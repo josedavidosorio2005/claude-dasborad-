@@ -370,9 +370,10 @@ function onGdVistaChange(){
 
 function renderGenericBanner(){
   var host = document.getElementById('gd-kpis');
-  var hayCargas = Object.keys(_gd.cargas).some(function(s){ return _gd.cargas[s].length; });
+  var hayCargas = Object.keys(_gd.cargas).some(function(s){ return (_gd.cargas[s]||[]).length; });
+  var esModulo = _gd.cliente === 'INVENTARIO' || _gd.cliente === 'GERENCIA';
   var ex = document.getElementById('gd-nodata-banner');
-  if(hayCargas){ if(ex) ex.remove(); return; }
+  if(hayCargas || esModulo){ if(ex) ex.remove(); return; }
   if(ex) return;
   var d = document.createElement('div');
   d.id = 'gd-nodata-banner';

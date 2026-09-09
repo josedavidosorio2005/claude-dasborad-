@@ -159,3 +159,48 @@ test('Gerencia: CRUD de KPIs y control de permisos', async (t) => {
     .set('Authorization', 'Bearer ' + adminToken);
   assert.equal(resDel.status, 200);
 });
+
+test('M4: dashboards configurables de Inventario y Gerencia (adaptadores)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const invToken = await tokenFor('mlopez', SEED.mlopez);   // perms.Inventario
+  const gerToken = await tokenFor('jherrera', SEED.jherrera); // perms.Gerencia
+  const B = (t) => 'Bearer ' + t;
+
+  // Datos base
+  await request(app).post('/api/inventario/items').set('Authorization', B(invToken))
+    .send({ nombre: 'Diadema QA', categoria: 'Equipos', cantidad: 10, unidad: 'un', estado: 'Disponible', costoUnitario: 50000 });
+  await request(app).post('/api/inventario/items').set('Authorization', B(invToken))
+    .send({ nombre: 'Silla QA', categoria: 'Mobiliario', cantidad: 0, unidad: 'un', estado: 'Mantenimiento', costoUnitario: 200000 });
+  await request(app).post('/api/gerencia/kpis').set('Authorization', B(gerToken))
+    .send({ periodo: '2026-08', nombre: 'Nivel de atencion', categoria: 'Operaciones', valor: 92, unidad: '%', meta: 90 });
+  await request(app).post('/api/gerencia/kpis').set('Authorization', B(gerToken))
+    .send({ periodo: '2026-08', nombre: 'Productividad', categoria: 'Operaciones', valor: 80, unidad: '%', meta: 90 });
+
+  // Inventario: renderiza por el motor generico, con KPIs derivados y alerta de sin stock
+  const itemsAll = (await request(app).get('/api/inventario/items').set('Authorization', B(invToken))).body;
+  const inv = await request(app).get('/api/dashboard/INVENTARIO').set('Authorization', B(invToken));
+  assert.equal(inv.status, 200);
+  assert.equal(inv.body.config.cliente, 'INVENTARIO');
+  const invResumen = inv.body.secciones.resumen[0].filas[0];
+  assert.equal(invResumen.items, itemsAll.length);
+  assert.equal(invResumen.sin_stock, itemsAll.filter((i) => i.cantidad <= 0).length);
+  assert.ok(invResumen.sin_stock >= 1); // la "Silla QA" quedo en 0
+  assert.ok(inv.body.secciones.por_categoria[0].filas.length >= 2);
+
+  // Gerencia: % cumplimiento derivado por periodo
+  const ger = await request(app).get('/api/dashboard/GERENCIA').set('Authorization', B(gerToken));
+  assert.equal(ger.status, 200);
+  const gr = ger.body.secciones.resumen.find((r) => r.periodo === '2026-08').filas[0];
+  assert.equal(gr.con_meta, 2);
+  assert.equal(gr.cumplen, 1); // 92>=90 si, 80>=90 no
+  assert.equal(gr.pct_cumplimiento, 50);
+
+  // Permisos: sin el permiso del modulo -> 403
+  assert.equal((await request(app).get('/api/dashboard/GERENCIA').set('Authorization', B(invToken))).status, 403);
+  assert.equal((await request(app).get('/api/dashboard/INVENTARIO').set('Authorization', B(gerToken))).status, 403);
+
+  // No se pueden cargar Excel contra estos (no estan en dashboards_config)
+  const carga = await request(app).post('/api/dashboard/cargas').set('Authorization', B(admin))
+    .send({ cliente: 'INVENTARIO', seccion: 'resumen', cadencia: 'mensual', periodo: '2026-08', filas: [{ items: 1 }] });
+  assert.equal(carga.status, 400);
+});
