@@ -1,0 +1,19 @@
+node_modules/
+
+# Variables de entorno con secretos — nunca al repo
+.env
+app.env
+server/.env
+*.env
+!*.env.example
+!server/.env.example
+
+# Base de datos SQLite y copias de seguridad
+server/data/
+
+# Logs
+*.log
+
+# Datos de Caddy (certificados) si se ejecutan fuera de volumen
+deploy/data/
+deploy/config/

@@ -1,0 +1,64 @@
+# docker-compose.yml — despliegue de InConexion Platform.
+#
+# Uso:
+#   cp app.env.example app.env   # y completa los valores (secrets, dominio...)
+#   docker compose up -d --build
+#
+# Los secretos se leen de app.env (que NO se sube al repo). Nada sensible vive
+# aqui. Usamos "app.env" y no ".env" a proposito: Docker Compose lee ".env"
+# automaticamente para interpolar el propio YAML y se quejaria del "$" del hash
+# bcrypt. "format: raw" ademas evita que Compose interprete esos "$".
+#
+# Requiere Docker Compose >= v2.30 (por "format: raw"). Comprueba tu version
+# con:  docker compose version
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: inconexion:latest
+    restart: unless-stopped
+    env_file:
+      - path: app.env
+        format: raw
+    environment:
+      # Dentro del contenedor la BD vive en el volumen montado abajo.
+      DB_PATH: /app/server/data/inconexion.db
+      NODE_ENV: production
+    volumes:
+      - inconexion-data:/app/server/data
+    ports:
+      # Publica el puerto solo en localhost del host; el reverse proxy (Caddy)
+      # es quien lo expone a internet con HTTPS. Si NO usas reverse proxy en
+      # esta maquina, cambia a "80:3000" (no recomendado sin TLS).
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ── Reverse proxy con HTTPS automatico (opcional pero recomendado) ──
+  # Actívalo con:  docker compose --profile proxy up -d
+  # Requiere que tu dominio ya apunte (DNS A/AAAA) a esta maquina y los
+  # puertos 80/443 abiertos. Configura el dominio en deploy/Caddyfile.
+  caddy:
+    image: caddy:2
+    profiles: ["proxy"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  inconexion-data:
+  caddy-data:
+  caddy-config:

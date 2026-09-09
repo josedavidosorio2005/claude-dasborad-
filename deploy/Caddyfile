@@ -1,0 +1,46 @@
+# deploy/Caddyfile — Reverse proxy con HTTPS automatico para InConexion Platform.
+#
+# Caddy obtiene y renueva el certificado TLS solo (Let's Encrypt / ZeroSSL) y
+# redirige HTTP -> HTTPS automaticamente. No hay que tocar certbot.
+#
+# Requisitos antes de levantarlo:
+#   1. Un dominio real cuyo registro DNS A (y AAAA si tienes IPv6) apunte a la IP
+#      publica de esta maquina.
+#   2. Puertos 80 y 443 abiertos en el firewall / grupo de seguridad.
+#   3. Cambiar "tudominio.com" abajo por tu dominio y "tu-email@ejemplo.com" por
+#      tu correo (para avisos de expiracion de certificados).
+#
+# Levantar junto al backend:
+#   docker compose --profile proxy up -d
+#
+# Y en tu .env:  CORS_ORIGIN=https://tudominio.com   y   TRUST_PROXY=1
+
+{
+	email tu-email@ejemplo.com
+}
+
+tudominio.com {
+	# El backend corre en el servicio "app" de docker-compose, puerto 3000.
+	reverse_proxy app:3000
+
+	encode gzip zstd
+
+	# Cabeceras de seguridad a nivel de proxy (complementan a helmet).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Logs de acceso en formato JSON.
+	log {
+		output stdout
+		format json
+	}
+}
+
+# Si quieres servir tambien "www", descomenta:
+# www.tudominio.com {
+# 	redir https://tudominio.com{uri} permanent
+# }

@@ -1,0 +1,14 @@
+**/node_modules
+**/data
+**/.env
+app.env
+*.env
+!*.env.example
+**/*.log
+docker-compose*.yml
+.git
+.github
+deploy
+DEPLOY_REPORT.md
+README.md
+*.md
