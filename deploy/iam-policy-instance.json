@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Comment": "Politica de MINIMO privilegio para el rol IAM de la instancia (EC2/Lightsail) de InConexion. Sustituye REGION, ACCOUNT_ID y los nombres de recurso.",
+  "Statement": [
+    {
+      "Sid": "LeerSecretosSSM",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParametersByPath",
+        "ssm:GetParameters",
+        "ssm:GetParameter"
+      ],
+      "Resource": "arn:aws:ssm:REGION:ACCOUNT_ID:parameter/inconexion/prod/*"
+    },
+    {
+      "Sid": "DescifrarSecretos",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": "arn:aws:kms:REGION:ACCOUNT_ID:alias/aws/ssm"
+    },
+    {
+      "Sid": "SubirBackupsAS3",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::inconexion-backups-tuempresa/db-backups/*"
+    },
+    {
+      "Sid": "EnviarLogsYMetricasCloudWatch",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams",
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

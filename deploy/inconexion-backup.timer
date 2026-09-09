@@ -1,0 +1,12 @@
+[Unit]
+Description=InConexion — backup diario de la base SQLite
+
+[Timer]
+# Todos los dias a las 03:15 hora del servidor. Persistent recupera la corrida
+# si la maquina estaba apagada a esa hora.
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

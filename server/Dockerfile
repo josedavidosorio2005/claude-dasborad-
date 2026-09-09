@@ -40,4 +40,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:${PORT:-3000}/api/health || exit 1
 
-CMD ["node", "server.js"]
+# bootstrap.js hidrata los secretos desde AWS SSM (si SSM_PARAM_PREFIX esta
+# definido) y luego arranca server.js. Sin SSM_PARAM_PREFIX se comporta igual.
+CMD ["node", "bootstrap.js"]

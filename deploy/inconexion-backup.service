@@ -1,0 +1,16 @@
+[Unit]
+Description=InConexion — backup de la base SQLite (local + S3)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Ejecuta el script de backup DENTRO del contenedor de la app, para que use
+# exactamente el mismo better-sqlite3 y el mismo volumen de datos.
+# --keep 14 mantiene 14 copias locales; S3 conserva todas (versionado).
+ExecStart=/usr/bin/docker compose -f /opt/inconexion/docker-compose.yml exec -T app node scripts/backup.js --keep 14
+# Alternativa sin exec (si prefieres un contenedor efimero):
+# ExecStart=/usr/bin/docker compose -f /opt/inconexion/docker-compose.yml run --rm app node scripts/backup.js --keep 14
+
+[Install]
+WantedBy=multi-user.target
