@@ -48,12 +48,12 @@ async function doLogin() {
 
     if (data.user.isMasterAdmin) {
       currentUser = null; // null = admin maestro
-      await loadData(); await loadHist();
+      await loadData(); await loadHist(); await loadDashboardClientes();
       enterAdminPanel();
       return;
     }
 
-    await loadData(); await loadHist();
+    await loadData(); await loadHist(); await loadDashboardClientes();
     var found = users.find(function(x){ return x.id === data.user.id; });
     currentUser = found || data.user;
 
@@ -106,6 +106,15 @@ function enterAdminPanel(){
     metasLi.classList.add('hidden');
     reportesRoleLi.classList.add('hidden');
   }
+
+  var cargasLi=document.getElementById('menu-cargas-li');
+  if(cargasLi) cargasLi.classList.toggle('hidden', !(isMaster||isAdminRole||canLoadData()));
+  var dashboardsLi=document.getElementById('menu-dashboards-li');
+  if(dashboardsLi) dashboardsLi.classList.toggle('hidden', !(isMaster||isAdminRole));
+  var invLi=document.getElementById('menu-inventario-li');
+  if(invLi) invLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Inventario)));
+  var gerLi=document.getElementById('menu-gerencia-li');
+  if(gerLi) gerLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Gerencia)));
 
   applyCreateBtn();
   showSection('users');
@@ -176,19 +185,20 @@ function renderSupervisorClientsGrid(){
     '<div class="es-hint">Solicita al administrador acceso a las campanas o clientes que supervisas.</div></div>';
 }
 
-function renderSupervisorMetaTable(){
+async function renderSupervisorMetaTable(){
   var tbl = document.getElementById('supervisor-meta-table');
   if(!tbl || !currentUser) return;
-  if(typeof loadCalData==='function') loadCalData();
+  await calLoadPlantillas();
   var curMonth = new Date().toISOString().slice(0,7);
-  var campanas = Object.keys(CAL_CAMPANAS).filter(function(c){ return currentUser.perms['campana_'+c]===true; });
+  var campanas = CAMPANAS_CON_PLANTILLA.filter(function(c){ return currentUser.perms['campana_'+c]===true; });
+  for(var i=0;i<campanas.length;i++){ try{ await loadCalData(campanas[i], curMonth); }catch(e){} }
   var html = '<tr><th>Campana</th><th>Mi Meta</th><th>Realizados</th><th>% Total</th><th>Llamada</th><th>WhatsApp</th></tr>';
   if(campanas.length===0){
     html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">No tienes campanas de Calidad asignadas.</td></tr>';
   } else {
     campanas.forEach(function(camp){
       var lideres = calLideresCumplimiento(camp, curMonth);
-      var mia = lideres.find(function(l){ return l.liderNombre.trim().toLowerCase()===(currentUser.nombre||'').trim().toLowerCase(); });
+      var mia = lideres.find(function(l){ return String(l.liderId)===String(currentUser.id); });
       if(!mia){
         html += '<tr><td>'+camp+'</td><td colspan="5" style="color:#7a9ba8">Sin meta individual asignada este mes</td></tr>';
       } else {

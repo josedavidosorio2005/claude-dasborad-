@@ -17,3 +17,7 @@ server/data/
 # Datos de Caddy (certificados) si se ejecutan fuera de volumen
 deploy/data/
 deploy/config/
+
+# Windows artifacts
+%SystemDrive%/
+

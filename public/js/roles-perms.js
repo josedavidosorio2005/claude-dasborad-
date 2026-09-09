@@ -63,7 +63,7 @@ function filterPermUsers(){renderPermTable(currentRole,document.getElementById('
 function allDashPermsOn(u){
   var ok=DASH_MODULES.every(function(m){return u.perms[m.key]===true;});
   if(!ok||u.rol!=='CLIENTES_DASH') return ok;
-  return CLIENTES_LIST.every(function(c){return u.perms['cliente_'+c]!==false;});
+  return CLIENTES_LIST.every(function(c){return u.perms['cliente_'+c]===true;});
 }
 
 function renderPermTable(roleKey,filter){
@@ -91,7 +91,7 @@ function renderPermTable(roleKey,filter){
       '<span class="mt-track"></span><span class="mt-thumb"></span></label></td>'+
       cols.map(function(c){
         return '<td><label class="mini-toggle"><input type="checkbox" data-uid="'+u.id+
-          '" data-key="'+c.key+'" data-role="'+roleKey+'" '+(u.perms[c.key]!==false?'checked':'')+
+          '" data-key="'+c.key+'" data-role="'+roleKey+'" '+(u.perms[c.key]===true?'checked':'')+
           ' onchange="togglePerm(this)"><span class="mt-track"></span><span class="mt-thumb"></span></label></td>';
       }).join('')+'</tr>';
   }).join('');

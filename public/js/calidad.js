@@ -1,157 +1,83 @@
-// calidad.js — InConexion Platform. Extraído de index.html (antes un único <script>).
+// calidad.js — InConexion Platform.
 // Se carga como <script src> global y en orden; todas las funciones son globales
 // y se invocan desde manejadores del HTML. No cambiar el orden de carga.
+//
+// MIGRADO A SERVIDOR (REAL_DATA_REPORT.md, Fase 1):
+//  - Ya no se usa localStorage. Los monitoreos y el cronograma de metas viven en
+//    la base de datos (endpoints /api/monitoreos, /api/metas, /api/calidad/plantillas).
+//  - El puntaje de un monitoreo lo calcula SIEMPRE el servidor al guardar; aqui
+//    solo se hace una vista previa mientras se responde el formulario.
+//  - El cumplimiento individual por lider tambien lo calcula el servidor
+//    (GET /api/metas/cumplimiento).
+//  - CAL_DB pasa a ser una cache en memoria que se llena desde la API.
 
-// Replica exacta de NUEVA_PLANTILLA_DE_CALIDAD_CLINICA_ORLANT_2026.xlsx
-// ═══════════════════════════════════════════════════════════
-var CAL_ITEMS_ORLANT = [
-  {n:1, cat:'APERTURA',      label:'Guion de saludo', weight:5, critico:false},
-  {n:2, cat:'APERTURA',      label:'Solicita documento de identidad', weight:4, critico:false},
-  {n:3, cat:'APERTURA',      label:'Valida entidad y derechos', weight:7, critico:true},
-  {n:4, cat:'ESCUCHA',       label:'Identifica y gestiona el requerimiento', weight:7, critico:false},
-  {n:5, cat:'ESCUCHA',       label:'No interrumpe al paciente', weight:3, critico:false},
-  {n:6, cat:'GESTION',       label:'Revisa aplicativos y ofrece mejor disponibilidad', weight:11, critico:true},
-  {n:7, cat:'GESTION',       label:'Agendamiento correcto / Servinte', weight:11, critico:true},
-  {n:8, cat:'GESTION',       label:'Trazabilidad en el STA', weight:8, critico:true},
-  {n:9, cat:'GESTION',       label:'Confirma datos en sistema', weight:4, critico:false},
-  {n:10,cat:'GESTION',       label:'Confirmacion de la cita con el paciente', weight:4, critico:false},
-  {n:11,cat:'INFORMACION',   label:'Recomendaciones / preparacion', weight:7, critico:true},
-  {n:12,cat:'INFORMACION',   label:'Informa cancelacion', weight:3, critico:false},
-  {n:13,cat:'INFORMACION',   label:'Conocimiento del servicio', weight:7, critico:true},
-  {n:14,cat:'TIEMPOS',       label:'Acompanamiento en espera', weight:3, critico:false},
-  {n:15,cat:'TIEMPOS',       label:'Uso del mute', weight:3, critico:false},
-  {n:16,cat:'CIERRE',        label:'Despedida con protocolo', weight:3, critico:false},
-  {n:17,cat:'GESTION 3P',    label:'Gestion correcta pacientes 3P', weight:10, critico:true}
-];
+// ── Plantillas (formato de evaluacion por campana) ─────────────
+// { 'ORLANT': { items:[{n,cat,label,weight,critico}], engine:'standard'|'sura' } }
+var CAL_PLANTILLAS = {};
+var _calPlantillasLoaded = false;
 
-var CAL_ITEMS_INFONDO = [
-  {n:1, cat:'APERTURA', label:'Saludo', weight:5, critico:false},
-  {n:2, cat:'APERTURA', label:'Valida correctamente la identidad del cliente', weight:9, critico:false},
-  {n:3, cat:'ESCUCHA',  label:'Escucha activamente sin interrumpir', weight:7, critico:false},
-  {n:4, cat:'ESCUCHA',  label:'Identifica correctamente la necesidad del cliente', weight:9, critico:true},
-  {n:5, cat:'GESTION',  label:'Brinda informacion clara y completa', weight:12, critico:true},
-  {n:6, cat:'GESTION',  label:'Utiliza lenguaje cordial y profesional', weight:10, critico:false},
-  {n:7, cat:'GESTION',  label:'Resuelve la solicitud o brinda la gestion correcta', weight:13, critico:true},
-  {n:8, cat:'GESTION',  label:'Ofrece alternativas o brinda gestion necesaria', weight:10, critico:false},
-  {n:9, cat:'GESTION',  label:'Registra correctamente la gestion en el sistema (CRM)', weight:13, critico:true},
-  {n:10,cat:'CIERRE',   label:'Cierre de llamada y se despide cordialmente', weight:7, critico:false},
-  {n:11,cat:'TIEMPOS',  label:'Retoma la llamada cada 60 segundos', weight:5, critico:false}
-];
-
-var CAL_ITEMS_SURA = [
-  {n:1, cat:'ACTITUD Y COMUNICACION', label:'Saludo y despedida', weight:7, critico:false},
-  {n:2, cat:'ACTITUD Y COMUNICACION', label:'Intencionalidad', weight:6, critico:true},
-  {n:3, cat:'ACTITUD Y COMUNICACION', label:'Amabilidad y trato hacia el cliente', weight:12, critico:true},
-  {n:4, cat:'ACTITUD Y COMUNICACION', label:'Expresion verbal, seguridad y confianza', weight:5, critico:false},
-  {n:5, cat:'CONOCIMIENTO Y PERFILACION', label:'Conocimiento producto', weight:12, critico:true},
-  {n:6, cat:'CONOCIMIENTO Y PERFILACION', label:'Filtros obligatorios y perfilacion', weight:12, critico:true},
-  {n:7, cat:'MANEJO DE OBJECIONES', label:'Manejo de objeciones (minimo 3 por llamada)', weight:12, critico:true},
-  {n:8, cat:'MANEJO DE OBJECIONES', label:'Manejo de objeciones 2 (solo 2 objeciones)', weight:9, critico:false},
-  {n:9, cat:'MANEJO DE OBJECIONES', label:'Manejo de objeciones 1 (solo 1 objecion)', weight:7, critico:false},
-  {n:10,cat:'CIERRE', label:'Escucha activa concentracion', weight:6, critico:false},
-  {n:11,cat:'CIERRE', label:'Tipificacion', weight:12, critico:true}
-];
-
-var CAL_ITEMS_AURORA = [
-  {n:1, cat:'GUION', label:'Saludo', weight:5, critico:false},
-  {n:2, cat:'GUION', label:'Escucha activa', weight:8, critico:false},
-  {n:3, cat:'GUION', label:'Revision (aplicativos y disponibilidad)', weight:10, critico:true},
-  {n:4, cat:'GUION', label:'Manejo de tiempos de espera y acompanamiento', weight:4, critico:false},
-  {n:5, cat:'GUION / AGENDAMIENTO', label:'Agendamiento correcto', weight:10, critico:true},
-  {n:6, cat:'GUION / AGENDAMIENTO', label:'Registro en sistema', weight:12, critico:false},
-  {n:7, cat:'GUION', label:'Recomendaciones', weight:10, critico:true},
-  {n:8, cat:'GUION', label:'Confirma paciente (fecha y hora de la cita)', weight:8, critico:false},
-  {n:9, cat:'GUION', label:'Conocimiento del producto', weight:10, critico:true},
-  {n:10,cat:'CORDIALIDAD', label:'Uso del mute', weight:5, critico:false},
-  {n:11,cat:'CORDIALIDAD', label:'Cordialidad y respeto', weight:13, critico:true},
-  {n:12,cat:'CORDIALIDAD', label:'Despedida', weight:5, critico:false}
-];
-
-var CAL_ITEMS_CARTERA = [
-  {n:1, cat:'APERTURA', label:'Saludo', weight:5, critico:false},
-  {n:2, cat:'APERTURA', label:'Grabacion de la llamada o chat', weight:7, critico:false},
-  {n:3, cat:'APERTURA', label:'Motivo de la llamada', weight:9, critico:false},
-  {n:4, cat:'COMUNICACION', label:'Comunicacion oral y cumplimiento de parametros de cobranza', weight:9, critico:false},
-  {n:5, cat:'GESTION', label:'Buen uso de los argumentos - Persuade al cliente', weight:7, critico:true},
-  {n:6, cat:'GESTION', label:'Objeciones', weight:9, critico:true},
-  {n:7, cat:'GESTION', label:'Liquidacion del credito', weight:12, critico:true},
-  {n:8, cat:'GESTION', label:'Resolucion de la llamada - dudas', weight:5, critico:false},
-  {n:9, cat:'GESTION', label:'Medios de pago', weight:13, critico:true},
-  {n:10,cat:'LEGAL', label:'Habeas data', weight:5, critico:false},
-  {n:11,cat:'GESTION', label:'Documenta gestion de la llamada', weight:5, critico:false},
-  {n:12,cat:'COMUNICACION', label:'Ortografia', weight:5, critico:false},
-  {n:13,cat:'CIERRE', label:'Cierre de la llamada', weight:6, critico:false},
-  {n:14,cat:'TIEMPOS', label:'Tiempo de retoma de llamada', weight:3, critico:false}
-];
-
-var CAL_ITEMS_COMFAMA = [
-  {n:1, cat:'NO NEGOCIABLES', label:'Presentacion y alianza (SURA Vida / Colmena Desempleo / Los Olivos Exequial)', weight:5, critico:true},
-  {n:2, cat:'NO NEGOCIABLES', label:'3 coberturas minimas con valores correctos', weight:10, critico:true},
-  {n:3, cat:'NO NEGOCIABLES', label:'Medio de pago, meses de pignoracion y vigencia', weight:8, critico:true},
-  {n:4, cat:'NO NEGOCIABLES', label:'Pregunta PEP (persona politicamente expuesta)', weight:5, critico:true},
-  {n:5, cat:'NO NEGOCIABLES', label:'Habeas Data (autorizacion tratamiento de datos)', weight:4, critico:true},
-  {n:6, cat:'NO NEGOCIABLES', label:'Codigos OTP (1ro datos/condiciones, 2do debito)', weight:3, critico:true},
-  {n:7, cat:'COMERCIAL', label:'Generar necesidad (conexion emocional antes del plan)', weight:13, critico:false},
-  {n:8, cat:'COMERCIAL', label:'Manejo de objeciones', weight:15, critico:false},
-  {n:9, cat:'COMERCIAL', label:'Cierre efectivo', weight:12, critico:false},
-  {n:10,cat:'ATRIBUTOS', label:'Empatia', weight:8, critico:false},
-  {n:11,cat:'ATRIBUTOS', label:'Resolutividad', weight:6, critico:false},
-  {n:12,cat:'ATRIBUTOS', label:'Mentoria (adapta la explicacion al cliente)', weight:6, critico:false},
-  {n:13,cat:'ATRIBUTOS', label:'Empoderamiento (seguridad y dominio)', weight:5, critico:false}
-];
-
-// engine 'standard' = N/A o SI suma peso completo, NO en critico resta -20 del peso (replica Orlant/Infondo/Aurora/Cartera/Comfama)
-// engine 'sura' = solo SI suma peso completo; NO o N/A no suman nada; los criticos no penalizan el puntaje, solo cuentan fallos (replica exacta de la plantilla Sura)
-var CAL_CAMPANAS = {
-  'ORLANT':             { items: CAL_ITEMS_ORLANT,  engine:'standard' },
-  'INFONDO':            { items: CAL_ITEMS_INFONDO, engine:'standard' },
-  'TELEVENTAS SURA':    { items: CAL_ITEMS_SURA,     engine:'sura' },
-  'CLINICA AURORA':     { items: CAL_ITEMS_AURORA,   engine:'standard' },
-  'CARTERA INTERNA':    { items: CAL_ITEMS_CARTERA,  engine:'standard' },
-  'TELEVENTAS COMFAMA': { items: CAL_ITEMS_COMFAMA,  engine:'standard' }
-};
-
-var CAL_SK = 'inconexion_calidad_v1';
-var CAL_DB = {}; // { ORLANT: { monitoreos:[], config:{metas:{'2026-07':6}} } }
-function calGetCronogramaRows(camp, monthKey){
-  // todas las filas (una por lider) programadas exactamente para ese mes, sin carry-forward
-  var d = CAL_DB[camp]; if(!d) return [];
-  var cron = d.config.cronograma || {};
-  return Array.isArray(cron[monthKey]) ? cron[monthKey] : [];
-}
-function calGetCronogramaForLider(camp, monthKey, liderId){
-  // busca la meta INDIVIDUAL de ese lider para ese mes; si no hay una entrada exacta, toma la del mes anterior mas reciente que si tenga
-  if(liderId===undefined || liderId===null || liderId==='') return null;
-  var d = CAL_DB[camp]; if(!d) return null;
-  var cron = d.config.cronograma || {};
-  var months = Object.keys(cron).filter(function(k){return k<=monthKey;}).sort().reverse();
-  for(var i=0;i<months.length;i++){
-    var rows = cron[months[i]];
-    if(!Array.isArray(rows)) continue;
-    var found = rows.filter(function(r){return String(r.liderId)===String(liderId);})[0];
-    if(found) return found;
+async function calLoadPlantillas(force){
+  if(_calPlantillasLoaded && !force) return;
+  try{
+    var rows = await apiRequest('GET','/calidad/plantillas');
+    CAL_PLANTILLAS = {};
+    (rows||[]).forEach(function(p){ CAL_PLANTILLAS[p.campana] = { items:p.items||[], engine:p.engine||'standard' }; });
+    _calPlantillasLoaded = true;
+  }catch(e){
+    if(!_calPlantillasLoaded) showToast('No se pudieron cargar las plantillas de Calidad: '+e.message);
   }
-  return null;
 }
-function calGetMyMetaForMonth(camp, monthKey){
-  // la meta INDIVIDUAL del usuario actualmente logueado (persona de Calidad o Supervisor) para esa campana/mes
-  if(!currentUser) return null; // el admin maestro no tiene una meta individual propia
-  var row = calGetCronogramaForLider(camp, monthKey, currentUser.id);
-  return row ? row.metaGrupal : null;
+
+function calCampanas(){
+  var k = Object.keys(CAL_PLANTILLAS);
+  return k.length ? k : CAMPANAS_CON_PLANTILLA.slice();
 }
-var _ccampana = 'ORLANT';
-var _ctab = 'nuevo';
-var _cmesFiltro = '';
+function calItems(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].items) || []; }
+function calEngine(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].engine) || 'standard'; }
+
+// ── Cache de datos por campana ────────────────────────────────
+// { camp: { monitoreos:[], cronogramaRows:[], cronogramaByMes:{}, cumplimiento:{mes:[]} } }
+var CAL_DB = {};
+
+function calCampCache(camp){
+  if(!CAL_DB[camp]) CAL_DB[camp] = { monitoreos:[], cronogramaRows:[], cronogramaByMes:{}, cumplimiento:{} };
+  return CAL_DB[camp];
+}
+
+// Carga desde el servidor los datos de una campana (monitoreos, cronograma y el
+// cumplimiento del mes indicado). Se llama al abrir el modulo y al cambiar
+// campana o mes. `mes` por defecto: el mes actual.
+async function loadCalData(camp, mes){
+  await calLoadPlantillas();
+  if(!camp) return;
+  mes = mes || new Date().toISOString().slice(0,7);
+  var d = calCampCache(camp);
+  var q = 'campana='+encodeURIComponent(camp);
+  try{
+    d.monitoreos = (await apiRequest('GET','/monitoreos?'+q)) || [];
+  }catch(e){ d.monitoreos = d.monitoreos || []; }
+  try{
+    var metas = (await apiRequest('GET','/metas?'+q)) || [];
+    d.cronogramaRows = metas;
+    d.cronogramaByMes = {};
+    metas.forEach(function(r){ (d.cronogramaByMes[r.mes] = d.cronogramaByMes[r.mes] || []).push(r); });
+  }catch(e){ d.cronogramaRows = d.cronogramaRows || []; }
+  try{
+    var cu = await apiRequest('GET','/metas/cumplimiento?'+q+'&mes='+mes);
+    d.cumplimiento[mes] = (cu && cu.lideres) || [];
+  }catch(e){ d.cumplimiento[mes] = d.cumplimiento[mes] || []; }
+}
 
 // ── Helpers de filtro por mes (reutilizables en todos los modulos) ──
+function calMonthKey(dateStr){ return dateStr ? String(dateStr).slice(0,7) : null; }
 function calAvailableMonths(arr){
   var set = {};
-  arr.forEach(function(m){ if(m.fecha) set[m.fecha.slice(0,7)] = true; });
+  (arr||[]).forEach(function(m){ if(m.fecha) set[m.fecha.slice(0,7)] = true; });
   return Object.keys(set).sort().reverse();
 }
 function calFilterByMonth(arr, month){
-  if(!month) return arr;
-  return arr.filter(function(m){ return m.fecha && m.fecha.slice(0,7)===month; });
+  if(!month) return arr || [];
+  return (arr||[]).filter(function(m){ return m.fecha && m.fecha.slice(0,7)===month; });
 }
 function calMonthSelectOptions(months, selected){
   return '<option value="">Todos los meses</option>' + months.map(function(mo){
@@ -159,74 +85,54 @@ function calMonthSelectOptions(months, selected){
   }).join('');
 }
 
-function loadCalData(){
-  var alreadyLoaded = CAL_DB && Object.keys(CAL_DB).length>0;
-  if(!alreadyLoaded){
-    try{
-      var raw = localStorage.getItem(CAL_SK);
-      CAL_DB = raw ? JSON.parse(raw) : {};
-    } catch(e){ CAL_DB = {}; }
-  }
-  CAMPANAS_CALIDAD.forEach(function(c){
-    if(!CAL_DB[c]) CAL_DB[c] = {monitoreos:[], config:{cronograma:{}}};
-    if(!CAL_DB[c].config) CAL_DB[c].config = {cronograma:{}};
-    if(!CAL_DB[c].config.cronograma) CAL_DB[c].config.cronograma = {};
-    var cron = CAL_DB[c].config.cronograma;
-    // backward-compat: una fila unica por mes (formato viejo) -> se convierte en arreglo de 1 fila "Sin asignar"
-    Object.keys(cron).forEach(function(m){
-      if(!Array.isArray(cron[m])){
-        var old = cron[m];
-        cron[m] = old ? [Object.assign({liderId:null, liderNombre:(old.lider||'Sin asignar')}, old)] : [];
-      }
-    });
-    // backward-compat: metas planas (solo numero) migradas a fila "Sin asignar"
-    if(CAL_DB[c].config.metas){
-      Object.keys(CAL_DB[c].config.metas).forEach(function(m){
-        if(cron[m]===undefined || cron[m].length===0){
-          var v = CAL_DB[c].config.metas[m];
-          cron[m] = [calBuildCronogramaRow(null, 'Sin asignar', v, 1, 19, false, 0)];
-        }
-      });
-      delete CAL_DB[c].config.metas;
-    }
-    if(CAL_DB[c].config.metaMensual!==undefined){
-      var curM=new Date().toISOString().slice(0,7);
-      if(cron[curM]===undefined || cron[curM].length===0){
-        cron[curM] = [calBuildCronogramaRow(null, 'Sin asignar', CAL_DB[c].config.metaMensual, 1, 19, false, 0)];
-      }
-      delete CAL_DB[c].config.metaMensual;
-    }
-    if(!CAL_DB[c].monitoreos) CAL_DB[c].monitoreos=[];
-  });
+// ── Cronograma / metas (lectura desde la cache) ───────────────
+function calGetCronogramaForLider(camp, monthKey, liderId){
+  if(liderId===undefined || liderId===null || liderId==='') return null;
+  var d = CAL_DB[camp]; if(!d) return null;
+  var rows = (d.cronogramaRows||[])
+    .filter(function(r){ return String(r.liderId)===String(liderId) && r.mes<=monthKey; })
+    .sort(function(a,b){ return b.mes.localeCompare(a.mes); });
+  return rows[0] || null;
 }
+function calGetMyMetaForMonth(camp, monthKey){
+  if(!currentUser) return null;
+  var row = calGetCronogramaForLider(camp, monthKey, currentUser.id);
+  return row ? row.metaGrupal : null;
+}
+// Valores derivados de una meta grupal — SOLO para la vista previa del formulario
+// de Admin (metas.js). Al guardar, el servidor recalcula y devuelve estos campos.
 function calBuildCronogramaRow(liderId, liderNombre, metaGrupal, asesores, diasLaborales, whatsapp, pctWhatsapp){
   metaGrupal = Number(metaGrupal)||0;
   asesores = Number(asesores)||1;
   diasLaborales = Number(diasLaborales)||19;
+  var r2 = function(n){ return Math.round(n*100)/100; };
   return {
     liderId: (liderId===undefined||liderId===null) ? null : liderId,
     liderNombre: liderNombre||'',
-    metaGrupal: metaGrupal,
-    asesores: asesores,
-    diasLaborales: diasLaborales,
-    whatsapp: !!whatsapp,
-    pctWhatsapp: Number(pctWhatsapp)||0,
-    metaPorAsesor: Math.round((metaGrupal/asesores)*100)/100,
-    metaDiaria: Math.round((metaGrupal/diasLaborales)*100)/100,
-    semana1: Math.round(metaGrupal*0.25*100)/100,
-    semana2: Math.round(metaGrupal*0.5*100)/100,
-    semana3: Math.round(metaGrupal*0.75*100)/100,
-    semana4: metaGrupal
+    metaGrupal: metaGrupal, asesores: asesores, diasLaborales: diasLaborales,
+    whatsapp: !!whatsapp, pctWhatsapp: Number(pctWhatsapp)||0,
+    metaPorAsesor: r2(metaGrupal/asesores),
+    metaDiaria: r2(metaGrupal/diasLaborales),
+    semana1: r2(metaGrupal*0.25), semana2: r2(metaGrupal*0.5),
+    semana3: r2(metaGrupal*0.75), semana4: metaGrupal
   };
 }
-function saveCalData(){
-  try{ localStorage.setItem(CAL_SK, JSON.stringify(CAL_DB)); }catch(e){}
+
+// Cumplimiento individual por lider — lo calcula el servidor; aqui solo se lee
+// de la cache lo que se cargo para ese mes en loadCalData().
+function calLideresCumplimiento(camp, mes){
+  var d = CAL_DB[camp];
+  return (d && d.cumplimiento && d.cumplimiento[mes]) || [];
 }
 
-// Motor de puntaje — replica exacta de la formula de Excel:
-// no critico: SI o N/A -> peso completo; NO -> 0
-// critico:    N/A o SI -> peso completo; NO -> peso - 20 (puede ir negativo)
-// total = MAX(0, MIN(100, suma))
+var _ccampana = 'ORLANT';
+var _ctab = 'nuevo';
+var _cmesFiltro = '';
+
+// ── Motor de puntaje — vista previa en el navegador ───────────
+// Copia exacta de server/calidad-logic.js (computeScore). El valor guardado
+// siempre es el que devuelve el servidor; esto solo alimenta el preview mientras
+// se responde el formulario, sin round-trip por cada cambio de select.
 function calComputeScore(items, answers, engine){
   engine = engine || 'standard';
   var answered = items.some(function(it){ return answers[it.n]; });
@@ -235,17 +141,13 @@ function calComputeScore(items, answers, engine){
   items.forEach(function(it){
     var a = answers[it.n];
     if(engine==='sura'){
-      // Solo SI suma el peso completo; NO o N/A no suman nada (replica exacta plantilla Sura)
       if(a==='SI') sum += it.weight;
       if(it.critico && a==='NO') fallos++;
+    } else if(!it.critico){
+      if(a==='N/A'||a==='SI') sum += it.weight;
     } else {
-      if(!it.critico){
-        if(a==='N/A'||a==='SI') sum += it.weight;
-        // NO -> +0
-      } else {
-        if(a==='N/A'||a==='SI') sum += it.weight;
-        else if(a==='NO'){ sum += (it.weight-20); fallos++; }
-      }
+      if(a==='N/A'||a==='SI') sum += it.weight;
+      else if(a==='NO'){ sum += (it.weight-20); fallos++; }
     }
   });
   var puntaje = Math.max(0, Math.min(100, sum));
@@ -259,29 +161,22 @@ function calComputeScore(items, answers, engine){
   return {puntaje:puntaje, clasificacion:clasificacion, fallos:fallos, nivelCritico:nivelCritico};
 }
 
+// ── Permisos (reflejan lo que el servidor tambien verifica) ──
 function calCurrentPerm(){
-  // true si el usuario actual puede CALIFICAR (crear monitoreos nuevos) en la campana seleccionada
   if(isFullAdmin()) return true;
   if(!currentUser || (currentUser.rol!=='CALIDAD' && currentUser.rol!=='SUPERVISOR')) return false;
   return currentUser.perms['campana_'+_ccampana]===true;
 }
-
 function calCanEvaluate(){
-  // rol CALIDAD, SUPERVISOR o el administrador pueden ver/usar la plantilla para crear monitoreos
   return isFullAdmin() || (currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR'));
 }
-
 function calCanManageMonitoreos(){
-  // Una vez guardado un monitoreo, solo el rol REPORTES (con acceso a la campana) o el Admin pueden editarlo/eliminarlo.
-  // Ni la persona de Calidad ni el Supervisor que lo creo pueden modificarlo despues de guardado.
   if(isFullAdmin()) return true;
   if(!currentUser || currentUser.rol!=='REPORTES') return false;
   return currentUser.perms['campana_'+_ccampana]===true;
 }
-
 function calAccessibleCampanas(){
-  // campanas que tienen plantilla de calificacion Y a las que el usuario tiene acceso (admin ve todas)
-  return Object.keys(CAL_CAMPANAS).filter(function(c){
+  return calCampanas().filter(function(c){
     if(isFullAdmin()) return true;
     if(!currentUser) return false;
     return currentUser.perms['campana_'+c]===true;
@@ -298,10 +193,12 @@ function populateCalCampanaSelect(){
   if(accesibles.indexOf(_ccampana)===-1) _ccampana = accesibles[0];
   sel.value = _ccampana;
 }
-function openCalidad(){
-  loadCalData();
+
+async function openCalidad(){
   document.getElementById('calidad-overlay').classList.add('show');
+  await calLoadPlantillas();
   populateCalCampanaSelect();
+  if(_ccampana) await loadCalData(_ccampana, _cmesFiltro || undefined);
   populateCalMesSelect();
   var cfg = document.getElementById('ctab-btn-config');
   if(cfg) cfg.style.display = isFullAdmin() ? '' : 'none';
@@ -331,13 +228,14 @@ function populateCalMesSelect(){
   sel.innerHTML = calMonthSelectOptions(months, _cmesFiltro);
   sel.value = _cmesFiltro;
 }
-function onCalMesChange(){
+async function onCalMesChange(){
   _cmesFiltro = document.getElementById('cal-mes-sel').value;
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
   switchCalTab(_ctab);
 }
-
-function onCalCampanaChange(){
+async function onCalCampanaChange(){
   _ccampana = document.getElementById('cal-campana-sel').value;
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
   populateCalMesSelect();
   renderCalItemsForm();
   populateCalAsesorSelect();
@@ -345,7 +243,6 @@ function onCalCampanaChange(){
 }
 
 // Lista desplegable de asesores: solo usuarios con rol ASESOR, activos, y asignados a la campana actual.
-// Garantiza trazabilidad: el monitoreo siempre queda vinculado a un usuario real del modulo ASESOR.
 function populateCalAsesorSelect(){
   var sel = document.getElementById('cf-asesor');
   var hint = document.getElementById('cf-asesor-hint');
@@ -380,7 +277,7 @@ function switchCalTab(t){
 }
 
 function renderCalItemsForm(){
-  var items = CAL_CAMPANAS[_ccampana].items;
+  var items = calItems(_ccampana);
   var cats = [];
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
   var html='';
@@ -399,7 +296,7 @@ function renderCalItemsForm(){
 }
 
 function calReadAnswers(){
-  var items = CAL_CAMPANAS[_ccampana].items;
+  var items = calItems(_ccampana);
   var answers = {};
   items.forEach(function(it){
     var el = document.getElementById('cf-item-'+it.n);
@@ -409,9 +306,9 @@ function calReadAnswers(){
 }
 
 function renderCalPreview(){
-  var items = CAL_CAMPANAS[_ccampana].items;
+  var items = calItems(_ccampana);
   var answers = calReadAnswers();
-  var r = calComputeScore(items, answers, CAL_CAMPANAS[_ccampana].engine);
+  var r = calComputeScore(items, answers, calEngine(_ccampana));
   var pv = document.getElementById('cf-preview');
   if(!pv) return;
   pv.innerHTML =
@@ -430,8 +327,7 @@ function setCanalAuditado(canal){
 var _editingMonitoreoId = null;
 
 function resetCalForm(){
-  var items = CAL_CAMPANAS[_ccampana].items;
-  items.forEach(function(it){ var el=document.getElementById('cf-item-'+it.n); if(el) el.value=''; });
+  calItems(_ccampana).forEach(function(it){ var el=document.getElementById('cf-item-'+it.n); if(el) el.value=''; });
   populateCalAsesorSelect();
   document.getElementById('cf-idllamada').value='';
   document.getElementById('cf-telefono').value='';
@@ -445,7 +341,7 @@ function resetCalForm(){
 
 function editarMonitoreo(id){
   if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
-  var arr = CAL_DB[_ccampana].monitoreos;
+  var arr = (CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || [];
   var m = arr.find(function(x){ return x.id===id; });
   if(!m){ showToast('Monitoreo no encontrado'); return; }
   _editingMonitoreoId = id;
@@ -463,8 +359,7 @@ function editarMonitoreo(id){
   document.getElementById('cf-evaluador').value = m.evaluador || '';
   document.getElementById('cf-observaciones').value = m.observaciones || '';
   setCanalAuditado(m.canal || 'LLAMADA');
-  var items = CAL_CAMPANAS[_ccampana].items;
-  items.forEach(function(it){
+  calItems(_ccampana).forEach(function(it){
     var el = document.getElementById('cf-item-'+it.n);
     if(el) el.value = (m.answers && m.answers[it.n]) || '';
   });
@@ -472,55 +367,58 @@ function editarMonitoreo(id){
   showToast('Editando monitoreo de '+m.asesor+' ('+(m.fecha||'-')+') — modifique y presione Guardar');
 }
 
-function submitMonitoreo(){
+async function submitMonitoreo(){
   var editing = !!_editingMonitoreoId;
   if(editing){
     if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
   } else if(!calCurrentPerm()){ showToast('No tiene permiso para evaluar esta campana'); return; }
   var asesor = document.getElementById('cf-asesor').value.trim();
   if(!asesor){ showToast('Seleccione el asesor a monitorear'); return; }
-  var items = CAL_CAMPANAS[_ccampana].items;
   var answers = calReadAnswers();
-  var r = calComputeScore(items, answers, CAL_CAMPANAS[_ccampana].engine);
-  if(r.puntaje===null){ showToast('Responda al menos un item'); return; }
-  var mon = {
-    id: editing ? _editingMonitoreoId : Date.now(),
+  var preview = calComputeScore(calItems(_ccampana), answers, calEngine(_ccampana));
+  if(preview.puntaje===null){ showToast('Responda al menos un item'); return; }
+  // El servidor solo acepta 'SI'/'NO'/'N/A'/''; enviamos las respuestas tal cual.
+  var body = {
+    campana: _ccampana,
     asesor: asesor,
     fecha: document.getElementById('cf-fecha').value,
+    canal: document.getElementById('cf-canal').value || 'LLAMADA',
     idLlamada: document.getElementById('cf-idllamada').value.trim(),
     telefono: document.getElementById('cf-telefono').value.trim(),
     codificacion: document.getElementById('cf-codificacion').value.trim(),
-    evaluador: document.getElementById('cf-evaluador').value.trim() || actorName(),
-    canal: document.getElementById('cf-canal').value || 'LLAMADA',
-    answers: answers,
-    puntaje: r.puntaje, clasificacion: r.clasificacion, fallos: r.fallos, nivelCritico: r.nivelCritico,
+    evaluador: document.getElementById('cf-evaluador').value.trim(),
     observaciones: document.getElementById('cf-observaciones').value.trim(),
-    createdAt: nowStr()
+    answers: answers
   };
-  if(editing){
-    var idx = CAL_DB[_ccampana].monitoreos.findIndex(function(x){ return x.id===_editingMonitoreoId; });
-    if(idx>=0){ mon.createdAt = CAL_DB[_ccampana].monitoreos[idx].createdAt; CAL_DB[_ccampana].monitoreos[idx] = mon; }
-    saveCalData();
-    showToast('Monitoreo actualizado correctamente');
-  } else {
-    CAL_DB[_ccampana].monitoreos.push(mon);
-    saveCalData();
-    showToast('Monitoreo guardado correctamente');
-  }
+  var btn = document.querySelector('#cpanel-nuevo .btn-primary');
+  try{
+    await withButtonLoading(btn, 'Guardando...', async function(){
+      if(editing){
+        await apiRequest('PUT','/monitoreos/'+_editingMonitoreoId, body);
+      } else {
+        await apiRequest('POST','/monitoreos', body);
+      }
+    });
+  }catch(e){ showToast(e.message); return; }
+  showToast(editing ? 'Monitoreo actualizado correctamente' : 'Monitoreo guardado correctamente');
   resetCalForm();
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
   switchCalTab('monitoreos');
 }
 
-function calMonitoreosDelete(id){
+async function calMonitoreosDelete(id){
   if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden eliminar un monitoreo ya guardado'); return; }
   if(!confirm('Eliminar este monitoreo?')) return;
-  var arr = CAL_DB[_ccampana].monitoreos;
-  var idx = arr.findIndex(function(m){return m.id===id;});
-  if(idx>=0){ arr.splice(idx,1); saveCalData(); renderCalMonitoreosTable(); renderCalKpis(); }
+  try{
+    await apiRequest('DELETE','/monitoreos/'+id);
+  }catch(e){ showToast(e.message); return; }
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
+  renderCalMonitoreosTable();
+  renderCalKpis();
 }
 
 function renderCalMonitoreosTable(){
-  var arr = calFilterByMonth(CAL_DB[_ccampana].monitoreos, _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
+  var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
   var canManage = calCanManageMonitoreos();
   var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(canManage?'<th></th>':'')+'</tr>';
   if(arr.length===0){
@@ -537,13 +435,13 @@ function renderCalMonitoreosTable(){
 }
 
 function renderCalResumenTable(){
-  var arr = calFilterByMonth(CAL_DB[_ccampana].monitoreos, _cmesFiltro);
+  var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro);
   var byAsesor = {};
   arr.forEach(function(m){
     if(!byAsesor[m.asesor]) byAsesor[m.asesor] = {count:0, sum:0, fallos:0};
     byAsesor[m.asesor].count++;
     byAsesor[m.asesor].sum += m.puntaje;
-    byAsesor[m.asesor].fallos += m.fallos;
+    byAsesor[m.asesor].fallos += (m.fallos||0);
   });
   var names = Object.keys(byAsesor);
   var html = '<tr><th>Asesor</th><th># Monitoreos</th><th>Prom. Puntaje</th><th>Clasificacion</th><th>Total Fallos Criticos</th><th>Alerta</th></tr>';
@@ -561,46 +459,8 @@ function renderCalResumenTable(){
   document.getElementById('cal-resumen-table').innerHTML = html;
 }
 
-function calMonthKey(dateStr){
-  if(!dateStr) return null;
-  return dateStr.slice(0,7); // YYYY-MM
-}
-
-function calLideresCumplimiento(camp, mes){
-  // Para cada lider con una meta vigente ese mes (via carry-forward), calcula su cumplimiento INDIVIDUAL,
-  // desglosado por canal (Llamada / WhatsApp) segun el % de WhatsApp a auditar configurado en el cronograma.
-  var d = CAL_DB[camp]; if(!d) return [];
-  var arr = d.monitoreos;
-  var cron = d.config.cronograma || {};
-  var liderIds = {};
-  Object.keys(cron).filter(function(k){return k<=mes;}).forEach(function(k){
-    (cron[k]||[]).forEach(function(r){ if(r.liderId) liderIds[r.liderId]=true; });
-  });
-  return Object.keys(liderIds).map(function(lid){
-    var row = calGetCronogramaForLider(camp, mes, lid);
-    if(!row) return null;
-    var misMon = arr.filter(function(m){
-      return calMonthKey(m.fecha)===mes && (m.evaluador||'').trim().toLowerCase()===(row.liderNombre||'').trim().toLowerCase();
-    });
-    var realizados = misMon.length;
-    var realizadosWpp = misMon.filter(function(m){ return m.canal==='WPP'; }).length;
-    var realizadosLlamada = realizados - realizadosWpp;
-    var pctWpp = row.pctWhatsapp || 0;
-    var metaWpp = row.whatsapp ? Math.round(row.metaGrupal * pctWpp/100) : 0;
-    var metaLlamada = row.metaGrupal - metaWpp;
-    var pct = row.metaGrupal ? Math.round(Math.min(100,(realizados/row.metaGrupal)*100)) : 0;
-    var pctWppCompl = metaWpp ? Math.round(Math.min(100,(realizadosWpp/metaWpp)*100)) : null;
-    var pctLlamadaCompl = metaLlamada ? Math.round(Math.min(100,(realizadosLlamada/metaLlamada)*100)) : null;
-    return {
-      liderNombre: row.liderNombre, meta: row.metaGrupal, realizados: realizados, pct: pct,
-      auditaWpp: !!row.whatsapp, metaWpp: metaWpp, realizadosWpp: realizadosWpp, pctWppCompl: pctWppCompl,
-      metaLlamada: metaLlamada, realizadosLlamada: realizadosLlamada, pctLlamadaCompl: pctLlamadaCompl
-    };
-  }).filter(Boolean).sort(function(a,b){ return a.liderNombre.localeCompare(b.liderNombre); });
-}
-
 function renderCalKpis(){
-  var allArr = CAL_DB[_ccampana].monitoreos;
+  var allArr = (CAL_DB[_ccampana]||{}).monitoreos || [];
   var arr = calFilterByMonth(allArr, _cmesFiltro);
   var total = arr.length;
   var promedio = total ? Math.round((arr.reduce(function(a,m){return a+m.puntaje;},0)/total)*10)/10 : 0;
@@ -615,7 +475,7 @@ function renderCalKpis(){
 
   if(currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR')){
     var lideresList = calLideresCumplimiento(_ccampana, mesMeta);
-    var mia = lideresList.find(function(l){ return l.liderNombre.trim().toLowerCase()===(currentUser.nombre||'').trim().toLowerCase(); });
+    var mia = lideresList.find(function(l){ return String(l.liderId)===String(currentUser.id); });
     if(!mia){
       html += '<div class="aurora-kpi kpi-org"><div class="kv" style="font-size:0.85rem">Sin meta asignada</div><div class="kl">Mi Meta Individual ('+mesMeta+')</div></div>';
     } else {
@@ -672,13 +532,15 @@ function ccmk(id,cfg){
   _cc[id]=new Chart(el,cfg);
 }
 
-function descargarReporteGeneral(){
-  if(typeof loadCalData==='function') loadCalData();
+async function descargarReporteGeneral(){
   if(typeof XLSX==='undefined'){ showToast('No se pudo cargar el generador de Excel. Verifique su conexion a internet e intente de nuevo.'); return; }
   var mes = _cmesFiltro || new Date().toISOString().slice(0,7);
+  var campanas = calAccessibleCampanas();
   var wb = XLSX.utils.book_new();
   var usedNames = {};
-  CAMPANAS_CALIDAD.forEach(function(camp){
+  for(var i=0;i<campanas.length;i++){
+    var camp = campanas[i];
+    await loadCalData(camp, mes);
     var lideres = calLideresCumplimiento(camp, mes);
     var aoa = [
       ['Reporte de Cumplimiento — '+camp],
@@ -703,9 +565,9 @@ function descargarReporteGeneral(){
     if(usedNames[sheetName]){ sheetName = sheetName.slice(0,28)+'_'+Object.keys(usedNames).length; }
     usedNames[sheetName] = true;
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  });
+  }
   XLSX.writeFile(wb, 'Reporte_Cumplimiento_'+mes+'.xlsx');
-  showToast('Reporte de '+mes+' descargado — una hoja completa por campana');
+  showToast('Reporte de '+mes+' descargado — una hoja por campana con acceso');
 }
 
 function closeSupervisionLider(){
@@ -727,7 +589,7 @@ function verSupervisionLider(camp, mes, liderNombre){
 
   var arr = (CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
   var misMon = arr.filter(function(m){
-    return calMonthKey(m.fecha)===mes && (m.evaluador||'').trim().toLowerCase()===liderNombre.trim().toLowerCase();
+    return calMonthKey(m.fecha)===mes && String(m.evaluadorUserId)===String(l.liderId);
   }).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
   var html = '<tr><th>Fecha</th><th>Asesor</th><th>Canal</th><th>Puntaje</th><th>Clasificacion</th><th>Nivel Critico</th></tr>';
   if(misMon.length===0){
@@ -743,7 +605,7 @@ function verSupervisionLider(camp, mes, liderNombre){
 }
 
 function renderCalReportes(){
-  var allArr = CAL_DB[_ccampana].monitoreos;
+  var allArr = (CAL_DB[_ccampana]||{}).monitoreos || [];
   var arr = calFilterByMonth(allArr, _cmesFiltro);
   var curMonth = _cmesFiltro || new Date().toISOString().slice(0,7);
   var sobresaliente = arr.filter(function(m){return m.puntaje>=90;}).length;

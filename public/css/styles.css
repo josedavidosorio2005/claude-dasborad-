@@ -302,6 +302,8 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 /* Tab panels */
 .atab-panel{display:none;padding:16px 18px 20px;}
 .atab-panel.visible{display:block;}
+#gd-panels{padding:16px 18px 20px;}
+#gd-panels .aurora-kpis{padding:0;background:none;border:none;margin-bottom:14px;}
 
 /* Chart cards grid */
 .aurora-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -327,9 +329,9 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 @media(max-width:700px){.aurora-grid-2,.aurora-grid-3{grid-template-columns:1fr;}.aurora-kpis{gap:6px;}}
 
 /* ── AURORA DASHBOARD MODAL ── */
-#aurora-overlay,#orlant-overlay,#hlm-overlay,#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#aurora-overlay.show,#orlant-overlay.show,#hlm-overlay.show,#calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show{display:flex;}
-#aurora-modal,#orlant-modal,#hlm-modal,#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
+#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#gd-overlay.show{display:flex;}
+#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#gd-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
 .dm-readonly{width:100%;padding:11px 14px;border:1.5px solid #e0eaf0;border-radius:8px;font-size:0.94rem;color:var(--c-primary);background:#eef3f6;min-height:20px;}
 .qi-answer-badge{border-radius:6px;padding:5px 12px;font-size:0.8rem;font-weight:700;min-width:60px;text-align:center;display:inline-block;}
 .qi-answer-si{background:#e8f8f1;color:var(--c-success-dark);border:1.5px solid var(--c-success);}

@@ -9,12 +9,17 @@ var CLIENTES_LIST = [
 ];
 var CAMPANAS_CALIDAD = ['ORLANT','HOSPITAL LA MARIA','CLINICA AURORA','TELEVENTAS SURA','TELEVENTAS COMFAMA','ANDRES YEPES','MOVILIZE','SASCHA FITNESS','INFONDO','BIVETT','CONSULTORIO JULIAN MOLANO','CARTERA INTERNA'];
 
+// Campanas que tienen plantilla de calificacion de Calidad en el servidor.
+// Debe coincidir con server/calidad-plantillas-seed.js. El detalle de cada
+// plantilla (items, pesos, motor) se pide por API (GET /api/calidad/plantillas).
+var CAMPANAS_CON_PLANTILLA = ['ORLANT','INFONDO','TELEVENTAS SURA','CLINICA AURORA','CARTERA INTERNA','TELEVENTAS COMFAMA'];
+
 // soon:true  -> el módulo aparece en el dashboard pero todavía no está construido.
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.
 var DASH_MODULES = [
   {key:'Calidad',     label:'Calidad',           icon:'&#10003;', sub:'Control de Calidad',     cls:'mod-calidad'},
-  {key:'Inventario',  label:'Inventario',         icon:'&#128230;',sub:'Gestion de Stock',        cls:'mod-inventario', soon:true},
-  {key:'Gerencia',    label:'Gerencia',           icon:'&#128202;',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia',   soon:true},
+  {key:'Inventario',  label:'Inventario',         icon:'&#128230;',sub:'Gestion de Stock',        cls:'mod-inventario'},
+  {key:'Gerencia',    label:'Gerencia',           icon:'&#128202;',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia'},
   {key:'ClientesDash',label:'Dashboard Clientes', icon:'&#129309;',sub:'Seguimiento de Clientes', cls:'mod-clientes'}
 ];
 

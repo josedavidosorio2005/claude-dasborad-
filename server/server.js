@@ -13,8 +13,22 @@ const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
 const db = require('./db');
-const { signToken, requireAuth, requirePermission } = require('./auth');
+const {
+  signToken,
+  requireAuth,
+  requirePermission,
+  requireActor,
+  isFullAdmin,
+  can,
+  campaignAccess,
+  canEvaluateCampaign,
+  canManageMonitoreos,
+  canLoadData,
+  requireDataLoader,
+} = require('./auth');
 const { validate, schemas } = require('./validation');
+const calc = require('./calidad-logic');
+const secciones = require('./dashboard-secciones');
 
 const MASTER_ADMIN_USER = config.masterAdminUser;
 const MASTER_ADMIN_PASSWORD_HASH = config.masterAdminPasswordHash;
@@ -62,6 +76,69 @@ function logEvent(accion, targetRow, actorLabel, detalle) {
 
 function actorLabel(actor) {
   return `${actor.nombre} (@${actor.user})`;
+}
+
+// ── Helpers del modulo de Calidad ────────────────────────────
+function getPlantillaRow(campana) {
+  return db
+    .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1')
+    .get(campana);
+}
+
+function toPlantilla(row) {
+  return {
+    campana: row.campana,
+    engine: row.engine,
+    items: JSON.parse(row.items || '[]'),
+    updatedAt: row.updatedAt,
+  };
+}
+
+function toMonitoreo(row) {
+  return {
+    id: row.id,
+    campana: row.campana,
+    asesor: row.asesor,
+    fecha: row.fecha,
+    mes: row.mes,
+    canal: row.canal,
+    idLlamada: row.idLlamada || '',
+    telefono: row.telefono || '',
+    codificacion: row.codificacion || '',
+    evaluador: row.evaluador,
+    evaluadorUserId: row.evaluadorUserId,
+    answers: JSON.parse(row.answers || '{}'),
+    puntaje: row.puntaje,
+    clasificacion: row.clasificacion,
+    fallos: row.fallos,
+    nivelCritico: row.nivelCritico,
+    observaciones: row.observaciones || '',
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt || null,
+  };
+}
+
+function toMetaRow(row) {
+  return calc.withDerived({
+    id: row.id,
+    campana: row.campana,
+    mes: row.mes,
+    liderId: row.liderId,
+    liderNombre: row.liderNombre,
+    metaGrupal: row.metaGrupal,
+    asesores: row.asesores,
+    diasLaborales: row.diasLaborales,
+    whatsapp: !!row.whatsapp,
+    pctWhatsapp: row.pctWhatsapp,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  });
+}
+
+// Registra un evento del modulo de Calidad en el historial (mismo append-only
+// que usuarios). El "objetivo" es sintetico: nombre = asesor/lider, rol = campana.
+function logCalEvent(accion, nombre, campana, actor, detalle) {
+  logEvent(accion, { nombre: nombre || '-', user: '-', rol: campana || '-' }, actorLabel(actor), detalle || '');
 }
 
 // ── CORS ─────────────────────────────────────────────────────
@@ -322,6 +399,1156 @@ function createApp() {
       db.prepare('DELETE FROM users WHERE id = ?').run(id);
       logEvent('ELIMINADO', row, actorLabel(req.actor), '');
       res.json({ ok: true });
+    })
+  );
+
+  // Los datos de Calidad cambian con cada monitoreo/meta: nunca cachear las
+  // respuestas (evita 304 con cuerpo viejo tras un POST).
+  api.use(['/monitoreos', '/metas', '/calidad'], (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // CALIDAD — PLANTILLAS (formato de evaluacion por campana)
+  // ══════════════════════════════════════════════════════════
+  api.get(
+    '/calidad/plantillas',
+    requireActor,
+    wrap((req, res) => {
+      const rows = db
+        .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana')
+        .all();
+      res.json(rows.map(toPlantilla));
+    })
+  );
+
+  api.get(
+    '/calidad/plantillas/:campana',
+    requireActor,
+    wrap((req, res) => {
+      const row = getPlantillaRow(req.params.campana);
+      if (!row) return res.status(404).json({ error: 'No hay plantilla para esa campana' });
+      res.json(toPlantilla(row));
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // CALIDAD — MONITOREOS
+  // ══════════════════════════════════════════════════════════
+
+  // Resumen por asesor + agregados de la campana/mes. Antes de /:id.
+  api.get(
+    '/monitoreos/resumen',
+    requireActor,
+    validate(schemas.calidadQuery, 'query'),
+    wrap((req, res) => {
+      const { campana, mes } = req.query;
+      if (!campaignAccess(req.actor, campana)) {
+        return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+      }
+      const rows = mes
+        ? db.prepare('SELECT * FROM monitoreos WHERE campana = ? AND mes = ?').all(campana, mes)
+        : db.prepare('SELECT * FROM monitoreos WHERE campana = ?').all(campana);
+      const monitoreos = rows.map(toMonitoreo);
+      res.json({
+        campana,
+        mes: mes || null,
+        agregados: calc.resumenCampana(monitoreos),
+        porAsesor: calc.resumenPorAsesor(monitoreos),
+      });
+    })
+  );
+
+  // Los monitoreos del asesor logueado (portal ASESOR). Empareja por nombre,
+  // igual que el dropdown de asesores del formulario. Antes de /:id.
+  api.get(
+    '/monitoreos/mios',
+    requireActor,
+    wrap((req, res) => {
+      const nombre = (req.actor.nombre || '').trim().toLowerCase();
+      if (!nombre) return res.json([]);
+      const rows = db
+        .prepare(
+          "SELECT * FROM monitoreos WHERE lower(trim(asesor)) = ? ORDER BY fecha DESC, id DESC"
+        )
+        .all(nombre);
+      res.json(rows.map(toMonitoreo));
+    })
+  );
+
+  api.get(
+    '/monitoreos',
+    requireActor,
+    validate(schemas.calidadQuery, 'query'),
+    wrap((req, res) => {
+      const { campana, mes } = req.query;
+      if (!campaignAccess(req.actor, campana)) {
+        return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+      }
+      const rows = mes
+        ? db
+            .prepare('SELECT * FROM monitoreos WHERE campana = ? AND mes = ? ORDER BY id DESC')
+            .all(campana, mes)
+        : db.prepare('SELECT * FROM monitoreos WHERE campana = ? ORDER BY id DESC').all(campana);
+      res.json(rows.map(toMonitoreo));
+    })
+  );
+
+  api.post(
+    '/monitoreos',
+    requireActor,
+    validate(schemas.createMonitoreoBody),
+    wrap((req, res) => {
+      const b = req.body;
+      if (!canEvaluateCampaign(req.actor, b.campana)) {
+        return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
+      }
+      const plantillaRow = getPlantillaRow(b.campana);
+      if (!plantillaRow) {
+        return res.status(400).json({ error: 'Esa campana no tiene plantilla de calificacion' });
+      }
+      const plantilla = toPlantilla(plantillaRow);
+      const score = calc.computeScore(plantilla.items, b.answers, plantilla.engine);
+      if (score.puntaje === null) {
+        return res.status(400).json({ error: 'Responda al menos un item de la plantilla' });
+      }
+      const now = nowStr();
+      const evaluador = b.evaluador || req.actor.nombre;
+      const info = db
+        .prepare(
+          `INSERT INTO monitoreos
+             (campana, asesor, fecha, mes, canal, idLlamada, telefono, codificacion,
+              evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
+              nivelCritico, observaciones, createdAt)
+           VALUES (@campana,@asesor,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
+                   @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
+                   @nivelCritico,@observaciones,@createdAt)`
+        )
+        .run({
+          campana: b.campana,
+          asesor: b.asesor,
+          fecha: b.fecha,
+          mes: calc.monthKey(b.fecha),
+          canal: b.canal,
+          idLlamada: b.idLlamada || null,
+          telefono: b.telefono || null,
+          codificacion: b.codificacion || null,
+          evaluador,
+          evaluadorUserId: req.actor.isMasterAdmin ? null : req.actor.id,
+          answers: JSON.stringify(b.answers),
+          puntaje: score.puntaje,
+          clasificacion: score.clasificacion,
+          fallos: score.fallos,
+          nivelCritico: score.nivelCritico,
+          observaciones: b.observaciones || null,
+          createdAt: now,
+        });
+      const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(info.lastInsertRowid);
+      logCalEvent('MONITOREO', b.asesor, b.campana, req.actor, `Puntaje: ${score.puntaje}`);
+      res.status(201).json(toMonitoreo(row));
+    })
+  );
+
+  api.put(
+    '/monitoreos/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.updateMonitoreoBody),
+    wrap((req, res) => {
+      const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
+      if (!canManageMonitoreos(req.actor, row.campana)) {
+        return res
+          .status(403)
+          .json({ error: 'Solo el rol Reportes o el Administrador pueden editar un monitoreo guardado' });
+      }
+      const b = req.body;
+      const plantilla = toPlantilla(getPlantillaRow(row.campana));
+      const answers = b.answers || JSON.parse(row.answers || '{}');
+      const score = calc.computeScore(plantilla.items, answers, plantilla.engine);
+      if (score.puntaje === null) {
+        return res.status(400).json({ error: 'Responda al menos un item de la plantilla' });
+      }
+      const fecha = b.fecha || row.fecha;
+      db.prepare(
+        `UPDATE monitoreos SET
+           asesor=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
+           evaluador=?, answers=?, puntaje=?, clasificacion=?, fallos=?, nivelCritico=?,
+           observaciones=?, updatedAt=?
+         WHERE id=?`
+      ).run(
+        b.asesor ?? row.asesor,
+        fecha,
+        calc.monthKey(fecha),
+        b.canal ?? row.canal,
+        (b.idLlamada ?? row.idLlamada) || null,
+        (b.telefono ?? row.telefono) || null,
+        (b.codificacion ?? row.codificacion) || null,
+        b.evaluador ?? row.evaluador,
+        JSON.stringify(answers),
+        score.puntaje,
+        score.clasificacion,
+        score.fallos,
+        score.nivelCritico,
+        (b.observaciones ?? row.observaciones) || null,
+        nowStr(),
+        row.id
+      );
+      const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
+      logCalEvent('MONITOREO_EDIT', updated.asesor, row.campana, req.actor, `Puntaje: ${score.puntaje}`);
+      res.json(toMonitoreo(updated));
+    })
+  );
+
+  api.delete(
+    '/monitoreos/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
+      if (!canManageMonitoreos(req.actor, row.campana)) {
+        return res
+          .status(403)
+          .json({ error: 'Solo el rol Reportes o el Administrador pueden eliminar un monitoreo guardado' });
+      }
+      db.prepare('DELETE FROM monitoreos WHERE id = ?').run(row.id);
+      logCalEvent('MONITOREO_DEL', row.asesor, row.campana, req.actor, '');
+      res.json({ ok: true });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // CALIDAD — CRONOGRAMA Y METAS
+  // ══════════════════════════════════════════════════════════
+
+  // Cumplimiento individual por lider (calculo reproducible en servidor). Antes de /:id.
+  api.get(
+    '/metas/cumplimiento',
+    requireActor,
+    validate(schemas.calidadQuery, 'query'),
+    wrap((req, res) => {
+      const { campana } = req.query;
+      const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+      if (!campaignAccess(req.actor, campana)) {
+        return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+      }
+      const cronograma = db
+        .prepare('SELECT * FROM cronograma_metas WHERE campana = ?')
+        .all(campana)
+        .map(toMetaRow);
+      const monitoreos = db
+        .prepare('SELECT * FROM monitoreos WHERE campana = ?')
+        .all(campana)
+        .map(toMonitoreo);
+      res.json({
+        campana,
+        mes,
+        lideres: calc.lideresCumplimiento(monitoreos, cronograma, mes),
+      });
+    })
+  );
+
+  // La meta individual del usuario logueado para una campana/mes (con carry-forward).
+  api.get(
+    '/metas/mi-meta',
+    requireActor,
+    validate(schemas.calidadQuery, 'query'),
+    wrap((req, res) => {
+      const { campana } = req.query;
+      const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+      if (req.actor.isMasterAdmin) return res.json({ campana, mes, meta: null });
+      const cronograma = db
+        .prepare('SELECT * FROM cronograma_metas WHERE campana = ?')
+        .all(campana)
+        .map(toMetaRow);
+      res.json({
+        campana,
+        mes,
+        meta: calc.metaForLiderInMonth(cronograma, mes, req.actor.id),
+      });
+    })
+  );
+
+  api.get(
+    '/metas',
+    requireActor,
+    wrap((req, res) => {
+      const campana = req.query.campana;
+      if (campana) {
+        if (!campaignAccess(req.actor, campana)) {
+          return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+        }
+        const rows = db
+          .prepare('SELECT * FROM cronograma_metas WHERE campana = ? ORDER BY mes DESC, liderNombre')
+          .all(campana);
+        return res.json(rows.map(toMetaRow));
+      }
+      // Sin campana: solo el administrador puede ver el cronograma completo.
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Indique una campana' });
+      }
+      const rows = db
+        .prepare('SELECT * FROM cronograma_metas ORDER BY mes DESC, campana, liderNombre')
+        .all();
+      res.json(rows.map(toMetaRow));
+    })
+  );
+
+  api.post(
+    '/metas',
+    requireActor,
+    validate(schemas.metaBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede configurar el cronograma' });
+      }
+      const b = req.body;
+      const lider = db.prepare('SELECT * FROM users WHERE id = ?').get(b.liderId);
+      if (!lider) return res.status(400).json({ error: 'Usuario responsable no encontrado' });
+      if (lider.rol !== 'CALIDAD' && lider.rol !== 'SUPERVISOR') {
+        return res
+          .status(400)
+          .json({ error: 'El responsable debe tener rol CALIDAD o SUPERVISOR' });
+      }
+      const now = nowStr();
+      const existing = db
+        .prepare('SELECT * FROM cronograma_metas WHERE campana = ? AND mes = ? AND liderId = ?')
+        .get(b.campana, b.mes, b.liderId);
+      if (existing) {
+        db.prepare(
+          `UPDATE cronograma_metas SET
+             liderNombre=?, metaGrupal=?, asesores=?, diasLaborales=?, whatsapp=?, pctWhatsapp=?, updatedAt=?
+           WHERE id=?`
+        ).run(
+          lider.nombre,
+          b.metaGrupal,
+          b.asesores,
+          b.diasLaborales,
+          b.whatsapp ? 1 : 0,
+          b.pctWhatsapp,
+          now,
+          existing.id
+        );
+        const row = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(existing.id);
+        logCalEvent('META_EDIT', lider.nombre, b.campana, req.actor, `${b.mes} — meta ${b.metaGrupal}`);
+        return res.json(toMetaRow(row));
+      }
+      const info = db
+        .prepare(
+          `INSERT INTO cronograma_metas
+             (campana, mes, liderId, liderNombre, metaGrupal, asesores, diasLaborales,
+              whatsapp, pctWhatsapp, createdAt, updatedAt)
+           VALUES (@campana,@mes,@liderId,@liderNombre,@metaGrupal,@asesores,@diasLaborales,
+                   @whatsapp,@pctWhatsapp,@createdAt,@updatedAt)`
+        )
+        .run({
+          campana: b.campana,
+          mes: b.mes,
+          liderId: b.liderId,
+          liderNombre: lider.nombre,
+          metaGrupal: b.metaGrupal,
+          asesores: b.asesores,
+          diasLaborales: b.diasLaborales,
+          whatsapp: b.whatsapp ? 1 : 0,
+          pctWhatsapp: b.pctWhatsapp,
+          createdAt: now,
+          updatedAt: now,
+        });
+      const row = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(info.lastInsertRowid);
+      logCalEvent('META', lider.nombre, b.campana, req.actor, `${b.mes} — meta ${b.metaGrupal}`);
+      res.status(201).json(toMetaRow(row));
+    })
+  );
+
+  api.put(
+    '/metas/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.updateMetaBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede editar el cronograma' });
+      }
+      const row = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Meta no encontrada' });
+      const b = req.body;
+      let liderNombre = row.liderNombre;
+      let liderId = row.liderId;
+      if (b.liderId && b.liderId !== row.liderId) {
+        const lider = db.prepare('SELECT * FROM users WHERE id = ?').get(b.liderId);
+        if (!lider) return res.status(400).json({ error: 'Usuario responsable no encontrado' });
+        if (lider.rol !== 'CALIDAD' && lider.rol !== 'SUPERVISOR') {
+          return res.status(400).json({ error: 'El responsable debe tener rol CALIDAD o SUPERVISOR' });
+        }
+        liderNombre = lider.nombre;
+        liderId = lider.id;
+      }
+      db.prepare(
+        `UPDATE cronograma_metas SET
+           campana=?, mes=?, liderId=?, liderNombre=?, metaGrupal=?, asesores=?,
+           diasLaborales=?, whatsapp=?, pctWhatsapp=?, updatedAt=?
+         WHERE id=?`
+      ).run(
+        b.campana ?? row.campana,
+        b.mes ?? row.mes,
+        liderId,
+        liderNombre,
+        b.metaGrupal ?? row.metaGrupal,
+        b.asesores ?? row.asesores,
+        b.diasLaborales ?? row.diasLaborales,
+        b.whatsapp === undefined ? row.whatsapp : b.whatsapp ? 1 : 0,
+        b.pctWhatsapp ?? row.pctWhatsapp,
+        nowStr(),
+        row.id
+      );
+      const updated = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(row.id);
+      logCalEvent('META_EDIT', updated.liderNombre, updated.campana, req.actor, `${updated.mes}`);
+      res.json(toMetaRow(updated));
+    })
+  );
+
+  api.delete(
+    '/metas/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede eliminar del cronograma' });
+      }
+      const row = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Meta no encontrada' });
+      db.prepare('DELETE FROM cronograma_metas WHERE id = ?').run(row.id);
+      logCalEvent('META_DEL', row.liderNombre, row.campana, req.actor, `${row.mes}`);
+      res.json({ ok: true });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // DASHBOARDS DE CLIENTE — datos operativos cargados por Excel
+  // ══════════════════════════════════════════════════════════
+  api.use(['/dashboard', '/dashboards'], (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
+  function clienteAccess(actor, cliente) {
+    if (isFullAdmin(actor)) return true;
+    if (canLoadData(actor)) return true;
+    if (!actor || !actor.perms) return false;
+    return (
+      actor.perms['cliente_' + cliente] === true || actor.perms['campana_' + cliente] === true
+    );
+  }
+
+  function toCarga(row) {
+    return {
+      id: row.id,
+      cliente: row.cliente,
+      seccion: row.seccion,
+      cadencia: row.cadencia,
+      periodo: row.periodo,
+      filas: JSON.parse(row.filas || '[]'),
+      archivoNombre: row.archivoNombre || '',
+      cargadoPorNombre: row.cargadoPorNombre || '',
+      cargadoEn: row.cargadoEn,
+    };
+  }
+
+  // ── Configuracion de dashboards (Fase 3): la fuente de verdad de que
+  // secciones y paneles tiene cada dashboard de cliente.
+  function getConfigRow(cliente) {
+    return db.prepare('SELECT * FROM dashboards_config WHERE cliente = ? AND activo = 1').get(cliente);
+  }
+  function toConfig(row) {
+    return {
+      cliente: row.cliente,
+      titulo: row.titulo,
+      vista: row.vista ? JSON.parse(row.vista) : null,
+      secciones: JSON.parse(row.secciones || '{}'),
+      layout: JSON.parse(row.layout || '{}'),
+      updatedAt: row.updatedAt,
+    };
+  }
+  function seccionSpec(cliente, seccionKey) {
+    const row = getConfigRow(cliente);
+    if (!row) return null;
+    const secs = JSON.parse(row.secciones || '{}');
+    return secs[seccionKey] || null;
+  }
+
+  // Clientes que tienen dashboard configurado.
+  api.get(
+    '/dashboard/clientes',
+    requireActor,
+    wrap((req, res) => {
+      const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
+      res.json({ clientes: rows.map((r) => r.cliente) });
+    })
+  );
+
+  // Definicion de las secciones de un cliente (para armar plantillas y el formulario de carga).
+  api.get(
+    '/dashboard/secciones/:cliente',
+    requireActor,
+    wrap((req, res) => {
+      const row = getConfigRow(req.params.cliente);
+      if (!row) return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
+      res.json({ cliente: req.params.cliente, secciones: JSON.parse(row.secciones || '{}') });
+    })
+  );
+
+  // Cargas existentes (para la pantalla de carga). Solo quien puede cargar.
+  api.get(
+    '/dashboard/cargas',
+    requireDataLoader,
+    wrap((req, res) => {
+      const { cliente, seccion } = req.query;
+      let rows;
+      if (cliente && seccion) {
+        rows = db
+          .prepare(
+            'SELECT * FROM dashboard_cargas WHERE cliente = ? AND seccion = ? ORDER BY periodo DESC'
+          )
+          .all(cliente, seccion);
+      } else if (cliente) {
+        rows = db
+          .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? ORDER BY seccion, periodo DESC')
+          .all(cliente);
+      } else {
+        rows = db.prepare('SELECT * FROM dashboard_cargas ORDER BY cliente, seccion, periodo DESC').all();
+      }
+      res.json(rows.map(toCarga));
+    })
+  );
+
+  // ── Configuracion de dashboards — CRUD (crear un dashboard = insertar aqui) ──
+  api.get(
+    '/dashboards/config',
+    requireActor,
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede ver la configuracion de dashboards' });
+      }
+      const rows = db.prepare('SELECT * FROM dashboards_config ORDER BY cliente').all();
+      res.json(
+        rows.map((r) => {
+          const layout = JSON.parse(r.layout || '{}');
+          return {
+            cliente: r.cliente,
+            titulo: r.titulo,
+            activo: !!r.activo,
+            tabs: (layout.tabs || []).length,
+            paneles: (layout.tabs || []).reduce((a, t) => a + (t.panels || []).length, 0),
+            updatedAt: r.updatedAt,
+          };
+        })
+      );
+    })
+  );
+
+  api.get(
+    '/dashboards/config/:cliente',
+    requireActor,
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede ver la configuracion de dashboards' });
+      }
+      const row = getConfigRow(req.params.cliente);
+      if (!row) return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
+      res.json(toConfig(row));
+    })
+  );
+
+  api.post(
+    '/dashboards/config',
+    requireActor,
+    validate(schemas.dashboardConfigBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede crear dashboards' });
+      }
+      const b = req.body;
+      if (db.prepare('SELECT id FROM dashboards_config WHERE cliente = ?').get(b.cliente)) {
+        return res.status(409).json({ error: 'Ya existe un dashboard para ese cliente' });
+      }
+      const now = new Date().toISOString();
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (@cliente,@titulo,@vista,@secciones,@layout,1,@now,@now)`
+      ).run({
+        cliente: b.cliente,
+        titulo: b.titulo,
+        vista: b.vista ? JSON.stringify(b.vista) : null,
+        secciones: JSON.stringify(b.secciones),
+        layout: JSON.stringify(b.layout),
+        now,
+      });
+      logEvent('DASHBOARD_CONFIG', { nombre: b.cliente, user: '-', rol: 'dashboard' }, actorLabel(req.actor), b.titulo);
+      res.status(201).json(toConfig(getConfigRow(b.cliente)));
+    })
+  );
+
+  api.put(
+    '/dashboards/config/:cliente',
+    requireActor,
+    validate(schemas.dashboardConfigBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede editar dashboards' });
+      }
+      const row = db.prepare('SELECT * FROM dashboards_config WHERE cliente = ?').get(req.params.cliente);
+      if (!row) return res.status(404).json({ error: 'Dashboard no encontrado' });
+      const b = req.body;
+      db.prepare(
+        `UPDATE dashboards_config SET titulo=?, vista=?, secciones=?, layout=?, updatedAt=? WHERE cliente=?`
+      ).run(
+        b.titulo,
+        b.vista ? JSON.stringify(b.vista) : null,
+        JSON.stringify(b.secciones),
+        JSON.stringify(b.layout),
+        new Date().toISOString(),
+        req.params.cliente
+      );
+      logEvent('DASHBOARD_CONFIG_EDIT', { nombre: req.params.cliente, user: '-', rol: 'dashboard' }, actorLabel(req.actor), b.titulo);
+      res.json(toConfig(getConfigRow(req.params.cliente)));
+    })
+  );
+
+  api.delete(
+    '/dashboards/config/:cliente',
+    requireActor,
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede eliminar dashboards' });
+      }
+      const row = db.prepare('SELECT * FROM dashboards_config WHERE cliente = ?').get(req.params.cliente);
+      if (!row) return res.status(404).json({ error: 'Dashboard no encontrado' });
+      db.prepare('DELETE FROM dashboards_config WHERE cliente = ?').run(req.params.cliente);
+      db.prepare('DELETE FROM dashboard_cargas WHERE cliente = ?').run(req.params.cliente);
+      logEvent('DASHBOARD_CONFIG_DEL', { nombre: req.params.cliente, user: '-', rol: 'dashboard' }, actorLabel(req.actor), '');
+      res.json({ ok: true });
+    })
+  );
+
+  // Todos los datos operativos de un cliente, agrupados por seccion (los lee el dashboard).
+  api.get(
+    '/dashboard/:cliente',
+    requireActor,
+    wrap((req, res) => {
+      const cliente = req.params.cliente;
+      if (!getConfigRow(cliente)) {
+        return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
+      }
+      if (!clienteAccess(req.actor, cliente)) {
+        return res.status(403).json({ error: 'Sin acceso a este dashboard' });
+      }
+      const rows = db
+        .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? ORDER BY periodo')
+        .all(cliente);
+      const porSeccion = {};
+      rows.map(toCarga).forEach((c) => {
+        (porSeccion[c.seccion] = porSeccion[c.seccion] || []).push(c);
+      });
+      res.json({ cliente, config: toConfig(getConfigRow(cliente)), secciones: porSeccion });
+    })
+  );
+
+  api.post(
+    '/dashboard/cargas',
+    requireDataLoader,
+    validate(schemas.cargaBody),
+    wrap((req, res) => {
+      const b = req.body;
+      const spec = seccionSpec(b.cliente, b.seccion);
+      if (!spec) return res.status(400).json({ error: 'Cliente o seccion desconocidos' });
+      if (!secciones.periodoValido(spec.periodo, b.periodo)) {
+        return res.status(400).json({
+          error:
+            spec.periodo === 'mes'
+              ? 'El periodo debe tener formato AAAA-MM'
+              : spec.periodo === 'dia'
+                ? 'El periodo debe tener formato AAAA-MM-DD'
+                : 'Formato de periodo invalido',
+        });
+      }
+      const norm = secciones.normalizarFilas(spec, b.filas);
+      if (!norm.ok) {
+        return res.status(400).json({ error: norm.errores[0], detalles: norm.errores });
+      }
+      const now = nowStr();
+      const existing = db
+        .prepare('SELECT id FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?')
+        .get(b.cliente, b.seccion, b.periodo);
+      const payload = {
+        cliente: b.cliente,
+        seccion: b.seccion,
+        cadencia: b.cadencia,
+        periodo: b.periodo,
+        filas: JSON.stringify(norm.filas),
+        archivoNombre: b.archivoNombre || null,
+        cargadoPor: req.actor.isMasterAdmin ? null : req.actor.id,
+        cargadoPorNombre: req.actor.nombre,
+        cargadoEn: now,
+      };
+      let id;
+      if (existing) {
+        db.prepare(
+          `UPDATE dashboard_cargas SET cadencia=@cadencia, filas=@filas, archivoNombre=@archivoNombre,
+             cargadoPor=@cargadoPor, cargadoPorNombre=@cargadoPorNombre, cargadoEn=@cargadoEn
+           WHERE id=@id`
+        ).run({ ...payload, id: existing.id });
+        id = existing.id;
+      } else {
+        const info = db
+          .prepare(
+            `INSERT INTO dashboard_cargas
+               (cliente, seccion, cadencia, periodo, filas, archivoNombre, cargadoPor, cargadoPorNombre, cargadoEn)
+             VALUES (@cliente,@seccion,@cadencia,@periodo,@filas,@archivoNombre,@cargadoPor,@cargadoPorNombre,@cargadoEn)`
+          )
+          .run(payload);
+        id = info.lastInsertRowid;
+      }
+      const row = db.prepare('SELECT * FROM dashboard_cargas WHERE id = ?').get(id);
+      logEvent(
+        existing ? 'DASHBOARD_CARGA_EDIT' : 'DASHBOARD_CARGA',
+        { nombre: b.cliente, user: '-', rol: b.seccion },
+        actorLabel(req.actor),
+        `${b.periodo} — ${norm.filas.length} fila(s)`
+      );
+      res.status(existing ? 200 : 201).json(toCarga(row));
+    })
+  );
+
+  api.delete(
+    '/dashboard/cargas/:id',
+    requireDataLoader,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      const row = db.prepare('SELECT * FROM dashboard_cargas WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Carga no encontrada' });
+      db.prepare('DELETE FROM dashboard_cargas WHERE id = ?').run(row.id);
+      logEvent(
+        'DASHBOARD_CARGA_DEL',
+        { nombre: row.cliente, user: '-', rol: row.seccion },
+        actorLabel(req.actor),
+        row.periodo
+      );
+      res.json({ ok: true });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // INVENTARIO — Items de stock y movimientos
+  // ══════════════════════════════════════════════════════════
+  api.use('/inventario', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+
+  function toInvItem(row) {
+    return {
+      id: row.id, nombre: row.nombre, categoria: row.categoria,
+      descripcion: row.descripcion || '', cantidad: row.cantidad, unidad: row.unidad,
+      ubicacion: row.ubicacion || '', estado: row.estado, proveedor: row.proveedor || '',
+      costoUnitario: row.costoUnitario || 0, observaciones: row.observaciones || '',
+      createdAt: row.createdAt, updatedAt: row.updatedAt,
+    };
+  }
+  function toInvMovimiento(row) {
+    return {
+      id: row.id, itemId: row.itemId, tipo: row.tipo, cantidad: row.cantidad,
+      fecha: row.fecha, motivo: row.motivo || '', destino: row.destino || '',
+      registradoPorNombre: row.registradoPorNombre || '', createdAt: row.createdAt,
+    };
+  }
+
+  // Listar items (con filtros opcionales por categoria y estado)
+  api.get(
+    '/inventario/items',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const { categoria, estado } = req.query;
+      let rows;
+      if (categoria && estado) {
+        rows = db.prepare('SELECT * FROM inventario_items WHERE categoria = ? AND estado = ? ORDER BY nombre').all(categoria, estado);
+      } else if (categoria) {
+        rows = db.prepare('SELECT * FROM inventario_items WHERE categoria = ? ORDER BY nombre').all(categoria);
+      } else if (estado) {
+        rows = db.prepare('SELECT * FROM inventario_items WHERE estado = ? ORDER BY nombre').all(estado);
+      } else {
+        rows = db.prepare('SELECT * FROM inventario_items ORDER BY categoria, nombre').all();
+      }
+      res.json(rows.map(toInvItem));
+    })
+  );
+
+  // Resumen del inventario
+  api.get(
+    '/inventario/resumen',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const total = db.prepare('SELECT COUNT(*) AS c FROM inventario_items').get().c;
+      const totalUnidades = db.prepare('SELECT COALESCE(SUM(cantidad), 0) AS s FROM inventario_items').get().s;
+      const valorTotal = db.prepare('SELECT COALESCE(SUM(cantidad * costoUnitario), 0) AS s FROM inventario_items').get().s;
+      const porEstado = db.prepare('SELECT estado, COUNT(*) AS c FROM inventario_items GROUP BY estado').all();
+      const porCategoria = db.prepare('SELECT categoria, COUNT(*) AS c, COALESCE(SUM(cantidad),0) AS unidades FROM inventario_items GROUP BY categoria ORDER BY categoria').all();
+      const movimientosRecientes = db.prepare('SELECT * FROM inventario_movimientos ORDER BY id DESC LIMIT 10').all().map(toInvMovimiento);
+      res.json({
+        total, totalUnidades, valorTotal: Math.round(valorTotal * 100) / 100,
+        porEstado, porCategoria, movimientosRecientes,
+      });
+    })
+  );
+
+  // Crear un item
+  api.post(
+    '/inventario/items',
+    requireActor,
+    validate(schemas.inventarioItemBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const b = req.body;
+      const now = nowStr();
+      const info = db.prepare(
+        `INSERT INTO inventario_items (nombre, categoria, descripcion, cantidad, unidad, ubicacion, estado, proveedor, costoUnitario, observaciones, createdAt, updatedAt)
+         VALUES (@nombre,@categoria,@descripcion,@cantidad,@unidad,@ubicacion,@estado,@proveedor,@costoUnitario,@observaciones,@now,@now)`
+      ).run({ ...b, now });
+      const row = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(info.lastInsertRowid);
+      logEvent('INV_ITEM', { nombre: b.nombre, user: '-', rol: b.categoria }, actorLabel(req.actor), `Cantidad: ${b.cantidad}`);
+      res.status(201).json(toInvItem(row));
+    })
+  );
+
+  // Actualizar un item
+  api.put(
+    '/inventario/items/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.inventarioItemUpdate),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const row = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+      const b = req.body;
+      db.prepare(
+        `UPDATE inventario_items SET nombre=?, categoria=?, descripcion=?, cantidad=?, unidad=?, ubicacion=?, estado=?, proveedor=?, costoUnitario=?, observaciones=?, updatedAt=? WHERE id=?`
+      ).run(
+        b.nombre ?? row.nombre, b.categoria ?? row.categoria, b.descripcion ?? row.descripcion,
+        b.cantidad ?? row.cantidad, b.unidad ?? row.unidad, b.ubicacion ?? row.ubicacion,
+        b.estado ?? row.estado, b.proveedor ?? row.proveedor, b.costoUnitario ?? row.costoUnitario,
+        b.observaciones ?? row.observaciones, nowStr(), row.id
+      );
+      const updated = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(row.id);
+      logEvent('INV_ITEM_EDIT', { nombre: updated.nombre, user: '-', rol: updated.categoria }, actorLabel(req.actor), '');
+      res.json(toInvItem(updated));
+    })
+  );
+
+  // Eliminar un item
+  api.delete(
+    '/inventario/items/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const row = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+      db.prepare('DELETE FROM inventario_items WHERE id = ?').run(row.id);
+      logEvent('INV_ITEM_DEL', { nombre: row.nombre, user: '-', rol: row.categoria }, actorLabel(req.actor), '');
+      res.json({ ok: true });
+    })
+  );
+
+  // Movimientos de un item
+  api.get(
+    '/inventario/movimientos',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const { itemId } = req.query;
+      let rows;
+      if (itemId) {
+        rows = db.prepare('SELECT * FROM inventario_movimientos WHERE itemId = ? ORDER BY id DESC').all(itemId);
+      } else {
+        rows = db.prepare('SELECT * FROM inventario_movimientos ORDER BY id DESC LIMIT 200').all();
+      }
+      res.json(rows.map(toInvMovimiento));
+    })
+  );
+
+  // Registrar un movimiento
+  api.post(
+    '/inventario/movimientos',
+    requireActor,
+    validate(schemas.inventarioMovimientoBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const b = req.body;
+      const item = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(b.itemId);
+      if (!item) return res.status(400).json({ error: 'Item no encontrado' });
+      // Actualizar cantidad segun tipo de movimiento
+      let nuevaCantidad = item.cantidad;
+      if (b.tipo === 'Entrada' || b.tipo === 'Ajuste') {
+        nuevaCantidad = b.tipo === 'Ajuste' ? b.cantidad : item.cantidad + b.cantidad;
+      } else if (b.tipo === 'Salida') {
+        if (item.cantidad < b.cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente. Disponible: ${item.cantidad} ${item.unidad}` });
+        }
+        nuevaCantidad = item.cantidad - b.cantidad;
+      } else if (b.tipo === 'Transferencia') {
+        if (item.cantidad < b.cantidad) {
+          return res.status(400).json({ error: `Stock insuficiente para transferencia. Disponible: ${item.cantidad} ${item.unidad}` });
+        }
+        nuevaCantidad = item.cantidad - b.cantidad;
+      }
+      const now = nowStr();
+      const tx = db.transaction(() => {
+        db.prepare('UPDATE inventario_items SET cantidad = ?, updatedAt = ? WHERE id = ?').run(nuevaCantidad, now, b.itemId);
+        const info = db.prepare(
+          `INSERT INTO inventario_movimientos (itemId, tipo, cantidad, fecha, motivo, destino, registradoPor, registradoPorNombre, createdAt)
+           VALUES (@itemId,@tipo,@cantidad,@fecha,@motivo,@destino,@registradoPor,@registradoPorNombre,@now)`
+        ).run({
+          itemId: b.itemId, tipo: b.tipo, cantidad: b.cantidad, fecha: b.fecha,
+          motivo: b.motivo || '', destino: b.destino || '',
+          registradoPor: req.actor.isMasterAdmin ? null : req.actor.id,
+          registradoPorNombre: req.actor.nombre, now,
+        });
+        return info.lastInsertRowid;
+      });
+      const movId = tx();
+      const mov = db.prepare('SELECT * FROM inventario_movimientos WHERE id = ?').get(movId);
+      logEvent('INV_MOV', { nombre: item.nombre, user: '-', rol: b.tipo }, actorLabel(req.actor), `${b.tipo}: ${b.cantidad} ${item.unidad}`);
+      res.status(201).json(toInvMovimiento(mov));
+    })
+  );
+
+  // Carga masiva de items desde Excel
+  api.post(
+    '/inventario/carga-items',
+    requireActor,
+    validate(schemas.inventarioCargaBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const { items } = req.body;
+      const now = nowStr();
+      let creados = 0;
+      const insert = db.prepare(
+        `INSERT INTO inventario_items (nombre, categoria, descripcion, cantidad, unidad, ubicacion, estado, proveedor, costoUnitario, observaciones, createdAt, updatedAt)
+         VALUES (@nombre,@categoria,@descripcion,@cantidad,@unidad,@ubicacion,@estado,@proveedor,@costoUnitario,@observaciones,@now,@now)`
+      );
+      const tx = db.transaction((rows) => {
+        for (const item of rows) {
+          insert.run({ ...item, now });
+          creados++;
+        }
+      });
+      tx(items);
+      logEvent('INV_CARGA', { nombre: `${creados} items`, user: '-', rol: 'inventario' }, actorLabel(req.actor), `Carga masiva`);
+      res.status(201).json({ ok: true, creados });
+    })
+  );
+
+  // Carga masiva de movimientos desde Excel
+  api.post(
+    '/inventario/carga-movimientos',
+    requireActor,
+    validate(schemas.inventarioMovCargaBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+      const { movimientos } = req.body;
+      const now = nowStr();
+      let creados = 0;
+      const insert = db.prepare(
+        `INSERT INTO inventario_movimientos (itemId, tipo, cantidad, fecha, motivo, destino, registradoPor, registradoPorNombre, createdAt)
+         VALUES (@itemId,@tipo,@cantidad,@fecha,@motivo,@destino,@registradoPor,@registradoPorNombre,@now)`
+      );
+      const tx = db.transaction((rows) => {
+        for (const m of rows) {
+          const item = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(m.itemId);
+          if (!item) continue;
+          // Actualizar stock
+          let nuevaCantidad = item.cantidad;
+          if (m.tipo === 'Entrada' || m.tipo === 'Ajuste') {
+            nuevaCantidad = m.tipo === 'Ajuste' ? m.cantidad : item.cantidad + m.cantidad;
+          } else if (m.tipo === 'Salida' || m.tipo === 'Transferencia') {
+            nuevaCantidad = Math.max(0, item.cantidad - m.cantidad);
+          }
+          db.prepare('UPDATE inventario_items SET cantidad = ?, updatedAt = ? WHERE id = ?').run(nuevaCantidad, now, m.itemId);
+          insert.run({
+            itemId: m.itemId, tipo: m.tipo, cantidad: m.cantidad, fecha: m.fecha,
+            motivo: m.motivo || '', destino: m.destino || '',
+            registradoPor: req.actor.isMasterAdmin ? null : req.actor.id,
+            registradoPorNombre: req.actor.nombre, now,
+          });
+          creados++;
+        }
+      });
+      tx(movimientos);
+      logEvent('INV_CARGA_MOV', { nombre: `${creados} movimientos`, user: '-', rol: 'inventario' }, actorLabel(req.actor), `Carga masiva`);
+      res.status(201).json({ ok: true, creados });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // GERENCIA — Indicadores ejecutivos mensuales
+  // ══════════════════════════════════════════════════════════
+  api.use('/gerencia', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+
+  function toGerenciaKpi(row) {
+    return {
+      id: row.id, periodo: row.periodo, nombre: row.nombre, categoria: row.categoria,
+      valor: row.valor, unidad: row.unidad || '', meta: row.meta,
+      observaciones: row.observaciones || '', createdAt: row.createdAt, updatedAt: row.updatedAt,
+    };
+  }
+
+  // KPIs de un periodo
+  api.get(
+    '/gerencia/kpis',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const { periodo, categoria } = req.query;
+      let rows;
+      if (periodo && categoria) {
+        rows = db.prepare('SELECT * FROM gerencia_kpis WHERE periodo = ? AND categoria = ? ORDER BY categoria, nombre').all(periodo, categoria);
+      } else if (periodo) {
+        rows = db.prepare('SELECT * FROM gerencia_kpis WHERE periodo = ? ORDER BY categoria, nombre').all(periodo);
+      } else if (categoria) {
+        rows = db.prepare('SELECT * FROM gerencia_kpis WHERE categoria = ? ORDER BY periodo DESC, nombre').all(categoria);
+      } else {
+        rows = db.prepare('SELECT * FROM gerencia_kpis ORDER BY periodo DESC, categoria, nombre').all();
+      }
+      res.json(rows.map(toGerenciaKpi));
+    })
+  );
+
+  // Periodos disponibles
+  api.get(
+    '/gerencia/periodos',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const rows = db.prepare('SELECT DISTINCT periodo FROM gerencia_kpis ORDER BY periodo DESC').all();
+      res.json(rows.map((r) => r.periodo));
+    })
+  );
+
+  // Resumen ejecutivo de un periodo
+  api.get(
+    '/gerencia/resumen',
+    requireActor,
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const periodo = req.query.periodo || new Date().toISOString().slice(0, 7);
+      const kpis = db.prepare('SELECT * FROM gerencia_kpis WHERE periodo = ? ORDER BY categoria, nombre').all(periodo);
+      const porCategoria = {};
+      kpis.forEach((k) => {
+        if (!porCategoria[k.categoria]) porCategoria[k.categoria] = [];
+        porCategoria[k.categoria].push(toGerenciaKpi(k));
+      });
+      const periodos = db.prepare('SELECT DISTINCT periodo FROM gerencia_kpis ORDER BY periodo DESC').all().map((r) => r.periodo);
+      res.json({ periodo, kpis: kpis.map(toGerenciaKpi), porCategoria, periodos });
+    })
+  );
+
+  // Crear / actualizar un KPI individual
+  api.post(
+    '/gerencia/kpis',
+    requireActor,
+    validate(schemas.gerenciaKpiBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const b = req.body;
+      const now = nowStr();
+      const existing = db.prepare('SELECT id FROM gerencia_kpis WHERE periodo = ? AND nombre = ?').get(b.periodo, b.nombre);
+      if (existing) {
+        db.prepare(
+          `UPDATE gerencia_kpis SET categoria=?, valor=?, unidad=?, meta=?, observaciones=?, updatedAt=? WHERE id=?`
+        ).run(b.categoria, b.valor, b.unidad, b.meta, b.observaciones, now, existing.id);
+        const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(existing.id);
+        logEvent('GER_KPI_EDIT', { nombre: b.nombre, user: '-', rol: b.periodo }, actorLabel(req.actor), `Valor: ${b.valor}`);
+        return res.json(toGerenciaKpi(row));
+      }
+      const info = db.prepare(
+        `INSERT INTO gerencia_kpis (periodo, nombre, categoria, valor, unidad, meta, observaciones, createdAt, updatedAt)
+         VALUES (@periodo,@nombre,@categoria,@valor,@unidad,@meta,@observaciones,@now,@now)`
+      ).run({ ...b, now });
+      const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(info.lastInsertRowid);
+      logEvent('GER_KPI', { nombre: b.nombre, user: '-', rol: b.periodo }, actorLabel(req.actor), `Valor: ${b.valor}`);
+      res.status(201).json(toGerenciaKpi(row));
+    })
+  );
+
+  // Actualizar un KPI
+  api.put(
+    '/gerencia/kpis/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.gerenciaKpiUpdate),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
+      const b = req.body;
+      db.prepare(
+        `UPDATE gerencia_kpis SET periodo=?, nombre=?, categoria=?, valor=?, unidad=?, meta=?, observaciones=?, updatedAt=? WHERE id=?`
+      ).run(
+        b.periodo ?? row.periodo, b.nombre ?? row.nombre, b.categoria ?? row.categoria,
+        b.valor ?? row.valor, b.unidad ?? row.unidad, b.meta ?? row.meta,
+        b.observaciones ?? row.observaciones, nowStr(), row.id
+      );
+      const updated = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(row.id);
+      logEvent('GER_KPI_EDIT', { nombre: updated.nombre, user: '-', rol: updated.periodo }, actorLabel(req.actor), '');
+      res.json(toGerenciaKpi(updated));
+    })
+  );
+
+  // Eliminar un KPI
+  api.delete(
+    '/gerencia/kpis/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
+      db.prepare('DELETE FROM gerencia_kpis WHERE id = ?').run(row.id);
+      logEvent('GER_KPI_DEL', { nombre: row.nombre, user: '-', rol: row.periodo }, actorLabel(req.actor), '');
+      res.json({ ok: true });
+    })
+  );
+
+  // Carga masiva de KPIs desde Excel
+  api.post(
+    '/gerencia/carga',
+    requireActor,
+    validate(schemas.gerenciaCargaBody),
+    wrap((req, res) => {
+      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      const { periodo, kpis } = req.body;
+      const now = nowStr();
+      let upserted = 0;
+      const insert = db.prepare(
+        `INSERT INTO gerencia_kpis (periodo, nombre, categoria, valor, unidad, meta, observaciones, createdAt, updatedAt)
+         VALUES (@periodo,@nombre,@categoria,@valor,@unidad,@meta,@observaciones,@now,@now)`
+      );
+      const tx = db.transaction((rows) => {
+        for (const kpi of rows) {
+          const existing = db.prepare('SELECT id FROM gerencia_kpis WHERE periodo = ? AND nombre = ?').get(periodo, kpi.nombre);
+          if (existing) {
+            db.prepare('UPDATE gerencia_kpis SET categoria=?, valor=?, unidad=?, meta=?, observaciones=?, updatedAt=? WHERE id=?')
+              .run(kpi.categoria, kpi.valor, kpi.unidad || '', kpi.meta, kpi.observaciones || '', now, existing.id);
+          } else {
+            insert.run({ periodo, nombre: kpi.nombre, categoria: kpi.categoria, valor: kpi.valor, unidad: kpi.unidad || '', meta: kpi.meta, observaciones: kpi.observaciones || '', now });
+          }
+          upserted++;
+        }
+      });
+      tx(kpis);
+      logEvent('GER_CARGA', { nombre: `${upserted} KPIs`, user: '-', rol: periodo }, actorLabel(req.actor), `Carga masiva`);
+      res.status(201).json({ ok: true, upserted });
     })
   );
 

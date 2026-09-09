@@ -39,7 +39,7 @@ function renderUsers(filter){
     var sl=u.active?'Suspender':'Activar';
     var sc=u.active?'btn-suspend':'btn-activate';
     var extra='';
-    if(u.rol==='CALIDAD' || u.rol==='REPORTES'){
+    if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
       extra='<div style="font-size:0.72rem;color:'+(asignadas.length?'#27ae60':'#c0392b')+';margin-top:2px">'+
         (asignadas.length? '&#9989; '+asignadas.join(', ') : '&#9888; Sin campanas asignadas')+'</div>';
@@ -76,6 +76,7 @@ function openCreateModal(){
   document.getElementById('mu-pass').value='';
   document.getElementById('mu-rol').value='CALIDAD';
   document.getElementById('mu-pass-hint').style.display='none';
+  document.getElementById('mu-cargar-datos').checked=false;
   document.getElementById('modal-user').classList.add('show');
   onRolChange();
 }
@@ -96,7 +97,7 @@ function openEditModal(id){
   } else {
     document.getElementById('mu-client-perms').style.display='none';
   }
-  if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR'){
+  if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
     buildCampaignCheckboxes(u.perms);
     document.getElementById('mu-campaign-perms').style.display='block';
   } else {
@@ -105,6 +106,7 @@ function openEditModal(id){
   var showAsesorEdit=(u.rol==='ASESOR');
   document.getElementById('mu-asesor-note').style.display=showAsesorEdit?'block':'none';
   if(showAsesorEdit) buildAsesorCampanaSelect(u.asesorCampana);
+  document.getElementById('mu-cargar-datos').checked=(u.perms && u.perms.cargarDatos===true);
   document.getElementById('modal-user').classList.add('show');
 }
 
@@ -113,7 +115,7 @@ function onRolChange(){
   var show=(rol==='CLIENTES_DASH' || rol==='SUPERVISOR');
   document.getElementById('mu-client-perms').style.display=show?'block':'none';
   if(show) buildClientCheckboxes(null);
-  var showCal=(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR');
+  var showCal=(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR' || rol==='GERENCIA');
   document.getElementById('mu-campaign-perms').style.display=showCal?'block':'none';
   if(showCal) buildCampaignCheckboxes(null);
   var showAsesor=(rol==='ASESOR');
@@ -123,7 +125,7 @@ function onRolChange(){
 
 function buildAsesorCampanaSelect(existingCampana){
   var sel=document.getElementById('mu-asesor-campana');
-  var campanas=Object.keys(CAL_CAMPANAS);
+  var campanas=CAMPANAS_CON_PLANTILLA.slice();
   sel.innerHTML=campanas.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   sel.value = existingCampana && campanas.indexOf(existingCampana)!==-1 ? existingCampana : campanas[0];
 }
@@ -131,7 +133,7 @@ function buildAsesorCampanaSelect(existingCampana){
 function buildClientCheckboxes(existingPerms){
   var grid=document.getElementById('mu-client-perm-grid');
   grid.innerHTML=CLIENTES_LIST.map(function(c){
-    var checked=existingPerms?existingPerms['cliente_'+c]!==false:true;
+    var checked=existingPerms?existingPerms['cliente_'+c]===true:true;
     return '<label class="client-perm-item">'+
       '<input type="checkbox" data-cliente="'+c+'" '+(checked?'checked':'')+'>'+c+'</label>';
   }).join('');
@@ -147,7 +149,7 @@ function getClientChecks(){
 function buildCampaignCheckboxes(existingPerms){
   var grid=document.getElementById('mu-campaign-perm-grid');
   grid.innerHTML=CAMPANAS_CALIDAD.map(function(c){
-    var checked=existingPerms?existingPerms['campana_'+c]!==false:true;
+    var checked=existingPerms?existingPerms['campana_'+c]===true:true;
     return '<label class="client-perm-item">'+
       '<input type="checkbox" data-campana="'+c+'" '+(checked?'checked':'')+'>'+c+'</label>';
   }).join('');
@@ -185,9 +187,10 @@ async function saveUserModal(){
       showToast('Define una contrasena de al menos '+PASSWORD_MIN+' caracteres para el nuevo usuario');return;
     }
     var clientChecks=(rol==='CLIENTES_DASH'||rol==='SUPERVISOR')?getClientChecks():null;
-    var campaignChecks=(rol==='CALIDAD'||rol==='REPORTES'||rol==='SUPERVISOR')?getCampaignChecks():null;
+    var campaignChecks=(rol==='CALIDAD'||rol==='REPORTES'||rol==='SUPERVISOR'||rol==='GERENCIA')?getCampaignChecks():null;
     var payload={ nombre:nombre, user:user, password:pass, rol:rol,
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
+    if(document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
     if(rol==='ASESOR') payload.asesorCampana = document.getElementById('mu-asesor-campana').value;
     var btnC=document.querySelector('#modal-user .btn-primary');
     try{
@@ -208,10 +211,11 @@ async function saveUserModal(){
       var cc=getClientChecks();
       CLIENTES_LIST.forEach(function(c){newPerms['cliente_'+c]=cc[c]===true;});
     }
-    if(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR'){
+    if(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR' || rol==='GERENCIA'){
       var cac=getCampaignChecks();
       CAMPANAS_CALIDAD.forEach(function(c){newPerms['campana_'+c]=cac[c]===true;});
     }
+    newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
     var payload={ nombre:nombre, user:user, rol:rol, perms:newPerms };
     if(pass) payload.password=pass;
     if(rol==='ASESOR') payload.asesorCampana=document.getElementById('mu-asesor-campana').value;

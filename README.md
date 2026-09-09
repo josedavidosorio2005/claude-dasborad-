@@ -28,6 +28,9 @@ inconexion-app/
 │   ├── db.js                 Conexión y esquema de la base de datos (SQLite)
 │   ├── auth.js               Emisión/verificación de JWT y checks de permisos
 │   ├── validation.js         Esquemas zod de entrada por endpoint
+│   ├── calidad-logic.js      Cálculos puros del módulo de Calidad (puntaje, metas, cumplimiento)
+│   ├── calidad-plantillas-seed.js  Plantillas de calificación por campaña (semilla)
+│   ├── dashboard-secciones.js  Secciones de cada dashboard de cliente y su plantilla de Excel
 │   ├── hash-password.js      Utilidad para generar hashes de contraseña
 │   ├── scripts/backup.js     Copia de seguridad del archivo SQLite
 │   ├── tests/                Pruebas (node:test + supertest)
@@ -241,20 +244,26 @@ cd server && npm test          # node:test + supertest, sin infra extra
 Cubren: login correcto/incorrecto (admin maestro y usuario normal), usuario
 suspendido, acceso sin permiso (`403`) y con permiso a las acciones de usuarios,
 que las contraseñas/hashes **nunca** aparecen en las respuestas, que el rate
-limit de login bloquea (`429`), y la validación de entrada (`400`). Se ejecutan
-también en CI (`.github/workflows/ci.yml`) en cada push y pull request.
+limit de login bloquea (`429`), la validación de entrada (`400`), el módulo de
+Calidad (puntaje calculado y reproducible en el servidor, acceso por campaña,
+cronograma de metas y cumplimiento), la carga de datos de dashboards por Excel
+(permiso `cargarDatos`, validación de la plantilla, upsert por período), y los
+módulos de Inventario y Gerencia con carga masiva de Excel y trazabilidad. Se
+ejecutan también en CI (`.github/workflows/ci.yml`) en cada push y pull request.
 
-## 8. Qué quedó pendiente (para que lo sepas de antemano)
+## 8. Módulos y funcionalidades del sistema
 
-- Los dashboards de clientes (Aurora, Orlant, Hospital La María, etc.) siguen
-  usando datos de ejemplo generados en el navegador — no vienen de la base de
-  datos. La parte central de usuarios/permisos/historial sí está completamente
-  migrada, endurecida y con pruebas.
-- Un dashboard de cliente todavía muestra "en desarrollo" al abrirlo (venía así).
-- No hay recuperación de contraseña por correo.
+- **Módulo de Calidad y cronograma de metas**: migrados al servidor (SQLite +
+  API + cálculos reproducibles + pruebas). Ver [`REAL_DATA_REPORT.md`](REAL_DATA_REPORT.md).
+- **Dashboards de Cliente**: 100% configurables (generador de dashboards desde
+  panel admin) y alimentados con datos reales vía Excel.
+- **Módulo de Inventario**: gestión de stock, movimientos (entradas, salidas,
+  ajustes, transferencias) con actualización atómica y carga masiva desde Excel.
+- **Módulo de Gerencia**: indicadores ejecutivos mensuales con semaforización
+  contra metas y carga masiva desde Excel.
+- No hay recuperación de contraseña por correo (se gestiona vía admin).
 - La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
-  ~105 manejadores `onclick` inline. Eliminar esa concesión requiere refactorizar
-  el frontend (fuera del alcance de este trabajo).
+  manejadores inline.
 
 ## 9. Comandos útiles
 

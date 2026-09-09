@@ -46,6 +46,10 @@
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
         <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" onclick="showSection('reportesrole')"><span class="s-icon">&#128200;</span> Rol Reportes</a></li>
+        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" onclick="openCargas()"><span class="s-icon">&#128228;</span> Cargar Datos</a></li>
+        <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
+        <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
+        <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
       </ul>
     </aside>
     <main class="main-content">
@@ -235,6 +239,63 @@
         </div>
       </div>
 
+      <!-- DASHBOARDS SECTION — admin: crear/editar dashboards de cliente por configuracion -->
+      <div id="section-dashboards" class="hidden">
+        <div class="page-title">Dashboards de Cliente</div>
+        <div class="page-subtitle">Cada dashboard se define por configuracion (secciones de Excel + paneles). Crear uno nuevo no requiere programar.</div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Dashboards configurados</h3>
+            <button class="btn-primary" onclick="openDashCfgModal()">+ Nuevo dashboard</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Cliente</th><th>Titulo</th><th>Pestanas</th><th>Paneles</th><th>Actualizado</th><th></th></tr></thead>
+            <tbody id="dashcfg-tbody"></tbody></table>
+          </div>
+          <div class="no-results hidden" id="dashcfg-no-results">Aun no hay dashboards configurados.</div>
+        </div>
+      </div>
+
+      <!-- INVENTARIO SECTION -->
+      <div id="section-inventario" class="hidden">
+        <div class="page-title">Gestion de Inventario</div>
+        <div class="page-subtitle">Control de stock: items, movimientos y cargas masivas desde Excel.</div>
+        <div class="stats-grid" id="inv-admin-stats"></div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Items de Inventario</h3>
+            <div class="header-actions">
+              <button class="btn-cancel" onclick="openInventario()">Ver modulo completo</button>
+              <button class="btn-primary" onclick="invNuevoItem()">+ Nuevo item</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr></thead>
+            <tbody id="inv-admin-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GERENCIA SECTION -->
+      <div id="section-gerencia" class="hidden">
+        <div class="page-title">Gerencia — Indicadores Ejecutivos</div>
+        <div class="page-subtitle">KPIs mensuales cargados desde Excel o creados individualmente.</div>
+        <div class="stats-grid" id="ger-admin-stats"></div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Indicadores del Periodo</h3>
+            <div class="header-actions">
+              <button class="btn-cancel" onclick="openGerencia()">Ver modulo completo</button>
+              <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Periodo</th><th>Nombre</th><th>Categoria</th><th>Valor</th><th>Unidad</th><th>Meta</th><th></th></tr></thead>
+            <tbody id="ger-admin-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -320,6 +381,11 @@
       <h4>Acceso a campanas de Calidad</h4>
       <div class="client-perm-grid" id="mu-campaign-perm-grid"></div>
     </div>
+    <div class="client-perms-section" id="mu-cargar-datos-section">
+      <label class="client-perm-item" style="display:inline-flex">
+        <input type="checkbox" id="mu-cargar-datos"> Puede cargar datos operativos de los dashboards (Excel)
+      </label>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveUserModal()">Guardar</button>
@@ -367,611 +433,29 @@
   </div>
 </div>
 
-<!-- ══ AURORA DASHBOARD MODAL ══════════════════════════════ -->
-<div id="aurora-overlay">
-  <div id="aurora-modal">
+<!-- ══ DASHBOARD DE CLIENTE (generico, por configuracion) ══════════════════════════════ -->
+<div id="gd-overlay">
+  <div id="gd-modal">
     <div class="aurora-header">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <div>
-          <h2>Dashboard Clinica Aurora</h2>
-          <div class="aurora-sub" id="aurora-sub-label">Informe Junio 2026 — Clinica Aurora</div>
+          <h2 id="gd-title">Dashboard</h2>
+          <div class="aurora-sub" id="gd-sub"></div>
+        </div>
+        <div id="gd-vista-wrap" style="display:none;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+          <label id="gd-vista-label" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">VISTA:</label>
+          <select id="gd-vista-sel" onchange="onGdVistaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="aurora-month-sel" onchange="onAuroraMonthChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
-            <option value="jun-26">Junio 2026</option>
-          </select>
+          <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
       </div>
-      <button class="aurora-close" onclick="closeAurora()">X Cerrar</button>
+      <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
     </div>
-
-    <div class="aurora-kpis" id="aurora-kpis-strip">
-      <div class="aurora-kpi"><div class="kv">909</div><div class="kl">Llamadas Entrada</div></div>
-      <div class="aurora-kpi kpi-green"><div class="kv">95%</div><div class="kl">Nivel Atencion</div></div>
-      <div class="aurora-kpi kpi-red"><div class="kv">39</div><div class="kl">Abandonos (5%)</div></div>
-      <div class="aurora-kpi kpi-org"><div class="kv">03:12</div><div class="kl">AHT Promedio</div></div>
-      <div class="aurora-kpi"><div class="kv">1.112</div><div class="kl">WhatsApp Entrada</div></div>
-      <div class="aurora-kpi kpi-green"><div class="kv">99.92%</div><div class="kl">Nivel Ate. WPP</div></div>
-      <div class="aurora-kpi kpi-pur"><div class="kv">1.213</div><div class="kl">Total Agendas</div></div>
-      <div class="aurora-kpi kpi-org"><div class="kv">60%</div><div class="kl">Efectividad</div></div>
-      <div class="aurora-kpi kpi-red"><div class="kv">3.076</div><div class="kl">Llamadas Salida</div></div>
-      <div class="aurora-kpi"><div class="kv">3.360</div><div class="kl">WhatsApp Salida</div></div>
-    </div>
-
-    <div class="aurora-tabs">
-      <button class="atab atab-active" data-tab="llamadas" onclick="switchTab('llamadas')">Llamadas Entrada</button>
-      <button class="atab" data-tab="wpp" onclick="switchTab('wpp')">WhatsApp Entrada</button>
-      <button class="atab" data-tab="agendas" onclick="switchTab('agendas')">Agendas</button>
-      <button class="atab" data-tab="tipificacion" onclick="switchTab('tipificacion')">Tipificacion</button>
-      <button class="atab" data-tab="salida" onclick="switchTab('salida')">Salida</button>
-      <button class="atab" data-tab="manager" onclick="switchTab('manager')">Manager</button>
-      <button class="atab" data-tab="sabados" onclick="switchTab('sabados')">Sabados</button>
-      <button class="atab" data-tab="calidad" onclick="switchTab('calidad')">Calidad</button>
-    </div>
-
-    <div id="panel-llamadas" class="atab-panel visible">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tendencia Llamadas Ingresadas — Total: 909</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-ll-dia"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Llamadas Contestadas — Total: 870 | Nivel Atencion: 95%</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-ll-cont"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Llamadas Abandonadas — Total: 39 | % Abandono: 5%</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-ll-aban"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">AHT Clinica Aurora — Promedio: 03:12</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-aht"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-wpp" class="atab-panel">
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tendencia WhatsApp Ingresados — Total: 1.112 | Nivel Atencion: 99.92% | Abandono: 1</div>
-          <div class="aurora-chart-wrap" style="height:280px"><canvas id="ch-wpp-dia"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-agendas" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Agendas via Llamada — Total: 525 | Efectividad: 57.8%</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-ag-ll"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Agendas via WhatsApp — Total: 688 | Efectividad: 61.9%</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-ag-wpp"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Total Agendas Llamada + WPP — Total: 1.213 | Efectividad: 60%</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-ag-tot"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tendencia Agendamiento Wolkvox — Promedio: 1.183</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-wolkvox"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Agendas por Especialidad — Total: 1.534</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-esp"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Ranking Agendamiento por Asesor — Total: 1.534</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-asesor"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo Inasistencia por Mes — Promedio: 2.5%</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="ch-inasist"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Inasistencia por Especialidad — Junio 2026 (Promedio: 2.3%)</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="ch-inasist-esp"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-tipificacion" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion — Llamada Entrada</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-tip-le"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion — Llamada Salida</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-tip-ls"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion — WhatsApp Entrada</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-tip-we"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion — WhatsApp Salida</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-tip-ws"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Encuestas Enviadas por Estado — Total: 2.862</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-encuestas"></canvas></div>
-        </div>
-        <div class="aurora-card" style="background:#f7fbfd">
-          <div class="aurora-card-title">Encuestas por Entidad (Top 5)</div>
-          <table class="aurora-rank-table">
-            <tr><th>#</th><th>Entidad</th><th>Encuestas</th></tr>
-            <tr><td>1</td><td>Seguros de Vida Suramericana</td><td>1.086</td></tr>
-            <tr><td>2</td><td>Coomeva Medicina Prepagada</td><td>466</td></tr>
-            <tr><td>3</td><td>Colsanitas</td><td>402</td></tr>
-            <tr><td>4</td><td>Colmedica Medicina Prepagada</td><td>221</td></tr>
-            <tr><td>5</td><td>Particular</td><td>201</td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-salida" class="atab-panel">
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Total Llamadas Salida — 3.076 (Confirmaciones + Reprogramaciones + Agendamiento)</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-sal-ll"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Total WhatsApp Salida — 3.360 (Confirmaciones + Reprogramaciones + Agendamiento)</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-sal-wpp"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-manager" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Agendas por Mes (Manager) — % Incremento</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-mgr"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo Errores por Mes</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-err"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo Llamadas y WhatsApp — Lineas de Ingreso por Mes (oct-25 a jun-26)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="ch-hist-flujo"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-plans">
-        <div class="aurora-plans-title">Planes de Accion — Junio 2026</div>
-        <ul>
-          <li>Reiterar y confirmar de manera correcta la fecha y hora de la cita.</li>
-          <li>Indicar que toda la documentacion se debe llevar de forma fisica el dia de la atencion.</li>
-          <li>Validar si los servicios que se estan agendando no tienen cobertura para evitar contratiempos.</li>
-          <li>Reinduccion de cobertura de las entidades para clarificar la informacion por la cual se cometieron los errores en junio.</li>
-        </ul>
-      </div>
-    </div>
-
-    <div id="panel-sabados" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Llamadas Dias Sabado — Promedio: 7.25 (3% del mes)</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-sab-ll"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">WhatsApp Dias Sabado — Promedio: 11.75 (4% del mes)</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="ch-sab-wpp"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card" style="background:#f7fbfd">
-          <div class="aurora-card-title">Llamadas y WhatsApp ingresados de 12:00 PM a 1:00 PM (Sabados)</div>
-          <table class="aurora-rank-table">
-            <tr><th>Fecha</th><th>WhatsApp</th><th>Llamadas</th></tr>
-            <tr><td>6/06/2026</td><td>4</td><td>2</td></tr>
-            <tr><td>13/06/2026</td><td>0</td><td>0</td></tr>
-            <tr><td>20/06/2026</td><td>0</td><td>1</td></tr>
-            <tr><td>27/06/2026</td><td>0</td><td>0</td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="panel-calidad" class="atab-panel">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;background:#eef3f6;border-radius:8px;padding:6px 12px">
-          <label style="color:#0d4a5e;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="aurora-cal-mes-sel" onchange="onAuroraCalMesChange()" style="border:none;background:transparent;color:#0d4a5e;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer"></select>
-        </div>
-      </div>
-      <div class="aurora-kpis" id="aurora-cal-kpis"></div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Distribucion de Clasificacion — Resultado de Calidad</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="ch-cal-clasif"></canvas></div>
-        </div>
-      </div>
-      <p style="font-size:0.78rem;color:#7a9ba8;text-align:center;margin-top:6px">Este resultado se calcula automaticamente a partir de las evaluaciones de calidad realizadas para esta campana.</p>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══ ORLANT DASHBOARD MODAL ══════════════════════════════ -->
-<div id="orlant-overlay">
-  <div id="orlant-modal">
-    <div class="aurora-header">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-        <div>
-          <h2>Dashboard Clinica Orlant</h2>
-          <div class="aurora-sub" id="orlant-sub-label">Informe Gestion Junio 2026 — Clinica Orlant</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="orlant-month-sel" onchange="onOrlantMonthChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
-            <option value="jun-26">Junio 2026</option>
-          </select>
-        </div>
-      </div>
-      <button class="aurora-close" onclick="closeOrlant()">X Cerrar</button>
-    </div>
-
-    <div class="aurora-kpis" id="orlant-kpis-strip">
-      <div class="aurora-kpi"><div class="kv">3.798</div><div class="kl">Llamadas 3P</div></div>
-      <div class="aurora-kpi kpi-green"><div class="kv">98%</div><div class="kl">Nivel Atencion 3P</div></div>
-      <div class="aurora-kpi"><div class="kv">4.165</div><div class="kl">WhatsApp 3P</div></div>
-      <div class="aurora-kpi kpi-green"><div class="kv">98%</div><div class="kl">Nivel Atencion WPP 3P</div></div>
-      <div class="aurora-kpi"><div class="kv">10.897</div><div class="kl">Llamadas Linea General</div></div>
-      <div class="aurora-kpi kpi-red"><div class="kv">87%</div><div class="kl">Nivel Atencion L.General</div></div>
-      <div class="aurora-kpi"><div class="kv">2.594</div><div class="kl">WhatsApp Linea General</div></div>
-      <div class="aurora-kpi kpi-pur"><div class="kv">11.918</div><div class="kl">Total Agendas Junio</div></div>
-      <div class="aurora-kpi kpi-org"><div class="kv">16%</div><div class="kl">Efec. Ordenamiento Medico</div></div>
-      <div class="aurora-kpi kpi-green"><div class="kv">65%</div><div class="kl">Recuperacion Cancelados</div></div>
-      <div class="aurora-kpi kpi-red"><div class="kv">7.795</div><div class="kl">Llamadas Salida (Gral+3P)</div></div>
-      <div class="aurora-kpi"><div class="kv">4.312</div><div class="kl">WhatsApp Salida (Gral+3P)</div></div>
-      <div class="aurora-kpi kpi-org"><div class="kv">75%</div><div class="kl">% Citas Atendidas Junio</div></div>
-    </div>
-
-    <div class="aurora-tabs">
-      <button class="atab atab-active" data-otab="flujo" onclick="switchOrlantTab('flujo')">Flujo Mensual</button>
-      <button class="atab" data-otab="salida" onclick="switchOrlantTab('salida')">Salida</button>
-      <button class="atab" data-otab="tipificacion" onclick="switchOrlantTab('tipificacion')">Tipificacion</button>
-      <button class="atab" data-otab="agendamiento" onclick="switchOrlantTab('agendamiento')">Agendamiento</button>
-      <button class="atab" data-otab="inasistencia" onclick="switchOrlantTab('inasistencia')">Inasistencia</button>
-      <button class="atab" data-otab="sta" onclick="switchOrlantTab('sta')">Gestion STA</button>
-      <button class="atab" data-otab="efectividad" onclick="switchOrlantTab('efectividad')">Efectividad Citas</button>
-      <button class="atab" data-otab="calidad" onclick="switchOrlantTab('calidad')">Calidad</button>
-    </div>
-
-    <div id="opanel-flujo" class="atab-panel visible">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo Llamadas por Mes — Linea 3P (Junio: 3.853 | Atendidas: 3.798 | 98%)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-ll3p"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo WhatsApp por Mes — Linea 3P (Junio: 4.269 | Atendidos: 4.165 | 98%)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-wpp3p"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo Llamadas por Mes — Linea General (Junio: 12.481 | Atendidas: 10.897 | 87%)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-llgen"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Flujo WhatsApp por Mes — Linea General (Junio: 2.635 | Atendidos: 2.594 | 98%)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-wppgen"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-salida" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Llamadas de Salida — Linea General (Junio) — Total: 5.129</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="och-salgen"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Llamadas de Salida — Linea 3P (Junio) — Total: 2.666</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="och-sal3p"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">WhatsApp de Salida — Linea General (Junio) — Total: 2.524</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="och-wppsalgen"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">WhatsApp de Salida — Linea 3P (Junio) — Total: 1.788</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="och-wppsal3p"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-tipificacion" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion Llamadas y WhatsApp — Linea 3P (Junio) — 28% Agendada</div>
-          <div class="aurora-chart-wrap" style="height:260px"><canvas id="och-tip3p"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Tipificacion Llamadas y WhatsApp — Linea General (Junio) — 32% Agendada</div>
-          <div class="aurora-chart-wrap" style="height:260px"><canvas id="och-tipgen"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-agendamiento" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Gestion Ordenamiento Medico 3P — Efectividad Anual: 16%</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-ordmed"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Recuperacion Pacientes Cancelan (WhatsApp) — Efectividad: 65%</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-recup"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Total Agendas 3P y Linea General por Mes</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-totagendas"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Agendas por Mes — Linea General vs 3P</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-agendasmes"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-inasistencia" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Inasistencia — Audifonos</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="och-inasist-audif"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Inasistencia — Audiologia</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="och-inasist-audio"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Inasistencia — Examenes Especiales</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="och-inasist-exam"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">% Inasistencia Total (Incl. Pendientes)</div>
-          <div class="aurora-chart-wrap" style="height:180px"><canvas id="och-inasist-total"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-sta" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Ordenes Cargadas al STA por Servicio — Año 2026</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-sta-servicio"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Estado de Ordenes Cargadas al STA — Año 2026</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-sta-estado"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Gestion STA por Mes — Efectividad (Facturado+Cumplida / Cargadas)</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-sta-mes"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title">Servicios Gestionados STA — Junio 2026</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="och-sta-junio"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-efectividad" class="atab-panel">
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Efectividad por Mes — Citas Asignadas vs Confirmadas por Sistema (Ene-Jun 2026)</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="och-efect"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card" style="background:#f7fbfd">
-          <div class="aurora-card-title">Citas Asignadas por Area — % Atendidas (Ene-Nov 2026)</div>
-          <table class="aurora-rank-table">
-            <tr><th>Mes</th><th>Canceladas</th><th>Inasist.</th><th>Pend.</th><th>Atendida</th><th>Total</th><th>%Aten.</th></tr>
-            <tr><td>Ene</td><td>1.527</td><td>471</td><td>321</td><td>8.391</td><td>10.710</td><td class="peak">78%</td></tr>
-            <tr><td>Feb</td><td>1.880</td><td>440</td><td>375</td><td>8.709</td><td>11.404</td><td>76%</td></tr>
-            <tr><td>Mar</td><td>2.005</td><td>377</td><td>468</td><td>8.537</td><td>11.387</td><td>75%</td></tr>
-            <tr><td>Abr</td><td>1.953</td><td>467</td><td>551</td><td>8.044</td><td>11.015</td><td>73%</td></tr>
-            <tr><td>May</td><td>2.158</td><td>500</td><td>552</td><td>8.992</td><td>12.202</td><td>74%</td></tr>
-            <tr><td>Jun</td><td>2.010</td><td>471</td><td>470</td><td>8.083</td><td>11.034</td><td>73%</td></tr>
-            <tr><td>Jul</td><td>2.403</td><td>512</td><td>679</td><td>10.224</td><td>13.818</td><td>74%</td></tr>
-            <tr><td>Ago</td><td>1.839</td><td>421</td><td>584</td><td>8.438</td><td>11.282</td><td>75%</td></tr>
-            <tr><td>Sep</td><td>2.293</td><td>547</td><td>502</td><td>9.695</td><td>13.037</td><td>74%</td></tr>
-            <tr><td>Oct</td><td>2.260</td><td>523</td><td>557</td><td>9.553</td><td>12.893</td><td>74%</td></tr>
-            <tr><td>Nov</td><td>2.262</td><td>474</td><td>457</td><td>8.547</td><td>11.740</td><td>73%</td></tr>
-          </table>
-        </div>
-        <div class="aurora-card" style="background:#f7fbfd">
-          <div class="aurora-card-title">Citas Confirmadas por Sistema — % Atendidas (Ene-Jun 2026)</div>
-          <table class="aurora-rank-table">
-            <tr><th>Mes</th><th>Cancelados</th><th>Inasist.</th><th>Pend.</th><th>Atendidos</th><th>Total</th><th>%Aten.</th></tr>
-            <tr><td>Ene</td><td>2.074</td><td>596</td><td>140</td><td>9.162</td><td>11.972</td><td class="peak">77%</td></tr>
-            <tr><td>Feb</td><td>2.229</td><td>834</td><td>27</td><td>10.188</td><td>13.278</td><td class="peak">77%</td></tr>
-            <tr><td>Mar</td><td>2.317</td><td>1.000</td><td>30</td><td>10.649</td><td>13.996</td><td>76%</td></tr>
-            <tr><td>Abr</td><td>2.559</td><td>855</td><td>47</td><td>10.279</td><td>13.740</td><td>75%</td></tr>
-            <tr><td>May</td><td>2.419</td><td>830</td><td>106</td><td>10.022</td><td>13.377</td><td>75%</td></tr>
-            <tr><td>Jun</td><td>2.790</td><td>778</td><td>89</td><td>10.831</td><td>14.488</td><td>75%</td></tr>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="opanel-calidad" class="atab-panel">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:8px;background:#eef3f6;border-radius:8px;padding:6px 12px">
-          <label style="color:#0d4a5e;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="orlant-cal-mes-sel" onchange="onOrlantCalMesChange()" style="border:none;background:transparent;color:#0d4a5e;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer"></select>
-        </div>
-      </div>
-      <div class="aurora-kpis" id="orlant-cal-kpis"></div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Distribucion de Clasificacion — Resultado de Calidad</div>
-          <div class="aurora-chart-wrap" style="height:240px"><canvas id="och-cal-clasif"></canvas></div>
-        </div>
-      </div>
-      <p style="font-size:0.78rem;color:#7a9ba8;text-align:center;margin-top:6px">Este resultado se calcula automaticamente a partir de las evaluaciones de calidad realizadas para esta campana.</p>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══ HOSPITAL LA MARIA DASHBOARD MODAL ══════════════════════════════ -->
-<div id="hlm-overlay">
-  <div id="hlm-modal">
-    <div class="aurora-header">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-        <div>
-          <h2>Dashboard Hospital La Maria</h2>
-          <div class="aurora-sub" id="hlm-sub-label">Informe Cierre Junio 2026 — Sede Castilla</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">SEDE:</label>
-          <select id="hlm-sede-sel" onchange="onHLMSedeChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
-            <option value="castilla">Sede Castilla</option>
-            <option value="sede33">Sede 33</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="hlm-month-sel" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
-            <option value="jun-26">Junio 2026</option>
-          </select>
-        </div>
-      </div>
-      <button class="aurora-close" onclick="closeHLM()">X Cerrar</button>
-    </div>
-
-    <div class="aurora-kpis" id="hlm-kpis-strip"></div>
-
-    <div class="aurora-tabs">
-      <button class="atab atab-active" data-htab="llamadas" onclick="switchHLMTab('llamadas')">Llamadas y WhatsApp</button>
-      <button class="atab" data-htab="agendamiento" onclick="switchHLMTab('agendamiento')">Agendamiento</button>
-      <button class="atab" data-htab="tipificacion" onclick="switchHLMTab('tipificacion')">Tipificacion</button>
-      <button class="atab" data-htab="demanda" id="htab-btn-demanda" onclick="switchHLMTab('demanda')">Demanda Insatisfecha</button>
-      <button class="atab" data-htab="entidades" onclick="switchHLMTab('entidades')">Entidades</button>
-    </div>
-
-    <div id="hpanel-llamadas" class="atab-panel visible">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-llIng">Tendencia Llamadas Ingresadas</div>
-          <div class="aurora-chart-wrap" style="height:210px"><canvas id="hch-ll-ing"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-contPct">% Llamadas Contestadas</div>
-          <div class="aurora-chart-wrap" style="height:210px"><canvas id="hch-ll-cont"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-abanPct">% Llamadas Abandonadas</div>
-          <div class="aurora-chart-wrap" style="height:210px"><canvas id="hch-ll-aban"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-wppIng">Tendencia WhatsApp / Salida</div>
-          <div class="aurora-chart-wrap" style="height:210px"><canvas id="hch-wpp-ing"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="hpanel-agendamiento" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-agWpp">Agendas via WhatsApp</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="hch-ag-wpp"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-agLl">Agendas via Llamada</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="hch-ag-ll"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-agTot">Total Agendas por Dia</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="hch-ag-tot"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-aht">AHT Hospital La Maria</div>
-          <div class="aurora-chart-wrap" style="height:200px"><canvas id="hch-aht"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="hpanel-tipificacion" class="atab-panel">
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-tip">Tipificacion — Llamadas y WhatsApp</div>
-          <div class="aurora-chart-wrap" style="height:300px"><canvas id="hch-tip"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="hpanel-demanda" class="atab-panel">
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Llamadas Ingresadas por Opcion del IVR Sin Agenda Disponible — Por Especialidad</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="hch-ivr"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-1">
-        <div class="aurora-card">
-          <div class="aurora-card-title">Demanda Insatisfecha por Especialidad — Llamadas vs WhatsApp</div>
-          <div class="aurora-chart-wrap" style="height:260px"><canvas id="hch-demanda-esp"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="hpanel-entidades" class="atab-panel">
-      <div class="aurora-grid-2">
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-entLl">Flujo de Llamadas Identificadas por Entidad</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="hch-ent-ll"></canvas></div>
-        </div>
-        <div class="aurora-card">
-          <div class="aurora-card-title" id="hlm-title-entWpp">Flujo de WhatsApp Identificados por Entidad</div>
-          <div class="aurora-chart-wrap" style="height:220px"><canvas id="hch-ent-wpp"></canvas></div>
-        </div>
-      </div>
-      <div class="aurora-grid-1" id="hlm-ent-note">
-        <div class="aurora-card" style="background:#f7fbfd">
-          <div class="aurora-card-title">Nota</div>
-          <p style="font-size:0.82rem;color:#2a4a58;line-height:1.5">Los pacientes que registran por la Nueva EPS corresponden a usuarios que estan siendo atendidos en la sede 33. En algunos casos, estos pacientes se comunican inicialmente a traves de la linea de la sede Castilla, por lo que se procede a remitir la llamada a la extension correspondiente para su atencion y agendamiento en la sede 33.</p>
-        </div>
-      </div>
-    </div>
-
+    <div class="aurora-kpis" id="gd-kpis"></div>
+    <div class="aurora-tabs" id="gd-tabs"></div>
+    <div id="gd-panels"></div>
   </div>
 </div>
 
@@ -1101,6 +585,308 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+  </div>
+</div>
+
+<!-- ══ MODULO DE INVENTARIO ═══════════════════════════════════════════════════════════ -->
+<div id="inventario-overlay">
+  <div id="inventario-modal">
+    <div class="aurora-header">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div>
+          <h2>&#128230; Inventario</h2>
+          <div class="aurora-sub">Gestion de stock, movimientos y control de items</div>
+        </div>
+      </div>
+      <button class="aurora-close" onclick="closeInventario()">X Cerrar</button>
+    </div>
+
+    <div class="aurora-kpis" id="inv-kpis"></div>
+
+    <div class="aurora-tabs">
+      <button class="atab atab-active" data-ctab="items" onclick="switchInvTab('items')">Items</button>
+      <button class="atab" data-ctab="movimientos" onclick="switchInvTab('movimientos')">Movimientos</button>
+      <button class="atab" data-ctab="carga" onclick="switchInvTab('carga')">Carga Excel</button>
+    </div>
+
+    <!-- TAB: ITEMS -->
+    <div id="ipanel-items" class="atab-panel visible">
+      <div class="aurora-card">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+            <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">CATEGORIA:</label>
+            <select id="inv-filtro-cat" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+            <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">ESTADO:</label>
+            <select id="inv-filtro-estado" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
+              <option value="">Todos</option>
+              <option value="Disponible">Disponible</option>
+              <option value="En Uso">En Uso</option>
+              <option value="Mantenimiento">Mantenimiento</option>
+              <option value="Dado de Baja">Dado de Baja</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="invNuevoItem()" style="margin-left:auto">+ Nuevo item</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="aurora-rank-table" id="inv-items-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: MOVIMIENTOS -->
+    <div id="ipanel-movimientos" class="atab-panel">
+      <div class="aurora-card">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <button class="btn-primary" onclick="invNuevoMovimiento()">+ Registrar movimiento</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="aurora-rank-table" id="inv-movimientos-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CARGA EXCEL -->
+    <div id="ipanel-carga" class="atab-panel">
+      <div class="aurora-kpis" id="inv-carga-status"></div>
+      <div class="aurora-card">
+        <div class="aurora-card-title">Carga masiva de Items</div>
+        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Descarga la plantilla, llena los datos en Excel y sube el archivo. Los items se agregan al inventario existente.</p>
+        <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+          <button class="btn-cancel" onclick="invDescargarPlantillaItems()">Descargar plantilla Items</button>
+          <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
+            Subir Items
+            <input type="file" accept=".xlsx,.xls" style="display:none" onchange="invProcesarArchivoItems(this)">
+          </label>
+          <button class="btn-cancel" id="inv-cargar-items-btn" style="display:none"></button>
+        </div>
+      </div>
+      <div class="aurora-card">
+        <div class="aurora-card-title">Carga masiva de Movimientos</div>
+        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Registra movimientos en lote. Necesitas el ID del item (consúltalo en la pestaña Items).</p>
+        <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+          <button class="btn-cancel" onclick="invDescargarPlantillaMovimientos()">Descargar plantilla Movimientos</button>
+          <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
+            Subir Movimientos
+            <input type="file" accept=".xlsx,.xls" style="display:none" onchange="invProcesarArchivoMovimientos(this)">
+          </label>
+          <button class="btn-cancel" id="inv-cargar-mov-btn" style="display:none"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo/Editar Item -->
+<div class="modal-overlay" id="inv-item-modal">
+  <div class="modal" style="max-width:580px">
+    <h3 id="inv-modal-title">Nuevo Item de Inventario</h3>
+    <div class="form-row">
+      <div class="ig"><label>Nombre *</label><input type="text" id="inv-nombre" placeholder="Ej: Audifonos Logitech"></div>
+      <div class="ig"><label>Categoria</label><input type="text" id="inv-categoria" placeholder="Ej: Equipos"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Descripcion</label><input type="text" id="inv-descripcion" placeholder="Descripcion breve"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Cantidad *</label><input type="number" id="inv-cantidad" min="0" value="0"></div>
+      <div class="ig"><label>Unidad</label><input type="text" id="inv-unidad" value="un" placeholder="un, kg, lt..."></div>
+      <div class="ig"><label>Estado</label>
+        <select id="inv-estado">
+          <option value="Disponible">Disponible</option>
+          <option value="En Uso">En Uso</option>
+          <option value="Mantenimiento">Mantenimiento</option>
+          <option value="Dado de Baja">Dado de Baja</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Ubicacion</label><input type="text" id="inv-ubicacion" placeholder="Ej: Bodega Central"></div>
+      <div class="ig"><label>Proveedor</label><input type="text" id="inv-proveedor" placeholder="Ej: Logitech"></div>
+      <div class="ig"><label>Costo Unitario</label><input type="number" id="inv-costo" min="0" step="0.01" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="inv-observaciones" placeholder="Notas adicionales"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeInvItemModal()">Cancelar</button>
+      <button class="btn-primary" onclick="invGuardarItem()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo Movimiento -->
+<div class="modal-overlay" id="inv-mov-modal">
+  <div class="modal" style="max-width:520px">
+    <h3>Registrar Movimiento</h3>
+    <div class="form-row">
+      <div class="ig" style="flex:1"><label>Item *</label><select id="inv-mov-item"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Tipo *</label>
+        <select id="inv-mov-tipo">
+          <option value="Entrada">Entrada</option>
+          <option value="Salida">Salida</option>
+          <option value="Ajuste">Ajuste</option>
+          <option value="Transferencia">Transferencia</option>
+        </select>
+      </div>
+      <div class="ig"><label>Cantidad *</label><input type="number" id="inv-mov-cantidad" min="1"></div>
+      <div class="ig"><label>Fecha *</label><input type="date" id="inv-mov-fecha"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Motivo</label><input type="text" id="inv-mov-motivo" placeholder="Ej: Compra, Prestamo..."></div>
+      <div class="ig"><label>Destino</label><input type="text" id="inv-mov-destino" placeholder="Para transferencias"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeInvMovModal()">Cancelar</button>
+      <button class="btn-primary" onclick="invGuardarMovimiento()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODULO DE GERENCIA ═══════════════════════════════════════════════════════════ -->
+<div id="gerencia-overlay">
+  <div id="gerencia-modal">
+    <div class="aurora-header">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div>
+          <h2>&#128202; Gerencia</h2>
+          <div class="aurora-sub">Indicadores ejecutivos mensuales</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">PERIODO:</label>
+          <select id="ger-periodo-sel" onchange="onGerPeriodoChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+        </div>
+      </div>
+      <button class="aurora-close" onclick="closeGerencia()">X Cerrar</button>
+    </div>
+
+    <div class="aurora-kpis" id="ger-kpis"></div>
+
+    <div class="aurora-tabs">
+      <button class="atab atab-active" data-ctab="panel" onclick="switchGerTab('panel')">Panel</button>
+      <button class="atab" data-ctab="tabla" onclick="switchGerTab('tabla')">Tabla</button>
+      <button class="atab" data-ctab="carga" onclick="switchGerTab('carga')">Carga Excel</button>
+    </div>
+
+    <!-- TAB: PANEL -->
+    <div id="ger-panel-panel" class="atab-panel visible">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
+      </div>
+      <div id="ger-panels"></div>
+    </div>
+
+    <!-- TAB: TABLA -->
+    <div id="ger-panel-tabla" class="atab-panel">
+      <div class="aurora-card">
+        <div style="overflow-x:auto">
+          <table class="aurora-rank-table" id="ger-tabla"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CARGA EXCEL -->
+    <div id="ger-panel-carga" class="atab-panel">
+      <div class="aurora-kpis" id="ger-carga-status"></div>
+      <div class="aurora-card">
+        <div class="aurora-card-title">Carga masiva de Indicadores</div>
+        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Descarga la plantilla, llena los KPIs del mes en Excel y sube el archivo. Si un indicador ya existe para ese periodo, se actualiza.</p>
+        <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+          <button class="btn-cancel" onclick="gerDescargarPlantilla()">Descargar plantilla</button>
+          <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
+            Subir archivo
+            <input type="file" accept=".xlsx,.xls" style="display:none" onchange="gerProcesarArchivo(this)">
+          </label>
+          <button class="btn-cancel" id="ger-cargar-btn" style="display:none"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo/Editar KPI -->
+<div class="modal-overlay" id="ger-kpi-modal">
+  <div class="modal" style="max-width:520px">
+    <h3 id="ger-kpi-modal-title">Nuevo Indicador</h3>
+    <div class="form-row">
+      <div class="ig" style="flex:1"><label>Nombre del indicador *</label><input type="text" id="ger-kpi-nombre" placeholder="Ej: Nivel de atencion promedio"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Categoria</label><input type="text" id="ger-kpi-categoria" value="General" placeholder="Ej: Operaciones, Financiero..."></div>
+      <div class="ig"><label>Valor *</label><input type="number" id="ger-kpi-valor" step="any"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Unidad</label><input type="text" id="ger-kpi-unidad" placeholder="%, USD, horas..."></div>
+      <div class="ig"><label>Meta (opcional)</label><input type="number" id="ger-kpi-meta" step="any" placeholder="Sin meta"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="ger-kpi-obs" placeholder="Notas adicionales"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeGerKpiModal()">Cancelar</button>
+      <button class="btn-primary" onclick="gerGuardarKpi()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CARGA DE DATOS DE DASHBOARDS (permiso cargarDatos) ══════════════════════════════ -->
+<div id="cargas-overlay">
+  <div id="cargas-modal">
+    <div class="aurora-header">
+      <div>
+        <h2>Cargar Datos de Dashboards</h2>
+        <div class="aurora-sub">Sube los Excel operativos de cada cliente. Volver a subir un periodo lo reemplaza.</div>
+      </div>
+      <button class="aurora-close" onclick="closeCargas()">X Cerrar</button>
+    </div>
+
+    <div class="aurora-card">
+      <div class="form-row">
+        <div class="ig"><label>Cliente</label>
+          <select id="carga-cliente" onchange="onCargaClienteChange()"></select>
+        </div>
+        <div class="ig"><label>Seccion</label>
+          <select id="carga-seccion" onchange="onCargaSeccionChange()"></select>
+        </div>
+      </div>
+      <div id="carga-seccion-desc" style="font-size:0.8rem;color:#7a9ba8;margin:-4px 0 10px"></div>
+      <div class="form-row">
+        <div class="ig"><label>Cadencia</label>
+          <input type="text" id="carga-cadencia" readonly style="background:#f2f6f8">
+        </div>
+        <div class="ig"><label id="carga-periodo-label">Periodo (mes)</label>
+          <input type="month" id="carga-periodo">
+        </div>
+      </div>
+      <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+        <button class="btn-cancel" onclick="descargarPlantillaCarga()">Descargar plantilla (Excel)</button>
+        <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
+          Elegir archivo…
+          <input type="file" id="carga-file" accept=".xlsx,.xls" style="display:none" onchange="procesarArchivoCarga(this)">
+        </label>
+      </div>
+    </div>
+
+    <div class="aurora-card" id="carga-preview-card" style="display:none">
+      <div class="aurora-card-title">Vista previa del archivo — <span id="carga-preview-nombre"></span></div>
+      <div id="carga-errores" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px"></div>
+      <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-preview-table"></table></div>
+      <div class="modal-btns" style="margin-top:10px">
+        <button class="btn-cancel" onclick="cancelarPreviewCarga()">Descartar</button>
+        <button class="btn-primary" onclick="guardarCarga()">Guardar carga</button>
+      </div>
+    </div>
+
+    <div class="aurora-card">
+      <div class="aurora-card-title">Cargas registradas</div>
+      <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-existentes-table"></table></div>
+    </div>
   </div>
 </div>
 
@@ -1289,13 +1075,15 @@
 <script src="js/roles-perms.js"></script>
 <script src="js/historial.js"></script>
 <script src="js/dashboards-core.js"></script>
-<script src="js/dashboard-aurora.js"></script>
-<script src="js/dashboard-orlant.js"></script>
-<script src="js/dashboard-hlm.js"></script>
 <script src="js/calidad.js"></script>
 <script src="js/metas.js"></script>
 <script src="js/reportes.js"></script>
 <script src="js/mis-resultados.js"></script>
+<script src="js/cargas.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/dashboard-generic.js"></script>
+<script src="js/dashboards-admin.js"></script>
+<script src="js/inventario.js"></script>
+<script src="js/gerencia.js"></script>
 </body>
 </html>

@@ -27,7 +27,7 @@ function buildPerms(rol, clientChecks, campaignChecks) {
       p['cliente_' + c] = clientChecks ? (clientChecks[c] === true) : true;
     });
   }
-  if (rol === 'CALIDAD' || rol === 'REPORTES' || rol === 'SUPERVISOR') {
+  if (rol === 'CALIDAD' || rol === 'REPORTES' || rol === 'SUPERVISOR' || rol === 'GERENCIA') {
     CAMPANAS_CALIDAD.forEach(function(c){
       p['campana_' + c] = campaignChecks ? (campaignChecks[c] === true) : true;
     });
@@ -47,10 +47,13 @@ function ensurePerms(u) {
   DASH_MODULES.forEach(function(m){ if(u.perms[m.key]===undefined) u.perms[m.key]=(m.key===defMod); });
   if (u.rol==='GERENCIA') { u.perms.Calidad = true; }
   if (u.rol==='CLIENTES_DASH' || u.rol==='SUPERVISOR') {
-    CLIENTES_LIST.forEach(function(c){ if(u.perms['cliente_'+c]===undefined) u.perms['cliente_'+c]=true; });
+    CLIENTES_LIST.forEach(function(c){ if(u.perms['cliente_'+c]===undefined) u.perms['cliente_'+c]=false; });
   }
   if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR') {
-    CAMPANAS_CALIDAD.forEach(function(c){ if(u.perms['campana_'+c]===undefined) u.perms['campana_'+c]=true; });
+    CAMPANAS_CALIDAD.forEach(function(c){ if(u.perms['campana_'+c]===undefined) u.perms['campana_'+c]=false; });
+  }
+  if (u.rol==='GERENCIA') {
+    CAMPANAS_CALIDAD.forEach(function(c){ if(u.perms['campana_'+c]===undefined) u.perms['campana_'+c]=false; });
   }
 }
 

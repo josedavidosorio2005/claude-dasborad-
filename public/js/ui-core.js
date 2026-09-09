@@ -18,6 +18,10 @@ function canAccessRole(rk){
   if (!currentUser) return false;
   return currentUser.perms['role_'+rk]===true;
 }
+function canLoadData(){
+  if (isFullAdmin()) return true;
+  return !!(currentUser && currentUser.perms && currentUser.perms.cargarDatos===true);
+}
 function applyCreateBtn(){
   var btn=document.getElementById('btn-create-user');
   var ok=isFullAdmin()||can('crearUsuarios');
@@ -29,7 +33,7 @@ function applyCreateBtn(){
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function showSection(sec){
-  ['users','perms','hist','metas','reportesrole'].forEach(function(s){
+  ['users','perms','hist','metas','reportesrole','dashboards','inventario','gerencia'].forEach(function(s){
     var el=document.getElementById('section-'+s);
     var mel=document.getElementById('menu-'+s);
     if(el) el.classList.toggle('hidden',s!==sec);
@@ -39,6 +43,9 @@ function showSection(sec){
   if(sec==='hist'){ loadHist(); renderHist(); }
   if(sec==='metas'){ renderMetasSection(); }
   if(sec==='reportesrole'){ renderReportesRoleSection(); }
+  if(sec==='dashboards'){ renderDashboardsSection(); }
+  if(sec==='inventario'){ renderInventarioSection(); }
+  if(sec==='gerencia'){ renderGerenciaSection(); }
 }
 
 // ═══════════════════════════════════════════════════════════

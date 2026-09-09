@@ -1,0 +1,401 @@
+// dashboard-generic.js — InConexion Platform. FASE 3.
+// Un unico modulo que renderiza CUALQUIER dashboard de cliente a partir de su
+// configuracion (GET /api/dashboard/<cliente> -> {config, secciones:cargas}).
+// Ya no hay un archivo JS por cliente: crear un dashboard = crear su config.
+//
+// Tipos de panel: kpi_row | line | bar | pie | combo | tabla | calidad_kpis | calidad_pie
+// Ver server/dashboard-config-seed.js para la forma de la config y las "fuentes".
+
+var _gd = {
+  cliente: null, config: null, cargas: {}, periodos: [],
+  mesSel: '', vistaSel: '', tab: null, charts: {}
+};
+
+var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+function _gdNum(v){ var n = typeof v==='number'?v:Number(v); return Number.isFinite(n)?n:0; }
+function _gdMesLbl(p){ var x=String(p||'').split('-'); return x.length<2?(p||''):((_GD_MESES[parseInt(x[1],10)-1]||x[1])+'-'+x[0].slice(2)); }
+function _gdDiaLbl(f){ var x=String(f||'').split('-'); return x.length>=3?(parseInt(x[2],10)+'/'+parseInt(x[1],10)):String(f||''); }
+function _gdUp(v){ return String(v==null?'':v).trim().toUpperCase().replace(/\s+/g,''); }
+
+function _gdFmt(v, formato){
+  var n = _gdNum(v);
+  if(formato==='porcentaje') return (n % 1 !== 0 ? n.toFixed(2) : n) + '%';
+  if(formato==='decimal') return (Math.round(n*100)/100).toLocaleString('es-CO');
+  if(formato==='tiempo_mmss'){ var m=Math.floor(n/60), s=Math.round(n%60); return m+':'+(s<10?'0':'')+s; }
+  return Math.round(n).toLocaleString('es-CO'); // entero / miles
+}
+
+// ── Resolucion de una "fuente" de datos ─────────────────────
+function _gdSeccionCargas(s){ return (_gd.cargas && _gd.cargas[s]) || []; }
+function _gdCargaMes(s){
+  var arr = _gdSeccionCargas(s).slice().sort(function(a,b){ return b.periodo.localeCompare(a.periodo); });
+  var tope = _gd.mesSel || (arr[0] && arr[0].periodo);
+  return arr.filter(function(c){ return !tope || c.periodo <= tope; })[0] || null;
+}
+function _gdVistaFiltro(){
+  var v = _gd.config && _gd.config.vista;
+  if(!v || !_gd.vistaSel) return null;
+  return { campo: v.campo, valor: _gd.vistaSel };
+}
+function _gdFilaMatch(row, filtro){
+  if(!filtro) return true;
+  return Object.keys(filtro).every(function(k){ return _gdUp(row[k]) === _gdUp(filtro[k]); });
+}
+function _gdPickFila(filas){
+  var vf = _gdVistaFiltro();
+  if(vf){ var m = (filas||[]).filter(function(r){ return _gdUp(r[vf.campo])===_gdUp(vf.valor); }); return m[0] || null; }
+  return (filas && filas[0]) || null;
+}
+function _gdEvalCampo(row, f){
+  if(!row) return null;
+  if(f.formula){
+    var a = _gdNum(row[f.a]), b = _gdNum(row[f.b]);
+    if(f.formula === 'a+b') return a + b;
+    if(f.formula === 'a-b') return a - b;
+    if(f.formula === 'a/b*100') return b ? Math.round((a/b)*1000)/10 : 0;
+    if(f.formula === 'a/b') return b ? a/b : 0;
+    return null;
+  }
+  return _gdNum(row[f.campo]);
+}
+
+// Devuelve { scalar } o { labels:[], values:[] }
+function _gdResolver(f){
+  if(!f) return { scalar: null };
+  var vf = _gdVistaFiltro();
+
+  if(f.modo === 'serie'){
+    var cargas = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
+    var tope = _gd.mesSel || (cargas.length ? cargas[cargas.length-1].periodo : null);
+    if(tope) cargas = cargas.filter(function(c){ return c.periodo <= tope; });
+    var labels = cargas.map(function(c){ return _gdMesLbl(c.periodo); });
+    var values = cargas.map(function(c){ return _gdEvalCampo(_gdPickFila(c.filas), f); });
+    if(f.transform === 'incremento'){
+      values = values.map(function(v,i){ return i===0 ? null : (values[i-1] ? Math.round(((_gdNum(v)-_gdNum(values[i-1]))/_gdNum(values[i-1]))*100) : null); });
+    }
+    return { labels: labels, values: values };
+  }
+
+  if(f.modo === 'ultimo'){
+    var carga = _gdCargaMes(f.s);
+    return { scalar: carga ? _gdEvalCampo(_gdPickFila(carga.filas), f) : null };
+  }
+
+  if(f.modo === 'filas'){
+    var c2 = _gdCargaMes(f.s);
+    var filas = (c2 ? c2.filas || [] : []).filter(function(r){
+      return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
+    });
+    var xk = f.x || 'fecha';
+    var esFecha = xk === 'fecha';
+    if(esFecha) filas = filas.slice().sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)); });
+    return {
+      labels: filas.map(function(r){ return esFecha ? _gdDiaLbl(r[xk]) : r[xk]; }),
+      values: filas.map(function(r){ return _gdEvalCampo(r, f); })
+    };
+  }
+
+  if(f.modo === 'agregado'){
+    var c3 = _gdCargaMes(f.s);
+    var rows = (c3 ? c3.filas || [] : []).filter(function(r){
+      return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
+    });
+    var total = 0, count = 0;
+    rows.forEach(function(r){ (f.campos || [f.campo]).forEach(function(k){ total += _gdNum(r[k]); count++; }); });
+    return { scalar: f.op === 'promedio' ? (count ? total/count : 0) : total };
+  }
+  return { scalar: null };
+}
+
+// ── Chart helpers (reutiliza lo/loBar/loPie/paleta de charts.js) ──
+function _gdChart(canvasId, cfg){
+  var el = document.getElementById(canvasId);
+  if(!el) return;
+  if(_gd.charts[canvasId]){ try{ _gd.charts[canvasId].destroy(); }catch(e){} delete _gd.charts[canvasId]; }
+  var empty = !cfg || !cfg.data || !cfg.data.labels || cfg.data.labels.length===0 ||
+    (cfg.data.datasets||[]).every(function(d){ return !(d.data||[]).some(function(v){ return v!==null && v!==undefined; }); });
+  var card = el.closest ? el.closest('.aurora-card') : null;
+  var note = card ? card.querySelector('.oc-nodata') : null;
+  if(empty){
+    el.style.display = 'none';
+    if(card && !note){
+      note = document.createElement('div');
+      note.className = 'oc-nodata';
+      note.style.cssText = 'text-align:center;color:#9bb0bb;font-size:0.8rem;padding:24px 8px';
+      note.textContent = 'Sin datos cargados para este periodo';
+      card.appendChild(note);
+    }
+    return;
+  }
+  if(note) note.remove();
+  el.style.display = '';
+  _gd.charts[canvasId] = new Chart(el, cfg);
+}
+
+// ── Apertura ────────────────────────────────────────────────
+async function openGenericDashboard(cliente){
+  document.getElementById('gd-overlay').classList.add('show');
+  document.getElementById('gd-title').textContent = 'Cargando…';
+  document.getElementById('gd-kpis').innerHTML = '';
+  document.getElementById('gd-tabs').innerHTML = '';
+  document.getElementById('gd-panels').innerHTML = '';
+  try{
+    var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(cliente));
+    _gd.cliente = cliente;
+    _gd.config = resp.config;
+    _gd.cargas = resp.secciones || {};
+  }catch(e){
+    document.getElementById('gd-title').textContent = 'Dashboard';
+    showToast('No se pudo abrir el dashboard: '+e.message);
+    return;
+  }
+  // Meses disponibles = union de periodos de todas las cargas
+  var set = {};
+  Object.keys(_gd.cargas).forEach(function(s){ _gd.cargas[s].forEach(function(c){ set[c.periodo] = true; }); });
+  _gd.periodos = Object.keys(set).sort().reverse();
+  _gd.mesSel = '';
+  _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
+
+  // Calidad: si algun panel la usa, cargar los monitoreos de esa campana
+  var campanas = {};
+  (_gd.config.layout.tabs || []).forEach(function(t){
+    (t.panels || []).forEach(function(p){ if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanas[p.campana] = true; });
+  });
+  for(var camp in campanas){ try{ await loadCalData(camp); }catch(e){} }
+
+  renderGenericHeader();
+  renderGenericKpis();
+  renderGenericTabs();
+  var first = (_gd.config.layout.tabs || [])[0];
+  switchGenericTab(first ? first.key : null);
+  renderGenericBanner();
+}
+function closeGenericDashboard(){
+  document.getElementById('gd-overlay').classList.remove('show');
+  Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
+}
+document.getElementById('gd-overlay').addEventListener('click',function(e){ if(e.target===this) closeGenericDashboard(); });
+
+function renderGenericHeader(){
+  document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
+  var sub = document.getElementById('gd-sub');
+  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 'Sin datos');
+  sub.textContent = 'Informe ' + mesLbl + ' — ' + _gd.cliente;
+
+  var vw = document.getElementById('gd-vista-wrap');
+  if(_gd.config.vista){
+    vw.style.display = '';
+    document.getElementById('gd-vista-label').textContent = (_gd.config.vista.label || 'Vista').toUpperCase() + ':';
+    var vs = document.getElementById('gd-vista-sel');
+    vs.innerHTML = _gd.config.vista.opciones.map(function(o){ return '<option value="'+o.valor+'">'+o.label+'</option>'; }).join('');
+    vs.value = _gd.vistaSel;
+  } else { vw.style.display = 'none'; }
+
+  var ms = document.getElementById('gd-mes-sel');
+  ms.innerHTML = _gd.periodos.length
+    ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('')
+    : '<option value="">Sin datos</option>';
+  ms.value = _gd.mesSel || (_gd.periodos[0] || '');
+}
+
+function onGdMesChange(){
+  _gd.mesSel = document.getElementById('gd-mes-sel').value;
+  renderGenericHeader();
+  renderGenericKpis();
+  renderGenericTab(_gd.tab);
+}
+function onGdVistaChange(){
+  _gd.vistaSel = document.getElementById('gd-vista-sel').value;
+  renderGenericKpis();
+  renderGenericTab(_gd.tab);
+}
+
+function renderGenericBanner(){
+  var host = document.getElementById('gd-kpis');
+  var hayCargas = Object.keys(_gd.cargas).some(function(s){ return _gd.cargas[s].length; });
+  var ex = document.getElementById('gd-nodata-banner');
+  if(hayCargas){ if(ex) ex.remove(); return; }
+  if(ex) return;
+  var d = document.createElement('div');
+  d.id = 'gd-nodata-banner';
+  d.style.cssText = 'grid-column:1/-1;background:#fff4e5;border:1px solid #f0c98a;border-radius:8px;padding:12px 16px;color:#8a5a12;font-size:0.85rem';
+  d.innerHTML = 'Este dashboard todavia no tiene datos cargados. Un usuario con permiso de <strong>Cargar Datos</strong> debe subir los Excel del periodo.';
+  host.appendChild(d);
+}
+
+function renderGenericKpis(){
+  var strip = document.getElementById('gd-kpis');
+  var kpis = (_gd.config.layout && _gd.config.layout.kpis) || [];
+  if(!kpis.length){ strip.innerHTML = ''; renderGenericBanner(); return; }
+  strip.innerHTML = kpis.map(function(k){
+    var r = _gdResolver(k.fuente);
+    var val = r.scalar;
+    var txt = (val===null || val===undefined) ? '—' : _gdFmt(val, k.formato);
+    var cls = k.cls || '';
+    if(k.semaforo && val!==null && val!==undefined) cls = _gdNum(val) >= k.semaforo ? 'kpi-green' : 'kpi-red';
+    return '<div class="aurora-kpi '+cls+'"><div class="kv">'+txt+'</div><div class="kl">'+k.titulo+'</div></div>';
+  }).join('');
+  renderGenericBanner();
+}
+
+function renderGenericTabs(){
+  var tabs = (_gd.config.layout.tabs || []);
+  document.getElementById('gd-tabs').innerHTML = tabs.map(function(t){
+    return '<button class="atab" data-gdtab="'+t.key+'" onclick="switchGenericTab(\''+t.key+'\')">'+t.label+'</button>';
+  }).join('');
+}
+
+function switchGenericTab(key){
+  _gd.tab = key;
+  document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
+  Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
+  renderGenericTab(key);
+}
+
+function renderGenericTab(key){
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key===key; });
+  var host = document.getElementById('gd-panels');
+  if(!tab){ host.innerHTML = ''; return; }
+  var panels = tab.panels || [];
+
+  // KPI-row panels van fuera de la rejilla; el resto en una rejilla de 2 columnas
+  var html = '';
+  panels.forEach(function(p, i){
+    if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
+      html += '<div class="aurora-kpis" id="gd-p'+i+'"></div>';
+    } else if(p.tipo === 'tabla'){
+      html += '<div class="aurora-card"><div class="aurora-card-title">'+(p.titulo||'')+'</div>'+
+        '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
+    }
+  });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla'; });
+  if(chartPanels.length){
+    html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
+      return '<div class="aurora-card"><div class="aurora-card-title">'+(x.p.titulo||'')+'</div>'+
+        '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div></div>';
+    }).join('') + '</div>';
+  }
+  host.innerHTML = html;
+
+  panels.forEach(function(p, i){ _gdRenderPanel(p, i); });
+}
+
+function _gdRenderPanel(p, i){
+  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var pal = (typeof PC!=='undefined') ? PC : ['#0d4a5e','#1a7a9e','#27ae60','#e67e22','#e74c3c','#8e44ad'];
+  var serieColors = [ (typeof CD!=='undefined'?CD:'#0d4a5e'), (typeof CM!=='undefined'?CM:'#1a7a9e'), (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ];
+
+  if(p.tipo === 'kpi_row'){
+    var el = document.getElementById('gd-p'+i); if(!el) return;
+    el.innerHTML = (p.items||[]).map(function(it){
+      var r = _gdResolver(it.fuente);
+      var txt = (r.scalar===null||r.scalar===undefined) ? '—' : _gdFmt(r.scalar, it.formato);
+      return '<div class="aurora-kpi '+(it.cls||'')+'"><div class="kv">'+txt+'</div><div class="kl">'+it.titulo+'</div></div>';
+    }).join('');
+    return;
+  }
+
+  if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie'){ _gdRenderCalidad(p, i); return; }
+
+  if(p.tipo === 'tabla'){
+    var t = document.getElementById('gd-p'+i); if(!t) return;
+    var r = _gdResolver(p.fuente); // espera modo:'filas'
+    var cols = p.columnas || [];
+    var carga = _gdCargaMes(p.fuente.s);
+    var filas = carga ? (carga.filas||[]) : [];
+    var html = '<tr>'+cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('')+'</tr>';
+    if(!filas.length) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#9bb0bb">Sin datos cargados</td></tr>';
+    else html += filas.map(function(f){ return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]==null?'-':f[c.key])+'</td>'; }).join('')+'</tr>'; }).join('');
+    t.innerHTML = html;
+    return;
+  }
+
+  var canvasId = 'gd-c'+i;
+
+  if(p.tipo === 'pie'){
+    var pr = _gdResolver(p.fuente);
+    _gdChart(canvasId, { type:'doughnut',
+      data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: pal }] },
+      options: loPie() });
+    return;
+  }
+
+  if(p.tipo === 'line' || p.tipo === 'bar'){
+    var series = p.series || [];
+    var labels = null;
+    var datasets = series.map(function(s, si){
+      var rr = _gdResolver(s.fuente);
+      if(!labels) labels = rr.labels || [];
+      var color = serieColors[si % serieColors.length];
+      if(p.tipo === 'line'){
+        return { label: s.label, data: rr.values||[], borderColor: color, backgroundColor:'rgba(26,122,158,0.08)', tension:0.3, pointRadius:3, borderWidth:2, fill: series.length===1 };
+      }
+      return { label: s.label, data: rr.values||[], backgroundColor: color, borderRadius:3 };
+    });
+    var opts = (p.tipo==='line')
+      ? (p.unidad==='%' ? loPct() : (p.unidad==='tiempo' ? _gdTiempoOpts() : lo(null, 50)))
+      : loBar();
+    if(p.tipo==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
+    _gdChart(canvasId, { type: p.tipo==='bar'?'bar':'line', data:{ labels: labels||[], datasets: datasets }, options: opts });
+    return;
+  }
+
+  if(p.tipo === 'combo'){
+    var barras = (p.barras||[]).map(function(b, bi){
+      var rb = _gdResolver(b.fuente);
+      return { _r: rb, ds: { type:'bar', label:b.label, data: rb.values||[], backgroundColor: serieColors[bi % serieColors.length], borderRadius:3, yAxisID:'y' } };
+    });
+    var labels2 = (barras[0] && barras[0]._r.labels) || [];
+    var lin = p.linea ? _gdResolver(p.linea.fuente) : null;
+    var ds = barras.map(function(x){ return x.ds; });
+    if(lin){
+      if(!labels2.length) labels2 = lin.labels || [];
+      ds.push({ type:'line', label:p.linea.label, data: lin.values||[], borderColor:(typeof CO!=='undefined'?CO:'#e67e22'), borderWidth:2.5, pointRadius:4, tension:0.3, yAxisID:'y2' });
+    }
+    var o = loBar();
+    o.scales = {
+      y:{ position:'left', grid:{color:'#f0f4f8'}, ticks:{font:{size:8}} },
+      y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
+      x:{ grid:{display:false}, ticks:{font:{size:8}} }
+    };
+    o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+      formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?v+'%':'') : v; } };
+    _gdChart(canvasId, { data:{ labels: labels2, datasets: ds }, options: o });
+    return;
+  }
+}
+
+function _gdTiempoOpts(){
+  var o = lo(null, 50);
+  var f = function(v){ var m=Math.floor(v/60), s=Math.round(v%60); return m+':'+(s<10?'0':'')+s; };
+  o.plugins.datalabels.formatter = f;
+  o.scales.y.ticks.callback = f;
+  return o;
+}
+
+// ── Paneles de Calidad (usan CAL_DB de la Fase 1) ───────────
+function _gdRenderCalidad(p, i){
+  var camp = p.campana;
+  var arr = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+  if(_gd.mesSel) arr = arr.filter(function(m){ return m.mes === _gd.mesSel; });
+  var total = arr.length;
+  var promedio = total ? Math.round((arr.reduce(function(a,m){return a+m.puntaje;},0)/total)*10)/10 : 0;
+  var sob = arr.filter(function(m){return m.puntaje>=90;}).length;
+  var noC = arr.filter(function(m){return m.puntaje>=70 && m.puntaje<90;}).length;
+  var cri = arr.filter(function(m){return m.puntaje<70;}).length;
+  var clasif = total===0 ? '—' : (promedio<70?'🔴 CRITICO':promedio<90?'🟡 NO CRITICO':'🟢 SOBRESALIENTE');
+
+  if(p.tipo === 'calidad_kpis'){
+    var el = document.getElementById('gd-p'+i); if(!el) return;
+    el.innerHTML =
+      '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
+      '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
+      '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv" style="font-size:1rem">'+clasif+'</div><div class="kl">Clasificacion General</div></div>';
+    return;
+  }
+  // calidad_pie
+  _gdChart('gd-c'+i, { type:'doughnut',
+    data:{ labels:['Sobresaliente','No Critico','Critico'], datasets:[{ data:[sob,noC,cri], backgroundColor:[
+      (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ] }] },
+    options: loPie() });
+}

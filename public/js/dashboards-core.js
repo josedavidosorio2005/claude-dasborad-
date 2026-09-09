@@ -21,6 +21,13 @@ function renderDashGrid(){
       '<div class="dash-label">'+m.label+'</div>'+
       '<div class="dash-sub">'+m.sub+'</div></div>';
   }).join('');
+  // Tile extra para quien puede cargar datos operativos de los dashboards.
+  if(typeof canLoadData==='function' && canLoadData() && !isFullAdmin()){
+    grid.innerHTML += '<div class="dash-btn mod-clientes" onclick="openCargas()">'+
+      '<div class="dash-icon">&#128228;</div>'+
+      '<div class="dash-label">Cargar Datos</div>'+
+      '<div class="dash-sub">Subir Excel de los dashboards</div></div>';
+  }
 }
 
 function onDashBtn(key){
@@ -31,6 +38,8 @@ function onDashBtn(key){
   }
   if(key==='ClientesDash'){openClientsModal();return;}
   if(key==='Calidad'){openCalidad();return;}
+  if(key==='Inventario'){openInventario();return;}
+  if(key==='Gerencia'){openGerencia();return;}
   showToast('El modulo '+(m?m.label:key)+' todavia no esta disponible.');
 }
 
@@ -39,7 +48,7 @@ function openClientsModal(){
   var html='';
   for(var i=0;i<CLIENTES_LIST.length;i++){
     var c=CLIENTES_LIST[i];
-    var hasPerm=!currentUser||currentUser.perms['cliente_'+c]!==false;
+    var hasPerm=!currentUser||currentUser.perms['cliente_'+c]===true;
     var built=BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1;
     var cls='client-card';
     var tag='';
@@ -58,10 +67,18 @@ function openClientsModal(){
 function closeClientsModal(){document.getElementById('clients-modal-overlay').classList.remove('show');}
 function openClientByEl(el){
   var c = el.dataset.cliente;
-  if (c === 'CLINICA AURORA') { openAurora(); return; }
-  if (c === 'ORLANT') { openOrlant(); return; }
-  if (c === 'HOSPITAL LA MARIA') { openHLM(); return; }
+  // Fase 3: cualquier cliente con dashboard configurado se abre con el modulo generico.
+  if (BUILT_CLIENT_DASHBOARDS.indexOf(c) !== -1) { openGenericDashboard(c); return; }
   showToast('El dashboard de '+c+' esta en preparacion. Pronto lo veras aqui.');
+}
+
+// Lista de clientes con dashboard configurado (Fase 3). Se pide al servidor tras
+// el login y reemplaza la lista fija que habia antes en constants.js.
+async function loadDashboardClientes(){
+  try{
+    var r = await apiRequest('GET','/dashboard/clientes');
+    if(r && Array.isArray(r.clientes)) BUILT_CLIENT_DASHBOARDS = r.clientes;
+  }catch(e){ /* deja la lista por defecto */ }
 }
 document.getElementById('clients-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeClientsModal();});
 

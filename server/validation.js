@@ -55,10 +55,16 @@ const asesorCampanaSchema = z
   .nullish();
 
 // perms: objeto plano de claves conocidas/dinamicas -> booleano.
-// Las claves dinamicas (role_*, cliente_*, campana_*) las genera el frontend.
+// Las claves dinamicas (role_*, cliente_*, campana_*) las genera el frontend a
+// partir de nombres de cliente/campana, que pueden tener espacios y signos
+// (ej. "campana_CLINICA AURORA", "cliente_HOSPITAL LA MARIA").
 const permsSchema = z
   .record(
-    z.string().min(1).max(80).regex(/^[a-zA-Z0-9_]+$/, 'Clave de permiso invalida'),
+    z
+      .string()
+      .min(1)
+      .max(80)
+      .regex(/^[a-zA-Z0-9_ .\-/]+$/, 'Clave de permiso invalida'),
     z.boolean({ invalid_type_error: 'Los permisos deben ser true/false' })
   )
   .refine((obj) => Object.keys(obj).length <= 200, {
@@ -107,6 +113,243 @@ const updatePermsBody = z.object({
   perms: permsSchema,
 });
 
+// ── Modulo de Calidad ───────────────────────────────────────
+
+// Nombre de campana: letras/numeros/espacios y algunos signos, 1..120.
+// (Las campanas no son un enum fijo: se pueden agregar. El servidor igual
+// valida contra la lista de plantillas existentes en el handler.)
+const campanaSchema = z
+  .string({ required_error: 'La campana es obligatoria' })
+  .trim()
+  .min(1, 'La campana es obligatoria')
+  .max(120, 'Nombre de campana demasiado largo')
+  .regex(/^[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ .\-/]+$/, 'Nombre de campana con caracteres no permitidos');
+
+const fechaSchema = z
+  .string({ required_error: 'La fecha es obligatoria' })
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato AAAA-MM-DD');
+
+const mesSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}$/, 'El mes debe tener formato AAAA-MM');
+
+const respuestaSchema = z.enum(['SI', 'NO', 'N/A', '']);
+
+// answers: { "1": "SI", "2": "NO", ... } — claves numericas, valores acotados.
+const answersSchema = z
+  .record(
+    z.string().regex(/^\d{1,3}$/, 'Clave de item invalida'),
+    respuestaSchema
+  )
+  .refine((o) => Object.keys(o).length >= 1 && Object.keys(o).length <= 100, {
+    message: 'Cantidad de respuestas fuera de rango',
+  });
+
+const textoCortoOpt = z.string().trim().max(200).optional().default('');
+
+// El puntaje/clasificacion/fallos NO se aceptan del cliente: los calcula el servidor.
+const createMonitoreoBody = z.object({
+  campana: campanaSchema,
+  asesor: z.string({ required_error: 'El asesor es obligatorio' }).trim().min(1).max(120),
+  fecha: fechaSchema,
+  canal: z.enum(['LLAMADA', 'WPP']).default('LLAMADA'),
+  idLlamada: textoCortoOpt,
+  telefono: textoCortoOpt,
+  codificacion: textoCortoOpt,
+  evaluador: z.string().trim().max(120).optional().default(''),
+  observaciones: textoCortoOpt,
+  answers: answersSchema,
+});
+
+const updateMonitoreoBody = z
+  .object({
+    asesor: z.string().trim().min(1).max(120).optional(),
+    fecha: fechaSchema.optional(),
+    canal: z.enum(['LLAMADA', 'WPP']).optional(),
+    idLlamada: z.string().trim().max(200).optional(),
+    telefono: z.string().trim().max(200).optional(),
+    codificacion: z.string().trim().max(200).optional(),
+    evaluador: z.string().trim().max(120).optional(),
+    observaciones: z.string().trim().max(200).optional(),
+    answers: answersSchema.optional(),
+  })
+  .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
+
+const metaBody = z.object({
+  campana: campanaSchema,
+  mes: mesSchema,
+  liderId: z.coerce.number().int().positive({ message: 'liderId invalido' }),
+  metaGrupal: z.coerce.number().int().min(1, 'La meta debe ser al menos 1').max(100000),
+  asesores: z.coerce.number().int().min(1, 'Cantidad de asesores invalida').max(1000),
+  diasLaborales: z.coerce.number().int().min(1, 'Dias laborales invalidos').max(31),
+  whatsapp: z
+    .preprocess(
+      (v) => (typeof v === 'string' ? v === 'SI' || v === 'true' : v),
+      z.boolean()
+    )
+    .optional()
+    .default(false),
+  pctWhatsapp: z.coerce.number().int().min(0).max(100).optional().default(0),
+});
+
+const updateMetaBody = metaBody.partial().refine((b) => Object.keys(b).length > 0, {
+  message: 'Nada que actualizar',
+});
+
+// Query params ?campana=&mes= (mes opcional).
+const calidadQuery = z.object({
+  campana: campanaSchema,
+  mes: mesSchema.optional(),
+});
+
+// ── Dashboards de cliente: cargas de Excel (Fase 2) ─────────
+const nombreClienteSeccionSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(60)
+  .regex(/^[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ _.\-/]+$/, 'Nombre con caracteres no permitidos');
+
+const celdaSchema = z.union([z.string().max(200), z.number(), z.boolean(), z.null()]);
+
+const cargaBody = z.object({
+  cliente: nombreClienteSeccionSchema,
+  seccion: nombreClienteSeccionSchema,
+  cadencia: z.enum(['diaria', 'semanal', 'mensual']),
+  periodo: z.string().trim().min(4).max(10),
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(z.record(z.string().min(1).max(60), celdaSchema))
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(500, 'Demasiadas filas en un solo archivo'),
+});
+
+// ── Configuracion de dashboards (Fase 3) ───────────────────
+const columnaSchema = z.object({
+  key: z.string().trim().min(1).max(60).regex(/^[a-z0-9_]+$/, 'key: solo minusculas, numeros y _'),
+  label: z.string().trim().min(1).max(120),
+  tipo: z.enum(['entero', 'decimal', 'porcentaje', 'texto', 'fecha']),
+  opcional: z.boolean().optional(),
+});
+
+// ── Modulo de Inventario ───────────────────────────────────
+
+const inventarioItemBody = z.object({
+  nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
+  categoria: z.string().trim().min(1).max(100).default('General'),
+  descripcion: z.string().trim().max(500).optional().default(''),
+  cantidad: z.coerce.number().int().min(0, 'La cantidad no puede ser negativa').max(999999),
+  unidad: z.string().trim().min(1).max(30).default('un'),
+  ubicacion: z.string().trim().max(200).optional().default(''),
+  estado: z.enum(['Disponible', 'En Uso', 'Mantenimiento', 'Dado de Baja']).default('Disponible'),
+  proveedor: z.string().trim().max(200).optional().default(''),
+  costoUnitario: z.coerce.number().min(0).max(999999999).optional().default(0),
+  observaciones: z.string().trim().max(500).optional().default(''),
+});
+
+const inventarioItemUpdate = inventarioItemBody.partial().refine(
+  (b) => Object.keys(b).length > 0,
+  { message: 'Nada que actualizar' }
+);
+
+const inventarioMovimientoBody = z.object({
+  itemId: z.coerce.number().int().positive({ message: 'itemId invalido' }),
+  tipo: z.enum(['Entrada', 'Salida', 'Ajuste', 'Transferencia']),
+  cantidad: z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1').max(999999),
+  fecha: fechaSchema,
+  motivo: z.string().trim().max(300).optional().default(''),
+  destino: z.string().trim().max(200).optional().default(''),
+});
+
+const inventarioCargaBody = z.object({
+  items: z
+    .array(inventarioItemBody)
+    .min(1, 'El archivo no tiene items')
+    .max(500, 'Demasiados items en un solo archivo'),
+});
+
+const inventarioMovCargaBody = z.object({
+  movimientos: z
+    .array(inventarioMovimientoBody)
+    .min(1, 'El archivo no tiene movimientos')
+    .max(500, 'Demasiados movimientos en un solo archivo'),
+});
+
+// ── Modulo de Gerencia ─────────────────────────────────────
+
+const gerenciaKpiBody = z.object({
+  periodo: z.string().trim().regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato AAAA-MM'),
+  nombre: z.string().trim().min(1, 'El nombre del KPI es obligatorio').max(200),
+  categoria: z.string().trim().min(1).max(100).default('General'),
+  valor: z.coerce.number(),
+  unidad: z.string().trim().max(30).optional().default(''),
+  meta: z.coerce.number().nullable().optional().default(null),
+  observaciones: z.string().trim().max(500).optional().default(''),
+});
+
+const gerenciaKpiUpdate = gerenciaKpiBody.partial().refine(
+  (b) => Object.keys(b).length > 0,
+  { message: 'Nada que actualizar' }
+);
+
+const gerenciaCargaBody = z.object({
+  periodo: z.string().trim().regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato AAAA-MM'),
+  kpis: z
+    .array(
+      z.object({
+        nombre: z.string().trim().min(1).max(200),
+        categoria: z.string().trim().min(1).max(100).default('General'),
+        valor: z.coerce.number(),
+        unidad: z.string().trim().max(30).optional().default(''),
+        meta: z.coerce.number().nullable().optional().default(null),
+        observaciones: z.string().trim().max(500).optional().default(''),
+      })
+    )
+    .min(1, 'El archivo no tiene indicadores')
+    .max(200, 'Demasiados indicadores en un solo archivo'),
+});
+
+const seccionSpecSchema = z.object({
+  titulo: z.string().trim().min(1).max(160),
+  descripcion: z.string().trim().max(400).optional().default(''),
+  cadencia: z.enum(['diaria', 'semanal', 'mensual']),
+  periodo: z.enum(['dia', 'semana', 'mes']),
+  filaUnica: z.boolean(),
+  columnas: z.array(columnaSchema).min(1, 'La seccion necesita al menos una columna').max(60),
+});
+
+const dashboardConfigBody = z.object({
+  cliente: nombreClienteSeccionSchema,
+  titulo: z.string().trim().min(1).max(160),
+  vista: z
+    .object({
+      campo: z.string().trim().min(1).max(60),
+      label: z.string().trim().min(1).max(60),
+      opciones: z
+        .array(z.object({ valor: z.string().trim().min(1).max(60), label: z.string().trim().min(1).max(60) }))
+        .min(1)
+        .max(12),
+    })
+    .nullish(),
+  secciones: z.record(z.string().min(1).max(60), seccionSpecSchema).refine(
+    (o) => Object.keys(o).length >= 1 && Object.keys(o).length <= 30,
+    { message: 'El dashboard necesita entre 1 y 30 secciones' }
+  ),
+  layout: z.object({
+    kpis: z.array(z.record(z.string(), z.any())).max(30).optional().default([]),
+    tabs: z
+      .array(
+        z.object({
+          key: z.string().trim().min(1).max(40),
+          label: z.string().trim().min(1).max(60),
+          panels: z.array(z.record(z.string(), z.any())).max(30),
+        })
+      )
+      .min(1, 'El dashboard necesita al menos una pestana')
+      .max(20),
+  }),
+});
+
 // Middleware factory: valida req[part] contra el schema; si falla -> 400.
 function validate(schema, part = 'body') {
   return (req, res, next) => {
@@ -138,5 +381,20 @@ module.exports = {
     changePasswordBody,
     updatePermsBody,
     idParamSchema,
+    createMonitoreoBody,
+    updateMonitoreoBody,
+    metaBody,
+    updateMetaBody,
+    calidadQuery,
+    cargaBody,
+    dashboardConfigBody,
+    inventarioItemBody,
+    inventarioItemUpdate,
+    inventarioMovimientoBody,
+    inventarioCargaBody,
+    inventarioMovCargaBody,
+    gerenciaKpiBody,
+    gerenciaKpiUpdate,
+    gerenciaCargaBody,
   },
 };

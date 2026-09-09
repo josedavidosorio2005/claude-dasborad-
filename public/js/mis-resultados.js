@@ -12,31 +12,25 @@ function mrmk(id,cfg){
   if(_mrc[id]) try{_mrc[id].destroy();}catch(e){}
   _mrc[id]=new Chart(el,cfg);
 }
-function calMisMonitoreos(){
-  if(!currentUser) return [];
-  var nombre = (currentUser.nombre||'').trim().toLowerCase();
-  if(!nombre) return [];
-  loadCalData();
-  var campanas = currentUser.asesorCampana ? [currentUser.asesorCampana] : Object.keys(CAL_CAMPANAS);
-  var results = [];
-  campanas.forEach(function(camp){
-    var arr = (CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
-    arr.forEach(function(m){
-      if((m.asesor||'').trim().toLowerCase()===nombre){
-        results.push(Object.assign({campana:camp}, m));
-      }
-    });
-  });
-  results.sort(function(a,b){ return (a.fecha||'').localeCompare(b.fecha||''); });
-  return results;
+// Los monitoreos del asesor logueado — MIGRADO A SERVIDOR: GET /api/monitoreos/mios
+// (el servidor empareja por nombre y devuelve solo los del usuario autenticado).
+var _misMonitoreosAll = [];
+async function loadMisMonitoreos(){
+  try{
+    _misMonitoreosAll = (await apiRequest('GET','/monitoreos/mios')) || [];
+  }catch(e){ _misMonitoreosAll = []; showToast('No se pudieron cargar tus resultados: '+e.message); }
+  _misMonitoreosAll.sort(function(a,b){ return (a.fecha||'').localeCompare(b.fecha||''); });
 }
+function calMisMonitoreos(){ return _misMonitoreosAll; }
 
 var _mrMesFiltro = '';
 function onMrMesChange(){
   _mrMesFiltro = document.getElementById('mr-mes-sel').value;
   renderMisResultados();
 }
-function renderMisResultados(){
+async function renderMisResultados(){
+  await calLoadPlantillas();
+  await loadMisMonitoreos();
   var allArr = calMisMonitoreos();
   var mesSel = document.getElementById('mr-mes-sel');
   if(mesSel){
@@ -104,7 +98,7 @@ function verDetalleMonitoreo(idx){
     '<div class="qi-pill"><div class="qv">'+m.fallos+'</div><div class="ql"># FALLOS CRITICOS</div></div>'+
     '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+m.nivelCritico+'</div><div class="ql">NIVEL CRITICO</div></div>';
 
-  var items = (CAL_CAMPANAS[m.campana] && CAL_CAMPANAS[m.campana].items) || [];
+  var items = (CAL_PLANTILLAS[m.campana] && CAL_PLANTILLAS[m.campana].items) || [];
   var answers = m.answers || {};
   var cats = [];
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
