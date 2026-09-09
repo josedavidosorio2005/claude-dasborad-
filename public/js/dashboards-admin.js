@@ -9,7 +9,7 @@ var _dcState = null;         // { cliente, titulo, vista, secciones:[], tabs:[],
 var _DC_TIPOS_COL = ['entero', 'decimal', 'porcentaje', 'texto', 'fecha'];
 var _DC_CADENCIAS = ['mensual', 'diaria', 'semanal'];
 var _DC_PERIODOS = ['mes', 'dia', 'semana'];
-var _DC_TIPOS_PANEL = ['line', 'bar', 'pie', 'tabla', 'calidad_kpis', 'calidad_pie'];
+var _DC_TIPOS_PANEL = ['line', 'bar', 'area', 'pie', 'tabla', 'calidad_kpis', 'calidad_pie'];
 var _DC_MODOS = ['serie', 'ultimo', 'filas', 'agregado'];
 var _DC_FORMATOS = ['entero', 'miles', 'porcentaje', 'decimal', 'tiempo_mmss'];
 
@@ -231,10 +231,12 @@ function _dcRenderFuenteRow(kind, k, ki){
 }
 
 function _dcRenderPanelRow(ti, pi, p){
+  var mov = '<button class="btn-sm btn-edit" onclick="_dcMovePanel('+ti+','+pi+',-1)" title="Subir">&#9650;</button>'+
+    '<button class="btn-sm btn-edit" onclick="_dcMovePanel('+ti+','+pi+',1)" title="Bajar">&#9660;</button>';
   if(p._raw){
     return '<div class="form-row"><div class="ig" style="flex:1"><label>Panel avanzado (JSON) — '+(p.titulo||'')+'</label>'+
       '<textarea rows="4" oninput="_dcPanel('+ti+','+pi+',\'_raw\',this.value)">'+_esc(p._raw)+'</textarea></div>'+
-      '<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
+      mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
   }
   var esCalidad = p.tipo==='calidad_kpis' || p.tipo==='calidad_pie';
   var h = '<div class="form-row" style="align-items:end">'+
@@ -248,12 +250,17 @@ function _dcRenderPanelRow(ti, pi, p){
       (p.tipo==='tabla' ? '' : '<div class="ig"><label>Campo</label><input type="text" value="'+_esc(p.campo)+'" oninput="_dcPanel('+ti+','+pi+',\'campo\',this.value)"></div>')+
       '<div class="ig"><label>Etiqueta X (filas/pie)</label><input type="text" value="'+_esc(p.x)+'" oninput="_dcPanel('+ti+','+pi+',\'x\',this.value)"></div>'+
       '<div class="ig"><label>Filtro (k=v,k2=v2)</label><input type="text" value="'+_esc(p.filtro)+'" oninput="_dcPanel('+ti+','+pi+',\'filtro\',this.value)"></div>'+
-      (p.tipo==='line' ? '<div class="ig"><label>Formula</label><input type="text" value="'+_esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
-      (p.tipo==='line' ? '<div class="ig"><label>Unidad</label><input type="text" placeholder="% / tiempo" value="'+_esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Formula</label><input type="text" value="'+_esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Unidad</label><input type="text" placeholder="% / tiempo" value="'+_esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
       (p.tipo==='bar' ? '<div class="ig"><label>Horizontal</label><input type="checkbox" '+(p.horizontal?'checked':'')+' onchange="_dcPanel('+ti+','+pi+',\'horizontal\',this.checked)"></div>' : '');
   }
-  h += '<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
+  h += mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
   return h;
+}
+function _dcMovePanel(ti,pi,dir){
+  var arr = _dcState.tabs[ti].panels; var ni = pi+dir;
+  if(ni<0 || ni>=arr.length) return;
+  var tmp = arr[pi]; arr[pi]=arr[ni]; arr[ni]=tmp; _dcRender();
 }
 
 function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
@@ -278,6 +285,18 @@ function _dcDelTab(i){ _dcState.tabs.splice(i,1); _dcRender(); }
 function _dcAddPanel(ti){ _dcState.tabs[ti].panels.push(_dcNuevoPanel()); _dcRender(); }
 function _dcPanel(ti,pi,k,v){ _dcState.tabs[ti].panels[pi][k]=v; if(k==='tipo'||k==='s') _dcRender(); }
 function _dcDelPanel(ti,pi){ _dcState.tabs[ti].panels.splice(pi,1); _dcRender(); }
+
+// ── Previsualizar (sin guardar) ────────────────────────────
+function previewDashCfg(){
+  var body;
+  try{ body = _dcToConfig(); }catch(e){ showToast('Configuracion invalida: '+e.message); return; }
+  if(!body.cliente){ showToast('Elige un cliente'); return; }
+  if(typeof openGenericDashboardPreview !== 'function'){ showToast('No se pudo abrir la previsualizacion'); return; }
+  openGenericDashboardPreview({
+    cliente: body.cliente, titulo: body.titulo || body.cliente,
+    vista: body.vista || null, secciones: body.secciones, layout: body.layout,
+  });
+}
 
 // ── Guardar ────────────────────────────────────────────────
 async function saveDashCfg(){

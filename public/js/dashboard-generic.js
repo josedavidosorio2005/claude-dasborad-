@@ -107,6 +107,40 @@ function _gdResolver(f){
   return { scalar: null };
 }
 
+// ── Preferencia de visualizacion por usuario (no altera la config del admin) ──
+// Cada visor puede cambiar el tipo de grafico de un panel para SU vista.
+// Se guarda por cliente en localStorage; los demas siguen viendo la config real.
+function _gdPrefsKey(){ return 'gdprefs:' + (_gd.cliente || ''); }
+function _gdPrefs(){
+  try{ return JSON.parse(localStorage.getItem(_gdPrefsKey()) || '{}') || {}; }catch(e){ return {}; }
+}
+function _gdSetPref(panelKey, tipo){
+  var p = _gdPrefs();
+  if(tipo) p[panelKey] = tipo; else delete p[panelKey];
+  try{ localStorage.setItem(_gdPrefsKey(), JSON.stringify(p)); }catch(e){}
+}
+function _gdPanelKey(i){ return _gd.tab + '|' + i; }
+// Tipo efectivo de un panel: preferencia del visor si existe, si no la de la config.
+function _gdPanelTipo(p, i){
+  var pref = _gdPrefs()[_gdPanelKey(i)];
+  var permitidos = { line:1, bar:1, area:1 };
+  if(pref && permitidos[pref]) return pref;
+  return p.tipo;
+}
+function _gdCyclePanelTipo(i, tipo){
+  _gdSetPref(_gdPanelKey(i), tipo);
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+  if(tab) _gdRenderPanel(tab.panels[i], i);
+  // refrescar los botones activos
+  var tools = document.querySelector('#gd-c' + i);
+  if(tools){
+    var card = tools.closest('.aurora-card');
+    if(card) card.querySelectorAll('.gd-panel-tools button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.t === tipo);
+    });
+  }
+}
+
 // ── Analisis: valor del periodo de comparacion (periodo anterior o el elegido) ──
 // Para una fuente 'ultimo', devuelve el escalar del periodo con el que se compara:
 //   - si el usuario eligio "Comparar contra", ese periodo exacto (o el ultimo <=).
@@ -236,15 +270,34 @@ async function openGenericDashboard(cliente){
     showToast('No se pudo abrir el dashboard: '+e.message);
     return;
   }
-  // Meses disponibles = union de periodos de todas las cargas
+  await _gdBootstrap();
+}
+
+// Previsualizacion desde el constructor: usa una config en memoria (sin guardar)
+// y, si el cliente ya existe, sus cargas reales; si no, se ve la estructura vacia.
+async function openGenericDashboardPreview(config){
+  document.getElementById('gd-overlay').classList.add('show');
+  document.getElementById('gd-kpis').innerHTML = '';
+  document.getElementById('gd-tabs').innerHTML = '';
+  document.getElementById('gd-panels').innerHTML = '';
+  _gd.cliente = config.cliente;
+  _gd.config = config;
+  _gd.cargas = {};
+  try{
+    var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(config.cliente));
+    _gd.cargas = resp.secciones || {};
+  }catch(e){ _gd.cargas = {}; }
+  await _gdBootstrap();
+}
+
+async function _gdBootstrap(){
   var set = {};
-  Object.keys(_gd.cargas).forEach(function(s){ _gd.cargas[s].forEach(function(c){ set[c.periodo] = true; }); });
+  Object.keys(_gd.cargas).forEach(function(s){ (_gd.cargas[s]||[]).forEach(function(c){ set[c.periodo] = true; }); });
   _gd.periodos = Object.keys(set).sort().reverse();
   _gd.mesSel = '';
   _gd.compSel = '';
   _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
 
-  // Calidad: si algun panel la usa, cargar los monitoreos de esa campana
   var campanas = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){ if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanas[p.campana] = true; });
@@ -369,7 +422,16 @@ function renderGenericTab(key){
   var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
-      return '<div class="aurora-card"><div class="aurora-card-title">'+(x.p.titulo||'')+'</div>'+
+      var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
+      var eff = _gdPanelTipo(x.p, x.i);
+      var tools = conmuta ? '<span class="gd-panel-tools">' +
+        ['line','bar','area'].map(function(t){
+          return '<button data-t="' + t + '"' + (t === eff ? ' class="on"' : '') +
+            ' onclick="_gdCyclePanelTipo(' + x.i + ',\'' + t + '\')">' +
+            (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
+        }).join('') + '</span>' : '';
+      return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
+        '<span>' + (x.p.titulo || '') + '</span>' + tools + '</div>' +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div></div>';
     }).join('') + '</div>';
   }
@@ -414,23 +476,27 @@ function _gdRenderPanel(p, i){
     return;
   }
 
-  if(p.tipo === 'line' || p.tipo === 'bar'){
+  if(p.tipo === 'line' || p.tipo === 'bar' || p.tipo === 'area'){
+    var eff = _gdPanelTipo(p, i);          // tipo efectivo (preferencia del visor)
+    var esLinea = eff === 'line' || eff === 'area';
+    var hex2rgba = function(h, a){ h = h.replace('#',''); return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')'; };
     var series = p.series || [];
     var labels = null;
     var datasets = series.map(function(s, si){
       var rr = _gdResolver(s.fuente);
       if(!labels) labels = rr.labels || [];
       var color = serieColors[si % serieColors.length];
-      if(p.tipo === 'line'){
-        return { label: s.label, data: rr.values||[], borderColor: color, backgroundColor:'rgba(26,122,158,0.08)', tension:0.3, pointRadius:3, borderWidth:2, fill: series.length===1 };
+      if(esLinea){
+        return { label: s.label, data: rr.values||[], borderColor: color, backgroundColor: hex2rgba(color, eff === 'area' ? 0.18 : 0.08),
+          tension:0.3, pointRadius:3, borderWidth:2, fill: eff === 'area' || series.length===1 };
       }
       return { label: s.label, data: rr.values||[], backgroundColor: color, borderRadius:3 };
     });
-    var opts = (p.tipo==='line')
+    var opts = esLinea
       ? (p.unidad==='%' ? loPct() : (p.unidad==='tiempo' ? _gdTiempoOpts() : loFmt(lo(null, 50), p.unidad)))
       : loFmt(loBar(), p.unidad);
-    if(p.tipo==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
-    _gdChart(canvasId, { type: p.tipo==='bar'?'bar':'line', data:{ labels: labels||[], datasets: datasets }, options: opts });
+    if(eff==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
+    _gdChart(canvasId, { type: esLinea ? 'line' : 'bar', data:{ labels: labels||[], datasets: datasets }, options: opts });
     return;
   }
 
@@ -492,4 +558,133 @@ function _gdRenderCalidad(p, i){
     data:{ labels:['Sobresaliente','No Critico','Critico'], datasets:[{ data:[sob,noC,cri], backgroundColor:[
       (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ] }] },
     options: loPie() });
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORTACION (Excel real + PDF por impresion) — Fase A6
+// ══════════════════════════════════════════════════════════════
+
+// Extrae, ya calculadas, las filas de KPIs y de datos de una pestana.
+function _gdDatosKpis(){
+  var kpis = (_gd.config.layout && _gd.config.layout.kpis) || [];
+  return kpis.map(function(k){
+    var cur = _gdResolver(k.fuente).scalar;
+    var comp = _gdResolverComp(k.fuente);
+    var v = _gdVariacion(cur, comp.scalar);
+    var meta = _gdMetaValor(k);
+    return {
+      Indicador: k.titulo,
+      Valor: cur === null || cur === undefined ? '' : cur,
+      'Periodo comparado': comp.periodo ? _gdMesLbl(comp.periodo) : '',
+      'Var. %': v && v.pct !== null ? v.pct : '',
+      'Var. abs': v ? v.abs : '',
+      Meta: meta === null || meta === undefined ? '' : meta,
+      '% Meta': meta ? Math.round((cur / meta) * 1000) / 10 : '',
+      Alerta: _gdFueraDeRango(cur, comp.scalar, k) ? 'FUERA DE RANGO' : '',
+    };
+  });
+}
+function _gdDatosPanelesTab(){
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+  if(!tab) return [];
+  var out = [];
+  (tab.panels || []).forEach(function(p){
+    if(p.tipo === 'kpi_row'){
+      (p.items || []).forEach(function(it){ out.push({ titulo: it.titulo, tipo: 'kpi', filas: [{ Valor: _gdResolver(it.fuente).scalar }] }); });
+      return;
+    }
+    if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
+    if(p.tipo === 'pie'){
+      var r = _gdResolver(p.fuente);
+      out.push({ titulo: p.titulo, tipo: 'pie', filas: (r.labels || []).map(function(l, idx){ return { Categoria: l, Valor: (r.values || [])[idx] }; }) });
+      return;
+    }
+    if(p.tipo === 'tabla'){
+      var carga = _gdCargaMes(p.fuente.s);
+      out.push({ titulo: p.titulo, tipo: 'tabla', filas: carga ? (carga.filas || []) : [] });
+      return;
+    }
+    // line / bar / area / combo -> serie(s)
+    var series = p.series || (p.barras || []).map(function(b){ return b; });
+    if(p.linea) series = series.concat([p.linea]);
+    var labels = null;
+    var cols = {};
+    series.forEach(function(s){
+      var rr = _gdResolver(s.fuente);
+      if(!labels) labels = rr.labels || [];
+      cols[s.label || 'Serie'] = rr.values || [];
+    });
+    var filas = (labels || []).map(function(l, idx){
+      var row = { Periodo: l };
+      Object.keys(cols).forEach(function(c){ row[c] = cols[c][idx]; });
+      return row;
+    });
+    out.push({ titulo: p.titulo, tipo: 'serie', filas: filas });
+  });
+  return out;
+}
+
+function _gdExportExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
+  var wb = XLSX.utils.book_new();
+  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(_gdDatosKpis()), 'KPIs');
+  var usados = {};
+  _gdDatosPanelesTab().forEach(function(pan){
+    if(!pan.filas.length) return;
+    var name = (pan.titulo || 'Panel').replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 28);
+    while(usados[name]) name = name.slice(0, 26) + '·' + (usados[name] = (usados[name] || 1) + 1);
+    usados[name] = 1;
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pan.filas), name);
+  });
+  XLSX.writeFile(wb, 'Dashboard_' + (_gd.cliente || '').replace(/\s+/g, '_') + '_' + mesLbl + '.xlsx');
+}
+
+// PDF por impresion nativa: abre una ventana solo con el tablero + estilo de
+// impresion y llama print(); el usuario elige "Guardar como PDF".
+function _gdExportPrint(){
+  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+  var kpis = _gdDatosKpis();
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+  var w = window.open('', '_blank');
+  if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
+  var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th></tr></thead><tbody>' +
+    kpis.map(function(r){ return '<tr><td>' + r.Indicador + '</td><td>' + _fmtCell(r.Valor) + '</td><td>' + _fmtCell(r['Var. %']) +
+      '</td><td>' + _fmtCell(r['% Meta']) + '</td><td>' + (r.Alerta || '') + '</td></tr>'; }).join('') + '</tbody></table>';
+  var secs = _gdDatosPanelesTab().filter(function(p){ return p.filas.length; }).map(function(pan){
+    var keys = Object.keys(pan.filas[0]);
+    return '<h3>' + (pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + k + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + _fmtCell(f[k]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  }).join('');
+  w.document.write('<!doctype html><html><head><title>' + (_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl + '</title>' +
+    '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}h2,h3{color:#0d4a5e}' +
+    'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}' +
+    'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
+    '<h1>' + (_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + mesLbl + ' — ' + _gd.cliente +
+    (_gd.compSel ? ' · comparado con ' + _gdMesLbl(_gd.compSel) : '') + '</p>' +
+    '<h2>Indicadores principales</h2>' + tblKpis +
+    '<h2>' + (tab ? tab.label : '') + '</h2>' + secs +
+    '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +
+    '</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); }, 300);
+}
+function _fmtCell(v){ return v === null || v === undefined || v === '' ? '' : (typeof v === 'number' ? v.toLocaleString('es-CO') : String(v)); }
+
+// Menu de exportacion (lo llama exportGenericDashboard del boton del header).
+function _gdExport(){
+  var m = document.getElementById('gd-export-menu');
+  if(m){ m.remove(); return; }
+  var btn = document.getElementById('gd-export-btn');
+  m = document.createElement('div');
+  m.id = 'gd-export-menu';
+  m.style.cssText = 'position:absolute;background:#fff;border:1px solid #dde8ef;border-radius:8px;box-shadow:0 8px 30px rgba(13,74,94,.2);z-index:50;overflow:hidden;font-size:0.85rem';
+  m.innerHTML =
+    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:#2a4a58" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
+    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:#2a4a58;border-top:1px solid #edf2f6" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
+  var r = btn.getBoundingClientRect();
+  m.style.top = (r.bottom + 6) + 'px';
+  m.style.left = Math.max(8, r.right - 160) + 'px';
+  m.style.width = '160px';
+  document.body.appendChild(m);
 }

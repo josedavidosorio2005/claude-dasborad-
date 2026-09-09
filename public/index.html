@@ -256,6 +256,27 @@
         </div>
       </div>
 
+      <!-- DASHBOARD BUILDER MODAL — constructor visual (Fase A6) -->
+      <div id="dashcfg-overlay">
+        <div id="dashcfg-modal">
+          <div class="aurora-header">
+            <div>
+              <h2 id="dashcfg-modal-title">Nuevo dashboard</h2>
+              <div class="aurora-sub">Define secciones de carga, KPIs y paneles. Previsualiza antes de guardar.</div>
+            </div>
+            <button class="aurora-close" onclick="closeDashCfgModal()">X Cerrar</button>
+          </div>
+          <div class="aurora-card">
+            <div id="dashcfg-body"></div>
+            <div class="modal-btns" style="margin-top:16px;position:sticky;bottom:0;background:var(--c-surface);padding-top:10px">
+              <button class="btn-cancel" onclick="closeDashCfgModal()">Cancelar</button>
+              <button class="btn-cancel" onclick="previewDashCfg()">Previsualizar</button>
+              <button class="btn-primary" onclick="saveDashCfg()">Guardar dashboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- INVENTARIO SECTION -->
       <div id="section-inventario" class="hidden">
         <div class="page-title">Gestion de Inventario</div>
@@ -456,7 +477,7 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="aurora-close" id="gd-export-btn" onclick="exportGenericDashboard()" style="display:none">Exportar</button>
+        <button class="aurora-close" id="gd-export-btn" onclick="exportGenericDashboard()">Exportar</button>
         <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
       </div>
     </div>
