@@ -8,7 +8,7 @@
 
 var _gd = {
   cliente: null, config: null, cargas: {}, periodos: [],
-  mesSel: '', vistaSel: '', tab: null, charts: {}
+  mesSel: '', compSel: '', vistaSel: '', tab: null, charts: {}
 };
 
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -107,6 +107,93 @@ function _gdResolver(f){
   return { scalar: null };
 }
 
+// ── Analisis: valor del periodo de comparacion (periodo anterior o el elegido) ──
+// Para una fuente 'ultimo', devuelve el escalar del periodo con el que se compara:
+//   - si el usuario eligio "Comparar contra", ese periodo exacto (o el ultimo <=).
+//   - si no, el periodo inmediatamente anterior al que se esta viendo.
+function _gdResolverComp(f){
+  if(!f || f.modo !== 'ultimo') return { scalar: null, periodo: null };
+  var actual = _gdCargaMes(f.s);
+  if(!actual) return { scalar: null, periodo: null };
+  var arr = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return b.periodo.localeCompare(a.periodo); });
+  var prev;
+  if(_gd.compSel){
+    prev = arr.filter(function(c){ return c.periodo <= _gd.compSel && c.periodo !== actual.periodo; })[0];
+  }
+  if(!prev){
+    prev = arr.filter(function(c){ return c.periodo < actual.periodo; })[0];
+  }
+  return prev ? { scalar: _gdEvalCampo(_gdPickFila(prev.filas), f), periodo: prev.periodo } : { scalar: null, periodo: null };
+}
+
+// Variacion absoluta y % entre el valor actual y el de comparacion.
+function _gdVariacion(cur, prev){
+  if(cur === null || cur === undefined || prev === null || prev === undefined) return null;
+  var abs = cur - prev;
+  var pct = prev === 0 ? null : Math.round((abs / Math.abs(prev)) * 1000) / 10;
+  return { abs: abs, pct: pct, sube: abs > 0, baja: abs < 0, plano: abs === 0 };
+}
+
+// Meta objetivo de un KPI: numero fijo, o una fuente { s, campo, modo }.
+function _gdMetaValor(k){
+  if(k.meta === null || k.meta === undefined) return null;
+  if(typeof k.meta === 'number') return k.meta;
+  var r = _gdResolver(k.meta);
+  return r.scalar;
+}
+
+// ¿El valor esta fuera del rango esperado? k.alerta = { min?, max?, caidaPct? }
+function _gdFueraDeRango(cur, prev, k){
+  var a = k.alerta;
+  if(!a || cur === null || cur === undefined) return false;
+  if(a.min !== undefined && a.min !== null && cur < a.min) return true;
+  if(a.max !== undefined && a.max !== null && cur > a.max) return true;
+  if(a.caidaPct !== undefined && a.caidaPct !== null && prev !== null && prev !== undefined && prev > 0){
+    if(((prev - cur) / prev) * 100 >= a.caidaPct) return true;
+  }
+  return false;
+}
+
+// HTML de una tarjeta KPI "de BI": valor grande, tendencia vs comparacion,
+// avance de meta y borde de alerta si esta fuera de rango.
+function _gdKpiCardHtml(k){
+  var cur = _gdResolver(k.fuente).scalar;
+  var comp = _gdResolverComp(k.fuente);
+  var prev = comp.scalar;
+  var vari = _gdVariacion(cur, prev);
+  var meta = _gdMetaValor(k);
+  var alerta = _gdFueraDeRango(cur, prev, k);
+  var mejorBaja = k.mejorDireccion === 'baja'; // para % inasistencia, abandono, costo…
+
+  var txt = (cur === null || cur === undefined) ? '—' : _gdFmt(cur, k.formato);
+  var cls = k.cls || '';
+  if(k.semaforo && cur !== null && cur !== undefined) cls = _gdNum(cur) >= k.semaforo ? 'kpi-green' : 'kpi-red';
+
+  var trendHtml = '';
+  if(vari){
+    var bueno = vari.plano ? null : (mejorBaja ? vari.baja : vari.sube);
+    var tcls = vari.plano ? 'gd-tr-flat' : (bueno ? 'gd-tr-up' : 'gd-tr-down');
+    var arrow = vari.plano ? '→' : (vari.sube ? '▲' : '▼');
+    var pctTxt = vari.pct === null ? '' : (vari.pct > 0 ? '+' : '') + vari.pct + '%';
+    var absTxt = _gdFmt(Math.abs(vari.abs), k.formato);
+    trendHtml = '<div class="gd-kpi-trend ' + tcls + '">' + arrow + ' ' + (pctTxt ? pctTxt + ' ' : '') +
+      '<span>(' + (vari.abs >= 0 ? '+' : '-') + absTxt + ') vs ' + (comp.periodo ? _gdMesLbl(comp.periodo) : 'periodo anterior') + '</span></div>';
+  }
+
+  var metaHtml = '';
+  if(meta !== null && meta !== undefined && meta !== 0 && cur !== null && cur !== undefined){
+    var av = Math.round((cur / meta) * 1000) / 10;
+    var mcls = av >= 100 ? 'gd-meta-ok' : (av >= 80 ? 'gd-meta-warn' : 'gd-meta-bad');
+    metaHtml = '<div class="gd-kpi-meta ' + mcls + '"><span class="gd-meta-bar"><i style="width:' +
+      Math.max(0, Math.min(100, av)) + '%"></i></span>' + av + '% de la meta (' + _gdFmt(meta, k.formato) + ')</div>';
+  }
+
+  return '<div class="aurora-kpi gd-kpi ' + cls + (alerta ? ' gd-kpi-alerta' : '') + '">' +
+    (alerta ? '<div class="gd-kpi-flag" title="Valor fuera del rango esperado">⚠</div>' : '') +
+    '<div class="kv">' + txt + '</div><div class="kl">' + k.titulo + '</div>' +
+    trendHtml + metaHtml + '</div>';
+}
+
 // ── Chart helpers (reutiliza lo/loBar/loPie/paleta de charts.js) ──
 function _gdChart(canvasId, cfg){
   var el = document.getElementById(canvasId);
@@ -154,6 +241,7 @@ async function openGenericDashboard(cliente){
   Object.keys(_gd.cargas).forEach(function(s){ _gd.cargas[s].forEach(function(c){ set[c.periodo] = true; }); });
   _gd.periodos = Object.keys(set).sort().reverse();
   _gd.mesSel = '';
+  _gd.compSel = '';
   _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
 
   // Calidad: si algun panel la usa, cargar los monitoreos de esa campana
@@ -196,6 +284,17 @@ function renderGenericHeader(){
     ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('')
     : '<option value="">Sin datos</option>';
   ms.value = _gd.mesSel || (_gd.periodos[0] || '');
+
+  // "Comparar contra": periodo anterior automatico + cualquier periodo previo.
+  var cs = document.getElementById('gd-comp-sel');
+  if(cs){
+    var verMes = ms.value;
+    var previos = _gd.periodos.filter(function(p){ return !verMes || p < verMes; });
+    cs.innerHTML = '<option value="">Periodo anterior (auto)</option>' +
+      previos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('');
+    cs.value = _gd.compSel && previos.indexOf(_gd.compSel) !== -1 ? _gd.compSel : '';
+    if(cs.value !== _gd.compSel) _gd.compSel = cs.value;
+  }
 }
 
 function onGdMesChange(){
@@ -204,6 +303,12 @@ function onGdMesChange(){
   renderGenericKpis();
   renderGenericTab(_gd.tab);
 }
+function onGdCompChange(){
+  _gd.compSel = document.getElementById('gd-comp-sel').value;
+  renderGenericKpis();
+  renderGenericTab(_gd.tab);
+}
+function exportGenericDashboard(){ if(typeof _gdExport === 'function') _gdExport(); }
 function onGdVistaChange(){
   _gd.vistaSel = document.getElementById('gd-vista-sel').value;
   renderGenericKpis();
@@ -227,14 +332,7 @@ function renderGenericKpis(){
   var strip = document.getElementById('gd-kpis');
   var kpis = (_gd.config.layout && _gd.config.layout.kpis) || [];
   if(!kpis.length){ strip.innerHTML = ''; renderGenericBanner(); return; }
-  strip.innerHTML = kpis.map(function(k){
-    var r = _gdResolver(k.fuente);
-    var val = r.scalar;
-    var txt = (val===null || val===undefined) ? '—' : _gdFmt(val, k.formato);
-    var cls = k.cls || '';
-    if(k.semaforo && val!==null && val!==undefined) cls = _gdNum(val) >= k.semaforo ? 'kpi-green' : 'kpi-red';
-    return '<div class="aurora-kpi '+cls+'"><div class="kv">'+txt+'</div><div class="kl">'+k.titulo+'</div></div>';
-  }).join('');
+  strip.innerHTML = kpis.map(_gdKpiCardHtml).join('');
   renderGenericBanner();
 }
 
@@ -287,11 +385,7 @@ function _gdRenderPanel(p, i){
 
   if(p.tipo === 'kpi_row'){
     var el = document.getElementById('gd-p'+i); if(!el) return;
-    el.innerHTML = (p.items||[]).map(function(it){
-      var r = _gdResolver(it.fuente);
-      var txt = (r.scalar===null||r.scalar===undefined) ? '—' : _gdFmt(r.scalar, it.formato);
-      return '<div class="aurora-kpi '+(it.cls||'')+'"><div class="kv">'+txt+'</div><div class="kl">'+it.titulo+'</div></div>';
-    }).join('');
+    el.innerHTML = (p.items||[]).map(_gdKpiCardHtml).join('');
     return;
   }
 
@@ -333,8 +427,8 @@ function _gdRenderPanel(p, i){
       return { label: s.label, data: rr.values||[], backgroundColor: color, borderRadius:3 };
     });
     var opts = (p.tipo==='line')
-      ? (p.unidad==='%' ? loPct() : (p.unidad==='tiempo' ? _gdTiempoOpts() : lo(null, 50)))
-      : loBar();
+      ? (p.unidad==='%' ? loPct() : (p.unidad==='tiempo' ? _gdTiempoOpts() : loFmt(lo(null, 50), p.unidad)))
+      : loFmt(loBar(), p.unidad);
     if(p.tipo==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
     _gdChart(canvasId, { type: p.tipo==='bar'?'bar':'line', data:{ labels: labels||[], datasets: datasets }, options: opts });
     return;

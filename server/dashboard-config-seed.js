@@ -130,9 +130,9 @@ const AURORA = {
   layout: {
     kpis: [
       kpi('Llamadas Entrada', ultimo('hist_llamadas'), 'miles'),
-      kpi('Nivel Atencion', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 90 }),
-      kpi('Abandonos', ultimo('abandonos'), 'entero', { cls: 'kpi-red' }),
-      kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org' }),
+      kpi('Nivel Atencion', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 90, meta: 90, alerta: { min: 85 } }),
+      kpi('Abandonos', ultimo('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
+      kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
       kpi('WhatsApp Entrada', ultimo('hist_whatsapp'), 'miles'),
       kpi('Nivel Ate. WPP', ultimo('nivel_atencion_wpp'), 'porcentaje', { cls: 'kpi-green' }),
       kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
