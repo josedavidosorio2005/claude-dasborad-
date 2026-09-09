@@ -68,6 +68,9 @@ function loFmt(o, unidad){
     o.scales.y.ticks = o.scales.y.ticks || {};
     o.scales.y.ticks.callback = function(v){ return gdFmtValor(v, unidad); };
   }
+  if(o.plugins.datalabels){
+    o.plugins.datalabels.formatter = function(v){ return v===null||v===undefined?'':gdFmtValor(v, unidad); };
+  }
   return o;
 }
 function loPie(t){

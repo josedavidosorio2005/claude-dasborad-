@@ -461,7 +461,11 @@ function _gdRenderPanel(p, i){
     var filas = carga ? (carga.filas||[]) : [];
     var html = '<tr>'+cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('')+'</tr>';
     if(!filas.length) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#9bb0bb">Sin datos cargados</td></tr>';
-    else html += filas.map(function(f){ return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]==null?'-':f[c.key])+'</td>'; }).join('')+'</tr>'; }).join('');
+    else html += filas.map(function(f){ return '<tr>'+cols.map(function(c){
+      var v = f[c.key];
+      if(v==null) return '<td>-</td>';
+      return '<td>'+(typeof v==='number' ? v.toLocaleString('es-CO') : v)+'</td>';
+    }).join('')+'</tr>'; }).join('');
     t.innerHTML = html;
     return;
   }

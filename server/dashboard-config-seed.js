@@ -251,6 +251,10 @@ const HLM = {
   },
 };
 
-const CONFIGS = [ORLANT, AURORA, HLM];
+// M3 (Fase A2): 9 dashboards de cliente mas, por plantilla estandar de contact
+// center. Se afinan desde el constructor visual, no aqui.
+const { CONFIGS_CLIENTE } = require('./dashboard-plantillas-cliente');
+
+const CONFIGS = [ORLANT, AURORA, HLM, ...CONFIGS_CLIENTE];
 
 module.exports = { CONFIGS };
