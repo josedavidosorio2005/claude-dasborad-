@@ -64,7 +64,23 @@ function _dcNuevaSeccion(){
     columnas:[ { key:'valor_1', label:'Valor 1', tipo:'entero', opcional:false } ] };
 }
 function _dcNuevoPanel(){ return { tipo:'line', titulo:'Nuevo panel', s:'', modo:'serie', campo:'', x:'', filtro:'', formula:'', formato:'entero', unidad:'', horizontal:false, campana:'' }; }
-function _dcNuevoKpi(){ return { titulo:'KPI', s:'', modo:'ultimo', campo:'', formula:'', formato:'miles' }; }
+function _dcNuevoKpi(){ return { titulo:'KPI', s:'', modo:'ultimo', campo:'', formula:'', formato:'miles', meta:'', direccion:'mayor' }; }
+
+// "Meta" en el formulario: numero (12.5) o nombre de columna (meta_ventas).
+// Se guarda como numero, o como fuente { s, modo:'ultimo', campo } si es columna.
+function _dcMetaFromCfg(k){
+  var m = k.meta;
+  if(m === null || m === undefined || m === '') return '';
+  if(typeof m === 'number') return String(m);
+  if(m && m.campo) return m.campo;
+  return '';
+}
+function _dcMetaToCfg(str, seccion){
+  var s = String(str == null ? '' : str).trim();
+  if(!s) return undefined;
+  if(/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  return { s: seccion || 'resumen', modo: 'ultimo', campo: s };
+}
 
 function _dcFromConfig(cfg){
   var secciones = Object.keys(cfg.secciones || {}).map(function(k){
@@ -77,7 +93,15 @@ function _dcFromConfig(cfg){
   });
   var kpis = (cfg.layout.kpis || []).map(function(k){
     var f = k.fuente || {};
-    return { titulo:k.titulo, s:f.s||'', modo:f.modo||'ultimo', campo:f.campo||'', formula:_dcFormulaStr(f), formato:k.formato||'miles' };
+    return {
+      titulo:k.titulo, s:f.s||'', modo:f.modo||'ultimo', campo:f.campo||'',
+      formula:_dcFormulaStr(f), formato:k.formato||'miles',
+      meta:_dcMetaFromCfg(k),
+      direccion:k.mejorDireccion === 'baja' ? 'menor' : 'mayor',
+      // Se conservan tal cual los campos de analisis que el formulario no edita
+      // (alerta, cls, semaforo) para no perderlos al guardar desde el constructor.
+      _extra:{ alerta:k.alerta, cls:k.cls, semaforo:k.semaforo }
+    };
   });
   return { cliente:cfg.cliente, titulo:cfg.titulo, vista:cfg.vista || null, secciones:secciones, tabs:tabs, kpis:kpis };
 }
@@ -133,7 +157,15 @@ function _dcToConfig(){
   });
   var kpis = st.kpis.map(function(k){
     var pf = _dcFuente({ s:k.s, modo:k.modo, campo:k.campo, formula:k.formula });
-    return { titulo:k.titulo, fuente:pf, formato:k.formato };
+    var out = { titulo:k.titulo, fuente:pf, formato:k.formato };
+    var meta = _dcMetaToCfg(k.meta, k.s);
+    if(meta !== undefined) out.meta = meta;
+    if(k.direccion === 'menor') out.mejorDireccion = 'baja';
+    var ex = k._extra || {};
+    if(ex.alerta) out.alerta = ex.alerta;
+    if(ex.cls) out.cls = ex.cls;
+    if(ex.semaforo !== undefined && ex.semaforo !== null) out.semaforo = ex.semaforo;
+    return out;
   });
   return {
     cliente: _dcEditCliente || st.cliente,
@@ -226,6 +258,8 @@ function _dcRenderFuenteRow(kind, k, ki){
     '<div class="ig"><label>Campo</label><input type="text" value="'+_esc(k.campo)+'" oninput="_dcKpi('+ki+',\'campo\',this.value)"></div>'+
     '<div class="ig"><label>Formula (opcional, ej. campo_a/campo_b*100)</label><input type="text" value="'+_esc(k.formula)+'" oninput="_dcKpi('+ki+',\'formula\',this.value)"></div>'+
     '<div class="ig"><label>Formato</label><select onchange="_dcKpi('+ki+',\'formato\',this.value)">'+_opt(_DC_FORMATOS,k.formato)+'</select></div>'+
+    '<div class="ig"><label>Meta (numero o columna)</label><input type="text" value="'+_esc(k.meta)+'" oninput="_dcKpi('+ki+',\'meta\',this.value)"></div>'+
+    '<div class="ig"><label>Mejor si</label><select onchange="_dcKpi('+ki+',\'direccion\',this.value)">'+_opt(['mayor','menor'],k.direccion||'mayor')+'</select></div>'+
     '<button class="btn-sm btn-delete" onclick="_dcDelKpi('+ki+')">x</button>'+
   '</div>';
 }
