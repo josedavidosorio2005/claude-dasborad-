@@ -40,3 +40,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build de la imagen Docker
         run: docker build -f server/Dockerfile -t inconexion:ci .
+      - name: Smoke test del contenedor (arranca y responde /api/health)
+        run: |
+          HASH=$(docker run --rm inconexion:ci node -e "console.log(require('bcryptjs').hashSync('ci-smoke',10))")
+          SECRET=$(head -c 48 /dev/urandom | base64 | tr -dc a-zA-Z0-9 | head -c 48)
+          docker run -d --name inconexion-ci -p 3000:3000 \
+            -e NODE_ENV=production \
+            -e JWT_SECRET="$SECRET" \
+            -e MASTER_ADMIN_PASSWORD_HASH="$HASH" \
+            -e CORS_ORIGIN=https://example.com \
+            inconexion:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:3000/api/health; then echo; echo "OK"; exit 0; fi
+            sleep 3
+          done
+          echo "El contenedor no respondio a /api/health"; docker logs inconexion-ci; exit 1

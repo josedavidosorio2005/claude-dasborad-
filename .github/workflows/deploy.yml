@@ -1,0 +1,76 @@
+name: Deploy a AWS
+
+# Se dispara SOLO cuando el workflow "CI" termina OK en la rama main.
+# Asi el deploy nunca corre sin que las pruebas hayan pasado.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # para autenticacion OIDC con AWS (sin claves de larga vida)
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: produccion   # permite exigir aprobacion manual en GitHub
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: inconexion
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y push de la imagen
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          IMAGE="$REGISTRY/$ECR_REPOSITORY"
+          docker build -f server/Dockerfile -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:latest"
+          echo "IMAGE=$IMAGE:$SHA" >> "$GITHUB_ENV"
+
+      - name: Desplegar en la instancia por SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} \
+              | docker login --username AWS --password-stdin ${{ steps.ecr.outputs.registry }}
+            export INCONEXION_IMAGE='${{ env.IMAGE }}'
+            docker compose pull
+            docker compose up -d
+            # Espera a que el health check pase (hasta ~60s) y limpia imagenes viejas.
+            for i in $(seq 1 20); do
+              if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then echo "OK healthy"; break; fi
+              sleep 3
+            done
+            curl -fsS http://127.0.0.1:3000/api/health
+            docker image prune -f
