@@ -1,56 +1,123 @@
-# InConexion Platform
+# InConexión Platform
 
-App completa (frontend + backend real) para gestión de usuarios, roles, permisos
-y dashboards. Reemplaza la versión anterior que solo guardaba datos en el
-navegador (`localStorage`) por un backend con base de datos, login seguro y
-API — lista para desplegarse en un servidor real.
-
-## Qué cambió respecto a la versión anterior
-
-| Antes | Ahora |
-|---|---|
-| Datos guardados en `localStorage` (solo en tu navegador) | Datos guardados en una base de datos SQLite en el servidor |
-| Contraseñas en texto plano dentro del HTML | Contraseñas con hash `bcrypt`, nunca en texto plano |
-| Sin login real (cualquiera podía editar el HTML) | Login con JWT (token de sesión) y permisos verificados en el servidor |
-| No se podía compartir entre usuarios/dispositivos | Cualquier usuario, desde cualquier dispositivo, ve los mismos datos |
-| No corría "como app" en un servidor | Es una app Node.js lista para desplegar |
+App completa (frontend + backend real) para un contact center / BPO: gestión de
+usuarios, roles y permisos, **control de Calidad**, **cronograma de metas**,
+**dashboards de cliente configurables** con análisis de datos, e **Inventario** y
+**Gerencia**. Todo con base de datos, login seguro y API — lista para desplegar
+en un servidor real (Docker) o en **AWS**.
 
 **No llama a Claude ni a ninguna IA en ningún punto** — es una app web
 tradicional (Node.js + Express + SQLite) con su propio login.
+
+---
+
+## Documentación
+
+| Archivo | Para qué |
+|---|---|
+| **README.md** (este) | Visión general, instalación local, seguridad, despliegue con Docker |
+| [`PROGRESS.md`](PROGRESS.md) | Estado del proyecto fase por fase (fuente de verdad del avance) |
+| [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) | Checklist "¿listo para lanzar?", entregables, pendientes de negocio, costos |
+| [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) | **Despliegue en AWS**: arquitectura, runbook desde cero, recuperación, secretos, red, backups, CloudWatch, pipeline |
+| [`DEPLOY_REPORT.md`](DEPLOY_REPORT.md) | Endurecimiento de seguridad y despliegue genérico (Docker/VPS) |
+| [`REAL_DATA_REPORT.md`](REAL_DATA_REPORT.md) | Migración de Calidad/Metas/dashboards a datos reales en el servidor |
+| [`UI_CLEANUP_REPORT.md`](UI_CLEANUP_REPORT.md) | Reorganización del frontend por módulos |
+
+---
+
+## Qué hace la app
+
+### Usuarios, roles y permisos
+9 roles (`ADMIN`, `AUX_ADMIN`, `CALIDAD`, `INVENTARIO`, `GERENCIA`,
+`CLIENTES_DASH`, `SUPERVISOR`, `ASESOR`, `REPORTES`) con permisos verificados en
+el servidor, incluyendo permisos por **campaña** (`campana_X`) y por **cliente**
+(`cliente_X`). Historial de auditoría *append-only*.
+
+### Calidad y Metas
+Monitoreos de calidad por asesor/campaña con puntaje **calculado en el servidor**
+(no manipulable desde el navegador), plantillas de calificación por campaña, y un
+cronograma de metas con cumplimiento reproducible. Todo en SQLite + API.
+
+### Dashboards de cliente — configurables, con análisis
+- **12 dashboards** (Aurora, Orlant, Hospital La María + 9 de contact center),
+  **todos definidos por configuración**, no por código. Crear o ajustar uno es
+  una tarea visual.
+- **Constructor visual** (panel admin → *Dashboards de Cliente*): elegir cliente,
+  definir secciones de carga (Excel), KPIs y paneles, elegir tipo de gráfico y
+  fuente, **reordenar** y **previsualizar** antes de guardar.
+- **Motor de análisis**: cada KPI muestra tendencia vs periodo de comparación
+  (variación absoluta y %), avance contra la meta (número o columna), tendencia
+  de N periodos, y **resaltado de alerta automático** cuando un valor se sale de
+  rango. Selector "Comparar contra" cualquier periodo previo.
+- **6 tipos de panel**: KPI con tendencia, barras, líneas, área, pie/donut,
+  tabla (+ combo barras/línea).
+- **Preferencia por visor**: cualquier usuario cambia el tipo de gráfico de un
+  panel para *su* vista (no afecta a los demás, no requiere permiso).
+- **Exportación** del dashboard a Excel (`.xlsx` con los datos calculados) y PDF.
+- Cada dashboard es visible **solo** para los roles con el permiso `cliente_<NOMBRE>`.
+
+### Inventario y Gerencia
+Se muestran con el **mismo motor de dashboards** (mismos paneles, mismo análisis,
+misma exportación). Sus datos salen de sus tablas propias:
+- **Inventario**: stock, estados, valor, movimientos (entrada/salida/ajuste/
+  transferencia) con actualización atómica, carga masiva por Excel, alerta de
+  "sin stock".
+- **Gerencia**: indicadores ejecutivos mensuales, % de cumplimiento de metas con
+  tendencia mes a mes, carga masiva por Excel.
+
+Los modales de gestión son la **entrada de datos**; el botón **"Ver dashboard"**
+abre la vista de análisis.
+
+---
 
 ## Estructura del proyecto
 
 ```
 inconexion-app/
-├── server/                  → Backend (Node.js + Express)
-│   ├── server.js             createApp() + arranque, endurecimiento, shutdown
-│   ├── config.js             Validación fail-fast de variables de entorno (zod)
-│   ├── db.js                 Conexión y esquema de la base de datos (SQLite)
-│   ├── auth.js               Emisión/verificación de JWT y checks de permisos
-│   ├── validation.js         Esquemas zod de entrada por endpoint
-│   ├── calidad-logic.js      Cálculos puros del módulo de Calidad (puntaje, metas, cumplimiento)
-│   ├── calidad-plantillas-seed.js  Plantillas de calificación por campaña (semilla)
-│   ├── dashboard-secciones.js  Secciones de cada dashboard de cliente y su plantilla de Excel
-│   ├── hash-password.js      Utilidad para generar hashes de contraseña
-│   ├── scripts/backup.js     Copia de seguridad del archivo SQLite
-│   ├── tests/                Pruebas (node:test + supertest)
-│   ├── Dockerfile            Imagen de producción (multi-stage, usuario no root)
-│   ├── .env.example          Plantilla de configuración (local, sin Docker)
+├── server/                            → Backend (Node.js + Express)
+│   ├── server.js                       createApp() + arranque + shutdown ordenado
+│   ├── bootstrap.js                    Entrypoint de producción: hidrata secretos de AWS SSM y arranca
+│   ├── secrets.js                      Lectura de secretos desde AWS SSM Parameter Store
+│   ├── config.js                       Validación fail-fast de variables de entorno (zod)
+│   ├── db.js                           Esquema y conexión SQLite + semillas idempotentes
+│   ├── auth.js                         JWT + checks de permisos (rol, campaña, cliente)
+│   ├── validation.js                   Esquemas zod de entrada por endpoint
+│   ├── calidad-logic.js                Cálculos puros de Calidad (puntaje, metas, cumplimiento)
+│   ├── calidad-plantillas-seed.js      Plantillas de calificación por campaña (semilla)
+│   ├── dashboard-secciones.js          Secciones/plantillas de Excel de los 3 dashboards base
+│   ├── dashboard-config-seed.js        Configuración de los dashboards base + los de M3
+│   ├── dashboard-plantillas-cliente.js Plantillas estándar (ventas / cobranza / atención) de los 9 clientes
+│   ├── dashboard-adapters.js           Inventario y Gerencia sobre el motor genérico
+│   ├── hash-password.js                Utilidad para generar hashes bcrypt
+│   ├── scripts/backup.js               Backup del SQLite → local + S3 (versionado)
+│   ├── tests/                          node:test + supertest (incl. role-matrix.test.js)
+│   ├── Dockerfile                      Imagen de producción (multi-stage, usuario no root)
 │   └── package.json
-├── public/
-│   └── index.html            Frontend (conectado a la API)
+├── public/                            → Frontend (HTML + JS por módulo, sin framework)
+│   ├── index.html
+│   ├── css/styles.css                  Design tokens (color, tipografía, espaciado)
+│   └── js/                             api, session, users, roles-perms, calidad, metas,
+│                                       cargas, dashboard-generic, dashboards-admin,
+│                                       dashboards-core, charts, inventario, gerencia, ...
 ├── deploy/
-│   └── Caddyfile             Ejemplo de reverse proxy con HTTPS automático
-├── .github/workflows/ci.yml  Integración continua (instala + pruebas)
-├── docker-compose.yml        Servicio app + volumen persistente + Caddy opcional
-├── app.env.example           Plantilla de configuración (Docker/producción)
-├── DEPLOY_REPORT.md          Resumen de cambios y guía de despliegue desde cero
-└── README.md                 Este archivo
+│   ├── Caddyfile                       Reverse proxy con HTTPS automático
+│   ├── docker-compose.prod.yml         Compose de la instancia AWS (descarga imagen de ECR)
+│   ├── inconexion-backup.{service,timer}  systemd timer del backup diario
+│   ├── cloudwatch-agent-config.json    Logs + métricas a CloudWatch
+│   └── iam-policy-instance.json        Política IAM de mínimo privilegio
+├── .github/workflows/
+│   ├── ci.yml                          Pruebas (Node 18/20/22) + build Docker + smoke test
+│   └── deploy.yml                      Deploy a AWS tras CI OK en main (OIDC → ECR → SSH)
+├── docker-compose.yml                 Servicio app + volumen persistente + Caddy opcional
+├── app.env.example                   Plantilla de configuración (Docker / producción)
+└── *.md                              Documentación (ver tabla arriba)
 ```
+
+---
 
 ## 1. Instalación local (para probar en tu computador)
 
-Requisitos: tener [Node.js](https://nodejs.org) instalado (v18 o superior).
+Requisitos: [Node.js](https://nodejs.org) v18 o superior.
 
 ```bash
 cd server
@@ -60,31 +127,28 @@ cp .env.example .env
 
 Edita `server/.env` y completa:
 
-1. **JWT_SECRET**: genera uno con
+1. **JWT_SECRET** (32+ caracteres):
    ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
    ```
-2. **MASTER_ADMIN_PASSWORD_HASH**: elige una contraseña para el admin maestro
-   y genera su hash con
+2. **MASTER_ADMIN_PASSWORD_HASH**:
    ```bash
    node hash-password.js "tu-contrasena-segura"
    ```
-   Pega el resultado (empieza con `$2a$...`) en `MASTER_ADMIN_PASSWORD_HASH`.
-
-Luego arranca el servidor:
+   Pega el resultado (empieza con `$2a$`/`$2b$`) en la variable.
 
 ```bash
-npm start
+npm start          # -> http://localhost:3000
 ```
 
-Abre `http://localhost:3000` en el navegador. Ya no es un archivo HTML suelto:
-es una app real corriendo en un servidor.
+> En local `npm start` ejecuta `bootstrap.js`, que se comporta igual que
+> `server.js` mientras no definas `SSM_PARAM_PREFIX`.
 
-### Usuarios de ejemplo (creados automáticamente la primera vez)
+### Usuarios de ejemplo (creados la primera vez)
 
 | Usuario | Contraseña | Rol |
 |---|---|---|
-| admin | (la que definiste en MASTER_ADMIN_PASSWORD_HASH) | Administrador maestro |
+| admin | la de `MASTER_ADMIN_PASSWORD_HASH` | Administrador maestro |
 | crodriguez | calidad123 | Calidad |
 | mlopez | inv123 | Inventario |
 | jherrera | ger123 | Gerencia |
@@ -92,195 +156,153 @@ es una app real corriendo en un servidor.
 | lrios | aux123 | Auxiliar Admin |
 | psuarez | admin456 | Admin |
 
-**Cambia estas contraseñas de ejemplo** (desde el panel de administración,
-opción "cambiar contraseña") antes de usar la app con datos reales.
+**Cambia estas contraseñas** antes de usar la app con datos reales.
 
-> **¿Vas directo a producción?** Salta a
-> [3. Desplegar con Docker](#3-desplegar-con-docker-recomendado) y luego
-> [`DEPLOY_REPORT.md`](DEPLOY_REPORT.md), que tiene el paso a paso completo
-> desde cero.
+---
 
-## 2. Cómo funciona la seguridad
+## 2. Seguridad
 
-- **Configuración validada al arrancar (fail-fast)**: `server/config.js` revisa
-  al inicio que estén todas las variables críticas y con formato válido
-  (`JWT_SECRET` de 32+ caracteres, `MASTER_ADMIN_PASSWORD_HASH` con formato
-  bcrypt, `PORT` numérico, y en producción `CORS_ORIGIN` obligatorio con un
-  dominio explícito). Si algo falta o está mal, el proceso **no arranca**:
-  imprime qué falta y termina.
-- **Contraseñas**: se guardan con `bcrypt` (hash de un solo sentido). Ni el
-  desarrollador ni nadie con acceso a la base de datos puede ver la
-  contraseña original. Política mínima: **8 caracteres** al crear o cambiar.
-- **Sesión**: al iniciar sesión el servidor entrega un token (JWT) que el
-  navegador guarda en memoria (no en `localStorage`). Cada petición lo incluye.
-- **Permisos**: cada acción sensible (crear/editar/eliminar usuario, cambiar
-  contraseña, suspender, gestionar permisos) se vuelve a verificar **en el
-  servidor**, con los datos reales de la base de datos. Manipular el navegador
-  no sirve. Un usuario suspendido a mitad de sesión también deja de poder actuar.
-- **Validación de entrada**: cada endpoint valida tipos, longitudes y formato
-  con `zod` (usuario sin espacios ni caracteres raros, rol dentro de la lista
-  válida, permisos booleanos, etc.). Lo que no cumple se rechaza con `400`.
-- **Anti fuerza-bruta y anti abuso**: el login está limitado (20 intentos / 15
-  min por IP) y además hay un límite global sobre toda la API (300 req / 15 min
-  por IP). Ambos son configurables por variables de entorno.
-- **Cabeceras de seguridad**: `helmet` con una **Content-Security-Policy
-  explícita** (no la de por defecto), afinada para una app que sirve su propio
-  HTML/JS y carga `xlsx` desde `cdnjs`. Chart.js va embebido en el HTML.
-- **Manejo de errores**: middleware centralizado. El cliente recibe un `500`
-  genérico; el detalle real (stack) se registra solo en el servidor.
-- **Logging de accesos**: `morgan` (`combined` en producción). No registra
-  contraseñas ni el header `Authorization`.
-- **Apagado ordenado**: ante `SIGTERM`/`SIGINT` cierra el servidor HTTP y la
-  conexión SQLite antes de salir (importante en Docker).
+- **Configuración fail-fast**: `config.js` valida al arrancar `JWT_SECRET`
+  (32+), `MASTER_ADMIN_PASSWORD_HASH` (formato bcrypt), `PORT`, y en producción
+  `CORS_ORIGIN` obligatorio con dominio explícito (sin `*`). Si algo falta, el
+  proceso **no arranca**.
+- **Secretos en producción**: si defines `SSM_PARAM_PREFIX`, el servidor lee
+  `JWT_SECRET`, `MASTER_ADMIN_PASSWORD_HASH`, `MASTER_ADMIN_USER` y `CORS_ORIGIN`
+  desde **AWS SSM Parameter Store** (rol IAM de la instancia, sin claves). No hay
+  `.env` con secretos en disco. Ver [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) §3.
+- **Contraseñas**: `bcrypt`, nunca en texto plano. Mínimo 8 caracteres.
+- **Sesión**: JWT en memoria del navegador (no `localStorage`).
+- **Permisos**: cada acción sensible se re-verifica en el servidor con los datos
+  reales. Un usuario suspendido a mitad de sesión deja de poder actuar. Verificado
+  para los 9 roles en `server/tests/role-matrix.test.js`.
+- **Validación de entrada**: `zod` en todos los endpoints (tipos, longitudes,
+  formato). Lo que no cumple → `400`.
+- **Anti abuso**: login limitado (20 intentos / 15 min por IP) + límite global
+  (300 req / 15 min por IP).
+- **Cabeceras**: `helmet` con CSP explícita.
+- **Errores**: middleware centralizado; el cliente recibe `500` genérico, el
+  detalle solo va al log del servidor.
+- **Logging**: `morgan` (`combined` en producción); nunca registra contraseñas ni
+  `Authorization`.
+- **Apagado ordenado**: `SIGTERM`/`SIGINT` cierran HTTP + SQLite.
 
-## 3. Desplegar con Docker (recomendado)
+---
 
-Necesitas Docker con **Compose ≥ v2.30** (`docker compose version`). En un VPS
-(DigitalOcean, Hetzner, Contabo…) con tu dominio apuntando a la máquina.
+## 3. Desplegar con Docker (VPS genérico)
+
+Docker con **Compose ≥ v2.30**. Dominio apuntando a la máquina.
 
 ```bash
-# 1. Clona el repo en el servidor
 git clone <tu-repo> inconexion-app && cd inconexion-app
-
-# 2. Crea el app.env a partir de la plantilla
 cp app.env.example app.env
 
-# 3. Genera tus secretos
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"      # -> JWT_SECRET
-docker compose run --rm --no-deps app node hash-password.js "TU-CONTRASENA-ADMIN"   # -> MASTER_ADMIN_PASSWORD_HASH
+# Secretos
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"                 # -> JWT_SECRET
+docker compose run --rm --no-deps app node hash-password.js "TU-CONTRASENA-ADMIN"        # -> MASTER_ADMIN_PASSWORD_HASH
 
-# 4. Edita app.env: pega JWT_SECRET y MASTER_ADMIN_PASSWORD_HASH (con sus "$",
-#    sin comillas), pon CORS_ORIGIN=https://tudominio.com y TRUST_PROXY=1
+# Edita app.env: JWT_SECRET, MASTER_ADMIN_PASSWORD_HASH (con sus "$", sin comillas),
+#                CORS_ORIGIN=https://tudominio.com, TRUST_PROXY=1
+# Edita deploy/Caddyfile: tu dominio y tu email.
 
-# 5. Levanta la app (con reverse proxy + HTTPS automático)
-#    Antes edita deploy/Caddyfile con tu dominio y tu email.
 docker compose --profile proxy up -d --build
-
-# 6. Comprueba
-curl -s https://tudominio.com/api/health   # -> {"ok":true}
+curl -s https://tudominio.com/api/health     # -> {"ok":true}
 ```
 
-> Los secretos van en **`app.env`** (no `.env`): Docker Compose lee `.env`
-> automáticamente para interpolar el YAML y se quejaría del `$` del hash bcrypt.
-> `docker-compose.yml` usa `env_file` con `format: raw` para pasar `app.env`
-> literal.
+- La BD SQLite vive en el volumen `inconexion-data` y **sobrevive** a
+  `restart` / `down`+`up` / actualizaciones de imagen. Solo `down -v` la borra.
+- Sin reverse proxy en esa máquina: omite `--profile proxy` y ajusta `ports`.
 
-- La base de datos SQLite vive en el **volumen** `inconexion-data`
-  (`/app/server/data` dentro del contenedor) y **sobrevive** a
-  `docker compose restart`, `down`/`up` y actualizaciones de imagen
-  (verificado). Solo `docker compose down -v` la borra.
-- Sin reverse proxy en esa máquina (p. ej. detrás de un balanceador que ya hace
-  TLS): omite `--profile proxy` y ajusta `ports` en `docker-compose.yml`.
-- Para PaaS (Render, Railway): también sirve — usa `server/` como raíz,
-  `npm ci` + `npm start`, configura las mismas variables de entorno en el panel
-  y añade un disco persistente montado en `server/data`. Detalles en
-  [`DEPLOY_REPORT.md`](DEPLOY_REPORT.md).
+---
 
-## 4. Poner detrás de HTTPS
+## 4. Desplegar en AWS  ⭐
 
-El ejemplo incluido usa **Caddy**, que obtiene y renueva el certificado TLS
-solo (Let's Encrypt) y redirige HTTP→HTTPS sin configuración extra.
+Arquitectura recomendada: **1 instancia Lightsail + Docker + Caddy + disco de
+bloques** para SQLite, con **SSM** (secretos), **S3** (backups versionados) y
+**CloudWatch** (logs + alarma de health check).
 
-1. Edita [`deploy/Caddyfile`](deploy/Caddyfile): reemplaza `tudominio.com` y
-   `tu-email@ejemplo.com`.
-2. Asegúrate de que el DNS (registro A / AAAA) de tu dominio apunta a la IP
-   pública del servidor y que los puertos **80 y 443** están abiertos.
-3. En `app.env`: `CORS_ORIGIN=https://tudominio.com` y `TRUST_PROXY=1`.
-4. `docker compose --profile proxy up -d`.
+El runbook completo paso a paso (crear instancia, SSM, S3, ECR, dominio, HTTPS,
+backups, monitoreo, pipeline, recuperación y costos ~US$18–25/mes) está en:
 
-Caddy queda como servicio `caddy` en `docker-compose.yml` y hace
-`reverse_proxy` al servicio `app`. Si prefieres Nginx, el patrón es el mismo
-(`proxy_pass http://app:3000`, bloque `listen 443 ssl`, redirección 80→443) pero
-gestionando los certificados con `certbot` aparte.
+**→ [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md)**
 
-## 5. Backups de la base de datos
+Pipeline: `.github/workflows/deploy.yml` despliega automáticamente tras pasar CI
+en `main` (OIDC → build → ECR → SSH → `docker compose pull && up -d` + health
+check). Requiere crear en AWS/GitHub los recursos y secrets del §8 de ese
+documento.
 
-`server/scripts/backup.js` hace una copia consistente del archivo SQLite (usa la
-API de backup en caliente de `better-sqlite3`, no hace falta parar la app):
+---
+
+## 5. Backups
+
+`server/scripts/backup.js` hace una copia consistente del SQLite (backup en
+caliente de `better-sqlite3`, sin parar la app) y, si defines `BACKUP_S3_BUCKET`,
+la sube a S3 (bucket con versionado).
 
 ```bash
-# copia puntual -> server/data/backups/inconexion-<fecha>.db
-docker compose exec app node scripts/backup.js
-
-# con retención (conserva las 14 más recientes)
-docker compose exec app node scripts/backup.js --keep 14
+docker compose exec app node scripts/backup.js --keep 14      # local, retención 14
 ```
 
-Para automatizarlo, añade un cron en el **host** (no dentro del contenedor):
+Automatizado en AWS con `deploy/inconexion-backup.timer` (systemd, diario 03:15).
 
-```cron
-0 3 * * * cd /ruta/inconexion-app && docker compose exec -T app node scripts/backup.js --keep 14 >> /var/log/inconexion-backup.log 2>&1
-```
-
-Copia además los backups a otra máquina / almacenamiento (S3, otro disco): un
-backup en el mismo servidor no protege ante pérdida del servidor.
+---
 
 ## 6. SQLite vs Postgres — cuándo migrar
 
-SQLite en un solo archivo es **adecuado** para esta app con tráfico bajo/medio:
-un solo proceso, decenas de usuarios del panel de administración, lecturas
-frecuentes y escrituras esporádicas (altas/bajas de usuarios, historial). Es más
-simple de operar y respaldar, y no hay servidor de BD que mantener.
+SQLite en un archivo es adecuado para esta app (un proceso, tráfico bajo/medio).
+Migrar a **Postgres + varias instancias** cuando: se necesite más de una
+instancia de app (alta disponibilidad), aparezcan `SQLITE_BUSY` recurrentes,
+varios servicios escriban la misma BD, o se requiera point-in-time recovery.
+Criterio detallado en [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) §2. Hoy **no
+se migra**.
 
-Conviene plantearse **Postgres** cuando aparezca alguna de estas señales:
-
-- Necesitas correr **varias instancias** de la app (balanceo horizontal,
-  alta disponibilidad, despliegues sin downtime): SQLite no se comparte entre
-  nodos.
-- Escrituras concurrentes sostenidas (aprox. **>50–100 por segundo**) o errores
-  `SQLITE_BUSY` frecuentes en los logs.
-- Varios servicios distintos necesitan leer/escribir la misma base de datos.
-- Requisitos de réplica, point-in-time recovery o backups gestionados por un
-  proveedor.
-
-Hoy **no se migra**; este es el criterio para decidirlo más adelante.
+---
 
 ## 7. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra
+cd server && npm test          # node:test + supertest, sin infra extra  ->  68/68
 ```
 
-Cubren: login correcto/incorrecto (admin maestro y usuario normal), usuario
-suspendido, acceso sin permiso (`403`) y con permiso a las acciones de usuarios,
-que las contraseñas/hashes **nunca** aparecen en las respuestas, que el rate
-limit de login bloquea (`429`), la validación de entrada (`400`), el módulo de
-Calidad (puntaje calculado y reproducible en el servidor, acceso por campaña,
-cronograma de metas y cumplimiento), la carga de datos de dashboards por Excel
-(permiso `cargarDatos`, validación de la plantilla, upsert por período), y los
-módulos de Inventario y Gerencia con carga masiva de Excel y trazabilidad. Se
-ejecutan también en CI (`.github/workflows/ci.yml`) en cada push y pull request.
+Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),
+que contraseñas/hashes **nunca** salen en respuestas, rate limit de login
+(`429`), validación de entrada (`400`), Calidad (puntaje reproducible, acceso por
+campaña, cronograma y cumplimiento), dashboards (cargas por Excel, config,
+acceso por cliente, dashboards de M3), Inventario y Gerencia (CRUD + carga masiva
++ adaptadores de dashboard), y la **matriz de los 9 roles**
+(`role-matrix.test.js`).
 
-## 8. Módulos y funcionalidades del sistema
+CI (`.github/workflows/ci.yml`): pruebas en Node 18/20/22 + build de la imagen
+Docker + **smoke test** que arranca el contenedor y verifica `/api/health`.
 
-- **Módulo de Calidad y cronograma de metas**: migrados al servidor (SQLite +
-  API + cálculos reproducibles + pruebas). Ver [`REAL_DATA_REPORT.md`](REAL_DATA_REPORT.md).
-- **Dashboards de Cliente**: 100% configurables (generador de dashboards desde
-  panel admin) y alimentados con datos reales vía Excel.
-- **Módulo de Inventario**: gestión de stock, movimientos (entradas, salidas,
-  ajustes, transferencias) con actualización atómica y carga masiva desde Excel.
-- **Módulo de Gerencia**: indicadores ejecutivos mensuales con semaforización
-  contra metas y carga masiva desde Excel.
-- No hay recuperación de contraseña por correo (se gestiona vía admin).
-- La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
-  manejadores inline.
+---
 
-## 9. Comandos útiles
+## 8. Comandos útiles
 
 ```bash
-# generar un JWT_SECRET nuevo (32+ caracteres)
+# generar JWT_SECRET
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
-# generar el hash bcrypt de una contraseña (admin maestro)
+# generar hash bcrypt del admin maestro
 node server/hash-password.js "mi-contrasena"
 
-# desarrollo local (sin Docker)
-cd server && npm install && cp .env.example .env   # completa .env
-npm start
+# desarrollo local
+cd server && npm install && cp .env.example .env && npm start
 
 # pruebas
 cd server && npm test
 
 # backup manual
-cd server && npm run backup            # o: node scripts/backup.js --keep 14
+cd server && npm run backup            # node scripts/backup.js --keep 14
 ```
+
+---
+
+## 9. Notas
+
+- No hay recuperación de contraseña por correo (se gestiona vía admin).
+- La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
+  manejadores inline; `xlsx` se carga desde `cdnjs`, Chart.js va embebido.
+- Métricas de negocio de algunos clientes (PANTERA MAIKERS, MOVILIZE) y la
+  dirección de las metas de Gerencia están **pendientes de confirmación**; ver
+  [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) §4. Se ajustan desde el constructor
+  visual sin programar.

@@ -1,5 +1,11 @@
 # REAL_DATA_REPORT - Datos reales y dashboards configurables
 
+> **Nota:** este documento describe la migración a datos reales (Calidad, Metas,
+> dashboards base). La ampliación posterior del sistema (motor de análisis, 9
+> dashboards nuevos, Inventario/Gerencia configurables, exportación, constructor
+> visual) y el despliegue en AWS están en [`PROGRESS.md`](PROGRESS.md),
+> [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) y [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md).
+
 Fecha: 2026-09-09
 
 Objetivo: sacar Calidad, Metas y los dashboards de cliente de datos locales/de
@@ -311,15 +317,15 @@ Frontend:
 - `public/index.html`
 - `public/css/styles.css`
 
-## Pendiente para Fase 4
+## Estado posterior (actualizado 2026-09-09)
 
-No se construyo Inventario ni Gerencia porque el alcance y el origen de datos no
-estan definidos. Antes de implementarlos hay que responder:
+Inventario y Gerencia **sí se construyeron** (`server/server.js`,
+`public/js/inventario.js`, `public/js/gerencia.js`) con sus tablas propias y
+carga masiva por Excel, y luego se expusieron sobre el **mismo motor de
+dashboards configurables** mediante `server/dashboard-adapters.js` (M4). Ver
+[`PROGRESS.md`](PROGRESS.md) Fase 4.
 
-- Inventario: stock de que elementos, movimientos esperados, responsables,
-  alertas y fuente inicial de datos.
-- Gerencia: indicadores ejecutivos concretos, formulas, periodicidad y si salen
-  de Calidad, cargas operativas, inventario u otra fuente.
-
-La base recomendada para esa fase es reutilizar `dashboards_config`,
-`dashboard_cargas`, permisos server-side y paneles configurables.
+Sigue pendiente de negocio: umbral de bajo stock **por ítem** en Inventario
+(hoy la alerta es `cantidad = 0`) y la **dirección** de cada meta ejecutiva de
+Gerencia (hoy `valor >= meta` para todas). Detalle en
+[`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) §4.

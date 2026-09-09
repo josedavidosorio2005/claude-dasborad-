@@ -1,5 +1,11 @@
 # DEPLOY_REPORT — InConexion Platform
 
+> **Nota (2026-09-09):** este documento cubre el **endurecimiento de seguridad y
+> el despliegue genérico con Docker/VPS**. Para el despliegue en **AWS**
+> (arquitectura, SSM, S3, CloudWatch, pipeline, runbooks, costos) ver
+> [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md). Para el estado global del
+> proyecto ver [`PROGRESS.md`](PROGRESS.md) y [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md).
+
 Estado: **lista para desplegar en producción con Docker.** Todos los cambios de
 seguridad y estabilidad están cubiertos por pruebas automatizadas o por un
 comando de verificación reproducible (ver la sección *Checklist* al final).
