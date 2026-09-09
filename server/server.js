@@ -29,6 +29,7 @@ const {
 const { validate, schemas } = require('./validation');
 const calc = require('./calidad-logic');
 const secciones = require('./dashboard-secciones');
+const { ADAPTERS } = require('./dashboard-adapters');
 
 const MASTER_ADMIN_USER = config.masterAdminUser;
 const MASTER_ADMIN_PASSWORD_HASH = config.masterAdminPasswordHash;
@@ -1038,6 +1039,17 @@ function createApp() {
     requireActor,
     wrap((req, res) => {
       const cliente = req.params.cliente;
+
+      // M4 (Fase A4): Inventario y Gerencia usan el mismo renderer generico, pero
+      // sus datos salen de sus tablas propias (no de dashboard_cargas).
+      const adapter = ADAPTERS[cliente];
+      if (adapter) {
+        if (!isFullAdmin(req.actor) && !can(req.actor, adapter.permiso)) {
+          return res.status(403).json({ error: `Sin acceso al modulo de ${adapter.permiso}` });
+        }
+        return res.json({ cliente, config: adapter.config, secciones: adapter.build(db) });
+      }
+
       if (!getConfigRow(cliente)) {
         return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
       }

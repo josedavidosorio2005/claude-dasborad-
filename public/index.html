@@ -256,6 +256,27 @@
         </div>
       </div>
 
+      <!-- DASHBOARD BUILDER MODAL — constructor visual (Fase A6) -->
+      <div id="dashcfg-overlay">
+        <div id="dashcfg-modal">
+          <div class="aurora-header">
+            <div>
+              <h2 id="dashcfg-modal-title">Nuevo dashboard</h2>
+              <div class="aurora-sub">Define secciones de carga, KPIs y paneles. Previsualiza antes de guardar.</div>
+            </div>
+            <button class="aurora-close" onclick="closeDashCfgModal()">X Cerrar</button>
+          </div>
+          <div class="aurora-card">
+            <div id="dashcfg-body"></div>
+            <div class="modal-btns" style="margin-top:16px;position:sticky;bottom:0;background:var(--c-surface);padding-top:10px">
+              <button class="btn-cancel" onclick="closeDashCfgModal()">Cancelar</button>
+              <button class="btn-cancel" onclick="previewDashCfg()">Previsualizar</button>
+              <button class="btn-primary" onclick="saveDashCfg()">Guardar dashboard</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- INVENTARIO SECTION -->
       <div id="section-inventario" class="hidden">
         <div class="page-title">Gestion de Inventario</div>
@@ -450,8 +471,15 @@
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
           <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">COMPARAR CONTRA:</label>
+          <select id="gd-comp-sel" onchange="onGdCompChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+        </div>
       </div>
-      <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="aurora-close" id="gd-export-btn" onclick="exportGenericDashboard()">Exportar</button>
+        <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
+      </div>
     </div>
     <div class="aurora-kpis" id="gd-kpis"></div>
     <div class="aurora-tabs" id="gd-tabs"></div>
@@ -601,7 +629,10 @@
           <div class="aurora-sub">Gestion de stock, movimientos y control de items</div>
         </div>
       </div>
-      <button class="aurora-close" onclick="closeInventario()">X Cerrar</button>
+      <div style="display:flex;gap:8px">
+        <button class="aurora-close" onclick="closeInventario();openGenericDashboard('INVENTARIO')">Ver dashboard</button>
+        <button class="aurora-close" onclick="closeInventario()">X Cerrar</button>
+      </div>
     </div>
 
     <div class="aurora-kpis" id="inv-kpis"></div>
@@ -763,7 +794,10 @@
           <select id="ger-periodo-sel" onchange="onGerPeriodoChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
       </div>
-      <button class="aurora-close" onclick="closeGerencia()">X Cerrar</button>
+      <div style="display:flex;gap:8px">
+        <button class="aurora-close" onclick="closeGerencia();openGenericDashboard('GERENCIA')">Ver dashboard</button>
+        <button class="aurora-close" onclick="closeGerencia()">X Cerrar</button>
+      </div>
     </div>
 
     <div class="aurora-kpis" id="ger-kpis"></div>

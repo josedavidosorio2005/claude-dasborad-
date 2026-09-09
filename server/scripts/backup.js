@@ -6,14 +6,44 @@
 //   node scripts/backup.js --keep 14       -> ademas borra backups mas alla de los 14 mas recientes
 //   BACKUP_DIR=/ruta/backups node scripts/backup.js
 //
-// Pensado para cron, por ejemplo (todos los dias a las 03:00, reteniendo 14):
-//   0 3 * * * cd /app && node scripts/backup.js --keep 14 >> /var/log/inconexion-backup.log 2>&1
+// Subida a S3 (Fase B5): si BACKUP_S3_BUCKET esta definido, ademas de la copia
+// local sube el respaldo a  s3://$BACKUP_S3_BUCKET/$BACKUP_S3_PREFIX/inconexion-<ts>.db
+// (el bucket debe tener versionado activado). Usa el rol IAM de la instancia.
+//
+// Pensado para systemd timer o cron, por ejemplo (todos los dias a las 03:00,
+// reteniendo 14 locales):
+//   0 3 * * * cd /app/server && node scripts/backup.js --keep 14 >> /var/log/inconexion-backup.log 2>&1
 //
 // Usa la API de backup online de better-sqlite3: es consistente aunque el
 // servidor este escribiendo en ese momento (no hace falta detener la app).
 const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
+
+async function uploadToS3(filePath) {
+  const bucket = process.env.BACKUP_S3_BUCKET;
+  if (!bucket) return null;
+  let S3Client, PutObjectCommand;
+  try {
+    ({ S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'));
+  } catch (e) {
+    console.error('[backup] BACKUP_S3_BUCKET definido pero @aws-sdk/client-s3 no esta instalado.');
+    process.exit(1);
+  }
+  const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
+  const prefix = (process.env.BACKUP_S3_PREFIX || 'db-backups').replace(/^\/+|\/+$/g, '');
+  const key = `${prefix}/${path.basename(filePath)}`;
+  const client = new S3Client({ region });
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: fs.createReadStream(filePath),
+      ContentType: 'application/x-sqlite3',
+    })
+  );
+  return `s3://${bucket}/${key}`;
+}
 
 function parseArgs(argv) {
   const args = { keep: null };
@@ -60,6 +90,14 @@ async function main() {
 
   const { size } = fs.statSync(dest);
   console.log(`[backup] OK -> ${dest} (${(size / 1024).toFixed(1)} KiB)`);
+
+  try {
+    const s3uri = await uploadToS3(dest);
+    if (s3uri) console.log(`[backup] Subido a ${s3uri}`);
+  } catch (err) {
+    console.error(`[backup] Fallo la subida a S3: ${err.message}`);
+    process.exitCode = 2; // la copia local si quedo; señalamos el fallo de S3
+  }
 
   if (args.keep) {
     const files = fs

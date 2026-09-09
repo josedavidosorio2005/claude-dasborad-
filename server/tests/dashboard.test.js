@@ -98,6 +98,23 @@ test('acceso al dashboard: sin cliente_ORLANT -> 403; con permiso -> 200', async
   assert.equal((await request(app).get('/api/dashboard/ORLANT').set(auth(con.token))).status, 200);
 });
 
+test('M3: los dashboards de cliente nuevos respetan la misma logica de permisos', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const sin = await makeUser(admin, { perms: { ClientesDash: true } });
+  const con = await makeUser(admin, { perms: { ClientesDash: true, cliente_INFONDO: true } });
+
+  assert.equal((await request(app).get('/api/dashboard/INFONDO').set(auth(sin.token))).status, 403);
+  const ok = await request(app).get('/api/dashboard/INFONDO').set(auth(con.token));
+  assert.equal(ok.status, 200);
+  assert.ok(ok.body.config.layout.tabs.some((t) => t.key === 'recaudo'));
+  // El dashboard de SASCHA usa la plantilla de atencion y expone su KPI de pedidos.
+  const sascha = await request(app)
+    .get('/api/dashboards/config/' + encodeURIComponent('SASCHA FITNESS'))
+    .set(auth(admin));
+  assert.equal(sascha.status, 200);
+  assert.ok(sascha.body.layout.kpis.some((k) => k.titulo === 'Pedidos'));
+});
+
 test('usuario semilla de dashboard cliente conserva acceso explicito a ORLANT', async () => {
   const token = await tokenFor('agomez', 'cli123');
   const res = await request(app).get('/api/dashboard/ORLANT').set(auth(token));
@@ -119,8 +136,8 @@ test('configuracion editable de dashboards: solo el administrador puede leerla',
 test('dashboard configurable: crea un cliente pendiente sin archivo JS nuevo', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const config = {
-    cliente: 'BIVETT',
-    titulo: 'Dashboard Bivett Demo',
+    cliente: 'DEMO QA',
+    titulo: 'Dashboard Demo QA',
     vista: null,
     secciones: {
       resumen: {
@@ -160,13 +177,13 @@ test('dashboard configurable: crea un cliente pendiente sin archivo JS nuevo', a
   assert.equal(create.status, 201, JSON.stringify(create.body));
 
   const clientes = await request(app).get('/api/dashboard/clientes').set(auth(admin));
-  assert.ok(clientes.body.clientes.includes('BIVETT'));
+  assert.ok(clientes.body.clientes.includes('DEMO QA'));
 
   const carga = await request(app)
     .post('/api/dashboard/cargas')
     .set(auth(admin))
     .send({
-      cliente: 'BIVETT',
+      cliente: 'DEMO QA',
       seccion: 'resumen',
       cadencia: 'mensual',
       periodo: MES,
@@ -174,19 +191,22 @@ test('dashboard configurable: crea un cliente pendiente sin archivo JS nuevo', a
     });
   assert.equal(carga.status, 201, JSON.stringify(carga.body));
 
-  const dash = await request(app).get('/api/dashboard/BIVETT').set(auth(admin));
+  const dash = await request(app).get('/api/dashboard/' + encodeURIComponent('DEMO QA')).set(auth(admin));
   assert.equal(dash.status, 200);
   assert.equal(dash.body.config.layout.kpis.length, 2);
   assert.equal(dash.body.secciones.resumen[0].filas[0].llamadas, 42);
 
-  const del = await request(app).delete('/api/dashboards/config/BIVETT').set(auth(admin));
+  const del = await request(app).delete('/api/dashboards/config/' + encodeURIComponent('DEMO QA')).set(auth(admin));
   assert.equal(del.status, 200);
 });
 
 test('Aurora y HLM tienen secciones definidas', async () => {
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const cl = await request(app).get('/api/dashboard/clientes').set(auth(t));
-  assert.deepEqual(cl.body.clientes.sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT']);
+  // Los 3 dashboards migrados + los 9 de cliente de M3 (Fase A2).
+  ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT', 'TELEVENTAS SURA', 'INFONDO', 'BIVETT']
+    .forEach((c) => assert.ok(cl.body.clientes.includes(c), 'falta ' + c));
+  assert.equal(cl.body.clientes.length, 12);
 
   const au = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('CLINICA AURORA')).set(auth(t));
   assert.equal(au.status, 200);

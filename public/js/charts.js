@@ -39,6 +39,40 @@ function loPct2(xrot){
   return o;
 }
 function loBar(t){ var o=lo(t); o.plugins.datalabels.align='end'; return o; }
+
+// ── Formato legible de valores (miles, %, mm:ss) ────────────
+// Se usa en ticks de eje y tooltips para que un dashboard se lea como
+// herramienta de BI y no como volcado de numeros crudos.
+function gdFmtValor(v, unidad){
+  if(v===null || v===undefined || v==='') return '';
+  var n = typeof v==='number' ? v : Number(v);
+  if(!isFinite(n)) return String(v);
+  if(unidad==='%') return (n % 1 !== 0 ? n.toFixed(1) : n) + '%';
+  if(unidad==='tiempo' || unidad==='tiempo_mmss'){ var m=Math.floor(n/60), s=Math.round(n%60); return m+':'+(s<10?'0':'')+s; }
+  return Math.round(n*100)/100 === Math.round(n) ? Math.round(n).toLocaleString('es-CO') : (Math.round(n*100)/100).toLocaleString('es-CO');
+}
+
+// Aplica formato de eje Y + tooltip con el valor exacto a unas opciones base.
+function loFmt(o, unidad){
+  o = o || lo();
+  o.plugins = o.plugins || {};
+  o.plugins.tooltip = Object.assign({}, o.plugins.tooltip, {
+    callbacks: {
+      label: function(ctx){
+        var lbl = ctx.dataset.label ? ctx.dataset.label + ': ' : '';
+        return lbl + gdFmtValor(ctx.parsed.y != null ? ctx.parsed.y : ctx.parsed, unidad);
+      }
+    }
+  });
+  if(o.scales && o.scales.y){
+    o.scales.y.ticks = o.scales.y.ticks || {};
+    o.scales.y.ticks.callback = function(v){ return gdFmtValor(v, unidad); };
+  }
+  if(o.plugins.datalabels){
+    o.plugins.datalabels.formatter = function(v){ return v===null||v===undefined?'':gdFmtValor(v, unidad); };
+  }
+  return o;
+}
 function loPie(t){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{

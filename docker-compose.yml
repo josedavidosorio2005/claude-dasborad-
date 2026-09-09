@@ -26,6 +26,13 @@ services:
       # Dentro del contenedor la BD vive en el volumen montado abajo.
       DB_PATH: /app/server/data/inconexion.db
       NODE_ENV: production
+    # Rotacion de logs para que el disco de la instancia no se llene; el
+    # CloudWatch Agent los recoge desde /var/lib/docker/containers/*.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     volumes:
       - inconexion-data:/app/server/data
     ports:

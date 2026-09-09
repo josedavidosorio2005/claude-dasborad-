@@ -254,16 +254,21 @@ CREATE INDEX IF NOT EXISTS idx_gerencia_periodo ON gerencia_kpis(periodo);
 CREATE INDEX IF NOT EXISTS idx_gerencia_categoria ON gerencia_kpis(categoria);
 `);
 
-// Semilla de configuracion de dashboards: solo si la tabla esta vacia.
-const dashCfgCount = db.prepare('SELECT COUNT(*) AS c FROM dashboards_config').get().c;
-if (dashCfgCount === 0) {
+// Semilla de configuracion de dashboards: idempotente por cliente. Inserta las
+// configuraciones de dashboard-config-seed.js que aun no existan en la tabla
+// (asi las plantillas nuevas llegan tambien a bases ya creadas), sin tocar las
+// que un admin haya editado.
+{
   const now = new Date().toISOString();
   const insertCfg = db.prepare(
     `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
      VALUES (@cliente, @titulo, @vista, @secciones, @layout, 1, @now, @now)`
   );
+  const existe = db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?');
   const txc = db.transaction((rows) => {
+    let n = 0;
     for (const c of rows) {
+      if (existe.get(c.cliente)) continue;
       insertCfg.run({
         cliente: c.cliente,
         titulo: c.titulo,
@@ -272,11 +277,13 @@ if (dashCfgCount === 0) {
         layout: JSON.stringify(c.layout),
         now,
       });
+      n++;
     }
+    return n;
   });
-  txc(CONFIGS);
-  if (!config.isTest) {
-    console.log(`[db] ${CONFIGS.length} dashboards de cliente inicializados desde configuracion.`);
+  const nuevos = txc(CONFIGS);
+  if (nuevos && !config.isTest) {
+    console.log(`[db] ${nuevos} dashboard(s) de cliente inicializados desde configuracion.`);
   }
 }
 
