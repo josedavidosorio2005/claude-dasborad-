@@ -616,18 +616,19 @@ Recorrido honesto sobre esta rama:
 | Backups automáticos local + S3 versionado | ✅ `inconexion-backup.timer` activo; prueba real subida a `s3://inconexion-backups-josedavidosorio2005/db-backups/` |
 | Disco persistente para SQLite | ✅ disco `inconexion-data` 20 GB montado por UUID en `/opt/inconexion/data` |
 | HTTPS automático (Caddy) | ✅ certificado Let's Encrypt emitido, HTTP→HTTPS 308 |
-| Security Group: 80/443 público, 22 restringido | ✅ aplicado (22 → `181.79.84.39/32`) |
-| Rol IAM de mínimo privilegio (instancia y deploy) | ✅ `user/inconexion-instance` + `role/inconexion-github-deploy` creados |
-| Pipeline CI→deploy | 🟡 ECR + OIDC + rol creados; ⏳ el usuario carga 5 secrets/variables en GitHub + 1 `push` a `main` para el primer deploy real |
-| Alarma de caída (health check) | ✅ Route 53 health check `94fe66d2-…` + CloudWatch alarm `inconexion-health` → SNS (estado OK) |
+| Security Group: 80/443 público, 22 restringido | 🟡 22 estaba en `181.79.84.39/32`; el paso SSH del pipeline (runners de GitHub, IP dinámica) **no conecta**. SSH es key-only (`passwordauthentication no`) → abrir 22 a `0.0.0.0/0` es aceptable. **Pendiente** (comando en `PROGRESS.md` «Fase 13»). Mientras tanto los deploys se hacen a mano por SSH desde la IP del operador. |
+| Rol IAM de mínimo privilegio (instancia y deploy) | ✅ `user/inconexion-instance` + `role/inconexion-github-deploy`. Trust policy ajustada: `StringEquals` sobre el claim `repository` + `StringLike` sobre `sub` = `repo:*:ref:refs/heads/main` (la cuenta usa *immutable subjects* → el `sub` trae sufijos `@<id>`). |
+| Pipeline CI→deploy | ✅ CI (test 18/20/22 + docker-build) + `deploy.yml` (OIDC → ECR build/push). El paso final SSH depende del puerto 22 (arriba). 5 secrets/variable de GitHub cargados. |
+| **Producción sirviendo la versión de `main`** | ✅ **2026-09-10**: imagen `sha256:9c8b0b72…` (tag `0fd699ce…`) = digest de `main` HEAD. `curl https://…/api/health` → `{"ok":true}` con cert Let's Encrypt válido. Login admin OK. `dashboard/GESTION_HUMANA` → 4 secciones. Historial registra la creación de usuarios (bug 1.1 corregido). |
+| Alarma de caída (health check) | ✅ Route 53 health check `94fe66d2-…` + CloudWatch alarm `inconexion-health` → SNS. **Suscripción email confirmada**. |
 | Métricas de negocio reales cargadas | ⏳ depende de negocio (§6) — hoy los dashboards tienen estructura, no datos |
-| Contraseñas de ejemplo cambiadas | ⏳ el usuario en el primer login (`admin`): `crodriguez, mlopez, jherrera, agomez, lrios, psuarez` |
+| Contraseñas de ejemplo cambiadas | ✅ verificado: login `crodriguez` / `calidad123` → **401** (las semilla ya no sirven) |
 
-**Veredicto:** la aplicación **está desplegada y sirviendo en producción** sobre
-HTTPS. Queda **acción del usuario** (confirmar SNS, cargar los 5 secrets de
-GitHub, `push` a `main`, cambiar las 6 contraseñas semilla) y **decisiones de
-negocio** (§6). Notas honestas en `PROGRESS.md` → «Fase 9»: 1 GB de RAM por
-límite de cuenta nueva, sin snapshots automáticos de Lightsail.
+**Veredicto:** la aplicación **está desplegada y sirviendo en producción** la
+versión de `main` (Edwin + Gestión Humana + Node 22), verificado contra la API
+real. El pipeline CI→ECR funciona; el paso SSH del deploy automático necesita
+abrir el puerto 22 (ver «Fase 13»). Quedan **4 decisiones de negocio** que no
+bloquean.
 
 > **Actualización 2026-09-10 (Fase 11):** `server/Dockerfile` pasó de `node:20-*`
 > a **`node:22-*`** (el AWS SDK v3 pedirá Node ≥ 22 después de enero 2027).
