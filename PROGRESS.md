@@ -174,7 +174,10 @@ Commits `209b926` (M5), `e5f60f6` (M6).
 
 ---
 
-## Fase 9 — Auditoría post-cierre: XSS almacenado (2026-09-10)
+## Fase 8.1 — Auditoría post-cierre: XSS almacenado (2026-09-10)
+
+> (Antes rotulada «Fase 9»; se renumeró para no chocar con «Fase 9 — Despliegue
+> real en AWS». Todas las referencias externas a «Fase 9» apuntan al despliegue.)
 
 **Estado: ✅ resuelto de raíz.** Detalle completo en `SECURITY_FIX_REPORT.md`.
 
@@ -460,3 +463,65 @@ desplegada en AWS. No se tocó `server/` ni `public/`.
   SmartScreen (decisión de negocio).
 - `mobile-app` tiene 2 vulnerabilidades npm en `tar` (transitiva de
   `@capacitor/cli`, **devDependency** — no se empaqueta en el `.apk`).
+
+---
+
+## Fase 13 — Cierre total: producción sirviendo la versión nueva (2026-09-10)
+
+### PRs
+
+- **PR #3** (`feat/feedback-edwin` + Gestión Humana + Node 22) — **mergeado** a `main`.
+- **PR #4** (`desktop-app/` + `mobile-app/`) — **mergeado** a `main`. No toca
+  `server/` ni `public/`.
+
+### Deploy a producción — resuelto tras 3 fallos diagnosticados
+
+1. `aws-region` vacío → faltaban los secrets/variable de GitHub. **Cargados** los
+   5 (`AWS_DEPLOY_ROLE_ARN`, `DEPLOY_SSH_HOST/USER/KEY`, var `AWS_REGION`).
+2. OIDC `Not authorized ... sts:AssumeRoleWithWebIdentity`. CloudTrail mostró que
+   el `sub` real es `repo:josedavidosorio2005@195043085/claude-dasborad-@1362719668:ref:refs/heads/main`
+   (la cuenta tiene *immutable subjects*). **Trust policy del rol
+   `inconexion-github-deploy` ajustada** (por el usuario, comando aparte): condiciona
+   por el claim `repository` (nombre plano) + `StringLike` `sub` = `repo:*:ref:refs/heads/main`.
+   Se quitó también `environment: produccion` del workflow (no aportaba gating).
+3. Paso SSH: `dial tcp ***:22: i/o timeout`. El firewall de Lightsail tiene el
+   **puerto 22 restringido a la IP del operador** (`181.79.84.39/32`); los runners
+   de GitHub tienen IP dinámica → no conectan.
+   - **Este deploy se hizo A MANO** por SSH desde la IP del operador
+     (`docker compose pull && up -d` con la imagen ya construida por CI y subida a ECR).
+   - **PENDIENTE para que el deploy automático funcione end-to-end**: abrir el
+     puerto 22. SSH es key-only (`passwordauthentication no`), así que abrirlo a
+     `0.0.0.0/0` es aceptable. Comando:
+     ```powershell
+     & 'C:\Program Files\Amazon\AWSCLIV2\aws.exe' lightsail put-instance-public-ports --region us-east-1 --instance-name inconexion-prod --port-infos fromPort=443,toPort=443,protocol=TCP,cidrs=0.0.0.0/0 fromPort=80,toPort=80,protocol=TCP,cidrs=0.0.0.0/0 fromPort=22,toPort=22,protocol=TCP,cidrs=0.0.0.0/0
+     ```
+     (El clasificador de seguridad de Claude Code bloquea esta llamada; la corre el usuario.)
+
+### Verificación en producción REAL (no en el estado del workflow)
+
+| Ítem | Evidencia |
+|---|---|
+| Imagen corriendo = versión nueva | `docker inspect` → `sha256:9c8b0b72693fa38a162a11a76b62161d166f8f8b5d00062c097d17f5eab1aa34`; ECR `latest` = mismo digest, tags `latest` + `0fd699ce…` (= `main` HEAD). Contenedor recreado 21:56 UTC. |
+| `/api/health` HTTPS + cert | `HTTP 200 {"ok":true}`; cert Let's Encrypt `CN=inconexionpruebasclaude.duckdns.org`, cadena válida, vence 2026-12-09 |
+| Login admin maestro | `POST /api/auth/login` → 200, JWT, `rol=ADMIN isMaster=true` |
+| `GET /api/dashboard/GESTION_HUMANA` (usuario rol `GESTION_HUMANA`) | 200, `config.cliente=GESTION_HUMANA`, secciones = `resumen, flujo_mes, por_campana, personal` (4) |
+| Bug 1.1 (crear usuario → historial) | `POST /api/users` → 201; `GET /api/historial` → fila `CREADO` con `actor='Administrador (@admin)'` |
+| Contraseñas de ejemplo cambiadas | login `crodriguez` / `calidad123` → **HTTP 401** |
+| Overlays Inventario/Gerencia | CSS servido en prod incluye `#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;…}` + `.show{display:flex}` — la regla que faltaba. (Confirmación visual pendiente del usuario.) |
+| Suscripción SNS de la alarma | `list-subscriptions-by-topic` → estado = ARN real, no `PendingConfirmation` |
+| Archivos nuevos en el contenedor | `public/js/gestion-humana.js` 7921 B, `public/js/esc.js` 867 B, `ADAPTERS` = `[GERENCIA, INVENTARIO, GESTION_HUMANA]` |
+| `npm test` / `npm audit` (local, `main`) | 85/85 · 0 vulnerabilidades |
+
+### Los 4 huecos de negocio que siguen abiertos (para Edwin)
+
+1. **1.2** "Quitar inventario del lugar de visita del historial" — sin descripción
+   clara de qué se ve mal. (Dato: el historial registra eventos `INV_*`/`GER_*`/
+   `GH_*`/`DASHBOARD_*`/Calidad además de los de usuarios; el filtro `<select>` solo
+   lista acciones de usuarios.)
+2. **3.2** Fórmula exacta de "nivel de servicio" + qué columnas de Excel la
+   alimentan.
+3. **3.3** "Editar el dashboard subiendo un Excel" — ¿(a) cargar datos (ya existe)
+   o (b) definir la estructura del dashboard por Excel?
+4. **Gestión Humana — "efectividad y ganancias"**: definición pendiente. (También
+   sin confirmar: qué KPI exacto de cada plantilla de cliente = "ingresos" para la
+   rentabilidad por campaña; hoy usa la heurística `recaudo || ventas`.)
