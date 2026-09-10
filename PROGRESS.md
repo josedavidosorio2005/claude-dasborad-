@@ -292,3 +292,46 @@ Ejecución del runbook de `AWS_DEPLOY_REPORT.md` §7 en la cuenta AWS
 - **La imagen desplegada se construyó desde el árbol de trabajo local** (incluye
   los cambios sin commitear de la Fase XSS). Para que CI y producción converjan,
   el usuario debe commitear y pushear a `main` antes del primer deploy automático.
+
+---
+
+## Fase 10 — Feedback de Edwin (rama `feature/feedback-edwin-2026-09-10`)
+
+Feedback real del operador de la app. **No mergeado** — vive en la rama para
+revisión y PR manual (el deploy a producción es continuo, así que nada llega a
+`main` sin aprobación explícita). `npm test` → **78/78**, `npm audit` → 0.
+
+### Implementado
+
+| # | Qué | Cómo | Tests |
+|---|-----|------|-------|
+| **1.1** | El historial "no registraba" la creación de usuarios | El backend **sí** la registra (`POST /api/users` → `logEvent('CREADO')`). Bug de frontend: `showSection('hist')` no hacía `await loadHist()` antes de `renderHist()` → al abrir Historial tras crear un usuario no aparecía. Además el filtro "Cambios de permisos" tenía `value="PERMISO"` y el backend escribe `"PERMISOS"`. Ambos corregidos. | `server/tests/historial.test.js` (nuevo, 3) |
+| **2.3** | Historial descargable | Botón "Descargar" → `.xlsx` de lo que esté filtrado en pantalla, con la columna "Realizado por" (actor). Patrón `_gdExportExcel`. | — (frontend) |
+| **2.1** | Rol REPORTES = quien carga los datos | `applyRolePermDefaults()` fuerza `cargarDatos:true` para REPORTES al crear el usuario y al cambiarle el rol. Sin fusionar rol y permiso en el modelo (menos riesgo). UI: el check se marca y bloquea para REPORTES. | `dashboard.test.js` (+2) |
+| **2.2** | Gerencia = solo lectura | Los 4 endpoints de escritura (`POST/PUT/DELETE /gerencia/kpis`, `POST /gerencia/carga`) pasan de `can(actor,'Gerencia')` a `canLoadData()`. La lectura sigue con `can(actor,'Gerencia')`. Frontend: se ocultan "Nuevo indicador", pestaña "Carga Excel" y Editar/Eliminar por fila. | `inventario-gerencia.test.js` (reescrito), `role-matrix.test.js` (+aserción) |
+| **3.1** | Cargas: avisar antes de sobrescribir | `POST /api/dashboard/cargas` responde **409** `{yaExiste:true,...}` si ya hay carga para (cliente, sección, periodo) y no se pasó `reemplazar:true`. El frontend pide `confirm(...)` y reenvía con la bandera. | `dashboard.test.js` (reescrito el flujo) |
+
+### Pendiente de tu respuesta (marcado "pregúntame" en el brief, no implementado)
+
+- **1.2** "Quitar inventario del lugar de visita del historial" — ambiguo. Necesito
+  captura o descripción de qué se ve mal. (Observación: el historial hoy muestra
+  también eventos `INV_*`, `GER_*`, `DASHBOARD_CONFIG*` y de Calidad, pero el
+  `<select>` de filtro solo lista acciones de usuarios.)
+- **3.1 (parte 2)** Cadencia diaria: el modelo y el selector ya la soportan cuando
+  la **sección** está configurada con `periodo:'dia'`. Qué dashboards deben pasar a
+  granularidad diaria es decisión de negocio — pendiente.
+- **3.2** Nivel de servicio / métricas de call center — falta la fórmula exacta de
+  esta operación y qué columnas de Excel la alimentan.
+- **3.3** "Editar el dashboard subiendo un Excel" — falta saber si es (a) cargar
+  datos (ya existe) o (b) definir la estructura del dashboard por Excel.
+- **4. Gestión Humana** (rol nuevo confirmado) — falta el esquema exacto de la
+  tabla (¿cargo, documento, salario, supervisor?), la definición de "efectividad y
+  ganancias", el periodo de rotación (mensual/trimestral) y si ya existe un costo
+  por asesor/hora para la rentabilidad por campaña.
+
+### Notas
+- Primer commit de la rama (`baseline`) = snapshot del árbol ya desplegado en
+  producción (Fase XSS + docs de infra), para separar lo previo del trabajo de
+  Edwin. Los 5 commits siguientes son 1.1/2.3, 2.1, 2.2, 3.1.
+- `apiRequest` ahora adjunta `err.status` y `err.data` al Error que lanza (lo
+  necesitaba el flujo 409 de 3.1; es retrocompatible).
