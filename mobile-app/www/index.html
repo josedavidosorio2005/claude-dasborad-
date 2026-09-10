@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>InConexion Platform</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0d4a5e;color:#e8f4f7;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      display:flex;align-items:center;justify-content:center;text-align:center}
+    .box{padding:24px}
+    .sp{width:36px;height:36px;border:3px solid rgba(255,255,255,.25);
+      border-top-color:#e8f4f7;border-radius:50%;margin:0 auto 16px;
+      animation:s 1s linear infinite}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <!-- Cliente ligero: Capacitor carga el sitio real (server.url en
+       capacitor.config.json). Esta pantalla solo se ve un instante si la red
+       tarda en responder. -->
+  <div class="box">
+    <div class="sp"></div>
+    <div>Conectando con InConexion Platform…</div>
+  </div>
+</body>
+</html>

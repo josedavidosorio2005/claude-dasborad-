@@ -1,0 +1,13 @@
+{
+  "appId": "com.inconexion.app",
+  "appName": "InConexion Platform",
+  "webDir": "www",
+  "server": {
+    "url": "https://inconexionpruebasclaude.duckdns.org",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

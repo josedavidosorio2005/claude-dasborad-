@@ -1,0 +1,16 @@
+node_modules/
+
+# secretos de firma — NUNCA versionar
+*.keystore
+*.jks
+release-signing.properties
+
+# salidas de build
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/*.iml

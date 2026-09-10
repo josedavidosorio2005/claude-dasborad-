@@ -402,3 +402,61 @@ Módulo nuevo siguiendo el patrón Inventario/Gerencia. Ver commit
 `cd server && npm test` → **85/85** (73 de fases previas + 3 `historial` + 2
 `/api/users`/REPORTES + 6 `gestion-humana` + 1 rework Gerencia neto). `npm audit`
 → 0.
+
+---
+
+## Fase 12 — Apps de escritorio y Android (rama `feature/apps-desktop-android`, 2026-09-10)
+
+Empaquetado de la MISMA aplicación web como cliente ligero de escritorio y de
+Android. **Ninguna embebe el backend** — las tres superficies consumen la API
+desplegada en AWS. No se tocó `server/` ni `public/`.
+
+### `desktop-app/` — Windows `.exe` (Electron)
+
+- Electron 33 + electron-builder 25. `appId` `com.inconexion.desktop`, producto
+  **InConexion Platform**, target **nsis**.
+- `main.js`: una `BrowserWindow` que carga `https://inconexionpruebasclaude.duckdns.org`.
+  `nodeIntegration:false`, `contextIsolation:true`, `sandbox:true`. Navegación
+  fuera del dominio de producción → `shell.openExternal` (no dentro de la app).
+  1280×800, recuerda tamaño/posición entre sesiones (`window-state.json` en
+  userData). Menú mínimo (recargar, zoom, devtools, salir). Instancia única.
+- Ícono: **placeholder genérico** (`build/icon.png`, teal). Reemplazar por el
+  real cuando lo haya.
+- `win.signAndEditExecutable=false` para evitar el fallo de symlinks de
+  `winCodeSign` en Windows sin Developer Mode (no firmamos igual).
+- **`npm run build` → `desktop-app/dist/InConexion Platform Setup 1.0.0.exe`**
+  (~78 MB, NSIS). Verificado: el `.exe` empaquetado abre sin crashear.
+- **Sin firma de código** → SmartScreen mostrará "Windows protegió tu PC" la
+  primera vez. Esperado; se quita con un certificado de firma de código.
+
+### `mobile-app/` — Android `.apk` (Capacitor)
+
+- Capacitor 6 en modo **server URL**: `capacitor.config.json` con
+  `server.url = https://inconexionpruebasclaude.duckdns.org`, `cleartext:false`.
+  `appId` `com.inconexion.app`, `appName` **InConexion Platform**. `www/` es solo
+  un placeholder — Capacitor carga el sitio real.
+- `npx cap add android` genera `mobile-app/android/` (versionado; sin `build/`).
+- **Permisos**: solo `android.permission.INTERNET` (+ el auto-generado por AGP
+  `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, obligatorio en targetSdk 34). Nada
+  de más.
+- **Keystore de firma de PRUEBAS** generado nuevo (`keytool`, RSA 2048, validez
+  ~27 años, alias `inconexion`). El `.keystore` y `release-signing.properties`
+  (con la contraseña) están **gitignoreados**. La contraseña se entregó al
+  usuario aparte para que la guarde.
+- `android/app/build.gradle`: `signingConfigs.release` lee
+  `../release-signing.properties` si existe; si no, el release queda sin firmar.
+- **`./gradlew assembleDebug assembleRelease`** →
+  - `app/build/outputs/apk/debug/app-debug.apk` (~3.7 MB)
+  - **`app/build/outputs/apk/release/app-release.apk` (~3.0 MB)** — firmado
+    (esquemas v1 + v2), `apksigner verify` → `Verifies`.
+- **No se sube a Google Play** (fuera de alcance). El `.apk` de release es para
+  *sideload* / distribución interna.
+
+### Pendiente / notas
+
+- Prueba visual de login en ambas apps (la hace el usuario).
+- Ícono real (desktop y Android) cuando exista — hoy placeholder.
+- Certificado de firma de código para el `.exe` si se quiere quitar el aviso de
+  SmartScreen (decisión de negocio).
+- `mobile-app` tiene 2 vulnerabilidades npm en `tar` (transitiva de
+  `@capacitor/cli`, **devDependency** — no se empaqueta en el `.apk`).
