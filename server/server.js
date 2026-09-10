@@ -1115,8 +1115,22 @@ function createApp() {
       }
       const now = nowStr();
       const existing = db
-        .prepare('SELECT id FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?')
+        .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?')
         .get(b.cliente, b.seccion, b.periodo);
+      // Ya hay una carga para este cliente/seccion/periodo y no se pidio
+      // reemplazar -> avisar, no sobrescribir en silencio (feedback Edwin 3.1).
+      if (existing && !b.reemplazar) {
+        return res.status(409).json({
+          error: `Ya existe una carga para ${b.cliente} / ${b.seccion} / ${b.periodo}.`,
+          yaExiste: true,
+          cliente: b.cliente,
+          seccion: b.seccion,
+          periodo: b.periodo,
+          cargadoPorNombre: existing.cargadoPorNombre,
+          cargadoEn: existing.cargadoEn,
+          filasActuales: (() => { try { return JSON.parse(existing.filas || '[]').length; } catch (_) { return null; } })(),
+        });
+      }
       const payload = {
         cliente: b.cliente,
         seccion: b.seccion,

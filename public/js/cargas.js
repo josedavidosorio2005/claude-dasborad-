@@ -3,7 +3,7 @@
 //
 // El Excel se parsea en el navegador (libreria XLSX ya cargada) y se envia como
 // JSON a POST /api/dashboard/cargas. El servidor valida contra la definicion de
-// la seccion y guarda. Volver a subir un periodo lo reemplaza.
+// la seccion y guarda. Volver a subir un periodo pide confirmacion antes de reemplazar (3.1).
 
 var _cargasClientes = [];
 var _cargasSpec = null;      // { cliente, secciones:{ key: {titulo, cadencia, periodo, filaUnica, columnas} } }
@@ -182,8 +182,25 @@ async function guardarCarga(){
   try{
     await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/dashboard/cargas', _cargaParsed); });
   }catch(e){
-    showToast(e.message);
-    return;
+    // 409: ya existe una carga para este cliente/seccion/periodo -> preguntar antes
+    // de sobrescribir (feedback Edwin 3.1).
+    if(e && e.status===409 && e.data && e.data.yaExiste){
+      var d=e.data;
+      var quien=d.cargadoPorNombre ? (' por '+d.cargadoPorNombre) : '';
+      var cuando=d.cargadoEn ? (' el '+d.cargadoEn) : '';
+      if(!confirm('Ya existe una carga para '+d.cliente+' / '+d.seccion+' / '+d.periodo+
+                  ' (cargada'+quien+cuando+'). ¿Reemplazarla con este archivo?')){
+        showToast('Carga cancelada. No se sobrescribió nada.');
+        return;
+      }
+      try{
+        var conReemplazo = Object.assign({}, _cargaParsed, { reemplazar: true });
+        await withButtonLoading(btn, 'Reemplazando...', function(){ return apiRequest('POST','/dashboard/cargas', conReemplazo); });
+      }catch(e2){ showToast(e2.message); return; }
+    } else {
+      showToast(e.message);
+      return;
+    }
   }
   showToast('Carga guardada. El dashboard ya usa estos datos.');
   cancelarPreviewCarga();

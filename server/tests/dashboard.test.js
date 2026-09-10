@@ -89,12 +89,24 @@ test('flujo completo: cargar resumen, leerlo en el dashboard, reemplazarlo', asy
   assert.equal(dash.status, 200);
   assert.equal(dash.body.secciones.resumen[0].filas[0].total_agendas, 11918);
 
-  // reemplazar el mismo periodo (upsert -> 200, no duplica)
+  // volver a cargar el mismo periodo SIN reemplazar -> 409, no sobrescribe (feedback Edwin 3.1)
   const c2 = await request(app)
     .post('/api/dashboard/cargas')
     .set(auth(loader.token))
     .send({ cliente: 'ORLANT', seccion: 'resumen', cadencia: 'mensual', periodo: MES, filas: [{ ...RESUMEN_OK, total_agendas: 99999 }] });
-  assert.equal(c2.status, 200);
+  assert.equal(c2.status, 409);
+  assert.equal(c2.body.yaExiste, true);
+  assert.equal(c2.body.periodo, MES);
+  // el dato viejo sigue intacto
+  const dashSigue = await request(app).get('/api/dashboard/ORLANT').set(auth(admin));
+  assert.equal(dashSigue.body.secciones.resumen[0].filas[0].total_agendas, 11918);
+
+  // reenviar con reemplazar:true -> 200, ahora sí sobrescribe
+  const c3 = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(loader.token))
+    .send({ cliente: 'ORLANT', seccion: 'resumen', cadencia: 'mensual', periodo: MES, reemplazar: true, filas: [{ ...RESUMEN_OK, total_agendas: 99999 }] });
+  assert.equal(c3.status, 200);
   const dash2 = await request(app).get('/api/dashboard/ORLANT').set(auth(admin));
   assert.equal(dash2.body.secciones.resumen.length, 1);
   assert.equal(dash2.body.secciones.resumen[0].filas[0].total_agendas, 99999);

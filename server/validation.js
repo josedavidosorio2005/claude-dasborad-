@@ -218,6 +218,9 @@ const cargaBody = z.object({
   cadencia: z.enum(['diaria', 'semanal', 'mensual']),
   periodo: z.string().trim().min(4).max(10),
   archivoNombre: z.string().trim().max(200).optional().default(''),
+  // Si ya existe una carga para (cliente, seccion, periodo), el POST responde 409
+  // y NO sobrescribe salvo que se reenvie con reemplazar:true (feedback Edwin 3.1).
+  reemplazar: z.boolean().optional().default(false),
   filas: z
     .array(z.record(z.string().min(1).max(60), celdaSchema))
     .min(1, 'El archivo no tiene filas de datos')
