@@ -487,15 +487,32 @@ desplegada en AWS. No se tocó `server/` ni `public/`.
 3. Paso SSH: `dial tcp ***:22: i/o timeout`. El firewall de Lightsail tiene el
    **puerto 22 restringido a la IP del operador** (`181.79.84.39/32`); los runners
    de GitHub tienen IP dinámica → no conectan.
-   - **Este deploy se hizo A MANO** por SSH desde la IP del operador
-     (`docker compose pull && up -d` con la imagen ya construida por CI y subida a ECR).
-   - **PENDIENTE para que el deploy automático funcione end-to-end**: abrir el
-     puerto 22. SSH es key-only (`passwordauthentication no`), así que abrirlo a
-     `0.0.0.0/0` es aceptable. Comando:
-     ```powershell
-     & 'C:\Program Files\Amazon\AWSCLIV2\aws.exe' lightsail put-instance-public-ports --region us-east-1 --instance-name inconexion-prod --port-infos fromPort=443,toPort=443,protocol=TCP,cidrs=0.0.0.0/0 fromPort=80,toPort=80,protocol=TCP,cidrs=0.0.0.0/0 fromPort=22,toPort=22,protocol=TCP,cidrs=0.0.0.0/0
-     ```
-     (El clasificador de seguridad de Claude Code bloquea esta llamada; la corre el usuario.)
+   - **Este deploy (y los siguientes, por ahora) se hacen A MANO** por SSH desde
+     la IP del operador: `cd /opt/inconexion && docker compose pull && docker
+     compose up -d` (la imagen ya la construye CI y la sube a ECR — esa parte del
+     pipeline sí funciona sola).
+   - **El deploy 100% automático queda PENDIENTE de decisión.** Opciones evaluadas
+     para no dejar el puerto 22 abierto a todo el mundo:
+     - ❌ **Restringir 22 a los CIDRs de GitHub Actions** (`api.github.com/meta` →
+       clave `actions`): **inviable** — la lista tiene **~6980 rangos** (5436 IPv4
+       + 1544 IPv6; GitHub movió los runners a Azure y ahora abarca asignaciones
+       enormes) y cambia seguido. Ningún firewall práctico (Lightsail incluido)
+       aguanta miles de reglas.
+     - 🟢 **Whitelist dinámica en el workflow** (recomendada): un paso previo al
+       SSH añade la IP pública del runner a `cidrs` del puerto 22; un paso `if:
+       always()` la quita al terminar. El 22 queda abierto a **una sola IP durante
+       ~90 s por deploy**. Requiere `lightsail:GetInstancePortStates` +
+       `lightsail:PutInstancePublicPorts` en el rol `inconexion-github-deploy`
+       (acotado al ARN de la instancia) + ~15 líneas en `deploy.yml`.
+     - 🟢 **AWS SSM (hybrid activation)**: registrar la instancia Lightsail como
+       *managed instance* (el `amazon-ssm-agent` ya está instalado y activo) y usar
+       `aws ssm send-command` en vez de SSH. Puerto 22 **cerrado del todo**. Más
+       piezas (activación, rol, re-registro del agente).
+     - 🟡 **Pull-based en la instancia**: systemd timer que hace `docker compose
+       pull && up -d` cada N min. Cero acceso entrante. Pierde la señal "deploy
+       falló" en CI y añade latencia = intervalo del timer.
+     - Mientras se decide: deploy manual (arriba). El pipeline hasta ECR ya es
+       automático.
 
 ### Verificación en producción REAL (no en el estado del workflow)
 
