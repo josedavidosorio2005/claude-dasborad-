@@ -23,10 +23,11 @@ Este documento cierra dos frentes:
 | M3 | 9 dashboards de cliente por plantilla estándar de contact center (ventas, cobranza, atención). BIVETT deja de ser demo | ✅ | Chrome headless + prueba de permisos |
 | M4 | Inventario y Gerencia como dashboards del **mismo** motor configurable (adaptadores de datos) | ✅ | Chrome headless + prueba |
 | M5 | Secretos en AWS SSM Parameter Store, backup a S3, systemd timer, CloudWatch Agent, IAM de mínimo privilegio | ✅ | `npm test`, arranque local de `bootstrap.js` |
-| M6 | Pipeline GitHub Actions → ECR → SSH a la instancia. Smoke test del contenedor en CI | ✅ (código) / ⏳ (deploy real) | `compose config` + YAML válidos; falta crear los secrets/rol en AWS |
+| M6 | Pipeline GitHub Actions → ECR → SSH a la instancia. Smoke test del contenedor en CI | ✅ (código) / 🟡 (infra AWS lista, falta cargar secrets de GitHub + 1 push) | `compose config` + YAML válidos; ECR + rol OIDC creados 2026-09-10 (ver §11 y `PROGRESS.md` Fase 9) |
 | M7 | Este documento | ✅ | — |
+| M8 | **Despliegue real** en AWS (runbook §7): app en producción con HTTPS, backups a S3, alarma | ✅ 2026-09-10 | <https://inconexionpruebasclaude.duckdns.org/api/health> → `{"ok":true}`; ver §11 |
 
-`cd server && npm test` → **58/58**.
+`cd server && npm test` → **73/73** (al 2026-09-10; eran 58 al escribir este documento).
 
 ---
 
@@ -597,30 +598,36 @@ Con RDS Postgres + 2 instancias esto subiría a **~US$60–100/mes** (ver §2).
 
 Recorrido honesto sobre esta rama:
 
+> **Actualización 2026-09-10:** ejecutado el runbook §7 en la cuenta AWS
+> `934685482338` (us-east-1). App en producción:
+> <https://inconexionpruebasclaude.duckdns.org>. Detalle completo con IDs/ARNs en
+> `PROGRESS.md` → «Fase 9».
+
 | Ítem | Estado |
 |---|---|
-| `npm test` en verde | ✅ 58/58 |
+| `npm test` en verde | ✅ **73/73** (68 + 2 de `/api/users` + 3 de XSS) |
 | Config fail-fast (JWT, hash admin, CORS obligatorio en prod) | ✅ (commit previo) |
-| Secretos fuera del repo y fuera del disco (SSM) | ✅ código listo; ⏳ crear los parámetros |
+| Secretos fuera del repo y fuera del disco (SSM) | ✅ 4 `SecureString` en `/inconexion/prod/*`; el contenedor los lee al arrancar |
 | Rate limiting, helmet + CSP, CORS whitelist | ✅ (commit previo) |
 | Historial append-only, permisos por rol/campaña/cliente | ✅ sin cambios |
 | Dashboards: 12 clientes + Inventario + Gerencia por configuración | ✅ |
 | Análisis (tendencia/meta/alerta), export, constructor visual | ✅ |
-| Imagen Docker arranca y responde `/api/health` | ✅ (smoke test en CI) |
-| Backups automáticos local + S3 versionado | ✅ script + systemd; ⏳ crear bucket + timer en la instancia |
-| Disco persistente para SQLite | ✅ documentado (bind al disco de bloques) |
-| HTTPS automático (Caddy) | ✅ configurado; ⏳ poner dominio real en el Caddyfile |
-| Security Group: 80/443 público, 22 restringido | ⏳ aplicar en Lightsail (comando en §4) |
-| Rol IAM de mínimo privilegio (instancia y deploy) | ✅ política escrita; ⏳ crearla en AWS |
-| Pipeline CI→deploy | ✅ código; ⏳ crear ECR + rol OIDC + 4 secrets; ⏳ **1 deploy real de prueba** |
-| Alarma de caída (health check) | ✅ documentada; ⏳ crearla |
+| Imagen Docker arranca y responde `/api/health` | ✅ en producción: `https://…/api/health` → `{"ok":true}` |
+| Backups automáticos local + S3 versionado | ✅ `inconexion-backup.timer` activo; prueba real subida a `s3://inconexion-backups-josedavidosorio2005/db-backups/` |
+| Disco persistente para SQLite | ✅ disco `inconexion-data` 20 GB montado por UUID en `/opt/inconexion/data` |
+| HTTPS automático (Caddy) | ✅ certificado Let's Encrypt emitido, HTTP→HTTPS 308 |
+| Security Group: 80/443 público, 22 restringido | ✅ aplicado (22 → `181.79.84.39/32`) |
+| Rol IAM de mínimo privilegio (instancia y deploy) | ✅ `user/inconexion-instance` + `role/inconexion-github-deploy` creados |
+| Pipeline CI→deploy | 🟡 ECR + OIDC + rol creados; ⏳ el usuario carga 5 secrets/variables en GitHub + 1 `push` a `main` para el primer deploy real |
+| Alarma de caída (health check) | ✅ Route 53 health check `94fe66d2-…` + CloudWatch alarm `inconexion-health` → SNS (estado OK) |
 | Métricas de negocio reales cargadas | ⏳ depende de negocio (§6) — hoy los dashboards tienen estructura, no datos |
-| Contraseñas de ejemplo cambiadas | ⏳ hacer en el primer login |
+| Contraseñas de ejemplo cambiadas | ⏳ el usuario en el primer login (`admin`): `crodriguez, mlopez, jherrera, agomez, lrios, psuarez` |
 
-**Veredicto:** el **código** está listo para producción. Lo que falta es
-**trabajo de cuenta AWS** (crear recursos con los comandos de §7) y **decisiones
-de negocio** (§6). Ninguno requiere programar más, salvo los dos ajustes menores
-de §6.2 si se confirman.
+**Veredicto:** la aplicación **está desplegada y sirviendo en producción** sobre
+HTTPS. Queda **acción del usuario** (confirmar SNS, cargar los 5 secrets de
+GitHub, `push` a `main`, cambiar las 6 contraseñas semilla) y **decisiones de
+negocio** (§6). Notas honestas en `PROGRESS.md` → «Fase 9»: 1 GB de RAM por
+límite de cuenta nueva, imagen Node 20, sin snapshots automáticos de Lightsail.
 
 ---
 

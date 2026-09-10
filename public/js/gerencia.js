@@ -103,7 +103,7 @@ function renderGerPanel(){
   } else {
     catNames.forEach(function(cat){
       var kpis = cats[cat] || [];
-      panelsHtml += '<div class="aurora-card"><div class="aurora-card-title">'+cat+'</div>';
+      panelsHtml += '<div class="aurora-card"><div class="aurora-card-title">'+esc(cat)+'</div>';
       panelsHtml += '<div class="aurora-kpis" style="margin-top:8px">';
       kpis.forEach(function(k){
         var cls = '';
@@ -115,7 +115,7 @@ function renderGerPanel(){
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
           '<div style="font-size:0.72rem;color:#7a9ba8;margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
-        panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+valFmt+'</div><div class="kl">'+k.nombre+(k.unidad?' ('+k.unidad+')':'')+'</div>'+metaTxt+'</div>';
+        panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';
     });
@@ -141,7 +141,7 @@ function renderGerTabla(){
         metaFmt = k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta.toLocaleString('es-CO');
         cumple = k.valor >= k.meta ? '<span class="kpi-green" style="font-weight:600">Si</span>' : '<span class="kpi-red" style="font-weight:600">No</span>';
       }
-      html += '<tr><td><strong>'+k.nombre+'</strong></td><td>'+k.categoria+'</td><td class="peak">'+valFmt+'</td><td>'+(k.unidad||'-')+'</td><td>'+metaFmt+'</td><td>'+cumple+'</td><td>'+(k.observaciones||'-')+'</td>'+
+      html += '<tr><td><strong>'+esc(k.nombre)+'</strong></td><td>'+esc(k.categoria)+'</td><td class="peak">'+valFmt+'</td><td>'+esc(k.unidad||'-')+'</td><td>'+metaFmt+'</td><td>'+cumple+'</td><td>'+esc(k.observaciones||'-')+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> '+
         '<button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button></td></tr>';
     });
@@ -239,7 +239,7 @@ function gerDescargarPlantilla(){
     ['Satisfaccion del cliente','Calidad',4.6,'',4.5,'Escala 1-5'],
     ['Costo por llamada','Financiero',2.50,'USD',3.00,''],
     ['Productividad por asesor','Productividad',85,'%',80,''],
-    ['Inasistencia promedio','Talento Humano',8,'%',10,''];
+    ['Inasistencia promedio','Talento Humano',8,'%',10,'']];
   var ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = [{wch:30},{wch:18},{wch:10},{wch:12},{wch:10},{wch:25}];
   var wb = XLSX.utils.book_new();
@@ -315,7 +315,7 @@ function renderGerAdminTabla(){
       var valFmt = k.unidad === '%' ? k.valor+'%' : k.unidad === 'USD' ? '$'+k.valor.toLocaleString('es-CO') : k.valor;
       var metaFmt = (k.meta !== null && k.meta !== undefined) ?
         (k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta) : '-';
-      html += '<tr><td>'+k.periodo+'</td><td><strong>'+k.nombre+'</strong></td><td>'+k.categoria+'</td><td class="peak">'+valFmt+'</td><td>'+(k.unidad||'-')+'</td><td>'+metaFmt+'</td>'+
+      html += '<tr><td>'+esc(k.periodo)+'</td><td><strong>'+esc(k.nombre)+'</strong></td><td>'+esc(k.categoria)+'</td><td class="peak">'+valFmt+'</td><td>'+esc(k.unidad||'-')+'</td><td>'+metaFmt+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> '+
         '<button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button></td></tr>';
     });

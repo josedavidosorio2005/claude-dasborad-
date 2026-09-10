@@ -48,7 +48,7 @@ function populateMetaLiderSelect(){
     sel.innerHTML = '<option value="">— Sin usuarios de Calidad/Supervisor con acceso a esta campana —</option>';
   } else {
     sel.innerHTML = '<option value="">Seleccione un responsable...</option>' +
-      candidatos.map(function(u){ return '<option value="'+u.id+'">'+u.nombre+' ('+u.rol+')</option>'; }).join('');
+      candidatos.map(function(u){ return '<option value="'+u.id+'">'+esc(u.nombre)+' ('+esc(u.rol)+')</option>'; }).join('');
   }
 }
 
@@ -81,7 +81,7 @@ function renderMetasHistory(){
   }
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
-    return '<tr><td>'+(r.liderNombre||'Sin asignar')+'</td><td>'+r.campana+'</td><td>'+r.mes+'</td><td>'+r.asesores+'</td><td>'+r.diasLaborales+'</td>'+
+    return '<tr><td>'+esc(r.liderNombre||'Sin asignar')+'</td><td>'+esc(r.campana)+'</td><td>'+esc(r.mes)+'</td><td>'+r.asesores+'</td><td>'+r.diasLaborales+'</td>'+
       '<td class="peak">'+r.metaGrupal+'</td><td>'+r.metaPorAsesor+'</td><td>'+r.metaDiaria+'</td>'+
       '<td>'+r.semana1+'</td><td>'+r.semana2+'</td><td>'+r.semana3+'</td><td>'+r.semana4+'</td>'+
       '<td>'+(r.whatsapp?'SI':'NO')+'</td><td>'+(r.whatsapp? (r.pctWhatsapp+'%') : '-')+'</td>'+

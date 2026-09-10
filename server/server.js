@@ -272,10 +272,22 @@ function createApp() {
   // ══════════════════════════════════════════════════════════
   api.get(
     '/users',
-    requireAuth,
+    requireActor,
     wrap((req, res) => {
       const rows = db.prepare('SELECT * FROM users ORDER BY id').all();
-      res.json(rows.map(toPublicUser));
+      // La matriz de permisos de TODOS los usuarios solo la ve quien administra
+      // usuarios o permisos (o el admin). El resto recibe la lista con `perms`
+      // vacio: los selects que la consumen (asesor, lider) usan id/nombre/rol/
+      // asesorCampana, y las pantallas que necesitan `perms` ajenos (gestion de
+      // permisos, cronograma de metas, matriz de Reportes) son de rol privilegiado.
+      const fullView =
+        isFullAdmin(req.actor) ||
+        can(req.actor, 'gestionPermisos') ||
+        can(req.actor, 'crearUsuarios') ||
+        can(req.actor, 'editarUsuarios');
+      res.json(
+        rows.map(toPublicUser).map((u) => (fullView ? u : { ...u, perms: {} }))
+      );
     })
   );
 

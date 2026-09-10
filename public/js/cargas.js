@@ -21,7 +21,7 @@ async function openCargas(){
     _cargasClientes = (r && r.clientes) || [];
   }catch(e){ _cargasClientes = []; showToast(e.message); }
   var selC = document.getElementById('carga-cliente');
-  selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('')
+  selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();
 }
@@ -38,7 +38,7 @@ async function onCargaClienteChange(){
   var selS = document.getElementById('carga-seccion');
   var keys = _cargasSpec ? Object.keys(_cargasSpec.secciones) : [];
   selS.innerHTML = keys.map(function(k){
-    return '<option value="'+k+'">'+_cargasSpec.secciones[k].titulo+'</option>';
+    return '<option value="'+esc(k)+'">'+esc(_cargasSpec.secciones[k].titulo)+'</option>';
   }).join('') || '<option value="">—</option>';
   onCargaSeccionChange();
   renderCargasExistentes();
@@ -159,11 +159,11 @@ function _parseMultiFila(spec, aoa){
 
 function _renderPreviewCarga(spec, filas, avisos){
   document.getElementById('carga-preview-nombre').textContent = _cargaParsed.archivoNombre + ' — ' + _cargaParsed.periodo;
-  document.getElementById('carga-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+a; }).join('<br>');
+  document.getElementById('carga-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+esc(a); }).join('<br>');
   var cols = spec.columnas;
-  var html = '<tr>'+cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('')+'</tr>';
+  var html = '<tr>'+cols.map(function(c){ return '<th>'+esc(c.label)+'</th>'; }).join('')+'</tr>';
   html += filas.slice(0,30).map(function(f){
-    return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]===undefined||f[c.key]===''?'<span style="color:#c0392b">—</span>':f[c.key])+'</td>'; }).join('')+'</tr>';
+    return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]===undefined||f[c.key]===''?'<span style="color:#c0392b">—</span>':esc(f[c.key]))+'</td>'; }).join('')+'</tr>';
   }).join('');
   if(filas.length>30) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#7a9ba8">… y '+(filas.length-30)+' filas mas</td></tr>';
   document.getElementById('carga-preview-table').innerHTML = html;
@@ -204,8 +204,8 @@ async function renderCargasExistentes(){
     html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">Sin cargas para esta seccion todavia</td></tr>';
   } else {
     rows.forEach(function(c){
-      html += '<tr><td>'+c.periodo+'</td><td>'+c.cadencia+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
-        '<td>'+(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:#7a9ba8">'+(c.cargadoEn||'-')+'</td>'+
+      html += '<tr><td>'+esc(c.periodo)+'</td><td>'+esc(c.cadencia)+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
+        '<td>'+esc(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:#7a9ba8">'+esc(c.cargadoEn||'-')+'</td>'+
         '<td><button class="btn-sm btn-delete" onclick="eliminarCarga('+c.id+')">Eliminar</button></td></tr>';
     });
   }

@@ -189,7 +189,7 @@ function populateCalCampanaSelect(){
     sel.innerHTML = '<option value="">Sin campanas asignadas</option>';
     return;
   }
-  sel.innerHTML = accesibles.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  sel.innerHTML = accesibles.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
   if(accesibles.indexOf(_ccampana)===-1) _ccampana = accesibles[0];
   sel.value = _ccampana;
 }
@@ -258,7 +258,7 @@ function populateCalAsesorSelect(){
     sel.disabled = false;
     if(hint) hint.style.display = 'none';
     sel.innerHTML = '<option value="">Seleccione un asesor...</option>' +
-      asesores.map(function(u){ return '<option value="'+u.nombre+'">'+u.nombre+'</option>'; }).join('');
+      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'">'+esc(u.nombre)+'</option>'; }).join('');
   }
 }
 
@@ -282,11 +282,11 @@ function renderCalItemsForm(){
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
   var html='';
   cats.forEach(function(cat){
-    html += '<div class="qi-cat-header">'+cat+'</div>';
+    html += '<div class="qi-cat-header">'+esc(cat)+'</div>';
     items.filter(function(it){return it.cat===cat;}).forEach(function(it){
       html += '<div class="qi-row">'+
-        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+it.n+'. '+it.label+'<span class="qi-weight">('+it.weight+'%)</span></div>'+
-        '<select class="qi-select" id="cf-item-'+it.n+'" onchange="renderCalPreview()">'+
+        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(it.weight)+'%)</span></div>'+
+        '<select class="qi-select" id="cf-item-'+esc(it.n)+'" onchange="renderCalPreview()">'+
           '<option value="">—</option><option value="SI">SI</option><option value="NO">NO</option><option value="N/A">N/A</option>'+
         '</select></div>';
     });
@@ -426,7 +426,7 @@ function renderCalMonitoreosTable(){
   } else {
     arr.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
-      html += '<tr><td>'+m.asesor+'</td><td>'+(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+(m.idLlamada||'-')+'</td><td>'+(m.codificacion||'-')+'</td><td>'+(m.evaluador||'-')+'</td>'+
+      html += '<tr><td>'+esc(m.asesor)+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.fallos+'</td><td>'+m.nivelCritico+'</td>'+
         (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):'')+'</tr>';
     });
@@ -453,7 +453,7 @@ function renderCalResumenTable(){
       var prom = Math.round((d.sum/d.count)*10)/10;
       var clasif = prom<70 ? '🔴 CRITICO' : (prom<90 ? '🟡 NO CRITICO' : '🟢 SOBRESALIENTE');
       var alerta = d.fallos===0 ? '✅ SIN FALLOS CRITICOS' : (d.fallos<=1 ? '⚠️ ALERTA' : '🚨 CRITICO FRECUENTE');
-      html += '<tr><td>'+n+'</td><td>'+d.count+'</td><td class="peak">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
+      html += '<tr><td>'+esc(n)+'</td><td>'+d.count+'</td><td class="peak">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
     });
   }
   document.getElementById('cal-resumen-table').innerHTML = html;
@@ -500,7 +500,7 @@ function renderCalConfig(){
   if(pv){
     if(row){
       pv.innerHTML =
-        '<div class="qi-pill"><div class="qv" style="font-size:1rem">'+(row.liderNombre||'—')+'</div><div class="ql">LIDER RESPONSABLE</div></div>'+
+        '<div class="qi-pill"><div class="qv" style="font-size:1rem">'+esc(row.liderNombre||'—')+'</div><div class="ql">LIDER RESPONSABLE</div></div>'+
         '<div class="qi-pill"><div class="qv">'+row.asesores+'</div><div class="ql">CANTIDAD ASESORES</div></div>'+
         '<div class="qi-pill"><div class="qv">'+row.metaGrupal+'</div><div class="ql">MI META DEL MES</div></div>'+
         '<div class="qi-pill"><div class="qv">'+row.metaPorAsesor+'</div><div class="ql">META MES / ASESOR</div></div>'+
@@ -519,7 +519,7 @@ function renderCalConfig(){
   } else {
     rows.forEach(function(u){
       var acceso = u.perms['campana_'+_ccampana]===true;
-      html += '<tr><td>'+u.nombre+' (@'+u.user+')</td><td>'+u.rol+'</td><td>'+(acceso?'✅ Si':'❌ No')+'</td><td>'+(u.active?'Activo':'Suspendido')+'</td></tr>';
+      html += '<tr><td>'+esc(u.nombre)+' (@'+esc(u.user)+')</td><td>'+esc(u.rol)+'</td><td>'+(acceso?'✅ Si':'❌ No')+'</td><td>'+(u.active?'Activo':'Suspendido')+'</td></tr>';
     });
   }
   document.getElementById('cal-permisos-table').innerHTML = html;
@@ -575,13 +575,21 @@ function closeSupervisionLider(){
 }
 document.getElementById('supervisar-lider-overlay').addEventListener('click',function(e){ if(e.target===this) closeSupervisionLider(); });
 
+// El boton "Supervisar" de la tabla de cumplimiento lleva los datos en data-*
+// (no en un onclick con texto libre — evita inyeccion de JS via liderNombre).
+document.getElementById('cal-cumplimiento-table').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-lider]');
+  if(!btn) return;
+  verSupervisionLider(btn.dataset.campana, btn.dataset.mes, btn.dataset.lider);
+});
+
 function verSupervisionLider(camp, mes, liderNombre){
   var lideres = calLideresCumplimiento(camp, mes);
   var l = lideres.find(function(x){ return x.liderNombre===liderNombre; });
   if(!l){ showToast('No se encontraron datos para esta persona'); return; }
   document.getElementById('sl-sub-label').textContent = camp+' — '+mes;
   document.getElementById('sl-kpis').innerHTML =
-    '<div class="aurora-kpi" style="grid-column:span 1"><div class="kv" style="font-size:1rem">'+l.liderNombre+'</div><div class="kl">Persona de Calidad / Supervisor</div></div>'+
+    '<div class="aurora-kpi" style="grid-column:span 1"><div class="kv" style="font-size:1rem">'+esc(l.liderNombre)+'</div><div class="kl">Persona de Calidad / Supervisor</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+l.realizados+' / '+l.meta+'</div><div class="kl">Total Realizado / Meta</div></div>'+
     '<div class="aurora-kpi '+(l.pct>=100?'kpi-green':'kpi-org')+'"><div class="kv">'+l.pct+'%</div><div class="kl">% Cumplimiento Total</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+l.realizadosLlamada+' / '+l.metaLlamada+'</div><div class="kl">Llamada'+(l.pctLlamadaCompl!==null?' ('+l.pctLlamadaCompl+'%)':'')+'</div></div>'+
@@ -597,7 +605,7 @@ function verSupervisionLider(camp, mes, liderNombre){
   } else {
     misMon.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
-      html += '<tr><td>'+(m.fecha||'-')+'</td><td>'+m.asesor+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td></tr>';
+      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.asesor)+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td></tr>';
     });
   }
   document.getElementById('sl-monitoreos-table').innerHTML = html;
@@ -632,10 +640,10 @@ function renderCalReportes(){
     html += '<tr><td colspan="9" style="text-align:center;color:#7a9ba8">'+curMonth+' no tiene metas individuales programadas en Admin</td></tr>';
   } else {
     lideres.forEach(function(l){
-      html += '<tr><td>'+l.liderNombre+'</td><td>'+l.meta+'</td><td>'+l.realizados+'</td><td class="'+(l.pct>=100?'peak':'')+'">'+l.pct+'%</td>'+
+      html += '<tr><td>'+esc(l.liderNombre)+'</td><td>'+l.meta+'</td><td>'+l.realizados+'</td><td class="'+(l.pct>=100?'peak':'')+'">'+l.pct+'%</td>'+
         '<td>'+l.metaLlamada+'</td><td>'+l.realizadosLlamada+(l.pctLlamadaCompl!==null?' ('+l.pctLlamadaCompl+'%)':'')+'</td>'+
         '<td>'+(l.auditaWpp?l.metaWpp:'-')+'</td><td>'+(l.auditaWpp?(l.realizadosWpp+(l.pctWppCompl!==null?' ('+l.pctWppCompl+'%)':'')):'-')+'</td>'+
-        '<td><button class="btn-sm btn-edit" onclick="verSupervisionLider(\''+_ccampana+'\',\''+curMonth+'\',\''+l.liderNombre.replace(/'/g,"\\'")+'\')">Supervisar</button></td></tr>';
+        '<td><button class="btn-sm btn-edit" data-campana="'+esc(_ccampana)+'" data-mes="'+esc(curMonth)+'" data-lider="'+esc(l.liderNombre)+'">Supervisar</button></td></tr>';
     });
   }
   document.getElementById('cal-cumplimiento-table').innerHTML = html;

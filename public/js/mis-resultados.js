@@ -67,7 +67,7 @@ async function renderMisResultados(){
     html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">'+(_mrMesFiltro?'No tienes monitoreos en '+_mrMesFiltro:'Aun no tienes monitoreos de calidad registrados')+'</td></tr>';
   } else {
     rows.forEach(function(m,i){
-      html += '<tr><td>'+(m.fecha||'-')+'</td><td>'+m.campana+'</td><td>'+(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td>'+
+      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="verDetalleMonitoreo('+i+')">Ver Detalle</button></td></tr>';
     });
   }
@@ -104,13 +104,13 @@ function verDetalleMonitoreo(idx){
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
   var html = '';
   cats.forEach(function(cat){
-    html += '<div class="qi-cat-header">'+cat+'</div>';
+    html += '<div class="qi-cat-header">'+esc(cat)+'</div>';
     items.filter(function(it){return it.cat===cat;}).forEach(function(it){
       var a = answers[it.n] || '';
       var badgeCls = a==='SI' ? 'qi-answer-si' : a==='NO' ? 'qi-answer-no' : a==='N/A' ? 'qi-answer-na' : 'qi-answer-blank';
       html += '<div class="qi-row">'+
-        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+it.n+'. '+it.label+'<span class="qi-weight">('+it.weight+'%)</span></div>'+
-        '<span class="qi-answer-badge '+badgeCls+'">'+(a||'—')+'</span></div>';
+        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(it.weight)+'%)</span></div>'+
+        '<span class="qi-answer-badge '+badgeCls+'">'+esc(a||'—')+'</span></div>';
     });
   });
   document.getElementById('dm-items-wrap').innerHTML = html;

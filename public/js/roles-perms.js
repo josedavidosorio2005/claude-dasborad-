@@ -84,7 +84,7 @@ function renderPermTable(roleKey,filter){
   tbody.innerHTML=ru.map(function(u){
     var allOn=allDashPermsOn(u);
     return '<tr id="prow-'+u.id+'">'+
-      '<td class="col-user"><span class="u-name">'+u.nombre+'</span><span class="u-login">@'+u.user+'</span>'+
+      '<td class="col-user"><span class="u-name">'+esc(u.nombre)+'</span><span class="u-login">@'+esc(u.user)+'</span>'+
       '<span class="u-status"><span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>'+(u.active?'Activo':'Suspendido')+'</span></td>'+
       '<td class="col-all"><label class="master-toggle"><input type="checkbox" '+(allOn?'checked':'')+
       ' data-uid="'+u.id+'" data-role="'+roleKey+'" onchange="toggleAllPerms(this)">'+
@@ -144,8 +144,8 @@ function renderAuxPerms(filter){
     var u=auxUsers[i];
     html+='<div style="border-top:1px solid #edf2f6;padding:22px 24px">';
     html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">';
-    html+='<strong style="color:#0d4a5e;font-size:0.95rem">'+u.nombre+'</strong>';
-    html+='<span style="font-size:0.76rem;color:#7a9ba8">@'+u.user+'</span>';
+    html+='<strong style="color:#0d4a5e;font-size:0.95rem">'+esc(u.nombre)+'</strong>';
+    html+='<span style="font-size:0.76rem;color:#7a9ba8">@'+esc(u.user)+'</span>';
     html+='<span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>';
     html+='<span style="font-size:0.76rem;color:#7a9ba8">'+(u.active?'Activo':'Suspendido')+'</span>';
     html+='</div>';
