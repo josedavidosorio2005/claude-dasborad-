@@ -20,7 +20,11 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: produccion   # permite exigir aprobacion manual en GitHub
+    # Sin `environment:` — el deploy es continuo sin reviewers, y declarar un
+    # environment cambia el `sub` del token OIDC a `repo:ORG/REPO:environment:...`,
+    # que no casa con la trust policy del rol (`...:ref:refs/heads/main`).
+    # Si en el futuro se quiere gating manual: reponer `environment: produccion`
+    # Y añadir ese `sub` a la condición del rol inconexion-github-deploy.
 
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
