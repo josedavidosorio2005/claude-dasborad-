@@ -42,6 +42,36 @@ test('cargar datos exige el permiso cargarDatos', async () => {
   assert.equal(r.status, 403);
 });
 
+test('REPORTES trae cargarDatos:true automaticamente al crearse (feedback Edwin 2.1)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const user = 'rep_' + Math.random().toString(36).slice(2, 8);
+  // se crea SIN pasar cargarDatos en perms
+  const created = await request(app).post('/api/users').set(auth(admin)).send({
+    nombre: 'Reportes Auto', user, password: 'ClaveRep123', rol: 'REPORTES', perms: { campana_ORLANT: true },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  assert.equal(created.body.perms.cargarDatos, true, 'REPORTES debe traer cargarDatos sin asignarlo a mano');
+
+  // y efectivamente puede cargar datos de dashboards
+  const tok = await tokenFor(user, 'ClaveRep123');
+  const carga = await request(app).post('/api/dashboard/cargas').set(auth(tok)).send({
+    cliente: 'ORLANT', seccion: 'tipificacion', cadencia: 'mensual', periodo: '2026-07',
+    filas: [{ linea: '3P', tipificacion: 'X', cantidad: 1 }],
+  });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+});
+
+test('cambiar el rol de un usuario a REPORTES le agrega cargarDatos (feedback Edwin 2.1)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const u = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true } });
+  const antes = await request(app).get('/api/users').set(auth(admin));
+  assert.notEqual((antes.body.find((x) => x.id === u.id).perms || {}).cargarDatos, true);
+
+  const upd = await request(app).put('/api/users/' + u.id).set(auth(admin)).send({ rol: 'REPORTES' });
+  assert.equal(upd.status, 200);
+  assert.equal(upd.body.perms.cargarDatos, true, 'al pasar a REPORTES debe ganar cargarDatos');
+});
+
 test('flujo completo: cargar resumen, leerlo en el dashboard, reemplazarlo', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } });

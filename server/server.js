@@ -79,6 +79,16 @@ function actorLabel(actor) {
   return `${actor.nombre} (@${actor.user})`;
 }
 
+// Defaults de permisos ligados al rol (feedback de Edwin 2.1).
+// El rol REPORTES es quien monta los datos que alimentan los dashboards, asi que
+// siempre trae `cargarDatos: true` sin que nadie se lo asigne a mano — al crear
+// el usuario y al cambiarle el rol a REPORTES.
+function applyRolePermDefaults(rol, perms) {
+  const p = perms && typeof perms === 'object' ? { ...perms } : {};
+  if (rol === 'REPORTES') p.cargarDatos = true;
+  return p;
+}
+
 // ── Helpers del modulo de Calidad ────────────────────────────
 function getPlantillaRow(campana) {
   return db
@@ -308,7 +318,7 @@ function createApp() {
           `INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt)
            VALUES (?,?,?,1,?,?,?,?)`
         )
-        .run(nombre, user, rol, hash, JSON.stringify(perms || {}), asesorCampana || null, nowStr());
+        .run(nombre, user, rol, hash, JSON.stringify(applyRolePermDefaults(rol, perms)), asesorCampana || null, nowStr());
       const row = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
       logEvent('CREADO', row, actorLabel(req.actor), `Rol: ${rol}`);
       res.status(201).json(toPublicUser(row));
@@ -334,14 +344,16 @@ function createApp() {
       }
 
       const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
+      const effectiveRol = rol ?? row.rol;
+      const basePerms = perms ?? JSON.parse(row.perms || '{}');
       db.prepare(
         `UPDATE users SET nombre=?, user=?, rol=?, password_hash=?, perms=?, asesorCampana=? WHERE id=?`
       ).run(
         nombre ?? row.nombre,
         user ?? row.user,
-        rol ?? row.rol,
+        effectiveRol,
         newHash,
-        JSON.stringify(perms ?? JSON.parse(row.perms || '{}')),
+        JSON.stringify(applyRolePermDefaults(effectiveRol, basePerms)),
         asesorCampana ?? row.asesorCampana,
         id
       );

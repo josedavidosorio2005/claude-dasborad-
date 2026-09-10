@@ -107,6 +107,7 @@ function openEditModal(id){
   document.getElementById('mu-asesor-note').style.display=showAsesorEdit?'block':'none';
   if(showAsesorEdit) buildAsesorCampanaSelect(u.asesorCampana);
   document.getElementById('mu-cargar-datos').checked=(u.perms && u.perms.cargarDatos===true);
+  syncCargarDatosLock(u.rol);
   document.getElementById('modal-user').classList.add('show');
 }
 
@@ -121,6 +122,16 @@ function onRolChange(){
   var showAsesor=(rol==='ASESOR');
   document.getElementById('mu-asesor-note').style.display=showAsesor?'block':'none';
   if(showAsesor) buildAsesorCampanaSelect(null);
+  syncCargarDatosLock(rol);
+}
+
+// REPORTES siempre puede cargar datos (feedback Edwin 2.1): el backend lo fuerza;
+// aqui se refleja marcando y bloqueando el check para que el admin lo entienda.
+function syncCargarDatosLock(rol){
+  var cd=document.getElementById('mu-cargar-datos');
+  var note=document.getElementById('mu-cargar-datos-reportes-note');
+  if(rol==='REPORTES'){ cd.checked=true; cd.disabled=true; if(note) note.style.display='block'; }
+  else { cd.disabled=false; if(note) note.style.display='none'; }
 }
 
 function buildAsesorCampanaSelect(existingCampana){
