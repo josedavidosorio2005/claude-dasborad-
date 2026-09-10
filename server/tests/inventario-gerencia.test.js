@@ -92,72 +92,54 @@ test('Inventario: CRUD de items y control de permisos', async (t) => {
   assert.equal(resDel.status, 200);
 });
 
-test('Gerencia: CRUD de KPIs y control de permisos', async (t) => {
+test('Gerencia: LECTURA con perms.Gerencia, ESCRITURA solo con Cargar Datos (feedback Edwin 2.2)', async (t) => {
   const adminToken = await tokenFor('admin', MASTER_PASSWORD);
-  const gerToken = await tokenFor('jherrera', SEED.jherrera); // rol GERENCIA con perms.Gerencia: true
+  const gerToken = await tokenFor('jherrera', SEED.jherrera); // rol GERENCIA, perms.Gerencia: true, SIN cargarDatos
   const noGerToken = await tokenFor('crodriguez', SEED.crodriguez); // rol CALIDAD sin perms.Gerencia
+  // Un cargador de datos (rol REPORTES -> cargarDatos automatico, ver 2.1)
+  const loaderUser = 'gerload_' + Math.random().toString(36).slice(2, 8);
+  await request(app).post('/api/users').set('Authorization', 'Bearer ' + adminToken)
+    .send({ nombre: 'Ger Loader', user: loaderUser, password: 'ClaveLoad123', rol: 'REPORTES', perms: {} });
+  const loaderToken = await tokenFor(loaderUser, 'ClaveLoad123');
 
-  // 1. Usuario sin permiso recibe 403
-  const resNoAcc = await request(app)
-    .get('/api/gerencia/kpis')
-    .set('Authorization', 'Bearer ' + noGerToken);
-  assert.equal(resNoAcc.status, 403);
+  // 1. Usuario sin perms.Gerencia no puede ni leer
+  assert.equal((await request(app).get('/api/gerencia/kpis').set('Authorization', 'Bearer ' + noGerToken)).status, 403);
 
-  // 2. Crear KPI individual
-  const kpiData = {
-    periodo: '2026-09',
-    nombre: 'Nivel de Atencion Global',
-    categoria: 'Operaciones',
-    valor: 94.2,
-    unidad: '%',
-    meta: 90.0,
-    observaciones: 'Meta superada',
-  };
-  const resCrear = await request(app)
-    .post('/api/gerencia/kpis')
-    .set('Authorization', 'Bearer ' + gerToken)
-    .send(kpiData);
-  assert.equal(resCrear.status, 201);
-  assert.equal(resCrear.body.nombre, 'Nivel de Atencion Global');
-  assert.equal(resCrear.body.valor, 94.2);
+  // 2. Gerencia PUEDE leer
+  const kpiData = { periodo: '2026-09', nombre: 'Nivel de Atencion Global', categoria: 'Operaciones', valor: 94.2, unidad: '%', meta: 90.0 };
+  // ...pero NO puede crear
+  const gerCrea = await request(app).post('/api/gerencia/kpis').set('Authorization', 'Bearer ' + gerToken).send(kpiData);
+  assert.equal(gerCrea.status, 403, 'Gerencia es solo lectura: POST /gerencia/kpis debe dar 403');
+
+  // 3. El cargador de datos SI crea
+  const resCrear = await request(app).post('/api/gerencia/kpis').set('Authorization', 'Bearer ' + loaderToken).send(kpiData);
+  assert.equal(resCrear.status, 201, JSON.stringify(resCrear.body));
   const kpiId = resCrear.body.id;
 
-  // 3. Resumen gerencial
-  const resResumen = await request(app)
-    .get('/api/gerencia/resumen?periodo=2026-09')
-    .set('Authorization', 'Bearer ' + gerToken);
+  // 4. Gerencia lee KPIs, resumen y periodos (200)
+  assert.equal((await request(app).get('/api/gerencia/kpis?periodo=2026-09').set('Authorization', 'Bearer ' + gerToken)).status, 200);
+  const resResumen = await request(app).get('/api/gerencia/resumen?periodo=2026-09').set('Authorization', 'Bearer ' + gerToken);
   assert.equal(resResumen.status, 200);
-  assert.equal(resResumen.body.periodo, '2026-09');
-  assert.ok(resResumen.body.kpis.length >= 1);
   assert.ok(resResumen.body.porCategoria['Operaciones']);
+  assert.ok((await request(app).get('/api/gerencia/periodos').set('Authorization', 'Bearer ' + gerToken)).body.includes('2026-09'));
 
-  // 4. Periodos disponibles
-  const resPeriodos = await request(app)
-    .get('/api/gerencia/periodos')
-    .set('Authorization', 'Bearer ' + gerToken);
-  assert.equal(resPeriodos.status, 200);
-  assert.ok(resPeriodos.body.includes('2026-09'));
+  // 5. Gerencia NO puede editar, borrar ni cargar Excel
+  assert.equal((await request(app).put('/api/gerencia/kpis/' + kpiId).set('Authorization', 'Bearer ' + gerToken).send({ valor: 1 })).status, 403);
+  assert.equal((await request(app).delete('/api/gerencia/kpis/' + kpiId).set('Authorization', 'Bearer ' + gerToken)).status, 403);
+  assert.equal((await request(app).post('/api/gerencia/carga').set('Authorization', 'Bearer ' + gerToken)
+    .send({ periodo: '2026-09', kpis: [{ nombre: 'X', categoria: 'Operaciones', valor: 1, meta: 1 }] })).status, 403);
 
-  // 5. Carga masiva de KPIs (simulando Excel)
-  const cargaKpis = {
+  // 6. El cargador de datos SI puede la carga masiva y el borrado
+  const resCarga = await request(app).post('/api/gerencia/carga').set('Authorization', 'Bearer ' + loaderToken).send({
     periodo: '2026-09',
     kpis: [
       { nombre: 'AHT Promedio', categoria: 'Operaciones', valor: 380, unidad: 'seg', meta: 400 },
       { nombre: 'Costo por Contacto', categoria: 'Financiero', valor: 3200, unidad: 'COP', meta: 3500 },
     ],
-  };
-  const resCarga = await request(app)
-    .post('/api/gerencia/carga')
-    .set('Authorization', 'Bearer ' + gerToken)
-    .send(cargaKpis);
+  });
   assert.equal(resCarga.status, 201);
   assert.equal(resCarga.body.upserted, 2);
-
-  // 6. Eliminar KPI
-  const resDel = await request(app)
-    .delete('/api/gerencia/kpis/' + kpiId)
-    .set('Authorization', 'Bearer ' + adminToken);
-  assert.equal(resDel.status, 200);
+  assert.equal((await request(app).delete('/api/gerencia/kpis/' + kpiId).set('Authorization', 'Bearer ' + adminToken)).status, 200);
 });
 
 test('M4: dashboards configurables de Inventario y Gerencia (adaptadores)', async () => {
@@ -171,9 +153,10 @@ test('M4: dashboards configurables de Inventario y Gerencia (adaptadores)', asyn
     .send({ nombre: 'Diadema QA', categoria: 'Equipos', cantidad: 10, unidad: 'un', estado: 'Disponible', costoUnitario: 50000 });
   await request(app).post('/api/inventario/items').set('Authorization', B(invToken))
     .send({ nombre: 'Silla QA', categoria: 'Mobiliario', cantidad: 0, unidad: 'un', estado: 'Mantenimiento', costoUnitario: 200000 });
-  await request(app).post('/api/gerencia/kpis').set('Authorization', B(gerToken))
+  // Gerencia es solo lectura (2.2): los KPIs los carga el admin / un cargador de datos.
+  await request(app).post('/api/gerencia/kpis').set('Authorization', B(admin))
     .send({ periodo: '2026-08', nombre: 'Nivel de atencion', categoria: 'Operaciones', valor: 92, unidad: '%', meta: 90 });
-  await request(app).post('/api/gerencia/kpis').set('Authorization', B(gerToken))
+  await request(app).post('/api/gerencia/kpis').set('Authorization', B(admin))
     .send({ periodo: '2026-08', nombre: 'Productividad', categoria: 'Operaciones', valor: 80, unidad: '%', meta: 90 });
 
   // Inventario: renderiza por el motor generico, con KPIs derivados y alerta de sin stock

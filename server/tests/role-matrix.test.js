@@ -63,14 +63,18 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 403);
   });
 
-  // ── GERENCIA (jherrera): gerencia + campañas de calidad, no inventario ──
-  await t.test('GERENCIA: su módulo y calidad sí, inventario no', async () => {
+  // ── GERENCIA (jherrera): lee gerencia + calidad; NO escribe (solo lectura); no inventario ──
+  await t.test('GERENCIA: su módulo y calidad sí (solo lectura), inventario no', async () => {
     const tok = await tokenFor('jherrera', SEED.jherrera);
     assert.equal(await G(tok, '/api/gerencia/kpis?periodo=2026-08'), 200);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 200);
     assert.equal(await G(tok, '/api/monitoreos?campana=ORLANT'), 200);
     assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
     assert.equal(await G(tok, '/api/inventario/items'), 403);
+    // Gerencia es SOLO LECTURA (feedback Edwin 2.2): no crea/edita/borra/carga KPIs.
+    const w = await request(app).post('/api/gerencia/kpis').set(auth(tok))
+      .send({ periodo: '2026-08', nombre: 'W RM', categoria: 'Operaciones', valor: 1, unidad: '%', meta: 1 });
+    assert.equal(w.status, 403);
   });
 
   // ── CLIENTES_DASH (agomez): todos los dashboards de cliente, no la config ──

@@ -1489,13 +1489,16 @@ function createApp() {
     })
   );
 
-  // Crear / actualizar un KPI individual
+  // Crear / actualizar un KPI individual.
+  // Gerencia es SOLO LECTURA (feedback de Edwin 2.2): la escritura de KPIs
+  // ejecutivos exige el permiso de carga de datos (cargarDatos / admin), igual
+  // que el resto de datos que alimentan los dashboards.
   api.post(
     '/gerencia/kpis',
     requireActor,
     validate(schemas.gerenciaKpiBody),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; cargar KPIs exige el permiso Cargar Datos' });
       const b = req.body;
       const now = nowStr();
       const existing = db.prepare('SELECT id FROM gerencia_kpis WHERE periodo = ? AND nombre = ?').get(b.periodo, b.nombre);
@@ -1524,7 +1527,7 @@ function createApp() {
     validate(schemas.idParamSchema, 'params'),
     validate(schemas.gerenciaKpiUpdate),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; editar KPIs exige el permiso Cargar Datos' });
       const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
       if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
       const b = req.body;
@@ -1547,7 +1550,7 @@ function createApp() {
     requireActor,
     validate(schemas.idParamSchema, 'params'),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; borrar KPIs exige el permiso Cargar Datos' });
       const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
       if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
       db.prepare('DELETE FROM gerencia_kpis WHERE id = ?').run(row.id);
@@ -1562,7 +1565,7 @@ function createApp() {
     requireActor,
     validate(schemas.gerenciaCargaBody),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; la carga de KPIs exige el permiso Cargar Datos' });
       const { periodo, kpis } = req.body;
       const now = nowStr();
       let upserted = 0;

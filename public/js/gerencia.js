@@ -9,6 +9,15 @@ var _gerResumen = null;
 var _gerTab = 'panel';
 var _gerEditId = null;
 
+// Gerencia es SOLO LECTURA (feedback Edwin 2.2): crear/editar/borrar/cargar KPIs
+// exige el permiso "Cargar Datos". El backend responde 403; aqui ocultamos las
+// acciones de escritura para el rol GERENCIA puro.
+function _gerCanWrite(){ return typeof canLoadData === 'function' ? canLoadData() : (typeof isFullAdmin === 'function' && isFullAdmin()); }
+function _gerApplyWritePerm(){
+  var show = _gerCanWrite();
+  document.querySelectorAll('.ger-write-only').forEach(function(el){ el.style.display = show ? '' : 'none'; });
+}
+
 // ═══════════════════════════════════════════════════════════
 // APERTURA / CIERRE
 // ═══════════════════════════════════════════════════════════
@@ -20,6 +29,7 @@ async function openGerencia(){
   await loadGerData();
   renderGerPeriodos();
   renderGerPanel();
+  _gerApplyWritePerm();
 }
 function closeGerencia(){
   document.getElementById('gerencia-overlay').classList.remove('show');
@@ -141,9 +151,11 @@ function renderGerTabla(){
         metaFmt = k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta.toLocaleString('es-CO');
         cumple = k.valor >= k.meta ? '<span class="kpi-green" style="font-weight:600">Si</span>' : '<span class="kpi-red" style="font-weight:600">No</span>';
       }
+      var acc = _gerCanWrite()
+        ? '<button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button>'
+        : '';
       html += '<tr><td><strong>'+esc(k.nombre)+'</strong></td><td>'+esc(k.categoria)+'</td><td class="peak">'+valFmt+'</td><td>'+esc(k.unidad||'-')+'</td><td>'+metaFmt+'</td><td>'+cumple+'</td><td>'+esc(k.observaciones||'-')+'</td>'+
-        '<td><button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> '+
-        '<button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button></td></tr>';
+        '<td>'+acc+'</td></tr>';
     });
   }
   document.getElementById('ger-tabla').innerHTML = html;
@@ -292,6 +304,7 @@ async function renderGerenciaSection(){
   await loadGerData();
   renderGerAdminStats();
   renderGerAdminTabla();
+  _gerApplyWritePerm();
 }
 
 function renderGerAdminStats(){
@@ -315,9 +328,11 @@ function renderGerAdminTabla(){
       var valFmt = k.unidad === '%' ? k.valor+'%' : k.unidad === 'USD' ? '$'+k.valor.toLocaleString('es-CO') : k.valor;
       var metaFmt = (k.meta !== null && k.meta !== undefined) ?
         (k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta) : '-';
+      var acc = _gerCanWrite()
+        ? '<button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button>'
+        : '';
       html += '<tr><td>'+esc(k.periodo)+'</td><td><strong>'+esc(k.nombre)+'</strong></td><td>'+esc(k.categoria)+'</td><td class="peak">'+valFmt+'</td><td>'+esc(k.unidad||'-')+'</td><td>'+metaFmt+'</td>'+
-        '<td><button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> '+
-        '<button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button></td></tr>';
+        '<td>'+acc+'</td></tr>';
     });
   }
   var tbody = document.getElementById('ger-admin-tbody');

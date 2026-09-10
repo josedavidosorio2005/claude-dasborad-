@@ -308,7 +308,7 @@
             <h3>Indicadores del Periodo</h3>
             <div class="header-actions">
               <button class="btn-cancel" onclick="openGerencia()">Ver modulo completo</button>
-              <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
+              <button class="btn-primary ger-write-only" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -807,12 +807,12 @@
     <div class="aurora-tabs">
       <button class="atab atab-active" data-ctab="panel" onclick="switchGerTab('panel')">Panel</button>
       <button class="atab" data-ctab="tabla" onclick="switchGerTab('tabla')">Tabla</button>
-      <button class="atab" data-ctab="carga" onclick="switchGerTab('carga')">Carga Excel</button>
+      <button class="atab ger-write-only" data-ctab="carga" onclick="switchGerTab('carga')">Carga Excel</button>
     </div>
 
     <!-- TAB: PANEL -->
     <div id="ger-panel-panel" class="atab-panel visible">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <div class="ger-write-only" style="display:flex;justify-content:flex-end;margin-bottom:10px">
         <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
       </div>
       <div id="ger-panels"></div>
