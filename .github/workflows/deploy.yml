@@ -56,6 +56,38 @@ jobs:
           docker push "$IMAGE:latest"
           echo "IMAGE=$IMAGE:$SHA" >> "$GITHUB_ENV"
 
+      # El puerto 22 de la instancia está restringido a la IP fija del operador
+      # (los runners de GitHub tienen IP dinámica). Aquí añadimos SOLO la IP de
+      # este runner al firewall, justo para este deploy, y la quitamos al final
+      # (paso `Cerrar SSH (22)`, if: always()). El 22 nunca queda abierto a todo.
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          # Guardamos el estado actual para revertirlo tal cual al terminar.
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          # put-instance-public-ports REEMPLAZA todo el set de reglas: reconstruimos
+          # las actuales sin cambios y sólo a la del 22/tcp le añadimos la IP del runner.
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          echo "Nuevo set: $NEW"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
       - name: Desplegar en la instancia por SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -78,3 +110,22 @@ jobs:
             done
             curl -fsS http://127.0.0.1:3000/api/health
             docker image prune -f
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
