@@ -335,3 +335,70 @@ revisión y PR manual (el deploy a producción es continuo, así que nada llega 
   Edwin. Los 5 commits siguientes son 1.1/2.3, 2.1, 2.2, 3.1.
 - `apiRequest` ahora adjunta `err.status` y `err.data` al Error que lanza (lo
   necesitaba el flujo 409 de 3.1; es retrocompatible).
+
+---
+
+## Fase 11 — Cierre: Gestión Humana + pasada de calidad + merge a producción (2026-09-10)
+
+### Feedback de Edwin — punto 4 (Gestión Humana) implementado
+
+Módulo nuevo siguiendo el patrón Inventario/Gerencia. Ver commit
+`feat(gestion-humana)`.
+
+- **Tabla** `gestion_humana_personal` (`db.js`) con índices `campana`,
+  `fecha_ingreso`, `fecha_salida`.
+- **Campo nuevo pedido por Edwin** para la rentabilidad: `costo_hora` +
+  `horas_mes` **por asesor** (no por campaña). Decisión: la tabla ya es por
+  persona; el costo de una campaña = suma de su gente activa; así soporta que
+  alguien cambie de campaña o tenga tarifa distinta. Costo mensual persona =
+  `costo_hora * horas_mes`.
+- **Rol** `GESTION_HUMANA` + permiso `GestionHumana`. La matriz de roles pasa de
+  9 a **10 roles** (`role-matrix.test.js`).
+- **Rutas** `/api/gh/personal` (CRUD) + `/api/gh/resumen`, guardadas por
+  `can(actor,'GestionHumana')`.
+- **Dashboard** `GESTION_HUMANA` (adapter): rotación (`bajas del mes / activos al
+  inicio del mes`), ingresos/salidas por mes, costo de nómina, y **rentabilidad
+  por campaña** = `ingresos - costo`.
+- **Frontend**: sección admin + overlay (para el rol) + modal CRUD; `esc()` en
+  todo dato. Se agregó también la regla CSS de overlay que **faltaba** para
+  `#inventario-overlay` / `#gerencia-overlay` (quedaban como bloque suelto al
+  fondo de la página — bug preexistente encontrado en la pasada).
+- **Tests**: `gestion-humana.test.js` (6).
+
+### Huecos de negocio que quedan (documentados, no bloquean)
+
+| Punto | Qué falta | Estado en el código |
+|---|---|---|
+| **1.2** "Quitar inventario del lugar de visita del historial" | Descripción/captura de qué se ve mal. El historial hoy muestra eventos `INV_*`/`GER_*`/`GH_*`/`DASHBOARD_*`/Calidad además de los de usuarios; el `<select>` de filtro solo lista acciones de usuarios. | Sin cambios — necesita aclaración de Edwin. |
+| **3.2** Nivel de servicio | Fórmula exacta de la operación + qué columnas de Excel la alimentan. | Sin implementar. |
+| **3.3** "Editar dashboard subiendo Excel" | Si es (a) cargar datos (ya existe) o (b) definir la estructura por Excel. | Sin implementar. |
+| **3.1 parte 2** Cadencia diaria por dashboard | Qué dashboards deben ofrecer granularidad diaria. | El modelo y el selector ya la soportan cuando la sección usa `periodo:'dia'`. |
+| **GH — "efectividad y ganancias"** | Definición (producción del equipo vs objetivo, o ingresos vs costo). | No se implementó como métrica propia. |
+| **GH — "ingresos generados" por campaña** | Qué KPI exacto de cada plantilla de cliente es "ingresos". | Heurística: `recaudo` si existe, si no `ventas`, de la última carga `resumen` del dashboard de esa campaña. |
+| **GH — campos de la persona** | Si Edwin necesita más que documento/cargo/supervisor/salario. | Incluidos como opcionales. |
+
+### Pasada de calidad / seguridad / escalabilidad
+
+- **XSS**: barrido de todos los sinks `innerHTML`/`document.write` de `public/js/`
+  incluyendo `gestion-humana.js` — 100% pasa por `esc()`/valores numéricos.
+  `xss-frontend.test.js` sigue en verde.
+- **`GET /api/users`**: ya resuelto en la fase anterior (roles no privilegiados
+  reciben `perms:{}`). Sin cambios.
+- **`npm audit`**: 0 vulnerabilidades.
+- **`npm outdated`**: se aplicó el único parche disponible (`@aws-sdk/client-s3` y
+  `@aws-sdk/client-ssm` 3.1129 → 3.1130). El resto son majors (express 4→5,
+  helmet 7→8, zod 3→4, bcryptjs 2→3, better-sqlite3 12→13, dotenv 16→17,
+  express-rate-limit 7→8) — no se tocan sin aprobación.
+- **`server/Dockerfile`**: `node:20-*` → **`node:22-*`** (aviso de fin de soporte
+  del AWS SDK v3). `AWS_DEPLOY_REPORT.md` actualizado.
+- **Sin `console.log`** de depuración en código nuevo (server ni frontend).
+- **Índices** de `gestion_humana_personal`: mismo criterio que `inventario_*` /
+  `gerencia_kpis`.
+- **Refactor**: no hizo falta — cada adaptador tiene lógica propia; los helpers
+  (`col`/`U`/`S`/`kpi`) ya se comparten.
+
+### Conteo final de tests
+
+`cd server && npm test` → **85/85** (73 de fases previas + 3 `historial` + 2
+`/api/users`/REPORTES + 6 `gestion-humana` + 1 rework Gerencia neto). `npm audit`
+→ 0.

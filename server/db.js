@@ -252,6 +252,37 @@ CREATE TABLE IF NOT EXISTS gerencia_kpis (
 );
 CREATE INDEX IF NOT EXISTS idx_gerencia_periodo ON gerencia_kpis(periodo);
 CREATE INDEX IF NOT EXISTS idx_gerencia_categoria ON gerencia_kpis(categoria);
+
+-- ── Modulo de Gestion Humana (Fase 10 — feedback de Edwin) ───
+-- Registro de personal por campana/area. Cada fila es una persona; fecha_salida
+-- NULL = sigue activo. Alimenta el dashboard GESTION_HUMANA (rotacion, altas/
+-- bajas por mes, costo de nomina y rentabilidad por campana).
+--
+-- costo_hora / horas_mes: dato NUEVO pedido por Edwin para la rentabilidad por
+-- campana. Se guarda POR ASESOR (no por campana): la tabla ya es por persona, el
+-- costo de una campana sale de sumar el de su gente activa, y asi soporta que
+-- alguien cambie de campana o tenga una tarifa distinta. Costo mensual de una
+-- persona = costo_hora * horas_mes.
+CREATE TABLE IF NOT EXISTS gestion_humana_personal (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  documento TEXT DEFAULT '',           -- cedula / documento (opcional)
+  cargo TEXT DEFAULT '',
+  campana TEXT NOT NULL DEFAULT 'General',   -- campana / area asignada
+  supervisor TEXT DEFAULT '',
+  fecha_ingreso TEXT NOT NULL,         -- YYYY-MM-DD
+  fecha_salida TEXT,                   -- YYYY-MM-DD o NULL (activo)
+  motivo_salida TEXT DEFAULT '',
+  costo_hora REAL NOT NULL DEFAULT 0,  -- moneda local / hora
+  horas_mes REAL NOT NULL DEFAULT 192, -- horas contratadas al mes (jornada plena CO ~192)
+  salario REAL,                        -- opcional, informativo
+  observaciones TEXT DEFAULT '',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_gh_personal_campana ON gestion_humana_personal(campana);
+CREATE INDEX IF NOT EXISTS idx_gh_personal_ingreso ON gestion_humana_personal(fecha_ingreso);
+CREATE INDEX IF NOT EXISTS idx_gh_personal_salida ON gestion_humana_personal(fecha_salida);
 `);
 
 // Semilla de configuracion de dashboards: idempotente por cliente. Inserta las

@@ -1,7 +1,7 @@
 // tests/role-matrix.test.js — Fase 7: matriz de acceso por rol.
 //
 // Confirma que cada rol ve exactamente lo que debe: qué endpoints/módulos puede
-// tocar y cuáles le devuelven 403. Cubre los 9 roles del sistema.
+// tocar y cuáles le devuelven 403. Cubre los 10 roles del sistema.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers');
@@ -75,6 +75,26 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     const w = await request(app).post('/api/gerencia/kpis').set(auth(tok))
       .send({ periodo: '2026-08', nombre: 'W RM', categoria: 'Operaciones', valor: 1, unidad: '%', meta: 1 });
     assert.equal(w.status, 403);
+  });
+
+  // ── GESTION_HUMANA: su modulo (CRUD) si, gerencia/inventario/clientes no ──
+  await t.test('GESTION_HUMANA: su módulo sí, el resto no', async () => {
+    const tok = await crearUsuario(admin, 'GESTION_HUMANA', { GestionHumana: true });
+    assert.equal(await G(tok, '/api/gh/personal'), 200);
+    assert.equal(await G(tok, '/api/gh/resumen'), 200);
+    assert.equal(await G(tok, '/api/dashboard/GESTION_HUMANA'), 200);
+    const alta = await request(app).post('/api/gh/personal').set(auth(tok))
+      .send({ nombre: 'RM GH', campana: 'RM', fecha_ingreso: '2026-02-01', costo_hora: 1000, horas_mes: 160 });
+    assert.equal(alta.status, 201);
+    // no toca otros modulos
+    assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
+    assert.equal(await G(tok, '/api/gerencia/kpis'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/dashboard/ORLANT'), 403);
+    // no puede administrar usuarios
+    const crear = await request(app).post('/api/users').set(auth(tok))
+      .send({ nombre: 'X', user: 'ghx_' + Date.now(), password: 'ClaveLarga123', rol: 'ASESOR' });
+    assert.equal(crear.status, 403);
   });
 
   // ── CLIENTES_DASH (agomez): todos los dashboards de cliente, no la config ──

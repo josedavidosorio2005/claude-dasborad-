@@ -627,7 +627,11 @@ Recorrido honesto sobre esta rama:
 HTTPS. Queda **acción del usuario** (confirmar SNS, cargar los 5 secrets de
 GitHub, `push` a `main`, cambiar las 6 contraseñas semilla) y **decisiones de
 negocio** (§6). Notas honestas en `PROGRESS.md` → «Fase 9»: 1 GB de RAM por
-límite de cuenta nueva, imagen Node 20, sin snapshots automáticos de Lightsail.
+límite de cuenta nueva, sin snapshots automáticos de Lightsail.
+
+> **Actualización 2026-09-10 (Fase 11):** `server/Dockerfile` pasó de `node:20-*`
+> a **`node:22-*`** (el AWS SDK v3 pedirá Node ≥ 22 después de enero 2027).
+> La imagen de producción se reconstruye en el próximo deploy.
 
 ---
 

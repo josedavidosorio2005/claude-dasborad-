@@ -10,22 +10,23 @@
 # docker-compose.yml ya lo hace asi.
 
 # ── Etapa 1: dependencias ───────────────────────────────────
-# node:20 (imagen completa) trae las herramientas de compilacion por si
+# node:22 (imagen completa) trae las herramientas de compilacion por si
 # better-sqlite3 necesitara compilar el binario nativo.
-FROM node:20-bookworm AS deps
+# (Node 22: el AWS SDK v3 pedira >=22 despues de ene-2027; ver AWS_DEPLOY_REPORT.md.)
+FROM node:22-bookworm AS deps
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # ── Etapa 2: runtime ────────────────────────────────────────
-FROM node:20-bookworm-slim AS runtime
+FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 # curl para el HEALTHCHECK
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# node_modules ya compilado contra el mismo ABI de Node 20
+# node_modules ya compilado contra el mismo ABI de Node 22
 COPY --from=deps /app/server/node_modules ./server/node_modules
 COPY server/ ./server/
 COPY public/ ./public/

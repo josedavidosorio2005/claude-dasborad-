@@ -50,6 +50,7 @@
         <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
         <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
         <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
+        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestion Humana</a></li>
       </ul>
     </aside>
     <main class="main-content">
@@ -294,6 +295,29 @@
           <div class="table-wrap">
             <table><thead><tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr></thead>
             <tbody id="inv-admin-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- GESTION HUMANA SECTION -->
+      <div id="section-gestionhumana" class="hidden">
+        <div class="page-title">Gestion Humana</div>
+        <div class="page-subtitle">Registro de personal por campana: ingresos, salidas, rotacion, costo de nomina y rentabilidad.</div>
+        <div class="stats-grid" id="gh-admin-stats"></div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Personal</h3>
+            <div class="header-actions">
+              <button class="btn-cancel" onclick="openGenericDashboard('GESTION_HUMANA')">Ver dashboard</button>
+              <button class="btn-primary" onclick="ghNuevaPersona()">+ Nueva persona</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Nombre</th><th>Cargo</th><th>Campana</th><th>Ingreso</th><th>Salida</th>
+              <th>Estado</th><th>Costo/mes</th><th></th>
+            </tr></thead>
+            <tbody id="gh-admin-tbody"></tbody></table>
           </div>
         </div>
       </div>
@@ -752,6 +776,40 @@
   </div>
 </div>
 
+<!-- MODAL: Nueva/Editar Persona (Gestion Humana) -->
+<div class="modal-overlay" id="gh-person-modal">
+  <div class="modal" style="max-width:620px">
+    <h3 id="gh-modal-title">Nueva persona</h3>
+    <div class="form-row">
+      <div class="ig"><label>Nombre *</label><input type="text" id="gh-nombre" placeholder="Nombre completo"></div>
+      <div class="ig"><label>Documento</label><input type="text" id="gh-documento" placeholder="Cedula / ID"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Cargo</label><input type="text" id="gh-cargo" placeholder="Ej: Asesor"></div>
+      <div class="ig"><label>Campana / area *</label><input type="text" id="gh-campana" placeholder="Ej: TELEVENTAS SURA"></div>
+      <div class="ig"><label>Supervisor</label><input type="text" id="gh-supervisor" placeholder="Nombre del supervisor"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Fecha de ingreso *</label><input type="date" id="gh-ingreso"></div>
+      <div class="ig"><label>Fecha de salida</label><input type="date" id="gh-salida"></div>
+      <div class="ig"><label>Motivo de salida</label><input type="text" id="gh-motivo" placeholder="Solo si se retiro"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig"><label>Costo por hora *</label><input type="number" id="gh-costo-hora" min="0" step="1" placeholder="0"></div>
+      <div class="ig"><label>Horas / mes</label><input type="number" id="gh-horas-mes" min="0" step="1" value="192"></div>
+      <div class="ig"><label>Salario (opcional)</label><input type="number" id="gh-salario" min="0" step="1" placeholder="Informativo"></div>
+    </div>
+    <div class="form-row">
+      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
+    </div>
+    <p style="font-size:0.78rem;color:#7a9ba8;margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campana del dashboard.</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeGhPersonModal()">Cancelar</button>
+      <button class="btn-primary" onclick="ghGuardarPersona()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Nuevo Movimiento -->
 <div class="modal-overlay" id="inv-mov-modal">
   <div class="modal" style="max-width:520px">
@@ -841,6 +899,31 @@
           </label>
           <button class="btn-cancel" id="ger-cargar-btn" style="display:none"></button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERLAY: Gestion Humana (para roles no-admin, desde el dashboard) -->
+<div id="gestionhumana-overlay">
+  <div id="gestionhumana-modal">
+    <div class="aurora-header">
+      <div>
+        <h2>&#128101; Gestion Humana</h2>
+        <div class="aurora-sub">Personal por campana: ingresos, salidas, rotacion y costo de nomina</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="aurora-close" onclick="closeGestionHumana();openGenericDashboard('GESTION_HUMANA')">Ver dashboard</button>
+        <button class="aurora-close" onclick="closeGestionHumana()">X Cerrar</button>
+      </div>
+    </div>
+    <div class="aurora-kpis" id="gh-ov-kpis"></div>
+    <div class="aurora-card">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn-primary" onclick="ghNuevaPersona()">+ Nueva persona</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="aurora-rank-table" id="gh-ov-table"></table>
       </div>
     </div>
   </div>
@@ -1122,5 +1205,6 @@
 <script src="js/dashboards-admin.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/gerencia.js"></script>
+<script src="js/gestion-humana.js"></script>
 </body>
 </html>

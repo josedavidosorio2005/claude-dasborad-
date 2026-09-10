@@ -354,6 +354,13 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 #calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#gd-overlay.show,#dashcfg-overlay.show{display:flex;}
 #calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#gd-modal,#dashcfg-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
+
+/* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
+   (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
+   al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */
+#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#inventario-overlay.show,#gerencia-overlay.show,#gestionhumana-overlay.show{display:flex;}
+#inventario-modal,#gerencia-modal,#gestionhumana-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;padding-bottom:18px;}
 .dm-readonly{width:100%;padding:11px 14px;border:1.5px solid #e0eaf0;border-radius:8px;font-size:0.94rem;color:var(--c-primary);background:#eef3f6;min-height:20px;}
 .qi-answer-badge{border-radius:6px;padding:5px 12px;font-size:0.8rem;font-weight:700;min-width:60px;text-align:center;display:inline-block;}
 .qi-answer-si{background:#e8f8f1;color:var(--c-success-dark);border:1.5px solid var(--c-success);}

@@ -11,6 +11,7 @@ const ROLES = [
   'CALIDAD',
   'INVENTARIO',
   'GERENCIA',
+  'GESTION_HUMANA',
   'CLIENTES_DASH',
   'REPORTES',
   'ASESOR',
@@ -312,6 +313,41 @@ const gerenciaCargaBody = z.object({
     .max(200, 'Demasiados indicadores en un solo archivo'),
 });
 
+// ── Modulo de Gestion Humana (Fase 10) ─────────────────────
+
+const ghPersonalBody = z.object({
+  nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(200),
+  documento: z.string().trim().max(40).optional().default(''),
+  cargo: z.string().trim().max(120).optional().default(''),
+  campana: z.string().trim().min(1).max(100).default('General'),
+  supervisor: z.string().trim().max(200).optional().default(''),
+  fecha_ingreso: fechaSchema,
+  fecha_salida: z.union([fechaSchema, z.literal(''), z.null()]).optional().default(null),
+  motivo_salida: z.string().trim().max(300).optional().default(''),
+  costo_hora: z.coerce.number().min(0).max(9999999).optional().default(0),
+  horas_mes: z.coerce.number().min(0).max(744).optional().default(192),
+  salario: z.coerce.number().min(0).max(999999999).nullable().optional().default(null),
+  observaciones: z.string().trim().max(500).optional().default(''),
+}).refine(
+  (b) => !b.fecha_salida || b.fecha_salida >= b.fecha_ingreso,
+  { message: 'La fecha de salida no puede ser anterior a la de ingreso', path: ['fecha_salida'] }
+);
+
+const ghPersonalUpdate = z.object({
+  nombre: z.string().trim().min(1).max(200).optional(),
+  documento: z.string().trim().max(40).optional(),
+  cargo: z.string().trim().max(120).optional(),
+  campana: z.string().trim().min(1).max(100).optional(),
+  supervisor: z.string().trim().max(200).optional(),
+  fecha_ingreso: fechaSchema.optional(),
+  fecha_salida: z.union([fechaSchema, z.literal(''), z.null()]).optional(),
+  motivo_salida: z.string().trim().max(300).optional(),
+  costo_hora: z.coerce.number().min(0).max(9999999).optional(),
+  horas_mes: z.coerce.number().min(0).max(744).optional(),
+  salario: z.coerce.number().min(0).max(999999999).nullable().optional(),
+  observaciones: z.string().trim().max(500).optional(),
+}).refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
+
 const seccionSpecSchema = z.object({
   titulo: z.string().trim().min(1).max(160),
   descripcion: z.string().trim().max(400).optional().default(''),
@@ -399,5 +435,7 @@ module.exports = {
     gerenciaKpiBody,
     gerenciaKpiUpdate,
     gerenciaCargaBody,
+    ghPersonalBody,
+    ghPersonalUpdate,
   },
 };
