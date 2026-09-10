@@ -1,0 +1,6 @@
+node_modules/
+android/
+!android/app/build.gradle
+*.keystore
+*.jks
+release-signing.properties

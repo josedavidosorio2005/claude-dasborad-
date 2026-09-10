@@ -26,7 +26,8 @@
     "files": ["main.js", "package.json"],
     "icon": "build/icon.png",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
