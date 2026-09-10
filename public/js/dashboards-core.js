@@ -40,6 +40,7 @@ function onDashBtn(key){
   if(key==='Calidad'){openCalidad();return;}
   if(key==='Inventario'){openInventario();return;}
   if(key==='Gerencia'){openGerencia();return;}
+  if(key==='GestionHumana'){openGestionHumana();return;}
   showToast('El modulo '+(m?m.label:key)+' todavia no esta disponible.');
 }
 

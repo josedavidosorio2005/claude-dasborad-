@@ -115,6 +115,8 @@ function enterAdminPanel(){
   if(invLi) invLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Inventario)));
   var gerLi=document.getElementById('menu-gerencia-li');
   if(gerLi) gerLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Gerencia)));
+  var ghLi=document.getElementById('menu-gestionhumana-li');
+  if(ghLi) ghLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.GestionHumana)));
 
   applyCreateBtn();
   showSection('users');
