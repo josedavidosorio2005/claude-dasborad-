@@ -79,6 +79,16 @@ function actorLabel(actor) {
   return `${actor.nombre} (@${actor.user})`;
 }
 
+// Defaults de permisos ligados al rol (feedback de Edwin 2.1).
+// El rol REPORTES es quien monta los datos que alimentan los dashboards, asi que
+// siempre trae `cargarDatos: true` sin que nadie se lo asigne a mano — al crear
+// el usuario y al cambiarle el rol a REPORTES.
+function applyRolePermDefaults(rol, perms) {
+  const p = perms && typeof perms === 'object' ? { ...perms } : {};
+  if (rol === 'REPORTES') p.cargarDatos = true;
+  return p;
+}
+
 // ── Helpers del modulo de Calidad ────────────────────────────
 function getPlantillaRow(campana) {
   return db
@@ -272,10 +282,22 @@ function createApp() {
   // ══════════════════════════════════════════════════════════
   api.get(
     '/users',
-    requireAuth,
+    requireActor,
     wrap((req, res) => {
       const rows = db.prepare('SELECT * FROM users ORDER BY id').all();
-      res.json(rows.map(toPublicUser));
+      // La matriz de permisos de TODOS los usuarios solo la ve quien administra
+      // usuarios o permisos (o el admin). El resto recibe la lista con `perms`
+      // vacio: los selects que la consumen (asesor, lider) usan id/nombre/rol/
+      // asesorCampana, y las pantallas que necesitan `perms` ajenos (gestion de
+      // permisos, cronograma de metas, matriz de Reportes) son de rol privilegiado.
+      const fullView =
+        isFullAdmin(req.actor) ||
+        can(req.actor, 'gestionPermisos') ||
+        can(req.actor, 'crearUsuarios') ||
+        can(req.actor, 'editarUsuarios');
+      res.json(
+        rows.map(toPublicUser).map((u) => (fullView ? u : { ...u, perms: {} }))
+      );
     })
   );
 
@@ -296,7 +318,7 @@ function createApp() {
           `INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt)
            VALUES (?,?,?,1,?,?,?,?)`
         )
-        .run(nombre, user, rol, hash, JSON.stringify(perms || {}), asesorCampana || null, nowStr());
+        .run(nombre, user, rol, hash, JSON.stringify(applyRolePermDefaults(rol, perms)), asesorCampana || null, nowStr());
       const row = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
       logEvent('CREADO', row, actorLabel(req.actor), `Rol: ${rol}`);
       res.status(201).json(toPublicUser(row));
@@ -322,14 +344,16 @@ function createApp() {
       }
 
       const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
+      const effectiveRol = rol ?? row.rol;
+      const basePerms = perms ?? JSON.parse(row.perms || '{}');
       db.prepare(
         `UPDATE users SET nombre=?, user=?, rol=?, password_hash=?, perms=?, asesorCampana=? WHERE id=?`
       ).run(
         nombre ?? row.nombre,
         user ?? row.user,
-        rol ?? row.rol,
+        effectiveRol,
         newHash,
-        JSON.stringify(perms ?? JSON.parse(row.perms || '{}')),
+        JSON.stringify(applyRolePermDefaults(effectiveRol, basePerms)),
         asesorCampana ?? row.asesorCampana,
         id
       );
@@ -1091,8 +1115,22 @@ function createApp() {
       }
       const now = nowStr();
       const existing = db
-        .prepare('SELECT id FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?')
+        .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?')
         .get(b.cliente, b.seccion, b.periodo);
+      // Ya hay una carga para este cliente/seccion/periodo y no se pidio
+      // reemplazar -> avisar, no sobrescribir en silencio (feedback Edwin 3.1).
+      if (existing && !b.reemplazar) {
+        return res.status(409).json({
+          error: `Ya existe una carga para ${b.cliente} / ${b.seccion} / ${b.periodo}.`,
+          yaExiste: true,
+          cliente: b.cliente,
+          seccion: b.seccion,
+          periodo: b.periodo,
+          cargadoPorNombre: existing.cargadoPorNombre,
+          cargadoEn: existing.cargadoEn,
+          filasActuales: (() => { try { return JSON.parse(existing.filas || '[]').length; } catch (_) { return null; } })(),
+        });
+      }
       const payload = {
         cliente: b.cliente,
         seccion: b.seccion,
@@ -1465,13 +1503,16 @@ function createApp() {
     })
   );
 
-  // Crear / actualizar un KPI individual
+  // Crear / actualizar un KPI individual.
+  // Gerencia es SOLO LECTURA (feedback de Edwin 2.2): la escritura de KPIs
+  // ejecutivos exige el permiso de carga de datos (cargarDatos / admin), igual
+  // que el resto de datos que alimentan los dashboards.
   api.post(
     '/gerencia/kpis',
     requireActor,
     validate(schemas.gerenciaKpiBody),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; cargar KPIs exige el permiso Cargar Datos' });
       const b = req.body;
       const now = nowStr();
       const existing = db.prepare('SELECT id FROM gerencia_kpis WHERE periodo = ? AND nombre = ?').get(b.periodo, b.nombre);
@@ -1500,7 +1541,7 @@ function createApp() {
     validate(schemas.idParamSchema, 'params'),
     validate(schemas.gerenciaKpiUpdate),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; editar KPIs exige el permiso Cargar Datos' });
       const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
       if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
       const b = req.body;
@@ -1523,7 +1564,7 @@ function createApp() {
     requireActor,
     validate(schemas.idParamSchema, 'params'),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; borrar KPIs exige el permiso Cargar Datos' });
       const row = db.prepare('SELECT * FROM gerencia_kpis WHERE id = ?').get(req.params.id);
       if (!row) return res.status(404).json({ error: 'KPI no encontrado' });
       db.prepare('DELETE FROM gerencia_kpis WHERE id = ?').run(row.id);
@@ -1538,7 +1579,7 @@ function createApp() {
     requireActor,
     validate(schemas.gerenciaCargaBody),
     wrap((req, res) => {
-      if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
+      if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Gerencia es de solo lectura; la carga de KPIs exige el permiso Cargar Datos' });
       const { periodo, kpis } = req.body;
       const now = nowStr();
       let upserted = 0;

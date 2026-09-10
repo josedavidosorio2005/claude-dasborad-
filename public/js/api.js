@@ -48,7 +48,10 @@ async function apiRequest(method, path, body){
   try { data = await res.json(); } catch(e){}
   if (!res.ok) {
     var msg = (data && data.error) ? data.error : friendlyHttpError(res.status);
-    throw new Error(msg);
+    var err = new Error(msg);
+    err.status = res.status;   // para que el llamador pueda distinguir 409, 403, etc.
+    err.data = data;
+    throw err;
   }
   return data;
 }

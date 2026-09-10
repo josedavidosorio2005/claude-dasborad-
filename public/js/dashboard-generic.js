@@ -224,7 +224,7 @@ function _gdKpiCardHtml(k){
 
   return '<div class="aurora-kpi gd-kpi ' + cls + (alerta ? ' gd-kpi-alerta' : '') + '">' +
     (alerta ? '<div class="gd-kpi-flag" title="Valor fuera del rango esperado">⚠</div>' : '') +
-    '<div class="kv">' + txt + '</div><div class="kl">' + k.titulo + '</div>' +
+    '<div class="kv">' + txt + '</div><div class="kl">' + esc(k.titulo) + '</div>' +
     trendHtml + metaHtml + '</div>';
 }
 
@@ -328,7 +328,7 @@ function renderGenericHeader(){
     vw.style.display = '';
     document.getElementById('gd-vista-label').textContent = (_gd.config.vista.label || 'Vista').toUpperCase() + ':';
     var vs = document.getElementById('gd-vista-sel');
-    vs.innerHTML = _gd.config.vista.opciones.map(function(o){ return '<option value="'+o.valor+'">'+o.label+'</option>'; }).join('');
+    vs.innerHTML = _gd.config.vista.opciones.map(function(o){ return '<option value="'+esc(o.valor)+'">'+esc(o.label)+'</option>'; }).join('');
     vs.value = _gd.vistaSel;
   } else { vw.style.display = 'none'; }
 
@@ -393,9 +393,15 @@ function renderGenericKpis(){
 function renderGenericTabs(){
   var tabs = (_gd.config.layout.tabs || []);
   document.getElementById('gd-tabs').innerHTML = tabs.map(function(t){
-    return '<button class="atab" data-gdtab="'+t.key+'" onclick="switchGenericTab(\''+t.key+'\')">'+t.label+'</button>';
+    return '<button class="atab" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
 }
+
+// La navegacion por pestanas usa data-gdtab (no un onclick con texto libre).
+document.getElementById('gd-tabs').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-gdtab]');
+  if(btn) switchGenericTab(btn.dataset.gdtab);
+});
 
 function switchGenericTab(key){
   _gd.tab = key;
@@ -416,7 +422,7 @@ function renderGenericTab(key){
     if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
       html += '<div class="aurora-kpis" id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'tabla'){
-      html += '<div class="aurora-card"><div class="aurora-card-title">'+(p.titulo||'')+'</div>'+
+      html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
     }
   });
@@ -432,7 +438,7 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
-        '<span>' + (x.p.titulo || '') + '</span>' + tools + '</div>' +
+        '<span>' + esc(x.p.titulo || '') + '</span>' + tools + '</div>' +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div></div>';
     }).join('') + '</div>';
   }
@@ -460,12 +466,12 @@ function _gdRenderPanel(p, i){
     var cols = p.columnas || [];
     var carga = _gdCargaMes(p.fuente.s);
     var filas = carga ? (carga.filas||[]) : [];
-    var html = '<tr>'+cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('')+'</tr>';
+    var html = '<tr>'+cols.map(function(c){ return '<th>'+esc(c.label)+'</th>'; }).join('')+'</tr>';
     if(!filas.length) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#9bb0bb">Sin datos cargados</td></tr>';
     else html += filas.map(function(f){ return '<tr>'+cols.map(function(c){
       var v = f[c.key];
       if(v==null) return '<td>-</td>';
-      return '<td>'+(typeof v==='number' ? v.toLocaleString('es-CO') : v)+'</td>';
+      return '<td>'+(typeof v==='number' ? v.toLocaleString('es-CO') : esc(v))+'</td>';
     }).join('')+'</tr>'; }).join('');
     t.innerHTML = html;
     return;
@@ -654,21 +660,21 @@ function _gdExportPrint(){
   var w = window.open('', '_blank');
   if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
   var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th></tr></thead><tbody>' +
-    kpis.map(function(r){ return '<tr><td>' + r.Indicador + '</td><td>' + _fmtCell(r.Valor) + '</td><td>' + _fmtCell(r['Var. %']) +
-      '</td><td>' + _fmtCell(r['% Meta']) + '</td><td>' + (r.Alerta || '') + '</td></tr>'; }).join('') + '</tbody></table>';
+    kpis.map(function(r){ return '<tr><td>' + esc(r.Indicador) + '</td><td>' + esc(_fmtCell(r.Valor)) + '</td><td>' + esc(_fmtCell(r['Var. %'])) +
+      '</td><td>' + esc(_fmtCell(r['% Meta'])) + '</td><td>' + esc(r.Alerta || '') + '</td></tr>'; }).join('') + '</tbody></table>';
   var secs = _gdDatosPanelesTab().filter(function(p){ return p.filas.length; }).map(function(pan){
     var keys = Object.keys(pan.filas[0]);
-    return '<h3>' + (pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + k + '</th>'; }).join('') +
-      '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + _fmtCell(f[k]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    return '<h3>' + esc(pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + esc(k) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + esc(_fmtCell(f[k])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
   }).join('');
-  w.document.write('<!doctype html><html><head><title>' + (_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl + '</title>' +
+  w.document.write('<!doctype html><html><head><title>' + esc((_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl) + '</title>' +
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}h2,h3{color:#0d4a5e}' +
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}' +
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
-    '<h1>' + (_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + mesLbl + ' — ' + _gd.cliente +
-    (_gd.compSel ? ' · comparado con ' + _gdMesLbl(_gd.compSel) : '') + '</p>' +
+    '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
+    (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
     '<h2>Indicadores principales</h2>' + tblKpis +
-    '<h2>' + (tab ? tab.label : '') + '</h2>' + secs +
+    '<h2>' + esc(tab ? tab.label : '') + '</h2>' + secs +
     '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +
     '</body></html>');
   w.document.close();

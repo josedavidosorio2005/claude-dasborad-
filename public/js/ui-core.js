@@ -40,7 +40,7 @@ function showSection(sec){
     if(mel) mel.classList.toggle('active',s===sec);
   });
   if(sec==='perms') showRolesView();
-  if(sec==='hist'){ loadHist(); renderHist(); }
+  if(sec==='hist'){ loadHist().then(function(){ renderHist(); }); }
   if(sec==='metas'){ renderMetasSection(); }
   if(sec==='reportesrole'){ renderReportesRoleSection(); }
   if(sec==='dashboards'){ renderDashboardsSection(); }

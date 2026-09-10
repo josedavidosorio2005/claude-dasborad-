@@ -171,3 +171,167 @@ Commits `209b926` (M5), `e5f60f6` (M6).
    deploy. A partir de ahí el pipeline lo automatiza.
 3. Cargar los **datos reales** de cada dashboard (Excel) y **cambiar las
    contraseñas de ejemplo** en el primer login.
+
+---
+
+## Fase 9 — Auditoría post-cierre: XSS almacenado (2026-09-10)
+
+**Estado: ✅ resuelto de raíz.** Detalle completo en `SECURITY_FIX_REPORT.md`.
+
+Una auditoría posterior (datos, seguridad, escalabilidad, documentación) dio verde
+en todo salvo **un** hallazgo real: **XSS almacenado generalizado** en el frontend.
+Todo `public/js/*.js` construía HTML por concatenación y lo asignaba con
+`innerHTML` (y un `document.write` en la exportación a PDF) **sin escapar** los
+valores que vienen de datos — texto libre del usuario (nombre de asesor,
+observaciones, `liderNombre`, nombres de ítem/KPI, log de auditoría) y celdas de
+Excel cargadas en el navegador. `server/validation.js` sólo limita longitud/formato
+y permite caracteres HTML a propósito: el problema es de **salida (render)**, no de
+entrada. El CSP no lo mitigaba (`script-src` ya tiene `'unsafe-inline'` por ~105
+`onclick` inline).
+
+**Arreglo:**
+
+- **`public/js/esc.js`** (nuevo): función central `esc()` que escapa
+  `& < > " '` (texto y atributos). Se carga antes que el resto de módulos en
+  `index.html`. Modo dual navegador/Node para poder testearla.
+- **Auditoría exhaustiva de cada sink** (`innerHTML` / `innerHTML +=` /
+  `document.write`) en todo `public/js/`: se aplica `esc()` a cada valor de datos y
+  se dejan intactos los literales de HTML y los valores de `constants.js`
+  (`CLIENTES_LIST`, `CAMPANAS_*`, …). Archivos tocados: `calidad.js`,
+  `dashboard-generic.js` (incl. `_gdExportPrint`), `inventario.js`, `gerencia.js`,
+  `cargas.js`, `users.js`, `historial.js`, `metas.js`, `reportes.js`,
+  `mis-resultados.js`, `dashboards-admin.js` (se reemplazó el `_esc` local
+  incompleto por `esc` global), `roles-perms.js`.
+- **3 `onclick`/`data` con texto libre** (`verSupervisionLider` con `liderNombre`,
+  editar/eliminar dashboard con `cliente`, `switchGenericTab` con `t.key`)
+  convertidos a `data-*` + `addEventListener` delegado — el escape HTML no basta
+  dentro de un atributo de evento.
+- **Fix colateral:** `public/js/gerencia.js` tenía un error de sintaxis
+  preexistente (array `aoa` sin cerrar en `gerDescargarPlantilla`) que impedía
+  parsear el archivo entero; corregido.
+- **Regresión automatizada:** `server/tests/xss-frontend.test.js` fija el contrato
+  de `esc()` (payloads `<img onerror>` / `<script>` quedan como texto).
+
+**Hallazgo menor — `GET /api/users`:** exponía la matriz de permisos completa de
+todos los usuarios a cualquier autenticado. Ahora filtra: sólo ADMIN / gestión de
+usuarios o permisos reciben `perms` poblado; el resto recibe `perms: {}` (los
+selects de asesor/líder usan id/nombre/rol/`asesorCampana`, y las pantallas que
+necesitan `perms` ajenos son de rol privilegiado). Tests nuevos en
+`server/tests/permissions.test.js`.
+
+**Verificación:** `npm test` → **73/73** (68 previos + 2 de `/api/users` + 3 de
+XSS). `npm audit` → 0 vulnerabilidades. Verificación manual end-to-end: un
+monitoreo con `<img src=x onerror=alert(1)>` / `<script>…</script>` en campos de
+texto libre se guarda crudo (correcto) y se renderiza como texto literal, sin
+etiquetas ejecutables — en tablas y en la exportación a PDF. Pasos y salidas en
+`SECURITY_FIX_REPORT.md`.
+
+---
+
+## Fase 9 — Despliegue real en AWS (2026-09-10)
+
+Ejecución del runbook de `AWS_DEPLOY_REPORT.md` §7 en la cuenta AWS
+**934685482338** (IAM user `deploy-inconexion`), región **us-east-1**.
+
+**La aplicación está EN PRODUCCIÓN:** <https://inconexionpruebasclaude.duckdns.org>
+— `GET /api/health` → `{"ok":true}` con certificado Let's Encrypt válido.
+
+### Recursos creados (IDs/ARNs, sin secretos)
+
+| Recurso | Identificador |
+|---|---|
+| Instancia Lightsail | `inconexion-prod` · plan `micro_3_0` (1 GB RAM / 2 vCPU / 40 GB) · Ubuntu 22.04 · `us-east-1a` |
+| IP estática | `inconexion-ip` = **100.51.93.1** |
+| Disco de bloques | `inconexion-data` 20 GB, adjuntado en `/dev/xvdf` (aparece como `/dev/nvme1n1` en el SO; montado por UUID en `/opt/inconexion/data`) |
+| Firewall Lightsail | 443 y 80 → `0.0.0.0/0`; 22 → `181.79.84.39/32` (IP del operador) |
+| ECR | `934685482338.dkr.ecr.us-east-1.amazonaws.com/inconexion` (scanOnPush) — imagen inicial construida localmente y subida (`:latest`, `:bootstrap`, `:d7b323c…`) |
+| SSM Parameter Store (SecureString) | `/inconexion/prod/JWT_SECRET`, `/MASTER_ADMIN_PASSWORD_HASH`, `/MASTER_ADMIN_USER`, `/CORS_ORIGIN` |
+| S3 backups | `inconexion-backups-josedavidosorio2005` — versionado activo, acceso público bloqueado (4/4) |
+| IAM usuario instancia | `arn:aws:iam::934685482338:user/inconexion-instance` — mínimo privilegio: leer `ssm:.../inconexion/prod/*`, `kms:Decrypt` vía `ssm`, `s3:{Put,Get}Object` + `ListBucket` solo prefijo `db-backups/`, `ecr` pull solo repo `inconexion`, `logs`/`cloudwatch` PutMetricData. Access key en `/opt/inconexion/aws/` y `/root/.aws/` de la instancia (Lightsail no tiene instance profile utilizable) |
+| IAM rol deploy (OIDC) | `arn:aws:iam::934685482338:role/inconexion-github-deploy` — trust `repo:josedavidosorio2005/claude-dasborad-:ref:refs/heads/main`, permisos solo push a ECR `inconexion` |
+| Proveedor OIDC | `arn:aws:iam::934685482338:oidc-provider/token.actions.githubusercontent.com` |
+| SNS | `arn:aws:sns:us-east-1:934685482338:inconexion-alertas` (suscripción email `jose.osoriog@…` — **pendiente de confirmar por el usuario**) |
+| Route 53 health check | `94fe66d2-b74c-4436-b49d-845febfa4b8b` — HTTPS `/api/health`, intervalo 30 s, umbral 3. Todas las regiones: `Success 200` |
+| CloudWatch alarma | `inconexion-health` — `HealthCheckStatus < 1` por 3×60 s → SNS. Estado actual: **OK** |
+| CloudWatch logs | grupos `/inconexion/prod/docker` (ret. 30 d) y `/inconexion/prod/backup` (ret. 90 d) — agente activo enviando logs de contenedores + backup + métricas mem/disk/cpu |
+| systemd | `inconexion-backup.timer` (diario 03:15 UTC) activo; corrida de prueba subió `s3://…/db-backups/inconexion-20260910-160854.db` (221 KB, con versionado) |
+| Swap | 2 GiB en `/swapfile` (la RAM de 1 GB es justa); `vm.swappiness=10` |
+
+### Verificación (checklist §11 del prompt)
+
+| Ítem | Estado |
+|---|---|
+| `npm test` en `server/` | ✅ 73/73 |
+| `https://inconexionpruebasclaude.duckdns.org/api/health` → `{"ok":true}` con cert válido | ✅ (Let's Encrypt `CN=inconexionpruebasclaude.duckdns.org`, válido 2026-09-10 → 2026-12-09; sin warnings) |
+| HTTP → HTTPS | ✅ 308 permanente |
+| Puerto 3000 **no** accesible desde internet | ✅ `Test-NetConnection :3000` → `False`; publicado solo en `127.0.0.1:3000` |
+| Puerto 22 solo desde la IP del operador | ✅ `181.79.84.39/32` |
+| Backup de prueba visible en S3 | ✅ (ver tabla arriba) |
+| Secretos fuera del repo y del disco (SSM) | ✅ el contenedor los lee de SSM al arrancar; en `app.env` no hay secretos (solo la access key de mínimo privilegio, `chmod 600`, root) |
+| Alarma de caída | ✅ Route 53 health check + CloudWatch alarm → SNS |
+| Contraseñas de ejemplo cambiadas | ⏳ **pendiente** — lo hace el usuario en el primer login (`admin`) sobre `crodriguez, mlopez, jherrera, agomez, lrios, psuarez` |
+| Push a `main` dispara CI → deploy | ⏳ **pendiente** — requiere que el usuario cargue 5 secrets/variables en GitHub (`AWS_DEPLOY_ROLE_ARN`, `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, `DEPLOY_SSH_KEY`, var `AWS_REGION`) y haga `commit` + `push` del árbol de trabajo actual a `main` |
+
+### Pendiente / notas honestas
+
+- **Sin firma de imagen ni escaneo bloqueante**: ECR tiene `scanOnPush` pero no hay
+  gate. Aceptable para pruebas.
+- **1 GB de RAM**: el plan `small_3_0` (2 GB) y planes mayores están **bloqueados
+  por ser cuenta AWS nueva** (`InvalidInputException` de Lightsail). Se usa
+  `micro_3_0` + 2 GiB de swap. Uso actual ~500 MB / swap casi sin tocar. Para
+  subir a 2 GB: pedir aumento de límite a AWS Support, luego snapshot + recrear.
+- **Sin snapshots automáticos de Lightsail** (decisión del usuario): la
+  recuperación de "toda la máquina" se hace recreando con el runbook + restaurando
+  la BD del último backup S3.
+- **Imagen base Node 20**: el AWS SDK v3 avisa que pedirá Node ≥ 22 después de
+  enero 2027. Cambiar `server/Dockerfile` a `node:22-*` antes de esa fecha.
+- **Lightsail sí expone un rol IMDS** (`AmazonLightsailInstanceRole`, en una cuenta
+  de AWS, sin permisos): el CloudWatch Agent lo tomaba por defecto y fallaba con
+  `AccessDenied`. Resuelto poniéndole las credenciales de `inconexion-instance` en
+  `/root/.aws/` + `common-config.toml`.
+- **La imagen desplegada se construyó desde el árbol de trabajo local** (incluye
+  los cambios sin commitear de la Fase XSS). Para que CI y producción converjan,
+  el usuario debe commitear y pushear a `main` antes del primer deploy automático.
+
+---
+
+## Fase 10 — Feedback de Edwin (rama `feature/feedback-edwin-2026-09-10`)
+
+Feedback real del operador de la app. **No mergeado** — vive en la rama para
+revisión y PR manual (el deploy a producción es continuo, así que nada llega a
+`main` sin aprobación explícita). `npm test` → **78/78**, `npm audit` → 0.
+
+### Implementado
+
+| # | Qué | Cómo | Tests |
+|---|-----|------|-------|
+| **1.1** | El historial "no registraba" la creación de usuarios | El backend **sí** la registra (`POST /api/users` → `logEvent('CREADO')`). Bug de frontend: `showSection('hist')` no hacía `await loadHist()` antes de `renderHist()` → al abrir Historial tras crear un usuario no aparecía. Además el filtro "Cambios de permisos" tenía `value="PERMISO"` y el backend escribe `"PERMISOS"`. Ambos corregidos. | `server/tests/historial.test.js` (nuevo, 3) |
+| **2.3** | Historial descargable | Botón "Descargar" → `.xlsx` de lo que esté filtrado en pantalla, con la columna "Realizado por" (actor). Patrón `_gdExportExcel`. | — (frontend) |
+| **2.1** | Rol REPORTES = quien carga los datos | `applyRolePermDefaults()` fuerza `cargarDatos:true` para REPORTES al crear el usuario y al cambiarle el rol. Sin fusionar rol y permiso en el modelo (menos riesgo). UI: el check se marca y bloquea para REPORTES. | `dashboard.test.js` (+2) |
+| **2.2** | Gerencia = solo lectura | Los 4 endpoints de escritura (`POST/PUT/DELETE /gerencia/kpis`, `POST /gerencia/carga`) pasan de `can(actor,'Gerencia')` a `canLoadData()`. La lectura sigue con `can(actor,'Gerencia')`. Frontend: se ocultan "Nuevo indicador", pestaña "Carga Excel" y Editar/Eliminar por fila. | `inventario-gerencia.test.js` (reescrito), `role-matrix.test.js` (+aserción) |
+| **3.1** | Cargas: avisar antes de sobrescribir | `POST /api/dashboard/cargas` responde **409** `{yaExiste:true,...}` si ya hay carga para (cliente, sección, periodo) y no se pasó `reemplazar:true`. El frontend pide `confirm(...)` y reenvía con la bandera. | `dashboard.test.js` (reescrito el flujo) |
+
+### Pendiente de tu respuesta (marcado "pregúntame" en el brief, no implementado)
+
+- **1.2** "Quitar inventario del lugar de visita del historial" — ambiguo. Necesito
+  captura o descripción de qué se ve mal. (Observación: el historial hoy muestra
+  también eventos `INV_*`, `GER_*`, `DASHBOARD_CONFIG*` y de Calidad, pero el
+  `<select>` de filtro solo lista acciones de usuarios.)
+- **3.1 (parte 2)** Cadencia diaria: el modelo y el selector ya la soportan cuando
+  la **sección** está configurada con `periodo:'dia'`. Qué dashboards deben pasar a
+  granularidad diaria es decisión de negocio — pendiente.
+- **3.2** Nivel de servicio / métricas de call center — falta la fórmula exacta de
+  esta operación y qué columnas de Excel la alimentan.
+- **3.3** "Editar el dashboard subiendo un Excel" — falta saber si es (a) cargar
+  datos (ya existe) o (b) definir la estructura del dashboard por Excel.
+- **4. Gestión Humana** (rol nuevo confirmado) — falta el esquema exacto de la
+  tabla (¿cargo, documento, salario, supervisor?), la definición de "efectividad y
+  ganancias", el periodo de rotación (mensual/trimestral) y si ya existe un costo
+  por asesor/hora para la rentabilidad por campaña.
+
+### Notas
+- Primer commit de la rama (`baseline`) = snapshot del árbol ya desplegado en
+  producción (Fase XSS + docs de infra), para separar lo previo del trabajo de
+  Edwin. Los 5 commits siguientes son 1.1/2.3, 2.1, 2.2, 3.1.
+- `apiRequest` ahora adjunta `err.status` y `err.data` al Error que lanza (lo
+  necesitaba el flujo 409 de 3.1; es retrocompatible).

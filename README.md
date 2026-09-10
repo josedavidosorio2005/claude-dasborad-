@@ -20,6 +20,7 @@ tradicional (Node.js + Express + SQLite) con su propio login.
 | [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) | Checklist "¿listo para lanzar?", entregables, pendientes de negocio, costos |
 | [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) | **Despliegue en AWS**: arquitectura, runbook desde cero, recuperación, secretos, red, backups, CloudWatch, pipeline |
 | [`DEPLOY_REPORT.md`](DEPLOY_REPORT.md) | Endurecimiento de seguridad y despliegue genérico (Docker/VPS) |
+| [`SECURITY_FIX_REPORT.md`](SECURITY_FIX_REPORT.md) | Cierre del hallazgo de auditoría: XSS almacenado en el frontend (`esc()`) + filtrado de `GET /api/users` |
 | [`REAL_DATA_REPORT.md`](REAL_DATA_REPORT.md) | Migración de Calidad/Metas/dashboards a datos reales en el servidor |
 | [`UI_CLEANUP_REPORT.md`](UI_CLEANUP_REPORT.md) | Reorganización del frontend por módulos |
 

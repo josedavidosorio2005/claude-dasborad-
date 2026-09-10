@@ -83,7 +83,7 @@ function renderInvFiltros(){
   _invItems.forEach(function(it){ if(cats.indexOf(it.categoria)===-1) cats.push(it.categoria); });
   cats.sort();
   var selC = document.getElementById('inv-filtro-cat');
-  selC.innerHTML = '<option value="">Todas las categorias</option>' + cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  selC.innerHTML = '<option value="">Todas las categorias</option>' + cats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
   selC.value = _invFiltroCat;
   var selE = document.getElementById('inv-filtro-estado');
   selE.value = _invFiltroEstado;
@@ -114,13 +114,13 @@ function renderInvTabla(){
   } else {
     items.forEach(function(it){
       var estadoCls = it.estado==='Disponible'?'kpi-green':it.estado==='En Uso'?'kpi-org':it.estado==='Mantenimiento'?'kpi-pur':'kpi-red';
-      html += '<tr><td><strong>'+it.nombre+'</strong>'+(it.descripcion?'<br><span style="font-size:0.75rem;color:#7a9ba8">'+it.descripcion+'</span>':'')+'</td>'+
-        '<td>'+it.categoria+'</td>'+
+      html += '<tr><td><strong>'+esc(it.nombre)+'</strong>'+(it.descripcion?'<br><span style="font-size:0.75rem;color:#7a9ba8">'+esc(it.descripcion)+'</span>':'')+'</td>'+
+        '<td>'+esc(it.categoria)+'</td>'+
         '<td class="peak">'+it.cantidad+'</td>'+
-        '<td>'+it.unidad+'</td>'+
-        '<td>'+(it.ubicacion||'-')+'</td>'+
-        '<td><span class="'+estadoCls+'" style="font-size:0.82rem;font-weight:600">'+it.estado+'</span></td>'+
-        '<td>'+(it.proveedor||'-')+'</td>'+
+        '<td>'+esc(it.unidad)+'</td>'+
+        '<td>'+esc(it.ubicacion||'-')+'</td>'+
+        '<td><span class="'+estadoCls+'" style="font-size:0.82rem;font-weight:600">'+esc(it.estado)+'</span></td>'+
+        '<td>'+esc(it.proveedor||'-')+'</td>'+
         '<td>'+(it.costoUnitario?'$'+Number(it.costoUnitario).toLocaleString('es-CO'):'-')+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="invEditarItem('+it.id+')">Editar</button> '+
         '<button class="btn-sm btn-delete" onclick="invEliminarItem('+it.id+')">Eliminar</button></td></tr>';
@@ -226,11 +226,11 @@ function renderInvMovimientosTabla(){
     _invMovimientos.forEach(function(m){
       var item = _invItems.find(function(x){return x.id===m.itemId;});
       var tipoCls = m.tipo==='Entrada'?'kpi-green':m.tipo==='Salida'?'kpi-red':m.tipo==='Ajuste'?'kpi-org':'kpi-pur';
-      html += '<tr><td>'+m.fecha+'</td><td>'+(item?item.nombre:'Item #'+m.itemId)+'</td>'+
-        '<td><span class="'+tipoCls+'" style="font-weight:600">'+m.tipo+'</span></td>'+
+      html += '<tr><td>'+esc(m.fecha)+'</td><td>'+(item?esc(item.nombre):'Item #'+m.itemId)+'</td>'+
+        '<td><span class="'+tipoCls+'" style="font-weight:600">'+esc(m.tipo)+'</span></td>'+
         '<td class="peak">'+m.cantidad+'</td>'+
-        '<td>'+(m.motivo||'-')+'</td>'+
-        '<td>'+(m.registradoPorNombre||'-')+'</td></tr>';
+        '<td>'+esc(m.motivo||'-')+'</td>'+
+        '<td>'+esc(m.registradoPorNombre||'-')+'</td></tr>';
     });
   }
   document.getElementById('inv-movimientos-table').innerHTML = html;
@@ -238,7 +238,7 @@ function renderInvMovimientosTabla(){
 
 function invNuevoMovimiento(){
   document.getElementById('inv-mov-item').innerHTML = _invItems.map(function(it){
-    return '<option value="'+it.id+'">'+it.nombre+' ('+it.cantidad+' '+it.unidad+')</option>';
+    return '<option value="'+it.id+'">'+esc(it.nombre)+' ('+it.cantidad+' '+esc(it.unidad)+')</option>';
   }).join('');
   if(_invItems.length === 0){
     showToast('Primero crea items en el inventario'); return;
@@ -414,8 +414,8 @@ function renderInvAdminTabla(){
     html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">No hay items. Crea uno o carga un Excel.</td></tr>';
   } else {
     items.forEach(function(it){
-      html += '<tr><td><strong>'+it.nombre+'</strong></td><td>'+it.categoria+'</td><td class="peak">'+it.cantidad+'</td><td>'+it.unidad+'</td>'+
-        '<td>'+it.estado+'</td><td>'+(it.costoUnitario?'$'+Number(it.costoUnitario).toLocaleString('es-CO'):'-')+'</td>'+
+      html += '<tr><td><strong>'+esc(it.nombre)+'</strong></td><td>'+esc(it.categoria)+'</td><td class="peak">'+it.cantidad+'</td><td>'+esc(it.unidad)+'</td>'+
+        '<td>'+esc(it.estado)+'</td><td>'+(it.costoUnitario?'$'+Number(it.costoUnitario).toLocaleString('es-CO'):'-')+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="invEditarItem('+it.id+')">Editar</button> '+
         '<button class="btn-sm btn-delete" onclick="invEliminarItem('+it.id+')">Eliminar</button></td></tr>';
     });

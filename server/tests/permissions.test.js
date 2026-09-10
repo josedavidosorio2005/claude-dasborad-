@@ -116,3 +116,29 @@ test('AUX_ADMIN con permiso crearUsuarios puede crear pero no borrar', async () 
   await request(app).delete(`/api/users/${auxId}`).set(auth(admin));
   await request(app).delete(`/api/users/${canCreate.body.id}`).set(auth(admin));
 });
+
+test('GET /api/users: rol no privilegiado recibe la lista sin la matriz de permisos', async () => {
+  // lrios = AUX_ADMIN sin permisos de gestion de usuarios/permisos.
+  const t = await tokenFor('lrios', 'aux123');
+  const res = await request(app).get('/api/users').set(auth(t));
+  assert.equal(res.status, 200);
+  assert.ok(Array.isArray(res.body) && res.body.length > 0);
+  // Campos de los selects (asesor / lider) siguen presentes...
+  for (const u of res.body) {
+    assert.ok(typeof u.id === 'number');
+    assert.ok(typeof u.nombre === 'string');
+    assert.ok(typeof u.rol === 'string');
+    // ...pero `perms` viene vacio para quien no administra usuarios/permisos.
+    assert.deepEqual(u.perms, {});
+    assert.equal(u.password_hash, undefined);
+    assert.equal(u.password, undefined);
+  }
+});
+
+test('GET /api/users: el admin si recibe la matriz de permisos', async () => {
+  const t = await tokenFor('admin', MASTER_PASSWORD);
+  const res = await request(app).get('/api/users').set(auth(t));
+  assert.equal(res.status, 200);
+  // Al menos un usuario semilla tiene permisos poblados (crodriguez -> Calidad).
+  assert.ok(res.body.some((u) => u.perms && Object.keys(u.perms).length > 0));
+});

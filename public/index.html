@@ -138,8 +138,9 @@
                 <option value="ACTIVADO">Activaciones</option>
                 <option value="ELIMINADO">Eliminaciones</option>
                 <option value="PASSWORD">Cambios de contrasena</option>
-                <option value="PERMISO">Cambios de permisos</option>
+                <option value="PERMISOS">Cambios de permisos</option>
               </select>
+              <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel">&#11015; Descargar</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -307,7 +308,7 @@
             <h3>Indicadores del Periodo</h3>
             <div class="header-actions">
               <button class="btn-cancel" onclick="openGerencia()">Ver modulo completo</button>
-              <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
+              <button class="btn-primary ger-write-only" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -406,6 +407,7 @@
       <label class="client-perm-item" style="display:inline-flex">
         <input type="checkbox" id="mu-cargar-datos"> Puede cargar datos operativos de los dashboards (Excel)
       </label>
+      <div id="mu-cargar-datos-reportes-note" class="hint" style="display:none;font-size:0.78rem;color:#7a9ba8;margin-top:4px">El rol REPORTES siempre puede cargar datos.</div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
@@ -805,12 +807,12 @@
     <div class="aurora-tabs">
       <button class="atab atab-active" data-ctab="panel" onclick="switchGerTab('panel')">Panel</button>
       <button class="atab" data-ctab="tabla" onclick="switchGerTab('tabla')">Tabla</button>
-      <button class="atab" data-ctab="carga" onclick="switchGerTab('carga')">Carga Excel</button>
+      <button class="atab ger-write-only" data-ctab="carga" onclick="switchGerTab('carga')">Carga Excel</button>
     </div>
 
     <!-- TAB: PANEL -->
     <div id="ger-panel-panel" class="atab-panel visible">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <div class="ger-write-only" style="display:flex;justify-content:flex-end;margin-bottom:10px">
         <button class="btn-primary" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
       </div>
       <div id="ger-panels"></div>
@@ -875,7 +877,7 @@
     <div class="aurora-header">
       <div>
         <h2>Cargar Datos de Dashboards</h2>
-        <div class="aurora-sub">Sube los Excel operativos de cada cliente. Volver a subir un periodo lo reemplaza.</div>
+        <div class="aurora-sub">Sube los Excel operativos de cada cliente. Si ya hay una carga para ese cliente/sección/periodo, se pide confirmación antes de reemplazarla.</div>
       </div>
       <button class="aurora-close" onclick="closeCargas()">X Cerrar</button>
     </div>
@@ -1100,6 +1102,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
+<script src="js/esc.js"></script>
 <script src="js/api.js"></script>
 <script src="js/constants.js"></script>
 <script src="js/state.js"></script>

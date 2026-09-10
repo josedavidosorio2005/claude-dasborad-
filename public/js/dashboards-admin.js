@@ -22,12 +22,21 @@ async function renderDashboardsSection(){
   if(!rows.length){ tbody.innerHTML = ''; noRes.classList.remove('hidden'); return; }
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
-    return '<tr><td><strong>'+r.cliente+'</strong></td><td>'+r.titulo+'</td><td>'+r.tabs+'</td><td>'+r.paneles+'</td>'+
-      '<td style="font-size:0.78rem;color:#7a9ba8">'+(r.updatedAt||'').slice(0,10)+'</td>'+
-      '<td><button class="btn-sm btn-edit" onclick="openDashCfgModal(\''+r.cliente.replace(/'/g,"\\'")+'\')">Editar</button> '+
-      '<button class="btn-sm btn-delete" onclick="deleteDashCfg(\''+r.cliente.replace(/'/g,"\\'")+'\')">Eliminar</button></td></tr>';
+    return '<tr><td><strong>'+esc(r.cliente)+'</strong></td><td>'+esc(r.titulo)+'</td><td>'+r.tabs+'</td><td>'+r.paneles+'</td>'+
+      '<td style="font-size:0.78rem;color:#7a9ba8">'+esc((r.updatedAt||'').slice(0,10))+'</td>'+
+      '<td><button class="btn-sm btn-edit" data-dcaction="edit" data-cliente="'+esc(r.cliente)+'">Editar</button> '+
+      '<button class="btn-sm btn-delete" data-dcaction="delete" data-cliente="'+esc(r.cliente)+'">Eliminar</button></td></tr>';
   }).join('');
 }
+
+// Los botones Editar/Eliminar llevan el cliente en data-cliente (no en un onclick
+// con texto libre — evita inyeccion de JS via el nombre del cliente).
+document.getElementById('dashcfg-tbody') && document.getElementById('dashcfg-tbody').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-dcaction]');
+  if(!btn) return;
+  if(btn.dataset.dcaction === 'edit') openDashCfgModal(btn.dataset.cliente);
+  else if(btn.dataset.dcaction === 'delete') deleteDashCfg(btn.dataset.cliente);
+});
 
 async function deleteDashCfg(cliente){
   if(!confirm('Eliminar el dashboard de '+cliente+'? Se borran tambien sus datos cargados.')) return;
@@ -177,7 +186,7 @@ function _dcToConfig(){
 }
 
 // ── Render del formulario ──────────────────────────────────
-function _opt(list, sel){ return list.map(function(v){ return '<option'+(v===sel?' selected':'')+'>'+v+'</option>'; }).join(''); }
+function _opt(list, sel){ return list.map(function(v){ return '<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>'; }).join(''); }
 function _seccionKeys(){ return _dcState.secciones.map(function(s){ return s.key; }); }
 
 function _dcRender(){
@@ -187,20 +196,20 @@ function _dcRender(){
   h += '<div class="form-row">'+
     '<div class="ig"><label>Cliente</label>'+
       (_dcEditCliente
-        ? '<input type="text" value="'+_dcEditCliente+'" disabled>'
-        : '<select id="dc-cliente" onchange="_dcSet(\'cliente\',this.value)">'+clientesLibres.map(function(c){ return '<option'+(c===st.cliente?' selected':'')+'>'+c+'</option>'; }).join('')+'</select>')+
+        ? '<input type="text" value="'+esc(_dcEditCliente)+'" disabled>'
+        : '<select id="dc-cliente" onchange="_dcSet(\'cliente\',this.value)">'+clientesLibres.map(function(c){ return '<option'+(c===st.cliente?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select>')+
     '</div>'+
-    '<div class="ig"><label>Titulo del dashboard</label><input type="text" value="'+_esc(st.titulo)+'" oninput="_dcSet(\'titulo\',this.value)"></div>'+
+    '<div class="ig"><label>Titulo del dashboard</label><input type="text" value="'+esc(st.titulo)+'" oninput="_dcSet(\'titulo\',this.value)"></div>'+
   '</div>';
 
   // Vista
   h += '<div class="section-card" style="margin:8px 0"><label style="font-weight:600"><input type="checkbox" '+(st.vista?'checked':'')+' onchange="_dcToggleVista(this.checked)"> Este cliente tiene sub-vistas (ej. sedes)</label>';
   if(st.vista){
     h += '<div class="form-row" style="margin-top:8px">'+
-      '<div class="ig"><label>Columna (en los Excel)</label><input type="text" value="'+_esc(st.vista.campo)+'" oninput="_dcVista(\'campo\',this.value)"></div>'+
-      '<div class="ig"><label>Etiqueta del selector</label><input type="text" value="'+_esc(st.vista.label)+'" oninput="_dcVista(\'label\',this.value)"></div>'+
+      '<div class="ig"><label>Columna (en los Excel)</label><input type="text" value="'+esc(st.vista.campo)+'" oninput="_dcVista(\'campo\',this.value)"></div>'+
+      '<div class="ig"><label>Etiqueta del selector</label><input type="text" value="'+esc(st.vista.label)+'" oninput="_dcVista(\'label\',this.value)"></div>'+
     '</div><div class="ig"><label>Opciones (una por linea, formato VALOR=Etiqueta)</label>'+
-      '<textarea rows="3" oninput="_dcVistaOpts(this.value)">'+st.vista.opciones.map(function(o){ return o.valor+'='+o.label; }).join('\n')+'</textarea></div>';
+      '<textarea rows="3" oninput="_dcVistaOpts(this.value)">'+st.vista.opciones.map(function(o){ return esc(o.valor)+'='+esc(o.label); }).join('\n')+'</textarea></div>';
   }
   h += '</div>';
 
@@ -208,8 +217,8 @@ function _dcRender(){
   h += '<h4 style="margin:14px 0 6px">Secciones (plantillas de Excel)</h4>';
   st.secciones.forEach(function(s, si){
     h += '<div class="section-card" style="margin-bottom:8px"><div class="form-row">'+
-      '<div class="ig"><label>Clave (sin espacios)</label><input type="text" value="'+_esc(s.key)+'" oninput="_dcSec('+si+',\'key\',this.value)"></div>'+
-      '<div class="ig"><label>Titulo</label><input type="text" value="'+_esc(s.titulo)+'" oninput="_dcSec('+si+',\'titulo\',this.value)"></div>'+
+      '<div class="ig"><label>Clave (sin espacios)</label><input type="text" value="'+esc(s.key)+'" oninput="_dcSec('+si+',\'key\',this.value)"></div>'+
+      '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(s.titulo)+'" oninput="_dcSec('+si+',\'titulo\',this.value)"></div>'+
       '<div class="ig"><label>Cadencia</label><select onchange="_dcSec('+si+',\'cadencia\',this.value)">'+_opt(_DC_CADENCIAS,s.cadencia)+'</select></div>'+
       '<div class="ig"><label>Periodo</label><select onchange="_dcSec('+si+',\'periodo\',this.value)">'+_opt(_DC_PERIODOS,s.periodo)+'</select></div>'+
       '<div class="ig"><label>Fila unica</label><input type="checkbox" '+(s.filaUnica?'checked':'')+' onchange="_dcSec('+si+',\'filaUnica\',this.checked)"></div>'+
@@ -217,8 +226,8 @@ function _dcRender(){
     h += '<div style="padding-left:8px">';
     s.columnas.forEach(function(c, ci){
       h += '<div class="form-row" style="align-items:end">'+
-        '<div class="ig"><label>Columna (clave)</label><input type="text" value="'+_esc(c.key)+'" oninput="_dcCol('+si+','+ci+',\'key\',this.value)"></div>'+
-        '<div class="ig"><label>Etiqueta</label><input type="text" value="'+_esc(c.label)+'" oninput="_dcCol('+si+','+ci+',\'label\',this.value)"></div>'+
+        '<div class="ig"><label>Columna (clave)</label><input type="text" value="'+esc(c.key)+'" oninput="_dcCol('+si+','+ci+',\'key\',this.value)"></div>'+
+        '<div class="ig"><label>Etiqueta</label><input type="text" value="'+esc(c.label)+'" oninput="_dcCol('+si+','+ci+',\'label\',this.value)"></div>'+
         '<div class="ig"><label>Tipo</label><select onchange="_dcCol('+si+','+ci+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_COL,c.tipo)+'</select></div>'+
         '<div class="ig"><label>Opcional</label><input type="checkbox" '+(c.opcional?'checked':'')+' onchange="_dcCol('+si+','+ci+',\'opcional\',this.checked)"></div>'+
         '<button class="btn-sm btn-delete" onclick="_dcDelCol('+si+','+ci+')">x</button>'+
@@ -238,8 +247,8 @@ function _dcRender(){
   h += '<h4 style="margin:14px 0 6px">Pestanas y paneles</h4>';
   st.tabs.forEach(function(t, ti){
     h += '<div class="section-card" style="margin-bottom:8px"><div class="form-row">'+
-      '<div class="ig"><label>Clave pestana</label><input type="text" value="'+_esc(t.key)+'" oninput="_dcTab('+ti+',\'key\',this.value)"></div>'+
-      '<div class="ig"><label>Etiqueta</label><input type="text" value="'+_esc(t.label)+'" oninput="_dcTab('+ti+',\'label\',this.value)"></div>'+
+      '<div class="ig"><label>Clave pestana</label><input type="text" value="'+esc(t.key)+'" oninput="_dcTab('+ti+',\'key\',this.value)"></div>'+
+      '<div class="ig"><label>Etiqueta</label><input type="text" value="'+esc(t.label)+'" oninput="_dcTab('+ti+',\'label\',this.value)"></div>'+
       '<button class="btn-sm btn-delete" onclick="_dcDelTab('+ti+')">Eliminar pestana</button>'+
     '</div><div style="padding-left:8px">';
     t.panels.forEach(function(p, pi){ h += _dcRenderPanelRow(ti, pi, p); });
@@ -252,13 +261,13 @@ function _dcRender(){
 
 function _dcRenderFuenteRow(kind, k, ki){
   return '<div class="form-row" style="align-items:end">'+
-    '<div class="ig"><label>Titulo</label><input type="text" value="'+_esc(k.titulo)+'" oninput="_dcKpi('+ki+',\'titulo\',this.value)"></div>'+
+    '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(k.titulo)+'" oninput="_dcKpi('+ki+',\'titulo\',this.value)"></div>'+
     '<div class="ig"><label>Seccion</label><select onchange="_dcKpi('+ki+',\'s\',this.value)">'+_opt(_seccionKeys(),k.s)+'</select></div>'+
     '<div class="ig"><label>Modo</label><select onchange="_dcKpi('+ki+',\'modo\',this.value)">'+_opt(_DC_MODOS,k.modo)+'</select></div>'+
-    '<div class="ig"><label>Campo</label><input type="text" value="'+_esc(k.campo)+'" oninput="_dcKpi('+ki+',\'campo\',this.value)"></div>'+
-    '<div class="ig"><label>Formula (opcional, ej. campo_a/campo_b*100)</label><input type="text" value="'+_esc(k.formula)+'" oninput="_dcKpi('+ki+',\'formula\',this.value)"></div>'+
+    '<div class="ig"><label>Campo</label><input type="text" value="'+esc(k.campo)+'" oninput="_dcKpi('+ki+',\'campo\',this.value)"></div>'+
+    '<div class="ig"><label>Formula (opcional, ej. campo_a/campo_b*100)</label><input type="text" value="'+esc(k.formula)+'" oninput="_dcKpi('+ki+',\'formula\',this.value)"></div>'+
     '<div class="ig"><label>Formato</label><select onchange="_dcKpi('+ki+',\'formato\',this.value)">'+_opt(_DC_FORMATOS,k.formato)+'</select></div>'+
-    '<div class="ig"><label>Meta (numero o columna)</label><input type="text" value="'+_esc(k.meta)+'" oninput="_dcKpi('+ki+',\'meta\',this.value)"></div>'+
+    '<div class="ig"><label>Meta (numero o columna)</label><input type="text" value="'+esc(k.meta)+'" oninput="_dcKpi('+ki+',\'meta\',this.value)"></div>'+
     '<div class="ig"><label>Mejor si</label><select onchange="_dcKpi('+ki+',\'direccion\',this.value)">'+_opt(['mayor','menor'],k.direccion||'mayor')+'</select></div>'+
     '<button class="btn-sm btn-delete" onclick="_dcDelKpi('+ki+')">x</button>'+
   '</div>';
@@ -268,24 +277,24 @@ function _dcRenderPanelRow(ti, pi, p){
   var mov = '<button class="btn-sm btn-edit" onclick="_dcMovePanel('+ti+','+pi+',-1)" title="Subir">&#9650;</button>'+
     '<button class="btn-sm btn-edit" onclick="_dcMovePanel('+ti+','+pi+',1)" title="Bajar">&#9660;</button>';
   if(p._raw){
-    return '<div class="form-row"><div class="ig" style="flex:1"><label>Panel avanzado (JSON) — '+(p.titulo||'')+'</label>'+
-      '<textarea rows="4" oninput="_dcPanel('+ti+','+pi+',\'_raw\',this.value)">'+_esc(p._raw)+'</textarea></div>'+
+    return '<div class="form-row"><div class="ig" style="flex:1"><label>Panel avanzado (JSON) — '+esc(p.titulo||'')+'</label>'+
+      '<textarea rows="4" oninput="_dcPanel('+ti+','+pi+',\'_raw\',this.value)">'+esc(p._raw)+'</textarea></div>'+
       mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
   }
   var esCalidad = p.tipo==='calidad_kpis' || p.tipo==='calidad_pie';
   var h = '<div class="form-row" style="align-items:end">'+
     '<div class="ig"><label>Tipo</label><select onchange="_dcPanel('+ti+','+pi+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_PANEL,p.tipo)+'</select></div>'+
-    '<div class="ig"><label>Titulo</label><input type="text" value="'+_esc(p.titulo)+'" oninput="_dcPanel('+ti+','+pi+',\'titulo\',this.value)"></div>';
+    '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(p.titulo)+'" oninput="_dcPanel('+ti+','+pi+',\'titulo\',this.value)"></div>';
   if(esCalidad){
-    h += '<div class="ig"><label>Campana de Calidad</label><input type="text" value="'+_esc(p.campana)+'" oninput="_dcPanel('+ti+','+pi+',\'campana\',this.value)"></div>';
+    h += '<div class="ig"><label>Campana de Calidad</label><input type="text" value="'+esc(p.campana)+'" oninput="_dcPanel('+ti+','+pi+',\'campana\',this.value)"></div>';
   } else {
     h += '<div class="ig"><label>Seccion</label><select onchange="_dcPanel('+ti+','+pi+',\'s\',this.value)">'+_opt(_seccionKeys(),p.s)+'</select></div>'+
       (p.tipo==='pie' || p.tipo==='tabla' ? '' : '<div class="ig"><label>Modo</label><select onchange="_dcPanel('+ti+','+pi+',\'modo\',this.value)">'+_opt(_DC_MODOS,p.modo)+'</select></div>')+
-      (p.tipo==='tabla' ? '' : '<div class="ig"><label>Campo</label><input type="text" value="'+_esc(p.campo)+'" oninput="_dcPanel('+ti+','+pi+',\'campo\',this.value)"></div>')+
-      '<div class="ig"><label>Etiqueta X (filas/pie)</label><input type="text" value="'+_esc(p.x)+'" oninput="_dcPanel('+ti+','+pi+',\'x\',this.value)"></div>'+
-      '<div class="ig"><label>Filtro (k=v,k2=v2)</label><input type="text" value="'+_esc(p.filtro)+'" oninput="_dcPanel('+ti+','+pi+',\'filtro\',this.value)"></div>'+
-      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Formula</label><input type="text" value="'+_esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
-      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Unidad</label><input type="text" placeholder="% / tiempo" value="'+_esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
+      (p.tipo==='tabla' ? '' : '<div class="ig"><label>Campo</label><input type="text" value="'+esc(p.campo)+'" oninput="_dcPanel('+ti+','+pi+',\'campo\',this.value)"></div>')+
+      '<div class="ig"><label>Etiqueta X (filas/pie)</label><input type="text" value="'+esc(p.x)+'" oninput="_dcPanel('+ti+','+pi+',\'x\',this.value)"></div>'+
+      '<div class="ig"><label>Filtro (k=v,k2=v2)</label><input type="text" value="'+esc(p.filtro)+'" oninput="_dcPanel('+ti+','+pi+',\'filtro\',this.value)"></div>'+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Formula</label><input type="text" value="'+esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Unidad</label><input type="text" placeholder="% / tiempo" value="'+esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
       (p.tipo==='bar' ? '<div class="ig"><label>Horizontal</label><input type="checkbox" '+(p.horizontal?'checked':'')+' onchange="_dcPanel('+ti+','+pi+',\'horizontal\',this.checked)"></div>' : '');
   }
   h += mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
@@ -297,7 +306,8 @@ function _dcMovePanel(ti,pi,dir){
   var tmp = arr[pi]; arr[pi]=arr[ni]; arr[ni]=tmp; _dcRender();
 }
 
-function _esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+// El escape HTML lo centraliza esc() de public/js/esc.js (cargado antes que este
+// modulo). Aqui se aplica a todo valor de configuracion que va al innerHTML.
 
 // ── Mutaciones de estado (re-render tras cambios estructurales) ──
 function _dcSet(k,v){ _dcState[k]=v; }

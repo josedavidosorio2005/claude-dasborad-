@@ -3,7 +3,7 @@
 //
 // El Excel se parsea en el navegador (libreria XLSX ya cargada) y se envia como
 // JSON a POST /api/dashboard/cargas. El servidor valida contra la definicion de
-// la seccion y guarda. Volver a subir un periodo lo reemplaza.
+// la seccion y guarda. Volver a subir un periodo pide confirmacion antes de reemplazar (3.1).
 
 var _cargasClientes = [];
 var _cargasSpec = null;      // { cliente, secciones:{ key: {titulo, cadencia, periodo, filaUnica, columnas} } }
@@ -21,7 +21,7 @@ async function openCargas(){
     _cargasClientes = (r && r.clientes) || [];
   }catch(e){ _cargasClientes = []; showToast(e.message); }
   var selC = document.getElementById('carga-cliente');
-  selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('')
+  selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();
 }
@@ -38,7 +38,7 @@ async function onCargaClienteChange(){
   var selS = document.getElementById('carga-seccion');
   var keys = _cargasSpec ? Object.keys(_cargasSpec.secciones) : [];
   selS.innerHTML = keys.map(function(k){
-    return '<option value="'+k+'">'+_cargasSpec.secciones[k].titulo+'</option>';
+    return '<option value="'+esc(k)+'">'+esc(_cargasSpec.secciones[k].titulo)+'</option>';
   }).join('') || '<option value="">—</option>';
   onCargaSeccionChange();
   renderCargasExistentes();
@@ -159,11 +159,11 @@ function _parseMultiFila(spec, aoa){
 
 function _renderPreviewCarga(spec, filas, avisos){
   document.getElementById('carga-preview-nombre').textContent = _cargaParsed.archivoNombre + ' — ' + _cargaParsed.periodo;
-  document.getElementById('carga-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+a; }).join('<br>');
+  document.getElementById('carga-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+esc(a); }).join('<br>');
   var cols = spec.columnas;
-  var html = '<tr>'+cols.map(function(c){ return '<th>'+c.label+'</th>'; }).join('')+'</tr>';
+  var html = '<tr>'+cols.map(function(c){ return '<th>'+esc(c.label)+'</th>'; }).join('')+'</tr>';
   html += filas.slice(0,30).map(function(f){
-    return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]===undefined||f[c.key]===''?'<span style="color:#c0392b">—</span>':f[c.key])+'</td>'; }).join('')+'</tr>';
+    return '<tr>'+cols.map(function(c){ return '<td>'+(f[c.key]===undefined||f[c.key]===''?'<span style="color:#c0392b">—</span>':esc(f[c.key]))+'</td>'; }).join('')+'</tr>';
   }).join('');
   if(filas.length>30) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#7a9ba8">… y '+(filas.length-30)+' filas mas</td></tr>';
   document.getElementById('carga-preview-table').innerHTML = html;
@@ -182,8 +182,25 @@ async function guardarCarga(){
   try{
     await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/dashboard/cargas', _cargaParsed); });
   }catch(e){
-    showToast(e.message);
-    return;
+    // 409: ya existe una carga para este cliente/seccion/periodo -> preguntar antes
+    // de sobrescribir (feedback Edwin 3.1).
+    if(e && e.status===409 && e.data && e.data.yaExiste){
+      var d=e.data;
+      var quien=d.cargadoPorNombre ? (' por '+d.cargadoPorNombre) : '';
+      var cuando=d.cargadoEn ? (' el '+d.cargadoEn) : '';
+      if(!confirm('Ya existe una carga para '+d.cliente+' / '+d.seccion+' / '+d.periodo+
+                  ' (cargada'+quien+cuando+'). ¿Reemplazarla con este archivo?')){
+        showToast('Carga cancelada. No se sobrescribió nada.');
+        return;
+      }
+      try{
+        var conReemplazo = Object.assign({}, _cargaParsed, { reemplazar: true });
+        await withButtonLoading(btn, 'Reemplazando...', function(){ return apiRequest('POST','/dashboard/cargas', conReemplazo); });
+      }catch(e2){ showToast(e2.message); return; }
+    } else {
+      showToast(e.message);
+      return;
+    }
   }
   showToast('Carga guardada. El dashboard ya usa estos datos.');
   cancelarPreviewCarga();
@@ -204,8 +221,8 @@ async function renderCargasExistentes(){
     html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">Sin cargas para esta seccion todavia</td></tr>';
   } else {
     rows.forEach(function(c){
-      html += '<tr><td>'+c.periodo+'</td><td>'+c.cadencia+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
-        '<td>'+(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:#7a9ba8">'+(c.cargadoEn||'-')+'</td>'+
+      html += '<tr><td>'+esc(c.periodo)+'</td><td>'+esc(c.cadencia)+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
+        '<td>'+esc(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:#7a9ba8">'+esc(c.cargadoEn||'-')+'</td>'+
         '<td><button class="btn-sm btn-delete" onclick="eliminarCarga('+c.id+')">Eliminar</button></td></tr>';
     });
   }
