@@ -30,6 +30,53 @@ function applyCreateBtn(){
 }
 
 // ═══════════════════════════════════════════════════════════
+// RESPONSIVE: sidebar off-canvas + menu de perfil (celular, <=768px)
+// ═══════════════════════════════════════════════════════════
+// El sidebar off-canvas y el dropdown de perfil comparten un patrón simple:
+// una clase que se prende/apaga en el contenedor padre (.app-page para el
+// sidebar, .navbar-right para el perfil) y el CSS (@media max-width:768px)
+// se encarga de mostrar/ocultar y animar. En desktop estas clases no tienen
+// ningún efecto visual (el CSS base ya deja todo visible en línea).
+function closeNavbarProfile(){
+  document.querySelectorAll('.navbar-right.open').forEach(function(el){ el.classList.remove('open'); });
+}
+function toggleSidebar(btn){
+  var page = btn.closest('.app-page');
+  if(!page) return;
+  var willOpen = !page.classList.contains('sidebar-open');
+  // El sidebar (z-index 300) queda por encima del dropdown de perfil
+  // (z-index 250) y ambos pueden ocupar la misma franja derecha en celular
+  // -- si los dos quedan abiertos a la vez el sidebar tapa parte del
+  // dropdown. Se evita dejando abierto solo uno de los dos.
+  if(willOpen) closeNavbarProfile();
+  page.classList.toggle('sidebar-open', willOpen);
+}
+function closeSidebar(){
+  document.querySelectorAll('.app-page.sidebar-open').forEach(function(p){
+    p.classList.remove('sidebar-open');
+  });
+}
+function toggleNavbarProfile(btn){
+  var wrap = btn.closest('.navbar-right');
+  if(!wrap) return;
+  var willOpen = !wrap.classList.contains('open');
+  if(willOpen) closeSidebar();
+  closeNavbarProfile();
+  if(willOpen) wrap.classList.add('open');
+}
+// Cerrar el menu de perfil al tocar afuera.
+document.addEventListener('click', function(e){
+  document.querySelectorAll('.navbar-right.open').forEach(function(el){
+    if(!el.contains(e.target)) el.classList.remove('open');
+  });
+});
+// Cerrar el sidebar off-canvas al elegir una opcion del menu (en desktop
+// esto no hace nada visible, sidebar-open no tiene efecto ahi).
+document.addEventListener('click', function(e){
+  if(e.target.closest('.sidebar-menu a')) closeSidebar();
+});
+
+// ═══════════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function showSection(sec){
