@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores de marca InConexion (mismos valores que las variables c-primary
+         de public/css/styles.css), usados por el tema de arranque, el splash
+         nativo y la barra de estado. -->
+    <color name="colorPrimary">#0D4A5E</color>
+    <color name="colorPrimaryDark">#093846</color>
+    <color name="colorAccent">#1A7A9E</color>
+    <!-- El splash ahora muestra el logo real (wordmark en teal oscuro sobre
+         fondo blanco, ver drawable/splash.xml), por eso el fondo es blanco
+         y no el teal de marca: texto oscuro sobre fondo oscuro no se leería. -->
+    <color name="splashBackground">#FFFFFF</color>
+</resources>

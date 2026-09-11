@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sin conexión</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d4a5e;color:#e8f4f7;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;text-align:center}
+  .box{padding:24px;max-width:320px;padding-top:calc(24px + env(safe-area-inset-top));
+    padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+  .icon{font-size:44px;margin-bottom:12px;opacity:.9}
+  h1{font-size:1.15rem;margin:0 0 8px}
+  p{font-size:0.9rem;opacity:.85;margin:0 0 22px;line-height:1.45}
+  button{background:#1a7a9e;color:#fff;border:none;border-radius:8px;
+    padding:12px 30px;font-size:0.95rem;font-weight:600;cursor:pointer}
+  button:active{background:#155f7c}
+</style>
+</head>
+<body>
+  <!-- Pantalla nativa de "sin conexión" del cliente Android (mobile-app/),
+       reemplaza la página de error genérica de Chromium. No forma parte del
+       sitio (public/): vive como asset local de la app y solo se muestra
+       cuando MainActivity.java detecta un error de red en el frame
+       principal. El botón navega de vuelta a la URL real de producción. -->
+  <div class="box">
+    <div class="icon">&#128246;</div>
+    <h1>Sin conexión</h1>
+    <p>No se pudo conectar con InConexion Platform. Verifica tu conexión a internet e intenta de nuevo.</p>
+    <button id="retry">Reintentar</button>
+  </div>
+  <script>
+    document.getElementById('retry').addEventListener('click', function () {
+      window.location.href = 'https://inconexionpruebasclaude.duckdns.org/';
+    });
+  </script>
+</body>
+</html>

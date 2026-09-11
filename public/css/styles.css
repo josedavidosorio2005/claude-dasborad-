@@ -64,7 +64,13 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .login-error{color:var(--c-danger-dark);font-size:0.83rem;margin-top:10px;display:none;}
 
 /* ── NAVBAR ── */
-.navbar{background:var(--c-primary);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
+/* padding-top extra = env(safe-area-inset-top): hoy no hace falta (Android
+   no usa edge-to-edge con el targetSdk actual, así que el sistema ya evita
+   dibujar bajo notch/cámara perforada), pero es gratis y evita que el
+   navbar quede tapado si eso cambia (edge-to-edge, un futuro targetSdk 35+,
+   u otro WebView embebido que sí lo haga). env() sin soporte = 0px, no
+   afecta a navegadores de escritorio ni a los que ya insetan solos. */
+.navbar{background:var(--c-primary);padding:0 28px;padding-top:env(safe-area-inset-top);padding-left:calc(28px + env(safe-area-inset-left));padding-right:calc(28px + env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
 .navbar-logo{height:34px;}
 .navbar-right{display:flex;align-items:center;gap:12px;}
 .navbar-user{color:var(--c-on-primary-soft);font-size:0.85rem;}
@@ -269,7 +275,10 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .client-perm-item{display:flex;align-items:center;gap:8px;font-size:0.82rem;color:var(--c-text);background:var(--c-surface);border:1px solid #e0ecf3;border-radius:6px;padding:7px 10px;}
 .client-perm-item input[type=checkbox]{accent-color:var(--c-primary-mid);width:15px;height:15px;flex-shrink:0;cursor:pointer;}
 
-.toast{position:fixed;bottom:24px;right:24px;background:var(--c-primary);color:var(--c-surface);padding:11px 18px;border-radius:9px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 18px rgba(var(--shadow-rgb),0.28);z-index:3000;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:340px;}
+/* bottom/right con env(safe-area-inset-*): mismo caso que el navbar, hoy
+   no hace falta pero evita que el toast quede debajo de una barra de
+   gestos si el WebView pasa a edge-to-edge más adelante. */
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));right:calc(24px + env(safe-area-inset-right));background:var(--c-primary);color:var(--c-surface);padding:11px 18px;border-radius:9px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 18px rgba(var(--shadow-rgb),0.28);z-index:3000;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:340px;}
 .toast.show{opacity:1;}
 .hidden{display:none;}
 

@@ -17,6 +17,33 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- Fallback pre-Android 12 (API &lt; 31): la técnica clásica de
+             windowBackground con el layer-list de drawable/splash.xml. -->
         <item name="android:background">@drawable/splash</item>
+        <!-- Android 12+ (API 31+): la API de sistema (androidx
+             core-splashscreen, activada automáticamente porque este tema
+             extiende Theme.SplashScreen) SOLO respeta estos atributos de
+             tema para la pantalla de arranque inicial. NO lee backgroundColor
+             / androidSplashResourceName / androidScaleType de
+             capacitor.config.json en esa ruta (confirmado leyendo
+             SplashScreen.java del plugin: showWithAndroid12API() solo llama
+             installSplashScreen(), sin tocar la config) — así que sin estos
+             atributos, el sistema mostraba un fondo oscuro por defecto en
+             vez del blanco de marca (confirmado con captura de pantalla real
+             en un teléfono Android 12+: salía #211F17 en vez de blanco). -->
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splashBackground</item>
+        <!-- postSplashScreenTheme es OBLIGATORIO acá (no opcional): sin él,
+             setKeepOnScreenCondition() de androidx.core.splashscreen revienta
+             con "You need to use a Theme.AppCompat theme (or descendant)
+             with this activity" (confirmado con un crash real en
+             dispositivo), porque AppCompatActivity necesita un tema
+             AppCompat activo para inflar su sub-decor. El cambio de tema
+             pisa el color de status bar fijado a mano en
+             MainActivity.onCreate(), por eso ese color se vuelve a fijar
+             también en el listener de salida del splash (ver
+             setOnExitAnimationListener). -->
+        <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>
 </resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo sólido color de marca. Es el windowBackground "clásico"
+     (android:background en AppTheme.NoActionBarLaunch), usado como splash
+     real solo en Android &lt; 12 (API &lt; 31); en API 31+ el splash real lo
+     maneja la API moderna vía los atributos windowSplashScreenBackground/
+     windowSplashScreenAnimatedIcon del mismo tema (ver styles.xml), que sí
+     muestra el símbolo de marca.
+
+     Antes este drawable era un layer-list con el logo completo encima de
+     blanco (símbolo + wordmark) — se sacó: en un teléfono Android 12+ real
+     quedaba pegado como fondo de la ventana incluso después de que
+     postSplashScreenTheme debía reemplazarlo, generando un texto
+     "fantasma" duplicado arriba de la pantalla de "sin conexión". Un color
+     sólido no tiene ese problema aunque se quede pegado (se funde con el
+     fondo real de la página). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/splashBackground" />
+</shape>

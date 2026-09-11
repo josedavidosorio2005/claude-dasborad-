@@ -16,6 +16,26 @@ const fs = require('fs');
 
 const PROD_URL = 'https://inconexionpruebasclaude.duckdns.org';
 const PROD_ORIGIN = new URL(PROD_URL).origin;
+const OFFLINE_FILE = path.join(__dirname, 'offline.html');
+
+// Codigos de red de Chromium que significan "no hay conexion" (equivalente
+// a los que MainActivity.java filtra en Android). NO incluye errores
+// 4xx/5xx del servidor -- esos SI cargan la pagina (con status de error),
+// no disparan did-fail-load. -3 (ERR_ABORTED) se ignora aparte: lo dispara
+// una navegacion cancelada a proposito (por ejemplo, cuando nosotros mismos
+// mandamos a cargar otra URL antes de que la anterior terminara), no una
+// falla real.
+const NETWORK_ERROR_CODES = new Set([
+  -100, // ERR_CONNECTION_CLOSED
+  -101, // ERR_CONNECTION_RESET
+  -102, // ERR_CONNECTION_REFUSED
+  -105, // ERR_NAME_NOT_RESOLVED
+  -106, // ERR_INTERNET_DISCONNECTED
+  -109, // ERR_ADDRESS_UNREACHABLE
+  -118, // ERR_CONNECTION_TIMED_OUT
+  -21,  // ERR_NETWORK_CHANGED
+  -7,   // ERR_TIMED_OUT
+]);
 
 // Recordar tamano/posicion de la ventana entre sesiones (archivo simple en userData).
 const stateFile = path.join(app.getPath('userData'), 'window-state.json');
@@ -43,6 +63,27 @@ function isProdUrl(u) {
 }
 
 let win;
+let splashWin;
+
+function createSplashWindow() {
+  splashWin = new BrowserWindow({
+    width: 420,
+    height: 320,
+    frame: false,
+    resizable: false,
+    movable: true,
+    backgroundColor: '#ffffff',
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    show: true,
+    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
+  });
+  splashWin.loadFile('splash.html');
+  splashWin.on('closed', () => { splashWin = null; });
+}
+
+function closeSplash() {
+  if (splashWin && !splashWin.isDestroyed()) splashWin.close();
+}
 
 function createWindow() {
   const state = loadState();
@@ -56,6 +97,7 @@ function createWindow() {
     title: 'InConexion Platform',
     backgroundColor: '#0d4a5e',
     icon: path.join(__dirname, 'build', 'icon.png'),
+    show: false, // se muestra recien cuando termina de cargar (o falla) -- mientras tanto se ve el splash
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -65,6 +107,28 @@ function createWindow() {
   });
 
   win.loadURL(PROD_URL);
+
+  let showedOnce = false;
+  const revealMain = () => {
+    if (showedOnce || !win || win.isDestroyed()) return;
+    showedOnce = true;
+    closeSplash();
+    win.show();
+  };
+
+  // Splash visible hasta que el sitio real termine de cargar -- no por un
+  // tiempo fijo. Si falla por red, mostramos igual la ventana (con la
+  // pantalla de "sin conexion" propia) en vez de dejar el splash pegado.
+  win.webContents.on('did-finish-load', revealMain);
+  win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (errorCode === -3) return; // ERR_ABORTED: navegacion cancelada a proposito, no es una falla real
+    if (!isMainFrame) return;
+    revealMain();
+    if (NETWORK_ERROR_CODES.has(errorCode)) {
+      win.loadFile(OFFLINE_FILE);
+    }
+    // errores que no son de red (ej. certificado) se dejan visibles tal cual los reporta Chromium
+  });
 
   // Navegacion fuera del dominio de produccion -> navegador del sistema.
   win.webContents.on('will-navigate', (event, url) => {
@@ -135,6 +199,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     buildMenu();
+    createSplashWindow();
     createWindow();
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();

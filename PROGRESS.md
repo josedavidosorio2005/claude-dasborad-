@@ -460,3 +460,281 @@ desplegada en AWS. No se tocó `server/` ni `public/`.
   SmartScreen (decisión de negocio).
 - `mobile-app` tiene 2 vulnerabilidades npm en `tar` (transitiva de
   `@capacitor/cli`, **devDependency** — no se empaqueta en el `.apk`).
+
+---
+
+## Fase 13 — Pulido nativo de la app Android (2026-09-11)
+
+Sigue siendo cliente ligero: **no se tocó `server/`**, y de `public/` solo se
+cambió la línea del `<meta name="viewport">` (se agregó `viewport-fit=cover`
+para las áreas seguras). Todo lo demás vive en `mobile-app/`.
+
+- **Plugins nuevos**: `@capacitor/splash-screen`, `@capacitor/status-bar`,
+  `@capacitor/app` (^6.x, sincronizados con `npx cap sync android`). Impacto
+  en tamaño: prácticamente nulo — el `.apk` de release bajó de ~3.0 MB a
+  **2.90 MB** y el de debug de ~3.7 MB a **3.70 MB** (se quitaron 11 PNG del
+  splash placeholder por defecto, que compensó el código de los plugins).
+- **Splash**: fondo sólido color de marca (`#0D4A5E`, mismo que
+  `--c-primary` de `public/css/styles.css`), vía `res/drawable/splash.xml`
+  (reemplaza el placeholder celeste-sobre-blanco de Capacitor). `capacitor.config.json`
+  → `SplashScreen.launchAutoHide:false`; se oculta desde `MainActivity.java`
+  cuando el `WebViewClient` dispara `onPageFinished` del sitio real (o de la
+  pantalla de sin conexión), nunca por un timer fijo.
+- **Status bar**: `capacitor.config.json` → `StatusBar.backgroundColor`
+  = color de marca, `style: LIGHT` (íconos claros, porque el fondo es
+  oscuro). Se lee automáticamente al arrancar el plugin nativo, sin JS.
+- **Botón/gesto atrás** (`MainActivity.onBackPressed`): si el `WebView`
+  tiene historial de navegación (`canGoBack()`) retrocede ahí; si no, pide
+  confirmación ("toca atrás de nuevo para salir", ventana de 2s con `Toast`)
+  en vez de cerrar de golpe. **Nota importante**: `public/js` no usa
+  `pushState` ni rutas por hash — es una SPA de una sola URL que cambia de
+  vista por estado de JS, no por historial del navegador. Por eso
+  `canGoBack()` normalmente será `false` incluso navegando entre
+  dashboards: el atrás nativo del WebView **no puede** hacer "volver del
+  dashboard al menú" sin que `public/js` empuje historial por vista, lo cual
+  queda fuera de esta tarea (no se tocó esa lógica). Lo que sí se logró es
+  que el botón atrás ya no cierre la app sin avisar.
+- **Sin conexión**: `WebViewClient` propio en `MainActivity.java` intercepta
+  `onReceivedError` para errores de red del frame principal (host lookup,
+  connect, timeout, IO) y carga `assets/offline.html` (pantalla propia, en
+  español, con botón "Reintentar" que vuelve a la URL de producción) en vez
+  del error nativo de Chromium.
+- **Áreas seguras**: `public/index.html` ya cargaba con `viewport-fit=cover`
+  agregado; Android respeta el notch/gestos por defecto porque la Activity
+  no usa modo edge-to-edge (`fitsSystemWindows` implícito de AppCompat).
+- **Orientación**: bloqueada a vertical (`android:screenOrientation="portrait"`
+  en el `<activity>` del manifest) — decisión del usuario, es una app de
+  dashboards/formularios de trabajo.
+- **Teclado**: `android:windowSoftInputMode="adjustResize"` en el manifest
+  para que el WebView se redimensione (no se tape el input activo) al
+  aparecer el teclado. Pendiente de confirmar en dispositivo real con
+  formularios largos (modal de Gestión Humana).
+- **Ícono adaptable**: ya estaba bien formado (`mipmap-anydpi-v26/ic_launcher.xml`
+  con capas `background`/`foreground` separadas) — se verificó, no fue
+  necesario tocarlo. Sigue siendo el placeholder genérico teal de Capacitor.
+- **`colors.xml`**: se creó (no existía) con los colores de marca —
+  `styles.xml` ya referenciaba `@color/colorPrimary`/`colorPrimaryDark`
+  /`colorAccent` sin que existiera ese recurso en ningún lado del proyecto
+  local; quedó resuelto de paso.
+- Verificado con `./gradlew assembleDebug assembleRelease` (`BUILD
+  SUCCESSFUL`) y `apksigner verify` sobre el release (firma v1+v2 OK, mismo
+  keystore de pruebas de la Fase 12). Pruebas de los 6 puntos (splash,
+  status bar, atrás, sin conexión, notch, teclado) **pendientes en
+  dispositivo físico real por el usuario** — un emulador no siempre
+  reproduce notch/gestos reales.
+
+---
+
+## Fase 14 — Ícono real y logo en el splash (2026-09-11)
+
+Logo real recibido del usuario (JPEG 307×78, fondo blanco: símbolo de 4
+círculos conectados — 1 verde + 3 azules — más wordmark "InConexion" en
+teal oscuro). Reemplaza el ícono placeholder teal genérico en **ambas**
+apps.
+
+- **El recorte del símbolo en el original es de solo 41×41 px.** Escalarlo
+  directamente a 256px (.ico) o 432px (adaptive icon xxxhdpi) se habría
+  visto borroso (~14x de upscale). En vez de eso, se detectaron los centros
+  y radios de los 4 círculos por análisis de imagen (umbral de color +
+  distancia por erosión) y se **reconstruyó el símbolo como figuras
+  geométricas limpias** (círculos + conectores) renderizadas con
+  supersampling a cualquier resolución — nítido en todos los tamaños, no es
+  una foto de la foto. El wordmark ("InConexion") si se usa (solo en el
+  splash) sale del original recortado y escalado ~3x, con el fondo
+  quitado — un upscale de texto moderado, no vectorizado (no hay forma de
+  vectorizar tipografía sin la fuente real).
+- **Desktop (`desktop-app/build/icon.ico`)**: 7 tamaños embebidos
+  (16/24/32/48/64/128/256), fondo transparente. `package.json` → `"icon"`
+  ahora apunta a `build/icon.ico` (antes `build/icon.png`, quedaba a criterio
+  de electron-builder). `build/icon.png` (ícono de ventana en tiempo de
+  ejecución, `main.js`) también reemplazado.
+- **Android — ícono adaptable** (`mipmap-*/ic_launcher_foreground.png`,
+  todas las densidades): símbolo solo, fondo transparente, ocupando ~62%
+  del canvas (safe zone del sistema de máscaras de Android). El fondo del
+  adaptive icon (`ic_launcher_background` = blanco) no cambió.
+- **Android — íconos legacy** (`mipmap-*/ic_launcher.png` +
+  `ic_launcher_round.png`, para API <26): símbolo sobre blanco, cuadrado y
+  recortado a círculo respectivamente.
+- **Splash**: ahora muestra el **logo completo** (símbolo + wordmark) en
+  vez del rectángulo de color sólido de la Fase 13.
+  `res/drawable-xxxhdpi/inconexion_logo.png` (único bucket de densidad — a
+  mayor densidad Android reescala hacia abajo para el resto, evita
+  duplicar el archivo 5 veces) sobre `res/drawable/splash.xml`, ahora un
+  `<layer-list>` (fondo + logo centrado) en vez de un `<shape>` sólido.
+  **El fondo del splash pasó de teal de marca a blanco**: el wordmark del
+  logo real es teal oscuro, sobre el teal de fondo anterior habría quedado
+  ilegible. `capacitor.config.json` → `SplashScreen.backgroundColor` blanco,
+  `androidScaleType` CENTER_INSIDE (antes CENTER_CROP, para no recortar el
+  logo si el layer-list no reporta bien su tamaño intrínseco al plugin).
+  La barra de estado del **resto de la app** (fuera del splash) se queda en
+  teal de marca — eso no cambió.
+- Reconstruido con `./gradlew assembleDebug assembleRelease` (`BUILD
+  SUCCESSFUL`) y `npm run build` en `desktop-app/` (electron-builder, sin
+  errores). `apksigner verify` OK sobre el release nuevo. Tamaños: `.exe`
+  81.7 MB→81.7 MB (+70 KB), `.apk` release 2.90→**3.03 MB**, debug
+  3.70→**3.83 MB** (+~130 KB cada uno, por los 17 PNG de íconos/splash
+  nuevos).
+- Copiados a `Desktop\InConexion-Entregables\`, reemplazando los anteriores.
+- Pendiente: el símbolo reconstruido es una aproximación geométrica fiel al
+  original pero no un archivo vectorial oficial de marca — si el diseñador
+  tiene el .ai/.svg original o un PNG de mayor resolución, usarlo
+  directamente daría un resultado aún más fiel (sobre todo del wordmark).
+
+---
+
+## Fase 15 — Cierre de escritorio y Android, verificación real en dispositivo (2026-09-11)
+
+Objetivo: dejar ambas apps terminadas de verdad, verificadas en un teléfono
+físico real por USB (no emulador) y en el `.exe` desempaquetado — no "debería
+funcionar". Sigue sin tocarse `server/`; de `public/` solo `css/styles.css`
+(dos reglas `env(safe-area-inset-*)`, ver punto 3).
+
+### Prerrequisitos — estado real al empezar
+
+- Logo: no estaba en `Desktop\inconexion-logo.png` (esa ruta nunca existió).
+  Ya se había usado el logo real, recibido por chat en la Fase 14, para los
+  íconos — no hizo falta repetir ese trabajo.
+- Keystore: `Desktop\inconexion-secrets\` presente, igual a la copia local en
+  `mobile-app/android/` que usa el build.
+- Teléfono por USB: apareció `unauthorized` — requirió intervención del
+  usuario (reconectar cable, aceptar el popup de depuración USB en pantalla)
+  antes de poder instalar nada. Una vez autorizado, se usó para **todas** las
+  pruebas de esta fase.
+
+### 1–2. Verificación y pulido nativo de Android — 3 bugs reales encontrados en el teléfono
+
+Lo de la Fase 13/14 (íconos, orientación, teclado, back button básico,
+offline básico) seguía intacto en el código, pero probarlo en el teléfono
+real (no en el análisis de código) encontró fallas que no eran visibles de
+otra forma:
+
+1. **Botón atrás no cerraba la app al segundo toque.** `super.onBackPressed()`
+   quedaba absorbido por el `OnBackPressedCallback` interno de Capacitor
+   (registrado para el evento JS `backButton`, que nunca tiene listener
+   porque `public/js` no lo usa) — el dispatcher lo daba por "manejado" y
+   nunca llegaba a cerrar la Activity. **Fix**: `finish()` directo en vez de
+   `super.onBackPressed()`. Confirmado con `adb shell input keyevent
+   KEYCODE_BACK` x2 + `dumpsys window` (el foco pasa a la app anterior).
+2. **Con el teléfono realmente sin ninguna interfaz de red** (wifi y datos
+   apagados a la vez, no solo un wifi sin internet), Chromium a veces se
+   quedaba esperando **25+ segundos sin disparar `onReceivedError`** en vez
+   de fallar rápido — confirmado con logcat completo, cero actividad de red
+   de la app. **Fix**: watchdog de `Handler.postDelayed` de 10s en
+   `onPageStarted`; si la carga real no terminó para entonces, se fuerza
+   `offline.html` igual. No se pudo aislar la causa exacta (parece timing de
+   MIUI al propagar "sin red" a Chromium justo después de apagar los radios),
+   pero el watchdog cubre el síntoma de forma determinística.
+3. **Splash con logo real en Android 12+**: el tema `Theme.SplashScreen` +
+   `android:background` (técnica clásica) es **ignorado** por la API de
+   sistema en API 31+; sin los atributos modernos
+   (`windowSplashScreenBackground`/`windowSplashScreenAnimatedIcon`/
+   `postSplashScreenTheme`) el sistema mostraba un fondo oscuro genérico en
+   vez del blanco de marca — confirmado con captura real (`#211F17` en vez
+   de blanco). Agregados esos atributos a `styles.xml`, usando
+   `@mipmap/ic_launcher_foreground` (el símbolo, sin wordmark) como ícono del
+   splash moderno.
+
+**Intento fallido, revertido a propósito** (documentado porque costó mucho
+tiempo de esta sesión y vale la pena que quede explicado): se intentó tomar
+control 100% nativo del splash (`SplashScreen.installSplashScreen()` +
+`setKeepOnScreenCondition` propio) para que también se ocultara al fallar la
+carga (`window.Capacitor` no existe en `offline.html` ni en una carga
+fallida — confirmado con logs — así que el `.hide()` por JS no tenía
+efecto ahí). Ese manejo nativo **funcionaba para el caso offline pero rompía
+el caso normal**: quedaba una franja blanca/negra visible entre la barra de
+estado y el contenido en la transición de la carga exitosa de todos los
+días (varias causas descartadas una por una: animación de salida por
+defecto, `postSplashScreenTheme` pisando el color de status bar, modo
+edge-to-edge dejado a medias) — **se revirtió** a que Capacitor maneje el
+splash con su mecanismo original (JS `.hide()`), que renderiza limpio en el
+caso normal. Costo aceptado: si la **primera** carga de la app falla por
+red, el splash (blanco + símbolo, sin fantasma ni franjas — eso sí se
+verificó limpio) puede quedar pegado sobre `offline.html`, que carga bien
+debajo pero no se ve hasta que el splash se oculta solo. Es un caso de borde
+(primer arranque + cero conectividad en ese instante exacto), no el uso
+normal.
+
+- **Status bar**: se confirmó por código (`StatusBarPlugin.java`) que el
+  plugin **no** lee `capacitor.config.json` — solo actúa si JS llama a sus
+  métodos, cosa que `public/js` no hace. Se fija nativamente en
+  `MainActivity.onCreate()` (`Window.setStatusBarColor` +
+  `WindowInsetsControllerCompat`). Verificado con captura real: teal de
+  marca, íconos claros.
+- **CSS safe-area** (`public/css/styles.css`): agregadas dos reglas
+  (`.navbar` padding-top, `.toast` bottom/right) con
+  `env(safe-area-inset-*)` — defensivo, hoy no cambia nada visible porque
+  Android no usa edge-to-edge con el targetSdk actual, pero protege ante un
+  futuro cambio. Este archivo lo sirve el sitio real, no el `.apk` — el
+  cambio se activa vía el deploy normal (push a `main`), no reconstruyendo
+  el paquete Android.
+- Teclado (`adjustResize`) y orientación vertical: sin cambios, ya estaban
+  bien de la Fase 13; no se pudo probar el modal de Gestión Humana porque
+  no hay credenciales de login disponibles para esta sesión.
+
+### 3. Pulido de escritorio (nuevo, `desktop-app/`)
+
+- **Splash propio**: `splash.html` (nueva ventana `BrowserWindow` sin marco,
+  logo real + spinner) se muestra mientras la ventana principal (que
+  arranca oculta, `show:false`) carga el sitio; se cierra sola en
+  `did-finish-load`/`did-fail-load`.
+- **Sin conexión**: `offline.html` (nuevo, mismo estilo que el de Android) se
+  carga en `did-fail-load` filtrando por una lista de net-error-codes de
+  Chromium que significan "sin red" (`ERR_INTERNET_DISCONNECTED`,
+  `ERR_NAME_NOT_RESOLVED`, `ERR_CONNECTION_REFUSED`, etc.), ignorando
+  `ERR_ABORTED` (navegaciones canceladas a propósito) — nunca para errores
+  4xx/5xx del servidor, esos sí cargan la página normal.
+- **Menú**: se dejó "Herramientas de desarrollador" (decisión del usuario,
+  para soporte remoto).
+- **Sesión persistente**: no se tocó nada — Electron usa por defecto una
+  sesión persistente en disco (sin `partition` custom en el
+  `BrowserWindow`), así que cookies/localStorage deberían sobrevivir entre
+  aperturas por comportamiento estándar de Chromium/Electron, no por código
+  de esta app. **No verificado end-to-end** (abrir, loguearse, cerrar,
+  reabrir, seguir logueado) porque esta sesión no tiene credenciales de
+  login válidas — pendiente de que el usuario lo confirme.
+- `package.json` → `files` ahora incluye `splash.html`, `offline.html`,
+  `build/icon.png`, `build/splash-logo.png` (si no, no se empaquetaban en el
+  `.exe`).
+
+### 4. Verificación real — qué se probó y qué se vio
+
+**Teléfono físico (USB, `adb`)**, APK de release, instalación limpia
+(desinstalar + instalar + un solo arranque, no reinstalos en caliente uno
+tras otro que podían estar afectando algún resultado intermedio):
+
+| Punto | Resultado | Evidencia |
+|---|---|---|
+| Ícono real | ✅ | capturas de pantalla |
+| Splash con símbolo real, fondo blanco | ✅ (caso normal) | capturas de pantalla |
+| Status bar color de marca | ✅ | capturas de pantalla |
+| Botón atrás (toast + cierre al 2do toque) | ✅ | `dumpsys window` (foco pasa a la app anterior) |
+| Sin conexión → pantalla propia + reintentar | ✅ (contenido), splash puede quedar pegado (ver arriba) | capturas de pantalla + logcat |
+| CSS safe-area | No verificable visualmente (no hay notch real en este teléfono ni edge-to-edge activo) | — |
+| Teclado no tapa inputs | No probado (sin credenciales para llegar al modal de Gestión Humana) | — |
+| Orientación bloqueada | Ya verificado en Fase 13, sin cambios | — |
+
+**Escritorio (.exe, `win-unpacked`, sin instalar)**: se abrió sin crashear,
+título de ventana pasa de vacío/splash a "InConexion Platform" tras ~4s
+(confirmado por proceso/título de ventana, no por captura de pantalla — ver
+nota de privacidad abajo), sin errores en stderr. Splash/login/manejo de
+sin-conexión **no se confirmaron visualmente** por la misma razón.
+
+**Nota de transparencia**: al intentar verificar visualmente la app de
+escritorio con una captura de pantalla automatizada, un primer intento
+capturó el escritorio completo del usuario y un segundo intento (más
+dirigido a la ventana de la app) falló y terminó capturando contenido
+privado (WhatsApp Web) que sí estaba en pantalla en ese momento. Se avisó
+de inmediato, se borraron los archivos, y no se volvió a intentar capturar
+el escritorio de Windows en esta sesión — por eso la verificación visual
+del `.exe` quedó incompleta (solo por proceso/logs, no por pantalla). Las
+capturas del teléfono sí se seguyeron usando (vía `adb exec-out
+screencap`, que solo trae el frame del dispositivo Android, no el
+escritorio de Windows) porque ese método no tiene ese riesgo.
+
+### 5–6. Entrega y control de versión
+
+- Copiados a `Desktop\InConexion-Entregables\` (reemplazando lo anterior):
+  `.exe` 81.9 MB, `.apk` release 3.03 MB, `.apk` debug 3.83 MB.
+  `apksigner verify` OK sobre el release final.
+- `README.txt` actualizado: mención de íconos reales y de la limitación del
+  splash pegado en el primer arranque sin red.

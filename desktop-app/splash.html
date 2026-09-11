@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>InConexion Platform</title>
+<style>
+  html,body{margin:0;height:100%;background:#ffffff;color:#0d4a5e;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    -webkit-user-select:none;user-select:none}
+  img{width:260px;margin-bottom:22px}
+  .sp{width:28px;height:28px;border:3px solid rgba(13,74,94,.18);
+    border-top-color:#1a7a9e;border-radius:50%;margin-bottom:10px;
+    animation:s 0.9s linear infinite}
+  @keyframes s{to{transform:rotate(360deg)}}
+  p{font-size:0.85rem;opacity:.7;margin:0}
+</style>
+</head>
+<body>
+  <!-- Ventana de arranque del cliente de escritorio (desktop-app/), se
+       muestra mientras main.js carga el sitio real en la ventana principal
+       (que arranca oculta) y se cierra sola cuando esa carga termina (ver
+       'did-finish-load'/'did-fail-load' en main.js). No forma parte del
+       sitio (public/). -->
+  <img src="build/splash-logo.png" alt="InConexion Platform">
+  <div class="sp"></div>
+  <p>Cargando InConexion Platform…</p>
+</body>
+</html>
