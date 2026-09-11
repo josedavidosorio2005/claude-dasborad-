@@ -542,3 +542,100 @@ desplegada en AWS. No se tocó `server/` ni `public/`.
 4. **Gestión Humana — "efectividad y ganancias"**: definición pendiente. (También
    sin confirmar: qué KPI exacto de cada plantilla de cliente = "ingresos" para la
    rentabilidad por campaña; hoy usa la heurística `recaudo || ventas`.)
+
+---
+
+## Fase 14 — Layout responsivo en celular: navbar + sidebar (rama `fix/responsive-navbar-sidebar-movil-2026-09-11`, 2026-09-11)
+
+Reportado con capturas reales de un teléfono físico (~412px de viewport):
+el logo del navbar se solapaba con "Administrador", el badge de rol tapaba
+"Cerrar Sesión", y el sidebar (ancho fijo) dejaba tan poco espacio al
+contenido que títulos como "Gestión de Usuarios" se partían palabra por
+palabra en 3+ líneas. Como `public/` es el mismo HTML/CSS/JS que carga la
+app Android empaquetada (cliente ligero, sin bundle propio), este arreglo
+del sitio real también arregla la app Android — no hizo falta tocar nada
+en `mobile-app/`; la próxima vez que se abra la app (con el deploy ya
+hecho) se va a ver bien sin reconstruir el `.apk`. No se tocó `server/`.
+
+### Diagnóstico
+
+`public/css/styles.css` ya tenía breakpoints (`max-width:700px` para grids
+de dashboards, `max-width:520px` para el login) pero **ninguno tocaba
+`.navbar` ni `.sidebar`** — ancho fijo de `.sidebar` (220px, ~55% del
+viewport en un teléfono de 412px) sin ningún media query, y `.navbar` sin
+ningún ajuste para ancho angosto.
+
+### Solución — patrón estándar (perfil colapsado a ícono + sidebar off-canvas)
+
+- **Navbar**: `navbar-user`/`navbar-role`/`btn-logout` se envolvieron en un
+  `.navbar-profile-dropdown` (en desktop se ve idéntico a como estaba,
+  `display:flex` con el mismo gap — envolver esos 3 elementos no cambia
+  nada arriba de 768px). En `@media(max-width:768px)` ese div pasa a panel
+  desplegable oculto por defecto, activado por un ícono nuevo
+  (`.navbar-profile-toggle`, 👤) — mismo patrón que Gmail/cualquier SaaS en
+  móvil.
+- **Sidebar**: por debajo de 768px pasa a `position:fixed` fuera del flujo
+  (`transform:translateX(-105%)` oculto, `translateX(0)` visible),
+  superpuesto sobre el contenido (no lo empuja), con un
+  `.sidebar-overlay` semitransparente detrás que cierra el menú al
+  tocarlo. Un botón hamburguesa nuevo (`.navbar-menu-toggle`, ☰) en el
+  navbar lo abre. Con el sidebar fuera del flujo, `.main-content` usa el
+  100% del ancho.
+- **Títulos**: con el ancho completo disponible, "Gestión de Usuarios" y
+  el resto de `.page-title` ya no se parten — se le bajó igual el
+  font-size en el breakpoint móvil (1.35rem → 1.1rem) como red de
+  seguridad para títulos más largos ("Gerencia — Indicadores Ejecutivos").
+- Nuevas funciones en `public/js/ui-core.js`: `toggleSidebar`,
+  `closeSidebar`, `toggleNavbarProfile` + listeners globales (cerrar el
+  perfil al tocar afuera, cerrar el sidebar al elegir una opción del
+  menú). Ninguna de las 3 funciones de navegación existentes
+  (`showSection`/`showAsesorSection`/`showSupervisorSection`) se tocó —
+  el cierre del sidebar al navegar es un listener genérico por delegación
+  sobre `.sidebar-menu a`, no un cambio en cada función.
+
+### Verificado de verdad — interacciones reales, no solo CSS estático
+
+El usuario pidió explícitamente no asumir que "se ve bien en devtools"
+basta sin probar los clics de verdad (ya pasó con Android 12+/splash en la
+tarea anterior). Se armó un script de Playwright (Chromium ya instalado
+localmente por una sesión previa) contra un servidor estático local de
+`public/` — sin backend, así que las llamadas a la API fallan (esperado,
+solo se probó layout/interacción, no datos), y el login se saltó llamando
+directo a `enterAdminPanel()`/seteando `display` de la página (funciones
+globales existentes, sin pasar por el servidor) porque esta sesión no
+tiene credenciales reales.
+
+Confirmado con clics reales + capturas en viewport 412×915:
+- Admin: sidebar abre/cierra (botón hamburguesa, click en un link del
+  menú, click en el overlay) — las 3 vías funcionan.
+- Menú de perfil: abre con el ícono, cierra al tocar afuera.
+- **Bug real encontrado y arreglado**: si el sidebar y el menú de perfil
+  quedaban abiertos a la vez (ej. abrir el sidebar y sin cerrarlo tocar el
+  ícono de perfil), el sidebar (z-index más alto) tapaba parte del
+  dropdown — ambos ocupan la franja derecha en pantallas angostas. Se
+  corrigió: abrir uno cierra el otro (mutuamente excluyentes).
+- Asesor y Supervisor (markup de navbar propio, distinto del admin):
+  mismo patrón confirmado por separado — hamburguesa, sidebar, perfil.
+- `user-page` (dashboard cliente, sin sidebar): solo el menú de perfil
+  aplica ahí — confirmado, sin hamburguesa (no tiene sidebar).
+- Contenido revisado en 4 secciones del admin (Usuarios, Gestión Humana,
+  Inventario, Gerencia — la última con el título más largo del panel,
+  "Gerencia — Indicadores Ejecutivos"): todas en una sola línea, sin
+  partirse.
+- Las tablas de datos se ven recortadas a la derecha en 412px — **no es un
+  bug nuevo**, ya existe `.table-wrap{overflow-x:auto}`/`.perm-wrap` en el
+  sitio para ese patrón (scroll horizontal), consistente con cómo ya se
+  manejaban las tablas antes de este cambio; no se tocó.
+
+### Pendiente
+
+- No probado en un teléfono físico real todavía (a diferencia de la tarea
+  de Android, acá se verificó con Playwright + Chromium en viewport
+  412×915, no con el navegador del teléfono). Pedirle al usuario que abra
+  `https://inconexionpruebasclaude.duckdns.org` desde su celular una vez
+  desplegado y confirme con captura que el navbar/sidebar se ven bien ahí
+  también.
+- Esta rama (`fix/responsive-navbar-sidebar-movil-2026-09-11`) se creó
+  desde `main` directo, no desde la rama de la Fase 12-13 de apps
+  (`feature/apps-cierre-final-2026-09-11`, todavía sin mergear en PR #6) —
+  a propósito, para no mezclar dos cambios independientes en un mismo PR.

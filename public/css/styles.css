@@ -64,7 +64,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .login-error{color:var(--c-danger-dark);font-size:0.83rem;margin-top:10px;display:none;}
 
 /* ── NAVBAR ── */
-.navbar{background:var(--c-primary);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
+.navbar{background:var(--c-primary);padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:10px;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
 .navbar-logo{height:34px;}
 .navbar-right{display:flex;align-items:center;gap:12px;}
 .navbar-user{color:var(--c-on-primary-soft);font-size:0.85rem;}
@@ -75,6 +75,18 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .btn-logout:hover{background:rgba(255,255,255,0.22);}
 .save-flash{font-size:0.78rem;color:#2ecc71;font-weight:700;opacity:0;transition:opacity 0.3s;white-space:nowrap;}
 .save-flash.show{opacity:1;}
+
+/* Botón hamburguesa (abre el sidebar off-canvas) y botón/menú de perfil
+   (agrupa nombre+rol+cerrar sesión) — ambos ocultos en desktop por defecto,
+   la media query de abajo los activa en pantallas angostas. En desktop,
+   .navbar-profile-dropdown se ve exactamente igual que antes (mismo
+   display:flex + gap que tenía .navbar-right), así que envolver
+   navbar-user/navbar-role/btn-logout en este div no cambia nada visualmente
+   arriba de 768px. */
+.navbar-menu-toggle,.navbar-profile-toggle{display:none;background:none;border:none;color:var(--c-surface);font-size:1.3rem;line-height:1;padding:4px 8px;cursor:pointer;border-radius:6px;}
+.navbar-menu-toggle:hover,.navbar-profile-toggle:hover{background:rgba(255,255,255,0.12);}
+.navbar-profile-dropdown{display:flex;align-items:center;gap:12px;}
+.sidebar-overlay{display:none;}
 
 /* ── ADMIN PANEL ── */
 #admin-page{display:none;min-height:100vh;}
@@ -89,9 +101,68 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .sidebar-menu li a.active,.sidebar-menu li a:hover{background:#e8f6fb;color:var(--c-primary);font-weight:600;}
 .s-icon{font-size:1rem;width:18px;text-align:center;}
 
-.main-content{flex:1;padding:30px 36px;overflow-y:auto;}
+.main-content{flex:1;padding:30px 36px;overflow-y:auto;min-width:0;}
 .page-title{font-size:1.35rem;color:var(--c-primary);font-weight:700;margin-bottom:3px;}
 .page-subtitle{color:var(--c-text-2);font-size:0.85rem;margin-bottom:24px;}
+
+/* ── NAVBAR + SIDEBAR EN CELULAR (<=768px) ──
+   Diagnóstico (confirmado con capturas reales en teléfono, ~412px de ancho):
+   1) El navbar no tenía ningún ajuste para ancho angosto — el logo se
+      solapaba con "Administrador" y el badge de rol tapaba "Cerrar Sesión".
+      Ya existían breakpoints (700px para grids de dashboards, 520px para
+      login) pero ninguno tocaba .navbar ni .sidebar.
+   2) .sidebar tenía un ancho fijo (220px, ~55% del viewport en ese
+      teléfono) sin media query — le dejaba al main-content tan poco
+      espacio que títulos como "Gestión de Usuarios" (.page-title) se
+      partían palabra por palabra en 3+ líneas.
+   Solución: patrón estándar — perfil de usuario colapsado a un ícono con
+   menú desplegable (nombre/rol/cerrar sesión), y sidebar off-canvas
+   (oculto por defecto, superpuesto con overlay al abrir, no empuja el
+   contenido). Con el sidebar fuera del flujo, main-content usa el 100%
+   del ancho y .page-title ya no necesita partirse — se le baja el
+   tamaño igual, de más, como red de seguridad para títulos largos. */
+@media(max-width:768px){
+  .navbar{padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right));gap:6px;}
+  .navbar-logo{height:26px;}
+  .navbar-logo-text{font-size:0.85rem;}
+  .save-flash{display:none;} /* con el perfil colapsado a ícono no hay lugar para este aviso secundario */
+
+  .navbar-menu-toggle{display:inline-flex;align-items:center;order:-1;}
+  .navbar-right{position:relative;gap:2px;}
+  .navbar-profile-toggle{display:inline-flex;align-items:center;}
+
+  /* nombre+rol+logout: en desktop es un <div> inline (ver regla base),
+     acá pasa a panel desplegable oculto por defecto. */
+  .navbar-profile-dropdown{
+    display:none;position:absolute;top:calc(100% + 10px);right:0;
+    flex-direction:column;align-items:stretch;gap:10px;
+    background:var(--c-surface);padding:14px 16px;border-radius:12px;
+    min-width:180px;box-shadow:0 10px 30px rgba(var(--shadow-rgb),0.3);
+    z-index:250;
+  }
+  .navbar-right.open .navbar-profile-dropdown{display:flex;}
+  .navbar-right .navbar-user{color:var(--c-text);font-size:0.9rem;font-weight:600;}
+  .navbar-right .navbar-role{align-self:flex-start;}
+  .navbar-right .btn-logout{background:var(--c-danger-bg);color:var(--c-danger-dark);}
+  .navbar-right .btn-logout:hover{background:#fbd4d1;}
+
+  /* Sidebar: de fijo-en-flujo a off-canvas superpuesto */
+  .admin-layout{display:block;min-height:0;}
+  .sidebar{
+    position:fixed;top:62px;left:0;bottom:0;width:80%;max-width:300px;
+    transform:translateX(-105%);transition:transform 0.25s ease;
+    z-index:300;box-shadow:6px 0 24px rgba(0,0,0,0.3);overflow-y:auto;
+  }
+  .app-page.sidebar-open .sidebar{transform:translateX(0);}
+  .sidebar-overlay{
+    display:none;position:fixed;top:62px;left:0;right:0;bottom:0;
+    background:rgba(8,38,52,0.5);z-index:290;
+  }
+  .app-page.sidebar-open .sidebar-overlay{display:block;}
+
+  .main-content{width:100%;padding:20px 16px;}
+  .page-title{font-size:1.1rem;}
+}
 
 /* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:24px;}
