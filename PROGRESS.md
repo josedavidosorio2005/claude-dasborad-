@@ -639,3 +639,78 @@ Confirmado con clics reales + capturas en viewport 412×915:
   desde `main` directo, no desde la rama de la Fase 12-13 de apps
   (`feature/apps-cierre-final-2026-09-11`, todavía sin mergear en PR #6) —
   a propósito, para no mezclar dos cambios independientes en un mismo PR.
+
+---
+
+## Fase 15 — Logo del navbar ilegible por contraste (rama `fix/logo-navbar-contraste-2026-09-11`, 2026-09-11)
+
+Reportado por Edwin (usuario final) con captura real: el wordmark
+"InConexion" del logo se perdía en el navbar — el símbolo (círculos
+verde/azul) se veía bien porque tiene color propio, pero el texto quedaba
+casi invisible.
+
+### Diagnóstico confirmado
+
+`.navbar-logo` en Admin y en el dashboard de cliente era **una sola imagen
+PNG** (símbolo + wordmark aplanados en los mismos píxeles, texto en teal
+oscuro fijo horneado en la imagen) sobre un navbar con fondo **igual de
+teal oscuro** (`var(--c-primary)` en ambos). Contraste real medido:
+**1.00:1** (colores idénticos, texto invisible en la práctica) — no se
+podía arreglar con CSS porque el texto no es texto, es parte de los
+píxeles de una imagen rasterizada.
+
+**Encontrado de paso, mismo bug exacto**: Asesor y Supervisor ya usaban
+una clase `.navbar-logo-text` (texto real, sin imagen) con
+`color:var(--c-primary)` — el mismo teal oscuro sobre el mismo fondo. Nunca
+se había notado porque no tienen logo de imagen para comparar al lado,
+pero el wordmark estaba igual de invisible ahí.
+
+### Arreglo — símbolo (imagen) separado del wordmark (texto real)
+
+- Se generó un ícono **solo-símbolo** (los círculos conectados, sin
+  texto), con la misma reconstrucción vectorial usada para los íconos de
+  escritorio/Android en la tarea de "logo real" (círculos + conectores
+  redibujados a partir de la geometría detectada del PNG original, no un
+  recorte/upscale del raster) — nítido, sin depender de la resolución del
+  PNG original (era de solo 41×41px en esa zona). `public/` sigue sin
+  tener archivos de imagen sueltos (mismo criterio que ya tenía el sitio):
+  el ícono nuevo va embebido en base64 directo en `index.html`, igual que
+  el logo anterior.
+- Nuevo markup en Admin y dashboard de cliente:
+  `<div class="navbar-brand"><img class="navbar-logo-icon" ...><span
+  class="navbar-logo-text">InConexion</span></div>` — la clase
+  `navbar-logo-text` ya existía (la usaban Asesor/Supervisor), se
+  reutilizó en vez de crear una nueva.
+- **El arreglo real es un solo cambio de color**: `.navbar-logo-text`
+  pasó de `color:var(--c-primary)` a `color:var(--c-surface)` (blanco) —
+  `--c-surface` ya es el token que usan `.navbar-role` y `.btn-logout`
+  para texto claro sobre este mismo fondo, no se inventó uno nuevo. Este
+  único cambio de CSS arregla las 4 superficies a la vez (Admin y
+  dashboard vía el markup nuevo, Asesor/Supervisor porque ya usaban la
+  misma clase).
+- Contraste nuevo, medido (WCAG, luminancia relativa): **9.73:1** — pasa
+  AA (4.5:1) y AAA (7:1) de sobra.
+
+### Verificado
+
+- Contraste calculado matemáticamente (no solo "se ve bien a ojo"): 1.00:1
+  antes → 9.73:1 después.
+- Captura real de "antes" (extraída de `main` con `git archive`, para
+  aislar específicamente este bug del fix de responsive de la Fase 14) vs
+  "después": el wordmark pasa de prácticamente invisible a blanco nítido.
+- Probado con Playwright en las **4 superficies × 2 anchos** (desktop
+  1280px y móvil 412px, el mismo patrón de verificación real-clicks de la
+  Fase 14): Admin, dashboard de cliente, Asesor, Supervisor — wordmark
+  legible en los 8 casos, sin cortarse ni solaparse con el ícono de
+  hamburguesa/perfil en móvil.
+- No se agregó ícono a Asesor/Supervisor (siguen solo con wordmark, sin
+  símbolo al lado) — el reporte era específicamente sobre el contraste,
+  no sobre unificar el layout de las 4 superficies a icono+texto; se
+  corrigió el bug reportado sin agregar alcance no pedido.
+
+### Alcance
+
+Solo `public/css/styles.css` y `public/index.html` (el nuevo ícono va
+embebido ahí, no hay archivo de imagen nuevo en el repo). No se tocó
+`server/`, `desktop-app/` ni `mobile-app/` — mismo sitio compartido, se
+propaga solo a las apps empaquetadas cuando se despliegue.
