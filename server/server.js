@@ -1015,6 +1015,111 @@ function createApp() {
     })
   );
 
+  // ── CARGA DIARIA (Fase 1 del pedido de carga real) ──────────
+  // Recibe filas ya parseadas en el navegador desde el export del conmutador
+  // (mismo patron que /dashboard/cargas: el servidor nunca parsea Excel). Por
+  // cada fila upsertea calidad_nivel_servicio_diario por (campana, fecha,
+  // skillName), y recalcula el agregado mensual de calidad_nivel_servicio a
+  // partir de TODAS las filas diarias de ese mes (no solo las de este
+  // archivo), asi que una vez que un mes tiene carga diaria, esta reemplaza
+  // cualquier dato manual que hubiera para ese mes.
+  api.post(
+    '/calidad/nivel-servicio/carga-diaria',
+    requireActor,
+    validate(schemas.nivelServicioCargaDiariaBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede cargar el nivel de servicio' });
+      }
+      const b = req.body;
+      const now = nowStr();
+
+      const selectDiario = db.prepare(
+        'SELECT id FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha = ? AND skillName = ?'
+      );
+      const insertDiario = db.prepare(
+        `INSERT INTO calidad_nivel_servicio_diario
+           (campana, fecha, skillName, totalLlamadas, contestadas, serviceLevel20secPct,
+            contestadas20sEstimado, archivoNombre, cargadoPorNombre, createdAt)
+         VALUES (@campana,@fecha,@skillName,@totalLlamadas,@contestadas,@serviceLevel20secPct,
+                 @contestadas20sEstimado,@archivoNombre,@cargadoPorNombre,@createdAt)`
+      );
+      const updateDiario = db.prepare(
+        `UPDATE calidad_nivel_servicio_diario SET
+           totalLlamadas=@totalLlamadas, contestadas=@contestadas,
+           serviceLevel20secPct=@serviceLevel20secPct, contestadas20sEstimado=@contestadas20sEstimado,
+           archivoNombre=@archivoNombre, cargadoPorNombre=@cargadoPorNombre, createdAt=@createdAt
+         WHERE id=@id`
+      );
+
+      const mesesAfectados = new Set();
+      const tx = db.transaction((filas) => {
+        for (const f of filas) {
+          const pct = f.serviceLevel20secPct === undefined ? null : f.serviceLevel20secPct;
+          const estimado = pct === null ? null : Math.round((pct / 100) * f.totalLlamadas);
+          const params = {
+            campana: b.campana,
+            fecha: f.fecha,
+            skillName: f.skillName,
+            totalLlamadas: f.totalLlamadas,
+            contestadas: f.contestadas,
+            serviceLevel20secPct: pct,
+            contestadas20sEstimado: estimado,
+            archivoNombre: b.archivoNombre || '',
+            cargadoPorNombre: req.actor.nombre || '-',
+            createdAt: now,
+          };
+          const existing = selectDiario.get(b.campana, f.fecha, f.skillName);
+          if (existing) updateDiario.run({ ...params, id: existing.id });
+          else insertDiario.run(params);
+          mesesAfectados.add(f.fecha.slice(0, 7));
+        }
+      });
+      tx(b.filas);
+
+      // Recalcular el agregado mensual de cada mes afectado a partir de TODAS
+      // sus filas diarias (pueden venir de cargas anteriores, no solo esta).
+      const selectMensual = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?');
+      const insertMensual = db.prepare(
+        `INSERT INTO calidad_nivel_servicio (campana, mes, contestadas20s, llamadasTotales, createdAt, updatedAt)
+         VALUES (?,?,?,?,?,?)`
+      );
+      const updateMensual = db.prepare(
+        'UPDATE calidad_nivel_servicio SET contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
+      );
+      const mensualActualizados = [];
+      for (const mes of mesesAfectados) {
+        const filasMes = db
+          .prepare(
+            "SELECT totalLlamadas, contestadas20sEstimado FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = ?"
+          )
+          .all(b.campana, mes);
+        const llamadasTotalesMes = filasMes.reduce((a, r) => a + (r.totalLlamadas || 0), 0);
+        const contestadas20sMes = filasMes.reduce(
+          (a, r) => a + (r.contestadas20sEstimado === null || r.contestadas20sEstimado === undefined ? 0 : r.contestadas20sEstimado),
+          0
+        );
+        const existingMes = selectMensual.get(b.campana, mes);
+        if (existingMes) {
+          updateMensual.run(contestadas20sMes, llamadasTotalesMes, now, existingMes.id);
+        } else {
+          insertMensual.run(b.campana, mes, contestadas20sMes, llamadasTotalesMes, now, now);
+        }
+        mensualActualizados.push(toNivelServicioRow(selectMensual.get(b.campana, mes)));
+      }
+      mensualActualizados.sort((a, b2) => a.mes.localeCompare(b2.mes));
+
+      logCalEvent(
+        'NIVEL_SERVICIO_CARGA_DIARIA',
+        '-',
+        b.campana,
+        req.actor,
+        `${b.filas.length} fila(s) — ${mesesAfectados.size} mes(es) recalculado(s)`
+      );
+      res.status(201).json({ diario: { insertadas: b.filas.length }, mensual: mensualActualizados });
+    })
+  );
+
   // ══════════════════════════════════════════════════════════
   // DASHBOARDS DE CLIENTE — datos operativos cargados por Excel
   // ══════════════════════════════════════════════════════════
