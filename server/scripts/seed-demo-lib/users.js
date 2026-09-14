@@ -156,4 +156,23 @@ function seedUsers(db, { clientesList, campanasCalidad }) {
   return { porRol, creadosConPassword, ASESOR_DEMO_NOMBRE, ASESOR_DEMO_CAMPANA };
 }
 
-module.exports = { seedUsers, ASESOR_DEMO_NOMBRE, ASESOR_DEMO_CAMPANA, randomPassword };
+// Regenera la contrasena de TODOS los usuarios demo_* ya sembrados (marcados
+// en seed_demo_marcas, tabla 'users'), sin tocar nombre/rol/perms/asesorCampana
+// ni ningun otro dato sembrado. Para usarse cuando una contrasena de demo se
+// filtro (p.ej. en un log de CI) y hay que invalidarla de verdad, no solo
+// dejar de imprimirla de ahi en adelante. Devuelve { rotadas: [{user,password,rol,nombre}] }.
+function rotarClaves(db) {
+  const marcas = db.prepare("SELECT rowId FROM seed_demo_marcas WHERE tabla = ?").all(TABLA);
+  const update = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+  const rotadas = [];
+  for (const m of marcas) {
+    const row = db.prepare('SELECT id, nombre, user, rol FROM users WHERE id = ?').get(m.rowId);
+    if (!row) continue; // marca huerfana (usuario borrado a mano) — se ignora
+    const password = randomPassword();
+    update.run(bcrypt.hashSync(password, 10), row.id);
+    rotadas.push({ user: row.user, password, rol: row.rol, nombre: row.nombre });
+  }
+  return { rotadas };
+}
+
+module.exports = { seedUsers, rotarClaves, ASESOR_DEMO_NOMBRE, ASESOR_DEMO_CAMPANA, randomPassword };
