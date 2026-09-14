@@ -39,6 +39,18 @@ Monitoreos de calidad por asesor/campaña con puntaje **calculado en el servidor
 (no manipulable desde el navegador), plantillas de calificación por campaña, y un
 cronograma de metas con cumplimiento reproducible. Todo en SQLite + API.
 
+### Tráfico de llamadas (export real de Volvox)
+Sube el reporte diario de la plataforma de marcación **Volvox tal cual lo
+descargas**, sin abrirlo ni recortar columnas — el sistema toma las columnas
+que necesita por **nombre de encabezado** (nunca por posición) y convierte lo
+que haga falta (horas → segundos, texto con `%` → número, fracción decimal →
+porcentaje). Una skill nueva se guarda igual, marcada "sin asignar", hasta
+que el admin la mapee a una campaña — nunca rompe la carga. Alimenta una
+pestaña **"Tráfico de Llamadas"** en el dashboard de cada campaña (grafica
+combinada: llamadas totales/contestadas en barras + nivel de atención en
+línea sobre eje secundario), con filtros de skill, rango de fechas y
+granularidad día/mes/año — ver la sección 7 para el detalle completo.
+
 ### Dashboards de cliente — configurables, con análisis
 - **12 dashboards** (Aurora, Orlant, Hospital La María + 9 de contact center),
   **todos definidos por configuración**, no por código. Crear o ajustar uno es
@@ -356,7 +368,73 @@ es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
 
 ---
 
-## 7. SQLite vs Postgres — cuándo migrar
+## 7. Tráfico de llamadas (Volvox) — para el usuario final
+
+### Qué descargar y dónde subirlo
+
+1. En **Volvox**, genera/descarga el reporte de **tráfico de llamadas** (el
+   que trae la hoja llamada **`DATA`**, con columnas `SKILL_NAME`, `DATE`,
+   `TOTAL LLAMADAS`, `LLAMADAS CONTESTADAS`, etc.).
+2. **No lo abras ni le cambies nada** — ni columnas, ni el orden, ni el
+   nombre de la hoja. Guárdalo como se descargó.
+3. En InConexion Platform, entra como **administrador** → menú **"Metas
+   Calidad"** → tarjeta **"Tráfico de Llamadas — carga desde Volvox"** →
+   elige el archivo `.xlsx`.
+4. Revisa la **vista previa** (filas válidas, skills y meses detectados, y
+   los avisos de filas descartadas si los hay) y confirma con **"Guardar
+   carga de trafico"**.
+5. Si el archivo trae una skill que el sistema no reconoce, queda guardada
+   igual (nada se pierde) pero marcada **"sin asignar"** en la tarjeta
+   **"Mapeo de Skills (Volvox) → Campana"**, justo debajo: elige ahí la
+   campaña/cliente correcta y guarda — no hace falta volver a subir el
+   archivo, los datos ya guardados se reasignan solos.
+6. Los datos aparecen de inmediato en la pestaña **"Tráfico de Llamadas"**
+   del dashboard de esa campaña.
+
+Puedes subir el mismo archivo las veces que quieras: si un día ya estaba
+cargado, se actualiza (nunca se duplica). Un mismo archivo puede traer
+varias skills y varios meses a la vez, sin problema.
+
+### Qué hace el sistema con cada columna
+
+| Columna del archivo | Cómo llega | Qué hace el sistema |
+|---|---|---|
+| `SKILL_NAME` | texto | **Obligatoria.** Determina la campaña (vía el mapeo). |
+| `DATE` | fecha nativa de Excel | **Obligatoria.** Se usa tal cual, nunca `MES`/`AÑO` (son solo respaldo informativo). |
+| `TOTAL LLAMADAS` / `LLAMADAS CONTESTADAS` | número | **Obligatorias.** |
+| `LLAMADAS ABANDONADAS` | número | Opcional — si falta, esa métrica queda vacía (no en 0). |
+| `SERVICE_LEVEL_10/20/30SEC`, `ABANDON` | texto `"87.03 %"` | Se convierte a número. |
+| `ASA`, `ATA` | número (a veces como texto) | Ya vienen en segundos. |
+| `WAIT_TIME`, `AHT` | hora nativa (`0:03:35`) | Se convierte a segundos (215). |
+| `NIVEL DE ATENCION`, `TASA DE ABNDONO` (*sic*, así la nombra Volvox) | fracción decimal (`0.9838`) | Se convierte a porcentaje (98.38%). |
+| `MES`, `AÑO` | texto/número | Solo respaldo — el mes/año real siempre sale de `DATE`. |
+| Cualquier otra columna | — | Se ignora sin fallar. Si Volvox agrega o reordena columnas mañana, la carga sigue funcionando (el emparejamiento es por nombre de encabezado). |
+
+### La gráfica y sus filtros
+
+Barras de **Total Llamadas** y **Llamadas Contestadas**, línea de **Nivel de
+Atención** en eje secundario (%). Filtros: skill (una, varias o todas),
+rango de fechas, y granularidad **día/mes/año** — al cambiar de
+granularidad, los volúmenes se **suman** y el % se **recalcula desde esa
+suma** (nunca se promedian los porcentajes diarios: el nivel de atención de
+un mes es contestadas del mes ÷ total del mes). Varias skills seleccionadas
+se suman entre sí, salvo que actives "Ver skills por separado". Los KPIs de
+la cabecera y las exportaciones a Excel/PDF reflejan siempre lo que esté
+filtrado en pantalla, y el estado de los filtros queda en la URL (compartible).
+
+### Decisión de arquitectura
+
+Se **extendió** `calidad_nivel_servicio_diario` (la tabla del PR #10) con las
+columnas que faltaban, en vez de crear una tabla nueva: ya comparte la misma
+llave natural (campaña+fecha+skill) y el mismo flujo de carga/recálculo
+mensual — una tabla aparte habría duplicado esa lógica sin necesidad. El
+mapeo skill→campaña vive en `trafico_skill_mapeo` (administrable desde el
+panel, nunca hardcodeado); remapear una skill reatribuye su histórico ya
+guardado sin tener que volver a subir el archivo.
+
+---
+
+## 8. SQLite vs Postgres — cuándo migrar
 
 SQLite en un archivo es adecuado para esta app (un proceso, tráfico bajo/medio).
 Migrar a **Postgres + varias instancias** cuando: se necesite más de una
@@ -367,10 +445,10 @@ se migra**.
 
 ---
 
-## 8. Pruebas automatizadas
+## 9. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra  ->  113/113
+cd server && npm test          # node:test + supertest, sin infra extra  ->  137/137
 ```
 
 Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),
@@ -387,12 +465,24 @@ sobre el **proceso real** del CLI (no la librería interna), que ninguna
 contraseña de demo se escriba jamás en stdout/stderr en el camino no
 interactivo, ni al sembrar ni al rotar claves (`seed-demo-cli.test.js`).
 
+**Tráfico de llamadas** (`trafico-logic.test.js`, `trafico-carga.test.js`):
+el parseo corre contra el fixture **real** (`server/tests/fixtures/EJEMPLO.xlsx`,
+leído con un lector de `.xlsx` propio y sin dependencias —
+`tests/helpers/xlsx-lite.js` — porque los paquetes de npm para leer Excel no
+pasan `npm audit` hoy), cubriendo horas→segundos, `%` en texto, fracción→%,
+columnas extra/reordenadas ignoradas, columna obligatoria faltante, archivo
+con varias skills y varios meses, y la agregación correcta por granularidad
+(recalcula el % desde los volúmenes ya sumados, nunca promedia los %
+diarios). Del lado del servidor: skill nueva → "(SIN ASIGNAR)" sin romper la
+carga, idempotencia, y que remapear una skill reatribuye su histórico y
+recalcula el mensual de la campaña vieja y la nueva.
+
 CI (`.github/workflows/ci.yml`): pruebas en Node 18/20/22 + build de la imagen
 Docker + **smoke test** que arranca el contenedor y verifica `/api/health`.
 
 ---
 
-## 9. Comandos útiles
+## 10. Comandos útiles
 
 ```bash
 # generar JWT_SECRET
@@ -417,7 +507,7 @@ cd server && npm run seed:demo:limpiar
 
 ---
 
-## 10. Notas
+## 11. Notas
 
 - No hay recuperación de contraseña por correo (se gestiona vía admin).
 - La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
