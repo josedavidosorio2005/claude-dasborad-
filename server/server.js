@@ -810,24 +810,33 @@ function createApp() {
         liderNombre = lider.nombre;
         liderId = lider.id;
       }
-      db.prepare(
-        `UPDATE cronograma_metas SET
-           campana=?, mes=?, liderId=?, liderNombre=?, metaGrupal=?, asesores=?,
-           diasLaborales=?, whatsapp=?, pctWhatsapp=?, updatedAt=?
-         WHERE id=?`
-      ).run(
-        b.campana ?? row.campana,
-        b.mes ?? row.mes,
-        liderId,
-        liderNombre,
-        b.metaGrupal ?? row.metaGrupal,
-        b.asesores ?? row.asesores,
-        b.diasLaborales ?? row.diasLaborales,
-        b.whatsapp === undefined ? row.whatsapp : b.whatsapp ? 1 : 0,
-        b.pctWhatsapp ?? row.pctWhatsapp,
-        nowStr(),
-        row.id
-      );
+      try {
+        db.prepare(
+          `UPDATE cronograma_metas SET
+             campana=?, mes=?, liderId=?, liderNombre=?, metaGrupal=?, asesores=?,
+             diasLaborales=?, whatsapp=?, pctWhatsapp=?, updatedAt=?
+           WHERE id=?`
+        ).run(
+          b.campana ?? row.campana,
+          b.mes ?? row.mes,
+          liderId,
+          liderNombre,
+          b.metaGrupal ?? row.metaGrupal,
+          b.asesores ?? row.asesores,
+          b.diasLaborales ?? row.diasLaborales,
+          b.whatsapp === undefined ? row.whatsapp : b.whatsapp ? 1 : 0,
+          b.pctWhatsapp ?? row.pctWhatsapp,
+          nowStr(),
+          row.id
+        );
+      } catch (e) {
+        // Ya existe otra meta para esa (campana, mes, liderId) -> conflicto amigable,
+        // no un 500 generico (UNIQUE(campana, mes, liderId) en cronograma_metas).
+        if (e && e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+          return res.status(409).json({ error: 'Ya existe una meta para esa campana, mes y lider responsable' });
+        }
+        throw e;
+      }
       const updated = db.prepare('SELECT * FROM cronograma_metas WHERE id = ?').get(row.id);
       logCalEvent('META_EDIT', updated.liderNombre, updated.campana, req.actor, `${updated.mes}`);
       res.json(toMetaRow(updated));
