@@ -855,3 +855,100 @@ entren los datos reales.
   se siembra escalado a los días ya transcurridos, HOY = 2026-09-14, para no
   inventar datos de fechas futuras), pero puede leerse a primera vista como
   una caída real si no se sabe que septiembre está incompleto.
+
+---
+
+## Fase 17 — Cierre de dos cabos sueltos de la Fase 16: credenciales de demo y aviso de datos ficticios (2026-09-14)
+
+Dos pendientes explícitos que quedaron de la Fase 16, cerrados de punta a
+punta (código, tests, PR, CI, deploy y verificación en producción): las
+contraseñas de demo quedaron expuestas en un log de CI, y producción quedó
+sembrada con datos ficticios sin ningún aviso visible.
+
+### 1. Contraseñas de demo expuestas en el log de CI
+
+**Problema real**: `seed-demo.js` imprimía las contraseñas aleatorias de
+`demo_*` al terminar; como la siembra de producción se corrió desde
+`.github/workflows/seed-demo.yml` (SSH → `docker compose exec -T`, sin TTY),
+esas contraseñas quedaron en el log de esa ejecución — legibles para
+cualquiera con acceso al repo, de usuarios que existen en producción con
+permisos reales por rol.
+
+**Arreglo**:
+
+- Salida **interactiva** (`process.stdout.isTTY`, ej. un desarrollador
+  corriendo `npm run seed:demo`) sigue imprimiendo como siempre — esa
+  terminal no es un log compartido.
+- Salida **no interactiva** (CI, `exec -T`, redirigida) nunca vuelve a
+  escribir una contraseña a stdout/stderr: se guarda en un archivo
+  (`seed-demo-credenciales.txt`, permisos `0600`) junto a la base de datos,
+  recuperable solo con acceso real (SSH/exec) a la instancia. Se eligió este
+  mecanismo sobre enmascarar con `::add-mask::` (depende de que CI procese
+  bien cada línea que emite un proceso remoto) o exigir las claves por
+  variable de entorno (las volvería un secreto compartido entre los 10
+  usuarios demo en vez de una por persona) porque es el único que garantiza
+  esto **por construcción**.
+- Nuevo modo `--rotar-claves` / `npm run seed:demo:rotar-claves`: regenera
+  la contraseña de TODOS los `demo_*` ya sembrados (vía el ledger
+  `seed_demo_marcas`) sin tocar ningún otro dato. Expuesto como tercera
+  opción en `seed-demo.yml` junto a `sembrar`/`limpiar`.
+- Test real sobre el proceso, no un comentario (`seed-demo-cli.test.js`):
+  spawnea el CLI como subproceso genuino sin TTY y verifica sobre
+  stdout/stderr capturados que ninguna contraseña generada aparece ahí, al
+  sembrar y al rotar.
+
+**Rotación y purga ejecutadas en esta sesión**:
+
+- Se disparó `gh workflow run seed-demo.yml -f accion=rotar-claves` contra
+  producción → confirmado en el log: rotación aplicada, **cero contraseñas**
+  en la salida capturada (solo la ruta del archivo dentro del contenedor).
+- Verificado en producción real: las contraseñas VIEJAS y filtradas de
+  `demo_clientes_dash` y `demo_admin` ahora devuelven `401` al hacer login —
+  la rotación invalidó de verdad las que se habían filtrado.
+- `gh run delete 34882365284` sobre la ejecución que había filtrado las
+  contraseñas originales → confirmado borrado (`gh run view` de ese id
+  devuelve `404 Not Found`).
+- Las contraseñas NUEVAS (rotadas) no las conozco ni las puedo mostrar: solo
+  quedaron en el archivo dentro del volumen persistente de la instancia,
+  recuperable por quien tenga acceso real (SSH) — a propósito, para no
+  recrear el mismo problema por el mismo canal que se acaba de cerrar.
+
+### 2. Producción mostraba datos ficticios sin avisarlo
+
+- `GET /api/seed-demo/estado` (cualquier rol autenticado): `{ activo, marcas }`
+  según si hay algo marcado en `seed_demo_marcas` (tabla que ahora **siempre**
+  se crea en `server/db.js`, no solo cuando corre el seed, para que el
+  endpoint funcione incluso en una base nunca sembrada).
+- Banner fijo y permanente (no un toast) arriba de **toda** pantalla —
+  admin, los 12 dashboards de cliente, Asesor, Supervisor — que se enciende
+  y apaga solo según ese estado, sin desplegar nada: se consulta en cada
+  login.
+- El mismo aviso se inyecta en las exportaciones del dashboard genérico:
+  hoja "AVISO" al inicio del Excel, banner arriba en el PDF/impresión.
+- Verificado con Playwright (no solo asserts de servidor): banner ausente
+  sin sembrar, presente con datos sembrados (probado con un rol admin y uno
+  no-admin), ausente de nuevo tras `seed:demo:limpiar`, y presente en la
+  ventana de exportación PDF — capturas en `docs/capturas-demo/banner-*.png`.
+  Test de servidor (`seed-demo.test.js`) cubre lo mismo vía HTTP.
+
+### PR, CI y despliegue
+
+PR #14 (`fix/seed-demo-credenciales-y-banner-2026-09-14`): ambos cierres en
+un solo PR (relacionados, misma sesión de trabajo). CI verde (Node
+18/20/22 + build Docker) → merge a `main` → `deploy.yml` se disparó solo y
+desplegó sin intervención manual. `npm test`: 113/113, `npm audit`: 0
+vulnerabilidades.
+
+### Pendiente / dudoso
+
+- Las contraseñas de demo rotadas (las nuevas) no quedaron en ningún lado
+  que yo pueda leer — es intencional, pero significa que alguien con acceso
+  SSH real a la instancia debe recuperarlas de
+  `/app/server/data/seed-demo-credenciales.txt` dentro del contenedor si se
+  necesitan para una demo guiada.
+- (Resuelto durante la verificación) El Excel exportado también se
+  comprobó de punta a punta: se descargó el .xlsx real vía Playwright
+  (`page.waitForEvent('download')`), se extrajo como ZIP y se confirmó que
+  la hoja "AVISO" es la primera del workbook y contiene exactamente el
+  texto esperado (`sheet1.xml`: "DATOS DE DEMOSTRACION" / "La informacion de
+  este archivo es de prueba y NO corresponde a la operacion real.").
