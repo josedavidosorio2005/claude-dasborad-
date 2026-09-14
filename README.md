@@ -290,6 +290,46 @@ npm run seed:demo:limpiar     # borra EXACTAMENTE lo que sembró — nada más
   (se guardan hasheadas). Si vuelves a correr `seed:demo` y esos usuarios ya
   existen, no se tocan ni se muestra contraseña de nuevo.
 
+### Contraseñas de demo: dónde salen y cómo rotarlas
+
+Las contraseñas nuevas **solo se imprimen en una terminal interactiva real**
+(`process.stdout.isTTY`) — exactamente lo que tienes al correr
+`npm run seed:demo` tú mismo. En una corrida **no interactiva** (CI,
+`docker compose exec -T ...`, salida redirigida a un archivo/log) el script
+**nunca** las escribe a stdout/stderr: las guarda en un archivo junto a la
+base de datos (`seed-demo-credenciales.txt`, permisos `0600`), recuperable
+solo con acceso real (SSH/exec) a la máquina — nunca desde el log de un
+workflow de CI. Cubierto por un test real sobre la salida del proceso
+(`server/tests/seed-demo-cli.test.js`), no por un comentario.
+
+Si una contraseña de demo se llegó a filtrar (p. ej. quedó en un log antes de
+este mecanismo), rótala — cambiar de ahora en adelante no es suficiente,
+la que ya se filtró sigue siendo válida hasta que la reemplaces:
+
+```bash
+npm run seed:demo:rotar-claves     # regenera la contrasena de TODOS los demo_*
+                                    # existentes, sin tocar ningun otro dato sembrado
+```
+
+En producción, cualquiera de los tres (`sembrar`/`limpiar`/`rotar-claves`) se
+dispara desde `.github/workflows/seed-demo.yml` (`workflow_dispatch`):
+
+```bash
+gh workflow run seed-demo.yml -f accion=rotar-claves
+```
+
+### Banner "Datos de demostración"
+
+Mientras `seed:demo` tenga algo sembrado, la app pinta un banner fijo y
+permanente arriba de **toda** pantalla (admin, dashboards de cliente, Asesor,
+Supervisor) avisando que los datos son de prueba — se enciende y apaga solo
+según `GET /api/seed-demo/estado` (que a su vez solo mira si hay algo en
+`seed_demo_marcas`), sin tocar código ni desplegar nada: corre
+`seed:demo:limpiar` y desaparece en el siguiente login. El mismo aviso se
+inyecta en las exportaciones a Excel (hoja `AVISO` al principio del archivo)
+y PDF/impresión del dashboard genérico, para que un archivo con datos falsos
+nunca circule sin decirlo.
+
 **Cómo se marca lo sembrado** (para que `seed:demo:limpiar` borre exactamente
 eso y nada más): cada fila que crea queda registrada en una tabla propia
 (`seed_demo_marcas`, `tabla` + `clave` determinística + `id` real de la fila),
@@ -330,7 +370,7 @@ se migra**.
 ## 8. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra  ->  108/108
+cd server && npm test          # node:test + supertest, sin infra extra  ->  113/113
 ```
 
 Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),
@@ -339,10 +379,13 @@ que contraseñas/hashes **nunca** salen en respuestas, rate limit de login
 campaña, cronograma y cumplimiento), dashboards (cargas por Excel, config,
 acceso por cliente, dashboards de M3), Inventario y Gerencia (CRUD + carga masiva
 + adaptadores de dashboard), la **matriz de los 9 roles**
-(`role-matrix.test.js`), y el seed de demo — idempotencia, que `seed:demo:limpiar`
+(`role-matrix.test.js`), el seed de demo — idempotencia, que `seed:demo:limpiar`
 deja la base como estaba, que los 12 clientes quedan con carga en todas sus
-secciones, y que su mensual de Nivel de Servicio coincide con el que produce
-el endpoint real (`seed-demo.test.js`).
+secciones, que su mensual de Nivel de Servicio coincide con el que produce
+el endpoint real, y el estado del banner de demo (`seed-demo.test.js`) — y,
+sobre el **proceso real** del CLI (no la librería interna), que ninguna
+contraseña de demo se escriba jamás en stdout/stderr en el camino no
+interactivo, ni al sembrar ni al rotar claves (`seed-demo-cli.test.js`).
 
 CI (`.github/workflows/ci.yml`): pruebas en Node 18/20/22 + build de la imagen
 Docker + **smoke test** que arranca el contenedor y verifica `/api/health`.

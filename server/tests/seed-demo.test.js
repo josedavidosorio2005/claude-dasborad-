@@ -197,3 +197,43 @@ test('las campanas con pestana de Calidad quedan con plantilla (nunca 404 al eva
     assert.ok(row, `falta plantilla de calidad para "${campana}" (su dashboard tiene pestana de Calidad)`);
   }
 });
+
+test('GET /api/seed-demo/estado: activo=true con datos sembrados, false tras limpiar', async () => {
+  // Estado limpio conocido (independiente del orden de los demas tests de
+  // este archivo, que comparten la misma BD).
+  limpiarTodo(db);
+
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+
+  const antes = await request(app).get('/api/seed-demo/estado').set(auth(admin));
+  assert.equal(antes.status, 200);
+  assert.equal(antes.body.activo, false, 'sin nada sembrado, activo debe ser false');
+  assert.equal(antes.body.marcas, 0);
+
+  correrSeedCompleto();
+
+  const durante = await request(app).get('/api/seed-demo/estado').set(auth(admin));
+  assert.equal(durante.status, 200);
+  assert.equal(durante.body.activo, true, 'con datos sembrados, activo debe ser true');
+  assert.ok(durante.body.marcas > 0);
+
+  limpiarTodo(db);
+
+  const despues = await request(app).get('/api/seed-demo/estado').set(auth(admin));
+  assert.equal(despues.status, 200);
+  assert.equal(despues.body.activo, false, 'tras limpiar, activo vuelve a false');
+  assert.equal(despues.body.marcas, 0);
+});
+
+test('GET /api/seed-demo/estado: cualquier rol autenticado lo puede leer (lo necesita para pintar el banner)', async () => {
+  limpiarTodo(db);
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const calidad = await tokenFor('crodriguez', 'calidad123');
+  const inventario = await tokenFor('mlopez', 'inv123');
+
+  for (const token of [admin, calidad, inventario]) {
+    const res = await request(app).get('/api/seed-demo/estado').set(auth(token));
+    assert.equal(res.status, 200);
+    assert.equal(typeof res.body.activo, 'boolean');
+  }
+});

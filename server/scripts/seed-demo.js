@@ -30,8 +30,11 @@ if (esProduccion && process.env.SEED_DEMO_CONFIRM !== '1') {
   process.exit(1);
 }
 
+const path = require('path');
+
 const args = process.argv.slice(2);
 const limpiar = args.includes('--limpiar') || args.includes('--clean');
+const rotarClavesFlag = args.includes('--rotar-claves') || args.includes('--rotate-keys');
 
 const CARGADO_POR = 'Seed Demo (script)';
 
@@ -42,6 +45,57 @@ function linea(char, n) {
 function imprimirResumen(titulo, filas) {
   process.stdout.write('\n' + titulo + '\n' + linea('-', titulo.length) + '\n');
   filas.forEach((f) => process.stdout.write('  ' + f + '\n'));
+}
+
+// ── Contrasenas: NUNCA a un log compartido ──────────────────────────────
+// Interactivo (una terminal real, ej. `npm run seed:demo` de un desarrollador)
+// -> se imprimen como siempre, porque esa terminal no es un log compartido.
+// NO interactivo (CI, `docker compose exec -T ...`, salida redirigida a un
+// archivo) -> nunca se escriben a stdout/stderr: se guardan en un archivo
+// dentro del volumen persistente (junto al .db), legible solo por quien tenga
+// acceso real (SSH/exec) a la maquina — nunca desde el log del workflow.
+// Se eligio este mecanismo (en vez de enmascarar con ::add-mask:: o exigir
+// las claves por variable de entorno) porque es el unico que garantiza, por
+// construccion, que ninguna contrasena toca jamas un stream que un log
+// pueda capturar — enmascarar depende de que CI procese bien cada linea, y
+// fijarlas por env var las volveria un secreto compartido entre todos los
+// usuarios demo en vez de una por persona.
+function esSalidaInteractiva() {
+  return !!process.stdout.isTTY;
+}
+
+function rutaArchivoCredenciales(db) {
+  return path.join(path.dirname(db.DB_PATH), 'seed-demo-credenciales.txt');
+}
+
+function imprimirCredenciales(db, lista, encabezado) {
+  if (!lista.length) {
+    imprimirResumen(encabezado, ['(nada nuevo en esta corrida)']);
+    return;
+  }
+  if (esSalidaInteractiva()) {
+    imprimirResumen(encabezado + ' (contrasena solo se muestra AHORA)', [
+      ...lista.map((u) => `${u.rol.padEnd(14)} user: ${u.user.padEnd(20)} password: ${u.password}`),
+      '',
+      'Guarda estas contrasenas ahora: no se pueden volver a mostrar (se guardan hasheadas).',
+    ]);
+    return;
+  }
+  const fs = require('fs');
+  const archivo = rutaArchivoCredenciales(db);
+  const contenido =
+    `[seed-demo] ${new Date().toISOString()} — ${encabezado}\n` +
+    lista.map((u) => `${u.rol}\tuser: ${u.user}\tpassword: ${u.password}`).join('\n') +
+    '\n';
+  fs.writeFileSync(archivo, contenido, { mode: 0o600 });
+  imprimirResumen(encabezado, [
+    ...lista.map((u) => `${u.rol.padEnd(14)} user: ${u.user}`),
+    '',
+    'Salida NO interactiva detectada: las contrasenas NO se imprimen aqui (no queda espacio para',
+    'que terminen en un log compartido). Se guardaron en un archivo dentro de la instancia:',
+    `  ${archivo}`,
+    'Recuperalas con acceso real (SSH/exec) a la maquina — nunca desde el log de este workflow.',
+  ]);
 }
 
 async function main() {
@@ -57,7 +111,7 @@ async function main() {
   const { CONFIGS } = require('../dashboard-config-seed');
   const { ensureMarksTable, countByTabla, limpiarTodo } = require('./seed-demo-lib/marks');
   const { campanasConCalidadTab } = require('./seed-demo-lib/campanas');
-  const { seedUsers } = require('./seed-demo-lib/users');
+  const { seedUsers, rotarClaves } = require('./seed-demo-lib/users');
   const { seedCalidad } = require('./seed-demo-lib/calidad');
   const { seedNivelServicio } = require('./seed-demo-lib/nivel-servicio');
   const { seedDashboards } = require('./seed-demo-lib/dashboards');
@@ -77,6 +131,17 @@ async function main() {
       .map(([tabla, n]) => `${tabla}: ${n} fila(s) borradas`);
     imprimirResumen('Limpieza completada', filas.length ? filas : ['(no habia nada sembrado por seed-demo)']);
     process.stdout.write('\n');
+    db.closeDb();
+    return;
+  }
+
+  if (rotarClavesFlag) {
+    process.stdout.write(
+      `\n[seed-demo] Rotando contrasenas de usuarios demo${esProduccion ? ' EN PRODUCCION' : ''} (DB: ${db.DB_PATH})...\n`
+    );
+    const { rotadas } = rotarClaves(db);
+    imprimirCredenciales(db, rotadas, 'Contrasenas de demo ROTADAS en esta corrida');
+    process.stdout.write('\n[seed-demo] Listo. Las contrasenas anteriores de estos usuarios ya no sirven.\n\n');
     db.closeDb();
     return;
   }
@@ -118,11 +183,7 @@ async function main() {
   );
 
   if (r.creadosConPassword.length) {
-    imprimirResumen('Usuarios de demo CREADOS en esta corrida (contrasena solo se muestra AHORA)', [
-      ...r.creadosConPassword.map((u) => `${u.rol.padEnd(14)} user: ${u.user.padEnd(20)} password: ${u.password}`),
-      '',
-      'Guarda estas contrasenas ahora: no se pueden volver a mostrar (se guardan hasheadas).',
-    ]);
+    imprimirCredenciales(db, r.creadosConPassword, 'Usuarios de demo CREADOS en esta corrida');
   } else {
     imprimirResumen('Usuarios de demo', ['Ya existian de una corrida anterior — contrasenas sin cambios (no se muestran de nuevo).']);
   }

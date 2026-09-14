@@ -91,6 +91,53 @@ async function loadHist() {
   } catch(e){ historial = []; }
 }
 
+// ═══════════════════════════════════════════════════════════
+// DATOS DE DEMOSTRACION — banner "esto no es real" (ver seed-demo.js)
+// ═══════════════════════════════════════════════════════════
+var seedDemoActivo = false;
+
+async function loadSeedDemoEstado() {
+  try {
+    var r = await apiRequest('GET', '/seed-demo/estado');
+    seedDemoActivo = !!(r && r.activo);
+  } catch (e) {
+    seedDemoActivo = false; // si falla el chequeo, no se muestra un aviso a medias
+  }
+  renderSeedDemoBanner();
+}
+
+function ensureSeedDemoBannerEl() {
+  var el = document.getElementById('seed-demo-banner');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'seed-demo-banner';
+  el.className = 'hidden';
+  // position:sticky (no fixed) para que empuje el contenido en flujo normal,
+  // pero con z-index por encima de CUALQUIER overlay/modal de la app (el mas
+  // alto existente es .toast en 3000) para que tambien se vea con un
+  // dashboard abierto. Se inserta como PRIMER hijo de <body>, antes que
+  // login-page/admin-page/user-page/... asi aparece encima de la que este
+  // visible sin tocar el markup de cada pantalla.
+  el.style.cssText =
+    'position:sticky;top:0;left:0;right:0;z-index:4000;background:#92400e;color:#fff;' +
+    'text-align:center;padding:8px 14px;font-size:0.85rem;font-weight:700;' +
+    'letter-spacing:.2px;box-shadow:0 2px 10px rgba(0,0,0,.25)';
+  el.textContent = '⚠ DATOS DE DEMOSTRACIÓN — la información mostrada es de prueba y no corresponde a la operación real.';
+  document.body.insertBefore(el, document.body.firstChild);
+  return el;
+}
+
+function renderSeedDemoBanner() {
+  var el = ensureSeedDemoBannerEl();
+  el.classList.toggle('hidden', !seedDemoActivo);
+  // El navbar de cada pantalla tambien es sticky top:0 (misma tecnica) — sin
+  // esto, al hacer scroll el navbar quedaria pegado justo debajo del banner
+  // en el mismo punto y el banner (con mas z-index) lo taparia parcialmente.
+  document.querySelectorAll('.navbar').forEach(function (nb) {
+    nb.style.top = seedDemoActivo ? '34px' : '';
+  });
+}
+
 function resetData() {
   showToast('El restablecimiento de datos de ejemplo ahora se hace desde el servidor (ver README), para no borrar datos reales por accidente.');
 }

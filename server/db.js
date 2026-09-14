@@ -320,6 +320,20 @@ CREATE TABLE IF NOT EXISTS gestion_humana_personal (
 CREATE INDEX IF NOT EXISTS idx_gh_personal_campana ON gestion_humana_personal(campana);
 CREATE INDEX IF NOT EXISTS idx_gh_personal_ingreso ON gestion_humana_personal(fecha_ingreso);
 CREATE INDEX IF NOT EXISTS idx_gh_personal_salida ON gestion_humana_personal(fecha_salida);
+
+-- Ledger de scripts/seed-demo.js (datos de demostracion): que fila de que
+-- tabla sembro, con una clave determinística propia, para poder borrar
+-- EXACTAMENTE eso con seed:demo:limpiar. Se crea siempre aqui (no solo cuando
+-- se corre el seed) para que GET /api/seed-demo/estado pueda consultarla en
+-- cualquier base, incluida una que nunca se haya sembrado.
+CREATE TABLE IF NOT EXISTS seed_demo_marcas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tabla TEXT NOT NULL,
+  clave TEXT NOT NULL,
+  rowId INTEGER NOT NULL,
+  createdAt TEXT NOT NULL,
+  UNIQUE(tabla, clave)
+);
 `);
 
 // Semilla de configuracion de dashboards: idempotente por cliente. Inserta las

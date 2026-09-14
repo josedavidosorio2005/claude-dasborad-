@@ -262,6 +262,22 @@ function createApp() {
   // ── Salud (publica) ───────────────────────────────────────
   api.get('/health', (req, res) => res.json({ ok: true }));
 
+  // ── Estado de datos de demostracion (scripts/seed-demo.js) ─────────────
+  // Cualquier usuario autenticado puede leerlo: es lo que pinta el banner
+  // "DATOS DE DEMOSTRACION" en el frontend, y debe verse en TODOS los roles,
+  // no solo el administrador. `activo` sale de si hay algo marcado en
+  // seed_demo_marcas — se enciende solo al sembrar y se apaga solo al
+  // limpiar (seed:demo:limpiar), sin desplegar nada.
+  api.get(
+    '/seed-demo/estado',
+    requireActor,
+    wrap((req, res) => {
+      res.set('Cache-Control', 'no-store');
+      const row = db.prepare('SELECT COUNT(*) AS c FROM seed_demo_marcas').get();
+      res.json({ activo: row.c > 0, marcas: row.c });
+    })
+  );
+
   // ══════════════════════════════════════════════════════════
   // AUTH
   // ══════════════════════════════════════════════════════════

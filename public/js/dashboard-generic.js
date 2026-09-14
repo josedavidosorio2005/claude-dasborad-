@@ -639,6 +639,16 @@ function _gdExportExcel(){
   if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
   var wb = XLSX.utils.book_new();
   var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+  // El aviso va PRIMERO (primera hoja que se ve al abrir el archivo) si los
+  // datos de este dashboard son de demostracion — para que un Excel con
+  // datos falsos nunca circule sin decirlo.
+  if(typeof seedDemoActivo !== 'undefined' && seedDemoActivo){
+    var avisoWs = XLSX.utils.aoa_to_sheet([
+      ['DATOS DE DEMOSTRACION'],
+      ['La informacion de este archivo es de prueba y NO corresponde a la operacion real.'],
+    ]);
+    XLSX.utils.book_append_sheet(wb, avisoWs, 'AVISO');
+  }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(_gdDatosKpis()), 'KPIs');
   var usados = {};
   _gdDatosPanelesTab().forEach(function(pan){
@@ -667,10 +677,18 @@ function _gdExportPrint(){
     return '<h3>' + esc(pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + esc(k) + '</th>'; }).join('') +
       '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + esc(_fmtCell(f[k])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
   }).join('');
+  // Mismo criterio que el Excel: si el dashboard tiene datos de demostracion,
+  // el aviso va como lo PRIMERO que se ve — un PDF con datos falsos no puede
+  // salir de la app sin decirlo.
+  var avisoHtml = (typeof seedDemoActivo !== 'undefined' && seedDemoActivo)
+    ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">' +
+      '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
+    : '';
   w.document.write('<!doctype html><html><head><title>' + esc((_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl) + '</title>' +
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}h2,h3{color:#0d4a5e}' +
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}' +
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
+    avisoHtml +
     '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
     (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
     '<h2>Indicadores principales</h2>' + tblKpis +
