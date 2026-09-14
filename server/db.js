@@ -175,6 +175,28 @@ CREATE TABLE IF NOT EXISTS calidad_nivel_servicio (
 );
 CREATE INDEX IF NOT EXISTS idx_nivelservicio_campana_mes ON calidad_nivel_servicio(campana, mes);
 
+-- Nivel de servicio DIARIO por campana/skill (Fase 1 del pedido de carga real):
+-- una fila por (campana, fecha, skillName), tal cual viene del export del
+-- conmutador/PBX. calidad_nivel_servicio (arriba) se recalcula a partir de la
+-- suma de estas filas para el mes correspondiente cuando se sube un archivo.
+-- Volver a subir el mismo dia para la misma campana/skill reemplaza la fila
+-- (mismo criterio que dashboard_cargas), no duplica.
+CREATE TABLE IF NOT EXISTS calidad_nivel_servicio_diario (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  fecha TEXT NOT NULL,               -- YYYY-MM-DD
+  skillName TEXT NOT NULL,           -- SKILL_NAME tal cual vino del archivo (auditoria)
+  totalLlamadas INTEGER NOT NULL DEFAULT 0,
+  contestadas INTEGER NOT NULL DEFAULT 0,        -- LLAMADAS CONTESTADAS (total, no solo <=20s)
+  serviceLevel20secPct REAL,          -- SERVICE_LEVEL_20SEC tal cual (ej. 87.03), puede venir null
+  contestadas20sEstimado INTEGER,     -- round(serviceLevel20secPct/100 * totalLlamadas); null si el pct es null
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, fecha, skillName)
+);
+CREATE INDEX IF NOT EXISTS idx_ns_diario_campana_fecha ON calidad_nivel_servicio_diario(campana, fecha);
+
 -- ── Dashboards de cliente: datos operativos cargados por Excel (Fase 2) ──
 -- Una fila = un archivo cargado para (cliente, seccion, periodo). Volver a
 -- subir el mismo periodo reemplaza la fila (UNIQUE). La columna filas guarda el

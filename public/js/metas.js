@@ -180,6 +180,8 @@ async function renderNivelServicioSection(){
 
   var sel = document.getElementById('ns-campana-sel');
   if(sel) sel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  var nsdSel = document.getElementById('nsd-campana-sel');
+  if(nsdSel) nsdSel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var monthInput = document.getElementById('ns-mes-input');
   if(monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
 
@@ -290,5 +292,147 @@ async function deleteNivelServicio(id){
     await apiRequest('DELETE','/calidad/nivel-servicio/'+id);
   }catch(e){ showToast(e.message); return; }
   if(_editingNivelServicioId===id) _editingNivelServicioId = null;
+  await renderNivelServicioSection();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN — NIVEL DE SERVICIO: CARGA DIARIA DESDE EXCEL (Fase 1 del pedido de
+// carga real). Mismo patron de parseo/preview que cargas.js (_colPorLabel,
+// XLSX.read en el navegador, preview antes de confirmar): el servidor solo
+// recibe filas ya parseadas como JSON, nunca parsea Excel.
+// ═══════════════════════════════════════════════════════════
+var _nsdParsed = null;   // { campana, archivoNombre, filas } listo para POST
+
+var NSD_COLUMNAS = [
+  { key: 'skillName', label: 'SKILL_NAME' },
+  { key: 'fecha', label: 'DATE' },
+  { key: 'totalLlamadas', label: 'TOTAL LLAMADAS' },
+  { key: 'contestadas', label: 'LLAMADAS CONTESTADAS' },
+  { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC' },
+];
+var NSD_LABELS_OBLIGATORIAS = ['skillName', 'fecha', 'totalLlamadas', 'contestadas'];
+
+function _nsdNorm(s){ return String(s==null?'':s).trim().toLowerCase(); }
+function _nsdColPorLabel(label){
+  var n = _nsdNorm(label);
+  return NSD_COLUMNAS.find(function(c){ return _nsdNorm(c.label)===n; }) || null;
+}
+function _nsdColIndexMap(headerRow){
+  var map = {};
+  (headerRow||[]).forEach(function(h, i){
+    var col = _nsdColPorLabel(h);
+    if(col && map[col.key]===undefined) map[col.key] = i;
+  });
+  return map;
+}
+
+// DATE: puede venir como fecha nativa de Excel (con {cellDates:true} llega
+// como objeto Date, construido por la libreria en UTC — por eso toISOString
+// da el dia correcto sin importar la zona horaria del navegador) o como texto.
+function _nsdParseFecha(v){
+  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
+  if(typeof v==='string'){
+    var t = v.trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    var d = new Date(t);
+    if(!isNaN(d)) return d.toISOString().slice(0,10);
+  }
+  return null;
+}
+
+// SERVICE_LEVEL_20SEC viene como texto '87.03 %' (o similar). Celda vacia o
+// no parseable -> null (no 0: 0% de nivel de servicio es un dato real y muy
+// distinto de "no hay dato ese dia").
+function _nsdParsePct(v){
+  if(v===null || v===undefined || v==='') return null;
+  if(typeof v==='number') return v;
+  var s = String(v).replace('%','').trim().replace(',', '.');
+  if(s==='') return null;
+  var n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function _nsdParseRows(aoa){
+  if(!aoa || !aoa.length) return { error: 'El archivo esta vacio' };
+  var map = _nsdColIndexMap(aoa[0]);
+  var faltantes = NSD_LABELS_OBLIGATORIAS.filter(function(k){ return map[k]===undefined; });
+  if(faltantes.length){
+    var labels = faltantes.map(function(k){ return NSD_COLUMNAS.find(function(c){ return c.key===k; }).label; });
+    return { error: 'Faltan columnas obligatorias: '+labels.join(', ')+'. Revisa los encabezados del archivo.' };
+  }
+  var filas = [];
+  var avisos = [];
+  for(var i=1;i<aoa.length;i++){
+    var row = aoa[i];
+    if(!row || row.every(function(v){ return v===''||v==null; })) continue;
+    var fecha = _nsdParseFecha(row[map.fecha]);
+    var skillName = row[map.skillName]==null ? '' : String(row[map.skillName]).trim();
+    var totalLlamadas = Number(row[map.totalLlamadas]);
+    var contestadas = Number(row[map.contestadas]);
+    var pct = map.serviceLevel20secPct===undefined ? null : _nsdParsePct(row[map.serviceLevel20secPct]);
+    var fila = (i+1);
+    if(!fecha){ avisos.push('Fila '+fila+': fecha invalida, se omitio.'); continue; }
+    if(!skillName){ avisos.push('Fila '+fila+': SKILL_NAME vacio, se omitio.'); continue; }
+    if(!isFinite(totalLlamadas) || totalLlamadas<0){ avisos.push('Fila '+fila+' ('+fecha+'): TOTAL LLAMADAS invalido, se omitio.'); continue; }
+    if(!isFinite(contestadas) || contestadas<0){ avisos.push('Fila '+fila+' ('+fecha+'): LLAMADAS CONTESTADAS invalido, se omitio.'); continue; }
+    if(contestadas>totalLlamadas){ avisos.push('Fila '+fila+' ('+fecha+'): contestadas ('+contestadas+') supera el total ('+totalLlamadas+'), se omitio.'); continue; }
+    filas.push({ fecha: fecha, skillName: skillName, totalLlamadas: totalLlamadas, contestadas: contestadas, serviceLevel20secPct: pct });
+  }
+  if(filas.length===0) return { error: 'El archivo no tiene filas de datos validas.' };
+  return { filas: filas, avisos: avisos };
+}
+
+async function procesarArchivoNivelServicioDiario(input){
+  var campana = document.getElementById('nsd-campana-sel').value;
+  if(!campana){ showToast('Selecciona una campana primero'); input.value=''; return; }
+  var file = input.files && input.files[0];
+  if(!file) return;
+
+  var buf;
+  try{ buf = await file.arrayBuffer(); }
+  catch(e){ showToast('No se pudo leer el archivo'); return; }
+  var wb, aoa;
+  try{
+    wb = XLSX.read(new Uint8Array(buf), { type:'array', cellDates:true });
+    var sheetName = wb.SheetNames.indexOf('DATA')!==-1 ? 'DATA' : wb.SheetNames[0];
+    var ws = wb.Sheets[sheetName];
+    aoa = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:null });
+  }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
+
+  var res = _nsdParseRows(aoa);
+  if(res.error){ showToast(res.error); input.value=''; return; }
+
+  _nsdParsed = { campana: campana, archivoNombre: file.name, filas: res.filas };
+  _renderPreviewNivelServicioDiario(file.name, res.filas, res.avisos||[]);
+}
+
+function _renderPreviewNivelServicioDiario(nombre, filas, avisos){
+  document.getElementById('nsd-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+esc(a); }).join('<br>');
+  var html = filas.slice(0,60).map(function(f){
+    var pctTxt = f.serviceLevel20secPct===null ? '—' : f.serviceLevel20secPct+'%';
+    return '<tr><td>'+esc(f.fecha)+'</td><td>'+esc(f.skillName)+'</td><td>'+f.totalLlamadas+'</td><td>'+f.contestadas+'</td><td>'+esc(pctTxt)+'</td></tr>';
+  }).join('');
+  if(filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:#7a9ba8">… y '+(filas.length-60)+' filas mas</td></tr>';
+  document.getElementById('nsd-preview-tbody').innerHTML = html;
+  document.getElementById('nsd-preview-card').style.display = '';
+}
+
+function cancelarPreviewNivelServicioDiario(){
+  _nsdParsed = null;
+  document.getElementById('nsd-preview-card').style.display = 'none';
+  document.getElementById('nsd-file').value = '';
+  document.getElementById('nsd-errores').innerHTML = '';
+}
+
+async function guardarNivelServicioDiario(){
+  if(!_nsdParsed){ showToast('Primero sube un archivo'); return; }
+  var btn = document.getElementById('nsd-save-btn');
+  var resp;
+  try{
+    resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/calidad/nivel-servicio/carga-diaria', _nsdParsed); });
+  }catch(e){ showToast(e.message); return; }
+  var meses = ((resp && resp.mensual) || []).map(function(m){ return m.mes; }).join(', ');
+  showToast('Carga guardada: '+((resp && resp.diario && resp.diario.insertadas) || 0)+' fila(s). Mes(es) recalculado(s): '+(meses||'-'));
+  cancelarPreviewNivelServicioDiario();
   await renderNivelServicioSection();
 }

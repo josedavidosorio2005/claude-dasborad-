@@ -219,6 +219,31 @@ const updateNivelServicioBody = z
   })
   .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
 
+// Nivel de servicio DIARIO (Fase 1, carga real del conmutador): una fila por
+// (fecha, skillName), agrupadas por campana en el body. serviceLevel20secPct
+// es opcional/null a proposito — un dia sin ese dato no es 0% de servicio.
+const nivelServicioDiarioFilaSchema = z
+  .object({
+    fecha: fechaSchema,
+    skillName: z.string({ required_error: 'El skill es obligatorio' }).trim().min(1).max(200),
+    totalLlamadas: z.coerce.number().int().min(0, 'Valor invalido').max(1000000),
+    contestadas: z.coerce.number().int().min(0, 'Valor invalido').max(1000000),
+    serviceLevel20secPct: z.number().min(0).max(100).nullable().optional(),
+  })
+  .refine((f) => f.contestadas <= f.totalLlamadas, {
+    message: 'Las llamadas contestadas no pueden superar el total',
+    path: ['contestadas'],
+  });
+
+const nivelServicioCargaDiariaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(nivelServicioDiarioFilaSchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(2000, 'Demasiadas filas en un solo archivo'),
+});
+
 // Query params ?campana=&mes= (mes opcional).
 const calidadQuery = z.object({
   campana: campanaSchema,
@@ -448,6 +473,7 @@ module.exports = {
     updateMetaBody,
     nivelServicioBody,
     updateNivelServicioBody,
+    nivelServicioCargaDiariaBody,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,
