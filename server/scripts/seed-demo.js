@@ -33,19 +33,6 @@ if (esProduccion && process.env.SEED_DEMO_CONFIRM !== '1') {
 const args = process.argv.slice(2);
 const limpiar = args.includes('--limpiar') || args.includes('--clean');
 
-const db = require('../db'); // side effect: crea/migra el esquema + semillas base (usuarios ejemplo, plantillas, dashboards_config)
-const { CONFIGS } = require('../dashboard-config-seed');
-
-const { ensureMarksTable, countByTabla, limpiarTodo } = require('./seed-demo-lib/marks');
-const { campanasConCalidadTab } = require('./seed-demo-lib/campanas');
-const { seedUsers } = require('./seed-demo-lib/users');
-const { seedCalidad } = require('./seed-demo-lib/calidad');
-const { seedNivelServicio } = require('./seed-demo-lib/nivel-servicio');
-const { seedDashboards } = require('./seed-demo-lib/dashboards');
-const { seedInventario } = require('./seed-demo-lib/inventario');
-const { seedGerencia } = require('./seed-demo-lib/gerencia');
-const { seedGestionHumana } = require('./seed-demo-lib/gestion-humana');
-
 const CARGADO_POR = 'Seed Demo (script)';
 
 function linea(char, n) {
@@ -57,7 +44,27 @@ function imprimirResumen(titulo, filas) {
   filas.forEach((f) => process.stdout.write('  ' + f + '\n'));
 }
 
-function main() {
+async function main() {
+  // En produccion los secretos (JWT_SECRET, MASTER_ADMIN_PASSWORD_HASH...) no
+  // viven en el entorno del contenedor: bootstrap.js los hidrata desde SSM
+  // DENTRO del proceso del servidor al arrancar (nunca se persisten). Un
+  // proceso nuevo (`docker compose exec ... node scripts/seed-demo.js`) no
+  // los hereda, asi que este script hace la MISMA hidratacion antes de tocar
+  // ../config/../db — igual que bootstrap.js. Sin SSM_PARAM_PREFIX es un no-op.
+  await require('../secrets').hydrateEnv();
+
+  const db = require('../db'); // side effect: crea/migra el esquema + semillas base (usuarios ejemplo, plantillas, dashboards_config)
+  const { CONFIGS } = require('../dashboard-config-seed');
+  const { ensureMarksTable, countByTabla, limpiarTodo } = require('./seed-demo-lib/marks');
+  const { campanasConCalidadTab } = require('./seed-demo-lib/campanas');
+  const { seedUsers } = require('./seed-demo-lib/users');
+  const { seedCalidad } = require('./seed-demo-lib/calidad');
+  const { seedNivelServicio } = require('./seed-demo-lib/nivel-servicio');
+  const { seedDashboards } = require('./seed-demo-lib/dashboards');
+  const { seedInventario } = require('./seed-demo-lib/inventario');
+  const { seedGerencia } = require('./seed-demo-lib/gerencia');
+  const { seedGestionHumana } = require('./seed-demo-lib/gestion-humana');
+
   ensureMarksTable(db);
 
   if (limpiar) {
@@ -124,4 +131,7 @@ function main() {
   db.closeDb();
 }
 
-main();
+main().catch((err) => {
+  process.stderr.write('\n[seed-demo] ERROR: ' + (err && err.stack ? err.stack : err) + '\n');
+  process.exitCode = 1;
+});

@@ -1,0 +1,107 @@
+name: Seed de demo en produccion
+
+# Disparo manual unicamente (nunca automatico): sembrar o limpiar los datos
+# de demostracion en la instancia de produccion. Reutiliza EXACTAMENTE el
+# mismo mecanismo que deploy.yml (rol OIDC, apertura temporal del puerto 22
+# solo para la IP de este runner, secrets de SSH) para no tener que abrir
+# acceso SSH nuevo ni exponer credenciales fuera de este pipeline ya
+# auditado. Ver la seccion "Datos de demostración" del README.
+on:
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: 'sembrar (npm run seed:demo) o limpiar (npm run seed:demo:limpiar)'
+        required: true
+        type: choice
+        options:
+          - sembrar
+          - limpiar
+        default: sembrar
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Mismo patron que deploy.yml: el puerto 22 solo se abre para la IP de
+      # ESTE runner, durante ESTE job, y se revierte al terminar (paso final,
+      # if: always()). Nunca queda abierto a todo.
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      # La entrada `accion` es un `choice` (sembrar|limpiar), sin texto libre
+      # del usuario: se interpola directo en el script, igual que deploy.yml
+      # ya interpola ${{ env.IMAGE }}/${{ env.AWS_REGION }} en el suyo.
+      - name: Sembrar o limpiar los datos de demo en la instancia
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            if [ "${{ inputs.accion }}" = "limpiar" ]; then
+              echo "== Limpiando datos de demo =="
+              docker compose exec -T -e SEED_DEMO_CONFIRM=1 app node scripts/seed-demo.js --limpiar
+            else
+              echo "== Sembrando datos de demo =="
+              docker compose exec -T -e SEED_DEMO_CONFIRM=1 app node scripts/seed-demo.js
+            fi
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
