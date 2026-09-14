@@ -55,7 +55,14 @@ async function doLogin() {
 
     await loadData(); await loadHist(); await loadDashboardClientes();
     var found = users.find(function(x){ return x.id === data.user.id; });
-    currentUser = found || data.user;
+    // GET /users filtra perms a {} para quien no administra usuarios/permisos
+    // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
+    // pisar los permisos DEL PROPIO usuario logueado: los que ya trajo el
+    // login (data.user, vía toPublicUser) son siempre los reales y completos.
+    // Sin este merge, ensurePerms() (state.js) rellena los cliente_*/campana_*
+    // que llegan undefined con `false` por defecto, y un usuario con acceso
+    // real a sus clientes/campañas se queda sin ver ninguno tras iniciar sesión.
+    currentUser = found ? Object.assign({}, found, { perms: data.user.perms }) : data.user;
 
     if (currentUser.rol==='ADMIN' || currentUser.rol==='AUX_ADMIN') { enterAdminPanel(); }
     else if (currentUser.rol==='ASESOR') { enterAsesorPage(); }
