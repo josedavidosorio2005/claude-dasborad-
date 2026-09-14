@@ -138,13 +138,41 @@
               <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="hist-search" placeholder="Buscar..." oninput="filterHist()"></div>
               <select class="hist-filter-sel" id="hist-filter" onchange="filterHist()">
                 <option value="">Todos los eventos</option>
-                <option value="CREADO">Creaciones</option>
-                <option value="EDITADO">Ediciones</option>
-                <option value="SUSPENDIDO">Suspensiones</option>
-                <option value="ACTIVADO">Activaciones</option>
-                <option value="ELIMINADO">Eliminaciones</option>
-                <option value="PASSWORD">Cambios de contrasena</option>
-                <option value="PERMISOS">Cambios de permisos</option>
+                <option value="CREADO">Usuario creado</option>
+                <option value="EDITADO">Usuario editado</option>
+                <option value="SUSPENDIDO">Usuario suspendido</option>
+                <option value="ACTIVADO">Usuario activado</option>
+                <option value="ELIMINADO">Usuario eliminado</option>
+                <option value="PASSWORD">Cambio de contrasena</option>
+                <option value="PERMISOS">Cambio de permisos</option>
+                <option value="MONITOREO">Calidad: monitoreo creado</option>
+                <option value="MONITOREO_EDIT">Calidad: monitoreo editado</option>
+                <option value="MONITOREO_DEL">Calidad: monitoreo eliminado</option>
+                <option value="META">Calidad: meta de cronograma creada</option>
+                <option value="META_EDIT">Calidad: meta de cronograma editada</option>
+                <option value="META_DEL">Calidad: meta de cronograma eliminada</option>
+                <option value="NIVEL_SERVICIO">Calidad: nivel de servicio cargado</option>
+                <option value="NIVEL_SERVICIO_EDIT">Calidad: nivel de servicio editado</option>
+                <option value="NIVEL_SERVICIO_DEL">Calidad: nivel de servicio eliminado</option>
+                <option value="DASHBOARD_CONFIG">Dashboard: configuracion creada</option>
+                <option value="DASHBOARD_CONFIG_EDIT">Dashboard: configuracion editada</option>
+                <option value="DASHBOARD_CONFIG_DEL">Dashboard: configuracion eliminada</option>
+                <option value="DASHBOARD_CARGA">Dashboard: carga de Excel</option>
+                <option value="DASHBOARD_CARGA_EDIT">Dashboard: carga de Excel reemplazada</option>
+                <option value="DASHBOARD_CARGA_DEL">Dashboard: carga de Excel eliminada</option>
+                <option value="INV_ITEM">Inventario: item creado</option>
+                <option value="INV_ITEM_EDIT">Inventario: item editado</option>
+                <option value="INV_ITEM_DEL">Inventario: item eliminado</option>
+                <option value="INV_MOV">Inventario: movimiento registrado</option>
+                <option value="INV_CARGA">Inventario: carga de Excel (items)</option>
+                <option value="INV_CARGA_MOV">Inventario: carga de Excel (movimientos)</option>
+                <option value="GER_KPI">Gerencia: indicador creado</option>
+                <option value="GER_KPI_EDIT">Gerencia: indicador editado</option>
+                <option value="GER_KPI_DEL">Gerencia: indicador eliminado</option>
+                <option value="GER_CARGA">Gerencia: carga de Excel</option>
+                <option value="GH_PERSONAL">Gestion Humana: persona creada</option>
+                <option value="GH_PERSONAL_EDIT">Gestion Humana: persona editada</option>
+                <option value="GH_PERSONAL_DEL">Gestion Humana: persona eliminada</option>
               </select>
               <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel">&#11015; Descargar</button>
             </div>
