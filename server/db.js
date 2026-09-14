@@ -160,6 +160,21 @@ CREATE TABLE IF NOT EXISTS cronograma_metas (
 );
 CREATE INDEX IF NOT EXISTS idx_cronograma_campana_mes ON cronograma_metas(campana, mes);
 
+-- Nivel de servicio mensual por campana (feedback de Edwin, punto 3.2): % de
+-- llamadas contestadas dentro de 20 segundos sobre el total de llamadas.
+-- El % y la clasificacion (>=80% cumple) se calculan al vuelo, nunca se guardan.
+CREATE TABLE IF NOT EXISTS calidad_nivel_servicio (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  mes TEXT NOT NULL,                 -- YYYY-MM
+  contestadas20s INTEGER NOT NULL DEFAULT 0,
+  llamadasTotales INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL,
+  UNIQUE(campana, mes)
+);
+CREATE INDEX IF NOT EXISTS idx_nivelservicio_campana_mes ON calidad_nivel_servicio(campana, mes);
+
 -- ── Dashboards de cliente: datos operativos cargados por Excel (Fase 2) ──
 -- Una fila = un archivo cargado para (cliente, seccion, periodo). Volver a
 -- subir el mismo periodo reemplaza la fila (UNIQUE). La columna filas guarda el

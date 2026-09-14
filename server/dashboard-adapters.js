@@ -252,12 +252,14 @@ function buildInventario(db) {
 //    de su gente activa.
 //  - Rentabilidad por campana: ingresos de la campana - costo de nomina.
 //    "Ingresos" se toma del ultimo `resumen` cargado del dashboard de esa
-//    campana (columna `recaudo` si existe, si no `ventas`). HUECO DE NEGOCIO:
-//    que KPI exacto = "ingresos generados" depende de la plantilla del cliente
-//    y no esta confirmado; ver PROGRESS.md «Fase 10».
-//  - "Efectividad y ganancias" (del brief) NO se implementa como metrica propia:
-//    su definicion (produccion del equipo vs objetivo, o ingresos vs costo)
-//    no fue confirmada por negocio. Ver PROGRESS.md.
+//    campana (columna `recaudo` si existe, si no `ventas`). Heuristica
+//    confirmada por el usuario (2026-09-14): se mantiene tal cual.
+//  - "Efectividad" (feedback de Edwin, punto 4): produccion del equipo (el
+//    mismo KPI de "ingresos" de arriba) vs su meta (`meta_recaudo`/`meta_ventas`
+//    de esa misma fila `resumen`), definicion confirmada por el usuario
+//    (2026-09-14). Ver produccionCampana() abajo. Queda `null` para campanas
+//    sin recaudo/ventas en su resumen (hoy: Sascha Fitness, Bivett — plantilla
+//    de atencion), mismo hueco que ya tenia "ingresos" para esos 2 clientes.
 
 const GH_CONFIG = {
   cliente: 'GESTION_HUMANA',
@@ -288,6 +290,7 @@ const GH_CONFIG = {
         col('campana', 'Campana', 'texto'), col('activos', 'Activos'),
         col('costo_mes', 'Costo nomina / mes', 'decimal'), col('ingresos', 'Ingresos', 'decimal'),
         col('rentabilidad', 'Rentabilidad', 'decimal'), col('margen_pct', '% Margen', 'porcentaje'),
+        col('efectividad_pct', '% Efectividad (produccion vs meta)', 'porcentaje'),
       ],
     },
     personal: {
@@ -325,11 +328,14 @@ const GH_CONFIG = {
           { label: 'Ingresos', fuente: { s: 'por_campana', modo: 'filas', x: 'campana', campo: 'ingresos' } },
           { label: 'Costo nomina', fuente: { s: 'por_campana', modo: 'filas', x: 'campana', campo: 'costo_mes' } }],
           linea: { label: 'Rentabilidad', fuente: { s: 'por_campana', modo: 'filas', x: 'campana', campo: 'rentabilidad' } } },
+        { tipo: 'bar', titulo: '% Efectividad por campana (produccion vs meta)', horizontal: true, unidad: '%',
+          series: [{ label: '% Efectividad', fuente: { s: 'por_campana', modo: 'filas', x: 'campana', campo: 'efectividad_pct' } }] },
         { tipo: 'tabla', titulo: 'Rentabilidad por campana', fuente: { s: 'por_campana', modo: 'filas', x: 'campana' },
           columnas: [
             { key: 'campana', label: 'Campana' }, { key: 'activos', label: 'Activos' },
             { key: 'costo_mes', label: 'Costo/mes' }, { key: 'ingresos', label: 'Ingresos' },
             { key: 'rentabilidad', label: 'Rentabilidad' }, { key: 'margen_pct', label: '% Margen' },
+            { key: 'efectividad_pct', label: '% Efectividad' },
           ] },
       ] },
       { key: 'personal', label: 'Personal', panels: [
@@ -372,20 +378,35 @@ function mesesEntre(desdeYmd, hastaYmd) {
   return Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24 * 30.4375)));
 }
 
-// Ingresos "proxy" de una campana: ultimo `resumen` cargado de su dashboard.
-// Usa `recaudo` si existe (monetario), si no `ventas`. Heuristica documentada.
-function ingresosCampana(db, campana) {
+// Produccion "proxy" de una campana: ultimo `resumen` cargado de su dashboard,
+// con su meta emparejada (meta_recaudo / meta_ventas). Usa `recaudo` si existe
+// (monetario), si no `ventas`. Heuristica documentada (mismo criterio que ya
+// se usaba para "ingresos"; ver ingresosCampana abajo).
+function produccionCampana(db, campana) {
   const row = db
     .prepare("SELECT filas FROM dashboard_cargas WHERE cliente = ? AND seccion = 'resumen' ORDER BY periodo DESC, id DESC LIMIT 1")
     .get(campana);
-  if (!row) return 0;
+  if (!row) return { valor: 0, meta: null };
   let filas;
-  try { filas = JSON.parse(row.filas || '[]'); } catch (_) { return 0; }
+  try { filas = JSON.parse(row.filas || '[]'); } catch (_) { return { valor: 0, meta: null }; }
   const f = filas[0] || {};
   const rec = Number(f.recaudo);
-  if (Number.isFinite(rec) && rec > 0) return rec;
+  if (Number.isFinite(rec) && rec > 0) {
+    const meta = Number(f.meta_recaudo);
+    return { valor: rec, meta: Number.isFinite(meta) && meta > 0 ? meta : null };
+  }
   const ven = Number(f.ventas);
-  return Number.isFinite(ven) && ven > 0 ? ven : 0;
+  if (Number.isFinite(ven) && ven > 0) {
+    const meta = Number(f.meta_ventas);
+    return { valor: ven, meta: Number.isFinite(meta) && meta > 0 ? meta : null };
+  }
+  return { valor: 0, meta: null };
+}
+
+// Ingresos "proxy" de una campana (conserva la firma historica; ver
+// produccionCampana arriba, que ademas trae la meta para calcular efectividad).
+function ingresosCampana(db, campana) {
+  return produccionCampana(db, campana).valor;
 }
 
 function buildGestionHumana(db) {
@@ -421,11 +442,13 @@ function buildGestionHumana(db) {
     c.costo_mes += costoMes(p);
   }
   const por_campana_filas = Object.values(camps).map((c) => {
-    const ingresos = ingresosCampana(db, c.campana);
+    const prod = produccionCampana(db, c.campana);
+    const ingresos = prod.valor;
     const costo = Math.round(c.costo_mes * 100) / 100;
     const rentabilidad = ingresos > 0 ? Math.round((ingresos - costo) * 100) / 100 : 0;
     const margen = ingresos > 0 ? Math.round(((ingresos - costo) / ingresos) * 1000) / 10 : 0;
-    return { campana: c.campana, activos: c.activos, costo_mes: costo, ingresos, rentabilidad, margen_pct: margen };
+    const efectividad_pct = prod.meta ? Math.round((prod.valor / prod.meta) * 1000) / 10 : null;
+    return { campana: c.campana, activos: c.activos, costo_mes: costo, ingresos, rentabilidad, margen_pct: margen, efectividad_pct };
   }).sort((a, b) => b.activos - a.activos);
 
   // ── detalle de personal ──

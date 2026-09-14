@@ -289,14 +289,14 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .aux-banner{background:#eef2fb;border:1.5px solid #c0d0f0;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;color:#1a4a9e;font-size:0.85rem;}
 
 /* ── HISTORIAL ── */
-.hist-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap;}
+.hist-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap;background:#eef1f4;color:#4a5a68;}
 .hb-CREADO{background:var(--c-success-bg);color:var(--c-success-dark);}
 .hb-SUSPENDIDO{background:var(--c-warning-bg);color:var(--c-warning-dark);}
 .hb-ACTIVADO{background:var(--c-info-bg);color:var(--c-primary-mid);}
 .hb-ELIMINADO{background:var(--c-danger-bg);color:var(--c-danger-dark);}
 .hb-PASSWORD{background:#f0f0fa;color:#5e5ea8;}
 .hb-EDITADO{background:#fef9e2;color:#9e7a00;}
-.hb-PERMISO{background:#f3e8ff;color:#6b21a8;}
+.hb-PERMISOS{background:#f3e8ff;color:#6b21a8;}
 .hist-footer{padding:12px 20px;border-top:1px solid var(--c-border-soft2);background:var(--c-surface-alt2);}
 .hist-filter-sel{padding:7px 12px;border:1.5px solid var(--c-border);border-radius:7px;font-size:0.84rem;color:var(--c-primary);background:var(--c-bg);outline:none;cursor:pointer;}
 

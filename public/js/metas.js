@@ -34,6 +34,7 @@ async function renderMetasSection(){
 
   previewMetaCalc();
   renderMetasHistory();
+  renderNivelServicioSection();
 }
 
 // Solo usuarios con rol CALIDAD o SUPERVISOR, activos, con acceso a la campana seleccionada.
@@ -162,4 +163,132 @@ async function deleteMetaMes(id){
   }catch(e){ showToast(e.message); return; }
   if(_editingMetaId===id) _editingMetaId = null;
   await renderMetasSection();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN — NIVEL DE SERVICIO (feedback de Edwin, punto 3.2)
+// % de llamadas contestadas en <=20s sobre el total, por campana/mes.
+// Mismo patron que el cronograma de metas de arriba.
+// ═══════════════════════════════════════════════════════════
+var _nivelServicioAll = [];
+var _editingNivelServicioId = null;
+
+async function renderNivelServicioSection(){
+  try{
+    _nivelServicioAll = (await apiRequest('GET','/calidad/nivel-servicio')) || [];
+  }catch(e){ _nivelServicioAll = []; showToast('No se pudo cargar el nivel de servicio: '+e.message); }
+
+  var sel = document.getElementById('ns-campana-sel');
+  if(sel) sel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  var monthInput = document.getElementById('ns-mes-input');
+  if(monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
+
+  var mesFilter = document.getElementById('ns-mes-filter');
+  if(mesFilter){
+    var meses = [];
+    _nivelServicioAll.forEach(function(r){ if(meses.indexOf(r.mes)===-1) meses.push(r.mes); });
+    meses.sort().reverse();
+    var prev = mesFilter.value;
+    mesFilter.innerHTML = '<option value="">Todos los meses</option>' + meses.map(function(m){ return '<option value="'+m+'">'+m+'</option>'; }).join('');
+    if(prev && meses.indexOf(prev)!==-1) mesFilter.value = prev;
+  }
+
+  previewNivelServicio();
+  renderNivelServicioHistory();
+}
+
+function previewNivelServicio(){
+  var contestadasEl = document.getElementById('ns-contestadas-input');
+  var totalesEl = document.getElementById('ns-totales-input');
+  var pv = document.getElementById('ns-preview');
+  if(!contestadasEl || !totalesEl || !pv) return;
+  var contestadas = Number(contestadasEl.value)||0;
+  var totales = Number(totalesEl.value)||0;
+  var pct = totales>0 ? Math.round((contestadas/totales)*1000)/10 : null;
+  var cumple = pct===null ? '—' : (pct>=80 ? 'CUMPLE' : 'NO CUMPLE');
+  pv.innerHTML = '<div class="qi-pill"><div class="qv">'+(pct===null?'—':pct+'%')+'</div><div class="ql">NIVEL DE SERVICIO — '+cumple+' (meta 80%)</div></div>';
+}
+
+function renderNivelServicioHistory(){
+  var filterEl = document.getElementById('ns-mes-filter');
+  var filter = filterEl ? filterEl.value : '';
+  var rows = _nivelServicioAll.filter(function(r){ return !filter || r.mes===filter; });
+  rows.sort(function(a,b){ return b.mes.localeCompare(a.mes) || a.campana.localeCompare(b.campana); });
+  var tbody = document.getElementById('ns-history-tbody');
+  var noRes = document.getElementById('ns-no-results');
+  if(!tbody || !noRes) return;
+  if(rows.length===0){
+    tbody.innerHTML='';
+    noRes.classList.remove('hidden');
+    return;
+  }
+  noRes.classList.add('hidden');
+  tbody.innerHTML = rows.map(function(r){
+    var pctTxt = r.pct===null ? '—' : r.pct+'%';
+    var cumpleTxt = r.cumple===null ? '—' : (r.cumple ? '🟢 SI' : '🔴 NO');
+    return '<tr><td>'+esc(r.campana)+'</td><td>'+esc(r.mes)+'</td><td>'+r.contestadas20s+'</td><td>'+r.llamadasTotales+'</td>'+
+      '<td class="peak">'+esc(pctTxt)+'</td><td>'+esc(cumpleTxt)+'</td>'+
+      '<td><button class="btn-sm btn-edit" onclick="editNivelServicio('+r.id+')">Editar</button> '+
+      '<button class="btn-sm btn-delete" onclick="deleteNivelServicio('+r.id+')">Eliminar</button></td></tr>';
+  }).join('');
+}
+
+function editNivelServicio(id){
+  if(!isFullAdmin()){ showToast('Solo el administrador puede editar el nivel de servicio'); return; }
+  var row = _nivelServicioAll.find(function(r){ return r.id===id; });
+  if(!row){ showToast('No se encontro el registro a editar'); return; }
+  _editingNivelServicioId = id;
+  document.getElementById('ns-campana-sel').value = row.campana;
+  document.getElementById('ns-mes-input').value = row.mes;
+  document.getElementById('ns-contestadas-input').value = row.contestadas20s;
+  document.getElementById('ns-totales-input').value = row.llamadasTotales;
+  previewNivelServicio();
+  showToast('Editando nivel de servicio de '+row.campana+' ('+row.mes+') — modifique y presione Guardar');
+}
+
+async function saveNivelServicio(){
+  if(!isFullAdmin()){ showToast('Solo el administrador puede cargar el nivel de servicio'); return; }
+  var camp = document.getElementById('ns-campana-sel').value;
+  var mes = document.getElementById('ns-mes-input').value;
+  var contestadas = parseInt(document.getElementById('ns-contestadas-input').value,10);
+  var totales = parseInt(document.getElementById('ns-totales-input').value,10);
+  if(!mes){ showToast('Seleccione el mes'); return; }
+  if(isNaN(contestadas) || contestadas<0){ showToast('Ingrese las llamadas contestadas en <=20s'); return; }
+  if(!totales || totales<1){ showToast('Ingrese el total de llamadas del mes'); return; }
+  if(contestadas>totales){ showToast('Las llamadas contestadas no pueden superar el total'); return; }
+
+  var body = { campana: camp, mes: mes, contestadas20s: contestadas, llamadasTotales: totales };
+  var btn = document.getElementById('ns-save-btn');
+  try{
+    await withButtonLoading(btn, 'Guardando...', async function(){
+      if(_editingNivelServicioId && !_nsMovio(camp, mes)){
+        await apiRequest('PUT','/calidad/nivel-servicio/'+_editingNivelServicioId, body);
+      } else {
+        // POST hace upsert por (campana, mes); si se movio de celda, borramos
+        // la fila original para no dejar un duplicado huerfano.
+        if(_editingNivelServicioId) { try{ await apiRequest('DELETE','/calidad/nivel-servicio/'+_editingNivelServicioId); }catch(e){} }
+        await apiRequest('POST','/calidad/nivel-servicio', body);
+      }
+    });
+  }catch(e){ showToast(e.message); return; }
+  showToast((_editingNivelServicioId?'Nivel de servicio actualizado para ':'Nivel de servicio guardado para ')+camp+' — '+mes);
+  _editingNivelServicioId = null;
+  await renderNivelServicioSection();
+}
+
+// true si al editar cambiaron campana/mes (la fila "se movio de celda")
+function _nsMovio(camp, mes){
+  var orig = _nivelServicioAll.find(function(r){ return r.id===_editingNivelServicioId; });
+  if(!orig) return true;
+  return orig.campana!==camp || orig.mes!==mes;
+}
+
+async function deleteNivelServicio(id){
+  if(!isFullAdmin()){ showToast('Solo el administrador puede eliminar el nivel de servicio'); return; }
+  if(!confirm('Eliminar este registro de nivel de servicio?')) return;
+  try{
+    await apiRequest('DELETE','/calidad/nivel-servicio/'+id);
+  }catch(e){ showToast(e.message); return; }
+  if(_editingNivelServicioId===id) _editingNivelServicioId = null;
+  await renderNivelServicioSection();
 }

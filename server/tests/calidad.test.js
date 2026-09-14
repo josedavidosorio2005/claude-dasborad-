@@ -171,6 +171,35 @@ test('metas: solo el administrador puede crear/editar/borrar el cronograma', asy
   assert.equal(ok.body.metaPorAsesor, 5); // 10 / 2
 });
 
+test('metas: PUT hacia una (campana, mes, lider) ya existente -> 409, no 500', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const { id: liderId } = await calidadUser(admin, 'ORLANT', 'metaconflict');
+
+  const uno = await request(app)
+    .post('/api/metas')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', mes: MES, liderId, metaGrupal: 10, asesores: 2, diasLaborales: 19 });
+  assert.equal(uno.status, 201, JSON.stringify(uno.body));
+
+  const otroMes = MES === '2026-01' ? '2026-02' : '2026-01';
+  const dos = await request(app)
+    .post('/api/metas')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', mes: otroMes, liderId, metaGrupal: 10, asesores: 2, diasLaborales: 19 });
+  assert.equal(dos.status, 201, JSON.stringify(dos.body));
+
+  // Mover el segundo registro para que choque con (campana, mes, lider) del primero.
+  const conflicto = await request(app)
+    .put(`/api/metas/${dos.body.id}`)
+    .set(auth(admin))
+    .send({ mes: MES });
+  assert.equal(conflicto.status, 409, JSON.stringify(conflicto.body));
+
+  // El registro original no debe haber quedado alterado por el intento fallido.
+  const sigue = await request(app).get('/api/metas?campana=ORLANT').set(auth(admin));
+  assert.equal(sigue.body.find((r) => r.id === dos.body.id).mes, otroMes);
+});
+
 test('cumplimiento: el calculo en servidor refleja los monitoreos del lider', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const { token, id } = await calidadUser(admin, 'ORLANT', 'cumpl');
