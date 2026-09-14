@@ -714,3 +714,144 @@ Solo `public/css/styles.css` y `public/index.html` (el nuevo ícono va
 embebido ahí, no hay archivo de imagen nuevo en el repo). No se tocó
 `server/`, `desktop-app/` ni `mobile-app/` — mismo sitio compartido, se
 propaga solo a las apps empaquetadas cuando se despliegue.
+
+---
+
+## Fase 16 — Datos de demostración para todos los dashboards + PRs #9/#10 (2026-09-14)
+
+Pedido explícito: que la app se pudiera abrir con **todos** los dashboards
+mostrando datos (no vacíos) mientras llegan los datos reales del cliente, sin
+devolver la tarea a medias ni pedir confirmación entre pasos.
+
+(De paso quedan registradas aquí dos fases que se habían mergeado sin pasar
+por PROGRESS.md: PR #9 — feedback de Edwin sobre historial ampliado, Nivel de
+Servicio en Calidad y % efectividad en Gestión Humana — y PR #10 — carga
+diaria real de Nivel de Servicio desde el export del conmutador, Fase 1. Esta
+fase (16) es aparte, sobre PRs #11 y #12.)
+
+### Qué se construyó
+
+- **`server/scripts/seed-demo.js`** (+ `server/scripts/seed-demo-lib/*`):
+  siembra 6 meses de histórico (2026-04..2026-09) en los 12 dashboards de
+  cliente (todas sus secciones), Nivel de Servicio diario, Calidad
+  (monitoreos + cronograma), Inventario, Gerencia y Gestión Humana, más un
+  usuario de demo por rol. `npm run seed:demo` / `npm run seed:demo:limpiar`.
+  Detalle completo en la sección 6 del README.
+- Idempotente vía una tabla propia (`seed_demo_marcas`: tabla + clave
+  determinística -> id real), que también es lo que usa `--limpiar` para
+  borrar EXACTAMENTE lo sembrado y nunca un dato real ajeno.
+- Escribe directo a SQLite pero pasando por las mismas funciones que la API
+  real (`normalizarFilas`, `calidad-logic.computeScore`, y una nueva
+  `server/nivel-servicio-diario.js` — se extrajo del endpoint de carga diaria
+  para que el seed y el endpoint calculen el agregado mensual con el mismo
+  código, nunca dos veces la misma cuenta).
+
+### Bugs reales encontrados y arreglados en el camino
+
+1. **Permisos propios perdidos al iniciar sesión** (`public/js/session.js`):
+   `GET /api/users` filtra `perms` a `{}` para quien no administra
+   usuarios/permisos (para no exponer la matriz ajena — esto ya existía y es
+   correcto), pero `doLogin()` usaba esa misma lista filtrada para
+   reconstruir `currentUser`, y `ensurePerms()` (`state.js`) rellenaba los
+   `cliente_*`/`campana_*` que llegaban `undefined` con `false` por defecto.
+   Cualquier usuario NO admin (`CLIENTES_DASH`, `CALIDAD`, `GERENCIA`,
+   `SUPERVISOR`...) perdía silenciosamente el acceso a sus propios
+   clientes/campañas justo después de loguearse, aunque el login sí le
+   devolvía los permisos reales. Se detectó verificando con Playwright: el
+   modal de "Dashboard Clientes" salía vacío con un usuario que sí tenía los
+   12 permisos `cliente_*` en `true`. Arreglo: los permisos del propio
+   usuario logueado siempre vienen del login (autoritativos), nunca de la
+   lista filtrada.
+2. **4 campañas de M3 sin plantilla de Calidad**: `ANDRES YEPES`, `MOVILIZE`,
+   `SASCHA FITNESS` y `BIVETT` tienen pestaña de Calidad en su dashboard pero
+   no tenían fila en `calidad-plantillas-seed.js` — `POST /monitoreos` les
+   respondía 400 y su pestaña de Calidad no se podía cargar. Se les agregó
+   una plantilla estándar (no había definición de negocio específica para
+   estas 4). De paso, la semilla de `calidad_plantillas` pasó de "solo si la
+   tabla está vacía" a idempotente por campaña (igual que `dashboards_config`),
+   para que una campaña nueva llegue también a una base ya creada.
+
+### Verificación (no solo asserts de servidor)
+
+- `cd server && npm test`: **108/108** en verde (5 tests nuevos:
+  idempotencia del seed, `--limpiar` deja la base como estaba, los 12
+  clientes con carga en todas sus secciones, paridad Nivel de Servicio
+  seed-vs-endpoint-real, las 9 campañas con pestaña de Calidad tienen
+  plantilla). `npm audit`: 0 vulnerabilidades.
+- **Playwright real** (Chromium ya instalado en el equipo, sin
+  `playwright install`): servidor local + DB sembrada, login real como
+  usuario de demo, clicks reales por el modal de clientes y cada pestaña de
+  los 12 dashboards + los 3 módulos que comparten el mismo motor de render
+  (Inventario/Gerencia/Gestión Humana) — sin paneles "Sin datos", sin el
+  banner de dashboard vacío, sin KPIs en "—", sin errores de consola.
+  Capturas en `docs/capturas-demo/` (15 PNG).
+
+### PRs, CI y despliegue
+
+- PR #11 (`feature/seed-demo-datos-2026-09-14`): el seed, sus tests, el fix
+  de permisos, las plantillas faltantes y la extracción de
+  `nivel-servicio-diario.js`. CI verde (Node 18/20/22 + build Docker) ->
+  merge a `main` -> `deploy.yml` se disparó solo y desplegó
+  (`inconexionpruebasclaude.duckdns.org`) sin intervención manual.
+- PR #12 (`feature/seed-demo-prod-runner-2026-09-14`): `seed-demo.js` hidrata
+  secretos desde SSM antes de tocar `../config`/`../db` (igual que
+  `bootstrap.js`) — necesario porque `docker compose exec` no hereda los
+  secretos que `bootstrap.js` hidrata en memoria del proceso principal. Más
+  el workflow manual `.github/workflows/seed-demo.yml`
+  (`workflow_dispatch`, input `sembrar`/`limpiar`), que reutiliza el mismo
+  rol OIDC + apertura temporal del puerto 22 que ya usa `deploy.yml` — sin
+  necesitar acceso SSH nuevo. CI verde -> merge -> deploy automático de nuevo
+  en verde.
+- **Corrección de una nota de sesiones anteriores**: se creía que el paso
+  final de despliegue era manual (SSH cerrado a los runners de GitHub). Al
+  revisar el historial real de ejecuciones (`gh run list --workflow=deploy.yml`)
+  se confirmó que el deploy automático **sí funciona** desde el commit
+  `6d31cb8` (whitelist dinámica de la IP del runner) — los 2 merges de esta
+  fase desplegaron solos, sin ningún paso manual.
+
+### Decisión: sembrar producción con datos de demo
+
+El usuario autorizó explícitamente de antemano: *"decide tú si en
+producción se siembran los datos demo... si eso implica sembrar producción,
+siémbrala"*. Se sembró producción vía el workflow `seed-demo.yml`
+(`sembrar`), con este resultado:
+
+```
+12 dashboards de cliente con carga en todas sus secciones (6 meses: 2026-04 a 2026-09)
+9 campanas con monitoreos de Calidad y cronograma de metas
+Nivel de Servicio diario: 1278 fila(s) nuevas, 54 mes(es) recalculados
+Calidad: 1966 monitoreo(s) nuevo(s), 54 meta(s) de cronograma nuevas
+Inventario: 25 item(s) nuevos, 98 movimiento(s) nuevos
+Gerencia: 72 KPI(s) nuevos
+Gestion Humana: 151 registro(s) de personal nuevos
+```
+
+Verificado en producción real (no local): `GET /api/health` -> 200, login
+como `demo_clientes_dash` -> 200, y `ORLANT`/`INFONDO`/`BIVETT` devuelven sus
+cargas reales (24/24/18 registros respectivamente) vía
+`GET /api/dashboard/:cliente`.
+
+**Por qué sembrar y no dejarla limpia**: la intención declarada era ver la
+app funcionando con datos de prueba mientras llegan los reales, y la
+alternativa (dejarla vacía) es exactamente el problema que se pidió resolver.
+El riesgo se mitigó con lo mismo que hace idempotente y reversible al seed:
+`SEED_DEMO_CONFIRM=1 npm run seed:demo:limpiar` (o el workflow
+`seed-demo.yml` con `limpiar`) borra EXACTAMENTE lo sembrado — nada de lo que
+ya exista o se cargue después se toca — para vaciarla de un golpe en cuanto
+entren los datos reales.
+
+### Pendiente / dudoso
+
+- Los usuarios de demo con contraseña aleatoria quedan documentados en el
+  log de la ejecución del workflow (`gh run view <id> --log`), visible para
+  quien tenga acceso al repo — aceptable por ser credenciales de demo, pero
+  vale la pena rotarlas o borrarlas (`seed:demo:limpiar`) antes de dar acceso
+  externo amplio al repositorio.
+- No se probó `seed-demo.js` con `SSM_PARAM_PREFIX` real contra un stub
+  local (sí se probó como no-op, que es el camino de desarrollo/CI); la
+  ejecución real en producción sí lo ejercitó de punta a punta y funcionó.
+- La cifra de septiembre en los dashboards de cliente se ve más baja que
+  agosto en varias gráficas de tendencia — es intencional (el mes en curso
+  se siembra escalado a los días ya transcurridos, HOY = 2026-09-14, para no
+  inventar datos de fechas futuras), pero puede leerse a primera vista como
+  una caída real si no se sabe que septiembre está incompleto.
