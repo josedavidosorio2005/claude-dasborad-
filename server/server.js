@@ -31,6 +31,7 @@ const calc = require('./calidad-logic');
 const secciones = require('./dashboard-secciones');
 const { ADAPTERS } = require('./dashboard-adapters');
 const { cargarNivelServicioDiario } = require('./nivel-servicio-diario');
+const traficoSkills = require('./trafico-skills');
 
 const MASTER_ADMIN_USER = config.masterAdminUser;
 const MASTER_ADMIN_PASSWORD_HASH = config.masterAdminPasswordHash;
@@ -1066,6 +1067,114 @@ function createApp() {
         `${b.filas.length} fila(s) — ${resultado.mensual.length} mes(es) recalculado(s)`
       );
       res.status(201).json({ diario: { insertadas: resultado.diario.insertadas }, mensual });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // TRAFICO DE LLAMADAS — export real de Volvox (hoja DATA)
+  // ══════════════════════════════════════════════════════════
+  function toTraficoDiarioRow(row) {
+    return {
+      fecha: row.fecha,
+      skillName: row.skillName,
+      campana: row.campana,
+      totalLlamadas: row.totalLlamadas,
+      contestadas: row.contestadas,
+      llamadasAbandonadas: row.llamadasAbandonadas,
+      serviceLevel10secPct: row.serviceLevel10secPct,
+      serviceLevel20secPct: row.serviceLevel20secPct,
+      serviceLevel30secPct: row.serviceLevel30secPct,
+      abandonPct: row.abandonPct,
+      nivelAtencionPct: row.nivelAtencionPct,
+      tasaAbandonoPct: row.tasaAbandonoPct,
+      asaSegundos: row.asaSegundos,
+      ataSegundos: row.ataSegundos,
+      ahtSegundos: row.ahtSegundos,
+      waitTimeSegundos: row.waitTimeSegundos,
+    };
+  }
+
+  // Filas diarias crudas para la grafica de Trafico (el filtrado/agregado
+  // por skill, rango de fechas y granularidad lo hace el navegador —
+  // public/js/trafico-logic.js — asi que aqui se devuelve todo lo que haya
+  // para la campana, sin recortar).
+  api.get(
+    '/calidad/nivel-servicio/diario',
+    requireActor,
+    wrap((req, res) => {
+      const campana = req.query.campana;
+      if (!campana) return res.status(400).json({ error: 'Indica una campana' });
+      if (!campaignAccess(req.actor, campana)) {
+        return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+      }
+      const rows = db
+        .prepare('SELECT * FROM calidad_nivel_servicio_diario WHERE campana = ? ORDER BY fecha, skillName')
+        .all(campana);
+      res.json(rows.map(toTraficoDiarioRow));
+    })
+  );
+
+  // Sube el export de Volvox ya parseado en el navegador (mismo patron que
+  // /dashboard/cargas y la carga diaria de arriba: el servidor NUNCA abre el
+  // Excel). A diferencia de esa carga clasica, aqui NO se manda `campana`:
+  // un mismo archivo trae varias skills que pueden ser de campanas
+  // distintas, y cada una se resuelve por su mapeo (trafico-skills.js). Una
+  // skill nueva se guarda igual, bajo "(SIN ASIGNAR)", sin romper la carga.
+  api.post(
+    '/calidad/trafico/carga',
+    requireActor,
+    validate(schemas.traficoCargaBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede cargar el trafico de llamadas' });
+      }
+      const b = req.body;
+      const resultado = traficoSkills.cargarTrafico(db, {
+        archivoNombre: b.archivoNombre || '',
+        cargadoPorNombre: req.actor.nombre || '-',
+        filas: b.filas,
+      });
+      logEvent(
+        'TRAFICO_CARGA',
+        { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: resultado.campanas.join(', ') },
+        actorLabel(req.actor),
+        resultado.skillsSinAsignar.length
+          ? `${resultado.skillsSinAsignar.length} skill(s) sin asignar: ${resultado.skillsSinAsignar.join(', ')}`
+          : ''
+      );
+      res.status(201).json(resultado);
+    })
+  );
+
+  // Mapeo SKILL_NAME -> campana/cliente, administrable desde el panel.
+  api.get(
+    '/calidad/trafico/skills',
+    requireActor,
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede ver el mapeo de skills' });
+      }
+      res.json(traficoSkills.listarSkills(db));
+    })
+  );
+
+  api.put(
+    '/calidad/trafico/skills/:skillName',
+    requireActor,
+    validate(schemas.traficoSkillMapeoBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede editar el mapeo de skills' });
+      }
+      const skillName = req.params.skillName;
+      const resultado = traficoSkills.remapearSkill(db, { skillName, campana: req.body.campana });
+      logEvent(
+        'TRAFICO_SKILL_MAPEO',
+        { nombre: skillName, user: '-', rol: req.body.campana || '(sin asignar)' },
+        actorLabel(req.actor),
+        `${resultado.movidas} fila(s) reatribuidas, ${resultado.mesesRecalculados.length} mes(es) recalculado(s)`
+      );
+      res.json({ ok: true, ...resultado });
     })
   );
 

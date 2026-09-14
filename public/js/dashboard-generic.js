@@ -424,9 +424,13 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
+    } else if(p.tipo === 'trafico_combo'){
+      // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
+      // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
+      html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -459,6 +463,8 @@ function _gdRenderPanel(p, i){
   }
 
   if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie'){ _gdRenderCalidad(p, i); return; }
+
+  if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
 
   if(p.tipo === 'tabla'){
     var t = document.getElementById('gd-p'+i); if(!t) return;
@@ -605,6 +611,7 @@ function _gdDatosPanelesTab(){
       return;
     }
     if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
+    if(p.tipo === 'trafico_combo') return; // export propio (filtros/fecha no son los de _gd)
     if(p.tipo === 'pie'){
       var r = _gdResolver(p.fuente);
       out.push({ titulo: p.titulo, tipo: 'pie', filas: (r.labels || []).map(function(l, idx){ return { Categoria: l, Valor: (r.values || [])[idx] }; }) });

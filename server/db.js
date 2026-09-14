@@ -197,6 +197,21 @@ CREATE TABLE IF NOT EXISTS calidad_nivel_servicio_diario (
 );
 CREATE INDEX IF NOT EXISTS idx_ns_diario_campana_fecha ON calidad_nivel_servicio_diario(campana, fecha);
 
+-- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
+-- InConexion. Los nombres de skill los define Volvox y cambian con el
+-- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
+-- el codigo). campana=NULL significa "todavia sin asignar": una carga de
+-- trafico para una skill nueva crea su fila aqui automaticamente (para que
+-- el admin la vea y la mapee), y mientras tanto sus filas de
+-- calidad_nivel_servicio_diario quedan bajo la campana centinela
+-- '(SIN ASIGNAR)' — nunca se pierden ni rompen la carga.
+CREATE TABLE IF NOT EXISTS trafico_skill_mapeo (
+  skillName TEXT PRIMARY KEY,
+  campana TEXT,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+
 -- ── Dashboards de cliente: datos operativos cargados por Excel (Fase 2) ──
 -- Una fila = un archivo cargado para (cliente, seccion, periodo). Volver a
 -- subir el mismo periodo reemplaza la fila (UNIQUE). La columna filas guarda el
@@ -505,6 +520,35 @@ runOnceMigration('scoped_permissions_v1', () => {
   tx(rows);
   if (!config.isTest) {
     console.log('[db] Migracion scoped_permissions_v1 aplicada.');
+  }
+});
+
+// Fase "Trafico de llamadas" (export real de Volvox, hoja DATA): amplia
+// calidad_nivel_servicio_diario con las columnas que trae el reporte y que
+// el Fase 1 (carga-diaria) todavia no guardaba. Se decidio EXTENDER esta
+// tabla en vez de crear una nueva porque ya comparte la misma llave natural
+// (campana+fecha+skillName) y el mismo flujo de carga/recalculo mensual —
+// una tabla aparte duplicaria esa logica sin necesidad (ver
+// server/nivel-servicio-diario.js). Todas nullable: son opcionales en el
+// archivo, y "sin dato" (NULL) es distinto de 0 (ej. 0% de nivel de
+// atencion es un dato real). No se agregan directo al CREATE TABLE de
+// arriba para que esta migracion funcione igual en una base nueva o en una
+// que ya tenia filas (evita el error "duplicate column name").
+runOnceMigration('calidad_nivel_servicio_diario_trafico_v1', () => {
+  db.exec(`
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN llamadasAbandonadas INTEGER;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN serviceLevel10secPct REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN serviceLevel30secPct REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN abandonPct REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN nivelAtencionPct REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN tasaAbandonoPct REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN asaSegundos REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN ataSegundos REAL;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN ahtSegundos INTEGER;
+    ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN waitTimeSegundos INTEGER;
+  `);
+  if (!config.isTest) {
+    console.log('[db] Migracion calidad_nivel_servicio_diario_trafico_v1 aplicada.');
   }
 });
 

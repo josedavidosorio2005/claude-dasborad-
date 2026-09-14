@@ -112,6 +112,9 @@ const ORLANT = {
         { tipo: 'calidad_kpis', campana: 'ORLANT' },
         { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribucion de clasificacion' },
       ]},
+      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
+        { tipo: 'trafico_combo', campana: 'ORLANT' },
+      ]},
     ],
   },
 };
@@ -186,6 +189,9 @@ const AURORA = {
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'CLINICA AURORA' },
         { tipo: 'calidad_pie', campana: 'CLINICA AURORA', titulo: 'Distribucion de clasificacion' },
+      ]},
+      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
+        { tipo: 'trafico_combo', campana: 'CLINICA AURORA' },
       ]},
     ],
   },

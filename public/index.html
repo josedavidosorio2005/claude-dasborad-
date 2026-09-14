@@ -311,6 +311,51 @@
         </div>
         <div class="section-card">
           <div class="section-header">
+            <h3>Trafico de Llamadas — carga desde Volvox</h3>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">
+            Descarga el reporte de trafico de la plataforma de marcacion Volvox (hoja <b>DATA</b>) y subelo tal
+            cual, sin abrirlo ni recortar columnas. Puede traer varias skills y varios meses a la vez; cada skill
+            se enruta a su campana segun el mapeo de abajo — una skill nueva se guarda igual, marcada
+            "sin asignar", hasta que la mapees.
+          </div>
+          <div class="form-row">
+            <div class="ig"><label>Archivo Excel (.xlsx) de Volvox</label>
+              <input type="file" id="tv-file" accept=".xlsx,.xls" onchange="procesarArchivoTrafico(this)">
+            </div>
+          </div>
+          <div id="tv-errores" style="color:#c0392b;font-size:0.8rem;margin:4px 0"></div>
+          <div id="tv-preview-card" style="display:none">
+            <div class="page-subtitle" id="tv-preview-resumen" style="margin:0 0 8px 0"></div>
+            <div class="table-wrap">
+              <table><thead><tr>
+                <th>Fecha</th><th>Skill</th><th>Total Llamadas</th><th>Contestadas</th><th>Nivel Atencion</th>
+              </tr></thead>
+              <tbody id="tv-preview-tbody"></tbody></table>
+            </div>
+            <div class="modal-btns">
+              <button class="btn-cancel" onclick="cancelarPreviewTrafico()">Descartar</button>
+              <button class="btn-primary" id="tv-save-btn" onclick="guardarTrafico()">Guardar carga de trafico</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Mapeo de Skills (Volvox) &rarr; Campana</h3>
+            <div class="header-actions">
+              <button class="btn-sm" onclick="renderTraficoSkills()">Actualizar</button>
+            </div>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Los nombres de skill los define Volvox y cambian con el tiempo: aqui se asignan a una campana/cliente, sin tocar codigo. Las que aparecen "sin asignar" quedan guardadas igual, solo que su trafico no se ve en ningun dashboard hasta que las mapees.</div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Skill (Volvox)</th><th>Campana asignada</th><th>Filas guardadas</th><th></th>
+            </tr></thead>
+            <tbody id="tv-skills-tbody"></tbody></table>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
             <h3>Historial de Nivel de Servicio</h3>
             <div class="header-actions">
               <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">
@@ -1303,6 +1348,7 @@
 
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
 <script src="js/esc.js"></script>
+<script src="js/trafico-logic.js"></script>
 <script src="js/api.js"></script>
 <script src="js/constants.js"></script>
 <script src="js/state.js"></script>
@@ -1319,6 +1365,7 @@
 <script src="js/cargas.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/dashboard-generic.js"></script>
+<script src="js/trafico.js"></script>
 <script src="js/dashboards-admin.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/gerencia.js"></script>
