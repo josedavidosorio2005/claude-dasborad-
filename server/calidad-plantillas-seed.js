@@ -107,7 +107,29 @@ const ITEMS_COMFAMA = [
   { n: 13, cat: 'ATRIBUTOS', label: 'Empoderamiento (seguridad y dominio)', weight: 5, critico: false },
 ];
 
-// engine: 'standard' (Orlant/Infondo/Aurora/Cartera/Comfama) o 'sura'.
+// Plantilla generica estandar (10 items, pesos suman 100) para las campanas de
+// M3 (dashboard-plantillas-cliente.js) que tienen pestana de Calidad pero no
+// tenian una plantilla de calificacion propia (ANDRES YEPES, MOVILIZE, SASCHA
+// FITNESS, BIVETT): sin esto, POST /monitoreos fallaba con "Esa campana no
+// tiene plantilla de calificacion" y su pestana de Calidad quedaba vacia. No
+// habia definicion de negocio para estas 4, asi que se usa un formato
+// estandar de contact center (mismo criterio que las plantillas de dashboard).
+function plantillaGenerica(prefijoCategoria) {
+  return [
+    { n: 1, cat: 'APERTURA', label: 'Saludo y presentacion', weight: 6, critico: false },
+    { n: 2, cat: 'APERTURA', label: 'Valida identidad del cliente', weight: 8, critico: true },
+    { n: 3, cat: 'ESCUCHA', label: 'Escucha activa sin interrumpir', weight: 8, critico: false },
+    { n: 4, cat: 'ESCUCHA', label: 'Identifica correctamente la necesidad', weight: 10, critico: true },
+    { n: 5, cat: 'GESTION', label: 'Brinda informacion clara y completa', weight: 14, critico: true },
+    { n: 6, cat: 'GESTION', label: 'Tono cordial y profesional', weight: 10, critico: false },
+    { n: 7, cat: 'GESTION', label: 'Resuelve o gestiona correctamente la solicitud', weight: 16, critico: true },
+    { n: 8, cat: 'GESTION', label: 'Registra correctamente en el sistema (CRM)', weight: 14, critico: true },
+    { n: 9, cat: 'CIERRE', label: 'Cierre de llamada y se despide cordialmente', weight: 8, critico: false },
+    { n: 10, cat: 'TIEMPOS', label: 'Manejo adecuado de tiempos y silencios', weight: 6, critico: false },
+  ];
+}
+
+// engine: 'standard' (Orlant/Infondo/Aurora/Cartera/Comfama/generico) o 'sura'.
 const PLANTILLAS = [
   { campana: 'ORLANT', engine: 'standard', items: ITEMS_ORLANT },
   { campana: 'INFONDO', engine: 'standard', items: ITEMS_INFONDO },
@@ -115,6 +137,10 @@ const PLANTILLAS = [
   { campana: 'CLINICA AURORA', engine: 'standard', items: ITEMS_AURORA },
   { campana: 'CARTERA INTERNA', engine: 'standard', items: ITEMS_CARTERA },
   { campana: 'TELEVENTAS COMFAMA', engine: 'standard', items: ITEMS_COMFAMA },
+  { campana: 'ANDRES YEPES', engine: 'standard', items: plantillaGenerica() },
+  { campana: 'MOVILIZE', engine: 'standard', items: plantillaGenerica() },
+  { campana: 'SASCHA FITNESS', engine: 'standard', items: plantillaGenerica() },
+  { campana: 'BIVETT', engine: 'standard', items: plantillaGenerica() },
 ];
 
 module.exports = { PLANTILLAS };
