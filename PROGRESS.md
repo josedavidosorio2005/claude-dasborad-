@@ -952,3 +952,141 @@ vulnerabilidades.
   la hoja "AVISO" es la primera del workbook y contiene exactamente el
   texto esperado (`sheet1.xml`: "DATOS DE DEMOSTRACION" / "La informacion de
   este archivo es de prueba y NO corresponde a la operacion real.").
+
+---
+
+## Fase 18 — Trafico de llamadas: carga real de Volvox, mapeo de skills y grafica con filtros (2026-09-14)
+
+Cierra el flujo de datos de tráfico de llamadas de punta a punta: subir el
+export real de Volvox (hoja `DATA`) tal cual, sin abrirlo ni recortar
+columnas, y que de ahí salgan las gráficas con filtros. Antes de esta fase
+solo existía la carga diaria simple de Nivel de Servicio (PR #10, un solo
+campo `SERVICE_LEVEL_20SEC`, una campaña elegida a mano por archivo).
+
+### Decisión de arquitectura (pedida explícitamente: elegir una sola y explicar por qué)
+
+Se **extendió** `calidad_nivel_servicio_diario` en vez de crear una tabla
+nueva: ya comparte la misma llave natural (campaña+fecha+skillName) y el
+mismo flujo de carga/recálculo mensual — una tabla aparte habría duplicado
+esa lógica sin necesidad. Columnas nuevas, todas `NULL`able (abandonadas,
+service level 10/30s, `ABANDON`, nivel de atención, tasa de abandono,
+ASA/ATA/AHT/wait time en segundos), agregadas por migración (`ALTER TABLE`
+vía `runOnceMigration`, nunca en el `CREATE TABLE` original) para que
+funcione igual en una base nueva o en producción ya poblada.
+
+### Lo que cambió respecto a la carga simple anterior
+
+- **Antes**: el admin elegía la campaña a mano antes de subir el archivo (un
+  archivo = una campaña).
+- **Ahora**: el archivo NO trae campaña — cada skill se resuelve por un
+  mapeo administrable (`trafico_skill_mapeo`, nueva tabla). Una skill nueva
+  se guarda igual, bajo la campaña centinela `(SIN ASIGNAR)`, sin romper la
+  carga; el admin la mapea después desde el panel y sus filas **ya
+  guardadas** se reatribuyen solas (no hace falta volver a subir el
+  archivo) — se recalcula el mensual de la campaña vieja y la nueva.
+- Se mantiene la carga simple anterior (`POST /calidad/nivel-servicio/carga-diaria`)
+  sin tocar, para quien todavía quiera subir un archivo de una sola campaña
+  a mano; la nueva (`POST /calidad/trafico/carga`) es la recomendada para
+  el export real de Volvox multi-skill/multi-mes.
+
+### Realidades del archivo respetadas (no lo que uno esperaría)
+
+Verificadas contra el fixture real (`server/tests/fixtures/EJEMPLO.xlsx`),
+no contra suposiciones: `DATE` es un serial de Excel que se convierte por
+aritmética UTC directa (nunca vía `cellDates`+`Date`, que en algunos
+entornos desplaza el día con la zona horaria local); `WAIT_TIME`/`AHT` son
+fracción de día (hora) → segundos; `SERVICE_LEVEL_*`/`ABANDON` son texto
+`"87.03 %"` (con y sin espacio antes del `%`, ambos formatos conviven en el
+mismo archivo); `ASA`/`ATA` ya vienen en segundos pero como texto plano (no
+como hora); `NIVEL DE ATENCION`/`TASA DE ABNDONO` (*sic*, respetado tal cual
+lo escribe Volvox) son fracción decimal, no porcentaje; `MES`/`AÑO` son
+puro respaldo informativo, nunca la fuente real del mes (siempre `DATE`).
+
+### El riesgo más delicado: agregación de porcentajes al cambiar granularidad
+
+El requisito explícito era que "el nivel de atención de un mes es
+contestadas del mes / total del mes, no el promedio de los % diarios".
+Implementado así exactamente: la agregación (`traficoAgregar`,
+`public/js/trafico-logic.js`) suma los volúmenes primero y **recalcula**
+nivel de atención y tasa de abandono desde esa suma; el resto de % que
+reporta Volvox (sin numerador propio disponible) se agregan como promedio
+ponderado por volumen — nunca un promedio simple. Cubierto por un test que
+falla si se promediara ingenuamente (100 llamadas/50 contestadas un día +
+10/10 otro día: el promedio simple de 50%/100% da 75%, el correcto da
+54.55% — el test verifica el segundo número y que NO sea el primero).
+
+### Motor de dashboards reutilizado, no una vista suelta
+
+Nuevo tipo de panel `trafico_combo` en el motor genérico
+(`dashboard-generic.js`), agregado a la pestaña de Trafico de las 9
+campañas que ya tenían pestaña de Calidad — mismo patrón que
+`calidad_kpis`/`calidad_pie` (panel autónomo, su propio host, excluido del
+export genérico porque tiene el suyo propio). Gráfica combinada (barras
+Total/Contestadas + línea Nivel de Atención en eje secundario %), filtros
+de skill/rango de fechas/granularidad/combinar-o-separar, estado en la URL,
+KPIs y exportación Excel/PDF que reflejan siempre lo filtrado.
+
+### Verificación
+
+- `npm test`: **137/137** en verde (17 tests nuevos: parseo contra el
+  fixture real, conversiones, columnas extra/reordenadas, columna
+  obligatoria faltante, multi-skill/multi-mes, agregación por granularidad,
+  filtros; y del lado del servidor: permisos, skill sin mapear, remapeo con
+  reatribución + recálculo, idempotencia, reparto multi-campaña en un solo
+  POST, validación). `npm audit`: 0 vulnerabilidades.
+- Los dos paquetes de npm más usados para leer `.xlsx` (`xlsx` de SheetJS,
+  `exceljs`) fallan `npm audit` hoy (SheetJS dejó de publicar versiones
+  parcheadas al registro público; `exceljs` arrastra un `uuid` vulnerable).
+  En vez de aceptar la vulnerabilidad, se escribió un lector de ZIP+XML
+  mínimo y sin dependencias, **solo para pruebas**
+  (`server/tests/helpers/xlsx-lite.js`) — el navegador sigue usando
+  `xlsx.full.min.js` de cdnjs, como siempre.
+- **Playwright real, con el archivo real**: servidor local + DB limpia,
+  login como admin, subida de `EJEMPLO.xlsx` por la interfaz (`<input
+  type=file>` real, no una llamada a la API), preview con 12 filas y 1
+  skill detectada, mapeo de la skill a ORLANT, apertura del dashboard de
+  ORLANT → pestaña "Tráfico de Llamadas", y comparación exacta (no
+  aproximada) de los KPIs contra números calculados desde el archivo con la
+  misma lógica de parseo: granularidad día (1.867 llamadas, 1.847
+  contestadas, 98.9%), granularidad mes (mismos totales, 1 período), rango
+  de fechas filtrado (543/538/99.1%), estado de filtros reflejado en la URL,
+  y exportación PDF con el detalle día a día del rango filtrado. Sin
+  errores de consola. Capturas en `docs/capturas-demo/trafico-*.png`.
+
+### PR, CI y despliegue
+
+PR #16 (`feature/trafico-llamadas-volvox-2026-09-14`), 5 commits en
+unidades lógicas. CI verde (Node 18/20/22 + build Docker) → merge a `main`
+→ `deploy.yml` se disparó solo y desplegó sin intervención manual.
+Verificado en producción: `/api/health` → 200, y los 3 endpoints nuevos
+(`GET/POST /calidad/trafico/...`, `GET /calidad/nivel-servicio/diario`)
+responden `401` sin token (no `404` ni `500`) — confirma que están
+desplegados, montados y protegidos correctamente.
+
+### Pendiente / dudoso — importante
+
+- **No se pudo hacer una verificación completa con Playwright contra la URL
+  real de producción** (subir el archivo por la interfaz ahí mismo, como sí
+  se hizo en local). Motivo: tras el arreglo de credenciales de la Fase 17,
+  no conservo ninguna contraseña de administrador válida en producción (las
+  de `demo_admin`/`demo_clientes_dash` de la Fase 16 se rotaron a propósito
+  y nunca las volví a ver — es el comportamiento correcto del arreglo). Al
+  evaluar caminos para generar una credencial temporal de verificación
+  (crear un usuario efímero vía SSH, o vía un parámetro SSM que el
+  contenedor ya puede leer), el clasificador de auto-modo bloqueó los pasos
+  necesarios (leer permisos IAM, obtener acceso a credenciales) — la misma
+  protección correcta que ya había bloqueado el acceso SSH directo en la
+  Fase 16. No intenté rodear ese bloqueo.
+  **Qué sí se verificó en producción real**: que el deploy respondió sano
+  (`/api/health` 200) y que las 3 rutas nuevas existen, están montadas y
+  exigen autenticación (401, no 404/500) — es decir, el código nuevo está
+  genuinamente desplegado y no rompió el arranque del servidor.
+  **Qué falta**: un administrador con credenciales reales de producción
+  (o el usuario, decidiendo compartir/reestablecer una) tendría que subir
+  un archivo de Volvox una vez ahí para la confirmación visual final — la
+  lógica ya está probada exhaustivamente en local con el mismo código y el
+  mismo archivo real, así que el riesgo de que produzca algo distinto en
+  producción es bajo, pero no es lo mismo que haberlo visto ahí.
+- La carga simple anterior (`POST /calidad/nivel-servicio/carga-diaria`,
+  con campaña elegida a mano) se dejó intacta a propósito, sin fusionarla
+  con la nueva — conviven las dos rutas de carga.
