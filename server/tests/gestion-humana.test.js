@@ -134,6 +134,22 @@ test('dashboard GESTION_HUMANA: rentabilidad por campana cruza costo con ingreso
   assert.equal(camp.ingresos, 10000000);
   assert.equal(camp.rentabilidad, 10000000 - costo);
   assert.equal(camp.margen_pct, Math.round(((10000000 - costo) / 10000000) * 1000) / 10);
+  // efectividad = produccion (recaudo) vs su meta (meta_recaudo), misma fila resumen
+  assert.equal(camp.efectividad_pct, Math.round((10000000 / 12000000) * 1000) / 10);
+});
+
+test('dashboard GESTION_HUMANA: sin meta_recaudo/meta_ventas en el resumen, la efectividad queda en null', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const gh = await userToken(admin, 'GESTION_HUMANA', { GestionHumana: true });
+  await request(app).post('/api/gh/personal').set(auth(gh)).send(persona({ campana: 'SIN_META', costo_hora: 1000, horas_mes: 100 }));
+  db.prepare(
+    `INSERT INTO dashboard_cargas (cliente, seccion, cadencia, periodo, filas, archivoNombre, cargadoPor, cargadoPorNombre, cargadoEn)
+     VALUES (?, 'resumen', 'mensual', '2026-05', ?, NULL, NULL, 'test', '10/09/2026 00:00:00')`
+  ).run('SIN_META', JSON.stringify([{ ventas: 500000 }])); // sin meta_ventas
+  const dash = await request(app).get('/api/dashboard/GESTION_HUMANA').set(auth(gh));
+  const camp = dash.body.secciones.por_campana[0].filas.find((f) => f.campana === 'SIN_META');
+  assert.equal(camp.ingresos, 500000);
+  assert.equal(camp.efectividad_pct, null);
 });
 
 test('dashboard GESTION_HUMANA: sin datos de ingresos, la rentabilidad queda en 0 (hueco documentado)', async () => {
@@ -146,6 +162,7 @@ test('dashboard GESTION_HUMANA: sin datos de ingresos, la rentabilidad queda en 
   assert.equal(camp.ingresos, 0);
   assert.equal(camp.rentabilidad, 0);
   assert.equal(camp.margen_pct, 0);
+  assert.equal(camp.efectividad_pct, null);
 });
 
 test('GET /api/gh/resumen agrega activos y costo por campana', async () => {
