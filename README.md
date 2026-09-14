@@ -247,7 +247,76 @@ Automatizado en AWS con `deploy/inconexion-backup.timer` (systemd, diario 03:15)
 
 ---
 
-## 6. SQLite vs Postgres — cuándo migrar
+## 6. Datos de demostración (`seed:demo`)
+
+`server/scripts/seed-demo.js` siembra datos de ejemplo en **todos** los
+dashboards a la vez (los 12 de cliente + Calidad + Nivel de Servicio +
+Cronograma + Inventario + Gerencia + Gestión Humana), con 6 meses de
+histórico (`2026-04` a `2026-09`), para poder ver la app llena de datos
+mientras llegan los datos reales del cliente.
+
+```bash
+cd server
+npm run seed:demo             # siembra (idempotente: correrlo 2 veces no duplica nada)
+npm run seed:demo:limpiar     # borra EXACTAMENTE lo que sembró — nada más
+```
+
+**Qué siembra:**
+
+- Los 12 dashboards de cliente (`ORLANT`, `HOSPITAL LA MARIA`, `CLINICA AURORA`,
+  `TELEVENTAS SURA`, `TELEVENTAS COMFAMA`, `PANTERA MAIKERS`, `ANDRES YEPES`,
+  `MOVILIZE`, `SASCHA FITNESS`, `ALBERTO LINERO GO`, `INFONDO`, `BIVETT`), con
+  carga en **todas** sus secciones y los 6 meses de histórico.
+- Nivel de Servicio diario (`calidad_nivel_servicio_diario`) con el formato
+  real del conmutador (skill por campaña, lunes-viernes ~150-250 llamadas,
+  sábado ~30-40, domingo sin operación, `SERVICE_LEVEL_20SEC` 70-95%); el
+  agregado mensual lo recalcula la misma función que usa
+  `POST /api/calidad/nivel-servicio/carga-diaria`
+  (`server/nivel-servicio-diario.js`) — nunca hay dos formas de sumarlo.
+- Calidad: 8-12 asesores por campaña (de las que tienen pestaña de Calidad),
+  con monitoreos repartidos en los 6 meses y puntajes variados (calculados
+  siempre por `calidad-logic.js`, nunca a mano), y cronograma de metas con
+  cumplimiento variable mes a mes.
+- Cronograma de metas, Inventario (con ítems **sin stock** a propósito, para
+  ver la alerta), Gerencia (KPIs mensuales con meta y cumplimiento variable) y
+  Gestión Humana (altas/bajas repartidas en los meses, `costo_hora`/`horas_mes`
+  poblados para la rentabilidad y el % de efectividad por campaña).
+- Un usuario de demo **por cada rol** (`ADMIN`, `AUX_ADMIN`, `CALIDAD`,
+  `INVENTARIO`, `GERENCIA`, `GESTION_HUMANA`, `CLIENTES_DASH`, `SUPERVISOR`,
+  `ASESOR`, `REPORTES`), usuario `demo_<rol>`, con permisos por
+  campaña/cliente ya puestos (útiles también para probar la matriz de
+  permisos). Las contraseñas son aleatorias y **se imprimen una sola vez**, al
+  final de la corrida en que se crean — no se pueden volver a mostrar después
+  (se guardan hasheadas). Si vuelves a correr `seed:demo` y esos usuarios ya
+  existen, no se tocan ni se muestra contraseña de nuevo.
+
+**Cómo se marca lo sembrado** (para que `seed:demo:limpiar` borre exactamente
+eso y nada más): cada fila que crea queda registrada en una tabla propia
+(`seed_demo_marcas`, `tabla` + `clave` determinística + `id` real de la fila),
+además de un rastro visible en los datos mismos (`observaciones`/`archivoNombre`
+con `[DEMO]` / `seed-demo.xlsx`, `cargadoPorNombre: "Seed Demo (script)"`).
+Nunca pisa ni adopta una carga/meta/KPI que ya existiera y no fuera suyo — si
+alguien subió un dato real para el mismo período antes de sembrar, el seed lo
+deja intacto y no lo marca.
+
+Escribe **directo a SQLite** (no por HTTP), pero siempre pasando por las
+mismas funciones de normalización/cálculo que usa la API real
+(`dashboard-secciones.normalizarFilas`, `calidad-logic.computeScore`,
+`nivel-servicio-diario.cargarNivelServicioDiario`), así que un dato sembrado
+es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
+
+> ⚠️ **Nunca corre solo** (no está enganchado al arranque, solo por comando
+> explícito) y **rechaza correr contra producción** (`NODE_ENV=production`)
+> salvo que confirmes a propósito:
+>
+> ```bash
+> SEED_DEMO_CONFIRM=1 npm run seed:demo
+> SEED_DEMO_CONFIRM=1 npm run seed:demo:limpiar
+> ```
+
+---
+
+## 7. SQLite vs Postgres — cuándo migrar
 
 SQLite en un archivo es adecuado para esta app (un proceso, tráfico bajo/medio).
 Migrar a **Postgres + varias instancias** cuando: se necesite más de una
@@ -258,10 +327,10 @@ se migra**.
 
 ---
 
-## 7. Pruebas automatizadas
+## 8. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra  ->  68/68
+cd server && npm test          # node:test + supertest, sin infra extra  ->  108/108
 ```
 
 Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),
@@ -269,15 +338,18 @@ que contraseñas/hashes **nunca** salen en respuestas, rate limit de login
 (`429`), validación de entrada (`400`), Calidad (puntaje reproducible, acceso por
 campaña, cronograma y cumplimiento), dashboards (cargas por Excel, config,
 acceso por cliente, dashboards de M3), Inventario y Gerencia (CRUD + carga masiva
-+ adaptadores de dashboard), y la **matriz de los 9 roles**
-(`role-matrix.test.js`).
++ adaptadores de dashboard), la **matriz de los 9 roles**
+(`role-matrix.test.js`), y el seed de demo — idempotencia, que `seed:demo:limpiar`
+deja la base como estaba, que los 12 clientes quedan con carga en todas sus
+secciones, y que su mensual de Nivel de Servicio coincide con el que produce
+el endpoint real (`seed-demo.test.js`).
 
 CI (`.github/workflows/ci.yml`): pruebas en Node 18/20/22 + build de la imagen
 Docker + **smoke test** que arranca el contenedor y verifica `/api/health`.
 
 ---
 
-## 8. Comandos útiles
+## 9. Comandos útiles
 
 ```bash
 # generar JWT_SECRET
@@ -294,11 +366,15 @@ cd server && npm test
 
 # backup manual
 cd server && npm run backup            # node scripts/backup.js --keep 14
+
+# datos de demostración (ver sección 6)
+cd server && npm run seed:demo
+cd server && npm run seed:demo:limpiar
 ```
 
 ---
 
-## 9. Notas
+## 10. Notas
 
 - No hay recuperación de contraseña por correo (se gestiona vía admin).
 - La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
