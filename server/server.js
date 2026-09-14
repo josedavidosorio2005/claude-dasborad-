@@ -30,6 +30,7 @@ const { validate, schemas } = require('./validation');
 const calc = require('./calidad-logic');
 const secciones = require('./dashboard-secciones');
 const { ADAPTERS } = require('./dashboard-adapters');
+const { cargarNivelServicioDiario } = require('./nivel-servicio-diario');
 
 const MASTER_ADMIN_USER = config.masterAdminUser;
 const MASTER_ADMIN_PASSWORD_HASH = config.masterAdminPasswordHash;
@@ -1032,91 +1033,23 @@ function createApp() {
         return res.status(403).json({ error: 'Solo el administrador puede cargar el nivel de servicio' });
       }
       const b = req.body;
-      const now = nowStr();
-
-      const selectDiario = db.prepare(
-        'SELECT id FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha = ? AND skillName = ?'
-      );
-      const insertDiario = db.prepare(
-        `INSERT INTO calidad_nivel_servicio_diario
-           (campana, fecha, skillName, totalLlamadas, contestadas, serviceLevel20secPct,
-            contestadas20sEstimado, archivoNombre, cargadoPorNombre, createdAt)
-         VALUES (@campana,@fecha,@skillName,@totalLlamadas,@contestadas,@serviceLevel20secPct,
-                 @contestadas20sEstimado,@archivoNombre,@cargadoPorNombre,@createdAt)`
-      );
-      const updateDiario = db.prepare(
-        `UPDATE calidad_nivel_servicio_diario SET
-           totalLlamadas=@totalLlamadas, contestadas=@contestadas,
-           serviceLevel20secPct=@serviceLevel20secPct, contestadas20sEstimado=@contestadas20sEstimado,
-           archivoNombre=@archivoNombre, cargadoPorNombre=@cargadoPorNombre, createdAt=@createdAt
-         WHERE id=@id`
-      );
-
-      const mesesAfectados = new Set();
-      const tx = db.transaction((filas) => {
-        for (const f of filas) {
-          const pct = f.serviceLevel20secPct === undefined ? null : f.serviceLevel20secPct;
-          const estimado = pct === null ? null : Math.round((pct / 100) * f.totalLlamadas);
-          const params = {
-            campana: b.campana,
-            fecha: f.fecha,
-            skillName: f.skillName,
-            totalLlamadas: f.totalLlamadas,
-            contestadas: f.contestadas,
-            serviceLevel20secPct: pct,
-            contestadas20sEstimado: estimado,
-            archivoNombre: b.archivoNombre || '',
-            cargadoPorNombre: req.actor.nombre || '-',
-            createdAt: now,
-          };
-          const existing = selectDiario.get(b.campana, f.fecha, f.skillName);
-          if (existing) updateDiario.run({ ...params, id: existing.id });
-          else insertDiario.run(params);
-          mesesAfectados.add(f.fecha.slice(0, 7));
-        }
+      const resultado = cargarNivelServicioDiario(db, {
+        campana: b.campana,
+        archivoNombre: b.archivoNombre || '',
+        cargadoPorNombre: req.actor.nombre || '-',
+        filas: b.filas,
+        now: nowStr(),
       });
-      tx(b.filas);
-
-      // Recalcular el agregado mensual de cada mes afectado a partir de TODAS
-      // sus filas diarias (pueden venir de cargas anteriores, no solo esta).
-      const selectMensual = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?');
-      const insertMensual = db.prepare(
-        `INSERT INTO calidad_nivel_servicio (campana, mes, contestadas20s, llamadasTotales, createdAt, updatedAt)
-         VALUES (?,?,?,?,?,?)`
-      );
-      const updateMensual = db.prepare(
-        'UPDATE calidad_nivel_servicio SET contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
-      );
-      const mensualActualizados = [];
-      for (const mes of mesesAfectados) {
-        const filasMes = db
-          .prepare(
-            "SELECT totalLlamadas, contestadas20sEstimado FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = ?"
-          )
-          .all(b.campana, mes);
-        const llamadasTotalesMes = filasMes.reduce((a, r) => a + (r.totalLlamadas || 0), 0);
-        const contestadas20sMes = filasMes.reduce(
-          (a, r) => a + (r.contestadas20sEstimado === null || r.contestadas20sEstimado === undefined ? 0 : r.contestadas20sEstimado),
-          0
-        );
-        const existingMes = selectMensual.get(b.campana, mes);
-        if (existingMes) {
-          updateMensual.run(contestadas20sMes, llamadasTotalesMes, now, existingMes.id);
-        } else {
-          insertMensual.run(b.campana, mes, contestadas20sMes, llamadasTotalesMes, now, now);
-        }
-        mensualActualizados.push(toNivelServicioRow(selectMensual.get(b.campana, mes)));
-      }
-      mensualActualizados.sort((a, b2) => a.mes.localeCompare(b2.mes));
+      const mensual = resultado.mensual.map(toNivelServicioRow);
 
       logCalEvent(
         'NIVEL_SERVICIO_CARGA_DIARIA',
         '-',
         b.campana,
         req.actor,
-        `${b.filas.length} fila(s) — ${mesesAfectados.size} mes(es) recalculado(s)`
+        `${b.filas.length} fila(s) — ${resultado.mensual.length} mes(es) recalculado(s)`
       );
-      res.status(201).json({ diario: { insertadas: b.filas.length }, mensual: mensualActualizados });
+      res.status(201).json({ diario: { insertadas: resultado.diario.insertadas }, mensual });
     })
   );
 
