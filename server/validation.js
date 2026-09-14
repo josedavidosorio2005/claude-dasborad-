@@ -244,6 +244,51 @@ const nivelServicioCargaDiariaBody = z.object({
     .max(2000, 'Demasiadas filas en un solo archivo'),
 });
 
+// ── Trafico de llamadas (export real de Volvox, hoja DATA) ─────────────
+// A diferencia de nivelServicioCargaDiariaBody (arriba), NO trae `campana`:
+// un mismo archivo puede traer varias skills de campanas distintas, y la
+// campana de cada fila se resuelve server-side por el mapeo skill->campana
+// (server/trafico-skills.js), nunca por lo que mande el cliente. Todo lo
+// que no sea SKILL_NAME/DATE/TOTAL LLAMADAS/LLAMADAS CONTESTADAS es
+// opcional: si no vino en el archivo, la metrica queda ausente (no 0).
+const pctOpcional = z.number().min(0).max(100).optional();
+const segundosOpcional = z.coerce.number().min(0).max(1000000).optional();
+
+const traficoFilaSchema = z
+  .object({
+    fecha: fechaSchema,
+    skillName: z.string({ required_error: 'SKILL_NAME es obligatorio' }).trim().min(1).max(200),
+    totalLlamadas: z.coerce.number().int().min(0).max(1000000),
+    contestadas: z.coerce.number().int().min(0).max(1000000),
+    llamadasAbandonadas: z.coerce.number().int().min(0).max(1000000).optional(),
+    serviceLevel10secPct: pctOpcional,
+    serviceLevel20secPct: pctOpcional,
+    serviceLevel30secPct: pctOpcional,
+    abandonPct: pctOpcional,
+    nivelAtencionPct: pctOpcional,
+    tasaAbandonoPct: pctOpcional,
+    asaSegundos: segundosOpcional,
+    ataSegundos: segundosOpcional,
+    ahtSegundos: segundosOpcional,
+    waitTimeSegundos: segundosOpcional,
+  })
+  .refine((f) => f.contestadas <= f.totalLlamadas, {
+    message: 'Las llamadas contestadas no pueden superar el total',
+    path: ['contestadas'],
+  });
+
+const traficoCargaBody = z.object({
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(traficoFilaSchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(5000, 'Demasiadas filas en un solo archivo'),
+});
+
+const traficoSkillMapeoBody = z.object({
+  campana: campanaSchema.nullable(),
+});
+
 // Query params ?campana=&mes= (mes opcional).
 const calidadQuery = z.object({
   campana: campanaSchema,
@@ -474,6 +519,8 @@ module.exports = {
     nivelServicioBody,
     updateNivelServicioBody,
     nivelServicioCargaDiariaBody,
+    traficoCargaBody,
+    traficoSkillMapeoBody,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,
