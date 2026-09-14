@@ -197,6 +197,7 @@ async function renderNivelServicioSection(){
 
   previewNivelServicio();
   renderNivelServicioHistory();
+  if(typeof renderTraficoSkills === 'function') renderTraficoSkills();
 }
 
 function previewNivelServicio(){

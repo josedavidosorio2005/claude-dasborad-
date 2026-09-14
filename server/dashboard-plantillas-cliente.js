@@ -30,6 +30,20 @@ const tabCalidad = (campana) => ({
   ],
 });
 
+// Pestaña de Trafico de Llamadas (export real de Volvox via mapeo de skill):
+// grafica combinada + filtros, panel autonomo del motor generico (ver
+// dashboard-generic.js _traficoRenderPanel / dashboard-adapters.js).
+const tabTrafico = (campana) => ({
+  key: 'trafico', label: 'Trafico de Llamadas', panels: [
+    { tipo: 'trafico_combo', campana },
+  ],
+});
+
+// Las campanas con Calidad tambien traen su pestaña de Trafico (misma
+// campana, mismos datos de calidad_nivel_servicio_diario) — un solo punto
+// para agregar ambas donde ya se agregaba Calidad.
+const tabsCalidadYTrafico = (campana) => [tabCalidad(campana), tabTrafico(campana)];
+
 // ════════════════════════════════════════════════════════════
 // PLANTILLA 1 — Ventas salientes / televentas
 // ════════════════════════════════════════════════════════════
@@ -108,7 +122,7 @@ function plantillaVentas(cliente, titulo, opts) {
       ] },
     ],
   };
-  if (opts.calidad) layout.tabs.push(tabCalidad(cliente));
+  if (opts.calidad) layout.tabs.push(...tabsCalidadYTrafico(cliente));
   return { cliente, titulo, vista: null, secciones, layout };
 }
 
@@ -192,7 +206,7 @@ function plantillaCobranza(cliente, titulo, opts) {
       ] },
     ],
   };
-  if (opts.calidad) layout.tabs.push(tabCalidad(cliente));
+  if (opts.calidad) layout.tabs.push(...tabsCalidadYTrafico(cliente));
   return { cliente, titulo, vista: null, secciones, layout };
 }
 
@@ -260,7 +274,7 @@ function plantillaAtencion(cliente, titulo, opts) {
       ] },
     ],
   };
-  if (opts.calidad) layout.tabs.push(tabCalidad(cliente));
+  if (opts.calidad) layout.tabs.push(...tabsCalidadYTrafico(cliente));
   return { cliente, titulo, vista: null, secciones, layout };
 }
 
