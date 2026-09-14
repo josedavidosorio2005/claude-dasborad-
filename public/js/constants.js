@@ -12,7 +12,7 @@ var CAMPANAS_CALIDAD = ['ORLANT','HOSPITAL LA MARIA','CLINICA AURORA','TELEVENTA
 // Campanas que tienen plantilla de calificacion de Calidad en el servidor.
 // Debe coincidir con server/calidad-plantillas-seed.js. El detalle de cada
 // plantilla (items, pesos, motor) se pide por API (GET /api/calidad/plantillas).
-var CAMPANAS_CON_PLANTILLA = ['ORLANT','INFONDO','TELEVENTAS SURA','CLINICA AURORA','CARTERA INTERNA','TELEVENTAS COMFAMA'];
+var CAMPANAS_CON_PLANTILLA = ['ORLANT','INFONDO','TELEVENTAS SURA','CLINICA AURORA','CARTERA INTERNA','TELEVENTAS COMFAMA','ANDRES YEPES','MOVILIZE','SASCHA FITNESS','BIVETT'];
 
 // soon:true  -> el módulo aparece en el dashboard pero todavía no está construido.
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.

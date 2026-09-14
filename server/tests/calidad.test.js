@@ -32,7 +32,7 @@ test('GET /api/calidad/plantillas devuelve las plantillas semilla', async () => 
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const res = await request(app).get('/api/calidad/plantillas').set(auth(t));
   assert.equal(res.status, 200);
-  assert.equal(res.body.length, 6);
+  assert.equal(res.body.length, 10);
   const orlant = res.body.find((p) => p.campana === 'ORLANT');
   assert.ok(orlant);
   assert.equal(orlant.items.length, 17);

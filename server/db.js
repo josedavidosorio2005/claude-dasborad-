@@ -355,27 +355,34 @@ CREATE INDEX IF NOT EXISTS idx_gh_personal_salida ON gestion_humana_personal(fec
   }
 }
 
-// Semilla de plantillas de calidad: solo si la tabla esta vacia.
-const plantillasCount = db.prepare('SELECT COUNT(*) AS c FROM calidad_plantillas').get().c;
-if (plantillasCount === 0) {
+// Semilla de plantillas de calidad: idempotente por campana (igual criterio
+// que dashboards_config arriba), asi que agregar una campana nueva a
+// PLANTILLAS llega tambien a bases ya creadas (produccion incluida), sin
+// tocar las que un admin haya editado desde la API.
+{
   const now = new Date().toISOString();
   const insertPlantilla = db.prepare(
     `INSERT INTO calidad_plantillas (campana, engine, items, activo, updatedAt)
      VALUES (@campana, @engine, @items, 1, @updatedAt)`
   );
+  const existePlantilla = db.prepare('SELECT 1 FROM calidad_plantillas WHERE campana = ?');
   const txp = db.transaction((rows) => {
+    let n = 0;
     for (const p of rows) {
+      if (existePlantilla.get(p.campana)) continue;
       insertPlantilla.run({
         campana: p.campana,
         engine: p.engine,
         items: JSON.stringify(p.items),
         updatedAt: now,
       });
+      n++;
     }
+    return n;
   });
-  txp(PLANTILLAS);
-  if (!config.isTest) {
-    console.log(`[db] ${PLANTILLAS.length} plantillas de calidad inicializadas.`);
+  const nuevasPlantillas = txp(PLANTILLAS);
+  if (nuevasPlantillas && !config.isTest) {
+    console.log(`[db] ${nuevasPlantillas} plantilla(s) de calidad inicializadas.`);
   }
 }
 
