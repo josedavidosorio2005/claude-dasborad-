@@ -280,6 +280,34 @@
           <div class="modal-btns">
             <button class="btn-primary" id="ns-save-btn" onclick="saveNivelServicio()">Guardar Nivel de Servicio del Mes</button>
           </div>
+          <p style="font-size:0.78rem;color:#7a9ba8;margin-top:8px">Este formulario manual es el respaldo para meses sin archivo. Si tienes el export diario del conmutador, usa la carga por Excel de abajo — calcula el mes automaticamente y reemplaza lo que hayas cargado a mano para ese mes.</p>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Cargar Nivel de Servicio desde Excel (export diario del conmutador)</h3>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campana. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada dia, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los dias cargados de ese mes.</div>
+          <div class="form-row">
+            <div class="ig"><label>Campana</label>
+              <select id="nsd-campana-sel"></select>
+            </div>
+            <div class="ig"><label>Archivo Excel (.xlsx)</label>
+              <input type="file" id="nsd-file" accept=".xlsx,.xls" onchange="procesarArchivoNivelServicioDiario(this)">
+            </div>
+          </div>
+          <div id="nsd-errores" style="color:#c0392b;font-size:0.8rem;margin:4px 0"></div>
+          <div id="nsd-preview-card" style="display:none">
+            <div class="table-wrap">
+              <table><thead><tr>
+                <th>Fecha</th><th>Skill</th><th>Total Llamadas</th><th>Contestadas</th><th>% Nivel Servicio (&le;20s)</th>
+              </tr></thead>
+              <tbody id="nsd-preview-tbody"></tbody></table>
+            </div>
+            <div class="modal-btns">
+              <button class="btn-cancel" onclick="cancelarPreviewNivelServicioDiario()">Descartar</button>
+              <button class="btn-primary" id="nsd-save-btn" onclick="guardarNivelServicioDiario()">Guardar carga diaria</button>
+            </div>
+          </div>
         </div>
         <div class="section-card">
           <div class="section-header">
