@@ -205,6 +205,22 @@ function monthKey(dateStr) {
   return String(dateStr).slice(0, 7); // YYYY-MM
 }
 
+// ── Nivel de servicio (feedback de Edwin, punto 3.2) ────────
+// Formula acordada con el usuario: % de llamadas contestadas en <=20 segundos
+// sobre el total de llamadas del mes/campana. Umbral de cumplimiento: 80%.
+const NIVEL_SERVICIO_UMBRAL = 80;
+
+function nivelServicioPct(contestadas20s, llamadasTotales) {
+  const totales = Number(llamadasTotales) || 0;
+  if (totales <= 0) return null;
+  return Math.round(((Number(contestadas20s) || 0) / totales) * 1000) / 10;
+}
+
+function nivelServicioCumple(pct) {
+  if (pct === null || pct === undefined) return null;
+  return pct >= NIVEL_SERVICIO_UMBRAL;
+}
+
 module.exports = {
   computeScore,
   cronogramaDerived,
@@ -214,4 +230,7 @@ module.exports = {
   resumenPorAsesor,
   resumenCampana,
   monthKey,
+  NIVEL_SERVICIO_UMBRAL,
+  nivelServicioPct,
+  nivelServicioCumple,
 };

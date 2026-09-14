@@ -197,6 +197,28 @@ const updateMetaBody = metaBody.partial().refine((b) => Object.keys(b).length > 
   message: 'Nada que actualizar',
 });
 
+// Nivel de servicio: llamadas contestadas en <=20s sobre el total, por campana/mes.
+const nivelServicioBody = z
+  .object({
+    campana: campanaSchema,
+    mes: mesSchema,
+    contestadas20s: z.coerce.number().int().min(0, 'Valor invalido').max(10000000),
+    llamadasTotales: z.coerce.number().int().min(0, 'Valor invalido').max(10000000),
+  })
+  .refine((b) => b.contestadas20s <= b.llamadasTotales, {
+    message: 'Las llamadas contestadas no pueden superar el total',
+    path: ['contestadas20s'],
+  });
+
+const updateNivelServicioBody = z
+  .object({
+    campana: campanaSchema.optional(),
+    mes: mesSchema.optional(),
+    contestadas20s: z.coerce.number().int().min(0, 'Valor invalido').max(10000000).optional(),
+    llamadasTotales: z.coerce.number().int().min(0, 'Valor invalido').max(10000000).optional(),
+  })
+  .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
+
 // Query params ?campana=&mes= (mes opcional).
 const calidadQuery = z.object({
   campana: campanaSchema,
@@ -424,6 +446,8 @@ module.exports = {
     updateMonitoreoBody,
     metaBody,
     updateMetaBody,
+    nivelServicioBody,
+    updateNivelServicioBody,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

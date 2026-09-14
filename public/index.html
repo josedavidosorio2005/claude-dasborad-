@@ -256,6 +256,48 @@
           </div>
           <div class="no-results hidden" id="metas-no-results">Aun no hay meses programados.</div>
         </div>
+
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Nivel de Servicio (llamadas contestadas en &le;20 segundos)</h3>
+          </div>
+          <div class="form-row">
+            <div class="ig"><label>Mes</label>
+              <input type="month" id="ns-mes-input">
+            </div>
+            <div class="ig"><label>Campana</label>
+              <select id="ns-campana-sel"></select>
+            </div>
+            <div class="ig"><label>Llamadas contestadas en &le;20s</label>
+              <input type="number" id="ns-contestadas-input" min="0" style="max-width:160px" oninput="previewNivelServicio()">
+            </div>
+            <div class="ig"><label>Llamadas totales del mes</label>
+              <input type="number" id="ns-totales-input" min="0" style="max-width:160px" oninput="previewNivelServicio()">
+            </div>
+          </div>
+          <div class="qi-preview" id="ns-preview"></div>
+          <div class="modal-btns">
+            <button class="btn-primary" id="ns-save-btn" onclick="saveNivelServicio()">Guardar Nivel de Servicio del Mes</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Historial de Nivel de Servicio</h3>
+            <div class="header-actions">
+              <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">
+                <option value="">Todos los meses</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Campana</th><th>Mes</th><th>Contestadas &le;20s</th><th>Total llamadas</th>
+              <th>% Nivel de Servicio</th><th>Cumple (&ge;80%)</th><th></th>
+            </tr></thead>
+            <tbody id="ns-history-tbody"></tbody></table>
+          </div>
+          <div class="no-results hidden" id="ns-no-results">Aun no hay meses cargados.</div>
+        </div>
       </div>
 
       <!-- ROL REPORTES SECTION — admin only -->

@@ -146,6 +146,22 @@ function toMetaRow(row) {
   });
 }
 
+function toNivelServicioRow(row) {
+  const pct = calc.nivelServicioPct(row.contestadas20s, row.llamadasTotales);
+  return {
+    id: row.id,
+    campana: row.campana,
+    mes: row.mes,
+    contestadas20s: row.contestadas20s,
+    llamadasTotales: row.llamadasTotales,
+    pct,
+    cumple: calc.nivelServicioCumple(pct),
+    umbral: calc.NIVEL_SERVICIO_UMBRAL,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 // Registra un evento del modulo de Calidad en el historial (mismo append-only
 // que usuarios). El "objetivo" es sintetico: nombre = asesor/lider, rol = campana.
 function logCalEvent(accion, nombre, campana, actor, detalle) {
@@ -855,6 +871,146 @@ function createApp() {
       if (!row) return res.status(404).json({ error: 'Meta no encontrada' });
       db.prepare('DELETE FROM cronograma_metas WHERE id = ?').run(row.id);
       logCalEvent('META_DEL', row.liderNombre, row.campana, req.actor, `${row.mes}`);
+      res.json({ ok: true });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // CALIDAD — NIVEL DE SERVICIO (feedback de Edwin, punto 3.2)
+  // % de llamadas contestadas en <=20s sobre el total, por campana/mes.
+  // ══════════════════════════════════════════════════════════
+  api.get(
+    '/calidad/nivel-servicio',
+    requireActor,
+    wrap((req, res) => {
+      const campana = req.query.campana;
+      if (campana) {
+        if (!campaignAccess(req.actor, campana)) {
+          return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+        }
+        const rows = db
+          .prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? ORDER BY mes DESC')
+          .all(campana);
+        return res.json(rows.map(toNivelServicioRow));
+      }
+      // Sin campana: solo el administrador puede ver el listado completo.
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Indique una campana' });
+      }
+      const rows = db
+        .prepare('SELECT * FROM calidad_nivel_servicio ORDER BY mes DESC, campana')
+        .all();
+      res.json(rows.map(toNivelServicioRow));
+    })
+  );
+
+  api.post(
+    '/calidad/nivel-servicio',
+    requireActor,
+    validate(schemas.nivelServicioBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede cargar el nivel de servicio' });
+      }
+      const b = req.body;
+      const now = nowStr();
+      const existing = db
+        .prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?')
+        .get(b.campana, b.mes);
+      if (existing) {
+        db.prepare(
+          'UPDATE calidad_nivel_servicio SET contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
+        ).run(b.contestadas20s, b.llamadasTotales, now, existing.id);
+        const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(existing.id);
+        logCalEvent(
+          'NIVEL_SERVICIO_EDIT',
+          '-',
+          b.campana,
+          req.actor,
+          `${b.mes} — ${b.contestadas20s}/${b.llamadasTotales}`
+        );
+        return res.json(toNivelServicioRow(row));
+      }
+      const info = db
+        .prepare(
+          `INSERT INTO calidad_nivel_servicio
+             (campana, mes, contestadas20s, llamadasTotales, createdAt, updatedAt)
+           VALUES (@campana,@mes,@contestadas20s,@llamadasTotales,@createdAt,@updatedAt)`
+        )
+        .run({
+          campana: b.campana,
+          mes: b.mes,
+          contestadas20s: b.contestadas20s,
+          llamadasTotales: b.llamadasTotales,
+          createdAt: now,
+          updatedAt: now,
+        });
+      const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(info.lastInsertRowid);
+      logCalEvent(
+        'NIVEL_SERVICIO',
+        '-',
+        b.campana,
+        req.actor,
+        `${b.mes} — ${b.contestadas20s}/${b.llamadasTotales}`
+      );
+      res.status(201).json(toNivelServicioRow(row));
+    })
+  );
+
+  api.put(
+    '/calidad/nivel-servicio/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.updateNivelServicioBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede editar el nivel de servicio' });
+      }
+      const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Registro no encontrado' });
+      const b = req.body;
+      const contestadas20s = b.contestadas20s ?? row.contestadas20s;
+      const llamadasTotales = b.llamadasTotales ?? row.llamadasTotales;
+      if (contestadas20s > llamadasTotales) {
+        return res.status(400).json({ error: 'Las llamadas contestadas no pueden superar el total' });
+      }
+      try {
+        db.prepare(
+          'UPDATE calidad_nivel_servicio SET campana=?, mes=?, contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
+        ).run(
+          b.campana ?? row.campana,
+          b.mes ?? row.mes,
+          contestadas20s,
+          llamadasTotales,
+          nowStr(),
+          row.id
+        );
+      } catch (e) {
+        // Ya existe otro registro para esa (campana, mes) -> conflicto amigable,
+        // no un 500 generico (UNIQUE(campana, mes) en calidad_nivel_servicio).
+        if (e && e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+          return res.status(409).json({ error: 'Ya existe un registro de nivel de servicio para esa campana y mes' });
+        }
+        throw e;
+      }
+      const updated = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(row.id);
+      logCalEvent('NIVEL_SERVICIO_EDIT', '-', updated.campana, req.actor, `${updated.mes}`);
+      res.json(toNivelServicioRow(updated));
+    })
+  );
+
+  api.delete(
+    '/calidad/nivel-servicio/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede eliminar el nivel de servicio' });
+      }
+      const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Registro no encontrado' });
+      db.prepare('DELETE FROM calidad_nivel_servicio WHERE id = ?').run(row.id);
+      logCalEvent('NIVEL_SERVICIO_DEL', '-', row.campana, req.actor, `${row.mes}`);
       res.json({ ok: true });
     })
   );
