@@ -48,12 +48,12 @@ async function doLogin() {
 
     if (data.user.isMasterAdmin) {
       currentUser = null; // null = admin maestro
-      await loadData(); await loadHist(); await loadDashboardClientes();
+      await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
       enterAdminPanel();
       return;
     }
 
-    await loadData(); await loadHist(); await loadDashboardClientes();
+    await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
     var found = users.find(function(x){ return x.id === data.user.id; });
     // GET /users filtra perms a {} para quien no administra usuarios/permisos
     // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
@@ -222,6 +222,7 @@ async function renderSupervisorMetaTable(){
 
 function doLogout(){
   currentUser=null; authToken=null; users=[]; historial=[];
+  seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();
   document.getElementById('login-page').style.display='flex';
   ['username','password'].forEach(function(id){document.getElementById(id).value='';});
