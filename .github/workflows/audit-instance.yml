@@ -1,0 +1,108 @@
+name: Auditoria de permisos en la instancia (solo lectura)
+
+# Disparo manual unicamente. Reutiliza EXACTAMENTE el mismo mecanismo que
+# deploy.yml / seed-demo.yml (rol OIDC, apertura temporal del puerto 22
+# solo para la IP de este runner, secrets de SSH ya cargados) para no
+# tener que abrir acceso SSH nuevo ni exponer credenciales fuera de este
+# pipeline ya auditado. No modifica nada en la instancia: solo `stat`/`ls`.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Revisar permisos/dueño de credenciales AWS en el host
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: false
+          script: |
+            check() {
+              path="$1"
+              echo "== $path =="
+              if sudo -n test -e "$path" 2>/dev/null; then
+                sudo -n stat -c '  modo=%a dueno=%U:%G ruta=%n' "$path"
+              elif test -e "$path" 2>/dev/null; then
+                stat -c '  modo=%a dueno=%U:%G ruta=%n (comprobado SIN sudo)' "$path"
+              else
+                echo "  no existe o no accesible (ni con sudo)"
+              fi
+            }
+            echo "### Archivos/directorios de credenciales ###"
+            check /root/.aws
+            check /root/.aws/credentials
+            check /home/ubuntu/.aws
+            check /home/ubuntu/.aws/credentials
+            check /opt/inconexion/aws
+            if sudo -n test -d /opt/inconexion/aws 2>/dev/null; then
+              sudo -n find /opt/inconexion/aws -maxdepth 1 -type f -exec stat -c '  modo=%a dueno=%U:%G ruta=%n' {} \;
+            fi
+            echo ""
+            echo "### Usuarios humanos en el sistema (UID >= 1000) ###"
+            awk -F: '$3>=1000 && $3<60000 {print "  " $1 " (uid=" $3 ", shell=" $7 ")"}' /etc/passwd
+            echo ""
+            echo "### sudo del usuario de deploy (para interpretar el chequeo de arriba) ###"
+            sudo -n -l 2>&1 | head -5 || echo "  sin sudo sin password (o no se pudo listar)"
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
