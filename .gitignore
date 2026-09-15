@@ -21,3 +21,7 @@ deploy/config/
 # Windows artifacts
 %SystemDrive%/
 
+# Migracion de cuenta AWS (inventario/notas de trabajo — nunca al repo,
+# puede contener IDs de recursos y detalles internos de infraestructura)
+migracion/
+

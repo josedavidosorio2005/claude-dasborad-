@@ -3,6 +3,27 @@
 Fecha del trabajo: **2026-09-09**
 Rama: `feat/dashboards-pro-y-aws`
 
+> ## ⚠️ Qué cuenta AWS es cuál (leer primero)
+>
+> Este proyecto migró de cuenta AWS. Para no confundir logros/hallazgos de una
+> con la otra:
+>
+> - **§0 a §13 de este documento** (todo lo de abajo hasta antes de §14)
+>   describen el despliegue **original**, cuenta AWS **`934685482338`**
+>   (usuario `deploy-inconexion`), instancia `inconexion-prod` en
+>   `100.51.93.1`. Es **HISTÓRICO**: sigue corriendo (no se apaga hasta una
+>   semana después del corte de dominio), pero ya no es donde se despliega.
+> - **[§14 — Migración a la cuenta `877538609452`](#14-migración-a-la-cuenta-aws-877538609452-cuenta-actual)**
+>   (al final del documento) describe la cuenta **ACTUAL**, la que recibe el
+>   pipeline de GitHub Actions desde 2026-09-15 y la que sirve
+>   `inconexionpruebasclaude.duckdns.org` una vez cortado el DNS. **Para
+>   cualquier pregunta sobre el estado real de producción, empezar por §14,
+>   no por §11.**
+>
+> Motivo de dejarlo así de explícito: una sesión anterior de Claude empezó a
+> responder sobre el estado de producción usando solo la memoria de la cuenta
+> vieja, sin saber que esta migración existía. No repetir ese error.
+
 Este documento cierra dos frentes:
 
 - **Fase A** — terminar la funcionalidad de dashboards (los 9 dashboards de
@@ -694,3 +715,53 @@ bloquean.
 - `docker-compose.yml`, `app.env.example` — SSM/S3, rotación de logs
 - `deploy/docker-compose.prod.yml`, `deploy/inconexion-backup.{service,timer}`, `deploy/cloudwatch-agent-config.json`, `deploy/iam-policy-instance.json` (nuevos)
 - `.github/workflows/deploy.yml` (nuevo), `.github/workflows/ci.yml` — smoke test del contenedor
+
+---
+
+## 14. Migración a la cuenta AWS `877538609452` (CUENTA ACTUAL)
+
+> Empezada 2026-09-14 (infraestructura base) y completada 2026-09-15 (app
+> desplegada y verificada). Ver también `.github/workflows/audit-instance.yml`
+> y `migracion/` (no versionado — inventario de la cuenta origen y policies).
+
+### Por qué se migró
+
+No documentado en este archivo por una sesión anterior — si esto importa,
+preguntar al usuario. Lo que sí está confirmado: la cuenta origen
+(`934685482338`) sigue viva y no se apaga hasta una semana después del corte
+de DNS (regla explícita del usuario).
+
+### Recursos recreados en `877538609452` (us-east-1)
+
+| Recurso | Valor | Nota |
+|---|---|---|
+| Instancia Lightsail | `inconexion-prod`, `micro_3_0`, `us-east-1a` | IP **3.85.54.96** (estática) |
+| Disco de datos | `inconexion-data`, 20 GB | Formateado ext4, montado por **UUID** en `/etc/fstab` → `/opt/inconexion/data`, dueño `1000:1000` (uid del usuario `node` del contenedor) |
+| ECR | `877538609452.dkr.ecr.us-east-1.amazonaws.com/inconexion` | Imagen `main` (`788df0e`) construida y subida 2026-09-15 |
+| S3 backups | `inconexion-backups-877538609452` | Versionado activo |
+| SSM `/inconexion/prod/*` | `JWT_SECRET`, `CORS_ORIGIN`, `MASTER_ADMIN_USER`, `MASTER_ADMIN_PASSWORD_HASH` | Los dos últimos faltaban al empezar esta fase; se generaron y guardaron 2026-09-15 |
+| IAM rol OIDC | `inconexion-github-deploy` | Trust policy con la misma condición `StringEquals` sobre `repository` (mismo gotcha de subjects inmutables que en la cuenta origen) |
+| IAM usuario de instancia | `inconexion-instance` | Access key (no rol — Lightsail no soporta instance profiles, ver nota en §11). Permisos: SSM read + KMS decrypt + S3 backups prefix + **ECR pull** + CloudWatch logs/metrics |
+| Clave SSH de deploy | `inconexion_deploy` (ed25519, dedicada, distinta de la default de la cuenta) | Autorizada en `~ubuntu/.ssh/authorized_keys`; es el secret `DEPLOY_SSH_KEY` del repo |
+
+### Bugs reales encontrados y corregidos durante el bootstrap (no estaban en la cuenta origen o nunca se habían notado)
+
+1. **`deploy/docker-compose.prod.yml` no enlazaba el volumen `inconexion-data` al disco persistente** (sin `driver_opts`, viviría en el disco de sistema). Corregido en el repo — aplica también a la cuenta origen si se vuelve a desplegar desde cero ahí.
+2. **`inconexion-instance` nunca tuvo permisos de ECR** en la cuenta nueva (solo SSM/KMS/S3/CloudWatch) — sin eso ni el `pull` funcionaba. Agregado (solo lectura: pull + auth token; el push del bootstrap manual se hizo con la cuenta admin de migración, nunca con `inconexion-instance`).
+3. **El contenedor de la app no veía las credenciales AWS del host** (namespaces separados de Docker: `/root/.aws` y `/home/ubuntu/.aws` del host no existen dentro del contenedor). Se resolvió montando `/home/ubuntu/.aws:/home/node/.aws:ro` en `docker-compose.yml` de la instancia — mismo síntoma que ya había dado el agente de CloudWatch en la cuenta origen (rol IMDS de Lightsail sin permisos, cuenta AWS distinta a la del proyecto), pero esta vez afectando a la app.
+4. **La política del rol `inconexion-github-deploy` para el firewall tenía `lightsail:GetInstancePortStates` scopeada al ARN de la instancia** — Lightsail exige `Resource:"*"` para esa acción de lectura (el mismo gotcha ya documentado para la cuenta origen en §11, pero no se había aplicado aquí). Corregido; el primer despliegue automático de prueba falló por esto, el segundo (tras el fix) pasó limpio.
+
+### Estado verificado 2026-09-15
+
+- `docker compose up` manual: **OK**, `{"ok":true}` interno y externo por IP en HTTP (sin cert todavía, DNS no apunta aquí).
+- Pipeline automático (`git push` a `main` → CI → `deploy.yml`): **pasó limpio de punta a punta** en el segundo intento (el primero falló por el bug #4 de arriba), sin ningún paso manual. Abre/cierra el puerto 22 solo, confirmado revertido después.
+- Verificación funcional: login del admin maestro + 3 dashboards de plantillas distintas (`INVENTARIO`, `GERENCIA`, `INFONDO`) responden correctamente vía API.
+- **No verificado todavía**: recorrido visual con Playwright/navegador (la extensión Claude in Chrome no estaba instalada en esta sesión), historial de auditoría end-to-end, carga de Excel end-to-end, login con usuarios de rol no-admin.
+- **Corte de DNS**: pendiente, a decisión explícita del usuario (no tocar sin su autorización).
+- PR `docs/audit-instance-perms-2026-09-15` (documenta el porqué de la access key + workflow de auditoría): rama subida, **PR sin crear** — `gh pr create` fue bloqueado repetidamente por el clasificador de auto-mode de Claude Code en esta sesión.
+
+### No hacer todavía (regla explícita del usuario, 2026-09-15)
+
+- No apagar la instancia de la cuenta origen (`934685482338`) — es una fase aparte, una semana después de uso real en la cuenta nueva.
+- No borrar `inco-cli-migracion` ni `deploy-inconexion`.
+- No sembrar datos de demo en la cuenta nueva sin pedirlo explícitamente (hubo confusión de contexto entre sesiones sobre el estado de esta migración; no repetir el patrón de decidir esto por cuenta propia).
