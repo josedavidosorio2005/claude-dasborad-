@@ -217,6 +217,29 @@ function traficoParseFilas(aoa) {
   };
 }
 
+// Ventana movil de 12 meses (pedido explicito de Edwin, llamada 2026-09-15):
+// el panel de trafico, al abrirse SIN un filtro de fechas explicito, nunca
+// debe acumular años indefinidamente — siempre muestra los ultimos 12 meses
+// CALENDARIO con datos, y al aparecer un mes nuevo se cae automaticamente el
+// mas antiguo (ej. al llegar datos de enero-2027, se deja de ver enero-2026).
+// Devuelve el primer dia ('YYYY-MM-DD') del mes que abre esa ventana de 12
+// meses terminando en el mes de `maxDispFecha` — o `minDispFecha` si hay
+// menos de 12 meses de historia disponible (nunca antes del primer dato
+// real). El filtro de fechas explicito (Desde/Hasta en el panel) sigue
+// existiendo aparte y SIEMPRE tiene prioridad: esto solo calcula el valor
+// por defecto cuando el usuario no eligio nada.
+function traficoVentana12Meses(maxDispFecha, minDispFecha) {
+  if (!maxDispFecha) return minDispFecha || null;
+  var y = Number(maxDispFecha.slice(0, 4));
+  var m = Number(maxDispFecha.slice(5, 7));
+  // Date.UTC maneja el "underflow" de mes (ej. mes -2) corriendo el año
+  // hacia atras solo, sin aritmetica manual propensa a errores.
+  var d = new Date(Date.UTC(y, m - 1 - 11, 1));
+  var desde = d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-01';
+  if (minDispFecha && minDispFecha > desde) return minDispFecha;
+  return desde;
+}
+
 // ── Agregacion por granularidad (dia/mes/anio) + combinar/separar skills ──
 //
 // SIEMPRE suma los volumenes primero y recalcula los % desde esa suma —
@@ -313,6 +336,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPctDesdeFraccion: traficoPctDesdeFraccion,
     traficoNumero: traficoNumero,
     traficoParseFilas: traficoParseFilas,
+    traficoVentana12Meses: traficoVentana12Meses,
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,

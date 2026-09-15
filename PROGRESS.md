@@ -1268,3 +1268,63 @@ pero sí ve el tráfico de ambas sedes en su propio dashboard. Capturas en
 `hlm-trafico-sede-castilla.png`, `hlm-trafico-sede-33.png`,
 `control-cargas-por-periodo.png`, `viewer-sin-menu-cargar-datos.png`,
 `viewer-hlm-trafico-ambas-sedes.png`).
+
+## Fase 21 — Ajustes finos de "Flujo de Llamadas" tras la llamada real con Edwin (2026-09-15)
+
+Pedido: afinar el módulo ya cerrado (Fase 20) con lo que salió de una
+llamada real con el cliente — sin repetir la auditoría anterior.
+
+### Ventana móvil de 12 meses (cambio de código)
+
+El panel de tráfico (`trafico_combo`), al abrirse **sin un filtro de fechas
+explícito**, ya no muestra todo el histórico desde el primer dato — muestra
+los **últimos 12 meses calendario con datos**, y esa ventana se corre sola
+a medida que llega un mes nuevo (ejemplo del cliente: "cuando lleguemos a
+enero de 2027, se debe quitar enero de 2026"). El filtro "Desde"/"Hasta" de
+siempre sigue siendo el mecanismo explícito para ver cualquier período más
+viejo — en cuanto el usuario lo usa, esa elección manda sobre el default.
+Lógica pura y testeada: `traficoVentana12Meses` (`trafico-logic.js`).
+
+### Investigaciones (sin cambio de código, tal como se pidió)
+
+- **Filtro único multi-skill**: confirmado que ya cubre las 4 vistas fijas
+  que Edwin describía (Llamadas 3P/general, WhatsApp 3P/general) — elegir
+  un solo skill reproduce cada una. Nada que construir; se le muestra en la
+  próxima demo.
+- **Botón "Descargar base"**: no existe en ningún lado de la plataforma
+  (ni en Tráfico ni en ningún otro módulo de carga) — solo existen
+  exportaciones de la vista ya agregada/filtrada (Excel/PDF), que es algo
+  distinto y ya estaba abierto a cualquier usuario del dashboard, sin
+  permiso especial, por diseño. No se construyó nada nuevo — reportado
+  como ausente para que el cliente confirme si de verdad la necesita.
+- **Duplicación en "Metas de Calidad"**: no se pudo identificar con certeza
+  cuáles dos campos exactos señaló Edwin (la transcripción no lo deja
+  claro). Dos candidatos plausibles encontrados en el código, ninguno
+  confirmable sin más información: (a) "Meta Mes Monitoreo Grupal" —
+  cuántas evaluaciones de Calidad hacer al mes — vive en la misma pantalla,
+  muy cerca de (b) "Nivel de Servicio (llamadas contestadas en ≤20s)" —
+  una métrica operativa de conmutador, sin relación real con la meta de
+  monitoreo pero con un nombre que puede sonar a lo mismo. También podría
+  confundirse con "Nivel de Atención" del panel de Tráfico Volvox (cálculo
+  distinto: contestadas/total, sin el corte de 20s). No se tocó nada —
+  pendiente de una captura de Edwin en la próxima llamada.
+
+### Documentación
+
+README §7: nota explícita de que combinar datos de más de una fuente (ej.
+AHT de WhatsApp desde otro reporte) es un paso **manual** del equipo del
+cliente — se unifican a mano en la misma plantilla antes de subir un solo
+archivo, la plataforma nunca junta dos archivos separados para el mismo
+período.
+
+### Verificación
+
+Suite completa: **173/173** en verde (`npm test`), `npm audit`: 0
+vulnerabilidades. Playwright con 18 meses de datos sembrados (abril-2025 a
+septiembre-2026) en ORLANT: vista por defecto muestra "Desde" = 01/10/2025
+(exactamente la ventana de 12 meses esperada) con 1.338 llamadas totales
+(suma exacta de los últimos 12 meses sembrados); al fijar "Desde" a
+01/04/2025 a mano, aparecen los 18 meses completos (1.953 llamadas) —
+confirma que el filtro explícito manda sobre el default. Capturas en
+`docs/capturas-demo/` (`trafico-ventana-12meses-default.png`,
+`trafico-filtro-explicito-fuera-de-ventana.png`).

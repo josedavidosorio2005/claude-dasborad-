@@ -333,7 +333,15 @@ async function _traficoRenderPanel(p, i){
   var estado = _traficoEstadoDesdeURL();
   var fechasDisponibles = datos.filas.map(function(f){ return f.fecha; }).sort();
   var minDisp = fechasDisponibles[0], maxDisp = fechasDisponibles[fechasDisponibles.length-1];
-  if(!estado.desde) estado.desde = minDisp;
+  // Ventana movil de 12 meses (pedido de Edwin, llamada 2026-09-15): el
+  // valor POR DEFECTO de "Desde" (cuando el usuario no eligio nada, ni en
+  // esta carga de pagina ni antes via "Aplicar filtros") nunca es el inicio
+  // de TODO el historico — son los ultimos 12 meses calendario con datos.
+  // El campo "Desde"/"Hasta" sigue siendo el filtro explicito de siempre:
+  // en cuanto el usuario lo usa, esa eleccion queda en la URL y manda sobre
+  // este default (ver traficoVentana12Meses, trafico-logic.js).
+  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
+  if(!estado.desde) estado.desde = desdeDefault;
   if(!estado.hasta) estado.hasta = maxDisp;
   // El estado de filtros vive en la URL (?tv_...) compartido por CUALQUIER
   // panel trafico_combo de la pagina — si el usuario filtro un rango en el
@@ -343,7 +351,7 @@ async function _traficoRenderPanel(p, i){
   // un filtro heredado que nadie eligio para ESTE panel, se descarta y se
   // vuelve al rango completo disponible aqui (mismo criterio que ya se
   // usaba para skills: si el filtro heredado deja todo afuera, se ignora).
-  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = minDisp; estado.hasta = maxDisp; }
+  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = desdeDefault; estado.hasta = maxDisp; }
   if(!estado.skills) estado.skills = datos.skills.slice(); // sin filtro en la URL -> todas
   else estado.skills = estado.skills.filter(function(s){ return datos.skills.indexOf(s)!==-1; });
   if(!estado.skills.length) estado.skills = datos.skills.slice();

@@ -457,8 +457,29 @@ abre OTRO dashboard en la misma pestaña del navegador (sin recargar), ese
 rango puede no solapar en absoluto con los datos de la nueva campaña.
 `_traficoRenderPanel` lo detecta (el rango de la URL cae totalmente fuera
 del rango de fechas disponible para ESTA campaña) y descarta el filtro
-heredado, volviendo al rango completo de esta campaña — mismo criterio que
-ya existía para el filtro de skills.
+heredado, volviendo al **default** de esta campaña — mismo criterio que ya
+existía para el filtro de skills. Ver el punto siguiente para qué es
+exactamente ese "default".
+
+### Ventana móvil de 12 meses (llamada con Edwin, 2026-09-15)
+
+El valor **por defecto** de "Desde" del panel — cuando el usuario no eligió
+nada, ni en esta carga de página ni antes vía "Aplicar filtros" — nunca es
+el inicio de todo el histórico: son los **últimos 12 meses calendario con
+datos**. Pedido explícito del cliente: "cuando lleguemos a enero de 2027, se
+debe quitar enero de 2026" — no un reinicio por año calendario, una ventana
+que se corre sola a medida que llega un mes nuevo. `traficoVentana12Meses(maxDispFecha,
+minDispFecha)` (`trafico-logic.js`, pura y testeada) calcula el primer día
+del mes que abre esa ventana; si hay menos de 12 meses de historia real,
+nunca retrocede antes del primer dato (`minDispFecha`).
+
+**El filtro "Desde"/"Hasta" sigue siendo el mecanismo explícito de siempre**
+(no se agregó ningún selector de año nuevo — no hacía falta, esos campos ya
+permiten elegir cualquier período, incluido uno anterior a la ventana de 12
+meses): en cuanto el usuario los usa (o la URL ya trae `tv_desde`/`tv_hasta`,
+ej. de un enlace compartido), esa elección explícita manda sobre el default
+y NO se recalcula sola — la ventana móvil solo aplica mientras no haya
+ninguna elección explícita en curso.
 
 ---
 
