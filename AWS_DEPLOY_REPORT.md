@@ -617,12 +617,36 @@ Recorrido honesto sobre esta rama:
 | Disco persistente para SQLite | ✅ disco `inconexion-data` 20 GB montado por UUID en `/opt/inconexion/data` |
 | HTTPS automático (Caddy) | ✅ certificado Let's Encrypt emitido, HTTP→HTTPS 308 |
 | Security Group: 80/443 público, 22 restringido | 🟡 22 estaba en `181.79.84.39/32`; el paso SSH del pipeline (runners de GitHub, IP dinámica) **no conecta**. SSH es key-only (`passwordauthentication no`) → abrir 22 a `0.0.0.0/0` es aceptable. **Pendiente** (comando en `PROGRESS.md` «Fase 13»). Mientras tanto los deploys se hacen a mano por SSH desde la IP del operador. |
-| Rol IAM de mínimo privilegio (instancia y deploy) | ✅ `user/inconexion-instance` + `role/inconexion-github-deploy`. Trust policy ajustada: `StringEquals` sobre el claim `repository` + `StringLike` sobre `sub` = `repo:*:ref:refs/heads/main` (la cuenta usa *immutable subjects* → el `sub` trae sufijos `@<id>`). |
+| Rol IAM de mínimo privilegio (instancia y deploy) | 🟡 El deploy (`role/inconexion-github-deploy`, vía OIDC) sí es un rol real, sin claves de larga duración. **La instancia no**: es `user/inconexion-instance` con access key de larga duración, no un rol — ver nota debajo del veredicto. Trust policy del rol de deploy ajustada: `StringEquals` sobre el claim `repository` + `StringLike` sobre `sub` = `repo:*:ref:refs/heads/main` (la cuenta usa *immutable subjects* → el `sub` trae sufijos `@<id>`). |
 | Pipeline CI→deploy | ✅ CI (test 18/20/22 + docker-build) + `deploy.yml` (OIDC → ECR build/push). El paso final SSH depende del puerto 22 (arriba). 5 secrets/variable de GitHub cargados. |
 | **Producción sirviendo la versión de `main`** | ✅ **2026-09-10**: imagen `sha256:9c8b0b72…` (tag `0fd699ce…`) = digest de `main` HEAD. `curl https://…/api/health` → `{"ok":true}` con cert Let's Encrypt válido. Login admin OK. `dashboard/GESTION_HUMANA` → 4 secciones. Historial registra la creación de usuarios (bug 1.1 corregido). |
 | Alarma de caída (health check) | ✅ Route 53 health check `94fe66d2-…` + CloudWatch alarm `inconexion-health` → SNS. **Suscripción email confirmada**. |
 | Métricas de negocio reales cargadas | ⏳ depende de negocio (§6) — hoy los dashboards tienen estructura, no datos |
 | Contraseñas de ejemplo cambiadas | ✅ verificado: login `crodriguez` / `calidad123` → **401** (las semilla ya no sirven) |
+
+> **Nota (2026-09-15) — por qué `inconexion-instance` es un usuario IAM con
+> access key y no un rol de instancia:** Amazon Lightsail, a diferencia de
+> EC2, **no soporta instance profiles/roles adjuntables**. La documentación
+> oficial lo dice explícitamente ("Lightsail does not support service
+> roles") y se confirmó también a nivel de API: `aws lightsail help` no
+> tiene ningún comando relacionado con "role" (ni el equivalente a
+> `ec2 associate-iam-instance-profile`). El rol que expone el IMDS de la
+> instancia (`AmazonLightsailInstanceRole`) pertenece a una cuenta de AWS
+> operada por Lightsail (no a la cuenta `934685482338` de este proyecto) y
+> no tiene permisos utilizables — por eso el agente de CloudWatch dio
+> `AccessDenied` al intentar usarlo (ver Fase 9 en `PROGRESS.md`).
+>
+> Consecuencia: la clave de acceso de `inconexion-instance` (permisos
+> mínimos: lectura SSM + `kms:Decrypt`, prefijo de backups en S3, pull de
+> ECR, logs/métricas de CloudWatch) vive en texto plano en el disco de la
+> instancia (`/opt/inconexion/aws/` y `/root/.aws/credentials` /
+> `/home/ubuntu/.aws/`). Es una credencial de larga duración real, no un
+> rol — **debe rotarse periódicamente** (recomendado: cada 90 días, o de
+> inmediato si se sospecha que la instancia fue comprometida). Rotación:
+> generar nueva access key en IAM → reemplazar en los 2-3 archivos de
+> credenciales en la instancia → verificar que el contenedor y el agente
+> de CloudWatch siguen funcionando → desactivar y luego eliminar la key
+> antigua en IAM. No hay automatización para esto todavía; es manual.
 
 **Veredicto:** la aplicación **está desplegada y sirviendo en producción** la
 versión de `main` (Edwin + Gestión Humana + Node 22), verificado contra la API
