@@ -308,6 +308,67 @@ romper la carga; un administrador la reasigna después desde el panel
 reatribuyen solas** (recalcula el mensual de la campaña vieja y la nueva),
 sin tener que volver a subir el archivo.
 
+### El panel `trafico_combo`: tráfico embebido en el dashboard de cada campaña
+
+Desde la Fase 18 (tráfico Volvox), cualquier dashboard de cliente puede
+declarar un panel de tipo `trafico_combo` en su `layout.tabs[].panels`
+(`dashboards_config`) — no es una pantalla aparte: es el mismo modal de
+dashboard del cliente, con su propia pestaña. El panel trae de fábrica todo
+el patrón de filtros ya probado (skill, rango de fechas, granularidad
+día/mes/año, combinar/separar series) con estado en la URL (`?tv_...`),
+export a Excel/PDF, y 5 tarjetas KPI (Total Llamadas, Contestadas,
+Abandonadas, Nivel de Atención, Tasa de Abandono) coloreadas con el motor de
+semáforo (§3, métricas `nivel_atencion`/`tasa_abandono`). Hoy lo usan ORLANT,
+CLINICA AURORA y HOSPITAL LA MARIA — cualquier dashboard nuevo lo hereda con
+solo agregar el panel a su config, sin escribir código.
+
+**Cómo se resuelve la campaña del panel** (`_traficoCampanaPanel`,
+`public/js/trafico.js`): si el panel trae `campana` fija en su config (caso
+normal), se usa esa. Si no la trae **y** el dashboard tiene un selector de
+`vista` (hoy solo HOSPITAL LA MARIA, con sus 2 sedes), la campaña se deriva
+en caliente como `"<cliente> <valor de la vista seleccionada>"` — ej.
+`"HOSPITAL LA MARIA CASTILLA"` / `"HOSPITAL LA MARIA SEDE33"`. Esto evita
+inventar una columna "sede" que el export de Volvox no trae: la distinción
+vive enteramente en a qué campaña se mapea cada skill.
+
+⚠️ **Consecuencia práctica para el mapeo de skills**: para que el tráfico de
+cada sede de Hospital La María llegue a su propio dashboard, el admin debe
+mapear cada skill de Volvox exactamente a `HOSPITAL LA MARIA CASTILLA` o
+`HOSPITAL LA MARIA SEDE33` (**nunca** a `HOSPITAL LA MARIA` sola — esa
+campaña no la consume ningún panel). El desplegable de mapeo
+(`renderTraficoSkills`) ya ofrece estas 2 variantes en vez de la campaña
+plana, vía un pequeño registro explícito (`TRAFICO_CAMPANAS_MULTISEDE` en
+`trafico.js`) — si se agrega otro dashboard con `vista` que también
+necesite tráfico por sub-unidad, hay que registrarlo ahí (y su contraparte
+de permisos, ver abajo).
+
+**Permisos**: quien tiene acceso al dashboard tiene el permiso de la
+campaña "padre" (`cliente_HOSPITAL LA MARIA` / `campana_HOSPITAL LA
+MARIA`), no de la variante por sede — sin ajuste, el panel de tráfico
+devolvería 403 aunque el resto del dashboard funcione. `campaignAccess`
+(`server/auth.js`) resuelve esto con un mapeo `CAMPANA_BASE_MULTISEDE`
+(la contraparte servidor del registro de arriba): si la campaña pedida es
+una variante por sede conocida, también acepta el permiso de su campaña
+base.
+
+**Gotcha de snapshot, otra vez**: igual que en §3, si un dashboard con
+`trafico_combo` ya existe en una base (como producción), agregar el panel
+al código fuente después no le llega solo. `dashboards_config_trafico_hlm_v1`
+(`server/db.js`) es el backfill para Hospital La María; si otro dashboard ya
+existente necesita el panel agregado despues, seguir el mismo patrón (leer
+`layout`, revisar si ya tiene un panel `trafico_combo`, si no agregarlo,
+regrabar el JSON).
+
+**Estado de filtros compartido entre dashboards distintos**: el estado de
+filtros (`?tv_...`) vive en la URL de la página, no por panel — si un
+usuario filtra un rango de fechas en el tráfico de un dashboard y despues
+abre OTRO dashboard en la misma pestaña del navegador (sin recargar), ese
+rango puede no solapar en absoluto con los datos de la nueva campaña.
+`_traficoRenderPanel` lo detecta (el rango de la URL cae totalmente fuera
+del rango de fechas disponible para ESTA campaña) y descarta el filtro
+heredado, volviendo al rango completo de esta campaña — mismo criterio que
+ya existía para el filtro de skills.
+
 ---
 
 ## 6. Carga masiva de Calidad (`/api/monitoreos/bulk`)
@@ -465,3 +526,15 @@ Cosas que alguien podría "corregir" por accidente sin este contexto:
   (`dashboard-adapters.js`) que imita la misma forma de config para
   reutilizar el motor genérico, pero sus datos nunca pasan por
   `dashboard_cargas` ni por el flujo de carga de Excel de un cliente normal.
+- **Mapear un skill de una sede de Hospital La María a la campaña "HOSPITAL
+  LA MARIA" (sin sufijo) no rompe nada visiblemente, pero tampoco llega a
+  ningún dashboard** (§5) — el panel de tráfico de ese dashboard siempre
+  pide la variante por sede (`HOSPITAL LA MARIA CASTILLA`/`SEDE33`); la
+  campaña sola queda huérfana. Fácil de mapear "mal" sin que nada avise en
+  el momento, salvo que el admin no vea datos donde esperaba verlos.
+- **Un filtro de fecha aplicado al tráfico de un dashboard puede parecer
+  "perdido" al abrir el tráfico de otro dashboard en la misma pestaña del
+  navegador** (§5) — no es un bug de mezcla de datos (cada campaña sigue
+  viendo solo lo suyo), es que el estado de filtros vive en la URL de la
+  página, compartido por cualquier panel `trafico_combo`; el motor lo
+  detecta y descarta el filtro heredado si no aplica a la campaña nueva.
