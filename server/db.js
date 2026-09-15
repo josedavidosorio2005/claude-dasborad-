@@ -611,6 +611,32 @@ runOnceMigration('dashboards_config_metrica_nivel_atencion_v1', () => {
   }
 });
 
+// Backfill: agrega el tab "Trafico de Llamadas" (panel trafico_combo, sin
+// campana fija -> se resuelve por sede en caliente, ver trafico.js) a
+// HOSPITAL LA MARIA si ya existia en dashboards_config antes de este cambio
+// (mismo motivo que la migracion de arriba: dashboards_config no se
+// re-siembra solo). ORLANT y CLINICA AURORA no necesitan esto: su tab de
+// trafico ya se agrego en la fase anterior (Volvox), antes de que existiera
+// ninguna fila previa que backfillear.
+runOnceMigration('dashboards_config_trafico_hlm_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('HOSPITAL LA MARIA');
+  if (!row) return; // no existe todavia -> ya sale completo del seed normal
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const yaTiene = (layout.tabs || []).some((t) => (t.panels || []).some((p) => p.tipo === 'trafico_combo'));
+  if (yaTiene) return;
+  layout.tabs = layout.tabs || [];
+  layout.tabs.push({ key: 'trafico', label: 'Trafico de Llamadas', panels: [{ tipo: 'trafico_combo' }] });
+  db.prepare('UPDATE dashboards_config SET layout = ? WHERE cliente = ?').run(JSON.stringify(layout), 'HOSPITAL LA MARIA');
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_trafico_hlm_v1 aplicada.');
+  }
+});
+
 // Semilla de umbrales de semaforo por defecto (campana='' = global), para que
 // el sistema no quede sin color mientras nadie los configura desde el panel.
 // Valores iniciales razonables, documentados uno por uno (ajustables sin

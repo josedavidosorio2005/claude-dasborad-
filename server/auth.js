@@ -96,12 +96,30 @@ function requireActor(req, res, next) {
 // SUPERVISOR / REPORTES / GERENCIA) o quien tiene el permiso del cliente con el
 // mismo nombre (rol CLIENTES_DASH / SUPERVISOR) — este ultimo para que el
 // dashboard del cliente pueda leer sus resultados de calidad (Fase 2).
+// Campanas de TRAFICO por sede (ver public/js/trafico.js:
+// TRAFICO_CAMPANAS_MULTISEDE / _traficoCampanaPanel): el panel trafico_combo
+// de un dashboard con "vista" (hoy solo HOSPITAL LA MARIA) pide datos con
+// una campana tipo "HOSPITAL LA MARIA CASTILLA", pero quien tiene acceso al
+// DASHBOARD tiene el permiso de la campana "padre" (HOSPITAL LA MARIA), no
+// de la variante por sede. Sin este mapeo, cualquiera con acceso normal al
+// dashboard recibiria 403 solo en ese panel. Si se agrega otro dashboard
+// multi-sede, registrar aqui el mismo prefijo que en el archivo de arriba.
+const CAMPANA_BASE_MULTISEDE = {
+  'HOSPITAL LA MARIA CASTILLA': 'HOSPITAL LA MARIA',
+  'HOSPITAL LA MARIA SEDE33': 'HOSPITAL LA MARIA',
+};
+
 function campaignAccess(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms) return false;
-  return (
-    actor.perms['campana_' + campana] === true || actor.perms['cliente_' + campana] === true
-  );
+  if (actor.perms['campana_' + campana] === true || actor.perms['cliente_' + campana] === true) {
+    return true;
+  }
+  const base = CAMPANA_BASE_MULTISEDE[campana];
+  if (base) {
+    return actor.perms['campana_' + base] === true || actor.perms['cliente_' + base] === true;
+  }
+  return false;
 }
 
 // Puede CREAR monitoreos nuevos en una campana (rol CALIDAD o SUPERVISOR con
