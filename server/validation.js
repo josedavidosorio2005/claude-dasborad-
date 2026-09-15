@@ -317,8 +317,11 @@ const traficoCargaBody = z.object({
     .max(5000, 'Demasiadas filas en un solo archivo'),
 });
 
+const sedeSchema = z.string().trim().min(1).max(60);
+
 const traficoSkillMapeoBody = z.object({
   campana: campanaSchema.nullable(),
+  sede: sedeSchema.nullable().optional(),
 });
 
 // Query params ?campana=&mes= (mes opcional).

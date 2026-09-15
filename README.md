@@ -394,7 +394,28 @@ es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
 
 Puedes subir el mismo archivo las veces que quieras: si un día ya estaba
 cargado, se actualiza (nunca se duplica). Un mismo archivo puede traer
-varias skills y varios meses a la vez, sin problema.
+varias skills y varios meses a la vez, sin problema. Si vas a reemplazar un
+mes que ya tenía datos, el sistema te avisa cuántos registros se van a
+sobrescribir antes de guardar, para que lo confirmes con conocimiento.
+
+Cualquier fila de la base que parezca un resumen/cierre (`SKILL_NAME` =
+"TOTAL", "TOTALES", "TOTAL GENERAL", "GRAN TOTAL") se descarta automáticamente
+con un aviso — nunca se suma como si fuera una línea real.
+
+### Campañas con más de una sede (hoy: Hospital La María)
+
+Si la campaña tiene sedes (el dashboard muestra un selector "SEDE" arriba),
+el mapeo de cada skill pide además la sede correspondiente en un segundo
+desplegable, junto al de campaña. Es un solo dashboard con ambas sedes
+disponibles — el selector de sede solo cambia qué datos ves, cualquiera con
+acceso al dashboard puede ver cualquiera de las dos.
+
+### Control de cargas por período
+
+En la misma pantalla, debajo del mapeo de skills, la tarjeta **"Control de
+Cargas por Período"** muestra, por skill, qué meses ya tienen tráfico
+cargado — útil para saber qué pedirle a Volvox antes de que se te olvide un
+mes.
 
 ### Qué hace el sistema con cada columna
 

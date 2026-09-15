@@ -357,6 +357,21 @@
         </div>
         <div class="section-card">
           <div class="section-header">
+            <h3>Control de Cargas por Periodo</h3>
+            <div class="header-actions">
+              <button class="btn-sm" onclick="renderTraficoCobertura()">Actualizar</button>
+            </div>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Que meses de trafico ya estan cargados por skill, para saber que falta antes de pedirle una base nueva a Volvox. Solo lectura — la carga en si se hace arriba.</div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Skill (Volvox)</th><th>Campana / Sede</th><th>Cobertura</th><th>Meses cargados</th>
+            </tr></thead>
+            <tbody id="tv-cobertura-tbody"></tbody></table>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
             <h3>Historial de Nivel de Servicio</h3>
             <div class="header-actions">
               <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">

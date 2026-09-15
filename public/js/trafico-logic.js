@@ -41,6 +41,18 @@ function traficoNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
 }
 
+// Point 10 del pedido de Edwin: nunca confiar en una fila TOTAL/resumen de
+// la base como si fuera una linea real — Volvox (o quien la genere) a veces
+// deja una fila de cierre con SKILL_NAME tipo "TOTAL", "TOTAL GENERAL",
+// "TOTALES", etc. Si esa fila tuviera ademas una fecha valida, se sumaria
+// como una skill mas y duplicaria el conteo. Deteccion por palabra completa
+// (no substring) para no descartar una skill real que solo contenga "total"
+// como parte de un nombre mas largo por casualidad.
+var TRAFICO_SKILL_TOTAL_RE = /^(gran\s+)?total(es)?(\s+general(es)?)?$/i;
+function traficoEsFilaTotal(skillName) {
+  return TRAFICO_SKILL_TOTAL_RE.test(String(skillName == null ? '' : skillName).trim());
+}
+
 function traficoColIndexMap(headerRow) {
   var map = {};
   (headerRow || []).forEach(function (h, i) {
@@ -160,6 +172,7 @@ function traficoParseFilas(aoa) {
     // fila se descarta explicando por que, en vez de inventar un dia.
     if (!fecha) { avisos.push('Fila ' + filaNum + ': DATE invalida o vacia (MES/AÑO no bastan para reconstruir el dia), se omitio.'); continue; }
     if (!skillName) { avisos.push('Fila ' + filaNum + ' (' + fecha + '): SKILL_NAME vacio, se omitio.'); continue; }
+    if (traficoEsFilaTotal(skillName)) { avisos.push('Fila ' + filaNum + ' (' + fecha + '): SKILL_NAME "' + skillName + '" parece una fila TOTAL/resumen de la base, se omitio (nunca se suma como si fuera una linea real).'); continue; }
     if (totalLlamadas === null || totalLlamadas < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): TOTAL LLAMADAS invalido, se omitio.'); continue; }
     if (contestadas === null || contestadas < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): LLAMADAS CONTESTADAS invalido, se omitio.'); continue; }
     if (contestadas > totalLlamadas) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): contestadas (' + contestadas + ') supera el total (' + totalLlamadas + '), se omitio.'); continue; }
@@ -225,6 +238,7 @@ function traficoFiltrarFilas(filas, opts) {
   var skills = opts.skills && opts.skills.length ? opts.skills : null;
   return filas.filter(function (f) {
     if (skills && skills.indexOf(f.skillName) === -1) return false;
+    if (opts.sede && f.sede !== opts.sede) return false;
     if (opts.desde && f.fecha < opts.desde) return false;
     if (opts.hasta && f.fecha > opts.hasta) return false;
     return true;
@@ -243,7 +257,7 @@ function traficoAgregar(filas, opts) {
 
   filas.forEach(function (f) {
     var periodo = traficoPeriodoDe(f.fecha, granularidad);
-    var clave = combinar ? periodo : periodo + ' ' + f.skillName;
+    var clave = combinar ? periodo : periodo + ' ' + f.skillName;
     if (!buckets[clave]) {
       var b0 = {
         periodo: periodo, skillName: combinar ? null : f.skillName,
@@ -291,6 +305,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TRAFICO_COLUMNAS: TRAFICO_COLUMNAS,
     TRAFICO_COLUMNAS_OBLIGATORIAS: TRAFICO_COLUMNAS_OBLIGATORIAS,
     traficoColIndexMap: traficoColIndexMap,
+    traficoEsFilaTotal: traficoEsFilaTotal,
     traficoFechaDesdeSerial: traficoFechaDesdeSerial,
     traficoParseFecha: traficoParseFecha,
     traficoSegundosDesdeFraccionDia: traficoSegundosDesdeFraccionDia,

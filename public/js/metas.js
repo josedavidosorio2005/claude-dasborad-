@@ -198,6 +198,7 @@ async function renderNivelServicioSection(){
   previewNivelServicio();
   renderNivelServicioHistory();
   if(typeof renderTraficoSkills === 'function') renderTraficoSkills();
+  if(typeof renderTraficoCobertura === 'function') renderTraficoCobertura();
 }
 
 function previewNivelServicio(){
@@ -229,7 +230,12 @@ function renderNivelServicioHistory(){
   tbody.innerHTML = rows.map(function(r){
     var pctTxt = r.pct===null ? '—' : r.pct+'%';
     var cumpleTxt = r.cumple===null ? '—' : (r.cumple ? '🟢 SI' : '🔴 NO');
-    return '<tr><td>'+esc(r.campana)+'</td><td>'+esc(r.mes)+'</td><td>'+r.contestadas20s+'</td><td>'+r.llamadasTotales+'</td>'+
+    // Campanas multi-sede (ej. HOSPITAL LA MARIA) pueden tener 2 filas del
+    // mismo (campana, mes) — una por sede, nunca sumadas (ver
+    // docs/ARQUITECTURA.md). Sin mostrar la sede aqui, esas 2 filas se
+    // verian como un duplicado/error; se muestra entre parentesis.
+    var campanaTxt = r.campana + (r.sede ? ' (' + r.sede + ')' : '');
+    return '<tr><td>'+esc(campanaTxt)+'</td><td>'+esc(r.mes)+'</td><td>'+r.contestadas20s+'</td><td>'+r.llamadasTotales+'</td>'+
       '<td class="peak">'+esc(pctTxt)+'</td><td>'+esc(cumpleTxt)+'</td>'+
       '<td><button class="btn-sm btn-edit" onclick="editNivelServicio('+r.id+')">Editar</button> '+
       '<button class="btn-sm btn-delete" onclick="deleteNivelServicio('+r.id+')">Eliminar</button></td></tr>';

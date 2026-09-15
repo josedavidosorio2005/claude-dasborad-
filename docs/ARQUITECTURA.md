@@ -324,32 +324,70 @@ solo agregar el panel a su config, sin escribir código.
 
 **Cómo se resuelve la campaña del panel** (`_traficoCampanaPanel`,
 `public/js/trafico.js`): si el panel trae `campana` fija en su config (caso
-normal), se usa esa. Si no la trae **y** el dashboard tiene un selector de
-`vista` (hoy solo HOSPITAL LA MARIA, con sus 2 sedes), la campaña se deriva
-en caliente como `"<cliente> <valor de la vista seleccionada>"` — ej.
-`"HOSPITAL LA MARIA CASTILLA"` / `"HOSPITAL LA MARIA SEDE33"`. Esto evita
-inventar una columna "sede" que el export de Volvox no trae: la distinción
-vive enteramente en a qué campaña se mapea cada skill.
+normal), se usa esa. Si no la trae, es siempre el cliente del dashboard tal
+cual — **nunca** una variante distinta por sede (ver el aviso de
+consolidación justo abajo: eso cambió el 2026-09-15).
 
-⚠️ **Consecuencia práctica para el mapeo de skills**: para que el tráfico de
-cada sede de Hospital La María llegue a su propio dashboard, el admin debe
-mapear cada skill de Volvox exactamente a `HOSPITAL LA MARIA CASTILLA` o
-`HOSPITAL LA MARIA SEDE33` (**nunca** a `HOSPITAL LA MARIA` sola — esa
-campaña no la consume ningún panel). El desplegable de mapeo
-(`renderTraficoSkills`) ya ofrece estas 2 variantes en vez de la campaña
-plana, vía un pequeño registro explícito (`TRAFICO_CAMPANAS_MULTISEDE` en
-`trafico.js`) — si se agrega otro dashboard con `vista` que también
-necesite tráfico por sub-unidad, hay que registrarlo ahí (y su contraparte
-de permisos, ver abajo).
+⚠️ **Consolidación de sede (2026-09-15, auditoría contra el pedido de
+Edwin — módulo "Flujo de Llamadas"): la sede es un atributo del dato, NO una
+campaña distinta.** Antes de esta fecha, Hospital La María (la única
+campaña multi-sede hoy) usaba un atajo: el tráfico Volvox fabricaba 2
+campañas falsas, `"HOSPITAL LA MARIA CASTILLA"` / `"HOSPITAL LA MARIA
+SEDE33"`, y `auth.js` necesitaba un mapeo especial (`CAMPANA_BASE_MULTISEDE`)
+solo para que el permiso de la campaña real diera acceso a esas variantes.
+Eso era inconsistente con cómo el propio dashboard operativo (los datos de
+Excel de `dashboard_cargas`) ya trataba la sede desde antes: como un campo
+`sede` en cada fila, filtrable por `dashboards_config.vista`, con UNA sola
+campaña. La migración `hlm_sede_consolidacion_v1` (`server/db.js`) llevó el
+tráfico Volvox al mismo patrón:
 
-**Permisos**: quien tiene acceso al dashboard tiene el permiso de la
-campaña "padre" (`cliente_HOSPITAL LA MARIA` / `campana_HOSPITAL LA
-MARIA`), no de la variante por sede — sin ajuste, el panel de tráfico
-devolvería 403 aunque el resto del dashboard funcione. `campaignAccess`
-(`server/auth.js`) resuelve esto con un mapeo `CAMPANA_BASE_MULTISEDE`
-(la contraparte servidor del registro de arriba): si la campaña pedida es
-una variante por sede conocida, también acepta el permiso de su campaña
-base.
+- `calidad_nivel_servicio_diario` y `calidad_nivel_servicio` (el agregado
+  mensual) ganaron una columna `sede` (nullable — `NULL` para el resto de
+  campañas, que no tienen sedes). El agregado mensual **recalcula siempre
+  filtrando también por sede** (`recalcularMensual(db, campana, mes, now,
+  sede)`, `server/nivel-servicio-diario.js`) para que 2 sedes de una misma
+  campaña nunca se sumen ni se pisen en un mismo mes — punto crítico: la
+  `UNIQUE(campana, mes)` original de `calidad_nivel_servicio` pasó a
+  `UNIQUE(campana, mes, sede)`, y como SQL nunca trata 2 `NULL` como
+  iguales, cualquier código que compare por `(campana, mes)` sin filtrar
+  también por `sede IS ?` puede pisar la fila equivocada — ver el mismo
+  gotcha que esto le causó a la pantalla manual de Nivel de Servicio
+  (`POST`/`PUT /calidad/nivel-servicio`, que dejó de detectar duplicados por
+  el mismo motivo hasta que se le agregó el filtro `sede IS NULL` explícito).
+- `trafico_skill_mapeo` ganó una columna `sede`: el mapeo de una skill sigue
+  siendo a UNA campaña (`PUT /calidad/trafico/skills/:skillName`), más una
+  sede opcional cuando la campaña es multi-sede — nunca una campaña
+  distinta por sede. `TRAFICO_CAMPANAS_MULTISEDE` (`trafico.js`) sigue
+  siendo el registro de qué campañas tienen sedes y sus códigos (hoy
+  `CASTILLA`/`SEDE33`, los MISMOS que usa `dashboards_config.vista` para
+  Hospital La María — sin tabla de traducción entre los dos), pero ahora
+  puebla un segundo `<select>` de sede en el panel de mapeo, no una lista de
+  campañas falsas.
+- El panel `trafico_combo` (`_traficoRenderPanel`) carga TODO el tráfico de
+  la campaña real de una sola vez (`_traficoCargarDatos`, cacheado por
+  campaña) y filtra client-side por sede (`_traficoSedePanel()`, que lee
+  `_gd.vistaSel`) — un solo fetch por campaña, sin importar cuántas sedes
+  tenga.
+- `auth.js`: `CAMPANA_BASE_MULTISEDE` se eliminó por completo —
+  `campaignAccess` vuelve a ser una sola comprobación directa. **Decisión de
+  permisos, documentada en el propio código**: quien tiene acceso a
+  `HOSPITAL LA MARIA` ve AMBAS sedes; el filtro de sede en el dashboard es
+  solo de visualización, nunca una frontera de permisos (consistente con que
+  ningún otro módulo de esta plataforma tiene permisos con esa granularidad,
+  y con que el dashboard operativo ya trataba a Hospital La María como un
+  solo dashboard desde antes).
+- Migración verificada con un test dedicado
+  (`server/tests/hlm-sede-migracion.test.js`) que siembra el esquema y los
+  datos exactamente como estaban en producción ANTES de este cambio (2
+  campañas falsas) y confirma que, tras requerir `db.js`, los mismos números
+  siguen ahí bajo `HOSPITAL LA MARIA` + su `sede`, sin mezclarse entre
+  sedes.
+- `monitoreos` (Calidad) también ganó una columna `sede` (nullable) para
+  cuando exista una plantilla de Calidad para Hospital La María — hoy NO
+  existe ninguna (`calidad-plantillas-seed.js` no tiene una entrada para esa
+  campaña, verificado, no asumido), así que no hay ningún dato de Calidad
+  real que reetiquetar todavía. La columna queda lista para cuando esa
+  plantilla se cree.
 
 **Gotcha de snapshot, otra vez**: igual que en §3, si un dashboard con
 `trafico_combo` ya existe en una base (como producción), agregar el panel
@@ -358,6 +396,59 @@ al código fuente después no le llega solo. `dashboards_config_trafico_hlm_v1`
 existente necesita el panel agregado despues, seguir el mismo patrón (leer
 `layout`, revisar si ya tiene un panel `trafico_combo`, si no agregarlo,
 regrabar el JSON).
+
+### Punto 10 (auditoría Edwin): nunca confiar en una fila TOTAL/resumen
+
+`traficoParseFilas` descarta (con aviso, no error fatal) cualquier fila cuyo
+`SKILL_NAME` coincida por palabra completa con un patrón de fila
+resumen/cierre (`TOTAL`, `TOTALES`, `TOTAL GENERAL`, `GRAN TOTAL` —
+`TRAFICO_SKILL_TOTAL_RE`), aunque esa fila traiga una fecha válida (el caso
+que de verdad importa: una fila con fecha inválida ya se descartaba antes
+por esa razón). Coincidencia por palabra completa, no por substring, para no
+descartar por error una skill real que solo contenga "total" como parte de
+un nombre más largo (ej. "SKILL TOTALIZADORA" se conserva).
+
+### Puntos 11/12 (auditoría Edwin) y control de cargas por período
+
+Cargar/editar el mapeo de skills, y ver/usar el control de cargas de abajo,
+exige `canLoadData(actor)` (`server/auth.js`) — el mismo permiso "Cargar
+Datos" que ya gobierna el resto de la sección administrativa de cargas
+(`dashboard_cargas`, Nivel de Servicio manual), nunca accesible a un rol de
+dashboard normal (`CLIENTES_DASH`/`CALIDAD`/`SUPERVISOR` sin ese permiso
+otorgado a mano). **Decisión explícita** (antes de esta auditoría, estas
+rutas exigían `isFullAdmin` a secas, más estricto que el resto de la
+sección): se cambió a `canLoadData` para que un `AUX_ADMIN` con el permiso
+"Cargar Datos" otorgado por un administrador también pueda — el escenario
+que describe el pedido de Edwin ("Admin/AUX_ADMIN o el rol equivalente de
+supervisor").
+
+**Control de cargas por período** (`GET /calidad/trafico/cobertura`,
+`public/js/trafico.js: renderTraficoCobertura`): tabla administrativa (misma
+sección que la carga, mismo permiso) que muestra, por skill, qué meses ya
+tienen tráfico cargado — calculado con un `GROUP BY` sobre las fechas que YA
+existen en `calidad_nivel_servicio_diario`, nunca una tabla de "estado"
+aparte que haya que mantener sincronizada a mano. Antes de guardar una carga
+nueva, el frontend llama `POST /calidad/trafico/carga/impacto` (no escribe
+nada: solo cuenta, por `(skillName, mes)` del archivo recién parseado,
+cuántas filas ya existen hoy) y si hay alguna, exige confirmación explícita
+mostrando cuántos registros se van a reemplazar antes de llamar al guardado
+real — nunca sobrescribe un mes ya cargado en silencio.
+
+### Punto 9 (auditoría Edwin): agregar una fuente/plantilla nueva sin reconstruir todo
+
+El diseño actual NO obliga a una sola fuente de datos por campaña. Cada
+`dashboards_config.layout` es JSON libre por cliente: agregar una fuente
+nueva (ej. AHT de WhatsApp desde otro archivo, cuando llegue esa fase) es
+agregar una nueva `seccion` (`dashboard-secciones.js`, con sus propias
+columnas) + los paneles que la consuman en `layout.tabs`, sin tocar las
+fuentes existentes de esa misma campaña ni las de ninguna otra. El patrón
+`trafico_combo` (arriba) es un ejemplo de exactamente eso: se agregó como un
+panel más, con su propia tabla (`calidad_nivel_servicio_diario`) y su propio
+endpoint de carga, sin modificar ni una línea de las secciones operativas ya
+existentes de esa misma campaña. Documentado aquí para que no sea una
+sorpresa cuando llegue esa fase — no se implementó nada nuevo para esto en
+esta ronda (no fue pedido; el pedido de esta fase era solo confirmar que el
+diseño ya lo permite).
 
 **Estado de filtros compartido entre dashboards distintos**: el estado de
 filtros (`?tv_...`) vive en la URL de la página, no por panel — si un
@@ -442,9 +533,11 @@ documentado en ningún lado hasta ahora.
 | `/api/umbrales/:id` | DELETE | Borra un umbral | Solo administrador |
 | `/api/monitoreos/bulk` | POST | Carga masiva de monitoreos de Calidad (§6) | Rol CALIDAD/SUPERVISOR (o admin) con permiso sobre esa campaña |
 | `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §9) | Cualquier actor autenticado |
-| `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | Solo administrador |
-| `/api/calidad/trafico/skills` | GET | Lista el mapeo skill → campaña | Solo administrador |
-| `/api/calidad/trafico/skills/:skillName` | PUT | Reasigna una skill a otra campaña (reatribuye el histórico ya guardado) | Solo administrador |
+| `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
+| `/api/calidad/trafico/carga/impacto` | POST | Cuenta, por (skill,mes) del archivo, cuántas filas ya existen y se reemplazarían — no escribe nada (control de cargas, §5) | `canLoadData` |
+| `/api/calidad/trafico/cobertura` | GET | Por skill, qué meses ya tienen tráfico cargado (control de cargas, §5) | `canLoadData` |
+| `/api/calidad/trafico/skills` | GET | Lista el mapeo skill → campaña (+ sede) | `canLoadData` |
+| `/api/calidad/trafico/skills/:skillName` | PUT | Reasigna una skill a otra campaña/sede (reatribuye el histórico ya guardado) | `canLoadData` |
 | `/api/calidad/nivel-servicio/diario` | GET | Filas diarias de nivel de servicio de una campaña (el navegador agrega, ver §5) | Cualquier actor con acceso a esa campaña |
 
 ---
@@ -526,12 +619,21 @@ Cosas que alguien podría "corregir" por accidente sin este contexto:
   (`dashboard-adapters.js`) que imita la misma forma de config para
   reutilizar el motor genérico, pero sus datos nunca pasan por
   `dashboard_cargas` ni por el flujo de carga de Excel de un cliente normal.
-- **Mapear un skill de una sede de Hospital La María a la campaña "HOSPITAL
-  LA MARIA" (sin sufijo) no rompe nada visiblemente, pero tampoco llega a
-  ningún dashboard** (§5) — el panel de tráfico de ese dashboard siempre
-  pide la variante por sede (`HOSPITAL LA MARIA CASTILLA`/`SEDE33`); la
-  campaña sola queda huérfana. Fácil de mapear "mal" sin que nada avise en
-  el momento, salvo que el admin no vea datos donde esperaba verlos.
+- **Mapear un skill de Hospital La María sin elegir su sede (dejar el
+  segundo `<select>` vacío) lo deja en la campaña correcta pero sin sede**
+  (§5) — el panel de tráfico de ese dashboard filtra por sede
+  (`CASTILLA`/`SEDE33`), así que esa fila no aparece en ninguna de las 2
+  vistas hasta que se le asigne una sede. `guardarMapeoSkill`
+  (`trafico.js`) ya bloquea el guardado con un aviso si la campaña elegida
+  tiene sedes y no se eligió ninguna — pero sigue siendo un caso a tener en
+  cuenta si se agrega otro dashboard multi-sede en el futuro.
+- **La `UNIQUE` de `calidad_nivel_servicio` es `(campana, mes, sede)`, y SQL
+  nunca trata 2 `NULL` como iguales** (§5) — cualquier código que compare
+  filas de esa tabla por `(campana, mes)` sin agregar también `sede IS ?`
+  puede leer o pisar la fila equivocada quedándose calladito (sin violar
+  ninguna constraint). Ya causó un bug real en la pantalla manual de Nivel
+  de Servicio durante la migración de sede (2026-09-15) — corregido, y
+  documentado aquí para que no se repita en código nuevo.
 - **Un filtro de fecha aplicado al tráfico de un dashboard puede parecer
   "perdido" al abrir el tráfico de otro dashboard en la misma pestaña del
   navegador** (§5) — no es un bug de mezcla de datos (cada campaña sigue
