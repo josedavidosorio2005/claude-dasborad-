@@ -57,8 +57,29 @@ function cancelarPreviewTrafico(){
   document.getElementById('tv-errores').innerHTML = '';
 }
 
+// Control de cargas por periodo (seccion 3 del pedido de Edwin): antes de
+// guardar, pregunta al servidor cuantas filas YA existen para los mismos
+// (skill, mes) que trae este archivo y, si hay alguna, exige confirmacion
+// explicita mostrando cuantos registros se van a reemplazar — nunca
+// sobrescribe en silencio un mes ya cargado.
+async function _traficoConfirmarImpacto(){
+  var impacto;
+  try{ impacto = await apiRequest('POST','/calidad/trafico/carga/impacto', _tvParsed); }
+  catch(e){ showToast(e.message); return false; }
+  var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0; });
+  if(!afectados.length) return true;
+  var detalle = afectados.map(function(p){ return '• ' + p.skillName + ' — ' + p.mes + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
+  var totalExistentes = afectados.reduce(function(a,p){ return a+p.filasExistentes; }, 0);
+  return window.confirm(
+    'Esta carga va a REEMPLAZAR ' + totalExistentes + ' registro(s) ya cargados:\n\n' + detalle +
+    '\n\n¿Continuar y sobrescribir?'
+  );
+}
+
 async function guardarTrafico(){
   if(!_tvParsed){ showToast('Primero sube un archivo'); return; }
+  var ok = await _traficoConfirmarImpacto();
+  if(!ok) return;
   var btn = document.getElementById('tv-save-btn');
   var resp;
   try{
@@ -75,36 +96,34 @@ async function guardarTrafico(){
   // pagina (la carga de trafico recalcula esos meses, y sin esto quedaria
   // mostrando numeros de antes de subir el archivo hasta recargar la pagina).
   if(typeof renderNivelServicioSection === 'function') await renderNivelServicioSection();
-  else if(typeof renderTraficoSkills === 'function') renderTraficoSkills();
+  else {
+    if(typeof renderTraficoSkills === 'function') renderTraficoSkills();
+    if(typeof renderTraficoCobertura === 'function') renderTraficoCobertura();
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
-// ADMIN — MAPEO DE SKILLS -> CAMPANA
+// ADMIN — MAPEO DE SKILLS -> CAMPANA (+ SEDE si aplica)
 // ═══════════════════════════════════════════════════════════
-// Campanas con mas de una "vista" (sede/linea) en su dashboard: para el
-// mapeo de trafico se ofrecen las variantes "<campana> <valor>" en vez de
-// (o ademas de) la campana sola, porque el panel trafico_combo de esos
-// dashboards resuelve su campana en caliente como "<cliente> <vistaSel>"
-// (ver _traficoCampanaPanel arriba). Si se agrega otro dashboard con
-// "vista" que tambien necesite trafico por sede, se registra aqui.
+// Campanas con mas de una "vista" (sede/linea) en su dashboard: la campana
+// del mapeo sigue siendo UNA sola (ej. "HOSPITAL LA MARIA"), pero se pide
+// ademas una sede (atributo, no una campana distinta — ver
+// docs/ARQUITECTURA.md, consolidacion 2026-09-15). Los valores de sede son
+// los MISMOS codigos que usa dashboards_config.vista para esa campana
+// ('CASTILLA'/'SEDE33'), asi el panel trafico_combo puede filtrar
+// directamente por _gd.vistaSel sin tabla de traduccion. Si se agrega otro
+// dashboard con "vista" que tambien necesite trafico por sede, se registra
+// aqui igual.
 var TRAFICO_CAMPANAS_MULTISEDE = {
   'HOSPITAL LA MARIA': [
-    { valor: 'HOSPITAL LA MARIA CASTILLA', label: 'HOSPITAL LA MARIA — Sede Castilla' },
-    { valor: 'HOSPITAL LA MARIA SEDE33', label: 'HOSPITAL LA MARIA — Sede 33' },
+    { valor: 'CASTILLA', label: 'Sede Castilla' },
+    { valor: 'SEDE33', label: 'Sede 33' },
   ],
 };
 
 function _traficoCampanasAsignables(){
   var base = (typeof CAMPANAS_CALIDAD !== 'undefined') ? CAMPANAS_CALIDAD : [];
-  var out = [];
-  base.forEach(function(c){
-    if(TRAFICO_CAMPANAS_MULTISEDE[c]){
-      TRAFICO_CAMPANAS_MULTISEDE[c].forEach(function(v){ out.push(v); });
-    } else {
-      out.push({ valor: c, label: c });
-    }
-  });
-  return out;
+  return base.map(function(c){ return { valor: c, label: c }; });
 }
 
 async function renderTraficoSkills(){
@@ -123,27 +142,91 @@ async function renderTraficoSkills(){
     var opciones = '<option value="">— Sin asignar —</option>' + campanas.map(function(c){
       return '<option value="'+esc(c.valor)+'"'+(r.campana===c.valor?' selected':'')+'>'+esc(c.label)+'</option>';
     }).join('');
+    var sedesCampana = TRAFICO_CAMPANAS_MULTISEDE[r.campana] || [];
+    var sedeOpciones = '<option value="">— Sede —</option>' + sedesCampana.map(function(s){
+      return '<option value="'+esc(s.valor)+'"'+(r.sede===s.valor?' selected':'')+'>'+esc(s.label)+'</option>';
+    }).join('');
+    var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
       '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:#fff4e5;color:#8a5a12;border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
-      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'">'+opciones+'</select></td>' +
+      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
+        ' <select id="tv-skill-sede-'+idx+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
       '<td><button class="btn-sm" onclick="guardarMapeoSkill('+idx+')">Guardar</button></td>' +
       '</tr>';
   }).join('');
 }
 
+// Cuando se cambia la campana del mapeo, muestra/oculta y repuebla el
+// select de sede segun si la nueva campana elegida tiene sedes o no.
+function _traficoToggleSedeSel(idx){
+  var campSel = document.getElementById('tv-skill-sel-'+idx);
+  var sedeSel = document.getElementById('tv-skill-sede-'+idx);
+  if(!campSel || !sedeSel) return;
+  var sedes = TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [];
+  if(!sedes.length){
+    sedeSel.style.display = 'none';
+    sedeSel.innerHTML = '<option value="">— Sede —</option>';
+    return;
+  }
+  sedeSel.style.display = '';
+  sedeSel.innerHTML = '<option value="">— Sede —</option>' + sedes.map(function(s){
+    return '<option value="'+esc(s.valor)+'">'+esc(s.label)+'</option>';
+  }).join('');
+}
+
 async function guardarMapeoSkill(idx){
   var sel = document.getElementById('tv-skill-sel-'+idx);
+  var sedeSel = document.getElementById('tv-skill-sede-'+idx);
   if(!sel) return;
   var skillName = sel.dataset.skill;
   var campana = sel.value || null;
+  var sedes = TRAFICO_CAMPANAS_MULTISEDE[campana] || [];
+  if(campana && sedes.length && (!sedeSel || !sedeSel.value)){
+    showToast('Esta campana tiene mas de una sede: elige cual sede corresponde a esta skill.');
+    return;
+  }
+  var sede = (campana && sedes.length && sedeSel) ? sedeSel.value : null;
   try{
-    var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana });
+    var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana, sede: sede });
     showToast('Mapeo guardado. '+resp.movidas+' fila(s) reatribuidas, '+resp.mesesRecalculados.length+' mes(es) recalculado(s).');
   }catch(e){ showToast(e.message); return; }
-  _trafico = {}; // invalida cache: el trafico de esta skill ya vive en otra campana
+  _trafico = {}; // invalida cache: el trafico de esta skill ya vive en otra campana/sede
   if(typeof renderNivelServicioSection === 'function') await renderNivelServicioSection();
-  else renderTraficoSkills();
+  else {
+    renderTraficoSkills();
+    if(typeof renderTraficoCobertura === 'function') renderTraficoCobertura();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN — CONTROL DE CARGAS POR PERIODO (seccion 3 del pedido de Edwin)
+// ═══════════════════════════════════════════════════════════
+// Tabla, por skill, de que meses ya tienen base de trafico cargada.
+// Reutiliza las fechas YA guardadas (GET /calidad/trafico/cobertura hace el
+// GROUP BY sobre calidad_nivel_servicio_diario) — no hay ninguna tabla de
+// "estado" aparte que mantener sincronizada a mano.
+async function renderTraficoCobertura(){
+  var tbody = document.getElementById('tv-cobertura-tbody');
+  if(!tbody) return;
+  var rows = [];
+  try{ rows = await apiRequest('GET','/calidad/trafico/cobertura') || []; }
+  catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">'+esc(e.message)+'</td></tr>'; return; }
+
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">Todavia no se ha cargado ningun mes de trafico.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(r){
+    var campanaLabel = r.campana ? esc(r.campana) + (r.sede ? ' — ' + esc(r.sede) : '') : '<span style="color:#8a5a12">(sin asignar)</span>';
+    var meses = r.meses.slice().sort(function(a,b){ return a.mes<b.mes?-1:1; });
+    var badges = meses.map(function(m){
+      return '<span title="'+esc(m.filas)+' fila(s) — '+esc(m.archivoNombre||'')+' ('+esc(m.cargadoPorNombre||'')+')" ' +
+        'style="display:inline-block;background:#eafaf1;color:#1e7e45;border-radius:4px;padding:2px 7px;font-size:0.72rem;margin:2px 3px 2px 0">' +
+        '&#10003; '+esc(m.mes)+'</span>';
+    }).join('');
+    return '<tr><td>'+esc(r.skillName)+'</td><td>'+campanaLabel+'</td><td>'+meses.length+' mes(es)</td><td>'+badges+'</td></tr>';
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -200,25 +283,47 @@ function _traficoGuardarEstadoURL(estado){
 
 // Resuelve la campana de trafico para un panel trafico_combo: la fija en
 // config (p.campana, caso normal — ORLANT, CLINICA AURORA) si existe, o si
-// no, y el dashboard tiene "vista" (HOSPITAL LA MARIA: 2 sedes), la deriva
-// como "<cliente> <valor de vista seleccionada>" — asi cada sede tiene su
-// propia campana de trafico sin inventar una columna "sede" que el export
-// de Volvox no trae; la distincion vive enteramente en a que campana se
-// mapea cada skill (ver renderTraficoSkills / docs/ARQUITECTURA.md).
+// no, el cliente del dashboard tal cual (SIEMPRE la campana real, nunca una
+// variante por sede — desde la consolidacion 2026-09-15 la sede es un
+// atributo del dato, no una campana distinta. Ver _traficoSedePanel abajo y
+// docs/ARQUITECTURA.md).
 function _traficoCampanaPanel(p){
-  if(p.campana) return p.campana;
-  if(_gd.config && _gd.config.vista && _gd.vistaSel) return _gd.cliente + ' ' + _gd.vistaSel;
-  return _gd.cliente;
+  return p.campana || _gd.cliente;
+}
+
+// Sede a filtrar (client-side, sobre los datos YA cargados de la campana
+// completa) para un panel trafico_combo: si el dashboard tiene "vista"
+// (HOSPITAL LA MARIA: 2 sedes) y hay una seleccionada, es esa; si no, null
+// (sin filtro de sede — campanas de una sola sede, la inmensa mayoria).
+function _traficoSedePanel(){
+  if(_gd.config && _gd.config.vista && _gd.vistaSel) return _gd.vistaSel;
+  return null;
+}
+
+// Clave compuesta para el estado/agregado de un panel: campana sola para
+// las campanas de una sola sede (la inmensa mayoria), campana+sede para las
+// multi-sede (HOSPITAL LA MARIA) — asi cambiar de sede en el selector de
+// "vista" del dashboard nunca hereda el filtro de skills/fechas de la otra
+// sede (serian skills distintas de todas formas, pero mejor no asumirlo).
+function _traficoClaveEstado(campana, sede){
+  return sede ? campana + ' :: ' + sede : campana;
 }
 
 async function _traficoRenderPanel(p, i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
   var campana = _traficoCampanaPanel(p);
+  var sede = _traficoSedePanel();
+  var claveEstado = _traficoClaveEstado(campana, sede);
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
     '<div style="text-align:center;color:#9bb0bb;padding:20px 8px">Cargando…</div></div>';
 
-  var datos = await _traficoCargarDatos(campana);
+  var datosCampana = await _traficoCargarDatos(campana);
+  var filasSede = sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas;
+  var skillsSede = sede ? datosCampana.skills.filter(function(s){
+    return filasSede.some(function(f){ return f.skillName===s; });
+  }) : datosCampana.skills;
+  var datos = { filas: filasSede, skills: skillsSede };
   if(!datos.filas.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
       '<div style="text-align:center;color:#9bb0bb;padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Volvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
@@ -232,17 +337,18 @@ async function _traficoRenderPanel(p, i){
   if(!estado.hasta) estado.hasta = maxDisp;
   // El estado de filtros vive en la URL (?tv_...) compartido por CUALQUIER
   // panel trafico_combo de la pagina — si el usuario filtro un rango en el
-  // dashboard de otra campana y luego abre este (misma pestana del
-  // navegador, sin recargar), ese rango puede no solapar en absoluto con
-  // los datos de esta campana. En vez de mostrar "sin datos" por un filtro
-  // heredado que nadie eligio para ESTA campana, se descarta y se vuelve al
-  // rango completo disponible aqui (mismo criterio que ya se usaba para
-  // skills: si el filtro heredado deja todo afuera, se ignora).
+  // dashboard de otra campana (o de otra sede) y luego abre este (misma
+  // pestana del navegador, sin recargar), ese rango puede no solapar en
+  // absoluto con los datos de este panel. En vez de mostrar "sin datos" por
+  // un filtro heredado que nadie eligio para ESTE panel, se descarta y se
+  // vuelve al rango completo disponible aqui (mismo criterio que ya se
+  // usaba para skills: si el filtro heredado deja todo afuera, se ignora).
   if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = minDisp; estado.hasta = maxDisp; }
   if(!estado.skills) estado.skills = datos.skills.slice(); // sin filtro en la URL -> todas
   else estado.skills = estado.skills.filter(function(s){ return datos.skills.indexOf(s)!==-1; });
   if(!estado.skills.length) estado.skills = datos.skills.slice();
-  _traficoEstado[campana] = estado;
+  estado.sede = sede;
+  _traficoEstado[claveEstado] = estado;
 
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
   host.innerHTML =
@@ -269,8 +375,9 @@ async function _traficoRenderPanel(p, i){
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="tv-canvas-'+i+'"></canvas></div>' +
     '</div>';
   host.dataset.campana = campana;
+  host.dataset.sede = sede || '';
 
-  _traficoRenderContenido(campana, i);
+  _traficoRenderContenido(campana, sede, i);
 }
 
 function _traficoLeerControles(i){
@@ -288,19 +395,28 @@ function _traficoLeerControles(i){
 function _traficoAplicarFiltros(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host.dataset.campana;
+  var sede = host.dataset.sede || null;
+  var claveEstado = _traficoClaveEstado(campana, sede);
   var estado = _traficoLeerControles(i);
-  if(!estado.skills.length) estado.skills = (_trafico[campana] && _trafico[campana].skills.slice()) || [];
-  _traficoEstado[campana] = estado;
+  var datosCampana = _trafico[campana];
+  var skillsDisponibles = (datosCampana && sede)
+    ? datosCampana.skills.filter(function(s){ return datosCampana.filas.some(function(f){ return f.sede===sede && f.skillName===s; }); })
+    : ((datosCampana && datosCampana.skills.slice()) || []);
+  if(!estado.skills.length) estado.skills = skillsDisponibles;
+  estado.sede = sede;
+  _traficoEstado[claveEstado] = estado;
   _traficoGuardarEstadoURL(estado);
-  _traficoRenderContenido(campana, i);
+  _traficoRenderContenido(campana, sede, i);
 }
 
-function _traficoRenderContenido(campana, i){
-  var datos = _trafico[campana];
-  var estado = _traficoEstado[campana];
+function _traficoRenderContenido(campana, sede, i){
+  var claveEstado = _traficoClaveEstado(campana, sede);
+  var datosCampana = _trafico[campana];
+  var datos = { filas: sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas };
+  var estado = _traficoEstado[claveEstado];
   var filtradas = traficoFiltrarFilas(datos.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
   var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
-  _traficoAgregadoActual[campana] = agregado;
+  _traficoAgregadoActual[claveEstado] = agregado;
 
   // Totales del periodo YA filtrado (nunca promedio de % diarios): suma
   // primero, calcula el % despues — mismo criterio de traficoAgregar.
@@ -374,7 +490,8 @@ function _traficoRenderContenido(campana, i){
 function _traficoDatosExport(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
-  var agregado = _traficoAgregadoActual[campana] || [];
+  var sede = host ? (host.dataset.sede || null) : null;
+  var agregado = _traficoAgregadoActual[_traficoClaveEstado(campana, sede)] || [];
   return agregado.map(function(a){
     return {
       Periodo: a.periodo,

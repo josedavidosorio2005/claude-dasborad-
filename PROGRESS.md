@@ -1193,3 +1193,78 @@ sembrados, cambio de umbral de `nivel_atencion` reflejado de inmediato en
 el color de la tarjeta de ORLANT (verde→rojo→restaurado), carga masiva de
 Cartera con el fixture de prueba (preview con avisos + guardado limpio).
 Capturas en `docs/capturas-demo/fase19-semaforo-cartera/`.
+
+## Fase 20 — Cierre del módulo "Flujo de Llamadas" contra el pedido de Edwin (2026-09-15)
+
+Pedido: auditar el módulo de tráfico Volvox punto por punto contra la
+síntesis de requisitos de Edwin (el cliente) — no contra lo que ya creíamos
+que cumplía — y cerrar lo que faltara. Explícitamente acotado a "Flujo de
+Llamadas" + la gestión de cargas que lo sostiene; AHT, nivel de servicio,
+ASA/ATA y WhatsApp quedan para una fase siguiente, a propósito.
+
+### Auditoría — qué cumplía y qué no (tabla completa en el reporte del PR)
+
+- **Punto 1** (plantilla inválida → error claro, sin afectar datos
+  existentes): el motor ya lo hacía (validación en dos capas, cliente y
+  servidor, antes de tocar la BD) pero no tenía un test que lo probara de
+  punta a punta — se agregó.
+- **Punto 8** (varias líneas/canales por campaña, sin nombres quemados):
+  ya cumplía — el mapeo skill→campaña ya era muchos-a-uno y el panel de
+  tráfico ya tenía un filtro multi-skill combinable/separable.
+- **Punto 10** (nunca confiar en una fila TOTAL): NO cumplía — se agregó
+  detección de filas resumen (`TOTAL`, `TOTALES`, `TOTAL GENERAL`, `GRAN
+  TOTAL`, por palabra completa) en `trafico-logic.js`.
+- **Puntos 11/12** (carga solo administrativa): cumplía en el servidor,
+  pero con `isFullAdmin` — más estricto que el resto de la sección de
+  cargas. Se cambió a `canLoadData` (el mismo permiso "Cargar Datos" del
+  resto de la sección) para que un AUX_ADMIN con ese permiso también
+  pueda, sin abrirle la puerta a ningún rol de dashboard normal.
+- **Punto 9** (fuentes nuevas sin reconstruir todo): solo pedía
+  documentación — agregada en `docs/ARQUITECTURA.md`, sin código nuevo.
+
+### Consolidación de Hospital La María: sede como atributo, no como campaña
+
+Antes de esta fase, el tráfico Volvox de Hospital La María fabricaba 2
+campañas falsas (`HOSPITAL LA MARIA CASTILLA`/`SEDE33`) — un atajo
+inconsistente con cómo el dashboard operativo YA trataba la sede desde
+antes (un campo `sede`, una sola campaña). Migración
+`hlm_sede_consolidacion_v1` (`server/db.js`): agrega `sede` a
+`calidad_nivel_servicio_diario`/`calidad_nivel_servicio`/`trafico_skill_mapeo`/`monitoreos`,
+recrea la tabla mensual con `UNIQUE(campana, mes, sede)`, y re-etiqueta las
+filas existentes — sin perder ningún dato ni cambiar ningún puntaje,
+verificado con un test dedicado que siembra el esquema viejo real y
+confirma los mismos números después de migrar
+(`server/tests/hlm-sede-migracion.test.js`). `auth.js` perdió el parche
+`CAMPANA_BASE_MULTISEDE` (ya no hace falta); decisión documentada: quien
+tiene acceso a la campaña ve ambas sedes, el filtro de sede es solo de
+visualización.
+
+Bug real encontrado y corregido durante la migración: la pantalla manual de
+Nivel de Servicio dejó de detectar duplicados por `(campana, mes)` porque
+SQL nunca trata 2 `NULL` de `sede` como iguales — corregido con un chequeo
+explícito `sede IS NULL`. Documentado en ARQUITECTURA.md como un gotcha
+reutilizable para cualquier código futuro que toque esa tabla.
+
+### Control de cargas por período (sección administrativa nueva)
+
+`GET /calidad/trafico/cobertura`: tabla por skill de qué meses ya tienen
+tráfico cargado, calculada con un `GROUP BY` sobre los datos que ya existen
+— nunca una tabla de estado aparte. `POST /calidad/trafico/carga/impacto`:
+cuenta cuántas filas se reemplazarían antes de guardar (no escribe nada); el
+frontend exige confirmación explícita mostrando el conteo antes de
+sobrescribir un mes ya cargado.
+
+### Verificación
+
+Suite completa: **172/172** en verde (`npm test`), `npm audit`: 0
+vulnerabilidades. Playwright contra un servidor local con datos de demo:
+dashboard de Hospital La María con el selector de sede separando
+correctamente los números de tráfico (Castilla: 1015/915 llamadas, 90.1% —
+Sede 33: 265/165, 62.3%, nunca mezclados), pantalla de Control de Cargas
+reflejando la cobertura real, y confirmación de que un usuario
+`CLIENTES_DASH` sin el permiso "Cargar Datos" no ve el menú administrativo
+pero sí ve el tráfico de ambas sedes en su propio dashboard. Capturas en
+`docs/capturas-demo/` (`hlm-dashboard-consolidado.png`,
+`hlm-trafico-sede-castilla.png`, `hlm-trafico-sede-33.png`,
+`control-cargas-por-periodo.png`, `viewer-sin-menu-cargar-datos.png`,
+`viewer-hlm-trafico-ambas-sedes.png`).

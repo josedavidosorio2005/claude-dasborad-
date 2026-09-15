@@ -167,6 +167,7 @@ function toNivelServicioRow(row) {
     id: row.id,
     campana: row.campana,
     mes: row.mes,
+    sede: row.sede,
     contestadas20s: row.contestadas20s,
     llamadasTotales: row.llamadasTotales,
     pct,
@@ -1157,8 +1158,12 @@ function createApp() {
       }
       const b = req.body;
       const now = nowStr();
+      // sede IS NULL: esta pantalla manual nunca la pide, y con la
+      // consolidacion HOSPITAL LA MARIA (2026-09-15) puede haber filas de
+      // esta MISMA campana/mes con sede != NULL (trafico Volvox) que nunca
+      // deben tocarse desde aqui.
       const existing = db
-        .prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?')
+        .prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ? AND sede IS NULL')
         .get(b.campana, b.mes);
       if (existing) {
         db.prepare(
@@ -1217,25 +1222,23 @@ function createApp() {
       if (contestadas20s > llamadasTotales) {
         return res.status(400).json({ error: 'Las llamadas contestadas no pueden superar el total' });
       }
-      try {
-        db.prepare(
-          'UPDATE calidad_nivel_servicio SET campana=?, mes=?, contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
-        ).run(
-          b.campana ?? row.campana,
-          b.mes ?? row.mes,
-          contestadas20s,
-          llamadasTotales,
-          nowStr(),
-          row.id
-        );
-      } catch (e) {
-        // Ya existe otro registro para esa (campana, mes) -> conflicto amigable,
-        // no un 500 generico (UNIQUE(campana, mes) en calidad_nivel_servicio).
-        if (e && e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-          return res.status(409).json({ error: 'Ya existe un registro de nivel de servicio para esa campana y mes' });
-        }
-        throw e;
+      const campanaNueva = b.campana ?? row.campana;
+      const mesNuevo = b.mes ?? row.mes;
+      // Chequeo explicito en vez de confiar en el UNIQUE de la tabla: desde
+      // la consolidacion HOSPITAL LA MARIA (2026-09-15) esa UNIQUE es
+      // (campana, mes, sede), y SQL trata 2 NULL de `sede` como NO iguales
+      // (nunca chocan) — esta pantalla manual siempre opera con sede=NULL,
+      // asi que el duplicado hay que detectarlo a mano, no dejarselo a la
+      // constraint (que ya no lo atraparia).
+      const otro = db
+        .prepare('SELECT id FROM calidad_nivel_servicio WHERE campana = ? AND mes = ? AND sede IS NULL AND id != ?')
+        .get(campanaNueva, mesNuevo, row.id);
+      if (otro) {
+        return res.status(409).json({ error: 'Ya existe un registro de nivel de servicio para esa campana y mes' });
       }
+      db.prepare(
+        'UPDATE calidad_nivel_servicio SET campana=?, mes=?, contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?'
+      ).run(campanaNueva, mesNuevo, contestadas20s, llamadasTotales, nowStr(), row.id);
       const updated = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(row.id);
       logCalEvent('NIVEL_SERVICIO_EDIT', '-', updated.campana, req.actor, `${updated.mes}`);
       res.json(toNivelServicioRow(updated));
@@ -1298,11 +1301,23 @@ function createApp() {
   // ══════════════════════════════════════════════════════════
   // TRAFICO DE LLAMADAS — export real de Volvox (hoja DATA)
   // ══════════════════════════════════════════════════════════
+  // Puntos 11/12 del pedido de Edwin: cargar/eliminar/actualizar bases (y
+  // ver el control de cargas de mas abajo) SOLO desde la seccion
+  // administrativa, nunca accesible a un usuario normal de dashboard.
+  // Decision explicita (auditoria 2026-09-15): se usa canLoadData(), el
+  // MISMO permiso "Cargar Datos" que ya gobierna el resto de esta seccion
+  // (dashboard_cargas, nivel de servicio manual) — no isFullAdmin() a
+  // secas, que hubiera excluido a un AUX_ADMIN con ese permiso otorgado
+  // explicitamente por un administrador (el escenario que Edwin describe:
+  // "Admin/AUX_ADMIN o el rol equivalente de supervisor"). Sigue siendo
+  // imposible para cualquier rol CLIENTES_DASH/CALIDAD/SUPERVISOR sin ese
+  // permiso otorgado a mano.
   function toTraficoDiarioRow(row) {
     return {
       fecha: row.fecha,
       skillName: row.skillName,
       campana: row.campana,
+      sede: row.sede,
       totalLlamadas: row.totalLlamadas,
       contestadas: row.contestadas,
       llamadasAbandonadas: row.llamadasAbandonadas,
@@ -1350,8 +1365,8 @@ function createApp() {
     requireActor,
     validate(schemas.traficoCargaBody),
     wrap((req, res) => {
-      if (!isFullAdmin(req.actor)) {
-        return res.status(403).json({ error: 'Solo el administrador puede cargar el trafico de llamadas' });
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de llamadas' });
       }
       const b = req.body;
       const resultado = traficoSkills.cargarTrafico(db, {
@@ -1376,8 +1391,8 @@ function createApp() {
     '/calidad/trafico/skills',
     requireActor,
     wrap((req, res) => {
-      if (!isFullAdmin(req.actor)) {
-        return res.status(403).json({ error: 'Solo el administrador puede ver el mapeo de skills' });
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para ver el mapeo de skills' });
       }
       res.json(traficoSkills.listarSkills(db));
     })
@@ -1388,11 +1403,11 @@ function createApp() {
     requireActor,
     validate(schemas.traficoSkillMapeoBody),
     wrap((req, res) => {
-      if (!isFullAdmin(req.actor)) {
-        return res.status(403).json({ error: 'Solo el administrador puede editar el mapeo de skills' });
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para editar el mapeo de skills' });
       }
       const skillName = req.params.skillName;
-      const resultado = traficoSkills.remapearSkill(db, { skillName, campana: req.body.campana });
+      const resultado = traficoSkills.remapearSkill(db, { skillName, campana: req.body.campana, sede: req.body.sede || null });
       logEvent(
         'TRAFICO_SKILL_MAPEO',
         { nombre: skillName, user: '-', rol: req.body.campana || '(sin asignar)' },
@@ -1400,6 +1415,74 @@ function createApp() {
         `${resultado.movidas} fila(s) reatribuidas, ${resultado.mesesRecalculados.length} mes(es) recalculado(s)`
       );
       res.json({ ok: true, ...resultado });
+    })
+  );
+
+  // ── Control de cargas por periodo (punto 11/12 + seccion 3 del pedido de
+  // Edwin) — solo administrativo, nunca visible para un dashboard normal.
+  // Cobertura: reutiliza las fechas YA guardadas en calidad_nivel_servicio_diario
+  // (nunca una tabla de "estado" aparte que haya que mantener sincronizada a
+  // mano) para armar, por skill, que meses ya tienen base cargada.
+  api.get(
+    '/calidad/trafico/cobertura',
+    requireActor,
+    wrap((req, res) => {
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para ver el control de cargas' });
+      }
+      const filas = db
+        .prepare(
+          `SELECT skillName, campana, sede, substr(fecha,1,7) AS mes, COUNT(*) AS filas,
+                  MAX(archivoNombre) AS archivoNombre, MAX(cargadoPorNombre) AS cargadoPorNombre
+           FROM calidad_nivel_servicio_diario
+           GROUP BY skillName, campana, sede, mes
+           ORDER BY skillName, mes`
+        )
+        .all();
+      const porSkill = new Map();
+      filas.forEach((f) => {
+        if (!porSkill.has(f.skillName)) {
+          porSkill.set(f.skillName, { skillName: f.skillName, campana: f.campana, sede: f.sede, meses: [] });
+        }
+        porSkill.get(f.skillName).meses.push({
+          mes: f.mes,
+          filas: f.filas,
+          archivoNombre: f.archivoNombre,
+          cargadoPorNombre: f.cargadoPorNombre,
+        });
+      });
+      res.json([...porSkill.values()]);
+    })
+  );
+
+  // Impacto de una carga ANTES de guardarla (no escribe nada): cuenta, por
+  // (skillName, mes) presentes en el archivo ya parseado en el navegador,
+  // cuantas filas YA EXISTEN hoy y se reemplazarian. El frontend usa esto
+  // para pedir confirmacion explicita antes de sobrescribir un mes ya
+  // cargado ("esto va a reemplazar N registros de [mes] de [skill]").
+  api.post(
+    '/calidad/trafico/carga/impacto',
+    requireActor,
+    validate(schemas.traficoCargaBody),
+    wrap((req, res) => {
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+      }
+      const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas }
+      req.body.filas.forEach((f) => {
+        const mes = f.fecha.slice(0, 7);
+        const clave = f.skillName + '|' + mes;
+        if (!pares.has(clave)) pares.set(clave, { skillName: f.skillName, mes, filasNuevas: 0 });
+        pares.get(clave).filasNuevas++;
+      });
+      const stmt = db.prepare(
+        'SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario WHERE skillName = ? AND substr(fecha,1,7) = ?'
+      );
+      const resultado = [...pares.values()].map((p) => ({
+        ...p,
+        filasExistentes: stmt.get(p.skillName, p.mes).n,
+      }));
+      res.json(resultado);
     })
   );
 

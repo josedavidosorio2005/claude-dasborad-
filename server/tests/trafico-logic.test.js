@@ -169,6 +169,24 @@ test('filas invalidas se descartan con un aviso explicando por que (fecha vacia,
   assert.match(res.avisos[2], /SKILL_NAME vacio/);
 });
 
+// ── Point 10 del pedido de Edwin: nunca confiar en una fila TOTAL/resumen ──
+test('fila TOTAL/resumen de la base (SKILL_NAME="TOTAL", con fecha valida) se descarta con aviso, no se suma como si fuera una linea real', () => {
+  const aoa = [
+    ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS'],
+    ['SKILL X', '2026-01-01', 100, 90],
+    ['TOTAL', '2026-01-01', 100, 90], // fila resumen con fecha VALIDA: el riesgo real
+    ['Totales', '2026-01-02', 50, 40],
+    ['TOTAL GENERAL', '2026-01-03', 999, 999],
+    ['Gran Total', '2026-01-04', 999, 999],
+    ['SKILL TOTALIZADORA', '2026-01-05', 20, 15], // nombre real que solo CONTIENE "total": no se debe descartar
+  ];
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.deepEqual(res.skills.sort(), ['SKILL TOTALIZADORA', 'SKILL X']);
+  assert.equal(res.filas.length, 2);
+  assert.equal(res.avisos.filter((a) => /TOTAL\/resumen/.test(a)).length, 4);
+});
+
 // ── Agregacion: el requisito mas delicado — nunca promediar los % diarios ──
 test('agregacion: nivel de atencion mensual = contestadas del mes / total del mes (NO el promedio de los % diarios)', () => {
   // Dia 1: 100 llamadas, 50 contestadas -> 50%. Dia 2: 10 llamadas, 10 contestadas -> 100%.
@@ -237,6 +255,19 @@ test('filtro por skill y por rango de fechas (previo a agregar)', () => {
   const rango = traficoFiltrarFilas(filas, { desde: '2026-01-10', hasta: '2026-01-31' });
   assert.equal(rango.length, 1);
   assert.equal(rango[0].skillName, 'B');
+});
+
+test('filtro por sede (consolidacion HOSPITAL LA MARIA): solo deja las filas de la sede pedida', () => {
+  const filas = [
+    { fecha: '2026-01-01', skillName: 'A', sede: 'CASTILLA', totalLlamadas: 10, contestadas: 9 },
+    { fecha: '2026-01-01', skillName: 'B', sede: 'SEDE33', totalLlamadas: 20, contestadas: 18 },
+  ];
+  const castilla = traficoFiltrarFilas(filas, { sede: 'CASTILLA' });
+  assert.equal(castilla.length, 1);
+  assert.equal(castilla[0].skillName, 'A');
+
+  const sinFiltro = traficoFiltrarFilas(filas, {});
+  assert.equal(sinFiltro.length, 2, 'sin sede en opts, no filtra por sede (campanas de una sola sede)');
 });
 
 test('fixture EJEMPLO_FILTROS.xlsx (aportado con la hoja GRAFICA de referencia): agregado combinado por periodo unico', () => {

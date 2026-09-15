@@ -153,7 +153,7 @@ test('un archivo con varias skills mapeadas a campanas distintas se reparte corr
   assert.ok(aurora.body.some((r) => r.skillName === skillB));
 });
 
-test('Hospital La Maria: dos skills mapeados a dos sedes distintas no se mezclan', async () => {
+test('Hospital La Maria: dos skills mapeadas a la MISMA campana con sedes distintas no se mezclan (consolidacion 2026-09-15)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const skillCastilla = 'SKILL HLM CASTILLA ' + Math.random().toString(36).slice(2, 6);
   const skillSede33 = 'SKILL HLM SEDE33 ' + Math.random().toString(36).slice(2, 6);
@@ -161,11 +161,11 @@ test('Hospital La Maria: dos skills mapeados a dos sedes distintas no se mezclan
   await request(app)
     .put('/api/calidad/trafico/skills/' + encodeURIComponent(skillCastilla))
     .set(auth(admin))
-    .send({ campana: 'HOSPITAL LA MARIA CASTILLA' });
+    .send({ campana: 'HOSPITAL LA MARIA', sede: 'CASTILLA' });
   await request(app)
     .put('/api/calidad/trafico/skills/' + encodeURIComponent(skillSede33))
     .set(auth(admin))
-    .send({ campana: 'HOSPITAL LA MARIA SEDE33' });
+    .send({ campana: 'HOSPITAL LA MARIA', sede: 'SEDE33' });
 
   const res = await request(app)
     .post('/api/calidad/trafico/carga')
@@ -177,21 +177,28 @@ test('Hospital La Maria: dos skills mapeados a dos sedes distintas no se mezclan
       ],
     });
   assert.equal(res.status, 201, JSON.stringify(res.body));
-  assert.deepEqual(res.body.campanas.sort(), ['HOSPITAL LA MARIA CASTILLA', 'HOSPITAL LA MARIA SEDE33']);
+  // UNA sola campana ahora (no 2 campanas falsas): ambas skills caen bajo "HOSPITAL LA MARIA".
+  assert.deepEqual(res.body.campanas, ['HOSPITAL LA MARIA']);
 
-  const castilla = await request(app)
-    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA CASTILLA'))
-    .set(auth(admin));
-  const sede33 = await request(app)
-    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA SEDE33'))
-    .set(auth(admin));
-  assert.ok(castilla.body.some((r) => r.skillName === skillCastilla && r.totalLlamadas === 50));
-  assert.equal(castilla.body.some((r) => r.skillName === skillSede33), false); // no se mezcla con la otra sede
-  assert.ok(sede33.body.some((r) => r.skillName === skillSede33 && r.totalLlamadas === 30));
-  assert.equal(sede33.body.some((r) => r.skillName === skillCastilla), false);
+  const todas = await request(app).get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
+  const filaCastilla = todas.body.find((r) => r.skillName === skillCastilla);
+  const filaSede33 = todas.body.find((r) => r.skillName === skillSede33);
+  assert.equal(filaCastilla.sede, 'CASTILLA');
+  assert.equal(filaCastilla.totalLlamadas, 50);
+  assert.equal(filaSede33.sede, 'SEDE33');
+  assert.equal(filaSede33.totalLlamadas, 30);
+
+  // El mensual de cada sede queda separado (nunca sumado con la otra sede).
+  const mensual = await request(app).get('/api/calidad/nivel-servicio?campana=' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
+  const agosto = mensual.body.filter((m) => m.mes === '2026-08');
+  assert.equal(agosto.length, 2, 'deben quedar 2 filas mensuales separadas (una por sede), no 1 sumada');
+  const mesCastilla = agosto.find((m) => m.sede === 'CASTILLA');
+  const mesSede33 = agosto.find((m) => m.sede === 'SEDE33');
+  assert.ok(mesCastilla.llamadasTotales >= 50 && mesCastilla.llamadasTotales < 80, 'no debe incluir las llamadas de la otra sede');
+  assert.ok(mesSede33.llamadasTotales >= 30 && mesSede33.llamadasTotales < 80, 'no debe incluir las llamadas de la otra sede');
 });
 
-test('Hospital La Maria: acceso al dashboard base (cliente_HOSPITAL LA MARIA) alcanza para ver el trafico de cualquier sede', async () => {
+test('Hospital La Maria: acceso al dashboard base (cliente_HOSPITAL LA MARIA) alcanza para ver el trafico de ambas sedes (decision de permisos documentada en auth.js)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const create = await request(app)
     .post('/api/users')
@@ -206,18 +213,44 @@ test('Hospital La Maria: acceso al dashboard base (cliente_HOSPITAL LA MARIA) al
   assert.equal(create.status, 201, JSON.stringify(create.body));
   const token = await tokenFor(create.body.user, 'ClaveTrafico123');
 
-  const castilla = await request(app)
-    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA CASTILLA'))
+  const res = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA'))
     .set(auth(token));
-  assert.equal(castilla.status, 200, JSON.stringify(castilla.body));
-  const sede33 = await request(app)
-    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA SEDE33'))
-    .set(auth(token));
-  assert.equal(sede33.status, 200, JSON.stringify(sede33.body));
+  assert.equal(res.status, 200, JSON.stringify(res.body));
 
   // Pero NO le da acceso a otra campana cualquiera que no sea HLM.
   const otra = await request(app).get('/api/calidad/nivel-servicio/diario?campana=ORLANT').set(auth(token));
   assert.equal(otra.status, 403);
+});
+
+test('remapear una skill de una sede a otra mueve solo sus filas y recalcula el mensual de ambas sedes', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL HLM REMAP SEDE ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app).put('/api/calidad/trafico/skills/' + encodeURIComponent(skill)).set(auth(admin)).send({ campana: 'HOSPITAL LA MARIA', sede: 'CASTILLA' });
+  const carga = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-09-01', totalLlamadas: 40, contestadas: 35 })] });
+  assert.equal(carga.status, 201);
+
+  const map = await request(app)
+    .put('/api/calidad/trafico/skills/' + encodeURIComponent(skill))
+    .set(auth(admin))
+    .send({ campana: 'HOSPITAL LA MARIA', sede: 'SEDE33' });
+  assert.equal(map.status, 200, JSON.stringify(map.body));
+  assert.equal(map.body.movidas, 1);
+
+  const todas = await request(app).get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
+  const fila1 = todas.body.find((r) => r.skillName === skill);
+  assert.equal(fila1.sede, 'SEDE33', 'debe haberse movido a la sede nueva');
+
+  const mensual = await request(app).get('/api/calidad/nivel-servicio?campana=' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
+  const septiembre = mensual.body.filter((m) => m.mes === '2026-09');
+  const mesCastilla = septiembre.find((m) => m.sede === 'CASTILLA');
+  const mesSede33 = septiembre.find((m) => m.sede === 'SEDE33');
+  assert.ok(!mesCastilla || mesCastilla.llamadasTotales === 0, 'CASTILLA ya no debe tener esas llamadas');
+  assert.ok(mesSede33 && mesSede33.llamadasTotales >= 40, 'SEDE33 debe haber ganado esas llamadas');
 });
 
 test('GET /calidad/nivel-servicio/diario respeta el acceso por campana', async () => {
@@ -247,6 +280,126 @@ test('validacion: contestadas > totalLlamadas -> 400', async () => {
     .set(auth(admin))
     .send({ filas: [fila({ totalLlamadas: 50, contestadas: 60 })] });
   assert.equal(res.status, 400);
+});
+
+// ── Point 1 del pedido de Edwin: plantilla invalida -> error claro, sin ──
+// ── afectar los datos ya cargados (fin a fin, no solo la validacion suelta) ──
+test('point 1: un archivo con estructura invalida es rechazado y la carga anterior sigue intacta', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL POINT1 ' + Math.random().toString(36).slice(2, 6);
+
+  // Carga valida primero.
+  const buena = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-01', totalLlamadas: 77, contestadas: 70 })] });
+  assert.equal(buena.status, 201, JSON.stringify(buena.body));
+
+  // "Archivo roto": una fila sin SKILL_NAME (lo que produciria traficoParseFilas
+  // si el navegador mandara algo mal formado, o si alguien pega el body a mano) —
+  // el servidor debe rechazar TODO el request con 400 (zod), sin escribir nada.
+  const rota = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [{ fecha: '2026-10-02', totalLlamadas: 999, contestadas: 999 }] });
+  assert.equal(rota.status, 400);
+
+  // Los datos de la carga buena, intactos: mismos numeros, sin fila nueva del intento roto.
+  const rows = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
+    .set(auth(admin));
+  const filasSkill = rows.body.filter((r) => r.skillName === skill);
+  assert.equal(filasSkill.length, 1, 'la carga rota no debe haber agregado ni tocado filas de esta skill');
+  assert.equal(filasSkill[0].totalLlamadas, 77, 'el dato de la carga buena no debe cambiar');
+  assert.equal(rows.body.some((r) => r.fecha === '2026-10-02'), false, 'ninguna fila del intento roto debe existir');
+});
+
+// ── Control de cargas por periodo (seccion 3 del pedido de Edwin) ──
+test('GET /calidad/trafico/cobertura: refleja los meses ya cargados por skill, reutilizando las fechas existentes', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL COBERTURA ' + Math.random().toString(36).slice(2, 6);
+  await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-11-01', totalLlamadas: 10, contestadas: 9 }),
+        fila({ skillName: skill, fecha: '2026-12-01', totalLlamadas: 20, contestadas: 18 }),
+      ],
+    });
+
+  const cobertura = await request(app).get('/api/calidad/trafico/cobertura').set(auth(admin));
+  assert.equal(cobertura.status, 200);
+  const fila1 = cobertura.body.find((r) => r.skillName === skill);
+  assert.ok(fila1, 'la skill debe aparecer en la cobertura');
+  assert.deepEqual(fila1.meses.map((m) => m.mes).sort(), ['2026-11', '2026-12']);
+});
+
+test('POST /calidad/trafico/carga/impacto: cuenta cuantas filas se reemplazarian SIN escribir nada', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL IMPACTO ' + Math.random().toString(36).slice(2, 6);
+  await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-10', totalLlamadas: 5, contestadas: 5 })] });
+
+  const impacto = await request(app)
+    .post('/api/calidad/trafico/carga/impacto')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-10', totalLlamadas: 999, contestadas: 999 })] });
+  assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
+  const par = impacto.body.find((p) => p.skillName === skill);
+  assert.ok(par, JSON.stringify(impacto.body));
+  assert.equal(par.filasExistentes, 1);
+  assert.equal(par.mes, '2026-10');
+
+  // No debe haber escrito nada: el valor guardado sigue siendo el original (5), no 999.
+  const rows = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
+    .set(auth(admin));
+  const filaSkill = rows.body.find((r) => r.skillName === skill);
+  assert.equal(filaSkill.totalLlamadas, 5, '/carga/impacto no debe escribir nada en la base');
+});
+
+test('canLoadData (no solo isFullAdmin) alcanza para las rutas de trafico: un AUX_ADMIN con el permiso cargarDatos puede cargar y ver cobertura', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const create = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send({
+      nombre: 'Aux con carga',
+      user: 'aux_carga_' + Math.random().toString(36).slice(2, 7),
+      password: 'ClaveTrafico123',
+      rol: 'AUX_ADMIN',
+      perms: { cargarDatos: true },
+    });
+  assert.equal(create.status, 201, JSON.stringify(create.body));
+  const token = await tokenFor(create.body.user, 'ClaveTrafico123');
+
+  const skill = 'SKILL AUX ADMIN ' + Math.random().toString(36).slice(2, 6);
+  const carga = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(token))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-15' })] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+
+  const cobertura = await request(app).get('/api/calidad/trafico/cobertura').set(auth(token));
+  assert.equal(cobertura.status, 200);
+
+  // Pero un AUX_ADMIN SIN ese permiso sigue sin poder.
+  const create2 = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send({
+      nombre: 'Aux sin carga',
+      user: 'aux_sincarga_' + Math.random().toString(36).slice(2, 7),
+      password: 'ClaveTrafico123',
+      rol: 'AUX_ADMIN',
+      perms: {},
+    });
+  const token2 = await tokenFor(create2.body.user, 'ClaveTrafico123');
+  const bloqueado = await request(app).get('/api/calidad/trafico/cobertura').set(auth(token2));
+  assert.equal(bloqueado.status, 403);
 });
 
 test('las columnas opcionales ausentes no llegan como 0 sino como null', async () => {

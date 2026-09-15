@@ -637,6 +637,84 @@ runOnceMigration('dashboards_config_trafico_hlm_v1', () => {
   }
 });
 
+// Consolidacion de HOSPITAL LA MARIA: pasa de "2 campanas falsas" (el atajo
+// que usaba el trafico Volvox: "HOSPITAL LA MARIA CASTILLA" / "...SEDE33"
+// como si fueran campanas distintas) a UNA sola campana ("HOSPITAL LA
+// MARIA") con `sede` como atributo de cada fila — el mismo patron que YA
+// usaba dashboards_config.vista para los datos operativos (sede='CASTILLA'
+// o 'SEDE33', los mismos codigos que sus opciones de vista). Pedido
+// explicito de Edwin: nunca perder historico, solo re-etiquetar.
+//
+// calidad_nivel_servicio (mensual) tenia UNIQUE(campana, mes): con las 2
+// sedes compartiendo ahora una sola campana, esa unicidad debe incluir sede
+// o un mes con datos de ambas sedes chocaria (o peor, se pisarian entre si,
+// ver recalcularMensual en nivel-servicio-diario.js). SQLite no permite
+// ALTER TABLE para cambiar un UNIQUE existente, asi que la tabla se recrea
+// (patron estandar de SQLite: crear tabla nueva, copiar, borrar la vieja,
+// renombrar) ANTES de re-etiquetar filas, para que el retag de abajo nunca
+// choque contra la unicidad vieja.
+runOnceMigration('hlm_sede_consolidacion_v1', () => {
+  const HLM_SEDES = { 'HOSPITAL LA MARIA CASTILLA': 'CASTILLA', 'HOSPITAL LA MARIA SEDE33': 'SEDE33' };
+  const HLM = 'HOSPITAL LA MARIA';
+
+  const tx = db.transaction(() => {
+    // 1) monitoreos y trafico_skill_mapeo: agregar `sede` (nullable, sin
+    // choque de unicidad en ninguna de las dos) via ALTER TABLE simple.
+    const monitoreosCols = db.prepare("PRAGMA table_info(monitoreos)").all().map((c) => c.name);
+    if (!monitoreosCols.includes('sede')) {
+      db.exec('ALTER TABLE monitoreos ADD COLUMN sede TEXT');
+    }
+    const mapeoCols = db.prepare("PRAGMA table_info(trafico_skill_mapeo)").all().map((c) => c.name);
+    if (!mapeoCols.includes('sede')) {
+      db.exec('ALTER TABLE trafico_skill_mapeo ADD COLUMN sede TEXT');
+    }
+    const diarioCols = db.prepare("PRAGMA table_info(calidad_nivel_servicio_diario)").all().map((c) => c.name);
+    if (!diarioCols.includes('sede')) {
+      db.exec('ALTER TABLE calidad_nivel_servicio_diario ADD COLUMN sede TEXT');
+    }
+
+    // 2) calidad_nivel_servicio (mensual): recrear con sede + UNIQUE nueva.
+    const mensualCols = db.prepare("PRAGMA table_info(calidad_nivel_servicio)").all().map((c) => c.name);
+    if (!mensualCols.includes('sede')) {
+      db.exec(`
+        CREATE TABLE calidad_nivel_servicio_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          campana TEXT NOT NULL,
+          mes TEXT NOT NULL,
+          sede TEXT,
+          contestadas20s INTEGER NOT NULL DEFAULT 0,
+          llamadasTotales INTEGER NOT NULL DEFAULT 0,
+          createdAt TEXT NOT NULL,
+          updatedAt TEXT NOT NULL,
+          UNIQUE(campana, mes, sede)
+        );
+        INSERT INTO calidad_nivel_servicio_new
+          (id, campana, mes, sede, contestadas20s, llamadasTotales, createdAt, updatedAt)
+        SELECT id, campana, mes, NULL, contestadas20s, llamadasTotales, createdAt, updatedAt
+        FROM calidad_nivel_servicio;
+        DROP TABLE calidad_nivel_servicio;
+        ALTER TABLE calidad_nivel_servicio_new RENAME TO calidad_nivel_servicio;
+        CREATE INDEX IF NOT EXISTS idx_nivelservicio_campana_mes ON calidad_nivel_servicio(campana, mes);
+      `);
+    }
+
+    // 3) Re-etiquetar: las filas que hoy viven bajo las 2 campanas falsas
+    // pasan a campana='HOSPITAL LA MARIA' + su sede real. Mismos puntajes/
+    // numeros, solo cambia donde vive el dato de "cual sede es" — de la
+    // columna campana a la columna sede.
+    for (const [campanaVieja, sede] of Object.entries(HLM_SEDES)) {
+      db.prepare('UPDATE calidad_nivel_servicio_diario SET campana = ?, sede = ? WHERE campana = ?').run(HLM, sede, campanaVieja);
+      db.prepare('UPDATE calidad_nivel_servicio SET campana = ?, sede = ? WHERE campana = ?').run(HLM, sede, campanaVieja);
+      db.prepare('UPDATE trafico_skill_mapeo SET campana = ?, sede = ? WHERE campana = ?').run(HLM, sede, campanaVieja);
+    }
+  });
+  tx();
+
+  if (!config.isTest) {
+    console.log('[db] Migracion hlm_sede_consolidacion_v1 aplicada.');
+  }
+});
+
 // Semilla de umbrales de semaforo por defecto (campana='' = global), para que
 // el sistema no quede sin color mientras nadie los configura desde el panel.
 // Valores iniciales razonables, documentados uno por uno (ajustables sin

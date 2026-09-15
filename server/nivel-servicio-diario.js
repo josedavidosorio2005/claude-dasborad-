@@ -14,29 +14,35 @@ function nowStr() {
 // Upsertea las filas diarias de (campana, fecha, skillName) y recalcula el
 // agregado mensual de calidad_nivel_servicio para cada mes afectado, a partir
 // de TODAS las filas diarias de ese mes (no solo las de esta llamada).
-// Devuelve { diario: { insertadas }, mensual: [ {id,campana,mes,contestadas20s,llamadasTotales,createdAt,updatedAt}, ... ] }
+// `sede` es opcional (solo lo usan campanas con mas de una sede, ej.
+// HOSPITAL LA MARIA — ver docs/ARQUITECTURA.md): se guarda como atributo de
+// cada fila diaria y se propaga al agregado mensual, que se recalcula
+// SIEMPRE filtrando tambien por sede — nunca sumando 2 sedes de la misma
+// campana en un mismo agregado (ver recalcularMensual mas abajo).
+// Devuelve { diario: { insertadas }, mensual: [ {id,campana,mes,sede,contestadas20s,llamadasTotales,createdAt,updatedAt}, ... ] }
 // (filas crudas de calidad_nivel_servicio, sin el pct/cumple derivado — eso lo
 // agrega el caller con calidad-logic si lo necesita, igual que toNivelServicioRow).
-function cargarNivelServicioDiario(db, { campana, archivoNombre, cargadoPorNombre, filas, now }) {
+function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPorNombre, filas, now }) {
   const ts = now || nowStr();
+  sede = sede || null;
 
   const selectDiario = db.prepare(
     'SELECT id FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha = ? AND skillName = ?'
   );
   const insertDiario = db.prepare(
     `INSERT INTO calidad_nivel_servicio_diario
-       (campana, fecha, skillName, totalLlamadas, contestadas, serviceLevel20secPct,
+       (campana, fecha, skillName, sede, totalLlamadas, contestadas, serviceLevel20secPct,
         contestadas20sEstimado, llamadasAbandonadas, serviceLevel10secPct, serviceLevel30secPct,
         abandonPct, nivelAtencionPct, tasaAbandonoPct, asaSegundos, ataSegundos, ahtSegundos,
         waitTimeSegundos, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana,@fecha,@skillName,@totalLlamadas,@contestadas,@serviceLevel20secPct,
+     VALUES (@campana,@fecha,@skillName,@sede,@totalLlamadas,@contestadas,@serviceLevel20secPct,
              @contestadas20sEstimado,@llamadasAbandonadas,@serviceLevel10secPct,@serviceLevel30secPct,
              @abandonPct,@nivelAtencionPct,@tasaAbandonoPct,@asaSegundos,@ataSegundos,@ahtSegundos,
              @waitTimeSegundos,@archivoNombre,@cargadoPorNombre,@createdAt)`
   );
   const updateDiario = db.prepare(
     `UPDATE calidad_nivel_servicio_diario SET
-       totalLlamadas=@totalLlamadas, contestadas=@contestadas,
+       sede=@sede, totalLlamadas=@totalLlamadas, contestadas=@contestadas,
        serviceLevel20secPct=@serviceLevel20secPct, contestadas20sEstimado=@contestadas20sEstimado,
        llamadasAbandonadas=@llamadasAbandonadas, serviceLevel10secPct=@serviceLevel10secPct,
        serviceLevel30secPct=@serviceLevel30secPct, abandonPct=@abandonPct,
@@ -63,6 +69,7 @@ function cargarNivelServicioDiario(db, { campana, archivoNombre, cargadoPorNombr
         campana,
         fecha: f.fecha,
         skillName: f.skillName,
+        sede,
         totalLlamadas: f.totalLlamadas,
         contestadas: f.contestadas,
         serviceLevel20secPct: pct,
@@ -96,7 +103,7 @@ function cargarNivelServicioDiario(db, { campana, archivoNombre, cargadoPorNombr
 
   const mensualActualizados = [];
   for (const mes of mesesAfectados) {
-    mensualActualizados.push(recalcularMensual(db, campana, mes, ts));
+    mensualActualizados.push(recalcularMensual(db, campana, mes, ts, sede));
   }
   mensualActualizados.sort((a, b) => a.mes.localeCompare(b.mes));
 
@@ -106,28 +113,34 @@ function cargarNivelServicioDiario(db, { campana, archivoNombre, cargadoPorNombr
   };
 }
 
-// Recalcula el agregado mensual de UNA (campana, mes) a partir de TODAS las
-// filas diarias que existan hoy para esa campana/mes en
+// Recalcula el agregado mensual de UNA (campana, mes, sede) a partir de
+// TODAS las filas diarias que existan hoy para esa combinacion en
 // calidad_nivel_servicio_diario. Es el nucleo que reutilizan tanto
 // cargarNivelServicioDiario (arriba, para los meses que toco esta carga)
-// como server/trafico-skills.js (para recalcular una campana VIEJA y una
-// NUEVA cuando se remapea una skill sin volver a subir el archivo) — una
-// sola forma de sumarlo, nunca dos. Devuelve la fila cruda de
-// calidad_nivel_servicio (o null si esa campana/mes ya no tiene filas y
-// nunca existio un agregado previo).
-function recalcularMensual(db, campana, mes, now) {
+// como server/trafico-skills.js (para recalcular una campana/sede VIEJA y
+// una NUEVA cuando se remapea una skill sin volver a subir el archivo) — una
+// sola forma de sumarlo, nunca dos. `sede` es NULL para toda campana sin
+// sedes (la inmensa mayoria); CRITICO: siempre se filtra tambien por sede
+// (IS NULL o el valor exacto) para que 2 sedes de una misma campana (ej.
+// HOSPITAL LA MARIA) nunca se sumen en un mismo agregado mensual ni se
+// pisen entre si. Devuelve la fila cruda de calidad_nivel_servicio (o null
+// si esa combinacion ya no tiene filas y nunca existio un agregado previo).
+function recalcularMensual(db, campana, mes, now, sede) {
   const ts = now || nowStr();
+  sede = sede || null;
   const filasMes = db
     .prepare(
-      'SELECT totalLlamadas, contestadas20sEstimado FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = ?'
+      'SELECT totalLlamadas, contestadas20sEstimado FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = ? AND sede IS ?'
     )
-    .all(campana, mes);
+    .all(campana, mes, sede);
   const llamadasTotalesMes = filasMes.reduce((a, r) => a + (r.totalLlamadas || 0), 0);
   const contestadas20sMes = filasMes.reduce(
     (a, r) => a + (r.contestadas20sEstimado === null || r.contestadas20sEstimado === undefined ? 0 : r.contestadas20sEstimado),
     0
   );
-  const existingMes = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?').get(campana, mes);
+  const existingMes = db
+    .prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ? AND sede IS ?')
+    .get(campana, mes, sede);
   if (existingMes) {
     db.prepare('UPDATE calidad_nivel_servicio SET contestadas20s=?, llamadasTotales=?, updatedAt=? WHERE id=?').run(
       contestadas20sMes,
@@ -137,13 +150,13 @@ function recalcularMensual(db, campana, mes, now) {
     );
   } else if (filasMes.length) {
     db.prepare(
-      `INSERT INTO calidad_nivel_servicio (campana, mes, contestadas20s, llamadasTotales, createdAt, updatedAt)
-       VALUES (?,?,?,?,?,?)`
-    ).run(campana, mes, contestadas20sMes, llamadasTotalesMes, ts, ts);
+      `INSERT INTO calidad_nivel_servicio (campana, mes, sede, contestadas20s, llamadasTotales, createdAt, updatedAt)
+       VALUES (?,?,?,?,?,?,?)`
+    ).run(campana, mes, sede, contestadas20sMes, llamadasTotalesMes, ts, ts);
   } else {
     return null; // nada que recalcular ni antes ni ahora
   }
-  return db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?').get(campana, mes);
+  return db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ? AND sede IS ?').get(campana, mes, sede);
 }
 
 module.exports = { cargarNivelServicioDiario, recalcularMensual };
