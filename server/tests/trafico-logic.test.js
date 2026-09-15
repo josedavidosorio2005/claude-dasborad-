@@ -19,6 +19,7 @@ const {
   traficoNumero,
   traficoFiltrarFilas,
   traficoAgregar,
+  traficoVentana12Meses,
 } = require('../../public/js/trafico-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
@@ -255,6 +256,22 @@ test('filtro por skill y por rango de fechas (previo a agregar)', () => {
   const rango = traficoFiltrarFilas(filas, { desde: '2026-01-10', hasta: '2026-01-31' });
   assert.equal(rango.length, 1);
   assert.equal(rango[0].skillName, 'B');
+});
+
+test('traficoVentana12Meses: ventana movil de 12 meses calendario, nunca antes del primer dato real (pedido de Edwin, llamada 2026-09-15)', () => {
+  // Caso central del pedido: "cuando lleguemos a enero de 2027, se debe
+  // quitar enero de 2026" -> con el dato mas reciente en enero-2027, la
+  // ventana arranca en febrero-2026 (12 meses: feb-2026..ene-2027), enero-2026 queda afuera.
+  assert.equal(traficoVentana12Meses('2027-01-15', '2020-01-01'), '2026-02-01');
+  // Mas de 2 años de historia disponible: siempre se recorta a los ultimos 12 meses.
+  assert.equal(traficoVentana12Meses('2026-09-05', '2020-01-01'), '2025-10-01');
+  // Menos de 12 meses de historia real: nunca antes del primer dato (no inventa periodo vacio).
+  assert.equal(traficoVentana12Meses('2026-03-15', '2026-01-01'), '2026-01-01');
+  // Exactamente 12 meses de historia: la ventana coincide con el minimo disponible.
+  assert.equal(traficoVentana12Meses('2026-12-31', '2026-01-01'), '2026-01-01');
+  // Sin fecha maxima (sin datos): usa el minimo si lo hay, o null.
+  assert.equal(traficoVentana12Meses(null, '2026-01-01'), '2026-01-01');
+  assert.equal(traficoVentana12Meses(null, null), null);
 });
 
 test('filtro por sede (consolidacion HOSPITAL LA MARIA): solo deja las filas de la sede pedida', () => {

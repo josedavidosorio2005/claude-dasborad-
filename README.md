@@ -398,6 +398,14 @@ varias skills y varios meses a la vez, sin problema. Si vas a reemplazar un
 mes que ya tenía datos, el sistema te avisa cuántos registros se van a
 sobrescribir antes de guardar, para que lo confirmes con conocimiento.
 
+**Si necesitas combinar datos de más de una fuente** (ej. una línea cuyo AHT
+sale de un reporte distinto al de Volvox): la plataforma **no** une archivos
+por ti — se unifican **a mano, en la misma plantilla**, antes de subir. Es
+decir, agrega esas filas dentro del mismo archivo `.xlsx` (mismas columnas
+`SKILL_NAME`/`DATE`/etc.) y sube un único archivo por mes/skill — nunca dos
+archivos separados para el mismo período, porque el segundo reemplazaría al
+primero en vez de sumarse.
+
 Cualquier fila de la base que parezca un resumen/cierre (`SKILL_NAME` =
 "TOTAL", "TOTALES", "TOTAL GENERAL", "GRAN TOTAL") se descarta automáticamente
 con un aviso — nunca se suma como si fuera una línea real.
