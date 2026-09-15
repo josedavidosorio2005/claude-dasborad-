@@ -50,20 +50,36 @@ function sha256(buf) {
       console.error('Login fallo. Mensaje del servidor:', loginError.trim());
       process.exit(1);
     }
+    const adminPageVisible = await page
+      .locator('#admin-page')
+      .evaluate((el) => getComputedStyle(el).display !== 'none')
+      .catch(() => false);
+    if (!adminPageVisible) {
+      console.error('Login no entro al panel admin (se esperaba rol AUX_ADMIN). URL actual:', page.url());
+      process.exit(1);
+    }
 
-    // El usuario temporal es rol CALIDAD (no admin): el item de menu "Metas
-    // Calidad" del sidebar esta gateado por ROL en session.js (solo ADMIN lo
-    // ve), pero el permiso REAL que importa (canLoadData, server-side) ya lo
-    // tiene este usuario — por eso se entra a la seccion directo en vez de
-    // depender de un link de menu pensado solo para administradores.
+    // El usuario temporal es rol AUX_ADMIN (nunca ADMIN): el item de menu
+    // "Metas Calidad" del sidebar esta gateado por rol EXACTO "ADMIN" en
+    // session.js (ni siquiera AUX_ADMIN lo ve ahi), pero el permiso REAL que
+    // importa (canLoadData, server-side) ya lo tiene este usuario, y con rol
+    // AUX_ADMIN SI entra al panel admin — por eso se entra a la seccion
+    // directo en vez de depender de ese link de menu.
     await page.evaluate(() => {
       if (typeof showSection === 'function') showSection('metas');
     });
     await page.waitForTimeout(1200);
 
+    const btnLocator = page.locator('button[onclick="descargarPlantillaTrafico()"]');
+    const btnVisible = await btnLocator.isVisible().catch(() => false);
+    if (!btnVisible) {
+      console.error('El boton "Descargar plantilla" no esta visible tras showSection("metas"). URL actual:', page.url());
+      process.exit(1);
+    }
+
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 15000 }),
-      page.click('button[onclick="descargarPlantillaTrafico()"]'),
+      btnLocator.click(),
     ]);
     const tmpPath = path.join(os.tmpdir(), 'plantilla-descargada-produccion.xlsx');
     await download.saveAs(tmpPath);
