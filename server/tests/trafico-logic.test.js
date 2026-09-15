@@ -22,6 +22,13 @@ const {
 } = require('../../public/js/trafico-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
+// Fixture adicional (misma estructura de DATA, adjuntado por el usuario):
+// trae ademas una hoja GRAFICA con una tabla dinamica hecha a mano en Excel,
+// como referencia de que filtros/metricas pedia la fase de "plantilla
+// universal" — nunca como fuente de calculo (ver el test de mas abajo, que
+// prueba justamente que el promedio simple de esa hoja es el calculo
+// incorrecto que este motor evita).
+const FIXTURE_FILTROS = path.join(__dirname, 'fixtures', 'EJEMPLO_FILTROS.xlsx');
 
 test('conversion: serial de Excel -> YYYY-MM-DD (aritmetica UTC, sin depender de la zona horaria)', () => {
   assert.equal(traficoFechaDesdeSerial(46266), '2026-09-01');
@@ -230,4 +237,34 @@ test('filtro por skill y por rango de fechas (previo a agregar)', () => {
   const rango = traficoFiltrarFilas(filas, { desde: '2026-01-10', hasta: '2026-01-31' });
   assert.equal(rango.length, 1);
   assert.equal(rango[0].skillName, 'B');
+});
+
+test('fixture EJEMPLO_FILTROS.xlsx (aportado con la hoja GRAFICA de referencia): agregado combinado por periodo unico', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_FILTROS, 'DATA');
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  // 12 filas de datos reales + 2 filas totalmente en blanco al final (rango
+  // de origen de la tabla dinamica de la hoja GRAFICA) que se ignoran sin
+  // aviso, igual que cualquier fila vacia de cualquier carga de este sistema.
+  assert.equal(res.filas.length, 12);
+
+  const agregado = traficoAgregar(res.filas, { granularidad: 'anio', combinar: true });
+  assert.equal(agregado.length, 1); // un solo skill, un solo mes -> un solo periodo agregado
+  const a = agregado[0];
+  assert.equal(a.totalLlamadas, 1867);
+  assert.equal(a.contestadas, 1847);
+  assert.equal(a.llamadasAbandonadas, 20);
+
+  // El calculo correcto (contestadas del periodo / total del periodo) NO es
+  // el mismo numero que el "Promedio de NIVEL DE ATENCION" que arma la
+  // tabla dinamica de Excel en la hoja GRAFICA de este mismo archivo
+  // (0.986431545189923 -> 98.64%, un promedio simple de los % diarios,
+  // exactamente el calculo incorrecto que este motor evita). El correcto:
+  assert.equal(a.nivelAtencionPct, 98.93);
+  assert.notEqual(a.nivelAtencionPct, 98.64);
+
+  // Mismo criterio para tasa de abandono: promedio simple de la hoja GRAFICA
+  // da 0.01356845481007698 -> 1.36%; el correcto (abandonadas/total) es:
+  assert.equal(a.tasaAbandonoPct, 1.07);
+  assert.notEqual(a.tasaAbandonoPct, 1.36);
 });

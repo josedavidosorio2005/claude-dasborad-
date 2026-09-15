@@ -153,6 +153,73 @@ test('un archivo con varias skills mapeadas a campanas distintas se reparte corr
   assert.ok(aurora.body.some((r) => r.skillName === skillB));
 });
 
+test('Hospital La Maria: dos skills mapeados a dos sedes distintas no se mezclan', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skillCastilla = 'SKILL HLM CASTILLA ' + Math.random().toString(36).slice(2, 6);
+  const skillSede33 = 'SKILL HLM SEDE33 ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app)
+    .put('/api/calidad/trafico/skills/' + encodeURIComponent(skillCastilla))
+    .set(auth(admin))
+    .send({ campana: 'HOSPITAL LA MARIA CASTILLA' });
+  await request(app)
+    .put('/api/calidad/trafico/skills/' + encodeURIComponent(skillSede33))
+    .set(auth(admin))
+    .send({ campana: 'HOSPITAL LA MARIA SEDE33' });
+
+  const res = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skillCastilla, fecha: '2026-08-05', totalLlamadas: 50, contestadas: 45 }),
+        fila({ skillName: skillSede33, fecha: '2026-08-05', totalLlamadas: 30, contestadas: 20 }),
+      ],
+    });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+  assert.deepEqual(res.body.campanas.sort(), ['HOSPITAL LA MARIA CASTILLA', 'HOSPITAL LA MARIA SEDE33']);
+
+  const castilla = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA CASTILLA'))
+    .set(auth(admin));
+  const sede33 = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA SEDE33'))
+    .set(auth(admin));
+  assert.ok(castilla.body.some((r) => r.skillName === skillCastilla && r.totalLlamadas === 50));
+  assert.equal(castilla.body.some((r) => r.skillName === skillSede33), false); // no se mezcla con la otra sede
+  assert.ok(sede33.body.some((r) => r.skillName === skillSede33 && r.totalLlamadas === 30));
+  assert.equal(sede33.body.some((r) => r.skillName === skillCastilla), false);
+});
+
+test('Hospital La Maria: acceso al dashboard base (cliente_HOSPITAL LA MARIA) alcanza para ver el trafico de cualquier sede', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const create = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send({
+      nombre: 'Viewer HLM',
+      user: 'hlm_viewer_' + Math.random().toString(36).slice(2, 7),
+      password: 'ClaveTrafico123',
+      rol: 'CLIENTES_DASH',
+      perms: { ClientesDash: true, ['cliente_HOSPITAL LA MARIA']: true },
+    });
+  assert.equal(create.status, 201, JSON.stringify(create.body));
+  const token = await tokenFor(create.body.user, 'ClaveTrafico123');
+
+  const castilla = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA CASTILLA'))
+    .set(auth(token));
+  assert.equal(castilla.status, 200, JSON.stringify(castilla.body));
+  const sede33 = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA SEDE33'))
+    .set(auth(token));
+  assert.equal(sede33.status, 200, JSON.stringify(sede33.body));
+
+  // Pero NO le da acceso a otra campana cualquiera que no sea HLM.
+  const otra = await request(app).get('/api/calidad/nivel-servicio/diario?campana=ORLANT').set(auth(token));
+  assert.equal(otra.status, 403);
+});
+
 test('GET /calidad/nivel-servicio/diario respeta el acceso por campana', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const create = await request(app)
