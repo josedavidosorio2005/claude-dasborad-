@@ -253,6 +253,15 @@ const HLM = {
         { tipo: 'pie', titulo: 'Flujo llamadas por entidad', fuente: { s: 'entidades', modo: 'filas', x: 'entidad', campo: 'cantidad', filtro: { canal: 'LLAMADA' } } },
         { tipo: 'pie', titulo: 'Flujo WhatsApp por entidad', fuente: { s: 'entidades', modo: 'filas', x: 'entidad', campo: 'cantidad', filtro: { canal: 'WPP' } } },
       ]},
+      // Sin "campana" fija: HLM tiene 2 sedes (vista arriba). El panel resuelve
+      // la campana de trafico en caliente como "<cliente> <vistaSel>" (ver
+      // _traficoRenderPanel en public/js/trafico.js) — por eso el mapeo de
+      // skills de Volvox debe apuntar cada skill a "HOSPITAL LA MARIA CASTILLA"
+      // o "HOSPITAL LA MARIA SEDE33" (nunca a "HOSPITAL LA MARIA" sola), para
+      // que cada sede vea solo su propio trafico. Ver docs/ARQUITECTURA.md.
+      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
+        { tipo: 'trafico_combo' },
+      ]},
     ],
   },
 };

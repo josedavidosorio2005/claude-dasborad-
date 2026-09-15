@@ -81,6 +81,32 @@ async function guardarTrafico(){
 // ═══════════════════════════════════════════════════════════
 // ADMIN — MAPEO DE SKILLS -> CAMPANA
 // ═══════════════════════════════════════════════════════════
+// Campanas con mas de una "vista" (sede/linea) en su dashboard: para el
+// mapeo de trafico se ofrecen las variantes "<campana> <valor>" en vez de
+// (o ademas de) la campana sola, porque el panel trafico_combo de esos
+// dashboards resuelve su campana en caliente como "<cliente> <vistaSel>"
+// (ver _traficoCampanaPanel arriba). Si se agrega otro dashboard con
+// "vista" que tambien necesite trafico por sede, se registra aqui.
+var TRAFICO_CAMPANAS_MULTISEDE = {
+  'HOSPITAL LA MARIA': [
+    { valor: 'HOSPITAL LA MARIA CASTILLA', label: 'HOSPITAL LA MARIA — Sede Castilla' },
+    { valor: 'HOSPITAL LA MARIA SEDE33', label: 'HOSPITAL LA MARIA — Sede 33' },
+  ],
+};
+
+function _traficoCampanasAsignables(){
+  var base = (typeof CAMPANAS_CALIDAD !== 'undefined') ? CAMPANAS_CALIDAD : [];
+  var out = [];
+  base.forEach(function(c){
+    if(TRAFICO_CAMPANAS_MULTISEDE[c]){
+      TRAFICO_CAMPANAS_MULTISEDE[c].forEach(function(v){ out.push(v); });
+    } else {
+      out.push({ valor: c, label: c });
+    }
+  });
+  return out;
+}
+
 async function renderTraficoSkills(){
   var tbody = document.getElementById('tv-skills-tbody');
   if(!tbody) return;
@@ -92,10 +118,10 @@ async function renderTraficoSkills(){
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">Todavia no se ha cargado trafico de ninguna skill.</td></tr>';
     return;
   }
-  var campanas = (typeof CAMPANAS_CALIDAD !== 'undefined') ? CAMPANAS_CALIDAD : [];
+  var campanas = _traficoCampanasAsignables();
   tbody.innerHTML = rows.map(function(r, idx){
     var opciones = '<option value="">— Sin asignar —</option>' + campanas.map(function(c){
-      return '<option value="'+esc(c)+'"'+(r.campana===c?' selected':'')+'>'+esc(c)+'</option>';
+      return '<option value="'+esc(c.valor)+'"'+(r.campana===c.valor?' selected':'')+'>'+esc(c.label)+'</option>';
     }).join('');
     return '<tr>' +
       '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:#fff4e5;color:#8a5a12;border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
@@ -172,10 +198,23 @@ function _traficoGuardarEstadoURL(estado){
   window.history.replaceState(null, '', url);
 }
 
+// Resuelve la campana de trafico para un panel trafico_combo: la fija en
+// config (p.campana, caso normal — ORLANT, CLINICA AURORA) si existe, o si
+// no, y el dashboard tiene "vista" (HOSPITAL LA MARIA: 2 sedes), la deriva
+// como "<cliente> <valor de vista seleccionada>" — asi cada sede tiene su
+// propia campana de trafico sin inventar una columna "sede" que el export
+// de Volvox no trae; la distincion vive enteramente en a que campana se
+// mapea cada skill (ver renderTraficoSkills / docs/ARQUITECTURA.md).
+function _traficoCampanaPanel(p){
+  if(p.campana) return p.campana;
+  if(_gd.config && _gd.config.vista && _gd.vistaSel) return _gd.cliente + ' ' + _gd.vistaSel;
+  return _gd.cliente;
+}
+
 async function _traficoRenderPanel(p, i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
-  var campana = p.campana;
+  var campana = _traficoCampanaPanel(p);
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
     '<div style="text-align:center;color:#9bb0bb;padding:20px 8px">Cargando…</div></div>';
 
@@ -188,8 +227,18 @@ async function _traficoRenderPanel(p, i){
 
   var estado = _traficoEstadoDesdeURL();
   var fechasDisponibles = datos.filas.map(function(f){ return f.fecha; }).sort();
-  if(!estado.desde) estado.desde = fechasDisponibles[0];
-  if(!estado.hasta) estado.hasta = fechasDisponibles[fechasDisponibles.length-1];
+  var minDisp = fechasDisponibles[0], maxDisp = fechasDisponibles[fechasDisponibles.length-1];
+  if(!estado.desde) estado.desde = minDisp;
+  if(!estado.hasta) estado.hasta = maxDisp;
+  // El estado de filtros vive en la URL (?tv_...) compartido por CUALQUIER
+  // panel trafico_combo de la pagina — si el usuario filtro un rango en el
+  // dashboard de otra campana y luego abre este (misma pestana del
+  // navegador, sin recargar), ese rango puede no solapar en absoluto con
+  // los datos de esta campana. En vez de mostrar "sin datos" por un filtro
+  // heredado que nadie eligio para ESTA campana, se descarta y se vuelve al
+  // rango completo disponible aqui (mismo criterio que ya se usaba para
+  // skills: si el filtro heredado deja todo afuera, se ignora).
+  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = minDisp; estado.hasta = maxDisp; }
   if(!estado.skills) estado.skills = datos.skills.slice(); // sin filtro en la URL -> todas
   else estado.skills = estado.skills.filter(function(s){ return datos.skills.indexOf(s)!==-1; });
   if(!estado.skills.length) estado.skills = datos.skills.slice();
@@ -253,15 +302,27 @@ function _traficoRenderContenido(campana, i){
   var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
   _traficoAgregadoActual[campana] = agregado;
 
+  // Totales del periodo YA filtrado (nunca promedio de % diarios): suma
+  // primero, calcula el % despues — mismo criterio de traficoAgregar.
   var totalLlamadas = filtradas.reduce(function(a,f){ return a+f.totalLlamadas; }, 0);
   var totalContestadas = filtradas.reduce(function(a,f){ return a+f.contestadas; }, 0);
+  var tieneAbandonadas = filtradas.some(function(f){ return f.llamadasAbandonadas!=null; });
+  var totalAbandonadas = tieneAbandonadas ? filtradas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
   var nivelAtencion = totalLlamadas>0 ? Math.round((totalContestadas/totalLlamadas)*1000)/10 : null;
+  var tasaAbandono = (totalLlamadas>0 && tieneAbandonadas) ? Math.round((totalAbandonadas/totalLlamadas)*1000)/10 : null;
+
   var kpisEl = document.getElementById('tv-kpis-'+i);
   if(kpisEl){
+    var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
+    var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
+    var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (nivelAtencion===null?'':nivelAtencion>=90?'kpi-green':nivelAtencion>=70?'kpi-org':'kpi-red');
+    var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
     kpisEl.innerHTML =
       '<div class="aurora-kpi"><div class="kv">'+totalLlamadas.toLocaleString('es-CO')+'</div><div class="kl">Total Llamadas</div></div>'+
       '<div class="aurora-kpi kpi-green"><div class="kv">'+totalContestadas.toLocaleString('es-CO')+'</div><div class="kl">Llamadas Contestadas</div></div>'+
-      '<div class="aurora-kpi '+(nivelAtencion===null?'':nivelAtencion>=90?'kpi-green':nivelAtencion>=70?'kpi-org':'kpi-red')+'"><div class="kv">'+(nivelAtencion===null?'—':nivelAtencion+'%')+'</div><div class="kl">Nivel de Atencion</div></div>';
+      '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas Abandonadas</div></div>'+
+      '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(nivelAtencion===null?'—':nivelAtencion+'%')+'</div><div class="kl">Nivel de Atencion</div></div>'+
+      '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>';
   }
 
   var canvasId = 'tv-canvas-'+i;
