@@ -100,16 +100,18 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/inconexion
-            # JWT_SECRET/MASTER_ADMIN_PASSWORD_HASH: config.js los exige al
-            # arrancar (fail-fast), pero solo los hidrata bootstrap.js desde
-            # SSM DENTRO del proceso ya corriendo (PID 1) -- un `docker
-            # compose exec` nuevo no los hereda. Son dummies con forma
-            # valida solo para pasar esa validacion; este script nunca los
-            # usa para nada (ni firma JWT ni compara contra el admin real).
+            # JWT_SECRET/MASTER_ADMIN_PASSWORD_HASH/CORS_ORIGIN: config.js
+            # los exige al arrancar (fail-fast), pero solo los hidrata
+            # bootstrap.js desde SSM DENTRO del proceso ya corriendo (PID 1)
+            # -- un `docker compose exec` nuevo no los hereda. JWT_SECRET y
+            # MASTER_ADMIN_PASSWORD_HASH son dummies con forma valida, nunca
+            # usados para nada real (ni firma JWT ni compara contra el admin
+            # real); CORS_ORIGIN no es sensible, se pasa el valor real.
             docker compose exec -T \
               -e TEMP_PW="$TEMP_PW" -e TEMP_USER="${{ env.TEMP_USER }}" \
               -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
               -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
               app node -e '
               const db = require("./db");
               const bcrypt = require("bcryptjs");
@@ -153,6 +155,7 @@ jobs:
               -e TEMP_USER="${{ env.TEMP_USER }}" \
               -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
               -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
               app node -e '
               const db = require("./db");
               const info = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_USER);
