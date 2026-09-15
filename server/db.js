@@ -349,6 +349,27 @@ CREATE TABLE IF NOT EXISTS seed_demo_marcas (
   createdAt TEXT NOT NULL,
   UNIQUE(tabla, clave)
 );
+
+-- Umbrales de semaforo (color por dato) para las tarjetas KPI y celdas de
+-- tabla de los dashboards de cliente. Una fila por (metrica, campana):
+-- campana='' es el default GLOBAL para esa metrica; una fila con campana
+-- especifica la sobreescribe solo para esa campana. Un admin los edita
+-- desde el panel (pantalla "Umbrales") y los dashboards los leen en
+-- caliente via GET /api/umbrales — cambiar un valor aqui se refleja sin
+-- desplegar nada. direccion decide de que lado del umbral queda el verde:
+-- 'mayor_es_mejor' (ej. nivel de atencion: verde si valor>=verde) o
+-- 'menor_es_mejor' (ej. tasa de abandono: verde si valor<=verde).
+CREATE TABLE IF NOT EXISTS umbrales_semaforo (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  metrica TEXT NOT NULL,
+  campana TEXT NOT NULL DEFAULT '',
+  verde REAL NOT NULL,
+  amarillo REAL NOT NULL,
+  direccion TEXT NOT NULL DEFAULT 'mayor_es_mejor',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL,
+  UNIQUE(metrica, campana)
+);
 `);
 
 // Semilla de configuracion de dashboards: idempotente por cliente. Inserta las
@@ -549,6 +570,79 @@ runOnceMigration('calidad_nivel_servicio_diario_trafico_v1', () => {
   `);
   if (!config.isTest) {
     console.log('[db] Migracion calidad_nivel_servicio_diario_trafico_v1 aplicada.');
+  }
+});
+
+// Backfill: agrega metrica:'nivel_atencion' a los KPIs "Nivel Atencion*" que
+// YA EXISTEN en dashboards_config (ORLANT, CLINICA AURORA, HOSPITAL LA MARIA
+// y los generados por plantilla). dashboards_config se siembra "solo si el
+// cliente no existe todavia" (ver arriba) — en una base que ya tenia estos
+// dashboards (como produccion), el `metrica` nuevo agregado al codigo fuente
+// (dashboard-config-seed.js / dashboard-plantillas-cliente.js) NUNCA llega a
+// esas filas sin este backfill. Se identifica por tener `semaforo` ya puesto
+// (la senal que el KPI usa color) y sin `metrica` todavia — no toca nada que
+// un admin haya editado despues (ya tendria su propio metrica o ninguno a
+// proposito). Corre una sola vez.
+runOnceMigration('dashboards_config_metrica_nivel_atencion_v1', () => {
+  const rows = db.prepare('SELECT cliente, layout FROM dashboards_config').all();
+  const update = db.prepare('UPDATE dashboards_config SET layout = ? WHERE cliente = ?');
+  let tocados = 0;
+  for (const row of rows) {
+    let layout;
+    try {
+      layout = JSON.parse(row.layout);
+    } catch (e) {
+      continue;
+    }
+    let cambio = false;
+    (layout.kpis || []).forEach((k) => {
+      if (k && k.semaforo && !k.metrica && /nivel.*atencion/i.test(k.titulo || '')) {
+        k.metrica = 'nivel_atencion';
+        cambio = true;
+      }
+    });
+    if (cambio) {
+      update.run(JSON.stringify(layout), row.cliente);
+      tocados++;
+    }
+  }
+  if (!config.isTest && tocados) {
+    console.log(`[db] Migracion dashboards_config_metrica_nivel_atencion_v1 aplicada (${tocados} dashboard(s)).`);
+  }
+});
+
+// Semilla de umbrales de semaforo por defecto (campana='' = global), para que
+// el sistema no quede sin color mientras nadie los configura desde el panel.
+// Valores iniciales razonables, documentados uno por uno (ajustables sin
+// desplegar desde la pantalla de Umbrales):
+//  - nivel_atencion: >=90% verde / 70-90% amarillo / <70% rojo (estandar de
+//    contact center para nivel de servicio de atencion).
+//  - tasa_abandono: <=5% verde / 5-10% amarillo / >10% rojo, menor es mejor.
+//  - qa_promedio: >=90 verde / 70-90 amarillo / <70 rojo (mismo corte que ya
+//    usaba Calidad antes de este cambio, ahora editable).
+//  - service_level: >=80% verde / 65-80% amarillo / <65% rojo (contestadas
+//    dentro del tiempo objetivo, ej. 20s, sobre el total).
+//  - cumplimiento_meta: >=100% verde / 80-100% amarillo / <80% rojo (mismo
+//    corte que ya usaba la barra de avance de meta, ahora editable).
+runOnceMigration('umbrales_semaforo_seed_v1', () => {
+  const now = new Date().toISOString();
+  const insert = db.prepare(
+    `INSERT OR IGNORE INTO umbrales_semaforo (metrica, campana, verde, amarillo, direccion, createdAt, updatedAt)
+     VALUES (@metrica, '', @verde, @amarillo, @direccion, @now, @now)`
+  );
+  const defaults = [
+    { metrica: 'nivel_atencion', verde: 90, amarillo: 70, direccion: 'mayor_es_mejor' },
+    { metrica: 'tasa_abandono', verde: 5, amarillo: 10, direccion: 'menor_es_mejor' },
+    { metrica: 'qa_promedio', verde: 90, amarillo: 70, direccion: 'mayor_es_mejor' },
+    { metrica: 'service_level', verde: 80, amarillo: 65, direccion: 'mayor_es_mejor' },
+    { metrica: 'cumplimiento_meta', verde: 100, amarillo: 80, direccion: 'mayor_es_mejor' },
+  ];
+  const tx = db.transaction((rows) => {
+    rows.forEach((r) => insert.run({ ...r, now }));
+  });
+  tx(defaults);
+  if (!config.isTest) {
+    console.log('[db] Migracion umbrales_semaforo_seed_v1 aplicada (5 umbrales globales por defecto).');
   }
 });
 

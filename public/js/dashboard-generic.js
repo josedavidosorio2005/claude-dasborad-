@@ -25,6 +25,41 @@ function _gdFmt(v, formato){
   return Math.round(n).toLocaleString('es-CO'); // entero / miles
 }
 
+// ── Umbrales de semaforo (color por dato) ───────────────────
+// Configurables desde el panel de administracion (tabla umbrales_semaforo,
+// pantalla "Umbrales", public/js/umbrales.js), leidos aqui sin ningun
+// codigo/valor quemado. Se recargan cada vez que se abre un dashboard (la
+// lista es chica) para que un cambio de umbral se vea al instante, sin
+// desplegar ni tener que limpiar cache. Reemplaza las 3 implementaciones de
+// color que existian antes (k.semaforo binario, barra de meta hardcodeada,
+// promedio de Calidad hardcodeado): todas pasan ahora por _gdSemaforoColor.
+var _gdUmbrales = [];
+async function _gdCargarUmbrales(){
+  try{ _gdUmbrales = (await apiRequest('GET','/umbrales')) || []; }
+  catch(e){ _gdUmbrales = []; }
+  return _gdUmbrales;
+}
+// Identificador de metrica: k.metrica explicito si existe (recomendado), si
+// no se deriva del titulo. Logica pura compartida en semaforo-logic.js (con
+// pruebas en server/tests/semaforo-logic.test.js) para no duplicarla.
+function _gdMetricaKey(k){
+  if(k && k.metrica) return k.metrica;
+  return semaforoMetricaKey((k && k.titulo) || '');
+}
+function _gdUmbralPara(metrica, campana){
+  return semaforoUmbralPara(_gdUmbrales, metrica, campana);
+}
+// 'verde'|'amarillo'|'rojo' segun el umbral configurado, o null si no hay
+// umbral para esa metrica (no se inventa color sin config).
+function _gdSemaforoColor(valor, k, campanaOverride){
+  var metrica = _gdMetricaKey(k);
+  var campana = campanaOverride || (k && k.campana) || _gd.cliente;
+  return semaforoColorDe(valor, _gdUmbralPara(metrica, campana));
+}
+function _gdSemaforoClase(color){
+  return semaforoClaseCss(color);
+}
+
 // ── Resolucion de una "fuente" de datos ─────────────────────
 function _gdSeccionCargas(s){ return (_gd.cargas && _gd.cargas[s]) || []; }
 function _gdCargaMes(s){
@@ -200,8 +235,17 @@ function _gdKpiCardHtml(k){
   var mejorBaja = k.mejorDireccion === 'baja'; // para % inasistencia, abandono, costo…
 
   var txt = (cur === null || cur === undefined) ? '—' : _gdFmt(cur, k.formato);
-  var cls = k.cls || '';
-  if(k.semaforo && cur !== null && cur !== undefined) cls = _gdNum(cur) >= k.semaforo ? 'kpi-green' : 'kpi-red';
+  var semColor = _gdSemaforoColor(cur, k);
+  var cls;
+  if(semColor){
+    cls = _gdSemaforoClase(semColor);
+  } else if(k.semaforo && cur !== null && cur !== undefined){
+    // Compatibilidad: KPI con el semaforo binario viejo (un solo umbral
+    // quemado en la config) y sin fila en umbrales_semaforo todavia.
+    cls = _gdNum(cur) >= k.semaforo ? 'kpi-green' : 'kpi-red';
+  } else {
+    cls = k.cls || '';
+  }
 
   var trendHtml = '';
   if(vari){
@@ -217,7 +261,9 @@ function _gdKpiCardHtml(k){
   var metaHtml = '';
   if(meta !== null && meta !== undefined && meta !== 0 && cur !== null && cur !== undefined){
     var av = Math.round((cur / meta) * 1000) / 10;
-    var mcls = av >= 100 ? 'gd-meta-ok' : (av >= 80 ? 'gd-meta-warn' : 'gd-meta-bad');
+    var avColor = _gdSemaforoColor(av, { metrica: 'cumplimiento_meta' });
+    var mcls = avColor==='verde' ? 'gd-meta-ok' : avColor==='amarillo' ? 'gd-meta-warn' : avColor==='rojo' ? 'gd-meta-bad'
+      : (av >= 100 ? 'gd-meta-ok' : (av >= 80 ? 'gd-meta-warn' : 'gd-meta-bad')); // sin umbral configurado: mismo default de siempre
     metaHtml = '<div class="gd-kpi-meta ' + mcls + '"><span class="gd-meta-bar"><i style="width:' +
       Math.max(0, Math.min(100, av)) + '%"></i></span>' + av + '% de la meta (' + _gdFmt(meta, k.formato) + ')</div>';
   }
@@ -303,6 +349,7 @@ async function _gdBootstrap(){
     (t.panels || []).forEach(function(p){ if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanas[p.campana] = true; });
   });
   for(var camp in campanas){ try{ await loadCalData(camp); }catch(e){} }
+  await _gdCargarUmbrales();
 
   renderGenericHeader();
   renderGenericKpis();
@@ -564,10 +611,15 @@ function _gdRenderCalidad(p, i){
 
   if(p.tipo === 'calidad_kpis'){
     var el = document.getElementById('gd-p'+i); if(!el) return;
+    // 'qa_promedio' via umbrales_semaforo (default global 90/70, editable
+    // desde el panel de administracion); si no hay umbral configurado cae
+    // al mismo corte 90/70 que este panel siempre uso, para no perder color.
+    var qaColor = _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: camp });
+    var qaCls = qaColor ? _gdSemaforoClase(qaColor) : (promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red');
     el.innerHTML =
       '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
-      '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
-      '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv" style="font-size:1rem">'+clasif+'</div><div class="kl">Clasificacion General</div></div>';
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+clasif+'</div><div class="kl">Clasificacion General</div></div>';
     return;
   }
   // calidad_pie
@@ -598,6 +650,10 @@ function _gdDatosKpis(){
       Meta: meta === null || meta === undefined ? '' : meta,
       '% Meta': meta ? Math.round((cur / meta) * 1000) / 10 : '',
       Alerta: _gdFueraDeRango(cur, comp.scalar, k) ? 'FUERA DE RANGO' : '',
+      Semaforo: (function(){
+        var c = _gdSemaforoColor(cur, k);
+        return c ? c.toUpperCase() : '';
+      })(),
     };
   });
 }
@@ -676,9 +732,12 @@ function _gdExportPrint(){
   var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
   var w = window.open('', '_blank');
   if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
-  var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th></tr></thead><tbody>' +
-    kpis.map(function(r){ return '<tr><td>' + esc(r.Indicador) + '</td><td>' + esc(_fmtCell(r.Valor)) + '</td><td>' + esc(_fmtCell(r['Var. %'])) +
-      '</td><td>' + esc(_fmtCell(r['% Meta'])) + '</td><td>' + esc(r.Alerta || '') + '</td></tr>'; }).join('') + '</tbody></table>';
+  var SEM_HEX = { VERDE: '#27ae60', AMARILLO: '#e67e22', ROJO: '#e74c3c' };
+  var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th><th>Semaforo</th></tr></thead><tbody>' +
+    kpis.map(function(r){
+      var semColorTd = r.Semaforo ? ('<td style="color:' + SEM_HEX[r.Semaforo] + ';font-weight:700">' + esc(r.Semaforo) + '</td>') : '<td></td>';
+      return '<tr><td>' + esc(r.Indicador) + '</td><td>' + esc(_fmtCell(r.Valor)) + '</td><td>' + esc(_fmtCell(r['Var. %'])) +
+      '</td><td>' + esc(_fmtCell(r['% Meta'])) + '</td><td>' + esc(r.Alerta || '') + '</td>' + semColorTd + '</tr>'; }).join('') + '</tbody></table>';
   var secs = _gdDatosPanelesTab().filter(function(p){ return p.filas.length; }).map(function(pan){
     var keys = Object.keys(pan.filas[0]);
     return '<h3>' + esc(pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + esc(k) + '</th>'; }).join('') +

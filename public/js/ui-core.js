@@ -80,7 +80,7 @@ document.addEventListener('click', function(e){
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function showSection(sec){
-  ['users','perms','hist','metas','reportesrole','dashboards','inventario','gerencia','gestionhumana'].forEach(function(s){
+  ['users','perms','hist','metas','umbrales','reportesrole','dashboards','inventario','gerencia','gestionhumana'].forEach(function(s){
     var el=document.getElementById('section-'+s);
     var mel=document.getElementById('menu-'+s);
     if(el) el.classList.toggle('hidden',s!==sec);
@@ -89,6 +89,7 @@ function showSection(sec){
   if(sec==='perms') showRolesView();
   if(sec==='hist'){ loadHist().then(function(){ renderHist(); }); }
   if(sec==='metas'){ renderMetasSection(); }
+  if(sec==='umbrales'){ renderUmbralesSection(); }
   if(sec==='reportesrole'){ renderReportesRoleSection(); }
   if(sec==='dashboards'){ renderDashboardsSection(); }
   if(sec==='inventario'){ renderInventarioSection(); }

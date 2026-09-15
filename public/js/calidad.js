@@ -49,6 +49,10 @@ function calCampCache(camp){
 // campana o mes. `mes` por defecto: el mes actual.
 async function loadCalData(camp, mes){
   await calLoadPlantillas();
+  // Umbrales de semaforo (color por dato, configurables desde el panel de
+  // administracion): se cargan aqui tambien porque el modulo de Calidad se
+  // puede abrir sin pasar por dashboard-generic.js/_gdBootstrap.
+  if(typeof _gdCargarUmbrales === 'function'){ try{ await _gdCargarUmbrales(); }catch(e){} }
   if(!camp) return;
   mes = mes || new Date().toISOString().slice(0,7);
   var d = calCampCache(camp);
@@ -205,6 +209,8 @@ async function openCalidad(){
   var canEval = calCanEvaluate();
   var nuevoBtn = document.getElementById('ctab-btn-nuevo');
   if(nuevoBtn) nuevoBtn.style.display = canEval ? '' : 'none';
+  var cargaBtn = document.getElementById('ctab-btn-carga');
+  if(cargaBtn) cargaBtn.style.display = canEval ? '' : 'none';
   document.getElementById('cf-fecha').value = new Date().toISOString().slice(0,10);
   if(currentUser) document.getElementById('cf-evaluador').value = currentUser.nombre;
   renderCalItemsForm();
@@ -263,13 +269,14 @@ function populateCalAsesorSelect(){
 }
 
 function switchCalTab(t){
-  if(t==='nuevo' && !calCanEvaluate()) t='resumen';
+  if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
   _ctab = t;
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab===t); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-'+t); });
   populateCalMesSelect();
   renderCalKpis();
   if(t==='nuevo') renderCalPreview();
+  else if(t==='carga'){ if(typeof cancelarPreviewMonitoreos==='function') cancelarPreviewMonitoreos(); }
   else if(t==='monitoreos') renderCalMonitoreosTable();
   else if(t==='resumen') renderCalResumenTable();
   else if(t==='reportes') setTimeout(renderCalReportes,60);
@@ -453,7 +460,10 @@ function renderCalResumenTable(){
       var prom = Math.round((d.sum/d.count)*10)/10;
       var clasif = prom<70 ? '🔴 CRITICO' : (prom<90 ? '🟡 NO CRITICO' : '🟢 SOBRESALIENTE');
       var alerta = d.fallos===0 ? '✅ SIN FALLOS CRITICOS' : (d.fallos<=1 ? '⚠️ ALERTA' : '🚨 CRITICO FRECUENTE');
-      html += '<tr><td>'+esc(n)+'</td><td>'+d.count+'</td><td class="peak">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
+      var promCls = (typeof _gdSemaforoClase === 'function' && typeof _gdSemaforoColor === 'function')
+        ? _gdSemaforoClase(_gdSemaforoColor(prom, { metrica: 'qa_promedio', campana: _ccampana }))
+        : '';
+      html += '<tr><td>'+esc(n)+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
     });
   }
   document.getElementById('cal-resumen-table').innerHTML = html;
@@ -468,9 +478,12 @@ function renderCalKpis(){
   var mesMeta = _cmesFiltro || new Date().toISOString().slice(0,7);
   var totalLabel = _cmesFiltro ? 'Monitoreos ('+_cmesFiltro+')' : 'Monitoreos Totales (todos los meses)';
 
+  var promCardColor = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: _ccampana }) : null;
+  var promCardCls = (typeof _gdSemaforoClase === 'function' && promCardColor) ? _gdSemaforoClase(promCardColor)
+    : (promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red');
   var html =
     '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">'+totalLabel+'</div></div>'+
-    '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Promedio Puntaje</div></div>'+
+    '<div class="aurora-kpi '+promCardCls+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Promedio Puntaje</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+criticos+'</div><div class="kl">Monitoreos Criticos Absolutos</div></div>';
 
   if(currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR')){

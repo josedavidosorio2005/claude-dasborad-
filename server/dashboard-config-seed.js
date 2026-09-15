@@ -41,11 +41,11 @@ const ORLANT = {
   layout: {
     kpis: [
       kpi('Llamadas 3P', ultimo('llamadas_3p'), 'miles'),
-      kpi('Nivel Atencion 3P', ultimo('nivel_atencion_3p'), 'porcentaje', { semaforo: 90 }),
+      kpi('Nivel Atencion 3P', ultimo('nivel_atencion_3p'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
       kpi('WhatsApp 3P', ultimo('wpp_3p'), 'miles'),
-      kpi('Nivel Atencion WPP 3P', ultimo('nivel_atencion_wpp_3p'), 'porcentaje', { semaforo: 90 }),
+      kpi('Nivel Atencion WPP 3P', ultimo('nivel_atencion_wpp_3p'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
       kpi('Llamadas Linea General', ultimo('llamadas_general'), 'miles'),
-      kpi('Nivel Atencion L.General', ultimo('nivel_atencion_general'), 'porcentaje', { semaforo: 90 }),
+      kpi('Nivel Atencion L.General', ultimo('nivel_atencion_general'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
       kpi('WhatsApp Linea General', ultimo('wpp_general'), 'miles'),
       kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
       kpi('Efec. Ordenamiento Medico', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'ordmed_agendas', b: 'ordmed_gestionados' }, 'porcentaje', { cls: 'kpi-org' }),
@@ -133,11 +133,11 @@ const AURORA = {
   layout: {
     kpis: [
       kpi('Llamadas Entrada', ultimo('hist_llamadas'), 'miles'),
-      kpi('Nivel Atencion', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 90, meta: 90, alerta: { min: 85 } }),
+      kpi('Nivel Atencion', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
       kpi('Abandonos', ultimo('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
       kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
       kpi('WhatsApp Entrada', ultimo('hist_whatsapp'), 'miles'),
-      kpi('Nivel Ate. WPP', ultimo('nivel_atencion_wpp'), 'porcentaje', { cls: 'kpi-green' }),
+      kpi('Nivel Ate. WPP', ultimo('nivel_atencion_wpp'), 'porcentaje', { cls: 'kpi-green', metrica: 'nivel_atencion' }),
       kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
       kpi('Efectividad', ultimo('efectividad'), 'porcentaje', { cls: 'kpi-org' }),
       kpi('Llamadas Salida', ultimo('llamadas_salida'), 'miles', { cls: 'kpi-red' }),
@@ -218,7 +218,7 @@ const HLM = {
   layout: {
     kpis: [
       kpi('Llamadas Ingresadas', ultimo('llamadas_ingresadas'), 'miles'),
-      kpi('Nivel Atencion Llamadas', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 80 }),
+      kpi('Nivel Atencion Llamadas', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 80, metrica: 'nivel_atencion' }),
       kpi('Llamadas Contestadas', ultimo('llamadas_contestadas'), 'miles'),
       kpi('Llamadas Abandonadas', ultimo('llamadas_abandonadas'), 'miles', { cls: 'kpi-red' }),
       kpi('WhatsApp Ingresados', ultimo('wpp_ingresados'), 'miles'),

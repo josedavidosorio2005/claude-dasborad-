@@ -131,6 +131,19 @@ function toMonitoreo(row) {
   };
 }
 
+function toUmbralRow(row) {
+  return {
+    id: row.id,
+    metrica: row.metrica,
+    campana: row.campana || '',
+    verde: row.verde,
+    amarillo: row.amarillo,
+    direccion: row.direccion,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 function toMetaRow(row) {
   return calc.withDerived({
     id: row.id,
@@ -269,6 +282,16 @@ function createApp() {
   // no solo el administrador. `activo` sale de si hay algo marcado en
   // seed_demo_marcas — se enciende solo al sembrar y se apaga solo al
   // limpiar (seed:demo:limpiar), sin desplegar nada.
+  //
+  // DECISION (Cartera con datos reales, resto en demo): el banner se queda
+  // GLOBAL, no por campana. Hacerlo por campana exigiria agregar columnas de
+  // alcance a seed_demo_marcas y reescribir esta ruta con un filtro por
+  // cliente/campana en cada dashboard — un cambio real de schema, no solo de
+  // lectura. Mientras Cartera sea la unica campana con datos reales, el
+  // banner sigue mostrandose en TODA la app (incluida Cartera) hasta que se
+  // limpien los datos de demo de las 11 campanas restantes con
+  // `seed:demo:limpiar` — evita el riesgo de que alguien vea un dashboard
+  // sin el aviso y asuma que es real cuando solo Cartera lo es.
   api.get(
     '/seed-demo/estado',
     requireActor,
@@ -609,6 +632,110 @@ function createApp() {
     })
   );
 
+  // Carga masiva de monitoreos desde Excel (3 hojas: Monitoreos + Diccionario
+  // + Resumen por Asesor de apoyo). El navegador ya parseo el archivo (mismo
+  // criterio que el resto de cargas.js/NSD: el servidor nunca abre el Excel,
+  // solo recibe filas ya validadas como JSON) — aqui se reusa exactamente la
+  // misma logica de puntaje que el alta individual (calc.computeScore).
+  // Idempotencia: por (campana, asesor, fecha, idLlamada) SOLO cuando la fila
+  // trae idLlamada (es la unica clave natural disponible para un monitoreo:
+  // un mismo asesor puede tener varios monitoreos legitimos el mismo dia).
+  // Sin idLlamada no hay forma de deduplicar sin inventar una clave — esas
+  // filas siempre se insertan.
+  api.post(
+    '/monitoreos/bulk',
+    requireActor,
+    validate(schemas.monitoreoBulkBody),
+    wrap((req, res) => {
+      const b = req.body;
+      if (!canEvaluateCampaign(req.actor, b.campana)) {
+        return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
+      }
+      const plantillaRow = getPlantillaRow(b.campana);
+      if (!plantillaRow) {
+        return res.status(400).json({ error: 'Esa campana no tiene plantilla de calificacion' });
+      }
+      const plantilla = toPlantilla(plantillaRow);
+      const now = nowStr();
+      const evaluadorDefault = req.actor.nombre;
+      const evaluadorUserId = req.actor.isMasterAdmin ? null : req.actor.id;
+
+      const buscarExistente = db.prepare(
+        `SELECT id FROM monitoreos WHERE campana=? AND asesor=? AND fecha=? AND idLlamada=? LIMIT 1`
+      );
+      const insertar = db.prepare(
+        `INSERT INTO monitoreos
+           (campana, asesor, fecha, mes, canal, idLlamada, telefono, codificacion,
+            evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
+            nivelCritico, observaciones, createdAt)
+         VALUES (@campana,@asesor,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
+                 @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
+                 @nivelCritico,@observaciones,@createdAt)`
+      );
+      const actualizar = db.prepare(
+        `UPDATE monitoreos SET
+           canal=@canal, telefono=@telefono, codificacion=@codificacion, evaluador=@evaluador,
+           evaluadorUserId=@evaluadorUserId, answers=@answers, puntaje=@puntaje,
+           clasificacion=@clasificacion, fallos=@fallos, nivelCritico=@nivelCritico,
+           observaciones=@observaciones
+         WHERE id=@id`
+      );
+
+      let insertadas = 0;
+      let actualizadas = 0;
+      let omitidas = 0;
+      const avisos = [];
+
+      const tx = db.transaction((filas) => {
+        filas.forEach((fila, idx) => {
+          const score = calc.computeScore(plantilla.items, fila.answers, plantilla.engine);
+          if (score.puntaje === null) {
+            omitidas++;
+            avisos.push(`Fila ${idx + 2}: ninguna respuesta valida, se omitio.`);
+            return;
+          }
+          const payload = {
+            campana: b.campana,
+            asesor: fila.asesor,
+            fecha: fila.fecha,
+            mes: calc.monthKey(fila.fecha),
+            canal: fila.canal,
+            idLlamada: fila.idLlamada || null,
+            telefono: fila.telefono || null,
+            codificacion: fila.codificacion || null,
+            evaluador: fila.evaluador || evaluadorDefault,
+            evaluadorUserId,
+            answers: JSON.stringify(fila.answers),
+            puntaje: score.puntaje,
+            clasificacion: score.clasificacion,
+            fallos: score.fallos,
+            nivelCritico: score.nivelCritico,
+            observaciones: fila.observaciones || null,
+            createdAt: now,
+          };
+          const existente = fila.idLlamada ? buscarExistente.get(b.campana, fila.asesor, fila.fecha, fila.idLlamada) : null;
+          if (existente) {
+            actualizar.run({ ...payload, id: existente.id });
+            actualizadas++;
+          } else {
+            insertar.run(payload);
+            insertadas++;
+          }
+        });
+      });
+      tx(b.filas);
+
+      logCalEvent(
+        'MONITOREO_BULK',
+        b.campana,
+        b.campana,
+        req.actor,
+        `Carga masiva "${b.archivoNombre || 'sin nombre'}": ${insertadas} nueva(s), ${actualizadas} actualizada(s), ${omitidas} omitida(s)`
+      );
+      res.status(201).json({ insertadas, actualizadas, omitidas, avisos });
+    })
+  );
+
   api.put(
     '/monitoreos/:id',
     requireActor,
@@ -889,6 +1016,104 @@ function createApp() {
       if (!row) return res.status(404).json({ error: 'Meta no encontrada' });
       db.prepare('DELETE FROM cronograma_metas WHERE id = ?').run(row.id);
       logCalEvent('META_DEL', row.liderNombre, row.campana, req.actor, `${row.mes}`);
+      res.json({ ok: true });
+    })
+  );
+
+  // ══════════════════════════════════════════════════════════
+  // UMBRALES DE SEMAFORO (color por dato en los dashboards) — configurables
+  // desde el panel de administracion, sin desplegar. Lectura abierta a
+  // cualquier actor autenticado (los dashboards los necesitan para pintar);
+  // escritura solo administrador. Ver server/db.js para el diseño de
+  // (metrica, campana='') = default global vs. override por campana.
+  // ══════════════════════════════════════════════════════════
+  api.get(
+    '/umbrales',
+    requireActor,
+    wrap((req, res) => {
+      res.set('Cache-Control', 'no-store');
+      const rows = db.prepare('SELECT * FROM umbrales_semaforo ORDER BY metrica, campana').all();
+      res.json(rows.map(toUmbralRow));
+    })
+  );
+
+  api.post(
+    '/umbrales',
+    requireActor,
+    validate(schemas.umbralBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede configurar umbrales' });
+      }
+      const b = req.body;
+      const now = nowStr();
+      const existing = db
+        .prepare('SELECT * FROM umbrales_semaforo WHERE metrica = ? AND campana = ?')
+        .get(b.metrica, b.campana);
+      if (existing) {
+        db.prepare(
+          `UPDATE umbrales_semaforo SET verde=?, amarillo=?, direccion=?, updatedAt=? WHERE id=?`
+        ).run(b.verde, b.amarillo, b.direccion, now, existing.id);
+        const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(existing.id);
+        return res.json(toUmbralRow(row));
+      }
+      const info = db
+        .prepare(
+          `INSERT INTO umbrales_semaforo (metrica, campana, verde, amarillo, direccion, createdAt, updatedAt)
+           VALUES (@metrica,@campana,@verde,@amarillo,@direccion,@createdAt,@updatedAt)`
+        )
+        .run({ ...b, createdAt: now, updatedAt: now });
+      const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(info.lastInsertRowid);
+      res.status(201).json(toUmbralRow(row));
+    })
+  );
+
+  api.put(
+    '/umbrales/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    validate(schemas.updateUmbralBody),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede editar umbrales' });
+      }
+      const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Umbral no encontrado' });
+      const b = req.body;
+      try {
+        db.prepare(
+          `UPDATE umbrales_semaforo SET metrica=?, campana=?, verde=?, amarillo=?, direccion=?, updatedAt=? WHERE id=?`
+        ).run(
+          b.metrica ?? row.metrica,
+          b.campana ?? row.campana,
+          b.verde ?? row.verde,
+          b.amarillo ?? row.amarillo,
+          b.direccion ?? row.direccion,
+          nowStr(),
+          row.id
+        );
+      } catch (e) {
+        if (e && e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+          return res.status(409).json({ error: 'Ya existe un umbral para esa metrica y campana' });
+        }
+        throw e;
+      }
+      const updated = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(row.id);
+      res.json(toUmbralRow(updated));
+    })
+  );
+
+  api.delete(
+    '/umbrales/:id',
+    requireActor,
+    validate(schemas.idParamSchema, 'params'),
+    wrap((req, res) => {
+      if (!isFullAdmin(req.actor)) {
+        return res.status(403).json({ error: 'Solo el administrador puede eliminar umbrales' });
+      }
+      const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(req.params.id);
+      if (!row) return res.status(404).json({ error: 'Umbral no encontrado' });
+      db.prepare('DELETE FROM umbrales_semaforo WHERE id = ?').run(row.id);
       res.json({ ok: true });
     })
   );

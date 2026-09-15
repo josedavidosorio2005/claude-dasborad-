@@ -162,6 +162,17 @@ const createMonitoreoBody = z.object({
   answers: answersSchema,
 });
 
+// Carga masiva de monitoreos (Excel de 3 hojas: Monitoreos + Diccionario +
+// Resumen por Asesor de apoyo — solo "Monitoreos" se parsea). Cada fila es
+// el mismo shape que createMonitoreoBody sin "campana" (va una sola vez a
+// nivel de carga, no por fila).
+const monitoreoBulkFila = createMonitoreoBody.omit({ campana: true });
+const monitoreoBulkBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(300).optional().default(''),
+  filas: z.array(monitoreoBulkFila).min(1, 'El archivo no tiene filas validas').max(2000, 'Demasiadas filas en un solo archivo (maximo 2000)'),
+});
+
 const updateMonitoreoBody = z
   .object({
     asesor: z.string().trim().min(1).max(120).optional(),
@@ -194,6 +205,27 @@ const metaBody = z.object({
 });
 
 const updateMetaBody = metaBody.partial().refine((b) => Object.keys(b).length > 0, {
+  message: 'Nada que actualizar',
+});
+
+// Umbrales de semaforo: campana vacia/omitida = umbral GLOBAL para esa
+// metrica (ver server/db.js). verde/amarillo son numeros libres (pueden
+// ser %, segundos, etc. segun la metrica) — no se acotan a 0-100 aqui.
+const umbralBody = z.object({
+  metrica: z
+    .string({ required_error: 'La metrica es obligatoria' })
+    .trim()
+    .min(1, 'La metrica es obligatoria')
+    .max(100),
+  campana: z.string().trim().max(120).optional().default(''),
+  verde: z.coerce.number({ invalid_type_error: 'Valor verde invalido' }),
+  amarillo: z.coerce.number({ invalid_type_error: 'Valor amarillo invalido' }),
+  direccion: z.enum(['mayor_es_mejor', 'menor_es_mejor'], {
+    errorMap: () => ({ message: 'Direccion invalida' }),
+  }),
+});
+
+const updateUmbralBody = umbralBody.partial().refine((b) => Object.keys(b).length > 0, {
   message: 'Nada que actualizar',
 });
 
@@ -514,8 +546,11 @@ module.exports = {
     idParamSchema,
     createMonitoreoBody,
     updateMonitoreoBody,
+    monitoreoBulkBody,
     metaBody,
     updateMetaBody,
+    umbralBody,
+    updateUmbralBody,
     nivelServicioBody,
     updateNivelServicioBody,
     nivelServicioCargaDiariaBody,
