@@ -10,6 +10,35 @@
 // codigo que toca el DOM / la API.
 
 // ═══════════════════════════════════════════════════════════
+// ADMIN — PLANTILLA OFICIAL DE TRAFICO (una sola, para todas las campanas)
+// ═══════════════════════════════════════════════════════════
+// Descarga el archivo REAL que vive en el servidor (server/plantillas/,
+// nunca regenerado por el navegador) via un endpoint autenticado con el
+// mismo permiso que cargar la base — no es un link estatico, para que un
+// usuario de solo visualizacion no pueda descargarla ni con la URL directa.
+async function descargarPlantillaTrafico(){
+  var resp;
+  try{
+    resp = await fetch(API_BASE+'/calidad/trafico/plantilla', { headers: apiHeaders(false) });
+  }catch(e){ showToast('No se pudo conectar con el servidor.'); return; }
+  if(!resp.ok){
+    var msg = friendlyHttpError(resp.status);
+    try{ var data = await resp.json(); if(data && data.error) msg = data.error; }catch(e){}
+    showToast(msg);
+    return;
+  }
+  var blob = await resp.blob();
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════
 // ADMIN — CARGA DE TRAFICO DESDE EXCEL (Volvox)
 // ═══════════════════════════════════════════════════════════
 var _tvParsed = null; // { archivoNombre, filas } listo para POST

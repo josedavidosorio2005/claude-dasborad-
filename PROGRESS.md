@@ -1328,3 +1328,55 @@ septiembre-2026) en ORLANT: vista por defecto muestra "Desde" = 01/10/2025
 confirma que el filtro explícito manda sobre el default. Capturas en
 `docs/capturas-demo/` (`trafico-ventana-12meses-default.png`,
 `trafico-filtro-explicito-fuera-de-ventana.png`).
+
+## Fase 22 — Plantilla oficial de Tráfico publicada como descarga (2026-09-15)
+
+Pedido: publicar el archivo real `PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx`
+(ya revisado y aprobado por el cliente) como la descarga oficial desde la
+pantalla de carga de Tráfico — una sola plantilla para todas las campañas,
+nunca regenerada por código. Se descartó el enfoque anterior de reconocer
+alias de columnas nativas de Wolkvox (no llegó a mergearse en ninguna
+rama): la plantilla ya usa exactamente los nombres que el validador espera.
+
+### Qué se hizo
+
+- El archivo se guardó tal cual en `server/plantillas/` (fuera de
+  `public/`, que se sirve estático sin autenticación) y se sirve por
+  `GET /calidad/trafico/plantilla` (`res.download`, nunca regenerado),
+  exigiendo `canLoadData` — el mismo permiso que cargar la base, no
+  accesible a un usuario de solo visualización ni de forma anónima.
+- Botón **"Descargar plantilla"** junto al de carga, en la tarjeta
+  "Tráfico de Llamadas — carga desde Wolkvox".
+- README §7 reescrito: la vía principal ahora es descargar la plantilla,
+  llenarla con los datos de Wolkvox Manager (Skills & Servicios →
+  "Llamadas y Nivel de Servicio por Hora", agrupado por día) y subirla.
+  Subir el reporte crudo sin pasar por la plantilla queda como vía no
+  recomendada pero sigue aceptada (el emparejamiento de columnas sigue
+  siendo por nombre, no por plantilla — no se rompe nada retroactivo).
+
+### Verificación de que la plantilla real pasa la validación sin fricción
+
+Se tomó el archivo REAL publicado, se le agregaron 2 filas de datos de
+prueba (claramente ficticios) respetando exactamente los formatos que su
+propia hoja INSTRUCCIONES describe (fecha nativa, `SERVICE_LEVEL_*`/`ABANDON`
+como texto con `%`, `WAIT_TIME`/`AHT` como hora `h:mm:ss`, `NIVEL DE
+ATENCION`/`TASA DE ABNDONO` como fracción) y se subió por el flujo real.
+**Resultado: pasó sin ningún error ni aviso** — los 17 encabezados de la
+hoja DATA coinciden exactamente, uno a uno, con las 15 columnas que
+`traficoColIndexMap` reconoce (las 2 restantes, `MES`/`AÑO`, son
+informativas y el motor ya las ignora a propósito). No se encontró ningún
+desajuste entre la plantilla y el validador — no hizo falta tocar la
+plantilla para nada.
+
+### Verificación
+
+Suite completa: **177/177** en verde (`npm test`, incluye
+`server/tests/plantilla-trafico.test.js`: descarga byte-a-byte idéntica al
+archivo publicado, 403 sin el permiso, 401 sin autenticar, y la carga real
+de la plantilla llenada), `npm audit`: 0 vulnerabilidades. Playwright:
+descarga desde la interfaz con un admin real, confirmado byte a byte
+idéntico al archivo del repo (8925 bytes ambos); usuario sin el permiso
+"Cargar Datos" no tiene ni el menú ni forma de llegar al botón, y el
+endpoint responde 403 aunque se llame directo. Capturas en
+`docs/capturas-demo/` (`plantilla-trafico-boton-descarga.png`,
+`plantilla-trafico-viewer-sin-acceso.png`).

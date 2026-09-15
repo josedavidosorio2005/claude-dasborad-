@@ -1334,6 +1334,30 @@ function createApp() {
     };
   }
 
+  // Plantilla oficial de Tráfico (una sola, para todas las campañas — la
+  // campaña de cada fila la decide el mapeo de skill, no la plantilla).
+  // Sirve el ARCHIVO REAL guardado en server/plantillas/ tal cual, nunca lo
+  // regenera con código: así la copia publicada nunca se desvía de la que
+  // ya se le mandó al cliente para revisión. Vive FUERA de public/ (que se
+  // sirve estático sin autenticación) — este endpoint exige canLoadData,
+  // igual que cargar la base, para que no sea descargable por un usuario
+  // de solo visualización ni de forma anónima.
+  const PLANTILLA_TRAFICO_PATH = path.join(__dirname, 'plantillas', 'PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx');
+  api.get(
+    '/calidad/trafico/plantilla',
+    requireActor,
+    wrap((req, res) => {
+      if (!canLoadData(req.actor)) {
+        return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
+      }
+      res.download(PLANTILLA_TRAFICO_PATH, 'PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx', (err) => {
+        if (err && !res.headersSent) {
+          res.status(500).json({ error: 'No se pudo leer la plantilla en el servidor' });
+        }
+      });
+    })
+  );
+
   // Filas diarias crudas para la grafica de Trafico (el filtrado/agregado
   // por skill, rango de fechas y granularidad lo hace el navegador —
   // public/js/trafico-logic.js — asi que aqui se devuelve todo lo que haya

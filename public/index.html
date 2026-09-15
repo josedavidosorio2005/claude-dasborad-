@@ -312,16 +312,19 @@
         </div>
         <div class="section-card">
           <div class="section-header">
-            <h3>Trafico de Llamadas — carga desde Volvox</h3>
+            <h3>Trafico de Llamadas — carga desde Wolkvox</h3>
+            <div class="header-actions">
+              <button class="btn-sm" onclick="descargarPlantillaTrafico()">Descargar plantilla</button>
+            </div>
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">
-            Descarga el reporte de trafico de la plataforma de marcacion Volvox (hoja <b>DATA</b>) y subelo tal
-            cual, sin abrirlo ni recortar columnas. Puede traer varias skills y varios meses a la vez; cada skill
-            se enruta a su campana segun el mapeo de abajo — una skill nueva se guarda igual, marcada
-            "sin asignar", hasta que la mapees.
+            Descarga la <b>plantilla oficial</b> (una sola, sirve para todas las campanas), llenala con los datos de
+            Wolkvox Manager (Skills &amp; Servicios &rarr; "Llamadas y Nivel de Servicio por Hora", agrupado por dia)
+            y subela. Puede traer varias skills y varios meses a la vez; cada skill se enruta a su campana segun el
+            mapeo de abajo — una skill nueva se guarda igual, marcada "sin asignar", hasta que la mapees.
           </div>
           <div class="form-row">
-            <div class="ig"><label>Archivo Excel (.xlsx) de Volvox</label>
+            <div class="ig"><label>Archivo Excel (.xlsx) ya lleno</label>
               <input type="file" id="tv-file" accept=".xlsx,.xls" onchange="procesarArchivoTrafico(this)">
             </div>
           </div>
