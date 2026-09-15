@@ -308,6 +308,26 @@ romper la carga; un administrador la reasigna después desde el panel
 reatribuyen solas** (recalcula el mensual de la campaña vieja y la nueva),
 sin tener que volver a subir el archivo.
 
+### Plantilla oficial de carga (decisión 2026-09-15: una sola, para todas las campañas)
+
+`server/plantillas/PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx` es el **archivo
+real** que el cliente revisó y aprobó — el sistema lo sirve tal cual
+(`GET /calidad/trafico/plantilla`, `res.download`), **nunca lo regenera con
+código**, para que la copia publicada no pueda desviarse de la que el
+cliente ya tiene. Vive fuera de `public/` (que Express sirve estático sin
+autenticación) precisamente para que la descarga exija `canLoadData`, igual
+que cargar la base — no es un archivo público por URL directa. Es **una
+plantilla única** con nombres de columna fijos (los mismos 15 de
+`TRAFICO_COLUMNAS` más `MES`/`AÑO` informativas): no hay una plantilla por
+campaña, la campaña de cada fila la decide el mapeo de skill de siempre
+(arriba), nunca el archivo. Se descartó a propósito el enfoque de reconocer
+alias de nombres de columna nativos de Wolkvox — la plantilla ya usa
+exactamente los nombres que `traficoColIndexMap` espera, así que no hace
+falta ninguna traducción en el código. Verificado con un test que toma el
+archivo real publicado, le agrega filas de prueba respetando los formatos
+de su propia hoja INSTRUCCIONES, y confirma que pasa la carga real sin
+ningún aviso (`server/tests/plantilla-trafico.test.js`).
+
 ### El panel `trafico_combo`: tráfico embebido en el dashboard de cada campaña
 
 Desde la Fase 18 (tráfico Volvox), cualquier dashboard de cliente puede
@@ -557,6 +577,7 @@ documentado en ningún lado hasta ahora.
 | `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
 | `/api/calidad/trafico/carga/impacto` | POST | Cuenta, por (skill,mes) del archivo, cuántas filas ya existen y se reemplazarían — no escribe nada (control de cargas, §5) | `canLoadData` |
 | `/api/calidad/trafico/cobertura` | GET | Por skill, qué meses ya tienen tráfico cargado (control de cargas, §5) | `canLoadData` |
+| `/api/calidad/trafico/plantilla` | GET | Descarga la plantilla oficial de tráfico (archivo real, nunca regenerado) | `canLoadData` |
 | `/api/calidad/trafico/skills` | GET | Lista el mapeo skill → campaña (+ sede) | `canLoadData` |
 | `/api/calidad/trafico/skills/:skillName` | PUT | Reasigna una skill a otra campaña/sede (reatribuye el histórico ya guardado) | `canLoadData` |
 | `/api/calidad/nivel-servicio/diario` | GET | Filas diarias de nivel de servicio de una campaña (el navegador agrega, ver §5) | Cualquier actor con acceso a esa campaña |

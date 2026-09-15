@@ -369,18 +369,25 @@ es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
 
 ---
 
-## 7. Tráfico de llamadas (Volvox) — para el usuario final
+## 7. Tráfico de llamadas — para el usuario final
 
-### Qué descargar y dónde subirlo
+### Qué descargar y dónde subirlo (vía principal: la plantilla oficial)
 
-1. En **Volvox**, genera/descarga el reporte de **tráfico de llamadas** (el
-   que trae la hoja llamada **`DATA`**, con columnas `SKILL_NAME`, `DATE`,
-   `TOTAL LLAMADAS`, `LLAMADAS CONTESTADAS`, etc.).
-2. **No lo abras ni le cambies nada** — ni columnas, ni el orden, ni el
-   nombre de la hoja. Guárdalo como se descargó.
-3. En InConexion Platform, entra como **administrador** → menú **"Metas
-   Calidad"** → tarjeta **"Tráfico de Llamadas — carga desde Volvox"** →
-   elige el archivo `.xlsx`.
+1. En InConexion Platform, entra como **administrador** (o un usuario con el
+   permiso **"Cargar Datos"**) → menú **"Metas Calidad"** → tarjeta
+   **"Tráfico de Llamadas — carga desde Wolkvox"** → botón **"Descargar
+   plantilla"**. Es **una sola plantilla oficial**, la misma para todas las
+   campañas (Orlant, Clínica Aurora, Hospital La María, y cualquiera que se
+   mapee después) — la campaña de cada fila la decide el mapeo de skill
+   (ver más abajo), nunca la plantilla en sí.
+2. Llénala con los datos de **Wolkvox Manager**: Skills & Servicios →
+   reporte **"Llamadas y Nivel de Servicio por Hora"**, exportado
+   **agrupado por día** (no por hora). La hoja **INSTRUCCIONES** de la
+   propia plantilla explica columna por columna qué va en cada una y en qué
+   formato (fecha nativa de Excel, horas como `h:mm:ss`, porcentajes como
+   fracción donde aplica) — léela una vez antes de llenar la primera vez.
+3. Sube el archivo ya lleno en el mismo lugar de donde descargaste la
+   plantilla, elige el archivo `.xlsx`.
 4. Revisa la **vista previa** (filas válidas, skills y meses detectados, y
    los avisos de filas descartadas si los hay) y confirma con **"Guardar
    carga de trafico"**.
@@ -391,6 +398,13 @@ es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
    archivo, los datos ya guardados se reasignan solos.
 6. Los datos aparecen de inmediato en la pestaña **"Tráfico de Llamadas"**
    del dashboard de esa campaña.
+
+**Subir el reporte crudo de Wolkvox sin pasar por la plantilla ya no es la
+vía recomendada** — la plantilla oficial evita errores de formato y ya trae
+las instrucciones incluidas. El sistema sigue aceptando cualquier archivo
+cuyas columnas coincidan por nombre con las que espera (el emparejamiento es
+por nombre de encabezado, no por posición ni por plantilla), para no romper
+retroactivamente a quien ya tenía su propio flujo funcionando.
 
 Puedes subir el mismo archivo las veces que quieras: si un día ya estaba
 cargado, se actualiza (nunca se duplica). Un mismo archivo puede traer
