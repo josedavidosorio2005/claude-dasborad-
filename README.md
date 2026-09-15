@@ -16,6 +16,7 @@ tradicional (Node.js + Express + SQLite) con su propio login.
 | Archivo | Para qué |
 |---|---|
 | **README.md** (este) | Visión general, instalación local, seguridad, despliegue con Docker |
+| [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | **Foto completa del sistema**: modelo de datos, motor de semáforo, motor de dashboards, Tráfico Volvox, carga masiva de Calidad, API, y decisiones no obvias — para mantener/extender sin preguntar |
 | [`PROGRESS.md`](PROGRESS.md) | Estado del proyecto fase por fase (fuente de verdad del avance) |
 | [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) | Checklist "¿listo para lanzar?", entregables, pendientes de negocio, costos |
 | [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) | **Despliegue en AWS**: arquitectura, runbook desde cero, recuperación, secretos, red, backups, CloudWatch, pipeline |
