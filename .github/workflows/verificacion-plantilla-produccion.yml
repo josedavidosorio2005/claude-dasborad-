@@ -84,9 +84,17 @@ jobs:
 
       # Inserta el usuario temporal DIRECTO en la tabla users (nunca via
       # POST /api/users) -- asi no genera una fila CREADO en el historial
-      # de auditoria como si lo hubiera hecho un administrador real. Rol
-      # CALIDAD (nunca ADMIN) + perms.cargarDatos=true: el minimo permiso
-      # que exige el boton de descarga (canLoadData), nada mas.
+      # de auditoria como si lo hubiera hecho un administrador real.
+      # Rol AUX_ADMIN (NUNCA "ADMIN" -- isFullAdmin() en auth.js excluye
+      # explicitamente a AUX_ADMIN, y sin ningun permiso extra no puede
+      # crear/editar/borrar usuarios ni gestionar permisos, ver
+      # server/tests/permissions.test.js) + perms.cargarDatos=true: el
+      # minimo permiso que exige el boton de descarga (canLoadData), nada
+      # mas. Se necesita este rol (y no uno de dashboard de cliente) porque
+      # solo ADMIN/AUX_ADMIN entran al panel admin (enterAdminPanel() en
+      # session.js) donde vive la seccion "Metas Calidad" -- con cualquier
+      # otro rol la seccion existe en el DOM pero su contenedor padre queda
+      # oculto y el boton nunca es genuinamente clickeable.
       - name: Crear usuario temporal directo en la base de datos
         uses: appleboy/ssh-action@v1
         env:
@@ -121,7 +129,7 @@ jobs:
               const hash = bcrypt.hashSync(process.env.TEMP_PW, 10);
               db.prepare(
                 "INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt) VALUES (?,?,?,1,?,?,NULL,?)"
-              ).run("Verificacion Temporal QA (borrar automatico)", process.env.TEMP_USER, "CALIDAD", hash, JSON.stringify({ cargarDatos: true }), now);
+              ).run("Verificacion Temporal QA (borrar automatico)", process.env.TEMP_USER, "AUX_ADMIN", hash, JSON.stringify({ cargarDatos: true }), now);
               const row = db.prepare("SELECT id, user, rol, createdAt FROM users WHERE user = ?").get(process.env.TEMP_USER);
               console.log("USUARIO_TEMPORAL_CREADO " + JSON.stringify(row));
             '
