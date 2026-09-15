@@ -100,7 +100,17 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/inconexion
-            docker compose exec -T -e TEMP_PW="$TEMP_PW" -e TEMP_USER="${{ env.TEMP_USER }}" app node -e '
+            # JWT_SECRET/MASTER_ADMIN_PASSWORD_HASH: config.js los exige al
+            # arrancar (fail-fast), pero solo los hidrata bootstrap.js desde
+            # SSM DENTRO del proceso ya corriendo (PID 1) -- un `docker
+            # compose exec` nuevo no los hereda. Son dummies con forma
+            # valida solo para pasar esa validacion; este script nunca los
+            # usa para nada (ni firma JWT ni compara contra el admin real).
+            docker compose exec -T \
+              -e TEMP_PW="$TEMP_PW" -e TEMP_USER="${{ env.TEMP_USER }}" \
+              -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              app node -e '
               const db = require("./db");
               const bcrypt = require("bcryptjs");
               const pad = (n) => (n < 10 ? "0" + n : "" + n);
@@ -139,7 +149,11 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/inconexion
-            docker compose exec -T -e TEMP_USER="${{ env.TEMP_USER }}" app node -e '
+            docker compose exec -T \
+              -e TEMP_USER="${{ env.TEMP_USER }}" \
+              -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              app node -e '
               const db = require("./db");
               const info = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_USER);
               console.log("USUARIO_TEMPORAL_BORRADO " + JSON.stringify({ filasBorradas: info.changes, at: new Date().toISOString() }));
