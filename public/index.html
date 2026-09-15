@@ -49,6 +49,7 @@
         <li><a id="menu-perms" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
+        <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" onclick="showSection('umbrales')"><span class="s-icon">&#128994;</span> Umbrales</a></li>
         <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" onclick="showSection('reportesrole')"><span class="s-icon">&#128200;</span> Rol Reportes</a></li>
         <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" onclick="openCargas()"><span class="s-icon">&#128228;</span> Cargar Datos</a></li>
         <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
@@ -374,6 +375,67 @@
         </div>
       </div>
 
+      <!-- UMBRALES DE SEMAFORO — admin only. Color por dato configurable sin
+           desplegar: metrica + campana opcional (vacio = global) -> verde/
+           amarillo/direccion. Los 12 dashboards de cliente leen esta misma
+           tabla via GET /api/umbrales (dashboard-generic.js). -->
+      <div id="section-umbrales" class="hidden">
+        <div class="page-title">Umbrales de Semaforo</div>
+        <div class="page-subtitle">Define de que color se pinta cada metrica en los dashboards (verde/amarillo/rojo) segun que tan bien o mal esta el valor. Un umbral sin campana especifica es el <strong>default global</strong> para esa metrica; uno con campana lo sobreescribe solo ahi. Los cambios se ven en los dashboards al instante, sin desplegar.</div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3 id="umbral-form-title">Nuevo umbral</h3>
+          </div>
+          <div class="form-row">
+            <div class="ig"><label>Metrica</label>
+              <input type="text" id="umbral-metrica-input" list="umbral-metricas-conocidas" placeholder="ej: nivel_atencion" oninput="previewUmbral()">
+              <datalist id="umbral-metricas-conocidas">
+                <option value="nivel_atencion">
+                <option value="tasa_abandono">
+                <option value="qa_promedio">
+                <option value="service_level">
+                <option value="cumplimiento_meta">
+              </datalist>
+              <small style="color:#7a9ba8;font-size:0.75rem">Debe coincidir con el identificador de metrica del KPI (ver <code>metrica</code> en la configuracion del dashboard). Las 5 sugeridas ya vienen con default global.</small>
+            </div>
+            <div class="ig"><label>Campana (opcional)</label>
+              <select id="umbral-campana-sel">
+                <option value="">— Todas las campanas (default global) —</option>
+              </select>
+            </div>
+            <div class="ig"><label>Direccion</label>
+              <select id="umbral-direccion-sel" onchange="previewUmbral()">
+                <option value="mayor_es_mejor">Mayor es mejor (ej. nivel de atencion)</option>
+                <option value="menor_es_mejor">Menor es mejor (ej. tasa de abandono)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="ig"><label>Valor verde</label>
+              <input type="number" step="any" id="umbral-verde-input" style="max-width:140px" oninput="previewUmbral()">
+            </div>
+            <div class="ig"><label>Valor amarillo</label>
+              <input type="number" step="any" id="umbral-amarillo-input" style="max-width:140px" oninput="previewUmbral()">
+            </div>
+          </div>
+          <div class="qi-preview" id="umbral-preview"></div>
+          <div class="modal-btns">
+            <button class="btn-primary" onclick="saveUmbral()">Guardar Umbral</button>
+            <button class="btn-cancel hidden" id="umbral-cancel-btn" onclick="cancelEditUmbral()">Cancelar edicion</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header"><h3>Umbrales configurados</h3></div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Metrica</th><th>Campana</th><th>Verde</th><th>Amarillo</th><th>Direccion</th><th></th>
+            </tr></thead>
+            <tbody id="umbrales-tbody"></tbody></table>
+          </div>
+          <div class="no-results hidden" id="umbrales-no-results">Aun no hay umbrales configurados.</div>
+        </div>
+      </div>
+
       <!-- ROL REPORTES SECTION — admin only -->
       <div id="section-reportesrole" class="hidden">
         <div class="page-title">Rol Reportes — Permisos</div>
@@ -692,6 +754,7 @@
 
     <div class="aurora-tabs">
       <button class="atab atab-active" data-ctab="nuevo" id="ctab-btn-nuevo" onclick="switchCalTab('nuevo')">Nuevo Monitoreo</button>
+      <button class="atab" data-ctab="carga" id="ctab-btn-carga" onclick="switchCalTab('carga')">Carga Masiva (Excel)</button>
       <button class="atab" data-ctab="monitoreos" onclick="switchCalTab('monitoreos')">Monitoreos</button>
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
       <button class="atab" data-ctab="reportes" onclick="switchCalTab('reportes')">Reportes</button>
@@ -733,6 +796,29 @@
         <div class="modal-btns" style="margin-top:10px">
           <button class="btn-cancel" onclick="resetCalForm()">Limpiar</button>
           <button class="btn-primary" onclick="submitMonitoreo()">Guardar Monitoreo</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cpanel-carga" class="atab-panel">
+      <div class="aurora-card">
+        <div class="aurora-card-title">Cargar monitoreos desde Excel</div>
+        <div class="aurora-sub">Descarga la plantilla de esta campana (hoja <strong>Monitoreos</strong> para diligenciar, + <strong>Diccionario</strong> y <strong>Resumen por Asesor</strong> de apoyo), llenala y vuelve a subirla. Solo se procesa la hoja "Monitoreos"; las otras dos son de referencia.</div>
+        <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
+          <button class="btn-cancel" onclick="descargarPlantillaMonitoreos()">Descargar plantilla (Excel)</button>
+          <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
+            Elegir archivo…
+            <input type="file" id="cm-file" accept=".xlsx,.xls" style="display:none" onchange="procesarArchivoMonitoreos(this)">
+          </label>
+        </div>
+      </div>
+      <div class="aurora-card" id="cm-preview-card" style="display:none">
+        <div class="aurora-card-title">Vista previa — <span id="cm-preview-nombre"></span></div>
+        <div id="cm-avisos" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
+        <div style="overflow-x:auto"><table class="aurora-rank-table" id="cm-preview-table"></table></div>
+        <div class="modal-btns" style="margin-top:10px">
+          <button class="btn-cancel" onclick="cancelarPreviewMonitoreos()">Descartar</button>
+          <button class="btn-primary" id="cm-save-btn" onclick="guardarMonitoreosMasivo()">Guardar carga masiva</button>
         </div>
       </div>
     </div>
@@ -1349,6 +1435,7 @@
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
 <script src="js/esc.js"></script>
 <script src="js/trafico-logic.js"></script>
+<script src="js/semaforo-logic.js"></script>
 <script src="js/api.js"></script>
 <script src="js/constants.js"></script>
 <script src="js/state.js"></script>
@@ -1359,7 +1446,10 @@
 <script src="js/historial.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
+<script src="js/calidad-carga-masiva-logic.js"></script>
+<script src="js/calidad-carga-masiva.js"></script>
 <script src="js/metas.js"></script>
+<script src="js/umbrales.js"></script>
 <script src="js/reportes.js"></script>
 <script src="js/mis-resultados.js"></script>
 <script src="js/cargas.js"></script>

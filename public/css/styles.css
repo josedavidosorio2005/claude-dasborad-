@@ -378,6 +378,14 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .aurora-kpi.kpi-org{border-left-color:var(--c-warning);}
 .aurora-kpi.kpi-pur{border-left-color:var(--c-purple);}
 
+/* Semaforo de umbrales_semaforo (color por dato): mismas clases kpi-green/
+   kpi-org/kpi-red, aplicadas a celdas de tabla (ranking de asesores, resumen
+   por campana) ademas de las tarjetas KPI de arriba — un solo vocabulario de
+   color en toda la app. */
+td.kpi-green{background:rgba(39,174,96,.14);color:var(--c-success);font-weight:700;}
+td.kpi-org{background:rgba(230,126,34,.14);color:var(--c-warning);font-weight:700;}
+td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;}
+
 /* Tabs */
 .aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;flex-shrink:0;}
 .atab{padding:10px 16px;font-size:0.82rem;font-weight:600;color:var(--c-text-2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.2s;}

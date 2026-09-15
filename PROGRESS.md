@@ -1090,3 +1090,106 @@ desplegados, montados y protegidos correctamente.
 - La carga simple anterior (`POST /calidad/nivel-servicio/carga-diaria`,
   con campaña elegida a mano) se dejó intacta a propósito, sin fusionarla
   con la nueva — conviven las dos rutas de carga.
+
+---
+
+## Fase 19 — Semáforo de color configurable + carga masiva de Cartera (2026-09-15)
+
+Dos frentes en la misma tanda: (1) un motor de color por umbral, configurable
+desde el panel sin desplegar, aplicado uniformemente a los 12+ dashboards de
+cliente; (2) la primera campaña de Calidad con camino a datos reales
+(CARTERA INTERNA), con carga masiva de monitoreos por Excel — hasta ahora
+inexistente para ninguna campaña.
+
+### Decisión de arquitectura del semáforo (pedida explícitamente: una tabla admin-editable, no valores quemados)
+
+Tabla nueva `umbrales_semaforo(metrica, campana, verde, amarillo, direccion)`
+con `campana=''` como default global y una fila con campaña específica como
+override — mismo patrón de `(clave, alcance)` que ya usa `trafico_skill_mapeo`.
+Se prefirió esto sobre meter el umbral dentro del JSON `layout.kpis` de cada
+dashboard (que también es editable y ya tiene un slot `_extra` sin usar en el
+constructor visual) porque el pedido explícito fue "una métrica, un umbral,
+que aplique a varios dashboards a la vez" — una tabla plana centralizada
+resuelve eso en una sola edición; el JSON por dashboard habría exigido editar
+cada uno por separado.
+
+Antes de este cambio había **3 implementaciones de color distintas e
+inconsistentes**: `k.semaforo` (un solo umbral, binario verde/rojo, sin
+amarillo), la barra de avance de meta (3 niveles pero hardcodeados 100/80) y
+el promedio de Calidad (3 niveles hardcodeados 90/70, copiado en 2 lugares
+del código). Las tres quedaron unificadas detrás de una sola función
+(`_gdSemaforoColor` en `dashboard-generic.js`, que delega en
+`semaforoColorDe` de `public/js/semaforo-logic.js` — lógica pura, con
+pruebas, doble modo navegador/Node como `trafico-logic.js`).
+
+### El gotcha real: dashboards_config es un snapshot, no se re-siembra solo
+
+`dashboards_config` se siembra "solo si el cliente no existe todavía" (para
+no pisar ediciones de un admin). Eso significa que agregar `metrica:
+'nivel_atencion'` a los KPIs en `dashboard-config-seed.js` /
+`dashboard-plantillas-cliente.js` **no llega solo** a una base que ya tenía
+esos dashboards creados — incluida producción. Se encontró probando en local
+contra datos de demo reales (Playwright leía `kpi-red` en vez de `kpi-org`
+para un valor que claramente caía en el rango amarillo) antes de asumir que
+"cambiar el código alcanza". Arreglado con una migración de datos
+(`runOnceMigration('dashboards_config_metrica_nivel_atencion_v1', ...)`) que
+parchea el JSON `layout.kpis` ya guardado de los dashboards existentes
+(identifica los KPIs por tener `semaforo` puesto y sin `metrica` todavía, sin
+tocar nada que un admin haya editado después).
+
+Umbrales globales sembrados por defecto (documentados uno por uno, editables
+desde el panel de Umbrales sin desplegar — ver README §12):
+`nivel_atencion` 90/70, `tasa_abandono` 5/10 (menor es mejor), `qa_promedio`
+90/70, `service_level` 80/65, `cumplimiento_meta` 100/80.
+
+### Carga masiva de Cartera (CARTERA INTERNA)
+
+La campaña ya existía con los 14 ítems ponderados exactos pedidos (ver
+`server/calidad-plantillas-seed.js`, agregada en un commit previo del
+2026-09-14) — pero **no existía ningún camino de carga masiva por Excel para
+Calidad**, ni para Cartera ni para Orlant ni para nadie: los monitoreos se
+creaban uno por uno desde un formulario. Se construyó desde cero, siguiendo
+el patrón UX ya probado de `cargas.js`/la carga diaria de Nivel de Servicio
+(descarga de plantilla, preview con avisos de filas descartadas antes de
+confirmar, guardado explícito): plantilla de 3 hojas (Monitoreos a
+diligenciar + Diccionario y Resumen por Asesor de apoyo, solo se parsea
+Monitoreos), parseo puro en `calidad-carga-masiva-logic.js` (doble modo,
+probado contra un fixture real de 3 hojas generado para la prueba — datos
+claramente ficticios, nunca datos reales de la campaña), endpoint nuevo
+`POST /api/monitoreos/bulk` que reusa el mismo motor de puntaje que el alta
+individual. Idempotente por `(campaña, asesor, fecha, idLlamada)` cuando la
+fila trae ID de llamada (única clave natural disponible); sin ID de llamada
+no hay forma de deduplicar sin inventar una clave, así que esas filas
+siempre se insertan — documentado así, no es un descuido.
+
+### Banner de demo: decisión tomada, no dejada ambigua
+
+Se queda **global** (no por campaña) aunque Cartera ya tenga datos reales.
+Ver README §13 para el razonamiento completo — en corto: hacerlo por
+campaña es un cambio de esquema real (`seed_demo_marcas` no tiene columna de
+alcance hoy), y la opción global es la más segura mientras solo una de 12
+campañas tiene datos reales.
+
+### Qué NO se alcanzó a cerrar en esta tanda (dicho explícitamente, no se da por hecho)
+
+El pedido también incluía extender a los 12 dashboards el patrón completo de
+filtros de Volvox (rango de fechas, granularidad día/mes/año, estado en la
+URL), drill-down por clic desde una tarjeta/gráfica al detalle, tooltips con
+comparación contra período anterior/meta, y comparación mes-actual-vs-mismo-mes-año-anterior.
+Dado el tamaño real del pedido completo (motor de semáforo + Cartera ya son,
+cada uno, del tamaño de una fase propia), esto quedó **fuera de esta tanda**
+— no se implementó ni parcialmente, para no dejar una versión a medias
+rota en producción. El motor de agregación día/mes/año con recálculo
+correcto de porcentajes (`traficoAgregar`) ya existe y está probado en
+`trafico-logic.js`; extenderlo al resto de dashboards es un trabajo
+concreto y acotado para una fase siguiente, no un rediseño.
+
+### Verificación
+
+Suite completa: **161/161** en verde (`npm test`), `npm audit`: 0
+vulnerabilidades. Verificación real con Playwright contra un servidor local
+con datos de demo: login admin, pantalla de Umbrales con los 5 defaults
+sembrados, cambio de umbral de `nivel_atencion` reflejado de inmediato en
+el color de la tarjeta de ORLANT (verde→rojo→restaurado), carga masiva de
+Cartera con el fixture de prueba (preview con avisos + guardado limpio).
+Capturas en `docs/capturas-demo/fase19-semaforo-cartera/`.

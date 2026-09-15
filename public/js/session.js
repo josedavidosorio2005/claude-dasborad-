@@ -103,14 +103,17 @@ function enterAdminPanel(){
   // Historial tab only for master admin and ADMIN role users
   var histLi=document.getElementById('menu-hist-li');
   var metasLi=document.getElementById('menu-metas-li');
+  var umbralesLi=document.getElementById('menu-umbrales-li');
   var reportesRoleLi=document.getElementById('menu-reportesrole-li');
   if (isMaster||isAdminRole) {
     histLi.classList.remove('hidden');
     metasLi.classList.remove('hidden');
+    if(umbralesLi) umbralesLi.classList.remove('hidden');
     reportesRoleLi.classList.remove('hidden');
   } else {
     histLi.classList.add('hidden');
     metasLi.classList.add('hidden');
+    if(umbralesLi) umbralesLi.classList.add('hidden');
     reportesRoleLi.classList.add('hidden');
   }
 

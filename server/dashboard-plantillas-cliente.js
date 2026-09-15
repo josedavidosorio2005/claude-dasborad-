@@ -249,7 +249,7 @@ function plantillaAtencion(cliente, titulo, opts) {
     kpis: [
       kpi('Llamadas Entrada', U('llamadas_entrada'), 'miles'),
       kpi('WhatsApp Entrada', U('wpp_entrada'), 'miles'),
-      kpi('Nivel de Atencion', U('nivel_atencion'), 'porcentaje', { semaforo: 90, meta: 90, alerta: { min: 85 } }),
+      kpi('Nivel de Atencion', U('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
       kpi('Abandonos', U('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
       kpi('AHT Promedio', U('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
       kpi(etiquetaSalida, U(campoSalida), 'miles', { cls: 'kpi-green', meta: U('meta_' + campoSalida) }),

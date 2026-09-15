@@ -516,3 +516,93 @@ cd server && npm run seed:demo:limpiar
   dirección de las metas de Gerencia están **pendientes de confirmación**; ver
   [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) §4. Se ajustan desde el constructor
   visual sin programar.
+
+---
+
+## 12. Semáforo de color por umbral (configurable sin desplegar)
+
+Las tarjetas KPI de los 12 dashboards de cliente (y las celdas de tabla donde
+aplica, ej. el "Promedio Puntaje" de Calidad y el ranking de asesores) se
+pintan en **verde/amarillo/rojo** según qué tan bien o mal está el valor,
+usando umbrales que un administrador configura desde el panel — **nunca en
+código, nunca requiere desplegar**.
+
+### Cómo configurar un umbral
+
+1. Entra como **administrador** → menú **"Umbrales"**.
+2. Completa: **Métrica** (el identificador que usa el KPI, ver tabla abajo),
+   **Campaña** (déjalo en blanco para que aplique a todas — "default
+   global" — o elige una campaña específica para sobreescribir el default
+   solo ahí), **Valor verde**, **Valor amarillo** y **Dirección** (*mayor es
+   mejor*, ej. nivel de atención, o *menor es mejor*, ej. tasa de abandono).
+3. Guarda. El cambio se ve en los dashboards **de inmediato** — no hace
+   falta recargar el servidor ni desplegar nada.
+
+Un umbral con campaña específica siempre gana sobre el default global para
+esa misma métrica; si no hay ninguno de los dos, el dato queda sin color
+(nunca se inventa un color sin configuración).
+
+### Umbrales por defecto (sembrados automáticamente, editables desde el panel)
+
+| Métrica (identificador) | Verde | Amarillo | Dirección | Por qué este valor |
+|---|---|---|---|---|
+| `nivel_atencion` | ≥90% | 70–90% | Mayor es mejor | Estándar habitual de nivel de atención en contact center. |
+| `tasa_abandono` | ≤5% | 5–10% | Menor es mejor | Umbral típico de abandono de llamadas aceptable. |
+| `qa_promedio` | ≥90 | 70–90 | Mayor es mejor | Mismo corte que ya usaba Calidad antes de este cambio (ahora editable). |
+| `service_level` | ≥80% | 65–80% | Mayor es mejor | Contestadas dentro del tiempo objetivo (ej. 20s) sobre el total. |
+| `cumplimiento_meta` | ≥100% | 80–100% | Mayor es mejor | Mismo corte que ya usaba la barra de avance de meta (ahora editable). |
+
+Si un KPI no trae un identificador de métrica explícito en su configuración,
+el sistema deriva uno del título (minúsculas, sin tildes, espacios → `_`) —
+por eso el nombre de la métrica en el panel de Umbrales debe coincidir con
+ese identificador para que el color se aplique.
+
+### Exportación
+
+El color también viaja a las exportaciones: en **Excel** como una columna de
+texto `Semaforo` (VERDE/AMARILLO/ROJO) junto a cada KPI — el motor de Excel
+que usa la app (SheetJS, build gratuito de `cdnjs`) no soporta relleno de
+celda con color, así que no hay una celda pintada, pero el dato está
+presente y es fiel a lo que se ve en pantalla. En **PDF** (impresión) el
+texto del semáforo sí sale con su color real.
+
+---
+
+## 13. Cartera (cobranza) — primera campaña con camino a datos reales
+
+La campaña de Calidad **"CARTERA INTERNA"** (cobranza) ya tiene su plantilla
+de evaluación (14 ítems ponderados, varios marcados como críticos — ver
+`server/calidad-plantillas-seed.js`) y ahora también tiene **carga masiva de
+monitoreos por Excel**, la primera campaña con este camino hacia datos
+reales (antes, los monitoreos de Calidad solo se creaban uno por uno desde
+un formulario).
+
+### Cómo cargar monitoreos por Excel
+
+1. Entra al **módulo de Calidad**, elige la campaña **CARTERA INTERNA** →
+   pestaña **"Carga Masiva (Excel)"**.
+2. **Descarga la plantilla** — trae 3 hojas: **Monitoreos** (para
+   diligenciar), **Diccionario** (referencia: ítem, categoría, peso %,
+   crítico) y **Resumen por Asesor** (de apoyo). Solo se procesa la hoja
+   "Monitoreos"; las otras dos son de referencia.
+3. Llena la hoja Monitoreos (un asesor y una fecha por fila, más una columna
+   `SI`/`NO`/`N/A` por cada ítem de la plantilla) y vuelve a subirla.
+4. Revisa la **vista previa** (avisos de filas descartadas si las hay) y
+   confirma con **"Guardar carga masiva"**.
+
+Es **idempotente por (campaña, asesor, fecha, ID Llamada)** cuando la fila
+trae un ID de llamada: volver a subir el mismo archivo actualiza esos
+monitoreos en vez de duplicarlos. Sin ID de llamada no hay una clave natural
+para deduplicar, así que esas filas siempre se insertan.
+
+### Banner de "datos de demostración" mientras conviven campañas reales y demo
+
+**Decisión:** el banner se queda **global** (no por campaña), aunque Cartera
+ya tenga datos reales y las otras 11 campañas sigan en demo. Hacerlo por
+campaña exigiría un cambio de esquema (columnas de alcance en la tabla que
+rastrea los datos de demo) y reescribir la ruta que lo expone con un filtro
+por cliente en cada dashboard. Mientras tanto, el banner sigue visible en
+**toda** la app — incluida Cartera — hasta que se limpien los datos de demo
+de las 11 campañas restantes con `seed:demo:limpiar`. Evita el riesgo de que
+alguien vea un dashboard sin el aviso y asuma que es real cuando solo
+Cartera lo es (o al revés).
