@@ -50,6 +50,14 @@ services:
       - caddy-config:/config
 
 volumes:
+  # Respaldado por el disco de datos persistente de Lightsail, montado por
+  # UUID en /opt/inconexion/data (ver AWS_DEPLOY_REPORT.md). Sin driver_opts
+  # este volumen viviria en el disco de sistema, no en el disco dedicado.
   inconexion-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/inconexion/data
   caddy-data:
   caddy-config:
