@@ -80,7 +80,7 @@ contra RDS + varias instancias y las señales concretas para migrar).
  AWS SSM Parameter Store ── secretos que el contenedor lee AL ARRANCAR
                              (nunca en el repo, nunca en disco en texto plano)
  AWS S3 (versionado)     ── backup diario de inconexion.db (systemd timer en
-                             el host, fuera del contenedor — ver §9 abajo)
+                             el host, fuera del contenedor — ver §10 abajo)
  GitHub Actions           ── push a main -> CI corre la suite -> si pasa,
    (deploy.yml)               deploy.yml construye la imagen, la sube a ECR,
                                abre el puerto 22 solo para el runner, hace
@@ -116,7 +116,7 @@ con el tiempo sin que este documento tenga que actualizarse línea por línea.
 | `calidad_nivel_servicio` | Nivel de servicio **mensual** por campaña (contestadas ≤20s / total del mes) — se recalcula siempre a partir de `calidad_nivel_servicio_diario`, nunca se edita a mano cuando hay datos diarios. |
 | `calidad_nivel_servicio_diario` | Nivel de servicio **diario** por campaña/skill, tal cual viene del export del conmutador/PBX (incluye las columnas ampliadas del export real de Volvox — ver §5). Es la tabla que sobrevivió a la decisión de Volvox: se extendió en vez de crear una tabla nueva, porque ya compartía la llave natural (campaña+fecha+skill) y el flujo de recálculo mensual. |
 | `trafico_skill_mapeo` | Mapeo administrable de `SKILL_NAME` (tal cual lo nombra Volvox) → campaña/cliente de InConexion — ver §5. |
-| `seed_demo_marcas` | Ledger de qué filas sembró `scripts/seed-demo.js` (para poder borrar exactamente eso con `seed:demo:limpiar`). También es lo que enciende/apaga el banner global de "datos de demostración" — ver §10. |
+| `seed_demo_marcas` | Ledger de qué filas sembró `scripts/seed-demo.js` (para poder borrar exactamente eso con `seed:demo:limpiar`). También es lo que enciende/apaga el banner global de "datos de demostración" — ver §11. |
 | `gerencia_kpis`, `inventario_items`, `inventario_movimientos`, `gestion_humana_personal` | Datos propios de los 3 módulos administrativos (Gerencia, Inventario, Gestión Humana), que se ven con el mismo motor de dashboard que las campañas de cliente vía adaptadores — ver §4. |
 | `schema_migrations` | Ledger de qué migraciones (`runOnceMigration`) ya corrieron, para que cada una se aplique una sola vez incluso en una base que lleva meses corriendo. |
 
@@ -716,7 +716,7 @@ sin cambios — no hay otro tipo de dato que consolidar con ellas.
   de Tráfico es un archivo *estático* aprobado por el cliente y nunca
   regenerado por código (§5), mientras que la consolidada SÍ se genera al
   vuelo por campaña (columnas de Calidad/Gestión de base variables) y por lo
-  tanto no puede llevar color. Mismo límite ya documentado en §10
+  tanto no puede llevar color. Mismo límite ya documentado en §11
   ("Excel no pinta el color de las celdas del semáforo"). El
   obligatoria/opcional se resuelve con texto explícito en `INSTRUCCIONES` en
   su lugar.
@@ -817,7 +817,100 @@ y `docs/capturas-demo/produccion-orlant-dashboard-tras-carga.png`.
 
 ---
 
-## 8. API — endpoints agregados en las últimas fases
+## 8. Previsualización y filtros/colores de dashboard (2026-09-16)
+
+### Botón "Previsualizar" en el listado de dashboards
+
+`public/js/dashboards-admin.js` (`renderDashboardsSection`) agrega un tercer
+botón, antes de Editar/Eliminar, que llama `openGenericDashboard(cliente)`
+**tal cual** — la misma función que abre el dashboard real de cualquier
+cliente (`dashboard-generic.js`). Cero lógica de render nueva: lo que se ve
+al previsualizar es exactamente lo que vería un usuario real con acceso a
+esa campaña, con sus datos reales (nunca una maqueta). Esto es distinto de
+`previewDashCfg()` (botón "Previsualizar" que ya existía DENTRO del
+constructor visual): ese muestra la configuración **en memoria** del
+formulario, aún sin guardar, vía `openGenericDashboardPreview()`; el botón
+nuevo del listado siempre muestra la versión **ya guardada** en la base.
+
+Sobre permisos: toda la pantalla "Dashboards de Cliente" (menú +
+`GET/POST/PUT/DELETE /api/dashboards/config*`) ya era exclusiva de
+`isFullAdmin` (ADMIN o master admin) antes de este cambio — no existe un
+rol que vea el listado sin poder editar/borrar. El botón nuevo queda
+gratis detrás del mismo gate, sin código de permisos adicional.
+
+### Color categórico estable (`public/js/paleta-logic.js`)
+
+Bug real encontrado al revisar esto: las gráficas pie/bar/line/combo del
+dashboard genérico pintaban cada serie/categoría por su **posición** en un
+array de colores (`paleta[indice % paleta.length]`). En los paneles que
+leen filas de un Excel (`modo:'filas'` — tipificación, asesores, entidades,
+categorías de STA/demanda) esa posición depende del orden de las filas tal
+cual vienen del archivo subido, que no está garantizado entre una carga y
+otra — la misma categoría podía cambiar de color de un mes a otro. Los
+paneles con series fijas por config (ej. "Contactados" vs "Ventas" en un
+combo) sí eran estables *dentro de ese panel*, pero un mismo dato ("Ventas")
+podía verse de colores distintos en dos gráficas diferentes de la misma
+campaña, porque cada panel indexaba su propio array de series.
+
+`paletaColorPara(etiqueta, paleta)` (dual-mode como `semaforo-logic.js`,
+tests en `server/tests/paleta-logic.test.js`) deriva el color de un hash
+determinista de la etiqueta — nunca de su posición. Se usa ahora en
+`dashboard-generic.js` para pie (`backgroundColor` por label, no un array
+plano), line/bar/area multi-serie (`paletaColorPara(s.label)`), las barras
+de `combo` (`paletaColorPara(b.label)`), y en `trafico.js` para el color por
+skill en modo "separado". Resultado verificado: la misma etiqueta
+("Ventas", una skill, una tipificación) tiene el mismo color en **todas**
+las gráficas de esa campaña, en cualquier recarga, sin importar el orden en
+que vengan los datos.
+
+**Nunca se mezcla con el semáforo** (`semaforo-logic.js`): esa es una
+paleta de UMBRAL (verde/amarillo/rojo = cumple/no cumple una meta), esta es
+una paleta CATEGÓRICA (identidad de dato → color fijo). `calidad_pie`
+sigue usando verde/naranja/rojo fijos para Sobresaliente/No Crítico/Crítico
+— es una decisión de diseño de ESE gráfico puntual (una clasificación de 3
+cubetas con significado cualitativo obvio), no el motor de umbrales.
+
+### Filtros extendidos desde el patrón de Tráfico de Llamadas
+
+Inventario verificado antes de tocar código (no se asumió que las 12
+campañas tienen los mismos paneles):
+
+| Tipo de panel | Campañas | Filtro nuevo |
+|---|---|---|
+| `calidad_kpis`/`calidad_pie` (asesor, fecha reales en `CAL_DB`) | Las 9 con pestaña Calidad: ORLANT, CLINICA AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, ANDRES YEPES, MOVILIZE, INFONDO, SASCHA FITNESS, BIVETT | Asesor (multi-select) + Desde/Hasta |
+| `pie` / `bar` con `modo:'filas'` sobre un campo categórico (tipificación, asesor, entidad, categoría de STA/demanda) | Las 12 (todas tienen al menos un panel de tipificación) | Categorías a incluir (multi-select) |
+| `line`/`area` con `modo:'filas', x:'fecha'` (líneas diarias) | Las 12 con al menos una sección diaria (todas menos alguna variante mínima) | Desde/Hasta (días dentro del mes cargado) |
+| `line`/`bar`/`area` con `modo:'serie'` (tendencia mensual) | Las 12 | Sin filtro nuevo — ya lo controla el selector de mes superior, no hay un campo adicional que filtrar |
+| `trafico_combo` | Las 10 con pestaña Tráfico (todas menos PANTERA MAIKERS y ALBERTO LINERO GO, que no tienen esa pestaña en su dashboard aunque su plantilla de carga sí trae la hoja DATA — fuera de alcance de este cambio) | Ya tenía el filtro completo (skill + Desde/Hasta + granularidad); sin cambios funcionales, solo el color por skill ahora es estable |
+| `combo` (2 barras fijas + 1 línea %) | Las 12 | Sin filtro — son 2 métricas fijas por config, no una lista de categorías que varíe con el dato |
+| `tabla` | Las que tienen ranking de asesores | Sin filtro — fuera de alcance (el pedido fue sobre gráficas) |
+
+Implementación (`dashboard-generic.js`):
+- `_gdPanelFiltroTipo(p)` decide `'categoria'` | `'fecha'` | `null` mirando
+  el `modo`/`x` REAL de la fuente del panel — nunca se inventa un control
+  sobre un campo que ese panel no usa.
+- `_gdResolver(f, extra)` gana un segundo parámetro opcional (`{categorias}`
+  o `{desde,hasta}`); sin `extra` el comportamiento es idéntico al de antes
+  de este cambio (todos los demás llamadores — KPIs, export, tabla — no
+  pasan `extra`).
+- El filtro de categorías respeta la `vista` del dashboard (sede en
+  HOSPITAL LA MARIA): las opciones del multi-select y el rango de fechas
+  disponible solo consideran las filas de la sede activa, igual que ya
+  hacía el resto del motor.
+- Lógica pura extraída y testeada: `gd-filtro-logic.js`
+  (`gdFiltrarFilasCategorias`, `gdFiltrarFilasRangoFechas`,
+  `gdValoresDistintos`) para Gestión de base, `calidad-dashboard-logic.js`
+  (`calDashFiltrarMonitoreos`, `calDashResumen`, `calDashAsesoresDistintos`)
+  para Calidad — mismo patrón dual-mode que `trafico-logic.js`.
+- El filtro de Calidad es **autónomo** (no seguir al selector de mes
+  superior): igual que Tráfico, trae su propio rango por defecto (últimos
+  12 meses con datos, reutilizando `traficoVentana12Meses`) y el usuario lo
+  amplía si quiere — evita que cambiar el mes del dashboard reinicie en
+  silencio un filtro de asesor que el usuario ya había elegido.
+
+---
+
+## 9. API — endpoints agregados en las últimas fases
 
 Para el resto de la API (usuarios, dashboards de cliente, permisos,
 historial, etc.) ver directamente `server/server.js` — esta tabla cubre
@@ -831,7 +924,7 @@ documentado en ningún lado hasta ahora.
 | `/api/umbrales/:id` | PUT | Edita un umbral existente | Solo administrador |
 | `/api/umbrales/:id` | DELETE | Borra un umbral | Solo administrador |
 | `/api/monitoreos/bulk` | POST | Carga masiva de monitoreos de Calidad (§6) | Rol CALIDAD/SUPERVISOR (o admin) con permiso sobre esa campaña |
-| `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §10) | Cualquier actor autenticado |
+| `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §11) | Cualquier actor autenticado |
 | `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
 | `/api/calidad/trafico/carga/impacto` | POST | Cuenta, por (skill,mes) del archivo, cuántas filas ya existen y se reemplazarían — no escribe nada (control de cargas, §5) | `canLoadData` |
 | `/api/calidad/trafico/cobertura` | GET | Por skill, qué meses ya tienen tráfico cargado (control de cargas, §5) | `canLoadData` |
@@ -842,7 +935,7 @@ documentado en ningún lado hasta ahora.
 
 ---
 
-## 9. Despliegue y operación
+## 10. Despliegue y operación
 
 Para la cuenta AWS, IP, recursos exactos y el runbook de despliegue desde
 cero, ver [`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md) (§14 tiene el
@@ -878,7 +971,7 @@ estado de la cuenta actual). Acá solo el **flujo operativo del día a día**:
 
 ---
 
-## 10. Decisiones que no son obvias mirando el código
+## 11. Decisiones que no son obvias mirando el código
 
 Cosas que alguien podría "corregir" por accidente sin este contexto:
 

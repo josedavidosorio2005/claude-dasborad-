@@ -407,6 +407,14 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
 .aurora-chart-wrap{position:relative;}
 .aurora-chart-wrap canvas{width:100%!important;}
 
+/* Filtro de un panel (categorias o rango de fechas) — mismo patron visual
+   que .trafico-filtros, generalizado a cualquier grafica de Gestion de
+   base/Calidad que aprenda a filtrar (dashboard-generic.js). */
+.gd-panel-filtro{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px;}
+.gd-panel-filtro label{display:block;font-size:0.7rem;color:var(--c-text-muted,#7a9ba8);margin-bottom:3px;}
+.gd-panel-filtro select,.gd-panel-filtro input{font-size:0.76rem;}
+.gd-panel-filtro select[multiple]{min-width:130px;}
+
 /* Ranking table */
 .aurora-rank-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
 .aurora-rank-table th{background:var(--c-primary);color:var(--c-surface);padding:7px 10px;text-align:left;font-size:0.74rem;font-weight:600;}

@@ -475,10 +475,13 @@ function _traficoRenderContenido(campana, sede, i){
     var periodos = agregado.map(function(a){ return a.periodo; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
     var skillsPresentes = agregado.map(function(a){ return a.skillName; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; });
     datasets = [];
-    skillsPresentes.forEach(function(sk, idx){
+    skillsPresentes.forEach(function(sk){
       var porPeriodo = {};
       agregado.filter(function(a){ return a.skillName===sk; }).forEach(function(a){ porPeriodo[a.periodo]=a; });
-      var color = pal[idx % pal.length];
+      // Color por identidad de la skill (paleta-logic.js), no por posicion:
+      // la misma skill se ve siempre del mismo color, combinada o separada,
+      // sin importar el orden en que aparezca tras subir un archivo nuevo.
+      var color = (typeof paletaColorPara==='function') ? paletaColorPara(sk, pal) : pal[0];
       datasets.push({ type:'bar', label: sk+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
       datasets.push({ type:'line', label: sk+' — Nivel Atencion', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3 });
     });

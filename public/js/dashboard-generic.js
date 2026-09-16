@@ -94,8 +94,14 @@ function _gdEvalCampo(row, f){
   return _gdNum(row[f.campo]);
 }
 
-// Devuelve { scalar } o { labels:[], values:[] }
-function _gdResolver(f){
+// Devuelve { scalar } o { labels:[], values:[] }.
+// `extra` (opcional, solo aplica a modo:'filas'): { categorias:[...] } para
+// quedarse solo con esas categorias de f.x (pie/bar por categoria), o
+// { desde, hasta } para acotar por f.x==='fecha' (lineas diarias) — el
+// filtro nuevo de graficas de Gestion de base (gd-filtro-logic.js), ademas
+// del `f.filtro` de igualdad exacta que ya existia. Sin `extra`, el
+// comportamiento es identico al de antes de este cambio.
+function _gdResolver(f, extra){
   if(!f) return { scalar: null };
   var vf = _gdVistaFiltro();
 
@@ -122,6 +128,8 @@ function _gdResolver(f){
       return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
     });
     var xk = f.x || 'fecha';
+    if(extra && extra.categorias) filas = gdFiltrarFilasCategorias(filas, xk, extra.categorias);
+    if(extra && (extra.desde || extra.hasta)) filas = gdFiltrarFilasRangoFechas(filas, extra.desde, extra.hasta);
     var esFecha = xk === 'fecha';
     if(esFecha) filas = filas.slice().sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)); });
     return {
@@ -174,6 +182,91 @@ function _gdCyclePanelTipo(i, tipo){
       b.classList.toggle('on', b.dataset.t === tipo);
     });
   }
+}
+
+// ── Filtro por panel (categorias o rango de fechas) — Gestion de base ──
+// Extiende de forma consistente el patron combinable de Trafico de Llamadas
+// (skill + Desde/Hasta) a los pie/bar/line que leen filas de un Excel
+// (modo:'filas'): pie/bar sobre un campo categorico -> filtro de que
+// categorias incluir; line sobre 'fecha' -> filtro Desde/Hasta. Nunca se
+// inventa un filtro sobre un panel que no usa modo:'filas' (series
+// mensuales, KPIs escalares, combos de 2 barras fijas quedan intactos).
+var _gdCatFiltro = {};    // por 'tab|indice': { incluidas:[...] }
+var _gdFechaFiltro = {};  // por 'tab|indice': { desde, hasta }
+
+// 'categoria' | 'fecha' | null, segun el modo/x real de la fuente del panel.
+function _gdPanelFiltroTipo(p){
+  var f = p.tipo === 'pie' ? p.fuente : (p.series && p.series[0] && p.series[0].fuente);
+  if(!f || f.modo !== 'filas') return null;
+  var xk = f.x || (p.tipo === 'pie' ? 'categoria' : 'fecha');
+  return xk === 'fecha' ? 'fecha' : 'categoria';
+}
+function _gdPanelFuentes(p){
+  if(p.tipo === 'pie') return p.fuente ? [p.fuente] : [];
+  return (p.series||[]).map(function(s){ return s.fuente; }).filter(Boolean);
+}
+function _gdFilasBaseParaFiltro(p){
+  var f = _gdPanelFuentes(p)[0];
+  if(!f) return { filas: [], campo: 'categoria' };
+  var carga = _gdCargaMes(f.s);
+  var vf = _gdVistaFiltro();
+  var filas = (carga ? carga.filas||[] : []).filter(function(r){
+    return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
+  });
+  return { filas: filas, campo: f.x || 'categoria' };
+}
+function _gdRenderFiltroBar(p, i, tipo){
+  var host = document.getElementById('gd-f'+i);
+  if(!host) return;
+  var base = _gdFilasBaseParaFiltro(p);
+  var key = _gdPanelKey(i);
+
+  if(tipo === 'categoria'){
+    var disponibles = gdValoresDistintos(base.filas, base.campo);
+    var estado = _gdCatFiltro[key] || {};
+    var incluidas = (estado.incluidas && estado.incluidas.length) ? estado.incluidas : disponibles;
+    host.innerHTML = '<div class="gd-panel-filtro">' +
+      '<div><label>Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
+        disponibles.map(function(v){ return '<option value="'+esc(v)+'"'+(incluidas.indexOf(v)!==-1?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
+      '</select></div>' +
+      '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
+    '</div>';
+    return;
+  }
+
+  // 'fecha'
+  var fechas = base.filas.map(function(r){ return r.fecha; }).filter(Boolean).sort();
+  var minF = fechas[0] || '', maxF = fechas[fechas.length-1] || '';
+  var estadoF = _gdFechaFiltro[key] || {};
+  var desde = estadoF.desde || minF, hasta = estadoF.hasta || maxF;
+  host.innerHTML = '<div class="gd-panel-filtro">' +
+    '<div><label>Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label>Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
+  '</div>';
+}
+function _gdExtraFiltroPanel(p, i){
+  var tipo = _gdPanelFiltroTipo(p);
+  if(tipo === 'categoria') return { categorias: (_gdCatFiltro[_gdPanelKey(i)]||{}).incluidas };
+  if(tipo === 'fecha') return _gdFechaFiltro[_gdPanelKey(i)] || {};
+  return null;
+}
+function _gdAplicarFiltroPanel(i){
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+  if(!tab) return;
+  var p = tab.panels[i];
+  var tipo = _gdPanelFiltroTipo(p);
+  var key = _gdPanelKey(i);
+  if(tipo === 'categoria'){
+    var sel = document.getElementById('gd-catf-'+i);
+    var incluidas = sel ? Array.prototype.filter.call(sel.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
+    _gdCatFiltro[key] = { incluidas: incluidas };
+  } else if(tipo === 'fecha'){
+    var d = document.getElementById('gd-fechaf-desde-'+i);
+    var h = document.getElementById('gd-fechaf-hasta-'+i);
+    _gdFechaFiltro[key] = { desde: d ? d.value : '', hasta: h ? h.value : '' };
+  }
+  _gdRenderPanel(p, i);
 }
 
 // ── Analisis: valor del periodo de comparacion (periodo anterior o el elegido) ──
@@ -450,6 +543,14 @@ document.getElementById('gd-tabs').addEventListener('click', function(e){
   if(btn) switchGenericTab(btn.dataset.gdtab);
 });
 
+// El boton "Aplicar filtros" de Calidad lleva la campana en data-camp (no en
+// un onclick con texto libre — mismo criterio que data-gdtab de arriba y
+// data-cliente de dashboards-admin.js: evita inyeccion via el nombre).
+document.getElementById('gd-panels').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-calapply]');
+  if(btn) _calDashAplicarFiltros(btn.dataset.camp, Number(btn.dataset.i));
+});
+
 function switchGenericTab(key){
   _gd.tab = key;
   document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
@@ -467,6 +568,11 @@ function renderGenericTab(key){
   var html = '';
   panels.forEach(function(p, i){
     if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
+      // El filtro de asesor/fecha de Calidad (_gdRenderCalidad) va ANTES de
+      // la rejilla de tarjetas KPI, nunca adentro (.aurora-kpis es un
+      // flex/grid de tarjetas — un filtro adentro se veria como una tarjeta
+      // rota). kpi_row (sin Calidad) no tiene filtro: el div queda vacio.
+      if(p.tipo === 'calidad_kpis') html += '<div id="gd-f'+i+'"></div>';
       html += '<div class="aurora-kpis" id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
@@ -488,8 +594,9 @@ function renderGenericTab(key){
             ' onclick="_gdCyclePanelTipo(' + x.i + ',\'' + t + '\')">' +
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
+      var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
-        '<span>' + esc(x.p.titulo || '') + '</span>' + tools + '</div>' +
+        '<span>' + esc(x.p.titulo || '') + '</span>' + tools + '</div>' + filtroDiv +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div></div>';
     }).join('') + '</div>';
   }
@@ -499,10 +606,6 @@ function renderGenericTab(key){
 }
 
 function _gdRenderPanel(p, i){
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-  var pal = (typeof PC!=='undefined') ? PC : ['#0d4a5e','#1a7a9e','#27ae60','#e67e22','#e74c3c','#8e44ad'];
-  var serieColors = [ (typeof CD!=='undefined'?CD:'#0d4a5e'), (typeof CM!=='undefined'?CM:'#1a7a9e'), (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ];
-
   if(p.tipo === 'kpi_row'){
     var el = document.getElementById('gd-p'+i); if(!el) return;
     el.innerHTML = (p.items||[]).map(_gdKpiCardHtml).join('');
@@ -533,9 +636,11 @@ function _gdRenderPanel(p, i){
   var canvasId = 'gd-c'+i;
 
   if(p.tipo === 'pie'){
-    var pr = _gdResolver(p.fuente);
+    var filtroTipoPie = _gdPanelFiltroTipo(p);
+    if(filtroTipoPie) _gdRenderFiltroBar(p, i, filtroTipoPie);
+    var pr = _gdResolver(p.fuente, _gdExtraFiltroPanel(p, i));
     _gdChart(canvasId, { type:'doughnut',
-      data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: pal }] },
+      data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: (pr.labels||[]).map(function(l){ return paletaColorPara(l); }) }] },
       options: loPie() });
     return;
   }
@@ -545,11 +650,14 @@ function _gdRenderPanel(p, i){
     var esLinea = eff === 'line' || eff === 'area';
     var hex2rgba = function(h, a){ h = h.replace('#',''); return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')'; };
     var series = p.series || [];
+    var filtroTipoLb = _gdPanelFiltroTipo(p);
+    if(filtroTipoLb) _gdRenderFiltroBar(p, i, filtroTipoLb);
+    var extraLb = _gdExtraFiltroPanel(p, i);
     var labels = null;
-    var datasets = series.map(function(s, si){
-      var rr = _gdResolver(s.fuente);
+    var datasets = series.map(function(s){
+      var rr = _gdResolver(s.fuente, extraLb);
       if(!labels) labels = rr.labels || [];
-      var color = serieColors[si % serieColors.length];
+      var color = paletaColorPara(s.label);
       if(esLinea){
         return { label: s.label, data: rr.values||[], borderColor: color, backgroundColor: hex2rgba(color, eff === 'area' ? 0.18 : 0.08),
           tension:0.3, pointRadius:3, borderWidth:2, fill: eff === 'area' || series.length===1 };
@@ -565,9 +673,9 @@ function _gdRenderPanel(p, i){
   }
 
   if(p.tipo === 'combo'){
-    var barras = (p.barras||[]).map(function(b, bi){
+    var barras = (p.barras||[]).map(function(b){
       var rb = _gdResolver(b.fuente);
-      return { _r: rb, ds: { type:'bar', label:b.label, data: rb.values||[], backgroundColor: serieColors[bi % serieColors.length], borderRadius:3, yAxisID:'y' } };
+      return { _r: rb, ds: { type:'bar', label:b.label, data: rb.values||[], backgroundColor: paletaColorPara(b.label), borderRadius:3, yAxisID:'y' } };
     });
     var labels2 = (barras[0] && barras[0]._r.labels) || [];
     var lin = p.linea ? _gdResolver(p.linea.fuente) : null;
@@ -598,33 +706,79 @@ function _gdTiempoOpts(){
 }
 
 // ── Paneles de Calidad (usan CAL_DB de la Fase 1) ───────────
+// Filtro de asesor/fecha (extiende el patron combinable de Trafico de
+// Llamadas a Calidad, 2026-09-16): estado compartido por campana entre
+// calidad_kpis y calidad_pie (son dos paneles separados de la misma
+// pestaña, "tabCalidad" siempre los emite juntos) — la barra de filtro se
+// dibuja una sola vez (en calidad_kpis, que va primero) y calidad_pie lee
+// el mismo estado sin dibujar una segunda barra redundante. A diferencia
+// del selector de mes global (_gd.mesSel), este filtro es autonomo como el
+// de Trafico: no sigue al selector de mes de arriba, tiene su propio rango.
+var _calDashFiltro = {}; // por campana: { asesores:[...]|null, desde, hasta }
+
+function _calDashEstado(camp, todos){
+  if(!_calDashFiltro[camp]){
+    var fechas = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
+    var minF = fechas[0], maxF = fechas[fechas.length-1];
+    var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxF, minF) : minF;
+    _calDashFiltro[camp] = { asesores: null, desde: desdeDefault || '', hasta: maxF || '' };
+  }
+  return _calDashFiltro[camp];
+}
+
+function _calDashAplicarFiltros(camp, i){
+  var sel = document.getElementById('cd-f-asesor-'+i);
+  var asesores = sel ? Array.prototype.filter.call(sel.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
+  var desde = document.getElementById('cd-f-desde-'+i);
+  var hasta = document.getElementById('cd-f-hasta-'+i);
+  _calDashFiltro[camp] = { asesores: asesores, desde: desde ? desde.value : '', hasta: hasta ? hasta.value : '' };
+  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+  if(tab) renderGenericTab(tab.key);
+}
+
 function _gdRenderCalidad(p, i){
   var camp = p.campana;
-  var arr = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
-  if(_gd.mesSel) arr = arr.filter(function(m){ return m.mes === _gd.mesSel; });
-  var total = arr.length;
-  var promedio = total ? Math.round((arr.reduce(function(a,m){return a+m.puntaje;},0)/total)*10)/10 : 0;
-  var sob = arr.filter(function(m){return m.puntaje>=90;}).length;
-  var noC = arr.filter(function(m){return m.puntaje>=70 && m.puntaje<90;}).length;
-  var cri = arr.filter(function(m){return m.puntaje<70;}).length;
-  var clasif = total===0 ? '—' : (promedio<70?'🔴 CRITICO':promedio<90?'🟡 NO CRITICO':'🟢 SOBRESALIENTE');
+  var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+  var asesoresDisp = calDashAsesoresDistintos(todos);
+  var estado = _calDashEstado(camp, todos);
+  if(!estado.asesores) estado.asesores = asesoresDisp.slice();
+  else estado.asesores = estado.asesores.filter(function(a){ return asesoresDisp.indexOf(a)!==-1; });
+  if(!estado.asesores.length) estado.asesores = asesoresDisp.slice();
+
+  var arr = calDashFiltrarMonitoreos(todos, { asesores: estado.asesores, desde: estado.desde, hasta: estado.hasta });
+  var r = calDashResumen(arr);
 
   if(p.tipo === 'calidad_kpis'){
+    var fEl = document.getElementById('gd-f'+i);
+    if(fEl){
+      fEl.innerHTML = '<div class="gd-panel-filtro">' +
+        '<div><label>Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
+          asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(a)+'</option>'; }).join('') +
+        '</select></div>' +
+        '<div><label>Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label>Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<button class="btn-sm" data-calapply data-camp="'+esc(camp)+'" data-i="'+i+'">Aplicar filtros</button>' +
+      '</div>';
+    }
     var el = document.getElementById('gd-p'+i); if(!el) return;
     // 'qa_promedio' via umbrales_semaforo (default global 90/70, editable
     // desde el panel de administracion); si no hay umbral configurado cae
     // al mismo corte 90/70 que este panel siempre uso, para no perder color.
-    var qaColor = _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: camp });
-    var qaCls = qaColor ? _gdSemaforoClase(qaColor) : (promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red');
+    var qaColor = _gdSemaforoColor(r.total ? r.promedio : null, { metrica: 'qa_promedio', campana: camp });
+    var qaCls = qaColor ? _gdSemaforoClase(qaColor) : (r.promedio>=90?'kpi-green':r.promedio>=70?'kpi-org':'kpi-red');
     el.innerHTML =
-      '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+clasif+'</div><div class="kl">Clasificacion General</div></div>';
+      '<div class="aurora-kpi"><div class="kv">'+r.total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+(r.total?r.promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+r.clasificacion+'</div><div class="kl">Clasificacion General</div></div>';
     return;
   }
-  // calidad_pie
+  // calidad_pie — clasificacion cualitativa fija (sobresaliente/no critico/
+  // critico), no la paleta categorica: colores intencionalmente iguales al
+  // semaforo (verde/naranja/rojo = bueno/medio/malo), pero es una decision
+  // de diseño de ESTE grafico puntual, no el motor de umbrales de
+  // semaforo-logic.js (no hay umbral configurable de por medio aqui).
   _gdChart('gd-c'+i, { type:'doughnut',
-    data:{ labels:['Sobresaliente','No Critico','Critico'], datasets:[{ data:[sob,noC,cri], backgroundColor:[
+    data:{ labels:['Sobresaliente','No Critico','Critico'], datasets:[{ data:[r.sobresaliente,r.noCritico,r.critico], backgroundColor:[
       (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ] }] },
     options: loPie() });
 }

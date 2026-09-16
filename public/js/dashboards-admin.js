@@ -24,19 +24,34 @@ async function renderDashboardsSection(){
   tbody.innerHTML = rows.map(function(r){
     return '<tr><td><strong>'+esc(r.cliente)+'</strong></td><td>'+esc(r.titulo)+'</td><td>'+r.tabs+'</td><td>'+r.paneles+'</td>'+
       '<td style="font-size:0.78rem;color:#7a9ba8">'+esc((r.updatedAt||'').slice(0,10))+'</td>'+
-      '<td><button class="btn-sm btn-edit" data-dcaction="edit" data-cliente="'+esc(r.cliente)+'">Editar</button> '+
+      '<td><button class="btn-sm btn-cancel" data-dcaction="preview" data-cliente="'+esc(r.cliente)+'">Previsualizar</button> '+
+      '<button class="btn-sm btn-edit" data-dcaction="edit" data-cliente="'+esc(r.cliente)+'">Editar</button> '+
       '<button class="btn-sm btn-delete" data-dcaction="delete" data-cliente="'+esc(r.cliente)+'">Eliminar</button></td></tr>';
   }).join('');
 }
 
-// Los botones Editar/Eliminar llevan el cliente en data-cliente (no en un onclick
-// con texto libre — evita inyeccion de JS via el nombre del cliente).
+// Los botones Previsualizar/Editar/Eliminar llevan el cliente en data-cliente
+// (no en un onclick con texto libre — evita inyeccion de JS via el nombre
+// del cliente).
 document.getElementById('dashcfg-tbody') && document.getElementById('dashcfg-tbody').addEventListener('click', function(e){
   var btn = e.target.closest('button[data-dcaction]');
   if(!btn) return;
-  if(btn.dataset.dcaction === 'edit') openDashCfgModal(btn.dataset.cliente);
+  if(btn.dataset.dcaction === 'preview') previewDashCfgGuardado(btn.dataset.cliente);
+  else if(btn.dataset.dcaction === 'edit') openDashCfgModal(btn.dataset.cliente);
   else if(btn.dataset.dcaction === 'delete') deleteDashCfg(btn.dataset.cliente);
 });
+
+// Previsualizar el dashboard YA GUARDADO de una campana, desde el listado
+// (antes de decidir si editarlo o borrarlo) — reutiliza tal cual
+// openGenericDashboard(), la MISMA funcion que abre el dashboard real de un
+// cliente (dashboard-generic.js): mismos datos reales, mismo render, cero
+// logica nueva. A diferencia de previewDashCfg() (que muestra la
+// configuracion EN MEMORIA del formulario, aun sin guardar), esta
+// previsualizacion siempre es la version ya guardada en la base.
+function previewDashCfgGuardado(cliente){
+  if(typeof openGenericDashboard !== 'function'){ showToast('No se pudo abrir la previsualizacion'); return; }
+  openGenericDashboard(cliente);
+}
 
 async function deleteDashCfg(cliente){
   // Desde 2026-09-16 borrar la configuracion (KPIs/secciones/layout) NUNCA
