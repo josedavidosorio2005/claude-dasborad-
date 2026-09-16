@@ -82,6 +82,21 @@ jobs:
                 console.log("\n=== " + titulo + " ===");
                 console.log(JSON.stringify(data, null, 2));
               }
+              out("conteos totales por tabla", {
+                dashboard_cargas: db.prepare("SELECT COUNT(*) AS n FROM dashboard_cargas").get().n,
+                calidad_nivel_servicio_diario: db.prepare("SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario").get().n,
+                calidad_nivel_servicio: db.prepare("SELECT COUNT(*) AS n FROM calidad_nivel_servicio").get().n,
+                monitoreos: db.prepare("SELECT COUNT(*) AS n FROM monitoreos").get().n,
+                trafico_skill_mapeo: db.prepare("SELECT COUNT(*) AS n FROM trafico_skill_mapeo").get().n,
+                seed_demo_marcas: db.prepare("SELECT COUNT(*) AS n FROM seed_demo_marcas").get().n,
+                historial: db.prepare("SELECT COUNT(*) AS n FROM historial").get().n,
+              });
+              out("seed_demo_marcas -- distribucion por tabla marcada", db.prepare(
+                "SELECT tabla, COUNT(*) AS n, MIN(createdAt) AS primero, MAX(createdAt) AS ultimo FROM seed_demo_marcas GROUP BY tabla"
+              ).all());
+              out("historial -- 15 eventos mas recientes (por id desc)", db.prepare(
+                "SELECT id, fecha, accion, actor, detalle FROM historial ORDER BY id DESC LIMIT 15"
+              ).all());
               const recientesCargas = db.prepare(
                 "SELECT id, cliente, seccion, periodo, cargadoPorNombre, cargadoEn, filas FROM dashboard_cargas ORDER BY id DESC LIMIT 20"
               ).all().map((r) => {
