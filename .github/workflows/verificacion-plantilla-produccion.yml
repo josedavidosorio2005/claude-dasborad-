@@ -5,13 +5,22 @@ name: Verificacion QA - descarga de plantilla en produccion
 # para la IP de este runner, secrets de SSH ya auditados) para no abrir
 # ningun acceso nuevo.
 #
-# Que hace: crea un usuario TEMPORAL directo en la base de datos de
-# produccion (nunca via la API, para no dejar una fila en el historial de
-# auditoria como si lo hubiera creado un humano), con el permiso minimo
-# `cargarDatos` (nunca rol admin), usa Playwright contra la URL real de
-# produccion para descargar la plantilla oficial de Trafico con ese usuario,
-# confirma que es byte a byte identica a la del repo, y borra el usuario
-# temporal de inmediato.
+# Que hace (actualizado para la plantilla CONSOLIDADA del PR #32 -- el
+# boton individual de Trafico que este workflow probaba antes se retiro de
+# la interfaz, ver ARQUITECTURA.md §7): crea un usuario TEMPORAL directo en
+# la base de datos de produccion (nunca via la API, para no dejar una fila
+# en el historial de auditoria como si lo hubiera creado un humano), con el
+# permiso minimo `cargarDatos` (nunca rol admin), usa Playwright contra la
+# URL real de produccion para:
+#   1. ALBERTO LINERO GO (caso minimo, sin Calidad): descargar su plantilla,
+#      confirmar sus hojas, llenarla con datos de prueba y confirmar que la
+#      carga se guarda sin friccion.
+#   2. ORLANT (caso completo, con Calidad): descargar su plantilla y probar
+#      el camino de error real del PR #31 (formula sin calcular en una
+#      hoja) mezclado con una hoja valida (Trafico) en el MISMO archivo --
+#      confirmar que se rechaza solo la hoja mala.
+# Borra los datos de prueba (la carga de ALBERTO LINERO GO y el skill de
+# Trafico de ORLANT) y el usuario temporal de inmediato al terminar.
 #
 # La contrasena del usuario temporal se genera en este mismo job, se
 # enmascara con `::add-mask::` ANTES de usarse en ningun otro paso, y nunca
@@ -89,12 +98,13 @@ jobs:
       # explicitamente a AUX_ADMIN, y sin ningun permiso extra no puede
       # crear/editar/borrar usuarios ni gestionar permisos, ver
       # server/tests/permissions.test.js) + perms.cargarDatos=true: el
-      # minimo permiso que exige el boton de descarga (canLoadData), nada
-      # mas. Se necesita este rol (y no uno de dashboard de cliente) porque
-      # solo ADMIN/AUX_ADMIN entran al panel admin (enterAdminPanel() en
-      # session.js) donde vive la seccion "Metas Calidad" -- con cualquier
-      # otro rol la seccion existe en el DOM pero su contenedor padre queda
-      # oculto y el boton nunca es genuinamente clickeable.
+      # minimo permiso que exige la pantalla "Cargar Datos" (canLoadData),
+      # nada mas. Se necesita este rol (y no uno de dashboard de cliente)
+      # porque solo ADMIN/AUX_ADMIN entran al panel admin
+      # (enterAdminPanel() en session.js) donde vive esa pantalla -- el
+      # script de verificacion abre la pantalla llamando openCargas()
+      # directamente (no dependen del link del menu, que ademas queda
+      # oculto para otros roles).
       - name: Crear usuario temporal directo en la base de datos
         uses: appleboy/ssh-action@v1
         env:
@@ -134,21 +144,36 @@ jobs:
               console.log("USUARIO_TEMPORAL_CREADO " + JSON.stringify(row));
             '
 
-      - name: Instalar Playwright (Chromium)
+      - name: Instalar Playwright (Chromium) y xlsx (solo para leer/armar los .xlsx de esta verificacion)
         run: |
-          npm install --no-save playwright@1.63.0
+          npm install --no-save playwright@1.63.0 xlsx@0.18.5
           npx playwright install --with-deps chromium
 
-      - name: Verificar la descarga real en produccion con el usuario temporal
+      - name: Verificar la plantilla consolidada real en produccion con el usuario temporal
         id: verificacion
         env:
           TEMP_PW: ${{ steps.genpw.outputs.password }}
           PROD_URL: https://inconexionpruebasclaude.duckdns.org
-        run: node .github/scripts/verificar-plantilla-produccion.js
+          ARTIFACTS_DIR: ${{ runner.temp }}/verificacion-artifacts
+        run: |
+          mkdir -p "$ARTIFACTS_DIR"
+          node .github/scripts/verificar-plantilla-produccion.js
+
+      - name: Subir capturas y archivos descargados como evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verificacion-plantilla-consolidada-${{ github.run_id }}
+          path: ${{ runner.temp }}/verificacion-artifacts/**
+          retention-days: 30
+          if-no-files-found: warn
 
       # Corre SIEMPRE (incluso si la verificacion de arriba fallo), para
-      # nunca dejar el usuario temporal vivo en produccion.
-      - name: Borrar el usuario temporal (siempre, pase lo que pase arriba)
+      # nunca dejar en produccion ni los datos de prueba ni el usuario
+      # temporal. Los datos de prueba son identificables sin ambiguedad
+      # (periodo 2027-05 de ALBERTO LINERO GO, skill PROD_QA_VERIF_ORLANT
+      # de Trafico) -- no se toca ninguna otra fila.
+      - name: Borrar los datos de prueba y el usuario temporal (siempre, pase lo que pase arriba)
         if: always()
         uses: appleboy/ssh-action@v1
         with:
@@ -166,7 +191,21 @@ jobs:
               -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
               app node -e '
               const db = require("./db");
+              const carga = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
+                .run("ALBERTO LINERO GO", "resumen", "2027-05");
+              const diario = db.prepare("DELETE FROM calidad_nivel_servicio_diario WHERE skillName = ?")
+                .run("PROD_QA_VERIF_ORLANT");
+              const mensual = db.prepare("DELETE FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?")
+                .run("(SIN ASIGNAR)", "2027-05");
+              const mapeo = db.prepare("DELETE FROM trafico_skill_mapeo WHERE skillName = ?")
+                .run("PROD_QA_VERIF_ORLANT");
               const info = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_USER);
+              console.log("DATOS_DE_PRUEBA_BORRADOS " + JSON.stringify({
+                cargaAlbertoLineroGo: carga.changes,
+                traficoDiario: diario.changes,
+                traficoMensual: mensual.changes,
+                traficoSkillMapeo: mapeo.changes,
+              }));
               console.log("USUARIO_TEMPORAL_BORRADO " + JSON.stringify({ filasBorradas: info.changes, at: new Date().toISOString() }));
             '
 
