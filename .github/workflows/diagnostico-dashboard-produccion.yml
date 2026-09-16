@@ -1,0 +1,169 @@
+name: Diagnostico - datos subidos no se ven en el dashboard (produccion)
+
+# Disparo manual unicamente. Reutiliza el mismo mecanismo de acceso que
+# deploy.yml/verificacion-plantilla-produccion.yml (rol OIDC, apertura
+# temporal del puerto 22 solo para la IP de este runner) -- pero esta
+# corrida es de SOLO LECTURA: ningun paso escribe en la base de datos, no
+# crea usuarios, no sube archivos. Solo corre SELECTs contra la base real
+# para diagnosticar por que un dato recien cargado no aparece en un
+# dashboard (reporte de InCo, 2026-09-16). El script en si vive commiteado
+# en el repo (.github/scripts/diagnosticar-dashboard.js) para que quede
+# revisable, y se pega inline en el `script:` de ssh-action (mismo patron
+# que ya usan los otros workflows de este repo) para no depender de una
+# accion de terceros nueva (scp) solo para copiar un archivo.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Correr el diagnostico (solo lectura) dentro del contenedor
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e JWT_SECRET="dummy-no-usado-diagnostico-32-caracteres" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              function out(titulo, data) {
+                console.log("\n=== " + titulo + " ===");
+                console.log(JSON.stringify(data, null, 2));
+              }
+              const recientesCargas = db.prepare(
+                "SELECT id, cliente, seccion, periodo, cargadoPorNombre, cargadoEn, filas FROM dashboard_cargas ORDER BY id DESC LIMIT 20"
+              ).all().map((r) => {
+                let n = null;
+                try { n = JSON.parse(r.filas || "[]").length; } catch (e) {}
+                return { id: r.id, cliente: r.cliente, seccion: r.seccion, periodo: r.periodo, cargadoPorNombre: r.cargadoPorNombre, cargadoEn: r.cargadoEn, filas: n };
+              });
+              out("dashboard_cargas -- 20 mas recientes (por id desc)", recientesCargas);
+              out("calidad_nivel_servicio_diario -- 20 mas recientes (por id desc)", db.prepare(
+                "SELECT id, campana, sede, skillName, fecha, archivoNombre, cargadoPorNombre FROM calidad_nivel_servicio_diario ORDER BY id DESC LIMIT 20"
+              ).all());
+              out("monitoreos -- 20 mas recientes (por id desc)", db.prepare(
+                "SELECT id, campana, asesor, fecha, createdAt, updatedAt FROM monitoreos ORDER BY id DESC LIMIT 20"
+              ).all());
+              out("trafico_skill_mapeo -- completo", db.prepare(
+                "SELECT skillName, campana, sede FROM trafico_skill_mapeo ORDER BY campana, skillName"
+              ).all());
+              const rows = db.prepare(
+                "SELECT cliente, secciones, layout, updatedAt FROM dashboards_config WHERE activo = 1 ORDER BY cliente"
+              ).all();
+              const reporte = rows.map((row) => {
+                let secciones = {};
+                let layout = {};
+                try { secciones = JSON.parse(row.secciones || "{}"); } catch (e) {}
+                try { layout = JSON.parse(row.layout || "{}"); } catch (e) {}
+                const columnasPorSeccion = {};
+                Object.keys(secciones).forEach((s) => {
+                  columnasPorSeccion[s] = (secciones[s].columnas || []).map((c) => c.key);
+                });
+                const problemas = [];
+                function chequearFuente(f, dondeEtiqueta) {
+                  if (!f || typeof f !== "object") return;
+                  if (!f.s) return;
+                  const cols = columnasPorSeccion[f.s];
+                  if (cols === undefined) {
+                    problemas.push(dondeEtiqueta + ": referencia la seccion \"" + f.s + "\" que NO existe en secciones");
+                    return;
+                  }
+                  const camposUsados = [];
+                  if (f.campo) camposUsados.push(f.campo);
+                  if (f.formula) { if (f.a) camposUsados.push(f.a); if (f.b) camposUsados.push(f.b); }
+                  if (f.campos) camposUsados.push.apply(camposUsados, f.campos);
+                  camposUsados.forEach((campo) => {
+                    if (cols.indexOf(campo) === -1) {
+                      problemas.push(dondeEtiqueta + ": usa el campo \"" + campo + "\" de la seccion \"" + f.s + "\", pero esa seccion solo tiene columnas [" + cols.join(", ") + "]");
+                    }
+                  });
+                }
+                (layout.kpis || []).forEach((k, i) => {
+                  chequearFuente(k.fuente, "kpi[" + i + "] \"" + k.titulo + "\".fuente");
+                  if (k.meta && typeof k.meta === "object") chequearFuente(k.meta, "kpi[" + i + "] \"" + k.titulo + "\".meta");
+                });
+                (layout.tabs || []).forEach((tab, ti) => {
+                  (tab.panels || []).forEach((p, pi) => {
+                    const etiqueta = "tab[" + ti + ":" + tab.key + "].panel[" + pi + ":" + (p.titulo || p.tipo) + "]";
+                    chequearFuente(p.fuente, etiqueta + ".fuente");
+                    (p.series || []).forEach((s, si) => chequearFuente(s.fuente, etiqueta + ".series[" + si + "]"));
+                    (p.barras || []).forEach((b, bi) => chequearFuente(b.fuente, etiqueta + ".barras[" + bi + "]"));
+                    if (p.linea) chequearFuente(p.linea.fuente, etiqueta + ".linea");
+                  });
+                });
+                return { cliente: row.cliente, updatedAt: row.updatedAt, secciones: columnasPorSeccion, problemas: problemas };
+              });
+              out("dashboards_config -- columnas guardadas por seccion + problemas kpi/campo detectados (12 clientes)", reporte);
+              console.log("\n=== FIN DIAGNOSTICO ===");
+            '
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
