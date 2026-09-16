@@ -7,13 +7,23 @@
 // plantilla" / "Elegir archivo" por campaña, con una hoja por tipo de dato.
 //
 //   1. ALBERTO LINERO GO (caso minimo, sin Calidad): descarga la plantilla,
-//      confirma sus hojas exactas, la llena con datos de prueba y confirma
-//      que la carga se guarda sin fricción.
+//      confirma sus hojas exactas, la llena con datos de prueba, confirma
+//      que la carga se guarda sin fricción, y ADEMAS abre el DASHBOARD real
+//      (no solo la pantalla de carga) y confirma que ya muestra el periodo
+//      y el valor recien cargados.
 //   2. ORLANT (caso completo, con Calidad): descarga su plantilla, confirma
-//      que trae "Monitoreos", y prueba el camino de error real que arregló
+//      que trae "Monitoreos", prueba el camino de error real que arregló
 //      el PR #31 (formula de Excel sin calcular en una hoja) mezclado con
 //      una hoja válida (Trafico) en el MISMO archivo — confirma que se
-//      rechaza solo la hoja mala, sin bloquear la buena.
+//      rechaza solo la hoja mala, sin bloquear la buena — y tambien abre su
+//      DASHBOARD real para confirmar que refleja el dato nuevo.
+//
+// El chequeo del dashboard real (no solo el toast de "guardado") es el que
+// falto en las corridas anteriores de este script (PR #31/#32) y que
+// hubiera detectado antes el bug real de 2026-09-16 (DELETE
+// /dashboards/config/:cliente borrando en cascada dashboard_cargas, ver
+// docs/ARQUITECTURA.md §4): "se guardo" y "el dashboard lo muestra" son dos
+// afirmaciones distintas.
 //
 // Usa un usuario TEMPORAL (creado y borrado por el workflow, directo en la
 // base de datos — nunca via la API — con el permiso minimo `cargarDatos`,
@@ -41,6 +51,25 @@ const ARTIFACTS_DIR = process.env.ARTIFACTS_DIR || TMP;
 
 function sha256(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex');
+}
+
+// Abre el DASHBOARD real (no solo la pantalla de carga) y confirma que el
+// periodo recien guardado se ve con datos reales -- esto es lo que el
+// reporte de InCo (2026-09-16, "subi los datos y no los veo en el
+// dashboard") pedia verificar y que las corridas anteriores de este script
+// (PR #31/#32) nunca chequeaban: quedarse solo en que la carga se guarda
+// (toast/preview) no prueba que el DASHBOARD la lea de vuelta.
+async function verificarDashboardMuestraDato(page, cliente, screenshotPath) {
+  await page.evaluate(() => { if (typeof closeCargas === 'function') closeCargas(); });
+  await page.evaluate((c) => openGenericDashboard(c), cliente);
+  await page.waitForTimeout(1500);
+  const sub = (await page.locator('#gd-sub').innerText().catch(() => '')).trim();
+  const kpisText = (await page.locator('#gd-kpis').innerText().catch(() => '')).trim();
+  await page.screenshot({ path: screenshotPath, fullPage: true });
+  await page.evaluate(() => { if (typeof closeGenericDashboard === 'function') closeGenericDashboard(); });
+  await page.evaluate(() => { if (typeof openCargas === 'function') return openCargas(); });
+  await page.waitForTimeout(800);
+  return { sub, kpisText };
 }
 
 (async () => {
@@ -129,6 +158,22 @@ function sha256(buf) {
     resultado.algCargaOk = /Resumen mensual/.test(resultado.algToast) && !resultado.algToast.includes('✗');
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, '2-alberto-linero-go-guardado.png') });
 
+    // El dashboard REAL (no solo la pantalla de carga) debe mostrar ya el
+    // periodo 2027-05 con el valor de prueba (111 en TODAS las metricas de
+    // "resumen", incluida "base_asignada" -> KPI "Base asignada", formato
+    // 'miles' = pasa el numero tal cual).
+    const algDash = await verificarDashboardMuestraDato(page, 'ALBERTO LINERO GO', path.join(ARTIFACTS_DIR, '2b-alberto-linero-go-dashboard.png'));
+    resultado.algDashboardSub = algDash.sub;
+    resultado.algDashboardKpis = algDash.kpisText;
+    resultado.algDashboardMuestraPeriodoNuevo = /may-27/i.test(algDash.sub);
+    resultado.algDashboardMuestraValor = /111/.test(algDash.kpisText);
+    if (!resultado.algDashboardMuestraPeriodoNuevo || !resultado.algDashboardMuestraValor) {
+      throw new Error(
+        'ALBERTO LINERO GO: el dashboard NO refleja la carga recien guardada. gd-sub="' +
+          algDash.sub + '" gd-kpis="' + algDash.kpisText + '"'
+      );
+    }
+
     // ══ 2. ORLANT — caso completo (con Calidad) + camino de error ═════
     await page.evaluate(() => {
       var card = document.getElementById('carga-preview-card');
@@ -209,13 +254,34 @@ function sha256(buf) {
       /✓[^\n]*Resumen mensual/.test(resultado.orlantToast) && !/Trafico/.test(resultado.orlantToast);
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, '4-orlant-guardado-parcial.png') });
 
+    // Igual que con ALBERTO LINERO GO: confirmar que el DASHBOARD real de
+    // ORLANT (no solo el toast de guardado) ya muestra el periodo 2027-05
+    // con el valor de prueba (222 en "resumen" -> KPI "Total Agendas",
+    // formato 'miles' = pasa el numero tal cual). La hoja DATA (Trafico) se
+    // rechazo a proposito y nunca se guardo, asi que no se verifica ahi.
+    const orlantDash = await verificarDashboardMuestraDato(page, 'ORLANT', path.join(ARTIFACTS_DIR, '5-orlant-dashboard.png'));
+    resultado.orlantDashboardSub = orlantDash.sub;
+    resultado.orlantDashboardKpis = orlantDash.kpisText;
+    resultado.orlantDashboardMuestraPeriodoNuevo = /may-27/i.test(orlantDash.sub);
+    resultado.orlantDashboardMuestraValor = /222/.test(orlantDash.kpisText);
+    if (!resultado.orlantDashboardMuestraPeriodoNuevo || !resultado.orlantDashboardMuestraValor) {
+      throw new Error(
+        'ORLANT: el dashboard NO refleja la carga recien guardada. gd-sub="' +
+          orlantDash.sub + '" gd-kpis="' + orlantDash.kpisText + '"'
+      );
+    }
+
     ok =
       resultado.loginOk &&
       resultado.algHojasOk &&
       resultado.algCargaOk &&
+      resultado.algDashboardMuestraPeriodoNuevo &&
+      resultado.algDashboardMuestraValor &&
       resultado.orlantTieneCalidad &&
       resultado.orlantErrorDetectadoEnPreview &&
-      resultado.orlantSoloDataFallo;
+      resultado.orlantSoloDataFallo &&
+      resultado.orlantDashboardMuestraPeriodoNuevo &&
+      resultado.orlantDashboardMuestraValor;
 
     resultado.ok = ok;
     console.log(JSON.stringify(resultado, null, 2));
