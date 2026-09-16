@@ -198,10 +198,15 @@ function sha256(buf) {
     await page.evaluate(() => guardarCarga());
     await page.waitForTimeout(1500);
     resultado.orlantToast = (await page.locator('#toast').innerText().catch(() => '')).trim();
-    // "resumen" (buena) se guarda; "Trafico de Llamadas" (con la formula
-    // sin calcular) se rechaza sola -- no bloquea a "resumen".
+    // Una hoja rechazada en la VISTA PREVIA (formula sin calcular, como
+    // aqui) nunca llega siquiera a intentarse guardar -- guardarCarga()
+    // solo itera las hojas con `.filas` (cargas.js), asi que "Trafico de
+    // Llamadas" no aparece ni como "✓" ni como "✗" en este toast; el
+    // rechazo ya quedo probado en orlantErrorDetectadoEnPreview arriba.
+    // Lo que confirma este toast es que "resumen" SI se guardo (no quedo
+    // bloqueada por el error de la otra hoja) y que Trafico no se toco.
     resultado.orlantSoloDataFallo =
-      /✓[^\n]*Resumen mensual/.test(resultado.orlantToast) && /✗[^\n]*Trafico de Llamadas/.test(resultado.orlantToast);
+      /✓[^\n]*Resumen mensual/.test(resultado.orlantToast) && !/Trafico/.test(resultado.orlantToast);
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, '4-orlant-guardado-parcial.png') });
 
     ok =
