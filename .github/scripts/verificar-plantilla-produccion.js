@@ -209,10 +209,19 @@ async function verificarDashboardMuestraDato(page, cliente, screenshotPath) {
     // "resumen" -- DATA siempre trae mas de una columna (universal, 17
     // columnas fijas), asi que SI se puede tener una fila con datos reales
     // en unas columnas y una formula sin calcular en otra.
+    // Ojo: varias filas de "resumen" son porcentajes (validados 0-100 en el
+    // servidor, ver secciones.normalizarFilas) -- no se puede poner 222 en
+    // TODAS las filas a ciegas (una corrida real de este script lo hizo y
+    // el servidor rechazo la carga entera con 400, dejando el dashboard sin
+    // datos -- error del script de prueba, no del producto). El label de
+    // cada fila (columna A) dice si es un "% ..." -> ahi va un porcentaje
+    // valido (85); el resto usa 222 como antes.
     const wsResumenOrlant = wbOrlant.Sheets['resumen'];
     const rangeResumenOrlant = XLSX.utils.decode_range(wsResumenOrlant['!ref']);
     for (let r = rangeResumenOrlant.s.r + 1; r <= rangeResumenOrlant.e.r; r++) {
-      wsResumenOrlant[XLSX.utils.encode_cell({ r, c: 1 })] = { t: 'n', v: 222 };
+      const label = (wsResumenOrlant[XLSX.utils.encode_cell({ r, c: 0 })] || {}).v || '';
+      const esPorcentaje = /%/.test(label);
+      wsResumenOrlant[XLSX.utils.encode_cell({ r, c: 1 })] = { t: 'n', v: esPorcentaje ? 85 : 222 };
     }
 
     // "DATA" (Trafico): SKILL_NAME/DATE/LLAMADAS CONTESTADAS con datos
