@@ -369,48 +369,69 @@ es indistinguible de uno real y nunca se cuela algo que la app rechazaría.
 
 ---
 
-## 7. Tráfico de llamadas — para el usuario final
+## 7. Cargar datos de una campaña — para el usuario final
 
-### Qué descargar y dónde subirlo (vía principal: la plantilla oficial)
+> Actualizado 2026-09-16 (PR #32): antes había que ir a pantallas separadas
+> según el tipo de dato — la plantilla de Tráfico estaba en "Metas
+> Calidad", la de Calidad en el módulo de Calidad, y la de KPIs/resumen
+> mensual en "Cargar Datos". **Ya no.** Ahora es un solo paso, un solo
+> botón, un solo archivo por campaña.
 
-1. En InConexion Platform, entra como **administrador** (o un usuario con el
-   permiso **"Cargar Datos"**) → menú **"Metas Calidad"** → tarjeta
-   **"Tráfico de Llamadas — carga desde Wolkvox"** → botón **"Descargar
-   plantilla"**. Es **una sola plantilla oficial**, la misma para todas las
-   campañas (Orlant, Clínica Aurora, Hospital La María, y cualquiera que se
-   mapee después) — la campaña de cada fila la decide el mapeo de skill
-   (ver más abajo), nunca la plantilla en sí.
-2. Llénala con los datos de **Wolkvox Manager**: Skills & Servicios →
-   reporte **"Llamadas y Nivel de Servicio por Hora"**, exportado
-   **agrupado por día** (no por hora). La hoja **INSTRUCCIONES** de la
-   propia plantilla explica columna por columna qué va en cada una y en qué
-   formato (fecha nativa de Excel, horas como `h:mm:ss`, porcentajes como
-   fracción donde aplica) — léela una vez antes de llenar la primera vez.
-3. Sube el archivo ya lleno en el mismo lugar de donde descargaste la
-   plantilla, elige el archivo `.xlsx`.
-4. Revisa la **vista previa** (filas válidas, skills y meses detectados, y
-   los avisos de filas descartadas si los hay) y confirma con **"Guardar
-   carga de trafico"**.
-5. Si el archivo trae una skill que el sistema no reconoce, queda guardada
-   igual (nada se pierde) pero marcada **"sin asignar"** en la tarjeta
-   **"Mapeo de Skills (Volvox) → Campana"**, justo debajo: elige ahí la
-   campaña/cliente correcta y guarda — no hace falta volver a subir el
-   archivo, los datos ya guardados se reasignan solos.
-6. Los datos aparecen de inmediato en la pestaña **"Tráfico de Llamadas"**
-   del dashboard de esa campaña.
+### Un solo botón por campaña: la plantilla consolidada (vía principal)
 
-**Subir el reporte crudo de Wolkvox sin pasar por la plantilla ya no es la
-vía recomendada** — la plantilla oficial evita errores de formato y ya trae
-las instrucciones incluidas. El sistema sigue aceptando cualquier archivo
-cuyas columnas coincidan por nombre con las que espera (el emparejamiento es
-por nombre de encabezado, no por posición ni por plantilla), para no romper
-retroactivamente a quien ya tenía su propio flujo funcionando.
+1. Entra como **administrador** (o un usuario con el permiso **"Cargar
+   Datos"**) → menú **"Cargar Datos"** → elige la **campaña** en el
+   desplegable "Cliente".
+2. Botón **"Descargar plantilla (Excel)"** — trae **un solo archivo**, con
+   **una hoja por cada tipo de dato que le aplica a esa campaña**: sus
+   secciones propias de resumen mensual/KPIs y demás (varían por campaña),
+   una hoja **"Monitoreos"** de Calidad si esa campaña tiene plantilla de
+   calificación, y siempre una hoja **"DATA"** para el tráfico de llamadas
+   (Volvox). La hoja **INSTRUCCIONES** al inicio del archivo explica qué es
+   cada hoja, cuáles columnas son obligatorias/opcionales, y los formatos
+   de fecha/hora/porcentaje — léela una vez antes de llenar la primera vez.
+3. Llena **solo las hojas que le apliquen a esa campaña esta vez** — las
+   demás pueden quedarse tal cual las descargaste, vacías. Eso **no es un
+   error**: una hoja vacía simplemente no aplica esta vez, no hace falta
+   borrarla ni avisar nada.
+4. Indica el **período (mes)** — aplica a las hojas de resumen/KPIs; las de
+   Calidad y Tráfico ya traen su propia fecha por fila. Sube el archivo
+   lleno con **"Elegir archivo…"**.
+5. Revisa la **vista previa**: por cada hoja dice si quedó **OK** (con
+   cuántas filas), **vacía** (no aplica esta vez, sin problema) o con un
+   **error explícito** — por ejemplo, si una celda trae una fórmula de
+   Excel sin calcular en vez de un número (pasa cuando el archivo se
+   generó por script y nunca se abrió en Excel/LibreOffice para forzar el
+   cálculo), el mensaje dice **exactamente cuál celda** y qué escribir en
+   su lugar.
+6. Confirma con **"Guardar carga"**. **Si una hoja tiene un error, las
+   demás se guardan igual** — no hay que corregir y volver a llenar todo el
+   archivo por un solo error: corrige solo esa hoja, vuelve a subir el
+   archivo completo, y las que ya estaban bien no se pierden ni se vuelven
+   a pedir por separado.
 
-Puedes subir el mismo archivo las veces que quieras: si un día ya estaba
-cargado, se actualiza (nunca se duplica). Un mismo archivo puede traer
-varias skills y varios meses a la vez, sin problema. Si vas a reemplazar un
-mes que ya tenía datos, el sistema te avisa cuántos registros se van a
-sobrescribir antes de guardar, para que lo confirmes con conocimiento.
+### Casos especiales
+
+- **Tráfico en bloque, multi-skill y multi-campaña de un solo export de
+  Wolkvox:** si tu flujo es pegar el export completo de Wolkvox Manager
+  (varias skills, varias campañas, varios meses a la vez) en vez de
+  llenar la hoja "DATA" campaña por campaña, esa vía **sigue existiendo**
+  en menú **"Metas Calidad"** → tarjeta **"Tráfico de Llamadas — carga
+  desde Wolkvox"** (input "Elegir archivo…", sin plantilla propia que
+  descargar ahí — la plantilla se obtiene desde cualquier campaña, ver
+  arriba). Ahí mismo, debajo, sigue el **mapeo de Skills → Campaña**
+  (una skill nueva se guarda igual, marcada "sin asignar", hasta que la
+  mapees) y el **Control de Cargas por Período**. El resto de esta sección
+  (formato de columnas, sedes, gráfica y filtros) aplica igual sin
+  importar por cuál de las dos vías haya entrado el dato.
+- **Campañas sin dashboard propio (Cartera Interna, Consultorio Julián
+  Molano):** no tienen pantalla "Cargar Datos" — sus monitoreos de Calidad
+  se cargan desde el módulo de Calidad → esa campaña → pestaña **"Carga
+  Masiva (Excel)"**, sin cambios (ver §13).
+
+Puedes subir el mismo archivo las veces que quieras: si un período ya
+tenía datos, se actualiza (nunca se duplica) — el sistema te avisa antes
+de sobrescribir para que lo confirmes con conocimiento.
 
 **Si necesitas combinar datos de más de una fuente** (ej. una línea cuyo AHT
 sale de un reporte distinto al de Volvox): la plataforma **no** une archivos
@@ -620,6 +641,11 @@ de evaluación (14 ítems ponderados, varios marcados como críticos — ver
 monitoreos por Excel**, la primera campaña con este camino hacia datos
 reales (antes, los monitoreos de Calidad solo se creaban uno por uno desde
 un formulario).
+
+> Cartera Interna (y Consultorio Julián Molano) no tienen dashboard propio,
+> así que no aparecen en el menú "Cargar Datos" ni tienen plantilla
+> consolidada (§7) — este es su único camino de carga masiva, y sigue
+> siendo así a propósito.
 
 ### Cómo cargar monitoreos por Excel
 
