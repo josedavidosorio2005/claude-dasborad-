@@ -6,11 +6,13 @@ name: Diagnostico - datos subidos no se ven en el dashboard (produccion)
 # corrida es de SOLO LECTURA: ningun paso escribe en la base de datos, no
 # crea usuarios, no sube archivos. Solo corre SELECTs contra la base real
 # para diagnosticar por que un dato recien cargado no aparece en un
-# dashboard (reporte de InCo, 2026-09-16). El script en si vive commiteado
-# en el repo (.github/scripts/diagnosticar-dashboard.js) para que quede
-# revisable, y se pega inline en el `script:` de ssh-action (mismo patron
-# que ya usan los otros workflows de este repo) para no depender de una
-# accion de terceros nueva (scp) solo para copiar un archivo.
+# dashboard (reporte de InCo, 2026-09-16). El chequeo de
+# dashboards_config reutiliza server/scripts/verificar-consistencia-dashboards.js
+# (ya commiteado y deployado con la app -- ver docs/ARQUITECTURA.md §3); el
+# resto de consultas de este diagnostico se pegan inline en el `script:` de
+# ssh-action (mismo patron que ya usan los otros workflows de este repo) para
+# no depender de una accion de terceros nueva (scp) solo para copiar un
+# archivo.
 on:
   workflow_dispatch: {}
 
@@ -114,53 +116,8 @@ jobs:
               out("trafico_skill_mapeo -- completo", db.prepare(
                 "SELECT skillName, campana, sede FROM trafico_skill_mapeo ORDER BY campana, skillName"
               ).all());
-              const rows = db.prepare(
-                "SELECT cliente, secciones, layout, updatedAt FROM dashboards_config WHERE activo = 1 ORDER BY cliente"
-              ).all();
-              const reporte = rows.map((row) => {
-                let secciones = {};
-                let layout = {};
-                try { secciones = JSON.parse(row.secciones || "{}"); } catch (e) {}
-                try { layout = JSON.parse(row.layout || "{}"); } catch (e) {}
-                const columnasPorSeccion = {};
-                Object.keys(secciones).forEach((s) => {
-                  columnasPorSeccion[s] = (secciones[s].columnas || []).map((c) => c.key);
-                });
-                const problemas = [];
-                function chequearFuente(f, dondeEtiqueta) {
-                  if (!f || typeof f !== "object") return;
-                  if (!f.s) return;
-                  const cols = columnasPorSeccion[f.s];
-                  if (cols === undefined) {
-                    problemas.push(dondeEtiqueta + ": referencia la seccion \"" + f.s + "\" que NO existe en secciones");
-                    return;
-                  }
-                  const camposUsados = [];
-                  if (f.campo) camposUsados.push(f.campo);
-                  if (f.formula) { if (f.a) camposUsados.push(f.a); if (f.b) camposUsados.push(f.b); }
-                  if (f.campos) camposUsados.push.apply(camposUsados, f.campos);
-                  camposUsados.forEach((campo) => {
-                    if (cols.indexOf(campo) === -1) {
-                      problemas.push(dondeEtiqueta + ": usa el campo \"" + campo + "\" de la seccion \"" + f.s + "\", pero esa seccion solo tiene columnas [" + cols.join(", ") + "]");
-                    }
-                  });
-                }
-                (layout.kpis || []).forEach((k, i) => {
-                  chequearFuente(k.fuente, "kpi[" + i + "] \"" + k.titulo + "\".fuente");
-                  if (k.meta && typeof k.meta === "object") chequearFuente(k.meta, "kpi[" + i + "] \"" + k.titulo + "\".meta");
-                });
-                (layout.tabs || []).forEach((tab, ti) => {
-                  (tab.panels || []).forEach((p, pi) => {
-                    const etiqueta = "tab[" + ti + ":" + tab.key + "].panel[" + pi + ":" + (p.titulo || p.tipo) + "]";
-                    chequearFuente(p.fuente, etiqueta + ".fuente");
-                    (p.series || []).forEach((s, si) => chequearFuente(s.fuente, etiqueta + ".series[" + si + "]"));
-                    (p.barras || []).forEach((b, bi) => chequearFuente(b.fuente, etiqueta + ".barras[" + bi + "]"));
-                    if (p.linea) chequearFuente(p.linea.fuente, etiqueta + ".linea");
-                  });
-                });
-                return { cliente: row.cliente, updatedAt: row.updatedAt, secciones: columnasPorSeccion, problemas: problemas };
-              });
-              out("dashboards_config -- columnas guardadas por seccion + problemas kpi/campo detectados (12 clientes)", reporte);
+              const { verificarDashboardsConfig } = require("./scripts/verificar-consistencia-dashboards");
+              out("dashboards_config -- problemas kpi/campo detectados por el detector permanente (scripts/verificar-consistencia-dashboards.js)", verificarDashboardsConfig());
               console.log("\n=== FIN DIAGNOSTICO ===");
             '
 

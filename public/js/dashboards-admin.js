@@ -39,10 +39,14 @@ document.getElementById('dashcfg-tbody') && document.getElementById('dashcfg-tbo
 });
 
 async function deleteDashCfg(cliente){
-  if(!confirm('Eliminar el dashboard de '+cliente+'? Se borran tambien sus datos cargados.')) return;
+  // Desde 2026-09-16 borrar la configuracion (KPIs/secciones/layout) NUNCA
+  // borra los Excel ya cargados (bug real: alguien perdio una carga real
+  // de ORLANT al recrear su dashboard) -- si se vuelve a crear el
+  // dashboard para el mismo cliente, esos datos se ven de inmediato.
+  if(!confirm('Eliminar la configuracion del dashboard de '+cliente+'? Los datos ya cargados (Excel de meses anteriores) NO se borran -- si vuelves a crear el dashboard de este cliente, se veran de nuevo.')) return;
   try{ await apiRequest('DELETE', '/dashboards/config/'+encodeURIComponent(cliente)); }
   catch(e){ showToast(e.message); return; }
-  showToast('Dashboard eliminado');
+  showToast('Configuracion del dashboard eliminada (los datos cargados se conservaron)');
   await loadDashboardClientes();
   renderDashboardsSection();
 }

@@ -188,6 +188,33 @@ tocar por un criterio explícito — en ese caso, tener `semaforo` puesto y no
 tener `metrica` todavía — para no pisar nada que un admin haya editado
 después a propósito).
 
+### Red de seguridad (decisión 2026-09-16): detector automático de solo lectura, NO backfill automático
+
+Al investigar el reporte de InCo "los datos subidos no se ven en el
+dashboard" (2026-09-16), se evaluó explícitamente si vale la pena construir
+un mecanismo que reescriba `dashboards_config` solo cuando el código agrega
+un campo/KPI nuevo, en vez de depender de que alguien note el hueco y corra
+el backfill manual de arriba. **Decisión: no** — un backfill automático que
+reescribe el `layout`/`secciones` guardado es peligroso porque esa misma
+fila también guarda ediciones manuales hechas por un administrador desde el
+constructor visual de dashboards (de hecho, la causa real del reporte de
+InCo fue justo un administrador editando esa configuración — ver el bug de
+`DELETE /dashboards/config/:cliente` más abajo, no este gotcha de snapshot).
+Un script que "corrige" el JSON por su cuenta podría pisar en silencio una
+personalización intencional del admin.
+
+En su lugar se agregó `server/scripts/verificar-consistencia-dashboards.js`:
+un detector permanente, de solo lectura, que compara los `campo` que usan
+los KPIs/paneles de cada dashboard contra las columnas realmente guardadas
+en sus secciones y reporta cualquier desalineación (sin tocar nada). Se
+puede correr a mano (`node scripts/verificar-consistencia-dashboards.js`,
+código de salida 1 si encuentra problemas) o contra producción vía el
+workflow `Diagnostico - datos subidos no se ven en el dashboard
+(produccion)` (`workflow_dispatch`, sin escribir nada). **Correr este
+detector es responsabilidad manual** cada vez que se agregue/renombre un
+`campo` de KPI en el código fuente — el detector avisa del problema, pero
+sigue siendo el backfill de `runOnceMigration` (arriba) quien lo corrige.
+
 ### Dónde se aplica
 
 `_gdSemaforoColor` en `public/js/dashboard-generic.js` es el único punto que
@@ -222,6 +249,39 @@ generarla con una de las 3 plantillas de `dashboard-plantillas-cliente.js`
 (ventas, cobranza, atención) si encaja en un patrón ya existente. **Recordar
 el backfill del §3** si el nuevo dashboard necesita compartir un `metrica`
 con otros ya existentes.
+
+### ⚠️ Bug real corregido (2026-09-16): borrar la configuración NUNCA debe borrar los datos ya cargados
+
+`dashboards_config` (la configuración: KPIs, secciones, layout) y
+`dashboard_cargas` (los Excel ya subidos) son dos ciclos de vida
+**independientes** — el segundo no depende del `id` del primero, solo
+comparte el string `cliente`. Hasta el 2026-09-16, `DELETE
+/api/dashboards/config/:cliente` violaba esto: además de borrar la fila de
+config, también corría `DELETE FROM dashboard_cargas WHERE cliente = ?`,
+destruyendo en cascada **todo** el histórico de Excel de ese cliente.
+
+Esto le pasó de verdad a InCo: un administrador borró y volvió a crear la
+configuración del dashboard de ORLANT (para ajustar KPIs desde el
+constructor visual) y, sin querer, se llevó por delante una carga real de
+Gestión de base del periodo "2026-01" que InCo acababa de subir minutos
+antes por la plantilla consolidada — de ahí el reporte "subí los datos y no
+los veo en el dashboard" (el diagnóstico inicial sospechó del gotcha de
+snapshot del §3, pero un chequeo generalizado a las 12 campañas no encontró
+ningún desalineamiento de ese tipo; la causa real se confirmó leyendo la
+tabla `historial`, que mostraba los eventos `DASHBOARD_CONFIG_DEL` justo
+antes y después del `DASHBOARD_CARGA`/`MONITOREO_BULK` real de InCo).
+
+**Fix**: `DELETE /api/dashboards/config/:cliente` ya no toca
+`dashboard_cargas`. Borrar (o editar) la configuración de un dashboard
+nunca borra los Excel ya cargados; si se vuelve a crear el dashboard para
+el mismo `cliente` (a mano o por el auto-sembrado "solo si no existe" de
+`dashboard-config-seed.js`), esas cargas se ven de inmediato sin volver a
+subir nada. Importante: **este fix no recupera datos ya destruidos por el
+bug antes de corregirlo** — la carga real de ORLANT "2026-01" que InCo
+subió y se perdió el 2026-09-16 no se restauró automáticamente por este
+cambio (arreglar el código solo evita que el problema se repita); para
+recuperarla, lo más simple es que InCo vuelva a subir ese mismo periodo por
+la plantilla consolidada, que ya funciona de punta a punta.
 
 ### B. Módulo administrativo (datos de tablas propias, no de `dashboard_cargas`)
 

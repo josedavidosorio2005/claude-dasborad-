@@ -242,6 +242,63 @@ test('dashboard configurable: crea un cliente pendiente sin archivo JS nuevo', a
   assert.equal(del.status, 200);
 });
 
+// Bug real encontrado en produccion (2026-09-16, ver docs/ARQUITECTURA.md
+// §3): un admin borro y volvio a crear la configuracion del dashboard de
+// ORLANT (para ajustar KPIs/secciones) y eso borro tambien, en cascada, los
+// Excel ya cargados de ese cliente -- una carga real de InCo desaparecio
+// sin que nadie la tocara a proposito. Borrar/recrear la CONFIGURACION
+// nunca debe destruir los datos YA cargados: son ciclos de vida
+// independientes (la config define como se ve un KPI, dashboard_cargas es
+// el dato crudo del Excel; ninguno depende del id del otro).
+test('DELETE /api/dashboards/config/:cliente borra la configuracion pero NUNCA los Excel ya cargados (bug real 2026-09-16)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cliente = 'DEMO QA DELETE ' + Math.random().toString(36).slice(2, 6);
+  const config = {
+    cliente,
+    titulo: 'Dashboard ' + cliente,
+    vista: null,
+    secciones: {
+      resumen: {
+        titulo: 'Resumen mensual',
+        descripcion: 'Carga simple de prueba',
+        cadencia: 'mensual',
+        periodo: 'mes',
+        filaUnica: true,
+        columnas: [{ key: 'llamadas', label: 'Llamadas', tipo: 'entero' }],
+      },
+    },
+    layout: {
+      kpis: [{ titulo: 'Llamadas', formato: 'miles', fuente: { s: 'resumen', modo: 'ultimo', campo: 'llamadas' } }],
+      tabs: [{ key: 'general', label: 'General', panels: [] }],
+    },
+  };
+
+  assert.equal((await request(app).post('/api/dashboards/config').set(auth(admin)).send(config)).status, 201);
+  const carga = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(admin))
+    .send({ cliente, seccion: 'resumen', cadencia: 'mensual', periodo: MES, filas: [{ llamadas: 4242 }] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+
+  // Borrar la configuracion: la carga real (dashboard_cargas) debe sobrevivir.
+  const del = await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+  assert.equal(del.status, 200);
+  const cargasTrasBorrar = await request(app)
+    .get('/api/dashboard/cargas?cliente=' + encodeURIComponent(cliente))
+    .set(auth(admin));
+  assert.equal(cargasTrasBorrar.body.length, 1, 'la carga de dashboard_cargas no debia borrarse al borrar la configuracion');
+  assert.equal(cargasTrasBorrar.body[0].filas[0].llamadas, 4242);
+
+  // Si se vuelve a crear el dashboard para el mismo cliente, esa carga ya
+  // sobreviviente se ve de inmediato, sin volver a subir nada.
+  assert.equal((await request(app).post('/api/dashboards/config').set(auth(admin)).send(config)).status, 201);
+  const dashTrasRecrear = await request(app).get('/api/dashboard/' + encodeURIComponent(cliente)).set(auth(admin));
+  assert.equal(dashTrasRecrear.status, 200);
+  assert.equal(dashTrasRecrear.body.secciones.resumen[0].filas[0].llamadas, 4242);
+
+  await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+});
+
 test('Aurora y HLM tienen secciones definidas', async () => {
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const cl = await request(app).get('/api/dashboard/clientes').set(auth(t));

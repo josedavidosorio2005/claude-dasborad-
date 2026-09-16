@@ -1711,7 +1711,13 @@ function createApp() {
       const row = db.prepare('SELECT * FROM dashboards_config WHERE cliente = ?').get(req.params.cliente);
       if (!row) return res.status(404).json({ error: 'Dashboard no encontrado' });
       db.prepare('DELETE FROM dashboards_config WHERE cliente = ?').run(req.params.cliente);
-      db.prepare('DELETE FROM dashboard_cargas WHERE cliente = ?').run(req.params.cliente);
+      // NUNCA se borra dashboard_cargas aqui (bug real encontrado 2026-09-16,
+      // ver docs/ARQUITECTURA.md §4): borrar/recrear la CONFIGURACION de un
+      // dashboard (KPIs, secciones, layout) no debe destruir los EXCEL ya
+      // cargados de ningun periodo -- son dos ciclos de vida independientes.
+      // Si se vuelve a crear un dashboard para el mismo `cliente` (a mano o
+      // por el auto-sembrado "solo si no existe"), sus cargas siguen ahi y
+      // se ven de inmediato, sin tener que volver a subir nada.
       logEvent('DASHBOARD_CONFIG_DEL', { nombre: req.params.cliente, user: '-', rol: 'dashboard' }, actorLabel(req.actor), '');
       res.json({ ok: true });
     })
