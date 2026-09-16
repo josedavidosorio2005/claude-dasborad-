@@ -802,6 +802,19 @@ asumir una estructura fija** — cualquier campaña con un snapshot más
 viejo (o más nuevo) recibe automáticamente la plantilla que le
 corresponde de verdad, sin tocar código.
 
+**Segunda ronda (2026-09-16, tras el fix de la cascada de borrado del §4)**:
+el mismo workflow se extendió para, después de guardar cada carga de
+prueba, **abrir también el dashboard real** (`openGenericDashboard`, no
+solo la pantalla de carga) y confirmar que el periodo y los valores recién
+subidos aparecen ahí — el chequeo que faltaba y que el reporte de InCo
+("subí los datos y no los veo en el dashboard") pedía verificar
+explícitamente. Corrida real contra producción tras el deploy del fix:
+ALBERTO LINERO GO mostró sus KPIs (`111` en "Base asignada", etc.) para el
+periodo `May-27`, y ORLANT mostró los suyos (`222` en "Total Agendas", `85%`
+en los KPIs de nivel de atención) para el mismo periodo — capturas en
+`docs/capturas-demo/produccion-alberto-linero-go-dashboard-tras-carga.png`
+y `docs/capturas-demo/produccion-orlant-dashboard-tras-carga.png`.
+
 ---
 
 ## 8. API — endpoints agregados en las últimas fases
