@@ -120,11 +120,9 @@ function parseSheetXmlToAoA(sheetXml, sharedStrings) {
   return rows;
 }
 
-// Lee la hoja `sheetName` de un .xlsx y la devuelve como array-of-arrays
-// (fila 0 = encabezados), igual que XLSX.utils.sheet_to_json(ws,{header:1})
-// en el navegador — asi trafico-logic.js recibe exactamente la misma forma
-// de datos en la prueba que en produccion.
-function leerHojaXlsxComoAoA(filePath, sheetName) {
+// Localiza el XML de la hoja `sheetName` (y sus sharedStrings) dentro del
+// .xlsx — logica compartida por leerHojaXlsxComoAoA y leerHojaXlsxComoCeldas.
+function _localizarHojaXml(filePath, sheetName) {
   const buf = fs.readFileSync(filePath);
   const entries = readZipEntries(buf);
 
@@ -158,7 +156,46 @@ function leerHojaXlsxComoAoA(filePath, sheetName) {
   }
 
   const sheetXml = readEntryData(buf, entries[sheetKey]).toString('utf8');
+  return { sheetXml, sharedStrings };
+}
+
+// Lee la hoja `sheetName` de un .xlsx y la devuelve como array-of-arrays
+// (fila 0 = encabezados), igual que XLSX.utils.sheet_to_json(ws,{header:1})
+// en el navegador — asi trafico-logic.js recibe exactamente la misma forma
+// de datos en la prueba que en produccion.
+function leerHojaXlsxComoAoA(filePath, sheetName) {
+  const { sheetXml, sharedStrings } = _localizarHojaXml(filePath, sheetName);
   return parseSheetXmlToAoA(sheetXml, sharedStrings);
 }
 
-module.exports = { leerHojaXlsxComoAoA };
+// Lee la hoja `sheetName` y la devuelve como un objeto de celdas por
+// direccion (A1, B2, ...) con { v, f } — misma forma que un worksheet de
+// SheetJS (ws['A1'].v / ws['A1'].f) — para probar deteccion de formulas sin
+// valor cacheado (cargasDetectarFormulaSinValor en cargas-logic.js) contra un
+// .xlsx real, sin depender del paquete npm `xlsx` (ver cabecera del archivo).
+function leerHojaXlsxComoCeldas(filePath, sheetName) {
+  const { sheetXml, sharedStrings } = _localizarHojaXml(filePath, sheetName);
+  const cells = {};
+  const cellRe = /<c r="([A-Z]+\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
+  let m;
+  while ((m = cellRe.exec(sheetXml))) {
+    const addr = m[1];
+    const attrs = m[2] || '';
+    const inner = m[3] || '';
+    const typeMatch = /\st="([^"]+)"/.exec(attrs);
+    const type = typeMatch ? typeMatch[1] : 'n';
+    const fMatch = /<f[^>]*>([\s\S]*?)<\/f>/.exec(inner);
+    const vMatch = /<v>([\s\S]*?)<\/v>/.exec(inner);
+    const cell = {};
+    if (fMatch) cell.f = decodeXmlEntities(fMatch[1]);
+    if (vMatch) {
+      if (type === 's') cell.v = sharedStrings[parseInt(vMatch[1], 10)];
+      else if (type === 'str' || type === 'b') cell.v = decodeXmlEntities(vMatch[1]);
+      else cell.v = Number(vMatch[1]);
+    }
+    cells[addr] = cell;
+  }
+  return cells;
+}
+
+module.exports = { leerHojaXlsxComoAoA, leerHojaXlsxComoCeldas };
