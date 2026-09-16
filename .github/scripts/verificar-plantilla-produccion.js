@@ -155,11 +155,19 @@ function sha256(buf) {
 
     // "resumen": la primera metrica queda como FORMULA SIN VALOR (el bug
     // real que arreglo el PR #31 — un archivo que nunca se abrio en Excel
-    // para forzar el recalculo), a proposito, para probar el rechazo.
+    // para forzar el recalculo), a proposito, para probar el rechazo. El
+    // resto de metricas se llenan con un numero literal para que la hoja
+    // NO se lea como "vacia" (cargasHojaVacia mira si HAY algun valor real
+    // en la hoja antes de siquiera llegar a chequear la formula — si la
+    // unica celda tocada fuera la formula, la hoja se veria vacia y el
+    // camino de error nunca se probaria de verdad).
     const wsResumenOrlant = wbOrlant.Sheets['resumen'];
     const rangeResumenOrlant = XLSX.utils.decode_range(wsResumenOrlant['!ref']);
     const filaFormula = rangeResumenOrlant.s.r + 1;
-    wsResumenOrlant[XLSX.utils.encode_cell({ r: filaFormula, c: 1 })] = { f: 'A1+A1' }; // sin "v": sin calcular
+    for (let r = rangeResumenOrlant.s.r + 1; r <= rangeResumenOrlant.e.r; r++) {
+      const addr = XLSX.utils.encode_cell({ r, c: 1 });
+      wsResumenOrlant[addr] = r === filaFormula ? { f: 'A1+A1' } /* sin "v": sin calcular */ : { t: 'n', v: 222 };
+    }
 
     // "DATA" (Trafico): una fila VALIDA en el MISMO archivo -- debe
     // guardarse igual aunque "resumen" falle.
