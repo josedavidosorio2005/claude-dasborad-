@@ -310,6 +310,17 @@ sin tener que volver a subir el archivo.
 
 ### Plantilla oficial de carga (decisión 2026-09-15: una sola, para todas las campañas)
 
+> ⚠️ **Vigencia (actualizado 2026-09-16, PR #32):** el botón individual
+> "Descargar plantilla" que exponía este archivo se **retiró de la
+> interfaz** — la hoja "DATA" descrita aquí abajo ahora se descarga como
+> parte de la **plantilla consolidada** de cualquier campaña (§7). Todo lo
+> que sigue en esta sección (estructura de columnas, `TRAFICO_COLUMNAS`,
+> por qué es un archivo estático) sigue siendo la fuente de verdad de esa
+> hoja — el archivo no se borró ni cambió, solo dejó de tener su propio
+> botón de descarga. El endpoint `GET /calidad/trafico/plantilla` y el test
+> `plantilla-trafico.test.js` tampoco se tocaron (nada los referencia desde
+> la interfaz, pero conservarlos no cuesta nada).
+
 `server/plantillas/PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx` es el **archivo
 real** que el cliente revisó y aprobó — el sistema lo sirve tal cual
 (`GET /calidad/trafico/plantilla`, `res.download`), **nunca lo regenera con
@@ -326,7 +337,10 @@ exactamente los nombres que `traficoColIndexMap` espera, así que no hace
 falta ninguna traducción en el código. Verificado con un test que toma el
 archivo real publicado, le agrega filas de prueba respetando los formatos
 de su propia hoja INSTRUCCIONES, y confirma que pasa la carga real sin
-ningún aviso (`server/tests/plantilla-trafico.test.js`).
+ningún aviso (`server/tests/plantilla-trafico.test.js`). La hoja "DATA" de
+la plantilla consolidada (§7) reusa exactamente estos mismos 17 nombres de
+columna — `cargas.js` los toma de `TRAFICO_COLUMNAS` en vivo, nunca los
+duplica a mano.
 
 ### El panel `trafico_combo`: tráfico embebido en el dashboard de cada campaña
 
@@ -697,6 +711,36 @@ abre el Excel"):
   de 12 con plantilla) — usan la consolidada. Para `CARTERA INTERNA` y
   `CONSULTORIO JULIAN MOLANO` (sin dashboard, sin pantalla de Cargas donde
   consolidar) la pestaña sigue exactamente igual que antes.
+
+### QA end-to-end (2026-09-16) — las 12 campañas, en navegador real
+
+Antes de mergear, se verificó con Chrome real (no solo `node:test`) que la
+plantilla consolidada **descarga, se llena, se sube y se guarda
+correctamente en las 12 campañas con dashboard** (no solo en 2 de muestra):
+para cada una se descargó la plantilla, se confirmaron sus hojas exactas
+contra el inventario de arriba, se llenó con datos ficticios respetando el
+formato de cada columna, se subió, y se confirmó que la vista previa y el
+guardado final muestran los datos correctos. Dos caminos de error
+probados en campañas distintas (fórmula sin calcular en ORLANT, columna
+obligatoria ausente en TELEVENTAS COMFAMA) confirmaron que se rechaza
+**solo** la hoja mala sin bloquear las demás. No apareció ningún bug real
+de producto en esta ronda.
+
+**Verificado también contra producción real** (mecanismo del PR #26 —
+usuario temporal insertado directo en la base de datos del contenedor,
+nunca la contraseña maestra, borrado de inmediato junto con los datos de
+prueba que crea — ver `.github/workflows/verificacion-plantilla-produccion.yml`):
+ALBERTO LINERO GO (caso mínimo) y ORLANT (caso completo, con el mismo
+camino de error de fórmula sin calcular) pasaron limpio. Un hallazgo real
+de esa corrida: el `dashboards_config` de ORLANT en producción resultó
+tener **solo la sección "resumen" con una única métrica** — más viejo que
+la definición de 4 secciones/23 métricas que trae el código fuente hoy
+(el gotcha de "`dashboards_config` es un snapshot" de §3, confirmado en
+vivo). No es un bug de este mecanismo; es la razón exacta por la que la
+plantilla consolidada **lee la config viva de cada campaña en vez de
+asumir una estructura fija** — cualquier campaña con un snapshot más
+viejo (o más nuevo) recibe automáticamente la plantilla que le
+corresponde de verdad, sin tocar código.
 
 ---
 
