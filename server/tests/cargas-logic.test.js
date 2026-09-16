@@ -19,10 +19,16 @@ const {
   cargasParseFilaUnica,
   cargasParseMultiFila,
   cargasDetectarFormulaSinValor,
+  cargasPlanConsolidado,
+  cargasHojaVacia,
+  cargasProcesarHoja,
+  CARGAS_HOJA_TRAFICO,
+  CARGAS_HOJA_CALIDAD,
 } = require('../../public/js/cargas-logic.js');
 
 const FIXTURE_FORMULAS = path.join(__dirname, 'fixtures', 'carga-formula-sin-valor.xlsx');
 const FIXTURE_LITERALES = path.join(__dirname, 'fixtures', 'carga-valores-literales.xlsx');
+const FIXTURE_CONSOLIDADA = path.join(__dirname, 'fixtures', 'carga-consolidada.xlsx');
 
 // Spec equivalente a la seccion "resumen" de ALBERTO LINERO GO
 // (server/dashboard-plantillas-cliente.js, plantillaVentas) — la campana
@@ -68,6 +74,29 @@ test('cargasDetectarFormulaSinValor: null / no revienta con worksheet vacio o un
   assert.equal(cargasDetectarFormulaSinValor({}), null);
 });
 
+test('cargasDetectarFormulaSinValor: detecta la celda aunque SheetJS la marque t:"z" con v:0 (relleno de sheetStubs, NUNCA el resultado real)', () => {
+  // Verificado contra el paquete real `xlsx` (no asumido): SIN la opcion
+  // sheetStubs:true, una celda con formula sin valor cacheado ni siquiera
+  // aparece en `ws` -- y CON esa opcion (la que usa cargas.js), SheetJS la
+  // representa como { t:'z', f, v:0 }. Si esta funcion solo mirara `v`
+  // (undefined/null/''), un `v:0` de relleno pasaria colado como "si tiene
+  // valor" y el bug de PR #31 volveria a filtrarse en silencio.
+  const ws = {
+    A1: { v: 'Metrica' }, B1: { v: 'Valor' },
+    A2: { v: 'Ventas' }, B2: { t: 'z', f: "COUNTA('Otra hoja'!A1:A10)", v: 0 },
+    A3: { v: 'Meta de ventas' }, B3: { t: 'n', v: 80 },
+  };
+  const r = cargasDetectarFormulaSinValor(ws);
+  assert.ok(r);
+  assert.equal(r.celda, 'B2');
+  assert.equal(r.etiqueta, 'Ventas');
+});
+
+test('cargasDetectarFormulaSinValor: una formula CON valor real cacheado (t distinto de "z") nunca se marca, aunque el valor sea 0', () => {
+  const ws = { A1: { v: 'Ventas' }, B1: { t: 'n', f: 'A1-A1', v: 0 } };
+  assert.equal(cargasDetectarFormulaSinValor(ws), null);
+});
+
 test('cargasParseFilaUnica: el archivo con valores literales SI se parsea correctamente (camino feliz)', () => {
   const aoa = leerHojaXlsxComoAoA(FIXTURE_LITERALES, 'Datos');
   const res = cargasParseFilaUnica(SPEC_RESUMEN_VENTAS, aoa);
@@ -101,6 +130,101 @@ test('cargasColPorLabel: empareja por label o por key, normalizando mayusculas/e
   const col = cargasColPorLabel(SPEC_RESUMEN_VENTAS, '  ventas  ');
   assert.equal(col.key, 'ventas');
   assert.equal(cargasColPorLabel(SPEC_RESUMEN_VENTAS, 'no existe'), null);
+});
+
+// ── Plantilla consolidada (Fase "una sola plantilla por campana", 2026-09-16) ──
+const { cmParseRows } = require('../../public/js/calidad-carga-masiva-logic.js');
+const { traficoParseFilas } = require('../../public/js/trafico-logic.js');
+
+test('cargasHojaVacia: filaUnica (Metrica/Valor) es vacia solo si ningun valor esta lleno', () => {
+  assert.equal(cargasHojaVacia([], true), true);
+  assert.equal(cargasHojaVacia([['Metrica', 'Valor'], ['Ventas', '']], true), true);
+  assert.equal(cargasHojaVacia([['Metrica', 'Valor'], ['Ventas', 30]], true), false);
+});
+
+test('cargasHojaVacia: multi-fila es vacia si no hay filas mas alla del encabezado', () => {
+  assert.equal(cargasHojaVacia([['A', 'B']], false), true);
+  assert.equal(cargasHojaVacia([['A', 'B'], ['', '']], false), true);
+  assert.equal(cargasHojaVacia([['A', 'B'], [1, 2]], false), false);
+  assert.equal(cargasHojaVacia(null, false), true);
+});
+
+test('cargasPlanConsolidado: Trafico SIEMPRE se incluye; Calidad solo si la campana ya tiene plantilla', () => {
+  const secciones = { resumen: { titulo: 'Resumen', filaUnica: true, columnas: [] } };
+  const traficoCols = [{ label: 'SKILL_NAME' }];
+
+  const sinCalidad = cargasPlanConsolidado(secciones, null, traficoCols);
+  assert.deepEqual(sinCalidad.map((h) => h.hoja), ['resumen', CARGAS_HOJA_TRAFICO]);
+
+  const conCalidad = cargasPlanConsolidado(secciones, [{ label: 'ASESOR' }], traficoCols);
+  assert.deepEqual(conCalidad.map((h) => h.hoja), ['resumen', CARGAS_HOJA_CALIDAD, CARGAS_HOJA_TRAFICO]);
+});
+
+test('cargasProcesarHoja + archivo consolidado real: la hoja valida se procesa, la vacia se omite sin error, y la hoja con formula se rechaza sola', () => {
+  const ITEMS_TEST = [{ n: 1, cat: 'Apertura', label: 'Saludo inicial', weight: 100, critico: false }];
+  const SPEC_RESUMEN = {
+    filaUnica: true,
+    columnas: [
+      { key: 'base_asignada', label: 'Base asignada', tipo: 'entero' },
+      { key: 'gestionados', label: 'Registros gestionados', tipo: 'entero' },
+      { key: 'contactados', label: 'Contactados', tipo: 'entero' },
+      { key: 'contactos_efectivos', label: 'Contactos efectivos', tipo: 'entero' },
+      { key: 'ventas', label: 'Ventas', tipo: 'entero' },
+      { key: 'meta_ventas', label: 'Meta de ventas', tipo: 'entero' },
+      { key: 'aht_segundos', label: 'AHT promedio (segundos)', tipo: 'entero' },
+    ],
+  };
+
+  // Hoja 'resumen' (Gestion de base) — OK.
+  const aoaResumen = leerHojaXlsxComoAoA(FIXTURE_CONSOLIDADA, 'resumen');
+  const wsResumen = leerHojaXlsxComoCeldas(FIXTURE_CONSOLIDADA, 'resumen');
+  const rResumen = cargasProcesarHoja(
+    { tipo: 'seccion', hoja: 'resumen', titulo: 'Resumen', filaUnica: true },
+    aoaResumen, wsResumen,
+    (aoa) => cargasParseFilaUnica(SPEC_RESUMEN, aoa)
+  );
+  assert.equal(rResumen.vacia, undefined);
+  assert.equal(rResumen.error, undefined);
+  assert.equal(rResumen.filas[0].ventas, 30);
+
+  // Hoja 'DATA' (Trafico) — solo encabezado -> vacia, NO es un error.
+  const aoaData = leerHojaXlsxComoAoA(FIXTURE_CONSOLIDADA, 'DATA');
+  const wsData = leerHojaXlsxComoCeldas(FIXTURE_CONSOLIDADA, 'DATA');
+  const rData = cargasProcesarHoja(
+    { tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico', filaUnica: false },
+    aoaData, wsData,
+    traficoParseFilas
+  );
+  assert.equal(rData.vacia, true);
+  assert.equal(rData.error, undefined);
+  assert.equal(rData.filas, undefined);
+
+  // Hoja 'Monitoreos' (Calidad) — trae datos pero con una formula sin
+  // calcular -> se rechaza SOLO esta hoja, con un mensaje claro.
+  const aoaMon = leerHojaXlsxComoAoA(FIXTURE_CONSOLIDADA, 'Monitoreos');
+  const wsMon = leerHojaXlsxComoCeldas(FIXTURE_CONSOLIDADA, 'Monitoreos');
+  const rMon = cargasProcesarHoja(
+    { tipo: 'calidad', hoja: CARGAS_HOJA_CALIDAD, titulo: 'Calidad', filaUnica: false },
+    aoaMon, wsMon,
+    (aoa) => cmParseRows(aoa, ITEMS_TEST)
+  );
+  assert.equal(rMon.vacia, undefined);
+  assert.match(rMon.error, /formula de Excel/i);
+
+  // La hoja mala NO afecto el resultado de las otras dos: siguen siendo
+  // exactamente lo que eran antes de procesar 'Monitoreos'.
+  assert.equal(rResumen.filas[0].ventas, 30);
+  assert.equal(rData.vacia, true);
+});
+
+test('cargasProcesarHoja: hoja ausente en el archivo (aoa null/undefined) se trata igual que vacia, nunca como error', () => {
+  const r = cargasProcesarHoja(
+    { tipo: 'seccion', hoja: 'diario', titulo: 'Diario', filaUnica: false },
+    undefined, undefined,
+    () => { throw new Error('no deberia llamarse el parser si la hoja no existe'); }
+  );
+  assert.equal(r.vacia, true);
+  assert.equal(r.error, undefined);
 });
 
 test('cargasParseMultiFila: descarta filas vacias y columnas que no coinciden con la plantilla', () => {

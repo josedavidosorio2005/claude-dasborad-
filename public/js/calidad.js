@@ -28,6 +28,32 @@ async function calLoadPlantillas(force){
   }
 }
 
+// Campanas que ya tienen dashboard propio (12 campanas M3 + ORLANT/CLINICA
+// AURORA/HOSPITAL LA MARIA): para esas, la carga masiva de Calidad se hizo
+// desde la plantilla consolidada de la pantalla "Cargar Datos" (Fase "una
+// sola plantilla por campana", 2026-09-16) — esta pestana se oculta para no
+// dejar dos caminos de carga conviviendo. Campanas SIN dashboard (ej. CARTERA
+// INTERNA, CONSULTORIO JULIAN MOLANO) no tienen a donde mas ir: conservan
+// esta pestana intacta, tal cual funcionaba antes.
+var _calClientesConDashboard = null;
+async function _calCargarClientesConDashboard(){
+  if(_calClientesConDashboard) return;
+  try{
+    var r = await apiRequest('GET','/dashboard/clientes');
+    _calClientesConDashboard = (r && r.clientes) || [];
+  }catch(e){ _calClientesConDashboard = []; }
+}
+function _calCampanaTieneDashboard(camp){
+  return !!(_calClientesConDashboard && _calClientesConDashboard.indexOf(camp)!==-1);
+}
+function _calActualizarTabCarga(){
+  var cargaBtn = document.getElementById('ctab-btn-carga');
+  if(!cargaBtn) return;
+  var mostrar = calCanEvaluate() && !_calCampanaTieneDashboard(_ccampana);
+  cargaBtn.style.display = mostrar ? '' : 'none';
+  if(!mostrar && _ctab==='carga') switchCalTab(calCanEvaluate() ? 'monitoreos' : 'resumen');
+}
+
 function calCampanas(){
   var k = Object.keys(CAL_PLANTILLAS);
   return k.length ? k : CAMPANAS_CON_PLANTILLA.slice();
@@ -201,6 +227,7 @@ function populateCalCampanaSelect(){
 async function openCalidad(){
   document.getElementById('calidad-overlay').classList.add('show');
   await calLoadPlantillas();
+  await _calCargarClientesConDashboard();
   populateCalCampanaSelect();
   if(_ccampana) await loadCalData(_ccampana, _cmesFiltro || undefined);
   populateCalMesSelect();
@@ -209,8 +236,7 @@ async function openCalidad(){
   var canEval = calCanEvaluate();
   var nuevoBtn = document.getElementById('ctab-btn-nuevo');
   if(nuevoBtn) nuevoBtn.style.display = canEval ? '' : 'none';
-  var cargaBtn = document.getElementById('ctab-btn-carga');
-  if(cargaBtn) cargaBtn.style.display = canEval ? '' : 'none';
+  _calActualizarTabCarga();
   document.getElementById('cf-fecha').value = new Date().toISOString().slice(0,10);
   if(currentUser) document.getElementById('cf-evaluador').value = currentUser.nombre;
   renderCalItemsForm();
@@ -245,6 +271,7 @@ async function onCalCampanaChange(){
   populateCalMesSelect();
   renderCalItemsForm();
   populateCalAsesorSelect();
+  _calActualizarTabCarga();
   switchCalTab(_ctab);
 }
 
@@ -270,6 +297,7 @@ function populateCalAsesorSelect(){
 
 function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
+  if(t==='carga' && _calCampanaTieneDashboard(_ccampana)) t='monitoreos';
   _ctab = t;
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab===t); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-'+t); });
