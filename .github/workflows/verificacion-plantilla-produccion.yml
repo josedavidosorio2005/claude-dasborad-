@@ -16,11 +16,11 @@ name: Verificacion QA - descarga de plantilla en produccion
 #      confirmar sus hojas, llenarla con datos de prueba y confirmar que la
 #      carga se guarda sin friccion.
 #   2. ORLANT (caso completo, con Calidad): descargar su plantilla y probar
-#      el camino de error real del PR #31 (formula sin calcular en una
-#      hoja) mezclado con una hoja valida (Trafico) en el MISMO archivo --
-#      confirmar que se rechaza solo la hoja mala.
-# Borra los datos de prueba (la carga de ALBERTO LINERO GO y el skill de
-# Trafico de ORLANT) y el usuario temporal de inmediato al terminar.
+#      el camino de error real del PR #31 (formula sin calcular en la hoja
+#      DATA de Trafico) mezclado con una hoja valida ("resumen") en el
+#      MISMO archivo -- confirmar que se rechaza solo la hoja mala.
+# Borra los datos de prueba (las cargas de ALBERTO LINERO GO y ORLANT) y el
+# usuario temporal de inmediato al terminar.
 #
 # La contrasena del usuario temporal se genera en este mismo job, se
 # enmascara con `::add-mask::` ANTES de usarse en ningun otro paso, y nunca
@@ -191,8 +191,14 @@ jobs:
               -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
               app node -e '
               const db = require("./db");
-              const carga = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
+              const cargaAlg = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
                 .run("ALBERTO LINERO GO", "resumen", "2027-05");
+              const cargaOrlant = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
+                .run("ORLANT", "resumen", "2027-05");
+              // La hoja DATA de ORLANT lleva a proposito una formula sin
+              // calcular (para probar el rechazo) y por diseno NUNCA llega a
+              // guardarse -- estas 3 quedan solo por si una version futura
+              // de esta verificacion si la deja guardada.
               const diario = db.prepare("DELETE FROM calidad_nivel_servicio_diario WHERE skillName = ?")
                 .run("PROD_QA_VERIF_ORLANT");
               const mensual = db.prepare("DELETE FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?")
@@ -201,7 +207,8 @@ jobs:
                 .run("PROD_QA_VERIF_ORLANT");
               const info = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_USER);
               console.log("DATOS_DE_PRUEBA_BORRADOS " + JSON.stringify({
-                cargaAlbertoLineroGo: carga.changes,
+                cargaAlbertoLineroGo: cargaAlg.changes,
+                cargaOrlant: cargaOrlant.changes,
                 traficoDiario: diario.changes,
                 traficoMensual: mensual.changes,
                 traficoSkillMapeo: mapeo.changes,

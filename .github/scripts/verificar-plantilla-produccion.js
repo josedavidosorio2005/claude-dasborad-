@@ -153,31 +153,35 @@ function sha256(buf) {
     const wbOrlant = XLSX.readFile(orlantPath);
     resultado.orlantHojas = wbOrlant.SheetNames;
 
-    // "resumen": la primera metrica queda como FORMULA SIN VALOR (el bug
-    // real que arreglo el PR #31 — un archivo que nunca se abrio en Excel
-    // para forzar el recalculo), a proposito, para probar el rechazo. El
-    // resto de metricas se llenan con un numero literal para que la hoja
-    // NO se lea como "vacia" (cargasHojaVacia mira si HAY algun valor real
-    // en la hoja antes de siquiera llegar a chequear la formula — si la
-    // unica celda tocada fuera la formula, la hoja se veria vacia y el
-    // camino de error nunca se probaria de verdad).
+    // "resumen": TODAS sus metricas con un numero literal (hoja VALIDA).
+    // El config real de ORLANT en produccion resulto tener solo 1 metrica
+    // en "resumen" (mas viejo que el codigo fuente actual -- el gotcha de
+    // "dashboards_config es un snapshot" de ARQUITECTURA.md §3), asi que no
+    // hay forma de mezclar ahi una celda con error Y otra con valor real
+    // para probar el rechazo (con una sola fila, cargasHojaVacia veria la
+    // hoja entera como vacia apenas esa unica celda fuera una formula sin
+    // calcular). Por eso el camino de error se prueba en "DATA" en vez de
+    // "resumen" -- DATA siempre trae mas de una columna (universal, 17
+    // columnas fijas), asi que SI se puede tener una fila con datos reales
+    // en unas columnas y una formula sin calcular en otra.
     const wsResumenOrlant = wbOrlant.Sheets['resumen'];
     const rangeResumenOrlant = XLSX.utils.decode_range(wsResumenOrlant['!ref']);
-    const filaFormula = rangeResumenOrlant.s.r + 1;
     for (let r = rangeResumenOrlant.s.r + 1; r <= rangeResumenOrlant.e.r; r++) {
-      const addr = XLSX.utils.encode_cell({ r, c: 1 });
-      wsResumenOrlant[addr] = r === filaFormula ? { f: 'A1+A1' } /* sin "v": sin calcular */ : { t: 'n', v: 222 };
+      wsResumenOrlant[XLSX.utils.encode_cell({ r, c: 1 })] = { t: 'n', v: 222 };
     }
 
-    // "DATA" (Trafico): una fila VALIDA en el MISMO archivo -- debe
-    // guardarse igual aunque "resumen" falle.
+    // "DATA" (Trafico): SKILL_NAME/DATE/LLAMADAS CONTESTADAS con datos
+    // reales (para que la fila no se vea vacia) y TOTAL LLAMADAS como
+    // FORMULA SIN VALOR (el bug real que arreglo el PR #31 -- un archivo
+    // que nunca se abrio en Excel para forzar el recalculo), a proposito,
+    // para probar el rechazo de esta hoja sin bloquear "resumen".
     const wsData = wbOrlant.Sheets.DATA;
     const headerData = XLSX.utils.sheet_to_json(wsData, { header: 1 })[0];
     headerData.forEach((label, c) => {
       const addr = XLSX.utils.encode_cell({ r: 1, c });
       if (label === 'SKILL_NAME') wsData[addr] = { t: 's', v: 'PROD_QA_VERIF_ORLANT' };
       else if (label === 'DATE') wsData[addr] = { t: 's', v: '2027-05-10' };
-      else if (label === 'TOTAL LLAMADAS') wsData[addr] = { t: 'n', v: 20 };
+      else if (label === 'TOTAL LLAMADAS') wsData[addr] = { f: 'A1+A1' }; // sin "v": sin calcular
       else if (label === 'LLAMADAS CONTESTADAS') wsData[addr] = { t: 'n', v: 18 };
       else delete wsData[addr];
     });
@@ -194,8 +198,10 @@ function sha256(buf) {
     await page.evaluate(() => guardarCarga());
     await page.waitForTimeout(1500);
     resultado.orlantToast = (await page.locator('#toast').innerText().catch(() => '')).trim();
-    resultado.orlantSoloResumenFallo =
-      /✗[^\n]*Resumen mensual/.test(resultado.orlantToast) && /✓[^\n]*Trafico de Llamadas/.test(resultado.orlantToast);
+    // "resumen" (buena) se guarda; "Trafico de Llamadas" (con la formula
+    // sin calcular) se rechaza sola -- no bloquea a "resumen".
+    resultado.orlantSoloDataFallo =
+      /✓[^\n]*Resumen mensual/.test(resultado.orlantToast) && /✗[^\n]*Trafico de Llamadas/.test(resultado.orlantToast);
     await page.screenshot({ path: path.join(ARTIFACTS_DIR, '4-orlant-guardado-parcial.png') });
 
     ok =
@@ -204,7 +210,7 @@ function sha256(buf) {
       resultado.algCargaOk &&
       resultado.orlantTieneCalidad &&
       resultado.orlantErrorDetectadoEnPreview &&
-      resultado.orlantSoloResumenFallo;
+      resultado.orlantSoloDataFallo;
 
     resultado.ok = ok;
     console.log(JSON.stringify(resultado, null, 2));
