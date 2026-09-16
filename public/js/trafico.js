@@ -10,37 +10,16 @@
 // codigo que toca el DOM / la API.
 
 // ═══════════════════════════════════════════════════════════
-// ADMIN — PLANTILLA OFICIAL DE TRAFICO (una sola, para todas las campanas)
-// ═══════════════════════════════════════════════════════════
-// Descarga el archivo REAL que vive en el servidor (server/plantillas/,
-// nunca regenerado por el navegador) via un endpoint autenticado con el
-// mismo permiso que cargar la base — no es un link estatico, para que un
-// usuario de solo visualizacion no pueda descargarla ni con la URL directa.
-async function descargarPlantillaTrafico(){
-  var resp;
-  try{
-    resp = await fetch(API_BASE+'/calidad/trafico/plantilla', { headers: apiHeaders(false) });
-  }catch(e){ showToast('No se pudo conectar con el servidor.'); return; }
-  if(!resp.ok){
-    var msg = friendlyHttpError(resp.status);
-    try{ var data = await resp.json(); if(data && data.error) msg = data.error; }catch(e){}
-    showToast(msg);
-    return;
-  }
-  var blob = await resp.blob();
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-}
-
-// ═══════════════════════════════════════════════════════════
 // ADMIN — CARGA DE TRAFICO DESDE EXCEL (Volvox)
 // ═══════════════════════════════════════════════════════════
+// La plantilla individual (boton "Descargar plantilla" + GET
+// /calidad/trafico/plantilla) se retiro de la interfaz (Fase "una sola
+// plantilla por campana", 2026-09-16): la hoja "DATA" de Trafico ahora se
+// descarga como parte de la plantilla consolidada de cualquier campana
+// (cargas.js). El endpoint sigue existiendo en el servidor (nadie lo borro,
+// solo dejo de estar enlazado) por si hace falta el archivo original
+// aprobado por el cliente; subir un archivo aqui sigue funcionando igual,
+// multi-skill y multi-campana en una sola carga.
 var _tvParsed = null; // { archivoNombre, filas } listo para POST
 
 async function procesarArchivoTrafico(input){

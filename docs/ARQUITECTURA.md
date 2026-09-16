@@ -80,7 +80,7 @@ contra RDS + varias instancias y las señales concretas para migrar).
  AWS SSM Parameter Store ── secretos que el contenedor lee AL ARRANCAR
                              (nunca en el repo, nunca en disco en texto plano)
  AWS S3 (versionado)     ── backup diario de inconexion.db (systemd timer en
-                             el host, fuera del contenedor — ver §8 abajo)
+                             el host, fuera del contenedor — ver §9 abajo)
  GitHub Actions           ── push a main -> CI corre la suite -> si pasa,
    (deploy.yml)               deploy.yml construye la imagen, la sube a ECR,
                                abre el puerto 22 solo para el runner, hace
@@ -116,7 +116,7 @@ con el tiempo sin que este documento tenga que actualizarse línea por línea.
 | `calidad_nivel_servicio` | Nivel de servicio **mensual** por campaña (contestadas ≤20s / total del mes) — se recalcula siempre a partir de `calidad_nivel_servicio_diario`, nunca se edita a mano cuando hay datos diarios. |
 | `calidad_nivel_servicio_diario` | Nivel de servicio **diario** por campaña/skill, tal cual viene del export del conmutador/PBX (incluye las columnas ampliadas del export real de Volvox — ver §5). Es la tabla que sobrevivió a la decisión de Volvox: se extendió en vez de crear una tabla nueva, porque ya compartía la llave natural (campaña+fecha+skill) y el flujo de recálculo mensual. |
 | `trafico_skill_mapeo` | Mapeo administrable de `SKILL_NAME` (tal cual lo nombra Volvox) → campaña/cliente de InConexion — ver §5. |
-| `seed_demo_marcas` | Ledger de qué filas sembró `scripts/seed-demo.js` (para poder borrar exactamente eso con `seed:demo:limpiar`). También es lo que enciende/apaga el banner global de "datos de demostración" — ver §9. |
+| `seed_demo_marcas` | Ledger de qué filas sembró `scripts/seed-demo.js` (para poder borrar exactamente eso con `seed:demo:limpiar`). También es lo que enciende/apaga el banner global de "datos de demostración" — ver §10. |
 | `gerencia_kpis`, `inventario_items`, `inventario_movimientos`, `gestion_humana_personal` | Datos propios de los 3 módulos administrativos (Gerencia, Inventario, Gestión Humana), que se ven con el mismo motor de dashboard que las campañas de cliente vía adaptadores — ver §4. |
 | `schema_migrations` | Ledger de qué migraciones (`runOnceMigration`) ya corrieron, para que cada una se aplique una sola vez incluso en una base que lleva meses corriendo. |
 
@@ -559,7 +559,148 @@ siempre se inserta (documentado así en el código, no es un descuido).
 
 ---
 
-## 7. API — endpoints agregados en las últimas fases
+## 7. Plantilla consolidada de carga — una sola por campaña (2026-09-16)
+
+Antes de esta fase, una campaña con dashboard podía tener hasta 3 botones de
+carga por Excel separados y en pantallas distintas: Gestión de base (esta
+pantalla, `cargas.js`), Calidad (su propio módulo, pestaña "Carga Masiva") y
+Tráfico (su propia pantalla de administración). Pedido de negocio: que se
+sienta como **una sola plantilla por campaña** — un botón "Descargar
+plantilla", un `.xlsx`, un botón "Elegir archivo".
+
+**Decisión ya tomada, no reabrir**: nunca aplanar todo en una tabla única con
+la unión de columnas de los 3 tipos de dato — mezclaría filas de naturaleza
+distinta (una llamada no es un monitoreo de Calidad ni un resumen de KPI) y
+produciría datos mal interpretados. La solución es **un archivo, una hoja
+por tipo de dato**, dentro del mismo `.xlsx`.
+
+### Inventario (Paso 1 — verificado contra el código, no asumido)
+
+| Tipo de dato | Estructura | Dónde vive el parseo/validación |
+|---|---|---|
+| Gestión de base (KPIs/resumen mensual + secciones propias de cada cliente) | **Variable por campaña** — cada `dashboards_config.secciones` define sus propias columnas (de 3 a 7 secciones según el cliente) | `cargas-logic.js` (`cargasParseFilaUnica`/`cargasParseMultiFila`), spec en `dashboard-secciones.js` / `dashboard-plantillas-cliente.js`, guardado vía `POST /dashboard/cargas` |
+| Calidad (Monitoreos, ítems ponderados) | **Variable por campaña** — el diccionario de ítems/pesos cambia (`calidad_plantillas.items`); columnas fijas (Asesor/Fecha/Canal/...) + 1 columna por ítem | `calidad-carga-masiva-logic.js` (`cmParseRows`), plantilla en `calidad-plantillas-seed.js`, guardado vía `POST /monitoreos/bulk` |
+| Tráfico de llamadas (Volvox, hoja DATA) | **Universal** — mismas 15 columnas para cualquier campaña; la campaña de cada fila la decide el mapeo de skill (§5), nunca el archivo | `trafico-logic.js` (`traficoParseFilas`), guardado vía `POST /calidad/trafico/carga` |
+| Nivel de Servicio Diario (NSD, `metas.js`) | Universal — lee la MISMA hoja "DATA" que Tráfico, pero solo extrae `SERVICE_LEVEL_20SEC` (subconjunto estrecho, sin desglose por skill-mapeo) | `metas.js` (`_nsdParseRows`), guardado vía `POST /calidad/nivel-servicio/diario` |
+| "Cartera" (formato propio) | **No existe tal formato** — `CARTERA INTERNA` es una campaña de Calidad normal, con su propio diccionario de ítems (`ITEMS_CARTERA`) igual que las otras 9; fue la primera en usar la carga masiva de Calidad, nada más | (mismo que Calidad arriba) |
+
+**Nota sobre NSD**: se decidió **no** tocarlo en esta fase. Todo lo que NSD
+lee ya lo cubre la hoja de Tráfico (misma hoja "DATA", mismas columnas,
+Tráfico además hace el enrutamiento por skill que NSD no hace) — es
+funcionalmente una herramienta más angosta y anterior a la integración con
+Volvox. Se documenta aquí como redundancia conocida; retirarlo es una
+decisión de negocio aparte (no se apagó una función en producción sin que
+alguien lo pidiera explícitamente).
+
+### Qué tipo de dato aplica hoy a cada campaña con dashboard (12)
+
+| Campaña | Gestión de base | Calidad | Tráfico (panel hoy) |
+|---|---|---|---|
+| TELEVENTAS SURA | resumen, diario, tipificación, asesores | Sí (`engine:'sura'`) | Sí |
+| TELEVENTAS COMFAMA | resumen, diario, tipificación, asesores | Sí | Sí |
+| PANTERA MAIKERS | resumen, diario, tipificación, asesores | **No** (no está en `CAMPANAS_CALIDAD`) | No |
+| ANDRES YEPES | resumen, diario, tipificación, asesores | Sí (genérica) | Sí |
+| MOVILIZE | resumen, diario, tipificación, asesores | Sí (genérica) | Sí |
+| ALBERTO LINERO GO | resumen, diario, tipificación, asesores | **No** | No |
+| INFONDO (cobranza) | resumen, diario, tipificación, asesores | Sí | Sí |
+| SASCHA FITNESS (atención) | resumen, diario, tipificación | Sí (genérica) | Sí |
+| BIVETT (atención) | resumen, diario, tipificación | Sí (genérica) | Sí |
+| ORLANT | resumen, salida, tipificación, sta_categorias | Sí | Sí |
+| CLINICA AURORA | resumen, llamadas, salida, agendas, tipificación, agendas_categorias, sábados | Sí | Sí |
+| HOSPITAL LA MARIA | resumen, día, tipificación, demanda, entidades (multi-sede) | Módulo visible, **sin plantilla todavía** | Sí (multi-sede) |
+
+Fuera de esta tabla (Calidad-only, **sin dashboard**, por lo tanto sin
+pantalla de Cargas donde vivir): `CARTERA INTERNA` y `CONSULTORIO JULIAN
+MOLANO`. Conservan su pestaña de Calidad "Carga Masiva (Excel)" tal cual,
+sin cambios — no hay otro tipo de dato que consolidar con ellas.
+
+### Diseño (Paso 2) — qué hoja entra y por qué
+
+- **Tráfico se incluye SIEMPRE**, en las 12 campañas, tengan o no panel
+  `trafico_combo` activado hoy. Razón: el mapeo skill→campaña (§5) es
+  independiente de `dashboards_config` — cualquier campaña puede recibir
+  filas de tráfico ya hoy, activar el panel después es solo agregar una
+  entrada a `layout.tabs`, sin tocar datos. Incluir la hoja no cuesta nada
+  (columnas fijas, no dependen de la campaña) y evita que alguien tenga que
+  volver a esta decisión cuando active tráfico para Alberto Linero Go o
+  Pantera Maikers.
+- **Calidad se incluye solo si la campaña YA tiene una fila en
+  `calidad_plantillas`** (10 de 12 hoy) — se calcula en caliente
+  (`GET /calidad/plantillas`), nunca hace falta tocar código cuando alguien
+  cree la plantilla de Hospital La María: la hoja aparece sola la próxima
+  vez que se descargue. Para Pantera Maikers y Alberto Linero Go (ni
+  siquiera están en `CAMPANAS_CALIDAD`) nunca se incluye — a diferencia de
+  Hospital La María, aquí no es "todavía no", es que Calidad no aplica a
+  ese tipo de campaña.
+- **NSD queda fuera** (ver inventario arriba).
+- **Hoja `INSTRUCCIONES`** al inicio, con el mismo contenido/estructura que
+  ya usaba la plantilla oficial de Tráfico (cómo se usa, columnas
+  obligatorias/opcionales por hoja, formatos de fecha/%) — **sin el color de
+  fondo** que sí tiene esa plantilla: verificado (no asumido) que
+  `xlsx.full.min.js` (SheetJS build gratuita, la única que carga esta app)
+  no escribe estilos de celda al generar un archivo — por eso la plantilla
+  de Tráfico es un archivo *estático* aprobado por el cliente y nunca
+  regenerado por código (§5), mientras que la consolidada SÍ se genera al
+  vuelo por campaña (columnas de Calidad/Gestión de base variables) y por lo
+  tanto no puede llevar color. Mismo límite ya documentado en §10
+  ("Excel no pinta el color de las celdas del semáforo"). El
+  obligatoria/opcional se resuelve con texto explícito en `INSTRUCCIONES` en
+  su lugar.
+
+### Backend (Paso 3) — sin rutas nuevas
+
+**No se reescribió el parseo/validación de ningún tipo de dato.** Lo único
+nuevo es la capa de arriba, toda en el navegador (`cargas-logic.js` +
+`cargas.js`, igual que todo lo demás de esta pantalla — "el servidor nunca
+abre el Excel"):
+
+1. `cargasPlanConsolidado(secciones, calidadCols, traficoCols)` decide qué
+   hojas le tocan a la campaña seleccionada (regla de arriba).
+2. Al subir el archivo, `procesarArchivoConsolidado` busca cada hoja del
+   plan por **nombre exacto** (`DATA`, `Monitoreos`, o la `key` de la
+   sección — nunca por posición) y la pasa a `cargasProcesarHoja`, que:
+   - si la hoja no existe en el archivo, o existe pero no tiene filas de
+     datos (`cargasHojaVacia`) → **no es un error**, se omite ("no aplica
+     esta vez");
+   - si tiene una celda de fórmula sin calcular → reusa
+     `cargasDetectarFormulaSinValor` (PR #31), ahora aplicada a **cualquier**
+     hoja del archivo, no solo a Gestión de base → se rechaza **solo esa
+     hoja**;
+   - si no pasa el parser propio de su tipo (`cargasParseFilaUnica`/
+     `cargasParseMultiFila`, `cmParseRows`, `traficoParseFilas`) → se
+     rechaza **solo esa hoja**, con el mensaje exacto de ese parser.
+3. Al guardar, cada hoja con datos válidos se manda a la ruta que YA
+   procesaba ese tipo de dato (`POST /dashboard/cargas` por sección,
+   `POST /monitoreos/bulk`, `POST /calidad/trafico/carga`), una llamada
+   independiente por hoja — si una falla (ej. 403 porque el usuario no
+   tiene permiso de evaluar Calidad en esa campaña, o un 409 porque ya
+   existe una carga para ese período), las demás hojas se guardan igual; el
+   resumen final lista qué hoja se guardó y cuál no, y por qué.
+
+### Botones retirados (Paso 4)
+
+- **Tráfico** (`public/index.html`, pantalla de administración): se retiró
+  el botón "Descargar plantilla" y `descargarPlantillaTrafico()`
+  (`trafico.js`) — la hoja "DATA" ahora se obtiene desde la plantilla
+  consolidada de cualquier campaña. El endpoint `GET
+  /calidad/trafico/plantilla` y el archivo `server/plantillas/
+  PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx` **no se borraron** (nada más los
+  referencia, pero seguir sirviendo el archivo original aprobado por el
+  cliente por si hace falta no tiene costo). El input "Elegir archivo" y el
+  mapeo de skills/cobertura de esa pantalla **se conservan intactos**: no
+  son "una plantilla individual", son la vía de carga masiva multi-skill/
+  multi-campaña de un solo export de Wolkvox — que sigue funcionando igual
+  reciba el archivo por aquí o dentro de un consolidado (la hoja "DATA" se
+  procesa exactamente igual sin importar de qué descarga salió).
+- **Calidad** (`calidad.js`): la pestaña "Carga Masiva (Excel)" se oculta
+  (`_calActualizarTabCarga`) para las campañas que ya tienen dashboard (10
+  de 12 con plantilla) — usan la consolidada. Para `CARTERA INTERNA` y
+  `CONSULTORIO JULIAN MOLANO` (sin dashboard, sin pantalla de Cargas donde
+  consolidar) la pestaña sigue exactamente igual que antes.
+
+---
+
+## 8. API — endpoints agregados en las últimas fases
 
 Para el resto de la API (usuarios, dashboards de cliente, permisos,
 historial, etc.) ver directamente `server/server.js` — esta tabla cubre
@@ -573,7 +714,7 @@ documentado en ningún lado hasta ahora.
 | `/api/umbrales/:id` | PUT | Edita un umbral existente | Solo administrador |
 | `/api/umbrales/:id` | DELETE | Borra un umbral | Solo administrador |
 | `/api/monitoreos/bulk` | POST | Carga masiva de monitoreos de Calidad (§6) | Rol CALIDAD/SUPERVISOR (o admin) con permiso sobre esa campaña |
-| `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §9) | Cualquier actor autenticado |
+| `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §10) | Cualquier actor autenticado |
 | `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
 | `/api/calidad/trafico/carga/impacto` | POST | Cuenta, por (skill,mes) del archivo, cuántas filas ya existen y se reemplazarían — no escribe nada (control de cargas, §5) | `canLoadData` |
 | `/api/calidad/trafico/cobertura` | GET | Por skill, qué meses ya tienen tráfico cargado (control de cargas, §5) | `canLoadData` |
@@ -584,7 +725,7 @@ documentado en ningún lado hasta ahora.
 
 ---
 
-## 8. Despliegue y operación
+## 9. Despliegue y operación
 
 Para la cuenta AWS, IP, recursos exactos y el runbook de despliegue desde
 cero, ver [`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md) (§14 tiene el
@@ -620,7 +761,7 @@ estado de la cuenta actual). Acá solo el **flujo operativo del día a día**:
 
 ---
 
-## 9. Decisiones que no son obvias mirando el código
+## 10. Decisiones que no son obvias mirando el código
 
 Cosas que alguien podría "corregir" por accidente sin este contexto:
 
@@ -676,6 +817,20 @@ Cosas que alguien podría "corregir" por accidente sin este contexto:
   ninguna constraint). Ya causó un bug real en la pantalla manual de Nivel
   de Servicio durante la migración de sede (2026-09-15) — corregido, y
   documentado aquí para que no se repita en código nuevo.
+- **SheetJS descarta por completo una celda de formula sin valor cacheado, a
+  menos que se lea con `{sheetStubs:true}`** — verificado contra el paquete
+  real `xlsx` (no asumido) al construir `cargasDetectarFormulaSinValor`
+  (PR #31 + consolidacion 2026-09-16): sin esa opcion, `ws['B2']` da
+  `undefined` aunque el XML del archivo tenga `<f>` en esa celda — la celda
+  no existe en absoluto en el objeto `ws`, así que cualquier código que
+  recorra `ws` buscando formulas nunca la encuentra. **Con** `sheetStubs:true`
+  la celda sí aparece, pero como `{ t:'z', f, v:0 }` — ese `v:0` es un
+  relleno interno de SheetJS, **nunca** el resultado real de la formula,
+  así que cualquier chequeo de "esta celda no tiene valor" tiene que mirar
+  `t==='z'`, no solo si `v` es `undefined`/`null`/`''`. `cargas.js` ya pasa
+  `sheetStubs:true` al leer el archivo consolidado; si se agrega OTRO punto
+  de la app que necesite detectar formulas sin calcular, hay que repetir
+  ambas partes (la opción de lectura Y el chequeo de `t==='z'`), no solo una.
 - **Un filtro de fecha aplicado al tráfico de un dashboard puede parecer
   "perdido" al abrir el tráfico de otro dashboard en la misma pestaña del
   navegador** (§5) — no es un bug de mezcla de datos (cada campaña sigue

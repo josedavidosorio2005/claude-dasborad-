@@ -313,15 +313,13 @@
         <div class="section-card">
           <div class="section-header">
             <h3>Trafico de Llamadas — carga desde Wolkvox</h3>
-            <div class="header-actions">
-              <button class="btn-sm" onclick="descargarPlantillaTrafico()">Descargar plantilla</button>
-            </div>
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">
-            Descarga la <b>plantilla oficial</b> (una sola, sirve para todas las campanas), llenala con los datos de
-            Wolkvox Manager (Skills &amp; Servicios &rarr; "Llamadas y Nivel de Servicio por Hora", agrupado por dia)
-            y subela. Puede traer varias skills y varios meses a la vez; cada skill se enruta a su campana segun el
-            mapeo de abajo — una skill nueva se guarda igual, marcada "sin asignar", hasta que la mapees.
+            La plantilla de Trafico (hoja "DATA") ahora se descarga desde <b>Cargar Datos &rarr; plantilla
+            consolidada</b> de cualquier campana. Llenala con los datos de Wolkvox Manager (Skills &amp; Servicios
+            &rarr; "Llamadas y Nivel de Servicio por Hora", agrupado por dia) y subela aqui — puede traer varias
+            skills y varios meses a la vez; cada skill se enruta a su campana segun el mapeo de abajo, una skill
+            nueva se guarda igual, marcada "sin asignar", hasta que la mapees.
           </div>
           <div class="form-row">
             <div class="ig"><label>Archivo Excel (.xlsx) ya lleno</label>
@@ -1216,7 +1214,7 @@
     <div class="aurora-header">
       <div>
         <h2>Cargar Datos de Dashboards</h2>
-        <div class="aurora-sub">Sube los Excel operativos de cada cliente. Si ya hay una carga para ese cliente/sección/periodo, se pide confirmación antes de reemplazarla.</div>
+        <div class="aurora-sub">Una sola plantilla por cliente, con una hoja por tipo de dato (Gestion de base, Calidad, Trafico). Las hojas que no apliquen pueden quedar vacias. Si ya hay una carga para ese cliente/sección/periodo, se pide confirmación antes de reemplazarla.</div>
       </div>
       <button class="aurora-close" onclick="closeCargas()">X Cerrar</button>
     </div>
@@ -1226,31 +1224,23 @@
         <div class="ig"><label>Cliente</label>
           <select id="carga-cliente" onchange="onCargaClienteChange()"></select>
         </div>
-        <div class="ig"><label>Seccion</label>
-          <select id="carga-seccion" onchange="onCargaSeccionChange()"></select>
-        </div>
-      </div>
-      <div id="carga-seccion-desc" style="font-size:0.8rem;color:#7a9ba8;margin:-4px 0 10px"></div>
-      <div class="form-row">
-        <div class="ig"><label>Cadencia</label>
-          <input type="text" id="carga-cadencia" readonly style="background:#f2f6f8">
-        </div>
-        <div class="ig"><label id="carga-periodo-label">Periodo (mes)</label>
+        <div class="ig"><label>Periodo (mes) — para las hojas de Gestion de base</label>
           <input type="month" id="carga-periodo">
         </div>
       </div>
+      <div id="carga-plan-desc" style="font-size:0.8rem;color:#7a9ba8;margin:-4px 0 10px"></div>
       <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
-        <button class="btn-cancel" onclick="descargarPlantillaCarga()">Descargar plantilla (Excel)</button>
+        <button class="btn-cancel" onclick="descargarPlantillaConsolidada()">Descargar plantilla (Excel)</button>
         <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
           Elegir archivo…
-          <input type="file" id="carga-file" accept=".xlsx,.xls" style="display:none" onchange="procesarArchivoCarga(this)">
+          <input type="file" id="carga-file" accept=".xlsx,.xls" style="display:none" onchange="procesarArchivoConsolidado(this)">
         </label>
       </div>
     </div>
 
     <div class="aurora-card" id="carga-preview-card" style="display:none">
       <div class="aurora-card-title">Vista previa del archivo — <span id="carga-preview-nombre"></span></div>
-      <div id="carga-errores" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px"></div>
+      <div id="carga-errores" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
       <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-preview-table"></table></div>
       <div class="modal-btns" style="margin-top:10px">
         <button class="btn-cancel" onclick="cancelarPreviewCarga()">Descartar</button>
@@ -1259,7 +1249,7 @@
     </div>
 
     <div class="aurora-card">
-      <div class="aurora-card-title">Cargas registradas</div>
+      <div class="aurora-card-title">Cargas registradas (Gestion de base)</div>
       <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-existentes-table"></table></div>
     </div>
   </div>

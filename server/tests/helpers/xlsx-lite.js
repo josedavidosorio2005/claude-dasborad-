@@ -169,10 +169,14 @@ function leerHojaXlsxComoAoA(filePath, sheetName) {
 }
 
 // Lee la hoja `sheetName` y la devuelve como un objeto de celdas por
-// direccion (A1, B2, ...) con { v, f } — misma forma que un worksheet de
-// SheetJS (ws['A1'].v / ws['A1'].f) — para probar deteccion de formulas sin
-// valor cacheado (cargasDetectarFormulaSinValor en cargas-logic.js) contra un
-// .xlsx real, sin depender del paquete npm `xlsx` (ver cabecera del archivo).
+// direccion (A1, B2, ...) — misma forma que un worksheet de SheetJS leido
+// con `{sheetStubs:true}` (la opcion que usa cargas.js): { v, f } para una
+// celda normal, { t:'z', f, v:0 } para una celda con formula SIN valor
+// cacheado (verificado contra el paquete real `xlsx`, no asumido — sin
+// `sheetStubs:true` esa celda ni siquiera aparece en `ws`, y con la opcion
+// SheetJS la marca `t:'z'` con un `v:0` de relleno que NUNCA es el
+// resultado real de la formula). Para probar cargasDetectarFormulaSinValor
+// contra un .xlsx real sin depender del paquete npm `xlsx` (ver cabecera).
 function leerHojaXlsxComoCeldas(filePath, sheetName) {
   const { sheetXml, sharedStrings } = _localizarHojaXml(filePath, sheetName);
   const cells = {};
@@ -192,6 +196,9 @@ function leerHojaXlsxComoCeldas(filePath, sheetName) {
       if (type === 's') cell.v = sharedStrings[parseInt(vMatch[1], 10)];
       else if (type === 'str' || type === 'b') cell.v = decodeXmlEntities(vMatch[1]);
       else cell.v = Number(vMatch[1]);
+    } else if (fMatch) {
+      cell.t = 'z';
+      cell.v = 0;
     }
     cells[addr] = cell;
   }
