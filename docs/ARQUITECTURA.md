@@ -908,6 +908,22 @@ Implementación (`dashboard-generic.js`):
   amplía si quiere — evita que cambiar el mes del dashboard reinicie en
   silencio un filtro de asesor que el usuario ya había elegido.
 
+### Verificado en producción real (2026-09-16)
+
+Workflow `verificar-filtros-colores-produccion.yml` (usuario temporal
+ADMIN + uno AUX_ADMIN, ambos borrados al final): confirmó que un AUX_ADMIN
+no ve el botón/la sección; que Previsualizar abre el dashboard real de
+ORLANT y ALBERTO LINERO GO con datos reales; que el filtro de categorías
+(subida de prueba a ALBERTO LINERO GO, periodo `2027-06`, borrada al
+terminar) narrows correctamente y que el color de cada categoría es
+idéntico entre dos aperturas del dashboard (`QA Objecion precio` →
+`#27ae60` las dos veces, `QA Interesado` → `#8e44ad` las dos veces); que el
+filtro de fecha de la línea diaria funciona; y que el filtro de asesor de
+Calidad funciona sobre datos **reales** de ORLANT ya existentes (nunca
+escritos ni borrados por este workflow) — filtrar a un asesor real bajó los
+monitoreos de 37 a 5. Capturas en
+`docs/capturas-demo/produccion-filtro-*.png`.
+
 ---
 
 ## 9. API — endpoints agregados en las últimas fases
