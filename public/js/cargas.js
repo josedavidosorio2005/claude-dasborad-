@@ -4,6 +4,9 @@
 // El Excel se parsea en el navegador (libreria XLSX ya cargada) y se envia como
 // JSON a POST /api/dashboard/cargas. El servidor valida contra la definicion de
 // la seccion y guarda. Volver a subir un periodo pide confirmacion antes de reemplazar (3.1).
+//
+// El parseo puro (sin DOM) vive en cargas-logic.js para poder probarlo con
+// node:test contra un .xlsx real (ver server/tests/cargas-logic.test.js).
 
 var _cargasClientes = [];
 var _cargasSpec = null;      // { cliente, secciones:{ key: {titulo, cadencia, periodo, filaUnica, columnas} } }
@@ -99,14 +102,21 @@ async function procesarArchivoCarga(input){
   var buf;
   try{ buf = await file.arrayBuffer(); }
   catch(e){ showToast('No se pudo leer el archivo'); return; }
-  var wb, aoa;
+  var wb, ws, aoa;
   try{
     wb = XLSX.read(new Uint8Array(buf), {type:'array'});
-    var ws = wb.Sheets[wb.SheetNames[0]];
+    ws = wb.Sheets[wb.SheetNames[0]];
     aoa = XLSX.utils.sheet_to_json(ws, {header:1, blankrows:false, defval:''});
   }catch(e){ showToast('El archivo no es un Excel valido'); return; }
 
-  var res = spec.filaUnica ? _parseFilaUnica(spec, aoa) : _parseMultiFila(spec, aoa);
+  // Un archivo generado por script (nunca abierto en Excel/LibreOffice para
+  // forzar el recalculo) guarda formulas sin su resultado: sin este chequeo
+  // la carga se aceptaba en silencio y la vista previa mostraba "—" sin
+  // explicar por que (caso real: plantilla con =COUNTA/=COUNTIF).
+  var celdaFormula = cargasDetectarFormulaSinValor(ws);
+  if(celdaFormula){ showToast(celdaFormula.mensaje); input.value=''; return; }
+
+  var res = spec.filaUnica ? cargasParseFilaUnica(spec, aoa) : cargasParseMultiFila(spec, aoa);
   if(res.error){ showToast(res.error); return; }
 
   _cargaParsed = {
@@ -118,43 +128,6 @@ async function procesarArchivoCarga(input){
     filas: res.filas
   };
   _renderPreviewCarga(spec, res.filas, res.avisos || []);
-}
-
-function _norm(s){ return String(s==null?'':s).trim().toLowerCase(); }
-function _colPorLabel(spec, label){
-  var n = _norm(label);
-  return spec.columnas.find(function(c){ return _norm(c.label)===n || _norm(c.key)===n; }) || null;
-}
-
-function _parseFilaUnica(spec, aoa){
-  // Formato vertical: [ [label, valor], ... ]  (se ignora una fila de encabezado si dice "metrica")
-  var obj = {};
-  var avisos = [];
-  aoa.forEach(function(row){
-    if(!row || row.length<2) return;
-    if(_norm(row[0])==='metrica' || _norm(row[0])==='métrica') return;
-    var col = _colPorLabel(spec, row[0]);
-    if(!col){ avisos.push('Se ignoro la fila "'+row[0]+'" (no coincide con ninguna metrica)'); return; }
-    obj[col.key] = row[1];
-  });
-  if(Object.keys(obj).length===0) return {error:'El archivo no tiene metricas reconocibles. Descarga la plantilla.'};
-  return {filas:[obj], avisos:avisos};
-}
-
-function _parseMultiFila(spec, aoa){
-  if(!aoa.length) return {error:'El archivo esta vacio'};
-  var headers = aoa[0].map(function(h){ return _colPorLabel(spec, h); });
-  if(!headers.some(Boolean)) return {error:'Los encabezados no coinciden con la plantilla. Descarga la plantilla.'};
-  var filas = [];
-  for(var i=1;i<aoa.length;i++){
-    var row = aoa[i];
-    if(!row || row.every(function(v){ return v===''||v==null; })) continue;
-    var obj = {};
-    headers.forEach(function(col, j){ if(col) obj[col.key] = row[j]; });
-    filas.push(obj);
-  }
-  if(filas.length===0) return {error:'El archivo no tiene filas de datos'};
-  return {filas:filas, avisos:[]};
 }
 
 function _renderPreviewCarga(spec, filas, avisos){
