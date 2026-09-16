@@ -1,0 +1,192 @@
+name: Auditoria - campanas prioritarias en produccion (solo lectura)
+
+# Disparo manual unicamente. Mismo mecanismo de acceso que
+# diagnostico-dashboard-produccion.yml (rol OIDC, apertura temporal del
+# puerto 22 solo para la IP de este runner) -- esta corrida es de SOLO
+# LECTURA: ningun paso escribe en la base de datos, no crea usuarios, no
+# sube archivos.
+#
+# Pedido de InCo (2026-09-16): auditar que tan cerca de "100% funcional"
+# estan las 3 campanas prioritarias (ORLANT, CLINICA AURORA, HOSPITAL LA
+# MARIA) -- mapeo de skill real, datos reales cargados (Trafico y Calidad),
+# dashboards_config al dia, plantilla de Calidad definida, consolidacion
+# por sede de Hospital La Maria, y permisos/visibilidad reales.
+#
+# `input.campanas` permite reusar este mismo workflow para auditar otro
+# subconjunto de campanas en el futuro sin tocar el YAML.
+on:
+  workflow_dispatch:
+    inputs:
+      campanas:
+        description: 'Campanas a auditar, separadas por "|"'
+        required: false
+        default: 'ORLANT|CLINICA AURORA|HOSPITAL LA MARIA'
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  auditar:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      CAMPANAS: ${{ github.event.inputs.campanas }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Correr la auditoria (solo lectura) dentro del contenedor
+        uses: appleboy/ssh-action@v1
+        env:
+          CAMPANAS: ${{ env.CAMPANAS }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: CAMPANAS
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e CAMPANAS="$CAMPANAS" \
+              -e JWT_SECRET="dummy-no-usado-auditoria-32-caracteres-x" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              const CAMPANAS = (process.env.CAMPANAS || "").split("|").map((s) => s.trim()).filter(Boolean);
+              function out(titulo, data) {
+                console.log("\n=== " + titulo + " ===");
+                console.log(JSON.stringify(data, null, 2));
+              }
+              out("Campanas auditadas", CAMPANAS);
+
+              const placeholders = CAMPANAS.map(() => "?").join(",");
+
+              out("dashboard_cargas -- TODAS las filas de estas campanas (Gestion de base)", db.prepare(
+                "SELECT cliente, seccion, periodo, cargadoPorNombre, cargadoEn, filas FROM dashboard_cargas WHERE cliente IN (" + placeholders + ") ORDER BY cliente, seccion, periodo"
+              ).all(...CAMPANAS).map((r) => {
+                let n = null;
+                try { n = JSON.parse(r.filas || "[]").length; } catch (e) {}
+                return { cliente: r.cliente, seccion: r.seccion, periodo: r.periodo, filas: n, cargadoPorNombre: r.cargadoPorNombre, cargadoEn: r.cargadoEn };
+              }));
+
+              out("calidad_nivel_servicio_diario -- cobertura real de Trafico por campana+skill", db.prepare(
+                "SELECT campana, skillName, COUNT(*) AS dias, MIN(fecha) AS primerDia, MAX(fecha) AS ultimoDia, MAX(cargadoPorNombre) AS ultimoCargadoPor FROM calidad_nivel_servicio_diario WHERE campana IN (" + placeholders + ") GROUP BY campana, skillName ORDER BY campana, skillName"
+              ).all(...CAMPANAS));
+
+              out("trafico_skill_mapeo -- COMPLETO (para ver tambien las SIN ASIGNAR)", db.prepare(
+                "SELECT skillName, campana, sede, updatedAt FROM trafico_skill_mapeo ORDER BY campana, skillName"
+              ).all());
+
+              out("monitoreos -- resumen real por campana (conteo, rango de fechas, asesores distintos)", db.prepare(
+                "SELECT campana, COUNT(*) AS total, MIN(fecha) AS primerDia, MAX(fecha) AS ultimoDia, COUNT(DISTINCT asesor) AS asesoresDistintos FROM monitoreos WHERE campana IN (" + placeholders + ") GROUP BY campana"
+              ).all(...CAMPANAS));
+
+              out("monitoreos -- asesores distintos por campana (para juzgar si son reales o de prueba)", CAMPANAS.map((c) => ({
+                campana: c,
+                asesores: db.prepare("SELECT DISTINCT asesor FROM monitoreos WHERE campana = ? ORDER BY asesor").all(c).map((r) => r.asesor),
+                evaluadores: db.prepare("SELECT DISTINCT evaluador FROM monitoreos WHERE campana = ? ORDER BY evaluador").all(c).map((r) => r.evaluador),
+              })));
+
+              out("calidad_plantillas -- definicion de Calidad por campana (items, pesos, engine)", CAMPANAS.map((c) => {
+                const row = db.prepare("SELECT * FROM calidad_plantillas WHERE campana = ?").get(c);
+                if (!row) return { campana: c, existe: false };
+                let items = [];
+                try { items = JSON.parse(row.items || "[]"); } catch (e) {}
+                return {
+                  campana: c, existe: true, activo: !!row.activo, engine: row.engine,
+                  cantidadItems: items.length,
+                  sumaPesos: items.reduce((a, it) => a + (it.weight || 0), 0),
+                  itemsCriticos: items.filter((it) => it.critico).length,
+                  updatedAt: row.updatedAt,
+                };
+              }));
+
+              out("dashboards_config -- config cruda de estas campanas (vista, secciones, cantidad de kpis/paneles)", CAMPANAS.map((c) => {
+                const row = db.prepare("SELECT * FROM dashboards_config WHERE cliente = ?").get(c);
+                if (!row) return { cliente: c, existe: false };
+                let secciones = {}, layout = {}, vista = null;
+                try { secciones = JSON.parse(row.secciones || "{}"); } catch (e) {}
+                try { layout = JSON.parse(row.layout || "{}"); } catch (e) {}
+                try { vista = row.vista ? JSON.parse(row.vista) : null; } catch (e) {}
+                return {
+                  cliente: c, existe: true, activo: !!row.activo, updatedAt: row.updatedAt,
+                  secciones: Object.keys(secciones),
+                  vista: vista,
+                  cantidadKpis: (layout.kpis || []).length,
+                  tabs: (layout.tabs || []).map((t) => ({ key: t.key, label: t.label, paneles: (t.panels || []).length })),
+                };
+              }));
+
+              const { verificarDashboardsConfig } = require("./scripts/verificar-consistencia-dashboards");
+              out("dashboards_config -- consistencia KPI/campo (detector permanente)", verificarDashboardsConfig().filter((r) => CAMPANAS.includes(r.cliente)));
+
+              out("usuarios reales con acceso a estas campanas (dashboard de cliente o Calidad)", db.prepare(
+                "SELECT id, nombre, user, rol, active, perms FROM users WHERE active = 1"
+              ).all().map((u) => {
+                let perms = {};
+                try { perms = JSON.parse(u.perms || "{}"); } catch (e) {}
+                const accesoDash = CAMPANAS.filter((c) => perms["cliente_" + c]);
+                const accesoCalidad = CAMPANAS.filter((c) => perms["campana_" + c]);
+                return { id: u.id, nombre: u.nombre, user: u.user, rol: u.rol, accesoDash, accesoCalidad };
+              }).filter((u) => u.accesoDash.length || u.accesoCalidad.length || u.rol === "ADMIN"));
+
+              console.log("\n=== FIN AUDITORIA ===");
+            '
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
