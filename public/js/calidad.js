@@ -602,9 +602,7 @@ async function descargarReporteGeneral(){
     }
     var ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!cols'] = [{wch:28},{wch:10},{wch:11},{wch:16},{wch:12},{wch:12},{wch:9},{wch:13},{wch:13},{wch:10}];
-    var sheetName = camp.replace(/[\\\/\?\*\[\]:]/g,'').slice(0,31) || 'Campana';
-    if(usedNames[sheetName]){ sheetName = sheetName.slice(0,28)+'_'+Object.keys(usedNames).length; }
-    usedNames[sheetName] = true;
+    var sheetName = xlsxNombreHojaUnico(camp, usedNames);
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
   }
   XLSX.writeFile(wb, 'Reporte_Cumplimiento_'+mes+'.xlsx');
