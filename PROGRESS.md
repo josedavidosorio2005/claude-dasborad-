@@ -1536,6 +1536,23 @@ sobre cada router extraído (login, historial, users, calidad, tráfico —
 incluida la descarga real de la plantilla, que depende de una ruta de
 archivo (`__dirname`) ajustada al mover el código a `routes/` — inventario,
 gerencia, gestión humana, dashboard de cliente, umbrales, 401/404, estático).
-**Verificación en producción real: pendiente** — se documenta en la fase
-siguiente tras el deploy, siguiendo el mismo patrón que las Fases 26/27
-(PR de código + PR de evidencia de producción por separado).
+
+**Verificación en producción real** (PRs #48-49, tras el deploy): CI verde
+en Node 18/20/22 + `docker-build` (confirma que el Dockerfile empaqueta
+`server/routes/` y `public/img/` sin cambios), deploy automático (OIDC +
+apertura temporal del puerto 22) sin intervención manual, y un workflow de
+QA nuevo (`verificar-permiso-historial-y-routers-produccion.yml`) con 2
+usuarios temporales (creados/borrados directo en la BD, nunca vía la API)
+confirmó en producción real:
+
+| Chequeo | Resultado real |
+|---|---|
+| `GET /api/historial` con ASESOR temporal | **403** — `"Sin permiso para ver el historial"` |
+| `GET /api/historial` con ADMIN temporal | **200** — 57 filas reales, sin cambios |
+| Cabeceras de estáticos (`curl -I`) | `index.html`: `Cache-Control: no-cache`, gzip; `/img/*.png`: `max-age=604800`; `/css`,`/js`: `max-age=300`, gzip |
+| `index.html` real servido | 80 940 bytes (antes 467 112) — sin ningún `data:image` embebido, referencia real a `img/logo-inconexion.png` e `img/navbar-icon.png` |
+| Flujo Playwright login → dashboard → cargar datos | Login ADMIN temporal OK → dashboard real de ORLANT abre con datos reales (`"Informe Nov-26 — ORLANT"`) → carga de prueba a ALBERTO LINERO GO (periodo 2027-08, plantilla consolidada real) se guarda (`"✓ Resumen mensual (KPIs y tendencias)"`) y se ve reflejada en su dashboard → carga de prueba y los 2 usuarios temporales borrados al final |
+
+Los 4 puntos que pedía la verificación quedan confirmados con evidencia
+real, no solo con el test suite. Capturas subidas como artifact del run
+(`verificacion-historial-routers-<run id>`, 30 días de retención).
