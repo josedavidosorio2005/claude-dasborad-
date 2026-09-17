@@ -5,6 +5,18 @@
 // mensaje claro y NO ejecutamos la operacion.
 const { z } = require('zod');
 
+// zod v4 elimino required_error/invalid_type_error/errorMap (construccion por
+// objeto) en favor de un unico parametro `error`. Este helper reproduce el
+// mismo comportamiento de zod v3: `required` cuando el campo vino ausente
+// (undefined), `invalidType` cuando vino con otro tipo -- si no se pasa
+// `invalidType`, se deja el mensaje generico de zod (igual que antes, cuando
+// solo se pasaba required_error).
+function reqStr(required, invalidType) {
+  return {
+    error: (iss) => (iss.input === undefined ? required : invalidType),
+  };
+}
+
 // Roles validos: deben coincidir con ALL_ROLES en public/index.html
 const ROLES = [
   'ADMIN',
@@ -25,12 +37,12 @@ const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 
 const passwordSchema = z
-  .string({ required_error: 'La contrasena es obligatoria', invalid_type_error: 'La contrasena debe ser texto' })
+  .string(reqStr('La contrasena es obligatoria', 'La contrasena debe ser texto'))
   .min(PASSWORD_MIN, `La contrasena debe tener al menos ${PASSWORD_MIN} caracteres`)
   .max(PASSWORD_MAX, `La contrasena no puede superar ${PASSWORD_MAX} caracteres`);
 
 const userSchema = z
-  .string({ required_error: 'El usuario es obligatorio', invalid_type_error: 'El usuario debe ser texto' })
+  .string(reqStr('El usuario es obligatorio', 'El usuario debe ser texto'))
   .trim()
   .min(3, 'El usuario debe tener al menos 3 caracteres')
   .max(32, 'El usuario no puede superar 32 caracteres')
@@ -40,13 +52,13 @@ const userSchema = z
   );
 
 const nombreSchema = z
-  .string({ required_error: 'El nombre es obligatorio', invalid_type_error: 'El nombre debe ser texto' })
+  .string(reqStr('El nombre es obligatorio', 'El nombre debe ser texto'))
   .trim()
   .min(1, 'El nombre es obligatorio')
   .max(120, 'El nombre no puede superar 120 caracteres');
 
 const rolSchema = z.enum(ROLES, {
-  errorMap: () => ({ message: `Rol invalido. Debe ser uno de: ${ROLES.join(', ')}` }),
+  error: `Rol invalido. Debe ser uno de: ${ROLES.join(', ')}`,
 });
 
 const asesorCampanaSchema = z
@@ -66,7 +78,7 @@ const permsSchema = z
       .min(1)
       .max(80)
       .regex(/^[a-zA-Z0-9_ .\-/]+$/, 'Clave de permiso invalida'),
-    z.boolean({ invalid_type_error: 'Los permisos deben ser true/false' })
+    z.boolean({ error: 'Los permisos deben ser true/false' })
   )
   .refine((obj) => Object.keys(obj).length <= 200, {
     message: 'Demasiadas claves de permisos',
@@ -74,7 +86,7 @@ const permsSchema = z
 
 const idParamSchema = z.object({
   id: z.coerce
-    .number({ invalid_type_error: 'id invalido' })
+    .number({ error: 'id invalido' })
     .int('id invalido')
     .positive('id invalido'),
 });
@@ -82,8 +94,8 @@ const idParamSchema = z.object({
 // ── Esquemas por endpoint ───────────────────────────────────
 
 const loginBody = z.object({
-  user: z.string({ required_error: 'Usuario y contrasena requeridos' }).min(1, 'Usuario y contrasena requeridos'),
-  password: z.string({ required_error: 'Usuario y contrasena requeridos' }).min(1, 'Usuario y contrasena requeridos'),
+  user: z.string(reqStr('Usuario y contrasena requeridos')).min(1, 'Usuario y contrasena requeridos'),
+  password: z.string(reqStr('Usuario y contrasena requeridos')).min(1, 'Usuario y contrasena requeridos'),
 });
 
 const createUserBody = z.object({
@@ -120,14 +132,14 @@ const updatePermsBody = z.object({
 // (Las campanas no son un enum fijo: se pueden agregar. El servidor igual
 // valida contra la lista de plantillas existentes en el handler.)
 const campanaSchema = z
-  .string({ required_error: 'La campana es obligatoria' })
+  .string(reqStr('La campana es obligatoria'))
   .trim()
   .min(1, 'La campana es obligatoria')
   .max(120, 'Nombre de campana demasiado largo')
   .regex(/^[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ .\-/]+$/, 'Nombre de campana con caracteres no permitidos');
 
 const fechaSchema = z
-  .string({ required_error: 'La fecha es obligatoria' })
+  .string(reqStr('La fecha es obligatoria'))
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato AAAA-MM-DD');
 
 const mesSchema = z
@@ -151,7 +163,7 @@ const textoCortoOpt = z.string().trim().max(200).optional().default('');
 // El puntaje/clasificacion/fallos NO se aceptan del cliente: los calcula el servidor.
 const createMonitoreoBody = z.object({
   campana: campanaSchema,
-  asesor: z.string({ required_error: 'El asesor es obligatorio' }).trim().min(1).max(120),
+  asesor: z.string(reqStr('El asesor es obligatorio')).trim().min(1).max(120),
   fecha: fechaSchema,
   canal: z.enum(['LLAMADA', 'WPP']).default('LLAMADA'),
   idLlamada: textoCortoOpt,
@@ -213,15 +225,15 @@ const updateMetaBody = metaBody.partial().refine((b) => Object.keys(b).length > 
 // ser %, segundos, etc. segun la metrica) — no se acotan a 0-100 aqui.
 const umbralBody = z.object({
   metrica: z
-    .string({ required_error: 'La metrica es obligatoria' })
+    .string(reqStr('La metrica es obligatoria'))
     .trim()
     .min(1, 'La metrica es obligatoria')
     .max(100),
   campana: z.string().trim().max(120).optional().default(''),
-  verde: z.coerce.number({ invalid_type_error: 'Valor verde invalido' }),
-  amarillo: z.coerce.number({ invalid_type_error: 'Valor amarillo invalido' }),
+  verde: z.coerce.number({ error: 'Valor verde invalido' }),
+  amarillo: z.coerce.number({ error: 'Valor amarillo invalido' }),
   direccion: z.enum(['mayor_es_mejor', 'menor_es_mejor'], {
-    errorMap: () => ({ message: 'Direccion invalida' }),
+    error: 'Direccion invalida',
   }),
 });
 
@@ -257,7 +269,7 @@ const updateNivelServicioBody = z
 const nivelServicioDiarioFilaSchema = z
   .object({
     fecha: fechaSchema,
-    skillName: z.string({ required_error: 'El skill es obligatorio' }).trim().min(1).max(200),
+    skillName: z.string(reqStr('El skill es obligatorio')).trim().min(1).max(200),
     totalLlamadas: z.coerce.number().int().min(0, 'Valor invalido').max(1000000),
     contestadas: z.coerce.number().int().min(0, 'Valor invalido').max(1000000),
     serviceLevel20secPct: z.number().min(0).max(100).nullable().optional(),
@@ -289,7 +301,7 @@ const segundosOpcional = z.coerce.number().min(0).max(1000000).optional();
 const traficoFilaSchema = z
   .object({
     fecha: fechaSchema,
-    skillName: z.string({ required_error: 'SKILL_NAME es obligatorio' }).trim().min(1).max(200),
+    skillName: z.string(reqStr('SKILL_NAME es obligatorio')).trim().min(1).max(200),
     totalLlamadas: z.coerce.number().int().min(0).max(1000000),
     contestadas: z.coerce.number().int().min(0).max(1000000),
     llamadasAbandonadas: z.coerce.number().int().min(0).max(1000000).optional(),

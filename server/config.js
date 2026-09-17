@@ -13,6 +13,12 @@ const { z } = require('zod');
 
 const BCRYPT_HASH_RE = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
 
+// zod v4 elimino required_error/invalid_type_error (ver el mismo helper en
+// validation.js): reproduce "mensaje solo cuando el valor vino ausente".
+function reqStr(required) {
+  return { error: (iss) => (iss.input === undefined ? required : undefined) };
+}
+
 // Convierte "https://a.com, https://b.com" -> ["https://a.com","https://b.com"]
 function parseOrigins(value) {
   if (!value) return [];
@@ -41,14 +47,14 @@ const schema = z
       .default('development'),
 
     PORT: z.coerce
-      .number({ invalid_type_error: 'PORT debe ser un numero' })
+      .number({ error: 'PORT debe ser un numero' })
       .int('PORT debe ser un entero')
       .min(1, 'PORT fuera de rango (1-65535)')
       .max(65535, 'PORT fuera de rango (1-65535)')
       .default(3000),
 
     JWT_SECRET: z
-      .string({ required_error: 'JWT_SECRET es obligatorio' })
+      .string(reqStr('JWT_SECRET es obligatorio'))
       .min(
         32,
         'JWT_SECRET debe tener al menos 32 caracteres. Genera uno con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
@@ -59,7 +65,7 @@ const schema = z
     MASTER_ADMIN_USER: z.string().min(1).default('admin'),
 
     MASTER_ADMIN_PASSWORD_HASH: z
-      .string({ required_error: 'MASTER_ADMIN_PASSWORD_HASH es obligatorio' })
+      .string(reqStr('MASTER_ADMIN_PASSWORD_HASH es obligatorio'))
       .regex(
         BCRYPT_HASH_RE,
         'MASTER_ADMIN_PASSWORD_HASH no tiene formato bcrypt valido ($2a$/$2b$...). Genera el hash con: node hash-password.js "tu-contrasena"'
