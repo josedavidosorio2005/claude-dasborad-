@@ -1556,3 +1556,106 @@ confirmó en producción real:
 Los 4 puntos que pedía la verificación quedan confirmados con evidencia
 real, no solo con el test suite. Capturas subidas como artifact del run
 (`verificacion-historial-routers-<run id>`, 30 días de retención).
+
+## Fase 30 — Cierre del resto de la lista de auditoría (deps mayores) + fix de `main` roto + auditoría del flujo de carga (PRs #55-57, 2026-09-17)
+
+Pedido de InCo: cerrar los 7 puntos restantes de la lista priorizada de la
+Fase 29, y por separado auditar el flujo de "subir datos" en busca de huecos
+no cubiertos por la auditoría general.
+
+### Hallazgo de partida: 6 de los 7 puntos ya estaban cerrados
+
+Antes de tocar código se verificó el estado real de cada uno de los 7 puntos
+contra el repo (no contra el texto de la auditoría original, que quedó
+desactualizado por el trabajo de la propia Fase 29):
+
+| # | Punto | Estado real encontrado |
+|---|---|---|
+| 1 | Tests de `semaforo-logic.js`/`paleta-logic.js`/`gd-filtro-logic.js` | **Ya existían** (`server/tests/{semaforo,paleta,gd-filtro}-logic.test.js`), corriendo en CI vía `npm test`. De hecho los 7 archivos de lógica de navegador de `public/js/` tienen su test. |
+| 2 | Consolidar exportación a Excel/PDF | **Ya resuelto** en el PR #52 (`public/js/xlsx-export-helpers.js`) — investigado uno por uno, la duplicación real era `xlsxNombreHojaUnico`/`xlsxAgregarAvisoDemo`, no toda la lógica de exportación (cada módulo arma columnas/hojas genuinamente distintas). |
+| 3 | Playwright a 412px en constructor de dashboards + carga masiva | **Ya resuelto** en el PR #53 — encontró y arregló un bug real (`.form-row` sin wrap en el constructor). |
+| 4 | ~48 hex sueltos que duplican una variable | **Ya resuelto** en el PR #51 — de los ~48, solo 1 caso real tras revisarlos uno por uno. |
+| 5 | README: "9 roles"/"9 clientes", árbol de directorios | **Ya resuelto** en el PR #51 (10 roles, 12 clientes, árbol actualizado). |
+| 6 | 3 endpoints muertos | **Ya resuelto** en el PR #51 — 2 eliminados, `GET /gerencia/kpis` confirmado con consumidor real, no se toca. |
+| 7 | Deps mayores ancladas (7 paquetes) | **Parcialmente resuelto**: bcryptjs/dotenv/helmet/express-rate-limit ya en su mayor nueva desde el PR #54. Express y zod, pendientes de verdad — cerrados en esta fase. better-sqlite3, decisión explícita de NO subir (ver abajo). |
+
+Es decir: del trabajo pedido, lo único real que quedaba en código era terminar
+el punto 7. El resto ya estaba hecho por el propio trabajo de la Fase 29,
+simplemente el pedido se redactó sobre el texto original de la auditoría sin
+saber que ya se había cerrado.
+
+### Bloqueante encontrado primero: `main` estaba roto (PR #55)
+
+Antes de tocar nada de lo anterior: el PR #54 (mergeado más temprano el mismo
+día) se fusionó a `main` con **CI en rojo** en Node 18 y Node 20 —
+`better-sqlite3@13` exige Node ≥22 y crashea con SIGSEGV en versiones
+anteriores, no da un error controlado. El merge no se bloqueó porque no hay
+protección de rama que exija CI verde. El fix correcto ya existía
+(`fix(deps): revierte better-sqlite3 a 12.11.1`) pero vivía en una rama que se
+había mergeado *antes* de que ese commit se creara, así que nunca llegó a
+`main`. Sin impacto en producción real: el deploy está encadenado al éxito de
+CI, así que ese despliegue se saltó solo (`skipped`) y producción siguió
+sirviendo la versión anterior (PR #53) todo este tiempo. Corregido
+cherry-pickeando el commit a una rama nueva, con CI verde en los 3 Node antes
+de mergear (a diferencia del PR #54).
+
+### Deps mayores: Express 4→5 y zod 3→4 (PRs #56-57)
+
+- **Express 5** (#56): único punto de código afectado — `server.js` usaba
+  `app.get('*', ...)` para el fallback SPA; Express 5 (path-to-regexp v8) ya
+  no acepta `'*'` suelto como patrón. Cambiado a `app.get('/{*splat}', ...)`.
+  Verificado con servidor real: SPA fallback, estático y 404 de API sin
+  cambios de comportamiento.
+- **zod 4** (#57): **hallazgo real, no solo "subir el número"**. zod v4
+  elimina `required_error`/`invalid_type_error`/`errorMap` en favor de un
+  único parámetro `error`. Sin arreglar nada, la suite seguía en 224/224
+  (ningún test compara el texto exacto de estos mensajes) pero los 16 sitios
+  que usaban ese patrón en `validation.js`/`config.js` quedaban silenciosamente
+  con el mensaje genérico en inglés de zod en vez del mensaje en español
+  pensado para el usuario — una regresión de UX invisible a la suite, del
+  mismo tipo que pide vigilar la Parte 2 de este pedido. Arreglado con un
+  helper (`reqStr`) que reproduce exactamente el comportamiento de zod v3;
+  verificado con un script aparte que compara el mensaje palabra por palabra
+  antes/después, y en producción real (`POST /api/auth/login` sin body sigue
+  devolviendo `"Usuario y contrasena requeridos"`, no el genérico de zod).
+- **better-sqlite3 se queda en v12, a propósito**: subir a v13 exige antes
+  decidir si se deja de soportar Node 18/20 (cambiar `ci.yml` y el README) —
+  decisión de negocio de InCo, no algo que resolver dentro de este PR.
+
+Las 3 ramas siguieron el patrón completo: CI verde en Node 18/20/22 antes de
+mergear, deploy automático, verificación real en producción
+(`https://inconexionpruebasclaude.duckdns.org/api/health` y, para zod, el
+mensaje de error real de `/api/auth/login`).
+
+**Verificación**: `npm test` → 224/224 en cada PR, `npm audit` → 0
+vulnerabilidades. `main` sano de nuevo desde el PR #55 en adelante.
+
+### Parte 2 — Auditoría del flujo de carga de datos (sin código, salvo lo trivial)
+
+Pedido aparte de InCo: revisar qué le falta al flujo de "subir datos" para
+que la experiencia sea sólida cuando se carguen los archivos reales de
+Orlant/Aurora/Hospital La María. Reporte completo entregado directamente a
+InCo (no versionado aquí, igual que la "Radiografía" de la Fase 29). Resumen
+de los 3 hallazgos reales, verificados contra el código:
+
+1. **Mapeo manual de skill de Wolkvox — SÍ vale la pena, esfuerzo trivial**:
+   el backend (`PUT /calidad/trafico/skills/:skillName`) ya hace upsert —
+   soporta crear un mapeo nuevo de una campaña antes de que exista ningún
+   dato para esa skill. El único hueco es de frontend: la pantalla
+   "Mapeo de Skills → Campaña" (`public/index.html`, tabla
+   `tv-skills-tbody`) solo lista skills que YA tienen fila en
+   `trafico_skill_mapeo` — no hay un campo de texto para escribir un
+   `SKILL_NAME` nuevo a mano. Agregar ese campo + botón junto al ya existente
+   "Actualizar" reutiliza el endpoint tal cual (sin cambios de backend ni de
+   permisos). Recomendado antes de la carga real de Aurora/Hospital La María.
+2. **Mensajes de error de carga**: fecha inválida y archivo no-Excel ya son
+   claros (mensaje puntual por fila o por archivo). Hueco real encontrado:
+   en la plantilla consolidada (`cargas.js`), una hoja con el nombre
+   cambiado/faltante se trata exactamente igual que una hoja "vacía — no
+   aplica esta vez" (mismo camino de código, `cargasHojaVacia`) — no hay
+   forma de distinguir "esta sección de verdad no aplica" de "renombraste la
+   pestaña por error", así que esa sección se pierde en silencio.
+3. **Confirmación de qué se cargó**: ya es sólido — `guardarCarga()` refresca
+   la tabla de cargas existentes de inmediato (sin recargar la página) y
+   muestra un resumen ✓/✗ por hoja; lo mismo para la carga de Tráfico
+   independiente (refresca cobertura/skills/nivel de servicio al guardar).
