@@ -322,6 +322,37 @@ function traficoAgregar(filas, opts) {
   });
 }
 
+// ── Formulario "Registrar skill nuevo" (mapeo manual Wolkvox -> campana,
+// hallazgo de la auditoria del flujo de carga, Fase 30/32) ──────────────
+// Valida ANTES de llamar al backend -- reutiliza el mismo PUT que ya usan
+// las filas existentes de la tabla de mapeo (`/calidad/trafico/skills/
+// :skillName`, un upsert), asi que la unica responsabilidad de esta
+// funcion es rechazar con un mensaje claro los casos que ni deberian
+// llegar al servidor.
+// `skillsExistentes`: nombres de skill que YA tienen fila en
+// trafico_skill_mapeo (el ultimo GET, ya en el navegador) -- un SKILL_NAME
+// que coincida con uno de ellos se rechaza en vez de dejar que el upsert
+// lo reasigne en silencio: la fila que ya existe muestra su campana/filas
+// actuales a la vista, mas seguro editarla ahi que pisarla desde un
+// formulario que no tiene esa visibilidad (podria mover trafico ya
+// cargado a otra campana por un simple typo que coincida con un skill real).
+function traficoValidarNuevoMapeo(input) {
+  var skillName = String((input && input.skillName) == null ? '' : input.skillName).trim();
+  if (!skillName) return { error: 'Escribe el SKILL_NAME real de Wolkvox.' };
+  var campana = (input && input.campana) || '';
+  if (!campana) return { error: 'Selecciona la campana a la que pertenece este skill.' };
+  var sedesDisponibles = (input && input.sedesDisponibles) || [];
+  var sede = (input && input.sede) || '';
+  if (sedesDisponibles.length && !sede) {
+    return { error: 'Esta campana tiene mas de una sede: elige cual sede corresponde a este skill.' };
+  }
+  var skillsExistentes = (input && input.skillsExistentes) || [];
+  if (skillsExistentes.indexOf(skillName) !== -1) {
+    return { error: 'El skill "' + skillName + '" ya existe en la tabla de abajo — editalo ahi en vez de registrarlo de nuevo.' };
+  }
+  return { ok: true, skillName: skillName, campana: campana, sede: sedesDisponibles.length ? sede : null };
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -340,5 +371,6 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,
+    traficoValidarNuevoMapeo: traficoValidarNuevoMapeo,
   };
 }

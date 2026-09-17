@@ -343,6 +343,26 @@
         </div>
         <div class="section-card">
           <div class="section-header">
+            <h3>Registrar skill nuevo</h3>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Registra el SKILL_NAME real de Wolkvox y su campana ANTES de subir un archivo de Trafico -- cuando llegue una carga que lo mencione, el sistema ya sabe a que campana pertenece, en vez de guardarlo "sin asignar" hasta que lo mapees a mano.</div>
+          <div class="form-row">
+            <div class="ig"><label>SKILL_NAME (tal como aparece en Wolkvox)</label>
+              <input type="text" id="tv-skill-nuevo-nombre" placeholder="Ej: CALL_INBOUND_AURORA" autocomplete="off">
+            </div>
+            <div class="ig"><label>Campana</label>
+              <select id="tv-skill-nuevo-campana" onchange="_traficoToggleSedeSelNuevo()"></select>
+            </div>
+            <div class="ig" id="tv-skill-nuevo-sede-wrap" style="display:none"><label>Sede</label>
+              <select id="tv-skill-nuevo-sede"></select>
+            </div>
+          </div>
+          <div class="modal-btns">
+            <button class="btn-primary" id="tv-skill-nuevo-btn" onclick="registrarNuevoMapeoSkill()">Registrar skill</button>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
             <h3>Mapeo de Skills (Volvox) &rarr; Campana</h3>
             <div class="header-actions">
               <button class="btn-sm" onclick="renderTraficoSkills()">Actualizar</button>

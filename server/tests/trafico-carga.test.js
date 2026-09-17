@@ -402,6 +402,55 @@ test('canLoadData (no solo isFullAdmin) alcanza para las rutas de trafico: un AU
   assert.equal(bloqueado.status, 403);
 });
 
+// ── Pantalla "Registrar skill nuevo" (mapeo manual Wolkvox -> campana, ──
+// hallazgo de la auditoria del flujo de carga, Fase 30/32): confirma que
+// PUT /calidad/trafico/skills/:skillName funciona igual de bien ANTES de
+// que exista cualquier dato de trafico para ese skill (no asume que ya
+// tiene fila) — y que una carga posterior que lo mencione lo reconoce
+// como ya mapeado, sin duplicar la fila de mapeo ni pisar la campana ya
+// registrada.
+test('registrar un SKILL_NAME nuevo por PUT (sin ninguna carga previa) queda mapeado, y una carga posterior lo reconoce sin duplicar ni sobreescribir', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL REGISTRO PREVIO ' + Math.random().toString(36).slice(2, 6);
+
+  // Registro de antemano, sin ningun dato de trafico todavia (el caso real
+  // que motivo este formulario: registrar el skill de Aurora/Hospital La
+  // Maria antes de que Wolkvox mande el primer archivo que lo mencione).
+  const registro = await request(app)
+    .put('/api/calidad/trafico/skills/' + encodeURIComponent(skill))
+    .set(auth(admin))
+    .send({ campana: 'CLINICA AURORA' });
+  assert.equal(registro.status, 200, JSON.stringify(registro.body));
+  assert.equal(registro.body.movidas, 0, 'no hay filas previas que reatribuir');
+
+  const antes = await request(app).get('/api/calidad/trafico/skills').set(auth(admin));
+  const filaAntes = antes.body.filter((r) => r.skillName === skill);
+  assert.equal(filaAntes.length, 1, 'debe quedar exactamente una fila de mapeo, sin duplicados');
+  assert.equal(filaAntes[0].campana, 'CLINICA AURORA');
+  assert.equal(filaAntes[0].filas, 0, 'todavia sin trafico cargado');
+
+  // Ahora llega una carga real que menciona ese skill -- debe resolver
+  // DIRECTO a CLINICA AURORA (nunca a "(SIN ASIGNAR)").
+  const carga = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-11-01', totalLlamadas: 20, contestadas: 18 })] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+  assert.deepEqual(carga.body.campanas, ['CLINICA AURORA']);
+  assert.deepEqual(carga.body.skillsSinAsignar, [], 'ya estaba mapeado, no debe aparecer como skill nueva sin asignar');
+
+  const despues = await request(app).get('/api/calidad/trafico/skills').set(auth(admin));
+  const filaDespues = despues.body.filter((r) => r.skillName === skill);
+  assert.equal(filaDespues.length, 1, 'sigue habiendo una sola fila de mapeo (la carga no debio duplicarla)');
+  assert.equal(filaDespues[0].campana, 'CLINICA AURORA', 'la carga no debio pisar el mapeo ya registrado');
+  assert.equal(filaDespues[0].filas, 1);
+
+  const aurora = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('CLINICA AURORA'))
+    .set(auth(admin));
+  assert.ok(aurora.body.some((r) => r.skillName === skill && r.totalLlamadas === 20));
+});
+
 test('las columnas opcionales ausentes no llegan como 0 sino como null', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const skill = 'SKILL SIN OPCIONALES ' + Math.random().toString(36).slice(2, 6);

@@ -20,6 +20,7 @@ const {
   traficoFiltrarFilas,
   traficoAgregar,
   traficoVentana12Meses,
+  traficoValidarNuevoMapeo,
 } = require('../../public/js/trafico-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
@@ -315,4 +316,54 @@ test('fixture EJEMPLO_FILTROS.xlsx (aportado con la hoja GRAFICA de referencia):
   // da 0.01356845481007698 -> 1.36%; el correcto (abandonadas/total) es:
   assert.equal(a.tasaAbandonoPct, 1.07);
   assert.notEqual(a.tasaAbandonoPct, 1.36);
+});
+
+// ── traficoValidarNuevoMapeo: formulario "Registrar skill nuevo" (mapeo ──
+// manual Wolkvox -> campana, Fase 30/32) — valida ANTES de llamar al PUT
+// /calidad/trafico/skills/:skillName real, sin backend ni DOM de por medio.
+test('traficoValidarNuevoMapeo: SKILL_NAME vacio (o solo espacios) se rechaza con mensaje claro', () => {
+  assert.match(traficoValidarNuevoMapeo({ skillName: '', campana: 'ORLANT' }).error, /Escribe el SKILL_NAME/);
+  assert.match(traficoValidarNuevoMapeo({ skillName: '   ', campana: 'ORLANT' }).error, /Escribe el SKILL_NAME/);
+});
+
+test('traficoValidarNuevoMapeo: sin campana seleccionada se rechaza con mensaje claro', () => {
+  const r = traficoValidarNuevoMapeo({ skillName: 'CALL_INBOUND_AURORA', campana: '' });
+  assert.match(r.error, /Selecciona la campana/);
+});
+
+test('traficoValidarNuevoMapeo: campana multi-sede sin sede elegida se rechaza', () => {
+  const r = traficoValidarNuevoMapeo({
+    skillName: 'CALL_HLM', campana: 'HOSPITAL LA MARIA', sede: '',
+    sedesDisponibles: [{ valor: 'CASTILLA' }, { valor: 'SEDE33' }],
+  });
+  assert.match(r.error, /mas de una sede/);
+});
+
+test('traficoValidarNuevoMapeo: SKILL_NAME que ya existe en la tabla se rechaza, no se deja que el upsert lo pise en silencio', () => {
+  const r = traficoValidarNuevoMapeo({
+    skillName: 'CALL_YA_MAPEADO', campana: 'ORLANT',
+    skillsExistentes: ['CALL_YA_MAPEADO', 'OTRO_SKILL'],
+  });
+  assert.match(r.error, /ya existe en la tabla de abajo/);
+});
+
+test('traficoValidarNuevoMapeo: camino feliz -- recorta espacios, no exige sede si la campana no es multi-sede, sede queda null', () => {
+  const r = traficoValidarNuevoMapeo({
+    skillName: '  CALL_INBOUND_AURORA  ', campana: 'CLINICA AURORA',
+    sedesDisponibles: [], skillsExistentes: ['OTRO_SKILL'],
+  });
+  assert.equal(r.error, undefined);
+  assert.equal(r.ok, true);
+  assert.equal(r.skillName, 'CALL_INBOUND_AURORA');
+  assert.equal(r.campana, 'CLINICA AURORA');
+  assert.equal(r.sede, null);
+});
+
+test('traficoValidarNuevoMapeo: camino feliz con campana multi-sede -- conserva la sede elegida', () => {
+  const r = traficoValidarNuevoMapeo({
+    skillName: 'CALL_HLM_CASTILLA', campana: 'HOSPITAL LA MARIA', sede: 'CASTILLA',
+    sedesDisponibles: [{ valor: 'CASTILLA' }, { valor: 'SEDE33' }],
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.sede, 'CASTILLA');
 });
