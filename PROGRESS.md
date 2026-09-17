@@ -1815,10 +1815,26 @@ SKILL_NAME → rechazado como duplicado. Fila de prueba borrada al terminar
 (no hay endpoint de borrado para mapeos — se limpió directo en la base de
 desarrollo local).
 
-**Verificación en producción real**: pendiente de completar tras merge +
-deploy (workflow Playwright con usuario temporal, mismo mecanismo ya usado
-en verificaciones anteriores) — resultado documentado más abajo en esta
-misma fase.
+**Verificación en producción real** (PRs #61-62, tras merge + deploy): CI
+verde en Node 18/20/22 + docker-build en cada PR, deploy automático sin
+intervención manual, y un workflow nuevo
+(`verificar-mapeo-skill-produccion.yml`) con un usuario temporal **rol
+ADMIN** (nunca `AUX_ADMIN` aquí: la pantalla "Metas Calidad" solo es
+visible en el menú para ADMIN/master hoy — mismo criterio que ya usa
+`verificar-permiso-historial-y-routers-produccion.yml` para otra pantalla
+con la misma restricción; creado directo en la base de datos, nunca con
+la contraseña maestra) confirmó en producción real:
+
+| Caso | Resultado real |
+|---|---|
+| SKILL_NAME vacío | `"Escribe el SKILL_NAME real de Wolkvox."` — sin llamar al backend |
+| Sin campaña seleccionada | `"Selecciona la campana a la que pertenece este skill."` — sin llamar al backend |
+| Camino feliz (`PROD_QA_VERIF_SKILL_MAPEO_<run id>` → ORLANT) | `"Skill \"...\" registrado y asignado a ORLANT. Quedara listo para cuando llegue trafico con este nombre."` — aparece en la tabla de inmediato, sin recargar la página |
+| Reintentar el mismo SKILL_NAME | `"El skill \"...\" ya existe en la tabla de abajo — editalo ahi en vez de registrarlo de nuevo."` |
+
+Skill de prueba y usuario temporal borrados de inmediato al terminar
+(confirmado en el log del propio workflow: `skillMapeo: 1` fila borrada).
+`main` sano, producción sirviendo el formulario nuevo.
 
 ### Skills reales de Aurora/Hospital La María
 
