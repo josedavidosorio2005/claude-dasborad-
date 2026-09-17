@@ -19,6 +19,10 @@ name: Verificacion QA - descarga de plantilla en produccion
 #      el camino de error real del PR #31 (formula sin calcular en la hoja
 #      DATA de Trafico) mezclado con una hoja valida ("resumen") en el
 #      MISMO archivo -- confirmar que se rechaza solo la hoja mala.
+#   3. ALBERTO LINERO GO otra vez (periodo distinto): renombra la pestaña
+#      "diario" antes de subir -- prueba el fix de la Fase 30/31 (una hoja
+#      AUSENTE del archivo debe avisar, nunca perderse en silencio como una
+#      hoja vacia legitima), sin bloquear "resumen" en el mismo archivo.
 # Borra los datos de prueba (las cargas de ALBERTO LINERO GO y ORLANT) y el
 # usuario temporal de inmediato al terminar.
 #
@@ -193,6 +197,8 @@ jobs:
               const db = require("./db");
               const cargaAlg = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
                 .run("ALBERTO LINERO GO", "resumen", "2027-05");
+              const cargaAlgRenombrada = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
+                .run("ALBERTO LINERO GO", "resumen", "2027-06");
               const cargaOrlant = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?")
                 .run("ORLANT", "resumen", "2027-05");
               // La hoja DATA de ORLANT lleva a proposito una formula sin
@@ -208,6 +214,7 @@ jobs:
               const info = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_USER);
               console.log("DATOS_DE_PRUEBA_BORRADOS " + JSON.stringify({
                 cargaAlbertoLineroGo: cargaAlg.changes,
+                cargaAlbertoLineroGoHojaRenombrada: cargaAlgRenombrada.changes,
                 cargaOrlant: cargaOrlant.changes,
                 traficoDiario: diario.changes,
                 traficoMensual: mensual.changes,

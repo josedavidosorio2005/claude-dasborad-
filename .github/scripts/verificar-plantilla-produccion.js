@@ -17,6 +17,12 @@
 //      una hoja válida (Trafico) en el MISMO archivo — confirma que se
 //      rechaza solo la hoja mala, sin bloquear la buena — y tambien abre su
 //      DASHBOARD real para confirmar que refleja el dato nuevo.
+//   3. ALBERTO LINERO GO otra vez (periodo distinto): renombra la pestaña
+//      "diario" a "Diaro" (typo tipico de un usuario) antes de subir —
+//      prueba el fix de la Fase 30/31 (auditoría del flujo de carga): una
+//      hoja AUSENTE del archivo debe generar un aviso explícito, distinto
+//      de una hoja vacía legítima, y SIN bloquear "resumen" (hoja válida en
+//      el mismo archivo).
 //
 // El chequeo del dashboard real (no solo el toast de "guardado") es el que
 // falto en las corridas anteriores de este script (PR #31/#32) y que
@@ -280,6 +286,51 @@ async function verificarDashboardMuestraDato(page, cliente, screenshotPath) {
       );
     }
 
+    // ══ 3. ALBERTO LINERO GO otra vez — hoja renombrada (fix Fase 30/31) ══
+    // Reusa el mismo workbook `wbAlg` ya descargado arriba (todavia en
+    // memoria, con "resumen" lleno de la corrida anterior): renombra la
+    // pestaña "diario" -> "Diaro" (typo tipico) y confirma que el archivo
+    // sigue guardando "resumen" sin friccion, mientras "diario" aparece con
+    // un aviso explicito -- nunca el guardado silencioso que reporto la
+    // auditoria del flujo de carga.
+    await page.evaluate(() => {
+      var card = document.getElementById('carga-preview-card');
+      if (card) card.style.display = 'none';
+    });
+    await page.selectOption('#carga-cliente', 'ALBERTO LINERO GO');
+    await page.waitForTimeout(800);
+
+    const idxDiario = wbAlg.SheetNames.indexOf('diario');
+    wbAlg.SheetNames[idxDiario] = 'Diaro';
+    const wsResumenAlg2 = wbAlg.Sheets['resumen'];
+    const rangeResumenAlg2 = XLSX.utils.decode_range(wsResumenAlg2['!ref']);
+    for (let r = rangeResumenAlg2.s.r + 1; r <= rangeResumenAlg2.e.r; r++) {
+      wsResumenAlg2[XLSX.utils.encode_cell({ r, c: 1 })] = { t: 'n', v: 222 };
+    }
+    const algRenombradaPath = path.join(TMP, 'plantilla_ALBERTO_LINERO_GO_hoja_renombrada.xlsx');
+    XLSX.writeFile(wbAlg, algRenombradaPath);
+
+    await page.fill('#carga-periodo', '2027-06');
+    await page.setInputFiles('#carga-file', algRenombradaPath);
+    await page.waitForTimeout(800);
+    resultado.algRenombradaPreview = (await page.locator('#carga-preview-table').innerText()).replace(/\n/g, ' | ');
+    resultado.algAvisoHojaAusente =
+      /No se encontro la hoja "diario"/.test(resultado.algRenombradaPreview) &&
+      /Diaro/.test(resultado.algRenombradaPreview);
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '6-alg-hoja-renombrada-preview.png') });
+
+    await page.evaluate(() => guardarCarga());
+    await page.waitForTimeout(1500);
+    resultado.algRenombradaToast = (await page.locator('#toast').innerText().catch(() => '')).trim();
+    // "resumen" SI se guarda (no bloqueada por el aviso de "diario"); "diario"
+    // ("Gestion por dia") nunca tuvo `.filas` (igual que una hoja con formula
+    // sin calcular), asi que no aparece ni como ✓ ni como ✗ en este toast.
+    resultado.algRenombradaSoloResumenGuardado =
+      /✓[^\n]*Resumen mensual/.test(resultado.algRenombradaToast) &&
+      !/Gestion por dia/.test(resultado.algRenombradaToast) &&
+      !resultado.algRenombradaToast.includes('✗');
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '7-alg-hoja-renombrada-guardado.png') });
+
     ok =
       resultado.loginOk &&
       resultado.algHojasOk &&
@@ -290,7 +341,9 @@ async function verificarDashboardMuestraDato(page, cliente, screenshotPath) {
       resultado.orlantErrorDetectadoEnPreview &&
       resultado.orlantSoloDataFallo &&
       resultado.orlantDashboardMuestraPeriodoNuevo &&
-      resultado.orlantDashboardMuestraValor;
+      resultado.orlantDashboardMuestraValor &&
+      resultado.algAvisoHojaAusente &&
+      resultado.algRenombradaSoloResumenGuardado;
 
     resultado.ok = ok;
     console.log(JSON.stringify(resultado, null, 2));

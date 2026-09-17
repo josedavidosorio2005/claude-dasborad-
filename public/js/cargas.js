@@ -13,9 +13,12 @@
 // como JSON a las rutas que YA EXISTIAN para cada tipo de dato (nunca se
 // reescribio su parseo/validacion): POST /dashboard/cargas (Gestion de
 // base, una llamada por seccion con datos), POST /monitoreos/bulk (Calidad),
-// POST /calidad/trafico/carga (Trafico). Una hoja vacia no es un error (no
-// aplica esta vez); una hoja con datos invalidos se rechaza SOLA, sin
-// bloquear las demas.
+// POST /calidad/trafico/carga (Trafico). Una hoja PRESENTE pero vacia no es
+// un error (no aplica esta vez); una hoja AUSENTE (renombrada o borrada por
+// error respecto al nombre exacto que espera el plan) SI genera un aviso
+// (fix de la Fase 30/31 -- antes se perdia en silencio, igual que una hoja
+// vacia legitima); una hoja con datos invalidos se rechaza sola. Ningun caso
+// de estos bloquea las demas hojas del mismo archivo.
 //
 // El parseo puro (sin DOM) vive en cargas-logic.js para poder probarlo con
 // node:test contra un .xlsx real (ver server/tests/cargas-logic.test.js).
@@ -212,7 +215,7 @@ async function procesarArchivoConsolidado(input){
     } else {
       parseFn = traficoParseFilas;
     }
-    return cargasProcesarHoja(h, aoa, ws, parseFn);
+    return cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
   });
 
   if(!_cargasResultados.some(function(r){ return r.filas; })){
