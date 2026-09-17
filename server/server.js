@@ -195,7 +195,7 @@ function createApp() {
       },
     })
   );
-  app.get('*', (req, res) => {
+  app.get('/{*splat}', (req, res) => {
     res.set('Cache-Control', 'no-cache');
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
   });
