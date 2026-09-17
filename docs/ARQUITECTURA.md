@@ -89,8 +89,28 @@ contra RDS + varias instancias y las señales concretas para migrar).
 ```
 
 Quién habla con quién en tiempo de ejecución: el navegador nunca toca SQLite
-ni SSM directamente — todo pasa por la API REST de `server/server.js`, que
-es la única pieza que conoce las tablas y los secretos.
+ni SSM directamente — todo pasa por la API REST (`server/server.js` monta
+un `express.Router()` por dominio desde `server/routes/*.js`, ver abajo),
+que es la única pieza que conoce las tablas y los secretos.
+
+### Routers por dominio (`server/routes/`, 2026-09-17)
+
+`server/server.js` dejó de tener las ~75 rutas de la API en un solo archivo
+(llegó a 2534 líneas). Ahora solo hace el setup de la app (seguridad, CORS,
+rate limiting, estático) y monta un `express.Router()` por dominio, en el
+mismo orden en que esas rutas vivían en el monolito:
+
+`auth → usuarios → calidad → umbrales → trafico → dashboards → inventario
+→ gerencia → gestion-humana → historial`
+
+El orden importa en un solo caso: el router de `calidad` tiene un
+middleware de no-cache con el prefijo `/calidad`, que también cubre las
+rutas `/calidad/trafico/*` del router de `trafico` — por eso `calidad` se
+monta antes. Ningún otro par de routers comparte prefijo. `server/routes/shared.js`
+tiene el plumbing común a varios dominios (`wrap`, `logEvent`, `actorLabel`,
+`toPublicUser`, credenciales del admin maestro) — todo lo demás (helpers de
+formato de fila, checks de acceso específicos) vive junto a las rutas que
+lo usan, igual que antes.
 
 ---
 
@@ -305,7 +325,7 @@ NOMBRE: {
 }
 ```
 
-`GET /api/dashboard/:cliente` (`server/server.js`) revisa primero si
+`GET /api/dashboard/:cliente` (`server/routes/dashboards.js`) revisa primero si
 `cliente` está en `ADAPTERS`; si sí, usa `config`+`build(db)` y el permiso
 del adapter; si no, busca la fila en `dashboards_config` y usa
 `clienteAccess()` (permiso `cliente_<NOMBRE>` o `campana_<NOMBRE>`).
@@ -602,7 +622,7 @@ Parseo puro (sin DOM, con pruebas contra un fixture real de 3 hojas) en
 
 ### El endpoint
 
-`POST /api/monitoreos/bulk` (`server/server.js`) recibe `{campana,
+`POST /api/monitoreos/bulk` (`server/routes/calidad.js`) recibe `{campana,
 archivoNombre, filas}` ya parseado por el navegador (el servidor nunca abre
 el Excel) y reusa **el mismo motor de puntaje** que el alta individual
 (`calc.computeScore`, `server/calidad-logic.js`) — el puntaje nunca lo
@@ -929,7 +949,7 @@ monitoreos de 37 a 5. Capturas en
 ## 9. API — endpoints agregados en las últimas fases
 
 Para el resto de la API (usuarios, dashboards de cliente, permisos,
-historial, etc.) ver directamente `server/server.js` — esta tabla cubre
+historial, etc.) ver directamente `server/routes/` — esta tabla cubre
 solo lo agregado en Tráfico Volvox y Semáforo/Cartera, que no estaba
 documentado en ningún lado hasta ahora.
 

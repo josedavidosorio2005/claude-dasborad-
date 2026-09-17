@@ -30,8 +30,8 @@ tradicional (Node.js + Express + SQLite) con su propio login.
 ## Qué hace la app
 
 ### Usuarios, roles y permisos
-9 roles (`ADMIN`, `AUX_ADMIN`, `CALIDAD`, `INVENTARIO`, `GERENCIA`,
-`CLIENTES_DASH`, `SUPERVISOR`, `ASESOR`, `REPORTES`) con permisos verificados en
+10 roles (`ADMIN`, `AUX_ADMIN`, `CALIDAD`, `INVENTARIO`, `GERENCIA`,
+`CLIENTES_DASH`, `SUPERVISOR`, `ASESOR`, `REPORTES`, `GESTION_HUMANA`) con permisos verificados en
 el servidor, incluyendo permisos por **campaña** (`campana_X`) y por **cliente**
 (`cliente_X`). Historial de auditoría *append-only*.
 
@@ -100,8 +100,14 @@ inconexion-app/
 │   ├── calidad-plantillas-seed.js      Plantillas de calificación por campaña (semilla)
 │   ├── dashboard-secciones.js          Secciones/plantillas de Excel de los 3 dashboards base
 │   ├── dashboard-config-seed.js        Configuración de los dashboards base + los de M3
-│   ├── dashboard-plantillas-cliente.js Plantillas estándar (ventas / cobranza / atención) de los 9 clientes
-│   ├── dashboard-adapters.js           Inventario y Gerencia sobre el motor genérico
+│   ├── dashboard-plantillas-cliente.js Plantillas estándar (ventas / cobranza / atención) de los 12 clientes
+│   ├── dashboard-adapters.js           Inventario, Gerencia y Gestión Humana sobre el motor genérico
+│   ├── trafico-skills.js               Mapeo SKILL_NAME → campaña/sede del tráfico Volvox
+│   ├── nivel-servicio-diario.js        Carga diaria de Nivel de Servicio (usado por el endpoint y el seed)
+│   ├── routes/                         Un express.Router() por dominio (auth, usuarios, calidad,
+│   │                                   umbrales, trafico, dashboards, inventario, gerencia,
+│   │                                   gestion-humana, historial) + shared.js con el plumbing común
+│   ├── plantillas/                     Plantilla oficial de Tráfico (.xlsx real, servida tal cual)
 │   ├── hash-password.js                Utilidad para generar hashes bcrypt
 │   ├── scripts/backup.js               Backup del SQLite → local + S3 (versionado)
 │   ├── tests/                          node:test + supertest (incl. role-matrix.test.js)
@@ -110,9 +116,12 @@ inconexion-app/
 ├── public/                            → Frontend (HTML + JS por módulo, sin framework)
 │   ├── index.html
 │   ├── css/styles.css                  Design tokens (color, tipografía, espaciado)
+│   ├── img/                            Logo e ícono del navbar (archivos reales, cacheables)
 │   └── js/                             api, session, users, roles-perms, calidad, metas,
 │                                       cargas, dashboard-generic, dashboards-admin,
 │                                       dashboards-core, charts, inventario, gerencia, ...
+├── desktop-app/                       → Cliente ligero de escritorio (Electron), carga el sitio real
+├── mobile-app/                        → Cliente ligero Android (Capacitor), carga el sitio real
 ├── deploy/
 │   ├── Caddyfile                       Reverse proxy con HTTPS automático
 │   ├── docker-compose.prod.yml         Compose de la instancia AWS (descarga imagen de ECR)
@@ -121,7 +130,9 @@ inconexion-app/
 │   └── iam-policy-instance.json        Política IAM de mínimo privilegio
 ├── .github/workflows/
 │   ├── ci.yml                          Pruebas (Node 18/20/22) + build Docker + smoke test
-│   └── deploy.yml                      Deploy a AWS tras CI OK en main (OIDC → ECR → SSH)
+│   ├── deploy.yml                      Deploy a AWS tras CI OK en main (OIDC → ECR → SSH)
+│   └── verificar-*.yml, diagnostico-*.yml, auditoria-*.yml, seed-demo.yml
+│                                       Workflows de QA de solo lectura contra producción real
 ├── docker-compose.yml                 Servicio app + volumen persistente + Caddy opcional
 ├── app.env.example                   Plantilla de configuración (Docker / producción)
 └── *.md                              Documentación (ver tabla arriba)
@@ -188,7 +199,7 @@ npm start          # -> http://localhost:3000
 - **Sesión**: JWT en memoria del navegador (no `localStorage`).
 - **Permisos**: cada acción sensible se re-verifica en el servidor con los datos
   reales. Un usuario suspendido a mitad de sesión deja de poder actuar. Verificado
-  para los 9 roles en `server/tests/role-matrix.test.js`.
+  para los 10 roles en `server/tests/role-matrix.test.js`.
 - **Validación de entrada**: `zod` en todos los endpoints (tipos, longitudes,
   formato). Lo que no cumple → `400`.
 - **Anti abuso**: login limitado (20 intentos / 15 min por IP) + límite global
@@ -521,7 +532,7 @@ que contraseñas/hashes **nunca** salen en respuestas, rate limit de login
 (`429`), validación de entrada (`400`), Calidad (puntaje reproducible, acceso por
 campaña, cronograma y cumplimiento), dashboards (cargas por Excel, config,
 acceso por cliente, dashboards de M3), Inventario y Gerencia (CRUD + carga masiva
-+ adaptadores de dashboard), la **matriz de los 9 roles**
++ adaptadores de dashboard), la **matriz de los 10 roles**
 (`role-matrix.test.js`), el seed de demo — idempotencia, que `seed:demo:limpiar`
 deja la base como estaba, que los 12 clientes quedan con carga en todas sus
 secciones, que su mensual de Nivel de Servicio coincide con el que produce
