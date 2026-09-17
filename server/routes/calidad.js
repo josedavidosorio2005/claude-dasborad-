@@ -118,52 +118,9 @@ router.get(
   })
 );
 
-router.get(
-  '/calidad/plantillas/:campana',
-  requireActor,
-  wrap((req, res) => {
-    // A diferencia de /calidad/plantillas (sin campana), que a proposito
-    // devuelve la estructura de TODAS las plantillas activas -- la usan
-    // calidad.js y cargas.js para armar un lookup global, sin importar a
-    // que campanas tiene acceso el usuario logueado -- esta variante pide
-    // una campana concreta, asi que si aplica el mismo chequeo de acceso
-    // por campana que usa el resto de las rutas de Calidad (ej.
-    // /monitoreos/resumen).
-    if (!campaignAccess(req.actor, req.params.campana)) {
-      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
-    }
-    const row = getPlantillaRow(req.params.campana);
-    if (!row) return res.status(404).json({ error: 'No hay plantilla para esa campana' });
-    res.json(toPlantilla(row));
-  })
-);
-
 // ══════════════════════════════════════════════════════════
 // CALIDAD — MONITOREOS
 // ══════════════════════════════════════════════════════════
-
-// Resumen por asesor + agregados de la campana/mes. Antes de /:id.
-router.get(
-  '/monitoreos/resumen',
-  requireActor,
-  validate(schemas.calidadQuery, 'query'),
-  wrap((req, res) => {
-    const { campana, mes } = req.query;
-    if (!campaignAccess(req.actor, campana)) {
-      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
-    }
-    const rows = mes
-      ? db.prepare('SELECT * FROM monitoreos WHERE campana = ? AND mes = ?').all(campana, mes)
-      : db.prepare('SELECT * FROM monitoreos WHERE campana = ?').all(campana);
-    const monitoreos = rows.map(toMonitoreo);
-    res.json({
-      campana,
-      mes: mes || null,
-      agregados: calc.resumenCampana(monitoreos),
-      porAsesor: calc.resumenPorAsesor(monitoreos),
-    });
-  })
-);
 
 // Los monitoreos del asesor logueado (portal ASESOR). Empareja por nombre,
 // igual que el dropdown de asesores del formulario. Antes de /:id.
