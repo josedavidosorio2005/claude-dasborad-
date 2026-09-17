@@ -1380,3 +1380,162 @@ idéntico al archivo del repo (8925 bytes ambos); usuario sin el permiso
 endpoint responde 403 aunque se llame directo. Capturas en
 `docs/capturas-demo/` (`plantilla-trafico-boton-descarga.png`,
 `plantilla-trafico-viewer-sin-acceso.png`).
+
+---
+
+## Fase 23 — QA de la plantilla oficial de Tráfico en producción (PRs #27-30, 2026-09-15)
+
+Cuatro tandas cortas de ajuste del workflow de verificación en producción de
+la Fase 22 (plantilla de Tráfico): pasar `JWT_SECRET`/`MASTER_ADMIN_PASSWORD_HASH`
+dummy al exec del workflow, corregir CORS, agregar el rol AUX_ADMIN al
+chequeo. Sin cambios de producto — solo ops/QA.
+
+## Fase 24 — Plantilla consolidada de carga (PRs #31-37, 2026-09-15)
+
+Pedido: una sola plantilla `.xlsx` por campaña (una hoja por tipo de dato —
+`DATA`/`Monitoreos`/etc. — en vez de un botón de carga separado por cada
+sección) para reducir el número de archivos que el equipo del cliente tiene
+que manejar.
+
+- **#31**: la carga de datos ahora **rechaza fórmulas de Excel sin calcular**
+  (`fix(cargas)`) — evita que una celda con fórmula pero sin valor en caché se
+  guarde como vacía/`0` sin avisar.
+- **#32**: `feat(cargas)` — la plantilla consolidada en sí: una hoja por tipo
+  de dato, detección automática de qué hoja corresponde a qué sección.
+- **#33-36**: cuatro correcciones seguidas del workflow de verificación en
+  producción contra la plantilla consolidada real (el camino de error de una
+  hoja con datos inválidos, una hoja con solo una fórmula sin valor que se
+  veía "vacía" en vez de "inválida", el toast final no mostraba una hoja
+  rechazada en la vista previa).
+- **#37**: `docs` — `ARQUITECTURA.md` y `README.md` actualizados con el nuevo
+  flujo de plantilla consolidada (§7).
+
+Ejemplos reales en `docs/ejemplos-plantilla-consolidada/` (ORLANT y ALBERTO
+LINERO GO).
+
+## Fase 25 — Diagnóstico de solo lectura para producción (PRs #38-39, 2026-09-15)
+
+Workflow de ops nuevo: un diagnóstico de solo lectura contra producción con
+conteos totales por tabla y estado de `seed_demo_marcas`, para poder revisar
+el estado real de los datos sin necesitar acceso SSH. Sin cambios de
+producto.
+
+## Fase 26 — Fix: la cascada de borrado de dashboards ya no borra los Excel cargados (PRs #40-43, 2026-09-16)
+
+**Bug real encontrado en producción**: `DELETE /api/dashboards/config/:cliente`
+(borrar la configuración de un dashboard — KPIs, secciones, layout) arrastraba
+también `dashboard_cargas` de ese cliente por una cascada no intencional. Como
+la configuración y los datos operativos cargados (Excel) son dos ciclos de
+vida independientes, esto se llevaba por delante Excel ya cargados (fue la
+causa real detrás de un reporte de "se perdió la carga de ORLANT") cada vez
+que se recreaba o reconfiguraba un dashboard.
+
+- **#40** (`fix(dashboards)`): la cascada se elimina; borrar/recrear la
+  configuración de un dashboard ya no toca `dashboard_cargas`. Si se vuelve a
+  crear un dashboard para el mismo cliente, sus cargas siguen ahí sin volver a
+  subir nada.
+- **#41**: la verificación en producción ahora también abre el DASHBOARD real
+  (no solo pega contra la API) para confirmar visualmente que los datos siguen
+  ahí tras el fix.
+- **#42**: `fix(ops)` — la verificación de ORLANT ya no manda `222` en
+  columnas de porcentaje (bug del propio script de verificación, no del
+  producto).
+- **#43**: `docs` — evidencia de la re-verificación en producción del fix
+  (PR #40) documentada en `ARQUITECTURA.md`.
+
+## Fase 27 — Botón "Previsualizar" + filtros y colores estables en gráficas (PRs #44-46, 2026-09-16)
+
+- **#44** (`feat(dashboards)`): botón **"Previsualizar"** en el constructor de
+  dashboards — reutiliza el mismo render de producción (mismo motor genérico,
+  mismo gate de administrador) para mostrar cómo se vería un dashboard con
+  datos reales **antes de guardar** los cambios. Color categórico estable por
+  gráfica: cada etiqueta (campaña, categoría, etc.) obtiene un color fijo
+  derivado de un hash de su nombre (`public/js/paleta-logic.js`), en vez de
+  depender del orden en que llegan los datos — así una misma serie no cambia
+  de color entre recargas. Filtros extendidos a las pantallas de Calidad y
+  Gestión de base (antes solo estaban en Tráfico).
+- **#45**: verificación en producción real del botón Previsualizar + filtros
+  y colores.
+- **#46**: `docs` — evidencia de esa verificación documentada en
+  `ARQUITECTURA.md` (§8).
+
+## Fase 28 — Auditoría de solo lectura de las 3 campañas prioritarias (PR #47, 2026-09-16)
+
+Pedido directo de InCo: un workflow de solo lectura contra producción que
+recorre específicamente **ORLANT, Clínica Aurora y Hospital La María** (las 3
+campañas que InCo marcó como prioritarias) y reporta, por campaña, qué datos
+reales existen hoy en Gestión de base, Calidad y Tráfico. Sin escrituras, sin
+credenciales reales expuestas.
+
+**Resultado real** (confirmado de nuevo el 2026-09-17 para la auditoría de la
+Fase 29): solo **ORLANT** tiene datos reales de producción (cargas de
+oct/nov-2026, 37 monitoreos de Calidad de septiembre); **Clínica Aurora** y
+**Hospital La María** siguen en cero en las tres áreas. La Calidad de ORLANT
+además mezcla asesores/evaluadores de prueba (`Asesor Prueba 01-04`,
+`Evaluador QA Prueba`) con los reales — quedó documentado como hallazgo
+abierto, no resuelto en esta fase (ver Fase 29).
+
+## Fase 29 — Auditoría general de la plataforma ("Radiografía InConexión") + 4 mejoras técnicas (2026-09-17)
+
+Pedido de InCo: un paso atrás de todo lo anterior — no una funcionalidad
+puntual, sino un diagnóstico completo de la plataforma (funcionalidad, UX,
+código, seguridad, documentación) verificado contra el código real y contra
+producción, con una lista priorizada de mejoras. Entregado como reporte
+("Radiografía InConexión", no versionado en el repo — es un documento de
+decisión, no código). Hallazgo central: esta misma bitácora
+(`PROGRESS.md`) llevaba ~21 PRs sin actualizarse (Fases 23-28 de arriba,
+backfilled en esta misma fase) — incluido el bug real de la Fase 26 y la
+auditoría de campañas prioritarias de la Fase 28, que hasta ahora solo
+vivían en mensajes de commit.
+
+De esa auditoría, InCo priorizó implementar de inmediato 4 de las mejoras
+técnicas (no las de negocio/datos, que exigen coordinación con el cliente):
+
+1. **Permiso faltante en `GET /api/historial`**: la única de las ~75 rutas
+   de la API que solo exigía un JWT válido (`requireAuth`) sin ningún chequeo
+   de rol — cualquier autenticado (incluida una cuenta ya suspendida, mientras
+   su token siguiera vigente) podía leer el log de auditoría completo. Cambiado
+   a `requireActor` + el mismo criterio que ya usa el frontend para mostrar la
+   pestaña Historial (`isFullAdmin`: admin maestro o rol `ADMIN`; ni siquiera
+   `AUX_ADMIN` la ve). De paso se cerró el hallazgo menor relacionado:
+   `GET /calidad/plantillas/:campana` (variante con una campaña puntual, sin
+   consumidor hoy en el frontend) ahora exige `campaignAccess` — la lista sin
+   parámetro (`/calidad/plantillas`) sigue abierta a cualquier autenticado a
+   propósito, porque `calidad.js`/`cargas.js` la usan para armar un lookup
+   global de todas las plantillas activas, sin relación con las campañas del
+   usuario logueado.
+2. **Compresión y caché de estáticos**: se confirmó que Caddy ya comprimía en
+   producción (`encode gzip zstd`, verificado con `curl -H "Accept-Encoding: gzip"`)
+   — el hallazgo original de la auditoría fue un falso positivo por no mandar
+   ese header. Se agregó `compression` a nivel de Express de todos modos, para
+   que la app comprima igual sin el proxy delante (dev local, el smoke test de
+   CI que le pega directo al contenedor). El hallazgo real de caché sí se
+   corrigió: `index.html` pesaba 467 KB porque el logo y el ícono del navbar
+   (Fase 15) estaban embebidos dos veces cada uno como base64 — se extrajeron a
+   `public/img/logo-inconexion.png` y `public/img/navbar-icon.png` (archivos
+   reales, cacheables 7 días), bajando `index.html` a 82 KB. Cabeceras nuevas:
+   `index.html` → `no-cache` (siempre revalida, nunca deja a alguien atascado
+   en una versión vieja tras un deploy); `public/img/*` → 7 días; el resto
+   (css/js, sin fingerprint en el nombre) → 5 minutos.
+3. **`server.js` dividido en routers por dominio**: el archivo pasó de 2534 a
+   269 líneas. Las ~75 rutas se movieron a `server/routes/{auth,usuarios,
+   calidad,umbrales,trafico,dashboards,inventario,gerencia,gestion-humana,
+   historial}.js` (un `express.Router()` por dominio) + `server/routes/shared.js`
+   con el plumbing común (`wrap`, `logEvent`, `actorLabel`, `toPublicUser`,
+   credenciales del admin maestro). Refactor mecánico: cada router se monta en
+   `server.js` en el mismo orden relativo en que las rutas vivían en el
+   monolito, porque el middleware de no-cache de Calidad (prefijo `/calidad`)
+   también cubre las rutas `/calidad/trafico/*` que ahora viven en
+   `routes/trafico.js` — igual que en el archivo original. Ninguna URL,
+   respuesta, permiso, ni orden de validación cambió.
+
+**Verificación local** (antes de PR): `npm test` → **218/218** (216 previos +
+2 nuevos del permiso de historial/plantillas), `npm audit` → **0
+vulnerabilidades**, servidor levantado localmente con smoke test manual
+sobre cada router extraído (login, historial, users, calidad, tráfico —
+incluida la descarga real de la plantilla, que depende de una ruta de
+archivo (`__dirname`) ajustada al mover el código a `routes/` — inventario,
+gerencia, gestión humana, dashboard de cliente, umbrales, 401/404, estático).
+**Verificación en producción real: pendiente** — se documenta en la fase
+siguiente tras el deploy, siguiendo el mismo patrón que las Fases 26/27
+(PR de código + PR de evidencia de producción por separado).

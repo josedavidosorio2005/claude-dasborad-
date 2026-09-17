@@ -39,6 +39,26 @@ test('GET /api/calidad/plantillas devuelve las plantillas semilla', async () => 
   assert.equal(orlant.engine, 'standard');
 });
 
+test('GET /api/calidad/plantillas/:campana exige acceso a esa campana (a diferencia de la lista completa)', async () => {
+  // Regresion: esta variante con :campana solo tenia requireActor, sin
+  // campaignAccess -- cualquier autenticado veia la estructura de evaluacion
+  // de campanas ajenas. La lista sin parametro (arriba) SI sigue abierta a
+  // cualquier autenticado a proposito: calidad.js/cargas.js la usan para
+  // armar un lookup global de todas las plantillas activas.
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const { token } = await calidadUser(admin, 'ORLANT', 'plt');
+
+  const propia = await request(app).get('/api/calidad/plantillas/ORLANT').set(auth(token));
+  assert.equal(propia.status, 200);
+  assert.equal(propia.body.campana, 'ORLANT');
+
+  const ajena = await request(app).get('/api/calidad/plantillas/INFONDO').set(auth(token));
+  assert.equal(ajena.status, 403, 'sin campana_INFONDO no debe ver la plantilla de esa campana');
+
+  const comoAdmin = await request(app).get('/api/calidad/plantillas/INFONDO').set(auth(admin));
+  assert.equal(comoAdmin.status, 200, 'el admin sigue viendo cualquier plantilla sin cambios');
+});
+
 test('usuarios semilla de Calidad y Gerencia pueden leer campanas permitidas', async () => {
   const calidad = await tokenFor('crodriguez', 'calidad123');
   const gerencia = await tokenFor('jherrera', 'ger123');

@@ -10,7 +10,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { request, app, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
@@ -77,4 +77,25 @@ test('las acciones sobre usuarios usan las cadenas exactas del filtro del fronte
 test('GET /api/historial exige autenticación', async () => {
   const res = await request(app).get('/api/historial');
   assert.equal(res.status, 401);
+});
+
+test('GET /api/historial: solo admin (maestro o rol ADMIN) lo ve; el resto recibe 403', async () => {
+  // Regresión: antes esta ruta solo exigía un JWT válido (requireAuth), sin
+  // ningún chequeo de rol/permiso, así que cualquier autenticado -incluido un
+  // CALIDAD o un AUX_ADMIN sin permisos de administración- podía leer el log
+  // de auditoría completo. Debe quedar igual de restringida que la pestaña
+  // del frontend (session.js: solo isMaster || rol==='ADMIN').
+  const master = await tokenFor('admin', MASTER_PASSWORD);
+  await hist(master); // el admin maestro sigue viéndolo sin cambios (200)
+
+  const adminRol = await tokenFor('psuarez', SEED.psuarez);
+  await hist(adminRol); // un usuario con rol ADMIN (no maestro) también lo ve
+
+  const calidad = await tokenFor('crodriguez', SEED.crodriguez);
+  const resCalidad = await request(app).get('/api/historial').set(auth(calidad));
+  assert.equal(resCalidad.status, 403, 'CALIDAD no debe poder leer el historial');
+
+  const auxAdmin = await tokenFor('lrios', SEED.lrios);
+  const resAux = await request(app).get('/api/historial').set(auth(auxAdmin));
+  assert.equal(resAux.status, 403, 'AUX_ADMIN sin permisos de administración no debe poder leer el historial');
 });
