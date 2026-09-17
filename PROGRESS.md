@@ -1732,5 +1732,21 @@ de prueba (periodo `2099-01`) borrada al terminar.
 `.github/scripts/verificar-plantilla-produccion.js` (workflow
 `verificacion-plantilla-produccion.yml`) se extendió con un tercer
 escenario que reproduce este mismo caso contra producción real con un
-usuario temporal — resultado documentado en la sección de verificación en
-producción más abajo, tras el deploy.
+usuario temporal.
+
+**Verificación en producción real** (PR #59, tras merge + deploy): CI
+verde en Node 18/20/22 + docker-build, deploy automático sin intervención
+manual, y el workflow extendido corrido contra producción real
+(`https://inconexionpruebasclaude.duckdns.org`) con un usuario temporal —
+mismo mensaje exacto que en local:
+
+> ⚠ No se encontro la hoja "diario" en tu archivo. Si esta seccion no
+> aplica para esta campana, no la borres ni la renombres: dejala vacia.
+> Hojas encontradas en tu archivo: INSTRUCCIONES, resumen, Diaro,
+> tipificacion, asesores, DATA.
+
+Toast de guardado: `✓ Resumen mensual (KPIs y tendencias)` — "resumen" se
+guardó igual, sin que el aviso de "diario" bloqueara nada. Datos de
+prueba (carga `ALBERTO LINERO GO`/`resumen`/periodo `2027-06`) y usuario
+temporal borrados de inmediato al terminar (confirmado en el log del
+propio workflow). `main` sano, producción sirviendo el fix.

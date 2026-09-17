@@ -841,6 +841,16 @@ en los KPIs de nivel de atención) para el mismo periodo — capturas en
 `docs/capturas-demo/produccion-alberto-linero-go-dashboard-tras-carga.png`
 y `docs/capturas-demo/produccion-orlant-dashboard-tras-carga.png`.
 
+**Tercera ronda (2026-09-17, fix de la hoja AUSENTE — PR #59)**: el mismo
+workflow se extendió con un tercer escenario (ALBERTO LINERO GO, periodo
+`2027-06`): renombra la pestaña "diario" a "Diaro" antes de subir, para
+probar que una hoja ausente del archivo genera un aviso explícito en vez
+de perderse en silencio (§7 más abajo). Corrida real contra producción:
+el aviso apareció exacto ("No se encontro la hoja \"diario\"... Hojas
+encontradas en tu archivo: INSTRUCCIONES, resumen, Diaro, tipificacion,
+asesores, DATA.") y "resumen" se guardó igual (`✓ Resumen mensual`), sin
+que el aviso bloqueara la hoja válida del mismo archivo.
+
 ---
 
 ## 8. Previsualización y filtros/colores de dashboard (2026-09-16)
