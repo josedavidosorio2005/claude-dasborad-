@@ -134,12 +134,16 @@ function _traficoCampanasAsignables(){
   return base.map(function(c){ return { valor: c, label: c }; });
 }
 
+var _traficoSkillsCache = []; // ultimo GET /calidad/trafico/skills (para el chequeo de duplicados del formulario de registro)
+
 async function renderTraficoSkills(){
   var tbody = document.getElementById('tv-skills-tbody');
   if(!tbody) return;
+  _traficoPoblarCampanaNuevoSkill();
   var rows = [];
   try{ rows = await apiRequest('GET','/calidad/trafico/skills') || []; }
   catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">'+esc(e.message)+'</td></tr>'; return; }
+  _traficoSkillsCache = rows;
 
   if(!rows.length){
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">Todavia no se ha cargado trafico de ninguna skill.</td></tr>';
@@ -205,6 +209,73 @@ async function guardarMapeoSkill(idx){
     renderTraficoSkills();
     if(typeof renderTraficoCobertura === 'function') renderTraficoCobertura();
   }
+}
+
+// Puebla el select de campana del formulario "Registrar skill nuevo" una
+// sola vez (guard por `sel.options.length`) -- si se repoblara en cada
+// render de la tabla se perderia lo que el usuario ya haya elegido ahi
+// cada vez que alguien pulsa "Actualizar" o guarda el mapeo de otra fila.
+function _traficoPoblarCampanaNuevoSkill(){
+  var sel = document.getElementById('tv-skill-nuevo-campana');
+  if(!sel || sel.options.length) return;
+  var campanas = _traficoCampanasAsignables();
+  sel.innerHTML = '<option value="">— Selecciona una campana —</option>' + campanas.map(function(c){
+    return '<option value="'+esc(c.valor)+'">'+esc(c.label)+'</option>';
+  }).join('');
+}
+
+function _traficoToggleSedeSelNuevo(){
+  var campSel = document.getElementById('tv-skill-nuevo-campana');
+  var sedeWrap = document.getElementById('tv-skill-nuevo-sede-wrap');
+  var sedeSel = document.getElementById('tv-skill-nuevo-sede');
+  if(!campSel || !sedeWrap || !sedeSel) return;
+  var sedes = TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [];
+  if(!sedes.length){
+    sedeWrap.style.display = 'none';
+    sedeSel.innerHTML = '<option value="">— Sede —</option>';
+    return;
+  }
+  sedeWrap.style.display = '';
+  sedeSel.innerHTML = '<option value="">— Sede —</option>' + sedes.map(function(s){
+    return '<option value="'+esc(s.valor)+'">'+esc(s.label)+'</option>';
+  }).join('');
+}
+
+// Registra de antemano el mapeo de un skill que Wolkvox todavia no ha
+// mandado en ningun archivo (hallazgo de la auditoria del flujo de carga,
+// Fase 30/32): reutiliza EXACTAMENTE el mismo PUT que ya usan las filas
+// existentes de abajo (`guardarMapeoSkill`) -- el backend ya hace upsert,
+// asi que registrar un skill nuevo o remapear uno existente es la misma
+// operacion, solo que este formulario no depende de que el skill ya tenga
+// una fila (o trafico cargado) para poder escribirle un SKILL_NAME a mano.
+async function registrarNuevoMapeoSkill(){
+  var nombreInput = document.getElementById('tv-skill-nuevo-nombre');
+  var campSel = document.getElementById('tv-skill-nuevo-campana');
+  var sedeSel = document.getElementById('tv-skill-nuevo-sede');
+  if(!nombreInput || !campSel) return;
+
+  var v = traficoValidarNuevoMapeo({
+    skillName: nombreInput.value,
+    campana: campSel.value,
+    sede: sedeSel ? sedeSel.value : '',
+    sedesDisponibles: TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [],
+    skillsExistentes: _traficoSkillsCache.map(function(r){ return r.skillName; }),
+  });
+  if(v.error){ showToast(v.error); return; }
+
+  var btn = document.getElementById('tv-skill-nuevo-btn');
+  try{
+    await withButtonLoading(btn, 'Registrando...', function(){
+      return apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(v.skillName), { campana: v.campana, sede: v.sede });
+    });
+  }catch(e){ showToast(e.message); return; }
+
+  var campanaLabel = v.campana + (v.sede ? ' — ' + v.sede : '');
+  showToast('Skill "'+v.skillName+'" registrado y asignado a '+campanaLabel+'. Quedara listo para cuando llegue trafico con este nombre.');
+  nombreInput.value = '';
+  campSel.value = '';
+  _traficoToggleSedeSelNuevo();
+  renderTraficoSkills();
 }
 
 // ═══════════════════════════════════════════════════════════

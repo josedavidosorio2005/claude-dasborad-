@@ -388,6 +388,20 @@ romper la carga; un administrador la reasigna después desde el panel
 reatribuyen solas** (recalcula el mensual de la campaña vieja y la nueva),
 sin tener que volver a subir el archivo.
 
+**Registro por adelantado (Fase 32, 2026-09-17):** el mismo `PUT` acepta un
+`SKILL_NAME` que **todavía no existe** en la tabla (hace `INSERT`, no solo
+`UPDATE`) — no depende de ninguna fila previa ni de ningún `SKILL_ID` en
+otra tabla. La pantalla "Metas Calidad" agregó una tarjeta "Registrar
+skill nuevo" (arriba de la tabla de mapeos existentes) que llama a este
+mismo endpoint con un `SKILL_NAME` escrito a mano, para poder mapear una
+campaña de antemano y no depender de "subir un archivo a ciegas para que
+el sistema descubra el skill". Validación pura en
+`traficoValidarNuevoMapeo` (`trafico-logic.js`): rechaza SKILL_NAME
+vacío, campaña sin elegir, sede faltante en campaña multi-sede, y un
+SKILL_NAME que ya tenga fila (para no dejar que un typo reasigne en
+silencio el tráfico ya cargado de un skill real — se manda a editar la
+fila existente en su lugar).
+
 ### Plantilla oficial de carga (decisión 2026-09-15: una sola, para todas las campañas)
 
 > ⚠️ **Vigencia (actualizado 2026-09-16, PR #32):** el botón individual

@@ -1750,3 +1750,80 @@ guardó igual, sin que el aviso de "diario" bloqueara nada. Datos de
 prueba (carga `ALBERTO LINERO GO`/`resumen`/periodo `2027-06`) y usuario
 temporal borrados de inmediato al terminar (confirmado en el log del
 propio workflow). `main` sano, producción sirviendo el fix.
+
+## Fase 32 — Pantalla de mapeo manual de skill de Wolkvox → campaña (2026-09-17)
+
+Pedido de InCo: implementar ahora la única recomendación de la auditoría
+del flujo de carga (Fase 30) que había quedado sin construir — registrar de
+antemano el mapeo `SKILL_NAME` (Wolkvox) → campaña, antes de subir el
+primer archivo real de Aurora/Hospital La María.
+
+### Backend: sin cambios
+
+Confirmado antes de tocar nada: `PUT /calidad/trafico/skills/:skillName`
+(`server/trafico-skills.js`, `remapearSkill`) ya hace upsert puro —
+`INSERT` si el skill no existe, `UPDATE` si ya existe — sobre una tabla
+(`trafico_skill_mapeo`) sin ninguna relación con un `SKILL_ID` ni ninguna
+otra tabla que exija que el skill ya se haya visto antes. Cero ajuste de
+backend, cero cambio de permisos: sigue exigiendo `canLoadData` igual que
+hoy, tanto para leer como para editar el mapeo.
+
+### Frontend
+
+`public/index.html` (pantalla "Metas Calidad", donde ya vivía el mapeo):
+nuevo section-card "Registrar skill nuevo" **arriba** de la tabla de
+mapeos existentes (mismo patrón ya usado en Umbrales de Semáforo: tarjeta
+de alta separada de la tarjeta de "ya configurados") — campo de texto
+`SKILL_NAME`, selector de campaña (mismo catálogo `CAMPANAS_CALIDAD` que
+ya usa cada fila existente), selector de sede (mismo mecanismo de
+mostrar/ocultar ya usado para Hospital La María) y botón "Registrar
+skill". Reutiliza el mismo `PUT` que ya usa `guardarMapeoSkill` para las
+filas existentes — ninguna ruta nueva.
+
+Validación (`public/js/trafico-logic.js`, `traficoValidarNuevoMapeo` —
+función pura, mismo patrón dual navegador/`require()` que el resto de
+`*-logic.js`): SKILL_NAME vacío o solo espacios → rechazo; sin campaña
+seleccionada → rechazo; campaña multi-sede sin sede elegida → rechazo
+(mismo mensaje que ya usa `guardarMapeoSkill`); nada de esto llama al
+backend. **Decisión sobre duplicados**: si el SKILL_NAME ya tiene fila en
+la tabla de abajo, se **rechaza** ("ya existe en la tabla de abajo —
+edítalo ahí") en vez de dejar que el upsert lo actualice en silencio —
+aunque el backend lo soportaría sin problema, un typo que coincida con un
+skill real ya mapeado reasignaría de golpe su tráfico ya cargado a otra
+campaña, y este formulario nuevo no tiene la misma visibilidad (campaña/
+filas actuales ya a la vista) que sí tiene la fila existente antes de
+editarla. Al registrar con éxito: toast de confirmación, campo de texto
+limpio, y la tabla de mapeos se refresca sola (mismo patrón que control de
+cargas) — sin recargar la página.
+
+### Verificación
+
+`npm test` → **233/233** en verde (226 previos + 7 nuevos: 6 de
+`traficoValidarNuevoMapeo` — vacío, sin campaña, sin sede, duplicado, y los
+dos caminos felices — y 1 de extremo a extremo: registrar un SKILL_NAME
+por `PUT` **sin ninguna carga previa**, confirmar una sola fila de mapeo
+sin duplicar, subir después una carga real que lo menciona y confirmar que
+resuelve directo a la campaña ya registrada, nunca a `"(SIN ASIGNAR)"`, sin
+crear una segunda fila ni pisar la ya registrada). `npm audit` → 0
+vulnerabilidades.
+
+Playwright contra un servidor local real: SKILL_NAME vacío y sin campaña
+rechazados con el mensaje exacto, sin crear fila; registro de
+`QA_LOCAL_SKILL_...` → `CLINICA AURORA` exitoso, aparece en la tabla de
+inmediato sin recargar, campo de texto se limpia; reintentar el mismo
+SKILL_NAME → rechazado como duplicado. Fila de prueba borrada al terminar
+(no hay endpoint de borrado para mapeos — se limpió directo en la base de
+desarrollo local).
+
+**Verificación en producción real**: pendiente de completar tras merge +
+deploy (workflow Playwright con usuario temporal, mismo mecanismo ya usado
+en verificaciones anteriores) — resultado documentado más abajo en esta
+misma fase.
+
+### Skills reales de Aurora/Hospital La María
+
+No se registró ningún SKILL_NAME real de Clínica Aurora ni de Hospital La
+María en este cierre: no se cuenta con el nombre exacto que usa Wolkvox
+para ninguna de las dos campañas (ni sus sedes Castilla/Sede 33). Queda
+para que InCo lo registre él mismo desde esta pantalla nueva en cuanto
+tenga el dato real — nunca se inventó un nombre de skill.
