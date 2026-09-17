@@ -4,7 +4,10 @@
 // algo critico o tiene un formato invalido, el proceso imprime un mensaje claro
 // y termina con codigo 1 (no arranca "a medias"). El resto del codigo consume
 // el objeto `config` ya validado y congelado, nunca `process.env` directamente.
-require('dotenv').config();
+// quiet: dotenv 17 imprime por defecto una linea promocionando dotenvx en
+// cada arranque ("injected env (N) from .env // tip: ..."); no aporta nada
+// util a los logs de produccion (CloudWatch) y no existia en dotenv 16.
+require('dotenv').config({ quiet: true });
 
 const { z } = require('zod');
 
