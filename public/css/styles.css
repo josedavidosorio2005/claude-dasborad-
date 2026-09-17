@@ -541,6 +541,18 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
 
 @media(max-width:700px){.aurora-charts{grid-template-columns:1fr;}.aurora-var-row{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:520px){.dash-grid{grid-template-columns:1fr;}.login-box{padding:36px 24px;}}
+/* .form-row (constructor de dashboards, cargas, usuarios, umbrales, ...)
+   es flex sin wrap -- con 4-5 campos en la misma fila (ej. Clave/Titulo/
+   Cadencia/Periodo/Fila unica del constructor de dashboards) cada input
+   queda de ~70px, ilegible en un telefono. Con wrap, cada campo respeta
+   un ancho minimo y los que no entran bajan de linea en vez de
+   comprimirse. Va DESPUES de ".form-row .ig{flex:1}" (arriba, sin media
+   query) a proposito -- con la misma especificidad, la regla que gana es
+   la que queda mas abajo en el archivo, sin importar el @media. */
+@media(max-width:700px){
+  .form-row{flex-wrap:wrap;}
+  .form-row .ig{flex:1 1 150px;}
+}
 
 /* ═══════════════════════════════════════════════════════════
    COMPONENTES DE ESTADO REUTILIZABLES
