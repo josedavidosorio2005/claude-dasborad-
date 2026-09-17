@@ -859,20 +859,12 @@ function _gdExportExcel(){
   // El aviso va PRIMERO (primera hoja que se ve al abrir el archivo) si los
   // datos de este dashboard son de demostracion — para que un Excel con
   // datos falsos nunca circule sin decirlo.
-  if(typeof seedDemoActivo !== 'undefined' && seedDemoActivo){
-    var avisoWs = XLSX.utils.aoa_to_sheet([
-      ['DATOS DE DEMOSTRACION'],
-      ['La informacion de este archivo es de prueba y NO corresponde a la operacion real.'],
-    ]);
-    XLSX.utils.book_append_sheet(wb, avisoWs, 'AVISO');
-  }
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(_gdDatosKpis()), 'KPIs');
+  xlsxAgregarAvisoDemo(wb);
   var usados = {};
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(_gdDatosKpis()), xlsxNombreHojaUnico('KPIs', usados));
   _gdDatosPanelesTab().forEach(function(pan){
     if(!pan.filas.length) return;
-    var name = (pan.titulo || 'Panel').replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 28);
-    while(usados[name]) name = name.slice(0, 26) + '·' + (usados[name] = (usados[name] || 1) + 1);
-    usados[name] = 1;
+    var name = xlsxNombreHojaUnico(pan.titulo || 'Panel', usados);
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pan.filas), name);
   });
   XLSX.writeFile(wb, 'Dashboard_' + (_gd.cliente || '').replace(/\s+/g, '_') + '_' + mesLbl + '.xlsx');

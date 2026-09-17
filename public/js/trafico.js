@@ -538,13 +538,7 @@ function _traficoExportExcel(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : 'trafico';
   var wb = XLSX.utils.book_new();
-  if(typeof seedDemoActivo !== 'undefined' && seedDemoActivo){
-    var avisoWs = XLSX.utils.aoa_to_sheet([
-      ['DATOS DE DEMOSTRACION'],
-      ['La informacion de este archivo es de prueba y NO corresponde a la operacion real.'],
-    ]);
-    XLSX.utils.book_append_sheet(wb, avisoWs, 'AVISO');
-  }
+  xlsxAgregarAvisoDemo(wb);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datos), 'Trafico');
   XLSX.writeFile(wb, 'Trafico_Llamadas_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
