@@ -753,9 +753,15 @@ abre el Excel"):
 2. Al subir el archivo, `procesarArchivoConsolidado` busca cada hoja del
    plan por **nombre exacto** (`DATA`, `Monitoreos`, o la `key` de la
    sección — nunca por posición) y la pasa a `cargasProcesarHoja`, que:
-   - si la hoja no existe en el archivo, o existe pero no tiene filas de
-     datos (`cargasHojaVacia`) → **no es un error**, se omite ("no aplica
-     esta vez");
+   - si la hoja **existe** en el archivo pero no tiene filas de datos
+     (`cargasHojaVacia`) → **no es un error**, se omite ("no aplica esta
+     vez");
+   - si la hoja **no existe** en el archivo (ninguna pestaña con ese nombre
+     exacto — renombrada o borrada por error) → **SÍ es un error**, solo de
+     esa hoja: el mensaje nombra la hoja esperada y lista las pestañas
+     reales del archivo subido (fix Fase 30/31, auditoría del flujo de
+     carga — antes se perdía en silencio, igual que una hoja vacía
+     legítima);
    - si tiene una celda de fórmula sin calcular → reusa
      `cargasDetectarFormulaSinValor` (PR #31), ahora aplicada a **cualquier**
      hoja del archivo, no solo a Gestión de base → se rechaza **solo esa

@@ -7,7 +7,10 @@
 // en silencio. Corre contra dos .xlsx REALES en fixtures/ (uno con ese bug,
 // otro con los valores literales que la plantilla realmente pide). Ver
 // server/tests/helpers/xlsx-lite.js para por que se leen a mano en vez de
-// con el paquete npm `xlsx`.
+// con el paquete npm `xlsx`. Cubre tambien el fix de la Fase 30/31 (auditoria
+// del flujo de carga): una hoja AUSENTE del archivo (pestana renombrada o
+// borrada por error) ahora genera un aviso, en vez de perderse en silencio
+// igual que una hoja legitimamente vacia.
 'use strict';
 
 const { test } = require('node:test');
@@ -217,14 +220,44 @@ test('cargasProcesarHoja + archivo consolidado real: la hoja valida se procesa, 
   assert.equal(rData.vacia, true);
 });
 
-test('cargasProcesarHoja: hoja ausente en el archivo (aoa null/undefined) se trata igual que vacia, nunca como error', () => {
+test('cargasProcesarHoja: hoja realmente AUSENTE del archivo (ninguna pestana con ese nombre) genera un aviso claro, nunca un guardado silencioso', () => {
+  // Reproduce el hallazgo real de la auditoria del flujo de carga (Fase 30):
+  // antes de este fix, una pestana renombrada/borrada por error se trataba
+  // exactamente igual que una hoja vacia legitima.
   const r = cargasProcesarHoja(
     { tipo: 'seccion', hoja: 'diario', titulo: 'Diario', filaUnica: false },
     undefined, undefined,
-    () => { throw new Error('no deberia llamarse el parser si la hoja no existe'); }
+    () => { throw new Error('no deberia llamarse el parser si la hoja no existe'); },
+    ['INSTRUCCIONES', 'resumen', 'Diaro', 'tipificacion', 'asesores', 'DATA']
+  );
+  assert.equal(r.vacia, undefined);
+  assert.match(r.error, /No se encontro la hoja "diario"/);
+  assert.match(r.error, /no la borres ni la renombres/i);
+  assert.match(r.error, /INSTRUCCIONES, resumen, Diaro, tipificacion, asesores, DATA/);
+});
+
+test('cargasProcesarHoja: hoja PRESENTE pero sin filas de datos sigue siendo "vacia -- no aplica", nunca un error (caso legitimo sin cambios)', () => {
+  const ws = { A1: { v: 'Metrica' }, B1: { v: 'Valor' } }; // la pestana existe, con el nombre correcto
+  const aoa = [['Metrica', 'Valor']];
+  const r = cargasProcesarHoja(
+    { tipo: 'seccion', hoja: 'diario', titulo: 'Diario', filaUnica: true },
+    aoa, ws,
+    () => { throw new Error('no deberia llamarse el parser si la hoja esta vacia'); },
+    ['INSTRUCCIONES', 'diario']
   );
   assert.equal(r.vacia, true);
   assert.equal(r.error, undefined);
+});
+
+test('cargasProcesarHoja: hoja ausente sin ninguna otra hoja en el archivo -- el mensaje no queda vacio ni roto', () => {
+  const r = cargasProcesarHoja(
+    { tipo: 'trafico', hoja: 'DATA', titulo: 'Trafico', filaUnica: false },
+    undefined, undefined,
+    () => { throw new Error('no deberia llamarse el parser'); },
+    []
+  );
+  assert.match(r.error, /No se encontro la hoja "DATA"/);
+  assert.match(r.error, /\(el archivo no tiene ninguna hoja\)/);
 });
 
 test('cargasParseMultiFila: descarta filas vacias y columnas que no coinciden con la plantilla', () => {

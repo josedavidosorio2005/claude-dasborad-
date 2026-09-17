@@ -1659,3 +1659,78 @@ de los 3 hallazgos reales, verificados contra el código:
    la tabla de cargas existentes de inmediato (sin recargar la página) y
    muestra un resumen ✓/✗ por hoja; lo mismo para la carga de Tráfico
    independiente (refresca cobertura/skills/nivel de servicio al guardar).
+
+## Fase 31 — Fix: una hoja renombrada en la plantilla consolidada ya no se pierde en silencio (2026-09-17)
+
+Pedido de InCo: cerrar el hallazgo #2 de la auditoría del flujo de carga
+(Fase 30) — riesgo real de pérdida de datos silenciosa, no cosmético — antes
+de la carga real de datos de Orlant/Aurora/Hospital La María. El otro
+hallazgo de esa auditoría (pantalla de mapeo manual de skill de Wolkvox)
+queda solo documentado; InCo decide eso por separado.
+
+### El bug
+
+`cargasProcesarHoja` (`public/js/cargas-logic.js`) trataba dos casos muy
+distintos exactamente igual: una hoja **presente** en el archivo pero sin
+filas de datos (caso legítimo: "esta sección no aplica hoy") y una hoja
+**ausente** del archivo porque el usuario la renombró o borró por error.
+Ambos caían en `cargasHojaVacia` → `{vacia:true}` → se omitía sin ningún
+aviso. La sección se perdía en silencio.
+
+### El fix
+
+`cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo)` ahora
+distingue los dos casos usando una señal que ya estaba disponible pero sin
+usarse para esto: `ws` (`wb.Sheets[hoja]`) es `undefined` si y solo si esa
+pestaña no existe en el workbook subido — nunca si existe pero está vacía.
+
+- Hoja **ausente** (`!ws`) → `{error: 'No se encontro la hoja "X" en tu
+  archivo. Si esta seccion no aplica para esta campana, no la borres ni la
+  renombres: dejala vacia. Hojas encontradas en tu archivo: [lista real de
+  wb.SheetNames].'}` — mismo estilo que los mensajes ya existentes
+  (fórmula sin valor, columnas faltantes), rechaza **solo esa hoja**, igual
+  que cualquier otro error de esta pantalla — las demás hojas válidas del
+  mismo archivo se guardan igual.
+- Hoja **presente** sin filas de datos → sigue exactamente igual que antes:
+  `{vacia:true}`, sin ningún aviso nuevo, no bloquea nada. Verificado que
+  esto no se rompió.
+- El conjunto de "hojas esperadas" sigue siendo el plan de **esa campaña
+  específica** (`cargasPlanConsolidado`) — una campaña sin plantilla de
+  Calidad nunca incluye "Monitoreos" en su plan, así que nunca genera este
+  aviso por esa ausencia (sin falsos positivos).
+
+Único llamador (`public/js/cargas.js`, `procesarArchivoConsolidado`) ahora
+pasa `wb.SheetNames` como quinto argumento.
+
+### Verificación
+
+`npm test` → **226/226** en verde (224 previos + 2 nuevos:
+`cargasProcesarHoja` con hoja ausente → error con mensaje exacto y lista de
+hojas reales; caso legítimo de hoja vacía sin cambios). `npm audit` → 0
+vulnerabilidades. El test que antes fijaba el comportamiento viejo
+("hoja ausente se trata igual que vacía") se reescribió para exigir el
+comportamiento correcto.
+
+Playwright contra un servidor local (admin real, base de datos de
+desarrollo ya existente): plantilla real de ALBERTO LINERO GO descargada,
+pestaña "diario" renombrada a "Diaro" (typo típico), "resumen" llenada con
+datos válidos, resto de hojas sin tocar (vacías, legítimas). Resultado real
+en la vista previa:
+
+> ⚠ No se encontro la hoja "diario" en tu archivo. Si esta seccion no
+> aplica para esta campana, no la borres ni la renombres: dejala vacia.
+> Hojas encontradas en tu archivo: INSTRUCCIONES, resumen, Diaro,
+> tipificacion, asesores, DATA.
+
+"Resumen mensual" siguió en verde (`OK — 1 fila(s)`); "Tipificación de
+gestión"/"Resultados por asesor"/"Trafico de Llamadas" siguieron en
+`Vacia — no aplica esta vez` sin ningún cambio. Al guardar, el toast
+mostró únicamente `✓ Resumen mensual (KPIs y tendencias)` — "Gestión por
+día" nunca se intentó guardar, sin bloquear las demás hojas válidas. Carga
+de prueba (periodo `2099-01`) borrada al terminar.
+
+`.github/scripts/verificar-plantilla-produccion.js` (workflow
+`verificacion-plantilla-produccion.yml`) se extendió con un tercer
+escenario que reproduce este mismo caso contra producción real con un
+usuario temporal — resultado documentado en la sección de verificación en
+producción más abajo, tras el deploy.

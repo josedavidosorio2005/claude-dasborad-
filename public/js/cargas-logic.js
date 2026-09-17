@@ -167,8 +167,12 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
 }
 
 // aoa: array-of-arrays de la hoja tal cual la entrega SheetJS
-// (sheet_to_json(ws,{header:1})), o null/undefined si la hoja no existe en
-// el archivo subido (el usuario pudo haber borrado una que no le aplicaba).
+// (sheet_to_json(ws,{header:1})). ws es el worksheet crudo de SheetJS para
+// esa hoja, o null/undefined si el archivo subido NO TIENE ninguna pestana
+// con ese nombre exacto (borrada, renombrada sin querer, o Excel le cambio
+// el nombre al copiar/pegar) -- aoa y ws siempre viajan sincronizados: los
+// dos null/undefined juntos, o los dos presentes juntos (ver cargas.js,
+// donde `aoa` se deriva de `ws` con `ws ? sheet_to_json(ws,...) : null`).
 // filaUnica: true para hojas verticales Metrica/Valor (Gestion de base
 // "resumen"); false para hojas horizontales (headers en la fila 0, una fila
 // por registro) — Calidad y Trafico son siempre filaUnica:false.
@@ -194,17 +198,36 @@ function cargasHojaVacia(aoa, filaUnica) {
 // 'seccion', cmParseRows para 'calidad', traficoParseFilas para 'trafico') —
 // se inyecta en vez de requerirlo aqui para que este archivo siga sin
 // depender de calidad-carga-masiva-logic.js ni trafico-logic.js.
+// `nombresHojasArchivo`: TODOS los nombres de pestana que trae el workbook
+// subido (wb.SheetNames) -- solo se usa para armar el mensaje del caso
+// "hoja ausente" de abajo, nunca para decidir si una hoja aplica (eso lo
+// sigue decidiendo unicamente el plan de esta campana especifica).
 //
 // Reglas (pedido explicito, para que una hoja mala nunca bloquee las demas):
-//  - hoja ausente en el archivo, o presente pero sin filas de datos -> no es
-//    un error, es "no aplica esta vez" (`vacia:true`, se omite al guardar).
+//  - hoja AUSENTE del archivo (ninguna pestana con ese nombre exacto) ->
+//    ERROR de SOLO esa hoja. Antes de este fix se trataba exactamente igual
+//    que "vacia" -- una pestana renombrada o borrada por error se perdia en
+//    silencio, sin avisar a nadie (hallazgo real de la auditoria del flujo
+//    de carga, Fase 30).
+//  - hoja PRESENTE pero sin filas de datos -> sigue siendo el caso legitimo
+//    de "no aplica esta vez" (`vacia:true`, se omite al guardar, SIN
+//    aviso) -- la pestana existe con el nombre correcto, solo que no tiene
+//    datos esta vez.
 //  - hoja con una celda de formula sin calcular -> se rechaza SOLO esa hoja
 //    (reusa la deteccion del PR #31, ahora aplicada a cualquier hoja, no
 //    solo a Gestion de base).
 //  - hoja con datos que no pasan su propio parser -> se rechaza SOLO esa
 //    hoja, con el mensaje exacto que ya da ese parser.
-function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn) {
+function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
   var base = { tipo: hojaPlan.tipo, hoja: hojaPlan.hoja, titulo: hojaPlan.titulo };
+  if (!ws) {
+    var encontradas = (nombresHojasArchivo || []).join(', ') || '(el archivo no tiene ninguna hoja)';
+    return Object.assign({}, base, {
+      error: 'No se encontro la hoja "' + hojaPlan.hoja + '" en tu archivo. ' +
+        'Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. ' +
+        'Hojas encontradas en tu archivo: ' + encontradas + '.',
+    });
+  }
   if (cargasHojaVacia(aoa, hojaPlan.filaUnica)) {
     return Object.assign({}, base, { vacia: true });
   }
