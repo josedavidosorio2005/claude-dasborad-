@@ -1,0 +1,232 @@
+name: QA - datos de prueba Trafico/Salida en ORLANT (produccion)
+
+# Disparo manual unicamente. Reutiliza EXACTAMENTE el mismo mecanismo que
+# deploy.yml/verificar-graficas-orlant-produccion.yml (rol OIDC, apertura
+# temporal del puerto 22 solo para la IP de este runner).
+#
+# Pedido de InCo (2026-09-18): quiere VER las graficas de Trafico y Salida
+# de ORLANT funcionando con datos, antes de decidir si registra el skill
+# real de Wolkvox. Este workflow sube datos DE PRUEBA obviamente falsos
+# (SKILL_NAME "PRUEBA_QA_GRAFICAS_ORLANT", periodo año 2020 -- nunca se
+# solapa con datos reales de oct/nov-2026), toma capturas, y BORRA TODO al
+# final (mapeo de skill, filas de Trafico, carga de Salida, usuario
+# temporal) -- produccion queda exactamente como estaba antes salvo el
+# codigo ya mergeado de PRs #64-66.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TEMP_ADMIN_USER: qa_graf_trafico_orlant_${{ github.run_id }}
+      SKILL_PRUEBA: PRUEBA_QA_GRAFICAS_ORLANT
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generar contrasena temporal (enmascarada de inmediato)
+        id: genpw
+        run: |
+          set -euo pipefail
+          PW="$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 22)"
+          echo "::add-mask::$PW"
+          echo "admin_password=$PW" >> "$GITHUB_OUTPUT"
+          echo "Contrasena temporal generada (no se imprime)."
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      # Insertado DIRECTO en la tabla users (nunca via POST /api/users).
+      # Rol ADMIN: registrar skill, subir Trafico y subir Salida son
+      # canLoadData, pero abrir el dashboard sin depender del scoping por
+      # cliente necesita isFullAdmin.
+      - name: Crear el usuario temporal directo en la base de datos
+        uses: appleboy/ssh-action@v1
+        env:
+          ADMIN_PW: ${{ steps.genpw.outputs.admin_password }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: ADMIN_PW
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e ADMIN_PW="$ADMIN_PW" \
+              -e TEMP_ADMIN_USER="${{ env.TEMP_ADMIN_USER }}" \
+              -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              const bcrypt = require("bcryptjs");
+              const pad = (n) => (n < 10 ? "0" + n : "" + n);
+              const d = new Date();
+              const now = pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+              db.prepare(
+                "INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt) VALUES (?,?,?,1,?,?,NULL,?)"
+              ).run("QA Datos de Prueba Trafico-Salida ORLANT (borrar automatico)", process.env.TEMP_ADMIN_USER, "ADMIN", bcrypt.hashSync(process.env.ADMIN_PW, 10), JSON.stringify({}), now);
+              console.log("USUARIO_TEMPORAL_CREADO " + process.env.TEMP_ADMIN_USER);
+            '
+
+      - name: Instalar Playwright (Chromium) y xlsx
+        run: |
+          npm install --no-save playwright@1.63.0 xlsx@0.18.5
+          npx playwright install --with-deps chromium
+
+      - name: Subir datos de prueba y capturar las graficas
+        id: qa
+        env:
+          TEMP_ADMIN_PW: ${{ steps.genpw.outputs.admin_password }}
+          PROD_URL: https://inconexionpruebasclaude.duckdns.org
+          ARTIFACTS_DIR: ${{ runner.temp }}/qa-graficas-trafico-salida
+        run: |
+          mkdir -p "$ARTIFACTS_DIR"
+          node .github/scripts/qa-datos-prueba-trafico-salida-orlant.js
+        # El script espera TEMP_ADMIN_USER (ya en env del job) y
+        # TEMP_ADMIN_PW (recien seteada arriba).
+
+      - name: Subir capturas como evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-graficas-trafico-salida-${{ github.run_id }}
+          path: ${{ runner.temp }}/qa-graficas-trafico-salida/**
+          retention-days: 30
+          if-no-files-found: warn
+
+      # Corre SIEMPRE, pase lo que pase arriba. Borra EXACTAMENTE lo que
+      # este workflow pudo haber creado: filas de Trafico del skill de
+      # prueba (diario + mensual recalculado), el mapeo del skill de
+      # prueba, la carga de prueba de Salida (cliente+seccion+periodo
+      # inconfundibles) y el usuario temporal. Nunca toca ninguna fila real
+      # de ORLANT (otro skill, otro periodo, otra seccion).
+      - name: Borrar TODOS los datos de prueba y el usuario temporal
+        if: always()
+        uses: appleboy/ssh-action@v1
+        env:
+          SKILL_PRUEBA: ${{ env.SKILL_PRUEBA }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: SKILL_PRUEBA
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e TEMP_ADMIN_USER="${{ env.TEMP_ADMIN_USER }}" \
+              -e SKILL_PRUEBA="$SKILL_PRUEBA" \
+              -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              const skill = process.env.SKILL_PRUEBA;
+              const diario = db.prepare("DELETE FROM calidad_nivel_servicio_diario WHERE skillName = ?").run(skill);
+              const mensual = db.prepare("DELETE FROM calidad_nivel_servicio WHERE campana = ? AND mes LIKE ?").run("ORLANT", "2020-%");
+              const mapeo = db.prepare("DELETE FROM trafico_skill_mapeo WHERE skillName = ?").run(skill);
+              const salida = db.prepare("DELETE FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?").run("ORLANT", "salida", "2020-07");
+              const u = db.prepare("DELETE FROM users WHERE user = ?").run(process.env.TEMP_ADMIN_USER);
+              console.log("DATOS_DE_PRUEBA_BORRADOS " + JSON.stringify({
+                traficoDiarioBorradas: diario.changes,
+                traficoMensualBorradas: mensual.changes,
+                skillMapeoBorrado: mapeo.changes,
+                cargaSalidaPruebaBorrada: salida.changes,
+                usuarioTemporalBorrado: u.changes,
+              }));
+            '
+
+      - name: Confirmar que no queda ningun rastro del skill/carga de prueba
+        if: always()
+        uses: appleboy/ssh-action@v1
+        env:
+          SKILL_PRUEBA: ${{ env.SKILL_PRUEBA }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: SKILL_PRUEBA
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e SKILL_PRUEBA="$SKILL_PRUEBA" \
+              -e JWT_SECRET="dummy-no-usado-verificacion-qa-temporal-32chars" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              const skill = process.env.SKILL_PRUEBA;
+              const restos = {
+                traficoDiario: db.prepare("SELECT COUNT(*) c FROM calidad_nivel_servicio_diario WHERE skillName = ?").get(skill).c,
+                traficoMensual: db.prepare("SELECT COUNT(*) c FROM calidad_nivel_servicio WHERE campana = ? AND mes LIKE ?").get("ORLANT", "2020-%").c,
+                skillMapeo: db.prepare("SELECT COUNT(*) c FROM trafico_skill_mapeo WHERE skillName = ?").get(skill).c,
+                cargaSalida: db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente = ? AND seccion = ? AND periodo = ?").get("ORLANT", "salida", "2020-07").c,
+                usuarioTemporal: db.prepare("SELECT COUNT(*) c FROM users WHERE user = ?").get(process.env.TEMP_ADMIN_USER).c,
+              };
+              const limpio = Object.values(restos).every((n) => n === 0);
+              console.log("VERIFICACION_LIMPIEZA " + JSON.stringify({ limpio, restos }));
+              if (!limpio) process.exit(1);
+            '
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
