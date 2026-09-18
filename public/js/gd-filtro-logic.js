@@ -84,6 +84,21 @@ function gdCargasDelAnio(cargas, anio) {
   return (cargas || []).filter(function (c) { return c && typeof c.periodo === 'string' && c.periodo.slice(0, 4) === anio; });
 }
 
+// Valor efectivo de un filtro de "una sola linea a la vez" (panel con
+// filtroCampo + filtroUnico:true, ej. el pie de Tipificacion filtrable por
+// linea sin duplicar categorias entre 3P y General): si `valorPrevio` sigue
+// entre los `disponibles`, se conserva (el usuario ya eligio); si no
+// (primera vez que se abre el panel, o la linea elegida ya no aparece en
+// los datos), cae al primero de `disponibles` -- NUNCA a "todas las
+// lineas", que es justo el bug que este filtro evita (categorias
+// duplicadas en la leyenda). Mismo espiritu que gdSerieSeleccionada.
+function gdValorFiltroUnico(disponibles, valorPrevio) {
+  var lista = disponibles || [];
+  if (!lista.length) return null;
+  if (valorPrevio && lista.indexOf(valorPrevio) !== -1) return valorPrevio;
+  return lista[0];
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -93,5 +108,6 @@ if (typeof module !== 'undefined' && module.exports) {
     gdSerieSeleccionada: gdSerieSeleccionada,
     gdAnioDeMes: gdAnioDeMes,
     gdCargasDelAnio: gdCargasDelAnio,
+    gdValorFiltroUnico: gdValorFiltroUnico,
   };
 }

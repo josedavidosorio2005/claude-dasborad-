@@ -818,6 +818,54 @@ runOnceMigration('dashboards_config_orlant_pdf_graficas_v1', () => {
   }
 });
 
+// ORLANT: fix del pie de Tipificacion (categorias duplicadas en la leyenda,
+// hallazgo real de la verificacion con InCo del 2026-09-18) — la migracion
+// anterior (dashboards_config_orlant_pdf_graficas_v1) ya dejo el panel con
+// filtroCampo:'linea' pero SIN filtroUnico (multi-select, 3P+General
+// combinados por defecto = cada categoria duplicada). Esta migracion nueva
+// mueve ESE tab especifico a la forma con filtroUnico:true (selector de una
+// sola linea, igual patron que Salida). Misma fuente unica de verdad
+// (CONFIGS) y mismo criterio defensivo que las migraciones anteriores.
+runOnceMigration('dashboards_config_orlant_tipificacion_unico_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTab = (target.layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!targetTab) return;
+
+  const tab = (layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!tab) return;
+  const yaEsNuevo = (tab.panels || []).some((p) => p.filtroUnico === true);
+  if (yaEsNuevo) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_tipificacion_unico_v1: ya tenia filtroUnico, nada que hacer.');
+    return;
+  }
+  const esViejoReconocible = (tab.panels || []).length === 1 && tab.panels[0].filtroCampo === 'linea' && !tab.panels[0].filtroUnico;
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_tipificacion_unico_v1: el tab "tipificacion" no coincide con la forma esperada (vieja ni nueva) — se deja intacta, revisar a mano.');
+    }
+    return;
+  }
+
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_tipificacion_unico_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
