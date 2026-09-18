@@ -145,8 +145,36 @@ async function renderTraficoSkills(){
   catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">'+esc(e.message)+'</td></tr>'; return; }
   _traficoSkillsCache = rows;
 
+  // Filtro de Campana (Fase 37) -- opciones derivadas de las campanas
+  // presentes hoy en el mapeo (incluye "(SIN ASIGNAR)" para las que
+  // todavia no tienen campana). Mismo criterio que el filtro de la
+  // Historial de Nivel de Servicio: catalogo real, no fijo.
+  var filterEl = document.getElementById('tv-skills-campana-filter');
+  if(filterEl){
+    var campanasPresentes = [];
+    rows.forEach(function(r){ var v = r.campana || '(SIN ASIGNAR)'; if(campanasPresentes.indexOf(v)===-1) campanasPresentes.push(v); });
+    campanasPresentes.sort();
+    var prevFiltro = filterEl.value;
+    filterEl.innerHTML = '<option value="">Todas las campanas</option>' + campanasPresentes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+    if(prevFiltro && campanasPresentes.indexOf(prevFiltro)!==-1) filterEl.value = prevFiltro;
+  }
+
+  _renderTraficoSkillsTable();
+}
+
+// Redibuja la tabla desde _traficoSkillsCache (sin refetch) aplicando el
+// filtro de campana -- se llama al cambiar el filtro y desde
+// renderTraficoSkills() tras cada carga/remapeo.
+function _renderTraficoSkillsTable(){
+  var tbody = document.getElementById('tv-skills-tbody');
+  if(!tbody) return;
+  var filterEl = document.getElementById('tv-skills-campana-filter');
+  var filtro = filterEl ? filterEl.value : '';
+  var rows = _traficoSkillsCache.filter(function(r){ return !filtro || (r.campana || '(SIN ASIGNAR)')===filtro; });
+
   if(!rows.length){
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">Todavia no se ha cargado trafico de ninguna skill.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">' +
+      (filtro ? 'Ninguna skill mapeada a esta campana.' : 'Todavia no se ha cargado trafico de ninguna skill.') + '</td></tr>';
     return;
   }
   var campanas = _traficoCampanasAsignables();
@@ -394,7 +422,7 @@ async function _traficoRenderPanel(p, i){
   var campana = _traficoCampanaPanel(p);
   var sede = _traficoSedePanel();
   var claveEstado = _traficoClaveEstado(campana, sede);
-  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
+  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var datosCampana = await _traficoCargarDatos(campana);
@@ -404,8 +432,8 @@ async function _traficoRenderPanel(p, i){
   }) : datosCampana.skills;
   var datos = { filas: filasSede, skills: skillsSede };
   if(!datos.filas.length){
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Volvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Wolkvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
     return;
   }
 
@@ -440,7 +468,7 @@ async function _traficoRenderPanel(p, i){
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
   host.innerHTML =
     '<div class="aurora-card">' +
-      '<div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>' +
+      '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
           '<select multiple id="tv-f-skills-'+i+'" size="'+Math.min(6, Math.max(2, datos.skills.length))+'" style="min-width:180px">' +
