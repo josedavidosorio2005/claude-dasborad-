@@ -123,12 +123,38 @@ function _gdResolver(f, extra){
   }
 
   if(f.modo === 'filas'){
+    var xk = f.x || 'fecha';
+
+    // `f.anual`: en vez de la carga de UN mes, junta las filas de TODAS las
+    // cargas del año (gdCargasDelAnio, gd-filtro-logic.js) y agrupa-suma por
+    // xk. Para series "(año)" que el PDF pide acumuladas (ej. Ordenes STA
+    // por servicio/estado), no solo el ultimo mes cargado.
+    if(f.anual){
+      var cActual = _gdCargaMes(f.s);
+      var anio = gdAnioDeMes(_gd.mesSel || (cActual ? cActual.periodo : null));
+      var cargasAnio = gdCargasDelAnio(_gdSeccionCargas(f.s), anio);
+      var sumas = {}, orden = [];
+      cargasAnio.forEach(function(c){
+        (c.filas||[]).filter(function(r){ return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor)); })
+          .forEach(function(r){
+            var k = r[xk];
+            if(k === undefined || k === null || k === '') return;
+            if(sumas[k] === undefined){ sumas[k] = 0; orden.push(k); }
+            sumas[k] += _gdEvalCampo(r, f) || 0;
+          });
+      });
+      return { labels: orden, values: orden.map(function(k){ return sumas[k]; }) };
+    }
+
     var c2 = _gdCargaMes(f.s);
     var filas = (c2 ? c2.filas || [] : []).filter(function(r){
       return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
     });
-    var xk = f.x || 'fecha';
-    if(extra && extra.categorias) filas = gdFiltrarFilasCategorias(filas, xk, extra.categorias);
+    // filtroCampo (panel con filtro por una columna distinta al eje X, ej. un
+    // pie de tipificacion por 'tipificacion' filtrable por 'linea') pisa xk
+    // solo para saber QUE columna filtrar — el eje X del grafico sigue siendo xk.
+    var campoFiltro = (extra && extra.filtroCampo) || xk;
+    if(extra && extra.categorias) filas = gdFiltrarFilasCategorias(filas, campoFiltro, extra.categorias);
     if(extra && (extra.desde || extra.hasta)) filas = gdFiltrarFilasRangoFechas(filas, extra.desde, extra.hasta);
     var esFecha = xk === 'fecha';
     if(esFecha) filas = filas.slice().sort(function(a,b){ return String(a.fecha).localeCompare(String(b.fecha)); });
@@ -146,6 +172,20 @@ function _gdResolver(f, extra){
     var total = 0, count = 0;
     rows.forEach(function(r){ (f.campos || [f.campo]).forEach(function(k){ total += _gdNum(r[k]); count++; }); });
     return { scalar: f.op === 'promedio' ? (count ? total/count : 0) : total };
+  }
+
+  // Suma de un campo across TODAS las cargas del año (gdCargasDelAnio) — KPI
+  // anual con texto (ej. "Efectividad del año" de ordenamiento medico 3P).
+  if(f.modo === 'anual'){
+    var cAct = _gdCargaMes(f.s);
+    var anioK = gdAnioDeMes(_gd.mesSel || (cAct ? cAct.periodo : null));
+    var cargasK = gdCargasDelAnio(_gdSeccionCargas(f.s), anioK);
+    var totalK = 0;
+    cargasK.forEach(function(c){
+      (c.filas||[]).filter(function(r){ return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor)); })
+        .forEach(function(r){ totalK += _gdEvalCampo(r, f) || 0; });
+    });
+    return { scalar: cargasK.length ? totalK : null };
   }
   return { scalar: null };
 }
@@ -193,11 +233,24 @@ function _gdCyclePanelTipo(i, tipo){
 // mensuales, KPIs escalares, combos de 2 barras fijas quedan intactos).
 var _gdCatFiltro = {};    // por 'tab|indice': { incluidas:[...] }
 var _gdFechaFiltro = {};  // por 'tab|indice': { desde, hasta }
+var _gdSerieFiltro = {};  // por 'tab|indice': { label } — panel con filtroSerie:true
 
-// 'categoria' | 'fecha' | null, segun el modo/x real de la fuente del panel.
+// 'categoria' | 'fecha' | 'serie' | null, segun el panel.
+//  - p.filtroSerie (panel line/bar con >1 serie): 'serie' — un selector que
+//    elige CUAL serie dibujar (ej. Salida: Linea General / Linea 3P), en vez
+//    de mostrarlas todas juntas.
+//  - p.filtroCampo (pie/line sobre modo:'filas'): 'categoria', pero filtrando
+//    por esa columna en vez del eje X del grafico (ej. pie de tipificacion,
+//    x:'tipificacion', filtrable por 'linea').
+//  - si no, el criterio de siempre: x==='fecha' -> 'fecha', si no 'categoria'.
 function _gdPanelFiltroTipo(p){
+  if(p.filtroSerie && p.series && p.series.length > 1) return 'serie';
   var f = p.tipo === 'pie' ? p.fuente : (p.series && p.series[0] && p.series[0].fuente);
-  if(!f || f.modo !== 'filas') return null;
+  // f.anual (agregado multi-periodo, ver _gdResolver) no soporta el filtro
+  // de categorias de `extra` -- no se dibuja una barra de filtro que no
+  // haria nada.
+  if(!f || f.modo !== 'filas' || f.anual) return null;
+  if(p.filtroCampo) return 'categoria';
   var xk = f.x || (p.tipo === 'pie' ? 'categoria' : 'fecha');
   return xk === 'fecha' ? 'fecha' : 'categoria';
 }
@@ -213,13 +266,26 @@ function _gdFilasBaseParaFiltro(p){
   var filas = (carga ? carga.filas||[] : []).filter(function(r){
     return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
   });
-  return { filas: filas, campo: f.x || 'categoria' };
+  return { filas: filas, campo: p.filtroCampo || f.x || 'categoria' };
 }
 function _gdRenderFiltroBar(p, i, tipo){
   var host = document.getElementById('gd-f'+i);
   if(!host) return;
-  var base = _gdFilasBaseParaFiltro(p);
   var key = _gdPanelKey(i);
+
+  if(tipo === 'serie'){
+    var estadoS = _gdSerieFiltro[key] || {};
+    var actual = gdSerieSeleccionada(p.series, estadoS.label);
+    host.innerHTML = '<div class="gd-panel-filtro">' +
+      '<div><label>Linea</label><select id="gd-serief-'+i+'">' +
+        p.series.map(function(s){ return '<option value="'+esc(s.label)+'"'+(actual && actual.label===s.label?' selected':'')+'>'+esc(s.label)+'</option>'; }).join('') +
+      '</select></div>' +
+      '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
+    '</div>';
+    return;
+  }
+
+  var base = _gdFilasBaseParaFiltro(p);
 
   if(tipo === 'categoria'){
     var disponibles = gdValoresDistintos(base.filas, base.campo);
@@ -247,7 +313,7 @@ function _gdRenderFiltroBar(p, i, tipo){
 }
 function _gdExtraFiltroPanel(p, i){
   var tipo = _gdPanelFiltroTipo(p);
-  if(tipo === 'categoria') return { categorias: (_gdCatFiltro[_gdPanelKey(i)]||{}).incluidas };
+  if(tipo === 'categoria') return { categorias: (_gdCatFiltro[_gdPanelKey(i)]||{}).incluidas, filtroCampo: p.filtroCampo };
   if(tipo === 'fecha') return _gdFechaFiltro[_gdPanelKey(i)] || {};
   return null;
 }
@@ -265,6 +331,9 @@ function _gdAplicarFiltroPanel(i){
     var d = document.getElementById('gd-fechaf-desde-'+i);
     var h = document.getElementById('gd-fechaf-hasta-'+i);
     _gdFechaFiltro[key] = { desde: d ? d.value : '', hasta: h ? h.value : '' };
+  } else if(tipo === 'serie'){
+    var selS = document.getElementById('gd-serief-'+i);
+    _gdSerieFiltro[key] = { label: selS ? selS.value : '' };
   }
   _gdRenderPanel(p, i);
 }
@@ -581,9 +650,14 @@ function renderGenericTab(key){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       html += '<div id="gd-p'+i+'"></div>';
+    } else if(p.tipo === 'nota_kpi'){
+      // KPI anual con texto explicativo (ej. efectividad de ordenamiento
+      // medico): es texto, no un grafico — mismo criterio que trafico_combo,
+      // ancho completo, sin canvas.
+      html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -595,9 +669,11 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
+      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:#7a9ba8;font-weight:600;margin-left:10px"></span>' : '';
+      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:#5c7681;line-height:1.5"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
-        '<span>' + esc(x.p.titulo || '') + '</span>' + tools + '</div>' + filtroDiv +
-        '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div></div>';
+        '<span>' + esc(x.p.titulo || '') + '</span>' + totalSpan + tools + '</div>' + filtroDiv +
+        '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';
     }).join('') + '</div>';
   }
   host.innerHTML = html;
@@ -615,6 +691,8 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie'){ _gdRenderCalidad(p, i); return; }
 
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
+
+  if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
   if(p.tipo === 'tabla'){
     var t = document.getElementById('gd-p'+i); if(!t) return;
@@ -642,6 +720,7 @@ function _gdRenderPanel(p, i){
     _gdChart(canvasId, { type:'doughnut',
       data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: (pr.labels||[]).map(function(l){ return paletaColorPara(l); }) }] },
       options: loPie() });
+    _gdRenderNotasPanel(p, i);
     return;
   }
 
@@ -649,9 +728,14 @@ function _gdRenderPanel(p, i){
     var eff = _gdPanelTipo(p, i);          // tipo efectivo (preferencia del visor)
     var esLinea = eff === 'line' || eff === 'area';
     var hex2rgba = function(h, a){ h = h.replace('#',''); return 'rgba(' + parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16) + ',' + a + ')'; };
-    var series = p.series || [];
     var filtroTipoLb = _gdPanelFiltroTipo(p);
     if(filtroTipoLb) _gdRenderFiltroBar(p, i, filtroTipoLb);
+    // filtroSerie: en vez de dibujar TODAS las series juntas, solo la
+    // seleccionada en el filtro (ej. Salida: Linea General o 3P, nunca las 2
+    // superpuestas — mismo criterio de un dato a la vez que ya usa Trafico).
+    var series = p.filtroSerie
+      ? [gdSerieSeleccionada(p.series, (_gdSerieFiltro[_gdPanelKey(i)]||{}).label)].filter(Boolean)
+      : (p.series || []);
     var extraLb = _gdExtraFiltroPanel(p, i);
     var labels = null;
     var datasets = series.map(function(s){
@@ -664,11 +748,23 @@ function _gdRenderPanel(p, i){
       }
       return { label: s.label, data: rr.values||[], backgroundColor: color, borderRadius:3 };
     });
+    if(p.filtroSerie){
+      var totEl = document.getElementById('gd-serietot-'+i);
+      if(totEl){
+        var suma = (datasets[0] && datasets[0].data || []).reduce(function(a,v){ return a + (v||0); }, 0);
+        totEl.textContent = 'Total: ' + suma.toLocaleString('es-CO');
+      }
+    }
     var opts = esLinea
       ? (p.unidad==='%' ? loPct() : (p.unidad==='tiempo' ? _gdTiempoOpts() : loFmt(lo(null, 50), p.unidad)))
       : loFmt(loBar(), p.unidad);
+    // pctDeTotal: loFmt() ya puso el tooltip/eje en formato legible arriba —
+    // solo se pisa el datalabel (numero crudo) por el de "% del total"
+    // (loBarPct, charts.js), sin perder el resto del formato.
+    if(!esLinea && p.pctDeTotal) opts.plugins.datalabels.formatter = loBarPct().plugins.datalabels.formatter;
     if(eff==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
     _gdChart(canvasId, { type: esLinea ? 'line' : 'bar', data:{ labels: labels||[], datasets: datasets }, options: opts });
+    _gdRenderNotasPanel(p, i);
     return;
   }
 
@@ -703,6 +799,47 @@ function _gdTiempoOpts(){
   o.plugins.datalabels.formatter = f;
   o.scales.y.ticks.callback = f;
   return o;
+}
+
+// Texto opcional (glosario/nota) debajo de un panel pie/bar/line — ej. el
+// glosario de codigos de tipificacion, o la lista de servicios excluidos de
+// "Ordenes por estado". Contenido siempre estatico (viene de la config del
+// panel, nunca de una carga de Excel), pero se escapa igual que cualquier
+// otro valor renderizado (mismo criterio del resto del frontend desde la
+// fase de fix de XSS).
+function _gdRenderNotasPanel(p, i){
+  if(!p.notas || !p.notas.length) return;
+  var el = document.getElementById('gd-notas-'+i);
+  if(!el) return;
+  el.innerHTML = p.notas.map(function(n){ return '<div style="margin-bottom:4px">'+esc(n)+'</div>'; }).join('');
+}
+
+// Panel `nota_kpi`: resuelve 2-3 valores (modo:'anual', ver _gdResolver),
+// aplica una formula simple opcional y los sustituye en una plantilla de
+// texto — ej. "Efectividad del año" de ordenamiento medico 3P (PDF de InCo:
+// KPI anual con texto explicativo, no solo un numero).
+//   p.valores  : [{ clave, fuente }]  — cada uno resuelto via _gdResolver.
+//   p.formula  : { clave, a, b } opcional -> valores[clave] = b? round(a/b*100*10)/10 : null
+//   p.plantilla: texto con {clave} a sustituir (cada valor se escapa al insertarse).
+function _gdRenderNotaKpi(p, i){
+  var el = document.getElementById('gd-p'+i);
+  if(!el) return;
+  var valores = {};
+  (p.valores || []).forEach(function(v){ valores[v.clave] = _gdResolver(v.fuente).scalar; });
+  if(p.formula){
+    var a = valores[p.formula.a], b = valores[p.formula.b];
+    valores[p.formula.clave] = (a === null || a === undefined || b === null || b === undefined || !b)
+      ? null : Math.round((_gdNum(a) / _gdNum(b)) * 1000) / 10;
+  }
+  var faltan = Object.keys(valores).some(function(k){ return valores[k] === null || valores[k] === undefined; });
+  var texto = faltan
+    ? 'Todavía no hay datos suficientes del año para este cálculo.'
+    : String(p.plantilla || '').replace(/\{(\w+)\}/g, function(_, k){
+        var v = valores[k];
+        return esc(typeof v === 'number' ? v.toLocaleString('es-CO') : String(v == null ? '' : v));
+      });
+  el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(p.titulo || '') + '</div>' +
+    '<div style="padding:6px 4px 2px;font-size:0.92rem;line-height:1.6;color:#2a4a58">' + texto + '</div></div>';
 }
 
 // ── Paneles de Calidad (usan CAL_DB de la Fase 1) ───────────
@@ -822,6 +959,16 @@ function _gdDatosPanelesTab(){
     }
     if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
     if(p.tipo === 'trafico_combo') return; // export propio (filtros/fecha no son los de _gd)
+    if(p.tipo === 'nota_kpi'){
+      var valoresN = {};
+      (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });
+      if(p.formula){
+        var aN = valoresN[p.formula.a], bN = valoresN[p.formula.b];
+        valoresN[p.formula.clave] = (aN===null||aN===undefined||bN===null||bN===undefined||!bN) ? null : Math.round((_gdNum(aN)/_gdNum(bN))*1000)/10;
+      }
+      out.push({ titulo: p.titulo, tipo: 'kpi', filas: [valoresN] });
+      return;
+    }
     if(p.tipo === 'pie'){
       var r = _gdResolver(p.fuente);
       out.push({ titulo: p.titulo, tipo: 'pie', filas: (r.labels || []).map(function(l, idx){ return { Categoria: l, Valor: (r.values || [])[idx] }; }) });

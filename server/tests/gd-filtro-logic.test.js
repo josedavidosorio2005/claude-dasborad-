@@ -4,6 +4,9 @@ const {
   gdFiltrarFilasCategorias,
   gdFiltrarFilasRangoFechas,
   gdValoresDistintos,
+  gdSerieSeleccionada,
+  gdAnioDeMes,
+  gdCargasDelAnio,
 } = require('../../public/js/gd-filtro-logic');
 
 const FILAS_TIPIF = [
@@ -60,4 +63,50 @@ test('gdValoresDistintos: lista sin duplicados, en orden de aparicion', () => {
 test('gdValoresDistintos: normaliza mayusculas/espacios al deduplicar pero conserva la primera forma vista', () => {
   const filas = [{ a: 'Objecion Precio' }, { a: '  objecion precio  ' }, { a: 'No contesta' }];
   assert.deepEqual(gdValoresDistintos(filas, 'a'), ['Objecion Precio', 'No contesta']);
+});
+
+const SERIES = [
+  { label: 'Linea General', fuente: { campo: 'salida_general' } },
+  { label: 'Linea 3P', fuente: { campo: 'salida_3p' } },
+];
+
+test('gdSerieSeleccionada: con label valido, devuelve esa serie', () => {
+  assert.equal(gdSerieSeleccionada(SERIES, 'Linea 3P'), SERIES[1]);
+});
+
+test('gdSerieSeleccionada: sin label, o label que ya no existe, cae a la primera', () => {
+  assert.equal(gdSerieSeleccionada(SERIES, null), SERIES[0]);
+  assert.equal(gdSerieSeleccionada(SERIES, 'Linea Fantasma'), SERIES[0]);
+});
+
+test('gdSerieSeleccionada: sin series, devuelve null (nunca revienta)', () => {
+  assert.equal(gdSerieSeleccionada([], 'Linea General'), null);
+  assert.equal(gdSerieSeleccionada(null, 'Linea General'), null);
+});
+
+test('gdAnioDeMes: extrae el año de "YYYY-MM"; null-safe', () => {
+  assert.equal(gdAnioDeMes('2026-07'), '2026');
+  assert.equal(gdAnioDeMes(''), null);
+  assert.equal(gdAnioDeMes(null), null);
+  assert.equal(gdAnioDeMes(undefined), null);
+});
+
+const CARGAS = [
+  { periodo: '2025-12', filas: [] },
+  { periodo: '2026-01', filas: [] },
+  { periodo: '2026-07', filas: [] },
+];
+
+test('gdCargasDelAnio: deja solo las cargas del año pedido', () => {
+  assert.deepEqual(gdCargasDelAnio(CARGAS, '2026').map((c) => c.periodo), ['2026-01', '2026-07']);
+});
+
+test('gdCargasDelAnio: sin año, ninguna carga (nunca "todas" por accidente)', () => {
+  assert.deepEqual(gdCargasDelAnio(CARGAS, null), []);
+  assert.deepEqual(gdCargasDelAnio(CARGAS, ''), []);
+});
+
+test('gdCargasDelAnio: array vacio o null no rompe', () => {
+  assert.deepEqual(gdCargasDelAnio([], '2026'), []);
+  assert.deepEqual(gdCargasDelAnio(null, '2026'), []);
 });

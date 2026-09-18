@@ -61,29 +61,66 @@ const ORLANT = {
         lineP('Llamadas Linea General por mes', 'llamadas_general'),
         lineP('WhatsApp Linea General por mes', 'wpp_general'),
       ]},
+      // Salida (graficas 4-7 del PDF de InCo, 2026-09-18): el PDF sugiere
+      // "pueden ir integradas... y se puede mirar cada linea por medio de un
+      // filtro" en vez de 4 graficas separadas — filtroSerie (dashboard-
+      // generic.js) hace exactamente eso: una grafica, un selector de Linea
+      // General/3P, "Total: N" de la linea que se este viendo. Reemplaza los
+      // 4 paneles anteriores (misma fuente/campos, solo cambia la
+      // presentacion — ver PROGRESS.md de esta fase).
       { key: 'salida', label: 'Salida', panels: [
-        { tipo: 'line', titulo: 'Llamadas de salida — Linea General', series: [{ label: 'Salida L. General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } }] },
-        { tipo: 'line', titulo: 'Llamadas de salida — 3P', series: [{ label: 'Salida 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } }] },
-        { tipo: 'line', titulo: 'WhatsApp de salida — Linea General', series: [{ label: 'WPP Salida L. General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } }] },
-        { tipo: 'line', titulo: 'WhatsApp de salida — 3P', series: [{ label: 'WPP Salida 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } }] },
+        { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
+          { label: 'Linea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
+          { label: 'Linea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
+        ]},
+        { tipo: 'line', titulo: 'WhatsApp de salida', filtroSerie: true, series: [
+          { label: 'Linea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
+          { label: 'Linea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
+        ]},
       ]},
+      // Tipificacion (graficas 8-9): 1 pie filtrable por linea (filtroCampo,
+      // dashboard-generic.js) en vez de 2 pies fijos — misma fuente/campos.
+      // El glosario son SOLO los 2 codigos que el propio PDF explica en
+      // prosa (INFORMACION_3P / INFORMACION_SECRETARIA); el resto de
+      // categorias no se inventan — confirmar contra el archivo real cuando
+      // se cargue (puede traer categorias mas finas o distintas).
       { key: 'tipificacion', label: 'Tipificacion', panels: [
-        { tipo: 'pie', titulo: 'Tipificacion Linea 3P', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { linea: '3P' } } },
-        { tipo: 'pie', titulo: 'Tipificacion Linea General', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { linea: 'GENERAL' } } },
+        { tipo: 'pie', titulo: 'Tipificacion de llamadas y WhatsApp', filtroCampo: 'linea',
+          fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad' },
+          notas: [
+            'Glosario basado en el PDF de InCo — confirmar contra las categorias reales que traiga el archivo de tipificacion cuando se cargue (pueden variar).',
+            'INFORMACION_3P: el paciente solicita informacion sobre polizas, tarifas o examenes.',
+            'INFORMACION_SECRETARIA: se necesita una cita de revision y no ha sido posible comunicarse con la secretaria; tambien pagos o programacion de cirugia que requieren secretaria.',
+          ] },
       ]},
       { key: 'agendamiento', label: 'Agendamiento', panels: [
         { tipo: 'combo', titulo: 'Ordenamiento medico', barras: [
           { label: 'Gestionados', fuente: serie('ordmed_gestionados') },
           { label: 'Agendas', fuente: serie('ordmed_agendas') }],
           linea: { label: '% Efectividad', fuente: pctFormula('ordmed_agendas', 'ordmed_gestionados') } },
+        // Grafica 10 del PDF: KPI anual con texto explicativo (nota_kpi,
+        // dashboard-generic.js — modo:'anual' suma el campo en todas las
+        // cargas del año, no solo el ultimo mes).
+        { tipo: 'nota_kpi', titulo: 'Efectividad del año — Ordenamiento medico 3P',
+          valores: [
+            { clave: 'gestionados', fuente: { s: 'resumen', modo: 'anual', campo: 'ordmed_gestionados' } },
+            { clave: 'agendados', fuente: { s: 'resumen', modo: 'anual', campo: 'ordmed_agendas' } },
+          ],
+          formula: { clave: 'efectividad', a: 'agendados', b: 'gestionados' },
+          plantilla: 'De la estrategia de agendamiento por ordenamiento medico en consulta medica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.' },
         { tipo: 'combo', titulo: 'Recuperacion de cancelados', barras: [
           { label: 'Cancelado', fuente: serie('recup_cancelado') },
           { label: 'Atendido', fuente: serie('recup_atendido') }],
           linea: { label: '% Efectividad', fuente: pctFormula('recup_atendido', 'recup_cancelado') } },
+        // Grafica 11: 2 lineas (antes barras — mismo dato, formato del PDF)
+        // + variacion % mes a mes (transform:'incremento', ya existia en el
+        // motor — lo usa Aurora en "Agendas Manager e incremento").
         lineP('Total agendas por mes', 'total_agendas'),
-        { tipo: 'bar', titulo: 'Agendas por linea', series: [
+        { tipo: 'line', titulo: 'Agendas por linea', series: [
           { label: 'Linea General', fuente: serie('agendas_general') },
           { label: 'Linea 3P', fuente: serie('agendas_3p') }] },
+        { tipo: 'line', titulo: 'Total agendas — variacion % mes a mes', unidad: '%', series: [
+          { label: '% Variacion', fuente: serie('total_agendas', { transform: 'incremento' }) }] },
       ]},
       { key: 'inasistencia', label: 'Inasistencia', panels: [
         lineP('% Inasistencia Audifonos', 'inasist_audifonos', { unidad: '%' }),
@@ -92,13 +129,23 @@ const ORLANT = {
         lineP('% Inasistencia Total', 'inasist_total', { unidad: '%' }),
       ]},
       { key: 'sta', label: 'Gestion STA', panels: [
-        { tipo: 'bar', titulo: 'Ordenes por servicio', horizontal: true, series: [{ label: 'Ordenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'SERVICIO' } } }] },
-        { tipo: 'pie', titulo: 'Ordenes por estado', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'ESTADO' } } },
+        // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
+        // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,
+        // charts.js), tal como las dibuja el PDF.
+        { tipo: 'bar', titulo: 'Ordenes por servicio (año)', horizontal: true, pctDeTotal: true, series: [
+          { label: 'Ordenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'SERVICIO' }, anual: true } }] },
+        { tipo: 'bar', titulo: 'Estado de ordenes cargadas al STA (año)', horizontal: true, pctDeTotal: true,
+          series: [{ label: 'Ordenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'ESTADO' }, anual: true } }],
+          notas: ['No incluye Cirugia, Pre-revisado de cirugia, Procedimiento menor ni Otros servicios — esos se gestionan aparte.'] },
+        // Grafica 13: se agrega la barra "Agendada" (sta_agendadas ya
+        // existia en el esquema, opcional, sin usar en ningun panel).
         { tipo: 'combo', titulo: 'STA por mes', barras: [
           { label: 'Ordenes Cargadas', fuente: serie('sta_ordenes') },
+          { label: 'Agendada', fuente: serie('sta_agendadas') },
           { label: 'Facturado + Cumplida', fuente: serie('sta_factcump') }],
           linea: { label: '% Efectividad', fuente: pctFormula('sta_factcump', 'sta_ordenes') } },
-        { tipo: 'combo', titulo: 'STA del mes por tipo', barras: [
+        // Grafica 16: ya era exactamente esto, solo se renombra el titulo.
+        { tipo: 'combo', titulo: 'Servicios gestionados del STA del mes', barras: [
           { label: 'Cantidad', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'MES_ACTUAL' } } }],
           linea: { label: '% Efectividad', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', formula: 'a/b*100', a: 'agendas', b: 'cantidad', filtro: { dimension: 'MES_ACTUAL' } } } },
       ]},

@@ -460,6 +460,15 @@ async function _traficoRenderPanel(p, i){
       '</div>' +
       '<div class="aurora-kpis" id="tv-kpis-'+i+'"></div>' +
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="tv-canvas-'+i+'"></canvas></div>' +
+      // Abandono y AHT (graficas 2-3 del PDF de InCo): siempre agregado, sin
+      // el desglose "por separado" de arriba (que es para el grafico
+      // principal) — son tendencias mensuales de la campana completa.
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px">' +
+        '<div><div class="aurora-card-title" style="font-size:0.8rem">Llamadas abandonadas</div>' +
+          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-ab-'+i+'"></canvas></div></div>' +
+        '<div><div class="aurora-card-title" style="font-size:0.8rem">AHT — tiempo promedio de atencion</div>' +
+          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-aht-'+i+'"></canvas></div></div>' +
+      '</div>' +
     '</div>';
   host.dataset.campana = campana;
   host.dataset.sede = sede || '';
@@ -574,6 +583,45 @@ function _traficoRenderContenido(campana, sede, i){
 
   if(typeof _gdChart === 'function'){
     _gdChart(canvasId, { data:{ labels: labels, datasets: datasets }, options: o });
+  }
+
+  // Abandono (graf. 2 del PDF) y AHT (graf. 3) — siempre agregado combinado
+  // (traficoAgregar con combinar:true), sin depender del checkbox "Ver
+  // skills por separado" de arriba: son la tendencia de la campana completa,
+  // igual que las pide InCo. Reutiliza el mismo `filtradas` (mismos filtros
+  // de skill/fecha ya aplicados) y traficoAgregar ya testeado — sin logica
+  // nueva en trafico-logic.js, los campos ya se calculaban y exportaban.
+  var agregadoComb = estado.combinar ? agregado : traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true });
+
+  var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  oAband.scales = {
+    y: { position:'left', grid:{color:'#f0f4f8'}, ticks:{font:{size:8}} },
+    y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
+    x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
+  };
+  oAband.plugins.datalabels = { display:false };
+  oAband.plugins.tooltip = { callbacks: { label: function(ctx){
+    var v = ctx.parsed.y;
+    var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
+    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? v+suf : v.toLocaleString('es-CO')));
+  } } };
+  if(typeof _gdChart === 'function'){
+    _gdChart('tv-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+      datasets:[
+        { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
+        { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
+      ] }, options: oAband });
+  }
+
+  var oAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  var fmtAht = function(v){ if(v===null||v===undefined) return '—'; var m=Math.floor(v/60), s=Math.round(v%60); return m+':'+(s<10?'0':'')+s; };
+  oAht.plugins.datalabels = { display:false };
+  oAht.scales.y.ticks.callback = fmtAht;
+  oAht.plugins.tooltip = { callbacks: { label: function(ctx){ return 'AHT: ' + fmtAht(ctx.parsed.y); } } };
+  if(typeof _gdChart === 'function'){
+    _gdChart('tv-canvas-aht-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+      datasets:[{ label:'AHT', data: agregadoComb.map(function(a){return a.ahtSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false }] },
+      options: oAht });
   }
 }
 

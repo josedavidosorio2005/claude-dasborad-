@@ -40,6 +40,20 @@ function loPct2(xrot){
 }
 function loBar(t){ var o=lo(t); o.plugins.datalabels.align='end'; return o; }
 
+// Datalabel "% del total del dataset" — misma formula que ya usa loPie()
+// (factorizada aqui para no duplicarla), aplicada a una barra en vez de un
+// pie (ej. "Ordenes STA por servicio/estado (año)": cada barra es un % del
+// total del año, no solo la cantidad cruda).
+function _loPctDeTotal(v, ctx){
+  var s = ctx.chart.data.datasets[0].data.reduce(function(a,b){ return a+(b||0); }, 0);
+  return s ? Math.round(v/s*100)+'%' : '';
+}
+function loBarPct(t){
+  var o=loBar(t);
+  o.plugins.datalabels.formatter = _loPctDeTotal;
+  return o;
+}
+
 // ── Formato legible de valores (miles, %, mm:ss) ────────────
 // Se usa en ticks de eje y tooltips para que un dashboard se lea como
 // herramienta de BI y no como volcado de numeros crudos.
@@ -78,9 +92,7 @@ function loPie(t){
     plugins:{
       legend:{position:'right',labels:{font:{size:8},boxWidth:10,padding:4}},
       title:{display:!!t,text:t,font:{size:9},color:CD},
-      datalabels:{display:true,color:'#fff',font:{size:8,weight:'bold'},
-        formatter:function(v,ctx){var s=ctx.chart.data.datasets[0].data.reduce(function(a,b){return a+b;},0); return s?Math.round(v/s*100)+'%':'';}
-      }
+      datalabels:{display:true,color:'#fff',font:{size:8,weight:'bold'}, formatter:_loPctDeTotal}
     }};
 }
 function hFmtTime(v){ var m=Math.floor(v/60),s=v%60; return m+':'+(s<10?'0':'')+s; }
