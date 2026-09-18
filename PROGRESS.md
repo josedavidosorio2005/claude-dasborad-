@@ -2260,3 +2260,67 @@ escritorio/móvil, cero errores de consola. Capturas en
 
 Suite de servidor sin cambios (249/249), `npm audit` limpio —
 `trafico-logic.js` no se tocó.
+
+## Fase 39 — Llamadas 3P/General y Nivel de Atención de ORLANT se calculan solos desde Tráfico (PR #80, 2026-09-18)
+
+Pedido pendiente desde la Fase 1: los 4 KPIs de cabecera de "Flujo
+Mensual" de ORLANT (Llamadas 3P/General, Nivel Atención 3P/General) y sus
+2 gráficas de tendencia dependían de la hoja "resumen" —camino de datos
+separado del de Tráfico/Wolkvox, que nadie llenó nunca para ORLANT, a
+pesar de que Tráfico ya trae la misma información real desde la Fase 36.
+
+**Confirmado antes de codear** (tal como se pidió): `llamadas_3p`,
+`nivel_atencion_3p`, `llamadas_general`, `nivel_atencion_general` solo los
+usa ORLANT (`dashboard-secciones.js` — CLINICA AURORA y HOSPITAL LA MARIA
+tienen esquemas de campo completamente distintos), así que el diseño no
+se generalizó a otras campañas.
+
+**Implementado** (`server/resumen-orlant-trafico.js`, nuevo):
+`recalcularResumenOrlantDesdeTrafico(db, mes)` agrupa
+`calidad_nivel_servicio_diario` por línea —3P/GENERAL, inferida del
+nombre del skill ("termina en ' 3P'"/"termina en ' GENERAL'", los 2 únicos
+casos reales hoy; no se agregó un campo "línea" nuevo a
+`trafico_skill_mapeo`— y upsertea *solo* esos 4 campos en el resumen
+mensual (`dashboard_cargas`) de ORLANT, sin tocar ningún otro campo ya
+presente (whatsapp, agendas, citas...). `nivelAtencionPct` = contestadas/
+total del período, nunca promedio de los % diarios (mismo criterio que
+`traficoAgregar`). Se dispara desde `cargarTrafico()` (cada carga) *y*
+`remapearSkill()` — remapear una skill de/hacia ORLANT también cambia su
+tráfico ese mes, el caso real de la Fase 36; no estaba en el pedido
+original pero se agregó para no dejar un hueco de staleness.
+
+**Precedencia** (resumen manual vs. Tráfico): en vez de tocar la lógica
+genérica de reemplazo completo de `POST /dashboard/cargas` (compartida por
+todos los clientes/secciones), se optó por re-correr el recálculo de
+Tráfico después de cualquier carga manual de `(ORLANT, resumen)` — si
+Tráfico tiene datos para ese mes, gana para esos 4 campos; si no, la carga
+manual se respeta tal cual (aditivo, nunca deja un mes peor de lo que
+estaba).
+
+**Hallazgo reportado, no corregido en esta fase**: cuando Tráfico crea la
+*primera* fila de resumen de un mes (el caso real de producción: ORLANT
+nunca tuvo un resumen), las otras ~18 columnas que Tráfico no toca
+(WhatsApp, agendas, citas...) pasan de mostrarse como "—" a "0" —
+`_gdNum()` (`dashboard-generic.js`, sin tocar) no distingue "campo
+ausente" de "campo en cero". Es un helper de frontend compartido por
+muchas otras métricas/clientes; arreglarlo es un cambio de alcance mayor
+al de esta fase. Visible en las capturas de producción (abajo).
+
+**Verificación**: 7 tests nuevos (`resumen-orlant-trafico.test.js`) —
+agregación por contestadas/total (no promedio de %), el upsert no borra
+otros campos, precedencia en ambos órdenes, skill sin clasificar no rompe
+nada. Suite completa 256/256 (249 + 7), `npm audit` limpio. Playwright
+local: antes/después de subir Tráfico para un mes de ORLANT sin resumen
+previo, los 4 KPIs pasan de "—" a números reales, en claro/oscuro y
+escritorio/móvil.
+
+**Verificado en producción real**: el fix no es retroactivo (solo corre en
+cargas/remapeos *nuevos*), así que se re-subió el mismo archivo real de
+agosto 2026 (Fase 36) — idempotente para las filas de Tráfico, dispara el
+recálculo del resumen. Antes: `MES: Sin datos`, los 6 KPIs relevantes en
+"—", banner "este dashboard todavía no tiene datos cargados". Después:
+`MES: Ago-26`, **Llamadas 3P: 4.011**, **Nivel Atención 3P: 98.16%**,
+**Llamadas Línea General: 4.050**, **Nivel Atención L.General: 79.56%** —
+4.011 + 4.050 = 8.061, exactamente el total ya verificado en la pestaña
+Tráfico (Fase 36/38). Capturas antes/después (claro/oscuro,
+escritorio/móvil) en `docs/capturas-demo/fase39-resumen-orlant-trafico/`.
