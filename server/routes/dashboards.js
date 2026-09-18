@@ -9,6 +9,7 @@ const { requireActor, isFullAdmin, can, canLoadData, requireDataLoader } = requi
 const { validate, schemas } = require('../validation');
 const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
+const { recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -326,6 +327,18 @@ router.post(
         .run(payload);
       id = info.lastInsertRowid;
     }
+
+    // Fase 39: Trafico es la fuente de verdad para llamadas_3p/
+    // nivel_atencion_3p/llamadas_general/nivel_atencion_general de ORLANT --
+    // si esta carga manual de "resumen" trae sus propios valores para esos 4
+    // campos, se re-aplican de inmediato los que ya calculo Trafico (si hay
+    // datos de Trafico para este mes; si no hay, no hace nada y los valores
+    // recien subidos a mano quedan tal cual, igual que hoy). El resto de
+    // columnas de esta carga (whatsapp, agendas, citas, etc.) no se tocan.
+    if (b.cliente === 'ORLANT' && b.seccion === 'resumen') {
+      recalcularResumenOrlantDesdeTrafico(db, b.periodo, now);
+    }
+
     const row = db.prepare('SELECT * FROM dashboard_cargas WHERE id = ?').get(id);
     logEvent(
       existing ? 'DASHBOARD_CARGA_EDIT' : 'DASHBOARD_CARGA',
