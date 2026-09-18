@@ -750,6 +750,74 @@ runOnceMigration('umbrales_semaforo_seed_v1', () => {
   }
 });
 
+// ORLANT: gráficas del PDF de InCo (2026-09-18) — dashboards_config solo se
+// siembra si el cliente TODAVIA no existe (ver arriba), y ORLANT ya existe en
+// produccion, asi que editar dashboard-config-seed.js por si solo nunca
+// llega a la fila real. Esta migracion mueve el layout de ORLANT en
+// produccion a la MISMA forma que dashboard-config-seed.js define ahora
+// (misma fuente unica de verdad: se lee de CONFIGS, no se repite el JSON a
+// mano) — mismo criterio de las migraciones de arriba.
+//
+// Defensiva por tab: solo reemplaza un tab si su forma actual coincide con
+// la "vieja" reconocible (antes de este cambio); si ya tiene la forma nueva
+// (marca ya aplicada, o dashboard recien creado por el seed) o fue editada
+// a mano a algo distinto, se deja intacta y se loguea — nunca se pisa una
+// personalizacion sin poder reconocerla.
+runOnceMigration('dashboards_config_orlant_pdf_graficas_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTabs = {};
+  (target.layout.tabs || []).forEach((t) => { targetTabs[t.key] = t; });
+
+  const yaEsNuevo = {
+    salida: (t) => (t.panels || []).some((p) => p.filtroSerie === true),
+    tipificacion: (t) => (t.panels || []).some((p) => p.filtroCampo === 'linea'),
+    agendamiento: (t) => (t.panels || []).some((p) => p.tipo === 'nota_kpi'),
+    sta: (t) => (t.panels || [])[1] && (t.panels || [])[1].tipo === 'bar',
+  };
+  const esViejoReconocible = {
+    salida: (t) => (t.panels || []).length === 4 && (t.panels || []).every((p) => p.tipo === 'line' && !p.filtroSerie),
+    tipificacion: (t) => (t.panels || []).length === 2 && (t.panels || []).every((p) => p.tipo === 'pie' && !p.filtroCampo),
+    agendamiento: (t) => (t.panels || []).length === 4,
+    sta: (t) => (t.panels || []).length === 4 && (t.panels || [])[1] && (t.panels || [])[1].tipo === 'pie',
+  };
+
+  let tocado = false;
+  (layout.tabs || []).forEach((tab) => {
+    const chequeoNuevo = yaEsNuevo[tab.key];
+    const chequeoViejo = esViejoReconocible[tab.key];
+    if (!chequeoNuevo || !targetTabs[tab.key]) return; // no es uno de los 4 tabs que cambian
+    if (chequeoNuevo(tab)) return; // ya tiene la forma nueva, nada que hacer
+    if (!chequeoViejo(tab)) {
+      if (!config.isTest) {
+        console.log(`[db] Migracion dashboards_config_orlant_pdf_graficas_v1: tab "${tab.key}" no coincide con la forma esperada (vieja ni nueva) — se deja intacta, revisar a mano.`);
+      }
+      return;
+    }
+    tab.panels = JSON.parse(JSON.stringify(targetTabs[tab.key].panels));
+    tocado = true;
+  });
+
+  if (tocado) {
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      'ORLANT'
+    );
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_orlant_pdf_graficas_v1 aplicada (tocado=${tocado}).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

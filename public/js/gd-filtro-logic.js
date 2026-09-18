@@ -55,11 +55,43 @@ function gdValoresDistintos(filas, campo) {
   return out;
 }
 
+// Elige una serie entre varias por su `label` (panel con `filtroSerie:true`,
+// ej. Llamadas de salida con series Linea General / Linea 3P — una sola
+// grafica, selector en vez de 4 paneles separados). Sin seleccion, o una
+// seleccion que ya no existe en `series` (ej. quedo en la URL/estado de un
+// panel que cambio de series), cae a la primera — nunca a "ninguna serie".
+function gdSerieSeleccionada(series, labelSeleccionado) {
+  var lista = series || [];
+  if (!lista.length) return null;
+  if (labelSeleccionado) {
+    var m = lista.filter(function (s) { return s.label === labelSeleccionado; })[0];
+    if (m) return m;
+  }
+  return lista[0];
+}
+
+// 'YYYY-MM' -> 'YYYY'. null-safe (sin mes seleccionado, ej. dashboard recien
+// abierto sin cargas todavia).
+function gdAnioDeMes(mes) {
+  return (mes && /^\d{4}-\d{2}/.test(mes)) ? mes.slice(0, 4) : null;
+}
+
+// Cargas (cada una con `.periodo` 'YYYY-MM') cuyo anio coincide con `anio`
+// ('YYYY'). Sin `anio` -> ninguna carga (nunca "todas" por accidente: una
+// agregacion "(año)" sin año resuelto no debe sumar años distintos).
+function gdCargasDelAnio(cargas, anio) {
+  if (!anio) return [];
+  return (cargas || []).filter(function (c) { return c && typeof c.periodo === 'string' && c.periodo.slice(0, 4) === anio; });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     gdFiltrarFilasCategorias: gdFiltrarFilasCategorias,
     gdFiltrarFilasRangoFechas: gdFiltrarFilasRangoFechas,
     gdValoresDistintos: gdValoresDistintos,
+    gdSerieSeleccionada: gdSerieSeleccionada,
+    gdAnioDeMes: gdAnioDeMes,
+    gdCargasDelAnio: gdCargasDelAnio,
   };
 }
