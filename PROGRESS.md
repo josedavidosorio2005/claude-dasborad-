@@ -1843,3 +1843,94 @@ María en este cierre: no se cuenta con el nombre exacto que usa Wolkvox
 para ninguna de las dos campañas (ni sus sedes Castilla/Sede 33). Queda
 para que InCo lo registre él mismo desde esta pantalla nueva en cuanto
 tenga el dato real — nunca se inventó un nombre de skill.
+
+---
+
+## Fase 33 — Dashboard de ORLANT con las 16 gráficas del PDF de InCo (PRs #64-65, 2026-09-18)
+
+Pedido de InCo, con el orden decidido tras la auditoría de la Fase 30
+(reporte publicado como artifact, `17d6b216-…`): implementar **solo
+ORLANT** — es la campaña que ya tenía casi todo listo (STA ya construido,
+Salida con esquema completo aunque sin datos, tipificación sin límite de
+esquema). Clínica Aurora y Hospital La María no se tocan: tienen preguntas
+de negocio sin responder (¿"línea 3P" aplica a ellas? ¿"ordenamiento
+médico" es exclusivo de Orlant?).
+
+### Hallazgo de arquitectura antes de tocar nada
+
+`dashboards_config` solo se siembra si el cliente **no existe todavía**
+(`server/db.js`) — ORLANT ya existe en producción, así que editar
+`dashboard-config-seed.js` por sí solo nunca llega a la fila real. Se
+agregó la migración `dashboards_config_orlant_pdf_graficas_v1` que mueve
+el layout de producción a la misma forma que el seed define ahora (la
+migración lee el layout objetivo directo de `CONFIGS`, una sola fuente de
+verdad, sin repetir el JSON a mano). Defensiva por tab: solo reemplaza un
+tab si su forma actual coincide con la vieja reconocible; si no la
+reconoce (personalización manual), lo deja intacto y lo loguea —
+verificado con un test que simula un tab de ORLANT editado a mano y
+confirma que la migración no lo toca (`orlant-graficas-migracion.test.js`).
+
+### Qué se construyó (motor genérico, 3 capacidades nuevas reutilizadas ≥2 veces)
+
+| Capacidad | Dónde | Para qué |
+|---|---|---|
+| `filtroCampo` (filtro-por-panel existente, generalizado a filtrar por una columna distinta al eje X) | `dashboard-generic.js` | Tipificación: 1 pie filtrable por línea en vez de 2 pies fijos |
+| `filtroSerie` (selector de 1 serie entre varias + "Total: N") | `dashboard-generic.js` + `gdSerieSeleccionada` nueva en `gd-filtro-logic.js` | Salida: 1 gráfica de llamadas + 1 de WhatsApp, cada una con selector Línea General/3P |
+| Agregación anual (`modo:'anual'` escalar, `f.anual` agrupado por categoría) | `dashboard-generic.js` + `gdAnioDeMes`/`gdCargasDelAnio` nuevas en `gd-filtro-logic.js` | KPI anual de ordenamiento médico (panel `nota_kpi` nuevo) y "Órdenes por servicio/estado (año)" de STA |
+| `loBarPct` (% del total en barras, factorizado del mismo cálculo que ya usaba `loPie`) | `charts.js` | Órdenes por servicio/estado |
+
+Cero cambios de esquema de carga (`dashboard-secciones.js` sin tocar).
+`trafico.js` agrega 2 gráficas más (abandono, AHT) al panel de Tráfico ya
+existente, reusando datos que `traficoAgregar()` ya calculaba y exportaba
+a Excel pero no tenían gráfica propia — sin tocar `trafico-logic.js`.
+
+### Disposición de los 9 tabs de ORLANT
+
+- **Ajustados** (mismo dato, formato del PDF): Tráfico (+2 canvases),
+  "Agendas por línea" (bar→line), "STA por mes" (+barra Agendada), "Órdenes
+  por servicio" (+anual/+%), "STA del mes por tipo" (solo título).
+- **Reemplazados** (redundancia obvia con lo nuevo — mismos campos/fuente,
+  juicio propio, explicado en el PR): 4 líneas de Salida → 2 paneles con
+  selector de línea; 2 pies de Tipificación → 1 con filtro; "Órdenes por
+  estado" pie → bar con %.
+- **Nuevos**: `nota_kpi` "Efectividad del año — Ordenamiento médico 3P",
+  "Total agendas — variación % mes a mes" (reusa `transform:'incremento'`,
+  ya existía, lo usa Aurora).
+- **Sin equivalente en el PDF, se mantienen intactos**: tab "Flujo
+  Mensual", panel "Recuperación de cancelados", tab "Efectividad Citas",
+  tab "Calidad".
+- **Ya calzaba, sin cambios**: tab "Inasistencia" (4 líneas, ya idéntico a
+  la gráfica 12 del PDF).
+
+**Verificación**: `npm test` → **242/242** (8 tests nuevos de lógica pura +
+2 de la migración), `npm audit` → 0 vulnerabilidades. CI verde en Node
+18/20/22 + docker-build, deploy automático (PR #64).
+
+**Verificación en producción real** (PR #65, workflow nuevo
+`verificar-graficas-orlant-produccion.yml`, mismo patrón de usuario
+temporal + SSH temporal que las verificaciones anteriores, de solo
+lectura): Playwright abrió el dashboard real de ORLANT (datos reales de
+nov-2026) y confirmó cada tab — capturas en `docs/capturas-demo/
+orlant-graficas-pdf-*.png`:
+
+| Tab | Resultado real |
+|---|---|
+| Tráfico | Los 2 canvases nuevos (abandono, AHT) están listos, pero la campaña **no tiene ningún dato cargado en el módulo Tráfico/Volvox** — el panel muestra "Sin datos cargados todavía" en vez de las 3 gráficas. Hallazgo nuevo: los KPIs de llamadas 3P/General de la cabecera vienen de la sección `resumen` (carga manual por Excel), un camino de datos paralelo al de Tráfico/Volvox — Orlant nunca subió un archivo de Volvox. |
+| Salida | Los 2 paneles con selector de línea renderizan correctamente la UI (dropdown General/3P, botón Aplicar, "Total: 0") — confirma en cero, como ya se sabía. |
+| Tipificación | El pie renderiza con datos **reales** ya cargados — pero las categorías reales (`Agendamiento`, `Información general`, `Reprogramación`, `Cancelación`, `No contesta/llamada cortada`) **no coinciden** con los 2 códigos del glosario (`INFORMACION_3P`, `INFORMACION_SECRETARIA`, tomados del PDF). El glosario queda marcado como "basado en el PDF, confirmar" — confirmado que hacía falta esa advertencia. |
+| Agendamiento | El `nota_kpi` renderiza el texto real: *"...se han gestionado un total de 1.640 pacientes, de los cuales se han logrado agendar 1.230 — efectividad del año: 75%."* — coincide con el formato exacto del PDF. |
+| Inasistencia | Sin cambios, datos reales (10,5% / 8,3% / 6,7% / 8,6%). Se observó un defecto cosmético **preexistente** (no introducido en esta fase): las etiquetas del eje Y muestran ruido de punto flotante (ej. "8.7000000000001%") en rangos muy angostos — queda anotado para una fase aparte, no se tocó. |
+| Gestión STA | "Órdenes por servicio (año)" y "Estado de órdenes (año)" renderizan con datos reales y % del total (33/29/23/15% y 62/13/15/6/4%), con la nota de exclusiones visible. |
+
+Workflow y usuario temporal (`verif_graf_orlant_<run id>`, rol `ADMIN`,
+creado/borrado directo en la base de datos) limpiados automáticamente al
+final del run — de solo lectura, ninguna fila real de ORLANT se tocó.
+
+### Pendiente / decisión de InCo
+
+- Confirmar el glosario de Tipificación contra las categorías reales (no
+  coinciden con las del PDF) o quitarlo si no aporta.
+- Salida y Tráfico/Volvox siguen sin archivo real — fuera del alcance de
+  esta fase (vacío de datos ya conocido).
+- El defecto cosmético del eje Y de Inasistencia (punto flotante) queda
+  para una fase aparte.
