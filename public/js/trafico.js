@@ -496,6 +496,12 @@ async function _traficoRenderPanel(p, i){
           '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-ab-'+i+'"></canvas></div></div>' +
         '<div><div class="aurora-card-title" style="font-size:0.8rem">AHT — tiempo promedio de atencion</div>' +
           '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-aht-'+i+'"></canvas></div></div>' +
+        '<div><div class="aurora-card-title" style="font-size:0.8rem">ASA y ATA — tiempo promedio de respuesta y de abandono</div>' +
+          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-asaata-'+i+'"></canvas></div></div>' +
+        '<div><div class="aurora-card-title" style="font-size:0.8rem">Wait Time — tiempo de espera</div>' +
+          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-wait-'+i+'"></canvas></div></div>' +
+        '<div><div class="aurora-card-title" style="font-size:0.8rem">Niveles de Servicio a 10s y 30s</div>' +
+          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-sl-'+i+'"></canvas></div></div>' +
       '</div>' +
     '</div>';
   host.dataset.campana = campana;
@@ -650,6 +656,50 @@ function _traficoRenderContenido(campana, sede, i){
     _gdChart('tv-canvas-aht-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[{ label:'AHT', data: agregadoComb.map(function(a){return a.ahtSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false }] },
       options: oAht });
+  }
+
+  // ASA/ATA, Wait Time y Niveles de Servicio 10s/30s (Fase 38): estos 5
+  // campos ya llegaban calculados en `agregado`/`agregadoComb` (ponderados
+  // por volumen, PCT_PONDERADOS/NUM_PONDERADOS en trafico-logic.js) y ya se
+  // exportaban a Excel (_traficoDatosExport) -- solo faltaba pintarlos.
+  // Mismo patron que Abandono/AHT arriba: agregadoComb siempre combinado,
+  // sin depender del checkbox "Ver skills por separado".
+  var oAsaAta = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  oAsaAta.plugins.datalabels = { display:false };
+  oAsaAta.scales.y.ticks.callback = fmtAht;
+  oAsaAta.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtAht(ctx.parsed.y); } } };
+  if(typeof _gdChart === 'function'){
+    _gdChart('tv-canvas-asaata-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+      datasets:[
+        { label:'ASA', data: agregadoComb.map(function(a){return a.asaSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+        { label:'ATA', data: agregadoComb.map(function(a){return a.ataSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+      ] }, options: oAsaAta });
+  }
+
+  var oWait = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  oWait.plugins.datalabels = { display:false };
+  oWait.scales.y.ticks.callback = fmtAht;
+  oWait.plugins.tooltip = { callbacks: { label: function(ctx){ return 'Wait Time: ' + fmtAht(ctx.parsed.y); } } };
+  if(typeof _gdChart === 'function'){
+    _gdChart('tv-canvas-wait-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+      datasets:[{ label:'Wait Time', data: agregadoComb.map(function(a){return a.waitTimeSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false }] },
+      options: oWait });
+  }
+
+  var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  oSl.plugins.datalabels = { display:false };
+  oSl.scales.y.min = 0; oSl.scales.y.max = 100;
+  oSl.scales.y.ticks.callback = function(v){ return v+'%'; };
+  oSl.plugins.tooltip = { callbacks: { label: function(ctx){
+    var v = ctx.parsed.y;
+    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : v+'%');
+  } } };
+  if(typeof _gdChart === 'function'){
+    _gdChart('tv-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+      datasets:[
+        { label:'SL 10s', data: agregadoComb.map(function(a){return a.serviceLevel10secPct;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+        { label:'SL 30s', data: agregadoComb.map(function(a){return a.serviceLevel30secPct;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+      ] }, options: oSl });
   }
 }
 
