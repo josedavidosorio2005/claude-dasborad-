@@ -2106,3 +2106,71 @@ solo el toggle público del login) confirmó `data-theme` cambiando de
 `light` a `dark` al click, guardado en `localStorage`, y conservado tras
 recargar la página — y que el HTML servido en producción ya incluye
 `js/theme.js` y el botón `.theme-toggle`.
+
+## Fase 36 — Trafico real de ORLANT (agosto 2026) + retiro de los datos de prueba de la Fase 34 (2026-09-18)
+
+Operación de datos sobre producción real, sin cambios de código: InCo mandó
+el archivo real de tráfico de ORLANT para agosto 2026, ya lleno sobre la
+plantilla oficial (`server/plantillas/PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx`).
+Confirmado antes de usarlo (hoja `DATA`, 13 columnas del subconjunto
+oficial, 50 filas, 2 skills — `CALL INBOUND ORLANT 3P` y
+`CALL INBOUND ORLANT GENERAL` —, 2026-08-01 a 2026-08-31, sin fines de
+semana/festivos, sin fila `TOTAL`). El archivo nunca se comiteó al repo —
+vivió solo en `Claude outputs/` local, subido a producción por Playwright
+contra la UI real y borrado del scratch al terminar.
+
+**Mapeo de skills — hallazgo antes de subir nada:** al revisar
+`GET /calidad/trafico/skills` en producción, **ninguna de las 2 skills
+del archivo estaba mapeada todavía** — ni siquiera `CALL INBOUND ORLANT 3P`,
+que se asumía ya mapeada por haberse usado en el fixture `EJEMPLO.xlsx`
+(ese fixture resultó ser solo de pruebas locales — `server/tests/` —, nunca
+se subió a producción real). Se procedió igual (el diseño de la campaña
+centinela `(SIN ASIGNAR)` de la Fase 18 cubre exactamente este caso sin
+romper la carga), y se documenta aquí en vez de asumirlo silenciosamente.
+
+**Carga — Opción A (Playwright contra la UI real)**: login como admin
+maestro, `showSection('metas')` (la carga de Tráfico vive en la pantalla
+**Metas Calidad**, no en el modal "Cargar Datos" — primer intento fallido
+por confundir ambas pantallas, corregido antes de guardar nada), subir el
+archivo por `#tv-file`, revisar el preview (50 filas válidas, 2 skills, 1
+mes — 2026-08 — coincide exacto con la inspección previa), "Guardar carga
+de tráfico". Resultado: 50 filas guardadas, ambas skills cayeron en
+`(SIN ASIGNAR)` como se esperaba, remapeadas a ORLANT vía el mismo
+`PUT /api/calidad/trafico/skills/:skillName` que ya usa el panel — 25
+filas reatribuidas cada una, mes 2026-08 recalculado tanto para el
+sentinel como para ORLANT. Mapeo final confirmado: ambas skills → ORLANT,
+25 filas cada una, cobertura muestra el archivo real como origen.
+
+**Retiro de los datos de prueba (Fase 34)**: disparado
+`qa-datos-prueba-trafico-salida-orlant.yml` con `borrar_al_final=true`. El
+job general salió en rojo (falla en unos checks de Tipificación del propio
+script de QA, preexistentes y sin relación con esta fase — no se tocó ese
+script), pero los pasos de borrado corren con `if: always()` y sí
+completaron: `USUARIO_TEMPORAL_BORRADO {"filasBorradas":1}`,
+`DATOS_DE_PRUEBA_BORRADOS {"traficoDiarioBorradas":8,"traficoMensualBorradas":8,"skillMapeoBorrado":1,"cargaSalidaPruebaBorrada":1}`,
+`VERIFICACION_LIMPIEZA {"limpio":true,...}` — cero rastro confirmado por el
+propio workflow. Verificado además por separado que el borrado no tocó
+ninguna fila de agosto 2026 (`mapeoFinal` solo muestra las 2 skills reales,
+25 filas cada una, sin cambios).
+
+**Verificado en producción real**: dashboard de ORLANT, pestaña Tráfico,
+muestra agosto 2026 real (8.061 llamadas totales, 7.159 contestadas, 902
+abandonadas, 88.8% nivel de atención) con ambas skills seleccionables en el
+filtro y ninguna mención a `PRUEBA_QA_GRAFICAS_ORLANT` ni a fechas 2020. La
+pestaña Salida quedó vacía ("Sin datos cargados para este periodo"), tal
+como se esperaba (no se subió nada ahí en esta fase). Capturas en
+`docs/capturas-demo/trafico-real-orlant-agosto-2026-*.png`.
+
+**Nota de seguridad operativa**: se evitó tocar el admin maestro real
+creando de entrada un usuario ADMIN temporal por SSH+DB (mismo patrón que
+`qa-datos-prueba-trafico-salida-orlant.yml`), pero el PR que agregaba ese
+workflow nuevo fue bloqueado por el clasificador de seguridad del harness
+de Claude Code (cualquier PR que agregue/modifique un workflow de CI con
+acceso a secretos de despliegue queda sujeto a revisión humana, por
+diseño). InCo optó por pasar las credenciales del admin maestro
+directamente en vez de resolver ese bloqueo; llegaron por el chat en lugar
+del archivo local pedido — se recomienda rotar esa contraseña como buena
+práctica tras esta fase. La rama sin mergear
+`ops/usuario-temporal-trafico-real-orlant-2026-09-18` quedó pusheada pero
+sin usar; se puede borrar o dejar para una próxima vez que haga falta este
+mismo patrón.
