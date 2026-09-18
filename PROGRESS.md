@@ -2174,3 +2174,53 @@ práctica tras esta fase. La rama sin mergear
 `ops/usuario-temporal-trafico-real-orlant-2026-09-18` quedó pusheada pero
 sin usar; se puede borrar o dejar para una próxima vez que haga falta este
 mismo patrón.
+
+## Fase 37 — Cronograma y Metas de Monitoreo reorganizado en sub-pestañas (PR #76, 2026-09-18)
+
+Pedido pendiente desde la Fase 1 (14/09): `#section-metas` había crecido de
+2 tarjetas a 9, todas apiladas sueltas sin agrupar — la causa real de la
+sensación de "pantallas separadas" reportada por el usuario, que empeoraba
+con cada fase nueva en vez de mejorar.
+
+**Agrupamiento confirmado contra el código real antes de tocar nada** (tal
+como se pidió): las 9 tarjetas se agrupan en 3 sub-pestañas — Cronograma
+(1-2), Nivel de Servicio (3, 4, 9) y Tráfico/Wolkvox (5-8) — mismo patrón
+visual `.aurora-tabs`/`.atab` que ya usan los dashboards de cliente
+(`dashboard-generic.js`), sin crear página nueva ni tocar el menú
+principal. Cero cambios de backend: solo se envolvió el HTML existente en
+3 `<div>` y se agregó `switchMetasTab()` (`metas.js`) para alternar cuál
+está visible — ningún formulario cambió de id, firma ni comportamiento de
+guardado.
+
+**Hallazgo en el pedido original**: la nota sobre "Volvox" decía que
+aparecía en la pantalla de mapeo y "la copia del punto 3" (Nivel de
+Servicio manual) — pero el código real no menciona Volvox ahí. Sí aparecía
+(sin haberlo pedido) en "Control de Cargas por Periodo" (punto 8) y en las
+tarjetas "Trafico de Llamadas" que ven los 12 dashboards de cliente
+(`trafico.js`) y en la plantilla consolidada de carga (`cargas-logic.js`).
+Se corrigieron todas por ser igual de triviales (solo texto), y se
+documenta aquí la discrepancia en vez de asumir que el pedido original
+tenía razón.
+
+**De paso**: la carga simple de Nivel de Servicio (Fase 1) quedó marcada
+con un badge nuevo "Método anterior — 1 campaña" (`.badge-legacy`,
+`styles.css`) — sigue funcionando igual, solo menos prominente que la
+carga Wolkvox multi-skill recomendada. Se agregó el filtro de Campana
+pedido a "Historial de Nivel de Servicio" y "Mapeo de Skills → Campana"
+(gap anotado sin resolver en la Fase 34) — mismo patrón `hist-filter-sel`
+que ya usaba el filtro de mes, opciones derivadas de los datos reales
+(incluye `(SIN ASIGNAR)`).
+
+**Verificación**: suite de servidor sin cambios, 249/249 en verde (cambio
+100% frontend), `npm audit` limpio. Playwright **local** (entorno propio,
+sin tocar producción) confirmó que las 3 formas de cargar Nivel de
+Servicio/Tráfico (manual, Excel simple, Excel Wolkvox multi-skill) y el
+cronograma siguen guardando exactamente igual que antes, ahora agrupadas
+en pestañas, y que ambos filtros de Campana nuevos funcionan — capturas
+claro/oscuro y escritorio/móvil en `docs/capturas-demo/fase37-metas-tabs/`.
+
+**Verificado en producción real**: tras el merge del PR #76 y el deploy
+automático, un chequeo de Playwright de solo lectura (login con el admin
+maestro, sin tocar ningún botón de Guardar) confirmó las 3 pestañas
+desplegadas, el badge "Método anterior", ambos filtros de Campana nuevos y
+el texto "Wolkvox" ya en producción.
