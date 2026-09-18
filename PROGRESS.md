@@ -2025,3 +2025,84 @@ y suba el primer archivo real: el mapeo por SKILL_NAME es 1 a 1, así que
 un skill real nuevo no choca con `PRUEBA_QA_GRAFICAS_ORLANT` (nombres
 distintos) — ambos convivirían hasta que alguien borre el de prueba a
 mano.
+
+## Fase 35 — Tema oscuro/claro para toda la plataforma (PR #72, 2026-09-18)
+
+Pedido de InCo: tema oscuro consistente en toda la app (login, admin, los
+12 dashboards de cliente incluido ORLANT, Calidad, Gerencia, Inventario,
+Gestión Humana), como parte de seguir profesionalizando la apariencia,
+apoyándose en el trabajo de variables CSS del PR #51.
+
+**Reconocimiento previo (pedido explícito antes de tocar nada):** la
+cobertura de variables de `styles.css` es más parcial de lo que parece.
+Está bien tokenizada para superficies/texto/bordes/marca — extenderla con
+un segundo set oscuro cubre la mayoría del CSS sin reescribirlo. Pero dos
+categorías quedaban completamente fuera de ese sistema, sin que el PR #51
+las detectara porque no eran literales *duplicados* de una variable (eran
+únicos):
+
+1. **Chart.js 100% hardcodeado en JS, no en CSS** — `charts.js` definía
+   `CD/CM/CG/CR/CO/CP` y el array `PC` (paleta categórica) como hex fijos,
+   y `lo()/loPie()/loBar()/loPct()` escribían colores de eje/leyenda/
+   título/datalabel como strings literales. Nada de esto pasaba por
+   `var(--...)`.
+2. **~140 literales hex sueltos en `public/js/*.js`** — casi todos
+   `style="color:#xxxx"` en HTML generado dinámicamente (estados vacíos,
+   notas, badges "sin asignar", menú de exportar) en `dashboard-generic.js`,
+   `trafico.js`, `cargas.js`, `historial.js`, `users.js`, `gerencia.js`,
+   `inventario.js`, `gestion-humana.js`, `calidad.js`.
+
+**Diseño:** atributo `data-theme` en `<html>` (fijado por un script inline
+bloqueante en `<head>`, antes del primer paint, para no parpadear),
+persistido en `localStorage` (`inco_tema`). `public/js/theme.js` (nuevo)
+expone `toggleTema()`/`aplicarTema()`, y un botón `🌙/☀️` siempre visible en
+las 4 navbars (admin/user/asesor/supervisor, fuera del menú de perfil
+colapsable para que también se vea en móvil) + uno flotante en el login.
+
+`styles.css` extiende el `:root` existente con `:root[data-theme="dark"]`
+(mismos tokens, redefinidos) y promueve a la variable de marca fija
+`--c-brand` los usos de `--c-primary` que son fondo/chrome (navbar,
+botones, toast, headers de tablero) — `--c-primary` en sí queda libre para
+aclararse en oscuro, porque el resto de sus ~25 usos en el archivo son
+texto/acento sobre una tarjeta que deja de ser blanca. Para Chart.js,
+`charts.js` reasigna esas mismas constantes globales (`CD/CM/CG/CR/CO/CP/PC`
++ nuevas `CHART_GRID/CHART_TICK/CHART_DL_BG`) según el tema — el resto del
+código ya las lee por nombre al construir cada gráfica, así que no hizo
+falta tocar esos call-sites. Gráficas ya abiertas se redibujan al togglear
+reusando el mecanismo que la app ya tenía para cambios de filtro
+(`renderGenericTab`/`renderCalReportes`/`renderMisResultados`, destruyen y
+recrean canvases desde el estado en memoria, sin refetch).
+
+**Semáforo y paleta categórica — sin cambios de lógica.** `semaforo-logic.js`
+sigue devolviendo solo `'verde'/'amarillo'/'rojo'`; el ajuste de contraste
+en oscuro es 100% CSS (`td.kpi-green/org/red`, `.aurora-kpi.kpi-*`).
+`paleta-logic.js` sigue derivando el índice por hash de forma determinista;
+se le sumó un array alterno `PC_DARK` en `charts.js` (mismo índice = mismo
+color, ahora en su versión oscura) sin tocar `paletaColorPara`.
+
+**Excluido a propósito:** el HTML de impresión/exportación a PDF
+(`_gdExportPrint()` y su equivalente en `trafico.js`) abre una ventana
+aparte para imprimir en papel — ajena por completo al `data-theme` de la
+app, se queda blanco siempre. El banner fijo de "DATOS DE DEMOSTRACIÓN"
+(`state.js`) también se dejó con su color de advertencia fijo en ambos
+temas, a propósito (máxima visibilidad).
+
+**Verificación:** suite de servidor sin cambios, 249/249 en verde (cambio
+100% frontend), `npm audit` limpio. Script nuevo
+`.github/scripts/capturas-tema-oscuro.js` (mismo estilo que los de
+verificación en producción existentes) corrido en local contra los datos
+de prueba `PRUEBA_QA_GRAFICAS_ORLANT` que InCo dejó vivos en ORLANT (Fase
+34) — de solo lectura, no los tocó. Confirmó, con capturas claro/oscuro en
+escritorio y móvil (~412px) en `docs/capturas-demo/tema-oscuro/`: login,
+Usuarios (tabla de admin), el dashboard de ORLANT completo (con sus
+gráficas) y el modal de Previsualizar — semáforo y paleta categórica
+legibles y distinguibles en oscuro, y persistencia del tema confirmada tras
+recargar la página.
+
+**Verificado en producción real**: tras el merge del PR #72 y el deploy
+automático, un chequeo de Playwright contra
+`https://inconexionpruebasclaude.duckdns.org` (sin crear ningún usuario,
+solo el toggle público del login) confirmó `data-theme` cambiando de
+`light` a `dark` al click, guardado en `localStorage`, y conservado tras
+recargar la página — y que el HTML servido en producción ya incluye
+`js/theme.js` y el botón `.theme-toggle`.
