@@ -10,6 +10,7 @@
 'use strict';
 
 const { cargarNivelServicioDiario, recalcularMensual } = require('./nivel-servicio-diario');
+const { recalcularResumenOrlantDesdeTrafico } = require('./resumen-orlant-trafico');
 
 const SIN_ASIGNAR = '(SIN ASIGNAR)';
 
@@ -73,8 +74,21 @@ function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas }) {
     resultadosPorCampana.push({ campana, sede, filas: r.diario.insertadas, meses: r.mensual.map((m) => m.mes) });
   }
 
+  // Fase 39: cada carga de Trafico para ORLANT recalcula tambien
+  // llamadas_3p/nivel_atencion_3p/llamadas_general/nivel_atencion_general en
+  // el resumen mensual (dashboard_cargas) -- mismo lugar/momento donde ya se
+  // recalcula el mensual de calidad_nivel_servicio arriba, para los meses
+  // que esta carga realmente toco.
+  const resumenActualizado = [];
+  for (const { campana, meses } of resultadosPorCampana) {
+    if (campana !== 'ORLANT') continue;
+    for (const mes of meses) {
+      resumenActualizado.push({ mes, ...recalcularResumenOrlantDesdeTrafico(db, mes) });
+    }
+  }
+
   const skillsSinAsignar = skillNames.filter((s) => resueltoPorSkill.get(s).campana === SIN_ASIGNAR);
-  return { insertadas, campanas: [...campanasVistas], skillsSinAsignar, porCampana: resultadosPorCampana };
+  return { insertadas, campanas: [...campanasVistas], skillsSinAsignar, porCampana: resultadosPorCampana, resumenActualizado };
 }
 
 // Skills conocidas para el panel de mapeo del admin, con cuantas filas de
@@ -147,6 +161,14 @@ function remapearSkill(db, { skillName, campana, sede }) {
     recalcularMensual(db, nuevaCampana, mes, ts, sede);
     mesesRecalculados.push({ campana: nuevaCampana, sede, mes });
   }
+
+  // Fase 39: remapear una skill de/hacia ORLANT (ej. de "(SIN ASIGNAR)" a
+  // ORLANT tras subir un archivo con una skill nueva, el caso real de la
+  // Fase 36) cambia que filas cuentan como trafico de ORLANT ese mes -- hay
+  // que recalcular el resumen igual que en una carga nueva, o quedaria
+  // desactualizado hasta la proxima carga de Trafico.
+  const mesesOrlant = new Set(mesesRecalculados.filter((m) => m.campana === 'ORLANT').map((m) => m.mes));
+  mesesOrlant.forEach((mes) => recalcularResumenOrlantDesdeTrafico(db, mes, ts));
 
   return { movidas: info.changes, mesesRecalculados };
 }
