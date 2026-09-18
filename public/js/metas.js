@@ -6,6 +6,26 @@
 // en la tabla cronograma_metas. Endpoints: GET/POST/PUT/DELETE /api/metas.
 // El servidor recalcula meta por asesor / diaria / semanales al guardar.
 
+// Fase 37 (2026-09-18): las 9 tarjetas de esta pantalla (cronograma, nivel
+// de servicio manual/Excel/historial, Trafico-Wolkvox y su mapeo de
+// skills) vivian todas apiladas sueltas, sin agrupar -- de ahi la
+// sensacion de "pantallas separadas" reportada desde la Fase 1. Se
+// agrupan en 3 sub-pestanas (mismo patron visual .aurora-tabs/.atab que
+// ya usan los dashboards de cliente, dashboard-generic.js) SIN tocar
+// ningun formulario/tabla: solo se envuelve su HTML existente en 3 divs y
+// se alterna cual esta visible. Los render*() de cada tarjeta siguen
+// corriendo igual (renderMetasSection ya los llama a todos de una vez al
+// abrir la pantalla), esto solo decide cual grupo se ve.
+function switchMetasTab(key){
+  ['cronograma','nivelservicio','trafico'].forEach(function(k){
+    var panel = document.getElementById('metas-panel-'+k);
+    if(panel) panel.classList.toggle('hidden', k!==key);
+  });
+  document.querySelectorAll('#metas-tabs .atab').forEach(function(btn){
+    btn.classList.toggle('atab-active', btn.dataset.metastab===key);
+  });
+}
+
 // ═══════════════════════════════════════════════════════════
 // ADMIN — CRONOGRAMA Y METAS DE MONITOREO (por campana, por mes, por lider)
 // ═══════════════════════════════════════════════════════════
@@ -195,6 +215,21 @@ async function renderNivelServicioSection(){
     if(prev && meses.indexOf(prev)!==-1) mesFilter.value = prev;
   }
 
+  // Filtro de Campana (Fase 37) -- un ADMIN completo veia aqui filas de
+  // TODAS las campanas mezcladas sin poder filtrar (gap anotado en la Fase
+  // 34 de PROGRESS.md). Mismo patron que el filtro de mes de arriba:
+  // opciones derivadas de los datos reales (incluye "(SIN ASIGNAR)" si
+  // Trafico dejo alguna skill sin mapear), no de un catalogo fijo.
+  var campFilter = document.getElementById('ns-campana-filter');
+  if(campFilter){
+    var campanas = [];
+    _nivelServicioAll.forEach(function(r){ if(campanas.indexOf(r.campana)===-1) campanas.push(r.campana); });
+    campanas.sort();
+    var prevCamp = campFilter.value;
+    campFilter.innerHTML = '<option value="">Todas las campanas</option>' + campanas.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+    if(prevCamp && campanas.indexOf(prevCamp)!==-1) campFilter.value = prevCamp;
+  }
+
   previewNivelServicio();
   renderNivelServicioHistory();
   if(typeof renderTraficoSkills === 'function') renderTraficoSkills();
@@ -216,7 +251,11 @@ function previewNivelServicio(){
 function renderNivelServicioHistory(){
   var filterEl = document.getElementById('ns-mes-filter');
   var filter = filterEl ? filterEl.value : '';
-  var rows = _nivelServicioAll.filter(function(r){ return !filter || r.mes===filter; });
+  var campFilterEl = document.getElementById('ns-campana-filter');
+  var campFilter = campFilterEl ? campFilterEl.value : '';
+  var rows = _nivelServicioAll.filter(function(r){
+    return (!filter || r.mes===filter) && (!campFilter || r.campana===campFilter);
+  });
   rows.sort(function(a,b){ return b.mes.localeCompare(a.mes) || a.campana.localeCompare(b.campana); });
   var tbody = document.getElementById('ns-history-tbody');
   var noRes = document.getElementById('ns-no-results');

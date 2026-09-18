@@ -664,6 +664,14 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
   border:1px solid var(--c-accent);border-radius:var(--r-pill);padding:2px 9px;
   font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;}
 
+/* "Método anterior" — sigue funcionando, ya no es el camino recomendado
+   (ej. carga simple de Nivel de Servicio vs. la carga multi-skill de
+   Trafico/Wolkvox). Tono neutro/apagado a propósito -- no es una alerta
+   como .badge-soon, es solo una nota de prioridad. */
+.badge-legacy{display:inline-block;background:var(--c-surface-alt);color:var(--c-text-muted);
+  border:1px solid var(--c-border);border-radius:var(--r-pill);padding:2px 9px;
+  font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;}
+
 /* Botón de módulo del dashboard marcado como "próximamente": atenuado pero aún clicable
    (al pulsarlo se explica que todavía no está disponible, en vez de no hacer nada). */
 .dash-btn.mod-soon{opacity:0.55;}

@@ -159,8 +159,8 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
     });
   }
   plan.push({
-    tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico de Llamadas (Volvox)',
-    descripcion: 'Una fila por Skill + Dia, tal cual el export de Volvox.',
+    tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico de Llamadas (Wolkvox)',
+    descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox.',
     filaUnica: false, columnas: traficoCols,
   });
   return plan;

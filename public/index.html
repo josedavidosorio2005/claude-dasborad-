@@ -210,6 +210,14 @@
       <div id="section-metas" class="hidden">
         <div class="page-title">Cronograma y Metas de Monitoreo</div>
         <div class="page-subtitle">Se programa mes a mes, por lider responsable y campana, igual que el cronograma de InConexion SAS. Los campos de meta por asesor, meta diaria y metas semanales se calculan automaticamente.</div>
+
+        <div class="aurora-tabs" id="metas-tabs" style="margin-bottom:20px">
+          <button class="atab atab-active" data-metastab="cronograma" onclick="switchMetasTab('cronograma')">Cronograma</button>
+          <button class="atab" data-metastab="nivelservicio" onclick="switchMetasTab('nivelservicio')">Nivel de Servicio</button>
+          <button class="atab" data-metastab="trafico" onclick="switchMetasTab('trafico')">Trafico / Wolkvox</button>
+        </div>
+
+        <div id="metas-panel-cronograma">
         <div class="section-card">
           <div class="section-header">
             <h3>Programar mes</h3>
@@ -270,7 +278,9 @@
           </div>
           <div class="no-results hidden" id="metas-no-results">Aun no hay meses programados.</div>
         </div>
+        </div>
 
+        <div id="metas-panel-nivelservicio" class="hidden">
         <div class="section-card">
           <div class="section-header">
             <h3>Nivel de Servicio (llamadas contestadas en &le;20 segundos)</h3>
@@ -298,8 +308,11 @@
         <div class="section-card">
           <div class="section-header">
             <h3>Cargar Nivel de Servicio desde Excel (export diario del conmutador)</h3>
+            <div class="header-actions">
+              <span class="badge-legacy">Metodo anterior — 1 campana</span>
+            </div>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campana. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada dia, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los dias cargados de ese mes.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campana. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada dia, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los dias cargados de ese mes. Si tienes el export completo de Wolkvox con varias skills/campanas a la vez, usa mejor <b>Trafico / Wolkvox</b> arriba — esta carga sigue aqui como respaldo para cuando solo tienes el reporte simple de una campana.</div>
           <div class="form-row">
             <div class="ig"><label>Campana</label>
               <select id="nsd-campana-sel"></select>
@@ -322,6 +335,30 @@
             </div>
           </div>
         </div>
+        <div class="section-card">
+          <div class="section-header">
+            <h3>Historial de Nivel de Servicio</h3>
+            <div class="header-actions">
+              <select class="hist-filter-sel" id="ns-campana-filter" onchange="renderNivelServicioHistory()">
+                <option value="">Todas las campanas</option>
+              </select>
+              <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">
+                <option value="">Todos los meses</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th>Campana</th><th>Mes</th><th>Contestadas &le;20s</th><th>Total llamadas</th>
+              <th>% Nivel de Servicio</th><th>Cumple (&ge;80%)</th><th></th>
+            </tr></thead>
+            <tbody id="ns-history-tbody"></tbody></table>
+          </div>
+          <div class="no-results hidden" id="ns-no-results">Aun no hay meses cargados.</div>
+        </div>
+        </div>
+
+        <div id="metas-panel-trafico" class="hidden">
         <div class="section-card">
           <div class="section-header">
             <h3>Trafico de Llamadas — carga desde Wolkvox</h3>
@@ -375,15 +412,18 @@
         </div>
         <div class="section-card">
           <div class="section-header">
-            <h3>Mapeo de Skills (Volvox) &rarr; Campana</h3>
+            <h3>Mapeo de Skills (Wolkvox) &rarr; Campana</h3>
             <div class="header-actions">
+              <select class="hist-filter-sel" id="tv-skills-campana-filter" onchange="_renderTraficoSkillsTable()">
+                <option value="">Todas las campanas</option>
+              </select>
               <button class="btn-sm" onclick="renderTraficoSkills()">Actualizar</button>
             </div>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Los nombres de skill los define Volvox y cambian con el tiempo: aqui se asignan a una campana/cliente, sin tocar codigo. Las que aparecen "sin asignar" quedan guardadas igual, solo que su trafico no se ve en ningun dashboard hasta que las mapees.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Los nombres de skill los define Wolkvox y cambian con el tiempo: aqui se asignan a una campana/cliente, sin tocar codigo. Las que aparecen "sin asignar" quedan guardadas igual, solo que su trafico no se ve en ningun dashboard hasta que las mapees.</div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Skill (Volvox)</th><th>Campana asignada</th><th>Filas guardadas</th><th></th>
+              <th>Skill (Wolkvox)</th><th>Campana asignada</th><th>Filas guardadas</th><th></th>
             </tr></thead>
             <tbody id="tv-skills-tbody"></tbody></table>
           </div>
@@ -395,31 +435,14 @@
               <button class="btn-sm" onclick="renderTraficoCobertura()">Actualizar</button>
             </div>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Que meses de trafico ya estan cargados por skill, para saber que falta antes de pedirle una base nueva a Volvox. Solo lectura — la carga en si se hace arriba.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Que meses de trafico ya estan cargados por skill, para saber que falta antes de pedirle una base nueva a Wolkvox. Solo lectura — la carga en si se hace arriba.</div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Skill (Volvox)</th><th>Campana / Sede</th><th>Cobertura</th><th>Meses cargados</th>
+              <th>Skill (Wolkvox)</th><th>Campana / Sede</th><th>Cobertura</th><th>Meses cargados</th>
             </tr></thead>
             <tbody id="tv-cobertura-tbody"></tbody></table>
           </div>
         </div>
-        <div class="section-card">
-          <div class="section-header">
-            <h3>Historial de Nivel de Servicio</h3>
-            <div class="header-actions">
-              <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">
-                <option value="">Todos los meses</option>
-              </select>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table><thead><tr>
-              <th>Campana</th><th>Mes</th><th>Contestadas &le;20s</th><th>Total llamadas</th>
-              <th>% Nivel de Servicio</th><th>Cumple (&ge;80%)</th><th></th>
-            </tr></thead>
-            <tbody id="ns-history-tbody"></tbody></table>
-          </div>
-          <div class="no-results hidden" id="ns-no-results">Aun no hay meses cargados.</div>
         </div>
       </div>
 
