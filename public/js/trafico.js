@@ -53,7 +53,7 @@ function _renderPreviewTrafico(nombre, res){
     var nivel = f.nivelAtencionPct===undefined ? '—' : f.nivelAtencionPct+'%';
     return '<tr><td>'+esc(f.fecha)+'</td><td>'+esc(f.skillName)+'</td><td>'+f.totalLlamadas+'</td><td>'+f.contestadas+'</td><td>'+esc(nivel)+'</td></tr>';
   }).join('');
-  if(res.filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:#7a9ba8">… y '+(res.filas.length-60)+' filas mas</td></tr>';
+  if(res.filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted)">… y '+(res.filas.length-60)+' filas mas</td></tr>';
   document.getElementById('tv-preview-tbody').innerHTML = html;
   document.getElementById('tv-preview-card').style.display = '';
 }
@@ -142,11 +142,11 @@ async function renderTraficoSkills(){
   _traficoPoblarCampanaNuevoSkill();
   var rows = [];
   try{ rows = await apiRequest('GET','/calidad/trafico/skills') || []; }
-  catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">'+esc(e.message)+'</td></tr>'; return; }
+  catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">'+esc(e.message)+'</td></tr>'; return; }
   _traficoSkillsCache = rows;
 
   if(!rows.length){
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">Todavia no se ha cargado trafico de ninguna skill.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">Todavia no se ha cargado trafico de ninguna skill.</td></tr>';
     return;
   }
   var campanas = _traficoCampanasAsignables();
@@ -160,7 +160,7 @@ async function renderTraficoSkills(){
     }).join('');
     var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
-      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:#fff4e5;color:#8a5a12;border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
+      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
       '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
         ' <select id="tv-skill-sede-'+idx+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
@@ -290,18 +290,18 @@ async function renderTraficoCobertura(){
   if(!tbody) return;
   var rows = [];
   try{ rows = await apiRequest('GET','/calidad/trafico/cobertura') || []; }
-  catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">'+esc(e.message)+'</td></tr>'; return; }
+  catch(e){ tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">'+esc(e.message)+'</td></tr>'; return; }
 
   if(!rows.length){
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">Todavia no se ha cargado ningun mes de trafico.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">Todavia no se ha cargado ningun mes de trafico.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(function(r){
-    var campanaLabel = r.campana ? esc(r.campana) + (r.sede ? ' — ' + esc(r.sede) : '') : '<span style="color:#8a5a12">(sin asignar)</span>';
+    var campanaLabel = r.campana ? esc(r.campana) + (r.sede ? ' — ' + esc(r.sede) : '') : '<span style="color:var(--c-warning-dark)">(sin asignar)</span>';
     var meses = r.meses.slice().sort(function(a,b){ return a.mes<b.mes?-1:1; });
     var badges = meses.map(function(m){
       return '<span title="'+esc(m.filas)+' fila(s) — '+esc(m.archivoNombre||'')+' ('+esc(m.cargadoPorNombre||'')+')" ' +
-        'style="display:inline-block;background:#eafaf1;color:#1e7e45;border-radius:4px;padding:2px 7px;font-size:0.72rem;margin:2px 3px 2px 0">' +
+        'style="display:inline-block;background:var(--c-success-bg);color:var(--c-success-dark);border-radius:4px;padding:2px 7px;font-size:0.72rem;margin:2px 3px 2px 0">' +
         '&#10003; '+esc(m.mes)+'</span>';
     }).join('');
     return '<tr><td>'+esc(r.skillName)+'</td><td>'+campanaLabel+'</td><td>'+meses.length+' mes(es)</td><td>'+badges+'</td></tr>';
@@ -395,7 +395,7 @@ async function _traficoRenderPanel(p, i){
   var sede = _traficoSedePanel();
   var claveEstado = _traficoClaveEstado(campana, sede);
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
-    '<div style="text-align:center;color:#9bb0bb;padding:20px 8px">Cargando…</div></div>';
+    '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var datosCampana = await _traficoCargarDatos(campana);
   var filasSede = sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas;
@@ -405,7 +405,7 @@ async function _traficoRenderPanel(p, i){
   var datos = { filas: filasSede, skills: skillsSede };
   if(!datos.filas.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>'+
-      '<div style="text-align:center;color:#9bb0bb;padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Volvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Volvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
     return;
   }
 
@@ -442,15 +442,15 @@ async function _traficoRenderPanel(p, i){
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Trafico de Llamadas (Volvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
-        '<div><label style="display:block;font-size:0.72rem;color:#7a9ba8;margin-bottom:3px">Skill</label>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
           '<select multiple id="tv-f-skills-'+i+'" size="'+Math.min(6, Math.max(2, datos.skills.length))+'" style="min-width:180px">' +
             datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(estado.skills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
           '</select></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:#7a9ba8;margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:#7a9ba8;margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:#7a9ba8;margin-bottom:3px">Granularidad</label>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tv-f-gran-'+i+'">' + ['dia','mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:#7a9ba8;margin-bottom:3px">&nbsp;</label>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
           '<label style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
@@ -570,7 +570,7 @@ function _traficoRenderContenido(campana, sede, i){
 
   var o = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   o.scales = {
-    y: { position:'left', grid:{color:'#f0f4f8'}, ticks:{font:{size:8}} },
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
     y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };
@@ -595,7 +595,7 @@ function _traficoRenderContenido(campana, sede, i){
 
   var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oAband.scales = {
-    y: { position:'left', grid:{color:'#f0f4f8'}, ticks:{font:{size:8}} },
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
     y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };

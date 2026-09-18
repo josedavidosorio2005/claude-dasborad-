@@ -229,9 +229,9 @@ async function procesarArchivoConsolidado(input){
 }
 
 function _cargasEstadoLabel(r){
-  if(r.error) return '<span style="color:#c0392b">&#9888; '+esc(r.error)+'</span>';
-  if(r.vacia) return '<span style="color:#7a9ba8">Vacia — no aplica esta vez</span>';
-  return '<span style="color:#2e7d32">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+'</span>';
+  if(r.error) return '<span style="color:var(--c-danger-dark)">&#9888; '+esc(r.error)+'</span>';
+  if(r.vacia) return '<span style="color:var(--c-text-muted)">Vacia — no aplica esta vez</span>';
+  return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+'</span>';
 }
 
 function _renderPreviewCarga(){
@@ -348,12 +348,12 @@ async function renderCargasExistentes(){
   }
   var html = '<tr><th>Seccion</th><th>Periodo</th><th>Cadencia</th><th>Filas</th><th>Cargado por</th><th>Fecha</th><th></th></tr>';
   if(rows.length===0){
-    html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">Sin cargas de Gestion de base todavia</td></tr>';
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">Sin cargas de Gestion de base todavia</td></tr>';
   } else {
     rows.forEach(function(c){
       var titulo = (_cargasSpec && _cargasSpec.secciones[c.seccion]) ? _cargasSpec.secciones[c.seccion].titulo : c.seccion;
       html += '<tr><td>'+esc(titulo)+'</td><td>'+esc(c.periodo)+'</td><td>'+esc(c.cadencia)+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
-        '<td>'+esc(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:#7a9ba8">'+esc(c.cargadoEn||'-')+'</td>'+
+        '<td>'+esc(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(c.cargadoEn||'-')+'</td>'+
         '<td><button class="btn-sm btn-delete" onclick="eliminarCarga('+c.id+')">Eliminar</button></td></tr>';
     });
   }

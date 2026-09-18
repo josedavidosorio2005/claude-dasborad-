@@ -6,6 +6,37 @@
 var CD='#0d4a5e',CM='#1a7a9e',CG='#27ae60',CR='#e74c3c',CO='#e67e22',CP='#8e44ad';
 var PC=[CD,CM,CG,CO,CR,CP,'#16a085','#f39c12','#2980b9','#c0392b','#7f8c8d','#1abc9c'];
 
+// Set alterno de la paleta categorica para modo oscuro (paleta-logic.js no
+// cambia: sigue derivando el INDICE de forma determinista por hash de la
+// etiqueta -- lo unico que cambia aqui es a que color resuelve cada
+// indice, para que se distingan sobre un fondo oscuro).
+var PC_DARK=['#5fc9ea','#7dd6f0','#4ade80','#fbbf24','#f87171','#c084fc','#2dd4bf','#fb923c','#60a5fa','#f472b6','#94a3b8','#34d399'];
+
+// Colores de eje/leyenda/fondo-de-datalabel que lo()/loPie() usaban como
+// literales sueltos -- ahora tambien reasignables por tema.
+var CHART_GRID='#f0f4f8', CHART_TICK='#7a9ba8', CHART_DL_BG='rgba(255,255,255,0.75)';
+
+// Puente con theme.js: reasigna CD/CM/CG/CR/CO/CP/PC (y CHART_GRID/TICK/
+// DL_BG) segun el tema actual. El resto de este archivo y de
+// dashboard-generic.js/trafico.js/calidad.js/mis-resultados.js ya leen
+// estas variables por NOMBRE en el momento de construir cada grafico (no
+// las copian a una constante propia), asi que reasignarlas aca alcanza --
+// no hace falta tocar esos call-sites uno por uno. theme.js llama a esta
+// funcion al cargar la pagina y en cada toggle de tema.
+function aplicarTemaCharts(){
+  var oscuro = typeof temaActual === 'function' && temaActual() === 'dark';
+  if(oscuro){
+    CD='#5fc9ea'; CM='#7dd6f0'; CG='#4ade80'; CR='#f87171'; CO='#fbbf24'; CP='#c084fc';
+    PC=PC_DARK;
+    CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
+  } else {
+    CD='#0d4a5e'; CM='#1a7a9e'; CG='#27ae60'; CR='#e74c3c'; CO='#e67e22'; CP='#8e44ad';
+    PC=[CD,CM,CG,CO,CR,CP,'#16a085','#f39c12','#2980b9','#c0392b','#7f8c8d','#1abc9c'];
+    CHART_GRID='#f0f4f8'; CHART_TICK='#7a9ba8'; CHART_DL_BG='rgba(255,255,255,0.75)';
+  }
+}
+aplicarTemaCharts();
+
 function lo(t,xrot){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{
@@ -14,14 +45,14 @@ function lo(t,xrot){
       datalabels:{
         display:true, align:'top', anchor:'top', offset:2,
         font:{size:8,weight:'bold'}, color:CD,
-        backgroundColor:function(){return 'rgba(255,255,255,0.75)';},
+        backgroundColor:function(){return CHART_DL_BG;},
         borderRadius:2, padding:{top:1,bottom:1,left:2,right:2},
         formatter:function(v){return v===null||v===undefined?'':v;}
       }
     },
     scales:{
-      y:{grid:{color:'#f0f4f8'},ticks:{font:{size:8},color:'#7a9ba8'}},
-      x:{grid:{display:false},ticks:{font:{size:7},color:'#7a9ba8',maxRotation:xrot||50}}
+      y:{grid:{color:CHART_GRID},ticks:{font:{size:8},color:CHART_TICK}},
+      x:{grid:{display:false},ticks:{font:{size:7},color:CHART_TICK,maxRotation:xrot||50}}
     },
     layout:{padding:{top:20}}
   };

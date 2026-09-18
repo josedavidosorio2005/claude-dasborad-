@@ -43,7 +43,11 @@ function previewUmbral(){
   var ejemplos = mayor
     ? [verde, Math.round(((verde+amarillo)/2)*10)/10, Math.max(0, amarillo-1)]
     : [Math.max(0, verde-1), Math.round(((verde+amarillo)/2)*10)/10, amarillo+1];
-  var COLORES = { verde:'#27ae60', amarillo:'#e67e22', rojo:'#e74c3c' };
+  var COLORES = {
+    verde: (typeof CG!=='undefined'?CG:'#27ae60'),
+    amarillo: (typeof CO!=='undefined'?CO:'#e67e22'),
+    rojo: (typeof CR!=='undefined'?CR:'#e74c3c')
+  };
   pv.innerHTML = ejemplos.map(function(v){
     var c = _umbralColorFor(v, verde, amarillo, direccion) || 'rojo';
     return '<span class="qi-pill" style="border-left:4px solid '+COLORES[c]+'"><span class="qv" style="color:'+COLORES[c]+'">'+v+'</span><span class="ql">'+c.toUpperCase()+'</span></span>';

@@ -67,7 +67,7 @@ function _renderPreviewMonitoreos(nombre, filas, avisos){
   var body = filas.slice(0,60).map(function(f){
     return '<tr><td>'+esc(f.asesor)+'</td><td>'+esc(f.fecha)+'</td><td>'+esc(f.canal)+'</td><td>'+esc(f.idLlamada||'—')+'</td><td>'+Object.keys(f.answers).length+'</td></tr>';
   }).join('');
-  if(filas.length>60) body += '<tr><td colspan="5" style="text-align:center;color:#7a9ba8">… y '+(filas.length-60)+' filas mas</td></tr>';
+  if(filas.length>60) body += '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted)">… y '+(filas.length-60)+' filas mas</td></tr>';
   document.getElementById('cm-preview-table').innerHTML = head + body;
   document.getElementById('cm-preview-card').style.display = '';
 }

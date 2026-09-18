@@ -46,9 +46,9 @@ function renderGhStats(){
   var costo = Number(r.costoNominaMes || 0).toLocaleString('es-CO');
   var html =
     '<div class="stat-card"><div class="stat-num">'+r.activos+'</div><div class="stat-label">Personal activo</div></div>'+
-    '<div class="stat-card" style="border-left-color:#e67e22"><div class="stat-num">'+r.retirados+'</div><div class="stat-label">Retirados</div></div>'+
-    '<div class="stat-card" style="border-left-color:#8e44ad"><div class="stat-num">'+r.campanas+'</div><div class="stat-label">Campanas</div></div>'+
-    '<div class="stat-card" style="border-left-color:#27ae60"><div class="stat-num">$'+costo+'</div><div class="stat-label">Costo nomina / mes</div></div>';
+    '<div class="stat-card" style="border-left-color:var(--c-warning)"><div class="stat-num">'+r.retirados+'</div><div class="stat-label">Retirados</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--c-purple)"><div class="stat-num">'+r.campanas+'</div><div class="stat-label">Campanas</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--c-success)"><div class="stat-num">$'+costo+'</div><div class="stat-label">Costo nomina / mes</div></div>';
   _ghSetHtml(['gh-admin-stats','gh-ov-kpis'], html);
 }
 
@@ -58,7 +58,7 @@ function renderGhTabla(){
   });
   var html = '<tr><th>Nombre</th><th>Cargo</th><th>Campana</th><th>Ingreso</th><th>Salida</th><th>Estado</th><th>Costo/mes</th><th></th></tr>';
   if(rows.length === 0){
-    html += '<tr><td colspan="8" style="text-align:center;color:#7a9ba8">Sin personal registrado. Agrega la primera persona.</td></tr>';
+    html += '<tr><td colspan="8" style="text-align:center;color:var(--c-text-muted)">Sin personal registrado. Agrega la primera persona.</td></tr>';
   } else {
     rows.forEach(function(p){
       var estado = p.activo
@@ -66,7 +66,7 @@ function renderGhTabla(){
         : '<span class="kpi-red" style="font-weight:600">Retirado</span>';
       var costo = p.costo_mes ? '$'+Number(p.costo_mes).toLocaleString('es-CO') : '-';
       html += '<tr>'+
-        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:0.74rem;color:#7a9ba8">'+esc(p.documento)+'</span>':'')+'</td>'+
+        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:0.74rem;color:var(--c-text-muted)">'+esc(p.documento)+'</span>':'')+'</td>'+
         '<td>'+esc(p.cargo||'-')+'</td>'+
         '<td>'+esc(p.campana)+'</td>'+
         '<td>'+esc(p.fecha_ingreso)+'</td>'+

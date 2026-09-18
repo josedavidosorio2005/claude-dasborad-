@@ -41,18 +41,18 @@ function renderUsers(filter){
     var extra='';
     if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
-      extra='<div style="font-size:0.72rem;color:'+(asignadas.length?'#27ae60':'#c0392b')+';margin-top:2px">'+
+      extra='<div style="font-size:0.72rem;color:'+(asignadas.length?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (asignadas.length? '&#9989; '+asignadas.join(', ') : '&#9888; Sin campanas asignadas')+'</div>';
     } else if(u.rol==='ASESOR'){
-      extra='<div style="font-size:0.72rem;color:'+(u.asesorCampana?'#27ae60':'#c0392b')+';margin-top:2px">'+
+      extra='<div style="font-size:0.72rem;color:'+(u.asesorCampana?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (u.asesorCampana? '&#9989; '+esc(u.asesorCampana) : '&#9888; Sin operacion asignada')+'</div>';
     }
     return '<tr>'+
-      '<td><strong style="color:#0d4a5e">'+esc(u.nombre)+'</strong>'+extra+'</td>'+
-      '<td style="color:#7a9ba8;font-family:monospace;font-size:0.82rem">'+esc(u.user)+'</td>'+
+      '<td><strong style="color:var(--c-primary)">'+esc(u.nombre)+'</strong>'+extra+'</td>'+
+      '<td style="color:var(--c-text-muted);font-family:monospace;font-size:0.82rem">'+esc(u.user)+'</td>'+
       '<td><span class="badge badge-'+u.rol+'">'+esc(RL[u.rol]||u.rol)+'</span></td>'+
       '<td><span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>'+(u.active?'Activo':'Suspendido')+'</td>'+
-      '<td style="font-size:0.78rem;color:#7a9ba8">'+esc(u.createdAt||'-')+'</td>'+
+      '<td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(u.createdAt||'-')+'</td>'+
       '<td><div class="action-btns">'+
         '<button class="btn-sm btn-edit '+(canEdit?'':'blocked')+'" '+(canEdit?'onclick="openEditModal('+u.id+')"':'disabled')+'>Editar</button>'+
         '<button class="btn-sm btn-pass '+(canPass?'':'blocked')+'" '+(canPass?'onclick="openPassModal('+u.id+')"':'disabled')+'>Contrasena</button>'+

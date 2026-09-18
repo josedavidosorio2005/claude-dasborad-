@@ -64,7 +64,7 @@ async function renderMisResultados(){
   _misMonitoreosList = rows;
   var html = '<tr><th>Fecha</th><th>Campana</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Nivel Critico</th><th></th></tr>';
   if(rows.length===0){
-    html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">'+(_mrMesFiltro?'No tienes monitoreos en '+_mrMesFiltro:'Aun no tienes monitoreos de calidad registrados')+'</td></tr>';
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">'+(_mrMesFiltro?'No tienes monitoreos en '+_mrMesFiltro:'Aun no tienes monitoreos de calidad registrados')+'</td></tr>';
   } else {
     rows.forEach(function(m,i){
       html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td>'+

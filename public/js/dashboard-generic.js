@@ -478,7 +478,7 @@ function _gdChart(canvasId, cfg){
     if(card && !note){
       note = document.createElement('div');
       note.className = 'oc-nodata';
-      note.style.cssText = 'text-align:center;color:#9bb0bb;font-size:0.8rem;padding:24px 8px';
+      note.style.cssText = 'text-align:center;color:var(--c-text-muted);font-size:0.8rem;padding:24px 8px';
       note.textContent = 'Sin datos cargados para este periodo';
       card.appendChild(note);
     }
@@ -614,7 +614,7 @@ function renderGenericBanner(){
   if(ex) return;
   var d = document.createElement('div');
   d.id = 'gd-nodata-banner';
-  d.style.cssText = 'grid-column:1/-1;background:#fff4e5;border:1px solid #f0c98a;border-radius:8px;padding:12px 16px;color:#8a5a12;font-size:0.85rem';
+  d.style.cssText = 'grid-column:1/-1;background:var(--c-warning-bg);border:1px solid var(--c-warning);border-radius:8px;padding:12px 16px;color:var(--c-warning-dark);font-size:0.85rem';
   d.innerHTML = 'Este dashboard todavia no tiene datos cargados. Un usuario con permiso de <strong>Cargar Datos</strong> debe subir los Excel del periodo.';
   host.appendChild(d);
 }
@@ -697,8 +697,8 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
-      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:#7a9ba8;font-weight:600;margin-left:10px"></span>' : '';
-      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:#5c7681;line-height:1.5"></div>' : '';
+      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
+      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:var(--c-text-2);line-height:1.5"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
         '<span>' + esc(x.p.titulo || '') + '</span>' + totalSpan + tools + '</div>' + filtroDiv +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';
@@ -729,7 +729,7 @@ function _gdRenderPanel(p, i){
     var carga = _gdCargaMes(p.fuente.s);
     var filas = carga ? (carga.filas||[]) : [];
     var html = '<tr>'+cols.map(function(c){ return '<th>'+esc(c.label)+'</th>'; }).join('')+'</tr>';
-    if(!filas.length) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:#9bb0bb">Sin datos cargados</td></tr>';
+    if(!filas.length) html += '<tr><td colspan="'+cols.length+'" style="text-align:center;color:var(--c-text-muted)">Sin datos cargados</td></tr>';
     else html += filas.map(function(f){ return '<tr>'+cols.map(function(c){
       var v = f[c.key];
       if(v==null) return '<td>-</td>';
@@ -810,7 +810,7 @@ function _gdRenderPanel(p, i){
     }
     var o = loBar();
     o.scales = {
-      y:{ position:'left', grid:{color:'#f0f4f8'}, ticks:{font:{size:8}} },
+      y:{ position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
       y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
       x:{ grid:{display:false}, ticks:{font:{size:8}} }
     };
@@ -867,7 +867,7 @@ function _gdRenderNotaKpi(p, i){
         return esc(typeof v === 'number' ? v.toLocaleString('es-CO') : String(v == null ? '' : v));
       });
   el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(p.titulo || '') + '</div>' +
-    '<div style="padding:6px 4px 2px;font-size:0.92rem;line-height:1.6;color:#2a4a58">' + texto + '</div></div>';
+    '<div style="padding:6px 4px 2px;font-size:0.92rem;line-height:1.6;color:var(--c-text)">' + texto + '</div></div>';
 }
 
 // ── Paneles de Calidad (usan CAL_DB de la Fase 1) ───────────
@@ -1094,10 +1094,10 @@ function _gdExport(){
   var btn = document.getElementById('gd-export-btn');
   m = document.createElement('div');
   m.id = 'gd-export-menu';
-  m.style.cssText = 'position:absolute;background:#fff;border:1px solid #dde8ef;border-radius:8px;box-shadow:0 8px 30px rgba(13,74,94,.2);z-index:50;overflow:hidden;font-size:0.85rem';
+  m.style.cssText = 'position:absolute;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;box-shadow:0 8px 30px rgba(var(--shadow-rgb),.2);z-index:50;overflow:hidden;font-size:0.85rem';
   m.innerHTML =
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:#2a4a58" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:#2a4a58;border-top:1px solid #edf2f6" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
+    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
+    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
   var r = btn.getBoundingClientRect();
   m.style.top = (r.bottom + 6) + 'px';
   m.style.left = Math.max(8, r.right - 160) + 'px';

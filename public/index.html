@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>InConexion Platform</title>
+<script>
+// Fija el tema ANTES del primer paint (evita parpadeo de tema incorrecto).
+// El resto de la logica de tema vive en js/theme.js.
+(function(){
+  try{
+    var t = localStorage.getItem('inco_tema');
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  }catch(e){ document.documentElement.setAttribute('data-theme', 'light'); }
+})();
+</script>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -24,6 +34,7 @@
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <div class="login-error" id="login-error"></div>
   </div>
+  <button class="theme-toggle theme-toggle-fab" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
 </div>
 
 <!-- ADMIN PANEL -->
@@ -32,6 +43,7 @@
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/navbar-icon.png" alt="InConexion"><span class="navbar-logo-text">InConexion</span></div>
     <div class="navbar-right">
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <span class="save-flash" id="save-flash">Guardado</span>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
       <div class="navbar-profile-dropdown">
@@ -598,6 +610,7 @@
   <nav class="navbar">
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/navbar-icon.png" alt="InConexion"><span class="navbar-logo-text">InConexion</span></div>
     <div class="navbar-right">
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-dash"></span>
@@ -1281,6 +1294,7 @@
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
     <div class="navbar-logo-text">InConexion &mdash; Portal Asesor</div>
     <div class="navbar-right">
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-asesor"></span>
@@ -1340,6 +1354,7 @@
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
     <div class="navbar-logo-text">InConexion &mdash; Portal Supervisor</div>
     <div class="navbar-right">
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-supervisor"></span>
@@ -1455,6 +1470,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Librerias: Chart.js + plugin de etiquetas (antes inline) -->
+<script src="js/theme.js"></script>
 <script src="js/vendor/chart.umd.min.js"></script>
 <script src="js/vendor/chartjs-plugin-datalabels.min.js"></script>
 <script>Chart.register(ChartDataLabels);</script>
