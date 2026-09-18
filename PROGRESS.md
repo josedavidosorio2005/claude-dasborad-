@@ -2224,3 +2224,39 @@ automático, un chequeo de Playwright de solo lectura (login con el admin
 maestro, sin tocar ningún botón de Guardar) confirmó las 3 pestañas
 desplegadas, el badge "Método anterior", ambos filtros de Campana nuevos y
 el texto "Wolkvox" ya en producción.
+
+## Fase 38 — Gráficas de ASA/ATA, Wait Time y Niveles de Servicio 10s/30s en Tráfico (PR #78, 2026-09-18)
+
+Los 5 campos `serviceLevel10secPct`, `serviceLevel30secPct`, `asaSegundos`,
+`ataSegundos` y `waitTimeSegundos` ya llegaban calculados correctamente
+—ponderados por volumen, `PCT_PONDERADOS`/`NUM_PONDERADOS`
+(`trafico-logic.js`, sin tocar en esta fase)— y ya se exportaban a Excel
+(`_traficoDatosExport`), pero nadie los pintaba en la pestaña Tráfico. Fase
+100% de presentación: 3 paneles nuevos en `_traficoRenderContenido()`
+(`public/js/trafico.js`) — **ASA y ATA**, **Wait Time**, **Niveles de
+Servicio a 10s y 30s** — mismo patrón exacto que ya usaban "Llamadas
+abandonadas" y "AHT" (mismo grid, `agregadoComb` siempre combinado,
+`_gdChart`, `lo()`/`loBar()`). ASA/ATA y Wait Time reutilizan el mismo
+`fmtAht` (mm:ss) que ya definía el gráfico de AHT, sin redefinirlo.
+
+**Hallazgo pedido explícitamente**: localmente (ORLANT y ANDRES YEPES,
+datos de seed-demo) los 5 campos están en `NULL` — son datos generados
+antes de que estos campos existieran en el seed. Confirmado que esto no
+rompe nada: `_gdChart` ya tenía un guard de "sin datos" (oculta el canvas,
+un solo aviso compartido por tarjeta) que se activó igual para los 3
+paneles nuevos que para los 2 existentes — mismo comportamiento, cero
+errores de consola.
+
+**Verificado en producción real** contra los datos reales de ORLANT
+agosto 2026 (Fase 36): los 5 campos SÍ vienen poblados con valores
+coherentes — ej. el 2026-08-01, ASA agregado (both skills) = 18.83s, un
+promedio ponderado plausible entre las dos skills (3P con ASA=5.29s reportado
+en el archivo original y GENERAL con más volumen y ASA más alto), no un
+promedio simple. Las 5 gráficas renderizan con curvas reales, formato
+mm:ss correcto en ASA/ATA/Wait Time y % en SL10/SL30, en claro/oscuro y
+escritorio/móvil, cero errores de consola. Capturas en
+`docs/capturas-demo/fase38-trafico-metricas/` (local) y
+`docs/capturas-demo/fase38-verificacion-produccion/` (producción real).
+
+Suite de servidor sin cambios (249/249), `npm audit` limpio —
+`trafico-logic.js` no se tocó.
