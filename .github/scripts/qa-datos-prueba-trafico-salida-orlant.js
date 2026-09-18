@@ -210,7 +210,13 @@ async function shot(page, nombre) {
       var host = document.getElementById('gd-p0');
       return !!host && !/Sin datos cargados/i.test(host.textContent) && !!host.querySelector('#tv-canvas-aht-0');
     });
-    await shot(page, '1-orlant-trafico-con-datos.png');
+    // Captura del panel completo (no page.screenshot fullPage): #gd-overlay
+    // tiene su propio scroll interno, asi que una captura de pagina completa
+    // corta el contenido del modal que no entra en el viewport -- una
+    // captura de ELEMENTO escala/incluye todo el alto real del panel
+    // (filtros + KPIs + los 3 canvases), sin depender de cuanto scroll tenga
+    // el modal.
+    await page.locator('#gd-p0').screenshot({ path: path.join(ARTIFACTS_DIR, '1-orlant-trafico-con-datos.png') });
 
     // Salida: cambiar panel 1 a "Linea 3P" (panel 2 se queda en el default
     // "Linea General") -- asi la captura prueba que el selector realmente
