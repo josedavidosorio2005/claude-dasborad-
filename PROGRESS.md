@@ -1934,3 +1934,94 @@ final del run — de solo lectura, ninguna fila real de ORLANT se tocó.
   esta fase (vacío de datos ya conocido).
 - El defecto cosmético del eje Y de Inasistencia (punto flotante) queda
   para una fase aparte.
+
+---
+
+## Fase 34 — Fix: Tipificación duplicaba categorías en el pie + datos de prueba dejados visibles a propósito (PR #70, 2026-09-18)
+
+Pedido de InCo tras revisar las capturas de la Fase 33: el pie de
+Tipificación combinaba 3P+General por defecto (`filtroCampo:'linea'` con
+el multi-select genérico, ambas líneas seleccionadas de entrada) — como
+comparten nombres de categoría, cada una salía **duplicada** en la
+leyenda (10 porciones en vez de 5).
+
+**Fix — Opción A** (selector de una línea a la vez, mismo patrón que
+Salida, no Opción B de sumar duplicados): el PDF original ya mostraba esto
+como 2 pasteles separados por línea, así que es fiel al pedido, no una
+desviación. Nuevo tipo de filtro `'unico'` (`dashboard-generic.js`) +
+`gdValorFiltroUnico` (`gd-filtro-logic.js`, mismo patrón que
+`gdSerieSeleccionada`). Migración nueva `dashboards_config_orlant_tipificacion_unico_v1`
+(`db.js`, ORLANT ya existe en producción). Tests: caso exacto del bug
+(mismo nombre de categoría en ambas líneas → nunca duplicado tras
+filtrar) + 2 de la migración. Suite 249/249, `npm audit` limpio.
+
+**Verificado en producción real**: Playwright confirmó `tipificacionDefaultSinDuplicadosOk`,
+`tipificacionSelectorLineaOk` y `tipificacionCambioLineaSinDuplicadosOk` —
+la vista por defecto y el cambio de línea (3P↔General) nunca repiten una
+categoría. Captura reemplazada: `docs/capturas-demo/orlant-tipificacion-confirmacion-2026-09-18.png`
+(la versión anterior, con el bug, queda solo en el historial de git del
+PR #69 como evidencia del "antes").
+
+### Datos de prueba dejados visibles a propósito en producción
+
+A diferencia de la Fase 33, InCo pidió esta vez **no borrar** el skill y
+las cargas de prueba al terminar, para poder entrar él mismo a revisar las
+gráficas con datos reales fluyendo. Siguen en producción:
+
+- Skill `PRUEBA_QA_GRAFICAS_ORLANT` → mapeado a campaña `ORLANT`.
+- Tráfico: 8 filas diarias (una por mes, ene–ago **2020**) + su agregado
+  mensual en `calidad_nivel_servicio`.
+- Salida: 1 carga (`dashboard_cargas`, cliente `ORLANT`, sección `salida`,
+  periodo **2020-07**, 31 filas diarias).
+
+El workflow `qa-datos-prueba-trafico-salida-orlant.yml` ganó un input
+`borrar_al_final` (default `true`) — esta corrida se disparó con
+`borrar_al_final=false`. El usuario temporal de QA (rol ADMIN) **sí** se
+borró como siempre (nunca queda una cuenta ADMIN huérfana en producción,
+sin importar este input).
+
+**Nombre y periodo inconfundiblemente ficticios**: `PRUEBA_QA_GRAFICAS_ORLANT`
+no se parece a ningún patrón real de SKILL_NAME de Wolkvox, y el año 2020
+es anterior a que esta plataforma o esta campaña existieran — nadie puede
+confundirlos con datos reales de Orlant (oct/nov-2026 en adelante) si los
+ve sin este contexto.
+
+**Aislamiento — confirmado con matices, no 100% limpio**: dentro del
+dashboard de ORLANT y en cualquier vista de otro cliente (Gerencia,
+Aurora, HLM, exportes Excel/PDF de cualquier dashboard) el aislamiento es
+completo — cada fuente de datos está scopeada por `cliente`/`campana`, y
+se confirmó revisando cada endpoint involucrado. **Pero se encontraron 2
+pantallas administrativas (no un "reporte" de negocio, solo accesibles con
+permiso de Cargar Datos o rol ADMIN) que sí combinan campañas sin
+filtro**:
+
+1. `GET /calidad/trafico/skills` (tabla "Mapeo de Skills → Campaña",
+   pantalla Metas Calidad) — lista TODOS los skills de TODAS las campañas
+   sin scoping; el skill de prueba aparece ahí mezclado con los reales.
+2. `GET /calidad/nivel-servicio` sin `?campana=` (tabla "Historial de
+   Nivel de Servicio", misma pantalla) — para un ADMIN completo, devuelve
+   TODAS las filas de `calidad_nivel_servicio` de TODAS las campañas; las
+   8 filas de prueba (2020) aparecen ahí. Se ve tal cual en las 3 capturas
+   de esta fase y de la Fase 33 (la tabla al pie de cada captura).
+
+Ninguna de las dos es una vista que InCo use para revisar resultados de
+negocio (son pantallas de administración técnica de la plataforma, no
+dashboards de cliente ni reportes), y `GET /dashboard/cargas` (la lista de
+cargas de Salida) sí queda correctamente scopeada por cliente en el flujo
+real de la UI. Aun así, no es un aislamiento del 100% como se pidió
+confirmar — queda anotado aquí explícitamente en vez de reportarlo como
+resuelto. No se tocó en esta fase (no es trivial: requeriría decidir cómo
+scopear esas 2 pantallas por campaña, cambio de alcance mayor).
+
+### Cómo borrar esta data de prueba cuando InCo termine de revisarla
+
+Volver a correr `qa-datos-prueba-trafico-salida-orlant.yml` con
+`borrar_al_final=true` (el default), o borrarla a mano — mismas 4
+sentencias que ya usa el paso "Borrar los datos de prueba" del workflow
+(`calidad_nivel_servicio_diario`/`calidad_nivel_servicio` por skill/mes,
+`trafico_skill_mapeo`, `dashboard_cargas` por cliente+sección+periodo).
+También se reemplaza sola en cuanto InCo registre el skill real de Wolkvox
+y suba el primer archivo real: el mapeo por SKILL_NAME es 1 a 1, así que
+un skill real nuevo no choca con `PRUEBA_QA_GRAFICAS_ORLANT` (nombres
+distintos) — ambos convivirían hasta que alguien borre el de prueba a
+mano.
