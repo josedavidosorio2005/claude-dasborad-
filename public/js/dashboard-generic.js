@@ -234,14 +234,20 @@ function _gdCyclePanelTipo(i, tipo){
 var _gdCatFiltro = {};    // por 'tab|indice': { incluidas:[...] }
 var _gdFechaFiltro = {};  // por 'tab|indice': { desde, hasta }
 var _gdSerieFiltro = {};  // por 'tab|indice': { label } — panel con filtroSerie:true
+var _gdUnicoFiltro = {};  // por 'tab|indice': { valor } — panel con filtroCampo + filtroUnico:true
 
-// 'categoria' | 'fecha' | 'serie' | null, segun el panel.
+// 'categoria' | 'fecha' | 'serie' | 'unico' | null, segun el panel.
 //  - p.filtroSerie (panel line/bar con >1 serie): 'serie' — un selector que
 //    elige CUAL serie dibujar (ej. Salida: Linea General / Linea 3P), en vez
 //    de mostrarlas todas juntas.
-//  - p.filtroCampo (pie/line sobre modo:'filas'): 'categoria', pero filtrando
-//    por esa columna en vez del eje X del grafico (ej. pie de tipificacion,
-//    x:'tipificacion', filtrable por 'linea').
+//  - p.filtroCampo + p.filtroUnico (pie/line sobre modo:'filas'): 'unico' —
+//    un selector de UN SOLO valor de esa columna a la vez (ej. pie de
+//    Tipificacion, x:'tipificacion', UNA linea 3P/General a la vez) — evita
+//    que la misma categoria aparezca duplicada en la leyenda cuando ambas
+//    lineas comparten nombres (el bug que este tipo corrige).
+//  - p.filtroCampo sin filtroUnico: 'categoria' (multi-select, filtrando por
+//    esa columna en vez del eje X del grafico) — se mantiene para paneles
+//    que de verdad quieran combinar varios valores a la vez.
 //  - si no, el criterio de siempre: x==='fecha' -> 'fecha', si no 'categoria'.
 function _gdPanelFiltroTipo(p){
   if(p.filtroSerie && p.series && p.series.length > 1) return 'serie';
@@ -250,6 +256,7 @@ function _gdPanelFiltroTipo(p){
   // de categorias de `extra` -- no se dibuja una barra de filtro que no
   // haria nada.
   if(!f || f.modo !== 'filas' || f.anual) return null;
+  if(p.filtroCampo && p.filtroUnico) return 'unico';
   if(p.filtroCampo) return 'categoria';
   var xk = f.x || (p.tipo === 'pie' ? 'categoria' : 'fecha');
   return xk === 'fecha' ? 'fecha' : 'categoria';
@@ -287,6 +294,18 @@ function _gdRenderFiltroBar(p, i, tipo){
 
   var base = _gdFilasBaseParaFiltro(p);
 
+  if(tipo === 'unico'){
+    var disponiblesU = gdValoresDistintos(base.filas, base.campo);
+    var actualU = gdValorFiltroUnico(disponiblesU, (_gdUnicoFiltro[key]||{}).valor);
+    host.innerHTML = '<div class="gd-panel-filtro">' +
+      '<div><label>Linea</label><select id="gd-unicof-'+i+'">' +
+        disponiblesU.map(function(v){ return '<option value="'+esc(v)+'"'+(v===actualU?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
+      '</select></div>' +
+      '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
+    '</div>';
+    return;
+  }
+
   if(tipo === 'categoria'){
     var disponibles = gdValoresDistintos(base.filas, base.campo);
     var estado = _gdCatFiltro[key] || {};
@@ -313,6 +332,12 @@ function _gdRenderFiltroBar(p, i, tipo){
 }
 function _gdExtraFiltroPanel(p, i){
   var tipo = _gdPanelFiltroTipo(p);
+  if(tipo === 'unico'){
+    var baseU = _gdFilasBaseParaFiltro(p);
+    var disponiblesU = gdValoresDistintos(baseU.filas, baseU.campo);
+    var valorU = gdValorFiltroUnico(disponiblesU, (_gdUnicoFiltro[_gdPanelKey(i)]||{}).valor);
+    return { categorias: valorU ? [valorU] : [], filtroCampo: p.filtroCampo };
+  }
   if(tipo === 'categoria') return { categorias: (_gdCatFiltro[_gdPanelKey(i)]||{}).incluidas, filtroCampo: p.filtroCampo };
   if(tipo === 'fecha') return _gdFechaFiltro[_gdPanelKey(i)] || {};
   return null;
@@ -323,7 +348,10 @@ function _gdAplicarFiltroPanel(i){
   var p = tab.panels[i];
   var tipo = _gdPanelFiltroTipo(p);
   var key = _gdPanelKey(i);
-  if(tipo === 'categoria'){
+  if(tipo === 'unico'){
+    var selU = document.getElementById('gd-unicof-'+i);
+    _gdUnicoFiltro[key] = { valor: selU ? selU.value : '' };
+  } else if(tipo === 'categoria'){
     var sel = document.getElementById('gd-catf-'+i);
     var incluidas = sel ? Array.prototype.filter.call(sel.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
     _gdCatFiltro[key] = { incluidas: incluidas };

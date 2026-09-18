@@ -7,6 +7,7 @@ const {
   gdSerieSeleccionada,
   gdAnioDeMes,
   gdCargasDelAnio,
+  gdValorFiltroUnico,
 } = require('../../public/js/gd-filtro-logic');
 
 const FILAS_TIPIF = [
@@ -109,4 +110,59 @@ test('gdCargasDelAnio: sin año, ninguna carga (nunca "todas" por accidente)', (
 test('gdCargasDelAnio: array vacio o null no rompe', () => {
   assert.deepEqual(gdCargasDelAnio([], '2026'), []);
   assert.deepEqual(gdCargasDelAnio(null, '2026'), []);
+});
+
+test('gdValorFiltroUnico: sin valor previo, cae al primer disponible', () => {
+  assert.equal(gdValorFiltroUnico(['3P', 'GENERAL'], null), '3P');
+  assert.equal(gdValorFiltroUnico(['3P', 'GENERAL'], undefined), '3P');
+  assert.equal(gdValorFiltroUnico(['3P', 'GENERAL'], ''), '3P');
+});
+
+test('gdValorFiltroUnico: con valor previo valido, lo conserva', () => {
+  assert.equal(gdValorFiltroUnico(['3P', 'GENERAL'], 'GENERAL'), 'GENERAL');
+});
+
+test('gdValorFiltroUnico: valor previo que ya no esta disponible, cae al primero (nunca "sin filtro")', () => {
+  assert.equal(gdValorFiltroUnico(['3P', 'GENERAL'], 'SEDE33'), '3P');
+});
+
+test('gdValorFiltroUnico: sin disponibles, null (nunca revienta)', () => {
+  assert.equal(gdValorFiltroUnico([], 'GENERAL'), null);
+  assert.equal(gdValorFiltroUnico(null, 'GENERAL'), null);
+});
+
+// ── Caso real del bug (2026-09-18): el pie de Tipificacion de ORLANT
+// combinaba 3P + General por defecto, y ambas lineas comparten nombres de
+// categoria -> cada una aparecia DUPLICADA en la leyenda del pastel. Prueba
+// que el filtro de "una sola linea a la vez" (gdValoresDistintos +
+// gdValorFiltroUnico + gdFiltrarFilasCategorias, la misma composicion que
+// usa dashboard-generic.js) deja exactamente una fila por categoria — nunca
+// dos categorias con el mismo nombre.
+const FILAS_TIPIF_DUPLICADAS = [
+  { linea: '3P', tipificacion: 'Agendamiento', cantidad: 31 },
+  { linea: '3P', tipificacion: 'Informacion general', cantidad: 20 },
+  { linea: '3P', tipificacion: 'Cancelacion', cantidad: 8 },
+  { linea: 'GENERAL', tipificacion: 'Agendamiento', cantidad: 24 },
+  { linea: 'GENERAL', tipificacion: 'Informacion general', cantidad: 15 },
+  { linea: 'GENERAL', tipificacion: 'Reprogramacion', cantidad: 13 },
+];
+
+test('filtro de linea unica en Tipificacion: nunca deja categorias duplicadas en el resultado', () => {
+  const disponibles = gdValoresDistintos(FILAS_TIPIF_DUPLICADAS, 'linea');
+  assert.deepEqual(disponibles, ['3P', 'GENERAL']);
+
+  const lineaPorDefecto = gdValorFiltroUnico(disponibles, null);
+  const filtradas = gdFiltrarFilasCategorias(FILAS_TIPIF_DUPLICADAS, 'linea', [lineaPorDefecto]);
+
+  const nombres = filtradas.map((f) => f.tipificacion);
+  const nombresUnicos = Array.from(new Set(nombres));
+  assert.equal(nombres.length, nombresUnicos.length, 'ninguna categoria debe repetirse tras filtrar por una sola linea');
+  assert.deepEqual(nombres.sort(), ['Agendamiento', 'Cancelacion', 'Informacion general'].sort());
+
+  // Cambiar a la otra linea tambien queda sin duplicados, con SUS propias
+  // categorias (Reprogramacion, que 3P no tiene).
+  const filtradasGeneral = gdFiltrarFilasCategorias(FILAS_TIPIF_DUPLICADAS, 'linea', ['GENERAL']);
+  const nombresGeneral = filtradasGeneral.map((f) => f.tipificacion);
+  assert.equal(nombresGeneral.length, new Set(nombresGeneral).size);
+  assert.ok(nombresGeneral.includes('Reprogramacion'));
 });

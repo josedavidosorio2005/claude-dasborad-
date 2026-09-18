@@ -240,14 +240,41 @@ async function shot(page, nombre) {
       !!resultado.salidaTotalPanel2 && !resultado.salidaTotalPanel2.includes('Total: 0');
     await shot(page, '2-orlant-salida-con-datos.png');
 
-    // Tipificacion y STA: ya tenian datos reales antes de este prompt --
-    // confirmar que siguen viendose bien (sin tocarlos).
+    // Tipificacion: fix del bug real de la verificacion anterior (2026-09-18)
+    // -- el pie combinaba 3P+General por defecto y duplicaba cada categoria
+    // en la leyenda. Ahora es un selector de UNA linea a la vez
+    // (filtroUnico, dashboard-generic.js) -- confirma que la vista por
+    // defecto ya no tiene labels repetidos, y que cambiar de linea (mismo
+    // patron que Salida) sigue sin duplicados, con su propio set de
+    // categorias.
     await page.evaluate(() => switchGenericTab('tipificacion'));
     await page.waitForTimeout(1000);
-    resultado.tipificacionSigueOk = await page.evaluate(() => {
+    const tipifAntes = await page.evaluate(() => {
       var chart = _gd.charts['gd-c0'];
-      return !!chart && (chart.data.labels || []).length > 0;
+      var sel = document.getElementById('gd-unicof-0');
+      return {
+        labels: chart ? chart.data.labels.slice() : [],
+        lineaSeleccionada: sel ? sel.value : null,
+        opciones: sel ? Array.from(sel.options).map((o) => o.value) : [],
+      };
     });
+    resultado.tipificacionDefaultSinDuplicadosOk =
+      tipifAntes.labels.length > 0 && new Set(tipifAntes.labels).size === tipifAntes.labels.length;
+    resultado.tipificacionSelectorLineaOk = !!tipifAntes.lineaSeleccionada && tipifAntes.opciones.length === 2;
+
+    const otraLinea = tipifAntes.opciones.find((o) => o !== tipifAntes.lineaSeleccionada);
+    if (otraLinea) {
+      await page.selectOption('#gd-unicof-0', otraLinea);
+      await page.click('#gd-f0 button.btn-sm');
+      await page.waitForTimeout(600);
+    }
+    const tipifDespues = await page.evaluate(() => {
+      var chart = _gd.charts['gd-c0'];
+      return chart ? chart.data.labels.slice() : [];
+    });
+    resultado.tipificacionCambioLineaSinDuplicadosOk =
+      tipifDespues.length > 0 && new Set(tipifDespues).size === tipifDespues.length;
+    resultado.tipificacionLabelsPorLinea = { antes: tipifAntes.labels, despues: tipifDespues };
     await shot(page, '3-orlant-tipificacion.png');
 
     await page.evaluate(() => switchGenericTab('sta'));
@@ -268,7 +295,9 @@ async function shot(page, nombre) {
       resultado.dashboardAbreOk &&
       resultado.traficoConDatosOk &&
       resultado.salidaConDatosOk &&
-      resultado.tipificacionSigueOk &&
+      resultado.tipificacionDefaultSinDuplicadosOk &&
+      resultado.tipificacionSelectorLineaOk &&
+      resultado.tipificacionCambioLineaSinDuplicadosOk &&
       resultado.staSigueOk;
 
     resultado.ok = ok;
