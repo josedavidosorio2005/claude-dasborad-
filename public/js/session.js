@@ -206,13 +206,13 @@ async function renderSupervisorMetaTable(){
   for(var i=0;i<campanas.length;i++){ try{ await loadCalData(campanas[i], curMonth); }catch(e){} }
   var html = '<tr><th>Campana</th><th>Mi Meta</th><th>Realizados</th><th>% Total</th><th>Llamada</th><th>WhatsApp</th></tr>';
   if(campanas.length===0){
-    html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">No tienes campanas de Calidad asignadas.</td></tr>';
+    html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">No tienes campanas de Calidad asignadas.</td></tr>';
   } else {
     campanas.forEach(function(camp){
       var lideres = calLideresCumplimiento(camp, curMonth);
       var mia = lideres.find(function(l){ return String(l.liderId)===String(currentUser.id); });
       if(!mia){
-        html += '<tr><td>'+camp+'</td><td colspan="5" style="color:#7a9ba8">Sin meta individual asignada este mes</td></tr>';
+        html += '<tr><td>'+camp+'</td><td colspan="5" style="color:var(--c-text-muted)">Sin meta individual asignada este mes</td></tr>';
       } else {
         html += '<tr><td>'+camp+'</td><td>'+mia.meta+'</td><td>'+mia.realizados+'</td><td class="'+(mia.pct>=100?'peak':'')+'">'+mia.pct+'%</td>'+
           '<td>'+mia.realizadosLlamada+'/'+mia.metaLlamada+(mia.pctLlamadaCompl!==null?' ('+mia.pctLlamadaCompl+'%)':'')+'</td>'+

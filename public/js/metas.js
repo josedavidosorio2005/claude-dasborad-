@@ -419,7 +419,7 @@ function _renderPreviewNivelServicioDiario(nombre, filas, avisos){
     var pctTxt = f.serviceLevel20secPct===null ? '—' : f.serviceLevel20secPct+'%';
     return '<tr><td>'+esc(f.fecha)+'</td><td>'+esc(f.skillName)+'</td><td>'+f.totalLlamadas+'</td><td>'+f.contestadas+'</td><td>'+esc(pctTxt)+'</td></tr>';
   }).join('');
-  if(filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:#7a9ba8">… y '+(filas.length-60)+' filas mas</td></tr>';
+  if(filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted)">… y '+(filas.length-60)+' filas mas</td></tr>';
   document.getElementById('nsd-preview-tbody').innerHTML = html;
   document.getElementById('nsd-preview-card').style.display = '';
 }

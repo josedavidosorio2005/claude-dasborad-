@@ -110,11 +110,11 @@ function renderInvTabla(){
   var items = _invFiltered().slice().sort(function(a,b){ return a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre); });
   var html = '<tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Ubicacion</th><th>Estado</th><th>Proveedor</th><th>Costo Unit.</th><th></th></tr>';
   if(items.length === 0){
-    html += '<tr><td colspan="9" style="text-align:center;color:#7a9ba8">No hay items en el inventario'+(_invFiltroCat||_invFiltroEstado?' con estos filtros':'')+'</td></tr>';
+    html += '<tr><td colspan="9" style="text-align:center;color:var(--c-text-muted)">No hay items en el inventario'+(_invFiltroCat||_invFiltroEstado?' con estos filtros':'')+'</td></tr>';
   } else {
     items.forEach(function(it){
       var estadoCls = it.estado==='Disponible'?'kpi-green':it.estado==='En Uso'?'kpi-org':it.estado==='Mantenimiento'?'kpi-pur':'kpi-red';
-      html += '<tr><td><strong>'+esc(it.nombre)+'</strong>'+(it.descripcion?'<br><span style="font-size:0.75rem;color:#7a9ba8">'+esc(it.descripcion)+'</span>':'')+'</td>'+
+      html += '<tr><td><strong>'+esc(it.nombre)+'</strong>'+(it.descripcion?'<br><span style="font-size:0.75rem;color:var(--c-text-muted)">'+esc(it.descripcion)+'</span>':'')+'</td>'+
         '<td>'+esc(it.categoria)+'</td>'+
         '<td class="peak">'+it.cantidad+'</td>'+
         '<td>'+esc(it.unidad)+'</td>'+
@@ -221,7 +221,7 @@ async function invEliminarItem(id){
 function renderInvMovimientosTabla(){
   var html = '<tr><th>Fecha</th><th>Item</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Registrado por</th></tr>';
   if(_invMovimientos.length === 0){
-    html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">No hay movimientos registrados</td></tr>';
+    html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">No hay movimientos registrados</td></tr>';
   } else {
     _invMovimientos.forEach(function(m){
       var item = _invItems.find(function(x){return x.id===m.itemId;});
@@ -401,8 +401,8 @@ function renderInvAdminStats(){
   var r = _invResumen;
   if(!r) return;
   var html = '<div class="stat-card"><div class="stat-num">'+r.total+'</div><div class="stat-label">Items</div></div>'+
-    '<div class="stat-card" style="border-left-color:#8e44ad"><div class="stat-num">'+r.totalUnidades.toLocaleString('es-CO')+'</div><div class="stat-label">Unidades</div></div>'+
-    '<div class="stat-card" style="border-left-color:#e67e22"><div class="stat-num">$'+Number(r.valorTotal).toLocaleString('es-CO')+'</div><div class="stat-label">Valor Total</div></div>';
+    '<div class="stat-card" style="border-left-color:var(--c-purple)"><div class="stat-num">'+r.totalUnidades.toLocaleString('es-CO')+'</div><div class="stat-label">Unidades</div></div>'+
+    '<div class="stat-card" style="border-left-color:var(--c-warning)"><div class="stat-num">$'+Number(r.valorTotal).toLocaleString('es-CO')+'</div><div class="stat-label">Valor Total</div></div>';
   var el = document.getElementById('inv-admin-stats');
   if(el) el.innerHTML = html;
 }
@@ -411,7 +411,7 @@ function renderInvAdminTabla(){
   var items = _invItems.slice().sort(function(a,b){ return a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre); });
   var html = '<tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr>';
   if(items.length === 0){
-    html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">No hay items. Crea uno o carga un Excel.</td></tr>';
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">No hay items. Crea uno o carga un Excel.</td></tr>';
   } else {
     items.forEach(function(it){
       html += '<tr><td><strong>'+esc(it.nombre)+'</strong></td><td>'+esc(it.categoria)+'</td><td class="peak">'+it.cantidad+'</td><td>'+esc(it.unidad)+'</td>'+

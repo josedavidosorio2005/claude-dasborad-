@@ -457,7 +457,7 @@ function renderCalMonitoreosTable(){
   var canManage = calCanManageMonitoreos();
   var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(canManage?'<th></th>':'')+'</tr>';
   if(arr.length===0){
-    html += '<tr><td colspan="11" style="text-align:center;color:#7a9ba8">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
+    html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
   } else {
     arr.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
@@ -481,7 +481,7 @@ function renderCalResumenTable(){
   var names = Object.keys(byAsesor);
   var html = '<tr><th>Asesor</th><th># Monitoreos</th><th>Prom. Puntaje</th><th>Clasificacion</th><th>Total Fallos Criticos</th><th>Alerta</th></tr>';
   if(names.length===0){
-    html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">Sin datos'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
+    html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">Sin datos'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
   } else {
     names.forEach(function(n){
       var d = byAsesor[n];
@@ -556,7 +556,7 @@ function renderCalConfig(){
   var rows = users.filter(function(u){ return u.rol==='CALIDAD' || u.rol==='SUPERVISOR'; });
   var html = '<tr><th>Usuario</th><th>Rol</th><th>Acceso a '+_ccampana+'</th><th>Estado</th></tr>';
   if(rows.length===0){
-    html += '<tr><td colspan="4" style="text-align:center;color:#7a9ba8">No hay usuarios con rol CALIDAD o SUPERVISOR</td></tr>';
+    html += '<tr><td colspan="4" style="text-align:center;color:var(--c-text-muted)">No hay usuarios con rol CALIDAD o SUPERVISOR</td></tr>';
   } else {
     rows.forEach(function(u){
       var acceso = u.perms['campana_'+_ccampana]===true;
@@ -640,7 +640,7 @@ function verSupervisionLider(camp, mes, liderNombre){
   }).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
   var html = '<tr><th>Fecha</th><th>Asesor</th><th>Canal</th><th>Puntaje</th><th>Clasificacion</th><th>Nivel Critico</th></tr>';
   if(misMon.length===0){
-    html += '<tr><td colspan="6" style="text-align:center;color:#7a9ba8">Sin monitoreos registrados este mes</td></tr>';
+    html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados este mes</td></tr>';
   } else {
     misMon.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
@@ -676,7 +676,7 @@ function renderCalReportes(){
 
   var html = '<tr><th>Persona de Calidad / Supervisor</th><th>Meta Total</th><th>Realizados</th><th>% Total</th><th>Meta Llamada</th><th>Real Llamada</th><th>Meta WPP</th><th>Real WPP</th><th></th></tr>';
   if(lideres.length===0){
-    html += '<tr><td colspan="9" style="text-align:center;color:#7a9ba8">'+curMonth+' no tiene metas individuales programadas en Admin</td></tr>';
+    html += '<tr><td colspan="9" style="text-align:center;color:var(--c-text-muted)">'+curMonth+' no tiene metas individuales programadas en Admin</td></tr>';
   } else {
     lideres.forEach(function(l){
       html += '<tr><td>'+esc(l.liderNombre)+'</td><td>'+l.meta+'</td><td>'+l.realizados+'</td><td class="'+(l.pct>=100?'peak':'')+'">'+l.pct+'%</td>'+

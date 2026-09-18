@@ -109,7 +109,7 @@ function renderGerPanel(){
   // Paneles por categoria
   var panelsHtml = '';
   if(catNames.length === 0){
-    panelsHtml = '<div class="aurora-card"><div class="aurora-card-title">Sin datos para este periodo</div><p style="color:#7a9ba8;font-size:0.85rem">Sube un Excel con los indicadores del mes o crea KPIs individualmente.</p></div>';
+    panelsHtml = '<div class="aurora-card"><div class="aurora-card-title">Sin datos para este periodo</div><p style="color:var(--c-text-muted);font-size:0.85rem">Sube un Excel con los indicadores del mes o crea KPIs individualmente.</p></div>';
   } else {
     catNames.forEach(function(cat){
       var kpis = cats[cat] || [];
@@ -124,7 +124,7 @@ function renderGerPanel(){
                      k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
-          '<div style="font-size:0.72rem;color:#7a9ba8;margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
+          '<div style="font-size:0.72rem;color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
         panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';
@@ -139,7 +139,7 @@ function renderGerPanel(){
 function renderGerTabla(){
   var html = '<tr><th>Nombre</th><th>Categoria</th><th>Valor</th><th>Unidad</th><th>Meta</th><th>Cumple</th><th>Observaciones</th><th></th></tr>';
   if(_gerKpis.length === 0){
-    html += '<tr><td colspan="8" style="text-align:center;color:#7a9ba8">No hay indicadores para '+_gerPeriodoSel+'</td></tr>';
+    html += '<tr><td colspan="8" style="text-align:center;color:var(--c-text-muted)">No hay indicadores para '+_gerPeriodoSel+'</td></tr>';
   } else {
     _gerKpis.forEach(function(k){
       var valFmt = k.unidad === '%' ? (Math.round(k.valor * 100) / 100) + '%' :
@@ -309,11 +309,11 @@ async function renderGerenciaSection(){
 
 function renderGerAdminStats(){
   var html = '<div class="stat-card"><div class="stat-num">'+_gerPeriodos.length+'</div><div class="stat-label">Periodos</div></div>'+
-    '<div class="stat-card" style="border-left-color:#8e44ad"><div class="stat-num">'+_gerKpis.length+'</div><div class="stat-label">Indicadores ('+_gerPeriodoSel+')</div></div>';
+    '<div class="stat-card" style="border-left-color:var(--c-purple)"><div class="stat-num">'+_gerKpis.length+'</div><div class="stat-label">Indicadores ('+_gerPeriodoSel+')</div></div>';
   var conMeta = _gerKpis.filter(function(k){ return k.meta !== null && k.meta !== undefined; });
   if(conMeta.length > 0){
     var cumple = conMeta.filter(function(k){ return k.valor >= k.meta; }).length;
-    html += '<div class="stat-card" style="border-left-color:#27ae60"><div class="stat-num">'+cumple+'/'+conMeta.length+'</div><div class="stat-label">Cumplen Meta</div></div>';
+    html += '<div class="stat-card" style="border-left-color:var(--c-success)"><div class="stat-num">'+cumple+'/'+conMeta.length+'</div><div class="stat-label">Cumplen Meta</div></div>';
   }
   var el = document.getElementById('ger-admin-stats');
   if(el) el.innerHTML = html;
@@ -322,7 +322,7 @@ function renderGerAdminStats(){
 function renderGerAdminTabla(){
   var html = '<tr><th>Periodo</th><th>Nombre</th><th>Categoria</th><th>Valor</th><th>Unidad</th><th>Meta</th><th></th></tr>';
   if(_gerKpis.length === 0){
-    html += '<tr><td colspan="7" style="text-align:center;color:#7a9ba8">No hay indicadores para este periodo</td></tr>';
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">No hay indicadores para este periodo</td></tr>';
   } else {
     _gerKpis.forEach(function(k){
       var valFmt = k.unidad === '%' ? k.valor+'%' : k.unidad === 'USD' ? '$'+k.valor.toLocaleString('es-CO') : k.valor;

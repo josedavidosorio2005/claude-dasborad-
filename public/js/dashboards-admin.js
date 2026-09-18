@@ -23,7 +23,7 @@ async function renderDashboardsSection(){
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
     return '<tr><td><strong>'+esc(r.cliente)+'</strong></td><td>'+esc(r.titulo)+'</td><td>'+r.tabs+'</td><td>'+r.paneles+'</td>'+
-      '<td style="font-size:0.78rem;color:#7a9ba8">'+esc((r.updatedAt||'').slice(0,10))+'</td>'+
+      '<td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc((r.updatedAt||'').slice(0,10))+'</td>'+
       '<td><button class="btn-sm btn-cancel" data-dcaction="preview" data-cliente="'+esc(r.cliente)+'">Previsualizar</button> '+
       '<button class="btn-sm btn-edit" data-dcaction="edit" data-cliente="'+esc(r.cliente)+'">Editar</button> '+
       '<button class="btn-sm btn-delete" data-dcaction="delete" data-cliente="'+esc(r.cliente)+'">Eliminar</button></td></tr>';

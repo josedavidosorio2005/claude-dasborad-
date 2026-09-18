@@ -142,12 +142,12 @@ function renderAuxPerms(filter){
   var html='';
   for(var i=0;i<auxUsers.length;i++){
     var u=auxUsers[i];
-    html+='<div style="border-top:1px solid #edf2f6;padding:22px 24px">';
+    html+='<div style="border-top:1px solid var(--c-border-soft2);padding:22px 24px">';
     html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">';
-    html+='<strong style="color:#0d4a5e;font-size:0.95rem">'+esc(u.nombre)+'</strong>';
-    html+='<span style="font-size:0.76rem;color:#7a9ba8">@'+esc(u.user)+'</span>';
+    html+='<strong style="color:var(--c-primary);font-size:0.95rem">'+esc(u.nombre)+'</strong>';
+    html+='<span style="font-size:0.76rem;color:var(--c-text-muted)">@'+esc(u.user)+'</span>';
     html+='<span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>';
-    html+='<span style="font-size:0.76rem;color:#7a9ba8">'+(u.active?'Activo':'Suspendido')+'</span>';
+    html+='<span style="font-size:0.76rem;color:var(--c-text-muted)">'+(u.active?'Activo':'Suspendido')+'</span>';
     html+='</div>';
 
     // Actions section
