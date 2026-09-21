@@ -2831,3 +2831,78 @@ modal en vez de una sección — caso aparte en el script) y se confirmó que
 los 11 siguen navegando a su destino. Sin errores de JS en consola.
 `npm test`: 269/269 sin cambios (el cambio es de navegación/UI pura, no
 toca lógica de datos de ningún dashboard).
+
+## Fase 47 — Auditoría de cumplimiento vs. la reunión con Edwin (21/09) (2026-09-21)
+
+Pedido: verificar contra el código real (no contra la memoria de fases
+anteriores) cada punto de la reunión del 21/09, e implementar lo que
+estuviera pendiente y no bloqueado.
+
+**Corrección de partida**: el PR #97 (Fase 46, menú lateral desplegable) ya
+estaba MERGEADO a `main` (`git log origin/main`, commit `81ca006`) — no
+"abierto sin mergear" como se creía al iniciar esta fase. Se trabajó desde
+`main` actualizado.
+
+**Tabla de cumplimiento** (evidencia completa en el hallazgo de abajo):
+menú lateral desplegable, PDF/imprimir, filtros día/rango/mes por panel,
+las 7 métricas + SL20 de Tráfico, y la limpieza de duplicados — todos
+confirmados ya hechos en el código actual. "Todas las líneas"
+(multi-campaña), Tráfico de WhatsApp y comparativas entre meses siguen
+fuera de alcance/bloqueados, sin tocar, tal como se esperaba.
+
+**Hallazgo grande** (se pausó y se consultó al usuario antes de tocar
+código, como pedía el encargo): el pedido transversal "que se vea el valor
+sin hover en TODAS las gráficas" **ya estaba cumplido en todo el sistema**
+desde mucho antes de la Fase 45 — `git log -p -- public/js/charts.js`
+muestra que `lo()`/`loPie()` traen `datalabels:{display:true,...}` por
+defecto desde el commit original del motor de dashboards (`949e533`, muy
+anterior a la reunión del 21/09), no algo que la Fase 45 haya activado.
+Confirmado revisando los 3 únicos puntos del frontend que crean instancias
+de `Chart` (`grep "new Chart("` sobre todo `public/js`): `dashboard-generic.js`
+(9 plantillas de cliente + Aurora + Hospital La María + Calidad),
+`calidad.js` (portal Calidad) y `mis-resultados.js` (portal Asesor) — los
+3 ya mostraban los valores siempre, incluida la pestaña de Calidad (el caso
+que se iba a consultar antes de tocar terminó sin necesitar decisión: no
+había nada que "activar" ahí). Lo único apagado explícitamente
+(`display:false`) eran las 6 gráficas de `trafico.js`, que la Fase 45 ya
+corrigió agregando el auto-ocultado (`loDatalabelsAuto()`, `charts.js`).
+
+**Decisión del usuario tras el hallazgo**: ya que no había brecha de
+cumplimiento que cerrar, homogeneizar igual el modo `auto` (evita que las
+etiquetas se amontonen en paneles densos, ej. una línea diaria de un mes
+completo en una plantilla de cliente) en vez de dejar el `display:true`
+fijo de siempre — mismo criterio y mismo helper que ya usa Tráfico desde
+la Fase 45, sin inventar nada nuevo. Aplicado a los 5 puntos donde
+`dashboard-generic.js` no pasaba ya por `loDatalabelsAuto()`: panel `pie`,
+panel `line`/`bar`/`area` (un solo punto que cubre también `loPct()` y
+`_gdTiempoOpts()`, ya que el wrap se hizo sobre `opts` ya resuelto), panel
+`combo` (construye su propio objeto `datalabels` a mano, se le agregó
+`loDatalabelsAuto(o)` preservando su `formatter` de % en la línea) y
+`calidad_pie` (`_gdRenderCalidad`); y en los 2 gráficos de `calidad.js`
+(`ccmk`) y los 2 de `mis-resultados.js` (`mrmk`). Cero cambio de datos —
+solo qué etiquetas se ocultan cuando se solaparían.
+
+**Verificación**: `npm test` 269/269 antes y después (cambio de UI pura,
+sin tocar lógica de datos). Capturas Playwright reales (no vía extensión de
+Chrome — el entorno de la extensión no alcanza el `localhost` del sandbox
+donde corre el servidor de desarrollo, confirmado con `example.com` sí
+resuelve pero `127.0.0.1:3000` da `ERR_CONNECTION_REFUSED`; se usó
+`playwright` directo desde Node, que sí corre en el mismo sandbox que el
+servidor) de TELEVENTAS COMFAMA (pestañas "Flujo de gestión" y
+"Conversión"), BIVETT (pestaña "Flujo diario") y ORLANT (pestaña Calidad),
+claro/oscuro, antes/después (`git stash` de los 3 archivos para capturar
+"antes", `stash pop` para "después") en
+`docs/capturas-demo/fase47-auditoria-y-valores-graficas/`. Confirmado
+visualmente: mismos valores en KPIs y gráficas en ambas capturas (ej.
+Comfama: 2.822/2.540/70%/1.245/187/10.50%/5:30 idéntico antes/después;
+ORLANT Calidad: 191 monitoreos/57.4 promedio/CRÍTICO/16%-25%-59% idéntico),
+el panel `combo` (Comfama "Contactados vs Ventas") conserva el formato de
+% en la línea tras el fix, y el pie de Calidad de ORLANT sigue mostrando
+los 3 porcentajes. Con la densidad de datos de la demo (12 días, 6 meses)
+el auto-ocultado no tuvo etiquetas que ocultar — mismo comportamiento
+visible que antes, la diferencia solo aparecería con datos reales más
+densos, que es justamente el caso que motivó el cambio.
+
+`npm audit --omit=dev` (server): 0 vulnerabilidades.
+
+Sin cambios en CI/workflows ni secretos de despliegue.

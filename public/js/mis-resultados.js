@@ -54,11 +54,11 @@ async function renderMisResultados(){
     '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv" style="font-size:1rem">'+clasifGeneral+'</div><div class="kl">Clasificacion General</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+fallosTotal+'</div><div class="kl">Total Fallos Criticos</div></div>';
 
-  mrmk('mr-ch-clasif',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loPie()});
+  mrmk('mr-ch-clasif',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
 
   var labels = arr.map(function(m,i){ return m.fecha || ('#'+(i+1)); });
   var puntajes = arr.map(function(m){ return m.puntaje; });
-  mrmk('mr-ch-tendencia',{type:'line',data:{labels:labels.length?labels:['Sin datos'],datasets:[{label:'Puntaje',data:puntajes.length?puntajes:[0],borderColor:CM,backgroundColor:'rgba(26,122,158,0.1)',tension:0.3,pointRadius:4,borderWidth:2.5,fill:true}]},options:lo(null,50)});
+  mrmk('mr-ch-tendencia',{type:'line',data:{labels:labels.length?labels:['Sin datos'],datasets:[{label:'Puntaje',data:puntajes.length?puntajes:[0],borderColor:CM,backgroundColor:'rgba(26,122,158,0.1)',tension:0.3,pointRadius:4,borderWidth:2.5,fill:true}]},options:loDatalabelsAuto(lo(null,50))});
 
   var rows = arr.slice().reverse();
   _misMonitoreosList = rows;
