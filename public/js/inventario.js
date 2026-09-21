@@ -200,6 +200,8 @@ async function invGuardarItem(){
   renderInvFiltros();
   renderInvKpis();
   renderInvTabla();
+  renderInvAdminStats();
+  renderInvAdminTabla();
 }
 
 async function invEliminarItem(id){
@@ -213,6 +215,8 @@ async function invEliminarItem(id){
   renderInvFiltros();
   renderInvKpis();
   renderInvTabla();
+  renderInvAdminStats();
+  renderInvAdminTabla();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -409,7 +413,7 @@ function renderInvAdminStats(){
 
 function renderInvAdminTabla(){
   var items = _invItems.slice().sort(function(a,b){ return a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre); });
-  var html = '<tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr>';
+  var html = '';
   if(items.length === 0){
     html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">No hay items. Crea uno o carga un Excel.</td></tr>';
   } else {
