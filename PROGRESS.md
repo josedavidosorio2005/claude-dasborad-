@@ -2600,3 +2600,66 @@ producción tras el deploy: `charts.js` (`loPct`) y el eje `y2` de
 `v+'%'` crudo restante, `index.html` no tiene ningún color de la lista de
 hardcodeados, y `styles.css` trae la regla base `.kpi-pur` — los 5
 archivos servidos en producción coinciden exactamente con lo mergeado.
+
+## Fase 42 — Extiende el escaneo de tema/QA a las 8 campañas restantes + cierra los colores tenues pendientes (2026-09-21)
+
+Continuación directa de la Fase 41: esa fase escaneó tema/QA solo sobre
+ANDRES YEPES (plantilla estándar) + ORLANT + Metas Calidad, y dejó
+pendiente por bajo beneficio (no por riesgo) ~25 usos de `#7a9ba8` (texto
+tenue) hardcodeado. El usuario pidió extender la parte A/C a las 8
+campañas restantes y cerrar ese pendiente. **El bug de `_gdNum()` sigue
+sin tocarse — decisión ya tomada en la Fase 41, no se reabrió.**
+
+**Investigado antes de tocar código**: `server/dashboard-plantillas-cliente.js`
+(fuente única de las 9 campañas de plantilla estándar) se leyó completo —
+confirmado con grep que tiene **cero colores hardcodeados** y que las 9
+campañas se generan desde solo 3 funciones compartidas
+(`plantillaVentas`/`plantillaCobranza`/`plantillaAtencion`), sin ningún
+panel ni config hecha a mano por campaña. Esto predice que los fixes de
+la Fase 41 (compartidos en `charts.js`/`dashboard-generic.js`/`trafico.js`/
+`styles.css`) ya cubren las 8 campañas automáticamente — confirmado
+empíricamente con Playwright, no solo por lectura de código (tal como
+pidió el usuario).
+
+**Los ~25 colores tenues**: la mayoría de instancias de `#7a9ba8` que
+parecían pendientes en realidad NO eran bugs — `styles.css:27` es la
+propia definición del token `--c-text-muted` (debe quedarse tal cual),
+`charts.js` (2 instancias) son las variables puente `CHART_TICK`
+reasignadas por `aplicarTemaCharts()` (el mecanismo que hace los gráficos
+theme-aware, no un bug), y 2 instancias más están dentro de las ventanas
+de impresión/exportación (ya descartadas en la Fase 41, fijas a
+propósito). Las genuinas eran **22 instancias en `index.html`**
+(buscadores, notas de Historial/Umbrales/Cargar Datos, etc.) — todas
+reemplazadas por `var(--c-text-muted)` con un único reemplazo mecánico
+(`color:#7a9ba8` → `color:var(--c-text-muted)`), sin tocar diseño.
+
+**Las 8 campañas restantes** (TELEVENTAS SURA, TELEVENTAS COMFAMA,
+PANTERA MAIKERS, MOVILIZE, ALBERTO LINERO GO, INFONDO, SASCHA FITNESS,
+BIVETT): recorridas completas con Playwright (todas las pestañas
+visibles, todas las sub-pestañas de Tráfico de la Fase 40 donde
+aplica) en los 4 combos claro/oscuro × escritorio/móvil — **0
+hallazgos, ni de tema ni de consola, en ninguna de las 8**. Se
+confirmó visualmente que los % en ejes Y y KPIs salen redondeados (sin
+ruido de punto flotante) incluso en campañas con rangos angostos
+(ej. "Nivel de atención por mes" de SASCHA FITNESS: 78.5%, 81.4%,
+93.1%, 80.4%, 87.3%, 88.2% — todos limpios), y que PANTERA MAIKERS/
+ALBERTO LINERO GO (sin pestaña Calidad, `calidad:false`) se ven
+correctas con su menú de 4 pestañas. Ningún hallazgo funcional que
+reportar.
+
+**Verificación**: suite completa 263/263 (sin cambios — cambio 100%
+frontend), `npm audit` limpio, antes y después. Playwright local
+(Chromium, `seed:demo`): 156 capturas de las 8 campañas en
+`docs/capturas-demo/fase42-extender-escaneo/campanas/` (verificación,
+no hubo cambio que amerite antes/después ahí — los fixes ya estaban
+desplegados desde la Fase 41), más 32 capturas antes/después del fix de
+`#7a9ba8` sobre 4 pantallas admin representativas (Usuarios, Historial,
+Umbrales, Inventario) en
+`docs/capturas-demo/fase42-extender-escaneo/admin-antes/` y
+`.../admin-despues/`.
+
+**Verificado en producción real** (solo lectura): mismo criterio que la
+Fase 41 — cambio 100% de un archivo estático (`index.html`), sin ningún
+componente de servidor/DB, así que se confirmó directamente contra el
+archivo servido tras el deploy: cero ocurrencias de `#7a9ba8` en el
+`index.html` de producción, las 22 en `var(--c-text-muted)`.
