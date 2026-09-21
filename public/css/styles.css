@@ -162,7 +162,14 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .login-error{color:var(--c-danger-dark);font-size:0.83rem;margin-top:10px;display:none;}
 
 /* ── NAVBAR ── */
-.navbar{background:var(--c-brand);padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:10px;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
+/* justify-content:space-between (removido, Fase 46) esperaba EXACTAMENTE 2
+   hijos flex (brand, navbar-right) -- con el boton hamburguesa ahora
+   siempre visible (ver .navbar-menu-toggle abajo) pasan a ser 3, y
+   space-between los habria repartido con espacios iguales entre los tres en
+   vez de pegar el logo a la izquierda. margin-left:auto en .navbar-right
+   (mas abajo) logra el mismo resultado visual de siempre sin importar
+   cuantos hijos haya antes. */
+.navbar{background:var(--c-brand);padding:0 28px;display:flex;align-items:center;gap:10px;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
 /* El logo original era una sola imagen (símbolo a color + wordmark "InConexion"
    horneado en el mismo PNG, en teal oscuro fijo) -- el texto se perdía por
    contraste sobre el fondo del navbar, también teal oscuro (mismo var(--c-primary)
@@ -171,7 +178,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    CSS. Ambos van dentro de .navbar-brand. */
 .navbar-brand{display:flex;align-items:center;gap:10px;}
 .navbar-logo-icon{height:34px;}
-.navbar-right{display:flex;align-items:center;gap:12px;}
+.navbar-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
 .navbar-user{color:var(--c-on-primary-soft);font-size:0.85rem;}
 .navbar-role{background:rgba(255,255,255,0.15);color:var(--c-surface);font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;}
 .navbar-role.aux{background:rgba(91,184,212,0.3);color:#c8eaf5;}
@@ -181,14 +188,18 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .save-flash{font-size:0.78rem;color:#2ecc71;font-weight:700;opacity:0;transition:opacity 0.3s;white-space:nowrap;}
 .save-flash.show{opacity:1;}
 
-/* Botón hamburguesa (abre el sidebar off-canvas) y botón/menú de perfil
-   (agrupa nombre+rol+cerrar sesión) — ambos ocultos en desktop por defecto,
-   la media query de abajo los activa en pantallas angostas. En desktop,
-   .navbar-profile-dropdown se ve exactamente igual que antes (mismo
-   display:flex + gap que tenía .navbar-right), así que envolver
-   navbar-user/navbar-role/btn-logout en este div no cambia nada visualmente
-   arriba de 768px. */
-.navbar-menu-toggle,.navbar-profile-toggle{display:none;background:none;border:none;color:var(--c-surface);font-size:1.3rem;line-height:1;padding:4px 8px;cursor:pointer;border-radius:6px;}
+/* Botón hamburguesa: abre/cierra el sidebar. Hasta la Fase 46 solo existía
+   en movil (sidebar off-canvas); ahora tambien colapsa el sidebar en
+   escritorio (ver .sidebar / html[data-sidebar-collapsed] mas abajo), asi
+   que queda visible siempre, no solo bajo la media query de celular.
+   Boton/menú de perfil (agrupa nombre+rol+cerrar sesión) sigue oculto en
+   desktop por defecto -- la media query de abajo lo activa en pantallas
+   angostas. En desktop, .navbar-profile-dropdown se ve exactamente igual
+   que antes (mismo display:flex + gap que tenía .navbar-right), así que
+   envolver navbar-user/navbar-role/btn-logout en este div no cambia nada
+   visualmente arriba de 768px. */
+.navbar-menu-toggle{display:inline-flex;align-items:center;background:none;border:none;color:var(--c-surface);font-size:1.3rem;line-height:1;padding:4px 8px;cursor:pointer;border-radius:6px;}
+.navbar-profile-toggle{display:none;background:none;border:none;color:var(--c-surface);font-size:1.3rem;line-height:1;padding:4px 8px;cursor:pointer;border-radius:6px;}
 .navbar-menu-toggle:hover,.navbar-profile-toggle:hover{background:rgba(255,255,255,0.12);}
 .navbar-profile-dropdown{display:flex;align-items:center;gap:12px;}
 .sidebar-overlay{display:none;}
@@ -206,7 +217,31 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    tenían el mismo problema. */
 .navbar-logo-text{font-size:1.05rem;font-weight:800;color:var(--c-surface);letter-spacing:0.3px;}
 .admin-layout{display:flex;min-height:calc(100vh - 62px);}
-.sidebar{width:220px;background:var(--c-surface);border-right:1.5px solid var(--c-border);padding:24px 0 0;flex-shrink:0;}
+.sidebar{width:220px;background:var(--c-surface);border-right:1.5px solid var(--c-border);padding:24px 0 0;flex-shrink:0;transition:width 0.2s ease;}
+
+/* Sidebar colapsable en escritorio (Fase 46, pedido de Edwin: el menu va a
+   tener cada vez mas contenido -- mas lineas/campanas, Trafico de WhatsApp
+   -- y hoy siempre ocupa 220px fijos). Mismo boton/misma logica de
+   toggleSidebar() (ui-core.js) que YA abre/cierra el sidebar off-canvas en
+   movil; en escritorio en vez de superponerse (un overlay oscuro es mas
+   una necesidad de movil, donde no sobra espacio) "empuja": se colapsa a 0
+   y .main-content usa el ancho liberado (ya es flex:1, no requiere ningun
+   cambio ahi). El estado se guarda en localStorage (inco_sidebar_colapsado)
+   y se aplica ANTES del primer paint via este atributo en <html> (mismo
+   patron que data-theme, ver el <script> inline al inicio de <head> en
+   index.html) -- sin esto habria un parpadeo del sidebar expandido
+   colapsandose recien despues de cargar. Sin el atributo (caso por
+   defecto, ningun usuario lo ha tocado todavia) el sidebar se ve
+   exactamente como siempre: expandido.
+   Envuelto en min-width:769px a proposito: sin esto, el selector de mayor
+   especificidad ([data-sidebar-collapsed]+.sidebar vs. el .sidebar suelto
+   de la media query de movil) pisaria el ancho 80%/off-canvas de movil si
+   alguien colapsa en escritorio y despues abre la app en el celular (mismo
+   localStorage) -- este flag es puramente de escritorio, no debe tocar el
+   drawer de movil para nada. */
+@media(min-width:769px){
+  html[data-sidebar-collapsed="1"] .sidebar{width:0;padding-top:0;border-right-width:0;overflow:hidden;}
+}
 .sidebar-title{color:var(--c-primary);font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:0 20px 12px;border-bottom:1px solid var(--c-border-soft);margin-bottom:8px;}
 .sidebar-menu{list-style:none;}
 .sidebar-menu li a{display:flex;align-items:center;gap:9px;padding:10px 20px;color:var(--c-text-link);font-size:0.88rem;cursor:pointer;transition:background 0.15s,color 0.15s;}
@@ -239,7 +274,6 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
   .navbar-logo-text{font-size:0.85rem;}
   .save-flash{display:none;} /* con el perfil colapsado a ícono no hay lugar para este aviso secundario */
 
-  .navbar-menu-toggle{display:inline-flex;align-items:center;order:-1;}
   .navbar-right{position:relative;gap:2px;}
   .navbar-profile-toggle{display:inline-flex;align-items:center;}
 

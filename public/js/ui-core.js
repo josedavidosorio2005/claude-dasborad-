@@ -30,26 +30,47 @@ function applyCreateBtn(){
 }
 
 // ═══════════════════════════════════════════════════════════
-// RESPONSIVE: sidebar off-canvas + menu de perfil (celular, <=768px)
+// RESPONSIVE: sidebar (off-canvas en celular, colapsable en escritorio
+// desde la Fase 46) + menu de perfil (celular, <=768px)
 // ═══════════════════════════════════════════════════════════
-// El sidebar off-canvas y el dropdown de perfil comparten un patrón simple:
-// una clase que se prende/apaga en el contenedor padre (.app-page para el
-// sidebar, .navbar-right para el perfil) y el CSS (@media max-width:768px)
-// se encarga de mostrar/ocultar y animar. En desktop estas clases no tienen
-// ningún efecto visual (el CSS base ya deja todo visible en línea).
+// El dropdown de perfil usa una clase simple (.navbar-right.open) que el
+// CSS (@media max-width:768px) muestra/oculta -- en desktop no tiene ningun
+// efecto visual (el CSS base ya deja todo visible en linea).
+// El sidebar usa DOS mecanismos independientes, mismo boton/mismo
+// toggleSidebar(): en celular, la clase .sidebar-open en .app-page (off-
+// canvas superpuesto, como siempre); en escritorio, el atributo
+// data-sidebar-collapsed="1" en <html> (colapsa el ancho a 0, "empuja" en
+// vez de superponerse -- ver css/styles.css). Se usan dos señales
+// distintas (no una sola) porque el ESTADO POR DEFECTO es opuesto en cada
+// breakpoint (celular: oculto por defecto; escritorio: expandido por
+// defecto) -- toggleSidebar() calcula "esta abierto ahora" segun el
+// viewport actual (matchMedia) para que un mismo click siempre alterne en
+// la direccion correcta sin importar el tamano de pantalla.
 function closeNavbarProfile(){
   document.querySelectorAll('.navbar-right.open').forEach(function(el){ el.classList.remove('open'); });
 }
+var SIDEBAR_MQ_MOVIL = '(max-width: 768px)'; // mismo breakpoint que styles.css
 function toggleSidebar(btn){
   var page = btn.closest('.app-page');
   if(!page) return;
-  var willOpen = !page.classList.contains('sidebar-open');
+  var esMovil = window.matchMedia(SIDEBAR_MQ_MOVIL).matches;
+  var estabaAbierto = esMovil
+    ? page.classList.contains('sidebar-open')
+    : document.documentElement.getAttribute('data-sidebar-collapsed') !== '1';
+  var willOpen = !estabaAbierto;
   // El sidebar (z-index 300) queda por encima del dropdown de perfil
   // (z-index 250) y ambos pueden ocupar la misma franja derecha en celular
   // -- si los dos quedan abiertos a la vez el sidebar tapa parte del
   // dropdown. Se evita dejando abierto solo uno de los dos.
   if(willOpen) closeNavbarProfile();
   page.classList.toggle('sidebar-open', willOpen);
+  if(willOpen) document.documentElement.removeAttribute('data-sidebar-collapsed');
+  else document.documentElement.setAttribute('data-sidebar-collapsed', '1');
+  // Solo la preferencia de escritorio se recuerda (Fase 46, pedido de
+  // Edwin) -- en celular el sidebar siempre arranca oculto, ese default no
+  // cambia; guardar aca de todas formas es inofensivo (celular nunca lee
+  // esta clave) y mantiene una sola funcion de toggle para ambos casos.
+  try{ localStorage.setItem('inco_sidebar_colapsado', willOpen ? '0' : '1'); }catch(e){}
 }
 function closeSidebar(){
   document.querySelectorAll('.app-page.sidebar-open').forEach(function(p){
