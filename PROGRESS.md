@@ -2405,3 +2405,74 @@ esos campos son NULL en el seed local) — comportamiento esperado, no una
 regresión: confirmado leyendo el DOM directamente (el aviso "sin datos"
 existe, solo queda fuera del recorte del scroll interno del modal en la
 captura de página completa, limitación ya conocida desde el PR #68).
+
+## Fase 40b — Menú de ORLANT reducido a "Calidad" y "Tráfico de Llamadas" — TEMPORAL (2026-09-21)
+
+Pedido del usuario tras revisar el resultado de la Fase 40: de las 9
+pestañas de ORLANT, solo Calidad (reorganizada en la Fase 37) y Tráfico de
+Llamadas (datos reales de agosto, verificados varias veces) están
+completas. Las otras 7 (Flujo Mensual, Salida, Tipificación, Agendamiento,
+Inasistencia, Gestión STA, Efectividad Citas) siguen con huecos —p. ej.
+"Órdenes por Servicio (año)" de Gestión STA vacía, o el hallazgo de la
+Fase 39 de "0" en vez de "—" en varios campos de Flujo Mensual. Mientras
+se termina de organizar/llenar esa información, se ocultan del menú **de
+forma temporal y reversible** — no se borra nada.
+
+**Investigado antes de tocar nada** (tal como se pidió): no existía
+ningún mecanismo de "ocultar una pestaña sin borrar su config" en
+`dashboard-generic.js`. Se confirmó también que ni Calidad
+(`calidad_kpis`/`calidad_pie`, datos de `monitoreos` vía `loadCalData`) ni
+Tráfico (`trafico_combo`, datos de `calidad_nivel_servicio_diario`)
+dependen de ningún dato/cálculo que viva en las 7 pestañas a ocultar —
+fuentes de datos completamente independientes de `dashboard_cargas`
+(`resumen`/`salida`/etc., que sí usan las 7 pestañas ocultas). Único
+punto que se deja anotado sin tocar: el strip de 13 KPIs de cabecera
+(arriba de las pestañas) no es parte de ninguna pestaña — sigue visible
+siempre, independiente de qué pestañas estén ocultas, porque el pedido
+fue ocultar pestañas del menú, no ese strip.
+
+**Implementado**: campo opcional `oculta: true` en la config de una
+pestaña (`server/dashboard-config-seed.js`) — puramente aditivo, no toca
+`panels`/`subtabs`/datos/cálculos de la pestaña. `dashboard-generic.js`
+(`_gdTabsVisibles()`, usado por `renderGenericTabs()` y `_gdBootstrap()`)
+filtra las pestañas ocultas del menú y de la pestaña activa por defecto
+(ahora "Calidad", la primera visible). El constructor visual de
+dashboards (`dashboards-admin.js`) no se tocó — un administrador sigue
+viendo las 9 pestañas ahí para poder editarlas o revertir el flag.
+**Revertir = quitar `oculta: true` de la pestaña correspondiente en
+`dashboard-config-seed.js` + una migración nueva de reversión (mismo
+patrón que las de abajo) si ya se desplegó a producción.**
+
+**Mismo hallazgo crítico que la Fase 40, vuelto a aplicar**: ORLANT ya
+existe en `dashboards_config` (producción), así que el campo nuevo del
+seed no llega solo a la fila real. Se agregó
+`dashboards_config_orlant_ocultar_pestanas_v1` (`server/db.js`) — a
+diferencia de las migraciones anteriores de ORLANT, esta no depende de la
+forma de `panels` (el flag no los toca), así que se aplica aunque una
+pestaña haya sido personalizada a mano.
+
+**Verificación**: 4 tests nuevos
+(`tests/orlant-ocultar-pestanas-migracion.test.js`) — oculta exactamente
+las 7 pestañas pedidas, nunca oculta Calidad ni Tráfico, nunca toca
+`panels`/`subtabs`, nunca toca otro cliente. Suite completa 263/263 (259 +
+4), `npm audit` limpio. Playwright local (Chromium, `seed:demo`, entorno
+propio): confirmado en los 4 combos claro/oscuro × escritorio/móvil que
+el menú de ORLANT muestra exactamente `["Calidad", "Trafico de
+Llamadas"]`, que `_gd.config.layout.tabs` sigue trayendo las 9 pestañas
+(7 con `oculta:true`), y que Tráfico sigue con sus 6 sub-pestañas
+(Resumen + 5 de detalle) funcionando igual que en la Fase 40 — cero
+errores de consola. Capturas en
+`docs/capturas-demo/fase40-orlant-solo-calidad-trafico/`.
+
+**Verificado en producción real** (workflow de solo lectura, usuario
+temporal ADMIN creado/borrado directo en la base de datos, puerto SSH
+abierto solo para la IP del runner y revertido al final — mismo mecanismo
+que la Fase 40): el menú de ORLANT en producción muestra únicamente
+`["Calidad", "Trafico de Llamadas"]`; la config real sigue trayendo las 9
+pestañas (`flujoPanels: 4`, `staSubtabs: 4` — nada se borró, solo se
+ocultaron 7 del menú: flujo/salida/tipificacion/agendamiento/
+inasistencia/sta/efectividad); Calidad queda como pestaña activa por
+defecto; Tráfico sigue con sus 6 sub-pestañas y los mismos valores ya
+verificados — **Total Llamadas 8.061, Contestadas 7.159, Abandonadas 902,
+Nivel de Atención 88.8%, Tasa de Abandono 11.2%** — exactamente iguales a
+antes de ocultar las otras pestañas.
