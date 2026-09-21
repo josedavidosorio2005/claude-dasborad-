@@ -2672,3 +2672,32 @@ Fase 41 — cambio 100% de un archivo estático (`index.html`), sin ningún
 componente de servidor/DB, así que se confirmó directamente contra el
 archivo servido tras el deploy: cero ocurrencias de `#7a9ba8` en el
 `index.html` de producción, las 22 en `var(--c-text-muted)`.
+
+## Fase 42-bis — Limpieza de la rama sin usar de la Fase 36 (2026-09-21)
+
+Pedido del usuario: revisar si `ops/usuario-temporal-trafico-real-orlant-2026-09-18`
+(dada por sin mergear en la nota original de la Fase 36) seguía siendo
+segura de borrar.
+
+**Hallazgo**: la nota de la Fase 36 estaba equivocada — ese PR (#74) sí se
+mergeó el 2026-09-18 (confirmado con `git log`/`gh pr view 74`), así que
+la rama no tenía nada que perder al borrarse. Corregida la nota original
+(ver arriba). Rama borrada, local y en origin.
+
+Como el workflow que ese PR agregó
+(`.github/workflows/usuario-temporal-trafico-real-orlant.yml`) sí seguía
+activo en el repo, se revisó su historial real de GitHub Actions antes de
+decidir nada: **0 ejecuciones desde que se mergeó** (`gh api
+repos/.../actions/workflows/361634592/runs` → `total_count: 0`) — nunca se
+usó ni siquiera para la carga real de agosto de la propia Fase 36 (esa
+carga terminó usando la contraseña del admin maestro directamente, como
+ya decía la nota original).
+
+**Decisión**: dado que es una capacidad de CI con acceso a secretos de
+despliegue (rol OIDC, SSH, puede insertar un usuario ADMIN completo en la
+base de datos de producción a partir de un `workflow_dispatch` con
+cualquier hash de contraseña) y nadie la ha usado nunca, se prepara este
+PR para retirarla — **sin mergear**, a la espera de revisión humana
+explícita (mismo criterio del clasificador de seguridad que ya aplicó
+quien mergeó el PR original: cualquier cambio a un workflow con secretos
+de despliegue lo revisa una persona antes de entrar).
