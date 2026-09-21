@@ -59,7 +59,16 @@ const ORLANT = {
       // los indices del mismo array `panels` de siempre en sub-pestanas
       // (patron `.aurora-tabs`/`.atab` de la Fase 37, dashboard-generic.js);
       // no se creo grafica nueva ni se toco ningun calculo.
-      { key: 'flujo', label: 'Flujo Mensual', panels: [
+      //
+      // Fase 40b (2026-09-21): `oculta: true` (dashboard-generic.js) saca un
+      // tab del menu de pestanas SIN borrar nada -- panels/subtabs/datos/
+      // calculos quedan intactos, solo no se renderiza su boton ni puede
+      // quedar como pestana activa por defecto. TEMPORAL: mientras se
+      // termina de organizar/llenar la informacion de estas 7 pestanas
+      // (ver PROGRESS.md), solo quedan visibles Calidad y Trafico de
+      // Llamadas, que ya estan completas y verificadas. Revertir = quitar
+      // `oculta: true` de la pestana correspondiente.
+      { key: 'flujo', label: 'Flujo Mensual', oculta: true, panels: [
         lineP('Llamadas 3P por mes', 'llamadas_3p'),
         lineP('WhatsApp 3P por mes', 'wpp_3p'),
         lineP('Llamadas Linea General por mes', 'llamadas_general'),
@@ -77,7 +86,7 @@ const ORLANT = {
       // General/3P, "Total: N" de la linea que se este viendo. Reemplaza los
       // 4 paneles anteriores (misma fuente/campos, solo cambia la
       // presentacion — ver PROGRESS.md de esta fase).
-      { key: 'salida', label: 'Salida', panels: [
+      { key: 'salida', label: 'Salida', oculta: true, panels: [
         { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
           { label: 'Linea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
           { label: 'Linea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
@@ -104,7 +113,7 @@ const ORLANT = {
       // prosa (INFORMACION_3P / INFORMACION_SECRETARIA); el resto de
       // categorias no se inventan — confirmar contra el archivo real cuando
       // se cargue (puede traer categorias mas finas o distintas).
-      { key: 'tipificacion', label: 'Tipificacion', panels: [
+      { key: 'tipificacion', label: 'Tipificacion', oculta: true, panels: [
         { tipo: 'pie', titulo: 'Tipificacion de llamadas y WhatsApp', filtroCampo: 'linea', filtroUnico: true,
           fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad' },
           notas: [
@@ -113,7 +122,7 @@ const ORLANT = {
             'INFORMACION_SECRETARIA: se necesita una cita de revision y no ha sido posible comunicarse con la secretaria; tambien pagos o programacion de cirugia que requieren secretaria.',
           ] },
       ]},
-      { key: 'agendamiento', label: 'Agendamiento', panels: [
+      { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
         { tipo: 'combo', titulo: 'Ordenamiento medico', barras: [
           { label: 'Gestionados', fuente: serie('ordmed_gestionados') },
           { label: 'Agendas', fuente: serie('ordmed_agendas') }],
@@ -152,7 +161,7 @@ const ORLANT = {
         { key: 'agendasporlinea', label: 'Agendas por Linea', indices: [4] },
         { key: 'variacion', label: 'Variacion % Agendas', indices: [5] },
       ]},
-      { key: 'inasistencia', label: 'Inasistencia', panels: [
+      { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
         lineP('% Inasistencia Audifonos', 'inasist_audifonos', { unidad: '%' }),
         lineP('% Inasistencia Audiologia', 'inasist_audiologia', { unidad: '%' }),
         lineP('% Inasistencia Examenes', 'inasist_examenes', { unidad: '%' }),
@@ -163,7 +172,7 @@ const ORLANT = {
         { key: 'examenes', label: 'Examenes', indices: [2] },
         { key: 'total', label: 'Total', indices: [3] },
       ]},
-      { key: 'sta', label: 'Gestion STA', panels: [
+      { key: 'sta', label: 'Gestion STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
         // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,
         // charts.js), tal como las dibuja el PDF.
@@ -189,7 +198,7 @@ const ORLANT = {
         { key: 'stamensual', label: 'STA por Mes', indices: [2] },
         { key: 'serviciosmes', label: 'Servicios Gestionados del Mes', indices: [3] },
       ]},
-      { key: 'efectividad', label: 'Efectividad Citas', panels: [
+      { key: 'efectividad', label: 'Efectividad Citas', oculta: true, panels: [
         { tipo: 'combo', titulo: 'Efectividad de citas', barras: [
           { label: 'Citas para el mes', fuente: serie('citas_para_mes') },
           { label: 'Total Atendidas', fuente: serie('citas_atendidas') }],
