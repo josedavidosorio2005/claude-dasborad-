@@ -924,6 +924,48 @@ runOnceMigration('dashboards_config_orlant_subpestanas_v1', () => {
   }
 });
 
+// ORLANT: Fase 40b (2026-09-21) — mientras se termina de organizar/llenar
+// la informacion de 7 de las 9 pestanas, se ocultan del menu (TEMPORAL,
+// ver PROGRESS.md) y solo quedan visibles Calidad y Trafico de Llamadas,
+// que ya estan completas. `oculta: true` es un flag puramente aditivo
+// (dashboard-generic.js: renderGenericTabs/_gdBootstrap la filtran del
+// menu y de la pestana activa por defecto) — no toca panels/subtabs/datos
+// de ninguna pestana, asi que a diferencia de las migraciones anteriores
+// de ORLANT no hace falta verificar la forma de los paneles: se puede
+// aplicar aunque una pestana haya sido personalizada. Mismo criterio de
+// las migraciones anteriores: dashboards_config ya existe en produccion,
+// asi que el campo nuevo del seed no llega solo a la fila real.
+runOnceMigration('dashboards_config_orlant_ocultar_pestanas_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const CLAVES_A_OCULTAR = ['flujo', 'salida', 'tipificacion', 'agendamiento', 'inasistencia', 'sta', 'efectividad'];
+
+  let tocado = false;
+  (layout.tabs || []).forEach((tab) => {
+    if (CLAVES_A_OCULTAR.indexOf(tab.key) === -1) return;
+    if (tab.oculta) return; // ya tiene la forma nueva, nada que hacer
+    tab.oculta = true;
+    tocado = true;
+  });
+
+  if (tocado) {
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      'ORLANT'
+    );
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_orlant_ocultar_pestanas_v1 aplicada (tocado=${tocado}).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

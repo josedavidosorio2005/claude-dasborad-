@@ -544,7 +544,7 @@ async function _gdBootstrap(){
   renderGenericHeader();
   renderGenericKpis();
   renderGenericTabs();
-  var first = (_gd.config.layout.tabs || [])[0];
+  var first = _gdTabsVisibles()[0];
   switchGenericTab(first ? first.key : null);
   renderGenericBanner();
 }
@@ -627,9 +627,16 @@ function renderGenericKpis(){
   renderGenericBanner();
 }
 
+// `oculta: true` (opcional, en la config de la pestana) la saca del menu sin
+// borrar nada -- panels/subtabs/datos/calculos siguen intactos, solo no se
+// renderiza su boton ni puede quedar como pestana activa por defecto
+// (_gdBootstrap, abajo, usa el mismo filtro). Revertir = quitar `oculta` de
+// la config (server/dashboard-config-seed.js).
+function _gdTabsVisibles(){
+  return (_gd.config.layout.tabs || []).filter(function(t){ return !t.oculta; });
+}
 function renderGenericTabs(){
-  var tabs = (_gd.config.layout.tabs || []);
-  document.getElementById('gd-tabs').innerHTML = tabs.map(function(t){
+  document.getElementById('gd-tabs').innerHTML = _gdTabsVisibles().map(function(t){
     return '<button class="atab" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
 }
