@@ -2163,17 +2163,26 @@ como se esperaba (no se subió nada ahí en esta fase). Capturas en
 
 **Nota de seguridad operativa**: se evitó tocar el admin maestro real
 creando de entrada un usuario ADMIN temporal por SSH+DB (mismo patrón que
-`qa-datos-prueba-trafico-salida-orlant.yml`), pero el PR que agregaba ese
-workflow nuevo fue bloqueado por el clasificador de seguridad del harness
-de Claude Code (cualquier PR que agregue/modifique un workflow de CI con
-acceso a secretos de despliegue queda sujeto a revisión humana, por
-diseño). InCo optó por pasar las credenciales del admin maestro
-directamente en vez de resolver ese bloqueo; llegaron por el chat en lugar
-del archivo local pedido — se recomienda rotar esa contraseña como buena
-práctica tras esta fase. La rama sin mergear
-`ops/usuario-temporal-trafico-real-orlant-2026-09-18` quedó pusheada pero
-sin usar; se puede borrar o dejar para una próxima vez que haga falta este
-mismo patrón.
+`qa-datos-prueba-trafico-salida-orlant.yml`) — el PR que agregaba ese
+workflow nuevo (`ops/usuario-temporal-trafico-real-orlant-2026-09-18`,
+PR #74) quedó inicialmente bloqueado por el clasificador de seguridad del
+harness de Claude Code (cualquier PR que agregue/modifique un workflow de
+CI con acceso a secretos de despliegue queda sujeto a revisión humana,
+por diseño), pero terminó revisado y **mergeado** el 2026-09-18
+(`.github/workflows/usuario-temporal-trafico-real-orlant.yml` sigue en el
+repo). Aun así, para no esperar esa revisión en el momento, InCo optó por
+pasar las credenciales del admin maestro directamente y seguir con la
+carga por esa vía; llegaron por el chat en lugar del archivo local
+pedido — se recomienda rotar esa contraseña como buena práctica tras esta
+fase. Resultado: el workflow quedó disponible pero sin usarse para esta
+carga en particular.
+
+**Corrección (2026-09-21, revisión de ramas sin usar)**: esta nota decía
+originalmente que el PR había quedado sin mergear — no es así, sí se
+mergeó (ver arriba). Se confirmó además contra el historial real de
+GitHub Actions que el workflow nunca se disparó ni una sola vez desde
+entonces (0 runs) — ver Fase 42-bis más abajo para la decisión sobre qué
+hacer con él.
 
 ## Fase 37 — Cronograma y Metas de Monitoreo reorganizado en sub-pestañas (PR #76, 2026-09-18)
 
