@@ -3022,3 +3022,128 @@ ajenas a estas 3 fases, y quedan reportadas para decisión aparte.
 `npm test`: 269/269 (sin cambios de código en esta fase, solo verificación
 y documentación). Capturas en
 `docs/capturas-demo/fase48-seguridad-y-bugs/`.
+
+## Fase 49 — Verificación física completa, por rol de usuario, con navegador real (2026-09-21)
+
+Pedido: antes de seguir con la hoja de ruta, verificar CADA parte del
+sistema para CADA rol, con navegador real (Playwright, no lectura de
+código) — cerrando específicamente lo que quedó "no probado" en fases
+anteriores (edición de filas en Gerencia/Inventario/Umbrales ya se cubrió
+en la Fase 48/49, descarga real de Historial, y el menú con roles
+distintos a ADMIN).
+
+**Paso 1 — roles reales, verificados en código (no asumidos).**
+`server/validation.js` (`ROLES`) y `public/js/constants.js` (`ALL_ROLES`)
+coinciden exactamente: **10 roles** — ADMIN, AUX_ADMIN, CALIDAD,
+INVENTARIO, GERENCIA, GESTION_HUMANA, CLIENTES_DASH, REPORTES, ASESOR,
+SUPERVISOR. Arquitectura real (no documentada antes con este detalle):
+solo hay **4 "shells" de página** (`admin-page`, `user-page`,
+`asesor-page`, `supervisor-page`) — ADMIN y AUX_ADMIN comparten
+`admin-page` (con secciones ocultas por permiso); CALIDAD, INVENTARIO,
+GERENCIA, GESTION_HUMANA, CLIENTES_DASH y REPORTES comparten `user-page`
+(una grilla de módulos habilitados/deshabilitados según `perms.<Modulo>`);
+ASESOR y SUPERVISOR tienen cada uno su propia shell. Se confirmaron los
+perms reales de cada usuario demo directo en la base de datos local antes
+de probar, para no adivinar qué debía verse.
+
+**Paso 2 y 3 — recorrido real por rol, con Playwright (no la extensión de
+Chrome).** Resultados por rol (capturas en
+`docs/capturas-demo/fase49-verificacion-por-rol/<rol>/`):
+
+- **ADMIN**: barrido de las 7 secciones del sidebar + 3 módulos con modal
+  propio (Gerencia/Inventario/Gestión Humana) en claro/oscuro,
+  escritorio/móvil. **Edición real verificada de punta a punta** (no solo
+  el botón, el cambio confirmado en pantalla tras guardar, y revertido
+  después):
+  - Umbrales: cambiar "verde" de un umbral existente, guardar, confirmar
+    el nuevo valor en la tabla.
+  - Gerencia: editar el valor de un KPI en la pestaña Tabla, guardar,
+    confirmar.
+  - Inventario: editar la cantidad de un item, guardar, confirmar.
+  - **Historial → Descargar**: capturado el evento de descarga real del
+    navegador (no solo el clic) — `Historial_InConexion_2026-09-21.xlsx`,
+    19.696 bytes, firma ZIP válida, mismo número de filas que la tabla en
+    pantalla (10). Antes de esta fase solo se sabía que el botón existía.
+  - Sidebar: colapsa/expande correctamente para ADMIN (220px→0px→220px).
+  - 0 hallazgos reales.
+- **AUX_ADMIN**: el menú lateral muestra exactamente lo esperado según sus
+  permisos (`crearUsuarios`/`editarUsuarios`/`cambiarPassword`: true;
+  `suspenderUsuarios`/`eliminarUsuarios`/`gestionPermisos`: false) —
+  Usuarios y Permisos visibles, el resto (Historial, Metas, Umbrales, Rol
+  Reportes, Cargar Datos, Dashboards, Inventario, Gerencia, Gestión
+  Humana) oculto. La tabla de Permisos muestra los 10 roles con "Sin
+  acceso" (gestionPermisos:false), confirmado por captura. El usuario demo
+  no tenía ningún `role_X` asignado, así que veía la tabla de Usuarios
+  vacía — no es un bug: se le otorgó acceso a CALIDAD **a través del flujo
+  real de Permisos de un ADMIN** (no por base de datos) para poder probar
+  los botones sobre una fila real: Editar/Contraseña habilitados,
+  Suspender/Eliminar bloqueados (`disabled` real, no solo visual) — exacto
+  a lo esperado. Revertido después. Sidebar colapsa igual que para ADMIN.
+  0 hallazgos reales.
+- **CALIDAD, INVENTARIO, GESTION_HUMANA, CLIENTES_DASH**: cada uno ve
+  únicamente su propio módulo habilitado en la grilla (los demás
+  "Sin acceso"), abre su módulo sin errores, y — para
+  INVENTARIO — **edición real verificada** (cantidad de un item,
+  guardado, confirmado, revertido) a pesar de no tener el permiso
+  `cargarDatos`. CLIENTES_DASH ve sus 12 clientes permitidos y abre un
+  dashboard real. 0 hallazgos reales.
+- **GERENCIA**: ve Calidad Y Gerencia habilitados (coincide con sus
+  perms). Al abrir Gerencia, **confirmado en pantalla que es de solo
+  lectura** (0 botones Editar/Eliminar, "+ Nuevo indicador" oculto) — esto
+  contrasta con INVENTARIO, que SÍ puede editar sin `cargarDatos`. Se
+  investigó antes de reportarlo como inconsistencia: **es intencional y
+  está documentado en el código** (`server/routes/gerencia.js`: "Gerencia
+  es SOLO LECTURA (feedback de Edwin 2.2): la escritura de KPIs
+  ejecutivos exige el permiso de carga de datos"). No es un hallazgo, es
+  el diseño confirmado funcionando correctamente.
+- **REPORTES**: ve Calidad habilitado + el tile especial "Cargar Datos"
+  (tiene `cargarDatos:true`). Dentro de Calidad, confirmado en pantalla
+  que ve botones Editar/Eliminar en el historial de monitoreos (su
+  capacidad única, según `auth.js`) pero NO ve la pestaña "Nuevo
+  Monitoreo" (no puede crear, solo CALIDAD/SUPERVISOR pueden) — coincide
+  exactamente con el código.
+- **ASESOR**: única pantalla de "Mis Resultados de Calidad", "Ver
+  Detalle" de un monitoreo abre el modal correctamente con los datos
+  reales. Sidebar colapsa igual que el resto (220px→0px, confirmado con
+  selector correctamente acotado a `#asesor-page`).
+- **SUPERVISOR**: ve exactamente sus 12 clientes permitidos en
+  "Dashboards" y 9 filas en la tabla de cumplimiento de "Calidad" (ambas
+  filtradas por sus perms `cliente_X`/`campana_X`). Abre el módulo
+  completo de Calidad y **confirma en pantalla la pestaña "Nuevo
+  Monitoreo"** (coincide con `auth.js`: SUPERVISOR puede crear
+  monitoreos). Sidebar colapsa correctamente.
+
+**Falsos positivos descartados durante la verificación** (mismo criterio
+de rigor que la Fase 48 — investigar antes de reportar): un selector de
+canvas ambiguo hizo pensar que el sidebar de ASESOR/SUPERVISOR no
+colapsaba (en realidad `document.querySelector('.sidebar')` sin acotar a
+la página visible encontraba el `.sidebar` oculto de OTRA shell,
+`getBoundingClientRect()` de un elemento `display:none` da 0 siempre);
+corregido con el selector acotado y reverificado (220px→0px en ambos).
+Otro: el script esperaba que REPORTES NO viera "Cargar Datos", cuando
+sí le corresponde (tiene `cargarDatos:true`) — expectativa mal escrita
+en el script, no un bug de la app.
+
+**Veredicto**: los 10 roles del sistema, verificados uno por uno con
+navegador real (no solo código), funcionan correctamente — permisos,
+visibilidad de menú, colapso de sidebar, y los 3 flujos de escritura que
+quedaban sin probar (Gerencia/Inventario/Umbrales edición, descarga real
+de Historial) todos confirmados en pantalla. Ningún rol vio algo que no
+le correspondía. Cero bugs funcionales o de permisos encontrados — cero
+cambios de código en esta fase.
+
+**Verificación en producción**: de solo lectura y sin credenciales (no se
+conserva ninguna contraseña de administrador válida en producción, ver
+Fase 30) — `GET /api/health` → `{"ok":true}` (200), página de login carga
+sin errores de consola. Una verificación en producción **por rol**
+equivalente a la de esta fase requeriría el mismo mecanismo ya usado en
+fases anteriores (`verificar-*-produccion.yml`: un workflow de CI con
+secretos de despliegue que crea y borra un usuario temporal directo en la
+base de datos de producción) — como eso es un cambio/uso de CI con acceso
+a secretos, se dejó pendiente de decisión del usuario en vez de
+improvisarlo.
+
+`npm test`: 269/269 antes y después. `npm audit` (server): 0
+vulnerabilidades — sin cambios respecto a la Fase 48. Capturas completas
+en `docs/capturas-demo/fase49-verificacion-por-rol/`, una subcarpeta por
+rol.
