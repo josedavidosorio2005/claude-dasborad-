@@ -121,6 +121,22 @@ function loFmt(o, unidad){
   }
   return o;
 }
+// Datalabels con auto-ocultado (Fase 45, pedido de Edwin: "que se vea el
+// valor sin pasar el mouse", pero sin amontonarse en graficas con muchos
+// puntos, ej. una linea diaria de varios meses de Trafico de Llamadas).
+// El plugin vendorizado (chartjs-plugin-datalabels v2.2.0,
+// public/js/vendor/) soporta la opcion nativa display:'auto', que oculta
+// SOLO las etiquetas que se solaparian entre si (en orden de dataset/punto)
+// en vez de mostrarlas todas ilegibles o quitarlas todas -- se adapta solo
+// al ancho real del canvas, no a un conteo fijo de puntos que habria que
+// ajustar a mano por tipo de grafica. Factorizado aca (no en trafico.js)
+// para poder reusarlo en otros modulos sin duplicar el patron.
+function loDatalabelsAuto(o, formatter){
+  o.plugins = o.plugins || {};
+  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display:'auto' });
+  if(formatter) o.plugins.datalabels.formatter = formatter;
+  return o;
+}
 function loPie(t){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{

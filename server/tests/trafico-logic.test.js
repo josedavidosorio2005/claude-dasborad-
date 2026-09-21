@@ -47,7 +47,7 @@ test('conversion: WAIT_TIME/AHT (hora nativa de Excel = fraccion de dia) -> segu
   assert.equal(traficoSegundosDesdeFraccionDia(''), null);
 });
 
-test('conversion: SERVICE_LEVEL_*/ABANDON vienen como texto con % (con y sin espacio)', () => {
+test('conversion: SERVICE_LEVEL_* vienen como texto con % (con y sin espacio)', () => {
   assert.equal(traficoPctDesdeTexto('86.49 %'), 86.49); // con espacio
   assert.equal(traficoPctDesdeTexto('1.62%'), 1.62); // sin espacio
   assert.equal(traficoPctDesdeTexto('0.00%'), 0); // 0% real, no "sin dato"
@@ -88,7 +88,10 @@ test('parseo del archivo REAL (EJEMPLO.xlsx, hoja DATA): todas las columnas, val
   assert.equal(f1.serviceLevel10secPct, 86.49);
   assert.equal(f1.serviceLevel20secPct, 87.03);
   assert.equal(f1.serviceLevel30secPct, 88.11);
-  assert.equal(f1.abandonPct, 1.62);
+  // ABANDON (columna de Volvox) se dejo de parsear en la Fase 45 (sin uso en
+  // ningun lado -- tasaAbandonoPct ya cubre el abandono, recalculado exacto):
+  // la fila ya no trae abandonPct aunque el archivo real traiga esa columna.
+  assert.equal(f1.abandonPct, undefined);
   assert.equal(f1.asaSegundos, 22.47);
   assert.equal(f1.ataSegundos, 162.33);
   assert.equal(f1.waitTimeSegundos, 22);

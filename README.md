@@ -487,11 +487,12 @@ mes.
 | `DATE` | fecha nativa de Excel | **Obligatoria.** Se usa tal cual, nunca `MES`/`AÑO` (son solo respaldo informativo). |
 | `TOTAL LLAMADAS` / `LLAMADAS CONTESTADAS` | número | **Obligatorias.** |
 | `LLAMADAS ABANDONADAS` | número | Opcional — si falta, esa métrica queda vacía (no en 0). |
-| `SERVICE_LEVEL_10/20/30SEC`, `ABANDON` | texto `"87.03 %"` | Se convierte a número. |
+| `SERVICE_LEVEL_10/20/30SEC` | texto `"87.03 %"` | Se convierte a número. |
 | `ASA`, `ATA` | número (a veces como texto) | Ya vienen en segundos. |
 | `WAIT_TIME`, `AHT` | hora nativa (`0:03:35`) | Se convierte a segundos (215). |
 | `NIVEL DE ATENCION`, `TASA DE ABNDONO` (*sic*, así la nombra Volvox) | fracción decimal (`0.9838`) | Se convierte a porcentaje (98.38%). |
 | `MES`, `AÑO` | texto/número | Solo respaldo — el mes/año real siempre sale de `DATE`. |
+| `ABANDON` | texto `"1.62 %"` | Ya no se lee (Fase 45) — sin uso en ningún lado; `TASA DE ABNDONO` cubre el abandono, recalculado exacto desde abandonadas/total. |
 | Cualquier otra columna | — | Se ignora sin fallar. Si Volvox agrega o reordena columnas mañana, la carga sigue funcionando (el emparejamiento es por nombre de encabezado). |
 
 ### La gráfica y sus filtros
