@@ -786,7 +786,7 @@ function _gdRenderPanel(p, i){
     var pr = _gdResolver(p.fuente, _gdExtraFiltroPanel(p, i));
     _gdChart(canvasId, { type:'doughnut',
       data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: (pr.labels||[]).map(function(l){ return paletaColorPara(l); }) }] },
-      options: loPie() });
+      options: loDatalabelsAuto(loPie()) });
     _gdRenderNotasPanel(p, i);
     return;
   }
@@ -830,6 +830,10 @@ function _gdRenderPanel(p, i){
     // (loBarPct, charts.js), sin perder el resto del formato.
     if(!esLinea && p.pctDeTotal) opts.plugins.datalabels.formatter = loBarPct().plugins.datalabels.formatter;
     if(eff==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
+    // Auto-ocultado (Fase 47, mismo helper de Fase 45): evita que las
+    // etiquetas se amontonen en paneles densos (ej. una linea diaria de un
+    // mes completo), sin perder el formatter ya calculado arriba.
+    loDatalabelsAuto(opts);
     _gdChart(canvasId, { type: esLinea ? 'line' : 'bar', data:{ labels: labels||[], datasets: datasets }, options: opts });
     _gdRenderNotasPanel(p, i);
     return;
@@ -857,6 +861,7 @@ function _gdRenderPanel(p, i){
     // datalabel de la linea -- gdFmtValor(v,'%') redondea a 1 decimal.
     o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
       formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
+    loDatalabelsAuto(o);
     _gdChart(canvasId, { data:{ labels: labels2, datasets: ds }, options: o });
     return;
   }
@@ -986,7 +991,7 @@ function _gdRenderCalidad(p, i){
   _gdChart('gd-c'+i, { type:'doughnut',
     data:{ labels:['Sobresaliente','No Critico','Critico'], datasets:[{ data:[r.sobresaliente,r.noCritico,r.critico], backgroundColor:[
       (typeof CG!=='undefined'?CG:'#27ae60'), (typeof CO!=='undefined'?CO:'#e67e22'), (typeof CR!=='undefined'?CR:'#e74c3c') ] }] },
-    options: loPie() });
+    options: loDatalabelsAuto(loPie()) });
 }
 
 // ══════════════════════════════════════════════════════════════

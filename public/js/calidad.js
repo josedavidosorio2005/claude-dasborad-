@@ -665,14 +665,14 @@ function renderCalReportes(){
     '<div class="aurora-kpi kpi-red"><div class="kv">'+critico+'</div><div class="kl">🔴 Critico</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+arr.length+'</div><div class="kl">Total Evaluados'+(_cmesFiltro?' ('+_cmesFiltro+')':'')+'</div></div>';
 
-  ccmk('cch-clasificacion',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loPie()});
+  ccmk('cch-clasificacion',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
 
   var lideres = calLideresCumplimiento(_ccampana, curMonth);
   var nombres = lideres.map(function(l){return l.liderNombre;});
   var pcts = lideres.map(function(l){return l.pct;});
   ccmk('cch-cumplimiento',{type:'bar',data:{labels:nombres.length?nombres:['Sin metas programadas'],datasets:[
     {label:'% Cumplimiento Individual',data:pcts.length?pcts:[0],backgroundColor:CM,borderRadius:4}
-  ]},options:loPct2(30)});
+  ]},options:loDatalabelsAuto(loPct2(30))});
 
   var html = '<tr><th>Persona de Calidad / Supervisor</th><th>Meta Total</th><th>Realizados</th><th>% Total</th><th>Meta Llamada</th><th>Real Llamada</th><th>Meta WPP</th><th>Real WPP</th><th></th></tr>';
   if(lideres.length===0){
