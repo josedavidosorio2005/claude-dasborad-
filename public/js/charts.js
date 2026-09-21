@@ -57,16 +57,19 @@ function lo(t,xrot){
     layout:{padding:{top:20}}
   };
 }
+// v+'%' sin redondear mostraba ruido de punto flotante (ej.
+// "12.000000000002%") en rangos angostos -- gdFmtValor(v,'%') (mas abajo en
+// este archivo, hoisted) ya redondea a 1 decimal, mismo criterio que loFmt().
 function loPct(t){
   var o=lo(t);
-  o.plugins.datalabels.formatter=function(v){return v+'%';};
-  o.scales.y.ticks.callback=function(v){return v+'%';};
+  o.plugins.datalabels.formatter=function(v){return gdFmtValor(v,'%');};
+  o.scales.y.ticks.callback=function(v){return gdFmtValor(v,'%');};
   return o;
 }
 function loPct2(xrot){
   var o=lo(null,xrot);
-  o.plugins.datalabels.formatter=function(v){return v+'%';};
-  o.scales.y.ticks.callback=function(v){return v+'%';};
+  o.plugins.datalabels.formatter=function(v){return gdFmtValor(v,'%');};
+  o.scales.y.ticks.callback=function(v){return gdFmtValor(v,'%');};
   return o;
 }
 function loBar(t){ var o=lo(t); o.plugins.datalabels.align='end'; return o; }
