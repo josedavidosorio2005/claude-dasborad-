@@ -866,6 +866,64 @@ runOnceMigration('dashboards_config_orlant_tipificacion_unico_v1', () => {
   }
 });
 
+// ORLANT: Fase 40 (2026-09-21) — "una grafica por pestana": agrupa las
+// graficas de 5 pestanas (Flujo Mensual, Salida, Agendamiento,
+// Inasistencia, Gestion STA) en sub-pestanas (`subtabs`, dashboard-
+// generic.js) — mismo criterio que las migraciones anteriores de ORLANT:
+// dashboards_config ya existe en produccion, asi que el campo nuevo en
+// dashboard-config-seed.js no llega solo a la fila real.
+//
+// `subtabs` es puramente aditivo — agrupa los INDICES del mismo array
+// `panels` de siempre, no lo toca ni lo reordena — asi que se agrega solo
+// si el tab tiene la MISMA cantidad de paneles que la config actual espera
+// (misma forma => mismos indices validos); si no coincide (fue editado a
+// mano a algo distinto), se deja intacta y se loguea, igual que las
+// migraciones anteriores.
+runOnceMigration('dashboards_config_orlant_subpestanas_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTabs = {};
+  (target.layout.tabs || []).forEach((t) => { targetTabs[t.key] = t; });
+  const CLAVES_CON_SUBPESTANAS = ['flujo', 'salida', 'agendamiento', 'inasistencia', 'sta'];
+
+  let tocado = false;
+  (layout.tabs || []).forEach((tab) => {
+    if (CLAVES_CON_SUBPESTANAS.indexOf(tab.key) === -1) return;
+    const targetTab = targetTabs[tab.key];
+    if (!targetTab || !targetTab.subtabs) return;
+    if (tab.subtabs) return; // ya tiene la forma nueva, nada que hacer
+    const panelesActuales = (tab.panels || []).length;
+    const panelesEsperados = (targetTab.panels || []).length;
+    if (panelesActuales !== panelesEsperados) {
+      if (!config.isTest) {
+        console.log(`[db] Migracion dashboards_config_orlant_subpestanas_v1: tab "${tab.key}" tiene ${panelesActuales} panel(es), se esperaban ${panelesEsperados} — se deja intacta, revisar a mano.`);
+      }
+      return;
+    }
+    tab.subtabs = JSON.parse(JSON.stringify(targetTab.subtabs));
+    tocado = true;
+  });
+
+  if (tocado) {
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      'ORLANT'
+    );
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_orlant_subpestanas_v1 aplicada (tocado=${tocado}).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -8,7 +8,7 @@
 
 var _gd = {
   cliente: null, config: null, cargas: {}, periodos: [],
-  mesSel: '', compSel: '', vistaSel: '', tab: null, charts: {}
+  mesSel: '', compSel: '', vistaSel: '', tab: null, subtab: null, charts: {}
 };
 
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -646,13 +646,34 @@ document.getElementById('gd-tabs').addEventListener('click', function(e){
 document.getElementById('gd-panels').addEventListener('click', function(e){
   var btn = e.target.closest('button[data-calapply]');
   if(btn) _calDashAplicarFiltros(btn.dataset.camp, Number(btn.dataset.i));
+  var subBtn = e.target.closest('button[data-gdsubtab]');
+  if(subBtn) switchGenericSubtab(subBtn.dataset.gdsubtab);
 });
 
 function switchGenericTab(key){
   _gd.tab = key;
+  _gd.subtab = null; // cada pestana nueva empieza en su primera sub-pestana (si tiene)
   document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(key);
+}
+
+// Sub-pestanas dentro de una pestana (Fase 40): campo opcional `subtabs` en
+// la config de la pestana -- [{ key, label, indices:[...] }], cada `indices`
+// apunta a posiciones del MISMO array `panels` de siempre (no se duplica ni
+// reordena nada). Si la pestana no trae `subtabs`, el comportamiento es
+// identico al de antes (todas sus graficas en la rejilla de 2 columnas) --
+// asi AURORA, HOSPITAL LA MARIA y las 9 plantillas de cliente, que nunca
+// traen este campo, no se ven afectadas por este cambio.
+function _gdSubtabActiva(tab){
+  if(!tab.subtabs || !tab.subtabs.length) return null;
+  var encontrada = tab.subtabs.find(function(s){ return s.key === _gd.subtab; });
+  return encontrada || tab.subtabs[0];
+}
+function switchGenericSubtab(key){
+  _gd.subtab = key;
+  Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
+  renderGenericTab(_gd.tab);
 }
 
 function renderGenericTab(key){
@@ -660,10 +681,21 @@ function renderGenericTab(key){
   var host = document.getElementById('gd-panels');
   if(!tab){ host.innerHTML = ''; return; }
   var panels = tab.panels || [];
+  var subActiva = _gdSubtabActiva(tab);
+  // Sin `subtabs`: todos los indices del tab, igual que siempre. Con
+  // `subtabs`: solo los indices de la sub-pestana activa.
+  var indicesVisibles = subActiva ? subActiva.indices : panels.map(function(p,i){ return i; });
+  var subtabsHtml = '';
+  if(tab.subtabs && tab.subtabs.length > 1){
+    subtabsHtml = '<div class="gd-subtabs">' + tab.subtabs.map(function(s){
+      return '<button class="gd-subtab-btn' + (s.key===subActiva.key?' on':'') + '" data-gdsubtab="' + esc(s.key) + '">' + esc(s.label) + '</button>';
+    }).join('') + '</div>';
+  }
 
   // KPI-row panels van fuera de la rejilla; el resto en una rejilla de 2 columnas
-  var html = '';
+  var html = subtabsHtml;
   panels.forEach(function(p, i){
+    if(indicesVisibles.indexOf(i) === -1) return;
     if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
       // El filtro de asesor/fecha de Calidad (_gdRenderCalidad) va ANTES de
       // la rejilla de tarjetas KPI, nunca adentro (.aurora-kpis es un
@@ -685,7 +717,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -706,7 +738,7 @@ function renderGenericTab(key){
   }
   host.innerHTML = html;
 
-  panels.forEach(function(p, i){ _gdRenderPanel(p, i); });
+  panels.forEach(function(p, i){ if(indicesVisibles.indexOf(i)!==-1) _gdRenderPanel(p, i); });
 }
 
 function _gdRenderPanel(p, i){
