@@ -9,6 +9,10 @@ en un servidor real (Docker) o en **AWS**.
 **No llama a Claude ni a ninguna IA en ningún punto** — es una app web
 tradicional (Node.js + Express + SQLite) con su propio login.
 
+Tema **claro/oscuro** en toda la plataforma: cada usuario elige el suyo (botón
+en la barra superior), se recuerda entre sesiones (`localStorage`) y se aplica
+antes del primer paint (sin parpadeo), incluidas las gráficas.
+
 ---
 
 ## Documentación
@@ -70,7 +74,7 @@ granularidad día/mes/año — ver la sección 7 para el detalle completo.
 - **Exportación** del dashboard a Excel (`.xlsx` con los datos calculados) y PDF.
 - Cada dashboard es visible **solo** para los roles con el permiso `cliente_<NOMBRE>`.
 
-### Inventario y Gerencia
+### Inventario, Gerencia y Gestión Humana
 Se muestran con el **mismo motor de dashboards** (mismos paneles, mismo análisis,
 misma exportación). Sus datos salen de sus tablas propias:
 - **Inventario**: stock, estados, valor, movimientos (entrada/salida/ajuste/
@@ -78,6 +82,10 @@ misma exportación). Sus datos salen de sus tablas propias:
   "sin stock".
 - **Gerencia**: indicadores ejecutivos mensuales, % de cumplimiento de metas con
   tendencia mes a mes, carga masiva por Excel.
+- **Gestión Humana**: registro de personal por campaña (ingreso/salida, cargo,
+  supervisor, costo/hora, horas/mes), con el costo mensual y el **% de
+  efectividad por campaña** (feedback de Edwin) calculados igual que el resto
+  de KPIs, nunca a mano.
 
 Los modales de gestión son la **entrada de datos**; el botón **"Ver dashboard"**
 abre la vista de análisis.
@@ -524,7 +532,7 @@ se migra**.
 ## 9. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra  ->  137/137
+cd server && npm test          # node:test + supertest, sin infra extra  ->  263/263
 ```
 
 Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),

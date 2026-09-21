@@ -1,10 +1,11 @@
 // dashboard-adapters.js — M4 (Fase A4).
 //
-// Inventario y Gerencia se muestran con el MISMO sistema de dashboards
-// configurables que los clientes (mismos paneles, mismo motor de analisis A6,
-// misma exportacion). La unica diferencia: sus datos no salen de
+// Inventario, Gerencia y Gestion Humana se muestran con el MISMO sistema de
+// dashboards configurables que los clientes (mismos paneles, mismo motor de
+// analisis A6, misma exportacion). La unica diferencia: sus datos no salen de
 // `dashboard_cargas` (Excel) sino de sus tablas propias (`inventario_*`,
-// `gerencia_kpis`), que se siguen administrando desde sus modulos.
+// `gerencia_kpis`, `gestion_humana_personal`), que se siguen administrando
+// desde sus modulos.
 //
 // Cada adaptador expone:
 //   - config : la configuracion de dashboard (igual forma que dashboards_config)
