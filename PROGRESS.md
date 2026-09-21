@@ -2324,3 +2324,84 @@ recálculo del resumen. Antes: `MES: Sin datos`, los 6 KPIs relevantes en
 4.011 + 4.050 = 8.061, exactamente el total ya verificado en la pestaña
 Tráfico (Fase 36/38). Capturas antes/después (claro/oscuro,
 escritorio/móvil) en `docs/capturas-demo/fase39-resumen-orlant-trafico/`.
+
+## Fase 40 — "Una gráfica por pestaña": Tráfico/Wolkvox y el dashboard normal de ORLANT reorganizados en sub-pestañas (2026-09-21)
+
+Pedido del usuario a partir de capturas reales: las 5 gráficas de detalle
+agregadas en la Fase 38 (Abandono, AHT, ASA/ATA, Wait Time, SL10/30) se
+veían amontonadas en una grilla de 2-3 por fila debajo del resumen
+principal de Tráfico, y sospechaba que el mismo problema se repetía en las
+7 pestañas normales del dashboard de ORLANT. Pidió reorganizar (no borrar
+ninguna métrica) a "una gráfica por pestaña".
+
+**Inventario contra el código real antes de tocar nada** (tal como se
+pidió): de las 9 pestañas reales de ORLANT (`server/dashboard-config-seed.js`),
+5 traían varias gráficas juntas — Flujo Mensual (4), Salida (2),
+Agendamiento (5 gráficas + 1 `nota_kpi`), Inasistencia (4) y Gestión STA
+(4) — y 3 ya tenían una sola (Tipificación, Efectividad Citas, Calidad),
+sin necesidad de dividirse. El panel `trafico_combo` (pestaña "Tráfico de
+Llamadas", la misma que el usuario llama "Wolkvox") es un único panel de
+config que internamente dibuja 6 gráficas (combo principal + las 5 de la
+Fase 38). Confirmado de nuevo: ORLANT sigue siendo un bloque de
+configuración propio, separado de AURORA/HOSPITAL LA MARIA y de las 9
+plantillas de cliente — nada de esto las toca. El plan (19 sub-pestañas
+nuevas en las 5 pestañas del dashboard normal + 6 en Tráfico) coincidía
+con lo que sugerían las capturas, así que se ejecutó sin pausar a
+confirmar, como autorizó el pedido.
+
+**Mecanismo, reutilizando el patrón `.aurora-tabs`/`.atab` de la Fase 37**:
+campo opcional `subtabs` en la config de una pestaña —
+`[{ key, label, indices:[...] }]`, cada `indices` apunta a posiciones del
+MISMO array `panels` de siempre (nunca se duplicó ni reordenó ninguna
+gráfica). `dashboard-generic.js` (`renderGenericTab`) solo pinta los
+paneles de la sub-pestaña activa cuando el campo existe; sin él, el
+comportamiento es idéntico al de siempre — por eso AURORA, HOSPITAL LA
+MARIA y las 9 plantillas de cliente, que nunca traen `subtabs`, no se ven
+afectadas por este cambio. El `nota_kpi` de Agendamiento (texto de
+efectividad anual de Ordenamiento Médico) se agrupó con la gráfica de
+Ordenamiento Médico —mismo dato, misma estrategia— en vez de crear una
+sub-pestaña sin ninguna gráfica.
+
+Tráfico/Wolkvox (`_traficoRenderPanel`/`_traficoRenderContenido`,
+`trafico.js`) se resolvió aparte por ser un solo panel opaco: ahora tiene
+6 sub-pestañas propias (Resumen —KPIs + combo principal, la que se ve por
+defecto— y una por cada gráfica de detalle), con los filtros de
+Skill/Desde/Hasta/Granularidad compartidos arriba (aplican a las 6). Cero
+gráficas nuevas: `_traficoRenderContenido` sigue calculando exactamente lo
+mismo que antes: `_gdChart` ya ignoraba un canvas que no estuviera en el
+DOM (`if(!el) return`), así que mostrar un solo canvas a la vez no
+necesitó tocar ese cálculo.
+
+**Hallazgo crítico atrapado antes de reportar nada como listo**: ORLANT ya
+existe como fila en `dashboards_config` (producción y cualquier entorno de
+prueba), y ese layout es una foto fija en la base de datos — editar
+`dashboard-config-seed.js` por sí solo nunca llega a la fila real (mismo
+patrón ya documentado en las Fases 33/34, `dashboards_config_orlant_pdf_graficas_v1`
+/ `dashboards_config_orlant_tipificacion_unico_v1`). Sin una migración
+nueva, este cambio se habría visto perfecto en un ORLANT recién creado
+mientras en producción no pasaba nada — se confirmó el síntoma exacto en
+verificación local (servidor con el DB de pruebas ya poblado: el frontend
+actualizado no mostraba ninguna sub-pestaña hasta aplicar la migración).
+Se agregó `dashboards_config_orlant_subpestanas_v1` (`server/db.js`, mismo
+criterio defensivo que las anteriores: solo agrega `subtabs` a un tab si
+tiene la MISMA cantidad de paneles que la config actual espera; si fue
+personalizado a otra forma, se deja intacto y se loguea).
+
+**Verificación**: 3 tests nuevos
+(`tests/orlant-subpestanas-migracion.test.js`) — la migración agrega
+`subtabs` a las 5 pestañas que se dividieron con los índices exactos de la
+config actual, nunca toca Tipificación/Efectividad (sin `subtabs` en la
+config) ni otro cliente. Suite completa 259/259 (256 + 3), `npm audit`
+limpio. Playwright local (Chromium vía `npx playwright`, entorno propio
+con `seed:demo`, sin tocar producción): recorrido de las 9 pestañas de
+ORLANT y sus 25 + 6 sub-pestañas nuevas en escritorio claro, y de las 6
+pestañas que cambiaron (una sub-pestaña representativa cada una) en
+escritorio oscuro, móvil claro y móvil oscuro — 46 capturas en
+`docs/capturas-demo/fase40-reorganizar-orlant/`, cero errores de consola
+en los 4 recorridos. Con datos de `seed-demo` local, Abandono/AHT/ASA-ATA/
+Wait Time/SL10-30 y las gráficas anuales de STA muestran "Sin datos
+cargados para este período" (mismo hallazgo ya documentado en la Fase 38:
+esos campos son NULL en el seed local) — comportamiento esperado, no una
+regresión: confirmado leyendo el DOM directamente (el aviso "sin datos"
+existe, solo queda fuera del recorte del scroll interno del modal en la
+captura de página completa, limitación ya conocida desde el PR #68).
