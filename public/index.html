@@ -90,7 +90,7 @@
           <div class="section-header">
             <h3>Lista de Usuarios</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="user-search" placeholder="Buscar..." oninput="filterUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="user-search" placeholder="Buscar..." oninput="filterUsers()"></div>
               <button class="btn-primary" id="btn-create-user" onclick="openCreateModal()">+ Nuevo Usuario</button>
               <button class="btn-reset hidden" id="btn-reset" onclick="resetData()">&#8635; Restablecer</button>
             </div>
@@ -111,7 +111,7 @@
           <div class="section-card">
             <div class="section-header">
               <h3>Roles disponibles</h3>
-              <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="role-search" placeholder="Buscar rol..." oninput="filterRoles()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="role-search" placeholder="Buscar rol..." oninput="filterRoles()"></div>
             </div>
             <div class="roles-grid" id="roles-grid"></div>
           </div>
@@ -123,7 +123,7 @@
           <div id="regular-perm-card" class="section-card">
             <div class="section-header">
               <h3 id="detail-table-title"></h3>
-              <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="perm-user-search" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="perm-user-search" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
             </div>
             <div class="perm-wrap">
               <table class="perm-table"><thead><tr id="perm-thead"></tr></thead><tbody id="perm-tbody"></tbody></table>
@@ -133,7 +133,7 @@
           <div id="aux-perm-card" class="section-card hidden">
             <div class="section-header" style="border-bottom:none;padding-bottom:12px">
               <h3 id="aux-user-title">Usuarios Auxiliar Admin</h3>
-              <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="aux-user-search" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="aux-user-search" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
             </div>
             <div id="aux-users-container"></div>
           </div>
@@ -148,7 +148,7 @@
           <div class="section-header">
             <h3>Registro de eventos</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="hist-search" placeholder="Buscar..." oninput="filterHist()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="hist-search" placeholder="Buscar..." oninput="filterHist()"></div>
               <select class="hist-filter-sel" id="hist-filter" onchange="filterHist()">
                 <option value="">Todos los eventos</option>
                 <option value="CREADO">Usuario creado</option>
@@ -200,8 +200,8 @@
           </div>
           <div class="no-results hidden" id="hist-no-results">No hay registros que coincidan.</div>
           <div class="hist-footer">
-            <span style="font-size:0.78rem;color:#7a9ba8">&#128274; Este registro es permanente. Ninguna cuenta puede modificarlo ni eliminarlo.</span>
-            <span style="font-size:0.78rem;color:#7a9ba8;float:right" id="hist-count"></span>
+            <span style="font-size:0.78rem;color:var(--c-text-muted)">&#128274; Este registro es permanente. Ninguna cuenta puede modificarlo ni eliminarlo.</span>
+            <span style="font-size:0.78rem;color:var(--c-text-muted);float:right" id="hist-count"></span>
           </div>
         </div>
       </div>
@@ -231,7 +231,7 @@
             </div>
             <div class="ig"><label>Lider Responsable / Persona a Cargo</label>
               <select id="meta-lider-input"></select>
-              <small style="color:#7a9ba8;font-size:0.75rem">Solo usuarios con rol CALIDAD o SUPERVISOR que tengan acceso a la campana seleccionada.</small>
+              <small style="color:var(--c-text-muted);font-size:0.75rem">Solo usuarios con rol CALIDAD o SUPERVISOR que tengan acceso a la campana seleccionada.</small>
             </div>
           </div>
           <div class="form-row">
@@ -303,7 +303,7 @@
           <div class="modal-btns">
             <button class="btn-primary" id="ns-save-btn" onclick="saveNivelServicio()">Guardar Nivel de Servicio del Mes</button>
           </div>
-          <p style="font-size:0.78rem;color:#7a9ba8;margin-top:8px">Este formulario manual es el respaldo para meses sin archivo. Si tienes el export diario del conmutador, usa la carga por Excel de abajo — calcula el mes automaticamente y reemplaza lo que hayas cargado a mano para ese mes.</p>
+          <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Este formulario manual es el respaldo para meses sin archivo. Si tienes el export diario del conmutador, usa la carga por Excel de abajo — calcula el mes automaticamente y reemplaza lo que hayas cargado a mano para ese mes.</p>
         </div>
         <div class="section-card">
           <div class="section-header">
@@ -467,7 +467,7 @@
                 <option value="service_level">
                 <option value="cumplimiento_meta">
               </datalist>
-              <small style="color:#7a9ba8;font-size:0.75rem">Debe coincidir con el identificador de metrica del KPI (ver <code>metrica</code> en la configuracion del dashboard). Las 5 sugeridas ya vienen con default global.</small>
+              <small style="color:var(--c-text-muted);font-size:0.75rem">Debe coincidir con el identificador de metrica del KPI (ver <code>metrica</code> en la configuracion del dashboard). Las 5 sugeridas ya vienen con default global.</small>
             </div>
             <div class="ig"><label>Campana (opcional)</label>
               <select id="umbral-campana-sel">
@@ -514,7 +514,7 @@
         <div class="section-card">
           <div class="section-header">
             <h3>Usuarios con rol REPORTES</h3>
-            <div class="search-bar"><span style="color:#7a9ba8">&#128269;</span><input type="text" id="reportes-user-search" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
+            <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="reportes-user-search" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
           </div>
           <div class="perm-wrap">
             <table class="perm-table"><thead><tr id="reportes-perm-thead"></tr></thead><tbody id="reportes-perm-tbody"></tbody></table>
@@ -680,7 +680,7 @@
           <input type="password" id="mu-pass" placeholder="••••••••">
           <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)">&#128065;</button>
         </div>
-        <small id="mu-pass-hint" style="color:#7a9ba8;font-size:0.75rem;display:none">Dejar en blanco para no cambiar</small>
+        <small id="mu-pass-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">Dejar en blanco para no cambiar</small>
       </div>
       <div class="ig"><label>Rol</label>
         <select id="mu-rol" onchange="onRolChange()">
@@ -703,7 +703,7 @@
           <select id="mu-asesor-campana"></select>
         </div>
       </div>
-      <p style="font-size:0.78rem;color:#7a9ba8">El nombre completo debe coincidir exactamente con el nombre del asesor tal como lo escribe la persona de Calidad al calificar. Ademas, solo se mostraran los monitoreos registrados en la campana seleccionada arriba.</p>
+      <p style="font-size:0.78rem;color:var(--c-text-muted)">El nombre completo debe coincidir exactamente con el nombre del asesor tal como lo escribe la persona de Calidad al calificar. Ademas, solo se mostraran los monitoreos registrados en la campana seleccionada arriba.</p>
     </div>
     <div class="client-perms-section" id="mu-client-perms">
       <h4>Acceso a clientes</h4>
@@ -717,7 +717,7 @@
       <label class="client-perm-item" style="display:inline-flex">
         <input type="checkbox" id="mu-cargar-datos"> Puede cargar datos operativos de los dashboards (Excel)
       </label>
-      <div id="mu-cargar-datos-reportes-note" class="hint" style="display:none;font-size:0.78rem;color:#7a9ba8;margin-top:4px">El rol REPORTES siempre puede cargar datos.</div>
+      <div id="mu-cargar-datos-reportes-note" class="hint" style="display:none;font-size:0.78rem;color:var(--c-text-muted);margin-top:4px">El rol REPORTES siempre puede cargar datos.</div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
@@ -839,7 +839,7 @@
         <div class="form-row">
           <div class="ig"><label>Nombre del Asesor</label>
             <select id="cf-asesor"></select>
-            <small id="cf-asesor-hint" style="color:#7a9ba8;font-size:0.75rem;display:none">No hay asesores registrados para esta campana. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
+            <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campana. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
           </div>
           <div class="ig"><label>Fecha</label><input type="date" id="cf-fecha"></div>
         </div>
@@ -940,12 +940,12 @@
       <div class="aurora-card">
         <div class="aurora-card-title">Cronograma y Meta del Mes Actual</div>
         <div class="qi-preview" id="cf-cronograma-preview"></div>
-        <p style="font-size:0.78rem;color:#7a9ba8;margin-top:8px">El cronograma completo (lider, asesores, dias laborales, metas semanales, WhatsApp/Chat) se programa mes a mes desde Admin &gt; Cronograma y Metas de Monitoreo.</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">El cronograma completo (lider, asesores, dias laborales, metas semanales, WhatsApp/Chat) se programa mes a mes desde Admin &gt; Cronograma y Metas de Monitoreo.</p>
       </div>
       <div class="aurora-card">
         <div class="aurora-card-title">Usuarios con acceso a esta campana (rol CALIDAD)</div>
         <table class="aurora-rank-table" id="cal-permisos-table"></table>
-        <p style="font-size:0.78rem;color:#7a9ba8;margin-top:8px">Para dar o quitar acceso, edite el usuario desde Gestion de Usuarios (rol CALIDAD) y marque/desmarque la campana correspondiente.</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Para dar o quitar acceso, edite el usuario desde Gestion de Usuarios (rol CALIDAD) y marque/desmarque la campana correspondiente.</p>
       </div>
     </div>
 
@@ -1022,7 +1022,7 @@
       <div class="aurora-kpis" id="inv-carga-status"></div>
       <div class="aurora-card">
         <div class="aurora-card-title">Carga masiva de Items</div>
-        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Descarga la plantilla, llena los datos en Excel y sube el archivo. Los items se agregan al inventario existente.</p>
+        <p style="font-size:0.82rem;color:var(--c-text-muted);margin-bottom:10px">Descarga la plantilla, llena los datos en Excel y sube el archivo. Los items se agregan al inventario existente.</p>
         <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
           <button class="btn-cancel" onclick="invDescargarPlantillaItems()">Descargar plantilla Items</button>
           <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
@@ -1034,7 +1034,7 @@
       </div>
       <div class="aurora-card">
         <div class="aurora-card-title">Carga masiva de Movimientos</div>
-        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Registra movimientos en lote. Necesitas el ID del item (consúltalo en la pestaña Items).</p>
+        <p style="font-size:0.82rem;color:var(--c-text-muted);margin-bottom:10px">Registra movimientos en lote. Necesitas el ID del item (consúltalo en la pestaña Items).</p>
         <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
           <button class="btn-cancel" onclick="invDescargarPlantillaMovimientos()">Descargar plantilla Movimientos</button>
           <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
@@ -1112,7 +1112,7 @@
     <div class="form-row">
       <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
     </div>
-    <p style="font-size:0.78rem;color:#7a9ba8;margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campana del dashboard.</p>
+    <p style="font-size:0.78rem;color:var(--c-text-muted);margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campana del dashboard.</p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeGhPersonModal()">Cancelar</button>
       <button class="btn-primary" onclick="ghGuardarPersona()">Guardar</button>
@@ -1200,7 +1200,7 @@
       <div class="aurora-kpis" id="ger-carga-status"></div>
       <div class="aurora-card">
         <div class="aurora-card-title">Carga masiva de Indicadores</div>
-        <p style="font-size:0.82rem;color:#7a9ba8;margin-bottom:10px">Descarga la plantilla, llena los KPIs del mes en Excel y sube el archivo. Si un indicador ya existe para ese periodo, se actualiza.</p>
+        <p style="font-size:0.82rem;color:var(--c-text-muted);margin-bottom:10px">Descarga la plantilla, llena los KPIs del mes en Excel y sube el archivo. Si un indicador ya existe para ese periodo, se actualiza.</p>
         <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
           <button class="btn-cancel" onclick="gerDescargarPlantilla()">Descargar plantilla</button>
           <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
@@ -1284,7 +1284,7 @@
           <input type="month" id="carga-periodo">
         </div>
       </div>
-      <div id="carga-plan-desc" style="font-size:0.8rem;color:#7a9ba8;margin:-4px 0 10px"></div>
+      <div id="carga-plan-desc" style="font-size:0.8rem;color:var(--c-text-muted);margin:-4px 0 10px"></div>
       <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
         <button class="btn-cancel" onclick="descargarPlantillaConsolidada()">Descargar plantilla (Excel)</button>
         <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
