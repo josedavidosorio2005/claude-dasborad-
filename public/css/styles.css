@@ -496,6 +496,14 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
 #gd-panels{padding:16px 18px 20px;}
 #gd-panels .aurora-kpis{padding:0;background:none;border:none;margin-bottom:14px;}
 
+/* Sub-pestanas dentro de una pestana (Fase 40) -- un nivel visualmente mas
+   chico que .aurora-tabs/.atab para no confundirse con la navegacion
+   principal, pero con los mismos tokens de tema claro/oscuro. */
+.gd-subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.gd-subtab-btn{padding:6px 14px;font-size:0.78rem;font-weight:600;color:var(--c-text-2);border:1px solid var(--c-border);border-radius:999px;background:var(--c-surface);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
+.gd-subtab-btn:hover{color:var(--c-primary);border-color:var(--c-primary-mid);}
+.gd-subtab-btn.on{color:#fff;background:var(--c-primary-mid);border-color:var(--c-primary-mid);}
+
 /* Chart cards grid */
 .aurora-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 .aurora-grid-1{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px;}

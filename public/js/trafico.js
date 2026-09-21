@@ -342,6 +342,20 @@ async function renderTraficoCobertura(){
 var _trafico = {};          // cache por campana: { campana: { filas:[...], skills:[...] } }
 var _traficoEstado = {};    // estado de filtros actual por campana
 var _traficoAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
+// Fase 40 (2026-09-21): las 6 graficas de este panel (combo principal +
+// Abandono/AHT/ASA-ATA/WaitTime/SL10-30, antes todas juntas en una grilla
+// amontonada) ahora viven en sub-pestanas -- una gráfica visible a la vez.
+// Filtros y KPIs siguen siendo el mismo calculo de siempre (_traficoRenderContenido,
+// sin tocar); esto solo decide QUE canvas esta en el DOM en cada momento.
+var _traficoSubtabActivo = {}; // sub-pestana activa por claveEstado (campana[::sede]), default 'resumen'
+var TRAFICO_SUBTABS = [
+  { key: 'resumen', label: 'Resumen' },
+  { key: 'abandono', label: 'Abandono' },
+  { key: 'aht', label: 'AHT' },
+  { key: 'asaata', label: 'ASA y ATA' },
+  { key: 'wait', label: 'Wait Time' },
+  { key: 'sl', label: 'Niveles de Servicio 10s/30s' },
+];
 
 async function _traficoCargarDatos(campana){
   if(_trafico[campana]) return _trafico[campana];
@@ -466,6 +480,7 @@ async function _traficoRenderPanel(p, i){
   _traficoEstado[claveEstado] = estado;
 
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
+  var subActivo = _traficoSubtabActivo[claveEstado] || 'resumen';
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
@@ -486,28 +501,68 @@ async function _traficoRenderPanel(p, i){
           '<button class="btn-sm" onclick="_traficoExportPrint('+i+')">PDF</button>' +
         '</span>' +
       '</div>' +
-      '<div class="aurora-kpis" id="tv-kpis-'+i+'"></div>' +
-      '<div class="aurora-chart-wrap" style="height:280px"><canvas id="tv-canvas-'+i+'"></canvas></div>' +
-      // Abandono y AHT (graficas 2-3 del PDF de InCo): siempre agregado, sin
-      // el desglose "por separado" de arriba (que es para el grafico
-      // principal) — son tendencias mensuales de la campana completa.
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:16px">' +
-        '<div><div class="aurora-card-title" style="font-size:0.8rem">Llamadas abandonadas</div>' +
-          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-ab-'+i+'"></canvas></div></div>' +
-        '<div><div class="aurora-card-title" style="font-size:0.8rem">AHT — tiempo promedio de atencion</div>' +
-          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-aht-'+i+'"></canvas></div></div>' +
-        '<div><div class="aurora-card-title" style="font-size:0.8rem">ASA y ATA — tiempo promedio de respuesta y de abandono</div>' +
-          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-asaata-'+i+'"></canvas></div></div>' +
-        '<div><div class="aurora-card-title" style="font-size:0.8rem">Wait Time — tiempo de espera</div>' +
-          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-wait-'+i+'"></canvas></div></div>' +
-        '<div><div class="aurora-card-title" style="font-size:0.8rem">Niveles de Servicio a 10s y 30s</div>' +
-          '<div class="aurora-chart-wrap" style="height:230px"><canvas id="tv-canvas-sl-'+i+'"></canvas></div></div>' +
+      // Fase 40: 6 sub-pestanas (Resumen + Abandono/AHT/ASA-ATA/WaitTime/SL
+      // 10-30, antes todas amontonadas en una grilla) -- una grafica visible
+      // a la vez, mismo patron .gd-subtabs que las pestanas normales del
+      // dashboard (dashboard-generic.js).
+      '<div class="gd-subtabs" id="tv-subtabs-'+i+'">' +
+        TRAFICO_SUBTABS.map(function(s){
+          return '<button class="gd-subtab-btn'+(subActivo===s.key?' on':'')+'" data-trafsub="'+esc(s.key)+'" onclick="_traficoSwitchSubtab('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
+        }).join('') +
       '</div>' +
+      '<div id="tv-content-'+i+'"></div>' +
     '</div>';
   host.dataset.campana = campana;
   host.dataset.sede = sede || '';
 
+  _traficoRenderSubtabContent(i);
+}
+
+// Contenido de la sub-pestana activa de un panel trafico_combo: Resumen
+// (KPIs + grafica combinada principal) o una de las 5 graficas de detalle,
+// una sola a la vez. Reutiliza _traficoRenderContenido tal cual (calcula
+// TODO igual que antes) -- _gdChart ya no dibuja en un canvas que no este
+// en el DOM (dashboard-generic.js: `if(!el) return;`), asi que llamarla con
+// solo el canvas activo presente no requiere tocar ese calculo.
+var TRAFICO_SUBTAB_TITULOS = {
+  abandono: 'Llamadas abandonadas',
+  aht: 'AHT — tiempo promedio de atencion',
+  asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
+  wait: 'Wait Time — tiempo de espera',
+  sl: 'Niveles de Servicio a 10s y 30s',
+};
+var TRAFICO_SUBTAB_CANVAS = {
+  abandono: 'tv-canvas-ab-', aht: 'tv-canvas-aht-', asaata: 'tv-canvas-asaata-', wait: 'tv-canvas-wait-', sl: 'tv-canvas-sl-',
+};
+function _traficoRenderSubtabContent(i){
+  var content = document.getElementById('tv-content-'+i);
+  if(!content) return;
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var sede = host ? (host.dataset.sede || null) : null;
+  var claveEstado = _traficoClaveEstado(campana, sede);
+  var activo = _traficoSubtabActivo[claveEstado] || 'resumen';
+  if(activo === 'resumen'){
+    content.innerHTML = '<div class="aurora-kpis" id="tv-kpis-'+i+'"></div>' +
+      '<div class="aurora-chart-wrap" style="height:280px"><canvas id="tv-canvas-'+i+'"></canvas></div>';
+  } else {
+    content.innerHTML = '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+'</div>' +
+      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+TRAFICO_SUBTAB_CANVAS[activo]+i+'"></canvas></div>';
+  }
   _traficoRenderContenido(campana, sede, i);
+}
+
+function _traficoSwitchSubtab(i, key){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var sede = host ? (host.dataset.sede || null) : null;
+  var claveEstado = _traficoClaveEstado(campana, sede);
+  _traficoSubtabActivo[claveEstado] = key;
+  var nav = document.getElementById('tv-subtabs-'+i);
+  if(nav) Array.prototype.forEach.call(nav.querySelectorAll('.gd-subtab-btn'), function(btn){
+    btn.classList.toggle('on', btn.dataset.trafsub===key);
+  });
+  _traficoRenderSubtabContent(i);
 }
 
 function _traficoLeerControles(i){
