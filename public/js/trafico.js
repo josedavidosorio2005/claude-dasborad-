@@ -660,14 +660,14 @@ function _traficoRenderContenido(campana, sede, i){
   var o = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   o.scales = {
     y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-    y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
+    y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };
   o.plugins.datalabels = { display:false };
   o.plugins.tooltip = { callbacks: { label: function(ctx){
     var v = ctx.parsed.y;
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
-    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? v+suf : v.toLocaleString('es-CO')));
+    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
 
   if(typeof _gdChart === 'function'){
@@ -685,14 +685,14 @@ function _traficoRenderContenido(campana, sede, i){
   var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oAband.scales = {
     y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-    y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
+    y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };
   oAband.plugins.datalabels = { display:false };
   oAband.plugins.tooltip = { callbacks: { label: function(ctx){
     var v = ctx.parsed.y;
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
-    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? v+suf : v.toLocaleString('es-CO')));
+    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
   if(typeof _gdChart === 'function'){
     _gdChart('tv-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
@@ -744,10 +744,10 @@ function _traficoRenderContenido(campana, sede, i){
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oSl.plugins.datalabels = { display:false };
   oSl.scales.y.min = 0; oSl.scales.y.max = 100;
-  oSl.scales.y.ticks.callback = function(v){ return v+'%'; };
+  oSl.scales.y.ticks.callback = function(v){ return gdFmtValor(v,'%'); };
   oSl.plugins.tooltip = { callbacks: { label: function(ctx){
     var v = ctx.parsed.y;
-    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : v+'%');
+    return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : gdFmtValor(v,'%'));
   } } };
   if(typeof _gdChart === 'function'){
     _gdChart('tv-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),

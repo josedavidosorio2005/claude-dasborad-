@@ -321,7 +321,7 @@
               <input type="file" id="nsd-file" accept=".xlsx,.xls" onchange="procesarArchivoNivelServicioDiario(this)">
             </div>
           </div>
-          <div id="nsd-errores" style="color:#c0392b;font-size:0.8rem;margin:4px 0"></div>
+          <div id="nsd-errores" style="color:var(--c-danger-dark);font-size:0.8rem;margin:4px 0"></div>
           <div id="nsd-preview-card" style="display:none">
             <div class="table-wrap">
               <table><thead><tr>
@@ -375,7 +375,7 @@
               <input type="file" id="tv-file" accept=".xlsx,.xls" onchange="procesarArchivoTrafico(this)">
             </div>
           </div>
-          <div id="tv-errores" style="color:#c0392b;font-size:0.8rem;margin:4px 0"></div>
+          <div id="tv-errores" style="color:var(--c-danger-dark);font-size:0.8rem;margin:4px 0"></div>
           <div id="tv-preview-card" style="display:none">
             <div class="page-subtitle" id="tv-preview-resumen" style="margin:0 0 8px 0"></div>
             <div class="table-wrap">
@@ -757,11 +757,11 @@
   <div class="modal">
     <h3>Eliminar Usuario</h3>
     <input type="hidden" id="delete-id">
-    <p style="color:#5b7a8a;margin-bottom:8px">Eliminar a <strong id="delete-name" style="color:#0d4a5e"></strong>?</p>
-    <p style="color:#c0392b;font-size:0.82rem">Esta accion no se puede deshacer. Quedara registro en el Historial.</p>
+    <p style="color:var(--c-text-2);margin-bottom:8px">Eliminar a <strong id="delete-name" style="color:var(--c-primary)"></strong>?</p>
+    <p style="color:var(--c-danger-dark);font-size:0.82rem">Esta accion no se puede deshacer. Quedara registro en el Historial.</p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('modal-delete')">Cancelar</button>
-      <button class="btn-primary" style="background:linear-gradient(90deg,#c0392b,#e74c3c)" onclick="confirmDelete()">Eliminar</button>
+      <button class="btn-primary" style="background:linear-gradient(90deg,var(--c-danger-dark),var(--c-danger))" onclick="confirmDelete()">Eliminar</button>
     </div>
   </div>
 </div>
@@ -886,7 +886,7 @@
       </div>
       <div class="aurora-card" id="cm-preview-card" style="display:none">
         <div class="aurora-card-title">Vista previa — <span id="cm-preview-nombre"></span></div>
-        <div id="cm-avisos" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
+        <div id="cm-avisos" style="color:var(--c-danger-dark);font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
         <div style="overflow-x:auto"><table class="aurora-rank-table" id="cm-preview-table"></table></div>
         <div class="modal-btns" style="margin-top:10px">
           <button class="btn-cancel" onclick="cancelarPreviewMonitoreos()">Descartar</button>
@@ -927,9 +927,9 @@
         <div class="aurora-card-title">Detalle de Cumplimiento Individual — Mes Seleccionado</div>
         <table class="aurora-rank-table" id="cal-cumplimiento-table"></table>
       </div>
-      <div class="aurora-card" style="background:#f7fbfd">
+      <div class="aurora-card" style="background:var(--c-surface-subtle)">
         <div class="aurora-card-title">Reporte General de Cumplimiento (Todas las Campanas)</div>
-        <p style="font-size:0.82rem;color:#2a4a58">Descarga un Excel con <strong>una hoja completa por cada campana/operacion</strong> (no todo mezclado en una sola hoja), con el cumplimiento de Calidad/Supervisor desglosado por Llamada y WhatsApp, para el mes seleccionado en el filtro de arriba.</p>
+        <p style="font-size:0.82rem;color:var(--c-text)">Descarga un Excel con <strong>una hoja completa por cada campana/operacion</strong> (no todo mezclado en una sola hoja), con el cumplimiento de Calidad/Supervisor desglosado por Llamada y WhatsApp, para el mes seleccionado en el filtro de arriba.</p>
         <div class="modal-btns">
           <button class="btn-primary" onclick="descargarReporteGeneral()">Descargar Reporte General (Excel)</button>
         </div>
@@ -1296,7 +1296,7 @@
 
     <div class="aurora-card" id="carga-preview-card" style="display:none">
       <div class="aurora-card-title">Vista previa del archivo — <span id="carga-preview-nombre"></span></div>
-      <div id="carga-errores" style="color:#c0392b;font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
+      <div id="carga-errores" style="color:var(--c-danger-dark);font-size:0.82rem;margin-bottom:8px;white-space:pre-line"></div>
       <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-preview-table"></table></div>
       <div class="modal-btns" style="margin-top:10px">
         <button class="btn-cancel" onclick="cancelarPreviewCarga()">Descartar</button>
@@ -1342,9 +1342,9 @@
         <div class="page-subtitle">Consulta en tiempo real tus monitoreos de calidad. Mas adelante se agregaran aqui otras secciones (novedades, reportes, etc.).</div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:8px;background:#eef3f6;border-radius:8px;padding:6px 12px">
-            <label style="color:#0d4a5e;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-            <select id="mr-mes-sel" onchange="onMrMesChange()" style="border:none;background:transparent;color:#0d4a5e;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer"></select>
+          <div style="display:flex;align-items:center;gap:8px;background:var(--c-surface-alt);border-radius:8px;padding:6px 12px">
+            <label style="color:var(--c-primary);font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
+            <select id="mr-mes-sel" onchange="onMrMesChange()" style="border:none;background:transparent;color:var(--c-primary);font-size:0.84rem;font-weight:600;outline:none;cursor:pointer"></select>
           </div>
         </div>
 
@@ -1416,7 +1416,7 @@
 
         <div class="aurora-card" style="max-width:520px">
           <div class="aurora-card-title">Modulo de Calidad</div>
-          <p style="font-size:0.85rem;color:#2a4a58;line-height:1.5">Desde aqui puedes registrar nuevos monitoreos y consultar el historial, resumenes y reportes de las campanas que tienes asignadas.</p>
+          <p style="font-size:0.85rem;color:var(--c-text);line-height:1.5">Desde aqui puedes registrar nuevos monitoreos y consultar el historial, resumenes y reportes de las campanas que tienes asignadas.</p>
           <div class="modal-btns" style="margin-top:10px">
             <button class="btn-primary" onclick="openCalidad()">Abrir Modulo de Calidad</button>
           </div>

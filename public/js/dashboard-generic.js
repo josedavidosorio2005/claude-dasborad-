@@ -850,11 +850,13 @@ function _gdRenderPanel(p, i){
     var o = loBar();
     o.scales = {
       y:{ position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-      y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return v+'%'; }} },
+      y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
       x:{ grid:{display:false}, ticks:{font:{size:8}} }
     };
+    // v+'%' sin redondear mostraba ruido de punto flotante en el eje y en el
+    // datalabel de la linea -- gdFmtValor(v,'%') redondea a 1 decimal.
     o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
-      formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?v+'%':'') : v; } };
+      formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
     _gdChart(canvasId, { data:{ labels: labels2, datasets: ds }, options: o });
     return;
   }
