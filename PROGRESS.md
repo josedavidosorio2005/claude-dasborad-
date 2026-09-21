@@ -2906,3 +2906,119 @@ densos, que es justamente el caso que motivó el cambio.
 `npm audit --omit=dev` (server): 0 vulnerabilidades.
 
 Sin cambios en CI/workflows ni secretos de despliegue.
+
+## Fase 48 — Revisión de seguridad y de bugs de las Fases 45-47, integradas (2026-09-21)
+
+Pedido: revisar en conjunto (no fase por fase) los cambios de Tráfico de
+Llamadas (45), menú lateral desplegable (46) y homogeneización de
+datalabels (47), con un veredicto final de seguridad + bugs. Solo arreglar
+lo cosmético/bajo riesgo; pausar y preguntar ante cualquier hallazgo grande.
+
+**Parte A — Seguridad.**
+- `npm audit`: `server/` 0 vulnerabilidades. `desktop-app/` (14, 13 altas+1
+  crítica) y `mobile-app/` (2, 1 alta+1 crítica) SÍ tienen vulnerabilidades,
+  pero son preexistentes y ajenas a esta revisión — `git log` confirma que
+  ninguno de los dos `package-lock.json` se tocó desde 2026-09-10 (Fases
+  45-47 son todas del 21/09), y las dependencias afectadas
+  (`node-gyp`/`make-fetch-happen`/`tar` vía `@capacitor/cli`) son
+  herramientas de build, no código que se empaqueta en la app. Se reportan
+  aquí como hallazgo informativo, sin tocar (fuera de alcance del pedido).
+- Migración `dashboards_config_trafico_kpis_duplicados_v1` (Fase 45,
+  `server/db.js`): segura de correr más de una vez. Dos capas de
+  protección — (1) `runOnceMigration` la registra en `schema_migrations` y
+  nunca la vuelve a ejecutar aunque el proceso reinicie; (2) aun si se
+  forzara manualmente, la lógica interna es idempotente por sí sola (compara
+  `layout.kpis.length` antes/después y solo escribe si de verdad quitó algo).
+  Solo toca la columna `layout` (JSON de configuración de qué KPI se
+  dibuja) de `dashboards_config` — nunca las tablas de datos reales de
+  tráfico/calidad/cargas — así que correrla sobre una base con datos reales
+  ya cargados (el caso de ORLANT en producción) no puede duplicar ni dañar
+  ningún dato de negocio, solo ajusta qué tarjetas se muestran.
+- `localStorage` de la Fase 46 (`inco_sidebar_colapsado`, escrito en
+  `ui-core.js`/leído en `index.html`): confirmado que solo guarda `'0'` o
+  `'1'` (abierto/cerrado) — ninguna otra clave se agregó junto a esta. No
+  hay dato sensible.
+- Ningún endpoint nuevo ni tocado: `git diff --stat` de las 3 fases contra
+  `server/` solo muestra `dashboard-config-seed.js` (datos estáticos de
+  configuración, sin input de usuario) y `db.js` (la migración) — cero
+  archivos de `server/routes/`. No hay superficie de validación nueva que
+  auditar.
+- `.env`, `app.env.example` y `.github/workflows/` sin cambios en las 3
+  fases (diff vacío, confirmado explícitamente). Sí se agregaron 2 scripts
+  de un solo uso a `.github/scripts/` (`capturas-fase45-*.js`,
+  `capturas-fase46-menu.js`) — revisados: ningún workflow los referencia
+  (no corren en CI), y no tienen credenciales embebidas (leen el usuario
+  ADMIN de `server/data/seed-demo-credenciales.txt`, archivo local
+  ignorado por git; apuntan a `localhost:3000` por defecto, no a
+  producción) — mismo patrón ya usado por los demás scripts de
+  `.github/scripts/`.
+
+**Parte B — Bugs, con las 3 fases probadas juntas (Playwright real, no la
+extensión de Chrome).** Antes de correr las pruebas se descubrió un dato de
+arquitectura importante: TODOS los dashboards de cliente (ORLANT, las 9
+plantillas, Aurora, Hospital) y el módulo de Calidad standalone se abren
+dentro de un overlay a pantalla completa (`#gd-overlay`/`#calidad-overlay`,
+`position:fixed;inset:0;z-index:600`, mismo patrón que todos los modales
+del sistema desde antes de la Fase 46) que tapa la navbar — el usuario NO
+puede tocar el sidebar mientras mira esas gráficas. El único lugar donde
+el sidebar y una gráfica conviven visibles a la vez es el portal Asesor.
+Esto se verificó empíricamente (un intento de clic en la hamburguesa con
+un dashboard abierto expira con "intercepts pointer events") antes de
+diseñar las pruebas, en vez de asumirlo.
+
+Con esa arquitectura confirmada, se probaron con Playwright real: las 6
+sub-pestañas de Tráfico de ORLANT, la pestaña Calidad de ORLANT, 3
+pestañas de 2 campañas de plantilla (Televentas Comfama, Bivett), claro y
+oscuro, escritorio (1440×900) y móvil (390×844) — consola sin errores, sin
+texto `NaN`/`undefined`, sin desborde horizontal, sin cambio de datos según
+el estado del sidebar de fondo al abrir el modal (probado en 2 vistas de
+muestra). Y en el portal Asesor (única pantalla sin overlay): colapsar el
+sidebar con las gráficas visibles SÍ redibuja correctamente — medido en el
+DOM, no solo visualmente: `sidebar` 220px→0→220px, `.main-content`
+1220px→1440px→1220px, canvas de Chart.js 535px→645px→535px, simétrico en
+ambos sentidos (Chart.js v4 usa `ResizeObserver` internamente, sin
+necesidad de que `toggleSidebar()` dispare un evento de resize a mano).
+
+**Un hallazgo automático que resultó ser un falso positivo, verificado
+antes de reportarlo**: las 4 sub-pestañas de Tráfico "Abandono"/"AHT"/"ASA
+y ATA"/"Wait Time" de ORLANT no mostraban canvas visible en el barrido
+automático. Investigado a mano: es el fallback correcto de `_gdChart`
+(`dashboard-generic.js`) mostrando "Sin datos cargados para este periodo"
+— porque el seed de demo local, como ya documentó la propia Fase 45, no
+trae valores de Abandono/AHT/ASA/ATA/Wait Time para ninguna campaña. No es
+un bug, es la limitación de datos de demo ya conocida.
+
+**Otro falso positivo, del propio script de prueba (no de la app)**: dos
+capturas de pantalla del portal Asesor quedaron mal rotuladas como
+"colapsado" mostrando en realidad el sidebar expandido — causado porque
+`browser.newPage()` reutiliza el mismo contexto (mismo `localStorage`)
+entre las distintas partes del script, y una parte anterior dejó
+`inco_sidebar_colapsado` en `'1'` antes de que la parte del portal Asesor
+asumiera que arrancaba expandido. Detectado, investigado con una medición
+directa del DOM (no solo capturas) que confirmó el mecanismo real
+funciona bien, y las capturas mal rotuladas se descartaron/reemplazaron en
+`docs/capturas-demo/fase48-seguridad-y-bugs/`.
+
+**Observación de densidad (no es un bug, ya documentada en la Fase 45)**:
+la gráfica combinada principal de Trafico ORLANT (6 meses, granularidad
+diaria) se ve con las etiquetas de datos apretadas — el mismo "caso límite
+a vigilar" que ya anotó la Fase 45 al introducir el auto-ocultado. Colapsar
+el sidebar (Fase 46) le da MÁS ancho disponible, así que si acaso mejora
+la legibilidad, nunca la empeora — no hay interacción negativa entre las
+fases 45 y 46 en este punto.
+
+**Veredicto**: las Fases 45-47, evaluadas en conjunto, están bien
+implementadas, son seguras, y no se encontró ningún bug funcional real de
+interacción entre ellas. `npm audit` del server limpio; la migración de
+Fase 45 es idempotente y no toca datos reales; el `localStorage` de Fase
+46 no guarda nada sensible; ningún endpoint nuevo sin validar; nada tocó
+`.env`/CI/secretos. Los 2 "hallazgos" que sí aparecieron durante las
+pruebas automáticas se investigaron a fondo y ambos resultaron ser falsos
+positivos (limitación de datos de demo ya documentada; y un bug del propio
+script de prueba, no del producto) — ninguno requirió cambios de código.
+Las vulnerabilidades de `desktop-app`/`mobile-app` son preexistentes,
+ajenas a estas 3 fases, y quedan reportadas para decisión aparte.
+
+`npm test`: 269/269 (sin cambios de código en esta fase, solo verificación
+y documentación). Capturas en
+`docs/capturas-demo/fase48-seguridad-y-bugs/`.
