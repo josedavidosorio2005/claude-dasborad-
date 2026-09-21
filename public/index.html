@@ -406,6 +406,39 @@
         </div>
         <div class="section-card">
           <div class="section-header">
+            <h3>Trafico de WhatsApp — carga de la plantilla real</h3>
+          </div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">
+            Descarga la plantilla oficial desde <a href="#" onclick="descargarPlantillaTraficoWpp();return false">aqui</a>
+            (hoja "DATA"), llenala con una fila por cada COLA de WhatsApp y PERIODO que reportes (ej. un mes completo
+            — nunca un dato por dia) y subela aqui. A diferencia de Trafico de Llamadas, esta plantilla no tiene
+            mapeo de skill: elige la campana antes de subir el archivo.
+          </div>
+          <div class="form-row">
+            <div class="ig"><label>Campana</label>
+              <select id="tww-campana-sel"></select>
+            </div>
+            <div class="ig"><label>Archivo Excel (.xlsx) ya lleno</label>
+              <input type="file" id="tww-file" accept=".xlsx,.xls" onchange="procesarArchivoTraficoWpp(this)">
+            </div>
+          </div>
+          <div id="tww-errores" style="color:var(--c-danger-dark);font-size:0.8rem;margin:4px 0"></div>
+          <div id="tww-preview-card" style="display:none">
+            <div class="page-subtitle" id="tww-preview-resumen" style="margin:0 0 8px 0"></div>
+            <div class="table-wrap">
+              <table><thead><tr>
+                <th>Cola</th><th>Fecha Inicio</th><th>Fecha Fin</th><th>Total</th><th>Contestados</th>
+              </tr></thead>
+              <tbody id="tww-preview-tbody"></tbody></table>
+            </div>
+            <div class="modal-btns">
+              <button class="btn-cancel" onclick="cancelarPreviewTraficoWpp()">Descartar</button>
+              <button class="btn-primary" id="tww-save-btn" onclick="guardarTraficoWpp()">Guardar carga de WhatsApp</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
             <h3>Registrar skill nuevo</h3>
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">Registra el SKILL_NAME real de Wolkvox y su campana ANTES de subir un archivo de Trafico -- cuando llegue una carga que lo mencione, el sistema ya sabe a que campana pertenece, en vez de guardarlo "sin asignar" hasta que lo mapees a mano.</div>
@@ -1516,6 +1549,7 @@
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
 <script src="js/esc.js"></script>
 <script src="js/trafico-logic.js"></script>
+<script src="js/trafico-whatsapp-logic.js"></script>
 <script src="js/semaforo-logic.js"></script>
 <script src="js/paleta-logic.js"></script>
 <script src="js/gd-filtro-logic.js"></script>
@@ -1542,6 +1576,7 @@
 <script src="js/charts.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/trafico.js"></script>
+<script src="js/trafico-whatsapp.js"></script>
 <script src="js/dashboards-admin.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/gerencia.js"></script>

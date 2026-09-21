@@ -202,6 +202,11 @@ async function renderNivelServicioSection(){
   if(sel) sel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var nsdSel = document.getElementById('nsd-campana-sel');
   if(nsdSel) nsdSel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  // Trafico de WhatsApp (Fase 50): alcance actual solo ORLANT, pero se puebla
+  // igual desde el catalogo real (no un <option> fijo) para no reescribir
+  // esto cuando se agregue otra campana con esta plantilla.
+  var twwSel = document.getElementById('tww-campana-sel');
+  if(twwSel) twwSel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var monthInput = document.getElementById('ns-mes-input');
   if(monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
 

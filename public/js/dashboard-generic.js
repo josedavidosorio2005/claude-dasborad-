@@ -713,7 +713,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       html += '<div id="gd-p'+i+'"></div>';
@@ -724,7 +724,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -758,6 +758,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie'){ _gdRenderCalidad(p, i); return; }
 
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
+  if(p.tipo === 'trafico_whatsapp_combo'){ _traficoWppRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1032,7 +1033,7 @@ function _gdDatosPanelesTab(){
       return;
     }
     if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
-    if(p.tipo === 'trafico_combo') return; // export propio (filtros/fecha no son los de _gd)
+    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo') return; // export propio (filtros/fecha no son los de _gd)
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

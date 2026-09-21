@@ -336,6 +336,42 @@ const traficoSkillMapeoBody = z.object({
   sede: sedeSchema.nullable().optional(),
 });
 
+// Trafico de WhatsApp (Fase 50, plantilla real confirmada por Edwin): mismo
+// criterio que traficoFilaSchema de arriba, adaptado a que cada fila es una
+// COLA por un PERIODO (fechaInicio..fechaFin), no un dia. Solo 5 obligatorias
+// (colaWhatsapp + las 2 fechas + total + contestados); el resto opcional.
+const traficoWppFilaSchema = z
+  .object({
+    colaWhatsapp: z.string(reqStr('NOMBRE_COLA_WHATSAPP es obligatorio')).trim().min(1).max(200),
+    fechaInicio: fechaSchema,
+    fechaFin: fechaSchema,
+    totalWhatsapp: z.coerce.number().int().min(0).max(1000000),
+    contestados: z.coerce.number().int().min(0).max(1000000),
+    abandonados: z.coerce.number().int().min(0).max(1000000).optional(),
+    serviceLevel10secPct: pctOpcional,
+    serviceLevel20secPct: pctOpcional,
+    serviceLevel30secPct: pctOpcional,
+    asaSegundos: segundosOpcional,
+    ataSegundos: segundosOpcional,
+  })
+  .refine((f) => f.contestados <= f.totalWhatsapp, {
+    message: 'Los WhatsApp contestados no pueden superar el total',
+    path: ['contestados'],
+  })
+  .refine((f) => f.fechaFin >= f.fechaInicio, {
+    message: 'FECHA FIN no puede ser anterior a FECHA INICIO',
+    path: ['fechaFin'],
+  });
+
+const traficoWppCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(traficoWppFilaSchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(5000, 'Demasiadas filas en un solo archivo'),
+});
+
 // Query params ?campana=&mes= (mes opcional).
 const calidadQuery = z.object({
   campana: campanaSchema,
@@ -571,6 +607,7 @@ module.exports = {
     nivelServicioCargaDiariaBody,
     traficoCargaBody,
     traficoSkillMapeoBody,
+    traficoWppCargaBody,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

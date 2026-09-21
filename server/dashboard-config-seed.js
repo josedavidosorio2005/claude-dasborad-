@@ -211,6 +211,16 @@ const ORLANT = {
       { key: 'trafico', label: 'Trafico de Llamadas', panels: [
         { tipo: 'trafico_combo', campana: 'ORLANT' },
       ]},
+      // Fase 50 (plantilla real confirmada por Edwin): datos por COLA y
+      // PERIODO (fechaInicio..fechaFin), no diarios -- panel propio
+      // (trafico_whatsapp_combo, ver public/js/trafico-whatsapp.js), mismo
+      // patron de integracion que trafico_combo pero con su propia tabla
+      // (trafico_whatsapp, db.js) y su propio endpoint. Si esta pestaña ya
+      // existe en una base sembrada antes de este cambio, ver la migracion
+      // dashboards_config_orlant_trafico_whatsapp_tab_v1 en db.js.
+      { key: 'trafico_whatsapp', label: 'Trafico de WhatsApp', panels: [
+        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
+      ]},
     ],
   },
 };

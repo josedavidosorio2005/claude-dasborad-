@@ -3147,3 +3147,128 @@ improvisarlo.
 vulnerabilidades — sin cambios respecto a la Fase 48. Capturas completas
 en `docs/capturas-demo/fase49-verificacion-por-rol/`, una subcarpeta por
 rol.
+
+## Fase 50 — Módulo de Tráfico de WhatsApp: plantilla real, carga, dashboard (2026-09-21)
+
+Pedido: construir el módulo completo a partir de la plantilla real que
+Edwin confirmó (`PLANTILLA_TRAFICO_WHATSAPP_ORLANT.xlsx`, 5 colas de
+ejemplo, columnas: NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL
+WHATSAPP, WHATSAPP CONTESTADOS, WHATSAPP ABANDONADOS, SERVICE_LEVEL_10/20/
+30SEC, ABANDONO, ASA, ATA — una fila = una cola por un PERÍODO, no un día).
+
+**Parte A — plantilla corregida.** La hoja INSTRUCCIONES del archivo real
+venía copiada literal de la plantilla de voz (hablaba de "Skill + Día",
+SKILL_NAME, DATE — nada de eso coincide con WhatsApp). Se reescribió con la
+misma estructura/tono que `PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx` (voz):
+CÓMO SE USA, COLUMNAS OBLIGATORIAS (5: cola + las 2 fechas + total +
+contestados, fondo rojo) / OPCIONALES (7, fondo verde), REGLAS QUE NO SE
+PUEDEN SALTAR (nunca fila TOTAL, no renombrar columnas, no hace falta
+borrar columnas sin usar), y "¿de dónde salen estos datos?" dejada
+GENÉRICA a propósito (no se inventó Wolkvox/Meta Business/etc., tal como
+pidió el usuario — falta que Edwin confirme la fuente exacta si hace
+falta ese detalle). El archivo corregido y en blanco vive en
+`server/plantillas/PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`,
+mismo patrón de ubicación/nombre que la plantilla de voz — servido
+también sin regenerarse con código, igual criterio. Construido con
+`exceljs` en un entorno de scratch (nunca como dependencia del proyecto —
+ver la nota de `server/tests/helpers/xlsx-lite.js`: tanto `xlsx` como
+`exceljs` fallan `npm audit` hoy, por eso el proyecto nunca los agrega
+como dependencia real, solo se usaron aquí para *generar* el binario que
+se commitea).
+
+**Decisión de dónde guardar los datos (investigado primero, con la
+razón)**: tabla nueva `trafico_whatsapp` (`server/db.js`), NO una
+extensión de `calidad_nivel_servicio_diario` (voz) con un campo "canal".
+Motivo corto: el grano es distinto (una fila = una cola por un período
+`fechaInicio..fechaFin`, nunca un día) — mezclarlo en la tabla de voz
+habría forzado columnas nullable según el canal (WhatsApp no tiene AHT,
+voz no tiene fechaFin) y habría roto la lógica de agregado diario/mensual
+que ya existe para voz (`traficoAgregar` asume un día por fila). Tampoco
+se usó el mecanismo genérico `dashboard_cargas` (blob JSON por
+cliente/sección/período): el pedido explícito era seguir el patrón de
+voz (validación zod, rechazo de fila TOTAL, errores de estructura antes
+de guardar), que ese mecanismo genérico no tiene (su validación es más
+laxa, sin zod). A diferencia de voz, esta tabla NO necesita mapeo
+cola→campaña (voz lo necesita porque un mismo archivo puede traer skills
+de varias campañas sin que quede claro cuál es cuál); el alcance actual
+es solo ORLANT, así que `campana` se manda explícito al subir, mismo
+patrón "clásico" que `dashboard_cargas`. Reemplazo por
+`UNIQUE(campana, colaWhatsapp, fechaInicio, fechaFin)`, no duplica.
+Migración `dashboards_config_orlant_trafico_whatsapp_tab_v1` (mismo
+motivo que las migraciones de Fases 45/47: `dashboards_config` no se
+re-siembra sola) agrega la pestaña a cualquier ORLANT ya sembrado —
+verificada corriendo de verdad contra la base local ya sembrada antes de
+esta fase, confirmado el resultado en la tabla `schema_migrations`.
+
+ABANDONO (columna que sí trae el archivo real) se parsea pero **no se
+guarda**: se recalcula exacto desde abandonados/total, mismo criterio que
+la Fase 45 aplicó a voz (retiró el `ABANDON` de Volvox por la misma
+razón) — aplicado aquí desde el día uno en vez de repetir la lección
+después.
+
+**Parte B — backend.** `public/js/trafico-whatsapp-logic.js` (parseo puro,
+mismo patrón que `trafico-logic.js`: emparejamiento de columnas por
+nombre, rechazo de fila TOTAL, parsers para el formato real de fechas
+corto `M/D/AA` y números con separador de miles `9,230.35`) +
+`server/trafico-whatsapp.js` (escritura, upsert) + `server/routes/
+trafico-whatsapp.js` (GET datos, POST carga, GET plantilla — mismos
+permisos que voz: `canLoadData`/`campaignAccess`) + zod
+(`traficoWppCargaBody` en `validation.js`). 21 pruebas nuevas: 11 de
+parseo puro (`trafico-whatsapp-logic.test.js`, corriendo contra el
+**fixture real** — una copia de `PLANTILLA_TRAFICO_WHATSAPP_ORLANT.xlsx`
+con la hoja INSTRUCCIONES ya corregida, en
+`server/tests/fixtures/PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx`, nunca un
+fixture inventado — leída con `xlsx-lite.js`, el lector propio del
+proyecto) + 10 de ruta (`trafico-whatsapp-carga.test.js`: permisos,
+idempotencia, validación de estructura, columnas opcionales ausentes
+→ null no 0).
+
+Prueba real de carga contra el entorno de verificación local: subida la
+plantilla real (con las 5 colas de ejemplo) desde la pantalla de admin,
+confirmado que los 5 registros guardados coinciden EXACTO con el archivo
+original (`GET /calidad/trafico/whatsapp?campana=ORLANT` comparado campo
+por campo contra los valores del Excel).
+
+**Parte C — pestaña "Trafico de WhatsApp".** Agregada al dashboard de
+ORLANT junto a Calidad y Trafico de Llamadas (mismo patrón de pestañas,
+`dashboard-config-seed.js` + migración de arriba). Diseño (no es una
+réplica de voz a propósito, dato explicado en el pedido): tarjetas de KPI
+del período (Total/Contestados/Abandonados/Nivel de Atención/Tasa de
+Abandono, recalculados — nunca promedio simple de % por cola) + 3
+sub-pestañas de gráficas de BARRAS comparando las colas entre sí (Volumen:
+Total/Contestados/Abandonados: Niveles de Servicio: SL10/20/30; ASA y
+ATA — formateados con horas cuando aplica, ej. "23:00:00", porque en
+WhatsApp esos tiempos pueden ser mucho mayores que en una llamada) — nunca
+una línea de tendencia diaria, que no existe en estos datos. Selector de
+período simple (dropdown, un valor por ahora, pero ya construido para
+varios). Valores numéricos aplicados con `loDatalabelsAuto()` (mismo
+helper de la Fase 45, sin mecanismo nuevo) en las 3 gráficas.
+
+**Bug real encontrado y corregido durante la verificación real en
+navegador** (no solo revisando código): las 3 gráficas de barras no
+traían `type:'bar'` explícito en la configuración de Chart.js — sin eso,
+Chart.js tira `"undefined" is not a registered controller"` y deja el
+canvas "trabado" (el siguiente intento de dibujar ahí falla con "Canvas
+is already in use"). Corregido agregando `type:'bar'` a las 3
+configuraciones; reverificado con Playwright real tras el fix: 0
+hallazgos, KPIs y valores de las 3 gráficas coinciden con lo cargado.
+
+Confirmado (Fase 48 ya lo había establecido para el resto de dashboards,
+aquí solo se verificó que aplica igual): el panel vive dentro del mismo
+modal a pantalla completa (`#gd-overlay`) que tapa el menú — tema
+claro/oscuro y el menú desplegable de la Fase 46 no requieren nada
+especial, confirmado con capturas en ambos temas y escritorio/móvil.
+
+Fuera de alcance, confirmado sin tocar: líneas/campañas múltiples de
+Tráfico de Llamadas (sigue bloqueado esperando el listado de Edwin),
+Calidad, comparativas entre meses, Tráfico de WhatsApp para campañas
+distintas de ORLANT.
+
+**Verificación**: `npm test` 290/290 (269 previos + 21 nuevos), antes y
+después del fix del bug de Chart.js. `npm audit` (server): 0
+vulnerabilidades. Capturas Playwright reales en
+`docs/capturas-demo/fase50-trafico-whatsapp/` (carga, las 3 sub-pestañas,
+claro/oscuro, escritorio/móvil). Verificación de producción de solo
+lectura al final: `GET /api/health` → `{"ok":true}` (200) — la pestaña
+nueva no es visible ahí todavía porque este cambio no se ha desplegado
+(vive en esta rama/PR).
