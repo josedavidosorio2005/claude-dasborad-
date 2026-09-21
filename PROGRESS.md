@@ -2775,3 +2775,59 @@ no el dato. `npm test` en 269/269 (263 previos + 6 nuevos de la migración).
 Fuera de alcance a propósito (confirmado con el usuario, no se tocó):
 múltiples líneas/"Todas las líneas", Tráfico de WhatsApp, módulo de Calidad,
 menú lateral como desplegable.
+
+## Fase 46 — Menú lateral desplegable (2026-09-21)
+
+Pedido de Edwin (reunión 21/09, segunda prioridad de la hoja de ruta): el
+sidebar va a tener cada vez más contenido (más líneas/campañas, Tráfico de
+WhatsApp) y hoy en escritorio siempre está expandido, ocupando 220px fijos
+sin forma de colapsarlo.
+
+**Investigación primero**: el sidebar (admin/asesor/supervisor, los 3 en
+`index.html`) ya tenía un drawer off-canvas completamente funcional en
+móvil (≤768px) — botón hamburguesa, clase `.sidebar-open`, overlay,
+`toggleSidebar()`/`closeSidebar()` en `ui-core.js`. En escritorio ese mismo
+botón estaba `display:none` y el sidebar nunca colapsaba. La lista de items
+del sidebar de admin es plana (11 ítems, sin categorías) — no había ninguna
+agrupación existente sobre la que construir un accordion sin inventar una
+taxonomía nueva que Edwin no pidió.
+
+**Diseño propuesto y confirmado con el usuario** antes de tocar código:
+reusar exactamente el mecanismo que ya existe para móvil, extendido a
+escritorio como colapso tipo "push" (el `main-content` usa el ancho
+liberado, sin overlay oscuro — eso es más una necesidad de móvil) en vez de
+inventar un accordion o un rail de solo-íconos (dos ítems comparten el
+mismo emoji — Usuarios y Gestión Humana, ambos 👥 — así que un modo
+solo-íconos habría sido ambiguo sin arreglar eso aparte). Persistencia:
+`localStorage` con el mismo patrón que ya usa el tema (`inco_tema`),
+aplicado ANTES del primer paint vía un atributo en `<html>` para no
+parpadear.
+
+**Implementación**: `toggleSidebar()` ahora calcula "¿está abierto ahora?"
+según el viewport (`matchMedia`) — en móvil sigue leyendo `.sidebar-open`
+exactamente como antes (sin tocar ese camino); en escritorio lee/escribe
+`data-sidebar-collapsed="1"` en `<html>`, guardado en `inco_sidebar_colapsado`.
+El botón hamburguesa pasa de `display:none` a visible siempre; como eso
+convertía a `.navbar` de 2 a 3 hijos flex, `justify-content:space-between`
+ya no alineaba bien el logo — se cambió por `margin-left:auto` en
+`.navbar-right` (mismo resultado visual de siempre, sin importar cuántos
+hijos haya antes). Cero colores nuevos: todo el estilo del colapso
+(`html[data-sidebar-collapsed="1"] .sidebar{width:0;...}`, envuelto en
+`@media(min-width:769px)` a propósito — sin eso, por especificidad CSS,
+pisaría el ancho del drawer de móvil si alguien colapsa en escritorio y
+después abre la app en el celular con el mismo `localStorage`) reusa los
+tokens y transiciones que ya existían.
+
+**Verificado con Playwright** (`docs/capturas-demo/fase46-menu-desplegable/`):
+expandido/colapsado en escritorio y abierto/cerrado en móvil, claro/oscuro,
+contra 2 dashboards de fondo distintos (ORLANT y BIVETT, de plantilla,
+abiertos con `openGenericDashboard` igual que la Fase 45) — el sidebar
+colapsa/expande correctamente incluso con el modal de dashboard encima.
+Confirmado que la preferencia sobrevive un reload real (la sesión no
+persiste entre reloads — `authToken` vive solo en memoria — así que hubo
+que volver a loguear antes de comprobarlo). Se hizo click, uno por uno, en
+los 11 enlaces del sidebar de admin (incluido "Cargar Datos", que abre un
+modal en vez de una sección — caso aparte en el script) y se confirmó que
+los 11 siguen navegando a su destino. Sin errores de JS en consola.
+`npm test`: 269/269 sin cambios (el cambio es de navegación/UI pura, no
+toca lógica de datos de ningún dashboard).

@@ -14,6 +14,20 @@
   }catch(e){ document.documentElement.setAttribute('data-theme', 'light'); }
 })();
 </script>
+<script>
+// Fase 46: mismo criterio que el tema arriba -- fija ANTES del primer paint
+// si el sidebar arranca colapsado (preferencia de escritorio, ver
+// css/styles.css html[data-sidebar-collapsed] y toggleSidebar() en
+// ui-core.js). Sin atributo == expandido (el default de siempre); el
+// atributo solo se agrega si el usuario ya lo colapso antes.
+(function(){
+  try{
+    if(localStorage.getItem('inco_sidebar_colapsado') === '1'){
+      document.documentElement.setAttribute('data-sidebar-collapsed', '1');
+    }
+  }catch(e){}
+})();
+</script>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -40,7 +54,7 @@
 <!-- ADMIN PANEL -->
 <div id="admin-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/navbar-icon.png" alt="InConexion"><span class="navbar-logo-text">InConexion</span></div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
@@ -1314,7 +1328,7 @@
 <!-- ══ PORTAL ASESOR — pagina independiente (rol ASESOR) ══════════════════════════════ -->
 <div id="asesor-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
     <div class="navbar-logo-text">InConexion &mdash; Portal Asesor</div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
@@ -1374,7 +1388,7 @@
 <!-- ══ PORTAL SUPERVISOR — pagina independiente (rol SUPERVISOR) ══════════════════════════════ -->
 <div id="supervisor-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Abrir menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
     <div class="navbar-logo-text">InConexion &mdash; Portal Supervisor</div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
