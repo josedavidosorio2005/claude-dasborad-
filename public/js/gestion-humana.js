@@ -56,7 +56,7 @@ function renderGhTabla(){
   var rows = _ghPersonal.slice().sort(function(a,b){
     return (a.campana||'').localeCompare(b.campana||'') || (a.nombre||'').localeCompare(b.nombre||'');
   });
-  var html = '<tr><th>Nombre</th><th>Cargo</th><th>Campana</th><th>Ingreso</th><th>Salida</th><th>Estado</th><th>Costo/mes</th><th></th></tr>';
+  var html = '';
   if(rows.length === 0){
     html += '<tr><td colspan="8" style="text-align:center;color:var(--c-text-muted)">Sin personal registrado. Agrega la primera persona.</td></tr>';
   } else {
@@ -77,7 +77,12 @@ function renderGhTabla(){
         '<button class="btn-sm btn-delete" onclick="ghEliminarPersona('+p.id+')">Eliminar</button></td></tr>';
     });
   }
-  _ghSetHtml(['gh-admin-tbody','gh-ov-table'], html);
+  // gh-admin-tbody ya tiene su <thead> estatico en el HTML; gh-ov-table (el
+  // overlay "Ver dashboard") no tiene thead propio, asi que necesita el
+  // encabezado inyectado aqui para no perderlo.
+  var headerRow = '<tr><th>Nombre</th><th>Cargo</th><th>Campana</th><th>Ingreso</th><th>Salida</th><th>Estado</th><th>Costo/mes</th><th></th></tr>';
+  _ghSetHtml(['gh-admin-tbody'], html);
+  _ghSetHtml(['gh-ov-table'], headerRow + html);
 }
 
 // ── MODAL ──────────────────────────────────────────────────

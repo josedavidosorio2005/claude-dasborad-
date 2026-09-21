@@ -220,6 +220,8 @@ async function gerGuardarKpi(){
   renderGerPeriodos();
   renderGerPanel();
   if(_gerTab==='tabla') renderGerTabla();
+  renderGerAdminStats();
+  renderGerAdminTabla();
 }
 
 async function gerEliminarKpi(id){
@@ -232,6 +234,8 @@ async function gerEliminarKpi(id){
   await loadGerData();
   renderGerPanel();
   if(_gerTab==='tabla') renderGerTabla();
+  renderGerAdminStats();
+  renderGerAdminTabla();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -320,7 +324,7 @@ function renderGerAdminStats(){
 }
 
 function renderGerAdminTabla(){
-  var html = '<tr><th>Periodo</th><th>Nombre</th><th>Categoria</th><th>Valor</th><th>Unidad</th><th>Meta</th><th></th></tr>';
+  var html = '';
   if(_gerKpis.length === 0){
     html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">No hay indicadores para este periodo</td></tr>';
   } else {
