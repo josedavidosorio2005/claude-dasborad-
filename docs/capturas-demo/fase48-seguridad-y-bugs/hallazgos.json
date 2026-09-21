@@ -1,0 +1,42 @@
+[
+  {
+    "vista": "orlant-trafico-abandono",
+    "tipo": "sin-canvas-visible",
+    "tema": "claro"
+  },
+  {
+    "vista": "orlant-trafico-abandono",
+    "tipo": "sin-canvas-visible",
+    "tema": "oscuro"
+  },
+  {
+    "vista": "orlant-trafico-aht",
+    "tipo": "sin-canvas-visible",
+    "tema": "claro"
+  },
+  {
+    "vista": "orlant-trafico-aht",
+    "tipo": "sin-canvas-visible",
+    "tema": "oscuro"
+  },
+  {
+    "vista": "orlant-trafico-asaata",
+    "tipo": "sin-canvas-visible",
+    "tema": "claro"
+  },
+  {
+    "vista": "orlant-trafico-asaata",
+    "tipo": "sin-canvas-visible",
+    "tema": "oscuro"
+  },
+  {
+    "vista": "orlant-trafico-wait",
+    "tipo": "sin-canvas-visible",
+    "tema": "claro"
+  },
+  {
+    "vista": "orlant-trafico-wait",
+    "tipo": "sin-canvas-visible",
+    "tema": "oscuro"
+  }
+]
