@@ -354,7 +354,7 @@ var TRAFICO_SUBTABS = [
   { key: 'aht', label: 'AHT' },
   { key: 'asaata', label: 'ASA y ATA' },
   { key: 'wait', label: 'Wait Time' },
-  { key: 'sl', label: 'Niveles de Servicio 10s/30s' },
+  { key: 'sl', label: 'Niveles de Servicio 10s/20s/30s' },
 ];
 
 async function _traficoCargarDatos(campana){
@@ -529,7 +529,7 @@ var TRAFICO_SUBTAB_TITULOS = {
   aht: 'AHT — tiempo promedio de atencion',
   asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
   wait: 'Wait Time — tiempo de espera',
-  sl: 'Niveles de Servicio a 10s y 30s',
+  sl: 'Niveles de Servicio a 10s, 20s y 30s',
 };
 var TRAFICO_SUBTAB_CANVAS = {
   abandono: 'tv-canvas-ab-', aht: 'tv-canvas-aht-', asaata: 'tv-canvas-asaata-', wait: 'tv-canvas-wait-', sl: 'tv-canvas-sl-',
@@ -631,6 +631,7 @@ function _traficoRenderContenido(campana, sede, i){
   var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
   var CGl = (typeof CG!=='undefined') ? CG : '#27ae60';
   var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
   var pal = (typeof PC!=='undefined') ? PC : [CDl,CGl,COl];
 
   if(estado.combinar){
@@ -663,7 +664,10 @@ function _traficoRenderContenido(campana, sede, i){
     y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };
-  o.plugins.datalabels = { display:false };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function(v, ctx){
+    if(v===null||v===undefined) return '';
+    return ctx.dataset.yAxisID==='y2' ? gdFmtValor(v,'%') : gdFmtValor(v);
+  }); else o.plugins.datalabels = { display:false };
   o.plugins.tooltip = { callbacks: { label: function(ctx){
     var v = ctx.parsed.y;
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
@@ -688,7 +692,10 @@ function _traficoRenderContenido(campana, sede, i){
     y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
   };
-  oAband.plugins.datalabels = { display:false };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAband, function(v, ctx){
+    if(v===null||v===undefined) return '';
+    return ctx.dataset.yAxisID==='y2' ? gdFmtValor(v,'%') : gdFmtValor(v);
+  }); else oAband.plugins.datalabels = { display:false };
   oAband.plugins.tooltip = { callbacks: { label: function(ctx){
     var v = ctx.parsed.y;
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
@@ -704,7 +711,12 @@ function _traficoRenderContenido(campana, sede, i){
 
   var oAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   var fmtAht = function(v){ if(v===null||v===undefined) return '—'; var m=Math.floor(v/60), s=Math.round(v%60); return m+':'+(s<10?'0':'')+s; };
-  oAht.plugins.datalabels = { display:false };
+  // Version del formato de tiempo para las etiquetas ENCIMA de la grafica
+  // (datalabels): vacio en vez de '—' para un dia sin dato, para no llenar
+  // la linea de guiones cuando faltan varios dias seguidos.
+  var fmtAhtDL = function(v){ return (v===null||v===undefined) ? '' : fmtAht(v); };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAht, fmtAhtDL);
+  else oAht.plugins.datalabels = { display:false };
   oAht.scales.y.ticks.callback = fmtAht;
   oAht.plugins.tooltip = { callbacks: { label: function(ctx){ return 'AHT: ' + fmtAht(ctx.parsed.y); } } };
   if(typeof _gdChart === 'function'){
@@ -720,7 +732,8 @@ function _traficoRenderContenido(campana, sede, i){
   // Mismo patron que Abandono/AHT arriba: agregadoComb siempre combinado,
   // sin depender del checkbox "Ver skills por separado".
   var oAsaAta = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  oAsaAta.plugins.datalabels = { display:false };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAsaAta, fmtAhtDL);
+  else oAsaAta.plugins.datalabels = { display:false };
   oAsaAta.scales.y.ticks.callback = fmtAht;
   oAsaAta.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtAht(ctx.parsed.y); } } };
   if(typeof _gdChart === 'function'){
@@ -732,7 +745,8 @@ function _traficoRenderContenido(campana, sede, i){
   }
 
   var oWait = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  oWait.plugins.datalabels = { display:false };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oWait, fmtAhtDL);
+  else oWait.plugins.datalabels = { display:false };
   oWait.scales.y.ticks.callback = fmtAht;
   oWait.plugins.tooltip = { callbacks: { label: function(ctx){ return 'Wait Time: ' + fmtAht(ctx.parsed.y); } } };
   if(typeof _gdChart === 'function'){
@@ -742,7 +756,8 @@ function _traficoRenderContenido(campana, sede, i){
   }
 
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  oSl.plugins.datalabels = { display:false };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oSl, function(v){ return (v===null||v===undefined) ? '' : gdFmtValor(v,'%'); });
+  else oSl.plugins.datalabels = { display:false };
   oSl.scales.y.min = 0; oSl.scales.y.max = 100;
   oSl.scales.y.ticks.callback = function(v){ return gdFmtValor(v,'%'); };
   oSl.plugins.tooltip = { callbacks: { label: function(ctx){
@@ -750,9 +765,14 @@ function _traficoRenderContenido(campana, sede, i){
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : gdFmtValor(v,'%'));
   } } };
   if(typeof _gdChart === 'function'){
+    // SL 20s (Fase 45, pedido de Edwin): el dato ya se calculaba y exportaba
+    // (serviceLevel20secPct, mismo patron ponderado que SL10/SL30 en
+    // traficoAgregar) pero no se graficaba -- se agrega aqui como una linea
+    // mas, mismo criterio visual que las otras dos.
     _gdChart('tv-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[
         { label:'SL 10s', data: agregadoComb.map(function(a){return a.serviceLevel10secPct;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+        { label:'SL 20s', data: agregadoComb.map(function(a){return a.serviceLevel20secPct;}), borderColor: CMl, backgroundColor: CMl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
         { label:'SL 30s', data: agregadoComb.map(function(a){return a.serviceLevel30secPct;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
       ] }, options: oSl });
   }

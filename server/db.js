@@ -966,6 +966,45 @@ runOnceMigration('dashboards_config_orlant_ocultar_pestanas_v1', () => {
   }
 });
 
+// Backfill Fase 45 (pedido de Edwin): quita de la franja global de KPIs
+// (arriba de las pestanas) los que duplicaban, en nombre, las tarjetas del
+// resumen de "Trafico de Llamadas" (Total/Contestadas/Abandonadas/Nivel de
+// Atencion) -- esa informacion ahora vive SOLO en el resumen de Trafico.
+// Mismo motivo que las migraciones de arriba: dashboards_config no se
+// re-siembra sola, asi que quitar estos KPIs de dashboard-config-seed.js
+// nunca llega a una fila que ya existia (como produccion). AHT Promedio se
+// deja "por ahora" (pedido explicito, no definitivo) -- no se toca aqui.
+runOnceMigration('dashboards_config_trafico_kpis_duplicados_v1', () => {
+  const A_QUITAR = {
+    'CLINICA AURORA': ['Llamadas Entrada', 'Nivel Atencion', 'Abandonos'],
+    'HOSPITAL LA MARIA': ['Llamadas Ingresadas', 'Nivel Atencion Llamadas', 'Llamadas Contestadas', 'Llamadas Abandonadas'],
+  };
+  let dashboardsTocados = 0;
+  for (const cliente of Object.keys(A_QUITAR)) {
+    const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get(cliente);
+    if (!row) continue; // no existe todavia -> el seed ya la crea con la forma nueva
+    let layout;
+    try {
+      layout = JSON.parse(row.layout);
+    } catch (e) {
+      continue;
+    }
+    const titulosAQuitar = A_QUITAR[cliente];
+    const antes = (layout.kpis || []).length;
+    layout.kpis = (layout.kpis || []).filter((k) => titulosAQuitar.indexOf(k && k.titulo) === -1);
+    if (layout.kpis.length === antes) continue; // ya tiene la forma nueva (o un admin ya los quito) -- nada que hacer
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      cliente
+    );
+    dashboardsTocados++;
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_trafico_kpis_duplicados_v1 aplicada (${dashboardsTocados} dashboard(s)).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

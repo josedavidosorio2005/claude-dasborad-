@@ -227,10 +227,14 @@ const AURORA = {
   vista: null,
   secciones: SECCIONES['CLINICA AURORA'],
   layout: {
+    // Llamadas Entrada / Nivel Atencion / Abandonos se retiraron de aqui en
+    // la Fase 45 (pedido de Edwin): duplicaban, en nombre y concepto, el
+    // resumen de la pestana "Trafico de Llamadas" (Total Llamadas/Nivel de
+    // Atencion/Llamadas Abandonadas, mismo dato pero calculado desde la
+    // carga automatica de Wolkvox en vez de esta carga mensual manual) —
+    // esa informacion ahora vive SOLO en el resumen de Trafico. AHT Promedio
+    // se mantiene aqui "por ahora" (pedido explicito, no es definitivo).
     kpis: [
-      kpi('Llamadas Entrada', ultimo('hist_llamadas'), 'miles'),
-      kpi('Nivel Atencion', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
-      kpi('Abandonos', ultimo('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
       kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
       kpi('WhatsApp Entrada', ultimo('hist_whatsapp'), 'miles'),
       kpi('Nivel Ate. WPP', ultimo('nivel_atencion_wpp'), 'porcentaje', { cls: 'kpi-green', metrica: 'nivel_atencion' }),
@@ -312,11 +316,14 @@ const HLM = {
   },
   secciones: SECCIONES['HOSPITAL LA MARIA'],
   layout: {
+    // Llamadas Ingresadas / Nivel Atencion Llamadas / Llamadas Contestadas /
+    // Llamadas Abandonadas se retiraron de aqui en la Fase 45 (pedido de
+    // Edwin): coinciden literalmente con las tarjetas del resumen de la
+    // pestana "Trafico de Llamadas" (mismo dato, calculado desde la carga
+    // automatica de Wolkvox en vez de esta carga mensual manual) — esa
+    // informacion ahora vive SOLO en el resumen de Trafico. AHT Promedio
+    // (mas abajo) se mantiene "por ahora" (pedido explicito, no definitivo).
     kpis: [
-      kpi('Llamadas Ingresadas', ultimo('llamadas_ingresadas'), 'miles'),
-      kpi('Nivel Atencion Llamadas', ultimo('nivel_atencion'), 'porcentaje', { semaforo: 80, metrica: 'nivel_atencion' }),
-      kpi('Llamadas Contestadas', ultimo('llamadas_contestadas'), 'miles'),
-      kpi('Llamadas Abandonadas', ultimo('llamadas_abandonadas'), 'miles', { cls: 'kpi-red' }),
       kpi('WhatsApp Ingresados', ultimo('wpp_ingresados'), 'miles'),
       kpi('Agendas via WhatsApp', ultimo('agendas_wpp'), 'miles', { cls: 'kpi-pur' }),
       kpi('Agendas via Llamada', ultimo('agendas_llamada'), 'miles', { cls: 'kpi-pur' }),

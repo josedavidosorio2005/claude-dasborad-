@@ -372,7 +372,7 @@ para las métricas que sí tienen numerador/denominador disponibles
 abandonadas/total`) **suma los volúmenes del período primero y recalcula el
 % después** — nunca promedia los porcentajes diarios. Para las que Volvox ya
 reporta como % o duración sin numerador propio disponible aquí
-(`serviceLevel*Pct`, `abandonPct`, `asaSegundos`, etc.), se usa un promedio
+(`serviceLevel*Pct`, `asaSegundos`, etc.), se usa un promedio
 **ponderado por volumen de llamadas** del período — la mejor aproximación
 posible sin inventar un numerador que no existe, documentado así en el
 propio código (no es un promedio simple). `combinar` es un eje ortogonal a

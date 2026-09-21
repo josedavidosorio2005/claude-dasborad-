@@ -2701,3 +2701,77 @@ PR para retirarla — **sin mergear**, a la espera de revisión humana
 explícita (mismo criterio del clasificador de seguridad que ya aplicó
 quien mergeó el PR original: cualquier cambio a un workflow con secretos
 de despliegue lo revisa una persona antes de entrar).
+
+## Fase 45 — Ajustes de Tráfico de Llamadas + valores numéricos visibles en las gráficas (2026-09-21)
+
+Pedido de Edwin (reunión de estado): las dos primeras prioridades acordadas
+que no dependían de información externa pendiente (listado de líneas para
+"Todas las líneas", que sigue fuera de alcance).
+
+**Parte A — limpiar y completar los indicadores de Tráfico de Llamadas.**
+Investigado primero (sin asumir la lista que trajo el pedido): dentro del
+propio panel `trafico_combo` NO había duplicación — el resumen (Total/
+Contestadas/Abandonadas/Nivel de Atención/Tasa de Abandono) es la única
+tarjeta de KPIs ahí. La duplicación real estaba en la franja global de KPIs
+de cada dashboard (`layout.kpis`, arriba de las pestañas, visible en TODAS
+ellas — no solo Trafico), que coincidía en nombre/concepto con esas mismas
+5 tarjetas para CLINICA AURORA y HOSPITAL LA MARIA (no para ORLANT, cuyos
+KPIs están partidos por línea 3P/General y no coinciden). Confirmado con el
+usuario antes de tocar nada. Se quitaron de `layout.kpis`: AURORA pierde
+"Llamadas Entrada"/"Nivel Atencion"/"Abandonos"; HOSPITAL LA MARIA pierde
+"Llamadas Ingresadas"/"Nivel Atencion Llamadas"/"Llamadas Contestadas"/
+"Llamadas Abandonadas". AHT Promedio se mantiene "por ahora" (pedido
+explícito, no definitivo).
+
+Se agregó SL 20s ("Nivel de Servicio – 20 segundos") a la sub-pestaña de
+Niveles de Servicio: el dato (`serviceLevel20secPct`) ya se calculaba
+(mismo patrón ponderado que SL10/SL30 en `traficoAgregar`) y se exportaba a
+Excel, pero nunca se graficaba — solo faltaba dibujarlo.
+
+Candidata a "métrica sin uso" (confirmada con el usuario, no asumida):
+`abandonPct` (columna `ABANDON` de Volvox) se parseaba y agregaba igual que
+SL10/20/30 pero no se usaba en ningún lado (ni gráfica ni export) —
+`tasaAbandonoPct` (recalculada exacta) ya cubre el abandono. Se retiró del
+parseo/agregación de `trafico-logic.js` hacia adelante; la columna de la
+base de datos se conserva intacta (histórico ya cargado no se toca).
+
+**Hallazgo importante durante la verificación**: `dashboards_config` se
+siembra en la base de datos SOLO la primera vez que existe un cliente
+(`dashboard-config-seed.js` nunca llega solo a una fila que ya existía, como
+producción) — sin una migración explícita, el cambio de `layout.kpis` habría
+quedado sin efecto en cualquier entorno ya sembrado. Se agregó
+`dashboards_config_trafico_kpis_duplicados_v1` en `db.js` (mismo patrón que
+las migraciones de Fases anteriores para este mismo problema), con su propio
+test (`trafico-kpis-duplicados-migracion.test.js`).
+
+**Parte B — valores numéricos visibles en las gráficas.** El plugin
+`chartjs-plugin-datalabels` (v2.2.0) ya estaba vendorizado y cargado en
+`index.html`, y el helper compartido `charts.js` (`lo()`/`loBar()`/etc.) ya
+lo configuraba por defecto (temeado con `CHART_DL_BG`/`CD`) — pero cada una
+de las 6 gráficas de `trafico.js` lo apagaba explícitamente
+(`display:false`). Se agregó `loDatalabelsAuto(o, formatter)` a `charts.js`
+(reusable para otros módulos a futuro, sin tocarlos en esta fase): usa la
+opción nativa `display:'auto'` del plugin, que oculta solo las etiquetas que
+se solaparían entre sí, en vez de un umbral fijo de puntos que habría que
+recalibrar por tipo de gráfica. Aplicado a las 6 gráficas de Trafico con el
+formato correspondiente (enteros/porcentaje/mm:ss, reusando `gdFmtValor`/
+`fmtAht`). Verificado con Playwright (ORLANT, las 6 sub-pestañas, claro/
+oscuro, escritorio/móvil, antes/después) en
+`docs/capturas-demo/fase45-trafico-y-valores/`: la gráfica combinada
+principal (barras + línea, granularidad diaria de 6 meses) queda densa pero
+legible en escritorio; en móvil queda más apretada — el auto-ocultado de
+Chart.js evita solapamientos reales, pero es un caso límite a vigilar si en
+el futuro se filtra un rango aún más amplio. AHT/ASA/ATA/Wait Time no
+tienen datos en el seed de demo (ninguna campaña) para confirmar
+visualmente el formato mm:ss en pantalla — el formatter reusa la misma
+`fmtAht()` ya usada en tooltips/ejes, sin lógica nueva.
+
+Confirmado con el script de captura que ningún valor real cambió: las 5
+tarjetas del resumen (Total Llamadas 23.925 / Contestadas 22.829 /
+Abandonadas — / Nivel Atención 95,4% / Tasa Abandono —, mes Sep-26, ORLANT)
+son idénticas antes y después — solo cambió dónde se muestra la información,
+no el dato. `npm test` en 269/269 (263 previos + 6 nuevos de la migración).
+
+Fuera de alcance a propósito (confirmado con el usuario, no se tocó):
+múltiples líneas/"Todas las líneas", Tráfico de WhatsApp, módulo de Calidad,
+menú lateral como desplegable.

@@ -27,7 +27,12 @@ var TRAFICO_COLUMNAS = [
   { key: 'serviceLevel10secPct', label: 'SERVICE_LEVEL_10SEC' },
   { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC' },
   { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
-  { key: 'abandonPct', label: 'ABANDON' },
+  // ABANDON (columna propia de Volvox) se dejo de leer en la Fase 45: no se
+  // graficaba ni se exportaba en ningun lado -- tasaAbandonoPct (mas abajo)
+  // ya cubre ese dato, recalculado EXACTO desde abandonadas/total en vez de
+  // depender del % que reporta Volvox. El campo sigue existiendo en la
+  // columna calidad_nivel_servicio_diario.abandonPct de la base (cargas
+  // viejas lo conservan); solo se retiro de este parseo hacia adelante.
   { key: 'asaSegundos', label: 'ASA' },
   { key: 'ataSegundos', label: 'ATA' },
   { key: 'waitTimeSegundos', label: 'WAIT_TIME' },
@@ -108,8 +113,8 @@ function traficoSegundosDesdeFraccionDia(v) {
   return Math.round(n * 86400);
 }
 
-// SERVICE_LEVEL_10/20/30SEC y ABANDON: texto "86.49 %" / "1.62%" (con o sin
-// espacio antes del %, ambos formatos aparecen en el mismo archivo).
+// SERVICE_LEVEL_10/20/30SEC: texto "86.49 %" / "1.62%" (con o sin espacio
+// antes del %, ambos formatos aparecen en el mismo archivo).
 function traficoPctDesdeTexto(v) {
   if (v === null || v === undefined) return null;
   var s = String(v).trim();
@@ -188,7 +193,6 @@ function traficoParseFilas(aoa) {
       ['serviceLevel10secPct', traficoPctDesdeTexto, null],
       ['serviceLevel20secPct', traficoPctDesdeTexto, null],
       ['serviceLevel30secPct', traficoPctDesdeTexto, null],
-      ['abandonPct', traficoPctDesdeTexto, null],
       ['asaSegundos', traficoNumero, null],
       ['ataSegundos', traficoNumero, null],
       ['waitTimeSegundos', traficoSegundosDesdeFraccionDia, null],
@@ -246,7 +250,7 @@ function traficoVentana12Meses(maxDispFecha, minDispFecha) {
 // nunca promedia los % diarios. `nivelAtencionPct` y `tasaAbandonoPct` (las
 // dos que importan para la grafica principal y sus KPIs) se recalculan de
 // forma EXACTA como contestadas/total y abandonadas/total del periodo ya
-// agregado. Los demas % que reporta Volvox (SERVICE_LEVEL_*, ABANDON) no
+// agregado. Los demas % que reporta Volvox (SERVICE_LEVEL_*) no
 // tienen un numerador propio disponible aqui, asi que se agregan como
 // promedio PONDERADO por TOTAL LLAMADAS del periodo (mejor aproximacion
 // posible sin inventar datos; sigue sin ser un promedio simple de %).
@@ -275,7 +279,7 @@ function traficoAgregar(filas, opts) {
 
   var buckets = {};
   var orden = [];
-  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'abandonPct'];
+  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
   var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos', 'ahtSegundos', 'waitTimeSegundos'];
 
   filas.forEach(function (f) {
