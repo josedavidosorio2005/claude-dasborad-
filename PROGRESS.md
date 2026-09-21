@@ -2476,3 +2476,127 @@ defecto; Tráfico sigue con sus 6 sub-pestañas y los mismos valores ya
 verificados — **Total Llamadas 8.061, Contestadas 7.159, Abandonadas 902,
 Nivel de Atención 88.8%, Tasa de Abandono 11.2%** — exactamente iguales a
 antes de ocultar las otras pestañas.
+
+## Fase 41 — Escaneo completo: tema oscuro/claro, bugs cosméticos conocidos y QA funcional general (2026-09-21)
+
+Pedido de pulido general, no de una campaña específica: revisar que el
+tema oscuro/claro (Fase 35) quedara bien terminado en toda la UI agregada
+desde entonces (Fases 36-40b), arreglar los 2 bugs cosméticos ya
+documentados, y hacer una pasada de QA funcional real (no solo visual)
+para atrapar cualquier otro error colado en las últimas fases. Se pidió
+explícitamente **juntar todos los hallazgos en una sola lista antes de
+arreglar nada**, con severidad/riesgo, y decidir el alcance con esa lista
+completa en la mano.
+
+### Investigación (las 3 partes, antes de tocar código)
+
+**A) Auditoría de tema** — grep de colores hardcodeados + recorrido visual
+real (Playwright, Chromium, claro/oscuro × escritorio/móvil) de ambos
+dashboards de plantilla y ORLANT, Metas Calidad y sus 3 sub-pestañas, y
+las pantallas con más probabilidad de tener "elementos a medias
+tematizados". Descartados como falsos positivos (confirmado explícitamente,
+no solo intuición): las ventanas de impresión/exportación a PDF (fijas a
+propósito, un documento impreso no debe seguir el tema de la app) y los
+bordes de `.canal-btn`/`.ig input`/`.aurora-filters select` (ya tenían su
+propio override `[data-theme="dark"]`). Confirmados como bugs reales con
+`getComputedStyle` (no solo lectura de código): el nombre de usuario en el
+modal "Eliminar Usuario" se pintaba en `rgb(13,74,94)` sobre un fondo
+`rgb(19,44,53)` — contraste ~1.3:1, prácticamente invisible en oscuro.
+
+**B) Los 2 bugs conocidos** — diagnóstico de causa raíz para ambos antes
+de decidir si se tocaban:
+- Ruido de punto flotante en ejes Y de %: `loPct()`/`loPct2()`
+  (`charts.js`) formateaban con `v+'%'` sin redondear, a diferencia del
+  helper `gdFmtValor()` (ya correcto, usado por `loFmt()`) que sí redondea
+  a 1 decimal. El mismo patrón sin redondear apareció en 4 sitios más, no
+  solo en Inasistencia de ORLANT: el eje "% Efectividad" de cualquier
+  panel `combo` (`dashboard-generic.js`, todas las campañas) y 3 gráficas
+  de Tráfico (`trafico.js`) — 8 call-sites de tick/datalabel + 3 de
+  tooltip, 11 en total.
+- `_gdNum()` muestra "0" en vez de "—": la causa exacta es
+  `_gdEvalCampo()` (`dashboard-generic.js:94`), que coacciona un campo
+  ausente a `0` ANTES de que el chequeo `(cur===null...)?'—':...` de
+  `_gdKpiCardHtml` lo vea. Fix quirúrgico identificado (que esa función
+  devuelva `null` en vez de 0 para un campo crudo ausente), pero esa misma
+  función alimenta también las LÍNEAS de las gráficas de TODAS las
+  campañas (`modo:'serie'`) — hoy un mes sin dato dibuja un hundimiento a
+  0; con el fix pasaría a ser un hueco (gap). Cambio de comportamiento
+  visible en gráficas existentes, no solo un fix de formato.
+
+**C) QA funcional** — suite completa (263/263) antes de empezar;
+recorrido con Playwright de ANDRES YEPES (plantilla estándar) + ORLANT,
+todas las pestañas visibles y todas las sub-pestañas de la Fase 40, más
+Metas Calidad y sus 3 sub-pestañas (Cronograma/Nivel de Servicio/Tráfico),
+en los 4 combos claro/oscuro × escritorio/móvil, con lectura de consola en
+cada pantalla; y los 3 flujos de carga activos (Nivel de Servicio manual,
+Registrar skill nuevo, Carga de Tráfico/Wolkvox con un archivo real de
+`server/tests/fixtures/`) probados contra el entorno **local** (nunca
+producción). Un hallazgo de consola en el primer pase (9× `429 Too Many
+Requests`) se investigó antes de reportarlo como bug: el log del servidor
+confirmó que eran del limitador de tasa general (`RATE_LIMIT_MAX`,
+`express-rate-limit`) agotado por el propio volumen de logins/requests de
+esta sesión de pruebas, no un error de la app — se confirmó re-corriendo
+el mismo recorrido con el límite temporalmente alto, resultando en 0
+hallazgos de consola.
+
+### Decisión de alcance (con la lista completa en la mano)
+
+**Entraron en esta fase** (cosmético, bajo riesgo, autorizado sin esperar
+confirmación):
+1. Las 11 instancias del ruido de punto flotante en % (parte B) —
+   `charts.js`, `dashboard-generic.js`, `trafico.js` — todas ahora pasan
+   por `gdFmtValor(v,'%')`.
+2. 12 colores hardcodeados en `index.html` que no se adaptaban a oscuro
+   (parte A) — modal "Eliminar Usuario" (3), 4 mensajes de error de
+   formularios de carga, 2 cajas con fondo claro fijo ("MES" del portal
+   Asesor y "Reporte General de Cumplimiento" en Calidad → Reportes), y 2
+   textos más — reemplazados por su variable de tema equivalente
+   (`var(--c-primary)`, `var(--c-text)`, `var(--c-text-2)`,
+   `var(--c-danger-dark)`, `var(--c-surface-subtle)`,
+   `var(--c-surface-alt)`). Cero cambio de comportamiento, solo color.
+3. Hallazgo cosmético adicional (no específico del tema, encontrado
+   durante el recorrido): no existía una regla CSS base
+   `.kpi-green`/`.kpi-org`/`.kpi-red`/`.kpi-pur` — solo las prefijadas
+   `td.kpi-*` y `.aurora-kpi.kpi-*` — así que un `<span>` suelto con esa
+   clase (badge de Estado/Tipo en Inventario, Gerencia, Gestión Humana)
+   quedaba sin ningún color, en ningún tema. Se agregaron las 4 reglas
+   base en `styles.css` (usan `var(--c-success/warning/danger/purple)`,
+   ya definidas para ambos temas — no hizo falta override de oscuro
+   aparte). Confirmado con captura antes/después del módulo completo de
+   Inventario.
+
+**NO entraron, reportados con el detalle completo** (regla explícita del
+usuario):
+- `_gdNum()`/`_gdEvalCampo()` (bug B2): diagnóstico completo arriba, pero
+  el efecto secundario en gráficas de líneas de TODAS las campañas hace
+  que no sea tan quirúrgico como parecía — queda pendiente de
+  confirmación antes de tocarlo.
+- El glosario de Tipificación de ORLANT, las vulnerabilidades de
+  xlsx/exceljs, y las contraseñas de demo hardcodeadas: ya estaban fuera
+  de alcance por pedido explícito, no se investigaron de nuevo.
+- ~25 usos de `#7a9ba8` (texto tenue) hardcodeado: investigado, pero su
+  valor es casi idéntico entre claro (`#7a9ba8`) y oscuro (`#7fa3ae`) —
+  impacto visual mínimo. Se deja fuera por bajo beneficio frente al riesgo
+  de tocar ~25 sitios de HTML estático.
+
+### Verificación
+
+Suite completa 263/263 (sin cambios — todo lo tocado es frontend),
+`npm audit` limpio, antes y después. Playwright local (Chromium,
+`seed:demo`): recorrido completo confirmado en 0 (antes del fix de los
+429) y 0 (después) errores/warnings de consola reales de la app; capturas
+antes/después en claro/oscuro y escritorio/móvil de las 4 pantallas con
+bugs de tema confirmados + el módulo completo de Inventario, en
+`docs/capturas-demo/fase41-escaneo-completo/antes/` y `.../despues/`.
+Los 3 flujos de carga probados contra el entorno local funcionan
+correctamente, sin regresión de las Fases 37-40b.
+
+**Verificado en producción real** (solo lectura): cambio 100% de archivos
+estáticos (JS/CSS/HTML), sin ningún componente de servidor/DB — a
+diferencia de las Fases 40/40b, no hizo falta migración ni usuario
+temporal. Se confirmó directamente contra los archivos servidos por
+producción tras el deploy: `charts.js` (`loPct`) y el eje `y2` de
+`dashboard-generic.js` ya usan `gdFmtValor`, `trafico.js` no tiene ningún
+`v+'%'` crudo restante, `index.html` no tiene ningún color de la lista de
+hardcodeados, y `styles.css` trae la regla base `.kpi-pur` — los 5
+archivos servidos en producción coinciden exactamente con lo mergeado.
