@@ -1,0 +1,207 @@
+{
+  "orlantKpisGlobales": [
+    {
+      "valor": "1.149",
+      "etiqueta": "Llamadas 3P"
+    },
+    {
+      "valor": "83%",
+      "etiqueta": "Nivel Atencion 3P"
+    },
+    {
+      "valor": "1.545",
+      "etiqueta": "Llamadas Linea General"
+    },
+    {
+      "valor": "88.70%",
+      "etiqueta": "Nivel Atencion L.General"
+    },
+    {
+      "valor": "1.246",
+      "etiqueta": "Total Agendas"
+    },
+    {
+      "valor": "70.10%",
+      "etiqueta": "Efec. Ordenamiento Medico"
+    },
+    {
+      "valor": "30.40%",
+      "etiqueta": "Recuperacion Cancelados"
+    },
+    {
+      "valor": "2.043",
+      "etiqueta": "Llamadas Salida (Gral+3P)"
+    },
+    {
+      "valor": "80%",
+      "etiqueta": "% Citas Atendidas"
+    }
+  ],
+  "kpisPeriodo": [
+    {
+      "valor": "7.305",
+      "etiqueta": "Total WhatsApp"
+    },
+    {
+      "valor": "7.109",
+      "etiqueta": "Contestados"
+    },
+    {
+      "valor": "196",
+      "etiqueta": "Abandonados"
+    },
+    {
+      "valor": "97.32%",
+      "etiqueta": "Nivel de Atencion"
+    },
+    {
+      "valor": "2.68%",
+      "etiqueta": "Tasa de Abandono"
+    }
+  ],
+  "chartVolumen": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "Total",
+        "data": [
+          734,
+          31,
+          192,
+          4844,
+          1504
+        ]
+      },
+      {
+        "label": "Contestados",
+        "data": [
+          729,
+          29,
+          187,
+          4697,
+          1467
+        ]
+      },
+      {
+        "label": "Abandonados",
+        "data": [
+          5,
+          2,
+          5,
+          147,
+          37
+        ]
+      }
+    ]
+  },
+  "chartSl": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "SL 10s",
+        "data": [
+          66.21,
+          41.94,
+          46.88,
+          31.73,
+          24.4
+        ]
+      },
+      {
+        "label": "SL 20s",
+        "data": [
+          66.76,
+          41.94,
+          48.96,
+          32.18,
+          25.07
+        ]
+      },
+      {
+        "label": "SL 30s",
+        "data": [
+          67.17,
+          41.94,
+          49.48,
+          32.54,
+          25.6
+        ]
+      }
+    ]
+  },
+  "chartAsaAta": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "ASA",
+        "data": [
+          3392.3,
+          4771.76,
+          4245.5,
+          9230.35,
+          11762.29
+        ]
+      },
+      {
+        "label": "ATA",
+        "data": [
+          82800,
+          82800,
+          82800,
+          79125.8,
+          79988.08
+        ]
+      }
+    ]
+  },
+  "auroraKpisGlobales": [
+    {
+      "valor": "4:37",
+      "etiqueta": "AHT Promedio"
+    },
+    {
+      "valor": "1.238",
+      "etiqueta": "WhatsApp Entrada"
+    },
+    {
+      "valor": "90.90%",
+      "etiqueta": "Nivel Ate. WPP"
+    },
+    {
+      "valor": "926",
+      "etiqueta": "Total Agendas"
+    },
+    {
+      "valor": "90.60%",
+      "etiqueta": "Efectividad"
+    },
+    {
+      "valor": "810",
+      "etiqueta": "Llamadas Salida"
+    },
+    {
+      "valor": "448",
+      "etiqueta": "WhatsApp Salida"
+    }
+  ],
+  "consoleErrores": [],
+  "ok": true
+}

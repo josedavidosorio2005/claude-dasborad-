@@ -3602,3 +3602,65 @@ pestaña, franja global, claro/oscuro, escritorio/móvil): todo consistente,
 Playwright antes/después (franja global, Tráfico de Llamadas, Tráfico de
 WhatsApp, claro/oscuro, escritorio/móvil, ORLANT + CLINICA AURORA) en
 `docs/capturas-demo/fase54-kpis-whatsapp-globales/`.
+
+## Fase 55 — Verificación final consolidada del módulo de Tráfico de WhatsApp (2026-09-22)
+
+Pedido: cierre del módulo tras las Fases 50-54 — verificación completa de
+las 12 columnas (no solo 3-4 campos clave como en fases anteriores),
+comparando explícitamente contra la plantilla real que el usuario revisó
+a mano. Verificación pura, cero cambios de código.
+
+**Paso 1 — base de datos, 5 colas × 12 columnas.** Consultado
+`trafico_whatsapp` para ORLANT directo (solo lectura). Las 5 colas
+coinciden EXACTO contra la tabla de referencia del usuario, columna por
+columna — incluidas `fechaInicio`/`fechaFin` (`2026-08-01`/`2026-08-31`
+para las 5) y ABANDONO (no se guarda por diseño desde la Fase 50, pero
+recalculado desde abandonados/total coincide exacto con los 5 valores de
+referencia: 0.68%/6.45%/2.60%/3.03%/2.46%).
+
+| Cola | Total | Contestados | Abandonados | SL10 | SL20 | SL30 | ABANDONO (recalc.) | ASA | ATA | Fecha Inicio | Fecha Fin |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| WHATSAPP FONOAUDIOLOGIA | 192=192=192 | 187=187=187 | 5=5=5 | 46.88=46.88=46.88 | 48.96=48.96=48.96 | 49.48=49.48=49.48 | 2.60=2.60=2.60 | 4245.50=4245.50=4245.50 | 82800.00=82800.00=82800.00 | 01/08/2026 | 31/08/2026 |
+| WHATSAPP ORLANT 3P | 4844=4844=4844 | 4697=4697=4697 | 147=147=147 | 31.73=31.73=31.73 | 32.18=32.18=32.18 | 32.54=32.54=32.54 | 3.03=3.03=3.03 | 9230.35=9230.35=9230.35 | 79125.80=79125.80=79125.80 | 01/08/2026 | 31/08/2026 |
+| WHATSAPP ORLANT GENERAL | 1504=1504=1504 | 1467=1467=1467 | 37=37=37 | 24.40=24.40=24.40 | 25.07=25.07=25.07 | 25.60=25.60=25.60 | 2.46=2.46=2.46 | 11762.29=11762.29=11762.29 | 79988.08=79988.08=79988.08 | 01/08/2026 | 31/08/2026 |
+| WHATSAPP FONIATRIA | 31=31=31 | 29=29=29 | 2=2=2 | 41.94=41.94=41.94 | 41.94=41.94=41.94 | 41.94=41.94=41.94 | 6.45=6.45=6.45 | 4771.76=4771.76=4771.76 | 82800.00=82800.00=82800.00 | 01/08/2026 | 31/08/2026 |
+| WHATSAPP AUDIFONOS | 734=734=734 | 729=729=729 | 5=5=5 | 66.21=66.21=66.21 | 66.76=66.76=66.76 | 67.17=67.17=67.17 | 0.68=0.68=0.68 | 3392.30=3392.30=3392.30 | 82800.00=82800.00=82800.00 | 01/08/2026 | 31/08/2026 |
+
+(cada celda: archivo=base de datos=pantalla — las 3 fuentes coinciden en
+las 55 celdas comparadas: 5 colas × 11 columnas numéricas/fecha, más las
+2 columnas de fecha compartidas por las 5.)
+
+**Paso 2 — pantalla, con Playwright real, leyendo la instancia real de
+Chart.js (`_gd.charts['tww-canvas-0'].data`, no capturas adivinadas).**
+Las 3 sub-pestañas (Volumen, Niveles de Servicio, ASA y ATA) muestran
+exactamente los valores de la tabla de arriba para las 5 colas, y los 5
+KPI del período (7.305/7.109/196/97.32%/2.68%) coinciden exacto con los
+totales ya verificados. Confirmado en claro/oscuro y escritorio/móvil
+(incluida la vista de ASA/ATA en horas, ej. "23:00:00"). Cero errores de
+consola en todo el recorrido.
+
+**Paso 3 — franja global de ORLANT (tras el fix de la Fase 54).**
+Exactamente 9 tarjetas, ninguna de las 4 retiradas ("WhatsApp 3P" /
+"Nivel Atencion WPP 3P" / "WhatsApp Linea General" / "WhatsApp Salida
+(Gral+3P)") reaparece, en ningún tema ni tamaño de pantalla. Las 9
+restantes muestran los mismos valores que ya documentó la Fase 54 (sin
+moverse): Llamadas 3P 1.149, Nivel Atencion 3P 83%, Llamadas Linea
+General 1.545, Nivel Atencion L.General 88.70%, Total Agendas 1.246,
+Efec. Ordenamiento Medico 70.10%, Recuperacion Cancelados 30.40%,
+Llamadas Salida (Gral+3P) 2.043, % Citas Atendidas 80%. CLINICA AURORA
+confirmada sin cambios: sus 7 tarjetas propias (incluidas "WhatsApp
+Entrada"/"Nivel Ate. WPP"/"WhatsApp Salida", su única fuente real de
+WhatsApp) siguen intactas.
+
+**Veredicto: el módulo de Tráfico de WhatsApp de ORLANT, de punta a
+punta (archivo → carga → base de datos → pestaña → franja global), está
+100% correcto y consistente.** Cero discrepancias en las 5 colas × 12
+columnas, cero discrepancias en la franja global, cero efectos
+secundarios en CLINICA AURORA ni en las tarjetas de Llamadas. Cero
+hallazgos que reportar, cero cambios de código en esta fase.
+
+**Verificación**: `npm test` 300/300 y `npm audit` 0 vulnerabilidades
+(sin cambios, nada que arreglar). Capturas Playwright completas (3
+sub-pestañas × claro/oscuro × escritorio/móvil, más la franja global de
+ORLANT y CLINICA AURORA) en
+`docs/capturas-demo/fase55-verificacion-final-consolidada/`.
