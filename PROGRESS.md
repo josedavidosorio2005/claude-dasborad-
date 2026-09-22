@@ -3825,11 +3825,23 @@ servidor local también causó que se cayera a mitad de mi propia
 verificación de navegador (Parte D), generando errores de consola
 espurios que tuve que diagnosticar y descartar. Esa versión de
 `PROGRESS.md` se **reemplazó por esta**, tras verificar a mano los
-números que traía (2 de ellos estaban mal: decía "17 tablas" cuando son
-18, y "13 migraciones" cuando son 14) y confirmar que omitía un hallazgo
-real (las 4 funciones muertas de la Parte B, abajo). Ningún dato se
-perdió — el hallazgo real que sí encontró esa corrida (SASCHA FITNESS,
-Parte C) se verificó de nuevo por separado y se mantiene.
+números que traía (decía "17 tablas" cuando son 18 — esa parte sí estaba
+mal) y confirmar que omitía un hallazgo real (las 4 funciones muertas de
+la Parte B, abajo). Ningún dato se perdió — el hallazgo real que sí
+encontró esa corrida (SASCHA FITNESS, Parte C) se verificó de nuevo por
+separado y se mantiene.
+
+**Corrección (Fase 59, 2026-09-22)**: el número de migraciones de más
+abajo decía "14", tomado de `grep -c "runOnceMigration("` — ese conteo
+incluía la propia definición de la función (`function
+runOnceMigration(name, fn) {`), no solo sus 13 llamadas reales. El
+número correcto es **13** (confirmado listando cada
+`runOnceMigration('...')` por nombre) — la versión que reemplazó esta
+sección en la Fase 58 de hecho tenía el número correcto ("13
+migraciones") y mi verificación de ese momento lo cambió a uno
+incorrecto por el mismo error de conteo. El resto de esta sección
+(esquema de 18 tablas, hallazgo de SASCHA FITNESS/BIVETT) se re-verificó
+en la Fase 59 y sigue correcto.
 
 ### Parte A — ramas
 
@@ -3939,8 +3951,8 @@ allá del caso ya documentado (`abandonPct` de
 `calidad_nivel_servicio_diario`, retirado del parseo en la Fase 45 a
 propósito, dato histórico conservado).
 
-**Migraciones**: **14** `runOnceMigration(...)` en `server/db.js`
-(conteo verificado con `grep -c`), todas siguen el mismo patrón (ledger
+**Migraciones**: **13** `runOnceMigration(...)` en `server/db.js`
+(conteo corregido en la Fase 59 — ver nota arriba), todas siguen el mismo patrón (ledger
 en `schema_migrations` + chequeo interno propio de "¿ya aplicó esto?"
 antes de tocar datos) — revisadas varias representativas contra bugs de
 escritura o dependencia de orden frágil, ninguna encontrada.
@@ -4026,4 +4038,105 @@ encontrado (las 4 funciones muertas) ya se arregló en esta misma fase.
 **Verificación**: `npm test` 300/300 y `npm audit` (server) 0
 vulnerabilidades, antes y después. Capturas Playwright completas de la
 Parte D en `docs/capturas-demo/fase58-unificacion-y-auditoria-completa/`.
+
+## Fase 59 — Confirmación de la Fase 58 + arreglo de los 2 hallazgos pendientes (2026-09-22)
+
+Pedido: confirmar que la auditoría de la Fase 58 quedó completa (dado que
+un subagente se salió de tarea en esa fase), y arreglar los 2 hallazgos
+reales que quedaron pendientes de decisión.
+
+### Paso 0 — confirmación de la Fase 58
+
+**Hueco real encontrado y cerrado**: el conteo de migraciones de la Fase
+58 decía "14 `runOnceMigration`" — el conteo (mío y el del subagente
+"correcto") venía de `grep -c "runOnceMigration("`, que sin querer
+también contaba la propia definición de la función
+(`function runOnceMigration(name, fn) {`). El número real es **13**
+(confirmado listando cada llamada por nombre). Curiosamente, la versión
+que había escrito el subagente que se salió de tarea SÍ tenía el número
+correcto ("13") y mi "corrección" de ese momento lo cambió a uno
+incorrecto, por el mismo error de conteo. Corregido en la Fase 58 (ver
+nota ahí). El resto del alcance (Parte A/B/D completas, esquema de 18
+tablas, hallazgo de SASCHA FITNESS/BIVETT) se reconfirmó sólido — sin
+otro hueco encontrado.
+
+### Paso 1 — SASCHA FITNESS y BIVETT: KPI manual desincronizado
+
+**Investigado antes de tocar nada** (no se asumió que era exactamente
+igual a ORLANT): confirmado en `dashboard-plantillas-cliente.js`
+(`plantillaAtencion`) que "Llamadas Entrada" (`U('llamadas_entrada')`,
+Gestión de base manual) mide el mismo concepto que "Total Llamadas" de
+la pestaña real de Tráfico de Llamadas — pero el análisis se amplió: **la
+pestaña real también muestra "Nivel de Atencion" y "Llamadas
+Abandonadas"** (`trafico.js`), que duplican EXACTO las tarjetas manuales
+"Nivel de Atencion" y "Abandonos" de la franja global — no solo
+"Llamadas Entrada" como decía el pedido original. Presentado al usuario
+antes de construir (reencuadra el alcance): **eligió aplicar el mismo
+criterio completo que la Fase 45 ya usó para CLINICA AURORA** (que
+comparte el mismo problema pero se define en un config aparte,
+`dashboard-config-seed.js`) — quitar las 3 tarjetas duplicadas, no solo
+1.
+
+**Fix**: `plantillaAtencion` ahora filtra `['Llamadas Entrada', 'Nivel
+de Atencion', 'Abandonos']` de `layout.kpis` cuando `opts.calidad` es
+`true` (lo que agrega la pestaña real de Tráfico) — se mantienen
+`WhatsApp Entrada` (sin módulo automático de WhatsApp para estos
+clientes, es su única fuente real) y la de salida (Pedidos/Agendas, sin
+equivalente automático). Nueva migración
+`dashboards_config_sascha_bivett_kpis_duplicados_v1` (no se pudo reusar
+la de la Fase 45, ya corrió en producción) para SASCHA FITNESS y BIVETT
+ya sembrados, con su propio test (5 casos,
+`sascha-bivett-kpis-duplicados-migracion.test.js`).
+
+**Verificado con Playwright antes/después** (mismo seed, `git stash`):
+franja global de ambos clientes pasó de 6 a 3 tarjetas (quedan WhatsApp
+Entrada, AHT Promedio, Pedidos/Agendas), valores intactos; pestaña real
+de Tráfico de Llamadas sin cambios (SASCHA FITNESS: 24.402/23.257/95.3%;
+BIVETT: 24.570/23.407/95.3%). Cero errores de consola. Claro/oscuro,
+escritorio/móvil.
+
+### Paso 2 — vulnerabilidades de desktop-app y mobile-app
+
+**`desktop-app` (14 vulnerabilidades: 13 altas + 1 crítica, incluye
+Electron) — arreglado con verificación real de build.** `main.js` es un
+cliente ligero (solo `BrowserWindow`/`app`/`shell`/`Menu`, APIs estables
+que no cambiaron en el rango) con `nodeIntegration:false`,
+`contextIsolation:true`, `sandbox:true` ya configurados — superficie de
+ataque mínima. Electron 33.4.11→44.4.4, electron-builder 25.1.8→26.15.3
+(11 versiones mayores de Electron, pero sin API breaking para este
+código). **`npm audit` queda en 0 vulnerabilidades.** Verificado con
+pruebas reales, no solo el audit: `npm run build` (electron-builder
+--win) completó de punta a punta y generó el instalador NSIS real
+(`InConexion Platform Setup 1.0.0.exe`, ~111 MB); el ejecutable
+desempaquetado se lanzó de verdad (`Start-Process`) y quedó corriendo 4
+procesos (main+renderer+GPU+utility, arquitectura sana de Electron) con
+ventana real titulada "InConexion Platform" y ~94 MB de memoria
+(indicando carga real de contenido, no un crash inmediato) — cerrado
+limpiamente después. `dist/` está gitignorado, no se commitea ningún
+binario.
+
+**`mobile-app` (2 vulnerabilidades: `@capacitor/cli`→`tar`) —
+investigado, NO arreglado: rompe el build real de Android.** Al alinear
+el trío completo (`@capacitor/cli`/`core`/`android` 6.2.x→8.5.2, la
+forma correcta de arreglarlo dado que un bump aislado del CLI genera
+conflicto de peer-dependency), `npm audit` sí queda limpio y `cap sync
+android` corre bien — pero **`./gradlew assembleDebug` falla de verdad**:
+`bcprov-jdk18on` (dependencia transitiva que trae Capacitor 8/AGP más
+nuevo) incluye bytecode de Java 21
+(`META-INF/versions/21/...`), y el **Gradle 8.2.1** que usa este proyecto
+no sabe procesarlo (`Unsupported class file major version 65`).
+Confirmado que esto es 100% causado por el upgrade (no preexistente): se
+revirtió todo y se corrió `./gradlew assembleDebug` con las versiones
+originales — `BUILD SUCCESSFUL`, APK real generado. Arreglarlo de verdad
+necesitaría ADEMÁS subir la versión del wrapper de Gradle (un sistema
+distinto al de los paquetes npm), cambio no probado y fuera del alcance
+de "seguro y simple" que pedía esta fase — **se revirtió `mobile-app`
+por completo** (vuelve a las 2 vulnerabilidades originales, mismo estado
+que la Fase 58) y se reporta para decisión del usuario.
+
+**Verificación**: `npm test` (server) 305/305, `npm audit` en los 3
+proyectos (server 0, desktop-app 0, mobile-app 2 sin cambios — decisión
+consciente) antes y después. Capturas Playwright de SASCHA FITNESS/BIVETT
+antes/después en `docs/capturas-demo/fase59-fixes-post-auditoria/`. Nada
+de esta fase tocó `.env`, secretos, ni configuración de CI/deploy.
 
