@@ -71,6 +71,25 @@ function _cargasCalidadColumnas(items){
     .concat(items.map(function(it){ return { key:'item_'+it.n, label: it.label, opcional:true }; }));
 }
 
+// La hoja "DATA" acepta dos formatos (voz o WhatsApp, Fase 52) — se detecta
+// cual trae el archivo por las columnas del encabezado
+// (cargasDetectarCanalTrafico, cargas-logic.js) y se delega al parser
+// correspondiente, marcando el resultado con `canal` para que la vista
+// previa y el guardado (guardarCarga/_cargasGuardarTraficoWhatsapp) sepan
+// cual de los dos es.
+function _cargasParseTraficoAuto(aoa){
+  var header = (aoa && aoa[0]) || [];
+  var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap);
+  if(canal === 'whatsapp'){
+    var resWpp = traficoWppParseFilas(aoa);
+    if(!resWpp.error) resWpp.canal = 'whatsapp';
+    return resWpp;
+  }
+  var resVoz = traficoParseFilas(aoa);
+  if(!resVoz.error) resVoz.canal = 'voz';
+  return resVoz;
+}
+
 async function onCargaClienteChange(){
   var cliente = document.getElementById('carga-cliente').value;
   _cargasSpec = null;
@@ -213,7 +232,7 @@ async function procesarArchivoConsolidado(input){
     } else if(h.tipo === 'calidad'){
       parseFn = function(a){ return cmParseRows(a, calidad.items); };
     } else {
-      parseFn = traficoParseFilas;
+      parseFn = _cargasParseTraficoAuto;
     }
     return cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
   });
@@ -238,7 +257,8 @@ function _renderPreviewCarga(){
   document.getElementById('carga-preview-nombre').textContent = _cargasArchivoNombre;
   var html = '<tr><th>Hoja</th><th>Tipo</th><th>Estado</th></tr>';
   html += _cargasResultados.map(function(r){
-    var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' : 'Trafico');
+    var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -307,6 +327,18 @@ async function _cargasGuardarTrafico(r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Trafico de WhatsApp no tiene mapeo skill->campana (a diferencia de voz):
+// la campana se manda explicita, es el mismo cliente seleccionado en este
+// modal (mismo patron "clasico" que _cargasGuardarSeccion/_cargasGuardarCalidad).
+async function _cargasGuardarTraficoWhatsapp(cliente, r){
+  var payload = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  try{
+    var resp = await apiRequest('POST','/calidad/trafico/whatsapp/carga', payload);
+    if(typeof _traficoWpp !== 'undefined') _traficoWpp = {}; // invalida el cache del panel de WhatsApp abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.colas.length+' cola(s))' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -328,6 +360,7 @@ async function guardarCarga(){
       var res;
       if(r.tipo==='seccion') res = await _cargasGuardarSeccion(cliente, periodo, r);
       else if(r.tipo==='calidad') res = await _cargasGuardarCalidad(cliente, r);
+      else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));
     }
