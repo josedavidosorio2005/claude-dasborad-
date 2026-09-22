@@ -197,6 +197,39 @@ CREATE TABLE IF NOT EXISTS calidad_nivel_servicio_diario (
 );
 CREATE INDEX IF NOT EXISTS idx_ns_diario_campana_fecha ON calidad_nivel_servicio_diario(campana, fecha);
 
+-- Trafico de WhatsApp (Fase 50, plantilla real confirmada por Edwin): tabla
+-- PROPIA, no una extension de calidad_nivel_servicio_diario -- el grano es
+-- distinto (una fila = una cola por un PERIODO fechaInicio..fechaFin, nunca
+-- un dia), y mezclar los dos en una sola tabla con un campo "canal" habria
+-- forzado columnas nullable segun el canal (AHT no existe aqui, fechaFin no
+-- existe en la de voz) y habria roto la logica de agregado diario/mensual
+-- que ya existe para voz (trafico-logic.js: traficoAgregar espera UN dia por
+-- fila). Alcance actual: solo ORLANT (una campana, sin ambiguedad de a que
+-- campana pertenece cada cola), asi que a diferencia de voz no hace falta
+-- una tabla de mapeo cola->campana -- campana se manda explicito al subir,
+-- como el patron "clasico" de dashboard_cargas. Volver a subir la misma
+-- (campana, colaWhatsapp, fechaInicio, fechaFin) reemplaza la fila, no duplica.
+CREATE TABLE IF NOT EXISTS trafico_whatsapp (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  colaWhatsapp TEXT NOT NULL,          -- NOMBRE_COLA_WHATSAPP tal cual vino del archivo
+  fechaInicio TEXT NOT NULL,           -- YYYY-MM-DD
+  fechaFin TEXT NOT NULL,              -- YYYY-MM-DD
+  totalWhatsapp INTEGER NOT NULL DEFAULT 0,
+  contestados INTEGER NOT NULL DEFAULT 0,
+  abandonados INTEGER,                 -- opcional; tasaAbandonoPct se recalcula desde este campo, nunca desde un % importado
+  serviceLevel10secPct REAL,
+  serviceLevel20secPct REAL,
+  serviceLevel30secPct REAL,
+  asaSegundos REAL,
+  ataSegundos REAL,
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, colaWhatsapp, fechaInicio, fechaFin)
+);
+CREATE INDEX IF NOT EXISTS idx_trafico_whatsapp_campana ON trafico_whatsapp(campana, fechaInicio);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
@@ -1002,6 +1035,41 @@ runOnceMigration('dashboards_config_trafico_kpis_duplicados_v1', () => {
   }
   if (!config.isTest) {
     console.log(`[db] Migracion dashboards_config_trafico_kpis_duplicados_v1 aplicada (${dashboardsTocados} dashboard(s)).`);
+  }
+});
+
+// Agrega la pestaña "Trafico de WhatsApp" a ORLANT (Fase 50) para quien ya
+// tenia dashboards_config sembrado antes de este cambio -- mismo motivo que
+// las migraciones de arriba: dashboards_config solo se siembra la primera
+// vez que un cliente no existe, asi que agregar la pestaña en
+// dashboard-config-seed.js nunca llega sola a una fila que ya existia (como
+// produccion). Idempotente por construccion: si la pestaña ya esta (porque
+// el cliente se creo por primera vez DESPUES de este cambio, o porque la
+// migracion ya corrio), no vuelve a agregarla.
+runOnceMigration('dashboards_config_orlant_trafico_whatsapp_tab_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con la pestaña nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tabs = layout.tabs || [];
+  if (tabs.some((t) => t && t.key === 'trafico_whatsapp')) return; // ya tiene la pestaña -- nada que hacer
+  tabs.push({
+    key: 'trafico_whatsapp',
+    label: 'Trafico de WhatsApp',
+    panels: [{ tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' }],
+  });
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_trafico_whatsapp_tab_v1 aplicada.');
   }
 });
 
