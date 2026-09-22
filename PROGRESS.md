@@ -4140,3 +4140,64 @@ consciente) antes y después. Capturas Playwright de SASCHA FITNESS/BIVETT
 antes/después en `docs/capturas-demo/fase59-fixes-post-auditoria/`. Nada
 de esta fase tocó `.env`, secretos, ni configuración de CI/deploy.
 
+## Fase 60 — Filtro "Skill" de Trafico de Llamadas: de listbox multi-select a desplegable (2026-09-22)
+
+Pedido: en Trafico de Llamadas (Wolkvox), cambiar el filtro "Skill" (hoy un
+`<select multiple>` con scroll) por un desplegable de una sola línea, con
+"Todas las líneas" arriba del todo y una opción por cada skill real (los
+mismos nombres que trae Wolkvox, no una lista fija). Con instrucción
+explícita de investigar primero si la selección múltiple actual se usa de
+verdad en algún otro lado del flujo, y de parar y reportar si romper eso.
+
+**Investigación (antes de tocar nada)**: el filtro vive en
+`public/js/trafico.js` (`_traficoRenderPanel`), las opciones salen de
+`_traficoCargarDatos` → `GET /calidad/nivel-servicio/diario?campana=...`
+(nombres reales `skillName` de la BD, ordenados alfabéticamente, no config
+fija). `traficoFiltrarFilas` filtra por unión/inclusión (una fila pasa si
+su skill está en el array seleccionado). Se confirmó que la
+multi-selección SÍ se usa de verdad en 2 lugares reales, no solo
+teóricamente:
+1. El checkbox "Ver skills por separado" + selección de 2+ skills
+   específicas dibuja cada una como su propia serie de color en la
+   gráfica — permite comparar un subconjunto elegido, no solo "todas" o
+   "una".
+2. `_traficoGuardarEstadoURL` escribe el subconjunto en la URL
+   (`?tv_skills=A,C`) — comentario del propio código: "para poder
+   compartir la vista concreta". Es un enlace compartible real.
+
+Reportado al usuario antes de cambiar código (regla explícita de la
+fase); eligió conservar ambas capacidades en un control aparte en vez de
+perderlas.
+
+**Cambio implementado** (único archivo tocado: `public/js/trafico.js`,
+nada de Trafico de WhatsApp/Calidad): el filtro principal "Skill" pasa a
+ser un `<select>` de una sola línea (mismo patrón visual que el
+desplegable "Granularidad" de al lado) — "Todas las líneas" arriba, una
+opción por skill real. Debajo, un `<details>` colapsable "Comparar varias
+líneas específicas" conserva el listbox multi-select original (ahora
+secundario/opcional) para el caso real de comparar 2+ líneas a la vez;
+se auto-expande y pre-selecciona solo cuando el estado cargado (típicamente
+desde una URL compartida) trae un subconjunto genuino de 2+ skills, y en
+ese caso el desplegable principal muestra una opción informativa
+deshabilitada ("Varias líneas — ver Comparar abajo") en vez de mentir
+diciendo "Todas". `estado.skills`/`?tv_skills=` en la URL no cambiaron en
+nada — solo cambió el control que los alimenta (`_traficoLeerControles`).
+Ningún cálculo de métricas se tocó.
+
+**Verificación**: `npm test` 305/305 y `npm audit` 0 vulnerabilidades,
+antes y después (git stash). Con Playwright real sobre ORLANT (se
+insertaron temporalmente 2 skills sintéticas en la BD local de
+desarrollo — nunca producción — con los mismos nombres de ejemplo del
+pedido, "CALL INBOUND ORLANT 3P"/"GENERAL", y se borraron al terminar):
+confirmado que "Todas las líneas" (25.725 llamadas) vs. una línea
+específica (600 llamadas) cambian los KPIs/gráfica de verdad; confirmado
+que "Comparar varias líneas" con 2 skills + "Ver skills por separado"
+sigue dibujando 4 series independientes igual que antes; confirmado que
+recargar con una URL ya compartida (`?tv_skills=A,C&tv_modo=separado`)
+reproduce exactamente la misma vista (dropdown con el aviso correcto,
+comparador auto-expandido con las 2 líneas correctas, mismos KPIs/gráfica).
+Capturas claro/oscuro y escritorio/móvil en
+`docs/capturas-demo/fase60-dropdown-skill-trafico-llamadas/`. Sub-pestañas
+de detalle (Abandono, AHT, etc.) verificadas sin cambios. Cero errores de
+consola en todo el flujo.
+

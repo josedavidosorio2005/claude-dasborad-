@@ -481,13 +481,26 @@ async function _traficoRenderPanel(p, i){
 
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
   var subActivo = _traficoSubtabActivo[claveEstado] || 'resumen';
+  // Fase 60 (2026-09-22): el filtro "Skill" pasa de listbox multi-select a
+  // desplegable de una sola linea (Todas las lineas / una especifica), pero
+  // sin perder la comparacion de varias lineas a la vez (skillsPresentes por
+  // separado en _traficoRenderContenido) ni los enlaces compartidos con un
+  // subconjunto especifico (?tv_skills=A,C, ver _traficoGuardarEstadoURL):
+  // esa capacidad sigue viva en el listbox "Comparar varias lineas", que
+  // solo se despliega cuando hace falta. estado.skills/tv_skills en la URL
+  // no cambian en nada -- unicamente cambia el control que los alimenta.
+  var traficoTodasSkills = estado.skills.length === datos.skills.length;
+  var traficoUnaSkill = estado.skills.length === 1 ? estado.skills[0] : null;
+  var traficoSubsetParcial = estado.skills.length > 1 && !traficoTodasSkills;
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
-          '<select multiple id="tv-f-skills-'+i+'" size="'+Math.min(6, Math.max(2, datos.skills.length))+'" style="min-width:180px">' +
-            datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(estado.skills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+          '<select id="tv-f-skill-'+i+'" style="min-width:200px">' +
+            '<option value=""'+(traficoTodasSkills?' selected':'')+'>Todas las líneas</option>' +
+            datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(traficoUnaSkill===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+            (traficoSubsetParcial ? '<option value="__multi__" selected disabled>Varias líneas (ver "Comparar" abajo)</option>' : '') +
           '</select></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
@@ -500,6 +513,15 @@ async function _traficoRenderPanel(p, i){
           '<button class="btn-sm" onclick="_traficoExportExcel('+i+')">Excel</button>' +
           '<button class="btn-sm" onclick="_traficoExportPrint('+i+')">PDF</button>' +
         '</span>' +
+        '<details id="tv-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(traficoSubsetParcial?' open':'')+'>' +
+          '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias líneas específicas</summary>' +
+          '<div style="margin-top:8px;max-width:340px">' +
+            '<select multiple id="tv-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datos.skills.length))+'" style="min-width:220px">' +
+              datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(traficoSubsetParcial && estado.skills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+            '</select>' +
+            '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más líneas (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica — combínalo con "Ver skills por separado".</div>' +
+          '</div>' +
+        '</details>' +
       '</div>' +
       // Fase 40: 6 sub-pestanas (Resumen + Abandono/AHT/ASA-ATA/WaitTime/SL
       // 10-30, antes todas amontonadas en una grilla) -- una grafica visible
@@ -566,8 +588,22 @@ function _traficoSwitchSubtab(i, key){
 }
 
 function _traficoLeerControles(i){
-  var sel = document.getElementById('tv-f-skills-'+i);
-  var skills = sel ? Array.prototype.filter.call(sel.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
+  // Fase 60: el dropdown "Skill" (tv-f-skill-i) es la fuente normal --
+  // "" = Todas, un valor = esa linea sola. El listbox "Comparar varias
+  // lineas" (tv-f-skills-cmp-i, dentro del <details>) manda SOLO si el
+  // usuario eligio 2+ lineas ahi -- asi se conserva la comparacion lado a
+  // lado y los enlaces compartidos con un subconjunto especifico
+  // (?tv_skills=A,C) sin que el dropdown principal pueda expresarlos.
+  var selCmp = document.getElementById('tv-f-skills-cmp-'+i);
+  var seleccionCmp = selCmp ? Array.prototype.filter.call(selCmp.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
+  var skills;
+  if(seleccionCmp.length >= 2){
+    skills = seleccionCmp;
+  } else {
+    var selPrincipal = document.getElementById('tv-f-skill-'+i);
+    var valorPrincipal = selPrincipal ? selPrincipal.value : '';
+    skills = (valorPrincipal && valorPrincipal !== '__multi__') ? [valorPrincipal] : [];
+  }
   return {
     skills: skills,
     desde: document.getElementById('tv-f-desde-'+i).value,
