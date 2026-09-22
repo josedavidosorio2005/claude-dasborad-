@@ -16,21 +16,6 @@ function actorName() {
   return currentUser.nombre + ' (@' + currentUser.user + ')';
 }
 
-function logEvent(accion, targetUser, detalle) {
-  historial.push({
-    ts: Date.now(),
-    fecha: nowStr(),
-    accion: accion,
-    nombre: targetUser ? targetUser.nombre : '-',
-    username: targetUser ? targetUser.user : '-',
-    rol: targetUser ? (RL[targetUser.rol]||targetUser.rol) : '-',
-    actor: actorName(),
-    detalle: detalle || ''
-  });
-  saveHist();
-  document.getElementById('stat-hist').textContent = historial.length;
-}
-
 // ═══════════════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════════════

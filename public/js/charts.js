@@ -145,8 +145,6 @@ function loPie(t){
       datalabels:{display:true,color:'#fff',font:{size:8,weight:'bold'}, formatter:_loPctDeTotal}
     }};
 }
-function hFmtTime(v){ var m=Math.floor(v/60),s=v%60; return m+':'+(s<10?'0':'')+s; }
-
 // ═══════════════════════════════════════════════════════════
 // Nota: los dashboards de cliente se renderizan desde configuracion
 // (dashboard-generic.js). Ya no hay un archivo/objeto de datos por cliente.

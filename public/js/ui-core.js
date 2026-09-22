@@ -156,10 +156,4 @@ async function withButtonLoading(btn, loadingLabel, fn){
   finally { btn.disabled=wasDisabled; btn.textContent=prevText; }
 }
 
-// Fila "cargando" para una tabla, con el colspan correcto.
-function tableLoadingRow(cols, msg){
-  return '<tr><td colspan="'+cols+'"><div class="loading-state">'+
-    '<div class="spinner"></div>'+(msg||'Cargando...')+'</div></td></tr>';
-}
-
 // ═══════════════════════════════════════════════════════════
