@@ -159,11 +159,32 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
     });
   }
   plan.push({
-    tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico de Llamadas (Wolkvox)',
-    descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox.',
+    tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
+    descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox (Trafico de Llamadas). ' +
+      'Esta misma hoja tambien acepta el formato de Trafico de WhatsApp (columnas ' +
+      'NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL WHATSAPP, WHATSAPP CONTESTADOS, ' +
+      'etc. — una fila por cola y periodo) si subes ese archivo en su lugar: el sistema detecta ' +
+      'cual de los dos formatos trae por las columnas del encabezado, nunca por el nombre de hoja ' +
+      '(los dos usan "DATA").',
     filaUnica: false, columnas: traficoCols,
   });
   return plan;
+}
+
+// Distingue si la hoja "DATA" que trae el archivo es del formato de Trafico
+// de Llamadas (voz, Wolkvox) o de Trafico de WhatsApp -- Fase 52. Antes de
+// esto, esta hoja SOLO aceptaba el formato de voz (aunque el nombre de hoja
+// fuera el correcto), asi que un archivo real de WhatsApp subido aqui fallaba
+// con "ninguna hoja reconocida" (hallazgo real del usuario en produccion).
+// Los dos formatos comparten el mismo nombre de hoja, asi que no hay forma de
+// distinguirlos sin mirar las columnas del encabezado.
+// `colIndexMapVoz`/`colIndexMapWpp` son los indexadores YA EXISTENTES de cada
+// modulo (traficoColIndexMap / traficoWppColIndexMap), inyectados igual que
+// el resto de parsers de este archivo para no depender de trafico-logic.js
+// ni trafico-whatsapp-logic.js aqui.
+function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp) {
+  var esWhatsapp = colIndexMapWpp(headerRow || []).colaWhatsapp !== undefined;
+  return esWhatsapp ? 'whatsapp' : 'voz';
 }
 
 // aoa: array-of-arrays de la hoja tal cual la entrega SheetJS
@@ -237,7 +258,10 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
   }
   var res = parseFn(aoa);
   if (res.error) return Object.assign({}, base, { error: res.error });
-  return Object.assign({}, base, { filas: res.filas, avisos: res.avisos || [] });
+  // Se copia TODO `res` (no solo filas/avisos) para que campos extra que
+  // algunos parsers agregan (ej. `canal` de cargasDetectarCanalTrafico,
+  // Fase 52) lleguen intactos hasta el flujo de guardado.
+  return Object.assign({}, base, res, { avisos: res.avisos || [] });
 }
 
 // Doble modo: global en el navegador, require() en Node para las pruebas.
@@ -255,5 +279,6 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,
+    cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
   };
 }

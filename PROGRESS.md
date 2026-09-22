@@ -3367,3 +3367,100 @@ toast de guardado, las 3 sub-pestañas, claro/oscuro, escritorio/móvil).
 Esta fase no cambia código de producción, así que no aplica un nuevo
 despliegue ni una nueva verificación de producción más allá de la que ya
 confirmó la Fase 50 desplegada (`GET /api/health` → 200).
+
+## Fase 52 — Fix real: la carga de WhatsApp por el modal "Cargar Datos de Dashboards" no reconocía el archivo (2026-09-22)
+
+Bug real reportado por el usuario: subir el archivo real de Tráfico de
+WhatsApp por el camino que usaría cualquier administrador — el modal
+"Cargar Datos de Dashboards", cliente ORLANT — fallaba con *"El archivo
+no tiene datos en ninguna hoja reconocida (¿subiste la plantilla de este
+cliente?)"*.
+
+**Paso 1 — reproducido tal cual, antes de tocar nada.** Con Playwright
+real: login → `openCargas()` → cliente ORLANT → subir
+`PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx` (mismo archivo real de la Fase
+50/51) → mismo toast exacto que reportó el usuario.
+
+**Diagnóstico (reencuadra el reporte original).** El modal "Cargar Datos"
+(`public/js/cargas.js`/`cargas-logic.js`) y la carga de WhatsApp de la
+Fase 50 (pantalla **Metas Calidad → Tráfico/Wolkvox**) son y siempre
+fueron dos entradas de menú **separadas** del sidebar — no un caso de
+WhatsApp "nunca conectado a la UI real": la **Fase 36** ya documentó
+exactamente esta misma confusión para tráfico de **voz** (*"primer
+intento fallido por confundir ambas pantallas, corregido antes de guardar
+nada"*). La clasificación de hojas del modal genérico es por **nombre
+exacto** (`cargas-logic.js`: `CARGAS_HOJA_TRAFICO='DATA'`), y esa hoja
+"DATA" estaba fija al esquema de Wolkvox (voz) — nunca tuvo ninguna
+noción de WhatsApp. Se le presentó este hallazgo al usuario (con las dos
+opciones que había pedido investigar) antes de construir nada; eligió la
+Opción A completa: que el modal genérico también reconozca y guarde
+WhatsApp.
+
+**Fix — Opción A, distinguiendo por columnas, no por nombre de hoja**
+(los dos formatos comparten el mismo nombre de hoja "DATA"):
+- `cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp)`
+  nueva en `cargas-logic.js` (pura, testeable): mira el encabezado de la
+  hoja DATA y decide "voz" o "whatsapp" según si trae
+  `NOMBRE_COLA_WHATSAPP` (reusa `traficoWppColIndexMap`, inyectado, mismo
+  patrón del resto del archivo — no depende de trafico-whatsapp-logic.js
+  directamente). Sin ese encabezado, cae al comportamiento de siempre
+  (voz) — cero cambio para cualquier archivo que ya funcionaba.
+- `cargas.js#_cargasParseTraficoAuto` (dispatcher): llama
+  `traficoWppParseFilas` o `traficoParseFilas` según ese canal, y marca
+  el resultado con `res.canal`.
+- `cargasProcesarHoja` (cargas-logic.js) ahora copia el objeto `res`
+  completo (antes solo `filas`/`avisos`) para que `canal` llegue intacto
+  hasta el guardado — cambio mínimo, no rompe ningún parser existente
+  (ninguno de los otros tipos usaba campos extra).
+- Nueva `_cargasGuardarTraficoWhatsapp(cliente, r)` en `cargas.js`: POST
+  `/calidad/trafico/whatsapp/carga` con `{campana: cliente, ...}` — mismo
+  endpoint real de la Fase 50, mismo patrón "clásico" (campana explícita,
+  sin mapeo skill→campana) que ya usa `_cargasGuardarSeccion`.
+  `guardarCarga()` enruta a esta función cuando `r.canal==='whatsapp'`,
+  a la función de voz de siempre en cualquier otro caso.
+- Vista previa (`_renderPreviewCarga`) y descripción del plan
+  (`cargasPlanConsolidado`) actualizadas para reflejar que la hoja
+  "Trafico" ahora acepta cualquiera de los dos formatos.
+
+**Paso 3 — arreglado y reverificado con los mismos pasos exactos.**
+Mismo modal, mismo cliente ORLANT, mismo archivo real: la vista previa
+ahora muestra *"Trafico (Llamadas o WhatsApp) — Trafico de WhatsApp — OK
+— 5 fila(s)"*, y al guardar: *"✓ Trafico (Llamadas o WhatsApp): 5
+fila(s) guardadas (5 cola(s))"*. Confirmado en la pestaña "Tráfico de
+WhatsApp" del dashboard de ORLANT: mismos 5 KPIs ya verificados en la
+Fase 51 (Total 7.305, Contestados 7.109, Abandonados 196, Nivel de
+Atención 97.32%, Tasa de Abandono 2.68%) — y confirmado directo en la
+tabla `trafico_whatsapp` que son las mismas 5 filas de siempre (upsert
+por `campana+colaWhatsapp+fechaInicio+fechaFin`, sin duplicar), ahora
+alcanzables desde los DOS puntos de entrada reales (Metas Calidad y
+Cargar Datos).
+
+**Sin romper nada más — verificado con otro cliente real.** Subida
+`carga-consolidada.xlsx` (fixture real ya existente, con hojas `resumen`
++ `Monitoreos` + `DATA` de voz) para ANDRES YEPES por el mismo modal:
+`resumen` (Gestión de base) se guarda OK igual que siempre; `Monitoreos`
+(Calidad) sigue rechazando la fórmula sin calcular que ese fixture trae a
+propósito (mismo comportamiento documentado desde antes de esta fase, no
+una regresión); la hoja `DATA` se detecta correctamente como canal "voz"
+(`Trafico de Llamadas`) y queda "Vacía — no aplica esta vez" (ese fixture
+solo trae encabezado, mismo caso ya cubierto por un test existente desde
+antes). Cero cambios de comportamiento para Gestión de base/Calidad/
+Tráfico de voz.
+
+**Tests nuevos** (`server/tests/cargas-logic.test.js`, +6): 2 contra
+encabezados reales (`EJEMPLO.xlsx` → "voz", `PLANTILLA_TRAFICO_WHATSAPP_
+EJEMPLO.xlsx` → "whatsapp"), 1 de fallback sin encabezado reconocible, 2
+de `cargasProcesarHoja` de punta a punta reproduciendo el bug real
+(WhatsApp ahora reconocido; voz sigue igual), 1 confirmando que campos
+extra del parser (`canal`) ya no se filtran.
+
+**Verificación**: `npm test` 296/296 (290 + 6 nuevos) antes y después.
+`npm audit` (server): 0 vulnerabilidades. Script de QA reusable en
+`.github/scripts/verificar-fase52-fix-carga-whatsapp.js` (reproduce el
+flujo completo: modal → WhatsApp real por ORLANT → confirmación → pestaña
+con datos, más el archivo consolidado real para ANDRES YEPES). Capturas
+Playwright reales en `docs/capturas-demo/fase52-fix-carga-whatsapp/`.
+Sin cambios de esquema de base de datos ni de endpoints existentes —
+cambio acotado a la capa de clasificación/enrutamiento del modal
+genérico. No se toca producción (el fix vive en esta rama/PR hasta que
+se mergee y despliegue).

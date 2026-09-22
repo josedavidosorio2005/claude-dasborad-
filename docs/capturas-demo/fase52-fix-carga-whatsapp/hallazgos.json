@@ -1,0 +1,90 @@
+{
+  "wppPreviewVisible": true,
+  "wppPreviewFilas": [
+    [
+      "Hoja",
+      "Tipo",
+      "Estado"
+    ],
+    [
+      "Resumen mensual (KPIs y tendencias)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"resumen\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Llamadas y WhatsApp de salida (por dia)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"salida\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Tipificacion (Llamada 3P y General)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"tipificacion\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Gestion STA — por servicio, estado y mes actual",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"sta_categorias\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Calidad — Monitoreos",
+      "Calidad",
+      "⚠ No se encontro la hoja \"Monitoreos\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Trafico (Llamadas o WhatsApp)",
+      "Trafico de WhatsApp",
+      "OK — 5 fila(s)"
+    ]
+  ],
+  "wppToastGuardado": "✓ Trafico (Llamadas o WhatsApp): 5 fila(s) guardadas (5 cola(s))",
+  "wppKpis": [
+    "7.305",
+    "7.109",
+    "196",
+    "97.32%",
+    "2.68%"
+  ],
+  "consolidadaPreviewFilas": [
+    [
+      "Hoja",
+      "Tipo",
+      "Estado"
+    ],
+    [
+      "Resumen mensual (KPIs y tendencias)",
+      "Gestion de base",
+      "OK — 1 fila(s)"
+    ],
+    [
+      "Gestion por dia",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"diario\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: resumen, DATA, Monitoreos."
+    ],
+    [
+      "Tipificacion de gestion",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"tipificacion\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: resumen, DATA, Monitoreos."
+    ],
+    [
+      "Resultados por asesor",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"asesores\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: resumen, DATA, Monitoreos."
+    ],
+    [
+      "Calidad — Monitoreos",
+      "Calidad",
+      "⚠ La celda H2 (\"Juan Perez\") tiene una formula de Excel (\"=IF(TRUE,\"SI\",\"NO\")\") sin calcular. Escribe el numero final ya calculado, no una formula — probablemente este archivo nunca se abrio en Excel o LibreOffice para forzar el recalculo."
+    ],
+    [
+      "Trafico (Llamadas o WhatsApp)",
+      "Trafico de Llamadas",
+      "Vacia — no aplica esta vez"
+    ]
+  ],
+  "consolidadaToast": "✓ Resumen mensual (KPIs y tendencias)",
+  "consoleErrores": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "ok": true
+}

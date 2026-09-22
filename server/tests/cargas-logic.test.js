@@ -25,13 +25,18 @@ const {
   cargasPlanConsolidado,
   cargasHojaVacia,
   cargasProcesarHoja,
+  cargasDetectarCanalTrafico,
   CARGAS_HOJA_TRAFICO,
   CARGAS_HOJA_CALIDAD,
 } = require('../../public/js/cargas-logic.js');
+const { traficoColIndexMap, traficoParseFilas } = require('../../public/js/trafico-logic.js');
+const { traficoWppColIndexMap, traficoWppParseFilas } = require('../../public/js/trafico-whatsapp-logic.js');
 
 const FIXTURE_FORMULAS = path.join(__dirname, 'fixtures', 'carga-formula-sin-valor.xlsx');
 const FIXTURE_LITERALES = path.join(__dirname, 'fixtures', 'carga-valores-literales.xlsx');
 const FIXTURE_CONSOLIDADA = path.join(__dirname, 'fixtures', 'carga-consolidada.xlsx');
+const FIXTURE_TRAFICO_VOZ = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
+const FIXTURE_TRAFICO_WPP = path.join(__dirname, 'fixtures', 'PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx');
 
 // Spec equivalente a la seccion "resumen" de ALBERTO LINERO GO
 // (server/dashboard-plantillas-cliente.js, plantillaVentas) — la campana
@@ -137,7 +142,6 @@ test('cargasColPorLabel: empareja por label o por key, normalizando mayusculas/e
 
 // ── Plantilla consolidada (Fase "una sola plantilla por campana", 2026-09-16) ──
 const { cmParseRows } = require('../../public/js/calidad-carga-masiva-logic.js');
-const { traficoParseFilas } = require('../../public/js/trafico-logic.js');
 
 test('cargasHojaVacia: filaUnica (Metrica/Valor) es vacia solo si ningun valor esta lleno', () => {
   assert.equal(cargasHojaVacia([], true), true);
@@ -273,4 +277,76 @@ test('cargasParseMultiFila: descarta filas vacias y columnas que no coinciden co
   assert.equal(res.filas[0].fecha, '2026-09-01');
   assert.equal(res.filas[0].ventas, 5);
   assert.equal(res.filas[0]['Columna extra'], undefined);
+});
+
+// ── Fase 52: la hoja "DATA" del modal "Cargar Datos de Dashboards" acepta
+// dos formatos (Trafico de Llamadas o Trafico de WhatsApp) -- bug real
+// reportado por el usuario: subir el archivo real de WhatsApp por este
+// modal fallaba con "ninguna hoja reconocida" porque esta hoja SOLO
+// reconocia el formato de voz, aunque el nombre "DATA" fuera correcto.
+test('cargasDetectarCanalTrafico: encabezado real de voz (EJEMPLO.xlsx) -> "voz"', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_TRAFICO_VOZ, 'DATA');
+  const canal = cargasDetectarCanalTrafico(aoa[0], traficoColIndexMap, traficoWppColIndexMap);
+  assert.equal(canal, 'voz');
+});
+
+test('cargasDetectarCanalTrafico: encabezado real de WhatsApp (PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx) -> "whatsapp"', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_TRAFICO_WPP, 'DATA');
+  const canal = cargasDetectarCanalTrafico(aoa[0], traficoColIndexMap, traficoWppColIndexMap);
+  assert.equal(canal, 'whatsapp');
+});
+
+test('cargasDetectarCanalTrafico: encabezado vacio/irreconocible cae por defecto a "voz" (mismo comportamiento que antes de la Fase 52)', () => {
+  assert.equal(cargasDetectarCanalTrafico([], traficoColIndexMap, traficoWppColIndexMap), 'voz');
+  assert.equal(cargasDetectarCanalTrafico(['COLUMNA RARA'], traficoColIndexMap, traficoWppColIndexMap), 'voz');
+  assert.equal(cargasDetectarCanalTrafico(undefined, traficoColIndexMap, traficoWppColIndexMap), 'voz');
+});
+
+test('cargasProcesarHoja: reproduce el bug real -- la hoja DATA del archivo real de WhatsApp ahora SI se reconoce (antes: "ninguna hoja reconocida")', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_TRAFICO_WPP, 'DATA');
+  const ws = leerHojaXlsxComoCeldas(FIXTURE_TRAFICO_WPP, 'DATA');
+  // Mismo dispatcher que cargas.js#_cargasParseTraficoAuto, reproducido aqui
+  // con los parsers reales (sin DOM) para probar el flujo completo.
+  const parseFn = (a) => {
+    const canal = cargasDetectarCanalTrafico(a[0], traficoColIndexMap, traficoWppColIndexMap);
+    const res = canal === 'whatsapp' ? traficoWppParseFilas(a) : traficoParseFilas(a);
+    if (!res.error) res.canal = canal;
+    return res;
+  };
+  const r = cargasProcesarHoja(
+    { tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)', filaUnica: false },
+    aoa, ws, parseFn
+  );
+  assert.equal(r.error, undefined);
+  assert.equal(r.canal, 'whatsapp');
+  assert.equal(r.filas.length, 5);
+  assert.equal(r.filas[0].colaWhatsapp, 'WHATSAPP FONOAUDIOLOGIA');
+});
+
+test('cargasProcesarHoja: un archivo real de voz sigue yendo por el parser de voz de siempre (no rompio nada)', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_TRAFICO_VOZ, 'DATA');
+  const ws = leerHojaXlsxComoCeldas(FIXTURE_TRAFICO_VOZ, 'DATA');
+  const parseFn = (a) => {
+    const canal = cargasDetectarCanalTrafico(a[0], traficoColIndexMap, traficoWppColIndexMap);
+    const res = canal === 'whatsapp' ? traficoWppParseFilas(a) : traficoParseFilas(a);
+    if (!res.error) res.canal = canal;
+    return res;
+  };
+  const r = cargasProcesarHoja(
+    { tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)', filaUnica: false },
+    aoa, ws, parseFn
+  );
+  assert.equal(r.error, undefined);
+  assert.equal(r.canal, 'voz');
+  assert.ok(r.filas.length > 0);
+  assert.ok(r.filas[0].skillName);
+});
+
+test('cargasProcesarHoja: pasa de largo campos extra del parser (ej. `canal`) sin filtrarlos', () => {
+  const aoa = [['A'], [1]];
+  const ws = { A1: { v: 'A' }, A2: { v: 1 } };
+  const parseFn = () => ({ filas: [{ a: 1 }], avisos: [], canal: 'whatsapp', colas: ['X'] });
+  const r = cargasProcesarHoja({ tipo: 'trafico', hoja: 'DATA', titulo: 'Trafico', filaUnica: false }, aoa, ws, parseFn);
+  assert.equal(r.canal, 'whatsapp');
+  assert.deepEqual(r.colas, ['X']);
 });
