@@ -3521,3 +3521,84 @@ fase — verificación pura. Capturas Playwright completas (selección de
 archivo, vista previa con las 6 filas, confirmación de éxito, pestaña con
 los datos, y la segunda subida) en
 `docs/capturas-demo/fase53-subida-manual-web-whatsapp/`.
+
+## Fase 54 — KPIs de WhatsApp desconectados en la franja global de ORLANT (2026-09-22)
+
+Hallazgo real del usuario en producción: en la franja de KPIs globales de
+ORLANT (arriba de las pestañas Calidad/Tráfico de Llamadas/Tráfico de
+WhatsApp), 4 tarjetas relacionadas a WhatsApp ("WhatsApp 3P", "Nivel
+Atencion WPP 3P", "WhatsApp Linea General", "WhatsApp Salida (Gral+3P)")
+mostraban 0, mientras la pestaña "Tráfico de WhatsApp" (Fases 50-53,
+verificada a fondo) mostraba datos reales para el mismo período (7.305
+total, etc.).
+
+**Investigación — reencuadra el reporte otra vez.** Código
+(`server/dashboard-config-seed.js`): las 4 tarjetas usan
+`ultimo('wpp_3p')`/`ultimo('nivel_atencion_wpp_3p')`/`ultimo('wpp_general')`/
+un agregado de `wpp_salida_general`+`wpp_salida_3p` — `ultimo(campo) =
+{ s:'resumen', modo:'ultimo', campo }`. Es decir: **nunca** consultaron
+`trafico_whatsapp` (Fase 50) — salen de la sección "Resumen mensual"/
+"Llamadas y WhatsApp de salida" de **Gestión de base** (carga manual, el
+mismo mecanismo que ya vimos como filas rojas en las Fases 52/53). Más
+sorprendente aún: la tarjeta "Llamadas 3P" que el usuario tomó como
+referencia de "sí funciona" usa **exactamente el mismo mecanismo**
+(`ultimo('llamadas_3p')`, también de Gestión de base) — no viene de
+Wolkvox ni coincide con el total real de la pestaña Tráfico de Llamadas
+(8.061 llamadas reales en agosto 2026, Fase 36). El "0" no es una
+conexión rota: es que nadie diligenció esos campos específicos a mano en
+esa hoja (confirmado además que `_gdNum(undefined)` devuelve `0`, no
+`null` — un campo nunca lleno es indistinguible en pantalla de un cero
+real). Confirmado también que la **Fase 45** ya investigó este mismo tipo
+de duplicación para CLINICA AURORA/HOSPITAL LA MARIA (las quitó,
+`dashboards_config_trafico_kpis_duplicados_v1`) e investigó ORLANT
+explícitamente en ese momento, concluyendo que sus KPIs "no coinciden"
+— eso fue antes de que existiera el módulo de WhatsApp (Fase 50).
+
+**Decisión, presentada al usuario con evidencia antes de construir**: ni
+"están desconectadas, hay que conectarlas" (nunca estuvieron conectadas,
+y conectarlas ahora exigiría emparejar "3P"/"Línea General" contra el
+nombre de cola de `trafico_whatsapp` — texto libre, sin ID estable: la
+misma clase de "0 en silencio" si una cola cambia de nombre) ni un simple
+"están obsoletas" a ciegas. El usuario, visto el diagnóstico, eligió
+quitarlas — mismo patrón exacto que la Fase 45 aplicó a AURORA/HLM: si la
+pestaña Tráfico de WhatsApp ya muestra esta información completa y
+verificada, un número manual que se queda en 0 si nadie lo llena es más
+confuso que útil.
+
+**Fix — acotado, solo `layout.kpis` de ORLANT.** Se quitaron las 4
+tarjetas de `server/dashboard-config-seed.js` (para clientes nuevos) +
+nueva migración `dashboards_config_orlant_kpis_whatsapp_duplicados_v1`
+en `server/db.js` (para quien ya tenía ORLANT sembrado — no se pudo
+reusar la migración de la Fase 45 porque un `runOnceMigration` nunca se
+re-ejecuta una vez aplicado en producción), con su propio test
+(`orlant-kpis-whatsapp-duplicados-migracion.test.js`, mismo patrón que el
+de la Fase 45). Las tarjetas de Llamadas (mismo mecanismo, mismo riesgo
+de "0 si nadie llena a mano") **no se tocaron** — pedido explícito del
+usuario, fuera de alcance de esta fase; quedan anotadas aquí como
+observación para una fase futura si el usuario lo pide.
+
+**Verificación amplia, antes/después, con Playwright real** (mismo seed
+de datos, `git stash`/`git stash pop` para capturar el mismo estado antes
+y después del fix): franja global de ORLANT pasó de 13 a 9 tarjetas,
+exactamente las 4 esperadas desaparecieron, las 9 restantes (incluidas
+todas las de Llamadas) quedaron en el mismo orden y con los mismos
+valores; la pestaña Tráfico de Llamadas (23.925/22.829/95.4%) y la
+pestaña Tráfico de WhatsApp (7.305/7.109/196/97.32%/2.68%) no cambiaron
+en nada. Confirmado que **solo ORLANT** tiene el módulo de Tráfico de
+WhatsApp (`grep` de `trafico_whatsapp_combo` en
+`dashboard-config-seed.js`) — no hay 2-3 clientes más para comparar, tal
+como permitía el pedido. Revisado también CLINICA AURORA (sí tiene
+tarjetas "WhatsApp Entrada"/"Nivel Ate. WPP"/"WhatsApp Salida" en su
+franja global, pero son su ÚNICA fuente real — sin módulo automático que
+las duplique, la Fase 45 ya las dejó a propósito): confirmado que la
+migración de ORLANT no las toca, siguen exactamente iguales antes y
+después. Pasada amplia sobre el módulo de WhatsApp completo (carga,
+pestaña, franja global, claro/oscuro, escritorio/móvil): todo consistente,
+0 errores de consola.
+
+**Verificación**: `npm test` 300/300 (296 + 4 nuevos) antes y después.
+`npm audit` (server): 0 vulnerabilidades. Script de QA reusable en
+`.github/scripts/verificar-fase54-kpis-whatsapp-globales.js`. Capturas
+Playwright antes/después (franja global, Tráfico de Llamadas, Tráfico de
+WhatsApp, claro/oscuro, escritorio/móvil, ORLANT + CLINICA AURORA) en
+`docs/capturas-demo/fase54-kpis-whatsapp-globales/`.

@@ -1073,6 +1073,44 @@ runOnceMigration('dashboards_config_orlant_trafico_whatsapp_tab_v1', () => {
   }
 });
 
+// Quita de la franja global de KPIs de ORLANT (layout.kpis, arriba de las
+// pestañas) las 4 tarjetas de WhatsApp -- Fase 54 (hallazgo real del
+// usuario: mostraban "0" en producción). Investigado antes de tocar nada:
+// esas 4 tarjetas ('WhatsApp 3P', 'Nivel Atencion WPP 3P', 'WhatsApp Linea
+// General', 'WhatsApp Salida (Gral+3P)') NUNCA consultaron trafico_whatsapp
+// -- salen de `ultimo('wpp_3p')`/`ultimo('wpp_general')`/etc., que leen la
+// sección "resumen"/"salida" de Gestión de base (carga manual, mismo
+// mecanismo que ya vimos en las Fases 52/53). El "0" no es un bug de
+// conexión: es que nadie llena esos campos a mano ahí. Mismo patrón y
+// mismo motivo exacto que `dashboards_config_trafico_kpis_duplicados_v1`
+// (Fase 45) aplicó a CLINICA AURORA/HOSPITAL LA MARIA -- esa migración NO
+// puede reutilizarse para ORLANT porque ya corrió en producción (un
+// runOnceMigration nunca se re-ejecuta), así que esta es una nueva. Las
+// tarjetas de Llamadas (mismo mecanismo, mismo riesgo) NO se tocan aquí:
+// pedido explícito del usuario, fuera de alcance de esta fase.
+runOnceMigration('dashboards_config_orlant_kpis_whatsapp_duplicados_v1', () => {
+  const TITULOS_A_QUITAR = ['WhatsApp 3P', 'Nivel Atencion WPP 3P', 'WhatsApp Linea General', 'WhatsApp Salida (Gral+3P)'];
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea sin estas 4 tarjetas
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const antes = (layout.kpis || []).length;
+  layout.kpis = (layout.kpis || []).filter((k) => TITULOS_A_QUITAR.indexOf(k && k.titulo) === -1);
+  if (layout.kpis.length === antes) return; // ya tiene la forma nueva (o un admin ya las quito) -- nada que hacer
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

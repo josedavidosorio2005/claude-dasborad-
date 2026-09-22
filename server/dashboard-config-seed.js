@@ -42,16 +42,12 @@ const ORLANT = {
     kpis: [
       kpi('Llamadas 3P', ultimo('llamadas_3p'), 'miles'),
       kpi('Nivel Atencion 3P', ultimo('nivel_atencion_3p'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
-      kpi('WhatsApp 3P', ultimo('wpp_3p'), 'miles'),
-      kpi('Nivel Atencion WPP 3P', ultimo('nivel_atencion_wpp_3p'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
       kpi('Llamadas Linea General', ultimo('llamadas_general'), 'miles'),
       kpi('Nivel Atencion L.General', ultimo('nivel_atencion_general'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
-      kpi('WhatsApp Linea General', ultimo('wpp_general'), 'miles'),
       kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
       kpi('Efec. Ordenamiento Medico', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'ordmed_agendas', b: 'ordmed_gestionados' }, 'porcentaje', { cls: 'kpi-org' }),
       kpi('Recuperacion Cancelados', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'recup_atendido', b: 'recup_cancelado' }, 'porcentaje', { cls: 'kpi-green' }),
       kpi('Llamadas Salida (Gral+3P)', { s: 'salida', modo: 'agregado', op: 'suma', campos: ['salida_general', 'salida_3p'] }, 'miles', { cls: 'kpi-red' }),
-      kpi('WhatsApp Salida (Gral+3P)', { s: 'salida', modo: 'agregado', op: 'suma', campos: ['wpp_salida_general', 'wpp_salida_3p'] }, 'miles'),
       kpi('% Citas Atendidas', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'citas_atendidas', b: 'citas_para_mes' }, 'porcentaje', { cls: 'kpi-org' }),
     ],
     tabs: [
