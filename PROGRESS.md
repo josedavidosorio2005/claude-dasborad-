@@ -3272,3 +3272,98 @@ claro/oscuro, escritorio/móvil). Verificación de producción de solo
 lectura al final: `GET /api/health` → `{"ok":true}` (200) — la pestaña
 nueva no es visible ahí todavía porque este cambio no se ha desplegado
 (vive en esta rama/PR).
+
+## Fase 51 — Verificación final del módulo de Trafico de WhatsApp: código + base de datos + navegador (2026-09-22)
+
+Pedido: antes de dar por cerrada la Fase 50 (ya mergeada y desplegada,
+`GET /api/health` en 200 desde el 2026-09-22T02:03:44Z), verificar a fondo
+en 3 niveles que quedó bien implementada — no solo que los tests pasen.
+
+**Paso 0 — plantilla del repo vs. columnas reconfirmadas.** El usuario
+reconfirmó los 12 encabezados exactos de la hoja "DATA". Se leyó
+`server/plantillas/PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx` con
+`xlsx-lite.js` (el mismo lector propio de las pruebas) y se comparó
+columna por columna contra la lista reconfirmada: **coinciden exacto, en
+el mismo orden, las 12** — cero diferencias, no hizo falta tocar la
+plantilla.
+
+**Paso 1 — carga real por el flujo real de la UI.** Contra un entorno de
+verificación local (`node server.js`, base de datos y usuario admin ya
+sembrados con `npm run seed:demo` de una sesión previa), con Playwright
+lanzado directo desde Node (no la extensión de Chrome — no alcanza
+`localhost` en este sandbox): login como admin sembrado → `showSection
+('metas')` → `switchMetasTab('trafico')` → seleccionar campaña ORLANT →
+subir `server/tests/fixtures/PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx` (las
+5 colas reales) por `#tww-file` → vista previa → "Guardar carga de
+WhatsApp". El sistema reportó exactamente: preview *"5 fila(s) validas, 5
+cola(s), 1 periodo(s)"* (cero avisos), y al guardar el toast *"5 fila(s)
+guardadas (5 cola(s))"* — sin errores, sin filas descartadas.
+
+**Paso 2 — código releído (no solo PROGRESS.md).** Se releyó
+`trafico-whatsapp-logic.js`, `server/trafico-whatsapp.js`, `server/routes/
+trafico-whatsapp.js`, `server/validation.js` y `server/db.js` de la Fase
+50. Confirmado, línea por línea, que hace exactamente lo documentado: el
+emparejamiento de columnas es por nombre (no por posición, con test
+dedicado), la fila TOTAL se descarta con la regex
+`/^(gran\s+)?total(es)?(\s+general(es)?)?$/i`, las fechas cortas `M/D/AA`
+se parsean bien, los números con separador de miles (`"9,230.35"`) se
+limpian antes de convertir, y — el punto crítico — el % de ABANDONO del
+archivo **nunca se lee ni se guarda**: `tasaAbandonoPct` se recalcula
+siempre desde `abandonados/totalWhatsapp` ya sumados (nunca promediando
+los % crudos de cada cola). La clave de upsert en `trafico_whatsapp` es
+`UNIQUE(campana, colaWhatsapp, fechaInicio, fechaFin)`, igual en el
+constraint SQL y en el `SELECT ... WHERE` de la app. Sin discrepancias
+entre lo documentado y el código real.
+
+**Paso 3 — base de datos, fila por fila contra el archivo.** Tras la
+carga del Paso 1, se consultó `trafico_whatsapp` directo (`better-sqlite3`,
+solo lectura) filtrando `campana='ORLANT'`: 5 filas, una por cola, y los
+12 campos de cada una coinciden EXACTO con el archivo original —
+incluidas las fechas convertidas correctamente (`8/1/26` → `2026-08-01`,
+`8/31/26` → `2026-08-31`) y ningún campo de % de abandono guardado (tal
+como confirma el Paso 2).
+
+**Paso 4 — pantalla, con navegador real.** Login → `openGenericDashboard
+('ORLANT')` → pestaña "Trafico de WhatsApp": los 5 KPIs y las 3
+sub-pestañas (Volumen / Niveles de Servicio / ASA y ATA) se leyeron desde
+la instancia real de Chart.js en pantalla (`_gd.charts['tww-canvas-0']
+.data`, no capturas de pantalla adivinadas) y coinciden EXACTO con la base
+de datos y el archivo. Los valores se ven directo en las barras sin
+necesidad de hover (`loDatalabelsAuto`, confirmado en las capturas). Cero
+errores de consola (`console.error`/`pageerror`) en todo el recorrido. El
+menú desplegable de la Fase 46 se probó explícitamente desde esta pestaña
+nueva (`toggleSidebar` vía evaluate, mismo patrón que la Fase 46, porque el
+modal del dashboard tapa el botón real) — cambia de estado correctamente,
+sigue funcionando. Capturado en claro/oscuro y escritorio/móvil; en móvil
+el eje Y de ASA/ATA se ve formateado en horas (`25:00:00`, no minutos
+sueltos), confirmando el formateador `_traficoWppFmtTiempo`.
+
+**Tabla de comparación (archivo → base de datos → pantalla), 4 campos
+clave de las 5 colas — los tres coinciden exacto en las 5×4 = 20 celdas:**
+
+| Cola | Total (archivo / BD / pantalla) | Contestados (archivo / BD / pantalla) | SL20 % (archivo / BD / pantalla) | ASA seg. (archivo / BD / pantalla) |
+|---|---|---|---|---|
+| WHATSAPP AUDIFONOS | 734 / 734 / 734 | 729 / 729 / 729 | 66.76 / 66.76 / 66.76 | 3392.30 / 3392.30 / 3392.30 |
+| WHATSAPP FONIATRIA | 31 / 31 / 31 | 29 / 29 / 29 | 41.94 / 41.94 / 41.94 | 4771.76 / 4771.76 / 4771.76 |
+| WHATSAPP FONOAUDIOLOGIA | 192 / 192 / 192 | 187 / 187 / 187 | 48.96 / 48.96 / 48.96 | 4245.50 / 4245.50 / 4245.50 |
+| WHATSAPP ORLANT 3P | 4844 / 4844 / 4844 | 4697 / 4697 / 4697 | 32.18 / 32.18 / 32.18 | 9230.35 / 9230.35 / 9230.35 |
+| WHATSAPP ORLANT GENERAL | 1504 / 1504 / 1504 | 1467 / 1467 / 1467 | 25.07 / 25.07 / 25.07 | 11762.29 / 11762.29 / 11762.29 |
+
+Los 5 KPIs agregados del período también verificados: Total 7.305,
+Contestados 7.109, Abandonados 196, Nivel de Atención 97.32% (=
+7109/7305, no promedio de % por cola), Tasa de Abandono 2.68% (=
+196/7305).
+
+**Veredicto: el módulo de Trafico de WhatsApp, de punta a punta (carga →
+base de datos → dashboard), funciona correctamente y sin discrepancias.**
+Cero hallazgos que reportar, cero cambios de código en esta fase.
+
+**Verificación**: `npm test` 290/290 antes y después (nada cambió).
+`npm audit` (server): 0 vulnerabilidades, antes y después. Script de QA
+reusable en `.github/scripts/verificar-fase51-trafico-whatsapp.js`.
+Capturas Playwright reales en
+`docs/capturas-demo/fase51-verificacion-whatsapp/` (preview de carga,
+toast de guardado, las 3 sub-pestañas, claro/oscuro, escritorio/móvil).
+Esta fase no cambia código de producción, así que no aplica un nuevo
+despliegue ni una nueva verificación de producción más allá de la que ya
+confirmó la Fase 50 desplegada (`GET /api/health` → 200).
