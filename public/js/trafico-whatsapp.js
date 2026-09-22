@@ -116,6 +116,7 @@ async function _traficoWppRenderPanel(p, i) {
           return '<button class="gd-subtab-btn' + (subActivo === s.key ? ' on' : '') + '" data-trafwppsub="' + s.key + '" onclick="_traficoWppSwitchSubtab(' + i + ',\'' + s.key + '\')">' + s.label + '</button>';
         }).join('') +
       '</div>' +
+      '<div id="tww-colaleyenda-' + i + '" style="display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:8px;font-size:0.72rem;color:var(--c-text-muted)"></div>' +
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="tww-canvas-' + i + '"></canvas></div>' +
     '</div>';
   host.dataset.campana = campana;
@@ -175,6 +176,32 @@ function _traficoWppRenderContenido(i) {
   var CPl = (typeof CP !== 'undefined') ? CP : '#8e44ad';
   var colas = filas.map(function (f) { return f.colaWhatsapp; });
 
+  // Fase 57: cada cola tiene su propio color (borde de las barras + leyenda
+  // aparte), para poder distinguirlas sin depender solo de la etiqueta del
+  // eje X -- sin tocar charts.js ni el significado semantico de
+  // azul/verde/rojo (Total/Contestados/Abandonados) que ya usan las barras.
+  // Reusa PC/PC_DARK (charts.js), la MISMA paleta categorica ya usada en
+  // otros graficos de muchas categorias (ej. pies de Tipificacion) y ya
+  // reasignada automaticamente por tema -- nunca una paleta nueva propia de
+  // este archivo. Se filtran a mano los indices de PC que son verde o rojo
+  // (2, 4, 6, 9, 11 -- las 2 familias "verde"/"rojo" de esa paleta) para que
+  // el color de una cola nunca coincida con el verde de Contestados ni el
+  // rojo de Abandonados: esa coincidencia confundiria "es esta barra roja
+  // por Abandonados, o por el color de su cola" -- justo lo que se pidio
+  // evitar.
+  var PCl = (typeof PC !== 'undefined' && PC && PC.length) ? PC : [CDl, CMl, COl, CPl];
+  var PC_IDX_SEGURO = [0, 5, 3, 8, 10, 1, 7].filter(function (idx) { return idx < PCl.length; });
+  var paletaColas = PC_IDX_SEGURO.length ? PC_IDX_SEGURO.map(function (idx) { return PCl[idx]; }) : PCl;
+  var colaColors = colas.map(function (_, idx) { return paletaColas[idx % paletaColas.length]; });
+  var leyendaEl = document.getElementById('tww-colaleyenda-' + i);
+  if (leyendaEl) {
+    leyendaEl.innerHTML = colas.map(function (cola, idx) {
+      return '<span style="display:inline-flex;align-items:center;gap:5px">' +
+        '<span style="width:10px;height:10px;border-radius:2px;background:' + colaColors[idx] + ';display:inline-block;flex:none"></span>' +
+        esc(cola) + '</span>';
+    }).join('');
+  }
+
   var cfg;
   if (sub === 'sl') {
     var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
@@ -184,9 +211,9 @@ function _traficoWppRenderContenido(i) {
     cfg = {
       type: 'bar',
       data: { labels: colas, datasets: [
-        { label: 'SL 10s', data: filas.map(function (f) { return f.serviceLevel10secPct; }), backgroundColor: CDl, borderRadius: 3 },
-        { label: 'SL 20s', data: filas.map(function (f) { return f.serviceLevel20secPct; }), backgroundColor: CMl, borderRadius: 3 },
-        { label: 'SL 30s', data: filas.map(function (f) { return f.serviceLevel30secPct; }), backgroundColor: COl, borderRadius: 3 },
+        { label: 'SL 10s', data: filas.map(function (f) { return f.serviceLevel10secPct; }), backgroundColor: CDl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
+        { label: 'SL 20s', data: filas.map(function (f) { return f.serviceLevel20secPct; }), backgroundColor: CMl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
+        { label: 'SL 30s', data: filas.map(function (f) { return f.serviceLevel30secPct; }), backgroundColor: COl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
       ] },
       options: o,
     };
@@ -198,8 +225,8 @@ function _traficoWppRenderContenido(i) {
     cfg = {
       type: 'bar',
       data: { labels: colas, datasets: [
-        { label: 'ASA', data: filas.map(function (f) { return f.asaSegundos; }), backgroundColor: CPl, borderRadius: 3 },
-        { label: 'ATA', data: filas.map(function (f) { return f.ataSegundos; }), backgroundColor: COl, borderRadius: 3 },
+        { label: 'ASA', data: filas.map(function (f) { return f.asaSegundos; }), backgroundColor: CPl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
+        { label: 'ATA', data: filas.map(function (f) { return f.ataSegundos; }), backgroundColor: COl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
       ] },
       options: o2,
     };
@@ -211,9 +238,9 @@ function _traficoWppRenderContenido(i) {
     cfg = {
       type: 'bar',
       data: { labels: colas, datasets: [
-        { label: 'Total', data: filas.map(function (f) { return f.totalWhatsapp; }), backgroundColor: CDl, borderRadius: 3 },
-        { label: 'Contestados', data: filas.map(function (f) { return f.contestados; }), backgroundColor: CGl, borderRadius: 3 },
-        { label: 'Abandonados', data: filas.map(function (f) { return f.abandonados; }), backgroundColor: CRl, borderRadius: 3 },
+        { label: 'Total', data: filas.map(function (f) { return f.totalWhatsapp; }), backgroundColor: CDl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
+        { label: 'Contestados', data: filas.map(function (f) { return f.contestados; }), backgroundColor: CGl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
+        { label: 'Abandonados', data: filas.map(function (f) { return f.abandonados; }), backgroundColor: CRl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
       ] },
       options: o3,
     };

@@ -1,0 +1,150 @@
+{
+  "state": "despues",
+  "leyendaColas": "WHATSAPP AUDIFONOSWHATSAPP FONIATRIAWHATSAPP FONOAUDIOLOGIAWHATSAPP ORLANT 3PWHATSAPP ORLANT GENERAL",
+  "chartVolumen": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "Total",
+        "backgroundColor": "#0d4a5e",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      },
+      {
+        "label": "Contestados",
+        "backgroundColor": "#27ae60",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      },
+      {
+        "label": "Abandonados",
+        "backgroundColor": "#e74c3c",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      }
+    ]
+  },
+  "chartSl": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "SL 10s",
+        "backgroundColor": "#0d4a5e",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      },
+      {
+        "label": "SL 20s",
+        "backgroundColor": "#1a7a9e",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      },
+      {
+        "label": "SL 30s",
+        "backgroundColor": "#e67e22",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      }
+    ]
+  },
+  "chartAsaAta": {
+    "labels": [
+      "WHATSAPP AUDIFONOS",
+      "WHATSAPP FONIATRIA",
+      "WHATSAPP FONOAUDIOLOGIA",
+      "WHATSAPP ORLANT 3P",
+      "WHATSAPP ORLANT GENERAL"
+    ],
+    "datasets": [
+      {
+        "label": "ASA",
+        "backgroundColor": "#8e44ad",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      },
+      {
+        "label": "ATA",
+        "backgroundColor": "#e67e22",
+        "borderColor": [
+          "#0d4a5e",
+          "#8e44ad",
+          "#e67e22",
+          "#2980b9",
+          "#7f8c8d"
+        ],
+        "borderWidth": 2
+      }
+    ]
+  },
+  "chartLlamadasPrincipal": [
+    {
+      "label": "Total Llamadas",
+      "backgroundColor": "#0d4a5e"
+    },
+    {
+      "label": "Llamadas Contestadas",
+      "backgroundColor": "#27ae60"
+    },
+    {
+      "label": "Nivel de Atencion",
+      "backgroundColor": "#e67e22",
+      "borderColor": "#e67e22"
+    }
+  ],
+  "consoleErrores": [],
+  "ok": true
+}

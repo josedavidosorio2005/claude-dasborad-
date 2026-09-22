@@ -3757,3 +3757,54 @@ descargadas del artefacto del workflow y guardadas en
 **Veredicto: el módulo de Tráfico de WhatsApp de ORLANT tiene los datos
 reales cargados en producción, correctos y consistentes de punta a
 punta.** No se tocó ningún otro cliente ni ninguna otra tabla.
+
+## Fase 57 — Color por cola en las gráficas de Tráfico de WhatsApp (2026-09-22)
+
+Pedido: en las 3 sub-pestañas de Tráfico de WhatsApp, que cada
+servicio/cola (FONOAUDIOLOGIA, ORLANT 3P, ORLANT GENERAL, FONIATRIA,
+AUDIFONOS) se distinga por color, no solo por la etiqueta del eje X —
+hoy el color solo representaba la métrica (Total/Contestados/Abandonados),
+igual para las 5 colas.
+
+**Decisión (Opción B, sobre las dos que propuso el usuario)**: se agregó
+un borde de color por cola a cada barra + una leyenda aparte con el
+nombre de cada cola y su color — sin tocar el significado semántico de
+azul/verde/rojo (Total/Contestados/Abandonados), que sigue siendo el
+color de RELLENO de cada barra exactamente igual que antes. Se descartó
+la Opción A (familias de color por cola en el relleno) porque hubiera
+significado reemplazar el verde/rojo semántico existente, justo lo que el
+pedido pedía cuidar.
+
+**Reusa `PC`/`PC_DARK` de `charts.js`** (la paleta categórica de 12
+colores YA existente, usada en otros gráficos de muchas categorías como
+los pies de Tipificación, y ya reasignada automáticamente por tema) — se
+lee por nombre desde `trafico-whatsapp.js`, igual que ya se hacía con
+`CD`/`CG`/`CR`/etc. **Cero cambios en `charts.js`**, así que cero riesgo
+para Tráfico de Llamadas ni ningún otro módulo que comparta ese archivo.
+
+**Hallazgo propio durante la implementación (corregido antes de dar por
+terminado)**: usar la paleta `PC` cruda hacía que, por coincidencia, 2 de
+las 5 colas terminaran con el mismo verde de "Contestados" o el mismo
+rojo de "Abandonados" como color de borde — exactamente la confusión que
+el pedido pedía evitar ("que Contestados/Abandonados sigan siendo
+reconocibles como bien/mal"). Se filtraron a mano los índices de `PC`
+que son verde o rojo (2, 4, 6, 9, 11), quedando solo tonos que no chocan
+con ese significado (teal, morado, naranja, azul, gris — en ese orden).
+
+**Verificado con Playwright real, leyendo los datasets reales de
+Chart.js** (no solo capturas): las 3 sub-pestañas (Volumen, Niveles de
+Servicio, ASA y ATA) muestran el `backgroundColor` semántico intacto en
+cada dataset y un `borderColor` (array, uno por cola) que nunca coincide
+con verde/rojo. Confirmado en claro/oscuro y escritorio/móvil, con la
+leyenda de colas legible y el color del borde de cada barra coincidiendo
+con su cola en la leyenda. **Tráfico de Llamadas de ORLANT comparado
+explícitamente**: mismo `backgroundColor` de siempre
+(`#0d4a5e`/`#27ae60`/`#e67e22`), sin ningún `borderColor` por punto — cero
+cambios, confirmado programáticamente, no solo a simple vista.
+
+**Verificación**: `npm test` 300/300 y `npm audit` 0 vulnerabilidades,
+antes y después — único archivo modificado: `public/js/trafico-whatsapp.js`
+(confirmado con `git status` antes de commitear). Capturas Playwright
+completas (3 sub-pestañas × claro/oscuro × escritorio/móvil, más Tráfico
+de Llamadas de comparación) en
+`docs/capturas-demo/fase57-colores-por-servicio-whatsapp/`.
