@@ -1,0 +1,52 @@
+{
+  "previewVisible": true,
+  "filasPreview": [
+    [
+      "Hoja",
+      "Tipo",
+      "Estado"
+    ],
+    [
+      "Resumen mensual (KPIs y tendencias)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"resumen\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Llamadas y WhatsApp de salida (por dia)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"salida\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Tipificacion (Llamada 3P y General)",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"tipificacion\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Gestion STA — por servicio, estado y mes actual",
+      "Gestion de base",
+      "⚠ No se encontro la hoja \"sta_categorias\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Calidad — Monitoreos",
+      "Calidad",
+      "⚠ No se encontro la hoja \"Monitoreos\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: INSTRUCCIONES, DATA."
+    ],
+    [
+      "Trafico (Llamadas o WhatsApp)",
+      "Trafico de WhatsApp",
+      "OK — 5 fila(s)"
+    ]
+  ],
+  "botonGuardarDisabled": false,
+  "toastPrimeraCarga": "✓ Trafico (Llamadas o WhatsApp): 5 fila(s) guardadas (5 cola(s))",
+  "kpisTrasPrimeraCarga": [
+    "7.305",
+    "7.109",
+    "196",
+    "97.32%",
+    "2.68%"
+  ],
+  "toastSegundaCarga": "✓ Trafico (Llamadas o WhatsApp): 5 fila(s) guardadas (5 cola(s))",
+  "consoleErrores": [],
+  "ok": true
+}
