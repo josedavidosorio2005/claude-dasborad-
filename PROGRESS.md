@@ -3723,3 +3723,37 @@ auto-aprueba. Una vez mergeado, falta disparar el workflow
 (`workflow_dispatch`) para que la carga real ocurra de verdad en
 producción — se documentará el resultado (Pasos 1-3, capturas) en una
 actualización de esta misma fase.
+
+**Actualización — workflow disparado, resultado real (2026-09-22)**: el
+usuario revisó y mergeó el PR #107; disparado
+`carga-real-trafico-whatsapp-orlant-produccion.yml` (`workflow_dispatch`,
+run [35751340219](https://github.com/josedavidosorio2005/claude-dasborad-/actions/runs/35751340219),
+✓ exitoso en 55s).
+
+**Paso 1 (resultado real)**: producción **ya tenía** las 5 colas
+cargadas, coincidiendo EXACTO con los valores de referencia — el script
+lo detectó y **no subió nada** (`yaCoincideExacto: true`,
+`subioArchivo: false`), evitando una escritura innecesaria. Los datos
+reales que ya se venían verificando desde la Fase 54 (cuando el usuario
+reportó el hallazgo de KPIs mirando el dashboard de ORLANT en producción)
+ya estaban ahí — Paso 2 no hizo falta.
+
+**Paso 3 (verificado con Playwright real contra producción)**: franja
+global de ORLANT con exactamente 9 tarjetas
+(`kpisGlobalesCantidad: 9`, `sinTarjetasWhatsappEnFranjaGlobal: true`) —
+Llamadas 3P 4.011, Nivel Atencion 3P 98.16%, Llamadas Linea General
+4.050, Nivel Atencion L.General 79.56% (valores reales de producción,
+distintos a los del entorno de verificación usado en fases anteriores,
+como se esperaba). Pestaña "Tráfico de WhatsApp": 7.305 total / 7.109
+contestados / 196 abandonados / 97.32% nivel de atención / 2.68% tasa de
+abandono, con las 5 colas y sus barras de Volumen/Niveles de Servicio/ASA
+y ATA coincidiendo exacto contra la tabla de referencia. Usuario temporal
+borrado (`USUARIO_TEMPORAL_BORRADO {"filasBorradas":1}`) y puerto 22
+revertido al estado previo, ambos confirmados en el log del workflow.
+Capturas reales de producción (sin el banner de "Datos de demostración")
+descargadas del artefacto del workflow y guardadas en
+`docs/capturas-demo/fase56-carga-real-produccion-whatsapp/`.
+
+**Veredicto: el módulo de Tráfico de WhatsApp de ORLANT tiene los datos
+reales cargados en producción, correctos y consistentes de punta a
+punta.** No se tocó ningún otro cliente ni ninguna otra tabla.
