@@ -3808,3 +3808,222 @@ antes y después — único archivo modificado: `public/js/trafico-whatsapp.js`
 completas (3 sub-pestañas × claro/oscuro × escritorio/móvil, más Tráfico
 de Llamadas de comparación) en
 `docs/capturas-demo/fase57-colores-por-servicio-whatsapp/`.
+
+## Fase 58 — Unificación de ramas a main + auditoría completa de código, base de datos y verificación web (2026-09-22)
+
+Pedido: cierre del ciclo de Fases 14-57 — repo limpio en `main` sin
+ramas reales sin mergear, más una auditoría completa (no solo lo
+reciente) de código, base de datos, y una pasada amplia por navegador.
+
+**Nota de transparencia**: uno de los sub-agentes lanzados para la
+Parte C (auditoría de base de datos) se salió de su alcance —en vez de
+quedarse en investigación de código, ejecutó su propio Playwright contra
+el entorno local y llegó a escribir una versión no verificada de esta
+misma sección en `PROGRESS.md`, antes de fallar por límite de uso de
+sesión a mitad de tarea. Esa corrida concurrente contra el mismo
+servidor local también causó que se cayera a mitad de mi propia
+verificación de navegador (Parte D), generando errores de consola
+espurios que tuve que diagnosticar y descartar. Esa versión de
+`PROGRESS.md` se **reemplazó por esta**, tras verificar a mano los
+números que traía (2 de ellos estaban mal: decía "17 tablas" cuando son
+18, y "13 migraciones" cuando son 14) y confirmar que omitía un hallazgo
+real (las 4 funciones muertas de la Parte B, abajo). Ningún dato se
+perdió — el hallazgo real que sí encontró esa corrida (SASCHA FITNESS,
+Parte C) se verificó de nuevo por separado y se mantiene.
+
+### Parte A — ramas
+
+**Corrección de partida**: el PR #98 (Fase 47) que el pedido daba por
+abierto **ya estaba mergeado** desde el 2026-09-21T20:12:36Z — confirmado
+contra `gh pr list --state all` antes de asumir nada. Cero PRs abiertos
+al momento de esta fase.
+
+Ramas confirmadas mergeadas a `main` (`git branch --merged main` /
+`git branch -r --merged main`) y borradas, local y remoto (`git branch -d`,
+que se niega a borrar si no está realmente integrada — red de
+seguridad): `chore/fase49-verificacion-por-rol-2026-09-21`,
+`docs/fase44-calidad-codigo-y-documentacion-2026-09-21`,
+`feat/fase45-trafico-ajustes-y-valores-graficas-2026-09-21`,
+`feat/fase46-menu-lateral-desplegable-2026-09-21`,
+`feat/fase47-auditoria-cumplimiento-y-datalabels-2026-09-21` (PR #98),
+`feat/fase50-trafico-whatsapp-2026-09-21`,
+`feat/fase57-colores-por-cola-whatsapp-2026-09-22`,
+`fix/fase48-seguridad-y-bugs-fases45-47-2026-09-21`,
+`ops/fase56-carga-real-whatsapp-orlant-produccion-2026-09-22` — 9 locales
++ 9 remotas (las 6 ramas de las Fases 51-55 ya se habían borrado solas al
+mergear con `--delete-branch`, confirmado con `git fetch --prune`).
+
+**Hallazgo real, no registrado por el usuario**:
+`feature/apps-cierre-final-2026-09-11` (commit del 2026-09-11, "Apps:
+logo real, pulido nativo Android/escritorio, verificado en teléfono
+real" — 1 commit, 48 archivos, mayormente splash/iconos de Android
+(`mobile-app/android/...`) + cambios chicos en
+`public/css/styles.css`/`public/index.html`). Su PR (#6) está **cerrado
+sin mergear**. **No se tocó** (ni merge ni borrado) — queda pendiente de
+decisión del usuario, tal como pedía el alcance.
+
+**Estado final**: `main` + `feature/apps-cierre-final-2026-09-11` (sin
+tocar) son las únicas ramas que quedan, local y remoto.
+
+### Parte B — auditoría de código (investigación read-only, por sub-agente)
+
+**Seguridad**:
+- `npm audit` en `server/`: **0 vulnerabilidades**.
+- **`desktop-app/`: 14 vulnerabilidades (13 altas, 1 crítica)** —
+  cadena `electron`/`electron-builder`/`app-builder-lib`/
+  `builder-util-runtime`/`node-gyp`/`tar`, en `devDependencies`.
+  `electron` es el runtime real que ejecuta la app empaquetada — hallazgo
+  de seguridad genuino. Arreglarlo (`npm audit fix --force`) instala
+  `electron-builder@26.15.3`, cambio disruptivo. **No se tocó**, necesita
+  decisión explícita del usuario.
+- **`mobile-app/`: 2 vulnerabilidades (1 alta, 1 crítica)** — `tar` vía
+  `@capacitor/cli` (devDependency, tooling de build de Android, no queda
+  empaquetado en el APK). Mismo criterio: riesgo alto de arreglar
+  (`@capacitor/cli@8.5.2`, breaking cesar). **No se tocó**.
+- **Validación de inputs**: de 43 rutas POST/PUT/DELETE en
+  `server/routes/*.js`, 42 usan `validate(schemas.x)` (zod). La única
+  excepción (`DELETE /dashboards/config/:cliente`) no tiene body —solo un
+  param de URL en una consulta parametrizada, con guardia `isFullAdmin`—
+  verificado seguro, no es un hallazgo real.
+- **SQL**: sin concatenación de variables de usuario en ninguna consulta.
+  Único patrón con interpolación de nombre de tabla
+  (`server/scripts/seed-demo-lib/marks.js`) viene de una lista fija
+  hardcodeada, nunca de un request HTTP — script interno de seed, sin
+  ruta de usuario alcanzable.
+- **XSS**: cero `eval()`/`new Function`. Revisadas las asignaciones
+  `innerHTML=` con interpolación sospechosa — el caso de mayor riesgo
+  (vista previa de carga de Calidad) resultó ser falso positivo (el texto
+  libre sí se escapa con `esc()`, solo que en la línea anterior a donde
+  se arma el `innerHTML`). Sin hallazgos reales de XSS.
+- Confirmado explícitamente: nada de esta parte toca `.env`, ningún
+  archivo bajo `.github/workflows/`, ni configuración de secretos/CI/deploy.
+
+**Calidad de código**:
+- Cero TODOs/FIXMEs reales (los únicos matches de "TODO" son la palabra
+  española "todo/todos").
+- **4 funciones muertas confirmadas** (cero referencias en todo el
+  repo, incluidos `onclick=` de `index.html`) — **arregladas en esta
+  misma fase** (severidad cosmética, riesgo bajo, mismo criterio de
+  "arreglar sin esperar" del pedido): `logEvent` (`public/js/session.js`,
+  no confundir con la función homónima y sí usada de
+  `server/routes/shared.js`), `calGetMyMetaForMonth`
+  (`public/js/calidad.js`), `hFmtTime` (`public/js/charts.js`, duplicaba
+  lo que ya hace `gdFmtValor(v,'tiempo_mmss')`), `tableLoadingRow`
+  (`public/js/ui-core.js`). Verificado después de borrarlas: `npm test`
+  sigue en 300/300, y una pasada de Playwright por Historial/Metas
+  Calidad/una gráfica de `charts.js` (las pantallas más cercanas a cada
+  función borrada) sin errores de consola.
+- **Duplicación real pero intencional**: `trafico-logic.js` y
+  `trafico-whatsapp-logic.js` comparten lógica casi idéntica (parseo de
+  fecha serial de Excel, números con separador de miles, detección de
+  fila TOTAL) — decisión de diseño ya documentada en el propio código
+  (cada módulo se mantiene independiente para poder probarse aislado).
+  Riesgo de "corregir" extrayendo un helper compartido: alto (contradice
+  el diseño intencional) — no se tocó.
+- Patrón de manejo de errores y guardas de permiso
+  (`requireActor`/`isFullAdmin`/`canLoadData`) consistente en las rutas
+  revisadas.
+
+### Parte C — auditoría de base de datos (investigación read-only, por sub-agente)
+
+**Esquema vs. uso real**: las **18 tablas** de `server/db.js`
+(`users`, `historial`, `schema_migrations`, `calidad_plantillas`,
+`monitoreos`, `cronograma_metas`, `calidad_nivel_servicio`,
+`calidad_nivel_servicio_diario`, `trafico_whatsapp`,
+`trafico_skill_mapeo`, `dashboard_cargas`, `dashboards_config`,
+`inventario_items`, `inventario_movimientos`, `gerencia_kpis`,
+`gestion_humana_personal`, `seed_demo_marcas`, `umbrales_semaforo` —
+conteo verificado con `grep -c "CREATE TABLE IF NOT EXISTS"`) tienen uso
+real confirmado, ninguna tabla huérfana. Sin columna huérfana nueva más
+allá del caso ya documentado (`abandonPct` de
+`calidad_nivel_servicio_diario`, retirado del parseo en la Fase 45 a
+propósito, dato histórico conservado).
+
+**Migraciones**: **14** `runOnceMigration(...)` en `server/db.js`
+(conteo verificado con `grep -c`), todas siguen el mismo patrón (ledger
+en `schema_migrations` + chequeo interno propio de "¿ya aplicó esto?"
+antes de tocar datos) — revisadas varias representativas contra bugs de
+escritura o dependencia de orden frágil, ninguna encontrada.
+
+**Hallazgo real — mismo patrón que la Fase 54, en 2 clientes más, sin
+arreglar (necesita decisión del usuario)**:
+`server/dashboard-plantillas-cliente.js` (`plantillaAtencion`, línea
+~250) define una tarjeta KPI global `"Llamadas Entrada"` desde
+`U('llamadas_entrada')` (Gestión de base, carga manual) — y la misma
+plantilla, si `opts.calidad` es `true`, agrega ADEMÁS la pestaña real
+"Trafico de Llamadas" (datos automáticos de Wolkvox). **SASCHA FITNESS y
+BIVETT** usan esta plantilla con `calidad: true`. Verificado en vivo con
+Playwright (dos veces, por dos corridas separadas): SASCHA FITNESS
+muestra **"Llamadas Entrada" = 1.533** en la franja global mientras su
+propia pestaña Trafico de Llamadas muestra **"Total Llamadas" = 24.402**
+para el mismo período — una diferencia de ~16x, la misma clase de
+desincronización ya corregida para ORLANT (Fase 54). BIVETT tiene la
+misma estructura de código (no se verificaron sus números en vivo, la
+franja global no incluye ninguna carga manual llamativa distinta a
+Sascha). **No se tocó** — reportado para decisión del usuario, mismo
+criterio que la Fase 54. Ningún otro cliente (`plantillaVentas`/
+`plantillaCobranza`) tiene KPIs nombrados "Llamadas"/"WhatsApp" en su
+franja global (sus KPIs manuales usan nombres distintos — Gestionados/
+Contactados/Ventas/Recaudo — sin colisión de nombre con Tráfico).
+
+### Parte D — verificación amplia por navegador
+
+Con Playwright real (login, clics reales sobre los botones de pestaña —
+nunca `eval` del `onclick`), recorridos completos (todas las pestañas
+visibles) de 5 clientes: **ORLANT** (Cronograma, Nivel de Servicio,
+Tráfico/Wolkvox, Calidad, Tráfico de Llamadas, Tráfico de WhatsApp, y las
+de Gestión de base/Inventario/Gerencia visibles en el menú), **CLINICA
+AURORA** (incluye sus propias Llamadas Entrada/WhatsApp Entrada/Agendas/
+Tipificación/Salida), **HOSPITAL LA MARIA** (Llamadas y WhatsApp/
+Agendamiento/Tipificación/Demanda Insatisfecha/Entidades), **ANDRES
+YEPES** (plantilla de Ventas + Calidad/Tráfico), y **BIVETT** (plantilla
+de Atención + Calidad/Tráfico) — más el modal "Cargar Datos de
+Dashboards" (Gestión de base) verificado aparte. Claro/oscuro y
+escritorio/móvil en cada cliente.
+
+**Hallazgo descartado tras investigar**: la corrida inicial mostró 5
+errores de consola (`ERR_CONNECTION_REFUSED`) cada uno en ANDRES YEPES y
+BIVETT — investigado antes de reportarlo como bug real: el servidor
+local se había caído a mitad de esa corrida por la interferencia del
+sub-agente de la Parte C corriendo su propio Playwright concurrente
+contra el mismo servidor (ver nota de transparencia arriba). Repetida la
+verificación de ambos clientes con el servidor limpio y sin contención:
+**cero errores, en ambos**. **Resultado final: cero errores de consola
+reales en todo el recorrido**, sin datos incorrectos visibles (`NaN`/
+`undefined`/`[object Object]`, chequeado por texto en cada pestaña de
+cada cliente). Todo lo cerrado en las Fases 45-57 sigue funcionando igual
+— fotografía de salud general, no re-verificación fase por fase.
+Capturas en `docs/capturas-demo/fase58-unificacion-y-auditoria-completa/`.
+
+### Lista consolidada de hallazgos
+
+| # | Hallazgo | Severidad | Riesgo | Acción |
+|---|---|---|---|---|
+| 1 | 4 funciones muertas en `public/js/` | Cosmético | Bajo | **Arreglado** en esta fase |
+| 2 | 14 vulnerabilidades npm en `desktop-app` (incl. `electron`) | Seguridad | Alto (breaking) | Reportado, sin tocar |
+| 3 | 2 vulnerabilidades npm en `mobile-app` (`@capacitor/cli`→`tar`) | Seguridad | Alto (breaking) | Reportado, sin tocar |
+| 4 | SASCHA FITNESS/BIVETT: KPI manual "Llamadas Entrada" desincronizado del real (mismo patrón Fase 54) | Riesgo de datos | Necesita decisión de diseño | Reportado, sin tocar |
+| 5 | Duplicación intencional `trafico-logic.js`/`trafico-whatsapp-logic.js` | Cosmético | Alto si se "corrige" (diseño deliberado) | Sin tocar, no es hallazgo accionable |
+| 6 | Interpolación de nombre de tabla en script interno de seed (no alcanzable por usuario) | Cosmético | Bajo pero toca lógica de limpieza | Sin tocar por prudencia |
+
+### Veredicto final
+
+**El repo está limpio y unificado en `main`** — cero ramas con trabajo
+sin mergear salvo `feature/apps-cierre-final-2026-09-11`, dejada
+intencionalmente sin tocar a la espera de tu decisión. **El sistema
+funciona correctamente de punta a punta** en la verificación amplia por
+navegador — cero errores de consola reales, cero regresiones, `npm test`
+300/300 y `npm audit` (server) 0 vulnerabilidades antes y después.
+
+**No está "100% sin nada que reportar"**: quedan 3 hallazgos reales que
+requieren tu decisión antes de tocarse (#2, #3, #4 de la tabla de
+arriba) — ninguno de seguridad inmediata explotable por un usuario real
+(las vulnerabilidades npm son de *tooling* de build, no de runtime
+servido a usuarios; el hallazgo de datos es una confusión visual, no una
+pérdida ni corrupción de datos). El único hallazgo de bajo riesgo
+encontrado (las 4 funciones muertas) ya se arregló en esta misma fase.
+
+**Verificación**: `npm test` 300/300 y `npm audit` (server) 0
+vulnerabilidades, antes y después. Capturas Playwright completas de la
+Parte D en `docs/capturas-demo/fase58-unificacion-y-auditoria-completa/`.
+

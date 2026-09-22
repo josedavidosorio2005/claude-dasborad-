@@ -124,11 +124,6 @@ function calGetCronogramaForLider(camp, monthKey, liderId){
     .sort(function(a,b){ return b.mes.localeCompare(a.mes); });
   return rows[0] || null;
 }
-function calGetMyMetaForMonth(camp, monthKey){
-  if(!currentUser) return null;
-  var row = calGetCronogramaForLider(camp, monthKey, currentUser.id);
-  return row ? row.metaGrupal : null;
-}
 // Valores derivados de una meta grupal — SOLO para la vista previa del formulario
 // de Admin (metas.js). Al guardar, el servidor recalcula y devuelve estos campos.
 function calBuildCronogramaRow(liderId, liderNombre, metaGrupal, asesores, diasLaborales, whatsapp, pctWhatsapp){
