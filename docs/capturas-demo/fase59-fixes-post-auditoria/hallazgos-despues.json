@@ -1,0 +1,83 @@
+{
+  "state": "despues",
+  "clientes": {
+    "SASCHA FITNESS": {
+      "kpisGlobales": [
+        {
+          "valor": "934",
+          "etiqueta": "WhatsApp Entrada"
+        },
+        {
+          "valor": "3:25",
+          "etiqueta": "AHT Promedio"
+        },
+        {
+          "valor": "740",
+          "etiqueta": "Pedidos"
+        }
+      ],
+      "traficoResumen": [
+        {
+          "etiqueta": "Total Llamadas",
+          "valor": "24.402"
+        },
+        {
+          "etiqueta": "Llamadas Contestadas",
+          "valor": "23.257"
+        },
+        {
+          "etiqueta": "Llamadas Abandonadas",
+          "valor": "—"
+        },
+        {
+          "etiqueta": "Nivel de Atencion",
+          "valor": "95.3%"
+        },
+        {
+          "etiqueta": "Tasa de Abandono",
+          "valor": "—"
+        }
+      ]
+    },
+    "BIVETT": {
+      "kpisGlobales": [
+        {
+          "valor": "789",
+          "etiqueta": "WhatsApp Entrada"
+        },
+        {
+          "valor": "2:42",
+          "etiqueta": "AHT Promedio"
+        },
+        {
+          "valor": "442",
+          "etiqueta": "Agendas"
+        }
+      ],
+      "traficoResumen": [
+        {
+          "etiqueta": "Total Llamadas",
+          "valor": "24.570"
+        },
+        {
+          "etiqueta": "Llamadas Contestadas",
+          "valor": "23.407"
+        },
+        {
+          "etiqueta": "Llamadas Abandonadas",
+          "valor": "—"
+        },
+        {
+          "etiqueta": "Nivel de Atencion",
+          "valor": "95.3%"
+        },
+        {
+          "etiqueta": "Tasa de Abandono",
+          "valor": "—"
+        }
+      ]
+    }
+  },
+  "consoleErrores": [],
+  "ok": true
+}

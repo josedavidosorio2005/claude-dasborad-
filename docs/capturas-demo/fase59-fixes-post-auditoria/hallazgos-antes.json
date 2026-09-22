@@ -1,0 +1,107 @@
+{
+  "state": "antes",
+  "clientes": {
+    "SASCHA FITNESS": {
+      "kpisGlobales": [
+        {
+          "valor": "1.533",
+          "etiqueta": "Llamadas Entrada"
+        },
+        {
+          "valor": "934",
+          "etiqueta": "WhatsApp Entrada"
+        },
+        {
+          "valor": "88.20%",
+          "etiqueta": "Nivel de Atencion"
+        },
+        {
+          "valor": "163",
+          "etiqueta": "Abandonos"
+        },
+        {
+          "valor": "3:25",
+          "etiqueta": "AHT Promedio"
+        },
+        {
+          "valor": "740",
+          "etiqueta": "Pedidos"
+        }
+      ],
+      "traficoResumen": [
+        {
+          "etiqueta": "Total Llamadas",
+          "valor": "24.402"
+        },
+        {
+          "etiqueta": "Llamadas Contestadas",
+          "valor": "23.257"
+        },
+        {
+          "etiqueta": "Llamadas Abandonadas",
+          "valor": "—"
+        },
+        {
+          "etiqueta": "Nivel de Atencion",
+          "valor": "95.3%"
+        },
+        {
+          "etiqueta": "Tasa de Abandono",
+          "valor": "—"
+        }
+      ]
+    },
+    "BIVETT": {
+      "kpisGlobales": [
+        {
+          "valor": "1.423",
+          "etiqueta": "Llamadas Entrada"
+        },
+        {
+          "valor": "789",
+          "etiqueta": "WhatsApp Entrada"
+        },
+        {
+          "valor": "89.50%",
+          "etiqueta": "Nivel de Atencion"
+        },
+        {
+          "valor": "149",
+          "etiqueta": "Abandonos"
+        },
+        {
+          "valor": "2:42",
+          "etiqueta": "AHT Promedio"
+        },
+        {
+          "valor": "442",
+          "etiqueta": "Agendas"
+        }
+      ],
+      "traficoResumen": [
+        {
+          "etiqueta": "Total Llamadas",
+          "valor": "24.570"
+        },
+        {
+          "etiqueta": "Llamadas Contestadas",
+          "valor": "23.407"
+        },
+        {
+          "etiqueta": "Llamadas Abandonadas",
+          "valor": "—"
+        },
+        {
+          "etiqueta": "Nivel de Atencion",
+          "valor": "95.3%"
+        },
+        {
+          "etiqueta": "Tasa de Abandono",
+          "valor": "—"
+        }
+      ]
+    }
+  },
+  "consoleErrores": [],
+  "ok": true
+}

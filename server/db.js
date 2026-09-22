@@ -1111,6 +1111,45 @@ runOnceMigration('dashboards_config_orlant_kpis_whatsapp_duplicados_v1', () => {
   }
 });
 
+// Quita de la franja global de KPIs de SASCHA FITNESS y BIVETT ('Llamadas
+// Entrada'/'Nivel de Atencion'/'Abandonos') las 3 tarjetas que duplican
+// EXACTO lo que ya muestra su pestaña real de Trafico de Llamadas -- Fase
+// 59, mismo criterio que la Fase 45 aplicó a CLINICA AURORA/HOSPITAL LA
+// MARIA (`dashboards_config_trafico_kpis_duplicados_v1`, que no puede
+// reusarse aquí porque ya corrió en producción) y que la Fase 54 aplicó a
+// ORLANT para WhatsApp. Confirmado antes de esta migración que 'WhatsApp
+// Entrada' NO se toca: ninguno de los dos clientes tiene módulo automático
+// de Trafico de WhatsApp, así que esa tarjeta sigue siendo su única fuente
+// real (mismo motivo por el que la Fase 45 tampoco tocó el 'WhatsApp
+// Entrada' de CLINICA AURORA).
+runOnceMigration('dashboards_config_sascha_bivett_kpis_duplicados_v1', () => {
+  const TITULOS_A_QUITAR = ['Llamadas Entrada', 'Nivel de Atencion', 'Abandonos'];
+  const CLIENTES = ['SASCHA FITNESS', 'BIVETT'];
+  let dashboardsTocados = 0;
+  for (const cliente of CLIENTES) {
+    const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get(cliente);
+    if (!row) continue; // no existe todavia -> el seed ya la crea sin estas 3 tarjetas
+    let layout;
+    try {
+      layout = JSON.parse(row.layout);
+    } catch (e) {
+      continue;
+    }
+    const antes = (layout.kpis || []).length;
+    layout.kpis = (layout.kpis || []).filter((k) => TITULOS_A_QUITAR.indexOf(k && k.titulo) === -1);
+    if (layout.kpis.length === antes) continue; // ya tiene la forma nueva (o un admin ya las quito) -- nada que hacer
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      cliente
+    );
+    dashboardsTocados++;
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_sascha_bivett_kpis_duplicados_v1 aplicada (${dashboardsTocados} dashboard(s)).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

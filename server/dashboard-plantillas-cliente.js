@@ -245,15 +245,26 @@ function plantillaAtencion(cliente, titulo, opts) {
       columnas: [col('tipificacion', 'Tipificacion', 'texto'), col('cantidad', 'Cantidad')],
     },
   };
+  // 'Llamadas Entrada'/'Nivel de Atencion'/'Abandonos' (carga manual de
+  // Gestion de base) duplican EXACTO lo que ya muestra la pestaña real de
+  // Trafico de Llamadas ('Total Llamadas'/'Nivel de Atencion'/'Llamadas
+  // Abandonadas', trafico.js) cuando esa pestaña existe -- mismo criterio
+  // ya aplicado a CLINICA AURORA en la Fase 45 (dashboards_config_trafico_
+  // kpis_duplicados_v1) y confirmado de nuevo para SASCHA FITNESS/BIVETT en
+  // la Fase 59. Se mantienen 'WhatsApp Entrada' (sin modulo automatico de
+  // WhatsApp para estos clientes, es su unica fuente real) y la de salida
+  // (Pedidos/Agendas, tampoco tiene equivalente automatico).
+  const kpisBase = [
+    kpi('Llamadas Entrada', U('llamadas_entrada'), 'miles'),
+    kpi('WhatsApp Entrada', U('wpp_entrada'), 'miles'),
+    kpi('Nivel de Atencion', U('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
+    kpi('Abandonos', U('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
+    kpi('AHT Promedio', U('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
+    kpi(etiquetaSalida, U(campoSalida), 'miles', { cls: 'kpi-green', meta: U('meta_' + campoSalida) }),
+  ];
+  const DUPLICADOS_CON_TRAFICO = ['Llamadas Entrada', 'Nivel de Atencion', 'Abandonos'];
   const layout = {
-    kpis: [
-      kpi('Llamadas Entrada', U('llamadas_entrada'), 'miles'),
-      kpi('WhatsApp Entrada', U('wpp_entrada'), 'miles'),
-      kpi('Nivel de Atencion', U('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
-      kpi('Abandonos', U('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
-      kpi('AHT Promedio', U('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
-      kpi(etiquetaSalida, U(campoSalida), 'miles', { cls: 'kpi-green', meta: U('meta_' + campoSalida) }),
-    ],
+    kpis: opts.calidad ? kpisBase.filter((k) => DUPLICADOS_CON_TRAFICO.indexOf(k.titulo) === -1) : kpisBase,
     tabs: [
       { key: 'flujo', label: 'Flujo diario', panels: [
         lineDia('Llamadas por dia', 'diario', 'llamadas'),
