@@ -3664,3 +3664,62 @@ hallazgos que reportar, cero cambios de código en esta fase.
 sub-pestañas × claro/oscuro × escritorio/móvil, más la franja global de
 ORLANT y CLINICA AURORA) en
 `docs/capturas-demo/fase55-verificacion-final-consolidada/`.
+
+## Fase 56 — Carga real de Trafico de WhatsApp en producción (en curso, 2026-09-22)
+
+Pedido: dejar los datos reales de Trafico de WhatsApp de ORLANT (5 colas,
+agosto 2026 — ya verificados de punta a punta en las Fases 50-55) cargados
+de verdad en producción, no solo en el entorno de verificación usado hasta
+ahora a propósito.
+
+**Bloqueo real encontrado antes de tocar nada**: no hay ninguna
+credencial de administrador válida en producción (confirmado desde la
+Fase 30) — ni para el Paso 1 (leer `trafico_whatsapp` real) ni para el
+Paso 2 (subir el archivo). Los workflows `verificar-*-produccion.yml` que
+ya existen resuelven esto creando un usuario ADMIN temporal directo en la
+base de datos (SSH + secretos de despliegue), pero todos son de solo
+lectura — ninguno sube datos. Presentadas 3 opciones al usuario
+(credenciales del admin maestro por chat como en la Fase 36, un workflow
+nuevo de carga real, o que el propio usuario haga la carga y yo solo
+verifique): **eligió el workflow nuevo**.
+
+**Construido, mismo patrón exacto que los workflows existentes**
+(`carga-real-trafico-whatsapp-orlant-produccion.yml` +
+`carga-real-trafico-whatsapp-orlant-produccion.js`, disparo manual
+únicamente): usuario ADMIN temporal creado/borrado directo en la base de
+datos (nunca vía API, para no dejar rastro falso en el historial de
+auditoría), apertura temporal del puerto 22 solo para la IP del runner —
+mismo mecanismo que `verificar-graficas-orlant-produccion.yml`/
+`qa-datos-prueba-trafico-salida-orlant.yml`. A diferencia de ese último,
+esta carga es de datos **reales** (no de prueba): no hay paso de borrado
+de lo cargado, solo el usuario temporal se borra siempre.
+
+El script: (1) lee el estado actual de `trafico_whatsapp` para ORLANT vía
+`GET /calidad/trafico/whatsapp?campana=ORLANT` y lo compara campo por
+campo contra los 5×10 valores de referencia ya verificados (Fases 51/55)
+— si ya coincide exacto, **no sube nada** (evita una escritura
+innecesaria); (2) si hace falta, sube
+`server/tests/fixtures/PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx` (misma
+hoja DATA que `PLANTILLA_TRAFICO_WHATSAPP_ORLANT.xlsx`, ya verificada
+byte-idéntica en las Fases 51/53/55) por el modal real "Cargar Datos de
+Dashboards", confirma el mensaje de éxito; (3) relee, confirma que ahora
+coincide exacto, y verifica en pantalla la pestaña "Tráfico de WhatsApp"
+y que la franja global de ORLANT siga con sus 9 tarjetas (sin las 4 de
+WhatsApp retiradas en la Fase 54).
+
+**Probado primero contra el entorno local (nunca directo en
+producción)**: corrido dos veces con el mismo script real que usará el
+workflow — una vez con `trafico_whatsapp` vacío (confirma que sube y
+verifica correctamente, `ok:true`) y otra con los datos ya cargados
+(confirma que detecta el "ya coincide, no subas nada" y no repite la
+escritura, `ok:true`). `npm test` 300/300 y `npm audit` 0 vulnerabilidades
+(sin cambios de código de la app — solo el workflow/script nuevos).
+
+**Pendiente, a propósito, de decisión del usuario**: este PR agrega un
+workflow de CI con acceso a secretos de despliegue — por la disciplina ya
+establecida en este proyecto (y por el clasificador de seguridad del
+harness), queda sujeto a revisión humana antes de mergear; no se
+auto-aprueba. Una vez mergeado, falta disparar el workflow
+(`workflow_dispatch`) para que la carga real ocurra de verdad en
+producción — se documentará el resultado (Pasos 1-3, capturas) en una
+actualización de esta misma fase.
