@@ -3464,3 +3464,60 @@ Sin cambios de esquema de base de datos ni de endpoints existentes —
 cambio acotado a la capa de clasificación/enrutamiento del modal
 genérico. No se toca producción (el fix vive en esta rama/PR hasta que
 se mergee y despliegue).
+
+## Fase 53 — Subida manual guiada del archivo real de WhatsApp por la web (2026-09-22)
+
+Pedido: el usuario subió el archivo real por su cuenta contra la web (tras
+la Fase 52) y le generaron dudas las filas en rojo de la vista previa —
+quería verlo funcionar de nuevo en vivo, paso a paso, con explicación
+simple de cada cosa antes de cerrar el tema del todo. Verificación pura,
+contra un entorno de verificación local (nunca producción), con
+Playwright real: login → `openCargas()` → cliente ORLANT → subir el
+archivo real (`PLANTILLA_TRAFICO_WHATSAPP_ORLANT.xlsx`, las 5 colas de
+agosto de siempre).
+
+**Las 5 filas rojas — confirmado con evidencia de código, no solo
+observación.** La vista previa mostró exactamente las 6 filas que
+describió el usuario: 5 en rojo (Resumen mensual, Llamadas y WhatsApp de
+salida, Tipificación, Gestión STA, Calidad — Monitoreos) y 1 en verde
+("Trafico (Llamadas o WhatsApp)" — "OK — 5 fila(s)"). Las rojas son el
+mensaje *"No se encontro la hoja '...' en tu archivo"* — esperado y
+correcto, porque el archivo de WhatsApp solo trae 2 hojas
+(INSTRUCCIONES + DATA), nunca las de Gestión de base/Calidad. Confirmado
+en el código (`public/js/cargas.js`) que esto NO bloquea nada:
+`guardarCarga()` arma `conDatos = _cargasResultados.filter(r => r.filas)`
+— las filas con error no tienen `.filas` (solo `.error`), así que quedan
+automáticamente excluidas del guardado; el botón "Guardar carga" no tiene
+ningún atributo `disabled` ni lógica condicional (confirmado con
+`botonGuardarDisabled: false` leído en vivo del DOM). Es decir: las 5
+rojas son solo un aviso informativo de "esta hoja no aplica hoy", sin
+ningún efecto sobre la fila verde.
+
+**Guardar funcionó igual que en la Fase 52.** Clic real en "Guardar
+carga" → toast *"✓ Trafico (Llamadas o WhatsApp): 5 fila(s) guardadas (5
+cola(s))"*. Confirmado en la pestaña "Tráfico de WhatsApp" del dashboard
+de ORLANT: mismos 5 KPIs de siempre (Total 7.305, Contestados 7.109,
+Abandonados 196, Nivel de Atención 97.32%, Tasa de Abandono 2.68%).
+
+**Subida duplicada del mismo archivo (pregunta real del usuario sobre
+meses futuros) — información, no un bug.** Se repitió la misma subida
+completa una segunda vez: mismo toast de éxito, sin dialogo de
+confirmación, sin error. Verificado directo en `trafico_whatsapp`: siguen
+siendo exactamente 5 filas (no 10) — la segunda carga actualizó las
+mismas 5 filas en su lugar (upsert por
+`UNIQUE(campana, colaWhatsapp, fechaInicio, fechaFin)`, decisión ya
+documentada desde la Fase 50). Diferencia notada frente a Tráfico de
+voz: `_cargasGuardarTrafico` sí muestra un `confirm()` de "esto va a
+reemplazar N registros existentes, ¿continuar?" antes de sobrescribir
+(`cargas.js`), mientras que `_cargasGuardarTraficoWhatsapp` sobrescribe
+directo sin ese aviso — comportamiento consistente con el diseño
+original de la Fase 50 (mismo criterio "clásico" que Gestión de base, sin
+mapeo intermedio), no un bug nuevo de esta fase. Se deja anotado como
+posible mejora de UX a futuro (agregar el mismo `confirm()` a WhatsApp),
+sin tocarlo ahora porque no se pidió y no es un error funcional.
+
+**Sin hallazgos que reportar como bug.** Cero cambios de código en esta
+fase — verificación pura. Capturas Playwright completas (selección de
+archivo, vista previa con las 6 filas, confirmación de éxito, pestaña con
+los datos, y la segunda subida) en
+`docs/capturas-demo/fase53-subida-manual-web-whatsapp/`.
