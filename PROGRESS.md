@@ -4372,3 +4372,107 @@ vulnerabilidades — sin cambios de código en esta fase, solo esta entrada
 de `PROGRESS.md` (investigación pura). **El Paso 2 (capturas Playwright)
 queda pendiente**, ver arriba.
 
+## Fase 63 — Unificación del tipo de pestañas/gráficas de ORLANT (Calidad, Tráfico de Llamadas, Tráfico de WhatsApp) en el resto de plantillas (2026-09-23)
+
+Pedido: confirmar que el estilo visual y el tipo de gráfica de las 3
+pestañas de ORLANT (Calidad / Tráfico de Llamadas / Tráfico de WhatsApp)
+ya están unificados en el resto de plantillas que aplican, y arreglar solo
+lo que sea claramente de bajo riesgo. Alcance acordado con el pedido: los
+9 clientes que ya manejan Calidad + Tráfico de Llamadas hoy (CLINICA
+AURORA, HOSPITAL LA MARIA, TELEVENTAS SURA, TELEVENTAS COMFAMA, ANDRES
+YEPES, MOVILIZE, INFONDO, SASCHA FITNESS, BIVETT) — quedan fuera PANTERA
+MAIKERS y ALBERTO LINERO GO (plantilla de Ventas sin Calidad ni Tráfico,
+por decisión de negocio ya reportada en la Fase 61, no se les agregó nada
+sin pedido explícito).
+
+**Esta vez sí se resolvió el acceso al navegador** (a diferencia de la
+Fase 61): en vez de la extensión `claude-in-chrome` (bloqueada contra
+localhost y sin compartir la sesión del usuario), se usó Playwright
+directo desde Node (`chromium.launch()`, mismo patrón ya usado en
+`.github/scripts/capturas-tema-oscuro.js` de fases anteriores) contra el
+servidor de desarrollo local, con el usuario `demo_admin` (rol ADMIN,
+acceso a todas las campañas). Script nuevo:
+`.github/scripts/verificar-fase63-unificacion-graficas.js`.
+
+### Paso 1 — resultado de la comparación
+
+Para cada cliente se extrajo, por código (no a ojo), la "huella" real de
+cada panel: tipo y composición del gráfico (`chart.data.datasets` — bar/
+bar/line para Tráfico, doughnut para Calidad), sus labels, sus colores,
+las 3 tarjetas de KPI de Calidad, el filtro de Asesor+fechas, el
+desplegable "Skill" (Fase 60) y el comparador colapsable. Comparado contra
+la misma huella de ORLANT:
+
+| Cliente | Calidad vs ORLANT | Tráfico de Llamadas vs ORLANT |
+|---|---|---|
+| CLINICA AURORA | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| HOSPITAL LA MARIA | **No aplica** — sin pestaña de Calidad (sin plantilla de evaluación configurada, mismo hallazgo ya reportado en la Fase 61 — no es un bug de esta fase) | **Mismo componente compartido**, pero sin datos cargados localmente (0 filas en `calidad_nivel_servicio_diario` para esta campaña) — el panel muestra correctamente el estado vacío ("Sin datos cargados para este periodo") en vez del dropdown/gráfica, que es el comportamiento normal del MISMO código cuando no hay datos, no una diferencia de estilo |
+| TELEVENTAS SURA | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| TELEVENTAS COMFAMA | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| ANDRES YEPES | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| MOVILIZE | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| INFONDO | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| SASCHA FITNESS | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+| BIVETT | **Idéntico** (0 diferencias) | **Idéntico** (0 diferencias) |
+
+**Los 8 clientes comparables (todos salvo Hospital La María, que no tiene
+plantilla de Calidad) están 100% unificados con ORLANT**, sin ninguna
+diferencia real: mismo tipo de gráfica dona con las mismas 3 categorías
+(Sobresaliente/No Crítico/Crítico) en los mismos colores
+(`#27ae60`/`#e67e22`/`#e74c3c`), mismas 3 tarjetas de KPI de Calidad
+(Monitoreos Realizados / Puntaje Promedio de Calidad / Clasificación
+General), mismo filtro de Asesor+fechas, mismo gráfico combo (2 barras +
+1 línea, "Total Llamadas"/"Llamadas Contestadas"/"Nivel de Atencion") en
+Tráfico de Llamadas, con el mismo desplegable "Skill" con "Todas las
+líneas" (Fase 60) y el mismo comparador colapsable. Confirmado por código
+además de por Playwright: `_gdRenderCalidad` (`dashboard-generic.js`) y
+`_traficoRenderPanel` (`trafico.js`) son funciones ÚNICAS parametrizadas
+por `campana`, sin ninguna rama condicional por cliente — no podrían
+divergir visualmente aunque quisieran, y los 7 clientes de
+`dashboard-plantillas-cliente.js` ni siquiera tienen config propia: las
+pestañas de Calidad/Tráfico las emite la MISMA función compartida
+(`tabsCalidadYTrafico`), literal, para los 7.
+
+**No se encontró ninguna inconsistencia real que arreglar** — por eso el
+Paso 2 (arreglar lo de bajo riesgo) no tuvo nada que hacer. El único caso
+"distinto" (HOSPITAL LA MARIA sin pestaña de Calidad) es un hueco de datos
+de negocio ya documentado (Fase 61: sin plantilla de evaluación
+configurada para ese cliente), no una inconsistencia de código o estilo —
+no se tocó.
+
+### Confirmación — Tráfico de WhatsApp sigue siendo el mismo componente compartido
+
+Sin cambios desde la Fase 61 (ningún PR entre medio tocó
+`trafico-whatsapp.js`/`trafico-whatsapp-logic.js`/`trafico-whatsapp.js`
+del frontend): el panel `trafico_whatsapp_combo` sigue siendo 100%
+genérico por `campana`, con los colores por cola de la Fase 57 asignados
+por índice sobre la paleta compartida (`PC`/`PC_DARK`), sin ningún nombre
+de cliente ni de cola hardcodeado. El día que CLINICA AURORA, HOSPITAL LA
+MARIA, SASCHA FITNESS o BIVETT consigan su plantilla real de WhatsApp
+(Fase 61, caso A), activar su pestaña se verá automáticamente igual que
+ORLANT sin ningún trabajo adicional de estilo — no se activó la pestaña
+para ningún cliente nuevo ni se cargó ningún dato de WhatsApp, tal como
+pedía el alcance.
+
+### Qué NO se hizo (por diseño del pedido)
+
+No se agregó Calidad ni Tráfico de Llamadas a PANTERA MAIKERS ni ALBERTO
+LINERO GO (plantilla de Ventas, fuera del alcance de esta fase — el
+usuario puede reconsiderarlo si quiere que se les agregue). No se activó
+ninguna pestaña de Tráfico de WhatsApp nueva. No se cargó ni inventó
+ningún dato de cliente.
+
+### Verificación
+
+Playwright directo desde Node (`chromium.launch()`, no la extensión de
+Chrome) contra el servidor de desarrollo local, usuario `demo_admin`.
+Capturas claro/oscuro, escritorio/móvil de 3 clientes representativos
+(CLINICA AURORA, SASCHA FITNESS, TELEVENTAS SURA) comparadas visualmente
+contra el estilo ya conocido de ORLANT — confirman lo mismo que la
+comparación por código: mismo diseño, misma paleta, mismos tipos de
+gráfica. Capturas en
+`docs/capturas-demo/fase63-unificacion-graficas-plantillas/`. `npm test`
+(server) 305/305 y `npm audit` (server) 0 vulnerabilidades, antes y
+después (sin cambios de código de producto en esta fase — solo el script
+de verificación en `.github/scripts/` y esta entrada de `PROGRESS.md`).
+
