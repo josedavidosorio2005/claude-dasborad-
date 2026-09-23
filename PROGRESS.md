@@ -4201,3 +4201,174 @@ Capturas claro/oscuro y escritorio/móvil en
 de detalle (Abandono, AHT, etc.) verificadas sin cambios. Cero errores de
 consola en todo el flujo.
 
+## Fase 61 — Investigación: qué de lo hecho para ORLANT se puede extender al resto de clientes (2026-09-23)
+
+Pedido: fase de investigación y verificación (explícitamente no de
+construcción a ciegas) para saber qué del módulo de Tráfico de WhatsApp
+(Fases 50-57) y del desplegable "Todas las líneas" de Tráfico de Llamadas
+(Fase 60) — ambos cerrados solo para ORLANT — se puede extender al resto
+de clientes, sin inventar ni simular datos de ningún cliente.
+
+### Paso 1 — lista real de clientes
+
+Sacada de `server/db.js` (`CLIENTES_LIST`) + `dashboard-config-seed.js` +
+`dashboard-plantillas-cliente.js` — **12 clientes con dashboard propio**:
+
+| Cliente | Plantilla | Trafico de Llamadas | Trafico de WhatsApp |
+|---|---|---|---|
+| ORLANT | propia | Sí | Sí (única, Fase 50-57) |
+| CLINICA AURORA | propia | Sí | No |
+| HOSPITAL LA MARIA | propia | Sí (sin `campana`, filtra por sede) | No |
+| TELEVENTAS SURA | Ventas | Sí | No |
+| TELEVENTAS COMFAMA | Ventas | Sí | No |
+| PANTERA MAIKERS | Ventas | **No** (`calidad:false`) | No |
+| ANDRES YEPES | Ventas | Sí | No |
+| MOVILIZE | Ventas | Sí | No |
+| ALBERTO LINERO GO | Ventas | **No** (`calidad:false`) | No |
+| INFONDO | Cobranza | Sí | No |
+| SASCHA FITNESS | Atención | Sí | No |
+| BIVETT | Atención | Sí | No |
+
+Más **2 campañas de Calidad sin dashboard de cliente** (`CAMPANAS_CALIDAD`
+en `db.js`/`constants.js`, sin fila en `CLIENTES_LIST`): `CARTERA INTERNA`
+(sí tiene plantilla de Calidad) y `CONSULTORIO JULIAN MOLANO` (ni
+siquiera tiene plantilla de Calidad todavía — comentario propio del código
+en `calidad.js`: "no tienen a donde más ir"). Ninguna de las dos aplica a
+Tráfico de Llamadas ni de WhatsApp — no tienen dashboard.
+
+De los 12 clientes con dashboard, **10 tienen pestaña real de Tráfico de
+Llamadas** (todos salvo PANTERA MAIKERS y ALBERTO LINERO GO, que usan
+`plantillaVentas` con `calidad:false` y por eso no reciben ni Calidad ni
+Tráfico — `tabsCalidadYTrafico` solo se agrega cuando `opts.calidad` es
+`true`, `dashboard-plantillas-cliente.js` línea 125).
+
+### Paso 2 — verificación del desplegable "Todas las líneas" (Fase 60) — **BLOQUEADO por el entorno, no se pudo completar con Playwright**
+
+**Intentado, no logrado**: el navegador que controla la extensión
+`claude-in-chrome` no pudo llegar a `localhost:3000` (3 intentos —
+`http://localhost:3000/`, `http://127.0.0.1:3000/`, sin protocolo —
+ninguno generó una sola petición en el log del servidor local, mientras
+que navegar a `https://example.com` sí funcionó de inmediato: confirma que
+es un bloqueo de red/política de la extensión contra direcciones de
+loopback, no un problema transitorio del servidor). Redirigido a
+producción real (`https://inconexionpruebasclaude.duckdns.org`) por
+decisión del usuario, pero **tampoco se pudo autenticar**: por regla de
+seguridad de esta sesión no se puede escribir ni enviar una contraseña en
+un formulario de login (ni siquiera autocompletada por el navegador), y el
+navegador de la extensión resultó ser un perfil/contexto separado del
+Chrome/Brave "normal" del usuario — el usuario inició sesión varias veces
+en su navegador real, pero la pestaña controlada por la extensión seguía
+mostrando el login sin autenticar (4 intentos, distintos `tabGroupId` cada
+vez). Se decidió, con el usuario, entregar este reporte sin el Paso 2 en
+vez de seguir insistiendo — **queda pendiente** para una sesión donde se
+resuelva el acceso del navegador (túnel al server local, u otra vía de
+autenticación a producción).
+
+**Lo que sí se confirmó por código** (sin navegador): el filtro "Skill"
+(`_traficoRenderPanel`, `public/js/trafico.js`) es 100% genérico por
+campaña — las opciones salen de `GET /calidad/nivel-servicio/diario?campana=...`
+(nombres reales `skillName`, sin lista fija), sin ninguna rama de código
+específica de ORLANT. La consulta a la base de datos local de desarrollo
+(`server/data/inconexion.db`, datos de seed/demo, **no producción**) mostró
+que hoy cada una de las 9 campañas con Calidad sembrada localmente
+(ANDRES YEPES, BIVETT, CLINICA AURORA, INFONDO, MOVILIZE, ORLANT, SASCHA
+FITNESS, TELEVENTAS COMFAMA, TELEVENTAS SURA) tiene exactamente **1** skill
+(`"<CLIENTE> - INBOUND"`, patrón de seed genérico) — no representa el
+número real de líneas que cada cliente tenga en producción, solo confirma
+que el mecanismo no rompe con 1 sola opción. **No se puede afirmar con
+certeza que el desplegable se vea bien en producción real para el resto de
+clientes sin la verificación visual pendiente** — la conclusión de "código
+genérico" es necesaria pero no suficiente (Fase 60 misma advirtió que la
+multi-selección se usa de verdad en 2 lugares reales; un cliente con un
+caso raro de datos —p.ej. una sola skill real, o nombres de skill con
+caracteres especiales— podría comportarse distinto y no se descartó).
+
+### Paso 3 — qué haría falta para extender Tráfico de WhatsApp al resto de clientes
+
+**Hallazgo principal: no hay ningún cliente en caso (B).** Se revisó todo
+el código del módulo (`server/trafico-whatsapp.js`,
+`server/routes/trafico-whatsapp.js`, `public/js/trafico-whatsapp-logic.js`,
+`public/js/trafico-whatsapp.js`, el despacho genérico en
+`dashboard-generic.js`, `cargasDetectarCanalTrafico`/`cargasPlanConsolidado`
+en `cargas-logic.js`, y el esquema `trafico_whatsapp` en `db.js`) y **no
+se encontró ningún nombre de cliente, cola, ni valor hardcodeado de
+ORLANT en ninguna rama de lógica**:
+- `campana` viaja como parámetro explícito en cada capa (frontend → POST
+  `/calidad/trafico/whatsapp/carga` → `cargarTraficoWhatsapp`), nunca fijo.
+- El selector de campaña del admin (`tww-campana-sel`,
+  `public/js/metas.js` línea 205-209) ya se puebla desde el catálogo real
+  `CAMPANAS_CON_PLANTILLA` (10 campañas, no una lista fija) — un admin ya
+  podría elegir hoy cualquier cliente de esa lista y subir un archivo de
+  WhatsApp para él; solo faltaría un dashboard con la pestaña activa para
+  poder verlo.
+- Los colores por cola (Fase 57) se asignan por índice sobre una paleta
+  compartida (`PC`/`PC_DARK`, `charts.js`), nunca por nombre de cola.
+- La plantilla descargable (`PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`)
+  es genérica (nombre "INCONEXION", no "ORLANT"; columnas fijas del
+  formato real de Wolkvox — `NOMBRE_COLA_WHATSAPP`, `FECHA INICIO/FIN`,
+  etc. — confirmadas por Edwin en la Fase 50).
+- La carga de la hoja "DATA" con formato WhatsApp (`cargasDetectarCanalTrafico`)
+  ya está disponible para **cualquier** cliente en el modal genérico
+  "Cargar Datos" — el comentario del propio código (`cargas-logic.js`
+  línea 140-144) documenta la decisión explícita: "Trafico es
+  estructuralmente universal ... no hay razón para excluirla de ninguna
+  campaña, tenga o no panel de Tráfico activado hoy en su dashboard".
+- Lo único específico de ORLANT son **migraciones de datos** en `db.js`
+  (`dashboards_config_orlant_trafico_whatsapp_tab_v1` y similares) que
+  empujan la pestaña nueva a la fila de `dashboards_config` de ORLANT que
+  ya existía sembrada en producción antes de la Fase 50 — es el mecanismo
+  operativo normal de este proyecto para activar algo en un cliente ya
+  sembrado (mismo patrón usado varias veces para otros cambios de ORLANT),
+  no una barrera de generalización.
+
+**Clasificación por cliente** (ninguno tiene módulo de WhatsApp activo
+hoy salvo ORLANT, que no se tocó):
+
+| Cliente | Caso | Por qué |
+|---|---|---|
+| CLINICA AURORA | **(A)** con matiz | Código listo sin cambios. Señal de negocio real: ya tiene un KPI manual "WhatsApp Entrada" (`hist_whatsapp`, Gestión de base) — el cliente sí maneja WhatsApp como canal, aunque no se sabe si por Wolkvox. Si se activa, aplicaría el mismo criterio de KPI duplicado ya resuelto para Tráfico de Llamadas (Fase 45) entre el manual y el automático. |
+| HOSPITAL LA MARIA | **(A)** con matiz | Igual que Aurora: KPI manual "WhatsApp Ingresados" (`wpp_ingresados`) ya existe. Mismo matiz de duplicado potencial. |
+| SASCHA FITNESS | **(A)** con matiz | `plantillaAtencion` ya trae "WhatsApp Entrada" manual (`wpp_entrada`) — mismo patrón, mismo matiz de duplicado (ya se resolvió el equivalente para Tráfico de Llamadas en la Fase 59, mismo cliente). |
+| BIVETT | **(A)** con matiz | Igual que Sascha Fitness. |
+| TELEVENTAS SURA | (C) | `plantillaVentas`, sin ningún campo de WhatsApp en su config — cero señal. |
+| TELEVENTAS COMFAMA | (C) | Igual que Televentas Sura. |
+| ANDRES YEPES | (C) | Igual — `plantillaVentas`, sin campo de WhatsApp. |
+| MOVILIZE | (C) | Igual. |
+| PANTERA MAIKERS | (C) | Igual, y además sin siquiera pestaña de Tráfico de Llamadas hoy. |
+| ALBERTO LINERO GO | (C) | Igual que Pantera Maikers. |
+| INFONDO | (C) | `plantillaCobranza`, sin campo de WhatsApp en su config — cero señal. |
+
+**Ningún caso (B)**: no hace falta generalizar nada de código — el módulo
+ya es genérico por campaña de punta a punta.
+
+### Recomendación — por dónde empezar
+
+**No hay un "más rápido" real entre los 4 casos (A)** porque los 4 están
+exactamente al mismo nivel técnico (cero código pendiente, cero diferencia
+de esfuerzo entre ellos) — la única variable que decide el orden es de
+negocio, no de ingeniería: cuál de CLINICA AURORA / HOSPITAL LA MARIA /
+SASCHA FITNESS / BIVETT consiga primero su export real de Wolkvox con el
+formato de WhatsApp (mismas columnas que la plantilla de ORLANT). En
+cuanto llegue ese archivo de cualquiera de los 4, activarlo es: (1) subir
+el archivo real desde "Cargar Datos" (ya funciona hoy, sin cambios), (2)
+agregar una pestaña `trafico_whatsapp_combo` para ese cliente en su config
+(cambio de datos, no de lógica — una migración nueva tipo
+`dashboards_config_orlant_trafico_whatsapp_tab_v1` si el cliente ya está
+sembrado en producción), y (3) decidir si se retira su KPI manual de
+WhatsApp duplicado (mismo criterio de las Fases 45/54/59). Los otros 7
+clientes (C) necesitan primero que InCo confirme si manejan WhatsApp por
+Wolkvox — no es tarea nuestra hasta esa confirmación.
+
+### Qué NO se hizo (por diseño del pedido)
+
+No se activó ninguna pestaña de Tráfico de WhatsApp para ningún cliente
+nuevo, no se inventó ni simuló ningún dato de cliente, y no se tocó nada
+del módulo de WhatsApp de ORLANT.
+
+### Verificación
+
+`npm test` (server) sigue en verde y `npm audit` (server) en 0
+vulnerabilidades — sin cambios de código en esta fase, solo esta entrada
+de `PROGRESS.md` (investigación pura). **El Paso 2 (capturas Playwright)
+queda pendiente**, ver arriba.
+
