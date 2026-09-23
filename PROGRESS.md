@@ -5093,3 +5093,75 @@ nuevo, y se revirtió todo — filas y mapeo — al terminar):
   `server/tests/fixtures/` (usados como especificación exacta y como
   fixture de las pruebas automáticas).
 
+**Revisión independiente con subagentes** (mismas reglas que la Fase 65:
+solo lectura, sin `fork`, sin commits/PRs/merges propios, verificado por
+mí antes de actuar):
+1. **Revisor de lógica de parseo/compatibilidad**: recorrió las 5
+   combinaciones de rama de `cargasResolverHojaTrafico` y confirmó que la
+   ruta sin 4to parámetro es byte-idéntica al comportamiento previo a la
+   Fase 66. Encontró que el comentario sobre las columnas
+   LLAMADAS/WHATSAPP **sobre-afirmaba** su propia verificación (decía
+   "letra por letra iguales" contra las 2 plantillas estáticas generales,
+   cuando WHATSAPP sí coincide 12/12 pero LLAMADAS solo coincide en las
+   primeras 13 de 17 columnas de la plantilla estática vieja de voz, que
+   trae además NIVEL DE ATENCION/TASA DE ABNDONO/MES/AÑO al final —
+   decisión del cliente al aprobar el archivo unificado, no un error).
+   Verifiqué el hallazgo (`grep` de `nivelAtencionPct`/`tasaAbandonoPct`
+   en `trafico-logic.js`/`trafico.js`) y confirmé **cero impacto
+   funcional**: esas 4 columnas nunca se usan en ningún cálculo real
+   (`trafico.js` siempre recalcula desde contestadas/total, nunca confía
+   en el valor crudo del archivo — la única excepción es una tabla de
+   vista previa de la pantalla legacy "Metas Calidad → Tráfico/Wolkvox",
+   no el modal "Cargar Datos"). Corregido el comentario en
+   `public/js/cargas.js` (commit `0a792ad`), re-verificado con
+   `npm test` (355/355) antes de subir.
+2. **Revisor de seguridad/regresión**: confirmó que el diff no toca
+   `.github/workflows/`, ningún `.env*`, ni ninguna ruta/archivo de
+   `server/` fuera de tests y fixtures nuevos; que el texto nuevo
+   (`notasExtra`, encabezados de columna) solo llega a celdas de Excel
+   (`aoa_to_sheet`) y nunca a `innerHTML` sin escapar; que los 2 fixtures
+   `.xlsx` nuevos no contienen datos sensibles (solo encabezados y
+   números agregados de tráfico); `npm test` 355/355 y `npm audit` 0
+   vulnerabilidades corridos de forma independiente; sin código muerto,
+   `TODO`/`FIXME` ni secretos en el diff de producción (los únicos
+   `console.log`/uso de variable de entorno están en el script de QA
+   nuevo, `.github/scripts/verificar-fase66-plantilla-unificada-orlant.js`,
+   mismo patrón que los demás scripts `verificar-*.js` del repo, sin
+   secretos hardcodeados). Señaló de paso un archivo con una edición sin
+   commitear que encontró al hacer `git checkout` durante su revisión —
+   verifiqué que era mi propio commit `0a792ad`, ya subido antes de que
+   terminara su revisión; nada se perdió.
+
+Con las 2 revisiones limpias, CI en verde (`test(18/20/22)` +
+`docker-build`, ambos runs) y sin que el diff de la Fase 66 en sí toque
+CI/secretos de despliegue, se mergeó el PR #120 sin esperar confirmación
+adicional en el chat (regla explícita del pedido) — fast-forward a
+`main` en `537ee3b`. `Deploy a AWS` y `CI` corrieron en verde para ese
+commit; `/api/health` en producción responde `{"ok":true}`.
+
+### Paso 4 — verificación en producción
+
+- **Plantilla unificada servida en producción**: la descarga se genera
+  **en el navegador** (SheetJS, no hay endpoint de servidor que la
+  arme), así que la prueba equivalente y más directa es confirmar que el
+  código desplegado es el correcto — se descargó `public/js/cargas.js` y
+  `public/js/cargas-logic.js` reales de
+  `https://inconexionpruebasclaude.duckdns.org/js/...` y se confirmó que
+  contienen `CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT']`,
+  `_cargasTraficoLlamadasColumnasUnificado`/`_cargasTraficoWhatsappColumnasUnificado`
+  (con las columnas exactas `SKILL_NAME`/`NOMBRE_COLA_WHATSAPP`, etc.) y
+  `cargasResolverHojaTrafico` — el mecanismo que genera la plantilla
+  unificada para ORLANT está confirmado en vivo en producción.
+- **Dato actual de ORLANT en producción para agosto 2026**: pendiente —
+  requiere una consulta de solo lectura contra la base real (no hay
+  endpoint de API para esto). Se preparó un workflow nuevo de GitHub
+  Actions de solo lectura, mismo patrón que
+  `diagnostico-aht-6-clientes-produccion.yml`
+  (`.github/workflows/diagnostico-fase66-orlant-agosto-produccion.yml`,
+  PR #121) — **no se mergeó todavía**: toca `.github/workflows/`, y la
+  regla explícita de esta fase pide avisar antes de mergear cualquier
+  cambio que toque CI, incluso siendo de solo lectura y sin secretos
+  nuevos. Queda pendiente la confirmación del usuario para mergear y
+  correr ese diagnóstico. **No se subió ningún dato real a producción en
+  esta fase.**
+
