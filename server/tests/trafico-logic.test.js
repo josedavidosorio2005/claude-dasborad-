@@ -19,7 +19,10 @@ const {
   traficoNumero,
   traficoFiltrarFilas,
   traficoAgregar,
+  traficoAhtPromedioPeriodo,
   traficoVentana12Meses,
+  traficoResolverSkillsControles,
+  traficoModoDisplaySkills,
   traficoValidarNuevoMapeo,
 } = require('../../public/js/trafico-logic.js');
 
@@ -369,4 +372,117 @@ test('traficoValidarNuevoMapeo: camino feliz con campana multi-sede -- conserva 
   });
   assert.equal(r.ok, true);
   assert.equal(r.sede, 'CASTILLA');
+});
+
+// ── traficoResolverSkillsControles / traficoModoDisplaySkills (Fase 65) ──
+// Cubre el bug real de la Fase 64: el comparador de "varias lineas" podia
+// quedar con una seleccion vieja de 2+ lineas y ganarle a una eleccion
+// nueva del usuario en el desplegable principal.
+test('traficoResolverSkillsControles: sin nada seleccionado en ningun control -> modo "todas"', () => {
+  const r = traficoResolverSkillsControles([], '');
+  assert.deepEqual(r, { skills: [], modo: 'todas', skillUna: null });
+});
+
+test('traficoResolverSkillsControles: una linea elegida en el desplegable principal -> esa sola', () => {
+  const r = traficoResolverSkillsControles([], 'CALL_A');
+  assert.deepEqual(r, { skills: ['CALL_A'], modo: 'una', skillUna: 'CALL_A' });
+});
+
+test('traficoResolverSkillsControles: el comparador con SOLO 1 seleccionada no cuenta -- cae al desplegable principal', () => {
+  const r = traficoResolverSkillsControles(['CALL_A'], 'CALL_B');
+  assert.deepEqual(r, { skills: ['CALL_B'], modo: 'una', skillUna: 'CALL_B' });
+});
+
+test('traficoResolverSkillsControles: comparador con 2+ gana, sin importar el desplegable principal', () => {
+  const r = traficoResolverSkillsControles(['CALL_A', 'CALL_C'], 'CALL_B');
+  assert.deepEqual(r, { skills: ['CALL_A', 'CALL_C'], modo: 'multi', skillUna: null });
+});
+
+test('traficoResolverSkillsControles: valor "__multi__" (opcion informativa deshabilitada) del desplegable nunca se toma como una linea real', () => {
+  const r = traficoResolverSkillsControles([], '__multi__');
+  assert.deepEqual(r, { skills: [], modo: 'todas', skillUna: null });
+});
+
+test('traficoResolverSkillsControles: el bug real de la Fase 64 -- comparador con 2+ lineas VIEJAS ya no le gana a una eleccion NUEVA del desplegable, porque trafico.js limpia el comparador al cambiar el desplegable (aqui se simula ese estado ya limpio)', () => {
+  // Antes del arreglo: seleccionCmp seguia trayendo ['CALL_A','CALL_C']
+  // (nunca se limpiaba) y esta funcion (la logica ya existia) las usaba
+  // sin mirar que el usuario acababa de elegir CALL_B en el desplegable.
+  // El arreglo real esta en _traficoSkillPrincipalCambio (trafico.js): en
+  // cuanto el desplegable cambia, vacia el comparador -- por eso, para
+  // cuando se llega aqui, seleccionCmp ya esta vacio.
+  const comparadorYaLimpio = [];
+  const r = traficoResolverSkillsControles(comparadorYaLimpio, 'CALL_B');
+  assert.deepEqual(r, { skills: ['CALL_B'], modo: 'una', skillUna: 'CALL_B' });
+});
+
+test('traficoModoDisplaySkills: estado.skills con todas las skills reales -> modo "todas"', () => {
+  const r = traficoModoDisplaySkills(['CALL_A', 'CALL_B', 'CALL_C'], ['CALL_A', 'CALL_B', 'CALL_C']);
+  assert.deepEqual(r, { todas: true, una: null, subsetParcial: false });
+});
+
+test('traficoModoDisplaySkills: estado.skills con 1 sola -> modo "una", la reporta en `una`', () => {
+  const r = traficoModoDisplaySkills(['CALL_A', 'CALL_B', 'CALL_C'], ['CALL_B']);
+  assert.deepEqual(r, { todas: false, una: 'CALL_B', subsetParcial: false });
+});
+
+test('traficoModoDisplaySkills: estado.skills con 2+ pero no todas -> subsetParcial true (dispara la opcion "Varias lineas" del desplegable, hallazgo #2 de la Fase 64)', () => {
+  const r = traficoModoDisplaySkills(['CALL_A', 'CALL_B', 'CALL_C'], ['CALL_A', 'CALL_C']);
+  assert.deepEqual(r, { todas: false, una: null, subsetParcial: true });
+});
+
+test('traficoModoDisplaySkills: 2+ seleccionadas que resultan ser TODAS las reales -> modo "todas", no subsetParcial (mismo conteo que datosSkills)', () => {
+  const r = traficoModoDisplaySkills(['CALL_A', 'CALL_B'], ['CALL_A', 'CALL_B']);
+  assert.deepEqual(r, { todas: true, una: null, subsetParcial: false });
+});
+
+// ── traficoAhtPromedioPeriodo (Fase 65) ──────────────────────────────────
+// Conecta la tarjeta manual "AHT Promedio" de 6 clientes al dato real de
+// Wolkvox -- esta funcion tiene que coincidir EXACTO con el promedio
+// ponderado que ya usa traficoAgregar para la sub-pestaña "AHT", no
+// inventar una formula nueva.
+test('traficoAhtPromedioPeriodo: promedio ponderado por TOTAL LLAMADAS, no un promedio simple', () => {
+  const filas = [
+    { totalLlamadas: 100, ahtSegundos: 200 },
+    { totalLlamadas: 300, ahtSegundos: 240 },
+  ];
+  // Simple (200+240)/2 = 220 seria INCORRECTO -- ponderado: (100*200+300*240)/400 = 230.
+  assert.equal(traficoAhtPromedioPeriodo(filas), 230);
+});
+
+test('traficoAhtPromedioPeriodo: filas sin ahtSegundos (null) se ignoran, no cuentan como 0', () => {
+  const filas = [
+    { totalLlamadas: 100, ahtSegundos: null },
+    { totalLlamadas: 200, ahtSegundos: 250 },
+  ];
+  assert.equal(traficoAhtPromedioPeriodo(filas), 250);
+});
+
+test('traficoAhtPromedioPeriodo: filas con totalLlamadas 0 no aportan peso (division por cero evitada)', () => {
+  const filas = [
+    { totalLlamadas: 0, ahtSegundos: 999 },
+    { totalLlamadas: 50, ahtSegundos: 180 },
+  ];
+  assert.equal(traficoAhtPromedioPeriodo(filas), 180);
+});
+
+test('traficoAhtPromedioPeriodo: sin filas -> null (no 0, que se veria como un dato real)', () => {
+  assert.equal(traficoAhtPromedioPeriodo([]), null);
+  assert.equal(traficoAhtPromedioPeriodo(undefined), null);
+});
+
+test('traficoAhtPromedioPeriodo: todas las filas sin ahtSegundos -> null', () => {
+  const filas = [{ totalLlamadas: 100, ahtSegundos: null }, { totalLlamadas: 50, ahtSegundos: null }];
+  assert.equal(traficoAhtPromedioPeriodo(filas), null);
+});
+
+test('traficoAhtPromedioPeriodo: coincide EXACTO con traficoAgregar (granularidad "anio", 1 solo bucket) -- misma formula, mismo resultado que la sub-pestaña AHT', () => {
+  const filas = [
+    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 100, contestadas: 90, ahtSegundos: 200 },
+    { fecha: '2026-06-01', skillName: 'A', totalLlamadas: 300, contestadas: 280, ahtSegundos: 240 },
+  ];
+  const agregado = traficoAgregar(filas, { granularidad: 'anio', combinar: true });
+  assert.equal(agregado.length, 1);
+  assert.equal(agregado[0].periodo, '2026');
+  assert.equal(traficoAhtPromedioPeriodo(filas), agregado[0].ahtSegundos);
+  assert.equal(traficoAhtPromedioPeriodo(filas), 230);
 });

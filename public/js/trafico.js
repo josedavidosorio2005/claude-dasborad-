@@ -430,6 +430,49 @@ function _traficoClaveEstado(campana, sede){
   return sede ? campana + ' :: ' + sede : campana;
 }
 
+// Filtro "Skill" (desplegable principal + comparador de varias lineas) --
+// Fase 60, arreglado en la Fase 65 (ver traficoResolverSkillsControles/
+// traficoModoDisplaySkills, trafico-logic.js). Factorizado en su propia
+// funcion para poder re-dibujarse SOLO este fragmento despues de "Aplicar
+// filtros" (_traficoAplicarFiltros), sin tocar el resto de la barra de
+// filtros ni el contenido -- asi el desplegable principal SIEMPRE refleja
+// el `estadoSkills` real, nunca una opcion vieja de una interaccion
+// anterior (bug real de la Fase 64, hallazgo #2).
+function _traficoFiltroSkillHTML(i, datosSkills, estadoSkills){
+  var modo = traficoModoDisplaySkills(datosSkills, estadoSkills);
+  return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
+      '<select id="tv-f-skill-'+i+'" style="min-width:200px" onchange="_traficoSkillPrincipalCambio('+i+')">' +
+        '<option value=""'+(modo.todas?' selected':'')+'>Todas las líneas</option>' +
+        datosSkills.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.una===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+        (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias líneas (ver "Comparar" abajo)</option>' : '') +
+      '</select></div>' +
+    '<details id="tv-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
+      '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias líneas específicas</summary>' +
+      '<div style="margin-top:8px;max-width:340px">' +
+        '<select multiple id="tv-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosSkills.length))+'" style="min-width:220px">' +
+          datosSkills.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoSkills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+        '</select>' +
+        '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más líneas (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica — combínalo con "Ver skills por separado".</div>' +
+      '</div>' +
+    '</details>';
+}
+
+// El desplegable principal es el control "normal" -- cambiarlo es una
+// eleccion explicita y nueva del usuario, que siempre debe ganar. Sin
+// esto, si el comparador de abajo tenia 2+ lineas seleccionadas de antes
+// (ej. desde una URL compartida) y el usuario solo tocaba el desplegable,
+// "Aplicar filtros" seguia viendo esas 2+ lineas viejas en el comparador y
+// las usaba en vez de la eleccion nueva -- bug real de la Fase 64,
+// hallazgo #1. Limpiar la seleccion del comparador en cuanto el
+// desplegable cambia hace que "quien manda" sea siempre lo ultimo que el
+// usuario toco, sin depender de que recuerde abrir el comparador para
+// vaciarlo el mismo.
+function _traficoSkillPrincipalCambio(i){
+  var selCmp = document.getElementById('tv-f-skills-cmp-'+i);
+  if(!selCmp) return;
+  Array.prototype.forEach.call(selCmp.options, function(o){ o.selected = false; });
+}
+
 async function _traficoRenderPanel(p, i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
@@ -481,27 +524,11 @@ async function _traficoRenderPanel(p, i){
 
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
   var subActivo = _traficoSubtabActivo[claveEstado] || 'resumen';
-  // Fase 60 (2026-09-22): el filtro "Skill" pasa de listbox multi-select a
-  // desplegable de una sola linea (Todas las lineas / una especifica), pero
-  // sin perder la comparacion de varias lineas a la vez (skillsPresentes por
-  // separado en _traficoRenderContenido) ni los enlaces compartidos con un
-  // subconjunto especifico (?tv_skills=A,C, ver _traficoGuardarEstadoURL):
-  // esa capacidad sigue viva en el listbox "Comparar varias lineas", que
-  // solo se despliega cuando hace falta. estado.skills/tv_skills en la URL
-  // no cambian en nada -- unicamente cambia el control que los alimenta.
-  var traficoTodasSkills = estado.skills.length === datos.skills.length;
-  var traficoUnaSkill = estado.skills.length === 1 ? estado.skills[0] : null;
-  var traficoSubsetParcial = estado.skills.length > 1 && !traficoTodasSkills;
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
-          '<select id="tv-f-skill-'+i+'" style="min-width:200px">' +
-            '<option value=""'+(traficoTodasSkills?' selected':'')+'>Todas las líneas</option>' +
-            datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(traficoUnaSkill===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
-            (traficoSubsetParcial ? '<option value="__multi__" selected disabled>Varias líneas (ver "Comparar" abajo)</option>' : '') +
-          '</select></div>' +
+        '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroSkillHTML(i, datos.skills, estado.skills)+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
@@ -513,15 +540,6 @@ async function _traficoRenderPanel(p, i){
           '<button class="btn-sm" onclick="_traficoExportExcel('+i+')">Excel</button>' +
           '<button class="btn-sm" onclick="_traficoExportPrint('+i+')">PDF</button>' +
         '</span>' +
-        '<details id="tv-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(traficoSubsetParcial?' open':'')+'>' +
-          '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias líneas específicas</summary>' +
-          '<div style="margin-top:8px;max-width:340px">' +
-            '<select multiple id="tv-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datos.skills.length))+'" style="min-width:220px">' +
-              datos.skills.map(function(s){ return '<option value="'+esc(s)+'"'+(traficoSubsetParcial && estado.skills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
-            '</select>' +
-            '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más líneas (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica — combínalo con "Ver skills por separado".</div>' +
-          '</div>' +
-        '</details>' +
       '</div>' +
       // Fase 40: 6 sub-pestanas (Resumen + Abandono/AHT/ASA-ATA/WaitTime/SL
       // 10-30, antes todas amontonadas en una grilla) -- una grafica visible
@@ -594,18 +612,18 @@ function _traficoLeerControles(i){
   // usuario eligio 2+ lineas ahi -- asi se conserva la comparacion lado a
   // lado y los enlaces compartidos con un subconjunto especifico
   // (?tv_skills=A,C) sin que el dropdown principal pueda expresarlos.
+  // La logica de "quien manda" es traficoResolverSkillsControles (pura,
+  // trafico-logic.js, con sus propias pruebas) -- aqui solo se leen los
+  // valores crudos del DOM. El desplegable principal limpia el comparador
+  // al cambiar (_traficoSkillPrincipalCambio), asi que para cuando se
+  // llega aqui los dos controles ya son consistentes entre si.
   var selCmp = document.getElementById('tv-f-skills-cmp-'+i);
   var seleccionCmp = selCmp ? Array.prototype.filter.call(selCmp.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
-  var skills;
-  if(seleccionCmp.length >= 2){
-    skills = seleccionCmp;
-  } else {
-    var selPrincipal = document.getElementById('tv-f-skill-'+i);
-    var valorPrincipal = selPrincipal ? selPrincipal.value : '';
-    skills = (valorPrincipal && valorPrincipal !== '__multi__') ? [valorPrincipal] : [];
-  }
+  var selPrincipal = document.getElementById('tv-f-skill-'+i);
+  var valorPrincipal = selPrincipal ? selPrincipal.value : '';
+  var resuelto = traficoResolverSkillsControles(seleccionCmp, valorPrincipal);
   return {
-    skills: skills,
+    skills: resuelto.skills,
     desde: document.getElementById('tv-f-desde-'+i).value,
     hasta: document.getElementById('tv-f-hasta-'+i).value,
     granularidad: document.getElementById('tv-f-gran-'+i).value,
@@ -627,6 +645,13 @@ function _traficoAplicarFiltros(i){
   estado.sede = sede;
   _traficoEstado[claveEstado] = estado;
   _traficoGuardarEstadoURL(estado);
+  // Re-dibuja SOLO la barra de filtros de Skill (desplegable + comparador)
+  // para que refleje el estado recien aplicado -- sin esto, tras elegir
+  // 2+ lineas en el comparador y aplicar, el desplegable principal seguia
+  // mostrando la opcion de antes en vez de "Varias lineas" (Fase 64,
+  // hallazgo #2).
+  var skillbar = document.getElementById('tv-f-skillbar-'+i);
+  if(skillbar) skillbar.innerHTML = _traficoFiltroSkillHTML(i, skillsDisponibles, estado.skills);
   _traficoRenderContenido(campana, sede, i);
 }
 

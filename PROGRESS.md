@@ -4747,3 +4747,144 @@ Ninguno de los 2 hallazgos de esta adenda toca `.env`, secretos, ni CI.
 `npm test` (server) 305/305 y `npm audit` (server) 0 vulnerabilidades tras
 esta adenda (sin cambios de código, solo esta entrada de PROGRESS.md).
 
+## Fase 65 — Resuelve los 3 hallazgos de la Fase 64 (dropdown Skill + AHT Promedio real) + revisión independiente con subagentes (2026-09-23)
+
+Pedido: arreglar los 3 hallazgos reales que dejó pendientes la auditoría de
+la Fase 64 (dropdown "Skill" de Tráfico de Llamadas — bugs #1 funcional y
+#2 cosmético — y "AHT Promedio" manual en 6 clientes), aclarar el conteo
+de migraciones 13 vs. 14, verificar todo con Playwright directo, y lanzar
+subagentes independientes (no `fork`, para no heredar el permiso de
+"abre PR sin confirmación" que causó el incidente de la Fase 64) para
+revisar el trabajo antes de mergear.
+
+### Parte 1 — dropdown "Skill": bugs #1 y #2 arreglados
+
+**Causa raíz confirmada**: `_traficoLeerControles` (`public/js/trafico.js`)
+priorizaba el comparador "Comparar varias líneas" sobre el desplegable
+principal cuando tenía 2+ seleccionadas — pero nada limpiaba esa selección
+cuando el usuario cambiaba el desplegable principal, así que una selección
+VIEJA del comparador (ej. cargada de una URL compartida) le seguía ganando
+a una elección NUEVA del desplegable (bug #1). Además, `_traficoAplicarFiltros`
+solo volvía a dibujar el contenido (gráfica/KPIs), nunca la barra de
+filtros — así que el desplegable nunca reflejaba "Varias líneas" tras usar
+el comparador en vivo (bug #2).
+
+**Arreglo** (`public/js/trafico.js` + `public/js/trafico-logic.js`):
+- El desplegable principal, al cambiar (`onchange`), limpia la selección
+  del comparador (`_traficoSkillPrincipalCambio`) — así "lo último que el
+  usuario tocó" siempre gana, sin depender de que recuerde vaciar el otro
+  control.
+- La barra de filtros de Skill (desplegable + comparador) se factorizó en
+  `_traficoFiltroSkillHTML` y se re-dibuja SOLO ese fragmento después de
+  "Aplicar filtros" — así el desplegable siempre refleja el estado real
+  recién aplicado, incluida la opción informativa "Varias líneas" cuando
+  corresponde.
+- La lógica de "quién manda" (`traficoResolverSkillsControles`) y de "qué
+  debe mostrar el desplegable" (`traficoModoDisplaySkills`) se extrajeron
+  como funciones PURAS en `trafico-logic.js`, con 10 pruebas nuevas
+  (`server/tests/trafico-logic.test.js`) que cubren 0/1/2+ líneas en cada
+  control y el caso exacto del bug de la Fase 64.
+
+### Parte 2 — "AHT Promedio" conectado al dato real de Wolkvox en 6 clientes
+
+**Investigación antes de tocar nada**:
+- La sub-pestaña "AHT" de Tráfico de Llamadas usa `traficoAgregar`
+  (`trafico-logic.js`), que agrega `ahtSegundos` como **promedio ponderado
+  por TOTAL LLAMADAS de cada fila** (nunca un promedio simple de
+  promedios diarios) — se extrajo esa MISMA fórmula, colapsada a un solo
+  número en vez de una serie por periodo, en una función nueva
+  `traficoAhtPromedioPeriodo` (con 6 pruebas, incluida una que compara su
+  resultado contra `traficoAgregar` para confirmar que coinciden exacto).
+- **Consulta de solo lectura en producción** (workflow nuevo
+  `diagnostico-aht-6-clientes-produccion.yml`, mismo patrón que
+  `diagnostico-dashboard-produccion.yml` ya existente — PR #117, mergeado
+  y disparado por separado antes de tocar código; **toca `.github/workflows/`
+  con el mismo rol OIDC/SSH que ya usan 8 workflows de este repo, avisado
+  aparte al usuario antes del push, que lo aprobó**): **los 6 clientes
+  tienen HOY, en producción, CERO filas de Tráfico de Llamadas real Y
+  CERO cargas manuales de Gestión de base con `aht_segundos`** — ninguno
+  de los dos tiene datos todavía. Esto significa que la tarjeta "AHT
+  Promedio" de los 6 ya muestra "—" hoy (sin dato manual que perder) y el
+  cambio de fuente no le quita ningún número real visible a nadie — solo
+  cambia de dónde saldrá el número el día que llegue cualquiera de los dos
+  tipos de dato.
+- La franja global (`_gdResolver`, `dashboard-generic.js`) es 100% síncrona
+  sobre datos YA precargados — agregar la fuente real de Tráfico exigía
+  precargarlo TAMBIÉN antes de dibujar los KPIs, pero **ya existía
+  exactamente ese patrón** para Calidad (`loadCalData`, `_gdBootstrap`):
+  replicarlo para Tráfico (`_traficoCargarDatos`) fue aditivo, no un
+  rediseño.
+
+**Implementación**:
+- Nuevo `modo:'trafico_aht'` en `_gdResolver` (`dashboard-generic.js`):
+  lee `_trafico[campana]` (precargado por `_gdBootstrap`, mismo patrón que
+  Calidad), filtra al mes seleccionado (`_gd.mesSel` o el más reciente) con
+  `traficoFiltrarFilas`, y calcula con `traficoAhtPromedioPeriodo`. Sin
+  datos → `scalar:null`, que la tarjeta YA renderiza como "—" sin ningún
+  código nuevo (`_gdKpiCardHtml` ya lo hacía para cualquier KPI).
+- `dashboard-plantillas-cliente.js`: nuevo helper `kpiAhtPromedio(cliente,
+  tieneTrafico)` — usa la fuente real solo cuando `opts.calidad` es `true`
+  (la misma señal que ya decide si el cliente tiene la pestaña de Tráfico),
+  si no mantiene la fuente manual de siempre. Aplicado a
+  `plantillaVentas` (línea ~94, afecta a TELEVENTAS SURA/COMFAMA, ANDRES
+  YEPES, MOVILIZE — no a PANTERA MAIKERS/ALBERTO LINERO GO, que no tienen
+  Tráfico) y `plantillaAtencion` (línea ~262, SASCHA FITNESS/BIVETT).
+- Migración nueva `dashboards_config_aht_real_trafico_v1` (`server/db.js`)
+  para los 6 clientes ya sembrados en producción — reemplaza SOLO la
+  `fuente` del KPI "AHT Promedio" (no lo quita, no toca ningún otro KPI ni
+  tab), idempotente, con 15 pruebas nuevas
+  (`server/tests/aht-real-trafico-migracion.test.js`) que confirman que
+  nunca toca PANTERA MAIKERS/ALBERTO LINERO GO ni clientes fuera de la
+  lista.
+
+**No hizo falta pausar por tamaño/riesgo** — el cambio reutiliza 3 patrones
+ya existentes en el código (precarga estilo Calidad, rama nueva en
+`_gdResolver` como las que ya existen, migración de config estilo
+Fase 45/54/59), sin tocar la estructura del motor genérico.
+
+### Parte 3 — conteo de migraciones: 13 → 14 → 15, explicado
+
+La Fase 58 contó mal (14, incluía la línea de la propia `function
+runOnceMigration`). La Fase 59 corrigió esa cifra a **13** — pero esa
+corrección se escribió ANTES de que la propia Fase 59 agregara su propia
+migración nueva (`dashboards_config_sascha_bivett_kpis_duplicados_v1`,
+commit `76ee5b4`, confirmado con `git log -S`), así que el "13" nunca se
+actualizó tras el cambio de la misma fase. La Fase 64 recontó desde cero
+(por código Y contra el ledger real `schema_migrations` de la base local,
+coincidieron) y encontró **14** — ese número SIEMPRE fue correcto (13 +
+1 de la propia Fase 59), no fue un error nuevo. Esta fase agrega
+`dashboards_config_aht_real_trafico_v1` (Parte 2): **el conteo final
+correcto es 15**, confirmado igual por código y por el ledger real tras
+correr la suite de pruebas (que aplica todas las migraciones contra una
+base de test).
+
+### Parte 4 — verificación propia (Playwright directo desde Node)
+
+Contra el servidor de desarrollo local, usuario `demo_admin`
+(`.github/scripts/verificar-fase65-fixes.js`):
+- **Bug #1 reproducido y confirmado arreglado**: con `QA_SKILL_A,QA_SKILL_C`
+  cargadas en el comparador (600→488 llamadas combinadas), cambiar el
+  desplegable a `QA_SKILL_B` y aplicar cambia los KPIs (488→244 llamadas)
+  y la URL a `?tv_skills=QA_SKILL_B` — ya NO se queda pegado en las líneas
+  viejas.
+- **Bug #2 confirmado arreglado**: tras elegir 2+ líneas en el comparador y
+  aplicar, el desplegable principal muestra "Varias líneas (ver
+  'Comparar' abajo)" (antes se quedaba en la opción vieja).
+- **Sin regresiones**: "Todas las líneas" (24.657 llamadas, el agregado más
+  alto, confirma que sigue sumando TODAS las skills), "Ver skills por
+  separado" con 3 líneas (6 series independientes en la gráfica), y una
+  URL compartida (`?tv_skills=A,C&tv_modo=separado`) reproducen exactamente
+  la vista esperada (comparador auto-expandido, dropdown con el aviso
+  correcto).
+- **AHT**: para TELEVENTAS SURA, TELEVENTAS COMFAMA y ANDRES YEPES (datos
+  sintéticos de AHT insertados solo en la BD de desarrollo local, borrados
+  al terminar), la tarjeta "AHT Promedio" coincidió EXACTO, número a
+  número, con el valor recalculado en vivo con la misma función
+  (`traficoAhtPromedioPeriodo`) sobre las mismas filas: 3:51 / 4:00 / 4:02.
+- **0 errores de consola**, claro/oscuro, escritorio/móvil. 16 capturas en
+  `docs/capturas-demo/fase65-fixes-y-revision/`.
+
+`npm test` (server) 336/336 (31 pruebas nuevas: 10 del dropdown + 6 de AHT
++ 15 de la migración) y `npm audit` (server) 0 vulnerabilidades, antes y
+después.
+

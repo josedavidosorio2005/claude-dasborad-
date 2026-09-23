@@ -22,6 +22,23 @@ const lineMes = (titulo, campo, extra) => ({ tipo: 'line', titulo, series: [{ la
 const lineDia = (titulo, s, campo, unidad) => ({ tipo: 'line', titulo, unidad, series: [{ label: titulo, fuente: { s, modo: 'filas', x: 'fecha', campo } }] });
 const col = (key, label, tipo) => ({ key, label, tipo: tipo || 'entero' });
 
+// Fase 65 (hallazgo #3, auditoria Fase 64): en clientes con Trafico de
+// Llamadas activo (opts.calidad true en las 3 plantillas de este archivo
+// -- es la señal existente de "este cliente tiene la pestaña real"), la
+// tarjeta "AHT Promedio" de la franja global se conecta al dato REAL de
+// Wolkvox (mismo calculo/fuente que la sub-pestaña "AHT" del panel,
+// traficoAhtPromedioPeriodo en trafico-logic.js) en vez del dato manual de
+// Gestion de base -- asi los dos numeros nunca pueden desincronizarse.
+// Sin Trafico activo no hay dato real que leer, asi que se mantiene el
+// manual (mismo criterio que ya se aplicaba a "Llamadas Entrada"/"Nivel de
+// Atencion"/"Abandonos", DUPLICADOS_CON_TRAFICO mas abajo).
+const kpiAhtPromedio = (cliente, tieneTrafico) => kpi(
+  'AHT Promedio',
+  tieneTrafico ? { s: 'trafico', modo: 'trafico_aht', campana: cliente } : U('aht_segundos'),
+  'tiempo_mmss',
+  { cls: 'kpi-org', mejorDireccion: 'baja' }
+);
+
 // Pestaña de Calidad reutilizable (usa los monitoreos de la campana homonima).
 const tabCalidad = (campana) => ({
   key: 'calidad', label: 'Calidad', panels: [
@@ -91,7 +108,7 @@ function plantillaVentas(cliente, titulo, opts) {
       kpi('Contactos efectivos', U('contactos_efectivos'), 'miles'),
       kpi('Ventas', U('ventas'), 'miles', { cls: 'kpi-green', meta: U('meta_ventas') }),
       kpi('Conversion', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'ventas', b: 'contactados' }, 'porcentaje', { cls: 'kpi-org', meta: opts.metaConv || 15 }),
-      kpi('AHT Promedio', U('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
+      kpiAhtPromedio(cliente, !!opts.calidad),
     ],
     tabs: [
       { key: 'flujo', label: 'Flujo de gestion', panels: [
@@ -259,7 +276,7 @@ function plantillaAtencion(cliente, titulo, opts) {
     kpi('WhatsApp Entrada', U('wpp_entrada'), 'miles'),
     kpi('Nivel de Atencion', U('nivel_atencion'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion', meta: 90, alerta: { min: 85 } }),
     kpi('Abandonos', U('abandonos'), 'entero', { cls: 'kpi-red', mejorDireccion: 'baja' }),
-    kpi('AHT Promedio', U('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
+    kpiAhtPromedio(cliente, !!opts.calidad),
     kpi(etiquetaSalida, U(campoSalida), 'miles', { cls: 'kpi-green', meta: U('meta_' + campoSalida) }),
   ];
   const DUPLICADOS_CON_TRAFICO = ['Llamadas Entrada', 'Nivel de Atencion', 'Abandonos'];
