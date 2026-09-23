@@ -30,6 +30,12 @@ var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente a
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
 
+// Fase 66: campanas cuya plantilla de Trafico ya viene unificada en 2 hojas
+// (LLAMADAS/WHATSAPP, en vez de la "DATA" generica de una sola hoja). Solo
+// ORLANT por ahora -- agregar otro cliente aqui es la unica accion necesaria
+// para extenderlo (mismo criterio "no tocar a nadie mas sin que se pida").
+var CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT'];
+
 async function openCargas(){
   if(!(isFullAdmin() || (currentUser && currentUser.perms && currentUser.perms.cargarDatos))){
     showToast('No tienes permiso para cargar datos'); return;
@@ -64,6 +70,52 @@ function _cargasTraficoColumnas(){
   // aprobada por el cliente (server/plantillas/PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx).
   return TRAFICO_COLUMNAS.map(function(c){ return { key:c.key, label:c.label, opcional: !c.obligatoria }; })
     .concat([{ key:'mes', label:'MES', opcional:true }, { key:'anio', label:'AÑO', opcional:true }]);
+}
+// Fase 66 — columnas EXACTAS de las hojas LLAMADAS/WHATSAPP del archivo
+// unificado de ORLANT, letra por letra iguales a las plantillas oficiales
+// ya aprobadas por el cliente (server/plantillas/PLANTILLA_TRAFICO_
+// INCONEXION_VACIA.xlsx y PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx,
+// hoja DATA de cada una — verificado columna por columna). Incluyen
+// "ABANDON"/"ABANDONO", una columna que el parser NO lee (retirada del
+// parseo en la Fase 45 a proposito, ver TRAFICO_COLUMNAS/TRAFICO_WPP_
+// COLUMNAS en *-logic.js) pero que la plantilla oficial SI trae — no se
+// derivan de esas listas (que son las que SI lee el parser) para poder
+// insertar esa columna fantasma en su posicion exacta sin tocar el
+// parser ni el mapeo de columnas. A diferencia de _cargasTraficoColumnas()
+// (usada por el resto de campanas), esta version NO agrega MES/AÑO al
+// final -- la plantilla unificada tampoco los trae.
+function _cargasTraficoLlamadasColumnasUnificado(){
+  return [
+    { label:'SKILL_NAME', opcional:false },
+    { label:'DATE', opcional:false },
+    { label:'TOTAL LLAMADAS', opcional:false },
+    { label:'LLAMADAS CONTESTADAS', opcional:false },
+    { label:'LLAMADAS ABANDONADAS', opcional:true },
+    { label:'SERVICE_LEVEL_10SEC', opcional:true },
+    { label:'SERVICE_LEVEL_20SEC', opcional:true },
+    { label:'SERVICE_LEVEL_30SEC', opcional:true },
+    { label:'ABANDON', opcional:true },
+    { label:'ASA', opcional:true },
+    { label:'ATA', opcional:true },
+    { label:'WAIT_TIME', opcional:true },
+    { label:'AHT', opcional:true },
+  ];
+}
+function _cargasTraficoWhatsappColumnasUnificado(){
+  return [
+    { label:'NOMBRE_COLA_WHATSAPP', opcional:false },
+    { label:'FECHA INICIO', opcional:false },
+    { label:'FECHA FIN', opcional:false },
+    { label:'TOTAL WHATSAPP', opcional:false },
+    { label:'WHATSAPP CONTESTADOS', opcional:false },
+    { label:'WHATSAPP ABANDONADOS', opcional:true },
+    { label:'SERVICE_LEVEL_10SEC', opcional:true },
+    { label:'SERVICE_LEVEL_20SEC', opcional:true },
+    { label:'SERVICE_LEVEL_30SEC', opcional:true },
+    { label:'ABANDONO', opcional:true },
+    { label:'ASA', opcional:true },
+    { label:'ATA', opcional:true },
+  ];
 }
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
@@ -101,7 +153,17 @@ async function onCargaClienteChange(){
   var calidad = cliente ? (_cargasCalidadPorCampana[cliente] || null) : null;
   var calidadCols = calidad ? _cargasCalidadColumnas(calidad.items) : null;
   if(_cargasSpec){
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, _cargasTraficoColumnas());
+    // Fase 66: solo ORLANT usa la plantilla unificada de 2 hojas de Trafico
+    // (LLAMADAS/WHATSAPP, columnas EXACTAS de la plantilla oficial) -- el
+    // resto de campanas sigue con 1 sola hoja "DATA" tal cual siempre
+    // (CARGAS_CLIENTES_TRAFICO_UNIFICADO controla esto, nunca un cambio
+    // global). traficoCols solo se usa para la hoja LLAMADAS cuando hay
+    // plantilla unificada (ver cargasPlanConsolidado) -- por eso aqui va la
+    // version "unificado" en vez de la generica.
+    var esUnificado = CARGAS_CLIENTES_TRAFICO_UNIFICADO.indexOf(cliente) !== -1;
+    var traficoCols = esUnificado ? _cargasTraficoLlamadasColumnasUnificado() : _cargasTraficoColumnas();
+    var traficoWpp = esUnificado ? _cargasTraficoWhatsappColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -146,6 +208,10 @@ function _cargasInstruccionesAoA(cliente, plan){
     h.columnas.forEach(function(c){
       put('  - ' + c.label + (c.opcional ? ' (OPCIONAL, puede quedar vacia)' : ' (OBLIGATORIA)'));
     });
+    // notasExtra (Fase 66): lineas adicionales especificas de esta hoja
+    // (ejemplo de fila, reglas propias, de donde sale el dato) -- opcional,
+    // no cambia nada para las hojas que no lo traen (todas las de siempre).
+    (h.notasExtra || []).forEach(function(linea){ put(linea); });
     put('');
   });
   put('FORMATOS');
@@ -221,8 +287,24 @@ async function procesarArchivoConsolidado(input){
 
   var calidad = _cargasCalidadPorCampana[cliente] || null;
   _cargasArchivoNombre = file.name;
+  // Fase 66 — compatibilidad hacia atras para campanas con plantilla
+  // unificada (2 hojas de Trafico con `canalFijo`, ver cargasPlanConsolidado):
+  // un archivo VIEJO de un solo canal sigue trayendo su dato en la hoja
+  // "DATA" (nunca "LLAMADAS"/"WHATSAPP") -- si la hoja con el nombre nuevo
+  // no esta pero "DATA" si, y su canal detectado coincide con el de este
+  // slot, se usa esa. "DATA" solo se consume UNA vez (por el canal que
+  // realmente traiga), nunca se le asigna dos veces a ambos slots.
+  var dataLegadoUsada = false;
+  var wsData = wb.Sheets['DATA'] || null;
+  var canalData = null;
+  if(wsData){
+    var aoaDataHeader = XLSX.utils.sheet_to_json(wsData, {header:1, blankrows:false, defval:null});
+    canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap);
+  }
   _cargasResultados = _cargasPlan.map(function(h){
-    var ws = wb.Sheets[h.hoja];
+    var resuelto = cargasResolverHojaTrafico(h, wb.SheetNames, !!wsData, canalData, dataLegadoUsada);
+    var ws = resuelto.hojaReal ? wb.Sheets[resuelto.hojaReal] : undefined;
+    if(resuelto.usoData) dataLegadoUsada = true;
     var defval = h.tipo==='seccion' ? '' : null;
     var aoa = ws ? XLSX.utils.sheet_to_json(ws, {header:1, blankrows:false, defval:defval}) : null;
     var parseFn;
@@ -234,6 +316,10 @@ async function procesarArchivoConsolidado(input){
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
+    // `h` conserva su `hoja` "oficial" (LLAMADAS/WHATSAPP) para el mensaje
+    // de "hoja ausente" y la vista previa, aunque el dato real haya salido
+    // de "DATA" -- cargasProcesarHoja solo mira si `ws` es null o no, nunca
+    // vuelve a buscarla por nombre.
     return cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
   });
 

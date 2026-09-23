@@ -127,6 +127,12 @@ function cargasDetectarFormulaSinValor(ws) {
 // usados por dashboard-secciones.js / dashboard-plantillas-cliente.js, nunca
 // coinciden con los nombres reservados de arriba.
 var CARGAS_HOJA_TRAFICO = 'DATA';
+// Fase 66: ORLANT pasa de 1 hoja "DATA" (voz o WhatsApp, autodetectada por
+// columnas) a 2 hojas separadas y explicitas -- ver cargasPlanConsolidado.
+// Los nombres reservados de abajo son EXCLUSIVOS de ese caso; el resto de
+// campanas sigue usando CARGAS_HOJA_TRAFICO ('DATA') tal cual siempre.
+var CARGAS_HOJA_TRAFICO_LLAMADAS = 'LLAMADAS';
+var CARGAS_HOJA_TRAFICO_WHATSAPP = 'WHATSAPP';
 var CARGAS_HOJA_CALIDAD = 'Monitoreos';
 var CARGAS_HOJA_DICCIONARIO = 'Diccionario';
 var CARGAS_HOJA_RESUMEN_ASESOR = 'Resumen por Asesor';
@@ -142,7 +148,16 @@ var CARGAS_HOJA_INSTRUCCIONES = 'INSTRUCCIONES';
 // pertenece cada fila, no el archivo — ver docs/ARQUITECTURA.md §5), asi que
 // no hay razon para excluirla de ninguna campana, tenga o no panel de
 // Trafico activado hoy en su dashboard.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
+// traficoWppCols (Fase 66, OPCIONAL): cuando se pasa (hoy solo ORLANT), la
+// hoja unica "DATA" (voz o WhatsApp autodetectada) se reemplaza por DOS
+// hojas explicitas "LLAMADAS"/"WHATSAPP" -- mismos encabezados/orden que la
+// plantilla ya aprobada por el cliente. Sin este parametro, el comportamiento
+// es IDENTICO al de siempre (1 sola hoja "DATA") -- asi el resto de campanas
+// no cambia en nada. Archivos viejos con hoja "DATA" (de cualquier canal)
+// siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
+// (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
+// corresponde cada entrada del plan.
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -158,16 +173,49 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
       filaUnica: false, columnas: calidadCols,
     });
   }
-  plan.push({
-    tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
-    descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox (Trafico de Llamadas). ' +
-      'Esta misma hoja tambien acepta el formato de Trafico de WhatsApp (columnas ' +
-      'NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL WHATSAPP, WHATSAPP CONTESTADOS, ' +
-      'etc. — una fila por cola y periodo) si subes ese archivo en su lugar: el sistema detecta ' +
-      'cual de los dos formatos trae por las columnas del encabezado, nunca por el nombre de hoja ' +
-      '(los dos usan "DATA").',
-    filaUnica: false, columnas: traficoCols,
-  });
+  if (traficoWppCols) {
+    plan.push({
+      tipo: 'trafico', canalFijo: 'voz', hoja: CARGAS_HOJA_TRAFICO_LLAMADAS, titulo: 'Trafico de Llamadas (Wolkvox)',
+      descripcion: 'Una fila por skill/linea y dia, tal cual el export de voz de Wolkvox.',
+      filaUnica: false, columnas: traficoCols,
+      notasExtra: [
+        'De donde sale: export diario de voz de Wolkvox (una fila por linea/skill y dia).',
+        'Ejemplo de fila (NO la escribas en esta hoja de datos, es solo referencia):',
+        '  SKILL_NAME=CALL INBOUND ORLANT 3P | DATE=2026-08-03 | TOTAL LLAMADAS=161 | ' +
+          'LLAMADAS CONTESTADAS=158 | LLAMADAS ABANDONADAS=3 | AHT=0:03:41',
+        'Si vuelves a subir un dia+skill que ya existia, se actualiza en el mismo lugar (no se ' +
+          'duplica) — el sistema te muestra antes cuantos registros existentes se van a reemplazar ' +
+          'y pide que confirmes.',
+        'AHT/WAIT_TIME: si Wolkvox trae "----" en vez de un tiempo (tipico en un dia con 0 llamadas ' +
+          'contestadas), deja la celda vacia o tal cual "----" — el sistema la trata como "sin dato" ' +
+          'y la excluye del promedio, nunca la cuenta como 0.',
+      ],
+    });
+    plan.push({
+      tipo: 'trafico', canalFijo: 'whatsapp', hoja: CARGAS_HOJA_TRAFICO_WHATSAPP, titulo: 'Trafico de WhatsApp (Wolkvox)',
+      descripcion: 'Una fila por cola y periodo (FECHA INICIO..FECHA FIN), tal cual el export de WhatsApp de Wolkvox.',
+      filaUnica: false, columnas: traficoWppCols,
+      notasExtra: [
+        'De donde sale: export de WhatsApp de Wolkvox (una fila por cola y periodo, no por dia).',
+        'Ejemplo de fila (NO la escribas en esta hoja de datos, es solo referencia):',
+        '  NOMBRE_COLA_WHATSAPP=WHATSAPP ORLANT 3P | FECHA INICIO=2026-08-01 | FECHA FIN=2026-08-31 | ' +
+          'TOTAL WHATSAPP=1500 | WHATSAPP CONTESTADOS=1460',
+        'Si vuelves a subir una cola+periodo que ya existia, se actualiza en el mismo lugar (no se ' +
+          'duplica) — a diferencia de Llamadas, aqui no se pide confirmacion previa, se actualiza directo.',
+      ],
+    });
+  } else {
+    plan.push({
+      tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
+      descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox (Trafico de Llamadas). ' +
+        'Esta misma hoja tambien acepta el formato de Trafico de WhatsApp (columnas ' +
+        'NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL WHATSAPP, WHATSAPP CONTESTADOS, ' +
+        'etc. — una fila por cola y periodo) si subes ese archivo en su lugar: el sistema detecta ' +
+        'cual de los dos formatos trae por las columnas del encabezado, nunca por el nombre de hoja ' +
+        '(los dos usan "DATA").',
+      filaUnica: false, columnas: traficoCols,
+    });
+  }
   return plan;
 }
 
@@ -185,6 +233,28 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols) {
 function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp) {
   var esWhatsapp = colIndexMapWpp(headerRow || []).colaWhatsapp !== undefined;
   return esWhatsapp ? 'whatsapp' : 'voz';
+}
+
+// Fase 66 — decide de que hoja del archivo sale el dato de un slot de
+// Trafico con canal fijo (LLAMADAS o WHATSAPP, plantilla unificada de
+// ORLANT): si el archivo ya trae la hoja con el nombre nuevo, esa manda. Si
+// no, y el archivo trae una hoja "DATA" (formato viejo, un solo canal) cuyo
+// canal detectado coincide con el de este slot, se usa esa -- asi un
+// archivo viejo (voz o WhatsApp, hoja "DATA") sigue funcionando exactamente
+// igual que antes de la Fase 66. "DATA" nunca se le asigna a los dos slots:
+// `dataYaUsada` lo marca despues de que un slot ya la reclamo (ver el
+// caller, que llama esta funcion una vez por slot, en orden, y propaga el
+// resultado). Pura: no toca el workbook, solo decide un nombre de hoja a
+// partir de datos ya extraidos por el caller (nombresHojasDisponibles,
+// dataDisponible, canalDataDetectado).
+function cargasResolverHojaTrafico(hojaPlan, nombresHojasDisponibles, dataDisponible, canalDataDetectado, dataYaUsada) {
+  if ((nombresHojasDisponibles || []).indexOf(hojaPlan.hoja) !== -1) {
+    return { hojaReal: hojaPlan.hoja, usoData: false };
+  }
+  if (hojaPlan.canalFijo && dataDisponible && !dataYaUsada && canalDataDetectado === hojaPlan.canalFijo) {
+    return { hojaReal: 'DATA', usoData: true };
+  }
+  return { hojaReal: null, usoData: false };
 }
 
 // aoa: array-of-arrays de la hoja tal cual la entrega SheetJS
@@ -272,6 +342,8 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasParseMultiFila: cargasParseMultiFila,
     cargasDetectarFormulaSinValor: cargasDetectarFormulaSinValor,
     CARGAS_HOJA_TRAFICO: CARGAS_HOJA_TRAFICO,
+    CARGAS_HOJA_TRAFICO_LLAMADAS: CARGAS_HOJA_TRAFICO_LLAMADAS,
+    CARGAS_HOJA_TRAFICO_WHATSAPP: CARGAS_HOJA_TRAFICO_WHATSAPP,
     CARGAS_HOJA_CALIDAD: CARGAS_HOJA_CALIDAD,
     CARGAS_HOJA_DICCIONARIO: CARGAS_HOJA_DICCIONARIO,
     CARGAS_HOJA_RESUMEN_ASESOR: CARGAS_HOJA_RESUMEN_ASESOR,
@@ -280,5 +352,6 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,
     cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
+    cargasResolverHojaTrafico: cargasResolverHojaTrafico,
   };
 }
