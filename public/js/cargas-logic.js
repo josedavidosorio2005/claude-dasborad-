@@ -189,6 +189,10 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'AHT/WAIT_TIME: si Wolkvox trae "----" en vez de un tiempo (tipico en un dia con 0 llamadas ' +
           'contestadas), deja la celda vacia o tal cual "----" — el sistema la trata como "sin dato" ' +
           'y la excluye del promedio, nunca la cuenta como 0.',
+        'Esta nota manda sobre la seccion general "FORMATOS" de mas abajo para estas 2 hojas: ' +
+          'SERVICE_LEVEL_10/20/30SEC aceptan "93.55" o "93.55 %" (con o sin el simbolo); AHT y ' +
+          'WAIT_TIME van en formato de HORA de Excel (lo que Wolkvox ya trae, se ve como 0:03:41) — ' +
+          'nunca en segundos como numero.',
       ],
     });
     plan.push({
@@ -202,6 +206,8 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
           'TOTAL WHATSAPP=1500 | WHATSAPP CONTESTADOS=1460',
         'Si vuelves a subir una cola+periodo que ya existia, se actualiza en el mismo lugar (no se ' +
           'duplica) — a diferencia de Llamadas, aqui no se pide confirmacion previa, se actualiza directo.',
+        'Esta nota manda sobre la seccion general "FORMATOS" de mas abajo para esta hoja: ' +
+          'SERVICE_LEVEL_10/20/30SEC aceptan "93.55" o "93.55 %" (con o sin el simbolo).',
       ],
     });
   } else {

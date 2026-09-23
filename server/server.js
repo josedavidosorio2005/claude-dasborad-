@@ -17,6 +17,7 @@
 // mismo archivo. Ningun otro par de routers comparte prefijo, asi que el
 // resto del orden no afecta el comportamiento.
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -182,8 +183,47 @@ function createApp() {
   //     "atascado" para quien ya lo tenga en cache) pero 5 minutos evita la
   //     ida y vuelta de revalidacion en recargas seguidas dentro de la misma
   //     sesion de trabajo, con una ventana de staleness minima tras un deploy.
+  //
+  // Fase 67: los 5 minutos de arriba resultaron insuficientes en la practica
+  // -- un usuario con una PESTAÑA YA ABIERTA desde antes de un deploy sigue
+  // ejecutando el JS viejo que ya cargo en memoria (ningun deploy "empuja"
+  // codigo a una pestana abierta, eso es cierto en cualquier SPA), y ademas
+  // cualquiera que recargue dentro de esa ventana de 5 minutos podia recibir
+  // el JS/CSS viejo desde el cache del navegador SIN pasar por el servidor.
+  // index.html YA se revalida siempre (no-cache, ver arriba) -- lo que le
+  // faltaba era que los scripts/estilos que referencia tuvieran una URL
+  // DISTINTA en cada deploy, para que un navegador con el JS viejo en cache
+  // nunca pueda "acertarle" a esa URL nueva. BUILD_ID (fijado una sola vez al
+  // arrancar el proceso -- un deploy real siempre reinicia el proceso) se
+  // agrega como "?v=" a cada script/estilo LOCAL (nunca a cdnjs.cloudflare.com)
+  // referenciado en index.html; el propio index.html se transforma una sola
+  // vez al arrancar y se sirve cacheado en memoria. Con esto, recargar la
+  // pagina (no solo esperar 5 minutos) alcanza para tener el JS correcto —
+  // sigue sin poder "empujar" el cambio a una pestaña que nunca se recarga,
+  // eso requeriria un mecanismo de aviso/polling que no se implemento (mayor
+  // alcance, no pedido). No se toco ningun Cache-Control existente ni se creo
+  // service worker.
+  const BUILD_ID = String(Date.now());
+  let indiceHtmlVersionado = null;
+  function indiceHtmlConVersion() {
+    if (indiceHtmlVersionado === null) {
+      const raw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+      indiceHtmlVersionado = raw.replace(
+        /(src|href)="((?:js|css)\/[^"]+)"/g,
+        (match, attr, relPath) => `${attr}="${relPath}?v=${BUILD_ID}"`
+      );
+    }
+    return indiceHtmlVersionado;
+  }
+  function servirIndice(req, res) {
+    res.set('Cache-Control', 'no-cache');
+    res.type('html').send(indiceHtmlConVersion());
+  }
+  app.get('/', servirIndice);
+  app.get('/index.html', servirIndice);
   app.use(
     express.static(PUBLIC_DIR, {
+      index: false,
       setHeaders(res, filePath) {
         const rel = path.relative(PUBLIC_DIR, filePath).split(path.sep).join('/');
         if (rel === 'index.html') {
@@ -196,10 +236,7 @@ function createApp() {
       },
     })
   );
-  app.get('/{*splat}', (req, res) => {
-    res.set('Cache-Control', 'no-cache');
-    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-  });
+  app.get('/{*splat}', servirIndice);
 
   // ── Manejo de errores centralizado ────────────────────────
   // Loguea el detalle real en el servidor, responde generico al cliente.
