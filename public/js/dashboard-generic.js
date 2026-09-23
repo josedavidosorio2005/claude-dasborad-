@@ -187,6 +187,31 @@ function _gdResolver(f, extra){
     });
     return { scalar: cargasK.length ? totalK : null };
   }
+
+  // AHT real de Trafico de Llamadas (Wolkvox) para el mes seleccionado
+  // (`_gd.mesSel`, o el mes mas reciente con datos si no hay ninguno
+  // elegido) -- Fase 65: reemplaza el dato manual de Gestion de base
+  // (`aht_segundos`) en 6 clientes, para que la tarjeta "AHT Promedio" de
+  // la franja global sea la MISMA fuente y formula que la sub-pestaña
+  // "AHT" del panel de Trafico (traficoAhtPromedioPeriodo,
+  // trafico-logic.js). `_trafico[f.campana]` lo precarga _gdBootstrap
+  // (mismo patron que ya usa loadCalData para Calidad) antes de llamar a
+  // renderGenericKpis, asi que estos datos ya estan en cache para cuando
+  // se llega aqui. Sin datos de Wolkvox para el mes -> scalar:null, que
+  // ya renderiza como "—" (_gdKpiCardHtml), nunca un 0 que parezca real.
+  if(f.modo === 'trafico_aht'){
+    var campanaAht = f.campana || _gd.cliente;
+    var datosAht = (typeof _trafico !== 'undefined' && _trafico[campanaAht]) ? _trafico[campanaAht] : null;
+    if(!datosAht || !datosAht.filas || !datosAht.filas.length) return { scalar: null };
+    var mesesAht = datosAht.filas.map(function(r){ return String(r.fecha).slice(0,7); });
+    var mesTopeAht = _gd.mesSel || mesesAht.slice().sort().reverse()[0];
+    if(!mesTopeAht) return { scalar: null };
+    var filasMesAht = (typeof traficoFiltrarFilas === 'function')
+      ? traficoFiltrarFilas(datosAht.filas, { desde: mesTopeAht + '-01', hasta: mesTopeAht + '-31' })
+      : [];
+    return { scalar: (typeof traficoAhtPromedioPeriodo === 'function') ? traficoAhtPromedioPeriodo(filasMesAht) : null };
+  }
+
   return { scalar: null };
 }
 
@@ -539,6 +564,18 @@ async function _gdBootstrap(){
     (t.panels || []).forEach(function(p){ if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanas[p.campana] = true; });
   });
   for(var camp in campanas){ try{ await loadCalData(camp); }catch(e){} }
+
+  // Precarga de Trafico de Llamadas para cualquier KPI de la franja global
+  // que lo necesite (fuente.modo==='trafico_aht', Fase 65) -- mismo patron
+  // que el precargado de Calidad de arriba. La franja global se dibuja
+  // ANTES de que el usuario abra la pestaña "Trafico de Llamadas" (que es
+  // quien normalmente dispara _traficoCargarDatos), asi que sin esto
+  // _gdResolver encontraria _trafico[campana] vacio la primera vez.
+  var campanasTrafico = {};
+  (_gd.config.layout.kpis || []).forEach(function(k){
+    if(k.fuente && k.fuente.modo === 'trafico_aht') campanasTrafico[k.fuente.campana || _gd.cliente] = true;
+  });
+  for(var campT in campanasTrafico){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} }
   await _gdCargarUmbrales();
 
   renderGenericHeader();

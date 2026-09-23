@@ -1150,6 +1150,45 @@ runOnceMigration('dashboards_config_sascha_bivett_kpis_duplicados_v1', () => {
   }
 });
 
+// Conecta la tarjeta "AHT Promedio" de la franja global al dato REAL de
+// Trafico de Llamadas (Wolkvox) en los 6 clientes que ya usan esta
+// plantilla con Trafico activo -- Fase 65 (hallazgo #3 de la auditoria de
+// la Fase 64: el dato manual de Gestion de base podia desincronizarse del
+// AHT real que ya se ve en la sub-pestaña "AHT" del panel de Trafico).
+// Mismo motivo que las migraciones anteriores: dashboards_config solo se
+// siembra la primera vez que un cliente se crea, asi que el cambio nuevo
+// de dashboard-plantillas-cliente.js (kpiAhtPromedio) no le llega solo a
+// las filas ya sembradas en produccion. NO quita la tarjeta (a diferencia
+// de dashboards_config_sascha_bivett_kpis_duplicados_v1) -- solo reemplaza
+// su `fuente`, conservando titulo/formato/clase tal cual.
+runOnceMigration('dashboards_config_aht_real_trafico_v1', () => {
+  const CLIENTES = ['TELEVENTAS SURA', 'TELEVENTAS COMFAMA', 'ANDRES YEPES', 'MOVILIZE', 'SASCHA FITNESS', 'BIVETT'];
+  let dashboardsTocados = 0;
+  for (const cliente of CLIENTES) {
+    const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get(cliente);
+    if (!row) continue; // no existe todavia -> el seed ya la crea con la fuente nueva
+    let layout;
+    try {
+      layout = JSON.parse(row.layout);
+    } catch (e) {
+      continue;
+    }
+    const kpiAht = (layout.kpis || []).find((k) => k && k.titulo === 'AHT Promedio');
+    if (!kpiAht) continue; // este cliente no tiene esta tarjeta -- nada que hacer
+    if (kpiAht.fuente && kpiAht.fuente.modo === 'trafico_aht') continue; // ya tiene la forma nueva
+    kpiAht.fuente = { s: 'trafico', modo: 'trafico_aht', campana: cliente };
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+      JSON.stringify(layout),
+      new Date().toISOString(),
+      cliente
+    );
+    dashboardsTocados++;
+  }
+  if (!config.isTest) {
+    console.log(`[db] Migracion dashboards_config_aht_real_trafico_v1 aplicada (${dashboardsTocados} dashboard(s)).`);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -326,6 +326,64 @@ function traficoAgregar(filas, opts) {
   });
 }
 
+// AHT promedio de un conjunto de filas YA filtradas (skill/fecha/sede),
+// colapsado a UN solo numero en vez de una serie por periodo -- misma
+// formula EXACTA que usa traficoAgregar para ahtSegundos (promedio
+// ponderado por TOTAL LLAMADAS de cada fila, nunca un promedio simple de
+// promedios diarios), asi que un numero calculado con esta funcion
+// SIEMPRE coincide con lo que se ve en la sub-pestaña "AHT" de Trafico de
+// Llamadas para el mismo conjunto de filas (Fase 65: conecta la tarjeta
+// "AHT Promedio" de la franja global de 6 clientes a este mismo calculo,
+// en vez de un dato manual de Gestion de base que puede desincronizarse).
+function traficoAhtPromedioPeriodo(filas) {
+  var suma = 0, peso = 0;
+  (filas || []).forEach(function (f) {
+    var w = Number(f.totalLlamadas) || 0;
+    if (f.ahtSegundos != null && w > 0) { suma += f.ahtSegundos * w; peso += w; }
+  });
+  return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;
+}
+
+// ── Filtro "Skill": desplegable principal + comparador (Fase 60/65) ─────
+// Fase 60 introdujo el desplegable "Skill" (una sola linea o "Todas") mas
+// un listbox secundario "Comparar varias lineas" para 2+. Bug real de la
+// Fase 64: el listbox del comparador podia quedar con una seleccion vieja
+// de 2+ lineas (ej. cargada desde una URL compartida) y, si el usuario
+// cambiaba el desplegable principal a otra linea SIN tocar el comparador,
+// "Aplicar filtros" seguia usando la seleccion vieja del comparador --
+// ignoraba la eleccion nueva del usuario. Esta funcion es la fuente unica
+// de verdad de "quien manda": el comparador gana SOLO si tiene 2+
+// seleccionadas; el resto de las veces manda el desplegable principal. El
+// arreglo real (trafico.js) es que el desplegable principal, al cambiar,
+// limpia la seleccion del comparador -- asi el comparador NUNCA puede
+// "sobrevivir" a una eleccion nueva del usuario en el desplegable. Esta
+// funcion pura queda igual de todos modos como ultima linea de defensa y
+// para poder probarse sin DOM.
+function traficoResolverSkillsControles(seleccionComparador, valorPrincipal) {
+  var seleccion = seleccionComparador || [];
+  if (seleccion.length >= 2) {
+    return { skills: seleccion.slice(), modo: 'multi', skillUna: null };
+  }
+  if (valorPrincipal && valorPrincipal !== '__multi__') {
+    return { skills: [valorPrincipal], modo: 'una', skillUna: valorPrincipal };
+  }
+  return { skills: [], modo: 'todas', skillUna: null };
+}
+
+// Que debe mostrar el desplegable/comparador dado el `estado.skills` YA
+// resuelto (post-aplicar-filtros o al cargar desde una URL compartida).
+// Misma logica que ya usaba _traficoRenderPanel (Fase 60), factorizada
+// para reusarse tambien al re-dibujar la barra de filtros despues de
+// aplicar (Fase 65) -- sin esto, el desplegable principal se quedaba
+// mostrando una opcion vieja despues de usar el comparador en vivo
+// (segundo hallazgo real de la Fase 64).
+function traficoModoDisplaySkills(datosSkills, estadoSkills) {
+  var todas = estadoSkills.length === datosSkills.length;
+  var una = estadoSkills.length === 1 ? estadoSkills[0] : null;
+  var subsetParcial = estadoSkills.length > 1 && !todas;
+  return { todas: todas, una: una, subsetParcial: subsetParcial };
+}
+
 // ── Formulario "Registrar skill nuevo" (mapeo manual Wolkvox -> campana,
 // hallazgo de la auditoria del flujo de carga, Fase 30/32) ──────────────
 // Valida ANTES de llamar al backend -- reutiliza el mismo PUT que ya usan
@@ -375,6 +433,9 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,
+    traficoAhtPromedioPeriodo: traficoAhtPromedioPeriodo,
+    traficoResolverSkillsControles: traficoResolverSkillsControles,
+    traficoModoDisplaySkills: traficoModoDisplaySkills,
     traficoValidarNuevoMapeo: traficoValidarNuevoMapeo,
   };
 }
