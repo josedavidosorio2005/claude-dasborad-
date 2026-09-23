@@ -3952,7 +3952,11 @@ allá del caso ya documentado (`abandonPct` de
 propósito, dato histórico conservado).
 
 **Migraciones**: **13** `runOnceMigration(...)` en `server/db.js`
-(conteo corregido en la Fase 59 — ver nota arriba), todas siguen el mismo patrón (ledger
+(conteo corregido en la Fase 59 — ver nota arriba; ese "13" quedó
+desactualizado en el mismo commit de la Fase 59, que agregó su propia
+migración nueva — la Fase 64 recontó y encontró 14, la Fase 65 agregó una
+más: el conteo final correcto, con evidencia de `git log`, es **15** —
+ver la sección "Fase 65 — Parte 3"), todas siguen el mismo patrón (ledger
 en `schema_migrations` + chequeo interno propio de "¿ya aplicó esto?"
 antes de tocar datos) — revisadas varias representativas contra bugs de
 escritura o dependencia de orden frágil, ninguna encontrada.
@@ -4887,4 +4891,33 @@ Contra el servidor de desarrollo local, usuario `demo_admin`
 `npm test` (server) 336/336 (31 pruebas nuevas: 10 del dropdown + 6 de AHT
 + 15 de la migración) y `npm audit` (server) 0 vulnerabilidades, antes y
 después.
+
+### Parte 5 — revisión independiente con 4 subagentes (antes de mergear)
+
+Regla explícita del pedido tras el incidente de la Fase 64: nada de
+subagentes tipo `fork` (heredan toda la conversación, incluida la
+instrucción de "abre PR sin esperar confirmación" que causó el problema)
+— los 4 se lanzaron como agentes nuevos, sin ese historial, con un prompt
+propio, acotado, y la instrucción explícita de "solo lectura — prohibido
+editar/commitear/pushear/mergear/borrar ramas/tocar producción", sin
+levantar servidor ni navegador (para no repetir la contención de la Fase
+58).
+
+| Subagente | Qué revisó | Resultado |
+|---|---|---|
+| Dropdown | Lógica de `_traficoSkillPrincipalCambio`/`_traficoFiltroSkillHTML`, casos borde (0/1/2+ líneas, cambiar de control en ambos sentidos, `__multi__`, URL compartida), regresiones en el resto de `trafico.js` | **Limpio** — confirma los 2 bugs cerrados, sin regresiones; corrió `node --test tests/trafico-logic.test.js` el mismo (41/41) en vez de confiar en el reporte |
+| AHT | Misma fórmula/fuente/período que la sub-pestaña, estado vacío, idempotencia y alcance de la migración, cobertura de pruebas | **Limpio** — confirma con evidencia de código (no solo el comentario del diff) que todo coincide; corrió ambos archivos de test el mismo (15/15 y 41/41) |
+| Seguridad y regresiones | `.env`/CI/secretos no tocados, validación de inputs, escape XSS en `_traficoFiltroSkillHTML`, SQL parametrizado en la migración nueva, `npm test`/`npm audit` completos, código muerto/console.log sueltos | **Limpio** — corrió `npm test` (336/336) y `npm audit` (0 vulnerabilidades) el mismo, no repitió la cifra de memoria |
+| Migraciones | Recuenta el número final de forma independiente (grep propio + arrancar `db.js` contra una BD temporal propia y leer `schema_migrations` de verdad + arqueología de `git log -S`) | **Confirma 15**, con evidencia de 3 métodos independientes — encontró un detalle cosmético real: una línea vieja en la sección de la Fase 58 seguía diciendo "13" sin nota de actualización (corregido en esta misma fase, ver arriba) |
+
+**Ningún subagente se salió de su alcance** — los 4 se quedaron en
+investigación de solo lectura, corrieron sus propios comandos de
+verificación (no repitieron cifras de este reporte de memoria), y
+citaron archivo:línea real para cada hallazgo. El único hallazgo nuevo
+(la línea "13" desactualizada) es cosmético y ya se corrigió arriba. No
+hizo falta descartar ni revertir ningún trabajo.
+
+Con la revisión limpia, CI en verde y sin nada que toque CI/secretos, se
+mergeó el PR #118 sin esperar confirmación adicional (regla explícita del
+pedido).
 
