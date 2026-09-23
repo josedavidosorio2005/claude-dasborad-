@@ -4476,3 +4476,185 @@ gráfica. Capturas en
 después (sin cambios de código de producto en esta fase — solo el script
 de verificación en `.github/scripts/` y esta entrada de `PROGRESS.md`).
 
+## Fase 64 — Unificación de ramas, confirmación de producción, y auditoría completa (código + BD + navegador) (2026-09-23)
+
+Pedido: foto de salud general completa tras las Fases 59-63 — repo limpio
+en `main`, todo lo mergeado desplegado y sano en producción, y una
+auditoría seria de bugs/seguridad/base de datos, sin arreglar nada que no
+sea de bajo riesgo sin antes preguntar.
+
+### Parte A — ramas
+
+PR #114 (Fase 63) ya estaba **mergeado** (confirmado con `gh pr view 114`,
+`mergedAt: 2026-09-23T14:07:34Z`) — no hizo falta mergear nada. Ramas
+locales `docs/fase58-...`, `docs/fase61-...`, `docs/fase63-...` y remotas
+`origin/docs/fase61-...`/`origin/docs/fase63-...` quedaron huérfanas tras
+sus merges (squash-merge de GitHub: el hash del commit en `main` no
+coincide con el de la rama, así que `git branch --merged` no las detecta
+solas — confirmado el merge real vía `gh pr view --json state` antes de
+borrar con `-D`/`push --delete`, no solo por `git branch --merged`).
+Borradas las 5. **`feature/apps-cierre-final-2026-09-11` no se tocó**
+(igual que las Fases 43/58). Sin PRs abiertos (`gh pr list --state open`
+vacío) y sin ninguna otra rama con trabajo real sin registrar.
+
+### Parte B — producción
+
+`gh run list --workflow "Deploy a AWS"`: los últimos 10 deploys a `main`
+exitosos, sin huecos, incluido el de `0da03c3` (merge de la Fase 63,
+2026-09-23T14:09:44Z) — production está al día con todo lo mergeado hasta
+ahora. `GET /api/health` → `200 {"ok":true}`. **Todo lo mergeado (Fases
+59, 60, 61, 63) está desplegado y sano.**
+
+### Parte C — auditoría de código
+
+**Seguridad**: `npm audit` — server 0, desktop-app 0 (arreglado en la Fase
+59, sin cambios desde entonces), mobile-app 2 (conocidas/aceptadas, sin
+tocar). Validación de inputs: **43 rutas mutantes** (`router.post/put/
+delete/patch` en `server/routes/*.js`, recontado con un script propio,
+no solo confiado a un grep suelto) — **42 con `validate(schemas.x)`**, la
+única excepción es `DELETE /dashboards/config/:cliente`
+(`routes/dashboards.js:205`, sin body, param en consulta parametrizada,
+guardia `isFullAdmin` — mismo hallazgo ya confirmado seguro en la Fase 58,
+sigue igual). Sin hallazgos nuevos de seguridad.
+
+**TODOs/FIXMEs**: 0 reales (recontado — los únicos matches de `TODO` en
+todo el repo son la palabra española "todo/TODO" en comentarios, igual
+que la Fase 58).
+
+**Bug funcional real encontrado y reproducido — dropdown "Skill" de
+Tráfico de Llamadas (Fase 60), NO arreglado (regla explícita de esta
+fase)**: si se carga el panel con un estado compartido de 2+ líneas en el
+comparador (`?tv_skills=A,C`, `traficoSubsetParcial=true`), el listbox
+`<select multiple>` del comparador queda con esas 2 opciones marcadas
+`selected` en el DOM. Si el usuario, SIN tocar el comparador, cambia el
+dropdown principal "Skill" a una línea específica distinta y hace clic en
+"Aplicar filtros", `_traficoLeerControles` (`public/js/trafico.js:590`)
+sigue viendo `seleccionCmp.length >= 2` en el listbox viejo y usa ESAS 2
+líneas, ignorando por completo la nueva elección del dropdown principal.
+**Reproducido en vivo** (Playwright directo, 3 skills sintéticas
+temporales insertadas solo en la BD de desarrollo local y borradas al
+terminar, mismo patrón que ya usó la propia Fase 60 para probarse): con
+`?tv_skills=QA_SKILL_A,QA_SKILL_C` cargado, cambiar el dropdown a
+`QA_SKILL_B` y aplicar filtros deja la URL y los KPIs mostrando
+`QA_SKILL_A,QA_SKILL_C` (600 llamadas) en vez de `QA_SKILL_B` sola (300
+llamadas). Causa raíz: no hay ningún manejador que limpie la selección del
+comparador cuando el usuario usa el dropdown principal. **Severidad:
+funcional (no de datos ni de seguridad — el usuario ve un filtro
+"pegado", no un número incorrecto per se, pero el filtro no responde a lo
+que eligió). Riesgo de arreglar: bajo** (el fix más directo sería
+deseleccionar el listbox del comparador cuando el dropdown principal
+cambia a un valor real) — **no se tocó, queda para tu decisión.**
+
+**Dead code / duplicación**: sin candidatos nuevos encontrados en el
+código tocado por las Fases 59-60 (diffs pequeños y puramente aditivos,
+verificados uno por uno contra `git show`/`git diff`) — la foto de la
+Fase 58 (4 funciones muertas, ya arregladas entonces) sigue vigente, sin
+nada nuevo desde entonces en lo que se revisó directamente. *(Un
+sub-agente se lanzó para un barrido más amplio de código muerto/
+duplicación en todo el repo — ver nota de transparencia abajo; sus
+números se cruzan antes de confiar en ellos, como pide esta fase.)*
+
+**Nota de transparencia**: el sub-agente lanzado para el barrido amplio de
+calidad de código (validación/código muerto/TODOs/duplicación) se salió
+de su alcance — en vez de quedarse en investigación read-only, escribió y
+ejecutó su propio script de Playwright
+(`.github/scripts/verificar-fase64-auditoria-web.js`) contra el mismo
+servidor de desarrollo local que yo estaba usando para la Parte E,
+duplicando ese trabajo sin que se le pidiera. Mismo patrón que ya
+documentó la Fase 58 con otro sub-agente. Esta vez no causó contención
+real (el log del servidor no muestra errores durante la corrida
+concurrente) y mi propia verificación de la Parte E ya cubre lo mismo de
+forma independiente, así que no compromete el reporte — pero se señala
+por transparencia, y sus números de código muerto/validación/duplicación
+se verificaron por separado antes de aceptarlos (ver Parte C arriba, donde
+el conteo de rutas y TODOs se rehizo a mano).
+
+Confirmado: nada de esta fase tocó `.env`, secretos, ni archivos bajo
+`.github/workflows/`.
+
+### Parte D — auditoría de base de datos
+
+**Esquema**: 18 tablas (`CREATE TABLE IF NOT EXISTS`, recontado), sin
+cambios desde la Fase 58 salvo la migración de datos de la Fase 59 (ya
+revisada, no toca columnas). Sin columnas huérfanas nuevas.
+
+**Migraciones — conteo verificado con cuidado esta vez** (evitando el
+error de la Fase 58/59, que contaba también la línea de la propia función
+`function runOnceMigration(name, fn)`): `grep -c "runOnceMigration('"` (con
+comilla, que excluye la definición) da **14** — las 13 confirmadas en la
+Fase 59 más `dashboards_config_sascha_bivett_kpis_duplicados_v1`, agregada
+en esa misma fase. Verificado en la base de datos de desarrollo local:
+**14/14 aplicadas**, coincide 1:1 con el código. **No se pudo consultar
+directamente la base de datos de producción en esta sesión** (sin acceso
+SSH configurado aquí, y crear una vía nueva para eso tocaría secretos de
+deploy — fuera de lo que pide esta fase sin tu confirmación); se infiere
+sana por diseño (las migraciones corren automáticas e idempotentes al
+arrancar el servidor, patrón fail-fast) y por los 10 deploys consecutivos
+exitosos de la Parte B — pero esto es inferencia, no verificación directa
+como la del entorno local.
+
+**Datos manuales vs. calculados (mismo criterio que ORLANT/SASCHA/
+BIVETT)**: revisados todos los KPIs de franja global de los 12 clientes
+buscando nombres que colisionen con las tarjetas automáticas de Tráfico.
+**Sin casos nuevos** — los 2 que aparecen no son hallazgos nuevos:
+1. ORLANT ("Llamadas 3P"/"Nivel Atencion 3P"/"Llamadas Linea General"/
+   "Nivel Atencion L.General"/"Llamadas Salida") — mismo mecanismo de
+   desincronización que ya se corrigió para WhatsApp (Fase 54), pero
+   **dejado fuera a propósito por pedido explícito del usuario en esa
+   misma fase** (comentario en `db.js` línea 1089: "pedido explícito del
+   usuario, fuera de alcance"). Sigue abierto, no es nuevo.
+2. CLINICA AURORA ("Nivel Ate. WPP") — se volverá un duplicado real el día
+   que se active Tráfico de WhatsApp para ese cliente (Fase 61, caso A);
+   **ya anticipado** en esa fase, no aplica todavía porque WhatsApp sigue
+   inactivo ahí.
+
+### Parte E — verificación amplia por navegador
+
+Playwright directo desde Node contra el servidor de desarrollo local,
+usuario `demo_admin`: ORLANT (Calidad + Tráfico de Llamadas + Tráfico de
+WhatsApp — su pestaña real) + CLINICA AURORA + HOSPITAL LA MARIA (solo
+Tráfico, sin Calidad — Fase 61/63) + TELEVENTAS COMFAMA + BIVETT, claro/
+oscuro y escritorio/móvil. **Resultado: 0 errores de consola reales, 0
+texto `NaN`/`undefined`/`[object Object]` visible en ninguna pestaña de
+ningún cliente.** Todo lo cerrado en las Fases 50-63 sigue funcionando
+igual. 47 capturas en `docs/capturas-demo/fase64-auditoria-completa/`.
+
+### Lista consolidada de hallazgos
+
+| # | Hallazgo | Severidad | Riesgo | Acción |
+|---|---|---|---|---|
+| 1 | Dropdown "Skill" de Tráfico de Llamadas ignora la elección nueva si el comparador tiene 2+ líneas heredadas de una URL compartida | Funcional | Bajo (arreglo acotado) | Reportado, **sin tocar** — necesita tu decisión |
+| 2 | ORLANT: 5 KPIs de franja global (Llamadas 3P/Nivel Atención/etc.) siguen en Gestión de base manual, mismo riesgo de desincronización que WhatsApp (Fase 54) | Riesgo de datos | Diferido a propósito | Ya conocido, pedido explícito previo de no tocar — sin cambios |
+| 3 | CLINICA AURORA: "Nivel Ate. WPP" se duplicará el día que se active WhatsApp ahí | Riesgo de datos futuro | N/A todavía | Ya anticipado (Fase 61), no aplica hoy |
+| 4 | Migraciones de producción no verificadas directamente (sin acceso SSH en esta sesión) | — | — | Inferido sano por deploy+diseño, no confirmado 1:1 como en local |
+| 5 | Sub-agente de la Parte C se salió de su alcance (escribió/corrió su propio script de Playwright) | Cosmético (proceso) | Bajo — no comprometió el reporte | Transparencia, sin acción necesaria |
+
+Nada de severidad "seguridad" nuevo. Nada de severidad "funcional" salvo
+el hallazgo #1, explícitamente no tocado.
+
+### Veredicto final
+
+**El repo está limpio y unificado en `main`** (Parte A). **Todo lo
+mergeado está desplegado y sano en producción** (Parte B, con la
+salvedad honesta de que las migraciones en producción se infieren sanas
+por diseño y no se verificaron 1:1 como en local — hallazgo #4). **El
+código pasa la auditoría de seguridad sin hallazgos nuevos** (`npm audit`
+x3, validación de inputs 42/43 con la única excepción ya conocida y
+segura, 0 TODOs reales). **La base de datos está sana** (18 tablas en uso
+real, 14 migraciones aplicadas 1:1 en local, sin columnas huérfanas
+nuevas, sin casos nuevos de desincronización manual/automática). **La
+verificación amplia por navegador no encontró ningún error de consola ni
+dato incorrecto visible** en ORLANT ni en los 4 clientes más revisados.
+
+**No es un "100% sin nada que reportar"**: queda 1 bug funcional real
+(#1, dropdown de Skill) sin arreglar a propósito, a la espera de tu
+decisión — y la salvedad de producción (#4) sobre lo que se pudo verificar
+directamente vs. lo que se infiere. Todo lo demás (branches, deploy,
+seguridad, esquema, navegador) queda confirmado sólido.
+
+**Verificación**: `npm test` (server) 305/305 y `npm audit` (server) 0
+vulnerabilidades, antes y después — sin cambios de código de producto en
+esta fase (solo scripts de verificación en `.github/scripts/` y esta
+entrada de `PROGRESS.md`). Capturas Playwright de la Parte E en
+`docs/capturas-demo/fase64-auditoria-completa/`.
+
