@@ -4921,3 +4921,175 @@ Con la revisión limpia, CI en verde y sin nada que toque CI/secretos, se
 mergeó el PR #118 sin esperar confirmación adicional (regla explícita del
 pedido).
 
+## Fase 66 — Plantilla unificada de Tráfico para ORLANT (Llamadas + WhatsApp en un solo archivo) (2026-09-23)
+
+Pedido: ORLANT usaba 2 plantillas separadas de Tráfico (voz y WhatsApp),
+las dos con hoja "DATA" (se distinguen por columnas, `cargasDetectarCanalTrafico`,
+Fase 52). Una plantilla unificada nueva (3 hojas: INSTRUCCIONES/LLAMADAS/WHATSAPP,
+ya diseñada y entregada por el usuario) debía quedar siendo la que se
+descarga desde la plataforma para ORLANT, y subirla debía cargar los 2
+canales de una vez — funcionando en producción.
+
+### Paso 1 — investigación
+
+- **¿Dónde se genera la descarga?** El botón "Descargar plantilla (Excel)"
+  de "Cargar Datos de Dashboards" (`descargarPlantillaConsolidada`,
+  `public/js/cargas.js`) genera el archivo **dinámicamente en el
+  navegador** con SheetJS (`XLSX.utils.book_new()`), a partir de
+  `cargasPlanConsolidado(...)` — **no es un archivo estático**, y es **el
+  mismo generador para todos los clientes** (una hoja por sección de
+  Gestión de base + Calidad + 1 hoja de Trafico "DATA"). Para ORLANT hoy
+  genera **10 hojas** (resumen/salida/tipificacion/sta_categorias +
+  Monitoreos/Diccionario/Resumen por Asesor + DATA), no solo las 3 de
+  Trafico. Aparte, y sin relación con este botón, existen 2 plantillas
+  **estáticas** por canal (`server/plantillas/*.xlsx`, servidas por
+  `res.download`) — la de voz ya no tiene botón en la interfaz (se retiró
+  en la unificación de 2026-09-16), la de WhatsApp sí sigue enlazada desde
+  "Metas Calidad → Tráfico/Wolkvox".
+- **Tensión real encontrada, presentada al usuario antes de construir**:
+  la plantilla de 3 hojas que dio el usuario no calza tal cual con el
+  archivo de 10 hojas que ya baja cualquier cliente, y la librería
+  (SheetJS Community, la misma de siempre — este proyecto evita a
+  propósito `xlsx`/`exceljs` como dependencia de npm porque fallan `npm
+  audit`, ver `server/tests/helpers/xlsx-lite.js`) no puede escribir
+  colores ni desplegables de validación de datos. **El usuario eligió**:
+  mantener el archivo completo de 10 hojas de siempre (Gestión de
+  base+Calidad+Trafico), pero la parte de Trafico pasa de 1 hoja "DATA" a
+  2 hojas "LLAMADAS"/"WHATSAPP" con los encabezados exactos de la
+  especificación — sin colores ni desplegables (limitación ya existente,
+  igual para todos los clientes desde siempre).
+- **Cómo reconoce las hojas el modal**: por nombre exacto contra el plan
+  (`cargasProcesarHoja`), campo por campo — una hoja con el nombre
+  correcto pero vacía es "vacía, no aplica" (sin error); una hoja
+  totalmente ausente genera un aviso (Fase 30/31) que NO bloquea el
+  guardado de las demás hojas presentes.
+- **Qué pasa hoy con 2 hojas de Trafico en un archivo**: el plan de
+  cualquier campaña (salvo ORLANT desde esta fase) solo busca UNA hoja
+  llamada "DATA" — cualquier otra hoja de tráfico con otro nombre se
+  ignora en silencio, no genera error ni conflicto.
+- **"Metas Calidad → Tráfico/Wolkvox"**: tiene su propia carga
+  (`procesarArchivoTrafico`, `public/js/trafico.js`), **independiente del
+  modal consolidado** — busca la hoja "DATA" o, si no existe, la primera
+  hoja del archivo, y parsea **solo con el formato de voz** (nunca
+  autodetecta WhatsApp, a diferencia del modal consolidado). Confirmado
+  en vivo con Playwright: subirle el archivo unificado (sin hoja "DATA")
+  cae a leer "INSTRUCCIONES" como si fuera datos de tráfico y muestra un
+  error claro ("Faltan columnas obligatorias..."), **sin romperse** — no
+  se tocó este flujo (fuera de alcance, ya lo advertía el pedido).
+
+### Correcciones al texto de INSTRUCCIONES del usuario
+
+1. **Upsert vs. reemplazo**: el texto decía "voz reemplaza con
+   confirmación, WhatsApp hace upsert" — **verificado en el código real
+   (`server/nivel-servicio-diario.js`)**: los DOS canales son técnicamente
+   un **upsert** por su llave natural (voz: campaña+fecha+skill;
+   WhatsApp: campaña+cola+fechaInicio+fechaFin) — nunca un
+   borrar-y-reinsertar. La única diferencia real es de UX: **voz pide
+   confirmación antes** (`/calidad/trafico/carga/impacto` cuenta cuántos
+   registros existentes se reemplazarían y lo muestra), **WhatsApp
+   actualiza directo, sin ese aviso previo**. Corregido en el texto de
+   INSTRUCCIONES generado (`notasExtra`, ver abajo).
+2. **"----" en AHT**: **confirmado exactamente como decía el texto** —
+   `traficoSegundosDesdeFraccionDia` convierte cualquier valor no
+   numérico (incluido "----") a `null`, y el parseo (`trafico-logic.js`)
+   **nunca** escribe ese campo en la fila cuando el valor es `null` (queda
+   `undefined`, no `0`) — `traficoAhtPromedioPeriodo` (Fase 65) ya excluye
+   esas filas del promedio ponderado. Verificado con el archivo real de
+   prueba: 48 de 50 filas tienen AHT (las 2 del 17/08, con 0 contestadas,
+   quedan fuera). Sin cambios de código, el comportamiento ya era correcto.
+3. **Bug de la hoja INSTRUCCIONES de WhatsApp (copia de voz)**: **NO es
+   cierto en el estado actual del repo** — se revisó
+   `server/plantillas/PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`
+   (la única que sirve el botón real de la interfaz) y su hoja
+   INSTRUCCIONES ya está escrita correctamente para WhatsApp (habla de
+   `NOMBRE_COLA_WHATSAPP`, `FECHA INICIO/FIN`, colas y períodos — nunca de
+   `SKILL_NAME`/`DATE`). No se encontró ninguna otra copia de esa
+   plantilla en el repo. **No se tocó nada** — no había nada que arreglar.
+4. **Números de referencia de agosto 2026**: los 2 conjuntos que dio el
+   usuario (Llamadas: 4.011/3.937/74 y 4.050/3.222/828 → 8.061/7.159/902 →
+   88,81%/11,19%; WhatsApp: 7.305/7.109/196 → 97,32%/2,68%) **coinciden
+   exacto** con lo que el parseo real produce contra el archivo de prueba
+   — sin diferencia de cálculo que explicar.
+
+### Paso 2 — implementación
+
+- **`public/js/cargas-logic.js`**: `cargasPlanConsolidado` acepta un 4to
+  parámetro opcional `traficoWppCols` — sin él (todos los clientes salvo
+  ORLANT), comportamiento **idéntico** al de siempre (1 hoja "DATA"). Con
+  él, la hoja "DATA" se reemplaza por 2 entradas con `hoja:'LLAMADAS'`/`'WHATSAPP'`
+  y `canalFijo:'voz'`/`'whatsapp'`. Nueva función pura
+  `cargasResolverHojaTrafico` (con sus propias pruebas) — decide, por
+  cada hoja del plan, si usar la hoja con el nombre nuevo o, si no está,
+  caer a una hoja "DATA" vieja cuyo canal detectado coincida (compatibilidad
+  hacia atrás) — nunca le asigna "DATA" a los 2 slots a la vez.
+- **`public/js/cargas.js`**: `procesarArchivoConsolidado` usa la función
+  de arriba para resolver cada hoja de Trafico antes de parsear (mismo
+  parser de siempre, `_cargasParseTraficoAuto`, sin tocar el mapeo de
+  columnas ni los cálculos). Nueva constante
+  `CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT']` — único punto de
+  control de qué clientes usan la plantilla unificada (agregar otro
+  cliente es la única línea que haría falta tocar). Columnas EXACTAS de
+  LLAMADAS/WHATSAPP verificadas letra por letra contra las 2 plantillas
+  oficiales ya aprobadas (`_cargasTraficoLlamadasColumnasUnificado`/
+  `_cargasTraficoWhatsappColumnasUnificado`, incluyen la columna
+  "ABANDON"/"ABANDONO" que el parser no lee pero la plantilla oficial sí
+  trae). INSTRUCCIONES enriquecidas con `notasExtra` por hoja (ejemplo de
+  fila, upsert vs. confirmación, regla del "----" en AHT) — mecanismo
+  aditivo, no cambia las instrucciones de ningún otro cliente/sección.
+- **Descarga**: para ORLANT, el archivo trae 7 hojas de datos (resumen/
+  salida/tipificacion/sta_categorias/Monitoreos + LLAMADAS/WHATSAPP) en
+  vez de 8 (…+DATA) — **ningún otro cliente cambia**.
+- **Compatibilidad hacia atrás**: un archivo viejo de ORLANT con hoja
+  "DATA" (voz o WhatsApp) sigue funcionando exacto igual — el canal
+  presente se reconoce y guarda normal, el canal ausente muestra el
+  mismo aviso de "hoja ausente" que ya existía (no bloquea el otro).
+- **No se tocó** la descarga/carga de ningún otro cliente, ni el mapeo de
+  columnas, ni los cálculos de métricas, ni `mobile-app`.
+
+### Paso 3 — verificación
+
+**Pruebas automáticas** (`server/tests/cargas-logic-fase66-plantilla-unificada.test.js`,
+19 pruebas nuevas + 336 ya existentes = **355/355 en verde**, `npm audit`
+0 vulnerabilidades, antes y después): archivo unificado con las 2 hojas
+llenas (cruzado contra los números de referencia exactos), solo LLAMADAS,
+solo WHATSAPP, las 2 vacías, archivo viejo de voz, archivo viejo de
+WhatsApp, "----" en AHT excluido del promedio, encabezados mal escritos
+(error claro, nada se guarda).
+
+**Playwright directo desde Node** (`.github/scripts/verificar-fase66-plantilla-unificada-orlant.js`,
+servidor de desarrollo local, usuario `demo_admin`; los 2 skills de
+prueba se mapearon a ORLANT vía la API real de mapeo — Fase 32 — antes de
+subir, igual que un admin real haría la primera vez que ve un skill
+nuevo, y se revirtió todo — filas y mapeo — al terminar):
+- **Descarga**: confirmado que ORLANT trae hojas LLAMADAS/WHATSAPP con los
+  encabezados exactos de la especificación, **sin hoja "DATA"**.
+- **Subida del archivo de prueba**: vista previa muestra "OK — 50 fila(s)"
+  (Trafico de Llamadas) y "OK — 5 fila(s)" (Trafico de WhatsApp), con las
+  5 hojas de Gestión de base/Calidad correctamente marcadas "hoja ausente"
+  (esperado, es un archivo solo de Trafico) sin bloquear el guardado de
+  las 2 que sí traen datos. Guardado: **Trafico de Llamadas muestra
+  8.061/7.159/902 → 88,8%/11,2%** (coincide con la referencia, redondeo
+  de 1 decimal en la interfaz vs. 2 del cálculo); **Trafico de WhatsApp
+  muestra 7.305/7.109/196 → 97,32%/2,68%** (exacto). El cálculo de AHT
+  (con el "----" del 17/08 excluido) se verificó en vivo contra las MISMAS
+  50 filas reales: 272,55s = 4:33 — **nota**: ORLANT **no tiene** tarjeta
+  "AHT Promedio" en su franja global (esa conexión de la Fase 65 fue solo
+  para los otros 6 clientes; ORLANT sigue con sus KPIs de voz manuales,
+  diferidos a propósito desde la Fase 54) — corrección al pedido, no había
+  tarjeta que comparar contra la sub-pestaña.
+- **Re-subir el mismo archivo**: 50/5 filas antes y después — **sin
+  duplicados**.
+- **Archivos viejos**: el de solo voz (`EJEMPLO.xlsx`, hoja "DATA") cargó
+  "OK — 12 fila(s)" en Trafico de Llamadas con WhatsApp correctamente
+  ausente; el de solo WhatsApp (`PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx`,
+  hoja "DATA") cargó "OK — 5 fila(s)" en Trafico de WhatsApp con Llamadas
+  correctamente ausente — compatibilidad hacia atrás confirmada en vivo.
+- **Pantallas legacy**: confirmado que "Metas Calidad → Tráfico/Wolkvox"
+  no se rompe con el archivo unificado (mensaje de error claro, cero
+  errores de JS).
+- **0 errores de consola** en todo el flujo. Claro/oscuro, escritorio/
+  móvil. 9 capturas en `docs/capturas-demo/fase66-plantilla-unificada-orlant/`.
+- Los 2 archivos que dio el usuario se copiaron a
+  `server/tests/fixtures/` (usados como especificación exacta y como
+  fixture de las pruebas automáticas).
+
