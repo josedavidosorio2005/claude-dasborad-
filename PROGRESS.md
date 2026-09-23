@@ -5165,3 +5165,138 @@ commit; `/api/health` en producción responde `{"ok":true}`.
   correr ese diagnóstico. **No se subió ningún dato real a producción en
   esta fase.**
 
+## Fase 67 — Por qué producción seguía sirviendo la plantilla vieja de ORLANT, y prueba real de punta a punta en producción (2026-09-23)
+
+Pedido: tras dar por cerrada la Fase 66, el cliente descargó la plantilla
+de ORLANT desde producción y le salió la versión VIEJA (hoja "DATA", sin
+LLAMADAS/WHATSAPP). Encontrar la causa exacta antes de tocar nada,
+arreglarla, y probar de punta a punta (local y producción) que la carga
+real de Llamadas + WhatsApp funciona.
+
+### Paso 1 — causa exacta
+
+**NO fue un deploy fallido.** Confirmado: el PR #120 sí quedó mergeado
+(`537ee3b`), y `CI`/`Deploy a AWS` corrieron en verde **3 veces**
+después del merge (19:07, 19:20, 19:23 UTC). El archivo que descargó el
+cliente es de las 19:42 UTC — 16 minutos después del último deploy, casi
+el mismo momento en que se había confirmado por HTTP que producción ya
+servía el código nuevo.
+
+La causa real es doble, ninguna de las dos relacionada con el deploy en
+sí:
+1. **Pestaña ya abierta antes del deploy**: cualquier SPA sigue
+   ejecutando el JS que ya cargó en memoria — ningún deploy "empuja"
+   código a una pestaña abierta, hace falta recargar la página.
+2. **`Cache-Control: public, max-age=300`** en JS/CSS sin huella de
+   versión en el nombre (decisión deliberada de una fase anterior,
+   documentada en `server.js`, "Radiografía InConexión #3"): incluso una
+   recarga normal dentro de esa ventana de 5 minutos podía servir JS
+   viejo desde el caché del navegador **sin pasar por el servidor**.
+
+Se descartó una capa de caché en el proxy (`deploy/Caddyfile` es un
+reverse proxy simple, sin plugin de caché — confirmado leyendo el
+archivo).
+
+### Paso 2 — arreglo (afecta a TODOS los usuarios/clientes)
+
+`server.js`: se agrega `?v=<build id>` (un timestamp fijado una sola vez
+al arrancar el proceso — un deploy real siempre reinicia el proceso) a
+cada `<script src="js/...">`/`<link href="css/...">` **local** de
+`index.html`, nunca al script externo de `cdnjs.cloudflare.com`.
+`index.html` ya se revalidaba siempre (`no-cache`); ahora cualquier
+recarga de página —no hace falta esperar 5 minutos ni forzar un
+hard-refresh— apunta a una URL que el navegador nunca vio, garantizando
+JS/CSS frescos. Rutas reordenadas (`/`, `/index.html` explícitos antes de
+`express.static({index:false})`, más el fallback SPA) para que ESTE sea
+el único punto que sirve `index.html`. No se tocó ningún `Cache-Control`
+existente ni se agregó un service worker (no existía ninguno). 4 pruebas
+nuevas (`server/tests/estatico-cache-busting.test.js`). **Confirmado en
+vivo en producción** tras el deploy (commit `7696b07`): `js/cargas.js?v=`
+y `css/styles.css?v=` versionados, el script de cdnjs sin `?v=`.
+
+### Correcciones al texto de INSTRUCCIONES (Paso 4)
+
+Las notas de LLAMADAS/WHATSAPP (ORLANT) ahora dicen explícitamente que
+mandan sobre la sección general "FORMATOS" para porcentajes (aceptan
+`"93.55"` o `"93.55 %"`, con o sin el símbolo) y AHT/WAIT_TIME (formato
+de HORA de Excel — lo que ya trae Wolkvox — nunca segundos como número),
+resolviendo la contradicción aparente que señaló el cliente.
+
+### Paso 3 — verificación de punta a punta
+
+**Local** (`.github/scripts/verificar-fase67-local-carga-real.js`, 359/359
+tests, `npm audit` 0 vulnerabilidades): se descargó la plantilla real de
+ORLANT, se llenaron **solo** LLAMADAS/WHATSAPP con las 50+5 filas del
+fixture de agosto (dejando el resto de hojas EXACTAMENTE como vienen
+descargadas — `resumen` con los 23 nombres de métrica sin valor,
+`Diccionario` con sus filas reales de ítems/pesos — usando el mismo
+SheetJS que ya carga la app, dentro del navegador, sin instalar ningún
+paquete npm de xlsx), y se subió por la interfaz real: vista previa
+"OK — 50 fila(s)"/"OK — 5 fila(s)", las demás hojas "Vacía — no aplica
+esta vez" (sin error — confirmado que `guardarCarga()` filtra por
+`r.filas` antes de guardar, así que una hoja vacía JAMÁS llega a
+tocar el servidor), **ningún otro dato de ORLANT cambió** (`dashboard_cargas`/
+`monitoreos` comparados byte a byte antes/después), KPIs exactos
+(Llamadas 8.061/7.159/902 → 88,8 %/11,2 %; WhatsApp 7.305/7.109/196 →
+97,32 %/2,68 %), 0 errores de consola.
+
+**Producción** (`.github/workflows/fase67-prueba-real-produccion.yml` +
+`.github/scripts/verificar-fase67-produccion-carga-real.js`, PR #124 y
+#125, corridos con autorización explícita del cliente): usuario temporal
+mínimo (rol `AUX_ADMIN`, `perms.cargarDatos` + `perms.campana_ORLANT` —
+nunca ADMIN, creado/borrado directo en la base vía SSH temporal, mismo
+patrón que `verificacion-plantilla-produccion.yml`). El script primero
+**comparó fila por fila y columna por columna** (con las mismas funciones
+puras de parseo que usa la app, `traficoParseFilas`/`traficoWppParseFilas`)
+el fixture de agosto contra lo que YA tenía producción vía los endpoints
+de lectura reales (`GET /calidad/nivel-servicio/diario`,
+`GET /calidad/trafico/whatsapp`) — **resultado: idéntico** (0 diferencias
+en 50+5 filas × 8-12 campos cada una). Solo entonces subió el archivo
+real por la interfaz (aceptando el aviso esperado de voz "se
+reemplazarán 50 registros"), y volvió a comparar después: **idéntico y
+sin duplicados** (50/5 filas, mismas antes y después). `dashboard_cargas`
+y conteo de `monitoreos` de ORLANT **sin cambios** (37=37). Paneles reales
+de Trafico de Llamadas/WhatsApp confirmados: **8.061/7.159/902 →
+88,8 %/11,2 %** y **7.305/7.109/196 → 97,32 %/2,68 %** — exacto a la
+referencia. El puerto 22 se revirtió correctamente en ambas corridas
+(confirmado explícitamente); el único dato que se borró al terminar fue
+el usuario temporal, nunca la data de Tráfico/Gestión de base/Monitoreos.
+Un `console.error 403` incidental y consistente en ambas corridas
+(un límite de permisos esperado del usuario temporal mínimo contra algún
+sub-recurso periférico del dashboard) nunca afectó ninguna operación de
+datos — no se investigó más a fondo por no justificar un tercer login de
+producción solo para depurar una aserción cosmética del script de QA.
+Tras confirmar el éxito, se quitó el workflow del repo (PR #126) —
+pedido explícito del cliente: era de un solo uso y escribía en
+producción, no debía quedar disponible para dispararse otra vez.
+
+### Paso 4 — colores/desplegables (investigado, NO implementado)
+
+- `exceljs`: sigue fallando `npm audit` HOY (vulnerabilidad moderada en
+  `uuid`, confirmado instalándolo en un directorio aislado) — mismo
+  motivo ya documentado en `xlsx-lite.js`. Corrección al pedido: NO es
+  dependencia actual del server (`server/package.json` no lo tiene).
+- `xlsx-js-style`: `npm audit` limpio, pero (a) **no soporta
+  data-validation/desplegables** en absoluto (confirmado revisando su
+  paquete — es un fork de SheetJS Community que solo agrega estilos de
+  celda), y (b) define el mismo global `window.XLSX` que ya usa
+  `xlsx.full.min.js` — coexistir exigiría cargar dos librerías con el
+  mismo nombre global, afectando potencialmente a TODOS los clientes
+  (no solo ORLANT) para conseguir nada más que colores, sin
+  desplegables. **Decisión (aceptada por el cliente): no implementar.**
+  Sin cambios de código para este punto.
+
+### Paso 5 — riesgo de columnas corridas en otros clientes (solo reporte)
+
+Confirmado en `traficoColIndexMap`: el parser lee las columnas **por
+nombre de encabezado**, no por posición — robusto a reordenar columnas.
+El riesgo real es más angosto de lo que parecía: solo ocurre si alguien
+pega las FILAS crudas de Wolkvox (que sí trae "ABANDON") debajo del
+encabezado propio de la plantilla (que no la trae) sin reemplazar
+también el encabezado. **Propuesta (no implementada, requiere
+confirmación del cliente)**: agregar la misma columna "fantasma"
+ABANDON/ABANDONO (que el parser ya ignora a propósito, Fase 45) en su
+posición real a la plantilla general de voz, igual que ya se hizo para
+las hojas LLAMADAS/WHATSAPP de ORLANT — no se tocó ningún formato de
+otro cliente sin autorización explícita.
+
