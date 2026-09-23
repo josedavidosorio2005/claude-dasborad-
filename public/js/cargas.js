@@ -72,18 +72,28 @@ function _cargasTraficoColumnas(){
     .concat([{ key:'mes', label:'MES', opcional:true }, { key:'anio', label:'AÑO', opcional:true }]);
 }
 // Fase 66 — columnas EXACTAS de las hojas LLAMADAS/WHATSAPP del archivo
-// unificado de ORLANT, letra por letra iguales a las plantillas oficiales
-// ya aprobadas por el cliente (server/plantillas/PLANTILLA_TRAFICO_
-// INCONEXION_VACIA.xlsx y PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx,
-// hoja DATA de cada una — verificado columna por columna). Incluyen
-// "ABANDON"/"ABANDONO", una columna que el parser NO lee (retirada del
-// parseo en la Fase 45 a proposito, ver TRAFICO_COLUMNAS/TRAFICO_WPP_
-// COLUMNAS en *-logic.js) pero que la plantilla oficial SI trae — no se
-// derivan de esas listas (que son las que SI lee el parser) para poder
-// insertar esa columna fantasma en su posicion exacta sin tocar el
-// parser ni el mapeo de columnas. A diferencia de _cargasTraficoColumnas()
-// (usada por el resto de campanas), esta version NO agrega MES/AÑO al
-// final -- la plantilla unificada tampoco los trae.
+// unificado de ORLANT (server/tests/fixtures/PLANTILLA_TRAFICO_UNIFICADA_
+// ORLANT.xlsx, la especificacion real que aprobo el cliente — verificado
+// letra por letra contra ese archivo, no reconstruido de memoria).
+// WHATSAPP coincide ademas 12/12 con la plantilla estatica general
+// (server/plantillas/PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx,
+// hoja DATA). LLAMADAS coincide con la estatica general
+// (PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx) SOLO en las primeras 13
+// columnas -- esa plantilla vieja trae ademas NIVEL DE ATENCION/TASA DE
+// ABNDONO/MES/AÑO al final, que la plantilla unificada NO incluye (decision
+// del cliente al aprobar el archivo, no un error de esta funcion). Sin
+// impacto funcional: MES/AÑO nunca se leyeron (decorativas); NIVEL DE
+// ATENCION/TASA DE ABNDONO si estan en TRAFICO_COLUMNAS pero su valor
+// parseado no se usa en ningun calculo real (trafico.js siempre recalcula
+// esas 2 métricas desde contestadas/total, nunca confia en el dato crudo
+// del archivo) -- solo afectaria una tabla de vista previa de la pantalla
+// legacy "Metas Calidad -> Trafico/Wolkvox", no el modal "Cargar Datos".
+// Incluyen "ABANDON"/"ABANDONO", una columna que el parser NO lee (retirada
+// del parseo en la Fase 45 a proposito, ver TRAFICO_COLUMNAS/TRAFICO_WPP_
+// COLUMNAS en *-logic.js) pero que las plantillas oficiales SI traen — no
+// se derivan de esas listas (que son las que SI lee el parser) para poder
+// insertar esa columna fantasma en su posicion exacta sin tocar el parser
+// ni el mapeo de columnas.
 function _cargasTraficoLlamadasColumnasUnificado(){
   return [
     { label:'SKILL_NAME', opcional:false },
