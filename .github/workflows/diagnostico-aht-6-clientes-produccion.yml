@@ -1,0 +1,138 @@
+name: Diagnostico - AHT manual vs Trafico real en 6 clientes (produccion)
+
+# Disparo manual unicamente. Mismo patron de acceso que
+# diagnostico-dashboard-produccion.yml (rol OIDC, apertura temporal del
+# puerto 22 solo para la IP de este runner) -- SOLO LECTURA: ningun paso
+# escribe en la base de datos. Fase 65: antes de conectar la tarjeta
+# manual "AHT Promedio" al dato real de Wolkvox en 6 clientes
+# (TELEVENTAS SURA/COMFAMA, ANDRES YEPES, MOVILIZE, SASCHA FITNESS,
+# BIVETT), hay que confirmar cuales de ellos ya tienen datos reales de
+# Trafico de Llamadas cargados en produccion, y si el campo manual
+# aht_segundos esta lleno -- para saber si el cambio les deja la tarjeta
+# vacia en vez de con un dato real.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  diagnosticar:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Correr el diagnostico (solo lectura) dentro del contenedor
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e JWT_SECRET="dummy-no-usado-diagnostico-32-caracteres" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              function out(titulo, data) {
+                console.log("\n=== " + titulo + " ===");
+                console.log(JSON.stringify(data, null, 2));
+              }
+              const CLIENTES = ["TELEVENTAS SURA", "TELEVENTAS COMFAMA", "ANDRES YEPES", "MOVILIZE", "SASCHA FITNESS", "BIVETT"];
+
+              out("Trafico real (calidad_nivel_servicio_diario) por cliente", CLIENTES.map((c) => {
+                const row = db.prepare(
+                  "SELECT COUNT(*) n, MIN(fecha) minFecha, MAX(fecha) maxFecha, COUNT(DISTINCT skillName) skills, SUM(CASE WHEN ahtSegundos IS NOT NULL THEN 1 ELSE 0 END) conAht FROM calidad_nivel_servicio_diario WHERE campana = ?"
+                ).get(c);
+                return { cliente: c, filasTrafico: row.n, minFecha: row.minFecha, maxFecha: row.maxFecha, skillsDistintos: row.skills, filasConAhtSegundos: row.conAht };
+              }));
+
+              out("AHT manual (dashboard_cargas seccion resumen, campo aht_segundos) por cliente", CLIENTES.map((c) => {
+                const rows = db.prepare(
+                  "SELECT periodo, filas FROM dashboard_cargas WHERE cliente = ? AND seccion = ? ORDER BY periodo DESC LIMIT 6"
+                ).all(c, "resumen");
+                const detalle = rows.map((r) => {
+                  let aht = null;
+                  try {
+                    const filas = JSON.parse(r.filas || "[]");
+                    const primera = filas[0] || {};
+                    aht = (primera.aht_segundos === undefined) ? "(sin campo aht_segundos en esta carga)" : primera.aht_segundos;
+                  } catch (e) { aht = "(no se pudo parsear)"; }
+                  return { periodo: r.periodo, aht_segundos: aht };
+                });
+                return { cliente: c, ultimasCargasResumen: detalle };
+              }));
+
+              out("dashboards_config -- cliente existe y tiene KPI AHT Promedio hoy", CLIENTES.map((c) => {
+                const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = ?").get(c);
+                if (!row) return { cliente: c, existe: false };
+                let layout;
+                try { layout = JSON.parse(row.layout); } catch (e) { return { cliente: c, existe: true, error: "layout invalido" }; }
+                const kpi = (layout.kpis || []).find((k) => k && k.titulo === "AHT Promedio");
+                return { cliente: c, existe: true, tieneKpiAhtPromedio: !!kpi, fuenteActual: kpi ? kpi.fuente : null };
+              }));
+
+              console.log("\n=== FIN DIAGNOSTICO ===");
+            '
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
