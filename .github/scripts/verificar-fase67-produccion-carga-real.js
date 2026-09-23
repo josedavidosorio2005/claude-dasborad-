@@ -236,13 +236,23 @@ function compararFilas(esperadas, reales, claveFn, campos, etiqueta) {
       monitoreosDespues: monitoreosDespuesConteo,
     };
 
-    // ══ 6. KPIs en el dashboard real ════════════════════════════════════
+    // ══ 6. KPIs en el dashboard real (paneles propios de cada sub-pestaña
+    // de Trafico, #tv-kpis-0/#tww-kpis-0 -- NUNCA #gd-kpis, que es la franja
+    // global de KPIs MANUALES de ORLANT, fase 54, un dato totalmente
+    // distinto). Produccion no tiene el skill de demo que sí vive en la
+    // base de desarrollo local, asi que no hace falta filtrar por skill
+    // aqui -- el panel por defecto ya muestra el total real. ════════════
     await page.evaluate(() => openGenericDashboard('ORLANT'));
     await page.waitForTimeout(1200);
     await page.evaluate(() => switchGenericTab('trafico'));
     await page.waitForTimeout(1200);
-    resultado.kpisLlamadas = await page.$eval('#gd-kpis', (el) => el.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
-    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '3-dashboard-orlant-produccion.png') });
+    resultado.kpisLlamadas = await page.$eval('#tv-kpis-0', (el) => el.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '3-trafico-llamadas-orlant-produccion.png') });
+
+    await page.evaluate(() => switchGenericTab('trafico_whatsapp'));
+    await page.waitForTimeout(1200);
+    resultado.kpisWhatsapp = await page.$eval('#tww-kpis-0', (el) => el.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    await page.screenshot({ path: path.join(ARTIFACTS_DIR, '4-trafico-whatsapp-orlant-produccion.png') });
 
     resultado.erroresConsola = erroresConsola;
     ok =
@@ -254,6 +264,8 @@ function compararFilas(esperadas, reales, claveFn, campos, etiqueta) {
       resultado.subida.previewWhatsappOk &&
       resultado.comparacionPosterior.identico &&
       resultado.comparacionPosterior.sinDuplicados &&
+      /8[.,]061/.test(resultado.kpisLlamadas) && /7[.,]159/.test(resultado.kpisLlamadas) && /902/.test(resultado.kpisLlamadas) &&
+      /7[.,]305/.test(resultado.kpisWhatsapp) && /7[.,]109/.test(resultado.kpisWhatsapp) && /196/.test(resultado.kpisWhatsapp) &&
       resultado.otrosDatos.cargasIdenticas &&
       resultado.otrosDatos.monitoreosConteoIdentico &&
       erroresConsola.length === 0;
