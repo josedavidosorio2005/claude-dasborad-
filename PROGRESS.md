@@ -5461,10 +5461,26 @@ Claro/oscuro y escritorio/móvil confirmados con capturas. **0 errores de
 consola** en toda la corrida. 11 capturas en
 `docs/capturas-demo/fase68-ajustes-reunion-edwin/`.
 
-**No verificado en producción todavía**: el pedido no incluye ninguna
-carga de datos real, y placeholder para el paso post-deploy (`GET
-/api/health` + revisión visual de solo lectura en producción) queda
-pendiente de que este PR se mergee y despliegue.
+**Producción, tras el deploy (PR #128, `ef4530e`)**: `GET /api/health`
+200 OK. Verificación visual de solo lectura confirmada con un workflow de
+un solo uso (mismo patrón que las Fases 66/67 — PR #129, usuario temporal
+`AUX_ADMIN` con `perms.campana_ORLANT`/`perms.campana_CLINICA AURORA`,
+sin `cargarDatos`, SSH abierto solo para la IP del runner y revertido al
+final): **todos los checks funcionales pasaron**, incluyendo los números
+exactos de referencia (Llamadas 8.061/7.159/902, WhatsApp 7.305/7.109/196
+— sin cambios), franja de KPIs vacía en ORLANT, CLINICA AURORA con su
+franja intacta, vista mensual por defecto, solo SL 20s, sin Wait Time, y
+WhatsApp con la misma interfaz que Llamadas. La única aserción que falló
+fue la propia del script ("cero errores de consola"): un
+`console.error: Failed to load resource: 403` — el MISMO hallazgo ya
+documentado en la Fase 67 ("un límite de permisos esperado del usuario
+temporal mínimo contra algún sub-recurso periférico del dashboard, nunca
+afecta ninguna operación de datos"), no una regresión de esta fase. El
+usuario temporal y el puerto 22 se revirtieron correctamente (confirmado
+en los pasos de limpieza del workflow, que corren siempre). Tras
+confirmar el éxito, se quitó el workflow del repo (PR #130) — mismo
+motivo que la Fase 67: era de un solo uso y abría acceso SSH temporal a
+producción, no debía quedar disponible para dispararse otra vez.
 
 ### Riesgos señalados / decisiones documentadas
 
