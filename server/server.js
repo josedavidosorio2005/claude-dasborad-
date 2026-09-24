@@ -100,7 +100,13 @@ function createApp() {
   );
 
   app.use(cors(buildCorsOptions()));
-  app.use(express.json({ limit: '100kb' }));
+  // Fase 72 (hallazgo N2): 100kb se quedaba corto para cargas reales de
+  // Trafico (traficoCargaBody admite hasta 5000 filas, que en JSON ya pasan
+  // de 100kb con datos reales de varios meses). Sigue habiendo un limite
+  // (nunca sin limite -- eso es lo que evita un body gigante como intento
+  // de DoS), solo se sube a un tamano que cubre con margen las cargas mas
+  // grandes que ya permite validation.js.
+  app.use(express.json({ limit: '2mb' }));
 
   // Logging de accesos. morgan NO registra cuerpos ni el header Authorization.
   if (!config.isTest) {
