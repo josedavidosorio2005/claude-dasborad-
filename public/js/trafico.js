@@ -348,14 +348,31 @@ var _traficoAgregadoActual = {}; // ultimo agregado calculado por campana (para 
 // Filtros y KPIs siguen siendo el mismo calculo de siempre (_traficoRenderContenido,
 // sin tocar); esto solo decide QUE canvas esta en el DOM en cada momento.
 var _traficoSubtabActivo = {}; // sub-pestana activa por claveEstado (campana[::sede]), default 'resumen'
+// Fase 68, Pedido 3/4 (Edwin, 23/09): se quita la sub-pestana "Wait Time" y
+// el nivel de servicio pasa a mostrar SOLO 20s -- waitTimeSegundos y
+// serviceLevel10secPct/serviceLevel30secPct se siguen aceptando y guardando
+// igual (la plantilla y la base de datos no cambian), solo dejan de
+// graficarse/mostrarse. Cambio en el componente compartido: aplica a todos
+// los clientes (decision de como se muestran las metricas, no un dato de
+// un cliente).
 var TRAFICO_SUBTABS = [
   { key: 'resumen', label: 'Resumen' },
   { key: 'abandono', label: 'Abandono' },
   { key: 'aht', label: 'AHT' },
   { key: 'asaata', label: 'ASA y ATA' },
-  { key: 'wait', label: 'Wait Time' },
-  { key: 'sl', label: 'Niveles de Servicio 10s/20s/30s' },
+  { key: 'sl', label: 'Nivel de Servicio a 20s' },
 ];
+
+// Barra de sub-pestanas (.gd-subtabs), compartida entre Llamadas y WhatsApp
+// (Fase 68, Pedido 5) -- mismas 5 sub-pestanas, mismo estilo visual, cada
+// una con su propio prefijo de ids/atributo de dataset y su propia funcion
+// de "switch" (_traficoSwitchSubtab / _traficoWppSwitchSubtab) para no
+// compartir estado entre canales.
+function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr){
+  return TRAFICO_SUBTABS.map(function(s){
+    return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
+  }).join('');
+}
 
 async function _traficoCargarDatos(campana){
   if(_trafico[campana]) return _trafico[campana];
@@ -381,7 +398,15 @@ function _traficoEstadoDesdeURL(){
     skills: skillsParam ? skillsParam.split(',').filter(Boolean) : null,
     desde: params.get(TV_URL_PREFIJO+'desde') || '',
     hasta: params.get(TV_URL_PREFIJO+'hasta') || '',
-    granularidad: params.get(TV_URL_PREFIJO+'gran') || 'dia',
+    // Fase 68, Pedido 1 (Edwin, 23/09): vista MENSUAL por defecto, no
+    // diaria -- con muchos dias los numeros de las graficas se superponen y
+    // chartjs-plugin-datalabels (display:'auto', loDatalabelsAuto,
+    // charts.js) oculta los que no caben; con menos puntos (uno por mes) se
+    // ven todos. El usuario sigue pudiendo cambiar a diaria en el
+    // desplegable de Granularidad (sin tocar) o compartiendo un link con
+    // ?tv_gran=dia. Cambio en el componente compartido: aplica a todos los
+    // clientes.
+    granularidad: params.get(TV_URL_PREFIJO+'gran') || 'mes',
     combinar: params.get(TV_URL_PREFIJO+'modo') !== 'separado',
   };
 }
@@ -430,29 +455,37 @@ function _traficoClaveEstado(campana, sede){
   return sede ? campana + ' :: ' + sede : campana;
 }
 
-// Filtro "Skill" (desplegable principal + comparador de varias lineas) --
-// Fase 60, arreglado en la Fase 65 (ver traficoResolverSkillsControles/
+// Filtro de "linea" (desplegable principal + comparador de varias lineas)
+// -- Fase 60, arreglado en la Fase 65 (ver traficoResolverSkillsControles/
 // traficoModoDisplaySkills, trafico-logic.js). Factorizado en su propia
 // funcion para poder re-dibujarse SOLO este fragmento despues de "Aplicar
 // filtros" (_traficoAplicarFiltros), sin tocar el resto de la barra de
 // filtros ni el contenido -- asi el desplegable principal SIEMPRE refleja
 // el `estadoSkills` real, nunca una opcion vieja de una interaccion
 // anterior (bug real de la Fase 64, hallazgo #2).
-function _traficoFiltroSkillHTML(i, datosSkills, estadoSkills){
-  var modo = traficoModoDisplaySkills(datosSkills, estadoSkills);
-  return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Skill</label>' +
-      '<select id="tv-f-skill-'+i+'" style="min-width:200px" onchange="_traficoSkillPrincipalCambio('+i+')">' +
-        '<option value=""'+(modo.todas?' selected':'')+'>Todas las líneas</option>' +
-        datosSkills.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.una===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
-        (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias líneas (ver "Comparar" abajo)</option>' : '') +
+//
+// Fase 68, Pedido 5 (Edwin, 23/09): generalizada de _traficoFiltroSkillHTML
+// para reusarse tal cual en Trafico de WhatsApp -- `prefijo` decide los ids
+// del DOM ('tv' en Llamadas, 'tww' en WhatsApp, cada uno con su propio
+// espacio de ids, sin chocar); `etiqueta`/`etiquetaPlural` son el unico
+// texto que cambia por canal ("Skill"/"líneas" vs "Cola"/"colas"). La
+// logica (traficoModoDisplaySkills) es la MISMA sin importar el canal --
+// ya era generica (no lee nada de trafico.js, solo los 2 arrays que recibe).
+function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta, etiquetaPlural){
+  var modo = traficoModoDisplaySkills(datosLineas, estadoLineas);
+  return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
+      '<select id="'+prefijo+'-f-skill-'+i+'" style="min-width:200px" onchange="_traficoLineaPrincipalCambio(\''+prefijo+'\','+i+')">' +
+        '<option value=""'+(modo.todas?' selected':'')+'>Todas las '+esc(etiquetaPlural)+'</option>' +
+        datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.una===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+        (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias '+esc(etiquetaPlural)+' (ver "Comparar" abajo)</option>' : '') +
       '</select></div>' +
-    '<details id="tv-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
-      '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias líneas específicas</summary>' +
+    '<details id="'+prefijo+'-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
+      '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
       '<div style="margin-top:8px;max-width:340px">' +
-        '<select multiple id="tv-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosSkills.length))+'" style="min-width:220px">' +
-          datosSkills.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoSkills.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+        '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
+          datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
         '</select>' +
-        '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más líneas (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica — combínalo con "Ver skills por separado".</div>' +
+        '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
       '</div>' +
     '</details>';
 }
@@ -466,9 +499,10 @@ function _traficoFiltroSkillHTML(i, datosSkills, estadoSkills){
 // hallazgo #1. Limpiar la seleccion del comparador en cuanto el
 // desplegable cambia hace que "quien manda" sea siempre lo ultimo que el
 // usuario toco, sin depender de que recuerde abrir el comparador para
-// vaciarlo el mismo.
-function _traficoSkillPrincipalCambio(i){
-  var selCmp = document.getElementById('tv-f-skills-cmp-'+i);
+// vaciarlo el mismo. Generalizada por prefijo (Fase 68, Pedido 5) igual
+// que _traficoFiltroLineaHTML.
+function _traficoLineaPrincipalCambio(prefijo, i){
+  var selCmp = document.getElementById(prefijo+'-f-skills-cmp-'+i);
   if(!selCmp) return;
   Array.prototype.forEach.call(selCmp.options, function(o){ o.selected = false; });
 }
@@ -528,7 +562,7 @@ async function _traficoRenderPanel(p, i){
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
-        '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroSkillHTML(i, datos.skills, estado.skills)+'</span>' +
+        '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, 'Skill', 'líneas')+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
@@ -546,9 +580,7 @@ async function _traficoRenderPanel(p, i){
       // a la vez, mismo patron .gd-subtabs que las pestanas normales del
       // dashboard (dashboard-generic.js).
       '<div class="gd-subtabs" id="tv-subtabs-'+i+'">' +
-        TRAFICO_SUBTABS.map(function(s){
-          return '<button class="gd-subtab-btn'+(subActivo===s.key?' on':'')+'" data-trafsub="'+esc(s.key)+'" onclick="_traficoSwitchSubtab('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
-        }).join('') +
+        _traficoSubtabsNavHTML('tv', i, subActivo, '_traficoSwitchSubtab', 'trafsub') +
       '</div>' +
       '<div id="tv-content-'+i+'"></div>' +
     '</div>';
@@ -558,22 +590,34 @@ async function _traficoRenderPanel(p, i){
   _traficoRenderSubtabContent(i);
 }
 
-// Contenido de la sub-pestana activa de un panel trafico_combo: Resumen
-// (KPIs + grafica combinada principal) o una de las 5 graficas de detalle,
-// una sola a la vez. Reutiliza _traficoRenderContenido tal cual (calcula
+// Contenido de la sub-pestana activa de un panel trafico_combo/
+// trafico_whatsapp_combo: Resumen (KPIs + grafica combinada principal) o
+// una de las 4 graficas de detalle, una sola a la vez. Reutiliza
+// _traficoRenderContenido/_traficoWppRenderContenido tal cual (calculan
 // TODO igual que antes) -- _gdChart ya no dibuja en un canvas que no este
-// en el DOM (dashboard-generic.js: `if(!el) return;`), asi que llamarla con
-// solo el canvas activo presente no requiere tocar ese calculo.
+// en el DOM (dashboard-generic.js: `if(!el) return;`), asi que llamarlas
+// con solo el canvas activo presente no requiere tocar ese calculo.
+//
+// Fase 68, Pedido 5: `TRAFICO_SUBTAB_TITULOS`/`_traficoSubtabContentHTML`
+// se comparten entre Llamadas y WhatsApp (mismas 5 sub-pestanas en los dos
+// canales desde esta fase) -- solo el prefijo de ids del DOM cambia.
 var TRAFICO_SUBTAB_TITULOS = {
   abandono: 'Llamadas abandonadas',
   aht: 'AHT — tiempo promedio de atencion',
   asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
-  wait: 'Wait Time — tiempo de espera',
-  sl: 'Niveles de Servicio a 10s, 20s y 30s',
+  sl: 'Nivel de Servicio a 20 segundos',
 };
-var TRAFICO_SUBTAB_CANVAS = {
-  abandono: 'tv-canvas-ab-', aht: 'tv-canvas-aht-', asaata: 'tv-canvas-asaata-', wait: 'tv-canvas-wait-', sl: 'tv-canvas-sl-',
+var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
+  abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
 };
+function _traficoSubtabContentHTML(prefijo, i, activo){
+  if(activo === 'resumen'){
+    return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
+      '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
+  }
+  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+'</div>' +
+    '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
+}
 function _traficoRenderSubtabContent(i){
   var content = document.getElementById('tv-content-'+i);
   if(!content) return;
@@ -582,13 +626,7 @@ function _traficoRenderSubtabContent(i){
   var sede = host ? (host.dataset.sede || null) : null;
   var claveEstado = _traficoClaveEstado(campana, sede);
   var activo = _traficoSubtabActivo[claveEstado] || 'resumen';
-  if(activo === 'resumen'){
-    content.innerHTML = '<div class="aurora-kpis" id="tv-kpis-'+i+'"></div>' +
-      '<div class="aurora-chart-wrap" style="height:280px"><canvas id="tv-canvas-'+i+'"></canvas></div>';
-  } else {
-    content.innerHTML = '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+'</div>' +
-      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+TRAFICO_SUBTAB_CANVAS[activo]+i+'"></canvas></div>';
-  }
+  content.innerHTML = _traficoSubtabContentHTML('tv', i, activo);
   _traficoRenderContenido(campana, sede, i);
 }
 
@@ -615,7 +653,7 @@ function _traficoLeerControles(i){
   // La logica de "quien manda" es traficoResolverSkillsControles (pura,
   // trafico-logic.js, con sus propias pruebas) -- aqui solo se leen los
   // valores crudos del DOM. El desplegable principal limpia el comparador
-  // al cambiar (_traficoSkillPrincipalCambio), asi que para cuando se
+  // al cambiar (_traficoLineaPrincipalCambio), asi que para cuando se
   // llega aqui los dos controles ya son consistentes entre si.
   var selCmp = document.getElementById('tv-f-skills-cmp-'+i);
   var seleccionCmp = selCmp ? Array.prototype.filter.call(selCmp.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
@@ -651,55 +689,67 @@ function _traficoAplicarFiltros(i){
   // mostrando la opcion de antes en vez de "Varias lineas" (Fase 64,
   // hallazgo #2).
   var skillbar = document.getElementById('tv-f-skillbar-'+i);
-  if(skillbar) skillbar.innerHTML = _traficoFiltroSkillHTML(i, skillsDisponibles, estado.skills);
+  if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tv', i, skillsDisponibles, estado.skills, 'Skill', 'líneas');
   _traficoRenderContenido(campana, sede, i);
 }
 
-function _traficoRenderContenido(campana, sede, i){
-  var claveEstado = _traficoClaveEstado(campana, sede);
-  var datosCampana = _trafico[campana];
-  var datos = { filas: sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas };
-  var estado = _traficoEstado[claveEstado];
-  var filtradas = traficoFiltrarFilas(datos.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
-  var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
-  _traficoAgregadoActual[claveEstado] = agregado;
+// ═══════════════════════════════════════════════════════════
+// FUNCIONES DE DIBUJO COMPARTIDAS (Fase 68, Pedido 5, Edwin 23/09)
+// ═══════════════════════════════════════════════════════════
+// Extraidas tal cual (mismo calculo, mismos ejes, mismos colores) de lo que
+// antes era todo el cuerpo de _traficoRenderContenido -- Trafico de
+// Llamadas sigue llamandolas exactamente igual que antes (comportamiento
+// identico, solo se movio el codigo a funciones con nombre). Trafico de
+// WhatsApp (trafico-whatsapp.js) las reusa tal cual con sus propios datos,
+// ya reacomodados a la MISMA forma por traficoWppAgregarPorPeriodo
+// (trafico-whatsapp-logic.js) -- por eso estas funciones nunca preguntan de
+// que canal viene el dato, solo leen `agregado`/`agregadoComb` (periodo/
+// totalLlamadas/contestadas/llamadasAbandonadas/nivelAtencionPct/
+// tasaAbandonoPct/serviceLevel20secPct/asaSegundos/ataSegundos/
+// ahtSegundos) y el prefijo de ids del DOM ('tv' o 'tww').
+//
+// `fmtTiempo`/`fmtTiempoDL` (opcionales, AHT y ASA/ATA): formateador de
+// segundos -> texto. Sin pasar nada, usan mm:ss (Llamadas, valores siempre
+// cortos). WhatsApp pasa su propio formateador hh:mm:ss (_traficoWppFmtTiempo,
+// trafico-whatsapp.js) porque su ASA/ATA puede ser de varias horas.
+function _traficoFmtTiempoMMSS(v){
+  if(v===null||v===undefined) return '—';
+  var m=Math.floor(v/60), s=Math.round(v%60);
+  return m+':'+(s<10?'0':'')+s;
+}
 
-  // Totales del periodo YA filtrado (nunca promedio de % diarios): suma
-  // primero, calcula el % despues — mismo criterio de traficoAgregar.
-  var totalLlamadas = filtradas.reduce(function(a,f){ return a+f.totalLlamadas; }, 0);
-  var totalContestadas = filtradas.reduce(function(a,f){ return a+f.contestadas; }, 0);
-  var tieneAbandonadas = filtradas.some(function(f){ return f.llamadasAbandonadas!=null; });
-  var totalAbandonadas = tieneAbandonadas ? filtradas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
-  var nivelAtencion = totalLlamadas>0 ? Math.round((totalContestadas/totalLlamadas)*1000)/10 : null;
-  var tasaAbandono = (totalLlamadas>0 && tieneAbandonadas) ? Math.round((totalAbandonadas/totalLlamadas)*1000)/10 : null;
+function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
+  var kpisEl = document.getElementById(prefijo+'-kpis-'+i);
+  if(!kpisEl) return;
+  var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
+  var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
+  var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (totales.nivelAtencion===null?'':totales.nivelAtencion>=90?'kpi-green':totales.nivelAtencion>=70?'kpi-org':'kpi-red');
+  var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
+  kpisEl.innerHTML =
+    '<div class="aurora-kpi"><div class="kv">'+totales.total.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.total)+'</div></div>'+
+    '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
+    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
+    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atencion</div></div>'+
+    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>';
+}
 
-  var kpisEl = document.getElementById('tv-kpis-'+i);
-  if(kpisEl){
-    var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
-    var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
-    var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (nivelAtencion===null?'':nivelAtencion>=90?'kpi-green':nivelAtencion>=70?'kpi-org':'kpi-red');
-    var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
-    kpisEl.innerHTML =
-      '<div class="aurora-kpi"><div class="kv">'+totalLlamadas.toLocaleString('es-CO')+'</div><div class="kl">Total Llamadas</div></div>'+
-      '<div class="aurora-kpi kpi-green"><div class="kv">'+totalContestadas.toLocaleString('es-CO')+'</div><div class="kl">Llamadas Contestadas</div></div>'+
-      '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas Abandonadas</div></div>'+
-      '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(nivelAtencion===null?'—':nivelAtencion+'%')+'</div><div class="kl">Nivel de Atencion</div></div>'+
-      '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>';
-  }
-
-  var canvasId = 'tv-canvas-'+i;
+// Grafica principal del "Resumen": barras Total/Contestadas + linea Nivel
+// de Atencion, combinada por periodo o separada por linea (skill/cola)
+// segun el checkbox "Ver por separado". `labelTotal`/`labelContestadas`
+// son el unico texto que cambia por canal.
+function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal, labelContestadas){
+  var canvasId = prefijo+'-canvas-'+i;
   var labels, datasets;
   var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
   var CGl = (typeof CG!=='undefined') ? CG : '#27ae60';
   var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
-  var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
   var pal = (typeof PC!=='undefined') ? PC : [CDl,CGl,COl];
 
-  if(estado.combinar){
+  if(combinar){
     labels = agregado.map(function(a){ return a.periodo; });
     datasets = [
-      { type:'bar', label:'Total Llamadas', data: agregado.map(function(a){return a.totalLlamadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
-      { type:'bar', label:'Llamadas Contestadas', data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 },
+      { type:'bar', label:labelTotal, data: agregado.map(function(a){return a.totalLlamadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
+      { type:'bar', label:labelContestadas, data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 },
       { type:'line', label:'Nivel de Atencion', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
     ];
   } else {
@@ -709,8 +759,8 @@ function _traficoRenderContenido(campana, sede, i){
     skillsPresentes.forEach(function(sk){
       var porPeriodo = {};
       agregado.filter(function(a){ return a.skillName===sk; }).forEach(function(a){ porPeriodo[a.periodo]=a; });
-      // Color por identidad de la skill (paleta-logic.js), no por posicion:
-      // la misma skill se ve siempre del mismo color, combinada o separada,
+      // Color por identidad de la linea (paleta-logic.js), no por posicion:
+      // la misma linea se ve siempre del mismo color, combinada o separada,
       // sin importar el orden en que aparezca tras subir un archivo nuevo.
       var color = (typeof paletaColorPara==='function') ? paletaColorPara(sk, pal) : pal[0];
       datasets.push({ type:'bar', label: sk+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
@@ -738,15 +788,11 @@ function _traficoRenderContenido(campana, sede, i){
   if(typeof _gdChart === 'function'){
     _gdChart(canvasId, { data:{ labels: labels, datasets: datasets }, options: o });
   }
+}
 
-  // Abandono (graf. 2 del PDF) y AHT (graf. 3) — siempre agregado combinado
-  // (traficoAgregar con combinar:true), sin depender del checkbox "Ver
-  // skills por separado" de arriba: son la tendencia de la campana completa,
-  // igual que las pide InCo. Reutiliza el mismo `filtradas` (mismos filtros
-  // de skill/fecha ya aplicados) y traficoAgregar ya testeado — sin logica
-  // nueva en trafico-logic.js, los campos ya se calculaban y exportaban.
-  var agregadoComb = estado.combinar ? agregado : traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true });
-
+function _traficoDibujarAbandono(prefijo, i, agregadoComb){
+  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
   var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oAband.scales = {
     y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
@@ -763,59 +809,54 @@ function _traficoRenderContenido(campana, sede, i){
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
   if(typeof _gdChart === 'function'){
-    _gdChart('tv-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+    _gdChart(prefijo+'-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[
         { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
         { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
       ] }, options: oAband });
   }
+}
 
+function _traficoDibujarAht(prefijo, i, agregadoComb, fmtTiempo){
+  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
+  var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
   var oAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  var fmtAht = function(v){ if(v===null||v===undefined) return '—'; var m=Math.floor(v/60), s=Math.round(v%60); return m+':'+(s<10?'0':'')+s; };
-  // Version del formato de tiempo para las etiquetas ENCIMA de la grafica
-  // (datalabels): vacio en vez de '—' para un dia sin dato, para no llenar
-  // la linea de guiones cuando faltan varios dias seguidos.
-  var fmtAhtDL = function(v){ return (v===null||v===undefined) ? '' : fmtAht(v); };
-  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAht, fmtAhtDL);
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAht, fmtDL);
   else oAht.plugins.datalabels = { display:false };
-  oAht.scales.y.ticks.callback = fmtAht;
-  oAht.plugins.tooltip = { callbacks: { label: function(ctx){ return 'AHT: ' + fmtAht(ctx.parsed.y); } } };
+  oAht.scales.y.ticks.callback = fmt;
+  oAht.plugins.tooltip = { callbacks: { label: function(ctx){ return 'AHT: ' + fmt(ctx.parsed.y); } } };
   if(typeof _gdChart === 'function'){
-    _gdChart('tv-canvas-aht-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+    _gdChart(prefijo+'-canvas-aht-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[{ label:'AHT', data: agregadoComb.map(function(a){return a.ahtSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false }] },
       options: oAht });
   }
+}
 
-  // ASA/ATA, Wait Time y Niveles de Servicio 10s/30s (Fase 38): estos 5
-  // campos ya llegaban calculados en `agregado`/`agregadoComb` (ponderados
-  // por volumen, PCT_PONDERADOS/NUM_PONDERADOS en trafico-logic.js) y ya se
-  // exportaban a Excel (_traficoDatosExport) -- solo faltaba pintarlos.
-  // Mismo patron que Abandono/AHT arriba: agregadoComb siempre combinado,
-  // sin depender del checkbox "Ver skills por separado".
+function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo){
+  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
+  var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
   var oAsaAta = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAsaAta, fmtAhtDL);
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAsaAta, fmtDL);
   else oAsaAta.plugins.datalabels = { display:false };
-  oAsaAta.scales.y.ticks.callback = fmtAht;
-  oAsaAta.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtAht(ctx.parsed.y); } } };
+  oAsaAta.scales.y.ticks.callback = fmt;
+  oAsaAta.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmt(ctx.parsed.y); } } };
   if(typeof _gdChart === 'function'){
-    _gdChart('tv-canvas-asaata-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+    _gdChart(prefijo+'-canvas-asaata-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[
         { label:'ASA', data: agregadoComb.map(function(a){return a.asaSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
         { label:'ATA', data: agregadoComb.map(function(a){return a.ataSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
       ] }, options: oAsaAta });
   }
+}
 
-  var oWait = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
-  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oWait, fmtAhtDL);
-  else oWait.plugins.datalabels = { display:false };
-  oWait.scales.y.ticks.callback = fmtAht;
-  oWait.plugins.tooltip = { callbacks: { label: function(ctx){ return 'Wait Time: ' + fmtAht(ctx.parsed.y); } } };
-  if(typeof _gdChart === 'function'){
-    _gdChart('tv-canvas-wait-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
-      datasets:[{ label:'Wait Time', data: agregadoComb.map(function(a){return a.waitTimeSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false }] },
-      options: oWait });
-  }
-
+// Solo SL 20s (Fase 68, Pedido 3): serviceLevel10secPct/serviceLevel30secPct
+// se siguen calculando y guardando igual en ambos canales, solo dejaron de
+// graficarse aqui.
+function _traficoDibujarSL(prefijo, i, agregadoComb){
+  var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oSl, function(v){ return (v===null||v===undefined) ? '' : gdFmtValor(v,'%'); });
   else oSl.plugins.datalabels = { display:false };
@@ -826,19 +867,55 @@ function _traficoRenderContenido(campana, sede, i){
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : gdFmtValor(v,'%'));
   } } };
   if(typeof _gdChart === 'function'){
-    // SL 20s (Fase 45, pedido de Edwin): el dato ya se calculaba y exportaba
-    // (serviceLevel20secPct, mismo patron ponderado que SL10/SL30 en
-    // traficoAgregar) pero no se graficaba -- se agrega aqui como una linea
-    // mas, mismo criterio visual que las otras dos.
-    _gdChart('tv-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
+    _gdChart(prefijo+'-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[
-        { label:'SL 10s', data: agregadoComb.map(function(a){return a.serviceLevel10secPct;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
         { label:'SL 20s', data: agregadoComb.map(function(a){return a.serviceLevel20secPct;}), borderColor: CMl, backgroundColor: CMl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
-        { label:'SL 30s', data: agregadoComb.map(function(a){return a.serviceLevel30secPct;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
       ] }, options: oSl });
   }
 }
 
+function _traficoRenderContenido(campana, sede, i){
+  var claveEstado = _traficoClaveEstado(campana, sede);
+  var datosCampana = _trafico[campana];
+  var datos = { filas: sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas };
+  var estado = _traficoEstado[claveEstado];
+  var filtradas = traficoFiltrarFilas(datos.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
+  var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
+  _traficoAgregadoActual[claveEstado] = agregado;
+
+  // Totales del periodo YA filtrado (nunca promedio de % diarios): suma
+  // primero, calcula el % despues — mismo criterio de traficoAgregar.
+  var totalLlamadas = filtradas.reduce(function(a,f){ return a+f.totalLlamadas; }, 0);
+  var totalContestadas = filtradas.reduce(function(a,f){ return a+f.contestadas; }, 0);
+  var tieneAbandonadas = filtradas.some(function(f){ return f.llamadasAbandonadas!=null; });
+  var totalAbandonadas = tieneAbandonadas ? filtradas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
+  var nivelAtencion = totalLlamadas>0 ? Math.round((totalContestadas/totalLlamadas)*1000)/10 : null;
+  var tasaAbandono = (totalLlamadas>0 && tieneAbandonadas) ? Math.round((totalAbandonadas/totalLlamadas)*1000)/10 : null;
+
+  _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono },
+    { total: 'Total Llamadas', contestadas: 'Llamadas Contestadas', abandonadas: 'Llamadas Abandonadas' }, campana);
+
+  _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
+
+  // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
+  // combinar:true), sin depender del checkbox "Ver skills por separado" de
+  // arriba: son la tendencia de la campana completa, igual que las pide
+  // InCo. Reutiliza el mismo `filtradas` (mismos filtros de skill/fecha ya
+  // aplicados) y traficoAgregar ya testeado.
+  var agregadoComb = estado.combinar ? agregado : traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true });
+
+  _traficoDibujarAbandono('tv', i, agregadoComb);
+  _traficoDibujarAht('tv', i, agregadoComb);
+  _traficoDibujarAsaAta('tv', i, agregadoComb);
+  _traficoDibujarSL('tv', i, agregadoComb);
+}
+
+// Fase 68, Pedidos 3/4 (Edwin, 23/09): la tabla de exportacion (Excel/PDF)
+// es una de las "tablas" que Edwin pidio dejar solo con SL 20s y sin Wait
+// Time -- mismo alcance que las graficas de arriba, mismo criterio de "se
+// sigue calculando/guardando, solo deja de mostrarse" (serviceLevel10secPct/
+// serviceLevel30secPct/waitTimeSegundos siguen en `agregado`, solo no se
+// incluyen en las columnas exportadas).
 function _traficoDatosExport(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
@@ -853,13 +930,10 @@ function _traficoDatosExport(i){
       'Llamadas Abandonadas': a.llamadasAbandonadas,
       '% Nivel de Atencion': a.nivelAtencionPct,
       '% Tasa de Abandono': a.tasaAbandonoPct,
-      '% Service Level 10s': a.serviceLevel10secPct,
       '% Service Level 20s': a.serviceLevel20secPct,
-      '% Service Level 30s': a.serviceLevel30secPct,
       'ASA (seg)': a.asaSegundos,
       'ATA (seg)': a.ataSegundos,
       'AHT (seg)': a.ahtSegundos,
-      'Wait Time (seg)': a.waitTimeSegundos,
     };
   });
 }

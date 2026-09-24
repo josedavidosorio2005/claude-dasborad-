@@ -14,8 +14,12 @@ const {
   traficoWppParseFecha,
   traficoWppPctDesdeTexto,
   traficoWppNumero,
+  traficoWppSegundosDesdeFraccionDia,
   traficoWppEsFilaTotal,
   traficoWppResumen,
+  traficoWppFiltrarFilas,
+  traficoWppPeriodoDe,
+  traficoWppAgregarPorPeriodo,
 } = require('../../public/js/trafico-whatsapp-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx');
@@ -162,4 +166,112 @@ test('archivo sin filas de datos -> error', () => {
   ];
   const res = traficoWppParseFilas(aoa);
   assert.ok(res.error);
+});
+
+// ── Fase 68, Pedido 5 (Edwin, 23/09): columna AHT opcional ────────────────
+
+test('conversion: AHT viene como hora nativa de Excel (fraccion de dia), igual que voz', () => {
+  assert.equal(traficoWppSegundosDesdeFraccionDia(0.0024884259259259), 215);
+  assert.equal(traficoWppSegundosDesdeFraccionDia(''), null);
+  assert.equal(traficoWppSegundosDesdeFraccionDia(null), null);
+});
+
+test('parseo: AHT es opcional -- un archivo SIN esa columna sigue cargando igual (archivos viejos)', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],
+    ['COLA X', '2026-01-01', '2026-01-31', 100, 90],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].ahtSegundos, undefined); // ausente, no null explicito -- columna no vino
+});
+
+test('parseo: AHT presente se lee y se redondea a segundos enteros', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS', 'AHT'],
+    ['COLA X', '2026-01-01', '2026-01-31', 100, 90, 0.0024884259259259],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].ahtSegundos, 215);
+});
+
+test('el archivo REAL (sin columna AHT) sigue parseando igual que siempre -- ahtSegundos ausente en las 5 colas', () => {
+  const aoa = leerHojaXlsxComoAoA(FIXTURE, 'DATA');
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  res.filas.forEach((f) => assert.equal(f.ahtSegundos, undefined));
+});
+
+// ── Fase 68, Pedido 5: traficoWppFiltrarFilas (cola + rango de fechas) ───
+
+test('traficoWppFiltrarFilas: filtra por cola (mismo nombre de opcion "skills" que trafico-logic.js)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31' },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31' },
+  ];
+  const res = traficoWppFiltrarFilas(filas, { skills: ['A'] });
+  assert.deepEqual(res.map((f) => f.colaWhatsapp), ['A']);
+});
+
+test('traficoWppFiltrarFilas: "Desde"/"Hasta" incluye cualquier periodo que SE SOLAPE con el rango (no exige que quede totalmente adentro)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-07-01', fechaFin: '2026-07-31' }, // antes del rango
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31' }, // se solapa
+    { colaWhatsapp: 'C', fechaInicio: '2026-09-01', fechaFin: '2026-09-30' }, // despues del rango
+  ];
+  const res = traficoWppFiltrarFilas(filas, { desde: '2026-08-15', hasta: '2026-08-20' });
+  assert.deepEqual(res.map((f) => f.colaWhatsapp), ['B']);
+});
+
+// ── Fase 68, Pedido 5: traficoWppAgregarPorPeriodo ────────────────────────
+
+test('traficoWppPeriodoDe: "mes" agrupa por AAAA-MM, "anio" por AAAA', () => {
+  assert.equal(traficoWppPeriodoDe('2026-08-01', 'mes'), '2026-08');
+  assert.equal(traficoWppPeriodoDe('2026-08-01', 'anio'), '2026');
+  assert.equal(traficoWppPeriodoDe('2026-08-01'), '2026-08'); // default 'mes'
+});
+
+test('traficoWppAgregarPorPeriodo: combinado suma volumenes y recalcula % desde la suma (misma forma de salida que traficoAgregar)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 100, contestados: 90, abandonados: 8, serviceLevel20secPct: 80, asaSegundos: 10, ataSegundos: 20, ahtSegundos: 200 },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 50, contestados: 40, abandonados: 5, serviceLevel20secPct: 60, asaSegundos: 30, ataSegundos: 40, ahtSegundos: 100 },
+  ];
+  const agregado = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(agregado.length, 1);
+  const p = agregado[0];
+  assert.equal(p.periodo, '2026-08');
+  assert.equal(p.skillName, null);
+  assert.equal(p.totalLlamadas, 150);
+  assert.equal(p.contestadas, 130);
+  assert.equal(p.llamadasAbandonadas, 13);
+  assert.equal(p.nivelAtencionPct, Math.round((130 / 150) * 10000) / 100);
+  assert.equal(p.tasaAbandonoPct, Math.round((13 / 150) * 10000) / 100);
+  // Promedio ponderado por total, nunca promedio simple de las 2 colas (70 !== 70 aqui por coincidencia -- se verifica con la formula, no un numero fijo).
+  assert.equal(p.serviceLevel20secPct, Math.round(((80 * 100 + 60 * 50) / 150) * 100) / 100);
+  assert.equal(p.ahtSegundos, Math.round(((200 * 100 + 100 * 50) / 150) * 100) / 100);
+  assert.equal(p.waitTimeSegundos, null); // WhatsApp nunca tiene este dato
+});
+
+test('traficoWppAgregarPorPeriodo: separado (combinar:false) deja una fila por cola, con skillName = la cola', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 100, contestados: 90 },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 50, contestados: 40 },
+  ];
+  const agregado = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: false });
+  assert.equal(agregado.length, 2);
+  assert.deepEqual(agregado.map((a) => a.skillName), ['A', 'B']);
+  assert.equal(agregado[0].totalLlamadas, 100);
+  assert.equal(agregado[1].totalLlamadas, 50);
+});
+
+test('traficoWppAgregarPorPeriodo: dos filas de la MISMA cola en el mismo mes se suman (no se pisan)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-15', totalWhatsapp: 60, contestados: 50 },
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-16', fechaFin: '2026-08-31', totalWhatsapp: 40, contestados: 35 },
+  ];
+  const agregado = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(agregado.length, 1);
+  assert.equal(agregado[0].totalLlamadas, 100);
+  assert.equal(agregado[0].contestadas, 85);
 });

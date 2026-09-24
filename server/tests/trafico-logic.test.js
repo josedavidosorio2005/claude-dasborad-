@@ -407,7 +407,7 @@ test('traficoResolverSkillsControles: el bug real de la Fase 64 -- comparador co
   // Antes del arreglo: seleccionCmp seguia trayendo ['CALL_A','CALL_C']
   // (nunca se limpiaba) y esta funcion (la logica ya existia) las usaba
   // sin mirar que el usuario acababa de elegir CALL_B en el desplegable.
-  // El arreglo real esta en _traficoSkillPrincipalCambio (trafico.js): en
+  // El arreglo real esta en _traficoLineaPrincipalCambio (trafico.js): en
   // cuanto el desplegable cambia, vacia el comparador -- por eso, para
   // cuando se llega aqui, seleccionCmp ya esta vacio.
   const comparadorYaLimpio = [];

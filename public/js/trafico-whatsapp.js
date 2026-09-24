@@ -1,15 +1,20 @@
-// trafico-whatsapp.js — InConexion Platform. Fase 50.
+// trafico-whatsapp.js — InConexion Platform. Fase 50; interfaz reescrita en
+// la Fase 68 (Pedido 5, Edwin 23/09) para igualar Trafico de Llamadas.
 //
 // Panel "Trafico de WhatsApp" del dashboard de ORLANT (tipo de panel
 // 'trafico_whatsapp_combo', dashboard-config-seed.js) + pantalla de carga en
-// el admin. Mismo patron de integracion que trafico.js (voz) -- un panel
-// autonomo dentro de dashboard-generic.js, con sus propios datos/estado --
-// pero el DISENO de las graficas es distinto a proposito: los datos de esta
-// plantilla son una fila por COLA y PERIODO (no por dia), asi que aqui no
-// tiene sentido una linea de tendencia diaria como en voz. En su lugar:
-// tarjetas de KPI del periodo + graficas de BARRAS comparando las colas
-// entre si (Total/Contestados/Abandonados, Niveles de Servicio, ASA/ATA),
-// con un selector de periodo simple para cuando haya mas de uno cargado.
+// el admin. Desde la Fase 68 reusa TAL CUAL la misma interfaz/controles/
+// tipos de grafica que Trafico de Llamadas (trafico.js): desplegable de
+// linea (aqui, cola) + comparador, filtros de fecha, sub-pestanas Resumen/
+// Abandono/AHT/ASA-ATA/SL 20s, exportar Excel/PDF -- las funciones de
+// DIBUJO (_traficoDibujarKpis/_traficoDibujarResumenChart/_traficoDibujarAbandono/
+// _traficoDibujarAht/_traficoDibujarAsaAta/_traficoDibujarSL, trafico.js) son
+// las MISMAS para los dos canales, nunca copiadas. La UNICA diferencia real
+// de fondo es el grano del dato: aqui cada fila es una COLA por un PERIODO
+// completo (fechaInicio..fechaFin), no un dia -- por eso no hay
+// granularidad diaria (traficoWppAgregarPorPeriodo, trafico-whatsapp-
+// logic.js, agrupa por mes/año en vez de sumar dias) y las graficas de
+// tendencia muestran un punto por PERIODO cargado (hoy, uno solo: agosto).
 
 // Descarga autenticada de la plantilla (GET requiere el header Authorization
 // via JWT, asi que un <a href> plano no sirve -- mismo patron de blob+URL
@@ -33,14 +38,23 @@ async function descargarPlantillaTraficoWpp(){
 }
 
 var _traficoWpp = {}; // cache por campana: { filas: [...] } (GET /calidad/trafico/whatsapp)
-var _traficoWppPeriodoSel = {}; // por campana -> "fechaInicio_fechaFin" seleccionado
+var _traficoWppEstado = {}; // estado de filtros actual por campana (mismo patron que _traficoEstado, trafico.js)
+var _traficoWppAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
 var _traficoWppSubtabActivo = {}; // por campana -> key de subtab activa
 
-var TRAFICO_WPP_SUBTABS = [
-  { key: 'volumen', label: 'Volumen' },
-  { key: 'sl', label: 'Niveles de Servicio' },
-  { key: 'asaata', label: 'ASA y ATA' },
-];
+// ASA/ATA/AHT de WhatsApp pueden ser bastante mayores que en voz (un chat
+// puede quedar horas sin responder antes de que se marque abandonado, a
+// diferencia de una llamada) -- se formatea con horas cuando aplica, no solo
+// mm:ss, para que "82800" se lea "23:00:00" y no un numero de minutos gigante.
+// Se pasa como `fmtTiempo` a _traficoDibujarAht/_traficoDibujarAsaAta
+// (trafico.js) en vez de dejarles su formateador mm:ss por defecto.
+function _traficoWppFmtTiempo(v) {
+  if (v === null || v === undefined) return '—';
+  var total = Math.round(v);
+  var h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  return h > 0 ? (h + ':' + pad2(m) + ':' + pad2(s)) : (m + ':' + pad2(s));
+}
 
 async function _traficoWppCargarDatos(campana) {
   if (_traficoWpp[campana]) return _traficoWpp[campana];
@@ -51,201 +65,265 @@ async function _traficoWppCargarDatos(campana) {
   return _traficoWpp[campana];
 }
 
-// Periodos presentes en los datos, mas reciente primero (orden por
-// fechaInicio, que ademas es el orden natural de subida de meses).
-function _traficoWppPeriodos(filas) {
-  var set = {};
-  filas.forEach(function (f) { set[f.fechaInicio + '_' + f.fechaFin] = true; });
-  return Object.keys(set).sort().reverse();
-}
+// Prefijo propio (distinto de TV_URL_PREFIJO en trafico.js) para que los
+// filtros de Llamadas y de WhatsApp puedan vivir en la URL al mismo tiempo
+// sin pisarse -- las dos pestañas del mismo dashboard de ORLANT comparten
+// la misma campana ('ORLANT'), asi que sin un prefijo propio los ?tv_...
+// de un canal se leerian/sobreescribirian con los del otro.
+var TVW_URL_PREFIJO = 'tvw_';
 
-function _traficoWppFmtFecha(iso) {
-  if (!iso) return '';
-  var p = iso.split('-');
-  return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+function _traficoWppEstadoDesdeURL(){
+  var params = new URLSearchParams(window.location.search);
+  var skillsParam = params.get(TVW_URL_PREFIJO+'skills');
+  return {
+    skills: skillsParam ? skillsParam.split(',').filter(Boolean) : null,
+    desde: params.get(TVW_URL_PREFIJO+'desde') || '',
+    hasta: params.get(TVW_URL_PREFIJO+'hasta') || '',
+    // Sin 'dia': WhatsApp no tiene granularidad diaria (cada fila ya es un
+    // PERIODO completo) -- el desplegable de Granularidad de este panel
+    // nunca ofrece esa opcion (ver _traficoWppRenderPanel).
+    granularidad: params.get(TVW_URL_PREFIJO+'gran') || 'mes',
+    combinar: params.get(TVW_URL_PREFIJO+'modo') !== 'separado',
+  };
 }
-
-// ASA/ATA de WhatsApp pueden ser bastante mayores que en voz (un chat puede
-// quedar horas sin responder antes de que se marque abandonado, a
-// diferencia de una llamada) -- se formatea con horas cuando aplica, no solo
-// mm:ss, para que "82800" se lea "23:00:00" y no un numero de minutos gigante.
-function _traficoWppFmtTiempo(v) {
-  if (v === null || v === undefined) return '—';
-  var total = Math.round(v);
-  var h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
-  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
-  return h > 0 ? (h + ':' + pad2(m) + ':' + pad2(s)) : (m + ':' + pad2(s));
+function _traficoWppGuardarEstadoURL(estado){
+  var params = new URLSearchParams(window.location.search);
+  if(estado.skills && estado.skills.length) params.set(TVW_URL_PREFIJO+'skills', estado.skills.join(','));
+  else params.delete(TVW_URL_PREFIJO+'skills');
+  if(estado.desde) params.set(TVW_URL_PREFIJO+'desde', estado.desde); else params.delete(TVW_URL_PREFIJO+'desde');
+  if(estado.hasta) params.set(TVW_URL_PREFIJO+'hasta', estado.hasta); else params.delete(TVW_URL_PREFIJO+'hasta');
+  params.set(TVW_URL_PREFIJO+'gran', estado.granularidad);
+  params.set(TVW_URL_PREFIJO+'modo', estado.combinar ? 'combinado' : 'separado');
+  var qs = params.toString();
+  var url = window.location.pathname + (qs ? '?'+qs : '');
+  window.history.replaceState(null, '', url);
 }
 
 async function _traficoWppRenderPanel(p, i) {
   var campana = p.campana;
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
-  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp</div>' +
+  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var datosCampana = await _traficoWppCargarDatos(campana);
   if (!datosCampana.filas.length) {
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp</div>' +
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
       '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Trafico de WhatsApp desde "Cargar Datos".</div></div>';
     return;
   }
 
-  var periodos = _traficoWppPeriodos(datosCampana.filas);
-  var periodoSel = _traficoWppPeriodoSel[campana];
-  if (!periodoSel || periodos.indexOf(periodoSel) === -1) periodoSel = periodos[0];
-  _traficoWppPeriodoSel[campana] = periodoSel;
+  var colas = [];
+  var vistoCola = {};
+  datosCampana.filas.forEach(function(f){ if(!vistoCola[f.colaWhatsapp]){ vistoCola[f.colaWhatsapp]=true; colas.push(f.colaWhatsapp); } });
+  colas.sort();
 
-  var subActivo = _traficoWppSubtabActivo[campana] || 'volumen';
+  var estado = _traficoWppEstadoDesdeURL();
+  // Mismo criterio que Llamadas (traficoVentana12Meses, trafico-logic.js):
+  // por defecto, los ultimos 12 meses CALENDARIO con datos -- aqui sobre
+  // fechaInicio de cada periodo cargado, no sobre un dia individual.
+  // minDisp = primer FECHA INICIO cargado; maxDisp = ultimo FECHA FIN
+  // cargado (nunca fechaInicio para el limite "Hasta" -- un periodo tipico
+  // dura casi un mes entero, asi que tomar fechaInicio como "Hasta" dejaba
+  // el filtro por defecto mostrando "01/08" a "01/08" en vez de "01/08" a
+  // "31/08").
+  var fechasIniDisp = datosCampana.filas.map(function(f){ return f.fechaInicio; }).sort();
+  var fechasFinDisp = datosCampana.filas.map(function(f){ return f.fechaFin; }).sort();
+  var minDisp = fechasIniDisp[0], maxDisp = fechasFinDisp[fechasFinDisp.length-1];
+  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
+  if(!estado.desde) estado.desde = desdeDefault;
+  if(!estado.hasta) estado.hasta = maxDisp;
+  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = desdeDefault; estado.hasta = maxDisp; }
+  if(!estado.skills) estado.skills = colas.slice();
+  else estado.skills = estado.skills.filter(function(s){ return colas.indexOf(s)!==-1; });
+  if(!estado.skills.length) estado.skills = colas.slice();
+  _traficoWppEstado[campana] = estado;
+
+  var GRAN_LABEL = { mes:'Mes', anio:'Año' };
+  var subActivo = _traficoWppSubtabActivo[campana] || 'resumen';
   host.innerHTML =
     '<div class="aurora-card">' +
-      '<div class="aurora-card-title">Trafico de WhatsApp</div>' +
+      '<div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Periodo</label>' +
-          '<select id="tww-f-periodo-' + i + '" onchange="_traficoWppCambiarPeriodo(' + i + ',this.value)">' +
-            periodos.map(function (per) {
-              var partes = per.split('_');
-              return '<option value="' + esc(per) + '"' + (per === periodoSel ? ' selected' : '') + '>' +
-                esc(_traficoWppFmtFecha(partes[0])) + ' a ' + esc(_traficoWppFmtFecha(partes[1])) + '</option>';
-            }).join('') +
-          '</select></div>' +
+        '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+          '<select id="tww-f-gran-'+i+'">' + ['mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
+        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
+          '<label style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
+        '<button class="btn-primary btn-sm" onclick="_traficoWppAplicarFiltros('+i+')">Aplicar filtros</button>' +
+        '<span style="margin-left:auto;display:flex;gap:6px">' +
+          '<button class="btn-sm" onclick="_traficoWppExportExcel('+i+')">Excel</button>' +
+          '<button class="btn-sm" onclick="_traficoWppExportPrint('+i+')">PDF</button>' +
+        '</span>' +
       '</div>' +
-      '<div class="aurora-kpis" id="tww-kpis-' + i + '"></div>' +
-      '<div class="gd-subtabs" id="tww-subtabs-' + i + '">' +
-        TRAFICO_WPP_SUBTABS.map(function (s) {
-          return '<button class="gd-subtab-btn' + (subActivo === s.key ? ' on' : '') + '" data-trafwppsub="' + s.key + '" onclick="_traficoWppSwitchSubtab(' + i + ',\'' + s.key + '\')">' + s.label + '</button>';
-        }).join('') +
+      '<div class="gd-subtabs" id="tww-subtabs-'+i+'">' +
+        _traficoSubtabsNavHTML('tww', i, subActivo, '_traficoWppSwitchSubtab', 'trafwppsub') +
       '</div>' +
-      '<div id="tww-colaleyenda-' + i + '" style="display:flex;flex-wrap:wrap;gap:10px 16px;margin-bottom:8px;font-size:0.72rem;color:var(--c-text-muted)"></div>' +
-      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="tww-canvas-' + i + '"></canvas></div>' +
+      '<div id="tww-content-'+i+'"></div>' +
     '</div>';
   host.dataset.campana = campana;
 
+  _traficoWppRenderSubtabContent(i);
+}
+
+// Mismo patron que _traficoRenderSubtabContent/_traficoSwitchSubtab
+// (trafico.js), reusando _traficoSubtabContentHTML tal cual.
+function _traficoWppRenderSubtabContent(i){
+  var content = document.getElementById('tww-content-'+i);
+  if(!content) return;
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var activo = _traficoWppSubtabActivo[campana] || 'resumen';
+  content.innerHTML = _traficoSubtabContentHTML('tww', i, activo);
   _traficoWppRenderContenido(i);
 }
 
-function _traficoWppCambiarPeriodo(i, periodo) {
-  var host = document.getElementById('gd-p' + i);
-  if (!host) return;
-  _traficoWppPeriodoSel[host.dataset.campana] = periodo;
-  _traficoWppRenderContenido(i);
-}
-
-function _traficoWppSwitchSubtab(i, key) {
-  var host = document.getElementById('gd-p' + i);
-  if (!host) return;
-  _traficoWppSubtabActivo[host.dataset.campana] = key;
-  var nav = document.getElementById('tww-subtabs-' + i);
-  if (nav) Array.prototype.forEach.call(nav.querySelectorAll('.gd-subtab-btn'), function (btn) {
-    btn.classList.toggle('on', btn.dataset.trafwppsub === key);
+function _traficoWppSwitchSubtab(i, key){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  _traficoWppSubtabActivo[campana] = key;
+  var nav = document.getElementById('tww-subtabs-'+i);
+  if(nav) Array.prototype.forEach.call(nav.querySelectorAll('.gd-subtab-btn'), function(btn){
+    btn.classList.toggle('on', btn.dataset.trafwppsub===key);
   });
+  _traficoWppRenderSubtabContent(i);
+}
+
+function _traficoWppLeerControles(i){
+  var selCmp = document.getElementById('tww-f-skills-cmp-'+i);
+  var seleccionCmp = selCmp ? Array.prototype.filter.call(selCmp.options, function(o){ return o.selected; }).map(function(o){ return o.value; }) : [];
+  var selPrincipal = document.getElementById('tww-f-skill-'+i);
+  var valorPrincipal = selPrincipal ? selPrincipal.value : '';
+  var resuelto = traficoResolverSkillsControles(seleccionCmp, valorPrincipal);
+  return {
+    skills: resuelto.skills,
+    desde: document.getElementById('tww-f-desde-'+i).value,
+    hasta: document.getElementById('tww-f-hasta-'+i).value,
+    granularidad: document.getElementById('tww-f-gran-'+i).value,
+    combinar: !document.getElementById('tww-f-separado-'+i).checked,
+  };
+}
+
+function _traficoWppAplicarFiltros(i){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host.dataset.campana;
+  var estado = _traficoWppLeerControles(i);
+  var colasDisponibles = [];
+  var visto = {};
+  ((_traficoWpp[campana] || {}).filas || []).forEach(function(f){ if(!visto[f.colaWhatsapp]){ visto[f.colaWhatsapp]=true; colasDisponibles.push(f.colaWhatsapp); } });
+  if(!estado.skills.length) estado.skills = colasDisponibles;
+  _traficoWppEstado[campana] = estado;
+  _traficoWppGuardarEstadoURL(estado);
+  var skillbar = document.getElementById('tww-f-skillbar-'+i);
+  if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tww', i, colasDisponibles, estado.skills, 'Cola', 'colas');
   _traficoWppRenderContenido(i);
 }
 
-function _traficoWppRenderContenido(i) {
-  var host = document.getElementById('gd-p' + i);
-  if (!host) return;
+// Prepara los datos (filtrar + agregar por periodo) y delega el dibujo a
+// las MISMAS funciones que usa Trafico de Llamadas (trafico.js) -- ver el
+// comentario de cabecera de este archivo.
+function _traficoWppRenderContenido(i){
+  var host = document.getElementById('gd-p'+i);
+  if(!host) return;
   var campana = host.dataset.campana;
-  var periodoSel = _traficoWppPeriodoSel[campana];
-  var todasLasFilas = (_traficoWpp[campana] || { filas: [] }).filas;
-  var filas = todasLasFilas.filter(function (f) { return (f.fechaInicio + '_' + f.fechaFin) === periodoSel; });
-  filas.sort(function (a, b) { return a.colaWhatsapp.localeCompare(b.colaWhatsapp); });
+  var estado = _traficoWppEstado[campana];
+  var datosCampana = _traficoWpp[campana] || { filas: [] };
+  var filtradas = traficoWppFiltrarFilas(datosCampana.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
+  var agregado = traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
+  _traficoWppAgregadoActual[campana] = agregado;
 
-  var resumen = (typeof traficoWppResumen === 'function') ? traficoWppResumen(filas) : null;
-  var kpisEl = document.getElementById('tww-kpis-' + i);
-  if (kpisEl && resumen) {
-    var semNivel = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(resumen.nivelAtencionPct, { metrica: 'nivel_atencion', campana: campana }) : null;
-    var semAband = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(resumen.tasaAbandonoPct, { metrica: 'tasa_abandono', campana: campana }) : null;
-    var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (resumen.nivelAtencionPct === null ? '' : resumen.nivelAtencionPct >= 90 ? 'kpi-green' : resumen.nivelAtencionPct >= 70 ? 'kpi-org' : 'kpi-red');
-    var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
-    kpisEl.innerHTML =
-      '<div class="aurora-kpi"><div class="kv">' + resumen.totalWhatsapp.toLocaleString('es-CO') + '</div><div class="kl">Total WhatsApp</div></div>' +
-      '<div class="aurora-kpi kpi-green"><div class="kv">' + resumen.contestados.toLocaleString('es-CO') + '</div><div class="kl">Contestados</div></div>' +
-      '<div class="aurora-kpi ' + clsAband + '"><div class="kv">' + (resumen.abandonados === null ? '—' : resumen.abandonados.toLocaleString('es-CO')) + '</div><div class="kl">Abandonados</div></div>' +
-      '<div class="aurora-kpi ' + clsNivel + '"><div class="kv">' + (resumen.nivelAtencionPct === null ? '—' : resumen.nivelAtencionPct + '%') + '</div><div class="kl">Nivel de Atencion</div></div>' +
-      '<div class="aurora-kpi ' + clsAband + '"><div class="kv">' + (resumen.tasaAbandonoPct === null ? '—' : resumen.tasaAbandonoPct + '%') + '</div><div class="kl">Tasa de Abandono</div></div>';
-  }
+  // Totales del periodo YA filtrado (nunca promedio de % de cada cola):
+  // suma primero, calcula el % despues — mismo criterio de
+  // traficoWppAgregarPorPeriodo/traficoAgregar.
+  var totalWpp = filtradas.reduce(function(a,f){ return a+f.totalWhatsapp; }, 0);
+  var totalContestados = filtradas.reduce(function(a,f){ return a+f.contestados; }, 0);
+  var tieneAbandonados = filtradas.some(function(f){ return f.abandonados!=null; });
+  var totalAbandonados = tieneAbandonados ? filtradas.reduce(function(a,f){ return a+(f.abandonados||0); }, 0) : null;
+  var nivelAtencion = totalWpp>0 ? Math.round((totalContestados/totalWpp)*1000)/10 : null;
+  var tasaAbandono = (totalWpp>0 && tieneAbandonados) ? Math.round((totalAbandonados/totalWpp)*1000)/10 : null;
 
-  var canvasId = 'tww-canvas-' + i;
-  var sub = _traficoWppSubtabActivo[campana] || 'volumen';
-  var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
-  var CRl = (typeof CR !== 'undefined') ? CR : '#e74c3c';
-  var COl = (typeof CO !== 'undefined') ? CO : '#e67e22';
-  var CMl = (typeof CM !== 'undefined') ? CM : '#1a7a9e';
-  var CPl = (typeof CP !== 'undefined') ? CP : '#8e44ad';
-  var colas = filas.map(function (f) { return f.colaWhatsapp; });
+  _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono },
+    { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados' }, campana);
 
-  // Fase 57: cada cola tiene su propio color (borde de las barras + leyenda
-  // aparte), para poder distinguirlas sin depender solo de la etiqueta del
-  // eje X -- sin tocar charts.js ni el significado semantico de
-  // azul/verde/rojo (Total/Contestados/Abandonados) que ya usan las barras.
-  // Reusa PC/PC_DARK (charts.js), la MISMA paleta categorica ya usada en
-  // otros graficos de muchas categorias (ej. pies de Tipificacion) y ya
-  // reasignada automaticamente por tema -- nunca una paleta nueva propia de
-  // este archivo. Se filtran a mano los indices de PC que son verde o rojo
-  // (2, 4, 6, 9, 11 -- las 2 familias "verde"/"rojo" de esa paleta) para que
-  // el color de una cola nunca coincida con el verde de Contestados ni el
-  // rojo de Abandonados: esa coincidencia confundiria "es esta barra roja
-  // por Abandonados, o por el color de su cola" -- justo lo que se pidio
-  // evitar.
-  var PCl = (typeof PC !== 'undefined' && PC && PC.length) ? PC : [CDl, CMl, COl, CPl];
-  var PC_IDX_SEGURO = [0, 5, 3, 8, 10, 1, 7].filter(function (idx) { return idx < PCl.length; });
-  var paletaColas = PC_IDX_SEGURO.length ? PC_IDX_SEGURO.map(function (idx) { return PCl[idx]; }) : PCl;
-  var colaColors = colas.map(function (_, idx) { return paletaColas[idx % paletaColas.length]; });
-  var leyendaEl = document.getElementById('tww-colaleyenda-' + i);
-  if (leyendaEl) {
-    leyendaEl.innerHTML = colas.map(function (cola, idx) {
-      return '<span style="display:inline-flex;align-items:center;gap:5px">' +
-        '<span style="width:10px;height:10px;border-radius:2px;background:' + colaColors[idx] + ';display:inline-block;flex:none"></span>' +
-        esc(cola) + '</span>';
-    }).join('');
-  }
+  _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
 
-  var cfg;
-  if (sub === 'sl') {
-    var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
-    o.scales = { y: { min: 0, max: 100, ticks: { font: { size: 8 }, callback: function (v) { return gdFmtValor(v, '%'); } } }, x: { ticks: { font: { size: 8 } } } };
-    if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function (v) { return v === null || v === undefined ? '' : gdFmtValor(v, '%'); });
-    o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + gdFmtValor(ctx.parsed.y, '%'); } } };
-    cfg = {
-      type: 'bar',
-      data: { labels: colas, datasets: [
-        { label: 'SL 10s', data: filas.map(function (f) { return f.serviceLevel10secPct; }), backgroundColor: CDl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-        { label: 'SL 20s', data: filas.map(function (f) { return f.serviceLevel20secPct; }), backgroundColor: CMl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-        { label: 'SL 30s', data: filas.map(function (f) { return f.serviceLevel30secPct; }), backgroundColor: COl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-      ] },
-      options: o,
+  // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado, sin depender del
+  // checkbox "Ver colas por separado" de arriba (mismo criterio que
+  // Llamadas): son la tendencia de la campana completa.
+  var agregadoComb = estado.combinar ? agregado : traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: true });
+
+  _traficoDibujarAbandono('tww', i, agregadoComb);
+  _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);
+  _traficoDibujarAsaAta('tww', i, agregadoComb, _traficoWppFmtTiempo);
+  _traficoDibujarSL('tww', i, agregadoComb);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORTAR (Excel/PDF) — mismo patron que _traficoDatosExport/
+// _traficoExportExcel/_traficoExportPrint (trafico.js), con las columnas
+// de WhatsApp. Solo SL 20s (Pedido 3): serviceLevel10secPct/30secPct se
+// siguen calculando igual, solo no se incluyen aqui.
+// ═══════════════════════════════════════════════════════════
+function _traficoWppDatosExport(i){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var agregado = _traficoWppAgregadoActual[campana] || [];
+  return agregado.map(function(a){
+    return {
+      Periodo: a.periodo,
+      Cola: a.skillName || 'Todas (combinado)',
+      'Total WhatsApp': a.totalLlamadas,
+      'WhatsApp Contestados': a.contestadas,
+      'WhatsApp Abandonados': a.llamadasAbandonadas,
+      '% Nivel de Atencion': a.nivelAtencionPct,
+      '% Tasa de Abandono': a.tasaAbandonoPct,
+      '% Service Level 20s': a.serviceLevel20secPct,
+      'ASA (seg)': a.asaSegundos,
+      'ATA (seg)': a.ataSegundos,
+      'AHT (seg)': a.ahtSegundos,
     };
-  } else if (sub === 'asaata') {
-    var o2 = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
-    o2.scales = { y: { ticks: { font: { size: 8 }, callback: _traficoWppFmtTiempo } }, x: { ticks: { font: { size: 8 } } } };
-    if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o2, function (v) { return v === null || v === undefined ? '' : _traficoWppFmtTiempo(v); });
-    o2.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + _traficoWppFmtTiempo(ctx.parsed.y); } } };
-    cfg = {
-      type: 'bar',
-      data: { labels: colas, datasets: [
-        { label: 'ASA', data: filas.map(function (f) { return f.asaSegundos; }), backgroundColor: CPl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-        { label: 'ATA', data: filas.map(function (f) { return f.ataSegundos; }), backgroundColor: COl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-      ] },
-      options: o2,
-    };
-  } else { // 'volumen'
-    var o3 = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
-    o3.scales = { y: { ticks: { font: { size: 8 } } }, x: { ticks: { font: { size: 8 } } } };
-    if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o3, function (v) { return v === null || v === undefined ? '' : gdFmtValor(v); });
-    o3.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y === null ? '—' : ctx.parsed.y.toLocaleString('es-CO')); } } };
-    cfg = {
-      type: 'bar',
-      data: { labels: colas, datasets: [
-        { label: 'Total', data: filas.map(function (f) { return f.totalWhatsapp; }), backgroundColor: CDl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-        { label: 'Contestados', data: filas.map(function (f) { return f.contestados; }), backgroundColor: CGl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-        { label: 'Abandonados', data: filas.map(function (f) { return f.abandonados; }), backgroundColor: CRl, borderColor: colaColors, borderWidth: 2, borderRadius: 3 },
-      ] },
-      options: o3,
-    };
-  }
-  if (typeof _gdChart === 'function') _gdChart(canvasId, cfg);
+  });
+}
+
+function _traficoWppExportExcel(i){
+  if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
+  var datos = _traficoWppDatosExport(i);
+  if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : 'trafico_whatsapp';
+  var wb = XLSX.utils.book_new();
+  xlsxAgregarAvisoDemo(wb);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datos), 'TraficoWhatsApp');
+  XLSX.writeFile(wb, 'Trafico_WhatsApp_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
+}
+
+function _traficoWppExportPrint(i){
+  var datos = _traficoWppDatosExport(i);
+  if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : '';
+  var w = window.open('', '_blank');
+  if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
+  var cols = Object.keys(datos[0]);
+  var tabla = '<table><thead><tr>'+cols.map(function(c){ return '<th>'+esc(c)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    datos.map(function(r){ return '<tr>'+cols.map(function(c){ var v=r[c]; return '<td>'+(v===null||v===undefined?'—':esc(v))+'</td>'; }).join('')+'</tr>'; }).join('')+
+    '</tbody></table>';
+  var avisoHtml = (typeof seedDemoActivo !== 'undefined' && seedDemoActivo)
+    ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">'+
+      '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
+    : '';
+  w.document.write('<!doctype html><html><head><title>Trafico de WhatsApp — '+esc(campana)+'</title>'+
+    '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}'+
+    'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}'+
+    'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>'+
+    avisoHtml +
+    '<h1>Trafico de WhatsApp — '+esc(campana)+'</h1>'+tabla+
+    '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — '+new Date().toLocaleString('es-CO')+'</p>'+
+    '</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.focus(); w.print(); }, 300);
 }
 
 // ═══════════════════════════════════════════════════════════

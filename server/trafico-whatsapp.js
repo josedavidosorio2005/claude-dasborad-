@@ -24,17 +24,17 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   const insertFila = db.prepare(
     `INSERT INTO trafico_whatsapp
        (campana, colaWhatsapp, fechaInicio, fechaFin, totalWhatsapp, contestados, abandonados,
-        serviceLevel10secPct, serviceLevel20secPct, serviceLevel30secPct, asaSegundos, ataSegundos,
+        serviceLevel10secPct, serviceLevel20secPct, serviceLevel30secPct, asaSegundos, ataSegundos, ahtSegundos,
         archivoNombre, cargadoPorNombre, createdAt)
      VALUES (@campana,@colaWhatsapp,@fechaInicio,@fechaFin,@totalWhatsapp,@contestados,@abandonados,
-             @serviceLevel10secPct,@serviceLevel20secPct,@serviceLevel30secPct,@asaSegundos,@ataSegundos,
+             @serviceLevel10secPct,@serviceLevel20secPct,@serviceLevel30secPct,@asaSegundos,@ataSegundos,@ahtSegundos,
              @archivoNombre,@cargadoPorNombre,@createdAt)`
   );
   const updateFila = db.prepare(
     `UPDATE trafico_whatsapp SET
        totalWhatsapp=@totalWhatsapp, contestados=@contestados, abandonados=@abandonados,
        serviceLevel10secPct=@serviceLevel10secPct, serviceLevel20secPct=@serviceLevel20secPct,
-       serviceLevel30secPct=@serviceLevel30secPct, asaSegundos=@asaSegundos, ataSegundos=@ataSegundos,
+       serviceLevel30secPct=@serviceLevel30secPct, asaSegundos=@asaSegundos, ataSegundos=@ataSegundos, ahtSegundos=@ahtSegundos,
        archivoNombre=@archivoNombre, cargadoPorNombre=@cargadoPorNombre, createdAt=@createdAt
      WHERE id=@id`
   );
@@ -60,6 +60,7 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
         serviceLevel30secPct: opcional(f.serviceLevel30secPct),
         asaSegundos: opcional(f.asaSegundos),
         ataSegundos: opcional(f.ataSegundos),
+        ahtSegundos: opcional(f.ahtSegundos),
         archivoNombre: archivoNombre || '',
         cargadoPorNombre: cargadoPorNombre || '-',
         createdAt: ts,

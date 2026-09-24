@@ -1189,6 +1189,56 @@ runOnceMigration('dashboards_config_aht_real_trafico_v1', () => {
   }
 });
 
+// Vacia la franja global de KPIs de ORLANT (layout.kpis) por completo --
+// Fase 68, Pedido 2 (Edwin, 23/09): las tarjetas de Llamadas/Nivel de
+// Atencion ya estan abajo en la pestaña "Trafico de Llamadas" (filtrables
+// por linea, Fase 65), Total Agendas volvera cuando se grafiquen agendas
+// (pestaña "Agendamiento", hoy oculta), y las demas (Efec. Ordenamiento
+// Medico, Recuperacion Cancelados, Llamadas Salida, % Citas Atendidas) no
+// se usan asi. Mismo motivo que las migraciones anteriores:
+// dashboards_config solo se siembra la primera vez que un cliente no
+// existe, asi que dejar `kpis: []` en dashboard-config-seed.js nunca le
+// llega solo a una fila que ya existia (como produccion). SOLO ORLANT --
+// ningun otro cliente se toca. No borra ningun dato de Gestion de base: la
+// hoja "resumen" se sigue guardando igual, esto solo cambia que se
+// muestra arriba del dashboard.
+runOnceMigration('dashboards_config_orlant_kpis_vacios_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con kpis: []
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  if (!(layout.kpis || []).length) return; // ya esta vacio -- nada que hacer
+  layout.kpis = [];
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_kpis_vacios_v1 aplicada.');
+  }
+});
+
+// Columna AHT opcional en trafico_whatsapp (Fase 68, Pedido 5, Edwin
+// 23/09): la plantilla aprobada de WhatsApp no trae hoy ningun campo de
+// AHT/tiempo de conversacion -- columna nueva para cuando se complete a
+// mano en la plantilla (mismo criterio de la reunion del 21/09: si un dato
+// no llega automatico, quien sube la informacion lo completa a mano).
+// No se agrega directo al CREATE TABLE de arriba para que esta migracion
+// funcione igual en una base nueva o en una que ya tenia filas (evita el
+// error "duplicate column name") -- mismo patron que
+// calidad_nivel_servicio_diario_trafico_v1.
+runOnceMigration('trafico_whatsapp_aht_v1', () => {
+  db.exec('ALTER TABLE trafico_whatsapp ADD COLUMN ahtSegundos REAL');
+  if (!config.isTest) {
+    console.log('[db] Migracion trafico_whatsapp_aht_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
