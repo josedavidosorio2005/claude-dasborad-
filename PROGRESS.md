@@ -5757,6 +5757,19 @@ pestaña alimenta cada una.
 `resumen-orlant-trafico.test.js` para WhatsApp + combinado, 3 en
 `cargas-logic.test.js` para columnas `autoTrafico`, 1 archivo nuevo
 `orlant-resumen-trafico-opcional-migracion.test.js` con 5 tests),
-`npm audit` 0 vulnerabilidades, antes y después. Producción: pendiente de
-`/api/health` + revisión de solo lectura tras el deploy de esta fase.
+`npm audit` 0 vulnerabilidades, antes y después.
+
+**Producción, tras el deploy (PR #134, `cedd1c3`)**: `GET /api/health`
+200 OK. Verificación de solo lectura confirmada con un workflow de un
+solo uso (mismo patrón que las Fases 66-68 — PR #135, autorizado
+explícitamente por el usuario antes de dispararse; usuario temporal
+`AUX_ADMIN` con SOLO `perms.cargarDatos`, SSH abierto solo para la IP
+del runner y revertido al final): la plantilla real de ORLANT
+descargada de producción confirma que la hoja `resumen` ya NO trae
+ninguna de las 7 filas de tráfico, y tiene exactamente las 16 filas de
+métrica esperadas. 0 errores de consola. Usuario temporal borrado y
+puerto 22 revertido correctamente (confirmado en los pasos de limpieza,
+que corren siempre). Tras confirmar el éxito, se quitó el workflow del
+repo (PR #136) — mismo motivo que las Fases 67/68: era de un solo uso y
+abría acceso SSH temporal a producción.
 
