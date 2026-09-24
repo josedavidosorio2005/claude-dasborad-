@@ -38,7 +38,17 @@ async function doLogin() {
       return;
     }
 
-    await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+    // GET /historial exige isFullAdmin en el servidor (routes/historial.js) --
+    // cualquier rol que no sea ADMIN (AUX_ADMIN, CLIENTES_DASH, ASESOR,
+    // SUPERVISOR, CALIDAD, etc.) recibia 403 aqui en CADA login, siempre
+    // ignorado en silencio (loadHist ya cae a historial=[] con try/catch,
+    // Fase 68/67: el mismo 403 aparecia en las verificaciones de produccion
+    // con el usuario temporal AUX_ADMIN). El resultado final para esos roles
+    // no cambia (la pestana Historial ya estaba oculta para ellos, ver
+    // enterAdminPanel abajo) -- esto solo evita la peticion que de todas
+    // formas iba a fallar.
+    var puedeVerHistorial = data.user.rol === 'ADMIN';
+    await loadData(); if (puedeVerHistorial) await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
     var found = users.find(function(x){ return x.id === data.user.id; });
     // GET /users filtra perms a {} para quien no administra usuarios/permisos
     // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
