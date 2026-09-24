@@ -1,0 +1,71 @@
+name: Verificacion - errores reales en logs de produccion (solo lectura)
+
+# Disparo manual unicamente. Rol OIDC (mismo mecanismo que el resto), pero
+# a diferencia de audit-instance.yml/deploy.yml esta corrida NUNCA abre el
+# puerto 22 ni toca la instancia -- solo lee CloudWatch Logs (un servicio
+# de AWS aparte), asi que no comparte el grupo de concurrencia con el
+# despliegue.
+#
+# Fase 72 (auditoria de seguridad): trae los ultimos errores/excepciones
+# reales de produccion de las ultimas 24h desde los grupos de logs que ya
+# existen (ver PROGRESS.md, seccion 6.x -- CloudWatch Agent activo desde
+# antes de esta fase): /inconexion/prod/docker (contenedor de la app) y
+# /inconexion/prod/backup (backup diario). Nunca escribe ni borra nada.
+on:
+  workflow_dispatch:
+    inputs:
+      horas_atras:
+        description: 'Cuantas horas hacia atras buscar (default 24)'
+        required: false
+        default: '24'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verificar-logs:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Errores en /inconexion/prod/docker (contenedor de la app)
+        run: |
+          set -euo pipefail
+          HORAS="${{ github.event.inputs.horas_atras || '24' }}"
+          DESDE_MS=$(( $(date +%s%3N) - HORAS * 3600 * 1000 ))
+          echo "Buscando desde hace ${HORAS}h en /inconexion/prod/docker ..."
+          aws logs filter-log-events \
+            --region "$AWS_REGION" \
+            --log-group-name /inconexion/prod/docker \
+            --start-time "$DESDE_MS" \
+            --filter-pattern '?ERROR ?error ?Error ?Exception ?"uncaughtException" ?"unhandledRejection"' \
+            --query 'events[].{t:timestamp,m:message}' \
+            --output json > docker-errores.json || echo '[]' > docker-errores.json
+          COUNT=$(jq 'length' docker-errores.json)
+          echo "Eventos encontrados: $COUNT"
+          jq -r '.[] | "\(.t | tostring) \(.m)"' docker-errores.json | tail -100
+
+      - name: Errores en /inconexion/prod/backup (backup diario)
+        run: |
+          set -euo pipefail
+          HORAS="${{ github.event.inputs.horas_atras || '24' }}"
+          DESDE_MS=$(( $(date +%s%3N) - HORAS * 3600 * 1000 ))
+          echo "Buscando desde hace ${HORAS}h en /inconexion/prod/backup ..."
+          aws logs filter-log-events \
+            --region "$AWS_REGION" \
+            --log-group-name /inconexion/prod/backup \
+            --start-time "$DESDE_MS" \
+            --filter-pattern '?Fallo ?FALLO ?error ?Error' \
+            --query 'events[].{t:timestamp,m:message}' \
+            --output json > backup-errores.json || echo '[]' > backup-errores.json
+          COUNT=$(jq 'length' backup-errores.json)
+          echo "Eventos encontrados: $COUNT"
+          jq -r '.[] | "\(.t | tostring) \(.m)"' backup-errores.json | tail -100
