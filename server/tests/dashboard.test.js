@@ -42,6 +42,30 @@ test('cargar datos exige el permiso cargarDatos', async () => {
   assert.equal(r.status, 403);
 });
 
+test('Fase 72 (H1): tener cargarDatos NO da lectura del dashboard de un cliente sin cliente_/campana_ asignado', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  // Loader real (mismo shape que "flujo completo" mas abajo) pero SIN ningun
+  // cliente_/campana_ en sus permisos -- antes del fix, cargarDatos por si
+  // solo bastaba para leer el dashboard RENDERIZADO de cualquier cliente.
+  const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } });
+
+  const dash = await request(app).get('/api/dashboard/ORLANT').set(auth(loader.token));
+  assert.equal(dash.status, 403, JSON.stringify(dash.body));
+
+  // Pero SI puede seguir cargando datos para ORLANT (cargarDatos sigue
+  // siendo global a proposito para subir, eso no cambio).
+  const carga = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(loader.token))
+    .send({ cliente: 'ORLANT', seccion: 'tipificacion', cadencia: 'mensual', periodo: MES, filas: [{ linea: '3P', tipificacion: 'X', cantidad: 1 }] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+
+  // Y si se le da el permiso de cliente/campana correspondiente, ya si puede leer.
+  await request(app).put('/api/users/' + loader.id + '/perms').set(auth(admin)).send({ perms: { Calidad: true, cargarDatos: true, campana_ORLANT: true } });
+  const dashConAcceso = await request(app).get('/api/dashboard/ORLANT').set(auth(loader.token));
+  assert.equal(dashConAcceso.status, 200);
+});
+
 test('REPORTES trae cargarDatos:true automaticamente al crearse (feedback Edwin 2.1)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const user = 'rep_' + Math.random().toString(36).slice(2, 8);

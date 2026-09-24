@@ -5,7 +5,7 @@
 // sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, isFullAdmin, can, canLoadData, requireDataLoader } = require('../auth');
+const { requireActor, isFullAdmin, can, requireDataLoader } = require('../auth');
 const { validate, schemas } = require('../validation');
 const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
@@ -19,9 +19,18 @@ router.use(['/dashboard', '/dashboards'], (req, res, next) => {
   next();
 });
 
+// Fase 72 (hallazgo H1): antes esta funcion tambien daba acceso a
+// canLoadData(actor) -- eso hacia que CUALQUIER usuario con el permiso
+// global `cargarDatos` (p.ej. el rol REPORTES, que SIEMPRE lo tiene) pudiera
+// leer el dashboard RENDERIZADO de un cliente al que nunca se le dio acceso
+// (ver GET /dashboard/:cliente mas abajo), cambiando el nombre en la URL.
+// `cargarDatos` sigue siendo global a proposito para SUBIR datos
+// (requireDataLoader, sin tocar) y para /dashboard/cargas (pantalla interna
+// de gestion de cargas, sin tocar) -- pero leer el dashboard que ve el
+// cliente final debe seguir el mismo scoping por cliente/campana que todo
+// lo demas.
 function clienteAccess(actor, cliente) {
   if (isFullAdmin(actor)) return true;
-  if (canLoadData(actor)) return true;
   if (!actor || !actor.perms) return false;
   return (
     actor.perms['cliente_' + cliente] === true || actor.perms['campana_' + cliente] === true
