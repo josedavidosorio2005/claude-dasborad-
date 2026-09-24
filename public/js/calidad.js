@@ -595,7 +595,7 @@ async function descargarReporteGeneral(){
         ]);
       });
     }
-    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    var ws = XLSX.utils.aoa_to_sheet(xlsxFilasSeguras(aoa));
     ws['!cols'] = [{wch:28},{wch:10},{wch:11},{wch:16},{wch:12},{wch:12},{wch:9},{wch:13},{wch:13},{wch:10}];
     var sheetName = xlsxNombreHojaUnico(camp, usedNames);
     XLSX.utils.book_append_sheet(wb, ws, sheetName);

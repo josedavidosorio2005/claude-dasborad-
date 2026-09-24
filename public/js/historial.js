@@ -75,7 +75,7 @@ function exportHistorial(){
     };
   });
   var wb=XLSX.utils.book_new();
-  var ws=XLSX.utils.json_to_sheet(rows);
+  var ws=XLSX.utils.json_to_sheet(xlsxFilasSeguras(rows));
   ws['!cols']=[{wch:20},{wch:24},{wch:16},{wch:14},{wch:16},{wch:24},{wch:40}];
   XLSX.utils.book_append_sheet(wb,ws,'Historial');
   XLSX.writeFile(wb,'Historial_InConexion_'+new Date().toISOString().slice(0,10)+'.xlsx');

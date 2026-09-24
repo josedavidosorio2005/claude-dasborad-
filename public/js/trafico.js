@@ -946,7 +946,7 @@ function _traficoExportExcel(i){
   var campana = host ? host.dataset.campana : 'trafico';
   var wb = XLSX.utils.book_new();
   xlsxAgregarAvisoDemo(wb);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datos), 'Trafico');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'Trafico');
   XLSX.writeFile(wb, 'Trafico_Llamadas_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
 
