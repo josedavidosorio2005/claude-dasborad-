@@ -1,11 +1,11 @@
-// orlant-kpis-whatsapp-duplicados-migracion.test.js — prueba la migracion
-// `dashboards_config_orlant_kpis_whatsapp_duplicados_v1` (server/db.js),
-// Fase 54 (hallazgo real del usuario: las 4 tarjetas de WhatsApp de la
-// franja global de KPIs de ORLANT mostraban "0" en produccion porque nunca
-// consultaron trafico_whatsapp -- salian de la seccion "resumen"/"salida" de
-// Gestion de base, carga manual, nunca llenada para esos campos). Mismo
-// patron que trafico-kpis-duplicados-migracion.test.js (Fase 45): sembrar
-// el layout VIEJO a mano *antes* de requerir db.js, y verificar "despues".
+// orlant-kpis-vacios-migracion.test.js — prueba la migracion
+// `dashboards_config_orlant_kpis_vacios_v1` (server/db.js), Fase 68 Pedido 2
+// (Edwin, 23/09): la franja global de KPIs de ORLANT se vacia por completo
+// -- Llamadas/Nivel de Atencion ya estan en la pestaña de Trafico, Total
+// Agendas volvera cuando se grafiquen agendas, y las demas no se usan asi.
+// Mismo patron que orlant-kpis-whatsapp-duplicados-migracion.test.js (Fase
+// 54): sembrar el layout VIEJO a mano *antes* de requerir db.js, y
+// verificar "despues".
 'use strict';
 
 const os = require('os');
@@ -17,26 +17,28 @@ const assert = require('node:assert/strict');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
-const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-kpis-wpp-dup-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
+const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-kpis-vacios-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
 
-// Forma "vieja" reconocible: los kpis de ORLANT tal como salian antes de la
-// Fase 54, con las 4 tarjetas de WhatsApp desconectadas todavia adentro.
+// Forma "vieja" reconocible: los 9 kpis de ORLANT tal como quedaron tras la
+// Fase 54 (ya sin las 4 tarjetas de WhatsApp, pero con las de Llamadas y las
+// demas todavia adentro).
 const KPIS_ORLANT_VIEJO = [
   { titulo: 'Llamadas 3P', fuente: {}, formato: 'miles' },
   { titulo: 'Nivel Atencion 3P', fuente: {}, formato: 'porcentaje' },
-  { titulo: 'WhatsApp 3P', fuente: {}, formato: 'miles' },
-  { titulo: 'Nivel Atencion WPP 3P', fuente: {}, formato: 'porcentaje' },
   { titulo: 'Llamadas Linea General', fuente: {}, formato: 'miles' },
   { titulo: 'Nivel Atencion L.General', fuente: {}, formato: 'porcentaje' },
-  { titulo: 'WhatsApp Linea General', fuente: {}, formato: 'miles' },
   { titulo: 'Total Agendas', fuente: {}, formato: 'miles' },
+  { titulo: 'Efec. Ordenamiento Medico', fuente: {}, formato: 'porcentaje' },
+  { titulo: 'Recuperacion Cancelados', fuente: {}, formato: 'porcentaje' },
   { titulo: 'Llamadas Salida (Gral+3P)', fuente: {}, formato: 'miles' },
-  { titulo: 'WhatsApp Salida (Gral+3P)', fuente: {}, formato: 'miles' },
   { titulo: '% Citas Atendidas', fuente: {}, formato: 'porcentaje' },
 ];
-// Otro cliente cualquiera (nunca tuvo estos titulos) -- confirma que la
-// migracion no toca clientes fuera de ORLANT.
-const KPIS_OTRO_VIEJO = [{ titulo: 'WhatsApp 3P', fuente: {}, formato: 'miles' }];
+// Otro cliente cualquiera -- confirma que la migracion no toca clientes
+// fuera de ORLANT (pedido explicito: los demas clientes conservan su
+// franja). MOVILIZE a proposito: no aparece en ninguna otra migracion de
+// kpis de este archivo (ni Fase 45 ni Fase 59), asi que este titulo no se
+// puede confundir con el efecto de otra migracion distinta.
+const KPIS_OTRO_VIEJO = [{ titulo: 'Llamadas Entrada', fuente: {}, formato: 'miles' }];
 
 function layoutCon(kpis) {
   return {
@@ -62,13 +64,13 @@ pre.exec(`
     updatedAt TEXT NOT NULL
   );
 `);
-const now = '22/09/2026 14:00:00';
+const now = '24/09/2026 09:00:00';
 const insertar = pre.prepare(
   `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(layoutCon(KPIS_ORLANT_VIEJO)), now, now);
-insertar.run('BIVETT', 'Dashboard Bivett', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
+insertar.run('MOVILIZE', 'Dashboard Movilize', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -91,29 +93,15 @@ function kpisDe(cliente) {
   return JSON.parse(row.layout).kpis.map((k) => k.titulo);
 }
 
-test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: ORLANT pierde las 4 tarjetas de WhatsApp', () => {
-  const titulos = kpisDe('ORLANT');
-  ['WhatsApp 3P', 'Nivel Atencion WPP 3P', 'WhatsApp Linea General', 'WhatsApp Salida (Gral+3P)'].forEach((t) => {
-    assert.equal(titulos.indexOf(t), -1, t + ' deberia haberse quitado');
-  });
-});
-
-// Historicamente (Fase 54) esta migracion dejaba las 7 tarjetas de Llamadas
-// intactas. Desde la Fase 68 (Pedido 2, Edwin, 23/09) una migracion
-// posterior (dashboards_config_orlant_kpis_vacios_v1, db.js) vacia la franja
-// de KPIs de ORLANT por completo -- corre justo despues de esta en el mismo
-// require() de db.js, asi que el estado final observable aqui ya es el
-// vacio. La cobertura de que ESTA migracion en particular quita las 4
-// tarjetas de WhatsApp sigue viva en el test de arriba.
-test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: el estado final de ORLANT queda vacio (migracion posterior de la Fase 68)', () => {
+test('migracion dashboards_config_orlant_kpis_vacios_v1: ORLANT queda con la franja de KPIs vacia', () => {
   assert.deepEqual(kpisDe('ORLANT'), []);
 });
 
-test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: nunca toca otro cliente (BIVETT no es ORLANT, aunque tenga el mismo titulo)', () => {
-  assert.deepEqual(kpisDe('BIVETT'), ['WhatsApp 3P']);
+test('migracion dashboards_config_orlant_kpis_vacios_v1: nunca toca otro cliente', () => {
+  assert.deepEqual(kpisDe('MOVILIZE'), ['Llamadas Entrada']);
 });
 
-test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: nunca toca tabs/panels, solo el array kpis', () => {
+test('migracion dashboards_config_orlant_kpis_vacios_v1: nunca toca tabs/panels, solo el array kpis', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
   assert.equal(layout.tabs[1].key, 'trafico_whatsapp');

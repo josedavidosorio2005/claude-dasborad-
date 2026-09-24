@@ -33,6 +33,7 @@ function toTraficoWppRow(row) {
     serviceLevel30secPct: row.serviceLevel30secPct,
     asaSegundos: row.asaSegundos,
     ataSegundos: row.ataSegundos,
+    ahtSegundos: row.ahtSegundos,
   };
 }
 

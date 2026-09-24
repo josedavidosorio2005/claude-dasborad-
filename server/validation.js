@@ -353,6 +353,7 @@ const traficoWppFilaSchema = z
     serviceLevel30secPct: pctOpcional,
     asaSegundos: segundosOpcional,
     ataSegundos: segundosOpcional,
+    ahtSegundos: segundosOpcional,
   })
   .refine((f) => f.contestados <= f.totalWhatsapp, {
     message: 'Los WhatsApp contestados no pueden superar el total',

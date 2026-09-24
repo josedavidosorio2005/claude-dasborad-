@@ -17,6 +17,15 @@
 // mismo criterio que la Fase 45 aplico a voz (abandonPct) — la tasa de
 // abandono se recalcula EXACTA desde abandonados/total en vez de confiar en
 // el % que trae el archivo.
+// AHT (Fase 68, Pedido 5 -- investigacion AHT, Edwin 23/09): la plantilla
+// real de WhatsApp que el cliente ya aprobo (columnas de arriba) NO trae
+// ningun campo de AHT/tiempo de conversacion -- confirmado contra esa
+// especificacion aprobada (no hay acceso desde aqui al panel de Wolkvox en
+// vivo para verificar si existe un campo asi mas alla de lo ya aprobado).
+// Columna OPCIONAL nueva, mismo criterio de la reunion del 21/09 (cuando un
+// dato no llega automatico, quien sube la informacion lo completa a mano en
+// la misma plantilla): un archivo viejo sin esta columna sigue cargando
+// exactamente igual (avisos.push solo pasa por columnas obligatorias).
 var TRAFICO_WPP_COLUMNAS = [
   { key: 'colaWhatsapp', label: 'NOMBRE_COLA_WHATSAPP', obligatoria: true },
   { key: 'fechaInicio', label: 'FECHA INICIO', obligatoria: true },
@@ -29,6 +38,7 @@ var TRAFICO_WPP_COLUMNAS = [
   { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
   { key: 'asaSegundos', label: 'ASA' },
   { key: 'ataSegundos', label: 'ATA' },
+  { key: 'ahtSegundos', label: 'AHT' },
 ];
 var TRAFICO_WPP_COLUMNAS_OBLIGATORIAS = TRAFICO_WPP_COLUMNAS.filter(function (c) { return c.obligatoria; });
 
@@ -92,6 +102,18 @@ function traficoWppParseFecha(v) {
     if (!isNaN(d2)) return d2.toISOString().slice(0, 10);
   }
   return null;
+}
+
+// AHT: hora nativa de Excel = fraccion de dia (0.002488... -> 3:35 -> 215s),
+// mismo formato ya usado por WAIT_TIME/AHT en la plantilla de voz
+// (traficoSegundosDesdeFraccionDia, trafico-logic.js) -- pedido explicito
+// del cliente (Fase 67: "formato de HORA de Excel, nunca segundos como
+// numero"). Vacio -> null (no 0 segundos, que seria un dato real).
+function traficoWppSegundosDesdeFraccionDia(v) {
+  if (v === null || v === undefined || v === '') return null;
+  var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+  if (!Number.isFinite(n)) return null;
+  return Math.round(n * 86400);
 }
 
 // SERVICE_LEVEL_10/20/30SEC: texto "31.73 %" (con o sin espacio antes del %).
@@ -169,6 +191,7 @@ function traficoWppParseFilas(aoa) {
       ['serviceLevel30secPct', traficoWppPctDesdeTexto, null],
       ['asaSegundos', traficoWppNumero, null],
       ['ataSegundos', traficoWppNumero, null],
+      ['ahtSegundos', traficoWppSegundosDesdeFraccionDia, null],
     ];
     opcionales.forEach(function (spec) {
       var key = spec[0], parse = spec[1], post = spec[2];
@@ -225,6 +248,108 @@ function traficoWppResumen(filas) {
   return res;
 }
 
+// ── Filtro por cola + rango de fechas (Fase 68, Pedido 5) ───────────────
+// Mismo nombre de opciones que traficoFiltrarFilas (trafico-logic.js:
+// `skills`/`desde`/`hasta`) para que el codigo de UI compartido (trafico.js)
+// pueda leer/escribir el estado de filtros igual sin importar el canal --
+// aqui `skills` selecciona colas, no SKILL_NAME de Volvox. La diferencia de
+// fondo es de FECHA: en voz cada fila tiene un solo dia (`f.fecha`) asi que
+// el filtro es una comparacion directa; aqui cada fila es un PERIODO
+// (fechaInicio..fechaFin), asi que "Desde"/"Hasta" incluye cualquier
+// periodo que SE SOLAPE con el rango elegido (no exige que el periodo
+// quede totalmente adentro) -- mismo criterio intuitivo de cualquier
+// filtro de rango de fechas sobre eventos con duracion.
+function traficoWppFiltrarFilas(filas, opts) {
+  opts = opts || {};
+  var skills = opts.skills && opts.skills.length ? opts.skills : null;
+  return filas.filter(function (f) {
+    if (skills && skills.indexOf(f.colaWhatsapp) === -1) return false;
+    if (opts.desde && f.fechaFin < opts.desde) return false;
+    if (opts.hasta && f.fechaInicio > opts.hasta) return false;
+    return true;
+  });
+}
+
+// ── Agregado por granularidad (mes/año) + combinar/separar colas ───────
+// Cada fila YA es UNA cola para UN periodo completo (fechaInicio..fechaFin)
+// -- a diferencia de traficoAgregar (trafico-logic.js), que suma muchas
+// filas DIARIAS, aqui "agregar" es sobre todo AGRUPAR por mes/año (y sumar
+// si mas de una fila cae en el mismo periodo agrupado, ej. dos archivos
+// del mismo mes cargados por separado). Sin 'dia': estos datos no tienen
+// granularidad diaria (ver Pedido 5, nota de grano de datos) -- el llamador
+// (trafico-whatsapp.js) nunca ofrece esa opcion en el desplegable.
+//
+// Forma de salida EXACTAMENTE IGUAL a traficoAgregar (periodo/skillName/
+// totalLlamadas/contestadas/llamadasAbandonadas/nivelAtencionPct/
+// tasaAbandonoPct/serviceLevel10-30secPct/asaSegundos/ataSegundos/
+// ahtSegundos/waitTimeSegundos), a proposito: asi las mismas funciones de
+// dibujo de graficas de Trafico de Llamadas (trafico.js) se reusan tal
+// cual para Trafico de WhatsApp (Fase 68, Pedido 5) sin tener que conocer
+// de que canal viene el dato. `skillName` aqui es el nombre de la cola;
+// `waitTimeSegundos` siempre null (WhatsApp no tiene ese dato). Mismo
+// criterio de traficoAgregar: SIEMPRE suma volumenes primero y recalcula
+// el % desde esa suma; SERVICE_LEVEL_*/ASA/ATA/AHT se agregan como
+// promedio ponderado por TOTAL WHATSAPP.
+function traficoWppPeriodoDe(fechaInicio, granularidad) {
+  if (granularidad === 'anio') return fechaInicio.slice(0, 4);
+  return fechaInicio.slice(0, 7); // 'mes' -- unico grano real disponible hoy
+}
+
+function traficoWppAgregarPorPeriodo(filas, opts) {
+  opts = opts || {};
+  var granularidad = opts.granularidad || 'mes';
+  var combinar = opts.combinar !== false;
+
+  var buckets = {};
+  var orden = [];
+  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
+  var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos', 'ahtSegundos'];
+
+  filas.forEach(function (f) {
+    var periodo = traficoWppPeriodoDe(f.fechaInicio, granularidad);
+    var clave = combinar ? periodo : periodo + ' ' + f.colaWhatsapp;
+    if (!buckets[clave]) {
+      var b0 = {
+        periodo: periodo, skillName: combinar ? null : f.colaWhatsapp,
+        totalLlamadas: 0, contestadas: 0, llamadasAbandonadas: 0, _tieneAbandonadas: false,
+      };
+      PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { b0['_suma_' + k] = 0; b0['_peso_' + k] = 0; });
+      buckets[clave] = b0;
+      orden.push(clave);
+    }
+    var b = buckets[clave];
+    var peso = Number(f.totalWhatsapp) || 0;
+    b.totalLlamadas += peso;
+    b.contestadas += Number(f.contestados) || 0;
+    if (f.abandonados != null) { b.llamadasAbandonadas += f.abandonados; b._tieneAbandonadas = true; }
+    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) {
+      if (f[k] != null && peso > 0) { b['_suma_' + k] += f[k] * peso; b['_peso_' + k] += peso; }
+    });
+  });
+
+  var r2 = function (n) { return Math.round(n * 100) / 100; };
+  var promedioPonderado = function (b, k) { return b['_peso_' + k] > 0 ? r2(b['_suma_' + k] / b['_peso_' + k]) : null; };
+
+  return orden.map(function (clave) {
+    var b = buckets[clave];
+    var out = {
+      periodo: b.periodo,
+      skillName: b.skillName,
+      totalLlamadas: b.totalLlamadas,
+      contestadas: b.contestadas,
+      llamadasAbandonadas: b._tieneAbandonadas ? b.llamadasAbandonadas : null,
+      nivelAtencionPct: b.totalLlamadas > 0 ? r2((b.contestadas / b.totalLlamadas) * 100) : null,
+      tasaAbandonoPct: (b.totalLlamadas > 0 && b._tieneAbandonadas) ? r2((b.llamadasAbandonadas / b.totalLlamadas) * 100) : null,
+      waitTimeSegundos: null,
+    };
+    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
+    return out;
+  }).sort(function (a, b) {
+    if (a.periodo !== b.periodo) return a.periodo < b.periodo ? -1 : 1;
+    return (a.skillName || '').localeCompare(b.skillName || '');
+  });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -236,7 +361,11 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoWppParseFecha: traficoWppParseFecha,
     traficoWppPctDesdeTexto: traficoWppPctDesdeTexto,
     traficoWppNumero: traficoWppNumero,
+    traficoWppSegundosDesdeFraccionDia: traficoWppSegundosDesdeFraccionDia,
     traficoWppParseFilas: traficoWppParseFilas,
     traficoWppResumen: traficoWppResumen,
+    traficoWppFiltrarFilas: traficoWppFiltrarFilas,
+    traficoWppPeriodoDe: traficoWppPeriodoDe,
+    traficoWppAgregarPorPeriodo: traficoWppAgregarPorPeriodo,
   };
 }

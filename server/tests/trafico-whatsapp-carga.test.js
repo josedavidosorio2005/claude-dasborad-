@@ -45,7 +45,7 @@ test('carga valida: se guarda y se puede leer de vuelta con los mismos numeros',
     .send({
       campana: 'ORLANT',
       archivoNombre: 'PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx',
-      filas: [fila({ colaWhatsapp: cola, totalWhatsapp: 4844, contestados: 4697, abandonados: 147, serviceLevel10secPct: 31.73, asaSegundos: 9230.35, ataSegundos: 79125.8 })],
+      filas: [fila({ colaWhatsapp: cola, totalWhatsapp: 4844, contestados: 4697, abandonados: 147, serviceLevel10secPct: 31.73, asaSegundos: 9230.35, ataSegundos: 79125.8, ahtSegundos: 215 })],
     });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   assert.equal(res.body.insertadas, 1);
@@ -61,6 +61,7 @@ test('carga valida: se guarda y se puede leer de vuelta con los mismos numeros',
   assert.equal(row.serviceLevel10secPct, 31.73);
   assert.equal(row.asaSegundos, 9230.35);
   assert.equal(row.ataSegundos, 79125.8);
+  assert.equal(row.ahtSegundos, 215, 'AHT opcional (Fase 68, Pedido 5) debe guardarse y leerse de vuelta igual que los demas campos opcionales');
 });
 
 test('idempotencia: volver a subir la misma cola+periodo actualiza, no duplica', async () => {
@@ -176,4 +177,5 @@ test('las columnas opcionales ausentes no llegan como 0 sino como null', async (
   assert.equal(row.abandonados, null);
   assert.equal(row.serviceLevel20secPct, null);
   assert.equal(row.asaSegundos, null);
+  assert.equal(row.ahtSegundos, null, 'AHT (Fase 68, Pedido 5) es opcional -- ausente en el archivo debe quedar null, no 0');
 });

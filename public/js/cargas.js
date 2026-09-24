@@ -125,6 +125,12 @@ function _cargasTraficoWhatsappColumnasUnificado(){
     { label:'ABANDONO', opcional:true },
     { label:'ASA', opcional:true },
     { label:'ATA', opcional:true },
+    // AHT (Fase 68, Pedido 5, Edwin 23/09): columna opcional nueva -- la
+    // plantilla aprobada por el cliente (12 columnas de arriba) no la
+    // traia. Un archivo viejo sin esta columna sigue cargando igual
+    // (traficoWppParseFilas la trata como opcional -- ver
+    // trafico-whatsapp-logic.js).
+    { label:'AHT', opcional:true },
   ];
 }
 function _cargasCalidadColumnas(items){

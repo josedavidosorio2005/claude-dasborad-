@@ -5300,3 +5300,181 @@ posición real a la plantilla general de voz, igual que ya se hizo para
 las hojas LLAMADAS/WHATSAPP de ORLANT — no se tocó ningún formato de
 otro cliente sin autorización explícita.
 
+## Fase 68 — Ajustes pedidos por Edwin en la revisión del 23/09 (vista mensual, quitar franja de KPIs de ORLANT, solo SL20, quitar Wait Time, y Tráfico de WhatsApp igual a Tráfico de Llamadas) (2026-09-24)
+
+Pedido de Edwin tras revisar el dashboard de ORLANT con el cliente:
+5 ajustes (ver detalle abajo), foco exclusivo en ORLANT, sin replicar a
+otros clientes salvo donde el propio pedido lo pidiera explícitamente.
+
+### Pedido 1 — vista mensual por defecto
+
+`_traficoEstadoDesdeURL` (trafico.js): el default de `granularidad` pasa
+de `'dia'` a `'mes'`. Cambio en el componente **compartido** (con
+autorización explícita del pedido: "decisiones de cómo se muestran las
+métricas, no datos de un cliente") — aplica a todos los clientes con
+Tráfico de Llamadas. El usuario sigue pudiendo cambiar a diaria en el
+desplegable de Granularidad (sin tocar) o compartiendo un link con
+`?tv_gran=dia`. Confirmado en Playwright: con un solo mes cargado
+(agosto), la vista mensual muestra un único punto — nunca se superponen
+etiquetas.
+
+### Pedido 2 — quita la franja superior de KPIs de ORLANT
+
+`server/dashboard-config-seed.js`: `ORLANT.layout.kpis` pasa de 9
+tarjetas a `[]`. Migración idempotente nueva en `server/db.js`
+(`dashboards_config_orlant_kpis_vacios_v1`, mismo patrón que las Fases
+54/59/65) para quien ya tenía esta config sembrada en producción — vacía
+`layout.kpis` de ORLANT sin tocar ningún otro cliente ni ningún dato de
+Gestión de base (la hoja "resumen" se sigue guardando igual, sirve para
+las gráficas de agendas/inasistencia que vienen). `renderGenericKpis`
+(dashboard-generic.js) ya trataba un array vacío como "sin franja" —
+confirmado en Playwright que `#gd-kpis` queda vacío en ORLANT y
+CLINICA AURORA conserva sus 7 tarjetas intactas. 2 tests nuevos/
+actualizados (`orlant-kpis-vacios-migracion.test.js` nuevo;
+`orlant-kpis-whatsapp-duplicados-migracion.test.js` actualizado, ya que
+su migración de la Fase 54 queda superada por esta).
+
+### Pedido 3/4 — solo Nivel de Servicio a 20s, sin Wait Time
+
+`trafico.js` (componente **compartido**, misma autorización que el
+Pedido 1): se quita la sub-pestaña "Wait Time" y las líneas SL 10s/SL 30s
+de la gráfica de Nivel de Servicio (queda solo "SL 20s"), en tarjetas,
+gráficas, leyendas y en la tabla de exportación a Excel/PDF
+(`_traficoDatosExport`). Las columnas `SERVICE_LEVEL_10SEC`,
+`SERVICE_LEVEL_30SEC` y `WAIT_TIME` se siguen aceptando y guardando
+igual (plantilla y base de datos sin cambios) — los campos
+`serviceLevel10secPct`/`serviceLevel30secPct`/`waitTimeSegundos` se
+siguen calculando en `agregado`/`agregadoComb`, solo dejaron de
+graficarse/exportarse. Aplica a Trafico de Llamadas y de WhatsApp (este
+último ya tenía SL10/20/30 en barras — Pedido 5 lo unifica).
+
+### Pedido 5 — Tráfico de WhatsApp igual a Tráfico de Llamadas
+
+**Decisión de arquitectura (confirmada con el usuario antes de
+implementar, dado el riesgo de tocar la pestaña de Llamadas ya verificada
+en producción)**: helpers de dibujo COMPARTIDOS, no un motor único
+parametrizado ni una copia paralela. `trafico.js` extrae de
+`_traficoRenderContenido` (sin cambiar su comportamiento) las funciones
+`_traficoDibujarKpis`/`_traficoDibujarResumenChart`/
+`_traficoDibujarAbandono`/`_traficoDibujarAht`/`_traficoDibujarAsaAta`/
+`_traficoDibujarSL`, además de `_traficoFiltroLineaHTML` (generaliza el
+desplegable+comparador de línea, ya usado para Skill, ahora también para
+Cola) y `_traficoSubtabsNavHTML`/`_traficoSubtabContentHTML` (barra de
+sub-pestañas). Trafico de Llamadas sigue llamando exactamente el mismo
+código de siempre. `trafico-whatsapp.js` se reescribe para usar esas
+MISMAS funciones con sus propios datos.
+
+El grano de datos de WhatsApp (una fila = una cola por PERIODO
+`fechaInicio..fechaFin`, no por día) se resuelve con una función pura
+nueva, `traficoWppAgregarPorPeriodo` (`trafico-whatsapp-logic.js`), que
+agrupa por mes/año (nunca por día — WhatsApp no tiene ese grano) y
+produce la MISMA forma de salida que `traficoAgregar` (mismos nombres de
+campo, incluso reusando `totalLlamadas`/`skillName` para datos de
+WhatsApp — documentado en el código, es la base de la reutilización) para
+que las funciones de dibujo no necesiten saber de qué canal vienen los
+datos. `traficoWppFiltrarFilas` filtra por cola + solapamiento de rango
+de fechas (un período se incluye si se solapa con Desde/Hasta, no exige
+que quede totalmente adentro). Filtros de fecha, desplegable de línea
+(aquí "Cola") + comparador (mismos arreglos de la Fase 65), exportar
+Excel/PDF: todos iguales a Llamadas. Único desplegable distinto:
+Granularidad de WhatsApp nunca ofrece "Día" (`['mes','anio']`) — sin
+grano diario disponible hoy.
+
+Prefijo de URL propio (`tvw_`, antes solo `tv_`) para que los filtros de
+Llamadas y WhatsApp convivan en la misma URL sin pisarse (las dos
+pestañas comparten la campana "ORLANT").
+
+**Bug real encontrado y corregido durante la verificación en
+Playwright**: el default de "Hasta" usaba `fechaInicio` de cada período
+en vez de `fechaFin`, así que mostraba "01/08/2026" a "01/08/2026" en vez
+de "01/08/2026" a "31/08/2026" (los números seguían siendo correctos por
+coincidencia — el filtro de solapamiento igual incluía el período — pero
+el rango mostrado era engañoso). Corregido en `_traficoWppRenderPanel`.
+
+**AHT de WhatsApp (investigación + implementación, Pedido 5)**: la
+plantilla real de WhatsApp que Edwin ya aprobó (12 columnas:
+`NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL WHATSAPP, WHATSAPP
+CONTESTADOS, WHATSAPP ABANDONADOS, SERVICE_LEVEL_10/20/30SEC, ABANDONO,
+ASA, ATA`) no trae ningún campo de AHT — no hay acceso desde aquí al
+panel de Wolkvox en vivo para confirmar si existe un campo así más allá
+de la plantilla ya aprobada. Al ser un cambio pequeño y aditivo (mismo
+patrón que WAIT_TIME/AHT ya usa en la plantilla de voz), se implementó:
+columna opcional `AHT` en `TRAFICO_WPP_COLUMNAS`
+(`trafico-whatsapp-logic.js`, formato hora nativa de Excel, igual que
+voz) y en `_cargasTraficoWhatsappColumnasUnificado`
+(`cargas.js`, la hoja WHATSAPP del formato unificado de ORLANT); columna
+nullable `ahtSegundos` en `trafico_whatsapp` vía migración idempotente
+nueva (`trafico_whatsapp_aht_v1`, `ALTER TABLE ADD COLUMN`, mismo patrón
+que `calidad_nivel_servicio_diario_trafico_v1`); validación
+(`segundosOpcional`, ya existente) e inserción/lectura en
+`server/trafico-whatsapp.js`/`server/routes/trafico-whatsapp.js`; y la
+sub-pestaña "AHT" ya existe en WhatsApp (parte de las 5 sub-pestañas
+compartidas) mostrando "Sin datos cargados para este periodo" hasta que
+alguien la complete a mano en la plantilla (acuerdo de la reunión del
+21/09). Un archivo viejo, sin esta columna, sigue cargando exactamente
+igual — confirmado con test (`el archivo REAL (sin columna AHT) sigue
+parseando igual que siempre`). El botón de descarga de la plantilla
+INDIVIDUAL de WhatsApp (`PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`,
+archivo estático) NO se tocó — el pedido pedía la hoja WHATSAPP del
+**formato unificado de ORLANT**, que se genera en el navegador a partir
+de `_cargasTraficoWhatsappColumnasUnificado` (ya cubierto); ese botón
+individual queda sin la columna AHT etiquetada hasta que se confirme si
+hace falta tocarlo también.
+
+**Vista diaria de WhatsApp — qué haría falta (reporte, no implementado)**:
+el grano actual (una fila por cola por PERIODO, típicamente un mes) viene
+así de la plantilla que Wolkvox/el cliente ya aprobó — no hay forma de
+"inventar" un desglose diario a partir de un solo total mensual. Haría
+falta que Wolkvox exporte WhatsApp con una fila por cola POR DÍA (igual
+que ya hace para Llamadas); no se investigó si esa opción existe en el
+panel de Wolkvox (sin acceso a él desde aquí). Si esa exportación diaria
+existiera, el cambio en este repo sería acotado: nueva columna
+obligatoria `DATE` en la plantilla de WhatsApp, ajuste de
+`traficoWppParseFilas` y una función `traficoWppAgregar` (día/mes/año,
+igual patrón que `traficoAgregar` de voz) en vez de
+`traficoWppAgregarPorPeriodo` — el resto de la interfaz (ya compartida
+con Llamadas) no cambiaría.
+
+### Verificación
+
+**Backend**: `npm test` 374/374 (11 tests nuevos:
+`orlant-kpis-vacios-migracion.test.js`, `trafico-whatsapp-aht-migracion.test.js`,
+más casos nuevos en `trafico-whatsapp-logic.test.js`/`trafico-whatsapp-carga.test.js`),
+`npm audit` 0 vulnerabilidades, antes y después de los cambios.
+
+**Playwright, LOCAL, sobre ORLANT** (`chromium`, sin tocar producción):
+franja de KPIs de ORLANT vacía (`#gd-kpis` sin contenido) y CLINICA
+AURORA conserva sus 7 tarjetas; Llamadas y WhatsApp abren en vista
+mensual (`granularidad="mes"`); sub-pestañas idénticas en los dos
+canales (`Resumen/Abandono/AHT/ASA y ATA/Nivel de Servicio a 20s`, sin
+Wait Time); gráfica de Nivel de Servicio con SOLO el dataset "SL 20s" en
+ambos canales (inspeccionado vía `_gd.charts[...].data.datasets`, no solo
+visualmente); comparador de 2+ colas de WhatsApp refleja "Varias colas"
+en el desplegable principal (mismo arreglo de la Fase 65); botones
+Excel/PDF presentes en WhatsApp igual que en Llamadas. KPIs verificados
+contra la referencia real: **Llamadas 8.061/7.159/902** (fixture de
+agosto de la Fase 67, cargado en la base LOCAL de desarrollo — se borró
+antes un demo-seed genérico de ORLANT sin relación con datos reales,
+autorizado explícitamente por el usuario, solo en local) y **WhatsApp
+7.305/7.109/196** (fixture ya cargado en local de una fase anterior).
+Claro/oscuro y escritorio/móvil confirmados con capturas. **0 errores de
+consola** en toda la corrida. 11 capturas en
+`docs/capturas-demo/fase68-ajustes-reunion-edwin/`.
+
+**No verificado en producción todavía**: el pedido no incluye ninguna
+carga de datos real, y placeholder para el paso post-deploy (`GET
+/api/health` + revisión visual de solo lectura en producción) queda
+pendiente de que este PR se mergee y despliegue.
+
+### Riesgos señalados / decisiones documentadas
+
+- La tabla de exportación a Excel/PDF de Llamadas y WhatsApp se trató
+  como una de las "tablas" del Pedido 3/4 (se le quitaron SL10/SL30/Wait
+  Time) — interpretación razonable del alcance ("tablas" está en la
+  lista explícita de Edwin) pero es una decisión, no algo pedido letra
+  por letra; reversible con un cambio de una línea si Edwin prefiere que
+  el export conserve todo.
+- Botón de descarga de la plantilla INDIVIDUAL de WhatsApp
+  (`PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`) no se actualizó
+  con la columna AHT — ver nota arriba.
+

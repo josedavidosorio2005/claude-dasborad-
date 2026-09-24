@@ -39,17 +39,19 @@ const ORLANT = {
   vista: null,
   secciones: SECCIONES.ORLANT,
   layout: {
-    kpis: [
-      kpi('Llamadas 3P', ultimo('llamadas_3p'), 'miles'),
-      kpi('Nivel Atencion 3P', ultimo('nivel_atencion_3p'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
-      kpi('Llamadas Linea General', ultimo('llamadas_general'), 'miles'),
-      kpi('Nivel Atencion L.General', ultimo('nivel_atencion_general'), 'porcentaje', { semaforo: 90, metrica: 'nivel_atencion' }),
-      kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
-      kpi('Efec. Ordenamiento Medico', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'ordmed_agendas', b: 'ordmed_gestionados' }, 'porcentaje', { cls: 'kpi-org' }),
-      kpi('Recuperacion Cancelados', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'recup_atendido', b: 'recup_cancelado' }, 'porcentaje', { cls: 'kpi-green' }),
-      kpi('Llamadas Salida (Gral+3P)', { s: 'salida', modo: 'agregado', op: 'suma', campos: ['salida_general', 'salida_3p'] }, 'miles', { cls: 'kpi-red' }),
-      kpi('% Citas Atendidas', { s: 'resumen', modo: 'ultimo', formula: 'a/b*100', a: 'citas_atendidas', b: 'citas_para_mes' }, 'porcentaje', { cls: 'kpi-org' }),
-    ],
+    // Fase 68, Pedido 2 (Edwin, 23/09): se quita la franja superior de KPIs
+    // de ORLANT -- Llamadas/Nivel de Atencion ya estan abajo en Trafico de
+    // Llamadas (filtrables por linea, Fase 65); Total Agendas volvera
+    // cuando se grafiquen agendas; las demas no se usan asi. SOLO ORLANT --
+    // los demas clientes conservan su franja tal cual (renderGenericKpis,
+    // dashboard-generic.js, ya trata un array vacio como "sin franja",
+    // limpio). No se borra ningun dato: lo que se carga en la hoja
+    // "resumen" se sigue guardando igual (routes/dashboards.js,
+    // POST /dashboard/cargas, sin cambios) -- sirve para las graficas de
+    // agendas/inasistencia que vienen despues. Si esta config ya estaba
+    // sembrada en produccion por una migracion anterior, ver la migracion
+    // idempotente en db.js (mismo patron que las Fases 54/59/65).
+    kpis: [],
     tabs: [
       // Fase 40 (2026-09-21): "una grafica por pestana" -- `subtabs` agrupa
       // los indices del mismo array `panels` de siempre en sub-pestanas
