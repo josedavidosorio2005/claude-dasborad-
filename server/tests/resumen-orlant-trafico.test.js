@@ -1,15 +1,16 @@
-// resumen-orlant-trafico.test.js — Fase 39: llamadas_3p/nivel_atencion_3p/
-// llamadas_general/nivel_atencion_general (seccion "resumen" de ORLANT) se
-// recalculan solos a partir de los datos ya subidos por Trafico/Wolkvox
-// (POST /api/calidad/trafico/carga), sin depender de que alguien llene la
-// hoja "resumen" a mano para esos 4 campos. Cubre: agregacion por
-// contestadas/total del periodo (nunca promedio de % diarios), que el
-// upsert no borra otros campos de resumen ya presentes, y la precedencia
-// Trafico-vs-resumen-manual en ambos ordenes.
+// resumen-orlant-trafico.test.js — Fase 39 (Llamadas) + Fase 71 (WhatsApp):
+// llamadas_3p/nivel_atencion_3p/llamadas_general/nivel_atencion_general y
+// wpp_3p/wpp_general/nivel_atencion_wpp_3p (seccion "resumen" de ORLANT) se
+// recalculan solos a partir de los datos ya subidos por Trafico de
+// Llamadas/WhatsApp (Wolkvox), sin depender de que alguien llene la hoja
+// "resumen" a mano para esos 7 campos. Cubre: agregacion por
+// contestadas/total del periodo (nunca promedio de % diarios/por-cola), que
+// el upsert no borra otros campos de resumen ya presentes, y la precedencia
+// Trafico-vs-resumen-manual en ambos ordenes (Llamadas y WhatsApp).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
-const { lineaDeSkill, recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
+const { lineaDeSkill, lineaDeCola, recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
@@ -32,6 +33,17 @@ function traficoFila(over) {
     skillName: 'TEST F39 3P',
     totalLlamadas: 100,
     contestadas: 90,
+    ...over,
+  };
+}
+
+function traficoWppFila(over) {
+  return {
+    colaWhatsapp: 'TEST F71 3P',
+    fechaInicio: '2027-09-01',
+    fechaFin: '2027-09-30',
+    totalWhatsapp: 100,
+    contestados: 90,
     ...over,
   };
 }
@@ -211,4 +223,139 @@ test('recalcularResumenOrlantDesdeTrafico: sin filas de trafico para el mes, no 
   assert.equal(resultado.actualizado, false);
   const despues = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2029-01'").get().c;
   assert.equal(despues, antes);
+});
+
+// ── Fase 71: WhatsApp (wpp_3p / wpp_general / nivel_atencion_wpp_3p) ─────
+
+test('lineaDeCola: misma convencion de nombre que lineaDeSkill ("... 3P" / "... GENERAL")', () => {
+  assert.equal(lineaDeCola('WHATSAPP ORLANT 3P'), '3P');
+  assert.equal(lineaDeCola('whatsapp orlant general'), 'GENERAL');
+  assert.equal(lineaDeCola('  WHATSAPP ORLANT 3P  '), '3P');
+  // Las 3 colas que no terminan en "3P"/"GENERAL" quedan sin clasificar por
+  // diseno (Fase 71, ver cabecera del modulo) -- pendiente de confirmar con
+  // el cliente si "Linea General" debe incluirlas.
+  assert.equal(lineaDeCola('WHATSAPP AUDIFONOS'), null);
+  assert.equal(lineaDeCola('WHATSAPP FONIATRIA'), null);
+  assert.equal(lineaDeCola('WHATSAPP FONOAUDIOLOGIA'), null);
+});
+
+test('WhatsApp: la agregacion por linea usa contestados/total del periodo (nunca promedio simple)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-04';
+  // 2 colas de la linea 3P en el mismo mes -- deben SUMARSE, no promediarse.
+  const res = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({
+      campana: 'ORLANT',
+      filas: [
+        traficoWppFila({ colaWhatsapp: 'TEST F71 3P', fechaInicio: mes + '-01', fechaFin: mes + '-30', totalWhatsapp: 100, contestados: 50 }),
+        traficoWppFila({ colaWhatsapp: 'TEST F71 OTRA 3P', fechaInicio: mes + '-01', fechaFin: mes + '-30', totalWhatsapp: 20, contestados: 20 }),
+      ],
+    });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+
+  const fila = await resumenDeOrlant(admin, mes);
+  assert.ok(fila, 'debe existir un resumen de ORLANT para ' + mes + ' tras la carga de Trafico de WhatsApp');
+  assert.equal(fila.wpp_3p, 120);
+  assert.equal(fila.nivel_atencion_wpp_3p, 58.33);
+});
+
+test('WhatsApp: el recalculo NO borra otros campos ya presentes en resumen (incluidas las 4 de Llamadas)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-05';
+  await mapearAOrlant(admin, 'TEST F71 GENERAL');
+
+  const carga = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(admin))
+    .send({ cliente: 'ORLANT', seccion: 'resumen', cadencia: 'mensual', periodo: mes, filas: [RESUMEN_OK] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+
+  const llamadas = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [traficoFila({ fecha: mes + '-01', skillName: 'TEST F71 GENERAL', totalLlamadas: 300, contestadas: 270 })] });
+  assert.equal(llamadas.status, 201, JSON.stringify(llamadas.body));
+
+  const wpp = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'TEST F71 GENERAL', fechaInicio: mes + '-01', fechaFin: mes + '-28', totalWhatsapp: 50, contestados: 45 })] });
+  assert.equal(wpp.status, 201, JSON.stringify(wpp.body));
+
+  const fila = await resumenDeOrlant(admin, mes);
+  // Los campos que SI vinieron de Trafico (Llamadas General + WhatsApp General) se actualizaron.
+  assert.equal(fila.llamadas_general, 300);
+  assert.equal(fila.nivel_atencion_general, 90);
+  assert.equal(fila.wpp_general, 50);
+  // wpp_3p (esta carga no trajo nada de WhatsApp 3P) sigue con el valor manual.
+  assert.equal(fila.wpp_3p, RESUMEN_OK.wpp_3p);
+  // El resto de la carga manual (agendas, citas, inasistencia...) sigue intacto.
+  assert.equal(fila.total_agendas, RESUMEN_OK.total_agendas);
+  assert.equal(fila.citas_atendidas, RESUMEN_OK.citas_atendidas);
+});
+
+test('WhatsApp: precedencia -- un resumen manual subido DESPUES de Trafico de WhatsApp no pisa wpp_3p/nivel_atencion_wpp_3p', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-06';
+
+  const wpp = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'TEST F71 PREC 3P', fechaInicio: mes + '-01', fechaFin: mes + '-30', totalWhatsapp: 200, contestados: 180 })] });
+  assert.equal(wpp.status, 201, JSON.stringify(wpp.body));
+
+  let fila = await resumenDeOrlant(admin, mes);
+  assert.equal(fila.wpp_3p, 200);
+  assert.equal(fila.nivel_atencion_wpp_3p, 90);
+
+  const manual = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(admin))
+    .send({ cliente: 'ORLANT', seccion: 'resumen', cadencia: 'mensual', periodo: mes, reemplazar: true, filas: [{ ...RESUMEN_OK, wpp_3p: 999999, nivel_atencion_wpp_3p: 1 }] });
+  assert.equal(manual.status, 200, JSON.stringify(manual.body));
+
+  fila = await resumenDeOrlant(admin, mes);
+  // Trafico de WhatsApp sigue ganando para estos 2 campos...
+  assert.equal(fila.wpp_3p, 200);
+  assert.equal(fila.nivel_atencion_wpp_3p, 90);
+  // ...pero el resto de la carga manual si se guardo.
+  assert.equal(fila.total_agendas, RESUMEN_OK.total_agendas);
+});
+
+test('WhatsApp: una cola que no calza con ningun patron 3P/GENERAL no rompe la carga y no crea un resumen vacio', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-02';
+
+  const wpp = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'WHATSAPP AUDIFONOS', fechaInicio: mes + '-01', fechaFin: mes + '-29', totalWhatsapp: 50, contestados: 40 })] });
+  assert.equal(wpp.status, 201, JSON.stringify(wpp.body));
+
+  const r = await request(app).get('/api/dashboard/ORLANT').set(auth(admin));
+  const resumenMes = (r.body.secciones.resumen || []).find((c) => c.periodo === mes);
+  assert.equal(resumenMes, undefined, 'no debe crearse un resumen para un mes donde WhatsApp no tiene ninguna linea clasificable');
+});
+
+test('recalcularResumenOrlantDesdeTrafico: combina Llamadas y WhatsApp del mismo mes en una sola fila de resumen', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-03';
+  await mapearAOrlant(admin, 'TEST F71 COMBO 3P');
+
+  await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [traficoFila({ fecha: mes + '-01', skillName: 'TEST F71 COMBO 3P', totalLlamadas: 80, contestadas: 72 })] });
+  await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'TEST F71 COMBO 3P', fechaInicio: mes + '-01', fechaFin: mes + '-31', totalWhatsapp: 40, contestados: 36 })] });
+
+  const fila = await resumenDeOrlant(admin, mes);
+  assert.equal(fila.llamadas_3p, 80);
+  assert.equal(fila.nivel_atencion_3p, 90);
+  assert.equal(fila.wpp_3p, 40);
+  assert.equal(fila.nivel_atencion_wpp_3p, 90);
 });

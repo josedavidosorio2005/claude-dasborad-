@@ -24,14 +24,30 @@ const SECCIONES = {
       cadencia: 'mensual',
       periodo: 'mes', // AAAA-MM
       filaUnica: true,
+      // Fase 71: las 7 metricas de trafico (autoTrafico:true) ya NO se piden
+      // en la plantilla ni en las INSTRUCCIONES (cargas.js filtra columnas
+      // autoTrafico al generar el archivo descargable) -- se calculan solas
+      // todos los meses desde Trafico de Llamadas/WhatsApp
+      // (resumen-orlant-trafico.js), igual que ya pasaba desde la Fase 39
+      // con las 4 de Llamadas. opcional:true es necesario ademas para que el
+      // servidor (normalizarFilas) acepte un archivo que no las traiga. Un
+      // archivo VIEJO que todavia las traiga sigue cargando igual: el valor
+      // se ignora con un aviso en la vista previa (cargasParseFilaUnica,
+      // cargas-logic.js), nunca pisa lo que ya calculo Trafico.
+      notasExtra: [
+        'Las 7 metricas de trafico (Llamadas 3P/Linea General, WhatsApp 3P/Linea General, ' +
+          'Nivel Atencion 3P/WhatsApp 3P/Linea General) NO estan en esta hoja: se calculan solas, ' +
+          'todos los meses, desde Trafico de Llamadas y Trafico de WhatsApp -- no hace falta llenarlas ' +
+          'a mano (evita el trabajo doble y que los numeros no cuadren entre las dos cargas).',
+      ],
       columnas: [
-        { key: 'llamadas_3p', label: 'Llamadas 3P', tipo: 'entero' },
-        { key: 'wpp_3p', label: 'WhatsApp 3P', tipo: 'entero' },
-        { key: 'llamadas_general', label: 'Llamadas Linea General', tipo: 'entero' },
-        { key: 'wpp_general', label: 'WhatsApp Linea General', tipo: 'entero' },
-        { key: 'nivel_atencion_3p', label: 'Nivel Atencion 3P (%)', tipo: 'porcentaje' },
-        { key: 'nivel_atencion_wpp_3p', label: 'Nivel Atencion WhatsApp 3P (%)', tipo: 'porcentaje' },
-        { key: 'nivel_atencion_general', label: 'Nivel Atencion Linea General (%)', tipo: 'porcentaje' },
+        { key: 'llamadas_3p', label: 'Llamadas 3P', tipo: 'entero', opcional: true, autoTrafico: true },
+        { key: 'wpp_3p', label: 'WhatsApp 3P', tipo: 'entero', opcional: true, autoTrafico: true },
+        { key: 'llamadas_general', label: 'Llamadas Linea General', tipo: 'entero', opcional: true, autoTrafico: true },
+        { key: 'wpp_general', label: 'WhatsApp Linea General', tipo: 'entero', opcional: true, autoTrafico: true },
+        { key: 'nivel_atencion_3p', label: 'Nivel Atencion 3P (%)', tipo: 'porcentaje', opcional: true, autoTrafico: true },
+        { key: 'nivel_atencion_wpp_3p', label: 'Nivel Atencion WhatsApp 3P (%)', tipo: 'porcentaje', opcional: true, autoTrafico: true },
+        { key: 'nivel_atencion_general', label: 'Nivel Atencion Linea General (%)', tipo: 'porcentaje', opcional: true, autoTrafico: true },
         { key: 'ordmed_gestionados', label: 'Ordenes medicas gestionadas', tipo: 'entero' },
         { key: 'ordmed_agendas', label: 'Ordenes medicas que agendaron', tipo: 'entero' },
         { key: 'recup_cancelado', label: 'Citas canceladas (recuperacion)', tipo: 'entero' },

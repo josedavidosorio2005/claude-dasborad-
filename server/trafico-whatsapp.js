@@ -6,6 +6,8 @@
 // directo (ver routes/trafico-whatsapp.js).
 'use strict';
 
+const { recalcularResumenOrlantDesdeTrafico } = require('./resumen-orlant-trafico');
+
 function nowStr() {
   const d = new Date();
   const pad = (n) => (n < 10 ? '0' + n : '' + n);
@@ -78,7 +80,21 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   });
   tx(filas);
 
-  return { insertadas: filas.length, ids: idsAfectados, colas: [...colasVistas] };
+  // Fase 71: cada carga de Trafico de WhatsApp para ORLANT recalcula tambien
+  // wpp_3p/wpp_general/nivel_atencion_wpp_3p en el resumen mensual
+  // (dashboard_cargas) -- mismo criterio que ya aplica Trafico de Llamadas
+  // (Fase 39, trafico-skills.js) para llamadas_3p/nivel_atencion_3p/
+  // llamadas_general/nivel_atencion_general, para los meses que esta carga
+  // realmente toco.
+  const resumenActualizado = [];
+  if (campana === 'ORLANT') {
+    const mesesTocados = [...new Set(filas.map((f) => f.fechaInicio.slice(0, 7)))];
+    for (const mes of mesesTocados) {
+      resumenActualizado.push({ mes, ...recalcularResumenOrlantDesdeTrafico(db, mes) });
+    }
+  }
+
+  return { insertadas: filas.length, ids: idsAfectados, colas: [...colasVistas], resumenActualizado };
 }
 
 module.exports = { cargarTraficoWhatsapp };

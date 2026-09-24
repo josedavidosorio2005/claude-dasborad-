@@ -1,4 +1,14 @@
-# Inventario de bases de ORLANT (Fase 70, 2026-09-24)
+# Inventario de bases de ORLANT (Fase 70, 2026-09-24; actualizado Fase 71)
+
+**Actualización Fase 71** (2026-09-24, Edwin): de las 23 métricas de la hoja
+`resumen`, las 7 de tráfico (Llamadas/WhatsApp 3P y Línea General + sus 3
+niveles de atención) ya NO se le piden a Edwin — se calculan solas todos
+los meses desde Trafico de Llamadas/WhatsApp (mismo mecanismo que ya
+sincronizaba 4 de esas 7 desde la Fase 39, extendido en esta fase para
+cubrir también WhatsApp). La plantilla descargable de ORLANT ya no muestra
+esas 7 filas. Ver el detalle completo, y la lista exacta de las 16
+métricas que SÍ hay que llenar, en la sección "Para la primera base
+recomendada" más abajo.
 
 Contexto: quedan ~1.5 semanas, foco exclusivo en ORLANT. Edwin va a ir
 entregando ~15 bases (codificaciones/tipificaciones, agendas, inasistencia,
@@ -122,19 +132,45 @@ nuevo, solo falta el archivo real):
 
 ### Para la primera base recomendada (`resumen`) — qué pedirle a Edwin exactamente
 
-Un archivo (o los datos, para llenar la plantilla) con estas 22 columnas,
-UN VALOR por mes (hoja vertical `resumen` de la plantilla consolidada de
-ORLANT — `server/dashboard-secciones.js`, sección ORLANT):
+**Actualizado en la Fase 71** (2026-09-24): de las 23 columnas originales de
+`resumen`, **7 ya NO hay que pedírselas a Edwin** — son datos de tráfico
+(Llamadas 3P, WhatsApp 3P, Llamadas Línea General, WhatsApp Línea General,
+y los 3 niveles de atención correspondientes) que duplicaban exactamente lo
+que ya carga Wolkvox por Trafico de Llamadas/WhatsApp. Desde esta fase se
+calculan solos, todos los meses, a partir de esas dos cargas — la plantilla
+descargable de ORLANT ya no las muestra, y si un archivo viejo todavía las
+trae llenas, se ignoran con un aviso explícito en la vista previa ("se toma
+automáticamente de Tráfico"), nunca pisan el dato real.
 
-`Llamadas 3P`, `WhatsApp 3P`, `Llamadas Linea General`, `WhatsApp Linea
-General`, `Nivel Atencion 3P (%)`, `Nivel Atencion WhatsApp 3P (%)`,
-`Nivel Atencion Linea General (%)`, `Ordenes medicas gestionadas`,
-`Ordenes medicas que agendaron`, `Citas canceladas (recuperacion)`,
-`Citas canceladas recuperadas/atendidas`, `Total agendas del mes`,
-`Agendas Linea General`, `Agendas Linea 3P`, `% Inasistencia Audifonos`,
-`% Inasistencia Audiologia`, `% Inasistencia Examenes`, `% Inasistencia
-Total`, `STA — Ordenes cargadas`, `STA — Agendadas` (opcional), `STA —
-Facturado + Cumplida`, `Citas programadas para el mes`, `Citas atendidas`.
+**Lista exacta de las 16 métricas que Edwin SÍ debe llenar en `resumen`**
+(hoja vertical `Metrica`/`Valor`, un valor por mes — formato de la columna
+`Valor`: número entero salvo que diga "%", en cuyo caso es 0–100, nunca
+0–1):
+
+| Métrica (columna en la hoja) | Qué significa | Formato | Para qué pestaña |
+|---|---|---|---|
+| Ordenes medicas gestionadas | Total de órdenes médicas 3P gestionadas en el mes | Entero | Agendamiento → Ordenamiento Médico |
+| Ordenes medicas que agendaron | De esas, cuántas terminaron en una cita agendada | Entero | Agendamiento → Ordenamiento Médico (numerador de "% Efectividad") |
+| Citas canceladas (recuperacion) | Citas canceladas que se intentaron recuperar en el mes | Entero | Agendamiento → Recuperación de Cancelados |
+| Citas canceladas recuperadas/atendidas | De esas, cuántas se lograron reagendar/atender | Entero | Agendamiento → Recuperación de Cancelados (numerador de "% Efectividad") |
+| Total agendas del mes | Total de agendas del mes (todas las líneas) | Entero | Agendamiento → Total Agendas |
+| Agendas Linea General | Agendas de la línea general | Entero | Agendamiento → Agendas por Línea |
+| Agendas Linea 3P | Agendas de la línea 3P | Entero | Agendamiento → Agendas por Línea |
+| % Inasistencia Audifonos | % de inasistencia del servicio de audífonos | Porcentaje (0–100) | Inasistencia |
+| % Inasistencia Audiologia | % de inasistencia de audiología | Porcentaje (0–100) | Inasistencia |
+| % Inasistencia Examenes | % de inasistencia de exámenes | Porcentaje (0–100) | Inasistencia |
+| % Inasistencia Total | % de inasistencia total del mes | Porcentaje (0–100) | Inasistencia |
+| STA — Ordenes cargadas | Total de órdenes cargadas al STA en el mes | Entero | Gestión STA → STA por Mes |
+| STA — Agendadas | De esas, cuántas se agendaron (**opcional**, puede quedar vacía) | Entero | Gestión STA → STA por Mes |
+| STA — Facturado + Cumplida | De esas, cuántas quedaron facturadas y cumplidas | Entero | Gestión STA → STA por Mes (numerador de "% Efectividad") |
+| Citas programadas para el mes | Total de citas programadas para el mes | Entero | Efectividad Citas |
+| Citas atendidas | De esas, cuántas se atendieron de verdad | Entero | Efectividad Citas (numerador de "% Efectividad") |
+
+Nota: Gestión STA también tiene 2 gráficas más ("Ordenes por Servicio" y
+"Estado de Órdenes", ambas anuales) que vienen de la hoja `sta_categorias`
+aparte, NO de `resumen` — si Edwin manda primero solo `resumen`, esas 2
+gráficas de STA seguirán vacías hasta que llegue `sta_categorias` también
+(base separada en la tabla de arriba).
 
 Empezar por el mismo mes que ya tiene Trafico (agosto 2026) facilita
 comparar/cruzar datos.
