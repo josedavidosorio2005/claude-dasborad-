@@ -140,6 +140,61 @@ test('cargasColPorLabel: empareja por label o por key, normalizando mayusculas/e
   assert.equal(cargasColPorLabel(SPEC_RESUMEN_VENTAS, 'no existe'), null);
 });
 
+// ── Fase 71 (ORLANT/resumen): columnas autoTrafico -- se calculan solas
+// desde Trafico de Llamadas/WhatsApp, nunca se guardan desde esta hoja aunque
+// un archivo viejo todavia las traiga llenas.
+const SPEC_RESUMEN_ORLANT_MINI = {
+  filaUnica: true,
+  columnas: [
+    { key: 'llamadas_3p', label: 'Llamadas 3P', tipo: 'entero', opcional: true, autoTrafico: true },
+    { key: 'nivel_atencion_3p', label: 'Nivel Atencion 3P (%)', tipo: 'porcentaje', opcional: true, autoTrafico: true },
+    { key: 'total_agendas', label: 'Total agendas del mes', tipo: 'entero' },
+  ],
+};
+
+test('cargasParseFilaUnica: archivo NUEVO (sin las filas autoTrafico) se parsea igual, sin avisos', () => {
+  const aoa = [
+    ['Metrica', 'Valor'],
+    ['Total agendas del mes', 150],
+  ];
+  const res = cargasParseFilaUnica(SPEC_RESUMEN_ORLANT_MINI, aoa);
+  assert.equal(res.error, undefined);
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.filas[0].total_agendas, 150);
+  assert.equal(res.filas[0].llamadas_3p, undefined, 'nunca se guarda, ni siquiera ausente');
+  assert.deepEqual(res.avisos, []);
+});
+
+test('cargasParseFilaUnica: fila autoTrafico presente pero VACIA no genera aviso (plantilla vieja sin llenar)', () => {
+  const aoa = [
+    ['Metrica', 'Valor'],
+    ['Llamadas 3P', ''],
+    ['Total agendas del mes', 150],
+  ];
+  const res = cargasParseFilaUnica(SPEC_RESUMEN_ORLANT_MINI, aoa);
+  assert.equal(res.error, undefined);
+  assert.equal(res.filas[0].llamadas_3p, undefined);
+  assert.deepEqual(res.avisos, []);
+});
+
+test('cargasParseFilaUnica: archivo VIEJO con las filas autoTrafico llenas -- se ignoran con un aviso claro, nunca se guardan', () => {
+  const aoa = [
+    ['Metrica', 'Valor'],
+    ['Llamadas 3P', 8061],
+    ['Nivel Atencion 3P (%)', 88.8],
+    ['Total agendas del mes', 150],
+  ];
+  const res = cargasParseFilaUnica(SPEC_RESUMEN_ORLANT_MINI, aoa);
+  assert.equal(res.error, undefined);
+  assert.equal(res.filas[0].total_agendas, 150);
+  assert.equal(res.filas[0].llamadas_3p, undefined, 'el valor del archivo viejo NUNCA se guarda (Trafico manda)');
+  assert.equal(res.filas[0].nivel_atencion_3p, undefined);
+  assert.equal(res.avisos.length, 2);
+  assert.match(res.avisos[0], /Llamadas 3P/);
+  assert.match(res.avisos[0], /se toma automaticamente de Trafico/);
+  assert.match(res.avisos[1], /Nivel Atencion 3P/);
+});
+
 // ── Plantilla consolidada (Fase "una sola plantilla por campana", 2026-09-16) ──
 const { cmParseRows } = require('../../public/js/calidad-carga-masiva-logic.js');
 

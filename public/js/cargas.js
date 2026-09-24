@@ -222,6 +222,9 @@ function _cargasInstruccionesAoA(cliente, plan){
     }
     put('Columnas:');
     h.columnas.forEach(function(c){
+      // autoTrafico (Fase 71, ORLANT/resumen): no se lista como fila a
+      // llenar -- se explica aparte en notasExtra (nota fija de la hoja).
+      if(c.autoTrafico) return;
       put('  - ' + c.label + (c.opcional ? ' (OPCIONAL, puede quedar vacia)' : ' (OBLIGATORIA)'));
     });
     // notasExtra (Fase 66): lineas adicionales especificas de esta hoja
@@ -249,12 +252,17 @@ function descargarPlantillaConsolidada(){
   XLSX.utils.book_append_sheet(wb, wsInstr, CARGAS_HOJA_INSTRUCCIONES);
 
   _cargasPlan.forEach(function(h){
+    // autoTrafico (Fase 71, ORLANT/resumen): estas columnas se calculan
+    // solas desde Trafico -- no se generan como filas/columnas a llenar en
+    // el archivo descargable (ver notasExtra de la hoja, mas la nota fija
+    // que ya explica el porque).
+    var columnasPlantilla = (h.columnas || []).filter(function(c){ return !c.autoTrafico; });
     var aoa;
     if(h.filaUnica){
-      aoa = [['Metrica','Valor']].concat(h.columnas.map(function(c){ return [c.label, '']; }));
+      aoa = [['Metrica','Valor']].concat(columnasPlantilla.map(function(c){ return [c.label, '']; }));
     } else {
-      aoa = [h.columnas.map(function(c){ return c.label; })];
-      aoa.push(h.columnas.map(function(){ return ''; }));
+      aoa = [columnasPlantilla.map(function(c){ return c.label; })];
+      aoa.push(columnasPlantilla.map(function(){ return ''; }));
     }
     var ws = XLSX.utils.aoa_to_sheet(aoa);
     ws['!cols'] = h.filaUnica ? [{wch:42},{wch:16}] : h.columnas.map(function(){ return {wch:20}; });

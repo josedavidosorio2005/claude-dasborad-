@@ -5626,3 +5626,137 @@ ya estaba limpio, 0 vulnerabilidades). CI en verde, deploy sale bien,
   (`PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx`) no se actualizó
   con la columna AHT — ver nota arriba.
 
+## Fase 71 — Prepara la hoja "resumen" de ORLANT antes de la base de Edwin + revisión de Calidad (2026-09-24)
+
+El inventario de la Fase 70 mostró que la siguiente base a pedirle a Edwin
+es `resumen` (desbloquea 4 de las 7 pestañas ocultas). Antes de que la
+mande, quitar de esa hoja las 7 métricas que duplican Tráfico de
+Llamadas/WhatsApp — mismo motivo de las Fases 54/68 (KPIs manuales que
+duplicaban un dato ya automático).
+
+### Paso 1 — investigación
+
+Ninguna de las 23 métricas de `resumen` se usa como denominador de una
+fórmula de las 7 de tráfico — grep exhaustivo contra
+`dashboard-config-seed.js` confirmó que `llamadas_3p`/`wpp_3p`/
+`llamadas_general`/`wpp_general` solo alimentan la pestaña "Flujo Mensual"
+(oculta, candidata a no revivirse — ver Fase 70) y que
+`nivel_atencion_3p`/`nivel_atencion_wpp_3p`/`nivel_atencion_general` no
+alimentan NINGÚN panel hoy (quedaron huérfanas desde que se retiró la
+franja de KPIs vieja). Ninguna de las 4 pestañas a destapar (Agendamiento,
+Inasistencia, Gestión STA, Efectividad Citas) depende de estas 7 métricas.
+
+**Hallazgo real (no documentado hasta ahora)**: ya existía desde la **Fase
+39** un mecanismo (`server/resumen-orlant-trafico.js`,
+`recalcularResumenOrlantDesdeTrafico`) que sincroniza automáticamente 4 de
+las 7 métricas (`llamadas_3p`/`nivel_atencion_3p`/`llamadas_general`/
+`nivel_atencion_general`) desde Trafico de Llamadas cada vez que se carga
+— Trafico SIEMPRE gana sobre un valor manual, en cualquier orden de carga
+(bien probado, 7 tests ya existentes). El problema real no era que faltara
+el mecanismo, sino que el ESQUEMA (`dashboard-secciones.js`) seguía
+pidiéndolas como obligatorias en la plantilla, aunque cualquier valor
+tecleado se sobreescribiera segundos después — trabajo doble real para
+Edwin, exactamente su queja.
+
+Pestañas ocultas (Fase 40b): siguen ocultas porque nunca hubo dato real
+que mostrar. La forma más simple/segura de revelarlas cuando llegue el
+archivo real de Edwin es la que ya usa el propio código (comentario
+existente en `dashboard-config-seed.js`): quitar `oculta: true` de esas 4
+pestañas + una migración idempotente para producción (mismo patrón que
+`dashboards_config_orlant_kpis_vacios_v1`). **Deliberadamente NO se hace
+en esta fase** — hacerlo ahora expondría 4 pestañas vacías antes de tener
+dato real, justo lo que se pidió evitar. Queda listo para la fase en que
+Edwin ya haya mandado y se haya verificado el archivo real.
+
+### Paso 2 — implementación (solo ORLANT)
+
+- `server/dashboard-secciones.js`: las 7 columnas de tráfico de
+  `SECCIONES.ORLANT.resumen` pasan a `opcional:true, autoTrafico:true` +
+  `notasExtra` explicando por qué ya no están en la plantilla.
+- `server/resumen-orlant-trafico.js` (Fase 39 → extendido): ahora también
+  calcula `wpp_3p`/`wpp_general`/`nivel_atencion_wpp_3p` desde
+  `trafico_whatsapp`, con la MISMA lógica de líneas 3P/GENERAL por sufijo
+  de nombre (`lineaDeNombre`, compartida entre skills de Llamadas y colas
+  de WhatsApp). Se dispara tras cada carga de Trafico de WhatsApp
+  (`server/trafico-whatsapp.js`) además de tras Trafico de Llamadas
+  (ya existente) y tras una carga manual de `resumen` (ya existente).
+  El esquema no tiene `nivel_atencion_wpp_general` — no se inventó uno.
+- `public/js/cargas-logic.js` (`cargasParseFilaUnica`): una columna
+  `autoTrafico` con valor NUNCA se guarda — si un archivo viejo todavía la
+  trae llena, se ignora con un aviso claro en la vista previa ("se toma
+  automáticamente de Tráfico de Llamadas/WhatsApp"); vacía, sin aviso
+  (plantilla vieja sin llenar, caso normal).
+- `public/js/cargas.js`: la plantilla descargable y la hoja INSTRUCCIONES
+  ya NO listan las 7 columnas `autoTrafico` como filas a llenar.
+- **Migración de producción** (`dashboards_config_orlant_resumen_trafico_opcional_v1`,
+  `server/db.js`): `dashboards_config.secciones` de ORLANT solo se siembra
+  la primera vez — igual que `layout` — así que el cambio de esquema no le
+  llega solo a producción sin esta migración idempotente.
+- Ningún otro cliente se toca (confirmado con test: `CLINICA AURORA` sin
+  cambios).
+
+### Paso 3 — prueba local con datos inventados (agosto 2026, borrados al terminar)
+
+Verificado con Playwright de punta a punta, por la interfaz real de
+"Cargar Datos de Dashboards": la plantilla nueva de ORLANT confirma 16
+filas en `resumen` (23 − 7, ninguna de tráfico); se llenaron las 16 con
+valores inventados y se subieron — vista previa sin avisos, guardado OK;
+las 4 pestañas (des-ocultadas SOLO en la base local para esta prueba,
+revertido al terminar) muestran los valores inventados correctamente
+(Agendamiento: Total Agendas agosto = 2.950; Efectividad Citas: Citas
+Atendidas agosto = 2.790); Trafico de Llamadas/WhatsApp siguen exactos
+como siempre (8.061/7.159/902 y 7.305/7.109/196 — nada más de ORLANT
+cambió). Bonus: se subió además un archivo VIEJO con "Llamadas 3P" lleno
+— la interfaz real mostró el aviso amigable exacto ("se toma
+automáticamente de Trafico de Llamadas/WhatsApp") y el valor NO se guardó.
+Claro/oscuro, escritorio/móvil, 0 errores de consola inesperados (el único
+error de consola de toda la corrida es un 409 del flujo normal de "ya
+existe, ¿reemplazar?" al subir dos veces el mismo mes, mismo fenómeno que
+el 403 de `/historial` investigado en la Fase 70, no una regresión). Capturas en
+`docs/capturas-demo/fase71-resumen-orlant/`. Al terminar: se borró la
+carga de `resumen`/2026-08 inventada y se revirtió el des-ocultado de las
+4 pestañas en la base local — ambos solo afectaban la base LOCAL de
+desarrollo, nunca producción.
+
+### Paso 4 — ¿Calidad de ORLANT tiene datos de prueba?
+
+Confirmado con el workflow genérico de solo lectura YA EXISTENTE
+(`diagnostico-dashboard-produccion.yml`, PRs #38-40 — no hizo falta uno
+nuevo): producción tiene **37 monitoreos** de ORLANT en total. Las **20
+filas más recientes** (todas las visibles en el diagnóstico) tienen
+nombres de asesor **"Asesor Prueba 01–04"** (12 filas, cargadas
+`16/09/2026 19:43:42`, un solo lote) y **"Asesor 01–05"** (8 filas,
+cargadas `16/09/2026 16:24:09`, otro lote) — dos cargas de prueba
+distintas el mismo día, exactamente el patrón que describió el usuario
+("Asesor 01"… "Asesor 05"). `seed_demo_marcas` está en 0 para toda la
+base, así que estos datos NO se cargaron con el mecanismo oficial de
+demo (`seed:demo`) — el banner "DATOS DE DEMOSTRACIÓN" nunca se activó
+para avisar que no son reales. Esto confirma y concreta el hallazgo de
+la Fase 29 (que solo mencionaba "datos de prueba mezclados" sin
+identificar cuáles). No se pudo confirmar el 100% de las 37 filas (el
+diagnóstico solo trae las 20 más recientes por diseño), pero el patrón
+observado (nombres placeholder, 2 lotes del mismo día, sin marca de
+demo) hace muy probable que las 37 sean de prueba. **No se borró nada**
+(regla explícita de esta fase). Propuesta: confirmar con Edwin si
+ALGUNA de las 37 es real; si no, un futuro workflow de escritura
+(fuera de esta fase, con autorización explícita) puede limpiar
+`monitoreos` de ORLANT antes de cargar datos reales de Calidad — y
+mientras tanto, avisar a InCo que la pestaña Calidad de ORLANT en
+producción hoy muestra datos ficticios sin ningún aviso visual.
+
+### Paso 5 — lista exacta para Edwin
+
+Guardada en `docs/inventario-bases-orlant.md` (sección "Para la primera
+base recomendada"): tabla con las 16 métricas de `resumen` que SÍ hay que
+llenar, su significado, formato (entero / porcentaje 0–100) y a qué
+pestaña alimenta cada una.
+
+### Verificación
+
+`npm test` 388/388 (10 tests nuevos: 6 en
+`resumen-orlant-trafico.test.js` para WhatsApp + combinado, 3 en
+`cargas-logic.test.js` para columnas `autoTrafico`, 1 archivo nuevo
+`orlant-resumen-trafico-opcional-migracion.test.js` con 5 tests),
+`npm audit` 0 vulnerabilidades, antes y después. Producción: pendiente de
+`/api/health` + revisión de solo lectura tras el deploy de esta fase.
+

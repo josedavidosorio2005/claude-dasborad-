@@ -23,6 +23,18 @@ function cargasParseFilaUnica(spec, aoa) {
     if (_cargasNorm(row[0]) === 'metrica' || _cargasNorm(row[0]) === 'métrica') return;
     var col = cargasColPorLabel(spec, row[0]);
     if (!col) { avisos.push('Se ignoro la fila "' + row[0] + '" (no coincide con ninguna metrica)'); return; }
+    // autoTrafico (Fase 71, ORLANT/resumen): este dato se calcula solo desde
+    // Trafico de Llamadas/WhatsApp -- nunca se guarda desde esta hoja, ni
+    // siquiera si un archivo viejo todavia trae un valor (para no pisar en
+    // silencio lo que Trafico ya calculo). Solo avisa si de verdad traia
+    // algo escrito -- una fila vacia (plantilla vieja sin llenar) no genera
+    // ruido.
+    if (col.autoTrafico) {
+      if (row[1] !== undefined && row[1] !== null && String(row[1]).trim() !== '') {
+        avisos.push('Se ignoro "' + col.label + '" -- este dato se toma automaticamente de Trafico de Llamadas/WhatsApp, no hace falta llenarlo a mano.');
+      }
+      return;
+    }
     obj[col.key] = row[1];
   });
   if (Object.keys(obj).length === 0) return { error: 'El archivo no tiene metricas reconocibles. Descarga la plantilla.' };
@@ -163,7 +175,7 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
     var s = secciones[key];
     plan.push({
       tipo: 'seccion', hoja: key, titulo: s.titulo, descripcion: s.descripcion,
-      filaUnica: !!s.filaUnica, columnas: s.columnas,
+      filaUnica: !!s.filaUnica, columnas: s.columnas, notasExtra: s.notasExtra || [],
     });
   });
   if (calidadCols) {

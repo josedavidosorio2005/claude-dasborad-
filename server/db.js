@@ -1239,6 +1239,62 @@ runOnceMigration('trafico_whatsapp_aht_v1', () => {
   }
 });
 
+// Marca las 7 metricas de trafico de la hoja "resumen" de ORLANT como
+// opcional+autoTrafico (Fase 71, Edwin 24/09) -- igual que layout.kpis
+// (dashboards_config_orlant_kpis_vacios_v1), dashboards_config.secciones
+// solo se siembra la primera vez que un cliente no existe, asi que el
+// cambio nuevo de dashboard-secciones.js (columnas opcional/autoTrafico +
+// notasExtra en SECCIONES.ORLANT.resumen) nunca le llega solo a una fila
+// ya sembrada (como produccion) -- sin esto, GET /dashboard/secciones/ORLANT
+// (que lee dashboards_config.secciones, nunca el archivo en vivo) seguiria
+// devolviendo las 7 columnas como obligatorias y la plantilla descargable
+// las seguiria pidiendo, aunque el codigo ya no las exija. SOLO ORLANT.
+// No borra ningun dato: dashboard_cargas no se toca, esto solo cambia el
+// ESQUEMA que describe la hoja "resumen" (que columnas pide la plantilla,
+// cuales son opcionales).
+runOnceMigration('dashboards_config_orlant_resumen_trafico_opcional_v1', () => {
+  const AUTO_TRAFICO_KEYS = ['llamadas_3p', 'wpp_3p', 'llamadas_general', 'wpp_general', 'nivel_atencion_3p', 'nivel_atencion_wpp_3p', 'nivel_atencion_general'];
+  const NOTA_EXTRA =
+    'Las 7 metricas de trafico (Llamadas 3P/Linea General, WhatsApp 3P/Linea General, ' +
+    'Nivel Atencion 3P/WhatsApp 3P/Linea General) NO estan en esta hoja: se calculan solas, ' +
+    'todos los meses, desde Trafico de Llamadas y Trafico de WhatsApp -- no hace falta llenarlas ' +
+    'a mano (evita el trabajo doble y que los numeros no cuadren entre las dos cargas).';
+
+  const row = db.prepare("SELECT cliente, secciones FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con el esquema nuevo
+  let secciones;
+  try {
+    secciones = JSON.parse(row.secciones);
+  } catch (e) {
+    return;
+  }
+  const resumen = secciones && secciones.resumen;
+  if (!resumen || !Array.isArray(resumen.columnas)) return;
+
+  let tocado = false;
+  resumen.columnas.forEach((col) => {
+    if (col && AUTO_TRAFICO_KEYS.includes(col.key) && !col.autoTrafico) {
+      col.opcional = true;
+      col.autoTrafico = true;
+      tocado = true;
+    }
+  });
+  if (JSON.stringify(resumen.notasExtra || []) !== JSON.stringify([NOTA_EXTRA])) {
+    resumen.notasExtra = [NOTA_EXTRA];
+    tocado = true;
+  }
+  if (!tocado) return; // ya tiene la forma nueva -- nada que hacer
+
+  db.prepare('UPDATE dashboards_config SET secciones = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(secciones),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_resumen_trafico_opcional_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
