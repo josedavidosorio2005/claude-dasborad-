@@ -5482,6 +5482,138 @@ confirmar el éxito, se quitó el workflow del repo (PR #130) — mismo
 motivo que la Fase 67: era de un solo uso y abría acceso SSH temporal a
 producción, no debía quedar disponible para dispararse otra vez.
 
+## Fase 70 — Inventario de ORLANT, causa del 403, y retiro de las apps móvil/escritorio (2026-09-24)
+
+Quedan ~1.5 semanas, foco exclusivo en ORLANT. Edwin va a entregar ~15
+bases más, una a la vez — antes de pedírselas, inventario de qué ya está
+construido.
+
+### Parte 1 — inventario de bases de ORLANT
+
+Documento nuevo: `docs/inventario-bases-orlant.md` (PR #132, solo
+documentación). Resumen: solo Trafico de Llamadas, Trafico de WhatsApp y
+Calidad/Monitoreos tienen datos reales hoy — confirmado por el hallazgo
+real de la Fase 67 (la hoja `resumen` vino "con los 23 nombres de métrica
+sin valor" al descargar la plantilla real de producción) y por la
+auditoría de la Fase 29. Las 7 pestañas ocultas desde la Fase 40b
+(Flujo Mensual, Salida, Tipificacion, Agendamiento, Inasistencia, Gestión
+STA, Efectividad Citas) están construidas pero sin datos reales.
+
+Hallazgo clave: 4 de esas 7 pestañas (Agendamiento, Inasistencia,
+Efectividad Citas, parte de Gestión STA) se alimentan de la MISMA hoja
+`resumen` (22 columnas, un valor por mes) — un solo archivo lleno las
+desbloquea de una vez, es la base más rentable de pedirle a Edwin
+primero. Orden recomendado completo, y exactamente qué pedir para la
+primera base, en el documento.
+
+"Flujo Mensual" (pestaña oculta) muestra prácticamente lo mismo que ya
+cubren Trafico de Llamadas/WhatsApp con datos automáticos — candidata a
+no reconstruirse nunca, solo reportado, no se tocó nada.
+
+No se disparó ningún workflow de producción para este inventario — ya
+existe uno genérico de solo lectura
+(`diagnostico-dashboard-produccion.yml`, PRs #38-40) que puede confirmar
+el estado exacto si hace falta, pero no da un desglose limpio por
+sección/cliente; el inventario se armó con código + base local +
+histórico de PROGRESS.md.
+
+### Parte 2 — causa del 403 de las Fases 67/68 (PR #131, mergeado)
+
+`GET /historial` exige `isFullAdmin` en el servidor desde siempre.
+`doLogin()` (`session.js`) llamaba `loadHist()` sin condición en CADA
+login — cualquier rol que no fuera ADMIN (AUX_ADMIN, CLIENTES_DASH,
+ASESOR, SUPERVISOR, CALIDAD, INVENTARIO, GERENCIA, GESTION_HUMANA,
+REPORTES) recibía un 403 ahí, siempre ignorado en silencio (try/catch) —
+exactamente el 403 que aparecía en las verificaciones de producción de
+las Fases 67/68 con el usuario temporal AUX_ADMIN.
+
+**Afecta a usuarios reales**: sí, cualquier login que no sea ADMIN,
+incluido `CLIENTES_DASH` (el candidato a rol real de un usuario de
+ORLANT) — pero sin impacto funcional: la pestaña Historial ya estaba
+oculta para esos roles, así que el resultado final nunca cambiaba, era
+ruido puro de red/consola.
+
+Reproducido en LOCAL con los usuarios de seed-demo ya existentes
+(`lrios`/AUX_ADMIN — mismo rol del usuario temporal de las Fases 67/68 —
+y `agomez`/CLIENTES_DASH): confirmado el 403 con el código viejo
+(`git stash`), confirmado que desaparece con el fix (gatear `loadHist()`
+con `data.user.rol === 'ADMIN'`, mismo criterio que el backend). Sin
+usuarios nuevos que crear/borrar — se reusaron los de seed-demo. `npm
+test` 374/374, `npm audit` 0 vulnerabilidades (sin cambios, fix de
+frontend puro).
+
+### Parte 3 — confirmación AHT de WhatsApp
+
+Sí — la Fase 68 (Pedido 5) agregó la columna opcional `AHT` a la hoja
+`WHATSAPP` del formato unificado de ORLANT (`_cargasTraficoWhatsappColumnasUnificado`,
+`cargas.js`), más la columna `ahtSegundos` nullable en `trafico_whatsapp`
+(migración `trafico_whatsapp_aht_v1`) y la sub-pestaña AHT en la interfaz
+de WhatsApp, mostrando "Sin datos cargados para este periodo" hasta que
+se complete a mano. Sigue sin dato real (Wolkvox no lo exporta hoy).
+
+### Parte 4 — retiro de la app móvil y de escritorio
+
+Decisión del usuario: la plataforma queda solo como aplicación web.
+
+**Investigado antes de tocar nada**: `mobile-app/` (Android/Capacitor) y
+`desktop-app/` (Electron) son clientes LIGEROS -- `desktop-app/main.js`
+carga `https://inconexionpruebasclaude.duckdns.org` directo en una
+`BrowserWindow`; `mobile-app/capacitor.config.json` hace lo mismo vía
+`server.url` (la hoja `www/index.html` es solo una pantalla de "Cargando…"
+que nunca se usa de verdad). Ningún backend embebido, ningún frontend
+empaquetado aparte — **cualquier copia ya instalada (.exe o .apk) sigue
+funcionando exactamente igual después de este retiro**, porque solo abre
+la URL real de siempre, igual que un marcador de navegador; nada de este
+cambio la afecta.
+
+Confirmado que no hace falta ningún cambio de CI: ningún workflow
+(`.github/workflows/*.yml`) compilaba o publicaba ninguna de las dos apps
+(los `.exe`/`.apk` se generaban a mano, en local, nunca en GitHub
+Actions) — no hay ningún PR de CI que avisar aparte. Tampoco hay ningún
+botón/enlace/ruta en la web que ofreciera descargarlas, ni código del
+servidor exclusivo para ellas (sin orígenes CORS especiales, sin chequeo
+de versión — confirmado por búsqueda en `server/`). `README.md`
+mencionaba las dos carpetas en el árbol de directorios — actualizado. No
+hay releases de GitHub con instaladores publicados (`gh release list`
+vacío).
+
+**Retirado** (PR aparte, solo esto): carpetas `mobile-app/` y
+`desktop-app/` completas (`git rm -r`, quedan recuperables del historial
+de git — el commit `03b2f70`, HEAD de `main` justo antes de este retiro,
+las tiene completas). Referencia al árbol de directorios en `README.md`.
+
+**No se tocó** (decisión del usuario, no mía):
+- La rama `feature/apps-cierre-final-2026-09-11` — muy desactualizada
+  (no se tocó desde el 11/09, main avanzó ~1100 archivos desde entonces:
+  migraciones/tests de fases posteriores que esa rama nunca tuvo).
+  Mergearla hoy sería un desastre (revertiría meses de trabajo). Tiene
+  branding/pulido real de las apps (commits `fc19f91`, `570f1df`) por si
+  algún día se retoman. Queda para que el usuario decida si la borra.
+- Releases de GitHub: no hay ninguno (`gh release list` vacío) — nada que
+  decidir.
+- No se encontró código del servidor exclusivo para las apps que quitar
+  (ver arriba) — nada pendiente ahí.
+
+**Nota aparte (no es del repo, es del equipo)**: el keystore de firma de
+Android (`mobile-app/android/inconexion-release.keystore` +
+`release-signing.properties`) NUNCA estuvo en git (el propio
+`mobile-app/.gitignore` los excluía a propósito, comentario "secretos de
+firma — NUNCA versionar") — sin exposición en el historial. Pero siguen
+existiendo como archivos LOCALES sueltos en la máquina donde se
+compilaba el `.apk`, y `git rm` no los toca (nunca estuvieron
+trackeados). Si algún día se quiere volver a publicar una actualización
+de la app Android bajo la misma identidad, hace falta ese mismo keystore
+— vale la pena respaldarlo aparte antes de que se pierda, no es algo que
+este repo pueda proteger.
+
+Verificación: `npm test` (server) 374/374, `npm audit` 0
+vulnerabilidades — sin cambios respecto a antes (las 2 vulnerabilidades
+de `mobile-app` vivían en su propio `package-lock.json`, nunca en el de
+`server/`; confirmado con `npm audit` dentro de `mobile-app/` antes de
+borrarla: 1 alta + 1 crítica, de `@capacitor/cli` → `tar`; `desktop-app`
+ya estaba limpio, 0 vulnerabilidades). CI en verde, deploy sale bien,
+`/api/health` responde 200 tras el deploy.
+
 ### Riesgos señalados / decisiones documentadas
 
 - La tabla de exportación a Excel/PDF de Llamadas y WhatsApp se trató

@@ -128,8 +128,6 @@ inconexion-app/
 │   └── js/                             api, session, users, roles-perms, calidad, metas,
 │                                       cargas, dashboard-generic, dashboards-admin,
 │                                       dashboards-core, charts, inventario, gerencia, ...
-├── desktop-app/                       → Cliente ligero de escritorio (Electron), carga el sitio real
-├── mobile-app/                        → Cliente ligero Android (Capacitor), carga el sitio real
 ├── deploy/
 │   ├── Caddyfile                       Reverse proxy con HTTPS automático
 │   ├── docker-compose.prod.yml         Compose de la instancia AWS (descarga imagen de ECR)
