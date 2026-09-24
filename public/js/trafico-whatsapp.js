@@ -295,7 +295,7 @@ function _traficoWppExportExcel(i){
   var campana = host ? host.dataset.campana : 'trafico_whatsapp';
   var wb = XLSX.utils.book_new();
   xlsxAgregarAvisoDemo(wb);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(datos), 'TraficoWhatsApp');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'TraficoWhatsApp');
   XLSX.writeFile(wb, 'Trafico_WhatsApp_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
 

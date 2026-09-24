@@ -1120,11 +1120,11 @@ function _gdExportExcel(){
   // datos falsos nunca circule sin decirlo.
   xlsxAgregarAvisoDemo(wb);
   var usados = {};
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(_gdDatosKpis()), xlsxNombreHojaUnico('KPIs', usados));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(_gdDatosKpis())), xlsxNombreHojaUnico('KPIs', usados));
   _gdDatosPanelesTab().forEach(function(pan){
     if(!pan.filas.length) return;
     var name = xlsxNombreHojaUnico(pan.titulo || 'Panel', usados);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pan.filas), name);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(pan.filas)), name);
   });
   XLSX.writeFile(wb, 'Dashboard_' + (_gd.cliente || '').replace(/\s+/g, '_') + '_' + mesLbl + '.xlsx');
 }

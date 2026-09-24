@@ -45,10 +45,45 @@ function xlsxAgregarAvisoDemo(wb) {
   XLSX.utils.book_append_sheet(wb, ws, 'AVISO');
 }
 
+// Fase 72 (hallazgo H2): inyeccion de formulas / CSV injection (OWASP). Los
+// datos que exportamos vienen de texto libre cargado por Excel (skill,
+// observaciones, motivos, descripciones...) y se escriben tal cual en un
+// .xlsx nuevo con XLSX.utils.json_to_sheet/aoa_to_sheet. Si una celda de
+// texto empieza con =, +, -, @ (o tab/retorno de carro), Excel/LibreOffice
+// pueden interpretarla como formula al abrir el archivo exportado, en vez
+// de como texto literal. Anteponer una comilla simple neutraliza eso sin
+// cambiar el texto visible para quien abre el archivo (Excel la usa
+// justamente para forzar "esto es texto", nunca se muestra).
+var XLSX_FORMULA_RE = /^[=+\-@\t\r]/;
+function xlsxCeldaSegura(v) {
+  if (typeof v !== 'string') return v;
+  return XLSX_FORMULA_RE.test(v) ? "'" + v : v;
+}
+
+// Aplica xlsxCeldaSegura a cada celda de texto de `filas`, aceptando tanto
+// el formato de json_to_sheet (array de objetos) como el de aoa_to_sheet
+// (array de arrays) -- no muta el original, devuelve una copia.
+function xlsxFilasSeguras(filas) {
+  if (!Array.isArray(filas)) return filas;
+  return filas.map(function (fila) {
+    if (Array.isArray(fila)) return fila.map(xlsxCeldaSegura);
+    if (fila && typeof fila === 'object') {
+      var out = {};
+      Object.keys(fila).forEach(function (k) { out[k] = xlsxCeldaSegura(fila[k]); });
+      return out;
+    }
+    return xlsxCeldaSegura(fila);
+  });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 // (xlsxAgregarAvisoDemo depende de los globales XLSX/seedDemoActivo del
-// navegador y no se exporta -- xlsxNombreHojaUnico es logica pura, sin
-// esa dependencia, y si se puede probar igual que semaforo-logic.js.)
+// navegador y no se exporta -- el resto es logica pura, sin esa
+// dependencia, y si se puede probar igual que semaforo-logic.js.)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { xlsxNombreHojaUnico: xlsxNombreHojaUnico };
+  module.exports = {
+    xlsxNombreHojaUnico: xlsxNombreHojaUnico,
+    xlsxCeldaSegura: xlsxCeldaSegura,
+    xlsxFilasSeguras: xlsxFilasSeguras,
+  };
 }
