@@ -84,11 +84,21 @@ function _gdPickFila(filas){
 function _gdEvalCampo(row, f){
   if(!row) return null;
   if(f.formula){
-    var a = _gdNum(row[f.a]), b = _gdNum(row[f.b]);
-    if(f.formula === 'a+b') return a + b;
-    if(f.formula === 'a-b') return a - b;
-    if(f.formula === 'a/b*100') return b ? Math.round((a/b)*1000)/10 : 0;
-    if(f.formula === 'a/b') return b ? a/b : 0;
+    // Fase 75 (hallazgo Fase 74, pendiente A2): si el mes no trae `a` o `b`,
+    // _gdNum los volvia 0 en vez de tratarlos como "sin dato" -- un panel de
+    // formula (Ordenamiento Medico, Recuperacion de Cancelados, STA por mes,
+    // etc.) pintaba un 0% o una resta/suma parcial en vez de un hueco ("—").
+    // Mismo criterio que ya usan _gdRenderNotaKpi (linea 943) y el nota_kpi
+    // de _gdExportarTabDatos (linea 1079): null si falta cualquiera de los
+    // dos campos (o si `b` es 0, division invalida).
+    var rawA = row[f.a], rawB = row[f.b];
+    var faltaA = rawA === null || rawA === undefined;
+    var faltaB = rawB === null || rawB === undefined;
+    var a = _gdNum(rawA), b = _gdNum(rawB);
+    if(f.formula === 'a+b') return (faltaA || faltaB) ? null : a + b;
+    if(f.formula === 'a-b') return (faltaA || faltaB) ? null : a - b;
+    if(f.formula === 'a/b*100') return (faltaA || faltaB || !b) ? null : Math.round((a/b)*1000)/10;
+    if(f.formula === 'a/b') return (faltaA || faltaB || !b) ? null : a/b;
     return null;
   }
   return _gdNum(row[f.campo]);
