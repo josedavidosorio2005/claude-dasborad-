@@ -103,4 +103,44 @@ router.post(
   })
 );
 
+// Impacto de una carga ANTES de guardarla (no escribe nada): mismo patron
+// que POST /calidad/trafico/carga/impacto (routes/trafico.js, voz), pero la
+// clave de "ya existe" aqui es (colaWhatsapp, fechaInicio, fechaFin) -- cada
+// fila YA es un periodo completo (ver trafico-whatsapp.js), no un dia
+// dentro de un mes, asi que no hace falta agrupar por mes. Fase 75
+// (hallazgo Fase 74, pendiente A1): antes, guardarTraficoWpp() sobrescribia
+// un periodo ya cargado sin preguntar -- este endpoint es lo que le falta
+// al frontend para replicar la misma confirmacion explicita que ya tiene
+// Trafico de Llamadas (voz).
+router.post(
+  '/calidad/trafico/whatsapp/carga/impacto',
+  requireActor,
+  validate(schemas.traficoWppCargaBody),
+  wrap((req, res) => {
+    if (!canLoadData(req.actor)) {
+      return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+    }
+    const b = req.body;
+    if (!campaignAccess(req.actor, b.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    const pares = new Map(); // "cola|inicio|fin" -> { colaWhatsapp, fechaInicio, fechaFin, filasNuevas }
+    b.filas.forEach((f) => {
+      const clave = f.colaWhatsapp + '|' + f.fechaInicio + '|' + f.fechaFin;
+      if (!pares.has(clave)) {
+        pares.set(clave, { colaWhatsapp: f.colaWhatsapp, fechaInicio: f.fechaInicio, fechaFin: f.fechaFin, filasNuevas: 0 });
+      }
+      pares.get(clave).filasNuevas++;
+    });
+    const stmt = db.prepare(
+      'SELECT COUNT(*) AS n FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio = ? AND fechaFin = ?'
+    );
+    const resultado = [...pares.values()].map((p) => ({
+      ...p,
+      filasExistentes: stmt.get(b.campana, p.colaWhatsapp, p.fechaInicio, p.fechaFin).n,
+    }));
+    res.json(resultado);
+  })
+);
+
 module.exports = router;

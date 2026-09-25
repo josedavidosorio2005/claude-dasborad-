@@ -164,6 +164,62 @@ test('un archivo con estructura invalida es rechazado y la carga anterior sigue 
   assert.equal(filasCola[0].totalWhatsapp, 77, 'el dato de la carga buena no debe cambiar');
 });
 
+// Fase 75 (hallazgo Fase 74, pendiente A1): antes de este endpoint,
+// guardarTraficoWpp() (public/js/trafico-whatsapp.js) sobrescribia un
+// periodo ya cargado en silencio -- WhatsApp era la unica de las dos cargas
+// de Trafico sin el mismo aviso "se reemplazaran N registros" que ya tenia
+// voz (POST /calidad/trafico/carga/impacto, routes/trafico.js).
+test('POST /calidad/trafico/whatsapp/carga/impacto: cuenta cuantas filas se reemplazarian SIN escribir nada', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP IMPACTO ' + Math.random().toString(36).slice(2, 6);
+  await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, totalWhatsapp: 100, contestados: 90 })] });
+
+  const impacto = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga/impacto')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, totalWhatsapp: 999, contestados: 999 })] });
+  assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
+  const par = impacto.body.find((p) => p.colaWhatsapp === cola);
+  assert.ok(par, JSON.stringify(impacto.body));
+  assert.equal(par.filasExistentes, 1);
+  assert.equal(par.fechaInicio, '2026-06-01');
+  assert.equal(par.fechaFin, '2026-06-30');
+
+  // No debe haber escrito nada: el valor guardado sigue siendo el original (100), no 999.
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  const row = rows.body.find((r) => r.colaWhatsapp === cola);
+  assert.equal(row.totalWhatsapp, 100, '/carga/impacto no debe escribir nada en la base');
+});
+
+test('POST /calidad/trafico/whatsapp/carga/impacto: un periodo nuevo (nunca cargado) reporta 0 filas existentes', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP IMPACTO NUEVO ' + Math.random().toString(36).slice(2, 6);
+  const impacto = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga/impacto')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola })] });
+  assert.equal(impacto.status, 200);
+  const par = impacto.body.find((p) => p.colaWhatsapp === cola);
+  assert.equal(par.filasExistentes, 0);
+});
+
+test('POST /calidad/trafico/whatsapp/carga/impacto: solo quien tiene el permiso Cargar Datos puede consultarlo', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const create = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send({ nombre: 'X', user: 'wpp_impacto_noadmin_' + Math.random().toString(36).slice(2, 7), password: 'ClaveWpp1234', rol: 'CALIDAD', perms: { Calidad: true, 'campana_ORLANT': true } });
+  const token = await tokenFor(create.body.user, 'ClaveWpp1234');
+  const res = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga/impacto')
+    .set(auth(token))
+    .send({ campana: 'ORLANT', filas: [fila()] });
+  assert.equal(res.status, 403);
+});
+
 test('las columnas opcionales ausentes no llegan como 0 sino como null', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const cola = 'WHATSAPP SIN OPCIONALES ' + Math.random().toString(36).slice(2, 6);
