@@ -1,12 +1,10 @@
-// orlant-tipificacion-unico-migracion.test.js — prueba la migracion
-// `dashboards_config_orlant_tipificacion_unico_v1` (server/db.js), que
-// corrige el bug real de categorias duplicadas en el pie de Tipificacion de
-// ORLANT (verificacion con InCo, 2026-09-18): la migracion anterior
-// (dashboards_config_orlant_pdf_graficas_v1) dejo el panel con
-// filtroCampo:'linea' pero SIN filtroUnico (multi-select, 3P+General
-// combinados por defecto). Mismo patron que hlm-sede-migracion.test.js /
-// orlant-graficas-migracion.test.js: sembrar el layout VIEJO a mano *antes*
-// de requerir db.js, y verificar "despues".
+// orlant-tipificacion-panel-migracion.test.js — prueba la migracion
+// `dashboards_config_orlant_tipificacion_panel_v1` (server/db.js, Fase 77):
+// reemplaza el pie viejo (basado en la hoja "tipificacion" de
+// dashboard_cargas, que nunca llego a tener datos reales de ORLANT) por el
+// panel autonomo nuevo (tipificacion_panel, tabla `tipificaciones`). Mismo
+// patron que orlant-tipificacion-unico-migracion.test.js: sembrar el
+// layout VIEJO a mano *antes* de requerir db.js, y verificar "despues".
 'use strict';
 
 const os = require('os');
@@ -18,31 +16,31 @@ const assert = require('node:assert/strict');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
-const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-tipif-unico-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
+const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-tipif-panel-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
 
-// Forma "vieja" reconocible: filtroCampo:'linea' SIN filtroUnico (el estado
-// exacto en el que quedo ORLANT tras el PR #64-66, antes de este fix).
+// Forma "vieja" reconocible: 1 solo pie (el estado real de cualquier ORLANT
+// sembrado despues de la Fase 76, antes de esta) -- no importa si trae
+// filtroUnico o no, cualquier pie de 1 panel es reconocible.
 const LAYOUT_VIEJO = {
   kpis: [],
   tabs: [
     { key: 'salida', label: 'Salida', panels: [{ tipo: 'line', titulo: 'x', series: [], filtroSerie: true }] },
-    { key: 'tipificacion', label: 'Tipificacion', panels: [
-      { tipo: 'pie', titulo: 'Tipificacion de llamadas y WhatsApp', filtroCampo: 'linea',
+    { key: 'tipificacion', label: 'Tipificacion', oculta: true, panels: [
+      { tipo: 'pie', titulo: 'Tipificacion de llamadas y WhatsApp', filtroCampo: 'linea', filtroUnico: true,
         fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad' },
-        notas: ['nota vieja'] },
+        notas: ['glosario viejo'] },
     ]},
   ],
 };
 
-// Escenario 2: un tab "tipificacion" que ya fue personalizado a algo que no
-// es ni la forma vieja (1 panel, filtroCampo sin filtroUnico) ni la nueva
-// (filtroUnico:true) -- ej. un admin le agrego un segundo panel a mano. La
-// migracion debe dejarlo intacto.
+// Escenario 2: un tab "tipificacion" personalizado a algo que no es ni la
+// forma vieja (1 pie) ni la nueva (tipificacion_panel) -- ej. un admin le
+// agrego un segundo panel a mano. La migracion debe dejarlo intacto.
 const LAYOUT_PERSONALIZADO = {
   kpis: [],
   tabs: [
     { key: 'tipificacion', label: 'Tipificacion', panels: [
-      { tipo: 'pie', titulo: 'Personalizado 1', filtroCampo: 'linea', fuente: {} },
+      { tipo: 'pie', titulo: 'Personalizado 1', fuente: {} },
       { tipo: 'pie', titulo: 'Personalizado 2 — agregado a mano', fuente: {} },
     ]},
   ],
@@ -62,7 +60,7 @@ pre.exec(`
     updatedAt TEXT NOT NULL
   );
 `);
-const now = '18/09/2026 15:00:00';
+const now = '25/09/2026 15:00:00';
 pre.prepare(
   `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
    VALUES (?,?,?,?,?,1,?,?)`
@@ -89,31 +87,37 @@ setEnvDefault('RATE_LIMIT_MAX', '10000');
 setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
+const { CONFIGS } = require('../dashboard-config-seed');
+const ORLANT_TARGET = CONFIGS.find((c) => c.cliente === 'ORLANT');
+const TARGET_TAB = ORLANT_TARGET.layout.tabs.find((t) => t.key === 'tipificacion');
 
-test('migracion dashboards_config_orlant_tipificacion_unico_v1: agrega filtroUnico al pie de Tipificacion de ORLANT', () => {
+test('migracion dashboards_config_orlant_tipificacion_panel_v1: reemplaza el pie viejo por tipificacion_panel', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
   const tab = layout.tabs.find((t) => t.key === 'tipificacion');
-  assert.equal(tab.panels.length, 1);
-  // Fase 77: esta migracion SI corrio (paso intermedia: pie -> pie con
-  // filtroUnico:true), pero en este mismo require de db.js encadena de
-  // inmediato con dashboards_config_orlant_tipificacion_panel_v1 (mas
-  // abajo en db.js), que reemplaza CUALQUIER pie de 1 solo panel por el
-  // panel autonomo nuevo -- la forma FINAL visible aqui ya es
-  // tipificacion_panel, no el pie con filtroUnico que esta migracion
-  // producia antes de la Fase 77.
-  assert.equal(tab.panels[0].tipo, 'tipificacion_panel');
 
-  // El tab "salida" (ya migrado en la fase anterior, sin relacion con este
-  // fix) no se toca.
+  assert.equal(tab.panels.length, 1);
+  assert.equal(tab.panels[0].tipo, 'tipificacion_panel');
+  assert.deepEqual(tab.panels[0], TARGET_TAB.panels[0]);
+
+  // `oculta` no lo toca esta migracion (dashboard-generic.js decide en
+  // memoria segun si hay tipificaciones cargadas, nunca la migracion).
+  assert.equal(tab.oculta, true);
+
+  // El tab "salida" (sin relacion con este fix) no se toca.
   const salida = layout.tabs.find((t) => t.key === 'salida');
   assert.equal(salida.panels[0].filtroSerie, true);
 });
 
-test('migracion dashboards_config_orlant_tipificacion_unico_v1: nunca toca otro cliente (la query es exclusiva de ORLANT)', () => {
+test('migracion dashboards_config_orlant_tipificacion_panel_v1: nunca toca otro cliente', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
-  const layout = JSON.parse(row.layout);
-  assert.deepEqual(layout, LAYOUT_PERSONALIZADO);
+  assert.deepEqual(JSON.parse(row.layout), LAYOUT_PERSONALIZADO);
+});
+
+test('migracion dashboards_config_orlant_tipificacion_panel_v1: es idempotente -- correrla de nuevo no vuelve a tocar nada', () => {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  const tab = JSON.parse(row.layout).tabs.find((t) => t.key === 'tipificacion');
+  assert.equal(tab.panels.filter((p) => p.tipo === 'tipificacion_panel').length, 1);
 });
 
 test.after(() => {

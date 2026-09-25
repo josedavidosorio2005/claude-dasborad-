@@ -140,6 +140,16 @@ function _cargasTraficoWhatsappColumnasUnificado(){
 function _cargasAgendasColumnasUnificado(){
   return AGENDAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 77 (ORLANT, pedido de Edwin/Jairo) — columnas EXACTAS de las hojas
+// TIPIFICACION_LLAMADAS/TIPIFICACION_WHATSAPP: las 6 que trae el archivo
+// real de Edwin (AGENT_NAME, DATE, HORA, TIME_MIN, DESCRIPTION_COD_ACT,
+// SKILL_NAME -- MES es una formula de Excel, se ignora a proposito, ver
+// tipificacion-logic.js). Mismo set de columnas para las 2 hojas -- lo que
+// cambia entre Llamadas y WhatsApp es solo el canal (nota aparte en
+// INSTRUCCIONES), no la estructura.
+function _cargasTipificacionColumnasUnificado(){
+  return TIPIFICACION_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -190,7 +200,8 @@ async function onCargaClienteChange(){
     // ORLANT) -- no un flag propio, para no multiplicar listas de clientes
     // que hay que mantener en sincronia.
     var agendasCols = esUnificado ? _cargasAgendasColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols);
+    var tipificacionCols = esUnificado ? _cargasTipificacionColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -350,6 +361,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = function(a){ return cmParseRows(a, calidad.items); };
     } else if(h.tipo === 'agendas'){
       parseFn = agendasParseFilas;
+    } else if(h.tipo === 'tipificacion'){
+      parseFn = tipificacionParseFilas;
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
@@ -390,7 +403,9 @@ function _renderPreviewCarga(){
   var html = '<tr><th>Hoja</th><th>Tipo</th><th>Estado</th></tr>';
   html += _cargasResultados.map(function(r){
     var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
-      (r.tipo==='agendas' ? 'Agendas' : (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')));
+      (r.tipo==='agendas' ? 'Agendas' :
+      (r.tipo==='tipificacion' ? ('Tipificacion de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -503,6 +518,29 @@ async function _cargasGuardarAgendas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 77 (ORLANT): mismo patron exacto que _cargasGuardarAgendas (impacto
+// -> confirmar -> guardar, periodo = primera..ultima DATE del archivo), con
+// el canal (LLAMADAS/WHATSAPP) fijo por hoja -- reemplaza SOLO ese canal,
+// nunca el otro (ver server/tipificaciones.js).
+async function _cargasGuardarTipificacion(cliente, r){
+  var filasArray = r.filas.map(tipificacionFilaComoArray);
+  var parsed = { campana: cliente, canal: r.canalTipificacion, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  try{
+    var impacto = await apiRequest('POST','/calidad/tipificacion/carga/impacto', parsed);
+    if(impacto.filasExistentes > 0){
+      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de tipificacion de '+
+        (r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')+' ya cargados, del '+
+        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la tipificacion anterior sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/tipificacion/carga', parsed);
+    if(typeof _tipificacionCache !== 'undefined') _tipificacionCache = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -525,6 +563,7 @@ async function guardarCarga(){
       if(r.tipo==='seccion') res = await _cargasGuardarSeccion(cliente, periodo, r);
       else if(r.tipo==='calidad') res = await _cargasGuardarCalidad(cliente, r);
       else if(r.tipo==='agendas') res = await _cargasGuardarAgendas(cliente, r);
+      else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));

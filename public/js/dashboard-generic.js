@@ -602,6 +602,22 @@ async function _gdBootstrap(){
         if(agendasOp && agendasOp.meses && agendasOp.meses.length) tabAgendamiento.oculta = false;
       }catch(e){ /* se queda oculta */ }
     }
+
+    // Fase 77 (ORLANT, "Tipificacion"): mismo mecanismo exacto que
+    // Agendamiento (arriba) -- el tab sigue oculto por defecto en la config
+    // guardada, se destapa en memoria SOLO cuando ya hay tipificacion
+    // cargada (Llamadas O WhatsApp), sin escribir nunca ese cambio en el
+    // servidor. Si las 2 consultas fallan o vienen vacias, se queda oculta.
+    var tabTipificacion = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'tipificacion'; });
+    if(tabTipificacion){
+      try{
+        var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=ORLANT&canal=LLAMADAS');
+        var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=ORLANT&canal=WHATSAPP');
+        var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;
+        var tieneWhatsapp = tipifWhatsapp && tipifWhatsapp.meses && tipifWhatsapp.meses.length;
+        if(tieneLlamadas || tieneWhatsapp) tabTipificacion.oculta = false;
+      }catch(e){ /* se queda oculta */ }
+    }
   }
 
   renderGenericHeader();
@@ -776,10 +792,11 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'tipificacion_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
-      // agendas_panel (Fase 78, ORLANT) sigue el mismo criterio.
+      // agendas_panel (Fase 78) y tipificacion_panel (Fase 77, ORLANT)
+      // siguen el mismo criterio.
       html += '<div id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
@@ -788,7 +805,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -824,6 +841,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
   if(p.tipo === 'trafico_whatsapp_combo'){ _traficoWppRenderPanel(p, i); return; }
   if(p.tipo === 'agendas_panel'){ _agendasRenderPanel(p, i); return; }
+  if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1114,7 +1132,7 @@ function _gdDatosPanelesTab(){
       return;
     }
     if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
-    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel') return; // export propio (filtros/fecha no son los de _gd)
+    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'tipificacion_panel') return; // export propio (filtros/fecha no son los de _gd)
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

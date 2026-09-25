@@ -120,10 +120,14 @@ test('migracion dashboards_config_orlant_pdf_graficas_v1: reescribe los 4 tabs v
   assert.ok(salida.panels.every((p) => !p.filtroSerie));
   assert.equal(salida.panels[4].titulo, 'Personalizado 5 — agregado a mano');
 
+  // Fase 77: el pie viejo de Tipificacion (aqui recien migrado a 1 solo pie
+  // con filtroCampo:'linea') encadena de inmediato con la migracion
+  // dashboards_config_orlant_tipificacion_panel_v1 (db.js, corre despues en
+  // este mismo require de db.js) hacia el panel autonomo nuevo -- por eso
+  // la forma FINAL ya no es un pie con filtroCampo, sino tipificacion_panel.
   const tipif = tab('tipificacion');
   assert.equal(tipif.panels.length, 1, 'Tipificacion pasa de 2 pies a 1');
-  assert.equal(tipif.panels[0].filtroCampo, 'linea');
-  assert.ok(Array.isArray(tipif.panels[0].notas) && tipif.panels[0].notas.length >= 2);
+  assert.equal(tipif.panels[0].tipo, 'tipificacion_panel');
 
   const agenda = tab('agendamiento');
   assert.ok(agenda.panels.some((p) => p.tipo === 'nota_kpi'), 'se agrego el KPI anual con texto');

@@ -6010,3 +6010,174 @@ en producción — la carga del archivo real la hace el usuario desde la
 plataforma. No se tocaron los datos de prueba de Calidad de ORLANT ni el
 keystore de `mobile-app/`.
 
+## Fase 77 — Reunión con Edwin (25/09): fixes de Tráfico + Tipificación de ORLANT (2026-09-25, automática)
+
+Dos PRs, uno por parte (pedido explícito). Nota de orden: la Fase 78
+("Agendas — citas por especialidad") ya corrió antes que esta en el repo
+real, porque el pedido original de esta Fase 77 llegó reordenado — no
+afecta nada, las dos son independientes.
+
+### Parte A — fixes chicos de Trafico (PR #157, mergeado)
+
+Reunión real del 25/09 con Edwin: sus promedios diarios coincidían exacto
+con la plataforma, pero el promedio MENSUAL no — porque Edwin promedia los
+% de cada día a mano en Excel, y la plataforma pondera por volumen (ya
+correcto para SL/abandono), **excepto AHT/ASA, que se estaban ponderando
+por TOTAL de llamadas en vez de por CONTESTADAS** (una llamada abandonada
+nunca la atiende un agente, no tiene AHT).
+
+- **`traficoAhtPromedioPeriodo` + `traficoAgregar`/`traficoWppAgregarPorPeriodo`**
+  (`trafico-logic.js`/`trafico-whatsapp-logic.js`): AHT y ASA ahora
+  ponderan por `contestadas`/`contestados`; ATA y WAIT_TIME siguen
+  ponderando por total (correcto, sin cambios). Verificado exacto contra
+  la base real de ORLANT agosto 2026 (consulta SQL directa a
+  `calidad_nivel_servicio_diario`, sin exponer nada sensible):
+  **3P 3:44 → 3:44 (sin cambio)**, **GENERAL 5:20 → 5:18**,
+  **Total (ambas líneas) 4:33 → 4:26** — coincide exacto con los números
+  que Edwin dio en la reunión.
+- **Nota "?"** junto a los valores mensuales de SL y AHT/ASA (sub-pestañas
+  de Trafico), con el texto "Valor del mes ponderado por volumen de
+  llamadas (no es el promedio simple de los días)" — para que Edwin/Jairo
+  entiendan por qué difiere de su Excel.
+- **Verificado con datos inventados**: una tercera skill/línea (invención:
+  "REGIMEN ESPECIALES") convive con 3P/GENERAL sin romper nada — aparece
+  en el desplegable, suma en los totales combinados, y el mapeo automático
+  a "resumen" (`resumen-orlant-trafico.js`) la ignora correctamente (ya
+  estaba bien diseñado — `sinClasificar`, sin nada hardcodeado a
+  "exactamente 2 líneas"). Nada que arreglar, solo pruebas nuevas que lo
+  confirman.
+- **Bug real de producción, reproducido y corregido**: filtrar Trafico
+  (Llamadas o WhatsApp) a un rango sin datos (ej. Septiembre con solo
+  Agosto cargado — el caso real que mostró "847 llamadas" en producción)
+  sustituía en SILENCIO el rango pedido por el rango por defecto, mostrando
+  datos de OTRO período sin avisar. Ya no se sustituye nunca: se respeta el
+  rango pedido y, si no hay filas, se muestra "Sin datos de Trafico de
+  Llamadas/WhatsApp para el período seleccionado (...)" — verificado con
+  Playwright local (datos reales de agosto ya cargados, solo ese mes).
+- **Agendamiento — 5 sub-pestañas viejas alimentadas por "resumen"**:
+  investigado con Agendas cargadas y "resumen" sin datos para ese mes — ya
+  funcionan bien sin ningún cambio de código, vía los fallbacks genéricos
+  existentes (`_gdChart`: "Sin datos cargados para este periodo";
+  `nota_kpi`: "Todavía no hay datos suficientes del año para este
+  cálculo."). Confirmado con Playwright + captura.
+- **Incidente a declarar**: para investigar los puntos de arriba usé, por
+  error, un subagente tipo `fork` — la regla explícita de esta fase para
+  subagentes decía "nada de fork". Ese fork además ignoró mi instrucción
+  de "solo investigación, no escribas código" y llegó a editar
+  `trafico-logic.js`/`trafico-whatsapp-logic.js`/`trafico-logic.test.js`
+  antes de fallar por un límite de sesión (HTTP 429), dejando esos 3
+  archivos modificados sin commitear. Antes de decidir qué hacer,
+  revisé personalmente cada línea del diff, corrí toda la suite de
+  pruebas, y verifiqué a mano (consulta SQL directa contra la base real)
+  que el resultado coincidía EXACTO con los números de Edwin — solo
+  después de esa verificación independiente decidí conservar ese trabajo
+  (ya incorporado arriba) en vez de descartarlo y rehacerlo. No se hizo
+  ningún commit, push ni cambio en producción durante el incidente. No
+  volví a usar ningún subagente por el resto de la fase.
+
+### Parte B — Tipificación de ORLANT (PR #158, mergeado)
+
+Reunión con Edwin/Jairo (25/09): mostrar la tipificación de Llamadas y
+WhatsApp de ORLANT (hasta ahora una pestaña oculta sin datos reales),
+reutilizando el patrón de Agendas (Fase 78) — pero con ~2x el volumen
+(~15.000 filas/mes solo Llamadas, agosto 2026).
+
+- **Tabla nueva `tipificaciones`** (server/db.js): una fila por
+  interacción tipificada, con `canal` (LLAMADAS/WHATSAPP) — una sola
+  tabla para los 2 canales (mismo grano exacto), índice compuesto
+  `(campana, canal, fecha)`. El dashboard nunca descarga filas crudas —
+  `GET /calidad/tipificacion/por-tipo` devuelve el conteo por
+  tipificación ya agrupado (top 10 + "Otras (N tipificaciones)", N =
+  categorías distintas agrupadas, no filas — con 62 categorías reales un
+  pie completo es ilegible y el top 10 ya cubre la mayoría del volumen).
+- **Límite de tamaño de body**: medido contra datos reales, 14.940 filas
+  en formato array pesan ~1.4mb y el stress-test de 30.000 filas (pedido
+  explícito) pesa ~2.8mb — ambos superan el límite global de 2mb (Fase
+  72). Se le dio a `/calidad/tipificacion/carga` y su `/impacto` un
+  límite propio de 8mb (server.js) — el resto de la API sigue exacto en
+  2mb, nunca se tocó el límite global. Probado con 15.000 y 30.000 filas
+  reales (invented) sin 413, y confirmado que el resto de rutas siguen
+  rechazando a 2mb.
+- **Carga**: 2 hojas nuevas en la plantilla consolidada de ORLANT —
+  `TIPIFICACION_LLAMADAS` / `TIPIFICACION_WHATSAPP` (6 columnas exactas
+  del archivo de Edwin: AGENT_NAME, DATE, HORA, TIME_MIN,
+  DESCRIPTION_COD_ACT, SKILL_NAME — MES es una fórmula de Excel, se
+  ignora). **Reemplazan** el panel del dashboard que antes leía la hoja
+  vieja "tipificacion" (minúscula) — pero esa hoja sigue existiendo en el
+  plan y cargando exactamente igual si alguien la vuelve a subir
+  (`dashboard-secciones.js` no se tocó, compatibilidad hacia atrás
+  verificada con una prueba dedicada). Reemplaza por período Y POR CANAL
+  (subir Llamadas nunca toca WhatsApp del mismo rango de fechas, y
+  viceversa) con confirmación explícita, igual patrón que WhatsApp de
+  Trafico/Agendas — subir el mismo archivo 2 veces no duplica. Fechas
+  "dd/mm/aaaa" o serial de Excel; horas con am/pm (con el espacio NO
+  separable real del archivo de Edwin, con o sin puntos), 24 horas, o
+  serial de Excel — si no se puede leer la hora, la fila se guarda igual,
+  solo sin hora (no es obligatoria). WhatsApp: nota en INSTRUCCIONES
+  explicando que Wolkvox exporta la cola como un CÓDIGO, hay que cruzarlo
+  con BUSCARV/VLOOKUP antes de pegar el nombre real. Un archivo pegado en
+  una hoja con el nombre equivocado (ej. "DATA") dice EXACTO qué hoja usar.
+- **Dónde se ve**: la pestaña ya existente "Tipificación" de ORLANT (hoy
+  oculta) — un solo panel autónomo con 2 mitades (Llamadas a la
+  izquierda, WhatsApp a la derecha; apiladas en móvil), cada una con su
+  propio pie top10+Otras. Filtros Mes y rango de días COMPARTIDOS arriba
+  de las 2 mitades (por defecto, el mes más reciente con datos, mismo
+  criterio que Trafico); Agente y Skill/Cola INDEPENDIENTES por mitad
+  (patrón "Todos" + selección de la Fase 60). Si una mitad no tiene datos
+  para el filtro actual, muestra "Sin datos de Llamadas/WhatsApp cargados
+  para este período" en vez de una gráfica vacía. El título de cada pie
+  muestra el total de registros filtrados. Transformaciones SOLO de
+  presentación (el valor guardado nunca cambia): "_" → espacio, "-" (valor
+  completo) → "Sin tipificación". Se destapa SOLA en memoria (nunca se
+  escribe en el servidor) cuando ya hay tipificación cargada de
+  CUALQUIERA de los 2 canales — mismo mecanismo exacto que Agendamiento
+  (Fase 78). Migración `dashboards_config_orlant_tipificacion_panel_v1`
+  (server/db.js) para ORLANT ya sembrado en producción, con cuidado de no
+  chocar con la migración `..._tipificacion_unico_v1` anterior (se
+  encadenan en el mismo orden, verificado con una prueba dedicada).
+  Sin tabla de detalle por ahora (alcance explícito de esta fase — si
+  Jairo la pide más adelante, es tarea aparte).
+- **Verificado con el archivo real de Edwin**
+  (`BASE_PARA_TORTAS_DE_TIPIFICACION.xlsx`, hoja DATA, agosto 2026, solo
+  en local, nunca commiteado ni mostrado — cargado tal cual vía la UI
+  real de "Cargar Datos", nunca con SQL directo): **total 14.940**,
+  **LLAMADAS DE SALIDA 6.560**, **CALL INBOUND ORLANT 3P 3.957**,
+  **CALL INBOUND ORLANT GENERAL 3.229**, **REGIMEN ESPECIALES 804**,
+  **CANCELACIONES Y REPROGRAMACION 390**, **21 asesores distintos**,
+  **62 tipificaciones distintas**, **AGENDADA_InConexion 4.467**,
+  **NO_CONTESTAN 1.956**, **BUZON 1.278**, **INFORMACION_GENERAL_ 1.247**,
+  **TRANSFERENCIA_AGENTE 1.022** — TODOS coinciden EXACTOS con lo que
+  Edwin ya había contado a mano. El filtro de ejemplo de Edwin (Skill
+  LLAMADAS DE SALIDA + una asesora + 15-20 de agosto) dio exactamente 40
+  registros, con la misma distribución de 7 tipificaciones que él reportó
+  (13/8/7/5/5/1/1). Cargar el mismo archivo 2 veces se quedó en 14.940
+  (el diálogo de confirmación de la segunda carga mostró correctamente
+  "14940 registro(s)" a reemplazar). Cruce informativo confirmado: 3P
+  tiene 3.957 tipificaciones vs 3.937 contestadas en Trafico (diferencia
+  de 20), GENERAL 3.229 vs 3.222 (diferencia de 7) — ambas diferencias
+  chicas, dentro de lo esperado, nada que llame la atención. Archivo de
+  carga para producción (formato nuevo, mismos datos) dejado en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\ORLANT_tipificacion_llamadas_agosto_2026_PARA_CARGAR.xlsx`
+  (fuera del repo) — al cargarlo en producción se esperan exactamente los
+  mismos números de arriba.
+
+**Verificación (combinada A+B)**: `npm test` 493/493 (50 pruebas nuevas:
+parseo de fechas/horas incluido el espacio NO separable real del archivo
+de Edwin en `tipificacion-logic.test.js`; reemplazo por período y por
+canal, agrupación top10+Otras, filtros, volumen de 15.000/30.000 filas en
+`tipificaciones-carga.test.js`/`tipificacion-body-size-limit.test.js`; la
+migración del panel nuevo; la plantilla consolidada con las 2 hojas
+nuevas + compatibilidad con la vieja; los fixes de AHT/rango-sin-datos/
+tercera-skill de la Parte A), `npm audit` 0 vulnerabilidades, antes y
+después. Playwright directo desde Node, en local, con datos INVENTADOS
+para la parte visual (nunca el archivo real): las 2 mitades del panel con
+sus filtros, en claro/oscuro y escritorio/móvil, la confirmación al
+recargar (2 diálogos, uno por canal), cero errores de consola — capturas
+en `docs/capturas-demo/fase77-tipificacion/` (Parte B) y
+`docs/capturas-demo/fase77-parte-a/` (Parte A). Trafico y Calidad de
+ORLANT quedaron exactamente igual (Llamadas 8.061/7.159/902, WhatsApp
+7.305/7.109/196) salvo el AHT (cambio esperado, ver Parte A). No se
+escribió en producción — la carga del archivo real la hace el usuario
+desde la plataforma. No se tocaron los datos de prueba de Calidad de
+ORLANT, el keystore de `mobile-app/`, ni ninguna otra pestaña oculta.
+

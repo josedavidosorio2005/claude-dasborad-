@@ -428,6 +428,61 @@ const agendasFiltrosQuery = z.object({
   entidad: z.string().trim().max(200).optional(),
 });
 
+// ── Tipificacion de ORLANT (Fase 77) ─────────────────────────
+// Filas como ARRAY, mismo motivo que Agendas -- aqui el volumen es
+// aproximadamente el DOBLE (~15.000 filas/mes solo Llamadas), ver el
+// limite de tamano especifico de esta ruta en server.js. Orden FIJO, debe
+// coincidir con TIPIFICACION_ORDEN_ARRAY (tipificacion-logic.js) y con
+// CAMPOS_FILA (server/tipificaciones.js):
+//   [agente, fecha, hora, duracionMin, tipificacion, skill]
+// hora/duracionMin son OPCIONALES (null si el archivo no trae un valor
+// valido -- no todas las filas del archivo real de Edwin tienen HORA
+// legible, y TIME_MIN no bloquea nada, se guarda para uso futuro).
+const tipificacionTextoObligatorio = z.string().trim().min(1).max(200);
+const tipificacionHoraSchema = z
+  .string()
+  .regex(/^\d{2}:\d{2}:\d{2}$/, 'HORA debe tener formato HH:MM:SS')
+  .nullable();
+const tipificacionFilaArraySchema = z.tuple([
+  tipificacionTextoObligatorio, // agente
+  fechaSchema, // fecha
+  tipificacionHoraSchema, // hora
+  z.number().int().min(0).max(100000).nullable(), // duracionMin
+  tipificacionTextoObligatorio, // tipificacion (valor original, incluido "-")
+  tipificacionTextoObligatorio, // skill
+]);
+
+const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
+
+const tipificacionCargaBody = z.object({
+  campana: campanaSchema,
+  canal: tipificacionCanalSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(tipificacionFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo'),
+});
+
+// Filtros compartidos (Mes/rango) + independientes (Agente/Skill) por
+// mitad -- ver public/js/tipificacion.js. `canal` siempre obligatorio: el
+// dashboard SIEMPRE pide un canal a la vez (las 2 mitades del panel hacen
+// 2 llamadas independientes), nunca "ambos" en una sola consulta.
+const tipificacionFiltrosQuery = z.object({
+  campana: campanaSchema,
+  canal: tipificacionCanalSchema,
+  mes: mesSchema.optional(),
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  agente: z.string().trim().max(200).optional(),
+  skill: z.string().trim().max(200).optional(),
+});
+
+const tipificacionOpcionesQuery = z.object({
+  campana: campanaSchema,
+  canal: tipificacionCanalSchema,
+});
+
 // ── Dashboards de cliente: cargas de Excel (Fase 2) ─────────
 const nombreClienteSeccionSchema = z
   .string()
@@ -676,6 +731,9 @@ module.exports = {
     traficoWppCargaBody,
     agendasCargaBody,
     agendasFiltrosQuery,
+    tipificacionCargaBody,
+    tipificacionFiltrosQuery,
+    tipificacionOpcionesQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

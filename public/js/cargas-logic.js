@@ -154,6 +154,17 @@ var CARGAS_HOJA_INSTRUCCIONES = 'INSTRUCCIONES';
 // CARGAS_HOJA_TRAFICO_LLAMADAS/_WHATSAPP (solo ORLANT, ver
 // cargasPlanConsolidado). Los demas clientes no cambian.
 var CARGAS_HOJA_AGENDAS = 'AGENDAS';
+// Fase 77 (ORLANT, pedido de Edwin/Jairo): tipificacion de Llamadas y
+// WhatsApp en 2 hojas propias -- REEMPLAZAN, solo para ORLANT, la hoja
+// vieja "tipificacion" (minuscula, seccion generica de dashboard-secciones.js,
+// un resumen mensual manual por linea/tipificacion). Un archivo VIEJO que
+// todavia traiga esa hoja "tipificacion" sigue cargando exactamente igual
+// que siempre (la seccion generica NO se quita de dashboard-secciones.js a
+// proposito, ver docs de la Fase 77) -- las 2 hojas nuevas son ADEMAS, no
+// en lugar de. Mismo gate que CARGAS_HOJA_AGENDAS (solo cuando
+// tipificacionCols viene, hoy solo ORLANT).
+var CARGAS_HOJA_TIPIFICACION_LLAMADAS = 'TIPIFICACION_LLAMADAS';
+var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -174,7 +185,7 @@ var CARGAS_HOJA_AGENDAS = 'AGENDAS';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -250,6 +261,48 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima FECHA_SOLICITUD ' +
           'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 77 (ORLANT, pedido de Edwin/Jairo): tipificacion de Llamadas y
+  // WhatsApp -- hoja propia por canal, solo cuando tipificacionCols viene
+  // (hoy solo ORLANT, mismo gate que agendasCols). REEMPLAZAN el panel del
+  // dashboard que antes leia la hoja vieja "tipificacion" (minuscula, ver
+  // arriba) -- esa hoja sigue existiendo y cargando igual (compatibilidad
+  // hacia atras), solo que ya nada la muestra en el tab "Tipificacion".
+  if (tipificacionCols) {
+    var notaVolumen = 'Volumen esperado: varios miles de filas al mes (agosto 2026 trajo ~15.000 solo en Llamadas) -- ' +
+      'sube el archivo tal cual lo exporta Wolkvox, sin resumir ni pre-agrupar filas.';
+    var notaFormatos = 'DATE acepta "dd/mm/aaaa" o una fecha de Excel; HORA acepta "6:06:08 p. m." (con o sin ' +
+      'espacio antes de "m."), "18:06:08" (24 horas) o una hora de Excel -- si no se puede leer, la fila se ' +
+      'guarda igual, solo sin HORA. TIME_MIN es el minutaje de la llamada, se guarda para un reporte futuro.';
+    plan.push({
+      tipo: 'tipificacion', canalTipificacion: 'LLAMADAS', hoja: CARGAS_HOJA_TIPIFICACION_LLAMADAS, titulo: 'Tipificacion de Llamadas',
+      descripcion: 'Una fila por llamada tipificada, tal cual el export de Wolkvox.',
+      filaUnica: false, columnas: tipificacionCols,
+      notasExtra: [
+        'De donde sale: export de tipificacion de llamadas de Wolkvox (una fila por llamada).',
+        notaVolumen,
+        notaFormatos,
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de Llamadas entre la primera y la ultima DATE ' +
+          'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez. Nunca toca WhatsApp.',
+      ],
+    });
+    plan.push({
+      tipo: 'tipificacion', canalTipificacion: 'WHATSAPP', hoja: CARGAS_HOJA_TIPIFICACION_WHATSAPP, titulo: 'Tipificacion de WhatsApp',
+      descripcion: 'Una fila por conversacion de WhatsApp tipificada, tal cual el export de Wolkvox.',
+      filaUnica: false, columnas: tipificacionCols,
+      notasExtra: [
+        'De donde sale: export de tipificacion de WhatsApp de Wolkvox (una fila por conversacion).',
+        'SKILL_NAME (la cola): Wolkvox exporta la cola de WhatsApp como un CODIGO, no el nombre real -- ' +
+          'antes de pegar los datos en esta hoja, cruza ese codigo contra la lista real de colas (BUSCARV/' +
+          'VLOOKUP) y escribe el NOMBRE de la cola en esta columna, nunca el codigo tal cual.',
+        notaVolumen,
+        notaFormatos,
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de WhatsApp entre la primera y la ultima DATE ' +
+          'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez. Nunca toca Llamadas.',
       ],
     });
   }
@@ -359,7 +412,7 @@ function cargasHojaVacia(aoa, filaUnica) {
 //  - hoja con datos que no pasan su propio parser -> se rechaza SOLO esa
 //    hoja, con el mensaje exacto que ya da ese parser.
 function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
-  var base = { tipo: hojaPlan.tipo, hoja: hojaPlan.hoja, titulo: hojaPlan.titulo };
+  var base = { tipo: hojaPlan.tipo, hoja: hojaPlan.hoja, titulo: hojaPlan.titulo, canalTipificacion: hojaPlan.canalTipificacion };
   if (!ws) {
     var encontradas = (nombresHojasArchivo || []).join(', ') || '(el archivo no tiene ninguna hoja)';
     return Object.assign({}, base, {
@@ -398,6 +451,8 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_RESUMEN_ASESOR: CARGAS_HOJA_RESUMEN_ASESOR,
     CARGAS_HOJA_INSTRUCCIONES: CARGAS_HOJA_INSTRUCCIONES,
     CARGAS_HOJA_AGENDAS: CARGAS_HOJA_AGENDAS,
+    CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
+    CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,

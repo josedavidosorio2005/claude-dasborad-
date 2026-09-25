@@ -1,0 +1,25 @@
+{
+  "primeraCargaPreview": "Hoja\tTipo\tEstado\nResumen mensual (KPIs y tendencias)\tGestion de base\t⚠ No se encontro la hoja \"resumen\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nLlamadas y WhatsApp de salida (por dia)\tGestion de base\t⚠ No se encontro la hoja \"salida\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nTipificacion (Llamada 3P y General)\tGestion de base\t⚠ No se encontro la hoja \"tipificacion\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nGestion STA — por servicio, estado y mes actual\tGestion de base\t⚠ No se encontro la hoja \"sta_categorias\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nCalidad — Monitoreos\tCalidad\t⚠ No se encontro la hoja \"Monitoreos\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nTrafico de Llamadas (Wolkvox)\tTrafico de Llamadas\t⚠ No se encontro la hoja \"LLAMADAS\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nTrafico de WhatsApp (Wolkvox)\tTrafico de Llamadas\t⚠ No se encontro la hoja \"WHATSAPP\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nAgendas (citas asignadas)\tAgendas\t⚠ No se encontro la hoja \"AGENDAS\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP.\nTipificacion de Llamadas\tTipificacion de Llamadas\tOK — 400 fila(s)\nTipificacion de WhatsApp\tTipificacion de WhatsApp\tOK — 150 fila(s)",
+  "primeraCargaDialogos": [
+    "Esta carga va a REEMPLAZAR 400 registro(s) de tipificacion de Llamadas ya cargados, del 01/08 al 28/08.\n\n¿Continuar y sobrescribir?",
+    "Esta carga va a REEMPLAZAR 150 registro(s) de tipificacion de WhatsApp ya cargados, del 01/08 al 28/08.\n\n¿Continuar y sobrescribir?"
+  ],
+  "tipificacionVisible": true,
+  "tabsTexto": "Tipificacion\nAgendamiento\nCalidad\nTrafico de Llamadas\nTrafico de WhatsApp",
+  "panelTextoInicial": "Tipificacion\nMES\nAgo-26\nDESDE\nHASTA\nAplicar filtros\nTipificacion de Llamadas\nAGENTE\nTodos\nASESOR DEMO DOS\nASESOR DEMO TRES\nASESOR DEMO UNO\nSKILL\nTodos\nCALL INBOUND ORLANT 3P\nCALL INBOUND ORLANT GENERAL\nLLAMADAS DE SALIDA\nAplicar\nTipificacion de WhatsApp\nAGENTE\nTodos\nASESOR DEMO DOS\nASESOR DEMO TRES\nASESOR DEMO UNO\nCOLA\nTodos\nWHATSAPP ORLANT 3P\nWHATSAPP ORLANT GENERAL\nAplicar",
+  "tieneLlamadas": true,
+  "tieneWhatsapp": true,
+  "tieneOtras": false,
+  "mesSeleccionadoPorDefecto": "2026-08",
+  "agentesDisponiblesLlamadas": [
+    "ASESOR DEMO DOS",
+    "ASESOR DEMO TRES",
+    "ASESOR DEMO UNO"
+  ],
+  "panelTrasFiltroAgente": "Tipificacion\nMES\nAgo-26\nDESDE\nHASTA\nAplicar filtros\nTipificacion de Llamadas\nAGENTE\nTodos\nASESOR DEMO DOS\nASESOR DEMO TRES\nASESOR DEMO UNO\nSKILL\nTodos\nCALL INBOUND ORLANT 3P\nCALL INBOUND ORLANT GENERAL\nLLAMADAS DE SALIDA\nAplicar\nTipificacion de WhatsApp\nAGENTE\nTodos\nASESOR DEMO DOS\nASESOR DEMO TRES\nASESOR DEMO UNO\nCOLA\nTodos\nWHATSAPP ORLANT 3P\nWHATSAPP ORLANT GENERAL\nAplicar",
+  "segundaCargaDialogos": [
+    "Esta carga va a REEMPLAZAR 400 registro(s) de tipificacion de Llamadas ya cargados, del 01/08 al 28/08.\n\n¿Continuar y sobrescribir?",
+    "Esta carga va a REEMPLAZAR 150 registro(s) de tipificacion de WhatsApp ya cargados, del 01/08 al 28/08.\n\n¿Continuar y sobrescribir?"
+  ],
+  "consoleErrors": []
+}
