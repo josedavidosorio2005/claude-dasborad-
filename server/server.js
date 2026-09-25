@@ -165,6 +165,7 @@ function createApp() {
   api.use(require('./routes/umbrales'));
   api.use(require('./routes/trafico'));
   api.use(require('./routes/trafico-whatsapp'));
+  api.use(require('./routes/agendas'));
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/inventario'));
   api.use(require('./routes/gerencia'));

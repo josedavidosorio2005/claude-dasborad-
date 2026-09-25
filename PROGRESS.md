@@ -5935,3 +5935,78 @@ destapó ninguna pestaña en producción, no se tocaron los datos de prueba
 de Calidad de ORLANT ni el keystore de `mobile-app/`. Tras el deploy,
 `GET /api/health` → `200 {"ok":true}`.
 
+## Fase 78 — Agendas de ORLANT: citas asignadas por especialidad (2026-09-25, automática)
+
+Pedido de Jairo (ver la cantidad de citas agendadas por servicio),
+archivo real y criterio de visualización de Edwin. Nota: el pedido decía
+"reutiliza lo que hiciste en la Fase 77 para Tipificación", pero esa fase
+no existe en este repo (ni en `PROGRESS.md` ni en el historial de git) —
+se usó en su lugar el patrón ya probado de Trafico de WhatsApp (Fase 50/75:
+carga por período con confirmación, `impacto` antes de guardar) como
+referencia arquitectónica. El archivo `BASE_PARA_TORTAS_DE_TIPIFICACION.xlsx`
+que llegó junto al de Agendas no se tocó — no hacía falta para lo que pedía
+esta fase.
+
+- **Tabla nueva `agendas`** (server/db.js): una fila por cita (~7.500/mes),
+  con índices `(campana, fechaSolicitud)` y `(campana, especialidad)`. El
+  dashboard nunca descarga filas crudas — dos endpoints de solo lectura
+  (`GET /calidad/agendas/especialidad`, `GET /calidad/agendas/mensual`)
+  devuelven agregados ya calculados en SQL, con 8 filtros combinables
+  (mes, rango de días, asesor, sede, especialidad, examen, profesional,
+  tipo de línea, entidad) — "mensual" ignora a propósito el filtro de mes
+  (pedido explícito de Edwin: esa gráfica siempre muestra todos los meses
+  con datos).
+- **Privacidad de NOMBRE_ENTIDAD (obligatoria)**: la anonimización ocurre
+  en el NAVEGADOR (`agendas-logic.js`, `agendasAplicarPrivacidadEntidad`),
+  antes de armar el payload — el valor real de un paciente particular
+  nunca sale del navegador, nunca transita por la red ni por un log del
+  servidor. Entidad con menos de 5 registros en el archivo que se sube →
+  `"PARTICULAR / OTRA"`; vacía → `"SIN ENTIDAD"`. Verificado con el
+  archivo real de Edwin (abril 2025, solo en local, nunca commiteado):
+  576 filas agrupadas, 5 sin entidad, 19 entidades reales — exacto igual
+  a lo que Edwin ya había contado a mano.
+- **Carga**: nueva hoja `AGENDAS` (8 columnas exactas) en el formato
+  consolidado de ORLANT (`cargas-logic.js`/`cargas.js`, mismo gate que
+  Trafico unificado — solo ORLANT, los demás clientes no cambian).
+  Reemplaza por período (primera..última `FECHA_SOLICITUD` del archivo
+  que se sube) con confirmación explícita ("se reemplazarán N registros
+  del dd/mm al dd/mm") — subir el mismo archivo 2 veces no duplica.
+  Payload como arrays (no objetos con las 8 claves repetidas por fila):
+  a ~7.500 filas el formato de objeto se acerca al límite de
+  `express.json` (2mb); en arrays pesa ~35% menos.
+- **Dónde se ve**: dentro de la pestaña ya existente "Agendamiento" de
+  ORLANT (hoy oculta), como su PRIMERA sub-pestaña ("Citas por
+  Especialidad") — no una pestaña nueva. Se evaluó crear una pestaña
+  aparte, pero el sistema de sub-pestañas (Fase 40) ya agrupa índices del
+  mismo array de paneles sin tocar los que ya existían, así que agregar
+  un panel más ahí no "enreda" nada. La pestaña se destapa SOLA en
+  memoria (nunca se escribe en el servidor) cuando ya hay agendas
+  cargadas — las 5 sub-pestañas viejas (basadas en "resumen", que sigue
+  sin llenarse) quedan intactas, sin que esta fase les cambie nada.
+  Migración `dashboards_config_orlant_agendas_panel_v1` (server/db.js)
+  para que ORLANT, ya sembrado en producción, reciba el panel nuevo.
+- **Verificado con el archivo real de Edwin** (abril 2025, ~7.426 filas,
+  solo en local, nunca commiteado ni mostrado): los 16 totales por
+  especialidad, el total general (7.426), tipo de línea (GENERAL 4.643 /
+  3P 2.783), sedes (5), asesores (17), exámenes (66), profesionales (77)
+  y entidades (19 + PARTICULAR/OTRA + SIN ENTIDAD) coinciden EXACTOS con
+  la tabla dinámica de Edwin. Cargar el mismo archivo 2 veces se quedó en
+  7.426. Confirmado con una consulta SQL directa (solo conteos, nunca
+  valores) que ninguna entidad con menos de 5 filas escapó la regla de
+  privacidad. Archivo de carga para producción dejado en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\ORLANT_agendas_abril_2025_PARA_CARGAR.xlsx`
+  (fuera del repo).
+
+**Verificación**: `npm test` 444/444 (24 pruebas nuevas: parseo/privacidad/
+fechas en `agendas-logic.test.js`, carga/filtros/permisos en
+`agendas-carga.test.js`, la migración en
+`orlant-agendas-panel-migracion.test.js`), `npm audit` 0 vulnerabilidades,
+antes y después. Playwright directo desde Node, en local, con datos
+INVENTADOS (nunca el archivo real): las 2 gráficas + los 9 filtros, en
+claro/oscuro y escritorio/móvil, la confirmación al recargar, cero
+errores de consola — capturas en `docs/capturas-demo/fase78-agendas/`.
+Tráfico, Calidad y los números de ORLANT siguen iguales. No se escribió
+en producción — la carga del archivo real la hace el usuario desde la
+plataforma. No se tocaron los datos de prueba de Calidad de ORLANT ni el
+keystore de `mobile-app/`.
+

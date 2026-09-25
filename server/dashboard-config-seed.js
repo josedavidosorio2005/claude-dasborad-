@@ -121,6 +121,15 @@ const ORLANT = {
           ] },
       ]},
       { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
+        // Fase 78 (Jairo/Edwin): "Citas por Especialidad" -- agendas reales
+        // de Edwin (tabla `agendas`, server/agendas.js), independientes de
+        // "resumen" (de donde salen las demas sub-pestanas de este tab, que
+        // siguen sin terminar de llenarse). SIEMPRE primer panel/subtab:
+        // dashboard-generic.js destapa este tab en memoria SOLO cuando hay
+        // agendas cargadas (_gdBootstrap), sin tocar el `oculta` guardado
+        // aqui -- asi el admin siempre aterriza en esta sub-pestana cuando
+        // el tab recien se vuelve visible, nunca en una de resumen vacia.
+        { tipo: 'agendas_panel', titulo: 'Citas por Especialidad', campana: 'ORLANT' },
         { tipo: 'combo', titulo: 'Ordenamiento medico', barras: [
           { label: 'Gestionados', fuente: serie('ordmed_gestionados') },
           { label: 'Agendas', fuente: serie('ordmed_agendas') }],
@@ -149,15 +158,21 @@ const ORLANT = {
         { tipo: 'line', titulo: 'Total agendas — variacion % mes a mes', unidad: '%', series: [
           { label: '% Variacion', fuente: serie('total_agendas', { transform: 'incremento' }) }] },
       ], subtabs: [
-        // El nota_kpi (indice 1) se agrupa con la grafica de Ordenamiento
-        // medico (indice 0): es el mismo dato (efectividad anual de la misma
+        // Fase 78: nuevo panel de agendas insertado en el indice 0 -- todos
+        // los indices de las sub-pestanas de abajo (que ya existian) se
+        // corrieron +1. citasporespecialidad va PRIMERO a proposito (ver
+        // comentario del panel, arriba): es la sub-pestana con la que el
+        // tab se vuelve visible.
+        { key: 'citasporespecialidad', label: 'Citas por Especialidad', indices: [0] },
+        // El nota_kpi (indice 2) se agrupa con la grafica de Ordenamiento
+        // medico (indice 1): es el mismo dato (efectividad anual de la misma
         // estrategia), no una grafica aparte -- separarlo dejaria una
         // sub-pestana sin ninguna grafica, que el pedido explicito pidio evitar.
-        { key: 'ordmed', label: 'Ordenamiento Medico', indices: [0, 1] },
-        { key: 'recuperacion', label: 'Recuperacion de Cancelados', indices: [2] },
-        { key: 'totalagendas', label: 'Total Agendas', indices: [3] },
-        { key: 'agendasporlinea', label: 'Agendas por Linea', indices: [4] },
-        { key: 'variacion', label: 'Variacion % Agendas', indices: [5] },
+        { key: 'ordmed', label: 'Ordenamiento Medico', indices: [1, 2] },
+        { key: 'recuperacion', label: 'Recuperacion de Cancelados', indices: [3] },
+        { key: 'totalagendas', label: 'Total Agendas', indices: [4] },
+        { key: 'agendasporlinea', label: 'Agendas por Linea', indices: [5] },
+        { key: 'variacion', label: 'Variacion % Agendas', indices: [6] },
       ]},
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
         lineP('% Inasistencia Audifonos', 'inasist_audifonos', { unidad: '%' }),

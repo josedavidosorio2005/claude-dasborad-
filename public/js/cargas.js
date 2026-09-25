@@ -133,6 +133,13 @@ function _cargasTraficoWhatsappColumnasUnificado(){
     { label:'AHT', opcional:true },
   ];
 }
+// Fase 78 (ORLANT, pedido de Jairo/Edwin) — columnas EXACTAS de la hoja
+// AGENDAS del formato consolidado: las 8 que trae el export de agendamiento
+// de Edwin, tal cual (NOMBRE_ENTIDAD es la unica opcional -- una cita sin
+// entidad registrada se guarda como "SIN ENTIDAD", ver agendas-logic.js).
+function _cargasAgendasColumnasUnificado(){
+  return AGENDAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -179,7 +186,11 @@ async function onCargaClienteChange(){
     var esUnificado = CARGAS_CLIENTES_TRAFICO_UNIFICADO.indexOf(cliente) !== -1;
     var traficoCols = esUnificado ? _cargasTraficoLlamadasColumnasUnificado() : _cargasTraficoColumnas();
     var traficoWpp = esUnificado ? _cargasTraficoWhatsappColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp);
+    // Fase 78: agendas usa el MISMO gate que Trafico unificado (hoy solo
+    // ORLANT) -- no un flag propio, para no multiplicar listas de clientes
+    // que hay que mantener en sincronia.
+    var agendasCols = esUnificado ? _cargasAgendasColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -337,6 +348,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = function(a){ return spec.filaUnica ? cargasParseFilaUnica(spec, a) : cargasParseMultiFila(spec, a); };
     } else if(h.tipo === 'calidad'){
       parseFn = function(a){ return cmParseRows(a, calidad.items); };
+    } else if(h.tipo === 'agendas'){
+      parseFn = agendasParseFilas;
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
@@ -360,7 +373,16 @@ async function procesarArchivoConsolidado(input){
 function _cargasEstadoLabel(r){
   if(r.error) return '<span style="color:var(--c-danger-dark)">&#9888; '+esc(r.error)+'</span>';
   if(r.vacia) return '<span style="color:var(--c-text-muted)">Vacia — no aplica esta vez</span>';
-  return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+'</span>';
+  var extra = '';
+  // Fase 78: transparencia de privacidad -- la vista previa dice CUANTAS
+  // filas se agruparon por el umbral de entidad, nunca cuales (el nombre
+  // original nunca llega hasta aqui: agendasAplicarPrivacidadEntidad ya lo
+  // reemplazo dentro de agendasParseFilas, antes de que este codigo lo vea).
+  if(r.tipo==='agendas' && (r.entidadesAgrupadas || r.entidadesSinDato)){
+    extra = ' — '+(r.entidadesAgrupadas||0)+' fila(s) con entidad agrupada por privacidad (PARTICULAR / OTRA), '+
+      (r.entidadesSinDato||0)+' sin entidad (SIN ENTIDAD)';
+  }
+  return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>';
 }
 
 function _renderPreviewCarga(){
@@ -368,7 +390,7 @@ function _renderPreviewCarga(){
   var html = '<tr><th>Hoja</th><th>Tipo</th><th>Estado</th></tr>';
   html += _cargasResultados.map(function(r){
     var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'));
+      (r.tipo==='agendas' ? 'Agendas' : (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -449,6 +471,38 @@ async function _cargasGuardarTraficoWhatsapp(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 78 (ORLANT): mismo patron que _cargasGuardarTrafico (impacto ->
+// confirmar -> guardar), pero el periodo sale de los DATOS mismos
+// (primera..ultima FECHA_SOLICITUD del archivo), no de un selector de
+// mes/skill -- ver agendasRangoFechas (agendas-logic.js) y
+// server/agendas.js (que recalcula el mismo rango del lado del servidor,
+// nunca confia en un rango que mande el navegador).
+function _agendasFmtFechaCorta(fechaHora){
+  // "2025-04-01 08:00:00" -> "01/04" (solo lo que el mensaje de
+  // confirmacion necesita mostrar, igual al ejemplo del pedido de Edwin).
+  var d = String(fechaHora||'').slice(0,10).split('-');
+  return d.length===3 ? (d[2]+'/'+d[1]) : String(fechaHora||'');
+}
+async function _cargasGuardarAgendas(cliente, r){
+  // Payload compacto (arrays, no objetos) -- ver la nota de tamaño en
+  // validation.js (agendasCargaBody) y agendas-logic.js (agendasFilaComoArray).
+  var filasArray = r.filas.map(agendasFilaComoArray);
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  try{
+    var impacto = await apiRequest('POST','/calidad/agendas/carga/impacto', parsed);
+    if(impacto.filasExistentes > 0){
+      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de agendas ya cargados, del '+
+        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron las agendas anteriores sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/agendas/carga', parsed);
+    if(typeof _agendasCache !== 'undefined') _agendasCache = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -470,6 +524,7 @@ async function guardarCarga(){
       var res;
       if(r.tipo==='seccion') res = await _cargasGuardarSeccion(cliente, periodo, r);
       else if(r.tipo==='calidad') res = await _cargasGuardarCalidad(cliente, r);
+      else if(r.tipo==='agendas') res = await _cargasGuardarAgendas(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));
