@@ -149,6 +149,11 @@ var CARGAS_HOJA_CALIDAD = 'Monitoreos';
 var CARGAS_HOJA_DICCIONARIO = 'Diccionario';
 var CARGAS_HOJA_RESUMEN_ASESOR = 'Resumen por Asesor';
 var CARGAS_HOJA_INSTRUCCIONES = 'INSTRUCCIONES';
+// Fase 78 (ORLANT, pedido de Jairo/Edwin): agendas (citas asignadas) en su
+// propia hoja del archivo consolidado -- mismo criterio que
+// CARGAS_HOJA_TRAFICO_LLAMADAS/_WHATSAPP (solo ORLANT, ver
+// cargasPlanConsolidado). Los demas clientes no cambian.
+var CARGAS_HOJA_AGENDAS = 'AGENDAS';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -169,7 +174,7 @@ var CARGAS_HOJA_INSTRUCCIONES = 'INSTRUCCIONES';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -222,7 +227,33 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
           'SERVICE_LEVEL_10/20/30SEC aceptan "93.55" o "93.55 %" (con o sin el simbolo).',
       ],
     });
-  } else {
+  }
+  // Fase 78 (ORLANT, pedido de Jairo/Edwin): agendas (citas asignadas por
+  // especialidad) -- hoja propia, solo cuando agendasCols viene (hoy solo
+  // ORLANT, mismo gate que traficoWppCols). Sin este parametro, el
+  // comportamiento es identico al de siempre (ninguna hoja AGENDAS).
+  if (agendasCols) {
+    plan.push({
+      tipo: 'agendas', hoja: CARGAS_HOJA_AGENDAS, titulo: 'Agendas (citas asignadas)',
+      descripcion: 'Una fila por cita agendada, tal cual la exporta el sistema de agendamiento.',
+      filaUnica: false, columnas: agendasCols,
+      notasExtra: [
+        'De donde sale: export del sistema de agendamiento (una fila por cita).',
+        'PRIVACIDAD -- NOMBRE_ENTIDAD: si el paciente es PARTICULAR (no tiene EPS/prepagada/aseguradora), ' +
+          'escribe "PARTICULAR" en esa columna -- nunca el nombre del paciente. El sistema tambien protege ' +
+          'cualquier entidad que aparezca muy pocas veces en el archivo (probablemente el nombre de un ' +
+          'paciente escrito por error en esa columna): la agrupa automaticamente como "PARTICULAR / OTRA" ' +
+          'antes de guardarla, sin mostrar ni guardar el valor original en ningun caso.',
+        'FECHA_SOLICITUD: fecha y hora de Excel (o texto "dd/mm/aaaa hh:mm:ss"), en hora local de Colombia -- ' +
+          'no se convierte a UTC.',
+        'TIPO DE LINEA: exactamente "3P" o "GENERAL".',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima FECHA_SOLICITUD ' +
+          'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  if (!traficoWppCols) {
     plan.push({
       tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
       descripcion: 'Una fila por Skill + Dia, tal cual el export de Wolkvox (Trafico de Llamadas). ' +
@@ -366,6 +397,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_DICCIONARIO: CARGAS_HOJA_DICCIONARIO,
     CARGAS_HOJA_RESUMEN_ASESOR: CARGAS_HOJA_RESUMEN_ASESOR,
     CARGAS_HOJA_INSTRUCCIONES: CARGAS_HOJA_INSTRUCCIONES,
+    CARGAS_HOJA_AGENDAS: CARGAS_HOJA_AGENDAS,
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,

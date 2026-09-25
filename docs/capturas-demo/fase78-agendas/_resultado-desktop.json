@@ -1,0 +1,68 @@
+{
+  "previmeraCargaPreview": "Hoja\tTipo\tEstado\nResumen mensual (KPIs y tendencias)\tGestion de base\t⚠ No se encontro la hoja \"resumen\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: AGENDAS.\nLlamadas y WhatsApp de salida (por dia)\tGestion de base\t⚠ No se encontro la hoja \"salida\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: AGENDAS.\nTipificacion (Llamada 3P y General)\tGestion de base\t⚠ No se encontro la hoja \"tipificacion\" en tu archivo. Si esta seccion no aplica para esta campana, no la borres ni la renombres: dejala vacia. Hojas encontradas en tu archivo: AGENDAS.\nGestion STA — por servicio, estado y mes actual\tGestion de base\t⚠ No se enco",
+  "primeraCargaDialogo": null,
+  "agendamientoVisible": true,
+  "tabsTexto": "Agendamiento\nCalidad\nTrafico de Llamadas\nTrafico de WhatsApp",
+  "citasSubtabPrimera": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nCitas por Especialidad\nMES\nTodos\nEne-25\nFeb-25\nDESDE\nHASTA\nASESOR\nTodos\nASESOR",
+  "porEspecialidad": [
+    {
+      "especialidad": "AUDIOLOGIA",
+      "cantidad": 13
+    },
+    {
+      "especialidad": "RINOLOGIA",
+      "cantidad": 9
+    },
+    {
+      "especialidad": "OTORRINO",
+      "cantidad": 8
+    },
+    {
+      "especialidad": "FONIATRIA",
+      "cantidad": 7
+    }
+  ],
+  "porMes": [
+    {
+      "mes": "2025-01",
+      "cantidad": 20
+    },
+    {
+      "mes": "2025-02",
+      "cantidad": 17
+    }
+  ],
+  "porEspecialidadFiltradoEnero": [
+    {
+      "especialidad": "AUDIOLOGIA",
+      "cantidad": 8
+    },
+    {
+      "especialidad": "OTORRINO",
+      "cantidad": 5
+    },
+    {
+      "especialidad": "FONIATRIA",
+      "cantidad": 4
+    },
+    {
+      "especialidad": "RINOLOGIA",
+      "cantidad": 3
+    }
+  ],
+  "porMesFiltradoIgnoraMes": [
+    {
+      "mes": "2025-01",
+      "cantidad": 20
+    },
+    {
+      "mes": "2025-02",
+      "cantidad": 17
+    }
+  ],
+  "traficoLlamadasTexto": "Trafico de Llamadas (Wolkvox)\nSkill\nTodas las líneas\nCALL INBOUND ORLANT 3P\nCALL INBOUND ORLANT GENERAL\nComparar varias líneas especificas\nDesde\nHasta\nGranularidad\nDia\nMes\nAño\n \n Ver skills por separado\nAplicar filtros\nExcel\nPDF\nResumen\nAbandono\nAHT\nASA y ATA\nNivel de Servicio a 20s\n8.061\nTOTAL LLAM",
+  "calidadTabAbreSinError": true,
+  "segundaCargaDialogo": "Esta carga va a REEMPLAZAR 37 registro(s) de agendas ya cargados, del 05/01 al 28/02.\n\n¿Continuar y sobrescribir?",
+  "totalTrasSegundaCarga": 37,
+  "consoleErrors": []
+}

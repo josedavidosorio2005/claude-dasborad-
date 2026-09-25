@@ -379,6 +379,55 @@ const calidadQuery = z.object({
   mes: mesSchema.optional(),
 });
 
+// ── Agendas de ORLANT (Fase 78) ──────────────────────────────
+// Filas como ARRAY (no objeto con las 8 claves repetidas) -- a ~7.500
+// filas/mes, el formato de objeto se acerca al limite de express.json
+// (2mb, ver config.js); en arrays el mismo archivo pesa ~35% menos.
+// Orden FIJO, debe coincidir con AGENDAS_ORDEN_ARRAY (agendas-logic.js) y
+// con el orden en que server/agendas.js los vuelve a mapear por nombre:
+//   [asesor, sede, examen, especialidad, profesional, fechaSolicitud, tipoLinea, entidad]
+const agendasTextoObligatorio = z.string().trim().min(1).max(200);
+const agendasFechaHoraSchema = z
+  .string(reqStr('FECHA_SOLICITUD es obligatoria'))
+  .regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/, 'FECHA_SOLICITUD debe tener formato AAAA-MM-DD HH:MM:SS');
+const agendasFilaArraySchema = z.tuple([
+  agendasTextoObligatorio, // asesor
+  agendasTextoObligatorio, // sede
+  agendasTextoObligatorio, // examen
+  agendasTextoObligatorio, // especialidad
+  agendasTextoObligatorio, // profesional
+  agendasFechaHoraSchema, // fechaSolicitud
+  z.enum(['3P', 'GENERAL'], { error: 'TIPO DE LINEA debe ser 3P o GENERAL' }), // tipoLinea
+  agendasTextoObligatorio, // entidad (ya anonimizada en el navegador -- nunca vacia: "SIN ENTIDAD" si no habia dato)
+]);
+
+const agendasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(agendasFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(20000, 'Demasiadas filas en un solo archivo'),
+});
+
+// Filtros compartidos por los 3 endpoints de lectura (opciones/especialidad/
+// mensual) -- todos opcionales salvo `campana`; un filtro vacio/ausente
+// significa "Todos" (sin restringir por esa columna), igual que el resto
+// de desplegables "Todos + seleccion" de la plataforma.
+const agendasFiltrosQuery = z.object({
+  campana: campanaSchema,
+  mes: mesSchema.optional(),
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  asesor: z.string().trim().max(200).optional(),
+  sede: z.string().trim().max(120).optional(),
+  especialidad: z.string().trim().max(120).optional(),
+  examen: z.string().trim().max(200).optional(),
+  profesional: z.string().trim().max(200).optional(),
+  tipoLinea: z.enum(['3P', 'GENERAL']).optional(),
+  entidad: z.string().trim().max(200).optional(),
+});
+
 // ── Dashboards de cliente: cargas de Excel (Fase 2) ─────────
 const nombreClienteSeccionSchema = z
   .string()
@@ -625,6 +674,8 @@ module.exports = {
     traficoCargaBody,
     traficoSkillMapeoBody,
     traficoWppCargaBody,
+    agendasCargaBody,
+    agendasFiltrosQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

@@ -230,6 +230,40 @@ CREATE TABLE IF NOT EXISTS trafico_whatsapp (
 );
 CREATE INDEX IF NOT EXISTS idx_trafico_whatsapp_campana ON trafico_whatsapp(campana, fechaInicio);
 
+-- Agendas de ORLANT (Fase 78, pedido de Jairo/Edwin): citas asignadas por
+-- especialidad. Tabla PROPIA, no dashboard_cargas -- el grano es una fila
+-- POR CITA (~7.500 filas/mes), asi que el dashboard nunca descarga filas
+-- crudas: solo agregados ya calculados por el servidor (ver
+-- routes/agendas.js). Volver a subir un archivo reemplaza por RANGO de
+-- fechaSolicitud (primera..ultima del archivo que se sube) -- una cita no
+-- trae un identificador propio, asi que no hay upsert posible fila a fila
+-- (mismo criterio "reemplaza por periodo" de Trafico, aplicado a un rango
+-- de fecha+hora en vez de un mes/skill).
+--
+-- PRIVACIDAD (obligatorio): 'entidad' NUNCA es el valor crudo de
+-- NOMBRE_ENTIDAD del archivo -- el navegador ya la anonimiza ANTES de
+-- mandar la carga (agendas-logic.js, agendasAplicarPrivacidadEntidad): si
+-- aparece menos de 5 veces en el archivo que se sube, se guarda como
+-- 'PARTICULAR / OTRA'; si viene vacia, 'SIN ENTIDAD'. El servidor nunca ve
+-- ni guarda el nombre real de un paciente particular.
+CREATE TABLE IF NOT EXISTS agendas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  asesor TEXT NOT NULL,              -- NOMBRE DE AGENTE
+  sede TEXT NOT NULL,
+  examen TEXT NOT NULL,              -- NOMBRE_EXAMEN
+  especialidad TEXT NOT NULL,
+  profesional TEXT NOT NULL,
+  fechaSolicitud TEXT NOT NULL,      -- 'AAAA-MM-DD HH:MM:SS', hora local de Colombia (nunca convertida a UTC)
+  tipoLinea TEXT NOT NULL,           -- 3P | GENERAL
+  entidad TEXT NOT NULL,             -- ya anonimizada, ver nota de arriba
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agendas_campana_fecha ON agendas(campana, fechaSolicitud);
+CREATE INDEX IF NOT EXISTS idx_agendas_campana_especialidad ON agendas(campana, especialidad);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
@@ -896,6 +930,71 @@ runOnceMigration('dashboards_config_orlant_tipificacion_unico_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_tipificacion_unico_v1 aplicada.');
+  }
+});
+
+// ORLANT: Fase 78 (Jairo/Edwin) — agrega el panel "Citas por Especialidad"
+// (agendas reales de Edwin, tabla `agendas`) como PRIMER panel/subtab del
+// tab "agendamiento" -- dashboards_config ya existe en produccion, asi que
+// el panel nuevo en dashboard-config-seed.js no llega solo a la fila real
+// (mismo motivo de las migraciones de ORLANT de mas abajo). Puramente
+// aditivo: prepende un panel al array `panels` de siempre y corre +1 los
+// `indices` de las sub-pestanas que ya existian -- no reordena ni borra
+// ningun panel viejo. El tab sigue con `oculta:true` en la config guardada
+// (dashboard-generic.js lo destapa en memoria segun si hay agendas
+// cargadas, nunca aqui) -- esta migracion NO cambia esa regla.
+//
+// Va ANTES de dashboards_config_orlant_subpestanas_v1 (mas abajo) a
+// proposito: esa migracion compara la cantidad de paneles del tab contra
+// dashboard-config-seed.js para decidir si le agrega `subtabs` -- si esta
+// migracion corriera despues, un ORLANT sembrado ANTES de la Fase 40 (sin
+// subtabs todavia, con la cantidad VIEJA de paneles) quedaria con el
+// conteo ya actualizado pero sin que la de subpestanas alcanzara a
+// agrupar el panel nuevo. Corriendo primero, cuando la de subpestanas mire
+// el tab ya tiene la forma final.
+runOnceMigration('dashboards_config_orlant_agendas_panel_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el panel nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tab = (layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!tab) return;
+  if (tab.panels && tab.panels[0] && tab.panels[0].tipo === 'agendas_panel') return; // ya tiene la forma nueva
+
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  const targetTab = target && (target.layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!targetTab || !targetTab.panels || targetTab.panels[0].tipo !== 'agendas_panel') return;
+
+  // Solo se aplica si la cantidad de paneles VIEJOS (todo menos el panel
+  // nuevo que se va a agregar) coincide con lo que habia antes de esta
+  // fase -- si no coincide, el tab fue editado a mano a algo distinto:
+  // se deja intacta y se loguea, igual que las migraciones anteriores.
+  const panelesActuales = (tab.panels || []).length;
+  const panelesEsperadosViejos = targetTab.panels.length - 1;
+  if (panelesActuales !== panelesEsperadosViejos) {
+    if (!config.isTest) {
+      console.log(`[db] Migracion dashboards_config_orlant_agendas_panel_v1: tab "agendamiento" tiene ${panelesActuales} panel(es), se esperaban ${panelesEsperadosViejos} — se deja intacta, revisar a mano.`);
+    }
+    return;
+  }
+
+  tab.panels = [JSON.parse(JSON.stringify(targetTab.panels[0]))].concat(tab.panels);
+  if (tab.subtabs) {
+    tab.subtabs = tab.subtabs.map((s) => Object.assign({}, s, { indices: s.indices.map((idx) => idx + 1) }));
+    tab.subtabs = [JSON.parse(JSON.stringify(targetTab.subtabs[0]))].concat(tab.subtabs);
+  }
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_agendas_panel_v1 aplicada.');
   }
 });
 

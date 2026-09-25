@@ -588,6 +588,22 @@ async function _gdBootstrap(){
   for(var campT in campanasTrafico){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} }
   await _gdCargarUmbrales();
 
+  // Fase 78 (ORLANT, "Citas por Especialidad"): la pestana "Agendamiento"
+  // sigue oculta por defecto en la config guardada (Fase 40b -- sus demas
+  // sub-pestanas, basadas en "resumen", siguen sin terminar de llenarse) --
+  // se destapa en memoria SOLO cuando ya hay agendas cargadas, sin escribir
+  // nunca ese cambio en el servidor. Si la consulta falla (sin datos, sin
+  // acceso, etc.) se queda oculta, igual que siempre.
+  if(_gd.cliente === 'ORLANT'){
+    var tabAgendamiento = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendamiento'; });
+    if(tabAgendamiento){
+      try{
+        var agendasOp = await apiRequest('GET', '/calidad/agendas/opciones?campana=ORLANT');
+        if(agendasOp && agendasOp.meses && agendasOp.meses.length) tabAgendamiento.oculta = false;
+      }catch(e){ /* se queda oculta */ }
+    }
+  }
+
   renderGenericHeader();
   renderGenericKpis();
   renderGenericTabs();
@@ -760,9 +776,10 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
+      // agendas_panel (Fase 78, ORLANT) sigue el mismo criterio.
       html += '<div id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
@@ -771,7 +788,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -806,6 +823,7 @@ function _gdRenderPanel(p, i){
 
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
   if(p.tipo === 'trafico_whatsapp_combo'){ _traficoWppRenderPanel(p, i); return; }
+  if(p.tipo === 'agendas_panel'){ _agendasRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1096,7 +1114,7 @@ function _gdDatosPanelesTab(){
       return;
     }
     if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
-    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo') return; // export propio (filtros/fecha no son los de _gd)
+    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel') return; // export propio (filtros/fecha no son los de _gd)
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });
