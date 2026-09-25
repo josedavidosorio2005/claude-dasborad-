@@ -46,6 +46,20 @@ function traficoNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
 }
 
+// Fase 75: la pantalla vieja "Metas Calidad -> Trafico/Wolkvox" (trafico.js,
+// procesarArchivoTrafico) solo leia la hoja "DATA" -- la plantilla unificada
+// (Fase 66, ORLANT) trae la hoja "LLAMADAS" en su lugar, con las MISMAS
+// columnas (traficoColIndexMap empareja por nombre, no por posicion), asi
+// que basta con preferirla si el archivo la trae. Los archivos viejos (hoja
+// "DATA", o cualquier otro nombre) siguen cayendo exactamente en el mismo
+// comportamiento de siempre.
+function traficoElegirHoja(sheetNames) {
+  var nombres = sheetNames || [];
+  if (nombres.indexOf('LLAMADAS') !== -1) return 'LLAMADAS';
+  if (nombres.indexOf('DATA') !== -1) return 'DATA';
+  return nombres[0];
+}
+
 // Point 10 del pedido de Edwin: nunca confiar en una fila TOTAL/resumen de
 // la base como si fuera una linea real — Volvox (o quien la genere) a veces
 // deja una fila de cierre con SKILL_NAME tipo "TOTAL", "TOTAL GENERAL",
@@ -422,6 +436,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TRAFICO_COLUMNAS_OBLIGATORIAS: TRAFICO_COLUMNAS_OBLIGATORIAS,
     traficoColIndexMap: traficoColIndexMap,
     traficoEsFilaTotal: traficoEsFilaTotal,
+    traficoElegirHoja: traficoElegirHoja,
     traficoFechaDesdeSerial: traficoFechaDesdeSerial,
     traficoParseFecha: traficoParseFecha,
     traficoSegundosDesdeFraccionDia: traficoSegundosDesdeFraccionDia,
