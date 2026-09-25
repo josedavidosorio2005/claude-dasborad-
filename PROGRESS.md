@@ -5773,3 +5773,43 @@ que corren siempre). Tras confirmar el éxito, se quitó el workflow del
 repo (PR #136) — mismo motivo que las Fases 67/68: era de un solo uso y
 abría acceso SSH temporal a producción.
 
+## Fase 72 — Auditoría de seguridad y fallos (2026-09-24)
+
+Entrada agregada retroactivamente en la Fase 75 (la propia Fase 74
+señaló que faltaba, para no romper la disciplina de una entrada por
+fase). Detalle completo en `docs/auditoria-seguridad-fase72.md`.
+
+Auditoría pasiva de todo el código + configuración de despliegue +
+producción (sin escribir nada en producción): JWT/bcrypt/CSP/HSTS/CORS/
+SQL parametrizado salieron limpios, cero vulnerabilidades de `npm
+audit`, ningún secreto real commiteado nunca. Se encontraron y
+arreglaron 4 hallazgos:
+
+- **H1 (alta)**: `clienteAccess()` (`routes/dashboards.js`) daba
+  lectura de **cualquier** cliente a quien tuviera el permiso global
+  `cargarDatos` (todo REPORTES lo tiene por diseño), saltándose el
+  permiso por cliente/campaña — PR #137.
+- **H2**: inyección de fórmulas en exportaciones `.xlsx` — PR #138.
+- **N1**: el login filtraba por tiempo si un usuario existía o no — PR
+  #139.
+- **N2**: límite de `express.json()` en 100kb, insuficiente para cargas
+  reales — subido a 2mb, PR #140.
+
+Limpieza operativa: se retiraron 13 workflows de un solo uso ya
+cumplidos (PR #141, acceso real a producción) y se agregaron 2
+workflows de solo lectura reutilizables para probar backups y ver logs
+reales de producción (PR #142) — quedaron bloqueados por 2 permisos de
+AWS faltantes (`s3:ListBucket`, `logs:FilterLogEvents`), documentado en
+la Fase 74 como pendiente D1/D2. El propio informe de logs escondía un
+`AccessDenied` como "0 eventos" en vez de mostrar el error — corregido
+en PR #143. Informe completo en PR #144.
+
+## Fase 73 — Limpieza de ramas (2026-09-24, sin PR de código)
+
+Entrada agregada retroactivamente en la Fase 75, mismo motivo que la de
+arriba. Housekeeping de git puro, sin cambios de código: se borró la
+rama `feature/apps-cierre-final-2026-09-11` (local y remota, ya
+mergeada en fases anteriores) y se dejó el tag
+`archivo/apps-cierre-final-2026-09-11` apuntando a su último commit,
+como referencia permanente de ese trabajo sin dejar la rama viva.
+
