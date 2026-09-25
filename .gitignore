@@ -38,3 +38,12 @@ desktop-app/
 *-signing.properties
 release-signing.properties
 
+# Excel sueltos en docs/capturas-demo/ (Fase 76): 2 archivos locales de la
+# Fase 67 (server/tests/fixtures/ es aparte, no lo toca esta regla)
+# resultaron traer datos REALES de produccion de ORLANT (llenado-solo-
+# trafico-local.xlsx: Llamadas 8.061/7.159/902 y WhatsApp 7.305/7.109/196,
+# exacto igual a produccion) -- no se commitean ni se borran, se dejan en
+# disco para quien los necesite. Cubre tambien cualquier otro .xlsx que se
+# deje ahi por error al tomar capturas de demo en el futuro.
+docs/capturas-demo/**/*.xlsx
+
