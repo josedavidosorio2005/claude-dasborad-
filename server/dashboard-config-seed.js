@@ -97,28 +97,19 @@ const ORLANT = {
         { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
         { key: 'whatsapp', label: 'WhatsApp de Salida', indices: [1] },
       ]},
-      // Tipificacion (graficas 8-9): 1 pie filtrable por linea (filtroCampo,
-      // dashboard-generic.js) en vez de 2 pies fijos — misma fuente/campos.
-      // filtroUnico:true -> UNA sola linea a la vez (selector, igual que
-      // Salida), no un multi-select de categorias: 3P y General comparten
-      // nombres de tipificacion (Agendamiento, Informacion general, …), asi
-      // que combinarlas sin filtroUnico duplicaba cada categoria en la
-      // leyenda (bug real encontrado en la verificacion con InCo,
-      // 2026-09-18) — el usuario ve una linea limpia a la vez, sin
-      // duplicados, y cambia de linea con el mismo patron que ya conoce de
-      // Salida.
-      // El glosario son SOLO los 2 codigos que el propio PDF explica en
-      // prosa (INFORMACION_3P / INFORMACION_SECRETARIA); el resto de
-      // categorias no se inventan — confirmar contra el archivo real cuando
-      // se cargue (puede traer categorias mas finas o distintas).
+      // Tipificacion (Fase 77, pedido de Edwin/Jairo): REEMPLAZA el pie
+      // filtrable de mas abajo (basado en la hoja vieja "tipificacion", que
+      // nunca llego a tener datos reales de ORLANT) por un panel autonomo
+      // (mismo patron que "Citas por Especialidad", agendas_panel — Fase 78)
+      // alimentado por la tabla `tipificaciones` (server/tipificaciones.js):
+      // 2 pies (Llamadas/WhatsApp, ~15.000 filas/mes solo Llamadas) con
+      // filtros Mes/rango COMPARTIDOS y Agente/Skill INDEPENDIENTES por
+      // canal. La hoja vieja "tipificacion" (dashboard_cargas, seccion
+      // 'tipificacion') sigue funcionando exactamente igual que antes si
+      // alguien la vuelve a subir (compatibilidad hacia atras) — solo deja
+      // de tener un panel que la muestre en ESTE tab de ORLANT.
       { key: 'tipificacion', label: 'Tipificacion', oculta: true, panels: [
-        { tipo: 'pie', titulo: 'Tipificacion de llamadas y WhatsApp', filtroCampo: 'linea', filtroUnico: true,
-          fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad' },
-          notas: [
-            'Glosario basado en el PDF de InCo — confirmar contra las categorias reales que traiga el archivo de tipificacion cuando se cargue (pueden variar).',
-            'INFORMACION_3P: el paciente solicita informacion sobre polizas, tarifas o examenes.',
-            'INFORMACION_SECRETARIA: se necesita una cita de revision y no ha sido posible comunicarse con la secretaria; tambien pagos o programacion de cirugia que requieren secretaria.',
-          ] },
+        { tipo: 'tipificacion_panel', titulo: 'Tipificacion', campana: 'ORLANT' },
       ]},
       { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
         // Fase 78 (Jairo/Edwin): "Citas por Especialidad" -- agendas reales

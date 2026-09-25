@@ -106,7 +106,22 @@ function createApp() {
   // (nunca sin limite -- eso es lo que evita un body gigante como intento
   // de DoS), solo se sube a un tamano que cubre con margen las cargas mas
   // grandes que ya permite validation.js.
-  app.use(express.json({ limit: '2mb' }));
+  //
+  // Fase 77: Tipificacion de ORLANT (~15.000 filas/mes solo Llamadas, en
+  // crecimiento) no cabe con margen en 2mb -- medido contra datos reales:
+  // 14.940 filas en formato array ya pesan ~1.4mb, y el stress-test pedido
+  // de 30.000 filas pesa ~2.8mb (supera el limite global). En vez de subir
+  // el limite GLOBAL (2mb sigue siendo lo correcto para el resto de rutas,
+  // que no tienen este volumen), solo estas 2 rutas usan un limite mayor
+  // (8mb, holgado para varios años de crecimiento) -- el resto de la API
+  // sigue exactamente en 2mb.
+  const RUTAS_TIPIFICACION_LIMITE_MAYOR = ['/api/calidad/tipificacion/carga', '/api/calidad/tipificacion/carga/impacto'];
+  const jsonLimiteNormal = express.json({ limit: '2mb' });
+  const jsonLimiteTipificacion = express.json({ limit: '8mb' });
+  app.use((req, res, next) => {
+    if (RUTAS_TIPIFICACION_LIMITE_MAYOR.includes(req.path)) return jsonLimiteTipificacion(req, res, next);
+    return jsonLimiteNormal(req, res, next);
+  });
 
   // Logging de accesos. morgan NO registra cuerpos ni el header Authorization.
   if (!config.isTest) {
@@ -166,6 +181,7 @@ function createApp() {
   api.use(require('./routes/trafico'));
   api.use(require('./routes/trafico-whatsapp'));
   api.use(require('./routes/agendas'));
+  api.use(require('./routes/tipificaciones'));
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/inventario'));
   api.use(require('./routes/gerencia'));

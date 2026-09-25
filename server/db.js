@@ -264,6 +264,30 @@ CREATE TABLE IF NOT EXISTS agendas (
 CREATE INDEX IF NOT EXISTS idx_agendas_campana_fecha ON agendas(campana, fechaSolicitud);
 CREATE INDEX IF NOT EXISTS idx_agendas_campana_especialidad ON agendas(campana, especialidad);
 
+-- Tipificacion de ORLANT (Fase 77, pedido de Edwin/Jairo): 1 sola tabla para
+-- Llamadas y WhatsApp (mismo grano exacto en los 2 canales -- una fila por
+-- interaccion tipificada), 'canal' distingue cuál es. Volumen mucho mayor
+-- que Agendas (~15.000 filas/mes solo Llamadas, creciendo) -- el dashboard
+-- NUNCA descarga filas crudas, solo agregados via server/tipificaciones.js
+-- (ver routes/tipificaciones.js). hora/duracionMin son opcionales (no toda
+-- fila trae HORA valida; TIME_MIN se guarda para una futura funcionalidad de
+-- "duracion promedio", no se muestra todavia).
+CREATE TABLE IF NOT EXISTS tipificaciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  canal TEXT NOT NULL,               -- LLAMADAS | WHATSAPP
+  agente TEXT NOT NULL,              -- AGENT_NAME
+  fecha TEXT NOT NULL,               -- 'AAAA-MM-DD', hora local de Colombia (nunca convertida a UTC)
+  hora TEXT,                         -- 'HH:MM:SS' o NULL si no se pudo leer (no bloquea la fila)
+  duracionMin INTEGER,               -- TIME_MIN, guardado sin usar todavia
+  tipificacion TEXT NOT NULL,        -- DESCRIPTION_COD_ACT, valor ORIGINAL tal cual (incluido "-")
+  skill TEXT NOT NULL,               -- SKILL_NAME (Llamadas) / cola ya cruzada a nombre real (WhatsApp)
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificaciones(campana, canal, fecha);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
@@ -1391,6 +1415,57 @@ runOnceMigration('dashboards_config_orlant_resumen_trafico_opcional_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_resumen_trafico_opcional_v1 aplicada.');
+  }
+});
+
+// ORLANT: Fase 77 (Jairo/Edwin) -- reemplaza el panel viejo del tab
+// "tipificacion" (pie filtrable sobre la hoja "tipificacion" de
+// dashboard_cargas, que nunca llego a tener datos reales de ORLANT) por el
+// panel autonomo nuevo (tipificacion_panel, tabla `tipificaciones`). Mismo
+// patron exacto que dashboards_config_orlant_tipificacion_unico_v1 (mas
+// arriba): detecta la forma VIEJA reconocible, reemplaza `tab.panels` por
+// el del seed actual. El tab sigue con `oculta:true` en la config guardada
+// (dashboard-generic.js lo destapa en memoria segun si hay tipificaciones
+// cargadas, nunca aqui). No tiene `subtabs` (ni antes ni ahora), asi que no
+// hay ninguna dependencia de orden con dashboards_config_orlant_subpestanas_v1
+// (esa migracion no toca este tab).
+runOnceMigration('dashboards_config_orlant_tipificacion_panel_v1', () => {
+  const row = db.prepare('SELECT cliente, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTab = (target.layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!targetTab) return;
+
+  const tab = (layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!tab) return;
+  const yaEsNuevo = (tab.panels || []).some((p) => p.tipo === 'tipificacion_panel');
+  if (yaEsNuevo) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_tipificacion_panel_v1: ya tenia tipificacion_panel, nada que hacer.');
+    return;
+  }
+  const esViejoReconocible = (tab.panels || []).length === 1 && tab.panels[0].tipo === 'pie';
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_tipificacion_panel_v1: el tab "tipificacion" no coincide con la forma esperada (vieja ni nueva) — se deja intacta, revisar a mano.');
+    }
+    return;
+  }
+
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_tipificacion_panel_v1 aplicada.');
   }
 });
 
