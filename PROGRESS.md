@@ -5822,15 +5822,18 @@ Foco: ORLANT. Un PR por tema, para poder revertir uno sin tocar los demás.
   de validación no los declaraba, y Zod descarta por defecto cualquier
   campo no declarado). Arreglado agregando ambos campos al schema, con
   prueba que falla con el código viejo y pasa con el nuevo (PR #146).
-- **Producción, revisión de solo lectura** (confirmar que ningún cliente
-  perdió `oculta`/`subtabs` por un guardado anterior, y los números de
-  ORLANT — Llamadas 8.061/7.159/902, WhatsApp 7.305/7.109/196): requiere
-  un workflow de un solo uso (mismo patrón de siempre — disparo manual,
-  permisos mínimos, puerto 22 solo para el runner y revertido, retirado
-  del repo al terminar). Pendiente de autorización explícita del usuario
-  antes de dispararlo (regla del propio pedido de esta fase, por tocar
-  CI). Local ya está confirmado: los números coinciden exacto con la
-  referencia (verificado con Playwright, ver más abajo).
+- **Producción, revisión de solo lectura** — hecha, con autorización
+  explícita del usuario antes de dispararla (workflow de un solo uso,
+  mismo patrón de siempre: disparo manual, permisos mínimos, puerto 22
+  abierto solo para la IP del runner y **revertido correctamente** al
+  terminar — confirmado en el propio log del workflow, PR #152). Resultado
+  (run `36152421686`): **0 clientes con diferencias** de `oculta`/`subtabs`
+  contra el seed en los 12 clientes — el bug nunca corrompió nada en
+  producción — y los números de ORLANT en producción (agosto 2026)
+  coinciden **exacto** con la referencia: Llamadas 8.061/7.159/902,
+  WhatsApp 7.305/7.109/196 (igual que en local). Workflow retirado del
+  repo tras confirmar el resultado (PR #153), mismo criterio que los
+  demás workflows de un solo uso.
 - **Keystore de Android sin protección (hallazgo Fase 74)**: `mobile-app/`
   había reaparecido sin seguimiento en disco con el keystore de firma
   adentro, sin ningún `.gitignore` que lo cubriera (se fue al retirar la
@@ -5866,10 +5869,69 @@ Foco: ORLANT. Un PR por tema, para poder revertir uno sin tocar los demás.
   campo del mes — mismo criterio de `null` que ya usaban otras 2 fórmulas
   del mismo archivo (PR #150).
 
-**Verificación**: `npm test` 404/404 (13 pruebas nuevas), `npm audit` 0
-vulnerabilidades, antes y después. Playwright directo desde Node (no la
-extensión de Chrome, que no llega a `localhost`) contra el servidor
-local: capturas en `docs/capturas-demo/fase75-arreglos/`. No se tocaron
-los datos de prueba de Calidad de ORLANT ni se destapó ninguna pestaña en
-producción.
+**Verificación**: `npm test` 404/404 (8 pruebas nuevas: 1 en
+`dashboard.test.js`, 4 en `trafico-logic.test.js`, 3 en
+`trafico-whatsapp-carga.test.js` — el "13" de una versión anterior de esta
+entrada era un error de conteo del informe, corregido en la Fase 76 con
+`git diff f51ab05 main` como evidencia; ningún archivo de prueba se borró,
+renombró ni tiene pruebas saltadas), `npm audit` 0 vulnerabilidades, antes
+y después. Playwright directo desde Node (no la extensión de Chrome, que
+no llega a `localhost`) contra el servidor local: capturas en
+`docs/capturas-demo/fase75-arreglos/`. No se tocaron los datos de prueba
+de Calidad de ORLANT ni se destapó ninguna pestaña en producción.
+
+## Fase 76 — Cierra los 4 detalles que dejó la Fase 75 (2026-09-25, automática)
+
+Pedido explícito del usuario de decidir y ejecutar sin preguntar, con
+reglas para cada caso. Un PR para la gráfica, otro para documentación.
+
+- **Gráfica de la 4ª sub-pestaña de Gestión STA**: arreglada.
+  `gd-combo-logic.js` (nuevo, lógica pura testeable en Node, mismo patrón
+  que `gd-filtro-logic.js`) le pone a las barras del panel `combo` un tope
+  de ancho (`maxBarThickness`, solo entra en juego con pocas categorías) y
+  fija `order` explícito para que la línea SIEMPRE se dibuje encima —
+  Chart.js también usa `order` para la leyenda, así que se agregó un
+  `generateLabels` propio para que no cambiara de orden. Verificado con
+  capturas de Playwright ANTES/DESPUÉS de las 12 gráficas combo del
+  código (ORLANT, CLINICA AURORA, INFONDO, ANDRES YEPES, BIVETT):
+  idénticas con varias categorías, punto ya visible con 1 sola — también
+  en claro/oscuro y escritorio/móvil. PR #154.
+- **PROGRESS.md desactualizado**: corregido arriba, en la propia entrada
+  de la Fase 75 — la revisión de producción ya no dice "pendiente", dice
+  el resultado real (0 diferencias, números exactos, puerto 22
+  revertido), y "13 pruebas nuevas" se corrigió a 8 (evidencia abajo).
+- **Los 2 Excel sueltos en `docs/capturas-demo/fase67-.../`**: abiertos
+  con código (nunca mostrados en el chat). Veredicto: **tienen datos
+  reales de un cliente**. `llenado-solo-trafico-local.xlsx` trae la hoja
+  LLAMADAS con las mismas 50 filas de agosto 2026 de ORLANT que hay en
+  producción — sumadas dan exacto 8.061/7.159/902 (Llamadas) y
+  7.305/7.109/196 (WhatsApp, hoja WHATSAPP), la misma referencia
+  confirmada en la Fase 75. Ninguna de las hojas de Calidad
+  (`Monitoreos`/`Resumen por Asesor`) trae datos — no hay nombres de
+  asesores ni nada de Calidad en ninguno de los 2 archivos.
+  `descarga-orlant-local.xlsx` es la plantilla en blanco (mismas 10
+  hojas, sin ningún valor cargado). No son idénticos a ningún fixture de
+  `server/tests/fixtures/` (hash distinto, y traen más hojas — Monitoreos,
+  Resumen por Asesor — que ningún fixture tiene). **No se commitearon ni
+  se borraron**: regla nueva en `.gitignore`,
+  `docs/capturas-demo/**/*.xlsx` (no toca `server/tests/fixtures/`).
+- **Conteo de pruebas "13" vs. 8**: `git diff f51ab05 main -- server/tests/`
+  muestra que solo se modificaron 3 archivos de prueba (ninguno se creó,
+  borró, renombró ni se fusionó con otro): `dashboard.test.js` (+1),
+  `trafico-logic.test.js` (+4), `trafico-whatsapp-carga.test.js` (+3) — 8
+  pruebas nuevas en total, exacto igual a la diferencia real 396→404.
+  `npm test` no reporta ningún `skipped`/`todo`, y no hay `.skip(`/`.only(`
+  en ningún archivo de `server/tests/`. El "13" fue un error de conteo del
+  informe de la Fase 75, ya corregido arriba — no faltaba ninguna prueba
+  que restaurar.
+
+**Verificación**: `npm test` 409/409 antes y después (5 pruebas nuevas de
+`gd-combo-logic.test.js`), `npm audit` 0 vulnerabilidades. Playwright
+directo desde Node contra el servidor local: capturas antes/después de
+las 12 gráficas combo + la sub-pestaña de STA en claro/oscuro/escritorio/
+móvil, en `docs/capturas-demo/fase76-detalles/`, cero errores de consola.
+Números de ORLANT y formato unificado re-confirmados sin cambios. No se
+destapó ninguna pestaña en producción, no se tocaron los datos de prueba
+de Calidad de ORLANT ni el keystore de `mobile-app/`. Tras el deploy,
+`GET /api/health` → `200 {"ok":true}`.
 
