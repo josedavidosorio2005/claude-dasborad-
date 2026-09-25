@@ -133,7 +133,10 @@ async function _traficoWppRenderPanel(p, i) {
   var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
   if(!estado.desde) estado.desde = desdeDefault;
   if(!estado.hasta) estado.hasta = maxDisp;
-  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = desdeDefault; estado.hasta = maxDisp; }
+  // Fase 77: ya NO se sustituye en silencio un rango sin datos por el rango
+  // por defecto -- ver el comentario equivalente en trafico.js
+  // (_traficoRenderPanel) para el bug real que esto corregia (Septiembre
+  // mostrando datos de Agosto en produccion).
   if(!estado.skills) estado.skills = colas.slice();
   else estado.skills = estado.skills.filter(function(s){ return colas.indexOf(s)!==-1; });
   if(!estado.skills.length) estado.skills = colas.slice();
@@ -231,6 +234,15 @@ function _traficoWppRenderContenido(i){
   var estado = _traficoWppEstado[campana];
   var datosCampana = _traficoWpp[campana] || { filas: [] };
   var filtradas = traficoWppFiltrarFilas(datosCampana.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
+  // Fase 77: mismo criterio que Llamadas (trafico.js/_traficoRenderContenido)
+  // -- un rango sin ninguna fila muestra un mensaje explicito, nunca se
+  // sustituye por otro periodo.
+  var content = document.getElementById('tww-content-'+i);
+  if(!filtradas.length){
+    _traficoWppAgregadoActual[campana] = [];
+    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Trafico de WhatsApp para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
+    return;
+  }
   var agregado = traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
   _traficoWppAgregadoActual[campana] = agregado;
 

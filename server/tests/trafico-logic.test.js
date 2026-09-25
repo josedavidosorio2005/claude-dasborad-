@@ -282,6 +282,35 @@ test('filtro combinable: varias skills se suman salvo que se pidan como series s
   assert.deepEqual(separado.map((s) => s.skillName).sort(), ['A', 'B']);
 });
 
+// Fase 77 (25/09): nada en traficoParseFilas/traficoAgregar esta hardcodeado
+// a "exactamente 2 skills/lineas" -- una tercera skill (invencion: "REGIMEN
+// ESPECIALES", nombre real usado por ORLANT en Tipificacion) debe aparecer en
+// la lista de skills, sumar en los totales combinados y comportarse igual que
+// 3P/GENERAL al filtrar/separar series.
+test('Fase 77: una tercera skill (no solo 2) aparece en la lista, suma en el total y se puede separar como serie', () => {
+  const aoa = [
+    ['DATE', 'SKILL_NAME', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS', 'LLAMADAS ABANDONADAS'],
+    ['2026-08-15', 'CALL INBOUND ORLANT 3P', 100, 90, 10],
+    ['2026-08-15', 'CALL INBOUND ORLANT GENERAL', 200, 180, 20],
+    ['2026-08-15', 'REGIMEN ESPECIALES', 30, 25, 5],
+  ];
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.deepEqual(res.skills, ['CALL INBOUND ORLANT 3P', 'CALL INBOUND ORLANT GENERAL', 'REGIMEN ESPECIALES'].sort());
+
+  const combinado = traficoAgregar(res.filas, { granularidad: 'dia', combinar: true });
+  assert.equal(combinado.length, 1);
+  assert.equal(combinado[0].totalLlamadas, 330, 'las 3 skills suman en el total combinado, no solo 2');
+
+  const separado = traficoAgregar(res.filas, { granularidad: 'dia', combinar: false });
+  assert.equal(separado.length, 3);
+  assert.deepEqual(separado.map((s) => s.skillName).sort(), ['CALL INBOUND ORLANT 3P', 'CALL INBOUND ORLANT GENERAL', 'REGIMEN ESPECIALES'].sort());
+
+  const soloRegimen = traficoFiltrarFilas(res.filas, { skills: ['REGIMEN ESPECIALES'] });
+  assert.equal(soloRegimen.length, 1);
+  assert.equal(soloRegimen[0].totalLlamadas, 30);
+});
+
 test('filtro por skill y por rango de fechas (previo a agregar)', () => {
   const filas = [
     { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 10, contestadas: 9 },
@@ -466,32 +495,40 @@ test('traficoModoDisplaySkills: 2+ seleccionadas que resultan ser TODAS las real
   assert.deepEqual(r, { todas: true, una: null, subsetParcial: false });
 });
 
-// ── traficoAhtPromedioPeriodo (Fase 65) ──────────────────────────────────
+// ── traficoAhtPromedioPeriodo (Fase 65, ponderacion corregida en la Fase 77) ──
 // Conecta la tarjeta manual "AHT Promedio" de 6 clientes al dato real de
 // Wolkvox -- esta funcion tiene que coincidir EXACTO con el promedio
 // ponderado que ya usa traficoAgregar para la sub-pestaña "AHT", no
 // inventar una formula nueva.
-test('traficoAhtPromedioPeriodo: promedio ponderado por TOTAL LLAMADAS, no un promedio simple', () => {
+//
+// Fase 77 (hallazgo real de Edwin, 25/09): el peso es LLAMADAS CONTESTADAS,
+// NO el total -- el AHT es tiempo por llamada ATENDIDA (una abandonada
+// nunca tiene AHT). Antes de este fix se ponderaba por `totalLlamadas`;
+// las pruebas de abajo usan `contestadas` DISTINTO de `totalLlamadas` a
+// proposito, para que un regreso accidental al peso viejo las haga fallar.
+test('traficoAhtPromedioPeriodo: promedio ponderado por LLAMADAS CONTESTADAS, no por el total ni un promedio simple', () => {
   const filas = [
-    { totalLlamadas: 100, ahtSegundos: 200 },
-    { totalLlamadas: 300, ahtSegundos: 240 },
+    { totalLlamadas: 100, contestadas: 50, ahtSegundos: 200 },
+    { totalLlamadas: 100, contestadas: 150, ahtSegundos: 240 },
   ];
-  // Simple (200+240)/2 = 220 seria INCORRECTO -- ponderado: (100*200+300*240)/400 = 230.
+  // Simple (200+240)/2 = 220 seria incorrecto. Ponderado por TOTAL (bug
+  // viejo) daria (100*200+100*240)/200 = 220 tambien (mismo total en las 2
+  // filas) -- ponderado por CONTESTADAS (correcto): (50*200+150*240)/200 = 230.
   assert.equal(traficoAhtPromedioPeriodo(filas), 230);
 });
 
 test('traficoAhtPromedioPeriodo: filas sin ahtSegundos (null) se ignoran, no cuentan como 0', () => {
   const filas = [
-    { totalLlamadas: 100, ahtSegundos: null },
-    { totalLlamadas: 200, ahtSegundos: 250 },
+    { contestadas: 100, ahtSegundos: null },
+    { contestadas: 200, ahtSegundos: 250 },
   ];
   assert.equal(traficoAhtPromedioPeriodo(filas), 250);
 });
 
-test('traficoAhtPromedioPeriodo: filas con totalLlamadas 0 no aportan peso (division por cero evitada)', () => {
+test('traficoAhtPromedioPeriodo: filas con contestadas 0 no aportan peso (division por cero evitada) -- aunque tengan llamadas totales', () => {
   const filas = [
-    { totalLlamadas: 0, ahtSegundos: 999 },
-    { totalLlamadas: 50, ahtSegundos: 180 },
+    { totalLlamadas: 30, contestadas: 0, ahtSegundos: 999 },
+    { totalLlamadas: 50, contestadas: 50, ahtSegundos: 180 },
   ];
   assert.equal(traficoAhtPromedioPeriodo(filas), 180);
 });
@@ -502,7 +539,7 @@ test('traficoAhtPromedioPeriodo: sin filas -> null (no 0, que se veria como un d
 });
 
 test('traficoAhtPromedioPeriodo: todas las filas sin ahtSegundos -> null', () => {
-  const filas = [{ totalLlamadas: 100, ahtSegundos: null }, { totalLlamadas: 50, ahtSegundos: null }];
+  const filas = [{ contestadas: 100, ahtSegundos: null }, { contestadas: 50, ahtSegundos: null }];
   assert.equal(traficoAhtPromedioPeriodo(filas), null);
 });
 
@@ -515,5 +552,23 @@ test('traficoAhtPromedioPeriodo: coincide EXACTO con traficoAgregar (granularida
   assert.equal(agregado.length, 1);
   assert.equal(agregado[0].periodo, '2026');
   assert.equal(traficoAhtPromedioPeriodo(filas), agregado[0].ahtSegundos);
-  assert.equal(traficoAhtPromedioPeriodo(filas), 230);
+  // (90*200 + 280*240) / (90+280) = 85200/370 = 230.27
+  assert.equal(traficoAhtPromedioPeriodo(filas), 230.27);
+});
+
+// Fase 77: ASA comparte la misma regla (tiempo hasta que SE CONTESTA,
+// tampoco existe si la llamada nunca se contesto) -- ATA/WAIT_TIME NO
+// cambiaron, siguen ponderados por el total de llamadas.
+test('traficoAgregar: ASA/AHT ponderados por contestadas, ATA/WAIT_TIME ponderados por total (Fase 77)', () => {
+  const filas = [
+    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 100, contestadas: 50, asaSegundos: 20, ataSegundos: 300, ahtSegundos: 200, waitTimeSegundos: 15 },
+    { fecha: '2026-01-02', skillName: 'A', totalLlamadas: 100, contestadas: 150, asaSegundos: 40, ataSegundos: 300, ahtSegundos: 240, waitTimeSegundos: 15 },
+  ];
+  const [mes] = traficoAgregar(filas, { granularidad: 'mes', combinar: true });
+  // ASA/AHT por contestadas (50/150): (50*20+150*40)/200=35 ; (50*200+150*240)/200=230
+  assert.equal(mes.asaSegundos, 35);
+  assert.equal(mes.ahtSegundos, 230);
+  // ATA/WAIT_TIME por total (100/100, iguales): promedio simple porque el peso es igual en ambas filas
+  assert.equal(mes.ataSegundos, 300);
+  assert.equal(mes.waitTimeSegundos, 15);
 });
