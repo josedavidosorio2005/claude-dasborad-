@@ -24,6 +24,7 @@ const {
   traficoResolverSkillsControles,
   traficoModoDisplaySkills,
   traficoValidarNuevoMapeo,
+  traficoElegirHoja,
 } = require('../../public/js/trafico-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
@@ -34,6 +35,11 @@ const FIXTURE = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx');
 // prueba justamente que el promedio simple de esa hoja es el calculo
 // incorrecto que este motor evita).
 const FIXTURE_FILTROS = path.join(__dirname, 'fixtures', 'EJEMPLO_FILTROS.xlsx');
+// Fase 75: plantilla unificada real (hojas INSTRUCCIONES/LLAMADAS/WHATSAPP,
+// sin hoja "DATA") -- para probar que la pantalla vieja "Metas Calidad ->
+// Trafico/Wolkvox" (trafico.js, procesarArchivoTrafico) ahora tambien la
+// acepta, sin dejar de aceptar los archivos viejos de un cliente cualquiera.
+const FIXTURE_UNIFICADA = path.join(__dirname, 'fixtures', 'PLANTILLA_TRAFICO_UNIFICADA_ORLANT_PRUEBA_AGOSTO_2026.xlsx');
 
 test('conversion: serial de Excel -> YYYY-MM-DD (aritmetica UTC, sin depender de la zona horaria)', () => {
   assert.equal(traficoFechaDesdeSerial(46266), '2026-09-01');
@@ -72,6 +78,31 @@ test('conversion: ASA/ATA (numero, a veces como texto) -> numero', () => {
   assert.equal(traficoNumero(22.47), 22.47);
   assert.equal(traficoNumero('0.00'), 0);
   assert.equal(traficoNumero(''), null);
+});
+
+test('traficoElegirHoja: prefiere "LLAMADAS" (plantilla unificada) cuando esta presente', () => {
+  assert.equal(traficoElegirHoja(['INSTRUCCIONES', 'LLAMADAS', 'WHATSAPP']), 'LLAMADAS');
+});
+
+test('traficoElegirHoja: archivo viejo sin "LLAMADAS" -- sigue prefiriendo "DATA" exactamente como antes', () => {
+  assert.equal(traficoElegirHoja(['GRAFICA', 'DATA']), 'DATA');
+  assert.equal(traficoElegirHoja(['DATA']), 'DATA');
+});
+
+test('traficoElegirHoja: sin "LLAMADAS" ni "DATA" -- cae a la primera hoja, igual que antes', () => {
+  assert.equal(traficoElegirHoja(['HojaUnica']), 'HojaUnica');
+  assert.equal(traficoElegirHoja([]), undefined);
+});
+
+test('pantalla vieja con la plantilla unificada real (PLANTILLA_TRAFICO_UNIFICADA_ORLANT_PRUEBA_AGOSTO_2026.xlsx, sin hoja "DATA"): traficoElegirHoja + traficoParseFilas leen la hoja LLAMADAS correctamente (bug real Fase 74/75 -- antes se hubiera intentado leer una hoja "DATA" que no existe)', () => {
+  const sheetNames = ['INSTRUCCIONES', 'LLAMADAS', 'WHATSAPP'];
+  const hoja = traficoElegirHoja(sheetNames);
+  assert.equal(hoja, 'LLAMADAS');
+  const aoa = leerHojaXlsxComoAoA(FIXTURE_UNIFICADA, hoja);
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.ok(res.filas.length > 0);
+  assert.deepEqual(res.meses, ['2026-08']);
 });
 
 test('parseo del archivo REAL (EJEMPLO.xlsx, hoja DATA): todas las columnas, valores correctos', () => {
