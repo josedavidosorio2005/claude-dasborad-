@@ -374,8 +374,27 @@ function cancelarPreviewTraficoWpp() {
   document.getElementById('tww-errores').innerHTML = '';
 }
 
+// Mismo patron que _traficoConfirmarImpacto (trafico.js, voz) -- Fase 75,
+// pendiente A1: antes de este cambio, guardarTraficoWpp() sobrescribia un
+// periodo ya cargado sin preguntar nada.
+async function _traficoWppConfirmarImpacto() {
+  var impacto;
+  try { impacto = await apiRequest('POST', '/calidad/trafico/whatsapp/carga/impacto', _twwParsed); }
+  catch (e) { showToast(e.message); return false; }
+  var afectados = (impacto || []).filter(function (p) { return p.filasExistentes > 0; });
+  if (!afectados.length) return true;
+  var detalle = afectados.map(function (p) { return '• ' + p.colaWhatsapp + ' — ' + p.fechaInicio + ' a ' + p.fechaFin + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
+  var totalExistentes = afectados.reduce(function (a, p) { return a + p.filasExistentes; }, 0);
+  return window.confirm(
+    'Esta carga va a REEMPLAZAR ' + totalExistentes + ' registro(s) ya cargados:\n\n' + detalle +
+    '\n\n¿Continuar y sobrescribir?'
+  );
+}
+
 async function guardarTraficoWpp() {
   if (!_twwParsed) { showToast('Primero sube un archivo'); return; }
+  var ok = await _traficoWppConfirmarImpacto();
+  if (!ok) return;
   var btn = document.getElementById('tww-save-btn');
   var resp;
   try {
