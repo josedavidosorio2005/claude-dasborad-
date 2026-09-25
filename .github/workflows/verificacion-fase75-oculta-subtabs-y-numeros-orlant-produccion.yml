@@ -1,0 +1,158 @@
+name: Verificacion Fase 75 - oculta/subtabs y numeros de ORLANT (produccion, solo lectura)
+
+# Disparo manual unicamente. Reutiliza el mismo mecanismo de acceso que
+# deploy.yml/otros workflows de un solo uso de este repo (rol OIDC,
+# apertura temporal del puerto 22 solo para la IP de este runner) -- pero
+# esta corrida es de SOLO LECTURA: ningun paso escribe en la base de
+# datos, no crea usuarios, no sube archivos, no destapa ninguna pestana.
+#
+# Que verifica (pedido explicito de la Fase 75, hallazgos de la Fase 74):
+#   1) Si el bug de `PUT /dashboards/config/:cliente` (arreglado en PR
+#      #146: el schema no declaraba `oculta`/`subtabs`, asi que Zod los
+#      borraba de TODAS las pestanas al guardar) ya afecto a algun cliente
+#      en produccion -- compara, por cada cliente y cada pestana que
+#      exista en el modulo de seed (server/dashboard-config-seed.js,
+#      corriendo el mismo codigo ya desplegado), el `oculta`/`subtabs`
+#      esperado contra lo que hay guardado hoy en `dashboards_config`.
+#   2) Los numeros de Trafico de Llamadas/WhatsApp de ORLANT en
+#      produccion (Llamadas 8.061/7.159/902, WhatsApp 7.305/7.109/196,
+#      referencia ya confirmada en local con Playwright) -- se listan las
+#      filas crudas de `calidad_nivel_servicio_diario`/`trafico_whatsapp`
+#      de ORLANT para que el usuario las sume/confirme el mismo dato de la
+#      pantalla real.
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Correr la verificacion (solo lectura) dentro del contenedor
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T \
+              -e JWT_SECRET="dummy-no-usado-verificacion-32-caracteres" \
+              -e MASTER_ADMIN_PASSWORD_HASH='$2a$10$./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy' \
+              -e CORS_ORIGIN="https://inconexionpruebasclaude.duckdns.org" \
+              app node -e '
+              const db = require("./db");
+              function out(titulo, data) {
+                console.log("\n=== " + titulo + " ===");
+                console.log(JSON.stringify(data, null, 2));
+              }
+
+              // ── 1) oculta/subtabs: DB real vs el modulo de seed (mismo codigo ya desplegado) ──
+              const { CONFIGS } = require("./dashboard-config-seed");
+              const esperadoPorCliente = {};
+              CONFIGS.forEach((c) => {
+                esperadoPorCliente[c.cliente] = {};
+                (c.layout.tabs || []).forEach((t) => {
+                  esperadoPorCliente[c.cliente][t.key] = { oculta: !!t.oculta, subtabs: t.subtabs || null };
+                });
+              });
+
+              const rows = db.prepare("SELECT cliente, layout, updatedAt FROM dashboards_config ORDER BY cliente").all();
+              const diffs = [];
+              rows.forEach((r) => {
+                let layout;
+                try { layout = JSON.parse(r.layout || "{}"); } catch (e) { return; }
+                const esperado = esperadoPorCliente[r.cliente];
+                if (!esperado) return; // cliente sin ground truth en el seed (M3 construido a mano) -- no se compara
+                (layout.tabs || []).forEach((t) => {
+                  const exp = esperado[t.key];
+                  if (!exp) return; // pestana que solo existe en la DB (migracion la agrego despues del seed) -- no es el bug que buscamos
+                  const real = { oculta: !!t.oculta, subtabs: t.subtabs || null };
+                  if (JSON.stringify(exp) !== JSON.stringify(real)) {
+                    diffs.push({ cliente: r.cliente, tab: t.key, esperado: exp, real, updatedAt: r.updatedAt });
+                  }
+                });
+              });
+              out("dashboards_config -- diferencias oculta/subtabs vs el seed (deberia salir vacio)", diffs);
+              out("dashboards_config -- updatedAt de cada cliente (para ver si alguno se edito despues del deploy del bug)", rows.map((r) => ({ cliente: r.cliente, updatedAt: r.updatedAt })));
+
+              // ── 2) Numeros de ORLANT: filas crudas de Llamadas y WhatsApp ──
+              out("calidad_nivel_servicio_diario -- ORLANT, todas las filas (Llamadas)", db.prepare(
+                "SELECT fecha, skillName, totalLlamadas, contestadas, llamadasAbandonadas FROM calidad_nivel_servicio_diario WHERE campana = ? ORDER BY fecha, skillName"
+              ).all("ORLANT"));
+              out("calidad_nivel_servicio_diario -- ORLANT, sumas por mes (Llamadas)", db.prepare(
+                "SELECT substr(fecha,1,7) AS mes, SUM(totalLlamadas) AS totalLlamadas, SUM(contestadas) AS contestadas, SUM(llamadasAbandonadas) AS llamadasAbandonadas FROM calidad_nivel_servicio_diario WHERE campana = ? GROUP BY mes ORDER BY mes"
+              ).all("ORLANT"));
+              out("trafico_whatsapp -- ORLANT, todas las filas (WhatsApp)", db.prepare(
+                "SELECT colaWhatsapp, fechaInicio, fechaFin, totalWhatsapp, contestados, abandonados FROM trafico_whatsapp WHERE campana = ? ORDER BY fechaInicio, colaWhatsapp"
+              ).all("ORLANT"));
+              out("trafico_whatsapp -- ORLANT, sumas por mes de fechaInicio (WhatsApp)", db.prepare(
+                "SELECT substr(fechaInicio,1,7) AS mes, SUM(totalWhatsapp) AS totalWhatsapp, SUM(contestados) AS contestados, SUM(abandonados) AS abandonados FROM trafico_whatsapp WHERE campana = ? GROUP BY mes ORDER BY mes"
+              ).all("ORLANT"));
+
+              console.log("\n=== FIN VERIFICACION ===");
+            '
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
