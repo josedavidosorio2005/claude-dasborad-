@@ -1,0 +1,38 @@
+{
+  "login": "ok",
+  "putAplicado": {
+    "status": "ok",
+    "ocultaTrasPut": [
+      "flujo",
+      "agendamiento",
+      "inasistencia",
+      "efectividad"
+    ],
+    "subtabsIntactos": true
+  },
+  "traficoResumenTexto": "Trafico de Llamadas (Wolkvox)\nSkill\nTodas las líneas\nCALL INBOUND ORLANT 3P\nCALL INBOUND ORLANT GENERAL\nComparar varias líneas especificas\nDesde\nHasta\nGranularidad\nDia\nMes\nAño\n \n Ver skills por separado\nAplicar filtros\nExcel\nPDF\nResumen\nAbandono\nAHT\nASA y ATA\nNivel de Servicio a 20s\n8.061\nTOTAL LLAMADAS\n7.159\nLLAMADAS CONTESTADAS\n902\nLLAMADAS ABANDONADAS\n88.8%\nNIVEL DE ATENCION\n11.2%\nTASA DE ABANDONO",
+  "wppResumenTexto": "Trafico de WhatsApp (Wolkvox)\nCola\nTodas las colas\nWHATSAPP AUDIFONOS\nWHATSAPP FONIATRIA\nWHATSAPP FONOAUDIOLOGIA\nWHATSAPP ORLANT 3P\nWHATSAPP ORLANT GENERAL\nComparar varias colas especificas\nDesde\nHasta\nGranularidad\nMes\nAño\n \n Ver colas por separado\nAplicar filtros\nExcel\nPDF\nResumen\nAbandono\nAHT\nASA y ATA\nNivel de Servicio a 20s\n7.305\nTOTAL WHATSAPP\n7.109\nWHATSAPP CONTESTADOS\n196\nWHATSAPP ABANDONADOS\n97.3%\nNIVEL DE ATENCION\n2.7%\nTASA DE ABANDONO",
+  "revertido": false,
+  "pantallaViejaArchivoViejo": {
+    "errores": "",
+    "resumen": "EJEMPLO.xlsx — 12 fila(s) validas, 1 skill(s), 1 mes(es) (2026-09)",
+    "previewVisible": true
+  },
+  "pantallaViejaFormatoUnificado": {
+    "errores": "",
+    "resumen": "PLANTILLA_TRAFICO_UNIFICADA_ORLANT_PRUEBA_AGOSTO_2026.xlsx — 50 fila(s) validas, 2 skill(s), 1 mes(es) (2026-08)",
+    "previewVisible": true
+  },
+  "wppPrimeraCarga": {
+    "disparoDialogo": false,
+    "mensaje": null
+  },
+  "wppSegundaCargaCancelada": {
+    "dialogo": "Esta carga va a REEMPLAZAR 5 registro(s) ya cargados:\n\n• WHATSAPP FONOAUDIOLOGIA — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP ORLANT 3P — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP ORLANT GENERAL — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP FONIATRIA — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP AUDIFONOS — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n\n¿Continuar y sobrescribir?",
+    "filasSinCambiar": true
+  },
+  "wppTerceraCargaConfirmada": {
+    "dialogo": "Esta carga va a REEMPLAZAR 5 registro(s) ya cargados:\n\n• WHATSAPP FONOAUDIOLOGIA — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP ORLANT 3P — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP ORLANT GENERAL — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP FONIATRIA — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n• WHATSAPP AUDIFONOS — 2026-08-01 a 2026-08-31: 1 registro(s) existentes\n\n¿Continuar y sobrescribir?"
+  },
+  "consoleErrors": []
+}

@@ -5813,3 +5813,63 @@ mergeada en fases anteriores) y se dejó el tag
 `archivo/apps-cierre-final-2026-09-11` apuntando a su último commit,
 como referencia permanente de ese trabajo sin dejar la rama viva.
 
+## Fase 75 — Arregla lo que encontró la Fase 74 + pendientes chicos sin bloqueo (2026-09-25)
+
+Foco: ORLANT. Un PR por tema, para poder revertir uno sin tocar los demás.
+
+- **Bug real (hallazgo Fase 74)**: `PUT /dashboards/config/:cliente`
+  borraba `oculta`/`subtabs` de TODAS las pestañas al guardar (el schema
+  de validación no los declaraba, y Zod descarta por defecto cualquier
+  campo no declarado). Arreglado agregando ambos campos al schema, con
+  prueba que falla con el código viejo y pasa con el nuevo (PR #146).
+- **Producción, revisión de solo lectura** (confirmar que ningún cliente
+  perdió `oculta`/`subtabs` por un guardado anterior, y los números de
+  ORLANT — Llamadas 8.061/7.159/902, WhatsApp 7.305/7.109/196): requiere
+  un workflow de un solo uso (mismo patrón de siempre — disparo manual,
+  permisos mínimos, puerto 22 solo para el runner y revertido, retirado
+  del repo al terminar). Pendiente de autorización explícita del usuario
+  antes de dispararlo (regla del propio pedido de esta fase, por tocar
+  CI). Local ya está confirmado: los números coinciden exacto con la
+  referencia (verificado con Playwright, ver más abajo).
+- **Keystore de Android sin protección (hallazgo Fase 74)**: `mobile-app/`
+  había reaparecido sin seguimiento en disco con el keystore de firma
+  adentro, sin ningún `.gitignore` que lo cubriera (se fue al retirar la
+  carpeta en la Fase 70). Se agregaron reglas para `mobile-app/`,
+  `desktop-app/` y los formatos de archivo de firma del proyecto; se
+  confirmó con `git log --all` + `git rev-list --objects --all` que nunca
+  se commiteó ningún keystore. El keystore en sí no se tocó — el usuario
+  lo respalda aparte (PR #147).
+- **Las 3 pestañas ocultas restantes de ORLANT** (Salida, Tipificación,
+  Gestión STA) se verificaron visualmente con Playwright directo desde
+  Node (headless, contra `localhost`, con los datos de `seed:demo` ya
+  cargados) — las 3 se ven bien, cero errores de consola. Se hizo
+  destapándolas temporalmente vía el propio `PUT` (ya arreglado) y
+  revirtiendo la config byte a byte al terminar. La 4ª sub-pestaña de
+  Gestión STA ("Servicios Gestionados del Mes") calcula el dato de
+  `% Efectividad` correctamente (334/417 = 80,1 %, mismo valor que ya
+  se ve en "STA por Mes"), pero el punto/línea no se ve en el gráfico —
+  con una sola categoría en el eje X, la barra ocupa casi todo el ancho
+  del panel y tapa visualmente el punto de la línea. Reportado, no
+  arreglado (afecta el renderizado compartido de gráficas combo de una
+  sola categoría, fuera del alcance de un pendiente chico).
+- **Pantalla vieja "Metas Calidad → Tráfico/Wolkvox"**: ahora acepta
+  también la hoja "LLAMADAS" de la plantilla unificada de ORLANT (Fase
+  66), además de "DATA" — los archivos viejos de cualquier cliente
+  siguen funcionando igual (PR #148).
+- **Recargar WhatsApp** ahora pide confirmación antes de reemplazar datos
+  ya existentes ("se reemplazarán N registros"), igual que ya hacía Voz
+  — nuevo endpoint `POST /calidad/trafico/whatsapp/carga/impacto` (PR
+  #149).
+- **Pendiente chico adicional (A2 de la Fase 74)**: las fórmulas de panel
+  (`_gdEvalCampo`, usadas en Ordenamiento Médico/Recuperación de
+  Cancelados/STA por mes) mostraban `0%` en vez de `—` cuando faltaba un
+  campo del mes — mismo criterio de `null` que ya usaban otras 2 fórmulas
+  del mismo archivo (PR #150).
+
+**Verificación**: `npm test` 404/404 (13 pruebas nuevas), `npm audit` 0
+vulnerabilidades, antes y después. Playwright directo desde Node (no la
+extensión de Chrome, que no llega a `localhost`) contra el servidor
+local: capturas en `docs/capturas-demo/fase75-arreglos/`. No se tocaron
+los datos de prueba de Calidad de ORLANT ni se destapó ninguna pestaña en
+producción.
+
