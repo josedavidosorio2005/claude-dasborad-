@@ -890,16 +890,32 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'combo'){
     var barras = (p.barras||[]).map(function(b){
       var rb = _gdResolver(b.fuente);
-      return { _r: rb, ds: { type:'bar', label:b.label, data: rb.values||[], backgroundColor: paletaColorPara(b.label), borderRadius:3, yAxisID:'y' } };
+      return { _r: rb, label: b.label, data: rb.values||[], color: paletaColorPara(b.label) };
     });
     var labels2 = (barras[0] && barras[0]._r.labels) || [];
     var lin = p.linea ? _gdResolver(p.linea.fuente) : null;
-    var ds = barras.map(function(x){ return x.ds; });
-    if(lin){
-      if(!labels2.length) labels2 = lin.labels || [];
-      ds.push({ type:'line', label:p.linea.label, data: lin.values||[], borderColor:(typeof CO!=='undefined'?CO:'#e67e22'), borderWidth:2.5, pointRadius:4, tension:0.3, yAxisID:'y2' });
-    }
+    if(lin && !labels2.length) labels2 = lin.labels || [];
+    // gdComboDatasets (gd-combo-logic.js, Fase 76): limita el ancho maximo
+    // de las barras y fuerza que la linea se dibuje siempre encima -- con
+    // varias categorias/series no cambia nada (ver comentario de cabecera
+    // de ese archivo).
+    var linCfg = lin ? { label: p.linea.label, data: lin.values||[], color: (typeof CO!=='undefined'?CO:'#e67e22') } : null;
+    var ds = gdComboDatasets(barras, linCfg);
     var o = loBar();
+    // Chart.js usa el mismo `order` (gd-combo-logic.js) tambien para
+    // reordenar la leyenda -- sin esto, la linea pasaria a listarse PRIMERO
+    // en vez de al final, cambiando la leyenda de todas las graficas combo
+    // aunque su dibujo (que es lo unico que debia cambiar) se vea igual.
+    // Se fuerza generateLabels a listar los datasets en su orden original
+    // (barras, despues la linea), igual que antes del arreglo.
+    o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {
+      generateLabels: function(chart){
+        return chart.data.datasets.map(function(dset, i){
+          var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
+          return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(i), datasetIndex: i };
+        });
+      }
+    });
     o.scales = {
       y:{ position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
       y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },

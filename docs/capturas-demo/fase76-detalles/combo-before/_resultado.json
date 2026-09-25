@@ -1,0 +1,16 @@
+{
+  "mode": "before",
+  "shots": [
+    "01-orlant-agendamiento-ordmed-recuperacion",
+    "02-orlant-efectividad-citas",
+    "03-orlant-sta-stamensual-serviciosmes",
+    "04-aurora-manager-agendasincremento",
+    "05-infondo-recaudo",
+    "06-infondo-promesas",
+    "07-infondo-gestion",
+    "08-andresyepes-conversion",
+    "09-bivett-tendencias"
+  ],
+  "orlantRevertido": true,
+  "consoleErrors": []
+}
