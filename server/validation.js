@@ -558,6 +558,22 @@ const dashboardConfigBody = z.object({
           key: z.string().trim().min(1).max(40),
           label: z.string().trim().min(1).max(60),
           panels: z.array(z.record(z.string(), z.any())).max(30),
+          // Fase 75 (hallazgo Fase 74): faltaban aqui -- Zod descarta por
+          // defecto cualquier campo no declarado del objeto, asi que un PUT
+          // real de config perdia `oculta`/`subtabs` de TODAS las pestanas
+          // (ver dashboard-config-seed.js, p.ej. ORLANT: 7 pestanas ocultas
+          // + subtabs en flujo/salida/agendamiento/inasistencia/sta).
+          oculta: z.boolean().optional(),
+          subtabs: z
+            .array(
+              z.object({
+                key: z.string().trim().min(1).max(40),
+                label: z.string().trim().min(1).max(60),
+                indices: z.array(z.number().int().min(0)).min(1).max(30),
+              })
+            )
+            .max(10)
+            .optional(),
         })
       )
       .min(1, 'El dashboard necesita al menos una pestana')
