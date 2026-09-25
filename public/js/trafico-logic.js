@@ -294,7 +294,17 @@ function traficoAgregar(filas, opts) {
   var buckets = {};
   var orden = [];
   var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
-  var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos', 'ahtSegundos', 'waitTimeSegundos'];
+  // Fase 77 (hallazgo real de Edwin, 25/09): NO todos los numeros de tiempo
+  // se ponderan por lo mismo. SL sigue por TOTAL (esta bien: el nivel de
+  // servicio se mide sobre todas las llamadas que entraron). AHT/ASA son
+  // tiempo por llamada CONTESTADA (Average Handle Time / Average Speed of
+  // Answer) -- una llamada abandonada nunca la atiende un agente, no tiene
+  // AHT ni ASA, asi que no debe pesar en su promedio. ATA/WAIT_TIME quedan
+  // ponderados por total (su definicion no depende de si la llamada se
+  // contesto) -- Edwin no pidio tocarlos y no hay evidencia de que esten mal.
+  var PONDERADOS_POR_TOTAL = ['ataSegundos', 'waitTimeSegundos'];
+  var PONDERADOS_POR_CONTESTADAS = ['asaSegundos', 'ahtSegundos'];
+  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS);
 
   filas.forEach(function (f) {
     var periodo = traficoPeriodoDe(f.fecha, granularidad);
@@ -309,12 +319,16 @@ function traficoAgregar(filas, opts) {
       orden.push(clave);
     }
     var b = buckets[clave];
-    var peso = Number(f.totalLlamadas) || 0;
-    b.totalLlamadas += peso;
-    b.contestadas += Number(f.contestadas) || 0;
+    var pesoTotal = Number(f.totalLlamadas) || 0;
+    var pesoContestadas = Number(f.contestadas) || 0;
+    b.totalLlamadas += pesoTotal;
+    b.contestadas += pesoContestadas;
     if (f.llamadasAbandonadas != null) { b.llamadasAbandonadas += f.llamadasAbandonadas; b._tieneAbandonadas = true; }
-    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) {
-      if (f[k] != null && peso > 0) { b['_suma_' + k] += f[k] * peso; b['_peso_' + k] += peso; }
+    PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
+      if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
+    });
+    PONDERADOS_POR_CONTESTADAS.forEach(function (k) {
+      if (f[k] != null && pesoContestadas > 0) { b['_suma_' + k] += f[k] * pesoContestadas; b['_peso_' + k] += pesoContestadas; }
     });
   });
 
@@ -343,16 +357,27 @@ function traficoAgregar(filas, opts) {
 // AHT promedio de un conjunto de filas YA filtradas (skill/fecha/sede),
 // colapsado a UN solo numero en vez de una serie por periodo -- misma
 // formula EXACTA que usa traficoAgregar para ahtSegundos (promedio
-// ponderado por TOTAL LLAMADAS de cada fila, nunca un promedio simple de
-// promedios diarios), asi que un numero calculado con esta funcion
-// SIEMPRE coincide con lo que se ve en la sub-pestaña "AHT" de Trafico de
-// Llamadas para el mismo conjunto de filas (Fase 65: conecta la tarjeta
-// "AHT Promedio" de la franja global de 6 clientes a este mismo calculo,
-// en vez de un dato manual de Gestion de base que puede desincronizarse).
+// ponderado por LLAMADAS CONTESTADAS de cada fila, nunca un promedio
+// simple de promedios diarios), asi que un numero calculado con esta
+// funcion SIEMPRE coincide con lo que se ve en la sub-pestaña "AHT" de
+// Trafico de Llamadas para el mismo conjunto de filas (Fase 65: conecta la
+// tarjeta "AHT Promedio" de la franja global de 6 clientes a este mismo
+// calculo, en vez de un dato manual de Gestion de base que puede
+// desincronizarse).
+//
+// Fase 77 (hallazgo real de Edwin, reunion 25/09): el peso ANTES era
+// `totalLlamadas` -- incorrecto. El AHT es tiempo por llamada ATENDIDA
+// (Average Handle Time); una llamada abandonada nunca llega a un agente,
+// asi que no tiene AHT y no deberia pesar en el promedio. Con datos reales
+// de ORLANT/agosto-2026 el cambio corrige el total de las 2 lineas de 4:33
+// a 4:26 (GENERAL de 5:20 a 5:18; 3P no cambia, 3:44, porque ahi
+// contestadas y total casi coinciden). Mismo criterio para ASA (tiempo
+// hasta que SE CONTESTA la llamada -- tampoco existe si nunca se contesto)
+// -- ver traficoAgregar, mas abajo, que comparte esta misma regla.
 function traficoAhtPromedioPeriodo(filas) {
   var suma = 0, peso = 0;
   (filas || []).forEach(function (f) {
-    var w = Number(f.totalLlamadas) || 0;
+    var w = Number(f.contestadas) || 0;
     if (f.ahtSegundos != null && w > 0) { suma += f.ahtSegundos * w; peso += w; }
   });
   return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;

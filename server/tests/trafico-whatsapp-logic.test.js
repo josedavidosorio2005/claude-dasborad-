@@ -249,7 +249,11 @@ test('traficoWppAgregarPorPeriodo: combinado suma volumenes y recalcula % desde 
   assert.equal(p.tasaAbandonoPct, Math.round((13 / 150) * 10000) / 100);
   // Promedio ponderado por total, nunca promedio simple de las 2 colas (70 !== 70 aqui por coincidencia -- se verifica con la formula, no un numero fijo).
   assert.equal(p.serviceLevel20secPct, Math.round(((80 * 100 + 60 * 50) / 150) * 100) / 100);
-  assert.equal(p.ahtSegundos, Math.round(((200 * 100 + 100 * 50) / 150) * 100) / 100);
+  // Fase 77: AHT es tiempo por WhatsApp CONTESTADO, se pondera por
+  // `contestados` (90 y 40), NUNCA por `totalWhatsapp` (100 y 50) -- antes
+  // de la Fase 77 esta prueba esperaba el ponderado por total (166.67); el
+  // valor correcto pondera por contestados: (200*90+100*40)/(90+40)=169.23.
+  assert.equal(p.ahtSegundos, Math.round(((200 * 90 + 100 * 40) / 130) * 100) / 100);
   assert.equal(p.waitTimeSegundos, null); // WhatsApp nunca tiene este dato
 });
 

@@ -541,15 +541,20 @@ async function _traficoRenderPanel(p, i){
   var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
   if(!estado.desde) estado.desde = desdeDefault;
   if(!estado.hasta) estado.hasta = maxDisp;
-  // El estado de filtros vive en la URL (?tv_...) compartido por CUALQUIER
-  // panel trafico_combo de la pagina — si el usuario filtro un rango en el
-  // dashboard de otra campana (o de otra sede) y luego abre este (misma
-  // pestana del navegador, sin recargar), ese rango puede no solapar en
-  // absoluto con los datos de este panel. En vez de mostrar "sin datos" por
-  // un filtro heredado que nadie eligio para ESTE panel, se descarta y se
-  // vuelve al rango completo disponible aqui (mismo criterio que ya se
-  // usaba para skills: si el filtro heredado deja todo afuera, se ignora).
-  if(estado.desde > maxDisp || estado.hasta < minDisp){ estado.desde = desdeDefault; estado.hasta = maxDisp; }
+  // Fase 77 (bug real reportado por Edwin, 25/09): el estado de filtros vive
+  // en la URL (?tv_...) compartido por CUALQUIER panel trafico_combo de la
+  // pagina, asi que un rango sin ningun dato para ESTE panel puede venir de
+  // dos causas muy distintas: (a) un filtro heredado de otra campana/sede
+  // (sin relacion con lo que el usuario quiere ver aqui), o (b) el usuario
+  // SI eligio a proposito, para esta campana, un periodo que todavia no
+  // tiene datos cargados (ej. Septiembre cuando solo Agosto esta cargado).
+  // Antes esto se resolvia sustituyendo EN SILENCIO el rango pedido por el
+  // rango por defecto (mostrando Agosto como si fuera la respuesta a
+  // "Septiembre") -- bug real visto en produccion (847 llamadas mostradas
+  // para un rango sin datos). Ya NO se sustituye el rango en ningun caso:
+  // se respeta tal cual (sea por URL heredada o por eleccion explicita) y,
+  // si no hay filas en ese rango, _traficoRenderContenido muestra "Sin
+  // datos..." en vez de calcular sobre datos de otro periodo.
   if(!estado.skills) estado.skills = datos.skills.slice(); // sin filtro en la URL -> todas
   else estado.skills = estado.skills.filter(function(s){ return datos.skills.indexOf(s)!==-1; });
   if(!estado.skills.length) estado.skills = datos.skills.slice();
@@ -610,12 +615,24 @@ var TRAFICO_SUBTAB_TITULOS = {
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
 };
+// Fase 77 (pedido de Edwin/Jairo, 25/09): en la reunion del 25/09 los
+// valores MENSUALES de SL y AHT que muestra la plataforma no coincidian con
+// el promedio simple que Edwin calculaba a mano en Excel (promediar los % o
+// segundos de cada dia) -- la plataforma pondera por volumen real de
+// llamadas/contestadas del mes (correcto: un dia con 500 llamadas pesa mas
+// que un dia con 5), asi que los dos numeros pueden diferir aunque ninguno
+// este mal. Esta nota es solo aclaratoria (no cambia ningun calculo) para
+// que quede claro por que.
+var TRAFICO_NOTA_PONDERADO = 'Valor del mes ponderado por volumen de llamadas (no es el promedio simple de los días).';
 function _traficoSubtabContentHTML(prefijo, i, activo){
   if(activo === 'resumen'){
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
   }
-  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+'</div>' +
+  var nota = (activo === 'sl' || activo === 'aht')
+    ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
+    : '';
+  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+nota+'</div>' +
     '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
 }
 function _traficoRenderSubtabContent(i){
@@ -880,6 +897,17 @@ function _traficoRenderContenido(campana, sede, i){
   var datos = { filas: sede ? datosCampana.filas.filter(function(f){ return f.sede===sede; }) : datosCampana.filas };
   var estado = _traficoEstado[claveEstado];
   var filtradas = traficoFiltrarFilas(datos.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
+  // Fase 77: un rango sin ninguna fila (ej. Septiembre con solo Agosto
+  // cargado) muestra un mensaje explicito en vez de graficas/KPIs en cero
+  // que podrian confundirse con "cero llamadas ese mes" -- ver el
+  // comentario de _traficoRenderPanel sobre por que ya no se sustituye el
+  // rango pedido por el rango por defecto.
+  var content = document.getElementById('tv-content-'+i);
+  if(!filtradas.length){
+    _traficoAgregadoActual[claveEstado] = [];
+    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Trafico de Llamadas para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
+    return;
+  }
   var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
   _traficoAgregadoActual[claveEstado] = agregado;
 

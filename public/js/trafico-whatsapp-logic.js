@@ -303,7 +303,13 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
   var buckets = {};
   var orden = [];
   var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
-  var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos', 'ahtSegundos'];
+  // Fase 77 (mismo hallazgo de Edwin que trafico-logic.js/traficoAgregar):
+  // AHT/ASA son tiempo por WhatsApp CONTESTADO, no por total -- un chat
+  // abandonado nunca lo atiende un agente. ATA queda por total (sin pedido
+  // de cambiarlo, sin evidencia de que este mal).
+  var PONDERADOS_POR_TOTAL = ['ataSegundos'];
+  var PONDERADOS_POR_CONTESTADAS = ['asaSegundos', 'ahtSegundos'];
+  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS);
 
   filas.forEach(function (f) {
     var periodo = traficoWppPeriodoDe(f.fechaInicio, granularidad);
@@ -318,12 +324,16 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
       orden.push(clave);
     }
     var b = buckets[clave];
-    var peso = Number(f.totalWhatsapp) || 0;
-    b.totalLlamadas += peso;
-    b.contestadas += Number(f.contestados) || 0;
+    var pesoTotal = Number(f.totalWhatsapp) || 0;
+    var pesoContestadas = Number(f.contestados) || 0;
+    b.totalLlamadas += pesoTotal;
+    b.contestadas += pesoContestadas;
     if (f.abandonados != null) { b.llamadasAbandonadas += f.abandonados; b._tieneAbandonadas = true; }
-    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) {
-      if (f[k] != null && peso > 0) { b['_suma_' + k] += f[k] * peso; b['_peso_' + k] += peso; }
+    PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
+      if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
+    });
+    PONDERADOS_POR_CONTESTADAS.forEach(function (k) {
+      if (f[k] != null && pesoContestadas > 0) { b['_suma_' + k] += f[k] * pesoContestadas; b['_peso_' + k] += pesoContestadas; }
     });
   });
 

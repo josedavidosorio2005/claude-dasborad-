@@ -217,6 +217,41 @@ test('un skill que no calza con ningun patron 3P/GENERAL no rompe la carga y no 
   assert.equal(resumenMes, undefined, 'no debe crearse un resumen para un mes donde Trafico no tiene ninguna linea clasificable');
 });
 
+// Fase 77 (25/09): Edwin pidio verificar que una TERCERA skill/linea
+// ("REGIMEN ESPECIALES") convive sin problema con 3P/GENERAL -- no rompe
+// nada hardcodeado a "exactamente 2 lineas" y el mapeo automatico a resumen
+// sigue clasificando SOLO 3P/GENERAL, ignorando la tercera (por diseno,
+// ver cabecera de resumen-orlant-trafico.js).
+test('Fase 77: una tercera skill (REGIMEN ESPECIALES) conviviendo con 3P/GENERAL no se suma a ninguna linea y no afecta sus totales', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2028-07';
+
+  const filas = [
+    traficoFila({ fecha: mes + '-01', skillName: 'CALL INBOUND ORLANT 3P', totalLlamadas: 100, contestadas: 90 }),
+    traficoFila({ fecha: mes + '-01', skillName: 'CALL INBOUND ORLANT GENERAL', totalLlamadas: 200, contestadas: 180 }),
+    traficoFila({ fecha: mes + '-01', skillName: 'REGIMEN ESPECIALES', totalLlamadas: 9999, contestadas: 9999 }),
+  ];
+  const trafico = await request(app).post('/api/calidad/trafico/carga').set(auth(admin)).send({ filas });
+  assert.equal(trafico.status, 201, JSON.stringify(trafico.body));
+  for (const s of ['CALL INBOUND ORLANT 3P', 'CALL INBOUND ORLANT GENERAL', 'REGIMEN ESPECIALES']) {
+    await mapearAOrlant(admin, s);
+  }
+
+  const resultado = recalcularResumenOrlantDesdeTrafico(db, mes);
+  assert.equal(resultado.actualizado, true);
+  assert.deepEqual(resultado.skillsSinClasificar, ['REGIMEN ESPECIALES']);
+  // Los totales de 3P/GENERAL son EXACTAMENTE los suyos -- el volumen enorme
+  // de la tercera skill (9999) no se filtro a ninguna de las 2 lineas.
+  assert.equal(resultado.campos.llamadas_3p, 100);
+  assert.equal(resultado.campos.llamadas_general, 200);
+  assert.equal(resultado.campos.nivel_atencion_3p, 90);
+  assert.equal(resultado.campos.nivel_atencion_general, 90);
+
+  const filaResumen = await resumenDeOrlant(admin, mes);
+  assert.equal(filaResumen.llamadas_3p, 100);
+  assert.equal(filaResumen.llamadas_general, 200);
+});
+
 test('recalcularResumenOrlantDesdeTrafico: sin filas de trafico para el mes, no toca dashboard_cargas', () => {
   const antes = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2029-01'").get().c;
   const resultado = recalcularResumenOrlantDesdeTrafico(db, '2029-01');

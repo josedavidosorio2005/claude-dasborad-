@@ -1,0 +1,65 @@
+{
+  "traficoTercerSkillCarga": {
+    "insertadas": 3,
+    "campanas": [
+      "ORLANT"
+    ],
+    "skillsSinAsignar": [],
+    "porCampana": [
+      {
+        "campana": "ORLANT",
+        "sede": null,
+        "filas": 3,
+        "meses": [
+          "2030-06"
+        ]
+      }
+    ],
+    "resumenActualizado": [
+      {
+        "mes": "2030-06",
+        "actualizado": true,
+        "campos": {
+          "llamadas_3p": 100,
+          "nivel_atencion_3p": 90,
+          "llamadas_general": 200,
+          "nivel_atencion_general": 90
+        },
+        "skillsSinClasificar": [
+          "REGIMEN ESPECIALES"
+        ],
+        "colasSinClasificar": []
+      }
+    ]
+  },
+  "agendasCarga": {
+    "insertadas": 2,
+    "borradas": 0,
+    "desde": "2026-08-05 08:00:00",
+    "hasta": "2026-08-10 09:00:00"
+  },
+  "skillDropdownHtml": "<option value=\"\" selected=\"\">Todas las líneas</option><option value=\"CALL INBOUND ORLANT 3P\">CALL INBOUND ORLANT 3P</option><option value=\"CALL INBOUND ORLANT GENERAL\">CALL INBOUND ORLANT GENERAL</option><option value=\"REGIMEN ESPECIALES\">REGIMEN ESPECIALES</option>",
+  "septiembreSinDatosTexto": "Sin datos de Trafico de Llamadas para el período seleccionado (2026-09-01 a 2026-09-14).",
+  "septiembreMuestraSinDatos": true,
+  "septiembreNoMuestraOtroTotal": true,
+  "notaTooltipAht": "Valor del mes ponderado por volumen de llamadas (no es el promedio simple de los días).",
+  "notaTooltipSl": "Valor del mes ponderado por volumen de llamadas (no es el promedio simple de los días).",
+  "skillDropdownHtmlTrasCargar": "<option value=\"\" selected=\"\">Todas las líneas</option><option value=\"CALL INBOUND ORLANT 3P\">CALL INBOUND ORLANT 3P</option><option value=\"CALL INBOUND ORLANT GENERAL\">CALL INBOUND ORLANT GENERAL</option><option value=\"REGIMEN ESPECIALES\">REGIMEN ESPECIALES</option>",
+  "kpisTrasTercerSkill": "330\nTOTAL LLAMADAS\n295\nLLAMADAS CONTESTADAS\n—\nLLAMADAS ABANDONADAS\n89.4%\nNIVEL DE ATENCION\n—\nTASA DE ABANDONO",
+  "agendamientoVisible": true,
+  "mesOpcionesDisponibles": [
+    "2030-06",
+    "2026-09",
+    "2026-08",
+    "2026-07",
+    "2026-06",
+    "2026-05",
+    "2026-04"
+  ],
+  "agendamientoSubtab_ordmed": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nEfectividad del año — Ordenamiento medico 3P\nDe la estrategia de agendamiento por ordenamiento medico en consulta medica, se han gestionado un total de 3.702 pacientes, de los cuales se han logrado agendar 2.596 — efectividad del año: 70,1%.\nOrdenamiento medico",
+  "agendamientoSubtab_recuperacion": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nRecuperacion de cancelados",
+  "agendamientoSubtab_totalagendas": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nTotal agendas por mes\nLíneas\nBarras\nÁrea",
+  "agendamientoSubtab_agendasporlinea": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nAgendas por linea\nLíneas\nBarras\nÁrea",
+  "agendamientoSubtab_variacion": "Citas por Especialidad\nOrdenamiento Medico\nRecuperacion de Cancelados\nTotal Agendas\nAgendas por Linea\nVariacion % Agendas\nTotal agendas — variacion % mes a mes\nLíneas\nBarras\nÁrea",
+  "consoleErrors": []
+}
