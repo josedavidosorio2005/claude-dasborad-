@@ -266,6 +266,86 @@ test('dashboard configurable: crea un cliente pendiente sin archivo JS nuevo', a
   assert.equal(del.status, 200);
 });
 
+// Bug real encontrado en la Fase 74 (verificacion, docs/estado-pendientes-fase74.md
+// §"Hallazgos nuevos"): el schema de `layout.tabs` solo declaraba
+// key/label/panels -- Zod descarta por defecto cualquier campo no
+// declarado del objeto, asi que un PUT real de configuracion borraba
+// `oculta` y `subtabs` de TODAS las pestanas del dashboard editado, no
+// solo las que se querian cambiar. En produccion, guardar la config de
+// ORLANT (7 pestanas ocultas, varias con subtabs) las habria destapado
+// todas de golpe, vacias. Confirmado en vivo contra la base local antes
+// de arreglarlo.
+test('PUT /api/dashboards/config/:cliente conserva oculta y subtabs de cada pestana (bug real Fase 74)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cliente = 'DEMO QA OCULTA ' + Math.random().toString(36).slice(2, 6);
+  const config = {
+    cliente,
+    titulo: 'Dashboard Demo QA Oculta',
+    vista: null,
+    secciones: {
+      resumen: {
+        titulo: 'Resumen mensual',
+        descripcion: 'Carga simple de prueba',
+        cadencia: 'mensual',
+        periodo: 'mes',
+        filaUnica: true,
+        columnas: [{ key: 'llamadas', label: 'Llamadas', tipo: 'entero' }],
+      },
+    },
+    layout: {
+      kpis: [],
+      tabs: [
+        {
+          key: 'visible',
+          label: 'Visible',
+          panels: [{ tipo: 'line', titulo: 'Llamadas', series: [{ label: 'Llamadas', fuente: { s: 'resumen', modo: 'serie', campo: 'llamadas' } }] }],
+        },
+        {
+          key: 'escondida',
+          label: 'Escondida',
+          oculta: true,
+          panels: [
+            { tipo: 'line', titulo: 'A', series: [{ label: 'A', fuente: { s: 'resumen', modo: 'serie', campo: 'llamadas' } }] },
+            { tipo: 'line', titulo: 'B', series: [{ label: 'B', fuente: { s: 'resumen', modo: 'serie', campo: 'llamadas' } }] },
+          ],
+          subtabs: [
+            { key: 'sub-a', label: 'Sub A', indices: [0] },
+            { key: 'sub-b', label: 'Sub B', indices: [1] },
+          ],
+        },
+      ],
+    },
+  };
+
+  const create = await request(app).post('/api/dashboards/config').set(auth(admin)).send(config);
+  assert.equal(create.status, 201, JSON.stringify(create.body));
+
+  // El admin edita algo que NO tiene nada que ver con oculta/subtabs (aqui,
+  // el titulo) -- exactamente el caso real que rompia produccion.
+  const editado = { ...config, titulo: 'Dashboard Demo QA Oculta (editado)' };
+  const put = await request(app)
+    .put('/api/dashboards/config/' + encodeURIComponent(cliente))
+    .set(auth(admin))
+    .send(editado);
+  assert.equal(put.status, 200, JSON.stringify(put.body));
+
+  const escondida = put.body.layout.tabs.find((t) => t.key === 'escondida');
+  assert.equal(escondida.oculta, true);
+  assert.deepEqual(escondida.subtabs, [
+    { key: 'sub-a', label: 'Sub A', indices: [0] },
+    { key: 'sub-b', label: 'Sub B', indices: [1] },
+  ]);
+  const visible = put.body.layout.tabs.find((t) => t.key === 'visible');
+  assert.equal(visible.oculta, undefined);
+
+  // Releer de la base (no solo confiar en lo que devuelve el PUT) --
+  // confirma que de verdad quedo persistido, no solo en la respuesta.
+  const releido = await request(app).get('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+  assert.equal(releido.body.layout.tabs.find((t) => t.key === 'escondida').oculta, true);
+
+  await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+});
+
 // Bug real encontrado en produccion (2026-09-16, ver docs/ARQUITECTURA.md
 // §3): un admin borro y volvio a crear la configuracion del dashboard de
 // ORLANT (para ajustar KPIs/secciones) y eso borro tambien, en cascada, los
