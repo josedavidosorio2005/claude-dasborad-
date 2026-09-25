@@ -25,3 +25,16 @@ deploy/config/
 # puede contener IDs de recursos y detalles internos de infraestructura)
 migracion/
 
+# Apps mobile/desktop (Fase 75): el proyecto Android/Capacitor generado en
+# disco trae dependencias (node_modules, build/), rutas locales del SDK
+# (local.properties) y el material de firma de las apps — nunca al repo.
+# El .gitignore que cubria esto se borro sin querer en la Fase 70.
+mobile-app/
+desktop-app/
+*.keystore
+*.jks
+*.p12
+*.pfx
+*-signing.properties
+release-signing.properties
+
