@@ -4,26 +4,33 @@
 
 // ROLES GRID
 // ═══════════════════════════════════════════════════════════
+// Fase 83: antes se pintaban TODOS los roles, con "Sin acceso" en los que
+// un Auxiliar Admin no puede tocar (ADMIN/AUX_ADMIN siempre, el resto
+// segun canAccessRole) -- mismo criterio que ya usaba la tabla de
+// Usuarios (renderUsers, users.js) para FILTRAR filas enteras en vez de
+// mostrarlas bloqueadas. Aqui se hace igual: solo se pintan los roles que
+// el actor puede manejar. isFullAdmin() (master/ADMIN) sigue viendo todos.
 function renderRoles(filter){
   filter=filter||'';
   var fl=filter.toLowerCase();
   var grid=document.getElementById('roles-grid');
-  // Which roles to show in perms view
-  var visibleRoles=ALL_ROLES.filter(function(r){return r.label.toLowerCase().includes(fl);});
+  var porFiltro=ALL_ROLES.filter(function(r){return r.label.toLowerCase().includes(fl);});
+  var visibleRoles=dashRolesVisibles(porFiltro, isFullAdmin(), canAccessRole);
+  if(!visibleRoles.length){
+    grid.innerHTML='<div class="empty-state"><div class="es-icon">&#128274;</div>'+
+      '<div class="es-title">Sin roles asignados</div>'+
+      '<div class="es-hint">Pide al administrador que te de acceso a los roles que necesitas gestionar.</div></div>';
+    return;
+  }
   grid.innerHTML=visibleRoles.map(function(r){
     var count=users.filter(function(u){return u.rol===r.key;}).length;
     if(r.key==='ADMIN') count++; // include master admin
     var isAux=r.key==='AUX_ADMIN';
     var isAdm=r.key==='ADMIN';
-    var ok=isFullAdmin()||isAux||isAdm||canAccessRole(r.key);
-    // Aux cannot manage other admins or other aux
-    if(!isFullAdmin() && (isAdm||isAux)) ok=false;
-    return '<div class="role-card '+(isAux?'aux-card':'')+(isAdm?' admin-card':'')+' '+(!ok?'blocked-card':'')+'" '+
-      'onclick="'+(ok?"openRoleDetail('"+r.key+"')":'showToast("Sin acceso a este rol")')+'">' +
+    return '<div class="role-card '+(isAux?'aux-card':'')+(isAdm?' admin-card':'')+'" onclick="openRoleDetail(\''+r.key+'\')">'+
       '<div class="role-icon">'+r.icon+'</div>'+
       '<div class="role-name">'+r.label+'</div>'+
       '<div class="role-count">'+count+' usuario'+(count!==1?'s':'')+'</div>'+
-      (!ok?'<div class="role-locked">Sin acceso</div>':'')+
       '</div>';
   }).join('');
 }

@@ -122,6 +122,13 @@ function enterAdminPanel(){
   if(gerLi) gerLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Gerencia)));
   var ghLi=document.getElementById('menu-gestionhumana-li');
   if(ghLi) ghLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.GestionHumana)));
+  // Fase 83 (hallazgo real): "Permisos" no tenia ningun gate -- un
+  // Auxiliar Admin SIN gestionPermisos igual veia la pestana, y cada
+  // tarjeta de rol terminaba en un toast "Sin permiso" al tocarla
+  // (openRoleDetail ya lo exige). Si no puede gestionar NINGUN permiso,
+  // la pestana entera no aporta nada -- se esconde, igual que las demas.
+  var permsLi=document.getElementById('menu-perms-li');
+  if(permsLi) permsLi.classList.toggle('hidden', !(isMaster||isAdminRole||can('gestionPermisos')));
 
   applyCreateBtn();
   showSection('users');

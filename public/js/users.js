@@ -47,18 +47,24 @@ function renderUsers(filter){
       extra='<div style="font-size:0.72rem;color:'+(u.asesorCampana?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (u.asesorCampana? '&#9989; '+esc(u.asesorCampana) : '&#9888; Sin operacion asignada')+'</div>';
     }
+    // Fase 83 (hallazgo real): estos 4 botones se pintaban SIEMPRE, solo
+    // atenuados+"disabled" cuando faltaba el permiso -- el candado real
+    // vive en el servidor (editarUsuarios/cambiarPassword/
+    // suspenderUsuarios/eliminarUsuarios), asi que un boton visible que
+    // solo iba a devolver 403 es puro ruido. Ahora cada boton solo se
+    // pinta si el actor tiene ESE permiso puntual.
+    var botones=
+      (canEdit?'<button class="btn-sm btn-edit" onclick="openEditModal('+u.id+')">Editar</button>':'')+
+      (canPass?'<button class="btn-sm btn-pass" onclick="openPassModal('+u.id+')">Contrasena</button>':'')+
+      (canSusp?'<button class="btn-sm '+sc+'" onclick="toggleActive('+u.id+')">'+sl+'</button>':'')+
+      (canDel?'<button class="btn-sm btn-delete" onclick="openDeleteModal('+u.id+')">Eliminar</button>':'');
     return '<tr>'+
       '<td><strong style="color:var(--c-primary)">'+esc(u.nombre)+'</strong>'+extra+'</td>'+
       '<td style="color:var(--c-text-muted);font-family:monospace;font-size:0.82rem">'+esc(u.user)+'</td>'+
       '<td><span class="badge badge-'+u.rol+'">'+esc(RL[u.rol]||u.rol)+'</span></td>'+
       '<td><span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>'+(u.active?'Activo':'Suspendido')+'</td>'+
       '<td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(u.createdAt||'-')+'</td>'+
-      '<td><div class="action-btns">'+
-        '<button class="btn-sm btn-edit '+(canEdit?'':'blocked')+'" '+(canEdit?'onclick="openEditModal('+u.id+')"':'disabled')+'>Editar</button>'+
-        '<button class="btn-sm btn-pass '+(canPass?'':'blocked')+'" '+(canPass?'onclick="openPassModal('+u.id+')"':'disabled')+'>Contrasena</button>'+
-        '<button class="btn-sm '+sc+' '+(canSusp?'':'blocked')+'" '+(canSusp?'onclick="toggleActive('+u.id+')"':'disabled')+'>'+sl+'</button>'+
-        '<button class="btn-sm btn-delete '+(canDel?'':'blocked')+'" '+(canDel?'onclick="openDeleteModal('+u.id+')"':'disabled')+'>Eliminar</button>'+
-      '</div></td></tr>';
+      '<td><div class="action-btns">'+(botones||'<span style="font-size:0.76rem;color:var(--c-text-muted)">Sin acciones disponibles</span>')+'</div></td></tr>';
   }).join('');
   updateStats();
 }
