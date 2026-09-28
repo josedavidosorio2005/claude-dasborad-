@@ -28,6 +28,11 @@ asumir en qué quedó una fase anterior.
   explícitamente).
 - Nunca saltar hooks (`--no-verify`) ni bypassear firmas (`--no-gpg-sign`).
 - Nunca mergear con CI en rojo.
+- **Nunca commitear ni pushear directo a `main`.** Todo cambio, incluso si
+  es solo de documentación (`PROGRESS.md`, `docs/`), va en una rama con
+  PR y CI en verde antes de mergear — sin excepción de "es solo un doc".
+  (Precedente real: Fase 85 cerró con un commit directo a `main`,
+  `a440176`, solo `PROGRESS.md` — no debió pasar por fuera de un PR.)
 - Todo cambio sigue el ciclo completo: rama nueva → tests → CI verde
   (Node 18/20/22 + docker-build) → `npm audit` limpio → PR → merge →
   deploy automático (AWS vía OIDC) → verificación en producción real
