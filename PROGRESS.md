@@ -6505,3 +6505,46 @@ Playwright, números de control). Un solo PR (los 4 arreglos son el mismo
 tema: gates de acceso por cliente/campaña que faltaban). No se tocó CI/
 workflows, secretos de deploy, login/sesión ni Caddy.
 
+## Fase 82 — Cierra el hueco de POST /dashboard/cargas que la Fase 81 dejó pendiente de decisión (2026-09-28, automática)
+
+La Fase 81 acotó `GET`/`DELETE /dashboard/cargas` a `clienteAccess`, pero
+dejó `POST` (subir/reemplazar) a propósito como pendiente: bastaba el
+permiso global `cargarDatos` para subir datos de CUALQUIER cliente. Esta
+fase lo cierra.
+
+- **Investigación**: solo el rol **REPORTES** trae `cargarDatos: true`
+  automáticamente (`applyRolePermDefaults`, `routes/usuarios.js`); el
+  acceso SIN restricción a todos los clientes depende únicamente de
+  `isFullAdmin` (admin maestro o rol **ADMIN**), el mismo criterio que ya
+  usa `clienteAccess()` para GET/DELETE desde la Fase 81. Ningún otro rol
+  (AUX_ADMIN incluido) tiene trato especial en el servidor.
+- **Arreglo**: `POST /dashboard/cargas` ahora exige
+  `clienteAccess(req.actor, b.cliente)` — 403 sin escribir nada si el
+  cliente no corresponde. `isFullAdmin` sigue sin restricción. Se revisó
+  el resto de rutas de escritura del inventario de la Fase 81:
+  `POST /calidad/agendas/carga`, `/calidad/tipificacion/carga` y
+  `/calidad/trafico/whatsapp/carga` YA exigían `campaignAccess` desde
+  antes (nada que tocar); `POST /calidad/trafico/carga` resuelve el
+  cliente por mapeo de skill→campaña (no lleva `campana` en el body), un
+  mecanismo distinto — no aplica el mismo patrón directamente.
+- **Verificación**: prueba nueva en `server/tests/dashboard.test.js` (un
+  rol acotado a `campana_ORLANT` recibe 403 al subir a otro cliente sin
+  escribir nada, 201 a su propio cliente; ADMIN sigue subiendo a
+  cualquiera). 3 pruebas existentes que asumían el comportamiento viejo
+  se actualizaron para pedir el `campana_`/`cliente_` que ya les faltaba
+  (no se relajó ninguna). `npm test` 510/510 (1 prueba nueva), `npm
+  audit` 0 vulnerabilidades, antes y después. Confirmado en vivo además
+  del test automático, con los usuarios reales de `seed:demo`
+  (`demo_reportes` → 403/201 según el cliente; `demo_admin` → siempre
+  201). La carga real de Agendas y Tipificación de ORLANT (archivos
+  reales de Edwin) se repitió de punta a punta en local tras el arreglo:
+  **7.426** filas de Agendas y **14.940** de Tipificación, exacto igual
+  que antes, cero errores de consola.
+- Informe agregado como adenda a `docs/auditoria-seguridad-fase81.md`
+  (mismo documento, no uno nuevo — es el cierre directo de un hallazgo
+  que ese informe ya dejó documentado como pendiente).
+
+**Verificación y cierre**: un solo PR (mismo tema). No se tocó CI/
+workflows, secretos de deploy, login/sesión ni Caddy. Producción: solo
+`/api/health` tras el deploy.
+

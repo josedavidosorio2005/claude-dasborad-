@@ -24,11 +24,14 @@ router.use(['/dashboard', '/dashboards'], (req, res, next) => {
 // global `cargarDatos` (p.ej. el rol REPORTES, que SIEMPRE lo tiene) pudiera
 // leer el dashboard RENDERIZADO de un cliente al que nunca se le dio acceso
 // (ver GET /dashboard/:cliente mas abajo), cambiando el nombre en la URL.
-// `cargarDatos` sigue siendo global a proposito para SUBIR datos
-// (requireDataLoader, sin tocar) y para /dashboard/cargas (pantalla interna
-// de gestion de cargas, sin tocar) -- pero leer el dashboard que ve el
-// cliente final debe seguir el mismo scoping por cliente/campana que todo
-// lo demas.
+// Historial de /dashboard/cargas (Gestion de base): la Fase 81 acoto GET
+// (el CONTENIDO, no la metadata -- ver toCarga) y DELETE a clienteAccess;
+// dejo POST (subir/reemplazar) a proposito como pendiente de decision,
+// documentado como "cargarDatos sigue siendo global". La Fase 82 cierra
+// ese hueco: POST tambien exige clienteAccess al cliente puntual del
+// body -- isFullAdmin (admin maestro o rol ADMIN) sigue sin restriccion,
+// ningun otro rol (REPORTES incluido) puede subir a un cliente fuera de
+// su cliente_/campana_.
 function clienteAccess(actor, cliente) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms) return false;
@@ -296,12 +299,23 @@ router.get(
   })
 );
 
+// Fase 82 (cierra el hueco que la Fase 81 dejo a proposito abierto,
+// documentado como pendiente de decision): SUBIR datos de un cliente
+// ahora exige clienteAccess a ESE cliente puntual, igual que GET/DELETE
+// desde la Fase 81 -- ya no basta con el permiso GLOBAL cargarDatos.
+// isFullAdmin (admin maestro o rol ADMIN) sigue sin restriccion, via el
+// propio clienteAccess (ver mas arriba). Un rol acotado (ej. REPORTES con
+// solo unas campanas) ya no puede subir/reemplazar datos de un cliente
+// fuera de su lista.
 router.post(
   '/dashboard/cargas',
   requireDataLoader,
   validate(schemas.cargaBody),
   wrap((req, res) => {
     const b = req.body;
+    if (!clienteAccess(req.actor, b.cliente)) {
+      return res.status(403).json({ error: 'Sin acceso a este cliente' });
+    }
     const spec = seccionSpec(b.cliente, b.seccion);
     if (!spec) return res.status(400).json({ error: 'Cliente o seccion desconocidos' });
     if (!secciones.periodoValido(spec.periodo, b.periodo)) {
