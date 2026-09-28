@@ -7,6 +7,10 @@
 // (server/tests/tipificacion-logic.test.js).
 'use strict';
 
+// fecha-limites-logic.js: global en el navegador, require() en Node --
+// ver ese archivo para el criterio de "fecha futura".
+var _tipificacionFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+
 // ── Columnas (AGENT_NAME, DATE, HORA, TIME_MIN, DESCRIPTION_COD_ACT,
 // SKILL_NAME) -- MES es una formula de Excel del archivo de Edwin
 // (=TEXT(B2,"MMMM")), se ignora a proposito: el mes sale de DATE.
@@ -168,6 +172,16 @@ function tipificacionParseFilas(aoa) {
     if (!fecha) {
       avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.');
       continue;
+    }
+    // Fase 86 (tema 2): fecha futura -> se rechaza (nunca "posterior a
+    // hoy": un dia cualquiera del mes en curso es valido); fecha anterior
+    // a 2020 -> solo se advierte, no se omite.
+    if (_tipificacionFechaLimites.fechaLimitesEsFutura(fecha)) {
+      avisos.push('Fila ' + filaNum + ' (' + agente + '): DATE ' + fecha + ' esta en el futuro, se omitio.');
+      continue;
+    }
+    if (_tipificacionFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)) {
+      avisos.push('Fila ' + filaNum + ' (' + agente + '): DATE ' + fecha + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).');
     }
 
     filas.push({ agente: agente, fecha: fecha, hora: hora, duracionMin: duracionMin, tipificacion: tipificacion, skill: skill });

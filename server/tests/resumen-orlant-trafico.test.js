@@ -29,7 +29,7 @@ async function mapearAOrlant(admin, skillName) {
 
 function traficoFila(over) {
   return {
-    fecha: '2027-09-01',
+    fecha: '2021-09-01',
     skillName: 'TEST F39 3P',
     totalLlamadas: 100,
     contestadas: 90,
@@ -40,8 +40,8 @@ function traficoFila(over) {
 function traficoWppFila(over) {
   return {
     colaWhatsapp: 'TEST F71 3P',
-    fechaInicio: '2027-09-01',
-    fechaFin: '2027-09-30',
+    fechaInicio: '2021-09-01',
+    fechaFin: '2021-09-30',
     totalWhatsapp: 100,
     contestados: 90,
     ...over,
@@ -80,7 +80,7 @@ test('lineaDeSkill: infiere 3P/GENERAL por el nombre, sin generalizar a un skill
 
 test('la agregacion por linea usa contestadas/total del periodo, NUNCA promedio de los % diarios', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2027-09';
+  const mes = '2021-09';
   await mapearAOrlant(admin, 'TEST F39 3P');
   // Dia 1: 50% (50/100). Dia 2: 100% (20/20). Promedio simple de los 2 dias
   // seria (50+100)/2 = 75% -- INCORRECTO. El correcto es (50+20)/(100+20) = 58.33%.
@@ -103,7 +103,7 @@ test('la agregacion por linea usa contestadas/total del periodo, NUNCA promedio 
 
 test('el recalculo desde Trafico NO borra otros campos ya presentes en resumen (whatsapp, agendas, citas...)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2027-10';
+  const mes = '2021-10';
   await mapearAOrlant(admin, 'TEST F39 GENERAL');
 
   const carga = await request(app)
@@ -134,7 +134,7 @@ test('el recalculo desde Trafico NO borra otros campos ya presentes en resumen (
 
 test('precedencia: si se sube un resumen manual DESPUES de Trafico, Trafico gana para esos 4 campos', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2027-11';
+  const mes = '2021-11';
   await mapearAOrlant(admin, 'TEST F39 3P');
 
   const trafico = await request(app)
@@ -168,7 +168,7 @@ test('precedencia: si se sube un resumen manual DESPUES de Trafico, Trafico gana
 
 test('precedencia (al reves): un resumen manual subido ANTES de que exista Trafico se respeta, y Trafico lo toma despues', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2027-12';
+  const mes = '2021-12';
   await mapearAOrlant(admin, 'TEST F39 3P');
 
   // Resumen manual primero -- todavia no hay ninguna fila de Trafico para
@@ -200,7 +200,7 @@ test('precedencia (al reves): un resumen manual subido ANTES de que exista Trafi
 
 test('un skill que no calza con ningun patron 3P/GENERAL no rompe la carga y no crea un resumen vacio', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-01';
+  const mes = '2022-01';
 
   const trafico = await request(app)
     .post('/api/calidad/trafico/carga')
@@ -224,7 +224,7 @@ test('un skill que no calza con ningun patron 3P/GENERAL no rompe la carga y no 
 // ver cabecera de resumen-orlant-trafico.js).
 test('Fase 77: una tercera skill (REGIMEN ESPECIALES) conviviendo con 3P/GENERAL no se suma a ninguna linea y no afecta sus totales', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-07';
+  const mes = '2022-07';
 
   const filas = [
     traficoFila({ fecha: mes + '-01', skillName: 'CALL INBOUND ORLANT 3P', totalLlamadas: 100, contestadas: 90 }),
@@ -253,10 +253,10 @@ test('Fase 77: una tercera skill (REGIMEN ESPECIALES) conviviendo con 3P/GENERAL
 });
 
 test('recalcularResumenOrlantDesdeTrafico: sin filas de trafico para el mes, no toca dashboard_cargas', () => {
-  const antes = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2029-01'").get().c;
-  const resultado = recalcularResumenOrlantDesdeTrafico(db, '2029-01');
+  const antes = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2023-01'").get().c;
+  const resultado = recalcularResumenOrlantDesdeTrafico(db, '2023-01');
   assert.equal(resultado.actualizado, false);
-  const despues = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2029-01'").get().c;
+  const despues = db.prepare("SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente='ORLANT' AND seccion='resumen' AND periodo='2023-01'").get().c;
   assert.equal(despues, antes);
 });
 
@@ -276,7 +276,7 @@ test('lineaDeCola: misma convencion de nombre que lineaDeSkill ("... 3P" / "... 
 
 test('WhatsApp: la agregacion por linea usa contestados/total del periodo (nunca promedio simple)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-04';
+  const mes = '2022-04';
   // 2 colas de la linea 3P en el mismo mes -- deben SUMARSE, no promediarse.
   const res = await request(app)
     .post('/api/calidad/trafico/whatsapp/carga')
@@ -298,7 +298,7 @@ test('WhatsApp: la agregacion por linea usa contestados/total del periodo (nunca
 
 test('WhatsApp: el recalculo NO borra otros campos ya presentes en resumen (incluidas las 4 de Llamadas)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-05';
+  const mes = '2022-05';
   await mapearAOrlant(admin, 'TEST F71 GENERAL');
 
   const carga = await request(app)
@@ -333,7 +333,7 @@ test('WhatsApp: el recalculo NO borra otros campos ya presentes en resumen (incl
 
 test('WhatsApp: precedencia -- un resumen manual subido DESPUES de Trafico de WhatsApp no pisa wpp_3p/nivel_atencion_wpp_3p', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-06';
+  const mes = '2022-06';
 
   const wpp = await request(app)
     .post('/api/calidad/trafico/whatsapp/carga')
@@ -361,7 +361,7 @@ test('WhatsApp: precedencia -- un resumen manual subido DESPUES de Trafico de Wh
 
 test('WhatsApp: una cola que no calza con ningun patron 3P/GENERAL no rompe la carga y no crea un resumen vacio', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-02';
+  const mes = '2022-02';
 
   const wpp = await request(app)
     .post('/api/calidad/trafico/whatsapp/carga')
@@ -376,7 +376,7 @@ test('WhatsApp: una cola que no calza con ningun patron 3P/GENERAL no rompe la c
 
 test('recalcularResumenOrlantDesdeTrafico: combina Llamadas y WhatsApp del mismo mes en una sola fila de resumen', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const mes = '2028-03';
+  const mes = '2022-03';
   await mapearAOrlant(admin, 'TEST F71 COMBO 3P');
 
   await request(app)

@@ -144,6 +144,50 @@ test('filas invalidas se descartan con un aviso explicando por que', () => {
   assert.match(res.avisos[3], /NOMBRE_COLA_WHATSAPP vacio/);
 });
 
+// Fase 86 (tema 2): solo FECHA FIN se compara contra el limite -- un
+// periodo puede terminar legitimamente el ultimo dia del mes en curso.
+test('Fase 86: fila con FECHA FIN en el futuro se omite con un aviso que dice la fila y la fecha', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],
+    ['COLA X', '2099-06-01', '2099-06-30', 100, 90], // futuro -- se omite
+    ['COLA X', '2026-01-01', '2026-01-31', 50, 45], // valida
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.filas[0].fechaFin, '2026-01-31');
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /FECHA FIN/);
+  assert.match(res.avisos[0], /2099-06-30/);
+  assert.match(res.avisos[0], /futuro/);
+});
+
+test('Fase 86: FECHA FIN igual al ultimo dia del mes en curso se acepta (nunca "posterior a hoy")', () => {
+  const { fechaLimitesFinDeMesActual } = require('../../public/js/fecha-limites-logic.js');
+  const finMes = fechaLimitesFinDeMesActual();
+  const inicioMes = finMes.slice(0, 8) + '01';
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],
+    ['COLA X', inicioMes, finMes, 100, 90],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 1, 'un periodo que termina el ultimo dia del mes en curso es valido, no futuro');
+  assert.equal(res.avisos.length, 0);
+});
+
+test('Fase 86: FECHA INICIO anterior a 2020 SOLO se advierte -- no se omite', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],
+    ['COLA X', '2015-01-01', '2015-01-31', 100, 90],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 1, 'la fila NO se omite, solo se advierte');
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /anterior a 2020/);
+});
+
 test('fila TOTAL/resumen de la base se descarta con aviso, no se suma como si fuera una cola real', () => {
   const aoa = [
     ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],

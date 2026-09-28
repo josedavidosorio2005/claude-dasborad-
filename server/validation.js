@@ -4,6 +4,17 @@
 // (tipo, longitud, formato, rol desconocido, etc.) respondemos 400 con un
 // mensaje claro y NO ejecutamos la operacion.
 const { z } = require('zod');
+const { fechaLimitesEsFutura, fechaLimitesFinDeMesActual } = require('./fecha-limites');
+
+// Fase 86 (tema 2, hallazgo real Fase 85: una fila suelta con fecha
+// 2030-06 en la base local corria la ventana por defecto de Trafico/
+// Agendas a un mes casi vacio): defensa en el servidor (nunca solo en el
+// navegador) contra fechas futuras en CUALQUIER carga por Excel -- nunca
+// "posterior a hoy", porque WhatsApp trae periodos cuya FECHA FIN puede
+// ser legitimamente el fin del mes en curso.
+function mensajeFechaFutura(fechaISO) {
+  return `La fecha ${fechaISO} esta en el futuro (posterior al ${fechaLimitesFinDeMesActual()}, fin del mes en curso)`;
+}
 
 // zod v4 elimino required_error/invalid_type_error/errorMap (construccion por
 // objeto) en favor de un unico parametro `error`. Este helper reproduce el
@@ -182,7 +193,17 @@ const monitoreoBulkFila = createMonitoreoBody.omit({ campana: true });
 const monitoreoBulkBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(300).optional().default(''),
-  filas: z.array(monitoreoBulkFila).min(1, 'El archivo no tiene filas validas').max(2000, 'Demasiadas filas en un solo archivo (maximo 2000)'),
+  filas: z
+    .array(monitoreoBulkFila)
+    .min(1, 'El archivo no tiene filas validas')
+    .max(2000, 'Demasiadas filas en un solo archivo (maximo 2000)')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila.fecha)) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila.fecha), path: [i, 'fecha'] });
+        }
+      });
+    }),
 });
 
 const updateMonitoreoBody = z
@@ -319,6 +340,11 @@ const traficoFilaSchema = z
   .refine((f) => f.contestadas <= f.totalLlamadas, {
     message: 'Las llamadas contestadas no pueden superar el total',
     path: ['contestadas'],
+  })
+  .superRefine((f, ctx) => {
+    if (fechaLimitesEsFutura(f.fecha)) {
+      ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(f.fecha), path: ['fecha'] });
+    }
   });
 
 const traficoCargaBody = z.object({
@@ -362,6 +388,15 @@ const traficoWppFilaSchema = z
   .refine((f) => f.fechaFin >= f.fechaInicio, {
     message: 'FECHA FIN no puede ser anterior a FECHA INICIO',
     path: ['fechaFin'],
+  })
+  // Solo FECHA FIN se compara contra el limite -- un periodo puede
+  // legitimamente terminar el ultimo dia del mes en curso (ver
+  // fecha-limites.js); FECHA INICIO nunca es mas tardia que FECHA FIN
+  // (ya lo exige el refine de arriba), asi que queda cubierta sola.
+  .superRefine((f, ctx) => {
+    if (fechaLimitesEsFutura(f.fechaFin)) {
+      ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(f.fechaFin), path: ['fechaFin'] });
+    }
   });
 
 const traficoWppCargaBody = z.object({
@@ -407,7 +442,17 @@ const agendasCargaBody = z.object({
   filas: z
     .array(agendasFilaArraySchema)
     .min(1, 'El archivo no tiene filas de datos')
-    .max(20000, 'Demasiadas filas en un solo archivo'),
+    .max(20000, 'Demasiadas filas en un solo archivo')
+    // fechaSolicitud = indice 5 de la tupla (AAAA-MM-DD HH:MM:SS -- solo
+    // se compara la parte de fecha, los primeros 10 caracteres).
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        const fechaParte = String(fila[5]).slice(0, 10);
+        if (fechaLimitesEsFutura(fechaParte)) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fechaParte), path: [i, 5] });
+        }
+      });
+    }),
 });
 
 // Filtros compartidos por los 3 endpoints de lectura (opciones/especialidad/
@@ -461,7 +506,15 @@ const tipificacionCargaBody = z.object({
   filas: z
     .array(tipificacionFilaArraySchema)
     .min(1, 'El archivo no tiene filas de datos')
-    .max(50000, 'Demasiadas filas en un solo archivo'),
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    // fecha = indice 1 de la tupla (ver el comentario de arriba).
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
 });
 
 // Filtros compartidos (Mes/rango) + independientes (Agente/Skill) por

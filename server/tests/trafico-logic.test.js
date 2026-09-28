@@ -208,6 +208,39 @@ test('filas invalidas se descartan con un aviso explicando por que (fecha vacia,
   assert.match(res.avisos[2], /SKILL_NAME vacio/);
 });
 
+// Fase 86 (tema 2, hallazgo real Fase 85: una fila suelta con fecha
+// 2030-06 en la base local corrio la ventana por defecto a un mes casi
+// vacio) -- una fila con DATE en el futuro se rechaza (se omite, con
+// aviso que dice la fila y la fecha), nunca "posterior a hoy".
+test('Fase 86: fila con DATE en el futuro se omite con un aviso que dice la fila y la fecha', () => {
+  const aoa = [
+    ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS'],
+    ['SKILL X', '2099-06-15', 100, 90], // futuro -- se omite
+    ['SKILL X', '2026-01-03', 50, 45], // valida
+  ];
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.filas[0].fecha, '2026-01-03');
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /Fila 2/);
+  assert.match(res.avisos[0], /2099-06-15/);
+  assert.match(res.avisos[0], /futuro/);
+});
+
+test('Fase 86: fila con DATE anterior a 2020 SOLO se advierte -- no se omite, la fila se guarda igual', () => {
+  const aoa = [
+    ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS'],
+    ['SKILL X', '2015-03-10', 100, 90], // sospechosa, pero valida
+  ];
+  const res = traficoParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 1, 'la fila NO se omite, solo se advierte');
+  assert.equal(res.filas[0].fecha, '2015-03-10');
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /anterior a 2020/);
+});
+
 // ── Point 10 del pedido de Edwin: nunca confiar en una fila TOTAL/resumen ──
 test('fila TOTAL/resumen de la base (SKILL_NAME="TOTAL", con fecha valida) se descarta con aviso, no se suma como si fuera una linea real', () => {
   const aoa = [
