@@ -130,6 +130,9 @@ async function _traficoWppRenderPanel(p, i) {
   var fechasIniDisp = datosCampana.filas.map(function(f){ return f.fechaInicio; }).sort();
   var fechasFinDisp = datosCampana.filas.map(function(f){ return f.fechaFin; }).sort();
   var minDisp = fechasIniDisp[0], maxDisp = fechasFinDisp[fechasFinDisp.length-1];
+  // Fase 86 (tema 2): una fila vieja con fecha futura ya en la base nunca
+  // debe arrastrar la ventana por defecto (ver trafico.js).
+  if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
   var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
   if(!estado.desde) estado.desde = desdeDefault;
   if(!estado.hasta) estado.hasta = maxDisp;

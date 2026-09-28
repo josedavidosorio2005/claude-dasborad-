@@ -7,6 +7,10 @@
 // que corren esta MISMA logica contra un fixture real de 3 hojas.
 'use strict';
 
+// fecha-limites-logic.js: global en el navegador, require() en Node --
+// ver ese archivo para el criterio de "fecha futura".
+var _cmFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+
 var CM_COLUMNAS_FIJAS = [
   { key: 'asesor', label: 'ASESOR' },
   { key: 'fecha', label: 'FECHA' },
@@ -82,6 +86,10 @@ function cmParseRows(aoa, items){
     var fecha = cmParseFecha(row[map.fijas.fecha]);
     if(!asesor){ avisos.push('Fila '+fila+': ASESOR vacio, se omitio.'); continue; }
     if(!fecha){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA invalida, se omitio.'); continue; }
+    // Fase 86 (tema 2): fecha futura -> se rechaza; fecha anterior a 2020
+    // -> solo se advierte, no se omite.
+    if(_cmFechaLimites.fechaLimitesEsFutura(fecha)){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA '+fecha+' esta en el futuro, se omitio.'); continue; }
+    if(_cmFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA '+fecha+' es anterior a 2020, revisa si esta bien digitada (no se omitio).'); }
 
     var canalRaw = map.fijas.canal!==undefined ? _cmNorm(row[map.fijas.canal]) : '';
     var canal = (canalRaw.indexOf('wpp')!==-1 || canalRaw.indexOf('whatsapp')!==-1 || canalRaw.indexOf('chat')!==-1) ? 'WPP' : 'LLAMADA';

@@ -531,6 +531,11 @@ async function _traficoRenderPanel(p, i){
   var estado = _traficoEstadoDesdeURL();
   var fechasDisponibles = datos.filas.map(function(f){ return f.fecha; }).sort();
   var minDisp = fechasDisponibles[0], maxDisp = fechasDisponibles[fechasDisponibles.length-1];
+  // Fase 86 (tema 2, hallazgo real Fase 85): una fila vieja con fecha
+  // futura que ya exista en la base (carga anterior a este fix) nunca debe
+  // arrastrar la ventana por defecto a un mes casi vacio -- se recorta al
+  // fin del mes en curso, hora Colombia (fecha-limites-logic.js).
+  if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
   // Ventana movil de 12 meses (pedido de Edwin, llamada 2026-09-15): el
   // valor POR DEFECTO de "Desde" (cuando el usuario no eligio nada, ni en
   // esta carga de pagina ni antes via "Aplicar filtros") nunca es el inicio

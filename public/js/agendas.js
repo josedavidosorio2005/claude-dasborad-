@@ -55,7 +55,16 @@ async function _agendasRenderPanel(p, i){
   // selecciona el mes MAS RECIENTE con datos (mismo criterio que
   // Tipificacion, Fase 77) -- una eleccion explicita del usuario en el
   // desplegable (incluida "Todos") sigue mandando despues de la primera vez.
-  if(!_agendasEstado[i]) _agendasEstado[i] = { mes: opciones.meses[opciones.meses.length-1] };
+  if(!_agendasEstado[i]){
+    // Fase 86 (tema 2): el mes por defecto (el mas reciente CON DATOS,
+    // Fase 79) nunca pasa del mes actual -- una fila vieja con fecha
+    // futura ya en la base (carga anterior a este fix) nunca debe
+    // arrastrar el default a un mes que en realidad todavia no llego.
+    var mesActualAgendas = (typeof fechaLimitesFinDeMesActual === 'function') ? fechaLimitesFinDeMesActual().slice(0, 7) : null;
+    var mesesValidos = mesActualAgendas ? opciones.meses.filter(function(m){ return m <= mesActualAgendas; }) : opciones.meses;
+    if(!mesesValidos.length) mesesValidos = opciones.meses;
+    _agendasEstado[i] = { mes: mesesValidos[mesesValidos.length-1] };
+  }
   var estado = _agendasEstado[i];
 
   var html = '<div class="aurora-card">';

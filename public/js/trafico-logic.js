@@ -13,6 +13,11 @@
 // filas ya parseadas como JSON (mismo patron que cargas.js / metas.js NSD).
 'use strict';
 
+// fecha-limites-logic.js: global en el navegador (se carga antes por
+// <script>), require() en Node para las pruebas -- ver ese archivo para
+// el criterio de "fecha futura" (fin del mes en curso, hora Colombia).
+var _traficoFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+
 // ── Columnas del export de Volvox (hoja DATA) ───────────────────────────
 // El emparejamiento es por NOMBRE de columna (normalizado), nunca por
 // posicion: si Volvox reordena o agrega columnas, esto sigue funcionando.
@@ -195,6 +200,12 @@ function traficoParseFilas(aoa) {
     if (totalLlamadas === null || totalLlamadas < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): TOTAL LLAMADAS invalido, se omitio.'); continue; }
     if (contestadas === null || contestadas < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): LLAMADAS CONTESTADAS invalido, se omitio.'); continue; }
     if (contestadas > totalLlamadas) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + skillName + '): contestadas (' + contestadas + ') supera el total (' + totalLlamadas + '), se omitio.'); continue; }
+    // Fase 86 (tema 2, hallazgo real Fase 85): una fecha mal digitada (ej.
+    // "2030" en vez de "2026") corre la ventana por defecto del panel a un
+    // mes casi vacio -- se rechaza, nunca "posterior a hoy" (un dia
+    // cualquiera del mes en curso es valido).
+    if (_traficoFechaLimites.fechaLimitesEsFutura(fecha)) { avisos.push('Fila ' + filaNum + ' (' + skillName + '): DATE ' + fecha + ' esta en el futuro, se omitio.'); continue; }
+    if (_traficoFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)) { avisos.push('Fila ' + filaNum + ' (' + skillName + '): DATE ' + fecha + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).'); }
 
     var fila = {
       fecha: fecha,

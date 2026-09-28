@@ -72,6 +72,30 @@ test('cmParseRows: fixture de 3 hojas de Cartera — filas validas, invalidas de
   assert.equal(f3.answers[2], 'N/A');
 });
 
+// Fase 86 (tema 2, hallazgo real Fase 85): FECHA futura se rechaza (se
+// omite, con aviso que dice la fila y la fecha) -- nunca "posterior a hoy".
+test('Fase 86: cmParseRows -- FECHA en el futuro se omite con un aviso que dice la fila y la fecha', () => {
+  const header = ['ASESOR', 'FECHA', ITEMS_CARTERA[0].label];
+  const aoa = [header, ['Asesor Prueba', '2099-06-15', 'SI'], ['Asesor Prueba', '2026-01-03', 'SI']];
+  const res = cmParseRows(aoa, ITEMS_CARTERA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /Fila 2/);
+  assert.match(res.avisos[0], /2099-06-15/);
+  assert.match(res.avisos[0], /futuro/);
+});
+
+test('Fase 86: cmParseRows -- FECHA anterior a 2020 SOLO se advierte, no se omite', () => {
+  const header = ['ASESOR', 'FECHA', ITEMS_CARTERA[0].label];
+  const aoa = [header, ['Asesor Prueba', '2015-03-10', 'SI']];
+  const res = cmParseRows(aoa, ITEMS_CARTERA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas.length, 1, 'la fila NO se omite, solo se advierte');
+  assert.equal(res.avisos.length, 1);
+  assert.match(res.avisos[0], /anterior a 2020/);
+});
+
 test('cmParseRows: hoja vacia o sin columnas obligatorias -> error legible', () => {
   assert.match(cmParseRows([], ITEMS_CARTERA).error, /vacia/i);
   const sinAsesor = [['FECHA', 'CANAL'], ['2026-09-01', 'LLAMADA']];

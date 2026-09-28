@@ -1031,6 +1031,9 @@ function _calDashEstado(camp, todos){
   if(!_calDashFiltro[camp]){
     var fechas = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
     var minF = fechas[0], maxF = fechas[fechas.length-1];
+    // Fase 86 (tema 2): una fila vieja con fecha futura ya en la base nunca
+    // debe arrastrar la ventana por defecto (ver trafico.js).
+    if(typeof fechaLimitesRecortar === 'function') maxF = fechaLimitesRecortar(maxF);
     var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxF, minF) : minF;
     _calDashFiltro[camp] = { asesores: null, desde: desdeDefault || '', hasta: maxF || '' };
   }

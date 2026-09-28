@@ -14,6 +14,10 @@
 // servidor). Ver PRIVACIDAD mas abajo.
 'use strict';
 
+// fecha-limites-logic.js: global en el navegador, require() en Node --
+// ver ese archivo para el criterio de "fecha futura".
+var _agendasFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+
 // ── Columnas de la hoja AGENDAS (formato consolidado de ORLANT) ─────────
 // Emparejamiento por NOMBRE de columna, igual que el resto de la
 // plataforma -- nunca por posicion. Las 8 son tal cual las nombra Edwin;
@@ -148,6 +152,15 @@ function agendasParseFilas(aoa) {
     if (!fechaSolicitud) {
       avisos.push('Fila ' + filaNum + ': FECHA_SOLICITUD invalida o vacia, se omitio.');
       continue;
+    }
+    // Fase 86 (tema 2): solo se compara la parte de fecha (los primeros 10
+    // caracteres de 'AAAA-MM-DD HH:MM:SS').
+    if (_agendasFechaLimites.fechaLimitesEsFutura(fechaSolicitud.slice(0, 10))) {
+      avisos.push('Fila ' + filaNum + ': FECHA_SOLICITUD ' + fechaSolicitud + ' esta en el futuro, se omitio.');
+      continue;
+    }
+    if (_agendasFechaLimites.fechaLimitesEsSospechosaAntigua(fechaSolicitud.slice(0, 10))) {
+      avisos.push('Fila ' + filaNum + ': FECHA_SOLICITUD ' + fechaSolicitud + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).');
     }
     if (AGENDAS_TIPOS_LINEA.indexOf(tipoLinea) === -1) {
       avisos.push('Fila ' + filaNum + ': TIPO DE LINEA debe ser 3P o GENERAL (vino "' + tipoLinea + '"), se omitio.');

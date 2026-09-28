@@ -10,6 +10,10 @@
 // como en la version de voz.
 'use strict';
 
+// fecha-limites-logic.js: global en el navegador, require() en Node --
+// ver ese archivo para el criterio de "fecha futura".
+var _traficoWppFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+
 // ── Columnas de la plantilla real de WhatsApp (hoja DATA) ───────────────
 // Solo 5 obligatorias (cola + las 2 fechas del periodo + total + contestados);
 // el resto, si falta, la metrica queda ausente (no en 0 — 0% es un dato real).
@@ -176,6 +180,12 @@ function traficoWppParseFilas(aoa) {
     if (totalWhatsapp === null || totalWhatsapp < 0) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): TOTAL WHATSAPP invalido, se omitio.'); continue; }
     if (contestados === null || contestados < 0) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): WHATSAPP CONTESTADOS invalido, se omitio.'); continue; }
     if (contestados > totalWhatsapp) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): contestados (' + contestados + ') supera el total (' + totalWhatsapp + '), se omitio.'); continue; }
+    // Fase 86 (tema 2): solo FECHA FIN se compara contra el limite -- un
+    // periodo puede terminar legitimamente el ultimo dia del mes en curso;
+    // FECHA INICIO nunca es mas tardia que FECHA FIN (ya lo exige el check
+    // de arriba), asi que queda cubierta sola.
+    if (_traficoWppFechaLimites.fechaLimitesEsFutura(fechaFin)) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): FECHA FIN ' + fechaFin + ' esta en el futuro, se omitio.'); continue; }
+    if (_traficoWppFechaLimites.fechaLimitesEsSospechosaAntigua(fechaInicio)) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): FECHA INICIO ' + fechaInicio + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).'); }
 
     var fila = {
       colaWhatsapp: colaWhatsapp,

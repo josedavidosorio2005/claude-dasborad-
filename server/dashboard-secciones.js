@@ -15,6 +15,8 @@
 
 'use strict';
 
+const { fechaLimitesEsFutura, fechaLimitesFinDeMesActual } = require('./fecha-limites');
+
 const SECCIONES = {
   ORLANT: {
     resumen: {
@@ -343,6 +345,12 @@ function normalizarFilas(spec, filas) {
         const s = String(raw).trim().slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
           errores.push(`Fila ${i + 1}: "${col.label}" debe ser AAAA-MM-DD (recibido "${raw}")`);
+        } else if (fechaLimitesEsFutura(s)) {
+          // Fase 86 (tema 2, hallazgo real Fase 85): defensa en el servidor
+          // contra fechas futuras -- nunca "posterior a hoy" (ver
+          // fecha-limites.js), asi una fila con fecha mal digitada nunca
+          // corre la ventana por defecto de otro panel a un mes vacio.
+          errores.push(`Fila ${i + 1}: "${col.label}" esta en el futuro (recibido "${s}", posterior al ${fechaLimitesFinDeMesActual()})`);
         } else {
           nfila[col.key] = s;
         }

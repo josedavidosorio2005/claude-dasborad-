@@ -60,8 +60,14 @@ async function _tipificacionRenderPanel(p, i){
   }
 
   if(!_tipificacionEstadoCompartido[i]){
-    // Por defecto, el mes mas reciente con datos (mismo criterio que Trafico).
-    _tipificacionEstadoCompartido[i] = { mes: mesesCombinados[mesesCombinados.length-1], desde:'', hasta:'' };
+    // Por defecto, el mes mas reciente con datos (mismo criterio que
+    // Trafico) -- pero nunca posterior al mes actual (Fase 86, tema 2: una
+    // fila vieja con fecha futura ya en la base no debe arrastrar el
+    // default a un mes que en realidad todavia no llego).
+    var mesActualTipif = (typeof fechaLimitesFinDeMesActual === 'function') ? fechaLimitesFinDeMesActual().slice(0, 7) : null;
+    var mesesValidosTipif = mesActualTipif ? mesesCombinados.filter(function(m){ return m <= mesActualTipif; }) : mesesCombinados;
+    if(!mesesValidosTipif.length) mesesValidosTipif = mesesCombinados;
+    _tipificacionEstadoCompartido[i] = { mes: mesesValidosTipif[mesesValidosTipif.length-1], desde:'', hasta:'' };
   }
   var estado = _tipificacionEstadoCompartido[i];
 

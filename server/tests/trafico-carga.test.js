@@ -292,7 +292,7 @@ test('point 1: un archivo con estructura invalida es rechazado y la carga anteri
   const buena = await request(app)
     .post('/api/calidad/trafico/carga')
     .set(auth(admin))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-01', totalLlamadas: 77, contestadas: 70 })] });
+    .send({ filas: [fila({ skillName: skill, fecha: '2021-10-01', totalLlamadas: 77, contestadas: 70 })] });
   assert.equal(buena.status, 201, JSON.stringify(buena.body));
 
   // "Archivo roto": una fila sin SKILL_NAME (lo que produciria traficoParseFilas
@@ -301,7 +301,7 @@ test('point 1: un archivo con estructura invalida es rechazado y la carga anteri
   const rota = await request(app)
     .post('/api/calidad/trafico/carga')
     .set(auth(admin))
-    .send({ filas: [{ fecha: '2026-10-02', totalLlamadas: 999, contestadas: 999 }] });
+    .send({ filas: [{ fecha: '2021-10-02', totalLlamadas: 999, contestadas: 999 }] });
   assert.equal(rota.status, 400);
 
   // Los datos de la carga buena, intactos: mismos numeros, sin fila nueva del intento roto.
@@ -311,7 +311,7 @@ test('point 1: un archivo con estructura invalida es rechazado y la carga anteri
   const filasSkill = rows.body.filter((r) => r.skillName === skill);
   assert.equal(filasSkill.length, 1, 'la carga rota no debe haber agregado ni tocado filas de esta skill');
   assert.equal(filasSkill[0].totalLlamadas, 77, 'el dato de la carga buena no debe cambiar');
-  assert.equal(rows.body.some((r) => r.fecha === '2026-10-02'), false, 'ninguna fila del intento roto debe existir');
+  assert.equal(rows.body.some((r) => r.fecha === '2021-10-02'), false, 'ninguna fila del intento roto debe existir');
 });
 
 // ── Control de cargas por periodo (seccion 3 del pedido de Edwin) ──
@@ -323,8 +323,8 @@ test('GET /calidad/trafico/cobertura: refleja los meses ya cargados por skill, r
     .set(auth(admin))
     .send({
       filas: [
-        fila({ skillName: skill, fecha: '2026-11-01', totalLlamadas: 10, contestadas: 9 }),
-        fila({ skillName: skill, fecha: '2026-12-01', totalLlamadas: 20, contestadas: 18 }),
+        fila({ skillName: skill, fecha: '2021-11-01', totalLlamadas: 10, contestadas: 9 }),
+        fila({ skillName: skill, fecha: '2021-12-01', totalLlamadas: 20, contestadas: 18 }),
       ],
     });
 
@@ -332,7 +332,7 @@ test('GET /calidad/trafico/cobertura: refleja los meses ya cargados por skill, r
   assert.equal(cobertura.status, 200);
   const fila1 = cobertura.body.find((r) => r.skillName === skill);
   assert.ok(fila1, 'la skill debe aparecer en la cobertura');
-  assert.deepEqual(fila1.meses.map((m) => m.mes).sort(), ['2026-11', '2026-12']);
+  assert.deepEqual(fila1.meses.map((m) => m.mes).sort(), ['2021-11', '2021-12']);
 });
 
 test('POST /calidad/trafico/carga/impacto: cuenta cuantas filas se reemplazarian SIN escribir nada', async () => {
@@ -341,17 +341,17 @@ test('POST /calidad/trafico/carga/impacto: cuenta cuantas filas se reemplazarian
   await request(app)
     .post('/api/calidad/trafico/carga')
     .set(auth(admin))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-10', totalLlamadas: 5, contestadas: 5 })] });
+    .send({ filas: [fila({ skillName: skill, fecha: '2021-10-10', totalLlamadas: 5, contestadas: 5 })] });
 
   const impacto = await request(app)
     .post('/api/calidad/trafico/carga/impacto')
     .set(auth(admin))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-10', totalLlamadas: 999, contestadas: 999 })] });
+    .send({ filas: [fila({ skillName: skill, fecha: '2021-10-10', totalLlamadas: 999, contestadas: 999 })] });
   assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
   const par = impacto.body.find((p) => p.skillName === skill);
   assert.ok(par, JSON.stringify(impacto.body));
   assert.equal(par.filasExistentes, 1);
-  assert.equal(par.mes, '2026-10');
+  assert.equal(par.mes, '2021-10');
 
   // No debe haber escrito nada: el valor guardado sigue siendo el original (5), no 999.
   const rows = await request(app)
@@ -380,7 +380,7 @@ test('canLoadData (no solo isFullAdmin) alcanza para las rutas de trafico: un AU
   const carga = await request(app)
     .post('/api/calidad/trafico/carga')
     .set(auth(token))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-10-15' })] });
+    .send({ filas: [fila({ skillName: skill, fecha: '2021-10-15' })] });
   assert.equal(carga.status, 201, JSON.stringify(carga.body));
 
   const cobertura = await request(app).get('/api/calidad/trafico/cobertura').set(auth(token));
@@ -434,7 +434,7 @@ test('registrar un SKILL_NAME nuevo por PUT (sin ninguna carga previa) queda map
   const carga = await request(app)
     .post('/api/calidad/trafico/carga')
     .set(auth(admin))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-11-01', totalLlamadas: 20, contestadas: 18 })] });
+    .send({ filas: [fila({ skillName: skill, fecha: '2021-11-01', totalLlamadas: 20, contestadas: 18 })] });
   assert.equal(carga.status, 201, JSON.stringify(carga.body));
   assert.deepEqual(carga.body.campanas, ['CLINICA AURORA']);
   assert.deepEqual(carga.body.skillsSinAsignar, [], 'ya estaba mapeado, no debe aparecer como skill nueva sin asignar');
