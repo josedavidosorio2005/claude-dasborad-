@@ -1122,17 +1122,119 @@ function _gdDatosKpis(){
     };
   });
 }
-function _gdDatosPanelesTab(){
+// Fase 85 (hallazgo real: "Exportar" no exportaba nada en NINGUNA de las 5
+// pestanas de ORLANT). Causa con 2 partes:
+//  1. El menu de "Exportar" (#gd-export-menu) se pintaba con z-index:50,
+//     por DEBAJO del modal del dashboard (#gd-overlay, z-index:600) -- el
+//     menu quedaba invisible/inclicable detras del propio dashboard (ver
+//     el fix de z-index en _gdExport, mas abajo). Sin esto, ni siquiera
+//     se podia llegar a "Excel (.xlsx)".
+//  2. Aunque se pudiera hacer clic, esta funcion (_gdDatosPanelesTab)
+//     saltaba por completo los 5 tipos de panel autonomo (trafico_combo,
+//     trafico_whatsapp_combo, agendas_panel, tipificacion_panel,
+//     calidad_kpis/calidad_pie) con un comentario que decia "export
+//     propio" -- cierto para Trafico (_traficoDatosExport/
+//     _traficoWppDatosExport YA EXISTIAN, con botones Excel/PDF DENTRO de
+//     cada panel, Fase 68 -- nunca conectados a este boton de arriba) pero
+//     FALSO para Agendas/Tipificacion/Calidad (Fases 77/78): nunca tuvieron
+//     ningun export, ni aqui ni en su propio panel.
+//
+// GD_EXPORT_TIPOS_SOPORTADOS (lista CERRADA de tipos de panel que esta
+// funcion sabe exportar) vive en dashboard-export-tipos.js -- ver ese
+// archivo y server/tests/dashboard-generic-export-fase85-lista-cerrada.test.js.
+
+// Agendas (Fase 78, pedido explicito de esta fase): "Citas por Especialidad"
+// + el total por mes, con el mes/filtros que esten aplicados en el panel
+// AHORA MISMO (_agendasEstado[i], el mismo estado que ya usa _agendasDibujar).
+async function _gdExportarAgendas(p, i){
+  var campana = p.campana;
+  var filtros = _agendasEstado[i] || {};
+  var porEsp = [], porMes = [];
+  try{ porEsp = await apiRequest('GET','/calidad/agendas/especialidad?'+_agendasQueryString(campana, filtros, true)) || []; }catch(e){}
+  try{ porMes = await apiRequest('GET','/calidad/agendas/mensual?'+_agendasQueryString(campana, filtros, false)) || []; }catch(e){}
+  var out = [];
+  if(porEsp.length){
+    out.push({ titulo: 'Citas por Especialidad', tipo: 'tabla', filas: porEsp.map(function(r){ return { Especialidad: r.especialidad, Cantidad: r.cantidad }; }) });
+  } else {
+    out.push({ titulo: 'Citas por Especialidad', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' });
+  }
+  if(porMes.length){
+    out.push({ titulo: 'Total Agendas por Mes', tipo: 'tabla', filas: porMes.map(function(r){ return { Mes: _agendasMesLbl(r.mes), Cantidad: r.cantidad }; }) });
+  }
+  return out;
+}
+
+// Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
+// (Llamadas y WhatsApp) por separado -- si una no tiene datos, se dice
+// (nunca se omite en silencio). Mismo estado compartido/por-canal que ya
+// usa _tipificacionDibujarCanal.
+async function _gdExportarTipificacion(p, i){
+  var campana = p.campana;
+  var compartido = _tipificacionEstadoCompartido[i] || {};
+  var out = [];
+  for(var c=0; c<TIPIFICACION_CANALES.length; c++){
+    var def = TIPIFICACION_CANALES[c];
+    var deCanal = _tipificacionEstadoCanal[i+'::'+def.canal] || {};
+    var resultado = { datos: [], total: 0 };
+    try{ resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, def.canal, compartido, deCanal)) || resultado; }catch(e){}
+    var titulo = 'Tipificacion de ' + def.titulo;
+    if(resultado.total){
+      out.push({ titulo: titulo, tipo: 'tabla', filas: resultado.datos.map(function(r){ return { Tipificacion: (typeof tipificacionEtiqueta==='function'?tipificacionEtiqueta(r.tipificacion):r.tipificacion), Cantidad: r.cantidad }; }) });
+    } else {
+      out.push({ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de ' + def.titulo + ' para el mes/filtros actuales.' });
+    }
+  }
+  return out;
+}
+
+// Calidad: KPIs + desglose del pie, con el filtro de asesor/fecha que este
+// aplicado ahora mismo en el panel (_calDashEstado, el mismo que usa
+// _gdRenderCalidad). calidad_pie se omite a proposito -- es la MISMA data
+// de calidad_kpis, solo visualizada distinto; exportarla dos veces
+// duplicaria la hoja sin aportar nada nuevo.
+function _gdExportarCalidad(p, i){
+  var camp = p.campana;
+  var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+  var estado = _calDashEstado(camp, todos);
+  var arr = calDashFiltrarMonitoreos(todos, { asesores: estado.asesores, desde: estado.desde, hasta: estado.hasta });
+  var r = calDashResumen(arr);
+  if(!r.total){
+    return [{ titulo: 'Calidad', tipo: 'aviso', filas: [], mensaje: 'Sin monitoreos de Calidad para el filtro actual.' }];
+  }
+  return [{
+    titulo: 'Calidad', tipo: 'tabla',
+    filas: [{ 'Monitoreos Realizados': r.total, 'Puntaje Promedio': r.promedio, Clasificacion: r.clasificacion,
+      Sobresaliente: r.sobresaliente, 'No Critico': r.noCritico, Critico: r.critico }],
+  }];
+}
+
+async function _gdDatosPanelesTab(){
   var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
   if(!tab) return [];
   var out = [];
-  (tab.panels || []).forEach(function(p){
+  var panels = tab.panels || [];
+  for(var i=0; i<panels.length; i++){
+    var p = panels[i];
     if(p.tipo === 'kpi_row'){
       (p.items || []).forEach(function(it){ out.push({ titulo: it.titulo, tipo: 'kpi', filas: [{ Valor: _gdResolver(it.fuente).scalar }] }); });
-      return;
+      continue;
     }
-    if(p.tipo && p.tipo.indexOf('calidad') === 0) return;
-    if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'tipificacion_panel') return; // export propio (filtros/fecha no son los de _gd)
+    if(p.tipo === 'calidad_kpis'){ out = out.concat(_gdExportarCalidad(p, i)); continue; }
+    if(p.tipo === 'calidad_pie'){ continue; } // misma data que calidad_kpis, ver comentario arriba
+    if(p.tipo === 'trafico_combo'){
+      var dT = (typeof _traficoDatosExport === 'function') ? _traficoDatosExport(i) : [];
+      out.push(dT.length ? { titulo: 'Trafico de Llamadas', tipo: 'tabla', filas: dT }
+        : { titulo: 'Trafico de Llamadas', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Trafico de Llamadas para el periodo/filtros actuales.' });
+      continue;
+    }
+    if(p.tipo === 'trafico_whatsapp_combo'){
+      var dW = (typeof _traficoWppDatosExport === 'function') ? _traficoWppDatosExport(i) : [];
+      out.push(dW.length ? { titulo: 'Trafico de WhatsApp', tipo: 'tabla', filas: dW }
+        : { titulo: 'Trafico de WhatsApp', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Trafico de WhatsApp para el periodo/filtros actuales.' });
+      continue;
+    }
+    if(p.tipo === 'agendas_panel'){ out = out.concat(await _gdExportarAgendas(p, i)); continue; }
+    if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });
@@ -1141,106 +1243,138 @@ function _gdDatosPanelesTab(){
         valoresN[p.formula.clave] = (aN===null||aN===undefined||bN===null||bN===undefined||!bN) ? null : Math.round((_gdNum(aN)/_gdNum(bN))*1000)/10;
       }
       out.push({ titulo: p.titulo, tipo: 'kpi', filas: [valoresN] });
-      return;
+      continue;
     }
     if(p.tipo === 'pie'){
       var r = _gdResolver(p.fuente);
       out.push({ titulo: p.titulo, tipo: 'pie', filas: (r.labels || []).map(function(l, idx){ return { Categoria: l, Valor: (r.values || [])[idx] }; }) });
-      return;
+      continue;
     }
     if(p.tipo === 'tabla'){
       var carga = _gdCargaMes(p.fuente.s);
       out.push({ titulo: p.titulo, tipo: 'tabla', filas: carga ? (carga.filas || []) : [] });
-      return;
+      continue;
     }
-    // line / bar / area / combo -> serie(s)
-    var series = p.series || (p.barras || []).map(function(b){ return b; });
-    if(p.linea) series = series.concat([p.linea]);
-    var labels = null;
-    var cols = {};
-    series.forEach(function(s){
-      var rr = _gdResolver(s.fuente);
-      if(!labels) labels = rr.labels || [];
-      cols[s.label || 'Serie'] = rr.values || [];
-    });
-    var filas = (labels || []).map(function(l, idx){
-      var row = { Periodo: l };
-      Object.keys(cols).forEach(function(c){ row[c] = cols[c][idx]; });
-      return row;
-    });
-    out.push({ titulo: p.titulo, tipo: 'serie', filas: filas });
-  });
+    if(p.tipo === 'line' || p.tipo === 'bar' || p.tipo === 'area' || p.tipo === 'combo'){
+      var series = p.series || (p.barras || []).map(function(b){ return b; });
+      if(p.linea) series = series.concat([p.linea]);
+      var labels = null;
+      var cols = {};
+      series.forEach(function(s){
+        var rr = _gdResolver(s.fuente);
+        if(!labels) labels = rr.labels || [];
+        cols[s.label || 'Serie'] = rr.values || [];
+      });
+      var filas = (labels || []).map(function(l, idx){
+        var row = { Periodo: l };
+        Object.keys(cols).forEach(function(c){ row[c] = cols[c][idx]; });
+        return row;
+      });
+      out.push({ titulo: p.titulo, tipo: 'serie', filas: filas });
+      continue;
+    }
+    // Fase 85: tipo de panel no reconocido -- un aviso claro, nunca se
+    // rompe ni se ignora en silencio (ver GD_EXPORT_TIPOS_SOPORTADOS).
+    out.push({ titulo: p.titulo || p.tipo || ('panel ' + i), tipo: 'aviso', filas: [], mensaje: 'Este panel (tipo "' + (p.tipo || '?') + '") todavia no tiene soporte de exportacion.' });
+  }
   return out;
 }
 
-function _gdExportExcel(){
-  if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
-  var wb = XLSX.utils.book_new();
-  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
-  // El aviso va PRIMERO (primera hoja que se ve al abrir el archivo) si los
-  // datos de este dashboard son de demostracion — para que un Excel con
-  // datos falsos nunca circule sin decirlo.
-  xlsxAgregarAvisoDemo(wb);
-  var usados = {};
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(_gdDatosKpis())), xlsxNombreHojaUnico('KPIs', usados));
-  _gdDatosPanelesTab().forEach(function(pan){
-    if(!pan.filas.length) return;
-    var name = xlsxNombreHojaUnico(pan.titulo || 'Panel', usados);
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(pan.filas)), name);
-  });
-  XLSX.writeFile(wb, 'Dashboard_' + (_gd.cliente || '').replace(/\s+/g, '_') + '_' + mesLbl + '.xlsx');
+async function _gdExportExcel(){
+  if(typeof XLSX === 'undefined'){ showToast('No se pudo exportar: no se pudo cargar el generador de Excel.'); return; }
+  try{
+    var wb = XLSX.utils.book_new();
+    var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+    // El aviso va PRIMERO (primera hoja que se ve al abrir el archivo) si los
+    // datos de este dashboard son de demostracion — para que un Excel con
+    // datos falsos nunca circule sin decirlo.
+    xlsxAgregarAvisoDemo(wb);
+    var usados = {};
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(_gdDatosKpis())), xlsxNombreHojaUnico('KPIs', usados));
+    var paneles = await _gdDatosPanelesTab();
+    paneles.forEach(function(pan){
+      var name = xlsxNombreHojaUnico(pan.titulo || 'Panel', usados);
+      if(pan.tipo === 'aviso'){
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ Aviso: pan.mensaje }]), name);
+        return;
+      }
+      if(!pan.filas.length) return;
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(pan.filas)), name);
+    });
+    XLSX.writeFile(wb, 'Dashboard_' + (_gd.cliente || '').replace(/\s+/g, '_') + '_' + mesLbl + '.xlsx');
+  }catch(e){
+    showToast('No se pudo exportar: ' + (e && e.message ? e.message : 'error desconocido') + '.');
+  }
 }
 
 // PDF por impresion nativa: abre una ventana solo con el tablero + estilo de
 // impresion y llama print(); el usuario elige "Guardar como PDF".
-function _gdExportPrint(){
-  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
-  var kpis = _gdDatosKpis();
-  var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+async function _gdExportPrint(){
   var w = window.open('', '_blank');
-  if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
-  var SEM_HEX = { VERDE: '#27ae60', AMARILLO: '#e67e22', ROJO: '#e74c3c' };
-  var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th><th>Semaforo</th></tr></thead><tbody>' +
-    kpis.map(function(r){
-      var semColorTd = r.Semaforo ? ('<td style="color:' + SEM_HEX[r.Semaforo] + ';font-weight:700">' + esc(r.Semaforo) + '</td>') : '<td></td>';
-      return '<tr><td>' + esc(r.Indicador) + '</td><td>' + esc(_fmtCell(r.Valor)) + '</td><td>' + esc(_fmtCell(r['Var. %'])) +
-      '</td><td>' + esc(_fmtCell(r['% Meta'])) + '</td><td>' + esc(r.Alerta || '') + '</td>' + semColorTd + '</tr>'; }).join('') + '</tbody></table>';
-  var secs = _gdDatosPanelesTab().filter(function(p){ return p.filas.length; }).map(function(pan){
-    var keys = Object.keys(pan.filas[0]);
-    return '<h3>' + esc(pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + esc(k) + '</th>'; }).join('') +
-      '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + esc(_fmtCell(f[k])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
-  }).join('');
-  // Mismo criterio que el Excel: si el dashboard tiene datos de demostracion,
-  // el aviso va como lo PRIMERO que se ve — un PDF con datos falsos no puede
-  // salir de la app sin decirlo.
-  var avisoHtml = (typeof seedDemoActivo !== 'undefined' && seedDemoActivo)
-    ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">' +
-      '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
-    : '';
-  w.document.write('<!doctype html><html><head><title>' + esc((_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl) + '</title>' +
-    '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}h2,h3{color:#0d4a5e}' +
-    'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}' +
-    'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
-    avisoHtml +
-    '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
-    (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
-    '<h2>Indicadores principales</h2>' + tblKpis +
-    '<h2>' + esc(tab ? tab.label : '') + '</h2>' + secs +
-    '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +
-    '</body></html>');
-  w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 300);
+  if(!w){ showToast('No se pudo exportar: permite las ventanas emergentes para exportar a PDF.'); return; }
+  try{
+    var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+    var kpis = _gdDatosKpis();
+    var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+    var SEM_HEX = { VERDE: '#27ae60', AMARILLO: '#e67e22', ROJO: '#e74c3c' };
+    var tblKpis = '<table><thead><tr><th>Indicador</th><th>Valor</th><th>Var. %</th><th>% Meta</th><th>Alerta</th><th>Semaforo</th></tr></thead><tbody>' +
+      kpis.map(function(r){
+        var semColorTd = r.Semaforo ? ('<td style="color:' + SEM_HEX[r.Semaforo] + ';font-weight:700">' + esc(r.Semaforo) + '</td>') : '<td></td>';
+        return '<tr><td>' + esc(r.Indicador) + '</td><td>' + esc(_fmtCell(r.Valor)) + '</td><td>' + esc(_fmtCell(r['Var. %'])) +
+        '</td><td>' + esc(_fmtCell(r['% Meta'])) + '</td><td>' + esc(r.Alerta || '') + '</td>' + semColorTd + '</tr>'; }).join('') + '</tbody></table>';
+    var paneles = await _gdDatosPanelesTab();
+    var secs = paneles.map(function(pan){
+      if(pan.tipo === 'aviso'){
+        return '<h3>' + esc(pan.titulo || '') + '</h3><p style="color:#92400e;font-style:italic">' + esc(pan.mensaje) + '</p>';
+      }
+      if(!pan.filas.length) return '';
+      var keys = Object.keys(pan.filas[0]);
+      return '<h3>' + esc(pan.titulo || '') + '</h3><table><thead><tr>' + keys.map(function(k){ return '<th>' + esc(k) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' + pan.filas.map(function(f){ return '<tr>' + keys.map(function(k){ return '<td>' + esc(_fmtCell(f[k])) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }).join('');
+    // Mismo criterio que el Excel: si el dashboard tiene datos de demostracion,
+    // el aviso va como lo PRIMERO que se ve — un PDF con datos falsos no puede
+    // salir de la app sin decirlo.
+    var avisoHtml = (typeof seedDemoActivo !== 'undefined' && seedDemoActivo)
+      ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">' +
+        '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
+      : '';
+    w.document.write('<!doctype html><html><head><title>' + esc((_gd.config.titulo || _gd.cliente) + ' — ' + mesLbl) + '</title>' +
+      '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}h2,h3{color:#0d4a5e}' +
+      'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}' +
+      'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
+      avisoHtml +
+      '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
+      (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
+      '<h2>Indicadores principales</h2>' + tblKpis +
+      '<h2>' + esc(tab ? tab.label : '') + '</h2>' + secs +
+      '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +
+      '</body></html>');
+    w.document.close();
+    setTimeout(function(){ w.focus(); w.print(); }, 300);
+  }catch(e){
+    w.close();
+    showToast('No se pudo exportar: ' + (e && e.message ? e.message : 'error desconocido') + '.');
+  }
 }
 function _fmtCell(v){ return v === null || v === undefined || v === '' ? '' : (typeof v === 'number' ? v.toLocaleString('es-CO') : String(v)); }
 
 // Menu de exportacion (lo llama exportGenericDashboard del boton del header).
+// Fase 85: el menu se pintaba con position:absolute + z-index:50 -- por
+// DEBAJO de #gd-overlay (z-index:600, styles.css), es decir INVISIBLE/
+// INCLICABLE detras del propio dashboard en TODAS las pestanas (confirmado
+// con Playwright: "…subtree intercepts pointer events" al hacer clic).
+// Fix: position:fixed (getBoundingClientRect() ya es relativo al viewport,
+// igual que fixed -- absolute podia desalinearse si la pagina estaba
+// scrolleada) + z-index por encima del overlay, y un cierre al hacer clic
+// afuera para que no quede pegado en pantalla.
 function _gdExport(){
   var m = document.getElementById('gd-export-menu');
-  if(m){ m.remove(); return; }
+  if(m){ m.remove(); document.removeEventListener('click', _gdExportClickAfuera, true); return; }
   var btn = document.getElementById('gd-export-btn');
   m = document.createElement('div');
   m.id = 'gd-export-menu';
-  m.style.cssText = 'position:absolute;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;box-shadow:0 8px 30px rgba(var(--shadow-rgb),.2);z-index:50;overflow:hidden;font-size:0.85rem';
+  m.style.cssText = 'position:fixed;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;box-shadow:0 8px 30px rgba(var(--shadow-rgb),.2);z-index:700;overflow:hidden;font-size:0.85rem';
   m.innerHTML =
     '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
     '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
@@ -1249,4 +1383,13 @@ function _gdExport(){
   m.style.left = Math.max(8, r.right - 160) + 'px';
   m.style.width = '160px';
   document.body.appendChild(m);
+  setTimeout(function(){ document.addEventListener('click', _gdExportClickAfuera, true); }, 0);
+}
+function _gdExportClickAfuera(ev){
+  var m = document.getElementById('gd-export-menu');
+  var btn = document.getElementById('gd-export-btn');
+  if(!m) return;
+  if(m.contains(ev.target) || (btn && btn.contains(ev.target))) return;
+  m.remove();
+  document.removeEventListener('click', _gdExportClickAfuera, true);
 }
