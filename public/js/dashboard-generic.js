@@ -565,7 +565,13 @@ async function _gdBootstrap(){
   var set = {};
   Object.keys(_gd.cargas).forEach(function(s){ (_gd.cargas[s]||[]).forEach(function(c){ set[c.periodo] = true; }); });
   _gd.periodos = Object.keys(set).sort().reverse();
-  _gd.mesSel = '';
+  // Fase 86 (tema 3): antes quedaba vacio (el <select> mostraba el mas
+  // reciente por un fallback visual, pero _gd.mesSel de verdad seguia
+  // vacio) -- ahora se fija de una vez al mes mas reciente, para que los
+  // paneles autonomos (Agendas/Tipificacion/Trafico/Calidad) se
+  // sincronicen con el desde que se abre el dashboard, no solo despues del
+  // primer cambio manual del selector.
+  _gd.mesSel = _gd.periodos[0] || '';
   _gd.compSel = '';
   _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
 
@@ -664,6 +670,34 @@ function renderGenericHeader(){
     cs.value = _gd.compSel && previos.indexOf(_gd.compSel) !== -1 ? _gd.compSel : '';
     if(cs.value !== _gd.compSel) _gd.compSel = cs.value;
   }
+  _gdActualizarCompararContra();
+}
+
+// Fase 86 (tema 3): "Comparar contra" (periodo anterior) solo tiene
+// sentido para los paneles de RESUMEN (kpi_row/line/bar/pie/combo/tabla/
+// nota_kpi -- todos leen _gdResolverComp), nunca para los 5 paneles
+// autonomos (Trafico Llamadas/WhatsApp, Agendas, Tipificacion, Calidad):
+// esos tienen su PROPIA ventana de tiempo (ahora sincronizada con el MES
+// de arriba, tema 3) y ninguno calcula un "periodo anterior" -- mostrar el
+// selector ahi confundiria (pareceria que hace algo y no hace nada). Si la
+// pestana/sub-pestana activa es TODA de paneles autonomos (GD_TIPOS_AUTONOMOS,
+// mes-global-logic.js), se esconde el selector y se muestra una nota
+// discreta en su lugar; si mezcla paneles autonomos con paneles de resumen
+// (ej. Agendamiento: "Citas por Especialidad" autonomo + "Ordenamiento
+// medico" de resumen en otras sub-pestanas), el selector sigue disponible
+// sin cambios.
+function _gdActualizarCompararContra(){
+  var wrap = document.getElementById('gd-comp-wrap');
+  var nota = document.getElementById('gd-comp-nota');
+  if(!wrap || !nota) return;
+  var tab = (_gd.config && _gd.config.layout ? (_gd.config.layout.tabs || []) : []).find(function(t){ return t.key === _gd.tab; });
+  if(!tab || !tab.panels || !tab.panels.length){ wrap.style.display = ''; nota.style.display = 'none'; return; }
+  var subActiva = _gdSubtabActiva(tab);
+  var indicesVisibles = subActiva ? subActiva.indices : tab.panels.map(function(p,i){ return i; });
+  var visibles = tab.panels.filter(function(p,i){ return indicesVisibles.indexOf(i) !== -1; });
+  var todosAutonomos = gdTodosAutonomos(visibles);
+  wrap.style.display = todosAutonomos ? 'none' : '';
+  nota.style.display = todosAutonomos ? '' : 'none';
 }
 
 function onGdMesChange(){
@@ -682,6 +716,38 @@ function onGdVistaChange(){
   _gd.vistaSel = document.getElementById('gd-vista-sel').value;
   renderGenericKpis();
   renderGenericTab(_gd.tab);
+}
+
+// Fase 86 (tema 3): el boton "Ver <mes>" del aviso "sin datos" de un panel
+// autonomo (trafico_combo/trafico_whatsapp_combo/agendas_panel/
+// tipificacion_panel) mueve el selector MES de ARRIBA -- asi el resto de
+// pestanas tambien queda consistente con lo que se ve (una sola fuente de
+// verdad, nunca el header diciendo "Informe Ago-26" mientras un panel
+// abajo muestra Abr-25).
+function _gdIrAMes(mes){
+  _gd.mesSel = mes;
+  var sel = document.getElementById('gd-mes-sel');
+  if(sel) sel.value = mes;
+  renderGenericHeader();
+  renderGenericKpis();
+  renderGenericTab(_gd.tab);
+}
+
+// _gdFinDeMes: ver gdFinDeMes en mes-global-logic.js (mismo criterio,
+// extraido ahi para poder probarlo con node:test sin cargar el navegador).
+var _gdFinDeMes = gdFinDeMes;
+
+// HTML del aviso "sin datos para el mes elegido arriba" + boton al ultimo
+// mes con datos -- mismo texto/estructura para los 5 paneles autonomos
+// (Fase 86, tema 3): "Sin datos de <etiqueta> para <mes elegido> — el
+// ultimo mes con datos es <ultimo mes> [Ver <ultimo mes>]".
+function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos){
+  var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(_gdMesLbl(mesElegido)) + '.';
+  if(ultimoMesConDatos){
+    msg += ' El ultimo mes con datos es ' + esc(_gdMesLbl(ultimoMesConDatos)) +
+      ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(_gdMesLbl(ultimoMesConDatos))+'</button>';
+  }
+  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';
 }
 
 function renderGenericBanner(){
@@ -742,6 +808,7 @@ function switchGenericTab(key){
   document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(key);
+  _gdActualizarCompararContra();
 }
 
 // Sub-pestanas dentro de una pestana (Fase 40): campo opcional `subtabs` en
@@ -760,6 +827,7 @@ function switchGenericSubtab(key){
   _gd.subtab = key;
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(_gd.tab);
+  _gdActualizarCompararContra();
 }
 
 function renderGenericTab(key){
@@ -1023,9 +1091,13 @@ function _gdRenderNotaKpi(p, i){
 // pestaña, "tabCalidad" siempre los emite juntos) — la barra de filtro se
 // dibuja una sola vez (en calidad_kpis, que va primero) y calidad_pie lee
 // el mismo estado sin dibujar una segunda barra redundante. A diferencia
-// del selector de mes global (_gd.mesSel), este filtro es autonomo como el
-// de Trafico: no sigue al selector de mes de arriba, tiene su propio rango.
+// del selector de mes global (_gd.mesSel) de antes de la Fase 86, este
+// filtro ahora SI sigue al selector de mes de arriba (tema 3): el mes
+// elegido desliza la ventana de 12 meses igual que Trafico -- ver
+// _calDashMesSincronizado mas abajo.
 var _calDashFiltro = {}; // por campana: { asesores:[...]|null, desde, hasta }
+var _calDashMesSincronizado = {}; // por campana: ultimo _gd.mesSel ya aplicado
+var _calDashSinDatosMesGlobal = {}; // por campana: true si _gd.mesSel no tiene monitoreos
 
 function _calDashEstado(camp, todos){
   if(!_calDashFiltro[camp]){
@@ -1055,6 +1127,36 @@ function _gdRenderCalidad(p, i){
   var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
   var asesoresDisp = calDashAsesoresDistintos(todos);
   var estado = _calDashEstado(camp, todos);
+
+  // Fase 86 (tema 3): si el selector MES de arriba cambio desde la ultima
+  // vez que se sincronizo esta campana, desliza la ventana de 12 meses
+  // para que TERMINE en el mes elegido (mismo criterio que Trafico). Si
+  // ese mes no tiene ningun monitoreo, aviso con boton al ultimo mes con
+  // datos en vez de KPIs/pie en cero (que se verian como "0 monitoreos
+  // reales" en vez de "mes no sincronizado").
+  if(_gd.mesSel && _calDashMesSincronizado[camp] !== _gd.mesSel){
+    _calDashMesSincronizado[camp] = _gd.mesSel;
+    var inicioMesGlobalCal = _gd.mesSel + '-01', finMesGlobalCal = _gdFinDeMes(_gd.mesSel);
+    var tieneDatosMesGlobalCal = todos.some(function(m){ return m.fecha >= inicioMesGlobalCal && m.fecha <= finMesGlobalCal; });
+    // Se fija el rango SIEMPRE (incluso sin datos): asi Exportar
+    // (_gdExportarCalidad, que recalcula fresco desde _calDashFiltro en
+    // el momento del clic) queda consistente con lo que se ve en pantalla.
+    var fechasCalTodas = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
+    estado.hasta = finMesGlobalCal;
+    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, fechasCalTodas[0]) : estado.desde;
+    _calDashSinDatosMesGlobal[camp] = !tieneDatosMesGlobalCal;
+  }
+  if(_calDashSinDatosMesGlobal[camp]){
+    var fechasCalOrden = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
+    var ultimoMesCal = fechasCalOrden.length ? fechasCalOrden[fechasCalOrden.length-1].slice(0,7) : null;
+    if(p.tipo === 'calidad_kpis'){
+      var fElAviso = document.getElementById('gd-f'+i); if(fElAviso) fElAviso.innerHTML = '';
+      var elAviso = document.getElementById('gd-p'+i);
+      if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', _gd.mesSel, ultimoMesCal);
+    }
+    return; // calidad_pie: no dibuja nada -- evita un donut vacio sin explicacion
+  }
+
   if(!estado.asesores) estado.asesores = asesoresDisp.slice();
   else estado.asesores = estado.asesores.filter(function(a){ return asesoresDisp.indexOf(a)!==-1; });
   if(!estado.asesores.length) estado.asesores = asesoresDisp.slice();

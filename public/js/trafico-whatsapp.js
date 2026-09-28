@@ -41,6 +41,9 @@ var _traficoWpp = {}; // cache por campana: { filas: [...] } (GET /calidad/trafi
 var _traficoWppEstado = {}; // estado de filtros actual por campana (mismo patron que _traficoEstado, trafico.js)
 var _traficoWppAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
 var _traficoWppSubtabActivo = {}; // por campana -> key de subtab activa
+// Fase 86 (tema 3): mismo patron que _traficoMesSincronizado (trafico.js).
+var _traficoWppMesSincronizado = {};
+var _traficoWppSinDatosMesGlobal = {};
 
 // ASA/ATA/AHT de WhatsApp pueden ser bastante mayores que en voz (un chat
 // puede quedar horas sin responder antes de que se marque abandonado, a
@@ -133,6 +136,33 @@ async function _traficoWppRenderPanel(p, i) {
   // Fase 86 (tema 2): una fila vieja con fecha futura ya en la base nunca
   // debe arrastrar la ventana por defecto (ver trafico.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
+
+  // Fase 86 (tema 3): mismo patron que trafico.js -- el selector MES de
+  // arriba desliza la ventana de 12 meses (el mes elegido = el FIN de la
+  // ventana). Un periodo "tiene datos" de ese mes si SE SOLAPA con el, no
+  // solo si empieza justo ese dia 1 (mismo criterio que
+  // traficoWppFiltrarFilas).
+  if(_gd.mesSel && _traficoWppMesSincronizado[campana] !== _gd.mesSel){
+    _traficoWppMesSincronizado[campana] = _gd.mesSel;
+    var inicioMesGlobalWpp = _gd.mesSel + '-01', finMesGlobalWpp = _gdFinDeMes(_gd.mesSel);
+    var tieneDatosMesGlobalWpp = datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; });
+    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
+    // cacheado: asi Exportar (_traficoWppDatosExport) queda consistente
+    // con lo que se ve en pantalla -- ver el comentario equivalente en
+    // trafico.js.
+    estado.hasta = finMesGlobalWpp;
+    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
+    _traficoWppEstado[campana] = estado;
+    if(!tieneDatosMesGlobalWpp){
+      _traficoWppSinDatosMesGlobal[campana] = true;
+      _traficoWppAgregadoActual[campana] = [];
+      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>'+
+        _gdAvisoSinDatosMesHtml('Trafico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      host.dataset.campana = campana;
+      return;
+    }
+    _traficoWppSinDatosMesGlobal[campana] = false;
+  }
   var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
   if(!estado.desde) estado.desde = desdeDefault;
   if(!estado.hasta) estado.hasta = maxDisp;
