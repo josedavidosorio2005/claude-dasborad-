@@ -14,6 +14,22 @@ function cargasColPorLabel(spec, label) {
   return spec.columnas.find(function (c) { return _cargasNorm(c.label) === n || _cargasNorm(c.key) === n; }) || null;
 }
 
+// Fase 79 (hallazgo real: los archivos ORIGINALES de Edwin traen la hoja
+// "DATA", nunca "AGENDAS"/"TIPIFICACION_LLAMADAS" -- la gente real sube el
+// archivo tal cual lo exporta su sistema, no la plantilla). Si una hoja no
+// tiene un nombre reconocido pero sus encabezados coinciden EXACTO con los
+// de un formato (todas las columnas OBLIGATORIAS presentes, por nombre
+// normalizado), se reconoce igual -- ver cargasResolverHojaPorEncabezados
+// (cargas.js) para donde se usa esto contra el workbook real. Pura: no
+// toca el workbook, solo compara un header ya extraido contra una lista de
+// columnas del plan.
+function cargasEncabezadosCoinciden(headerRow, columnas) {
+  var normalizados = (headerRow || []).map(function (h) { return _cargasNorm(h); });
+  return (columnas || [])
+    .filter(function (c) { return !c.opcional; })
+    .every(function (c) { return normalizados.indexOf(_cargasNorm(c.label)) !== -1; });
+}
+
 function cargasParseFilaUnica(spec, aoa) {
   // Formato vertical: [ [label, valor], ... ]  (se ignora una fila de encabezado si dice "metrica")
   var obj = {};
@@ -440,6 +456,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     cargasColPorLabel: cargasColPorLabel,
+    cargasEncabezadosCoinciden: cargasEncabezadosCoinciden,
     cargasParseFilaUnica: cargasParseFilaUnica,
     cargasParseMultiFila: cargasParseMultiFila,
     cargasDetectarFormulaSinValor: cargasDetectarFormulaSinValor,

@@ -36,6 +36,33 @@ var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoCon
 // para extenderlo (mismo criterio "no tocar a nadie mas sin que se pida").
 var CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT'];
 
+// Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
+// llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
+// JS que ya estaba en memoria del navegador no reconocia esas hojas, y
+// nunca hay forma de "empujarle" el cambio a una pestana que no se recarga).
+// Compara el BUILD_ID que esta pagina cargo (window.__BUILD_ID__, ver
+// server.js) contra el que reporta el servidor AHORA MISMO (GET /health,
+// publico, sin autenticacion) -- si difieren, esta pestana esta corriendo
+// JS de un deploy viejo. Nunca bloquea la carga (podria ser un falso
+// positivo si /health fallara por otra razon), solo avisa con un banner
+// dificil de ignorar -- un toast de 3 segundos ya se habia perdido en el
+// incidente real.
+async function _cargasAvisarSiVersionVieja(){
+  var aviso = document.getElementById('carga-version-vieja-aviso');
+  if(!aviso) return;
+  aviso.style.display = 'none';
+  try{
+    var res = await fetch((typeof API_BASE!=='undefined'?API_BASE:'/api')+'/health');
+    var data = await res.json();
+    if(data && data.buildId && typeof window.__BUILD_ID__ === 'string' && data.buildId !== window.__BUILD_ID__){
+      aviso.textContent = '⚠ Esta pagina quedo abierta desde ANTES del ultimo cambio en la plataforma. ' +
+        'Antes de cargar un archivo, guarda lo que tengas sin guardar y RECARGA la pagina (F5) -- ' +
+        'de lo contrario la carga puede fallar con "hoja no reconocida" aunque el archivo este bien.';
+      aviso.style.display = '';
+    }
+  }catch(e){ /* si /health falla por otra razon, no se avisa nada -- nunca bloquea la carga */ }
+}
+
 async function openCargas(){
   if(!(isFullAdmin() || (currentUser && currentUser.perms && currentUser.perms.cargarDatos))){
     showToast('No tienes permiso para cargar datos'); return;
@@ -43,6 +70,7 @@ async function openCargas(){
   document.getElementById('cargas-overlay').classList.add('show');
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
+  _cargasAvisarSiVersionVieja();
   try{
     var r = await apiRequest('GET','/dashboard/clientes');
     _cargasClientes = (r && r.clientes) || [];
@@ -347,8 +375,43 @@ async function procesarArchivoConsolidado(input){
     var aoaDataHeader = XLSX.utils.sheet_to_json(wsData, {header:1, blankrows:false, defval:null});
     canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap);
   }
+
+  // Fase 79 (hallazgo real: los archivos ORIGINALES de Edwin traen la hoja
+  // "DATA", nunca "AGENDAS"/"TIPIFICACION_LLAMADAS") -- si una hoja de
+  // AGENDAS o de TIPIFICACION DE LLAMADAS (nunca WhatsApp, pedido
+  // explicito: comparte encabezados con Llamadas, solo se reconoce por
+  // nombre) no esta por su nombre exacto, se busca CUALQUIER hoja del
+  // archivo que (a) ningun otro renglon del plan ya reclamo por su nombre
+  // exacto, (b) no fue reclamada ya por otro renglon via este mismo
+  // mecanismo, y (c) trae TODAS las columnas obligatorias de ese formato
+  // (cargasEncabezadosCoinciden, cargas-logic.js) -- una hoja como
+  // "GRAFICA" nunca calza y se ignora sin error, tal como antes.
+  var hojasReclamadasPorNombre = {};
+  _cargasPlan.forEach(function(h){ if(wb.SheetNames.indexOf(h.hoja)!==-1) hojasReclamadasPorNombre[h.hoja]=true; });
+  var hojasUsadasPorEncabezados = {};
+  function _cargasBuscarHojaPorEncabezados(h){
+    if(h.tipo!=='agendas' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    for(var idx=0; idx<wb.SheetNames.length; idx++){
+      var nombre = wb.SheetNames[idx];
+      if(nombre===h.hoja) continue; // ya se intento por nombre exacto
+      if(hojasReclamadasPorNombre[nombre] || hojasUsadasPorEncabezados[nombre]) continue;
+      var wsCandidata = wb.Sheets[nombre];
+      var aoaHeader = XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null});
+      if(cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)){
+        hojasUsadasPorEncabezados[nombre] = true;
+        return nombre;
+      }
+    }
+    return null;
+  }
+
   _cargasResultados = _cargasPlan.map(function(h){
     var resuelto = cargasResolverHojaTrafico(h, wb.SheetNames, !!wsData, canalData, dataLegadoUsada);
+    var reconocidaPorEncabezadosComo = null;
+    if(!resuelto.hojaReal){
+      var porEncabezados = _cargasBuscarHojaPorEncabezados(h);
+      if(porEncabezados){ resuelto = { hojaReal: porEncabezados, usoData: false }; reconocidaPorEncabezadosComo = porEncabezados; }
+    }
     var ws = resuelto.hojaReal ? wb.Sheets[resuelto.hojaReal] : undefined;
     if(resuelto.usoData) dataLegadoUsada = true;
     var defval = h.tipo==='seccion' ? '' : null;
@@ -366,15 +429,21 @@ async function procesarArchivoConsolidado(input){
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
-    // `h` conserva su `hoja` "oficial" (LLAMADAS/WHATSAPP) para el mensaje
-    // de "hoja ausente" y la vista previa, aunque el dato real haya salido
-    // de "DATA" -- cargasProcesarHoja solo mira si `ws` es null o no, nunca
-    // vuelve a buscarla por nombre.
-    return cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
+    // `h` conserva su `hoja` "oficial" (LLAMADAS/WHATSAPP/AGENDAS/
+    // TIPIFICACION_LLAMADAS) para el mensaje de "hoja ausente" y la vista
+    // previa, aunque el dato real haya salido de "DATA" (por el fallback
+    // de canal o el de encabezados) -- cargasProcesarHoja solo mira si `ws`
+    // es null o no, nunca vuelve a buscarla por nombre.
+    var res = cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
+    if(reconocidaPorEncabezadosComo) res.reconocidaPorEncabezadosComo = reconocidaPorEncabezadosComo;
+    return res;
   });
 
   if(!_cargasResultados.some(function(r){ return r.filas; })){
-    showToast('El archivo no tiene datos en ninguna hoja reconocida (¿subiste la plantilla de este cliente?).');
+    var hojasEsperadas = _cargasPlan.map(function(h){ return h.hoja; }).join(', ');
+    var hojasEncontradas = wb.SheetNames.join(', ') || '(el archivo no tiene ninguna hoja)';
+    showToast('El archivo no tiene datos en ninguna hoja reconocida (¿subiste la plantilla de este cliente?). ' +
+      'Hojas que trae tu archivo: ' + hojasEncontradas + '. Hojas que espera ' + cliente + ': ' + hojasEsperadas + '.');
     input.value='';
     _cargasResultados = [];
     return;
@@ -395,7 +464,11 @@ function _cargasEstadoLabel(r){
     extra = ' — '+(r.entidadesAgrupadas||0)+' fila(s) con entidad agrupada por privacidad (PARTICULAR / OTRA), '+
       (r.entidadesSinDato||0)+' sin entidad (SIN ENTIDAD)';
   }
-  return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>';
+  // Fase 79: cuando la hoja no traia el nombre esperado pero sus
+  // encabezados calzaron exacto con el formato (archivo ORIGINAL de
+  // Edwin, hoja "DATA"), se dice explicitamente cual hoja se uso.
+  var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
+  return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;
 }
 
 function _renderPreviewCarga(){
