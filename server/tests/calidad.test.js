@@ -228,6 +228,23 @@ test('cumplimiento: el calculo en servidor refleja los monitoreos del lider', as
   assert.equal(mio.pct, 20);
 });
 
+// Fase 81 (hallazgo real, probado en vivo): GET /metas/mi-meta no tenia
+// ningun gate de campana -- el resultado ya se limitaba a la meta del PROPIO
+// actor (nunca fugaba la de otra persona), pero SI dejaba confirmar/
+// descartar si el actor tiene una meta configurada en una campana a la que
+// no tiene acceso. Se agrego campaignAccess, mismo criterio que el resto de
+// este archivo.
+test('Fase 81: GET /metas/mi-meta exige campaignAccess de la campana consultada', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const { token } = await calidadUser(admin, 'ORLANT', 'mimeta'); // SOLO campana_ORLANT
+
+  const sinAcceso = await request(app).get('/api/metas/mi-meta?campana=' + encodeURIComponent('CLINICA AURORA')).set(auth(token));
+  assert.equal(sinAcceso.status, 403, JSON.stringify(sinAcceso.body));
+
+  const conAcceso = await request(app).get('/api/metas/mi-meta?campana=ORLANT').set(auth(token));
+  assert.equal(conAcceso.status, 200, JSON.stringify(conAcceso.body));
+});
+
 test('permisos por campana con espacios en el nombre (CLINICA AURORA)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const { id, user } = await calidadUser(admin, null, 'aurora');

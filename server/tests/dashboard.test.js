@@ -66,6 +66,81 @@ test('Fase 72 (H1): tener cargarDatos NO da lectura del dashboard de un cliente 
   assert.equal(dashConAcceso.status, 200);
 });
 
+// Fase 81 (hallazgo real, probado en vivo contra el servidor local):
+// GET /dashboard/cargas es DELIBERADAMENTE global a cargarDatos (ver el
+// comentario de la Fase 72 en routes/dashboards.js) -- eso sigue igual a
+// proposito (quien gestiona cargas necesita ver que YA se cargo en
+// cualquier cliente, sin pedir acceso a cada uno). Lo que NO era necesario
+// ni intencional era mandar el CONTENIDO (filas) de un cliente al que el
+// actor no tiene cliente_/campana_ -- la UI (cargas.js) nunca lo lee, solo
+// el conteo. Ahora manda `filas:[]` + `filasCount` para esos casos, y el
+// contenido completo solo si el actor SI tiene acceso a ese cliente puntual.
+test('Fase 81: GET /dashboard/cargas no manda el CONTENIDO de un cliente sin cliente_/campana_ (si el conteo)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } }); // sin ningun cliente_/campana_
+
+  const c1 = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
+    cliente: 'CLINICA AURORA', seccion: 'tipificacion', cadencia: 'mensual', periodo: MES,
+    filas: [{ canal: 'LLAMADA_ENTRADA', tipificacion: 'X', cantidad: 5 }],
+  });
+  assert.equal(c1.status, 201, JSON.stringify(c1.body));
+
+  const sinAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(loader.token));
+  assert.equal(sinAcceso.status, 200);
+  const fila = sinAcceso.body.find((c) => c.id === c1.body.id);
+  assert.ok(fila, 'la carga debe seguir apareciendo en la lista (metadata global a proposito)');
+  assert.deepEqual(fila.filas, [], 'sin acceso al cliente, el CONTENIDO no debe viajar');
+  assert.equal(fila.filasCount, 1, 'el conteo si debe seguir disponible (para no duplicar cargas)');
+
+  // Con acceso al cliente, el contenido completo SI viaja (nada cambia para el flujo normal).
+  await request(app).put('/api/users/' + loader.id + '/perms').set(auth(admin)).send({ perms: { Calidad: true, cargarDatos: true, ['campana_CLINICA AURORA']: true } });
+  const conAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(loader.token));
+  const fila2 = conAcceso.body.find((c) => c.id === c1.body.id);
+  assert.equal(fila2.filas.length, 1, 'con acceso, el contenido si debe viajar completo');
+});
+
+// Fase 81 (hallazgo real): DELETE nunca tuvo ningun chequeo por cliente
+// (a diferencia de GET/POST, nunca estuvo documentado como global) -- un
+// usuario con cargarDatos pero sin cliente_/campana_ de ESE cliente podia
+// borrar la carga de otro cliente adivinando/enumerando el id.
+test('Fase 81: DELETE /dashboard/cargas/:id exige clienteAccess del cliente DE ESA carga', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } }); // sin ningun cliente_/campana_
+
+  const c1 = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
+    cliente: 'CLINICA AURORA', seccion: 'llamadas', cadencia: 'diaria', periodo: MES,
+    filas: [{ fecha: `${MES}-01`, llamadas_ingresadas: 1, pct_contestadas: 90, pct_abandonadas: 10, aht_segundos: 60, wpp_ingresados: 1 }],
+  });
+  assert.equal(c1.status, 201, JSON.stringify(c1.body));
+
+  const delSinAcceso = await request(app).delete('/api/dashboard/cargas/' + c1.body.id).set(auth(loader.token));
+  assert.equal(delSinAcceso.status, 403, JSON.stringify(delSinAcceso.body));
+
+  const sigueAhi = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(admin));
+  assert.ok(sigueAhi.body.some((c) => c.id === c1.body.id), 'el intento sin acceso NO debe haber borrado la carga');
+
+  const delConAdmin = await request(app).delete('/api/dashboard/cargas/' + c1.body.id).set(auth(admin));
+  assert.equal(delConAdmin.status, 200);
+});
+
+// Fase 81 (hallazgo real): esta ruta no exigia ni siquiera cargarDatos --
+// cualquier rol logueado podia pedir la plantilla/esquema (etiquetas de
+// columnas, nunca datos reales) de CUALQUIER cliente. Solo se usa desde la
+// pantalla de "Cargar Datos" (ya exige cargarDatos del lado del navegador);
+// esto lo exige tambien del lado del servidor.
+test('Fase 81: GET /dashboard/secciones/:cliente exige cargarDatos', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const sinCarga = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, campana_ORLANT: true } }); // sin cargarDatos
+
+  const sinAcceso = await request(app).get('/api/dashboard/secciones/ORLANT').set(auth(sinCarga.token));
+  assert.equal(sinAcceso.status, 403, JSON.stringify(sinAcceso.body));
+
+  const conCarga = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } });
+  const conAcceso = await request(app).get('/api/dashboard/secciones/ORLANT').set(auth(conCarga.token));
+  assert.equal(conAcceso.status, 200);
+  assert.ok(conAcceso.body.secciones.resumen, 'sigue devolviendo el esquema normal para quien SI puede cargar');
+});
+
 test('REPORTES trae cargarDatos:true automaticamente al crearse (feedback Edwin 2.1)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const user = 'rep_' + Math.random().toString(36).slice(2, 8);

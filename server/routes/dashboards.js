@@ -37,14 +37,32 @@ function clienteAccess(actor, cliente) {
   );
 }
 
-function toCarga(row) {
+// Fase 81 (hallazgo real, probado en vivo: demo_reportes -- SIN
+// cliente_/campana_ para "HOSPITAL LA MARIA" -- leyo las filas COMPLETAS
+// de esa campana via GET /dashboard/cargas?cliente=HOSPITAL LA MARIA,
+// porque esa ruta solo exige requireDataLoader/cargarDatos GLOBAL, nunca
+// clienteAccess para el cliente puntual -- a proposito, para que
+// quien gestiona cargas vea que YA se cargo en CUALQUIER cliente sin
+// tener que pedir acceso a cada uno (pantalla interna de gestion,
+// comentario de la Fase 72 mas abajo). El problema no era esa vista
+// global en si, sino que tambien mandaba el CONTENIDO de cada fila
+// (nombres de asesor/entidad, cifras) de clientes a los que el actor no
+// tiene acceso -- y la UI (cargas.js, renderCargasExistentes) NUNCA lee
+// ese contenido, solo `filas.length`. `incluirFilas` deja pasar el
+// contenido completo solo si el actor tiene clienteAccess a ESE cliente
+// puntual; si no, viaja `filas: []` + `filasCount` (mismo conteo, sin el
+// contenido) -- la pantalla de gestion sigue mostrando que existe la
+// carga y cuantas filas trae, pero no fugan datos de otro cliente.
+function toCarga(row, incluirFilas = true) {
+  const filas = JSON.parse(row.filas || '[]');
   return {
     id: row.id,
     cliente: row.cliente,
     seccion: row.seccion,
     cadencia: row.cadencia,
     periodo: row.periodo,
-    filas: JSON.parse(row.filas || '[]'),
+    filas: incluirFilas ? filas : [],
+    filasCount: filas.length,
     archivoNombre: row.archivoNombre || '',
     cargadoPorNombre: row.cargadoPorNombre || '',
     cargadoEn: row.cargadoEn,
@@ -83,10 +101,16 @@ router.get(
   })
 );
 
-// Definicion de las secciones de un cliente (para armar plantillas y el formulario de carga).
+// Definicion de las secciones de un cliente (para armar plantillas y el
+// formulario de carga -- solo estructura/etiquetas, nunca datos reales de
+// ningun cliente). Fase 81 (hallazgo real): no tenia ningun gate mas alla de
+// "estar logueado" -- cualquier rol, incluso sin cargarDatos, podia pedir la
+// plantilla de un cliente ajeno. La pantalla que la usa (openCargas,
+// cargas.js) ya exige cargarDatos del lado del navegador; esto lo exige
+// tambien del lado del servidor, que es lo que de verdad protege.
 router.get(
   '/dashboard/secciones/:cliente',
-  requireActor,
+  requireDataLoader,
   wrap((req, res) => {
     const row = getConfigRow(req.params.cliente);
     if (!row) return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
@@ -114,7 +138,7 @@ router.get(
     } else {
       rows = db.prepare('SELECT * FROM dashboard_cargas ORDER BY cliente, seccion, periodo DESC').all();
     }
-    res.json(rows.map(toCarga));
+    res.json(rows.map((row) => toCarga(row, clienteAccess(req.actor, row.cliente))));
   })
 );
 
@@ -260,7 +284,12 @@ router.get(
       .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? ORDER BY periodo')
       .all(cliente);
     const porSeccion = {};
-    rows.map(toCarga).forEach((c) => {
+    // clienteAccess ya se verifico arriba para `cliente` -- SIEMPRE incluye
+    // el contenido. (Nota Fase 81: nunca usar `.map(toCarga)` a secas --
+    // Array.prototype.map manda el INDICE como 2do argumento, que ahora
+    // colisiona con el parametro `incluirFilas` de toCarga; el indice 0 es
+    // falsy y vaciaba en silencio la primera fila de cada cliente.)
+    rows.map((row) => toCarga(row, true)).forEach((c) => {
       (porSeccion[c.seccion] = porSeccion[c.seccion] || []).push(c);
     });
     res.json({ cliente, config: toConfig(getConfigRow(cliente)), secciones: porSeccion });
@@ -366,6 +395,14 @@ router.delete(
   wrap((req, res) => {
     const row = db.prepare('SELECT * FROM dashboard_cargas WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Carga no encontrada' });
+    // Fase 81 (hallazgo real): a diferencia de GET/POST /dashboard/cargas
+    // (deliberadamente globales a cargarDatos, ver el comentario de la
+    // Fase 72 mas arriba), BORRAR nunca estuvo documentado como global -- un
+    // usuario con cargarDatos pero sin cliente_/campana_ de ESTE cliente
+    // podia borrar la carga de otro cliente adivinando/enumerando el id.
+    if (!clienteAccess(req.actor, row.cliente)) {
+      return res.status(403).json({ error: 'Sin acceso a este cliente' });
+    }
     db.prepare('DELETE FROM dashboard_cargas WHERE id = ?').run(row.id);
     logEvent(
       'DASHBOARD_CARGA_DEL',
