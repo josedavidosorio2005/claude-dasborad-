@@ -6638,3 +6638,103 @@ de demo) en `docs/capturas-demo/fase83-modulos-por-permiso/`.
 permiso real). No se tocó CI/workflows, secretos de deploy, login/sesión
 ni Caddy. Producción: solo `/api/health` tras el deploy.
 
+## Fase 84 — Plantilla de Excel de ORLANT al día: una hoja por cada tipo de dato que ya se puede cargar (2026-09-28, automática)
+
+Pedido: que "Descargar plantilla" de ORLANT traiga una hoja por cada tipo
+de dato que el cargador acepta hoy (Tráfico Llamadas/WhatsApp,
+Tipificación Llamadas/WhatsApp de la Fase 77, Agendas de la Fase 78),
+con encabezados exactos. Solo ORLANT.
+
+**Comparación (Paso 1)**: `descargarPlantillaConsolidada()`
+(`public/js/cargas.js`) ya generaba la plantilla a partir de `_cargasPlan`
+— el MISMO plan que arma el cargador al subir (`cargasPlanConsolidado`,
+`cargas-logic.js`) — así que, al descargar y verificar de verdad, **las 5
+hojas nuevas YA estaban presentes, con encabezados idénticos** a
+`AGENDAS_COLUMNAS`/`TIPIFICACION_COLUMNAS` (la misma fuente que usa el
+cargador): no había ningún encabezado descuadrado. Lo que SÍ se encontró:
+1. **Orden**: las 5 hojas nuevas quedaban al final, no primero como pide
+   el pedido.
+2. **Nota faltante de "resumen"** (Fase 71 — las 7 métricas de tráfico se
+   llenan solas): la nota y el filtro `autoTrafico` (que las saca de la
+   lista de columnas a llenar) NO aparecían. Causa real encontrada:
+   `dashboards_config.secciones` de ORLANT es una foto congelada en la
+   base (se siembra solo una vez) — la migración de la Fase 71
+   (`..._v1`) SÍ había corregido esa foto, pero **`seccionSpecSchema`/
+   `columnaSchema` (`server/validation.js`) nunca declaraban
+   `notasExtra`/`autoTrafico`**, así que CUALQUIER `PUT
+   /dashboards/config/:cliente` posterior (ej. la pantalla "Dashboards"
+   del panel admin, aunque no tocara "resumen") los volvía a borrar en
+   silencio — Zod descarta cualquier campo no declarado. Mismo patrón
+   EXACTO del hallazgo de la Fase 75 con `oculta`/`subtabs`, nunca
+   cubierto para estos 2 campos. Confirmado que así pasó de verdad en la
+   base local.
+3. **Hoja obsoleta**: la hoja vieja "tipificacion" (minúscula, anterior a
+   la Fase 77) seguía ofreciéndose en la plantilla — el cargador la sigue
+   aceptando (nunca se tocó esa parte), pero ningún tab del dashboard
+   muestra ya esos datos desde que existen TIPIFICACION_LLAMADAS/
+   TIPIFICACION_WHATSAPP. Se preguntó (única pregunta autorizada de esta
+   fase) — el usuario confirmó quitarla de la plantilla DESCARGABLE.
+
+**Arreglos**:
+- `public/js/cargas-logic.js` (dual-mode, ahora testeable):
+  `cargasPlanOrdenParaDescarga` reordena — Trafico Llamadas/WhatsApp,
+  Tipificación Llamadas/WhatsApp, Agendas primero, el resto después, sin
+  perder ninguna hoja — y `cargasPlanSinTipificacionSuperada` quita
+  "tipificacion" de la plantilla SOLO cuando el plan ya trae el sistema
+  nuevo (nunca por nombre de cliente, así nunca afecta a Clínica Aurora/
+  Hospital La María, que siguen usando esa misma hoja como único
+  mecanismo). El PLAN real que usa el cargador (`_cargasPlan`) nunca se
+  toca — la hoja vieja se sigue aceptando si alguien sube un archivo que
+  la trae.
+- `server/validation.js`: se agregó `autoTrafico` a `columnaSchema` y
+  `notasExtra` a `seccionSpecSchema` — un futuro `PUT` ya no los vuelve a
+  borrar.
+- `server/db.js`: migración nueva
+  `dashboards_config_orlant_resumen_trafico_opcional_v2` (idempotente,
+  mismo criterio que `_v1`) repara el estado actual de ORLANT — necesaria
+  porque `runOnceMigration` nunca se repite solo, `_v1` no se
+  autocorregía.
+- `public/index.html`/`cargas.js`: sin cambios de contenido de hoja más
+  allá del orden — cada hoja sigue vacía (solo encabezados), sin datos
+  reales ni de pacientes.
+
+**Cómo quedó la plantilla de ORLANT** (12 hojas): INSTRUCCIONES, LLAMADAS,
+WHATSAPP, TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP, AGENDAS, resumen,
+salida, sta_categorias, Monitoreos, Diccionario, Resumen por Asesor.
+INSTRUCCIONES explica, por hoja, qué es, columnas obligatorias/opcionales,
+y las notas ya sabidas: resumen (7 métricas de tráfico se llenan solas,
+Fase 71 — ahora con la nota visible de nuevo), TIPIFICACION_WHATSAPP (cola
+por BUSCARV contra el código de Wolkvox), AGENDAS ("PARTICULAR" para
+paciente sin EPS, agrupación automática de entidades con pocos registros),
+y el recordatorio general de dejar vacía (no borrar) una hoja que no
+aplique ese mes. Clínica Aurora y Hospital La María: plantilla sin
+cambios (verificado).
+
+**Ronda descargar → llenar → subir** (Playwright, local, datos
+INVENTADOS, periodo enero 2020 — fuera de cualquier rango real u datos de
+`seed:demo`): las 10 hojas con datos se reconocieron y guardaron sin
+ningún "hoja no reconocida" (la hoja vieja "tipificacion", ausente a
+propósito, solo generó un aviso informativo, sin bloquear el resto).
+Cada pestaña del dashboard mostró los datos de prueba exactos (Trafico
+Llamadas 130/115/15, WhatsApp 200/190/10, Tipificación Llamadas=2/
+WhatsApp=1, Agendas=2). Cero errores de consola. Datos de prueba borrados
+al terminar (SQL directo sobre la base LOCAL, solo las filas del periodo
+2020-01 que se acababan de insertar). Confirmado además: los archivos
+reales de Edwin (originales con hoja DATA, y los
+`..._PARA_CARGAR.xlsx`) siguen cargando exactos igual que en la Fase 79.
+Números de control de ORLANT sin cambios: Agendas 7.426, Tipificación
+14.940 (ejemplo Edwin=40), Tráfico 8.061/7.159/902 y 7.305/7.109/196.
+
+**Verificación**: `npm test` 534/534 (12 pruebas nuevas: 7 en
+`cargas-logic-fase84-plantilla-orlant.test.js` — incluida la prueba de
+lista CERRADA de hojas que falla si a futuro se agrega un tipo de dato y
+se olvida la plantilla —, 1 en `dashboard.test.js` sobre la
+preservación de `notasExtra`/`autoTrafico` en un PUT, 4 en
+`orlant-resumen-trafico-opcional-v2-migracion.test.js`), `npm audit` 0
+vulnerabilidades, antes y después. Capturas en
+`docs/capturas-demo/fase84-plantilla-orlant/`.
+
+**Verificación y cierre**: un solo PR (mismo tema). No se tocó CI/
+workflows, secretos de deploy, login/sesión ni Caddy. Producción: solo
+`/api/health` y lectura de la plantilla, tras el deploy.
+

@@ -509,11 +509,25 @@ const cargaBody = z.object({
 });
 
 // ── Configuracion de dashboards (Fase 3) ───────────────────
+// Fase 84 (hallazgo real): faltaban aqui autoTrafico (columnaSchema) y
+// notasExtra (seccionSpecSchema, mas abajo) -- mismo patron exacto que el
+// hallazgo de la Fase 75 con oculta/subtabs (ver el comentario de
+// dashboardConfigBody.layout.tabs mas abajo): Zod descarta por defecto
+// cualquier campo no declarado, asi que CUALQUIER PUT /dashboards/config/
+// :cliente (ej. guardar la pantalla "Dashboards" del panel admin, aunque
+// sea sin tocar la seccion "resumen") borraba en silencio el
+// autoTrafico:true de las 7 metricas de trafico y el notasExtra que la
+// Migracion dashboards_config_orlant_resumen_trafico_opcional_v1 (Fase 71)
+// ya habia puesto -- confirmado que asi paso en la base local (la
+// migracion SI corrio, pero un PUT posterior volvio a dejar la config sin
+// esos 2 campos). Ver la migracion _v2 mas abajo que repara el estado
+// actual; con este fix, un futuro PUT ya no lo vuelve a borrar.
 const columnaSchema = z.object({
   key: z.string().trim().min(1).max(60).regex(/^[a-z0-9_]+$/, 'key: solo minusculas, numeros y _'),
   label: z.string().trim().min(1).max(120),
   tipo: z.enum(['entero', 'decimal', 'porcentaje', 'texto', 'fecha']),
   opcional: z.boolean().optional(),
+  autoTrafico: z.boolean().optional(),
 });
 
 // ── Modulo de Inventario ───────────────────────────────────
@@ -635,6 +649,7 @@ const seccionSpecSchema = z.object({
   periodo: z.enum(['dia', 'semana', 'mes']),
   filaUnica: z.boolean(),
   columnas: z.array(columnaSchema).min(1, 'La seccion necesita al menos una columna').max(60),
+  notasExtra: z.array(z.string().max(600)).max(20).optional(),
 });
 
 const dashboardConfigBody = z.object({
