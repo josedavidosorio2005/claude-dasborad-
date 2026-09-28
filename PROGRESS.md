@@ -6738,3 +6738,100 @@ vulnerabilidades, antes y después. Capturas en
 workflows, secretos de deploy, login/sesión ni Caddy. Producción: solo
 `/api/health` y lectura de la plantilla, tras el deploy.
 
+## Fase 85 — "Exportar" del dashboard genérico no exportaba nada en ninguna pestaña (2026-09-28, automática)
+
+**Pedido**: en producción, en ORLANT (pestaña Tipificación, mes Ago-26),
+"Exportar" no descargaba nada. El dashboard ya tiene 5 pestañas
+(Tipificación, Agendamiento, Calidad, Tráfico de Llamadas, Tráfico de
+WhatsApp) — encontrar la causa real y que "Exportar" funcione en las 5.
+
+**Causa real, con evidencia (Playwright)**: dos causas encadenadas, NO
+una sola.
+1. El menú de "Exportar" (`#gd-export-menu`) se pintaba con
+   `position:absolute` + `z-index:50` — por DEBAJO del modal del
+   dashboard (`#gd-overlay`, `z-index:600`, `styles.css`). El menú
+   quedaba invisible/inclicable en las 5 pestañas, SIN ningún error en
+   consola — Playwright confirmó "…subtree intercepts pointer events" al
+   intentar el clic en las 5.
+2. Aunque se pudiera hacer clic, `_gdDatosPanelesTab()` (la función que
+   arma los datos exportables, usada tanto por Excel como por PDF)
+   saltaba en silencio los 5 tipos de panel "autónomo" de ORLANT
+   (`trafico_combo`, `trafico_whatsapp_combo`, `agendas_panel`,
+   `tipificacion_panel`, `calidad_kpis`/`calidad_pie`), con un
+   comentario que decía "export propio" — cierto SOLO para Tráfico
+   (`_traficoDatosExport`/`_traficoWppDatosExport` ya existían con
+   botones Excel/PDF DENTRO de cada panel, Fase 68, nunca conectados a
+   este botón de arriba) y FALSO para Agendas/Tipificación/Calidad
+   (Fases 77/78): nunca tuvieron ningún export, ni ahí ni en su propio
+   panel.
+
+**Fix (`public/js/dashboard-generic.js`)**:
+- `_gdExport()`: el menú ahora usa `position:fixed` + `z-index:700`
+  (por encima del overlay) y se cierra al hacer clic afuera.
+- `_gdDatosPanelesTab()` ahora es `async` y sabe convertir cada tipo de
+  panel a filas exportables: Tráfico Llamadas/WhatsApp reutilizan el
+  export ya existente (Fase 68); Agendas exporta "Citas por
+  Especialidad" + "Total Agendas por Mes" (mismas 2 llamadas API que ya
+  usa el panel en pantalla); Tipificación exporta Llamadas y WhatsApp
+  por separado, con aviso explícito si una mitad no tiene datos; Calidad
+  exporta el resumen de KPIs con el filtro de asesor/fecha actual
+  (`calidad_pie` se omite a propósito — misma data que `calidad_kpis`).
+  Un tipo de panel sin soporte agrega una hoja/sección "Aviso" visible
+  en vez de romper o callar.
+- `_gdExportExcel()`/`_gdExportPrint()`: ahora esperan (`await`) los
+  datos y todo queda en `try/catch` — cualquier fallo muestra "No se
+  pudo exportar: …", nunca en silencio. Formato sin cambios: Excel
+  (.xlsx, descarga directa — nunca bloqueada por un bloqueador de
+  popups) y PDF/Imprimir (`window.print()`, con su aviso existente si el
+  navegador bloquea la ventana).
+- No se tocó la protección de inyección de fórmulas (H2, Fase 72) ni los
+  permisos de Fases 81-83: el export solo usa datos que el panel ya
+  tenía permiso de mostrar en pantalla; Agendas exporta agregados
+  (especialidad/mes), nunca filas de pacientes.
+- `public/js/dashboard-export-tipos.js` (nuevo, doble modo — sin DOM):
+  expone `GD_EXPORT_TIPOS_SOPORTADOS`, la lista CERRADA de tipos de
+  panel soportados. `server/tests/dashboard-generic-export-fase85-
+  lista-cerrada.test.js` la compara contra los tipos de panel que de
+  verdad usa cada cliente sembrado — falla si un tipo nuevo se agrega
+  sin darle soporte de exportación.
+
+**Paso 3 (PR separado)**: Fases 74 y 84 encontraron el mismo bug dos
+veces (Zod descarta por defecto cualquier campo no declarado en un
+`z.object`, así que un `PUT /dashboards/config/:cliente` que no toca
+cierta sección igual la deja sin esos campos) — ambas correcciones
+fueron puntuales al campo que se encontró esa vez.
+`server/tests/dashboards-config-put-round-trip-fase85.test.js` es la
+versión GENERAL: toma la config YA SEMBRADA de cada cliente real, la
+manda de vuelta por PUT sin tocar nada, y confirma que la lectura
+posterior es idéntica byte a byte. Corrió contra los clientes sembrados
+hoy (ORLANT, CLÍNICA AURORA, Hospital La María y los de
+`CONFIGS_CLIENTE`) — **0 campos perdidos**, no hizo falta ningún fix de
+schema ni migración esta vez.
+
+**Verificación local** (Playwright, datos demo): Export en las 5
+pestañas de ORLANT — descarga en las 5, 0 errores de consola, 0
+peticiones fallidas. Números de control confirmados en los archivos
+descargados (aplicando el mes/filtro real de cada panel autónomo, ya
+que cada uno tiene su propio filtro independiente del selector global —
+la base local tenía además una fila suelta con fecha "2030-06" que
+sesgaba la ventana de 12 meses por defecto de Tráfico/Agendas hacia un
+mes casi vacío; con el filtro correcto los números de control
+coincidieron exacto, confirmando que el export en sí es correcto):
+Tipificación Llamadas 14.940 (WhatsApp 150, si tiene datos), Agendas
+7.426 total con AUDIFONOS 2.141, Tráfico Llamadas 8.061/7.159/902,
+Tráfico WhatsApp 7.305/7.109/196, Calidad 191 monitoreos (promedio
+57.4). Capturas en `docs/capturas-demo/fase85-exportar/`.
+
+**Verificación**: `npm test` 537/537 (2 pruebas nuevas del export + 1 del
+PUT round-trip), `npm audit` 0 vulnerabilidades, antes y después.
+
+**Cierre**: dos PRs separados (#165 export, #166 prueba general de PUT),
+ambos con CI verde (Node 18/20/22 + docker-build), mergeados y
+desplegados. No se tocó CI/workflows, secretos de deploy ni login/
+sesión. Producción (solo lectura, autorizado): clic en "Exportar" en las
+5 pestañas de ORLANT con la sesión real del usuario — descarga en las 5,
+0 errores de consola, archivos guardados fuera del repo en
+`bases edwin\exportes-prueba\` (nunca al repo ni a GitHub). `main` =
+`origin/main`, 0 PRs abiertos, ramas borradas, `/api/health` 200 después
+del deploy.
+
