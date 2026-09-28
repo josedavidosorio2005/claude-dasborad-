@@ -6835,3 +6835,117 @@ sesión. Producción (solo lectura, autorizado): clic en "Exportar" en las
 `origin/main`, 0 PRs abiertos, ramas borradas, `/api/health` 200 después
 del deploy.
 
+## Fase 86 — 3 ajustes de la Fase 85: nada de commits directos a `main`, frenar fechas futuras al cargar, y que el selector "MES" mueva todas las pestañas (2026-09-28, automática)
+
+Del informe de la Fase 85 salieron 3 cosas para ajustar, un PR por tema.
+Esta sesión retomó el trabajo donde lo dejó una sesión anterior cortada
+por límite de uso: temas 1 y 2 ya estaban mergeados, tema 3 estaba
+escrito y parcialmente verificado en la rama pero sin commitear.
+
+### Tema 1 — Nada de commits directos a `main` (PR #167, mergeado)
+
+El commit `a440176` (cierre de la Fase 85, `docs: Fase 85 -- entrada de
+PROGRESS.md...`) se hizo directo a `main`, sin PR: `git show --stat
+a440176` confirma que tocó **solo `PROGRESS.md`** (97 líneas agregadas),
+sin ningún cambio de código. `CLAUDE.md` ahora tiene una regla explícita
+("Nunca commitear ni pushear directo a `main`... sin excepción de 'es
+solo un doc'") con ese commit como precedente documentado. Esta misma
+Fase 86 se cierra respetando esa regla: esta entrada de `PROGRESS.md` va
+dentro de este PR, no directo a `main`.
+
+### Tema 2 — Frenar fechas futuras (y absurdas) al cargar (PR #168, mergeado)
+
+Causa real: una fila suelta con fecha **2030-06** en la base local corría
+la ventana por defecto de Tráfico/Agendas a un mes casi vacío. Fix en
+`public/js/fecha-limites-logic.js` (nuevo, doble modo) + servidor
+(`server/fecha-limites.js`): cualquier fecha posterior al **último día
+del mes en curso** (hora Colombia, nunca "posterior a hoy" — el `FECHA
+FIN` de WhatsApp puede ser legítimamente el fin del mes en curso) se
+**rechaza** al cargar, en las 6 rutas de carga por Excel, con un mensaje
+que dice la hoja, la fila y la fecha. Una fecha anterior a 2020 solo
+**advierte**, no bloquea (probable error de digitación). La ventana por
+defecto de cada panel también se recorta para nunca pasar del mes
+actual. `npm test`: pruebas nuevas por hoja (LLAMADAS, WHATSAPP,
+TIPIFICACION_LLAMADAS/WHATSAPP, AGENDAS, resumen/salida/sta_categorias,
+Calidad) + el caso límite del `FECHA FIN` de WhatsApp.
+
+### Tema 3 — El selector "MES" de arriba mueve las 5 pestañas de ORLANT (PR #169, mergeado)
+
+Antes cada pestaña autónoma de ORLANT (Tráfico de Llamadas/WhatsApp,
+Agendas, Tipificación, Calidad) tenía su propio filtro de mes, sin
+relación con el selector "MES" de arriba — Edwin o Jairo iban a pensar
+que no funciona.
+
+**Fix**:
+- `_gd.mesSel` se fija al mes más reciente desde que se abre el
+  dashboard (antes quedaba vacío de verdad, aunque el `<select>` mostrara
+  el más reciente por un fallback visual).
+- Los 5 paneles autónomos se sincronizan con el mes de arriba cada vez
+  que cambia; el filtro propio de cada pestaña sigue sirviendo para
+  afinar (rango de días, agente, skill, mes específico, etc.) y se
+  respeta mientras el mes de arriba no vuelva a cambiar.
+- Si el mes elegido no tiene datos para una pestaña, aviso claro ("Sin
+  datos de \<pestaña\> para \<mes\> — el último mes con datos es \<mes\>
+  [Ver \<mes\>]") con botón que mueve el selector de arriba — nunca un
+  panel en blanco sin explicación.
+- "Comparar contra" (periodo anterior) solo aplica a paneles de resumen:
+  se esconde con una nota discreta ("La comparación aplica a las
+  pestañas de resumen") en pestañas/sub-pestañas 100% autónomas; sigue
+  visible sin cambios donde hay paneles de resumen (ej. Agendamiento →
+  Ordenamiento médico).
+- Exportar exporta el mes visible en cada pestaña.
+- `public/js/mes-global-logic.js` (nuevo, doble modo): `GD_TIPOS_AUTONOMOS`
+  / `gdTodosAutonomos` (clasificación para "Comparar contra") y
+  `gdFinDeMes` (fin de la ventana móvil de 12 meses de Tráfico/Calidad),
+  con una prueba de lista CERRADA (mismo patrón que la Fase 85) para que
+  un tipo de panel nuevo nunca quede sin clasificar en silencio.
+
+**Verificación con Playwright en local (datos demo)**: las 5 pestañas se
+mueven juntas al cambiar el mes de arriba; con el mes en Sep-26 (sin
+datos en 4 de las 5 verticales) aparece el aviso en cada una, y el botón
+"Ver Ago-26" de Agendamiento mueve el selector de arriba y las 5 se
+sincronizan a Ago-26; dentro de Agendamiento, elegir **Abr-25 a mano** en
+el filtro propio del panel se respeta al cambiar de pestaña y volver
+(mientras el mes de arriba no cambia), y se pisa solo cuando el mes de
+arriba se mueve de nuevo; "Comparar contra" se esconde con su nota en
+Tipificación y en Agendamiento/Citas por Especialidad (100% autónomas) y
+sigue visible en Agendamiento/Ordenamiento médico (paneles de resumen); 0
+errores de consola. Capturas en
+`docs/capturas-demo/fase86-mes-y-fechas/`.
+
+Números de control de ORLANT, exactos en los archivos exportados:
+Tipificación de Llamadas **14.940**; Agendas **7.426** total con
+AUDÍFONOS **2.141** (mes Abr-25, vía el filtro propio del panel); Tráfico
+de Llamadas **8.061 / 7.159 / 902**; Tráfico de WhatsApp **7.305 / 7.109
+/ 196** (estos dos, mes Ago-26).
+
+### Verificación y cierre
+
+- `npm test`: **572/572** (5 pruebas nuevas de `mes-global-logic.test.js`
+  para el tema 3; el tema 2 sumó las suyas en el PR #168). `npm audit`: 0
+  vulnerabilidades. (Nota: el mensaje del commit del tema 3 dice
+  "577/577" por error de conteo al escribirlo apurado — el número real,
+  confirmado corriendo la suite después del merge en `main`, es
+  **572/572**; se corrige acá.)
+- 3 PRs (#167, #168, #169), todos con CI en verde (Node 18/20/22 +
+  docker-build), mergeados; `main` = `origin/main`, 0 PRs abiertos, las 3
+  ramas de trabajo borradas. Deploy automático confirmado tras cada merge
+  (`Deploy a AWS` en verde) y `/api/health` 200 después del último
+  deploy.
+- **Producción, solo lectura (autorizado)**: se abrió un navegador
+  **visible** con Playwright en la página de inicio de sesión de
+  producción y se esperaron los 10 minutos completos a que el usuario
+  iniciara sesión — no se detectó login en ese lapso, así que el
+  navegador se cerró solo sin tocar nada (nunca se pidió ni se guardó
+  ninguna contraseña ni cookie). Quedan pendientes, para cuando el
+  usuario pueda iniciar sesión: (a) revisar si algún cliente tiene meses
+  futuros cargados en producción, y (b) confirmar que el selector MES de
+  arriba mueve las 5 pestañas de ORLANT en producción (tema 3 ya está
+  desplegado, `buildId` de `/api/health` cambió tras el merge del PR
+  #169).
+- No se tocaron CI/workflows, secretos de deploy, login/sesión, los datos
+  de prueba de Calidad de ORLANT ni el keystore. `git stash list` sigue
+  con un único stash previo a esta fase ("On
+  feature/apps-cierre-final-2026-09-11: responsive navbar/sidebar fix"),
+  sin tocar.
+
