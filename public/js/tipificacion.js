@@ -12,6 +12,22 @@ var _tipificacionOpciones = {}; // cache por campana::canal: {meses,agentes,skil
 var _tipificacionEstadoCompartido = {}; // por indice de panel (i): {mes, desde, hasta}
 var _tipificacionEstadoCanal = {};      // por "i::canal": {agente, skill}
 var _tipificacionCampanaPorPanel = {};
+// Fase 86 (tema 3): mismo patron que _agendasMesSincronizado/
+// _agendasSinDatosMesGlobal (agendas.js) -- ver ese comentario.
+var _tipificacionMesSincronizado = {};
+var _tipificacionSinDatosMesGlobal = {};
+
+function _tipificacionSincronizarConMesGlobal(i, mesesCombinados){
+  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
+  if(!mesGlobal || _tipificacionMesSincronizado[i] === mesGlobal) return !!_tipificacionSinDatosMesGlobal[i];
+  _tipificacionMesSincronizado[i] = mesGlobal;
+  // Se fija el mes SIEMPRE (incluso sin datos): asi Exportar
+  // (_gdExportarTipificacion) pide ese mismo mes y, si vuelve vacio, cae
+  // solo en su propio aviso por canal -- consistente con lo que se ve.
+  _tipificacionEstadoCompartido[i] = { mes: mesGlobal, desde:'', hasta:'' };
+  _tipificacionSinDatosMesGlobal[i] = mesesCombinados.indexOf(mesGlobal) === -1;
+  return _tipificacionSinDatosMesGlobal[i];
+}
 
 var TIPIFICACION_CANALES = [
   { canal: 'LLAMADAS', titulo: 'Llamadas', etiquetaSkill: 'Skill' },
@@ -68,6 +84,15 @@ async function _tipificacionRenderPanel(p, i){
     var mesesValidosTipif = mesActualTipif ? mesesCombinados.filter(function(m){ return m <= mesActualTipif; }) : mesesCombinados;
     if(!mesesValidosTipif.length) mesesValidosTipif = mesesCombinados;
     _tipificacionEstadoCompartido[i] = { mes: mesesValidosTipif[mesesValidosTipif.length-1], desde:'', hasta:'' };
+  }
+  // Fase 86 (tema 3): el selector MES de arriba manda sobre el filtro
+  // compartido de este panel, salvo que el usuario ya haya elegido este
+  // mismo mes global antes -- ver _tipificacionSincronizarConMesGlobal.
+  if(_tipificacionSincronizarConMesGlobal(i, mesesCombinados)){
+    var ultimoConDatosTipif = mesesCombinados[mesesCombinados.length-1];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
+      _gdAvisoSinDatosMesHtml('Tipificacion', _gd.mesSel, ultimoConDatosTipif) + '</div>';
+    return;
   }
   var estado = _tipificacionEstadoCompartido[i];
 

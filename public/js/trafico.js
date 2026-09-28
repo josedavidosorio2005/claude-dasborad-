@@ -342,6 +342,14 @@ async function renderTraficoCobertura(){
 var _trafico = {};          // cache por campana: { campana: { filas:[...], skills:[...] } }
 var _traficoEstado = {};    // estado de filtros actual por campana
 var _traficoAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
+// Fase 86 (tema 3): el selector MES de arriba desliza la ventana movil de
+// 12 meses de este panel (el mes elegido se vuelve el FIN de la ventana --
+// se mantiene el diseno de tendencia de la Fase 68, solo cambia donde
+// termina). Mismo patron de "solo re-sincroniza si el mes global cambio
+// desde la ultima vez" que agendas.js/tipificacion.js, aqui por claveEstado
+// (campana[::sede], la misma clave de _traficoEstado).
+var _traficoMesSincronizado = {};
+var _traficoSinDatosMesGlobal = {};
 // Fase 40 (2026-09-21): las 6 graficas de este panel (combo principal +
 // Abandono/AHT/ASA-ATA/WaitTime/SL10-30, antes todas juntas en una grilla
 // amontonada) ahora viven en sub-pestanas -- una gráfica visible a la vez.
@@ -536,6 +544,35 @@ async function _traficoRenderPanel(p, i){
   // arrastrar la ventana por defecto a un mes casi vacio -- se recorta al
   // fin del mes en curso, hora Colombia (fecha-limites-logic.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
+
+  // Fase 86 (tema 3): si el selector MES de arriba cambio desde la ultima
+  // vez que se sincronizo ESTE panel, manda sobre el filtro propio --
+  // desliza la ventana de 12 meses para que TERMINE en el mes elegido. Si
+  // ese mes no tiene ninguna fila (no solo "el rango exacto quedo vacio",
+  // que Fase 77 respeta a proposito si el usuario lo eligio a mano dentro
+  // de la pestana), se muestra el aviso con boton al ultimo mes con datos
+  // en vez de un panel en blanco sin explicacion.
+  if(_gd.mesSel && _traficoMesSincronizado[claveEstado] !== _gd.mesSel){
+    _traficoMesSincronizado[claveEstado] = _gd.mesSel;
+    var tieneDatosMesGlobal = fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; });
+    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
+    // cacheado: asi Exportar (_traficoDatosExport) pide/lee ese mismo mes
+    // y, si vuelve vacio, cae solo en su propio aviso -- nunca un mes
+    // viejo distinto de lo que se ve en pantalla.
+    estado.hasta = _gdFinDeMes(_gd.mesSel);
+    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
+    _traficoEstado[claveEstado] = estado;
+    if(!tieneDatosMesGlobal){
+      _traficoSinDatosMesGlobal[claveEstado] = true;
+      _traficoAgregadoActual[claveEstado] = [];
+      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
+        _gdAvisoSinDatosMesHtml('Trafico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      host.dataset.campana = campana;
+      host.dataset.sede = sede || '';
+      return;
+    }
+    _traficoSinDatosMesGlobal[claveEstado] = false;
+  }
   // Ventana movil de 12 meses (pedido de Edwin, llamada 2026-09-15): el
   // valor POR DEFECTO de "Desde" (cuando el usuario no eligio nada, ni en
   // esta carga de pagina ni antes via "Aplicar filtros") nunca es el inicio

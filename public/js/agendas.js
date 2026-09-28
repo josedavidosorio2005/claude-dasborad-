@@ -9,6 +9,29 @@
 var _agendasOpciones = {}; // cache por campana: { meses, asesores, sedes, especialidades, examenes, profesionales, entidades, tiposLinea }
 var _agendasEstado = {};   // estado de filtros por indice de panel (i): { mes, desde, hasta, asesor, sede, especialidad, examen, profesional, tipoLinea, entidad }
 var _agendasCampanaPorPanel = {}; // que campana quedo pintada en cada indice de panel (i) -- alcance actual: solo ORLANT, pero sin fijarlo a mano
+// Fase 86 (tema 3): ultimo _gd.mesSel (selector MES de arriba) ya aplicado
+// a cada panel (i) -- mientras no cambie, se respeta lo que el usuario
+// haya elegido DENTRO de esta pestana (Fase filtro propio); en cuanto
+// cambia, este mes manda de nuevo. Ver _agendasSincronizarConMesGlobal.
+var _agendasMesSincronizado = {};
+var _agendasSinDatosMesGlobal = {}; // panel (i) -> true si _gd.mesSel no tiene datos para esta campana (aviso, no filtro)
+
+// Sincroniza el panel `i` con el selector MES de arriba (_gd.mesSel), salvo
+// que el usuario ya este viendo ese mismo mes global (no pisa un cambio
+// manual DENTRO de la pestana mientras el mes de arriba no se mueva de
+// nuevo). Devuelve true si el panel debe mostrar el aviso "sin datos".
+function _agendasSincronizarConMesGlobal(i, opciones){
+  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
+  if(!mesGlobal || _agendasMesSincronizado[i] === mesGlobal) return !!_agendasSinDatosMesGlobal[i];
+  _agendasMesSincronizado[i] = mesGlobal;
+  // Se fija el mes SIEMPRE (incluso sin datos): asi Exportar (_gdExportarAgendas,
+  // dashboard-generic.js) pide ese mismo mes y, si vuelve vacio, cae solo
+  // en su propio aviso "Sin datos..." -- el archivo exportado queda
+  // consistente con lo que se ve en pantalla, nunca un mes viejo distinto.
+  _agendasEstado[i] = { mes: mesGlobal };
+  _agendasSinDatosMesGlobal[i] = opciones.meses.indexOf(mesGlobal) === -1;
+  return _agendasSinDatosMesGlobal[i];
+}
 
 async function _agendasCargarOpciones(campana){
   if(_agendasOpciones[campana]) return _agendasOpciones[campana];
@@ -64,6 +87,17 @@ async function _agendasRenderPanel(p, i){
     var mesesValidos = mesActualAgendas ? opciones.meses.filter(function(m){ return m <= mesActualAgendas; }) : opciones.meses;
     if(!mesesValidos.length) mesesValidos = opciones.meses;
     _agendasEstado[i] = { mes: mesesValidos[mesesValidos.length-1] };
+  }
+  // Fase 86 (tema 3): el selector MES de arriba manda sobre el filtro
+  // propio de este panel, salvo que el usuario ya haya elegido este mismo
+  // mes global antes (ver _agendasSincronizarConMesGlobal) -- si el mes de
+  // arriba no tiene agendas para esta campana, se muestra un aviso con
+  // boton al ultimo mes con datos, en vez de un panel en blanco.
+  if(_agendasSincronizarConMesGlobal(i, opciones)){
+    var ultimoConDatos = opciones.meses[opciones.meses.length-1];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
+      _gdAvisoSinDatosMesHtml('Agendas', _gd.mesSel, ultimoConDatos) + '</div>';
+    return;
   }
   var estado = _agendasEstado[i];
 
