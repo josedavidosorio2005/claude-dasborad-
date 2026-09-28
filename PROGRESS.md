@@ -6276,6 +6276,160 @@ Calidad de ORLANT sin tocar. Script dejado en
 `.github/scripts/verificar-fase79-reconocimiento-archivos-edwin.js`
 (solo lee estructura/conteos, nunca datos reales).
 
-Carga real en producción (Parte 3, autorizada explícitamente): ver
-actualización de esta misma fase más abajo/arriba tras el deploy.
+Carga real en producción (Parte 3, autorizada explícitamente): no se hizo
+en esta fase (se cerró con el fix desplegado y verificado localmente) —
+ver Fase 80, que la retoma y la completa.
+
+## Fase 80 — Carga real de Agendas/Tipificación en producción + cierre de pendientes (2026-09-28, automática)
+
+### Parte 1 — Carga real en producción (autorizada explícitamente)
+
+Script `.github/scripts/fase80-carga-real-produccion-agendas-tipificacion.js`
+(Playwright directo desde Node, `headless:false`, navegador visible — nunca
+la extensión de Chrome). El usuario inició sesión a mano en la ventana (el
+script nunca vio ni escribió la contraseña, sin `storageState`/cookies en
+disco); el primer intento agotó el tiempo de espera de 10 minutos sin
+detectar sesión, se volvió a abrir la ventana y en el segundo intento el
+usuario entró a los ~2m49s — el script siguió solo desde ahí, sin más
+intervención.
+
+**Los 2 archivos ORIGINALES de Edwin (hoja "DATA") se reconocieron
+correctamente en producción real**, probando en vivo el arreglo de la
+Fase 79:
+
+- `AGENDAS.xlsx`: hoja "DATA" reconocida como "Agendas (citas asignadas)"
+  — 7.426 fila(s), 576 agrupadas como "PARTICULAR / OTRA", 5 sin entidad.
+  Guardado: "7426 fila(s) guardadas (01/04 al 30/04)".
+- `BASE_PARA_TORTAS_DE_TIPIFICACION.xlsx`: hoja "DATA" reconocida como
+  "Tipificación de Llamadas" — 14.940 fila(s). Guardado: "14940 fila(s)
+  guardadas (01/08 al 31/08)".
+
+No hizo falta ningún respaldo (`PARA_CARGAR`) ni ningún fix adicional —
+los originales funcionaron a la primera.
+
+**Verificación en el dashboard de ORLANT en producción** (vía la API real
+de la plataforma, con la sesión ya autenticada — no un reload completo:
+el token de sesión vive solo en memoria del navegador, nunca en
+`localStorage`/cookie, así que un F5 real habría cerrado la sesión sin
+el usuario presente para volver a entrar; este es de todas formas un
+contexto de navegador recién abierto que nunca tuvo JS viejo en caché,
+así que un reload no habría cambiado nada):
+
+| Pestaña | Métrica | Esperado | Producción real |
+|---|---|---|---|
+| Agendamiento | Abre en (sin tocar el filtro) | abril 2025 | **2025-04** ✓ |
+| Agendamiento | Barras (especialidades) | 16 | **16** ✓ |
+| Agendamiento | Total abril 2025 | 7.426 | **7.426** ✓ |
+| Agendamiento | GENERAL / 3P | 4.643 / 2.783 | **4.643 / 2.783** ✓ |
+| Agendamiento | Top 1–5 | AUDIFONOS 2.141, CONSULTA OTORRINO 1.369, AUDIOLOGIA 971, OTORRINOLARINGOLOGIA 928, OTORRINOS EXAMENES ESPECIALES 872 | **idéntico** ✓ |
+| Agendamiento | Último (16°) | NUTRICION 16 | **NUTRICION 16** ✓ |
+| Tipificación | Llamadas totales | 14.940 | **14.940** ✓ |
+| Tipificación | Top 3 | AGENDADA InConexion 4.467, NO CONTESTAN 1.956, BUZON 1.278 | **idéntico** ✓ |
+| Tipificación | Por skill | SALIDA 6.560, 3P 3.957, GENERAL 3.229, REGIMEN ESP. 804, CANCEL./REPROG. 390 | **idéntico** ✓ |
+| Tipificación | Ejemplo de Edwin (salida + Sara Ramírez López + 15–20 ago) | 40 | **40** ✓ |
+| Tipificación | WhatsApp | sin datos | **sin datos** (total 0) ✓ |
+| Tráfico Llamadas | Total/Contestadas/Abandonadas | 8.061 / 7.159 / 902 | **8.061 / 7.159 / 902** ✓ |
+| Tráfico WhatsApp | Total/Contestados/Abandonados | 7.305 / 7.109 / 196 | **7.305 / 7.109 / 196** ✓ |
+| Consola | Errores | 0 | **0** ✓ |
+
+**No verificado en esta pasada**: el AHT total (4:26) de Tráfico de
+Llamadas — la tarjeta de KPIs que se leyó no incluye esa sub-pestaña
+específica (vive en una sub-pestaña "AHT" aparte, ver Fase 77). No cambió
+nada en esta fase que pudiera afectarlo (ninguna carga de Tráfico se
+tocó), y ya se recalculó por separado en la Parte 2 de esta misma fase
+(tabla de AHT más abajo) contra la base local, con el mismo resultado
+exacto (4:33 → 4:26) que reportó la Fase 77 — se da por bueno sin volver
+a abrir esa sub-pestaña en producción.
+
+Capturas (9, con datos reales) en
+`C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\`
+— fuera del repo, nunca commiteadas. Ningún otro dato de ORLANT (Calidad,
+Tráfico) ni de ningún otro cliente se tocó.
+
+### Parte 2 — Cierre de pendientes de código
+
+- **`CLAUDE.md`** (raíz del repo, nuevo): reglas fijas del proyecto para
+  que cualquier sesión futura las cargue sola sin que el usuario tenga
+  que repetirlas — nada de subagentes `fork` (pasó 2 veces, Fases 64 y
+  77, que un fork editó código sin permiso), cualquier otro subagente
+  solo con alcance de lectura, nada de `--force`/saltar hooks/mergear con
+  CI en rojo, nunca escribir en producción sin autorización explícita de
+  ESA fase, datos reales de clientes nunca al repo, verificación visual
+  con Playwright directo (nunca la extensión de Chrome), migraciones
+  idempotentes para `dashboards_config`, y el foco actual (solo ORLANT
+  tiene datos reales).
+- **AHT antes/después por cliente** (pedido pendiente de la Fase 77),
+  calculado con los datos de Tráfico de la base LOCAL
+  (`calidad_nivel_servicio_diario`), ponderado por `totalLlamadas`
+  ("antes") y por `contestadas` ("ahora", el criterio correcto desde la
+  Fase 77 — una llamada abandonada nunca tiene AHT, no debe pesar):
+
+  | Cliente | Filas de Tráfico | Filas con AHT | AHT antes (peso=total) | AHT ahora (peso=contestadas) |
+  |---|---|---|---|---|
+  | ORLANT | 53 | 48 | 4:33 | 4:26 |
+  | ANDRES YEPES | 142 | 0 | sin datos | sin datos |
+  | BIVETT | 142 | 0 | sin datos | sin datos |
+  | CLINICA AURORA | 142 | 0 | sin datos | sin datos |
+  | INFONDO | 142 | 0 | sin datos | sin datos |
+  | MOVILIZE | 142 | 0 | sin datos | sin datos |
+  | SASCHA FITNESS | 142 | 0 | sin datos | sin datos |
+  | TELEVENTAS COMFAMA | 142 | 0 | sin datos | sin datos |
+  | TELEVENTAS SURA | 142 | 0 | sin datos | sin datos |
+
+  Solo ORLANT tiene AHT calculable (48 de sus 53 filas locales traen
+  `ahtSegundos`; las otras 5 son filas de prueba de fecha 2030-06-01 sin
+  AHT, usadas por las pruebas automáticas de "rango sin datos" — no
+  afectan el cálculo). El número de ORLANT (4:33 → 4:26, total de ambas
+  líneas) coincide EXACTO con el que ya reportó la Fase 77. Los otros 8
+  "clientes" de la lista son datos de DEMOSTRACIÓN sembrados localmente
+  (`scripts/seed-demo.js`, 142 filas idénticas cada uno, mismo rango de
+  fechas, sin AHT) — no son campañas reales de InConexión (los únicos 2
+  clientes reales aparte de ORLANT, Clínica Aurora y Hospital La María,
+  siguen en cero tanto en producción como en esta base local: la fila
+  "CLINICA AURORA" de la tabla de arriba es la campaña de DEMO de ese
+  nombre, no la campaña real).
+
+  **Aclaración pedida explícitamente**: la verificación de la Fase 77
+  ("consulta SQL directa contra la base real de ORLANT") fue contra la
+  base de datos **LOCAL** (`server/data/inconexion.db`), la misma en la
+  que se había cargado el archivo real de Edwin por la UI real de
+  "Cargar Datos" (nunca por SQL directo — la carga en sí siempre pasó
+  por la interfaz). "Real" ahí describía el DATO (datos reales de Edwin,
+  no inventados), no que la consulta se corriera contra el servidor de
+  producción — este repo nunca tuvo ni tiene una forma de correr SQL ad
+  hoc contra la base de producción; el único acceso a producción es por
+  HTTPS (la interfaz o su API) o por SSH del workflow de deploy (que no
+  corre consultas arbitrarias).
+
+- **Keystore de Android movido** (no copiado) fuera de cualquier repo:
+  `mobile-app/android/inconexion-release.keystore` y
+  `mobile-app/android/release-signing.properties` →
+  `C:\Users\filid\Documents\firma-android-inconexion\`. `mobile-app/` ya
+  estaba en `.gitignore` desde la Fase 75 (nunca estuvieron en git), así
+  que el movimiento no generó ningún cambio en el repo. Verificado con
+  SHA-256 antes y después del movimiento — hash idéntico en los 2
+  archivos (keystore y `.properties`), confirmando que llegaron intactos.
+  Contenido nunca leído ni mostrado. **Recordatorio para el usuario**:
+  guardar una copia de respaldo de esa carpeta en un lugar seguro (fuera
+  de este equipo) — es la única copia que queda del keystore de firma de
+  la app Android; perderlo impide publicar actualizaciones futuras con
+  la misma firma.
+- **`docs/aws-permisos-pendientes.md`** (nuevo, no aplica nada): guía con
+  los pasos exactos en la consola de AWS y el JSON mínimo de los 2
+  permisos de solo lectura que siguen pendientes desde la Fase 72
+  (`s3:ListBucket` para `inconexion-instance` sobre el bucket de
+  respaldos; `logs:FilterLogEvents` para `inconexion-github-deploy` sobre
+  `/inconexion/prod/*`), y qué disparar después — las 2 herramientas
+  (`.github/workflows/verificar-restore-backup-produccion.yml`,
+  `verificar-logs-produccion.yml`) siguen en el repo, listas, no hay que
+  recrear nada.
+
+**Verificación**: `npm test` 505/505 (sin cambios de código — esta fase
+solo agrega documentación, `CLAUDE.md` y el script de un solo uso de la
+Parte 1), `npm audit` 0 vulnerabilidades, antes y después. `git status`
+limpio, `main` = `origin/main`, 0 PRs abiertos, ramas de fases anteriores
+ya borradas, `GET /api/health` → 200. Confirmado que `bases edwin/`, sus
+capturas de producción y `firma-android-inconexion/` (el keystore movido)
+no aparecen en `git status` ni en ningún commit — ninguno de los 3 vive
+dentro del repo.
 
