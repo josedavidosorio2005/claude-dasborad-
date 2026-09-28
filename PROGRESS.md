@@ -6433,3 +6433,75 @@ capturas de producción y `firma-android-inconexion/` (el keystore movido)
 no aparecen en `git status` ni en ningún commit — ninguno de los 3 vive
 dentro del repo.
 
+## Fase 81 — Auditoría de seguridad y QA de toda la plataforma: inyección SQL + permisos + no-regresión (2026-09-28, automática)
+
+Continuación de las Fases 58, 64 y 72. Todo en LOCAL (servidor local +
+`seed:demo` + el archivo real de Agendas de Edwin cargado localmente para
+tener números de control reales, nunca commiteado); contra producción
+solo revisión pasiva (`/api/health`, cabeceras — cero inyección/carga).
+Informe completo con toda la evidencia en
+`docs/auditoria-seguridad-fase81.md`.
+
+- **Inyección SQL — 0 hallazgos.** Revisión de TODAS las consultas del
+  servidor (100% parametrizadas, `?`/`@nombre`, ningún nombre de columna
+  ni tabla sale de un valor controlado por el usuario) + prueba en vivo
+  real (~80 peticiones: 11 cargas típicas de inyección contra login,
+  filtros de Agendas/Tráfico/Tipificación, y campos que vienen de un
+  Excel cargado — asesor/sede/especialidad/entidad/skill/agente). Ninguna
+  alteró, filtró ni rompió una consulta; los conteos de todas las tablas
+  quedaron idénticos antes/después. La inyección de fórmulas de Excel
+  (H2, Fase 72) sigue cubierta (`xlsxCeldaSegura` sigue en la suite).
+- **Permisos por rol — 4 hallazgos confirmados y arreglados** (mismo
+  patrón que H1 de la Fase 72, en rutas que ese fix no tocó):
+  1. **`GET /dashboard/cargas`** (Alta) — mandaba el CONTENIDO completo
+     (filas reales) de un cliente ajeno a quien solo tenía `cargarDatos`
+     global, sin `cliente_`/`campana_` de ese cliente puntual. Probado en
+     vivo: `demo_reportes` leyó 30 cargas reales de "HOSPITAL LA MARIA"
+     (sin acceso) solo cambiando `?cliente=` en la URL. Arreglado sin
+     tocar el comportamiento intencional (documentado desde la Fase 72):
+     la METADATA (qué cliente/sección/período ya tiene carga, con
+     cuántas filas — nuevo campo `filasCount`) sigue siendo global a
+     `cargarDatos` a propósito; solo el CONTENIDO ahora exige
+     `clienteAccess` del cliente puntual.
+  2. **`DELETE /dashboard/cargas/:id`** (Alta) — sin ningún chequeo por
+     cliente (nunca documentado como intencional, a diferencia de GET/
+     POST): cualquiera con `cargarDatos` podía borrar la carga de OTRO
+     cliente adivinando el id. Arreglado con `clienteAccess`.
+  3. **`GET /dashboard/secciones/:cliente`** (Baja) — sin ningún gate más
+     allá de estar logueado; cualquier rol podía pedir el esquema (solo
+     etiquetas de columna, nunca datos reales) de cualquier cliente.
+     Arreglado exigiendo `cargarDatos`, igual que ya exige la pantalla.
+  4. **`GET /metas/mi-meta`** (Baja, ya autolimitado a la meta del propio
+     actor) — sin `campaignAccess`. Arreglado.
+
+  Un quinto bug, propio de esta fase, se encontró y arregló ANTES de
+  cualquier commit: al agregar un segundo parámetro a `toCarga`, un sitio
+  existente que la llamaba como `rows.map(toCarga)` empezó a recibir el
+  ÍNDICE como ese parámetro (`Array.prototype.map`), vaciando en
+  silencio la primera fila de cada cliente en `GET /dashboard/:cliente`
+  — lo agarró la propia suite de pruebas (2 pruebas ya existentes
+  fallaron) antes de llegar a ningún commit.
+- **No-regresión**: `npm test` 509/509 (4 pruebas nuevas), `npm audit` 0
+  vulnerabilidades, antes y después. Playwright directo desde Node (no la
+  extensión de Chrome) con los usuarios reales de `seed:demo` por las 5
+  pestañas de ORLANT (Calidad, Tráfico Llamadas, Tráfico WhatsApp,
+  Tipificación, Agendamiento): 0 errores de consola, 0 peticiones
+  fallidas. Números de control de ORLANT verificados exactos: Llamadas
+  8.061/7.159/902, WhatsApp 7.305/7.109/196, Tipificación 14.940 (top 3 y
+  ejemplo de Edwin = 40 idénticos), Agendas 7.426 con AUDIFONOS 2.141 (de
+  paso reconfirma en vivo el arreglo de la Fase 79).
+- **QA de casos borde**: no se repitieron a mano — ya cubiertos por
+  pruebas automáticas que siguen en la suite y pasando (hojas vacías,
+  encabezados raros, fechas como texto, separador de miles con coma,
+  filas duplicadas, volumen alto, confirmación al recargar sin duplicar,
+  pestañas ocultas sin datos).
+- **Producción**: solo lectura — `/api/health` 200, cabeceras (CSP/HSTS/
+  etc.) sin cambios respecto a la Fase 72, rutas sensibles exigen token.
+  El arreglo de RBAC llega a producción con el deploy normal de esta
+  fase, nunca se probó el hallazgo en sí contra producción.
+
+**Verificación**: ver arriba (`npm test`/`npm audit` antes y después,
+Playwright, números de control). Un solo PR (los 4 arreglos son el mismo
+tema: gates de acceso por cliente/campaña que faltaban). No se tocó CI/
+workflows, secretos de deploy, login/sesión ni Caddy.
+

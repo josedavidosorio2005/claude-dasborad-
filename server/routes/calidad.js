@@ -425,6 +425,15 @@ router.get(
     const { campana } = req.query;
     const mes = req.query.mes || new Date().toISOString().slice(0, 7);
     if (req.actor.isMasterAdmin) return res.json({ campana, mes, meta: null });
+    // Fase 81 (hallazgo real): faltaba este gate -- el resultado ya se
+    // limita a la meta del propio actor (metaForLiderInMonth con su
+    // req.actor.id), asi que nunca fugaba la meta de otra persona, pero SI
+    // dejaba confirmar/descartar si el actor tiene una meta configurada en
+    // una campana a la que no tiene acceso. Mismo criterio que el resto de
+    // este archivo (campaignAccess en cada ruta que recibe `campana`).
+    if (!campaignAccess(req.actor, campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
     const cronograma = db
       .prepare('SELECT * FROM cronograma_metas WHERE campana = ?')
       .all(campana)

@@ -662,7 +662,12 @@ async function renderCargasExistentes(){
   } else {
     rows.forEach(function(c){
       var titulo = (_cargasSpec && _cargasSpec.secciones[c.seccion]) ? _cargasSpec.secciones[c.seccion].titulo : c.seccion;
-      html += '<tr><td>'+esc(titulo)+'</td><td>'+esc(c.periodo)+'</td><td>'+esc(c.cadencia)+'</td><td>'+(c.filas?c.filas.length:0)+'</td>'+
+      // Fase 81: filasCount siempre trae el conteo real (aunque `filas` venga
+      // vacio por no tener acceso a ESE cliente puntual, ver GET
+      // /dashboard/cargas en el servidor) -- se prefiere sobre filas.length
+      // para que esta tabla no muestre "0" de forma enganosa.
+      var conteoFilas = typeof c.filasCount === 'number' ? c.filasCount : (c.filas ? c.filas.length : 0);
+      html += '<tr><td>'+esc(titulo)+'</td><td>'+esc(c.periodo)+'</td><td>'+esc(c.cadencia)+'</td><td>'+conteoFilas+'</td>'+
         '<td>'+esc(c.cargadoPorNombre||'-')+'</td><td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(c.cargadoEn||'-')+'</td>'+
         '<td><button class="btn-sm btn-delete" onclick="eliminarCarga('+c.id+')">Eliminar</button></td></tr>';
     });
