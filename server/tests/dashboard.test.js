@@ -42,6 +42,42 @@ test('cargar datos exige el permiso cargarDatos', async () => {
   assert.equal(r.status, 403);
 });
 
+// Fase 82 (cierra el hueco que la Fase 81 dejo abierto a proposito, como
+// pendiente de decision): antes, cargarDatos GLOBAL bastaba para SUBIR
+// datos de CUALQUIER cliente -- ahora POST /dashboard/cargas tambien
+// exige clienteAccess al cliente puntual del body, igual que GET/DELETE.
+test('Fase 82: POST /dashboard/cargas exige clienteAccess del cliente AL QUE SE SUBE (no solo cargarDatos global)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  // Mismo shape que REPORTES real: cargarDatos global + SOLO campana_ORLANT.
+  // Secciones/periodo elegidos a proposito para no chocar con otras pruebas
+  // de este archivo que tambien usan ORLANT/CLINICA AURORA (ORLANT tipificacion,
+  // CLINICA AURORA tipificacion, ambas con MES, ya las usan otras pruebas).
+  const loader = await makeUser(admin, { rol: 'REPORTES', perms: { cargarDatos: true, campana_ORLANT: true } });
+
+  // Sin acceso a CLINICA AURORA -> 403, y la base no cambia.
+  const sinAcceso = await request(app).post('/api/dashboard/cargas').set(auth(loader.token)).send({
+    cliente: 'CLINICA AURORA', seccion: 'sabados', cadencia: 'mensual', periodo: MES,
+    filas: [{ fecha: `${MES}-06`, llamadas: 3, whatsapp: 2 }],
+  });
+  assert.equal(sinAcceso.status, 403, JSON.stringify(sinAcceso.body));
+  const listaAurora = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(admin));
+  assert.equal(listaAurora.body.filter((c) => c.periodo === MES && c.seccion === 'sabados').length, 0, 'el intento sin acceso NO debio escribir nada');
+
+  // CON acceso a ORLANT (su propio cliente) -> sigue funcionando igual que siempre.
+  const conAcceso = await request(app).post('/api/dashboard/cargas').set(auth(loader.token)).send({
+    cliente: 'ORLANT', seccion: 'sta_categorias', cadencia: 'mensual', periodo: MES,
+    filas: [{ dimension: 'ESTADO', categoria: 'X', cantidad: 1 }],
+  });
+  assert.equal(conAcceso.status, 201, JSON.stringify(conAcceso.body));
+
+  // ADMIN (isFullAdmin) sigue pudiendo subir a CUALQUIER cliente, sin excepcion.
+  const comoAdmin = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
+    cliente: 'CLINICA AURORA', seccion: 'sabados', cadencia: 'mensual', periodo: MES,
+    filas: [{ fecha: `${MES}-06`, llamadas: 3, whatsapp: 2 }],
+  });
+  assert.equal(comoAdmin.status, 201, JSON.stringify(comoAdmin.body));
+});
+
 test('Fase 72 (H1): tener cargarDatos NO da lectura del dashboard de un cliente sin cliente_/campana_ asignado', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   // Loader real (mismo shape que "flujo completo" mas abajo) pero SIN ningun
@@ -52,18 +88,24 @@ test('Fase 72 (H1): tener cargarDatos NO da lectura del dashboard de un cliente 
   const dash = await request(app).get('/api/dashboard/ORLANT').set(auth(loader.token));
   assert.equal(dash.status, 403, JSON.stringify(dash.body));
 
-  // Pero SI puede seguir cargando datos para ORLANT (cargarDatos sigue
-  // siendo global a proposito para subir, eso no cambio).
+  // Fase 82: tampoco puede SUBIR datos de ORLANT sin ese mismo permiso --
+  // cargarDatos global dejo de bastar por si solo (cerro el hueco que la
+  // Fase 81 habia dejado abierto a proposito en POST).
   const carga = await request(app)
     .post('/api/dashboard/cargas')
     .set(auth(loader.token))
     .send({ cliente: 'ORLANT', seccion: 'tipificacion', cadencia: 'mensual', periodo: MES, filas: [{ linea: '3P', tipificacion: 'X', cantidad: 1 }] });
-  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+  assert.equal(carga.status, 403, JSON.stringify(carga.body));
 
-  // Y si se le da el permiso de cliente/campana correspondiente, ya si puede leer.
+  // Y si se le da el permiso de cliente/campana correspondiente, ya si puede leer Y subir.
   await request(app).put('/api/users/' + loader.id + '/perms').set(auth(admin)).send({ perms: { Calidad: true, cargarDatos: true, campana_ORLANT: true } });
   const dashConAcceso = await request(app).get('/api/dashboard/ORLANT').set(auth(loader.token));
   assert.equal(dashConAcceso.status, 200);
+  const cargaConAcceso = await request(app)
+    .post('/api/dashboard/cargas')
+    .set(auth(loader.token))
+    .send({ cliente: 'ORLANT', seccion: 'tipificacion', cadencia: 'mensual', periodo: MES, filas: [{ linea: '3P', tipificacion: 'X', cantidad: 1 }] });
+  assert.equal(cargaConAcceso.status, 201, JSON.stringify(cargaConAcceso.body));
 });
 
 // Fase 81 (hallazgo real, probado en vivo contra el servidor local):
@@ -173,7 +215,9 @@ test('cambiar el rol de un usuario a REPORTES le agrega cargarDatos (feedback Ed
 
 test('flujo completo: cargar resumen, leerlo en el dashboard, reemplazarlo', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } });
+  // Fase 82: subir requiere clienteAccess ademas de cargarDatos -- este
+  // loader necesita campana_ORLANT para poder cargar datos de ORLANT.
+  const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true, campana_ORLANT: true } });
 
   // carga inicial
   const c1 = await request(app)
