@@ -295,13 +295,14 @@ function descargarPlantillaConsolidada(){
   var cliente = document.getElementById('carga-cliente').value;
   if(!cliente || !_cargasPlan.length){ showToast('Selecciona un cliente'); return; }
 
+  var planOrdenado = cargasPlanOrdenParaDescarga(_cargasPlan);
   var wb = XLSX.utils.book_new();
 
-  var wsInstr = XLSX.utils.aoa_to_sheet(_cargasInstruccionesAoA(cliente, _cargasPlan));
+  var wsInstr = XLSX.utils.aoa_to_sheet(_cargasInstruccionesAoA(cliente, planOrdenado));
   wsInstr['!cols'] = [{ wch: 100 }];
   XLSX.utils.book_append_sheet(wb, wsInstr, CARGAS_HOJA_INSTRUCCIONES);
 
-  _cargasPlan.forEach(function(h){
+  planOrdenado.forEach(function(h){
     // autoTrafico (Fase 71, ORLANT/resumen): estas columnas se calculan
     // solas desde Trafico -- no se generan como filas/columnas a llenar en
     // el archivo descargable (ver notasExtra de la hoja, mas la nota fija

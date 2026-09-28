@@ -465,6 +465,62 @@ test('PUT /api/dashboards/config/:cliente conserva oculta y subtabs de cada pest
   await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
 });
 
+// Fase 84 (hallazgo real, mismo patron exacto que el bug de Fase 74 de
+// arriba): seccionSpecSchema/columnaSchema (server/validation.js) no
+// declaraban notasExtra/autoTrafico -- Zod los descartaba en CUALQUIER PUT
+// /dashboards/config/:cliente, aunque el PUT no tocara esa seccion.
+// Confirmado que asi paso de verdad en ORLANT/resumen (Fase 71): la
+// migracion _v1 los habia puesto, un PUT posterior los volvio a borrar (ver
+// la migracion _v2, server/db.js). Esta prueba reproduce el bug con el
+// mismo patron que la de arriba: crear con notasExtra/autoTrafico, editar
+// ALGO QUE NO ES ESO, confirmar que siguen ahi.
+test('PUT /api/dashboards/config/:cliente conserva notasExtra (seccion) y autoTrafico (columna) -- Fase 84, mismo patron que oculta/subtabs de la Fase 74', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cliente = 'DEMO QA NOTASEXTRA ' + Math.random().toString(36).slice(2, 6);
+  const config = {
+    cliente,
+    titulo: 'Dashboard Demo QA NotasExtra',
+    vista: null,
+    secciones: {
+      resumen: {
+        titulo: 'Resumen mensual',
+        descripcion: 'Carga simple de prueba',
+        cadencia: 'mensual',
+        periodo: 'mes',
+        filaUnica: true,
+        columnas: [
+          { key: 'llamadas', label: 'Llamadas', tipo: 'entero', opcional: true, autoTrafico: true },
+          { key: 'ordenes', label: 'Ordenes', tipo: 'entero' },
+        ],
+        notasExtra: ['Nota de prueba: Llamadas se calcula sola, no la digites a mano.'],
+      },
+    },
+    layout: { kpis: [], tabs: [{ key: 'visible', label: 'Visible', panels: [] }] },
+  };
+
+  const create = await request(app).post('/api/dashboards/config').set(auth(admin)).send(config);
+  assert.equal(create.status, 201, JSON.stringify(create.body));
+  assert.equal(create.body.secciones.resumen.columnas[0].autoTrafico, true, 'autoTrafico debe sobrevivir el POST inicial');
+  assert.deepEqual(create.body.secciones.resumen.notasExtra, config.secciones.resumen.notasExtra);
+
+  // Edita algo que NO tiene nada que ver con notasExtra/autoTrafico (aqui, el titulo).
+  const editado = { ...config, titulo: 'Dashboard Demo QA NotasExtra (editado)' };
+  const put = await request(app)
+    .put('/api/dashboards/config/' + encodeURIComponent(cliente))
+    .set(auth(admin))
+    .send(editado);
+  assert.equal(put.status, 200, JSON.stringify(put.body));
+  assert.equal(put.body.secciones.resumen.columnas[0].autoTrafico, true, 'autoTrafico NO debe borrarse en un PUT que no toca esa seccion');
+  assert.deepEqual(put.body.secciones.resumen.notasExtra, config.secciones.resumen.notasExtra, 'notasExtra NO debe borrarse en un PUT que no toca esa seccion');
+
+  // Releer de la base -- confirma que de verdad quedo persistido.
+  const releido = await request(app).get('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+  assert.equal(releido.body.secciones.resumen.columnas[0].autoTrafico, true);
+  assert.deepEqual(releido.body.secciones.resumen.notasExtra, config.secciones.resumen.notasExtra);
+
+  await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
+});
+
 // Bug real encontrado en produccion (2026-09-16, ver docs/ARQUITECTURA.md
 // §3): un admin borro y volvio a crear la configuracion del dashboard de
 // ORLANT (para ajustar KPIs/secciones) y eso borro tambien, en cascada, los

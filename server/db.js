@@ -1418,6 +1418,61 @@ runOnceMigration('dashboards_config_orlant_resumen_trafico_opcional_v1', () => {
   }
 });
 
+// Fase 84 (hallazgo real): la migracion _v1 de arriba SI corrio (esta en
+// schema_migrations), pero autoTrafico/notasExtra de resumen aparecieron
+// borrados igual -- porque seccionSpecSchema/columnaSchema
+// (server/validation.js) nunca los declaraban, asi que CUALQUIER PUT
+// /dashboards/config/ORLANT posterior (ej. la pantalla "Dashboards" del
+// panel admin, guardando sin tocar "resumen") los volvia a borrar en
+// silencio (Zod descarta cualquier campo no declarado). Se agregaron esos
+// 2 campos al schema (arriba) -- eso evita que un PUT futuro los vuelva a
+// borrar. Esta migracion repara el estado ACTUAL (necesaria ademas de la
+// _v1: un runOnceMigration nunca se repite, asi que _v1 no se autocorrige
+// sola). Misma logica exacta que _v1, nombre nuevo porque _v1 ya se
+// consumio. Idempotente: si ya esta bien, no hace nada.
+runOnceMigration('dashboards_config_orlant_resumen_trafico_opcional_v2', () => {
+  const AUTO_TRAFICO_KEYS = ['llamadas_3p', 'wpp_3p', 'llamadas_general', 'wpp_general', 'nivel_atencion_3p', 'nivel_atencion_wpp_3p', 'nivel_atencion_general'];
+  const NOTA_EXTRA =
+    'Las 7 metricas de trafico (Llamadas 3P/Linea General, WhatsApp 3P/Linea General, ' +
+    'Nivel Atencion 3P/WhatsApp 3P/Linea General) NO estan en esta hoja: se calculan solas, ' +
+    'todos los meses, desde Trafico de Llamadas y Trafico de WhatsApp -- no hace falta llenarlas ' +
+    'a mano (evita el trabajo doble y que los numeros no cuadren entre las dos cargas).';
+
+  const row = db.prepare("SELECT cliente, secciones FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return;
+  let secciones;
+  try {
+    secciones = JSON.parse(row.secciones);
+  } catch (e) {
+    return;
+  }
+  const resumen = secciones && secciones.resumen;
+  if (!resumen || !Array.isArray(resumen.columnas)) return;
+
+  let tocado = false;
+  resumen.columnas.forEach((col) => {
+    if (col && AUTO_TRAFICO_KEYS.includes(col.key) && !col.autoTrafico) {
+      col.opcional = true;
+      col.autoTrafico = true;
+      tocado = true;
+    }
+  });
+  if (JSON.stringify(resumen.notasExtra || []) !== JSON.stringify([NOTA_EXTRA])) {
+    resumen.notasExtra = [NOTA_EXTRA];
+    tocado = true;
+  }
+  if (!tocado) return;
+
+  db.prepare('UPDATE dashboards_config SET secciones = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(secciones),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_resumen_trafico_opcional_v2 aplicada.');
+  }
+});
+
 // ORLANT: Fase 77 (Jairo/Edwin) -- reemplaza el panel viejo del tab
 // "tipificacion" (pie filtrable sobre la hoja "tipificacion" de
 // dashboard_cargas, que nunca llego a tener datos reales de ORLANT) por el

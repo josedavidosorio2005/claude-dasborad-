@@ -452,6 +452,43 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
   return Object.assign({}, base, res, { avisos: res.avisos || [] });
 }
 
+// Fase 84: orden de la plantilla DESCARGABLE -- primero INSTRUCCIONES (fija,
+// fuera de esta lista), luego las hojas que mas se usan (Trafico +
+// Tipificacion + Agendas, pedido explicito), al final las demas en su orden
+// de siempre (resumen/salida/tipificacion vieja/sta_categorias/Calidad).
+// Esto es SOLO el orden de las hojas al descargar -- no cambia el PLAN que
+// gobierna que hojas se reconocen al subir (cargasPlanConsolidado, arriba),
+// ni el orden de la "vista previa" al subir un archivo.
+var CARGAS_ORDEN_DESCARGA = [
+  CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
+  CARGAS_HOJA_AGENDAS,
+];
+// Fase 84 (pedido explicito, confirmado con el usuario): la hoja
+// "tipificacion" (minuscula, la de ANTES de la Fase 77) ya no alimenta
+// ningun tab del dashboard desde que existen TIPIFICACION_LLAMADAS/
+// TIPIFICACION_WHATSAPP -- se quita de la plantilla DESCARGABLE para no
+// confundir a quien la llena (el cargador la sigue aceptando igual, por si
+// alguien sube un archivo viejo que la trae; esta funcion NUNCA toca el
+// plan real que usa el cargador, solo lo que se ofrece para llenar). Se
+// detecta que esta superada viendo si el plan YA trae el sistema nuevo
+// (tipo==='tipificacion'), nunca por el nombre del cliente -- asi nunca
+// afecta a Clinica Aurora/Hospital La Maria, que siguen usando esta misma
+// hoja como su UNICO mecanismo de tipificacion.
+function cargasPlanSinTipificacionSuperada(plan){
+  var tieneSistemaNuevo = (plan || []).some(function(h){ return h.tipo==='tipificacion'; });
+  if(!tieneSistemaNuevo) return plan;
+  return plan.filter(function(h){ return h.hoja!=='tipificacion'; });
+}
+function cargasPlanOrdenParaDescarga(plan){
+  plan = cargasPlanSinTipificacionSuperada(plan || []);
+  return plan.map(function(h,i){ return {h:h, i:i}; }).sort(function(a,b){
+    var pa = CARGAS_ORDEN_DESCARGA.indexOf(a.h.hoja); if(pa===-1) pa = 100+a.i;
+    var pb = CARGAS_ORDEN_DESCARGA.indexOf(b.h.hoja); if(pb===-1) pb = 100+b.i;
+    return pa-pb;
+  }).map(function(x){ return x.h; });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -475,5 +512,8 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasProcesarHoja: cargasProcesarHoja,
     cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
     cargasResolverHojaTrafico: cargasResolverHojaTrafico,
+    CARGAS_ORDEN_DESCARGA: CARGAS_ORDEN_DESCARGA,
+    cargasPlanSinTipificacionSuperada: cargasPlanSinTipificacionSuperada,
+    cargasPlanOrdenParaDescarga: cargasPlanOrdenParaDescarga,
   };
 }
