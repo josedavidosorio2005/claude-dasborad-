@@ -6181,3 +6181,101 @@ escribió en producción — la carga del archivo real la hace el usuario
 desde la plataforma. No se tocaron los datos de prueba de Calidad de
 ORLANT, el keystore de `mobile-app/`, ni ninguna otra pestaña oculta.
 
+## Fase 79 — La carga de Agendas/Tipificación falló en producción: causa real, arreglo y carga de los datos reales (2026-09-28, automática)
+
+Incidente reportado por el usuario: al intentar cargar en producción por
+primera vez (Fases 77/78, ya con CI verde y merge), "Cargar Datos" mostró
+"El archivo no tiene datos en ninguna hoja reconocida". El usuario no
+recordaba cuál de los 4 archivos había subido (2 preparados para carga —
+`ORLANT_agendas_abril_2025_PARA_CARGAR.xlsx`,
+`ORLANT_tipificacion_llamadas_agosto_2026_PARA_CARGAR.xlsx` — y 2
+originales de Edwin — `AGENDAS.xlsx`,
+`BASE_PARA_TORTAS_DE_TIPIFICACION.xlsx` — los 4 fuera del repo, en
+`bases edwin/`).
+
+**Diagnóstico, con evidencia (se revisaron las 5 causas del pedido)**:
+1. **Config de producción vs. local — descartada.** El plan de hojas que
+   arma la pantalla de carga (`cargasPlanConsolidado`, qué hoja busca por
+   nombre para Agendas/Tipificación) sale 100% del JS estático del
+   cliente (`CARGAS_CLIENTES_TRAFICO_UNIFICADO` en `cargas.js`,
+   `AGENDAS_COLUMNAS`/`TIPIFICACION_COLUMNAS`) — nunca de
+   `dashboards_config` ni de ninguna tabla. Las migraciones de
+   `dashboards_config` (`dashboards_config_orlant_agendas_panel_v1`,
+   `dashboards_config_orlant_tipificacion_panel_v1`, server/db.js) además
+   corren automáticamente e idempotentes en CADA arranque del proceso
+   (`runOnceMigration` se llama a nivel de módulo en `db.js`, que
+   `server.js` carga al iniciar) — un deploy real siempre reinicia el
+   proceso, así que no puede quedar "sin migrar". No aplica.
+2. **Caché del navegador — descartada para este incidente.** `curl` de
+   solo lectura contra producción confirmó `Cache-Control: no-cache` +
+   ETag en `index.html` (revalida siempre, no sirve HTML viejo sin
+   preguntar) y `max-age=300` en los `.js` (además versionados con
+   `?v=<build id>`). Se agregó de todas formas un aviso defensivo
+   (`GET /api/health` ahora expone `buildId`; una pestaña vieja que
+   nunca se recargó lo compara contra `window.__BUILD_ID__` y avisa antes
+   de dejar cargar) por si una pestaña quedó abierta desde antes de un
+   deploy futuro — pero no era la causa de este incidente.
+3. **Pantalla equivocada — descartada.** El mensaje solo sale de un único
+   lugar (`procesarArchivoConsolidado`, `cargas.js`), sin depender de
+   cliente/campaña/rol.
+4. **SheetJS no lee bien los archivos — descartada.** Los 4 archivos
+   reales se leyeron con la MISMA versión de SheetJS que usa la app
+   (0.18.5) sin ningún error: dimensiones, encabezados y conteo de filas
+   exactos en los 4 (verificado local, estructura únicamente — nunca se
+   imprimieron datos reales).
+5. **CONFIRMADA — el archivo original de Edwin trae la hoja "DATA", no
+   "AGENDAS"/"TIPIFICACION_LLAMADAS".** Reproducido de punta a punta:
+   con el código YA desplegado en producción (confirmado con `curl` que
+   producción sirve el `cargas.js` con la lógica de Fase 77/78) corriendo
+   LOCAL, subir `ORLANT_agendas_abril_2025_PARA_CARGAR.xlsx` o
+   `..._tipificacion_llamadas..._PARA_CARGAR.xlsx` (hoja ya con el nombre
+   correcto) funciona sin error; subir `AGENDAS.xlsx` o
+   `BASE_PARA_TORTAS_DE_TIPIFICACION.xlsx` (hoja "DATA") reproduce
+   EXACTO el mensaje del incidente. El usuario tiene los 4 archivos en la
+   misma carpeta y no recordaba cuál subió — la explicación más probable
+   es que subió uno de los 2 originales de Edwin por error.
+
+**Arreglo (robustece independientemente de cuál haya sido)**:
+- `cargasEncabezadosCoinciden` (`cargas-logic.js`, pura): dado un
+  encabezado ya leído, dice si calza con las columnas OBLIGATORIAS de un
+  formato (por nombre normalizado, sin importar orden/mayúsculas). Si una
+  hoja de Agendas o de Tipificación de Llamadas (nunca WhatsApp —
+  comparte encabezados con Llamadas, pedido explícito: solo se reconoce
+  por nombre) no está por su nombre exacto, `cargas.js` busca CUALQUIER
+  otra hoja del archivo (que ningún otro renglón del plan ya haya
+  reclamado por nombre ni por este mismo mecanismo) cuyos encabezados
+  calcen — una hoja como "GRAFICA" nunca calza con ningún formato y se
+  ignora sin error, como antes. La vista previa lo dice explícito:
+  `OK — 7426 fila(s) ... (hoja "DATA" reconocida como Agendas (citas
+  asignadas))`.
+- Mensaje de error mejorado: si ninguna hoja se reconoce, ahora lista las
+  hojas que trae el archivo y las que espera ese cliente.
+- Agendamiento (igual que Tipificación desde la Fase 77) abre por defecto
+  en el ÚLTIMO mes con datos, no en "Todos" sin explicar — evita el caso
+  de abrir la pestaña con el selector global en otro período y ver una
+  gráfica vacía sin aviso.
+- Extra defensivo (no la causa real, ver punto 2): `GET /api/health`
+  expone `buildId`; un aviso compara la versión de la pestaña contra la
+  del servidor antes de dejar cargar un archivo.
+
+**Verificación**: `npm test` 505/505 (12 pruebas nuevas:
+`cargas-logic-fase79-reconocimiento-encabezados.test.js` con los
+encabezados EXACTOS de los archivos reales de Edwin —incluida la nota
+explícita de que el gate de canal para WhatsApp vive en `cargas.js`, no
+en esta función—, `fase79-build-id.test.js`), `npm audit` 0
+vulnerabilidades, antes y después. Reproducción "antes/después" real
+contra el código YA desplegado en producción (`git stash` del fix,
+mismo script de Playwright, mismo resultado que el incidente reportado;
+`git stash pop` para restaurar) y luego contra el fix, ambas veces con
+los 4 archivos reales (nunca commiteados, nunca mostrados) — los 2
+`PARA_CARGAR` reconocidos por nombre y los 2 originales de Edwin
+reconocidos por encabezados, ambos con el conteo de filas correcto
+(7.426 / 14.940) y, para Agendas, las 576 filas agrupadas
+"PARTICULAR / OTRA" (5 sin entidad) — cero errores de consola. Trafico y
+Calidad de ORLANT sin tocar. Script dejado en
+`.github/scripts/verificar-fase79-reconocimiento-archivos-edwin.js`
+(solo lee estructura/conteos, nunca datos reales).
+
+Carga real en producción (Parte 3, autorizada explícitamente): ver
+actualización de esta misma fase más abajo/arriba tras el deploy.
+

@@ -47,7 +47,15 @@ async function _agendasRenderPanel(p, i){
     return;
   }
 
-  if(!_agendasEstado[i]) _agendasEstado[i] = {};
+  // Fase 79 (hallazgo real: con solo un mes viejo cargado -- ej. abril 2025
+  // -- y el selector global de mes en otro periodo -- ej. Ago-26 --, un
+  // admin que abre esta pestana por primera vez veia "Todos" en el filtro
+  // de Mes, que SI trae datos (agrega todo el historico), pero nada dejaba
+  // claro en que mes estaba parado ese total. Por defecto ahora se
+  // selecciona el mes MAS RECIENTE con datos (mismo criterio que
+  // Tipificacion, Fase 77) -- una eleccion explicita del usuario en el
+  // desplegable (incluida "Todos") sigue mandando despues de la primera vez.
+  if(!_agendasEstado[i]) _agendasEstado[i] = { mes: opciones.meses[opciones.meses.length-1] };
   var estado = _agendasEstado[i];
 
   var html = '<div class="aurora-card">';

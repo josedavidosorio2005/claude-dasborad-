@@ -142,8 +142,19 @@ function createApp() {
   const api = express.Router();
   app.use('/api', apiLimiter, api);
 
+  // Fase 79 (hallazgo real: una pestana abierta desde antes de un deploy
+  // sigue con el JS viejo en memoria -- un deploy real no puede "empujar"
+  // el cambio a una pestana que nunca se recarga). BUILD_ID se fija UNA
+  // sola vez al arrancar el proceso (un deploy real siempre reinicia el
+  // proceso) -- se usa mas abajo para versionar los scripts/estilos de
+  // index.html (?v=), y aqui se expone en /health para que el navegador
+  // pueda comparar su propia version (window.__BUILD_ID__, ver
+  // indiceHtmlConVersion mas abajo) contra la del servidor y avisar si
+  // quedo desactualizado (ver cargas.js, _cargasAvisarSiVersionVieja).
+  const BUILD_ID = String(Date.now());
+
   // ── Salud (publica) ───────────────────────────────────────
-  api.get('/health', (req, res) => res.json({ ok: true }));
+  api.get('/health', (req, res) => res.json({ ok: true, buildId: BUILD_ID }));
 
   // ── Estado de datos de demostracion (scripts/seed-demo.js) ─────────────
   // Cualquier usuario autenticado puede leerlo: es lo que pinta el banner
@@ -222,18 +233,23 @@ function createApp() {
   // referenciado en index.html; el propio index.html se transforma una sola
   // vez al arrancar y se sirve cacheado en memoria. Con esto, recargar la
   // pagina (no solo esperar 5 minutos) alcanza para tener el JS correcto —
-  // sigue sin poder "empujar" el cambio a una pestaña que nunca se recarga,
-  // eso requeriria un mecanismo de aviso/polling que no se implemento (mayor
-  // alcance, no pedido). No se toco ningun Cache-Control existente ni se creo
-  // service worker.
-  const BUILD_ID = String(Date.now());
+  // sigue sin poder "empujar" el cambio a una pestaña que nunca se recarga
+  // -- Fase 79 le agrega un aviso (window.__BUILD_ID__ + GET /health,
+  // comparados justo antes de una carga de datos, ver cargas.js) para que
+  // al menos esa pestaña vieja avise que hay una version nueva antes de
+  // dejar que alguien intente una carga que va a fallar. No se toco ningun
+  // Cache-Control existente ni se creo service worker.
   let indiceHtmlVersionado = null;
   function indiceHtmlConVersion() {
     if (indiceHtmlVersionado === null) {
       const raw = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
-      indiceHtmlVersionado = raw.replace(
+      const conVersion = raw.replace(
         /(src|href)="((?:js|css)\/[^"]+)"/g,
         (match, attr, relPath) => `${attr}="${relPath}?v=${BUILD_ID}"`
+      );
+      indiceHtmlVersionado = conVersion.replace(
+        '<head>',
+        `<head>\n<script>window.__BUILD_ID__=${JSON.stringify(BUILD_ID)};</script>`
       );
     }
     return indiceHtmlVersionado;
