@@ -6548,3 +6548,93 @@ fase lo cierra.
 workflows, secretos de deploy, login/sesión ni Caddy. Producción: solo
 `/api/health` tras el deploy.
 
+## Fase 83 — Cada usuario ve SOLO los módulos/pestañas/botones a los que tiene permiso (esconder, no mostrar en gris) (2026-09-28, automática)
+
+Pedido tras probar con un usuario "Dashboard Clientes": la pantalla
+"Selecciona un módulo" mostraba igual todos los demás módulos, atenuados
+con la etiqueta "Sin acceso". Cambio puramente de INTERFAZ — el candado
+real sigue en el servidor (Fases 72/81/82), sin tocar.
+
+**Qué se esconde ahora, y de dónde sale la lista**: la fuente es siempre
+`currentUser.perms` — los mismos permisos que manda el servidor en el
+login, nunca una lista aparte que se pueda desincronizar. Se extrajo la
+lógica de "qué se pinta" a `public/js/dashboards-logic.js` (3 funciones
+puras, doble modo browser/Node como `agendas-logic.js`):
+`dashModulosVisibles` (grid de módulos), `dashClientesVisibles` (modal
+"Dashboard Clientes"), `dashRolesVisibles` (pantalla "Permisos", solo
+Auxiliar Admin). Se encontraron y arreglaron 6 sitios con el mismo
+patrón "se pinta siempre, atenuado/disabled sin el permiso" — todos
+esconden ahora en vez de mostrar bloqueado:
+1. Grid de módulos ("Selecciona un módulo") — quitada la etiqueta "Sin
+   acceso" y el estado `disabled-btn`.
+2. Tarjetas de cliente en el modal "Dashboard Clientes" — mismo cambio, y
+   de paso se corrigió que solo usaba `!currentUser` (cubría al admin
+   maestro pero no al rol ADMIN) por `isFullAdmin()`.
+3. Botones Editar/Contraseña/Suspender/Eliminar en la tabla de Usuarios —
+   cada uno se pinta solo si el actor tiene ESE permiso puntual (antes:
+   siempre visibles, `disabled` + 🔒 sin el permiso).
+4. Botón "+ Nuevo Usuario" — igual, escondido sin `crearUsuarios`.
+5. Grid de roles en "Permisos" — se filtran los roles que un Auxiliar
+   Admin no puede manejar (ADMIN/AUX_ADMIN siempre fuera de su alcance,
+   el resto según `role_X`), mismo criterio que ya usaba la tabla de
+   Usuarios para roles enteros.
+6. **Pestaña "Permisos" del panel admin — no tenía NINGÚN gate** (hallazgo
+   nuevo, no reportado en el pedido): cualquier Auxiliar Admin la veía
+   aunque no tuviera `gestionPermisos`, y cada tarjeta de rol terminaba en
+   un toast "Sin permiso" al tocarla. Ahora la pestaña se esconde si el
+   actor no tiene `gestionPermisos` (ni es ADMIN/maestro) — mismo patrón
+   que ya usaban las demás pestañas del sidebar (`menu-cargas-li`,
+   `menu-inventario-li`, etc.).
+
+Se revisó el resto de la app (Calidad, Inventario, Gerencia, Gestión
+Humana, dashboard genérico) — ya usaban `style.display`/`classList` para
+esconder según permiso (ej. `_gerApplyWritePerm` en `gerencia.js`, con un
+comentario explícito de la Fase 2.2 de Edwin) o bloqueaban el módulo
+entero con un toast en la entrada (`openInventario`/`openGerencia`/
+`openGestionHumana`) — redundante pero inofensivo ahora que el tile de
+entrada ya está escondido, no se tocó.
+
+**Casos especiales**:
+- ADMIN / admin maestro: sin cambios, `isFullAdmin()` sigue viendo todo.
+- Un solo módulo disponible: el grid (CSS grid de 2 columnas) se ve bien
+  con una sola tarjeta, sin romper el diseño — verificado con capturas.
+  No se implementó el salto automático a ese módulo (no se preguntó, per
+  la regla del pedido).
+- Sin ningún módulo: mensaje claro "No tienes módulos asignados, contacta
+  al administrador", sin tarjetas (nuevo elemento `#dash-grid-vacio`).
+
+**Tabla por rol (verificado en vivo, Playwright)**:
+
+| Rol (usuario seed-demo) | Ve en "Selecciona un módulo" |
+|---|---|
+| CLIENTES_DASH (`demo_clientes_dash`) | Solo "Dashboard Clientes" |
+| CALIDAD (`demo_calidad`) | Solo "Calidad" |
+| GESTION_HUMANA (`demo_gestion_humana`) | Solo "Gestión Humana" |
+| REPORTES (`demo_reportes`) | "Calidad" + "Cargar Datos" (tiene `cargarDatos`) |
+| GERENCIA (`demo_gerencia`) | "Calidad" + "Gerencia" (2 módulos — caso de grid a medio llenar) |
+| ADMIN (`demo_admin`) | Todo — panel admin completo, 0 pestañas ocultas |
+| AUX_ADMIN (con `editarUsuarios` únicamente) | Tabla de Usuarios con SOLO el botón "Editar" por fila; "+ Nuevo Usuario" y "Permisos" ocultos |
+| AUX_ADMIN (con `gestionPermisos` + 2 `role_X`) | "Permisos" visible, grid de roles con EXACTAMENTE esos 2 roles |
+
+**Confirmación de que el servidor sigue dando 403**: probado en vivo
+contra las rutas de lo que ahora está escondido —
+`POST /api/users` (crear, sin `crearUsuarios`) → 403,
+`DELETE /api/users/:id` (eliminar, sin `eliminarUsuarios`) → 403,
+`GET /api/gerencia/kpis` (sin `Gerencia`) → 403. Ningún control de
+servidor se tocó en esta fase.
+
+**Verificación**: `npm test` 522/522 (12 pruebas nuevas en
+`dashboards-logic.test.js`, sobre las 3 funciones puras — un rol acotado
+a un módulo recibe solo ese módulo, `isFullAdmin` recibe todos,
+`perms[key]` no-exactamente-`true` no cuenta, etc.), `npm audit` 0
+vulnerabilidades, antes y después. Playwright directo desde Node, en
+local, con los usuarios reales de `seed:demo` — 0 errores de consola en
+todos los casos, claro/oscuro y escritorio/móvil. Números de control de
+ORLANT sin cambios (WhatsApp 7.305/7.109/196, Tráfico/Tipificación/
+Agendamiento cargan igual, 0 peticiones fallidas). Capturas (18, datos
+de demo) en `docs/capturas-demo/fase83-modulos-por-permiso/`.
+
+**Verificación y cierre**: un solo PR (mismo tema: esconder según
+permiso real). No se tocó CI/workflows, secretos de deploy, login/sesión
+ni Caddy. Producción: solo `/api/health` tras el deploy.
+

@@ -22,11 +22,12 @@ function canLoadData(){
   if (isFullAdmin()) return true;
   return !!(currentUser && currentUser.perms && currentUser.perms.cargarDatos===true);
 }
+// Fase 83: se pintaba siempre, solo atenuado+disabled sin el permiso --
+// ahora directamente se esconde (el candado real sigue en el servidor).
 function applyCreateBtn(){
   var btn=document.getElementById('btn-create-user');
   var ok=isFullAdmin()||can('crearUsuarios');
-  btn.disabled=!ok; btn.classList.toggle('blocked',!ok);
-  btn.style.opacity=ok?'1':'0.5'; btn.style.cursor=ok?'pointer':'not-allowed';
+  btn.classList.toggle('hidden',!ok);
 }
 
 // ═══════════════════════════════════════════════════════════

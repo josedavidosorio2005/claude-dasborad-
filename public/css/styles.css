@@ -102,7 +102,6 @@
 [data-theme="dark"] .badge-CLIENTES_DASH{background:#4a3a00;color:#ffd54f;}
 [data-theme="dark"] .badge-AUX_ADMIN{background:#152a4a;color:#8ab4f8;}
 [data-theme="dark"] .btn-pass,[data-theme="dark"] .hb-PASSWORD{background:#2a2a4a;color:#b8b8f0;}
-[data-theme="dark"] .btn-sm.blocked{background:#2a2a2a!important;color:#777!important;}
 [data-theme="dark"] .role-card.aux-card{border-color:#2a3a5a;background:#16202f;}
 [data-theme="dark"] .role-card.aux-card:hover{border-color:#3a6ac0;background:#1a2840;}
 [data-theme="dark"] .role-card.admin-card{background:#2a2410;}
@@ -358,8 +357,6 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .btn-activate{background:var(--c-success-bg);color:var(--c-success-dark);}
 .btn-delete{background:var(--c-danger-bg);color:var(--c-danger-dark);}
 .btn-pass{background:#f0f0fa;color:#5e5ea8;}
-.btn-sm.blocked{background:#f0f0f0!important;color:#bbb!important;cursor:not-allowed!important;}
-.btn-sm.blocked::after{content:'🔒';font-size:0.65rem;margin-left:3px;}
 
 /* ── ROLES GRID ── */
 .roles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;padding:20px;}
@@ -442,11 +439,9 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;width:100%;max-width:700px;}
 .dash-btn{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,0.2);border-radius:20px;padding:38px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:all 0.22s;text-align:center;color:var(--c-surface);position:relative;overflow:hidden;}
 .dash-btn:hover{background:rgba(255,255,255,0.22);transform:translateY(-5px);box-shadow:0 14px 36px rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.45);}
-.dash-btn.disabled-btn{opacity:0.32;cursor:not-allowed;pointer-events:none;}
 .dash-icon{font-size:3rem;line-height:1;}
 .dash-label{font-size:1.05rem;font-weight:700;letter-spacing:0.02em;}
 .dash-sub{font-size:0.76rem;color:rgba(255,255,255,0.62);margin-top:2px;}
-.dash-lock{position:absolute;top:12px;right:14px;background:rgba(0,0,0,0.25);border-radius:20px;padding:2px 8px;font-size:0.7rem;color:rgba(255,255,255,0.7);}
 .dash-btn.mod-calidad{border-color:rgba(39,174,96,0.5);background:rgba(39,174,96,0.15);}
 .dash-btn.mod-calidad:hover{background:rgba(39,174,96,0.28);}
 .dash-btn.mod-inventario{border-color:rgba(26,122,158,0.5);background:rgba(26,122,158,0.2);}
@@ -467,9 +462,7 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .clients-grid{display:flex;flex-direction:column;gap:8px;}
 .client-card{border:1.5px solid var(--c-border);border-radius:10px;padding:14px 18px;background:var(--c-surface-subtle);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:space-between;}
 .client-card:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg);box-shadow:0 3px 10px rgba(var(--shadow-rgb),0.1);}
-.client-card.client-locked{opacity:0.38;cursor:not-allowed;pointer-events:none;}
 .client-card .client-name{font-size:0.88rem;font-weight:700;color:var(--c-primary);}
-.client-card .client-lock-label{font-size:0.72rem;color:#bbb;}
 
 /* ── MODALS ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(var(--shadow-rgb),0.45);z-index:1000;align-items:center;justify-content:center;}

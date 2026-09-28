@@ -72,7 +72,7 @@
       <div class="sidebar-title">Panel Admin</div>
       <ul class="sidebar-menu" id="sidebar-menu">
         <li><a id="menu-users" onclick="showSection('users')" class="active"><span class="s-icon">&#128101;</span> Usuarios</a></li>
-        <li><a id="menu-perms" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
+        <li id="menu-perms-li"><a id="menu-perms" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
         <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" onclick="showSection('umbrales')"><span class="s-icon">&#128994;</span> Umbrales</a></li>
@@ -92,7 +92,7 @@
         <div class="page-title">Gestion de Usuarios</div>
         <div class="page-subtitle">Los cambios se guardan automaticamente. Cada accion queda registrada en el Historial.</div>
         <div class="aux-banner hidden" id="aux-banner">
-          &#128274; <div><strong>Modo Auxiliar Admin</strong> — Solo puedes realizar las acciones habilitadas y sobre los roles permitidos. Las acciones sin permiso aparecen con &#128274;.</div>
+          &#128274; <div><strong>Modo Auxiliar Admin</strong> — Solo ves las acciones y los roles a los que tienes acceso.</div>
         </div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-num" id="stat-active">-</div><div class="stat-label">Activos</div></div>
@@ -696,6 +696,11 @@
       <p>Selecciona un modulo para continuar</p>
     </div>
     <div class="dash-grid" id="dash-grid"></div>
+    <div class="empty-state hidden" id="dash-grid-vacio" style="max-width:520px;margin:0 auto">
+      <div class="es-icon">&#128274;</div>
+      <div class="es-title">No tienes modulos asignados</div>
+      <div class="es-hint">Contacta al administrador para que te asigne acceso a un modulo.</div>
+    </div>
   </div>
 </div>
 
@@ -1562,6 +1567,7 @@
 <script src="js/calidad-dashboard-logic.js"></script>
 <script src="js/api.js"></script>
 <script src="js/constants.js"></script>
+<script src="js/dashboards-logic.js"></script>
 <script src="js/state.js"></script>
 <script src="js/session.js"></script>
 <script src="js/ui-core.js"></script>
