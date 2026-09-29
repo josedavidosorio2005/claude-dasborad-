@@ -1692,6 +1692,74 @@ runOnceMigration('dashboards_config_orlant_orden_pestanas_v1', () => {
   }
 });
 
+// Fase 94 (tema B, pedido de Edwin): Agendamiento de ORLANT queda SOLO con
+// datos reales de la tabla `agendas` -- 4 sub-pestañas que comparten los
+// mismos filtros (Por especialidad / Total agendas / Agendas por línea /
+// Agendas por agente, ver public/js/agendas.js). "Ordenamiento Médico" y
+// "Recuperación de Cancelados" (hoja "resumen", vacía) salen a sus propias
+// pestañas ocultas -- MISMA config exacta, nada se borra ni se recalcula,
+// solo cambia de donde cuelgan. "Variación % Agendas" se quita del todo
+// (pedido explicito). dashboards_config ya existia en produccion (con la
+// forma de la Fase 78: "Citas por Especialidad" + 6 paneles de "resumen"),
+// asi que la forma nueva del seed nunca le habria llegado sola.
+runOnceMigration('dashboards_config_orlant_agendamiento_edwin_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTabs = {};
+  (target.layout.tabs || []).forEach((t) => { targetTabs[t.key] = t; });
+  if (!targetTabs.agendamiento) return;
+
+  const tabs = layout.tabs || [];
+  const agenda = tabs.find((t) => t.key === 'agendamiento');
+  if (!agenda) return;
+
+  const yaEsNuevo = (agenda.panels || []).length > 0 && (agenda.panels || []).every((p) => p.tipo === 'agendas_panel');
+  if (yaEsNuevo) return; // ya tiene la forma nueva, nada que hacer (dos corridas seguidas = mismo resultado)
+
+  // Forma "vieja" reconocible (Fase 78 -> antes de esta fase): 7 paneles,
+  // el primero "Citas por Especialidad" (agendas_panel). Si no coincide
+  // (config editada a mano a algo distinto), se deja intacta y se loguea,
+  // igual que las demas migraciones de ORLANT.
+  const esViejoReconocible = (agenda.panels || []).length === 7 && agenda.panels[0] && agenda.panels[0].tipo === 'agendas_panel';
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log(`[db] Migracion dashboards_config_orlant_agendamiento_edwin_v1: tab "agendamiento" tiene ${(agenda.panels || []).length} panel(es) en una forma no reconocida -- se deja intacta, revisar a mano.`);
+    }
+    return;
+  }
+
+  agenda.panels = JSON.parse(JSON.stringify(targetTabs.agendamiento.panels));
+  agenda.subtabs = JSON.parse(JSON.stringify(targetTabs.agendamiento.subtabs));
+
+  // Las 2 pestañas nuevas (ocultas) con la config EXACTA que tenian adentro
+  // de Agendamiento -- solo si no existen ya (idempotente / no pisa una
+  // personalizacion posterior si alguien ya las agrego a mano).
+  if (!tabs.some((t) => t.key === 'ordenamiento_medico') && targetTabs.ordenamiento_medico) {
+    tabs.push(JSON.parse(JSON.stringify(targetTabs.ordenamiento_medico)));
+  }
+  if (!tabs.some((t) => t.key === 'recuperacion_cancelados') && targetTabs.recuperacion_cancelados) {
+    tabs.push(JSON.parse(JSON.stringify(targetTabs.recuperacion_cancelados)));
+  }
+  layout.tabs = tabs;
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_agendamiento_edwin_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

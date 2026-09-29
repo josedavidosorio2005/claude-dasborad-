@@ -95,23 +95,54 @@ const ORLANT = {
       { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
         { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
       ]},
+      // Fase 94 (tema B, pedido de Edwin): Agendamiento queda SOLO con datos
+      // reales de la tabla `agendas` (server/agendas.js) -- 4 sub-pestañas
+      // que comparten los MISMOS filtros (mes/rango/asesor/sede/examen/
+      // especialidad/profesional/tipoLinea/entidad, ver public/js/agendas.js).
+      // Cada sub-pestaña es su PROPIO panel `agendas_panel` con un `vista`
+      // distinto (especialidad/mensual/linea/agente) -- el componente
+      // renderiza la fila de filtros compartida (estado por CAMPANA, no por
+      // indice de panel, asi los 4 quedan sincronizados entre si) mas UNA
+      // sola grafica, la de su `vista`. "Ordenamiento Médico" y
+      // "Recuperación de Cancelados" (hoja "resumen", vacia -- Edwin dijo
+      // que son procesos distintos que se montan despues) salen a sus
+      // propias pestañas ocultas, MAS ABAJO, sin borrar su configuracion.
+      // "Variación % Agendas" se quita del todo (pedido explicito). Ver la
+      // migracion idempotente dashboards_config_orlant_agendamiento_edwin_v1
+      // en db.js.
       { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
-        // Fase 78 (Jairo/Edwin): "Citas por Especialidad" -- agendas reales
-        // de Edwin (tabla `agendas`, server/agendas.js), independientes de
-        // "resumen" (de donde salen las demas sub-pestanas de este tab, que
-        // siguen sin terminar de llenarse). SIEMPRE primer panel/subtab:
-        // dashboard-generic.js destapa este tab en memoria SOLO cuando hay
-        // agendas cargadas (_gdBootstrap), sin tocar el `oculta` guardado
-        // aqui -- asi el admin siempre aterriza en esta sub-pestana cuando
-        // el tab recien se vuelve visible, nunca en una de resumen vacia.
-        { tipo: 'agendas_panel', titulo: 'Citas por Especialidad', campana: 'ORLANT' },
+        // SIEMPRE primer panel/subtab: dashboard-generic.js destapa este
+        // tab en memoria SOLO cuando hay agendas cargadas (_gdBootstrap),
+        // sin tocar el `oculta` guardado aqui -- asi el admin siempre
+        // aterriza en esta sub-pestana cuando el tab recien se vuelve
+        // visible, nunca en una vacia.
+        { tipo: 'agendas_panel', vista: 'especialidad', titulo: 'Agendas por Especialidad', campana: 'ORLANT' },
+        { tipo: 'agendas_panel', vista: 'mensual', titulo: 'Total de Agendas por Mes', campana: 'ORLANT' },
+        // "Agendas por línea" (Fase 94): YA NO sale de la hoja "resumen"
+        // (agendas_general/agendas_3p, siempre vacios) -- sale de la
+        // columna `tipoLinea` de la tabla `agendas` real (GET
+        // /calidad/agendas/linea, server/agendas.js).
+        { tipo: 'agendas_panel', vista: 'linea', titulo: 'Agendas por Línea', campana: 'ORLANT' },
+        // "Agendas por agente" (Fase 94, nueva): barras por asesor, mayor a
+        // menor, con los mismos filtros (GET /calidad/agendas/agente).
+        { tipo: 'agendas_panel', vista: 'agente', titulo: 'Agendas por Agente', campana: 'ORLANT' },
+      ], subtabs: [
+        { key: 'porespecialidad', label: 'Por especialidad', indices: [0] },
+        { key: 'totalagendas', label: 'Total agendas', indices: [1] },
+        { key: 'agendasporlinea', label: 'Agendas por línea', indices: [2] },
+        { key: 'agendasporagente', label: 'Agendas por agente', indices: [3] },
+      ]},
+      // Fase 94 (tema B): salen de Agendamiento (Edwin dijo que son otros
+      // procesos, con bases completamente distintas, que se montan
+      // despues) a su propia pestaña oculta -- MISMA config exacta que
+      // tenian adentro de Agendamiento, nada se borra ni se recalcula, solo
+      // cambia de donde cuelga. Se destapa a mano (quitar `oculta: true`)
+      // el dia que Edwin mande la base de Ordenamiento Médico.
+      { key: 'ordenamiento_medico', label: 'Ordenamiento Médico', oculta: true, panels: [
         { tipo: 'combo', titulo: 'Ordenamiento médico', barras: [
           { label: 'Gestionados', fuente: serie('ordmed_gestionados') },
           { label: 'Agendas', fuente: serie('ordmed_agendas') }],
           linea: { label: '% Efectividad', fuente: pctFormula('ordmed_agendas', 'ordmed_gestionados') } },
-        // Grafica 10 del PDF: KPI anual con texto explicativo (nota_kpi,
-        // dashboard-generic.js — modo:'anual' suma el campo en todas las
-        // cargas del año, no solo el ultimo mes).
         { tipo: 'nota_kpi', titulo: 'Efectividad del año — Ordenamiento médico 3P',
           valores: [
             { clave: 'gestionados', fuente: { s: 'resumen', modo: 'anual', campo: 'ordmed_gestionados' } },
@@ -119,35 +150,14 @@ const ORLANT = {
           ],
           formula: { clave: 'efectividad', a: 'agendados', b: 'gestionados' },
           plantilla: 'De la estrategia de agendamiento por ordenamiento médico en consulta médica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.' },
+      ]},
+      // Fase 94 (tema B): idem, "Recuperación de Cancelados" sale a su
+      // propia pestaña oculta -- misma config exacta.
+      { key: 'recuperacion_cancelados', label: 'Recuperación de Cancelados', oculta: true, panels: [
         { tipo: 'combo', titulo: 'Recuperación de cancelados', barras: [
           { label: 'Cancelado', fuente: serie('recup_cancelado') },
           { label: 'Atendido', fuente: serie('recup_atendido') }],
           linea: { label: '% Efectividad', fuente: pctFormula('recup_atendido', 'recup_cancelado') } },
-        // Grafica 11: 2 lineas (antes barras — mismo dato, formato del PDF)
-        // + variacion % mes a mes (transform:'incremento', ya existia en el
-        // motor — lo usa Aurora en "Agendas Manager e incremento").
-        lineP('Total agendas por mes', 'total_agendas'),
-        { tipo: 'line', titulo: 'Agendas por línea', series: [
-          { label: 'Línea General', fuente: serie('agendas_general') },
-          { label: 'Línea 3P', fuente: serie('agendas_3p') }] },
-        { tipo: 'line', titulo: 'Total agendas — variación % mes a mes', unidad: '%', series: [
-          { label: '% Variación', fuente: serie('total_agendas', { transform: 'incremento' }) }] },
-      ], subtabs: [
-        // Fase 78: nuevo panel de agendas insertado en el indice 0 -- todos
-        // los indices de las sub-pestanas de abajo (que ya existian) se
-        // corrieron +1. citasporespecialidad va PRIMERO a proposito (ver
-        // comentario del panel, arriba): es la sub-pestana con la que el
-        // tab se vuelve visible.
-        { key: 'citasporespecialidad', label: 'Citas por Especialidad', indices: [0] },
-        // El nota_kpi (indice 2) se agrupa con la grafica de Ordenamiento
-        // medico (indice 1): es el mismo dato (efectividad anual de la misma
-        // estrategia), no una grafica aparte -- separarlo dejaria una
-        // sub-pestana sin ninguna grafica, que el pedido explicito pidio evitar.
-        { key: 'ordmed', label: 'Ordenamiento Médico', indices: [1, 2] },
-        { key: 'recuperacion', label: 'Recuperación de Cancelados', indices: [3] },
-        { key: 'totalagendas', label: 'Total Agendas', indices: [4] },
-        { key: 'agendasporlinea', label: 'Agendas por Línea', indices: [5] },
-        { key: 'variacion', label: 'Variación % Agendas', indices: [6] },
       ]},
       // Tipificacion (Fase 77, pedido de Edwin/Jairo): REEMPLAZA el pie
       // filtrable de mas abajo (basado en la hoja vieja "tipificacion", que

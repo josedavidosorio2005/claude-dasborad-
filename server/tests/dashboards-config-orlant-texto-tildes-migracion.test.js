@@ -33,6 +33,14 @@ const LAYOUT_ORLANT_VIEJO = {
       { tipo: 'combo', titulo: 'Recuperacion de cancelados', barras: [] },
       { tipo: 'line', titulo: 'Agendas por linea', series: [{ label: 'Linea General', fuente: {} }, { label: 'Linea 3P', fuente: {} }] },
       { tipo: 'line', titulo: 'Total agendas — variacion % mes a mes', series: [{ label: '% Variacion', fuente: {} }] },
+      // Panel de relleno (Fase 94): con 4 paneles este fixture coincide con
+      // la forma "vieja reconocible" de dashboards_config_orlant_pdf_graficas_v1
+      // (esViejoReconocible.agendamiento = length===4), que reescribiria
+      // panels[] ENTERO con la forma actual de CONFIGS antes de que esta
+      // migracion (texto_tildes) llegue a corregir el texto -- rompiendo
+      // esta prueba, que es de OTRA migracion. Con 5 paneles esa migracion
+      // ya no reconoce la forma y deja este fixture intacto.
+      { tipo: 'bar', titulo: 'Panel relleno (no forma parte de ninguna migracion real)', series: [] },
     ], subtabs: [
       { key: 'ordmed', label: 'Ordenamiento Medico', indices: [0] },
       { key: 'recuperacion', label: 'Recuperacion de Cancelados', indices: [1] },
