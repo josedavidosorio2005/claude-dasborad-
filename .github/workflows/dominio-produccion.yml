@@ -99,7 +99,6 @@ jobs:
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: DOMINIO,AWS_REGION
-          script_stop: false
           script: |
             set -uo pipefail
             cd /opt/inconexion
@@ -161,7 +160,6 @@ jobs:
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: DOMINIO,AWS_REGION
-          script_stop: true
           script: |
             set -uo pipefail
             cd /opt/inconexion
@@ -259,9 +257,21 @@ jobs:
             echo ""
 
             echo "### 8) Esperando el certificado TLS (hasta ~2 min) ###"
+            # Chequeo directo del handshake TLS (SNI) contra el propio Caddy en
+            # vez de parsear logs: es inmune a ventanas de tiempo/timing y prueba
+            # exactamente lo que importa (que Caddy ya presenta un certificado
+            # real para $DOMINIO), no solo que la obtencion se registro en logs.
             CERT_OK=0
             for i in $(seq 1 24); do
-              if docker compose logs --since 3m caddy 2>/dev/null | grep -F "$DOMINIO" | grep -qi "certificate obtained successfully"; then
+              SUBJ="$(echo | timeout 5 openssl s_client -connect 127.0.0.1:443 -servername "$DOMINIO" 2>/dev/null | openssl x509 -noout -subject 2>/dev/null || true)"
+              if printf '%s' "$SUBJ" | grep -qF "$DOMINIO"; then
+                CERT_OK=1
+                break
+              fi
+              # Respaldo: si el handshake no es concluyente, tambien vale que el
+              # log de Caddy confirme la obtencion (ventana amplia para evitar
+              # falsos negativos por timing).
+              if docker compose logs --since 10m caddy 2>/dev/null | grep -F "$DOMINIO" | grep -qi "certificate obtained successfully"; then
                 CERT_OK=1
                 break
               fi
