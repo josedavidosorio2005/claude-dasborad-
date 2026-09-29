@@ -1,5 +1,11 @@
 # deploy/Caddyfile — Reverse proxy con HTTPS automatico para InConexion Platform.
 #
+# Esto es solo una PLANTILLA de referencia. El Caddyfile REAL de produccion
+# vive en la instancia (no en este repo, que es publico) y se agrega un
+# dominio nuevo con el workflow `dominio-produccion.yml` (modo `revisar`
+# primero, despues `aplicar`) — nunca editando el archivo a mano por SSH.
+# Ver la seccion "Produccion" de CLAUDE.md.
+#
 # Caddy obtiene y renueva el certificado TLS solo (Let's Encrypt / ZeroSSL) y
 # redirige HTTP -> HTTPS automaticamente. No hay que tocar certbot.
 #
