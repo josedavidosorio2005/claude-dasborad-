@@ -195,7 +195,7 @@ async function _traficoWppRenderPanel(p, i) {
         '</span>' +
       '</div>' +
       '<div class="gd-subtabs" id="tww-subtabs-'+i+'">' +
-        _traficoSubtabsNavHTML('tww', i, subActivo, '_traficoWppSwitchSubtab', 'trafwppsub') +
+        _traficoSubtabsNavHTML('tww', i, subActivo, '_traficoWppSwitchSubtab', 'trafwppsub', TRAFICO_WPP_SUBTABS) +
       '</div>' +
       '<div id="tww-content-'+i+'"></div>' +
     '</div>';
@@ -212,7 +212,7 @@ function _traficoWppRenderSubtabContent(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
   var activo = _traficoWppSubtabActivo[campana] || 'resumen';
-  content.innerHTML = _traficoSubtabContentHTML('tww', i, activo);
+  content.innerHTML = _traficoSubtabContentHTML('tww', i, activo, TRAFICO_WPP_SUBTAB_TITULOS);
   _traficoWppRenderContenido(i);
 }
 
@@ -288,16 +288,19 @@ function _traficoWppRenderContenido(i){
   var totalAbandonados = tieneAbandonados ? filtradas.reduce(function(a,f){ return a+(f.abandonados||0); }, 0) : null;
   var nivelAtencion = totalWpp>0 ? Math.round((totalContestados/totalWpp)*1000)/10 : null;
   var tasaAbandono = (totalWpp>0 && tieneAbandonados) ? Math.round((totalAbandonados/totalWpp)*1000)/10 : null;
-  // Fase 87 (tema A): nivel de servicio, ponderado por el total del mismo
-  // rango YA filtrado -- mismo criterio que Llamadas (trafico.js). Por ahora
-  // sigue leyendo el campo de 20s (unico disponible); Tema B (mas abajo, PR
-  // aparte) lo cambia al de 5 minutos y agrega el aviso de "sin dato".
-  var nivelServicio = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
+  // Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de
+  // 5 minutos"): a diferencia de Llamadas (siempre a 20s), WhatsApp usa
+  // serviceLevel5minPct -- si el periodo/filtro actual no trae ese dato (ej.
+  // agosto, cargado antes de que existiera la columna SERVICE_LEVEL_5MIN),
+  // el resultado es null y NUNCA se reemplaza por el de 20s (eso seria
+  // inventar un numero con un umbral distinto al que dice la tarjeta).
+  var nivelServicio = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel5minPct');
 
   _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
     { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados',
-      nivelServicioLabel: 'Nivel de Servicio (20 s)',
-      nivelServicioNota: 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.' }, campana);
+      nivelServicioLabel: 'Nivel de Servicio (5 min)',
+      nivelServicioNota: 'Porcentaje de WhatsApp contestados dentro de los primeros 5 minutos (300 segundos), ponderado por el total de WhatsApp del periodo/filtro actual.',
+      nivelServicioSinDatoMsg: 'Sin dato de nivel de servicio a 5 min para este período — cargar la columna SERVICE_LEVEL_5MIN.' }, campana);
 
   _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
 
@@ -309,7 +312,9 @@ function _traficoWppRenderContenido(i){
   _traficoDibujarAbandono('tww', i, agregadoComb);
   _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);
   _traficoDibujarAsaAta('tww', i, agregadoComb, _traficoWppFmtTiempo);
-  _traficoDibujarSL('tww', i, agregadoComb);
+  // Fase 87 (tema B): WhatsApp grafica el nivel de servicio a 5 minutos, no
+  // a 20s (Llamadas si sigue a 20s, trafico.js sin cambios).
+  _traficoDibujarSL('tww', i, agregadoComb, 'serviceLevel5minPct', 'SL 5 min');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -331,7 +336,9 @@ function _traficoWppDatosExport(i){
       'WhatsApp Abandonados': a.llamadasAbandonadas,
       '% Nivel de Atencion': a.nivelAtencionPct,
       '% Tasa de Abandono': a.tasaAbandonoPct,
-      '% Service Level 20s': a.serviceLevel20secPct,
+      // Fase 87 (tema B): WhatsApp exporta el nivel de servicio a 5 min, no
+      // a 20s (Llamadas sigue exportando el de 20s, sin cambios).
+      '% Service Level 5 min': a.serviceLevel5minPct,
       'ASA (seg)': a.asaSegundos,
       'ATA (seg)': a.ataSegundos,
       'AHT (seg)': a.ahtSegundos,

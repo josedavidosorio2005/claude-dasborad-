@@ -251,7 +251,14 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Si vuelves a subir una cola+periodo que ya existia, se actualiza en el mismo lugar (no se ' +
           'duplica) — a diferencia de Llamadas, aqui no se pide confirmacion previa, se actualiza directo.',
         'Esta nota manda sobre la seccion general "FORMATOS" de mas abajo para esta hoja: ' +
-          'SERVICE_LEVEL_10/20/30SEC aceptan "93.55" o "93.55 %" (con o sin el simbolo).',
+          'SERVICE_LEVEL_10/20/30SEC/5MIN aceptan "93.55" o "93.55 %" (con o sin el simbolo).',
+        // Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio
+        // es de 5 minutos"): el umbral que muestra el dashboard de WhatsApp
+        // (tarjeta "Resumen" + grafica) es este, no el de 20s -- sin esta
+        // columna, el dashboard dice "Sin dato de nivel de servicio a 5 min
+        // para este periodo" en vez de inventar el numero.
+        'Nivel de servicio de WhatsApp a 5 minutos: en el reporte de Wolkvox, configurar el umbral de ' +
+          'nivel de servicio en 300 segundos, y pegar ese porcentaje en la columna SERVICE_LEVEL_5MIN.',
       ],
     });
   }

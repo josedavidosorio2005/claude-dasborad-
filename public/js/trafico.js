@@ -370,14 +370,22 @@ var TRAFICO_SUBTABS = [
   { key: 'asaata', label: 'ASA y ATA' },
   { key: 'sl', label: 'Nivel de Servicio a 20s' },
 ];
+// Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de 5
+// minutos"): WhatsApp usa las mismas 5 sub-pestanas, solo la pastilla "sl"
+// cambia de texto -- Llamadas (TRAFICO_SUBTABS de arriba) no cambia.
+var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
+  return s.key === 'sl' ? { key: 'sl', label: 'Nivel de Servicio a 5 min' } : s;
+});
 
 // Barra de sub-pestanas (.gd-subtabs), compartida entre Llamadas y WhatsApp
 // (Fase 68, Pedido 5) -- mismas 5 sub-pestanas, mismo estilo visual, cada
 // una con su propio prefijo de ids/atributo de dataset y su propia funcion
 // de "switch" (_traficoSwitchSubtab / _traficoWppSwitchSubtab) para no
-// compartir estado entre canales.
-function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr){
-  return TRAFICO_SUBTABS.map(function(s){
+// compartir estado entre canales. `subtabs` (Fase 87, tema B) es opcional --
+// sin pasarlo, usa TRAFICO_SUBTABS (Llamadas, sin cambios); WhatsApp pasa
+// TRAFICO_WPP_SUBTABS.
+function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr, subtabs){
+  return (subtabs || TRAFICO_SUBTABS).map(function(s){
     return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
   }).join('');
 }
@@ -654,6 +662,11 @@ var TRAFICO_SUBTAB_TITULOS = {
   asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
   sl: 'Nivel de Servicio a 20 segundos',
 };
+// Fase 87 (tema B): mismos 4 titulos salvo "sl" -- WhatsApp mide a 5
+// minutos, no 20 segundos (Llamadas sigue usando TRAFICO_SUBTAB_TITULOS).
+var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
+  sl: 'Nivel de Servicio a 5 minutos',
+});
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
 };
@@ -666,7 +679,11 @@ var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
 // este mal. Esta nota es solo aclaratoria (no cambia ningun calculo) para
 // que quede claro por que.
 var TRAFICO_NOTA_PONDERADO = 'Valor del mes ponderado por volumen de llamadas (no es el promedio simple de los días).';
-function _traficoSubtabContentHTML(prefijo, i, activo){
+// `titulos` (Fase 87, tema B) es opcional -- sin pasarlo, usa
+// TRAFICO_SUBTAB_TITULOS (Llamadas, sin cambios); WhatsApp pasa
+// TRAFICO_WPP_SUBTAB_TITULOS.
+function _traficoSubtabContentHTML(prefijo, i, activo, titulos){
+  titulos = titulos || TRAFICO_SUBTAB_TITULOS;
   if(activo === 'resumen'){
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
@@ -674,7 +691,7 @@ function _traficoSubtabContentHTML(prefijo, i, activo){
   var nota = (activo === 'sl' || activo === 'aht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
-  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(TRAFICO_SUBTAB_TITULOS[activo])+nota+'</div>' +
+  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
     '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
 }
 function _traficoRenderSubtabContent(i){
@@ -931,10 +948,15 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo){
   }
 }
 
-// Solo SL 20s (Fase 68, Pedido 3): serviceLevel10secPct/serviceLevel30secPct
-// se siguen calculando y guardando igual en ambos canales, solo dejaron de
-// graficarse aqui.
-function _traficoDibujarSL(prefijo, i, agregadoComb){
+// Solo SL 20s en Llamadas (Fase 68, Pedido 3): serviceLevel10secPct/
+// serviceLevel30secPct se siguen calculando y guardando igual en ambos
+// canales, solo dejaron de graficarse aqui. Fase 87 (tema B): WhatsApp pasa
+// `campo`/`labelSerie` para graficar serviceLevel5minPct en vez de 20s
+// (Llamadas no manda estos 2 parametros -- sigue exactamente igual que
+// antes, default a 20s).
+function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie){
+  campo = campo || 'serviceLevel20secPct';
+  labelSerie = labelSerie || 'SL 20s';
   var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oSl, function(v){ return (v===null||v===undefined) ? '' : gdFmtValor(v,'%'); });
@@ -948,7 +970,7 @@ function _traficoDibujarSL(prefijo, i, agregadoComb){
   if(typeof _gdChart === 'function'){
     _gdChart(prefijo+'-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets:[
-        { label:'SL 20s', data: agregadoComb.map(function(a){return a.serviceLevel20secPct;}), borderColor: CMl, backgroundColor: CMl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+        { label:labelSerie, data: agregadoComb.map(function(a){return a[campo];}), borderColor: CMl, backgroundColor: CMl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
       ] }, options: oSl });
   }
 }

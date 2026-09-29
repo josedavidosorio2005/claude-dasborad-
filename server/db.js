@@ -227,6 +227,11 @@ CREATE TABLE IF NOT EXISTS trafico_whatsapp (
   cargadoPorNombre TEXT NOT NULL DEFAULT '',
   createdAt TEXT NOT NULL,
   UNIQUE(campana, colaWhatsapp, fechaInicio, fechaFin)
+  -- serviceLevel5minPct (Fase 87, tema B) se agrega por migracion (ver
+  -- trafico_whatsapp_service_level_5min_v1, mas abajo), mismo patron que
+  -- ahtSegundos (trafico_whatsapp_aht_v1) -- nunca directo aqui, para que
+  -- esta migracion funcione igual en una base nueva o en una que ya tenia
+  -- filas.
 );
 CREATE INDEX IF NOT EXISTS idx_trafico_whatsapp_campana ON trafico_whatsapp(campana, fechaInicio);
 
@@ -1521,6 +1526,18 @@ runOnceMigration('dashboards_config_orlant_tipificacion_panel_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_tipificacion_panel_v1 aplicada.');
+  }
+});
+
+// Columna SERVICE_LEVEL_5MIN opcional en trafico_whatsapp (Fase 87, tema B,
+// nota del jefe: "En WhatsApp el nivel de servicio es de 5 minutos") --
+// mismo patron que trafico_whatsapp_aht_v1 (no se agrega directo al CREATE
+// TABLE de arriba para que esta migracion funcione igual en una base nueva
+// o en una que ya tenia filas, evita "duplicate column name").
+runOnceMigration('trafico_whatsapp_service_level_5min_v1', () => {
+  db.exec('ALTER TABLE trafico_whatsapp ADD COLUMN serviceLevel5minPct REAL');
+  if (!config.isTest) {
+    console.log('[db] Migracion trafico_whatsapp_service_level_5min_v1 aplicada.');
   }
 });
 
