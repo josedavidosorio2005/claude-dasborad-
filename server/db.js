@@ -139,6 +139,14 @@ CREATE TABLE IF NOT EXISTS monitoreos (
 );
 CREATE INDEX IF NOT EXISTS idx_monitoreos_campana_mes ON monitoreos(campana, mes);
 CREATE INDEX IF NOT EXISTS idx_monitoreos_evaluador ON monitoreos(evaluadorUserId);
+-- Fase 88: GET /monitoreos/mios (portal personal del rol ASESOR) filtra
+-- por "lower(trim(asesor)) = ?", sin cota de campana/mes -- sin este
+-- indice de expresion hace SCAN completo de la tabla en cada visita
+-- (confirmado con EXPLAIN QUERY PLAN). IF NOT EXISTS: se autoaplica en
+-- cualquier base ya sembrada (incluida produccion) con el proximo deploy,
+-- sin intervencion manual -- mismo criterio que el resto de indices de
+-- este bloque.
+CREATE INDEX IF NOT EXISTS idx_monitoreos_asesor_lower ON monitoreos(lower(trim(asesor)));
 
 -- Programacion mensual de metas de monitoreo por lider/campana (cronograma).
 -- Las metas derivadas (por asesor, diaria, semanales) se calculan al vuelo.
