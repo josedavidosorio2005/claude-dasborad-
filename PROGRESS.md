@@ -7515,3 +7515,104 @@ Playwright directo:
   fases previas). `main` = `origin/main`, 0 PRs abiertos al cerrar.
   `/api/health` 200 antes y después. No se tocaron los datos de prueba
   de Calidad de ORLANT ni el keystore.
+
+## Fase 92 — poner a funcionar el dominio nuevo `https://informa.inconexion.com.co` (2026-09-29, automática)
+
+El jefe consiguió un dominio nuevo para la plataforma. El DNS (registro A
+en GoDaddy, sin AAAA ni CAA que bloqueara Let's Encrypt) ya apuntaba a la
+IP de producción, pero la página no cargaba: HTTPS daba
+`ERR_SSL_PROTOCOL_ERROR` (el dominio no estaba en el Caddyfile real) y
+HTTP servía el HTML de la app sin redirigir a HTTPS, con todos los
+recursos (CSS/JS/imágenes) fallando por la CSP con
+`upgrade-insecure-requests`. Pedido: dejarlo funcionando ese mismo día.
+
+### Diagnóstico y el workflow nuevo
+
+`.github/workflows/dominio-produccion.yml` (disparo manual,
+`workflow_dispatch`, reutiliza el mismo mecanismo OIDC + apertura/cierre
+temporal del puerto 22 ya auditado en `audit-instance.yml`/`seed-demo.yml`)
+con dos modos:
+
+- **`revisar`** (solo lectura): Caddyfile real, `docker compose ps`,
+  versión de Caddy, logs de 24h filtrados por dominio, origen/valor de
+  `CORS_ORIGIN`, si `SSM_PARAM_PREFIX` está definido, y qué sirve la app
+  por HTTP para cualquier nombre.
+- **`aplicar`**: agrega el dominio al mismo bloque de Caddy que ya sirve
+  `inconexionpruebasclaude.duckdns.org` (comparte proxy/cabeceras/logs) y
+  agrega el origen HTTPS a `CORS_ORIGIN` sin quitar los existentes.
+  Idempotente, con respaldo con fecha en
+  `/opt/inconexion/respaldos-config/` antes de tocar nada y reversión
+  automática (Caddyfile + `app.env` + reload + recreate) si falla
+  `caddy validate`, el health check o la obtención del certificado.
+
+La primera corrida en `revisar` reveló lo importante:
+
+- **Qué servía HTTP para cualquier nombre**: un bloque `:80 { reverse_proxy
+  app:3000 }` genérico (sin filtro de host) en el Caddyfile real,
+  documentado en su propio comentario como "temporal, para verificar el
+  despliegue por IP antes de que el DNS apuntara aquí" (Fase 3, nunca se
+  quitó). Al agregar el dominio nuevo al bloque de duckdns (que sí tiene
+  host), Caddy le da prioridad por especificidad de Host sobre el `:80`
+  genérico, así que el redirect automático a HTTPS funciona sin tocar ese
+  bloque temporal — queda pendiente para una fase futura quitarlo o
+  restringirlo, no era parte de este pedido.
+- `CORS_ORIGIN` venía de SSM (no de `app.env`), con un solo origen:
+  `https://inconexionpruebasclaude.duckdns.org`.
+
+### La corrida en `aplicar` y un bug propio (no de producción)
+
+La primera corrida en `aplicar` sí obtuvo el certificado real (confirmado
+en los logs de Caddy: `certificate obtained successfully`, challenge
+`tls-alpn-01`, en ~3 segundos) pero mi propio chequeo de espera
+(`docker compose logs --since 3m | grep`) no lo detectó a tiempo y
+disparó una reversión innecesaria — limpia: Caddyfile y `app.env`
+volvieron al estado anterior, el contenedor `app` se recreó sano, y un
+`curl` externo confirmó que duckdns nunca dejó de responder. Se
+reemplazó el chequeo por un handshake TLS directo (`openssl s_client`
+con SNI) contra el propio Caddy, inmune a ventanas de tiempo de logs.
+Con el fix, la segunda corrida completó en 27 segundos, certificado
+detectado en el primer intento.
+
+### Verificación externa (solo lectura, sin datos)
+
+- `https://informa.inconexion.com.co/api/health` → 200, certificado real
+  de Let's Encrypt (`CN=informa.inconexion.com.co`, vigente
+  29/09/2026–28/12/2026).
+- `http://informa.inconexion.com.co/` → 308 a HTTPS.
+- `https://inconexionpruebasclaude.duckdns.org/api/health` → 200 (alterno
+  intacto).
+- CORS: POST a `/api/auth/login` con `Origin: https://informa.inconexion.com.co`
+  → 400 (no 403); con `Origin: https://ejemplo-malo.invalid` → 403.
+- Playwright directo desde Node (`server/node_modules/playwright`,
+  headless:false — nunca la extensión de Chrome), consola con "INICIA
+  SESIÓN AHORA"; el usuario inició sesión dentro de los 10 minutos, sin
+  pedir ni guardar contraseña ni cookies. Con su sesión real se abrió
+  ORLANT y se recorrieron las 5 pestañas visibles (Calidad, Tráfico de
+  Llamadas, Tráfico de WhatsApp, Agendamiento, Tipificación — las dos
+  últimas destapadas en memoria por `_gdBootstrap` porque ORLANT ya tiene
+  datos cargados): **0 errores de consola, 0 peticiones fallidas, 0
+  recursos por HTTP**. Capturas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase92-dominio\`.
+  Script nuevo: `.github/scripts/verificar-fase92-dominio-produccion.js`.
+
+### Documentación
+
+`CLAUDE.md`: `https://informa.inconexion.com.co` como dominio principal
+(duckdns queda como alterno), y la regla de que un dominio nuevo se
+agrega con `dominio-produccion.yml`, nunca a mano. `deploy/Caddyfile`
+(plantilla): nota de que el real vive en la instancia y se cambia con ese
+workflow — sin correos reales, el repo es público.
+
+### Verificación y cierre
+
+- 3 PRs: #190 (workflow nuevo, CI verde, mergeado), #191 (fix del chequeo
+  de certificado tras el primer `aplicar` fallido, CI verde, mergeado), y
+  este mismo PR de documentación. `main` = `origin/main` al cerrar.
+- No se cambiaron secretos de GitHub, el rol IAM, ni reglas de firewall
+  fuera de la apertura/cierre temporal del puerto 22 de siempre. No se
+  tocaron los `PROD_URL` por defecto de `.github/scripts/` ni se
+  redirigió duckdns al dominio nuevo (fuera del alcance de este pedido;
+  ambos dominios quedan activos en paralelo).
+- No se tocaron datos, el keystore ni los datos de prueba de Calidad de
+  ORLANT. No se mostró el valor de ningún secreto — `CORS_ORIGIN` sí se
+  mostró (son solo dominios), como autorizó el pedido.
