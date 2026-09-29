@@ -7622,3 +7622,137 @@ workflow — sin correos reales, el repo es público.
 - No se tocaron datos, el keystore ni los datos de prueba de Calidad de
   ORLANT. No se mostró el valor de ningún secreto — `CORS_ORIGIN` sí se
   mostró (son solo dominios), como autorizó el pedido.
+
+## Fase 93 — quitar duckdns por completo: todo desde informa.inconexion.com.co (2026-09-29, automática)
+
+La Fase 92 dejó `https://informa.inconexion.com.co` funcionando en
+paralelo con `inconexionpruebasclaude.duckdns.org`. Esta fase retira
+duckdns por completo — producción, repo, GitHub y servidor — sin dejar
+redirección: quien entre por duckdns deja de ver la plataforma.
+
+### Inventario (Paso 1)
+
+- **Repo, activo**: ~10 `PROD_URL` por defecto en `.github/scripts/*.js` y
+  `dominio-produccion.yml`.
+- **Repo, histórico**: 21 menciones en `PROGRESS.md` (fases anteriores,
+  sin reescribir), 3 en `AWS_DEPLOY_REPORT.md` (secciones históricas), 2
+  en `docs/auditoria-seguridad-fase72.md` (auditoría fechada) — todas sin
+  tocar, con una nota de retiro agregada arriba de cada bitácora.
+- **Servidor**: Caddyfile con bloque compartido duckdns+informa y el
+  bloque `:80` genérico de la Fase 3 sirviendo la app para cualquier
+  host; `CORS_ORIGIN` en `app.env` (gana sobre SSM) con ambos orígenes;
+  **ningún actualizador dinámico de duckdns** (ni crontab de
+  usuario/root, ni `/etc/cron.*`, ni unidad systemd, ni script suelto —
+  el DNS siempre fue estático en GoDaddy, nunca hizo falta un cliente
+  dinámico en este servidor).
+- **GitHub**: `DEPLOY_SSH_HOST` ya era una IP (nunca dependió de
+  duckdns) — confirmado sin mostrar su valor, con un paso nuevo del
+  workflow que solo clasifica el tipo. 4 secrets / 1 variable, ninguno
+  relacionado con duckdns. `homepageUrl` del repo vacío — nada que
+  cambiar ahí.
+- **Cuenta de AWS**: producción corre confirmada en `877538609452` (vía
+  el rol OIDC, `sts get-caller-identity` desde el propio workflow). La
+  cuenta origen `934685482338` — inventario de solo lectura con el
+  perfil local `default` (ver nota más abajo) — **ya no tiene instancia
+  Lightsail activa** (ni disco ni IP estática: se fueron antes de lo que
+  decía la regla de "una semana después del corte de DNS" documentada en
+  su momento). Queda solo el bucket S3 `inconexion-backups-josedavidosorio2005`
+  (6 objetos, ~3,6 MB, backups del 13-14/09), los usuarios IAM
+  `deploy-inconexion` e `inconexion-instance`, el rol `inconexion-github-deploy`
+  (con trust policy OIDC hacia este mismo repo de GitHub — sigue siendo
+  una vía de acceso válida, aunque sin uso) y el proveedor OIDC de
+  GitHub Actions registrado. Sin Cost Explorer habilitado en ese perfil
+  para un costo exacto, pero el único recurso facturable que queda es el
+  bucket S3 minúsculo — costo aproximado: **prácticamente $0/mes**.
+  `inco-cli-migracion` (mencionado en `AWS_DEPLOY_REPORT.md` §14 como
+  "no borrar") no se encontró como usuario, rol, ni perfil local de AWS
+  CLI — probablemente ya no existe o nunca fue un recurso de IAM.
+
+### Paso 2 — el deploy primero
+
+`DEPLOY_SSH_HOST` ya era una IP (nunca duckdns): **sin acción** — nada
+que cambiar antes de tocar el repo o la instancia.
+
+### Paso 3 — el repo (PR #193)
+
+- `dominio-produccion.yml`: nuevo modo `quitar` (idempotente, respaldo
+  con fecha, `caddy validate`/reload, reversión automática si falla
+  validate/health/certificado) — quita el dominio del bloque de sitio,
+  neutraliza el bloque `:80` genérico con `:80 { abort }`, quita el
+  origen de `CORS_ORIGIN`, y apaga (sin borrar, mueve a
+  `/opt/inconexion/respaldos-config/`) cualquier actualizador de ese
+  dominio que encuentre en cron/systemd/scripts sueltos. El modo
+  `aplicar` se generalizó: el ancla para agregar un dominio ya no es un
+  nombre hardcodeado, es el primer bloque de sitio con nombre que exista
+  en el Caddyfile — sigue sirviendo para el dominio #6 sin volver a
+  tocar el script.
+- Los `PROD_URL` por defecto de `.github/scripts/*.js` apuntan ahora a
+  `https://informa.inconexion.com.co`.
+- `CLAUDE.md`: dominio único + nota de retiro. `AWS_DEPLOY_REPORT.md`:
+  aviso de arriba y nota en la Sec. 14 actualizados, con el hallazgo de
+  que la cuenta origen ya no tiene instancia activa.
+- `server/tests/sin-duckdns.test.js`: prueba de guardia que falla si
+  aparece una mención activa a duckdns en `server/`, `public/`,
+  `deploy/`, `.github/workflows/`, `.github/scripts/`, `CLAUDE.md` o
+  `README.md` — con 2 excepciones acotadas línea por línea (la nota de
+  retiro de `CLAUDE.md`, y el chequeo genérico de tipo de
+  `DEPLOY_SSH_HOST`, que necesita reconocer "duckdns.org" para siempre).
+  Probada explícitamente: reintroducir una URL de duckdns en un script
+  hace fallar la prueba (confirmado y revertido antes de commitear).
+- `npm test`: 665/665 (1 prueba nueva). CI verde, mergeado. El deploy
+  automático que corrió después del merge salió en verde — confirma que
+  el pipeline ya no depende de duckdns.
+
+### Paso 4 — el servidor (`modo=quitar`)
+
+`gh workflow run dominio-produccion.yml -f modo=quitar -f dominio=inconexionpruebasclaude.duckdns.org`
+en verde, un solo intento, sin necesidad de reversión:
+
+1. Dominio quitado del bloque de sitio del Caddyfile (queda solo
+   `informa.inconexion.com.co {`).
+2. Bloque `:80` genérico reemplazado por `:80 { abort }` — deja de
+   proxiar la app para cualquier host/IP no listado.
+3-4. `caddy validate` y `caddy reload` limpios.
+5-6. `CORS_ORIGIN` nuevo: `https://informa.inconexion.com.co` (el único
+   origen que quedaba tras quitar duckdns) — escrito en `app.env`.
+7-8. Contenedor `app` recreado, `/api/health` → `{"ok":true}`.
+9. Sin actualizador de duckdns que apagar (confirma el inventario del
+   Paso 1); tampoco quedó ningún archivo suelto bajo `/opt`/`/home/ubuntu`
+   mencionando el dominio fuera de los propios `Caddyfile`/`app.env`
+   (ya corregidos).
+
+### Paso 5 — verificación externa (solo lectura)
+
+| Prueba | Resultado |
+|---|---|
+| `https://informa.inconexion.com.co/api/health` | 200, certificado Let's Encrypt válido (`CN=informa.inconexion.com.co`) |
+| `http://informa.inconexion.com.co/` | 308 a HTTPS |
+| `https://inconexionpruebasclaude.duckdns.org` | TLS rechazado (`tlsv1 alert internal error` — sin certificado para ese SNI) |
+| `http://inconexionpruebasclaude.duckdns.org` | Conexión vacía/abortada (`:80 { abort }`) |
+| `http://3.85.54.96` (IP directa) | Conexión vacía/abortada (`:80 { abort }`) |
+| POST `/api/auth/login`, `Origin: https://informa.inconexion.com.co` | 400 |
+| POST `/api/auth/login`, `Origin: https://...duckdns.org` | 403 |
+| `git grep -i duckdns` | Solo lo histórico + las 2 excepciones deliberadas |
+
+Playwright directo desde Node (`server/node_modules/playwright`,
+headless:false, consola con "INICIA SESIÓN AHORA"); el usuario inició
+sesión dentro de los 10 minutos, sin pedir ni guardar contraseña ni
+cookies. Con su sesión real se recorrieron las 5 pestañas visibles de
+ORLANT (Calidad, Tráfico de Llamadas, Tráfico de WhatsApp, Agendamiento,
+Tipificación): **0 errores de consola, 0 peticiones fallidas, 0 recursos
+por HTTP**. Capturas fuera del repo, en
+`C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase93-sin-duckdns\`.
+Script nuevo: `.github/scripts/verificar-fase93-sin-duckdns.js`.
+
+### Verificación y cierre
+
+- 3 PRs: #193 (workflow + PROD_URL + docs + prueba de guardia, CI verde,
+  mergeado), y este mismo PR de `PROGRESS.md`. `main` = `origin/main` al
+  cerrar, 0 PRs abiertos.
+- No se cambió ningún secreto de GitHub (`DEPLOY_SSH_HOST` no lo
+  necesitaba), ni el rol IAM, ni reglas de firewall fuera del 22
+  temporal de siempre. En AWS, fuera de lo autorizado, todo fue solo
+  lectura — nada se apagó ni se borró, ni en la cuenta actual ni en la
+  vieja.
+- No se tocaron datos, el keystore ni los datos de prueba de Calidad de
+  ORLANT.

@@ -6,7 +6,7 @@
 // default de PROD_URL vuelto a copiar de un script viejo, o un dominio de
 // ejemplo en un workflow nuevo.
 //
-// Dos excepciones deliberadas, acotadas linea por linea (todo lo demas en
+// Tres excepciones deliberadas, acotadas linea por linea (todo lo demas en
 // esas rutas sigue fallando la prueba):
 // - CLAUDE.md: la nota de retiro ("duckdns se retiro el 29/09/2026 ... no
 //   volver a usarlo") -- se permite solo en lineas que tambien digan
@@ -16,6 +16,11 @@
 //   otro nombre) sin nunca imprimir el valor del secret -- necesita seguir
 //   reconociendo el patron "duckdns.org" para siempre, no es un residuo de
 //   esta fase.
+// - .github/scripts/verificar-fase93-sin-duckdns.js: script cuyo PROPOSITO
+//   es verificar que duckdns ya no sirve nada -- mencionarlo (en el nombre,
+//   comentarios y el nombre de la carpeta de capturas) es el punto del
+//   archivo, no un residuo. Exento por completo (a diferencia de los otros
+//   ~10 scripts de .github/scripts/, que SI deben quedar en cero).
 //
 // PROGRESS.md y AWS_DEPLOY_REPORT.md quedan FUERA de esta prueba a
 // proposito: son bitacoras aditivas con menciones historicas que nunca se
@@ -47,6 +52,7 @@ const RUTAS_A_ESCANEAR = [
 const EXCEPCIONES = {
   'CLAUDE.md': [/retir/i],
   '.github/workflows/dominio-produccion.yml': [/duckdns\.org\*/, /usa duckdns/, /no duckdns/],
+  '.github/scripts/verificar-fase93-sin-duckdns.js': [/./],
 };
 
 const DIRS_IGNORADOS = new Set(['node_modules', '.git']);
