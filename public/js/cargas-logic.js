@@ -300,7 +300,7 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       'espacio antes de "m."), "18:06:08" (24 horas) o una hora de Excel -- si no se puede leer, la fila se ' +
       'guarda igual, solo sin HORA. TIME_MIN es el minutaje de la llamada, se guarda para un reporte futuro.';
     plan.push({
-      tipo: 'tipificacion', canalTipificacion: 'LLAMADAS', hoja: CARGAS_HOJA_TIPIFICACION_LLAMADAS, titulo: 'Tipificacion de Llamadas',
+      tipo: 'tipificacion', canalTipificacion: 'LLAMADAS', hoja: CARGAS_HOJA_TIPIFICACION_LLAMADAS, titulo: 'Tipificación de Llamadas',
       descripcion: 'Una fila por llamada tipificada, tal cual el export de Wolkvox.',
       filaUnica: false, columnas: tipificacionCols,
       notasExtra: [
@@ -313,7 +313,7 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
     plan.push({
-      tipo: 'tipificacion', canalTipificacion: 'WHATSAPP', hoja: CARGAS_HOJA_TIPIFICACION_WHATSAPP, titulo: 'Tipificacion de WhatsApp',
+      tipo: 'tipificacion', canalTipificacion: 'WHATSAPP', hoja: CARGAS_HOJA_TIPIFICACION_WHATSAPP, titulo: 'Tipificación de WhatsApp',
       descripcion: 'Una fila por conversacion de WhatsApp tipificada, tal cual el export de Wolkvox.',
       filaUnica: false, columnas: tipificacionCols,
       notasExtra: [

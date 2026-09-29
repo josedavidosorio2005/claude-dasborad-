@@ -485,7 +485,7 @@ function _renderPreviewCarga(){
   html += _cargasResultados.map(function(r){
     var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
       (r.tipo==='agendas' ? 'Agendas' :
-      (r.tipo==='tipificacion' ? ('Tipificacion de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
+      (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');

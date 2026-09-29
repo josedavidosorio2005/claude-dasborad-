@@ -131,7 +131,10 @@ test('migracion dashboards_config_orlant_pdf_graficas_v1: reescribe los 4 tabs v
 
   const agenda = tab('agendamiento');
   assert.ok(agenda.panels.some((p) => p.tipo === 'nota_kpi'), 'se agrego el KPI anual con texto');
-  assert.ok(agenda.panels.some((p) => p.titulo === 'Total agendas — variacion % mes a mes'));
+  // Fase 87 (tema C): el titulo sale directo de CONFIGS (dashboard-config-
+  // seed.js), que ya trae la tilde -- esta migracion reescribe el tab
+  // ENTERO desde ahi, asi que el resultado ya nace correcto.
+  assert.ok(agenda.panels.some((p) => p.titulo === 'Total agendas — variación % mes a mes'));
 
   const sta = tab('sta');
   assert.equal(sta.panels[1].tipo, 'bar', '"Ordenes por estado" paso de pie a bar');

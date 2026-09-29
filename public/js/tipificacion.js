@@ -49,9 +49,12 @@ function _tipificacionMesLbl(m){
   var partes = String(m||'').split('-');
   return partes.length===2 ? (_TIPIFICACION_MESES[parseInt(partes[1],10)-1]+'-'+partes[0].slice(2)) : String(m||'');
 }
+// Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL (agente/skill,
+// los filtros tienen que seguir funcionando con el dato tal cual llego de
+// Wolkvox); solo el texto visible pasa por textoFormatoNombre.
 function _tipificacionOptionsHtml(valores, seleccionado){
   return '<option value="">Todos</option>' + (valores||[]).map(function(v){
-    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(v)+'</option>';
+    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(textoFormatoNombre(v))+'</option>';
   }).join('');
 }
 
@@ -60,7 +63,7 @@ async function _tipificacionRenderPanel(p, i){
   _tipificacionCampanaPorPanel[i] = campana;
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
-  var titulo = p.titulo || 'Tipificacion';
+  var titulo = p.titulo || 'Tipificación';
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
@@ -71,7 +74,7 @@ async function _tipificacionRenderPanel(p, i){
 
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tipificacion cargada todavia. Un usuario con permiso de administrador debe subir las hojas TIPIFICACION_LLAMADAS/TIPIFICACION_WHATSAPP desde "Cargar Datos".</div></div>';
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tipificación cargada todavia. Un usuario con permiso de administrador debe subir las hojas TIPIFICACION_LLAMADAS/TIPIFICACION_WHATSAPP desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -91,7 +94,7 @@ async function _tipificacionRenderPanel(p, i){
   if(_tipificacionSincronizarConMesGlobal(i, mesesCombinados)){
     var ultimoConDatosTipif = mesesCombinados[mesesCombinados.length-1];
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      _gdAvisoSinDatosMesHtml('Tipificacion', _gd.mesSel, ultimoConDatosTipif) + '</div>';
+      _gdAvisoSinDatosMesHtml('Tipificación', _gd.mesSel, ultimoConDatosTipif) + '</div>';
     return;
   }
   var estado = _tipificacionEstadoCompartido[i];
@@ -112,7 +115,7 @@ async function _tipificacionRenderPanel(p, i){
     var claveCanal = i+'::'+c.canal;
     if(!_tipificacionEstadoCanal[claveCanal]) _tipificacionEstadoCanal[claveCanal] = { agente:'', skill:'' };
     var estadoCanal = _tipificacionEstadoCanal[claveCanal];
-    html += '<div class="aurora-card"><div class="aurora-card-title">Tipificacion de '+esc(c.titulo)+'</div>';
+    html += '<div class="aurora-card"><div class="aurora-card-title">Tipificación de '+esc(c.titulo)+'</div>';
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label>Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
     html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill)+'</select></div>';

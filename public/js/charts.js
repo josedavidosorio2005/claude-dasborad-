@@ -3,6 +3,17 @@
 // generico (dashboard-generic.js), el modulo de Calidad y el portal Asesor.
 // Se carga como <script src> global y en orden. No cambiar el orden de carga.
 
+// Fase 87 (tema C, "unificar tipo de letra"): sin esto, Chart.js dibuja
+// ejes/leyendas/etiquetas de dato con su propia fuente por defecto
+// ('Helvetica Neue'/Arial), distinta de la que usa el resto de la interfaz
+// (--font-sans en styles.css). TEXTO_FUENTE (texto-formato-logic.js, se
+// carga antes que este archivo) es la fuente unica del mismo valor para los
+// dos -- cambiar la tipografia del dashboard es cambiar TEXTO_FUENTE ahi Y
+// --font-sans en styles.css (Chart.js no puede leer una variable CSS).
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = (typeof TEXTO_FUENTE !== 'undefined') ? TEXTO_FUENTE : "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
+}
+
 var CD='#0d4a5e',CM='#1a7a9e',CG='#27ae60',CR='#e74c3c',CO='#e67e22',CP='#8e44ad';
 var PC=[CD,CM,CG,CO,CR,CP,'#16a085','#f39c12','#2980b9','#c0392b','#7f8c8d','#1abc9c'];
 

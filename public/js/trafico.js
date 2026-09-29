@@ -492,14 +492,17 @@ function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta
   return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
       '<select id="'+prefijo+'-f-skill-'+i+'" style="min-width:200px" onchange="_traficoLineaPrincipalCambio(\''+prefijo+'\','+i+')">' +
         '<option value=""'+(modo.todas?' selected':'')+'>Todas las '+esc(etiquetaPlural)+'</option>' +
-        datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.una===s?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+        // Fase 87 (tema C): el `value` sigue siendo el nombre ORIGINAL (los
+        // filtros tienen que seguir funcionando con el dato tal cual llego
+        // de Wolkvox); solo el texto visible pasa por textoFormatoNombre.
+        datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.una===s?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
         (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias '+esc(etiquetaPlural)+' (ver "Comparar" abajo)</option>' : '') +
       '</select></div>' +
     '<details id="'+prefijo+'-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
       '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
       '<div style="margin-top:8px;max-width:340px">' +
         '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
-          datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(s)+'</option>'; }).join('') +
+          datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
         '</select>' +
         '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
       '</div>' +
@@ -529,7 +532,7 @@ async function _traficoRenderPanel(p, i){
   var campana = _traficoCampanaPanel(p);
   var sede = _traficoSedePanel();
   var claveEstado = _traficoClaveEstado(campana, sede);
-  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
+  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var datosCampana = await _traficoCargarDatos(campana);
@@ -539,8 +542,8 @@ async function _traficoRenderPanel(p, i){
   }) : datosCampana.skills;
   var datos = { filas: filasSede, skills: skillsSede };
   if(!datos.filas.length){
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Wolkvox desde "Cargar Datos → Trafico de Llamadas".</div></div>';
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Wolkvox desde "Cargar Datos → Tráfico de Llamadas".</div></div>';
     return;
   }
 
@@ -573,8 +576,8 @@ async function _traficoRenderPanel(p, i){
     if(!tieneDatosMesGlobal){
       _traficoSinDatosMesGlobal[claveEstado] = true;
       _traficoAgregadoActual[claveEstado] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Trafico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
+        _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
       host.dataset.campana = campana;
       host.dataset.sede = sede || '';
       return;
@@ -615,7 +618,7 @@ async function _traficoRenderPanel(p, i){
   var subActivo = _traficoSubtabActivo[claveEstado] || 'resumen';
   host.innerHTML =
     '<div class="aurora-card">' +
-      '<div class="aurora-card-title">Trafico de Llamadas (Wolkvox)</div>' +
+      '<div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, 'Skill', 'líneas')+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
@@ -823,7 +826,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
     '<div class="aurora-kpi"><div class="kv">'+totales.total.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.total)+'</div></div>'+
     '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
     '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
-    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atencion</div></div>'+
+    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
     '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>'+
     nsSinDato;
@@ -846,7 +849,7 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
     datasets = [
       { type:'bar', label:labelTotal, data: agregado.map(function(a){return a.totalLlamadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
       { type:'bar', label:labelContestadas, data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 },
-      { type:'line', label:'Nivel de Atencion', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
+      { type:'line', label:'Nivel de Atención', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
     ];
   } else {
     var periodos = agregado.map(function(a){ return a.periodo; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
@@ -859,8 +862,12 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
       // la misma linea se ve siempre del mismo color, combinada o separada,
       // sin importar el orden en que aparezca tras subir un archivo nuevo.
       var color = (typeof paletaColorPara==='function') ? paletaColorPara(sk, pal) : pal[0];
-      datasets.push({ type:'bar', label: sk+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
-      datasets.push({ type:'line', label: sk+' — Nivel Atencion', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3 });
+      // Fase 87 (tema C): el nombre visible de la linea/cola pasa por
+      // textoFormatoNombre -- `sk` (usado para el color y para leer
+      // porPeriodo) sigue siendo el valor original.
+      var skLbl = textoFormatoNombre(sk);
+      datasets.push({ type:'bar', label: skLbl+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
+      datasets.push({ type:'line', label: skLbl+' — Nivel de Atención', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3 });
     });
     labels = periodos;
   }
@@ -989,7 +996,7 @@ function _traficoRenderContenido(campana, sede, i){
   var content = document.getElementById('tv-content-'+i);
   if(!filtradas.length){
     _traficoAgregadoActual[claveEstado] = [];
-    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Trafico de Llamadas para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
+    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Tráfico de Llamadas para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
     return;
   }
   var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
@@ -1083,12 +1090,12 @@ function _traficoExportPrint(i){
     ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">'+
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
     : '';
-  w.document.write('<!doctype html><html><head><title>Trafico de Llamadas — '+esc(campana)+'</title>'+
+  w.document.write('<!doctype html><html><head><title>Tráfico de Llamadas — '+esc(campana)+'</title>'+
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}'+
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}'+
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>'+
     avisoHtml +
-    '<h1>Trafico de Llamadas — '+esc(campana)+'</h1>'+tabla+
+    '<h1>Tráfico de Llamadas — '+esc(campana)+'</h1>'+tabla+
     '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — '+new Date().toLocaleString('es-CO')+'</p>'+
     '</body></html>');
   w.document.close();

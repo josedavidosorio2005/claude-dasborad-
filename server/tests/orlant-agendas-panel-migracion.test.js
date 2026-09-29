@@ -104,12 +104,17 @@ test('migracion dashboards_config_orlant_agendas_panel_v1: prepende el panel nue
     tab.subtabs.map((s) => s.key),
     ['citasporespecialidad', 'ordmed', 'recuperacion', 'totalagendas', 'agendasporlinea', 'variacion']
   );
+  // Fase 87 (tema C): el fixture de arriba (LAYOUT_VIEJO) siembra texto
+  // viejo A PROPOSITO (esta prueba es de OTRA migracion, la de indices) --
+  // pero dashboards_config_orlant_texto_tildes_v1 corre despues, en el
+  // mismo proceso, y corrige tildes/capitalizacion donde encuentre una
+  // coincidencia EXACTA -- por eso el texto esperado aqui ya es el nuevo.
   assert.deepEqual(tab.subtabs[0], { key: 'citasporespecialidad', label: 'Citas por Especialidad', indices: [0] });
-  assert.deepEqual(tab.subtabs[1], { key: 'ordmed', label: 'Ordenamiento Medico', indices: [1, 2] });
-  assert.deepEqual(tab.subtabs[2], { key: 'recuperacion', label: 'Recuperacion de Cancelados', indices: [3] });
+  assert.deepEqual(tab.subtabs[1], { key: 'ordmed', label: 'Ordenamiento Médico', indices: [1, 2] });
+  assert.deepEqual(tab.subtabs[2], { key: 'recuperacion', label: 'Recuperación de Cancelados', indices: [3] });
   assert.deepEqual(tab.subtabs[3], { key: 'totalagendas', label: 'Total Agendas', indices: [4] });
-  assert.deepEqual(tab.subtabs[4], { key: 'agendasporlinea', label: 'Agendas por Linea', indices: [5] });
-  assert.deepEqual(tab.subtabs[5], { key: 'variacion', label: 'Variacion % Agendas', indices: [6] });
+  assert.deepEqual(tab.subtabs[4], { key: 'agendasporlinea', label: 'Agendas por Línea', indices: [5] });
+  assert.deepEqual(tab.subtabs[5], { key: 'variacion', label: 'Variación % Agendas', indices: [6] });
   // Todos los indices siguen apuntando dentro del array de paneles real.
   tab.subtabs.forEach((s) => s.indices.forEach((i) => assert.ok(i >= 0 && i < tab.panels.length)));
 
