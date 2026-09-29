@@ -1,7 +1,7 @@
 // trafico-whatsapp.js — InConexion Platform. Fase 50; interfaz reescrita en
 // la Fase 68 (Pedido 5, Edwin 23/09) para igualar Trafico de Llamadas.
 //
-// Panel "Trafico de WhatsApp" del dashboard de ORLANT (tipo de panel
+// Panel "Tráfico de WhatsApp" del dashboard de ORLANT (tipo de panel
 // 'trafico_whatsapp_combo', dashboard-config-seed.js) + pantalla de carga en
 // el admin. Desde la Fase 68 reusa TAL CUAL la misma interfaz/controles/
 // tipos de grafica que Trafico de Llamadas (trafico.js): desplegable de
@@ -106,13 +106,13 @@ async function _traficoWppRenderPanel(p, i) {
   var campana = p.campana;
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
-  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
+  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var datosCampana = await _traficoWppCargarDatos(campana);
   if (!datosCampana.filas.length) {
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Trafico de WhatsApp desde "Cargar Datos".</div></div>';
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Tráfico de WhatsApp desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -156,8 +156,8 @@ async function _traficoWppRenderPanel(p, i) {
     if(!tieneDatosMesGlobalWpp){
       _traficoWppSinDatosMesGlobal[campana] = true;
       _traficoWppAgregadoActual[campana] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Trafico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
+        _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
       host.dataset.campana = campana;
       return;
     }
@@ -179,7 +179,7 @@ async function _traficoWppRenderPanel(p, i) {
   var subActivo = _traficoWppSubtabActivo[campana] || 'resumen';
   host.innerHTML =
     '<div class="aurora-card">' +
-      '<div class="aurora-card-title">Trafico de WhatsApp (Wolkvox)</div>' +
+      '<div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
@@ -273,7 +273,7 @@ function _traficoWppRenderContenido(i){
   var content = document.getElementById('tww-content-'+i);
   if(!filtradas.length){
     _traficoWppAgregadoActual[campana] = [];
-    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Trafico de WhatsApp para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
+    if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Tráfico de WhatsApp para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
     return;
   }
   var agregado = traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
@@ -373,12 +373,12 @@ function _traficoWppExportPrint(i){
     ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">'+
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
     : '';
-  w.document.write('<!doctype html><html><head><title>Trafico de WhatsApp — '+esc(campana)+'</title>'+
+  w.document.write('<!doctype html><html><head><title>Tráfico de WhatsApp — '+esc(campana)+'</title>'+
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}'+
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}'+
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>'+
     avisoHtml +
-    '<h1>Trafico de WhatsApp — '+esc(campana)+'</h1>'+tabla+
+    '<h1>Tráfico de WhatsApp — '+esc(campana)+'</h1>'+tabla+
     '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — '+new Date().toLocaleString('es-CO')+'</p>'+
     '</body></html>');
   w.document.close();

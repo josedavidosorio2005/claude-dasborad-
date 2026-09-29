@@ -10,6 +10,10 @@
 // fecha-limites-logic.js: global en el navegador, require() en Node --
 // ver ese archivo para el criterio de "fecha futura".
 var _tipificacionFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+// texto-formato-logic.js (Fase 87, tema C): mismo doble modo, para que
+// tipificacionEtiqueta use la MISMA regla de mayuscula inicial/siglas que
+// el resto del dashboard.
+var _tipificacionTexto = (typeof require === 'function') ? require('./texto-formato-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // ── Columnas (AGENT_NAME, DATE, HORA, TIME_MIN, DESCRIPTION_COD_ACT,
 // SKILL_NAME) -- MES es una formula de Excel del archivo de Edwin
@@ -137,7 +141,10 @@ function tipificacionParseDuracion(v) {
 function tipificacionEtiqueta(valorOriginal) {
   var v = String(valorOriginal == null ? '' : valorOriginal);
   if (v.trim() === '-') return 'Sin tipificación';
-  return v.replace(/_/g, ' ').trim();
+  // Fase 87 (tema C): mayuscula inicial por palabra (siglas intactas, "_"
+  // como espacio) -- mismo criterio que el resto de nombres que vienen de
+  // los datos. El valor guardado/filtrado nunca cambia, solo esta etiqueta.
+  return _tipificacionTexto.textoFormatoNombre(v);
 }
 
 // ── Parseo de filas (aoa = array-of-arrays, fila 0 = encabezados) ───────

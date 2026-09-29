@@ -35,7 +35,7 @@ const kpi = (titulo, fuente, formato, extra) => ({ titulo, fuente, formato: form
 // ── ORLANT ──────────────────────────────────────────────────
 const ORLANT = {
   cliente: 'ORLANT',
-  titulo: 'Dashboard Clinica Orlant',
+  titulo: 'Dashboard Clínica Orlant',
   vista: null,
   secciones: SECCIONES.ORLANT,
   layout: {
@@ -69,13 +69,13 @@ const ORLANT = {
       { key: 'flujo', label: 'Flujo Mensual', oculta: true, panels: [
         lineP('Llamadas 3P por mes', 'llamadas_3p'),
         lineP('WhatsApp 3P por mes', 'wpp_3p'),
-        lineP('Llamadas Linea General por mes', 'llamadas_general'),
-        lineP('WhatsApp Linea General por mes', 'wpp_general'),
+        lineP('Llamadas Línea General por mes', 'llamadas_general'),
+        lineP('WhatsApp Línea General por mes', 'wpp_general'),
       ], subtabs: [
         { key: 'llamadas3p', label: 'Llamadas 3P', indices: [0] },
         { key: 'wpp3p', label: 'WhatsApp 3P', indices: [1] },
-        { key: 'llamadasgeneral', label: 'Llamadas Linea General', indices: [2] },
-        { key: 'wppgeneral', label: 'WhatsApp Linea General', indices: [3] },
+        { key: 'llamadasgeneral', label: 'Llamadas Línea General', indices: [2] },
+        { key: 'wppgeneral', label: 'WhatsApp Línea General', indices: [3] },
       ]},
       // Salida (graficas 4-7 del PDF de InCo, 2026-09-18): el PDF sugiere
       // "pueden ir integradas... y se puede mirar cada linea por medio de un
@@ -86,12 +86,12 @@ const ORLANT = {
       // presentacion — ver PROGRESS.md de esta fase).
       { key: 'salida', label: 'Salida', oculta: true, panels: [
         { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
-          { label: 'Linea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
-          { label: 'Linea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
+          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
+          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
         ]},
         { tipo: 'line', titulo: 'WhatsApp de salida', filtroSerie: true, series: [
-          { label: 'Linea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
-          { label: 'Linea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
+          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
+          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
         ]},
       ], subtabs: [
         { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
@@ -108,8 +108,8 @@ const ORLANT = {
       // 'tipificacion') sigue funcionando exactamente igual que antes si
       // alguien la vuelve a subir (compatibilidad hacia atras) — solo deja
       // de tener un panel que la muestre en ESTE tab de ORLANT.
-      { key: 'tipificacion', label: 'Tipificacion', oculta: true, panels: [
-        { tipo: 'tipificacion_panel', titulo: 'Tipificacion', campana: 'ORLANT' },
+      { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
+        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT' },
       ]},
       { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
         // Fase 78 (Jairo/Edwin): "Citas por Especialidad" -- agendas reales
@@ -121,21 +121,21 @@ const ORLANT = {
         // aqui -- asi el admin siempre aterriza en esta sub-pestana cuando
         // el tab recien se vuelve visible, nunca en una de resumen vacia.
         { tipo: 'agendas_panel', titulo: 'Citas por Especialidad', campana: 'ORLANT' },
-        { tipo: 'combo', titulo: 'Ordenamiento medico', barras: [
+        { tipo: 'combo', titulo: 'Ordenamiento médico', barras: [
           { label: 'Gestionados', fuente: serie('ordmed_gestionados') },
           { label: 'Agendas', fuente: serie('ordmed_agendas') }],
           linea: { label: '% Efectividad', fuente: pctFormula('ordmed_agendas', 'ordmed_gestionados') } },
         // Grafica 10 del PDF: KPI anual con texto explicativo (nota_kpi,
         // dashboard-generic.js — modo:'anual' suma el campo en todas las
         // cargas del año, no solo el ultimo mes).
-        { tipo: 'nota_kpi', titulo: 'Efectividad del año — Ordenamiento medico 3P',
+        { tipo: 'nota_kpi', titulo: 'Efectividad del año — Ordenamiento médico 3P',
           valores: [
             { clave: 'gestionados', fuente: { s: 'resumen', modo: 'anual', campo: 'ordmed_gestionados' } },
             { clave: 'agendados', fuente: { s: 'resumen', modo: 'anual', campo: 'ordmed_agendas' } },
           ],
           formula: { clave: 'efectividad', a: 'agendados', b: 'gestionados' },
-          plantilla: 'De la estrategia de agendamiento por ordenamiento medico en consulta medica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.' },
-        { tipo: 'combo', titulo: 'Recuperacion de cancelados', barras: [
+          plantilla: 'De la estrategia de agendamiento por ordenamiento médico en consulta médica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.' },
+        { tipo: 'combo', titulo: 'Recuperación de cancelados', barras: [
           { label: 'Cancelado', fuente: serie('recup_cancelado') },
           { label: 'Atendido', fuente: serie('recup_atendido') }],
           linea: { label: '% Efectividad', fuente: pctFormula('recup_atendido', 'recup_cancelado') } },
@@ -143,11 +143,11 @@ const ORLANT = {
         // + variacion % mes a mes (transform:'incremento', ya existia en el
         // motor — lo usa Aurora en "Agendas Manager e incremento").
         lineP('Total agendas por mes', 'total_agendas'),
-        { tipo: 'line', titulo: 'Agendas por linea', series: [
-          { label: 'Linea General', fuente: serie('agendas_general') },
-          { label: 'Linea 3P', fuente: serie('agendas_3p') }] },
-        { tipo: 'line', titulo: 'Total agendas — variacion % mes a mes', unidad: '%', series: [
-          { label: '% Variacion', fuente: serie('total_agendas', { transform: 'incremento' }) }] },
+        { tipo: 'line', titulo: 'Agendas por línea', series: [
+          { label: 'Línea General', fuente: serie('agendas_general') },
+          { label: 'Línea 3P', fuente: serie('agendas_3p') }] },
+        { tipo: 'line', titulo: 'Total agendas — variación % mes a mes', unidad: '%', series: [
+          { label: '% Variación', fuente: serie('total_agendas', { transform: 'incremento' }) }] },
       ], subtabs: [
         // Fase 78: nuevo panel de agendas insertado en el indice 0 -- todos
         // los indices de las sub-pestanas de abajo (que ya existian) se
@@ -159,36 +159,36 @@ const ORLANT = {
         // medico (indice 1): es el mismo dato (efectividad anual de la misma
         // estrategia), no una grafica aparte -- separarlo dejaria una
         // sub-pestana sin ninguna grafica, que el pedido explicito pidio evitar.
-        { key: 'ordmed', label: 'Ordenamiento Medico', indices: [1, 2] },
-        { key: 'recuperacion', label: 'Recuperacion de Cancelados', indices: [3] },
+        { key: 'ordmed', label: 'Ordenamiento Médico', indices: [1, 2] },
+        { key: 'recuperacion', label: 'Recuperación de Cancelados', indices: [3] },
         { key: 'totalagendas', label: 'Total Agendas', indices: [4] },
-        { key: 'agendasporlinea', label: 'Agendas por Linea', indices: [5] },
-        { key: 'variacion', label: 'Variacion % Agendas', indices: [6] },
+        { key: 'agendasporlinea', label: 'Agendas por Línea', indices: [5] },
+        { key: 'variacion', label: 'Variación % Agendas', indices: [6] },
       ]},
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
-        lineP('% Inasistencia Audifonos', 'inasist_audifonos', { unidad: '%' }),
-        lineP('% Inasistencia Audiologia', 'inasist_audiologia', { unidad: '%' }),
-        lineP('% Inasistencia Examenes', 'inasist_examenes', { unidad: '%' }),
+        lineP('% Inasistencia Audífonos', 'inasist_audifonos', { unidad: '%' }),
+        lineP('% Inasistencia Audiología', 'inasist_audiologia', { unidad: '%' }),
+        lineP('% Inasistencia Exámenes', 'inasist_examenes', { unidad: '%' }),
         lineP('% Inasistencia Total', 'inasist_total', { unidad: '%' }),
       ], subtabs: [
-        { key: 'audifonos', label: 'Audifonos', indices: [0] },
-        { key: 'audiologia', label: 'Audiologia', indices: [1] },
-        { key: 'examenes', label: 'Examenes', indices: [2] },
+        { key: 'audifonos', label: 'Audífonos', indices: [0] },
+        { key: 'audiologia', label: 'Audiología', indices: [1] },
+        { key: 'examenes', label: 'Exámenes', indices: [2] },
         { key: 'total', label: 'Total', indices: [3] },
       ]},
-      { key: 'sta', label: 'Gestion STA', oculta: true, panels: [
+      { key: 'sta', label: 'Gestión STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
         // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,
         // charts.js), tal como las dibuja el PDF.
-        { tipo: 'bar', titulo: 'Ordenes por servicio (año)', horizontal: true, pctDeTotal: true, series: [
-          { label: 'Ordenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'SERVICIO' }, anual: true } }] },
-        { tipo: 'bar', titulo: 'Estado de ordenes cargadas al STA (año)', horizontal: true, pctDeTotal: true,
-          series: [{ label: 'Ordenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'ESTADO' }, anual: true } }],
-          notas: ['No incluye Cirugia, Pre-revisado de cirugia, Procedimiento menor ni Otros servicios — esos se gestionan aparte.'] },
+        { tipo: 'bar', titulo: 'Órdenes por servicio (año)', horizontal: true, pctDeTotal: true, series: [
+          { label: 'Órdenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'SERVICIO' }, anual: true } }] },
+        { tipo: 'bar', titulo: 'Estado de órdenes cargadas al STA (año)', horizontal: true, pctDeTotal: true,
+          series: [{ label: 'Órdenes', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'ESTADO' }, anual: true } }],
+          notas: ['No incluye Cirugía, Pre-revisado de cirugía, Procedimiento menor ni Otros servicios — esos se gestionan aparte.'] },
         // Grafica 13: se agrega la barra "Agendada" (sta_agendadas ya
         // existia en el esquema, opcional, sin usar en ningun panel).
         { tipo: 'combo', titulo: 'STA por mes', barras: [
-          { label: 'Ordenes Cargadas', fuente: serie('sta_ordenes') },
+          { label: 'Órdenes Cargadas', fuente: serie('sta_ordenes') },
           { label: 'Agendada', fuente: serie('sta_agendadas') },
           { label: 'Facturado + Cumplida', fuente: serie('sta_factcump') }],
           linea: { label: '% Efectividad', fuente: pctFormula('sta_factcump', 'sta_ordenes') } },
@@ -197,22 +197,22 @@ const ORLANT = {
           { label: 'Cantidad', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', campo: 'cantidad', filtro: { dimension: 'MES_ACTUAL' } } }],
           linea: { label: '% Efectividad', fuente: { s: 'sta_categorias', modo: 'filas', x: 'categoria', formula: 'a/b*100', a: 'agendas', b: 'cantidad', filtro: { dimension: 'MES_ACTUAL' } } } },
       ], subtabs: [
-        { key: 'porservicio', label: 'Ordenes por Servicio (año)', indices: [0] },
-        { key: 'porestado', label: 'Estado de Ordenes (año)', indices: [1] },
+        { key: 'porservicio', label: 'Órdenes por Servicio (Año)', indices: [0] },
+        { key: 'porestado', label: 'Estado de Órdenes (Año)', indices: [1] },
         { key: 'stamensual', label: 'STA por Mes', indices: [2] },
         { key: 'serviciosmes', label: 'Servicios Gestionados del Mes', indices: [3] },
       ]},
       { key: 'efectividad', label: 'Efectividad Citas', oculta: true, panels: [
         { tipo: 'combo', titulo: 'Efectividad de citas', barras: [
-          { label: 'Citas para el mes', fuente: serie('citas_para_mes') },
+          { label: 'Citas para el Mes', fuente: serie('citas_para_mes') },
           { label: 'Total Atendidas', fuente: serie('citas_atendidas') }],
           linea: { label: '% Efectividad', fuente: pctFormula('citas_atendidas', 'citas_para_mes') } },
       ]},
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'ORLANT' },
-        { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribucion de clasificacion' },
+        { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación' },
       ]},
-      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
+      { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
         { tipo: 'trafico_combo', campana: 'ORLANT' },
       ]},
       // Fase 50 (plantilla real confirmada por Edwin): datos por COLA y
@@ -222,7 +222,7 @@ const ORLANT = {
       // (trafico_whatsapp, db.js) y su propio endpoint. Si esta pestaña ya
       // existe en una base sembrada antes de este cambio, ver la migracion
       // dashboards_config_orlant_trafico_whatsapp_tab_v1 en db.js.
-      { key: 'trafico_whatsapp', label: 'Trafico de WhatsApp', panels: [
+      { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
         { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
       ]},
     ],

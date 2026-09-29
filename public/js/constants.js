@@ -20,7 +20,7 @@ var DASH_MODULES = [
   {key:'Calidad',      label:'Calidad',           icon:'&#10003;', sub:'Control de Calidad',     cls:'mod-calidad'},
   {key:'Inventario',   label:'Inventario',         icon:'&#128230;',sub:'Gestion de Stock',        cls:'mod-inventario'},
   {key:'Gerencia',     label:'Gerencia',           icon:'&#128202;',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia'},
-  {key:'GestionHumana',label:'Gestion Humana',     icon:'&#128101;',sub:'Personal por Campana',     cls:'mod-gerencia'},
+  {key:'GestionHumana',label:'Gestión Humana',     icon:'&#128101;',sub:'Personal por Campaña',     cls:'mod-gerencia'},
   {key:'ClientesDash', label:'Dashboard Clientes', icon:'&#129309;',sub:'Seguimiento de Clientes', cls:'mod-clientes'}
 ];
 

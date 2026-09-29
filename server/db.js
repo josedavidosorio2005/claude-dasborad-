@@ -1541,6 +1541,101 @@ runOnceMigration('trafico_whatsapp_service_level_5min_v1', () => {
   }
 });
 
+// Fase 87 (tema C, nota del jefe: "unificar tipo de letra / letra capital"):
+// corrige tildes/capitalizacion en los textos de layout.tabs de ORLANT ya
+// sembrado en produccion -- dashboards_config solo se siembra la primera
+// vez que un cliente no existe (mismo motivo que las migraciones de texto
+// anteriores, ej. dashboards_config_orlant_kpis_vacios_v1), asi que un
+// cambio nuevo en dashboard-config-seed.js nunca le llega solo a una fila
+// ya sembrada. Recorre TODO el arbol de layout.tabs (label/titulo/
+// plantilla/notas, a cualquier profundidad) y reemplaza SOLO coincidencias
+// EXACTAS del texto completo de cada campo (nunca un reemplazo de
+// substring, que podria corromper un campo que solo contenga la palabra
+// vieja como parte de un texto mas largo no listado aqui) -- si el texto ya
+// fue editado a mano o no calza exacto, se deja intacto. SOLO ORLANT (otros
+// clientes conservan su texto, ver PROGRESS.md de esta fase para la lista
+// de los que quedarian distintos).
+runOnceMigration('dashboards_config_orlant_texto_tildes_v1', () => {
+  const row = db.prepare('SELECT cliente, titulo, layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return; // no existe todavia -> el seed ya la crea con el texto nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  // `titulo` es una columna aparte de `layout` (el titulo grande del modal
+  // del dashboard, dashboard-generic.js: _gd.config.titulo) -- mismo mapa,
+  // coincidencia EXACTA.
+  const tituloNuevo = row.titulo === 'Dashboard Clinica Orlant' ? 'Dashboard Clínica Orlant' : row.titulo;
+
+  const MAPA_TEXTO = {
+    'Llamadas Linea General por mes': 'Llamadas Línea General por mes',
+    'WhatsApp Linea General por mes': 'WhatsApp Línea General por mes',
+    'Llamadas Linea General': 'Llamadas Línea General',
+    'WhatsApp Linea General': 'WhatsApp Línea General',
+    'Linea General': 'Línea General',
+    'Linea 3P': 'Línea 3P',
+    'Tipificacion': 'Tipificación',
+    'Ordenamiento medico': 'Ordenamiento médico',
+    'Ordenamiento Medico': 'Ordenamiento Médico',
+    'Efectividad del año — Ordenamiento medico 3P': 'Efectividad del año — Ordenamiento médico 3P',
+    'De la estrategia de agendamiento por ordenamiento medico en consulta medica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.':
+      'De la estrategia de agendamiento por ordenamiento médico en consulta médica, se han gestionado un total de {gestionados} pacientes, de los cuales se han logrado agendar {agendados} — efectividad del año: {efectividad}%.',
+    'Recuperacion de cancelados': 'Recuperación de cancelados',
+    'Recuperacion de Cancelados': 'Recuperación de Cancelados',
+    'Agendas por linea': 'Agendas por línea',
+    'Agendas por Linea': 'Agendas por Línea',
+    'Total agendas — variacion % mes a mes': 'Total agendas — variación % mes a mes',
+    '% Variacion': '% Variación',
+    'Variacion % Agendas': 'Variación % Agendas',
+    'Audifonos': 'Audífonos',
+    'Audiologia': 'Audiología',
+    'Examenes': 'Exámenes',
+    'Gestion STA': 'Gestión STA',
+    'Ordenes por servicio (año)': 'Órdenes por servicio (año)',
+    'Ordenes por Servicio (año)': 'Órdenes por Servicio (Año)',
+    'Estado de ordenes cargadas al STA (año)': 'Estado de órdenes cargadas al STA (año)',
+    'Estado de Ordenes (año)': 'Estado de Órdenes (Año)',
+    'Ordenes Cargadas': 'Órdenes Cargadas',
+    'Ordenes': 'Órdenes',
+    'No incluye Cirugia, Pre-revisado de cirugia, Procedimiento menor ni Otros servicios — esos se gestionan aparte.':
+      'No incluye Cirugía, Pre-revisado de cirugía, Procedimiento menor ni Otros servicios — esos se gestionan aparte.',
+    'Citas para el mes': 'Citas para el Mes',
+    'Distribucion de clasificacion': 'Distribución de clasificación',
+    'Trafico de Llamadas': 'Tráfico de Llamadas',
+    'Trafico de WhatsApp': 'Tráfico de WhatsApp',
+  };
+
+  function migrarValor(v) {
+    return typeof v === 'string' && Object.prototype.hasOwnProperty.call(MAPA_TEXTO, v) ? MAPA_TEXTO[v] : v;
+  }
+  function migrarRecursivo(node) {
+    if (Array.isArray(node)) {
+      for (let i = 0; i < node.length; i++) {
+        if (typeof node[i] === 'string') node[i] = migrarValor(node[i]);
+        else migrarRecursivo(node[i]);
+      }
+    } else if (node && typeof node === 'object') {
+      for (const k of Object.keys(node)) {
+        if (typeof node[k] === 'string') node[k] = migrarValor(node[k]);
+        else migrarRecursivo(node[k]);
+      }
+    }
+  }
+  migrarRecursivo(layout.tabs || []);
+
+  db.prepare('UPDATE dashboards_config SET titulo = ?, layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    tituloNuevo,
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_texto_tildes_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -48,9 +48,12 @@ function _agendasMesLbl(m){
   return partes.length===2 ? (_AGENDAS_MESES[parseInt(partes[1],10)-1]+'-'+partes[0].slice(2)) : String(m||'');
 }
 
+// Fase 87 (tema C): el `value` sigue siendo el nombre ORIGINAL (los filtros
+// tienen que seguir funcionando con el dato tal cual llego del sistema de
+// agendamiento); solo el texto visible pasa por textoFormatoNombre.
 function _agendasOptionsHtml(valores, seleccionado){
   return '<option value="">Todos</option>' + (valores||[]).map(function(v){
-    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(v)+'</option>';
+    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(textoFormatoNombre(v))+'</option>';
   }).join('');
 }
 
@@ -115,7 +118,7 @@ async function _agendasRenderPanel(p, i){
     '<datalist id="agendas-dl-examen-'+i+'">'+(opciones.examenes||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
   html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Profesional</label><input list="agendas-dl-prof-'+i+'" id="agendas-f-profesional-'+i+'" value="'+esc(estado.profesional||'')+'" placeholder="Todos">' +
     '<datalist id="agendas-dl-prof-'+i+'">'+(opciones.profesionales||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
-  html += '<div class="ig" style="min-width:120px;margin-bottom:0"><label>Tipo de linea</label><select id="agendas-f-tipolinea-'+i+'">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
+  html += '<div class="ig" style="min-width:120px;margin-bottom:0"><label>Tipo de Línea</label><select id="agendas-f-tipolinea-'+i+'">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
   html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label>Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
@@ -184,7 +187,10 @@ async function _agendasDibujar(campana, i, opciones){
   var o1 = loBar();
   _gdChart('agendas-c-esp-'+i, {
     type: 'bar',
-    data: { labels: porEsp.map(function(r){ return r.especialidad; }),
+    data: { labels: porEsp.map(function(r){ return textoFormatoNombre(r.especialidad); }),
+      // Fase 87 (tema C): el color se sigue derivando del valor ORIGINAL
+      // (paletaColorPara hashea el texto) para que no cambie de color si el
+      // formato de texto cambia -- solo la etiqueta visible se formatea.
       datasets: [{ label:'Agendas', data: porEsp.map(function(r){ return r.cantidad; }), backgroundColor: porEsp.map(function(r){ return paletaColorPara(r.especialidad); }), borderRadius:3 }] },
     options: loDatalabelsAuto(o1),
   });

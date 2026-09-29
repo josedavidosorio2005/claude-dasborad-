@@ -665,7 +665,7 @@ function renderGenericHeader(){
   if(cs){
     var verMes = ms.value;
     var previos = _gd.periodos.filter(function(p){ return !verMes || p < verMes; });
-    cs.innerHTML = '<option value="">Periodo anterior (auto)</option>' +
+    cs.innerHTML = '<option value="">Período anterior (auto)</option>' +
       previos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('');
     cs.value = _gd.compSel && previos.indexOf(_gd.compSel) !== -1 ? _gd.compSel : '';
     if(cs.value !== _gd.compSel) _gd.compSel = cs.value;
@@ -1169,7 +1169,10 @@ function _gdRenderCalidad(p, i){
     if(fEl){
       fEl.innerHTML = '<div class="gd-panel-filtro">' +
         '<div><label>Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
-          asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(a)+'</option>'; }).join('') +
+          // Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL del
+          // asesor (los filtros tienen que seguir funcionando igual); solo
+          // el texto visible pasa por textoFormatoNombre.
+          asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(a))+'</option>'; }).join('') +
         '</select></div>' +
         '<div><label>Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label>Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
@@ -1259,7 +1262,7 @@ async function _gdExportarAgendas(p, i){
   try{ porMes = await apiRequest('GET','/calidad/agendas/mensual?'+_agendasQueryString(campana, filtros, false)) || []; }catch(e){}
   var out = [];
   if(porEsp.length){
-    out.push({ titulo: 'Citas por Especialidad', tipo: 'tabla', filas: porEsp.map(function(r){ return { Especialidad: r.especialidad, Cantidad: r.cantidad }; }) });
+    out.push({ titulo: 'Citas por Especialidad', tipo: 'tabla', filas: porEsp.map(function(r){ return { Especialidad: textoFormatoNombre(r.especialidad), Cantidad: r.cantidad }; }) });
   } else {
     out.push({ titulo: 'Citas por Especialidad', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' });
   }
@@ -1282,7 +1285,7 @@ async function _gdExportarTipificacion(p, i){
     var deCanal = _tipificacionEstadoCanal[i+'::'+def.canal] || {};
     var resultado = { datos: [], total: 0 };
     try{ resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, def.canal, compartido, deCanal)) || resultado; }catch(e){}
-    var titulo = 'Tipificacion de ' + def.titulo;
+    var titulo = 'Tipificación de ' + def.titulo;
     if(resultado.total){
       out.push({ titulo: titulo, tipo: 'tabla', filas: resultado.datos.map(function(r){ return { Tipificacion: (typeof tipificacionEtiqueta==='function'?tipificacionEtiqueta(r.tipificacion):r.tipificacion), Cantidad: r.cantidad }; }) });
     } else {

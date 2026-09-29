@@ -99,10 +99,14 @@ test('tipificacionParseDuracion: entero de TIME_MIN, se guarda aunque no se mues
 });
 
 // ── Etiqueta de presentacion (nunca cambia lo que se guarda) ────────────
-test('tipificacionEtiqueta: "_" -> espacio, valor original se guarda tal cual', () => {
-  assert.equal(tipificacionEtiqueta('AGENDADA_InConexion'), 'AGENDADA InConexion');
-  assert.equal(tipificacionEtiqueta('INFORMACION_GENERAL_'), 'INFORMACION GENERAL', 'sin espacio colgando al final');
-  assert.equal(tipificacionEtiqueta('NO_CONTESTAN'), 'NO CONTESTAN');
+// Fase 87 (tema C, nota del jefe: "unificar tipo de letra / letra capital"):
+// tipificacionEtiqueta ahora pasa por textoFormatoNombre (texto-formato-
+// logic.js) -- mayuscula inicial por palabra, siglas/"InConexion" intactas.
+// Estos son los mismos 2 ejemplos EXACTOS del pedido del jefe.
+test('tipificacionEtiqueta: "_" -> espacio + mayuscula inicial (Tema C) -- el valor original guardado no cambia', () => {
+  assert.equal(tipificacionEtiqueta('AGENDADA_InConexion'), 'Agendada InConexion');
+  assert.equal(tipificacionEtiqueta('INFORMACION_GENERAL_'), 'Informacion General', 'sin espacio colgando al final');
+  assert.equal(tipificacionEtiqueta('NO_CONTESTAN'), 'No Contestan');
 });
 
 test('tipificacionEtiqueta: "-" (valor completo, sin tipificar) -> "Sin tipificación"', () => {
@@ -110,7 +114,7 @@ test('tipificacionEtiqueta: "-" (valor completo, sin tipificar) -> "Sin tipifica
 });
 
 test('tipificacionEtiqueta: un guion que es PARTE de un texto real no se confunde con el marcador', () => {
-  assert.equal(tipificacionEtiqueta('PRE-AGENDADA'), 'PRE-AGENDADA');
+  assert.equal(tipificacionEtiqueta('PRE-AGENDADA'), 'Pre-agendada');
 });
 
 // ── Parseo completo ──────────────────────────────────────────────────
