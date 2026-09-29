@@ -1,0 +1,296 @@
+name: Dominio de produccion (revisar/aplicar)
+
+# Disparo manual unicamente. Reutiliza EXACTAMENTE el mismo mecanismo que
+# audit-instance.yml / seed-demo.yml / deploy.yml (rol OIDC, apertura
+# temporal del puerto 22 solo para la IP de este runner, secretos SSH ya
+# auditados, cierre del 22 al final con if: always()) para no abrir acceso
+# nuevo ni exponer credenciales fuera de este pipeline ya auditado.
+#
+# modo=revisar (por defecto): solo lectura, no cambia nada en la instancia.
+# modo=aplicar: agrega el dominio al bloque de sitio de Caddy que ya sirve
+#   duckdns (comparte proxy/cabeceras/logs) y agrega el origen HTTPS del
+#   dominio a CORS_ORIGIN, sin quitar los que ya haya. Todo idempotente y
+#   con respaldo + reversion automatica si algo falla a mitad de camino.
+on:
+  workflow_dispatch:
+    inputs:
+      dominio:
+        description: 'Dominio a agregar (el DNS A ya debe apuntar a la instancia)'
+        required: true
+        type: string
+        default: informa.inconexion.com.co
+      modo:
+        description: 'revisar (solo lectura) o aplicar (cambia Caddyfile + CORS_ORIGIN)'
+        required: true
+        type: choice
+        options:
+          - revisar
+          - aplicar
+        default: revisar
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  dominio:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Validar formato del dominio
+        env:
+          DOMINIO: ${{ inputs.dominio }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$DOMINIO" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$ ]]; then
+            echo "Dominio invalido: '$DOMINIO'"
+            exit 1
+          fi
+          echo "Dominio valido: $DOMINIO"
+          echo "Modo: ${{ inputs.modo }}"
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Mismo patron que deploy.yml/seed-demo.yml/audit-instance.yml: el 22
+      # solo se abre para la IP de ESTE runner, durante ESTE job, y se
+      # revierte al terminar (paso final, if: always()).
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      # ── modo revisar: solo lectura, nada se escribe en la instancia ──
+      - name: "Revisar (solo lectura)"
+        if: inputs.modo == 'revisar'
+        uses: appleboy/ssh-action@v1
+        env:
+          DOMINIO: ${{ inputs.dominio }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DOMINIO,AWS_REGION
+          script_stop: false
+          script: |
+            set -uo pipefail
+            cd /opt/inconexion
+
+            echo "### Caddyfile real (email enmascarado) ###"
+            sed -E 's/^([[:space:]]*email[[:space:]]+).*/\1***enmascarado***/' Caddyfile
+
+            echo ""
+            echo "### docker compose ps ###"
+            docker compose ps
+
+            echo ""
+            echo "### Version de Caddy ###"
+            docker compose exec -T caddy caddy version 2>&1 || echo "(no se pudo obtener: revisar si el servicio caddy esta arriba)"
+
+            echo ""
+            echo "### Logs de Caddy (24h) filtrados por $DOMINIO ###"
+            docker compose logs --since 24h caddy 2>/dev/null | grep -F "$DOMINIO" || echo "(sin coincidencias en las ultimas 24h)"
+
+            echo ""
+            echo "### CORS_ORIGIN: fuente y valor ###"
+            if grep -q '^CORS_ORIGIN=' app.env 2>/dev/null; then
+              echo "fuente: app.env"
+              grep '^CORS_ORIGIN=' app.env
+            else
+              echo "fuente: no esta en app.env -> viene de SSM"
+              if command -v aws >/dev/null 2>&1; then
+                aws ssm get-parameter --name "/inconexion/prod/CORS_ORIGIN" --with-decryption --region "${AWS_REGION}" --query Parameter.Value --output text 2>&1 \
+                  || echo "(no se pudo leer desde SSM con el rol de la instancia)"
+              else
+                echo "(aws-cli no esta instalado en la instancia; no se puede leer el valor desde aqui)"
+              fi
+            fi
+
+            echo ""
+            echo "### SSM_PARAM_PREFIX definido en app.env? (solo si existe, nunca el valor) ###"
+            if grep -q '^SSM_PARAM_PREFIX=' app.env 2>/dev/null; then
+              echo "definido en app.env"
+            else
+              echo "no esta en app.env"
+            fi
+
+            echo ""
+            echo "### Que sirve la app por HTTP (puerto 80) para cualquier nombre ###"
+            echo "-- bloques ':80' o 'http://' explicitos en el Caddyfile real:"
+            grep -nE '^[[:space:]]*(:80|http://)' Caddyfile || echo "(no se encontro bloque :80/http:// explicito en el Caddyfile)"
+            echo "-- servicios y puertos segun docker compose:"
+            docker compose config --services
+            docker compose ps --format 'table {{.Service}}\t{{.Ports}}'
+
+      # ── modo aplicar: idempotente, con respaldo y reversion automatica ──
+      - name: "Aplicar (Caddyfile + CORS_ORIGIN)"
+        if: inputs.modo == 'aplicar'
+        uses: appleboy/ssh-action@v1
+        env:
+          DOMINIO: ${{ inputs.dominio }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DOMINIO,AWS_REGION
+          script_stop: true
+          script: |
+            set -uo pipefail
+            cd /opt/inconexion
+
+            DUCKDNS="inconexionpruebasclaude.duckdns.org"
+            NEW_ORIGIN="https://${DOMINIO}"
+            DUCK_ORIGIN="https://${DUCKDNS}"
+
+            command -v aws >/dev/null 2>&1 || {
+              echo "aws-cli no esta en la instancia; no se puede resolver CORS_ORIGIN desde SSM de forma segura. Abortando sin tocar nada.";
+              exit 1;
+            }
+
+            TS="$(date -u +%Y%m%dT%H%M%SZ)"
+            BACKUP_DIR=/opt/inconexion/respaldos-config
+            mkdir -p "$BACKUP_DIR" || { echo "no se pudo crear $BACKUP_DIR"; exit 1; }
+            cp -p Caddyfile "$BACKUP_DIR/Caddyfile.$TS.bak" || { echo "no se pudo respaldar Caddyfile"; exit 1; }
+            cp -p app.env "$BACKUP_DIR/app.env.$TS.bak" || { echo "no se pudo respaldar app.env"; exit 1; }
+            echo "Respaldo: $BACKUP_DIR/Caddyfile.$TS.bak y $BACKUP_DIR/app.env.$TS.bak"
+
+            fail_rollback() {
+              echo "## FALLO: $1"
+              echo "## Restaurando Caddyfile y app.env desde el respaldo..."
+              cat "$BACKUP_DIR/Caddyfile.$TS.bak" > Caddyfile
+              cat "$BACKUP_DIR/app.env.$TS.bak" > app.env
+              docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 || true
+              docker compose up -d --force-recreate app 2>&1 || true
+              echo "## Respaldos restaurados. duckdns no deberia haber quedado caido."
+              exit 1
+            }
+
+            echo "### 1) Editando Caddyfile (idempotente) ###"
+            if grep -qF "$DOMINIO" Caddyfile; then
+              echo "El dominio ya esta en el Caddyfile, no se duplica."
+            else
+              awk -v dom="$DOMINIO" -v duck="$DUCKDNS" '
+                index($0, duck) > 0 && $0 ~ / \{[[:space:]]*$/ {
+                  sub(/ \{[[:space:]]*$/, ", " dom " {")
+                }
+                { print }
+              ' Caddyfile > /tmp/Caddyfile.nuevo
+              if ! grep -qF "$DOMINIO" /tmp/Caddyfile.nuevo; then
+                echo "No se encontro el bloque de $DUCKDNS en el formato esperado (linea 'host, host {'). Nada se toco todavia."
+                exit 1
+              fi
+              # Se escribe ENCIMA del mismo archivo (mismo inode) para que el
+              # bind-mount del contenedor caddy vea el cambio sin recrearlo.
+              cat /tmp/Caddyfile.nuevo > Caddyfile
+            fi
+
+            echo "### 2) Validando el Caddyfile ###"
+            docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile \
+              || fail_rollback "caddy validate fallo"
+
+            echo "### 3) Recargando Caddy ###"
+            docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+              || fail_rollback "caddy reload fallo"
+
+            echo "### 4) Resolviendo CORS_ORIGIN actual ###"
+            if grep -q '^CORS_ORIGIN=' app.env; then
+              CURRENT="$(grep '^CORS_ORIGIN=' app.env | head -1 | cut -d= -f2-)"
+              SOURCE="app.env"
+            else
+              CURRENT="$(aws ssm get-parameter --name "/inconexion/prod/CORS_ORIGIN" --with-decryption --region "${AWS_REGION}" --query Parameter.Value --output text 2>/dev/null || true)"
+              SOURCE="ssm"
+            fi
+            if [ -z "$CURRENT" ] || [ "$CURRENT" = "None" ]; then
+              fail_rollback "no se pudo determinar el CORS_ORIGIN actual (ni en app.env ni en SSM)"
+            fi
+            echo "CORS_ORIGIN actual (fuente: $SOURCE): $CURRENT"
+
+            NEWLIST="$(printf '%s,%s,%s' "$CURRENT" "$DUCK_ORIGIN" "$NEW_ORIGIN" | tr ',' '\n' | sed '/^$/d' | awk '!seen[$0]++' | paste -sd, -)"
+            echo "CORS_ORIGIN nuevo: $NEWLIST"
+
+            echo "### 5) Escribiendo CORS_ORIGIN en app.env (gana sobre SSM) ###"
+            if grep -q '^CORS_ORIGIN=' app.env; then
+              awk -v val="CORS_ORIGIN=$NEWLIST" '{ if ($0 ~ /^CORS_ORIGIN=/) print val; else print }' app.env > /tmp/app.env.nuevo
+            else
+              cp -p app.env /tmp/app.env.nuevo
+              printf '\nCORS_ORIGIN=%s\n' "$NEWLIST" >> /tmp/app.env.nuevo
+            fi
+            cat /tmp/app.env.nuevo > app.env
+
+            echo "### 6) Recreando el contenedor app ###"
+            docker compose up -d --force-recreate app || fail_rollback "docker compose up --force-recreate app fallo"
+
+            echo "### 7) Esperando /api/health ###"
+            OK=0
+            for i in $(seq 1 20); do
+              if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then OK=1; break; fi
+              sleep 3
+            done
+            [ "$OK" = "1" ] || fail_rollback "health check de app no respondio tras el force-recreate"
+            curl -fsS http://127.0.0.1:3000/api/health
+            echo ""
+
+            echo "### 8) Esperando el certificado TLS (hasta ~2 min) ###"
+            CERT_OK=0
+            for i in $(seq 1 24); do
+              if docker compose logs --since 3m caddy 2>/dev/null | grep -F "$DOMINIO" | grep -qi "certificate obtained successfully"; then
+                CERT_OK=1
+                break
+              fi
+              sleep 5
+            done
+            if [ "$CERT_OK" != "1" ]; then
+              fail_rollback "no aparecio 'certificate obtained successfully' para $DOMINIO en los logs de Caddy tras ~2 min"
+            fi
+            echo "Certificado obtenido para $DOMINIO."
+
+            docker image prune -f || true
+
+            echo "### Listo. Un deploy normal (docker compose pull && up -d) no pisa esto: Caddyfile y app.env viven en /opt/inconexion, fuera de la imagen. ###"
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
