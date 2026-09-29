@@ -24,7 +24,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const BASE = 'https://inconexionpruebasclaude.duckdns.org';
+const BASE = 'https://informa.inconexion.com.co';
 const DIR_EDWIN = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\bases edwin';
 const OUT_DIR = path.join(DIR_EDWIN, 'capturas-produccion');
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;

@@ -25,7 +25,7 @@
 'use strict';
 const { chromium } = require('playwright');
 
-const BASE = process.env.PROD_URL || 'https://inconexionpruebasclaude.duckdns.org';
+const BASE = process.env.PROD_URL || 'https://informa.inconexion.com.co';
 const TEMP_USER = process.env.TEMP_USER;
 const TEMP_PW = process.env.TEMP_PW;
 const ARTIFACTS_DIR = process.env.ARTIFACTS_DIR || require('os').tmpdir();

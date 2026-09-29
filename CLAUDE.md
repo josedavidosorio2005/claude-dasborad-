@@ -43,16 +43,18 @@ asumir en qué quedó una fase anterior.
 
 ## Producción
 
-- **Dominio principal: `https://informa.inconexion.com.co`** (desde la Fase
-  92). `https://inconexionpruebasclaude.duckdns.org` sigue funcionando
-  como alterno — mismo servidor, mismo Caddy, ambos con certificado real.
-- **Para agregar un dominio nuevo, usar el workflow
-  `dominio-produccion.yml` (modo `revisar` primero, después `aplicar`) —
-  nunca a mano por SSH.** Agrega el dominio al Caddyfile real de la
-  instancia y a `CORS_ORIGIN`, con respaldo automático y reversión si algo
-  falla (validate, health check o certificado). El Caddyfile del repo
-  (`deploy/Caddyfile`) es solo una plantilla; el real vive en la instancia
-  y ese workflow es la única forma auditada de tocarlo.
+- **Producción: `https://informa.inconexion.com.co` (único dominio).**
+  duckdns se retiró el 29/09/2026 (Fase 93); no volver a usarlo — no
+  queda como alterno, no redirige, no sirve la app por ningún otro nombre
+  ni por la IP directa.
+- **Para agregar o quitar un dominio, usar el workflow
+  `dominio-produccion.yml`** (modo `revisar` primero, después `aplicar` o
+  `quitar`) — nunca a mano por SSH. Agrega/quita el dominio del Caddyfile
+  real de la instancia y de `CORS_ORIGIN`, con respaldo automático y
+  reversión si algo falla (validate, health check o certificado). El
+  Caddyfile del repo (`deploy/Caddyfile`) es solo una plantilla; el real
+  vive en la instancia y ese workflow es la única forma auditada de
+  tocarlo.
 - Nunca escribir en producción sin autorización EXPLÍCITA del usuario en
   el pedido de esa fase — una autorización de una fase no se extiende a
   la siguiente ni a otros datos.
