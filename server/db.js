@@ -1644,6 +1644,54 @@ runOnceMigration('dashboards_config_orlant_texto_tildes_v1', () => {
   }
 });
 
+// Fase 94 (tema A, pedido de Edwin): orden de las pestañas de ORLANT --
+// Trafico de Llamadas -> Trafico de WhatsApp -> Agendamiento -> Tipificacion
+// -> Calidad (hoy Calidad va primero). Solo reordena, nunca toca panels/
+// subtabs/oculta de ninguna pestaña -- puramente un reacomodo del array
+// `tabs` (el orden del array decide el orden del menu Y cual pestaña queda
+// activa por defecto: `_gdTabsVisibles()[0]`, dashboard-generic.js). Mismo
+// motivo de siempre: dashboards_config ya existe en produccion, asi que el
+// orden nuevo del seed nunca le habria llegado solo.
+runOnceMigration('dashboards_config_orlant_orden_pestanas_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el orden nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const ORDEN = ['trafico', 'trafico_whatsapp', 'agendamiento', 'tipificacion', 'calidad'];
+  const tabs = layout.tabs || [];
+  const porClave = {};
+  tabs.forEach((t) => {
+    if (t && t.key) porClave[t.key] = t;
+  });
+  // Si falta alguna de las 5 claves esperadas (config editada a mano a algo
+  // distinto), se deja intacta y se loguea -- mismo criterio de las
+  // migraciones anteriores de ORLANT.
+  if (!ORDEN.every((k) => porClave[k])) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_orden_pestanas_v1: faltan pestañas esperadas, se deja intacta.');
+    }
+    return;
+  }
+  const yaEnOrden = ORDEN.every((k, i) => tabs[i] && tabs[i].key === k);
+  if (yaEnOrden) return; // ya tiene el orden nuevo, nada que hacer (dos corridas seguidas = mismo resultado)
+
+  const resto = tabs.filter((t) => ORDEN.indexOf(t && t.key) === -1);
+  layout.tabs = ORDEN.map((k) => porClave[k]).concat(resto);
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_orden_pestanas_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

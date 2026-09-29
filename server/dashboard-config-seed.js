@@ -61,55 +61,39 @@ const ORLANT = {
       // Fase 40b (2026-09-21): `oculta: true` (dashboard-generic.js) saca un
       // tab del menu de pestanas SIN borrar nada -- panels/subtabs/datos/
       // calculos quedan intactos, solo no se renderiza su boton ni puede
-      // quedar como pestana activa por defecto. TEMPORAL: mientras se
-      // termina de organizar/llenar la informacion de estas 7 pestanas
-      // (ver PROGRESS.md), solo quedan visibles Calidad y Trafico de
-      // Llamadas, que ya estan completas y verificadas. Revertir = quitar
+      // quedar como pestana activa por defecto. Revertir = quitar
       // `oculta: true` de la pestana correspondiente.
-      { key: 'flujo', label: 'Flujo Mensual', oculta: true, panels: [
-        lineP('Llamadas 3P por mes', 'llamadas_3p'),
-        lineP('WhatsApp 3P por mes', 'wpp_3p'),
-        lineP('Llamadas Línea General por mes', 'llamadas_general'),
-        lineP('WhatsApp Línea General por mes', 'wpp_general'),
-      ], subtabs: [
-        { key: 'llamadas3p', label: 'Llamadas 3P', indices: [0] },
-        { key: 'wpp3p', label: 'WhatsApp 3P', indices: [1] },
-        { key: 'llamadasgeneral', label: 'Llamadas Línea General', indices: [2] },
-        { key: 'wppgeneral', label: 'WhatsApp Línea General', indices: [3] },
+      //
+      // Fase 94 (tema A, pedido de Edwin): orden de las pestañas VISIBLES
+      // (las `oculta:true` no aparecen en el menu, pero su posicion en este
+      // array SI importa para cuando se destapan en memoria -- Agendamiento
+      // y Tipificacion, ver _gdBootstrap en dashboard-generic.js): Trafico
+      // de Llamadas -> Trafico de WhatsApp -> Agendamiento -> Tipificacion
+      // -> Calidad. La pestaña activa por defecto es SIEMPRE la primera
+      // VISIBLE del array (renderGenericTabs/_gdBootstrap toman
+      // `_gdTabsVisibles()[0]`) -- por eso 'trafico' va primero: ni
+      // Agendamiento ni Tipificacion pueden ganarle el primer lugar aunque
+      // se destapen antes de que el usuario mire, porque siguen despues en
+      // este mismo array. Las pestañas ocultas (Flujo, Salida, Inasistencia,
+      // Gestion STA, Efectividad Citas, y las 2 nuevas de la Fase 94 tema B
+      // -- Ordenamiento Medico, Recuperacion de Cancelados) van al final,
+      // en cualquier orden (no aparecen en el menu, su posicion no importa
+      // salvo para estas 2 mismas). Ver la migracion idempotente
+      // dashboards_config_orlant_orden_pestanas_v1 en db.js -- produccion
+      // ya tenia dashboards_config sembrado, este orden nuevo del seed
+      // nunca le habria llegado solo.
+      { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
+        { tipo: 'trafico_combo', campana: 'ORLANT' },
       ]},
-      // Salida (graficas 4-7 del PDF de InCo, 2026-09-18): el PDF sugiere
-      // "pueden ir integradas... y se puede mirar cada linea por medio de un
-      // filtro" en vez de 4 graficas separadas — filtroSerie (dashboard-
-      // generic.js) hace exactamente eso: una grafica, un selector de Linea
-      // General/3P, "Total: N" de la linea que se este viendo. Reemplaza los
-      // 4 paneles anteriores (misma fuente/campos, solo cambia la
-      // presentacion — ver PROGRESS.md de esta fase).
-      { key: 'salida', label: 'Salida', oculta: true, panels: [
-        { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
-          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
-          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
-        ]},
-        { tipo: 'line', titulo: 'WhatsApp de salida', filtroSerie: true, series: [
-          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
-          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
-        ]},
-      ], subtabs: [
-        { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
-        { key: 'whatsapp', label: 'WhatsApp de Salida', indices: [1] },
-      ]},
-      // Tipificacion (Fase 77, pedido de Edwin/Jairo): REEMPLAZA el pie
-      // filtrable de mas abajo (basado en la hoja vieja "tipificacion", que
-      // nunca llego a tener datos reales de ORLANT) por un panel autonomo
-      // (mismo patron que "Citas por Especialidad", agendas_panel — Fase 78)
-      // alimentado por la tabla `tipificaciones` (server/tipificaciones.js):
-      // 2 pies (Llamadas/WhatsApp, ~15.000 filas/mes solo Llamadas) con
-      // filtros Mes/rango COMPARTIDOS y Agente/Skill INDEPENDIENTES por
-      // canal. La hoja vieja "tipificacion" (dashboard_cargas, seccion
-      // 'tipificacion') sigue funcionando exactamente igual que antes si
-      // alguien la vuelve a subir (compatibilidad hacia atras) — solo deja
-      // de tener un panel que la muestre en ESTE tab de ORLANT.
-      { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
-        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT' },
+      // Fase 50 (plantilla real confirmada por Edwin): datos por COLA y
+      // PERIODO (fechaInicio..fechaFin), no diarios -- panel propio
+      // (trafico_whatsapp_combo, ver public/js/trafico-whatsapp.js), mismo
+      // patron de integracion que trafico_combo pero con su propia tabla
+      // (trafico_whatsapp, db.js) y su propio endpoint. Si esta pestaña ya
+      // existe en una base sembrada antes de este cambio, ver la migracion
+      // dashboards_config_orlant_trafico_whatsapp_tab_v1 en db.js.
+      { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
+        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
       ]},
       { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [
         // Fase 78 (Jairo/Edwin): "Citas por Especialidad" -- agendas reales
@@ -165,6 +149,55 @@ const ORLANT = {
         { key: 'agendasporlinea', label: 'Agendas por Línea', indices: [5] },
         { key: 'variacion', label: 'Variación % Agendas', indices: [6] },
       ]},
+      // Tipificacion (Fase 77, pedido de Edwin/Jairo): REEMPLAZA el pie
+      // filtrable de mas abajo (basado en la hoja vieja "tipificacion", que
+      // nunca llego a tener datos reales de ORLANT) por un panel autonomo
+      // (mismo patron que "Citas por Especialidad", agendas_panel — Fase 78)
+      // alimentado por la tabla `tipificaciones` (server/tipificaciones.js):
+      // 2 pies (Llamadas/WhatsApp, ~15.000 filas/mes solo Llamadas) con
+      // filtros Mes/rango COMPARTIDOS y Agente/Skill INDEPENDIENTES por
+      // canal. La hoja vieja "tipificacion" (dashboard_cargas, seccion
+      // 'tipificacion') sigue funcionando exactamente igual que antes si
+      // alguien la vuelve a subir (compatibilidad hacia atras) — solo deja
+      // de tener un panel que la muestre en ESTE tab de ORLANT.
+      { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
+        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT' },
+      ]},
+      { key: 'calidad', label: 'Calidad', panels: [
+        { tipo: 'calidad_kpis', campana: 'ORLANT' },
+        { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación' },
+      ]},
+      { key: 'flujo', label: 'Flujo Mensual', oculta: true, panels: [
+        lineP('Llamadas 3P por mes', 'llamadas_3p'),
+        lineP('WhatsApp 3P por mes', 'wpp_3p'),
+        lineP('Llamadas Línea General por mes', 'llamadas_general'),
+        lineP('WhatsApp Línea General por mes', 'wpp_general'),
+      ], subtabs: [
+        { key: 'llamadas3p', label: 'Llamadas 3P', indices: [0] },
+        { key: 'wpp3p', label: 'WhatsApp 3P', indices: [1] },
+        { key: 'llamadasgeneral', label: 'Llamadas Línea General', indices: [2] },
+        { key: 'wppgeneral', label: 'WhatsApp Línea General', indices: [3] },
+      ]},
+      // Salida (graficas 4-7 del PDF de InCo, 2026-09-18): el PDF sugiere
+      // "pueden ir integradas... y se puede mirar cada linea por medio de un
+      // filtro" en vez de 4 graficas separadas — filtroSerie (dashboard-
+      // generic.js) hace exactamente eso: una grafica, un selector de Linea
+      // General/3P, "Total: N" de la linea que se este viendo. Reemplaza los
+      // 4 paneles anteriores (misma fuente/campos, solo cambia la
+      // presentacion — ver PROGRESS.md de esta fase).
+      { key: 'salida', label: 'Salida', oculta: true, panels: [
+        { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
+          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
+          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
+        ]},
+        { tipo: 'line', titulo: 'WhatsApp de salida', filtroSerie: true, series: [
+          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
+          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
+        ]},
+      ], subtabs: [
+        { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
+        { key: 'whatsapp', label: 'WhatsApp de Salida', indices: [1] },
+      ]},
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
         lineP('% Inasistencia Audífonos', 'inasist_audifonos', { unidad: '%' }),
         lineP('% Inasistencia Audiología', 'inasist_audiologia', { unidad: '%' }),
@@ -207,23 +240,6 @@ const ORLANT = {
           { label: 'Citas para el Mes', fuente: serie('citas_para_mes') },
           { label: 'Total Atendidas', fuente: serie('citas_atendidas') }],
           linea: { label: '% Efectividad', fuente: pctFormula('citas_atendidas', 'citas_para_mes') } },
-      ]},
-      { key: 'calidad', label: 'Calidad', panels: [
-        { tipo: 'calidad_kpis', campana: 'ORLANT' },
-        { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación' },
-      ]},
-      { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
-        { tipo: 'trafico_combo', campana: 'ORLANT' },
-      ]},
-      // Fase 50 (plantilla real confirmada por Edwin): datos por COLA y
-      // PERIODO (fechaInicio..fechaFin), no diarios -- panel propio
-      // (trafico_whatsapp_combo, ver public/js/trafico-whatsapp.js), mismo
-      // patron de integracion que trafico_combo pero con su propia tabla
-      // (trafico_whatsapp, db.js) y su propio endpoint. Si esta pestaña ya
-      // existe en una base sembrada antes de este cambio, ver la migracion
-      // dashboards_config_orlant_trafico_whatsapp_tab_v1 en db.js.
-      { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
-        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
       ]},
     ],
   },
