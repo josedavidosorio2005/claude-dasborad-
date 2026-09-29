@@ -370,6 +370,20 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
   });
 }
 
+// Fase 87 (tema A, nota del jefe: "siempre tener visible el nivel de
+// servicio, en Resumen"): mismo criterio EXACTO que traficoServiceLevelPromedioPeriodo
+// (trafico-logic.js) pero ponderado por TOTAL WHATSAPP -- cada fila de este
+// canal es una cola por PERIODO, no por dia, pero el peso correcto sigue
+// siendo el volumen que entro (contestado o no), nunca solo lo contestado.
+function traficoWppServiceLevelPromedioPeriodo(filas, campo) {
+  var suma = 0, peso = 0;
+  (filas || []).forEach(function (f) {
+    var w = Number(f.totalWhatsapp) || 0;
+    if (f[campo] != null && w > 0) { suma += f[campo] * w; peso += w; }
+  });
+  return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -387,5 +401,6 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoWppFiltrarFilas: traficoWppFiltrarFilas,
     traficoWppPeriodoDe: traficoWppPeriodoDe,
     traficoWppAgregarPorPeriodo: traficoWppAgregarPorPeriodo,
+    traficoWppServiceLevelPromedioPeriodo: traficoWppServiceLevelPromedioPeriodo,
   };
 }
