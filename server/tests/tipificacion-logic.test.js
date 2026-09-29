@@ -193,7 +193,12 @@ test('tipificacionParseFilas: HORA invalida NO descarta la fila (campo opcional)
 });
 
 test('tipificacionParseFilas: filas vacias intermedias se ignoran sin generar aviso', () => {
-  const aoa = [HEADER, fila(), ['', '', '', '', '', '', ''], fila()];
+  // Fase 88: las 2 filas de datos deben ser DISTINTAS (agente distinto) --
+  // si no, el dedup de duplicados exactos (nuevo) las colapsaria a 1 y
+  // esta prueba dejaria de probar lo que dice probar (filas vacias
+  // intermedias se ignoran), confundiendo ese comportamiento con el del
+  // dedup.
+  const aoa = [HEADER, fila(), ['', '', '', '', '', '', ''], fila({ 0: 'ASESOR DEMO DOS' })];
   const res = tipificacionParseFilas(aoa);
   assert.ok(!res.error, res.error);
   assert.equal(res.filas.length, 2);

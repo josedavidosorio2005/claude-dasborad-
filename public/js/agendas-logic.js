@@ -17,6 +17,8 @@
 // fecha-limites-logic.js: global en el navegador, require() en Node --
 // ver ese archivo para el criterio de "fecha futura".
 var _agendasFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+// duplicados-exactos-logic.js: global en el navegador, require() en Node.
+var _agendasDuplicadosExactos = (typeof require === 'function') ? require('./duplicados-exactos-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // ── Columnas de la hoja AGENDAS (formato consolidado de ORLANT) ─────────
 // Emparejamiento por NOMBRE de columna, igual que el resto de la
@@ -179,8 +181,21 @@ function agendasParseFilas(aoa) {
   }
 
   var priv = agendasAplicarPrivacidadEntidad(filas);
+  // Fase 88: solo filas EXACTAMENTE iguales en TODAS las columnas (mismo
+  // asesor/sede/examen/especialidad/profesional/fechaSolicitud incluida
+  // hora/tipoLinea/entidad) -- nunca "casi iguales". Se avisa cuantas se
+  // quitaron para que la persona pueda cancelar la carga si no esta de
+  // acuerdo (mismo lugar donde ya se muestran los demas avisos, ANTES de
+  // confirmar la carga).
+  var dedup = _agendasDuplicadosExactos.quitarDuplicadosExactos(priv.filas);
+  if (dedup.quitadas > 0) {
+    avisos.push(
+      'Se encontraron ' + dedup.quitadas + ' fila(s) exactamente duplicada(s) ' +
+      '(mismos valores en TODAS las columnas, incluida fecha y hora) -- se conservo solo 1 de cada una.'
+    );
+  }
   return {
-    filas: priv.filas, avisos: avisos,
+    filas: dedup.filas, avisos: avisos,
     entidadesAgrupadas: priv.entidadesAgrupadas, entidadesSinDato: priv.entidadesSinDato,
   };
 }
