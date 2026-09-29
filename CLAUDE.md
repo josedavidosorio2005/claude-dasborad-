@@ -89,6 +89,8 @@ asumir en qué quedó una fase anterior.
 - Foco actual: **solo ORLANT** tiene datos reales en producción. Clínica
   Aurora y Hospital La María siguen en cero — no inventar datos ni
   adelantarse a pedidos que no han llegado.
+- El repositorio es público por decisión del jefe (29/09/2026); no
+  reportarlo como pendiente.
 
 ## Bitácora
 
