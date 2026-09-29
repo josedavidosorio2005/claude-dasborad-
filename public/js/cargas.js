@@ -150,6 +150,13 @@ function _cargasTraficoWhatsappColumnasUnificado(){
     { label:'SERVICE_LEVEL_10SEC', opcional:true },
     { label:'SERVICE_LEVEL_20SEC', opcional:true },
     { label:'SERVICE_LEVEL_30SEC', opcional:true },
+    // SERVICE_LEVEL_5MIN (Fase 87, tema B, nota del jefe: "En WhatsApp el
+    // nivel de servicio es de 5 minutos") -- columna opcional nueva; el
+    // cargador (traficoWppColIndexMap, trafico-whatsapp-logic.js) tambien
+    // acepta SERVICE_LEVEL_300SEC/"NIVEL DE SERVICIO 5 MIN" como alias si el
+    // export de Wolkvox trae otro nombre, pero la plantilla siempre ofrece
+    // este (el mas claro para quien la llena a mano).
+    { label:'SERVICE_LEVEL_5MIN', opcional:true },
     { label:'ABANDONO', opcional:true },
     { label:'ASA', opcional:true },
     { label:'ATA', opcional:true },

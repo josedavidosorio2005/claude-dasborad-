@@ -40,6 +40,13 @@ var TRAFICO_WPP_COLUMNAS = [
   { key: 'serviceLevel10secPct', label: 'SERVICE_LEVEL_10SEC' },
   { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC' },
   { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
+  // Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de
+  // 5 minutos"): columna opcional nueva -- no estaba en la plantilla
+  // aprobada (solo 10/20/30s). `aliases`: un archivo real de Wolkvox podria
+  // traer el umbral configurado como SERVICE_LEVEL_300SEC (segundos, 300 =
+  // 5 min) o alguien podria escribirlo a mano como "NIVEL DE SERVICIO 5
+  // MIN" -- las 3 variantes se aceptan igual, ver traficoWppColIndexMap.
+  { key: 'serviceLevel5minPct', label: 'SERVICE_LEVEL_5MIN', aliases: ['SERVICE_LEVEL_300SEC', 'NIVEL DE SERVICIO 5 MIN'] },
   { key: 'asaSegundos', label: 'ASA' },
   { key: 'ataSegundos', label: 'ATA' },
   { key: 'ahtSegundos', label: 'AHT' },
@@ -57,11 +64,20 @@ function traficoWppEsFilaTotal(colaWhatsapp) {
   return TRAFICO_WPP_COLA_TOTAL_RE.test(String(colaWhatsapp == null ? '' : colaWhatsapp).trim());
 }
 
+// Fase 87 (tema B): el emparejamiento por nombre ahora tambien acepta
+// `aliases` ademas del `label` principal -- un encabezado real de Wolkvox
+// puede variar (SERVICE_LEVEL_5MIN vs SERVICE_LEVEL_300SEC), y ninguna de
+// las columnas de antes de esta fase define `aliases` (queda `undefined`,
+// el `some` de un array vacio da `false`), asi que el resto sigue
+// emparejando exactamente igual que siempre.
 function traficoWppColIndexMap(headerRow) {
   var map = {};
   (headerRow || []).forEach(function (h, i) {
     var n = traficoWppNorm(h);
-    var col = TRAFICO_WPP_COLUMNAS.filter(function (c) { return traficoWppNorm(c.label) === n; })[0];
+    var col = TRAFICO_WPP_COLUMNAS.filter(function (c) {
+      if (traficoWppNorm(c.label) === n) return true;
+      return (c.aliases || []).some(function (a) { return traficoWppNorm(a) === n; });
+    })[0];
     if (col && map[col.key] === undefined) map[col.key] = i;
   });
   return map;
@@ -199,6 +215,7 @@ function traficoWppParseFilas(aoa) {
       ['serviceLevel10secPct', traficoWppPctDesdeTexto, null],
       ['serviceLevel20secPct', traficoWppPctDesdeTexto, null],
       ['serviceLevel30secPct', traficoWppPctDesdeTexto, null],
+      ['serviceLevel5minPct', traficoWppPctDesdeTexto, null],
       ['asaSegundos', traficoWppNumero, null],
       ['ataSegundos', traficoWppNumero, null],
       ['ahtSegundos', traficoWppSegundosDesdeFraccionDia, null],
@@ -230,7 +247,7 @@ function traficoWppParseFilas(aoa) {
 // TOTAL WHATSAPP, mismo criterio que traficoAgregar en trafico-logic.js. ──
 function traficoWppResumen(filas) {
   var out = { totalWhatsapp: 0, contestados: 0, abandonados: 0, _tieneAbandonados: false };
-  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
+  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'serviceLevel5minPct'];
   var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos'];
   PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out['_suma_' + k] = 0; out['_peso_' + k] = 0; });
 
@@ -312,7 +329,7 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
 
   var buckets = {};
   var orden = [];
-  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
+  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'serviceLevel5minPct'];
   // Fase 77 (mismo hallazgo de Edwin que trafico-logic.js/traficoAgregar):
   // AHT/ASA son tiempo por WhatsApp CONTESTADO, no por total -- un chat
   // abandonado nunca lo atiende un agente. ATA queda por total (sin pedido

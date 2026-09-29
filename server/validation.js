@@ -377,6 +377,7 @@ const traficoWppFilaSchema = z
     serviceLevel10secPct: pctOpcional,
     serviceLevel20secPct: pctOpcional,
     serviceLevel30secPct: pctOpcional,
+    serviceLevel5minPct: pctOpcional,
     asaSegundos: segundosOpcional,
     ataSegundos: segundosOpcional,
     ahtSegundos: segundosOpcional,

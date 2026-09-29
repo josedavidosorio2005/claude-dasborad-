@@ -26,17 +26,18 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   const insertFila = db.prepare(
     `INSERT INTO trafico_whatsapp
        (campana, colaWhatsapp, fechaInicio, fechaFin, totalWhatsapp, contestados, abandonados,
-        serviceLevel10secPct, serviceLevel20secPct, serviceLevel30secPct, asaSegundos, ataSegundos, ahtSegundos,
+        serviceLevel10secPct, serviceLevel20secPct, serviceLevel30secPct, serviceLevel5minPct, asaSegundos, ataSegundos, ahtSegundos,
         archivoNombre, cargadoPorNombre, createdAt)
      VALUES (@campana,@colaWhatsapp,@fechaInicio,@fechaFin,@totalWhatsapp,@contestados,@abandonados,
-             @serviceLevel10secPct,@serviceLevel20secPct,@serviceLevel30secPct,@asaSegundos,@ataSegundos,@ahtSegundos,
+             @serviceLevel10secPct,@serviceLevel20secPct,@serviceLevel30secPct,@serviceLevel5minPct,@asaSegundos,@ataSegundos,@ahtSegundos,
              @archivoNombre,@cargadoPorNombre,@createdAt)`
   );
   const updateFila = db.prepare(
     `UPDATE trafico_whatsapp SET
        totalWhatsapp=@totalWhatsapp, contestados=@contestados, abandonados=@abandonados,
        serviceLevel10secPct=@serviceLevel10secPct, serviceLevel20secPct=@serviceLevel20secPct,
-       serviceLevel30secPct=@serviceLevel30secPct, asaSegundos=@asaSegundos, ataSegundos=@ataSegundos, ahtSegundos=@ahtSegundos,
+       serviceLevel30secPct=@serviceLevel30secPct, serviceLevel5minPct=@serviceLevel5minPct,
+       asaSegundos=@asaSegundos, ataSegundos=@ataSegundos, ahtSegundos=@ahtSegundos,
        archivoNombre=@archivoNombre, cargadoPorNombre=@cargadoPorNombre, createdAt=@createdAt
      WHERE id=@id`
   );
@@ -60,6 +61,7 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
         serviceLevel10secPct: opcional(f.serviceLevel10secPct),
         serviceLevel20secPct: opcional(f.serviceLevel20secPct),
         serviceLevel30secPct: opcional(f.serviceLevel30secPct),
+        serviceLevel5minPct: opcional(f.serviceLevel5minPct),
         asaSegundos: opcional(f.asaSegundos),
         ataSegundos: opcional(f.ataSegundos),
         ahtSegundos: opcional(f.ahtSegundos),

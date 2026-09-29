@@ -86,6 +86,65 @@ test('parseo del archivo REAL (PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx, hoja DAT
   // la Fase 45. La fila no debe traer ese campo.
   assert.equal(orlant3p.abandonoReportado, undefined);
   assert.equal(orlant3p.abandonoPct, undefined);
+  // Fase 87 (tema B): este fixture real es de agosto 2026, cargado ANTES de
+  // que existiera la columna SERVICE_LEVEL_5MIN -- debe quedar AUSENTE
+  // (undefined), nunca null-como-0 ni inventado desde el de 20s. Este es el
+  // escenario real que el dashboard debe mostrar como "sin dato".
+  assert.equal(orlant3p.serviceLevel5minPct, undefined, 'agosto no trae la columna -- el dato debe quedar ausente, no inventado');
+});
+
+// Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de 5
+// minutos"): SERVICE_LEVEL_5MIN es una columna opcional nueva, con 2 alias
+// razonables que un export real de Wolkvox podria traer en su lugar.
+test('SERVICE_LEVEL_5MIN: se parsea igual que los demas SERVICE_LEVEL_*', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS', 'SERVICE_LEVEL_5MIN'],
+    ['WHATSAPP ORLANT 3P', '2026-09-01', '2026-09-30', 100, 90, '96.42 %'],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].serviceLevel5minPct, 96.42);
+});
+
+test('SERVICE_LEVEL_5MIN: alias SERVICE_LEVEL_300SEC se reconoce igual (300s = 5 min)', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS', 'SERVICE_LEVEL_300SEC'],
+    ['WHATSAPP ORLANT 3P', '2026-09-01', '2026-09-30', 100, 90, '88.10'],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].serviceLevel5minPct, 88.1);
+});
+
+test('SERVICE_LEVEL_5MIN: alias "NIVEL DE SERVICIO 5 MIN" (escrito a mano) se reconoce igual', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS', 'NIVEL DE SERVICIO 5 MIN'],
+    ['WHATSAPP ORLANT 3P', '2026-09-01', '2026-09-30', 100, 90, '75'],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].serviceLevel5minPct, 75);
+});
+
+test('SERVICE_LEVEL_5MIN ausente (archivo viejo, sin la columna): sigue cargando igual, sin error', () => {
+  const aoa = [
+    ['NOMBRE_COLA_WHATSAPP', 'FECHA INICIO', 'FECHA FIN', 'TOTAL WHATSAPP', 'WHATSAPP CONTESTADOS'],
+    ['WHATSAPP ORLANT 3P', '2026-09-01', '2026-09-30', 100, 90],
+  ];
+  const res = traficoWppParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas[0].serviceLevel5minPct, undefined);
+});
+
+test('traficoWppAgregarPorPeriodo: serviceLevel5minPct se agrega ponderado por TOTAL WHATSAPP, igual que los demas SERVICE_LEVEL_*', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 100, contestados: 90, serviceLevel5minPct: 80 },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 300, contestados: 270, serviceLevel5minPct: 90 },
+  ];
+  const agregado = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(agregado.length, 1);
+  // Ponderado: (100*80+300*90)/400 = 87.5
+  assert.equal(agregado[0].serviceLevel5minPct, 87.5);
 });
 
 test('resumen agregado del periodo: suma volumenes primero, recalcula % desde la suma (no promedia % crudos)', () => {
