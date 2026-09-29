@@ -4,6 +4,8 @@
 // ya viene agrupado (ver routes/agendas.js).
 'use strict';
 
+const { fechaLimitesRangoDeMes } = require('./fecha-limites');
+
 function nowStr() {
   const d = new Date();
   const pad = (n) => (n < 10 ? '0' + n : '' + n);
@@ -90,17 +92,26 @@ function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas }) 
 function agendasWhereClausulas(q, incluirMes) {
   const clausulas = ['campana = @campana'];
   const params = { campana: q.campana };
+  // Fase 88: `fechaSolicitud` guarda tambien hora ('AAAA-MM-DD HH:MM:SS'),
+  // por eso el codigo viejo comparaba con `substr(fechaSolicitud,1,7/10)`
+  // -- no sargable, nunca aprovechaba idx_agendas_campana_fecha. El mismo
+  // resultado se logra con un rango DIRECTO sobre la columna completa: el
+  // limite "hasta" lleva ' 23:59:59' agregado para no perder filas del
+  // ultimo dia (el limite "desde" no lo necesita: '2025-04-01' ya es menor
+  // que cualquier hora de ese mismo dia en orden de texto).
   if (incluirMes && q.mes) {
-    clausulas.push('substr(fechaSolicitud,1,7) = @mes');
-    params.mes = q.mes;
+    const rango = fechaLimitesRangoDeMes(q.mes);
+    clausulas.push('fechaSolicitud >= @mesDesde AND fechaSolicitud <= @mesHasta');
+    params.mesDesde = rango.desde;
+    params.mesHasta = rango.hasta + ' 23:59:59';
   }
   if (q.desde) {
-    clausulas.push('substr(fechaSolicitud,1,10) >= @desde');
+    clausulas.push('fechaSolicitud >= @desde');
     params.desde = q.desde;
   }
   if (q.hasta) {
-    clausulas.push('substr(fechaSolicitud,1,10) <= @hasta');
-    params.hasta = q.hasta;
+    clausulas.push('fechaSolicitud <= @hasta');
+    params.hasta = q.hasta + ' 23:59:59';
   }
   ['asesor', 'sede', 'especialidad', 'examen', 'profesional', 'tipoLinea', 'entidad'].forEach((campo) => {
     if (q[campo]) {

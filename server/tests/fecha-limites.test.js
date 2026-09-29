@@ -52,6 +52,13 @@ for (const [nombre, impl] of [['server/fecha-limites.js', servidor], ['public/js
   });
 }
 
+test('server/fecha-limites.js: fechaLimitesRangoDeMes devuelve el primer y ultimo dia del mes, incluidos meses de 28/29/30/31 dias', () => {
+  assert.deepEqual(servidor.fechaLimitesRangoDeMes('2025-02'), { desde: '2025-02-01', hasta: '2025-02-28' });
+  assert.deepEqual(servidor.fechaLimitesRangoDeMes('2028-02'), { desde: '2028-02-01', hasta: '2028-02-29' }, 'bisiesto');
+  assert.deepEqual(servidor.fechaLimitesRangoDeMes('2025-04'), { desde: '2025-04-01', hasta: '2025-04-30' });
+  assert.deepEqual(servidor.fechaLimitesRangoDeMes('2025-01'), { desde: '2025-01-01', hasta: '2025-01-31' });
+});
+
 test('public/js/fecha-limites-logic.js: fechaLimitesEsSospechosaAntigua marca fechas anteriores a 2020 (sin bloquear -- eso lo decide quien llama)', () => {
   assert.equal(cliente.fechaLimitesEsSospechosaAntigua('2019-12-31'), true);
   assert.equal(cliente.fechaLimitesEsSospechosaAntigua('2020-01-01'), false);

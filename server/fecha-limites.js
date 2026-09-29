@@ -37,8 +37,24 @@ function fechaLimitesEsFutura(fechaISO, ahora) {
   return fechaISO.slice(0, 10) > fechaLimitesFinDeMesActual(ahora);
 }
 
+// Primer y ultimo dia de un mes 'AAAA-MM' como 'AAAA-MM-DD' (sin hora).
+// Fase 88: reemplaza filtros `substr(columna,1,7) = @mes` (no sargables,
+// nunca usan la parte de fecha de un indice compuesto) por un rango
+// directo `columna >= @desde AND columna <= @hasta` sobre la MISMA
+// columna indexada -- mismo resultado, ahora aprovechando el indice.
+// Si la columna guarda tambien hora ('AAAA-MM-DD HH:MM:SS'), el caller
+// debe agregar ' 23:59:59' a `hasta` para no perder filas del ultimo dia
+// (ver agendas.js).
+function fechaLimitesRangoDeMes(mes) {
+  const y = parseInt(mes.slice(0, 4), 10);
+  const m = parseInt(mes.slice(5, 7), 10);
+  const ultimoDia = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { desde: mes + '-01', hasta: mes + '-' + String(ultimoDia).padStart(2, '0') };
+}
+
 module.exports = {
   fechaLimitesHoyColombia,
   fechaLimitesFinDeMesActual,
   fechaLimitesEsFutura,
+  fechaLimitesRangoDeMes,
 };

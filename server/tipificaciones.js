@@ -10,6 +10,8 @@
 // llegar al navegador.
 'use strict';
 
+const { fechaLimitesRangoDeMes } = require('./fecha-limites');
+
 const CANALES = ['LLAMADAS', 'WHATSAPP'];
 
 function nowStr() {
@@ -96,8 +98,14 @@ function tipificacionesWhereClausulas(q) {
   const clausulas = ['campana = @campana', 'canal = @canal'];
   const params = { campana: q.campana, canal: q.canal };
   if (q.mes) {
-    clausulas.push('substr(fecha,1,7) = @mes');
-    params.mes = q.mes;
+    // Fase 88: rango directo sobre `fecha` (columna sin hora, 'AAAA-MM-DD')
+    // en vez de `substr(fecha,1,7) = @mes` -- mismo resultado, pero ahora
+    // aprovecha idx_tipificaciones_campana_canal_fecha en vez de escanear
+    // TODO el historico de esa campana+canal en cada apertura del tab.
+    const rango = fechaLimitesRangoDeMes(q.mes);
+    clausulas.push('fecha >= @mesDesde AND fecha <= @mesHasta');
+    params.mesDesde = rango.desde;
+    params.mesHasta = rango.hasta;
   }
   if (q.desde) {
     clausulas.push('fecha >= @desde');
