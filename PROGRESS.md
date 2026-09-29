@@ -6949,3 +6949,150 @@ de Llamadas **8.061 / 7.159 / 902**; Tráfico de WhatsApp **7.305 / 7.109
   feature/apps-cierre-final-2026-09-11: responsive navbar/sidebar fix"),
   sin tocar.
 
+## Fase 87 — Notas del jefe (nivel de servicio en Resumen, WhatsApp a 5 min, tipografía unificada) + 2 revisiones pendientes de la Fase 86 (2026-09-29, automática)
+
+El jefe revisó el dashboard de ORLANT (28/09) y dejó 3 notas, un PR por
+tema (A, B, C) más una revisión de producción (tema D, solo lectura).
+
+### Tema A — Nivel de servicio siempre visible en "Resumen" (PR #171, mergeado)
+
+Antes, en Tráfico de Llamadas y de WhatsApp, la vista "Resumen" no
+mostraba el nivel de servicio — había que entrar a la sub-pestaña "Nivel
+de Servicio a 20s". Ahora hay una 6ta tarjeta "Nivel de Servicio" siempre
+junto a Total/Contestadas/Abandonadas/Nivel de Atención/Tasa de Abandono,
+en los dos canales, respetando el mes y los filtros (skill/cola, "Ver por
+separado") ya aplicados. `traficoServiceLevelPromedioPeriodo`/
+`traficoWppServiceLevelPromedioPeriodo` (`*-logic.js`, nuevas): ponderado
+por el total del periodo/filtro actual — mismo criterio de peso que ya
+usa `traficoAgregar` para SERVICE_LEVEL_\*, nunca un promedio simple de
+los % por día. No se encontró otra vista "Resumen" obvia donde el jefe
+esperaría verlo (se revisó Agendamiento: sus sub-pestañas de resumen son
+de citas/ordenamiento médico, sin concepto de nivel de servicio
+telefónico/WhatsApp).
+
+### Tema B — WhatsApp mide el nivel de servicio a 5 minutos, no a 20s (PR #173, mergeado)
+
+Plantilla y cargador (solo ORLANT): columna opcional nueva
+`SERVICE_LEVEL_5MIN` en la hoja WHATSAPP, con 2 alias razonables
+(`SERVICE_LEVEL_300SEC`, "NIVEL DE SERVICIO 5 MIN") en el emparejamiento
+por nombre; INSTRUCCIONES actualizada pidiendo configurar el umbral en
+300s en Wolkvox; columna nueva en `trafico_whatsapp` vía migración
+idempotente (`trafico_whatsapp_service_level_5min_v1`, `server/db.js`).
+Dashboard: la tarjeta de WhatsApp (Tema A) pasa a leer el campo de 5 min;
+si el periodo no lo tiene (agosto, cargado antes de que existiera la
+columna) muestra "Sin dato de nivel de servicio a 5 min para este
+período — cargar la columna SERVICE_LEVEL_5MIN" — nunca cae al de 20s ni
+inventa un número (verificado en producción, ver Tema D). Gráfica y
+pastilla de la sub-pestaña renombradas a "Nivel de Servicio a 5 min";
+Exportar trae `% Service Level 5 min`. Llamadas no cambia, sigue a 20s.
+
+### Tema C — Tipografía unificada y mayúscula inicial en nombres de datos (PR #174, mergeado)
+
+Regla centralizada en `public/js/texto-formato-logic.js` (nuevo, doble
+modo navegador/Node): `TEXTO_FUENTE` (familia tipográfica única, ahora
+también la usa Chart.js — antes dibujaba ejes/leyendas con su fuente por
+defecto, distinta de `--font-sans`); `textoFormatoNombre(valor)`
+("_" como espacio, mayúscula inicial por palabra, siglas intactas
+—ORLANT/3P/AHT/ASA/ATA/SL/EPS/ARL/KPI, lista cerrada—, "WhatsApp"/
+"InConexion" con su capitalización propia, nunca toca el valor
+guardado/filtrado); un solo interruptor (`TEXTO_CONFIG.modoMayusculas`)
+para pasar a TODO EN MAYÚSCULAS si se pidiera después. Aplicada a
+nombres que vienen de los datos: skills/colas (Tráfico), tipificaciones,
+especialidades/sedes (Agendas), asesores/agentes (Calidad,
+Tipificación) — ejemplo real verificado: "CALL INBOUND ORLANT 3P" →
+"Call Inbound ORLANT 3P". Tildes corregidas en texto de interfaz que
+este PR controla directamente ("Tráfico de Llamadas/WhatsApp",
+"Tipificación", "Nivel de Atención", "Línea", "Gestión STA/Humana",
+"Período anterior", "Clínica Orlant", "Audífonos/Audiología/Exámenes",
+"Órdenes", etc.). ORLANT (`dashboards_config`): seed actualizado +
+migración idempotente nueva (`dashboards_config_orlant_texto_tildes_v1`)
+que recorre TODO `layout.tabs` (label/título/plantilla/notas, cualquier
+profundidad) más la columna `titulo`, reemplazando solo coincidencias
+EXACTAS del texto completo. **Otros clientes NO se tocaron** — quedan
+con texto distinto: CLÍNICA AURORA y HOSPITAL LA MARIA (`Tipificacion`,
+`Trafico de Llamadas`, `Distribucion de clasificacion`, sin tildes), y
+los 9 clientes de `dashboard-plantillas-cliente.js` (TELEVENTAS SURA,
+TELEVENTAS COMFAMA, PANTERA MAIKERS, ANDRES YEPES, MOVILIZE, ALBERTO
+LINERO GO, INFONDO, SASCHA FITNESS, BIVETT — mismo patrón sin tilde,
+más "Conversion"/"Flujo de gestion"/"Gestion" en sus tabs propios).
+Queda para decidir después si se migran igual.
+
+Playwright local, capturas antes/después (5 pestañas de ORLANT, claro/
+oscuro, escritorio/móvil, `docs/capturas-demo/fase87-nivel-servicio-y-
+tipografia/`): confirmado que "antes" (commit `541af17`, worktree con su
+propio seed de demo) no tenía la 6ta tarjeta ni tildes, y "después" sí;
+0 errores de consola en las 2 corridas.
+
+### Tema D — 2 revisiones pendientes de la Fase 86, en producción (solo lectura, autorizado)
+
+Se hizo al final, después de desplegar A+B+C (deploy confirmado,
+`/api/health` con `buildId` nuevo tras el merge del PR #174). Navegador
+visible con Playwright, consola con "INICIA SESIÓN AHORA"; el usuario iba
+a iniciar sesión y así fue, detectado dentro de los 10 minutos.
+
+**Meses futuros, por tabla y por cliente** (antes solo se había revisado
+el nivel del dashboard general, Fase 86): ninguna tabla de ningún cliente
+tiene un mes posterior al actual (2026-09). Primer/último mes con datos:
+
+| Cliente | Trafico Llamadas | Trafico WhatsApp | Tipif. Llamadas | Tipif. WhatsApp | Agendas | Calidad |
+|---|---|---|---|---|---|---|
+| ORLANT | Ago-26 | Ago-26 | Ago-26 | sin datos | **Abr-25** | Sep-26 |
+| CLÍNICA AURORA | sin datos | sin datos | sin datos | sin datos | sin datos | sin datos |
+| HOSPITAL LA MARIA | sin datos | sin datos | sin datos | sin datos | sin datos | sin datos |
+
+Agendas de ORLANT solo tiene Abr-25 cargado (ni un mes más, ni antes ni
+después) — coincide con el número de control ya conocido (7.426, con
+AUDÍFONOS 2.141). Aurora y Hospital La María siguen en cero en las 6
+tablas, confirmando lo ya sabido.
+
+**El MES de arriba mueve las 5 pestañas**: producción sigue con un solo
+mes en el selector de arriba (`_gd.periodos = ["2026-08"]"`, igual que en
+la Fase 86 — nadie ha cargado un segundo mes a nivel general todavía), así
+que no se pudo repetir la prueba de "cambiar entre 2 meses reales". Sí se
+confirmó el aviso de Agendas con datos reales: con el mes de arriba en
+Ago-26 (su único valor posible hoy), Agendamiento muestra exacto "Sin
+datos de Agendas para Ago-26. El ultimo mes con datos es Abr-25 [Ver
+Abr-25]" — el mecanismo de la Fase 86 funciona en producción con datos
+reales, no solo en la demo local.
+
+**Notas del jefe desplegadas**, confirmadas en producción real (agosto
+2026):
+- Tarjeta "Nivel de Servicio (20 s)" en Resumen de Llamadas: 64,05% sin
+  filtro (todas las líneas); con el filtro de línea 3P — verificado
+  contra el mismo código ya en producción, con datos locales que
+  replican exacto los totales reales de agosto (8.061/7.159/902) — da
+  **87,66%**, el número de control exacto.
+- WhatsApp en Resumen: tarjeta "Nivel de Servicio (5 min)" en "—" con el
+  aviso exacto "Sin dato de nivel de servicio a 5 min para este período
+  — cargar la columna SERVICE_LEVEL_5MIN".
+- Tipografía: título del modal "Dashboard Clínica Orlant" y las 5
+  pestañas "Tipificación / Agendamiento / Calidad / Tráfico de Llamadas /
+  Tráfico de WhatsApp", todas con tilde, confirmadas tal cual en
+  producción.
+
+Capturas guardadas fuera del repo, en
+`C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase87\`.
+De solo lectura: no se subió, borró ni cambió ningún dato; no se pidió ni
+se guardó contraseña ni cookie alguna.
+
+### Verificación y cierre
+
+- `npm test`: **605/605** (23 pruebas nuevas entre los 3 temas:
+  `traficoServiceLevelPromedioPeriodo`/`traficoWppServiceLevelPromedioPeriodo`
+  + parseo/alias/agregado de `SERVICE_LEVEL_5MIN` + carga/lectura en
+  servidor + `texto-formato-logic.test.js` +
+  `dashboards-config-orlant-texto-tildes-migracion.test.js`). `npm audit`:
+  0 vulnerabilidades.
+- 3 PRs (#171, #173, #174 — el #172 se cerró solo cuando GitHub borró su
+  rama base al mergear el #171; se recreó como #173 apuntando a `main`),
+  todos con CI en verde (Node 18/20/22 + docker-build), mergeados; `main`
+  = `origin/main`, 0 PRs abiertos, las ramas de trabajo borradas. Deploy
+  automático confirmado tras cada merge y `/api/health` 200 después del
+  último deploy.
+- Números de control de ORLANT sin cambios: Tipificación 14.940; Agendas
+  7.426 con AUDÍFONOS 2.141; Tráfico de Llamadas 8.061 / 7.159 / 902, SL20
+  3P 87,66 %, AHT total 4:26; Tráfico de WhatsApp 7.305 / 7.109 / 196.
+- No se tocaron CI/workflows, secretos de deploy, los datos de prueba de
+  Calidad de ORLANT ni el keystore. `git stash list` sigue con el único
+  stash previo a esta fase, sin tocar.
+
