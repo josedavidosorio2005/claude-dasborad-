@@ -7096,3 +7096,143 @@ se guardó contraseña ni cookie alguna.
   Calidad de ORLANT ni el keystore. `git stash list` sigue con el único
   stash previo a esta fase, sin tocar.
 
+## Fase 88 — barrido de bugs después de las Fases 75-87, más revisión de exposición pública del repo (2026-09-29, automática)
+
+Pedido en dos partes: (1) barrido completo de la plataforma buscando lo
+que las Fases 75-87 pudieron dejar roto o a medias, sobre todo en
+clientes distintos de ORLANT; (2) a mitad de la Parte 3, el usuario avisó
+que el repo en GitHub había estado **público** (ya lo puso en privado) y
+pidió una revisión de exposición — solo lectura, sin tocar nada.
+
+### Parte 1-2 — barrido y tabla de hallazgos
+
+Base: `npm test` 605/605, `npm audit` 0 vulnerabilidades, 0 TODO/FIXME/HACK
+reales. Apps móvil/escritorio: retiradas limpiamente en la Fase 70 (las
+carpetas locales `mobile-app`/`desktop-app` son leftovers gitignorados,
+inofensivos). La hoja vieja `"tipificacion"` sigue soportada a propósito
+para otros clientes — no es código muerto.
+
+5 revisiones estáticas en paralelo (subagentes de solo lectura, nunca
+`fork`, cada hallazgo verificado a mano) + recorrido en vivo con
+Playwright (12 clientes × todas sus pestañas, 10 roles de `seed:demo`,
+móvil/oscuro en 3 clientes): **0 errores de consola, 0 peticiones
+fallidas** en el estado previo a esta fase. Hallazgos reales:
+
+1. **[Media-Alta]** `traficoPctDesdeTexto`/`traficoWppPctDesdeTexto`
+   (SERVICE_LEVEL_10/20/30SEC/5MIN) no distinguían una celda numérica con
+   formato de porcentaje real de Excel de una sin formato — un valor
+   fracción (0.8649) se leía como 0.86 en vez de 86.49.
+2. **[Media]** Agendas y Tipificación no descartaban filas exactamente
+   duplicadas dentro del mismo archivo (solo evitaban duplicar al
+   re-subir el MISMO archivo completo).
+3. **[Media]** Exportar KPIs: `% Meta` mostraba `0` en vez de vacío
+   cuando no había dato del período pero sí meta configurada (afecta
+   clientes M3 con metas de Ventas/Recaudo).
+4. **[Media]** El módulo de Calidad dedicado y el portal Asesor no
+   aplicaban `textoFormatoNombre` (Fase 87) al nombre del asesor —
+   inconsistente con el widget embebido en los dashboards de cliente.
+5. **[Baja-Media, preventivo]** Consultas de Tipificación/Agendas
+   filtraban fecha con `substr(col,1,7)` en vez de rango directo — no
+   aprovechaban el índice compuesto; el costo escala con todo el
+   histórico acumulado, no con el mes visualizado.
+6. **[Baja]** `GET /monitoreos/mios` (portal personal del rol ASESOR)
+   hacía `SCAN` completo de `monitoreos`, sin índice sobre `asesor`.
+7. **[Baja]** 3 dependencias con actualización de parche/menor
+   disponible (`@aws-sdk/client-s3`, `@aws-sdk/client-ssm`, `supertest`).
+
+Confirmado sin hallazgos: permisos (Fase 83, cobertura completa en los 6
+módulos + admin), Exportar/MES/"sin datos" (Fases 85-86) en los 12
+clientes, 6 de 9 escenarios de carga rara (vacío, encabezados con typos,
+columnas de más/menos, coma/punto, fechas como texto). Rendimiento:
+ninguna consulta superaba 1 segundo con el volumen local (ya comparable
+al real de ORLANT).
+
+### Parte 3 — 7 correcciones, un PR por tema, todas con prueba que falla
+### con el código viejo y pasa con el nuevo
+
+| # | PR | Tema |
+|---|---|---|
+| 1 | #182 | `SERVICE_LEVEL_*` detecta el FORMATO real de la celda de Excel (nunca "si es ≤1, multiplicar x100" — un 0,56 % real como texto "0.56" habría terminado en 56 %). Celda de texto: sin cambios (caso real de producción, agosto, "93.55 %"). Celda numérica con formato %: se multiplica x100. Celda numérica sin formato: se deja tal cual; si TODA la columna es ≤1 sin formato, se avisa en la vista previa en vez de adivinar. |
+| 2 | #181 | Filas exactamente duplicadas (TODAS las columnas iguales, incluida hora con segundos — nunca "casi iguales") se descartan en Agendas/Tipificación, con aviso de cuántas se quitaron en la vista previa (para poder cancelar). Verificado contra los archivos reales de Edwin: 0 duplicados, números de control sin cambio. |
+| 3 | #178 | `% Meta` del export usa la MISMA función que la tarjeta en pantalla (`gdPorcentajeMeta`, nueva) — antes eran 2 copias del mismo cálculo que habían divergido. |
+| 4 | #179 | `calidad.js`/`mis-resultados.js` ahora pasan el nombre del asesor por `textoFormatoNombre` al mostrarlo (el `value` del filtro sigue crudo). |
+| 5 | #176 | `fechaLimitesRangoDeMes` (nuevo) + rango directo sobre `fecha`/`fechaSolicitud` en vez de `substr` — mismos resultados (`EXPLAIN QUERY PLAN` confirma que ahora usa el índice), nunca un fix de bug funcional. |
+| 6 | #177 | `idx_monitoreos_asesor_lower`, índice de expresión sobre `lower(trim(asesor))` — `CREATE INDEX IF NOT EXISTS`, se autoaplica en cualquier base ya sembrada (incluida producción) con el próximo deploy. |
+| 7 | #180 | `@aws-sdk/client-s3`/`client-ssm` (parche) + `supertest` (menor) actualizados. `better-sqlite3` (12→13) y `dotenv` (17→18), mayores, **NO tocados** — decisión explícita del usuario, se revisan después de la entrega de ORLANT. |
+
+Los 7 PRs, CI en verde (Node 18/20/22 + docker-build), mergeados por el
+usuario. `npm test` tras el último merge: **642/642**. `npm audit`: 0
+vulnerabilidades.
+
+### Revisión de exposición pública del repositorio (solo lectura, a mitad de la Parte 3)
+
+El repo estuvo público en GitHub (creado 2026-09-09); el usuario lo puso
+en privado durante esta fase. Revisión, sin cambiar nada:
+
+- **Secretos en TODO el historial de git** (`git log --all -G` con
+  patrones de claves AWS, bloques de llave privada, tokens de GitHub,
+  URLs con credenciales, `JWT_SECRET=`/`MASTER_ADMIN_PASSWORD(_HASH)?=`
+  con valor, hashes bcrypt, webhooks): **cero secretos reales** — todo lo
+  encontrado son placeholders explícitos (`dummy-no-usado-...`,
+  `CAMBIA_ESTO_por_...`, ARNs de ejemplo, un hash bcrypt de relleno que
+  es literalmente el alfabeto). Nunca se commiteó un `.env`, una base
+  `.db` ni `seed-demo-credenciales.txt`. Los secretos reales viven solo
+  en GitHub Actions Secrets / AWS SSM, nunca en el repo. GitHub Secret
+  Scanning, Dependabot y Vulnerability alerts estaban **desactivados**
+  (recomendado activarlos).
+- **Forks**: 0 (`gh api .../forks`). No hay forma de confirmar si alguien
+  hizo `git clone` sin fork (no queda registro).
+- **Archivos con datos reales o de infraestructura**: los 14 fixtures
+  `.xlsx` y las 1098 capturas de `docs/capturas-demo/` revisados por
+  muestreo son sintéticos (nombres/teléfonos tipo "Juan Perez"/
+  3001234567). `deploy/iam-policy-instance.json` y `deploy/Caddyfile` son
+  plantillas con placeholders. `PROGRESS.md`/`AWS_DEPLOY_REPORT.md` SÍ
+  documentan infraestructura real: el dominio de producción
+  (`inconexionpruebasclaude.duckdns.org`), el nombre de la instancia
+  Lightsail (`inconexion-prod`), su IP real, y la IP real del operador
+  (histórica, usada para restringir el puerto 22 por firewall).
+  `SECURITY_FIX_REPORT.md` documenta un XSS almacenado ya corregido
+  (2026-09-10), no una vulnerabilidad viva.
+- **`seed:demo` en producción**: sí puede correr ahí a propósito —
+  `.github/workflows/seed-demo.yml` es un workflow de disparo manual
+  (nunca automático) que siembra/limpia/rota contraseñas de usuarios
+  `demo_*` directo en producción, guardado por `SEED_DEMO_CONFIRM=1`.
+  Verificado en la Parte 4 (ver abajo): **0 usuarios `demo_*` en
+  producción hoy**.
+- Recomendado (no ejecutado, decisión del usuario): repo privado
+  (confirmado), activar Secret Scanning/Push Protection/Dependabot,
+  rotar `JWT_SECRET` y las contraseñas `demo_*` por precaución (no por
+  evidencia de filtración), revisar si la regla de firewall con la IP
+  del operador sigue vigente.
+- No se reescribió el historial ni se borró nada.
+
+### Parte 4 — verificación final
+
+- `npm test` antes/después: 605/605 → **642/642**. `npm audit`: 0
+  vulnerabilidades antes y después.
+- Recorrido con Playwright repetido sobre `main` ya fusionado (12
+  clientes × todas sus pestañas, 10 roles, móvil/oscuro en 3 clientes):
+  **0 errores de consola, 0 peticiones fallidas**. 31 capturas en
+  `docs/capturas-demo/fase88-barrido/` (solo datos de demo).
+- Números de control de ORLANT, verificados en vivo contra la base local
+  (ya con volumen real de ORLANT) tras los 7 merges — **sin cambios**:
+  Tipificación de Llamadas **14.940**; Agendas **7.426** (abril 2025) con
+  especialidad AUDÍFONOS **2.141**; Tráfico de Llamadas **8.061 / 7.159 /
+  902**, Nivel de Servicio (20s) sin filtro **64,05 %**; Tráfico de
+  WhatsApp **7.305 / 7.109 / 196**, con el aviso correcto de "sin dato de
+  nivel de servicio a 5 min" en agosto (columna `SERVICE_LEVEL_5MIN` no
+  cargada ese mes).
+- **Producción, solo lectura (autorizado)**: navegador visible con
+  Playwright, consola con "INICIA SESIÓN AHORA"; el usuario inició sesión
+  dentro de los 10 minutos. Recorridas las 5 pestañas de ORLANT: 0
+  errores de consola, 0 peticiones fallidas. Lista de usuarios revisada
+  (sesión admin): **0 usuarios `demo_*` en producción**. Capturas
+  guardadas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase88\`.
+  No se subió, borró ni cambió nada; no se pidió ni se guardó ninguna
+  contraseña ni cookie.
+- `main` = `origin/main`, 0 PRs abiertos, las 7 ramas de trabajo
+  borradas (locales y remotas). `/api/health` 200 antes y después del
+  paso de producción. No se tocaron los datos de prueba de Calidad de
+  ORLANT ni el keystore.
+
