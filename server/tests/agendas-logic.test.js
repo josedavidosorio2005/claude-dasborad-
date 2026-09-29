@@ -130,7 +130,11 @@ test('agendasParseFilas: TIPO DE LINEA distinto de 3P/GENERAL se descarta con av
 });
 
 test('agendasParseFilas: NOMBRE_ENTIDAD vacia -> se guarda como "SIN ENTIDAD"', () => {
-  const aoa = [HEADER, fila({ 7: '' }), fila({ 7: '   ' })];
+  // Fase 88: asesor distinto en cada fila -- si no, ambas quedarian
+  // EXACTAMENTE iguales tras la privacidad (entidad='' -> 'SIN ENTIDAD'
+  // en las 2) y el dedup nuevo las colapsaria a 1, sin probar lo que esta
+  // prueba dice probar.
+  const aoa = [HEADER, fila({ 0: 'ASESOR UNO', 7: '' }), fila({ 0: 'ASESOR DOS', 7: '   ' })];
   const res = agendasParseFilas(aoa);
   assert.ok(!res.error, res.error);
   assert.equal(res.filas.length, 2);
@@ -139,7 +143,9 @@ test('agendasParseFilas: NOMBRE_ENTIDAD vacia -> se guarda como "SIN ENTIDAD"', 
 });
 
 test('agendasParseFilas: filas vacias intermedias (fila en blanco en el Excel) se ignoran sin generar aviso', () => {
-  const aoa = [HEADER, fila(), ['', '', '', '', '', '', '', ''], fila()];
+  // Fase 88: las 2 filas de datos deben ser DISTINTAS -- si no, el dedup
+  // de duplicados exactos (nuevo) las colapsaria a 1.
+  const aoa = [HEADER, fila(), ['', '', '', '', '', '', '', ''], fila({ 0: 'ASESOR DOS' })];
   const res = agendasParseFilas(aoa);
   assert.ok(!res.error, res.error);
   assert.equal(res.filas.length, 2);

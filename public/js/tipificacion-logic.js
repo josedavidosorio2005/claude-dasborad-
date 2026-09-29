@@ -14,6 +14,8 @@ var _tipificacionFechaLimites = (typeof require === 'function') ? require('./fec
 // tipificacionEtiqueta use la MISMA regla de mayuscula inicial/siglas que
 // el resto del dashboard.
 var _tipificacionTexto = (typeof require === 'function') ? require('./texto-formato-logic.js') : (typeof window !== 'undefined' ? window : this);
+// duplicados-exactos-logic.js (Fase 88): mismo doble modo.
+var _tipificacionDuplicadosExactos = (typeof require === 'function') ? require('./duplicados-exactos-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // ── Columnas (AGENT_NAME, DATE, HORA, TIME_MIN, DESCRIPTION_COD_ACT,
 // SKILL_NAME) -- MES es una formula de Excel del archivo de Edwin
@@ -197,7 +199,18 @@ function tipificacionParseFilas(aoa) {
   if (!filas.length) {
     return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos };
   }
-  return { filas: filas, avisos: avisos };
+  // Fase 88: solo filas EXACTAMENTE iguales en TODAS las columnas (mismo
+  // agente/fecha/hora/duracionMin/tipificacion/skill) -- nunca "casi
+  // iguales". Se avisa cuantas se quitaron para que la persona pueda
+  // cancelar la carga si no esta de acuerdo.
+  var dedup = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas);
+  if (dedup.quitadas > 0) {
+    avisos.push(
+      'Se encontraron ' + dedup.quitadas + ' fila(s) exactamente duplicada(s) ' +
+      '(mismos valores en TODAS las columnas, incluida fecha y hora) -- se conservo solo 1 de cada una.'
+    );
+  }
+  return { filas: dedup.filas, avisos: avisos };
 }
 
 function tipificacionFilaComoArray(f) {
