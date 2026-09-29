@@ -105,6 +105,8 @@ setEnvDefault('RATE_LIMIT_MAX', '10000');
 setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
+const { CONFIGS } = require('../dashboard-config-seed');
+const ORLANT_TARGET = CONFIGS.find((c) => c.cliente === 'ORLANT');
 
 test('migracion dashboards_config_orlant_pdf_graficas_v1: reescribe los 4 tabs viejos de ORLANT a la forma nueva', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
@@ -129,12 +131,13 @@ test('migracion dashboards_config_orlant_pdf_graficas_v1: reescribe los 4 tabs v
   assert.equal(tipif.panels.length, 1, 'Tipificacion pasa de 2 pies a 1');
   assert.equal(tipif.panels[0].tipo, 'tipificacion_panel');
 
+  // Fase 94 (tema B): "agendamiento" reescribe el tab ENTERO desde CONFIGS
+  // (dashboard-config-seed.js) -- el resultado siempre nace igual a lo que
+  // sea que CONFIGS diga HOY, comparacion dinamica en vez de hardcodear su
+  // forma (que ya cambio 2 veces: Fase 78 agrego "Citas por Especialidad",
+  // Fase 94 dejo solo los 4 paneles reales de la tabla `agendas`).
   const agenda = tab('agendamiento');
-  assert.ok(agenda.panels.some((p) => p.tipo === 'nota_kpi'), 'se agrego el KPI anual con texto');
-  // Fase 87 (tema C): el titulo sale directo de CONFIGS (dashboard-config-
-  // seed.js), que ya trae la tilde -- esta migracion reescribe el tab
-  // ENTERO desde ahi, asi que el resultado ya nace correcto.
-  assert.ok(agenda.panels.some((p) => p.titulo === 'Total agendas — variación % mes a mes'));
+  assert.deepEqual(agenda.panels, ORLANT_TARGET.layout.tabs.find((t) => t.key === 'agendamiento').panels);
 
   const sta = tab('sta');
   assert.equal(sta.panels[1].tipo, 'bar', '"Ordenes por estado" paso de pie a bar');

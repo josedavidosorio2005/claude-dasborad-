@@ -139,6 +139,33 @@ function agendasPorMes(db, q) {
     .all(params);
 }
 
+// Fase 94 (tema B, pedido de Edwin): "Agendas por línea" -- por mes, una
+// serie para Línea General y otra para 3P, sacadas de `tipoLinea` de la
+// tabla `agendas` (ya NO de la hoja "resumen", que Edwin dijo que nunca se
+// llena). Mismo criterio que agendasPorMes: TODOS los meses con datos,
+// ignora el filtro de mes (es una serie de tiempo), respeta los demas.
+function agendasPorLinea(db, q) {
+  const { where, params } = agendasWhereClausulas(q, false);
+  return db
+    .prepare(
+      `SELECT substr(fechaSolicitud,1,7) AS mes, tipoLinea, COUNT(*) AS cantidad
+       FROM agendas WHERE ${where} GROUP BY mes, tipoLinea ORDER BY mes ASC`
+    )
+    .all(params);
+}
+
+// Fase 94 (tema B, pedido de Edwin): "Agendas por agente" -- barras por
+// asesor, de mayor a menor, con los mismos filtros (incluido mes: es una
+// foto del periodo elegido, igual que agendasPorEspecialidad -- no una
+// serie de tiempo). La suma de todas las filas siempre da el total del
+// filtro actual (es un COUNT(*) agrupado sin descartar nada).
+function agendasPorAgente(db, q) {
+  const { where, params } = agendasWhereClausulas(q, true);
+  return db
+    .prepare(`SELECT asesor, COUNT(*) AS cantidad FROM agendas WHERE ${where} GROUP BY asesor ORDER BY cantidad DESC`)
+    .all(params);
+}
+
 // Valores distintos para cada desplegable de filtro ("Todos" + seleccion) --
 // SIN filtrar por los demas filtros (Edwin no pidio que un filtro angostara
 // las opciones de otro; simplifica la UI y evita un ida-y-vuelta extra por
@@ -166,5 +193,7 @@ module.exports = {
   cargarAgendas,
   agendasPorEspecialidad,
   agendasPorMes,
+  agendasPorLinea,
+  agendasPorAgente,
   agendasOpciones,
 };

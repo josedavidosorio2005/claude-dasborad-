@@ -13,7 +13,7 @@ const express = require('express');
 const db = require('../db');
 const { requireActor, campaignAccess, canLoadData } = require('../auth');
 const { validate, schemas } = require('../validation');
-const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasOpciones } = require('../agendas');
+const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasPorAgente, agendasOpciones } = require('../agendas');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -59,6 +59,35 @@ router.get(
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
     res.json(agendasPorMes(db, req.query));
+  })
+);
+
+// Fase 94 (tema B, pedido de Edwin): "Agendas por línea" -- por mes,
+// Línea General vs 3P, desde `tipoLinea` de la tabla agendas (ya no de la
+// hoja "resumen").
+router.get(
+  '/calidad/agendas/linea',
+  requireActor,
+  validate(schemas.agendasFiltrosQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(agendasPorLinea(db, req.query));
+  })
+);
+
+// Fase 94 (tema B, pedido de Edwin): "Agendas por agente" -- barras por
+// asesor, de mayor a menor (respeta TODOS los filtros, incluido mes).
+router.get(
+  '/calidad/agendas/agente',
+  requireActor,
+  validate(schemas.agendasFiltrosQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(agendasPorAgente(db, req.query));
   })
 );
 

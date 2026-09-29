@@ -19,6 +19,19 @@ const bcrypt = require('bcryptjs');
 
 const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-subpestanas-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
 
+// La config actual (dashboard-config-seed.js), leida ANTES de requerir
+// db.js -- el guard de esta migracion exige que el tab "viejo" tenga
+// EXACTAMENTE la misma CANTIDAD de paneles que la config actual espera
+// para esa clave (ver server/db.js); "agendamiento" en particular ya
+// cambio de forma 2 veces desde que esta migracion se escribio (Fase 78 y
+// Fase 94), asi que su cantidad de paneles dummy se deriva de CONFIGS en
+// vez de quedar hardcodeada a un numero que dejaria de ser cierto.
+const { CONFIGS: CONFIGS_ACTUAL } = require('../dashboard-config-seed');
+const ORLANT_ACTUAL = CONFIGS_ACTUAL.find((c) => c.cliente === 'ORLANT');
+const targetTabsActual = {};
+(ORLANT_ACTUAL.layout.tabs || []).forEach((t) => { targetTabsActual[t.key] = t; });
+function nPaneles(key) { return (targetTabsActual[key].panels || []).length; }
+
 // Forma "vieja" reconocible: mismos 5 tabs, mismo NUMERO de paneles que la
 // config actual (dashboard-config-seed.js) pero SIN `subtabs` -- el estado
 // real de cualquier ORLANT ya sembrado antes de esta fase.
@@ -28,13 +41,13 @@ function panelesDummy(n, tipo) {
 const LAYOUT_VIEJO = {
   kpis: [],
   tabs: [
-    { key: 'flujo', label: 'Flujo Mensual', panels: panelesDummy(4) },
-    { key: 'salida', label: 'Salida', panels: panelesDummy(2) },
-    { key: 'tipificacion', label: 'Tipificacion', panels: panelesDummy(1, 'pie') },
-    { key: 'agendamiento', label: 'Agendamiento', panels: panelesDummy(6) },
-    { key: 'inasistencia', label: 'Inasistencia', panels: panelesDummy(4) },
-    { key: 'sta', label: 'Gestion STA', panels: panelesDummy(4) },
-    { key: 'efectividad', label: 'Efectividad Citas', panels: panelesDummy(1, 'combo') },
+    { key: 'flujo', label: 'Flujo Mensual', panels: panelesDummy(nPaneles('flujo')) },
+    { key: 'salida', label: 'Salida', panels: panelesDummy(nPaneles('salida')) },
+    { key: 'tipificacion', label: 'Tipificacion', panels: panelesDummy(nPaneles('tipificacion'), 'pie') },
+    { key: 'agendamiento', label: 'Agendamiento', panels: panelesDummy(nPaneles('agendamiento')) },
+    { key: 'inasistencia', label: 'Inasistencia', panels: panelesDummy(nPaneles('inasistencia')) },
+    { key: 'sta', label: 'Gestion STA', panels: panelesDummy(nPaneles('sta')) },
+    { key: 'efectividad', label: 'Efectividad Citas', panels: panelesDummy(nPaneles('efectividad'), 'combo') },
   ],
 };
 
@@ -90,10 +103,7 @@ setEnvDefault('RATE_LIMIT_MAX', '10000');
 setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
-const { CONFIGS } = require('../dashboard-config-seed');
-const ORLANT_TARGET = CONFIGS.find((c) => c.cliente === 'ORLANT');
-const targetTabs = {};
-(ORLANT_TARGET.layout.tabs || []).forEach((t) => { targetTabs[t.key] = t; });
+const targetTabs = targetTabsActual;
 
 test('migracion dashboards_config_orlant_subpestanas_v1: agrega subtabs a las 5 pestanas que se dividieron', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');

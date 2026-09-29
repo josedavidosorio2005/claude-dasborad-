@@ -1321,25 +1321,40 @@ function _gdDatosKpis(){
 // funcion sabe exportar) vive en dashboard-export-tipos.js -- ver ese
 // archivo y server/tests/dashboard-generic-export-fase85-lista-cerrada.test.js.
 
-// Agendas (Fase 78, pedido explicito de esta fase): "Citas por Especialidad"
-// + el total por mes, con el mes/filtros que esten aplicados en el panel
-// AHORA MISMO (_agendasEstado[i], el mismo estado que ya usa _agendasDibujar).
+// Agendas (Fase 78; Fase 94 tema B, pedido explicito de Edwin: "Exportar
+// tiene que incluir las 4 sub-pestañas con los filtros aplicados"). Cada
+// una de las 4 sub-pestañas es su propio panel `agendas_panel` (distinto
+// `vista`) -- _gdDatosPanelesTab llama esta funcion UNA VEZ POR PANEL (los
+// 4, sin importar cual este activo en pantalla), asi el export siempre
+// trae las 4. El filtro que se usa es el ESTADO COMPARTIDO por campana
+// (_agendasEstado[campana], el mismo que ya usa _agendasDibujar) -- no el
+// de un panel puntual -- para que quede igual sin importar cual de las 4
+// sub-pestañas se visito ultimo.
 async function _gdExportarAgendas(p, i){
   var campana = p.campana;
-  var filtros = _agendasEstado[i] || {};
-  var porEsp = [], porMes = [];
-  try{ porEsp = await apiRequest('GET','/calidad/agendas/especialidad?'+_agendasQueryString(campana, filtros, true)) || []; }catch(e){}
-  try{ porMes = await apiRequest('GET','/calidad/agendas/mensual?'+_agendasQueryString(campana, filtros, false)) || []; }catch(e){}
-  var out = [];
-  if(porEsp.length){
-    out.push({ titulo: 'Citas por Especialidad', tipo: 'tabla', filas: porEsp.map(function(r){ return { Especialidad: textoFormatoNombre(r.especialidad), Cantidad: r.cantidad }; }) });
-  } else {
-    out.push({ titulo: 'Citas por Especialidad', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' });
+  var vista = p.vista || 'especialidad';
+  var filtros = _agendasEstado[campana] || {};
+  var titulo = p.titulo || (_AGENDAS_VISTAS[vista] && _AGENDAS_VISTAS[vista].titulo) || 'Agendas';
+  var def = _AGENDAS_VISTAS[vista];
+  if(!def) return [];
+  var datos = [];
+  try{ datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || []; }catch(e){}
+  if(!datos.length){
+    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' }];
   }
-  if(porMes.length){
-    out.push({ titulo: 'Total Agendas por Mes', tipo: 'tabla', filas: porMes.map(function(r){ return { Mes: _agendasMesLbl(r.mes), Cantidad: r.cantidad }; }) });
+  if(vista === 'especialidad'){
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Especialidad: textoFormatoNombre(r.especialidad), Cantidad: r.cantidad }; }) }];
   }
-  return out;
+  if(vista === 'mensual'){
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), Cantidad: r.cantidad }; }) }];
+  }
+  if(vista === 'linea'){
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), 'Tipo de Línea': r.tipoLinea, Cantidad: r.cantidad }; }) }];
+  }
+  if(vista === 'agente'){
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Agente: textoFormatoNombre(r.asesor), Cantidad: r.cantidad }; }) }];
+  }
+  return [];
 }
 
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
