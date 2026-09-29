@@ -7236,3 +7236,133 @@ en privado durante esta fase. Revisión, sin cambiar nada:
   paso de producción. No se tocaron los datos de prueba de Calidad de
   ORLANT ni el keystore.
 
+## Fase 90 — WhatsApp con los DOS niveles de servicio (20 s y 5 min) + arreglar el selector de MES y las fechas (2026-09-30, automática)
+
+El usuario probó ORLANT en producción y encontró 2 problemas reales.
+Un PR por tema (#184 tema A, #185 tema B), ambos con CI en verde,
+mergeados por el usuario.
+
+### Tema A — WhatsApp: los DOS niveles de servicio (PR #184)
+
+**Por qué salió en blanco**: la Fase 87 reemplazó por completo la serie/
+tarjeta de "Nivel de Servicio a 20s" (que SÍ existe, viene de Wolkvox)
+por la de 5 min (la tolerancia que pidió el jefe, todavía sin cargar en
+ningún período real) — el resultado, con ningún dato para graficar, era
+un área en blanco. La causa técnica exacta: `_gdChart` ya tenía un aviso
+genérico para gráfica vacía, pero solo lo insertaba dentro de un
+ancestro `.aurora-card` — las sub-pestañas de Tráfico (Fase 68) nunca
+envuelven su canvas en `.aurora-card` (solo un título + `.aurora-chart-
+wrap`), así que el aviso nunca se insertaba.
+
+**Cómo se ve ahora**: pastilla renombrada a "Nivel de Servicio" (sin "a
+5 min"). La gráfica muestra 2 series — "Nivel de servicio a 5 min
+(tolerancia WhatsApp)" (principal, resaltada: línea más gruesa, primera
+en la leyenda) y "Nivel de servicio a 20 s" (secundaria, la que ya
+existe) — si la principal no tiene dato pero la secundaria sí, aparece
+un aviso específico DENTRO del área ("Sin dato de nivel de servicio a 5
+min para este período — cargar la columna SERVICE_LEVEL_5MIN"), nunca
+se inventa/aproxima un umbral desde el otro. El Resumen muestra 2
+tarjetas ("Nivel de Servicio (5 min)" y "(20 s)"). "Ver colas por
+separado", el filtro de cola y Exportar funcionan con las 2 series.
+Tráfico de Llamadas sin cambios (sigue 1 sola serie a 20s).
+
+`grafica-vacia-logic.js` (nuevo, doble modo sin DOM) extrae la lógica de
+decisión ("está vacía"/"hace falta el aviso específico") de `_gdChart`/
+`_traficoDibujarSL` para poder probarla con `node:test` — la inserción
+real en el DOM se verificó con Playwright.
+
+Verificado con Playwright contra los datos reales de agosto ya
+sembrados: canvas SIEMPRE visible (nunca `display:none`), aviso
+específico presente, orden de legenda correcto. Números de control sin
+cambios: Tráfico WhatsApp 7.305/7.109/196, SL20 34,67 % (todas las
+colas). `npm test`: 652/652 (10 pruebas nuevas).
+
+### Tema B — el selector de MES y las fechas (PR #185)
+
+**Qué causaba "Sep-26" con el selector en blanco**: `_gdBootstrap` solo
+miraba `dashboard_cargas` para armar la lista de meses (`_gd.periodos`)
+y el mes por defecto (`_gd.mesSel`) — Agendas/Tipificación/Tráfico
+Llamadas/Tráfico WhatsApp/Calidad viven en sus PROPIAS tablas, nunca en
+`dashboard_cargas`. Si cualquiera de esas tablas tenía un mes que
+`dashboard_cargas` no tenía (el caso real: Calidad con datos de prueba
+en Sep-26), `_gd.mesSel` podía terminar en un mes que el `<select>`
+nunca ofrecía como opción — de ahí el selector en blanco. Reproducido
+localmente con el estado exacto de producción (worktree en el commit
+previo a esta fase): confirmado.
+
+**Qué meses lista ahora y en cuál abre ORLANT**: `_gdBootstrap` detecta,
+de la config del cliente actual (nunca hardcodeado a un cliente
+puntual), qué campañas usan cada tipo de panel y junta la UNIÓN de
+meses de TODAS sus fuentes + `dashboard_cargas`. El mes por defecto
+(`gdMesPorDefecto`, `mes-global-logic.js`, nuevo): el más reciente con
+Tráfico de Llamadas o Tipificación (los datos mensuales principales); si
+el cliente no tiene ninguno de esos, el más reciente con CUALQUIER dato
+— nunca un mes que no sea una opción real del selector. Probado que
+esta regla funciona igual de bien para clientes sin
+`trafico_combo`/`tipificacion_panel` (Clínica Aurora/Hospital La María
+hoy): cae al fallback de "cualquier dato" sin problema — no hizo falta
+proponer otra regla.
+
+**Fechas corridas al cargar**: revisando fin de mes a las 7 p. m., texto
+dd/mm/aaaa, número de Excel y el período de WhatsApp 1-31 en los 4
+tipos de hoja, se encontró un hallazgo real en **Tráfico de Llamadas
+(DATE)**: un texto "dd/mm/aaaa" (formato colombiano) caía en `new
+Date(t)`, que V8 interpreta como MM/DD/AAAA (locale en-US). Con día
+≤12 esto NO fallaba: daba una fecha VÁLIDA pero CORRIDA EN SILENCIO
+(ej. "03/04/2026", 3 de abril, se leía como 4 de marzo — mes Y día
+cambiados, sin ningún aviso); con día >12 sí fallaba (fila descartada).
+Fix: el mismo parseo manual dd/mm/aaaa (nunca `new Date(texto)`) que ya
+usan `tipificacion-logic.js`/`agendas-logic.js`. Tipificación/Agendas/
+WhatsApp ya lo hacían bien, no hizo falta tocarlos. Los datos YA
+cargados no cambian (el fix solo afecta el PARSEO de una carga nueva).
+
+Además: la tilde faltante en "El ultimo mes con datos es..." corregida
+("último"); el botón "Ver `<mes>`" ya movía el selector Y el subtítulo
+correctamente (confirmado, no hizo falta tocarlo); los campos "Desde"/
+"Hasta" usan `<input type="date">` nativo — su formato visible ya sigue
+la configuración regional del navegador, no es algo que el código deba
+forzar.
+
+Verificado con Playwright contra los 12 clientes sembrados: 0 errores de
+consola, 0 peticiones fallidas. Números de control de ORLANT sin
+cambios: Tipificación 14.940, Agendas 7.426 (Abr-25) con AUDÍFONOS
+2.141. `npm test`: 653/653 (17 pruebas nuevas).
+
+### Verificación y cierre
+
+- `npm test` antes/después: 605/605 → **663/663**. `npm audit`: 0
+  vulnerabilidades antes y después.
+- Capturas ANTES (worktree en el commit previo a la fase, con su propio
+  `seed:demo`) y DESPUÉS (sobre `main` ya fusionado), en claro/oscuro y
+  escritorio/móvil, en `docs/capturas-demo/fase90-whatsapp-y-fechas/` —
+  0 errores de consola en el "después".
+- **Producción, solo lectura (autorizado)**: navegador visible con
+  Playwright, consola con "INICIA SESIÓN AHORA"; el usuario inició
+  sesión dentro de los 10 minutos. Confirmado en vivo: ORLANT abre con
+  `mesSel="2026-08"`, subtítulo "Informe Ago-26" y el selector con
+  "2026-08" como única opción hoy (ver nota abajo) — nunca en blanco.
+  WhatsApp: las 2 tarjetas de Nivel de Servicio (5 min "—" con el aviso
+  exacto, 20s con dato) y la gráfica de "Nivel de Servicio" con el
+  mismo aviso dentro del área, canvas siempre visible. 0 errores de
+  consola, 0 peticiones fallidas. Capturas guardadas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase90\`.
+  No se subió, borró ni cambió nada; no se pidió ni se guardó ninguna
+  contraseña ni cookie.
+  - **Nota honesta**: en producción, `_gd.periodos` mostró SOLO
+    "2026-08" (no aparecieron Abr-25 de Agendas ni Sep-26 de Calidad
+    como opciones, a diferencia de la reproducción local, que sí las
+    trajo). El bug reportado (selector en blanco, subtítulo sin
+    coincidir con una opción real) está resuelto y verificado — pero no
+    se pudo confirmar en producción que la unión de fuentes trajera
+    TODOS los meses esperados. Sesión de solo lectura, sin margen para
+    depurar más a fondo en producción; queda pendiente revisarlo la
+    próxima vez que haya sesión real (podría ser simplemente que esos
+    datos ya no estén, o una diferencia de acceso/campaña puntual, no
+    necesariamente un bug).
+- 2 PRs (#184, #185), ambos con CI en verde (Node 18/20/22 +
+  docker-build), mergeados por el usuario; ramas remotas borradas tras
+  el merge (`delete_branch_on_merge` sigue apagado, confirmado en la
+  Fase 89 — hay que borrarlas a mano). `main` = `origin/main`, 0 PRs
+  abiertos. `/api/health` 200 antes y después del paso de producción. No
+  se tocaron los datos de prueba de Calidad de ORLANT ni el keystore.
+
