@@ -832,9 +832,21 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
   var nsNota = labels.nivelServicioNota
     ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
-  var nsSinDato = (totales.nivelServicio===null && labels.nivelServicioSinDatoMsg)
-    ? '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:2px;font-size:0.78rem;color:var(--c-warning-dark,#92400e)">'+esc(labels.nivelServicioSinDatoMsg)+'</div>'
-    : '';
+  // Fase 94 (tema C): 2 niveles de texto -- `principal` (para cualquiera
+  // que mire el dashboard) y, en linea aparte y mas chica, `detalle` (como
+  // cargar el dato) SOLO para quien puede cargar datos (permiso
+  // cargarDatos o admin). Compatible con un string plano (sin detalle,
+  // como usaba esta funcion antes de esta fase).
+  var nsSinDato = '';
+  if(totales.nivelServicio===null && labels.nivelServicioSinDatoMsg){
+    var msg = labels.nivelServicioSinDatoMsg;
+    var principal = (typeof msg === 'object') ? msg.principal : msg;
+    var puedeVerDetalle = (typeof msg === 'object') && msg.detalle && typeof canLoadData === 'function' && canLoadData();
+    nsSinDato = '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:2px;font-size:0.78rem;color:var(--c-warning-dark,#92400e)">'+esc(principal)+'</div>';
+    if(puedeVerDetalle){
+      nsSinDato += '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:1px;font-size:0.7rem;color:var(--c-text-muted)">'+esc(msg.detalle)+'</div>';
+    }
+  }
   var tarjeta2 = '';
   if(totales.nivelServicio2 !== undefined){
     var ns2Nota = labels.nivelServicio2Nota
@@ -1031,7 +1043,13 @@ function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra){
         aviso.style.cssText = 'text-align:center;color:var(--c-warning-dark,#92400e);font-size:0.78rem;padding:6px 8px 0';
         wrap.appendChild(aviso);
       }
-      aviso.textContent = extra.sinDatoMsg;
+      // Fase 94 (tema C): mismo criterio de 2 niveles que _traficoDibujarKpis
+      // -- `principal` para cualquiera, `detalle` (como cargar el dato)
+      // solo para quien puede cargar datos. Compatible con string plano.
+      var msgSl = extra.sinDatoMsg;
+      var principalSl = (typeof msgSl === 'object') ? msgSl.principal : msgSl;
+      var puedeVerDetalleSl = (typeof msgSl === 'object') && msgSl.detalle && typeof canLoadData === 'function' && canLoadData();
+      aviso.innerHTML = esc(principalSl) + (puedeVerDetalleSl ? '<div style="margin-top:2px;font-size:0.9em;color:var(--c-text-muted)">'+esc(msgSl.detalle)+'</div>' : '');
     } else if(aviso){
       aviso.remove();
     }
