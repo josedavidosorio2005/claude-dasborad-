@@ -410,6 +410,20 @@ test('traficoWppServiceLevelPromedioPeriodo: ninguna fila trae el campo -> null 
   assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel5minPct'), null);
 });
 
+// Fase 90 (tema A, hallazgo real: WhatsApp ahora muestra LOS DOS niveles a
+// la vez). Mismo set de filas, LOS DOS campos calculados por separado: 20s
+// (que SI viene cargado) da un numero real, 5 min (que NO viene cargado
+// todavia en ningun periodo real) da null -- nunca se aproxima el de 5
+// min a partir del de 20s, ni al reves.
+test('traficoWppServiceLevelPromedioPeriodo: 20s Y 5min sobre las MISMAS filas -- 20s con dato real, 5min null, sin mezclarse entre si', () => {
+  const filas = [
+    { totalWhatsapp: 100, serviceLevel20secPct: 40, serviceLevel5minPct: null },
+    { totalWhatsapp: 300, serviceLevel20secPct: 30, serviceLevel5minPct: null },
+  ];
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 32.5, '(100*40+300*30)/400 = 32.5');
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel5minPct'), null, 'nunca se inventa ni se aproxima desde el de 20s');
+});
+
 test('traficoWppServiceLevelPromedioPeriodo: sin filas -> null', () => {
   assert.equal(traficoWppServiceLevelPromedioPeriodo([], 'serviceLevel20secPct'), null);
   assert.equal(traficoWppServiceLevelPromedioPeriodo(undefined, 'serviceLevel20secPct'), null);

@@ -376,8 +376,12 @@ var TRAFICO_SUBTABS = [
 // Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de 5
 // minutos"): WhatsApp usa las mismas 5 sub-pestanas, solo la pastilla "sl"
 // cambia de texto -- Llamadas (TRAFICO_SUBTABS de arriba) no cambia.
+// Fase 90 (tema A, hallazgo real: la de 5 min todavia no tiene dato
+// cargado en ningun periodo real, y "solo la de 5 min" dejo la grafica en
+// blanco): la pastilla vuelve a un nombre generico -- adentro se grafican
+// LAS DOS series (20s, que ya existe, y 5 min, resaltada).
 var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
-  return s.key === 'sl' ? { key: 'sl', label: 'Nivel de Servicio a 5 min' } : s;
+  return s.key === 'sl' ? { key: 'sl', label: 'Nivel de Servicio' } : s;
 });
 
 // Barra de sub-pestanas (.gd-subtabs), compartida entre Llamadas y WhatsApp
@@ -668,10 +672,12 @@ var TRAFICO_SUBTAB_TITULOS = {
   asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
   sl: 'Nivel de Servicio a 20 segundos',
 };
-// Fase 87 (tema B): mismos 4 titulos salvo "sl" -- WhatsApp mide a 5
-// minutos, no 20 segundos (Llamadas sigue usando TRAFICO_SUBTAB_TITULOS).
+// Fase 87 (tema B) / Fase 90 (tema A): mismos 4 titulos salvo "sl" --
+// WhatsApp grafica LAS DOS series (20s, que ya existe en Wolkvox, y 5
+// minutos, la tolerancia que pidio el jefe y que aun no tiene dato
+// cargado) -- Llamadas sigue usando TRAFICO_SUBTAB_TITULOS, sin cambios.
 var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
-  sl: 'Nivel de Servicio a 5 minutos',
+  sl: 'Nivel de Servicio',
 });
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
@@ -812,6 +818,10 @@ function _traficoFmtTiempoMMSS(v){
 // es el texto del "?" (explica el umbral y que esta ponderado por el total);
 // `labels.nivelServicioSinDatoMsg` (opcional, Tema B/WhatsApp) se muestra
 // como aviso visible aparte (no solo al pasar el mouse) cuando no hay dato.
+// `totales.nivelServicio2`/`labels.nivelServicio2Label`/
+// `labels.nivelServicio2Nota` (opcional, Fase 90 tema A, solo WhatsApp):
+// SEGUNDA tarjeta de nivel de servicio -- WhatsApp muestra "(5 min)" y
+// "(20 s)" a la vez (Llamadas nunca pasa esto, sigue con 1 sola tarjeta).
 function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
   var kpisEl = document.getElementById(prefijo+'-kpis-'+i);
   if(!kpisEl) return;
@@ -825,6 +835,13 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
   var nsSinDato = (totales.nivelServicio===null && labels.nivelServicioSinDatoMsg)
     ? '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:2px;font-size:0.78rem;color:var(--c-warning-dark,#92400e)">'+esc(labels.nivelServicioSinDatoMsg)+'</div>'
     : '';
+  var tarjeta2 = '';
+  if(totales.nivelServicio2 !== undefined){
+    var ns2Nota = labels.nivelServicio2Nota
+      ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
+      : '';
+    tarjeta2 = '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio2===null?'—':totales.nivelServicio2+'%')+'</div><div class="kl">'+esc(labels.nivelServicio2Label||'Nivel de Servicio')+ns2Nota+'</div></div>';
+  }
   kpisEl.innerHTML =
     '<div class="aurora-kpi"><div class="kv">'+totales.total.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.total)+'</div></div>'+
     '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
@@ -832,6 +849,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
     '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
     '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>'+
+    tarjeta2+
     nsSinDato;
 }
 
@@ -960,14 +978,25 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo){
 
 // Solo SL 20s en Llamadas (Fase 68, Pedido 3): serviceLevel10secPct/
 // serviceLevel30secPct se siguen calculando y guardando igual en ambos
-// canales, solo dejaron de graficarse aqui. Fase 87 (tema B): WhatsApp pasa
-// `campo`/`labelSerie` para graficar serviceLevel5minPct en vez de 20s
-// (Llamadas no manda estos 2 parametros -- sigue exactamente igual que
-// antes, default a 20s).
-function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie){
+// canales, solo dejaron de graficarse aqui. Llamadas llama esta funcion
+// con solo 3 argumentos (campo/labelSerie/extra quedan undefined) --
+// sigue exactamente 1 sola serie a 20s, igual que siempre.
+//
+// `extra` (opcional, Fase 90 tema A, solo WhatsApp): { campo, labelSerie,
+// sinDatoMsg } -- una SEGUNDA serie (20s, la que YA existe en Wolkvox) que
+// se grafica SIEMPRE que el periodo la traiga, ademas de la principal
+// (`campo`/`labelSerie`, resaltada: linea mas gruesa y primera en la
+// leyenda -- en WhatsApp la principal es 5 minutos, la tolerancia que
+// pidio el jefe). Si la serie PRINCIPAL no tiene NINGUN dato en el
+// periodo pero la secundaria SI, `_gdChart` ya no ve la grafica "vacia"
+// (una de las 2 series tiene datos) asi que dibuja igual la secundaria --
+// aqui se agrega un aviso especifico DENTRO del area de la grafica
+// (nunca en blanco, nunca se sustituye un umbral por el otro).
+function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra){
   campo = campo || 'serviceLevel20secPct';
   labelSerie = labelSerie || 'SL 20s';
   var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
+  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oSl, function(v){ return (v===null||v===undefined) ? '' : gdFmtValor(v,'%'); });
   else oSl.plugins.datalabels = { display:false };
@@ -977,11 +1006,35 @@ function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie){
     var v = ctx.parsed.y;
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : gdFmtValor(v,'%'));
   } } };
+  var datasets = [
+    { label:labelSerie, data: agregadoComb.map(function(a){return a[campo];}), borderColor: CMl, backgroundColor: CMl, borderWidth: extra ? 3.5 : 2.5, pointRadius: extra ? 4 : 3, tension:0.3, fill:false },
+  ];
+  if(extra){
+    datasets.push({ label: extra.labelSerie, data: agregadoComb.map(function(a){return a[extra.campo];}), borderColor: COl, backgroundColor: COl, borderWidth:2, pointRadius:3, tension:0.3, fill:false, borderDash:[4,3] });
+  }
+  var canvasId = prefijo+'-canvas-sl-'+i;
   if(typeof _gdChart === 'function'){
-    _gdChart(prefijo+'-canvas-sl-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
-      datasets:[
-        { label:labelSerie, data: agregadoComb.map(function(a){return a[campo];}), borderColor: CMl, backgroundColor: CMl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
-      ] }, options: oSl });
+    _gdChart(canvasId, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}), datasets: datasets }, options: oSl });
+  }
+  if(extra && extra.sinDatoMsg){
+    var el = document.getElementById(canvasId);
+    var wrap = el && el.closest ? el.closest('.aurora-chart-wrap') : null;
+    var aviso = wrap ? wrap.querySelector('.oc-sindato-serie') : null;
+    var necesitaAviso = gdSerieSinDatoAvisoNecesario(
+      agregadoComb.map(function(a){ return a[campo]; }),
+      agregadoComb.map(function(a){ return a[extra.campo]; })
+    );
+    if(necesitaAviso && wrap){
+      if(!aviso){
+        aviso = document.createElement('div');
+        aviso.className = 'oc-sindato-serie';
+        aviso.style.cssText = 'text-align:center;color:var(--c-warning-dark,#92400e);font-size:0.78rem;padding:6px 8px 0';
+        wrap.appendChild(aviso);
+      }
+      aviso.textContent = extra.sinDatoMsg;
+    } else if(aviso){
+      aviso.remove();
+    }
   }
 }
 

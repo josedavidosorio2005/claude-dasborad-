@@ -504,18 +504,28 @@ function _gdChart(canvasId, cfg){
   var el = document.getElementById(canvasId);
   if(!el) return;
   if(_gd.charts[canvasId]){ try{ _gd.charts[canvasId].destroy(); }catch(e){} delete _gd.charts[canvasId]; }
-  var empty = !cfg || !cfg.data || !cfg.data.labels || cfg.data.labels.length===0 ||
-    (cfg.data.datasets||[]).every(function(d){ return !(d.data||[]).some(function(v){ return v!==null && v!==undefined; }); });
-  var card = el.closest ? el.closest('.aurora-card') : null;
-  var note = card ? card.querySelector('.oc-nodata') : null;
+  var empty = gdGraficaEstaVacia(cfg);
+  // Fase 90 (hallazgo real: la pastilla de Nivel de Servicio de WhatsApp
+  // quedaba en blanco, sin ningun mensaje, cuando su unica serie no tenia
+  // dato para el periodo). Causa: este aviso solo se insertaba dentro de
+  // un ancestro .aurora-card -- las sub-pestanas de Trafico (Resumen
+  // aparte, Abandono/AHT/ASA y ATA/Nivel de Servicio, Fase 68) NUNCA
+  // envuelven su canvas en .aurora-card (solo un titulo + .aurora-chart-
+  // wrap), asi que el aviso nunca se insertaba y el area quedaba vacia.
+  // Ahora cae al contenedor mas cercano que exista: .aurora-card si esta,
+  // si no .aurora-chart-wrap (el padre directo del canvas, SIEMPRE
+  // presente), si no el padre directo tal cual -- nunca queda sin donde
+  // insertar el aviso.
+  var contenedor = (el.closest && (el.closest('.aurora-card') || el.closest('.aurora-chart-wrap'))) || el.parentElement;
+  var note = contenedor ? contenedor.querySelector('.oc-nodata') : null;
   if(empty){
     el.style.display = 'none';
-    if(card && !note){
+    if(contenedor && !note){
       note = document.createElement('div');
       note.className = 'oc-nodata';
       note.style.cssText = 'text-align:center;color:var(--c-text-muted);font-size:0.8rem;padding:24px 8px';
       note.textContent = 'Sin datos cargados para este periodo';
-      card.appendChild(note);
+      contenedor.appendChild(note);
     }
     return;
   }
