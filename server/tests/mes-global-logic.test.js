@@ -120,3 +120,40 @@ test('gdMesPorDefecto: nunca devuelve un mes que no este en mesesTodos (defensiv
   // cae a mesesTodos[0] en vez de devolver un mes "fantasma".
   assert.equal(gdMesPorDefecto(['2026-09'], ['2026-08', '2026-07']), '2026-08');
 });
+
+// ── Fase 91: valores REALES leidos en produccion (ORLANT) ───────────────
+// La nota de cierre de la Fase 90 decia que el selector de MES en
+// produccion solo mostraba "Ago-26" (le faltaban Abr-25 y Sep-26). Un
+// diagnostico en vivo contra produccion (Playwright + la sesion real del
+// usuario, solo lectura) mostro que las 3 fuentes SI devuelven sus meses
+// correctos -- dashboard_cargas=['2026-08'], Agendas=['2025-04'],
+// Tipificacion Llamadas=['2026-08'], Trafico Llamadas=['2026-08'],
+// Calidad monitoreos=['2026-09'] -- y que _gd.periodos en produccion YA
+// era ['2026-09','2026-08','2025-04'] con mesSel='2026-08'. La causa mas
+// probable de la nota de cierre de la Fase 90 no fue un bug de esta
+// logica sino el propio script de verificacion de esa fase (un
+// page.evaluate sin `return` + una espera fija corta, contra un
+// _gdBootstrap que en ese momento pedia sus ~11 fuentes EN SERIE -- pudo
+// leer _gd.periodos antes de que terminaran todos los fetches). Esta
+// prueba deja fijado, con los valores reales de produccion, que
+// gdMesesUnion/gdMesPorDefecto siempre producen el resultado correcto
+// (los 3 meses, en orden, con Ago-26 por defecto) sin importar en que
+// orden terminen las fuentes -- la paralelizacion de _gdBootstrap
+// (Promise.all en vez de awaits en serie) no cambia este resultado, solo
+// evita depender de que TODAS las fuentes respondan antes de que
+// cualquier lectura externa (como un script de verificacion) inspeccione
+// el estado.
+test('Fase 91: valores reales de produccion (ORLANT) -- periodos y mes por defecto correctos sin importar el orden de llegada', () => {
+  const mesesCargas = ['2026-08'];
+  const mesesAgendas = ['2025-04'];
+  const mesesTipificacion = ['2026-08'];
+  const mesesTraficoLlamadas = ['2026-08'];
+  const mesesTraficoWpp = [];
+  const mesesCalidad = ['2026-09'];
+
+  const mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
+  const periodos = gdMesesUnion([mesesCargas, mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesTipificacion, mesesCalidad]);
+
+  assert.deepEqual(periodos, ['2026-09', '2026-08', '2025-04']);
+  assert.equal(gdMesPorDefecto(mesesPrincipales, periodos), '2026-08');
+});

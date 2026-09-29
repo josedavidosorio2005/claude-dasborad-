@@ -603,10 +603,30 @@ async function _gdBootstrap(){
     if(k.fuente && k.fuente.modo === 'trafico_aht') campanasTraficoLlamadas[k.fuente.campana || _gd.cliente] = true;
   });
 
-  for(var camp in campanasCalidad){ try{ await loadCalData(camp); }catch(e){} }
-  for(var campT in campanasTraficoLlamadas){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} }
-  for(var campW in campanasTraficoWpp){ try{ if(typeof _traficoWppCargarDatos === 'function') await _traficoWppCargarDatos(campW); }catch(e){} }
-  await _gdCargarUmbrales();
+  // Fase 91: las 6 fuentes de abajo (Calidad, Trafico Llamadas, Trafico
+  // WhatsApp, umbrales, Agendas, Tipificacion) son independientes entre si
+  // -- antes se pedian en serie (hasta ~11 idas y vueltas de red, una
+  // atras de otra), lo que ademas de ser mas lento dejaba mas tiempo
+  // muerto en el que un solo fetch lento podia hacer sentir el resto como
+  // "colgado". Ahora se disparan todas a la vez y se espera el conjunto
+  // con Promise.all -- cada tarea sigue con su propio try/catch (un fallo
+  // en una fuente no debe tumbar a las demas), y los efectos sobre
+  // mesesAgendas/mesesTipificacion/tabs.oculta son seguros en paralelo
+  // porque JS es de un solo hilo (nunca hay dos tareas escribiendo a la
+  // vez, solo turnos intercalados en cada await).
+  var mesesAgendas = [], mesesTipificacion = [];
+  var tareasBootstrap = [];
+
+  Object.keys(campanasCalidad).forEach(function(camp){
+    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); }catch(e){} })());
+  });
+  Object.keys(campanasTraficoLlamadas).forEach(function(campT){
+    tareasBootstrap.push((async function(){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} })());
+  });
+  Object.keys(campanasTraficoWpp).forEach(function(campW){
+    tareasBootstrap.push((async function(){ try{ if(typeof _traficoWppCargarDatos === 'function') await _traficoWppCargarDatos(campW); }catch(e){} })());
+  });
+  tareasBootstrap.push(_gdCargarUmbrales());
 
   // Agendas/Tipificacion: ademas de juntar sus meses (abajo), este mismo
   // GET ya destapa el tab en memoria cuando corresponde (Fases 77/78 --
@@ -615,31 +635,36 @@ async function _gdBootstrap(){
   // el servidor). Antes esto estaba hardcodeado a "ORLANT"; ahora sigue
   // las campanas que de verdad tienen ese tipo de panel (hoy, solo
   // ORLANT lo tiene -- mismo resultado, ya generico).
-  var mesesAgendas = [], mesesTipificacion = [];
-  for(var campAg in campanasAgendas){
-    try{
-      var agendasOp = await apiRequest('GET', '/calidad/agendas/opciones?campana='+encodeURIComponent(campAg));
-      if(agendasOp && agendasOp.meses) mesesAgendas = mesesAgendas.concat(agendasOp.meses);
-      if(campAg === _gd.cliente && agendasOp && agendasOp.meses && agendasOp.meses.length){
-        var tabAgendamiento = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendamiento'; });
-        if(tabAgendamiento) tabAgendamiento.oculta = false;
-      }
-    }catch(e){ /* se queda oculta / sin esos meses */ }
-  }
-  for(var campTip in campanasTipificacion){
-    try{
-      var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=LLAMADAS');
-      var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=WHATSAPP');
-      if(tipifLlamadas && tipifLlamadas.meses) mesesTipificacion = mesesTipificacion.concat(tipifLlamadas.meses);
-      if(tipifWhatsapp && tipifWhatsapp.meses) mesesTipificacion = mesesTipificacion.concat(tipifWhatsapp.meses);
-      var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;
-      var tieneWhatsapp = tipifWhatsapp && tipifWhatsapp.meses && tipifWhatsapp.meses.length;
-      if(campTip === _gd.cliente && (tieneLlamadas || tieneWhatsapp)){
-        var tabTipificacion = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'tipificacion'; });
-        if(tabTipificacion) tabTipificacion.oculta = false;
-      }
-    }catch(e){ /* se queda oculta / sin esos meses */ }
-  }
+  Object.keys(campanasAgendas).forEach(function(campAg){
+    tareasBootstrap.push((async function(){
+      try{
+        var agendasOp = await apiRequest('GET', '/calidad/agendas/opciones?campana='+encodeURIComponent(campAg));
+        if(agendasOp && agendasOp.meses) mesesAgendas = mesesAgendas.concat(agendasOp.meses);
+        if(campAg === _gd.cliente && agendasOp && agendasOp.meses && agendasOp.meses.length){
+          var tabAgendamiento = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendamiento'; });
+          if(tabAgendamiento) tabAgendamiento.oculta = false;
+        }
+      }catch(e){ /* se queda oculta / sin esos meses */ }
+    })());
+  });
+  Object.keys(campanasTipificacion).forEach(function(campTip){
+    tareasBootstrap.push((async function(){
+      try{
+        var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=LLAMADAS');
+        var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=WHATSAPP');
+        if(tipifLlamadas && tipifLlamadas.meses) mesesTipificacion = mesesTipificacion.concat(tipifLlamadas.meses);
+        if(tipifWhatsapp && tipifWhatsapp.meses) mesesTipificacion = mesesTipificacion.concat(tipifWhatsapp.meses);
+        var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;
+        var tieneWhatsapp = tipifWhatsapp && tipifWhatsapp.meses && tipifWhatsapp.meses.length;
+        if(campTip === _gd.cliente && (tieneLlamadas || tieneWhatsapp)){
+          var tabTipificacion = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'tipificacion'; });
+          if(tabTipificacion) tabTipificacion.oculta = false;
+        }
+      }catch(e){ /* se queda oculta / sin esos meses */ }
+    })());
+  });
+
+  await Promise.all(tareasBootstrap);
 
   var mesesCargas = {};
   Object.keys(_gd.cargas).forEach(function(s){ (_gd.cargas[s]||[]).forEach(function(c){ mesesCargas[c.periodo] = true; }); });
