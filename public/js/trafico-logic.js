@@ -132,10 +132,55 @@ function traficoSegundosDesdeFraccionDia(v) {
   return Math.round(n * 86400);
 }
 
+// Fase 88: referencia de celda ('A1', 'B2', ...) sin depender de la
+// libreria XLSX (este archivo es "puro", sin ninguna dependencia externa)
+// -- para leer ws[ref] del worksheet crudo de SheetJS (t/z de cada celda),
+// que SI llega desde cargas.js (que ya tiene XLSX cargado).
+function traficoCeldaRef(fila0based, col0based) {
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + (fila0based + 1);
+}
+
+// Clasifica la celda NUMERICA de una columna de porcentaje segun su
+// formato REAL de Excel (nunca segun su valor): 'porcentaje' si la celda
+// es numerica (t:'n') y su formato (z) contiene "%" (Excel guarda la
+// FRACCION, 0.8649, y la muestra como "86.49%"); 'numero' si es numerica
+// pero SIN formato de porcentaje (se toma tal cual, igual que siempre);
+// null si no hay informacion de formato disponible (ws ausente, celda de
+// texto, o celda vacia) -- en null, el llamador cae al comportamiento de
+// SIEMPRE (nunca se adivina por el valor solo).
+function traficoClasificarCeldaNumerica(ws, fila0based, col0based) {
+  if (!ws) return null;
+  var cell = ws[traficoCeldaRef(fila0based, col0based)];
+  if (!cell || cell.t !== 'n') return null;
+  return (cell.z && cell.z.indexOf('%') !== -1) ? 'porcentaje' : 'numero';
+}
+
 // SERVICE_LEVEL_10/20/30SEC: texto "86.49 %" / "1.62%" (con o sin espacio
-// antes del %, ambos formatos aparecen en el mismo archivo).
-function traficoPctDesdeTexto(v) {
+// antes del %, ambos formatos aparecen en el mismo archivo real de Edwin
+// -- ese camino NO CAMBIA con la Fase 88, sigue igual).
+//
+// `clasificacion` (Fase 88, opcional): resultado de
+// traficoClasificarCeldaNumerica para ESTA celda. Solo importa cuando `v`
+// es un NUMERO (celda numerica real de Excel, no texto escrito a mano):
+// - 'porcentaje': la celda tiene formato de porcentaje real -> el valor
+//   guardado es la FRACCION (0.8649 -> se convierte a 86.49).
+// - 'numero' / null / undefined: SIN formato de porcentaje o sin
+//   informacion de formato -- se toma tal cual, exactamente el mismo
+//   comportamiento que antes de la Fase 88 (nunca se adivina "si es <=1
+//   es fraccion", porque un 0.56% real escrito como numero terminaria
+//   multiplicado por error). La columna se marca aparte como ambigua si
+//   TODOS sus valores numericos sin formato son <=1 (ver traficoParseFilas).
+function traficoPctDesdeTexto(v, clasificacion) {
   if (v === null || v === undefined) return null;
+  if (typeof v === 'number' && clasificacion === 'porcentaje') {
+    return Number.isFinite(v) ? Math.round(v * 10000) / 100 : null;
+  }
   var s = String(v).trim();
   if (s === '') return null;
   var m = s.match(/^(-?\d+(?:[.,]\d+)?)\s*%?$/);
@@ -165,7 +210,13 @@ function traficoNumero(v) {
 // Devuelve { error } si falta una columna obligatoria (no procesa nada), o
 // { filas, avisos, skills, meses } con las filas validas + un aviso por
 // cada fila descartada y por que (mismo patron que cargas.js / NSD).
-function traficoParseFilas(aoa) {
+//
+// `ws` (Fase 88, opcional): worksheet CRUDO de SheetJS (con `cellNF:true`
+// al leer el workbook) -- si viene, SERVICE_LEVEL_10/20/30SEC usan el
+// FORMATO real de cada celda (ver traficoClasificarCeldaNumerica) en vez
+// de adivinar por el valor. Sin `ws` (o con una version vieja de SheetJS
+// sin cellNF), el comportamiento es EXACTAMENTE igual al de antes.
+function traficoParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = traficoColIndexMap(aoa[0]);
   var faltantes = TRAFICO_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -180,6 +231,32 @@ function traficoParseFilas(aoa) {
   var avisos = [];
   var skillsSet = {};
   var mesesSet = {};
+
+  // Fase 88: si TODOS los valores numericos de una columna SERVICE_LEVEL_*
+  // que llegan SIN formato de porcentaje son <=1 (ej. toda la columna en
+  // 0.x), es ambiguo -- podria ser una fraccion (multiplicar x100) o un
+  // valor real ya en escala 0-100 (un service level de menos del 1% es
+  // posible pero raro). En vez de adivinar, se avisa UNA vez por columna
+  // para que la persona revise antes de confirmar la carga; el valor
+  // parseado NO cambia (mismo comportamiento de siempre).
+  if (ws) {
+    ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'].forEach(function (key) {
+      if (map[key] === undefined) return;
+      var col = TRAFICO_COLUMNAS.filter(function (c) { return c.key === key; })[0];
+      var valoresSinFormato = [];
+      for (var r = 1; r < aoa.length; r++) {
+        var raw = aoa[r] ? aoa[r][map[key]] : undefined;
+        if (typeof raw !== 'number') continue;
+        if (traficoClasificarCeldaNumerica(ws, r, map[key]) === 'numero') valoresSinFormato.push(raw);
+      }
+      if (valoresSinFormato.length && valoresSinFormato.every(function (v) { return v <= 1; })) {
+        avisos.push(
+          'La columna "' + col.label + '" trae valores numericos <= 1 sin formato de porcentaje en Excel ' +
+          '(ej. 0.56) -- no se adivino si son fracciones (x100) o ya estan en escala 0-100. Revisa esta columna antes de confirmar.'
+        );
+      }
+    });
+  }
 
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
@@ -228,7 +305,8 @@ function traficoParseFilas(aoa) {
     opcionales.forEach(function (spec) {
       var key = spec[0], parse = spec[1], post = spec[2];
       if (map[key] === undefined) return; // columna no vino en el archivo -> no se toca (queda ausente, no null explicito)
-      var val = parse(row[map[key]]);
+      var clasif = ws ? traficoClasificarCeldaNumerica(ws, i, map[key]) : null;
+      var val = parse(row[map[key]], clasif);
       if (val !== null) fila[key] = post ? post(val) : val;
     });
 
@@ -499,6 +577,8 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPctDesdeTexto: traficoPctDesdeTexto,
     traficoPctDesdeFraccion: traficoPctDesdeFraccion,
     traficoNumero: traficoNumero,
+    traficoCeldaRef: traficoCeldaRef,
+    traficoClasificarCeldaNumerica: traficoClasificarCeldaNumerica,
     traficoParseFilas: traficoParseFilas,
     traficoVentana12Meses: traficoVentana12Meses,
     traficoPeriodoDe: traficoPeriodoDe,

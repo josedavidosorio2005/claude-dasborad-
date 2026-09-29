@@ -136,9 +136,35 @@ function traficoWppSegundosDesdeFraccionDia(v) {
   return Math.round(n * 86400);
 }
 
-// SERVICE_LEVEL_10/20/30SEC: texto "31.73 %" (con o sin espacio antes del %).
-function traficoWppPctDesdeTexto(v) {
+// Fase 88: mismos helpers que trafico-logic.js (duplicados a proposito,
+// mismo criterio que el resto de este archivo "gemelo") -- referencia de
+// celda sin depender de la libreria XLSX, y clasificacion por FORMATO
+// real de la celda (nunca por su valor).
+function traficoWppCeldaRef(fila0based, col0based) {
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + (fila0based + 1);
+}
+function traficoWppClasificarCeldaNumerica(ws, fila0based, col0based) {
+  if (!ws) return null;
+  var cell = ws[traficoWppCeldaRef(fila0based, col0based)];
+  if (!cell || cell.t !== 'n') return null;
+  return (cell.z && cell.z.indexOf('%') !== -1) ? 'porcentaje' : 'numero';
+}
+
+// SERVICE_LEVEL_10/20/30SEC/5MIN: texto "31.73 %" (con o sin espacio antes
+// del %) -- ese camino NO CAMBIA con la Fase 88. `clasificacion`
+// (opcional): ver traficoPctDesdeTexto (trafico-logic.js) para el detalle
+// completo -- mismo criterio exacto, solo importa cuando `v` es NUMERO.
+function traficoWppPctDesdeTexto(v, clasificacion) {
   if (v === null || v === undefined) return null;
+  if (typeof v === 'number' && clasificacion === 'porcentaje') {
+    return Number.isFinite(v) ? Math.round(v * 10000) / 100 : null;
+  }
   var s = String(v).trim();
   if (s === '') return null;
   var m = s.match(/^(-?\d+(?:[.,]\d+)?)\s*%?$/);
@@ -161,7 +187,10 @@ function traficoWppNumero(v) {
 // Devuelve { error } si falta una columna obligatoria (no procesa nada), o
 // { filas, avisos, colas, periodos } con las filas validas + un aviso por
 // cada fila descartada y por que (mismo patron que trafico-logic.js).
-function traficoWppParseFilas(aoa) {
+//
+// `ws` (Fase 88, opcional): ver traficoParseFilas (trafico-logic.js) --
+// mismo criterio exacto, worksheet crudo de SheetJS con cellNF:true.
+function traficoWppParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = traficoWppColIndexMap(aoa[0]);
   var faltantes = TRAFICO_WPP_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -176,6 +205,27 @@ function traficoWppParseFilas(aoa) {
   var avisos = [];
   var colasSet = {};
   var periodosSet = {};
+
+  // Fase 88: mismo criterio que traficoParseFilas -- ver ese comentario
+  // para el detalle completo.
+  if (ws) {
+    ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'serviceLevel5minPct'].forEach(function (key) {
+      if (map[key] === undefined) return;
+      var col = TRAFICO_WPP_COLUMNAS.filter(function (c) { return c.key === key; })[0];
+      var valoresSinFormato = [];
+      for (var r = 1; r < aoa.length; r++) {
+        var raw = aoa[r] ? aoa[r][map[key]] : undefined;
+        if (typeof raw !== 'number') continue;
+        if (traficoWppClasificarCeldaNumerica(ws, r, map[key]) === 'numero') valoresSinFormato.push(raw);
+      }
+      if (valoresSinFormato.length && valoresSinFormato.every(function (v) { return v <= 1; })) {
+        avisos.push(
+          'La columna "' + col.label + '" trae valores numericos <= 1 sin formato de porcentaje en Excel ' +
+          '(ej. 0.56) -- no se adivino si son fracciones (x100) o ya estan en escala 0-100. Revisa esta columna antes de confirmar.'
+        );
+      }
+    });
+  }
 
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
@@ -223,7 +273,8 @@ function traficoWppParseFilas(aoa) {
     opcionales.forEach(function (spec) {
       var key = spec[0], parse = spec[1], post = spec[2];
       if (map[key] === undefined) return; // columna no vino en el archivo -> no se toca
-      var val = parse(row[map[key]]);
+      var clasif = ws ? traficoWppClasificarCeldaNumerica(ws, i, map[key]) : null;
+      var val = parse(row[map[key]], clasif);
       if (val !== null) fila[key] = post ? post(val) : val;
     });
 
@@ -411,6 +462,8 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoWppFechaDesdeSerial: traficoWppFechaDesdeSerial,
     traficoWppParseFecha: traficoWppParseFecha,
     traficoWppPctDesdeTexto: traficoWppPctDesdeTexto,
+    traficoWppCeldaRef: traficoWppCeldaRef,
+    traficoWppClasificarCeldaNumerica: traficoWppClasificarCeldaNumerica,
     traficoWppNumero: traficoWppNumero,
     traficoWppSegundosDesdeFraccionDia: traficoWppSegundosDesdeFraccionDia,
     traficoWppParseFilas: traficoWppParseFilas,
