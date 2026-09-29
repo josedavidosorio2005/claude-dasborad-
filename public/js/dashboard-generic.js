@@ -484,8 +484,8 @@ function _gdKpiCardHtml(k){
   }
 
   var metaHtml = '';
-  if(meta !== null && meta !== undefined && meta !== 0 && cur !== null && cur !== undefined){
-    var av = Math.round((cur / meta) * 1000) / 10;
+  var av = gdPorcentajeMeta(cur, meta);
+  if(av !== null){
     var avColor = _gdSemaforoColor(av, { metrica: 'cumplimiento_meta' });
     var mcls = avColor==='verde' ? 'gd-meta-ok' : avColor==='amarillo' ? 'gd-meta-warn' : avColor==='rojo' ? 'gd-meta-bad'
       : (av >= 100 ? 'gd-meta-ok' : (av >= 80 ? 'gd-meta-warn' : 'gd-meta-bad')); // sin umbral configurado: mismo default de siempre
@@ -1221,7 +1221,13 @@ function _gdDatosKpis(){
       'Var. %': v && v.pct !== null ? v.pct : '',
       'Var. abs': v ? v.abs : '',
       Meta: meta === null || meta === undefined ? '' : meta,
-      '% Meta': meta ? Math.round((cur / meta) * 1000) / 10 : '',
+      // Fase 88 (hallazgo real del barrido): usa la MISMA funcion que la
+      // tarjeta en pantalla (_gdKpiCardHtml, dashboard-kpi-logic.js) --
+      // antes esto era un calculo aparte que no chequeaba `cur`, y con
+      // `cur` null (sin dato del periodo) pero `meta` configurada, el
+      // export mostraba "% Meta: 0" como si la meta estuviera en 0%
+      // cumplida en vez de "sin dato".
+      '% Meta': (function(){ var av = gdPorcentajeMeta(cur, meta); return av === null ? '' : av; })(),
       Alerta: _gdFueraDeRango(cur, comp.scalar, k) ? 'FUERA DE RANGO' : '',
       Semaforo: (function(){
         var c = _gdSemaforoColor(cur, k);
