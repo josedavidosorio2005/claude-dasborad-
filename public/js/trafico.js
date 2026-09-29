@@ -31,13 +31,16 @@ async function procesarArchivoTrafico(input){
   catch(e){ showToast('No se pudo leer el archivo'); input.value=''; return; }
   var wb, aoa;
   try{
-    wb = XLSX.read(new Uint8Array(buf), { type:'array' }); // sin cellDates: DATE se convierte a mano (trafico-logic.js), no depende de la zona horaria
+    // cellNF:true (Fase 88): ver el comentario de cargas.js -- necesario
+    // para que traficoParseFilas distinga una celda con formato de
+    // porcentaje real de Excel de una numerica sin ese formato.
+    wb = XLSX.read(new Uint8Array(buf), { type:'array', cellNF:true }); // sin cellDates: DATE se convierte a mano (trafico-logic.js), no depende de la zona horaria
     var sheetName = traficoElegirHoja(wb.SheetNames);
     var ws = wb.Sheets[sheetName];
     aoa = XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:null });
   }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
-  var res = traficoParseFilas(aoa);
+  var res = traficoParseFilas(aoa, ws);
   if(res.error){ showToast(res.error); input.value=''; return; }
 
   _tvParsed = { archivoNombre: file.name, filas: res.filas };

@@ -399,13 +399,14 @@ async function procesarArchivoTraficoWpp(input) {
   catch (e) { showToast('No se pudo leer el archivo'); input.value = ''; return; }
   var wb, aoa;
   try {
-    wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+    // cellNF:true (Fase 88): ver el comentario de cargas.js.
+    wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellNF: true });
     var sheetName = wb.SheetNames.indexOf('DATA') !== -1 ? 'DATA' : wb.SheetNames[0];
     var ws = wb.Sheets[sheetName];
     aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null });
   } catch (e) { showToast('El archivo no es un Excel valido'); input.value = ''; return; }
 
-  var res = traficoWppParseFilas(aoa);
+  var res = traficoWppParseFilas(aoa, ws);
   if (res.error) { showToast(res.error); input.value = ''; return; }
 
   var campana = document.getElementById('tww-campana-sel').value;

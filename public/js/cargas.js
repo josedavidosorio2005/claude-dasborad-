@@ -197,15 +197,15 @@ function _cargasCalidadColumnas(items){
 // correspondiente, marcando el resultado con `canal` para que la vista
 // previa y el guardado (guardarCarga/_cargasGuardarTraficoWhatsapp) sepan
 // cual de los dos es.
-function _cargasParseTraficoAuto(aoa){
+function _cargasParseTraficoAuto(aoa, ws){
   var header = (aoa && aoa[0]) || [];
   var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap);
   if(canal === 'whatsapp'){
-    var resWpp = traficoWppParseFilas(aoa);
+    var resWpp = traficoWppParseFilas(aoa, ws);
     if(!resWpp.error) resWpp.canal = 'whatsapp';
     return resWpp;
   }
-  var resVoz = traficoParseFilas(aoa);
+  var resVoz = traficoParseFilas(aoa, ws);
   if(!resVoz.error) resVoz.canal = 'voz';
   return resVoz;
 }
@@ -364,7 +364,13 @@ async function procesarArchivoConsolidado(input){
   // cacheado — cargasDetectarFormulaSinValor nunca la veria (verificado
   // contra la libreria real: sin sheetStubs, ws['B2'] da undefined aunque el
   // XML tenga <f> en esa celda; con sheetStubs llega como {t:'z', f, v:0}).
-  try{ wb = XLSX.read(new Uint8Array(buf), {type:'array', sheetStubs:true}); }
+  // cellNF:true (Fase 88): conserva el formato (`z`) de cada celda numerica
+  // -- lo necesita traficoParseFilas/traficoWppParseFilas para distinguir
+  // una celda con formato de porcentaje REAL de Excel (guarda la fraccion,
+  // 0.8649 -> se multiplica x100) de una celda numerica sin ese formato
+  // (se deja tal cual, nunca se adivina). No cambia ningun otro valor
+  // leido del archivo -- solo agrega metadata de formato a cada celda.
+  try{ wb = XLSX.read(new Uint8Array(buf), {type:'array', sheetStubs:true, cellNF:true}); }
   catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
   var calidad = _cargasCalidadPorCampana[cliente] || null;

@@ -451,7 +451,11 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
   if (celdaFormula) {
     return Object.assign({}, base, { error: celdaFormula.mensaje });
   }
-  var res = parseFn(aoa);
+  // ws (Fase 88): worksheet crudo de SheetJS, para que los parsers de
+  // Trafico (unicos que lo usan) puedan leer el FORMATO real de las
+  // celdas de porcentaje -- todos los demas parseFn (agendas/
+  // tipificacion/calidad/seccion) ignoran este segundo argumento.
+  var res = parseFn(aoa, ws);
   if (res.error) return Object.assign({}, base, { error: res.error });
   // Se copia TODO `res` (no solo filas/avisos) para que campos extra que
   // algunos parsers agregan (ej. `canal` de cargasDetectarCanalTrafico,
