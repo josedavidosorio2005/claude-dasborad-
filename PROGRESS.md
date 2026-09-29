@@ -7756,3 +7756,136 @@ Script nuevo: `.github/scripts/verificar-fase93-sin-duckdns.js`.
   vieja.
 - No se tocaron datos, el keystore ni los datos de prueba de Calidad de
   ORLANT.
+
+## Fase 94 — Agendamiento como lo pidió Edwin + orden de pestañas + aviso de WhatsApp más claro + análisis de brecha de Calidad (2026-09-29, automática)
+
+Edwin revisó el dashboard de ORLANT el 29/09; el 30/09 se lo muestra en
+persona. Pedido en 4 temas, un PR por tema.
+
+### Tema A — orden de las pestañas de ORLANT
+
+Nuevo orden: Tráfico de Llamadas → Tráfico de WhatsApp → Agendamiento →
+Tipificación → Calidad (antes Calidad iba primero). ORLANT ahora abre en
+Tráfico de Llamadas — el orden del array `tabs` decide tanto el menú como
+la pestaña activa por defecto (`_gdTabsVisibles()[0]`,
+`dashboard-generic.js`), así que Agendamiento/Tipificación (que se
+destapan en memoria cuando tienen datos) quedaron en su posición real
+dentro del array, no al final, para no perder su lugar cuando se
+destapan. Pestañas ocultas (Flujo, Salida, Inasistencia, Gestión STA,
+Efectividad Citas) van después, sin importar el orden entre ellas.
+Migración idempotente `dashboards_config_orlant_orden_pestanas_v1`
+(`server/db.js`) + mismo orden en el seed. PR #195.
+
+### Tema B — Agendamiento con datos reales de la tabla `agendas`
+
+Agendamiento queda SOLO con datos reales de la tabla `agendas`
+(server/agendas.js), 4 sub-pestañas que comparten los mismos filtros
+(mes, fecha de solicitud desde/hasta, agente, sede, especialidad, examen,
+profesional, tipo de línea, entidad — etiquetas en español):
+
+- **Por especialidad**: ya existía (barras, mayor a menor).
+- **Total agendas**: ya existía junto con la anterior; ahora en su propia
+  sub-pestaña.
+- **Agendas por línea**: ahora sale de `tipoLinea` de la tabla `agendas`
+  real (`GET /calidad/agendas/linea`) — ya NO de la hoja "resumen"
+  (siempre vacía).
+- **Agendas por agente** (nueva): barras horizontales, mayor a menor, top
+  12 + "Otros" si hay más — la suma siempre da el total (`GET
+  /calidad/agendas/agente`).
+
+"Ordenamiento Médico" (con su "Efectividad del año") y "Recuperación de
+Cancelados" (hoja "resumen", vacía — Edwin dijo que son otros procesos,
+con bases completamente distintas, que se montan después) salieron de
+Agendamiento a 2 pestañas propias **ocultas**, con la MISMA config
+exacta — nada se borró ni se recalculó, ni se tocaron los campos de la
+plantilla/resumen. "Variación % Agendas" se quitó del todo (pedido
+explícito).
+
+El estado de filtros pasó de ser por ÍNDICE de panel a ser por CAMPAÑA
+(`public/js/agendas.js`, reescrito) — así las 4 sub-pestañas y Exportar
+quedan sincronizados sin importar cuál se visitó último
+(`_gdExportarAgendas`, `dashboard-generic.js`, ahora consciente del
+`vista` de cada panel).
+
+Migración idempotente `dashboards_config_orlant_agendamiento_edwin_v1`
+(`server/db.js`). 4 migraciones viejas de ORLANT (agendas_panel/
+pdf_graficas/subpestanas/texto_tildes) tenían pruebas que comparaban
+contra la forma EN VIVO de `CONFIGS` (frágil: cualquier cambio de forma
+de "agendamiento" las rompía) — se corrigieron para seguir siendo
+correctas con la forma nueva, sin cambiar su patrón de diseño (referencia
+dinámica a `CONFIGS`). Pruebas nuevas: `agendas-linea-agente.test.js`
+(las 4 sub-pestañas y sus sumas, filtros combinados, que "Agendas por
+línea" no depende de resumen) + `orlant-agendamiento-edwin-migracion.test.js`
+(la migración, dos veces seguidas = mismo resultado). PR #196.
+
+### Tema C — aviso de WhatsApp a 5 min más claro
+
+El cálculo no cambió (el dato de verdad sigue faltando); solo el texto,
+en 2 niveles: cualquiera que mire el dashboard ve "Nivel de servicio a 5
+minutos: aún no hay datos para este período."; quien puede cargar datos
+(permiso `cargarDatos` o admin, `canLoadData()`) ve además, en línea
+aparte y más chica, "Para verlo, carga el reporte de WhatsApp con la
+columna SERVICE_LEVEL_5MIN (umbral de 300 s en Wolkvox)." Mismo texto en
+la tarjeta del Resumen, la gráfica y Exportar (Excel: hoja
+`AVISO_SL_5MIN` si ninguna fila trae el dato; PDF: nota en el
+encabezado). La serie de 20 s se sigue viendo igual. PR #197.
+
+### Tema D — Calidad: análisis de brecha (solo lectura)
+
+`docs/calidad-flujo-edwin-brecha.md`: tabla completa (archivo:línea) de
+cada pieza del flujo que Edwin describió contra lo que ya existe. No se
+cambió código de Calidad. Hallazgo principal: la mayor parte del flujo YA
+EXISTE y funciona (crear monitoreo con rol CALIDAD, asesor en
+desplegable, motor de puntaje con pesos y "No aplica", "Mis Resultados"
+del asesor, suma al resumen mensual de la pestaña Calidad). Lo que falta
+o está distinto: fecha y evaluador son campos de texto libre editables
+(deberían autocompletarse con hoy/la sesión y bloquearse); codificación
+es texto libre (falta que Edwin mande la lista); no existe ningún
+mecanismo de notificación al iniciar sesión en toda la plataforma (sería
+el primero). 9 preguntas concretas para Edwin incluidas en el documento.
+PR #198.
+
+### Verificación
+
+- `npm test` antes/después: 673/673 → **677/677** (8 pruebas nuevas:
+  4 de Tema A, 4 de Tema B). `npm audit`: 0 vulnerabilidades antes y
+  después de cada tema.
+- Números de control de ORLANT, confirmados EXACTOS en local (datos
+  reales/demo) y en producción real, vía API y visualmente:
+  Tipificación **14.940**; Tráfico de Llamadas **8.061 / 7.159 / 902**;
+  Tráfico de WhatsApp **7.305 / 7.109 / 196**, SL20 **34,67 %**; Agendas
+  **7.426** (General **4.643** / 3P **2.783**), AUDÍFONOS **2.141**; la
+  suma de "Agendas por agente" = **7.426** = el total (confirmado
+  programáticamente, `sumaIgualATotal: true`).
+- Playwright en local con datos reales/demo, escritorio (1440×900) y
+  móvil (390×844): orden de pestañas, las 4 sub-pestañas de Agendamiento,
+  Tráfico de Llamadas y el aviso de WhatsApp — **0 errores de consola**
+  en ambos tamaños. Capturas en
+  `docs/capturas-demo/fase94-agendamiento/` (14 archivos, datos de demo).
+- Playwright en producción (autorizado, solo lectura), con la sesión real
+  del usuario, `INICIA SESIÓN AHORA` + login manual dentro de los 10
+  minutos, sin pedir ni guardar contraseña ni cookies: mismo orden de
+  pestañas, las 4 sub-pestañas con los números de control exactos, el
+  aviso nuevo de WhatsApp confirmado (principal + detalle, verificado por
+  texto en la primera corrida) — **0 errores de consola, 0 peticiones
+  fallidas** en ambas corridas. Capturas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase94-agendamiento\`
+  (datos reales — nombres de agentes reales en "Agendas por agente", igual
+  que ya pasaba en Tipificación antes de esta fase). Script:
+  `.github/scripts/verificar-fase94-agendamiento-produccion.js`. Se
+  necesitaron 2 corridas (la primera confirmó todo con el mes global en
+  Ago-26, pero Agendas solo tiene datos reales en Abr-25 y mostraba el
+  aviso "Sin datos" en las capturas; la segunda saltó el selector de mes
+  a Abr-25 para capturas con las gráficas reales — al hacerlo, Tráfico de
+  WhatsApp quedó en Abr-25, sin datos, así que esa captura puntual quedó
+  con el aviso "Sin datos de Tráfico de WhatsApp" en vez del aviso de SL
+  5 min — el aviso de SL 5 min en sí ya había quedado confirmado, con
+  captura, en la primera corrida).
+- No se cambiaron secretos de GitHub, el rol IAM, ni reglas de firewall.
+  No se tocaron datos, el keystore ni los datos de prueba de Calidad de
+  ORLANT. No se cambió código de Calidad (Tema D fue solo lectura/docs).
+- 5 PRs: #195 (tema A), #196 (tema B), #197 (tema C), #198 (tema D, docs),
+  y este mismo PR de verificación/`PROGRESS.md`. CI verde en los 5,
+  mergeados sin necesidad de intervención manual. `main` = `origin/main`
+  al cerrar, 0 PRs abiertos, deploy automático en verde después de cada
+  merge.
