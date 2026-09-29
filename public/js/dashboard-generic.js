@@ -562,69 +562,98 @@ async function openGenericDashboardPreview(config){
 }
 
 async function _gdBootstrap(){
-  var set = {};
-  Object.keys(_gd.cargas).forEach(function(s){ (_gd.cargas[s]||[]).forEach(function(c){ set[c.periodo] = true; }); });
-  _gd.periodos = Object.keys(set).sort().reverse();
-  // Fase 86 (tema 3): antes quedaba vacio (el <select> mostraba el mas
-  // reciente por un fallback visual, pero _gd.mesSel de verdad seguia
-  // vacio) -- ahora se fija de una vez al mes mas reciente, para que los
-  // paneles autonomos (Agendas/Tipificacion/Trafico/Calidad) se
-  // sincronicen con el desde que se abre el dashboard, no solo despues del
-  // primer cambio manual del selector.
-  _gd.mesSel = _gd.periodos[0] || '';
   _gd.compSel = '';
   _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
 
-  var campanas = {};
+  // Fase 90 (tema B, hallazgo real en produccion: el selector "MES" de
+  // arriba solo miraba dashboard_cargas -- Agendas/Tipificacion/Trafico
+  // Llamadas/Trafico WhatsApp/Calidad viven en sus PROPIAS tablas, nunca
+  // ahi. El resultado: la lista de meses podia faltarle meses enteros, y
+  // el mes por defecto podia caer en uno que ni siquiera fuera una opcion
+  // del selector (ORLANT abria en "Sep-26" con el selector en blanco y la
+  // UNICA opcion real era "Ago-26"). Ahora se detectan las campanas de
+  // CADA tipo de panel presentes en la config de este cliente (nunca
+  // hardcodeado a un cliente puntual) y se junta la lista de TODAS las
+  // fuentes de datos mensuales.
+  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasTipificacion = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
-    (t.panels || []).forEach(function(p){ if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanas[p.campana] = true; });
+    (t.panels || []).forEach(function(p){
+      if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanasCalidad[p.campana] = true;
+      if(p.tipo === 'trafico_combo') campanasTraficoLlamadas[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'trafico_whatsapp_combo') campanasTraficoWpp[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'agendas_panel') campanasAgendas[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'tipificacion_panel') campanasTipificacion[p.campana || _gd.cliente] = true;
+    });
   });
-  for(var camp in campanas){ try{ await loadCalData(camp); }catch(e){} }
-
   // Precarga de Trafico de Llamadas para cualquier KPI de la franja global
-  // que lo necesite (fuente.modo==='trafico_aht', Fase 65) -- mismo patron
-  // que el precargado de Calidad de arriba. La franja global se dibuja
-  // ANTES de que el usuario abra la pestaña "Trafico de Llamadas" (que es
-  // quien normalmente dispara _traficoCargarDatos), asi que sin esto
-  // _gdResolver encontraria _trafico[campana] vacio la primera vez.
-  var campanasTrafico = {};
+  // que lo necesite (fuente.modo==='trafico_aht', Fase 65) -- mismo motivo
+  // de siempre: la franja global se dibuja ANTES de que el usuario abra la
+  // pestaña "Trafico de Llamadas".
   (_gd.config.layout.kpis || []).forEach(function(k){
-    if(k.fuente && k.fuente.modo === 'trafico_aht') campanasTrafico[k.fuente.campana || _gd.cliente] = true;
+    if(k.fuente && k.fuente.modo === 'trafico_aht') campanasTraficoLlamadas[k.fuente.campana || _gd.cliente] = true;
   });
-  for(var campT in campanasTrafico){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} }
+
+  for(var camp in campanasCalidad){ try{ await loadCalData(camp); }catch(e){} }
+  for(var campT in campanasTraficoLlamadas){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} }
+  for(var campW in campanasTraficoWpp){ try{ if(typeof _traficoWppCargarDatos === 'function') await _traficoWppCargarDatos(campW); }catch(e){} }
   await _gdCargarUmbrales();
 
-  // Fase 78 (ORLANT, "Citas por Especialidad"): la pestana "Agendamiento"
-  // sigue oculta por defecto en la config guardada (Fase 40b -- sus demas
-  // sub-pestanas, basadas en "resumen", siguen sin terminar de llenarse) --
-  // se destapa en memoria SOLO cuando ya hay agendas cargadas, sin escribir
-  // nunca ese cambio en el servidor. Si la consulta falla (sin datos, sin
-  // acceso, etc.) se queda oculta, igual que siempre.
-  if(_gd.cliente === 'ORLANT'){
-    var tabAgendamiento = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendamiento'; });
-    if(tabAgendamiento){
-      try{
-        var agendasOp = await apiRequest('GET', '/calidad/agendas/opciones?campana=ORLANT');
-        if(agendasOp && agendasOp.meses && agendasOp.meses.length) tabAgendamiento.oculta = false;
-      }catch(e){ /* se queda oculta */ }
-    }
-
-    // Fase 77 (ORLANT, "Tipificacion"): mismo mecanismo exacto que
-    // Agendamiento (arriba) -- el tab sigue oculto por defecto en la config
-    // guardada, se destapa en memoria SOLO cuando ya hay tipificacion
-    // cargada (Llamadas O WhatsApp), sin escribir nunca ese cambio en el
-    // servidor. Si las 2 consultas fallan o vienen vacias, se queda oculta.
-    var tabTipificacion = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'tipificacion'; });
-    if(tabTipificacion){
-      try{
-        var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=ORLANT&canal=LLAMADAS');
-        var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=ORLANT&canal=WHATSAPP');
-        var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;
-        var tieneWhatsapp = tipifWhatsapp && tipifWhatsapp.meses && tipifWhatsapp.meses.length;
-        if(tieneLlamadas || tieneWhatsapp) tabTipificacion.oculta = false;
-      }catch(e){ /* se queda oculta */ }
-    }
+  // Agendas/Tipificacion: ademas de juntar sus meses (abajo), este mismo
+  // GET ya destapa el tab en memoria cuando corresponde (Fases 77/78 --
+  // el tab sigue oculto por defecto en la config guardada, se destapa
+  // SOLO cuando ya hay datos cargados, sin escribir nunca ese cambio en
+  // el servidor). Antes esto estaba hardcodeado a "ORLANT"; ahora sigue
+  // las campanas que de verdad tienen ese tipo de panel (hoy, solo
+  // ORLANT lo tiene -- mismo resultado, ya generico).
+  var mesesAgendas = [], mesesTipificacion = [];
+  for(var campAg in campanasAgendas){
+    try{
+      var agendasOp = await apiRequest('GET', '/calidad/agendas/opciones?campana='+encodeURIComponent(campAg));
+      if(agendasOp && agendasOp.meses) mesesAgendas = mesesAgendas.concat(agendasOp.meses);
+      if(campAg === _gd.cliente && agendasOp && agendasOp.meses && agendasOp.meses.length){
+        var tabAgendamiento = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendamiento'; });
+        if(tabAgendamiento) tabAgendamiento.oculta = false;
+      }
+    }catch(e){ /* se queda oculta / sin esos meses */ }
   }
+  for(var campTip in campanasTipificacion){
+    try{
+      var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=LLAMADAS');
+      var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=WHATSAPP');
+      if(tipifLlamadas && tipifLlamadas.meses) mesesTipificacion = mesesTipificacion.concat(tipifLlamadas.meses);
+      if(tipifWhatsapp && tipifWhatsapp.meses) mesesTipificacion = mesesTipificacion.concat(tipifWhatsapp.meses);
+      var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;
+      var tieneWhatsapp = tipifWhatsapp && tipifWhatsapp.meses && tipifWhatsapp.meses.length;
+      if(campTip === _gd.cliente && (tieneLlamadas || tieneWhatsapp)){
+        var tabTipificacion = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'tipificacion'; });
+        if(tabTipificacion) tabTipificacion.oculta = false;
+      }
+    }catch(e){ /* se queda oculta / sin esos meses */ }
+  }
+
+  var mesesCargas = {};
+  Object.keys(_gd.cargas).forEach(function(s){ (_gd.cargas[s]||[]).forEach(function(c){ mesesCargas[c.periodo] = true; }); });
+  var mesesTraficoLlamadas = [];
+  for(var campTr in campanasTraficoLlamadas){
+    ((typeof _trafico!=='undefined' && _trafico[campTr] && _trafico[campTr].filas) || []).forEach(function(f){ mesesTraficoLlamadas.push(f.fecha); });
+  }
+  var mesesTraficoWpp = [];
+  for(var campWp in campanasTraficoWpp){
+    ((typeof _traficoWpp!=='undefined' && _traficoWpp[campWp] && _traficoWpp[campWp].filas) || []).forEach(function(f){ mesesTraficoWpp.push(f.fechaInicio); });
+  }
+  var mesesCalidad = [];
+  for(var campCal in campanasCalidad){
+    ((typeof CAL_DB!=='undefined' && CAL_DB[campCal] && CAL_DB[campCal].monitoreos) || []).forEach(function(m){ mesesCalidad.push(m.fecha); });
+  }
+
+  // Datos mensuales PRINCIPALES (pedido explicito): el mes por defecto es
+  // el mas reciente con Trafico de Llamadas o Tipificacion. Si el cliente
+  // no tiene ninguno de esos (ej. Aurora/HLM hoy, o un cliente sin esos 2
+  // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
+  // un mes que no sea una opcion real del selector.
+  var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesTipificacion, mesesCalidad]);
+  _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
   renderGenericKpis();
@@ -744,7 +773,7 @@ var _gdFinDeMes = gdFinDeMes;
 function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos){
   var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(_gdMesLbl(mesElegido)) + '.';
   if(ultimoMesConDatos){
-    msg += ' El ultimo mes con datos es ' + esc(_gdMesLbl(ultimoMesConDatos)) +
+    msg += ' El último mes con datos es ' + esc(_gdMesLbl(ultimoMesConDatos)) +
       ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(_gdMesLbl(ultimoMesConDatos))+'</button>';
   }
   return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';

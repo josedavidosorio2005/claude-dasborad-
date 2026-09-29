@@ -12,6 +12,7 @@ const path = require('path');
 const { leerHojaXlsxComoAoA } = require('./helpers/xlsx-lite');
 const {
   traficoParseFilas,
+  traficoParseFecha,
   traficoFechaDesdeSerial,
   traficoSegundosDesdeFraccionDia,
   traficoPctDesdeTexto,
@@ -47,6 +48,35 @@ test('conversion: serial de Excel -> YYYY-MM-DD (aritmetica UTC, sin depender de
   assert.equal(traficoFechaDesdeSerial(46267), '2026-09-02');
   assert.equal(traficoFechaDesdeSerial('46268'), '2026-09-03'); // texto numerico tambien
   assert.equal(traficoFechaDesdeSerial('no es un numero'), null);
+});
+
+// Fase 90 (tema B, hallazgo real): DATE como texto "dd/mm/aaaa" (formato
+// colombiano) caia en `new Date(t)`, que V8 interpreta como MM/DD/AAAA
+// (locale en-US). Con dia <=12 esto daba una fecha VALIDA pero CORRIDA en
+// SILENCIO (mes y dia cambiados, sin ningun aviso); con dia >12 si
+// fallaba a null (fila descartada). Ahora usa el mismo parseo manual
+// dd/mm/aaaa que ya usan tipificacion-logic.js/agendas-logic.js.
+test('conversion: DATE como serial de Excel (uso normal) sigue exacto', () => {
+  assert.equal(traficoParseFecha(46266), '2026-09-01');
+  assert.equal(traficoParseFecha('46268'), '2026-09-03'); // texto numerico tambien
+});
+
+test('conversion: DATE como texto "dd/mm/aaaa" -- el hallazgo real: "03/04/2026" es 3 de ABRIL, nunca 4 de marzo', () => {
+  assert.equal(traficoParseFecha('03/04/2026'), '2026-04-03', 'antes daba "2026-03-04" (mes y dia CAMBIADOS, en silencio)');
+  assert.equal(traficoParseFecha('01/12/2026'), '2026-12-01', 'antes daba "2026-01-12"');
+  assert.equal(traficoParseFecha('31/08/2026'), '2026-08-31', 'fin de mes -- antes fallaba a null (dia 31 invalido como mes)');
+  assert.equal(traficoParseFecha('15/01/2026'), '2026-01-15');
+});
+
+test('conversion: DATE como texto ISO "aaaa-mm-dd" sigue exacto', () => {
+  assert.equal(traficoParseFecha('2026-08-31'), '2026-08-31');
+});
+
+test('conversion: DATE invalida (mes > 12, dia > 31, o texto sin sentido) -> null, nunca una fecha inventada', () => {
+  assert.equal(traficoParseFecha('31/13/2026'), null);
+  assert.equal(traficoParseFecha('32/01/2026'), null);
+  assert.equal(traficoParseFecha('texto raro'), null);
+  assert.equal(traficoParseFecha(''), null);
 });
 
 test('conversion: WAIT_TIME/AHT (hora nativa de Excel = fraccion de dia) -> segundos', () => {

@@ -40,10 +40,48 @@ function gdFinDeMes(mesStr) {
   return mesStr + '-' + String(ultimoDia).padStart(2, '0');
 }
 
+// Fase 90 (tema B, hallazgo real: el selector "MES" de arriba solo miraba
+// dashboard_cargas -- Agendas/Tipificacion/Trafico Llamadas/Trafico
+// WhatsApp/Calidad viven en sus PROPIAS tablas, nunca ahi, asi que la
+// lista de meses podia faltarle meses enteros y el mes por defecto podia
+// caer en uno que ni siquiera fuera una opcion del selector).
+//
+// gdMesesUnion(listasDeMeses): listasDeMeses es un array de arrays de
+// valores 'AAAA-MM' o 'AAAA-MM-DD' (se recorta a los primeros 7
+// caracteres) -- devuelve la UNION, sin duplicados, ordenada de mas
+// reciente a mas antiguo. Cualquier valor vacio/invalido se ignora.
+function gdMesesUnion(listasDeMeses) {
+  var set = {};
+  (listasDeMeses || []).forEach(function (lista) {
+    (lista || []).forEach(function (v) {
+      if (!v || typeof v !== 'string' || v.length < 7) return;
+      set[v.slice(0, 7)] = true;
+    });
+  });
+  return Object.keys(set).sort().reverse();
+}
+
+// gdMesPorDefecto(mesesPrincipales, mesesTodos): el mes por defecto al
+// abrir el dashboard es el MAS RECIENTE con datos de Trafico de Llamadas
+// o Tipificacion (los datos mensuales PRINCIPALES, `mesesPrincipales` --
+// ya la union de los 2, ordenada de mas reciente a mas antiguo). Si el
+// cliente no tiene ninguno de esos, el mes mas reciente con CUALQUIER
+// dato (`mesesTodos`). Nunca un mes que no este en `mesesTodos` -- eso
+// evitaria que el selector (que solo ofrece `mesesTodos` como opciones)
+// quedara en blanco por un mes "fantasma" que ni siquiera es una opcion.
+function gdMesPorDefecto(mesesPrincipales, mesesTodos) {
+  var todos = mesesTodos || [];
+  var principales = mesesPrincipales || [];
+  if (principales.length && todos.indexOf(principales[0]) !== -1) return principales[0];
+  return todos[0] || '';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     GD_TIPOS_AUTONOMOS: GD_TIPOS_AUTONOMOS,
     gdTodosAutonomos: gdTodosAutonomos,
     gdFinDeMes: gdFinDeMes,
+    gdMesesUnion: gdMesesUnion,
+    gdMesPorDefecto: gdMesPorDefecto,
   };
 }
