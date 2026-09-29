@@ -82,7 +82,7 @@ document.getElementById('detalle-monitoreo-overlay').addEventListener('click',fu
 function verDetalleMonitoreo(idx){
   var m = _misMonitoreosList[idx];
   if(!m) return;
-  document.getElementById('dm-asesor').textContent = m.asesor || '-';
+  document.getElementById('dm-asesor').textContent = m.asesor ? textoFormatoNombre(m.asesor) : '-';
   document.getElementById('dm-fecha').textContent = m.fecha || '-';
   document.getElementById('dm-campana').textContent = m.campana || '-';
   document.getElementById('dm-evaluador').textContent = m.evaluador || '-';

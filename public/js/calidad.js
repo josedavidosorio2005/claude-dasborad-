@@ -286,7 +286,10 @@ function populateCalAsesorSelect(){
     sel.disabled = false;
     if(hint) hint.style.display = 'none';
     sel.innerHTML = '<option value="">Seleccione un asesor...</option>' +
-      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'">'+esc(u.nombre)+'</option>'; }).join('');
+      // Fase 88: value SIEMPRE el nombre crudo (es lo que filtra/agrupa
+      // contra CAL_DB), solo el texto visible pasa por textoFormatoNombre
+      // -- mismo patron que agendas.js/trafico.js.
+      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'">'+esc(textoFormatoNombre(u.nombre))+'</option>'; }).join('');
   }
 }
 
@@ -456,7 +459,7 @@ function renderCalMonitoreosTable(){
   } else {
     arr.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
-      html += '<tr><td>'+esc(m.asesor)+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
+      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.fallos+'</td><td>'+m.nivelCritico+'</td>'+
         (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):'')+'</tr>';
     });
@@ -486,7 +489,7 @@ function renderCalResumenTable(){
       var promCls = (typeof _gdSemaforoClase === 'function' && typeof _gdSemaforoColor === 'function')
         ? _gdSemaforoClase(_gdSemaforoColor(prom, { metrica: 'qa_promedio', campana: _ccampana }))
         : '';
-      html += '<tr><td>'+esc(n)+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
+      html += '<tr><td>'+esc(textoFormatoNombre(n))+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
     });
   }
   document.getElementById('cal-resumen-table').innerHTML = html;
@@ -639,7 +642,7 @@ function verSupervisionLider(camp, mes, liderNombre){
   } else {
     misMon.forEach(function(m){
       var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
-      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.asesor)+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td></tr>';
+      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td></tr>';
     });
   }
   document.getElementById('sl-monitoreos-table').innerHTML = html;
