@@ -107,6 +107,19 @@ function traficoFechaDesdeSerial(serial) {
 
 // DATE: normalmente serial numerico (fecha nativa de Excel). Defensivamente
 // tambien acepta texto ya formateado, por si algun export viene distinto.
+//
+// Fase 90 (tema B, hallazgo real: texto "dd/mm/aaaa" -- formato colombiano
+// -- caia en `new Date(t)`, que en V8 asume MM/DD/AAAA (locale en-US). Con
+// dia <= 12 esto NO fallaba: daba una fecha VALIDA pero CORRIDA en
+// silencio (ej. "03/04/2026", 3 de abril, se leia como 4 de marzo -- mes Y
+// dia cambiados, sin ningun aviso). Con dia > 12 si fallaba (null, fila
+// descartada con aviso) -- inconsistente y peligroso justo en el caso mas
+// comun. Ahora usa el MISMO parseo manual dd/mm/aaaa (nunca `new
+// Date(texto)`) que ya usan tipificacion-logic.js/agendas-logic.js -- el
+// fallback generico de `new Date(t)` se mantiene SOLO para el resto de
+// formatos de texto no numericos/no dd-mm-aaaa que pudiera traer un
+// export distinto.
+var TRAFICO_FECHA_TEXTO_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 function traficoParseFecha(v) {
   if (typeof v === 'number') return traficoFechaDesdeSerial(v);
   if (v instanceof Date && !isNaN(v)) {
@@ -117,6 +130,13 @@ function traficoParseFecha(v) {
     if (t === '') return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
     if (/^\d+(\.\d+)?$/.test(t)) return traficoFechaDesdeSerial(Number(t));
+    var mDmy = TRAFICO_FECHA_TEXTO_RE.exec(t);
+    if (mDmy) {
+      var dd = parseInt(mDmy[1], 10), mm = parseInt(mDmy[2], 10), aaaa = parseInt(mDmy[3], 10);
+      if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+      var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
+      return aaaa + '-' + pad2(mm) + '-' + pad2(dd);
+    }
     var d2 = new Date(t);
     if (!isNaN(d2)) return d2.toISOString().slice(0, 10);
   }

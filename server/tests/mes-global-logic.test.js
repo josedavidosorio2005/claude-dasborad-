@@ -9,7 +9,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { GD_TIPOS_AUTONOMOS, gdTodosAutonomos, gdFinDeMes } = require('../../public/js/mes-global-logic.js');
+const { GD_TIPOS_AUTONOMOS, gdTodosAutonomos, gdFinDeMes, gdMesesUnion, gdMesPorDefecto } = require('../../public/js/mes-global-logic.js');
 const { CONFIGS } = require('../dashboard-config-seed.js');
 
 test('gdFinDeMes: ultimo dia de meses de 31, 30, 28 (no bisiesto) y 29 dias (bisiesto)', () => {
@@ -69,4 +69,54 @@ test('GD_TIPOS_AUTONOMOS cubre exactamente los 5 paneles autonomos de ORLANT (Tr
   }
   const autonomosUsados = [...usados].filter((t) => GD_TIPOS_AUTONOMOS.indexOf(t) !== -1).sort();
   assert.deepEqual(autonomosUsados, ['agendas_panel', 'calidad_kpis', 'calidad_pie', 'tipificacion_panel', 'trafico_combo', 'trafico_whatsapp_combo']);
+});
+
+// ── gdMesesUnion / gdMesPorDefecto (Fase 90, tema B) ─────────────────────
+// Hallazgo real en produccion: el selector "MES" de arriba solo miraba
+// dashboard_cargas (nunca Agendas/Tipificacion/Trafico/Calidad, que viven
+// en sus propias tablas) -- ORLANT abria en "Sep-26" con el subtitulo asi,
+// pero el selector solo ofrecia "Ago-26" como opcion (mesSel no era ni
+// siquiera una opcion real, por eso el <select> se veia en blanco).
+test('gdMesesUnion: junta varias listas, sin duplicados, ordenada de mas reciente a mas antiguo', () => {
+  assert.deepEqual(
+    gdMesesUnion([['2026-04', '2026-07'], ['2026-08'], ['2026-07', '2026-05']]),
+    ['2026-08', '2026-07', '2026-05', '2026-04']
+  );
+});
+
+test('gdMesesUnion: acepta fechas completas (AAAA-MM-DD) o ya recortadas (AAAA-MM), ignora valores vacios/invalidos', () => {
+  assert.deepEqual(
+    gdMesesUnion([['2026-08-15', '2025-04-30 19:00:00'], ['2026-08'], [null, '', undefined, 'x']]),
+    ['2026-08', '2025-04']
+  );
+});
+
+test('gdMesesUnion: listas vacias o ausentes -> lista vacia', () => {
+  assert.deepEqual(gdMesesUnion([]), []);
+  assert.deepEqual(gdMesesUnion([[], []]), []);
+  assert.deepEqual(gdMesesUnion(undefined), []);
+});
+
+test('gdMesPorDefecto: el hallazgo real -- Trafico Llamadas/Tipificacion en Ago-26, dashboard_cargas con una fila suelta en Sep-26 -- el mes por defecto es Ago-26, no Sep-26', () => {
+  const mesesPrincipales = gdMesesUnion([['2026-08'], ['2026-08']]); // Trafico Llamadas + Tipificacion
+  const mesesTodos = gdMesesUnion([['2026-09'], mesesPrincipales, ['2025-04']]); // dashboard_cargas (Sep suelto) + Agendas (Abr-25)
+  assert.deepEqual(mesesTodos, ['2026-09', '2026-08', '2025-04'], 'Sep-26 SI es una opcion valida del selector (existe en algun dato)');
+  assert.equal(gdMesPorDefecto(mesesPrincipales, mesesTodos), '2026-08', 'el mes por defecto nunca es un mes sin Trafico Llamadas/Tipificacion si existe uno mejor');
+});
+
+test('gdMesPorDefecto: sin Trafico Llamadas ni Tipificacion (ej. Clinica Aurora/Hospital La Maria hoy) -> el mes mas reciente con CUALQUIER dato', () => {
+  const mesesPrincipales = gdMesesUnion([[], []]);
+  const mesesTodos = gdMesesUnion([['2026-06'], ['2026-05']]);
+  assert.equal(gdMesPorDefecto(mesesPrincipales, mesesTodos), '2026-06');
+});
+
+test('gdMesPorDefecto: sin ningun dato en absoluto -> cadena vacia (selector "Sin datos")', () => {
+  assert.equal(gdMesPorDefecto([], []), '');
+  assert.equal(gdMesPorDefecto(undefined, undefined), '');
+});
+
+test('gdMesPorDefecto: nunca devuelve un mes que no este en mesesTodos (defensivo -- el selector solo ofrece mesesTodos como opciones)', () => {
+  // mesesPrincipales con un mes que por algun motivo no llego a mesesTodos:
+  // cae a mesesTodos[0] en vez de devolver un mes "fantasma".
+  assert.equal(gdMesPorDefecto(['2026-09'], ['2026-08', '2026-07']), '2026-08');
 });
