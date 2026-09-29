@@ -45,6 +45,27 @@ var _traficoWppSubtabActivo = {}; // por campana -> key de subtab activa
 var _traficoWppMesSincronizado = {};
 var _traficoWppSinDatosMesGlobal = {};
 
+// Fase 94 (tema C, Edwin vio el aviso viejo y no lo entendio): el CALCULO
+// no cambia (el dato de verdad sigue faltando) -- solo el TEXTO, en 2
+// niveles. `principal` lo ve cualquiera que mire el dashboard; `detalle`
+// (como cargar el dato) solo lo ve quien PUEDE cargar datos (permiso
+// cargarDatos o admin, canLoadData() en ui-core.js). Nivel de modulo (no
+// dentro de una funcion) para poder reusarlo tal cual en el aviso de la
+// tarjeta/grafica (trafico.js, via _traficoWppRenderPanel) Y en Exportar
+// (_traficoWppDatosExport, mas abajo en este archivo).
+var TRAFICO_WPP_SIN_DATO_5MIN_MSG = {
+  principal: 'Nivel de servicio a 5 minutos: aún no hay datos para este período.',
+  detalle: 'Para verlo, carga el reporte de WhatsApp con la columna SERVICE_LEVEL_5MIN (umbral de 300 s en Wolkvox).',
+};
+// Texto plano (Exportar: Excel/PDF no tienen "letra chica" HTML) -- incluye
+// el detalle solo si quien exporta puede cargar datos, mismo criterio que
+// el aviso de la tarjeta/grafica.
+function _traficoWppMensajeSinDatoSL5Texto(){
+  var msg = TRAFICO_WPP_SIN_DATO_5MIN_MSG;
+  var puedeVerDetalle = typeof canLoadData === 'function' && canLoadData();
+  return msg.principal + (puedeVerDetalle ? ' ' + msg.detalle : '');
+}
+
 // ASA/ATA/AHT de WhatsApp pueden ser bastante mayores que en voz (un chat
 // puede quedar horas sin responder antes de que se marque abandonado, a
 // diferencia de una llamada) -- se formatea con horas cuando aplica, no solo
@@ -299,7 +320,7 @@ function _traficoWppRenderContenido(i){
   // serian umbrales distintos, se muestra "sin dato" en vez de inventar.
   var nivelServicio5min = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel5minPct');
   var nivelServicio20s = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
-  var SIN_DATO_5MIN_MSG = 'Sin dato de nivel de servicio a 5 min para este período — cargar la columna SERVICE_LEVEL_5MIN.';
+  var SIN_DATO_5MIN_MSG = TRAFICO_WPP_SIN_DATO_5MIN_MSG;
 
   _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio5min, nivelServicio2: nivelServicio20s },
     { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados',
@@ -369,6 +390,13 @@ function _traficoWppExportExcel(i){
   var campana = host ? host.dataset.campana : 'trafico_whatsapp';
   var wb = XLSX.utils.book_new();
   xlsxAgregarAvisoDemo(wb);
+  // Fase 94 (tema C): mismo aviso que la tarjeta/grafica, "en Exportar" --
+  // si NINGUNA fila exportada trae SL 5 min, una hoja aparte lo explica
+  // (una columna en blanco sin contexto no dice nada de por que).
+  if(datos.length && datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; })){
+    var wsAviso = XLSX.utils.aoa_to_sheet([['NIVEL DE SERVICIO A 5 MINUTOS'], [_traficoWppMensajeSinDatoSL5Texto()]]);
+    XLSX.utils.book_append_sheet(wb, wsAviso, 'AVISO_SL_5MIN');
+  }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'TraficoWhatsApp');
   XLSX.writeFile(wb, 'Trafico_WhatsApp_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
@@ -388,11 +416,17 @@ function _traficoWppExportPrint(i){
     ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">'+
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
     : '';
+  // Fase 94 (tema C): mismo aviso que la tarjeta/grafica, "en Exportar" --
+  // si NINGUNA fila exportada trae SL 5 min, una nota lo explica.
+  var sinSL5 = datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; });
+  var avisoSl5Html = sinSL5
+    ? '<div style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;margin-bottom:16px;font-size:12px">'+esc(_traficoWppMensajeSinDatoSL5Texto())+'</div>'
+    : '';
   w.document.write('<!doctype html><html><head><title>Tráfico de WhatsApp — '+esc(campana)+'</title>'+
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}'+
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}'+
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>'+
-    avisoHtml +
+    avisoHtml + avisoSl5Html +
     '<h1>Tráfico de WhatsApp — '+esc(campana)+'</h1>'+tabla+
     '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — '+new Date().toLocaleString('es-CO')+'</p>'+
     '</body></html>');
