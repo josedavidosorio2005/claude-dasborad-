@@ -31,6 +31,7 @@ function toTraficoWppRow(row) {
     serviceLevel10secPct: row.serviceLevel10secPct,
     serviceLevel20secPct: row.serviceLevel20secPct,
     serviceLevel30secPct: row.serviceLevel30secPct,
+    serviceLevel5minPct: row.serviceLevel5minPct,
     asaSegundos: row.asaSegundos,
     ataSegundos: row.ataSegundos,
     ahtSegundos: row.ahtSegundos,

@@ -232,6 +232,46 @@ test('las columnas opcionales ausentes no llegan como 0 sino como null', async (
   const row = rows.body.find((r) => r.colaWhatsapp === cola);
   assert.equal(row.abandonados, null);
   assert.equal(row.serviceLevel20secPct, null);
+  assert.equal(row.serviceLevel5minPct, null, 'SERVICE_LEVEL_5MIN (Fase 87, tema B) es opcional -- ausente en el archivo debe quedar null, no 0');
   assert.equal(row.asaSegundos, null);
   assert.equal(row.ahtSegundos, null, 'AHT (Fase 68, Pedido 5) es opcional -- ausente en el archivo debe quedar null, no 0');
+});
+
+// Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio es de 5
+// minutos"): serviceLevel5minPct se guarda y se lee de vuelta igual que los
+// demas campos opcionales, y una recarga del mismo periodo lo actualiza sin
+// duplicar (mismo mecanismo de upsert que ya cubre el resto de la fila).
+test('serviceLevel5minPct (Tema B) se guarda y se lee de vuelta igual que los demas campos opcionales', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP SL5MIN ' + Math.random().toString(36).slice(2, 8);
+  const res = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, serviceLevel5minPct: 96.42 })] });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  const row = rows.body.find((r) => r.colaWhatsapp === cola);
+  assert.equal(row.serviceLevel5minPct, 96.42);
+});
+
+test('recargar un periodo que ya existia con SERVICE_LEVEL_5MIN nuevo actualiza el dato sin duplicar', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP SL5MIN RECARGA ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola })] }); // sin SERVICE_LEVEL_5MIN, como agosto
+
+  const dos = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, serviceLevel5minPct: 91.5 })] });
+  assert.equal(dos.status, 201);
+
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  const filasCola = rows.body.filter((r) => r.colaWhatsapp === cola);
+  assert.equal(filasCola.length, 1, 'no debe duplicar la fila');
+  assert.equal(filasCola[0].serviceLevel5minPct, 91.5, 'debe reflejar el dato de la SEGUNDA carga');
 });
