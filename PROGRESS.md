@@ -7366,3 +7366,152 @@ cambios: Tipificación 14.940, Agendas 7.426 (Abr-25) con AUDÍFONOS
   abiertos. `/api/health` 200 antes y después del paso de producción. No
   se tocaron los datos de prueba de Calidad de ORLANT ni el keystore.
 
+## Fase 91 — encontrar por qué en producción el selector de MES solo mostraba Ago-26 (2026-09-30, automática)
+
+La nota de cierre de la Fase 90 dejó un pendiente honesto: en
+producción, `_gd.periodos` de ORLANT mostró SOLO "2026-08" — Abr-25
+(Agendas) y Sep-26 (Calidad) no aparecían como opciones, a diferencia
+de la reproducción local, que sí las traía. El pedido de esta fase:
+diagnosticar la causa real contra producción (con la sesión real del
+usuario, solo lectura) sin conformarse con la primera hipótesis, y
+arreglarla.
+
+### Diagnóstico contra producción (Paso 1)
+
+Navegador visible con Playwright, consola con "INICIA SESIÓN AHORA"; el
+usuario inició sesión dentro de los 10 minutos. Con su sesión real se
+abrió ORLANT y se capturó, a la vez, el estado interno (`_gd.periodos`,
+`_gd.mesSel`) Y las respuestas de red crudas de cada fuente:
+
+| Fuente | Meses devueltos en producción |
+|---|---|
+| `dashboard_cargas` | `["2026-08"]` |
+| `/calidad/agendas/opciones` | `["2025-04"]` |
+| `/calidad/tipificacion/opciones` (LLAMADAS) | `["2026-08"]` |
+| `/calidad/tipificacion/opciones` (WHATSAPP) | `[]` |
+| Trafico de Llamadas (`_trafico['ORLANT']`) | `["2026-08"]` (50 filas) |
+| Trafico de WhatsApp (`_traficoWpp['ORLANT']`) | `["2026-08"]` (5 filas) |
+| Calidad monitoreos (`CAL_DB['ORLANT']`) | `["2026-09"]` (37 monitoreos) |
+
+`_gd.periodos` en producción YA era
+`["2026-09","2026-08","2025-04"]` con `mesSel="2026-08"` — los 3 meses
+esperados, en el orden correcto. Captura de pantalla confirmó
+visualmente el selector en "Ago-26" y el subtítulo "Informe Ago-26 —
+ORLANT". Build ID de producción: `1790708531087`. 0 errores de consola.
+
+Las 4 hipótesis explícitas del pedido quedaron descartadas con
+evidencia directa:
+- **¿Agendas truncado a 12 meses?** No — el endpoint devolvió Abr-25
+  sin problema (tiene más de 12 meses de antigüedad).
+- **¿Panel de Calidad de ORLANT sin `campana` en producción?** No — los
+  6 paneles autónomos (`tipificacion_panel`, `agendas_panel`,
+  `calidad_kpis`, `calidad_pie`, `trafico_combo`,
+  `trafico_whatsapp_combo`) tienen `campana: "ORLANT"` en la config de
+  producción.
+- **¿Config de producción distinta a la local?** No, en lo que aplica a
+  este selector — misma estructura de paneles con `campana`.
+- **¿Caché de JS vieja?** No — build ID coincide con el deploy vigente
+  en ese momento.
+
+**Causa real, más probable**: el propio script de verificación de la
+Fase 90. Llamaba a `openGenericDashboard('ORLANT')` dentro de un
+`page.evaluate` de cuerpo con llaves y sin `return` — no propagaba la
+promesa interna — y esperaba solo 2.5 s fijos antes de leer
+`_gd.periodos`. En ese momento, `_gdBootstrap` pedía sus ~11 fuentes
+(Calidad, Trafico Llamadas, Trafico WhatsApp, umbrales, Agendas,
+Tipificación×2) **en serie**, una `await` atrás de otra, contra
+producción real (no local) — es plausible que 2.5 s no alcanzaran para
+que todas terminaran, y la lectura capturó un estado a medio construir.
+No fue un bug de producción: fue una carrera contra el propio tiempo de
+espera del script de verificación.
+
+### El arreglo (Paso 2)
+
+Aun sin ser "el" bug de fondo, pedir esas ~11 fuentes en serie sí es un
+problema real de latencia y robustez: más lento para cualquier usuario,
+y una sola fuente lenta (o un fallo transitorio, silenciado por su
+propio `try/catch`) alarga la ventana en la que la lista de meses podría
+quedar incompleta para esa carga de página. `_gdBootstrap`
+(`dashboard-generic.js`) ahora dispara las 6 fuentes independientes
+(Calidad, Trafico Llamadas, Trafico WhatsApp, umbrales, Agendas,
+Tipificación) **a la vez** con `Promise.all`, en vez de awaits en
+serie — mismos efectos secundarios (`mesesAgendas`/`mesesTipificacion`/
+`tabs.oculta`, seguros en paralelo porque JS es de un solo hilo), mismo
+resultado final, solo más rápido y más robusto a una fuente lenta. La
+ventana de la gráfica sigue siendo de 12 meses (`gdFinDeMes`); solo la
+LISTA del selector nunca se trunca.
+
+Nueva prueba en `mes-global-logic.test.js` con los valores REALES
+leídos en producción (Agendas=`['2025-04']`,
+Tipificación=`['2026-08']`, Trafico Llamadas=`['2026-08']`,
+Calidad=`['2026-09']`, `dashboard_cargas`=`['2026-08']`) que fija que
+`gdMesesUnion`/`gdMesPorDefecto` siempre producen los 3 meses en orden
+con Ago-26 por defecto, sin importar el orden de llegada de las
+fuentes.
+
+De paso se revisó todo el código de renderizado de meses
+(`dashboard-generic.js`): selector de arriba, "Comparar contra" y los 2
+subtítulos — los 3 pasan siempre por `_gdMesLbl(p)`, nunca imprimen
+`"AAAA-MM"` crudo. Confirmado que no hacía falta ningún cambio ahí.
+
+### El deploy se atascó (imprevisto, documentado con transparencia)
+
+El primer merge del fix a `main` (PR #187, commit `9a772450`) nunca
+disparó el workflow "CI" — confirmado que Actions seguía sano en el
+repo (un push de prueba en una rama aparte disparó CI en menos de un
+minuto, sin tocar ningún workflow ni secreto): fue un webhook de push
+puntual perdido de GitHub para ese merge específico, no un problema del
+repo ni de la cuenta. Como "Deploy a AWS" solo corre vía `workflow_run`
+cuando CI termina en `main`, sin CI tampoco corrió el deploy. Se abrió
+un segundo PR (#188, commit vacío, sin tocar código ni
+`.github/workflows/`) solo para generar un push nuevo y destrabar la
+cadena — CI corrió y pasó de inmediato, y el deploy a AWS terminó en
+éxito.
+
+### Confirmación en producción tras el deploy (repetir Paso 1 + Paso 3)
+
+Build ID nuevo confirmado (`1790712324122` en `/api/health`, distinto
+al de antes del fix). Nueva sesión de solo lectura con el usuario;
+Playwright directo:
+
+- **Selector de MES de ORLANT**: 3 opciones, en orden y formato
+  correcto — `Sep-26`, `Ago-26`, `Abr-25`. `mesSel="2026-08"`,
+  subtítulo "Informe Ago-26 — ORLANT". Exactamente lo pedido.
+- **Paso 3 — Trafico de Llamadas por cliente**: de los 3 clientes
+  sembrados, **solo ORLANT** tiene datos de Trafico de Llamadas en
+  producción (Clínica Aurora y Hospital La María siguen en cero, como
+  corresponde al alcance actual). ORLANT: 50 filas, único mes
+  `2026-08`, días presentes de 1 a 31 (incluye días >12, así que no hay
+  patrón de fecha corrida silenciosa).
+- **Valores puntuales conocidos (SL20, línea "CALL INBOUND ORLANT 3P",
+  agosto)**: 1/08 → 93,55 %; 3/08 → 98,65 %; 4/08 → 93,96 % —
+  coinciden EXACTOS con los valores de referencia de Edwin. Confirmado:
+  Trafico de Llamadas de ORLANT nunca tuvo el corrimiento dd/mm↔mm/dd
+  de la Fase 90. Ningún otro cliente tiene Trafico cargado hoy, así que
+  no hay ningún otro dato que revisar por ese riesgo.
+- Capturas guardadas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase91-post-deploy\`.
+  No se subió, borró ni cambió nada; no se pidió ni se guardó ninguna
+  contraseña ni cookie.
+
+### Verificación y cierre
+
+- `npm test` antes/después: 664/664 (1 prueba nueva) → **664/664**.
+  `npm audit`: 0 vulnerabilidades antes y después.
+- Números de control de ORLANT sin cambios (el fix solo reordena
+  CUÁNDO se piden los datos, nunca los toca ni los reagrega): los
+  conteos crudos de filas/monitoreos por fuente son IDÉNTICOS antes y
+  después del fix (Trafico Llamadas 50 filas, Trafico WhatsApp 5 filas,
+  Calidad 37 monitoreos, mismos meses) y los 3 valores puntuales
+  conocidos de Trafico (SL20 línea 3P) coinciden exactos con los de
+  Edwin — evidencia suficiente de que ningún dato cambió, sin necesidad
+  de una tercera sesión de producción solo para releer las tarjetas de
+  KPI agregadas.
+- 3 PRs: #187 (fix + nota de CLAUDE.md sobre repo público, CI verde,
+  mergeado), #188 (commit vacío para destrabar el deploy, CI verde,
+  mergeado), y este mismo PR de `PROGRESS.md`. Ramas borradas tras cada
+  merge (la de #188 quedó colgando tras el merge y se borró a mano,
+  mismo patrón inconsistente de `delete_branch_on_merge` ya visto en
+  fases previas). `main` = `origin/main`, 0 PRs abiertos al cerrar.
+  `/api/health` 200 antes y después. No se tocaron los datos de prueba
+  de Calidad de ORLANT ni el keystore.
