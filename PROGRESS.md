@@ -6,6 +6,12 @@ no se reescribe.
 Rama de trabajo: `main` (mergeado desde `feat/dashboards-pro-y-aws`).
 Última actualización: **2026-09-09**.
 
+> **Nota (Fase 93, 2026-09-29):** `inconexionpruebasclaude.duckdns.org` se
+> retiró por completo — producción es solo `https://informa.inconexion.com.co`
+> desde esa fecha. Las menciones a duckdns en las fases anteriores de esta
+> bitácora son históricas (describen el estado real en su momento) y no se
+> reescriben.
+
 ---
 
 ## Fase 0 — Auditoría de punto de partida

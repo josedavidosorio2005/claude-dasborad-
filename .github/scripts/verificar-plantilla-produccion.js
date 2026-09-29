@@ -49,7 +49,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const BASE = process.env.PROD_URL || 'https://inconexionpruebasclaude.duckdns.org';
+const BASE = process.env.PROD_URL || 'https://informa.inconexion.com.co';
 const TEMP_USER = process.env.TEMP_USER;
 const TEMP_PW = process.env.TEMP_PW;
 const TMP = os.tmpdir();

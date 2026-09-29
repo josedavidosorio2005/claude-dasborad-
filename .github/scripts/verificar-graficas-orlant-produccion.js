@@ -18,7 +18,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const os = require('os');
 
-const BASE = process.env.PROD_URL || 'https://inconexionpruebasclaude.duckdns.org';
+const BASE = process.env.PROD_URL || 'https://informa.inconexion.com.co';
 const ADMIN_USER = process.env.TEMP_ADMIN_USER;
 const ADMIN_PW = process.env.TEMP_ADMIN_PW;
 const ARTIFACTS_DIR = process.env.ARTIFACTS_DIR || os.tmpdir();

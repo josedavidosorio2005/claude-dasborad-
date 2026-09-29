@@ -1,4 +1,4 @@
-name: Dominio de produccion (revisar/aplicar)
+name: Dominio de produccion (revisar/aplicar/quitar)
 
 # Disparo manual unicamente. Reutiliza EXACTAMENTE el mismo mecanismo que
 # audit-instance.yml / seed-demo.yml / deploy.yml (rol OIDC, apertura
@@ -8,24 +8,31 @@ name: Dominio de produccion (revisar/aplicar)
 #
 # modo=revisar (por defecto): solo lectura, no cambia nada en la instancia.
 # modo=aplicar: agrega el dominio al bloque de sitio de Caddy que ya sirve
-#   duckdns (comparte proxy/cabeceras/logs) y agrega el origen HTTPS del
-#   dominio a CORS_ORIGIN, sin quitar los que ya haya. Todo idempotente y
-#   con respaldo + reversion automatica si algo falla a mitad de camino.
+#   el/los dominio(s) actuales (comparte proxy/cabeceras/logs) y agrega el
+#   origen HTTPS del dominio a CORS_ORIGIN, sin quitar los que ya haya.
+# modo=quitar: quita el dominio del bloque de sitio y de CORS_ORIGIN, y
+#   apaga (sin borrar) cualquier actualizador dinamico de ese dominio que
+#   encuentre en cron/systemd/scripts sueltos.
+# Los 3 modos son idempotentes y tienen respaldo + reversion automatica si
+# algo falla a mitad de camino (Caddyfile invalido, health check o
+# certificado). Ninguno depende de un dominio en particular -- el ancla
+# para aplicar/quitar es el bloque de sitio que ya exista en el Caddyfile.
 on:
   workflow_dispatch:
     inputs:
       dominio:
-        description: 'Dominio a agregar (el DNS A ya debe apuntar a la instancia)'
+        description: 'Dominio a agregar/quitar (para aplicar: el DNS A ya debe apuntar a la instancia)'
         required: true
         type: string
         default: informa.inconexion.com.co
       modo:
-        description: 'revisar (solo lectura) o aplicar (cambia Caddyfile + CORS_ORIGIN)'
+        description: 'revisar (solo lectura) / aplicar (agrega dominio) / quitar (retira dominio)'
         required: true
         type: choice
         options:
           - revisar
           - aplicar
+          - quitar
         default: revisar
 
 concurrency:
@@ -60,6 +67,25 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: Cuenta de AWS donde corre esto (solo el numero de cuenta)
+        run: aws sts get-caller-identity --query '{cuenta:Account,rol:Arn}' --output text
+
+      # Nunca imprime el VALOR del secret, solo de que tipo es -- para saber
+      # si el deploy/SSH depende de un nombre de dominio que se vaya a
+      # retirar (si DEPLOY_SSH_HOST usa ese nombre, quitarlo rompe el deploy).
+      - name: Tipo de DEPLOY_SSH_HOST (nunca su valor)
+        env:
+          HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          if [[ "$HOST" == *duckdns.org* ]]; then
+            echo "DEPLOY_SSH_HOST: usa duckdns"
+          elif [[ "$HOST" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+            echo "DEPLOY_SSH_HOST: es una IP"
+          else
+            echo "DEPLOY_SSH_HOST: otro nombre (no duckdns, no IP)"
+          fi
 
       # Mismo patron que deploy.yml/seed-demo.yml/audit-instance.yml: el 22
       # solo se abre para la IP de ESTE runner, durante ESTE job, y se
@@ -149,6 +175,19 @@ jobs:
             docker compose config --services
             docker compose ps --format 'table {{.Service}}\t{{.Ports}}'
 
+            echo ""
+            echo "### Buscando actualizador de $DOMINIO (cron/systemd/scripts sueltos) ###"
+            echo "-- crontab del usuario de deploy --"
+            crontab -l 2>/dev/null | grep -iF "$DOMINIO" || echo "(sin entradas de $DOMINIO en el crontab del usuario)"
+            echo "-- crontab de root (requiere sudo sin password) --"
+            sudo -n crontab -l -u root 2>/dev/null | grep -iF "$DOMINIO" || echo "(sin sudo sin password, o sin entradas de $DOMINIO en el crontab de root)"
+            echo "-- /etc/cron.d, /etc/cron.daily, /etc/cron.hourly, /etc/cron.weekly --"
+            sudo -n grep -rilF "$DOMINIO" /etc/cron.d /etc/cron.daily /etc/cron.hourly /etc/cron.weekly 2>/dev/null || echo "(nada, o sin sudo sin password)"
+            echo "-- unidades systemd (timer/service) cuyo NOMBRE mencione el dominio --"
+            systemctl list-units --all --type=timer,service --no-legend 2>/dev/null | grep -iF "$(echo "$DOMINIO" | cut -d. -f1)" || echo "(sin unidades systemd con ese nombre)"
+            echo "-- archivos bajo /opt y /home/ubuntu que mencionan el dominio (fuera de los respaldos) --"
+            grep -rilF "$DOMINIO" /opt /home/ubuntu 2>/dev/null | grep -vF '/opt/inconexion/respaldos-config' || echo "(nada)"
+
       # ── modo aplicar: idempotente, con respaldo y reversion automatica ──
       - name: "Aplicar (Caddyfile + CORS_ORIGIN)"
         if: inputs.modo == 'aplicar'
@@ -164,9 +203,7 @@ jobs:
             set -uo pipefail
             cd /opt/inconexion
 
-            DUCKDNS="inconexionpruebasclaude.duckdns.org"
             NEW_ORIGIN="https://${DOMINIO}"
-            DUCK_ORIGIN="https://${DUCKDNS}"
 
             command -v aws >/dev/null 2>&1 || {
               echo "aws-cli no esta en la instancia; no se puede resolver CORS_ORIGIN desde SSM de forma segura. Abortando sin tocar nada.";
@@ -187,7 +224,7 @@ jobs:
               cat "$BACKUP_DIR/app.env.$TS.bak" > app.env
               docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 || true
               docker compose up -d --force-recreate app 2>&1 || true
-              echo "## Respaldos restaurados. duckdns no deberia haber quedado caido."
+              echo "## Respaldos restaurados. La plataforma no deberia haber quedado caida."
               exit 1
             }
 
@@ -195,14 +232,20 @@ jobs:
             if grep -qF "$DOMINIO" Caddyfile; then
               echo "El dominio ya esta en el Caddyfile, no se duplica."
             else
-              awk -v dom="$DOMINIO" -v duck="$DUCKDNS" '
-                index($0, duck) > 0 && $0 ~ / \{[[:space:]]*$/ {
+              # Ancla: la PRIMERA linea del Caddyfile que sea un bloque de sitio
+              # con nombre (tiene un punto, no es ":80" generico, termina en
+              # " {") -- no depende de que dominio sea hoy, asi este workflow
+              # sigue sirviendo para agregar el dominio #6, #7... el dia que
+              # haga falta, sin volver a tocar el script.
+              awk -v dom="$DOMINIO" '
+                !done && $0 !~ /^:80/ && $0 ~ /\./ && $0 ~ / \{[[:space:]]*$/ {
                   sub(/ \{[[:space:]]*$/, ", " dom " {")
+                  done=1
                 }
                 { print }
               ' Caddyfile > /tmp/Caddyfile.nuevo
               if ! grep -qF "$DOMINIO" /tmp/Caddyfile.nuevo; then
-                echo "No se encontro el bloque de $DUCKDNS en el formato esperado (linea 'host, host {'). Nada se toco todavia."
+                echo "No se encontro ningun bloque de sitio con nombre (linea 'host[, host...] {') en el Caddyfile. Nada se toco todavia."
                 exit 1
               fi
               # Se escribe ENCIMA del mismo archivo (mismo inode) para que el
@@ -231,7 +274,7 @@ jobs:
             fi
             echo "CORS_ORIGIN actual (fuente: $SOURCE): $CURRENT"
 
-            NEWLIST="$(printf '%s,%s,%s' "$CURRENT" "$DUCK_ORIGIN" "$NEW_ORIGIN" | tr ',' '\n' | sed '/^$/d' | awk '!seen[$0]++' | paste -sd, -)"
+            NEWLIST="$(printf '%s,%s' "$CURRENT" "$NEW_ORIGIN" | tr ',' '\n' | sed '/^$/d' | awk '!seen[$0]++' | paste -sd, -)"
             echo "CORS_ORIGIN nuevo: $NEWLIST"
 
             echo "### 5) Escribiendo CORS_ORIGIN en app.env (gana sobre SSM) ###"
@@ -285,6 +328,173 @@ jobs:
             docker image prune -f || true
 
             echo "### Listo. Un deploy normal (docker compose pull && up -d) no pisa esto: Caddyfile y app.env viven en /opt/inconexion, fuera de la imagen. ###"
+
+      # ── modo quitar: idempotente, con respaldo y reversion automatica ──
+      - name: "Quitar (Caddyfile + CORS_ORIGIN + actualizador)"
+        if: inputs.modo == 'quitar'
+        uses: appleboy/ssh-action@v1
+        env:
+          DOMINIO: ${{ inputs.dominio }}
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DOMINIO,AWS_REGION
+          script: |
+            set -uo pipefail
+            cd /opt/inconexion
+
+            command -v aws >/dev/null 2>&1 || {
+              echo "aws-cli no esta en la instancia; no se puede resolver CORS_ORIGIN desde SSM de forma segura. Abortando sin tocar nada.";
+              exit 1;
+            }
+
+            TS="$(date -u +%Y%m%dT%H%M%SZ)"
+            BACKUP_DIR=/opt/inconexion/respaldos-config
+            mkdir -p "$BACKUP_DIR" || { echo "no se pudo crear $BACKUP_DIR"; exit 1; }
+            cp -p Caddyfile "$BACKUP_DIR/Caddyfile.$TS.bak" || { echo "no se pudo respaldar Caddyfile"; exit 1; }
+            cp -p app.env "$BACKUP_DIR/app.env.$TS.bak" || { echo "no se pudo respaldar app.env"; exit 1; }
+            echo "Respaldo: $BACKUP_DIR/Caddyfile.$TS.bak y $BACKUP_DIR/app.env.$TS.bak"
+
+            fail_rollback() {
+              echo "## FALLO: $1"
+              echo "## Restaurando Caddyfile y app.env desde el respaldo..."
+              cat "$BACKUP_DIR/Caddyfile.$TS.bak" > Caddyfile
+              cat "$BACKUP_DIR/app.env.$TS.bak" > app.env
+              docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 || true
+              docker compose up -d --force-recreate app 2>&1 || true
+              echo "## Respaldos restaurados. La plataforma no deberia haber quedado caida."
+              exit 1
+            }
+
+            echo "### 1) Quitando $DOMINIO del bloque de sitio del Caddyfile (idempotente) ###"
+            if ! grep -qF "$DOMINIO" Caddyfile; then
+              echo "El dominio ya no esta en el Caddyfile, nada que quitar."
+            else
+              awk -v dom="$DOMINIO" '
+                {
+                  line = $0
+                  if (line !~ /^:80/ && line ~ / \{[[:space:]]*$/ && index(line, dom) > 0) {
+                    header = line
+                    sub(/ \{[[:space:]]*$/, "", header)
+                    n = split(header, hosts, /,[[:space:]]*/)
+                    out = ""
+                    for (i = 1; i <= n; i++) {
+                      h = hosts[i]
+                      gsub(/^[[:space:]]+|[[:space:]]+$/, "", h)
+                      if (h != dom && h != "") out = (out == "" ? h : out ", " h)
+                    }
+                    if (out == "") { print "###ERROR_BLOQUE_QUEDARIA_VACIO###" }
+                    else { print out " {" }
+                  } else {
+                    print line
+                  }
+                }
+              ' Caddyfile > /tmp/Caddyfile.nuevo
+              if grep -q '###ERROR_BLOQUE_QUEDARIA_VACIO###' /tmp/Caddyfile.nuevo; then
+                echo "Quitar $DOMINIO dejaria un bloque de Caddy sin ningun host -- abortando sin tocar nada (nunca se llego a escribir el Caddyfile real)."
+                exit 1
+              fi
+              # Se escribe ENCIMA del mismo archivo (mismo inode) -- igual que
+              # en modo aplicar, para que el bind-mount de caddy vea el cambio.
+              cat /tmp/Caddyfile.nuevo > Caddyfile
+            fi
+
+            echo "### 2) Neutralizando el bloque ':80' generico, si sirve la app (deja de proxiar cualquier host no listado) ###"
+            TIENE_80_GENERICO="$(grep -cE '^:80[[:space:]]*\{[[:space:]]*$' Caddyfile || true)"
+            BLOQUE_80_TIENE_ABORT="$(awk '/^:80[[:space:]]*\{[[:space:]]*$/{f=1} f{print} f&&/^\}[[:space:]]*$/{exit}' Caddyfile | grep -c 'abort' || true)"
+            if [ "${TIENE_80_GENERICO:-0}" != "0" ] && [ "${BLOQUE_80_TIENE_ABORT:-0}" = "0" ]; then
+              awk '
+                /^:80[[:space:]]*\{[[:space:]]*$/ { print ":80 {"; print "\tabort"; print "}"; skip=1; next }
+                skip && /^\}[[:space:]]*$/ { skip=0; next }
+                skip { next }
+                { print }
+              ' Caddyfile > /tmp/Caddyfile.nuevo2
+              cat /tmp/Caddyfile.nuevo2 > Caddyfile
+              echo "Bloque ':80 { reverse_proxy ... }' generico reemplazado por ':80 { abort }'."
+            else
+              echo "No hay bloque ':80' generico sirviendo la app (ya esta neutralizado o no existe)."
+            fi
+
+            echo "### 3) Validando el Caddyfile ###"
+            docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile \
+              || fail_rollback "caddy validate fallo"
+
+            echo "### 4) Recargando Caddy ###"
+            docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+              || fail_rollback "caddy reload fallo"
+
+            echo "### 5) Quitando el origen de $DOMINIO de CORS_ORIGIN ###"
+            QUITAR_ORIGIN="https://${DOMINIO}"
+            if grep -q '^CORS_ORIGIN=' app.env; then
+              CURRENT="$(grep '^CORS_ORIGIN=' app.env | head -1 | cut -d= -f2-)"
+              SOURCE="app.env"
+            else
+              CURRENT="$(aws ssm get-parameter --name "/inconexion/prod/CORS_ORIGIN" --with-decryption --region "${AWS_REGION}" --query Parameter.Value --output text 2>/dev/null || true)"
+              SOURCE="ssm"
+            fi
+            if [ -z "$CURRENT" ] || [ "$CURRENT" = "None" ]; then
+              fail_rollback "no se pudo determinar el CORS_ORIGIN actual (ni en app.env ni en SSM)"
+            fi
+            echo "CORS_ORIGIN actual (fuente: $SOURCE): $CURRENT"
+            NEWLIST="$(printf '%s' "$CURRENT" | tr ',' '\n' | sed '/^$/d' | awk -v q="$QUITAR_ORIGIN" '$0 != q' | awk '!seen[$0]++' | paste -sd, -)"
+            if [ -z "$NEWLIST" ]; then
+              fail_rollback "quitar $QUITAR_ORIGIN dejaria CORS_ORIGIN vacio -- abortando"
+            fi
+            echo "CORS_ORIGIN nuevo: $NEWLIST"
+
+            echo "### 6) Escribiendo CORS_ORIGIN en app.env (gana sobre SSM) ###"
+            if grep -q '^CORS_ORIGIN=' app.env; then
+              awk -v val="CORS_ORIGIN=$NEWLIST" '{ if ($0 ~ /^CORS_ORIGIN=/) print val; else print }' app.env > /tmp/app.env.nuevo
+            else
+              cp -p app.env /tmp/app.env.nuevo
+              printf '\nCORS_ORIGIN=%s\n' "$NEWLIST" >> /tmp/app.env.nuevo
+            fi
+            cat /tmp/app.env.nuevo > app.env
+
+            echo "### 7) Recreando el contenedor app ###"
+            docker compose up -d --force-recreate app || fail_rollback "docker compose up --force-recreate app fallo"
+
+            echo "### 8) Esperando /api/health ###"
+            OK=0
+            for i in $(seq 1 20); do
+              if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then OK=1; break; fi
+              sleep 3
+            done
+            [ "$OK" = "1" ] || fail_rollback "health check de app no respondio tras el force-recreate"
+            curl -fsS http://127.0.0.1:3000/api/health
+            echo ""
+
+            echo "### 9) Apagando (sin borrar) cualquier actualizador de $DOMINIO en cron/systemd ###"
+            ACCION=0
+            if crontab -l 2>/dev/null | grep -qiF "$DOMINIO"; then
+              crontab -l 2>/dev/null > "$BACKUP_DIR/crontab-usuario.$TS.bak"
+              crontab -l 2>/dev/null | grep -viF "$DOMINIO" | crontab -
+              echo "Crontab del usuario de deploy: se quito la entrada de $DOMINIO (respaldo completo en $BACKUP_DIR/crontab-usuario.$TS.bak)."
+              ACCION=1
+            fi
+            if sudo -n crontab -l -u root 2>/dev/null | grep -qiF "$DOMINIO"; then
+              sudo -n crontab -l -u root 2>/dev/null > "$BACKUP_DIR/crontab-root.$TS.bak"
+              sudo -n bash -c "crontab -l -u root 2>/dev/null | grep -viF '$DOMINIO' | crontab -u root -"
+              echo "Crontab de root: se quito la entrada de $DOMINIO (respaldo completo en $BACKUP_DIR/crontab-root.$TS.bak)."
+              ACCION=1
+            fi
+            SUBNOMBRE="$(echo "$DOMINIO" | cut -d. -f1)"
+            for unit in $(systemctl list-units --all --type=timer,service --no-legend 2>/dev/null | awk '{print $1}' | grep -iF "$SUBNOMBRE" || true); do
+              echo "Deteniendo y deshabilitando unidad systemd: $unit (no se borra el archivo de unidad)"
+              sudo -n systemctl stop "$unit" 2>&1 || true
+              sudo -n systemctl disable "$unit" 2>&1 || true
+              ACCION=1
+            done
+            if [ "$ACCION" = "0" ]; then
+              echo "No se encontro actualizador de $DOMINIO en crontab (usuario/root) ni en unidades systemd por nombre."
+            fi
+            echo "-- Archivos sueltos bajo /opt y /home/ubuntu que aun mencionan $DOMINIO (revisar a mano, no se tocan automaticamente): --"
+            grep -rilF "$DOMINIO" /opt /home/ubuntu 2>/dev/null | grep -vF '/opt/inconexion/respaldos-config' || echo "(ninguno)"
+
+            docker image prune -f || true
+
+            echo "### Listo. $DOMINIO quitado del Caddyfile y de CORS_ORIGIN. ###"
 
       - name: Cerrar SSH (22) — revertir el firewall al estado previo
         if: always() && steps.fw.outputs.before != ''

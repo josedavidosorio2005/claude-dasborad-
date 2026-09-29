@@ -11,14 +11,18 @@ Rama: `feat/dashboards-pro-y-aws`
 > - **§0 a §13 de este documento** (todo lo de abajo hasta antes de §14)
 >   describen el despliegue **original**, cuenta AWS **`934685482338`**
 >   (usuario `deploy-inconexion`), instancia `inconexion-prod` en
->   `100.51.93.1`. Es **HISTÓRICO**: sigue corriendo (no se apaga hasta una
->   semana después del corte de dominio), pero ya no es donde se despliega.
+>   `100.51.93.1`. Es **HISTÓRICO** y ya no es donde se despliega — ver el
+>   inventario de la Fase 93 en `PROGRESS.md` para el estado real de lo que
+>   queda en esa cuenta (no tiene instancia activa a esa fecha; solo un
+>   bucket S3 con backups viejos y los usuarios/rol IAM).
 > - **[§14 — Migración a la cuenta `877538609452`](#14-migración-a-la-cuenta-aws-877538609452-cuenta-actual)**
 >   (al final del documento) describe la cuenta **ACTUAL**, la que recibe el
 >   pipeline de GitHub Actions desde 2026-09-15 y la que sirve
->   `inconexionpruebasclaude.duckdns.org` una vez cortado el DNS. **Para
->   cualquier pregunta sobre el estado real de producción, empezar por §14,
->   no por §11.**
+>   `https://informa.inconexion.com.co` (único dominio desde la Fase 93,
+>   29/09/2026 — duckdns se retiró, las menciones a
+>   `inconexionpruebasclaude.duckdns.org` en el resto de este documento son
+>   históricas). **Para cualquier pregunta sobre el estado real de
+>   producción, empezar por §14, no por §11.**
 >
 > Motivo de dejarlo así de explícito: una sesión anterior de Claude empezó a
 > responder sobre el estado de producción usando solo la memoria de la cuenta
@@ -723,6 +727,18 @@ bloquean.
 > Empezada 2026-09-14 (infraestructura base) y completada 2026-09-15 (app
 > desplegada y verificada). Ver también `.github/workflows/audit-instance.yml`
 > y `migracion/` (no versionado — inventario de la cuenta origen y policies).
+
+> **Actualización — Fase 93 (2026-09-29):** dominio único de producción
+> `https://informa.inconexion.com.co`; `inconexionpruebasclaude.duckdns.org`
+> se retiró (Caddyfile, `CORS_ORIGIN` y cualquier actualizador dinámico que
+> hubiera). Inventario de solo lectura de la cuenta origen (`934685482338`)
+> en esa fecha: **sin instancia Lightsail activa** (ni disco ni IP estática
+> — ya no está, antes de lo que decía la regla de "una semana después del
+> corte de DNS" de más abajo), solo queda el bucket S3 de backups viejos
+> (`inconexion-backups-josedavidosorio2005`, ~3.6 MB) y los usuarios/rol
+> IAM (`deploy-inconexion`, `inconexion-instance`,
+> `inconexion-github-deploy`). Detalle completo en `PROGRESS.md` → «Fase
+> 93».
 
 ### Por qué se migró
 
