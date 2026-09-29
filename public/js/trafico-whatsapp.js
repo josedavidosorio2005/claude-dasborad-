@@ -288,9 +288,16 @@ function _traficoWppRenderContenido(i){
   var totalAbandonados = tieneAbandonados ? filtradas.reduce(function(a,f){ return a+(f.abandonados||0); }, 0) : null;
   var nivelAtencion = totalWpp>0 ? Math.round((totalContestados/totalWpp)*1000)/10 : null;
   var tasaAbandono = (totalWpp>0 && tieneAbandonados) ? Math.round((totalAbandonados/totalWpp)*1000)/10 : null;
+  // Fase 87 (tema A): nivel de servicio, ponderado por el total del mismo
+  // rango YA filtrado -- mismo criterio que Llamadas (trafico.js). Por ahora
+  // sigue leyendo el campo de 20s (unico disponible); Tema B (mas abajo, PR
+  // aparte) lo cambia al de 5 minutos y agrega el aviso de "sin dato".
+  var nivelServicio = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
 
-  _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono },
-    { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados' }, campana);
+  _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
+    { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados',
+      nivelServicioLabel: 'Nivel de Servicio (20 s)',
+      nivelServicioNota: 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.' }, campana);
 
   _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
 

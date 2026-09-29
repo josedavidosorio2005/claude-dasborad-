@@ -394,6 +394,26 @@ function traficoAhtPromedioPeriodo(filas) {
   return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;
 }
 
+// Fase 87 (tema A, nota del jefe: "siempre tener visible el nivel de
+// servicio, en Resumen"): colapsa un conjunto de filas YA filtradas (el
+// mismo `filtradas` que ya usa la tarjeta "Resumen" para Total/Contestadas/
+// Nivel de Atencion) a UN solo numero ponderado por TOTAL LLAMADAS -- mismo
+// criterio de peso que traficoAgregar usa para serviceLevel10/20/30secPct
+// (el nivel de servicio se mide sobre TODO lo que entro, no solo lo
+// contestado). Generica en `campo` para poder reusarse tal cual con
+// cualquier columna de nivel de servicio (20s hoy; WhatsApp usa su propia
+// version ponderada por TOTAL WHATSAPP, trafico-whatsapp-logic.js). Si
+// ninguna fila trae el campo, devuelve null (nunca 0 ni un numero
+// inventado) -- la tarjeta debe mostrar "—", no un dato que no existe.
+function traficoServiceLevelPromedioPeriodo(filas, campo) {
+  var suma = 0, peso = 0;
+  (filas || []).forEach(function (f) {
+    var w = Number(f.totalLlamadas) || 0;
+    if (f[campo] != null && w > 0) { suma += f[campo] * w; peso += w; }
+  });
+  return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;
+}
+
 // ── Filtro "Skill": desplegable principal + comparador (Fase 60/65) ─────
 // Fase 60 introdujo el desplegable "Skill" (una sola linea o "Todas") mas
 // un listbox secundario "Comparar varias lineas" para 2+. Bug real de la
@@ -485,6 +505,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,
     traficoAhtPromedioPeriodo: traficoAhtPromedioPeriodo,
+    traficoServiceLevelPromedioPeriodo: traficoServiceLevelPromedioPeriodo,
     traficoResolverSkillsControles: traficoResolverSkillsControles,
     traficoModoDisplaySkills: traficoModoDisplaySkills,
     traficoValidarNuevoMapeo: traficoValidarNuevoMapeo,

@@ -20,6 +20,7 @@ const {
   traficoWppFiltrarFilas,
   traficoWppPeriodoDe,
   traficoWppAgregarPorPeriodo,
+  traficoWppServiceLevelPromedioPeriodo,
 } = require('../../public/js/trafico-whatsapp-logic.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx');
@@ -322,4 +323,35 @@ test('traficoWppAgregarPorPeriodo: dos filas de la MISMA cola en el mismo mes se
   assert.equal(agregado.length, 1);
   assert.equal(agregado[0].totalLlamadas, 100);
   assert.equal(agregado[0].contestadas, 85);
+});
+
+// ── traficoWppServiceLevelPromedioPeriodo (Fase 87, tema A: tarjeta "Nivel
+// de Servicio" siempre visible en "Resumen") -- ponderado por TOTAL
+// WHATSAPP, mismo criterio de peso que traficoWppAgregarPorPeriodo usa para
+// serviceLevel10/20/30secPct.
+test('traficoWppServiceLevelPromedioPeriodo: ponderado por TOTAL WHATSAPP (no un promedio simple de los %)', () => {
+  const filas = [
+    { totalWhatsapp: 100, serviceLevel20secPct: 60 },
+    { totalWhatsapp: 300, serviceLevel20secPct: 90 },
+  ];
+  // Simple (60+90)/2=75 seria incorrecto. Ponderado: (100*60+300*90)/400 = 82.5
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 82.5);
+});
+
+test('traficoWppServiceLevelPromedioPeriodo: filas sin el campo se ignoran, no cuentan como 0', () => {
+  const filas = [
+    { totalWhatsapp: 100, serviceLevel20secPct: null },
+    { totalWhatsapp: 200, serviceLevel20secPct: 88 },
+  ];
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 88);
+});
+
+test('traficoWppServiceLevelPromedioPeriodo: ninguna fila trae el campo -> null (Tema B: agosto sin SERVICE_LEVEL_5MIN)', () => {
+  const filas = [{ totalWhatsapp: 100 }, { totalWhatsapp: 200, serviceLevel5minPct: null }];
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(filas, 'serviceLevel5minPct'), null);
+});
+
+test('traficoWppServiceLevelPromedioPeriodo: sin filas -> null', () => {
+  assert.equal(traficoWppServiceLevelPromedioPeriodo([], 'serviceLevel20secPct'), null);
+  assert.equal(traficoWppServiceLevelPromedioPeriodo(undefined, 'serviceLevel20secPct'), null);
 });

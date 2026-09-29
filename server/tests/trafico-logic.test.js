@@ -20,6 +20,7 @@ const {
   traficoFiltrarFilas,
   traficoAgregar,
   traficoAhtPromedioPeriodo,
+  traficoServiceLevelPromedioPeriodo,
   traficoVentana12Meses,
   traficoResolverSkillsControles,
   traficoModoDisplaySkills,
@@ -587,6 +588,45 @@ test('traficoAhtPromedioPeriodo: coincide EXACTO con traficoAgregar (granularida
   assert.equal(traficoAhtPromedioPeriodo(filas), agregado[0].ahtSegundos);
   // (90*200 + 280*240) / (90+280) = 85200/370 = 230.27
   assert.equal(traficoAhtPromedioPeriodo(filas), 230.27);
+});
+
+// ── traficoServiceLevelPromedioPeriodo (Fase 87, tema A: tarjeta "Nivel de
+// Servicio" siempre visible en "Resumen") -- mismo criterio de peso que
+// traficoAgregar usa para serviceLevel10/20/30secPct (ponderado por TOTAL
+// LLAMADAS, no por contestadas -- a diferencia de traficoAhtPromedioPeriodo).
+test('traficoServiceLevelPromedioPeriodo: ponderado por TOTAL LLAMADAS (no un promedio simple de los %)', () => {
+  const filas = [
+    { totalLlamadas: 100, serviceLevel20secPct: 80 },
+    { totalLlamadas: 300, serviceLevel20secPct: 90 },
+  ];
+  // Simple (80+90)/2=85 seria incorrecto. Ponderado: (100*80+300*90)/400 = 87.5
+  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 87.5);
+});
+
+test('traficoServiceLevelPromedioPeriodo: filas sin el campo se ignoran, no cuentan como 0', () => {
+  const filas = [
+    { totalLlamadas: 100, serviceLevel20secPct: null },
+    { totalLlamadas: 200, serviceLevel20secPct: 92 },
+  ];
+  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 92);
+});
+
+test('traficoServiceLevelPromedioPeriodo: ninguna fila trae el campo -> null (nunca 0 ni un dato inventado)', () => {
+  const filas = [{ totalLlamadas: 100 }, { totalLlamadas: 200, serviceLevel20secPct: null }];
+  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), null);
+});
+
+test('traficoServiceLevelPromedioPeriodo: sin filas -> null', () => {
+  assert.equal(traficoServiceLevelPromedioPeriodo([], 'serviceLevel20secPct'), null);
+  assert.equal(traficoServiceLevelPromedioPeriodo(undefined, 'serviceLevel20secPct'), null);
+});
+
+test('traficoServiceLevelPromedioPeriodo: generica en el campo -- funciona igual para un campo hipotetico de 5 minutos (Tema B)', () => {
+  const filas = [
+    { totalLlamadas: 50, serviceLevel5minPct: 99 },
+    { totalLlamadas: 50, serviceLevel5minPct: 97 },
+  ];
+  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel5minPct'), 98);
 });
 
 // Fase 77: ASA comparte la misma regla (tiempo hasta que SE CONTESTA,
