@@ -34,9 +34,13 @@ asumir en qué quedó una fase anterior.
   (Precedente real: Fase 85 cerró con un commit directo a `main`,
   `a440176`, solo `PROGRESS.md` — no debió pasar por fuera de un PR.)
 - Todo cambio sigue el ciclo completo: rama nueva → tests → CI verde
-  (Node 18/20/22 + docker-build) → `npm audit` limpio → PR → merge →
+  (Node 22 + docker-build) → `npm audit` limpio → PR → merge →
   deploy automático (AWS vía OIDC) → verificación en producción real
   cuando aplica (no solo el test suite).
+  (Desde la Fase 96, CI solo prueba Node 22 — la versión de producción,
+  `server/Dockerfile`. Node 18/20 salieron de la matriz: ya no tienen
+  soporte upstream y `better-sqlite3` no trae binario listo para ellos,
+  lo que colgaba esos jobs.)
 - Cualquier cosa que toque CI/workflows (`.github/workflows/`) o secretos
   de deploy se consulta con el usuario ANTES de tocarla — no asumir que
   "arreglar CI" autoriza cambiarlo sin avisar.

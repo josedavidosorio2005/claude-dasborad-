@@ -4,6 +4,12 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.0.1 — Octubre 2026
+
+Mantenimiento: pruebas automáticas más rápidas y estables. También se
+activó seguridad adicional del repositorio (nada visible para quien usa
+la plataforma).
+
 ## v1.0.0 — Octubre 2026 — Entrega ORLANT
 
 Primera version que se entrega a ORLANT. El dashboard de ORLANT ya tiene:
