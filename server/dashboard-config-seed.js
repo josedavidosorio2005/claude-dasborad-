@@ -217,17 +217,27 @@ const ORLANT = {
       // comparten los mismos filtros (mes/especialidad/rango, estado por
       // CAMPANA -- ver public/js/inasistencia.js). Posicion: justo despues
       // de Agendamiento (orden de ORLANT, ver
-      // dashboards_config_orlant_orden_pestanas_v2 en db.js). Ver la
-      // migracion idempotente dashboards_config_orlant_inasistencia_panel_v1
-      // en db.js -- dashboards_config ya existia en produccion con la forma
-      // vieja, asi que la forma nueva del seed nunca le habria llegado sola.
+      // dashboards_config_orlant_orden_pestanas_v2 en db.js).
+      //
+      // Fase 101 (pedido del jefe): la vista PRINCIPAL pasa a ser "Por mes"
+      // (total de TODAS las especialidades juntas, sin filtro, una sola
+      // grafica comparando citas vs. inasistencias con el % ponderado) --
+      // "Por especialidad" deja de ser la principal y pasa a incluir la
+      // linea de tendencia por especialidad que antes vivia en "Por mes".
+      // Ver la migracion idempotente
+      // dashboards_config_orlant_inasistencia_panel_v1 (forma vieja de la
+      // Fase 98 -> esta forma) y
+      // dashboards_config_orlant_inasistencia_panel_v2 (esta forma -> la de
+      // la Fase 101) en db.js -- dashboards_config ya existia en produccion
+      // con la forma de la Fase 98, asi que esta forma nueva del seed nunca
+      // le habria llegado sola.
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
-        { tipo: 'inasistencia_panel', vista: 'especialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
-        { tipo: 'inasistencia_panel', vista: 'mes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
+        { tipo: 'inasistencia_panel', vista: 'pormes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
+        { tipo: 'inasistencia_panel', vista: 'porespecialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
         { tipo: 'inasistencia_panel', vista: 'detalle', titulo: 'Detalle de Inasistencia', campana: 'ORLANT' },
       ], subtabs: [
-        { key: 'porespecialidad', label: 'Por especialidad', indices: [0] },
-        { key: 'pormes', label: 'Por mes', indices: [1] },
+        { key: 'pormes', label: 'Por mes', indices: [0] },
+        { key: 'porespecialidad', label: 'Por especialidad', indices: [1] },
         { key: 'detalle', label: 'Detalle', indices: [2] },
       ]},
       { key: 'sta', label: 'Gestión STA', oculta: true, panels: [

@@ -17,6 +17,8 @@ const {
   inasistenciaFilaComoArray,
   inasistenciaMesesDeFilas,
   inasistenciaMesLbl,
+  inasistenciaAgregarPorMes,
+  inasistenciaMesesIncompletos,
 } = require('../../public/js/inasistencia-logic.js');
 
 // "Hoy" fijo para que la inferencia de año sea determinista en las pruebas
@@ -183,4 +185,77 @@ test('INASISTENCIA_COLUMNAS: ESPECIALIDAD tiene "ESPECIALIDA" como alias, AÑO e
   assert.ok(esp.labelAlt.includes('ESPECIALIDA'));
   const anio = INASISTENCIA_COLUMNAS.find((c) => c.key === 'anio');
   assert.equal(anio.obligatoria, false);
+});
+
+// ── "Por mes" (Fase 101, sub-pestaña PRINCIPAL): agregado de todas las
+// especialidades juntas, % PONDERADO (nunca el promedio simple de los % de
+// cada especialidad) -- numeros de control de Ago-26 (5.893 citas, 332
+// inasistencias+pendientes, 5,63 %). Datos SIEMPRE inventados (2
+// especialidades ficticias cuya suma cuadra con el total real de control),
+// nunca el desglose real de ORLANT.
+test('inasistenciaAgregarPorMes: suma TODAS las especialidades del mes y calcula el % PONDERADO (5,63 %, no el promedio simple ~9,39 %)', () => {
+  const filas = [
+    { mes: '2026-08', especialidad: 'ESPECIALIDAD GRANDE', cancelada: 0, inasistencia: 200, pendiente: 0, atendidas: 4800, total: 5000 },
+    { mes: '2026-08', especialidad: 'ESPECIALIDAD CHICA', cancelada: 0, inasistencia: 132, pendiente: 0, atendidas: 761, total: 893 },
+  ];
+  const agregado = inasistenciaAgregarPorMes(filas);
+  assert.equal(agregado.length, 1);
+  assert.equal(agregado[0].mes, '2026-08');
+  assert.equal(agregado[0].total, 5893);
+  assert.equal(agregado[0].inasistenciaPendiente, 332);
+  assert.equal(agregado[0].pct, 5.63); // 332/5893*100, ponderado
+
+  // El promedio simple de los % de cada especialidad (4,00 % y 14,78 %) da
+  // ~9,39 % -- bien distinto del 5,63 % ponderado. Confirma que
+  // inasistenciaAgregarPorMes NUNCA promedia los % por especialidad.
+  const pctGrande = Math.round((200 / 5000) * 10000) / 100;
+  const pctChica = Math.round((132 / 893) * 10000) / 100;
+  const promedioSimple = Math.round(((pctGrande + pctChica) / 2) * 100) / 100;
+  assert.equal(promedioSimple, 9.39);
+  assert.notEqual(agregado[0].pct, promedioSimple);
+});
+
+test('inasistenciaAgregarPorMes: un mes por fila, ordenados asc, con las especialidades que aportaron datos', () => {
+  const filas = [
+    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 10, pendiente: 0, atendidas: 90, total: 100 },
+    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 5, pendiente: 0, atendidas: 95, total: 100 },
+  ];
+  const agregado = inasistenciaAgregarPorMes(filas);
+  assert.deepEqual(agregado.map((a) => a.mes), ['2026-08', '2026-09']);
+  assert.deepEqual(agregado[0].especialidades, ['AUDIFONOS', 'AUDIOLOGIA']);
+  assert.deepEqual(agregado[1].especialidades, ['EXAMENES ESPECIALES']);
+});
+
+test('inasistenciaAgregarPorMes: sin filas -> sin meses', () => {
+  assert.deepEqual(inasistenciaAgregarPorMes([]), []);
+  assert.deepEqual(inasistenciaAgregarPorMes(undefined), []);
+});
+
+// ── Aviso de mes incompleto (Fase 101, debajo de la grafica "Por mes") ──
+test('inasistenciaMesesIncompletos: un mes con MENOS especialidades que el mas completo del rango queda marcado -- ej. real "Sep-26: solo incluye Examenes Especiales"', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-08', especialidad: 'EXAMENES ESPECIALES', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
+  ]);
+  const incompletos = inasistenciaMesesIncompletos(agregado);
+  assert.equal(incompletos.length, 1);
+  assert.equal(incompletos[0].mes, '2026-09');
+  assert.deepEqual(incompletos[0].especialidades, ['EXAMENES ESPECIALES']);
+});
+
+test('inasistenciaMesesIncompletos: todos los meses con el mismo numero de especialidades -> ningun aviso', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-09', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+  ]);
+  assert.deepEqual(inasistenciaMesesIncompletos(agregado), []);
+});
+
+test('inasistenciaMesesIncompletos: sin meses -> sin avisos', () => {
+  assert.deepEqual(inasistenciaMesesIncompletos([]), []);
 });

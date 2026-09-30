@@ -1,15 +1,19 @@
 // inasistencia.js — InConexion Platform (Fase 98, ORLANT, pedido URGENTE de
-// Edwin). Inasistencia tiene 3 sub-pestañas ("Por especialidad", "Por mes",
+// Edwin; Fase 101: la vista PRINCIPAL pasa a ser "Por mes", total de todas
+// las especialidades juntas -- "Por especialidad" deja de ser la principal).
+// Inasistencia tiene 3 sub-pestañas ("Por mes", "Por especialidad",
 // "Detalle"), cada una su PROPIO panel `inasistencia_panel` (con un `vista`
 // distinto) pero las 3 COMPARTEN los mismos filtros: el estado vive por
 // CAMPANA (_inasistenciaEstado[campana]), no por indice de panel -- mismo
 // patron que Agendamiento (public/js/agendas.js).
 //
-// A diferencia de Agendamiento, el filtro de Mes de Inasistencia NO tiene un
-// <select> propio: siempre sigue al selector "MES" de arriba (_gd.mesSel) --
-// "Por especialidad" y "Detalle" muestran ese mes; "Por mes" lo ignora a
-// proposito (linea de tendencia, mismo criterio que "Total de Agendas por
-// Mes") y en su lugar ofrece un rango (desde/hasta) opcional.
+// "Por mes" (Fase 101) NUNCA filtra por especialidad -- siempre suma TODAS.
+// El mes de sus tarjetas sigue al selector "MES" de arriba (_gd.mesSel),
+// igual que antes; su grafica compara TODOS los meses con datos, sin
+// importar el mes elegido arriba. "Por especialidad" y "Detalle" si tienen
+// filtro de especialidad y siguen mostrando el mes elegido arriba;
+// "Por especialidad" ademas trae su propio rango (desde/hasta) opcional
+// para la linea de tendencia (movida aqui desde la vieja "Por mes").
 'use strict';
 
 var _inasistenciaOpciones = {}; // cache por campana: { meses, especialidades }
@@ -19,8 +23,8 @@ var _inasistenciaVistaPorPanel = {};
 var _inasistenciaCache = {}; // invalidado tras cada carga nueva (ver cargas.js) -- hoy sin uso propio, reservado por si se agrega cache de datos.
 
 var _INASISTENCIA_VISTAS = {
-  especialidad: { titulo: 'Inasistencia por Especialidad' },
-  mes: { titulo: 'Inasistencia por Mes' },
+  pormes: { titulo: 'Inasistencia por Mes' },
+  porespecialidad: { titulo: 'Inasistencia por Especialidad' },
   detalle: { titulo: 'Detalle de Inasistencia' },
 };
 
@@ -59,8 +63,8 @@ function _inasistenciaSumar(filas){
 
 async function _inasistenciaRenderPanel(p, i){
   var campana = p.campana;
-  var vista = p.vista || 'especialidad';
-  var def = _INASISTENCIA_VISTAS[vista] || _INASISTENCIA_VISTAS.especialidad;
+  var vista = p.vista || 'pormes';
+  var def = _INASISTENCIA_VISTAS[vista] || _INASISTENCIA_VISTAS.pormes;
   _inasistenciaCampanaPorPanel[i] = campana;
   _inasistenciaVistaPorPanel[i] = vista;
   var host = document.getElementById('gd-p'+i);
@@ -77,35 +81,9 @@ async function _inasistenciaRenderPanel(p, i){
   }
 
   var sinDatosMes = _inasistenciaSincronizarConMesGlobal(campana, opciones);
-  if(vista === 'especialidad') await _inasistenciaRenderEspecialidad(host, campana, i, opciones, titulo, sinDatosMes);
-  else if(vista === 'mes') await _inasistenciaRenderMes(host, campana, i, opciones, titulo);
+  if(vista === 'pormes') await _inasistenciaRenderPorMes(host, campana, i, opciones, titulo, sinDatosMes);
+  else if(vista === 'porespecialidad') await _inasistenciaRenderEspecialidad(host, campana, i, opciones, titulo, sinDatosMes);
   else await _inasistenciaRenderDetalle(host, campana, i, opciones, titulo, sinDatosMes);
-}
-
-// ── "Por especialidad": tarjetas del mes + 2 graficas ───────────────────
-async function _inasistenciaRenderEspecialidad(host, campana, i, opciones, titulo, sinDatosMes){
-  if(sinDatosMes){
-    var ultimoConDatos = opciones.meses[opciones.meses.length-1];
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      _gdAvisoSinDatosMesHtml('Inasistencia', _gd.mesSel, ultimoConDatos) + '</div>';
-    return;
-  }
-  var estado = _inasistenciaEstado[campana];
-  var html = '<div class="aurora-card">';
-  html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
-  html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
-  html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Especialidad</label><select id="inasist-f-especialidad-'+i+'">'+_inasistenciaOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
-  html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_inasistenciaAplicarFiltros('+i+')">Aplicar filtros</button></div>';
-  html += '</div>';
-  html += '<div class="aurora-kpis" id="inasist-tarjetas-'+i+'"></div>';
-  html += '<div class="aurora-grid-2">';
-  html += '<div class="aurora-card"><div class="aurora-card-title">% de inasistencia por especialidad <span class="gd-help" title="(Inasistencia + Pendientes) / Total, por especialidad. Los pendientes cuentan como inasistencia; cancelados van en el denominador.">?</span></div><div class="aurora-chart-wrap" style="height:260px"><canvas id="inasist-c-pct-'+i+'"></canvas></div></div>';
-  html += '<div class="aurora-card"><div class="aurora-card-title">Citas por estado y especialidad</div><div class="aurora-chart-wrap" style="height:260px"><canvas id="inasist-c-apilada-'+i+'"></canvas></div></div>';
-  html += '</div>';
-  html += '<div id="inasist-aviso-'+i+'"></div>';
-  html += '</div>';
-  host.innerHTML = html;
-  await _inasistenciaDibujarEspecialidad(campana, i, opciones);
 }
 
 function _inasistenciaTarjetaHtml(titulo, valor, formato, vari){
@@ -122,93 +100,110 @@ function _inasistenciaTarjetaHtml(titulo, valor, formato, vari){
   return '<div class="aurora-kpi gd-kpi"><div class="kv">'+txt+'</div><div class="kl">'+esc(titulo)+'</div>'+trendHtml+'</div>';
 }
 
-async function _inasistenciaDibujarEspecialidad(campana, i, opciones){
-  var estado = _inasistenciaEstado[campana];
-  var mes = estado.mes;
-  var qs = 'campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mes)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'');
+// ── "Por mes" (Fase 101, vista PRINCIPAL): tarjetas del mes elegido arriba
+// -- SIEMPRE todas las especialidades juntas, sin filtro -- mas una sola
+// grafica que compara el total de citas contra las inasistencias (incluye
+// pendientes) de CADA mes con datos, con el % ponderado en una linea de eje
+// secundario. Aviso automatico cuando un mes trae menos especialidades que
+// el mes mas completo del rango (ver inasistenciaMesesIncompletos,
+// inasistencia-logic.js).
+async function _inasistenciaRenderPorMes(host, campana, i, opciones, titulo, sinDatosMes){
+  var html = '<div class="aurora-card">';
+  html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
+  html += '<div id="inasist-tarjetas-wrap-'+i+'"></div>';
+  html += '<div class="aurora-card-title" style="margin-top:10px">Citas vs. inasistencias por mes '+
+    '<span class="gd-help" title="Inasistencias (incluye pendientes) = suma de INASISTENCIA + PENDIENTES de TODAS las especialidades, del mes. % de inasistencia = esa suma dividida entre el total de citas del mes, PONDERADO (nunca el promedio simple del % de cada especialidad).">?</span></div>';
+  html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="inasist-c-pormes-'+i+'"></canvas></div>';
+  html += '<div id="inasist-aviso-'+i+'"></div>';
+  html += '</div>';
+  host.innerHTML = html;
+  await _inasistenciaDibujarPorMes(campana, i, opciones, sinDatosMes);
+}
+
+async function _inasistenciaDibujarPorMes(campana, i, opciones, sinDatosMes){
+  var qs = 'campana='+encodeURIComponent(campana);
   var datos = [];
-  try{ datos = await apiRequest('GET','/calidad/inasistencia/especialidad?'+qs) || []; }catch(e){ showToast(e.message); }
+  try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+qs) || []; }catch(e){ showToast(e.message); }
+  var agregado = inasistenciaAgregarPorMes(datos);
 
-  var tot = _inasistenciaSumar(datos);
-  var pct = inasistenciaPctPonderado(tot.inasistencia, tot.pendiente, tot.total);
-
-  var mesesOrdenados = opciones.meses; // ya vienen ordenados asc del servidor
-  var idxMes = mesesOrdenados.indexOf(mes);
-  var mesAnterior = idxMes > 0 ? mesesOrdenados[idxMes-1] : null;
-  var totPrev = null, pctPrev = null, datosPrevTodas = null;
-  if(mesAnterior){
-    var qsPrev = 'campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesAnterior)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'');
-    try{
-      var filasPrev = await apiRequest('GET','/calidad/inasistencia/especialidad?'+qsPrev) || [];
-      totPrev = _inasistenciaSumar(filasPrev);
-      pctPrev = inasistenciaPctPonderado(totPrev.inasistencia, totPrev.pendiente, totPrev.total);
-      if(!estado.especialidad) datosPrevTodas = filasPrev; // ya trae TODAS las especialidades (sin filtro)
-    }catch(e){}
-  }
-
-  var tarjetasEl = document.getElementById('inasist-tarjetas-'+i);
-  if(tarjetasEl){
-    var variTotal = (totPrev !== null) ? _gdVariacion(tot.total, totPrev.total) : null;
-    var variAtendidas = (totPrev !== null) ? _gdVariacion(tot.atendidas, totPrev.atendidas) : null;
-    var variCanceladas = (totPrev !== null) ? _gdVariacion(tot.cancelada, totPrev.cancelada) : null;
-    var variInasist = (totPrev !== null) ? _gdVariacion(tot.inasistencia, totPrev.inasistencia) : null;
-    var variPendientes = (totPrev !== null) ? _gdVariacion(tot.pendiente, totPrev.pendiente) : null;
-    var variPct = (pctPrev !== null) ? _gdVariacion(pct, pctPrev) : null;
-    tarjetasEl.innerHTML =
-      _inasistenciaTarjetaHtml('Total de citas', tot.total, 'entero', variTotal) +
-      _inasistenciaTarjetaHtml('Atendidas', tot.atendidas, 'entero', variAtendidas) +
-      _inasistenciaTarjetaHtml('Canceladas', tot.cancelada, 'entero', variCanceladas) +
-      _inasistenciaTarjetaHtml('Inasistencia', tot.inasistencia, 'entero', variInasist) +
-      _inasistenciaTarjetaHtml('Pendientes', tot.pendiente, 'entero', variPendientes) +
-      _inasistenciaTarjetaHtml('% de inasistencia', pct, 'pct', variPct);
-  }
-
-  // Aviso: el mes elegido tiene MENOS especialidades que el mes anterior
-  // (ej. Septiembre recien empieza) -- nunca se inventan ceros para las
-  // que faltan.
-  var avisoEl = document.getElementById('inasist-aviso-'+i);
-  if(avisoEl){
-    avisoEl.innerHTML = '';
-    if(!estado.especialidad && datosPrevTodas){
-      var espActuales = {}; datos.forEach(function(r){ espActuales[r.especialidad] = true; });
-      var espPrev = {}; datosPrevTodas.forEach(function(r){ espPrev[r.especialidad] = true; });
-      var nActuales = Object.keys(espActuales).length, nPrev = Object.keys(espPrev).length;
-      if(nActuales < nPrev){
-        var nombres = Object.keys(espActuales).map(textoFormatoNombre).sort().join(', ') || 'ninguna especialidad';
-        avisoEl.innerHTML = '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+
-          esc(_gdMesLbl(mes)+': solo hay datos de '+nombres+'.')+'</div>';
+  // Tarjetas del mes elegido arriba (aviso en su lugar si ese mes no tiene
+  // datos -- la grafica de abajo sigue mostrando todos los meses igual).
+  var wrap = document.getElementById('inasist-tarjetas-wrap-'+i);
+  if(wrap){
+    if(sinDatosMes){
+      var ultimoConDatos = agregado.length ? agregado[agregado.length-1].mes : null;
+      wrap.innerHTML = _gdAvisoSinDatosMesHtml('Inasistencia', _gd.mesSel, ultimoConDatos);
+    } else {
+      var mes = (_inasistenciaEstado[campana] || {}).mes;
+      var idxMes = agregado.map(function(a){ return a.mes; }).indexOf(mes);
+      var actual = idxMes !== -1 ? agregado[idxMes] : null;
+      var anterior = idxMes > 0 ? agregado[idxMes-1] : null;
+      if(actual){
+        var variTotal = anterior ? _gdVariacion(actual.total, anterior.total) : null;
+        var variAtendidas = anterior ? _gdVariacion(actual.atendidas, anterior.atendidas) : null;
+        var variCanceladas = anterior ? _gdVariacion(actual.cancelada, anterior.cancelada) : null;
+        var variInasist = anterior ? _gdVariacion(actual.inasistencia, anterior.inasistencia) : null;
+        var variPendientes = anterior ? _gdVariacion(actual.pendiente, anterior.pendiente) : null;
+        var variPct = anterior ? _gdVariacion(actual.pct, anterior.pct) : null;
+        wrap.innerHTML = '<div class="aurora-kpis">' +
+          _inasistenciaTarjetaHtml('Total de citas', actual.total, 'entero', variTotal) +
+          _inasistenciaTarjetaHtml('Atendidas', actual.atendidas, 'entero', variAtendidas) +
+          _inasistenciaTarjetaHtml('Canceladas', actual.cancelada, 'entero', variCanceladas) +
+          _inasistenciaTarjetaHtml('Inasistencia', actual.inasistencia, 'entero', variInasist) +
+          _inasistenciaTarjetaHtml('Pendientes', actual.pendiente, 'entero', variPendientes) +
+          _inasistenciaTarjetaHtml('% de inasistencia', actual.pct, 'pct', variPct) +
+          '</div>';
+      } else {
+        wrap.innerHTML = '';
       }
     }
   }
 
-  var o1 = loPct(null);
-  o1.plugins.datalabels.align = 'end';
-  _gdChart('inasist-c-pct-'+i, {
-    type: 'bar',
-    data: { labels: datos.map(function(r){ return textoFormatoNombre(r.especialidad); }),
-      datasets: [{ label: '% Inasistencia', data: datos.map(function(r){ return inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total) || 0; }),
-        backgroundColor: datos.map(function(r){ return paletaColorPara(r.especialidad); }), borderRadius: 3 }] },
-    options: loDatalabelsAuto(o1),
+  var labels = agregado.map(function(a){ return inasistenciaMesLbl(a.mes); });
+  var barras = [
+    { label: 'Total de citas', data: agregado.map(function(a){ return a.total; }), color: (typeof CM!=='undefined'?CM:'#1a7a9e') },
+    { label: 'Inasistencias (incluye pendientes)', data: agregado.map(function(a){ return a.inasistenciaPendiente; }), color: (typeof CR!=='undefined'?CR:'#e74c3c') },
+  ];
+  var linea = { label: '% de inasistencia', data: agregado.map(function(a){ return a.pct; }), color: (typeof CD!=='undefined'?CD:'#0d4a5e') };
+  var ds = gdComboDatasets(barras, linea);
+  var o = loBar();
+  o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {
+    generateLabels: function(chart){
+      return chart.data.datasets.map(function(dset, idx){
+        var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
+        return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
+      });
+    }
   });
+  o.scales = {
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v); }} },
+    y2: { position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:8}} },
+  };
+  o.plugins.datalabels = {
+    display: true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+    formatter: function(v, ctx){ if(v===null||v===undefined) return ''; return ctx.dataset.type==='line' ? gdFmtValor(v,'%') : gdFmtValor(v); },
+  };
+  loDatalabelsAuto(o);
+  _gdChart('inasist-c-pormes-'+i, { data: { labels: labels, datasets: ds }, options: o });
 
-  var o2 = loBar(null);
-  o2.scales.x = Object.assign({}, o2.scales.x, { stacked: true });
-  o2.scales.y = Object.assign({}, o2.scales.y, { stacked: true });
-  _gdChart('inasist-c-apilada-'+i, {
-    type: 'bar',
-    data: { labels: datos.map(function(r){ return textoFormatoNombre(r.especialidad); }),
-      datasets: [
-        { label: 'Atendidas', data: datos.map(function(r){ return r.atendidas; }), backgroundColor: CG, borderRadius: 2 },
-        { label: 'Canceladas', data: datos.map(function(r){ return r.cancelada; }), backgroundColor: CM, borderRadius: 2 },
-        { label: 'Inasistencia', data: datos.map(function(r){ return r.inasistencia; }), backgroundColor: CR, borderRadius: 2 },
-        { label: 'Pendientes', data: datos.map(function(r){ return r.pendiente; }), backgroundColor: CO, borderRadius: 2 },
-      ] },
-    options: loDatalabelsAuto(o2),
-  });
+  // Aviso: meses con menos especialidades que el mes mas completo del rango
+  // -- nunca se comparan como si fueran el mes completo.
+  var avisoEl = document.getElementById('inasist-aviso-'+i);
+  if(avisoEl){
+    var incompletos = inasistenciaMesesIncompletos(agregado);
+    avisoEl.innerHTML = incompletos.map(function(m){
+      var nombres = m.especialidades.map(textoFormatoNombre).join(', ');
+      return '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+
+        esc(inasistenciaMesLbl(m.mes)+': solo incluye '+nombres+'.')+'</div>';
+    }).join('');
+  }
 }
 
-// ── "Por mes": linea, una serie por especialidad + Total ponderado ─────
-async function _inasistenciaRenderMes(host, campana, i, opciones, titulo){
+// ── "Por especialidad": filtro de especialidad + 2 graficas del mes
+// elegido arriba, mas la linea de tendencia de % por especialidad a lo
+// largo de los meses (Fase 101: movida aqui desde la vieja "Por mes") ─────
+async function _inasistenciaRenderEspecialidad(host, campana, i, opciones, titulo, sinDatosMes){
   var estado = _inasistenciaEstado[campana];
   var html = '<div class="aurora-card">';
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
@@ -218,25 +213,74 @@ async function _inasistenciaRenderMes(host, campana, i, opciones, titulo){
   html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label>Hasta (mes)</label><input type="month" id="inasist-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_inasistenciaAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
-  html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="inasist-c-mes-'+i+'"></canvas></div>';
+  html += '<div id="inasist-porespecialidad-mesactual-'+i+'"></div>';
+  html += '<div class="aurora-card-title" style="margin-top:10px">% de inasistencia por especialidad, a lo largo de los meses</div>';
+  html += '<div class="aurora-chart-wrap" style="height:300px"><canvas id="inasist-c-mes-'+i+'"></canvas></div>';
   html += '</div>';
   host.innerHTML = html;
-  await _inasistenciaDibujarMes(campana, i, opciones);
+  await _inasistenciaDibujarEspecialidad(campana, i, opciones, sinDatosMes);
 }
 
-async function _inasistenciaDibujarMes(campana, i, opciones){
+async function _inasistenciaDibujarEspecialidad(campana, i, opciones, sinDatosMes){
   var estado = _inasistenciaEstado[campana];
-  var qs = 'campana='+encodeURIComponent(campana)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'')+(estado.desde?('&desde='+estado.desde):'')+(estado.hasta?('&hasta='+estado.hasta):'');
-  var datos = [];
-  try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+qs) || []; }catch(e){ showToast(e.message); }
+  var contMesActual = document.getElementById('inasist-porespecialidad-mesactual-'+i);
 
-  var meses = datos.map(function(r){ return r.mes; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
-  var especialidades = estado.especialidad ? [estado.especialidad] :
-    datos.map(function(r){ return r.especialidad; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
+  if(contMesActual){
+    if(sinDatosMes){
+      var ultimoConDatos = opciones.meses[opciones.meses.length-1];
+      contMesActual.innerHTML = _gdAvisoSinDatosMesHtml('Inasistencia', _gd.mesSel, ultimoConDatos);
+    } else {
+      contMesActual.innerHTML =
+        '<div class="aurora-grid-2">' +
+        '<div class="aurora-card"><div class="aurora-card-title">% de inasistencia por especialidad <span class="gd-help" title="(Inasistencia + Pendientes) / Total, por especialidad. Los pendientes cuentan como inasistencia; cancelados van en el denominador.">?</span></div><div class="aurora-chart-wrap" style="height:260px"><canvas id="inasist-c-pct-'+i+'"></canvas></div></div>' +
+        '<div class="aurora-card"><div class="aurora-card-title">Citas por estado y especialidad</div><div class="aurora-chart-wrap" style="height:260px"><canvas id="inasist-c-apilada-'+i+'"></canvas></div></div>' +
+        '</div>';
 
-  var porMesEsp = {}; // 'mes|especialidad' -> fila
-  var totalesPorMes = {}; // mes -> {inasistencia,pendiente,total}
-  datos.forEach(function(r){
+      var mes = estado.mes;
+      var qs = 'campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mes)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'');
+      var datos = [];
+      try{ datos = await apiRequest('GET','/calidad/inasistencia/especialidad?'+qs) || []; }catch(e){ showToast(e.message); }
+
+      var o1 = loPct(null);
+      o1.plugins.datalabels.align = 'end';
+      _gdChart('inasist-c-pct-'+i, {
+        type: 'bar',
+        data: { labels: datos.map(function(r){ return textoFormatoNombre(r.especialidad); }),
+          datasets: [{ label: '% Inasistencia', data: datos.map(function(r){ return inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total) || 0; }),
+            backgroundColor: datos.map(function(r){ return paletaColorPara(r.especialidad); }), borderRadius: 3 }] },
+        options: loDatalabelsAuto(o1),
+      });
+
+      var o2 = loBar(null);
+      o2.scales.x = Object.assign({}, o2.scales.x, { stacked: true });
+      o2.scales.y = Object.assign({}, o2.scales.y, { stacked: true });
+      _gdChart('inasist-c-apilada-'+i, {
+        type: 'bar',
+        data: { labels: datos.map(function(r){ return textoFormatoNombre(r.especialidad); }),
+          datasets: [
+            { label: 'Atendidas', data: datos.map(function(r){ return r.atendidas; }), backgroundColor: CG, borderRadius: 2 },
+            { label: 'Canceladas', data: datos.map(function(r){ return r.cancelada; }), backgroundColor: CM, borderRadius: 2 },
+            { label: 'Inasistencia', data: datos.map(function(r){ return r.inasistencia; }), backgroundColor: CR, borderRadius: 2 },
+            { label: 'Pendientes', data: datos.map(function(r){ return r.pendiente; }), backgroundColor: CO, borderRadius: 2 },
+          ] },
+        options: loDatalabelsAuto(o2),
+      });
+    }
+  }
+
+  // Linea de tendencia por especialidad (independiente del mes global --
+  // usa el rango desde/hasta propio de este panel, igual que antes).
+  var qsTrend = 'campana='+encodeURIComponent(campana)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'')+(estado.desde?('&desde='+estado.desde):'')+(estado.hasta?('&hasta='+estado.hasta):'');
+  var datosTrend = [];
+  try{ datosTrend = await apiRequest('GET','/calidad/inasistencia/mensual?'+qsTrend) || []; }catch(e){ showToast(e.message); }
+
+  var mesesT = datosTrend.map(function(r){ return r.mes; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
+  var especialidadesT = estado.especialidad ? [estado.especialidad] :
+    datosTrend.map(function(r){ return r.especialidad; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
+
+  var porMesEsp = {};
+  var totalesPorMes = {};
+  datosTrend.forEach(function(r){
     porMesEsp[r.mes+'|'+r.especialidad] = r;
     if(!totalesPorMes[r.mes]) totalesPorMes[r.mes] = { inasistencia:0, pendiente:0, total:0 };
     totalesPorMes[r.mes].inasistencia += r.inasistencia;
@@ -244,10 +288,10 @@ async function _inasistenciaDibujarMes(campana, i, opciones){
     totalesPorMes[r.mes].total += r.total;
   });
 
-  var datasets = especialidades.map(function(esp){
+  var datasetsT = especialidadesT.map(function(esp){
     return {
       label: textoFormatoNombre(esp),
-      data: meses.map(function(m){ var r = porMesEsp[m+'|'+esp]; return r ? (inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total) || 0) : null; }),
+      data: mesesT.map(function(m){ var r = porMesEsp[m+'|'+esp]; return r ? (inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total) || 0) : null; }),
       borderColor: paletaColorPara(esp), backgroundColor: paletaColorPara(esp), fill: false, tension: 0.15,
     };
   });
@@ -255,18 +299,18 @@ async function _inasistenciaDibujarMes(campana, i, opciones){
   // cuando no hay un filtro de especialidad puesto (si ya filtro a una
   // sola, el Total coincidiria exacto con su unica serie, ruido de mas).
   if(!estado.especialidad){
-    datasets.push({
+    datasetsT.push({
       label: 'Total', borderColor: (typeof CD!=='undefined'?CD:'#0d4a5e'), backgroundColor: (typeof CD!=='undefined'?CD:'#0d4a5e'),
       borderWidth: 3, borderDash: [6,3], fill: false, tension: 0.15,
-      data: meses.map(function(m){ var t = totalesPorMes[m]; return t ? (inasistenciaPctPonderado(t.inasistencia, t.pendiente, t.total) || 0) : null; }),
+      data: mesesT.map(function(m){ var t = totalesPorMes[m]; return t ? (inasistenciaPctPonderado(t.inasistencia, t.pendiente, t.total) || 0) : null; }),
     });
   }
 
-  var o = loPct(null);
+  var oT = loPct(null);
   _gdChart('inasist-c-mes-'+i, {
     type: 'line',
-    data: { labels: meses.map(inasistenciaMesLbl), datasets: datasets },
-    options: loDatalabelsAuto(o),
+    data: { labels: mesesT.map(inasistenciaMesLbl), datasets: datasetsT },
+    options: loDatalabelsAuto(oT),
   });
 }
 
@@ -325,10 +369,12 @@ async function _inasistenciaDibujarDetalle(campana, i){
 }
 
 // ── Filtros compartidos (leer del DOM + redibujar la vista activa) ──────
+// "pormes" no tiene formulario de filtros (Fase 101: sin filtro de
+// especialidad, siempre todas juntas) -- nunca se llama para esa vista.
 function _inasistenciaLeerFiltros(i, vista){
   function v(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
   var out = { especialidad: v('inasist-f-especialidad-'+i) };
-  if(vista === 'mes'){
+  if(vista === 'porespecialidad'){
     out.desde = v('inasist-f-desde-'+i);
     out.hasta = v('inasist-f-hasta-'+i);
   }
@@ -338,11 +384,14 @@ function _inasistenciaLeerFiltros(i, vista){
 async function _inasistenciaAplicarFiltros(i){
   var campana = _inasistenciaCampanaPorPanel[i];
   if(!campana) return;
-  var vista = _inasistenciaVistaPorPanel[i] || 'especialidad';
+  var vista = _inasistenciaVistaPorPanel[i] || 'porespecialidad';
   var leidos = _inasistenciaLeerFiltros(i, vista);
   _inasistenciaEstado[campana] = Object.assign({}, _inasistenciaEstado[campana], leidos);
   var opciones = _inasistenciaOpciones[campana] || { meses: [], especialidades: [] };
-  if(vista === 'especialidad') await _inasistenciaDibujarEspecialidad(campana, i, opciones);
-  else if(vista === 'mes') await _inasistenciaDibujarMes(campana, i, opciones);
-  else await _inasistenciaDibujarDetalle(campana, i);
+  if(vista === 'porespecialidad'){
+    var sinDatosMes = _inasistenciaSincronizarConMesGlobal(campana, opciones);
+    await _inasistenciaDibujarEspecialidad(campana, i, opciones, sinDatosMes);
+  } else if(vista === 'detalle'){
+    await _inasistenciaDibujarDetalle(campana, i);
+  }
 }
