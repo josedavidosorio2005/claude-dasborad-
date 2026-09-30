@@ -663,12 +663,18 @@ const cargaBody = z.object({
 // migracion SI corrio, pero un PUT posterior volvio a dejar la config sin
 // esos 2 campos). Ver la migracion _v2 mas abajo que repara el estado
 // actual; con este fix, un futuro PUT ya no lo vuelve a borrar.
+// ocultaEnPlantilla (Fase 98, mismo hallazgo de la Fase 84 -- se declara
+// aqui desde el primer commit que la usa, para no repetir el bug de un PUT
+// borrandola en silencio): columna superada por otra fuente real (ej.
+// inasist_* -> tabla `inasistencias`) que el servidor sigue aceptando por
+// compatibilidad pero que cargas.js ya no pide en la plantilla descargable.
 const columnaSchema = z.object({
   key: z.string().trim().min(1).max(60).regex(/^[a-z0-9_]+$/, 'key: solo minusculas, numeros y _'),
   label: z.string().trim().min(1).max(120),
   tipo: z.enum(['entero', 'decimal', 'porcentaje', 'texto', 'fecha']),
   opcional: z.boolean().optional(),
   autoTrafico: z.boolean().optional(),
+  ocultaEnPlantilla: z.boolean().optional(),
 });
 
 // ── Modulo de Inventario ───────────────────────────────────
