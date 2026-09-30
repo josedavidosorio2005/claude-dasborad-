@@ -12,96 +12,90 @@ sensibles.
 
 ## 1. Qué falta exactamente
 
-Dos permisos de **solo lectura**, ninguno de escritura — ninguno amplía lo
-que esas identidades ya pueden hacer, solo les permite *listar/filtrar*
-algo sobre lo que ya tienen acceso de lectura a nivel de objeto.
+Un permiso de **solo lectura**, ninguno de escritura — no amplía lo que
+esta identidad ya puede hacer, solo le permite *listar y leer* el bucket de
+respaldos sobre el que ya tiene acceso de escritura.
 
-### 1.1 `s3:ListBucket` — prueba de restauración de respaldos
+### 1.1 `s3:ListBucket` + `s3:GetObject` — prueba de restauración de respaldos
 
-El usuario IAM `inconexion-instance` ya tiene `s3:GetObject` sobre
+El usuario IAM `inconexion-instance` ya tiene `s3:PutObject` sobre
 `db-backups/*` en el bucket `inconexion-backups-877538609452` (por eso el
-respaldo SÍ sube bien) pero le falta `s3:ListBucket` sobre el bucket, así
-que no puede listar cuál es el respaldo más reciente para descargarlo y
-probar la restauración.
+respaldo SÍ sube bien), pero **no** tiene `s3:ListBucket` (para listar cuál
+es el respaldo más reciente) ni `s3:GetObject` (para descargarlo y probar la
+restauración) — el hallazgo original (Fase 72) solo mencionaba el primero;
+al revisar de nuevo (Fase 97) se confirmó que el segundo también falta.
 
 **Pasos en la consola de AWS**:
 1. IAM → Users → `inconexion-instance` → pestaña "Permissions".
-2. Edita (o agrega) la política inline/administrada que ya cubre el acceso
-   a `inconexion-backups-877538609452` y agrégale el statement de abajo
-   (o créala como una política nueva separada, lo que prefieras mantener).
+2. Agrega una política inline nueva (o edita la existente, lo que
+   prefieras mantener) con el JSON de abajo.
 3. Guarda.
 
-**JSON mínimo** (statement a agregar; no reemplaza lo que ya existe):
+**JSON mínimo** (2 statements — el prefijo en `s3:prefix` solo aplica al
+statement de `ListBucket`; `GetObject` ya está acotado por el ARN del
+objeto, no necesita condición):
 
 ```json
 {
-  "Sid": "PermitirListarBucketRespaldos",
-  "Effect": "Allow",
-  "Action": "s3:ListBucket",
-  "Resource": "arn:aws:s3:::inconexion-backups-877538609452",
-  "Condition": {
-    "StringLike": { "s3:prefix": "db-backups/*" }
-  }
-}
-```
-
-La condición `s3:prefix` limita el listado al mismo prefijo donde ya puede
-leer objetos (`db-backups/*`) — no le da visibilidad sobre nada nuevo del
-bucket.
-
-### 1.2 `logs:FilterLogEvents` — logs reales de producción
-
-El rol OIDC `inconexion-github-deploy` (el que usa el workflow de deploy
-vía GitHub Actions) no tiene `logs:FilterLogEvents` sobre los log groups de
-producción, así que el workflow de verificación de logs no puede traer
-eventos reales.
-
-**Pasos en la consola de AWS**:
-1. IAM → Roles → `inconexion-github-deploy` → pestaña "Permissions".
-2. Edita la política que ya cubre CloudWatch Logs para este rol (o agrega
-   una nueva) con el statement de abajo.
-3. Guarda.
-
-**JSON mínimo**:
-
-```json
-{
-  "Sid": "PermitirFiltrarLogsProduccion",
-  "Effect": "Allow",
-  "Action": ["logs:FilterLogEvents", "logs:GetLogEvents"],
-  "Resource": [
-    "arn:aws:logs:*:*:log-group:/inconexion/prod/docker:*",
-    "arn:aws:logs:*:*:log-group:/inconexion/prod/backup:*"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PermitirListarBackups",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::inconexion-backups-877538609452",
+      "Condition": {
+        "StringLike": { "s3:prefix": "db-backups/*" }
+      }
+    },
+    {
+      "Sid": "PermitirLeerBackups",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::inconexion-backups-877538609452/db-backups/*"
+    }
   ]
 }
 ```
 
-`logs:GetLogEvents` es opcional (da margen para traer un stream puntual
-completo) — con solo `FilterLogEvents` el workflow ya funciona.
-
 ## 2. Qué disparar después, cuando el permiso ya esté aplicado
 
-Las 2 herramientas ya existen en el repo, listas, esperando el permiso —
-**no hay que recrear nada**:
+La herramienta ya existe en el repo, lista, esperando el permiso — **no hay
+que recrear nada**:
 
 - `.github/workflows/verificar-restore-backup-produccion.yml` — prueba de
   restauración real de un respaldo (solo lectura contra el respaldo más
   reciente, nunca escribe sobre producción).
-- `.github/workflows/verificar-logs-produccion.yml` — trae errores reales
-  de los log groups de producción (solo lectura).
 
-Dispara cada uno a mano desde GitHub Actions ("Run workflow") después de
-aplicar el permiso correspondiente. Si `gh` está disponible:
+Dispárala a mano desde GitHub Actions ("Run workflow") después de aplicar
+el permiso. Si `gh` está disponible:
 
 ```
 gh workflow run verificar-restore-backup-produccion.yml
-gh workflow run verificar-logs-produccion.yml
 ```
 
-## 3. Estado a 2026-09-28 (Fase 80)
+## 3. Logs de producción — ya NO hace falta un permiso nuevo (Fase 97)
 
-Sigue exactamente igual que en la Fase 72/74: los 2 permisos arriba siguen
-sin aplicarse (confirmado por la falta de estos permisos reportada
-entonces; este documento no volvió a probar los workflows, solo deja la
-guía). Cuando se apliquen y se disparen los workflows, actualizar
+El plan original (Fase 72) pedía además `logs:FilterLogEvents` para el rol
+OIDC `inconexion-github-deploy`, para que
+`.github/workflows/verificar-logs-produccion.yml` pudiera traer errores
+reales por GitHub Actions. El usuario decidió (Fase 97) revisar los logs de
+producción **desde su PC** (con sus propias credenciales de AWS) en vez de
+por un workflow — ese permiso ya no se va a pedir. El workflow sigue en el
+repo (sigue siendo solo lectura, nunca escribe nada) por si más adelante se
+decide usarlo, pero no está en el plan pendiente.
+
+Nota (Fase 97, hallazgo sin explicar): `verificar-logs-produccion.yml` tuvo
+una corrida en verde el 2026-09-24 que sí trajo errores reales de
+producción, a pesar de que este documento reportaba el permiso como
+pendiente en ese momento — no se investigó la causa de la discrepancia
+(pudo ser un permiso temporal que alguien quitó después). Sin relevancia
+ahora que no se va a volver a usar este camino.
+
+## 4. Estado a 2026-09-30 (Fase 97, sesión pausada por falta de credenciales)
+
+El único pendiente real es el permiso de la sección 1 (`s3:ListBucket` +
+`s3:GetObject` para `inconexion-instance`). Sigue sin aplicarse — el
+usuario no tenía las credenciales de AWS a mano en esta sesión, se retoma
+cuando las tenga. Cuando se aplique y se dispare el workflow, actualizar
 `PROGRESS.md` con el resultado real.

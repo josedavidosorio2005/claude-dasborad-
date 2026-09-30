@@ -8294,3 +8294,75 @@ descargable de ORLANT para que no haya 2 fuentes de la misma métrica.
 - No se tocó ningún dato de prueba de Calidad de ORLANT, el keystore, ni
   ningún otro workflow/secreto. La única escritura en producción de esta
   fase fue la carga de `INASISTENCIA.xlsx` (autorizada explícitamente).
+
+## Fase 97 (continuación) — PAUSADA la parte de AWS; hecho lo que no depende de credenciales (2026-09-30)
+
+El usuario no tiene a mano las credenciales de AWS para retomar la Fase
+97 — la parte de AWS queda pausada, sin correr ningún comando de AWS en
+esta sesión. Pendiente exacto para cuando se retome:
+
+- **Política 1 de IAM** (la única que sigue haciendo falta — ver más abajo
+  por qué la de logs ya no aplica): agregar `s3:ListBucket` + `s3:GetObject`
+  (este segundo también faltaba, no solo el primero — ver el hallazgo real
+  de la sesión anterior) al usuario `inconexion-instance`, acotado al
+  prefijo `db-backups/*` del bucket `inconexion-backups-877538609452`. JSON
+  actualizado en `docs/aws-permisos-pendientes.md`.
+- **SSM `/inconexion/prod/CORS_ORIGIN`**: confirmar que sigue en
+  `https://informa.inconexion.com.co` (no se tocó todavía).
+- **Prueba de restauración de respaldos** (`verificar-restore-backup-produccion.yml`):
+  no se pudo correr — depende de la política 1.
+- **Logs de producción**: ya no se van a revisar por GitHub Actions (ver
+  más abajo) — se revisan desde el PC cuando haga falta, con las
+  credenciales de AWS a mano.
+- **Inventario y respaldo de la cuenta vieja** (934685482338): sin
+  empezar — necesita las credenciales de esa cuenta.
+
+### Hecho en esta sesión (sin tocar AWS)
+
+- **Quién tiene hoy el rol REPORTES o el permiso `cargarDatos`**: se revisó
+  en producción con la sesión real del usuario (Playwright, solo lectura,
+  `GET /users`) — **ningún usuario no-administrador tiene hoy el rol
+  REPORTES ni el permiso `cargarDatos` marcado explícitamente**. Hoy solo
+  pueden cargar datos los administradores completos (`ADMIN`/master admin
+  — `canLoadData` los deja pasar sin mirar el permiso puntual, ver
+  `server/auth.js`). La lista detallada (vacía) se dio en el chat, no va
+  en el repo.
+- **Corridas viejas de GitHub Actions con datos de producción impresos**:
+  revisado con `gh api .../actions/runs` (solo lectura) — 18 workflows de
+  diagnóstico/verificación de las Fases 63–77 se borraron del repo
+  (`git log --diff-filter=D`) pero sus **corridas siguen existiendo** en
+  el historial de Actions (46 corridas en total, con enlace directo cada
+  una — lista completa dada en el chat). Notable: `verificar-logs-produccion.yml`
+  (sigue activo hoy) ya tuvo una corrida en verde el 2026-09-24T20:53:22Z
+  — esa corrida SÍ imprimió errores reales de producción en su log,
+  aunque el permiso de IAM que necesita (política 1.2 del doc, antes de
+  esta sesión) se seguía reportando como pendiente; no se investigó la
+  causa de esa discrepancia. Nada se borró — el usuario decide.
+- **Los 2 archivos JSON de políticas de IAM** que se armaron en la sesión
+  anterior de la Fase 97 nunca llegaron al repo (vivían solo en el
+  scratchpad temporal fuera del repo) — confirmado con `git ls-files` y
+  `git status`, no hubo nada que sacar.
+- **`docs/aws-permisos-pendientes.md`**: actualizado — queda solo la
+  política 1 (lectura de respaldos para `inconexion-instance`, ahora con
+  `s3:GetObject` además de `s3:ListBucket`); se quitó la política 2
+  (logs para el rol de GitHub) porque el usuario decidió revisar los logs
+  desde su PC en vez de por GitHub Actions.
+- **Capturas limpias de Inasistencia para Edwin**: en la misma sesión de
+  producción del punto de usuarios, se repitieron las capturas de las 3
+  sub-pestañas (cerrando "Cargar Datos" antes de abrir el dashboard, a
+  diferencia del script de la Fase 98 Tema D) — **0 errores de consola**.
+  Fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase98-inasistencia\limpias\`.
+  Script: `.github/scripts/revision-fase97-usuarios-y-capturas-limpias.js`.
+- **Quitar `inasist_*` de la plantilla de ORLANT** (pedido en la misma
+  sesión, para que no haya 2 fuentes de la métrica): hecho en PR aparte,
+  versión **1.1.0 → 1.1.1**. Los 4 campos quedan `opcional` +
+  `ocultaEnPlantilla` en `server/dashboard-secciones.js` (el servidor los
+  sigue aceptando por compatibilidad si un archivo viejo los trae, pero
+  ya no se piden en la plantilla descargable ni en INSTRUCCIONES). Hallazgo
+  real al hacer el cambio: `ocultaEnPlantilla` no estaba declarado en
+  `columnaSchema` (`server/validation.js`) — sin eso, cualquier
+  `PUT /dashboards/config/:cliente` lo habría borrado en silencio (mismo
+  bug real de las Fases 74/84); la prueba general de round-trip
+  (`dashboards-config-put-round-trip-fase85.test.js`) lo atrapó antes de
+  mergear.
