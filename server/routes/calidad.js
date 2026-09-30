@@ -94,6 +94,7 @@ function toMonitoreo(row) {
     observaciones: row.observaciones || '',
     createdAt: row.createdAt,
     updatedAt: row.updatedAt || null,
+    vistoPorAsesorAt: row.vistoPorAsesorAt || null,
   };
 }
 
@@ -153,6 +154,24 @@ function resolverAsesorUserId(asesorUserId, asesorNombre, campana) {
   return row ? row.id : null;
 }
 
+// Fase 95 (tema C): id de monitoreo desde el que cuenta la alerta de
+// "monitoreo nuevo" al asesor (guardado por la migracion
+// monitoreos_visto_por_asesor_v1 -- el maximo id que existia justo antes
+// del deploy de esta fase). Los monitoreos viejos, incluidos los datos de
+// prueba de Calidad, nunca cuentan.
+function alertaAsesorDesdeId() {
+  const row = db.prepare("SELECT valor FROM app_config WHERE clave = 'alertaAsesorDesdeMonitoreoId'").get();
+  return row ? Number(row.valor) : 0;
+}
+
+// Es del asesor dueño (mismo criterio que /monitoreos/mios, Fase 95 tema
+// A): prioriza el id real, cae al nombre solo para filas viejas sin id.
+function esDelAsesor(actor, row) {
+  if (row.asesorUserId) return actor.id != null && row.asesorUserId === actor.id;
+  const nombre = (actor.nombre || '').trim().toLowerCase();
+  return !!nombre && (row.asesor || '').trim().toLowerCase() === nombre;
+}
+
 // ══════════════════════════════════════════════════════════
 // CALIDAD — PLANTILLAS (formato de evaluacion por campana)
 // ══════════════════════════════════════════════════════════
@@ -192,6 +211,50 @@ router.get(
       )
       .all({ id: req.actor.id || 0, nombre });
     res.json(rows.map(toMonitoreo));
+  })
+);
+
+// Cuantos monitoreos NUEVOS (creados despues del deploy de esta fase) el
+// asesor logueado todavia no ha visto (Fase 95, tema C). Antes de /:id.
+router.get(
+  '/monitoreos/mios/nuevos',
+  requireActor,
+  wrap((req, res) => {
+    const nombre = (req.actor.nombre || '').trim().toLowerCase();
+    if (!req.actor.id && !nombre) return res.json({ count: 0 });
+    const row = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM monitoreos
+         WHERE ((asesorUserId = @id) OR (asesorUserId IS NULL AND lower(trim(asesor)) = @nombre))
+           AND vistoPorAsesorAt IS NULL
+           AND id > @desde`
+      )
+      .get({ id: req.actor.id || 0, nombre, desde: alertaAsesorDesdeId() });
+    res.json({ count: row.n });
+  })
+);
+
+// Marca un monitoreo como visto por el asesor dueño (se llama al abrir el
+// detalle en "Mis Resultados", Fase 95 tema C). Idempotente: si ya estaba
+// marcado, no pisa la fecha original. Solo el asesor dueño puede marcarlo
+// -- ni siquiera un administrador (no hace falta: esto es solo el "ya lo
+// vi" del propio asesor). Antes de /:id generico (PUT /monitoreos/:id).
+router.put(
+  '/monitoreos/:id/visto',
+  requireActor,
+  validate(schemas.idParamSchema, 'params'),
+  wrap((req, res) => {
+    const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
+    if (!esDelAsesor(req.actor, row)) {
+      return res.status(403).json({ error: 'Ese monitoreo no es suyo' });
+    }
+    if (!row.vistoPorAsesorAt) {
+      db.prepare('UPDATE monitoreos SET vistoPorAsesorAt = ? WHERE id = ?').run(nowStr(), row.id);
+      logCalEvent('MONITOREO_VISTO', row.asesor, row.campana, req.actor, '');
+    }
+    const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
+    res.json(toMonitoreo(updated));
   })
 );
 

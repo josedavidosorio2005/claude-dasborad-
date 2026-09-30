@@ -151,6 +151,9 @@ function enterAsesorPage(){
   hideAllPages();
   document.getElementById('asesor-page').style.display='block';
   document.getElementById('nb-user-asesor').textContent = currentUser.nombre;
+  // Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad, solo para
+  // el rol ASESOR (quien tiene "Mis Resultados"). No para admin ni Calidad.
+  if(typeof calCargarAlertaNuevos === 'function') calCargarAlertaNuevos();
   showAsesorSection('calidad');
 }
 

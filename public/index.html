@@ -1403,11 +1403,19 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="asesor-sidebar-menu">
-        <li><a id="asesor-menu-calidad" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon">&#127942;</span> Resultados de Calidad</a></li>
+        <li><a id="asesor-menu-calidad" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon">&#127942;</span> Resultados de Calidad
+          <span id="asesor-menu-calidad-badge" class="hidden" style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 7px;font-size:0.7rem;font-weight:700;margin-left:6px"></span>
+        </a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
     <main class="main-content">
+
+      <!-- Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad sin ver -->
+      <div class="aux-banner hidden" id="asesor-alerta-nuevos" style="justify-content:space-between">
+        <div>&#128276; <strong id="asesor-alerta-nuevos-texto"></strong></div>
+        <button class="btn-sm btn-edit" onclick="asesorVerAlertaNuevos()">Ver</button>
+      </div>
 
       <!-- RESULTADOS DE CALIDAD SECTION -->
       <div id="asesor-section-calidad">
