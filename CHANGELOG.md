@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.2.0 — Octubre 2026
+
+Inasistencia: la vista principal ahora es el total por mes. Antes abría
+por especialidad; ahora abre con una sola gráfica que compara el total de
+citas contra las inasistencias de cada mes (con todas las especialidades
+juntas) y el % de inasistencia. Si un mes todavía no tiene todas las
+especialidades cargadas, sale un aviso debajo de la gráfica. "Por
+especialidad" y "Detalle" siguen disponibles como sub-pestañas aparte.
+
 ## v1.1.3 — Octubre 2026
 
 Arreglo (revisión final antes de entregar ORLANT): la plantilla

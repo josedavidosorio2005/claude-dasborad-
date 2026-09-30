@@ -1398,19 +1398,34 @@ async function _gdExportarTipificacion(p, i){
   return out;
 }
 
-// Inasistencia (Fase 98, pedido URGENTE de Edwin): las 3 sub-pestañas (Por
-// especialidad / Por mes / Detalle), cada una su propio panel
-// `inasistencia_panel` -- _gdDatosPanelesTab llama esta funcion UNA VEZ POR
-// PANEL (las 3, sin importar cual este activa en pantalla), asi el export
-// siempre trae las 3, con los filtros ya aplicados (estado compartido por
-// campana, _inasistenciaEstado -- mismo criterio que _agendasEstado).
+// Inasistencia (Fase 98, pedido URGENTE de Edwin; Fase 101: 3 sub-pestañas
+// reordenadas y con contenido distinto -- Por mes / Por especialidad /
+// Detalle), cada una su propio panel `inasistencia_panel` --
+// _gdDatosPanelesTab llama esta funcion UNA VEZ POR PANEL (las 3, sin
+// importar cual este activa en pantalla), asi el export siempre trae las 3,
+// con los filtros ya aplicados (estado compartido por campana,
+// _inasistenciaEstado -- mismo criterio que _agendasEstado).
 async function _gdExportarInasistencia(p, i){
   var campana = p.campana;
-  var vista = p.vista || 'especialidad';
+  var vista = p.vista || 'pormes';
   var titulo = p.titulo || 'Inasistencia';
   var estado = _inasistenciaEstado[campana] || {};
 
-  if(vista === 'mes'){
+  // "Por mes": el mismo agregado (todas las especialidades juntas, %
+  // ponderado) que dibuja la grafica "Citas vs. inasistencias por mes".
+  if(vista === 'pormes'){
+    var datosPorMes = [];
+    try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+    var agregado = inasistenciaAgregarPorMes(datosPorMes);
+    if(!agregado.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
+    return [{ titulo: titulo, tipo: 'tabla', filas: agregado.map(function(a){
+      return { Mes: inasistenciaMesLbl(a.mes), 'Total de citas': a.total, 'Inasistencias (incluye pendientes)': a.inasistenciaPendiente, '% de inasistencia': a.pct===null?'':a.pct };
+    }) }];
+  }
+
+  // "Por especialidad": la tendencia por (mes, especialidad) que dibuja su
+  // linea de abajo -- respeta el mismo filtro de especialidad/rango.
+  if(vista === 'porespecialidad'){
     var qsMes = 'campana='+encodeURIComponent(campana)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'')+(estado.desde?('&desde='+estado.desde):'')+(estado.hasta?('&hasta='+estado.hasta):'');
     var datosMes = [];
     try{ datosMes = await apiRequest('GET', '/calidad/inasistencia/mensual?'+qsMes) || []; }catch(e){}
@@ -1421,9 +1436,7 @@ async function _gdExportarInasistencia(p, i){
     }) }];
   }
 
-  // "especialidad" y "detalle" comparten la MISMA fuente (mes global +
-  // especialidad) -- solo cambia la presentacion en pantalla (tarjetas+
-  // graficas vs. tabla cruda).
+  // "detalle": desglose crudo del mes global elegido arriba + especialidad.
   if(!estado.mes) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para el mes actual.' }];
   var qsEsp = 'campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(estado.mes)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'');
   var datosEsp = [];

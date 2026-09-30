@@ -8576,3 +8576,89 @@ hallazgos reales, ambos ya corregidos en este PR:
   vuelve a editar este documento. Capturas fuera del repo, en
   `bases edwin\capturas-produccion\fase100-revision-final\`.
 - Versión `1.1.2` → `1.1.3` (arreglo) + `CHANGELOG.md`.
+
+## Fase 101 — Inasistencia: la vista principal pasa a ser "Por mes" (total de todas las especialidades juntas) (2026-09-30)
+
+Pedido del jefe: la pestaña Inasistencia de ORLANT abría en "Por
+especialidad" (2 gráficas por especialidad). Se pidió que la vista
+PRINCIPAL pase a ser "Por mes": una sola gráfica que compare, mes a mes,
+el total de citas contra las inasistencias (siempre todas las
+especialidades juntas, sin filtro), con el % de inasistencia ponderado.
+"Por especialidad" deja de ser la principal — sigue disponible como
+sub-pestaña aparte.
+
+### Cómo quedó (3 sub-pestañas, en este orden)
+
+1. **"Por mes"** (la que abre por defecto):
+   - Sin filtro de especialidad — siempre todas juntas.
+   - Las tarjetas del mes elegido arriba (total de citas, atendidas,
+     canceladas, inasistencia, pendientes, % de inasistencia) — igual que
+     antes, solo que ahora sin filtrar por especialidad.
+   - Una sola gráfica, "Citas vs. inasistencias por mes": barra de Total
+     de citas, barra de Inasistencias (incluye pendientes, mismo
+     numerador del %), línea de % de inasistencia ponderado en un eje
+     secundario (`Σ(inasistencia+pendientes) / Σtotal`, nunca el promedio
+     simple de los % por especialidad — con Ago-26 real esa diferencia es
+     5,63 % ponderado contra ~6,05 % si se promediaran los % sueltos).
+     Etiquetas de valor en las barras y en la línea (la barra de
+     inasistencias es mucho más baja que la de citas, pero el número se
+     sigue leyendo).
+   - Aviso automático debajo de la gráfica cuando un mes trae menos
+     especialidades que el mes más completo del rango (ej. real:
+     "Sep-26: solo incluye Examenes Especiales" — el mes no ha cerrado
+     todavía). El "?" junto al título explica la fórmula.
+2. **"Por especialidad"**: el filtro de especialidad, "% de inasistencia
+   por especialidad", "Citas por estado y especialidad" — igual que
+   antes — más la línea de % por especialidad a lo largo de los meses,
+   que antes vivía en la vieja "Por mes" (se movió aquí porque ya no
+   tiene sentido en la vista sin filtro).
+3. **"Detalle"**: la tabla, sin cambios.
+
+### Implementación
+
+- Lógica pura nueva en `public/js/inasistencia-logic.js`:
+  `inasistenciaAgregarPorMes` (suma TODAS las especialidades por mes, %
+  ponderado) e `inasistenciaMesesIncompletos` (meses con menos
+  especialidades que el máximo del rango) — ambas con pruebas Node
+  (`server/tests/inasistencia-logic.test.js`).
+- `public/js/inasistencia.js`: las 3 vistas (`pormes`/`porespecialidad`/
+  `detalle`) reestructuradas; `_inasistenciaRenderPorMes`/
+  `_inasistenciaDibujarPorMes` nuevas (tarjetas + gráfica combo, reusa
+  `gdComboDatasets` de `gd-combo-logic.js`, mismo patrón que los paneles
+  `combo` del dashboard genérico); `_inasistenciaDibujarEspecialidad`
+  ahora también dibuja la línea de tendencia movida.
+- `public/js/dashboard-generic.js`: `_gdExportExcel`/
+  `_gdExportarInasistencia` actualizados para las 3 sub-pestañas nuevas
+  (cada una su propia hoja: agregado mensual / tendencia por especialidad
+  / desglose crudo del mes).
+- Config: `server/dashboard-config-seed.js` (orden y `vista` de los 3
+  paneles/subtabs de ORLANT) + migración idempotente nueva
+  `dashboards_config_orlant_inasistencia_panel_v2` (`server/db.js`) —
+  ORLANT ya tenía la forma de la Fase 98 sembrada en producción, así que
+  la forma nueva del seed nunca le habría llegado sola. Mismo patrón que
+  `dashboards_config_orlant_inasistencia_panel_v1`.
+- No se tocó cómo se carga el archivo ni la tabla `inasistencias` — solo
+  la vista.
+
+### Verificación
+
+- `npm test`: 756/756 (9 pruebas nuevas: 6 de lógica pura del agregado
+  ponderado/aviso de mes incompleto, 3 de la migración — incluye
+  correrla 2 veces seguidas = mismo resultado). `npm audit`: 0
+  vulnerabilidades.
+- Playwright en local (`npm run seed:demo` — el seed de demo ya siembra
+  el mes en curso con una sola especialidad, `seedInasistenciaOrlant` en
+  `scripts/seed-demo-lib/dashboards.js`, así que el aviso de mes
+  incompleto se pudo probar con datos de demo tal cual): escritorio y
+  móvil, tema claro y oscuro, "Por mes" abre por defecto, 6 tarjetas, sin
+  filtro de especialidad, gráfica combo, aviso de mes incompleto
+  disparado, las 3 hojas de exportar con sus columnas — 0 hallazgos, 0
+  errores de consola. Capturas en
+  `docs/capturas-demo/fase101-inasistencia-por-mes/`.
+- Producción (solo lectura, después del deploy): ver el cierre de esta
+  fase en el chat (no se vuelve a editar este documento) — se confirma
+  que Inasistencia abre en "Por mes" con los números de control reales de
+  Ago-26 (5.893 / 332 / 5,63 %) y Sep-26 (1.483 / 96 / 6,47 %, con el
+  aviso de mes incompleto). Capturas fuera del repo, en
+  `bases edwin\capturas-produccion\fase101-inasistencia-por-mes\`.
+- Versión `1.1.3` → `1.2.0` (vista principal nueva) + `CHANGELOG.md`.

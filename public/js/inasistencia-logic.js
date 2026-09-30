@@ -239,6 +239,54 @@ function inasistenciaMesLbl(mes) {
   return partes.length === 2 ? (INASISTENCIA_MESES_ABREV[parseInt(partes[1], 10) - 1] + '-' + partes[0].slice(2)) : String(mes || '');
 }
 
+// Agrega TODAS las especialidades de cada mes (Fase 101: sub-pestaña "Por
+// mes" -- ya no va por especialidad, siempre todas juntas) a partir de las
+// filas crudas de `/calidad/inasistencia/mensual` (una fila por mes+
+// especialidad). El % de cada mes es PONDERADO sobre la suma real
+// (inasistenciaPctPonderado), nunca el promedio simple de los % de cada
+// especialidad -- con Ago-26 real (5 especialidades, tamaños muy distintos)
+// el promedio simple da 6,05 % y el ponderado correcto da 5,63 %. También
+// guarda que especialidades aportaron datos ese mes (para el aviso de mes
+// incompleto, ver inasistenciaMesesIncompletos).
+function inasistenciaAgregarPorMes(filas) {
+  var porMes = {};
+  (filas || []).forEach(function (r) {
+    if (!porMes[r.mes]) porMes[r.mes] = { mes: r.mes, cancelada: 0, inasistencia: 0, pendiente: 0, atendidas: 0, total: 0, especialidades: {} };
+    var m = porMes[r.mes];
+    m.cancelada += r.cancelada; m.inasistencia += r.inasistencia; m.pendiente += r.pendiente;
+    m.atendidas += r.atendidas; m.total += r.total;
+    m.especialidades[r.especialidad] = true;
+  });
+  return Object.keys(porMes).sort().map(function (mes) {
+    var m = porMes[mes];
+    return {
+      mes: mes,
+      cancelada: m.cancelada,
+      inasistencia: m.inasistencia,
+      pendiente: m.pendiente,
+      atendidas: m.atendidas,
+      total: m.total,
+      inasistenciaPendiente: m.inasistencia + m.pendiente,
+      pct: inasistenciaPctPonderado(m.inasistencia, m.pendiente, m.total),
+      especialidades: Object.keys(m.especialidades).sort(),
+    };
+  });
+}
+
+// Meses cuyo numero de especialidades es MENOR al maximo de todo el rango
+// (ej. Sep-26 recien empieza y solo trae Examenes Especiales, mientras
+// Ago-26 ya trae las 5) -- para el aviso debajo de la grafica "Por mes".
+// Se compara contra el MAXIMO de todo el rango (no contra "el mes
+// anterior") para que el aviso no dependa de cual mes esta seleccionado
+// arriba. `agregadoPorMes` es la salida de inasistenciaAgregarPorMes.
+function inasistenciaMesesIncompletos(agregadoPorMes) {
+  var max = (agregadoPorMes || []).reduce(function (a, m) { return Math.max(a, (m.especialidades || []).length); }, 0);
+  if (!max) return [];
+  return (agregadoPorMes || [])
+    .filter(function (m) { return (m.especialidades || []).length > 0 && m.especialidades.length < max; })
+    .map(function (m) { return { mes: m.mes, especialidades: m.especialidades }; });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -254,5 +302,7 @@ if (typeof module !== 'undefined' && module.exports) {
     inasistenciaMesLbl: inasistenciaMesLbl,
     inasistenciaPctPonderado: inasistenciaPctPonderado,
     inasistenciaFmtPct: inasistenciaFmtPct,
+    inasistenciaAgregarPorMes: inasistenciaAgregarPorMes,
+    inasistenciaMesesIncompletos: inasistenciaMesesIncompletos,
   };
 }
