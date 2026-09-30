@@ -27,7 +27,14 @@ function cargasEncabezadosCoinciden(headerRow, columnas) {
   var normalizados = (headerRow || []).map(function (h) { return _cargasNorm(h); });
   return (columnas || [])
     .filter(function (c) { return !c.opcional; })
-    .every(function (c) { return normalizados.indexOf(_cargasNorm(c.label)) !== -1; });
+    .every(function (c) {
+      // labelAlt (Fase 98, Inasistencia de ORLANT): columnas con mas de un
+      // nombre aceptado (ej. "ESPECIALIDAD"/"ESPECIALIDA", el archivo real
+      // de Edwin viene sin la D) -- coincide si el encabezado trae el label
+      // oficial O cualquiera de sus alias.
+      if (normalizados.indexOf(_cargasNorm(c.label)) !== -1) return true;
+      return (c.labelAlt || []).some(function (alt) { return normalizados.indexOf(_cargasNorm(alt)) !== -1; });
+    });
 }
 
 function cargasParseFilaUnica(spec, aoa) {
@@ -181,6 +188,10 @@ var CARGAS_HOJA_AGENDAS = 'AGENDAS';
 // tipificacionCols viene, hoy solo ORLANT).
 var CARGAS_HOJA_TIPIFICACION_LLAMADAS = 'TIPIFICACION_LLAMADAS';
 var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
+// Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
+// agregados por mes+especialidad) en su propia hoja -- mismo gate que
+// CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
+var CARGAS_HOJA_INASISTENCIA = 'INASISTENCIA';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -201,7 +212,7 @@ var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -284,6 +295,29 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima FECHA_SOLICITUD ' +
           'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia -- totales
+  // agregados por mes+especialidad (cancelada/inasistencia/pendiente/
+  // atendidas/total), hoja propia, solo cuando inasistenciaCols viene (hoy
+  // solo ORLANT, mismo gate que agendasCols/tipificacionCols).
+  if (inasistenciaCols) {
+    plan.push({
+      tipo: 'inasistencia', hoja: CARGAS_HOJA_INASISTENCIA, titulo: 'Inasistencia',
+      descripcion: 'Un total por mes y especialidad (cancelada, inasistencia, pendiente, atendidas, total) -- nunca datos de pacientes.',
+      filaUnica: false, columnas: inasistenciaCols,
+      notasExtra: [
+        'De donde sale: el reporte mensual de inasistencia que ya prepara el area de Agendamiento (agregado, no fila por fila).',
+        'MES: nombre del mes ("AGOSTO"), fecha de Excel o "AAAA-MM". Si no traes la columna AÑO, el sistema usa el año ' +
+          'mas reciente en que ese mes no sea futuro (ej. hoy AGOSTO y SEPTIEMBRE se interpretan como del año en curso) -- ' +
+          'revisa el mes que se muestra en la confirmacion antes de guardar.',
+        'ESPECIALIDAD: el nombre tal cual (Audífonos, Audiología, Exámenes especiales...).',
+        'TOTAL: escribe el numero final ya calculado. Si no coincide con CANCELADA+INASISTENCIA+PENDIENTE+ATENDIDAS, ' +
+          'el sistema avisa pero usa igual el TOTAL de esta columna (nunca lo recalcula por su cuenta).',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te muestra ' +
+          'antes como quedaria, ej. "Ago-26 (3 especialidades) y Sep-26 (1)", y pide que confirmes) -- nunca duplica, ' +
+          'aunque subas el mismo archivo mas de una vez. No toca otros meses que este archivo no traiga.',
       ],
     });
   }
@@ -473,7 +507,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
   CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
-  CARGAS_HOJA_AGENDAS,
+  CARGAS_HOJA_AGENDAS, CARGAS_HOJA_INASISTENCIA,
 ];
 // Fase 84 (pedido explicito, confirmado con el usuario): la hoja
 // "tipificacion" (minuscula, la de ANTES de la Fase 77) ya no alimenta
@@ -518,6 +552,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_AGENDAS: CARGAS_HOJA_AGENDAS,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
+    CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,

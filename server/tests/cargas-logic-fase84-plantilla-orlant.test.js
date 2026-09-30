@@ -20,10 +20,12 @@ const {
   CARGAS_HOJA_TIPIFICACION_LLAMADAS,
   CARGAS_HOJA_TIPIFICACION_WHATSAPP,
   CARGAS_HOJA_AGENDAS,
+  CARGAS_HOJA_INASISTENCIA,
   CARGAS_HOJA_CALIDAD,
 } = require('../../public/js/cargas-logic.js');
 const { AGENDAS_COLUMNAS } = require('../../public/js/agendas-logic.js');
 const { TIPIFICACION_COLUMNAS } = require('../../public/js/tipificacion-logic.js');
+const { INASISTENCIA_COLUMNAS } = require('../../public/js/inasistencia-logic.js');
 
 // Misma forma vieja de SECCIONES.ORLANT (resumen/salida/tipificacion vieja/
 // sta_categorias) que ya usan las demas pruebas de este archivo -- la real
@@ -42,6 +44,9 @@ function agendasCols() {
 function tipificacionCols() {
   return TIPIFICACION_COLUMNAS.map((c) => ({ label: c.label, opcional: !c.obligatoria }));
 }
+function inasistenciaCols() {
+  return INASISTENCIA_COLUMNAS.map((c) => ({ label: c.label, labelAlt: c.labelAlt, opcional: !c.obligatoria }));
+}
 // Mismo shape que _cargasTraficoLlamadasColumnasUnificado/
 // _cargasTraficoWhatsappColumnasUnificado (cargas.js) -- el detalle exacto
 // de estas 2 no es lo nuevo de esta fase, solo importa que EXISTAN.
@@ -50,16 +55,25 @@ const traficoWppCols = () => [{ label: 'NOMBRE_COLA_WHATSAPP' }, { label: 'FECHA
 const calidadCols = () => [{ key: 'asesor', label: 'ASESOR' }, { key: 'fecha', label: 'FECHA' }];
 
 function planOrlantCompleto() {
-  return cargasPlanConsolidado(SECCIONES_ORLANT, calidadCols(), traficoLlamadasCols(), traficoWppCols(), agendasCols(), tipificacionCols());
+  return cargasPlanConsolidado(SECCIONES_ORLANT, calidadCols(), traficoLlamadasCols(), traficoWppCols(), agendasCols(), tipificacionCols(), inasistenciaCols());
 }
 
-test('la plantilla descargable de ORLANT trae TODAS las hojas nuevas (Fases 77-78): LLAMADAS, WHATSAPP, TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP, AGENDAS', () => {
+test('la plantilla descargable de ORLANT trae TODAS las hojas nuevas (Fases 77-78-98): LLAMADAS, WHATSAPP, TIPIFICACION_LLAMADAS, TIPIFICACION_WHATSAPP, AGENDAS, INASISTENCIA', () => {
   const plan = planOrlantCompleto();
   const descarga = cargasPlanOrdenParaDescarga(plan);
   const hojas = descarga.map((h) => h.hoja);
-  for (const esperada of [CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP, CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_AGENDAS]) {
+  for (const esperada of [CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP, CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_AGENDAS, CARGAS_HOJA_INASISTENCIA]) {
     assert.ok(hojas.includes(esperada), `falta la hoja "${esperada}" en la plantilla descargable`);
   }
+});
+
+test('INASISTENCIA: los encabezados de la plantilla son EXACTOS a INASISTENCIA_COLUMNAS (inasistencia-logic.js, la fuente real que usa el parseo al subir) -- mismo texto y mismo orden, incluida AÑO opcional', () => {
+  const plan = planOrlantCompleto();
+  const hojaInasistencia = plan.find((h) => h.hoja === CARGAS_HOJA_INASISTENCIA);
+  assert.ok(hojaInasistencia, 'la hoja INASISTENCIA debe existir en el plan de ORLANT');
+  const labelsEnPlantilla = hojaInasistencia.columnas.map((c) => c.label);
+  const labelsEsperados = INASISTENCIA_COLUMNAS.map((c) => c.label);
+  assert.deepEqual(labelsEnPlantilla, labelsEsperados);
 });
 
 test('AGENDAS: los encabezados de la plantilla son EXACTOS a AGENDAS_COLUMNAS (agendas-logic.js, la fuente real que usa el parseo al subir) -- mismo texto y mismo orden', () => {
@@ -81,15 +95,15 @@ test('TIPIFICACION_LLAMADAS y TIPIFICACION_WHATSAPP: los encabezados son EXACTOS
   }
 });
 
-test('orden de descarga: Trafico + Tipificacion + Agendas van primero (en ese orden), el resto despues sin perder ninguna hoja', () => {
+test('orden de descarga: Trafico + Tipificacion + Agendas + Inasistencia van primero (en ese orden), el resto despues sin perder ninguna hoja', () => {
   const plan = planOrlantCompleto();
   const descarga = cargasPlanOrdenParaDescarga(plan);
   const hojas = descarga.map((h) => h.hoja);
-  const primeras5 = hojas.slice(0, 5);
-  assert.deepEqual(primeras5, [
+  const primeras6 = hojas.slice(0, 6);
+  assert.deepEqual(primeras6, [
     CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
-    CARGAS_HOJA_AGENDAS,
+    CARGAS_HOJA_AGENDAS, CARGAS_HOJA_INASISTENCIA,
   ]);
   // Nada se pierde en el reordenamiento, salvo la hoja vieja "tipificacion"
   // (superada, ver la prueba de abajo) -- el resto de hojas del plan
@@ -127,7 +141,7 @@ test('lista CERRADA de hojas que la plantilla descargable de ORLANT debe traer h
   const ESPERADAS = [
     CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
-    CARGAS_HOJA_AGENDAS,
+    CARGAS_HOJA_AGENDAS, CARGAS_HOJA_INASISTENCIA,
     'resumen', 'salida', 'sta_categorias',
     CARGAS_HOJA_CALIDAD,
   ];
