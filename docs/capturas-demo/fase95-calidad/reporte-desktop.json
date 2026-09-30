@@ -1,0 +1,36 @@
+{
+  "viewport": "desktop",
+  "estadoFormulario1": {
+    "fechaDisabled": true,
+    "fechaValor": "2026-09-30",
+    "evaluadorDisabled": true,
+    "evaluadorValor": "Demo Calidad",
+    "codifEsTexto": true
+  },
+  "estadoFormulario2": {
+    "codifEsDesplegable": true,
+    "opciones": [
+      "",
+      "NO CONTESTA",
+      "NUMERO EQUIVOCADO",
+      "POS"
+    ]
+  },
+  "alertaInicial": {
+    "bannerVisible": true,
+    "texto": "Tienes 2 monitoreos nuevos de calidad",
+    "badge": "2"
+  },
+  "alertaTrasUno": "1",
+  "alertaFinal": {
+    "bannerVisible": false,
+    "badgeVisible": false
+  },
+  "otroAsesor": {
+    "bannerVisible": false,
+    "badgeVisible": false,
+    "monitoreosPropios": 0
+  },
+  "erroresConsola": [],
+  "peticionesFallidas": []
+}

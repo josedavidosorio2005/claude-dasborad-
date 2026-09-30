@@ -1,0 +1,36 @@
+{
+  "viewport": "movil",
+  "estadoFormulario1": {
+    "fechaDisabled": true,
+    "fechaValor": "2026-09-30",
+    "evaluadorDisabled": true,
+    "evaluadorValor": "Demo Calidad",
+    "codifEsTexto": false
+  },
+  "estadoFormulario2": {
+    "codifEsDesplegable": true,
+    "opciones": [
+      "",
+      "NO CONTESTA",
+      "NUMERO EQUIVOCADO",
+      "POS"
+    ]
+  },
+  "alertaInicial": {
+    "bannerVisible": true,
+    "texto": "Tienes 1 monitoreo nuevo de calidad",
+    "badge": "1"
+  },
+  "alertaTrasUno": "1",
+  "alertaFinal": {
+    "bannerVisible": false,
+    "badgeVisible": false
+  },
+  "otroAsesor": {
+    "bannerVisible": false,
+    "badgeVisible": false,
+    "monitoreosPropios": 0
+  },
+  "erroresConsola": [],
+  "peticionesFallidas": []
+}
