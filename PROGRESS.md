@@ -8530,3 +8530,49 @@ consola).
   navegador abierto en ORLANT para que el usuario lo confirme a ojo.
 - Versión `1.1.1` → `1.1.2` (arreglo) + `CHANGELOG.md`. Solo CSS (2 reglas
   centrales) — ningún filtro ni funcionalidad cambió.
+
+## Fase 100 — revisión final de ORLANT antes de entregar: 2 arreglos reales encontrados en producción (2026-09-30)
+
+Antes de cerrar la entrega de ORLANT se preparó una revisión final en
+producción (`.github/scripts/verificar-fase100-revision-final-produccion.js`,
+Playwright directo desde Node, `headless:false`, solo lectura: recorre las
+6 pestañas x 3 viewports x 2 temas, descarga la plantilla y cada
+exportación, compara contra los números de control ya conocidos, sin
+escribir nada en producción). Preparando esa revisión salieron 2
+hallazgos reales, ambos ya corregidos en este PR:
+
+1. **La plantilla descargable de ORLANT todavía listaba los 4 campos
+   viejos de inasistencia** (`inasist_audifonos/audiologia/examenes/total`)
+   en la hoja "resumen", a pesar de que la Fase 98 (adenda, PR #212) ya
+   los había marcado `opcional`+`ocultaEnPlantilla` en
+   `server/dashboard-secciones.js`. Causa: igual que
+   `dashboards_config_orlant_resumen_trafico_opcional_v1/v2` (fases
+   anteriores), ese cambio de código nunca le llega solo a la fila YA
+   sembrada de `dashboards_config` — `GET /dashboard/secciones/ORLANT` lee
+   `dashboards_config.secciones` en la base, nunca el archivo en vivo.
+   Arreglo: migración idempotente nueva
+   `dashboards_config_orlant_resumen_inasist_opcional_v1` (`server/db.js`)
+   que marca esos 4 campos en la fila ya sembrada de ORLANT si todavía no
+   lo están; no toca ninguna otra sección ni otro cliente. Prueba nueva:
+   `server/tests/orlant-resumen-inasist-opcional-migracion.test.js`
+   (siembra el esquema viejo a mano, confirma el después, confirma que no
+   toca `total_agendas`/`sta_ordenes`/la sección `salida`/otro cliente).
+2. **Exportar a Excel agregaba una hoja "KPIs" siempre vacía** en
+   cualquier cliente sin franja de KPIs arriba (`layout.kpis:[]`, caso de
+   ORLANT), sin ningún aviso — inconsistente con los paneles de abajo, que
+   si no tienen filas simplemente no agregan la hoja. Arreglo en
+   `_gdExportExcel` (`public/js/dashboard-generic.js`): la hoja "KPIs"
+   solo se agrega si `_gdDatosKpis()` devuelve filas.
+
+### Verificación
+
+- `npm test`: 747/747 (4 pruebas nuevas de la migración). `npm audit`: 0
+  vulnerabilidades.
+- Producción (solo lectura, después del deploy de este PR): se corre
+  `verificar-fase100-revision-final-produccion.js` contra
+  `https://informa.inconexion.com.co` — el usuario inicia sesión a mano en
+  el navegador visible que abre el script (nunca se guarda contraseña ni
+  cookies). Resultado real en el chat de cierre de esta fase, no se
+  vuelve a editar este documento. Capturas fuera del repo, en
+  `bases edwin\capturas-produccion\fase100-revision-final\`.
+- Versión `1.1.2` → `1.1.3` (arreglo) + `CHANGELOG.md`.

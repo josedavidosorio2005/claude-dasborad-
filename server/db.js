@@ -1951,6 +1951,54 @@ runOnceMigration('monitoreos_visto_por_asesor_v1', () => {
   }
 });
 
+// Fase 100 (hallazgo real en produccion, revision final antes de entregar
+// ORLANT): la Fase 98 (adenda, PR #212) marco los 4 campos viejos de
+// inasistencia de la hoja "resumen" (inasist_audifonos/audiologia/
+// examenes/total) como opcional+ocultaEnPlantilla en
+// server/dashboard-secciones.js (SECCIONES.ORLANT.resumen.columnas) para
+// que la plantilla descargable dejara de pedirlos -- pero, mismo patron
+// exacto que dashboards_config_orlant_resumen_trafico_opcional_v1/v2 de
+// arriba, ese cambio de codigo nunca le llega solo a la fila YA sembrada
+// de dashboards_config (GET /dashboard/secciones/ORLANT lee
+// dashboards_config.secciones, nunca el archivo en vivo). Sin esta
+// migracion, la plantilla descargable de produccion seguia listando esos
+// 4 campos viejos (confirmado bajando la plantilla real en produccion,
+// Fase 100) aunque el codigo ya los marcara ocultos. Idempotente: si ya
+// estan marcados, no hace nada. No borra ningun dato cargado.
+runOnceMigration('dashboards_config_orlant_resumen_inasist_opcional_v1', () => {
+  const INASIST_KEYS = ['inasist_audifonos', 'inasist_audiologia', 'inasist_examenes', 'inasist_total'];
+
+  const row = db.prepare("SELECT cliente, secciones FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con el esquema nuevo
+  let secciones;
+  try {
+    secciones = JSON.parse(row.secciones);
+  } catch (e) {
+    return;
+  }
+  const resumen = secciones && secciones.resumen;
+  if (!resumen || !Array.isArray(resumen.columnas)) return;
+
+  let tocado = false;
+  resumen.columnas.forEach((col) => {
+    if (col && INASIST_KEYS.includes(col.key) && !col.ocultaEnPlantilla) {
+      col.opcional = true;
+      col.ocultaEnPlantilla = true;
+      tocado = true;
+    }
+  });
+  if (!tocado) return; // ya tiene la forma nueva -- nada que hacer
+
+  db.prepare('UPDATE dashboards_config SET secciones = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(secciones),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_resumen_inasist_opcional_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
