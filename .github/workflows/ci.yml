@@ -5,16 +5,36 @@ on:
     branches: ["**"]
   pull_request:
 
+# Fase 96: un push nuevo cancela la corrida vieja del MISMO PR/rama, para no
+# gastar minutos en una version ya obsoleta -- pero nunca en main, porque
+# deploy.yml se dispara con workflow_run: workflows: ["CI"] sobre main, y
+# cancelar esa corrida dejaria sin disparar el deploy.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Fase 96: un job colgado (Node 18/20 sin binario prebuilt de
+    # better-sqlite3 -- ver server/package.json "engines") falla rapido en
+    # vez de quedarse 20+ minutos.
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: server
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18, 20, 22]
+        # Fase 96: solo Node 22, la version de produccion (server/Dockerfile:
+        # node:22-bookworm). Node 18 y 20 ya no tienen soporte upstream y
+        # eran los que se colgaban -- better-sqlite3@12 solo trae binario
+        # prebuilt para 20.x/22.x/23.x/24.x/25.x/26.x, pero en la practica
+        # solo 22.x lo resolvia al instante (~3s); 18.x fallaba el chequeo de
+        # engines y 20.x igual tardaba ~1m30s por instalacion, contra los 3s
+        # de Node 22 -- confirmado en los logs de una corrida real de la
+        # Fase 95 (job "Instalar dependencias").
+        node-version: [22]
 
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +56,7 @@ jobs:
 
   docker-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Build de la imagen Docker
