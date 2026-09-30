@@ -10,7 +10,7 @@
 // _gdDatosPanelesTab, esa prueba falla.
 var GD_EXPORT_TIPOS_SOPORTADOS = [
   'kpi_row', 'calidad_kpis', 'calidad_pie', 'trafico_combo', 'trafico_whatsapp_combo',
-  'agendas_panel', 'tipificacion_panel', 'nota_kpi', 'pie', 'tabla', 'line', 'bar', 'area', 'combo',
+  'agendas_panel', 'tipificacion_panel', 'inasistencia_panel', 'nota_kpi', 'pie', 'tabla', 'line', 'bar', 'area', 'combo',
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

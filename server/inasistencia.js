@@ -103,7 +103,10 @@ function inasistenciaResumen(db, { campana, mes, especialidad }) {
        FROM inasistencias WHERE ${clausulas.join(' AND ')}`
     )
     .get(params);
-  const pct = row.total > 0 ? Math.round(((row.inasistencia + row.pendiente) / row.total) * 1000) / 10 : null;
+  // 2 decimales (no 1): los numeros de control del pedido de Edwin (ej.
+  // "4,16 %") solo cuadran exacto con 2 decimales -- 1 decimal redondearia
+  // 4,1550...% a 4,2%, no a 4,16%.
+  const pct = row.total > 0 ? Math.round(((row.inasistencia + row.pendiente) / row.total) * 10000) / 100 : null;
   return { mes, cancelada: row.cancelada, inasistencia: row.inasistencia, pendiente: row.pendiente, atendidas: row.atendidas, total: row.total, pct };
 }
 

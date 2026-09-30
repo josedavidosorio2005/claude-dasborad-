@@ -101,6 +101,55 @@ function filasTipificacion(rand, total, categorias, extraCols) {
   });
 }
 
+// Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia con datos REALES
+// (tabla `inasistencias`, server/inasistencia.js) -- a diferencia de
+// Agendas/Tipificacion (que hoy NO se siembran, ver nota de la Fase 98 en
+// PROGRESS.md), esta tabla SI necesita demo local: es la unica manera de
+// probar visualmente el panel nuevo (tarjetas, graficas, aviso de "menos
+// especialidades que el mes anterior") sin esperar a la carga real en
+// produccion. INSERT directo + seedOnceGuarded (categoria A: la tabla ya
+// tiene su propio UNIQUE campana+mes+especialidad) -- mismo patron que
+// dashboard_cargas (cargarSeccion, mas arriba), nunca pisa una fila real
+// que un admin ya haya cargado a mano para esta campana/mes/especialidad.
+const INASISTENCIA_ESPECIALIDADES = ['AUDIFONOS', 'AUDIOLOGIA', 'EXAMENES ESPECIALES'];
+function seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre) {
+  const insert = db.prepare(`
+    INSERT INTO inasistencias
+      (campana, mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana,@mes,@especialidad,@cancelada,@inasistencia,@pendiente,@atendidas,@total,@archivoNombre,@cargadoPorNombre,@createdAt)
+  `);
+  // El mes en curso solo trae UNA especialidad (mismo patron real del
+  // archivo de Edwin: "Septiembre solo trae EXAMENES ESPECIALES, porque el
+  // mes no ha cerrado") -- asi el demo tambien ejercita el aviso de "menos
+  // especialidades que el mes anterior" en el panel.
+  const esMesActual = idxMes === MESES.length - 1;
+  const especialidades = esMesActual ? ['EXAMENES ESPECIALES'] : INASISTENCIA_ESPECIALIDADES;
+  especialidades.forEach((especialidad) => {
+    const clave = `ORLANT|${mes}|${especialidad}`;
+    seedOnceGuarded(db, 'inasistencias', clave, {
+      checkExisting: () => {
+        const row = db
+          .prepare('SELECT id FROM inasistencias WHERE campana = ? AND mes = ? AND especialidad = ?')
+          .get('ORLANT', mes, especialidad);
+        return row ? row.id : null;
+      },
+      insertFn: () => {
+        const total = Math.max(50, ent(serieMensual(rand, idxMes, { base: 1200, ruidoPct: 0.15 })));
+        const cancelada = ent(total * randFloat(rand, 0.1, 0.2, 3));
+        const inasistencia = ent(total * randFloat(rand, 0.03, 0.09, 3));
+        const pendiente = ent(total * randFloat(rand, 0.002, 0.01, 3));
+        const atendidas = Math.max(0, total - cancelada - inasistencia - pendiente); // TOTAL siempre cuadra en el demo
+        const info = insert.run({
+          campana: 'ORLANT', mes, especialidad,
+          cancelada, inasistencia, pendiente, atendidas, total,
+          archivoNombre: ARCHIVO_DEMO, cargadoPorNombre: cargadoPorNombre || 'Seed Demo', createdAt: new Date().toISOString(),
+        });
+        return info.lastInsertRowid;
+      },
+    });
+  });
+}
+
 // ════════════════════════════════════════════════════════════
 // ORLANT
 // ════════════════════════════════════════════════════════════
@@ -180,6 +229,8 @@ function seedOrlant(db, { cargadoPorNombre }) {
       { dimension: 'MES_ACTUAL', categoria: 'ORDENES DEL MES', cantidad: staOrdenes, agendas: staFactcump },
     ];
     cargarSeccion(db, { cliente, seccion: 'sta_categorias', cadencia: 'mensual', periodo: mes, filas: sta, spec: cfg.secciones.sta_categorias, cargadoPorNombre });
+
+    seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre);
   });
 }
 

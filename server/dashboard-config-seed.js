@@ -66,22 +66,21 @@ const ORLANT = {
       //
       // Fase 94 (tema A, pedido de Edwin): orden de las pestañas VISIBLES
       // (las `oculta:true` no aparecen en el menu, pero su posicion en este
-      // array SI importa para cuando se destapan en memoria -- Agendamiento
-      // y Tipificacion, ver _gdBootstrap en dashboard-generic.js): Trafico
-      // de Llamadas -> Trafico de WhatsApp -> Agendamiento -> Tipificacion
-      // -> Calidad. La pestaña activa por defecto es SIEMPRE la primera
-      // VISIBLE del array (renderGenericTabs/_gdBootstrap toman
-      // `_gdTabsVisibles()[0]`) -- por eso 'trafico' va primero: ni
-      // Agendamiento ni Tipificacion pueden ganarle el primer lugar aunque
-      // se destapen antes de que el usuario mire, porque siguen despues en
-      // este mismo array. Las pestañas ocultas (Flujo, Salida, Inasistencia,
-      // Gestion STA, Efectividad Citas, y las 2 nuevas de la Fase 94 tema B
-      // -- Ordenamiento Medico, Recuperacion de Cancelados) van al final,
-      // en cualquier orden (no aparecen en el menu, su posicion no importa
-      // salvo para estas 2 mismas). Ver la migracion idempotente
-      // dashboards_config_orlant_orden_pestanas_v1 en db.js -- produccion
-      // ya tenia dashboards_config sembrado, este orden nuevo del seed
-      // nunca le habria llegado solo.
+      // array SI importa para cuando se destapan en memoria -- Agendamiento,
+      // Inasistencia y Tipificacion, ver _gdBootstrap en dashboard-generic.js):
+      // Trafico de Llamadas -> Trafico de WhatsApp -> Agendamiento ->
+      // Inasistencia (Fase 98) -> Tipificacion -> Calidad. La pestaña activa
+      // por defecto es SIEMPRE la primera VISIBLE del array
+      // (renderGenericTabs/_gdBootstrap toman `_gdTabsVisibles()[0]`) -- por
+      // eso 'trafico' va primero: ninguna de las autonomas puede ganarle el
+      // primer lugar aunque se destape antes de que el usuario mire, porque
+      // siguen despues en este mismo array. Las pestañas ocultas restantes
+      // (Ordenamiento Medico, Recuperacion de Cancelados, Flujo, Salida,
+      // Gestion STA, Efectividad Citas) van al final, en cualquier orden (no
+      // aparecen en el menu, su posicion no importa). Ver las migraciones
+      // idempotentes dashboards_config_orlant_orden_pestanas_v1/_v2 en
+      // db.js -- produccion ya tenia dashboards_config sembrado, este orden
+      // nuevo del seed nunca le habria llegado solo.
       { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
         { tipo: 'trafico_combo', campana: 'ORLANT' },
       ]},
@@ -208,16 +207,28 @@ const ORLANT = {
         { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
         { key: 'whatsapp', label: 'WhatsApp de Salida', indices: [1] },
       ]},
+      // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia con datos
+      // REALES (tabla `inasistencias`, server/inasistencia.js) -- reemplaza
+      // las 4 graficas de linea viejas (inasist_audifonos/audiologia/
+      // examenes/total, hoja "resumen" generica, que nunca tuvieron datos
+      // reales de ORLANT). Mismo patron autonomo que Agendamiento/
+      // Tipificacion (Fases 77-78): 3 sub-pestañas, su propio panel
+      // `inasistencia_panel` con un `vista` distinto cada una, todas
+      // comparten los mismos filtros (mes/especialidad/rango, estado por
+      // CAMPANA -- ver public/js/inasistencia.js). Posicion: justo despues
+      // de Agendamiento (orden de ORLANT, ver
+      // dashboards_config_orlant_orden_pestanas_v2 en db.js). Ver la
+      // migracion idempotente dashboards_config_orlant_inasistencia_panel_v1
+      // en db.js -- dashboards_config ya existia en produccion con la forma
+      // vieja, asi que la forma nueva del seed nunca le habria llegado sola.
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
-        lineP('% Inasistencia Audífonos', 'inasist_audifonos', { unidad: '%' }),
-        lineP('% Inasistencia Audiología', 'inasist_audiologia', { unidad: '%' }),
-        lineP('% Inasistencia Exámenes', 'inasist_examenes', { unidad: '%' }),
-        lineP('% Inasistencia Total', 'inasist_total', { unidad: '%' }),
+        { tipo: 'inasistencia_panel', vista: 'especialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
+        { tipo: 'inasistencia_panel', vista: 'mes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
+        { tipo: 'inasistencia_panel', vista: 'detalle', titulo: 'Detalle de Inasistencia', campana: 'ORLANT' },
       ], subtabs: [
-        { key: 'audifonos', label: 'Audífonos', indices: [0] },
-        { key: 'audiologia', label: 'Audiología', indices: [1] },
-        { key: 'examenes', label: 'Exámenes', indices: [2] },
-        { key: 'total', label: 'Total', indices: [3] },
+        { key: 'porespecialidad', label: 'Por especialidad', indices: [0] },
+        { key: 'pormes', label: 'Por mes', indices: [1] },
+        { key: 'detalle', label: 'Detalle', indices: [2] },
       ]},
       { key: 'sta', label: 'Gestión STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes

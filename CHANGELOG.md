@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.1.0 — Octubre 2026
+
+Nueva pestaña Inasistencia en ORLANT, por especialidad y por mes. Se
+puede filtrar por especialidad y por mes, ver tarjetas con el total de
+citas, atendidas, canceladas, inasistencia, pendientes y el % de
+inasistencia (comparado con el mes anterior), gráficas de barras y una
+tabla de detalle con exportar a Excel.
+
 ## v1.0.1 — Octubre 2026
 
 Mantenimiento: pruebas automáticas más rápidas y estables. También se

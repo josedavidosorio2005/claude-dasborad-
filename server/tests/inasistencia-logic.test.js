@@ -137,11 +137,11 @@ test('inasistenciaParseFilas: TOTAL que no cuadra con la suma -- NO bloquea, usa
 test('inasistenciaParseFilas: % del archivo distinto del recalculado -- avisa (el recalculado SIEMPRE gana, nunca se guarda el % del archivo)', () => {
   const aoa = [
     ['MES', 'ESPECIALIDAD', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL', '% DE INASISTENCIA'],
-    ['2025-06', 'AUDIFONOS', 10, 2, 0, 50, 62, '50 %'], // recalculado real: 2/62=3.2%, muy distinto de 50%
+    ['2025-06', 'AUDIFONOS', 10, 2, 0, 50, 62, '50 %'], // recalculado real (2 decimales): 2/62=3,23%, muy distinto de 50%
   ];
   const res = inasistenciaParseFilas(aoa);
   assert.equal(res.filas.length, 1);
-  assert.ok(res.avisos.some((a) => /% DE INASISTENCIA del archivo \(50%\) difiere del recalculado \(3\.2%\)/.test(a)));
+  assert.ok(res.avisos.some((a) => /% DE INASISTENCIA del archivo \(50%\) difiere del recalculado \(3\.23%\)/.test(a)));
 });
 
 test('inasistenciaParseFilas: numero negativo -> fila omitida con aviso (nunca 500, nunca se cuela)', () => {
