@@ -14,6 +14,14 @@
 // servidor) ni la reemplaza -- es una verificacion de que "el backup mas
 // reciente SIRVE", no un restore real contra produccion.
 //
+// Fase 97 (el repo es publico: esta salida queda en el log de GitHub
+// Actions, ver verificar-restore-backup-produccion.yml): todo lo que se
+// imprime aqui es SOLO nombre de archivo (timestamp, sin datos), fecha,
+// tamano en KiB, el resultado de integrity_check ('ok'/otro) y CONTEOS de
+// filas (nunca una fila real) -- si se agrega un console.log nuevo a este
+// script, nunca debe imprimir un valor de columna real (nombre, correo,
+// telefono, texto libre de un monitoreo, etc.), solo metadatos/conteos.
+//
 // Uso:  docker compose exec -T app node scripts/verificar-restore-backup.js
 'use strict';
 const fs = require('fs');

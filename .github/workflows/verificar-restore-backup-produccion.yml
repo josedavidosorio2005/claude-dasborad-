@@ -11,6 +11,11 @@ name: Verificacion - restauracion real de un backup (produccion, solo lectura)
 # PRAGMA integrity_check + conteos de sanity-check con better-sqlite3, y
 # borra el archivo temporal. No escribe en S3, no modifica la base real, no
 # crea usuarios, no sube archivos. Ver server/scripts/verificar-restore-backup.js.
+#
+# Fase 97 (el repo es publico): el script solo imprime nombre de archivo
+# (timestamp), fecha, tamano (KiB), resultado de integrity_check y CONTEOS
+# de filas -- nunca una fila real (nombre, correo, IP, texto libre). Ver el
+# comentario de ese script antes de agregarle un console.log nuevo.
 on:
   workflow_dispatch:
 
