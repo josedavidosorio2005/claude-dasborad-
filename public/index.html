@@ -894,7 +894,9 @@
             <select id="cf-asesor"></select>
             <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campana. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
           </div>
-          <div class="ig"><label>Fecha</label><input type="date" id="cf-fecha"></div>
+          <div class="ig"><label>Fecha</label><input type="date" id="cf-fecha" disabled>
+            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Se registra automaticamente con la fecha de hoy.</small>
+          </div>
         </div>
         <div class="form-row">
           <div class="ig"><label>ID / Llamada - Wpp</label><input type="text" id="cf-idllamada" placeholder="Ej: ID-98745"></div>
@@ -902,7 +904,9 @@
         </div>
         <div class="form-row">
           <div class="ig"><label>Codificacion</label><input type="text" id="cf-codificacion" placeholder="Ej: POS"></div>
-          <div class="ig"><label>Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador"></div>
+          <div class="ig"><label>Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
+            <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesion; no se puede cambiar.</small>
+          </div>
         </div>
         <div class="form-row">
           <div class="ig"><label>Canal Auditado</label>

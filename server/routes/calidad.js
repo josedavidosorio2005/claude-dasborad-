@@ -13,6 +13,7 @@ const calc = require('../calidad-logic');
 const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
+const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -45,6 +46,7 @@ function toMonitoreo(row) {
     id: row.id,
     campana: row.campana,
     asesor: row.asesor,
+    asesorUserId: row.asesorUserId || null,
     fecha: row.fecha,
     mes: row.mes,
     canal: row.canal,
@@ -104,6 +106,22 @@ function logCalEvent(accion, nombre, campana, actor, detalle) {
   logEvent(accion, { nombre: nombre || '-', user: '-', rol: campana || '-' }, actorLabel(actor), detalle || '');
 }
 
+// Resuelve y valida el asesorUserId que mando el cliente (id elegido en el
+// desplegable de populateCalAsesorSelect, Fase 95 tema A): debe ser un
+// usuario ASESOR activo, de ESA campana, y con el mismo nombre que el
+// campo "asesor" de texto -- evita que un id ajeno o de otra campana quede
+// pegado al monitoreo. Si no valida, se guarda null (igual que antes:
+// /monitoreos/mios cae al nombre para esos casos).
+function resolverAsesorUserId(asesorUserId, asesorNombre, campana) {
+  if (!asesorUserId) return null;
+  const row = db
+    .prepare(
+      "SELECT id FROM users WHERE id = ? AND rol = 'ASESOR' AND active = 1 AND asesorCampana = ? AND lower(trim(nombre)) = lower(trim(?))"
+    )
+    .get(asesorUserId, campana, asesorNombre || '');
+  return row ? row.id : null;
+}
+
 // ══════════════════════════════════════════════════════════
 // CALIDAD — PLANTILLAS (formato de evaluacion por campana)
 // ══════════════════════════════════════════════════════════
@@ -122,19 +140,26 @@ router.get(
 // CALIDAD — MONITOREOS
 // ══════════════════════════════════════════════════════════
 
-// Los monitoreos del asesor logueado (portal ASESOR). Empareja por nombre,
-// igual que el dropdown de asesores del formulario. Antes de /:id.
+// Los monitoreos del asesor logueado (portal ASESOR). Fase 95 (tema A):
+// prioriza el id real del actor (asesorUserId, guardado desde el
+// desplegable al crear) y SOLO cae al nombre para monitoreos viejos que no
+// lo tienen -- antes emparejaba solo por nombre, lo que hacia que dos
+// usuarios con el mismo nombre vieran (o no vieran) los monitoreos del
+// otro. Antes de /:id.
 router.get(
   '/monitoreos/mios',
   requireActor,
   wrap((req, res) => {
     const nombre = (req.actor.nombre || '').trim().toLowerCase();
-    if (!nombre) return res.json([]);
+    if (!req.actor.id && !nombre) return res.json([]);
     const rows = db
       .prepare(
-        "SELECT * FROM monitoreos WHERE lower(trim(asesor)) = ? ORDER BY fecha DESC, id DESC"
+        `SELECT * FROM monitoreos
+         WHERE (asesorUserId = @id)
+            OR (asesorUserId IS NULL AND lower(trim(asesor)) = @nombre)
+         ORDER BY fecha DESC, id DESC`
       )
-      .all(nombre);
+      .all({ id: req.actor.id || 0, nombre });
     res.json(rows.map(toMonitoreo));
   })
 );
@@ -176,22 +201,29 @@ router.post(
       return res.status(400).json({ error: 'Responda al menos un item de la plantilla' });
     }
     const now = nowStr();
-    const evaluador = b.evaluador || req.actor.nombre;
+    // Fase 95 (tema A): evaluador SIEMPRE el usuario de la sesion (se
+    // ignora cualquier texto que mande el cliente); fecha SIEMPRE hoy en
+    // Colombia, salvo que el actor sea administrador completo (correccion
+    // explicita, envia una fecha distinta).
+    const evaluador = req.actor.nombre;
+    const fecha = isFullAdmin(req.actor) && b.fecha ? b.fecha : fechaLimitesHoyColombia();
+    const asesorUserId = resolverAsesorUserId(b.asesorUserId, b.asesor, b.campana);
     const info = db
       .prepare(
         `INSERT INTO monitoreos
-           (campana, asesor, fecha, mes, canal, idLlamada, telefono, codificacion,
+           (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
             evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
             nivelCritico, observaciones, createdAt)
-         VALUES (@campana,@asesor,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
+         VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                  @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
                  @nivelCritico,@observaciones,@createdAt)`
       )
       .run({
         campana: b.campana,
         asesor: b.asesor,
-        fecha: b.fecha,
-        mes: calc.monthKey(b.fecha),
+        asesorUserId,
+        fecha,
+        mes: calc.monthKey(fecha),
         canal: b.canal,
         idLlamada: b.idLlamada || null,
         telefono: b.telefono || null,
@@ -336,22 +368,30 @@ router.put(
     if (score.puntaje === null) {
       return res.status(400).json({ error: 'Responda al menos un item de la plantilla' });
     }
-    const fecha = b.fecha || row.fecha;
+    // Fase 95 (tema A): el evaluador original NUNCA cambia al editar (ni el
+    // nombre visible ni evaluadorUserId) -- no se aceptan del body. La
+    // fecha solo la puede corregir un administrador completo; cualquier
+    // otro rol que edite (REPORTES) mantiene la fecha original.
+    const fecha = isFullAdmin(req.actor) && b.fecha ? b.fecha : row.fecha;
+    const asesorNombre = b.asesor ?? row.asesor;
+    const asesorUserId = b.asesorUserId
+      ? resolverAsesorUserId(b.asesorUserId, asesorNombre, row.campana)
+      : row.asesorUserId;
     db.prepare(
       `UPDATE monitoreos SET
-         asesor=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
-         evaluador=?, answers=?, puntaje=?, clasificacion=?, fallos=?, nivelCritico=?,
+         asesor=?, asesorUserId=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
+         answers=?, puntaje=?, clasificacion=?, fallos=?, nivelCritico=?,
          observaciones=?, updatedAt=?
        WHERE id=?`
     ).run(
-      b.asesor ?? row.asesor,
+      asesorNombre,
+      asesorUserId,
       fecha,
       calc.monthKey(fecha),
       b.canal ?? row.canal,
       (b.idLlamada ?? row.idLlamada) || null,
       (b.telefono ?? row.telefono) || null,
       (b.codificacion ?? row.codificacion) || null,
-      b.evaluador ?? row.evaluador,
       JSON.stringify(answers),
       score.puntaje,
       score.clasificacion,
