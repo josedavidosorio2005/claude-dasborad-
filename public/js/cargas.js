@@ -185,6 +185,15 @@ function _cargasAgendasColumnasUnificado(){
 function _cargasTipificacionColumnasUnificado(){
   return TIPIFICACION_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 98 (ORLANT, pedido urgente de Edwin) — columnas de la hoja
+// INASISTENCIA: conserva `labelAlt` (ej. ESPECIALIDAD/ESPECIALIDA) para que
+// cargasEncabezadosCoinciden (Fase 79, reconocer la hoja por encabezados
+// aunque no se llame "INASISTENCIA") tambien acepte los alias -- a
+// diferencia de _cargasAgendasColumnasUnificado/_cargasTipificacionColumnasUnificado,
+// que no tienen columnas con mas de un nombre aceptado.
+function _cargasInasistenciaColumnasUnificado(){
+  return INASISTENCIA_COLUMNAS.map(function(c){ return { label:c.label, labelAlt:c.labelAlt, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -236,7 +245,8 @@ async function onCargaClienteChange(){
     // que hay que mantener en sincronia.
     var agendasCols = esUnificado ? _cargasAgendasColumnasUnificado() : null;
     var tipificacionCols = esUnificado ? _cargasTipificacionColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols);
+    var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -404,7 +414,7 @@ async function procesarArchivoConsolidado(input){
   _cargasPlan.forEach(function(h){ if(wb.SheetNames.indexOf(h.hoja)!==-1) hojasReclamadasPorNombre[h.hoja]=true; });
   var hojasUsadasPorEncabezados = {};
   function _cargasBuscarHojaPorEncabezados(h){
-    if(h.tipo!=='agendas' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    if(h.tipo!=='agendas' && h.tipo!=='inasistencia' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -440,6 +450,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = agendasParseFilas;
     } else if(h.tipo === 'tipificacion'){
       parseFn = tipificacionParseFilas;
+    } else if(h.tipo === 'inasistencia'){
+      parseFn = inasistenciaParseFilas;
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
@@ -491,8 +503,9 @@ function _renderPreviewCarga(){
   html += _cargasResultados.map(function(r){
     var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
       (r.tipo==='agendas' ? 'Agendas' :
+      (r.tipo==='inasistencia' ? 'Inasistencia' :
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))));
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -628,6 +641,40 @@ async function _cargasGuardarTipificacion(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 98 (ORLANT, pedido urgente de Edwin): mismo patron impacto ->
+// confirmar -> guardar de _cargasGuardarAgendas/_cargasGuardarTipificacion,
+// pero el periodo a reemplazar es el CONJUNTO de meses que trae el archivo
+// (no un rango continuo de fecha) -- el mensaje de confirmacion muestra
+// exactamente como se interpreto cada mes + cuantas especialidades trae
+// (calculado aqui mismo, de las filas YA parseadas, sin otra llamada al
+// servidor), para que quien carga pueda revisar antes de confirmar.
+async function _cargasGuardarInasistencia(cliente, r){
+  var filasArray = r.filas.map(inasistenciaFilaComoArray);
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+
+  var porMes = {};
+  r.filas.forEach(function(f){ (porMes[f.mes] = porMes[f.mes] || {})[f.especialidad] = true; });
+  var resumenMeses = inasistenciaMesesDeFilas(r.filas).map(function(m){
+    var n = Object.keys(porMes[m]).length;
+    return inasistenciaMesLbl(m) + ' (' + n + ' especialidad' + (n===1?'':'es') + ')';
+  }).join(' y ');
+
+  try{
+    var impacto = await apiRequest('POST','/calidad/inasistencia/carga/impacto', parsed);
+    var msg = 'Se cargará como ' + resumenMeses + '.';
+    if(impacto.filasExistentes > 0){
+      msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
+    }
+    msg += '\n\n¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la inasistencia anterior sin tocar.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/inasistencia/carga', parsed);
+    if(typeof _inasistenciaCache !== 'undefined') _inasistenciaCache = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(inasistenciaMesLbl).join(', ')+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -651,6 +698,7 @@ async function guardarCarga(){
       else if(r.tipo==='calidad') res = await _cargasGuardarCalidad(cliente, r);
       else if(r.tipo==='agendas') res = await _cargasGuardarAgendas(cliente, r);
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
+      else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));
