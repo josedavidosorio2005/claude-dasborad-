@@ -8135,3 +8135,162 @@ Para la entrega de ORLANT queda en **1.0.0**, como se pidió.
 - No se tocó `deploy.yml`, ningún otro workflow, secretos, datos ni el
   keystore. No se actualizó ninguna dependencia (solo el `engines`
   declarado en `server/package.json`).
+
+## Fase 98 — Inasistencia de ORLANT: base real, pestaña con filtro por mes y por especialidad, y carga en producción (2026-09-30, URGENTE, automática)
+
+Pedido urgente de Edwin: subir la Inasistencia de ORLANT (archivo
+`INASISTENCIA.xlsx`, totales agregados por mes+especialidad, sin datos de
+pacientes), con filtro por mes y vista por especialidad, cargada en
+producción. 4 temas, 4 PRs secuenciales (cada uno depende del anterior ya
+en `main`).
+
+### Tema A — la base (servidor), PR #208
+
+- Tabla `inasistencias` (`server/db.js`): campana, mes (`AAAA-MM`),
+  especialidad, cancelada, inasistencia, pendiente, atendidas, total,
+  archivoNombre, cargadoPorNombre, createdAt. `UNIQUE(campana,mes,especialidad)`,
+  índice por (campana,mes).
+- `server/inasistencia.js`: reemplazo por los MESES que trae el archivo
+  (no por rango continuo como Agendas — el archivo puede traer meses no
+  consecutivos), en una transacción; volver a subir el mismo archivo dejó
+  el mismo conteo (probado). El % siempre ponderado
+  (Σ(inasistencia+pendiente)/Σtotal), nunca promedio de porcentajes.
+- `server/routes/inasistencia.js`: opciones/resumen/especialidad/mensual
+  (lectura) + carga/impacto (escritura), con `campaignAccess`/`canLoadData`
+  igual que Agendas/Tipificación. Historial (`INASISTENCIA_CARGA`).
+- 14 pruebas nuevas (704 → 718).
+
+### Tema B — cargar el archivo (interfaz y plantilla), PR #209
+
+- `public/js/inasistencia-logic.js` (parseo puro): encabezados por nombre
+  — ESPECIALIDAD acepta también "ESPECIALIDA" (el archivo real de Edwin
+  viene sin la D, `labelAlt` nuevo en `cargasEncabezadosCoinciden`, cargas-
+  logic.js). MES acepta nombre de mes, fecha de Excel o `AAAA-MM`; con AÑO
+  (columna opcional) se usa tal cual; sin AÑO se infiere el año MÁS
+  RECIENTE en que el mes no sea futuro (hora Colombia, misma regla de la
+  Fase 86). TOTAL siempre se guarda tal cual del archivo (nunca se
+  recalcula) — si no cuadra con la suma de los otros 4, o si el % DE
+  INASISTENCIA del archivo difiere del ponderado recalculado, se agrega un
+  AVISO (nunca bloquea). Filas vacías se ignoran.
+- Cargar Datos reconoce la hoja INASISTENCIA por sus encabezados (Fase 79)
+  aunque el archivo la traiga con otro nombre de hoja (el archivo real de
+  Edwin trae "Hoja1", no "INASISTENCIA" — confirmado en producción, ver
+  Tema D).
+- Plantilla descargable de ORLANT: hoja `INASISTENCIA` nueva (MES, AÑO
+  opcional, ESPECIALIDAD, CANCELADA, INASISTENCIA, PENDIENTE, ATENDIDAS,
+  TOTAL) + su bloque en INSTRUCCIONES; prueba de lista cerrada actualizada.
+- Confirmación de carga muestra cómo quedó cada mes ("Se cargará como
+  Ago-26 (3 especialidades) y Sep-26 (1 especialidad).").
+- 21 pruebas nuevas (718 → 739).
+
+### Tema C — la pestaña "Inasistencia" de ORLANT, PR #210 (versión 1.1.0)
+
+- Reemplaza las 4 gráficas de línea viejas de la hoja "resumen" (nunca
+  tuvieron datos reales de ORLANT) por un panel autónomo
+  (`inasistencia_panel`, tabla `inasistencias`) — mismo patrón que
+  Agendamiento/Tipificación. 2 migraciones idempotentes nuevas en `db.js`
+  (`dashboards_config_orlant_inasistencia_panel_v1` y
+  `..._orden_pestanas_v2`, que reubica la pestaña justo después de
+  Agendamiento).
+- 3 sub-pestañas, filtros compartidos por campaña (mes = SIEMPRE el
+  selector global de arriba, sus meses se agregaron a `gdMesesUnion`;
+  especialidad; rango de meses solo en "Por mes"):
+  - **Por especialidad**: tarjetas (Total de citas, Atendidas, Canceladas,
+    Inasistencia, Pendientes, % de inasistencia con "?" que explica la
+    fórmula) con comparación al mes anterior; barras de "% de inasistencia
+    por especialidad" con el valor en cada barra; barras apiladas "Citas
+    por estado y especialidad"; aviso si el mes tiene menos especialidades
+    que el anterior (nunca ceros inventados).
+  - **Por mes**: línea con una serie por especialidad + Total ponderado,
+    en todos los meses con datos.
+  - **Detalle**: tabla como la de Edwin (mes, especialidad, las 4
+    columnas, total, inasistencia+pendiente, %) + fila de total del mes.
+  - Exportar incluye las 3 sub-pestañas con los filtros aplicados.
+- Fix de precisión encontrado al construir la UI: el % ponderado se
+  calculaba a 1 decimal en los Temas A/B — los números de control del
+  pedido (Ago-26 Audífonos 4,16 %, Total 5,63 %) solo cuadran exacto con 2
+  decimales. Corregido en servidor, parser y export; pruebas de A/B
+  actualizadas para reflejarlo.
+- Demo local: `seedOrlant` siembra `inasistencias` real (6 meses, Sep-26
+  solo con Exámenes Especiales — mismo patrón del archivo real de Edwin)
+  para poder verificar el panel sin esperar producción.
+  `seed:demo:limpiar` ya sabe borrarla (`marks.js`).
+- Playwright en local (`npm run seed:demo`), escritorio (1440×900) y móvil
+  (390×844), claro y oscuro: las 3 sub-pestañas, orden de pestañas,
+  números de control del demo (Ago-26 con 3 especialidades y TOTAL
+  siempre cuadra, Sep-26 solo con 1), aviso de "menos especialidades" —
+  **0 errores de consola, 0 peticiones fallidas**. Capturas en
+  `docs/capturas-demo/fase98-inasistencia/`. Script:
+  `.github/scripts/verificar-fase98-inasistencia-demo.js`.
+- 4 pruebas nuevas (739 → 743). Versión `1.0.1` → `1.1.0` (función nueva)
+  + `CHANGELOG.md`.
+
+### Tema D — cargarlo en producción (autorizado, solo esta escritura)
+
+- Producción (autorizado, solo la carga de `INASISTENCIA.xlsx`),
+  Playwright directo desde Node, `INICIA SESIÓN AHORA` + login manual real
+  (detectado a los 12 s): en Cargar Datos → ORLANT, se subió
+  `bases edwin\INASISTENCIA.xlsx` tal cual (hoja real "Hoja1", reconocida
+  como INASISTENCIA por encabezados — confirma el mecanismo de la Fase 79
+  también para este tipo de dato). El diálogo de confirmación dijo
+  exactamente **"Se cargará como Ago-26 (3 especialidades) y Sep-26 (1
+  especialidad)."** — se confirmó.
+- Números de control verificados en producción, EXACTOS a los del pedido:
+  Ago-26 Audífonos 475/109/10/2.270/2.864; Audiología 327/127/1/1.317/1.772;
+  Exámenes Especiales 352/84/1/820/1.257; **Total Ago-26 ponderado
+  5,63 %** (1.154/320/12/4.407/5.893 — el promedio simple habría dado
+  6,05 %, confirmando que nunca se usa); Sep-26 Exámenes Especiales
+  452/94/2/935/1.483. Aviso de septiembre, selector de MES (con Ago-26 y
+  Sep-26) y Exportar (descarga real de
+  `Dashboard_ORLANT_Sep-26.xlsx`) — todo correcto.
+- Se comprobó que nada más cambió: Tipificación sigue en 14.940; Agendas
+  sigue en 7.426 (AUDIFONOS 2.141, General 4.643, 3P 2.783); Tráfico de
+  Llamadas y Tráfico de WhatsApp confirmados por captura visual (sin
+  endpoint de "resumen" propio que consultar por API). **0 errores de
+  consola, 0 peticiones fallidas** durante toda la corrida. No se guardó
+  ningún otro dato ni se tocó nada de Calidad.
+- Capturas fuera del repo, en
+  `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase98-inasistencia\`.
+  Nota: las capturas de la pestaña Inasistencia (3 a 7) quedaron con el
+  panel "Cargar Datos" superpuesto en primer plano (el script de
+  verificación no lo cerró antes de reabrir el dashboard) — el dashboard
+  real se alcanza a ver correctamente detrás, y los números de control de
+  este mismo Tema D se verificaron de forma independiente por API
+  (`apiRequest`), no por lectura de la captura, así que el hallazgo no
+  afecta la verificación. Script:
+  `.github/scripts/verificar-fase98-inasistencia-produccion.js`.
+
+### Cómo se carga el mes siguiente
+
+En 3 pasos, desde Cargar Datos → ORLANT: 1) subir el archivo de Edwin tal
+cual (o la hoja INASISTENCIA de la plantilla consolidada); 2) revisar en
+la confirmación que diga el/los mes(es) y cuántas especialidades trae cada
+uno; 3) confirmar — reemplaza solo esos meses, nunca duplica.
+
+### Qué pasó con las 4 gráficas viejas de "resumen"
+
+Se reemplazaron por el panel nuevo (Tema C) — los campos `inasist_*` de la
+hoja "resumen" (`dashboard-secciones.js`) NO se borraron (compatibilidad
+hacia atrás, mismo criterio que la hoja "tipificacion" vieja de la Fase
+77): si alguien los llena a mano, se siguen guardando igual, solo que ya
+nada los muestra en la pestaña Inasistencia de ORLANT. Propuesta (sin
+aplicar, pendiente de decisión del usuario): quitarlos de la plantilla
+descargable de ORLANT para que no haya 2 fuentes de la misma métrica.
+
+### Verificación
+
+- `npm test`: 704 → 718 (tema A) → 739 (tema B) → 743 (tema C), sin
+  cambios en el tema D (no toca código). `npm audit`: 0 vulnerabilidades
+  en los 3 PRs de código.
+- 4 PRs: #208 (tema A), #209 (tema B), #210 (tema C), y este mismo PR de
+  `PROGRESS.md` (tema D no generó cambios de código, solo la carga real y
+  su verificación). CI verde en los 4, mergeados sin intervención manual,
+  ramas borradas solas. `main` = `origin/main` al cerrar, 0 PRs abiertos.
+  Deploy automático verde después de cada merge de código; producción
+  confirmada en `1.1.0`
+  (`https://informa.inconexion.com.co/api/health` →
+  `{"ok":true,"version":"1.1.0"}`). Tag `v1.1.0` creado sobre `main` al
+  final, después de mergear este PR.
+- No se tocó ningún dato de prueba de Calidad de ORLANT, el keystore, ni
+  ningún otro workflow/secreto. La única escritura en producción de esta
+  fase fue la carga de `INASISTENCIA.xlsx` (autorizada explícitamente).
