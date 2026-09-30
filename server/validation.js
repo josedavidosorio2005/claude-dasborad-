@@ -220,6 +220,25 @@ const updateMonitoreoBody = z
   })
   .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
 
+// Fase 95 (tema B): catalogo de codificaciones validas por campana.
+const codificacionValorSchema = z
+  .string(reqStr('La codificacion es obligatoria'))
+  .trim()
+  .min(1, 'La codificacion no puede estar vacia')
+  .max(120, 'La codificacion no puede superar 120 caracteres');
+
+const codificacionBulkBody = z.object({
+  campana: campanaSchema,
+  valores: z
+    .array(codificacionValorSchema)
+    .min(1, 'Pegue al menos una codificacion')
+    .max(500, 'Demasiadas codificaciones de una vez (maximo 500)'),
+});
+
+const updateCodificacionBody = z.object({
+  activo: z.boolean({ error: 'activo es obligatorio' }),
+});
+
 const metaBody = z.object({
   campana: campanaSchema,
   mes: mesSchema,
@@ -788,6 +807,8 @@ module.exports = {
     createMonitoreoBody,
     updateMonitoreoBody,
     monitoreoBulkBody,
+    codificacionBulkBody,
+    updateCodificacionBody,
     metaBody,
     updateMetaBody,
     umbralBody,
