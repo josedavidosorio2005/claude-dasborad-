@@ -36,7 +36,11 @@ test('GET /monitoreos/mios sigue devolviendo exactamente los monitoreos del ases
   const create = await request(app)
     .post('/api/users')
     .set(auth(admin))
-    .send({ nombre: asesor, user: asesorLogin, password: 'ClaveAsesor1234', rol: 'ASESOR', perms: {} });
+    // asesorCampana: la pantalla de Usuarios SIEMPRE lo manda para un ASESOR
+    // (select obligatorio, ver buildAsesorCampanaSelect en users.js) -- se
+    // fija aca tal cual lo haria un alta real (Fase 102: el fallback por
+    // nombre de /monitoreos/mios ahora exige que coincida la campana).
+    .send({ nombre: asesor, user: asesorLogin, password: 'ClaveAsesor1234', rol: 'ASESOR', perms: {}, asesorCampana: 'ORLANT' });
   assert.equal(create.status, 201, JSON.stringify(create.body));
 
   // Un monitoreo guardado con espacios/mayusculas distintas al nombre exacto del usuario.
