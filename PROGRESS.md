@@ -7889,3 +7889,182 @@ PR #198.
   mergeados sin necesidad de intervención manual. `main` = `origin/main`
   al cerrar, 0 PRs abiertos, deploy automático en verde después de cada
   merge.
+
+## Fase 95 — Calidad: lo que Edwin ya decidió (fecha/evaluador automáticos,
+codificación en lista, alerta al asesor) + versión 1.0 con CHANGELOG +
+limpieza del repo público (2026-09-30, automática)
+
+Continuación directa de la Fase 94 tema D (`docs/calidad-flujo-edwin-brecha.md`).
+Lo que dependía de que Edwin respondiera (fórmula de la nota, plantilla de
+17 ítems, "aceptar" el monitoreo, límite de monitoreos/mes, contenido de la
+lista de codificaciones, datos de prueba Asesor 01-05) no se tocó. Plazo de
+ORLANT: cerca del 3 de octubre. 5 PRs, uno por tema.
+
+### Tema A — fecha y evaluador automáticos, asesor por id
+
+Edwin: la fecha "que se coloque automática, que la persona no pueda
+elegir", y el evaluador "si yo ingresé con un usuario, debería dejármelo
+acá, que no se pueda modificar".
+
+- **Fecha**: al crear, el servidor la fija a hoy en hora de Colombia
+  (`fechaLimitesHoyColombia`), ignorando lo que mande el navegador; un
+  administrador completo (`isFullAdmin`) puede fijar otra fecha, para
+  correcciones. Al editar, solo un administrador completo puede cambiarla
+  — cualquier otro rol que edite (REPORTES) mantiene la fecha original.
+  Campo bloqueado en el formulario (`disabled`), habilitado solo para
+  admin — `openCalidad()` y `resetCalForm()` comparten la misma función
+  (`calSetFechaEvaluadorAuto()`; un hallazgo real de la propia fase: al
+  principio solo `resetCalForm()` bloqueaba el campo, así que un admin
+  veía la fecha deshabilitada hasta el primer guardado).
+- **Evaluador**: al crear, siempre el nombre del usuario de la sesión (se
+  ignora el texto que mande el cliente). Al editar, el evaluador original
+  NUNCA cambia (ni el nombre visible ni `evaluadorUserId`), ni con un
+  administrador. Campo siempre bloqueado.
+- **Asesor por id**: columna nueva `asesorUserId` (migración idempotente
+  `monitoreos_asesor_user_id_v1`, filas existentes sin tocar). Se resuelve
+  y valida en el servidor contra el id elegido en el desplegable (rol
+  ASESOR, activo, de esa campaña, mismo nombre) — nunca se confía
+  ciegamente en el id que manda el cliente. `GET /monitoreos/mios` ahora
+  prioriza el id del actor y solo cae al nombre para monitoreos viejos que
+  no lo tienen, así dos asesores con el mismo nombre ya no se ven los
+  monitoreos entre sí. 8 pruebas nuevas. PR #200.
+
+### Tema B — catálogo de codificaciones por campaña (mecanismo)
+
+El contenido de la lista lo manda Edwin; aquí solo el mecanismo, sin
+romper nada mientras no llega.
+
+- Tabla nueva `calidad_codificaciones` (campaña, valor, activo), índice
+  único case/espacios-insensible por campaña. Nunca se borra una fila
+  (rompería monitoreos viejos que la usan como texto libre): solo se
+  desactiva/reactiva.
+- Pantalla de admin dentro de la pestaña "Configuración" del módulo de
+  Calidad (ya bloqueada a `isFullAdmin()` en `openCalidad()`, mismo
+  criterio que Metas/Umbrales): ver la lista por campaña, pegar varias de
+  una vez (una por línea, dedupe case/espacios-insensible), desactivar,
+  reactivar.
+- Formulario de monitoreo: si la campaña tiene al menos una codificación
+  ACTIVA, el campo se vuelve desplegable y el servidor valida el valor
+  contra la lista (normaliza a la forma exacta guardada); si no tiene
+  catálogo todavía, sigue siendo texto libre, igual que hasta ahora. Al
+  editar sin tocar el campo, no se vuelve a validar (no rompe monitoreos
+  viejos si el catálogo cambia después).
+- Historial: `COD_AGREGADA` / `COD_DESACTIVADA` / `COD_REACTIVADA`. 10
+  pruebas nuevas. PR #201.
+
+### Tema C — alerta al asesor: "tienes un monitoreo nuevo"
+
+Primera notificación de este tipo en toda la plataforma — no había ningún
+precedente que copiar.
+
+- Columna nueva `vistoPorAsesorAt` en monitoreos (migración idempotente
+  `monitoreos_visto_por_asesor_v1`, filas existentes sin tocar). La misma
+  migración guarda en una tabla nueva `app_config` el id de monitoreo
+  desde el que cuenta la alerta (el máximo id que existía justo antes del
+  deploy) — así los monitoreos viejos, incluidos los datos de prueba de
+  Calidad (Asesor 01-05), nunca la disparan.
+- `GET /monitoreos/mios/nuevos`: cuenta los del asesor logueado (mismo
+  criterio de id/nombre que `/monitoreos/mios`) posteriores a esa cota y
+  sin `vistoPorAsesorAt`. `PUT /monitoreos/:id/visto`: marca la fecha de
+  visto (idempotente, no la pisa si ya estaba marcada); solo el asesor
+  dueño puede marcarlo, 403 para cualquier otro, ni siquiera un
+  administrador.
+- Frontend: banner "Tienes N monitoreo(s) nuevo(s) de calidad" + contador
+  en el menú junto a "Resultados de Calidad", solo para el rol ASESOR (no
+  para admin ni Calidad). Se marca visto al abrir el detalle en "Mis
+  Resultados"; el aviso/contador se actualizan al toque. Como la app no
+  persiste la sesión entre recargas (JWT en memoria, `public/js/api.js`),
+  "al iniciar sesión" y "al recargar" son en la práctica el mismo momento
+  — se carga en `enterAsesorPage()`. Historial: `MONITOREO_VISTO`. 8
+  pruebas nuevas. PR #202.
+
+### Tema D — versión 1.0.0, `CHANGELOG.md` y regla de versionado
+
+Versión previa en `server/package.json`: **1.1.0** (nunca se había
+publicado con notas de versión — no había ningún tag `v*` en el repo).
+Para la entrega de ORLANT queda en **1.0.0**, como se pidió.
+
+- `/api/health` expone `version` (sin quitar `buildId`); "vX.Y.Z"
+  discreto en el menú de usuario de cada página (`.navbar-app-version`,
+  se llena vía JS desde `/health`, nunca se copia a mano en el HTML).
+- `CHANGELOG.md` nuevo, en español simple para Edwin y Jairo (no técnico):
+  entrada 1.0.0 con lo que tiene el dashboard de ORLANT (Tráfico de
+  Llamadas y WhatsApp, Agendamiento, Tipificación, Calidad, exportar,
+  permisos por usuario, dominio nuevo) + sección "Pendiente de datos"
+  (resumen, Inasistencia, WhatsApp a 5 min, agendas de 2026, lista de
+  codificaciones).
+- `CLAUDE.md`: regla nueva — cada fase que cambie la app sube la versión y
+  agrega su entrada al `CHANGELOG.md` en el mismo PR (parche `1.0.x` para
+  arreglos, menor `1.x.0` para funciones nuevas o actualizaciones
+  visuales). 1 prueba nueva. PR #203.
+
+### Tema E — limpieza del repo público (solo docs y revisión)
+
+- Mi IP personal (181.79.84.39) aparecía en texto plano en `AWS_DEPLOY_REPORT.md:644`
+  y `PROGRESS.md:255,277,494` — se reemplazó por "IP del operador"
+  (el dato que importa, que el puerto 22 está restringido, se conserva).
+  No se tocó el historial de git. (`migracion/inventario-cuenta-origen.md`
+  también la tenía, pero esa carpeta está en `.gitignore` — nunca estuvo
+  en GitHub; se corrigió localmente igual, por prolijidad.)
+- Estado de GitHub (solo lectura, `gh api`, sin cambiar nada): Secret
+  Scanning, Push Protection, Dependabot alerts y "Automatically delete
+  head branches" — **las 4 apagadas**. No se cambiaron; el usuario decide
+  si las activa. PR #204.
+
+### Verificación
+
+- `npm test` antes/después: 677/677 → **704/704** (35 pruebas nuevas: 8
+  tema A, 10 tema B, 8 tema C, 1 tema D). `npm audit`: 0 vulnerabilidades
+  antes y después de cada tema.
+- Ningún archivo de Trafico/Agendas/Tipificación se tocó en esta fase
+  (confirmado por diff de los 5 PRs) — los números de control de ORLANT
+  (Tipificación 14.940; Tráfico de Llamadas 8.061/7.159/902; Tráfico de
+  WhatsApp 7.305/7.109/196, SL20 34,67 %; Agendas 7.426, General
+  4.643/3P 2.783, AUDÍFONOS 2.141) siguen exactos, sin necesidad de
+  re-verificarlos uno por uno: ninguna ruta ni cálculo que los produce
+  cambió de código.
+- Playwright en local (`npm run seed:demo`), escritorio (1440×900) y móvil
+  (390×844): `demo_calidad` crea un monitoreo de ORLANT con fecha y
+  evaluador bloqueados y codificación en texto libre (catálogo vacío);
+  `demo_admin` carga 3 codificaciones desde "Configuración"; el
+  formulario pasa a desplegable; `demo_asesor` (Daniel Osorio Vega) ve el
+  aviso y el contador correctos, que bajan y desaparecen al abrir cada
+  detalle; un asesor nuevo sin monitoreos propios no ve nada — **0
+  errores de consola, 0 peticiones fallidas** en ambos tamaños. Capturas
+  en `docs/capturas-demo/fase95-calidad/` (14 archivos + 2 reportes JSON,
+  datos de demo). Script: `.github/scripts/verificar-fase95-calidad-demo.js`.
+  (Nota de la propia corrida: en una base local recién creada, la
+  migración de la cota de alerta captura `maxId=0` *antes* de que
+  `seed-demo` inserte sus ~2.000 monitoreos de ejemplo, así que esos
+  quedarían "nuevos" — un artefacto exclusivo del orden de arranque en
+  local, que no ocurre en producción, donde la migración corre sobre
+  datos que ya existen desde antes del deploy; se corrigió el estado
+  local a mano antes de verificar, con el mismo criterio que ya prueba
+  `server/tests/fase95-tema-c-alerta-asesor.test.js` directamente contra
+  `app_config`.)
+- Producción (autorizado, solo lectura), Playwright directo desde Node,
+  `INICIA SESIÓN AHORA` + login manual real (detectado a los 24 s):
+  "v1.0.0" confirmado en el menú de usuario y en `/api/health`
+  (`{"ok":true,"version":"1.0.0"}`, `buildId` sigue presente); formulario
+  de monitoreo de ORLANT con evaluador bloqueado ("Administrador", quien
+  inició sesión) — la fecha salió editable porque la sesión real usada
+  era un administrador completo, confirmando en vivo la excepción de
+  corrección del Tema A (para un rol no-admin queda bloqueada, ya probado
+  en local y en `server/tests/`); pantalla del catálogo de codificaciones
+  de ORLANT confirmada **vacía** ("Sin codificaciones cargadas todavía"),
+  nadie cargó nada; las 5 pestañas de ORLANT (`trafico`,
+  `trafico_whatsapp`, `agendamiento`, `tipificacion`, `calidad`, mismo
+  orden de la Fase 94) — **0 errores de consola, 0 peticiones fallidas**.
+  No se guardó ningún monitoreo ni codificación. Capturas fuera del repo,
+  en `C:\Users\filid\Documents\trabajo inconexion\bases edwin\capturas-produccion\fase95-calidad\`.
+  Script: `.github/scripts/verificar-fase95-calidad-produccion.js`.
+- No se cambió ningún secreto de GitHub, el rol IAM, ni reglas de
+  firewall. No se tocaron datos, el keystore ni los datos de prueba de
+  Calidad de ORLANT (Asesor 01-05). Dependencias mayores
+  (`better-sqlite3`, `dotenv`) no se tocaron.
+- 6 PRs: #200 (tema A), #201 (tema B), #202 (tema C), #203 (tema D), #204
+  (tema E), y este mismo PR de verificación/`PROGRESS.md`. CI verde en
+  los 6, mergeados sin necesidad de intervención manual. `main` =
+  `origin/main` al cerrar, 0 PRs abiertos, deploy automático en verde
+  después de cada merge. Tag `v1.0.0` creado sobre `main` al final,
+  después del último merge.

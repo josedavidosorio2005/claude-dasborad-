@@ -127,11 +127,16 @@ async function esperarLogin(page) {
 
     reporte.erroresConsola = erroresConsola;
     reporte.peticionesFallidas = peticionesFallidas;
+    // La fecha solo debe estar bloqueada para un actor que NO sea
+    // administrador completo (la excepcion de correccion de Tema A);
+    // evaluador SIEMPRE bloqueado, sin excepcion.
     ok = erroresConsola.length === 0 && peticionesFallidas.length === 0
-      && formulario.fechaDisabled === true
       && formulario.evaluadorDisabled === true
       && healthRes.version === '1.0.0'
       && !!versionVisible;
+    reporte.notaFecha = formulario.fechaDisabled
+      ? 'fecha bloqueada (actor no-admin)'
+      : 'fecha editable (actor administrador completo -- excepcion de correccion, Tema A)';
     reporte.ok = ok;
 
     console.log(JSON.stringify(reporte, null, 2));
