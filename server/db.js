@@ -100,6 +100,14 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
   appliedAt TEXT NOT NULL
 );
 
+-- Configuracion chica de la app, clave/valor (Fase 95, tema C): hoy solo
+-- guarda desde que id de monitoreos cuenta la alerta de "monitoreo nuevo"
+-- al asesor (ver migracion monitoreos_visto_por_asesor_v1 mas abajo).
+CREATE TABLE IF NOT EXISTS app_config (
+  clave TEXT PRIMARY KEY,
+  valor TEXT NOT NULL
+);
+
 -- ── Modulo de Calidad ────────────────────────────────────────
 -- Plantilla de calificacion por campana (items, pesos, criticos, motor).
 -- Unica fuente de verdad del formato de evaluacion; el frontend la consume por API.
@@ -1775,6 +1783,28 @@ runOnceMigration('monitoreos_asesor_user_id_v1', () => {
   `);
   if (!config.isTest) {
     console.log('[db] Migracion monitoreos_asesor_user_id_v1 aplicada.');
+  }
+});
+
+// Fase 95 (tema C): agrega vistoPorAsesorAt a monitoreos (se marca cuando
+// el asesor dueño abre el detalle en "Mis Resultados") y guarda en
+// app_config el id de monitoreo desde el que cuenta la alerta de
+// "monitoreo nuevo" -- el maximo id que existia justo antes de que esta
+// migracion corriera. Asi los monitoreos viejos (incluidos los datos de
+// prueba de Calidad, Asesor 01-05) NUNCA disparan la alerta, sin tocar
+// ninguna de sus filas: solo cuentan los que se crean despues del deploy
+// de esta fase. No se agrega la columna directo al CREATE TABLE de arriba
+// para que esta migracion funcione igual en una base nueva o en una que
+// ya tenia filas (evita "duplicate column name").
+runOnceMigration('monitoreos_visto_por_asesor_v1', () => {
+  db.exec('ALTER TABLE monitoreos ADD COLUMN vistoPorAsesorAt TEXT;');
+  const maxRow = db.prepare('SELECT COALESCE(MAX(id), 0) AS maxId FROM monitoreos').get();
+  db.prepare('INSERT OR IGNORE INTO app_config (clave, valor) VALUES (?, ?)').run(
+    'alertaAsesorDesdeMonitoreoId',
+    String(maxRow.maxId)
+  );
+  if (!config.isTest) {
+    console.log(`[db] Migracion monitoreos_visto_por_asesor_v1 aplicada (cuenta desde id > ${maxRow.maxId}).`);
   }
 });
 

@@ -23,6 +23,47 @@ async function loadMisMonitoreos(){
 }
 function calMisMonitoreos(){ return _misMonitoreosAll; }
 
+// ═══════════════════════════════════════════════════════════
+// Fase 95 (tema C): alerta de "monitoreo nuevo" al asesor. Se carga al
+// entrar al portal (enterAsesorPage, session.js) -- esta app no persiste
+// la sesion entre recargas (el token vive solo en memoria, ver api.js),
+// asi que "al iniciar sesion" y "al recargar la app" son, en la practica,
+// el mismo momento: cada recarga vuelve a la pantalla de login.
+// ═══════════════════════════════════════════════════════════
+var _misMonitoreosNuevos = 0;
+async function calCargarAlertaNuevos(){
+  try{
+    var r = await apiRequest('GET','/monitoreos/mios/nuevos');
+    _misMonitoreosNuevos = (r && r.count) || 0;
+  }catch(e){ _misMonitoreosNuevos = 0; }
+  renderAlertaNuevos();
+}
+function renderAlertaNuevos(){
+  var banner = document.getElementById('asesor-alerta-nuevos');
+  var badge = document.getElementById('asesor-menu-calidad-badge');
+  if(!banner) return;
+  if(_misMonitoreosNuevos > 0){
+    var texto = document.getElementById('asesor-alerta-nuevos-texto');
+    var plural = _misMonitoreosNuevos===1 ? '' : 's';
+    if(texto) texto.textContent = 'Tienes '+_misMonitoreosNuevos+' monitoreo'+plural+' nuevo'+plural+' de calidad';
+    banner.classList.remove('hidden');
+    if(badge){ badge.textContent = _misMonitoreosNuevos; badge.classList.remove('hidden'); }
+  } else {
+    banner.classList.add('hidden');
+    if(badge) badge.classList.add('hidden');
+  }
+}
+function asesorVerAlertaNuevos(){
+  showAsesorSection('calidad');
+}
+// Se llama al abrir el detalle de un monitoreo (verDetalleMonitoreo, abajo).
+// Si ya estaba marcado, el servidor no hace nada (idempotente) -- igual se
+// vuelve a pedir el contador por si este era el ultimo nuevo pendiente.
+async function marcarMonitoreoVisto(id){
+  try{ await apiRequest('PUT','/monitoreos/'+id+'/visto'); }catch(e){ return; }
+  await calCargarAlertaNuevos();
+}
+
 var _mrMesFiltro = '';
 function onMrMesChange(){
   _mrMesFiltro = document.getElementById('mr-mes-sel').value;
@@ -116,4 +157,5 @@ function verDetalleMonitoreo(idx){
   document.getElementById('dm-items-wrap').innerHTML = html;
 
   document.getElementById('detalle-monitoreo-overlay').classList.add('show');
+  marcarMonitoreoVisto(m.id);
 }
