@@ -1,0 +1,198 @@
+name: Monitor de produccion (aviso automatico si se cae)
+
+# Fase 100 (Tema C, autorizado por el jefe). Revisa produccion SOLO DESDE
+# AFUERA (HTTP publico, como cualquier visitante) -- nunca toca AWS, ni
+# secretos, ni deploy.yml, ni abre el puerto 22.
+#
+# Que revisa (ver PROGRESS.md de esta fase para el detalle del reporte):
+#   - GET https://informa.inconexion.com.co/api/health -> 200 con ok:true
+#     (con 2 reintentos y 30s de espera antes de dar la plataforma por
+#     caida, para que un error de red pasajero no dispare una falsa
+#     alarma);
+#   - tiempo de respuesta;
+#   - dias que le quedan al certificado TLS (falla si quedan menos de 14);
+#   - que http:// redirija a https.
+#
+# El repo es PUBLICO: este workflow solo imprime estado/tiempo/dias de
+# certificado/version -- nunca un cuerpo de respuesta crudo, un header
+# completo ni nada que pueda traer un dato real.
+#
+# Si algo falla: el job termina en rojo (GitHub manda el correo estandar
+# de "workflow failed" a quien tenga notificaciones activadas) y se abre
+# (o se comenta, si ya hay uno abierto) un issue "Producción caída o con
+# problemas" con la etiqueta `produccion`. Cuando vuelve a estar bien, se
+# comenta ese issue y se cierra solo.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: monitor-produccion
+  cancel-in-progress: false
+
+env:
+  SITIO_URL: https://informa.inconexion.com.co
+  ISSUE_TITULO: 'Producción caída o con problemas'
+  ISSUE_LABEL: produccion
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GET /api/health (2 reintentos, 30s de espera) + tiempo de respuesta + version
+        id: health
+        run: |
+          set -uo pipefail
+          MAX_INTENTOS=3
+          OK=0
+          TIEMPO_MS=0
+          VERSION="desconocida"
+          for INTENTO in $(seq 1 "$MAX_INTENTOS"); do
+            INICIO=$(date +%s%3N)
+            RESP=$(curl -sS -m 10 -w '\n%{http_code}' "$SITIO_URL/api/health" 2>/dev/null || printf '\n000')
+            FIN=$(date +%s%3N)
+            TIEMPO_MS=$((FIN - INICIO))
+            CODIGO=$(echo "$RESP" | tail -n1)
+            BODY=$(echo "$RESP" | sed '$d')
+            if [ "$CODIGO" = "200" ] && echo "$BODY" | jq -e '.ok == true' >/dev/null 2>&1; then
+              OK=1
+              VERSION=$(echo "$BODY" | jq -r '.version // "desconocida"')
+              break
+            fi
+            echo "Intento $INTENTO/$MAX_INTENTOS: codigo=$CODIGO (todavia no OK)"
+            if [ "$INTENTO" -lt "$MAX_INTENTOS" ]; then sleep 30; fi
+          done
+          {
+            echo "ok=$OK"
+            echo "tiempo_ms=$TIEMPO_MS"
+            echo "version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
+          echo "Estado: $([ "$OK" = 1 ] && echo OK || echo CAIDO) | Tiempo: ${TIEMPO_MS}ms | Version: $VERSION"
+
+      - name: Dias que le quedan al certificado TLS
+        id: cert
+        run: |
+          set -uo pipefail
+          HOST=$(echo "$SITIO_URL" | sed -E 's#^https?://##; s#/.*##')
+          FECHA_FIN=$(printf '' | timeout 10 openssl s_client -servername "$HOST" -connect "$HOST:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+          if [ -z "$FECHA_FIN" ]; then
+            echo "dias=-1" >> "$GITHUB_OUTPUT"
+            echo "No se pudo leer el certificado TLS."
+          else
+            FIN_EPOCH=$(date -d "$FECHA_FIN" +%s)
+            HOY_EPOCH=$(date +%s)
+            DIAS=$(( (FIN_EPOCH - HOY_EPOCH) / 86400 ))
+            echo "dias=$DIAS" >> "$GITHUB_OUTPUT"
+            echo "Dias que le quedan al certificado: $DIAS"
+          fi
+
+      - name: http:// debe redirigir a https
+        id: redirect
+        run: |
+          set -uo pipefail
+          HOST=$(echo "$SITIO_URL" | sed -E 's#^https?://##; s#/.*##')
+          CODIGO=$(curl -s -o /dev/null -w '%{http_code}' -m 10 "http://$HOST/" 2>/dev/null || echo 000)
+          UBICACION=$(curl -s -o /dev/null -w '%{redirect_url}' -m 10 "http://$HOST/" 2>/dev/null || echo '')
+          REDIRIGE=0
+          case "$CODIGO" in
+            3??) echo "$UBICACION" | grep -q '^https://' && REDIRIGE=1 ;;
+          esac
+          echo "redirige=$REDIRIGE" >> "$GITHUB_OUTPUT"
+          echo "http -> https: $([ "$REDIRIGE" = 1 ] && echo OK || echo FALLA) (codigo $CODIGO)"
+
+      - name: Evaluar resultado (sin fallar el job todavia -- primero se gestiona el issue)
+        id: evaluar
+        run: |
+          set -uo pipefail
+          PROBLEMA=0
+          MOTIVOS=""
+          [ "${{ steps.health.outputs.ok }}" != "1" ] && { PROBLEMA=1; MOTIVOS="$MOTIVOS health"; }
+          [ "${{ steps.cert.outputs.dias }}" -lt 14 ] && { PROBLEMA=1; MOTIVOS="$MOTIVOS certificado(${{ steps.cert.outputs.dias }}d)"; }
+          [ "${{ steps.redirect.outputs.redirige }}" != "1" ] && { PROBLEMA=1; MOTIVOS="$MOTIVOS redireccion"; }
+          echo "problema=$PROBLEMA" >> "$GITHUB_OUTPUT"
+          echo "motivos=$MOTIVOS" >> "$GITHUB_OUTPUT"
+          echo "Resultado: $([ "$PROBLEMA" = 1 ] && echo "PROBLEMA ($MOTIVOS)" || echo "TODO OK")"
+
+      - name: Abrir/comentar el issue si hay problema, o cerrarlo si ya se recupero
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const problema = '${{ steps.evaluar.outputs.problema }}' === '1';
+            const motivos = '${{ steps.evaluar.outputs.motivos }}'.trim();
+            const estado = '${{ steps.health.outputs.ok }}' === '1' ? 'OK' : 'CAIDO';
+            const tiempoMs = '${{ steps.health.outputs.tiempo_ms }}';
+            const version = '${{ steps.health.outputs.version }}';
+            const diasCert = '${{ steps.cert.outputs.dias }}';
+            const titulo = process.env.ISSUE_TITULO;
+            const label = process.env.ISSUE_LABEL;
+
+            // La etiqueta puede no existir todavia (primera corrida) --
+            // se crea sola, sin fallar si ya existe.
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                name: label, color: 'd93f0b',
+                description: 'Produccion caida o con problemas (monitor automatico)',
+              });
+            } catch (e) {
+              if (e.status !== 422) throw e; // 422 = la etiqueta ya existe
+            }
+
+            const resumen = [
+              `Estado: **${estado}**`,
+              `Tiempo de respuesta: ${tiempoMs} ms`,
+              `Dias que le quedan al certificado: ${diasCert}`,
+              `Version: ${version}`,
+              `Corrida: ${context.runId} (${new Date().toISOString()})`,
+            ].join('\n');
+
+            const { data: abiertos } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            const existente = abiertos.find((i) => i.title === titulo);
+
+            if (problema) {
+              const cuerpo = `${resumen}\n\nMotivo(s): ${motivos}`;
+              if (existente) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existente.number, body: cuerpo,
+                });
+                console.log(`Comentado el issue #${existente.number} (ya estaba abierto).`);
+              } else {
+                const nuevo = await github.rest.issues.create({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  title: titulo, body: cuerpo, labels: [label],
+                });
+                console.log(`Issue nuevo creado: #${nuevo.data.number}`);
+              }
+            } else if (existente) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existente.number, body: `Recuperado.\n\n${resumen}`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existente.number, state: 'closed',
+              });
+              console.log(`Issue #${existente.number} comentado y cerrado (recuperado).`);
+            } else {
+              console.log('Todo OK, sin issue abierto que tocar.');
+            }
+        env:
+          ISSUE_TITULO: ${{ env.ISSUE_TITULO }}
+          ISSUE_LABEL: ${{ env.ISSUE_LABEL }}
+
+      - name: Fallar el job si hay un problema (dispara el correo de GitHub)
+        if: steps.evaluar.outputs.problema == '1'
+        run: |
+          echo "::error::Produccion con problemas: ${{ steps.evaluar.outputs.motivos }}"
+          exit 1

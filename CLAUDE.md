@@ -80,6 +80,27 @@ asumir en qué quedó una fase anterior.
   escriba una sola vez a mano. Así un ORLANT ya sembrado en producción
   recibe el cambio solo con el deploy (el proceso se reinicia y las
   migraciones corren solas), sin intervención manual.
+- **Monitor automático de producción** (Fase 100, Tema C):
+  `.github/workflows/monitor-produccion.yml` revisa produccion SOLO
+  DESDE AFUERA (HTTP público) cada 15 minutos (`schedule`) + botón
+  manual (`workflow_dispatch`): `GET /api/health` (200, `ok:true`, con 2
+  reintentos y 30s de espera antes de dar la plataforma por caída),
+  tiempo de respuesta, días que le quedan al certificado TLS (falla si
+  quedan menos de 14) y que `http://` redirija a `https://`. Solo
+  imprime estado/tiempo/certificado/versión — nunca un cuerpo de
+  respuesta crudo (el repo es público). Si algo falla, el job termina en
+  rojo (dispara el correo estándar de GitHub de "workflow failed" a
+  quien tenga notificaciones activas) y abre — o comenta, si ya hay uno
+  abierto — el issue "Producción caída o con problemas" con la etiqueta
+  `produccion`; cuando se recupera, comenta ese issue y lo cierra solo.
+  No toca AWS, secretos ni `deploy.yml`. Dos cosas a tener en cuenta:
+  GitHub puede retrasar unos minutos una corrida programada (`schedule`)
+  cuando hay mucha carga en sus runners — no es un fallo del workflow; y
+  en un repo **público**, GitHub **desactiva automáticamente los
+  workflows programados tras 60 días sin actividad** en el repo (commits,
+  PRs, etc.) — se reactiva solo abriendo la pestaña Actions → el
+  workflow → botón "Enable workflow" (o con cualquier commit nuevo al
+  repo, que cuenta como actividad).
 
 ## Datos reales de clientes
 
