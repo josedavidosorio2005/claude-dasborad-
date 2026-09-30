@@ -49,6 +49,16 @@
 
   /* Radios */
   --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-pill:20px;
+
+  /* Fase 99: le dice al navegador que dibuje los controles nativos (la
+     lista emergente de un <select>, el scrollbar...) en modo claro -- sin
+     esto, la lista hereda el `color` que tenga puesto el <select> (varios
+     selects del encabezado lo fuerzan a blanco para verse bien SOBRE el
+     encabezado oscuro) pero el navegador le pinta el FONDO de la lista en
+     blanco tambien (su default), asi que el texto queda blanco sobre
+     blanco. Ver la regla `option,optgroup` mas abajo, que ademas fija
+     color Y fondo EXPLICITOS para no depender solo de esta pista. */
+  color-scheme:light;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -78,7 +88,27 @@
   --shadow-sm:0 2px 8px rgba(var(--shadow-rgb),0.35);
   --shadow-md:0 2px 12px rgba(var(--shadow-rgb),0.4);
   --shadow-lg:0 8px 40px rgba(var(--shadow-rgb),0.55);
+
+  color-scheme:dark;
 }
+
+/* ── Fase 99 (hallazgo real en producción, Brave/Windows): el selector MES
+   de arriba (y el resto de selects del encabezado de cada módulo) fuerza
+   `color:#fff` en linea para leerse sobre su encabezado oscuro -- ese color
+   se hereda en la lista emergente que abre el navegador al hacer clic, y
+   el navegador le pone fondo blanco a esa lista (default de UA, o el
+   fondo que le toque al tema si no hay `color-scheme`), asi que las
+   opciones quedan en blanco sobre blanco: solo se lee la que tiene el
+   mouse encima (el navegador la resalta con su azul de seleccion nativo).
+   Encontrado en el selector MES, pero el mismo problema le puede pasar a
+   CUALQUIER <select> que herede un color pensado para su propio fondo
+   (no el de la lista) -- por eso el arreglo es UNA regla central, no un
+   parche por select: SIEMPRE color y fondo explicitos en `option`/
+   `optgroup`, tomados de los mismos tokens de texto/superficie del tema
+   actual (nunca de lo que tenga puesto el <select> padre) — el cierre del
+   select (lo que se ve sin abrir la lista) no lo toca esta regla, sigue
+   leyendo su propio `color` como siempre. */
+select option,select optgroup{color:var(--c-text);background-color:var(--c-surface);}
 
 /* ── Toggle de tema (navbar + login) ── */
 .theme-toggle{background:none;border:none;color:var(--c-surface);font-size:1.2rem;line-height:1;padding:4px 8px;cursor:pointer;border-radius:6px;}

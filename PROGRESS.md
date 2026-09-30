@@ -8448,3 +8448,85 @@ ni artefactos de otros workflows.
 - No se copió ningún contenido de esas corridas a este documento ni a
   ningún otro lugar del repo — solo conteos y nombres de workflow, que ya
   no son sensibles (los workflows están borrados).
+
+## Fase 99 — las opciones de los desplegables se veían en blanco (texto blanco sobre fondo blanco) (2026-09-30)
+
+Reporte real del usuario: en producción, pestaña Inasistencia de ORLANT,
+el selector MES de arriba abría con las opciones ilegibles (blanco sobre
+blanco) — solo se leía la que tenía el mouse encima (resaltada en azul por
+el navegador).
+
+### Causa confirmada
+
+El `<select>` del encabezado (`#gd-mes-sel`, `public/index.html`) fuerza
+`color:#fff` en línea para leerse sobre el encabezado oscuro del panel.
+Ese blanco se **hereda** en la lista emergente que abre el navegador al
+hacer clic — y esa lista nunca tenía un fondo propio declarado
+(`getComputedStyle` de un `<option>` daba `background-color: rgba(0, 0, 0, 0)`,
+transparente), así que el navegador le ponía su fondo por defecto (blanco)
+y el texto blanco quedaba invisible. Confirmado con `getComputedStyle`
+tanto en local (con el CSS viejo, revertido a propósito para probarlo)
+como en producción real, antes del arreglo.
+
+El mismo problema no era exclusivo del selector MES: **CUALQUIER**
+`<select>` de la plataforma hereda su `color` sin que ningún `<option>`
+tenga un fondo propio — se reprodujo en los 8 selects del patrón
+"encabezado" (`color:#fff` en línea: MES/Vista/Comparar del dashboard
+genérico, Campaña/Mes de Calidad, Categoría/Estado de Inventario, Periodo
+de Gerencia) y también en los selects "planos" (`.ig`/`.hist-filter-sel`,
+color `var(--c-primary)`) **en tema oscuro**, donde ese color pasa a ser
+un celeste claro que tampoco se lee sobre el fondo claro por defecto de la
+lista. En total, antes del arreglo, la prueba automática encontró **el
+problema en 12 de los 16 `<select>` distintos verificados** (3 no tenían
+opciones cargadas en ese momento, no se pudieron probar; 1 — un
+`<select multiple>`, que se renderiza como lista inline, no como popup
+nativo — ya estaba bien) — prácticamente todos los desplegables de la
+plataforma que SÍ se pudieron probar, en las 2 pantallas principales, en
+los 2 temas.
+
+### Arreglo (un solo lugar, `public/css/styles.css`)
+
+- `select option,select optgroup{color:var(--c-text);background-color:var(--c-surface)}`
+  — color y fondo EXPLÍCITOS en cada `option`/`optgroup`, tomados de los
+  mismos tokens de texto/superficie del tema actual (nunca heredados del
+  `<select>` padre). Esta única regla gana sobre cualquier `color`
+  heredado (inline o no) porque un valor asignado directo al elemento
+  siempre le gana a un valor heredado, sin importar la especificidad.
+- `color-scheme:light` en `:root` y `color-scheme:dark` en
+  `:root[data-theme="dark"]` — además del color/fondo explícitos, esto le
+  dice al navegador que dibuje los controles nativos (la lista, el
+  scrollbar) en el modo correcto.
+- El `<select>` CERRADO no lo toca ninguna de las 2 reglas (solo afectan a
+  `option`/`optgroup`, nunca al propio `select`) — sigue viéndose EXACTO
+  igual que antes (confirmado con capturas antes/después, pixel a pixel).
+
+### Prueba automática nueva
+
+`.github/scripts/verificar-fase99-desplegables-demo.js` (Playwright +
+`getComputedStyle`, ya que la lista nativa abierta no se puede
+fotografiar): recorre 16 `<select>` distintos de las pantallas principales
+(encabezado del dashboard genérico de ORLANT y de Clínica Aurora, panel de
+Inasistencia, panel de Calidad, formulario de monitoreo + catálogo de
+codificaciones, Cargar Datos, Usuarios — modal Nuevo Usuario, Historial,
+Inventario, Gerencia) en tema claro y oscuro, calcula el contraste WCAG
+entre el `color` y el `background-color` calculados de cada `option`, y
+falla si el fondo es transparente o el contraste es menor a 4.5:1.
+Confirmado que falla con el CSS viejo (240 comprobaciones, 222 fallos) y
+pasa limpio con el arreglo (240 comprobaciones, 0 fallos, 0 errores de
+consola).
+
+### Verificación
+
+- `npm test`: 743/743 sin cambios (no se tocó código de servidor).
+  `npm audit`: 0 vulnerabilidades. Antes y después del arreglo.
+- Playwright en local (`npm run seed:demo`), tema claro y oscuro: contraste
+  de los `option` (arriba), capturas del selector MES y de "Cliente"
+  (Cargar Datos) CERRADOS antes/después (idénticas), 0 errores de consola.
+  Capturas en `docs/capturas-demo/fase99-desplegables/` (datos de demo).
+- Verificación en producción (solo lectura, después del deploy): ver el
+  cierre de esta fase en el chat (no se vuelve a editar este documento) —
+  se confirma con `getComputedStyle` sobre `#gd-mes-sel` en
+  `https://informa.inconexion.com.co`, en los 2 temas, y se deja el
+  navegador abierto en ORLANT para que el usuario lo confirme a ojo.
+- Versión `1.1.1` → `1.1.2` (arreglo) + `CHANGELOG.md`. Solo CSS (2 reglas
+  centrales) — ningún filtro ni funcionalidad cambió.
