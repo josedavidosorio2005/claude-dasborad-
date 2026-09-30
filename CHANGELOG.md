@@ -4,6 +4,12 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.3.0 — Octubre 2026
+
+Nueva "Guía de uso" — un enlace en el menú de tu usuario abre una guía
+en español simple con cómo entrar, qué significa cada indicador, cómo
+cargar cada base cada mes y a quién escribir si algo falla.
+
 ## v1.2.0 — Octubre 2026
 
 Inasistencia: la vista principal ahora es el total por mes. Antes abría

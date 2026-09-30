@@ -8662,3 +8662,58 @@ sub-pestaña aparte.
   aviso de mes incompleto). Capturas fuera del repo, en
   `bases edwin\capturas-produccion\fase101-inasistencia-por-mes\`.
 - Versión `1.1.3` → `1.2.0` (vista principal nueva) + `CHANGELOG.md`.
+
+## Fase 100 (continuación) — Tema B: guía de uso (2026-09-30)
+
+Pendiente del prompt original de la Fase 100 (`Temas B y C` no se habían
+hecho todavía). Tema B: guía de uso en español simple, para Edwin, Jairo
+y el equipo.
+
+- `docs/guia-uso-orlant.md`: cómo entrar (con qué hacer si se olvida la
+  contraseña — hoy no hay recuperación propia, la cambia un admin desde
+  Usuarios), las 6 pestañas de ORLANT con sus sub-pestañas, qué significa
+  cada indicador en palabras (incluye las fórmulas ponderadas de nivel de
+  servicio/AHT de Tráfico, el % de inasistencia ponderado de Inasistencia,
+  y cómo se calcula la nota de Calidad — SI/N/A suman el peso, un NO
+  crítico resta puntos y cuenta como fallo), una ficha por base con qué
+  archivo/hoja/columnas obligatorias y cómo reemplaza el mes o el rango
+  (Tráfico de Llamadas, Tráfico de WhatsApp, Tipificación, Agendas,
+  Inasistencia, Calidad), calendario mensual (con "por confirmar" donde
+  falta que Edwin precise), la sección de Calidad (crear monitoreo,
+  cargar codificaciones, alerta al asesor, Mis Resultados), Usuarios y
+  permisos (solo admin), "Pendiente de datos" y a quién escribir.
+- Capturas **solo con datos de demo** (`npm run seed:demo`,
+  `.github/scripts/generar-capturas-guia-uso.js`, committeado para poder
+  regenerarlas en el futuro): login, dashboard de ORLANT, Inasistencia
+  "Por mes", Cargar Datos, Calidad (formulario sin guardar), Usuarios —
+  en `docs/img/guia-uso/` (repo) y copiadas a `public/img/guia/`
+  (servidas por la app). Nota agregada donde corresponde: en el entorno
+  de demo Agendamiento/Tipificación no tienen datos de ejemplo cargados
+  (no se siembran, ver Fase 98), así que esas 2 pestañas no se ven en
+  esas capturas puntuales — en producción real sí, cuando hay datos.
+- `public/guia-uso.html`: la misma guía, como página estática servida
+  directo por Express (`express.static`, ya montado antes del catch-all
+  del SPA) en `/guia-uso.html` — no necesita sesión iniciada.
+- Enlace **"Guía de uso"** agregado en el menú de usuario (dropdown del
+  perfil) de las 4 páginas que lo tienen (shell de administración,
+  dashboard genérico, Calidad, y la cuarta página con el mismo dropdown)
+  — abre la guía en una pestaña nueva. Clase CSS nueva
+  `.navbar-help-link` en `public/css/styles.css`, mismo estilo visual que
+  `.btn-logout`.
+- PDF `Guia_de_uso_ORLANT_v1.2.pdf` generado con `page.pdf()` de
+  Playwright sobre la página real servida en local
+  (`.github/scripts/generar-pdf-guia-uso.js`), guardado **fuera del
+  repo** en `C:\Users\filid\Documents\trabajo inconexion\entregables\`.
+- Sin datos reales de clientes en ningún lugar de la guía ni de las
+  capturas — todo con el seed de demo.
+
+### Verificación
+
+- `npm test`: 756/756 sin cambios (no se tocó lógica de servidor).
+  `npm audit`: 0 vulnerabilidades.
+- Capturas y PDF generados contra `http://localhost:3000` en local, con
+  `npm run seed:demo` — confirmado a ojo que el enlace "Guía de uso"
+  aparece en el menú, que la página `/guia-uso.html` carga con las
+  imágenes, y que el PDF (~1 MB, 6 capturas embebidas) se generó
+  completo.
+- Versión `1.2.0` → `1.3.0` (función nueva: guía de uso) + `CHANGELOG.md`.

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de uso — InConexión Platform (ORLANT)</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --c-primary:#0d4a5e; --c-primary-light:#1a7a9e; --c-text:#1f2d33; --c-text-muted:#5b6b73;
+    --c-surface:#ffffff; --c-bg:#f4f7f9; --c-border:#dbe4e8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;background:var(--c-bg);color:var(--c-text);line-height:1.6}
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 60px}
+  header.top{background:var(--c-primary);color:#fff;padding:26px 20px}
+  header.top .wrap{padding:0}
+  header.top h1{margin:0 0 4px;font-size:1.5rem}
+  header.top p{margin:0;opacity:0.9;font-size:0.9rem}
+  a{color:var(--c-primary-light)}
+  h2{color:var(--c-primary);border-bottom:2px solid var(--c-border);padding-bottom:6px;margin-top:40px}
+  h3{color:var(--c-primary)}
+  .toc{background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:18px 22px;margin:20px 0}
+  .toc ol{margin:8px 0 0;padding-left:20px}
+  table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--c-surface)}
+  th,td{border:1px solid var(--c-border);padding:8px 10px;text-align:left;font-size:0.92rem;vertical-align:top}
+  th{background:#eef3f5;color:var(--c-primary)}
+  code{background:#eef3f5;padding:1px 5px;border-radius:4px;font-size:0.88em}
+  .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:18px 22px;margin:14px 0}
+  .version-pill{display:inline-block;background:rgba(255,255,255,0.18);padding:3px 10px;border-radius:12px;font-size:0.78rem;margin-top:8px}
+  .back-link{display:inline-block;margin-top:24px;font-size:0.9rem}
+  ul{padding-left:22px}
+  footer{margin-top:50px;font-size:0.8rem;color:var(--c-text-muted);text-align:center}
+  figure{margin:14px 0}
+  figure img{max-width:100%;border:1px solid var(--c-border);border-radius:8px;display:block}
+  figcaption{font-size:0.78rem;color:var(--c-text-muted);margin-top:6px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>Guía de uso — InConexión Platform (ORLANT)</h1>
+    <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
+    <span class="version-pill">Versión de la plataforma: 1.2.0</span>
+  </div>
+</header>
+<div class="wrap">
+
+<div class="toc">
+  <strong>Índice</strong>
+  <ol>
+    <li><a href="#s1">Cómo entrar</a></li>
+    <li><a href="#s2">El dashboard de ORLANT</a></li>
+    <li><a href="#s3">Qué significa cada indicador</a></li>
+    <li><a href="#s4">Cómo cargar cada base cada mes</a></li>
+    <li><a href="#s5">Calendario mensual</a></li>
+    <li><a href="#s6">Calidad</a></li>
+    <li><a href="#s7">Usuarios y permisos (solo administrador)</a></li>
+    <li><a href="#s8">Pendiente de datos</a></li>
+    <li><a href="#s9">A quién escribir si algo falla</a></li>
+  </ol>
+</div>
+
+<h2 id="s1">1. Cómo entrar</h2>
+<p>La plataforma vive en <a href="https://informa.inconexion.com.co">https://informa.inconexion.com.co</a>. Ábrela en el navegador (Chrome, Edge o similar) como cualquier página web.</p>
+<p>En la pantalla de inicio escribe tu <strong>usuario</strong> y tu <strong>contraseña</strong>, y presiona "Iniciar sesión". Cada persona tiene su propio usuario, con acceso solo a lo que le corresponde (ver <a href="#s7">sección 7</a>).</p>
+<p><strong>Si olvidaste la contraseña</strong>: hoy la plataforma no tiene un botón de "recuperar contraseña" — tienes que pedirle a un administrador que te la cambie desde la pantalla de Usuarios (Administración → Usuarios → tu usuario → "Cambiar contraseña"). Avísale por el canal que usen normalmente (no la escribas en un mensaje que quede guardado, para que solo tú la conozcas).</p>
+<figure><img src="/img/guia/01-login.png" alt="Pantalla de inicio de sesión"><figcaption>Pantalla de inicio de sesión (datos de demostración).</figcaption></figure>
+
+<h2 id="s2">2. El dashboard de ORLANT</h2>
+<p>Al entrar, elige el dashboard de <strong>ORLANT</strong> en el menú principal. Arriba del todo vas a ver:</p>
+<ul>
+  <li>El <strong>selector de MES</strong> — elige el mes que quieres ver (ej. "Ago-26"). Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez.</li>
+  <li>El botón <strong>Exportar</strong> — descarga a Excel todo lo que estás viendo en la pestaña activa (una hoja por gráfica/tabla).</li>
+  <li>El interruptor de <strong>tema oscuro/claro</strong> (en el menú de tu usuario, arriba a la derecha) — cambia el color de toda la plataforma, no afecta los datos.</li>
+</ul>
+
+<h3>Las 6 pestañas</h3>
+<table>
+  <tr><th>Pestaña</th><th>Qué muestra</th></tr>
+  <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
+  <tr><td><strong>Tráfico de WhatsApp</strong></td><td>Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos).</td></tr>
+  <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente.</td></tr>
+  <tr><td><strong>Inasistencia</strong></td><td>Cuántas citas no se presentaron. Abre en <strong>"Por mes"</strong> (el total de todas las especialidades juntas) — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
+  <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto).</td></tr>
+  <tr><td><strong>Calidad</strong></td><td>Monitoreo de calidad de los asesores, con su nota y resultados.</td></tr>
+</table>
+<p>Cada pestaña que tiene varias vistas las muestra como <strong>sub-pestañas</strong> justo debajo del nombre de la pestaña principal — haz clic para cambiar entre ellas, sin perder el mes ni los filtros que ya elegiste.</p>
+<figure><img src="/img/guia/02-dashboard-orlant.png" alt="Dashboard de ORLANT"><figcaption>Dashboard de ORLANT, pestaña Tráfico de Llamadas (datos de demostración). En este entorno de demo no todas las bases tienen datos de ejemplo — Agendamiento y Tipificación solo aparecen cuando su base sí está cargada, tanto en demo como en producción real.</figcaption></figure>
+
+<h3>Filtros</h3>
+<p>La mayoría de las pestañas traen filtros propios arriba de sus gráficas (especialidad, línea, rango de meses, etc.) con un botón <strong>"Aplicar filtros"</strong>. Elige lo que quieras ver y presiona ese botón — las gráficas de esa sub-pestaña se vuelven a dibujar con el filtro puesto.</p>
+<p>Si un mes todavía no tiene datos cargados para esa pestaña, sale un aviso explicando que no hay datos para ese mes (y un botón para ir directo al último mes que sí tiene).</p>
+
+<h2 id="s3">3. Qué significa cada indicador</h2>
+<div class="card">
+<h3>Tráfico de Llamadas</h3>
+<ul>
+  <li><strong>Total</strong>: todas las llamadas que entraron en el mes.</li>
+  <li><strong>Contestadas</strong>: las que un asesor sí atendió.</li>
+  <li><strong>Abandonadas</strong>: las que colgaron antes de que las atendieran.</li>
+  <li><strong>Nivel de atención</strong>: contestadas ÷ total, en %.</li>
+  <li><strong>% de abandono</strong>: abandonadas ÷ total, en %.</li>
+  <li><strong>Nivel de servicio a 20 segundos</strong>: de TODO lo que entró (no solo lo contestado), qué % se contestó en 20 segundos o menos. Cuando se combinan varias líneas o meses, se promedia <strong>ponderado por el total de llamadas de cada uno</strong> (no es un promedio simple de los porcentajes).</li>
+  <li><strong>AHT</strong> (tiempo promedio de atención): cuánto dura en promedio una llamada YA contestada. Se promedia ponderado por las <strong>llamadas contestadas</strong> (una llamada abandonada nunca tuvo un AHT, así que no cuenta en ese promedio).</li>
+</ul>
+</div>
+<div class="card">
+<h3>Tráfico de WhatsApp</h3>
+<p>Los mismos indicadores que Llamadas, más el <strong>Nivel de Servicio a 5 minutos</strong> (mismo cálculo que el de 20 segundos, pero con esa ventana de tiempo — es el que más le importa a WhatsApp).</p>
+</div>
+<div class="card">
+<h3>Agendamiento</h3>
+<p>Sus 4 vistas (Por especialidad, Total agendas, Agendas por línea, Agendas por agente) muestran cuántas citas se agendaron, sin un cálculo adicional — son conteos directos agrupados de distinta forma.</p>
+</div>
+<div class="card">
+<h3>Inasistencia</h3>
+<p>El % de inasistencia es <strong>(inasistencia + pendientes) ÷ total, ponderado</strong>. Los "pendientes" (citas que quedaron sin confirmar si la persona fue o no) cuentan como inasistencia para este cálculo; las canceladas NO cuentan como inasistencia, pero sí quedan en el total. Al combinar varias especialidades, el % se calcula sobre la SUMA de todas (nunca promediando los % de cada especialidad por separado — eso daría un número distinto y menos correcto).</p>
+<figure><img src="/img/guia/03-inasistencia-por-mes.png" alt="Inasistencia, Por mes"><figcaption>Inasistencia, sub-pestaña "Por mes" (datos de demostración).</figcaption></figure>
+</div>
+<div class="card">
+<h3>Tipificación</h3>
+<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional.</p>
+</div>
+<div class="card">
+<h3>Calidad</h3>
+<p>Cada monitoreo responde una lista de preguntas con peso propio (SI / NO / N/A). Un SI o un N/A suma el peso completo de esa pregunta; un NO en una pregunta normal no suma nada; un NO en una pregunta <strong>crítica</strong> resta puntos adicionales y cuenta como un "fallo". El puntaje final queda entre 0 y 100, y se clasifica así:</p>
+<table>
+  <tr><th>Puntaje</th><th>Clasificación</th></tr>
+  <tr><td>Menos de 70</td><td>🔴 Crítico</td></tr>
+  <tr><td>70 a 89</td><td>🟡 No crítico</td></tr>
+  <tr><td>90 a 100</td><td>🟢 Sobresaliente</td></tr>
+</table>
+</div>
+
+<h2 id="s4">4. Cómo cargar cada base cada mes</h2>
+<p>Todas las cargas se hacen desde <strong>"Cargar Datos"</strong> (menú principal), eligiendo el cliente <strong>ORLANT</strong> y descargando primero la <strong>plantilla consolidada</strong> (un solo Excel con una hoja por base). Llena la hoja que te toque con el archivo que te llegue, sin cambiar los nombres de las columnas, y vuelve a subir ese mismo Excel.</p>
+<p>Al subir, la plataforma te muestra <strong>antes de guardar</strong> cuántas filas se van a reemplazar (para que nunca subas un mes por error sin darte cuenta), y después de guardar te confirma cuántas filas se cargaron. Si algo no cuadra (falta una columna obligatoria, un dato inválido, una fecha futura), sale un <strong>aviso explicando exactamente qué fila y qué columna</strong> tiene el problema — esa fila se omite, pero el resto del archivo sí se carga.</p>
+<figure><img src="/img/guia/04-cargar-datos.png" alt="Pantalla Cargar Datos"><figcaption>Pantalla "Cargar Datos", cliente ORLANT (datos de demostración).</figcaption></figure>
+
+<div class="card">
+<h3>Tráfico de Llamadas</h3>
+<p><strong>Qué archivo</strong>: el reporte diario de llamadas por skill, que exporta Wolkvox.<br>
+<strong>Hoja</strong>: <code>LLAMADAS</code> de la plantilla.<br>
+<strong>Columnas obligatorias</strong>: SKILL_NAME, DATE, TOTAL LLAMADAS, LLAMADAS CONTESTADAS. Las demás (abandonadas, niveles de servicio, ASA, ATA, AHT, etc.) son opcionales.<br>
+<strong>Reemplazo</strong>: al subir, se reemplazan las filas de esa(s) skill(s) en las fechas que trae el archivo — nunca las de otras skills o fechas que no vengan en el archivo.</p>
+</div>
+<div class="card">
+<h3>Tráfico de WhatsApp</h3>
+<p><strong>Qué archivo</strong>: el reporte de WhatsApp por cola, de Wolkvox.<br>
+<strong>Hoja</strong>: <code>WHATSAPP</code>.<br>
+<strong>Columnas obligatorias</strong>: NOMBRE_COLA_WHATSAPP, FECHA INICIO, FECHA FIN, TOTAL WHATSAPP, WHATSAPP CONTESTADOS. Aquí el periodo se reporta como un RANGO de fechas, no un solo día.<br>
+<strong>Reemplazo</strong>: mismo criterio que Llamadas, pero por el rango de fechas que trae cada fila.</p>
+</div>
+<div class="card">
+<h3>Tipificación</h3>
+<p><strong>Qué archivo</strong>: el reporte de tipificación de llamadas/chats de Wolkvox.<br>
+<strong>Hojas</strong>: <code>TIPIFICACION_LLAMADAS</code> y <code>TIPIFICACION_WHATSAPP</code> (independientes, se cargan por separado).<br>
+<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, DESCRIPTION_COD_ACT (el motivo), SKILL_NAME.</p>
+</div>
+<div class="card">
+<h3>Agendas</h3>
+<p><strong>Qué archivo</strong>: el reporte de citas agendadas, del sistema de agendamiento de ORLANT.<br>
+<strong>Hoja</strong>: <code>AGENDAS</code>.<br>
+<strong>Columnas obligatorias</strong>: NOMBRE DE AGENTE, SEDE, NOMBRE_EXAMEN, ESPECIALIDAD, PROFESIONAL, FECHA_SOLICITUD, TIPO DE LINEA.<br>
+<strong>Reemplazo</strong>: por el RANGO continuo de fechas que trae el archivo (no por mes).</p>
+</div>
+<div class="card">
+<h3>Inasistencia</h3>
+<p><strong>Qué archivo</strong>: el reporte mensual de inasistencia por especialidad que manda Edwin.<br>
+<strong>Hoja</strong>: <code>INASISTENCIA</code>.<br>
+<strong>Columnas obligatorias</strong>: MES, ESPECIALIDAD, CANCELADA, INASISTENCIA, PENDIENTE, ATENDIDAS, TOTAL.<br>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.<br>
+El mes en curso puede traer menos especialidades que un mes ya cerrado — es normal, la plataforma avisa cuando eso pasa.</p>
+</div>
+<div class="card">
+<h3>Calidad</h3>
+<p>La carga normal es <strong>un monitoreo a la vez</strong>, desde el formulario (ver <a href="#s6">sección 6</a>) — no es una carga de archivo mensual como las demás bases. También existe una <strong>carga masiva</strong> desde Excel (3 hojas: "Monitoreos" para diligenciar, "Diccionario" con la lista de preguntas de referencia, "Resumen por Asesor" de consulta) para cuando hay muchos monitoreos para subir de una vez.</p>
+</div>
+
+<h2 id="s5">5. Calendario mensual</h2>
+<table>
+  <tr><th>Base</th><th>Quién la manda</th><th>De qué sistema sale</th><th>Cuándo se carga</th></tr>
+  <tr><td>Tráfico de Llamadas</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
+  <tr><td>Tráfico de WhatsApp</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
+  <tr><td>Tipificación</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
+  <tr><td>Agendas</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Por confirmar</td></tr>
+  <tr><td>Inasistencia</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
+  <tr><td>Calidad</td><td>El equipo de Calidad</td><td>Monitoreos propios</td><td>Continuo, a medida que se hacen</td></tr>
+</table>
+<p><em>(Las columnas "quién la manda" y "de qué sistema sale" se completan con lo que ya sabemos hoy — las columnas "por confirmar" quedan pendientes de que Edwin las precise.)</em></p>
+
+<h2 id="s6">6. Calidad</h2>
+<ul>
+  <li><strong>Crear un monitoreo</strong>: Calidad → "Nuevo monitoreo". La fecha y el evaluador se ponen solos (hoy y quien inició sesión) y no se pueden cambiar a mano, para que el registro sea confiable. Completa el formulario con las respuestas (SI/NO/N/A) y guarda.
+    <figure><img src="/img/guia/05-calidad-nuevo-monitoreo.png" alt="Formulario Nuevo Monitoreo"><figcaption>Calidad, formulario de "Nuevo Monitoreo" sin guardar (datos de demostración).</figcaption></figure>
+  </li>
+  <li><strong>Cargar la lista de codificaciones</strong>: Calidad → pestaña de configuración/catálogo — ahí se sube la lista de codificaciones válidas por campaña (la manda Edwin).</li>
+  <li><strong>Alerta al asesor</strong>: cuando a un asesor le registran un monitoreo nuevo, la próxima vez que inicia sesión le sale un aviso con un botón para verlo.</li>
+  <li><strong>"Mis Resultados"</strong>: cada asesor, al iniciar sesión con su propio usuario, tiene una pantalla donde ve sus propios monitoreos y su nota — no ve los de otros asesores.</li>
+</ul>
+
+<h2 id="s7">7. Usuarios y permisos (solo administrador)</h2>
+<p>Desde <strong>Administración → Usuarios</strong> (solo visible si tu usuario es administrador):</p>
+<ol>
+  <li>"Nuevo usuario" → escribe nombre, usuario, contraseña (mínimo los caracteres que pida el formulario) y elige el rol.</li>
+  <li>Marca las <strong>campañas</strong> a las que ese usuario va a tener acceso (ej. solo ORLANT) — así esa persona nunca ve datos de otra campaña.</li>
+  <li>Guarda. Esa persona ya puede iniciar sesión con lo que le diste.</li>
+</ol>
+<p>Para cambiarle la contraseña o los permisos después, entra a ese usuario desde la misma lista y edítalo.</p>
+<figure><img src="/img/guia/06-usuarios.png" alt="Administración de Usuarios"><figcaption>Administración → Usuarios (datos de demostración).</figcaption></figure>
+
+<h2 id="s8">8. Pendiente de datos</h2>
+<p>Esto no es un problema de la plataforma — son datos que todavía faltan por llegar:</p>
+<ul>
+  <li>El resumen general todavía no tiene todos los números consolidados.</li>
+  <li>WhatsApp a 5 minutos: falta que llegue el reporte con esa columna.</li>
+  <li>Agendas de 2026: falta la carga de datos reales de este año.</li>
+  <li>Codificaciones de Calidad: falta la lista que va a mandar Edwin.</li>
+  <li>Salida (llamadas/WhatsApp salientes).</li>
+  <li>Ordenamiento médico.</li>
+  <li>Recuperación de cancelados.</li>
+</ul>
+
+<h2 id="s9">9. A quién escribir si algo falla</h2>
+<p>Jose David Osorio — (completar).</p>
+
+<a class="back-link" href="/">&larr; Volver a la plataforma</a>
+<footer>InConexión Platform — Guía de uso — versión 1.2.0</footer>
+</div>
+</body>
+</html>
