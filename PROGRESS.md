@@ -252,7 +252,7 @@ Ejecución del runbook de `AWS_DEPLOY_REPORT.md` §7 en la cuenta AWS
 | Instancia Lightsail | `inconexion-prod` · plan `micro_3_0` (1 GB RAM / 2 vCPU / 40 GB) · Ubuntu 22.04 · `us-east-1a` |
 | IP estática | `inconexion-ip` = **100.51.93.1** |
 | Disco de bloques | `inconexion-data` 20 GB, adjuntado en `/dev/xvdf` (aparece como `/dev/nvme1n1` en el SO; montado por UUID en `/opt/inconexion/data`) |
-| Firewall Lightsail | 443 y 80 → `0.0.0.0/0`; 22 → `181.79.84.39/32` (IP del operador) |
+| Firewall Lightsail | 443 y 80 → `0.0.0.0/0`; 22 → IP del operador |
 | ECR | `934685482338.dkr.ecr.us-east-1.amazonaws.com/inconexion` (scanOnPush) — imagen inicial construida localmente y subida (`:latest`, `:bootstrap`, `:d7b323c…`) |
 | SSM Parameter Store (SecureString) | `/inconexion/prod/JWT_SECRET`, `/MASTER_ADMIN_PASSWORD_HASH`, `/MASTER_ADMIN_USER`, `/CORS_ORIGIN` |
 | S3 backups | `inconexion-backups-josedavidosorio2005` — versionado activo, acceso público bloqueado (4/4) |
@@ -274,7 +274,7 @@ Ejecución del runbook de `AWS_DEPLOY_REPORT.md` §7 en la cuenta AWS
 | `https://inconexionpruebasclaude.duckdns.org/api/health` → `{"ok":true}` con cert válido | ✅ (Let's Encrypt `CN=inconexionpruebasclaude.duckdns.org`, válido 2026-09-10 → 2026-12-09; sin warnings) |
 | HTTP → HTTPS | ✅ 308 permanente |
 | Puerto 3000 **no** accesible desde internet | ✅ `Test-NetConnection :3000` → `False`; publicado solo en `127.0.0.1:3000` |
-| Puerto 22 solo desde la IP del operador | ✅ `181.79.84.39/32` |
+| Puerto 22 solo desde la IP del operador | ✅ restringido a esa IP (`/32`) |
 | Backup de prueba visible en S3 | ✅ (ver tabla arriba) |
 | Secretos fuera del repo y del disco (SSM) | ✅ el contenedor los lee de SSM al arrancar; en `app.env` no hay secretos (solo la access key de mínimo privilegio, `chmod 600`, root) |
 | Alarma de caída | ✅ Route 53 health check + CloudWatch alarm → SNS |
@@ -491,7 +491,7 @@ desplegada en AWS. No se tocó `server/` ni `public/`.
    por el claim `repository` (nombre plano) + `StringLike` `sub` = `repo:*:ref:refs/heads/main`.
    Se quitó también `environment: produccion` del workflow (no aportaba gating).
 3. Paso SSH: `dial tcp ***:22: i/o timeout`. El firewall de Lightsail tiene el
-   **puerto 22 restringido a la IP del operador** (`181.79.84.39/32`); los runners
+   **puerto 22 restringido a la IP del operador**; los runners
    de GitHub tienen IP dinámica → no conectan.
    - **Este deploy (y los siguientes, por ahora) se hacen A MANO** por SSH desde
      la IP del operador: `cd /opt/inconexion && docker compose pull && docker
