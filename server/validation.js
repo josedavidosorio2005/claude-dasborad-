@@ -574,6 +574,56 @@ const tipificacionOpcionesQuery = z.object({
   canal: tipificacionCanalSchema,
 });
 
+// ── Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin) ───────────
+// Filas como ARRAY, mismo motivo que Agendas/Tipificacion. Orden FIJO, debe
+// coincidir con INASISTENCIA_ORDEN_ARRAY (inasistencia-logic.js) y con
+// CAMPOS_FILA (server/inasistencia.js):
+//   [mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total]
+// El mes ya viene resuelto a 'AAAA-MM' por el navegador (texto del mes,
+// AÑO opcional, fecha de Excel o 'AAAA-MM' -- ver inasistencia-logic.js: si
+// el archivo no trae año, se infiere el mas reciente en que ese mes no es
+// futuro, hora Colombia). Los 4 conteos son enteros no negativos; TOTAL se
+// guarda tal cual vino del archivo (nunca se recalcula en el servidor -- si
+// no cuadra con la suma de los otros 4, el navegador ya avisa antes de
+// confirmar la carga, pero no bloquea).
+const inasistenciaEnteroNoNegativo = z.number().int().min(0).max(1000000);
+const inasistenciaFilaArraySchema = z.tuple([
+  mesSchema, // mes
+  z.string(reqStr('ESPECIALIDAD es obligatoria')).trim().min(1).max(120), // especialidad
+  inasistenciaEnteroNoNegativo, // cancelada
+  inasistenciaEnteroNoNegativo, // inasistencia
+  inasistenciaEnteroNoNegativo, // pendiente
+  inasistenciaEnteroNoNegativo, // atendidas
+  inasistenciaEnteroNoNegativo, // total
+]);
+
+const inasistenciaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(inasistenciaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(2000, 'Demasiadas filas en un solo archivo')
+    // mes = indice 0 de la tupla ('AAAA-MM') -- se compara el PRIMER dia de
+    // ese mes contra el fin del mes en curso (mismo helper que Agendas/
+    // Tipificacion, ver fecha-limites.js).
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0] + '-01')) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0] + '-01'), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const inasistenciaFiltrosQuery = z.object({
+  campana: campanaSchema,
+  mes: mesSchema.optional(),
+  desde: mesSchema.optional(),
+  hasta: mesSchema.optional(),
+  especialidad: z.string().trim().max(120).optional(),
+});
+
 // ── Dashboards de cliente: cargas de Excel (Fase 2) ─────────
 const nombreClienteSeccionSchema = z
   .string()
@@ -842,6 +892,8 @@ module.exports = {
     tipificacionCargaBody,
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,
+    inasistenciaCargaBody,
+    inasistenciaFiltrosQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,
