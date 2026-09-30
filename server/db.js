@@ -1782,6 +1782,24 @@ runOnceMigration('dashboards_config_orlant_agendamiento_edwin_v1', () => {
   }
 });
 
+// Fase 95 (tema A): agrega asesorUserId a monitoreos para que "Mis
+// Resultados" (GET /monitoreos/mios) pueda identificar al asesor por id en
+// vez de solo por nombre -- dos usuarios ASESOR con el mismo nombre hacian
+// que uno viera (o no viera) los monitoreos del otro. No se agrega directo
+// al CREATE TABLE de arriba para que esta migracion funcione igual en una
+// base nueva o en una que ya tenia filas (evita "duplicate column name").
+// Las filas existentes NO se tocan: quedan con asesorUserId NULL y la
+// consulta de /monitoreos/mios sigue resolviendolas por nombre (fallback).
+runOnceMigration('monitoreos_asesor_user_id_v1', () => {
+  db.exec(`
+    ALTER TABLE monitoreos ADD COLUMN asesorUserId INTEGER;
+    CREATE INDEX IF NOT EXISTS idx_monitoreos_asesor_user_id ON monitoreos(asesorUserId);
+  `);
+  if (!config.isTest) {
+    console.log('[db] Migracion monitoreos_asesor_user_id_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

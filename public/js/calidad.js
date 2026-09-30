@@ -243,8 +243,7 @@ async function openCalidad(){
   var nuevoBtn = document.getElementById('ctab-btn-nuevo');
   if(nuevoBtn) nuevoBtn.style.display = canEval ? '' : 'none';
   _calActualizarTabCarga();
-  document.getElementById('cf-fecha').value = new Date().toISOString().slice(0,10);
-  if(currentUser) document.getElementById('cf-evaluador').value = currentUser.nombre;
+  calSetFechaEvaluadorAuto();
   renderCalItemsForm();
   populateCalAsesorSelect();
   renderCalCodifCampoForm('');
@@ -328,8 +327,11 @@ function populateCalAsesorSelect(){
     sel.innerHTML = '<option value="">Seleccione un asesor...</option>' +
       // Fase 88: value SIEMPRE el nombre crudo (es lo que filtra/agrupa
       // contra CAL_DB), solo el texto visible pasa por textoFormatoNombre
-      // -- mismo patron que agendas.js/trafico.js.
-      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'">'+esc(textoFormatoNombre(u.nombre))+'</option>'; }).join('');
+      // -- mismo patron que agendas.js/trafico.js. Fase 95 (tema A):
+      // data-user-id lleva el id real del usuario ASESOR, para que
+      // submitMonitoreo() lo mande como asesorUserId (identifica al asesor
+      // sin depender solo del nombre en /monitoreos/mios).
+      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'" data-user-id="'+u.id+'">'+esc(textoFormatoNombre(u.nombre))+'</option>'; }).join('');
   }
 }
 
@@ -399,6 +401,28 @@ function setCanalAuditado(canal){
 
 var _editingMonitoreoId = null;
 
+// Fase 95 (tema A): "hoy" tal como lo ve el navegador -- solo para mostrar
+// el campo bloqueado; el valor real que queda guardado lo decide el
+// servidor con la hora de Colombia (fechaLimitesHoyColombia), nunca esto.
+function calFechaHoyLocal(){
+  var d = new Date();
+  var pad = function(n){ return n<10 ? '0'+n : n; };
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+
+// Fase 95 (tema A): fecha = hoy, bloqueada salvo administrador completo
+// (correcciones); evaluador = usuario de la sesion, siempre bloqueado.
+// Se llama tanto al abrir el modulo (openCalidad) como al resetear el
+// formulario (resetCalForm) -- antes solo openCalidad tocaba estos campos
+// (sin bloquear la fecha), asi que un administrador veia el campo
+// deshabilitado hasta el primer guardado.
+function calSetFechaEvaluadorAuto(){
+  var fechaEl = document.getElementById('cf-fecha');
+  fechaEl.value = calFechaHoyLocal();
+  fechaEl.disabled = !isFullAdmin();
+  document.getElementById('cf-evaluador').value = currentUser ? currentUser.nombre : 'Administrador';
+}
+
 function resetCalForm(){
   calItems(_ccampana).forEach(function(it){ var el=document.getElementById('cf-item-'+it.n); if(el) el.value=''; });
   populateCalAsesorSelect();
@@ -406,6 +430,7 @@ function resetCalForm(){
   document.getElementById('cf-telefono').value='';
   renderCalCodifCampoForm('');
   document.getElementById('cf-observaciones').value='';
+  calSetFechaEvaluadorAuto();
   setCanalAuditado('LLAMADA');
   _editingMonitoreoId = null;
   var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Datos generales del monitoreo';
@@ -425,7 +450,12 @@ function editarMonitoreo(id){
   populateCalAsesorSelect();
   var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Editando monitoreo existente (solo Reportes/Admin)';
   document.getElementById('cf-asesor').value = m.asesor;
-  document.getElementById('cf-fecha').value = m.fecha || '';
+  // Fase 95 (tema A): la fecha solo se puede tocar al editar si el actor es
+  // administrador completo (correccion explicita); el evaluador original
+  // nunca cambia, siempre bloqueado.
+  var fechaEl = document.getElementById('cf-fecha');
+  fechaEl.value = m.fecha || '';
+  fechaEl.disabled = !isFullAdmin();
   document.getElementById('cf-idllamada').value = m.idLlamada || '';
   document.getElementById('cf-telefono').value = m.telefono || '';
   renderCalCodifCampoForm(m.codificacion || '');
@@ -445,15 +475,25 @@ async function submitMonitoreo(){
   if(editing){
     if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
   } else if(!calCurrentPerm()){ showToast('No tiene permiso para evaluar esta campana'); return; }
-  var asesor = document.getElementById('cf-asesor').value.trim();
+  var asesorSel = document.getElementById('cf-asesor');
+  var asesor = asesorSel.value.trim();
   if(!asesor){ showToast('Seleccione el asesor a monitorear'); return; }
+  // Fase 95 (tema A): id real del usuario ASESOR elegido (data-user-id del
+  // <option>), para que el servidor pueda identificarlo sin depender solo
+  // del nombre en /monitoreos/mios.
+  var asesorOpt = asesorSel.selectedOptions && asesorSel.selectedOptions[0];
+  var asesorUserId = asesorOpt ? asesorOpt.getAttribute('data-user-id') : null;
   var answers = calReadAnswers();
   var preview = calComputeScore(calItems(_ccampana), answers, calEngine(_ccampana));
   if(preview.puntaje===null){ showToast('Responda al menos un item'); return; }
   // El servidor solo acepta 'SI'/'NO'/'N/A'/''; enviamos las respuestas tal cual.
+  // fecha/evaluador: el servidor los recalcula/ignora salvo la excepcion de
+  // administrador para la fecha (Fase 95, tema A) -- se siguen mandando
+  // porque el schema los sigue exigiendo/aceptando.
   var body = {
     campana: _ccampana,
     asesor: asesor,
+    asesorUserId: asesorUserId ? Number(asesorUserId) : undefined,
     fecha: document.getElementById('cf-fecha').value,
     canal: document.getElementById('cf-canal').value || 'LLAMADA',
     idLlamada: document.getElementById('cf-idllamada').value.trim(),

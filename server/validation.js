@@ -175,11 +175,23 @@ const textoCortoOpt = z.string().trim().max(200).optional().default('');
 const createMonitoreoBody = z.object({
   campana: campanaSchema,
   asesor: z.string(reqStr('El asesor es obligatorio')).trim().min(1).max(120),
+  // Fase 95 (tema A): id del usuario ASESOR elegido en el desplegable, para
+  // que /monitoreos/mios pueda identificarlo sin depender solo del nombre
+  // (texto libre, colisiona con nombres duplicados). El servidor lo valida
+  // contra la campana/nombre antes de guardarlo -- ver routes/calidad.js.
+  asesorUserId: z.coerce.number().int().positive().optional(),
+  // Fase 95 (tema A): el servidor ignora esta fecha salvo que el actor sea
+  // administrador completo (correcciones) -- ver routes/calidad.js. Sigue
+  // siendo obligatoria en el body porque el formulario la sigue mostrando
+  // (bloqueada, con hoy ya puesto) y la carga masiva reusa este schema.
   fecha: fechaSchema,
   canal: z.enum(['LLAMADA', 'WPP']).default('LLAMADA'),
   idLlamada: textoCortoOpt,
   telefono: textoCortoOpt,
   codificacion: textoCortoOpt,
+  // Fase 95 (tema A): el servidor ignora este campo al crear (usa el nombre
+  // de la sesion) -- sigue en el schema porque la carga masiva historica
+  // (POST /monitoreos/bulk) SI necesita el evaluador real de cada fila.
   evaluador: z.string().trim().max(120).optional().default(''),
   observaciones: textoCortoOpt,
   answers: answersSchema,
@@ -209,11 +221,17 @@ const monitoreoBulkBody = z.object({
 const updateMonitoreoBody = z
   .object({
     asesor: z.string().trim().min(1).max(120).optional(),
+    asesorUserId: z.coerce.number().int().positive().optional(),
+    // Fase 95 (tema A): el servidor solo aplica un cambio de fecha si el
+    // actor es administrador completo (correcciones) -- ver routes/calidad.js.
     fecha: fechaSchema.optional(),
     canal: z.enum(['LLAMADA', 'WPP']).optional(),
     idLlamada: z.string().trim().max(200).optional(),
     telefono: z.string().trim().max(200).optional(),
     codificacion: z.string().trim().max(200).optional(),
+    // Fase 95 (tema A): el servidor ya NO aplica este campo al editar (el
+    // evaluador original nunca cambia) -- se deja en el schema solo para
+    // no romper un body viejo que todavia lo mande; se ignora en la ruta.
     evaluador: z.string().trim().max(120).optional(),
     observaciones: z.string().trim().max(200).optional(),
     answers: answersSchema.optional(),
