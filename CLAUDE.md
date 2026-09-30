@@ -104,6 +104,20 @@ asumir en qué quedó una fase anterior.
 - El repositorio es público por decisión del jefe (29/09/2026); no
   reportarlo como pendiente.
 
+## Versión y CHANGELOG
+
+- La versión de la app vive en un solo lugar: `server/package.json`
+  (`version`). Se expone en `/api/health` (campo `version`, junto a
+  `buildId`, sin quitarlo) y discretamente en la interfaz (menú de
+  usuario de cada página, clase `.navbar-app-version`).
+- Cualquier fase que cambie la app (código, no solo `PROGRESS.md`/`docs/`)
+  sube esa versión y agrega su entrada a `CHANGELOG.md` (español simple,
+  para Edwin y Jairo — no técnico) en el MISMO PR de la fase:
+  - parche (`1.0.x`) para arreglos;
+  - menor (`1.x.0`) para funciones nuevas o actualizaciones visuales.
+- `CHANGELOG.md` es aditivo igual que `PROGRESS.md`: se agregan entradas
+  nuevas, nunca se reescribe una entrada de una versión ya publicada.
+
 ## Bitácora
 
 - `PROGRESS.md` es aditivo: se agregan entradas al cerrar cada fase, no

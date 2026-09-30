@@ -55,3 +55,19 @@ async function apiRequest(method, path, body){
   }
   return data;
 }
+
+// Fase 95 (tema D): "vX.Y.Z" discreto en el menu de usuario de cada
+// pagina (.navbar-app-version). Unica fuente de verdad: package.json,
+// expuesto por el servidor en GET /health (nunca se copia el numero a
+// mano en el HTML, para que no se desactualice).
+var _appVersion = null;
+async function renderAppVersion(){
+  if(_appVersion===null){
+    try{
+      var h = await apiRequest('GET','/health');
+      _appVersion = (h && h.version) ? ('v'+h.version) : '';
+    }catch(e){ _appVersion = ''; }
+  }
+  document.querySelectorAll('.navbar-app-version').forEach(function(el){ el.textContent = _appVersion; });
+}
+document.addEventListener('DOMContentLoaded', renderAppVersion);

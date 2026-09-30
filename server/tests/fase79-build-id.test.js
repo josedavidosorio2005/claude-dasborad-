@@ -17,3 +17,15 @@ test('GET /api/health: expone buildId (string no vacio) ademas de ok:true, sin n
   assert.equal(typeof res.body.buildId, 'string');
   assert.ok(res.body.buildId.length > 0);
 });
+
+// Fase 95 (tema D): la version vive en un solo lugar (package.json) --
+// /health la expone (sin quitar buildId) para que el pie de la interfaz
+// nunca tenga que copiarla a mano.
+test('GET /api/health: expone version, igual a la de package.json, sin quitar buildId', async () => {
+  const pkg = require('../package.json');
+  const res = await request(app).get('/api/health');
+  assert.equal(res.status, 200);
+  assert.equal(res.body.version, pkg.version);
+  assert.equal(typeof res.body.buildId, 'string');
+  assert.ok(res.body.buildId.length > 0, 'buildId sigue presente, no se reemplaza por version');
+});
