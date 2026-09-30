@@ -8758,3 +8758,62 @@ el pedido de esta continuación).
 - YAML validado localmente antes de subir. Probado con
   `workflow_dispatch` contra producción real (solo lectura) — resultado
   en el chat de cierre de esta fase.
+
+## Fase 100 (cierre) — lo que ve un usuario sin admin, confirmación de la plantilla, y verificación en vivo del monitor (2026-09-30)
+
+Últimos 3 puntos que quedaban abiertos del prompt original de la Fase
+100: el punto 6 de Tema A ("lo que ve el cliente"), confirmar a mano la
+plantilla que ya había descargado el script de la Fase 101, y la prueba
+en vivo del monitor de producción (Tema C).
+
+- **Lo que ve el cliente**: el usuario dio su propio usuario sin admin
+  (rol `CLIENTES_DASH`, acceso solo a ORLANT) y entró en una segunda
+  ventana; `.github/scripts/verificar-fase100-usuario-sin-admin-produccion.js`
+  (Playwright, solo lectura, misma sesión del usuario) confirmó en
+  producción real: `isFullAdmin()` es `false`; el menú principal solo
+  trae el módulo "Dashboard Clientes" (ningún módulo de administrador —
+  Usuarios/Permisos/Cargar Datos/Dashboards/Inventario/Gerencia/Gestión
+  Humana/Umbrales/Rol Reportes — visible); dentro del dashboard, ningún
+  otro cliente aparece en la página; el botón "Exportar" sí se ve
+  (lectura), ningún botón/enlace de carga de archivos se ve. Las 6
+  pestañas de ORLANT (con datos reales) se ven bien, incluida
+  Inasistencia en "Por mes" con los números de control reales (Ago-26
+  5.893/332/5,63 %, Sep-26 1.483/96/6,47 %). 0 hallazgos. Capturas fuera
+  del repo, en `bases edwin\capturas-produccion\fase100-usuario-sin-admin\`.
+- **Plantilla de ORLANT**: se abrió a mano el archivo que ya había
+  descargado el script de verificación de la Fase 101
+  (`bases edwin\capturas-produccion\fase101-inasistencia-por-mes\plantilla-ORLANT.xlsx`,
+  parseo directo del XML de la hoja "resumen") — confirmado: los 4
+  campos viejos de inasistencia (`inasist_audifonos/audiologia/
+  examenes/total`) YA NO están en esa hoja. Sus 13 filas reales son
+  Metrica/Valor, órdenes médicas gestionadas/que agendaron, citas
+  canceladas (recuperación)/recuperadas/atendidas, total de agendas del
+  mes, agendas línea General/3P, las 3 métricas de STA, y citas
+  programadas/atendidas para el mes.
+- **Monitor de producción**: ya reportado en la fase anterior — corrida
+  real con `workflow_dispatch` contra `https://informa.inconexion.com.co`,
+  en verde: estado OK, 253 ms, certificado con 88 días, redirección
+  `http→https` con código 308, sin ningún issue que tocar (todo sano).
+
+### Verificación
+
+- Los 2 scripts de esta fase (usuario sin admin, y el de la
+  Fase 101 reusado para la plantilla) son de solo lectura — no crearon,
+  subieron, borraron ni cambiaron nada en producción.
+- Sin cambios de código de la app en este PR (solo el script de
+  verificación + este cierre de `PROGRESS.md`) — sin cambio de versión.
+
+### Estado final de la Fase 100
+
+| Tema | Estado |
+|---|---|
+| A — revisión final en producción | Hecho (fases anteriores + este cierre) |
+| B — guía de uso | Hecho (PR #221, v1.3.0) |
+| C — monitor automático de producción | Hecho (PR #222, probado en verde) |
+| D — limpieza del repo (apps móvil/escritorio) | No hacía falta — ya se había hecho en la Fase 70 (PR #133) |
+
+PRs de esta fase: #218 (migración + export), #219 (vista "Por mes"),
+#220 (script de verificación de la Fase 101), #221 (Tema B), #222
+(Tema C), y este cierre. Todos mergeados a `main`, CI verde, deploy
+automático confirmado, `/api/health` en 200. Versión final: `1.3.0`
+(tag `v1.3.0` pendiente de crear en este cierre).
