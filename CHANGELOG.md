@@ -4,6 +4,10 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.1.2 — Octubre 2026
+
+Arreglo: las opciones de los desplegables ya se leen bien.
+
 ## v1.1.1 — Octubre 2026
 
 Arreglo: la plantilla descargable de ORLANT ya no pide los 4 campos
