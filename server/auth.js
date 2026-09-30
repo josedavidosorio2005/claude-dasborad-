@@ -11,8 +11,15 @@ const config = require('./config');
 const JWT_SECRET = config.jwtSecret;
 const JWT_EXPIRES_IN = config.jwtExpiresIn;
 
+// Fase 102 (endurecimiento, defensa en profundidad): fija el algoritmo en
+// vez de dejar que `jsonwebtoken` decida por defecto -- con un secreto de
+// texto plano la libreria ya solo acepta HS256/384/512 (nunca `alg:none` ni
+// confusion RS<->HS), asi que esto no cambia ningun comportamiento real,
+// solo deja de depender de un default implicito de una dependencia externa.
+const JWT_ALGORITHM = 'HS256';
+
 function signToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN, algorithm: JWT_ALGORITHM });
 }
 
 // Middleware: exige un token válido en el header Authorization: Bearer <token>
@@ -21,7 +28,7 @@ function requireAuth(req, res, next) {
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'No autenticado' });
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
     req.auth = decoded; // { isMasterAdmin, userId, rol }
     next();
   } catch (e) {
@@ -73,7 +80,7 @@ function requireActor(req, res, next) {
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
     if (!token) return res.status(401).json({ error: 'No autenticado' });
     try {
-      req.auth = jwt.verify(token, JWT_SECRET);
+      req.auth = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
     } catch (e) {
       return res.status(401).json({ error: 'Sesion invalida o expirada' });
     }

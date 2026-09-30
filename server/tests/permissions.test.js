@@ -142,3 +142,70 @@ test('GET /api/users: el admin si recibe la matriz de permisos', async () => {
   // Al menos un usuario semilla tiene permisos poblados (crodriguez -> Calidad).
   assert.ok(res.body.some((u) => u.perms && Object.keys(u.perms).length > 0));
 });
+
+// Fase 102 (escalada de privilegios, hallazgo real): un AUX_ADMIN con SOLO el
+// permiso puntual `crearUsuarios`/`editarUsuarios` (nunca ADMIN completo) no
+// debe poder crear ni convertir a nadie -- ni a si mismo -- en rol ADMIN o
+// AUX_ADMIN. Antes de este fix, el servidor solo exigia el permiso puntual y
+// aceptaba CUALQUIER valor de `rol` del enum (incluido ADMIN), sin ningun
+// chequeo adicional -- el mismo limite que ya existia SOLO en el frontend
+// (dashRolesVisibles, "un Auxiliar Admin no puede tocar ADMIN/AUX_ADMIN").
+test('AUX_ADMIN con crearUsuarios NO puede crear un usuario con rol ADMIN ni AUX_ADMIN', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const aux = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send(
+      newUserPayload({
+        user: 'auxcreador_' + Math.random().toString(36).slice(2, 7),
+        rol: 'AUX_ADMIN',
+        password: 'AuxCreador123',
+        perms: { crearUsuarios: true, editarUsuarios: true },
+      })
+    );
+  assert.equal(aux.status, 201);
+  const t = await tokenFor(aux.body.user, 'AuxCreador123');
+
+  const intentoAdmin = await request(app).post('/api/users').set(auth(t)).send(newUserPayload({ rol: 'ADMIN', user: 'backdoor_' + Math.random().toString(36).slice(2, 7) }));
+  assert.equal(intentoAdmin.status, 403);
+
+  const intentoAux = await request(app).post('/api/users').set(auth(t)).send(newUserPayload({ rol: 'AUX_ADMIN', user: 'backdoor2_' + Math.random().toString(36).slice(2, 7) }));
+  assert.equal(intentoAux.status, 403);
+
+  // Tampoco por PUT, ni a otro usuario ni a si mismo.
+  const otro = await request(app).post('/api/users').set(auth(admin)).send(newUserPayload({ user: 'victima_' + Math.random().toString(36).slice(2, 7) }));
+  const escaladaOtro = await request(app).put(`/api/users/${otro.body.id}`).set(auth(t)).send({ rol: 'ADMIN' });
+  assert.equal(escaladaOtro.status, 403);
+
+  const autoEscalada = await request(app).put(`/api/users/${aux.body.id}`).set(auth(t)).send({ rol: 'ADMIN' });
+  assert.equal(autoEscalada.status, 403);
+
+  await request(app).delete(`/api/users/${otro.body.id}`).set(auth(admin));
+  await request(app).delete(`/api/users/${aux.body.id}`).set(auth(admin));
+});
+
+// Nadie cambia su propio rol via PUT /users/:id -- ni siquiera un ADMIN
+// completo (evita un auto-bloqueo o un cambio sin revision de otra persona).
+test('nadie puede cambiar su propio rol, ni siendo ADMIN', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const otroAdmin = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send(newUserPayload({ user: 'admin2_' + Math.random().toString(36).slice(2, 7), rol: 'ADMIN', password: 'OtroAdmin123' }));
+  assert.equal(otroAdmin.status, 201);
+  const t = await tokenFor(otroAdmin.body.user, 'OtroAdmin123');
+
+  const autoRol = await request(app).put(`/api/users/${otroAdmin.body.id}`).set(auth(t)).send({ rol: 'CALIDAD' });
+  assert.equal(autoRol.status, 403);
+
+  // Pero SI puede editar otros campos de si mismo (nombre), y editar el rol de OTRO usuario.
+  const autoNombre = await request(app).put(`/api/users/${otroAdmin.body.id}`).set(auth(t)).send({ nombre: 'Nombre Propio Editado' });
+  assert.equal(autoNombre.status, 200);
+
+  const otro = await request(app).post('/api/users').set(auth(admin)).send(newUserPayload({ user: 'terceroparaadmin_' + Math.random().toString(36).slice(2, 7) }));
+  const editaOtro = await request(app).put(`/api/users/${otro.body.id}`).set(auth(t)).send({ rol: 'SUPERVISOR' });
+  assert.equal(editaOtro.status, 200);
+
+  await request(app).delete(`/api/users/${otro.body.id}`).set(auth(admin));
+  await request(app).delete(`/api/users/${otroAdmin.body.id}`).set(auth(admin));
+});
