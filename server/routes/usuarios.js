@@ -20,6 +20,19 @@ function applyRolePermDefaults(rol, perms) {
   return p;
 }
 
+// Fase 102 (escalada de privilegios, hallazgo real): ADMIN/AUX_ADMIN son un
+// LIMITE ESTRUCTURAL, no un permiso puntual -- ya existia esta regla en el
+// frontend (dashRolesVisibles, public/js/dashboards-logic.js: "un Auxiliar
+// Admin no puede tocar ADMIN/AUX_ADMIN") pero el servidor nunca la volvia a
+// exigir: bastaba el permiso puntual `crearUsuarios`/`editarUsuarios` (que
+// puede tener CUALQUIER rol, ese es el proposito de AUX_ADMIN) para crear o
+// editar un usuario con `rol: 'ADMIN'`, incluido el propio actor. Ahora solo
+// un admin completo (isFullAdmin) puede asignar/mantener esos 2 roles.
+const ROLES_ESTRUCTURALES = ['ADMIN', 'AUX_ADMIN'];
+function puedeAsignarRol(actor, rol) {
+  return !ROLES_ESTRUCTURALES.includes(rol) || isFullAdmin(actor);
+}
+
 router.get(
   '/users',
   requireActor,
@@ -49,6 +62,9 @@ router.post(
   wrap(async (req, res) => {
     const { nombre, user, password, rol, perms, asesorCampana } = req.body;
     if (user === MASTER_ADMIN_USER) return res.status(400).json({ error: 'Nombre de usuario reservado' });
+    if (!puedeAsignarRol(req.actor, rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede crear un usuario ADMIN o AUX_ADMIN' });
+    }
     const exists = db.prepare('SELECT id FROM users WHERE user = ?').get(user);
     if (exists) return res.status(409).json({ error: 'Ese usuario ya existe' });
 
@@ -81,6 +97,19 @@ router.put(
     if (user) {
       const dupe = db.prepare('SELECT id FROM users WHERE user = ? AND id != ?').get(user, id);
       if (dupe) return res.status(409).json({ error: 'Ese usuario ya existe' });
+    }
+    if (rol !== undefined) {
+      // Nadie cambia su propio rol por esta via -- ni siquiera un admin
+      // completo (evita un auto-bloqueo o una auto-escalada sin que otra
+      // persona lo revise). req.actor.id es null para el admin maestro, que
+      // nunca tiene fila propia en `users`, asi que esta comparacion nunca
+      // le aplica a el.
+      if (req.actor.id != null && req.actor.id === id) {
+        return res.status(403).json({ error: 'No puedes cambiar tu propio rol' });
+      }
+      if (!puedeAsignarRol(req.actor, rol)) {
+        return res.status(403).json({ error: 'Solo un administrador completo puede asignar el rol ADMIN o AUX_ADMIN' });
+      }
     }
 
     const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
