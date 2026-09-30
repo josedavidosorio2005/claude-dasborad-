@@ -6,11 +6,20 @@ name: Verificacion - errores reales en logs de produccion (solo lectura)
 # de AWS aparte), asi que no comparte el grupo de concurrencia con el
 # despliegue.
 #
-# Fase 72 (auditoria de seguridad): trae los ultimos errores/excepciones
-# reales de produccion de las ultimas 24h desde los grupos de logs que ya
-# existen (ver PROGRESS.md, seccion 6.x -- CloudWatch Agent activo desde
-# antes de esta fase): /inconexion/prod/docker (contenedor de la app) y
-# /inconexion/prod/backup (backup diario). Nunca escribe ni borra nada.
+# Fase 72 (auditoria de seguridad): busca errores/excepciones reales de
+# produccion de las ultimas 24h en los grupos de logs que ya existen (ver
+# PROGRESS.md, seccion 6.x -- CloudWatch Agent activo desde antes de esta
+# fase): /inconexion/prod/docker (contenedor de la app) y
+# /inconexion/prod/backup (backup diario). Nunca escribe ni borra nada en
+# AWS.
+#
+# Fase 97 (el repo es publico): el resultado impreso es SOLO conteo, tamano
+# del JSON (bytes) y rango de fechas -- nunca la linea de log cruda (puede
+# traer nombres, correos, IPs o filas de datos reales). El JSON descargado
+# se borra al final de cada paso, nunca se sube como artefacto del run. Si
+# hace falta ver el texto real de un error, se revisa directo en CloudWatch
+# (o desde el PC con credenciales de AWS), nunca por este log de GitHub
+# Actions, que cualquiera puede leer al ser un repo publico.
 on:
   workflow_dispatch:
     inputs:
@@ -52,9 +61,20 @@ jobs:
             --filter-pattern '?ERROR ?error ?Error ?Exception ?"uncaughtException" ?"unhandledRejection"' \
             --query 'events[].{t:timestamp,m:message}' \
             --output json > docker-errores.json
+          # El repo es publico: nunca se imprime la linea de log cruda (puede
+          # traer nombres, correos, IPs o filas de datos reales) -- solo
+          # conteo, tamano total (bytes) y rango de fechas. El archivo se
+          # borra al terminar el paso, nunca se sube como artefacto.
           COUNT=$(jq 'length' docker-errores.json)
           echo "Eventos encontrados: $COUNT"
-          jq -r '.[] | "\(.t | tostring) \(.m)"' docker-errores.json | tail -100
+          if [ "$COUNT" -gt 0 ]; then
+            BYTES=$(wc -c < docker-errores.json)
+            DESDE_MS_EV=$(jq -r '[.[].t] | min | floor' docker-errores.json)
+            HASTA_MS_EV=$(jq -r '[.[].t] | max | floor' docker-errores.json)
+            echo "Tamano del JSON (bytes): $BYTES"
+            echo "Rango de fechas: $(date -u -d "@$((DESDE_MS_EV/1000))" +"%Y-%m-%dT%H:%M:%SZ") a $(date -u -d "@$((HASTA_MS_EV/1000))" +"%Y-%m-%dT%H:%M:%SZ")"
+          fi
+          rm -f docker-errores.json
 
       - name: Errores en /inconexion/prod/backup (backup diario)
         run: |
@@ -62,6 +82,7 @@ jobs:
           HORAS="${{ github.event.inputs.horas_atras || '24' }}"
           DESDE_MS=$(( $(date +%s%3N) - HORAS * 3600 * 1000 ))
           echo "Buscando desde hace ${HORAS}h en /inconexion/prod/backup ..."
+          # OJO: nunca "|| echo '[]'" aqui -- ver el comentario del paso de arriba.
           aws logs filter-log-events \
             --region "$AWS_REGION" \
             --log-group-name /inconexion/prod/backup \
@@ -69,6 +90,15 @@ jobs:
             --filter-pattern '?Fallo ?FALLO ?error ?Error' \
             --query 'events[].{t:timestamp,m:message}' \
             --output json > backup-errores.json
+          # Mismo criterio de arriba: solo conteo/tamano/fechas, nunca la
+          # linea de log cruda -- el repo es publico.
           COUNT=$(jq 'length' backup-errores.json)
           echo "Eventos encontrados: $COUNT"
-          jq -r '.[] | "\(.t | tostring) \(.m)"' backup-errores.json | tail -100
+          if [ "$COUNT" -gt 0 ]; then
+            BYTES=$(wc -c < backup-errores.json)
+            DESDE_MS_EV=$(jq -r '[.[].t] | min | floor' backup-errores.json)
+            HASTA_MS_EV=$(jq -r '[.[].t] | max | floor' backup-errores.json)
+            echo "Tamano del JSON (bytes): $BYTES"
+            echo "Rango de fechas: $(date -u -d "@$((DESDE_MS_EV/1000))" +"%Y-%m-%dT%H:%M:%SZ") a $(date -u -d "@$((HASTA_MS_EV/1000))" +"%Y-%m-%dT%H:%M:%SZ")"
+          fi
+          rm -f backup-errores.json
