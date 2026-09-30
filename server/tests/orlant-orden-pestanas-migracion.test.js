@@ -82,14 +82,18 @@ setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
 
-test('migracion dashboards_config_orlant_orden_pestanas_v1: reordena a Trafico Llamadas -> Trafico WhatsApp -> Agendamiento -> Tipificacion -> Calidad -> el resto', () => {
+// Nota Fase 98: db.js corre v1 Y v2 (dashboards_config_orlant_orden_pestanas_v2,
+// que reubica 'inasistencia' justo despues de 'agendamiento') en secuencia al
+// requerirse -- no hay forma de observar el resultado de v1 aislado de v2 en
+// una base fresca, asi que esta prueba verifica el resultado COMBINADO final.
+test('migraciones dashboards_config_orlant_orden_pestanas_v1+v2: reordena a Trafico Llamadas -> Trafico WhatsApp -> Agendamiento -> Inasistencia -> Tipificacion -> Calidad -> el resto', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
   const claves = layout.tabs.map((t) => t.key);
-  assert.deepEqual(claves.slice(0, 5), ['trafico', 'trafico_whatsapp', 'agendamiento', 'tipificacion', 'calidad']);
+  assert.deepEqual(claves.slice(0, 6), ['trafico', 'trafico_whatsapp', 'agendamiento', 'inasistencia', 'tipificacion', 'calidad']);
   // El resto (ocultas) sigue presente, sin perder ninguna -- el orden entre
   // ellas no importa (no aparecen en el menu).
-  assert.deepEqual(new Set(claves.slice(5)), new Set(['flujo', 'salida', 'inasistencia', 'sta', 'efectividad']));
+  assert.deepEqual(new Set(claves.slice(6)), new Set(['flujo', 'salida', 'sta', 'efectividad']));
   assert.equal(claves.length, 10, 'ninguna pestaña se perdio ni se duplico');
 });
 
@@ -118,7 +122,7 @@ test('migracion dashboards_config_orlant_orden_pestanas_v1: es idempotente -- co
   // asi se prueba la funcion sin depender del guard de "ya corrida" de
   // runOnceMigration, igual que el pedido explicito de la Fase 94.
   const antes = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT').layout;
-  const ORDEN = ['trafico', 'trafico_whatsapp', 'agendamiento', 'tipificacion', 'calidad'];
+  const ORDEN = ['trafico', 'trafico_whatsapp', 'agendamiento', 'inasistencia', 'tipificacion', 'calidad'];
   const layout = JSON.parse(antes);
   const yaEnOrden = ORDEN.every((k, i) => layout.tabs[i] && layout.tabs[i].key === k);
   assert.ok(yaEnOrden, 'el resultado ya deberia estar en el orden nuevo tras la primera corrida');

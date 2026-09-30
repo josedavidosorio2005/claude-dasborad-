@@ -114,13 +114,15 @@ function _inasistenciaNumeroEntero(v) {
 }
 
 // "4,16 %" / "4.16%" / 4.16 / 0.0416 (fraccion de formato % de Excel) -> 4.16.
+// 2 decimales -- mismo criterio que pctRecalculado (mas abajo): los numeros
+// de control del pedido de Edwin solo cuadran exacto con 2 decimales.
 function _inasistenciaPctDesdeCelda(v) {
   if (v === null || v === undefined || v === '') return null;
-  if (typeof v === 'number') return Math.round((v <= 1 ? v * 100 : v) * 10) / 10;
+  if (typeof v === 'number') return Math.round((v <= 1 ? v * 100 : v) * 100) / 100;
   var s = String(v).trim().replace('%', '').replace(',', '.').trim();
   if (s === '') return null;
   var n = Number(s);
-  return Number.isFinite(n) ? Math.round(n * 10) / 10 : null;
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
 }
 
 // ── Parseo de filas (aoa = array-of-arrays, fila 0 = encabezados) ───────
@@ -183,7 +185,7 @@ function inasistenciaParseFilas(aoa, ahora) {
       avisos.push('Fila ' + filaNum + ' (' + mes + ' / ' + especialidad + '): TOTAL del archivo (' + total + ') no coincide con CANCELADA+INASISTENCIA+PENDIENTE+ATENDIDAS (' + sumaCalculada + ') -- se uso el TOTAL del archivo tal cual.');
     }
 
-    var pctRecalculado = total > 0 ? Math.round(((inas + pendiente) / total) * 1000) / 10 : null;
+    var pctRecalculado = total > 0 ? Math.round(((inas + pendiente) / total) * 10000) / 100 : null;
     if (idxPctArchivo !== -1 && pctRecalculado !== null) {
       var pctArchivo = _inasistenciaPctDesdeCelda(row[idxPctArchivo]);
       if (pctArchivo !== null && Math.abs(pctArchivo - pctRecalculado) > 0.15) {
@@ -212,6 +214,22 @@ function inasistenciaMesesDeFilas(filas) {
   return Object.keys(set).sort();
 }
 
+// % ponderado = (inasistencia+pendiente)/total, 2 decimales -- formula
+// UNICA reusada por el navegador (panel, export) y el servidor
+// (server/inasistencia.js hace la misma cuenta en SQL) para que nunca
+// queden 2 redondeos distintos del mismo numero. total<=0 -> null (nunca
+// se inventa un 0%).
+function inasistenciaPctPonderado(inasistencia, pendiente, total) {
+  if (!total || total <= 0) return null;
+  return Math.round(((inasistencia + pendiente) / total) * 10000) / 100;
+}
+
+// "4,16 %" -- 2 decimales, coma decimal (es-CO), con el simbolo de %. null -> "—".
+function inasistenciaFmtPct(v) {
+  if (v === null || v === undefined) return '—';
+  return v.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
+}
+
 // 'AAAA-MM' -> "Ago-26" (mismo formato corto que _agendasMesLbl/
 // _tipificacionMesLbl) -- pura, usada por cargas.js (mensaje de
 // confirmacion) e inasistencia.js (selector/tarjetas/tabla).
@@ -234,5 +252,7 @@ if (typeof module !== 'undefined' && module.exports) {
     inasistenciaFilaComoArray: inasistenciaFilaComoArray,
     inasistenciaMesesDeFilas: inasistenciaMesesDeFilas,
     inasistenciaMesLbl: inasistenciaMesLbl,
+    inasistenciaPctPonderado: inasistenciaPctPonderado,
+    inasistenciaFmtPct: inasistenciaFmtPct,
   };
 }

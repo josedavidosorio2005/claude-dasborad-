@@ -85,6 +85,7 @@ function countByTabla(db) {
 // resuelve solo. Devuelve { tabla: borrados } y limpia la propia tabla de marcas.
 const ORDEN_LIMPIEZA = [
   'dashboard_cargas',
+  'inasistencias',
   'calidad_nivel_servicio_diario',
   'calidad_nivel_servicio',
   'monitoreos',

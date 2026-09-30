@@ -54,11 +54,13 @@ test('carga valida: se guarda y GET /especialidad + /resumen la agregan correcta
   assert.ok(fEsp, 'la especialidad cargada debe aparecer');
   assert.equal(fEsp.total, 2864);
 
-  // % ponderado = (inasistencia+pendiente)/total = (109+10)/2864 = 4.15... -> 4.2 redondeado a 1 decimal
+  // % ponderado = (inasistencia+pendiente)/total = (109+10)/2864 = 4.1550...% -> 4.16 con 2 decimales
+  // (numero de control real del pedido de Edwin: solo cuadra con 2 decimales, 1 decimal daria 4.2%).
   const resumen = await request(app).get('/api/calidad/inasistencia/resumen?campana=ORLANT&mes=2025-05&especialidad=' + encodeURIComponent(especialidad)).set(auth(admin));
   assert.equal(resumen.status, 200, JSON.stringify(resumen.body));
   assert.equal(resumen.body.total, 2864);
-  assert.equal(resumen.body.pct, Math.round(((109 + 10) / 2864) * 1000) / 10);
+  assert.equal(resumen.body.pct, Math.round(((109 + 10) / 2864) * 10000) / 100);
+  assert.equal(resumen.body.pct, 4.16);
 });
 
 test('% ponderado NUNCA es el promedio simple de los % por especialidad (numeros de control del archivo real de Edwin)', async () => {
@@ -79,11 +81,12 @@ test('% ponderado NUNCA es el promedio simple de los % por especialidad (numeros
   assert.equal(resumen.body.cancelada, 475 + 327 + 352); // 1154
   assert.equal(resumen.body.inasistencia, 109 + 127 + 84); // 320
   assert.equal(resumen.body.pendiente, 10 + 1 + 1); // 12
-  // Ponderado: (320+12)/5893 = 5.632... -> 5.6
-  const ponderado = Math.round(((320 + 12) / 5893) * 1000) / 10;
+  // Ponderado: (320+12)/5893 = 5.6321...% -> 5.63 (numero de control real del pedido).
+  const ponderado = Math.round(((320 + 12) / 5893) * 10000) / 100;
   assert.equal(resumen.body.pct, ponderado);
+  assert.equal(resumen.body.pct, 5.63);
   // El promedio simple de 4.16/7.22/6.76 daria ~6.05, DISTINTO del ponderado -- confirma que nunca se usa el promedio.
-  const promedioSimple = Math.round(((4.16 + 7.22 + 6.76) / 3) * 10) / 10;
+  const promedioSimple = Math.round(((4.16 + 7.22 + 6.76) / 3) * 100) / 100;
   assert.notEqual(resumen.body.pct, promedioSimple);
 });
 
