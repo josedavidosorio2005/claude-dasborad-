@@ -291,7 +291,10 @@ function _cargasInstruccionesAoA(cliente, plan){
     h.columnas.forEach(function(c){
       // autoTrafico (Fase 71, ORLANT/resumen): no se lista como fila a
       // llenar -- se explica aparte en notasExtra (nota fija de la hoja).
-      if(c.autoTrafico) return;
+      // ocultaEnPlantilla (Fase 98, ORLANT/resumen): columna superada por
+      // otra fuente real (ej. inasist_* -> tabla `inasistencias`) -- el
+      // servidor la sigue aceptando por compatibilidad, pero ya no se pide.
+      if(c.autoTrafico || c.ocultaEnPlantilla) return;
       put('  - ' + c.label + (c.opcional ? ' (OPCIONAL, puede quedar vacia)' : ' (OBLIGATORIA)'));
     });
     // notasExtra (Fase 66): lineas adicionales especificas de esta hoja
@@ -320,11 +323,12 @@ function descargarPlantillaConsolidada(){
   XLSX.utils.book_append_sheet(wb, wsInstr, CARGAS_HOJA_INSTRUCCIONES);
 
   planOrdenado.forEach(function(h){
-    // autoTrafico (Fase 71, ORLANT/resumen): estas columnas se calculan
-    // solas desde Trafico -- no se generan como filas/columnas a llenar en
-    // el archivo descargable (ver notasExtra de la hoja, mas la nota fija
-    // que ya explica el porque).
-    var columnasPlantilla = (h.columnas || []).filter(function(c){ return !c.autoTrafico; });
+    // autoTrafico (Fase 71) + ocultaEnPlantilla (Fase 98): columnas que no
+    // se generan como filas/columnas a llenar en el archivo descargable --
+    // las autoTrafico se calculan solas desde Trafico; las ocultaEnPlantilla
+    // estan superadas por otra fuente real (ver el comentario en
+    // dashboard-secciones.js de cada una).
+    var columnasPlantilla = (h.columnas || []).filter(function(c){ return !c.autoTrafico && !c.ocultaEnPlantilla; });
     var aoa;
     if(h.filaUnica){
       aoa = [['Metrica','Valor']].concat(columnasPlantilla.map(function(c){ return [c.label, '']; }));

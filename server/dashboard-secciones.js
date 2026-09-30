@@ -57,10 +57,20 @@ const SECCIONES = {
         { key: 'total_agendas', label: 'Total agendas del mes', tipo: 'entero' },
         { key: 'agendas_general', label: 'Agendas Linea General', tipo: 'entero' },
         { key: 'agendas_3p', label: 'Agendas Linea 3P', tipo: 'entero' },
-        { key: 'inasist_audifonos', label: '% Inasistencia Audifonos', tipo: 'porcentaje' },
-        { key: 'inasist_audiologia', label: '% Inasistencia Audiologia', tipo: 'porcentaje' },
-        { key: 'inasist_examenes', label: '% Inasistencia Examenes', tipo: 'porcentaje' },
-        { key: 'inasist_total', label: '% Inasistencia Total', tipo: 'porcentaje' },
+        // Fase 98 tema C: superadas por la pestaña "Inasistencia" real
+        // (tabla `inasistencias`, server/inasistencia.js) -- ya NO se piden
+        // en la plantilla ni en las INSTRUCCIONES (cargas.js filtra columnas
+        // `ocultaEnPlantilla` al generar el archivo descargable, mismo
+        // mecanismo que `autoTrafico`), para que no haya 2 fuentes de la
+        // misma metrica. `opcional:true` es necesario ademas para que el
+        // servidor (normalizarFilas) acepte un archivo que no las traiga. Un
+        // archivo VIEJO que todavia las traiga sigue cargando igual
+        // (compatibilidad hacia atras) -- el valor se guarda tal cual,
+        // aunque ya nada lo muestre en el dashboard.
+        { key: 'inasist_audifonos', label: '% Inasistencia Audifonos', tipo: 'porcentaje', opcional: true, ocultaEnPlantilla: true },
+        { key: 'inasist_audiologia', label: '% Inasistencia Audiologia', tipo: 'porcentaje', opcional: true, ocultaEnPlantilla: true },
+        { key: 'inasist_examenes', label: '% Inasistencia Examenes', tipo: 'porcentaje', opcional: true, ocultaEnPlantilla: true },
+        { key: 'inasist_total', label: '% Inasistencia Total', tipo: 'porcentaje', opcional: true, ocultaEnPlantilla: true },
         { key: 'sta_ordenes', label: 'STA — Ordenes cargadas', tipo: 'entero' },
         { key: 'sta_agendadas', label: 'STA — Agendadas', tipo: 'entero', opcional: true },
         { key: 'sta_factcump', label: 'STA — Facturado + Cumplida', tipo: 'entero' },
