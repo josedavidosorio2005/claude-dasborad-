@@ -166,22 +166,37 @@ function alertaAsesorDesdeId() {
 
 // Es del asesor dueño (mismo criterio que /monitoreos/mios, Fase 95 tema
 // A): prioriza el id real, cae al nombre solo para filas viejas sin id.
+// Fase 102 (hallazgo real): el fallback por nombre NUNCA filtraba por
+// campana -- una fila de OTRA campana (asesorUserId nulo, ej. toda la carga
+// masiva historica, que nunca lo completa) con el mismo nombre (coincidencia
+// entre 2 campanas distintas) se consideraba "del asesor". Ahora el fallback
+// por nombre tambien exige que la fila sea de la MISMA campana del actor
+// (asesorCampana, fijada al crear el usuario ASESOR) -- sin esa campana,
+// nunca cae al nombre (nunca adivina).
 function esDelAsesor(actor, row) {
   if (row.asesorUserId) return actor.id != null && row.asesorUserId === actor.id;
   const nombre = (actor.nombre || '').trim().toLowerCase();
-  return !!nombre && (row.asesor || '').trim().toLowerCase() === nombre;
+  const campana = (actor.asesorCampana || '').trim();
+  return !!nombre && !!campana && row.campana === campana && (row.asesor || '').trim().toLowerCase() === nombre;
 }
 
 // ══════════════════════════════════════════════════════════
 // CALIDAD — PLANTILLAS (formato de evaluacion por campana)
 // ══════════════════════════════════════════════════════════
+// Fase 102 (hallazgo real de la auditoria): antes devolvia la plantilla de
+// evaluacion de TODAS las campanas a cualquier actor autenticado, sin
+// filtrar por campaignAccess -- un actor con acceso a una sola campana veia
+// los items/pesos de calificacion de las demas. Mismo criterio que
+// GET /dashboard/cargas (routes/dashboards.js): se filtra el contenido por
+// acceso, nunca se bloquea el endpoint entero (el admin sigue viendo todas).
 router.get(
   '/calidad/plantillas',
   requireActor,
   wrap((req, res) => {
     const rows = db
       .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana')
-      .all();
+      .all()
+      .filter((row) => campaignAccess(req.actor, row.campana));
     res.json(rows.map(toPlantilla));
   })
 );
@@ -196,40 +211,45 @@ router.get(
 // lo tienen -- antes emparejaba solo por nombre, lo que hacia que dos
 // usuarios con el mismo nombre vieran (o no vieran) los monitoreos del
 // otro. Antes de /:id.
+// Fase 102: el fallback por nombre ahora tambien exige `campana = @campana`
+// (actor.asesorCampana) -- mismo motivo que esDelAsesor, arriba.
 router.get(
   '/monitoreos/mios',
   requireActor,
   wrap((req, res) => {
     const nombre = (req.actor.nombre || '').trim().toLowerCase();
+    const campana = (req.actor.asesorCampana || '').trim();
     if (!req.actor.id && !nombre) return res.json([]);
     const rows = db
       .prepare(
         `SELECT * FROM monitoreos
          WHERE (asesorUserId = @id)
-            OR (asesorUserId IS NULL AND lower(trim(asesor)) = @nombre)
+            OR (asesorUserId IS NULL AND campana = @campana AND lower(trim(asesor)) = @nombre)
          ORDER BY fecha DESC, id DESC`
       )
-      .all({ id: req.actor.id || 0, nombre });
+      .all({ id: req.actor.id || 0, nombre, campana });
     res.json(rows.map(toMonitoreo));
   })
 );
 
 // Cuantos monitoreos NUEVOS (creados despues del deploy de esta fase) el
 // asesor logueado todavia no ha visto (Fase 95, tema C). Antes de /:id.
+// Fase 102: mismo filtro de campana en el fallback por nombre que arriba.
 router.get(
   '/monitoreos/mios/nuevos',
   requireActor,
   wrap((req, res) => {
     const nombre = (req.actor.nombre || '').trim().toLowerCase();
+    const campana = (req.actor.asesorCampana || '').trim();
     if (!req.actor.id && !nombre) return res.json({ count: 0 });
     const row = db
       .prepare(
         `SELECT COUNT(*) AS n FROM monitoreos
-         WHERE ((asesorUserId = @id) OR (asesorUserId IS NULL AND lower(trim(asesor)) = @nombre))
+         WHERE ((asesorUserId = @id) OR (asesorUserId IS NULL AND campana = @campana AND lower(trim(asesor)) = @nombre))
            AND vistoPorAsesorAt IS NULL
            AND id > @desde`
       )
-      .get({ id: req.actor.id || 0, nombre, desde: alertaAsesorDesdeId() });
+      .get({ id: req.actor.id || 0, nombre, campana, desde: alertaAsesorDesdeId() });
     res.json({ count: row.n });
   })
 );
