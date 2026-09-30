@@ -196,6 +196,7 @@ function createApp() {
   api.use(require('./routes/trafico-whatsapp'));
   api.use(require('./routes/agendas'));
   api.use(require('./routes/tipificaciones'));
+  api.use(require('./routes/inasistencia'));
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/inventario'));
   api.use(require('./routes/gerencia'));

@@ -331,6 +331,29 @@ CREATE TABLE IF NOT EXISTS tipificaciones (
 );
 CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificaciones(campana, canal, fecha);
 
+-- Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin): un total
+-- AGREGADO por mes+especialidad (nunca una fila por cita/paciente -- el
+-- archivo real de Edwin ya viene resumido asi, sin datos de pacientes). Una
+-- carga REEMPLAZA los meses que trae el archivo (server/inasistencia.js,
+-- cargarInasistencias) -- por eso el UNIQUE es (campana,mes,especialidad):
+-- volver a subir el mismo archivo actualiza las mismas filas, nunca duplica.
+CREATE TABLE IF NOT EXISTS inasistencias (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  mes TEXT NOT NULL,                 -- 'AAAA-MM'
+  especialidad TEXT NOT NULL,
+  cancelada INTEGER NOT NULL,
+  inasistencia INTEGER NOT NULL,
+  pendiente INTEGER NOT NULL,
+  atendidas INTEGER NOT NULL,
+  total INTEGER NOT NULL,            -- tal cual vino del archivo (nunca recalculado aqui)
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, mes, especialidad)
+);
+CREATE INDEX IF NOT EXISTS idx_inasistencias_campana_mes ON inasistencias(campana, mes);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
