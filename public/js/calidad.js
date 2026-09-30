@@ -66,8 +66,16 @@ function calEngine(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].e
 var CAL_DB = {};
 
 function calCampCache(camp){
-  if(!CAL_DB[camp]) CAL_DB[camp] = { monitoreos:[], cronogramaRows:[], cronogramaByMes:{}, cumplimiento:{} };
+  if(!CAL_DB[camp]) CAL_DB[camp] = { monitoreos:[], cronogramaRows:[], cronogramaByMes:{}, cumplimiento:{}, codificaciones:[] };
   return CAL_DB[camp];
+}
+
+// Fase 95 (tema B): catalogo de codificaciones de la campana (activas E
+// inactivas -- la pantalla de admin necesita ambas). El formulario de
+// monitoreo solo usa las activas.
+function calCodificaciones(camp){ return (CAL_DB[camp] && CAL_DB[camp].codificaciones) || []; }
+function calCodificacionesActivas(camp){
+  return calCodificaciones(camp).filter(function(c){ return c.activo; }).map(function(c){ return c.valor; });
 }
 
 // Carga desde el servidor los datos de una campana (monitoreos, cronograma y el
@@ -96,6 +104,9 @@ async function loadCalData(camp, mes){
     var cu = await apiRequest('GET','/metas/cumplimiento?'+q+'&mes='+mes);
     d.cumplimiento[mes] = (cu && cu.lideres) || [];
   }catch(e){ d.cumplimiento[mes] = d.cumplimiento[mes] || []; }
+  try{
+    d.codificaciones = (await apiRequest('GET','/calidad/codificaciones?'+q)) || [];
+  }catch(e){ d.codificaciones = d.codificaciones || []; }
 }
 
 // ── Helpers de filtro por mes (reutilizables en todos los modulos) ──
@@ -235,6 +246,7 @@ async function openCalidad(){
   calSetFechaEvaluadorAuto();
   renderCalItemsForm();
   populateCalAsesorSelect();
+  renderCalCodifCampoForm('');
   var defaultTab = canEval ? 'nuevo' : (currentUser && currentUser.rol==='REPORTES' ? 'reportes' : 'resumen');
   switchCalTab(defaultTab);
 }
@@ -265,8 +277,36 @@ async function onCalCampanaChange(){
   populateCalMesSelect();
   renderCalItemsForm();
   populateCalAsesorSelect();
+  renderCalCodifCampoForm('');
   _calActualizarTabCarga();
   switchCalTab(_ctab);
+}
+
+// Fase 95 (tema B): si la campana tiene al menos una codificacion activa
+// en el catalogo, el campo se muestra como desplegable (solo esos
+// valores); si no, sigue siendo texto libre, igual que hasta ahora.
+// `valorActual` precarga el valor (usado al editar un monitoreo).
+function renderCalCodifCampoForm(valorActual){
+  var inputEl = document.getElementById('cf-codificacion');
+  var selEl = document.getElementById('cf-codificacion-select');
+  if(!inputEl || !selEl) return;
+  var activas = calCodificacionesActivas(_ccampana);
+  if(activas.length > 0){
+    selEl.innerHTML = '<option value="">— Seleccione —</option>' +
+      activas.map(function(v){ return '<option value="'+esc(v)+'">'+esc(v)+'</option>'; }).join('');
+    selEl.value = valorActual || '';
+    selEl.style.display = '';
+    inputEl.style.display = 'none';
+  } else {
+    selEl.style.display = 'none';
+    inputEl.style.display = '';
+    inputEl.value = valorActual || '';
+  }
+}
+function calLeerCodificacionForm(){
+  var selEl = document.getElementById('cf-codificacion-select');
+  if(selEl && selEl.style.display !== 'none') return selEl.value.trim();
+  return document.getElementById('cf-codificacion').value.trim();
 }
 
 // Lista desplegable de asesores: solo usuarios con rol ASESOR, activos, y asignados a la campana actual.
@@ -388,7 +428,7 @@ function resetCalForm(){
   populateCalAsesorSelect();
   document.getElementById('cf-idllamada').value='';
   document.getElementById('cf-telefono').value='';
-  document.getElementById('cf-codificacion').value='';
+  renderCalCodifCampoForm('');
   document.getElementById('cf-observaciones').value='';
   calSetFechaEvaluadorAuto();
   setCanalAuditado('LLAMADA');
@@ -418,7 +458,7 @@ function editarMonitoreo(id){
   fechaEl.disabled = !isFullAdmin();
   document.getElementById('cf-idllamada').value = m.idLlamada || '';
   document.getElementById('cf-telefono').value = m.telefono || '';
-  document.getElementById('cf-codificacion').value = m.codificacion || '';
+  renderCalCodifCampoForm(m.codificacion || '');
   document.getElementById('cf-evaluador').value = m.evaluador || '';
   document.getElementById('cf-observaciones').value = m.observaciones || '';
   setCanalAuditado(m.canal || 'LLAMADA');
@@ -458,7 +498,7 @@ async function submitMonitoreo(){
     canal: document.getElementById('cf-canal').value || 'LLAMADA',
     idLlamada: document.getElementById('cf-idllamada').value.trim(),
     telefono: document.getElementById('cf-telefono').value.trim(),
-    codificacion: document.getElementById('cf-codificacion').value.trim(),
+    codificacion: calLeerCodificacionForm(),
     evaluador: document.getElementById('cf-evaluador').value.trim(),
     observaciones: document.getElementById('cf-observaciones').value.trim(),
     answers: answers
@@ -602,6 +642,54 @@ function renderCalConfig(){
     });
   }
   document.getElementById('cal-permisos-table').innerHTML = html;
+  renderCalCodificacionesAdmin();
+}
+
+// Fase 95 (tema B): pantalla de admin del catalogo de codificaciones,
+// dentro de la pestana "Configuracion" del modulo de Calidad (ya bloqueada
+// a isFullAdmin() en openCalidad()). Mismo patron CRUD que umbrales.js/
+// metas.js, salvo que aqui nunca se borra -- solo se desactiva/reactiva.
+function renderCalCodificacionesAdmin(){
+  var tbl = document.getElementById('cal-codificaciones-table');
+  if(!tbl) return;
+  var rows = calCodificaciones(_ccampana).slice().sort(function(a,b){ return a.valor.localeCompare(b.valor); });
+  var html = '<tr><th>Codificacion</th><th>Estado</th><th></th></tr>';
+  if(rows.length===0){
+    html += '<tr><td colspan="3" style="text-align:center;color:var(--c-text-muted)">Sin codificaciones cargadas todavia -- el campo sigue siendo texto libre</td></tr>';
+  } else {
+    rows.forEach(function(c){
+      html += '<tr><td>'+esc(c.valor)+'</td><td>'+(c.activo?'✅ Activa':'⛔ Desactivada')+'</td>'+
+        '<td><button class="btn-sm '+(c.activo?'btn-delete':'btn-edit')+'" onclick="calCodificacionToggle('+c.id+','+(!c.activo)+')">'+(c.activo?'Desactivar':'Reactivar')+'</button></td></tr>';
+    });
+  }
+  tbl.innerHTML = html;
+}
+
+async function calCodificacionesAgregar(){
+  if(!isFullAdmin()){ showToast('Solo el administrador puede administrar el catalogo de codificaciones'); return; }
+  var ta = document.getElementById('cf-cod-nuevas');
+  var valores = (ta.value||'').split('\n').map(function(v){ return v.trim(); }).filter(function(v){ return v.length>0; });
+  if(valores.length===0){ showToast('Pegue al menos una codificacion'); return; }
+  try{
+    var r = await apiRequest('POST','/calidad/codificaciones/bulk',{ campana: _ccampana, valores: valores });
+    ta.value = '';
+    await loadCalData(_ccampana, _cmesFiltro || undefined);
+    renderCalCodificacionesAdmin();
+    renderCalCodifCampoForm('');
+    var msg = r.creadas.length+' agregada(s)'+(r.yaExistian.length? ', '+r.yaExistian.length+' ya existian (se omitieron)':'');
+    showToast(msg);
+  }catch(e){ showToast(e.message); }
+}
+
+async function calCodificacionToggle(id, activo){
+  if(!isFullAdmin()){ showToast('Solo el administrador puede administrar el catalogo de codificaciones'); return; }
+  try{
+    await apiRequest('PUT','/calidad/codificaciones/'+id,{ activo: activo });
+    await loadCalData(_ccampana, _cmesFiltro || undefined);
+    renderCalCodificacionesAdmin();
+    renderCalCodifCampoForm('');
+    showToast(activo ? 'Codificacion reactivada' : 'Codificacion desactivada');
+  }catch(e){ showToast(e.message); }
 }
 
 var _cc = {};

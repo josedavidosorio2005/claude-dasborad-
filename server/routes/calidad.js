@@ -32,6 +32,37 @@ function getPlantillaRow(campana) {
     .get(campana);
 }
 
+// Fase 95 (tema B): catalogo de codificaciones validas por campana.
+function toCodificacion(row) {
+  return {
+    id: row.id,
+    campana: row.campana,
+    valor: row.valor,
+    activo: !!row.activo,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+function codificacionesActivas(campana) {
+  return db
+    .prepare('SELECT valor FROM calidad_codificaciones WHERE campana = ? AND activo = 1 ORDER BY lower(valor)')
+    .all(campana)
+    .map((r) => r.valor);
+}
+
+// Si la campana todavia no tiene ningun catalogo cargado, sigue siendo
+// texto libre (ok:true, tal cual). En cuanto tiene al menos una fila
+// activa, el valor debe coincidir (sin distinguir mayusculas/espacios) con
+// alguna -- se normaliza a la forma exacta guardada en el catalogo.
+function validarCodificacion(campana, valor) {
+  if (!valor) return { ok: true, valor: null };
+  const activas = codificacionesActivas(campana);
+  if (activas.length === 0) return { ok: true, valor };
+  const match = activas.find((v) => v.trim().toLowerCase() === valor.trim().toLowerCase());
+  return match ? { ok: true, valor: match } : { ok: false };
+}
+
 function toPlantilla(row) {
   return {
     campana: row.campana,
@@ -271,6 +302,13 @@ router.post(
     const evaluador = req.actor.nombre;
     const fecha = isFullAdmin(req.actor) && b.fecha ? b.fecha : fechaLimitesHoyColombia();
     const asesorUserId = resolverAsesorUserId(b.asesorUserId, b.asesor, b.campana);
+    // Fase 95 (tema B): si la campana ya tiene catalogo de codificaciones,
+    // el valor debe estar en la lista activa; si no tiene catalogo
+    // todavia, sigue siendo texto libre (igual que hasta ahora).
+    const codifCheck = validarCodificacion(b.campana, b.codificacion);
+    if (!codifCheck.ok) {
+      return res.status(400).json({ error: 'Esa codificacion no esta en la lista activa de la campana' });
+    }
     const info = db
       .prepare(
         `INSERT INTO monitoreos
@@ -290,7 +328,7 @@ router.post(
         canal: b.canal,
         idLlamada: b.idLlamada || null,
         telefono: b.telefono || null,
-        codificacion: b.codificacion || null,
+        codificacion: codifCheck.valor,
         evaluador,
         evaluadorUserId: req.actor.isMasterAdmin ? null : req.actor.id,
         answers: JSON.stringify(b.answers),
@@ -440,6 +478,17 @@ router.put(
     const asesorUserId = b.asesorUserId
       ? resolverAsesorUserId(b.asesorUserId, asesorNombre, row.campana)
       : row.asesorUserId;
+    // Fase 95 (tema B): solo se valida contra el catalogo si el body trae
+    // codificacion (si no la trae, se mantiene la de la fila sin volver a
+    // validarla -- ya paso la validacion cuando se creo/edito por ultima vez).
+    let codificacion = row.codificacion;
+    if (b.codificacion !== undefined) {
+      const codifCheck = validarCodificacion(row.campana, b.codificacion);
+      if (!codifCheck.ok) {
+        return res.status(400).json({ error: 'Esa codificacion no esta en la lista activa de la campana' });
+      }
+      codificacion = codifCheck.valor;
+    }
     db.prepare(
       `UPDATE monitoreos SET
          asesor=?, asesorUserId=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
@@ -454,7 +503,7 @@ router.put(
       b.canal ?? row.canal,
       (b.idLlamada ?? row.idLlamada) || null,
       (b.telefono ?? row.telefono) || null,
-      (b.codificacion ?? row.codificacion) || null,
+      codificacion,
       JSON.stringify(answers),
       score.puntaje,
       score.clasificacion,
@@ -485,6 +534,111 @@ router.delete(
     db.prepare('DELETE FROM monitoreos WHERE id = ?').run(row.id);
     logCalEvent('MONITOREO_DEL', row.asesor, row.campana, req.actor, '');
     res.json({ ok: true });
+  })
+);
+
+// ══════════════════════════════════════════════════════════
+// CALIDAD — CATALOGO DE CODIFICACIONES (Fase 95, tema B)
+// ══════════════════════════════════════════════════════════
+
+// Lectura: cualquier actor con acceso a la campana (el formulario de
+// monitoreo y la pantalla de administracion la necesitan). Incluye
+// activas E inactivas -- la pantalla de admin necesita ver ambas para
+// poder reactivar; el formulario de monitoreo filtra "activo" en el
+// navegador (igual patron que calidad_plantillas/activo).
+router.get(
+  '/calidad/codificaciones',
+  requireActor,
+  validate(schemas.calidadQuery, 'query'),
+  wrap((req, res) => {
+    const { campana } = req.query;
+    if (!campaignAccess(req.actor, campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    const rows = db
+      .prepare('SELECT * FROM calidad_codificaciones WHERE campana = ? ORDER BY lower(valor)')
+      .all(campana);
+    res.json(rows.map(toCodificacion));
+  })
+);
+
+// Alta (pegar varias de una vez, una por linea -> array ya partido por el
+// navegador). Deduplica contra lo que YA EXISTE (activo o inactivo) e
+// internamente en el mismo pegado, sin distinguir mayusculas/espacios --
+// nunca crea un duplicado ni reactiva algo desactivado (eso es una accion
+// aparte, PUT :id). Solo administrador completo.
+router.post(
+  '/calidad/codificaciones/bulk',
+  requireActor,
+  validate(schemas.codificacionBulkBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo el administrador puede administrar el catalogo de codificaciones' });
+    }
+    const b = req.body;
+    const existentes = new Set(
+      db
+        .prepare('SELECT valor FROM calidad_codificaciones WHERE campana = ?')
+        .all(b.campana)
+        .map((r) => r.valor.trim().toLowerCase())
+    );
+    const now = nowStr();
+    const insertar = db.prepare(
+      `INSERT INTO calidad_codificaciones (campana, valor, activo, createdAt, updatedAt)
+       VALUES (@campana, @valor, 1, @createdAt, @updatedAt)`
+    );
+    const creadas = [];
+    const yaExistian = [];
+    const vistasEnEstePegado = new Set();
+    const tx = db.transaction((valores) => {
+      valores.forEach((valorCrudo) => {
+        const valor = valorCrudo.trim();
+        const norm = valor.toLowerCase();
+        if (existentes.has(norm) || vistasEnEstePegado.has(norm)) {
+          yaExistian.push(valor);
+          return;
+        }
+        vistasEnEstePegado.add(norm);
+        insertar.run({ campana: b.campana, valor, createdAt: now, updatedAt: now });
+        creadas.push(valor);
+      });
+    });
+    tx(b.valores);
+    if (creadas.length > 0) {
+      logCalEvent(
+        'COD_AGREGADA',
+        creadas.length === 1 ? creadas[0] : `${creadas.length} codificaciones`,
+        b.campana,
+        req.actor,
+        `Codificacion(es) agregada(s): ${creadas.join(', ')}`
+      );
+    }
+    res.status(201).json({ creadas, yaExistian });
+  })
+);
+
+// Desactivar / reactivar (nunca se borra: rompería monitoreos viejos que
+// la guardaron como texto). Solo administrador completo.
+router.put(
+  '/calidad/codificaciones/:id',
+  requireActor,
+  validate(schemas.idParamSchema, 'params'),
+  validate(schemas.updateCodificacionBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo el administrador puede administrar el catalogo de codificaciones' });
+    }
+    const row = db.prepare('SELECT * FROM calidad_codificaciones WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Codificacion no encontrada' });
+    const activo = req.body.activo ? 1 : 0;
+    db.prepare('UPDATE calidad_codificaciones SET activo=?, updatedAt=? WHERE id=?').run(
+      activo,
+      nowStr(),
+      row.id
+    );
+    const updated = db.prepare('SELECT * FROM calidad_codificaciones WHERE id = ?').get(row.id);
+    logCalEvent(activo ? 'COD_REACTIVADA' : 'COD_DESACTIVADA', row.valor, row.campana, req.actor, '');
+    res.json(toCodificacion(updated));
   })
 );
 

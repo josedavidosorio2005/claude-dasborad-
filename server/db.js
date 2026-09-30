@@ -120,6 +120,28 @@ CREATE TABLE IF NOT EXISTS calidad_plantillas (
   updatedAt TEXT NOT NULL
 );
 
+-- Catalogo de codificaciones validas por campana (Fase 95, tema B). Mientras
+-- una campana no tenga ninguna fila activa, el campo "codificacion" del
+-- monitoreo sigue siendo texto libre (igual que hasta ahora); en cuanto
+-- tiene al menos una, el formulario la vuelve un desplegable y el servidor
+-- valida el valor contra esta lista (ver validation.js/routes/calidad.js).
+-- Nunca se borra una fila (romperia monitoreos viejos que la usan como
+-- texto): solo se desactiva/reactiva con activo 0/1.
+CREATE TABLE IF NOT EXISTS calidad_codificaciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  valor TEXT NOT NULL,
+  activo INTEGER NOT NULL DEFAULT 1,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+-- Unicidad case/espacios-insensible por campana: pegar "POS" y "pos " no
+-- debe crear 2 filas. Expresion en vez de UNIQUE(campana,valor) crudo.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_calidad_codificaciones_unica
+  ON calidad_codificaciones(campana, lower(trim(valor)));
+CREATE INDEX IF NOT EXISTS idx_calidad_codificaciones_campana_activo
+  ON calidad_codificaciones(campana, activo);
+
 -- Un monitoreo de calidad por asesor/campana/fecha, con sus respuestas y el
 -- puntaje resultante. El puntaje/clasificacion/fallos los calcula el servidor
 -- a partir de la plantilla + respuestas (calidad-logic.js), nunca el cliente.

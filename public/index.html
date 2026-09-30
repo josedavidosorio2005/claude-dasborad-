@@ -903,7 +903,10 @@
           <div class="ig"><label># Telefono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
         </div>
         <div class="form-row">
-          <div class="ig"><label>Codificacion</label><input type="text" id="cf-codificacion" placeholder="Ej: POS"></div>
+          <div class="ig"><label>Codificacion</label>
+            <input type="text" id="cf-codificacion" placeholder="Ej: POS">
+            <select id="cf-codificacion-select" style="display:none"></select>
+          </div>
           <div class="ig"><label>Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
             <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesion; no se puede cambiar.</small>
           </div>
@@ -1003,6 +1006,17 @@
         <div class="aurora-card-title">Usuarios con acceso a esta campana (rol CALIDAD)</div>
         <table class="aurora-rank-table" id="cal-permisos-table"></table>
         <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Para dar o quitar acceso, edite el usuario desde Gestion de Usuarios (rol CALIDAD) y marque/desmarque la campana correspondiente.</p>
+      </div>
+      <div class="aurora-card">
+        <div class="aurora-card-title">Codificaciones validas de esta campana</div>
+        <p style="font-size:0.78rem;color:var(--c-text-muted)">Mientras esta campana no tenga ninguna codificacion aqui, el campo "Codificacion" del monitoreo sigue siendo texto libre. En cuanto agregue al menos una, el formulario la muestra como lista desplegable. Nunca se borra una codificacion (romperia monitoreos viejos): solo se desactiva o reactiva.</p>
+        <div class="ig"><label>Pegar codificaciones nuevas (una por linea)</label>
+          <textarea id="cf-cod-nuevas" rows="4" placeholder="POS&#10;NO CONTESTA&#10;NUMERO EQUIVOCADO"></textarea>
+        </div>
+        <div class="modal-btns">
+          <button class="btn-primary" onclick="calCodificacionesAgregar()">Agregar</button>
+        </div>
+        <table class="aurora-rank-table" id="cal-codificaciones-table" style="margin-top:12px"></table>
       </div>
     </div>
 
