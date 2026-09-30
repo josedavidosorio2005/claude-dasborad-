@@ -8366,3 +8366,53 @@ esta sesión. Pendiente exacto para cuando se retome:
   bug real de las Fases 74/84); la prueba general de round-trip
   (`dashboards-config-put-round-trip-fase85.test.js`) lo atrapó antes de
   mergear.
+
+## Fase 97 (continuación 2) — revisión del log de `verificar-logs-produccion` y corrección de los 2 workflows (2026-09-30)
+
+Antes de que el usuario borre las corridas viejas de Actions, se revisó a
+mano (solo lectura, `gh api`) el log de la corrida
+`36057888794` (`verificar-logs-produccion.yml`, 2026-09-24T20:53:22Z):
+
+- **No trae nada útil para la revisión de accesos entre clientes** (Fase 72
+  H1, Fase 81 GET/DELETE `/dashboard/cargas`): los 2 pasos (`/inconexion/prod/docker`
+  y `/inconexion/prod/backup`) terminaron en `Eventos encontrados: 0` — no
+  hay ninguna línea de log real que revisar en esta corrida.
+- **Por qué pudo "leer" logs si el permiso figuraba pendiente**: en
+  realidad NO los leyó — la llamada real a `aws logs filter-log-events`
+  SÍ falló con `AccessDeniedException` (el permiso de verdad no estaba, tal
+  como decía el doc), pero esa corrida ejecutó una versión del workflow
+  (mergeada por el PR #142, commit `604d8b3`) que todavía tenía
+  `|| echo '[]' > archivo` — ese fallback convertía el `AccessDeniedException`
+  en un archivo vacío, así que `COUNT=0` y el paso terminaba en verde sin
+  haber leído nada real. El fix que quita ese fallback (commit `764c22e`,
+  "no debe esconder un AccessDenied como 0 eventos") se mergeó 7 minutos
+  DESPUÉS (PR #143, 2026-09-24 21:00:43 UTC) de que se disparara esta
+  corrida (20:53:22 UTC) — coincidencia de tiempos, no un permiso que
+  apareció y desapareció. Confirmado con `git log`/`git show` sobre el
+  archivo del workflow, sin tocar AWS.
+
+De paso, se revisaron 41 corridas más de 18 workflows de diagnóstico ya
+borrados del repo (Fases 63-77) que siguen en el historial de Actions —
+lista completa con enlaces dada al usuario en el chat (no en el repo);
+nada se borró, decide el usuario.
+
+Corrección pedida (el repo es público): ningún workflow debe imprimir
+texto crudo de producción en su log.
+
+- `.github/workflows/verificar-logs-produccion.yml`: imprimía la línea
+  completa de cada evento (`jq -r '.[] | "\(.t) \(.m)"'`) — mensaje real de
+  CloudWatch, puede traer nombres/correos/IPs/filas. Ahora solo imprime
+  conteo, tamaño del JSON (bytes) y rango de fechas; el archivo se borra al
+  terminar cada paso, nunca se sube como artefacto.
+- `.github/workflows/verificar-restore-backup-produccion.yml` y
+  `server/scripts/verificar-restore-backup.js`: revisados — ya solo
+  imprimían nombre de archivo (timestamp), fecha, tamaño (KiB),
+  `integrity_check` y CONTEOS de filas (nunca una fila real). Se agregó un
+  comentario guardrail en los 2 para que no se cuele un `console.log` con
+  datos reales más adelante.
+- Sin cambios de versión (no es una función nueva de la app, es
+  higiene de seguridad en tooling de CI). `npm test`: 743/743 sin cambios.
+  `npm audit`: 0 vulnerabilidades. YAML validado localmente
+  (`python -c "import yaml; ..."`, los 2 archivos parsean bien) — ningún
+  workflow `workflow_dispatch` corre solo con `npm test`/`docker-build`, así
+  que esto no se pudo probar en vivo contra AWS en este PR.
