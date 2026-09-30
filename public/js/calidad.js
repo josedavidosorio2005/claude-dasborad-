@@ -232,8 +232,7 @@ async function openCalidad(){
   var nuevoBtn = document.getElementById('ctab-btn-nuevo');
   if(nuevoBtn) nuevoBtn.style.display = canEval ? '' : 'none';
   _calActualizarTabCarga();
-  document.getElementById('cf-fecha').value = new Date().toISOString().slice(0,10);
-  if(currentUser) document.getElementById('cf-evaluador').value = currentUser.nombre;
+  calSetFechaEvaluadorAuto();
   renderCalItemsForm();
   populateCalAsesorSelect();
   var defaultTab = canEval ? 'nuevo' : (currentUser && currentUser.rol==='REPORTES' ? 'reportes' : 'resumen');
@@ -371,6 +370,19 @@ function calFechaHoyLocal(){
   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 }
 
+// Fase 95 (tema A): fecha = hoy, bloqueada salvo administrador completo
+// (correcciones); evaluador = usuario de la sesion, siempre bloqueado.
+// Se llama tanto al abrir el modulo (openCalidad) como al resetear el
+// formulario (resetCalForm) -- antes solo openCalidad tocaba estos campos
+// (sin bloquear la fecha), asi que un administrador veia el campo
+// deshabilitado hasta el primer guardado.
+function calSetFechaEvaluadorAuto(){
+  var fechaEl = document.getElementById('cf-fecha');
+  fechaEl.value = calFechaHoyLocal();
+  fechaEl.disabled = !isFullAdmin();
+  document.getElementById('cf-evaluador').value = currentUser ? currentUser.nombre : 'Administrador';
+}
+
 function resetCalForm(){
   calItems(_ccampana).forEach(function(it){ var el=document.getElementById('cf-item-'+it.n); if(el) el.value=''; });
   populateCalAsesorSelect();
@@ -378,12 +390,7 @@ function resetCalForm(){
   document.getElementById('cf-telefono').value='';
   document.getElementById('cf-codificacion').value='';
   document.getElementById('cf-observaciones').value='';
-  // Fase 95 (tema A): fecha = hoy, bloqueada salvo administrador completo
-  // (correcciones); evaluador = usuario de la sesion, siempre bloqueado.
-  var fechaEl = document.getElementById('cf-fecha');
-  fechaEl.value = calFechaHoyLocal();
-  fechaEl.disabled = !isFullAdmin();
-  document.getElementById('cf-evaluador').value = currentUser ? currentUser.nombre : 'Administrador';
+  calSetFechaEvaluadorAuto();
   setCanalAuditado('LLAMADA');
   _editingMonitoreoId = null;
   var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Datos generales del monitoreo';
