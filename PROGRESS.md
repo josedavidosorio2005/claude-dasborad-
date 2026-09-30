@@ -8068,3 +8068,70 @@ Para la entrega de ORLANT queda en **1.0.0**, como se pidió.
   `origin/main` al cerrar, 0 PRs abiertos, deploy automático en verde
   después de cada merge. Tag `v1.0.0` creado sobre `main` al final,
   después del último merge.
+
+## Fase 96 — activar la seguridad de GitHub que estaba apagada + CI sin Node 18/20 y con límite de tiempo (2026-09-30, automática)
+
+### Parte 1 — seguridad de GitHub
+
+- Las 4 opciones que la Fase 95 encontró **apagadas** (Secret Scanning,
+  Push Protection, Dependabot alerts, "Automatically delete head
+  branches") y la aprobación de workflows de contribuidores externos ya
+  estaban **las 5 activas** al revisarlas en esta fase (`gh api
+  repos/{owner}/{repo}` y los endpoints correspondientes) — no hizo falta
+  cambiarlas, solo confirmarlas: `secret_scanning: enabled`,
+  `secret_scanning_push_protection: enabled`,
+  `/vulnerability-alerts` → `204` (Dependabot alerts activo),
+  `delete_branch_on_merge: true`,
+  `/actions/permissions/fork-pr-contributor-approval` →
+  `approval_policy: all_external_contributors` (pide aprobación a
+  **todo** contribuidor externo, no solo a los de la primera vez).
+  "Dependabot security updates" sigue apagado (confirmado
+  `dependabot_security_updates: disabled`) y no existe
+  `.github/dependabot.yml`, así que tampoco hay "version updates" —
+  ambos a propósito, las dependencias mayores siguen congeladas hasta
+  después de la entrega de ORLANT.
+- Secret scanning (`/secret-scanning/alerts`): **0 alertas.**
+- Dependabot (`/dependabot/alerts`): **0 alertas.**
+
+### Parte 2 — CI: matriz, timeouts, concurrency
+
+- Causa confirmada de los cuelgues de la Fase 95 mirando una corrida real
+  cancelada (`run 36726890288`, 14:08–14:22, cancelada tras ~14 min):
+  `test (18)` y `test (20)` quedaron atascados en el paso "Instalar
+  dependencias" mientras `test (22)` y `docker-build` ya habían
+  terminado hacía 12 minutos. `better-sqlite3@12` solo trae binario
+  prebuilt listo para Node `20.x||22.x||23.x||24.x||25.x||26.x`; Node 18
+  además falla el chequeo de `engines` — en la práctica solo Node 22
+  resolvía el binario al instante (~3 s), Node 20 tardaba ~1m30s
+  compilando y Node 18 se quedaba pegado.
+- `ci.yml`: matriz `[18, 20, 22]` → `[22]` (versión de producción,
+  `server/Dockerfile: node:22-bookworm`); `timeout-minutes: 15` en
+  `test`, `20` en `docker-build`; `concurrency` a nivel de workflow
+  (`group: ci-${{ github.ref }}`, `cancel-in-progress` en todo excepto
+  `main`, para no cancelar el CI que dispara el deploy vía
+  `workflow_run`). El workflow sigue llamándose `CI`. `server/package.json`
+  `engines`: `>=18` → `>=22`. PR #206.
+- Minutos de la corrida completa del workflow (push→fin, no solo el job
+  más lento): **antes** (3 versiones, sin cuelgue) 2m23s
+  (`run 36729042438`); con cuelgue real, ~14 min antes de cancelarse
+  manualmente. **Después** (solo Node 22): ~1m17s–1m42s
+  (`runs 36730764429`/`36730792388` en el PR, `36731796070` en `main`).
+- CLAUDE.md y CHANGELOG.md actualizados en el mismo PR; versión
+  `1.0.0` → `1.0.1`.
+
+### Verificación
+
+- `npm test`: 704/704 sin cambios, antes y después. `npm audit`: 0
+  vulnerabilidades antes y después.
+- PR #206 (código de CI + versión + docs) mergeado sin intervención
+  manual, rama borrada sola (`delete_branch_on_merge`). CI en `main`
+  verde en 1m2s tras el merge; deploy automático disparado por
+  `workflow_run` y verde en 1m23s. Producción confirmada:
+  `https://informa.inconexion.com.co/api/health` → `200`,
+  `{"ok":true,"version":"1.0.1","buildId":"1790779805203"}`.
+- Este PR (solo `PROGRESS.md`) es el segundo y último de la fase. `main`
+  = `origin/main` al cerrar, 0 PRs abiertos. Tag `v1.0.1` creado sobre
+  `main` al final, después de mergear este PR.
+- No se tocó `deploy.yml`, ningún otro workflow, secretos, datos ni el
+  keystore. No se actualizó ninguna dependencia (solo el `engines`
+  declarado en `server/package.json`).
