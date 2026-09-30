@@ -29,6 +29,9 @@ const config = require('./config');
 const db = require('./db');
 const { requireActor } = require('./auth');
 const { wrap } = require('./routes/shared');
+// Fase 95 (tema D): version de la app, unica fuente de verdad
+// (package.json) -- se expone en /health y en el pie de la interfaz.
+const APP_VERSION = require('./package.json').version;
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
@@ -154,7 +157,7 @@ function createApp() {
   const BUILD_ID = String(Date.now());
 
   // ── Salud (publica) ───────────────────────────────────────
-  api.get('/health', (req, res) => res.json({ ok: true, buildId: BUILD_ID }));
+  api.get('/health', (req, res) => res.json({ ok: true, buildId: BUILD_ID, version: APP_VERSION }));
 
   // ── Estado de datos de demostracion (scripts/seed-demo.js) ─────────────
   // Cualquier usuario autenticado puede leerlo: es lo que pinta el banner
