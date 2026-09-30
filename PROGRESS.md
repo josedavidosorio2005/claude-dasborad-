@@ -8717,3 +8717,44 @@ y el equipo.
   imágenes, y que el PDF (~1 MB, 6 capturas embebidas) se generó
   completo.
 - Versión `1.2.0` → `1.3.0` (función nueva: guía de uso) + `CHANGELOG.md`.
+
+## Fase 100 (continuación) — Tema C: monitor automático de producción (2026-09-30)
+
+Pendiente del prompt original de la Fase 100. Tema C: aviso automático si
+la plataforma se cae, autorizado explícitamente por el jefe (repetido en
+el pedido de esta continuación).
+
+- `.github/workflows/monitor-produccion.yml`, nuevo: `schedule` cada 15
+  minutos + `workflow_dispatch`. Revisa produccion SOLO desde afuera
+  (HTTP público, como cualquier visitante): `GET /api/health` (200,
+  `ok:true`, con 2 reintentos y 30s de espera antes de dar la plataforma
+  por caída — un error de red pasajero no dispara una falsa alarma),
+  tiempo de respuesta, días que le quedan al certificado TLS (falla si
+  quedan menos de 14) y que `http://` redirija a `https://`.
+- Solo imprime estado/tiempo/certificado/versión — nunca un cuerpo de
+  respuesta crudo (el repo es público).
+- Si hay un problema: el job termina en rojo (correo estándar de GitHub
+  de "workflow failed") y abre — o comenta, si ya hay uno abierto — el
+  issue "Producción caída o con problemas" con la etiqueta `produccion`
+  (se crea sola en la primera corrida que la necesite). Cuando se
+  recupera, comenta ese issue y lo cierra solo. El orden de los pasos
+  importa: primero se gestiona el issue, y SOLO DESPUÉS se falla el job
+  a propósito — así la notificación del issue sale siempre, incluso si
+  el job termina en rojo.
+- Permisos mínimos (`contents: read`, `issues: write`), `concurrency`
+  (`group: monitor-produccion`) para que no se encimen corridas. No toca
+  AWS, secretos ni `deploy.yml`.
+- Documentado en `CLAUDE.md` (sección Producción): cómo llega el aviso,
+  que GitHub puede retrasar unos minutos una corrida programada, y que
+  en un repo público GitHub desactiva los workflows programados tras 60
+  días sin actividad (se reactiva desde Actions → el workflow → "Enable
+  workflow", o con cualquier commit nuevo).
+
+### Verificación
+
+- `npm test`: 756/756 sin cambios. `npm audit`: 0 vulnerabilidades. Sin
+  cambio de versión (no es una función nueva de la app, es tooling de
+  CI — mismo criterio que la Fase 97).
+- YAML validado localmente antes de subir. Probado con
+  `workflow_dispatch` contra producción real (solo lectura) — resultado
+  en el chat de cierre de esta fase.
