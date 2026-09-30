@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.1.3 — Octubre 2026
+
+Arreglo (revisión final antes de entregar ORLANT): la plantilla
+descargable ya no lista los 4 campos viejos de inasistencia en la hoja de
+resumen (el arreglo de la versión anterior había quedado solo en el
+código, sin llegarle a los datos ya guardados). También: exportar a Excel
+ya no trae una hoja "KPIs" vacía en los paneles que no tienen esa franja.
+
 ## v1.1.2 — Octubre 2026
 
 Arreglo: las opciones de los desplegables ya se leen bien.

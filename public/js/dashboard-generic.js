@@ -1539,7 +1539,15 @@ async function _gdExportExcel(){
     // datos falsos nunca circule sin decirlo.
     xlsxAgregarAvisoDemo(wb);
     var usados = {};
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(_gdDatosKpis())), xlsxNombreHojaUnico('KPIs', usados));
+    // Fase 100 (hallazgo real en produccion): ORLANT (y cualquier cliente
+    // sin franja de KPIs arriba, layout.kpis:[]) exportaba una hoja "KPIs"
+    // siempre vacia, sin ningun aviso -- mismo criterio que los paneles de
+    // abajo (`if(!pan.filas.length) return;`): si no hay KPIs, no se agrega
+    // la hoja en absoluto, en vez de agregarla vacia.
+    var datosKpis = _gdDatosKpis();
+    if(datosKpis.length){
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datosKpis)), xlsxNombreHojaUnico('KPIs', usados));
+    }
     var paneles = await _gdDatosPanelesTab();
     paneles.forEach(function(pan){
       var name = xlsxNombreHojaUnico(pan.titulo || 'Panel', usados);
