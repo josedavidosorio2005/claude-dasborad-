@@ -8416,3 +8416,35 @@ texto crudo de producción en su log.
   (`python -c "import yaml; ..."`, los 2 archivos parsean bien) — ningún
   workflow `workflow_dispatch` corre solo con `npm test`/`docker-build`, así
   que esto no se pudo probar en vivo contra AWS en este PR.
+
+## Fase 97 (continuación 3) — borradas las 40 corridas viejas de GitHub Actions con datos de producción (2026-09-30, autorizado explícitamente)
+
+Autorización explícita del usuario (30/09): borrar, con `gh run delete`,
+las corridas de los 18 workflows de diagnóstico/verificación de
+producción de las Fases 63–77 (ya borrados del repo) más las 2 corridas
+del 24/09 de `verificar-logs-produccion.yml`/`verificar-restore-backup-produccion.yml`
+(workflows que siguen activos, pero esas 2 corridas puntuales sí se
+autorizaron a borrar). Nada más se tocó — ni ramas, ni tags, ni releases,
+ni artefactos de otros workflows.
+
+- Antes de borrar se confirmó que no faltaba ninguna corrida: las 40 que
+  dio el usuario coinciden EXACTO con las 40 que devuelve la API para esos
+  19 workflows (`diff` entre las dos listas, vacío) — el "41" que se
+  había mencionado antes fue un error de conteo en la conversación, no una
+  corrida real de más. El workflow #18 de la lista original
+  (`usuario-temporal-trafico-real-orlant.yml`) nunca tuvo ninguna corrida
+  (0 en el historial), así que no había nada suyo que borrar.
+- `gh run delete <id> --repo josedavidosorio2005/claude-dasborad-` por
+  cada una de las 40 — **40/40 exitosas**, ninguna bloqueada por el modo
+  automático.
+- Verificación después de borrar: `gh api .../actions/workflows/<archivo>.yml/runs`
+  para cada uno de los 18 workflows devuelve `404 Not Found` (GitHub ya no
+  tiene ningún registro de esos workflows, ni el archivo en el repo ni
+  corridas) y para los 2 workflows activos (`verificar-logs-produccion`,
+  `verificar-restore-backup-produccion`) devuelve `total_count: 0` — los
+  archivos siguen en el repo, solo se les borró el historial de esas 2
+  corridas puntuales. `gh run list --limit 200` solo muestra CI, Deploy a
+  AWS y Dominio de producción.
+- No se copió ningún contenido de esas corridas a este documento ni a
+  ningún otro lugar del repo — solo conteos y nombres de workflow, que ya
+  no son sensibles (los workflows están borrados).
