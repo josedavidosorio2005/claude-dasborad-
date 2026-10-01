@@ -366,7 +366,9 @@ test('WhatsApp: una cola que no calza con ningun patron 3P/GENERAL no rompe la c
   const wpp = await request(app)
     .post('/api/calidad/trafico/whatsapp/carga')
     .set(auth(admin))
-    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'WHATSAPP AUDIFONOS', fechaInicio: mes + '-01', fechaFin: mes + '-29', totalWhatsapp: 50, contestados: 40 })] });
+    // 2022 no es bisiesto -- "2022-02-29" no existe (hallazgo de la Fase 102:
+    // el fixture viejo pasaba porque fechaSchema solo exigia el FORMATO).
+    .send({ campana: 'ORLANT', filas: [traficoWppFila({ colaWhatsapp: 'WHATSAPP AUDIFONOS', fechaInicio: mes + '-01', fechaFin: mes + '-28', totalWhatsapp: 50, contestados: 40 })] });
   assert.equal(wpp.status, 201, JSON.stringify(wpp.body));
 
   const r = await request(app).get('/api/dashboard/ORLANT').set(auth(admin));
