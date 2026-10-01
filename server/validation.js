@@ -149,9 +149,22 @@ const campanaSchema = z
   .max(120, 'Nombre de campana demasiado largo')
   .regex(/^[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ .\-/]+$/, 'Nombre de campana con caracteres no permitidos');
 
+// Fase 102 (bug real, hallazgo de la auditoria): el regex solo exigia el
+// FORMATO AAAA-MM-DD, nunca que la fecha existiera en el calendario -- un
+// "2026-02-30" o "2026-13-01" pasaba la validacion y quedaba guardado tal
+// cual (ej. mes calculado por texto a partir de una fecha que nunca
+// existio). El refine recalcula la fecha con Date.UTC y exige que
+// year/month/day se lean exactamente igual de vuelta -- JS normaliza
+// desbordes (30 de febrero -> 2 de marzo) en vez de fallar, asi que
+// comparar round-trip es la unica forma de atraparlo.
 const fechaSchema = z
   .string(reqStr('La fecha es obligatoria'))
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato AAAA-MM-DD');
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato AAAA-MM-DD')
+  .refine((s) => {
+    const [y, m, d] = s.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+  }, 'La fecha no existe en el calendario');
 
 const mesSchema = z
   .string()

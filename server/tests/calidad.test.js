@@ -272,6 +272,34 @@ test('validacion: fecha con formato invalido -> 400', async () => {
   assert.equal(res.status, 400);
 });
 
+// Fase 102 (bug real, hallazgo de la auditoria): el regex de fechaSchema
+// (validation.js) solo exigia el FORMATO AAAA-MM-DD, nunca que la fecha
+// existiera en el calendario -- "2026-02-30"/"2026-13-01" pasaban.
+test('validacion: fecha con formato correcto pero que no existe en el calendario -> 400', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const { token } = await calidadUser(admin, 'ORLANT', 'valcal');
+
+  const diaImposible = await request(app)
+    .post('/api/monitoreos')
+    .set(auth(token))
+    .send({ campana: 'ORLANT', asesor: 'X', fecha: '2026-02-30', answers: RESP_TODO_SI });
+  assert.equal(diaImposible.status, 400);
+
+  const mesImposible = await request(app)
+    .post('/api/monitoreos')
+    .set(auth(token))
+    .send({ campana: 'ORLANT', asesor: 'X', fecha: '2026-13-01', answers: RESP_TODO_SI });
+  assert.equal(mesImposible.status, 400);
+
+  // Una fecha real valida sigue funcionando (el refine no es mas estricto
+  // de lo necesario).
+  const valida = await request(app)
+    .post('/api/monitoreos')
+    .set(auth(token))
+    .send({ campana: 'ORLANT', asesor: 'X', fecha: '2026-02-28', answers: RESP_TODO_SI });
+  assert.equal(valida.status, 201);
+});
+
 test('persistencia: un monitoreo creado sigue disponible al volver a consultarlo', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const { token } = await calidadUser(admin, 'ORLANT', 'persist');

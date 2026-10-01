@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.3.2 — Octubre 2026
+
+Sigue la revision de seguridad y de bugs de la Fase 102. Primero, 2
+correcciones que en realidad ya habian salido con la v1.3.1 pero por un
+error de registro no quedaron anotadas en esa nota (el PR que las trajo
+se mergeo despues de subir la version, sin volver a subirla):
+
+- Alguien con el permiso puntual de cambiar contraseñas ya no puede
+  resetear la de un Administrador o Auxiliar Admin existente.
+- Nadie puede otorgarse permisos a si mismo (ni por la pantalla de
+  permisos ni editandose desde la de usuarios).
+
+Y lo nuevo de esta version:
+
+- Arreglo: una fecha que no existe en el calendario (por ejemplo "30 de
+  febrero") ya no se guardaba en silencio al cargar un archivo -- ahora
+  se rechaza con un aviso.
+
 ## v1.3.1 — Octubre 2026
 
 Mejoras de seguridad y arreglos, de una revision completa de la
