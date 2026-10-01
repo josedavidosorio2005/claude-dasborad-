@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.3.1 — Octubre 2026
+
+Mejoras de seguridad y arreglos, de una revision completa de la
+plataforma (Fase 102):
+
+- La "Guía de uso" ya no se podía ver sin iniciar sesión (cualquiera con
+  el enlace veía el nombre del cliente y cómo se cargan sus bases).
+  Ahora pide sesión, igual que el resto de la plataforma.
+- Nadie con permiso de Usuarios podía convertirse (ni convertir a otra
+  persona) en Administrador o Auxiliar Admin por su cuenta — esa
+  decisión ya solo la puede tomar un Administrador completo, y nadie
+  puede cambiar su propio rol.
+- En Calidad, un asesor con el mismo nombre que otro de una campaña
+  distinta ya no podía ver ni marcar como "visto" un monitoreo que no
+  era suyo; y la plantilla de evaluación de Calidad ya no se mostraba
+  completa a cualquier campaña.
+
 ## v1.3.0 — Octubre 2026
 
 Nueva "Guía de uso" — un enlace en el menú de tu usuario abre una guía
