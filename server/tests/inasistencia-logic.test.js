@@ -24,7 +24,8 @@ const {
   inasistenciaPctPonderado,
   inasistenciaPonderadoTotal,
   inasistenciaAgregarPorMes,
-  inasistenciaMesesIncompletos,
+  inasistenciaRangoLbl,
+  inasistenciaAvisosPorMes,
   inasistenciaOrdenarBaseBaja,
 } = require('../../public/js/inasistencia-logic.js');
 
@@ -284,23 +285,74 @@ test('inasistenciaAgregarPorMes: sin filas -> sin meses', () => {
   assert.deepEqual(inasistenciaAgregarPorMes(undefined), []);
 });
 
-test('inasistenciaMesesIncompletos: un mes con MENOS especialidades que el mas completo del rango queda marcado', () => {
+// ── Fase 109: rango de la tarjeta del periodo ────────────────────────────
+test('inasistenciaRangoLbl: varios meses -> "Ene-26 a Sep-26"', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-01', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+  ]);
+  assert.equal(inasistenciaRangoLbl(agregado), 'Ene-26 a Sep-26');
+});
+
+test('inasistenciaRangoLbl: un solo mes -> solo ese mes, sin "a"', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+  ]);
+  assert.equal(inasistenciaRangoLbl(agregado), 'Ago-26');
+});
+
+test('inasistenciaRangoLbl: sin meses -> ""', () => {
+  assert.equal(inasistenciaRangoLbl([]), '');
+});
+
+// ── Fase 109: avisos por mes (parcial / incompleto / sin datos por filtro) ──
+test('inasistenciaAvisosPorMes: un mes 100% formato viejo se marca "parcial", nunca tambien "incompleto"', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
+  ]);
+  const avisos = inasistenciaAvisosPorMes(agregado, ['2026-08', '2026-09'], ['2026-09']);
+  assert.equal(avisos.length, 1);
+  assert.equal(avisos[0].mes, '2026-09');
+  assert.equal(avisos[0].tipo, 'parcial');
+  assert.deepEqual(avisos[0].especialidades, ['EXAMENES ESPECIALES']);
+});
+
+test('inasistenciaAvisosPorMes: un mes con menos especialidades pero CON sede/entidad real se marca "incompleto"', () => {
   const agregado = inasistenciaAgregarPorMes([
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
   ]);
-  const incompletos = inasistenciaMesesIncompletos(agregado);
-  assert.equal(incompletos.length, 1);
-  assert.equal(incompletos[0].mes, '2026-09');
+  // '2026-09' NO esta en mesesFormatoViejo -- tiene datos reales, solo que menos especialidades.
+  const avisos = inasistenciaAvisosPorMes(agregado, ['2026-08', '2026-09'], []);
+  assert.equal(avisos.length, 1);
+  assert.equal(avisos[0].mes, '2026-09');
+  assert.equal(avisos[0].tipo, 'incompleto');
 });
 
-test('inasistenciaMesesIncompletos: todos los meses con el mismo numero de especialidades -> ningun aviso', () => {
+test('inasistenciaAvisosPorMes: un mes que existe en el universo pero el filtro lo dejo sin filas -> "sinDatosFiltro"', () => {
+  const agregado = inasistenciaAgregarPorMes([
+    { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
+  ]);
+  // '2026-09' esta en mesesTodos (el universo SIN filtrar) pero no aparece en `agregado` (el filtro activo lo excluyo).
+  const avisos = inasistenciaAvisosPorMes(agregado, ['2026-08', '2026-09'], []);
+  assert.equal(avisos.length, 1);
+  assert.equal(avisos[0].mes, '2026-09');
+  assert.equal(avisos[0].tipo, 'sinDatosFiltro');
+});
+
+test('inasistenciaAvisosPorMes: todos los meses completos y sin filtro que excluya nada -> ningun aviso', () => {
   const agregado = inasistenciaAgregarPorMes([
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
   ]);
-  assert.deepEqual(inasistenciaMesesIncompletos(agregado), []);
+  assert.deepEqual(inasistenciaAvisosPorMes(agregado, ['2026-08', '2026-09'], []), []);
+});
+
+test('inasistenciaAvisosPorMes: sin agregado ni universo -> sin avisos', () => {
+  assert.deepEqual(inasistenciaAvisosPorMes([], [], []), []);
 });
 
 // ── "Por especialidad": base baja ────────────────────────────────────────
@@ -327,4 +379,45 @@ test('inasistenciaOrdenarBaseBaja: umbral por defecto es 30 si no se pasa uno va
 test('inasistenciaOrdenarBaseBaja: sin filas -> sin filas', () => {
   assert.deepEqual(inasistenciaOrdenarBaseBaja([], 30), []);
   assert.deepEqual(inasistenciaOrdenarBaseBaja(undefined, 30), []);
+});
+
+// ── Fase 109: numeros de control reales de ORLANT (Ene-26 a Sep-26) ────────
+// Agregados por mes (cancelada/inasistencia/pendiente/atendidas/total) --
+// NUNCA datos de paciente, son las mismas sumas mensuales ya publicadas en
+// PROGRESS.md (Fase 108, carga real verificada en produccion). Esta
+// prueba fija (pin) que el calculo y la grafica de linea de la Fase 109
+// siguen dando exactamente esos % -- si alguien toca la formula ponderada
+// sin querer, esta prueba se rompe antes de llegar a produccion.
+test('Fase 109: % por mes y % del periodo completo coinciden EXACTO con la tabla de control de ORLANT (Ene-26 a Sep-26)', () => {
+  const filas = [
+    { mes: '2026-01', especialidad: 'TODAS', cancelada: 1666, inasistencia: 463, pendiente: 103, atendidas: 6579, total: 8811 },
+    { mes: '2026-02', especialidad: 'TODAS', cancelada: 1719, inasistencia: 610, pendiente: 21, atendidas: 7176, total: 9526 },
+    { mes: '2026-03', especialidad: 'TODAS', cancelada: 1751, inasistencia: 735, pendiente: 19, atendidas: 7509, total: 10014 },
+    { mes: '2026-04', especialidad: 'TODAS', cancelada: 1941, inasistencia: 675, pendiente: 30, atendidas: 7302, total: 9948 },
+    { mes: '2026-05', especialidad: 'TODAS', cancelada: 1826, inasistencia: 630, pendiente: 78, atendidas: 7293, total: 9827 },
+    { mes: '2026-06', especialidad: 'TODAS', cancelada: 2244, inasistencia: 637, pendiente: 60, atendidas: 7972, total: 10913 },
+    { mes: '2026-07', especialidad: 'TODAS', cancelada: 2827, inasistencia: 742, pendiente: 70, atendidas: 9139, total: 12778 },
+    { mes: '2026-08', especialidad: 'TODAS', cancelada: 2459, inasistencia: 786, pendiente: 48, atendidas: 7896, total: 11189 },
+    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 452, inasistencia: 94, pendiente: 2, atendidas: 935, total: 1483 },
+  ];
+  const agregado = inasistenciaAgregarPorMes(filas);
+  const CONTROL = {
+    '2026-01': 6.42, '2026-02': 6.62, '2026-03': 7.53, '2026-04': 7.09,
+    '2026-05': 7.20, '2026-06': 6.39, '2026-07': 6.35, '2026-08': 7.45, '2026-09': 6.47,
+  };
+  agregado.forEach((a) => assert.equal(a.pct, CONTROL[a.mes], `pct de ${a.mes}`));
+
+  // El total del periodo completo (Σ(I+P)/Σtotal de los 9 meses) = 6,87 %.
+  assert.equal(inasistenciaPonderadoTotal(agregado).pct, 6.87);
+  assert.equal(inasistenciaRangoLbl(agregado), 'Ene-26 a Sep-26');
+
+  // El mes elegido (Ago-26, ej. el del selector global): su propia tarjeta
+  // muestra su % individual, nunca el del periodo completo.
+  const delMesElegido = agregado.find((a) => a.mes === '2026-08');
+  assert.equal(delMesElegido.pct, 7.45);
+
+  // Sep-26 (formato viejo, sede/entidad='SIN DATO' en la base real) queda
+  // marcado 'parcial' -- nunca tambien 'incompleto'.
+  const avisos = inasistenciaAvisosPorMes(agregado, Object.keys(CONTROL), ['2026-09']);
+  assert.deepEqual(avisos, [{ mes: '2026-09', tipo: 'parcial', especialidades: ['EXAMENES ESPECIALES'] }]);
 });

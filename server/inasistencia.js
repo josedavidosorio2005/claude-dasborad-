@@ -169,7 +169,25 @@ function inasistenciaOpciones(db, campana) {
     sedes: db.prepare("SELECT DISTINCT sede AS v FROM inasistencias WHERE campana = ? AND sede != 'SIN DATO' ORDER BY v").all(campana).map((r) => r.v),
     especialidades: db.prepare('SELECT DISTINCT especialidad AS v FROM inasistencias WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
     entidades: db.prepare("SELECT DISTINCT entidad AS v FROM inasistencias WHERE campana = ? AND entidad != 'SIN DATO' ORDER BY v").all(campana).map((r) => r.v),
+    mesesFormatoViejo: inasistenciaMesesFormatoViejo(db, campana),
   };
+}
+
+// Meses donde TODAS las filas son del formato viejo (Fase 98-106, sede y
+// entidad='SIN DATO' -- antes de que el archivo real pasara a una fila por
+// cita, Fase 108). Nunca filtrado por sede/especialidad/entidad a
+// proposito: es informacion del UNIVERSO completo de la campaña (igual que
+// el resto de `inasistenciaOpciones`), el navegador decide si el aviso
+// aplica comparando esta lista contra el agregado YA filtrado que este
+// viendo (ver inasistenciaAvisosPorMes, inasistencia-logic.js) -- si un
+// filtro de sede/entidad excluye ese mes por completo, el mes ya no
+// aparece en el agregado y aplica el aviso de "sin datos por el filtro"
+// en vez de este.
+function inasistenciaMesesFormatoViejo(db, campana) {
+  return db.prepare(
+    `SELECT mes FROM inasistencias WHERE campana = ?
+     GROUP BY mes HAVING SUM(CASE WHEN sede != 'SIN DATO' THEN 1 ELSE 0 END) = 0`
+  ).all(campana).map((r) => r.mes);
 }
 
 module.exports = {
@@ -182,4 +200,5 @@ module.exports = {
   inasistenciaPorEspecialidad,
   inasistenciaPorMes,
   inasistenciaOpciones,
+  inasistenciaMesesFormatoViejo,
 };

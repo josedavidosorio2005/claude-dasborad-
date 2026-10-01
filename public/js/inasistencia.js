@@ -45,7 +45,7 @@ var _INASISTENCIA_VISTAS = {
 
 async function _inasistenciaCargarOpciones(campana){
   if(_inasistenciaOpciones[campana]) return _inasistenciaOpciones[campana];
-  var op = { meses:[], sedes:[], especialidades:[], entidades:[] };
+  var op = { meses:[], sedes:[], especialidades:[], entidades:[], mesesFormatoViejo:[] };
   try{ op = await apiRequest('GET','/calidad/inasistencia/opciones?campana='+encodeURIComponent(campana)); }
   catch(e){ /* sin datos o sin acceso -- se queda vacio, el panel muestra "sin datos" */ }
   _inasistenciaOpciones[campana] = op;
@@ -146,11 +146,15 @@ function _inasistenciaTarjetaHtml(titulo, valor){
   return '<div class="aurora-kpi gd-kpi"><div class="kv">'+txt+'</div><div class="kl">'+esc(titulo)+'</div></div>';
 }
 
-// "Resumen por mes": tarjeta con el % ponderado de TODO el periodo filtrado
-// + grafica de barras con el % de cada mes con datos (resalta el mes
-// elegido arriba). Aviso automatico cuando un mes trae menos
-// especialidades que el mes mas completo del rango (ver
-// inasistenciaMesesIncompletos, inasistencia-logic.js).
+// "Resumen por mes" (Fase 109, pedido explicito: grafica de LINEA "como un
+// grafico de linea de Excel", con una tabla de datos debajo, y 2 tarjetas
+// -- la del periodo completo y la del mes elegido arriba, cada una con su
+// propia etiqueta de rango para que nunca se confunda una con la otra).
+// Aviso automatico por mes: 'parcial' (100% formato viejo, Fase 98-106,
+// sin sede/entidad real), 'incompleto' (menos especialidades que el mas
+// completo del rango, pero con datos reales) o 'sinDatosFiltro' (el mes
+// existe pero el filtro de sede/especialidad/entidad lo dejo sin filas) --
+// ver inasistenciaAvisosPorMes, inasistencia-logic.js.
 async function _inasistenciaRenderPorMes(host, campana, i, titulo, opciones){
   var estado = _inasistenciaEstado[campana] || {};
   var html = '<div class="aurora-card">';
@@ -160,10 +164,33 @@ async function _inasistenciaRenderPorMes(host, campana, i, titulo, opciones){
   html += '<div class="aurora-card-title" style="margin-top:10px">% de inasistencia por mes '+
     '<span class="gd-help" title="% de inasistencia = (Inasistencias + Pendientes) de TODAS las especialidades que pasen los filtros, dividido entre el total de citas, PONDERADO (nunca el promedio simple de los % de cada mes).">?</span></div>';
   html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="inasist-c-pormes-'+i+'"></canvas></div>';
+  html += '<div id="inasist-tabla-pormes-'+i+'"></div>';
   html += '<div id="inasist-aviso-'+i+'"></div>';
   html += '</div>';
   host.innerHTML = html;
   await _inasistenciaDibujarPorMes(campana, i, opciones);
+}
+
+// Texto generico del/los filtro(s) activo(s), para el aviso "Mes no tiene
+// datos por <filtro>." (Fase 109) -- nunca se arma a mano en 3 lugares.
+function _inasistenciaFiltroActivoTxt(estado){
+  var activos = [];
+  if(estado.sede) activos.push('sede');
+  if(estado.especialidad) activos.push('especialidad');
+  if(estado.entidad) activos.push('entidad');
+  return activos.length ? activos.join('/') : 'estos filtros';
+}
+
+function _inasistenciaAvisoHtml(a, estado){
+  var texto;
+  if(a.tipo === 'parcial'){
+    texto = inasistenciaMesLbl(a.mes) + ': datos parciales (solo ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + ', sin sede ni entidad).';
+  } else if(a.tipo === 'incompleto'){
+    texto = inasistenciaMesLbl(a.mes) + ': solo incluye ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + '.';
+  } else {
+    texto = inasistenciaMesLbl(a.mes) + ' no tiene datos por ' + _inasistenciaFiltroActivoTxt(estado) + '.';
+  }
+  return '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+esc(texto)+'</div>';
 }
 
 async function _inasistenciaDibujarPorMes(campana, i, opciones){
@@ -176,42 +203,110 @@ async function _inasistenciaDibujarPorMes(campana, i, opciones){
   var datos = [];
   try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+params.toString()) || []; }catch(e){ showToast(e.message); }
   var agregado = inasistenciaAgregarPorMes(datos);
+  var mesSel = estado.mes;
+  var mesesFormatoViejo = opciones.mesesFormatoViejo || [];
+  var esFormatoViejo = {};
+  mesesFormatoViejo.forEach(function(m){ esFormatoViejo[m] = true; });
 
-  // Tarjeta: % ponderado de TODO el periodo que pasa los filtros (Fase 108
-  // -- ya no el % de un solo mes con variacion vs el anterior, Fase 106).
+  // 2 tarjetas (Fase 109): % ponderado de TODO el periodo filtrado (con la
+  // etiqueta diciendo el RANGO exacto) + % del mes elegido arriba -- nunca
+  // se confunden entre si.
   var wrap = document.getElementById('inasist-tarjetas-wrap-'+i);
   if(wrap){
-    var ponderado = inasistenciaPonderadoTotal(agregado);
-    wrap.innerHTML = agregado.length
-      ? '<div class="aurora-kpis">' + _inasistenciaTarjetaHtml('% de inasistencia (periodo filtrado)', ponderado.pct) + '</div>'
-      : '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin datos con estos filtros.</div>';
+    if(!agregado.length){
+      wrap.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin datos con estos filtros.</div>';
+    } else {
+      var ponderado = inasistenciaPonderadoTotal(agregado);
+      var rangoLbl = inasistenciaRangoLbl(agregado);
+      var delMes = agregado.filter(function(a){ return a.mes === mesSel; })[0];
+      wrap.innerHTML = '<div class="aurora-kpis">' +
+        _inasistenciaTarjetaHtml('% de inasistencia · ' + rangoLbl, ponderado.pct) +
+        _inasistenciaTarjetaHtml('% de inasistencia · ' + (mesSel ? inasistenciaMesLbl(mesSel) : '—'), delMes ? delMes.pct : null) +
+        '</div>';
+    }
   }
 
-  var labels = agregado.map(function(a){ return inasistenciaMesLbl(a.mes); });
-  var mesSel = estado.mes;
-  // CD vs CP (nunca el semaforo -- no hay meta definida para inasistencia):
-  // se distinguen bien en los 2 temas (Fase 106, CD/CM se veian casi
-  // iguales en oscuro).
-  var colorSel = (typeof CD!=='undefined'?CD:'#0d4a5e');
-  var colorResto = (typeof CP!=='undefined'?CP:'#8e44ad');
-  var colores = agregado.map(function(a){ return a.mes === mesSel ? colorSel : colorResto; });
+  _inasistenciaDibujarLineaPorMes('inasist-c-pormes-'+i, agregado, mesSel, esFormatoViejo);
 
-  var o = loPct(null);
-  _gdChart('inasist-c-pormes-'+i, {
-    type: 'bar',
-    data: { labels: labels, datasets: [{ label: '% de inasistencia', data: agregado.map(function(a){ return a.pct; }), backgroundColor: colores, borderRadius: 3 }] },
-    options: o,
-  });
+  var tablaEl = document.getElementById('inasist-tabla-pormes-'+i);
+  if(tablaEl) tablaEl.innerHTML = _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo);
 
   var avisoEl = document.getElementById('inasist-aviso-'+i);
   if(avisoEl){
-    var incompletos = inasistenciaMesesIncompletos(agregado);
-    avisoEl.innerHTML = incompletos.map(function(m){
-      var nombres = m.especialidades.map(textoFormatoNombre).join(', ');
-      return '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+
-        esc(inasistenciaMesLbl(m.mes)+': solo incluye '+nombres+'.')+'</div>';
-    }).join('');
+    var avisos = inasistenciaAvisosPorMes(agregado, opciones.meses || [], mesesFormatoViejo);
+    avisoEl.innerHTML = avisos.map(function(a){ return _inasistenciaAvisoHtml(a, estado); }).join('');
   }
+}
+
+// Grafica de LINEA de "Resumen por mes" (Fase 109, pedido explicito: "como
+// un grafico de linea de Excel"): una sola serie ("% de inasistencia",
+// nunca "Series1" -- Chart.js toma la leyenda del `label` del dataset),
+// etiqueta de valor SIEMPRE visible con 2 decimales y coma
+// (inasistenciaFmtPct -- nunca el formato de 1 decimal de loPct/
+// gdFmtValor), eje Y desde 0% con lineas guia suaves (CHART_GRID, mismo
+// token que el resto de graficas). El mes elegido arriba se resalta
+// (punto mas grande, mismo color CD que ya se usaba para resaltar barras);
+// un mes 100% formato viejo (esFormatoViejo, ver inasistenciaOpciones)
+// se dibuja con el punto HUECO (pointBackgroundColor:'transparent') y el
+// tramo que LLEGA a el punteado (segment.borderDash, Chart.js v4 -- se
+// evalua por el INDICE FINAL de cada segmento, p1DataIndex).
+function _inasistenciaDibujarLineaPorMes(canvasId, agregado, mesSel, esFormatoViejo){
+  var colorSel = (typeof CD!=='undefined'?CD:'#0d4a5e');
+  var colorLinea = (typeof CM!=='undefined'?CM:'#1a7a9e');
+  var labels = agregado.map(function(a){ return inasistenciaMesLbl(a.mes); });
+  var valores = agregado.map(function(a){ return a.pct; });
+
+  var o = lo(null);
+  o.plugins.legend.display = true;
+  o.plugins.datalabels.formatter = function(v){ return v===null||v===undefined?'':inasistenciaFmtPct(v); };
+  o.scales.y.min = 0;
+  o.scales.y.ticks.callback = function(v){ return gdFmtValor(v,'%'); };
+
+  _gdChart(canvasId, {
+    type: 'line',
+    data: { labels: labels, datasets: [{
+      label: '% de inasistencia',
+      data: valores,
+      borderColor: colorLinea,
+      backgroundColor: colorLinea,
+      borderWidth: 2.5,
+      tension: 0, // recto, como un grafico de linea de Excel (nunca curvado)
+      fill: false,
+      pointRadius: agregado.map(function(a){ return a.mes===mesSel ? 7 : 4; }),
+      pointHoverRadius: agregado.map(function(a){ return a.mes===mesSel ? 9 : 6; }),
+      pointBackgroundColor: agregado.map(function(a){ return esFormatoViejo[a.mes] ? 'transparent' : (a.mes===mesSel ? colorSel : colorLinea); }),
+      pointBorderColor: agregado.map(function(a){ return a.mes===mesSel ? colorSel : colorLinea; }),
+      pointBorderWidth: agregado.map(function(a){ return esFormatoViejo[a.mes] ? 2 : 1; }),
+      segment: {
+        borderDash: function(ctx){
+          var mesFin = agregado[ctx.p1DataIndex] ? agregado[ctx.p1DataIndex].mes : null;
+          return (mesFin && esFormatoViejo[mesFin]) ? [6,4] : undefined;
+        },
+      },
+    }] },
+    options: o,
+  });
+}
+
+// Tabla de datos debajo de la grafica (Fase 109, pedido explicito: "como
+// la 'tabla de datos' de Excel"): mes y valor alineados bajo cada punto,
+// con su PROPIO scroll horizontal (overflow-x:auto) para que en movil
+// nunca sea la pagina completa la que se desplace. El mes elegido arriba
+// queda en negrita (misma columna que el punto resaltado); un mes de
+// formato viejo lleva un asterisco en el encabezado que remite al aviso
+// de abajo (_inasistenciaAvisoHtml, tipo 'parcial').
+function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
+  if(!agregado.length) return '';
+  function celda(tag, txt, mes){
+    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+  }
+  var encabezados = agregado.map(function(a){ return celda('th', inasistenciaMesLbl(a.mes) + (esFormatoViejo[a.mes]?' *':''), a.mes); }).join('');
+  var filaPct = agregado.map(function(a){ return celda('td', inasistenciaFmtPct(a.pct), a.mes); }).join('');
+  var filaTotal = agregado.map(function(a){ return celda('td', gdFmtValor(a.total), a.mes); }).join('');
+  return '<div style="overflow-x:auto;margin-top:10px">' +
+    '<table class="aurora-rank-table"><thead><tr><th></th>'+encabezados+'</tr></thead>'+
+    '<tbody><tr><td>% de inasistencia</td>'+filaPct+'</tr>'+
+    '<tr><td>Total de citas</td>'+filaTotal+'</tr></tbody></table></div>';
 }
 
 // "Por especialidad": una barra por especialidad del MES elegido arriba

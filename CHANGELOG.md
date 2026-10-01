@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.8.0 — Octubre 2026
+
+En Inasistencia, la sub-pestaña "Resumen por mes" cambia de barras a una
+**gráfica de línea** (como un gráfico de línea de Excel), con una **tabla
+de datos** debajo que muestra el % de cada mes y el total de citas, igual
+que la tabla que Excel pone debajo de sus propias gráficas. El mes
+elegido arriba se resalta (punto más grande, columna en negrita en la
+tabla); un mes que todavía viene del reporte anterior (sin sede ni
+entidad, como Septiembre 2026 hoy) se marca con un punto hueco, el último
+tramo de la línea punteado y un asterisco en la tabla.
+
+También cambia la tarjeta de arriba: ahora son **2 tarjetas** — una con
+el % de todo el período que dejen pasar los filtros (dice el rango exacto,
+ej. "Ene-26 a Sep-26", para que nadie la confunda con el mes elegido
+arriba) y otra con el % solo del mes elegido arriba. Antes había una sola
+tarjeta que podía confundirse con "el % de agosto" sin serlo.
+
+Se confirmó que, cuando llegue el archivo de Septiembre en el formato
+nuevo (una fila por cita), subirlo reemplaza completo lo que hoy hay de
+Septiembre en el formato anterior — no queda ninguna mezcla de los dos
+formatos en el mismo mes.
+
 ## v1.7.0 — Octubre 2026
 
 Cambio de fondo en Inasistencia: el archivo que sube Edwin ya no es un

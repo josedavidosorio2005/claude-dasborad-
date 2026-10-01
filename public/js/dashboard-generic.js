@@ -1537,8 +1537,12 @@ async function _gdExportarInasistencia(p, i){
   try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?'+paramsMes.toString()) || []; }catch(e){}
   var agregado = inasistenciaAgregarPorMes(datosPorMes);
   if(!agregado.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
+  // Fase 109: "Exportar trae los mismos valores de la tabla" -- la tabla de
+  // datos debajo de la grafica de linea trae Mes/% de inasistencia/Total de
+  // citas (ver _inasistenciaTablaHtml, inasistencia.js), mismas 3 columnas
+  // aqui, mismo orden.
   return [{ titulo: titulo, tipo: 'tabla', filas: agregado.map(function(a){
-    return { Mes: inasistenciaMesLbl(a.mes), '% de inasistencia': a.pct===null?'':a.pct };
+    return { Mes: inasistenciaMesLbl(a.mes), '% de inasistencia': a.pct===null?'':a.pct, 'Total de citas': a.total };
   }) }];
 }
 
