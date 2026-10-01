@@ -9417,13 +9417,45 @@ inasistencia PONDERADO por mes, todas las especialidades juntas.
 
 ### Verificación final en producción (solo lectura, con la sesión real del usuario)
 
-_Pendiente al momento de escribir esta entrada — se completa abajo en
-cuanto corra `verificar-fase104-revision-final-produccion.js` con sesión
-real._
+Corrida el 2026-10-01 con `.github/scripts/verificar-fase104-revision-final-produccion.js`
+(actualizado en esta fase), sesión real del usuario ("INICIA SESIÓN
+AHORA", login detectado en ~27s). **0 errores de consola, 0 peticiones
+fallidas** en todo el recorrido. Inasistencia, específicamente, pasó
+limpio: sin botones de sub-pestañas, sin conteos sueltos en pantalla,
+exporta 1 sola hoja ("Inasistencia por Mes"), y el % visible de la
+tarjeta coincidió EXACTO con el número de control:
+
+| Métrica | Esperado | Obtenido |
+|---|---|---|
+| Inasistencia Ago-26 (% visible en la tarjeta) | 5,63 % | 5,63 % |
+| Inasistencia Ago-26 (API: total/%) | 5.893, 5,63 % | 5.893, 5,63 % |
+| Inasistencia Sep-26 Exámenes Especiales (API) | 6,47 % | 6,47 % |
+| Exportar Inasistencia (hojas) | 1 ("Inasistencia por Mes") | 1 |
+| Tipificación (total) | 14.940 | 14.940 |
+| Tráfico de Llamadas (total/contestadas/pendientes) | 8.061/7.159/902 | 8.061/7.159/902 |
+| Tráfico de WhatsApp (total/contestados/pendientes), SL20 | 7.305/7.109/196, 34,67 % | 7.305/7.109/196, 34,67 % |
+| Agendas (total, General/3P), AUDÍFONOS | 7.426 (4.643/2.783), 2.141 | 7.426 (4.643/2.783), 2.141 |
+
+**Hallazgo real, NO relacionado con esta fase (Inasistencia no se tocó en
+ninguno de los dos):** la sub-pestaña "Ranking de asesores" de
+Agendamiento (Fase 104) no montó su tabla en el DOM durante este
+recorrido, y su hoja de export salió con "Total" = 0 (se esperaba 7.426)
+— ambos relacionados con el filtro propio de Mes de esa sub-pestaña
+(abril 2025, el único mes con datos reales de Agendas). Esta fase no
+tocó `agendas.js`, el endpoint de ranking, ni la lógica de sub-pestañas
+genérica (`dashboard-generic.js`) salvo la función de export de
+Inasistencia — no hay cambio de código de esta fase que explique esta
+falla. Puede ser una regresión real entre la verificación de la Fase 104
+(que sí confirmó el ranking funcionando) y hoy, o un timing/flake de este
+recorrido puntual (corrió ~2 minutos después del deploy). **Queda
+pendiente de investigar en una fase propia** — no se intentó diagnosticar
+ni arreglar aquí por estar fuera del alcance pedido para Fase 106 (InCo
+solo pidió el cambio de Inasistencia).
 
 ### Estado final de la Fase 106
 
 Un solo PR (interfaz + migración + pruebas + script de verificación local
 nuevo + script de producción actualizado + docs + capturas +
 `CHANGELOG.md`), CI verde. Versión final: `1.6.0` (menor, cambio visible),
-tag `v1.6.0` al cerrar esta fase.
+tag `v1.6.0`, deploy confirmado (`/api/health` → `version: "1.6.0"`) y
+verificación final en producción corrida el mismo día.
