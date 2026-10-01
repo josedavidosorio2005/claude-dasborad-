@@ -8971,3 +8971,83 @@ el permiso, ahora correctamente restringido para `ADMIN`/`AUX_ADMIN`.
 Versión final: `1.3.2`, tag `v1.3.2` pendiente de crear al mergear este
 cierre. El resto de los PRs ya está mergeado a `main`, CI verde, deploy
 automático confirmado, `/api/health` en 200 con la versión nueva.
+
+## Fase 103 — dashboards de cliente a pantalla completa (2026-10-01)
+
+Pedido de InCo: los dashboards de cliente se ven a pantalla completa, para
+visualizar mejor las gráficas. Antes `#gd-modal` compartía una sola regla
+CSS con otros 5 modales (Calidad, Cargas, constructor de dashboards,
+detalle de monitoreo, supervisar líder) — `width:96vw;max-width:1180px;
+max-height:93vh;border-radius:18px` (ventana flotante centrada), dejando
+espacio vacío a los lados en pantallas grandes.
+
+### Qué cambió
+
+- `#gd-modal` salió de esa regla compartida a una propia: `width:100vw;
+  height:100dvh;max-width:none;max-height:none;border-radius:0;
+  box-shadow:none` (`dvh`, no `vh`, para que en móvil no quede un recorte
+  por la barra de direcciones). Los otros 5 modales de la lista se quedan
+  **exactamente igual** (confirmado con capturas antes/después de Calidad
+  y Cargar Datos, y con una prueba automática que lo verifica).
+- `#gd-modal .aurora-header` (título, MES, Exportar, Cerrar) queda
+  `position:sticky;top:0` dentro del propio scroll del modal, así sigue a
+  la vista sin tener que subir el scroll. Ningún contenedor interno
+  (`.aurora-grid-2/3`, `#gd-panels`, tarjetas de KPI) tenía un `max-width`
+  que limitara el ancho — las gráficas ya aprovechan todo el espacio
+  nuevo sin tocar nada más.
+- Botón opcional "Pantalla completa del navegador" (⛶ / 🗗) en la
+  cabecera: Fullscreen API sobre `document.documentElement` (toda la
+  página). Se oculta solo si el navegador no soporta la API.
+- **Hallazgo real durante la verificación** (encontrado con Playwright, no
+  en el pedido original): el primer intento fullscreenaba solo
+  `#gd-overlay` en vez de toda la página — el menú de "Exportar"
+  (`#gd-export-menu`, agregado como hijo de `<body>` desde la Fase 85)
+  queda fuera del subárbol del elemento en fullscreen, y el navegador deja
+  de pintarlo en la "top layer" de fullscreen: el clic en "Excel (.xlsx)"
+  lo recibía la cabecera en su lugar. Se corrigió fullscreenando
+  `document.documentElement` completo, que no tiene ese problema.
+- **Segundo hallazgo real** (también con datos de demo): el banner "DATOS
+  DE DEMOSTRACIÓN" (`position:sticky;z-index:4000`, solo visible con
+  `seed:demo`) tapaba la parte de arriba de la cabecera del dashboard,
+  porque esta ahora arranca en el y=0 real del viewport (antes, siendo una
+  ventana flotante más chica y centrada, nunca llegaba hasta ahí). Mismo
+  ajuste que ya existía para `.navbar` (`renderSeedDemoBanner`, Fase 97) —
+  nunca pasa en producción real (ahí `seedDemoActivo` siempre es `false`).
+
+### Verificación
+
+- 6 pruebas nuevas (`fase103-gd-modal-pantalla-completa.test.js`):
+  confirmado que fallan contra el CSS/JS viejo y pasan con el nuevo.
+  `npm test`: 773/773. `npm audit`: 0 vulnerabilidades (antes y después).
+- Recorrido amplio con Playwright en local (`seed:demo`,
+  `.github/scripts/verificar-fase103-pantalla-completa-local.js`): los 3
+  clientes con dashboard sembrado (ORLANT, CLÍNICA AURORA, HOSPITAL LA
+  MARÍA) en 1366×768 / 1920×1080 / 2560×1440 / móvil 412px, claro y
+  oscuro — confirma que `#gd-modal` cubre el viewport exacto (ancho, alto,
+  sin esquinas redondeadas) en las 24 combinaciones, sin scroll
+  horizontal ni texto sospechoso. Botón de pantalla completa: entra,
+  Exportar y el selector de MES siguen funcionando adentro (confirmado
+  con una descarga real), sale con el botón y reacciona igual que si
+  saliera por Esc (simulado con `document.exitFullscreen()` — Esc en sí
+  no se puede simular vía CDP de Playwright, lo intercepta el navegador
+  antes de que le llegue a la página). **0 hallazgos.** Capturas (datos de
+  demo, nunca reales) en `docs/capturas-demo/fase103-pantalla-completa/`
+  — 20 archivos: ORLANT en las 4 resoluciones x 2 temas + sus 4 pestañas
+  en 1920/claro, los otros 2 clientes en 1920/móvil claro, y antes/después
+  de Calidad y Cargar Datos.
+- Números de control de ORLANT, sin cambios (confirmado en los datos de
+  demo durante el recorrido — la verificación final en producción, más
+  abajo, los confirma contra los datos reales).
+
+### Verificación final en producción (solo lectura, con la sesión real del usuario)
+
+Pendiente: se corre `.github/scripts/verificar-fase103-revision-final-produccion.js`
+(mismo criterio que la Fase 102, mas la confirmacion de que `#gd-modal`
+cubre el viewport exacto) contra la version ya desplegada de esta fase, y
+se completa esta seccion con el resultado antes de cerrar la fase.
+
+### Estado final de la Fase 103
+
+Un solo PR (CSS/HTML/JS + 6 pruebas nuevas + script de QA local + capturas
++ `CHANGELOG.md` + este cierre), CI verde. Versión final: `1.4.0`, tag
+`v1.4.0` creado al cerrar esta fase.
