@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.6.0 — Octubre 2026
+
+La pestaña Inasistencia ahora muestra solo el porcentaje de inasistencia
+por mes. Antes tenía 3 sub-pestañas ("Por mes", "Por especialidad",
+"Detalle") con conteos (total de citas, atendidas, canceladas,
+inasistencias, pendientes); ahora es una sola vista limpia, con una
+tarjeta y una gráfica, las dos con el mismo % ponderado de siempre (nunca
+el promedio simple). El selector de Mes de arriba sigue funcionando igual
+(resalta el mes elegido en la gráfica) y Exportar a Excel trae el mismo %
+que se ve en pantalla. Nada se borró de la base de datos ni de la carga
+del archivo — solo cambió qué se muestra en pantalla.
+
 ## v1.5.1 — Octubre 2026
 
 Arreglo: el dashboard de cliente a pantalla completa (desde la v1.4.0)

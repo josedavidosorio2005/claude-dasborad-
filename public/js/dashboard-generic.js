@@ -1494,51 +1494,23 @@ async function _gdExportarTipificacion(p, i){
 
 // Inasistencia (Fase 98, pedido URGENTE de Edwin; Fase 101: 3 sub-pestañas
 // reordenadas y con contenido distinto -- Por mes / Por especialidad /
-// Detalle), cada una su propio panel `inasistencia_panel` --
-// _gdDatosPanelesTab llama esta funcion UNA VEZ POR PANEL (las 3, sin
-// importar cual este activa en pantalla), asi el export siempre trae las 3,
-// con los filtros ya aplicados (estado compartido por campana,
-// _inasistenciaEstado -- mismo criterio que _agendasEstado).
+// Detalle; Fase 106, pedido de InCo "que en Inasistencia solo quede en
+// porcentaje, por mes": un solo panel `inasistencia_panel` (vista:'pormes')
+// -- exporta lo que se ve: una hoja con Mes y % de inasistencia (el mismo
+// agregado ponderado, todas las especialidades juntas, que dibuja la
+// grafica). Las ramas de "Por especialidad"/"Detalle" se borraron junto con
+// su vista (ver public/js/inasistencia.js) -- siguen en el historial de git
+// (PR de la Fase 106) si Edwin pide alguna de vuelta.
 async function _gdExportarInasistencia(p, i){
   var campana = p.campana;
-  var vista = p.vista || 'pormes';
   var titulo = p.titulo || 'Inasistencia';
-  var estado = _inasistenciaEstado[campana] || {};
 
-  // "Por mes": el mismo agregado (todas las especialidades juntas, %
-  // ponderado) que dibuja la grafica "Citas vs. inasistencias por mes".
-  if(vista === 'pormes'){
-    var datosPorMes = [];
-    try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
-    var agregado = inasistenciaAgregarPorMes(datosPorMes);
-    if(!agregado.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
-    return [{ titulo: titulo, tipo: 'tabla', filas: agregado.map(function(a){
-      return { Mes: inasistenciaMesLbl(a.mes), 'Total de citas': a.total, 'Inasistencias (incluye pendientes)': a.inasistenciaPendiente, '% de inasistencia': a.pct===null?'':a.pct };
-    }) }];
-  }
-
-  // "Por especialidad": la tendencia por (mes, especialidad) que dibuja su
-  // linea de abajo -- respeta el mismo filtro de especialidad/rango.
-  if(vista === 'porespecialidad'){
-    var qsMes = 'campana='+encodeURIComponent(campana)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'')+(estado.desde?('&desde='+estado.desde):'')+(estado.hasta?('&hasta='+estado.hasta):'');
-    var datosMes = [];
-    try{ datosMes = await apiRequest('GET', '/calidad/inasistencia/mensual?'+qsMes) || []; }catch(e){}
-    if(!datosMes.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para los filtros actuales.' }];
-    return [{ titulo: titulo, tipo: 'tabla', filas: datosMes.map(function(r){
-      var pct = inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total);
-      return { Mes: inasistenciaMesLbl(r.mes), Especialidad: textoFormatoNombre(r.especialidad), Total: r.total, '% Inasistencia': pct===null?'':pct };
-    }) }];
-  }
-
-  // "detalle": desglose crudo del mes global elegido arriba + especialidad.
-  if(!estado.mes) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para el mes actual.' }];
-  var qsEsp = 'campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(estado.mes)+(estado.especialidad?('&especialidad='+encodeURIComponent(estado.especialidad)):'');
-  var datosEsp = [];
-  try{ datosEsp = await apiRequest('GET', '/calidad/inasistencia/especialidad?'+qsEsp) || []; }catch(e){}
-  if(!datosEsp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para el mes/filtros actuales.' }];
-  return [{ titulo: titulo, tipo: 'tabla', filas: datosEsp.map(function(r){
-    var pct = inasistenciaPctPonderado(r.inasistencia, r.pendiente, r.total);
-    return { Mes: inasistenciaMesLbl(estado.mes), Especialidad: textoFormatoNombre(r.especialidad), Canceladas: r.cancelada, Inasistencia: r.inasistencia, Pendientes: r.pendiente, Atendidas: r.atendidas, Total: r.total, '% Inasistencia': pct===null?'':pct };
+  var datosPorMes = [];
+  try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  var agregado = inasistenciaAgregarPorMes(datosPorMes);
+  if(!agregado.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
+  return [{ titulo: titulo, tipo: 'tabla', filas: agregado.map(function(a){
+    return { Mes: inasistenciaMesLbl(a.mes), '% de inasistencia': a.pct===null?'':a.pct };
   }) }];
 }
 

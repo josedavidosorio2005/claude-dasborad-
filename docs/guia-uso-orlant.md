@@ -56,7 +56,7 @@ del todo vas a ver:
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
 | **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos). |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente. |
-| **Inasistencia** | Cuántas citas no se presentaron. Abre en **"Por mes"** (el total de todas las especialidades juntas) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
+| **Inasistencia** | El % de inasistencia, por mes (el total de todas las especialidades juntas) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Tipificación** | Cómo se clasificó cada llamada/chat (motivo de contacto). |
 | **Calidad** | Monitoreo de calidad de los asesores, con su nota y resultados. |
 
@@ -115,7 +115,7 @@ combinar varias especialidades, el % se calcula sobre la SUMA de todas
 (nunca promediando los % de cada especialidad por separado — eso daría
 un número distinto y menos correcto).
 
-![Inasistencia, sub-pestaña "Por mes" (datos de demostración)](img/guia-uso/03-inasistencia-por-mes.png)
+![Inasistencia: % de inasistencia por mes (datos de demostración)](img/guia-uso/03-inasistencia-por-mes.png)
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional.

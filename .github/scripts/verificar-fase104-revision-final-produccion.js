@@ -15,6 +15,15 @@
 // perder cobertura de regresion de las 2 fases anteriores en el mismo
 // recorrido (la verificacion final en produccion de la Fase 103 seguia
 // pendiente al cerrar esta fase -- ver PROGRESS.md).
+//
+// Actualizado en la Fase 106 (InCo, "que en Inasistencia solo quede en
+// porcentaje, por mes"): Inasistencia ya no trae `subtabs` (el `for` de
+// sub-pestañas se saltaria su captura sin el caso especial agregado) y se
+// suma una verificacion propia: sin boton de sub-pestañas, sin conteos
+// sueltos (Total/Atendidas/Canceladas/Pendientes) en pantalla, con el % de
+// la tarjeta visible. Los numeros de control de Inasistencia (Ago-26
+// 5.893/5,63 %, Sep-26 Examenes Especiales 6,47 %) siguen viniendo del
+// endpoint -- el backend no cambio en esta fase.
 'use strict';
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -219,6 +228,14 @@ async function esperarLogin(page) {
               const t = _gd.config.layout.tabs.find((x) => x.key === k);
               return (t && t.subtabs) ? t.subtabs.map((s) => s.key) : [];
             }, tab);
+            // Fase 106: Inasistencia se queda sin `subtabs` (array vacio) --
+            // sin este caso especial, el `for` de abajo no toma NINGUNA
+            // captura para esta combinacion exacta de pestaña/viewport/tema
+            // (ni esta rama ni el `else`, que solo corre para las demas
+            // combinaciones de viewport/tema).
+            if (!subtabs.length) {
+              await shot(page, `${tab}-${vp.name}-${tema}.png`);
+            }
             for (const sub of subtabs) {
               await page.evaluate((k) => switchGenericSubtab(k), sub);
               await page.waitForTimeout(1200);
@@ -248,6 +265,26 @@ async function esperarLogin(page) {
                 if (!infoTabla) hallazgo('ALTO', 'Ranking de asesores: la tabla no esta montada en el DOM');
                 else log('Ranking de asesores (DOM): filas=', infoTabla.nFilas, 'ultima fila=', infoTabla.ultima.replace(/\n/g, ' | '));
               }
+            }
+            // Fase 106 (pedido de InCo, "que en Inasistencia solo quede en
+            // porcentaje, por mes"): confirma que ya no hay boton de
+            // sub-pestañas ni conteos sueltos (Total de citas/Atendidas/
+            // Canceladas/Pendientes) en pantalla -- el mes global ya esta en
+            // 2026-08 en este punto del recorrido (ver _gdIrAMes arriba), asi
+            // que el % visible deberia leer 5,63 %.
+            if (tab === 'inasistencia') {
+              const infoInasist = await page.evaluate(() => {
+                const panel = document.getElementById('gd-panels');
+                const texto = panel ? panel.innerText : '';
+                return {
+                  tieneSubtabsBtn: !!(panel && panel.querySelector('.gd-subtabs')),
+                  tieneConteos: /Total de citas|Atendidas|Canceladas|Pendientes/i.test(texto),
+                  tarjetaPct: (texto.match(/([\d.,]+)\s?%/) || [])[1] || null,
+                };
+              });
+              if (infoInasist.tieneSubtabsBtn) hallazgo('ALTO', 'Inasistencia todavia muestra botones de sub-pestañas (Fase 106 las retiro)');
+              if (infoInasist.tieneConteos) hallazgo('ALTO', 'Inasistencia todavia muestra conteos sueltos (Total/Atendidas/Canceladas/Pendientes) en pantalla');
+              log('Inasistencia (DOM): % visible de la tarjeta =', infoInasist.tarjetaPct);
             }
           } else {
             await shot(page, `${tab}-${vp.name}-${tema}.png`);
