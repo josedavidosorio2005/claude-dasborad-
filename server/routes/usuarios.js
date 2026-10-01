@@ -111,6 +111,16 @@ router.put(
         return res.status(403).json({ error: 'Solo un administrador completo puede asignar el rol ADMIN o AUX_ADMIN' });
       }
     }
+    // Fase 102 (seguridad, hallazgo real): mismo principio que el bloqueo de
+    // rol de arriba, pero para `perms` -- sin esto, cualquier actor con el
+    // permiso puntual `editarUsuarios` podia editarse A SI MISMO sin tocar
+    // `rol` y otorgarse cualquier otro permiso (crearUsuarios, cambiarPassword,
+    // suspenderUsuarios, eliminarUsuarios, gestionPermisos, acceso a
+    // cualquier campana_X/cliente_X), un camino de escalada identico en
+    // efecto practico a volverse ADMIN, sin pasar nunca por `puedeAsignarRol`.
+    if (perms !== undefined && req.actor.id != null && req.actor.id === id) {
+      return res.status(403).json({ error: 'No puedes cambiar tus propios permisos' });
+    }
 
     const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
     const effectiveRol = rol ?? row.rol;
@@ -142,6 +152,14 @@ router.put(
     const id = req.params.id;
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Fase 102 (seguridad, hallazgo real): mismo limite que ya existia para
+    // crear/editar (puedeAsignarRol) -- sin esto, cualquier actor con SOLO el
+    // permiso puntual `cambiarPassword` (asignable a cualquier rol) podia
+    // resetear la contrasena de un ADMIN/AUX_ADMIN existente e iniciar sesion
+    // como esa cuenta, sin pasar nunca por el chequeo de rol.
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede cambiar la contrasena de un usuario ADMIN o AUX_ADMIN' });
+    }
     const hash = await bcrypt.hash(req.body.password, 10);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
     logEvent('PASSWORD', row, actorLabel(req.actor), 'Contrasena cambiada');
@@ -175,6 +193,13 @@ router.put(
     const id = req.params.id;
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Fase 102 (seguridad, hallazgo real): mismo bloqueo de auto-edicion que
+    // PUT /users/:id -- sin esto, cualquier actor con el permiso puntual
+    // `gestionPermisos` (asignable a cualquier rol) podia otorgarse A SI
+    // MISMO cualquier otro permiso de la plataforma.
+    if (req.actor.id != null && req.actor.id === id) {
+      return res.status(403).json({ error: 'No puedes cambiar tus propios permisos' });
+    }
     db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(req.body.perms), id);
     logEvent('PERMISOS', row, actorLabel(req.actor), 'Permisos actualizados');
     res.json({ ok: true });
