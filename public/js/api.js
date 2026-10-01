@@ -71,3 +71,28 @@ async function renderAppVersion(){
   document.querySelectorAll('.navbar-app-version').forEach(function(el){ el.textContent = _appVersion; });
 }
 document.addEventListener('DOMContentLoaded', renderAppVersion);
+
+// Fase 102 (seguridad): la guia de uso ya NO es un archivo estatico publico
+// (antes cualquiera con la URL la veia sin iniciar sesion -- nombre del
+// cliente y estructura de carga de cada base, ver server/routes/guia.js).
+// Ahora se pide con el token de la sesion (igual que cualquier otro dato) y
+// se abre en una pestaña nueva. La pestaña se abre ANTES del await (sincrono
+// dentro del click) para que el bloqueador de ventanas emergentes no la
+// frene -- si se abriera despues del await, la mayoria de navegadores la
+// tratarian como un popup no solicitado por el usuario.
+async function abrirGuiaUso(){
+  var ventana = window.open('', '_blank');
+  try{
+    var res = await fetch(API_BASE + '/guia-uso', { headers: apiHeaders() });
+    if(!res.ok) throw new Error(friendlyHttpError(res.status));
+    var html = await res.text();
+    if(ventana){
+      ventana.document.open();
+      ventana.document.write(html);
+      ventana.document.close();
+    }
+  }catch(e){
+    if(ventana) ventana.close();
+    showToast('No se pudo abrir la guia de uso: ' + e.message);
+  }
+}

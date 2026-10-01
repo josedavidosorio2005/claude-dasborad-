@@ -1,6 +1,6 @@
 // generar-capturas-guia-uso.js — Fase 100 (Tema B, guía de uso). Genera las
 // capturas de pantalla que ilustran `docs/guia-uso-orlant.md` y
-// `public/guia-uso.html`, SIEMPRE con datos de demo (`npm run seed:demo`,
+// `docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`, SIEMPRE con datos de demo (`npm run seed:demo`,
 // http://localhost:3000) -- nunca datos reales de clientes. Se guardan en
 // `docs/img/guia-uso/` (repo) y se copian a `public/img/guia/` (servidas
 // por la app dentro de la guía web).
