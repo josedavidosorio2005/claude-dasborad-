@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.5.1 — Octubre 2026
+
+Arreglo: el dashboard de cliente a pantalla completa (desde la v1.4.0)
+quedaba unos pixeles más angosto que la pantalla real en algunos
+navegadores — se notaba como un margen vacío muy delgado del lado
+derecho. Corregido: ahora cubre el ancho exacto de la pantalla siempre.
+
 ## v1.5.0 — Octubre 2026
 
 Nuevo ranking de agendamiento por asesor. Dentro de Agendamiento (ORLANT),

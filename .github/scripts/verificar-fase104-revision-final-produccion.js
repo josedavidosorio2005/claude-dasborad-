@@ -224,8 +224,21 @@ async function esperarLogin(page) {
               await page.waitForTimeout(1200);
               await shot(page, `${tab}-${sub}-${vp.name}-${tema}.png`);
               // Fase 104: confirma visualmente la tabla de ranking (filas
-              // reales, "Sin asesor" si aplica) ademas de la captura.
+              // reales, "Sin asesor" si aplica) ademas de la captura. Los
+              // unicos datos reales de AGENDAS son de abril de 2025 (el mes
+              // global del recorrido, 2026-08, no tiene ninguna agenda
+              // cargada todavia -- "Agendas de 2026" sigue pendiente, ver
+              // v1.0.0 en CHANGELOG.md) -- el filtro de Mes PROPIO de
+              // Agendamiento (independiente del selector global) se mueve a
+              // 2025-04 antes de revisar la tabla, igual que haria un
+              // usuario real buscando ese dato.
               if (sub === 'rankingasesores') {
+                await page.evaluate(() => {
+                  const sel = document.querySelector('select[id^="agendas-f-mes-"]');
+                  if (sel) { sel.value = '2025-04'; }
+                });
+                await page.locator('button[onclick*="_agendasAplicarFiltros"]').first().click().catch(() => {});
+                await page.waitForTimeout(900);
                 const infoTabla = await page.evaluate(() => {
                   const tabla = document.querySelector('table[id^="agendas-ranking-tabla-"]');
                   if (!tabla) return null;
@@ -255,6 +268,22 @@ async function esperarLogin(page) {
     for (const tab of TABS) {
       await page.evaluate((k) => switchGenericTab(k), tab);
       await page.waitForTimeout(1500);
+      // Fase 104: Agendamiento tiene su PROPIO filtro de Mes (independiente
+      // del selector global, 2026-08 -- sin agendas cargadas todavia, ver
+      // comentario de mas arriba) -- se mueve a abril de 2025 (el unico mes
+      // con datos reales) antes de exportar, para que la hoja de ranking
+      // (y las otras 3 sub-pestañas de Agendamiento) traiga datos reales en
+      // vez de la hoja de "aviso: sin datos".
+      if (tab === 'agendamiento') {
+        await page.evaluate(() => { if (typeof switchGenericSubtab === 'function') switchGenericSubtab('rankingasesores'); });
+        await page.waitForTimeout(800);
+        await page.evaluate(() => {
+          const sel = document.querySelector('select[id^="agendas-f-mes-"]');
+          if (sel) sel.value = '2025-04';
+        });
+        await page.locator('button[onclick*="_agendasAplicarFiltros"]').first().click().catch(() => {});
+        await page.waitForTimeout(900);
+      }
       try {
         const [descarga] = await Promise.all([
           page.waitForEvent('download', { timeout: 15000 }),

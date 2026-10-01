@@ -535,7 +535,26 @@ function _gdChart(canvasId, cfg){
 }
 
 // ── Apertura ────────────────────────────────────────────────
+// Fase 105 (hallazgo real de la verificacion final en produccion de la
+// Fase 104, con un Chrome real -- en headless nunca aparecio): mientras
+// #gd-modal esta abierto, la pagina de FONDO (detras del overlay, nunca
+// visible) seguia pudiendo tener su propia barra de scroll vertical si su
+// contenido era mas alto que el viewport. Un Chrome real reserva el ancho
+// de esa barra al calcular `100vw`/`100%` del arbol completo -- el modal
+// (ahora a pantalla completa, Fase 103) quedaba sistematicamente ~15px
+// mas angosto que el viewport real, en toda resolucion/tema. Bloquear el
+// scroll de `html`/`body` mientras el modal esta abierto (estandar para
+// cualquier modal a pantalla completa: nada detras deberia poder
+// scrollear de todos modos) elimina esa barra de raiz -- el modal usa su
+// PROPIO scroll interno (`#gd-modal{overflow-y:auto}`), nunca el de la
+// pagina de fondo.
+function _gdBloquearScrollFondo(bloquear){
+  document.documentElement.style.overflow = bloquear ? 'hidden' : '';
+  document.body.style.overflow = bloquear ? 'hidden' : '';
+}
+
 async function openGenericDashboard(cliente){
+  _gdBloquearScrollFondo(true);
   document.getElementById('gd-overlay').classList.add('show');
   document.getElementById('gd-title').textContent = 'Cargando…';
   document.getElementById('gd-kpis').innerHTML = '';
@@ -557,6 +576,7 @@ async function openGenericDashboard(cliente){
 // Previsualizacion desde el constructor: usa una config en memoria (sin guardar)
 // y, si el cliente ya existe, sus cargas reales; si no, se ve la estructura vacia.
 async function openGenericDashboardPreview(config){
+  _gdBloquearScrollFondo(true);
   document.getElementById('gd-overlay').classList.add('show');
   document.getElementById('gd-kpis').innerHTML = '';
   document.getElementById('gd-tabs').innerHTML = '';
@@ -721,6 +741,7 @@ function closeGenericDashboard(){
   if(document.fullscreenElement) document.exitFullscreen();
   document.getElementById('gd-overlay').classList.remove('show');
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
+  _gdBloquearScrollFondo(false);
 }
 document.getElementById('gd-overlay').addEventListener('click',function(e){ if(e.target===this) closeGenericDashboard(); });
 

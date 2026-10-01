@@ -9041,10 +9041,18 @@ espacio vacío a los lados en pantallas grandes.
 
 ### Verificación final en producción (solo lectura, con la sesión real del usuario)
 
-Pendiente: se corre `.github/scripts/verificar-fase103-revision-final-produccion.js`
-(mismo criterio que la Fase 102, mas la confirmacion de que `#gd-modal`
-cubre el viewport exacto) contra la version ya desplegada de esta fase, y
-se completa esta seccion con el resultado antes de cerrar la fase.
+Corrida el 2026-10-01 (en conjunto con el cierre de la Fase 104, vía
+`.github/scripts/verificar-fase104-revision-final-produccion.js`, que
+reusa exactamente el mismo recorrido de este script más lo propio del
+ranking de asesores — ver Fase 104 abajo): login ok, 0 errores de consola
+y 0 peticiones fallidas en todo el recorrido. Números de control de
+ORLANT, todos exactos (ver detalle en la sección de la Fase 104).
+
+**Hallazgo real: `#gd-modal` NO cubría el viewport exacto** en las 6
+combinaciones de tamaño/tema probadas (~15px más angosto que el ancho
+real) — nunca se había detectado porque los recorridos anteriores corrían
+en Chromium headless, donde el problema no aparece. Causa raíz y
+corrección: ver **Fase 105** (abajo), cerrada el mismo día.
 
 ### Estado final de la Fase 103
 
@@ -9180,18 +9188,105 @@ a nadie.
 
 ### Verificación final en producción (solo lectura, con la sesión real del usuario)
 
-Pendiente: se corre `.github/scripts/verificar-fase104-revision-final-produccion.js`
-(mismo criterio que la Fase 103, mas la confirmación del ranking de
-asesores) contra la versión ya desplegada de esta fase — confirma que la
-sub-pestaña "Ranking de asesores" muestra los datos reales de abril 2025
-de ORLANT, que la suma del ranking da exactamente 7.426, cuántos
-asesores reales tienen variantes de escritura (`variantesConHomonimos`),
-y los demás números de control listados arriba — 0 errores de consola.
-Se completa esta sección con el resultado antes de cerrar la fase (de
-paso, si sigue pendiente, la verificación en vivo de la Fase 103).
+Corrida el 2026-10-01 con `.github/scripts/verificar-fase104-revision-final-produccion.js`,
+sesión real del usuario ("INICIA SESIÓN AHORA", login detectado en ~18s).
+**0 errores de consola, 0 peticiones fallidas** en todo el recorrido (6
+pestañas x 3 tamaños x 2 temas + exports + Calidad + guía de uso). Números
+de control de ORLANT, TODOS exactos:
+
+| Métrica | Esperado | Obtenido |
+|---|---|---|
+| Tipificación (total) | 14.940 | 14.940 |
+| Tráfico de Llamadas (total/contestadas/pendientes) | 8.061 / 7.159 / 902 | 8.061 / 7.159 / 902 |
+| Tráfico de WhatsApp (total/contestados/pendientes), SL20 | 7.305 / 7.109 / 196, 34,67 % | 7.305 / 7.109 / 196, 34,67 % |
+| Agendas (total, General/3P), AUDIFONOS | 7.426 (4.643/2.783), 2.141 | 7.426 (4.643/2.783), 2.141 |
+| Ranking de asesores (total, suma de "%") | 7.426, 100 % | 7.426, 100 % |
+| Inasistencia Ago-26 (total, %) | 5.893, 5,63 % | 5.893, 5,63 % |
+| Inasistencia Sep-26 Exámenes Especiales (%) | 6,47 % | 6,47 % |
+
+**Ranking de asesores en datos reales (abril 2025, ORLANT): 17 asesores
+distintos, 0 con variantes de escritura** (`variantesConHomonimos: 0`) —
+a diferencia de los datos sintéticos usados en la verificación local
+(donde se forzó un caso a propósito para probar la lógica), en la carga
+real de ORLANT cada asesor ya está escrito de forma consistente en el
+archivo de origen. Queda confirmado que la lógica de homónimos (Fase 104)
+está lista para el día en que aparezca un caso real, pero hoy no hace
+falta fundir ninguno.
+
+**Hallazgo real (no relacionado con el ranking de asesores en sí):**
+`#gd-modal` (el dashboard de cliente a pantalla completa, Fase 103) NO
+cubría el viewport exacto — quedaba ~15px más angosto en las 6
+combinaciones de tamaño/tema, nunca visto antes porque los recorridos
+anteriores corrían en Chromium headless. Diagnosticado y corregido el
+mismo día — ver **Fase 105** (abajo).
 
 ### Estado final de la Fase 104
 
 Un solo PR (servidor + migración + interfaz + pruebas + script de QA
 local + capturas + `CHANGELOG.md`), CI verde. Versión final: `1.5.0`, tag
 `v1.5.0` al cerrar esta fase.
+
+## Fase 105 — #gd-modal no cubría el viewport exacto (2026-10-01)
+
+Hallazgo real, no pedido, encontrado durante la verificación final en
+producción de la Fase 104 (primera vez que esa verificación corría contra
+un Chrome real, no headless, desde que `#gd-modal` pasó a pantalla
+completa en la Fase 103): en las 6 combinaciones de tamaño/tema probadas,
+`#gd-modal` medía sistemáticamente ~15px menos de ancho que el viewport
+real (ej. 1424,67px en vez de 1440px) — se notaba como un margen vacío
+muy delgado del lado derecho.
+
+### Causa raíz
+
+`#gd-modal{width:100vw;...}` (Fase 103). En un Chrome real, `100vw` se
+calcula sobre el ancho del documento EXCLUYENDO la barra de scroll de la
+página si hay una presente (`document.documentElement.clientWidth`, no
+`window.innerWidth`) — un detalle de implementación que Chromium headless
+no reproduce (ahí nunca hay una barra de scroll real reservando espacio).
+La página de FONDO (detrás de `#gd-overlay`, nunca visible mientras el
+modal está abierto) sí tenía su propia barra de scroll vertical porque su
+contenido es más alto que un viewport — nada la bloqueaba. Confirmado
+también en local (reproducible siempre con un Chrome real, sin necesidad
+de producción ni de datos reales).
+
+### Qué cambió
+
+- `#gd-modal`: `width:100vw` → `width:100%` — hereda de `#gd-overlay`
+  (`position:fixed;inset:0`), que sí es inmune a esa barra de scroll (su
+  tamaño lo fija directamente el viewport visual, no una unidad `vw`).
+  `height` se deja en `100dvh` (el alto medido ya daba exacto; cambiar
+  `vw`→`100%` solo correspondía al eje donde se vio el problema).
+- Nueva función `_gdBloquearScrollFondo(bloquear)`
+  (`public/js/dashboard-generic.js`): bloquea `overflow` de `html`/`body`
+  mientras el modal está abierto (estándar para cualquier modal a
+  pantalla completa — nada detrás debería poder scrollear de todos
+  modos) y lo restaura al cerrar. Elimina la causa raíz de fondo, no solo
+  el síntoma en `#gd-modal`: con el scroll de fondo bloqueado, ninguna
+  barra de scroll queda reservando espacio, así que `100vw` también
+  habría quedado correcto — se prefirió igual `100%` por ser inmune al
+  problema sin depender de que el bloqueo de scroll se mantenga vigente.
+  Conectado en `openGenericDashboard`, `openGenericDashboardPreview`
+  (bloquea al abrir) y `closeGenericDashboard` (restaura al cerrar).
+
+### Verificación
+
+- 3 pruebas nuevas (`fase105-gd-modal-scroll-fondo.test.js`) + 1 prueba
+  existente actualizada (`fase103-gd-modal-pantalla-completa.test.js`,
+  ahora espera `width:100%` en vez de `100vw`). `npm test`: 789/789.
+  `npm audit`: 0 vulnerabilidades (antes y después).
+- Confirmado con Playwright, headed (Chrome real) Y headless, antes/después
+  del fix: antes, `#gd-modal` medía 1424,67px de 1440px reales (headed) —
+  igual en local que en la corrida de producción de la Fase 104; después,
+  mide exactamente 1440px en ambos modos. Confirmado también que el
+  scroll de fondo queda bloqueado mientras el modal está abierto y se
+  restaura al cerrarlo. Captura en
+  `docs/capturas-demo/fase105-modal-scroll-fondo/`. 0 errores de consola.
+
+### Estado final de la Fase 105
+
+Un solo PR (CSS + JS + pruebas + captura + `CHANGELOG.md`), CI verde.
+Versión final: `1.5.1`, tag `v1.5.1` al cerrar esta fase. Verificación
+final en producción: pendiente de una corrida dedicada (el hallazgo que
+originó esta fase ya se confirmó en local contra el mismo navegador real
+que usa producción; una pasada final con la sesión real del usuario queda
+para la próxima vez que se abra esa ventana).
