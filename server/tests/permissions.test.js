@@ -256,3 +256,49 @@ test('AUX_ADMIN con cambiarPassword NO puede resetear la contrasena de un ADMIN/
   await request(app).delete(`/api/users/${auxResetter.body.id}`).set(auth(admin));
   await request(app).delete(`/api/users/${victimaAdmin.body.id}`).set(auth(admin));
 });
+
+// Fase 102 (escalada de privilegios, hallazgo real): ni PUT /users/:id/perms
+// ni el campo `perms` de PUT /users/:id bloqueaban la AUTO-edicion (a
+// diferencia de `rol`, que ya estaba bloqueado desde la fase anterior). Un
+// actor con SOLO el permiso puntual `gestionPermisos` (o `editarUsuarios`)
+// podia otorgarse a si mismo cualquier otro permiso de la plataforma
+// (crearUsuarios, cambiarPassword, suspenderUsuarios, eliminarUsuarios,
+// acceso a cualquier campana_X/cliente_X) sin pasar nunca por `rol` ni por
+// `puedeAsignarRol` -- control funcional equivalente a ADMIN.
+test('nadie puede cambiar sus propios permisos, ni por PUT /users/:id/perms ni por el campo perms de PUT /users/:id', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const auxGestor = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send(
+      newUserPayload({
+        user: 'auxgestor_' + Math.random().toString(36).slice(2, 7),
+        rol: 'AUX_ADMIN',
+        password: 'AuxGestor123',
+        perms: { gestionPermisos: true, editarUsuarios: true },
+      })
+    );
+  assert.equal(auxGestor.status, 201);
+  const t = await tokenFor(auxGestor.body.user, 'AuxGestor123');
+
+  const porRutaPerms = await request(app)
+    .put(`/api/users/${auxGestor.body.id}/perms`)
+    .set(auth(t))
+    .send({ perms: { gestionPermisos: true, editarUsuarios: true, crearUsuarios: true, eliminarUsuarios: true } });
+  assert.equal(porRutaPerms.status, 403);
+
+  const porRutaUsers = await request(app)
+    .put(`/api/users/${auxGestor.body.id}`)
+    .set(auth(t))
+    .send({ perms: { gestionPermisos: true, editarUsuarios: true, crearUsuarios: true, eliminarUsuarios: true } });
+  assert.equal(porRutaUsers.status, 403);
+
+  // Pero SI puede seguir otorgando permisos a OTRO usuario (ese es el uso
+  // legitimo de gestionPermisos).
+  const otro = await request(app).post('/api/users').set(auth(admin)).send(newUserPayload({ user: 'terceroparapermisos_' + Math.random().toString(36).slice(2, 7) }));
+  const okOtro = await request(app).put(`/api/users/${otro.body.id}/perms`).set(auth(t)).send({ perms: { Calidad: true } });
+  assert.equal(okOtro.status, 200);
+
+  await request(app).delete(`/api/users/${otro.body.id}`).set(auth(admin));
+  await request(app).delete(`/api/users/${auxGestor.body.id}`).set(auth(admin));
+});
