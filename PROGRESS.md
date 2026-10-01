@@ -8963,9 +8963,11 @@ el permiso, ahora correctamente restringido para `ADMIN`/`AUX_ADMIN`.
 | #226 | Alto — guía de uso pública (v1.3.1) | Mergeado |
 | #227 | Crítico x2 — password reset + auto-escalada de permisos | Mergeado |
 | #228 | Bajo — fecha de calendario + script de QA local (v1.3.2) | Mergeado |
-| #229 | Dependencias — parche de AWS SDK | Abierto, CI verde |
-| #230 | Endurecimiento de workflows | Abierto, CI verde |
-| #231 | Docs de la auditoría + script de verificación final en producción | Abierto, CI verde |
+| #229 | Dependencias — parche de AWS SDK | Mergeado |
+| #230 | Endurecimiento de workflows | Mergeado |
+| #231 | Docs de la auditoría + script de verificación final en producción | Mergeado |
+| #232 | Este cierre (`PROGRESS.md`) | En este PR |
 
-Versión final: `1.3.2`. Tag `v1.3.2` pendiente de crear al cerrar esta
-fase (tras mergear #229/#230/#231).
+Versión final: `1.3.2`, tag `v1.3.2` pendiente de crear al mergear este
+cierre. El resto de los PRs ya está mergeado a `main`, CI verde, deploy
+automático confirmado, `/api/health` en 200 con la versión nueva.
