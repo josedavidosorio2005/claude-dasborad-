@@ -209,3 +209,50 @@ test('nadie puede cambiar su propio rol, ni siendo ADMIN', async () => {
   await request(app).delete(`/api/users/${otro.body.id}`).set(auth(admin));
   await request(app).delete(`/api/users/${otroAdmin.body.id}`).set(auth(admin));
 });
+
+// Fase 102 (escalada de privilegios, hallazgo real): PUT /users/:id/password
+// solo exigia el permiso puntual `cambiarPassword` (asignable a CUALQUIER rol,
+// igual que crearUsuarios/editarUsuarios), sin el mismo limite de
+// `puedeAsignarRol` que ya protege crear/editar. Un AUX_ADMIN con SOLO ese
+// permiso podia resetear la contrasena de un ADMIN o AUX_ADMIN ya existente e
+// iniciar sesion como esa cuenta -- el mismo vector de escalada que el PUT de
+// rol, pero por la puerta de la contrasena.
+test('AUX_ADMIN con cambiarPassword NO puede resetear la contrasena de un ADMIN/AUX_ADMIN existente', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+
+  const victimaAdmin = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send(newUserPayload({ user: 'victimaadmin_' + Math.random().toString(36).slice(2, 7), rol: 'ADMIN', password: 'ClaveOriginal123' }));
+  assert.equal(victimaAdmin.status, 201);
+
+  const auxResetter = await request(app)
+    .post('/api/users')
+    .set(auth(admin))
+    .send(
+      newUserPayload({
+        user: 'auxresetter_' + Math.random().toString(36).slice(2, 7),
+        rol: 'AUX_ADMIN',
+        password: 'AuxResetter123',
+        perms: { cambiarPassword: true },
+      })
+    );
+  assert.equal(auxResetter.status, 201);
+  const t = await tokenFor(auxResetter.body.user, 'AuxResetter123');
+
+  const intento = await request(app).put(`/api/users/${victimaAdmin.body.id}/password`).set(auth(t)).send({ password: 'PasswordRobada123' });
+  assert.equal(intento.status, 403);
+
+  // La contrasena original sigue sirviendo -- no se toco.
+  const siguenFuncionando = await tokenFor(victimaAdmin.body.user, 'ClaveOriginal123');
+  assert.ok(siguenFuncionando);
+
+  // El mismo AUX_ADMIN SI puede cambiar la password de un usuario normal.
+  const victimaNormal = await request(app).post('/api/users').set(auth(admin)).send(newUserPayload({ user: 'victimanormal_' + Math.random().toString(36).slice(2, 7) }));
+  const okNormal = await request(app).put(`/api/users/${victimaNormal.body.id}/password`).set(auth(t)).send({ password: 'NuevaClaveNormal123' });
+  assert.equal(okNormal.status, 200);
+
+  await request(app).delete(`/api/users/${victimaNormal.body.id}`).set(auth(admin));
+  await request(app).delete(`/api/users/${auxResetter.body.id}`).set(auth(admin));
+  await request(app).delete(`/api/users/${victimaAdmin.body.id}`).set(auth(admin));
+});

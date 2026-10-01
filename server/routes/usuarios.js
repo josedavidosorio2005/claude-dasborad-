@@ -142,6 +142,14 @@ router.put(
     const id = req.params.id;
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Fase 102 (seguridad, hallazgo real): mismo limite que ya existia para
+    // crear/editar (puedeAsignarRol) -- sin esto, cualquier actor con SOLO el
+    // permiso puntual `cambiarPassword` (asignable a cualquier rol) podia
+    // resetear la contrasena de un ADMIN/AUX_ADMIN existente e iniciar sesion
+    // como esa cuenta, sin pasar nunca por el chequeo de rol.
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede cambiar la contrasena de un usuario ADMIN o AUX_ADMIN' });
+    }
     const hash = await bcrypt.hash(req.body.password, 10);
     db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
     logEvent('PASSWORD', row, actorLabel(req.actor), 'Contrasena cambiada');
