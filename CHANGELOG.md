@@ -4,6 +4,34 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.7.0 — Octubre 2026
+
+Cambio de fondo en Inasistencia: el archivo que sube Edwin ya no es un
+resumen por mes/especialidad, ahora es un reporte con una fila por cada
+cita (igual que Agendas) — eso permite filtrar por Sede, Especialidad y
+Entidad (esta última con buscador, porque son miles), algo que antes no
+se podía. La pestaña Inasistencia ahora tiene 2 vistas:
+
+- **Resumen por mes** (la que abre por defecto): una tarjeta con el % de
+  inasistencia de todo el período que dejen pasar los filtros de arriba,
+  más una gráfica con el % de cada mes con datos.
+- **Por especialidad**: una barra por especialidad, del mes elegido
+  arriba. Las especialidades con muy pocas citas ese mes se marcan con un
+  asterisco (\*) y se muestran al final del todo — su porcentaje puede no
+  ser representativo con tan pocos datos.
+
+Exportar a Excel ahora trae 2 hojas (una por vista), respetando los
+filtros que estén aplicados.
+
+**Importante — un número que ya se veía en pantalla va a cambiar**: el %
+de inasistencia de Agosto 2026 pasa de 5,63% a 7,45%. No es un error: el
+5,63% salía de un reporte parcial (solo 3 especialidades, 5.893 citas) que
+Edwin mandó antes de tener listo el reporte completo de agendamiento; el
+7,45% sale del archivo completo (todas las especialidades, 11.189 citas) y
+es el número correcto. Los meses de Enero a Agosto 2026 completos quedan
+cargados con este archivo nuevo; Septiembre 2026 (que solo tenía datos de
+Exámenes Especiales) se queda exactamente como estaba.
+
 ## v1.6.0 — Octubre 2026
 
 La pestaña Inasistencia ahora muestra solo el porcentaje de inasistencia

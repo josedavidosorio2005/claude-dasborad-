@@ -112,11 +112,35 @@ function filasTipificacion(rand, total, categorias, extraCols) {
 // dashboard_cargas (cargarSeccion, mas arriba), nunca pisa una fila real
 // que un admin ya haya cargado a mano para esta campana/mes/especialidad.
 const INASISTENCIA_ESPECIALIDADES = ['AUDIFONOS', 'AUDIOLOGIA', 'EXAMENES ESPECIALES'];
+// Fase 108 (pedido textual de InCo: "que se pueda filtrar por sede,
+// especialidad, nombre entidad"): cada fila real ahora es (mes, sede,
+// especialidad, entidad) -- el demo reparte el total de cada
+// (mes,especialidad) entre estas 2 sedes y 3 entidades para poder probar
+// visualmente los filtros nuevos (y la vista "Por especialidad") sin
+// esperar la carga real.
+const INASISTENCIA_SEDES = ['SEDE PRINCIPAL', 'SEDE NORTE'];
+const INASISTENCIA_ENTIDADES = ['EPS DEMO UNO', 'EPS DEMO DOS', 'EPS DEMO TRES'];
+
+// Reparte `total` entre `n` partes enteras no negativas que suman EXACTO
+// `total` (pesos aleatorios, la ultima parte se lleva el redondeo) -- mismo
+// criterio que distribuirTipificacion (mas arriba en este archivo).
+function distribuirEntero(rand, total, n) {
+  const pesos = Array.from({ length: n }, () => 0.4 + rand());
+  const suma = pesos.reduce((a, b) => a + b, 0);
+  let restante = total;
+  return pesos.map((p, i) => {
+    if (i === n - 1) return Math.max(0, restante);
+    const v = Math.max(0, Math.round((total * p) / suma));
+    restante -= v;
+    return v;
+  });
+}
+
 function seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre) {
   const insert = db.prepare(`
     INSERT INTO inasistencias
-      (campana, mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt)
-    VALUES (@campana,@mes,@especialidad,@cancelada,@inasistencia,@pendiente,@atendidas,@total,@archivoNombre,@cargadoPorNombre,@createdAt)
+      (campana, mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana,@mes,@sede,@especialidad,@entidad,@cancelada,@inasistencia,@pendiente,@atendidas,@total,@archivoNombre,@cargadoPorNombre,@createdAt)
   `);
   // El mes en curso solo trae UNA especialidad (mismo patron real del
   // archivo de Edwin: "Septiembre solo trae EXAMENES ESPECIALES, porque el
@@ -124,28 +148,46 @@ function seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre) {
   // especialidades que el mes anterior" en el panel.
   const esMesActual = idxMes === MESES.length - 1;
   const especialidades = esMesActual ? ['EXAMENES ESPECIALES'] : INASISTENCIA_ESPECIALIDADES;
+  const combos = [];
+  INASISTENCIA_SEDES.forEach((sede) => INASISTENCIA_ENTIDADES.forEach((entidad) => combos.push({ sede, entidad })));
+
   especialidades.forEach((especialidad) => {
-    const clave = `ORLANT|${mes}|${especialidad}`;
-    seedOnceGuarded(db, 'inasistencias', clave, {
-      checkExisting: () => {
-        const row = db
-          .prepare('SELECT id FROM inasistencias WHERE campana = ? AND mes = ? AND especialidad = ?')
-          .get('ORLANT', mes, especialidad);
-        return row ? row.id : null;
-      },
-      insertFn: () => {
-        const total = Math.max(50, ent(serieMensual(rand, idxMes, { base: 1200, ruidoPct: 0.15 })));
-        const cancelada = ent(total * randFloat(rand, 0.1, 0.2, 3));
-        const inasistencia = ent(total * randFloat(rand, 0.03, 0.09, 3));
-        const pendiente = ent(total * randFloat(rand, 0.002, 0.01, 3));
-        const atendidas = Math.max(0, total - cancelada - inasistencia - pendiente); // TOTAL siempre cuadra en el demo
-        const info = insert.run({
-          campana: 'ORLANT', mes, especialidad,
-          cancelada, inasistencia, pendiente, atendidas, total,
-          archivoNombre: ARCHIVO_DEMO, cargadoPorNombre: cargadoPorNombre || 'Seed Demo', createdAt: new Date().toISOString(),
-        });
-        return info.lastInsertRowid;
-      },
+    const total = Math.max(50, ent(serieMensual(rand, idxMes, { base: 1200, ruidoPct: 0.15 })));
+    const cancelada = ent(total * randFloat(rand, 0.1, 0.2, 3));
+    const inasistencia = ent(total * randFloat(rand, 0.03, 0.09, 3));
+    const pendiente = ent(total * randFloat(rand, 0.002, 0.01, 3));
+    const atendidas = Math.max(0, total - cancelada - inasistencia - pendiente); // TOTAL siempre cuadra en el demo
+
+    // Cada conteo se reparte POR SU CUENTA entre las combinaciones sede x
+    // entidad (nunca el mismo peso para los 4, para que el % de cada fila
+    // varie como en un archivo real) -- el TOTAL de cada fila es la suma de
+    // sus propios 4 conteos (nunca se reparte aparte, mismo criterio que
+    // inasistenciaParseFilas, inasistencia-logic.js).
+    const porCancelada = distribuirEntero(rand, cancelada, combos.length);
+    const porInasistencia = distribuirEntero(rand, inasistencia, combos.length);
+    const porPendiente = distribuirEntero(rand, pendiente, combos.length);
+    const porAtendidas = distribuirEntero(rand, atendidas, combos.length);
+
+    combos.forEach((combo, i) => {
+      const filaTotal = porCancelada[i] + porInasistencia[i] + porPendiente[i] + porAtendidas[i];
+      if (filaTotal <= 0) return; // combinacion sin citas este mes -- no se inserta una fila vacia
+      const clave = `ORLANT|${mes}|${combo.sede}|${especialidad}|${combo.entidad}`;
+      seedOnceGuarded(db, 'inasistencias', clave, {
+        checkExisting: () => {
+          const row = db
+            .prepare('SELECT id FROM inasistencias WHERE campana = ? AND mes = ? AND sede = ? AND especialidad = ? AND entidad = ?')
+            .get('ORLANT', mes, combo.sede, especialidad, combo.entidad);
+          return row ? row.id : null;
+        },
+        insertFn: () => {
+          const info = insert.run({
+            campana: 'ORLANT', mes, sede: combo.sede, especialidad, entidad: combo.entidad,
+            cancelada: porCancelada[i], inasistencia: porInasistencia[i], pendiente: porPendiente[i], atendidas: porAtendidas[i], total: filaTotal,
+            archivoNombre: ARCHIVO_DEMO, cargadoPorNombre: cargadoPorNombre || 'Seed Demo', createdAt: new Date().toISOString(),
+          });
+          return info.lastInsertRowid;
+        },
+      });
     });
   });
 }

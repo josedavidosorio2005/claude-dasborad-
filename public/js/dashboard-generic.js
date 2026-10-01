@@ -1492,21 +1492,49 @@ async function _gdExportarTipificacion(p, i){
   return out;
 }
 
-// Inasistencia (Fase 98, pedido URGENTE de Edwin; Fase 101: 3 sub-pestañas
-// reordenadas y con contenido distinto -- Por mes / Por especialidad /
-// Detalle; Fase 106, pedido de InCo "que en Inasistencia solo quede en
-// porcentaje, por mes": un solo panel `inasistencia_panel` (vista:'pormes')
-// -- exporta lo que se ve: una hoja con Mes y % de inasistencia (el mismo
-// agregado ponderado, todas las especialidades juntas, que dibuja la
-// grafica). Las ramas de "Por especialidad"/"Detalle" se borraron junto con
-// su vista (ver public/js/inasistencia.js) -- siguen en el historial de git
-// (PR de la Fase 106) si Edwin pide alguna de vuelta.
+// Inasistencia (Fase 98, pedido URGENTE de Edwin; Fase 106, "que en
+// Inasistencia solo quede en porcentaje, por mes"; Fase 108, pedido
+// textual de InCo: filtros de sede/especialidad/entidad + sub-pestaña "Por
+// especialidad"). Se llama UNA VEZ por panel `inasistencia_panel` del tab
+// (hoy 2: vista 'pormes' y 'porespecialidad') -- "una hoja por vista,
+// respetando los filtros" sale solo de que cada llamada exporta la hoja de
+// SU propia vista, usando el mismo estado de filtros compartido que pinto
+// la pantalla (_inasistenciaEstado, inasistencia.js) -- nunca vuelve a
+// preguntar nada, nunca una fila cruda (solo mes/especialidad y %, Fase
+// 106). La proteccion anti-formula (xlsxFilasSeguras, Fase 72) se aplica
+// de forma generica mas abajo en este archivo a TODO lo que devuelva esto,
+// no hace falta llamarla aqui.
 async function _gdExportarInasistencia(p, i){
   var campana = p.campana;
+  var vista = p.vista || 'pormes';
   var titulo = p.titulo || 'Inasistencia';
+  var estado = _inasistenciaEstado[campana] || {};
 
+  if(vista === 'porespecialidad'){
+    var mesGlobal = estado.mes || (typeof _gd!=='undefined' ? _gd.mesSel : '');
+    if(!mesGlobal) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
+    var paramsEsp = new URLSearchParams();
+    paramsEsp.set('campana', campana);
+    paramsEsp.set('mes', mesGlobal);
+    if(estado.sede) paramsEsp.set('sede', estado.sede);
+    if(estado.entidad) paramsEsp.set('entidad', estado.entidad);
+    var filasEsp = [];
+    try{ filasEsp = await apiRequest('GET', '/calidad/inasistencia/especialidad?'+paramsEsp.toString()) || []; }catch(e){}
+    if(!filasEsp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para ' + inasistenciaMesLbl(mesGlobal) + ' con estos filtros.' }];
+    var conPct = filasEsp.map(function(f){ return { especialidad: f.especialidad, pct: inasistenciaPctPonderado(f.inasistencia, f.pendiente, f.total), total: f.total }; });
+    var ordenadas = inasistenciaOrdenarBaseBaja(conPct, (typeof INASISTENCIA_BASE_BAJA_UMBRAL!=='undefined') ? INASISTENCIA_BASE_BAJA_UMBRAL : 30);
+    return [{ titulo: titulo, tipo: 'tabla', filas: ordenadas.map(function(f){
+      return { Especialidad: textoFormatoNombre(f.especialidad) + (f.baseBaja?' *':''), '% de inasistencia': f.pct===null?'':f.pct };
+    }) }];
+  }
+
+  var paramsMes = new URLSearchParams();
+  paramsMes.set('campana', campana);
+  if(estado.sede) paramsMes.set('sede', estado.sede);
+  if(estado.especialidad) paramsMes.set('especialidad', estado.especialidad);
+  if(estado.entidad) paramsMes.set('entidad', estado.entidad);
   var datosPorMes = [];
-  try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  try{ datosPorMes = await apiRequest('GET', '/calidad/inasistencia/mensual?'+paramsMes.toString()) || []; }catch(e){}
   var agregado = inasistenciaAgregarPorMes(datosPorMes);
   if(!agregado.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
   return [{ titulo: titulo, tipo: 'tabla', filas: agregado.map(function(a){

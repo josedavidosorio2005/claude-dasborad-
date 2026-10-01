@@ -591,18 +591,29 @@ const tipificacionOpcionesQuery = z.object({
 // Filas como ARRAY, mismo motivo que Agendas/Tipificacion. Orden FIJO, debe
 // coincidir con INASISTENCIA_ORDEN_ARRAY (inasistencia-logic.js) y con
 // CAMPOS_FILA (server/inasistencia.js):
-//   [mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total]
-// El mes ya viene resuelto a 'AAAA-MM' por el navegador (texto del mes,
-// AÑO opcional, fecha de Excel o 'AAAA-MM' -- ver inasistencia-logic.js: si
-// el archivo no trae año, se infiere el mas reciente en que ese mes no es
-// futuro, hora Colombia). Los 4 conteos son enteros no negativos; TOTAL se
-// guarda tal cual vino del archivo (nunca se recalcula en el servidor -- si
-// no cuadra con la suma de los otros 4, el navegador ya avisa antes de
-// confirmar la carga, pero no bloquea).
+//   [mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total]
+// Fase 108 (pedido de InCo: filtrar por sede/especialidad/entidad): el
+// archivo real trae una fila por CITA (SEDE/ESPECIALIDAD/FECHA_CITA/NOMBRE
+// ENTIDAD/CITEST) -- el navegador la agrega a (mes, sede, especialidad,
+// entidad) ANTES de mandar el payload. Medido contra el archivo real de
+// InCo (83.006 filas crudas, ene-ago 2026): agrega a 2.664 filas, payload
+// de ~225kb en este formato de array compacto -- MUY por debajo de 2mb, asi
+// que esta ruta NO necesita el grupo de limite mayor (8mb) de server.js,
+// a diferencia de Tipificacion (~15.000 filas/mes SIN agregar). El limite
+// de filas sube de 2.000 a 10.000 (con ese tamaño promedio por fila,
+// ~850kb en el peor caso, sigue holgado dentro de 2mb) para dar margen a
+// mas meses/sedes/campañas sin tener que volver a tocar esto. El mes ya
+// viene resuelto a 'AAAA-MM' (de FECHA_CITA, ver inasistencia-logic.js).
+// Los 5 conteos son enteros no negativos; TOTAL = la suma de los otros 4
+// SIEMPRE (se calcula en el navegador al agregar, nunca viene de una
+// columna TOTAL del archivo como en el formato viejo).
 const inasistenciaEnteroNoNegativo = z.number().int().min(0).max(1000000);
+const inasistenciaTextoObligatorio = z.string().trim().min(1).max(200);
 const inasistenciaFilaArraySchema = z.tuple([
   mesSchema, // mes
-  z.string(reqStr('ESPECIALIDAD es obligatoria')).trim().min(1).max(120), // especialidad
+  inasistenciaTextoObligatorio, // sede ("SIN SEDE" si el archivo no la traia)
+  z.string(reqStr('ESPECIALIDAD es obligatoria')).trim().min(1).max(120), // especialidad ("SIN ESPECIALIDAD" si el archivo no la traia)
+  inasistenciaTextoObligatorio, // entidad (ya anonimizada en el navegador -- nunca vacia: "SIN ENTIDAD" si no habia dato)
   inasistenciaEnteroNoNegativo, // cancelada
   inasistenciaEnteroNoNegativo, // inasistencia
   inasistenciaEnteroNoNegativo, // pendiente
@@ -616,7 +627,7 @@ const inasistenciaCargaBody = z.object({
   filas: z
     .array(inasistenciaFilaArraySchema)
     .min(1, 'El archivo no tiene filas de datos')
-    .max(2000, 'Demasiadas filas en un solo archivo')
+    .max(10000, 'Demasiadas filas en un solo archivo')
     // mes = indice 0 de la tupla ('AAAA-MM') -- se compara el PRIMER dia de
     // ese mes contra el fin del mes en curso (mismo helper que Agendas/
     // Tipificacion, ver fecha-limites.js).
@@ -634,7 +645,9 @@ const inasistenciaFiltrosQuery = z.object({
   mes: mesSchema.optional(),
   desde: mesSchema.optional(),
   hasta: mesSchema.optional(),
+  sede: z.string().trim().max(120).optional(),
   especialidad: z.string().trim().max(120).optional(),
+  entidad: z.string().trim().max(200).optional(),
 });
 
 // ── Dashboards de cliente: cargas de Excel (Fase 2) ─────────
