@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.4.0 — Octubre 2026
+
+Los dashboards ahora se ven a pantalla completa, para visualizar mejor las
+gráficas — antes se abrían en una ventana más chica, con espacio vacío a
+los lados en pantallas grandes. También se agregó un botón opcional para
+pasar a pantalla completa del navegador (oculta hasta la barra de
+direcciones). El resto de las pantallas (Calidad, Cargar Datos, etc.) se
+ven exactamente igual que antes.
+
 ## v1.3.2 — Octubre 2026
 
 Sigue la revision de seguridad y de bugs de la Fase 102. Primero, 2

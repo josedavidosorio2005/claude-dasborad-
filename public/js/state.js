@@ -136,6 +136,13 @@ function renderSeedDemoBanner() {
   document.querySelectorAll('.navbar').forEach(function (nb) {
     nb.style.top = seedDemoActivo ? '34px' : '';
   });
+  // Fase 103 (hallazgo real probando con datos de demo): el dashboard de
+  // cliente (#gd-modal) ahora es a pantalla completa, asi que su cabecera
+  // sticky arranca en el y=0 real del viewport -- el banner de arriba
+  // (z-index 4000, mas alto que el del dashboard) le tapaba la parte de
+  // arriba. Mismo ajuste que ya existia para .navbar.
+  var gdHeader = document.querySelector('#gd-modal .aurora-header');
+  if (gdHeader) gdHeader.style.top = seedDemoActivo ? '34px' : '';
 }
 
 function resetData() {

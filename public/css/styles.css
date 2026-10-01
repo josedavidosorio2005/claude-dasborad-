@@ -632,7 +632,22 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
 /* ── AURORA DASHBOARD MODAL ── */
 #calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#gd-overlay.show,#dashcfg-overlay.show{display:flex;}
-#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#gd-modal,#dashcfg-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
+/* Fase 103: #gd-modal (dashboard de cliente) salio de esta regla -- ver su
+   propia regla mas abajo, a pantalla completa. Los otros 5 modales de esta
+   lista se quedan EXACTAMENTE igual (ventana flotante centrada). */
+#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
+
+/* Fase 103 (pedido de InCo, "ver mejor las graficas"): el dashboard de
+   cliente ya no es una ventana flotante -- ocupa toda la ventana del
+   navegador. 100dvh (no 100vh) para que en movil no quede un recorte por
+   la barra de direcciones (dvh = "dynamic viewport height", ya con buen
+   soporte en los navegadores que usa esta plataforma). La cabecera queda
+   "sticky" dentro del propio scroll del modal (ver mas abajo) para que el
+   titulo/MES/Exportar/Cerrar sigan a la vista sin tener que subir scroll.
+   Mismo fondo/overflow/flex que el resto -- solo cambian tamano, radio y
+   sombra. */
+#gd-modal{background:var(--c-bg);border-radius:0;width:100vw;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
+#gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
 
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto

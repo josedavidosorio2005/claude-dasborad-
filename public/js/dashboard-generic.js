@@ -715,10 +715,59 @@ async function _gdBootstrap(){
   renderGenericBanner();
 }
 function closeGenericDashboard(){
+  // Fase 103: si se cierra el dashboard estando en pantalla completa del
+  // navegador, hay que salir primero -- si no, el navegador se queda en
+  // fullscreen mostrando lo que sea que quede detras (el overlay ya oculto).
+  if(document.fullscreenElement) document.exitFullscreen();
   document.getElementById('gd-overlay').classList.remove('show');
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
 }
 document.getElementById('gd-overlay').addEventListener('click',function(e){ if(e.target===this) closeGenericDashboard(); });
+
+// ── Pantalla completa del navegador (Fase 103, pedido de InCo) ──────────
+// Boton opcional en la cabecera del dashboard de cliente: usa la Fullscreen
+// API sobre document.documentElement (TODA la pagina, no solo #gd-overlay).
+// Hallazgo real probando con Playwright: el menu de "Exportar"
+// (#gd-export-menu, ver _gdExport() mas abajo) se agrega como hijo directo
+// de <body>, fuera del subarbol de #gd-overlay -- cuando el elemento en
+// fullscreen es #gd-overlay (no la pagina completa), el navegador solo
+// pinta ESE subarbol en la "top layer" de fullscreen, y cualquier otra cosa
+// colgada directo de <body> (el menu de Exportar, un toast, etc.) deja de
+// ser clickeable aunque siga "visible" (los clics los recibe lo que SI esta
+// en el subarbol fullscreen, como la cabecera). Fullscreen sobre la pagina
+// COMPLETA evita este problema de raiz: no hay ningun elemento que quede
+// "afuera". Si el navegador no soporta la API (ej. iOS Safari, que no la
+// implementa para iPhone), el boton se queda oculto -- `.hidden` ya viene
+// puesto en el HTML por defecto.
+var GD_FS_ICON_ENTRAR = '⛶', GD_FS_ICON_SALIR = '🗗';
+(function(){
+  var btn = document.getElementById('gd-fullscreen-btn');
+  if(!btn) return;
+  var soportado = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+  btn.classList.toggle('hidden', !soportado);
+})();
+
+function toggleGdFullscreen(){
+  var el = document.documentElement;
+  if(!document.fullscreenElement){
+    var pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+    if(pedir) pedir.call(el).catch(function(e){ showToast('No se pudo activar pantalla completa: '+e.message); });
+  }else{
+    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  }
+}
+
+// Cubre tambien el Esc del navegador (dispara este mismo evento) -- el
+// icono y el estado quedan consistentes sin importar como se salio.
+function _gdOnFullscreenChange(){
+  var btn = document.getElementById('gd-fullscreen-btn');
+  if(!btn) return;
+  var activo = document.fullscreenElement === document.documentElement;
+  btn.innerHTML = activo ? GD_FS_ICON_SALIR : GD_FS_ICON_ENTRAR;
+  btn.title = btn.ariaLabel = activo ? 'Salir de pantalla completa' : 'Pantalla completa';
+}
+document.addEventListener('fullscreenchange', _gdOnFullscreenChange);
+document.addEventListener('webkitfullscreenchange', _gdOnFullscreenChange);
 
 function renderGenericHeader(){
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
