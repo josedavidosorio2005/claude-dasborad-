@@ -6,6 +6,16 @@
 // `inasistencias`) y reubica la pestaña justo despues de "agendamiento".
 // Mismo patron que orlant-tipificacion-panel-migracion.test.js: sembrar el
 // layout VIEJO a mano *antes* de requerir db.js, y verificar "despues".
+//
+// v1 reemplaza panels/subtabs por los de CONFIGS EN VIVO (dashboard-config-
+// seed.js), no por una copia fija de como se veian en la Fase 98 -- por eso
+// las aserciones de abajo comparan contra TARGET_TAB en vez de hardcodear
+// un numero de paneles: desde la Fase 106 (InCo, "solo en porcentaje, por
+// mes") esa forma en vivo es 1 solo panel, asi que esta prueba (que arranca
+// desde el layout de 4 graficas de linea, anterior incluso a la Fase 98)
+// ahora converge directo a la forma de la Fase 106 -- v2 y v3 (mas abajo en
+// db.js) se vuelven no-ops sobre este fixture en particular, porque v1 ya
+// la dejo en la forma final.
 'use strict';
 
 const os = require('os');
@@ -101,12 +111,12 @@ const { CONFIGS } = require('../dashboard-config-seed');
 const ORLANT_TARGET = CONFIGS.find((c) => c.cliente === 'ORLANT');
 const TARGET_TAB = ORLANT_TARGET.layout.tabs.find((t) => t.key === 'inasistencia');
 
-test('migracion dashboards_config_orlant_inasistencia_panel_v1: reemplaza las 4 graficas viejas por 3 inasistencia_panel + subtabs nuevos', () => {
+test('migracion dashboards_config_orlant_inasistencia_panel_v1: reemplaza las 4 graficas viejas por inasistencia_panel + subtabs nuevos (forma EN VIVO de CONFIGS)', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
   const tab = layout.tabs.find((t) => t.key === 'inasistencia');
 
-  assert.equal(tab.panels.length, 3);
+  assert.equal(tab.panels.length, TARGET_TAB.panels.length);
   assert.ok(tab.panels.every((p) => p.tipo === 'inasistencia_panel'));
   assert.deepEqual(tab.panels, TARGET_TAB.panels);
   assert.deepEqual(tab.subtabs, TARGET_TAB.subtabs);
@@ -140,7 +150,7 @@ test('migraciones de inasistencia: nunca tocan otro cliente', () => {
 test('migracion dashboards_config_orlant_inasistencia_panel_v1: es idempotente -- correrla de nuevo no vuelve a tocar nada', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const tab = JSON.parse(row.layout).tabs.find((t) => t.key === 'inasistencia');
-  assert.equal(tab.panels.filter((p) => p.tipo === 'inasistencia_panel').length, 3);
+  assert.equal(tab.panels.filter((p) => p.tipo === 'inasistencia_panel').length, TARGET_TAB.panels.length);
 });
 
 test.after(() => {

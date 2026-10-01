@@ -6,6 +6,13 @@
 // de siempre, sin tocarlo. Mismo patron que
 // orlant-tipificacion-unico-migracion.test.js: sembrar el layout VIEJO a
 // mano *antes* de requerir db.js, y verificar "despues".
+//
+// Fase 106 (pedido de InCo): Inasistencia dejo de tener sub-pestañas (queda
+// un solo panel). Sigue en CLAVES_CON_SUBPESTANAS de db.js -- por eso esta
+// migracion todavia la toca -- pero converge a `subtabs:[]` en vez de un
+// array con contenido, distinto de Tipificacion/Efectividad (que nunca
+// estuvieron en esa lista y quedan en `undefined`). Ver la prueba dedicada
+// mas abajo.
 'use strict';
 
 const os = require('os');
@@ -105,10 +112,10 @@ setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 const db = require('../db');
 const targetTabs = targetTabsActual;
 
-test('migracion dashboards_config_orlant_subpestanas_v1: agrega subtabs a las 5 pestanas que se dividieron', () => {
+test('migracion dashboards_config_orlant_subpestanas_v1: agrega subtabs a las 4 pestanas que se dividieron (Inasistencia aparte, Fase 106 la dejo sin sub-pestañas)', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
-  ['flujo', 'salida', 'agendamiento', 'inasistencia', 'sta'].forEach((key) => {
+  ['flujo', 'salida', 'agendamiento', 'sta'].forEach((key) => {
     const tab = layout.tabs.find((t) => t.key === key);
     assert.ok(Array.isArray(tab.subtabs) && tab.subtabs.length > 0, key + ' deberia tener subtabs');
     assert.deepEqual(tab.subtabs, targetTabs[key].subtabs, key + ' subtabs deberia migrar a la forma exacta de la config actual');
@@ -116,6 +123,13 @@ test('migracion dashboards_config_orlant_subpestanas_v1: agrega subtabs a las 5 
     // paneles (nunca se toco `panels`, solo se agrego `subtabs`).
     tab.subtabs.forEach((s) => s.indices.forEach((i) => assert.ok(i >= 0 && i < tab.panels.length)));
   });
+});
+
+test('migracion dashboards_config_orlant_subpestanas_v1: Inasistencia (Fase 106, sin sub-pestañas en la config actual) converge a subtabs:[], no se le deja contenido viejo', () => {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  const layout = JSON.parse(row.layout);
+  const tab = layout.tabs.find((t) => t.key === 'inasistencia');
+  assert.deepEqual(tab.subtabs, []);
 });
 
 test('migracion dashboards_config_orlant_subpestanas_v1: nunca toca pestanas sin subtabs en la config actual (Tipificacion, Efectividad)', () => {

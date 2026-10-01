@@ -9290,3 +9290,140 @@ final en producción: pendiente de una corrida dedicada (el hallazgo que
 originó esta fase ya se confirmó en local contra el mismo navegador real
 que usa producción; una pasada final con la sesión real del usuario queda
 para la próxima vez que se abra esa ventana).
+
+## Fase 106 — Inasistencia solo en porcentaje, por mes (2026-10-01)
+
+Pedido textual de InCo: "que en Inasistencia solo quede en porcentaje,
+por mes". La pestaña Inasistencia de ORLANT tenía 3 sub-pestañas ("Por
+mes", "Por especialidad", "Detalle") con tarjetas de conteos (total de
+citas, atendidas, canceladas, inasistencias, pendientes) y una gráfica
+combo (barras de Total/Inasistencias + línea de % ponderado). Pasa a una
+sola vista: una tarjeta y una gráfica, las dos solo con el % de
+inasistencia PONDERADO por mes, todas las especialidades juntas.
+
+### Qué cambió
+
+- **Interfaz** (`public/js/inasistencia.js`): se borró el código de las
+  vistas "Por especialidad" y "Detalle" (filtro de especialidad, gráfica
+  por especialidad, línea de tendencia por especialidad, tabla cruda) —
+  no quedó "apagado pero presente": es código muerto y seguro de borrar
+  (nada más en el repo lo llamaba, confirmado por grep antes de borrarlo),
+  y sigue disponible en el historial de git (el PR de esta fase) si Edwin
+  lo pide de vuelta. "Por mes" se recortó a 1 sola tarjeta (`% de
+  inasistencia`, con la variación vs. mes anterior que ya traía) y la
+  gráfica combo se simplificó a una sola serie de barras (el % de cada
+  mes, con su etiqueta siempre visible) — la barra del mes elegido en el
+  selector global arriba se resalta con otro color de la paleta
+  categórica (CD vs. CP; probado también que CD/CM, el par usado antes de
+  este ajuste, se veían casi iguales en tema oscuro — nunca el semáforo,
+  no hay meta definida para inasistencia). El aviso de mes incompleto y
+  el tooltip "?" con la fórmula ponderada se conservan intactos. El
+  cálculo en sí sigue 100% en `inasistenciaAgregarPorMes`
+  (`inasistencia-logic.js`), nunca duplicado.
+- **Exportar a Excel** (`_gdExportarInasistencia`,
+  `public/js/dashboard-generic.js`): recortado a la rama "Por mes" —
+  ahora exporta siempre 1 sola hoja con columnas `Mes` y `% de
+  inasistencia` (antes incluía `Total de citas` e `Inasistencias`). La
+  protección contra inyección de fórmulas (Fase 72, `xlsxFilasSeguras`)
+  es genérica y se sigue aplicando sin cambios.
+- **Config/migración** (`server/dashboard-config-seed.js`,
+  `server/db.js`): el tab `inasistencia` de ORLANT pasa de 3 paneles
+  `inasistencia_panel` + `subtabs` de 3 entradas a **1 panel**
+  (`vista:'pormes'`) y `subtabs: []` (array vacío, nunca el campo
+  omitido — las migraciones v1/v2 hacen
+  `JSON.parse(JSON.stringify(targetTab.subtabs))` sin guard contra
+  `undefined`, que revienta con `SyntaxError`). Migración idempotente
+  nueva `dashboards_config_orlant_inasistencia_panel_v3` (mismo patrón
+  que v1/v2 de las Fases 98/101): detecta la forma vieja reconocible (la
+  de la Fase 101, hoy en producción — 3 paneles vista
+  pormes/porespecialidad/detalle en ese orden) y la reemplaza por la
+  forma nueva leída en vivo de `CONFIGS`; si no coincide (config
+  personalizada), se deja intacta. Probada corriéndola 2 veces seguidas
+  (reabriendo la base, resultado byte a byte idéntico) y también sobre
+  una base nueva que corre TODAS las migraciones desde fixtures
+  anteriores a la Fase 98 — verificado panel y sub-pestaña **por
+  separado** (precedente real de la Fase 104): la migración
+  `dashboards_config_orlant_subpestanas_v1` (Fase 40) sigue tocando el
+  tab `inasistencia` (está en su lista de 5 claves) pero ahora converge a
+  `subtabs:[]` en vez de agregar contenido — se actualizó su prueba para
+  distinguir ese caso del de Tipificación/Efectividad (que quedan en
+  `undefined`, nunca estuvieron en esa lista).
+- **Pruebas de migración actualizadas**: `orlant-inasistencia-panel-
+  migracion.test.js` (v1) y `orlant-inasistencia-pormes-migracion.test.js`
+  (v2) sembraban formas viejas (Fase 98/anteriores) y comparaban el
+  resultado contra `CONFIGS` en vivo — como v1/v2 reemplazan
+  panels/subtabs con la forma ACTUAL del seed (nunca una copia fija de
+  cómo se veían en su momento), con el seed ya en la forma de esta fase
+  esos 2 fixtures convergen derecho a la forma de la Fase 106 (v2 y v3 se
+  vuelven no-ops sobre el fixture de v1; v3 se vuelve no-op sobre el de
+  v2) — se cambiaron las aserciones hardcodeadas (`length === 3`, arrays
+  de vista fijos) por comparaciones dinámicas contra `TARGET_TAB`. Prueba
+  nueva dedicada `orlant-inasistencia-porcentaje-migracion.test.js` (v3)
+  que sí arranca exactamente de la forma de producción de hoy (Fase 101)
+  y confirma que v3 es quien hace el trabajo real en ese caso — el
+  escenario más representativo de lo que le va a pasar al ORLANT real en
+  este deploy.
+- **Script de verificación final en producción**
+  (`.github/scripts/verificar-fase104-revision-final-produccion.js`,
+  reusado desde la Fase 104): sin el ajuste, el `for` que recorre
+  `subtabs` por pestaña se saltaba por completo la captura de
+  escritorio/claro de Inasistencia (array vacío) — se agregó el caso
+  especial (captura plana si `subtabs.length === 0`) y una verificación
+  propia: sin botón de sub-pestañas, sin conteos sueltos en pantalla, %
+  de la tarjeta visible y registrado en el log.
+- **Documentación**: `docs/guia-uso-orlant.md` y
+  `server/paginas/guia-uso.html` — la fila de Inasistencia en la tabla de
+  pestañas y el pie de la captura ya no dicen "Abre en 'Por mes'" (que
+  implicaba otras vistas); ahora dicen "El % de inasistencia, por mes".
+  El resto de la guía (fórmula ponderada, carga del archivo INASISTENCIA)
+  no cambia. Captura `03-inasistencia-por-mes.png` regenerada junto con
+  las otras 5 de la guía (`generar-capturas-guia-uso.js`, solo datos de
+  demo).
+
+### Verificación
+
+- `npm test`: 793/793 (antes y después). `npm audit`: 0 vulnerabilidades
+  (antes y después).
+- Prueba de ida y vuelta del PUT de `dashboards_config`
+  (`dashboards-config-put-round-trip-fase85.test.js`, genérica, no
+  hardcodea nombres de vista) sigue pasando sin cambios — confirmado que
+  el esquema Zod de `panels` (`z.record` sin schema fijo) y `subtabs`
+  (`.optional()`, sin `.min(1)`) no necesitaron tocarse: el panel único y
+  el array vacío pasan la validación igual, 0 campos perdidos en el
+  roundtrip.
+- Playwright directo desde Node, en local (`seed:demo`,
+  `.github/scripts/verificar-fase106-inasistencia-local.js`, nuevo):
+  pestaña Inasistencia en 1366×768, 1920×1080 y móvil 412px, claro y
+  oscuro — sin botones de sub-pestañas, sin conteos sueltos, 1 sola
+  tarjeta, gráfica con 1 serie de barras con etiqueta de % visible en
+  cada mes, barra del mes elegido resaltada (color distinto confirmado
+  leyendo la instancia de Chart.js), tarjeta y barra coinciden EXACTO con
+  `inasistenciaAgregarPorMes` sobre la respuesta real del endpoint (nunca
+  un número hardcodeado, los datos de demo son aleatorios por semilla),
+  selector de Mes cambiando de mes actualiza la tarjeta, aviso de mes
+  incompleto presente, tooltip "?" presente, exportar a Excel abre 1 sola
+  hoja con columnas `Mes`/`% de inasistencia` (nunca las de conteos) que
+  cuadra con lo que se ve en pantalla, sin scroll horizontal. **0 errores
+  de consola, 0 peticiones fallidas.** Capturas en
+  `docs/capturas-demo/fase106-inasistencia-porcentaje/`.
+- Números de control (conteos ya no visibles en pantalla, verificados
+  contra el endpoint): **pendiente de confirmar en la verificación final
+  en producción** (abajo) — Inasistencia Ago-26 5,63 % (5.893/332),
+  Sep-26 Exámenes Especiales 6,47 %. Sin cambios (no tocados por esta
+  fase): Tipificación 14.940; Tráfico de Llamadas 8.061/7.159/902;
+  Tráfico de WhatsApp 7.305/7.109/196, SL20 34,67 %; Agendas 7.426
+  (General 4.643/3P 2.783), AUDÍFONOS 2.141, ranking de asesores sumando
+  7.426.
+
+### Verificación final en producción (solo lectura, con la sesión real del usuario)
+
+_Pendiente al momento de escribir esta entrada — se completa abajo en
+cuanto corra `verificar-fase104-revision-final-produccion.js` con sesión
+real._
+
+### Estado final de la Fase 106
+
+Un solo PR (interfaz + migración + pruebas + script de verificación local
+nuevo + script de producción actualizado + docs + capturas +
+`CHANGELOG.md`), CI verde. Versión final: `1.6.0` (menor, cambio visible),
+tag `v1.6.0` al cerrar esta fase.

@@ -229,22 +229,25 @@ const ORLANT = {
       // grafica comparando citas vs. inasistencias con el % ponderado) --
       // "Por especialidad" deja de ser la principal y pasa a incluir la
       // linea de tendencia por especialidad que antes vivia en "Por mes".
-      // Ver la migracion idempotente
+      //
+      // Fase 106 (pedido de InCo, "que en Inasistencia solo quede en
+      // porcentaje, por mes"): se retiran las sub-pestañas "Por
+      // especialidad" y "Detalle" (y los conteos sueltos de "Por mes") --
+      // queda UN SOLO panel, sin `subtabs` (`subtabs: []`, no se omite el
+      // campo: las migraciones v1/v2 de abajo le hacen
+      // JSON.parse(JSON.stringify(targetTab.subtabs)) sin guard, y
+      // `undefined` ahi revienta -- ver dashboards_config_orlant_inasistencia_panel_v3).
+      // Ver las migraciones idempotentes
       // dashboards_config_orlant_inasistencia_panel_v1 (forma vieja de la
-      // Fase 98 -> esta forma) y
-      // dashboards_config_orlant_inasistencia_panel_v2 (esta forma -> la de
-      // la Fase 101) en db.js -- dashboards_config ya existia en produccion
-      // con la forma de la Fase 98, asi que esta forma nueva del seed nunca
-      // le habria llegado sola.
+      // Fase 98 -> la de la Fase 101),
+      // dashboards_config_orlant_inasistencia_panel_v2 (Fase 98 tardia ->
+      // Fase 101) y dashboards_config_orlant_inasistencia_panel_v3 (Fase
+      // 101 -> esta forma) en db.js -- dashboards_config ya existia en
+      // produccion, asi que esta forma nueva del seed nunca le habria
+      // llegado sola.
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
         { tipo: 'inasistencia_panel', vista: 'pormes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
-        { tipo: 'inasistencia_panel', vista: 'porespecialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
-        { tipo: 'inasistencia_panel', vista: 'detalle', titulo: 'Detalle de Inasistencia', campana: 'ORLANT' },
-      ], subtabs: [
-        { key: 'pormes', label: 'Por mes', indices: [0] },
-        { key: 'porespecialidad', label: 'Por especialidad', indices: [1] },
-        { key: 'detalle', label: 'Detalle', indices: [2] },
-      ]},
+      ], subtabs: []},
       { key: 'sta', label: 'Gestión STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
         // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,

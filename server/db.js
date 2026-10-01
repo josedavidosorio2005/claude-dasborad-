@@ -1699,6 +1699,66 @@ runOnceMigration('dashboards_config_orlant_inasistencia_panel_v2', () => {
   }
 });
 
+// ORLANT: Fase 106 (pedido de InCo, textual: "que en Inasistencia solo
+// quede en porcentaje, por mes") -- se retiran las sub-pestañas "Por
+// especialidad" y "Detalle" (y los conteos sueltos de "Por mes": total de
+// citas, atendidas, canceladas, inasistencias, pendientes); Inasistencia
+// pasa a un SOLO panel `inasistencia_panel` (vista:'pormes'), sin
+// `subtabs` (`[]`): una tarjeta y una grafica, las dos solo con el % de
+// inasistencia PONDERADO por mes. Mismo patron exacto que
+// dashboards_config_orlant_inasistencia_panel_v1/v2: detecta la forma
+// VIEJA reconocible (la de la Fase 101, ya aplicada en produccion -- 3
+// paneles `inasistencia_panel` con vista pormes/porespecialidad/detalle,
+// en ese orden), reemplaza tab.panels Y tab.subtabs por los del seed
+// actual. El tab sigue con `oculta:true` en la config guardada
+// (dashboard-generic.js lo destapa en memoria segun si hay inasistencias
+// cargadas, nunca aqui). El calculo ponderado, la tabla `inasistencias` y
+// su carga no cambian -- esto es solo forma de la config de paneles.
+runOnceMigration('dashboards_config_orlant_inasistencia_panel_v3', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTab = (target.layout.tabs || []).find((t) => t.key === 'inasistencia');
+  if (!targetTab) return;
+
+  const tab = (layout.tabs || []).find((t) => t.key === 'inasistencia');
+  if (!tab) return;
+  const yaEsNuevo = (tab.panels || []).length === 1 &&
+    (tab.panels || []).every((p) => p.vista === 'pormes') &&
+    !((tab.subtabs || []).length);
+  if (yaEsNuevo) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v3: ya tenia la forma nueva, nada que hacer.');
+    return;
+  }
+  const VISTAS_VIEJAS = ['pormes', 'porespecialidad', 'detalle'];
+  const esViejoReconocible = (tab.panels || []).length === 3 &&
+    (tab.panels || []).every((p, i) => p.tipo === 'inasistencia_panel' && p.vista === VISTAS_VIEJAS[i]);
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v3: el tab "inasistencia" no coincide con la forma esperada (Fase 101 ni Fase 106) — se deja intacta, revisar a mano.');
+    }
+    return;
+  }
+
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+  tab.subtabs = JSON.parse(JSON.stringify(targetTab.subtabs || []));
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v3 aplicada.');
+  }
+});
+
 // Columna SERVICE_LEVEL_5MIN opcional en trafico_whatsapp (Fase 87, tema B,
 // nota del jefe: "En WhatsApp el nivel de servicio es de 5 minutos") --
 // mismo patron que trafico_whatsapp_aht_v1 (no se agrega directo al CREATE
