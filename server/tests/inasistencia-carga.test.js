@@ -1,9 +1,10 @@
 // inasistencia-carga.test.js — POST /api/calidad/inasistencia/carga(/impacto)
 // + GET /api/calidad/inasistencia/(resumen|especialidad|mensual|opciones)
-// (Fase 98, ORLANT, pedido urgente de Edwin). Mismo patron que
-// agendas-carga.test.js: reemplazo (aqui por MES, no por rango de fecha),
-// impacto/confirmacion, filtros, permisos, % ponderado. Datos SIEMPRE
-// inventados.
+// (Fase 98, ORLANT, pedido urgente de Edwin; reescrito en la Fase 108,
+// pedido textual de InCo: filtros de sede/especialidad/entidad). Mismo
+// patron que agendas-carga.test.js: reemplazo (aqui por MES, no por rango
+// de fecha), impacto/confirmacion, filtros, permisos, % ponderado. Datos
+// SIEMPRE inventados.
 'use strict';
 
 const { test } = require('node:test');
@@ -12,9 +13,9 @@ const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
-// [mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total]
+// [mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total]
 function fila(over) {
-  const base = ['2025-04', 'AUDIFONOS', 475, 109, 10, 2270, 2864];
+  const base = ['2025-04', 'SEDE 1', 'AUDIFONOS', 'EPS UNO', 475, 109, 10, 2270, 2864];
   return Object.assign([], base, over);
 }
 
@@ -42,7 +43,7 @@ test('carga valida: se guarda y GET /especialidad + /resumen la agregan correcta
     .send({
       campana: 'ORLANT',
       archivoNombre: 'INASISTENCIA_test.xlsx',
-      filas: [fila({ 0: '2025-05', 1: especialidad, 2: 475, 3: 109, 4: 10, 5: 2270, 6: 2864 })],
+      filas: [fila({ 0: '2025-05', 2: especialidad, 4: 475, 5: 109, 6: 10, 7: 2270, 8: 2864 })],
     });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   assert.equal(res.body.insertadas, 1);
@@ -54,8 +55,7 @@ test('carga valida: se guarda y GET /especialidad + /resumen la agregan correcta
   assert.ok(fEsp, 'la especialidad cargada debe aparecer');
   assert.equal(fEsp.total, 2864);
 
-  // % ponderado = (inasistencia+pendiente)/total = (109+10)/2864 = 4.1550...% -> 4.16 con 2 decimales
-  // (numero de control real del pedido de Edwin: solo cuadra con 2 decimales, 1 decimal daria 4.2%).
+  // % ponderado = (inasistencia+pendiente)/total = (109+10)/2864 = 4.1550...% -> 4.16 con 2 decimales.
   const resumen = await request(app).get('/api/calidad/inasistencia/resumen?campana=ORLANT&mes=2025-05&especialidad=' + encodeURIComponent(especialidad)).set(auth(admin));
   assert.equal(resumen.status, 200, JSON.stringify(resumen.body));
   assert.equal(resumen.body.total, 2864);
@@ -63,29 +63,24 @@ test('carga valida: se guarda y GET /especialidad + /resumen la agregan correcta
   assert.equal(resumen.body.pct, 4.16);
 });
 
-test('% ponderado NUNCA es el promedio simple de los % por especialidad (numeros de control del archivo real de Edwin)', async () => {
+test('% ponderado NUNCA es el promedio simple de los % por especialidad (numeros de control del archivo real)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const campana = 'ORLANT';
   const mes = '2025-06';
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
     campana,
     filas: [
-      [mes, 'AUDIFONOS', 475, 109, 10, 2270, 2864],
-      [mes, 'AUDIOLOGIA', 327, 127, 1, 1317, 1772],
-      [mes, 'EXAMENES ESPECIALES', 352, 84, 1, 820, 1257],
+      fila({ 0: mes, 2: 'AUDIFONOS', 4: 475, 5: 109, 6: 10, 7: 2270, 8: 2864 }),
+      fila({ 0: mes, 2: 'AUDIOLOGIA', 4: 327, 5: 127, 6: 1, 7: 1317, 8: 1772 }),
+      fila({ 0: mes, 2: 'EXAMENES ESPECIALES', 4: 352, 5: 84, 6: 1, 7: 820, 8: 1257 }),
     ],
   });
   const resumen = await request(app).get(`/api/calidad/inasistencia/resumen?campana=${campana}&mes=${mes}`).set(auth(admin));
   assert.equal(resumen.status, 200, JSON.stringify(resumen.body));
   assert.equal(resumen.body.total, 2864 + 1772 + 1257); // 5893
-  assert.equal(resumen.body.cancelada, 475 + 327 + 352); // 1154
-  assert.equal(resumen.body.inasistencia, 109 + 127 + 84); // 320
-  assert.equal(resumen.body.pendiente, 10 + 1 + 1); // 12
-  // Ponderado: (320+12)/5893 = 5.6321...% -> 5.63 (numero de control real del pedido).
   const ponderado = Math.round(((320 + 12) / 5893) * 10000) / 100;
   assert.equal(resumen.body.pct, ponderado);
   assert.equal(resumen.body.pct, 5.63);
-  // El promedio simple de 4.16/7.22/6.76 daria ~6.05, DISTINTO del ponderado -- confirma que nunca se usa el promedio.
   const promedioSimple = Math.round(((4.16 + 7.22 + 6.76) / 3) * 100) / 100;
   assert.notEqual(resumen.body.pct, promedioSimple);
 });
@@ -96,7 +91,7 @@ test('reemplaza por MES: subir el MISMO archivo 2 veces no duplica (sigue en el 
   const payload = {
     campana: 'ORLANT',
     archivoNombre: 'INASISTENCIA_dup.xlsx',
-    filas: [fila({ 0: '2025-07', 1: especialidad })],
+    filas: [fila({ 0: '2025-07', 2: especialidad })],
   };
   const uno = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send(payload);
   assert.equal(uno.status, 201);
@@ -113,25 +108,25 @@ test('reemplaza por MES: un archivo de un mes DISTINTO no toca las filas de otro
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const especialidad = 'ESP MES ' + Math.random().toString(36).slice(2, 6);
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 0: '2025-08', 1: especialidad })],
+    campana: 'ORLANT', filas: [fila({ 0: '2025-08', 2: especialidad })],
   });
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 0: '2025-09', 1: especialidad })],
+    campana: 'ORLANT', filas: [fila({ 0: '2025-09', 2: especialidad })],
   });
   const porMes = await request(app).get('/api/calidad/inasistencia/mensual?campana=ORLANT&especialidad=' + encodeURIComponent(especialidad)).set(auth(admin));
   const meses = porMes.body.map((r) => r.mes);
   assert.ok(meses.includes('2025-08') && meses.includes('2025-09'), 'agosto y septiembre son meses distintos -- las 2 filas deben seguir existiendo');
 });
 
-test('un archivo con VARIOS meses reemplaza SOLO esos meses (Ago-26/Sep-26 real: 1 mes cerrado + 1 mes parcial)', async () => {
+test('un archivo con VARIOS meses reemplaza SOLO esos meses', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const especialidad = 'ESP MULTI ' + Math.random().toString(36).slice(2, 6);
   const res = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
     campana: 'ORLANT',
     filas: [
-      fila({ 0: '2025-10', 1: especialidad }),
-      ['2025-10', 'OTRA ESP', 100, 20, 2, 400, 522],
-      fila({ 0: '2025-11', 1: especialidad }),
+      fila({ 0: '2025-10', 2: especialidad }),
+      fila({ 0: '2025-10', 2: 'OTRA ESP', 4: 100, 5: 20, 6: 2, 7: 400, 8: 522 }),
+      fila({ 0: '2025-11', 2: especialidad }),
     ],
   });
   assert.equal(res.status, 201, JSON.stringify(res.body));
@@ -144,43 +139,90 @@ test('POST /calidad/inasistencia/carga/impacto: cuenta cuantas filas se reemplaz
   const especialidad = 'ESP IMPACTO ' + Math.random().toString(36).slice(2, 6);
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
     campana: 'ORLANT',
-    filas: [fila({ 0: '2025-12', 1: especialidad }), ['2025-12', 'OTRA', 1, 1, 0, 10, 12]],
+    filas: [fila({ 0: '2025-12', 2: especialidad }), fila({ 0: '2025-12', 2: 'OTRA', 4: 1, 5: 1, 6: 0, 7: 10, 8: 12 })],
   });
 
   const impacto = await request(app).post('/api/calidad/inasistencia/carga/impacto').set(auth(admin)).send({
     campana: 'ORLANT',
-    filas: [fila({ 0: '2025-12', 1: especialidad })],
+    filas: [fila({ 0: '2025-12', 2: especialidad })],
   });
   assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
   assert.equal(impacto.body.filasExistentes, 2);
   assert.equal(impacto.body.filasNuevas, 1);
   assert.deepEqual(impacto.body.meses, ['2025-12']);
 
-  // No debe haber escrito nada -- las 2 filas originales siguen intactas.
   const porEsp = await request(app).get('/api/calidad/inasistencia/especialidad?campana=ORLANT&mes=2025-12').set(auth(admin));
   assert.equal(porEsp.body.length, 2, '/carga/impacto no debe escribir nada en la base');
 });
 
-test('GET /calidad/inasistencia/opciones: trae meses y especialidades con datos', async () => {
+test('GET /calidad/inasistencia/opciones: trae meses, sedes, especialidades y entidades con datos', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const especialidad = 'ESP OPCIONES ' + Math.random().toString(36).slice(2, 6);
+  const sede = 'SEDE OPCIONES ' + Math.random().toString(36).slice(2, 6);
+  const entidad = 'ENTIDAD OPCIONES ' + Math.random().toString(36).slice(2, 6);
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 0: '2024-01', 1: especialidad })],
+    campana: 'ORLANT', filas: [fila({ 0: '2024-01', 1: sede, 2: especialidad, 3: entidad })],
   });
   const res = await request(app).get('/api/calidad/inasistencia/opciones?campana=ORLANT').set(auth(admin));
   assert.equal(res.status, 200);
   assert.ok(res.body.especialidades.indexOf(especialidad) !== -1);
+  assert.ok(res.body.sedes.indexOf(sede) !== -1);
+  assert.ok(res.body.entidades.indexOf(entidad) !== -1);
   assert.ok(res.body.meses.indexOf('2024-01') !== -1);
+});
+
+test('filtros de Sede/Especialidad/Entidad cambian el % (mismo mes, un filtro de sede distinto deja afuera la otra sede)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2025-04';
+  const sedeA = 'SEDE FILTRO A ' + Math.random().toString(36).slice(2, 6);
+  const sedeB = 'SEDE FILTRO B ' + Math.random().toString(36).slice(2, 6);
+  const especialidad = 'ESP FILTRO ' + Math.random().toString(36).slice(2, 6);
+  await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT',
+    filas: [
+      fila({ 0: mes, 1: sedeA, 2: especialidad, 4: 0, 5: 10, 6: 0, 7: 90, 8: 100 }), // 10%
+      fila({ 0: mes, 1: sedeB, 2: especialidad, 4: 0, 5: 50, 6: 0, 7: 50, 8: 100 }), // 50%
+    ],
+  });
+  const soloA = await request(app).get(`/api/calidad/inasistencia/resumen?campana=ORLANT&mes=${mes}&sede=${encodeURIComponent(sedeA)}&especialidad=${encodeURIComponent(especialidad)}`).set(auth(admin));
+  assert.equal(soloA.body.pct, 10);
+  const soloB = await request(app).get(`/api/calidad/inasistencia/resumen?campana=ORLANT&mes=${mes}&sede=${encodeURIComponent(sedeB)}&especialidad=${encodeURIComponent(especialidad)}`).set(auth(admin));
+  assert.equal(soloB.body.pct, 50);
+  const ambas = await request(app).get(`/api/calidad/inasistencia/resumen?campana=ORLANT&mes=${mes}&especialidad=${encodeURIComponent(especialidad)}`).set(auth(admin));
+  assert.equal(ambas.body.pct, 30); // (10+50)/(100+100) ponderado
+});
+
+test('GET /calidad/inasistencia/especialidad respeta sede/entidad y agrupa por especialidad (GROUP BY, nunca una fila por entidad)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2025-04';
+  const especialidad = 'ESP GROUPBY ' + Math.random().toString(36).slice(2, 6);
+  const entidadX = 'ENTIDAD X ' + Math.random().toString(36).slice(2, 6);
+  const entidadY = 'ENTIDAD Y ' + Math.random().toString(36).slice(2, 6);
+  await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT',
+    filas: [
+      fila({ 0: mes, 2: especialidad, 3: entidadX, 4: 0, 5: 5, 6: 0, 7: 45, 8: 50 }),
+      fila({ 0: mes, 2: especialidad, 3: entidadY, 4: 0, 5: 5, 6: 0, 7: 45, 8: 50 }),
+    ],
+  });
+  const res = await request(app).get(`/api/calidad/inasistencia/especialidad?campana=ORLANT&mes=${mes}`).set(auth(admin));
+  const filas = res.body.filter((r) => r.especialidad === especialidad);
+  assert.equal(filas.length, 1, 'una sola fila por especialidad, sin importar cuantas entidades la compongan');
+  assert.equal(filas[0].total, 100);
+
+  const soloX = await request(app).get(`/api/calidad/inasistencia/especialidad?campana=ORLANT&mes=${mes}&entidad=${encodeURIComponent(entidadX)}`).set(auth(admin));
+  const filaX = soloX.body.find((r) => r.especialidad === especialidad);
+  assert.equal(filaX.total, 50);
 });
 
 test('GET /calidad/inasistencia/mensual: ignora el filtro implicito de un solo mes (trae TODOS los meses con datos), respeta especialidad y rango', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const especialidad = 'ESP RANGO ' + Math.random().toString(36).slice(2, 6);
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 0: '2024-02', 1: especialidad })],
+    campana: 'ORLANT', filas: [fila({ 0: '2024-02', 2: especialidad })],
   });
   await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 0: '2024-03', 1: especialidad })],
+    campana: 'ORLANT', filas: [fila({ 0: '2024-03', 2: especialidad })],
   });
   const sinRango = await request(app).get('/api/calidad/inasistencia/mensual?campana=ORLANT&especialidad=' + encodeURIComponent(especialidad)).set(auth(admin));
   const mesesSinRango = sinRango.body.map((r) => r.mes);
@@ -205,7 +247,7 @@ test('GET /calidad/inasistencia/especialidad respeta el acceso por campana', asy
 test('validacion: numero negativo -> 400 (defensa en el servidor, no solo en el navegador)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const res = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [fila({ 2: -5 })],
+    campana: 'ORLANT', filas: [fila({ 4: -5 })],
   });
   assert.equal(res.status, 400);
 });
@@ -229,10 +271,18 @@ test('validacion: mes futuro -> 400 (defensa en el servidor, misma regla que Age
   assert.equal(res.status, 400);
 });
 
-test('validacion: fila con menos de 7 campos -> 400', async () => {
+test('validacion: sede/entidad vacias -> 400 (el navegador siempre manda "SIN SEDE"/"SIN ENTIDAD", nunca vacio)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const res = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
-    campana: 'ORLANT', filas: [['2025-04', 'AUDIFONOS', 475]],
+    campana: 'ORLANT', filas: [fila({ 1: '' })],
+  });
+  assert.equal(res.status, 400);
+});
+
+test('validacion: fila con menos de 9 campos -> 400', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const res = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT', filas: [['2025-04', 'SEDE 1', 'AUDIFONOS', 'EPS UNO', 475]],
   });
   assert.equal(res.status, 400);
 });

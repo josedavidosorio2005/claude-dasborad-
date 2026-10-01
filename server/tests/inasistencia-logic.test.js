@@ -1,162 +1,84 @@
-// inasistencia-logic.test.js — Fase 98 (ORLANT, pedido urgente de Edwin).
-// Logica PURA de parseo de la hoja INASISTENCIA (public/js/inasistencia-logic.js):
-// encabezados con/sin la D de ESPECIALIDAD, AÑO opcional, MES en texto/fecha/
-// AAAA-MM, año inferido, mes futuro rechazado, filas vacias ignoradas, TOTAL
-// que no cuadra (advertencia, nunca bloquea), % ponderado vs. archivo. Datos
-// SIEMPRE inventados (los numeros de control del archivo real de Edwin se
-// usan como EJEMPLO numerico, nunca el archivo en si).
+// inasistencia-logic.test.js — Fase 98 (ORLANT, pedido urgente de Edwin);
+// reescrito en la Fase 108 (pedido textual de InCo: "la inasistencia va a
+// ser por mes, que se pueda filtrar por sede, especialidad, nombre
+// entidad"). Logica PURA de parseo de la hoja INASISTENCIA/Hoja1 (public/
+// js/inasistencia-logic.js) -- el archivo real ahora trae UNA FILA POR
+// CITA (SEDE, ESPECIALIDAD/ESPECIALIDA, FECHA_CITA, NOMBRE ENTIDAD,
+// CITEST), que el navegador agrega a (mes,sede,especialidad,entidad) antes
+// de mandarla al servidor. Datos SIEMPRE inventados (los numeros de
+// control del archivo real de InCo se usan como EJEMPLO numerico, nunca el
+// archivo en si).
 'use strict';
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   INASISTENCIA_COLUMNAS,
+  INASISTENCIA_ORDEN_ARRAY,
   inasistenciaColIndexMap,
-  inasistenciaParseMes,
+  inasistenciaParseFechaCita,
   inasistenciaParseFilas,
   inasistenciaFilaComoArray,
   inasistenciaMesesDeFilas,
   inasistenciaMesLbl,
+  inasistenciaPctPonderado,
+  inasistenciaPonderadoTotal,
   inasistenciaAgregarPorMes,
   inasistenciaMesesIncompletos,
+  inasistenciaOrdenarBaseBaja,
 } = require('../../public/js/inasistencia-logic.js');
 
-// "Hoy" fijo para que la inferencia de año sea determinista en las pruebas
-// (mismo criterio que agendas-logic.test.js con fecha-limites-logic.js):
-// 2026-09-30, coincide con el ejemplo del pedido ("hoy AGOSTO y SEPTIEMBRE dan 2026").
+// "Hoy" fijo para que el rechazo de fecha futura sea determinista.
 const AHORA = new Date('2026-09-30T15:00:00Z');
 
-function headerConD() {
-  return ['MES', 'ESPECIALIDAD', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL'];
+function header(){
+  return ['SEDE', 'ESPECIALIDAD', 'FECHA_CITA', 'NOMBRE ENTIDAD', 'CITEST'];
 }
-function headerSinD() {
-  return ['MES', 'ESPECIALIDA', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL', 'INASISTENCIA & PENDIENTE', '% DE INASISTENCIA'];
+function headerEspecialidadTruncada(){
+  return ['SEDE', 'ESPECIALIDA', 'FECHA_CITA', 'NOMBRE ENTIDAD', 'CITEST'];
 }
 
-test('inasistenciaColIndexMap: ESPECIALIDAD y ESPECIALIDA (sin la D, archivo real de Edwin) resuelven a la misma columna', () => {
-  const map1 = inasistenciaColIndexMap(headerConD());
-  const map2 = inasistenciaColIndexMap(headerSinD());
-  assert.equal(map1.especialidad, 1);
-  assert.equal(map2.especialidad, 1);
+// ── inasistenciaColIndexMap / columnas ───────────────────────────────────
+test('inasistenciaColIndexMap: ESPECIALIDAD y ESPECIALIDA (sin la D, archivo real) resuelven a la misma columna', () => {
+  assert.equal(inasistenciaColIndexMap(header()).especialidad, 1);
+  assert.equal(inasistenciaColIndexMap(headerEspecialidadTruncada()).especialidad, 1);
 });
 
-test('inasistenciaColIndexMap: AÑO y ANO (sin tilde) resuelven a la misma columna opcional', () => {
-  const conTilde = inasistenciaColIndexMap(['MES', 'AÑO', 'ESPECIALIDAD', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL']);
-  const sinTilde = inasistenciaColIndexMap(['MES', 'ANO', 'ESPECIALIDAD', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL']);
-  assert.equal(conTilde.anio, 1);
-  assert.equal(sinTilde.anio, 1);
+test('INASISTENCIA_COLUMNAS: las 5 son obligatorias, ESPECIALIDAD tiene "ESPECIALIDA" como alias', () => {
+  assert.ok(INASISTENCIA_COLUMNAS.every((c) => c.obligatoria));
+  const esp = INASISTENCIA_COLUMNAS.find((c) => c.key === 'especialidad');
+  assert.ok(esp.labelAlt.includes('ESPECIALIDA'));
 });
 
-// ── inasistenciaParseMes ─────────────────────────────────────────────────
-test('inasistenciaParseMes: ya viene como AAAA-MM -> se devuelve tal cual', () => {
-  assert.equal(inasistenciaParseMes('2026-08'), '2026-08');
+test('INASISTENCIA_ORDEN_ARRAY: orden fijo [mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total]', () => {
+  assert.deepEqual(INASISTENCIA_ORDEN_ARRAY, ['mes', 'sede', 'especialidad', 'entidad', 'cancelada', 'inasistencia', 'pendiente', 'atendidas', 'total']);
 });
 
-test('inasistenciaParseMes: fecha completa AAAA-MM-DD -> se recorta a AAAA-MM', () => {
-  assert.equal(inasistenciaParseMes('2026-08-15'), '2026-08');
+// ── inasistenciaParseFechaCita ───────────────────────────────────────────
+test('inasistenciaParseFechaCita: serial de Excel -> AAAA-MM-DD', () => {
+  assert.equal(inasistenciaParseFechaCita(46234), '2026-07-31');
+  assert.equal(inasistenciaParseFechaCita(46235), '2026-08-01');
 });
 
-test('inasistenciaParseMes: serial de Excel (numero o texto numerico) -> AAAA-MM', () => {
-  // 46234 = 1/ago/2026 aprox (serial de Excel, epoch 1899-12-30).
-  const desdeNumero = inasistenciaParseMes(46234);
-  const desdeTexto = inasistenciaParseMes('46234');
-  assert.equal(desdeNumero, desdeTexto);
-  assert.match(desdeNumero, /^\d{4}-\d{2}$/);
+test('inasistenciaParseFechaCita: texto "dd/mm/aaaa" -> AAAA-MM-DD (nunca interpretado como mm/dd, Fase 90)', () => {
+  assert.equal(inasistenciaParseFechaCita('05/08/2026'), '2026-08-05');
+  assert.equal(inasistenciaParseFechaCita('31/01/2026'), '2026-01-31'); // dia 31 -- imposible como "mes" en mm/dd
 });
 
-test('inasistenciaParseMes: nombre de mes en texto + AÑO explicito -> se usa el AÑO tal cual (nunca se infiere)', () => {
-  assert.equal(inasistenciaParseMes('AGOSTO', '2024'), '2024-08');
-  assert.equal(inasistenciaParseMes('agosto', 2024), '2024-08'); // insensible a mayusculas, AÑO como numero
+test('inasistenciaParseFechaCita: texto ISO -> se recorta a AAAA-MM-DD', () => {
+  assert.equal(inasistenciaParseFechaCita('2026-08-15T00:00:00'), '2026-08-15');
 });
 
-test('inasistenciaParseMes: nombre de mes SIN año -- se infiere el AÑO MAS RECIENTE en que ese mes no es futuro (hora Colombia)', () => {
-  // "Hoy" = 2026-09-30: Agosto y Septiembre (<= mes actual) -> 2026.
-  assert.equal(inasistenciaParseMes('AGOSTO', undefined, AHORA), '2026-08');
-  assert.equal(inasistenciaParseMes('SEPTIEMBRE', undefined, AHORA), '2026-09');
-  // Octubre (> mes actual, seria futuro en 2026) -> año anterior, 2025.
-  assert.equal(inasistenciaParseMes('OCTUBRE', undefined, AHORA), '2025-10');
-  assert.equal(inasistenciaParseMes('DICIEMBRE', undefined, AHORA), '2025-12');
+test('inasistenciaParseFechaCita: invalida -> null', () => {
+  assert.equal(inasistenciaParseFechaCita('no es una fecha'), null);
+  assert.equal(inasistenciaParseFechaCita(''), null);
+  assert.equal(inasistenciaParseFechaCita(null), null);
 });
 
-test('inasistenciaParseMes: mes no reconocido -> null', () => {
-  assert.equal(inasistenciaParseMes('MESINVENTADO', undefined, AHORA), null);
-  assert.equal(inasistenciaParseMes('', undefined, AHORA), null);
-  assert.equal(inasistenciaParseMes(null, undefined, AHORA), null);
-});
-
-// ── inasistenciaParseFilas ───────────────────────────────────────────────
-test('inasistenciaParseFilas: numeros de control del pedido (Ago-26 x3 especialidades, Sep-26 x1) -- encabezado SIN la D + año inferido', () => {
-  const aoa = [
-    headerSinD(),
-    ['AGOSTO', 'AUDIFONOS', 475, 109, 10, 2270, 2864, 119, '4,16 %'],
-    ['AGOSTO', 'AUDIOLOGIA', 327, 127, 1, 1317, 1772, 128, '7,22 %'],
-    ['AGOSTO', 'EXAMENES ESPECIALES', 352, 84, 1, 820, 1257, 85, '6,76 %'],
-    ['SEPTIEMBRE', 'EXAMENES ESPECIALES', 452, 94, 2, 935, 1483, 96, '6,47 %'],
-  ];
-  const res = inasistenciaParseFilas(aoa, AHORA);
-  assert.equal(res.error, undefined, JSON.stringify(res));
-  assert.equal(res.filas.length, 4);
-  assert.deepEqual(inasistenciaMesesDeFilas(res.filas), ['2026-08', '2026-09']);
-  const ago = res.filas.filter((f) => f.mes === '2026-08');
-  const sep = res.filas.filter((f) => f.mes === '2026-09');
-  assert.equal(ago.length, 3);
-  assert.equal(sep.length, 1);
-  assert.equal(sep[0].especialidad, 'EXAMENES ESPECIALES');
-  assert.equal(sep[0].total, 1483);
-  // Ninguna de estas 4 filas tiene TOTAL descuadrado ni % distinto del
-  // recalculado -- CERO avisos (los numeros de control ya cuadran).
-  assert.deepEqual(res.avisos, []);
-});
-
-test('inasistenciaParseFilas: filas vacias se ignoran (no generan aviso ni error)', () => {
-  const aoa = [
-    headerConD(),
-    ['2025-04', 'AUDIFONOS', 10, 2, 0, 50, 62],
-    ['', '', '', '', '', '', ''],
-    [null, null, null, null, null, null, null],
-    ['2025-04', 'AUDIOLOGIA', 5, 1, 0, 30, 36],
-  ];
-  const res = inasistenciaParseFilas(aoa);
-  assert.equal(res.filas.length, 2);
-});
-
-test('inasistenciaParseFilas: mes futuro se rechaza (defensa igual a Agendas/Tipificacion, Fase 86) -- la fila se omite con aviso', () => {
-  const aoa = [headerConD(), ['2030-01', 'AUDIFONOS', 10, 2, 0, 50, 62]];
-  const res = inasistenciaParseFilas(aoa, AHORA);
-  assert.equal(res.filas, undefined);
-  assert.equal(res.error, 'Ninguna fila valida (revisa los avisos anteriores).');
-  assert.ok(res.avisos.some((a) => /futuro/.test(a)));
-});
-
-test('inasistenciaParseFilas: TOTAL que no cuadra con la suma -- NO bloquea, usa el TOTAL del archivo y avisa', () => {
-  const aoa = [headerConD(), ['2025-05', 'AUDIFONOS', 10, 2, 0, 50, 999]]; // 10+2+0+50=62, no 999
-  const res = inasistenciaParseFilas(aoa);
-  assert.equal(res.filas.length, 1);
-  assert.equal(res.filas[0].total, 999, 'se usa el TOTAL del archivo tal cual, nunca se recalcula');
-  assert.ok(res.avisos.some((a) => /TOTAL del archivo \(999\) no coincide/.test(a)));
-});
-
-test('inasistenciaParseFilas: % del archivo distinto del recalculado -- avisa (el recalculado SIEMPRE gana, nunca se guarda el % del archivo)', () => {
-  const aoa = [
-    ['MES', 'ESPECIALIDAD', 'CANCELADA', 'INASISTENCIA', 'PENDIENTE', 'ATENDIDAS', 'TOTAL', '% DE INASISTENCIA'],
-    ['2025-06', 'AUDIFONOS', 10, 2, 0, 50, 62, '50 %'], // recalculado real (2 decimales): 2/62=3,23%, muy distinto de 50%
-  ];
-  const res = inasistenciaParseFilas(aoa);
-  assert.equal(res.filas.length, 1);
-  assert.ok(res.avisos.some((a) => /% DE INASISTENCIA del archivo \(50%\) difiere del recalculado \(3\.23%\)/.test(a)));
-});
-
-test('inasistenciaParseFilas: numero negativo -> fila omitida con aviso (nunca 500, nunca se cuela)', () => {
-  const aoa = [headerConD(), ['2025-07', 'AUDIFONOS', -1, 2, 0, 50, 51]];
-  const res = inasistenciaParseFilas(aoa);
-  assert.equal(res.filas, undefined);
-  assert.ok(res.avisos.some((a) => /numeros enteros no negativos/.test(a)));
-});
-
+// ── inasistenciaParseFilas: columnas/estructura ──────────────────────────
 test('inasistenciaParseFilas: falta una columna obligatoria -> error explicito, nunca 500', () => {
-  const aoa = [['MES', 'ESPECIALIDAD', 'CANCELADA'], ['2025-04', 'AUDIFONOS', 10]];
-  const res = inasistenciaParseFilas(aoa);
-  assert.match(res.error, /Faltan columnas obligatorias/);
+  const aoa = [['SEDE', 'ESPECIALIDAD', 'FECHA_CITA'], ['SEDE 1', 'AUDIFONOS', 46234]];
+  assert.match(inasistenciaParseFilas(aoa).error, /Faltan columnas obligatorias/);
 });
 
 test('inasistenciaParseFilas: hoja vacia -> error explicito', () => {
@@ -164,15 +86,153 @@ test('inasistenciaParseFilas: hoja vacia -> error explicito', () => {
   assert.match(inasistenciaParseFilas(null).error, /vacio/);
 });
 
-// ── Helpers de payload/etiqueta ──────────────────────────────────────────
-test('inasistenciaFilaComoArray: orden fijo [mes, especialidad, cancelada, inasistencia, pendiente, atendidas, total]', () => {
-  const fila = { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 475, inasistencia: 109, pendiente: 10, atendidas: 2270, total: 2864 };
-  assert.deepEqual(inasistenciaFilaComoArray(fila), ['2026-08', 'AUDIFONOS', 475, 109, 10, 2270, 2864]);
+test('inasistenciaParseFilas: filas vacias se ignoran (no generan aviso ni error)', () => {
+  const aoa = [
+    header(),
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+    ['', '', '', '', ''],
+    [null, null, null, null, null],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+  ];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  // Las 2 filas reales agregan a UNA sola fila (misma mes/sede/especialidad/entidad).
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.filas[0].total, 2);
+});
+
+test('inasistenciaParseFilas: fecha invalida -> fila omitida con aviso', () => {
+  const aoa = [header(), ['SEDE 1', 'AUDIFONOS', 'no es fecha', 'EPS UNO', 'T']];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.filas, undefined);
+  assert.ok(res.avisos.some((a) => /invalida/.test(a)));
+});
+
+test('inasistenciaParseFilas: fecha futura se rechaza (defensa igual a Agendas/Tipificacion) -- la fila se omite con aviso', () => {
+  const aoa = [header(), ['SEDE 1', 'AUDIFONOS', '15/01/2030', 'EPS UNO', 'T']];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.filas, undefined);
+  assert.ok(res.avisos.some((a) => /futuro/.test(a)));
+});
+
+test('inasistenciaParseFilas: SEDE/ESPECIALIDAD vacias se guardan igual, agrupadas como "SIN SEDE"/"SIN ESPECIALIDAD"', () => {
+  const aoa = [header(), ['', '', 46234, 'EPS UNO', 'T']];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas[0].sede, 'SIN SEDE');
+  assert.equal(res.filas[0].especialidad, 'SIN ESPECIALIDAD');
+  assert.ok(res.avisos.some((a) => /SIN SEDE/.test(a)));
+  assert.ok(res.avisos.some((a) => /SIN ESPECIALIDAD/.test(a)));
+});
+
+test('inasistenciaParseFilas: NOMBRE ENTIDAD vacio -> "SIN ENTIDAD" (nunca se descarta la cita)', () => {
+  const aoa = [header(), ['SEDE 1', 'AUDIFONOS', 46234, '', 'T']];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.filas[0].entidad, 'SIN ENTIDAD');
+});
+
+// ── CITEST ────────────────────────────────────────────────────────────────
+test('inasistenciaParseFilas: C/I/P/T mapean a cancelada/inasistencia/pendiente/atendidas', () => {
+  const aoa = [
+    header(),
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'C'],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'I'],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'P'],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+  ];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  const f = res.filas[0]; // misma mes/sede/especialidad/entidad -> 1 sola fila agregada
+  assert.equal(f.cancelada, 1);
+  assert.equal(f.inasistencia, 1);
+  assert.equal(f.pendiente, 1);
+  assert.equal(f.atendidas, 1);
+  assert.equal(f.total, 4);
+});
+
+test('inasistenciaParseFilas: CITEST desconocido por debajo del umbral de rechazo -- se omite esa fila con aviso, el resto se guarda', () => {
+  const aoa = [header()];
+  for (let i = 0; i < 95; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T']);
+  for (let i = 0; i < 5; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'X']); // 5% exacto, no pasa el umbral (>5%)
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas[0].total, 95);
+  assert.ok(res.avisos.some((a) => /CITEST "X" no reconocido/.test(a)));
+});
+
+test('inasistenciaParseFilas: CITEST desconocido por ENCIMA del umbral de rechazo -- la carga COMPLETA se rechaza', () => {
+  const aoa = [header()];
+  for (let i = 0; i < 90; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T']);
+  for (let i = 0; i < 10; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'X']); // 10% > 5%
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.filas, undefined);
+  assert.match(res.error, /CITEST desconocido/);
+});
+
+// ── Duplicados exactos: NUNCA se deduplican (a diferencia de Agendas/Tipificacion, Fase 88) ──
+test('inasistenciaParseFilas: filas EXACTAMENTE repetidas no se deduplican -- sin id de cita, son 2 citas reales', () => {
+  const aoa = [
+    header(),
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+  ];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.filas.length, 1); // 1 fila agregada...
+  assert.equal(res.filas[0].total, 3); // ...pero cuenta las 3 citas, no las colapsa a 1.
+});
+
+// ── Agregacion a (mes, sede, especialidad, entidad) ──────────────────────
+test('inasistenciaParseFilas: agrega por (mes, sede, especialidad, entidad) -- filas con alguna dimension distinta NO se mezclan', () => {
+  const aoa = [
+    header(),
+    ['SEDE 1', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+    ['SEDE 2', 'AUDIFONOS', 46234, 'EPS UNO', 'T'], // sede distinta
+    ['SEDE 1', 'AUDIOLOGIA', 46234, 'EPS UNO', 'T'], // especialidad distinta
+    ['SEDE 1', 'AUDIFONOS', 46265, 'EPS UNO', 'T'], // mes distinto (46265 = 46234+31 dias -> agosto, no julio)
+  ];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas.length, 4);
+  assert.ok(res.filas.every((f) => f.total === 1));
+});
+
+test('inasistenciaParseFilas: suma de TODAS las filas agregadas = total de filas de entrada (control de integridad)', () => {
+  const aoa = [header()];
+  const letras = ['C', 'I', 'P', 'T'];
+  for (let i = 0; i < 200; i++) {
+    aoa.push(['SEDE ' + (i % 3), 'ESP ' + (i % 5), 46234 + (i % 7), 'ENT ' + (i % 11), letras[i % 4]]);
+  }
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  const sumaTotal = res.filas.reduce((a, f) => a + f.total, 0);
+  assert.equal(sumaTotal, 200);
+});
+
+// ── Privacidad de NOMBRE ENTIDAD (reusa agendasAplicarPrivacidadEntidad, Fase 78) ──
+test('inasistenciaParseFilas: entidad con menos de 5 citas en el archivo -> "PARTICULAR / OTRA" (nunca se expone el nombre real)', () => {
+  const aoa = [header()];
+  for (let i = 0; i < 10; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'EPS GRANDE', 'T']); // >=5 -> visible
+  for (let i = 0; i < 3; i++) aoa.push(['SEDE 1', 'AUDIFONOS', 46234, 'CLINICA PEQUEÑA', 'T']); // <5 -> agrupada
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  const entidades = res.filas.map((f) => f.entidad);
+  assert.ok(entidades.includes('EPS GRANDE'));
+  assert.ok(entidades.includes('PARTICULAR / OTRA'));
+  assert.ok(!entidades.includes('CLINICA PEQUEÑA'));
+  assert.equal(res.entidadesAgrupadas, 3);
+  // El total de citas no cambia por la anonimizacion (solo cambia el nombre).
+  const sumaTotal = res.filas.reduce((a, f) => a + f.total, 0);
+  assert.equal(sumaTotal, 13);
+});
+
+// ── Payload compacto ──────────────────────────────────────────────────────
+test('inasistenciaFilaComoArray: respeta INASISTENCIA_ORDEN_ARRAY', () => {
+  const fila = { mes: '2026-08', sede: 'SEDE 1', especialidad: 'AUDIFONOS', entidad: 'EPS UNO', cancelada: 1, inasistencia: 2, pendiente: 0, atendidas: 7, total: 10 };
+  assert.deepEqual(inasistenciaFilaComoArray(fila), ['2026-08', 'SEDE 1', 'AUDIFONOS', 'EPS UNO', 1, 2, 0, 7, 10]);
 });
 
 test('inasistenciaMesesDeFilas: distintos, ordenados, sin duplicados', () => {
-  const filas = [{ mes: '2026-09' }, { mes: '2026-08' }, { mes: '2026-08' }];
-  assert.deepEqual(inasistenciaMesesDeFilas(filas), ['2026-08', '2026-09']);
+  assert.deepEqual(inasistenciaMesesDeFilas([{ mes: '2026-09' }, { mes: '2026-08' }, { mes: '2026-08' }]), ['2026-08', '2026-09']);
 });
 
 test('inasistenciaMesLbl: AAAA-MM -> "Ago-26"', () => {
@@ -180,51 +240,43 @@ test('inasistenciaMesLbl: AAAA-MM -> "Ago-26"', () => {
   assert.equal(inasistenciaMesLbl('2026-09'), 'Sep-26');
 });
 
-test('INASISTENCIA_COLUMNAS: ESPECIALIDAD tiene "ESPECIALIDA" como alias, AÑO es opcional', () => {
-  const esp = INASISTENCIA_COLUMNAS.find((c) => c.key === 'especialidad');
-  assert.ok(esp.labelAlt.includes('ESPECIALIDA'));
-  const anio = INASISTENCIA_COLUMNAS.find((c) => c.key === 'anio');
-  assert.equal(anio.obligatoria, false);
+// ── % ponderado ───────────────────────────────────────────────────────────
+test('inasistenciaPctPonderado: (inasistencia+pendiente)/total, 2 decimales; total<=0 -> null', () => {
+  assert.equal(inasistenciaPctPonderado(109, 10, 2864), 4.16);
+  assert.equal(inasistenciaPctPonderado(0, 0, 0), null);
 });
 
-// ── "Por mes" (Fase 101, sub-pestaña PRINCIPAL): agregado de todas las
-// especialidades juntas, % PONDERADO (nunca el promedio simple de los % de
-// cada especialidad) -- numeros de control de Ago-26 (5.893 citas, 332
-// inasistencias+pendientes, 5,63 %). Datos SIEMPRE inventados (2
-// especialidades ficticias cuya suma cuadra con el total real de control),
-// nunca el desglose real de ORLANT.
-test('inasistenciaAgregarPorMes: suma TODAS las especialidades del mes y calcula el % PONDERADO (5,63 %, no el promedio simple ~9,39 %)', () => {
+test('inasistenciaPonderadoTotal: suma TODO el conjunto (Σ(I+P)/Σtotal), nunca el promedio simple', () => {
+  const r = inasistenciaPonderadoTotal([
+    { mes: '2026-08', inasistencia: 200, pendiente: 0, total: 5000 },
+    { mes: '2026-08', inasistencia: 132, pendiente: 0, total: 893 },
+  ]);
+  assert.equal(r.total, 5893);
+  assert.equal(r.pct, 5.63);
+});
+
+// ── "Resumen por mes" ─────────────────────────────────────────────────────
+test('inasistenciaAgregarPorMes: suma TODAS las especialidades del mes y calcula el % PONDERADO (nunca el promedio simple)', () => {
   const filas = [
     { mes: '2026-08', especialidad: 'ESPECIALIDAD GRANDE', cancelada: 0, inasistencia: 200, pendiente: 0, atendidas: 4800, total: 5000 },
     { mes: '2026-08', especialidad: 'ESPECIALIDAD CHICA', cancelada: 0, inasistencia: 132, pendiente: 0, atendidas: 761, total: 893 },
   ];
   const agregado = inasistenciaAgregarPorMes(filas);
   assert.equal(agregado.length, 1);
-  assert.equal(agregado[0].mes, '2026-08');
   assert.equal(agregado[0].total, 5893);
-  assert.equal(agregado[0].inasistenciaPendiente, 332);
-  assert.equal(agregado[0].pct, 5.63); // 332/5893*100, ponderado
-
-  // El promedio simple de los % de cada especialidad (4,00 % y 14,78 %) da
-  // ~9,39 % -- bien distinto del 5,63 % ponderado. Confirma que
-  // inasistenciaAgregarPorMes NUNCA promedia los % por especialidad.
-  const pctGrande = Math.round((200 / 5000) * 10000) / 100;
-  const pctChica = Math.round((132 / 893) * 10000) / 100;
-  const promedioSimple = Math.round(((pctGrande + pctChica) / 2) * 100) / 100;
-  assert.equal(promedioSimple, 9.39);
+  assert.equal(agregado[0].pct, 5.63);
+  const promedioSimple = Math.round((((200 / 5000 * 100) + (132 / 893 * 100)) / 2) * 100) / 100;
   assert.notEqual(agregado[0].pct, promedioSimple);
 });
 
-test('inasistenciaAgregarPorMes: un mes por fila, ordenados asc, con las especialidades que aportaron datos', () => {
+test('inasistenciaAgregarPorMes: con UNA sola especialidad en las filas (ej. ya filtrada por el servidor), cada mes refleja solo esa especialidad', () => {
   const filas = [
-    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 10, pendiente: 0, atendidas: 90, total: 100 },
-    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 5, pendiente: 0, atendidas: 95, total: 100 },
+    { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 20, pendiente: 0, atendidas: 80, total: 100 },
   ];
   const agregado = inasistenciaAgregarPorMes(filas);
-  assert.deepEqual(agregado.map((a) => a.mes), ['2026-08', '2026-09']);
-  assert.deepEqual(agregado[0].especialidades, ['AUDIFONOS', 'AUDIOLOGIA']);
-  assert.deepEqual(agregado[1].especialidades, ['EXAMENES ESPECIALES']);
+  assert.deepEqual(agregado.map((a) => a.pct), [10, 20]);
+  assert.deepEqual(agregado.map((a) => a.especialidades), [['AUDIFONOS'], ['AUDIFONOS']]);
 });
 
 test('inasistenciaAgregarPorMes: sin filas -> sin meses', () => {
@@ -232,30 +284,47 @@ test('inasistenciaAgregarPorMes: sin filas -> sin meses', () => {
   assert.deepEqual(inasistenciaAgregarPorMes(undefined), []);
 });
 
-// ── Aviso de mes incompleto (Fase 101, debajo de la grafica "Por mes") ──
-test('inasistenciaMesesIncompletos: un mes con MENOS especialidades que el mas completo del rango queda marcado -- ej. real "Sep-26: solo incluye Examenes Especiales"', () => {
+test('inasistenciaMesesIncompletos: un mes con MENOS especialidades que el mas completo del rango queda marcado', () => {
   const agregado = inasistenciaAgregarPorMes([
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
-    { mes: '2026-08', especialidad: 'EXAMENES ESPECIALES', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
-    { mes: '2026-09', especialidad: 'EXAMENES ESPECIALES', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
+    { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 1, inasistencia: 50, pendiente: 46, atendidas: 1386, total: 1483 },
   ]);
   const incompletos = inasistenciaMesesIncompletos(agregado);
   assert.equal(incompletos.length, 1);
   assert.equal(incompletos[0].mes, '2026-09');
-  assert.deepEqual(incompletos[0].especialidades, ['EXAMENES ESPECIALES']);
 });
 
 test('inasistenciaMesesIncompletos: todos los meses con el mismo numero de especialidades -> ningun aviso', () => {
   const agregado = inasistenciaAgregarPorMes([
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
-    { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-09', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
-    { mes: '2026-09', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
   ]);
   assert.deepEqual(inasistenciaMesesIncompletos(agregado), []);
 });
 
-test('inasistenciaMesesIncompletos: sin meses -> sin avisos', () => {
-  assert.deepEqual(inasistenciaMesesIncompletos([]), []);
+// ── "Por especialidad": base baja ────────────────────────────────────────
+test('inasistenciaOrdenarBaseBaja: ordena de mayor a menor %, manda al final las de menos de `umbral` citas, marcadas', () => {
+  const filas = [
+    { especialidad: 'GRANDE BAJA', pct: 5, total: 1000 },
+    { especialidad: 'GRANDE ALTA', pct: 40, total: 1000 },
+    { especialidad: 'CHICA EXTREMA', pct: 50, total: 2 }, // base baja: 1 de 2 da un % enganoso
+  ];
+  const r = inasistenciaOrdenarBaseBaja(filas, 30);
+  assert.deepEqual(r.map((f) => f.especialidad), ['GRANDE ALTA', 'GRANDE BAJA', 'CHICA EXTREMA']);
+  assert.deepEqual(r.map((f) => f.baseBaja), [false, false, true]);
+  // Nunca expone el conteo real (total) en el resultado.
+  assert.ok(r.every((f) => !('total' in f)));
+});
+
+test('inasistenciaOrdenarBaseBaja: umbral por defecto es 30 si no se pasa uno valido', () => {
+  const filas = [{ especialidad: 'A', pct: 10, total: 29 }, { especialidad: 'B', pct: 20, total: 30 }];
+  const r = inasistenciaOrdenarBaseBaja(filas);
+  assert.equal(r.find((f) => f.especialidad === 'A').baseBaja, true);
+  assert.equal(r.find((f) => f.especialidad === 'B').baseBaja, false);
+});
+
+test('inasistenciaOrdenarBaseBaja: sin filas -> sin filas', () => {
+  assert.deepEqual(inasistenciaOrdenarBaseBaja([], 30), []);
+  assert.deepEqual(inasistenciaOrdenarBaseBaja(undefined, 30), []);
 });

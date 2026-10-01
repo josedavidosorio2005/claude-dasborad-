@@ -81,7 +81,7 @@
   <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
   <tr><td><strong>Tráfico de WhatsApp</strong></td><td>Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos).</td></tr>
   <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente.</td></tr>
-  <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes (el total de todas las especialidades juntas) — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
+  <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto).</td></tr>
   <tr><td><strong>Calidad</strong></td><td>Monitoreo de calidad de los asesores, con su nota y resultados.</td></tr>
 </table>
@@ -115,7 +115,7 @@
 </div>
 <div class="card">
 <h3>Inasistencia</h3>
-<p>El % de inasistencia es <strong>(inasistencia + pendientes) ÷ total, ponderado</strong>. Los "pendientes" (citas que quedaron sin confirmar si la persona fue o no) cuentan como inasistencia para este cálculo; las canceladas NO cuentan como inasistencia, pero sí quedan en el total. Al combinar varias especialidades, el % se calcula sobre la SUMA de todas (nunca promediando los % de cada especialidad por separado — eso daría un número distinto y menos correcto).</p>
+<p>El % de inasistencia es <strong>(inasistencia + pendientes) ÷ total, ponderado</strong>. Los "pendientes" (citas que quedaron sin confirmar si la persona fue o no) cuentan como inasistencia para este cálculo; las canceladas NO cuentan como inasistencia, pero sí quedan en el total. Al combinar varias especialidades, el % se calcula sobre la SUMA de todas (nunca promediando los % de cada especialidad por separado — eso daría un número distinto y menos correcto). Tiene filtros de Sede, Especialidad y Entidad (esta última con buscador) y 2 vistas: <strong>Resumen por mes</strong> (una tarjeta con el % de todo el período filtrado, más una gráfica con el % de cada mes) y <strong>Por especialidad</strong> (una barra por especialidad del mes elegido arriba; las de muy pocas citas se marcan con asterisco y van al final).</p>
 <figure><img src="/img/guia/03-inasistencia-por-mes.png" alt="Inasistencia, % por mes"><figcaption>Inasistencia: % de inasistencia por mes (datos de demostración).</figcaption></figure>
 </div>
 <div class="card">
@@ -167,9 +167,11 @@
 </div>
 <div class="card">
 <h3>Inasistencia</h3>
-<p><strong>Qué archivo</strong>: el reporte mensual de inasistencia por especialidad que manda Edwin.<br>
+<p><strong>Qué archivo</strong>: el export de citas del sistema de agendamiento de Edwin — una fila por cita, puede traer varios meses a la vez.<br>
 <strong>Hoja</strong>: <code>INASISTENCIA</code>.<br>
-<strong>Columnas obligatorias</strong>: MES, ESPECIALIDAD, CANCELADA, INASISTENCIA, PENDIENTE, ATENDIDAS, TOTAL.<br>
+<strong>Columnas obligatorias</strong>: SEDE, ESPECIALIDAD, FECHA_CITA, NOMBRE ENTIDAD, CITEST.<br>
+<strong>CITEST</strong>: una letra por cita — C=Cancelada, I=Inasistencia, P=Pendiente, T=Atendida.<br>
+<strong>Privacidad</strong>: una entidad con muy pocas citas en el archivo se guarda como "PARTICULAR / OTRA" — nunca se muestra el valor original.<br>
 <strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.<br>
 El mes en curso puede traer menos especialidades que un mes ya cerrado — es normal, la plataforma avisa cuando eso pasa.</p>
 </div>

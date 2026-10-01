@@ -1,18 +1,14 @@
-// orlant-inasistencia-porcentaje-migracion.test.js — prueba la migracion
-// `dashboards_config_orlant_inasistencia_panel_v3` (server/db.js, Fase 106,
-// pedido textual de InCo: "que en Inasistencia solo quede en porcentaje,
-// por mes"): reemplaza la forma de la Fase 101 -- la que SI esta hoy en
-// produccion (3 inasistencia_panel con vista pormes/porespecialidad/detalle,
-// subtabs en ese mismo orden) -- por un SOLO panel (vista:'pormes'), sin
-// subtabs (`[]`). Mismo patron que orlant-inasistencia-pormes-migracion.test.js
-// (Fase 101): sembrar el layout de la forma VIEJA reconocible a mano *antes*
-// de requerir db.js, y verificar "despues". A diferencia de los fixtures de
-// los otros 2 archivos de pruebas de inasistencia (que arrancan de formas
-// MAS viejas que la Fase 101 y por eso v1/v2 los convierten directo a la
-// forma final, dejando a v3 como no-op) este fixture arranca EXACTAMENTE de
-// la forma de produccion de hoy, asi que v1 y v2 son los no-ops aqui y v3 es
-// quien hace el trabajo real -- el escenario mas representativo de lo que le
-// va a pasar al ORLANT real en el deploy de esta fase.
+// orlant-inasistencia-subtabs-migracion.test.js — prueba la migracion
+// `dashboards_config_orlant_inasistencia_panel_v4` (server/db.js, Fase 108,
+// pedido textual de InCo: "la inasistencia va a ser por mes, que se pueda
+// filtrar por sede, especialidad, nombre entidad... y barra por
+// especialidad"): reemplaza la forma de la Fase 106 -- la que esta hoy en
+// produccion (1 solo inasistencia_panel, vista:'pormes', sin subtabs) -- por
+// 2 paneles (vista pormes/porespecialidad) con 2 sub-pestañas. Mismo patron
+// que orlant-inasistencia-porcentaje-migracion.test.js (Fase 106): sembrar
+// el layout de la forma VIEJA reconocible a mano *antes* de requerir db.js,
+// y verificar panel y sub-pestaña por separado, un cliente sin relacion
+// intacto, e idempotencia reabriendo la base.
 'use strict';
 
 const os = require('os');
@@ -24,32 +20,23 @@ const assert = require('node:assert/strict');
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
-const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-inasist-pct-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
+const tmpDb = path.join(os.tmpdir(), `inconexion-orlant-inasist-subtabs-${process.pid}-${crypto.randomBytes(6).toString('hex')}.db`);
 
-// Forma "vieja" reconocible: la de la Fase 101, HOY en produccion -- 3
-// inasistencia_panel con vista pormes/porespecialidad/detalle (en ese
-// orden) y subtabs en el mismo orden.
+// Forma "vieja" reconocible: la de la Fase 106, HOY en produccion -- 1 solo
+// inasistencia_panel (vista:'pormes'), sin subtabs.
 const LAYOUT_VIEJO = {
   kpis: [],
   tabs: [
     { key: 'trafico', label: 'Trafico de Llamadas', panels: [{ tipo: 'trafico_combo', campana: 'ORLANT' }] },
-    { key: 'agendamiento', label: 'Agendamiento', oculta: true, panels: [{ tipo: 'agendas_panel', vista: 'especialidad', campana: 'ORLANT' }] },
     { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
       { tipo: 'inasistencia_panel', vista: 'pormes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
-      { tipo: 'inasistencia_panel', vista: 'porespecialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
-      { tipo: 'inasistencia_panel', vista: 'detalle', titulo: 'Detalle de Inasistencia', campana: 'ORLANT' },
-    ], subtabs: [
-      { key: 'pormes', label: 'Por mes', indices: [0] },
-      { key: 'porespecialidad', label: 'Por especialidad', indices: [1] },
-      { key: 'detalle', label: 'Detalle', indices: [2] },
-    ]},
+    ], subtabs: []},
     { key: 'calidad', label: 'Calidad', panels: [{ tipo: 'calidad_kpis', campana: 'ORLANT' }] },
   ],
 };
 
-// Escenario 2: un tab "inasistencia" personalizado a algo que no es ni la
-// forma vieja (Fase 101) ni la nueva (Fase 106) -- la migracion debe
-// dejarlo intacto.
+// Escenario 2: un tab "inasistencia" personalizado -- ni la forma vieja
+// (Fase 106) ni la nueva (Fase 108). La migracion debe dejarlo intacto.
 const LAYOUT_PERSONALIZADO = {
   kpis: [],
   tabs: [
@@ -104,40 +91,38 @@ const { CONFIGS } = require('../dashboard-config-seed');
 const ORLANT_TARGET = CONFIGS.find((c) => c.cliente === 'ORLANT');
 const TARGET_TAB = ORLANT_TARGET.layout.tabs.find((t) => t.key === 'inasistencia');
 
-test('migracion dashboards_config_orlant_inasistencia_panel_v3: reemplaza panels/subtabs por la forma EN VIVO de CONFIGS (hoy, Fase 108: 2 paneles con subtabs; en su momento, Fase 106: 1 solo panel sin subtabs)', () => {
+test('migracion dashboards_config_orlant_inasistencia_panel_v4: deja Inasistencia con 2 paneles (pormes/porespecialidad) y 2 sub-pestañas', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
   const tab = layout.tabs.find((t) => t.key === 'inasistencia');
 
   // Verificado por separado (panel y sub-pestaña), no uno gateado por el
-  // otro -- precedente real de la Fase 104 (interaccion entre migraciones
-  // por cantidad de paneles). v3 reemplaza con la forma EN VIVO del seed
-  // (dashboard-config-seed.js), no con una copia fija de como se veian en
-  // la Fase 106 -- mismo criterio que v1/v2 (ver cabecera del archivo).
-  assert.equal(tab.panels.length, TARGET_TAB.panels.length);
-  assert.ok(tab.panels.every((p) => p.tipo === 'inasistencia_panel'));
+  // otro -- precedente real de la Fase 104.
+  assert.equal(tab.panels.length, 2);
+  assert.equal(tab.panels[0].vista, 'pormes');
+  assert.equal(tab.panels[1].vista, 'porespecialidad');
   assert.deepEqual(tab.panels, TARGET_TAB.panels);
+
+  assert.equal(tab.subtabs.length, 2);
+  assert.deepEqual(tab.subtabs.map((s) => s.key), ['pormes', 'porespecialidad']);
   assert.deepEqual(tab.subtabs, TARGET_TAB.subtabs);
 
-  // `oculta` no lo toca esta migracion (dashboard-generic.js decide en
-  // memoria segun si hay inasistencias cargadas, nunca la migracion).
-  assert.equal(tab.oculta, true);
+  assert.equal(tab.oculta, true); // esta migracion no toca `oculta`
 
-  // El tab "calidad" (sin relacion con este fix) no se toca.
   const calidad = layout.tabs.find((t) => t.key === 'calidad');
   assert.equal(calidad.panels[0].tipo, 'calidad_kpis');
 });
 
-test('migracion dashboards_config_orlant_inasistencia_panel_v3: nunca toca un tab "inasistencia" que no coincide con la forma esperada (Fase 101 ni Fase 106)', () => {
+test('migracion dashboards_config_orlant_inasistencia_panel_v4: nunca toca un tab "inasistencia" que no coincide con la forma esperada (Fase 106)', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
   assert.deepEqual(JSON.parse(row.layout), LAYOUT_PERSONALIZADO, 'el layout de otro cliente queda byte a byte igual (la query es exclusiva de ORLANT)');
 });
 
-test('migracion dashboards_config_orlant_inasistencia_panel_v3: es idempotente -- correrla dos veces seguidas (reabriendo la base) da byte a byte el mismo resultado', () => {
+test('migracion dashboards_config_orlant_inasistencia_panel_v4: es idempotente -- correrla dos veces seguidas (reabriendo la base) da byte a byte el mismo resultado', () => {
   const antes = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT').layout;
   const tab = JSON.parse(antes).tabs.find((t) => t.key === 'inasistencia');
-  assert.deepEqual(tab.panels, TARGET_TAB.panels, 'el resultado deberia ya cumplir el guard de "ya migrado" (forma EN VIVO de CONFIGS) tras la primera corrida');
-  assert.deepEqual(tab.subtabs, TARGET_TAB.subtabs);
+  const yaEsNuevo = tab.panels.length === 2 && tab.panels.some((p) => p.vista === 'porespecialidad') && (tab.subtabs || []).length === 2;
+  assert.ok(yaEsNuevo, 'el resultado deberia ya cumplir el guard de "ya migrado" tras la primera corrida');
 
   delete require.cache[require.resolve('../db')];
   const db2 = require('../db');

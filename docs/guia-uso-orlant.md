@@ -56,7 +56,7 @@ del todo vas a ver:
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
 | **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos). |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente. |
-| **Inasistencia** | El % de inasistencia, por mes (el total de todas las especialidades juntas) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
+| **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Tipificación** | Cómo se clasificó cada llamada/chat (motivo de contacto). |
 | **Calidad** | Monitoreo de calidad de los asesores, con su nota y resultados. |
 
@@ -113,7 +113,16 @@ la persona fue o no) cuentan como inasistencia para este cálculo; las
 canceladas NO cuentan como inasistencia, pero sí quedan en el total. Al
 combinar varias especialidades, el % se calcula sobre la SUMA de todas
 (nunca promediando los % de cada especialidad por separado — eso daría
-un número distinto y menos correcto).
+un número distinto y menos correcto). Tiene filtros de Sede, Especialidad
+y Entidad (esta última con buscador, porque son muchas) y 2 vistas:
+
+- **Resumen por mes** (la que abre por defecto): una tarjeta con el % de
+  todo el período que deja pasar los filtros de arriba, más una gráfica
+  con el % de cada mes con datos — el mes elegido arriba se resalta.
+- **Por especialidad**: una barra por especialidad, del mes elegido
+  arriba. Las especialidades con muy pocas citas ese mes se marcan con
+  un asterisco (\*) y se muestran al final — su % puede no ser
+  representativo.
 
 ![Inasistencia: % de inasistencia por mes (datos de demostración)](img/guia-uso/03-inasistencia-por-mes.png)
 
@@ -195,14 +204,25 @@ archivo sí se carga.
 
 ### Inasistencia
 
-- **Qué archivo**: el reporte mensual de inasistencia por especialidad
-  que manda Edwin.
+- **Qué archivo**: el export de citas del sistema de agendamiento de
+  Edwin — una fila por CITA (no un resumen), puede traer varios meses a
+  la vez.
 - **Hoja**: `INASISTENCIA`.
-- **Columnas obligatorias**: MES, ESPECIALIDAD, CANCELADA, INASISTENCIA,
-  PENDIENTE, ATENDIDAS, TOTAL.
+- **Columnas obligatorias**: SEDE, ESPECIALIDAD, FECHA_CITA, NOMBRE
+  ENTIDAD, CITEST.
+- **CITEST**: una letra por cita — `C` = Cancelada, `I` = Inasistencia,
+  `P` = Pendiente (sin confirmar si la persona fue o no), `T` =
+  Atendida. Una letra distinta de estas 4 (o vacía) se avisa; si son
+  demasiadas filas así, la carga se rechaza completa.
+- El sistema agrupa las filas por sede/especialidad/entidad/mes en el
+  navegador antes de guardar — no borres ni resumas filas repetidas: sin
+  un número de cita, dos filas idénticas son dos citas reales.
+- **Privacidad**: cualquier entidad (NOMBRE ENTIDAD) que aparezca muy
+  pocas veces en el archivo se guarda como "PARTICULAR / OTRA" — nunca
+  se muestra ni se guarda el valor original.
 - **Reemplazo**: por MES — si el archivo trae Agosto y Septiembre, se
-  reemplazan esos 2 meses completos (todas sus especialidades), sin
-  tocar ningún otro mes ya cargado.
+  reemplazan esos 2 meses completos, sin tocar ningún otro mes ya
+  cargado.
 - Septiembre (o el mes que esté en curso) puede traer menos
   especialidades que un mes ya cerrado — es normal, la plataforma avisa
   cuando eso pasa (ver [sección 3](#3-qué-significa-cada-indicador)).

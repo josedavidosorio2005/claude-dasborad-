@@ -9459,3 +9459,184 @@ nuevo + script de producción actualizado + docs + capturas +
 `CHANGELOG.md`), CI verde. Versión final: `1.6.0` (menor, cambio visible),
 tag `v1.6.0`, deploy confirmado (`/api/health` → `version: "1.6.0"`) y
 verificación final en producción corrida el mismo día.
+
+## Fase 108 — Inasistencia con la base nueva: por mes, filtros de sede/especialidad/entidad, resumen de todos los meses, barra por especialidad (2026-10-01)
+
+Pedido textual de InCo sobre Inasistencia de ORLANT: "La inasistencia va a
+ser por mes, que se pueda filtrar por sede, especialidad, nombre
+entidad... Con resumen de todos los meses... Y barra por especialidad,
+para cada una de ellas, con el % de la inasistencia y poder filtrar por
+el mes... Y que se pueda ver una sola especialidad por cada mes que se
+tenga subido." El archivo real de Edwin dejó de traer un agregado por
+mes+especialidad (formato de las Fases 98-106) y ahora trae **una fila
+por CITA** (hoja `Hoja1`, no `INASISTENCIA`): SEDE, ESPECIALIDA(D),
+FECHA_CITA, NOMBRE ENTIDAD, CITEST — 83.006 filas, ene-ago 2026 (5 sedes,
+19 especialidades, 4.473 entidades distintas).
+
+### Qué cambió
+
+- **Grano de datos** (`server/db.js`, `server/inasistencia.js`): la tabla
+  `inasistencias` pasa de un agregado por `(campana,mes,especialidad)` a
+  `(campana,mes,sede,especialidad,entidad)` — UNIQUE nuevo, migración
+  idempotente `inasistencias_sede_entidad_v1` (recrea la tabla, patrón
+  `CREATE TABLE...new` + `INSERT...SELECT` + `DROP` + `RENAME`, mismo que
+  usa `hlm_sede_consolidacion_v1`) que conserva las filas ya cargadas con
+  el formato viejo (Ago-26 de 3 especialidades, Sep-26 de 1) con
+  `sede='SIN DATO'`/`entidad='SIN DATO'` — se excluyen de las listas de
+  filtro (`inasistenciaOpciones`) pero sus datos no se pierden ni se
+  borran. Probada corriéndola 2 veces (idéntico) y sobre una base nueva
+  que corre TODAS las migraciones (`inasistencias-sede-entidad-migracion.test.js`).
+- **Parseo/agregación en el navegador** (`public/js/inasistencia-logic.js`):
+  `inasistenciaParseFilas` reconoce la hoja por encabezados (tolera
+  `ESPECIALIDA`/`ESPECIALIDAD`, Fase 79), mapea CITEST (C/I/P/T →
+  cancelada/inasistencia/pendiente/atendidas; una letra desconocida se
+  avisa fila por fila y, si pasa el 5% del archivo, **rechaza la carga
+  completa** — umbral nuevo, ver comentario `INASISTENCIA_CITEST_UMBRAL_RECHAZO`),
+  reutiliza `agendasAplicarPrivacidadEntidad` TAL CUAL (Fase 78, nunca
+  duplicada) para anonimizar entidades con menos de 5 citas en el archivo
+  a "PARTICULAR / OTRA", y agrega las filas crudas a
+  `(mes,sede,especialidad,entidad)` con sus 5 conteos **antes** de armar
+  el payload — el servidor nunca ve una fila cruda. Las 83.006 filas
+  reales agregan a 2.664 filas. Decisión de producto: el formato AGREGADO
+  viejo (Fase 98-106) **ya no se acepta** — son 2 esquemas sin columnas
+  en común salvo ESPECIALIDAD, y el archivo real ya migró por completo a
+  `Hoja1`; mantener los 2 formatos habría significado 2 rutas completas
+  de parseo/validación/pruebas para un formato que ya nadie va a volver a
+  generar. Duplicados exactos (55.661 filas repetidas en el archivo real)
+  **nunca se deduplican** — sin id de cita, 2 filas idénticas son 2 citas
+  reales (mismo criterio opt-in de la Fase 88).
+- **Medición de payload** (`server/validation.js`): contra el archivo
+  real (83.006 filas → 2.664 agregadas) el payload compacto (array) pesa
+  ~225 KB — muy por debajo de 2 MB, así que esta ruta **no** necesita el
+  grupo de límite mayor (8 MB) que usa Tipificación. El límite de filas
+  sube de 2.000 a 10.000 (con el tamaño promedio medido, ~850 KB en el
+  peor caso, sigue holgado dentro de 2 MB) para dar margen a más
+  meses/sedes/campañas.
+- **Servidor** (`server/inasistencia.js`, `server/routes/inasistencia.js`,
+  `server/validation.js`): 4 endpoints de lectura (`opciones`, `resumen`,
+  `especialidad`, `mensual`) ahora aceptan `sede`/`especialidad`/`entidad`
+  como filtros opcionales (`_whereFiltros` común); `especialidad` agrega
+  ahora con `GROUP BY especialidad` (una fila por especialidad, sin
+  importar cuántas sedes/entidades la compongan); el % sigue
+  SIEMPRE ponderado en SQL (`Σ(inasistencia+pendiente)/Σtotal`), 2
+  decimales, nunca el promedio simple. Mismo control de acceso por
+  campaña (`campaignAccess`) de siempre.
+- **Interfaz** (`public/js/inasistencia.js`): 2 sub-pestañas (patrón
+  genérico `subtabs`, igual que Agendamiento):
+  - **"Resumen por mes"** (la que abre por defecto): filtros de Sede,
+    Especialidad y Entidad (ésta con `<input list>`+`<datalist>`, mismo
+    patrón "buscador" que examen/profesional de Agendas — si lo escrito
+    no calza exacto con una opción conocida se trata como "Todos"), una
+    tarjeta con el **% ponderado de TODO el período filtrado**
+    (`inasistenciaPonderadoTotal`, reemplaza la tarjeta de un solo mes
+    con variación vs. anterior de la Fase 106 — ya no aplica con un
+    período completo en vez de un mes), y la gráfica de barras de
+    siempre (% de cada mes, resalta con otro color de la paleta
+    categórica el mes del selector global — nunca el semáforo). Con una
+    especialidad elegida, el servidor ya filtra a esa única especialidad
+    antes de agregar, así que la gráfica muestra el % de esa especialidad
+    en cada mes subido (punto explícito del pedido).
+  - **"Por especialidad"**: filtros de Sede y Entidad (Especialidad no
+    aplica aquí — el punto de esta vista es desglosar TODAS), una barra
+    por especialidad **del mes elegido arriba** (`_gd.mesSel`, igual
+    criterio que el resto de la plataforma, sin selector de mes propio).
+    Especialidades con menos de 30 citas en el mes (`INASISTENCIA_BASE_BAJA_UMBRAL`,
+    `inasistenciaOrdenarBaseBaja`) se mandan al final con un asterisco y
+    una nota "base baja" — nunca se expone el conteo real (Fase 106: solo
+    porcentaje en pantalla). Umbral de 30 elegido como piso razonable
+    (suficiente para que el % no salte varios puntos por una sola cita
+    más o menos, sin esconder especialidades con volumen moderado) — sin
+    precedente exacto en el repo para copiar, documentado aquí.
+  - Migración idempotente de config `dashboards_config_orlant_inasistencia_panel_v4`
+    (server/db.js, patrón v1/v2/v3) transforma la forma de la Fase 106 (1
+    panel, sin subtabs) a la de esta fase (2 paneles + 2 subtabs) —
+    probada con fixture que arranca exacto de la forma de producción de
+    hoy, panel y sub-pestaña verificados por separado (precedente de la
+    Fase 104). `orlant-subpestanas-migracion.test.js` (Fase 40,
+    `dashboards_config_orlant_subpestanas_v1`) actualizado: Inasistencia
+    vuelve a converger con forma de sub-pestañas propia en vez de
+    `subtabs:[]`.
+- **Export a Excel** (`_gdExportarInasistencia`, `dashboard-generic.js`):
+  ahora se llama una vez por panel (2, una por vista) y cada llamada
+  exporta la hoja de SU propia vista usando el mismo estado de filtros
+  compartido que pintó la pantalla — 2 hojas, solo mes/especialidad y %
+  (Fase 106: nunca conteos sueltos), con la protección contra inyección
+  de fórmulas (Fase 72, `xlsxFilasSeguras`) aplicada de forma genérica
+  como siempre.
+- **Plantilla consolidada** (`public/js/cargas-logic.js`): las
+  `notasExtra` de la hoja INASISTENCIA se reescriben para el formato
+  nuevo (qué significa cada letra de CITEST, que no se borra ni se
+  deduplica nada, que se puede subir un archivo con varios meses) — las
+  columnas de la plantilla ya salían automáticas de `INASISTENCIA_COLUMNAS`
+  (`inasistencia-logic.js`), así que no hubo que tocar esa parte. El
+  parser acepta tanto la plantilla nueva como el archivo de Edwin tal
+  cual viene (hoja `Hoja1`, encabezado `ESPECIALIDA`) — reconocimiento
+  por encabezados (Fase 79), no por nombre de hoja.
+- **Demo local** (`server/scripts/seed-demo-lib/dashboards.js`): el seed
+  de Inasistencia de ORLANT pasa a sembrar por combinación
+  sede×entidad (2 sedes × 3 entidades de demo) en vez de una sola fila
+  por especialidad — necesario para poder probar visualmente los filtros
+  nuevos sin esperar datos reales.
+- **Docs**: `docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`
+  actualizados (columnas nuevas de la hoja, qué significa CITEST, aviso
+  de privacidad, las 2 sub-pestañas con sus filtros). El ejemplo binario
+  `docs/ejemplos-plantilla-consolidada/plantilla_consolidada_ORLANT_ejemplo.xlsx`
+  (Fase 24) **no se tocó** — es un artefacto histórico que no está
+  enlazado desde ningún documento de cara al usuario (la plantilla real
+  que descarga el equipo sale en vivo de "Cargar Datos", ya corregida
+  arriba); queda anotado aquí por si alguna fase futura decide
+  regenerarlo.
+
+### Verificación
+
+- `npm test`: 809/809 (antes: 793 + nuevas pruebas de esta fase). `npm
+  audit`: 0 vulnerabilidades (antes y después).
+- Pruebas nuevas/reescritas: `inasistencia-logic.test.js` (reescrito
+  completo para el formato nuevo: parseo de fecha/CITEST, rechazo por
+  umbral, agregación por las 4 dimensiones, duplicados exactos NO se
+  deduplican, privacidad sin cambiar totales, % ponderado nunca promedio
+  simple, orden/marca de base baja), `inasistencia-carga.test.js`
+  (reescrito: filas de 9 campos, filtros de sede/especialidad/entidad
+  cambian el %, `/especialidad` agrupa por especialidad sin importar
+  sede/entidad, 403/404 sin acceso a la campaña, reemplazo solo de los
+  meses del archivo), `inasistencias-sede-entidad-migracion.test.js`
+  (migración de tabla, nuevo) y `orlant-inasistencia-subtabs-migracion.test.js`
+  (migración de config v4, nuevo) — ambas con fixture de forma vieja
+  reconocible, verificación de "otro cliente intacto" e idempotencia
+  (reabrir la base). `orlant-inasistencia-porcentaje-migracion.test.js`
+  (v3) y `orlant-subpestanas-migracion.test.js` (Fase 40) actualizados
+  para seguir pasando con la forma EN VIVO de `CONFIGS` (ya no 1 panel
+  de la Fase 106, ahora 2 + subtabs) — mismo criterio dinámico que ya
+  usaban v1/v2 desde la Fase 106 (comparan contra `TARGET_TAB`, nunca un
+  número hardcodeado).
+- Verificado a mano contra el archivo real (estructura/agregados
+  solamente, nunca valores individuales, el archivo nunca tocó el repo):
+  83.006 filas de entrada agregan a 2.664 filas (~225 KB de payload),
+  CITEST C=16.433/I=5.278/P=429/T=60.866 (suma 83.006), 5.532 entidades
+  anonimizadas a "PARTICULAR / OTRA" + 17 sin entidad ("SIN ENTIDAD") de
+  este archivo en particular.
+- Playwright directo desde Node (`seed:demo`,
+  `.github/scripts/verificar-fase108-inasistencia-local.js`, nuevo): las
+  2 sub-pestañas, filtros de Sede/Especialidad/Entidad presentes y
+  funcionando (la tarjeta ponderada cambia al filtrar por sede,
+  comparado contra el propio endpoint — nunca un número hardcodeado), el
+  datalist de Entidad trae las mismas opciones que el servidor, "Por
+  especialidad" respeta el mes global y NO muestra filtro de
+  Especialidad, % de cada barra coincide exacto con
+  `inasistenciaOrdenarBaseBaja` sobre la respuesta real del endpoint,
+  exportar trae 2 hojas sin columnas de conteos, 1366×768/1920×1080/
+  móvil 412px en claro y oscuro sin scroll horizontal. **0 hallazgos, 0
+  errores de consola.** Capturas en
+  `docs/capturas-demo/fase108-inasistencia-filtros/`.
+- Carga de un archivo sintético de 83.006 filas (misma forma y
+  proporciones del archivo real, datos inventados) en Chrome real con
+  ventana visible (headed, no headless): subida + parseo + agregación +
+  vista previa en ~2 segundos, la página sigue respondiendo todo el
+  tiempo, 0 errores de consola, la hoja se reconoce por encabezados sin
+  llamarse "INASISTENCIA" (Fase 79). Script temporal fuera del repo (no
+  se commiteó, generaba un archivo sintético grande sin valor como
+  fixture permanente).
+
+### Carga real en producción
+
+(pendiente — ver cierre de esta fase)

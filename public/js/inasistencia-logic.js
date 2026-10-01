@@ -1,36 +1,80 @@
 // inasistencia-logic.js — InConexion Platform (Fase 98, ORLANT, pedido
-// urgente de Edwin).
+// urgente de Edwin; Fase 108, pedido textual de InCo: "la inasistencia va
+// a ser por mes, que se pueda filtrar por sede, especialidad, nombre
+// entidad").
 //
-// Logica PURA (sin DOM) de "Inasistencia" de ORLANT: parseo de la hoja
-// INASISTENCIA del archivo real de Edwin (totales AGREGADOS por mes +
-// especialidad -- nunca datos de pacientes). Doble modo como agendas-logic.js:
-// global en el navegador, require() en Node para las pruebas
-// (server/tests/inasistencia-logic.test.js).
+// Logica PURA (sin DOM) de "Inasistencia" de ORLANT. Doble modo como
+// agendas-logic.js: global en el navegador, require() en Node para las
+// pruebas (server/tests/inasistencia-logic.test.js).
+//
+// Fase 108 — cambio de fondo: el archivo real de Edwin dejo de traer un
+// agregado por mes+especialidad (formato viejo, Fase 98-106) y ahora trae
+// UNA FILA POR CITA (hoja "Hoja1", no "INASISTENCIA"): SEDE, ESPECIALIDAD
+// (o "ESPECIALIDA", sin la D), FECHA_CITA, NOMBRE ENTIDAD, CITEST (C =
+// cancelada, I = inasistencia, P = pendiente, T = atendida). Decision de
+// producto: el formato AGREGADO viejo (7 columnas MES/ESPECIALIDAD/
+// CANCELADA/INASISTENCIA/PENDIENTE/ATENDIDAS/TOTAL) NO se sigue aceptando
+// -- son 2 esquemas sin columnas en comun salvo ESPECIALIDAD, soportar los
+// 2 a la vez habria significado 2 rutas de parseo/validacion/pruebas
+// completas por mantener para un formato que ya nadie va a volver a
+// generar (Edwin ya migro a Hoja1). Las filas YA CARGADAS con el formato
+// viejo (Ago-26 de 3 especialidades, Sep-26 de 1) se conservan intactas
+// (migracion de datos `inasistencias_sede_entidad_v1`, server/db.js, les
+// asigna sede/entidad = 'SIN DATO') -- no se pierde nada, solo que una
+// carga NUEVA tiene que venir en el formato nuevo.
+//
+// El navegador agrega las ~83.000 filas crudas a (mes, sede, especialidad,
+// entidad) ANTES de armar el payload -- el servidor nunca ve una fila
+// cruda (mismo patron que Agendas/Tipificacion). Por eso `filas` que
+// devuelve `inasistenciaParseFilas` ya son filas AGREGADAS (como en el
+// formato viejo), solo que ahora con `sede` y `entidad` ademas de `mes`/
+// `especialidad`.
 'use strict';
 
 // fecha-limites-logic.js: global en el navegador, require() en Node.
 var _inasistenciaFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+// agendas-logic.js: global en el navegador, require() en Node -- se reusa
+// agendasAplicarPrivacidadEntidad TAL CUAL (Fase 78), nunca se duplica la
+// formula de privacidad de NOMBRE_ENTIDAD.
+var _inasistenciaAgendasLogic = (typeof require === 'function') ? require('./agendas-logic.js') : (typeof window !== 'undefined' ? window : this);
 
-// ── Columnas de la hoja INASISTENCIA ────────────────────────────────────
+// ── Columnas de la hoja de Inasistencia (formato nuevo, Fase 108) ───────
 // Emparejamiento por NOMBRE de columna, nunca por posicion. ESPECIALIDAD
-// acepta tambien "ESPECIALIDA" (sin la D -- asi viene en el archivo real de
-// Edwin, ver `labelAlt`). AÑO es opcional (el archivo real no la trae --
-// el año se infiere del mes, ver inasistenciaParseMes).
+// acepta tambien "ESPECIALIDA" (sin la D -- asi viene en el archivo real
+// de Edwin, ver `labelAlt`). Las 5 son obligatorias: sin SEDE/FECHA_CITA/
+// CITEST la fila no se puede ubicar en el tiempo ni clasificar; ESPECIALIDAD
+// y NOMBRE ENTIDAD vacias se conservan igual con un valor "SIN ..." (nunca
+// se descarta una cita real solo por eso, mismo criterio que "SIN ASESOR"
+// de Agendas, Fase 104).
 var INASISTENCIA_COLUMNAS = [
-  { key: 'mes', label: 'MES', obligatoria: true },
+  { key: 'sede', label: 'SEDE', obligatoria: true },
   { key: 'especialidad', label: 'ESPECIALIDAD', labelAlt: ['ESPECIALIDA'], obligatoria: true },
-  { key: 'cancelada', label: 'CANCELADA', obligatoria: true },
-  { key: 'inasistencia', label: 'INASISTENCIA', obligatoria: true },
-  { key: 'pendiente', label: 'PENDIENTE', obligatoria: true },
-  { key: 'atendidas', label: 'ATENDIDAS', obligatoria: true },
-  { key: 'total', label: 'TOTAL', obligatoria: true },
-  { key: 'anio', label: 'AÑO', labelAlt: ['ANO'], obligatoria: false },
+  { key: 'fecha', label: 'FECHA_CITA', obligatoria: true },
+  { key: 'entidad', label: 'NOMBRE ENTIDAD', obligatoria: true },
+  { key: 'citest', label: 'CITEST', obligatoria: true },
 ];
 var INASISTENCIA_COLUMNAS_OBLIGATORIAS = INASISTENCIA_COLUMNAS.filter(function (c) { return c.obligatoria; });
 // Orden fijo para el payload compacto (arrays) -- ver inasistenciaFilaComoArray.
 // Mismo orden que server/inasistencia.js (CAMPOS_FILA) y
 // validation.js (inasistenciaFilaArraySchema).
-var INASISTENCIA_ORDEN_ARRAY = ['mes', 'especialidad', 'cancelada', 'inasistencia', 'pendiente', 'atendidas', 'total'];
+var INASISTENCIA_ORDEN_ARRAY = ['mes', 'sede', 'especialidad', 'entidad', 'cancelada', 'inasistencia', 'pendiente', 'atendidas', 'total'];
+
+// CITEST -> campo del sistema. Confirmado contra el agregado de control
+// del pedido de InCo (archivo real de 83.006 filas, ene-ago 2026):
+// C=16.433 cancelada, I=5.278 inasistencia, P=429 pendiente, T=60.866
+// atendidas -- el % de inasistencia por mes calculado con este mapeo
+// coincide exacto con la tabla de control fila por fila.
+var INASISTENCIA_CITEST_CAMPO = { C: 'cancelada', I: 'inasistencia', P: 'pendiente', T: 'atendidas' };
+
+// Umbral de rechazo de CITEST desconocido/vacio: por debajo de este %, las
+// filas con CITEST invalido se omiten con un aviso (no se pierde un
+// archivo bueno por unas pocas filas mal digitadas); por encima, la carga
+// COMPLETA se rechaza (senal de que el archivo no es el formato esperado,
+// o de un problema real en el origen) -- no hay un umbral parecido ya
+// usado en este repo para copiar; se eligio 5% como piso razonable, mismo
+// orden de magnitud que el resto de controles "no bloqueantes vs
+// bloqueantes" de esta plataforma.
+var INASISTENCIA_CITEST_UMBRAL_RECHAZO = 0.05;
 
 function inasistenciaNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
@@ -55,15 +99,10 @@ function inasistenciaNormTexto(v) {
   return String(v == null ? '' : v).trim().replace(/\s+/g, ' ');
 }
 
-var INASISTENCIA_MESES_NOMBRE = {
-  ENERO: '01', FEBRERO: '02', MARZO: '03', ABRIL: '04', MAYO: '05', JUNIO: '06',
-  JULIO: '07', AGOSTO: '08', SEPTIEMBRE: '09', SETIEMBRE: '09', OCTUBRE: '10', NOVIEMBRE: '11', DICIEMBRE: '12',
-};
-
-// Serial de Excel (sin hora) -> 'AAAA-MM' -- aritmetica directa sobre UTC,
-// nunca Date+cellDates de SheetJS (puede desplazar el mes por la zona
+// Serial de Excel (sin hora) -> 'AAAA-MM-DD' -- aritmetica directa sobre
+// UTC, nunca Date+cellDates de SheetJS (puede desplazar el dia por la zona
 // horaria del sistema). Mismo criterio que agendasFechaHoraDesdeSerial.
-function _inasistenciaSerialAMes(serial) {
+function _inasistenciaSerialAFecha(serial) {
   var n = Number(serial);
   if (!Number.isFinite(n)) return null;
   var ms = Math.round((n - 25569) * 86400000);
@@ -72,65 +111,40 @@ function _inasistenciaSerialAMes(serial) {
   var y = d.getUTCFullYear();
   if (y < 1970 || y > 2200) return null;
   var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
-  return y + '-' + pad2(d.getUTCMonth() + 1);
+  return y + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
 }
 
-// MES + AÑO (opcional) -> 'AAAA-MM', o null si no se pudo reconocer.
-// Acepta: ya 'AAAA-MM' (o 'AAAA-MM-DD...', se recorta); serial de Excel (o
-// texto numerico); nombre de mes en texto ("AGOSTO"). Con nombre de mes:
-// si viene AÑO (columna opcional), se usa tal cual; si no, se infiere el
-// AÑO MAS RECIENTE en que ese mes no es futuro (hora Colombia) -- mismo
-// criterio de "nunca despues del mes en curso" de la Fase 86.
-function inasistenciaParseMes(valorMes, valorAnio, ahora) {
-  if (valorMes === null || valorMes === undefined || valorMes === '') return null;
-  if (typeof valorMes === 'string') {
-    var t = valorMes.trim();
-    if (/^\d{4}-\d{2}$/.test(t)) return t;
-    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 7);
-    if (/^\d+(\.\d+)?$/.test(t)) return _inasistenciaSerialAMes(Number(t));
-    var nombre = t.toUpperCase();
-    var mm = INASISTENCIA_MESES_NOMBRE[nombre];
-    if (!mm) return null;
-    var anioTexto = (valorAnio !== undefined && valorAnio !== null && String(valorAnio).trim() !== '') ? String(valorAnio).trim().replace(/\.0$/, '') : null;
-    if (anioTexto && /^\d{4}$/.test(anioTexto)) return anioTexto + '-' + mm;
-    var hoy = _inasistenciaFechaLimites.fechaLimitesHoyColombia(ahora);
-    var anioActual = parseInt(hoy.slice(0, 4), 10);
-    var mesActual = hoy.slice(5, 7);
-    return (mm > mesActual) ? (String(anioActual - 1) + '-' + mm) : (String(anioActual) + '-' + mm);
+// Texto "dd/mm/aaaa" -> "aaaa-mm-dd" -- parseo MANUAL (nunca `new
+// Date(texto)`: dd/mm/aaaa es ambiguo para el motor de fechas de JS, que
+// asume mm/dd/aaaa en locale en-US -- Fase 90). Tambien acepta texto ya en
+// formato ISO o un serial de Excel como texto.
+var INASISTENCIA_FECHA_TEXTO_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+function inasistenciaParseFechaCita(v) {
+  if (typeof v === 'number') return _inasistenciaSerialAFecha(v);
+  if (typeof v === 'string') {
+    var t = v.trim();
+    if (t === '') return null;
+    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+    if (/^\d+(\.\d+)?$/.test(t)) return _inasistenciaSerialAFecha(Number(t));
+    var m = INASISTENCIA_FECHA_TEXTO_RE.exec(t);
+    if (!m) return null;
+    var dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), aaaa = parseInt(m[3], 10);
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+    var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
+    return aaaa + '-' + pad2(mm) + '-' + pad2(dd);
   }
-  if (typeof valorMes === 'number') return _inasistenciaSerialAMes(valorMes);
   return null;
 }
 
-// Entero no negativo (celda numerica o texto numerico), o null si no aplica
-// -- nunca se adivina un valor invalido.
-function _inasistenciaNumeroEntero(v) {
-  if (v === null || v === undefined || v === '') return null;
-  var n = Number(v);
-  if (!Number.isFinite(n)) return null;
-  if (Math.round(n) !== n) return null;
-  if (n < 0) return null;
-  return n;
-}
-
-// "4,16 %" / "4.16%" / 4.16 / 0.0416 (fraccion de formato % de Excel) -> 4.16.
-// 2 decimales -- mismo criterio que pctRecalculado (mas abajo): los numeros
-// de control del pedido de Edwin solo cuadran exacto con 2 decimales.
-function _inasistenciaPctDesdeCelda(v) {
-  if (v === null || v === undefined || v === '') return null;
-  if (typeof v === 'number') return Math.round((v <= 1 ? v * 100 : v) * 100) / 100;
-  var s = String(v).trim().replace('%', '').replace(',', '.').trim();
-  if (s === '') return null;
-  var n = Number(s);
-  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
-}
-
 // ── Parseo de filas (aoa = array-of-arrays, fila 0 = encabezados) ───────
-// Devuelve { error } si falta una columna obligatoria, o { filas, avisos }.
-// Filas vacias se ignoran. TOTAL siempre se guarda tal cual vino del
-// archivo (nunca se recalcula) -- si no cuadra con la suma de los otros 4,
-// o si trae una columna "% DE INASISTENCIA" que no coincide con el
-// ponderado recalculado, se agrega un AVISO (nunca bloquea la fila).
+// Devuelve { error } si falta una columna obligatoria o si demasiadas
+// filas traen un CITEST desconocido, o { filas, avisos, entidadesAgrupadas,
+// entidadesSinDato } -- `filas` YA vienen agregadas a (mes, sede,
+// especialidad, entidad) con sus 5 conteos, listas para
+// inasistenciaFilaComoArray. Fila vacia se ignora. NUNCA se deduplican
+// filas exactamente repetidas (a proposito, Fase 88 es opt-in por modulo):
+// sin id de cita, 2 citas con la misma sede/especialidad/fecha/entidad/
+// estado son 2 citas reales, no un error de carga.
 function inasistenciaParseFilas(aoa, ahora) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = inasistenciaColIndexMap(aoa[0]);
@@ -138,66 +152,93 @@ function inasistenciaParseFilas(aoa, ahora) {
   if (faltantes.length) {
     return {
       error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') +
-        '. Sube la hoja INASISTENCIA tal cual la exporta el sistema de Edwin, sin recortar columnas.',
+        '. Sube la hoja de Inasistencia tal cual la exporta el sistema de Edwin (SEDE, ESPECIALIDAD, FECHA_CITA, ' +
+        'NOMBRE ENTIDAD, CITEST), sin recortar columnas.',
     };
   }
-  // Columna "% DE INASISTENCIA" del archivo (si viene) -- solo para el
-  // aviso de cruce contra el % recalculado, nunca se guarda.
-  var idxPctArchivo = -1;
-  (aoa[0] || []).forEach(function (h, i) {
-    if (idxPctArchivo === -1 && /^% *de *inasistencia/.test(inasistenciaNorm(h))) idxPctArchivo = i;
-  });
 
-  var filas = [];
+  var crudas = [];
   var avisos = [];
+  var sedeSinDato = 0, especialidadSinDato = 0, citestDesconocidos = 0;
+  var totalFilasConDatos = 0;
+
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
     if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
     var filaNum = i + 1;
+    totalFilasConDatos++;
 
-    var mes = inasistenciaParseMes(row[map.mes], map.anio !== undefined ? row[map.anio] : undefined, ahora);
-    if (!mes) {
-      avisos.push('Fila ' + filaNum + ': MES invalido o no reconocido ("' + row[map.mes] + '"), se omitio.');
+    var sedeCruda = inasistenciaNormTexto(row[map.sede]).toUpperCase();
+    var especialidadCruda = inasistenciaNormTexto(row[map.especialidad]).toUpperCase();
+    var entidad = inasistenciaNormTexto(row[map.entidad]);
+    var fecha = inasistenciaParseFechaCita(row[map.fecha]);
+    var citestCrudo = inasistenciaNormTexto(row[map.citest]).toUpperCase();
+
+    var sede = sedeCruda || 'SIN SEDE';
+    if (!sedeCruda) sedeSinDato++;
+    var especialidad = especialidadCruda || 'SIN ESPECIALIDAD';
+    if (!especialidadCruda) especialidadSinDato++;
+
+    if (!fecha) {
+      avisos.push('Fila ' + filaNum + ': FECHA_CITA invalida o vacia, se omitio.');
       continue;
     }
-    if (_inasistenciaFechaLimites.fechaLimitesEsFutura(mes + '-01', ahora)) {
-      avisos.push('Fila ' + filaNum + ': el mes ' + mes + ' esta en el futuro, se omitio.');
+    if (_inasistenciaFechaLimites.fechaLimitesEsFutura(fecha, ahora)) {
+      avisos.push('Fila ' + filaNum + ': FECHA_CITA ' + fecha + ' esta en el futuro, se omitio.');
       continue;
     }
-    var especialidad = inasistenciaNormTexto(row[map.especialidad]);
-    if (!especialidad) {
-      avisos.push('Fila ' + filaNum + ': falta ESPECIALIDAD, se omitio.');
-      continue;
+    if (_inasistenciaFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)) {
+      avisos.push('Fila ' + filaNum + ': FECHA_CITA ' + fecha + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).');
     }
-
-    var cancelada = _inasistenciaNumeroEntero(row[map.cancelada]);
-    var inas = _inasistenciaNumeroEntero(row[map.inasistencia]);
-    var pendiente = _inasistenciaNumeroEntero(row[map.pendiente]);
-    var atendidas = _inasistenciaNumeroEntero(row[map.atendidas]);
-    var total = _inasistenciaNumeroEntero(row[map.total]);
-    if (cancelada === null || inas === null || pendiente === null || atendidas === null || total === null) {
-      avisos.push('Fila ' + filaNum + ' (' + mes + ' / ' + especialidad + '): CANCELADA/INASISTENCIA/PENDIENTE/ATENDIDAS/TOTAL deben ser numeros enteros no negativos, se omitio.');
+    var campo = INASISTENCIA_CITEST_CAMPO[citestCrudo];
+    if (!campo) {
+      citestDesconocidos++;
+      avisos.push('Fila ' + filaNum + ': CITEST "' + citestCrudo + '" no reconocido (debe ser C/I/P/T), se omitio.');
       continue;
     }
 
-    var sumaCalculada = cancelada + inas + pendiente + atendidas;
-    if (sumaCalculada !== total) {
-      avisos.push('Fila ' + filaNum + ' (' + mes + ' / ' + especialidad + '): TOTAL del archivo (' + total + ') no coincide con CANCELADA+INASISTENCIA+PENDIENTE+ATENDIDAS (' + sumaCalculada + ') -- se uso el TOTAL del archivo tal cual.');
-    }
-
-    var pctRecalculado = total > 0 ? Math.round(((inas + pendiente) / total) * 10000) / 100 : null;
-    if (idxPctArchivo !== -1 && pctRecalculado !== null) {
-      var pctArchivo = _inasistenciaPctDesdeCelda(row[idxPctArchivo]);
-      if (pctArchivo !== null && Math.abs(pctArchivo - pctRecalculado) > 0.15) {
-        avisos.push('Fila ' + filaNum + ' (' + mes + ' / ' + especialidad + '): el % DE INASISTENCIA del archivo (' + pctArchivo + '%) difiere del recalculado (' + pctRecalculado + '%) -- se uso el recalculado.');
-      }
-    }
-
-    filas.push({ mes: mes, especialidad: especialidad, cancelada: cancelada, inasistencia: inas, pendiente: pendiente, atendidas: atendidas, total: total });
+    crudas.push({ mes: fecha.slice(0, 7), sede: sede, especialidad: especialidad, entidad: entidad, citestCampo: campo });
   }
 
-  if (!filas.length) return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos };
-  return { filas: filas, avisos: avisos };
+  if (totalFilasConDatos > 0 && (citestDesconocidos / totalFilasConDatos) > INASISTENCIA_CITEST_UMBRAL_RECHAZO) {
+    return {
+      error: citestDesconocidos + ' de ' + totalFilasConDatos + ' fila(s) (' +
+        Math.round((citestDesconocidos / totalFilasConDatos) * 100) + '%) traen un CITEST desconocido (debe ser C/I/P/T) -- ' +
+        'revisa si este es realmente el archivo de Inasistencia. La carga se cancelo, no se guardo nada.',
+    };
+  }
+  if (!crudas.length) return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos };
+
+  // Privacidad (Fase 78, agendasAplicarPrivacidadEntidad TAL CUAL, nunca
+  // duplicada): la frecuencia se cuenta sobre TODAS las filas crudas de
+  // ESTE archivo (antes de agregar) -- 2 veces del mismo archivo con la
+  // misma entidad siguen juntas en "PARTICULAR / OTRA" o visibles, segun
+  // el conteo total de ESTE archivo.
+  var priv = _inasistenciaAgendasLogic.agendasAplicarPrivacidadEntidad(crudas);
+
+  // Agregar a (mes, sede, especialidad, entidadFinal) con los 5 conteos.
+  var agg = {};
+  priv.filas.forEach(function (f) {
+    var k = f.mes + '|' + f.sede + '|' + f.especialidad + '|' + f.entidad;
+    if (!agg[k]) agg[k] = { mes: f.mes, sede: f.sede, especialidad: f.especialidad, entidad: f.entidad, cancelada: 0, inasistencia: 0, pendiente: 0, atendidas: 0, total: 0 };
+    agg[k][f.citestCampo]++;
+    agg[k].total++;
+  });
+  var filasAgregadas = Object.keys(agg).sort().map(function (k) { return agg[k]; });
+
+  if (sedeSinDato > 0) avisos.push(sedeSinDato + ' fila(s) sin SEDE -- se guardaron igual, agrupadas como "SIN SEDE".');
+  if (especialidadSinDato > 0) avisos.push(especialidadSinDato + ' fila(s) sin ESPECIALIDAD -- se guardaron igual, agrupadas como "SIN ESPECIALIDAD".');
+  if (priv.entidadesAgrupadas > 0 || priv.entidadesSinDato > 0) {
+    avisos.push(
+      priv.entidadesAgrupadas + ' fila(s) con entidad agrupada por privacidad (menos de 5 citas de esa entidad en este archivo, ' +
+      '"PARTICULAR / OTRA"), ' + priv.entidadesSinDato + ' sin entidad ("SIN ENTIDAD").'
+    );
+  }
+
+  return {
+    filas: filasAgregadas, avisos: avisos,
+    entidadesAgrupadas: priv.entidadesAgrupadas, entidadesSinDato: priv.entidadesSinDato,
+  };
 }
 
 // Fila (objeto) -> array en INASISTENCIA_ORDEN_ARRAY, para el payload
@@ -207,7 +248,7 @@ function inasistenciaFilaComoArray(f) {
 }
 
 // Meses distintos (ordenados) entre las filas ya parseadas -- para el
-// mensaje de confirmacion de carga ("Se cargará como Ago-26 y Sep-26").
+// mensaje de confirmacion de carga ("Se cargará como Ene-26 ... Ago-26").
 function inasistenciaMesesDeFilas(filas) {
   var set = {};
   (filas || []).forEach(function (f) { set[f.mes] = true; });
@@ -224,6 +265,18 @@ function inasistenciaPctPonderado(inasistencia, pendiente, total) {
   return Math.round(((inasistencia + pendiente) / total) * 10000) / 100;
 }
 
+// % ponderado de TODO un conjunto de filas/meses ya agregados (Fase 108:
+// tarjeta de "Resumen por mes" con el total del PERIODO filtrado completo,
+// no de un solo mes) -- Σ(inasistencia+pendiente) / Σtotal, reusando
+// inasistenciaPctPonderado, nunca el promedio simple de los % de cada mes.
+function inasistenciaPonderadoTotal(filas) {
+  var tot = { inasistencia: 0, pendiente: 0, total: 0 };
+  (filas || []).forEach(function (f) {
+    tot.inasistencia += f.inasistencia; tot.pendiente += f.pendiente; tot.total += f.total;
+  });
+  return { inasistencia: tot.inasistencia, pendiente: tot.pendiente, total: tot.total, pct: inasistenciaPctPonderado(tot.inasistencia, tot.pendiente, tot.total) };
+}
+
 // "4,16 %" -- 2 decimales, coma decimal (es-CO), con el simbolo de %. null -> "—".
 function inasistenciaFmtPct(v) {
   if (v === null || v === undefined) return '—';
@@ -232,22 +285,24 @@ function inasistenciaFmtPct(v) {
 
 // 'AAAA-MM' -> "Ago-26" (mismo formato corto que _agendasMesLbl/
 // _tipificacionMesLbl) -- pura, usada por cargas.js (mensaje de
-// confirmacion) e inasistencia.js (selector/tarjetas/tabla).
+// confirmacion) e inasistencia.js (selector/tarjetas/graficas).
 var INASISTENCIA_MESES_ABREV = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 function inasistenciaMesLbl(mes) {
   var partes = String(mes || '').split('-');
   return partes.length === 2 ? (INASISTENCIA_MESES_ABREV[parseInt(partes[1], 10) - 1] + '-' + partes[0].slice(2)) : String(mes || '');
 }
 
-// Agrega TODAS las especialidades de cada mes (Fase 101: sub-pestaña "Por
-// mes" -- ya no va por especialidad, siempre todas juntas) a partir de las
-// filas crudas de `/calidad/inasistencia/mensual` (una fila por mes+
-// especialidad). El % de cada mes es PONDERADO sobre la suma real
-// (inasistenciaPctPonderado), nunca el promedio simple de los % de cada
-// especialidad -- con Ago-26 real (5 especialidades, tamaños muy distintos)
-// el promedio simple da 6,05 % y el ponderado correcto da 5,63 %. También
-// guarda que especialidades aportaron datos ese mes (para el aviso de mes
-// incompleto, ver inasistenciaMesesIncompletos).
+// Agrega TODAS las especialidades de cada mes (Fase 101/106/108: "Resumen
+// por mes" siempre suma TODAS las especialidades que dejaron pasar los
+// filtros de sede/especialidad/entidad -- el filtrado en si lo hace el
+// servidor, esta funcion solo agrega lo que ya llego) a partir de filas
+// (mes, especialidad, conteos). El % de cada mes es PONDERADO sobre la
+// suma real (inasistenciaPctPonderado), nunca el promedio simple de los %
+// de cada especialidad -- con Ago-26 real (varias especialidades, tamaños
+// muy distintos) el promedio simple da un numero mas alto y menos
+// correcto que el ponderado. También guarda que especialidades aportaron
+// datos ese mes (para el aviso de mes incompleto, ver
+// inasistenciaMesesIncompletos).
 function inasistenciaAgregarPorMes(filas) {
   var porMes = {};
   (filas || []).forEach(function (r) {
@@ -274,8 +329,8 @@ function inasistenciaAgregarPorMes(filas) {
 }
 
 // Meses cuyo numero de especialidades es MENOR al maximo de todo el rango
-// (ej. Sep-26 recien empieza y solo trae Examenes Especiales, mientras
-// Ago-26 ya trae las 5) -- para el aviso debajo de la grafica "Por mes".
+// (ej. un mes recien empezado que solo trae 1 especialidad, mientras otro
+// ya trae todas) -- para el aviso debajo de la grafica "Resumen por mes".
 // Se compara contra el MAXIMO de todo el rango (no contra "el mes
 // anterior") para que el aviso no dependa de cual mes esta seleccionado
 // arriba. `agregadoPorMes` es la salida de inasistenciaAgregarPorMes.
@@ -287,22 +342,47 @@ function inasistenciaMesesIncompletos(agregadoPorMes) {
     .map(function (m) { return { mes: m.mes, especialidades: m.especialidades }; });
 }
 
+// Ordena filas "por especialidad" (de un solo mes) de mayor a menor %,
+// marcando con `baseBaja:true` las que tienen MENOS citas que `umbral` en
+// ese mes (Fase 108, pedido explicito: una especialidad con pocas citas da
+// un % extremo y enganoso -- ej. 1 de 2 citas = 50%) -- esas se mandan al
+// final, en vez de orden normal por %, para que no parezcan las "peores"
+// cuando en realidad es una base casi sin datos. `umbral` por defecto 30
+// (documentado en el reporte de la Fase 108: suficiente para que el %
+// deje de moverse en saltos de varios puntos por una sola cita mas o
+// menos, sin ser tan alto que esconda especialidades reales con volumen
+// moderado). Nunca expone el conteo real en el resultado (Fase 106: solo
+// porcentaje en pantalla) -- el llamador decide que mostrar con la marca.
+function inasistenciaOrdenarBaseBaja(filas, umbral) {
+  var u = (typeof umbral === 'number' && umbral > 0) ? umbral : 30;
+  var marcadas = (filas || []).map(function (f) {
+    return { especialidad: f.especialidad, pct: f.pct, baseBaja: (f.total || 0) < u };
+  });
+  var normales = marcadas.filter(function (f) { return !f.baseBaja; }).sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
+  var bajas = marcadas.filter(function (f) { return f.baseBaja; }).sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
+  return normales.concat(bajas);
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     INASISTENCIA_COLUMNAS: INASISTENCIA_COLUMNAS,
     INASISTENCIA_COLUMNAS_OBLIGATORIAS: INASISTENCIA_COLUMNAS_OBLIGATORIAS,
     INASISTENCIA_ORDEN_ARRAY: INASISTENCIA_ORDEN_ARRAY,
+    INASISTENCIA_CITEST_CAMPO: INASISTENCIA_CITEST_CAMPO,
+    INASISTENCIA_CITEST_UMBRAL_RECHAZO: INASISTENCIA_CITEST_UMBRAL_RECHAZO,
     inasistenciaColIndexMap: inasistenciaColIndexMap,
     inasistenciaNormTexto: inasistenciaNormTexto,
-    inasistenciaParseMes: inasistenciaParseMes,
+    inasistenciaParseFechaCita: inasistenciaParseFechaCita,
     inasistenciaParseFilas: inasistenciaParseFilas,
     inasistenciaFilaComoArray: inasistenciaFilaComoArray,
     inasistenciaMesesDeFilas: inasistenciaMesesDeFilas,
     inasistenciaMesLbl: inasistenciaMesLbl,
     inasistenciaPctPonderado: inasistenciaPctPonderado,
+    inasistenciaPonderadoTotal: inasistenciaPonderadoTotal,
     inasistenciaFmtPct: inasistenciaFmtPct,
     inasistenciaAgregarPorMes: inasistenciaAgregarPorMes,
     inasistenciaMesesIncompletos: inasistenciaMesesIncompletos,
+    inasistenciaOrdenarBaseBaja: inasistenciaOrdenarBaseBaja,
   };
 }

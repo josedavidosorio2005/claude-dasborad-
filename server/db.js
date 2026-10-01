@@ -331,26 +331,35 @@ CREATE TABLE IF NOT EXISTS tipificaciones (
 );
 CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificaciones(campana, canal, fecha);
 
--- Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin): un total
--- AGREGADO por mes+especialidad (nunca una fila por cita/paciente -- el
--- archivo real de Edwin ya viene resumido asi, sin datos de pacientes). Una
--- carga REEMPLAZA los meses que trae el archivo (server/inasistencia.js,
--- cargarInasistencias) -- por eso el UNIQUE es (campana,mes,especialidad):
--- volver a subir el mismo archivo actualiza las mismas filas, nunca duplica.
+-- Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin; Fase 108,
+-- pedido textual de InCo: "que se pueda filtrar por sede, especialidad,
+-- nombre entidad"): un total AGREGADO por (mes,sede,especialidad,entidad)
+-- -- nunca una fila por cita/paciente, el navegador ya agrego las filas
+-- crudas del archivo real antes de mandar el payload (ver
+-- public/js/inasistencia-logic.js). Una carga REEMPLAZA los meses que trae
+-- el archivo (server/inasistencia.js, cargarInasistencias) -- por eso el
+-- UNIQUE incluye sede/especialidad/entidad: volver a subir el mismo
+-- archivo actualiza las mismas filas, nunca duplica. Las filas cargadas
+-- ANTES de esta fase (formato viejo, sin sede/entidad real) quedan con
+-- sede='SIN DATO'/entidad='SIN DATO' (ver migracion
+-- inasistencias_sede_entidad_v1 mas abajo -- esta definicion ya es la
+-- forma FINAL, para que una base nueva nazca con ella directo).
 CREATE TABLE IF NOT EXISTS inasistencias (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   campana TEXT NOT NULL,
   mes TEXT NOT NULL,                 -- 'AAAA-MM'
+  sede TEXT NOT NULL,
   especialidad TEXT NOT NULL,
+  entidad TEXT NOT NULL,
   cancelada INTEGER NOT NULL,
   inasistencia INTEGER NOT NULL,
   pendiente INTEGER NOT NULL,
   atendidas INTEGER NOT NULL,
-  total INTEGER NOT NULL,            -- tal cual vino del archivo (nunca recalculado aqui)
+  total INTEGER NOT NULL,            -- suma de los otros 4 (Fase 108: se calcula en el navegador al agregar)
   archivoNombre TEXT NOT NULL DEFAULT '',
   cargadoPorNombre TEXT NOT NULL DEFAULT '',
   createdAt TEXT NOT NULL,
-  UNIQUE(campana, mes, especialidad)
+  UNIQUE(campana, mes, sede, especialidad, entidad)
 );
 CREATE INDEX IF NOT EXISTS idx_inasistencias_campana_mes ON inasistencias(campana, mes);
 
@@ -2192,6 +2201,110 @@ runOnceMigration('dashboards_config_orlant_ranking_asesores_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_ranking_asesores_v1 aplicada.');
+  }
+});
+
+// Inasistencia (Fase 108, pedido textual de InCo: "que se pueda filtrar
+// por sede, especialidad, nombre entidad"): la tabla pasa de un agregado
+// por (campana,mes,especialidad) a (campana,mes,sede,especialidad,entidad)
+// -- mismo patron de recrear tabla que hlm_sede_consolidacion_v1 (CREATE
+// TABLE nueva + INSERT + DROP + RENAME, todo en una transaccion), guardado
+// con PRAGMA table_info para no reventar "duplicate column" en una base
+// que corre esta migracion 2 veces o que ya nace con la forma nueva (el
+// CREATE TABLE de arriba ya declara sede/entidad). Las filas YA CARGADAS
+// con el formato viejo (Ago-26 de 3 especialidades, Sep-26 de 1 -- Fase
+// 98-106, sin sede/entidad real) quedan con sede='SIN DATO',
+// entidad='SIN DATO' -- no se pierde nada, solo que esas filas no
+// participan de los filtros nuevos de sede/entidad (inasistenciaOpciones
+// las excluye de las listas de valores, ver server/inasistencia.js).
+runOnceMigration('inasistencias_sede_entidad_v1', () => {
+  const cols = db.prepare('PRAGMA table_info(inasistencias)').all().map((c) => c.name);
+  if (cols.includes('sede')) return; // base nueva (ya nace con la forma de arriba) o ya migrada
+
+  const tx = db.transaction(() => {
+    db.exec(`
+      CREATE TABLE inasistencias_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campana TEXT NOT NULL,
+        mes TEXT NOT NULL,
+        sede TEXT NOT NULL,
+        especialidad TEXT NOT NULL,
+        entidad TEXT NOT NULL,
+        cancelada INTEGER NOT NULL,
+        inasistencia INTEGER NOT NULL,
+        pendiente INTEGER NOT NULL,
+        atendidas INTEGER NOT NULL,
+        total INTEGER NOT NULL,
+        archivoNombre TEXT NOT NULL DEFAULT '',
+        cargadoPorNombre TEXT NOT NULL DEFAULT '',
+        createdAt TEXT NOT NULL,
+        UNIQUE(campana, mes, sede, especialidad, entidad)
+      );
+      INSERT INTO inasistencias_new
+        (id, campana, mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt)
+      SELECT id, campana, mes, 'SIN DATO', especialidad, 'SIN DATO', cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt
+      FROM inasistencias;
+      DROP TABLE inasistencias;
+      ALTER TABLE inasistencias_new RENAME TO inasistencias;
+      CREATE INDEX IF NOT EXISTS idx_inasistencias_campana_mes ON inasistencias(campana, mes);
+    `);
+  });
+  tx();
+  if (!config.isTest) {
+    console.log('[db] Migracion inasistencias_sede_entidad_v1 aplicada.');
+  }
+});
+
+// Fase 108 (pedido textual de InCo: filtros de sede/especialidad/entidad +
+// sub-pestaña "Por especialidad" por mes elegido): el tab "inasistencia" de
+// ORLANT pasa de 1 panel sin subtabs (Fase 106) a 2 paneles
+// (vista:'pormes'/'porespecialidad') con subtabs -- dashboards_config ya
+// existia en produccion con la forma de la Fase 106, asi que esta forma
+// nueva del seed nunca le habria llegado sola. Mismo patron de deteccion
+// de "forma vieja reconocible" que v1/v2/v3: si no calza EXACTO, se deja
+// intacta y solo se loguea (podria ser una personalizacion).
+runOnceMigration('dashboards_config_orlant_inasistencia_panel_v4', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetTab = (target.layout.tabs || []).find((t) => t.key === 'inasistencia');
+  if (!targetTab) return;
+
+  const tab = (layout.tabs || []).find((t) => t.key === 'inasistencia');
+  if (!tab) return;
+  const yaEsNuevo = (tab.panels || []).length === 2 &&
+    (tab.panels || []).some((p) => p.vista === 'porespecialidad') &&
+    (tab.subtabs || []).length === 2;
+  if (yaEsNuevo) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v4: ya tenia la forma nueva, nada que hacer.');
+    return;
+  }
+  const esViejoReconocible = (tab.panels || []).length === 1 &&
+    tab.panels[0].tipo === 'inasistencia_panel' && tab.panels[0].vista === 'pormes' &&
+    !((tab.subtabs || []).length);
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v4: el tab "inasistencia" no coincide con la forma esperada (Fase 106) -- se deja intacta, revisar a mano.');
+    }
+    return;
+  }
+
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+  tab.subtabs = JSON.parse(JSON.stringify(targetTab.subtabs || []));
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v4 aplicada.');
   }
 });
 

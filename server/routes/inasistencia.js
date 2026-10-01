@@ -1,8 +1,8 @@
 // routes/inasistencia.js — Inasistencia de ORLANT (Fase 98, pedido urgente
-// de Edwin). Mismo patron que routes/agendas.js: el servidor NUNCA abre el
-// Excel, solo recibe filas ya parseadas desde el navegador. Todos los GET de
-// lectura devuelven agregados ya calculados en SQL (inasistencia.js), nunca
-// la tabla completa.
+// de Edwin; Fase 108, filtros de sede/especialidad/entidad). Mismo patron
+// que routes/agendas.js: el servidor NUNCA abre el Excel, solo recibe filas
+// ya parseadas desde el navegador. Todos los GET de lectura devuelven
+// agregados ya calculados en SQL (inasistencia.js), nunca la tabla completa.
 //
 // Montado bajo '/calidad/inasistencia' para heredar el middleware de no-cache
 // de '/calidad' -- se monta en server.js despues de routes/calidad.

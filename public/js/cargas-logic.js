@@ -298,26 +298,36 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
   }
-  // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia -- totales
-  // agregados por mes+especialidad (cancelada/inasistencia/pendiente/
-  // atendidas/total), hoja propia, solo cuando inasistenciaCols viene (hoy
-  // solo ORLANT, mismo gate que agendasCols/tipificacionCols).
+  // Fase 98 (ORLANT, pedido URGENTE de Edwin); Fase 108 (pedido textual de
+  // InCo: "la inasistencia va a ser por mes, que se pueda filtrar por sede,
+  // especialidad, nombre entidad") -- cambio de fondo del formato: ya no es
+  // un agregado por mes+especialidad, ahora es UNA FILA POR CITA (igual que
+  // Agendas), hoja propia, solo cuando inasistenciaCols viene (hoy solo
+  // ORLANT, mismo gate que agendasCols/tipificacionCols). El navegador
+  // agrega las filas a (mes,sede,especialidad,entidad) antes de mandarlas
+  // al servidor (inasistenciaParseFilas, inasistencia-logic.js) -- el
+  // formato AGREGADO viejo (Fase 98-106) ya NO se acepta.
   if (inasistenciaCols) {
     plan.push({
       tipo: 'inasistencia', hoja: CARGAS_HOJA_INASISTENCIA, titulo: 'Inasistencia',
-      descripcion: 'Un total por mes y especialidad (cancelada, inasistencia, pendiente, atendidas, total) -- nunca datos de pacientes.',
+      descripcion: 'Una fila por cita (SEDE, ESPECIALIDAD, FECHA_CITA, NOMBRE ENTIDAD, CITEST) -- nunca datos de pacientes.',
       filaUnica: false, columnas: inasistenciaCols,
       notasExtra: [
-        'De donde sale: el reporte mensual de inasistencia que ya prepara el area de Agendamiento (agregado, no fila por fila).',
-        'MES: nombre del mes ("AGOSTO"), fecha de Excel o "AAAA-MM". Si no traes la columna AÑO, el sistema usa el año ' +
-          'mas reciente en que ese mes no sea futuro (ej. hoy AGOSTO y SEPTIEMBRE se interpretan como del año en curso) -- ' +
-          'revisa el mes que se muestra en la confirmacion antes de guardar.',
-        'ESPECIALIDAD: el nombre tal cual (Audífonos, Audiología, Exámenes especiales...).',
-        'TOTAL: escribe el numero final ya calculado. Si no coincide con CANCELADA+INASISTENCIA+PENDIENTE+ATENDIDAS, ' +
-          'el sistema avisa pero usa igual el TOTAL de esta columna (nunca lo recalcula por su cuenta).',
+        'De donde sale: el export del sistema de agendamiento de Edwin, una fila por cita (no un resumen).',
+        'CITEST: una letra por cita -- C = Cancelada, I = Inasistencia, P = Pendiente (sin confirmar si la persona fue o ' +
+          'no), T = Atendida. Una letra distinta de estas 4 (o vacia) se avisa; si son demasiadas filas asi, la carga se ' +
+          'rechaza completa (probable archivo equivocado).',
+        'FECHA_CITA: fecha de Excel o texto "dd/mm/aaaa" -- de aqui sale el MES (AAAA-MM) de cada fila, puedes subir ' +
+          'varios meses en el mismo archivo.',
+        'NOMBRE ENTIDAD: si va vacia se guarda igual como "SIN ENTIDAD" -- nunca se descarta una cita real por eso. ' +
+          'PRIVACIDAD: cualquier entidad que aparezca muy pocas veces en el archivo (probablemente un paciente, no una ' +
+          'entidad real) se agrupa automaticamente como "PARTICULAR / OTRA" antes de guardarla -- el valor original ' +
+          'nunca se muestra ni se guarda.',
+        'No borres ni resumas filas repetidas: sin un numero de cita, dos filas con la misma sede/especialidad/fecha/' +
+          'entidad/estado son dos citas reales, no un error de carga.',
         'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te muestra ' +
-          'antes como quedaria, ej. "Ago-26 (3 especialidades) y Sep-26 (1)", y pide que confirmes) -- nunca duplica, ' +
-          'aunque subas el mismo archivo mas de una vez. No toca otros meses que este archivo no traiga.',
+          'antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez. ' +
+          'No toca otros meses que este archivo no traiga.',
       ],
     });
   }

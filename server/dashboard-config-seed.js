@@ -231,23 +231,37 @@ const ORLANT = {
       // linea de tendencia por especialidad que antes vivia en "Por mes".
       //
       // Fase 106 (pedido de InCo, "que en Inasistencia solo quede en
-      // porcentaje, por mes"): se retiran las sub-pestañas "Por
+      // porcentaje, por mes"): se retiraron las sub-pestañas "Por
       // especialidad" y "Detalle" (y los conteos sueltos de "Por mes") --
-      // queda UN SOLO panel, sin `subtabs` (`subtabs: []`, no se omite el
-      // campo: las migraciones v1/v2 de abajo le hacen
+      // quedo UN SOLO panel, sin `subtabs`.
+      //
+      // Fase 108 (pedido textual de InCo: "que se pueda filtrar por sede,
+      // especialidad, nombre entidad... y barra por especialidad, para cada
+      // una de ellas, con el % de la inasistencia y poder filtrar por el
+      // mes"): vuelven 2 sub-pestañas -- "Resumen por mes" (vista:'pormes',
+      // ahora con filtros de sede/especialidad/entidad y una tarjeta con el
+      // % ponderado de TODO el periodo filtrado) y "Por especialidad"
+      // (vista:'porespecialidad', una barra por especialidad del mes elegido
+      // arriba, respetando sede/entidad). `subtabs` nunca se omite (array
+      // vacio en vez de ausente): las migraciones viejas de abajo le hacen
       // JSON.parse(JSON.stringify(targetTab.subtabs)) sin guard, y
-      // `undefined` ahi revienta -- ver dashboards_config_orlant_inasistencia_panel_v3).
+      // `undefined` ahi revienta.
       // Ver las migraciones idempotentes
       // dashboards_config_orlant_inasistencia_panel_v1 (forma vieja de la
       // Fase 98 -> la de la Fase 101),
       // dashboards_config_orlant_inasistencia_panel_v2 (Fase 98 tardia ->
-      // Fase 101) y dashboards_config_orlant_inasistencia_panel_v3 (Fase
-      // 101 -> esta forma) en db.js -- dashboards_config ya existia en
+      // Fase 101), dashboards_config_orlant_inasistencia_panel_v3 (Fase 101
+      // -> Fase 106) y dashboards_config_orlant_inasistencia_panel_v4 (Fase
+      // 106 -> esta forma) en db.js -- dashboards_config ya existia en
       // produccion, asi que esta forma nueva del seed nunca le habria
       // llegado sola.
       { key: 'inasistencia', label: 'Inasistencia', oculta: true, panels: [
         { tipo: 'inasistencia_panel', vista: 'pormes', titulo: 'Inasistencia por Mes', campana: 'ORLANT' },
-      ], subtabs: []},
+        { tipo: 'inasistencia_panel', vista: 'porespecialidad', titulo: 'Inasistencia por Especialidad', campana: 'ORLANT' },
+      ], subtabs: [
+        { key: 'pormes', label: 'Resumen por mes', indices: [0] },
+        { key: 'porespecialidad', label: 'Por especialidad', indices: [1] },
+      ]},
       { key: 'sta', label: 'Gestión STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
         // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,
