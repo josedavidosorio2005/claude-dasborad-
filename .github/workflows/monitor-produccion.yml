@@ -119,7 +119,7 @@ jobs:
           echo "Resultado: $([ "$PROBLEMA" = 1 ] && echo "PROBLEMA ($MOTIVOS)" || echo "TODO OK")"
 
       - name: Abrir/comentar el issue si hay problema, o cerrarlo si ya se recupero
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
         with:
           script: |
             const problema = '${{ steps.evaluar.outputs.problema }}' === '1';
