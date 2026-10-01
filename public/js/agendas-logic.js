@@ -133,12 +133,13 @@ function agendasParseFilas(aoa) {
 
   var filas = [];
   var avisos = [];
+  var asesoresSinDato = 0;
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
     if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
     var filaNum = i + 1;
 
-    var asesor = agendasNormTexto(row[map.asesor]);
+    var asesorCruda = agendasNormTexto(row[map.asesor]);
     var sede = agendasNormTexto(row[map.sede]);
     var examen = agendasNormTexto(row[map.examen]);
     var especialidad = agendasNormTexto(row[map.especialidad]);
@@ -147,10 +148,18 @@ function agendasParseFilas(aoa) {
     var entidad = map.entidad !== undefined ? agendasNormTexto(row[map.entidad]) : '';
     var fechaSolicitud = agendasParseFechaSolicitud(row[map.fechaSolicitud]);
 
-    if (!asesor || !sede || !examen || !especialidad || !profesional) {
-      avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (agente/sede/examen/especialidad/profesional), se omitio.');
+    if (!sede || !examen || !especialidad || !profesional) {
+      avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (sede/examen/especialidad/profesional), se omitio.');
       continue;
     }
+    // Fase 104 (pedido de InCo, ranking de asesores): antes, una fila SIN
+    // agente asignado se omitia en silencio igual que si le faltara un dato
+    // realmente obligatorio -- la suma de lo cargado quedaba por debajo del
+    // archivo real, sin ningun aviso. Ahora se conserva (mismo criterio que
+    // NOMBRE_ENTIDAD vacio -> "SIN ENTIDAD"): asesor vacio -> "SIN ASESOR",
+    // nunca se descarta la cita solo porque no quedo asignada a nadie.
+    var asesor = asesorCruda || 'SIN ASESOR';
+    if (!asesorCruda) asesoresSinDato++;
     if (!fechaSolicitud) {
       avisos.push('Fila ' + filaNum + ': FECHA_SOLICITUD invalida o vacia, se omitio.');
       continue;
@@ -194,9 +203,16 @@ function agendasParseFilas(aoa) {
       '(mismos valores en TODAS las columnas, incluida fecha y hora) -- se conservo solo 1 de cada una.'
     );
   }
+  if (asesoresSinDato > 0) {
+    avisos.push(
+      asesoresSinDato + ' fila(s) sin NOMBRE DE AGENTE -- se guardaron igual, agrupadas como "Sin asesor" ' +
+      '(nunca se descarta una cita real solo porque no quedo asignada a nadie).'
+    );
+  }
   return {
     filas: dedup.filas, avisos: avisos,
     entidadesAgrupadas: priv.entidadesAgrupadas, entidadesSinDato: priv.entidadesSinDato,
+    asesoresSinDato: asesoresSinDato,
   };
 }
 

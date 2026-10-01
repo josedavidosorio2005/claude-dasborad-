@@ -142,6 +142,19 @@ test('agendasParseFilas: NOMBRE_ENTIDAD vacia -> se guarda como "SIN ENTIDAD"', 
   assert.equal(res.entidadesSinDato, 2);
 });
 
+test('agendasParseFilas: NOMBRE DE AGENTE vacio -> se guarda como "SIN ASESOR", nunca se descarta la fila (Fase 104)', () => {
+  // Antes de la Fase 104, una fila sin agente se descartaba igual que si le
+  // faltara sede/examen/especialidad/profesional -- la suma de lo cargado
+  // quedaba por debajo del archivo real, sin ningun aviso que lo explicara.
+  const aoa = [HEADER, fila({ 0: '' }), fila({ 0: '   ', 2: 'EXAMEN DOS' })];
+  const res = agendasParseFilas(aoa);
+  assert.ok(!res.error, res.error);
+  assert.equal(res.filas.length, 2, 'ninguna de las 2 filas debe descartarse');
+  res.filas.forEach((f) => assert.equal(f.asesor, 'SIN ASESOR'));
+  assert.equal(res.asesoresSinDato, 2);
+  assert.ok(res.avisos.some((a) => /2 fila\(s\) sin NOMBRE DE AGENTE/.test(a)));
+});
+
 test('agendasParseFilas: filas vacias intermedias (fila en blanco en el Excel) se ignoran sin generar aviso', () => {
   // Fase 88: las 2 filas de datos deben ser DISTINTAS -- si no, el dedup
   // de duplicados exactos (nuevo) las colapsaria a 1.

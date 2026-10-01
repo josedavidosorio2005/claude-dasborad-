@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.5.0 — Octubre 2026
+
+Nuevo ranking de agendamiento por asesor. Dentro de Agendamiento (ORLANT),
+la pestaña "Agendas por agente" (que solo mostraba los 12 asesores con más
+citas y agrupaba al resto en "Otros") se reemplaza por "Ranking de
+asesores": una tabla completa con TODOS los asesores, ordenada de mayor a
+menor, que muestra la posición de cada uno, el % que representa sobre el
+total, cuántas citas fueron de Línea 3P y cuántas de Línea General, el
+promedio de citas por día trabajado, y cómo varió frente al mes anterior
+(▲/▼). La tabla se puede ordenar por cualquier columna y buscar por
+nombre de asesor; una gráfica de barras acompaña con los primeros 25 (o
+todos, si son menos). Se puede exportar a Excel igual que el resto de
+Agendamiento, respetando los filtros aplicados. Si el mes elegido es el
+mes en curso, aparece un aviso de que el ranking todavía puede cambiar.
+
+También se corrigió un detalle en la carga de AGENDAS: antes, una fila sin
+nombre de agente se descartaba en silencio (la suma de lo cargado quedaba
+por debajo del archivo real, sin ningún aviso); ahora se guarda igual,
+agrupada como "Sin asesor" al final del ranking, con un aviso que dice
+cuántas filas no traían agente.
+
 ## v1.4.0 — Octubre 2026
 
 Los dashboards ahora se ven a pantalla completa, para visualizar mejor las

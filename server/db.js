@@ -2054,6 +2054,87 @@ runOnceMigration('dashboards_config_orlant_resumen_inasist_opcional_v1', () => {
   }
 });
 
+// Fase 104 (pedido de InCo): "Agendas por agente" (panel index 3 de la
+// pestaña Agendamiento, vista:'agente', top 12 + "Otros") se reemplaza por
+// "Ranking de Asesores" (vista:'ranking', ranking completo). dashboards_config
+// de ORLANT ya existia en produccion con la forma vieja (vista:'agente'),
+// asi que la forma nueva del seed nunca le habria llegado sola.
+//
+// El panel y la sub-pestaña se verifican y corrigen POR SEPARADO (nunca uno
+// gateado por el estado del otro): la migracion vieja
+// dashboards_config_orlant_pdf_graficas_v1 (de antes de esta fase, ya
+// aplicada en produccion) reconoce "forma vieja" de "agendamiento" solo por
+// CANTIDAD de paneles (4) -- una condicion que, en una base que corre TODAS
+// las migraciones desde cero (instancia nueva, `seed:demo`, los tests de
+// este archivo), calza con la forma de ESTA fase tambien y alcanza a
+// reemplazar `panels` usando el CONFIGS actual (ya con vista:'ranking')
+// antes de que esta migracion corra -- pero esa migracion vieja nunca toca
+// `subtabs`. Si el fix de abajo dependiera de `panelAgente.vista==='agente'`
+// para tambien arreglar la sub-pestaña, ese escenario (panel ya nuevo,
+// sub-pestaña todavia vieja) quedaria con "Agendas por agente" colgando de
+// un panel vista:'ranking' -- sin romper nada visualmente raro, pero sin
+// converger a la forma real de CONFIGS. En produccion esa migracion vieja
+// YA corrio hace meses (no se repite), asi que alli el panel SI llega como
+// 'agente' y ambos fixes corren juntos -- pero esta migracion debe converger
+// igual sin depender de ese orden.
+runOnceMigration('dashboards_config_orlant_ranking_asesores_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetAgenda = (target.layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!targetAgenda) return;
+
+  const agenda = (layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!agenda || !Array.isArray(agenda.panels)) return;
+
+  let tocado = false;
+
+  const panelAgente = agenda.panels[3];
+  if (panelAgente && panelAgente.tipo === 'agendas_panel' && panelAgente.vista === 'agente') {
+    agenda.panels[3] = JSON.parse(JSON.stringify(targetAgenda.panels[3]));
+    tocado = true;
+  } else if (panelAgente && panelAgente.tipo === 'agendas_panel' && panelAgente.vista !== 'ranking') {
+    if (!config.isTest) {
+      console.log(`[db] Migracion dashboards_config_orlant_ranking_asesores_v1: panel 3 de "agendamiento" tiene vista "${panelAgente.vista}" (no "agente" ni "ranking") -- se deja intacto, revisar a mano.`);
+    }
+  } else if (!panelAgente || panelAgente.tipo !== 'agendas_panel') {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_ranking_asesores_v1: panel 3 de "agendamiento" no es un agendas_panel reconocible -- se deja intacto, revisar a mano.');
+    }
+  }
+
+  // Igual que el resto de las migraciones de este archivo: solo se
+  // reemplaza la forma VIEJA reconocible exacta ('agendasporagente',
+  // Fase 94) -- cualquier otra cosa (una personalizacion, o un fixture de
+  // otra migracion/prueba que no tiene nada que ver con esta) se deja
+  // intacta, nunca se fuerza a la forma nueva solo porque no coincide.
+  const subtabAgente = (agenda.subtabs || []).find((s) => (s.indices || []).includes(3));
+  const targetSubtab = (targetAgenda.subtabs || []).find((s) => (s.indices || []).includes(3));
+  if (subtabAgente && targetSubtab && subtabAgente.key === 'agendasporagente') {
+    subtabAgente.key = targetSubtab.key;
+    subtabAgente.label = targetSubtab.label;
+    tocado = true;
+  }
+
+  if (!tocado) return; // ya tiene la forma nueva en ambos lados (dos corridas seguidas = mismo resultado)
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_ranking_asesores_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

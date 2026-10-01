@@ -13,7 +13,7 @@ const express = require('express');
 const db = require('../db');
 const { requireActor, campaignAccess, canLoadData } = require('../auth');
 const { validate, schemas } = require('../validation');
-const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasPorAgente, agendasOpciones } = require('../agendas');
+const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -77,17 +77,21 @@ router.get(
   })
 );
 
-// Fase 94 (tema B, pedido de Edwin): "Agendas por agente" -- barras por
-// asesor, de mayor a menor (respeta TODOS los filtros, incluido mes).
+// Fase 104 (pedido de InCo): ranking COMPLETO de asesores -- reemplaza a
+// "Agendas por agente" (Fase 94, top 12 + "Otros", sin posicion ni
+// desglose). Mismos filtros/control de acceso que el resto de Agendas; el
+// servidor ya devuelve todo calculado (puesto, %, 3P/General, promedio por
+// dia, variacion vs. mes anterior) -- el navegador nunca agrega el
+// resultado el mismo, solo lo ordena/filtra por nombre en pantalla.
 router.get(
-  '/calidad/agendas/agente',
+  '/calidad/agendas/ranking',
   requireActor,
   validate(schemas.agendasFiltrosQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(agendasPorAgente(db, req.query));
+    res.json(agendasRanking(db, req.query));
   })
 );
 
