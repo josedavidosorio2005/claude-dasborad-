@@ -5,6 +5,13 @@ on:
     branches: ["**"]
   pull_request:
 
+# Fase 102 (endurecimiento, repo publico): ningun job de este workflow
+# necesita escribir en el repo -- solo checkout + npm test / docker build.
+# Sin este bloque, GITHUB_TOKEN usa el default del repo (puede ser mas
+# amplio de lo necesario); esto lo deja explicito y minimo.
+permissions:
+  contents: read
+
 # Fase 96: un push nuevo cancela la corrida vieja del MISMO PR/rama, para no
 # gastar minutos en una version ya obsoleta -- pero nunca en main, porque
 # deploy.yml se dispara con workflow_run: workflows: ["CI"] sobre main, y

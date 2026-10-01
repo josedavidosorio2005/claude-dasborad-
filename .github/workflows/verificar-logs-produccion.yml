@@ -46,9 +46,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Errores en /inconexion/prod/docker (contenedor de la app)
+        # Fase 102 (endurecimiento): el input se pasa por env, nunca
+        # interpolado directo dentro de run: -- aunque hoy nadie manda algo
+        # distinto de un numero, esto evita que un valor con comillas/
+        # backticks/`$(...)` termine ejecutandose como shell.
+        env:
+          HORAS_ATRAS_INPUT: ${{ github.event.inputs.horas_atras }}
         run: |
           set -euo pipefail
-          HORAS="${{ github.event.inputs.horas_atras || '24' }}"
+          HORAS="${HORAS_ATRAS_INPUT:-24}"
           DESDE_MS=$(( $(date +%s%3N) - HORAS * 3600 * 1000 ))
           echo "Buscando desde hace ${HORAS}h en /inconexion/prod/docker ..."
           # OJO: nunca "|| echo '[]'" aqui -- eso esconderia un AccessDenied
@@ -77,9 +83,11 @@ jobs:
           rm -f docker-errores.json
 
       - name: Errores en /inconexion/prod/backup (backup diario)
+        env:
+          HORAS_ATRAS_INPUT: ${{ github.event.inputs.horas_atras }}
         run: |
           set -euo pipefail
-          HORAS="${{ github.event.inputs.horas_atras || '24' }}"
+          HORAS="${HORAS_ATRAS_INPUT:-24}"
           DESDE_MS=$(( $(date +%s%3N) - HORAS * 3600 * 1000 ))
           echo "Buscando desde hace ${HORAS}h en /inconexion/prod/backup ..."
           # OJO: nunca "|| echo '[]'" aqui -- ver el comentario del paso de arriba.
