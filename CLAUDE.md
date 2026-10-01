@@ -44,6 +44,9 @@ asumir en qué quedó una fase anterior.
 - Cualquier cosa que toque CI/workflows (`.github/workflows/`) o secretos
   de deploy se consulta con el usuario ANTES de tocarla — no asumir que
   "arreglar CI" autoriza cambiarlo sin avisar.
+- Las acciones de terceros en los workflows van fijadas a SHA (`uses:
+  x@<sha-completo>  # vN`, Fase 109) — nunca a un tag mutable (`@v4`). Para
+  actualizar una acción: cambiar el SHA y el comentario con la versión.
 
 ## Producción
 
