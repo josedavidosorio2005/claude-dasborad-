@@ -9637,6 +9637,68 @@ FECHA_CITA, NOMBRE ENTIDAD, CITEST — 83.006 filas, ene-ago 2026 (5 sedes,
   se commiteó, generaba un archivo sintético grande sin valor como
   fixture permanente).
 
-### Carga real en producción
+### Carga real en producción (autorizada, solo Inasistencia de ORLANT ene-ago 2026)
 
-(pendiente — ver cierre de esta fase)
+Corrida el 2026-10-01 con `.github/scripts/verificar-fase108-carga-real-produccion.js`
+(mismo patrón que `verificar-fase104-revision-final-produccion.js`: la
+ruta absoluta del archivo real vive como constante en el script, igual
+que `DIR_EDWIN` — el archivo en sí nunca se commitea, solo la ruta),
+sesión real del usuario ("INICIA SESIÓN AHORA",
+login detectado en ~72s), por la interfaz normal de la plataforma (modal
+"Cargar Datos de Dashboards", cliente ORLANT) — nunca directo a la base ni
+por un workflow. Respaldo del estado ANTES guardado fuera del repo en
+`bases edwin\respaldos-inasistencia\` (JSON con `opciones`+`mensual` de
+ORLANT) antes de tocar nada. El diálogo de confirmación de la carga se
+verificó automáticamente (debía mencionar "REEMPLAZAR" y "Ene-26"/"Ago-26"
+antes de aceptarse) y mostró: "Se cargará como Ene-26 (17 especialidades) y
+Feb-26 (18) y Mar-26 (18) y Abr-26 (17) y May-26 (17) y Jun-26 (17) y
+Jul-26 (17) y Ago-26 (18). Esto va a REEMPLAZAR 3 registro(s) ya
+cargados" (las 3 filas viejas de Ago-26, formato Fase 98-106). **0 errores
+de consola** en todo el recorrido.
+
+| Mes | % esperado | % obtenido | Total esperado | Total obtenido |
+|---|---|---|---|---|
+| Ene-26 | 6,42 % | 6,42 % | 8.811 | 8.811 |
+| Feb-26 | 6,62 % | 6,62 % | 9.526 | 9.526 |
+| Mar-26 | 7,53 % | 7,53 % | 10.014 | 10.014 |
+| Abr-26 | 7,09 % | 7,09 % | 9.948 | 9.948 |
+| May-26 | 7,20 % | 7,20 % | 9.827 | 9.827 |
+| Jun-26 | 6,39 % | 6,39 % | 10.913 | 10.913 |
+| Jul-26 | 6,35 % | 6,35 % | 12.778 | 12.778 |
+| Ago-26 | 7,45 % | 7,45 % | 11.189 | 11.189 |
+| Sep-26 (NO tocado, formato viejo) | 6,47 % | 6,47 % | 1.483 | 1.483 |
+
+Suma de conteos ene-ago (API): C=16.433, I=5.278, P=429, T=60.866, total
+83.006 — coincide exacto con el archivo real. "Por especialidad" de
+Ago-26 (API, `(inasistencia+pendiente)/total`): AUDIFONOS 4,09 %,
+CONSULTA OTORRINO 9,51 %, VERTIGO Y EQUILIBRIO 6,91 %, FONOAUDIOLOGIA
+13,66 %, AUDIOLOGIA 7,81 % — las 5 coinciden exacto con el pedido.
+
+**Hallazgo del script de verificación, NO es un bug**: la tarjeta de
+"Resumen por mes" en pantalla con Ago-26 elegido arriba y sin filtros
+mostró `6,87 %`, no `7,45 %` — el script de verificación asumía (mal) el
+comportamiento viejo de la Fase 106 (tarjeta = % del mes elegido). Desde
+esta fase la tarjeta es el **% ponderado de TODO el período filtrado**
+(spec explícito: "Una tarjeta con el % ponderado de todo el período
+filtrado"), que con "Todos" los meses incluye Ene-26 a Sep-26 juntos —
+`Σ(I+P)/Σtotal` de los 9 meses = 5.803/84.489 = 6,868...% ≈ 6,87 %,
+calculado y confirmado a mano. La barra de Ago-26 en la gráfica sí
+muestra su propio 7,5 % (redondeado a 1 decimal en la etiqueta),
+resaltada con el color distinto. Captura:
+`bases edwin\capturas-produccion\fase108-carga-real\03-pantalla-ago26.png`
+(fuera del repo, datos reales).
+
+Números de control sin cambios en lo demás (no verificados de nuevo en
+este recorrido puntual — ya confirmados en la verificación final de la
+Fase 106): Tipificación 14.940; Tráfico de Llamadas 8.061/7.159/902;
+Tráfico de WhatsApp 7.305/7.109/196, SL20 34,67 %; Agendas 7.426 (General
+4.643/3P 2.783), AUDÍFONOS 2.141, ranking de asesores sumando 7.426.
+
+### Estado final de la Fase 108
+
+2 PRs (código+migración+pruebas+docs+capturas en el primero; este cierre
+en el segundo, `PROGRESS.md` + el script de verificación de la carga
+real), CI verde en ambos. Versión final:
+`1.7.0` (menor, cambio visible), tag `v1.7.0`, deploy confirmado
+(`/api/health` → `version: "1.7.0"`) y carga real en producción
+verificada el mismo día contra la tabla de control completa del pedido.
