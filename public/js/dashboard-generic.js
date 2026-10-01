@@ -1404,6 +1404,33 @@ async function _gdExportarAgendas(p, i){
   var titulo = p.titulo || (_AGENDAS_VISTAS[vista] && _AGENDAS_VISTAS[vista].titulo) || 'Agendas';
   var def = _AGENDAS_VISTAS[vista];
   if(!def) return [];
+
+  // Fase 104: 'ranking' devuelve {filas,total,...}, no un array como las
+  // otras 3 vistas -- exporta la tabla COMPLETA (todos los asesores, igual
+  // que se ve en pantalla), respetando el filtro activo. La proteccion
+  // contra inyeccion de formulas (Fase 72) se aplica de forma generica a
+  // CUALQUIER panel tipo:'tabla' al armar el libro (xlsxFilasSeguras, ver
+  // mas abajo en este archivo) -- no hace falta repetirla aqui.
+  if(vista === 'ranking'){
+    var ranking = { filas: [], total: 0 };
+    try{ ranking = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || ranking; }catch(e){}
+    if(!ranking.filas || !ranking.filas.length){
+      return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' }];
+    }
+    return [{ titulo: titulo, tipo: 'tabla', filas: ranking.filas.map(function(f){
+      return {
+        Puesto: f.sinAsesor ? '' : f.puesto,
+        Asesor: f.sinAsesor ? 'Sin asesor' : textoFormatoNombre(f.asesor),
+        Total: f.total,
+        '%': f.pct,
+        '3P': f.cantidad3p,
+        General: f.cantidadGeneral,
+        'Promedio por día': f.promedioPorDia,
+        'Variación vs. mes anterior': (f.variacion===null || f.variacion===undefined) ? '' : f.variacion,
+      };
+    }) }];
+  }
+
   var datos = [];
   try{ datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || []; }catch(e){}
   if(!datos.length){
@@ -1417,9 +1444,6 @@ async function _gdExportarAgendas(p, i){
   }
   if(vista === 'linea'){
     return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), 'Tipo de Línea': r.tipoLinea, Cantidad: r.cantidad }; }) }];
-  }
-  if(vista === 'agente'){
-    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Agente: textoFormatoNombre(r.asesor), Cantidad: r.cantidad }; }) }];
   }
   return [];
 }

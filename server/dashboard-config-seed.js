@@ -122,14 +122,19 @@ const ORLANT = {
         // columna `tipoLinea` de la tabla `agendas` real (GET
         // /calidad/agendas/linea, server/agendas.js).
         { tipo: 'agendas_panel', vista: 'linea', titulo: 'Agendas por Línea', campana: 'ORLANT' },
-        // "Agendas por agente" (Fase 94, nueva): barras por asesor, mayor a
-        // menor, con los mismos filtros (GET /calidad/agendas/agente).
-        { tipo: 'agendas_panel', vista: 'agente', titulo: 'Agendas por Agente', campana: 'ORLANT' },
+        // "Ranking de asesores" (Fase 104, pedido de InCo): reemplaza a
+        // "Agendas por agente" (Fase 94, top 12 + "Otros", sin posicion ni
+        // desglose) -- ranking COMPLETO (GET /calidad/agendas/ranking,
+        // server/agendas.js) con puesto, %, 3P/General, promedio por dia y
+        // variacion contra el mes anterior. Ver migracion idempotente
+        // dashboards_config_orlant_ranking_asesores_v1 en db.js (produccion
+        // ya tenia este panel sembrado con la forma vieja).
+        { tipo: 'agendas_panel', vista: 'ranking', titulo: 'Ranking de Asesores', campana: 'ORLANT' },
       ], subtabs: [
         { key: 'porespecialidad', label: 'Por especialidad', indices: [0] },
         { key: 'totalagendas', label: 'Total agendas', indices: [1] },
         { key: 'agendasporlinea', label: 'Agendas por línea', indices: [2] },
-        { key: 'agendasporagente', label: 'Agendas por agente', indices: [3] },
+        { key: 'rankingasesores', label: 'Ranking de asesores', indices: [3] },
       ]},
       // Fase 94 (tema B): salen de Agendamiento (Edwin dijo que son otros
       // procesos, con bases completamente distintas, que se montan

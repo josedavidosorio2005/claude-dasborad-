@@ -9051,3 +9051,147 @@ se completa esta seccion con el resultado antes de cerrar la fase.
 Un solo PR (CSS/HTML/JS + 6 pruebas nuevas + script de QA local + capturas
 + `CHANGELOG.md` + este cierre), CI verde. Versión final: `1.4.0`, tag
 `v1.4.0` creado al cerrar esta fase.
+
+## Fase 104 — ranking de agendamiento por asesor (2026-10-01)
+
+Pedido de InCo: un ranking completo de agendamiento por asesor para
+Agendamiento (ORLANT). Reemplaza a "Agendas por agente" (Fase 94): esa
+vista solo mostraba el top 12 + "Otros" (barras, sin posición ni
+desglose) — el ranking nuevo muestra a TODOS los asesores, nunca esconde
+a nadie.
+
+### Qué cambió
+
+- **Servidor** (`server/agendas.js`): `agendasRanking`/`agendasRankingPuro`/
+  `agendasRankingCrudo` — todo el cálculo vive en el servidor (el
+  navegador nunca agrega filas crudas de `agendas`, ~7.500/mes). Por
+  asesor: puesto (competencia: empates comparten puesto, el siguiente
+  salta), % del total (reparto exacto a 100.00 por el método del resto
+  mayor — redondear cada fila por separado puede dar 99.98/100.02),
+  agendas 3P y General por separado, promedio por día con agendas, y
+  variación contra el mes calendario anterior (`null`/"—" si no hay mes
+  fijo o no hay dato previo). Nuevo endpoint `GET
+  /calidad/agendas/ranking` (`server/routes/agendas.js`), mismos
+  filtros/validación Zod/control de acceso por campaña que el resto de
+  Agendas — reemplaza a `GET /calidad/agendas/agente`.
+- **Asesores con variantes de escritura** (mayúsculas/tildes/espacios
+  dobles): se funden en una sola fila al agrupar (normalización
+  `agendasNombreNormalizado`, solo para decidir qué filas son "el mismo
+  asesor" — la columna `asesor` guardada en la base nunca se modifica).
+  El nombre que se muestra es la variante más usada en el período
+  (empate → alfabético, determinista). La respuesta incluye
+  `variantesConHomonimos` (cuántos asesores distintos tenían más de una
+  variante en el período filtrado) — en los datos reales de abril 2025 de
+  ORLANT: **pendiente de confirmar en la verificación final en
+  producción** (ver abajo).
+- **Asesor vacío o "sin asignar"**: antes, `agendas-logic.js` (parseo del
+  Excel en el navegador) descartaba en silencio una fila sin NOMBRE DE
+  AGENTE, igual que si le faltara sede/examen/especialidad/profesional —
+  la suma de lo cargado quedaba por debajo del archivo real sin ningún
+  aviso. Ahora se conserva (mismo criterio que NOMBRE_ENTIDAD vacío →
+  "SIN ENTIDAD", Fase 87): asesor vacío → `"SIN ASESOR"`, con un aviso
+  nuevo ("N fila(s) sin NOMBRE DE AGENTE..."). En el ranking, ese grupo
+  aparece como fila "Sin asesor" al final, fuera de la competencia de
+  puestos (no es un asesor real), para que la suma siga cuadrando con el
+  total del filtro.
+- **Migración idempotente** `dashboards_config_orlant_ranking_asesores_v1`
+  (`server/db.js`): el panel `vista:'agente'` ("Agendas por Agente") pasa
+  a `vista:'ranking'` ("Ranking de Asesores"), y la sub-pestaña
+  `agendasporagente` pasa a `rankingasesores` — así un ORLANT ya
+  sembrado en producción recibe el cambio solo con el deploy. **Hallazgo
+  real durante la verificación**: una migración más vieja
+  (`dashboards_config_orlant_pdf_graficas_v1`, de antes de esta fase, ya
+  aplicada en producción) reconoce la forma "vieja" de la pestaña
+  Agendamiento solo por *cantidad* de paneles (4) — una condición que, en
+  una base que corre TODAS las migraciones desde cero (instancia nueva,
+  `seed:demo`, los tests de este archivo — NO el caso de producción, que
+  ya tiene esa migración vieja aplicada hace meses), calza con la forma
+  de esta fase también, y alcanza a reemplazar `panels` usando el
+  `CONFIGS` actual antes de que la migración de esta fase corra — pero
+  esa migración vieja nunca toca `subtabs`. Se corrigió verificando y
+  corrigiendo panel y sub-pestaña **por separado** (nunca uno gateado por
+  el estado del otro), para que converja a la forma correcta sin importar
+  ese orden.
+- **Interfaz** (`public/js/agendas.js`, `public/js/dashboard-generic.js`):
+  tabla completa (puesto, asesor, total, %, 3P, General, promedio/día,
+  variación), ordenable por clic en cualquier encabezado (con flecha de
+  orden activo), buscador por nombre de asesor — todo client-side sobre
+  el último resultado ya traído del servidor, sin volver a pedir nada por
+  ordenar/buscar. Gráfica de barras horizontales acompañante (todos los
+  asesores si son ≤25, si hay más, el top 25 por puesto — fijo, no se
+  mueve con el orden/búsqueda de la tabla de abajo); los 3 primeros
+  puestos resaltados con los primeros 3 colores de la paleta categórica
+  (`PC`, por POSICIÓN de puesto, nunca con el semáforo — ver
+  `paleta-logic.js`). Aviso de "mes en curso" (mismo criterio que
+  Inasistencia) cuando el filtro de Mes es el mes calendario de hoy.
+  Exportar a Excel reutiliza el mecanismo ya existente de Agendamiento
+  (`_gdExportarAgendas`), con la protección contra inyección de fórmulas
+  de la Fase 72 aplicada igual que al resto de paneles tipo tabla.
+- **Visibilidad de nombres de asesores — decisión pendiente de InCo**: hoy
+  cualquier rol con acceso a Agendamiento de ORLANT (`campana_ORLANT` —
+  CALIDAD/SUPERVISOR/REPORTES/GERENCIA — o `cliente_ORLANT` — el login
+  del cliente, CLIENTES_DASH/SUPERVISOR) ve el ranking completo con los
+  nombres reales de los asesores — el mismo criterio que ya tenía
+  "Agendas por agente" desde la Fase 94, sin cambios de permisos en esta
+  fase. No se tocó el control de acceso por no ser un pedido explícito de
+  esta fase; queda anotado aquí para que InCo decida si el login del
+  cliente (CLIENTES_DASH) debería ver el ranking nominal completo o una
+  versión sin nombres/anonimizada.
+
+### Verificación
+
+- `server/tests/agendas-ranking.test.js` (nuevo, 9 pruebas): suma de
+  "total" = total del filtro, suma de "%" = 100.00 exacto, 3P + General =
+  total por asesor, orden mayor a menor con empates compartiendo puesto
+  (orden estable entre corridas repetidas), homónimos fundidos en una
+  sola fila, "Sin asesor" al final sin desaparecer de la suma, filtro por
+  línea/sede cambia el ranking, mes sin datos → 200 con lista vacía
+  (nunca error), variación contra el mes anterior (con/sin dato previo,
+  sin mes fijo → null para todos), 403 sin acceso a la campaña.
+- `server/tests/orlant-ranking-asesores-migracion.test.js` (nuevo, 4
+  pruebas): panel y sub-pestaña migran correctamente, un tab
+  personalizado (no reconocible) se deja intacto, idempotente (corrida
+  dos veces seguidas = mismo resultado, confirmado reabriendo la base).
+- `server/tests/agendas-logic.test.js`: prueba nueva para "SIN ASESOR" (2
+  filas sin agente se guardan igual, con el aviso correcto).
+- `server/tests/agendas-linea.test.js` reemplaza a
+  `agendas-linea-agente.test.js` (cubría también al viejo
+  `/calidad/agendas/agente`, ya no existe).
+- Prueba de ida y vuelta de `dashboards_config` (PUT) ya es genérica
+  (`dashboards-config-put-round-trip-fase85.test.js`, confirmado — no
+  hardcodea nombres de vista), cubre la sub-pestaña nueva sin cambios.
+- `npm test`: 786/786. `npm audit`: 0 vulnerabilidades (antes y después).
+- Recorrido con Playwright en local (`seed:demo`,
+  `.github/scripts/verificar-fase104-ranking-local.js` — carga agendas
+  sintéticas por la API normal, 30 asesores + 1 con 3 variantes de
+  escritura + 1 fila sin asesor, mes calendario completo anterior y mes
+  en curso): sub-pestaña "Ranking de asesores" en 1366×768 y móvil 412px,
+  claro y oscuro, filtros aplicados, ordenar por columna (cambia el
+  orden), buscar por nombre (filtra a 1 fila), aviso de "mes en curso",
+  exportar a Excel (el archivo descargado trae la hoja "Ranking de
+  Asesores" con las mismas filas y la misma suma que en pantalla). **0
+  errores de consola, 0 peticiones fallidas, sin scroll horizontal.**
+  Capturas en `docs/capturas-demo/fase104-ranking-asesores/`.
+- Números de control: pendiente de confirmar en la verificación final en
+  producción (abajo) — Agendas 7.426 (General 4.643 / 3P 2.783), AUDÍFONOS
+  2.141, Tipificación 14.940, Tráfico de Llamadas 8.061/7.159/902, Tráfico
+  de WhatsApp 7.305/7.109/196, SL20 34,67 %, Inasistencia Ago-26
+  5.893/332/5,63 %, Sep-26 6,47 %.
+
+### Verificación final en producción (solo lectura, con la sesión real del usuario)
+
+Pendiente: se corre `.github/scripts/verificar-fase104-revision-final-produccion.js`
+(mismo criterio que la Fase 103, mas la confirmación del ranking de
+asesores) contra la versión ya desplegada de esta fase — confirma que la
+sub-pestaña "Ranking de asesores" muestra los datos reales de abril 2025
+de ORLANT, que la suma del ranking da exactamente 7.426, cuántos
+asesores reales tienen variantes de escritura (`variantesConHomonimos`),
+y los demás números de control listados arriba — 0 errores de consola.
+Se completa esta sección con el resultado antes de cerrar la fase (de
+paso, si sigue pendiente, la verificación en vivo de la Fase 103).
+
+### Estado final de la Fase 104
+
+Un solo PR (servidor + migración + interfaz + pruebas + script de QA
+local + capturas + `CHANGELOG.md`), CI verde. Versión final: `1.5.0`, tag
+`v1.5.0` al cerrar esta fase.
