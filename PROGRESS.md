@@ -8817,3 +8817,155 @@ PRs de esta fase: #218 (migración + export), #219 (vista "Por mes"),
 (Tema C), y este cierre. Todos mergeados a `main`, CI verde, deploy
 automático confirmado, `/api/health` en 200. Versión final: `1.3.0`
 (tag `v1.3.0` pendiente de crear en este cierre).
+
+## Fase 102 — escaneo completo de seguridad y bugs (2026-10-01)
+
+Pedido explícito: revisar todo lo agregado desde las últimas auditorías
+(Fases 72/81 de seguridad, 88 de bugs) — selector de MES global, WhatsApp
+con 2 niveles de servicio, el dominio nuevo, Calidad (fecha/evaluador
+bloqueados, asesorUserId, catálogo de codificaciones, alerta y "visto"),
+Inasistencia completo, Agendamiento con 4 vistas, la guía de uso y el
+monitor de producción — y arreglar lo que apareciera. Reporte completo,
+sin secretos ni pasos explotables, en
+`docs/auditoria-seguridad-fase102.md`.
+
+### Hallazgos y arreglos (un PR por tema, CI verde en todos)
+
+- **Crítico** (PR #224, de una sesión anterior cortada por límite de uso,
+  cerrada en esta misma fase): un actor con el permiso puntual
+  `crearUsuarios`/`editarUsuarios` (asignable a cualquier rol) podía
+  crear o convertir un usuario a `ADMIN`/`AUX_ADMIN`, incluso a sí mismo.
+  Arreglo: solo un administrador completo puede asignar esos 2 roles;
+  nadie cambia su propio rol.
+- **Medio + informativo** (PR #225, misma sesión anterior): el fallback
+  por nombre de `/monitoreos/mios` y `PUT /monitoreos/:id/visto` no
+  filtraba por campaña (un asesor con el mismo nombre en otra campaña
+  podía ver/marcar como visto un monitoreo ajeno); `GET
+  /calidad/plantillas` devolvía la plantilla de TODAS las campañas a
+  cualquiera. Ambos cerrados.
+- **Alto** (PR #226, v1.3.1): `public/guia-uso.html` se servía por
+  `express.static` SIN autenticación — cualquiera con la URL veía el
+  nombre del cliente y la estructura de carga de cada base sin iniciar
+  sesión. Se movió fuera de `public/` (`server/paginas/guia-uso.html`) y
+  ahora solo se entrega por `GET /api/guia-uso`, protegido. De paso puso
+  al día versión/`CHANGELOG.md`: los PRs #224/#225 no habían subido
+  versión por el corte de sesión anterior.
+- **Crítico x2** (PR #227, parte de v1.3.1 aunque se mergeó después de
+  subir la versión — ver la corrección de este hueco de registro más
+  abajo): `PUT /users/:id/password` no tenía el mismo límite que
+  crear/editar un usuario — cualquiera con el permiso puntual
+  `cambiarPassword` podía resetear la contraseña de un `ADMIN`/
+  `AUX_ADMIN` existente e iniciar sesión como esa cuenta. Y ni `PUT
+  /users/:id/perms` ni el campo `perms` de `PUT /users/:id` bloqueaban la
+  AUTO-edición — un actor con `gestionPermisos` podía otorgarse a sí
+  mismo cualquier otro permiso de la plataforma (control equivalente a
+  ADMIN sin tocar nunca `rol`). Ambos cerrados con el mismo principio que
+  ya protegía `rol`.
+- **Bajo** (PR #228, v1.3.2): `fechaSchema` (usada en monitoreos, tráfico,
+  agendas, tipificaciones, gestión humana) solo exigía el FORMATO
+  `AAAA-MM-DD`, nunca que la fecha existiera en el calendario —
+  `"2026-02-30"` se guardaba tal cual. Se agregó un `refine` con
+  round-trip de `Date.UTC`. De paso corrigió un fixture de prueba
+  (`"2022-02-29"`, 2022 no es bisiesto) que tenía el mismo hueco sin
+  saberlo. Mismo PR: script de QA amplia en local
+  (`.github/scripts/verificar-fase102-auditoria-amplia-local.js`,
+  Playwright directo, solo lectura) — recorrido a fondo de ORLANT (todas
+  las pestañas/sub-pestañas reales, claro/oscuro, escritorio/móvil,
+  Exportar en cada una) + login de los 10 roles de seed:demo: **0
+  hallazgos**.
+- **Workflows** (PR #230, autorizado antes de tocar nada, como exige
+  CLAUDE.md): `ci.yml` sin `permissions:` explícito; 2 pasos de
+  `verificar-logs-produccion.yml` interpolaban
+  `${{ github.event.inputs.horas_atras }}` directo en `run:` en vez de
+  `env:`. No se tocó `deploy.yml` ni ningún secreto. `seed-demo.yml` se
+  dejó igual (mismo patrón textual, pero `type: choice` con 3 opciones
+  fijas, sin texto libre que inyectar).
+- **Dependencias** (PR #229): única actualización menor/de parche
+  disponible, `@aws-sdk/client-s3`/`client-ssm` 3.1142.0 → 3.1144.0. Las
+  mayores (`better-sqlite3` 12→13, `dotenv` 17→18) siguen congeladas
+  hasta después de la entrega de ORLANT, solo listadas.
+- **Corrección de registro**: el PR #227 se mergeó DESPUÉS de que el PR
+  #226 ya había subido la versión a 1.3.1, así que sus 2 arreglos
+  críticos salieron a producción bajo esa versión pero nunca quedaron
+  anotados en su nota de `CHANGELOG.md` (es aditivo, nunca se reescribe
+  una versión ya publicada) — se documentaron en la nota de la v1.3.2
+  (PR #228), con la aclaración de que en realidad ya estaban en la
+  1.3.1.
+
+### Áreas revisadas sin hallazgos (detalle completo en el doc de la fase)
+
+Inyección SQL, XSS guardado, fórmulas de Excel en exports (incluidos los
+nuevos de Inasistencia/Agendas), prototype pollution, path traversal,
+JWT (algoritmo/vencimiento/usuario borrado o suspendido), rate limiting
+de login, costo de hash, DoS/límites de carga, `DELETE` con alcance de
+cliente/campaña en cada tabla, cabeceras HTTP (CSP/HSTS/CORS/frame/
+referrer), manejo de errores (sin stack traces), secretos en el repo y
+su historial completo de git, logs del servidor. Decisiones de diseño ya
+existentes confirmadas (no son bugs): evaluador del bulk histórico de
+Calidad desde Excel (Fase 95), alcance global de Inventario/Gerencia/
+Gestión Humana, carga de Tráfico de Llamadas sin filtro de campaña
+puntual (auditoría 2026-09-15).
+
+Observación sin cambio de código (no es vulnerabilidad): no existe un
+flujo de "cambiar mi propia contraseña" — solo reseteo por alguien con
+el permiso, ahora correctamente restringido para `ADMIN`/`AUX_ADMIN`.
+
+### Verificación final
+
+- `npm test`: verde antes y después de cada arreglo; una flakiness
+  ocasional preexistente bajo paralelismo en 1-2 archivos sueltos
+  (confirmada reproduciendo en aislado y en corridas repetidas, no
+  relacionada con ningún cambio de esta fase).
+- `npm audit`: 0 vulnerabilidades, antes y después.
+- Migraciones: una base sembrada con `seed:demo` + todas las migraciones,
+  reabierta 3 veces seguidas, da contenido byte-idéntico (hash SHA-256 de
+  las 24 tablas) sin ningún error.
+- Config round-trip (el bug que ya se había repetido en las Fases 74/84):
+  ya existía una prueba general de la Fase 85 que cubre exactamente el
+  pedido — se confirmó que sigue vigente y en verde.
+- Verificación final en producción, solo lectura, con la sesión real del
+  usuario (`.github/scripts/verificar-fase102-revision-final-produccion.js`,
+  navegador visible, "INICIA SESIÓN AHORA"): login ok, **0 errores de
+  consola y 0 peticiones fallidas** en todo el recorrido (6 pestañas x 3
+  tamaños x 2 temas + exports + Calidad + guía de uso). Números de
+  control de ORLANT, TODOS exactos:
+
+  | Métrica | Esperado | Obtenido |
+  |---|---|---|
+  | Tipificación (total) | 14.940 | 14.940 |
+  | Tráfico de Llamadas (total/contestadas/pendientes) | 8.061 / 7.159 / 902 | 8.061 / 7.159 / 902 |
+  | Tráfico de WhatsApp (total/contestados/pendientes), SL20 | 7.305 / 7.109 / 196, 34,67 % | 7.305 / 7.109 / 196, 34,67 % |
+  | Agendas (total, General/3P), AUDIFONOS | 7.426 (4.643/2.783), 2.141 | 7.426 (4.643/2.783), 2.141 |
+  | Inasistencia Ago-26 (total, %) | 5.893, 5,63 % | 5.893, 5,63 % |
+  | Inasistencia Sep-26 (%) | 6,47 % | 6,47 % |
+
+  La plantilla descargable trae la hoja `INASISTENCIA`; los 6 exports no
+  traen ninguna hoja vacía sin aviso; el EVALUADOR del formulario de
+  monitoreo sigue bloqueado; la guía de uso abre con sesión, título
+  correcto. Único punto que el script marcó inicialmente como hallazgo
+  (FECHA del formulario habilitada) resultó ser un falso positivo: la
+  sesión usada era de un administrador completo, para quien ese campo se
+  desbloquea A PROPÓSITO (Fase 95) — el script se corrigió para tener en
+  cuenta el rol de quien verifica.
+
+### Pendiente de decisión del usuario
+
+- Fijar las acciones de terceros de los workflows a un SHA de commit
+  (hoy todas usan un tag mutable, ej. `@v4`) — solo se listaron, no se
+  tocaron.
+
+### Estado final de la Fase 102
+
+| PR | Tema | Estado |
+|---|---|---|
+| #224 | Crítico — escalada por `rol` | Mergeado |
+| #225 | Medio/informativo — cruce de campaña en Calidad | Mergeado |
+| #226 | Alto — guía de uso pública (v1.3.1) | Mergeado |
+| #227 | Crítico x2 — password reset + auto-escalada de permisos | Mergeado |
+| #228 | Bajo — fecha de calendario + script de QA local (v1.3.2) | Mergeado |
+| #229 | Dependencias — parche de AWS SDK | Abierto, CI verde |
+| #230 | Endurecimiento de workflows | Abierto, CI verde |
+| #231 | Docs de la auditoría + script de verificación final en producción | Abierto, CI verde |
+
+Versión final: `1.3.2`. Tag `v1.3.2` pendiente de crear al cerrar esta
+fase (tras mergear #229/#230/#231).
