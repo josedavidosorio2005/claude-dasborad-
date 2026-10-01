@@ -286,3 +286,54 @@ test('validacion: fila con menos de 9 campos -> 400', async () => {
   });
   assert.equal(res.status, 400);
 });
+
+// ── Fase 109: reemplazo de un mes "formato viejo" (SIN DATO) por el formato nuevo ──
+test('Fase 109: subir un mes en formato NUEVO reemplaza por completo las filas viejas "SIN DATO" de ese mismo mes, sin dejar mezcla', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2026-09';
+  const especialidadVieja = 'EXAMENES ESPECIALES FASE109 ' + Math.random().toString(36).slice(2, 6);
+  const especialidadNueva = 'AUDIOLOGIA FASE109 ' + Math.random().toString(36).slice(2, 6);
+
+  // 1) Carga vieja: sede/entidad = 'SIN DATO' (formato Fase 98-106).
+  await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT',
+    filas: [fila({ 0: mes, 1: 'SIN DATO', 2: especialidadVieja, 3: 'SIN DATO', 4: 452, 5: 94, 6: 2, 7: 935, 8: 1483 })],
+  });
+  const opcionesAntes = await request(app).get('/api/calidad/inasistencia/opciones?campana=ORLANT').set(auth(admin));
+  assert.ok(opcionesAntes.body.mesesFormatoViejo.includes(mes), 'el mes debe quedar marcado como formato viejo tras la carga vieja');
+
+  // 2) Carga nueva para el MISMO mes: sede/entidad reales (formato Fase 108+).
+  const res = await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT',
+    filas: [fila({ 0: mes, 1: 'SEDE PRINCIPAL', 2: especialidadNueva, 3: 'EPS REAL', 4: 10, 5: 20, 6: 5, 7: 65, 8: 100 })],
+  });
+  assert.equal(res.status, 201, JSON.stringify(res.body));
+  assert.equal(res.body.borradas, 1, 'debe borrar la UNICA fila vieja de ese mes antes de insertar la nueva');
+
+  // 3) La especialidad VIEJA ya no debe aparecer, ni el mes debe seguir marcado como formato viejo.
+  const porEsp = await request(app).get(`/api/calidad/inasistencia/especialidad?campana=ORLANT&mes=${mes}`).set(auth(admin));
+  assert.ok(!porEsp.body.some((r) => r.especialidad === especialidadVieja), 'la especialidad del formato viejo no debe quedar mezclada');
+  const filaNueva = porEsp.body.find((r) => r.especialidad === especialidadNueva);
+  assert.ok(filaNueva, 'la especialidad nueva debe estar presente');
+  assert.equal(filaNueva.total, 100, 'el total debe ser SOLO el de la carga nueva, sin sumar la vieja (1483)');
+
+  const opcionesDespues = await request(app).get('/api/calidad/inasistencia/opciones?campana=ORLANT').set(auth(admin));
+  assert.ok(!opcionesDespues.body.mesesFormatoViejo.includes(mes), 'el mes ya no debe estar marcado como formato viejo (tiene sede/entidad reales ahora)');
+  assert.ok(opcionesDespues.body.sedes.includes('SEDE PRINCIPAL'));
+  assert.ok(opcionesDespues.body.entidades.includes('EPS REAL'));
+});
+
+test('GET /calidad/inasistencia/opciones: mesesFormatoViejo nunca incluye un mes con AL MENOS una fila de sede real', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const mes = '2024-05';
+  const especialidad = 'ESP MIXTO ' + Math.random().toString(36).slice(2, 6);
+  await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+    campana: 'ORLANT',
+    filas: [
+      fila({ 0: mes, 1: 'SIN DATO', 2: especialidad, 3: 'SIN DATO' }),
+      fila({ 0: mes, 1: 'SEDE PRINCIPAL', 2: especialidad, 3: 'EPS OTRA' }),
+    ],
+  });
+  const opciones = await request(app).get('/api/calidad/inasistencia/opciones?campana=ORLANT').set(auth(admin));
+  assert.ok(!opciones.body.mesesFormatoViejo.includes(mes), 'con al menos 1 fila de sede real, el mes NO es 100% formato viejo');
+});

@@ -142,14 +142,18 @@ function seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre) {
       (campana, mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total, archivoNombre, cargadoPorNombre, createdAt)
     VALUES (@campana,@mes,@sede,@especialidad,@entidad,@cancelada,@inasistencia,@pendiente,@atendidas,@total,@archivoNombre,@cargadoPorNombre,@createdAt)
   `);
-  // El mes en curso solo trae UNA especialidad (mismo patron real del
-  // archivo de Edwin: "Septiembre solo trae EXAMENES ESPECIALES, porque el
-  // mes no ha cerrado") -- asi el demo tambien ejercita el aviso de "menos
-  // especialidades que el mes anterior" en el panel.
+  // El mes en curso solo trae UNA especialidad, sede='SIN DATO' y
+  // entidad='SIN DATO' -- mismo patron REAL de produccion (Fase 109:
+  // "Sep-26 quedo del formato viejo -- Fase 98-106 -- mientras Ene-26 a
+  // Ago-26 ya vienen del archivo nuevo"): los meses CERRADOS ya tienen el
+  // reparto sede x entidad del archivo nuevo, pero el mes que todavia no
+  // cierra sigue en el formato agregado viejo. Asi el demo ejercita el
+  // aviso 'parcial' (no solo 'incompleto') sin esperar datos reales.
   const esMesActual = idxMes === MESES.length - 1;
   const especialidades = esMesActual ? ['EXAMENES ESPECIALES'] : INASISTENCIA_ESPECIALIDADES;
-  const combos = [];
-  INASISTENCIA_SEDES.forEach((sede) => INASISTENCIA_ENTIDADES.forEach((entidad) => combos.push({ sede, entidad })));
+  const combos = esMesActual
+    ? [{ sede: 'SIN DATO', entidad: 'SIN DATO' }]
+    : INASISTENCIA_SEDES.reduce((acc, sede) => acc.concat(INASISTENCIA_ENTIDADES.map((entidad) => ({ sede, entidad }))), []);
 
   especialidades.forEach((especialidad) => {
     const total = Math.max(50, ent(serieMensual(rand, idxMes, { base: 1200, ruidoPct: 0.15 })));

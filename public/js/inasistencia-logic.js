@@ -301,8 +301,8 @@ function inasistenciaMesLbl(mes) {
 // de cada especialidad -- con Ago-26 real (varias especialidades, tamaños
 // muy distintos) el promedio simple da un numero mas alto y menos
 // correcto que el ponderado. También guarda que especialidades aportaron
-// datos ese mes (para el aviso de mes incompleto, ver
-// inasistenciaMesesIncompletos).
+// datos ese mes (para los avisos de mes parcial/incompleto, ver
+// inasistenciaAvisosPorMes).
 function inasistenciaAgregarPorMes(filas) {
   var porMes = {};
   (filas || []).forEach(function (r) {
@@ -328,18 +328,59 @@ function inasistenciaAgregarPorMes(filas) {
   });
 }
 
-// Meses cuyo numero de especialidades es MENOR al maximo de todo el rango
-// (ej. un mes recien empezado que solo trae 1 especialidad, mientras otro
-// ya trae todas) -- para el aviso debajo de la grafica "Resumen por mes".
-// Se compara contra el MAXIMO de todo el rango (no contra "el mes
-// anterior") para que el aviso no dependa de cual mes esta seleccionado
-// arriba. `agregadoPorMes` es la salida de inasistenciaAgregarPorMes.
-function inasistenciaMesesIncompletos(agregadoPorMes) {
-  var max = (agregadoPorMes || []).reduce(function (a, m) { return Math.max(a, (m.especialidades || []).length); }, 0);
-  if (!max) return [];
-  return (agregadoPorMes || [])
-    .filter(function (m) { return (m.especialidades || []).length > 0 && m.especialidades.length < max; })
-    .map(function (m) { return { mes: m.mes, especialidades: m.especialidades }; });
+// "Ene-26 a Sep-26" (o "Ago-26" si solo hay un mes, o "" sin meses) -- para
+// que la tarjeta del periodo (Fase 109) diga explicitamente el RANGO que
+// esta promediando, en vez de poder confundirse con el mes del selector
+// global de arriba. `agregado` es la salida de inasistenciaAgregarPorMes
+// (YA respeta los filtros de sede/especialidad/entidad).
+function inasistenciaRangoLbl(agregado) {
+  if (!agregado || !agregado.length) return '';
+  var a = inasistenciaMesLbl(agregado[0].mes);
+  var b = inasistenciaMesLbl(agregado[agregado.length - 1].mes);
+  return a === b ? a : (a + ' a ' + b);
+}
+
+// Clasifica cada mes del "Resumen por mes" para avisar sin confundir (Fase
+// 109, hallazgo real: Sep-26 quedo del formato viejo -- Fase 98-106, sede/
+// entidad='SIN DATO' -- mientras Ene-26 a Ago-26 ya vienen del archivo
+// nuevo de InCo, una fila por cita):
+//   - 'parcial': el mes es 100% formato viejo (`mesesFormatoViejo`, que
+//     trae el servidor en /opciones -- TODAS sus filas tienen sede/
+//     entidad='SIN DATO'). Nunca se clasifica TAMBIEN como 'incompleto'
+//     para el mismo mes -- ya queda explicado por si solo.
+//   - 'incompleto': el mes trae MENOS especialidades que el mas completo
+//     del rango YA FILTRADO, pero SI tiene sede/entidad real (ej. un mes
+//     recien empezado) -- mismo criterio que antes de esta fase.
+//   - 'sinDatosFiltro': el mes tiene datos en general (esta en
+//     `mesesTodos`, la lista SIN filtrar de /opciones) pero el filtro de
+//     sede/especialidad/entidad activo lo dejo sin ninguna fila -- por
+//     eso no aparece en `agregado`.
+// `agregado` es la salida de inasistenciaAgregarPorMes (YA filtrada);
+// `mesesTodos`/`mesesFormatoViejo` son el universo SIN filtrar (campos de
+// /calidad/inasistencia/opciones) -- nunca se recalculan aqui, siempre
+// vienen del servidor.
+function inasistenciaAvisosPorMes(agregado, mesesTodos, mesesFormatoViejo) {
+  var lista = agregado || [];
+  var esFormatoViejo = {};
+  (mesesFormatoViejo || []).forEach(function (m) { esFormatoViejo[m] = true; });
+  var max = lista.reduce(function (a, m) { return Math.max(a, (m.especialidades || []).length); }, 0);
+
+  var avisos = lista
+    .filter(function (m) { return (m.especialidades || []).length > 0; })
+    .map(function (m) {
+      if (esFormatoViejo[m.mes]) return { mes: m.mes, tipo: 'parcial', especialidades: m.especialidades };
+      if (max && m.especialidades.length < max) return { mes: m.mes, tipo: 'incompleto', especialidades: m.especialidades };
+      return null;
+    })
+    .filter(function (a) { return a; });
+
+  var mesesPresentes = {};
+  lista.forEach(function (m) { mesesPresentes[m.mes] = true; });
+  (mesesTodos || []).forEach(function (mes) {
+    if (!mesesPresentes[mes]) avisos.push({ mes: mes, tipo: 'sinDatosFiltro' });
+  });
+
+  return avisos.sort(function (a, b) { return a.mes < b.mes ? -1 : a.mes > b.mes ? 1 : 0; });
 }
 
 // Ordena filas "por especialidad" (de un solo mes) de mayor a menor %,
@@ -382,7 +423,8 @@ if (typeof module !== 'undefined' && module.exports) {
     inasistenciaPonderadoTotal: inasistenciaPonderadoTotal,
     inasistenciaFmtPct: inasistenciaFmtPct,
     inasistenciaAgregarPorMes: inasistenciaAgregarPorMes,
-    inasistenciaMesesIncompletos: inasistenciaMesesIncompletos,
+    inasistenciaRangoLbl: inasistenciaRangoLbl,
+    inasistenciaAvisosPorMes: inasistenciaAvisosPorMes,
     inasistenciaOrdenarBaseBaja: inasistenciaOrdenarBaseBaja,
   };
 }

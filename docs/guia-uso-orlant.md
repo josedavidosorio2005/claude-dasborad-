@@ -116,9 +116,16 @@ combinar varias especialidades, el % se calcula sobre la SUMA de todas
 un número distinto y menos correcto). Tiene filtros de Sede, Especialidad
 y Entidad (esta última con buscador, porque son muchas) y 2 vistas:
 
-- **Resumen por mes** (la que abre por defecto): una tarjeta con el % de
-  todo el período que deja pasar los filtros de arriba, más una gráfica
-  con el % de cada mes con datos — el mes elegido arriba se resalta.
+- **Resumen por mes** (la que abre por defecto): 2 tarjetas (el % de todo
+  el período que deja pasar los filtros de arriba, y el % del mes elegido
+  arriba — cada una dice su propio rango, para no confundirlas) más una
+  gráfica de línea con el valor de cada mes, una tabla de datos debajo
+  (mes y % alineados, más el total de citas) y un aviso cuando un mes
+  trae menos datos que el resto — el mes elegido arriba se resalta (punto
+  más grande, columna en negrita en la tabla); un mes que todavía viene
+  del formato de reporte anterior (sin sede ni entidad) se marca con un
+  punto hueco, el último tramo de la línea punteado y un asterisco en la
+  tabla.
 - **Por especialidad**: una barra por especialidad, del mes elegido
   arriba. Las especialidades con muy pocas citas ese mes se marcan con
   un asterisco (\*) y se muestran al final — su % puede no ser
