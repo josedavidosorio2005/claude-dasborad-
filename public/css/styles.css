@@ -645,8 +645,22 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger);font-weight:700;
    "sticky" dentro del propio scroll del modal (ver mas abajo) para que el
    titulo/MES/Exportar/Cerrar sigan a la vista sin tener que subir scroll.
    Mismo fondo/overflow/flex que el resto -- solo cambian tamano, radio y
-   sombra. */
-#gd-modal{background:var(--c-bg);border-radius:0;width:100vw;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
+   sombra.
+   Fase 105 (hallazgo real de la verificacion final en produccion de la
+   Fase 104, con un Chrome real -- en headless nunca aparecio): `width`
+   era `100vw`, que en un Chrome real (no headless) se calcula EXCLUYENDO
+   el ancho de la barra de scroll de la pagina de fondo (si la hay) --
+   el modal quedaba ~15px mas angosto que el viewport real, en las 3
+   resoluciones x 2 temas probadas. `width:100%` en cambio hereda del
+   padre (#gd-overlay, `position:fixed;inset:0` -- ESE si es inmune a la
+   barra de scroll, su tamano lo fija el viewport visual directo, no una
+   unidad `vw`), asi que siempre da el ancho real sin importar si hay
+   barra de scroll de fondo o no. `height` se deja en `100dvh` (no
+   `100%`): es el mismo caso vertical, pero nunca se vio el problema ahi
+   (alto medido = alto real en las 3 resoluciones) y `dvh` resuelve un
+   problema real aparte (recorte por la barra de direcciones en movil)
+   que `100%` no resolveria igual de bien. */
+#gd-modal{background:var(--c-bg);border-radius:0;width:100%;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
 #gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
 
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.

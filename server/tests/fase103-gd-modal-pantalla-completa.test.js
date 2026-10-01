@@ -19,12 +19,19 @@ async function css() {
   return res.text;
 }
 
-test('#gd-modal: regla propia, sin max-width/max-height limitado, cubre el viewport (100vw/100dvh), sin bordes redondeados', async () => {
+test('#gd-modal: regla propia, sin max-width/max-height limitado, cubre el viewport (100%/100dvh), sin bordes redondeados', async () => {
   const texto = await css();
   const m = texto.match(/#gd-modal\{([^}]*)\}/);
   assert.ok(m, 'deberia existir una regla CSS propia para #gd-modal (no solo dentro de una lista compartida)');
   const reglas = m[1];
-  assert.match(reglas, /width:\s*100vw/, '#gd-modal deberia medir 100vw de ancho');
+  // Fase 105 (hallazgo real de la verificacion final en produccion: con un
+  // Chrome real, no headless, `100vw` se calcula EXCLUYENDO el ancho de la
+  // barra de scroll de la pagina de fondo si la hay -- el modal quedaba
+  // ~15px mas angosto que el viewport real). `100%` hereda de #gd-overlay
+  // (`position:fixed;inset:0`, inmune a esa barra) y, junto con el bloqueo
+  // de scroll de fondo mientras el modal esta abierto (ver
+  // fase105-gd-modal-scroll-fondo.test.js), da el ancho real siempre.
+  assert.match(reglas, /width:\s*100%/, '#gd-modal deberia medir 100% de ancho (no 100vw, ver Fase 105)');
   assert.match(reglas, /height:\s*100dvh/, '#gd-modal deberia medir 100dvh de alto (dvh, no vh, para movil)');
   assert.match(reglas, /max-width:\s*none/, '#gd-modal no deberia tener un max-width limitado');
   assert.match(reglas, /max-height:\s*none/, '#gd-modal no deberia tener un max-height limitado');
