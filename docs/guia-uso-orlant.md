@@ -1,5 +1,12 @@
 # Guía de uso — InConexión Platform (ORLANT)
 
+> Este archivo es el espejo legible en GitHub de la guía REAL que ve el
+> usuario dentro de la plataforma: `server/paginas/guia-uso.html` (servida
+> por `GET /guia-uso`, con sesión — ver `server/routes/guia.js`). Mismas 9
+> secciones, mismo contenido — al editar una, editar la otra en el mismo
+> PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
+> HTML real, no de este `.md`).
+
 Versión de la plataforma: **1.9.0**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
