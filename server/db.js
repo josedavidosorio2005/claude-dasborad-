@@ -363,6 +363,27 @@ CREATE TABLE IF NOT EXISTS inasistencias (
 );
 CREATE INDEX IF NOT EXISTS idx_inasistencias_campana_mes ON inasistencias(campana, mes);
 
+-- Efectividad de Agendamiento (Fase 111, ORLANT, pedido de Edwin: "el
+-- ranking va a ser efectividad por agendamiento"). Un agregado mensual YA
+-- calculado por Edwin, por asesor -- gestiones/agendas, nunca el %
+-- (EFECTIVIDAD del archivo NUNCA se guarda aqui, se recalcula siempre al
+-- leer, ver server/efectividad-agendamiento.js). Reemplazo por MES, mismo
+-- patron que inasistencias: UNIQUE(campana,mes,asesor) evita duplicar si
+-- se vuelve a subir el mismo archivo.
+CREATE TABLE IF NOT EXISTS efectividad_agendamiento (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  mes TEXT NOT NULL,                 -- 'AAAA-MM'
+  asesor TEXT NOT NULL,
+  gestiones INTEGER NOT NULL,
+  agendas INTEGER NOT NULL,
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, mes, asesor)
+);
+CREATE INDEX IF NOT EXISTS idx_efectividad_agendamiento_campana_mes ON efectividad_agendamiento(campana, mes);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
@@ -2362,6 +2383,58 @@ runOnceMigration('dashboards_config_orlant_inasistencia_panel_v4', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_inasistencia_panel_v4 aplicada.');
+  }
+});
+
+// "Ranking de asesores" de ORLANT (Fase 111, pedido textual de Edwin: "el
+// ranking va a ser efectividad por agendamiento"): el panel[3] del tab
+// "agendamiento" pasa de `agendas_panel`/vista:'ranking' (Fase 104,
+// calculado por CANTIDAD de agendas) a `efectividad_agendamiento_panel`
+// (calculado por EFECTIVIDAD = agendas/gestiones, tabla nueva
+// `efectividad_agendamiento`) -- produccion ya tenia este panel sembrado
+// con la forma vieja (Fase 104), asi que la forma nueva del seed nunca le
+// habria llegado sola. Mismo patron de deteccion de "forma vieja
+// reconocible" que el resto de migraciones de dashboards_config: si no
+// calza EXACTO, se deja intacta y solo se loguea (podria ser una
+// personalizacion). El subtab ('rankingasesores', indices:[3]) no cambia
+// de key/label/indice -- solo el panel que apunta.
+runOnceMigration('dashboards_config_orlant_efectividad_agendamiento_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetAgenda = (target.layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!targetAgenda) return;
+
+  const agenda = (layout.tabs || []).find((t) => t.key === 'agendamiento');
+  if (!agenda || !Array.isArray(agenda.panels)) return;
+
+  const panelRanking = agenda.panels[3];
+  if (panelRanking && panelRanking.tipo === 'efectividad_agendamiento_panel') {
+    return; // ya tiene la forma nueva -- nada que hacer (corrida 2 veces seguidas = mismo resultado)
+  }
+  if (!panelRanking || panelRanking.tipo !== 'agendas_panel' || panelRanking.vista !== 'ranking') {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_efectividad_agendamiento_v1: panel 3 de "agendamiento" no coincide con la forma esperada (Fase 104) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  agenda.panels[3] = JSON.parse(JSON.stringify(targetAgenda.panels[3]));
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_efectividad_agendamiento_v1 aplicada.');
   }
 });
 

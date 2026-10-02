@@ -640,6 +640,49 @@ const inasistenciaCargaBody = z.object({
     }),
 });
 
+// ── Efectividad de Agendamiento (Fase 111, ORLANT, pedido textual de
+// Edwin: "el ranking va a ser efectividad por agendamiento") ───────────
+// El mes ya viene resuelto a 'AAAA-MM' en el navegador (nombre de mes sin
+// año, inferido -- ver public/js/mes-nombre-logic.js). Gestiones/agendas
+// son enteros no negativos; EFECTIVIDAD nunca viaja en el payload (se
+// recalcula siempre, servidor y navegador coinciden en nunca confiar en un
+// derivado ya calculado del archivo).
+const efectividadAgendamientoTextoObligatorio = z.string().trim().min(1).max(200);
+const efectividadAgendamientoEnteroNoNegativo = z.number().int().min(0).max(1000000);
+const efectividadAgendamientoFilaArraySchema = z.tuple([
+  mesSchema, // mes
+  efectividadAgendamientoTextoObligatorio, // asesor (NOMBRE DE AGENTE, tal cual viene -- incluye casos como "_falla")
+  efectividadAgendamientoEnteroNoNegativo, // gestiones
+  efectividadAgendamientoEnteroNoNegativo, // agendas
+]);
+
+const efectividadAgendamientoCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(efectividadAgendamientoFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(10000, 'Demasiadas filas en un solo archivo')
+    // mes = indice 0 de la tupla ('AAAA-MM') -- nunca un mes futuro, mismo
+    // criterio que Inasistencia/Agendas/Tipificacion.
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0] + '-01')) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0] + '-01'), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const efectividadAgendamientoOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+const efectividadAgendamientoRankingQuery = z.object({
+  campana: campanaSchema,
+  mes: mesSchema,
+});
+
 const inasistenciaFiltrosQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
@@ -926,6 +969,9 @@ module.exports = {
     tipificacionOpcionesQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,
+    efectividadAgendamientoCargaBody,
+    efectividadAgendamientoOpcionesQuery,
+    efectividadAgendamientoRankingQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

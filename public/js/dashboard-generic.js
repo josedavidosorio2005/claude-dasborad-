@@ -605,13 +605,14 @@ async function _gdBootstrap(){
   // CADA tipo de panel presentes en la config de este cliente (nunca
   // hardcodeado a un cliente puntual) y se junta la lista de TODAS las
   // fuentes de datos mensuales.
-  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasInasistencia = {}, campanasTipificacion = {};
+  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasTipificacion = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){
       if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanasCalidad[p.campana] = true;
       if(p.tipo === 'trafico_combo') campanasTraficoLlamadas[p.campana || _gd.cliente] = true;
       if(p.tipo === 'trafico_whatsapp_combo') campanasTraficoWpp[p.campana || _gd.cliente] = true;
       if(p.tipo === 'agendas_panel') campanasAgendas[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'efectividad_agendamiento_panel') campanasEfectividadAgendamiento[p.campana || _gd.cliente] = true;
       if(p.tipo === 'inasistencia_panel') campanasInasistencia[p.campana || _gd.cliente] = true;
       if(p.tipo === 'tipificacion_panel') campanasTipificacion[p.campana || _gd.cliente] = true;
     });
@@ -635,7 +636,7 @@ async function _gdBootstrap(){
   // mesesAgendas/mesesTipificacion/tabs.oculta son seguros en paralelo
   // porque JS es de un solo hilo (nunca hay dos tareas escribiendo a la
   // vez, solo turnos intercalados en cada await).
-  var mesesAgendas = [], mesesInasistencia = [], mesesTipificacion = [];
+  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesTipificacion = [];
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
@@ -666,6 +667,19 @@ async function _gdBootstrap(){
           if(tabAgendamiento) tabAgendamiento.oculta = false;
         }
       }catch(e){ /* se queda oculta / sin esos meses */ }
+    })());
+  });
+  // Fase 111 (pedido textual de Edwin): "Ranking de Asesores" vive en el
+  // MISMO tab "agendamiento" (su visibilidad ya la destapan los paneles
+  // agendas_panel de arriba) -- aqui solo se juntan SUS PROPIOS meses
+  // (tabla efectividad_agendamiento) al selector global de Mes, nunca al
+  // mes POR DEFECTO (mesesPrincipales, mas abajo, no cambia).
+  Object.keys(campanasEfectividadAgendamiento).forEach(function(campEa){
+    tareasBootstrap.push((async function(){
+      try{
+        var eaOp = await apiRequest('GET', '/calidad/efectividad-agendamiento/opciones?campana='+encodeURIComponent(campEa));
+        if(eaOp && eaOp.meses) mesesEfectividadAgendamiento = mesesEfectividadAgendamiento.concat(eaOp.meses);
+      }catch(e){ /* sin datos o sin acceso -- el panel muestra su propio aviso */ }
     })());
   });
   // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia sigue el MISMO
@@ -724,7 +738,7 @@ async function _gdBootstrap(){
   // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
-  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesInasistencia, mesesTipificacion, mesesCalidad]);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesTipificacion, mesesCalidad]);
   _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
@@ -1060,6 +1074,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
   if(p.tipo === 'trafico_whatsapp_combo'){ _traficoWppRenderPanel(p, i); return; }
   if(p.tipo === 'agendas_panel'){ _agendasRenderPanel(p, i); return; }
+  if(p.tipo === 'efectividad_agendamiento_panel'){ _efectividadAgendamientoRenderPanel(p, i); return; }
   if(p.tipo === 'inasistencia_panel'){ _inasistenciaRenderPanel(p, i); return; }
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
 
@@ -1426,32 +1441,6 @@ async function _gdExportarAgendas(p, i){
   var def = _AGENDAS_VISTAS[vista];
   if(!def) return [];
 
-  // Fase 104: 'ranking' devuelve {filas,total,...}, no un array como las
-  // otras 3 vistas -- exporta la tabla COMPLETA (todos los asesores, igual
-  // que se ve en pantalla), respetando el filtro activo. La proteccion
-  // contra inyeccion de formulas (Fase 72) se aplica de forma generica a
-  // CUALQUIER panel tipo:'tabla' al armar el libro (xlsxFilasSeguras, ver
-  // mas abajo en este archivo) -- no hace falta repetirla aqui.
-  if(vista === 'ranking'){
-    var ranking = { filas: [], total: 0 };
-    try{ ranking = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || ranking; }catch(e){}
-    if(!ranking.filas || !ranking.filas.length){
-      return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' }];
-    }
-    return [{ titulo: titulo, tipo: 'tabla', filas: ranking.filas.map(function(f){
-      return {
-        Puesto: f.sinAsesor ? '' : f.puesto,
-        Asesor: f.sinAsesor ? 'Sin asesor' : textoFormatoNombre(f.asesor),
-        Total: f.total,
-        '%': f.pct,
-        '3P': f.cantidad3p,
-        General: f.cantidadGeneral,
-        'Promedio por día': f.promedioPorDia,
-        'Variación vs. mes anterior': (f.variacion===null || f.variacion===undefined) ? '' : f.variacion,
-      };
-    }) }];
-  }
-
   var datos = [];
   try{ datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || []; }catch(e){}
   if(!datos.length){
@@ -1467,6 +1456,30 @@ async function _gdExportarAgendas(p, i){
     return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), 'Tipo de Línea': r.tipoLinea, Cantidad: r.cantidad }; }) }];
   }
   return [];
+}
+
+// "Ranking de Asesores" (Fase 111, pedido textual de Edwin: "el ranking va
+// a ser efectividad por agendamiento"): exporta la tabla COMPLETA del mes
+// elegido arriba (_gd.mesSel -- este panel no tiene su propio filtro de
+// mes, ver public/js/efectividad-agendamiento.js), igual que se ve en
+// pantalla, mas una fila de totales del equipo (ponderado, nunca el
+// promedio simple de los %). La proteccion contra inyeccion de formulas
+// (Fase 72) se aplica de forma generica a cualquier panel tipo:'tabla' al
+// armar el libro (xlsxFilasSeguras, mas abajo en este archivo).
+async function _gdExportarEfectividadAgendamiento(p, i){
+  var campana = p.campana;
+  var titulo = p.titulo || 'Ranking de Asesores';
+  if(!_gd.mesSel) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para el mes actual.' }];
+  var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
+  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(_gd.mesSel)) || ranking; }catch(e){}
+  if(!ranking.filas || !ranking.filas.length){
+    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + _gdMesLbl(_gd.mesSel) + '.' }];
+  }
+  var filas = ranking.filas.map(function(f){
+    return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), Gestiones: f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
+  });
+  filas.push({ Puesto: '', Asesor: 'TOTAL EQUIPO', Gestiones: ranking.equipo.gestiones, Agendas: ranking.equipo.agendas, '% Efectividad': efectividadAgendamientoFmtPct(ranking.equipo.efectividad) });
+  return [{ titulo: titulo, tipo: 'tabla', filas: filas }];
 }
 
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
@@ -1593,6 +1606,7 @@ async function _gdDatosPanelesTab(){
       continue;
     }
     if(p.tipo === 'agendas_panel'){ out = out.concat(await _gdExportarAgendas(p, i)); continue; }
+    if(p.tipo === 'efectividad_agendamiento_panel'){ out = out.concat(await _gdExportarEfectividadAgendamiento(p, i)); continue; }
     if(p.tipo === 'inasistencia_panel'){ out = out.concat(await _gdExportarInasistencia(p, i)); continue; }
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){

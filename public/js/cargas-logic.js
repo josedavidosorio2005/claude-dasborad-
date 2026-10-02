@@ -192,6 +192,11 @@ var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
 var CARGAS_HOJA_INASISTENCIA = 'INASISTENCIA';
+// Fase 111 (ORLANT, pedido textual de Edwin: "el ranking va a ser
+// efectividad por agendamiento"): un agregado mensual por asesor, hoja
+// propia -- mismo gate que CARGAS_HOJA_AGENDAS (solo cuando
+// efectividadAgendamientoCols viene, hoy solo ORLANT).
+var CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO = 'EFECTIVIDAD_AGENDAMIENTO';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -212,7 +217,7 @@ var CARGAS_HOJA_INASISTENCIA = 'INASISTENCIA';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -295,6 +300,30 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima FECHA_SOLICITUD ' +
           'de este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 111 (ORLANT, pedido textual de Edwin: "el ranking va a ser
+  // efectividad por agendamiento"): un agregado MENSUAL por asesor -- hoja
+  // propia, solo cuando efectividadAgendamientoCols viene (hoy solo ORLANT,
+  // mismo gate que agendasCols). EFECTIVIDAD (la ultima columna del
+  // archivo real) nunca se guarda -- el sistema siempre la recalcula
+  // (AGENDAS/GESTIONES) y avisa en la confirmacion si no coincide con la
+  // del archivo.
+  if (efectividadAgendamientoCols) {
+    plan.push({
+      tipo: 'efectividad_agendamiento', hoja: CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, titulo: 'Efectividad de Agendamiento',
+      descripcion: 'Un agregado del mes por asesor (gestiones y agendas) -- el ranking de asesores se calcula a partir de esta hoja.',
+      filaUnica: false, columnas: efectividadAgendamientoCols,
+      notasExtra: [
+        'De donde sale: el consolidado mensual de gestion del sistema de agendamiento, una fila por asesor.',
+        'MES: nombre del mes en español (ej. "SEPTIEMBRE"), sin año -- el sistema infiere el año mas reciente ' +
+          'en que ese mes no sea futuro (mismo criterio que el resto de la plataforma).',
+        'EFECTIVIDAD: si la traes, el sistema la recalcula siempre (AGENDAS ÷ GESTIONES) -- si no coincide con ' +
+          'la del archivo, se avisa en la confirmacion antes de guardar, pero la carga sigue con el recalculo.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te ' +
+          'muestra antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo archivo ' +
+          'mas de una vez.',
       ],
     });
   }
@@ -517,7 +546,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
   CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
-  CARGAS_HOJA_AGENDAS, CARGAS_HOJA_INASISTENCIA,
+  CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA,
 ];
 // Fase 84 (pedido explicito, confirmado con el usuario): la hoja
 // "tipificacion" (minuscula, la de ANTES de la Fase 77) ya no alimenta
@@ -560,6 +589,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_RESUMEN_ASESOR: CARGAS_HOJA_RESUMEN_ASESOR,
     CARGAS_HOJA_INSTRUCCIONES: CARGAS_HOJA_INSTRUCCIONES,
     CARGAS_HOJA_AGENDAS: CARGAS_HOJA_AGENDAS,
+    CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO: CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,

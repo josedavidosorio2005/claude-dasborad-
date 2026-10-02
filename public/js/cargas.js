@@ -194,6 +194,14 @@ function _cargasTipificacionColumnasUnificado(){
 function _cargasInasistenciaColumnasUnificado(){
   return INASISTENCIA_COLUMNAS.map(function(c){ return { label:c.label, labelAlt:c.labelAlt, opcional: !c.obligatoria }; });
 }
+// Fase 111 (ORLANT, pedido textual de Edwin) — columnas de la hoja
+// EFECTIVIDAD_AGENDAMIENTO: EFECTIVIDAD (5ta) va `ocultaEnPlantilla` (nunca
+// se pide en blanco: el sistema siempre la recalcula) pero SIGUE
+// aceptandose si el archivo real la trae (para compararla, ver
+// efectividad-agendamiento-logic.js).
+function _cargasEfectividadAgendamientoColumnasUnificado(){
+  return EFECTIVIDAD_AGENDAMIENTO_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria, ocultaEnPlantilla: !!c.ocultaEnPlantilla }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -246,7 +254,8 @@ async function onCargaClienteChange(){
     var agendasCols = esUnificado ? _cargasAgendasColumnasUnificado() : null;
     var tipificacionCols = esUnificado ? _cargasTipificacionColumnasUnificado() : null;
     var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols);
+    var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -418,7 +427,7 @@ async function procesarArchivoConsolidado(input){
   _cargasPlan.forEach(function(h){ if(wb.SheetNames.indexOf(h.hoja)!==-1) hojasReclamadasPorNombre[h.hoja]=true; });
   var hojasUsadasPorEncabezados = {};
   function _cargasBuscarHojaPorEncabezados(h){
-    if(h.tipo!=='agendas' && h.tipo!=='inasistencia' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -452,6 +461,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = function(a){ return cmParseRows(a, calidad.items); };
     } else if(h.tipo === 'agendas'){
       parseFn = agendasParseFilas;
+    } else if(h.tipo === 'efectividad_agendamiento'){
+      parseFn = function(a){ return efectividadAgendamientoParseFilas(a); };
     } else if(h.tipo === 'tipificacion'){
       parseFn = tipificacionParseFilas;
     } else if(h.tipo === 'inasistencia'){
@@ -679,6 +690,38 @@ async function _cargasGuardarInasistencia(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 111 (ORLANT, pedido textual de Edwin): mismo patron impacto ->
+// confirmar -> guardar de _cargasGuardarInasistencia (reemplazo por el
+// CONJUNTO de meses del archivo). Si alguna fila trae una EFECTIVIDAD que
+// no coincide con el recalculo (ver efectividadAgendamientoParseFilas), se
+// suma esa advertencia al mensaje de confirmacion -- nunca bloquea la
+// carga, el sistema siempre guarda el recalculo.
+async function _cargasGuardarEfectividadAgendamiento(cliente, r){
+  var filasArray = r.filas.map(efectividadAgendamientoFilaComoArray);
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  var meses = efectividadAgendamientoMesesDelArchivo(r.filas);
+
+  try{
+    var impacto = await apiRequest('POST','/calidad/efectividad-agendamiento/carga/impacto', parsed);
+    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + ' (' + r.filas.length + ' asesor(es)).';
+    if(impacto.filasExistentes > 0){
+      msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
+    }
+    if(r.advertenciasEfectividad && r.advertenciasEfectividad.length){
+      msg += '\n\nAdvertencia -- la columna EFECTIVIDAD del archivo no coincide con el recalculo en ' +
+        r.advertenciasEfectividad.length + ' fila(s) (se guarda el recalculo igual):\n' +
+        r.advertenciasEfectividad.slice(0, 5).join('\n') +
+        (r.advertenciasEfectividad.length > 5 ? '\n…' : '');
+    }
+    msg += '\n\n¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la efectividad de agendamiento anterior sin tocar.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/efectividad-agendamiento/carga', parsed);
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -701,6 +744,7 @@ async function guardarCarga(){
       if(r.tipo==='seccion') res = await _cargasGuardarSeccion(cliente, periodo, r);
       else if(r.tipo==='calidad') res = await _cargasGuardarCalidad(cliente, r);
       else if(r.tipo==='agendas') res = await _cargasGuardarAgendas(cliente, r);
+      else if(r.tipo==='efectividad_agendamiento') res = await _cargasGuardarEfectividadAgendamiento(cliente, r);
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
