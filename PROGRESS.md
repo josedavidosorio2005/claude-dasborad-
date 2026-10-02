@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.10.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.10.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -26,7 +26,7 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 113, 2026-10-02)
+### Números de control (ORLANT, última verificación Fase 114, 2026-10-02)
 
 Reconfirmados en vivo contra producción en la Fase 112
 (`scripts/produccion/revision-final.js`, con sesión real del usuario):
@@ -167,4 +167,5 @@ mismo orden):
 - Fase 111 — 2 bases nuevas de ORLANT: el ranking pasa a ser EFECTIVIDAD de agendamiento + Efectividad de citas atendidas (2026-10-02)
 - Fase 112 — revisión general de toda la plataforma + reorganización completa del repo (2026-10-02)
 - Fase 113 — registro de inicios de sesión + "Cambiar mi contraseña" + revisión diaria de la salud del servidor (2026-10-02)
+- Fase 114 (URGENTE) — respaldos automáticos vueltos a activar (nunca se habían instalado en la instancia nueva) + alerta alta de Dependabot (SheetJS) resuelta (2026-10-02)
 

@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.10.1 — Octubre 2026
+
+**Arreglo: los respaldos automaticos de la base volvieron a funcionar.**
+El respaldo diario de la base de datos llevaba desde el 18 de septiembre sin
+correr (nunca se activo en el servidor nuevo despues de un cambio de cuenta
+de AWS) — todo lo cargado desde entonces no tenia copia de seguridad. Ya
+esta corregido y confirmado: hay un respaldo de hoy, completo y verificado,
+y vuelve a correr solo todas las noches.
+
+**Seguridad: actualizacion de la libreria de Excel.** La libreria que usa la
+plataforma para leer los archivos Excel que se suben y para generar los
+"Exportar" tenia una vulnerabilidad conocida. Se actualizo a la version mas
+reciente — se probo que cada tipo de archivo (Trafico, Tipificacion,
+Agendas, Inasistencia, Efectividad, Calidad) y cada "Exportar" siguen
+funcionando exactamente igual.
+
 ## v1.10.0 — Octubre 2026
 
 **Ahora cada usuario puede cambiar su contrasena.** Nueva opcion "Cambiar mi
