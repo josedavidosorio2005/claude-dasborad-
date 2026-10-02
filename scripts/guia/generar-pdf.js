@@ -8,14 +8,16 @@
 // El PDF sale FUERA del repo, en
 // `C:\Users\filid\Documents\trabajo inconexion\entregables\`.
 'use strict';
-const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+
+const SERVER_DIR = path.join(__dirname, '..', '..', 'server');
+const { chromium } = require(path.join(SERVER_DIR, 'node_modules', 'playwright'));
 
 const BASE = process.env.LOCAL_URL || 'http://localhost:3000';
 const OUT_DIR = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\entregables';
 const OUT_FILE = path.join(OUT_DIR, 'Guia_de_uso_ORLANT_v1.2.pdf');
-const CRED_FILE = path.join(__dirname, '..', '..', 'server', 'data', 'seed-demo-credenciales.txt');
+const CRED_FILE = path.join(SERVER_DIR, 'data', 'seed-demo-credenciales.txt');
 
 function leerCredenciales() {
   const texto = fs.readFileSync(CRED_FILE, 'utf8');

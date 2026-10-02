@@ -154,6 +154,20 @@ asumir en qué quedó una fase anterior.
   pasando, CI verde, deploy confirmado, o la verificación real que
   corresponda) — nunca asumir.
 
+## Scripts de verificación (Fase 112)
+
+- Un script que se sigue usando fase tras fase (auditoría local, revisión
+  final en producción, generar la guía, patrón de carga real) va en
+  `scripts/` (raíz del repo), ordenado por tema (`scripts/qa/`,
+  `scripts/produccion/`, `scripts/guia/`) — ver `scripts/README.md`.
+- Un script de un solo uso para verificar UNA fase puntual, ya cerrada,
+  no se queda en el repo indefinidamente: al reorganizar (o cuando
+  estorbe), se archiva con un tag `archivo/...` y sale de `main` — el
+  historial completo de Fases 45–111 vive en el tag
+  `archivo/scripts-fases-45-111`.
+- `server/scripts/` es aparte: son scripts que corre la propia app en
+  producción (`seed-demo.js`, `backup.js`, etc.), no QA.
+
 ## Capturas de pantalla (Fase 112)
 
 - Las capturas que genera un script de verificación (local o contra
