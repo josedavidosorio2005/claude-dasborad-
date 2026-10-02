@@ -13,6 +13,11 @@
 // control YA publico que el propio Edwin/InCo dieron) -- nunca el listado
 // completo de nombres de asesores. Capturas fuera del repo, en
 // "bases edwin\capturas-produccion\fase111-efectividad\".
+//
+// Fase 112: "bases edwin\" se reorganizo en subcarpetas por tipo de base
+// (agendas/, tipificacion/, efectividad/, inasistencia/, consolidadas/,
+// respaldos/ -- ver INDICE.md en esa carpeta). Los 2 archivos de esta
+// fase viven ahora en "bases edwin\efectividad\".
 'use strict';
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
@@ -23,8 +28,8 @@ const DIR_EDWIN = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\bases edwin'
 const OUT_DIR = path.join(DIR_EDWIN, 'capturas-produccion', 'fase111-efectividad');
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 
-const ARCHIVO_EA = path.join(DIR_EDWIN, 'EFECTIVIDAD_AGENDAMIENTO.xlsx');
-const ARCHIVO_EC = path.join(DIR_EDWIN, 'CITAS_ATENDIDAS.xlsx');
+const ARCHIVO_EA = path.join(DIR_EDWIN, 'efectividad', 'EFECTIVIDAD_AGENDAMIENTO.xlsx');
+const ARCHIVO_EC = path.join(DIR_EDWIN, 'efectividad', 'CITAS_ATENDIDAS.xlsx');
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
 
