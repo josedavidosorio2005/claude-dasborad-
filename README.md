@@ -131,7 +131,7 @@ inconexion-app/
 │   ├── cloudwatch-agent-config.json    Logs + métricas a CloudWatch
 │   └── iam-policy-instance.json        Política IAM de mínimo privilegio
 ├── .github/workflows/
-│   ├── ci.yml                          Pruebas (Node 18/20/22) + build Docker + smoke test
+│   ├── ci.yml                          Pruebas (Node 22) + recorrido de pantallas + build Docker + smoke test
 │   ├── deploy.yml                      Deploy a AWS tras CI OK en main (OIDC → ECR → SSH)
 │   └── verificar-*.yml, diagnostico-*.yml, auditoria-*.yml, seed-demo.yml
 │                                       Workflows de QA de solo lectura contra producción real
@@ -527,7 +527,7 @@ se migra**.
 ## 9. Pruebas automatizadas
 
 ```bash
-cd server && npm test          # node:test + supertest, sin infra extra  ->  263/263
+cd server && npm test          # node:test + supertest, sin infra extra  ->  916/916
 ```
 
 Cubren: login (correcto/incorrecto, suspendido), acceso por permiso (`403`/`200`),
@@ -556,8 +556,10 @@ diarios). Del lado del servidor: skill nueva → "(SIN ASIGNAR)" sin romper la
 carga, idempotencia, y que remapear una skill reatribuye su histórico y
 recalcula el mensual de la campaña vieja y la nueva.
 
-CI (`.github/workflows/ci.yml`): pruebas en Node 18/20/22 + build de la imagen
-Docker + **smoke test** que arranca el contenedor y verifica `/api/health`.
+CI (`.github/workflows/ci.yml`): pruebas en Node 22 + recorrido headless de
+ORLANT (job `pantallas`, falla si hay error de consola, petición fallida o un
+`<canvas>` sin dibujar) + build de la imagen Docker + **smoke test** que
+arranca el contenedor y verifica `/api/health`.
 
 ---
 
