@@ -851,9 +851,10 @@ subidos aparecen ahí — el chequeo que faltaba y que el reporte de InCo
 explícitamente. Corrida real contra producción tras el deploy del fix:
 ALBERTO LINERO GO mostró sus KPIs (`111` en "Base asignada", etc.) para el
 periodo `May-27`, y ORLANT mostró los suyos (`222` en "Total Agendas", `85%`
-en los KPIs de nivel de atención) para el mismo periodo — capturas en
-`docs/capturas-demo/produccion-alberto-linero-go-dashboard-tras-carga.png`
-y `docs/capturas-demo/produccion-orlant-dashboard-tras-carga.png`.
+en los KPIs de nivel de atención) para el mismo periodo (capturas de esa
+corrida: tag de archivo `archivo/capturas-demo-pre-fase112`, ya no en
+`main` — ver CLAUDE.md, las capturas de verificación no se quedan en el
+repo).
 
 **Tercera ronda (2026-09-17, fix de la hoja AUSENTE — PR #59)**: el mismo
 workflow se extendió con un tercer escenario (ALBERTO LINERO GO, periodo
@@ -971,8 +972,8 @@ idéntico entre dos aperturas del dashboard (`QA Objecion precio` →
 filtro de fecha de la línea diaria funciona; y que el filtro de asesor de
 Calidad funciona sobre datos **reales** de ORLANT ya existentes (nunca
 escritos ni borrados por este workflow) — filtrar a un asesor real bajó los
-monitoreos de 37 a 5. Capturas en
-`docs/capturas-demo/produccion-filtro-*.png`.
+monitoreos de 37 a 5 (capturas de esa corrida: tag de archivo
+`archivo/capturas-demo-pre-fase112`, ya no en `main`).
 
 ---
 
