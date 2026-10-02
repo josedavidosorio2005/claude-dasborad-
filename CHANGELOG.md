@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.9.0 — Octubre 2026
+
+**El ranking de asesores ahora es por efectividad (agendas / gestiones).**
+Antes ordenaba a los asesores por cuántas agendas lograba cada uno; ahora
+ordena por su **% de efectividad** (agendas ÷ gestiones) — un asesor con
+pocas gestiones pero casi todas agendadas puede quedar por encima de uno
+con muchas más gestiones pero menos agendadas. La tarjeta "Efectividad
+del equipo" es un **ponderado** (suma de agendas ÷ suma de gestiones de
+todos los asesores), nunca el promedio simple de cada %. Se carga con el
+archivo mensual que manda Edwin, hoja `EFECTIVIDAD_AGENDAMIENTO`.
+
+**Nueva pestaña Efectividad de Citas.** Muestra qué porcentaje de las
+citas agendadas se atendieron realmente, mes a mes, con una tarjeta del
+mes elegido arriba y otra con el % ponderado de todo el período con
+datos. Se carga con el archivo mensual `CITAS_ATENDIDAS`.
+
 ## v1.8.1 — Octubre 2026
 
 **Seguridad:** las cuentas de ejemplo ya no se crean en producción. Además,

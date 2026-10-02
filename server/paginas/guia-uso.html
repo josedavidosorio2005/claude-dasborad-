@@ -41,7 +41,7 @@
   <div class="wrap">
     <h1>Guía de uso — InConexión Platform (ORLANT)</h1>
     <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
-    <span class="version-pill">Versión de la plataforma: 1.2.0</span>
+    <span class="version-pill">Versión de la plataforma: 1.9.0</span>
   </div>
 </header>
 <div class="wrap">
@@ -75,13 +75,14 @@
   <li>El interruptor de <strong>tema oscuro/claro</strong> (en el menú de tu usuario, arriba a la derecha) — cambia el color de toda la plataforma, no afecta los datos.</li>
 </ul>
 
-<h3>Las 6 pestañas</h3>
+<h3>Las 7 pestañas</h3>
 <table>
   <tr><th>Pestaña</th><th>Qué muestra</th></tr>
   <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
   <tr><td><strong>Tráfico de WhatsApp</strong></td><td>Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos).</td></tr>
-  <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente.</td></tr>
+  <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento).</td></tr>
   <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
+  <tr><td><strong>Efectividad de Citas</strong></td><td>El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto).</td></tr>
   <tr><td><strong>Calidad</strong></td><td>Monitoreo de calidad de los asesores, con su nota y resultados.</td></tr>
 </table>
@@ -111,12 +112,16 @@
 </div>
 <div class="card">
 <h3>Agendamiento</h3>
-<p>Sus 4 vistas (Por especialidad, Total agendas, Agendas por línea, Agendas por agente) muestran cuántas citas se agendaron, sin un cálculo adicional — son conteos directos agrupados de distinta forma.</p>
+<p>"Por especialidad", "Total agendas" y "Agendas por línea" muestran cuántas citas se agendaron, sin un cálculo adicional — son conteos directos agrupados de distinta forma. La 4ª vista, <strong>Ranking de asesores</strong>, es distinta: ordena a los asesores por <strong>% de EFECTIVIDAD de agendamiento = agendas ÷ gestiones</strong> (nunca por cantidad de agendas) — un asesor con pocas gestiones pero casi todas agendadas puede quedar por encima de uno con muchas más gestiones pero menos agendadas. La tarjeta "Efectividad del equipo" es la <strong>suma de todas las agendas ÷ suma de todas las gestiones</strong> (ponderada) — nunca el promedio simple de los % de cada asesor.</p>
 </div>
 <div class="card">
 <h3>Inasistencia</h3>
 <p>El % de inasistencia es <strong>(inasistencia + pendientes) ÷ total, ponderado</strong>. Los "pendientes" (citas que quedaron sin confirmar si la persona fue o no) cuentan como inasistencia para este cálculo; las canceladas NO cuentan como inasistencia, pero sí quedan en el total. Al combinar varias especialidades, el % se calcula sobre la SUMA de todas (nunca promediando los % de cada especialidad por separado — eso daría un número distinto y menos correcto). Tiene filtros de Sede, Especialidad y Entidad (esta última con buscador) y 2 vistas: <strong>Resumen por mes</strong> (2 tarjetas — el % del período filtrado y el % del mes elegido arriba, cada una con su propio rango — más una gráfica de línea con una tabla de datos debajo; el mes elegido se resalta y un mes del formato de reporte anterior sin sede ni entidad se marca con punto hueco, tramo punteado y asterisco) y <strong>Por especialidad</strong> (una barra por especialidad del mes elegido arriba; las de muy pocas citas se marcan con asterisco y van al final).</p>
 <figure><img src="/img/guia/03-inasistencia-por-mes.png" alt="Inasistencia, % por mes"><figcaption>Inasistencia: % de inasistencia por mes (datos de demostración).</figcaption></figure>
+</div>
+<div class="card">
+<h3>Efectividad de Citas</h3>
+<p>El % de <strong>EFECTIVIDAD = citas atendidas ÷ agendas</strong>, un total del mes (no por especialidad ni asesor). Muestra 2 tarjetas: el % del mes elegido arriba, y el % <strong>ponderado</strong> de todo el período que tiene datos cargados (suma de atendidas ÷ suma de agendas de esos meses — nunca el promedio simple de los % de cada mes), con el rango de meses en su etiqueta.</p>
 </div>
 <div class="card">
 <h3>Tipificación</h3>
@@ -166,6 +171,13 @@
 <strong>Reemplazo</strong>: por el RANGO continuo de fechas que trae el archivo (no por mes).</p>
 </div>
 <div class="card">
+<h3>Efectividad de Agendamiento (Ranking de asesores)</h3>
+<p><strong>Qué archivo</strong>: el resumen mensual de gestiones/agendas por asesor, de Edwin — una fila por asesor, no por cita.<br>
+<strong>Hoja</strong>: <code>EFECTIVIDAD_AGENDAMIENTO</code>.<br>
+<strong>Columnas obligatorias</strong>: NOMBRE DE AGENTE, MES, CANTIDAD DE GESTIONES, AGENDAS. La columna EFECTIVIDAD del archivo (si viene) nunca se guarda — siempre se recalcula; si no coincide con el recalculado, sale una advertencia en la confirmación (no bloquea la carga).<br>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Septiembre, se reemplaza ese mes completo para todos los asesores que traiga.</p>
+</div>
+<div class="card">
 <h3>Inasistencia</h3>
 <p><strong>Qué archivo</strong>: el export de citas del sistema de agendamiento de Edwin — una fila por cita, puede traer varios meses a la vez.<br>
 <strong>Hoja</strong>: <code>INASISTENCIA</code>.<br>
@@ -174,6 +186,13 @@
 <strong>Privacidad</strong>: una entidad con muy pocas citas en el archivo se guarda como "PARTICULAR / OTRA" — nunca se muestra el valor original.<br>
 <strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.<br>
 El mes en curso puede traer menos especialidades que un mes ya cerrado — es normal, la plataforma avisa cuando eso pasa.</p>
+</div>
+<div class="card">
+<h3>Efectividad de Citas Atendidas</h3>
+<p><strong>Qué archivo</strong>: el total mensual de agendas/atendidas de Edwin — un total del mes, no una fila por cita ni por asesor.<br>
+<strong>Hoja</strong>: <code>CITAS_ATENDIDAS</code>.<br>
+<strong>Columnas obligatorias</strong>: MES, AGENDAS, ATENDIDAS. La columna EFECTIVIDAD CITAS ATENDIDAS del archivo (si viene) nunca se guarda — siempre se recalcula.<br>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Enero, Febrero y Marzo, se reemplazan esos 3 meses completos.</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
@@ -187,7 +206,9 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
   <tr><td>Tráfico de WhatsApp</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
   <tr><td>Tipificación</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
   <tr><td>Agendas</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Por confirmar</td></tr>
+  <tr><td>Efectividad de Agendamiento</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Inasistencia</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
+  <tr><td>Efectividad de Citas Atendidas</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Calidad</td><td>El equipo de Calidad</td><td>Monitoreos propios</td><td>Continuo, a medida que se hacen</td></tr>
 </table>
 <p><em>(Las columnas "quién la manda" y "de qué sistema sale" se completan con lo que ya sabemos hoy — las columnas "por confirmar" quedan pendientes de que Edwin las precise.)</em></p>
@@ -218,6 +239,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
   <li>El resumen general todavía no tiene todos los números consolidados.</li>
   <li>WhatsApp a 5 minutos: falta que llegue el reporte con esa columna.</li>
   <li>Agendas de 2026: falta la carga de datos reales de este año.</li>
+  <li>Ranking de asesores: hay una fila llamada "MICHELL GARCIA SERNA_falla" que llegó separada de "MICHELL GARCIA SERNA" en el archivo — está pendiente de confirmar con Edwin si son la misma persona.</li>
   <li>Codificaciones de Calidad: falta la lista que va a mandar Edwin.</li>
   <li>Salida (llamadas/WhatsApp salientes).</li>
   <li>Ordenamiento médico.</li>
