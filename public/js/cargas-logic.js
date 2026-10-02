@@ -197,6 +197,10 @@ var CARGAS_HOJA_INASISTENCIA = 'INASISTENCIA';
 // propia -- mismo gate que CARGAS_HOJA_AGENDAS (solo cuando
 // efectividadAgendamientoCols viene, hoy solo ORLANT).
 var CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO = 'EFECTIVIDAD_AGENDAMIENTO';
+// Fase 111 (ORLANT, pedido textual de InCo): un total mensual (agendas/
+// atendidas), hoja propia -- mismo gate que CARGAS_HOJA_INASISTENCIA (solo
+// cuando citasAtendidasCols viene, hoy solo ORLANT).
+var CARGAS_HOJA_CITAS_ATENDIDAS = 'CITAS_ATENDIDAS';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -217,7 +221,7 @@ var CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO = 'EFECTIVIDAD_AGENDAMIENTO';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -357,6 +361,28 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te muestra ' +
           'antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez. ' +
           'No toca otros meses que este archivo no traiga.',
+      ],
+    });
+  }
+  // Fase 111 (ORLANT, pedido textual de InCo): total mensual de citas
+  // atendidas (agendas/atendidas) -- hoja propia, solo cuando
+  // citasAtendidasCols viene (hoy solo ORLANT, mismo gate que
+  // inasistenciaCols). EFECTIVIDAD CITAS ATENDIDAS nunca se guarda -- el
+  // sistema siempre la recalcula.
+  if (citasAtendidasCols) {
+    plan.push({
+      tipo: 'citas_atendidas', hoja: CARGAS_HOJA_CITAS_ATENDIDAS, titulo: 'Efectividad de Citas Atendidas',
+      descripcion: 'Un total del mes (AGENDAS, ATENDIDAS) -- la pestaña "Efectividad de Citas" se calcula a partir de esta hoja.',
+      filaUnica: false, columnas: citasAtendidasCols,
+      notasExtra: [
+        'De donde sale: el consolidado mensual de citas atendidas del sistema de agendamiento.',
+        'MES: nombre del mes en español (ej. "ENERO"), sin año -- el sistema infiere el año mas reciente en que ese ' +
+          'mes no sea futuro (mismo criterio que Efectividad de Agendamiento).',
+        'EFECTIVIDAD CITAS ATENDIDAS: si la traes, el sistema la recalcula siempre (ATENDIDAS ÷ AGENDAS) -- si no ' +
+          'coincide con la del archivo, se avisa en la confirmacion antes de guardar, pero la carga sigue con el recalculo.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te ' +
+          'muestra antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo archivo ' +
+          'mas de una vez.',
       ],
     });
   }
@@ -546,7 +572,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
   CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
-  CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA,
+  CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
 ];
 // Fase 84 (pedido explicito, confirmado con el usuario): la hoja
 // "tipificacion" (minuscula, la de ANTES de la Fase 77) ya no alimenta
@@ -590,6 +616,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_INSTRUCCIONES: CARGAS_HOJA_INSTRUCCIONES,
     CARGAS_HOJA_AGENDAS: CARGAS_HOJA_AGENDAS,
     CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO: CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO,
+    CARGAS_HOJA_CITAS_ATENDIDAS: CARGAS_HOJA_CITAS_ATENDIDAS,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,

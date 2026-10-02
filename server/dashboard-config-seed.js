@@ -270,6 +270,22 @@ const ORLANT = {
         { key: 'pormes', label: 'Resumen por mes', indices: [0] },
         { key: 'porespecialidad', label: 'Por especialidad', indices: [1] },
       ]},
+      // "Efectividad de Citas" (Fase 111, pedido textual de InCo): hoy leia
+      // citas_para_mes/citas_atendidas de la hoja "resumen" (filaUnica), que
+      // nunca tuvo datos reales -- ahora lee la base nueva
+      // CITAS_ATENDIDAS.xlsx (tabla efectividad_citas, un total por mes),
+      // con su propio panel (efectividad_citas_panel,
+      // public/js/efectividad-citas.js) en vez del `combo` generico. Los 2
+      // campos viejos de "resumen" quedan ocultaEnPlantilla (ver
+      // dashboard-secciones.js) -- nunca se borran, por si un archivo viejo
+      // todavia los trae. Se mueve justo DESPUES de "Inasistencia" (pedido
+      // explicito) -- antes vivia al final, despues de "Gestión STA". Ver
+      // migraciones idempotentes dashboards_config_orlant_efectividad_citas_v1
+      // (panel + orden) y dashboards_config_orlant_resumen_citas_opcional_v1
+      // (los 2 campos de "resumen") en db.js.
+      { key: 'efectividad', label: 'Efectividad de Citas', oculta: true, panels: [
+        { tipo: 'efectividad_citas_panel', titulo: 'Efectividad de Citas', campana: 'ORLANT' },
+      ]},
       { key: 'sta', label: 'Gestión STA', oculta: true, panels: [
         // Graficas 14-15: agregado ANUAL (f.anual, no solo el ultimo mes
         // cargado) + % del total en cada barra (pctDeTotal -> loBarPct,
@@ -295,12 +311,6 @@ const ORLANT = {
         { key: 'porestado', label: 'Estado de Órdenes (Año)', indices: [1] },
         { key: 'stamensual', label: 'STA por Mes', indices: [2] },
         { key: 'serviciosmes', label: 'Servicios Gestionados del Mes', indices: [3] },
-      ]},
-      { key: 'efectividad', label: 'Efectividad Citas', oculta: true, panels: [
-        { tipo: 'combo', titulo: 'Efectividad de citas', barras: [
-          { label: 'Citas para el Mes', fuente: serie('citas_para_mes') },
-          { label: 'Total Atendidas', fuente: serie('citas_atendidas') }],
-          linea: { label: '% Efectividad', fuente: pctFormula('citas_atendidas', 'citas_para_mes') } },
       ]},
     ],
   },

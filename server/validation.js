@@ -683,6 +683,39 @@ const efectividadAgendamientoRankingQuery = z.object({
   mes: mesSchema,
 });
 
+// ── Efectividad de Citas Atendidas (Fase 111, ORLANT, pedido textual de
+// InCo) ────────────────────────────────────────────────────────────────
+// El mes ya viene resuelto a 'AAAA-MM' en el navegador (nombre de mes sin
+// año, inferido -- mismo mesNombreAAAAMM que Efectividad de Agendamiento).
+// agendas/atendidas son enteros no negativos; EFECTIVIDAD CITAS ATENDIDAS
+// nunca viaja en el payload (se recalcula siempre).
+const efectividadCitasEnteroNoNegativo = z.number().int().min(0).max(10000000);
+const efectividadCitasFilaArraySchema = z.tuple([
+  mesSchema, // mes
+  efectividadCitasEnteroNoNegativo, // agendas
+  efectividadCitasEnteroNoNegativo, // atendidas
+]);
+
+const efectividadCitasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(efectividadCitasFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(1000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0] + '-01')) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0] + '-01'), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const efectividadCitasQuery = z.object({
+  campana: campanaSchema,
+});
+
 const inasistenciaFiltrosQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
@@ -972,6 +1005,8 @@ module.exports = {
     efectividadAgendamientoCargaBody,
     efectividadAgendamientoOpcionesQuery,
     efectividadAgendamientoRankingQuery,
+    efectividadCitasCargaBody,
+    efectividadCitasQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

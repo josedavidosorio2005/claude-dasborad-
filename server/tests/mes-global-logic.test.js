@@ -60,7 +60,7 @@ test('lista CERRADA de tipos de panel: todo tipo usado por un cliente sembrado e
   assert.deepEqual(sinClasificar, [], `estos tipos de panel se usan en algun dashboard sembrado pero no estan clasificados como autonomo ni de resumen: ${sinClasificar.join(', ')}`);
 });
 
-test('GD_TIPOS_AUTONOMOS cubre exactamente los 7 paneles autonomos de ORLANT (Trafico Llamadas/WhatsApp, Agendas, Efectividad de Agendamiento, Inasistencia, Tipificacion, Calidad)', () => {
+test('GD_TIPOS_AUTONOMOS cubre exactamente los 8 paneles autonomos de ORLANT (Trafico Llamadas/WhatsApp, Agendas, Efectividad de Agendamiento, Inasistencia, Efectividad de Citas, Tipificacion, Calidad)', () => {
   const orlant = CONFIGS.find((d) => d.cliente === 'ORLANT');
   assert.ok(orlant, 'ORLANT debe estar sembrado');
   const usados = new Set();
@@ -68,7 +68,7 @@ test('GD_TIPOS_AUTONOMOS cubre exactamente los 7 paneles autonomos de ORLANT (Tr
     for (const p of tab.panels || []) if (p.tipo) usados.add(p.tipo);
   }
   const autonomosUsados = [...usados].filter((t) => GD_TIPOS_AUTONOMOS.indexOf(t) !== -1).sort();
-  assert.deepEqual(autonomosUsados, ['agendas_panel', 'calidad_kpis', 'calidad_pie', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'tipificacion_panel', 'trafico_combo', 'trafico_whatsapp_combo']);
+  assert.deepEqual(autonomosUsados, ['agendas_panel', 'calidad_kpis', 'calidad_pie', 'efectividad_agendamiento_panel', 'efectividad_citas_panel', 'inasistencia_panel', 'tipificacion_panel', 'trafico_combo', 'trafico_whatsapp_combo']);
 });
 
 // ── gdMesesUnion / gdMesPorDefecto (Fase 90, tema B) ─────────────────────
