@@ -16,7 +16,11 @@ const { chromium } = require(path.join(SERVER_DIR, 'node_modules', 'playwright')
 
 const BASE = process.env.LOCAL_URL || 'http://localhost:3000';
 const OUT_DIR = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\entregables';
-const OUT_FILE = path.join(OUT_DIR, 'Guia_de_uso_ORLANT_v1.2.pdf');
+// Fase 112: el nombre llevaba "v1.2" fijo desde la Fase 100 -- quedo
+// desactualizado (hoy v1.9.0). Se lee de server/package.json para que
+// nunca mas quede atras de un bump de version real.
+const APP_VERSION = require(path.join(SERVER_DIR, 'package.json')).version;
+const OUT_FILE = path.join(OUT_DIR, `Guia_de_uso_ORLANT_v${APP_VERSION}.pdf`);
 const CRED_FILE = path.join(SERVER_DIR, 'data', 'seed-demo-credenciales.txt');
 
 function leerCredenciales() {
