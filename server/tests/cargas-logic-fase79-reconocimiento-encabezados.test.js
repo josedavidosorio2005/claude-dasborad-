@@ -15,6 +15,7 @@ const assert = require('node:assert/strict');
 const { cargasEncabezadosCoinciden } = require('../../public/js/cargas-logic.js');
 const { AGENDAS_COLUMNAS } = require('../../public/js/agendas-logic.js');
 const { TIPIFICACION_COLUMNAS } = require('../../public/js/tipificacion-logic.js');
+const { EFECTIVIDAD_AGENDAMIENTO_COLUMNAS } = require('../../public/js/efectividad-agendamiento-logic.js');
 
 function comoColumnasPlan(columnas) {
   return columnas.map((c) => ({ label: c.label, opcional: !c.obligatoria }));
@@ -85,4 +86,23 @@ test('cargasEncabezadosCoinciden: encabezado vacio o ausente -> no calza (nunca 
 test('cargasEncabezadosCoinciden: (nota) el mismo header de tipificacion calza igual sin importar el canal -- el canal lo decide cargas.js, no esta funcion', () => {
   const header = ['AGENT_NAME', 'DATE', 'HORA', 'TIME_MIN', 'DESCRIPTION_COD_ACT', 'SKILL_NAME'];
   assert.ok(cargasEncabezadosCoinciden(header, comoColumnasPlan(TIPIFICACION_COLUMNAS)));
+});
+
+// Fase 111 (ORLANT, pedido textual de Edwin): el archivo real de
+// EFECTIVIDAD_AGENDAMIENTO trae su unica hoja llamada "Hoja1" (nunca
+// "EFECTIVIDAD_AGENDAMIENTO") -- mismo caso que AGENDAS/TIPIFICACION, el
+// reconocimiento por encabezados es lo que rescata el archivo tal cual.
+test('cargasEncabezadosCoinciden: hoja "Hoja1" con las 4 columnas obligatorias de Efectividad de Agendamiento (archivo real de Edwin) calza', () => {
+  const header = ['NOMBRE DE AGENTE', 'MES', 'CANTIDAD DE GESTIONES', 'AGENDAS', 'EFECTIVIDAD'];
+  assert.ok(cargasEncabezadosCoinciden(header, comoColumnasPlan(EFECTIVIDAD_AGENDAMIENTO_COLUMNAS)));
+});
+
+test('cargasEncabezadosCoinciden: Efectividad de Agendamiento sin la columna EFECTIVIDAD (opcional, se recalcula) tambien calza', () => {
+  const header = ['NOMBRE DE AGENTE', 'MES', 'CANTIDAD DE GESTIONES', 'AGENDAS'];
+  assert.ok(cargasEncabezadosCoinciden(header, comoColumnasPlan(EFECTIVIDAD_AGENDAMIENTO_COLUMNAS)));
+});
+
+test('cargasEncabezadosCoinciden: falta una columna obligatoria de Efectividad de Agendamiento -> no calza', () => {
+  const header = ['NOMBRE DE AGENTE', 'MES', 'AGENDAS']; // sin CANTIDAD DE GESTIONES
+  assert.ok(!cargasEncabezadosCoinciden(header, comoColumnasPlan(EFECTIVIDAD_AGENDAMIENTO_COLUMNAS)));
 });

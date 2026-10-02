@@ -111,7 +111,13 @@ test('migracion dashboards_config_orlant_agendamiento_edwin_v1: Agendamiento que
   assert.deepEqual(agenda.panels, targetTabs.agendamiento.panels);
   assert.deepEqual(agenda.subtabs, targetTabs.agendamiento.subtabs);
   assert.equal(agenda.panels.length, 4);
-  assert.ok(agenda.panels.every((p) => p.tipo === 'agendas_panel'));
+  // Panel 3 ("Agendas por Agente" en esta fase) lo reemplaza una migracion
+  // POSTERIOR (Fase 104: vista 'ranking'; Fase 111: su propio
+  // efectividad_agendamiento_panel) -- en una base que corre TODAS las
+  // migraciones desde cero (como esta prueba), panels[3] ya no es
+  // 'agendas_panel' al final. Solo los 3 primeros (que ninguna fase
+  // posterior toca) quedan garantizados por ESTA migracion.
+  assert.ok(agenda.panels.slice(0, 3).every((p) => p.tipo === 'agendas_panel'));
   // Ninguna mencion de "Variacion" sobrevive.
   assert.ok(!agenda.panels.some((p) => /variaci/i.test(p.titulo || '')));
   // `oculta` no lo toca esta migracion.
@@ -146,13 +152,14 @@ test('migracion dashboards_config_orlant_agendamiento_edwin_v1: nunca toca un ta
 
 test('migracion dashboards_config_orlant_agendamiento_edwin_v1: es idempotente -- correrla dos veces seguidas da el mismo resultado', () => {
   // db.js ya corrio la migracion una vez al requerirse arriba. El guard
-  // `yaEsNuevo` (todos los paneles son agendas_panel) es exactamente lo
-  // que confirma esta prueba: el resultado actual YA cumple esa condicion,
-  // asi que una segunda corrida (a mano, sin pasar por runOnceMigration)
-  // seria un no-op garantizado.
+  // `yaEsNuevo` (los primeros 3 paneles son agendas_panel -- el 4to lo
+  // reemplaza una migracion posterior, ver la prueba de arriba) es
+  // exactamente lo que confirma esta prueba: el resultado actual YA cumple
+  // esa condicion, asi que una segunda corrida (a mano, sin pasar por
+  // runOnceMigration) seria un no-op garantizado.
   const antes = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT').layout;
   const agenda = JSON.parse(antes).tabs.find((t) => t.key === 'agendamiento');
-  const yaEsNuevo = agenda.panels.length > 0 && agenda.panels.every((p) => p.tipo === 'agendas_panel');
+  const yaEsNuevo = agenda.panels.length > 0 && agenda.panels.slice(0, 3).every((p) => p.tipo === 'agendas_panel');
   assert.ok(yaEsNuevo, 'el resultado deberia ya cumplir el guard de "ya migrado" tras la primera corrida');
   const despues = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT').layout;
   assert.equal(antes, despues);

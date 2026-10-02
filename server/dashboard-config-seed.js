@@ -122,14 +122,22 @@ const ORLANT = {
         // columna `tipoLinea` de la tabla `agendas` real (GET
         // /calidad/agendas/linea, server/agendas.js).
         { tipo: 'agendas_panel', vista: 'linea', titulo: 'Agendas por Línea', campana: 'ORLANT' },
-        // "Ranking de asesores" (Fase 104, pedido de InCo): reemplaza a
-        // "Agendas por agente" (Fase 94, top 12 + "Otros", sin posicion ni
-        // desglose) -- ranking COMPLETO (GET /calidad/agendas/ranking,
-        // server/agendas.js) con puesto, %, 3P/General, promedio por dia y
-        // variacion contra el mes anterior. Ver migracion idempotente
-        // dashboards_config_orlant_ranking_asesores_v1 en db.js (produccion
-        // ya tenia este panel sembrado con la forma vieja).
-        { tipo: 'agendas_panel', vista: 'ranking', titulo: 'Ranking de Asesores', campana: 'ORLANT' },
+        // "Ranking de asesores": Fase 104 (pedido de InCo) lo calculaba por
+        // CANTIDAD de agendas (tabla `agendas`). Fase 111 (pedido textual de
+        // Edwin: "el ranking va a ser efectividad por agendamiento") lo
+        // reemplaza por un panel PROPIO (`efectividad_agendamiento_panel`,
+        // ya no `agendas_panel`), calculado 100% en el servidor a partir de
+        // la tabla nueva `efectividad_agendamiento` (GET
+        // /calidad/efectividad-agendamiento/ranking,
+        // server/efectividad-agendamiento.js): puesto por EFECTIVIDAD
+        // (agendas/gestiones) de mayor a menor, empate = mas gestiones
+        // primero. El calculo viejo (agendasRanking, server/agendas.js) se
+        // deja intacto -- Fase 104 sigue teniendo su propia prueba y nadie
+        // mas lo usa, pero no hace daño que seguir existiendo. Ver migracion
+        // idempotente dashboards_config_orlant_efectividad_agendamiento_v1
+        // en db.js (produccion ya tenia este panel sembrado con la forma de
+        // la Fase 104).
+        { tipo: 'efectividad_agendamiento_panel', titulo: 'Ranking de Asesores', campana: 'ORLANT' },
       ], subtabs: [
         { key: 'porespecialidad', label: 'Por especialidad', indices: [0] },
         { key: 'totalagendas', label: 'Total agendas', indices: [1] },
