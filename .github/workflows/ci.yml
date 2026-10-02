@@ -93,16 +93,19 @@ jobs:
       - name: Instalar Chromium (Playwright)
         run: npx playwright install --with-deps chromium
 
+      - name: Credenciales efimeras (solo para este job -- config.js las exige incluso para sembrar demo)
+        run: |
+          echo "JWT_SECRET=$(head -c 48 /dev/urandom | base64 | tr -dc a-zA-Z0-9 | head -c 48)" >> "$GITHUB_ENV"
+          echo "MASTER_ADMIN_PASSWORD_HASH=$(node -e "console.log(require('bcryptjs').hashSync('ci-pantallas-' + Date.now(), 10))")" >> "$GITHUB_ENV"
+          echo "RATE_LIMIT_MAX=100000" >> "$GITHUB_ENV"
+          echo "LOGIN_RATE_LIMIT_MAX=100000" >> "$GITHUB_ENV"
+
       - name: Sembrar datos de demo
         run: SEED_DEMO_CONFIRM=1 node scripts/seed-demo.js
 
-      - name: Arrancar servidor (credenciales efimeras, solo para este job)
+      - name: Arrancar servidor
         run: |
-          HASH=$(node -e "console.log(require('bcryptjs').hashSync('ci-pantallas-' + Date.now(), 10))")
-          SECRET=$(head -c 48 /dev/urandom | base64 | tr -dc a-zA-Z0-9 | head -c 48)
-          JWT_SECRET="$SECRET" MASTER_ADMIN_PASSWORD_HASH="$HASH" \
-            RATE_LIMIT_MAX=100000 LOGIN_RATE_LIMIT_MAX=100000 \
-            node server.js > /tmp/ci-pantallas-server.log 2>&1 &
+          node server.js > /tmp/ci-pantallas-server.log 2>&1 &
           for i in $(seq 1 30); do
             if curl -fsS http://localhost:3000/api/health > /dev/null; then echo "Servidor arriba"; exit 0; fi
             sleep 1
