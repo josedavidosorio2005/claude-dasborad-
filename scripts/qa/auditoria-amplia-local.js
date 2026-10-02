@@ -128,6 +128,13 @@ async function canvasesSinDibujar(page) {
     // de este flujo -- no son el bug que se busca aqui.
     const host = document.getElementById('gd-panels');
     if (!host) return out;
+    // Fase 112 (hallazgo real en produccion, Calidad/gd-c1): si el panel
+    // muestra "Sin datos de <X> para <mes>" (los 5 paneles autonomos lo
+    // hacen cuando el mes global no tiene datos), el canvas asociado se
+    // deja SIN DIBUJAR a proposito (_gdRenderCalidad, dashboard-generic.js
+    // -- "evita un donut vacio sin explicacion"). No es el bug de la Fase
+    // 111, es manejo correcto de "sin datos".
+    if (/Sin datos de/.test(host.innerText)) return out;
     host.querySelectorAll('canvas').forEach((c) => {
       const rect = c.getBoundingClientRect();
       const style = getComputedStyle(c);
