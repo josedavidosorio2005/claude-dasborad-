@@ -1,0 +1,263 @@
+name: Respaldo de produccion (estado / respaldar ahora / activar timer)
+
+# Fase 114 (URGENTE, autorizado explicitamente): inconexion-backup.timer
+# aparecio "inactive" en la primera corrida de salud-servidor.yml (Fase 113)
+# -- el ultimo respaldo local quedo del 2026-09-18, antes de todas las
+# cargas reales de ORLANT de las Fases 98-111. Este workflow reutiliza
+# EXACTAMENTE el mismo mecanismo ya auditado de audit-instance.yml /
+# salud-servidor.yml (rol OIDC, apertura temporal del puerto 22 solo para la
+# IP de este runner, cerrado al final con if: always(), secrets SSH de
+# siempre) -- no abre acceso nuevo.
+#
+# Disparo manual unicamente, con 3 modos (input "modo"):
+#   - estado:           SOLO LECTURA. Archivos de unidad, is-enabled/is-active
+#                        del timer, proxima corrida, resultado de la ultima
+#                        corrida del servicio, fecha/tamano del ultimo
+#                        respaldo local, si la ultima subida a S3 dijo OK o
+#                        error. Nunca cambia nada.
+#   - respaldar-ahora:   corre `inconexion-backup.service` UNA VEZ (lo mismo
+#                        que haria el timer) y verifica el respaldo nuevo
+#                        contra el archivo local (integrity_check + conteos
+#                        por tabla, con scripts/verificar-restore-backup.js
+#                        --local) SIN sacarlo del servidor.
+#   - activar-timer:     instala/actualiza los archivos de unidad desde
+#                        deploy/ (daemon-reload) y
+#                        `systemctl enable --now inconexion-backup.timer`.
+#                        Idempotente (systemctl enable/cp son idempotentes).
+#
+# Autorizacion de esta fase: SOLO estas 3 acciones en el servidor. Nada de
+# tocar la base, app.env, Caddy, Docker ni el firewall (salvo el 22
+# temporal). El repo es PUBLICO: nunca se imprime una fila, un nombre de
+# archivo con datos, una ruta interna de mas, ni la base/el respaldo como
+# artifact -- solo estados, fechas, tamanos y conteos de filas (numeros).
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'Que hacer'
+        type: choice
+        required: true
+        default: estado
+        options:
+          - estado
+          - respaldar-ahora
+          - activar-timer
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      # Solo hace falta el checkout para "activar-timer" (lee deploy/*.service
+      # y deploy/*.timer) -- en los otros 2 modos es inofensivo y mas simple
+      # que condicionarlo.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Cargar el contenido de las unidades systemd desde deploy/
+        if: inputs.modo == 'activar-timer'
+        run: |
+          set -euo pipefail
+          { echo 'UNIT_SERVICE_CONTENT<<__UNIT__'; cat deploy/inconexion-backup.service; echo '__UNIT__'; } >> "$GITHUB_ENV"
+          { echo 'UNIT_TIMER_CONTENT<<__UNIT__'; cat deploy/inconexion-backup.timer; echo '__UNIT__'; } >> "$GITHUB_ENV"
+
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      # ── Modo "estado": SOLO LECTURA ──────────────────────────────────────
+      - name: 'estado: leer archivos de unidad, timer y ultimo respaldo'
+        if: inputs.modo == 'estado'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: false
+          script: |
+            set +e
+            echo "== Archivos de unidad =="
+            for f in inconexion-backup.service inconexion-backup.timer; do
+              if sudo -n test -f "/etc/systemd/system/$f" 2>/dev/null || test -f "/etc/systemd/system/$f" 2>/dev/null; then
+                echo "  $f: existe"
+              else
+                echo "  $f: NO existe"
+              fi
+            done
+
+            echo "== Timer =="
+            ENABLED=$(systemctl is-enabled inconexion-backup.timer 2>/dev/null)
+            [ -z "$ENABLED" ] && ENABLED=$(sudo -n systemctl is-enabled inconexion-backup.timer 2>/dev/null)
+            echo "  is-enabled: ${ENABLED:-SIN_PERMISO_O_NO_EXISTE}"
+            ACTIVE=$(systemctl is-active inconexion-backup.timer 2>/dev/null)
+            [ -z "$ACTIVE" ] && ACTIVE=$(sudo -n systemctl is-active inconexion-backup.timer 2>/dev/null)
+            echo "  is-active: ${ACTIVE:-SIN_PERMISO_O_NO_EXISTE}"
+            PROXIMA=$(systemctl show inconexion-backup.timer -p NextElapseUSecRealtime --value 2>/dev/null)
+            [ -z "$PROXIMA" ] && PROXIMA=$(sudo -n systemctl show inconexion-backup.timer -p NextElapseUSecRealtime --value 2>/dev/null)
+            echo "  proxima corrida: ${PROXIMA:-SIN_DATO}"
+
+            echo "== Ultima corrida del servicio =="
+            RESULT=$(systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
+            [ -z "$RESULT" ] && RESULT=$(sudo -n systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
+            echo "  resultado: ${RESULT:-SIN_PERMISO_O_NUNCA_CORRIO}"
+            FECHA=$(systemctl show inconexion-backup.service -p ExecMainExitTimestamp --value 2>/dev/null)
+            [ -z "$FECHA" ] && FECHA=$(sudo -n systemctl show inconexion-backup.service -p ExecMainExitTimestamp --value 2>/dev/null)
+            echo "  fecha de esa corrida: ${FECHA:-SIN_DATO}"
+
+            echo "== Ultimo respaldo local =="
+            BACKUP_DIR="/opt/inconexion/data/backups"
+            ULTIMO=""
+            if [ -d "$BACKUP_DIR" ] && [ -r "$BACKUP_DIR" ]; then
+              ULTIMO=$(ls -1 "$BACKUP_DIR" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            elif sudo -n test -d "$BACKUP_DIR" 2>/dev/null; then
+              ULTIMO=$(sudo -n ls -1 "$BACKUP_DIR" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            fi
+            if [ -n "$ULTIMO" ]; then
+              RUTA="$BACKUP_DIR/$ULTIMO"
+              if [ -r "$RUTA" ]; then
+                EPOCH=$(stat -c '%Y' "$RUTA" 2>/dev/null); BYTES=$(stat -c '%s' "$RUTA" 2>/dev/null)
+              else
+                EPOCH=$(sudo -n stat -c '%Y' "$RUTA" 2>/dev/null); BYTES=$(sudo -n stat -c '%s' "$RUTA" 2>/dev/null)
+              fi
+              echo "  fecha: $(date -d "@$EPOCH" '+%Y-%m-%d %H:%M' 2>/dev/null)"
+              echo "  tamano: $(awk -v b="$BYTES" 'BEGIN{printf "%.1f", b/1024/1024}') MB"
+            else
+              echo "  SIN_DATO (no se encontro ningun respaldo local)"
+            fi
+
+            echo "== Ultima subida a S3 =="
+            LOG=$(journalctl -u inconexion-backup.service -n 30 --no-pager 2>/dev/null)
+            [ -z "$LOG" ] && LOG=$(sudo -n journalctl -u inconexion-backup.service -n 30 --no-pager 2>/dev/null)
+            if [ -z "$LOG" ]; then
+              echo "  SIN_PERMISO"
+            elif echo "$LOG" | grep -q '\[backup\] Fallo la subida a S3'; then
+              echo "  ERROR"
+            elif echo "$LOG" | grep -q '\[backup\] Subido a '; then
+              echo "  OK"
+            else
+              echo "  SIN_DATO"
+            fi
+            exit 0
+
+      # ── Modo "respaldar-ahora": corre el servicio UNA VEZ y verifica ─────
+      - name: 'respaldar-ahora: correr el servicio y verificar el respaldo nuevo'
+        if: inputs.modo == 'respaldar-ahora'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            echo "== Corriendo inconexion-backup.service =="
+            sudo -n systemctl start inconexion-backup.service
+            RESULT=$(sudo -n systemctl show inconexion-backup.service -p Result --value)
+            echo "  resultado: $RESULT"
+            if [ "$RESULT" != "success" ]; then
+              echo "::error::inconexion-backup.service no termino en success (Result=$RESULT)"
+              exit 1
+            fi
+
+            echo "== Respaldo local nuevo =="
+            BACKUP_DIR_HOST="/opt/inconexion/data/backups"
+            ULTIMO=$(sudo -n ls -1 "$BACKUP_DIR_HOST" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            if [ -z "$ULTIMO" ]; then
+              echo "::error::No se encontro ningun archivo de respaldo tras correr el servicio."
+              exit 1
+            fi
+            BYTES=$(sudo -n stat -c '%s' "$BACKUP_DIR_HOST/$ULTIMO")
+            echo "  tamano: $(awk -v b="$BYTES" 'BEGIN{printf "%.1f", b/1024/1024}') MB"
+
+            echo "== Verificando el respaldo (integrity_check + conteos), sin sacarlo del servidor =="
+            cd /opt/inconexion
+            docker compose exec -T app node scripts/verificar-restore-backup.js --local "/app/server/data/backups/$ULTIMO"
+
+            echo "== Subida a S3 de esta corrida =="
+            LOG=$(sudo -n journalctl -u inconexion-backup.service -n 30 --no-pager)
+            if echo "$LOG" | grep -q '\[backup\] Fallo la subida a S3'; then
+              echo "S3: ERROR"
+            elif echo "$LOG" | grep -q '\[backup\] Subido a '; then
+              echo "S3: OK"
+            else
+              echo "S3: SIN_DATO"
+            fi
+
+      # ── Modo "activar-timer": instala/actualiza unidades + enable --now ──
+      - name: 'activar-timer: instalar unidades (si hace falta) y habilitar'
+        if: inputs.modo == 'activar-timer'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          envs: UNIT_SERVICE_CONTENT,UNIT_TIMER_CONTENT
+          script: |
+            set -euo pipefail
+            echo "== Instalando/actualizando las 2 unidades desde deploy/ (repo) =="
+            printf '%s\n' "$UNIT_SERVICE_CONTENT" | sudo -n tee /etc/systemd/system/inconexion-backup.service > /dev/null
+            printf '%s\n' "$UNIT_TIMER_CONTENT" | sudo -n tee /etc/systemd/system/inconexion-backup.timer > /dev/null
+            sudo -n systemctl daemon-reload
+
+            echo "== Habilitando el timer (idempotente) =="
+            sudo -n systemctl enable --now inconexion-backup.timer
+
+            echo "== Estado resultante =="
+            sudo -n systemctl is-enabled inconexion-backup.timer
+            sudo -n systemctl is-active inconexion-backup.timer
+            sudo -n systemctl show inconexion-backup.timer -p NextElapseUSecRealtime --value
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
