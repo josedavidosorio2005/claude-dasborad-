@@ -1634,7 +1634,12 @@
 <script src="js/vendor/chart.umd.min.js"></script>
 <script src="js/vendor/chartjs-plugin-datalabels.min.js"></script>
 <script>Chart.register(ChartDataLabels);</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Fase 114: SheetJS 0.20.3 (fix de CVE-2023-30533/GHSA-4r6h-8v6p-xvw6, que
+     afectaba 0.18.5) vendorizado desde cdn.sheetjs.com -- la fuente oficial,
+     ya que el paquete de npm quedo congelado en 0.18.5. integrity verifica
+     que el archivo servido coincide byte a byte con el descargado y
+     verificado (ver public/js/vendor/README.md). -->
+<script src="js/vendor/xlsx-0.20.3.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT"></script>
 
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
 <script src="js/esc.js"></script>

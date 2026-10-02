@@ -15,7 +15,8 @@
 // estilos complejos). NO es un parser de xlsx de proposito general: es
 // deliberadamente minimo, y solo se usa desde las pruebas, nunca desde el
 // codigo de produccion (el navegador sigue usando xlsx.full.min.js de
-// cdnjs, como siempre).
+// SheetJS, Fase 114 en adelante vendorizado en public/js/vendor/ en vez de
+// cargado desde cdnjs -- ver public/js/vendor/README.md).
 'use strict';
 
 const fs = require('fs');

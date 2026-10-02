@@ -11,7 +11,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app } = require('./helpers');
 
-test('index.html trae los scripts/estilos locales con ?v= (cache-busting), nunca el CDN externo', async () => {
+test('index.html trae los scripts/estilos locales con ?v= (cache-busting), sin CDN externo', async () => {
   const res = await request(app).get('/');
   assert.equal(res.status, 200);
   assert.equal(res.headers['cache-control'], 'no-cache');
@@ -24,9 +24,14 @@ test('index.html trae los scripts/estilos locales con ?v= (cache-busting), nunca
   assert.ok(cssTag, 'no se encontro <link href="css/styles.css"> en index.html');
   assert.ok(cssTag[1], 'css/styles.css deberia llevar ?v=<build id>');
 
-  const cdnTag = res.text.match(/src="(https:\/\/cdnjs\.cloudflare\.com[^"]*)"/);
-  assert.ok(cdnTag, 'no se encontro el script de xlsx.full.min.js via cdnjs');
-  assert.ok(!cdnTag[1].includes('?v='), 'el script externo de cdnjs NO debe llevar ?v= (no lo sirve este servidor)');
+  // Fase 114: SheetJS se sirve ahora desde la propia app (public/js/vendor/,
+  // con integrity) -- ya no hay ningun script/estilo externo que versionar
+  // distinto, y ningun <script src="https://..."> deberia quedar en la pagina.
+  const xlsxTag = res.text.match(/src="(js\/vendor\/xlsx-[^"]+)"[^>]*integrity="(sha384-[^"]+)"/);
+  assert.ok(xlsxTag, 'no se encontro el script vendorizado de xlsx con su atributo integrity');
+  assert.ok(xlsxTag[1].includes('?v='), 'el xlsx vendorizado deberia llevar ?v=<build id> igual que cualquier script local');
+
+  assert.ok(!/src="https:\/\//.test(res.text), 'no deberia quedar ningun <script src="https://..."> externo');
 });
 
 test('el mismo build id se usa en TODOS los scripts locales de una misma respuesta', async () => {

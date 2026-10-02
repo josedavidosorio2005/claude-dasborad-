@@ -79,7 +79,9 @@ function createApp() {
   // Cabeceras de seguridad + CSP explicito.
   // 'unsafe-inline' en script-src es necesario porque public/index.html usa ~105
   // manejadores onclick inline y estilos inline (refactorizarlos queda fuera de
-  // alcance). cdnjs.cloudflare.com se permite por xlsx.full.min.js.
+  // alcance). Fase 114: xlsx.full.min.js (SheetJS) se sirve ahora desde la
+  // propia app (public/js/vendor/) en vez de cdnjs.cloudflare.com -- ya no
+  // hace falta permitir ningun origen externo en script-src.
   app.use(
     helmet({
       contentSecurityPolicy: {
@@ -87,7 +89,7 @@ function createApp() {
         directives: {
           defaultSrc: ["'self'"],
           baseUri: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com'],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:'],
           fontSrc: ["'self'", 'data:'],
