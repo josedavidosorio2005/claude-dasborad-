@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.9.1 — Octubre 2026
+
+Revision general de toda la plataforma antes de seguir con las bases
+nuevas de Edwin. Nada visible cambia en el dia a dia — quedo todo mas
+organizado y verificado por dentro.
+
+- **Revision completa de ORLANT**: las 7 pestañas, cada rol de usuario,
+  computador y celular, tema claro y oscuro — confirmado tambien en vivo
+  contra produccion: todos los numeros que muestra cada pestaña coinciden
+  exactamente con lo esperado.
+- **Nueva revision automatica**: de ahora en adelante, cada cambio al
+  codigo pasa por un chequeo que abre la plataforma de verdad y confirma
+  que cada grafico se dibuja — si alguna vez un grafico deja de
+  mostrarse (como paso una vez), se detecta solo antes de llegar a
+  produccion.
+- Se ordenaron los documentos y los scripts internos del proyecto (nada
+  que afecte el uso diario de la plataforma).
+
 ## v1.9.0 — Octubre 2026
 
 **El ranking de asesores ahora es por efectividad (agendas / gestiones).**
