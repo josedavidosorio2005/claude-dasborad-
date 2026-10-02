@@ -431,21 +431,33 @@ async function procesarArchivoConsolidado(input){
   // mecanismo, y (c) trae TODAS las columnas obligatorias de ese formato
   // (cargasEncabezadosCoinciden, cargas-logic.js) -- una hoja como
   // "GRAFICA" nunca calza y se ignora sin error, tal como antes.
+  //
+  // Fase 115 (hallazgo real: el archivo de Trafico de Llamadas de Edwin,
+  // ago-sep/2026, trae su unica hoja llamada "Hoja1", nunca "LLAMADAS" ni
+  // "DATA") -- se agrega 'trafico' a este mismo mecanismo. A diferencia de
+  // Tipificacion (Llamadas/WhatsApp SI comparten encabezados, por eso ese
+  // slot exige nombre exacto salvo LLAMADAS), las columnas obligatorias de
+  // Trafico Llamadas (SKILL_NAME/...) y WhatsApp (NOMBRE_COLA_WHATSAPP/...)
+  // son disjuntas -- cargasEncabezadosCoinciden ya alcanza para no confundir
+  // una con la otra, pero se verifica ademas el canal detectado
+  // (cargasDetectarCanalTrafico) contra canalFijo del slot como defensa
+  // adicional, igual de barata.
   var hojasReclamadasPorNombre = {};
   _cargasPlan.forEach(function(h){ if(wb.SheetNames.indexOf(h.hoja)!==-1) hojasReclamadasPorNombre[h.hoja]=true; });
   var hojasUsadasPorEncabezados = {};
   function _cargasBuscarHojaPorEncabezados(h){
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    var esTrafico = h.tipo==='trafico';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !esTrafico && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
       if(hojasReclamadasPorNombre[nombre] || hojasUsadasPorEncabezados[nombre]) continue;
       var wsCandidata = wb.Sheets[nombre];
       var aoaHeader = XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null});
-      if(cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)){
-        hojasUsadasPorEncabezados[nombre] = true;
-        return nombre;
-      }
+      if(!cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)) continue;
+      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(aoaHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap) !== h.canalFijo) continue;
+      hojasUsadasPorEncabezados[nombre] = true;
+      return nombre;
     }
     return null;
   }

@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.10.2 — Octubre 2026
+
+**Arreglo: un archivo real de Trafico de Llamadas no se reconocia al
+subirlo.** Cuando la unica hoja del Excel se llama "Hoja1" (en vez de
+"LLAMADAS" o "DATA", como paso con el archivo de agosto-septiembre), la
+pantalla de Cargar Datos ya no lo rechaza — lo reconoce igual que ya hacia
+con Agendas, Tipificacion, Efectividad de Agendamiento y Citas Atendidas.
+
 ## v1.10.1 — Octubre 2026
 
 **Arreglo: los respaldos automaticos de la base volvieron a funcionar.**
