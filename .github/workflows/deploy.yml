@@ -100,6 +100,18 @@ jobs:
             cd /opt/inconexion
             aws ecr get-login-password --region ${{ env.AWS_REGION }} \
               | docker login --username AWS --password-stdin ${{ steps.ecr.outputs.registry }}
+            # Fase 111 (hallazgo real: el deploy fallo por "no space left on
+            # device" al extraer la imagen nueva): `docker image prune -f`
+            # (mas abajo) solo borra imagenes SIN TAG (dangling) -- cada
+            # imagen de cada deploy anterior queda tageada por su SHA
+            # unico, asi que nunca se consideraba dangling y se acumulaban
+            # sin limite. `docker system prune -af` SI borra cualquier
+            # imagen/contenedor/red/cache de build que no este en uso por
+            # un contenedor activo -- la imagen que sigue corriendo (la
+            # version actual, antes de este pull) no se toca, solo las
+            # decenas de versiones viejas huerfanas. Nunca toca volumenes
+            # (la base de datos vive en un volumen, no en la imagen).
+            docker system prune -af
             export INCONEXION_IMAGE='${{ env.IMAGE }}'
             docker compose pull
             docker compose up -d
