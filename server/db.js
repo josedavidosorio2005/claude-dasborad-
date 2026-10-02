@@ -2565,6 +2565,28 @@ runOnceMigration('dashboards_config_orlant_resumen_citas_opcional_v1', () => {
   }
 });
 
+// Fase 113 (tema A): last_login_at alimenta la columna "Ultimo ingreso" de
+// Usuarios (NULL para toda cuenta que no haya iniciado sesion desde este
+// deploy -- el frontend muestra "Sin registro" para ese caso).
+runOnceMigration('users_last_login_v1', () => {
+  db.exec(`ALTER TABLE users ADD COLUMN last_login_at TEXT`);
+  if (!config.isTest) {
+    console.log('[db] Migracion users_last_login_v1 aplicada.');
+  }
+});
+
+// Historial: columnas ip/userAgent, usadas SOLO por los eventos de inicio/
+// cierre de sesion (LOGIN_OK/LOGIN_FALLIDO/LOGOUT) -- el resto de acciones
+// (ya existentes) las deja NULL. El navegador se guarda ya RESUMIDO (ej.
+// "Chrome / Windows"), nunca el user-agent crudo completo.
+runOnceMigration('historial_login_ip_ua_v1', () => {
+  db.exec(`ALTER TABLE historial ADD COLUMN ip TEXT`);
+  db.exec(`ALTER TABLE historial ADD COLUMN userAgent TEXT`);
+  if (!config.isTest) {
+    console.log('[db] Migracion historial_login_ip_ua_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

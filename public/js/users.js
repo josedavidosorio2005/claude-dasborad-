@@ -58,12 +58,21 @@ function renderUsers(filter){
       (canPass?'<button class="btn-sm btn-pass" onclick="openPassModal('+u.id+')">Contrasena</button>':'')+
       (canSusp?'<button class="btn-sm '+sc+'" onclick="toggleActive('+u.id+')">'+sl+'</button>':'')+
       (canDel?'<button class="btn-sm btn-delete" onclick="openDeleteModal('+u.id+')">Eliminar</button>':'');
+    // Fase 113 (tema A): "Ultimo ingreso", solo admin completo (el servidor
+    // ya omite `lastLogin` para cualquier otro rol -- aqui solo se decide si
+    // se pinta la celda, en sincronia con el <th> que se esconde en
+    // enterAdminPanel). "Sin registro" para una cuenta que no ha iniciado
+    // sesion desde que existe este registro (03/10/2026).
+    var celdaUltimoIngreso = isFullAdmin()
+      ? '<td style="font-size:0.78rem;color:var(--c-text-muted);white-space:nowrap">'+(u.lastLogin?esc(u.lastLogin):'Sin registro (antes del 03/10/2026)')+'</td>'
+      : '';
     return '<tr>'+
       '<td><strong style="color:var(--c-primary)">'+esc(u.nombre)+'</strong>'+extra+'</td>'+
       '<td style="color:var(--c-text-muted);font-family:monospace;font-size:0.82rem">'+esc(u.user)+'</td>'+
       '<td><span class="badge badge-'+u.rol+'">'+esc(RL[u.rol]||u.rol)+'</span></td>'+
       '<td><span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>'+(u.active?'Activo':'Suspendido')+'</td>'+
       '<td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(u.createdAt||'-')+'</td>'+
+      celdaUltimoIngreso+
       '<td><div class="action-btns">'+(botones||'<span style="font-size:0.76rem;color:var(--c-text-muted)">Sin acciones disponibles</span>')+'</div></td></tr>';
   }).join('');
   updateStats();

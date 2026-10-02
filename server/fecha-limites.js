@@ -37,6 +37,22 @@ function fechaLimitesEsFutura(fechaISO, ahora) {
   return fechaISO.slice(0, 10) > fechaLimitesFinDeMesActual(ahora);
 }
 
+// Fase 113 (tema A): fecha+hora completa en Colombia ('DD/MM/AAAA HH:MM:SS'),
+// para el registro de inicios de sesion -- mismo offset fijo UTC-5 que el
+// resto de este archivo. El servidor (AWS) corre en UTC; el helper generico
+// de historial (nowStr, routes/shared.js) usa la hora LOCAL DEL PROCESO, que
+// en produccion es UTC, no Colombia -- por eso el registro de login no lo
+// reusa y pide la hora aqui, donde ya se resuelve correctamente.
+function fechaLimitesAhoraColombiaStr(ahora) {
+  const d = ahora instanceof Date ? ahora : new Date();
+  const bogota = new Date(d.getTime() - 5 * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return (
+    `${pad(bogota.getUTCDate())}/${pad(bogota.getUTCMonth() + 1)}/${bogota.getUTCFullYear()} ` +
+    `${pad(bogota.getUTCHours())}:${pad(bogota.getUTCMinutes())}:${pad(bogota.getUTCSeconds())}`
+  );
+}
+
 // Primer y ultimo dia de un mes 'AAAA-MM' como 'AAAA-MM-DD' (sin hora).
 // Fase 88: reemplaza filtros `substr(columna,1,7) = @mes` (no sargables,
 // nunca usan la parte de fecha de un indice compuesto) por un rango
@@ -57,4 +73,5 @@ module.exports = {
   fechaLimitesFinDeMesActual,
   fechaLimitesEsFutura,
   fechaLimitesRangoDeMes,
+  fechaLimitesAhoraColombiaStr,
 };

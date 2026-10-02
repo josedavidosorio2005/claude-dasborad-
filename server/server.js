@@ -204,6 +204,7 @@ function createApp() {
   api.use(require('./routes/gerencia'));
   api.use(require('./routes/gestion-humana'));
   api.use(require('./routes/historial'));
+  api.use(require('./routes/seguridad'));
   api.use(require('./routes/guia'));
 
   // 404 JSON para rutas de API desconocidas (antes del fallback SPA).

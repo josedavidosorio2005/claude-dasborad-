@@ -96,6 +96,11 @@
         <div class="aux-banner hidden" id="aux-banner">
           &#128274; <div><strong>Modo Auxiliar Admin</strong> — Solo ves las acciones y los roles a los que tienes acceso.</div>
         </div>
+        <!-- Fase 113 (tema A): aviso de seguridad, mismo patron visual que la
+             alerta de Calidad (.aux-banner) -- calculado en vivo, sin correos. -->
+        <div class="aux-banner hidden" id="admin-alerta-seguridad">
+          &#128272; <div><strong id="admin-alerta-seguridad-texto"></strong></div>
+        </div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-num" id="stat-active">-</div><div class="stat-label">Activos</div></div>
           <div class="stat-card" style="border-left-color:#e74c3c"><div class="stat-num" id="stat-suspended">-</div><div class="stat-label">Suspendidos</div></div>
@@ -112,7 +117,7 @@
             </div>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead>
+            <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th id="th-ultimo-ingreso" class="hidden">Ultimo ingreso</th><th>Acciones</th></tr></thead>
             <tbody id="users-tbody"></tbody></table>
           </div>
           <div class="no-results hidden" id="no-results">No se encontraron usuarios.</div>
@@ -174,6 +179,11 @@
                 <option value="ELIMINADO">Usuario eliminado</option>
                 <option value="PASSWORD">Cambio de contrasena</option>
                 <option value="PERMISOS">Cambio de permisos</option>
+                <option value="__LOGINS__">Inicios de sesion</option>
+                <option value="LOGIN_OK">Inicio de sesion exitoso</option>
+                <option value="LOGIN_FALLIDO">Inicio de sesion fallido</option>
+                <option value="LOGOUT">Cierre de sesion</option>
+                <option value="PASSWORD_PROPIA">Cambio de contrasena (propio)</option>
                 <option value="MONITOREO">Calidad: monitoreo creado</option>
                 <option value="MONITOREO_EDIT">Calidad: monitoreo editado</option>
                 <option value="MONITOREO_DEL">Calidad: monitoreo eliminado</option>
@@ -1618,6 +1628,7 @@
 <script src="js/users.js"></script>
 <script src="js/roles-perms.js"></script>
 <script src="js/historial.js"></script>
+<script src="js/seguridad.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>

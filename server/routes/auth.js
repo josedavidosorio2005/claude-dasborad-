@@ -6,9 +6,17 @@ const bcrypt = require('bcryptjs');
 const rateLimit = require('express-rate-limit');
 const config = require('../config');
 const db = require('../db');
-const { signToken } = require('../auth');
+const { signToken, requireActor } = require('../auth');
 const { validate, schemas } = require('../validation');
-const { wrap, toPublicUser, MASTER_ADMIN_USER, MASTER_ADMIN_PASSWORD_HASH } = require('./shared');
+const { fechaLimitesAhoraColombiaStr } = require('../fecha-limites');
+const {
+  wrap,
+  logEvent,
+  summarizeUserAgent,
+  toPublicUser,
+  MASTER_ADMIN_USER,
+  MASTER_ADMIN_PASSWORD_HASH,
+} = require('./shared');
 
 const router = express.Router();
 
@@ -33,6 +41,23 @@ const loginLimiter = rateLimit({
   message: { error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
 });
 
+// Fase 113 (tema A): cada intento de login queda en el Historial (exitoso o
+// fallido), visible SOLO para el administrador completo (ver
+// routes/historial.js). El mensaje de error que recibe quien intenta
+// iniciar sesion NUNCA cambia por esto -- sigue siendo el mismo texto
+// generico de siempre para los 3 motivos (usuario no existe/contrasena
+// incorrecta/suspendido); el motivo real solo se guarda en el registro que
+// ve el admin, nunca se expone en la respuesta HTTP ni en el tiempo de
+// respuesta (el N1 de la Fase 72 sigue intacto: logEvent es una insercion
+// sincrona local, no agrega una espera perceptible).
+function registrarLogin(req, accion, targetRow, detalle) {
+  logEvent(accion, targetRow, 'Sistema (autenticacion)', detalle, {
+    ip: req.ip,
+    userAgent: summarizeUserAgent(req.get('user-agent')),
+    fecha: fechaLimitesAhoraColombiaStr(),
+  });
+}
+
 router.post(
   '/auth/login',
   loginLimiter,
@@ -43,7 +68,11 @@ router.post(
     // Admin maestro: su hash vive SOLO en variables de entorno.
     if (user === MASTER_ADMIN_USER) {
       const ok = await bcrypt.compare(password, MASTER_ADMIN_PASSWORD_HASH);
-      if (!ok) return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
+      if (!ok) {
+        registrarLogin(req, 'LOGIN_FALLIDO', { nombre: '-', user, rol: '-' }, 'Contrasena incorrecta');
+        return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
+      }
+      registrarLogin(req, 'LOGIN_OK', { nombre: 'Administrador', user: MASTER_ADMIN_USER, rol: 'ADMIN' }, '');
       const token = signToken({ isMasterAdmin: true, rol: 'ADMIN' });
       return res.json({
         token,
@@ -54,14 +83,44 @@ router.post(
     const row = db.prepare('SELECT * FROM users WHERE user = ?').get(user);
     if (!row) {
       await bcrypt.compare(password, DUMMY_HASH_PARA_TIMING);
+      registrarLogin(req, 'LOGIN_FALLIDO', { nombre: '-', user, rol: '-' }, 'Usuario no existe');
       return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
     }
     const ok = await bcrypt.compare(password, row.password_hash);
-    if (!ok) return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
-    if (!row.active) return res.status(403).json({ error: 'Usuario suspendido. Contacte al administrador.' });
+    if (!ok) {
+      registrarLogin(req, 'LOGIN_FALLIDO', row, 'Contrasena incorrecta');
+      return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
+    }
+    if (!row.active) {
+      registrarLogin(req, 'LOGIN_FALLIDO', row, 'Usuario suspendido');
+      return res.status(403).json({ error: 'Usuario suspendido. Contacte al administrador.' });
+    }
+
+    const ahora = fechaLimitesAhoraColombiaStr();
+    db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(ahora, row.id);
+    registrarLogin(req, 'LOGIN_OK', row, '');
 
     const token = signToken({ isMasterAdmin: false, userId: row.id, rol: row.rol });
-    res.json({ token, user: toPublicUser(row) });
+    res.json({ token, user: toPublicUser({ ...row, last_login_at: ahora }) });
+  })
+);
+
+// Fase 113 (tema A): "cierre de sesion, si existe ese flujo" -- antes no
+// existia ningun endpoint de logout (JWT sin estado, el frontend solo
+// limpiaba variables en memoria). Se agrega este endpoint minimo SOLO para
+// poder registrarlo en el Historial; no revoca el token (eso ya lo cubre
+// token_version al cambiar la contrasena, ver Fase 113 tema B) -- el token
+// sigue siendo valido hasta su expiracion natural, igual que cualquier JWT
+// sin estado, pero el cierre de sesion queda anotado para auditoria.
+router.post(
+  '/auth/logout',
+  requireActor,
+  wrap((req, res) => {
+    const targetRow = req.actor.isMasterAdmin
+      ? { nombre: 'Administrador', user: MASTER_ADMIN_USER, rol: 'ADMIN' }
+      : req.actor;
+    registrarLogin(req, 'LOGOUT', targetRow, '');
+    res.json({ ok: true });
   })
 );
 
