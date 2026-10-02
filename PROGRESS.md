@@ -9702,3 +9702,123 @@ real), CI verde en ambos. Versión final:
 `1.7.0` (menor, cambio visible), tag `v1.7.0`, deploy confirmado
 (`/api/health` → `version: "1.7.0"`) y carga real en producción
 verificada el mismo día contra la tabla de control completa del pedido.
+
+## Fase 109 — Auditoría de las 3 escaladas de la Fase 102, Inasistencia en línea y acciones de workflows fijadas a SHA (2026-10-01)
+
+Tres temas independientes, uno por PR, pedidos en el mismo mensaje.
+
+### Tema A — ¿alguien usó las 3 escaladas críticas antes del arreglo?
+
+Auditoría de solo lectura contra producción (Historial completo + lista de
+usuarios/permisos), sesión real del usuario. **Resultado reportado
+directamente al usuario en el chat, no se guarda aquí ningún dato de
+usuarios/historial** (instrucción explícita del pedido) — revisado, sin
+evidencia de uso de ninguna de las 3 fallas cerradas en la Fase 102.
+
+### Tema B — Inasistencia: gráfica de línea, septiembre y la tarjeta del período
+
+- **Confirmado con prueba nueva** (`inasistencia-carga.test.js`): subir un
+  mes en formato NUEVO reemplaza por completo las filas viejas "SIN DATO"
+  de ese mismo mes — el `DELETE` de `cargarInasistencias`
+  (`server/inasistencia.js`) ya filtraba solo por `campana`+`mes`, sin
+  sede/especialidad/entidad, así que esto ya funcionaba desde la Fase 108;
+  esta fase lo deja probado explícitamente en vez de asumido.
+- **`inasistenciaMesesFormatoViejo`** (`server/inasistencia.js`, nuevo
+  campo `mesesFormatoViejo` en `/calidad/inasistencia/opciones`): meses
+  donde el 100% de las filas siguen siendo del formato viejo (sede/
+  entidad='SIN DATO', Fase 98-106) — permite distinguir un mes "parcial"
+  de uno simplemente "incompleto" con datos reales.
+- **`inasistenciaAvisosPorMes`** (`public/js/inasistencia-logic.js`,
+  reemplaza a `inasistenciaMesesIncompletos`): clasifica cada mes como
+  `parcial` (formato viejo), `incompleto` (menos especialidades pero con
+  sede/entidad real) o `sinDatosFiltro` (el filtro activo lo dejó sin
+  filas) — nunca se mezclan 2 avisos para el mismo mes.
+- **Interfaz** (`public/js/inasistencia.js`): "Resumen por mes" pasa de
+  barras a **gráfica de línea** (Chart.js `type:'line'`, `tension:0` —
+  recta, como un gráfico de línea de Excel), con etiqueta de valor SIEMPRE
+  visible (2 decimales y coma, `inasistenciaFmtPct` — nunca el formato de
+  1 decimal de `loPct`), eje Y desde 0% (`scales.y.min=0`), leyenda "% de
+  inasistencia" (nunca "Series1" — Chart.js la toma del `label` del
+  dataset). El mes elegido arriba se resalta (punto más grande, mismo
+  color `CD` que ya resaltaba las barras); un mes `parcial` se dibuja con
+  punto hueco (`pointBackgroundColor:'transparent'`) y el tramo que llega
+  a él punteado (`segment.borderDash`, evaluado por `p1DataIndex`, Chart.js
+  v4). **Tabla de datos** debajo de la gráfica (mes/% de inasistencia/
+  Total de citas, con scroll horizontal propio — nunca de la página — para
+  que quepa en móvil), con la columna del mes elegido en negrita y un
+  asterisco en el mes `parcial` que remite al aviso. **2 tarjetas** en vez
+  de 1: % de TODO el período filtrado (etiqueta con el rango exacto, ej.
+  "% de inasistencia · Ene-26 a Sep-26" — `inasistenciaRangoLbl`, nuevo) y
+  % del mes elegido arriba — nunca se confunden entre sí.
+- **Export** (`_gdExportarInasistencia`, `dashboard-generic.js`): la hoja
+  de "Resumen por mes" agrega la columna "Total de citas" (mismos valores
+  que la tabla en pantalla). "Por especialidad" no cambió (sigue en
+  barras).
+- **Demo** (`server/scripts/seed-demo-lib/dashboards.js`): el último mes
+  (el que todavía no cierra) pasa a sembrarse 100% en formato viejo (sede/
+  entidad='SIN DATO', 1 sola especialidad) en vez del reparto sede×entidad
+  de la Fase 108 — igual que la producción real (Sep-26) — así el demo
+  ejercita el aviso `parcial` sin esperar datos reales.
+- **Docs**: `docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`
+  describen la gráfica de línea, las 2 tarjetas y las marcas de mes
+  parcial.
+
+### Tema C — Acciones de los workflows fijadas a SHA (autorizado)
+
+Cada `uses: x@vN` de los 8 workflows (`.github/workflows/`, incluido
+`deploy.yml`) pasa a `uses: x@<sha-completo>  # vN` — sin tocar nada más
+de esos archivos ni los secretos. SHA obtenido con `gh api repos/<owner>/
+<accion>/git/ref/tags/<tag>`, desreferenciando el tag cuando es anotado
+(`aws-actions/configure-aws-credentials@v4` es el único caso: el objeto
+del tag no es el commit real).
+
+| Acción | Tag | SHA |
+|---|---|---|
+| actions/checkout | v4 | `11d5960a326750d5838078e36cf38b85af677262` |
+| actions/setup-node | v4 | `49933ea5288caeca8642d1e84afbd3f7d6820020` |
+| aws-actions/configure-aws-credentials | v4 | `7474bc4690e29a8392af63c5b98e7449536d5c3a` |
+| aws-actions/amazon-ecr-login | v2 | `03f1aad4c6c7ffd436567f42f9384779290529bd` |
+| appleboy/ssh-action | v1 | `0ff4204d59e8e51228ff73bce53f80d53301dee2` |
+| actions/github-script | v7 | `f28e40c7f34bde8b3046d885e986cb6290c5673b` |
+
+`CLAUDE.md` actualizado: "Las acciones van fijadas a SHA; para
+actualizarlas, cambiar el SHA y el comentario con la versión".
+
+### Verificación
+
+- `npm test`: 818/818 (antes: 809 + pruebas nuevas de esta fase). `npm
+  audit`: 0 vulnerabilidades (antes y después).
+- Pruebas nuevas: reemplazo de un mes "SIN DATO" por formato nuevo sin
+  mezcla (`inasistencia-carga.test.js`), `mesesFormatoViejo` nunca incluye
+  un mes con al menos 1 fila de sede real, `inasistenciaRangoLbl` y
+  `inasistenciaAvisosPorMes` (parcial/incompleto/sinDatosFiltro, nunca 2 a
+  la vez para el mismo mes), y una prueba de regresión con los números de
+  control REALES de ORLANT (Ene-26 a Sep-26, ya públicos desde la Fase
+  108) que fija el % de cada mes y el 6,87 % del período completo.
+- Playwright local (`seed:demo`,
+  `.github/scripts/verificar-fase109-inasistencia-linea-local.js`,
+  nuevo): línea (no barras), leyenda correcta, valores de cada punto
+  iguales a `inasistenciaAgregarPorMes` (nunca hardcodeados), mes elegido
+  resaltado (radio mayor), mes parcial con punto hueco, tabla con
+  negrita/asterisco, aviso "no tiene datos por sede" al filtrar, export
+  con las 3 columnas, "Por especialidad" intacto, sin scroll horizontal
+  de página en móvil/oscuro. **0 hallazgos, 0 errores de consola.**
+  Capturas antes/después en
+  `docs/capturas-demo/fase109-inasistencia-linea/`.
+- Verificación visual en producción (solo lectura): "Resumen por mes" en
+  Ago-26 mostró exacto 6,87 % (período Ene-26 a Sep-26) y 7,45 % (mes
+  elegido), los 9 puntos de la línea con los % de control, Sep-26 con
+  punto hueco/tramo punteado/asterisco; "Por especialidad" de Ago-26 sigue
+  en barras con los mismos % ya verificados en la Fase 108. 0 errores de
+  consola. Capturas fuera del repo en
+  `bases edwin\capturas-produccion\fase109-inasistencia-linea\`.
+- Tema C: tras el merge, CI en verde, "Deploy a AWS" en verde
+  (`/api/health` → `1.8.0`) y `monitor-produccion.yml` disparado a mano
+  (`workflow_dispatch`) terminó en verde.
+
+### Estado final de la Fase 109
+
+3 PRs (uno por tema) + este cierre, CI verde en todos. Versión final
+`1.8.0` (menor, cambio visible de Inasistencia), tag `v1.8.0`, deploy
+confirmado. Tema A no tocó código ni datos (solo lectura) — resultado
+entregado al usuario directamente en el chat.
