@@ -15,12 +15,14 @@
 // Solo lectura sobre la app: nunca crea/edita/borra datos de negocio (si
 // cambia algo de UI como el tema, no persiste nada en el servidor).
 'use strict';
-const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
+const SERVER_DIR = path.join(__dirname, '..', '..', 'server');
+const { chromium } = require(path.join(SERVER_DIR, 'node_modules', 'playwright'));
+
 const BASE = process.env.APP_URL || 'http://localhost:3000';
-const CRED_FILE = path.join(__dirname, '..', '..', 'server', 'data', 'seed-demo-credenciales.txt');
+const CRED_FILE = path.join(SERVER_DIR, 'data', 'seed-demo-credenciales.txt');
 const DESKTOP = { width: 1440, height: 900 };
 const MOBILE = { width: 412, height: 915 };
 const TEXTO_SOSPECHOSO = /\bNaN\b|\bundefined\b|\[object Object\]/;
