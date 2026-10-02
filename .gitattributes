@@ -1,0 +1,13 @@
+# Fase 112: salvaguarda contra finales de linea mixtos (CRLF/LF) que
+# aparecen como "modificados" al ver el repo desde un sistema con un
+# core.autocrlf distinto. Verificado con `git add --renormalize .`: los
+# blobs ya commiteados estaban en LF puro, 0 archivos cambiaron -- esto
+# es solo para que un commit futuro no vuelva a meter CRLF por accidente
+# (ej. alguien con core.autocrlf=false en Windows). Git sigue mostrando
+# CRLF en el checkout local si core.autocrlf=true, sin que eso afecte lo
+# que queda commiteado.
+* text=auto eol=lf
+
+# Binarios -- nunca tocar finales de linea.
+*.png binary
+*.xlsx binary
