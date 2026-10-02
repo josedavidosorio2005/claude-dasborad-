@@ -9822,3 +9822,60 @@ actualizarlas, cambiar el SHA y el comentario con la versión".
 `1.8.0` (menor, cambio visible de Inasistencia), tag `v1.8.0`, deploy
 confirmado. Tema A no tocó código ni datos (solo lectura) — resultado
 entregado al usuario directamente en el chat.
+
+## Fase 110 (URGENTE) — usuarios de ejemplo con contraseña pública seguían activos en producción (2026-10-02)
+
+Hallazgo real durante una revisión: los 6 usuarios de ejemplo que
+`server/db.js` siembra cuando la tabla `users` está vacía (contraseña fija
+en el código, repo PÚBLICO) se creaban sin importar el entorno. En
+producción esto dejó esas 6 cuentas reales activas con su contraseña de
+ejemplo intacta, visibles a cualquiera que leyera el repo.
+
+### Parte 1 — estado antes del fix (solo lectura, con sesión real del usuario)
+
+Las 6 cuentas existían y estaban activas en producción (ninguna había
+quedado suspendida). La plataforma no registra inicios de sesión en
+ningún lado (ni Historial, ni una columna de último ingreso) — queda
+pendiente de revisar en los logs de CloudWatch cuando se retome la Fase
+97. Las auditorías de las Fases 72, 81 y 102 no lo detectaron porque las
+3 revisaron los usuarios de `seed:demo` (el set de 10 roles sembrado a
+mano por CLI para pruebas) y la lógica de login/permisos, nunca si la
+siembra automática de arranque de `db.js` podía dejar cuentas de ejemplo
+activas en una producción real — ver la sección agregada a
+`docs/auditoria-seguridad-fase102.md`.
+
+### Parte 2 — el fix (código, PR #243)
+
+- La semilla de ejemplo de `server/db.js` ya nunca se crea en producción
+  (`count === 0 && !config.isProduction`). El único usuario inicial en
+  producción sigue siendo el admin maestro (ya era obligatorio y
+  fail-fast en `config.js` desde antes de esta fase). En
+  desarrollo/pruebas la semilla sigue igual.
+- Red de seguridad al arrancar, solo en producción: por cada uno de esos
+  6 usuarios que siga existiendo y activo, compara su hash contra la
+  contraseña de ejemplo (`bcrypt.compare`, en memoria) — si coincide, lo
+  suspende solo y deja constancia en el Historial, sin la contraseña en
+  ningún lado (ni DB, ni Historial, ni log). Idempotente, nunca borra
+  usuarios ni toca a nadie más.
+- Prueba de guardia (`npm test`) que falla si aparece una contraseña fija
+  de una semilla en `server/` (fuera de `tests/`) sin el candado de
+  producción.
+- Versión `1.8.1` (parche) + entrada en `CHANGELOG.md`.
+
+### Parte 3 — verificación tras el deploy (solo lectura, con sesión real del usuario)
+
+- `npm test`: 833/833 en verde (830 + 3 pruebas nuevas de esta fase).
+  `npm audit --omit=dev`: 0 vulnerabilidades.
+- PR #243: CI (Node 22 + docker-build) en verde, merge a `main`, "Deploy a
+  AWS" en verde.
+- `/api/health` → `200`, `version: "1.8.1"`.
+- La red de seguridad corrió sola al arrancar: suspendió automáticamente
+  las cuentas de ejemplo que todavía tenían su contraseña original y dejó
+  el evento correspondiente en el Historial ("Seguridad automática
+  (@arranque)"); las cuentas que ya tenían otra contraseña quedaron
+  intactas y activas, como se espera. 0 errores de consola al navegar.
+
+### Estado final de la Fase 110
+
+PR #243 (código) + este cierre, CI verde en ambos. Versión final `1.8.1`
+(parche, corrección de seguridad), tag `v1.8.1`, deploy confirmado.
