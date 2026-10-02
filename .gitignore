@@ -11,6 +11,11 @@ server/.env
 # Base de datos SQLite y copias de seguridad
 server/data/
 
+# Capturas de fallo del job "pantallas" de CI (Fase 112) -- solo se
+# generan al correr ese chequeo en local; en CI quedan como artifact de la
+# corrida, nunca en el repo.
+server/ci-capturas-fallo/
+
 # Logs
 *.log
 

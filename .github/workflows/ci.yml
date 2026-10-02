@@ -61,6 +61,69 @@ jobs:
         # dummy y una BD SQLite temporal, asi que no hace falta configurar nada.
         run: npm test
 
+  # Fase 112 (Parte 1.2, autorizado): el bug de la Fase 111 (Ranking de
+  # Asesores / Efectividad de Citas no se dibujaban) se le escapo a las
+  # pruebas porque nada corria un navegador real contra ORLANT. Este job
+  # abre ORLANT headless (admin, claro, escritorio -- liviano a proposito,
+  # la auditoria completa con todos los roles/temas/viewports es manual,
+  # ver .github/scripts/verificar-fase102-auditoria-amplia-local.js) y
+  # falla si hay un error de consola, una peticion fallida inesperada, una
+  # respuesta 5xx, o un <canvas> sin pixeles pintados. Corre en cada PR.
+  pantallas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Usar Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Credenciales efimeras (solo para este job -- config.js las exige incluso para sembrar demo)
+        run: |
+          echo "JWT_SECRET=$(head -c 48 /dev/urandom | base64 | tr -dc a-zA-Z0-9 | head -c 48)" >> "$GITHUB_ENV"
+          echo "MASTER_ADMIN_PASSWORD_HASH=$(node -e "console.log(require('bcryptjs').hashSync('ci-pantallas-' + Date.now(), 10))")" >> "$GITHUB_ENV"
+          echo "RATE_LIMIT_MAX=100000" >> "$GITHUB_ENV"
+          echo "LOGIN_RATE_LIMIT_MAX=100000" >> "$GITHUB_ENV"
+
+      - name: Sembrar datos de demo
+        run: SEED_DEMO_CONFIRM=1 node scripts/seed-demo.js
+
+      - name: Arrancar servidor
+        run: |
+          node server.js > /tmp/ci-pantallas-server.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then echo "Servidor arriba"; exit 0; fi
+            sleep 1
+          done
+          echo "El servidor no respondio a tiempo"; cat /tmp/ci-pantallas-server.log; exit 1
+
+      - name: Recorrido de ORLANT (sin errores de consola, sin canvas vacios)
+        run: node ../.github/scripts/ci-pantallas-orlant.js
+
+      - name: Subir capturas del fallo (solo datos de demo)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: capturas-fallo-pantallas-orlant
+          path: server/ci-capturas-fallo/
+          retention-days: 7
+          if-no-files-found: ignore
+
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
