@@ -9879,3 +9879,189 @@ activas en una producción real — ver la sección agregada a
 
 PR #243 (código) + este cierre, CI verde en ambos. Versión final `1.8.1`
 (parche, corrección de seguridad), tag `v1.8.1`, deploy confirmado.
+
+## Fase 111 — 2 bases nuevas de ORLANT: el ranking pasa a ser EFECTIVIDAD de agendamiento + Efectividad de citas atendidas (2026-10-02)
+
+Edwin mandó 2 bases nuevas de ORLANT (fuera del repo, en `bases edwin\`)
+con una indicación textual: "el ranking va a ser efectividad por
+agendamiento". En los 2 archivos las filas 1-2 vienen vacías y los
+encabezados están en la fila 3 (igual que Inasistencia desde la Fase 98);
+ambos traen una gráfica combo de Excel (columnas + línea con % y
+etiquetas) que el dashboard reproduce igual.
+
+### Tema A — Ranking de asesores por EFECTIVIDAD de agendamiento (PR #245)
+
+Reemplaza el "Ranking de asesores" (Fase 104, por CANTIDAD de agendas) por
+un ranking por **EFECTIVIDAD = agendas ÷ gestiones**, calculado a partir
+de `EFECTIVIDAD_AGENDAMIENTO.xlsx` (por asesor, un mes a la vez, MES en
+texto sin año — SEPTIEMBRE a Sep-26, mismo criterio de año inferido de
+Inasistencia).
+
+- Tabla nueva `efectividad_agendamiento` (campana, mes, asesor, gestiones,
+  agendas, archivoNombre, cargadoPorNombre, createdAt), único por
+  (campana, mes, asesor), reemplazo por mes.
+- `server/efectividad-agendamiento.js`: ranking con puesto (empate = más
+  gestiones primero) y efectividad del equipo **ponderada**
+  (suma de agendas / suma de gestiones, nunca el promedio simple de los %).
+- Panel propio `efectividad_agendamiento_panel`
+  (`public/js/efectividad-agendamiento.js`): tarjetas del mes, gráfica
+  combo (Gestiones+Agendas en barras, % Efectividad en línea con eje
+  secundario) con scroll horizontal propio si hay muchos asesores, tabla
+  completa + buscador, aviso "sin datos" con botón al último mes con
+  datos. El ranking viejo por cantidad de agendas (Fase 104) sale de la
+  vista; su cálculo en el servidor se deja intacto (no lo usa nadie más,
+  pero no estorba).
+- Migración idempotente dashboards_config_orlant_efectividad_agendamiento_v1
+  (producción ya tenía el panel viejo sembrado en esa posición).
+- Cargar Datos: hoja `EFECTIVIDAD_AGENDAMIENTO`, reconocida también por
+  encabezados (el archivo real de Edwin trae su hoja como "Hoja1"). La
+  columna EFECTIVIDAD del archivo nunca se guarda — siempre se recalcula,
+  con advertencia en la confirmación si no coincide.
+- La fila "MICHELL GARCIA SERNA_falla" se deja TAL CUAL llega, sin
+  fusionarla con "MICHELL GARCIA SERNA" — pregunta pendiente para Edwin
+  (son la misma persona?), documentada en la guía de uso.
+- `public/js/mes-nombre-logic.js` (nuevo, compartido con el Tema B): mes
+  en texto sin año infiere el año más reciente en que ese mes no es
+  futuro, recuperado de la lógica que Inasistencia tenía antes de la Fase
+  108.
+
+Control real (Sep-26, dado por Edwin/InCo): 20 filas, gestiones 18.566,
+agendas 8.319, efectividad del equipo 44,81 % (nunca 51,59 %, el promedio
+simple); 1er puesto Santiago Londoño Rúa 97,36 % (369/379), último Mariana
+Ramirez Cano 12,18 % (254/2.086).
+
+### Tema B — Efectividad de Citas Atendidas (PR #246)
+
+La pestaña oculta "Efectividad Citas" leía citas_para_mes/citas_atendidas
+de la hoja "resumen" (nunca tuvo datos reales) — ahora lee
+`CITAS_ATENDIDAS.xlsx` (un total real por mes).
+
+- Tabla nueva `efectividad_citas` (campana, mes, agendas, atendidas,
+  archivoNombre, cargadoPorNombre, createdAt), único por (campana, mes),
+  reemplazo por mes.
+- Panel propio `efectividad_citas_panel`
+  (`public/js/efectividad-citas.js`): 2 tarjetas (% del mes elegido arriba
+  + % ponderado del período con datos, con el rango en la etiqueta), misma
+  gráfica combo que Edwin (Agendas+Atendidas en barras, % Efectividad en
+  línea), tabla de datos debajo (mismo patrón que "Resumen por mes" de
+  Inasistencia), aviso "sin datos" con botón al último mes. Se destapa en
+  memoria solo cuando hay datos (igual que Agendamiento e Inasistencia) y
+  se mueve justo DESPUÉS de "Inasistencia" (antes vivía al final).
+- Los 2 campos viejos de "resumen" (citas_para_mes/citas_atendidas) quedan
+  ocultaEnPlantilla — nunca se borran, un archivo viejo que todavía los
+  traiga sigue cargando igual. Migración idempotente sobre la fila ya
+  sembrada de dashboards_config (mismo patrón que la Fase 100 con
+  Inasistencia — si no, no llega a producción).
+- 2 migraciones idempotentes: dashboards_config_orlant_efectividad_citas_v1
+  (panel + orden del tab) y dashboards_config_orlant_resumen_citas_opcional_v1
+  (los 2 campos de "resumen").
+- Cargar Datos: hoja `CITAS_ATENDIDAS`, reconocida también por
+  encabezados. La columna EFECTIVIDAD CITAS ATENDIDAS del archivo nunca se
+  guarda — siempre se recalcula.
+
+Control real (dado por Edwin/InCo): Ene-26 93,67 % (158/148), Feb-26
+84,32 % (625/527), Mar-26 85,54 % (325/278), período 86,01 % (1.108/953,
+ponderado).
+
+### Fix urgente — los 2 paneles nuevos no se dibujaban en pantalla (PR #248)
+
+Hallazgo real durante la verificación visual local con Playwright (parte
+del cierre de esta fase, con demo nueva para las 2 tablas — ver más
+abajo): el constructor de esqueleto de renderGenericTab
+(`public/js/dashboard-generic.js`) nunca se actualizó para reconocer
+efectividad_agendamiento_panel y efectividad_citas_panel como paneles
+autónomos de ancho completo (mismo criterio que agendas_panel/
+inasistencia_panel/tipificacion_panel) — caían al camino genérico de
+"chartPanels", que les crea un canvas suelto sin el div id="gd-pN" que sus
+propios renderizadores necesitan para montar tarjetas/tabla/gráfica.
+Resultado: los 2 paneles quedaban prácticamente vacíos en pantalla (solo
+el título) pese a que la API, las migraciones y las 916 pruebas (todas de
+servidor, nunca tocan el DOM real) pasaban en verde — **este bug ya
+estaba en producción** desde el deploy de los Temas A y B.
+
+- Se agregan los 2 tipos de panel a la lista de paneles autónomos y se
+  excluyen de "chartPanels".
+- `server/scripts/seed-demo-lib/dashboards.js`: demo local nueva para
+  efectividad_agendamiento (15 asesores ficticios, nivel propio y estable
+  por asesor vía rngFromSeed independiente del `rand` compartido del resto
+  de seedOrlant, para no mover ningún número de demo ya existente) y
+  efectividad_citas (6 meses) — sin esta demo el bug no se podía ver en
+  pantalla.
+- Verificación Playwright local nueva
+  (`.github/scripts/verificar-fase111-efectividad-local.js`): ranking
+  ordenado por efectividad con empate, equipo ponderado (cruzado contra la
+  misma fórmula, nunca un número hardcodeado), gráfica combo con las 3
+  series en el orden del ranking, buscador, export con la tabla completa,
+  2 tarjetas + gráfica + tabla de Efectividad de Citas. **0 hallazgos, 0
+  errores de consola** en escritorio/móvil y claro/oscuro. Capturas en
+  `docs/capturas-demo/fase111-efectividad/`.
+
+### Tema C — carga real en producción (autorizada, solo estos 2 archivos)
+
+Con sesión real del usuario (login manual, Playwright nunca vio ni guardó
+la contraseña), por la interfaz normal de "Cargar Datos" → ORLANT:
+`.github/scripts/fase111-carga-real-produccion-efectividad.js`.
+
+- `EFECTIVIDAD_AGENDAMIENTO.xlsx`: 20 filas reconocidas (hoja "Hoja1",
+  encabezados detectados), 0 avisos, 0 advertencias de efectividad
+  (coincide con el recalculado) → guardado como Sep-26.
+- `CITAS_ATENDIDAS.xlsx`: 3 filas reconocidas → guardado como Ene-26,
+  Feb-26, Mar-26.
+- Verificado en el dashboard real (API autenticada + capturas, fuera del
+  repo en `bases edwin\capturas-produccion\fase111-efectividad\`):
+  ranking con los 20 asesores, gestiones 18.566, agendas 8.319, efectividad
+  del equipo 44,81 %, 1er puesto Santiago Londoño Rúa 97,36 % (369/379),
+  último Mariana Ramirez Cano 12,18 % (254/2.086), la fila "..._falla"
+  presente y separada — **todo exacto contra el control de Edwin**.
+  Efectividad de Citas: Ene-26 93,67 %, Feb-26 84,32 %, Mar-26 85,54 %,
+  período 86,01 % (1.108/953) — exacto. El mes global (Ago-26, el que no
+  cambia solo por cargar datos nuevos) mostró correctamente el aviso "Sin
+  datos de efectividad para Ago-26 — Ver Sep-26" en el ranking y "Ver
+  Mar-26" en Efectividad de Citas, con sus botones funcionando.
+- Lo demás sin cambios, confirmado por API: Tipificación 14.940; Tráfico
+  de Llamadas 8.061/7.159/902; Tráfico de WhatsApp 7.305/7.109/196, SL20
+  34,67 %; Inasistencia Ago-26 7,45 % y período 6,87 %; Agendas 7.426
+  (General 4.643/3P 2.783, Abr-25 — el script de un solo uso traía 2
+  descuidos ya corregidos antes de comitearlo: exportaba el ranking sin
+  pararse primero en Sep-26, y consultaba Agendas con mes=2026-09 en vez
+  de mes=2025-04, el mes real de ese control (Fase 80/104) — ninguno de
+  los 2 era un problema real, solo del script de verificación; quedó
+  confirmado a mano con las capturas de pantalla antes de corregir el
+  script). 0 errores de consola.
+
+### Verificación
+
+- `npm test`: 916/916 (sin pruebas nuevas en el fix de render — el bug era
+  de dibujado en el DOM real, no de lógica de servidor; las pruebas de
+  Tema A/B — encabezados en fila 3, año inferido, % recalculado con
+  advertencia si difiere, ponderado 44,81 %/86,01 %, orden y empates del
+  ranking, la fila _falla separada, reemplazo por mes, permisos,
+  migraciones corridas 2 veces, plantilla con las 2 hojas nuevas — ya
+  estaban incluidas en los PR #245/#246). `npm audit --omit=dev`: 0
+  vulnerabilidades.
+- Playwright local con demo nueva: 0 hallazgos, 0 errores de consola,
+  escritorio/móvil y claro/oscuro (ver fix urgente arriba).
+- Deploy: el primer intento (tras el Tema A) falló por disco lleno en la
+  instancia (docker image prune -f nunca borraba imágenes tageadas por
+  SHA, que nunca son "dangling") — corregido en PR #247 (docker system
+  prune -af antes del pull). Producción no se cayó durante ese fallo. Tras
+  el fix urgente (PR #248), deploy confirmado en verde y /api/health
+  respondiendo.
+- Guía de uso (`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`):
+  pasa de 6 a 7 pestañas documentadas, con las 2 fichas de carga nuevas
+  (hoja, columnas obligatorias, reemplazo por mes) y los 2 indicadores con
+  su fórmula (incluida la pregunta pendiente sobre "..._falla").
+
+### Preguntas para Edwin
+
+- La fila "MICHELL GARCIA SERNA_falla" del archivo de Efectividad de
+  Agendamiento: es la misma persona que "MICHELL GARCIA SERNA" (y qué
+  significa el sufijo "_falla"), o son 2 asesores distintos?
+
+### Estado final de la Fase 111
+
+4 PRs (#245 Tema A, #246 Tema B, #247 fix de deploy, #248 fix urgente de
+render) + Tema C (solo lectura/carga autorizada, sin PR) + este cierre.
+CI verde en todos. Versión final `1.9.0` (menor, ranking nuevo + pestaña
+nueva), tag `v1.9.0`, deploy confirmado, carga real verificada en
+producción.

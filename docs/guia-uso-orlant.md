@@ -1,6 +1,6 @@
 # Guía de uso — InConexión Platform (ORLANT)
 
-Versión de la plataforma: **1.2.0**. Esta guía es para quien usa la
+Versión de la plataforma: **1.9.0**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -49,14 +49,15 @@ del todo vas a ver:
   arriba a la derecha) — cambia el color de toda la plataforma, no afecta
   los datos.
 
-### Las 6 pestañas
+### Las 7 pestañas
 
 | Pestaña | Qué muestra |
 |---|---|
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
 | **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos). |
-| **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Agendas por agente. |
+| **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
+| **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Tipificación** | Cómo se clasificó cada llamada/chat (motivo de contacto). |
 | **Calidad** | Monitoreo de calidad de los asesores, con su nota y resultados. |
 
@@ -103,9 +104,17 @@ explicando que no hay datos para ese mes (y un botón para ir directo al
 **Nivel de Servicio a 5 minutos** (mismo cálculo que el de 20 segundos,
 pero con esa ventana de tiempo — es el que más le importa a WhatsApp).
 
-**Agendamiento**: sus 4 vistas (Por especialidad, Total agendas, Agendas
-por línea, Agendas por agente) muestran cuántas citas se agendaron, sin
-un cálculo adicional — son conteos directos agrupados de distinta forma.
+**Agendamiento**: "Por especialidad", "Total agendas" y "Agendas por
+línea" muestran cuántas citas se agendaron, sin un cálculo adicional —
+son conteos directos agrupados de distinta forma. La 4ª vista, **Ranking
+de asesores**, es distinta: ordena a los asesores por **% de EFECTIVIDAD
+de agendamiento = agendas ÷ gestiones** (nunca por cantidad de agendas) —
+un asesor con pocas gestiones pero casi todas agendadas puede quedar por
+encima de uno con muchas más gestiones pero menos agendadas. La
+tarjeta "Efectividad del equipo" es la **suma de todas las agendas ÷ suma
+de todas las gestiones** (ponderada) — nunca el promedio simple de los %
+de cada asesor, que da un número distinto (y menos correcto, porque le da
+el mismo peso a un asesor con 50 gestiones que a uno con 2.000).
 
 **Inasistencia**: el % de inasistencia es **(inasistencia + pendientes) ÷
 total, ponderado**. Los "pendientes" (citas que quedaron sin confirmar si
@@ -132,6 +141,13 @@ y Entidad (esta última con buscador, porque son muchas) y 2 vistas:
   representativo.
 
 ![Inasistencia: % de inasistencia por mes (datos de demostración)](img/guia-uso/03-inasistencia-por-mes.png)
+
+**Efectividad de Citas**: el % de **EFECTIVIDAD = citas atendidas ÷
+agendas**, un total del mes (no por especialidad ni asesor). Muestra 2
+tarjetas: el % del mes elegido arriba, y el % **ponderado** de todo el
+período que tiene datos cargados (suma de atendidas ÷ suma de agendas de
+esos meses — nunca el promedio simple de los % de cada mes), con el rango
+de meses en su etiqueta.
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional.
@@ -209,6 +225,20 @@ archivo sí se carga.
   por mes) — si el archivo trae del 1 al 15, solo se reemplaza ese
   tramo.
 
+### Efectividad de Agendamiento (Ranking de asesores)
+
+- **Qué archivo**: el resumen mensual de gestiones/agendas por asesor, de
+  Edwin — una fila por asesor, no por cita.
+- **Hoja**: `EFECTIVIDAD_AGENDAMIENTO`.
+- **Columnas obligatorias**: NOMBRE DE AGENTE, MES, CANTIDAD DE
+  GESTIONES, AGENDAS. La columna EFECTIVIDAD del archivo (si viene) nunca
+  se guarda — la plataforma siempre la vuelve a calcular; si el número
+  del archivo no coincide con el recalculado, sale una advertencia en la
+  confirmación (no bloquea la carga).
+- **Reemplazo**: por MES — si el archivo trae Septiembre, se reemplaza
+  ese mes completo para todos los asesores que traiga, sin tocar otros
+  meses ya cargados.
+
 ### Inasistencia
 
 - **Qué archivo**: el export de citas del sistema de agendamiento de
@@ -234,6 +264,18 @@ archivo sí se carga.
   especialidades que un mes ya cerrado — es normal, la plataforma avisa
   cuando eso pasa (ver [sección 3](#3-qué-significa-cada-indicador)).
 
+### Efectividad de Citas Atendidas
+
+- **Qué archivo**: el total mensual de agendas/atendidas de Edwin — un
+  total del mes, no una fila por cita ni por asesor.
+- **Hoja**: `CITAS_ATENDIDAS`.
+- **Columnas obligatorias**: MES, AGENDAS, ATENDIDAS. La columna
+  EFECTIVIDAD CITAS ATENDIDAS del archivo (si viene) nunca se guarda —
+  siempre se recalcula.
+- **Reemplazo**: por MES — si el archivo trae Enero, Febrero y Marzo, se
+  reemplazan esos 3 meses completos, sin tocar ningún otro mes ya
+  cargado.
+
 ### Calidad
 
 - La carga normal es **un monitoreo a la vez**, desde el formulario (ver
@@ -252,7 +294,9 @@ archivo sí se carga.
 | Tráfico de WhatsApp | Edwin | Wolkvox | Por confirmar |
 | Tipificación | Edwin | Wolkvox | Por confirmar |
 | Agendas | Edwin | Sistema de agendamiento ORLANT | Por confirmar |
+| Efectividad de Agendamiento | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Inasistencia | Edwin | Sistema de agendamiento ORLANT | Mensual, después de cerrado el mes |
+| Efectividad de Citas Atendidas | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Calidad | El equipo de Calidad | Monitoreos propios | Continuo, a medida que se hacen |
 
 *(Las columnas "quién la manda" y "de qué sistema sale" se completan con
@@ -301,6 +345,9 @@ por llegar:
 - El resumen general todavía no tiene todos los números consolidados.
 - WhatsApp a 5 minutos: falta que llegue el reporte con esa columna.
 - Agendas de 2026: falta la carga de datos reales de este año.
+- Ranking de asesores: hay una fila llamada "MICHELL GARCIA SERNA_falla"
+  que llegó separada de "MICHELL GARCIA SERNA" en el archivo de Edwin —
+  está pendiente de confirmar con él si son la misma persona.
 - Codificaciones de Calidad: falta la lista que va a mandar Edwin.
 - Salida (llamadas/WhatsApp salientes).
 - Ordenamiento médico.
