@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.8.1 — Octubre 2026
+
+**Seguridad:** las cuentas de ejemplo ya no se crean en producción. Además,
+al arrancar, la plataforma revisa sola si alguna cuenta de ejemplo quedó
+con su contraseña original y, si la encuentra, la suspende automáticamente
+y lo deja anotado en el Historial.
+
 ## v1.8.0 — Octubre 2026
 
 En Inasistencia, la sub-pestaña "Resumen por mes" cambia de barras a una

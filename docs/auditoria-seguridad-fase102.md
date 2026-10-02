@@ -85,3 +85,16 @@ Para cada una se detalla qué se revisó y por qué se considera cerrada:
 - `npm audit`: 0 vulnerabilidades antes y después.
 - Recorrido amplio con Playwright en local (`seed:demo`): 0 hallazgos — ver `.github/scripts/verificar-fase102-auditoria-amplia-local.js`.
 - Verificación final en producción, solo lectura, con sesión real del usuario: ver `.github/scripts/verificar-fase102-revision-final-produccion.js` y el cierre de esta fase en `PROGRESS.md`.
+
+## Hallazgo posterior: cuentas de ejemplo en producción — corregido
+
+Esta auditoría (igual que las Fases 72 y 81) revisó los usuarios de
+`seed:demo` — el set de 10 roles que se siembra manualmente por CLI para
+pruebas — y la lógica de login/permisos en sí misma, pero nunca se
+preguntó si la siembra automática de arranque de `server/db.js` (que
+corre sola cuando la tabla `users` está vacía, sin importar el entorno)
+podía dejar cuentas con su contraseña de ejemplo activas en una
+producción real. La Fase 110 encontró que sí había ocurrido, y corrigió
+de raíz que esa siembra ya nunca se ejecute en producción, más una red de
+seguridad que suspende sola cualquier cuenta de ejemplo que aún conserve
+su contraseña original. Ver `PROGRESS.md`, Fase 110.
