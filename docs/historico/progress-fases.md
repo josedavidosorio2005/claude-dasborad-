@@ -10324,3 +10324,131 @@ orden (A → B → C), deploy automático confirmado tras cada merge de
 código. Versión `1.10.0`, tag `v1.10.0`. Un hallazgo real quedó
 pendiente de una próxima sesión con autorización de escritura en
 producción: reactivar `inconexion-backup.timer` (issue #269 abierto).
+
+## Fase 114 (URGENTE) — respaldos automáticos reactivados + alerta alta de Dependabot resuelta (2026-10-02, autorizado explícitamente)
+
+Dos frentes urgentes, autorizados explícitamente por el usuario: el
+hallazgo de la Fase 113 (`inconexion-backup.timer` inactivo) y una
+alerta alta de Dependabot.
+
+### Tema A — respaldos
+
+**Causa real** (confirmada en vivo, no solo inferida): las 2 unidades
+systemd (`inconexion-backup.service`/`.timer`) **nunca se habían
+instalado** en la instancia de Lightsail actual (`877538609452`) —
+`estado` mostró `NO existe` para ambos archivos en
+`/etc/systemd/system/`. No es que se hubieran deshabilitado tras un
+reinicio; el paso manual del runbook original (`sudo cp
+deploy/inconexion-backup.* /etc/systemd/system/ && daemon-reload &&
+enable --now`, documentado en `AWS_DEPLOY_REPORT.md` §14) nunca se
+repitió al migrar a la cuenta/instancia nueva (la cuenta vieja,
+`934685482338`, sí lo tenía activo y probado desde la Fase 9). El único
+respaldo local que existía (2026-09-18, 0.3 MB) salió de una corrida
+manual puntual, nunca del timer.
+
+**Arreglo**: workflow nuevo `.github/workflows/respaldo-produccion.yml`
+(PR #271), mismo mecanismo OIDC+SSH+puerto 22 temporal ya auditado de
+`audit-instance.yml`/`salud-servidor.yml`, 3 modos manuales:
+
+- `estado` (solo lectura) confirmó el diagnóstico de arriba.
+- `activar-timer`: copió el contenido de `deploy/inconexion-backup.{service,timer}`
+  (vía `actions/checkout`, nunca texto hardcodeado) a
+  `/etc/systemd/system/`, `daemon-reload`, `enable --now`. Primer
+  intento: `enabled` + `active`, próxima corrida confirmada (nota: el
+  timer corre a las 03:15 **hora del servidor**, y el servidor está en
+  UTC — eso es 10:15 p.m. Colombia, no 3 a.m.; comportamiento preexistente
+  de `deploy/inconexion-backup.timer`, sin cambios en esta fase).
+- `respaldar-ahora`: corrió el servicio una vez. Resultado: `success`,
+  respaldo de **6.8 MB** (vs. 0.3 MB del respaldo viejo de agosto —
+  confirma que ahora sí incluye todas las cargas reales de las Fases
+  98-111). Verificado con el nuevo modo `--local` de
+  `server/scripts/verificar-restore-backup.js` (sin sacarlo del
+  servidor): `integrity_check: ok`, conteos — `tipificaciones: 14940`
+  (coincide exacto con el número de control de `PROGRESS.md`),
+  `agendas: 7426` (coincide exacto), `inasistencias: 2665`,
+  `efectividad_agendamiento: 20`, `efectividad_citas: 3`, `users: 8`,
+  `monitoreos: 37`. Subida a S3: **OK** (el rol de instancia ya tenía
+  permiso de escritura — la Política 1 de IAM pendiente de la Fase 97 es
+  para la LECTURA que necesita `verificar-restore-backup-produccion.yml`,
+  un permiso distinto, sigue pendiente de las credenciales de Edwin).
+
+`salud-servidor.yml` se amplió para además chequear `is-enabled` del
+timer (antes solo miraba `is-active`, que no detecta "nunca se instaló
+para sobrevivir un reinicio") y fallar si no está `enabled`. Vuelto a
+correr tras el arreglo: `conclusion: success`, resumen confirma timer
+`active (enabled: enabled)`, último respaldo "hace 0h", S3 `OK`. El
+issue #269 ("Salud del servidor con problemas") apareció ya cerrado al
+momento de esta corrida (cerrado por la cuenta del usuario a las
+20:07 UTC, antes de que terminaran los pasos de esta fase — no se
+investigó más a fondo quién/qué lo cerró porque no cambia la conclusión:
+el estado real del servidor, confirmado de forma independiente por esta
+misma corrida, es saludable).
+
+`docs/infraestructura.md` documenta cómo se instalan/activan los
+respaldos y cómo usar `respaldo-produccion.yml` para la próxima vez que
+se cree o reemplace la instancia.
+
+### Tema B — Dependabot (xlsx/SheetJS)
+
+Alerta alta (en realidad 2 alertas, ambas del paquete `xlsx`):
+`GHSA-4r6h-8v6p-xvw6` / `CVE-2023-30533` (prototype pollution),
+`xlsx@0.18.5`, rango vulnerable `< 0.19.3`.
+
+- **devDependency de npm**: agregada en la Fase 112 para unos scripts de
+  `.github/scripts/` que ya se habían archivado en la reorganización de
+  esa misma fase — confirmado con grep exhaustivo que **no se usa en
+  ningún lado del repo actual**. Se eliminó por completo (PR #272) en
+  vez de "actualizarla": más seguro que mantener una dependencia muerta,
+  y cierra la alerta de raíz sin tocar ningún código real.
+- **Navegador**: SheetJS sí se usa de verdad (leer los `.xlsx` que se
+  suben, generar los `.xlsx` de "Exportar" y de la plantilla
+  consolidada) — ahí la vulnerabilidad real aplicaba, con exposición
+  acotada (solo usuarios con permiso de carga, procesado en su propio
+  navegador, nunca en el servidor). SheetJS dejó de publicar en el
+  registro de npm desde 0.18.5; la fuente oficial de versiones nuevas es
+  `cdn.sheetjs.com`. Se descargó la 0.20.3 (la vigente a la fecha),
+  verificada por hash cruzado (mismo `sha384` descargado del standalone
+  de `cdn.sheetjs.com` y extraído del tarball oficial de npm — ver
+  `public/js/vendor/README.md`), vendorizada en `public/js/vendor/` con
+  atributo `integrity` en el `<script>`, y se quitó
+  `cdnjs.cloudflare.com` de la CSP (`script-src`) — ya no hace falta
+  ningún origen externo.
+
+**Verificación** (más allá de los 934 tests unitarios, que usan el
+lector propio `xlsx-lite.js` ajeno a este cambio): Playwright real
+confirmó `window.XLSX.version` → `0.20.3` en el navegador;
+`EJEMPLO.xlsx` sigue dando "12 fila(s) validas, 1 skill(s)" y
+`PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx` "5 fila(s) validas, 5
+cola(s)" (idéntico a antes del cambio); la plantilla consolidada se
+descarga con firma ZIP válida; `scripts/qa/auditoria-amplia-local.js`
+(recorrido completo de ORLANT, claro/oscuro, escritorio/móvil, Exportar
+real en cada pestaña) y `.github/scripts/ci-pantallas-orlant.js`: 0
+hallazgos. `npm audit` completo (sin `--omit=dev`): 0 vulnerabilidades.
+
+Tras mergear ambos PRs: **0 alertas abiertas de Dependabot** (las 2 se
+marcaron `fixed` automáticamente al desaparecer el paquete del
+`package-lock.json`).
+
+### Cierre
+
+`npm test`: 934/934. `npm audit` (completo, sin `--omit=dev`): 0
+vulnerabilidades. Verificación en producción, solo lectura, con sesión
+real del usuario (`scripts/produccion/revision-final.js`, Playwright
+visible, sin guardar contraseña ni cookies — el usuario inició sesión a
+mano, en menos de 20 segundos): 7 pestañas, 0 canvas sin dibujar, 0
+errores de consola, los 18 números de control exactos (incluido
+`tipificacionTotal: 14940` y `agendasTotal: 7426`, los mismos que ya
+había confirmado el respaldo del Tema A por otra vía), y la Fase 113
+(mi propio login en el Historial, botón "Cambiar mi contraseña"
+visible) sigue funcionando. No se repitió el login para un segundo
+chequeo puntual de "plantilla descarga"/"Exportar abre" en vivo — ya se
+habían confirmado de forma más exhaustiva en local, contra el MISMO
+build desplegado (`scripts/qa/auditoria-amplia-local.js`, Exportar real
+en las 7 pestañas + descarga de la plantilla consolidada, ambos con
+firma ZIP válida), y `/api/health`/el HTML servido confirmaron que
+producción corre exactamente ese build.
+
+Versión `1.10.1` (parche: 1 arreglo + 1 seguridad), tag `v1.10.1`. Único
+destino: `main`, por PR con CI en verde — ningún commit directo (los 2
+PRs de tema, #271 y #272, y el PR de cierre, se mergearon por el modo
+automático sin necesitar intervención manual).
