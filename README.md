@@ -22,12 +22,8 @@ antes del primer paint (sin parpadeo), incluidas las gráficas.
 | **README.md** (este) | Visión general, instalación local, seguridad, despliegue con Docker |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | **Foto completa del sistema**: modelo de datos, motor de semáforo, motor de dashboards, Tráfico Volvox, carga masiva de Calidad, API, y decisiones no obvias — para mantener/extender sin preguntar |
 | [`PROGRESS.md`](PROGRESS.md) | Estado del proyecto fase por fase (fuente de verdad del avance) |
-| [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) | Checklist "¿listo para lanzar?", entregables, pendientes de negocio, costos |
-| [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) | **Despliegue en AWS**: arquitectura, runbook desde cero, recuperación, secretos, red, backups, CloudWatch, pipeline |
-| [`DEPLOY_REPORT.md`](DEPLOY_REPORT.md) | Endurecimiento de seguridad y despliegue genérico (Docker/VPS) |
-| [`SECURITY_FIX_REPORT.md`](SECURITY_FIX_REPORT.md) | Cierre del hallazgo de auditoría: XSS almacenado en el frontend (`esc()`) + filtrado de `GET /api/users` |
-| [`REAL_DATA_REPORT.md`](REAL_DATA_REPORT.md) | Migración de Calidad/Metas/dashboards a datos reales en el servidor |
-| [`UI_CLEANUP_REPORT.md`](UI_CLEANUP_REPORT.md) | Reorganización del frontend por módulos |
+| [`docs/infraestructura.md`](docs/infraestructura.md) | **Despliegue en AWS, estado vigente**: cuenta, recursos, pipeline — corto |
+| [`docs/historico/`](docs/historico/) | Informes de fases ya cerradas (despliegue AWS completo con runbook, lanzamiento, seguridad, datos reales, limpieza de UI) — archivo, no vigente |
 
 ---
 
@@ -200,7 +196,7 @@ npm start          # -> http://localhost:3000
 - **Secretos en producción**: si defines `SSM_PARAM_PREFIX`, el servidor lee
   `JWT_SECRET`, `MASTER_ADMIN_PASSWORD_HASH`, `MASTER_ADMIN_USER` y `CORS_ORIGIN`
   desde **AWS SSM Parameter Store** (rol IAM de la instancia, sin claves). No hay
-  `.env` con secretos en disco. Ver [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) §3.
+  `.env` con secretos en disco. Ver [`docs/historico/AWS_DEPLOY_REPORT.md`](docs/historico/AWS_DEPLOY_REPORT.md) §3.
 - **Contraseñas**: `bcrypt`, nunca en texto plano. Mínimo 8 caracteres.
 - **Sesión**: JWT en memoria del navegador (no `localStorage`).
 - **Permisos**: cada acción sensible se re-verifica en el servidor con los datos
@@ -254,7 +250,7 @@ bloques** para SQLite, con **SSM** (secretos), **S3** (backups versionados) y
 El runbook completo paso a paso (crear instancia, SSM, S3, ECR, dominio, HTTPS,
 backups, monitoreo, pipeline, recuperación y costos ~US$18–25/mes) está en:
 
-**→ [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md)**
+**→ [`docs/historico/AWS_DEPLOY_REPORT.md`](docs/historico/AWS_DEPLOY_REPORT.md)** (estado vigente, corto: [`docs/infraestructura.md`](docs/infraestructura.md))
 
 Pipeline: `.github/workflows/deploy.yml` despliega automáticamente tras pasar CI
 en `main` (OIDC → build → ECR → SSH → `docker compose pull && up -d` + health
@@ -523,7 +519,7 @@ SQLite en un archivo es adecuado para esta app (un proceso, tráfico bajo/medio)
 Migrar a **Postgres + varias instancias** cuando: se necesite más de una
 instancia de app (alta disponibilidad), aparezcan `SQLITE_BUSY` recurrentes,
 varios servicios escriban la misma BD, o se requiera point-in-time recovery.
-Criterio detallado en [`AWS_DEPLOY_REPORT.md`](AWS_DEPLOY_REPORT.md) §2. Hoy **no
+Criterio detallado en [`docs/historico/AWS_DEPLOY_REPORT.md`](docs/historico/AWS_DEPLOY_REPORT.md) §2. Hoy **no
 se migra**.
 
 ---
@@ -597,7 +593,7 @@ cd server && npm run seed:demo:limpiar
   manejadores inline; `xlsx` se carga desde `cdnjs`, Chart.js va embebido.
 - Métricas de negocio de algunos clientes (PANTERA MAIKERS, MOVILIZE) y la
   dirección de las metas de Gerencia están **pendientes de confirmación**; ver
-  [`LAUNCH_REPORT.md`](LAUNCH_REPORT.md) §4. Se ajustan desde el constructor
+  [`docs/historico/LAUNCH_REPORT.md`](docs/historico/LAUNCH_REPORT.md) §4. Se ajustan desde el constructor
   visual sin programar.
 
 ---
