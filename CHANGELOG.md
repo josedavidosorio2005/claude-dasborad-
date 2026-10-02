@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.10.3 — Octubre 2026
+
+**Arreglo: el tiempo promedio de atencion (AHT) y el tiempo de espera
+(WAIT_TIME) de Trafico de Llamadas se guardaban vacios.** Cuando el Excel
+trae esas 2 columnas con formato de hora real (como vino el archivo de
+agosto-septiembre), el navegador las convertia mal por un detalle de la
+zona horaria del equipo que sube el archivo -- ya corregido: se lee el
+numero real de la celda, sin depender de esa conversion.
+
 ## v1.10.2 — Octubre 2026
 
 **Arreglo: un archivo real de Trafico de Llamadas no se reconocia al

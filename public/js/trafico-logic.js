@@ -181,6 +181,29 @@ function traficoClasificarCeldaNumerica(ws, fila0based, col0based) {
   return (cell.z && cell.z.indexOf('%') !== -1) ? 'porcentaje' : 'numero';
 }
 
+// Fase 115 (hallazgo real, archivo de ORLANT ago-sep/2026): WAIT_TIME/AHT
+// vienen en Excel con formato de HORA real ("h:mm:ss") -- SheetJS, al leer
+// con cellNF:true (necesario para la clasificacion de % de arriba), convierte
+// esas celdas numericas a un objeto Date dentro de
+// XLSX.utils.sheet_to_json(ws,{header:1}) (nunca en el worksheet crudo `ws`,
+// que SIEMPRE conserva el numero original). Esa conversion depende de la
+// ZONA HORARIA del navegador: verificado que con TZ=UTC el Date resultante
+// es exacto, pero con America/Bogota (la zona del equipo que sube el
+// archivo, la misma de Edwin) el motor de V8 le aplica la hora solar media
+// historica de Bogota (-4:56:16, vigente en Colombia antes de 1914, que
+// Node/Chrome todavia aplican para fechas de 1899) -- el Date queda
+// corrido por ese desfase y WAIT_TIME/AHT se leian como null en vez del
+// segundo real. En vez de intentar deshacer esa conversion (dependeria de
+// la zona horaria de quien suba el archivo, fragil), se recupera el valor
+// NUMERICO original directamente de la celda cruda (`ws`), que SheetJS
+// nunca altera -- mismo patron que traficoClasificarCeldaNumerica.
+// Sin `ws` (o si la celda cruda no es numerica), se devuelve `v` tal cual.
+function traficoValorCrudoSiFechaBoxeada(v, ws, fila0based, col0based) {
+  if (!(v instanceof Date) || !ws) return v;
+  var cell = ws[traficoCeldaRef(fila0based, col0based)];
+  return (cell && cell.t === 'n' && typeof cell.v === 'number') ? cell.v : v;
+}
+
 // SERVICE_LEVEL_10/20/30SEC: texto "86.49 %" / "1.62%" (con o sin espacio
 // antes del %, ambos formatos aparecen en el mismo archivo real de Edwin
 // -- ese camino NO CAMBIA con la Fase 88, sigue igual).
@@ -326,7 +349,8 @@ function traficoParseFilas(aoa, ws) {
       var key = spec[0], parse = spec[1], post = spec[2];
       if (map[key] === undefined) return; // columna no vino en el archivo -> no se toca (queda ausente, no null explicito)
       var clasif = ws ? traficoClasificarCeldaNumerica(ws, i, map[key]) : null;
-      var val = parse(row[map[key]], clasif);
+      var crudo = traficoValorCrudoSiFechaBoxeada(row[map[key]], ws, i, map[key]);
+      var val = parse(crudo, clasif);
       if (val !== null) fila[key] = post ? post(val) : val;
     });
 
@@ -599,6 +623,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoNumero: traficoNumero,
     traficoCeldaRef: traficoCeldaRef,
     traficoClasificarCeldaNumerica: traficoClasificarCeldaNumerica,
+    traficoValorCrudoSiFechaBoxeada: traficoValorCrudoSiFechaBoxeada,
     traficoParseFilas: traficoParseFilas,
     traficoVentana12Meses: traficoVentana12Meses,
     traficoPeriodoDe: traficoPeriodoDe,
