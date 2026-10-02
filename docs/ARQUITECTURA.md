@@ -4,8 +4,9 @@
 > no lo escribió y tiene que mantenerlo o extenderlo sin preguntar. Esto
 > **no** es un historial de cambios (eso vive en [`PROGRESS.md`](../PROGRESS.md))
 > ni un runbook de despliegue con credenciales (eso vive en
-> [`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md)). Este documento enlaza a
-> ambos en vez de repetirlos.
+> [`docs/infraestructura.md`](infraestructura.md) y, el runbook completo,
+> en [`docs/historico/AWS_DEPLOY_REPORT.md`](historico/AWS_DEPLOY_REPORT.md)).
+> Este documento enlaza a los tres en vez de repetirlos.
 
 ---
 
@@ -36,8 +37,9 @@ con SQLite embebido (un solo archivo, un solo proceso escritor) detrás de
 Caddy como reverse proxy con HTTPS automático, desplegada como contenedores
 Docker en una instancia Lightsail de AWS. No hay microservicios, no hay cola
 de mensajes, no hay caché externo — la simplicidad es deliberada (ver
-[`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md) §2 para la comparación
-contra RDS + varias instancias y las señales concretas para migrar).
+[`docs/historico/AWS_DEPLOY_REPORT.md`](historico/AWS_DEPLOY_REPORT.md) §2
+para la comparación contra RDS + varias instancias y las señales concretas
+para migrar).
 
 ### Stack
 
@@ -49,7 +51,7 @@ contra RDS + varias instancias y las señales concretas para migrar).
 | Autenticación | JWT propio (`jsonwebtoken`), sin sesiones de servidor |
 | Reverse proxy / HTTPS | Caddy 2 (certificados Let's Encrypt automáticos) |
 | Contenedores | Docker Compose (`app` + `caddy`), imagen construida desde `server/Dockerfile` |
-| Infra / nube | AWS Lightsail (instancia + disco de datos persistente), ECR (imágenes), SSM Parameter Store (secretos), S3 (backups) — detalle completo en [`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md) |
+| Infra / nube | AWS Lightsail (instancia + disco de datos persistente), ECR (imágenes), SSM Parameter Store (secretos), S3 (backups) — estado vigente en [`docs/infraestructura.md`](infraestructura.md) |
 | CI/CD | GitHub Actions: `ci.yml` (tests + build) → `deploy.yml` (build/push a ECR + despliegue por SSH, disparado solo si CI pasó en `main`) |
 
 ### Cómo se conectan las piezas
@@ -1003,12 +1005,14 @@ documentado en ningún lado hasta ahora.
 
 ## 10. Despliegue y operación
 
-Para la cuenta AWS, IP, recursos exactos y el runbook de despliegue desde
-cero, ver [`AWS_DEPLOY_REPORT.md`](../AWS_DEPLOY_REPORT.md) (§14 tiene el
-estado de la cuenta actual). Acá solo el **flujo operativo del día a día**:
+Para la cuenta AWS, IP y recursos exactos vigentes, ver
+[`docs/infraestructura.md`](infraestructura.md); el runbook completo de
+despliegue desde cero vive en
+[`docs/historico/AWS_DEPLOY_REPORT.md`](historico/AWS_DEPLOY_REPORT.md) §7.
+Acá solo el **flujo operativo del día a día**:
 
 - **Disparar un deploy**: push a `main` (directo o vía merge de PR). `ci.yml`
-  corre la suite en Node 18/20/22 + build de la imagen Docker; si pasa,
+  corre la suite en Node 22 + build de la imagen Docker; si pasa,
   dispara `deploy.yml` automáticamente (`workflow_run`). No hay paso manual.
 - **Puerto 22 durante el pipeline**: se abre y se cierra **solo dentro de
   `deploy.yml`**, automáticamente: un paso guarda el estado actual del
@@ -1022,7 +1026,7 @@ estado de la cuenta actual). Acá solo el **flujo operativo del día a día**:
   para no pegarle siempre al segundo exacto; `Persistent=true` recupera la
   corrida si la máquina estaba apagada a esa hora). Sube a S3 con
   versionado — retención local + política de versiones documentadas en
-  `AWS_DEPLOY_REPORT.md` §5.
+  `docs/historico/AWS_DEPLOY_REPORT.md` §5.
 - **Rotar la contraseña del admin maestro sin que quede en ningún log**: el
   procedimiento ya usado (ver histórico de la migración de cuenta AWS) es
   generar la contraseña, hashearla con `server/hash-password.js`, y subir
