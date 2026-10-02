@@ -46,7 +46,7 @@ nuevas de Edwin:
 | Efectividad de agendamiento | Sep-26 44,81 % (18.566 / 8.319) |
 | Efectividad de Citas | Ene 93,67 %, Feb 84,32 %, Mar 85,54 %, período 86,01 % |
 
-## Índice — fases 0 a 111
+## Índice — fases 0 a 112
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -165,4 +165,5 @@ mismo orden):
 - Fase 109 — Auditoría de las 3 escaladas de la Fase 102, Inasistencia en línea y acciones de workflows fijadas a SHA (2026-10-01)
 - Fase 110 (URGENTE) — usuarios de ejemplo con contraseña pública seguían activos en producción (2026-10-02)
 - Fase 111 — 2 bases nuevas de ORLANT: el ranking pasa a ser EFECTIVIDAD de agendamiento + Efectividad de citas atendidas (2026-10-02)
+- Fase 112 — revisión general de toda la plataforma + reorganización completa del repo (2026-10-02)
 

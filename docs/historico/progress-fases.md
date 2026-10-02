@@ -10073,3 +10073,129 @@ render) + Tema C (solo lectura/carga autorizada, sin PR) + este cierre.
 CI verde en todos. Versión final `1.9.0` (menor, ranking nuevo + pestaña
 nueva), tag `v1.9.0`, deploy confirmado, carga real verificada en
 producción.
+
+---
+
+## Fase 112 — revisión general de toda la plataforma + reorganización completa del repo (2026-10-02)
+
+Primera revisión completa desde la Fase 102. Dos partes: que no quede
+ningún bug (QA a fondo + una prueba de pantallas nueva en CI) y dejar
+todo organizado (scripts, docs, `PROGRESS.md`, la carpeta externa de
+bases de Edwin).
+
+### Parte 1 — QA
+
+- **`npm test`**: 916/916. **`npm audit --omit=dev`** (lo que de verdad
+  se despliega): 0 vulnerabilidades.
+- **Migraciones**: 3 corridas seguidas sobre la misma base, hash SHA-256
+  de las 26 tablas idéntico las 3 veces — confirmado idempotentes.
+- **Chequeo real de píxeles de canvas** (hallazgo clave): el bug de la
+  Fase 111 (Ranking de Asesores / Efectividad de Citas no se dibujaban)
+  se le escapó a las pruebas porque solo verificaban que el objeto
+  Chart.js existiera, nunca el `<canvas>` real. Se agregó
+  `canvasesSinDibujar()` (lee `getImageData`, exige al menos un pixel
+  con alpha≠0) a la auditoría local — 0 hallazgos en las 7 pestañas de
+  ORLANT, ambos clientes sin datos, claro/oscuro, escritorio/móvil.
+- **Job nuevo de CI, "pantallas"** (autorizado explícitamente): abre
+  ORLANT headless en cada PR (admin, claro, escritorio — liviano a
+  propósito), falla si hay error de consola, petición fallida, 5xx, o
+  un canvas sin dibujar. ~18-55s por corrida, bien dentro del límite de
+  5 minutos. Sube capturas como artifact solo si falla.
+- **Investigación de 6 scripts viejos** (Fases 95/98/104/106/108) que
+  fallaban al re-correrlos: todos resultaron estar probando una forma
+  de UI ya superada por una fase posterior (ej. el formato agregado
+  viejo de Inasistencia, retirado en la Fase 108) — no bugs reales,
+  confirmado comparando contra el script más reciente de cada tema
+  (siempre 0 hallazgos).
+- **Dependencias faltantes**: `playwright` y `xlsx` estaban instalados a
+  mano en `server/node_modules` sin declarar en `package.json` — un
+  `npm ci` limpio no los habría instalado. Declarados como
+  `devDependencies`. `xlsx@0.18.5` (última en npm) deja 1 alta sin fix
+  disponible — nunca se usa en código de producción, el Dockerfile ya
+  excluye devDependencies.
+- **Verificación en vivo contra producción** (Parte 1.3,
+  `scripts/produccion/revision-final.js`, con sesión real del usuario):
+  0 discrepancias en 18 números de control, 0 errores de consola, las 7
+  pestañas sin canvas sin dibujar. Un hallazgo en Calidad (`gd-c1` sin
+  píxeles) resultó ser comportamiento esperado — el código deja ese
+  donut sin dibujar a propósito cuando el mes global no tiene
+  monitoreos, con un aviso "Sin datos de Calidad para \<mes\>" en el
+  panel vecino. Se corrigió el chequeo genérico de canvas (en los 3
+  scripts que lo usan) para reconocer ese aviso y no marcarlo como
+  fallo.
+- Código muerto buscado explícitamente (ranking viejo por cantidad,
+  parsers del formato agregado viejo de Inasistencia, hoja vieja
+  `tipificacion`): no se encontró nada confirmable con búsqueda — lo
+  que parecía "viejo" resultó ser compatibilidad hacia atrás deliberada
+  (`opcional`+`ocultaEnPlantilla`, documentada en el código) o lógica
+  de migración que debe seguir viva mientras exista una config antigua
+  en producción.
+
+### Parte 2 — organización
+
+- **`.github/scripts/`**: 59 scripts de las Fases 45-111 → tag de
+  archivo `archivo/scripts-fases-45-111`. Quedan 5 reutilizables,
+  movidos a `scripts/` (raíz) por tema: `scripts/qa/`,
+  `scripts/produccion/`, `scripts/guia/` — ver `scripts/README.md`.
+- **6 informes viejos de la raíz** (`AWS_DEPLOY_REPORT.md`, etc.) →
+  `docs/historico/`. Lo vigente de AWS pasó a `docs/infraestructura.md`
+  (corto).
+- **`docs/guia-de-usuario.md`** (vieja, huérfana, superada por
+  `docs/guia-uso-orlant.md`) → `docs/historico/`. Confirmado que
+  `docs/guia-uso-orlant.md` y la guía real servida
+  (`server/paginas/guia-uso.html`) siguen en sync — nota cruzada
+  agregada en ambos.
+- **`docs/estado-pendientes-fase74.md`** (reporte puntual ya cerrado) →
+  `docs/historico/`.
+- **`docs/capturas-demo/`**: 205 MB, 120+ archivos de Fases 19-111 →
+  tag de archivo `archivo/capturas-demo-pre-fase112`, fuera de `main`.
+  Nada vivo dependía de esos archivos (la guía tiene su propio set,
+  separado). Regla nueva en `CLAUDE.md`: las capturas de verificación
+  nunca se commitean a `main`.
+- **`docs/inventario-bases-orlant.md`**: reescrito de cero — la versión
+  de la Fase 70/71 describía un momento en el que la mayoría de las
+  pestañas estaban ocultas y sin datos; hoy son 7 con datos reales y el
+  formato agregado viejo se retiró (Fase 108).
+- **`PROGRESS.md`**: 10.067 líneas (113 entradas) → `PROGRESS.md`
+  (raíz) queda como resumen corto que se actualiza en el sitio
+  (versión, pestañas/bases, números de control, pendientes, índice); el
+  detalle narrativo completo de las Fases 0-111 pasó, sin cambios, a
+  `docs/historico/progress-fases.md` (este archivo), que sigue siendo
+  el aditivo real de aquí en adelante.
+- **`docs/pendientes.md`** (nuevo): de Edwin, de AWS (Política 1 de IAM
+  pausada desde la Fase 97, inventario de la cuenta vieja, alarma de
+  disco), decisiones del usuario, mejoras propuestas.
+- **`.gitattributes`**: investigado el reporte de 336 archivos
+  "modificados" por CRLF/LF visto desde Linux — los blobs ya
+  commiteados resultaron estar en LF puro (`git add --renormalize .`:
+  0 archivos cambiaron; el primer chequeo que sugería lo contrario era
+  un artefacto de Git Bash en Windows al volcar un blob a una tubería).
+  Se agregó igual como salvaguarda a futuro.
+- **Coherencia version/CHANGELOG/tags**: hueco real encontrado y
+  corregido — el `CHANGELOG.md` tenía una nota de `v1.3.1` (y el commit
+  que subió esa versión existía) pero nunca se había creado el tag git.
+  Creado (`v1.3.1` → `0f2c1dd`).
+- **Carpeta externa `bases edwin\`** (fuera del repo, autorizado con la
+  lista de movimientos confirmada antes de mover nada — PARA): 8
+  archivos sueltos + `respaldos-inasistencia/` reorganizados en
+  `agendas/`, `tipificacion/`, `efectividad/`, `inasistencia/`,
+  `consolidadas/`, `respaldos/`. `capturas-produccion/` y
+  `exportes-prueba/` se dejaron sin tocar. `INDICE.md` nuevo en esa
+  carpeta; `scripts/produccion/carga-real-patron.js` corregido a las
+  rutas nuevas.
+- **PDF de la guía**: `scripts/guia/generar-pdf.js` tenía el nombre de
+  archivo fijo en "v1.2" desde la Fase 100 — ahora lee la versión real
+  de `server/package.json`. Regenerado:
+  `...\entregables\Guia_de_uso_ORLANT_v1.9.1.pdf`.
+- Ramas remotas: las 5 `fase111-*` que parecían sin borrar resultaron
+  ya borradas en GitHub (`delete_branch_on_merge` funcionando bien) —
+  el `git branch -a` inicial solo mostraba referencias locales obsoletas
+  (sin `fetch --prune` previo). Resuelto con `git fetch --prune`.
+
+### Estado final de la Fase 112
+
+15 PRs de Parte 1/Parte 2 (#250-264) + este cierre, CI verde en todos,
+deploy automático confirmado tras cada merge. Verificación en vivo
+contra producción: 0 discrepancias, 0 errores de consola. Versión final
+`1.9.1` (parche — arreglos y organización, sin cambios de funcionalidad
+visible), tag `v1.9.1`.
