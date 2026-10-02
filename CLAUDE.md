@@ -167,3 +167,17 @@ asumir en qué quedó una fase anterior.
   `archivo/scripts-fases-45-111`.
 - `server/scripts/` es aparte: son scripts que corre la propia app en
   producción (`seed-demo.js`, `backup.js`, etc.), no QA.
+
+## Capturas de pantalla (Fase 112)
+
+- Las capturas que genera un script de verificación (local o contra
+  producción) **nunca se commitean a `main`** — `docs/capturas-demo/`
+  llegó a pesar 205 MB creciendo fase tras fase sin que nadie las
+  volviera a mirar. Van fuera del repo (quedan en disco, sin subir) o,
+  si hace falta adjuntarlas a una corrida puntual, como *artifact* de esa
+  corrida de CI (ver el job `pantallas` de `ci.yml`, que sube capturas
+  solo cuando falla, con `retention-days` corto).
+- La única excepción: las capturas que la guía de uso **realmente usa**
+  (`docs/img/guia-uso/` / `public/img/guia/`, generadas por
+  `scripts/guia/generar-capturas.js`) — esas sí se commitean porque las
+  sirve la app.
