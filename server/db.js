@@ -602,10 +602,20 @@ CREATE TABLE IF NOT EXISTS umbrales_semaforo (
   }
 }
 
-// Semilla inicial: solo se ejecuta si la tabla users está vacía.
+// Semilla inicial: solo se ejecuta si la tabla users está vacía Y nunca en
+// produccion (Fase 110, hallazgo real URGENTE: estos 6 usuarios con
+// contrasena fija en el codigo -- repo PUBLICO -- seguian activos en
+// produccion con la contrasena de ejemplo intacta; cualquiera que leyera
+// el repo podia entrar como ADMIN completo). En produccion el UNICO
+// usuario inicial es el admin maestro (MASTER_ADMIN_USER/
+// MASTER_ADMIN_PASSWORD_HASH, config.js -- ya es obligatorio y
+// fail-fast en CUALQUIER entorno, asi que una produccion sin el
+// configurado ya no arranca, nunca cae en crear usuarios de ejemplo en su
+// lugar). En desarrollo/pruebas la semilla sigue igual -- varios tests
+// (ver server/tests/helpers.js) dependen de estos 6 usuarios tal cual.
 // Las contraseñas de ejemplo se hashean con bcrypt (nunca texto plano).
 const count = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-if (count === 0) {
+if (count === 0 && !config.isProduction) {
   const insert = db.prepare(`
     INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt)
     VALUES (@nombre, @user, @rol, @active, @password_hash, @perms, @asesorCampana, @createdAt)
@@ -647,6 +657,53 @@ if (count === 0) {
   if (!config.isTest) {
     console.log('[db] Base de datos inicializada con usuarios de ejemplo (contrasenas hasheadas con bcrypt).');
     console.log('[db] IMPORTANTE: cambia estas contrasenas de ejemplo antes de usar en produccion.');
+  }
+}
+
+// Red de seguridad (Fase 110, URGENTE): corre en CADA arranque, SOLO en
+// produccion -- independiente del `count === 0` de arriba, porque una
+// produccion ya afectada ANTES de este fix no tiene la tabla vacia (ya
+// tiene estos 6 usuarios con su contrasena de ejemplo). Por cada uno que
+// SIGA existiendo y activo, compara su hash contra la contrasena de
+// ejemplo (bcrypt.compare, nunca en texto plano en la base ni en un log)
+// -- si coincide, lo suspende solo y deja constancia en el Historial, sin
+// la contrasena. Idempotente: una cuenta ya suspendida o con otra
+// contrasena no se vuelve a tocar en el siguiente arranque. Nunca borra
+// usuarios ni toca a nadie mas que estos 6 (lista cerrada, Fase 110).
+const USUARIOS_EJEMPLO_INSEGUROS = [
+  { user: 'crodriguez', password: 'calidad123' },
+  { user: 'mlopez', password: 'inv123' },
+  { user: 'jherrera', password: 'ger123' },
+  { user: 'agomez', password: 'cli123' },
+  { user: 'lrios', password: 'aux123' },
+  { user: 'psuarez', password: 'admin456' },
+];
+if (config.isProduction) {
+  const buscarActivo = db.prepare('SELECT * FROM users WHERE user = ? AND active = 1');
+  const suspender = db.prepare('UPDATE users SET active = 0 WHERE id = ?');
+  for (const u of USUARIOS_EJEMPLO_INSEGUROS) {
+    const row = buscarActivo.get(u.user);
+    if (!row) continue; // no existe o ya esta suspendido -- nada que hacer (idempotente)
+    if (!bcrypt.compareSync(u.password, row.password_hash)) continue; // ya tiene otra contrasena
+    suspender.run(row.id);
+    const ts = new Date();
+    const pad = (n) => (n < 10 ? '0' + n : '' + n);
+    const fechaStr = `${pad(ts.getDate())}/${pad(ts.getMonth() + 1)}/${ts.getFullYear()} ${pad(ts.getHours())}:${pad(ts.getMinutes())}:${pad(ts.getSeconds())}`;
+    db.prepare(
+      `INSERT INTO historial (ts, fecha, accion, nombre, username, rol, actor, detalle)
+       VALUES (?,?,?,?,?,?,?,?)`
+    ).run(
+      ts.getTime(),
+      fechaStr,
+      'SUSPENDIDO',
+      row.nombre,
+      row.user,
+      row.rol,
+      'Seguridad automatica (@arranque)',
+      'Usuario suspendido automaticamente: tenia la contrasena de ejemplo publica'
+    );
+    // Nunca la contrasena -- solo el usuario, aqui y en el Historial de arriba.
+    console.log(`[db] SEGURIDAD: usuario "${u.user}" suspendido automaticamente (contrasena de ejemplo detectada en produccion).`);
   }
 }
 
