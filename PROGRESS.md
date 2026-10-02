@@ -26,11 +26,15 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 111)
+### Números de control (ORLANT, última verificación Fase 112, 2026-10-02)
 
-Confirmados en producción al cierre de la Fase 111 — se vuelven a
-confirmar en cada revisión final (`scripts/produccion/revision-final.js`)
-y pueden moverse mes a mes con cargas nuevas de Edwin:
+Reconfirmados en vivo contra producción en la Fase 112
+(`scripts/produccion/revision-final.js`, con sesión real del usuario):
+0 discrepancias, 0 errores de consola, las 7 pestañas sin canvas sin
+dibujar (Calidad mostró su aviso normal de "sin datos" para el mes
+global sin monitoreos — comportamiento esperado, no un fallo). Se vuelven
+a confirmar en cada revisión final y pueden moverse mes a mes con cargas
+nuevas de Edwin:
 
 | Indicador | Valor |
 |---|---|
