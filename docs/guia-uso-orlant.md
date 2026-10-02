@@ -7,7 +7,7 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.9.0**. Esta guía es para quien usa la
+Versión de la plataforma: **1.10.0**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -40,6 +40,14 @@ la cambie desde la pantalla de Usuarios (Administración → Usuarios → tu
 usuario → "Cambiar contraseña"). Avísale por el canal que usen
 normalmente (no la escribas en un mensaje que quede guardado, para que
 solo tú la conozcas).
+
+**Cómo cambiar mi contraseña:** si ya la sabes y quieres cambiarla tú
+mismo (sin pedírselo a un administrador), entra a la plataforma y en el
+menú de tu usuario (arriba a la derecha) elige **"Cambiar mi
+contraseña"**. Te va a pedir la contraseña actual, la nueva y que la
+confirmes. Al cambiarla, cualquier otra sesión que tuvieras abierta (otro
+equipo, otra pestaña) deja de funcionar — la pantalla donde la cambiaste
+sigue abierta, sin que tengas que volver a entrar.
 
 ![Pantalla de inicio de sesión (datos de demostración)](img/guia-uso/01-login.png)
 

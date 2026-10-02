@@ -100,8 +100,74 @@ router.post(
     db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(ahora, row.id);
     registrarLogin(req, 'LOGIN_OK', row, '');
 
-    const token = signToken({ isMasterAdmin: false, userId: row.id, rol: row.rol });
+    const token = signToken({ isMasterAdmin: false, userId: row.id, rol: row.rol, tokenVersion: row.token_version });
     res.json({ token, user: toPublicUser({ ...row, last_login_at: ahora }) });
+  })
+);
+
+// Fase 113 (tema B): limite de intentos propio (nunca comparte contador con
+// loginLimiter) para que este endpoint no sirva para adivinar la contrasena
+// ACTUAL por fuerza bruta -- requiere ya estar autenticado, asi que el
+// riesgo es menor que el login publico, pero igual se acota.
+const changePasswordLimiter = rateLimit({
+  windowMs: config.loginRateLimit.windowMs,
+  max: config.loginRateLimit.max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
+});
+
+// Fase 113 (tema B): "Cambiar mi contrasena", para cualquier usuario sobre
+// si mismo (el admin maestro no tiene fila en `users` -- su contrasena vive
+// en MASTER_ADMIN_PASSWORD_HASH, env var, y no se puede cambiar en caliente
+// desde aqui). Al cambiar, se incrementa token_version: el propio token
+// usado en esta peticion queda invalidado, por eso se firma y se devuelve
+// uno NUEVO de una vez -- la sesion actual sigue abierta sin pedir login de
+// nuevo (decision explicita, ver CLAUDE.md / reporte de la Fase 113), y
+// cualquier OTRO token viejo de este usuario (otro dispositivo, una pestana
+// vieja) deja de servir en su siguiente peticion.
+router.put(
+  '/auth/password',
+  requireActor,
+  changePasswordLimiter,
+  validate(schemas.changeOwnPasswordBody),
+  wrap(async (req, res) => {
+    if (req.actor.isMasterAdmin) {
+      return res.status(400).json({
+        error: 'El administrador maestro no puede cambiar su contrasena desde aqui (vive en la configuracion del servidor).',
+      });
+    }
+    const { currentPassword, newPassword } = req.body;
+    const row = db.prepare('SELECT * FROM users WHERE id = ?').get(req.actor.id);
+    if (!row) return res.status(401).json({ error: 'No autenticado' });
+
+    const ok = await bcrypt.compare(currentPassword, row.password_hash);
+    if (!ok) return res.status(401).json({ error: 'La contrasena actual no es correcta' });
+
+    if (newPassword.toLowerCase() === row.user.toLowerCase()) {
+      return res.status(400).json({ error: 'La nueva contrasena no puede ser igual al nombre de usuario' });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(hash, row.id);
+    const actualizado = db.prepare('SELECT token_version FROM users WHERE id = ?').get(row.id);
+
+    logEvent(
+      'PASSWORD_PROPIA',
+      row,
+      'Sistema (autenticacion)',
+      'Contrasena cambiada por el propio usuario',
+      { fecha: fechaLimitesAhoraColombiaStr() }
+    );
+
+    const token = signToken({
+      isMasterAdmin: false,
+      userId: row.id,
+      rol: row.rol,
+      tokenVersion: actualizado.token_version,
+    });
+    res.json({ ok: true, token });
   })
 );
 
