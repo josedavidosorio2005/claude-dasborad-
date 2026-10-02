@@ -196,6 +196,79 @@ function seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre) {
   });
 }
 
+// Fase 111 (ORLANT, pedido textual de Edwin: "el ranking va a ser
+// efectividad por agendamiento"): igual que Inasistencia (Fase 98), estas 2
+// tablas nuevas SI necesitan demo local -- es la unica manera de probar
+// visualmente los paneles nuevos (ranking con grafica combo, Efectividad de
+// Citas) sin esperar la carga real en produccion. Generadores PROPIOS
+// (rngFromSeed independiente, nunca el `rand` compartido del resto de
+// seedOrlant) para no correr el PRNG del resto de secciones y asi no cambiar
+// ningun numero de demo ya existente.
+const EFECTIVIDAD_AGENDAMIENTO_ASESORES = [
+  'Mateo Londono Cardenas', 'Valeria Pulgarin', 'Esteban Zapata', 'Sofia Marulanda',
+  'Nicolas Ocampo', 'Camila Agudelo', 'Juan Esteban Villa', 'Manuela Betancourt',
+  'Santiago Franco', 'Daniela Mesa', 'Andres David Gaviria', 'Laura Tangarife',
+  'Felipe Arroyave', 'Isabella Cano', 'Jacobo Montoya',
+];
+
+function seedEfectividadAgendamientoOrlant(db, mes, idxMes, cargadoPorNombre) {
+  const insert = db.prepare(`
+    INSERT INTO efectividad_agendamiento
+      (campana, mes, asesor, gestiones, agendas, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana,@mes,@asesor,@gestiones,@agendas,@archivoNombre,@cargadoPorNombre,@createdAt)
+  `);
+  EFECTIVIDAD_AGENDAMIENTO_ASESORES.forEach((asesor) => {
+    // Nivel propio del asesor (0..1, estable entre meses) -- mismo criterio
+    // que respuestasParaNivel en calidad.js -- para que el ranking tenga
+    // puestos altos y bajos de verdad, como el control real (97,36% primero,
+    // 12,18% ultimo).
+    const randNivel = rngFromSeed('ea-nivel|' + asesor);
+    const nivel = randFloat(randNivel, 0.08, 0.95, 3);
+    const randMes = rngFromSeed('ea-mes|' + asesor + '|' + mes);
+    const gestiones = Math.max(10, ent(serieMensual(randMes, idxMes, { base: randInt(randNivel, 300, 2200), ruidoPct: 0.15 })));
+    const agendas = Math.max(0, Math.min(gestiones, ent(gestiones * Math.min(1, Math.max(0, nivel + randFloat(randMes, -0.05, 0.05, 3))))));
+    const clave = `ORLANT|${mes}|${asesor}`;
+    seedOnceGuarded(db, 'efectividad_agendamiento', clave, {
+      checkExisting: () => {
+        const row = db
+          .prepare('SELECT id FROM efectividad_agendamiento WHERE campana = ? AND mes = ? AND asesor = ?')
+          .get('ORLANT', mes, asesor);
+        return row ? row.id : null;
+      },
+      insertFn: () => {
+        const info = insert.run({
+          campana: 'ORLANT', mes, asesor, gestiones, agendas,
+          archivoNombre: ARCHIVO_DEMO, cargadoPorNombre: cargadoPorNombre || 'Seed Demo', createdAt: new Date().toISOString(),
+        });
+        return info.lastInsertRowid;
+      },
+    });
+  });
+}
+
+function seedEfectividadCitasOrlant(db, mes, idxMes, cargadoPorNombre) {
+  const randMes = rngFromSeed('ec-mes|' + mes);
+  const agendas = Math.max(50, ent(serieMensual(randMes, idxMes, { base: 2600, ruidoPct: 0.1 })));
+  const atendidas = Math.max(0, Math.min(agendas, ent(agendas * randFloat(randMes, 0.78, 0.94, 3))));
+  const clave = `ORLANT|${mes}|citas`;
+  seedOnceGuarded(db, 'efectividad_citas', clave, {
+    checkExisting: () => {
+      const row = db.prepare('SELECT id FROM efectividad_citas WHERE campana = ? AND mes = ?').get('ORLANT', mes);
+      return row ? row.id : null;
+    },
+    insertFn: () => {
+      const info = db
+        .prepare(
+          `INSERT INTO efectividad_citas
+             (campana, mes, agendas, atendidas, archivoNombre, cargadoPorNombre, createdAt)
+           VALUES (?,?,?,?,?,?,?)`
+        )
+        .run('ORLANT', mes, agendas, atendidas, ARCHIVO_DEMO, cargadoPorNombre || 'Seed Demo', new Date().toISOString());
+      return info.lastInsertRowid;
+    },
+  });
+}
+
 // ════════════════════════════════════════════════════════════
 // ORLANT
 // ════════════════════════════════════════════════════════════
@@ -277,6 +350,8 @@ function seedOrlant(db, { cargadoPorNombre }) {
     cargarSeccion(db, { cliente, seccion: 'sta_categorias', cadencia: 'mensual', periodo: mes, filas: sta, spec: cfg.secciones.sta_categorias, cargadoPorNombre });
 
     seedInasistenciaOrlant(db, rand, mes, idxMes, cargadoPorNombre);
+    seedEfectividadAgendamientoOrlant(db, mes, idxMes, cargadoPorNombre);
+    seedEfectividadCitasOrlant(db, mes, idxMes, cargadoPorNombre);
   });
 }
 
