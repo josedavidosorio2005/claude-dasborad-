@@ -21,6 +21,10 @@ const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_mo
 const BASE = 'https://informa.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 const USUARIOS_EJEMPLO = ['crodriguez', 'mlopez', 'jherrera', 'agomez', 'lrios', 'psuarez'];
+// Usuario del admin maestro (config.js: MASTER_ADMIN_USER, default 'admin') --
+// no tiene fila en `users` (su "Ultimo ingreso" no aplica), a diferencia de
+// cualquier otro rol ADMIN con fila real.
+const MASTER_ADMIN_USER_ESPERADO = 'admin';
 
 // Numeros de control esperados -- ver PROGRESS.md -> "Numeros de control".
 const ESPERADO = {
@@ -177,6 +181,32 @@ async function canvasesSinDibujar(page) {
       return typeof esperado === 'number' && Math.abs(real - esperado) > 0.01;
     }).map((k) => `${k}: esperado ${ESPERADO[k]}, real ${n[k]}`);
 
+    // ══ 4. Fase 113: mi propio login queda en el Historial (tema A) +
+    // "Ultimo ingreso" se actualiza (tema A) + "Cambiar mi contrasena"
+    // aparece en el menu, SIN usarla (tema B) ══
+    const hist113 = await page.evaluate(() => apiRequest('GET', '/historial'));
+    const miLogin = hist113.find((h) => h.accion === 'LOGIN_OK');
+    const fase113 = { miLoginEnHistorial: !!miLogin };
+    if (miLogin) {
+      fase113.miLoginReciente = Date.now() - miLogin.ts < 15 * 60 * 1000;
+      fase113.miLoginTieneIpYNavegador = !!(miLogin.ip && miLogin.userAgent);
+      if (miLogin.username && miLogin.username !== MASTER_ADMIN_USER_ESPERADO) {
+        const usersAhora = await page.evaluate(() => apiRequest('GET', '/users'));
+        const filaUsuario = usersAhora.find((u) => u.user === miLogin.username);
+        fase113.ultimoIngresoActualizado = !!(filaUsuario && filaUsuario.lastLogin);
+      } else {
+        fase113.ultimoIngresoActualizado = 'n/a (admin maestro no tiene fila en Usuarios)';
+      }
+    }
+    fase113.botonCambiarPasswordVisible = await page.evaluate(() => {
+      const btn = document.querySelector('button[onclick="abrirCambiarPasswordModal()"]');
+      return !!btn && getComputedStyle(btn).display !== 'none' && btn.offsetParent !== null;
+    });
+    reporte.fase113 = fase113;
+    const fase113Ok =
+      fase113.miLoginEnHistorial && fase113.miLoginReciente && fase113.miLoginTieneIpYNavegador &&
+      fase113.ultimoIngresoActualizado !== false && fase113.botonCambiarPasswordVisible;
+
     reporte.erroresConsola = erroresConsola;
     reporte.discrepanciasNumeros = discrepancias;
     reporte.canvasesSinDibujar = hallazgosCanvas;
@@ -184,8 +214,8 @@ async function canvasesSinDibujar(page) {
     log('=== REPORTE ===');
     console.log(JSON.stringify(reporte, null, 2));
 
-    ok = erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0;
-    log(ok ? 'OK: 7 pestañas, 0 canvas sin dibujar, 0 errores de consola, números de control exactos.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
+    ok = erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 && fase113Ok;
+    log(ok ? 'OK: 7 pestañas, 0 canvas sin dibujar, 0 errores de consola, números de control exactos, Fase 113 (login/Ultimo ingreso/Cambiar mi contraseña) confirmada.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
   } catch (e) {
     console.error('FALLO:', e.message);
     console.log(JSON.stringify(reporte, null, 2));
