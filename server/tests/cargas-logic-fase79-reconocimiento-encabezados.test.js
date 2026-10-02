@@ -16,6 +16,7 @@ const { cargasEncabezadosCoinciden } = require('../../public/js/cargas-logic.js'
 const { AGENDAS_COLUMNAS } = require('../../public/js/agendas-logic.js');
 const { TIPIFICACION_COLUMNAS } = require('../../public/js/tipificacion-logic.js');
 const { EFECTIVIDAD_AGENDAMIENTO_COLUMNAS } = require('../../public/js/efectividad-agendamiento-logic.js');
+const { CITAS_ATENDIDAS_COLUMNAS } = require('../../public/js/citas-atendidas-logic.js');
 
 function comoColumnasPlan(columnas) {
   return columnas.map((c) => ({ label: c.label, opcional: !c.obligatoria }));
@@ -105,4 +106,21 @@ test('cargasEncabezadosCoinciden: Efectividad de Agendamiento sin la columna EFE
 test('cargasEncabezadosCoinciden: falta una columna obligatoria de Efectividad de Agendamiento -> no calza', () => {
   const header = ['NOMBRE DE AGENTE', 'MES', 'AGENDAS']; // sin CANTIDAD DE GESTIONES
   assert.ok(!cargasEncabezadosCoinciden(header, comoColumnasPlan(EFECTIVIDAD_AGENDAMIENTO_COLUMNAS)));
+});
+
+// Fase 111 (ORLANT, pedido textual de InCo): el archivo real de
+// CITAS_ATENDIDAS tambien trae su unica hoja llamada "Hoja1".
+test('cargasEncabezadosCoinciden: hoja "Hoja1" con las 3 columnas obligatorias de Citas Atendidas (archivo real de Edwin) calza', () => {
+  const header = ['MES', 'AGENDAS', 'ATENDIDAS', 'EFECTIVIDAD CITAS ATENDIDAS'];
+  assert.ok(cargasEncabezadosCoinciden(header, comoColumnasPlan(CITAS_ATENDIDAS_COLUMNAS)));
+});
+
+test('cargasEncabezadosCoinciden: Citas Atendidas sin la columna EFECTIVIDAD CITAS ATENDIDAS (opcional, se recalcula) tambien calza', () => {
+  const header = ['MES', 'AGENDAS', 'ATENDIDAS'];
+  assert.ok(cargasEncabezadosCoinciden(header, comoColumnasPlan(CITAS_ATENDIDAS_COLUMNAS)));
+});
+
+test('cargasEncabezadosCoinciden: falta una columna obligatoria de Citas Atendidas -> no calza', () => {
+  const header = ['MES', 'AGENDAS']; // sin ATENDIDAS
+  assert.ok(!cargasEncabezadosCoinciden(header, comoColumnasPlan(CITAS_ATENDIDAS_COLUMNAS)));
 });

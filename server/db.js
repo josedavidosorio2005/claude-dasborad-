@@ -384,6 +384,25 @@ CREATE TABLE IF NOT EXISTS efectividad_agendamiento (
 );
 CREATE INDEX IF NOT EXISTS idx_efectividad_agendamiento_campana_mes ON efectividad_agendamiento(campana, mes);
 
+-- Efectividad de Citas Atendidas (Fase 111, ORLANT): un total del mes
+-- (agendas/atendidas, nunca el % -- se recalcula siempre, ver
+-- server/efectividad-citas.js). Reemplaza lo que antes leia de
+-- citas_para_mes/citas_atendidas de la hoja "resumen" (nunca tuvo datos
+-- reales). Reemplazo por MES: UNIQUE(campana,mes) evita duplicar si se
+-- vuelve a subir el mismo archivo.
+CREATE TABLE IF NOT EXISTS efectividad_citas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  mes TEXT NOT NULL,                 -- 'AAAA-MM'
+  agendas INTEGER NOT NULL,
+  atendidas INTEGER NOT NULL,
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, mes)
+);
+CREATE INDEX IF NOT EXISTS idx_efectividad_citas_campana_mes ON efectividad_citas(campana, mes);
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en
@@ -2435,6 +2454,114 @@ runOnceMigration('dashboards_config_orlant_efectividad_agendamiento_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_efectividad_agendamiento_v1 aplicada.');
+  }
+});
+
+// "Efectividad de Citas" de ORLANT (Fase 111, pedido textual de InCo):
+// hoy leia citas_para_mes/citas_atendidas de la hoja "resumen" (filaUnica,
+// que nunca tuvo datos reales) con un panel `combo` generico -- pasa a su
+// propio panel (`efectividad_citas_panel`, tabla nueva `efectividad_citas`)
+// Y se mueve de "al final, despues de Gestión STA" a "justo despues de
+// Inasistencia" (pedido explicito). Produccion ya tenia el tab "efectividad"
+// sembrado con la forma vieja en la posicion vieja, asi que la forma/orden
+// nuevos del seed nunca le habrian llegado solos. Mismo patron de
+// deteccion de "forma vieja reconocible" que el resto de migraciones de
+// dashboards_config: si no calza EXACTO, se deja intacta y solo se loguea
+// (podria ser una personalizacion).
+runOnceMigration('dashboards_config_orlant_efectividad_citas_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma/orden nuevos
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetEfectividad = (target.layout.tabs || []).find((t) => t.key === 'efectividad');
+  if (!targetEfectividad) return;
+
+  const tabs = layout.tabs || [];
+  const idxEfectividad = tabs.findIndex((t) => t && t.key === 'efectividad');
+  if (idxEfectividad === -1) return; // no deberia pasar (el seed siempre lo trae oculto) -- nada que migrar
+
+  let tocado = false;
+  const tabEfectividad = tabs[idxEfectividad];
+  const panelViejo = (tabEfectividad.panels || [])[0];
+  const yaEsNuevo = panelViejo && panelViejo.tipo === 'efectividad_citas_panel';
+  const esViejoReconocible = (tabEfectividad.panels || []).length === 1 &&
+    panelViejo && panelViejo.tipo === 'combo' && panelViejo.titulo === 'Efectividad de citas';
+
+  if (yaEsNuevo) {
+    // ya tiene la forma nueva -- solo falta confirmar la posicion (abajo).
+  } else if (esViejoReconocible) {
+    tabEfectividad.label = targetEfectividad.label;
+    tabEfectividad.panels = JSON.parse(JSON.stringify(targetEfectividad.panels));
+    tocado = true;
+  } else {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_efectividad_citas_v1: el tab "efectividad" no coincide con la forma esperada (vieja ni nueva) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  const idxInasistencia = tabs.findIndex((t) => t && t.key === 'inasistencia');
+  if (idxInasistencia !== -1 && tabs[idxInasistencia + 1] !== tabEfectividad) {
+    tabs.splice(tabs.indexOf(tabEfectividad), 1);
+    const nuevoIdxInasistencia = tabs.findIndex((t) => t && t.key === 'inasistencia');
+    tabs.splice(nuevoIdxInasistencia + 1, 0, tabEfectividad);
+    layout.tabs = tabs;
+    tocado = true;
+  }
+
+  if (!tocado) return; // ya tenia la forma Y la posicion nuevas (dos corridas seguidas = mismo resultado)
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_efectividad_citas_v1 aplicada.');
+  }
+});
+
+// "resumen" de ORLANT (Fase 111, pedido textual de InCo): citas_para_mes/
+// citas_atendidas quedan ocultaEnPlantilla (ver dashboard-secciones.js) --
+// mismo patron EXACTO que dashboards_config_orlant_resumen_inasist_opcional_v1
+// (Fase 100), solo que sobre otros 2 campos.
+runOnceMigration('dashboards_config_orlant_resumen_citas_opcional_v1', () => {
+  const CITAS_KEYS = ['citas_para_mes', 'citas_atendidas'];
+
+  const row = db.prepare("SELECT cliente, secciones FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con el esquema nuevo
+  let secciones;
+  try {
+    secciones = JSON.parse(row.secciones);
+  } catch (e) {
+    return;
+  }
+  const resumen = secciones && secciones.resumen;
+  if (!resumen || !Array.isArray(resumen.columnas)) return;
+
+  let tocado = false;
+  resumen.columnas.forEach((col) => {
+    if (col && CITAS_KEYS.includes(col.key) && !col.ocultaEnPlantilla) {
+      col.opcional = true;
+      col.ocultaEnPlantilla = true;
+      tocado = true;
+    }
+  });
+  if (!tocado) return; // ya tiene la forma nueva -- nada que hacer
+
+  db.prepare('UPDATE dashboards_config SET secciones = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(secciones),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_resumen_citas_opcional_v1 aplicada.');
   }
 });
 

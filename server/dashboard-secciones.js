@@ -74,8 +74,15 @@ const SECCIONES = {
         { key: 'sta_ordenes', label: 'STA — Ordenes cargadas', tipo: 'entero' },
         { key: 'sta_agendadas', label: 'STA — Agendadas', tipo: 'entero', opcional: true },
         { key: 'sta_factcump', label: 'STA — Facturado + Cumplida', tipo: 'entero' },
-        { key: 'citas_para_mes', label: 'Citas programadas para el mes', tipo: 'entero' },
-        { key: 'citas_atendidas', label: 'Citas atendidas', tipo: 'entero' },
+        // Fase 111 (pedido textual de InCo): superadas por la pestaña
+        // "Efectividad de Citas" real (tabla `efectividad_citas`,
+        // server/efectividad-citas.js) -- ya NO se piden en la plantilla ni
+        // en las INSTRUCCIONES (mismo mecanismo `ocultaEnPlantilla` que
+        // inasist_audifonos/etc., Fase 98 tema C). Un archivo VIEJO que
+        // todavia las traiga sigue cargando igual (compatibilidad hacia
+        // atras), aunque ya nada las muestre en el dashboard.
+        { key: 'citas_para_mes', label: 'Citas programadas para el mes', tipo: 'entero', opcional: true, ocultaEnPlantilla: true },
+        { key: 'citas_atendidas', label: 'Citas atendidas', tipo: 'entero', opcional: true, ocultaEnPlantilla: true },
       ],
     },
 

@@ -605,7 +605,7 @@ async function _gdBootstrap(){
   // CADA tipo de panel presentes en la config de este cliente (nunca
   // hardcodeado a un cliente puntual) y se junta la lista de TODAS las
   // fuentes de datos mensuales.
-  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasTipificacion = {};
+  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasEfectividadCitas = {}, campanasTipificacion = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){
       if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanasCalidad[p.campana] = true;
@@ -614,6 +614,7 @@ async function _gdBootstrap(){
       if(p.tipo === 'agendas_panel') campanasAgendas[p.campana || _gd.cliente] = true;
       if(p.tipo === 'efectividad_agendamiento_panel') campanasEfectividadAgendamiento[p.campana || _gd.cliente] = true;
       if(p.tipo === 'inasistencia_panel') campanasInasistencia[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'efectividad_citas_panel') campanasEfectividadCitas[p.campana || _gd.cliente] = true;
       if(p.tipo === 'tipificacion_panel') campanasTipificacion[p.campana || _gd.cliente] = true;
     });
   });
@@ -636,7 +637,7 @@ async function _gdBootstrap(){
   // mesesAgendas/mesesTipificacion/tabs.oculta son seguros en paralelo
   // porque JS es de un solo hilo (nunca hay dos tareas escribiendo a la
   // vez, solo turnos intercalados en cada await).
-  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesTipificacion = [];
+  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesEfectividadCitas = [], mesesTipificacion = [];
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
@@ -698,6 +699,22 @@ async function _gdBootstrap(){
       }catch(e){ /* se queda oculta / sin esos meses */ }
     })());
   });
+  // Fase 111 (pedido textual de InCo): "Efectividad de Citas" sigue el
+  // MISMO criterio que Agendas/Inasistencia -- se destapa en memoria solo
+  // cuando ya hay datos reales cargados (tabla efectividad_citas), nunca
+  // escribiendo ese cambio en el servidor.
+  Object.keys(campanasEfectividadCitas).forEach(function(campEc){
+    tareasBootstrap.push((async function(){
+      try{
+        var ecOp = await apiRequest('GET', '/calidad/efectividad-citas/opciones?campana='+encodeURIComponent(campEc));
+        if(ecOp && ecOp.meses) mesesEfectividadCitas = mesesEfectividadCitas.concat(ecOp.meses);
+        if(campEc === _gd.cliente && ecOp && ecOp.meses && ecOp.meses.length){
+          var tabEfectividadCitas = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'efectividad'; });
+          if(tabEfectividadCitas) tabEfectividadCitas.oculta = false;
+        }
+      }catch(e){ /* se queda oculta / sin esos meses */ }
+    })());
+  });
   Object.keys(campanasTipificacion).forEach(function(campTip){
     tareasBootstrap.push((async function(){
       try{
@@ -738,7 +755,7 @@ async function _gdBootstrap(){
   // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
-  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesTipificacion, mesesCalidad]);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad]);
   _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
@@ -1076,6 +1093,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'agendas_panel'){ _agendasRenderPanel(p, i); return; }
   if(p.tipo === 'efectividad_agendamiento_panel'){ _efectividadAgendamientoRenderPanel(p, i); return; }
   if(p.tipo === 'inasistencia_panel'){ _inasistenciaRenderPanel(p, i); return; }
+  if(p.tipo === 'efectividad_citas_panel'){ _efectividadCitasRenderPanel(p, i); return; }
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
@@ -1482,6 +1500,26 @@ async function _gdExportarEfectividadAgendamiento(p, i){
   return [{ titulo: titulo, tipo: 'tabla', filas: filas }];
 }
 
+// "Efectividad de Citas" (Fase 111, pedido textual de InCo): exporta
+// TODOS los meses con datos (tabla completa, igual que se ve en pantalla)
+// mas una fila de totales del periodo (ponderado, nunca el promedio
+// simple de los %).
+async function _gdExportarEfectividadCitas(p, i){
+  var campana = p.campana;
+  var titulo = p.titulo || 'Efectividad de Citas';
+  var filas = [];
+  try{ filas = await apiRequest('GET', '/calidad/efectividad-citas/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  if(!filas.length){
+    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de citas para el periodo actual.' }];
+  }
+  var ponderado = citasAtendidasPonderado(filas);
+  var out = filas.map(function(f){
+    return { Mes: citasAtendidasMesLbl(f.mes), Agendas: f.agendas, Atendidas: f.atendidas, '% Efectividad': citasAtendidasFmtPct(f.agendas>0?f.atendidas/f.agendas:null) };
+  });
+  out.push({ Mes: 'PERÍODO ('+citasAtendidasRangoLbl(filas)+')', Agendas: ponderado.agendas, Atendidas: ponderado.atendidas, '% Efectividad': citasAtendidasFmtPct(ponderado.pct) });
+  return [{ titulo: titulo, tipo: 'tabla', filas: out }];
+}
+
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
 // (Llamadas y WhatsApp) por separado -- si una no tiene datos, se dice
 // (nunca se omite en silencio). Mismo estado compartido/por-canal que ya
@@ -1608,6 +1646,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'agendas_panel'){ out = out.concat(await _gdExportarAgendas(p, i)); continue; }
     if(p.tipo === 'efectividad_agendamiento_panel'){ out = out.concat(await _gdExportarEfectividadAgendamiento(p, i)); continue; }
     if(p.tipo === 'inasistencia_panel'){ out = out.concat(await _gdExportarInasistencia(p, i)); continue; }
+    if(p.tipo === 'efectividad_citas_panel'){ out = out.concat(await _gdExportarEfectividadCitas(p, i)); continue; }
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};

@@ -198,6 +198,7 @@ function createApp() {
   api.use(require('./routes/efectividad-agendamiento'));
   api.use(require('./routes/tipificaciones'));
   api.use(require('./routes/inasistencia'));
+  api.use(require('./routes/efectividad-citas'));
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/inventario'));
   api.use(require('./routes/gerencia'));

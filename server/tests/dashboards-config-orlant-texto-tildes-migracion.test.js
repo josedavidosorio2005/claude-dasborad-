@@ -175,8 +175,11 @@ test('migracion dashboards_config_orlant_texto_tildes_v1: subtabs y titulos/labe
   assert.equal(sta.panels[1].barras[0].label, 'Órdenes Cargadas');
   assert.deepEqual(sta.subtabs.map((s) => s.label), ['Órdenes por Servicio (Año)', 'Estado de Órdenes (Año)']);
 
-  const efect = layout.tabs.find((t) => t.key === 'efectividad');
-  assert.equal(efect.panels[0].barras[0].label, 'Citas para el Mes');
+  // El tab "efectividad" ya no trae texto con tildes que verificar aqui --
+  // Fase 111 le reemplazo el panel `combo` (con "Citas para el Mes") por
+  // efectividad_citas_panel ("Efectividad de Citas", sin tildes). La
+  // cobertura de esta migracion sigue intacta con el resto de ejemplos de
+  // arriba (flujo/agendamiento/sta/inasistencia/calidad).
 
   const calidad = layout.tabs.find((t) => t.key === 'calidad');
   assert.equal(calidad.panels[0].titulo, 'Distribución de clasificación');

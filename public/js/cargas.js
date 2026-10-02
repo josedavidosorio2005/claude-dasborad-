@@ -202,6 +202,13 @@ function _cargasInasistenciaColumnasUnificado(){
 function _cargasEfectividadAgendamientoColumnasUnificado(){
   return EFECTIVIDAD_AGENDAMIENTO_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria, ocultaEnPlantilla: !!c.ocultaEnPlantilla }; });
 }
+// Fase 111 (ORLANT, pedido textual de InCo) — columnas de la hoja
+// CITAS_ATENDIDAS: EFECTIVIDAD CITAS ATENDIDAS (4ta) va `ocultaEnPlantilla`
+// (nunca se pide en blanco: el sistema siempre la recalcula) pero SIGUE
+// aceptandose si el archivo real la trae.
+function _cargasCitasAtendidasColumnasUnificado(){
+  return CITAS_ATENDIDAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria, ocultaEnPlantilla: !!c.ocultaEnPlantilla }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -255,7 +262,8 @@ async function onCargaClienteChange(){
     var tipificacionCols = esUnificado ? _cargasTipificacionColumnasUnificado() : null;
     var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
     var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols);
+    var citasAtendidasCols = esUnificado ? _cargasCitasAtendidasColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -427,7 +435,7 @@ async function procesarArchivoConsolidado(input){
   _cargasPlan.forEach(function(h){ if(wb.SheetNames.indexOf(h.hoja)!==-1) hojasReclamadasPorNombre[h.hoja]=true; });
   var hojasUsadasPorEncabezados = {};
   function _cargasBuscarHojaPorEncabezados(h){
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -467,6 +475,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = tipificacionParseFilas;
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
+    } else if(h.tipo === 'citas_atendidas'){
+      parseFn = function(a){ return citasAtendidasParseFilas(a); };
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
@@ -722,6 +732,34 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 111 (ORLANT, pedido textual de InCo): mismo patron impacto ->
+// confirmar -> guardar de _cargasGuardarEfectividadAgendamiento.
+async function _cargasGuardarCitasAtendidas(cliente, r){
+  var filasArray = r.filas.map(citasAtendidasFilaComoArray);
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  var meses = citasAtendidasMesesDelArchivo(r.filas);
+
+  try{
+    var impacto = await apiRequest('POST','/calidad/efectividad-citas/carga/impacto', parsed);
+    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + '.';
+    if(impacto.filasExistentes > 0){
+      msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
+    }
+    if(r.advertenciasEfectividad && r.advertenciasEfectividad.length){
+      msg += '\n\nAdvertencia -- la columna EFECTIVIDAD CITAS ATENDIDAS del archivo no coincide con el recalculo en ' +
+        r.advertenciasEfectividad.length + ' fila(s) (se guarda el recalculo igual):\n' +
+        r.advertenciasEfectividad.slice(0, 5).join('\n') +
+        (r.advertenciasEfectividad.length > 5 ? '\n…' : '');
+    }
+    msg += '\n\n¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la efectividad de citas anterior sin tocar.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/efectividad-citas/carga', parsed);
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -747,6 +785,7 @@ async function guardarCarga(){
       else if(r.tipo==='efectividad_agendamiento') res = await _cargasGuardarEfectividadAgendamiento(cliente, r);
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
+      else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));
