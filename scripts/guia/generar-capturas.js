@@ -8,14 +8,16 @@
 // Playwright directo desde Node (regla fija del proyecto, CLAUDE.md) -- NO
 // la extension de Claude in Chrome.
 'use strict';
-const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+
+const SERVER_DIR = path.join(__dirname, '..', '..', 'server');
+const { chromium } = require(path.join(SERVER_DIR, 'node_modules', 'playwright'));
 
 const BASE = process.env.LOCAL_URL || 'http://localhost:3000';
 const DIR_DOCS = path.join(__dirname, '..', '..', 'docs', 'img', 'guia-uso');
 const DIR_PUBLIC = path.join(__dirname, '..', '..', 'public', 'img', 'guia');
-const CRED_FILE = path.join(__dirname, '..', '..', 'server', 'data', 'seed-demo-credenciales.txt');
+const CRED_FILE = path.join(SERVER_DIR, 'data', 'seed-demo-credenciales.txt');
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
 
