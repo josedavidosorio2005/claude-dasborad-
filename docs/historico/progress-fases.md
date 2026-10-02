@@ -10199,3 +10199,128 @@ deploy automático confirmado tras cada merge. Verificación en vivo
 contra producción: 0 discrepancias, 0 errores de consola. Versión final
 `1.9.1` (parche — arreglos y organización, sin cambios de funcionalidad
 visible), tag `v1.9.1`.
+
+## Fase 113 — registro de inicios de sesión + "Cambiar mi contraseña" + revisión diaria de la salud del servidor (2026-10-02)
+
+Tres mejoras pedidas mientras llegan las bases nuevas de Edwin y las
+credenciales de AWS, cada una por su propio PR, con CI en verde. Los 3
+huecos reales de partida: la Fase 110 no pudo confirmar si alguien entró
+con las cuentas de ejemplo (la plataforma no registraba logins); nadie
+podía cambiar su propia contraseña; y la Fase 111 llenó el disco del
+servidor sin que nadie se enterara, sin saber si los respaldos corrían.
+
+### Tema A — registro de inicios de sesión (PR #266)
+
+- Cada intento de login (admin maestro y usuarios normales) y cada
+  logout quedan en el Historial existente: `LOGIN_OK`/`LOGIN_FALLIDO`/
+  `LOGOUT`, con usuario, fecha/hora de **Colombia** (nueva
+  `fechaLimitesAhoraColombiaStr`, `server/fecha-limites.js` — el
+  `nowStr()` genérico que ya usaba el Historial corre en hora del
+  proceso, que en producción es UTC, no Colombia; se dejó así para el
+  resto de acciones, solo el login usa la hora correcta desde ahora), IP
+  (`req.ip`, ya resuelta bien gracias a `trust proxy`) y navegador
+  resumido (`summarizeUserAgent`, ej. "Chrome / Windows" — nunca el
+  User-Agent crudo). Los fallidos guardan el motivo real para el admin
+  ("Usuario no existe"/"Contraseña incorrecta"/"Usuario suspendido") sin
+  tocar el mensaje de error genérico que recibe quien intenta entrar (el
+  N1 de la Fase 72 sigue intacto).
+- Migración `users_last_login_v1` (`last_login_at`) → columna "Último
+  ingreso" en Usuarios, **solo visible para admin completo** (ni
+  siquiera Auxiliar Admin); "Sin registro (antes del 03/10/2026)" para
+  quien no ha entrado desde el deploy.
+- Filtro nuevo "Inicios de sesión" en el Historial y su descarga
+  (agrupa los 3 códigos).
+- Aviso en el panel admin, mismo patrón visual que la alerta de Calidad
+  (`.aux-banner`), **sin correos**: 10+ intentos fallidos en 24h sobre
+  una cuenta, o login exitoso ADMIN/AUX_ADMIN desde una IP nueva.
+  Calculado EN VIVO sobre el Historial (`GET /seguridad/alertas`,
+  `server/routes/seguridad.js`) — sin tabla ni estado propio, sin
+  "marcar como visto" (si la condición deja de ser cierta, el aviso
+  desaparece solo).
+- Endpoint mínimo `POST /auth/logout` (no existía ningún flujo de
+  logout en el servidor, JWT sin estado) solo para poder registrarlo.
+- Crecimiento del Historial: insignificante (cada fila, unos cientos de
+  bytes; con el uso actual de ORLANT, del orden de unos pocos miles de
+  filas al mes — muy por debajo de 1 MB/mes). No se borra nada.
+
+### Tema B — "Cambiar mi contraseña" (PR #267)
+
+- Opción nueva en el menú de usuario (las 4 páginas): pide contraseña
+  actual, nueva y confirmación. Mismas reglas que el reseteo de admin
+  (`passwordSchema`, mínimo 8) + "no igual al nombre de usuario".
+- **Invalidación de tokens**: columna `token_version` (migración
+  `users_token_version_v1`), metida en el JWT al firmar y comparada en
+  cada peticion (`getActor`, `server/auth.js`) — al cambiar una
+  contraseña (propia o por reseteo de admin) se incrementa, y cualquier
+  token firmado antes deja de servir en la siguiente petición. Decisión
+  tomada (pedida explícitamente): el autoservicio devuelve un token
+  NUEVO en la misma respuesta — la sesión actual de quien cambia su
+  propia contraseña sigue abierta, sin pedirle entrar de nuevo; otra
+  sesión de ese mismo usuario (otro equipo) sí queda invalidada.
+  Verificado con 2 contextos de navegador reales (Playwright): el
+  contexto que cambió la contraseña sigue funcionando con el token
+  nuevo, el otro recibe 401 en la siguiente petición.
+- Límite de intentos propio en `PUT /auth/password` (archivo de test
+  aparte, mismo patrón que `rate-limit.test.js`).
+- Historial: "Cambio de contraseña (propio)" (`PASSWORD_PROPIA`).
+- Guía de uso actualizada (HTML real + espejo `.md`) y PDF regenerado.
+- Versión **`1.10.0`** + `CHANGELOG.md` (una sola entrada para los
+  temas A y B, liberados juntos).
+
+### Tema C — salud del servidor (PR #268, autorizado explícitamente)
+
+- `.github/workflows/salud-servidor.yml`: una vez al día (6 a.m.
+  Colombia) + botón manual, **solo lectura**, mismo mecanismo ya
+  auditado que `audit-instance.yml` (rol OIDC, puerto 22 abierto solo
+  para la IP del runner, cerrado al final). Revisa por SSH: disco del
+  sistema y de `/opt/inconexion/data`, memoria, imágenes Docker, tamaño
+  de la base, fecha/tamaño del último respaldo local (nunca el nombre de
+  archivo), estado de `inconexion-backup.timer`/`.service` (incluida la
+  subida a S3 según su log, sin imprimir la línea cruda) y días de
+  certificado TLS (mismo chequeo público que `monitor-produccion.yml`).
+  Si algo no se puede leer sin ampliar los permisos que ya tiene el
+  usuario de deploy, se reporta `SIN_PERMISO` en vez de pedir más acceso.
+- Falla (abre/comenta/cierra el issue "Salud del servidor con
+  problemas", etiqueta `servidor`) si: un disco > 80 %, el respaldo
+  tiene más de 26h, el servicio de respaldo no terminó en éxito, o
+  quedan menos de 14 días de certificado.
+- **Primera corrida real (2026-10-02, issue #269): encontró un problema
+  real** — `inconexion-backup.timer` está `inactive` en producción; el
+  último respaldo local es del **2026-09-18** (¡antes de las cargas
+  reales de ORLANT de las Fases 98-111!). El resto, sano: disco sistema
+  13 %, disco de datos 1 %, memoria 38 % (355/913 MB), 3 imágenes Docker
+  (745.7 MB), base de 6.8 MB, certificado con 86 días. Segunda corrida
+  manual confirmó que comenta el issue existente en vez de duplicarlo
+  (idempotencia). Arreglar el timer requiere SSH de escritura a
+  producción — fuera del alcance de solo lectura de esta fase, anotado
+  en `docs/pendientes.md`; el issue #269 sigue abierto a propósito.
+- `docs/pendientes.md`: se quita "Alarma de espacio en disco" (cubierta
+  por este workflow) y las 2 "mejoras propuestas" (temas A/B, ya
+  implementadas) — se agrega el hallazgo del timer inactivo.
+
+### Verificación
+
+- `npm test`: 934 pruebas, 0 fallos (antes y después). `npm audit`: 0
+  vulnerabilidades en dependencias de producción.
+- Local (Playwright directo, nunca la extensión de Chrome): historial
+  con login bueno/malo, columna "Último ingreso", "Cambiar mi
+  contraseña" de punta a punta con la sesión vieja invalidada,
+  `scripts/qa/auditoria-amplia-local.js` en 0 hallazgos (corrido tras
+  cada tema).
+- Producción (`scripts/produccion/revision-final.js`, extendido con los
+  3 chequeos de esta fase, sesión real del usuario): mi propio login
+  apareció en el Historial (reciente, con IP y navegador), "Cambiar mi
+  contraseña" visible en el menú (sin usarla), 0 errores de consola, 7
+  pestañas sin canvas sin dibujar, números de control **exactos, 0
+  discrepancias** (login fue con el admin maestro, que no tiene fila en
+  Usuarios — "Último ingreso" no aplica a esa cuenta en particular, por
+  eso no se confirmó ahí ese punto específico, aunque sí para cualquier
+  usuario con rol real).
+
+### Estado final de la Fase 113
+
+3 PRs (#266, #267, #268), todos con CI verde, mergeados a `main` en
+orden (A → B → C), deploy automático confirmado tras cada merge de
+código. Versión `1.10.0`, tag `v1.10.0`. Un hallazgo real quedó
+pendiente de una próxima sesión con autorización de escritura en
+producción: reactivar `inconexion-backup.timer` (issue #269 abierto).

@@ -31,6 +31,17 @@ una:
   una sesión de Claude Code sin eso.
 - **Inventario y respaldo de la cuenta AWS vieja** (`934685482338`): sin
   empezar — necesita las credenciales de esa cuenta.
+- **`inconexion-backup.timer` está `inactive` en producción** (hallazgo
+  real de la primera corrida de `salud-servidor.yml`, Fase 113, 2026-10-02):
+  el último respaldo local es del 2026-09-18 (¡antes de todas las cargas
+  reales de ORLANT de las Fases 98-111!). El timer existe en el repo
+  (`deploy/inconexion-backup.timer`/`.service`) pero nunca quedó habilitado
+  en la instancia real. Arreglarlo requiere SSH a producción
+  (`systemctl enable --now inconexion-backup.timer`) — fuera del alcance de
+  solo lectura de `salud-servidor.yml` y de esta fase; queda para una
+  próxima sesión con autorización explícita de escribir en el servidor. El
+  issue de GitHub "Salud del servidor con problemas" (etiqueta `servidor`)
+  sigue abierto reflejando esto.
 
 ## Decisiones pendientes del usuario
 
