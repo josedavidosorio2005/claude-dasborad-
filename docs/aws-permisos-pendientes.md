@@ -6,7 +6,7 @@ modificar políticas de IAM) haga el cambio a mano en la consola cuando
 quiera. Ninguna herramienta de este repo escribe permisos de IAM.
 
 Contexto completo en `docs/auditoria-seguridad-fase72.md` (§5) y
-`docs/estado-pendientes-fase74.md`. Sin nombres de secretos ni valores —
+`docs/historico/estado-pendientes-fase74.md`. Sin nombres de secretos ni valores —
 solo nombres de recursos (usuario, rol, bucket, log groups), que no son
 sensibles.
 
