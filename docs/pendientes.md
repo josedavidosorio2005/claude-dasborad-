@@ -31,13 +31,6 @@ una:
   una sesión de Claude Code sin eso.
 - **Inventario y respaldo de la cuenta AWS vieja** (`934685482338`): sin
   empezar — necesita las credenciales de esa cuenta.
-- **Alarma de espacio en disco**: el disco de la instancia se llenó una
-  vez (Fase 111, causó que fallara un deploy — ya arreglado el síntoma
-  con `docker system prune -af` antes del `pull`, ver `deploy.yml`), pero
-  no hay una alarma de CloudWatch que avise ANTES de que vuelva a pasar.
-  Sería una métrica custom del `cloudwatch-agent-config.json` + una
-  alarma más, mismo patrón que la de health check
-  (`docs/historico/AWS_DEPLOY_REPORT.md` §7.5).
 
 ## Decisiones pendientes del usuario
 
@@ -50,10 +43,6 @@ una:
 
 ## Mejoras propuestas (no pedidas todavía, para cuando haya espacio)
 
-- **"Cambiar mi contraseña"**: hoy solo un administrador puede cambiar la
-  contraseña de alguien más (Administración → Usuarios) — no hay un
-  botón de autoservicio para que cada quien cambie la suya.
-- **Registro de inicios de sesión**: el Historial ya registra acciones
-  administrativas (crear/editar usuarios, cargas, etc.) pero no
-  "fulano inició sesión a tal hora" — útil para auditoría si alguna vez
-  se sospecha de una cuenta comprometida.
+Ninguna pendiente por ahora — "Cambiar mi contraseña" y el registro de
+inicios de sesión (las dos únicas que había en esta lista) se
+implementaron en la Fase 113.
