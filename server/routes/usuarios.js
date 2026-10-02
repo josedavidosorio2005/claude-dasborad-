@@ -48,8 +48,17 @@ router.get(
       can(req.actor, 'gestionPermisos') ||
       can(req.actor, 'crearUsuarios') ||
       can(req.actor, 'editarUsuarios');
+    // Fase 113 (tema A): "Ultimo ingreso" es visible SOLO para un
+    // administrador completo (mismo criterio que el Historial, ver
+    // routes/historial.js) -- un Auxiliar Admin con permiso de
+    // crearUsuarios/editarUsuarios ya ve la lista completa (fullView) pero
+    // no este campo en particular.
+    const verUltimoIngreso = isFullAdmin(req.actor);
     res.json(
-      rows.map(toPublicUser).map((u) => (fullView ? u : { ...u, perms: {} }))
+      rows
+        .map(toPublicUser)
+        .map((u) => (fullView ? u : { ...u, perms: {} }))
+        .map((u) => (verUltimoIngreso ? u : { ...u, lastLogin: undefined }))
     );
   })
 );

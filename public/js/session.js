@@ -34,6 +34,7 @@ async function doLogin() {
     if (data.user.isMasterAdmin) {
       currentUser = null; // null = admin maestro
       await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+      if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
       enterAdminPanel();
       return;
     }
@@ -49,6 +50,7 @@ async function doLogin() {
     // formas iba a fallar.
     var puedeVerHistorial = data.user.rol === 'ADMIN';
     await loadData(); if (puedeVerHistorial) await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+    if (puedeVerHistorial && typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
     var found = users.find(function(x){ return x.id === data.user.id; });
     // GET /users filtra perms a {} para quien no administra usuarios/permisos
     // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
@@ -111,6 +113,12 @@ function enterAdminPanel(){
     if(umbralesLi) umbralesLi.classList.add('hidden');
     reportesRoleLi.classList.add('hidden');
   }
+
+  // Fase 113 (tema A): "Ultimo ingreso" solo para admin completo (mismo
+  // criterio que el Historial -- el servidor ya omite el campo para
+  // cualquier otro rol, esto solo esconde la columna vacia).
+  var thUltimoIngreso=document.getElementById('th-ultimo-ingreso');
+  if(thUltimoIngreso) thUltimoIngreso.classList.toggle('hidden',!(isMaster||isAdminRole));
 
   var cargasLi=document.getElementById('menu-cargas-li');
   if(cargasLi) cargasLi.classList.toggle('hidden', !(isMaster||isAdminRole||canLoadData()));
@@ -229,6 +237,10 @@ async function renderSupervisorMetaTable(){
 }
 
 function doLogout(){
+  // Fase 113 (tema A): registra el cierre de sesion en el Historial antes de
+  // limpiar el token -- "fire and forget" (no se espera la respuesta, nunca
+  // debe frenar ni poder fallar el cierre de sesion visible para el usuario).
+  if(authToken){ apiRequest('POST','/auth/logout').catch(function(){}); }
   currentUser=null; authToken=null; users=[]; historial=[];
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();

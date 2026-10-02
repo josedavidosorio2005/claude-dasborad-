@@ -131,7 +131,7 @@ select option,select optgroup{color:var(--c-text);background-color:var(--c-surfa
 [data-theme="dark"] .badge-ADMIN{background:#4a3c05;color:#ffe082;}
 [data-theme="dark"] .badge-CLIENTES_DASH{background:#4a3a00;color:#ffd54f;}
 [data-theme="dark"] .badge-AUX_ADMIN{background:#152a4a;color:#8ab4f8;}
-[data-theme="dark"] .btn-pass,[data-theme="dark"] .hb-PASSWORD{background:#2a2a4a;color:#b8b8f0;}
+[data-theme="dark"] .btn-pass,[data-theme="dark"] .hb-PASSWORD,[data-theme="dark"] .hb-PASSWORD_PROPIA{background:#2a2a4a;color:#b8b8f0;}
 [data-theme="dark"] .role-card.aux-card{border-color:#2a3a5a;background:#16202f;}
 [data-theme="dark"] .role-card.aux-card:hover{border-color:#3a6ac0;background:#1a2840;}
 [data-theme="dark"] .role-card.admin-card{background:#2a2410;}
@@ -455,9 +455,13 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .hb-SUSPENDIDO{background:var(--c-warning-bg);color:var(--c-warning-dark);}
 .hb-ACTIVADO{background:var(--c-info-bg);color:var(--c-primary-mid);}
 .hb-ELIMINADO{background:var(--c-danger-bg);color:var(--c-danger-dark);}
-.hb-PASSWORD{background:#f0f0fa;color:#5e5ea8;}
+.hb-PASSWORD,.hb-PASSWORD_PROPIA{background:#f0f0fa;color:#5e5ea8;}
 .hb-EDITADO{background:#fef9e2;color:#9e7a00;}
 .hb-PERMISOS{background:#f3e8ff;color:#6b21a8;}
+/* Fase 113 (tema A): usan var() a proposito (como CREADO/ELIMINADO arriba)
+   para que se adapten solas al tema oscuro, sin override aparte. */
+.hb-LOGIN_OK{background:var(--c-success-bg);color:var(--c-success-dark);}
+.hb-LOGIN_FALLIDO{background:var(--c-danger-bg);color:var(--c-danger-dark);}
 .hist-footer{padding:12px 20px;border-top:1px solid var(--c-border-soft2);background:var(--c-surface-alt2);}
 .hist-filter-sel{padding:7px 12px;border:1.5px solid var(--c-border);border-radius:7px;font-size:0.84rem;color:var(--c-primary);background:var(--c-bg);outline:none;cursor:pointer;}
 

@@ -16,7 +16,12 @@ function _histApplyFilters(list,filter,tipo){
            (h.detalle||'').toLowerCase().includes(filter)||
            (h.accion||'').toLowerCase().includes(filter);
   });
-  if(tipo) list=list.filter(function(h){return h.accion===tipo;});
+  // Fase 113 (tema A): "Inicios de sesion" agrupa los 3 eventos de
+  // autenticacion en un solo filtro (en pantalla y en la descarga).
+  if(tipo==='__LOGINS__') list=list.filter(function(h){
+    return h.accion==='LOGIN_OK'||h.accion==='LOGIN_FALLIDO'||h.accion==='LOGOUT';
+  });
+  else if(tipo) list=list.filter(function(h){return h.accion===tipo;});
   return list;
 }
 function renderHist(filter,tipo){
