@@ -1,0 +1,59 @@
+# Pendientes (Fase 112, 2026-10-02)
+
+Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
+antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
+punto, si existe, está en `docs/historico/progress-fases.md`.
+
+## De Edwin (datos reales)
+
+Pestañas ya construidas, esperando el archivo real — ver
+`docs/inventario-bases-orlant.md` para la hoja/columnas exactas de cada
+una:
+
+- **Ordenamiento Médico** y **Recuperación de Cancelados** (parte de la
+  pestaña Agendamiento).
+- **Flujo Mensual** — probablemente redundante con Tráfico de
+  Llamadas/WhatsApp (que ya cubre lo mismo, automático); preguntar a
+  Edwin si se puede retirar del todo en vez de solo dejarla oculta.
+- **Salida** (llamadas/WhatsApp de salida, diaria).
+- **Gestión STA** — necesita 2 fuentes (`sta_categorias` + parte del
+  archivo de agendamiento).
+
+## De AWS
+
+- **Fase 97, parte de AWS: pausada** — falta la **Política 1 de IAM**
+  (agregar `s3:ListBucket` + `s3:GetObject` al usuario
+  `inconexion-instance`, acotado al prefijo `db-backups/*` del bucket de
+  backups — JSON ya armado en `docs/aws-permisos-pendientes.md`). Bloquea
+  la prueba real de restauración de backups
+  (`.github/workflows/verificar-restore-backup-produccion.yml`). Necesita
+  credenciales de AWS a mano para aplicarse — no se puede hacer desde
+  una sesión de Claude Code sin eso.
+- **Inventario y respaldo de la cuenta AWS vieja** (`934685482338`): sin
+  empezar — necesita las credenciales de esa cuenta.
+- **Alarma de espacio en disco**: el disco de la instancia se llenó una
+  vez (Fase 111, causó que fallara un deploy — ya arreglado el síntoma
+  con `docker system prune -af` antes del `pull`, ver `deploy.yml`), pero
+  no hay una alarma de CloudWatch que avise ANTES de que vuelva a pasar.
+  Sería una métrica custom del `cloudwatch-agent-config.json` + una
+  alarma más, mismo patrón que la de health check
+  (`docs/historico/AWS_DEPLOY_REPORT.md` §7.5).
+
+## Decisiones pendientes del usuario
+
+- **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
+  deja esperando por si algún día se usa?
+- **Nivel de servicio**: Edwin lo mencionó como una base aparte en algún
+  momento, pero Tráfico de Llamadas/WhatsApp ya muestra Nivel de Servicio
+  a 20s — aclarar con él si se refiere a algo distinto (por hora, un SLA
+  interno de InCo, una línea específica) antes de construir nada nuevo.
+
+## Mejoras propuestas (no pedidas todavía, para cuando haya espacio)
+
+- **"Cambiar mi contraseña"**: hoy solo un administrador puede cambiar la
+  contraseña de alguien más (Administración → Usuarios) — no hay un
+  botón de autoservicio para que cada quien cambie la suya.
+- **Registro de inicios de sesión**: el Historial ya registra acciones
+  administrativas (crear/editar usuarios, cargas, etc.) pero no
+  "fulano inició sesión a tal hora" — útil para auditoría si alguna vez
+  se sospecha de una cuenta comprometida.

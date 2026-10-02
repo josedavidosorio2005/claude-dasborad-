@@ -21,7 +21,7 @@ antes del primer paint (sin parpadeo), incluidas las gráficas.
 |---|---|
 | **README.md** (este) | Visión general, instalación local, seguridad, despliegue con Docker |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | **Foto completa del sistema**: modelo de datos, motor de semáforo, motor de dashboards, Tráfico Volvox, carga masiva de Calidad, API, y decisiones no obvias — para mantener/extender sin preguntar |
-| [`PROGRESS.md`](PROGRESS.md) | Estado del proyecto fase por fase (fuente de verdad del avance) |
+| [`PROGRESS.md`](PROGRESS.md) | Estado actual (versión, bases, pendientes) + índice de fases. Detalle narrativo fase por fase: [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md) |
 | [`docs/infraestructura.md`](docs/infraestructura.md) | **Despliegue en AWS, estado vigente**: cuenta, recursos, pipeline — corto |
 | [`docs/historico/`](docs/historico/) | Informes de fases ya cerradas (despliegue AWS completo con runbook, lanzamiento, seguridad, datos reales, limpieza de UI) — archivo, no vigente |
 

@@ -148,8 +148,14 @@ asumir en qué quedó una fase anterior.
 
 ## Bitácora
 
-- `PROGRESS.md` es aditivo: se agregan entradas al cerrar cada fase, no
-  se reescribe el historial.
+- **Desde la Fase 112**, el detalle narrativo de cada fase (qué se hizo,
+  verificación, PRs, estado final) se agrega a
+  `docs/historico/progress-fases.md` — ese archivo es el aditivo, nunca
+  se reescribe. `PROGRESS.md` (raíz del repo) es ahora un resumen corto
+  que se actualiza EN EL SITIO al cerrar cada fase: versión, pestañas y
+  bases de ORLANT, números de control, pendientes (apunta a
+  `docs/pendientes.md`) y el índice de títulos — nunca crece sin límite.
+  Actualizar ambos en el mismo PR de cierre de cada fase.
 - Antes de reportar algo como "listo", verificarlo explícitamente (tests
   pasando, CI verde, deploy confirmado, o la verificación real que
   corresponda) — nunca asumir.
