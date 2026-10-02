@@ -133,6 +133,15 @@ const changePasswordBody = z.object({
   password: passwordSchema,
 });
 
+// Fase 113 (tema B): "Cambiar mi contrasena" -- mismas reglas de largo que
+// ya usa el reseteo de admin (passwordSchema); la regla extra de "no igual
+// al nombre de usuario" se aplica en el handler (routes/auth.js), porque
+// necesita el usuario de la sesion, no solo el body.
+const changeOwnPasswordBody = z.object({
+  currentPassword: z.string(reqStr('La contrasena actual es obligatoria')).min(1, 'La contrasena actual es obligatoria'),
+  newPassword: passwordSchema,
+});
+
 const updatePermsBody = z.object({
   perms: permsSchema,
 });
@@ -978,6 +987,7 @@ module.exports = {
     createUserBody,
     updateUserBody,
     changePasswordBody,
+    changeOwnPasswordBody,
     updatePermsBody,
     idParamSchema,
     createMonitoreoBody,

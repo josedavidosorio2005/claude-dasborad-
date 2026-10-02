@@ -170,7 +170,13 @@ router.put(
       return res.status(403).json({ error: 'Solo un administrador completo puede cambiar la contrasena de un usuario ADMIN o AUX_ADMIN' });
     }
     const hash = await bcrypt.hash(req.body.password, 10);
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, id);
+    // Fase 113 (tema B): un reseteo de admin tambien invalida los tokens ya
+    // emitidos de ese usuario -- igual que el cambio de contrasena propio
+    // (routes/auth.js), solo que aqui quien cambia la contrasena NO es quien
+    // queda con la sesion abierta, asi que no hay un token nuevo que devolver:
+    // la proxima peticion de ESE usuario con su token viejo simplemente deja
+    // de servir (401 generico), como cualquier sesion vencida.
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(hash, id);
     logEvent('PASSWORD', row, actorLabel(req.actor), 'Contrasena cambiada');
     res.json({ ok: true });
   })

@@ -2575,6 +2575,18 @@ runOnceMigration('users_last_login_v1', () => {
   }
 });
 
+// Fase 113 (tema B): token_version se mete en el JWT al firmar (signToken,
+// server/auth.js) y se compara en cada peticion contra el valor real en BD
+// (getActor) -- al cambiar una contrasena (propia o por reseteo de admin)
+// se incrementa, y cualquier token firmado antes deja de servir en la
+// SIGUIENTE peticion, sin guardar una lista de tokens revocados.
+runOnceMigration('users_token_version_v1', () => {
+  db.exec(`ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1`);
+  if (!config.isTest) {
+    console.log('[db] Migracion users_token_version_v1 aplicada.');
+  }
+});
+
 // Historial: columnas ip/userAgent, usadas SOLO por los eventos de inicio/
 // cierre de sesion (LOGIN_OK/LOGIN_FALLIDO/LOGOUT) -- el resto de acciones
 // (ya existentes) las deja NULL. El navegador se guarda ya RESUMIDO (ej.

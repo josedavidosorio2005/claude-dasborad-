@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.10.0 — Octubre 2026
+
+**Ahora cada usuario puede cambiar su contrasena.** Nueva opcion "Cambiar mi
+contrasena" en el menu de usuario, disponible para cualquier persona desde
+cualquier pagina — pide la contrasena actual, la nueva y que la confirmes.
+Al cambiarla (ya sea asi, o cuando un administrador resetea la de alguien
+mas desde Usuarios), las sesiones abiertas antes de ese cambio dejan de
+servir; la que usaste para cambiarla sigue abierta sin pedirte entrar de
+nuevo.
+
+**La plataforma registra los inicios de sesion.** Cada vez que alguien
+entra o intenta entrar (bien o mal) queda anotado en el Historial — con
+fecha, hora, IP y el navegador usado — visible solo para un administrador
+completo. La lista de Usuarios ahora muestra cuando entro cada quien por
+ultima vez, y si una cuenta tiene muchos intentos fallidos seguidos o un
+administrador entra desde un lugar nuevo, sale un aviso en el panel.
+
 ## v1.9.1 — Octubre 2026
 
 Revision general de toda la plataforma antes de seguir con las bases

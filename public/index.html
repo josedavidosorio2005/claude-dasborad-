@@ -65,6 +65,7 @@
         <span class="navbar-role" id="nb-role-admin"></span>
         <span class="navbar-app-version" style="font-size:0.7rem;color:var(--c-text-muted);margin-left:4px"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -699,6 +700,7 @@
         <span class="navbar-role" id="nb-role-dash"></span>
         <span class="navbar-app-version" style="font-size:0.7rem;color:var(--c-text-muted);margin-left:4px"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -1412,6 +1414,7 @@
         <span class="navbar-role" id="nb-role-asesor">ASESOR</span>
         <span class="navbar-app-version" style="font-size:0.7rem;color:var(--c-text-muted);margin-left:4px"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -1482,6 +1485,7 @@
         <span class="navbar-role" id="nb-role-supervisor">SUPERVISOR</span>
         <span class="navbar-app-version" style="font-size:0.7rem;color:var(--c-text-muted);margin-left:4px"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -1590,6 +1594,39 @@
   </div>
 </div>
 
+<!-- Fase 113 (tema B): global (fuera de los 4 app-page) -- reusable desde
+     cualquier rol, igual que el toast de abajo. -->
+<div class="modal-overlay" id="modal-change-own-password">
+  <div class="modal">
+    <h3>Cambiar mi Contrasena</h3>
+    <div class="ig">
+      <label>Contrasena Actual</label>
+      <div class="pass-wrap">
+        <input type="password" id="cop-actual" placeholder="••••••••">
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)">&#128065;</button>
+      </div>
+    </div>
+    <div class="ig">
+      <label>Nueva Contrasena</label>
+      <div class="pass-wrap">
+        <input type="password" id="cop-nueva" placeholder="••••••••">
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)">&#128065;</button>
+      </div>
+    </div>
+    <div class="ig">
+      <label>Confirmar Nueva Contrasena</label>
+      <div class="pass-wrap">
+        <input type="password" id="cop-confirmar" placeholder="••••••••">
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)">&#128065;</button>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal('modal-change-own-password')">Cancelar</button>
+      <button class="btn-primary" onclick="submitCambiarPasswordPropia()">Cambiar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- Librerias: Chart.js + plugin de etiquetas (antes inline) -->
@@ -1629,6 +1666,7 @@
 <script src="js/roles-perms.js"></script>
 <script src="js/historial.js"></script>
 <script src="js/seguridad.js"></script>
+<script src="js/mi-cuenta.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>

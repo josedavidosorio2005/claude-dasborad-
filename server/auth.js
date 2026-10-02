@@ -43,6 +43,13 @@ function getActor(req) {
   }
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(req.auth.userId);
   if (!row) return null;
+  // Fase 113 (tema B): un token firmado ANTES de un cambio de contrasena
+  // (propio o por reseteo de admin) trae una tokenVersion vieja -- se
+  // incrementa token_version en BD al cambiar la contrasena, asi que
+  // comparar aqui invalida ese token de inmediato en la SIGUIENTE peticion,
+  // sin necesidad de guardar una lista de tokens revocados. Se trata igual
+  // que "actor no encontrado" (401 generico) para no distinguir el motivo.
+  if (req.auth.tokenVersion !== row.token_version) return null;
   return { ...row, perms: JSON.parse(row.perms || '{}'), isMasterAdmin: false };
 }
 
