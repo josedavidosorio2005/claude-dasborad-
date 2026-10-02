@@ -112,10 +112,50 @@ async function revisarExportarExcel(page, hallazgos, ctx) {
   await page.keyboard.press('Escape').catch(() => {});
 }
 
+// Fase 112: el bug de la Fase 111 (Ranking de Asesores y Efectividad de
+// Citas no se dibujaban) se le escapo a las pruebas porque solo chequeaban
+// que `_gd.charts[id]` existiera como objeto, no que el <canvas> tuviera
+// pixeles realmente pintados. Aqui se lee getImageData de cada canvas
+// visible y se busca al menos un pixel con alpha != 0.
+async function canvasesSinDibujar(page) {
+  return page.evaluate(() => {
+    const out = [];
+    // Acotado a #gd-panels: el documento tiene otros canvases ajenos al
+    // dashboard generico (ej. "cch-*"/"mr-ch-*" de un modal de Calidad en
+    // otra parte de la pagina) que son 0x0 legitimamente porque viven fuera
+    // de este flujo -- no son el bug que se busca aqui.
+    const host = document.getElementById('gd-panels');
+    if (!host) return out;
+    host.querySelectorAll('canvas').forEach((c) => {
+      const rect = c.getBoundingClientRect();
+      const style = getComputedStyle(c);
+      if (style.display === 'none' || style.visibility === 'hidden') return; // no es el panel activo
+      if (rect.width < 5 || rect.height < 5) {
+        out.push({ id: c.id || '(sin id)', motivo: 'tamano-cero-en-pantalla', width: rect.width, height: rect.height });
+        return;
+      }
+      let ctx;
+      try { ctx = c.getContext('2d'); } catch (e) { return; }
+      if (!ctx) return; // WebGL u otro motor -- no aplica este chequeo
+      let data;
+      try { data = ctx.getImageData(0, 0, c.width, c.height).data; } catch (e) {
+        out.push({ id: c.id || '(sin id)', motivo: 'error-leyendo-canvas', error: e.message });
+        return;
+      }
+      let tienePixel = false;
+      for (let i = 3; i < data.length; i += 4) { if (data[i] !== 0) { tienePixel = true; break; } }
+      if (!tienePixel) out.push({ id: c.id || '(sin id)', motivo: 'sin-pixeles-dibujados', width: c.width, height: c.height });
+    });
+    return out;
+  });
+}
+
 async function revisarPanelActual(page, hallazgos, ctx, { exportar }) {
   if (await hayScrollHorizontal(page)) hallazgos.push({ tipo: 'scroll-horizontal', ctx });
   const sosp = await textoSospechoso(page);
   if (sosp) hallazgos.push({ tipo: 'texto-sospechoso', ctx, muestra: sosp });
+  const canvasesMalos = await canvasesSinDibujar(page);
+  canvasesMalos.forEach((c) => hallazgos.push({ tipo: 'canvas-' + c.motivo, ctx, canvas: c.id, detalle: c }));
   if (exportar) await revisarExportarExcel(page, hallazgos, ctx);
 }
 
