@@ -1,0 +1,370 @@
+name: Salud del servidor (disco, respaldos, certificado — solo lectura)
+
+# Fase 113 (Tema C, autorizado explicitamente). Revisa POR DENTRO del
+# servidor (via SSH) lo que monitor-produccion.yml no puede ver desde
+# afuera: disco, memoria, imagenes Docker, tamano de la base y el estado
+# del respaldo diario. Reutiliza EXACTAMENTE el mismo mecanismo ya auditado
+# que audit-instance.yml/deploy.yml (rol OIDC, apertura temporal del puerto
+# 22 solo para la IP de este runner, secrets de SSH ya cargados) -- no abre
+# acceso nuevo ni expone credenciales fuera de este pipeline.
+#
+# SOLO LECTURA: ningun comando de este workflow cambia nada en el servidor
+# (df, free, docker images/system df, stat, systemctl is-active/show,
+# journalctl, openssl). Si un chequeo no se puede leer sin sudo con los
+# permisos que ya tiene el usuario de deploy, se reporta "SIN_PERMISO" --
+# este workflow NUNCA amplia permisos por su cuenta.
+#
+# El repo es PUBLICO: solo se imprimen numeros, fechas y OK/ERROR -- nunca
+# una linea cruda de log, un nombre de archivo, una IP interna ni una ruta
+# de mas (ver el script embebido mas abajo, comentado punto por punto).
+on:
+  schedule:
+    # 6:00 a.m. hora de Colombia (UTC-5 fijo, sin horario de verano) = 11:00 UTC.
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+env:
+  SITIO_URL: https://informa.inconexion.com.co
+  ISSUE_TITULO: 'Salud del servidor con problemas'
+  ISSUE_LABEL: servidor
+
+jobs:
+  salud:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      # Un solo script que recoge TODO por SSH y lo imprime como lineas
+      # CLAVE=VALOR (capture_stdout:true las deja disponibles en el step de
+      # abajo via steps.salud.outputs.stdout). Nunca falla el step en si
+      # mismo (siempre termina en "exit 0"): el veredicto OK/ERROR lo decide
+      # el step "Evaluar umbrales", aparte, igual que monitor-produccion.yml.
+      - name: Recoger metricas del servidor (solo lectura)
+        id: salud
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: false
+          capture_stdout: true
+          script: |
+            set +e
+
+            # ── Disco: % de uso del disco del sistema y del disco de datos ──
+            DISCO_SISTEMA_PCT=$(df -h / 2>/dev/null | awk 'NR==2{gsub("%","",$5); print $5}')
+            DISCO_DATOS_PCT=$(df -h /opt/inconexion/data 2>/dev/null | awk 'NR==2{gsub("%","",$5); print $5}')
+            echo "DISCO_SISTEMA_PCT=${DISCO_SISTEMA_PCT:-SIN_DATO}"
+            echo "DISCO_DATOS_PCT=${DISCO_DATOS_PCT:-SIN_DATO}"
+
+            # ── Memoria ──
+            read -r MEM_TOTAL MEM_USADA <<< "$(free -m 2>/dev/null | awk '/^Mem:/{print $2, $3}')"
+            if [ -n "$MEM_TOTAL" ] && [ "$MEM_TOTAL" -gt 0 ] 2>/dev/null; then
+              MEM_PCT=$(( MEM_USADA * 100 / MEM_TOTAL ))
+            else
+              MEM_PCT="SIN_DATO"
+            fi
+            echo "MEM_USADA_PCT=${MEM_PCT}"
+            echo "MEM_TOTAL_MB=${MEM_TOTAL:-SIN_DATO}"
+            echo "MEM_USADA_MB=${MEM_USADA:-SIN_DATO}"
+
+            # ── Docker: cuantas imagenes y cuanto ocupan ──
+            # El usuario de deploy ya esta en el grupo docker (deploy.yml
+            # corre "docker compose ..." sin sudo) -- se intenta sin sudo
+            # primero, con sudo -n como respaldo, nunca se pide password.
+            if docker info >/dev/null 2>&1; then DOCKER_CMD="docker";
+            elif sudo -n docker info >/dev/null 2>&1; then DOCKER_CMD="sudo -n docker";
+            else DOCKER_CMD=""; fi
+            if [ -n "$DOCKER_CMD" ]; then
+              echo "DOCKER_IMAGENES=$($DOCKER_CMD images -q 2>/dev/null | wc -l | tr -d ' ')"
+              echo "DOCKER_IMAGENES_SIZE=$($DOCKER_CMD system df --format '{{.Type}} {{.Size}}' 2>/dev/null | awk '$1=="Images"{print $2}')"
+            else
+              echo "DOCKER_IMAGENES=SIN_PERMISO"
+              echo "DOCKER_IMAGENES_SIZE=SIN_PERMISO"
+            fi
+
+            # ── Tamano de la base ──
+            DB_PATH="/opt/inconexion/data/inconexion.db"
+            if [ -r "$DB_PATH" ]; then DB_BYTES=$(stat -c '%s' "$DB_PATH" 2>/dev/null);
+            elif sudo -n test -r "$DB_PATH" 2>/dev/null; then DB_BYTES=$(sudo -n stat -c '%s' "$DB_PATH" 2>/dev/null); fi
+            if [ -n "$DB_BYTES" ]; then
+              echo "DB_SIZE_MB=$(awk -v b="$DB_BYTES" 'BEGIN{printf "%.1f", b/1024/1024}')"
+            else
+              echo "DB_SIZE_MB=SIN_PERMISO"
+            fi
+
+            # ── Ultimo respaldo local: fecha y tamano -- NUNCA el nombre de
+            # archivo (puede delatar un timestamp exacto de operacion; el
+            # repo es publico). Se listan los nombres solo para encontrar
+            # el mas reciente (orden lexicografico = cronologico, por el
+            # formato AAAAMMDD-HHMMSS), nunca se imprimen.
+            BACKUP_DIR="/opt/inconexion/data/backups"
+            ULTIMO=""
+            if [ -d "$BACKUP_DIR" ] && [ -r "$BACKUP_DIR" ]; then
+              ULTIMO=$(ls -1 "$BACKUP_DIR" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            elif sudo -n test -d "$BACKUP_DIR" 2>/dev/null; then
+              ULTIMO=$(sudo -n ls -1 "$BACKUP_DIR" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            fi
+            if [ -n "$ULTIMO" ]; then
+              RUTA="$BACKUP_DIR/$ULTIMO"
+              if [ -r "$RUTA" ]; then
+                BACKUP_EPOCH=$(stat -c '%Y' "$RUTA" 2>/dev/null); BACKUP_BYTES=$(stat -c '%s' "$RUTA" 2>/dev/null)
+              else
+                BACKUP_EPOCH=$(sudo -n stat -c '%Y' "$RUTA" 2>/dev/null); BACKUP_BYTES=$(sudo -n stat -c '%s' "$RUTA" 2>/dev/null)
+              fi
+            fi
+            if [ -n "$BACKUP_EPOCH" ]; then
+              AHORA=$(date +%s)
+              echo "BACKUP_FECHA=$(date -d "@$BACKUP_EPOCH" '+%Y-%m-%d %H:%M' 2>/dev/null)"
+              echo "BACKUP_HORAS=$(( (AHORA - BACKUP_EPOCH) / 3600 ))"
+              echo "BACKUP_TAMANO_MB=$(awk -v b="$BACKUP_BYTES" 'BEGIN{printf "%.1f", b/1024/1024}')"
+            else
+              echo "BACKUP_FECHA=SIN_DATO"
+              echo "BACKUP_HORAS=SIN_DATO"
+              echo "BACKUP_TAMANO_MB=SIN_DATO"
+            fi
+
+            # ── Timer y ultima corrida del servicio de respaldo ──
+            TIMER_ESTADO=$(systemctl is-active inconexion-backup.timer 2>/dev/null)
+            [ -z "$TIMER_ESTADO" ] && TIMER_ESTADO=$(sudo -n systemctl is-active inconexion-backup.timer 2>/dev/null)
+            echo "TIMER_ESTADO=${TIMER_ESTADO:-SIN_PERMISO}"
+
+            SERVICIO_RESULT=$(systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
+            [ -z "$SERVICIO_RESULT" ] && SERVICIO_RESULT=$(sudo -n systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
+            echo "SERVICIO_RESULT=${SERVICIO_RESULT:-SIN_PERMISO}"
+
+            # Solo clasifica OK/ERROR de la linea que ya imprime
+            # scripts/backup.js al subir a S3 -- NUNCA se imprime la linea
+            # cruda del log (trae la ruta/nombre del archivo).
+            LOG=$(journalctl -u inconexion-backup.service -n 30 --no-pager 2>/dev/null)
+            [ -z "$LOG" ] && LOG=$(sudo -n journalctl -u inconexion-backup.service -n 30 --no-pager 2>/dev/null)
+            if [ -z "$LOG" ]; then
+              echo "BACKUP_S3=SIN_PERMISO"
+            elif echo "$LOG" | grep -q '\[backup\] Fallo la subida a S3'; then
+              echo "BACKUP_S3=ERROR"
+            elif echo "$LOG" | grep -q '\[backup\] Subido a '; then
+              echo "BACKUP_S3=OK"
+            else
+              echo "BACKUP_S3=SIN_DATO"
+            fi
+
+            exit 0
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
+
+      # Mismo chequeo de certificado que monitor-produccion.yml (publico,
+      # sin SSH) -- se repite aqui a proposito: este workflow es el que
+      # decide si el certificado entra en la condicion de fallo de HOY.
+      - name: Dias que le quedan al certificado TLS
+        id: cert
+        run: |
+          set -uo pipefail
+          HOST=$(echo "$SITIO_URL" | sed -E 's#^https?://##; s#/.*##')
+          FECHA_FIN=$(printf '' | timeout 10 openssl s_client -servername "$HOST" -connect "$HOST:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+          if [ -z "$FECHA_FIN" ]; then
+            echo "dias=-1" >> "$GITHUB_OUTPUT"
+            echo "No se pudo leer el certificado TLS."
+          else
+            FIN_EPOCH=$(date -d "$FECHA_FIN" +%s)
+            HOY_EPOCH=$(date +%s)
+            DIAS=$(( (FIN_EPOCH - HOY_EPOCH) / 86400 ))
+            echo "dias=$DIAS" >> "$GITHUB_OUTPUT"
+            echo "Dias que le quedan al certificado: $DIAS"
+          fi
+
+      - name: Evaluar umbrales e imprimir el resumen (solo numeros/fechas/OK-ERROR)
+        id: evaluar
+        env:
+          SALUD_STDOUT: ${{ steps.salud.outputs.stdout }}
+          DIAS_CERT: ${{ steps.cert.outputs.dias }}
+        run: |
+          set -uo pipefail
+          printf '%s' "$SALUD_STDOUT" > /tmp/salud.txt
+          val() { grep -m1 "^$1=" /tmp/salud.txt | cut -d= -f2-; }
+          es_numero() { [[ "$1" =~ ^[0-9]+$ ]]; }
+
+          DISCO_SISTEMA_PCT=$(val DISCO_SISTEMA_PCT)
+          DISCO_DATOS_PCT=$(val DISCO_DATOS_PCT)
+          MEM_USADA_PCT=$(val MEM_USADA_PCT)
+          MEM_TOTAL_MB=$(val MEM_TOTAL_MB)
+          MEM_USADA_MB=$(val MEM_USADA_MB)
+          DOCKER_IMAGENES=$(val DOCKER_IMAGENES)
+          DOCKER_IMAGENES_SIZE=$(val DOCKER_IMAGENES_SIZE)
+          DB_SIZE_MB=$(val DB_SIZE_MB)
+          BACKUP_FECHA=$(val BACKUP_FECHA)
+          BACKUP_HORAS=$(val BACKUP_HORAS)
+          BACKUP_TAMANO_MB=$(val BACKUP_TAMANO_MB)
+          TIMER_ESTADO=$(val TIMER_ESTADO)
+          SERVICIO_RESULT=$(val SERVICIO_RESULT)
+          BACKUP_S3=$(val BACKUP_S3)
+
+          echo "Disco sistema (/): ${DISCO_SISTEMA_PCT}%"
+          echo "Disco de datos (/opt/inconexion/data): ${DISCO_DATOS_PCT}%"
+          echo "Memoria usada: ${MEM_USADA_PCT}% (${MEM_USADA_MB}/${MEM_TOTAL_MB} MB)"
+          echo "Imagenes Docker: ${DOCKER_IMAGENES} (${DOCKER_IMAGENES_SIZE})"
+          echo "Tamano de la base: ${DB_SIZE_MB} MB"
+          echo "Ultimo respaldo local: ${BACKUP_FECHA} (hace ${BACKUP_HORAS}h), ${BACKUP_TAMANO_MB} MB"
+          echo "Timer de respaldo: ${TIMER_ESTADO}"
+          echo "Ultima corrida del servicio de respaldo: ${SERVICIO_RESULT}"
+          echo "Subida a S3 (ultima corrida): ${BACKUP_S3}"
+          echo "Certificado TLS: ${DIAS_CERT} dias restantes"
+
+          PROBLEMA=0
+          MOTIVOS=""
+          if es_numero "$DISCO_SISTEMA_PCT" && [ "$DISCO_SISTEMA_PCT" -gt 80 ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS disco-sistema(${DISCO_SISTEMA_PCT}%)"
+          fi
+          if es_numero "$DISCO_DATOS_PCT" && [ "$DISCO_DATOS_PCT" -gt 80 ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS disco-datos(${DISCO_DATOS_PCT}%)"
+          fi
+          if es_numero "$BACKUP_HORAS" && [ "$BACKUP_HORAS" -gt 26 ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS backup-viejo(${BACKUP_HORAS}h)"
+          elif [ "$BACKUP_HORAS" = "SIN_DATO" ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS sin-backup-encontrado"
+          fi
+          if [ "$SERVICIO_RESULT" != "success" ] && [ "$SERVICIO_RESULT" != "SIN_PERMISO" ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS servicio-backup-fallo(${SERVICIO_RESULT})"
+          fi
+          if es_numero "$DIAS_CERT" && [ "$DIAS_CERT" -lt 14 ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS certificado(${DIAS_CERT}d)"
+          fi
+
+          {
+            echo "problema=$PROBLEMA"
+            echo "motivos=$MOTIVOS"
+            echo "resumen<<__RESUMEN__"
+            echo "Disco sistema (/): ${DISCO_SISTEMA_PCT}%"
+            echo "Disco de datos: ${DISCO_DATOS_PCT}%"
+            echo "Memoria usada: ${MEM_USADA_PCT}%"
+            echo "Imagenes Docker: ${DOCKER_IMAGENES} (${DOCKER_IMAGENES_SIZE})"
+            echo "Tamano de la base: ${DB_SIZE_MB} MB"
+            echo "Ultimo respaldo local: hace ${BACKUP_HORAS}h (${BACKUP_TAMANO_MB} MB)"
+            echo "Timer de respaldo: ${TIMER_ESTADO}"
+            echo "Ultima corrida del servicio: ${SERVICIO_RESULT}"
+            echo "Subida a S3: ${BACKUP_S3}"
+            echo "Certificado TLS: ${DIAS_CERT} dias restantes"
+            echo "__RESUMEN__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Abrir/comentar el issue si hay problema, o cerrarlo si ya se recupero
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
+        with:
+          script: |
+            const problema = '${{ steps.evaluar.outputs.problema }}' === '1';
+            const motivos = '${{ steps.evaluar.outputs.motivos }}'.trim();
+            const resumen = `${{ steps.evaluar.outputs.resumen }}`;
+            const titulo = process.env.ISSUE_TITULO;
+            const label = process.env.ISSUE_LABEL;
+
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner, repo: context.repo.repo,
+                name: label, color: 'd93f0b',
+                description: 'Salud del servidor con problemas (disco, respaldo o certificado)',
+              });
+            } catch (e) {
+              if (e.status !== 422) throw e; // 422 = la etiqueta ya existe
+            }
+
+            const { data: abiertos } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            const existente = abiertos.find((i) => i.title === titulo);
+
+            if (problema) {
+              const cuerpo = `${resumen}\n\nMotivo(s): ${motivos}\n\nCorrida: ${context.runId} (${new Date().toISOString()})`;
+              if (existente) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: existente.number, body: cuerpo,
+                });
+                console.log(`Comentado el issue #${existente.number} (ya estaba abierto).`);
+              } else {
+                const nuevo = await github.rest.issues.create({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  title: titulo, body: cuerpo, labels: [label],
+                });
+                console.log(`Issue nuevo creado: #${nuevo.data.number}`);
+              }
+            } else if (existente) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existente.number, body: `Recuperado.\n\n${resumen}`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: existente.number, state: 'closed',
+              });
+              console.log(`Issue #${existente.number} comentado y cerrado (recuperado).`);
+            } else {
+              console.log('Todo OK, sin issue abierto que tocar.');
+            }
+        env:
+          ISSUE_TITULO: ${{ env.ISSUE_TITULO }}
+          ISSUE_LABEL: ${{ env.ISSUE_LABEL }}
+
+      - name: Fallar el job si hay un problema (dispara el correo de GitHub)
+        if: steps.evaluar.outputs.problema == '1'
+        run: |
+          echo "::error::Salud del servidor con problemas: ${{ steps.evaluar.outputs.motivos }}"
+          exit 1

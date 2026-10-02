@@ -43,6 +43,17 @@ cómo se llegó aquí, o para reconstruir todo desde cero, usar el histórico.
    tiempo de respuesta, certificado TLS, redirección HTTP→HTTPS. Abre/
    comenta/cierra solo el issue "Producción caída o con problemas". No
    toca AWS ni secretos.
+4. Salud del servidor (Fase 113, Tema C): `.github/workflows/salud-servidor.yml`
+   revisa POR DENTRO del servidor una vez al día (6 a.m. Colombia) + botón
+   manual, solo lectura, vía SSH (mismo mecanismo OIDC + puerto 22
+   temporal que `audit-instance.yml`): disco (sistema y `/opt/inconexion/data`),
+   memoria, imágenes Docker, tamaño de la base, fecha/tamaño del último
+   respaldo local, estado de `inconexion-backup.timer`/`.service` (incluida
+   la subida a S3 según su log) y días de certificado TLS. Abre/comenta/
+   cierra el issue "Salud del servidor con problemas" (etiqueta `servidor`)
+   si un disco pasa 80 %, el último respaldo tiene más de 26 h, el
+   servicio de respaldo no terminó en éxito, o el certificado tiene menos
+   de 14 días. Ver `CLAUDE.md` para el detalle completo.
 
 Secrets/variables de GitHub Actions: `AWS_DEPLOY_ROLE_ARN`,
 `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, `DEPLOY_SSH_KEY` (secrets),

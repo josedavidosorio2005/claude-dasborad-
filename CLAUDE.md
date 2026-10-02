@@ -104,6 +104,29 @@ asumir en qué quedó una fase anterior.
   PRs, etc.) — se reactiva solo abriendo la pestaña Actions → el
   workflow → botón "Enable workflow" (o con cualquier commit nuevo al
   repo, que cuenta como actividad).
+- **Salud del servidor** (Fase 113, Tema C, autorizado explícitamente):
+  `.github/workflows/salud-servidor.yml` revisa POR DENTRO del servidor
+  (vía SSH, reutilizando EXACTAMENTE el mismo mecanismo ya auditado de
+  `audit-instance.yml`/`deploy.yml`: rol OIDC, puerto 22 abierto solo para
+  la IP del runner y cerrado al final con `if: always()`, secrets SSH de
+  siempre) una vez al día (6 a.m. Colombia) + botón manual
+  (`workflow_dispatch`), **solo lectura** (ningún comando cambia nada en
+  el servidor): % de uso del disco del sistema y del disco de datos
+  (`/opt/inconexion/data`), memoria, cantidad y tamaño de imágenes
+  Docker, tamaño de la base, fecha y tamaño del último respaldo local,
+  estado de `inconexion-backup.timer` y resultado de la última corrida de
+  `inconexion-backup.service` (según su log: si la subida a S3 dijo OK o
+  error), y días restantes del certificado TLS. Solo imprime
+  números/fechas/OK-ERROR — nunca una línea cruda de log, un nombre de
+  archivo, una IP interna ni una ruta de más (el repo es público). Si no
+  se puede leer algo sin ampliar los permisos que ya tiene el usuario de
+  deploy (ej. el log del servicio sin sudo), lo reporta como
+  `SIN_PERMISO` en vez de fallar o pedir más acceso. Falla (abre o
+  comenta el issue "Salud del servidor con problemas", etiqueta
+  `servidor`; se cierra solo al recuperarse) si: un disco queda por
+  encima del 80 %, el último respaldo tiene más de 26 h, el servicio de
+  respaldo no terminó en `success`, o quedan menos de 14 días de
+  certificado. No toca `deploy.yml` ni amplía permisos IAM.
 
 ## Datos reales de clientes
 
