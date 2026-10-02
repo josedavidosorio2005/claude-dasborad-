@@ -169,6 +169,17 @@ jobs:
             [ -z "$TIMER_ESTADO" ] && TIMER_ESTADO=$(sudo -n systemctl is-active inconexion-backup.timer 2>/dev/null)
             echo "TIMER_ESTADO=${TIMER_ESTADO:-SIN_PERMISO}"
 
+            # Fase 114: is-active por si solo no basta -- is-active de un timer
+            # systemd normalmente YA es "active" mientras este habilitado y
+            # esperando su proxima corrida, pero is-enabled es lo que de verdad
+            # confirma que sobrevive un reboot/reinicio del servicio. El
+            # hallazgo real de la primera corrida de este workflow (Fase 113)
+            # fue justo esto: el timer nunca quedo habilitado tras la
+            # migracion de cuenta AWS (ver docs/pendientes.md).
+            TIMER_ENABLED=$(systemctl is-enabled inconexion-backup.timer 2>/dev/null)
+            [ -z "$TIMER_ENABLED" ] && TIMER_ENABLED=$(sudo -n systemctl is-enabled inconexion-backup.timer 2>/dev/null)
+            echo "TIMER_ENABLED=${TIMER_ENABLED:-SIN_PERMISO}"
+
             SERVICIO_RESULT=$(systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
             [ -z "$SERVICIO_RESULT" ] && SERVICIO_RESULT=$(sudo -n systemctl show inconexion-backup.service -p Result --value 2>/dev/null)
             echo "SERVICIO_RESULT=${SERVICIO_RESULT:-SIN_PERMISO}"
@@ -252,6 +263,7 @@ jobs:
           BACKUP_HORAS=$(val BACKUP_HORAS)
           BACKUP_TAMANO_MB=$(val BACKUP_TAMANO_MB)
           TIMER_ESTADO=$(val TIMER_ESTADO)
+          TIMER_ENABLED=$(val TIMER_ENABLED)
           SERVICIO_RESULT=$(val SERVICIO_RESULT)
           BACKUP_S3=$(val BACKUP_S3)
 
@@ -261,7 +273,7 @@ jobs:
           echo "Imagenes Docker: ${DOCKER_IMAGENES} (${DOCKER_IMAGENES_SIZE})"
           echo "Tamano de la base: ${DB_SIZE_MB} MB"
           echo "Ultimo respaldo local: ${BACKUP_FECHA} (hace ${BACKUP_HORAS}h), ${BACKUP_TAMANO_MB} MB"
-          echo "Timer de respaldo: ${TIMER_ESTADO}"
+          echo "Timer de respaldo: ${TIMER_ESTADO} (enabled: ${TIMER_ENABLED})"
           echo "Ultima corrida del servicio de respaldo: ${SERVICIO_RESULT}"
           echo "Subida a S3 (ultima corrida): ${BACKUP_S3}"
           echo "Certificado TLS: ${DIAS_CERT} dias restantes"
@@ -282,6 +294,9 @@ jobs:
           if [ "$SERVICIO_RESULT" != "success" ] && [ "$SERVICIO_RESULT" != "SIN_PERMISO" ]; then
             PROBLEMA=1; MOTIVOS="$MOTIVOS servicio-backup-fallo(${SERVICIO_RESULT})"
           fi
+          if [ "$TIMER_ENABLED" != "enabled" ] && [ "$TIMER_ENABLED" != "SIN_PERMISO" ]; then
+            PROBLEMA=1; MOTIVOS="$MOTIVOS timer-no-enabled(${TIMER_ENABLED})"
+          fi
           if es_numero "$DIAS_CERT" && [ "$DIAS_CERT" -lt 14 ]; then
             PROBLEMA=1; MOTIVOS="$MOTIVOS certificado(${DIAS_CERT}d)"
           fi
@@ -296,7 +311,7 @@ jobs:
             echo "Imagenes Docker: ${DOCKER_IMAGENES} (${DOCKER_IMAGENES_SIZE})"
             echo "Tamano de la base: ${DB_SIZE_MB} MB"
             echo "Ultimo respaldo local: hace ${BACKUP_HORAS}h (${BACKUP_TAMANO_MB} MB)"
-            echo "Timer de respaldo: ${TIMER_ESTADO}"
+            echo "Timer de respaldo: ${TIMER_ESTADO} (enabled: ${TIMER_ENABLED})"
             echo "Ultima corrida del servicio: ${SERVICIO_RESULT}"
             echo "Subida a S3: ${BACKUP_S3}"
             echo "Certificado TLS: ${DIAS_CERT} dias restantes"

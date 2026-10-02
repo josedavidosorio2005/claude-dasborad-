@@ -48,12 +48,52 @@ cómo se llegó aquí, o para reconstruir todo desde cero, usar el histórico.
    manual, solo lectura, vía SSH (mismo mecanismo OIDC + puerto 22
    temporal que `audit-instance.yml`): disco (sistema y `/opt/inconexion/data`),
    memoria, imágenes Docker, tamaño de la base, fecha/tamaño del último
-   respaldo local, estado de `inconexion-backup.timer`/`.service` (incluida
-   la subida a S3 según su log) y días de certificado TLS. Abre/comenta/
-   cierra el issue "Salud del servidor con problemas" (etiqueta `servidor`)
-   si un disco pasa 80 %, el último respaldo tiene más de 26 h, el
-   servicio de respaldo no terminó en éxito, o el certificado tiene menos
-   de 14 días. Ver `CLAUDE.md` para el detalle completo.
+   respaldo local, estado de `inconexion-backup.timer`/`.service` (is-active
+   **e is-enabled** desde la Fase 114 — is-active solo no bastaba: un timer
+   puede estar activo y aun así nunca haberse habilitado para sobrevivir un
+   reinicio) (incluida la subida a S3 según su log) y días de certificado
+   TLS. Abre/comenta/cierra el issue "Salud del servidor con problemas"
+   (etiqueta `servidor`) si un disco pasa 80 %, el último respaldo tiene más
+   de 26 h, el servicio de respaldo no terminó en éxito, el timer no está
+   `enabled`, o el certificado tiene menos de 14 días. Ver `CLAUDE.md` para
+   el detalle completo.
+
+## Respaldos: cómo se instalan, activan y verifican
+
+Los respaldos (`scripts/backup.js`: copia local con `better-sqlite3`
+`db.backup()` + subida a S3 si `BACKUP_S3_BUCKET` está definido) corren por
+un timer systemd — `deploy/inconexion-backup.service`/`.timer` en el repo —
+pero **instalar y habilitar esas 2 unidades en una instancia nueva es un
+paso manual** (no lo hace `deploy.yml`, que solo despliega la app vía
+Docker). Si se crea o reemplaza la instancia de Lightsail, hay que repetir
+esto — es justo lo que no se repitió tras la migración de cuenta AWS que
+dejó el timer sin habilitar (hallazgo de la Fase 113, resuelto en la
+Fase 114, ver `docs/pendientes.md`/`docs/historico/progress-fases.md`).
+
+`.github/workflows/respaldo-produccion.yml` (Fase 114) es la única forma
+auditada de hacerlo — nunca a mano por SSH fuera de este pipeline. Mismo
+mecanismo OIDC + puerto 22 temporal de siempre. 3 modos manuales
+(`workflow_dispatch`, input `modo`):
+
+- **`estado`** (solo lectura): si los 2 archivos de unidad existen en
+  `/etc/systemd/system/`, `is-enabled`/`is-active` del timer, próxima
+  corrida, resultado y fecha de la última corrida del servicio, fecha/tamaño
+  del último respaldo local, y si la última subida a S3 dijo OK o error.
+- **`respaldar-ahora`**: corre `inconexion-backup.service` una sola vez (lo
+  mismo que haría el timer esa noche) y verifica el respaldo nuevo con
+  `docker compose exec -T app node scripts/verificar-restore-backup.js
+  --local <ruta>` — `integrity_check` + conteo de filas por tabla (solo
+  números), **sin sacar el archivo del servidor**.
+- **`activar-timer`**: copia el contenido actual de
+  `deploy/inconexion-backup.{service,timer}` (del propio repo, vía
+  `actions/checkout` — nunca texto hardcodeado en el workflow) a
+  `/etc/systemd/system/`, `daemon-reload`, y
+  `systemctl enable --now inconexion-backup.timer`. Idempotente: correrlo
+  de nuevo con los mismos archivos no cambia nada.
+
+Solo imprime estados/fechas/tamaños/conteos — nunca una fila real, el
+nombre exacto de un archivo de respaldo, ni sube la base/el respaldo como
+artifact de GitHub (el repo es público).
 
 Secrets/variables de GitHub Actions: `AWS_DEPLOY_ROLE_ARN`,
 `DEPLOY_SSH_HOST`, `DEPLOY_SSH_USER`, `DEPLOY_SSH_KEY` (secrets),
