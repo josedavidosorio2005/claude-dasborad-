@@ -594,11 +594,25 @@ async function _cargasGuardarTrafico(r){
   var parsed = { archivoNombre: _cargasArchivoNombre, filas: r.filas };
   try{
     var impacto = await apiRequest('POST','/calidad/trafico/carga/impacto', parsed);
-    var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0; });
+    // Fase 115: la carga reemplaza TODO el rango de fechas que trae el
+    // archivo, por skill -- no solo los dias presentes (ver
+    // nivel-servicio-diario.js). filasABorrar son registros que YA existen
+    // dentro de ese rango pero que este archivo no trae (se borran, nunca
+    // quedan huerfanos como paso con un residuo de prueba de la Fase 67).
+    var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0 || p.filasABorrar>0; });
     if(afectados.length){
-      var detalle = afectados.map(function(p){ return '• ' + p.skillName + ' — ' + p.mes + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
-      var total = afectados.reduce(function(a,p){ return a+p.filasExistentes; }, 0);
-      if(!confirm('La hoja de Trafico va a REEMPLAZAR '+total+' registro(s) ya cargados:\n\n'+detalle+'\n\n¿Continuar?')){
+      var detalle = afectados.map(function(p){
+        var partes = [];
+        if(p.filasExistentes>0) partes.push(p.filasExistentes+' existente(s) se reemplazan');
+        if(p.filasABorrar>0) partes.push(p.filasABorrar+' se borran (no vienen en el archivo nuevo)');
+        return '• ' + p.skillName + ' — ' + p.mes + ': ' + partes.join(', ');
+      }).join('\n');
+      var totalExistentes = afectados.reduce(function(a,p){ return a+p.filasExistentes; }, 0);
+      var totalABorrar = afectados.reduce(function(a,p){ return a+(p.filasABorrar||0); }, 0);
+      var msg = 'La hoja de Trafico va a REEMPLAZAR '+totalExistentes+' registro(s) ya cargados';
+      if(totalABorrar>0) msg += ' y BORRAR '+totalABorrar+' registro(s) que ya no vienen en el archivo nuevo';
+      msg += ':\n\n'+detalle+'\n\n¿Continuar?';
+      if(!confirm(msg)){
         return { ok:false, mensaje: 'Se dejo el trafico anterior sin tocar.' };
       }
     }
@@ -607,6 +621,7 @@ async function _cargasGuardarTrafico(r){
     var resp = await apiRequest('POST','/calidad/trafico/carga', parsed);
     _trafico = {}; // invalida el cache de los paneles trafico_combo abiertos
     return { ok:true, mensaje: resp.insertadas+' fila(s) en '+resp.campanas.length+' campana(s)'+
+      (resp.borradas ? ', '+resp.borradas+' borrada(s) fuera del archivo nuevo' : '')+
       (resp.skillsSinAsignar && resp.skillsSinAsignar.length ? '. '+resp.skillsSinAsignar.length+' skill(s) sin asignar' : '') };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
@@ -614,12 +629,39 @@ async function _cargasGuardarTrafico(r){
 // Trafico de WhatsApp no tiene mapeo skill->campana (a diferencia de voz):
 // la campana se manda explicita, es el mismo cliente seleccionado en este
 // modal (mismo patron "clasico" que _cargasGuardarSeccion/_cargasGuardarCalidad).
+//
+// Fase 115: igual que voz (_cargasGuardarTrafico), pide impacto -> confirma
+// -> guarda -- la carga reemplaza TODO el rango de fechaInicio que trae el
+// archivo, por cola (ver cargarTraficoWhatsapp), asi que puede BORRAR
+// periodos que ya no vienen en el archivo nuevo, no solo reemplazar los que
+// si vienen.
 async function _cargasGuardarTraficoWhatsapp(cliente, r){
   var payload = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
   try{
+    var impacto = await apiRequest('POST','/calidad/trafico/whatsapp/carga/impacto', payload);
+    var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0 || p.filasABorrar>0; });
+    if(afectados.length){
+      var detalle = afectados.map(function(p){
+        var partes = [];
+        if(p.filasExistentes>0) partes.push(p.filasExistentes+' existente(s) se reemplazan');
+        if(p.filasABorrar>0) partes.push(p.filasABorrar+' se borran (no vienen en el archivo nuevo)');
+        return '• ' + p.colaWhatsapp + ' — ' + p.fechaInicio + ' a ' + p.fechaFin + ': ' + partes.join(', ');
+      }).join('\n');
+      var totalExistentes = afectados.reduce(function(a,p){ return a+p.filasExistentes; }, 0);
+      var totalABorrar = afectados.reduce(function(a,p){ return a+(p.filasABorrar||0); }, 0);
+      var msg = 'La hoja de Trafico de WhatsApp va a REEMPLAZAR '+totalExistentes+' periodo(s) ya cargado(s)';
+      if(totalABorrar>0) msg += ' y BORRAR '+totalABorrar+' periodo(s) que ya no vienen en el archivo nuevo';
+      msg += ':\n\n'+detalle+'\n\n¿Continuar?';
+      if(!confirm(msg)){
+        return { ok:false, mensaje: 'Se dejo el trafico de WhatsApp anterior sin tocar.' };
+      }
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
     var resp = await apiRequest('POST','/calidad/trafico/whatsapp/carga', payload);
     if(typeof _traficoWpp !== 'undefined') _traficoWpp = {}; // invalida el cache del panel de WhatsApp abierto
-    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.colas.length+' cola(s))' };
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.colas.length+' cola(s))'+
+      (resp.borradas ? ', '+resp.borradas+' borrada(s) fuera del archivo nuevo' : '') };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 

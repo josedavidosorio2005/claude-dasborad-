@@ -206,6 +206,110 @@ test('POST /calidad/trafico/whatsapp/carga/impacto: un periodo nuevo (nunca carg
   assert.equal(par.filasExistentes, 0);
 });
 
+// Fase 115 (mismo hallazgo real que voz -- trafico-carga.test.js -- aplicado
+// a WhatsApp: el residuo de prueba de la Fase 67 tambien dejo 5 filas
+// huerfanas en trafico_whatsapp). Una carga reemplaza TODO el rango
+// [primera..ultima fechaInicio] que trae el archivo, por cola -- no solo los
+// periodos presentes.
+test('una carga con un periodo menos (dentro del rango de la anterior) BORRA ese periodo sobrante', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP RANGO ' + Math.random().toString(36).slice(2, 6);
+
+  const primera = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({
+      campana: 'ORLANT',
+      filas: [
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-07-01', fechaFin: '2026-07-07', totalWhatsapp: 10, contestados: 9 }),
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-07-08', fechaFin: '2026-07-14', totalWhatsapp: 20, contestados: 18 }), // periodo sobrante
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-07-15', fechaFin: '2026-07-21', totalWhatsapp: 30, contestados: 27 }),
+      ],
+    });
+  assert.equal(primera.status, 201, JSON.stringify(primera.body));
+  assert.equal(primera.body.borradas, 0);
+
+  // Archivo que llega despues: mismo rango [07-01..07-21], SIN el periodo del medio.
+  const segunda = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({
+      campana: 'ORLANT',
+      filas: [
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-07-01', fechaFin: '2026-07-07', totalWhatsapp: 11, contestados: 10 }),
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-07-15', fechaFin: '2026-07-21', totalWhatsapp: 31, contestados: 28 }),
+      ],
+    });
+  assert.equal(segunda.status, 201, JSON.stringify(segunda.body));
+  assert.equal(segunda.body.insertadas, 2);
+  assert.equal(segunda.body.borradas, 1, 'el periodo 07-08..07-14 (dentro del rango 07-01..07-21) debe borrarse');
+
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  const filasCola = rows.body.filter((r) => r.colaWhatsapp === cola);
+  assert.equal(filasCola.length, 2, 'el periodo sobrante ya no debe existir');
+  assert.ok(!filasCola.some((r) => r.fechaInicio === '2026-07-08'));
+});
+
+test('una carga de WhatsApp NUNCA borra periodos fuera de su propio rango, aunque sean de la misma cola', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP RANGO LIMITE ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, fechaInicio: '2026-06-01', fechaFin: '2026-06-30', totalWhatsapp: 5, contestados: 5 })] });
+
+  const carga = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({ campana: 'ORLANT', filas: [fila({ colaWhatsapp: cola, fechaInicio: '2026-07-01', fechaFin: '2026-07-31', totalWhatsapp: 10, contestados: 9 })] });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+  assert.equal(carga.body.borradas, 0, 'junio esta fuera del rango de esta carga (solo julio), nunca se toca');
+
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  const filasCola = rows.body.filter((r) => r.colaWhatsapp === cola);
+  assert.ok(filasCola.some((r) => r.fechaInicio === '2026-06-01'), 'junio debe seguir intacto');
+});
+
+test('POST /calidad/trafico/whatsapp/carga/impacto informa filasABorrar (dentro del rango) SIN escribir nada', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const cola = 'WHATSAPP IMPACTO BORRAR ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga')
+    .set(auth(admin))
+    .send({
+      campana: 'ORLANT',
+      filas: [
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-08-01', fechaFin: '2026-08-07', totalWhatsapp: 10, contestados: 9 }),
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-08-08', fechaFin: '2026-08-14', totalWhatsapp: 20, contestados: 18 }),
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-08-15', fechaFin: '2026-08-21', totalWhatsapp: 30, contestados: 27 }),
+      ],
+    });
+
+  const impacto = await request(app)
+    .post('/api/calidad/trafico/whatsapp/carga/impacto')
+    .set(auth(admin))
+    .send({
+      campana: 'ORLANT',
+      filas: [
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-08-01', fechaFin: '2026-08-07', totalWhatsapp: 11, contestados: 10 }),
+        fila({ colaWhatsapp: cola, fechaInicio: '2026-08-15', fechaFin: '2026-08-21', totalWhatsapp: 31, contestados: 28 }),
+      ],
+    });
+  assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
+  const reemplazos = impacto.body.filter((p) => p.colaWhatsapp === cola && p.filasExistentes > 0);
+  const borrados = impacto.body.filter((p) => p.colaWhatsapp === cola && p.filasABorrar > 0);
+  assert.equal(reemplazos.length, 2, '08-01..07 y 08-15..21 ya existen y se reemplazarian');
+  assert.equal(borrados.length, 1, 'el periodo 08-08..14 esta dentro del rango y no viene en el archivo nuevo');
+  assert.equal(borrados[0].fechaInicio, '2026-08-08');
+  assert.equal(borrados[0].filasExistentes, 0, 'un periodo que se borra nunca se cuenta tambien como "reemplazado"');
+
+  // No debe haber escrito/borrado nada todavia.
+  const rows = await request(app).get('/api/calidad/trafico/whatsapp?campana=ORLANT').set(auth(admin));
+  assert.equal(rows.body.filter((r) => r.colaWhatsapp === cola).length, 3, '/carga/impacto no debe borrar ni escribir nada en la base');
+});
+
 test('POST /calidad/trafico/whatsapp/carga/impacto: solo quien tiene el permiso Cargar Datos puede consultarlo', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const create = await request(app)

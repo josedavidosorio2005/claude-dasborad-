@@ -113,6 +113,11 @@ router.post(
 // un periodo ya cargado sin preguntar -- este endpoint es lo que le falta
 // al frontend para replicar la misma confirmacion explicita que ya tiene
 // Trafico de Llamadas (voz).
+//
+// Fase 115: tambien informa filasABorrar -- periodos existentes de una cola
+// cuyo fechaInicio cae dentro de [primera..ultima fechaInicio] que trae el
+// archivo para esa cola, pero que no calzan con ningun periodo exacto del
+// archivo nuevo (se van a borrar al guardar, ver cargarTraficoWhatsapp).
 router.post(
   '/calidad/trafico/whatsapp/carga/impacto',
   requireActor,
@@ -136,9 +141,44 @@ router.post(
     const stmt = db.prepare(
       'SELECT COUNT(*) AS n FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio = ? AND fechaFin = ?'
     );
+
+    const fechasPorCola = new Map(); // colaWhatsapp -> Set(fechaInicio) que trae el archivo
+    const periodosPorCola = new Map(); // colaWhatsapp -> Set("inicio|fin")
+    b.filas.forEach((f) => {
+      if (!fechasPorCola.has(f.colaWhatsapp)) {
+        fechasPorCola.set(f.colaWhatsapp, new Set());
+        periodosPorCola.set(f.colaWhatsapp, new Set());
+      }
+      fechasPorCola.get(f.colaWhatsapp).add(f.fechaInicio);
+      periodosPorCola.get(f.colaWhatsapp).add(f.fechaInicio + '|' + f.fechaFin);
+    });
+    const stmtEnRango = db.prepare(
+      'SELECT fechaInicio, fechaFin FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio BETWEEN ? AND ?'
+    );
+    for (const [colaWhatsapp, fechasInicio] of fechasPorCola) {
+      const ordenadas = [...fechasInicio].sort();
+      const minFechaInicio = ordenadas[0];
+      const maxFechaInicio = ordenadas[ordenadas.length - 1];
+      const periodosNuevos = periodosPorCola.get(colaWhatsapp);
+      stmtEnRango.all(b.campana, colaWhatsapp, minFechaInicio, maxFechaInicio).forEach((r) => {
+        const claveExistente = r.fechaInicio + '|' + r.fechaFin;
+        if (periodosNuevos.has(claveExistente)) return; // ese periodo exacto SI viene en el archivo -- se reemplaza, no se borra
+        const clave = colaWhatsapp + '|' + r.fechaInicio + '|' + r.fechaFin;
+        if (!pares.has(clave)) {
+          pares.set(clave, { colaWhatsapp, fechaInicio: r.fechaInicio, fechaFin: r.fechaFin, filasNuevas: 0 });
+        }
+        pares.get(clave).filasABorrar = (pares.get(clave).filasABorrar || 0) + 1;
+      });
+    }
+
     const resultado = [...pares.values()].map((p) => ({
       ...p,
-      filasExistentes: stmt.get(b.campana, p.colaWhatsapp, p.fechaInicio, p.fechaFin).n,
+      // Solo cuenta como "existente a reemplazar" si el archivo realmente
+      // trae una fila nueva para esa clave exacta -- una entrada que solo
+      // esta aqui por filasABorrar (filasNuevas=0) no se "reemplaza", se
+      // borra sin mas (nunca se cuenta el mismo periodo en los 2 campos).
+      filasExistentes: p.filasNuevas > 0 ? stmt.get(b.campana, p.colaWhatsapp, p.fechaInicio, p.fechaFin).n : 0,
+      filasABorrar: p.filasABorrar || 0,
     }));
     res.json(resultado);
   })

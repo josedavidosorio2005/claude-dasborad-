@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.10.4 — Octubre 2026
+
+**Arreglo: subir un Trafico de Llamadas o de WhatsApp corregido (con un
+dia o periodo de menos) dejaba el dato viejo huerfano en vez de
+quitarlo.** Antes, la carga solo actualizaba las fechas que traia el
+archivo nuevo — si un dia dejaba de venir (por ejemplo, un dato de
+prueba que nunca debio quedar, o un reenvio corregido de Edwin), ese dia
+seguia en la base para siempre, sin que nadie lo notara. Ahora la carga
+reemplaza TODO el rango de fechas que cubre el archivo (de la primera a
+la ultima fecha, por linea/cola) — igual que ya funcionaba Agendas e
+Inasistencia. El aviso de confirmacion antes de guardar ahora dice
+tambien cuantos registros se van a BORRAR (ademas de cuantos se
+reemplazan), para que quede claro antes de confirmar. Nunca toca una
+fecha fuera del rango que trae el archivo.
+
 ## v1.10.3 — Octubre 2026
 
 **Arreglo: el tiempo promedio de atencion (AHT) y el tiempo de espera

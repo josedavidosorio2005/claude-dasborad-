@@ -361,6 +361,124 @@ test('POST /calidad/trafico/carga/impacto: cuenta cuantas filas se reemplazarian
   assert.equal(filaSkill.totalLlamadas, 5, '/carga/impacto no debe escribir nada en la base');
 });
 
+// Fase 115 (hallazgo real: un residuo de una prueba vieja, Fase 67, sobrevivio
+// sin detectarse porque el upsert de siempre solo tocaba las fechas presentes
+// en cada archivo nuevo, nunca borraba una fecha que dejara de venir). Desde
+// esta fase, una carga reemplaza TODO el rango [primera..ultima fecha] que
+// trae el archivo, por skill -- no solo los dias presentes.
+test('una carga con un dia menos (dentro del rango de la anterior) BORRA ese dia sobrante, no lo deja huerfano', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL RANGO ' + Math.random().toString(36).slice(2, 6);
+
+  const primera = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-07-01', totalLlamadas: 10, contestadas: 9 }),
+        fila({ skillName: skill, fecha: '2026-07-02', totalLlamadas: 20, contestadas: 18 }), // dia sobrante (ej. residuo de prueba)
+        fila({ skillName: skill, fecha: '2026-07-03', totalLlamadas: 30, contestadas: 27 }),
+      ],
+    });
+  assert.equal(primera.status, 201, JSON.stringify(primera.body));
+  assert.equal(primera.body.borradas, 0, 'la primera carga no tiene nada que borrar');
+
+  // Archivo "real" que llega despues: mismos dias 1 y 3, SIN el dia 2 --
+  // mismo rango exacto [07-01..07-03] (min/max de ESTE archivo).
+  const segunda = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-07-01', totalLlamadas: 11, contestadas: 10 }),
+        fila({ skillName: skill, fecha: '2026-07-03', totalLlamadas: 31, contestadas: 28 }),
+      ],
+    });
+  assert.equal(segunda.status, 201, JSON.stringify(segunda.body));
+  assert.equal(segunda.body.insertadas, 2);
+  assert.equal(segunda.body.borradas, 1, 'el dia 07-02 (sobrante, dentro del rango 07-01..07-03) debe borrarse');
+
+  const rows = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
+    .set(auth(admin));
+  const filasSkill = rows.body.filter((r) => r.skillName === skill);
+  assert.deepEqual(filasSkill.map((r) => r.fecha).sort(), ['2026-07-01', '2026-07-03'], 'el dia 07-02 ya no debe existir');
+  assert.equal(filasSkill.find((r) => r.fecha === '2026-07-01').totalLlamadas, 11, 'el dia 07-01 se actualizo con el valor nuevo');
+  assert.equal(filasSkill.find((r) => r.fecha === '2026-07-03').totalLlamadas, 31);
+});
+
+test('una carga NUNCA borra fechas fuera de su propio rango [primera..ultima], aunque sean de la misma skill', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL RANGO LIMITE ' + Math.random().toString(36).slice(2, 6);
+
+  // Mes de junio ya cargado antes (fuera del rango de la carga de julio de abajo).
+  await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({ filas: [fila({ skillName: skill, fecha: '2026-06-15', totalLlamadas: 5, contestadas: 5 })] });
+
+  // Carga nueva, solo julio -- su rango es [07-01..07-02], nunca debe tocar junio.
+  const carga = await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-07-01', totalLlamadas: 10, contestadas: 9 }),
+        fila({ skillName: skill, fecha: '2026-07-02', totalLlamadas: 20, contestadas: 18 }),
+      ],
+    });
+  assert.equal(carga.status, 201, JSON.stringify(carga.body));
+  assert.equal(carga.body.borradas, 0, 'junio esta fuera del rango de esta carga, nunca se toca');
+
+  const rows = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
+    .set(auth(admin));
+  const filasSkill = rows.body.filter((r) => r.skillName === skill);
+  assert.ok(filasSkill.some((r) => r.fecha === '2026-06-15'), 'junio debe seguir intacto, fuera del rango de la carga de julio');
+});
+
+test('POST /calidad/trafico/carga/impacto informa filasABorrar (dentro del rango) SIN escribir nada', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const skill = 'SKILL IMPACTO BORRAR ' + Math.random().toString(36).slice(2, 6);
+
+  await request(app)
+    .post('/api/calidad/trafico/carga')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-08-01', totalLlamadas: 10, contestadas: 9 }),
+        fila({ skillName: skill, fecha: '2026-08-02', totalLlamadas: 20, contestadas: 18 }),
+        fila({ skillName: skill, fecha: '2026-08-03', totalLlamadas: 30, contestadas: 27 }),
+      ],
+    });
+
+  const impacto = await request(app)
+    .post('/api/calidad/trafico/carga/impacto')
+    .set(auth(admin))
+    .send({
+      filas: [
+        fila({ skillName: skill, fecha: '2026-08-01', totalLlamadas: 11, contestadas: 10 }),
+        fila({ skillName: skill, fecha: '2026-08-03', totalLlamadas: 31, contestadas: 28 }),
+      ],
+    });
+  assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
+  const par = impacto.body.find((p) => p.skillName === skill && p.mes === '2026-08');
+  assert.ok(par, JSON.stringify(impacto.body));
+  // filasExistentes cuenta TODAS las filas ya cargadas para (skill, mes) --
+  // semantica de siempre, sin cambios (08-01, 08-02 y 08-03 del mes). Lo
+  // nuevo de la Fase 115 es filasABorrar: de esas 3, cual especificamente no
+  // viene en el archivo nuevo y por eso se va a borrar.
+  assert.equal(par.filasExistentes, 3, 'las 3 filas de agosto ya cargadas (semantica sin cambios)');
+  assert.equal(par.filasABorrar, 1, '08-02 existe, esta dentro del rango 08-01..08-03, y no viene en el archivo nuevo');
+
+  // No debe haber escrito/borrado nada todavia.
+  const rows = await request(app)
+    .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
+    .set(auth(admin));
+  const filasSkill = rows.body.filter((r) => r.skillName === skill);
+  assert.equal(filasSkill.length, 3, '/carga/impacto no debe borrar ni escribir nada en la base');
+});
+
 test('canLoadData (no solo isFullAdmin) alcanza para las rutas de trafico: un AUX_ADMIN con el permiso cargarDatos puede cargar y ver cobertura', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const create = await request(app)

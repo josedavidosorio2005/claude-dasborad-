@@ -46,9 +46,49 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   // real distinto de "no vino"), mismo criterio que trafico/voz.
   const opcional = (v) => (v === undefined ? null : v);
 
+  // Fase 115: misma logica de reemplazo por rango completo que Trafico de
+  // Llamadas (nivel-servicio-diario.js) -- por cola, el rango va de la
+  // primera a la ultima fechaInicio que trae ESTE archivo; un periodo
+  // existente de esa cola cuyo fechaInicio cae dentro de ese rango pero no
+  // calza con ningun periodo (fechaInicio+fechaFin exactos) del archivo
+  // nuevo se borra, nunca queda huerfano.
+  const fechasPorCola = new Map(); // colaWhatsapp -> Set(fechaInicio) de ESTA carga
+  const periodosPorCola = new Map(); // colaWhatsapp -> Set("fechaInicio|fechaFin")
+  filas.forEach((f) => {
+    if (!fechasPorCola.has(f.colaWhatsapp)) {
+      fechasPorCola.set(f.colaWhatsapp, new Set());
+      periodosPorCola.set(f.colaWhatsapp, new Set());
+    }
+    fechasPorCola.get(f.colaWhatsapp).add(f.fechaInicio);
+    periodosPorCola.get(f.colaWhatsapp).add(f.fechaInicio + '|' + f.fechaFin);
+  });
+  const selectEnRango = db.prepare(
+    'SELECT id, fechaInicio, fechaFin FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio BETWEEN ? AND ?'
+  );
+
   const colasVistas = new Set();
   const idsAfectados = [];
+  const idsBorrados = [];
+  const mesesBorrados = new Set();
   const tx = db.transaction((rows) => {
+    for (const [colaWhatsapp, fechasInicio] of fechasPorCola) {
+      const ordenadas = [...fechasInicio].sort();
+      const minFechaInicio = ordenadas[0];
+      const maxFechaInicio = ordenadas[ordenadas.length - 1];
+      const periodosNuevos = periodosPorCola.get(colaWhatsapp);
+      const aBorrar = selectEnRango
+        .all(campana, colaWhatsapp, minFechaInicio, maxFechaInicio)
+        .filter((r) => !periodosNuevos.has(r.fechaInicio + '|' + r.fechaFin));
+      if (aBorrar.length) {
+        const placeholders = aBorrar.map(() => '?').join(',');
+        db.prepare(`DELETE FROM trafico_whatsapp WHERE id IN (${placeholders})`).run(...aBorrar.map((r) => r.id));
+        aBorrar.forEach((r) => {
+          idsBorrados.push(r.id);
+          mesesBorrados.add(r.fechaInicio.slice(0, 7));
+        });
+      }
+    }
+
     for (const f of rows) {
       const params = {
         campana,
@@ -90,13 +130,14 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   // realmente toco.
   const resumenActualizado = [];
   if (campana === 'ORLANT') {
-    const mesesTocados = [...new Set(filas.map((f) => f.fechaInicio.slice(0, 7)))];
+    const mesesTocados = new Set(filas.map((f) => f.fechaInicio.slice(0, 7)));
+    mesesBorrados.forEach((mes) => mesesTocados.add(mes));
     for (const mes of mesesTocados) {
       resumenActualizado.push({ mes, ...recalcularResumenOrlantDesdeTrafico(db, mes) });
     }
   }
 
-  return { insertadas: filas.length, ids: idsAfectados, colas: [...colasVistas], resumenActualizado };
+  return { insertadas: filas.length, ids: idsAfectados, borradas: idsBorrados.length, colas: [...colasVistas], resumenActualizado };
 }
 
 module.exports = { cargarTraficoWhatsapp };

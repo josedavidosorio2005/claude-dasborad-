@@ -202,9 +202,13 @@ router.get(
 
 // Impacto de una carga ANTES de guardarla (no escribe nada): cuenta, por
 // (skillName, mes) presentes en el archivo ya parseado en el navegador,
-// cuantas filas YA EXISTEN hoy y se reemplazarian. El frontend usa esto
-// para pedir confirmacion explicita antes de sobrescribir un mes ya
-// cargado ("esto va a reemplazar N registros de [mes] de [skill]").
+// cuantas filas YA EXISTEN hoy y se reemplazarian (filasExistentes) y
+// cuantas filas existentes, dentro del rango [primera..ultima fecha] que
+// trae el archivo PARA ESA skill, se van a BORRAR porque esa fecha dejo de
+// venir (filasABorrar) — Fase 115, mismo rango que aplicara
+// cargarNivelServicioDiario al guardar de verdad (nivel-servicio-diario.js).
+// El frontend usa esto para pedir confirmacion explicita antes de
+// sobrescribir/borrar ("esto va a reemplazar N y borrar M registros").
 router.post(
   '/calidad/trafico/carga/impacto',
   requireActor,
@@ -213,19 +217,41 @@ router.post(
     if (!canLoadData(req.actor)) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
-    const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas }
+    const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas, filasABorrar }
     req.body.filas.forEach((f) => {
       const mes = f.fecha.slice(0, 7);
       const clave = f.skillName + '|' + mes;
       if (!pares.has(clave)) pares.set(clave, { skillName: f.skillName, mes, filasNuevas: 0 });
       pares.get(clave).filasNuevas++;
     });
-    const stmt = db.prepare(
+    const stmtExistentes = db.prepare(
       'SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario WHERE skillName = ? AND substr(fecha,1,7) = ?'
     );
+
+    const fechasPorSkill = new Map(); // skillName -> Set(fechas) que trae el archivo
+    req.body.filas.forEach((f) => {
+      if (!fechasPorSkill.has(f.skillName)) fechasPorSkill.set(f.skillName, new Set());
+      fechasPorSkill.get(f.skillName).add(f.fecha);
+    });
+    const stmtEnRango = db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ?');
+    for (const [skillName, fechas] of fechasPorSkill) {
+      const ordenadas = [...fechas].sort();
+      const minFecha = ordenadas[0];
+      const maxFecha = ordenadas[ordenadas.length - 1];
+      stmtEnRango.all(skillName, minFecha, maxFecha).forEach((r) => {
+        if (fechas.has(r.fecha)) return; // esa fecha SI viene en el archivo -- se reemplaza, no se borra
+        const mes = r.fecha.slice(0, 7);
+        const clave = skillName + '|' + mes;
+        if (!pares.has(clave)) pares.set(clave, { skillName, mes, filasNuevas: 0 });
+        const p = pares.get(clave);
+        p.filasABorrar = (p.filasABorrar || 0) + 1;
+      });
+    }
+
     const resultado = [...pares.values()].map((p) => ({
       ...p,
-      filasExistentes: stmt.get(p.skillName, p.mes).n,
+      filasExistentes: stmtExistentes.get(p.skillName, p.mes).n,
+      filasABorrar: p.filasABorrar || 0,
     }));
     res.json(resultado);
   })
