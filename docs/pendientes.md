@@ -45,8 +45,19 @@ una:
 
 ## Decisiones pendientes del usuario
 
+- **Residuo de prueba de la Fase 67 en producción** (hallado en la Fase
+  115, 2026-10-04): una fila sintética del 2026-08-17 (3 llamadas, 3
+  abandonadas, repartida entre 3P y GENERAL), cargada como
+  `llenado-agosto-produccion.xlsx` y marcada "Fase 67 - prueba real
+  (borrar automatico)", nunca se borró — infla agosto de 3P/GENERAL en 3
+  llamadas (0,04 %) sobre el archivo real de Edwin. Borrarla es una
+  escritura puntual en producción (2 filas de
+  `calidad_nivel_servicio_diario` + su mensual) que no estaba autorizada
+  en la Fase 115 (solo se autorizó subir el archivo nuevo) — pedir visto
+  bueno explícito antes de borrarla.
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
-  deja esperando por si algún día se usa?
+  deja esperando por si algún día se usa? (Fase 115: ya quedaría lista
+  con Ago-26/Sep-26 en cuanto se decida destaparla.)
 - **Nivel de servicio**: Edwin lo mencionó como una base aparte en algún
   momento, pero Tráfico de Llamadas/WhatsApp ya muestra Nivel de Servicio
   a 20s — aclarar con él si se refiere a algo distinto (por hora, un SLA

@@ -29,7 +29,14 @@ const MASTER_ADMIN_USER_ESPERADO = 'admin';
 // Numeros de control esperados -- ver PROGRESS.md -> "Numeros de control".
 const ESPERADO = {
   tipificacionTotal: 14940,
-  llamadasTotal: 8061, llamadasContestadas: 7159, llamadasPendientes: 902,
+  // Fase 115: 2 meses (Ago-26/Sep-26) x 3 lineas (3P/GENERAL/REGIMEN
+  // ESPECIALES, esta ultima nueva desde la Fase 67). Incluye 3 llamadas
+  // (3 abandonadas) de un residuo de prueba de la Fase 67
+  // ("llenado-agosto-produccion.xlsx", fila 2026-08-17 de 3P y GENERAL,
+  // marcada "borrar automatico" y nunca borrada) que el upsert por fecha
+  // exacta no toca porque el archivo real no trae esa fecha -- ver
+  // docs/pendientes.md.
+  llamadasTotal: 17954, llamadasContestadas: 16844, llamadasPendientes: 1110,
   wppTotal: 7305, wppContestados: 7109, wppPendientes: 196, wppSl20: 34.67,
   agendasTotal: 7426, agendasGeneral: 4643, agendas3p: 2783,
   inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 6.87,

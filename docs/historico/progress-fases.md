@@ -10452,3 +10452,138 @@ Versión `1.10.1` (parche: 1 arreglo + 1 seguridad), tag `v1.10.1`. Único
 destino: `main`, por PR con CI en verde — ningún commit directo (los 2
 PRs de tema, #271 y #272, y el PR de cierre, se mergearon por el modo
 automático sin necesitar intervención manual).
+
+## Fase 115 — Tráfico de Llamadas de agosto y septiembre 2026, con REGIMEN ESPECIALES (2026-10-04)
+
+Edwin mandó el flujo de llamadas de agosto y septiembre 2026
+(`LLAMADAS_PARA_PLATAFORMA_ago-sep_2026.xlsx`, fuera del repo en
+`bases edwin\trafico\`, agregado a `INDICE.md`): hoja única "Hoja1", 150
+filas, 3 skills (CALL INBOUND ORLANT 3P, CALL INBOUND ORLANT GENERAL y
+REGIMEN ESPECIALES — esta última la línea que faltaba desde la Fase 67).
+
+### Temas A/B — el lector no entendía 2 formatos reales de este archivo
+
+Antes de esta sesión, una prueba real del archivo contra producción
+encontró 2 problemas en `public/js/trafico-logic.js` / `cargas.js`, cada
+uno arreglado en su propio PR con test de regresión:
+
+- **Tema A** (PR #274, v1.10.2): la hoja única se llama "Hoja1" (no
+  "LLAMADAS"/"DATA") — el modal "Cargar Datos" no la reconocía porque el
+  fallback de reconocimiento por encabezados excluía `tipo==='trafico'`.
+  Se agregó al mismo mecanismo que ya rescata Agendas/Tipificación/
+  Efectividad (con verificación de canal voz/whatsapp como defensa
+  adicional).
+- **Tema B** (PR #275, v1.10.3): WAIT_TIME/AHT vienen con formato de hora
+  real de Excel ("h:mm:ss") — SheetJS, con `cellNF:true`, convertía esas
+  celdas a un `Date` dentro de `sheet_to_json` de forma dependiente de la
+  zona horaria del equipo que sube el archivo; con América/Bogotá
+  (la zona real de Edwin) el `Date` quedaba corrido por la hora solar
+  media histórica de Bogotá (-4:56:16, que V8 aplica a fechas de 1899) y
+  las 2 columnas se leían como `null`. Confirmado contra producción: los
+  150 registros de una prueba real subieron con WAIT_TIME/AHT vacíos.
+  `traficoValorCrudoSiFechaBoxeada` recupera el número original leyendo
+  la celda cruda (`ws`), igual que ya hacía `traficoClasificarCeldaNumerica`
+  (Fase 88).
+
+### Esta sesión: verificación + carga real
+
+**Antes de cargar (solo lectura):**
+
+- **Mapeo de REGIMEN ESPECIALES**: ya estaba asignado a ORLANT (creado
+  2026-10-02T21:22, en la misma sesión que probó los temas A/B) — no
+  hizo falta remapear nada.
+- **Comparación de agosto**: producción tenía 8.061/7.159/902 (3P+GENERAL)
+  contra 8.058/7.159/899 del archivo nuevo — diff de 0,04 %, muy por
+  debajo del 1 % acordado. El único día que cambia es **2026-08-17**:
+  producción traía una fila de 3 llamadas (0 contestadas, 3 abandonadas)
+  repartida entre 3P y GENERAL que **no viene en el archivo real de
+  Edwin** — resultó ser un residuo de la prueba sintética de la Fase 67
+  (`llenado-agosto-produccion.xlsx`, cargada por "Fase 67 - prueba real
+  (borrar automatico)", nunca borrada). Como `cargarNivelServicioDiario`
+  hace upsert por `(campana, fecha, skillName)` exacto y nunca borra una
+  fecha que el archivo nuevo no trae, esa fila sintética **sigue en pie
+  después de esta carga** — ver "Pendiente" más abajo.
+- **Cobertura ya existente**: antes de esta sesión, una prueba diagnóstica
+  de los temas A/B ya había cargado en producción REGIMEN ESPECIALES
+  completo (ago+sep) y 3P/GENERAL de septiembre — solo agosto de
+  3P/GENERAL seguía con el dato sintético de la Fase 67. Por eso el
+  diálogo de confirmación de esta carga dijo "REEMPLAZAR 152 registro(s)
+  ya cargados" (las 6 combinaciones skill×mes), no "agrega septiembre"
+  como se esperaba al escribir el pedido — septiembre ya estaba, de la
+  prueba previa.
+
+**Carga (autorizada, solo este archivo):** por la interfaz normal
+"Cargar Datos → ORLANT" (Playwright visible, login manual del usuario,
+sin guardar contraseña/cookies). Preview: 150 filas, 0 avisos, 3 skills,
+hoja "Hoja1" reconocida por encabezados. Confirmación revisada y
+aceptada. Guardado: "✓ Trafico de Llamadas (Wolkvox): 150 fila(s) en 1
+campana(s)".
+
+**Verificación post-carga** (API real, misma sesión autenticada):
+
+| Línea | Mes | Total | Contestadas | Abandonadas | SL20 | AHT |
+|---|---|---|---|---|---|---|
+| 3P | Ago-26 | 4.011* | 3.937 | 74* | 87,66 % | 3:44 |
+| GENERAL | Ago-26 | 4.050* | 3.222 | 828* | 40,67 % | 5:18 |
+| REGIMEN ESPECIALES | Ago-26 | 850 | 802 | 48 | 65,88 % | 4:40 |
+| 3P | Sep-26 | 4.264 | 4.214 | 50 | 88,37 % | 3:41 |
+| GENERAL | Sep-26 | 4.057 | 3.958 | 99 | 74,24 % | 5:13 |
+| REGIMEN ESPECIALES | Sep-26 | 722 | 711 | 11 | 86,84 % | 5:01 |
+
+(*) incluye la fila sintética de la Fase 67 del 2026-08-17 (+1 en 3P,
++2 en GENERAL) — el archivo real de Edwin da 4.010/73 y 4.048/826 para
+esas 2 celdas. AHT/WAIT_TIME de las 150 filas reales: 0 nulos (temas A/B
+confirmados en producción real). Total ORLANT acumulado (6
+combinaciones): 17.954 / 16.844 / 1.110.
+
+Resto confirmado sin cambios: Tipificación 14.940; WhatsApp
+7.305/7.109/196 (SL20 34,67 %); Agendas 7.426 (General 4.643/3P 2.783);
+Inasistencia Ago-26 7,45 %/período 6,87 %; Ranking 18.566/8.319/44,81 %;
+Efectividad de Citas 1.108/953. 0 errores de consola.
+
+**Mes por defecto**: pasó a Sep-26 automáticamente (sin tocar código).
+Tráfico de WhatsApp, Tipificación y Agendamiento (las 3 pestañas sin
+septiembre) muestran el aviso de "último mes con datos" con su botón.
+El filtro de línea de Tráfico de Llamadas lista "Regimen Especiales"
+como línea propia; "Ver skills por separado" y Exportar funcionan.
+
+**Flujo Mensual** (pestaña oculta, nunca destapada — decisión pendiente
+de Edwin, ver `docs/pendientes.md`): consultado solo por API
+(`GET /dashboard/cargas?cliente=ORLANT&seccion=resumen`), sus 4 campos
+`autoTrafico` (Fase 71) ya reflejan la carga nueva sin tocar código:
+Sep-26 `llamadas_3p=4264` (98,83 %) / `llamadas_general=4057` (97,56 %);
+Ago-26 `llamadas_3p=4011`* (98,16 %) / `llamadas_general=4050`*
+(79,56 %) — mismo residuo de la Fase 67 marcado arriba. REGIMEN
+ESPECIALES no alimenta estos 2 campos (su nombre no termina en "3P"/
+"GENERAL", por diseño — Fase 39/71) — sin cambios en ese comportamiento.
+Quedaría lista para destaparse en cuanto Edwin decida.
+
+**Respaldo**: `respaldo-produccion.yml` en modo `respaldar-ahora`
+corrido justo después de la carga (run 37181510380, 2026-10-04 06:00
+UTC) — `integrity_check: ok`, 6.9 MB, subida a S3 OK.
+
+### Pendiente (no autorizado en esta fase)
+
+La fila sintética de la Fase 67 (2026-08-17, 3P+GENERAL, 3 llamadas/3
+abandonadas, archivo `llenado-agosto-produccion.xlsx` marcado
+"Fase 67 - prueba real (borrar automatico)") sigue en
+`calidad_nivel_servicio_diario` — el upsert por fecha exacta nunca la
+toca porque el archivo real no trae esa fecha. Es un residuo de prueba,
+no un dato real de Edwin; borrarla es una escritura en producción fuera
+del alcance autorizado para esta fase (solo se autorizó subir el archivo
+nuevo) — queda para una fase futura con visto bueno explícito del
+usuario. Mientras tanto, los números de control de agosto (3P/GENERAL)
+quedan 3 llamadas por encima del archivo real de Edwin (diferencia
+documentada arriba, 0,04 %).
+
+`docs/pendientes.md`: no tenía ninguna entrada de "Tráfico de agosto de
+Régimen Especiales" que quitar (ya no estaba listada desde la
+reorganización de la Fase 112).
+
+### Cierre
+
+Sin cambios de código en esta sesión (los temas A/B ya habían subido la
+versión a `1.10.3` en PRs previos) — `npm test` 943/943, `npm audit` 0
+vulnerabilidades, confirmados antes de tocar producción. Sin versión
+nueva (solo datos + documentación). Único destino: `main`, por PR con CI
+en verde.

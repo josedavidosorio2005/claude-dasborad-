@@ -26,7 +26,7 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 114, 2026-10-02)
+### Números de control (ORLANT, última verificación Fase 115, 2026-10-04)
 
 Reconfirmados en vivo contra producción en la Fase 112
 (`scripts/produccion/revision-final.js`, con sesión real del usuario):
@@ -39,7 +39,7 @@ nuevas de Edwin:
 | Indicador | Valor |
 |---|---|
 | Tipificación | 14.940 |
-| Tráfico de Llamadas | 8.061 / 7.159 / 902 |
+| Tráfico de Llamadas (Fase 115: Ago-26+Sep-26, 3 líneas — 3P/GENERAL/REGIMEN ESPECIALES) | 17.954 / 16.844 / 1.110 |
 | Tráfico de WhatsApp | 7.305 / 7.109 / 196, SL20 34,67 % |
 | Agendas | 7.426 (General 4.643 / 3P 2.783) |
 | Inasistencia | Ago-26 7,45 %, período 6,87 % |
@@ -168,4 +168,5 @@ mismo orden):
 - Fase 112 — revisión general de toda la plataforma + reorganización completa del repo (2026-10-02)
 - Fase 113 — registro de inicios de sesión + "Cambiar mi contraseña" + revisión diaria de la salud del servidor (2026-10-02)
 - Fase 114 (URGENTE) — respaldos automáticos vueltos a activar (nunca se habían instalado en la instancia nueva) + alerta alta de Dependabot (SheetJS) resuelta (2026-10-02)
+- Fase 115 — Tráfico de Llamadas de agosto y septiembre 2026, con la línea REGIMEN ESPECIALES (faltaba desde la Fase 67): lector al día (hoja "Hoja1", WAIT_TIME/AHT con fecha boxeada) y carga real en producción (2026-10-04)
 
