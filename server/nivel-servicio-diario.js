@@ -59,9 +59,44 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
   // dato real y distinto de "no vino".
   const opcional = (v) => (v === undefined ? null : v);
 
+  // Fase 115: una carga reemplaza TODO el rango de fechas que trae, por
+  // skill — no solo los dias presentes en el archivo (mismo criterio que ya
+  // usan Agendas/Inasistencia, que reemplazan por rango/mes completo).
+  // Hallazgo real: un residuo de una prueba vieja (Fase 67) sobrevivio sin
+  // detectarse hasta la Fase 115 porque el upsert de siempre solo tocaba
+  // las fechas presentes en cada archivo nuevo, nunca borraba una fecha que
+  // dejara de venir. El rango nunca sale de [primera fecha, ultima fecha]
+  // que trae ESTE archivo PARA ESA skill — nunca se toca una fecha fuera de
+  // ahi, aunque exista en la base (ej. un archivo mas corto en una punta no
+  // borra lo que quedo fuera de su propio rango).
+  const fechasPorSkill = new Map(); // skillName -> Set(fechas) de ESTA carga
+  filas.forEach((f) => {
+    if (!fechasPorSkill.has(f.skillName)) fechasPorSkill.set(f.skillName, new Set());
+    fechasPorSkill.get(f.skillName).add(f.fecha);
+  });
+  const selectEnRango = db.prepare(
+    'SELECT id, fecha FROM calidad_nivel_servicio_diario WHERE campana = ? AND skillName = ? AND sede IS ? AND fecha BETWEEN ? AND ?'
+  );
+
   const mesesAfectados = new Set();
   const idsDiario = [];
+  const idsBorrados = [];
   const tx = db.transaction((rows) => {
+    for (const [skillName, fechas] of fechasPorSkill) {
+      const ordenadas = [...fechas].sort();
+      const minFecha = ordenadas[0];
+      const maxFecha = ordenadas[ordenadas.length - 1];
+      const aBorrar = selectEnRango.all(campana, skillName, sede, minFecha, maxFecha).filter((r) => !fechas.has(r.fecha));
+      if (aBorrar.length) {
+        const placeholders = aBorrar.map(() => '?').join(',');
+        db.prepare(`DELETE FROM calidad_nivel_servicio_diario WHERE id IN (${placeholders})`).run(...aBorrar.map((r) => r.id));
+        aBorrar.forEach((r) => {
+          idsBorrados.push(r.id);
+          mesesAfectados.add(r.fecha.slice(0, 7));
+        });
+      }
+    }
+
     for (const f of rows) {
       const pct = f.serviceLevel20secPct === undefined ? null : f.serviceLevel20secPct;
       const estimado = pct === null ? null : Math.round((pct / 100) * f.totalLlamadas);
@@ -108,7 +143,7 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
   mensualActualizados.sort((a, b) => a.mes.localeCompare(b.mes));
 
   return {
-    diario: { insertadas: filas.length, ids: idsDiario },
+    diario: { insertadas: filas.length, ids: idsDiario, borradas: idsBorrados.length, idsBorrados },
     mensual: mensualActualizados,
   };
 }

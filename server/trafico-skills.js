@@ -65,13 +65,15 @@ function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas }) {
   }
 
   let insertadas = 0;
+  let borradas = 0;
   const campanasVistas = new Set();
   const resultadosPorCampana = [];
   for (const { campana, sede, filas: filasCampana } of porCampanaSede.values()) {
     const r = cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPorNombre, filas: filasCampana });
     insertadas += r.diario.insertadas;
+    borradas += r.diario.borradas;
     campanasVistas.add(campana);
-    resultadosPorCampana.push({ campana, sede, filas: r.diario.insertadas, meses: r.mensual.map((m) => m.mes) });
+    resultadosPorCampana.push({ campana, sede, filas: r.diario.insertadas, borradas: r.diario.borradas, meses: r.mensual.map((m) => m.mes) });
   }
 
   // Fase 39: cada carga de Trafico para ORLANT recalcula tambien
@@ -88,7 +90,7 @@ function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas }) {
   }
 
   const skillsSinAsignar = skillNames.filter((s) => resueltoPorSkill.get(s).campana === SIN_ASIGNAR);
-  return { insertadas, campanas: [...campanasVistas], skillsSinAsignar, porCampana: resultadosPorCampana, resumenActualizado };
+  return { insertadas, borradas, campanas: [...campanasVistas], skillsSinAsignar, porCampana: resultadosPorCampana, resumenActualizado };
 }
 
 // Skills conocidas para el panel de mapeo del admin, con cuantas filas de
