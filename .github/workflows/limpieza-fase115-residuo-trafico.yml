@@ -1,30 +1,39 @@
-name: Limpieza residuo de prueba Fase 67 (Trafico de Llamadas, revisar/borrar)
+name: Limpieza residuo de prueba Fase 67 (Trafico de Llamadas, revisar/borrar/escanear)
 
 # Fase 115 (autorizado explicitamente, 2026-10-04): comparar agosto contra
 # el archivo real de Edwin encontro un residuo de la Fase 67 en produccion
 # -- 2 filas sinteticas del 2026-08-17 (CALL INBOUND ORLANT 3P / CALL
 # INBOUND ORLANT GENERAL), cargadas como "llenado-agosto-produccion.xlsx" y
 # marcadas "Fase 67 - prueba real (borrar automatico)" en su momento, nunca
-# borradas (ver docs/pendientes.md).
+# borradas (ver docs/pendientes.md). Ya se confirmo (modo revisar) y borro
+# (modo borrar) ese residuo puntual.
 #
 # Este workflow es de UN SOLO USO (no un borrador general de filas): corre
-# server/scripts/limpieza-fase115-residuo-trafico.js, que tiene el filtro
-# EXACTO y fijo escrito en el propio script (nunca parametrizable desde
-# aqui) -- reutiliza EXACTAMENTE el mismo mecanismo ya auditado de
-# respaldo-produccion.yml/salud-servidor.yml (rol OIDC, apertura temporal
-# del puerto 22 solo para la IP de este runner, cerrado al final con
-# if: always(), secrets SSH de siempre, docker compose exec DENTRO del
+# server/scripts/limpieza-fase115-residuo-trafico.js (filtro EXACTO y fijo
+# escrito en el propio script, nunca parametrizable desde aqui) o
+# server/scripts/escaneo-fase115-residuos-prueba.js (modo escanear, SOLO
+# LECTURA, nunca borra nada) -- reutiliza EXACTAMENTE el mismo mecanismo ya
+# auditado de respaldo-produccion.yml/salud-servidor.yml (rol OIDC, apertura
+# temporal del puerto 22 solo para la IP de este runner, cerrado al final
+# con if: always(), secrets SSH de siempre, docker compose exec DENTRO del
 # contenedor ya corriendo) -- no abre acceso nuevo.
 #
 # Modos:
 #   - revisar (default): SOLO LECTURA. Cuenta e imprime las filas que
-#                         calzan con el filtro exacto. Nunca borra nada.
+#                         calzan con el filtro exacto del residuo de la
+#                         Fase 67. Nunca borra nada.
 #   - borrar:             el script vuelve a contar antes de borrar y
 #                         ABORTA si no son exactamente las esperadas; si
 #                         coinciden, borra esas filas exactas y recalcula
 #                         el agregado mensual de ORLANT/2026-08.
+#   - escanear:           SOLO LECTURA. Inventario de posibles residuos de
+#                         prueba en TODAS las tablas de carga real (Trafico
+#                         de Llamadas/WhatsApp, Agendas, Tipificacion,
+#                         Inasistencia, Efectividad de Agendamiento/Citas,
+#                         cargas generales) -- nunca borra nada, es un
+#                         inventario para decidir despues.
 #
-# El repo es PUBLICO: el script solo imprime conteos/totales/metadatos de
+# El repo es PUBLICO: los scripts solo imprimen conteos/totales/metadatos de
 # carga (nunca una columna de dato real de cliente).
 on:
   workflow_dispatch:
@@ -37,6 +46,7 @@ on:
         options:
           - revisar
           - borrar
+          - escanear
 
 concurrency:
   group: deploy-produccion
@@ -110,6 +120,20 @@ jobs:
             set -euo pipefail
             cd /opt/inconexion
             docker compose exec -T app node scripts/limpieza-fase115-residuo-trafico.js --borrar
+
+      # ── Modo "escanear": SOLO LECTURA, inventario en todas las tablas ────
+      - name: 'escanear: inventario de posibles residuos de prueba (todas las tablas)'
+        if: inputs.modo == 'escanear'
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/inconexion
+            docker compose exec -T app node scripts/escaneo-fase115-residuos-prueba.js
 
       - name: Cerrar SSH (22) — revertir el firewall al estado previo
         if: always() && steps.fw.outputs.before != ''
