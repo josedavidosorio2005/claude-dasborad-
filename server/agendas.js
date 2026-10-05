@@ -5,6 +5,7 @@
 'use strict';
 
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
+const { aplicarAliasAFilas } = require('./alias-asesores');
 
 function nowStr() {
   const d = new Date();
@@ -46,7 +47,12 @@ function impactoAgendas(db, { campana, filas }) {
   const existentes = db
     .prepare('SELECT COUNT(*) AS n FROM agendas WHERE campana = ? AND fechaSolicitud >= ? AND fechaSolicitud <= ?')
     .get(campana, desde, hasta).n;
-  return { desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length };
+  // Fase 122: transparencia del alias de asesor ANTES de confirmar la carga.
+  const alias = aplicarAliasAFilas(db, campana, filasObj, 'asesor');
+  return {
+    desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length,
+    filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados,
+  };
 }
 
 // Reemplaza por PERIODO: borra todo lo que haya en [desde,hasta] del
@@ -56,7 +62,9 @@ function impactoAgendas(db, { campana, filas }) {
 // exacto, inserta las mismas N filas nuevas -- nunca duplica).
 function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
   const ts = nowStr();
-  const filasObj = filas.map(filaArrayAObjeto);
+  let filasObj = filas.map(filaArrayAObjeto);
+  // Fase 122: alias de nombre de asesor ANTES de guardar.
+  filasObj = aplicarAliasAFilas(db, campana, filasObj, 'asesor').filas;
   const { desde, hasta } = rangoFechas(filasObj);
 
   const del = db.prepare('DELETE FROM agendas WHERE campana = ? AND fechaSolicitud >= ? AND fechaSolicitud <= ?');

@@ -403,6 +403,28 @@ CREATE TABLE IF NOT EXISTS efectividad_citas (
 );
 CREATE INDEX IF NOT EXISTS idx_efectividad_citas_campana_mes ON efectividad_citas(campana, mes);
 
+-- Alias de nombre de asesor (Fase 122, reunion con Edwin 2026-10-05): la
+-- misma persona real puede llegar con mas de un nombre entre archivos (ej.
+-- "NATALIA TAMAYO CORREA" en Efectividad de Agendamiento == "ISABEL
+-- CORREA" en Agendas) o con una errata puntual de tipeo en Wolkvox (ej.
+-- "ESTEFANIA GIRLADO SUAZA"). Se aplica en el SERVIDOR al GUARDAR
+-- Tipificacion/Agendas/Efectividad de Agendamiento (ver alias-asesores.js),
+-- nunca reescribe en silencio datos que ya estan guardados -- cambiar un
+-- alias es borrar y volver a crear (alta/baja simple, sin UPDATE).
+CREATE TABLE IF NOT EXISTS alias_asesores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  alias TEXT NOT NULL,
+  canonico TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  createdPorNombre TEXT NOT NULL DEFAULT '-'
+);
+-- Unicidad case/espacios-insensible por campana (mismo criterio que
+-- calidad_codificaciones): pegar "Isabel Correa" dos veces no debe crear 2
+-- filas para el mismo alias.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_alias_asesores_unico
+  ON alias_asesores(campana, lower(trim(alias)));
+
 -- Mapeo SKILL_NAME (tal cual lo nombra Volvox) -> campana/cliente de
 -- InConexion. Los nombres de skill los define Volvox y cambian con el
 -- tiempo, asi que este mapeo se administra desde el panel (nunca a mano en

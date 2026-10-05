@@ -687,6 +687,28 @@ const efectividadAgendamientoOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// ── Alias de nombre de asesor (Fase 122, reunion con Edwin 2026-10-05) ──
+// La misma persona real puede llegar con mas de un nombre entre archivos
+// (ej. "NATALIA TAMAYO CORREA" en Efectividad == "ISABEL CORREA" en
+// Agendas) o con una errata de tipeo puntual -- nunca se escribe un nombre
+// real de asesor en este archivo (son solo los patrones de validacion).
+const nombreAsesorSchema = z
+  .string(reqStr('El nombre es obligatorio'))
+  .trim()
+  .min(1, 'El nombre es obligatorio')
+  .max(120, 'Nombre demasiado largo')
+  .regex(/^[A-Za-z0-9ÁÉÍÓÚÑáéíóúñ .\-_]+$/, 'Nombre con caracteres no permitidos');
+
+const aliasAsesorQuery = z.object({
+  campana: campanaSchema,
+});
+
+const aliasAsesorBody = z.object({
+  campana: campanaSchema,
+  alias: nombreAsesorSchema,
+  canonico: nombreAsesorSchema,
+});
+
 const efectividadAgendamientoRankingQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema,
@@ -1015,6 +1037,8 @@ module.exports = {
     efectividadAgendamientoCargaBody,
     efectividadAgendamientoOpcionesQuery,
     efectividadAgendamientoRankingQuery,
+    aliasAsesorQuery,
+    aliasAsesorBody,
     efectividadCitasCargaBody,
     efectividadCitasQuery,
     calidadQuery,

@@ -11,6 +11,7 @@
 'use strict';
 
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
+const { aplicarAliasAFilas } = require('./alias-asesores');
 
 const CANALES = ['LLAMADAS', 'WHATSAPP'];
 
@@ -56,7 +57,14 @@ function impactoTipificaciones(db, { campana, canal, filas }) {
   const existentes = db
     .prepare('SELECT COUNT(*) AS n FROM tipificaciones WHERE campana = ? AND canal = ? AND fecha >= ? AND fecha <= ?')
     .get(campana, canal, desde, hasta).n;
-  return { desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length };
+  // Fase 122: transparencia del alias de asesor ANTES de confirmar la carga
+  // -- cuantas filas/asesores distintos se van a unificar, nunca el nombre
+  // real (ver aplicarAliasAFilas).
+  const alias = aplicarAliasAFilas(db, campana, filasObj, 'agente');
+  return {
+    desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length,
+    filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados,
+  };
 }
 
 // Reemplaza por PERIODO Y CANAL: borra todo lo que haya de este canal en
@@ -66,7 +74,12 @@ function impactoTipificaciones(db, { campana, canal, filas }) {
 // clausula WHERE siempre incluye canal = ?).
 function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNombre, filas }) {
   const ts = nowStr();
-  const filasObj = filas.map(filaArrayAObjeto);
+  let filasObj = filas.map(filaArrayAObjeto);
+  // Fase 122: alias de nombre de asesor ANTES de guardar -- el nombre que
+  // queda en la base es siempre el canonico (ver alias-asesores.js). El
+  // rango de fechas a reemplazar no cambia (sale de `fecha`, nunca de
+  // `agente`).
+  filasObj = aplicarAliasAFilas(db, campana, filasObj, 'agente').filas;
   const { desde, hasta } = rangoFechas(filasObj);
 
   const del = db.prepare('DELETE FROM tipificaciones WHERE campana = ? AND canal = ? AND fecha >= ? AND fecha <= ?');
