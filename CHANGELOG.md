@@ -4,6 +4,42 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.12.0 — Octubre 2026
+
+**Fase 120: se revisaron en produccion, dato por dato, los 3 archivos que
+envio InCo (Trafico de Llamadas, Trafico de WhatsApp, Tipificacion) y se
+corrigieron 2 cosas reales en Trafico de WhatsApp.**
+
+- **En Trafico de WhatsApp se quito el AHT (tiempo promedio de atencion)
+  porque Wolkvox no lo entrega.** Se confirmo contra los 2 archivos reales
+  de agosto y septiembre/2026 (258 filas en total): la columna AHT siempre
+  viene vacia ("----"), nunca con un numero real. Se quito la sub-pestaña
+  "AHT", y la columna "AHT (seg)" de los archivos exportados (Excel/PDF).
+  El AHT de Trafico de Llamadas (voz) sigue igual — ahi si llega un numero
+  real. Si Wolkvox llega a entregar el AHT de WhatsApp mas adelante, se
+  puede volver a activar sin tocar codigo.
+- **Arreglo real: el ATA (tiempo promedio de abandono) de Trafico de
+  Llamadas y de WhatsApp se promediaba mal.** Se calculaba ponderado por
+  el total de llamadas/WhatsApp del dia, en vez de por cuantas realmente
+  se abandonaron ese dia — un dia con mucho volumen y pocos abandonos
+  "diluia" el promedio hacia abajo. Contra el archivo real de Llamadas,
+  el promedio de agosto quedaba en 350.92 segundos calculado como antes,
+  contra 625.13 segundos con la cuenta corregida (casi el doble). Ya
+  quedo corregido en los dos canales (Llamadas y WhatsApp); el numero que
+  se ve en la pantalla "ASA y ATA" y en los exportados ahora sube para
+  reflejar el dato real.
+- Se revisaron en produccion, con la cuenta real del cliente y con la de
+  administrador, las 7 pestañas de ORLANT Y cada una de sus sub-pestañas
+  (no solo la que abre por defecto) — todas dibujan algo real o muestran
+  un mensaje claro, ninguna queda en blanco. Los numeros en pantalla
+  coinciden exactamente con los archivos reales: 150 filas de Llamadas,
+  258 de WhatsApp y 34.661 de Tipificacion, sin diferencias.
+- La revision automatica que corre en cada cambio a la plataforma ahora
+  tambien confirma que, cuando una grafica se esconde porque no tiene
+  dato, SI quede un aviso visible explicando por que — antes solo
+  confirmaba que estuviera escondida, sin revisar si el aviso de verdad
+  aparecia.
+
 ## v1.11.2 — Octubre 2026
 
 **Revision final de seguridad antes de entregar ORLANT (Fase 117): 2

@@ -72,7 +72,7 @@ del todo vas a ver:
 | Pestaña | Qué muestra |
 |---|---|
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
-| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos). |
+| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos), con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio. No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
@@ -120,7 +120,10 @@ explicando que no hay datos para ese mes (y un botón para ir directo al
 
 **Tráfico de WhatsApp**: los mismos indicadores que Llamadas, más el
 **Nivel de Servicio a 5 minutos** (mismo cálculo que el de 20 segundos,
-pero con esa ventana de tiempo — es el que más le importa a WhatsApp).
+pero con esa ventana de tiempo — es el que más le importa a WhatsApp),
+**excepto el AHT**: Wolkvox no entrega ese dato para WhatsApp, así que esa
+sub-pestaña no aparece (si algún día llega, se puede reactivar sin
+cambiar nada más).
 
 **Agendamiento**: "Por especialidad", "Total agendas" y "Agendas por
 línea" muestran cuántas citas se agendaron, sin un cálculo adicional —

@@ -11177,3 +11177,152 @@ previas + 38 nuevas). `npm audit`: 0 vulnerabilidades antes y después
 fase toca `server/`/`public/` de forma que cambie el comportamiento de
 la app para un usuario real (solo tests, un script de QA, y docs/HTML de
 contenido). v1.11.2 sin cambios.
+
+## Fase 120 — Verificación dato por dato de lo cargado + AHT de WhatsApp (2026-10-05)
+
+InCo envió 6 archivos (3 contenidos distintos tras deduplicar por MD5 y
+filas) de Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación, más
+una captura mostrando la sub-pestaña "AHT" de Tráfico de WhatsApp
+completamente en blanco. Pedido: verificar en producción, dato por dato
+(no solo totales), que todo lo de esos archivos está cargado; que cada
+sub-vista del dashboard muestre algo correcto o un mensaje claro, nunca
+un espacio en blanco; y arreglar el AHT de WhatsApp "como debe ser".
+
+### Parte 1 — Verificación en producción, dato por dato
+
+Se parsearon los 3 archivos reales LOCALMENTE (nunca al repo, nunca a un
+commit) leyendo solo los campos agregables — en Tipificación, nunca más
+que fecha y skill, nunca teléfonos/CUSTOMER_ID/COMMENT/CONN_ID/DESTINY ni
+sus valores, aunque la hoja los trae. Confirmó exactos los números que el
+usuario ya había calculado: Tipificación 14.940 (ago) + 19.721 (sep) =
+34.661; Llamadas y WhatsApp coinciden fila por fila con las tablas de
+referencia dadas.
+
+`scripts/produccion/revision-final.js` se extendió con un paso nuevo
+(`datoPorDato`) que compara esos mismos agregados contra la API en vivo
+de producción (`GET /calidad/nivel-servicio/diario`, `GET
+/calidad/trafico/whatsapp`, `GET /calidad/tipificacion/por-tipo` por
+skill×mes): 150/150 filas de Llamadas, 258/258 de WhatsApp, 0
+duplicados, 0 diferencias; Tipificación exacta por skill×mes, total
+34.661. Se corrió con sesión real del usuario (ventana visible, login
+manual, nunca se guardó contraseña ni cookies).
+
+El hueco estructural que señaló el usuario era real: las revisiones de
+las Fases 112–119 solo recorrían la sub-vista que abre por defecto de
+cada pestaña. Se reescribió el recorrido para abrir cada tab Y cada
+sub-pestaña (botones `.gd-subtab-btn`) una por una, clasificando cada una
+como "dibujó algo" / "mensaje claro" / "EN BLANCO". Resultado contra
+producción: las 7 pestañas y todas sus sub-vistas dibujan algo real o
+muestran un mensaje — `enBlancoSinMensaje: []`. El AHT de WhatsApp, en
+el momento de esta corrida, ya mostraba un mensaje (no un blanco
+literal) — una discrepancia honesta con la captura original de InCo que
+se reporta tal cual, sin asumir cuál de las dos observaciones estaba
+más correcta: pudo ser un estado/filtro distinto al que se probó aquí.
+De cualquier forma, la decisión de InCo (quitar el AHT, no solo dejarle
+un mensaje) se ejecuta igual, independiente de esa duda.
+
+Se investigó también el defecto de recorte de cabecera reportado en la
+captura (~1878×850): el selector usado para medir el título tenía un
+bug (`#gd-overlay h1, #gd-overlay .gd-titulo, #gd-modal h1`, que no
+matchea nada — el elemento real es `<h2 id="gd-title">`,
+`public/index.html`). Corregido el selector del script de verificación;
+con la medición ya correcta, el título y el título de sección de
+WhatsApp no quedan tapados por la barra fija en ese viewport —
+consistente con que fuera un artefacto del recorte de la captura, no un
+defecto real del header (Fases 103/105).
+
+### Parte 2 — AHT de Trafico de WhatsApp
+
+Decisión autorizada por InCo: si el AHT de WhatsApp no llega de verdad,
+se quita (nunca inventar/aproximar, nunca dejarlo en blanco). Confirmado
+contra los 2 archivos reales (258 filas): AHT siempre "----", 0
+numéricas — igual en la API en vivo (`ahtNumericas: 0`).
+
+- `server/db.js`: migración idempotente
+  `dashboards_config_orlant_whatsapp_sin_aht_v1` (panel
+  `trafico_whatsapp_combo` → `mostrarAht:false`), que revisa el panel Y
+  la pestaña por separado (la Fase 104 ya mostró que mezclar los 2
+  niveles en una sola migración puede dejar un estado intermedio), nunca
+  pisa un `mostrarAht` ya personalizado, no toca Trafico de Llamadas
+  (voz, que sí tiene AHT real). Probada corriendo DOS VECES contra la
+  misma base (mismo resultado) y en una base nueva (todas las
+  migraciones + el seed).
+- `server/dashboard-config-seed.js`: instalaciones nuevas nacen con
+  `mostrarAht:false`.
+- `public/js/trafico-whatsapp.js`: lee `p.mostrarAht` por campaña,
+  filtra la sub-pestaña "AHT" del nav y la columna "AHT (seg)" del
+  export cuando está en `false`; cae a "Resumen" si quedó guardado un
+  estado viejo con `'aht'`. `public/js/trafico.js` (voz) y
+  `public/js/trafico-whatsapp-logic.js` (el lector de la columna AHT) no
+  se tocan — reactivarlo después es solo volver a poner
+  `mostrarAht:true`.
+- Verificado de punta a punta contra un servidor local real (no solo
+  tests unitarios): con una base sintética de WhatsApp cargada por la
+  API normal (nunca datos reales, nunca producción), la sub-pestaña AHT
+  desaparece del nav y `_traficoWppDatosExport` ya no incluye la
+  columna.
+
+Hallazgo real no pedido explícitamente pero descubierto al revisar el
+mismo código (pedido de InCo: "si hay un problema con el 0.0 del ATA,
+corrígelo"): el ATA (tiempo promedio de abandono) de Tráfico de Llamadas
+Y de WhatsApp se ponderaba por el TOTAL de llamadas/WhatsApp, no por
+cuántas realmente abandonaron — decisión de la Fase 77 ("ATA/WAIT_TIME
+sin evidencia de que esté mal"), que esta fase sí trae evidencia real en
+contra. Un día/periodo de mucho volumen y pocos abandonos diluía el
+promedio. Efecto numérico medido contra el archivo real: Llamadas agosto
+pasa de 350,92s (ponderado por total) a 625,13s (ponderado por
+abandonadas, el correcto) — casi el doble; septiembre de 189,80s a
+270,73s. WhatsApp agosto de 14,00s a 50,15s; septiembre de 7,37s a
+34,07s. Corregido en `traficoAgregar`/`traficoWppAgregarPorPeriodo`, con
+tests que fallan con el código viejo y pasan con el nuevo. WAIT_TIME
+(voz) no se tocó — su definición sí depende del total, no de los
+abandonos. Ninguno de los números de control documentados incluye ATA,
+así que esa tabla no se mueve — el número que sí cambia (hacia arriba,
+reflejando el dato real) es el de la sub-pestaña "ASA y ATA" y su
+export.
+
+Revisado sin cambios (confirmado, no corregido porque ya estaba bien):
+ASA se sigue ponderando por contestadas (no por total) en los 2
+canales; `_traficoWppFmtTiempo` formatea correctamente en horas cuando
+aplica (ej. 27.554,56s → "7:39:14", el ejemplo real que trajo esta
+fase); el aviso de "sin dato" del nivel de servicio a 5 minutos sigue
+presente.
+
+Hallazgo documentado, no corregido (fuera del alcance pedido, código
+sin ningún llamador en producción): `traficoWppResumen`
+(`trafico-whatsapp-logic.js`) tiene el mismo defecto de ponderación
+(ASA/ATA por total) que se corrigió en las funciones que sí se usan —
+al no estar conectada a ninguna pantalla, no afecta nada visible hoy.
+Ver `docs/pendientes.md`.
+
+### Parte 3 — Que esto no vuelva a pasar
+
+`.github/scripts/ci-pantallas-orlant.js` (el job "pantallas" de CI) ya
+recorría cada sub-pestaña de cada pestaña (genérico, vía
+`.gd-subtab-btn`) — lo que faltaba es que, al encontrar un canvas oculto
+a propósito (serie vacía), el chequeo lo daba por bien manejado sin
+confirmar que de verdad quedara un mensaje `.oc-nodata` visible cerca.
+Ahora lo confirma. Verificado localmente contra un servidor real
+(`seed:demo` + la misma base sintética de WhatsApp de la Parte 2): 0
+hallazgos antes y después del cambio. Sin tocar `deploy.yml` ni el
+límite de 5 minutos del job.
+
+No se llegó a cubrir en esta fase (ver `docs/pendientes.md` → "De la
+Fase 120" para el detalle): la matriz completa de Playwright
+(claro/oscuro × 1366×768/1920×1080/móvil 412px, abriendo cada
+sub-pestaña una por una) — se verificó a mano, con navegador real, el
+caso concreto de esta fase; barrido de código muerto completo (aparte
+del hallazgo puntual de `traficoWppResumen`); XSS dinámico y
+fallas/carreras de UI (heredados sin cambios de las Fases 118/119).
+
+### Parte 4 — Cierre
+
+4 PRs, uno por tema, CI verde: #297 (quita el AHT de WhatsApp +
+migración + `revision-final.js`), #298 (corrige el peso del ATA), #299
+(CI confirma el mensaje del canvas oculto), más este PR de cierre
+(versión, `CHANGELOG.md`, `PROGRESS.md`, `docs/pendientes.md`, guía de
+uso en los 2 formatos). `npm audit` (completo y `--omit=dev`): 0
+vulnerabilidades antes y después (sin cambios de dependencias). Esta
+fase SÍ cambia el comportamiento visible de la app (se quita una
+sub-pestaña y una columna de export, y un número en pantalla cambia de
+valor) → sube de versión MENOR: v1.11.2 → v1.12.0.
