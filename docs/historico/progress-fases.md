@@ -11028,3 +11028,152 @@ cambio de versión — ninguno de los 5 PRs tocó código de `server/` o
 `.gitignore` y `CLAUDE.md`); CLAUDE.md liga el bump de versión a
 "cambie la app (código, no solo PROGRESS.md/docs)" y ninguno de estos 5
 cambios lo hace. v1.11.2 sin cambios.
+
+## Fase 119 — Deja ORLANT lista para entregarla al cliente (y lista para cargar más meses) (2026-10-05)
+
+Dos objetivos explícitos del jefe: (1) entregarle ORLANT al cliente real,
+(2) dejar las 7 bases seguras para que él mismo suba más meses de datos
+pronto. No agrega funciones nuevas — verifica con evidencia, endurece lo
+que hiciera falta, y prepara la entrega. Antes de pegar el prompt, el
+jefe creó desde la propia plataforma el usuario real del cliente de
+ORLANT (rol `CLIENTES_DASH`, solo ORLANT) y explicó por qué su
+contraseña temporal (`12345678`) nunca debía dársele a Claude Code ni
+quedar en ningún archivo — la escribió él mismo en el navegador cuando
+el script la pidió, y la cambiaría apenas terminara la fase.
+
+### Parte 1 — Producción, con la cuenta REAL del cliente
+
+`scripts/produccion/revision-final.js` se reescribió a fondo. Hallazgo
+real durante esta misma fase: 3 corridas seguidas (contando una de la
+Fase 118) recibieron la cuenta `CLIENTES_DASH` en la ventana pensada para
+admin, pese al aviso en pantalla — patrón sistemático, no un error de
+lectura puntual (probable autocompletado del navegador guardando la
+cuenta recién creada). El script ya no asume qué ventana es cuál: espera
+CUALQUIER login, decodifica el JWT, y corre el bloque de chequeos (admin
+o cliente) que corresponda — si la segunda ventana repite la identidad
+de la primera, ya no aborta perdiendo lo que sí se alcanzó a verificar,
+avisa claro y lo conserva.
+
+Con esa reescritura, una corrida real por fin completó el recorrido
+`CLIENTES_DASH` con la cuenta real del cliente (identidad confirmada por
+JWT: `rol: CLIENTES_DASH`, `isMasterAdmin: false`): `#admin-page` oculto,
+`#user-page` visible; los 7 endpoints administrativos probados
+(`/historial`, `/seguridad/alertas`, `/dashboards/config`,
+`/dashboard/cargas`, `/inventario/items`, `/gerencia/kpis`,
+`/gh/personal`) dan 403; las 7 pestañas con canvas dibujado y Exportar
+funcionando en las 7; las 5 pestañas ocultas (Ordenamiento Médico,
+Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA) NO
+aparecen; sin ningún aviso "demo" visible; Calidad descrita sin tocarla
+(catálogo de codificaciones vacío, 37 monitoreos — esperan confirmación
+de Edwin); "Cambiar mi contraseña" visible y rechaza una contraseña
+actual incorrecta (401).
+
+Dos falsos negativos del propio script, encontrados y corregidos al leer
+el primer reporte real: (1) el botón "Cambiar mi contraseña" existe
+repetido una vez por página (`#admin-page`/`#user-page`/`#asesor-page`/
+`#supervisor-page`); un `querySelector` sin acotar a la página activa
+siempre agarraba el de `#admin-page` (primero en el HTML), oculto para
+un cliente — daba "no visible" aunque el botón real sí lo estuviera.
+(2) los 403/401 esperados de las propias pruebas de escalada/rechazo de
+contraseña se contaban como "petición fallida"/"error de consola" — se
+descartan explícitamente (son el resultado CORRECTO, no un problema).
+
+El recorrido de ADMIN no se repitió esta sesión (la cuenta del cliente
+se usó también en la segunda ventana, 3 veces seguidas en total) — se
+apoya en la confirmación completa de ese mismo recorrido horas antes, en
+la Fase 118, mismo día, sin cambios de código de `server/`/`public/` de
+por medio mientras tanto. Infraestructura pública (headers, TLS, backups)
+no se repitió por la misma razón (ya confirmada horas antes).
+
+### Parte 2 — Cargas mensuales seguras (PRIORIDAD ALTA)
+
+`server/tests/fase119-cargas-multi-mes.test.js` (26 pruebas, las 7
+bases): falla a mitad de carga inyectada — un monkey-patch temporal de
+`db.prepare` fuerza una excepción dentro de la transacción de cada una de
+las 7 bases, confirmando 0 filas a medias (better-sqlite3 revierte la
+transacción completa, DELETE de reemplazo incluido). Otra campaña con las
+mismas fechas no se toca AL ESCRIBIR (no solo al leer, que ya estaba
+cubierto desde antes). Orden inverso (cargar un periodo anterior después
+de uno más reciente) no daña ninguno de los 2, confirmado en 3 bases.
+Archivo equivocado en la ventana equivocada (forma de WhatsApp en la
+carga de Llamadas, Tipificación en la de Agendas, canal inválido) se
+rechaza con 400, nunca se mezcla.
+
+Dos hallazgos de COBERTURA (el código ya se comportaba bien, solo
+faltaba la prueba EJECUTADA): Efectividad de Agendamiento no tenía la
+prueba de "un archivo con varios meses reemplaza solo esos meses" que sí
+tenían Inasistencia y Efectividad de Citas — agregada. Tráfico de
+Llamadas/WhatsApp, Agendas y Tipificación no tenían una prueba dinámica
+de "fecha futura → 400" (el rechazo ya estaba implementado, solo faltaba
+ejecutarlo) — las 4 se agregaron. De paso se confirmó, al escribir mal
+las fechas de prueba la primera vez y verlas rechazadas, un detalle de
+negocio no obvio: "futura" significa posterior al FIN DEL MES EN CURSO,
+no posterior a "hoy" — una fecha de mañana dentro del mes en curso se
+acepta.
+
+`docs/procedimiento-carga-mensual.md` (nuevo): qué archivo sube cada
+base y en qué orden, respaldo antes de cada carga real
+(`respaldo-produccion.yml`), cómo leer el diálogo de confirmación, qué
+verificar después, cómo volver atrás si algo sale mal, y qué protege la
+plataforma automáticamente (con referencia a las pruebas de esta parte).
+
+### Parte 3 — Lo que la Fase 118 dejó sin demostrar (parcial)
+
+**Matriz de acceso de las 7 familias de carga masiva**
+(`server/tests/fase119-matriz-cargas-masivas.test.js`, 9 pruebas):
+reusando los cuerpos mínimos válidos de la Parte 2, se ejecutaron de
+verdad contra los 10 roles × propia/ajena. Hallazgo real, severidad
+BAJA/informativa: Tráfico de Llamadas es la única de las 7 cuya carga no
+exige `campaignAccess` — decisión EXPLÍCITA y ya documentada de una
+auditoría anterior (`server/routes/trafico.js`, "auditoría 2026-09-15"),
+porque un archivo trae varias skills que resuelven a campañas distintas
+vía mapeo. Confirmado con una prueba dedicada que contrasta las 7
+familias (REPORTES, con acceso solo a ORLANT, SÍ logra cargar Tráfico de
+Llamadas mapeado a CLINICA AURORA; las otras 6 lo bloquean). No se
+corrige esta fase — ver `docs/pendientes.md` para el motivo completo.
+
+**Zonas horarias** (`server/tests/fase119-zonas-horarias.test.js`, 3
+pruebas): 2 procesos Node reales, uno con `TZ=UTC` y otro con
+`TZ=America/Bogota`, confirman que `fecha-limites.js`,
+`fecha-limites-logic.js` y `tipificacion-logic.js` dan el mismo
+resultado bajo las 2 — usan solo métodos `getUTC*()` sobre un offset fijo
+de -5h. Defecto simulado (métodos locales, sensibles a la TZ del
+proceso) y revertido: con el defecto, una diferencia real de un día
+completo entre los 2 procesos — confirma que la prueba no es vacía.
+
+**Sin cubrir en esta fase** (pedido de nuevo, ver `docs/pendientes.md` →
+"De la Fase 119" para el detalle y motivo de cada uno): barrido visual
+completo (7 pestañas × tema × 4 tamaños de pantalla), barrido de código
+muerto a partir del grafo de `graphify`, XSS dinámico con Playwright,
+fallas y carreras de UI, y algunos casos de borde adicionales del
+reemplazo por rango (archivo de un solo día explícito, re-subida
+idéntica con aserción fila por fila, archivo grande de varios meses a la
+vez en bases distintas a Tipificación).
+
+### Parte 4 — Preparar la entrega al cliente
+
+`docs/guia-uso-orlant.md` + `server/paginas/guia-uso.html` (mismo
+contenido en los 2): versión 1.10.0 → 1.11.2 (estaba desactualizada),
+agrega el botón de pantalla completa (Fase 103) que faltaba mencionar —
+el resto ya estaba al día (7 pestañas, Inasistencia con filtros, ranking
+por efectividad, Cambiar mi contraseña). `CHECKLIST_VERIFICACION_EDWIN.md`
+(nuevo — no existía en el repo pese al nombre del pedido, se creó de
+cero): checklist corto de aceptación manual, una casilla por cosa a
+revisar. El "Calendario mensual de cargas" de la guía sigue con 4 de 8
+filas marcadas "Por confirmar" — depende de que Edwin las precise, no se
+resolvió en esta fase. Confirmado por búsqueda (grep) que no hay texto
+"TODO"/"prueba"/"demo" fuera de lo esperado, ni nombres de otras
+campañas, ni rutas de servidor, en el código del frontend que ve un
+`CLIENTES_DASH` — consistente con el chequeo dinámico real de la Parte 1
+(`avisosDemoVisibles: []` contra la cuenta real del cliente).
+
+### Cierre
+
+6 PRs, uno por tema, CI verde en los 6 (#291 `revision-final.js`, #292
+cargas multi-mes, #293 docs de entrega, #294 matriz de cargas masivas,
+#295 zonas horarias, más este PR de cierre). `npm test`: 1071/1071 (1033
+previas + 38 nuevas). `npm audit`: 0 vulnerabilidades antes y después
+(sin cambios de dependencias). Sin cambio de versión — ningún PR de esta
+fase toca `server/`/`public/` de forma que cambie el comportamiento de
+la app para un usuario real (solo tests, un script de QA, y docs/HTML de
+contenido). v1.11.2 sin cambios.
