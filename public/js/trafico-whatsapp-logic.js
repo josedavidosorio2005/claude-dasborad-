@@ -53,6 +53,61 @@ var TRAFICO_WPP_COLUMNAS = [
 ];
 var TRAFICO_WPP_COLUMNAS_OBLIGATORIAS = TRAFICO_WPP_COLUMNAS.filter(function (c) { return c.obligatoria; });
 
+// Fase 116 (archivo real de Edwin, ago-sep/2026): Wolkvox tambien exporta
+// WhatsApp en el MISMO formato diario que usa voz (SKILL_NAME + DATE, una
+// fila por cola y DIA -- no por periodo como la plantilla vieja de arriba),
+// con columnas propias de volumen (INBOUND_CALLS/ANSWER_CALLS/ABANDON_CALLS
+// en vez de TOTAL WHATSAPP/WHATSAPP CONTESTADOS/WHATSAPP ABANDONADOS). Lista
+// SEPARADA (nunca se mezcla con TRAFICO_WPP_COLUMNAS de arriba): las 2
+// conviven, traficoWppParseFilas detecta cual trae el archivo por el
+// encabezado (ver traficoWppEsFormatoDiario) y delega al parser que
+// corresponde -- un archivo con el formato viejo (periodo) sigue cargando
+// exactamente igual que siempre.
+// WAIT_TIME llega en este export (hora nativa de Excel) pero NUNCA se
+// mapea aqui a proposito: Fase 68 (pedido explicito de Edwin) ya retiro
+// Wait Time de la vista de Trafico de WhatsApp, y no hay columna
+// `waitTimeSegundos` en la tabla `trafico_whatsapp` -- una columna que no
+// esta en esta lista simplemente se ignora sin error (igual que ABANDON,
+// que tampoco se lee aqui ni en voz desde la Fase 45).
+var TRAFICO_WPP_COLUMNAS_DIARIO = [
+  { key: 'colaWhatsapp', label: 'SKILL_NAME', obligatoria: true },
+  { key: 'fecha', label: 'DATE', obligatoria: true },
+  { key: 'totalWhatsapp', label: 'INBOUND_CALLS', obligatoria: true },
+  { key: 'contestados', label: 'ANSWER_CALLS', obligatoria: true },
+  { key: 'abandonados', label: 'ABANDON_CALLS' },
+  { key: 'serviceLevel10secPct', label: 'SERVICE_LEVEL_10SEC' },
+  { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC' },
+  { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
+  { key: 'serviceLevel5minPct', label: 'SERVICE_LEVEL_5MIN', aliases: ['SERVICE_LEVEL_300SEC', 'NIVEL DE SERVICIO 5 MIN'] },
+  { key: 'asaSegundos', label: 'ASA' },
+  { key: 'ataSegundos', label: 'ATA' },
+  { key: 'ahtSegundos', label: 'AHT' },
+];
+var TRAFICO_WPP_COLUMNAS_DIARIO_OBLIGATORIAS = TRAFICO_WPP_COLUMNAS_DIARIO.filter(function (c) { return c.obligatoria; });
+
+function traficoWppColIndexMapDiario(headerRow) {
+  var map = {};
+  (headerRow || []).forEach(function (h, i) {
+    var n = traficoWppNorm(h);
+    var col = TRAFICO_WPP_COLUMNAS_DIARIO.filter(function (c) {
+      if (traficoWppNorm(c.label) === n) return true;
+      return (c.aliases || []).some(function (a) { return traficoWppNorm(a) === n; });
+    })[0];
+    if (col && map[col.key] === undefined) map[col.key] = i;
+  });
+  return map;
+}
+
+// Detecta el formato DIARIO (Wolkvox real) por sus 2 columnas de volumen
+// (INBOUND_CALLS/ANSWER_CALLS) -- unicas de este formato, nunca apareren en
+// el formato viejo de periodo (TOTAL WHATSAPP/WHATSAPP CONTESTADOS) ni en
+// Trafico de Llamadas (TOTAL LLAMADAS/LLAMADAS CONTESTADAS), asi que no hay
+// riesgo de confundir los 3 formatos entre si.
+function traficoWppEsFormatoDiario(headerRow) {
+  var map = traficoWppColIndexMapDiario(headerRow);
+  return map.totalWhatsapp !== undefined && map.contestados !== undefined;
+}
+
 function traficoWppNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
 }
@@ -190,7 +245,11 @@ function traficoWppNumero(v) {
 //
 // `ws` (Fase 88, opcional): ver traficoParseFilas (trafico-logic.js) --
 // mismo criterio exacto, worksheet crudo de SheetJS con cellNF:true.
-function traficoWppParseFilas(aoa, ws) {
+//
+// Fase 116: esta es la version PERIODO (plantilla vieja, una cola por
+// FECHA INICIO..FECHA FIN) -- ver traficoWppParseFilas (dispatcher, mas
+// abajo) para el formato DIARIO nuevo (Wolkvox real).
+function traficoWppParseFilasPeriodo(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = traficoWppColIndexMap(aoa[0]);
   var faltantes = TRAFICO_WPP_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -290,6 +349,109 @@ function traficoWppParseFilas(aoa, ws) {
     colas: Object.keys(colasSet).sort(),
     periodos: Object.keys(periodosSet).sort(),
   };
+}
+
+// Fase 116: formato DIARIO (export real de Wolkvox, SKILL_NAME + DATE, una
+// fila por cola y DIA) -- produce la MISMA forma de fila que el formato
+// periodo (fechaInicio/fechaFin), con fechaInicio===fechaFin===ese dia, para
+// que el resto del pipeline (traficoWppResumen, traficoWppFiltrarFilas,
+// traficoWppAgregarPorPeriodo, y el reemplazo por rango del backend --
+// cargarTraficoWhatsapp, Fase 115) funcione IGUAL sin tener que saber de que
+// formato vino cada fila.
+//
+// DATE: traficoWppParseFecha ya maneja un objeto Date boxeado (rama
+// `instanceof Date`, getters UTC) -- a diferencia de WAIT_TIME/AHT (Fase
+// 115), aqui NO hace falta recuperar el valor crudo de `ws`: el boxeo de
+// SheetJS para una celda de SOLO FECHA (sin hora) corre la medianoche local
+// a UTC, pero nunca cruza el dia calendario para la zona de Colombia
+// (UTC-5), asi que los getters UTC siguen dando el dia correcto --
+// verificado contra el archivo real (DATE crudo 46235 / "8/1/26" -> boxeado
+// "2026-08-01T05:00:00.000Z" -> getUTCDate()=1, correcto).
+//
+// ASA/ATA/AHT: a diferencia del formato periodo (hora nativa de Excel,
+// fraccion de dia), aqui Wolkvox los exporta como TEXTO en SEGUNDOS con
+// separador de miles ingles (ej. "27,554.56" = 27554,56 segundos) -- se usa
+// traficoWppNumero (quita TODAS las comas) para los 3, nunca
+// traficoWppSegundosDesdeFraccionDia. AHT viene "----" en todas las filas
+// reales de hoy (Number("----") no es finito -> null, nunca 0).
+function traficoWppParseFilasDiario(aoa, ws) {
+  var map = traficoWppColIndexMapDiario(aoa[0]);
+  var faltantes = TRAFICO_WPP_COLUMNAS_DIARIO_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
+  if (faltantes.length) {
+    return {
+      error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') +
+        '. Sube el archivo tal cual lo exporta Wolkvox, sin recortar columnas.',
+    };
+  }
+
+  var filas = [];
+  var avisos = [];
+  var colasSet = {};
+  var periodosSet = {};
+
+  for (var i = 1; i < aoa.length; i++) {
+    var row = aoa[i];
+    if (!row || row.every(function (v) { return v === '' || v == null; })) continue;
+    var filaNum = i + 1;
+
+    var colaWhatsapp = row[map.colaWhatsapp] == null ? '' : String(row[map.colaWhatsapp]).trim();
+    var fecha = traficoWppParseFecha(row[map.fecha]);
+    var totalWhatsapp = traficoWppNumero(row[map.totalWhatsapp]);
+    var contestados = traficoWppNumero(row[map.contestados]);
+
+    if (!colaWhatsapp) { avisos.push('Fila ' + filaNum + ': SKILL_NAME vacio, se omitio.'); continue; }
+    if (traficoWppEsFilaTotal(colaWhatsapp)) { avisos.push('Fila ' + filaNum + ': SKILL_NAME "' + colaWhatsapp + '" parece una fila TOTAL/resumen de la base, se omitio (nunca se suma como si fuera una cola real).'); continue; }
+    if (!fecha) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): DATE invalida o vacia, se omitio.'); continue; }
+    if (totalWhatsapp === null || totalWhatsapp < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + colaWhatsapp + '): INBOUND_CALLS invalido, se omitio.'); continue; }
+    if (contestados === null || contestados < 0) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + colaWhatsapp + '): ANSWER_CALLS invalido, se omitio.'); continue; }
+    if (contestados > totalWhatsapp) { avisos.push('Fila ' + filaNum + ' (' + fecha + ', ' + colaWhatsapp + '): ANSWER_CALLS (' + contestados + ') supera INBOUND_CALLS (' + totalWhatsapp + '), se omitio.'); continue; }
+    if (_traficoWppFechaLimites.fechaLimitesEsFutura(fecha)) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): DATE ' + fecha + ' esta en el futuro, se omitio.'); continue; }
+    if (_traficoWppFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)) { avisos.push('Fila ' + filaNum + ' (' + colaWhatsapp + '): DATE ' + fecha + ' es anterior a 2020, revisa si esta bien digitada (no se omitio).'); }
+
+    var fila = {
+      colaWhatsapp: colaWhatsapp,
+      fechaInicio: fecha,
+      fechaFin: fecha,
+      totalWhatsapp: Math.round(totalWhatsapp),
+      contestados: Math.round(contestados),
+    };
+    var opcionales = [
+      ['abandonados', traficoWppNumero, Math.round],
+      ['serviceLevel10secPct', traficoWppPctDesdeTexto, null],
+      ['serviceLevel20secPct', traficoWppPctDesdeTexto, null],
+      ['serviceLevel30secPct', traficoWppPctDesdeTexto, null],
+      ['serviceLevel5minPct', traficoWppPctDesdeTexto, null],
+      ['asaSegundos', traficoWppNumero, null],
+      ['ataSegundos', traficoWppNumero, null],
+      ['ahtSegundos', traficoWppNumero, null],
+    ];
+    opcionales.forEach(function (spec) {
+      var key = spec[0], parse = spec[1], post = spec[2];
+      if (map[key] === undefined) return;
+      var val = parse(row[map[key]]);
+      if (val !== null) fila[key] = post ? post(val) : val;
+    });
+
+    filas.push(fila);
+    colasSet[colaWhatsapp] = true;
+    periodosSet[fecha + '_' + fecha] = true;
+  }
+
+  if (filas.length === 0) return { error: 'El archivo no tiene filas de datos validas.' };
+  return {
+    filas: filas,
+    avisos: avisos,
+    colas: Object.keys(colasSet).sort(),
+    periodos: Object.keys(periodosSet).sort(),
+  };
+}
+
+// Dispatcher publico: detecta el formato por el encabezado (Fase 116) y
+// delega al parser que corresponde -- ver traficoWppEsFormatoDiario.
+function traficoWppParseFilas(aoa, ws) {
+  if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
+  if (traficoWppEsFormatoDiario(aoa[0])) return traficoWppParseFilasDiario(aoa, ws);
+  return traficoWppParseFilasPeriodo(aoa, ws);
 }
 
 // ── Agregado de KPIs para el resumen de un periodo (suma volumenes primero,
@@ -457,6 +619,12 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     TRAFICO_WPP_COLUMNAS: TRAFICO_WPP_COLUMNAS,
     TRAFICO_WPP_COLUMNAS_OBLIGATORIAS: TRAFICO_WPP_COLUMNAS_OBLIGATORIAS,
+    TRAFICO_WPP_COLUMNAS_DIARIO: TRAFICO_WPP_COLUMNAS_DIARIO,
+    TRAFICO_WPP_COLUMNAS_DIARIO_OBLIGATORIAS: TRAFICO_WPP_COLUMNAS_DIARIO_OBLIGATORIAS,
+    traficoWppColIndexMapDiario: traficoWppColIndexMapDiario,
+    traficoWppEsFormatoDiario: traficoWppEsFormatoDiario,
+    traficoWppParseFilasPeriodo: traficoWppParseFilasPeriodo,
+    traficoWppParseFilasDiario: traficoWppParseFilasDiario,
     traficoWppColIndexMap: traficoWppColIndexMap,
     traficoWppEsFilaTotal: traficoWppEsFilaTotal,
     traficoWppFechaDesdeSerial: traficoWppFechaDesdeSerial,
