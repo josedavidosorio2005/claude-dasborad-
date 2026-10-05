@@ -228,17 +228,22 @@ router.post(
       'SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario WHERE skillName = ? AND substr(fecha,1,7) = ?'
     );
 
+    // Fase 116: rango GLOBAL del archivo completo (nunca por skill) -- ver
+    // el comentario en nivel-servicio-diario.js (cargarNivelServicioDiario)
+    // para el hallazgo real que lo exige: si la skill no tiene fila en los
+    // primeros dias que el archivo SI cubre para otras skills, su propio
+    // rango arrancaria mas tarde y dejaria un residuo viejo sin detectar.
     const fechasPorSkill = new Map(); // skillName -> Set(fechas) que trae el archivo
+    let minFechaGlobal = null, maxFechaGlobal = null;
     req.body.filas.forEach((f) => {
       if (!fechasPorSkill.has(f.skillName)) fechasPorSkill.set(f.skillName, new Set());
       fechasPorSkill.get(f.skillName).add(f.fecha);
+      if (minFechaGlobal === null || f.fecha < minFechaGlobal) minFechaGlobal = f.fecha;
+      if (maxFechaGlobal === null || f.fecha > maxFechaGlobal) maxFechaGlobal = f.fecha;
     });
     const stmtEnRango = db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ?');
     for (const [skillName, fechas] of fechasPorSkill) {
-      const ordenadas = [...fechas].sort();
-      const minFecha = ordenadas[0];
-      const maxFecha = ordenadas[ordenadas.length - 1];
-      stmtEnRango.all(skillName, minFecha, maxFecha).forEach((r) => {
+      stmtEnRango.all(skillName, minFechaGlobal, maxFechaGlobal).forEach((r) => {
         if (fechas.has(r.fecha)) return; // esa fecha SI viene en el archivo -- se reemplaza, no se borra
         const mes = r.fecha.slice(0, 7);
         const clave = skillName + '|' + mes;

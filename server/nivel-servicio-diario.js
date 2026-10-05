@@ -65,14 +65,30 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
   // Hallazgo real: un residuo de una prueba vieja (Fase 67) sobrevivio sin
   // detectarse hasta la Fase 115 porque el upsert de siempre solo tocaba
   // las fechas presentes en cada archivo nuevo, nunca borraba una fecha que
-  // dejara de venir. El rango nunca sale de [primera fecha, ultima fecha]
-  // que trae ESTE archivo PARA ESA skill — nunca se toca una fecha fuera de
-  // ahi, aunque exista en la base (ej. un archivo mas corto en una punta no
-  // borra lo que quedo fuera de su propio rango).
+  // dejara de venir.
+  //
+  // Fase 116 (hallazgo real, archivo de WhatsApp ago-sep/2026 -- mismo
+  // defecto de fondo tambien presente aqui en voz, aunque ningun archivo
+  // real lo haya expuesto todavia): el rango NO puede ser [primera..ultima
+  // fecha] de ESA skill dentro de ESTE archivo -- si la skill no tiene
+  // actividad (0 llamadas/mensajes, Wolkvox no genera fila) en los primeros
+  // dias que el archivo SI cubre para OTRAS skills, el rango de esa skill
+  // arranca mas tarde y una fila vieja anterior a su propio primer dia
+  // sobrevive sin detectarse (igual que el residuo de la Fase 67, solo que
+  // ahora el "hueco" es real, no un dato de prueba). El rango correcto es
+  // el GLOBAL del archivo completo (primera..ultima fecha de CUALQUIER
+  // fila, sin importar la skill) -- unico que de verdad representa "el
+  // periodo que este archivo dice cubrir". Una skill que no aparece en el
+  // archivo sigue sin tocarse en absoluto (el `for` de abajo solo recorre
+  // las skills presentes); una skill presente nunca pierde una fecha fuera
+  // del rango GLOBAL del archivo (ej. un archivo de julio nunca toca junio).
   const fechasPorSkill = new Map(); // skillName -> Set(fechas) de ESTA carga
+  let minFechaGlobal = null, maxFechaGlobal = null;
   filas.forEach((f) => {
     if (!fechasPorSkill.has(f.skillName)) fechasPorSkill.set(f.skillName, new Set());
     fechasPorSkill.get(f.skillName).add(f.fecha);
+    if (minFechaGlobal === null || f.fecha < minFechaGlobal) minFechaGlobal = f.fecha;
+    if (maxFechaGlobal === null || f.fecha > maxFechaGlobal) maxFechaGlobal = f.fecha;
   });
   const selectEnRango = db.prepare(
     'SELECT id, fecha FROM calidad_nivel_servicio_diario WHERE campana = ? AND skillName = ? AND sede IS ? AND fecha BETWEEN ? AND ?'
@@ -83,10 +99,7 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
   const idsBorrados = [];
   const tx = db.transaction((rows) => {
     for (const [skillName, fechas] of fechasPorSkill) {
-      const ordenadas = [...fechas].sort();
-      const minFecha = ordenadas[0];
-      const maxFecha = ordenadas[ordenadas.length - 1];
-      const aBorrar = selectEnRango.all(campana, skillName, sede, minFecha, maxFecha).filter((r) => !fechas.has(r.fecha));
+      const aBorrar = selectEnRango.all(campana, skillName, sede, minFechaGlobal, maxFechaGlobal).filter((r) => !fechas.has(r.fecha));
       if (aBorrar.length) {
         const placeholders = aBorrar.map(() => '?').join(',');
         db.prepare(`DELETE FROM calidad_nivel_servicio_diario WHERE id IN (${placeholders})`).run(...aBorrar.map((r) => r.id));

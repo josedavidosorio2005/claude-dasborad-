@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.11.1 — Octubre 2026
+
+**Arreglo: un residuo de datos viejos podia sobrevivir al reemplazar
+Trafico de Llamadas o de WhatsApp, si la linea/cola no tenia actividad
+justo en los primeros dias del archivo nuevo.** El reemplazo por rango
+(ver v1.10.4) calculaba el rango a borrar usando solo las fechas de ESA
+linea/cola dentro del archivo — si una cola de WhatsApp no tuvo ningun
+mensaje los primeros 1-2 dias del periodo (puede pasar, no es un error),
+su rango arrancaba despues y un dato viejo de antes de esa fecha se
+quedaba sin borrar, inflando el total. Encontrado y corregido durante la
+carga real de agosto-septiembre 2026: ahora el rango a reemplazar es el
+de TODO el archivo (todas las lineas/colas juntas), nunca el de una sola
+linea/cola por separado.
+
 ## v1.11.0 — Octubre 2026
 
 **Novedad: Trafico de WhatsApp acepta el reporte diario real de Wolkvox

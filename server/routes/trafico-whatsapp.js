@@ -142,8 +142,12 @@ router.post(
       'SELECT COUNT(*) AS n FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio = ? AND fechaFin = ?'
     );
 
+    // Fase 116: rango GLOBAL del archivo completo (nunca por cola) -- ver
+    // el comentario en trafico-whatsapp.js (cargarTraficoWhatsapp) para el
+    // hallazgo real que lo exige.
     const fechasPorCola = new Map(); // colaWhatsapp -> Set(fechaInicio) que trae el archivo
     const periodosPorCola = new Map(); // colaWhatsapp -> Set("inicio|fin")
+    let minFechaInicioGlobal = null, maxFechaInicioGlobal = null;
     b.filas.forEach((f) => {
       if (!fechasPorCola.has(f.colaWhatsapp)) {
         fechasPorCola.set(f.colaWhatsapp, new Set());
@@ -151,16 +155,15 @@ router.post(
       }
       fechasPorCola.get(f.colaWhatsapp).add(f.fechaInicio);
       periodosPorCola.get(f.colaWhatsapp).add(f.fechaInicio + '|' + f.fechaFin);
+      if (minFechaInicioGlobal === null || f.fechaInicio < minFechaInicioGlobal) minFechaInicioGlobal = f.fechaInicio;
+      if (maxFechaInicioGlobal === null || f.fechaInicio > maxFechaInicioGlobal) maxFechaInicioGlobal = f.fechaInicio;
     });
     const stmtEnRango = db.prepare(
       'SELECT fechaInicio, fechaFin FROM trafico_whatsapp WHERE campana = ? AND colaWhatsapp = ? AND fechaInicio BETWEEN ? AND ?'
     );
-    for (const [colaWhatsapp, fechasInicio] of fechasPorCola) {
-      const ordenadas = [...fechasInicio].sort();
-      const minFechaInicio = ordenadas[0];
-      const maxFechaInicio = ordenadas[ordenadas.length - 1];
+    for (const [colaWhatsapp] of fechasPorCola) {
       const periodosNuevos = periodosPorCola.get(colaWhatsapp);
-      stmtEnRango.all(b.campana, colaWhatsapp, minFechaInicio, maxFechaInicio).forEach((r) => {
+      stmtEnRango.all(b.campana, colaWhatsapp, minFechaInicioGlobal, maxFechaInicioGlobal).forEach((r) => {
         const claveExistente = r.fechaInicio + '|' + r.fechaFin;
         if (periodosNuevos.has(claveExistente)) return; // ese periodo exacto SI viene en el archivo -- se reemplaza, no se borra
         const clave = colaWhatsapp + '|' + r.fechaInicio + '|' + r.fechaFin;
