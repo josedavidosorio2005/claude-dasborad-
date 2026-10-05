@@ -369,10 +369,13 @@ function descargarPlantillaConsolidada(){
     if(h.tipo === 'calidad'){
       var calidad = _cargasCalidadPorCampana[cliente];
       var items = calidad ? calidad.items : [];
+      // Fase 117: it.label es texto libre del diccionario de criterios de
+      // Calidad (igual que en calidad-carga-masiva.js) -- xlsxFilasSeguras
+      // antes de escribirlo evita inyeccion de formulas.
       var dicAoa = [['#','Categoria','Item','Peso %','Critico']].concat(
         items.map(function(it){ return [it.n, it.cat, it.label, it.weight, it.critico ? 'SI' : 'NO']; })
       );
-      var wsDic = XLSX.utils.aoa_to_sheet(dicAoa);
+      var wsDic = XLSX.utils.aoa_to_sheet(xlsxFilasSeguras(dicAoa));
       wsDic['!cols'] = [{wch:4},{wch:16},{wch:55},{wch:9},{wch:9}];
       XLSX.utils.book_append_sheet(wb, wsDic, CARGAS_HOJA_DICCIONARIO);
 

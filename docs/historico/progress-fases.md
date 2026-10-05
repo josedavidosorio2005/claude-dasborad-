@@ -10722,3 +10722,119 @@ actualizados con los números de control nuevos.
 el fix. `npm test` 977/977, `npm audit` limpio. v1.11.1. Único destino:
 `main`, por PR con CI en verde, deploy automático confirmado (`/api/health`
 en vivo) antes de cada escritura en producción posterior.
+
+## Fase 117 — Revisión final integral (seguridad + bugs) antes de
+entregar ORLANT a Edwin (2026-10-05)
+
+Pedido: revisión de punta a punta de toda la plataforma (código nuevo de
+las Fases 113-116 incluido), con evidencia real por cada punto, antes de
+la entrega. Modo automático, con mi autorización explícita para hacer
+todo el ciclo (rama → PR → CI → merge → verificación de deploy) sin
+pausar entre pasos — la verificación en producción con sesión real
+quedó aparte, condicionada a que el usuario inicie sesión.
+
+### Línea base
+
+`npm test`: 966/967 en la primera corrida completa — una prueba de
+`fase113-tema-a-registro-login.test.js` falló SOLO en la corrida
+completa (no al correr ese archivo solo). `npm audit` (completo y
+`--omit=dev`): 0 vulnerabilidades, ambos. Migraciones corridas 3 veces
+sobre la misma base (hash SHA-256 del esquema completo + conteo de filas
+por tabla): idéntico en las 3 corridas — idempotentes.
+
+### Hallazgo 1 (real, demostrado): el Historial podía mostrar dos
+eventos muy seguidos en el orden equivocado
+
+La prueba que falló al azar fue la pista: `GET /historial`
+(`server/routes/historial.js`) ordenaba solo por `ts` (`Date.now()`,
+resolución de milisegundo). Dos eventos insertados en el MISMO
+milisegundo (ej. el login del admin maestro justo antes del login de
+otro usuario, dentro de la misma prueba) empataban, y SQLite no
+garantiza ningún orden estable entre filas empatadas en un `ORDER BY`
+sin desempate — podía devolver el evento más viejo primero. Reproducido
+a propósito (2 inserts directos con el mismo `ts`) en una prueba nueva
+que falla con el código viejo y pasa con el fix; confirmado corriendo
+`npm test` 5 veces seguidas tras el fix (0 fallas). Severidad: media —
+no es una fuga de datos, pero el Historial es la bitácora de auditoría y
+un orden incorrecto puede llevar a una conclusión equivocada sobre "qué
+pasó primero". Fix: desempatar por `id` (AUTOINCREMENT, estrictamente
+creciente) cuando `ts` empata.
+
+### Hallazgo 2 (real, preventivo, severidad baja): la plantilla de
+Calidad no protegía contra fórmulas de Excel
+
+`descargarPlantillaMonitoreos` (`public/js/calidad-carga-masiva.js`) y
+`descargarPlantillaConsolidada` (`public/js/cargas.js`) escriben el
+nombre de cada criterio de evaluación (texto libre, configurado por
+quien administra el diccionario de Calidad de una campaña) directo a un
+`.xlsx` con `aoa_to_sheet`, sin pasar por `xlsxFilasSeguras` como sí hace
+el resto de las descargas de la plataforma desde la Fase 8.1. No se
+encontró ningún criterio real con `=`/`+`/`-`/`@` al frente — es una
+inconsistencia encontrada por inspección de código (grep de todos los
+`XLSX.utils.*_to_sheet` de `public/js/`), no un dato real afectado. Se
+corrigió por ser chico y seguro, con el mismo patrón ya usado en el
+resto del código (`xlsxFilasSeguras`).
+
+### Revisado con evidencia, sin hallazgos nuevos
+
+- **SQL**: `grep` de concatenación de strings en consultas (`server/*.js`
+  completo) — cero resultados; toda consulta usa parámetros (`?`).
+  Tampoco hay ningún `ORDER BY` armado con datos del usuario (el orden de
+  tablas se hace en el navegador, no en SQL).
+- **Transacciones**: el reemplazo por rango de Tráfico de
+  Llamadas/WhatsApp, Tipificación, Inasistencia, Agendas, Efectividad de
+  Agendamiento/Citas usa `db.transaction(...)` (atómico por diseño de
+  better-sqlite3: si algo lanza a mitad de camino, no se confirma nada).
+  El caso límite de "una cola sin filas en los primeros días del archivo"
+  (el que causó el residuo de la Fase 116) ya quedó resuelto desde esa
+  fase con el rango GLOBAL del archivo, documentado en el código
+  (`server/nivel-servicio-diario.js`).
+- **Cabeceras/CORS**: `helmet()` activo, lista blanca explícita de CORS
+  (nunca `origin: true`), confirmado en `server/server.js`.
+- **Archivos estáticos**: solo `express.static(PUBLIC_DIR, ...)`, ningún
+  `path.join` con datos de la petición — sin superficie de path
+  traversal nueva.
+- **Secretos**: `JWT_SECRET` sin valor por defecto (obligatorio, mínimo
+  32 caracteres, validado en `server/config.js` al arrancar). Escaneo de
+  patrones de clave AWS/llave privada en el árbol actual Y en TODO el
+  historial de Git (`git log --all -p`): cero resultados reales — el
+  único archivo que coincidió con el patrón de clave AWS
+  (`migracion/inconexion-instance-accesskey.json`) está en `.gitignore`
+  y nunca estuvo en el índice de Git (`git ls-files` lo confirma). Ningún
+  `.env` fue commiteado jamás (`git log --diff-filter=A` sobre el
+  historial completo).
+- **Workflows**: las 22+ líneas `uses:` de `.github/workflows/*.yml`
+  están TODAS fijadas a un SHA completo — ninguna a un tag mutable.
+- **Fórmulas en exports ya existentes**: confirmado por inspección de
+  todos los `XLSX.utils.*_to_sheet` de `public/js/` (Trafico, WhatsApp,
+  Tipificación/dashboard genérico, Calidad, Historial, Inventario,
+  Gerencia) que ya pasan por `xlsxFilasSeguras`/`xlsxCeldaSegura`
+  (cubre, entre otras, las pestañas nuevas de Inasistencia, ranking de
+  efectividad y Efectividad de Citas, que usan el motor genérico de
+  `dashboard-generic.js`).
+- **Login/sesión**: límite de intentos propio por endpoint (login y
+  cambio de contraseña, contadores separados), mensaje de error idéntico
+  para usuario inexistente/contraseña incorrecta (con mitigación de
+  canal de tiempo desde la Fase 72), JWT con expiración y algoritmo fijo
+  (`HS256`, sin aceptar `alg:none`), `/auth/password` solo puede actuar
+  sobre `req.actor.id` (el ID sale del token firmado, nunca del body/URL
+  — no hay IDOR posible porque no hay ningún parámetro de ID en esa
+  ruta).
+
+### Lo que esta fase NO llegó a cubrir con evidencia propia (alcance
+real de una sola sesión, ver `docs/pendientes.md`)
+
+Matriz completa de IDOR (los 10 roles de `seed:demo` × los ~12 módulos,
+uno por uno); barrido visual de las 7 pestañas × claro/oscuro ×
+viewport; verificación en producción con sesión real (quedó pendiente de
+que el usuario inicie sesión); barrido de código muerto. Lo ya revisado
+en fases anteriores (Fases 48, 72, 81, 88, 102, 109, 112) sobre estos
+mismos temas sigue vigente — esta fase no encontró motivo para
+repetirlo todo desde cero, solo se enfocó en el código nuevo desde la
+Fase 113 y en una pasada de verificación general con evidencia puntual.
+
+### Cierre
+
+1 PR (fix del Historial + fórmulas de Calidad), `npm test` 968/968 (967
++ 1 prueba nueva de regresión), 5 corridas seguidas sin fallas, `npm
+audit` limpio antes y después. v1.11.2.

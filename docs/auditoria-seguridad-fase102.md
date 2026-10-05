@@ -98,3 +98,35 @@ producción real. La Fase 110 encontró que sí había ocurrido, y corrigió
 de raíz que esa siembra ya nunca se ejecute en producción, más una red de
 seguridad que suspende sola cualquier cuenta de ejemplo que aún conserve
 su contraseña original. Ver `PROGRESS.md`, Fase 110.
+
+## Revisión Fase 117 (2026-10-05) — código nuevo de las Fases 113-116
+
+Antes de entregar ORLANT, se revisó con evidencia el código de
+autenticación/auditoría más nuevo (Fase 113: "Cambiar mi contraseña" y
+registro de inicios de sesión) y se repasó, con grep dirigido sobre todo
+`server/*.js` y `public/js/*.js`, lo que ya cubrían las Fases 72/81/102
+(inyección SQL, `ORDER BY` dinámico, cabeceras HTTP/CORS, archivos
+estáticos, secretos en el árbol y en todo el historial de Git, SHA-pin
+de workflows) para confirmar que nada retrocedió. Detalle completo,
+incluido lo que esta fase no llegó a cubrir con evidencia propia (matriz
+de IDOR por rol, barrido visual completo, verificación en producción con
+sesión real), en `docs/historico/progress-fases.md` → Fase 117 y en
+`docs/pendientes.md`.
+
+Dos hallazgos reales, ambos corregidos en el mismo PR:
+
+1. **Orden del Historial no determinista en empates de milisegundo**
+   (severidad media, encontrado por una prueba que falló al azar en la
+   suite completa) — `GET /historial` ordenaba solo por `ts`
+   (`Date.now()`); dos eventos en el mismo milisegundo podían aparecer
+   en cualquier orden. Fix: desempate por `id` (AUTOINCREMENT).
+2. **Plantilla descargable de Calidad sin protección contra fórmulas de
+   Excel** (severidad baja, preventivo — ningún dato real afectado) —
+   `descargarPlantillaMonitoreos`/`descargarPlantillaConsolidada` no
+   pasaban el nombre de cada criterio por `xlsxFilasSeguras`, a
+   diferencia del resto de descargas de la plataforma. Fix: mismo patrón
+   ya usado en el resto del código.
+
+Ningún otro hallazgo nuevo con evidencia (login, permisos por campaña,
+transacciones del reemplazo por rango, secretos, workflows: todos
+revisados y sin problema — ver el detalle en `progress-fases.md`).

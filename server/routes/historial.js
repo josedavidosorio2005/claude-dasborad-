@@ -20,7 +20,13 @@ router.get(
     if (!isFullAdmin(req.actor)) {
       return res.status(403).json({ error: 'Sin permiso para ver el historial' });
     }
-    const rows = db.prepare('SELECT * FROM historial ORDER BY ts DESC').all();
+    // Fase 117: `ts` es Date.now() (resolucion de milisegundo) -- dos eventos
+    // muy seguidos (ej. el login del admin maestro justo antes de otro login)
+    // pueden empatar en el mismo milisegundo, y SQLite no garantiza ningun
+    // orden estable entre filas empatadas. `id` es AUTOINCREMENT (estrictamente
+    // creciente en el orden de insercion), asi que sirve de desempate exacto
+    // sin cambiar el orden visible en ningun caso donde `ts` ya difiere.
+    const rows = db.prepare('SELECT * FROM historial ORDER BY ts DESC, id DESC').all();
     res.json(rows);
   })
 );

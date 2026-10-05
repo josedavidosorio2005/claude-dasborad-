@@ -4,6 +4,35 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.11.2 — Octubre 2026
+
+**Revision final de seguridad antes de entregar ORLANT (Fase 117): 2
+arreglos reales, el resto de la plataforma quedo verificado sin
+hallazgos nuevos.**
+
+- **Arreglo: el Historial (registro de acciones e inicios de sesion)
+  podia mostrar dos eventos MUY seguidos en el orden equivocado.** Se
+  encontro al correr las pruebas automaticas varias veces seguidas (una
+  de ellas fallo por esto, al azar). La causa: el orden se calculaba con
+  la hora exacta al milisegundo, y dos eventos en el MISMO milisegundo
+  (ej. dos inicios de sesion casi simultaneos) podian aparecer en
+  cualquier orden. Ahora, si dos eventos empatan en el mismo
+  milisegundo, se desempata siempre por cual ocurrio primero.
+- **Arreglo preventivo: la plantilla descargable de Calidad (lista de
+  criterios de evaluacion) no protegia contra formulas de Excel en el
+  nombre de un criterio**, igual que ya protegen todas las demas
+  descargas de la plataforma. No se encontro ningun criterio real
+  afectado — es una proteccion agregada por si acaso, antes de que haga
+  falta.
+- Revisado sin hallazgos nuevos (con evidencia, no solo "se ve bien"):
+  inicio de sesion y "Cambiar mi contrasena" (limite de intentos, mensaje
+  de error igual para usuario inexistente/clave mala, JWT con expiracion
+  y algoritmo fijo), permisos por campana/cliente en las cargas y
+  exportaciones, inyeccion SQL (todas las consultas parametrizadas),
+  cabeceras de seguridad HTTP y CORS, archivos/datos reales fuera del
+  repositorio y del historial de Git, y que las acciones de los workflows
+  de GitHub sigan fijadas a una version exacta.
+
 ## v1.11.1 — Octubre 2026
 
 **Arreglo: un residuo de datos viejos podia sobrevivir al reemplazar
