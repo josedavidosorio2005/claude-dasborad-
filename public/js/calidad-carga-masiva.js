@@ -16,14 +16,18 @@ function descargarPlantillaMonitoreos(){
   var items = calItems(_ccampana);
   if(!items.length){ showToast('Esta campana no tiene plantilla de calificacion.'); return; }
 
+  // Fase 117: item.label viene del diccionario de criterios de Calidad,
+  // texto libre configurado desde Gestion de Usuarios/Calidad -- igual que
+  // cualquier otro texto libre que termina en un .xlsx, pasa por
+  // xlsxFilasSeguras antes de escribirse (inyeccion de formulas).
   var headerMonitoreos = CM_COLUMNAS_FIJAS.map(function(c){ return c.label; }).concat(items.map(function(it){ return it.label; }));
-  var wsMonitoreos = XLSX.utils.aoa_to_sheet([headerMonitoreos]);
+  var wsMonitoreos = XLSX.utils.aoa_to_sheet(xlsxFilasSeguras([headerMonitoreos]));
   wsMonitoreos['!cols'] = headerMonitoreos.map(function(){ return { wch: 20 }; });
 
   var dicAoa = [['#','Categoria','Item','Peso %','Critico']].concat(
     items.map(function(it){ return [it.n, it.cat, it.label, it.weight, it.critico ? 'SI' : 'NO']; })
   );
-  var wsDic = XLSX.utils.aoa_to_sheet(dicAoa);
+  var wsDic = XLSX.utils.aoa_to_sheet(xlsxFilasSeguras(dicAoa));
   wsDic['!cols'] = [{wch:4},{wch:16},{wch:55},{wch:9},{wch:9}];
 
   var wsResumen = XLSX.utils.aoa_to_sheet([['Asesor','# Monitoreos','Promedio','Clasificacion']]);

@@ -1,4 +1,4 @@
-# Pendientes (Fase 112, 2026-10-02)
+# Pendientes (actualizado Fase 117, 2026-10-05)
 
 Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
 antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
@@ -70,3 +70,26 @@ una:
 Ninguna pendiente por ahora — "Cambiar mi contraseña" y el registro de
 inicios de sesión (las dos únicas que había en esta lista) se
 implementaron en la Fase 113.
+
+## De la Fase 117 (revisión final integral)
+
+- **Verificación en producción con sesión real**: el script
+  `scripts/produccion/revision-final.js`, las 7 pestañas de ORLANT con
+  Exportar, y el recorrido con un usuario `CLIENTES_DASH` quedaron
+  pendientes de que el usuario inicie sesión (ventana de 10 minutos del
+  pedido original ya se cerró sin que se iniciara sesión en esta
+  sesión de Claude Code). Repetir en la próxima sesión disponible,
+  contra los números de control de `PROGRESS.md`.
+- **Alcance no cubierto con evidencia propia en esta fase** (no porque
+  se haya encontrado un problema, sino porque excede lo que se puede
+  demostrar en una sola sesión): matriz completa de IDOR probando los
+  10 roles de `seed:demo` uno por uno contra cada módulo de carga/
+  lectura/exportación; barrido visual de las 7 pestañas × modo claro/
+  oscuro × escritorio/móvil/1366×768/1920×1080; barrido de código
+  muerto de vistas retiradas. Ninguno mostró indicios de problema en la
+  revisión de código que sí se hizo (grep de rutas sin
+  `requireActor`/`requirePermission`, lectura de los middlewares de
+  `server/auth.js`) — queda como trabajo de verificación pendiente, no
+  como hallazgo abierto. Ver el detalle completo de lo que SÍ se
+  verificó con evidencia en `docs/historico/progress-fases.md` (Fase
+  117) y en `docs/auditoria-seguridad-fase102.md`.

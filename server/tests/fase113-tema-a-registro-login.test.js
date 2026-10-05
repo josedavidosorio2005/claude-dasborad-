@@ -2,7 +2,7 @@
 // aviso de seguridad al admin.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { request, app, login, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers');
+const { request, app, login, tokenFor, MASTER_PASSWORD, SEED, db } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
@@ -151,4 +151,36 @@ test('no hay fuga de hashes/contrasenas en GET /historial tras varios logins', a
   assert.ok(!/password_hash/i.test(raw));
   assert.ok(!/\$2[aby]\$\d{2}\$/.test(raw));
   assert.ok(!/otra-clave-mala/.test(raw));
+});
+
+// Fase 117 (hallazgo real, detectado por un test flaky en la corrida completa
+// de la suite): `ts` es Date.now() -- resolucion de milisegundo. Dos eventos
+// insertados en el mismo milisegundo (plausible: el login del admin maestro
+// justo antes de otro login, en la misma peticion de prueba) empataban en
+// `ORDER BY ts DESC`, y SQLite no promete ningun orden estable entre filas
+// empatadas -- GET /historial podia devolver el evento mas viejo primero.
+// El fix agrega `id DESC` (AUTOINCREMENT, estrictamente creciente) como
+// desempate. Esta prueba fuerza el empate a mano (mismo `ts` en 2 insertos
+// directos a la BD) para no depender de que la maquina sea lo bastante
+// rapida como para topar con el bug por casualidad.
+test('GET /historial desempata eventos con el mismo `ts` por orden de insercion (id), nunca al azar', async () => {
+  const adminToken = await tokenFor('admin', MASTER_PASSWORD);
+  const tsFijo = Date.now();
+  db.prepare(
+    `INSERT INTO historial (ts, fecha, accion, nombre, username, rol, actor, detalle)
+     VALUES (?,?,?,?,?,?,?,?)`
+  ).run(tsFijo, '01/01/2026 00:00:00', 'LOGIN_OK', 'Primero', 'primero_117', '-', 'Sistema', '');
+  db.prepare(
+    `INSERT INTO historial (ts, fecha, accion, nombre, username, rol, actor, detalle)
+     VALUES (?,?,?,?,?,?,?,?)`
+  ).run(tsFijo, '01/01/2026 00:00:00', 'LOGIN_OK', 'Segundo', 'segundo_117', '-', 'Sistema', '');
+
+  const res = await request(app).get('/api/historial').set(auth(adminToken));
+  assert.equal(res.status, 200);
+  const empatados = res.body.filter((h) => h.ts === tsFijo);
+  assert.equal(empatados.length, 2);
+  // El segundo insertado (id mayor) debe salir ANTES: es el mas nuevo de los
+  // dos, aunque compartan exactamente el mismo `ts`.
+  assert.equal(empatados[0].username, 'segundo_117');
+  assert.equal(empatados[1].username, 'primero_117');
 });
