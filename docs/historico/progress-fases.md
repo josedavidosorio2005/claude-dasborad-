@@ -10587,3 +10587,138 @@ versión a `1.10.3` en PRs previos) — `npm test` 943/943, `npm audit` 0
 vulnerabilidades, confirmados antes de tocar producción. Sin versión
 nueva (solo datos + documentación). Único destino: `main`, por PR con CI
 en verde.
+
+## Fase 116 — WhatsApp (formato diario real) y Tipificación (export
+completo HistCDR) de agosto-septiembre 2026, sin duplicados — y el fix
+real de un residuo huérfano que dejó la Fase 115 (2026-10-04)
+
+Pedido: subir los archivos reales nuevos de Edwin (WhatsApp y
+Tipificación, ago-sep/2026) sin ningún duplicado, con el mismo reemplazo
+por rango que Tráfico de Llamadas ya tenía desde la Fase 115, y verificar
+todo de punta a punta. Autorizado explícitamente: las 3 cargas (re-subir
+Llamadas, WhatsApp, Tipificación) y, tras encontrarlo, el fix de código +
+la re-subida de WhatsApp para limpiar el residuo real.
+
+**Tema A — los lectores al día con el formato real (PR #281, v1.11.0).**
+Verificado contra los 3 archivos reales (solo estructura, nunca datos de
+pacientes):
+- **Trafico de WhatsApp**: Wolkvox exporta WhatsApp en el MISMO formato
+  diario que ya usa Llamadas (`SKILL_NAME`+`DATE`, una fila por cola y
+  día) — no la plantilla vieja por periodo largo
+  (`NOMBRE_COLA_WHATSAPP`/`FECHA INICIO`/`FECHA FIN`). `traficoWppParseFilas`
+  (trafico-whatsapp-logic.js) ahora detecta el formato por el encabezado
+  (`INBOUND_CALLS`/`ANSWER_CALLS`, únicas del nuevo formato) y delega al
+  parser que corresponde — el formato viejo sigue aceptándose igual.
+  ASA/ATA/AHT en este formato van en SEGUNDOS como texto con separador de
+  miles inglés (`"27,554.56"`), nunca en hora nativa de Excel; AHT
+  `"----"` se lee como "sin dato". WAIT_TIME se ignora a propósito (Fase
+  68 ya retiró esa métrica de WhatsApp). `cargasDetectarCanalTrafico`
+  ganó un 4to parámetro opcional para no confundir este formato con voz
+  (ambos comparten `SKILL_NAME`+`DATE`).
+- **Tipificación**: el export completo HistCDR (20 columnas, incluidas
+  `TELEPHONE`/`CUSTOMER_ID`/`COMMENT`/`CONN_ID`/`DESTINY` con datos de
+  pacientes) trae `DATE` con fecha y hora juntas, sin columna `HORA`
+  propia. `tipificacionParseFilas` ahora recibe el worksheet crudo (`ws`)
+  para recuperar el valor numérico real de `DATE` cuando SheetJS lo
+  convierte a un objeto `Date` (mismo hallazgo que WAIT_TIME/AHT de la
+  Fase 115) y deriva la hora de su fracción de día cuando no hay columna
+  HORA separada — el formato viejo sigue igual. Las columnas con datos de
+  pacientes nunca se leen por nombre, así que nunca llegan al payload que
+  sube al servidor (prueba explícita incluida). El tamaño del payload
+  real (34.661 filas, ~3.2 MB) quedó cómodo bajo el límite de 8 MB de esa
+  ruta — no hizo falta partir la carga por mes.
+- Confirmado contra la lógica ya existente (sin cambios): Tipificación ya
+  reemplazaba por período y campaña desde que se creó (Fase 77); la hoja
+  WhatsApp nueva no necesitó ningún mapeo cola→campaña nuevo (las 8
+  colas reales — incluidas PAUTAS/TINNITUS, que no existían antes — se
+  reconocen todas, sin lista fija).
+
+23 pruebas nuevas, `npm test` 972/972, `npm audit` limpio. v1.11.0.
+
+**Carga real — Paso 1 (Llamadas, re-subida).** Mismo archivo que la Fase
+115 (MD5 idéntico, confirmado). La confirmación dijo "0 borradas" en vez
+de las "3" esperadas — investigado antes de seguir (ver más abajo el
+PARA real): el residuo del 2026-08-17 cayó en una fecha que el archivo
+real TAMBIÉN trae, así que se sobrescribió en el mismo lugar en vez de
+borrarse como huérfano. Resultado idéntico de todos modos: Ago-26
+8.908/7.961/947 (3P 4.010/3.937, General 4.048/3.222), Sep-26
+9.043/8.883/160 — exacto contra los números de control del pedido.
+
+**Carga real — Paso 2 (WhatsApp) — hallazgo real: un residuo huérfano
+nuevo.** Confirmación: "REEMPLAZAR 0 periodo(s) y BORRAR 4" (las 4 colas
+que ya tenían el formato viejo de periodo, correcto). Tras subir, se
+detectó que **WHATSAPP FONIATRIA** quedó con el periodo viejo completo
+(2026-08-01..31, 31 WhatsApp) SIN borrar, sumado a las 29 filas diarias
+reales de agosto — total inflado a 60 en vez de 29 (confirmado con
+`charCodeAt` que no era un problema de texto/espacios: el string
+`colaWhatsapp` era idéntico byte a byte).
+
+**Causa real**: el reemplazo por rango de la Fase 115
+(`cargarNivelServicioDiario`/`cargarTraficoWhatsapp`, y sus 2 endpoints de
+impacto) calculaba el rango a borrar como `[primera..última fecha]` **de
+esa skill/cola dentro del archivo nuevo** — no el rango global del
+archivo. WHATSAPP FONIATRIA no tuvo mensajes el 2026-08-01 ni el 02
+(Wolkvox no generó fila), así que su propio rango arrancaba el 08-03 y el
+periodo viejo (que empezaba el 08-01) quedaba FUERA de ese rango acotado.
+El mismo patrón existe en voz (`nivel-servicio-diario.js`) pero ningún
+archivo real lo había expuesto todavía (3P/GENERAL/REGIMEN tienen
+actividad los 31 días de agosto, sin huecos).
+
+**Fix (PR #282, v1.11.1)**: el rango de borrado pasa a ser el GLOBAL de
+TODO el archivo (primera..última fecha de CUALQUIER fila, sin importar
+la skill/cola) — nunca el de una skill/cola por separado. Una skill/cola
+AUSENTE del archivo sigue sin tocarse en absoluto (invariante ya cubierta
+por los tests de la Fase 115, que siguen pasando sin cambios). Mismo fix
+en los 4 lugares con el patrón: `nivel-servicio-diario.js`,
+`trafico-whatsapp.js`, y sus 2 endpoints de impacto. 5 pruebas nuevas
+reproducen el caso real exacto. `npm test` 977/977, `npm audit` limpio.
+
+Tras el deploy, se re-subió WhatsApp una segunda vez (autorizado, era
+necesario para limpiar el residuo real): confirmación "1 borrada(s)" —
+exactamente el periodo huérfano de FONIATRIA. Verificado después: 0
+periodos de formato viejo restantes, 258/258 filas (ninguna de más), 0
+duplicados, FONIATRIA agosto correcto en 29/29.
+
+**Carga real — Paso 3 (Tipificación).** Confirmación: "REEMPLAZAR 14.940
+registro(s)... del 01/08 al 30/09" (todo el período existente de
+Llamadas, correcto — la carga cubre ambos meses en una sola transacción).
+Agosto quedó en el MISMO total (14.940) con un desglose por skill más
+completo que antes (LINEA DE SALIDA pasó de 0 a 6.560 — la carga vieja no
+tenía esa categoría separada; el total nunca cambió). Septiembre:
+19.721. Ambos exactos contra los números de control del pedido
+(incluida la línea nueva ATENCION TUTELAS, 6 en septiembre).
+
+### Verificación final (Paso 3 completo, sesión real del usuario)
+
+Las 7 pestañas de ORLANT en Sep-26: 0 canvas sin dibujar, Exportar
+(Excel) generó descarga en las 7, 0 errores de consola. Sin duplicados
+confirmado por API en las 3 tablas (Trafico de Llamadas, Trafico de
+WhatsApp — por skill/cola+fecha exacta — y Tipificación, por el total
+exacto 14.940+19.721=34.661 sin inflarse). Números de control, exactos
+contra el pedido:
+
+| Indicador | Antes (Ago-26 solo) | Después |
+|---|---|---|
+| Tráfico de Llamadas | 8.908/7.961/947 (con el residuo oculto en el mismo valor) | 8.908/7.961/947, Sep 9.043/8.883/160 |
+| Tráfico de WhatsApp (5 colas, formato viejo) | 7.305/7.109/196 | Ago 7.390/7.370/20 (8 colas), Sep 7.968/7.953/15 |
+| Tipificación | 14.940 | 14.940 (Ago) + 19.721 (Sep) = 34.661 |
+| Agendas / Inasistencia / Efectividad | sin cambios | 7.426 / 7,45 % / 44,81 % (confirmados intactos) |
+
+Respaldo antes (run 37246232746, 6.9 MB, integrity_check ok, S3 OK) y
+después (run 37257606222, 11.0 MB, integrity_check ok, S3 OK) de las 4
+cargas reales.
+
+### Documentación
+
+`docs/pendientes.md`: cerrado el ítem del residuo de la Fase 67 (se
+resolvió solo, explicado arriba); agregado "pedir a Edwin WhatsApp con
+SERVICE_LEVEL_5MIN" (el export real de Wolkvox no trae esa columna
+todavía). `PROGRESS.md` y `scripts/produccion/revision-final.js`
+actualizados con los números de control nuevos.
+
+### Cierre
+
+2 PRs (#281 lectores, #282 fix) + 1 re-subida de WhatsApp autorizada tras
+el fix. `npm test` 977/977, `npm audit` limpio. v1.11.1. Único destino:
+`main`, por PR con CI en verde, deploy automático confirmado (`/api/health`
+en vivo) antes de cada escritura en producción posterior.

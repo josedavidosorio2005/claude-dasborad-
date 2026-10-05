@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.10.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.11.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -26,21 +26,19 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 115, 2026-10-04)
+### Números de control (ORLANT, última verificación Fase 116, 2026-10-04)
 
-Reconfirmados en vivo contra producción en la Fase 112
-(`scripts/produccion/revision-final.js`, con sesión real del usuario):
-0 discrepancias, 0 errores de consola, las 7 pestañas sin canvas sin
-dibujar (Calidad mostró su aviso normal de "sin datos" para el mes
-global sin monitoreos — comportamiento esperado, no un fallo). Se vuelven
-a confirmar en cada revisión final y pueden moverse mes a mes con cargas
-nuevas de Edwin:
+Reconfirmados en vivo contra producción (sesión real del usuario, API +
+pantalla): 0 discrepancias, 0 errores de consola, 0 duplicados (Tráfico
+de Llamadas/WhatsApp, por skill/cola+fecha), las 7 pestañas sin canvas
+sin dibujar, Exportar OK en las 7. Se vuelven a confirmar en cada
+revisión final y pueden moverse mes a mes con cargas nuevas de Edwin:
 
 | Indicador | Valor |
 |---|---|
-| Tipificación | 14.940 |
-| Tráfico de Llamadas (Fase 115: Ago-26+Sep-26, 3 líneas — 3P/GENERAL/REGIMEN ESPECIALES) | 17.954 / 16.844 / 1.110 |
-| Tráfico de WhatsApp | 7.305 / 7.109 / 196, SL20 34,67 % |
+| Tipificación (Fase 116: export completo HistCDR, Ago-26+Sep-26) | 14.940 / 19.721 |
+| Tráfico de Llamadas (Ago-26+Sep-26, 3 líneas — 3P/GENERAL/REGIMEN ESPECIALES, sin el residuo de la Fase 67) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
+| Tráfico de WhatsApp (Fase 116: formato diario real de Wolkvox, 8 colas) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
 | Agendas | 7.426 (General 4.643 / 3P 2.783) |
 | Inasistencia | Ago-26 7,45 %, período 6,87 % |
 | Efectividad de agendamiento | Sep-26 44,81 % (18.566 / 8.319) |
@@ -169,4 +167,5 @@ mismo orden):
 - Fase 113 — registro de inicios de sesión + "Cambiar mi contraseña" + revisión diaria de la salud del servidor (2026-10-02)
 - Fase 114 (URGENTE) — respaldos automáticos vueltos a activar (nunca se habían instalado en la instancia nueva) + alerta alta de Dependabot (SheetJS) resuelta (2026-10-02)
 - Fase 115 — Tráfico de Llamadas de agosto y septiembre 2026, con la línea REGIMEN ESPECIALES (faltaba desde la Fase 67): lector al día (hoja "Hoja1", WAIT_TIME/AHT con fecha boxeada) y carga real en producción (2026-10-04)
+- Fase 116 — Tráfico de WhatsApp (formato diario real de Wolkvox) y Tipificación (export completo HistCDR) de agosto y septiembre 2026, sin duplicados; fix real de un residuo huérfano por un defecto del reemplazo por rango de la Fase 115 (2026-10-04)
 

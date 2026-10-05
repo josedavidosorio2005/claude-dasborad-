@@ -45,16 +45,18 @@ una:
 
 ## Decisiones pendientes del usuario
 
-- **Residuo de prueba de la Fase 67 en producción** (hallado en la Fase
-  115, 2026-10-04): una fila sintética del 2026-08-17 (3 llamadas, 3
-  abandonadas, repartida entre 3P y GENERAL), cargada como
-  `llenado-agosto-produccion.xlsx` y marcada "Fase 67 - prueba real
-  (borrar automatico)", nunca se borró — infla agosto de 3P/GENERAL en 3
-  llamadas (0,04 %) sobre el archivo real de Edwin. Borrarla es una
-  escritura puntual en producción (2 filas de
-  `calidad_nivel_servicio_diario` + su mensual) que no estaba autorizada
-  en la Fase 115 (solo se autorizó subir el archivo nuevo) — pedir visto
-  bueno explícito antes de borrarla.
+- ~~**Residuo de prueba de la Fase 67 en producción**~~ — **resuelto en la
+  Fase 116** (2026-10-04): al re-subir Tráfico de Llamadas con el
+  reemplazo por rango (Fase 115), el 2026-08-17 real del archivo nuevo
+  reemplazó la fila sintética en el mismo lugar (no quedó huérfana porque
+  esa fecha SÍ viene en el archivo real). Ver también el hallazgo nuevo de
+  la Fase 116 abajo.
+- **Pedir a Edwin: Tráfico de WhatsApp con `SERVICE_LEVEL_5MIN`** (Fase
+  116, 2026-10-04): el export diario real de Wolkvox que mandó para
+  agosto-septiembre/2026 no trae esa columna (solo 10/20/30s) — la
+  pestaña sigue mostrando el aviso de "sin dato" para el nivel de
+  servicio a 5 minutos en WhatsApp (pedido del jefe, Fase 87). Pedirle
+  que la agregue (umbral de 300s en Wolkvox) en el próximo export.
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
   deja esperando por si algún día se usa? (Fase 115: ya quedaría lista
   con Ago-26/Sep-26 en cuanto se decida destaparla.)
