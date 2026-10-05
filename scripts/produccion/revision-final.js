@@ -7,13 +7,15 @@
 // ve ni escribe la contrasena, no persiste storageState ni cookies en
 // disco.
 //
-// Fase 112: actualizado a las 7 pestanas de ORLANT y a los numeros de
-// control vigentes (ultima verificacion real, Fase 111 --
-// scripts/produccion/carga-real-patron.js corrio esta misma logica de
-// numeros justo despues de cargar los 2 archivos reales de esa fase).
-// Si algun numero cambio (carga nueva de Edwin), este script lo va a
-// marcar como FALLO -- actualiza los valores esperados mas abajo despues
-// de confirmar a mano que el cambio es legitimo.
+// Fase 119: las 2 ventanas ya NO asumen un orden fijo (admin primero,
+// cliente segundo) -- en la practica, 3 corridas seguidas de la Fase 119
+// recibieron la cuenta del cliente en la PRIMERA ventana pese al aviso en
+// pantalla (probable autocompletado del navegador). El script ahora
+// DETECTA la identidad real de cada login por el JWT decodificado y
+// corre el bloque de chequeos que corresponda, sin importar en que
+// ventana se escribio cada cuenta -- la segunda ventana exige la
+// identidad que todavia falte (si se repite la misma cuenta, lo dice
+// claro y no sigue).
 'use strict';
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
@@ -38,9 +40,6 @@ const ESPERADO = {
   // Fase 118: estaban en 17954/1110 (3 de mas), desalineados de PROGRESS.md
   // ("Numeros de control") desde que se corrigieron -- la suma real de
   // Ago-26 (8.908/7.961/947) + Sep-26 (9.043/8.883/160) es 17951/16844/1107.
-  // Confirmado contra produccion real en la Fase 118 (0 discrepancias tras
-  // este fix); no es un numero que se haya movido en produccion, era el
-  // ESPERADO de este script el que quedo desactualizado.
   llamadasTotal: 8908 + 9043, llamadasContestadas: 7961 + 8883, llamadasPendientes: 947 + 160,
   // Fase 116: formato diario real de Wolkvox (8 colas) reemplazo la
   // plantilla vieja de periodo -- suma de Ago-26+Sep-26.
@@ -55,18 +54,38 @@ const ESPERADO = {
 // cuentan como "peticion fallida" real.
 const STATUS_IGNORADOS_RE = /\/api\/historial$|\/api\/auth\/login$/;
 
+const OCULTAS_ESPERADAS = ['Ordenamiento Médico', 'Recuperación de Cancelados', 'Flujo Mensual', 'Salida', 'Gestión STA'];
+
 function log(...args) { console.log(new Date().toISOString(), ...args); }
 
-async function esperarLogin(page) {
-  log('=== INICIA SESIÓN AHORA === (ventana de Chromium abierta, esperando hasta 10 min)');
+// Espera un login (cualquiera) y devuelve la identidad real decodificada del
+// JWT -- nunca confia solo en `currentUser` del front (puede quedar null en
+// una condicion de carrera justo despues del login).
+async function esperarLoginYDecodificar(page, mensaje) {
+  log('');
+  log('##########################################################');
+  log('##  INICIA SESIÓN AHORA EN ESTA VENTANA');
+  log('##  >>> ' + mensaje + ' <<<');
+  log('##  (tienes hasta 10 min)');
+  log('##########################################################');
+  log('');
   const deadline = Date.now() + LOGIN_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const logueado = await page.evaluate(() => typeof authToken !== 'undefined' && !!authToken).catch(() => false);
-    if (logueado) return true;
+    const tokenInfo = await page.evaluate(() => {
+      if (typeof authToken !== 'string' || !authToken) return null;
+      try {
+        const payload = JSON.parse(atob(authToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return { isMasterAdmin: !!payload.isMasterAdmin, rol: payload.rol || null, userId: payload.userId || null };
+      } catch (e) { return null; }
+    }).catch(() => null);
+    if (tokenInfo) return tokenInfo;
     await page.waitForTimeout(3000);
   }
-  return false;
+  return null;
 }
+
+function esAdmin(tokenInfo) { return !!tokenInfo && (tokenInfo.isMasterAdmin || tokenInfo.rol === 'ADMIN'); }
+function esClienteDash(tokenInfo) { return !!tokenInfo && !tokenInfo.isMasterAdmin && tokenInfo.rol === 'CLIENTES_DASH'; }
 
 // Mismo chequeo que scripts/qa/auditoria-amplia-local.js -- el bug de la
 // Fase 111 (Ranking de Asesores/Efectividad de Citas no se dibujaban) se
@@ -114,212 +133,395 @@ async function exportarYVerificarDescarga(page) {
   return nombre;
 }
 
-(async () => {
+function instalarListeners(page, erroresConsola, peticionesFallidas) {
+  page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
+  page.on('requestfailed', (req) => {
+    if (STATUS_IGNORADOS_RE.test(req.url())) return;
+    peticionesFallidas.push('requestfailed: ' + req.method() + ' ' + req.url() + ' (' + (req.failure() && req.failure().errorText) + ')');
+  });
+  page.on('response', (res) => {
+    if (res.status() < 400) return;
+    if (STATUS_IGNORADOS_RE.test(res.url())) return;
+    peticionesFallidas.push('http ' + res.status() + ': ' + res.request().method() + ' ' + res.url());
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Chequeos con la cuenta de ADMINISTRADOR
+// ══════════════════════════════════════════════════════════════════
+async function correrChequeosAdmin(page) {
   const erroresConsola = [];
-  const hallazgosCanvas = [];
   const peticionesFallidas = [];
+  instalarListeners(page, erroresConsola, peticionesFallidas);
   const exportsOk = {};
-  const reporte = { usuariosEjemplo: {}, pestanas: {}, numeros: {} };
+  const hallazgosCanvas = [];
+  const reporte = { pestanas: {} };
+
+  // ══ 1. Usuarios de ejemplo (Fase 110): ninguno activo con la clave de ejemplo ══
+  await page.evaluate(() => showSection('users'));
+  await page.waitForTimeout(1200);
+  const usuarios = await page.evaluate(async (lista) => {
+    const rows = await apiRequest('GET', '/users');
+    return lista.map((u) => {
+      const row = rows.find((r) => r.user === u);
+      return row ? { user: u, existe: true, active: row.active, rol: row.rol } : { user: u, existe: false };
+    });
+  }, USUARIOS_EJEMPLO);
+  reporte.usuariosEjemplo = { estado: usuarios };
+  const activosConEjemplo = usuarios.filter((u) => u.existe && u.active);
+  if (activosConEjemplo.length > 0) {
+    log('ADVERTENCIA: siguen activos (puede ser legitimo si ya tienen otra contraseña):', activosConEjemplo.map((u) => u.user).join(', '));
+  }
+
+  // ══ 2. Las 7 pestañas de ORLANT: abre cada una, canvas con pixeles, sin errores ══
+  await page.evaluate(() => openGenericDashboard('ORLANT'));
+  await page.waitForTimeout(1200);
+  const nTabs = await page.locator('#gd-tabs .atab').count();
+  for (let i = 0; i < nTabs; i++) {
+    const tab = page.locator('#gd-tabs .atab').nth(i);
+    const label = (await tab.textContent() || '').trim();
+    await tab.click();
+    await page.waitForTimeout(1200);
+    const malos = await canvasesSinDibujar(page);
+    reporte.pestanas[label] = { canvasesSinDibujar: malos };
+    malos.forEach((m) => hallazgosCanvas.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
+    try {
+      const nombreDescarga = await exportarYVerificarDescarga(page);
+      exportsOk[label] = { ok: !!nombreDescarga, archivo: nombreDescarga };
+    } catch (e) {
+      exportsOk[label] = { ok: false, error: e.message };
+    }
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
+  }
+  reporte.exports = exportsOk;
+
+  // ══ 3. Numeros de control ══
+  await page.evaluate(() => { if (typeof _gdIrAMes === 'function') _gdIrAMes('2026-09'); });
+  await page.waitForTimeout(800);
+  const sinCambios = await page.evaluate(async () => {
+    const tipif = await apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS');
+    const porEsp = await apiRequest('GET', '/calidad/agendas/especialidad?campana=ORLANT&mes=2025-04');
+    const porLinea = await apiRequest('GET', '/calidad/agendas/linea?campana=ORLANT&mes=2025-04');
+    const totalAgendas = porEsp.reduce((a, r) => a + r.cantidad, 0);
+    const linea = porLinea.filter((r) => r.mes === '2025-04');
+    const diario = await apiRequest('GET', '/calidad/nivel-servicio/diario?campana=ORLANT');
+    const llamadasTotal = diario.reduce((a, r) => a + (Number(r.totalLlamadas) || 0), 0);
+    const llamadasContestadas = diario.reduce((a, r) => a + (Number(r.contestadas) || 0), 0);
+    const wpp = await apiRequest('GET', '/calidad/trafico/whatsapp?campana=ORLANT');
+    const wppTotal = wpp.reduce((a, r) => a + (Number(r.totalWhatsapp) || 0), 0);
+    const wppContestados = wpp.reduce((a, r) => a + (Number(r.contestados) || 0), 0);
+    const sl20 = (typeof traficoWppServiceLevelPromedioPeriodo === 'function') ? traficoWppServiceLevelPromedioPeriodo(wpp, 'serviceLevel20secPct') : null;
+    const inasistAgo = await apiRequest('GET', '/calidad/inasistencia/resumen?campana=ORLANT&mes=2026-08');
+    const inasistTodos = await apiRequest('GET', '/calidad/inasistencia/mensual?campana=ORLANT');
+    const i = inasistTodos.reduce((s, f) => s + f.inasistencia + f.pendiente, 0);
+    const t = inasistTodos.reduce((s, f) => s + f.total, 0);
+    return {
+      tipificacionTotal: tipif.total,
+      llamadasTotal, llamadasContestadas, llamadasPendientes: llamadasTotal - llamadasContestadas,
+      wppTotal, wppContestados, wppPendientes: wppTotal - wppContestados, wppSl20: sl20,
+      agendasTotal: totalAgendas,
+      agendasGeneral: (linea.find((r) => r.tipoLinea === 'GENERAL') || {}).cantidad,
+      agendas3p: (linea.find((r) => r.tipoLinea === '3P') || {}).cantidad,
+      inasistenciaAgoPct: inasistAgo.pct,
+      inasistenciaPeriodoPct: Math.round((i / t) * 10000) / 100,
+    };
+  });
+  const ranking = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana=ORLANT&mes=2026-09'));
+  const citasPorMes = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-citas/mensual?campana=ORLANT'));
+  reporte.numeros = {
+    ...sinCambios,
+    rankingEquipoGestiones: ranking.equipo.gestiones,
+    rankingEquipoAgendas: ranking.equipo.agendas,
+    rankingEquipoEfectividadPct: Math.round(ranking.equipo.efectividad * 10000) / 100,
+    efectividadCitasPeriodoAgendas: citasPorMes.reduce((s, f) => s + f.agendas, 0),
+    efectividadCitasPeriodoAtendidas: citasPorMes.reduce((s, f) => s + f.atendidas, 0),
+  };
+
+  const n = reporte.numeros;
+  const discrepancias = Object.keys(ESPERADO).filter((k) => {
+    const esperado = ESPERADO[k];
+    const real = n[k];
+    return typeof esperado === 'number' && Math.abs(real - esperado) > 0.01;
+  }).map((k) => `${k}: esperado ${ESPERADO[k]}, real ${n[k]}`);
+
+  // ══ 4. Fase 113: mi propio login queda en el Historial + "Ultimo ingreso"
+  // se actualiza + "Cambiar mi contrasena" aparece en el menu, SIN usarla ══
+  const hist113 = await page.evaluate(() => apiRequest('GET', '/historial'));
+  const miLogin = hist113.find((h) => h.accion === 'LOGIN_OK');
+  const fase113 = { miLoginEnHistorial: !!miLogin };
+  if (miLogin) {
+    fase113.miLoginReciente = Date.now() - miLogin.ts < 15 * 60 * 1000;
+    fase113.miLoginTieneIpYNavegador = !!(miLogin.ip && miLogin.userAgent);
+    if (miLogin.username && miLogin.username !== MASTER_ADMIN_USER_ESPERADO) {
+      const usersAhora = await page.evaluate(() => apiRequest('GET', '/users'));
+      const filaUsuario = usersAhora.find((u) => u.user === miLogin.username);
+      fase113.ultimoIngresoActualizado = !!(filaUsuario && filaUsuario.lastLogin);
+    } else {
+      fase113.ultimoIngresoActualizado = 'n/a (admin maestro no tiene fila en Usuarios)';
+    }
+  }
+  // Fase 119 (hallazgo real, falso negativo del PROPIO script): el DOM
+  // tiene el MISMO boton "Cambiar mi contrasena" repetido una vez por
+  // pagina (#admin-page, #user-page, #asesor-page, #supervisor-page,
+  // todas presentes a la vez, solo una visible). document.querySelector
+  // sin acotar a la pagina activa siempre agarra la PRIMERA en el DOM
+  // (#admin-page, que aparece primero en index.html) -- para el chequeo de
+  // CLIENTES_DASH esto dio un falso "no visible" porque el boton de
+  // #admin-page esta oculto (esa pagina ni se muestra), nunca porque el
+  // boton real de #user-page faltara. Acotar a la pagina activa.
+  fase113.botonCambiarPasswordVisible = await page.evaluate(() => {
+    const btn = document.querySelector('#admin-page button[onclick="abrirCambiarPasswordModal()"]');
+    return !!btn && getComputedStyle(btn).display !== 'none' && btn.offsetParent !== null;
+  });
+  reporte.fase113 = fase113;
+  const fase113Ok =
+    fase113.miLoginEnHistorial && fase113.miLoginReciente && fase113.miLoginTieneIpYNavegador &&
+    fase113.ultimoIngresoActualizado !== false && fase113.botonCambiarPasswordVisible;
+
+  reporte.erroresConsola = erroresConsola;
+  reporte.discrepanciasNumeros = discrepancias;
+  reporte.canvasesSinDibujar = hallazgosCanvas;
+  reporte.peticionesFallidas = peticionesFallidas;
+  const exportsFallidos = Object.keys(exportsOk).filter((k) => !exportsOk[k].ok);
+
+  reporte.ok =
+    erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 &&
+    fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0;
+
+  // Cierra sesion admin antes de soltar esta pagina -- nunca deja el
+  // navegador logueado como admin al terminar este bloque.
+  await page.evaluate(() => apiRequest('POST', '/auth/logout').catch(() => {}));
+  return reporte;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Chequeos con la cuenta REAL del cliente (CLIENTES_DASH, solo ORLANT)
+// ══════════════════════════════════════════════════════════════════
+async function correrChequeosCliente(page) {
+  const erroresConsola = [];
+  const peticionesFallidas = [];
+  instalarListeners(page, erroresConsola, peticionesFallidas);
+  const clientesDash = {};
+
+  clientesDash.vistaUsuario = await page.evaluate(() => ({
+    userPageVisible: getComputedStyle(document.getElementById('user-page')).display !== 'none',
+    adminPageOculto: getComputedStyle(document.getElementById('admin-page')).display === 'none',
+    rolFrontend: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.rol : null,
+  }));
+
+  // IDOR / escalada (Fase 102/118): con el token de este usuario, los
+  // endpoints admin-only deben devolver 403/404, nunca datos. Estos 403
+  // SON el resultado esperado y correcto -- Chrome igual los loguea como
+  // console.error/requestfailed (ruido propio de la prueba, no un error
+  // real de la app): se descarta todo lo que se acumule en esta ventana
+  // (Fase 119, hallazgo real: antes inflaban erroresConsola/
+  // peticionesFallidas y hacian fallar el chequeo aunque todo estuviera
+  // correctamente bloqueado).
+  const antesConsola = erroresConsola.length;
+  const antesPeticiones = peticionesFallidas.length;
+  const escaladas = await page.evaluate(async () => {
+    async function intentar(method, url) {
+      try { await apiRequest(method, url); return { url, bloqueado: false }; }
+      catch (e) { return { url, bloqueado: e.status === 403 || e.status === 401 || e.status === 404, status: e.status, mensaje: e.message }; }
+    }
+    return Promise.all([
+      intentar('GET', '/historial'),
+      intentar('GET', '/seguridad/alertas'),
+      intentar('GET', '/dashboards/config'),
+      intentar('GET', '/dashboard/cargas'),
+      intentar('GET', '/inventario/items'),
+      intentar('GET', '/gerencia/kpis'),
+      intentar('GET', '/gh/personal'),
+    ]);
+  });
+  erroresConsola.length = antesConsola;
+  peticionesFallidas.length = antesPeticiones;
+  clientesDash.escaladasBloqueadas = escaladas;
+
+  // Pestañas visibles: solo las 7 con datos reales, nunca las 5 que esperan
+  // base de Edwin (dashboard-config-seed.js: oculta:true).
+  await page.evaluate(() => openGenericDashboard('ORLANT'));
+  await page.waitForTimeout(1200);
+  const nTabsCliente = await page.locator('#gd-tabs .atab').count();
+  const etiquetasTabs = [];
+  for (let i = 0; i < nTabsCliente; i++) {
+    etiquetasTabs.push(((await page.locator('#gd-tabs .atab').nth(i).textContent()) || '').trim());
+  }
+  clientesDash.pestanasVisibles = etiquetasTabs;
+  clientesDash.pestanasOcultasFiltradas = OCULTAS_ESPERADAS.filter((o) => etiquetasTabs.includes(o));
+
+  // Recorre las 7 pestañas reales: canvas con pixeles, Exportar funciona,
+  // sin aviso "demo"/dato de prueba visible.
+  const hallazgosCanvasCliente = [];
+  const exportsCliente = {};
+  const avisosDemo = [];
+  for (let i = 0; i < nTabsCliente; i++) {
+    const tab = page.locator('#gd-tabs .atab').nth(i);
+    const label = ((await tab.textContent()) || '').trim();
+    await tab.click();
+    await page.waitForTimeout(1200);
+    const malos = await canvasesSinDibujar(page);
+    malos.forEach((m) => hallazgosCanvasCliente.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
+    const textoPanel = await page.evaluate(() => (document.getElementById('gd-panels') || {}).innerText || '');
+    if (/\bdemo\b|datos? de prueba|ficticio/i.test(textoPanel)) avisosDemo.push(label);
+    try {
+      const nombreDescarga = await exportarYVerificarDescarga(page);
+      exportsCliente[label] = { ok: !!nombreDescarga };
+    } catch (e) {
+      exportsCliente[label] = { ok: false, error: e.message };
+    }
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
+  }
+  clientesDash.canvasesSinDibujar = hallazgosCanvasCliente;
+  clientesDash.exports = exportsCliente;
+  clientesDash.avisosDemoVisibles = avisosDemo;
+
+  // Calidad: solo DESCRIBE lo que el cliente ve (catalogo de
+  // codificaciones, cantidad de monitoreos) -- nunca toca nada, los 37
+  // monitoreos de ORLANT esperan confirmacion de Edwin.
+  clientesDash.calidadVista = await page.evaluate(async () => {
+    try {
+      const codifs = await apiRequest('GET', '/calidad/codificaciones?campana=ORLANT');
+      const monitoreos = await apiRequest('GET', '/monitoreos?campana=ORLANT');
+      return { codificacionesCount: Array.isArray(codifs) ? codifs.length : null, monitoreosCount: Array.isArray(monitoreos) ? monitoreos.length : null };
+    } catch (e) { return { error: e.message }; }
+  });
+
+  // "Cambiar mi contraseña": carga y VALIDA (contraseña actual incorrecta
+  // -> rechazo), nunca se envia una contraseña nueva real. Fase 119: acotar
+  // a #user-page (ver el mismo comentario en correrChequeosAdmin) -- sin
+  // esto, el boton identico y oculto de #admin-page daba un falso negativo.
+  // Igual que en el bloque de escaladas: el 401 esperado de este PUT con
+  // clave actual incorrecta no cuenta como ruido.
+  const antesConsola2 = erroresConsola.length;
+  const antesPeticiones2 = peticionesFallidas.length;
+  clientesDash.cambiarPassword = await page.evaluate(async () => {
+    const btn = document.querySelector('#user-page button[onclick="abrirCambiarPasswordModal()"]');
+    const visible = !!btn && getComputedStyle(btn).display !== 'none' && btn.offsetParent !== null;
+    if (!visible) return { visible: false };
+    let rechazoOk = null;
+    try {
+      await apiRequest('PUT', '/auth/password', { currentPassword: 'esta-password-seguro-que-no-es-FASE119', newPassword: 'NoSeVaAUsar#2026xx' });
+      rechazoOk = false; // si no lanzo, algo esta mal (acepto una clave actual incorrecta)
+    } catch (e) {
+      rechazoOk = e.status === 401 || e.status === 400;
+    }
+    return { visible: true, rechazoContrasenaActualIncorrecta: rechazoOk };
+  });
+  erroresConsola.length = antesConsola2;
+  peticionesFallidas.length = antesPeticiones2;
+
+  clientesDash.erroresConsola = erroresConsola;
+  clientesDash.peticionesFallidas = peticionesFallidas;
+  clientesDash.ok =
+    clientesDash.vistaUsuario.userPageVisible &&
+    clientesDash.vistaUsuario.adminPageOculto &&
+    clientesDash.vistaUsuario.rolFrontend === 'CLIENTES_DASH' &&
+    escaladas.every((e) => e.bloqueado) &&
+    clientesDash.pestanasOcultasFiltradas.length === 0 &&
+    hallazgosCanvasCliente.length === 0 &&
+    Object.values(exportsCliente).every((e) => e.ok) &&
+    avisosDemo.length === 0 &&
+    clientesDash.cambiarPassword.visible && clientesDash.cambiarPassword.rechazoContrasenaActualIncorrecta === true &&
+    erroresConsola.length === 0 && peticionesFallidas.length === 0;
+
+  // Cierra sesion del cliente tambien, no deja el browser logueado con su
+  // cuenta real al terminar.
+  await page.evaluate(() => apiRequest('POST', '/auth/logout').catch(() => {}));
+  return clientesDash;
+}
+
+async function paginaFresca(browser) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.clearCookies();
+  const page = await context.newPage();
+  await page.addInitScript(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} });
+  await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
+  return { context, page };
+}
+
+(async () => {
+  const reporte = {};
   let ok = true;
   let browser;
 
   try {
     browser = await chromium.launch({ headless: false });
-    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-    const page = await context.newPage();
-    page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
-    page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
-    page.on('requestfailed', (req) => {
-      if (STATUS_IGNORADOS_RE.test(req.url())) return;
-      peticionesFallidas.push('requestfailed: ' + req.method() + ' ' + req.url() + ' (' + (req.failure() && req.failure().errorText) + ')');
-    });
-    page.on('response', (res) => {
-      if (res.status() < 400) return;
-      if (STATUS_IGNORADOS_RE.test(res.url())) return;
-      peticionesFallidas.push('http ' + res.status() + ': ' + res.request().method() + ' ' + res.url());
-    });
 
-    await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
-    const logueado = await esperarLogin(page);
-    if (!logueado) throw new Error('Se agoto el tiempo de espera de login (10 min) sin detectar sesion iniciada.');
-    log('Login detectado, continuando automaticamente.');
-    await page.waitForTimeout(1000);
+    // ── Ventana 1: cualquiera de las 2 cuentas, el script detecta cual es ──
+    let { context: ctx1, page: page1 } = await paginaFresca(browser);
+    const token1 = await esperarLoginYDecodificar(page1, 'con TU CUENTA DE ADMINISTRADOR *o* con LA CUENTA REAL DEL CLIENTE -- cualquiera de las 2, el script detecta cual es');
+    if (!token1) throw new Error('Se agoto el tiempo de espera de login (10 min) en la primera ventana, sin detectar sesion iniciada.');
+    await page1.waitForTimeout(1000);
 
-    // ══ 1. Usuarios de ejemplo (Fase 110): ninguno activo con la clave de ejemplo ══
-    await page.evaluate(() => showSection('users'));
-    await page.waitForTimeout(1200);
-    const usuarios = await page.evaluate(async (lista) => {
-      const rows = await apiRequest('GET', '/users');
-      return lista.map((u) => {
-        const row = rows.find((r) => r.user === u);
-        return row ? { user: u, existe: true, active: row.active, rol: row.rol } : { user: u, existe: false };
-      });
-    }, USUARIOS_EJEMPLO);
-    reporte.usuariosEjemplo.estado = usuarios;
-    const activosConEjemplo = usuarios.filter((u) => u.existe && u.active);
-    if (activosConEjemplo.length > 0) {
-      log('ADVERTENCIA: siguen activos (puede ser legitimo si ya tienen otra contraseña):', activosConEjemplo.map((u) => u.user).join(', '));
-    }
+    let reporteAdmin = null;
+    let reporteCliente = null;
+    let primeraFue;
 
-    // ══ 2. Las 7 pestañas de ORLANT: abre cada una, canvas con pixeles, sin errores ══
-    await page.evaluate(() => openGenericDashboard('ORLANT'));
-    await page.waitForTimeout(1200);
-    const nTabs = await page.locator('#gd-tabs .atab').count();
-    for (let i = 0; i < nTabs; i++) {
-      const tab = page.locator('#gd-tabs .atab').nth(i);
-      const label = (await tab.textContent() || '').trim();
-      await tab.click();
-      await page.waitForTimeout(1200);
-      const malos = await canvasesSinDibujar(page);
-      reporte.pestanas[label] = { canvasesSinDibujar: malos };
-      malos.forEach((m) => hallazgosCanvas.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
-      try {
-        const nombreDescarga = await exportarYVerificarDescarga(page);
-        exportsOk[label] = { ok: !!nombreDescarga, archivo: nombreDescarga };
-      } catch (e) {
-        exportsOk[label] = { ok: false, error: e.message };
-      }
-      // cierra el menu de exportar si quedo abierto, para no tapar la siguiente pestana
-      await page.keyboard.press('Escape').catch(() => {});
-      await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
-    }
-    reporte.exports = exportsOk;
-
-    // ══ 3. Numeros de control (misma formula que carga-real-patron.js,
-    //    corrida real contra produccion al cerrar la Fase 111) ══
-    await page.evaluate(() => { if (typeof _gdIrAMes === 'function') _gdIrAMes('2026-09'); });
-    await page.waitForTimeout(800);
-    const sinCambios = await page.evaluate(async () => {
-      const tipif = await apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS');
-      const porEsp = await apiRequest('GET', '/calidad/agendas/especialidad?campana=ORLANT&mes=2025-04');
-      const porLinea = await apiRequest('GET', '/calidad/agendas/linea?campana=ORLANT&mes=2025-04');
-      const totalAgendas = porEsp.reduce((a, r) => a + r.cantidad, 0);
-      const linea = porLinea.filter((r) => r.mes === '2025-04');
-      const diario = await apiRequest('GET', '/calidad/nivel-servicio/diario?campana=ORLANT');
-      const llamadasTotal = diario.reduce((a, r) => a + (Number(r.totalLlamadas) || 0), 0);
-      const llamadasContestadas = diario.reduce((a, r) => a + (Number(r.contestadas) || 0), 0);
-      const wpp = await apiRequest('GET', '/calidad/trafico/whatsapp?campana=ORLANT');
-      const wppTotal = wpp.reduce((a, r) => a + (Number(r.totalWhatsapp) || 0), 0);
-      const wppContestados = wpp.reduce((a, r) => a + (Number(r.contestados) || 0), 0);
-      const sl20 = (typeof traficoWppServiceLevelPromedioPeriodo === 'function') ? traficoWppServiceLevelPromedioPeriodo(wpp, 'serviceLevel20secPct') : null;
-      const inasistAgo = await apiRequest('GET', '/calidad/inasistencia/resumen?campana=ORLANT&mes=2026-08');
-      const inasistTodos = await apiRequest('GET', '/calidad/inasistencia/mensual?campana=ORLANT');
-      const i = inasistTodos.reduce((s, f) => s + f.inasistencia + f.pendiente, 0);
-      const t = inasistTodos.reduce((s, f) => s + f.total, 0);
-      return {
-        tipificacionTotal: tipif.total,
-        llamadasTotal, llamadasContestadas, llamadasPendientes: llamadasTotal - llamadasContestadas,
-        wppTotal, wppContestados, wppPendientes: wppTotal - wppContestados, wppSl20: sl20,
-        agendasTotal: totalAgendas,
-        agendasGeneral: (linea.find((r) => r.tipoLinea === 'GENERAL') || {}).cantidad,
-        agendas3p: (linea.find((r) => r.tipoLinea === '3P') || {}).cantidad,
-        inasistenciaAgoPct: inasistAgo.pct,
-        inasistenciaPeriodoPct: Math.round((i / t) * 10000) / 100,
-      };
-    });
-    const ranking = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana=ORLANT&mes=2026-09'));
-    const citasPorMes = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-citas/mensual?campana=ORLANT'));
-    reporte.numeros = {
-      ...sinCambios,
-      rankingEquipoGestiones: ranking.equipo.gestiones,
-      rankingEquipoAgendas: ranking.equipo.agendas,
-      rankingEquipoEfectividadPct: Math.round(ranking.equipo.efectividad * 10000) / 100,
-      efectividadCitasPeriodoAgendas: citasPorMes.reduce((s, f) => s + f.agendas, 0),
-      efectividadCitasPeriodoAtendidas: citasPorMes.reduce((s, f) => s + f.atendidas, 0),
-    };
-
-    const n = reporte.numeros;
-    const discrepancias = Object.keys(ESPERADO).filter((k) => {
-      const esperado = ESPERADO[k];
-      const real = n[k];
-      return typeof esperado === 'number' && Math.abs(real - esperado) > 0.01;
-    }).map((k) => `${k}: esperado ${ESPERADO[k]}, real ${n[k]}`);
-
-    // ══ 4. Fase 113: mi propio login queda en el Historial (tema A) +
-    // "Ultimo ingreso" se actualiza (tema A) + "Cambiar mi contrasena"
-    // aparece en el menu, SIN usarla (tema B) ══
-    const hist113 = await page.evaluate(() => apiRequest('GET', '/historial'));
-    const miLogin = hist113.find((h) => h.accion === 'LOGIN_OK');
-    const fase113 = { miLoginEnHistorial: !!miLogin };
-    if (miLogin) {
-      fase113.miLoginReciente = Date.now() - miLogin.ts < 15 * 60 * 1000;
-      fase113.miLoginTieneIpYNavegador = !!(miLogin.ip && miLogin.userAgent);
-      if (miLogin.username && miLogin.username !== MASTER_ADMIN_USER_ESPERADO) {
-        const usersAhora = await page.evaluate(() => apiRequest('GET', '/users'));
-        const filaUsuario = usersAhora.find((u) => u.user === miLogin.username);
-        fase113.ultimoIngresoActualizado = !!(filaUsuario && filaUsuario.lastLogin);
-      } else {
-        fase113.ultimoIngresoActualizado = 'n/a (admin maestro no tiene fila en Usuarios)';
-      }
-    }
-    fase113.botonCambiarPasswordVisible = await page.evaluate(() => {
-      const btn = document.querySelector('button[onclick="abrirCambiarPasswordModal()"]');
-      return !!btn && getComputedStyle(btn).display !== 'none' && btn.offsetParent !== null;
-    });
-    reporte.fase113 = fase113;
-    const fase113Ok =
-      fase113.miLoginEnHistorial && fase113.miLoginReciente && fase113.miLoginTieneIpYNavegador &&
-      fase113.ultimoIngresoActualizado !== false && fase113.botonCambiarPasswordVisible;
-
-    reporte.erroresConsola = erroresConsola;
-    reporte.discrepanciasNumeros = discrepancias;
-    reporte.canvasesSinDibujar = hallazgosCanvas;
-    reporte.peticionesFallidas = peticionesFallidas;
-
-    const exportsFallidos = Object.keys(exportsOk).filter((k) => !exportsOk[k].ok);
-
-    // ══ 5. Fase 118: recorrido con un usuario sin admin (CLIENTES_DASH) --
-    // misma sesion del navegador visible, segundo login manual. No se cierra
-    // el browser entre logins (nueva pestaña con un contexto aparte, para no
-    // mezclar cookies con la sesion admin de arriba). ══
-    const page2 = await context.browser().newPage();
-    const erroresConsola2 = [];
-    page2.on('pageerror', (e) => erroresConsola2.push('pageerror: ' + e.message));
-    page2.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola2.push('console.error: ' + m.text()); });
-    await page2.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
-    log('=== AHORA INICIA SESIÓN COMO crodriguez (rol CLIENTES_DASH, sin admin) === (nueva ventana, hasta 10 min)');
-    const logueado2 = await esperarLogin(page2);
-    const clientesDash = { intentado: logueado2 };
-    if (logueado2) {
-      await page2.waitForTimeout(1200);
-      clientesDash.vistaUsuario = await page2.evaluate(() => ({
-        userPageVisible: getComputedStyle(document.getElementById('user-page')).display !== 'none',
-        adminPageOculto: getComputedStyle(document.getElementById('admin-page')).display === 'none',
-        rol: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.rol : null,
-      }));
-      // IDOR / escalada (Fase 102): con el token de este usuario, los
-      // endpoints admin-only deben devolver 403, nunca datos.
-      const escaladas = await page2.evaluate(async () => {
-        async function intentar(method, url) {
-          try { await apiRequest(method, url); return { url, bloqueado: false }; }
-          catch (e) { return { url, bloqueado: e.status === 403 || e.status === 401, status: e.status, mensaje: e.message }; }
-        }
-        return Promise.all([
-          intentar('GET', '/users'),
-          intentar('GET', '/historial'),
-        ]);
-      });
-      clientesDash.escaladasBloqueadas = escaladas;
-      clientesDash.erroresConsola = erroresConsola2;
-      clientesDash.ok =
-        clientesDash.vistaUsuario.userPageVisible &&
-        clientesDash.vistaUsuario.adminPageOculto &&
-        clientesDash.vistaUsuario.rol === 'CLIENTES_DASH' &&
-        escaladas.every((e) => e.bloqueado) &&
-        erroresConsola2.length === 0;
+    if (esAdmin(token1)) {
+      primeraFue = 'admin';
+      log('Identidad de la 1ra ventana: ADMIN (confirmado por JWT).');
+      reporteAdmin = await correrChequeosAdmin(page1);
+      reporte.admin = reporteAdmin;
+      log('--- Chequeos de ADMIN terminados (se guardan ya, por si la 2da ventana falla) ---');
+      console.log(JSON.stringify({ admin: reporteAdmin }, null, 2));
+    } else if (esClienteDash(token1)) {
+      primeraFue = 'cliente';
+      log('Identidad de la 1ra ventana: CLIENTE CLIENTES_DASH (confirmado por JWT).');
+      reporteCliente = await correrChequeosCliente(page1);
+      reporte.clientesDash = reporteCliente;
+      log('--- Chequeos de CLIENTES_DASH terminados (se guardan ya, por si la 2da ventana falla) ---');
+      console.log(JSON.stringify({ clientesDash: reporteCliente }, null, 2));
     } else {
-      log('ADVERTENCIA: no se detecto login de CLIENTES_DASH en 10 min -- recorrido queda SIN VERIFICAR, no se bloquea el resto.');
+      throw new Error('La 1ra ventana no es ni admin ni CLIENTES_DASH (token: ' + JSON.stringify(token1) + '). Revisa con que cuenta iniciaste sesion.');
     }
-    reporte.clientesDash = clientesDash;
-    await page2.close();
+    await ctx1.close();
 
-    log('=== REPORTE ===');
+    // ── Ventana 2: la identidad que todavia falte. Si se repite la misma
+    // identidad de la ventana 1 (confusion de credenciales), esta vez NO
+    // aborta -- avisa claro y se queda con lo que ya tiene de la ventana 1
+    // (nunca se pierde un recorrido que SI se completo bien). ──
+    const falta = primeraFue === 'admin' ? 'cliente' : 'admin';
+    const { context: ctx2, page: page2 } = await paginaFresca(browser);
+    const mensaje2 = falta === 'admin'
+      ? 'con TU CUENTA DE ADMINISTRADOR (en la ventana anterior entraste con la del cliente -- ahora toca la tuya)'
+      : 'con LA CUENTA REAL DEL CLIENTE, rol CLIENTES_DASH (en la ventana anterior entraste con la de administrador -- ahora toca la del cliente)';
+    const token2 = await esperarLoginYDecodificar(page2, mensaje2);
+    if (!token2) {
+      log('ADVERTENCIA: no se detecto el segundo login (' + falta + ') en 10 min -- esa mitad queda SIN VERIFICAR, no se bloquea el resto.');
+    } else {
+      await page2.waitForTimeout(1000);
+      if (falta === 'admin' && esAdmin(token2)) {
+        log('Identidad de la 2da ventana: ADMIN (confirmado por JWT).');
+        reporteAdmin = await correrChequeosAdmin(page2);
+        reporte.admin = reporteAdmin;
+      } else if (falta === 'cliente' && esClienteDash(token2)) {
+        log('Identidad de la 2da ventana: CLIENTE CLIENTES_DASH (confirmado por JWT).');
+        reporteCliente = await correrChequeosCliente(page2);
+        reporte.clientesDash = reporteCliente;
+      } else {
+        log(
+          'ADVERTENCIA: la 2da ventana debia ser la cuenta de ' + falta + ', pero el JWT dice otra cosa (' + JSON.stringify(token2) + '). ' +
+          (esAdmin(token2) || esClienteDash(token2) ? 'Parece que se repitio la MISMA cuenta de la primera ventana.' : 'Esa cuenta no es ni admin ni CLIENTES_DASH.') +
+          ' Esa mitad (' + falta + ') queda SIN VERIFICAR esta corrida -- se conserva lo que SI se completo.'
+        );
+      }
+    }
+    await ctx2.close();
+
+    reporte.admin = reporteAdmin;
+    reporte.clientesDash = reporteCliente;
+
+    log('=== REPORTE COMPLETO ===');
     console.log(JSON.stringify(reporte, null, 2));
 
-    ok = erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 && fase113Ok &&
-      peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
-      (clientesDash.intentado ? clientesDash.ok : true);
-    log(ok ? 'OK: 7 pestañas, 0 canvas sin dibujar, 0 errores de consola, 0 peticiones fallidas, exports OK, números de control exactos, Fase 113 confirmada, CLIENTES_DASH confirmado.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
+    ok = (reporteAdmin ? reporteAdmin.ok : false) && (reporteCliente ? reporteCliente.ok : false);
+    if (!reporteAdmin) log('ADVERTENCIA: los chequeos de ADMIN no se corrieron.');
+    if (!reporteCliente) log('ADVERTENCIA: los chequeos de CLIENTES_DASH no se corrieron.');
+    log(ok ? 'OK: ambas cuentas verificadas, 0 discrepancias, 0 errores, exports OK.' : 'REVISAR -- ver discrepancias/hallazgos/advertencias arriba.');
   } catch (e) {
     console.error('FALLO:', e.message);
     console.log(JSON.stringify(reporte, null, 2));
