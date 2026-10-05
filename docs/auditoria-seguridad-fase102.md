@@ -130,3 +130,86 @@ Dos hallazgos reales, ambos corregidos en el mismo PR:
 Ningún otro hallazgo nuevo con evidencia (login, permisos por campaña,
 transacciones del reemplazo por rango, secretos, workflows: todos
 revisados y sin problema — ver el detalle en `progress-fases.md`).
+
+## Revisión Fase 118 (2026-10-05) — cierra con evidencia lo que la Fase 117 dejó sin demostrar
+
+La Fase 117 señaló varias cosas revisadas por CÓDIGO pero nunca
+EJECUTADAS contra el sistema real: una matriz de acceso completa, la
+privacidad del HistCDR con valores centinela, y la verificación en
+producción con sesión real. Esta fase las ejecuta.
+
+**Matriz de acceso (Parte 2A, `server/tests/fase118-matriz-acceso.test.js`,
+51 pruebas)**: inventario programático de las 113 rutas reales de Express
+(recorrido de `app.router.stack`, nunca a mano) con una política
+declarada por ruta — una ruta nueva sin política hace fallar la prueba de
+cobertura. Los 10 roles de `seed:demo` (vía `seedUsers()` real, sembrados
+con acceso SOLO a ORLANT) ejecutados contra `CLINICA AURORA` como
+campaña/cliente ajena para cada ruta de lectura scoped, los módulos
+internos (Inventario/Gerencia/Gestión Humana) y las rutas
+`requireDataLoader`. Reconfirma con un ataque real (no solo lectura de
+código) las 3 escaladas CRÍTICAS de la Fase 102 — `crearUsuarios` no
+alcanza para crear/convertir a `ADMIN`/`AUX_ADMIN`, `cambiarPassword` no
+alcanza para resetear la clave de una cuenta `ADMIN`/`AUX_ADMIN`
+existente, `gestionPermisos` no permite auto-otorgarse `isAdmin` — y que
+`CLIENTES_DASH` nunca llega a otra campaña ni a ningún módulo
+administrativo. Las 7 familias de endpoints de carga masiva (esquemas Zod
+de fila con muchas columnas obligatorias) quedaron fuera de la ejecución
+dinámica; se confirmó por lectura de código que siguen el mismo patrón
+`canLoadData`+`campaignAccess(body.campana)` ya verificado dinámicamente
+en otros 4 endpoints de escritura.
+
+**Privacidad del HistCDR completo (Parte 2B,
+`server/tests/fase118-histcdr-privacidad.test.js`, 4 pruebas + 8 ya
+existentes de la Fase 116)**: valores centinela únicos en TELEPHONE,
+CUSTOMER_ID, COMMENT, CONN_ID, DESTINY y COST, en un libro sintético de 20
+columnas con la forma real del export HistCDR de Wolkvox. Confirmado que
+ninguno sobrevive en el payload del navegador (protección estructural: el
+parser ni siquiera reconoce esas columnas), el servidor (un 7mo elemento
+colado en la fila se rechaza con 400 — `tipificacionFilaArraySchema` es
+un `z.tuple()` de 6 elementos sin `.rest()`), SQLite (`SELECT *` de la
+fila insertada, la tabla no tiene columna para eso), el Historial, `GET
+/calidad/tipificacion/por-tipo` (agregado, nunca filas crudas) y ningún
+`console.log` del servidor. Defecto simulado (`.rest(z.any())` temporal
+en el schema) y revertido para confirmar que la prueba del rechazo-400 no
+es vacía.
+
+**Verificación en producción con sesión real** (`scripts/produccion/
+revision-final.js`, ampliado): corrida real contra
+`https://informa.inconexion.com.co` — 0 discrepancias de números de
+control (el `ESPERADO` del script estaba desactualizado en 3, no la
+producción — ver el commit), 0 errores de consola, 0 canvas sin dibujar,
+0 peticiones fallidas (chequeo nuevo), Exportar dispara descarga real en
+las 7 pestañas (chequeo nuevo), Fase 113 (login propio en el Historial +
+"Cambiar mi contraseña") confirmada. El recorrido con un usuario
+`CLIENTES_DASH` (chequeo nuevo, segundo login en la misma ventana visible)
+quedó **inconcluso**: la evidencia de esa corrida (rol devuelto `null`,
+`#admin-page` NO oculto, ambas escaladas de prueba "no bloqueadas") es la
+firma de que el segundo login reutilizó la sesión de administrador, no
+una cuenta `CLIENTES_DASH` real — no había a mano una contraseña real de
+ese tipo de usuario en producción. No se reporta como verificado.
+
+**Hallazgo real adicional, severidad baja**: un test de la Fase 117
+(`fase113-tema-a-registro-login.test.js`, desempate de `GET /historial`
+por `id`) resultó flaky en CI — no por el comportamiento real (el fix de
+la Fase 117 sigue correcto), sino porque su filtro de verificación era
+demasiado amplio (`ts === tsFijo` sin acotar también por los usuarios
+sintéticos de la prueba) y podía coincidir con un evento real de otra
+prueba del mismo archivo en el mismo milisegundo. Corregido.
+
+**Fuera de alcance de esta sesión, con motivo documentado** (ver
+`docs/pendientes.md` → "De la Fase 118"): casos de borde del reemplazo
+por rango más allá de los ya cubiertos por las Fases 115/116 (archivo de
+un solo día, skill nueva, re-subida idéntica idempotente, rango que
+cruza meses, fecha futura — la atomicidad ante una falla a la mitad SÍ
+se confirmó por lectura de código: las 3 funciones de carga revisadas
+usan `db.transaction(...)`, que revierte todo ante cualquier excepción);
+XSS dirigido con Playwright en local; pruebas de zona horaria
+UTC/América-Bogotá; pruebas de fallas de red/carreras de UI; el barrido
+visual completo (7 pestañas × claro/oscuro × 4 tamaños de pantalla); el
+barrido de código muerto a partir del grafo de graphify.
+
+`npm test`: 1033/1033 (1029 previas + 4 nuevas de HistCDR; la matriz de
+acceso se sumó y restó en el mismo PR que el fix del test flaky). `npm
+audit`: 0 vulnerabilidades antes y después (sin cambios de dependencias).
+5 PRs, uno por tema, CI verde en los 5. Detalle completo en
+`docs/historico/progress-fases.md` → Fase 118.

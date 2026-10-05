@@ -10838,3 +10838,193 @@ Fase 113 y en una pasada de verificación general con evidencia puntual.
 1 PR (fix del Historial + fórmulas de Calidad), `npm test` 968/968 (967
 + 1 prueba nueva de regresión), 5 corridas seguidas sin fallas, `npm
 audit` limpio antes y después. v1.11.2.
+
+## Fase 118 — Cierra con evidencia todo lo que la Fase 117 no demostró (2026-10-05)
+
+Pedido explícito del jefe: la Fase 117 encontró y arregló 2 problemas
+reales, pero dejó varias cosas "revisadas por código" en vez de
+EJECUTADAS contra el sistema real (matriz de acceso, privacidad del
+HistCDR, verificación en producción con sesión real). Regla de oro del
+pedido: no reportar "verificado" ni "0 hallazgos" sobre algo que no se
+ejecutó — decir qué se corrió y qué se vio, y marcar como "no
+verificado" con el motivo lo que no alcanzó el tiempo de la fase.
+
+Nota de alcance: el pedido original tenía 6 partes (producción,
+pruebas automáticas A-F, barrido visual, código muerto, higiene del
+repo, arreglar y cerrar). Dado el tamaño real de la tarea para una sola
+sesión, esta fase priorizó lo de mayor severidad/valor y lo más
+demostrable con evidencia real (producción, matriz de acceso completa,
+privacidad de datos de pacientes) y dejó documentado, con motivo
+explícito en `docs/pendientes.md`, lo que no alcanzó: el barrido visual
+completo, el barrido de código muerto, las pruebas dinámicas de XSS/
+zona horaria/fallas de UI, y los casos de borde adicionales del
+reemplazo por rango.
+
+### Parte 1 — Verificación en producción, solo lectura, con sesión real
+
+`scripts/produccion/revision-final.js` corrió contra
+`https://informa.inconexion.com.co` con el usuario iniciando sesión a
+mano en el navegador visible (nunca se guardó contraseña ni cookies).
+
+- **Números de control**: 0 discrepancias tras un fix al propio script
+  — su `ESPERADO.llamadasTotal`/`llamadasPendientes` estaba 3 de más
+  (17.954/1.110 en vez de 17.951/1.107), desalineado de `PROGRESS.md`
+  desde que ese documento pasó a reflejar la suma real Ago-26+Sep-26; no
+  era un número que se hubiera movido en producción.
+- **Las 7 pestañas de ORLANT**: 0 errores de consola, 0 canvas sin
+  dibujar, 0 peticiones fallidas (chequeo nuevo: `requestfailed` +
+  respuestas HTTP ≥400 durante toda la sesión), Exportar dispara una
+  descarga real en las 7 (chequeo nuevo: `page.waitForEvent('download')`
+  en cada pestaña).
+- **Fase 113** ("Cambiar mi contraseña" + mi login en el Historial):
+  confirmada.
+- **Recorrido con un usuario `CLIENTES_DASH`**: INCONCLUSO, no
+  verificado. Se agregó un segundo login manual (misma ventana visible)
+  al script para esto, pero la evidencia de la corrida real (rol
+  devuelto `null`, `#admin-page` NO quedó oculto, las 2 escaladas de
+  prueba contra `/users` y `/historial` "no bloqueadas") es la firma de
+  que el segundo login reutilizó la sesión de administrador en vez de
+  iniciar sesión como `crodriguez` — no había a mano una contraseña real
+  de un usuario `CLIENTES_DASH` de producción. Queda pendiente.
+- **Infraestructura pública** (sin SSH, sin AWS): HTTP→HTTPS 308, cabeceras
+  reales (HSTS, CSP estricto, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy`, sin `X-Powered-By`), certificado con 85 días
+  restantes, `inconexion.duckdns.org` sin responder (confirmado,
+  retirado desde la Fase 93). `salud-servidor.yml` (última corrida
+  verde: disco 12%/1%, memoria 39%, respaldo de hace 7h, timer
+  `active`/`enabled`, última corrida del servicio `success`, S3 OK) y
+  `respaldo-produccion.yml`/`monitor-produccion.yml`: últimas corridas
+  todas verdes vía `gh run list`.
+
+### Parte 2A — Matriz de acceso EJECUTADA (no leída)
+
+`server/tests/fase118-matriz-acceso.test.js`, 51 pruebas. Inventario
+programático de las 113 rutas reales de Express (recorrido de
+`app.router.stack`, nunca a mano) con una política declarada por ruta —
+una ruta nueva sin política hace fallar la prueba de cobertura. Los 10
+roles de `seed:demo` (vía `seedUsers()` real de
+`scripts/seed-demo-lib/users.js`, sembrados con acceso SOLO a ORLANT)
+ejecutados de verdad contra `CLINICA AURORA` como campaña/cliente ajena,
+para cada ruta de lectura scoped por `campaignAccess`, los módulos
+internos (Inventario/Gerencia/Gestión Humana vía `can()`) y las rutas
+`requireDataLoader`.
+
+Reconfirma con un ataque real (no solo lectura de código) las 3
+escaladas CRÍTICAS de la Fase 102: `crearUsuarios` no alcanza para
+crear/convertir a `ADMIN`/`AUX_ADMIN` (ni a sí mismo); `cambiarPassword`
+no alcanza para resetear la clave de una cuenta `ADMIN`/`AUX_ADMIN`
+existente; `gestionPermisos` no permite auto-otorgarse `isAdmin` ni
+ningún otro permiso. También confirma que `CLIENTES_DASH` nunca llega a
+ORLANT-que-no-sea-suyo ni a ningún módulo administrativo.
+
+Hallazgo incidental, no un bug: `POST /gerencia/kpis` está gateado solo
+por `canLoadData` (el permiso genérico "Cargar Datos"), deliberadamente
+independiente de `can(actor,'Gerencia')` — quien sube KPIs no tiene que
+ser quien ve el dashboard ejecutivo. Confirmado por lectura de
+`server/routes/gerencia.js` y documentado en el test para que no se lea
+como inconsistencia la próxima vez que alguien audite esta ruta.
+
+Fuera de la ejecución dinámica: las 7 familias de endpoints de carga
+masiva (Tráfico×2, Agendas, Tipificación, Inasistencia, Efectividad×2) —
+sus esquemas Zod de fila (`traficoFilaSchema`, `agendasFilaArraySchema`,
+etc.) tienen demasiadas columnas obligatorias para un body sintético
+mínimo. Se confirmó por lectura de código que las 7 siguen el mismo
+patrón `canLoadData`+`campaignAccess(body.campana)` ya verificado
+dinámicamente en otros 4 endpoints de escritura (`/monitoreos`,
+`/inventario/items`, `/gerencia/kpis`, `/gh/personal`).
+
+### Parte 2B — Privacidad del HistCDR completo, EJECUTADA de extremo a extremo
+
+`server/tests/fase118-histcdr-privacidad.test.js`, 4 pruebas nuevas (más
+8 ya existentes de la Fase 116 en `fase116-tipificacion-histcdr.test.js`,
+que ya cubría TELEPHONE/CUSTOMER_ID/COMMENT/CONN_ID/DESTINY). Valores
+centinela únicos (se agregó COST, que la prueba de la Fase 116 no
+cubría) en un libro sintético de 20 columnas con la forma real del
+export HistCDR de Wolkvox.
+
+Confirmado que ninguno sobrevive en: el payload que arma el navegador
+(protección estructural — el parser de `tipificacion-logic.js` ni
+siquiera reconoce esas columnas en el mapa de encabezados); el servidor
+(un 7mo elemento colado en la fila, simulando un cliente comprometido
+que se salta el navegador, se rechaza con 400 —
+`tipificacionFilaArraySchema` es un `z.tuple()` de 6 elementos SIN
+`.rest()`); la base SQLite (`SELECT *` completo de la fila insertada —
+la tabla `tipificaciones` no tiene columna para teléfono/comentario/
+etc.); el Historial (`logEvent` solo guarda conteos y la campaña); `GET
+/calidad/tipificacion/por-tipo` (agregado por tipificación, nunca filas
+crudas); y ningún `console.log`/`error`/`warn`/`debug` en
+`server/routes/tipificaciones.js` ni `server/tipificaciones.js` (grep
+estático).
+
+Defecto simulado y revertido para confirmar que la prueba del
+rechazo-400 no es vacía: con `.rest(z.any())` agregado temporalmente al
+schema, la prueba falló (201 en vez de 400) como se esperaba; revertido
+antes del commit final (sin diff en `validation.js`).
+
+### Hallazgo real adicional: test flaky de la Fase 117 (severidad baja)
+
+Al correr la suite completa en CI (no en local, donde pasó a la
+primera), `GET /historial desempata eventos con el mismo ts...`
+(`fase113-tema-a-registro-login.test.js`, de la Fase 117) falló con
+"3 !== 2". No es un retroceso del comportamiento real: el fix de la Fase
+117 (desempate por `id`) sigue correcto. La causa fue que el filtro de
+verificación de la prueba (`h.ts === tsFijo`) era demasiado amplio — en
+una corrida con muchos logins reales de otras pruebas del mismo archivo,
+un evento real cayó por coincidencia en el mismo milisegundo exacto que
+`tsFijo` e infló el conteo. Fix: acotar el filtro también por
+`username` a los 2 usuarios sintéticos de esa prueba.
+
+### Parte 2C (parcial) — atomicidad del reemplazo por rango, confirmada por código
+
+Se confirmó por lectura de código (no ejecutada con una falla inyectada)
+que `server/tipificaciones.js`, `server/trafico-whatsapp.js` y
+`server/agendas.js` envuelven cada carga completa (borrar + insertar) en
+`db.transaction(...)` — better-sqlite3 revierte la transacción completa
+ante cualquier excepción, así que una falla a la mitad de una carga
+nunca puede dejar datos a medias, por construcción. Los demás casos de
+borde pedidos (archivo de un solo día, skill nueva, re-subida idéntica
+idempotente, rango que cruza meses, fecha futura) no se cubrieron con
+pruebas dedicadas nuevas en esta fase — ver `docs/pendientes.md`.
+
+### Parte 5 — Higiene del repo
+
+`.gitignore` agrega `.claude/` y `graphify-out/` (el grafo trae rutas
+absolutas de la máquina local de quien lo generó, es derivado y
+regenerable). La sección `## graphify` de `CLAUDE.md` (agregada
+localmente antes de esta fase, sin commitear) solo recomendaba consultar
+el grafo como ayuda de navegación — no chocaba con la regla de
+subagentes de solo lectura del mismo archivo, así que se subió con una
+línea aclaratoria: `graphify-out/` es local/derivado/regenerable, nunca
+fuente de verdad, y no autoriza subagentes con escritura fuera de
+`graphify-out/`. Confirmado que ni `graphify-out/` ni `.claude/`
+aparecen en el índice de git ni en el historial.
+
+Para la ejecución de esta misma fase, los subagentes de extracción
+semántica de `/graphify` (solo para construir el grafo, nunca para
+código del repo) se corrieron con permiso de escritura ACOTADO
+explícitamente a `graphify-out/` únicamente — consultado con el usuario
+antes de hacerlo, porque la regla de "subagentes siempre de solo
+lectura" de `CLAUDE.md` no preveía ese caso (graphify necesita que sus
+subagentes escriban sus fragmentos de extracción a disco). El usuario
+autorizó esa excepción puntual para esta fase.
+
+### Pendiente — decisión del usuario
+
+Nada de lo investigado esta fase requirió una decisión nueva del
+usuario; las decisiones pendientes de fases anteriores (AWS, Flujo
+Mensual, Nivel de Servicio) siguen igual, ver `docs/pendientes.md`.
+
+### Cierre
+
+5 PRs, uno por tema, CI verde en los 5 (#285 higiene del repo, #286
+matriz de acceso, #287 `revision-final.js`, #288 privacidad HistCDR,
+#289 fix del test flaky). `npm test`: 1033/1033 (1029 previas + 4
+nuevas de HistCDR; la matriz de acceso se sumó y restó en el mismo PR
+que el fix del test flaky, de ahí que el neto no sea +55). `npm audit`:
+0 vulnerabilidades antes y después (sin cambios de dependencias). Sin
+cambio de versión — ninguno de los 5 PRs tocó código de `server/` o
+`public/` que cambie el comportamiento de la app para un usuario real
+(solo `server/tests/`, un script de QA en `scripts/produccion/`,
+`.gitignore` y `CLAUDE.md`); CLAUDE.md liga el bump de versión a
+"cambie la app (código, no solo PROGRESS.md/docs)" y ninguno de estos 5
+cambios lo hace. v1.11.2 sin cambios.

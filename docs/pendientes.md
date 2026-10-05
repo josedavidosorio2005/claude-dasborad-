@@ -1,4 +1,4 @@
-# Pendientes (actualizado Fase 117, 2026-10-05)
+# Pendientes (actualizado Fase 118, 2026-10-05)
 
 Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
 antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
@@ -71,25 +71,67 @@ Ninguna pendiente por ahora — "Cambiar mi contraseña" y el registro de
 inicios de sesión (las dos únicas que había en esta lista) se
 implementaron en la Fase 113.
 
-## De la Fase 117 (revisión final integral)
+## De la Fase 117 (revisión final integral) — demostrado en la Fase 118
 
-- **Verificación en producción con sesión real**: el script
-  `scripts/produccion/revision-final.js`, las 7 pestañas de ORLANT con
-  Exportar, y el recorrido con un usuario `CLIENTES_DASH` quedaron
-  pendientes de que el usuario inicie sesión (ventana de 10 minutos del
-  pedido original ya se cerró sin que se iniciara sesión en esta
-  sesión de Claude Code). Repetir en la próxima sesión disponible,
-  contra los números de control de `PROGRESS.md`.
-- **Alcance no cubierto con evidencia propia en esta fase** (no porque
-  se haya encontrado un problema, sino porque excede lo que se puede
-  demostrar en una sola sesión): matriz completa de IDOR probando los
-  10 roles de `seed:demo` uno por uno contra cada módulo de carga/
-  lectura/exportación; barrido visual de las 7 pestañas × modo claro/
-  oscuro × escritorio/móvil/1366×768/1920×1080; barrido de código
-  muerto de vistas retiradas. Ninguno mostró indicios de problema en la
-  revisión de código que sí se hizo (grep de rutas sin
-  `requireActor`/`requirePermission`, lectura de los middlewares de
-  `server/auth.js`) — queda como trabajo de verificación pendiente, no
-  como hallazgo abierto. Ver el detalle completo de lo que SÍ se
-  verificó con evidencia en `docs/historico/progress-fases.md` (Fase
-  117) y en `docs/auditoria-seguridad-fase102.md`.
+- ~~Verificación en producción con sesión real~~ — **hecho en la Fase
+  118** (2026-10-05): `scripts/produccion/revision-final.js` corrió
+  contra producción con sesión real del usuario — 0 discrepancias de
+  números de control, 0 errores de consola, 0 canvas sin dibujar, 0
+  peticiones fallidas, Exportar OK en las 7 pestañas, Fase 113
+  confirmada. Ver el recorrido `CLIENTES_DASH` abajo (de la Fase 118),
+  que quedó aparte, inconcluso.
+- ~~Matriz completa de IDOR (10 roles × módulos)~~ — **hecho en la Fase
+  118**: `server/tests/fase118-matriz-acceso.test.js` (51 pruebas),
+  inventario programático de las 113 rutas reales + política declarada
+  + ejecución real contra los 10 roles de `seed:demo`. Detalle en
+  `docs/auditoria-seguridad-fase102.md` → Fase 118.
+- ~~Barrido visual de las 7 pestañas × claro/oscuro × tamaños de
+  pantalla~~ y ~~barrido de código muerto~~ — **siguen pendientes**, ver
+  "De la Fase 118" abajo (no se llegaron a cubrir tampoco en esta fase).
+
+## De la Fase 118 (cierra con evidencia lo que la Fase 117 no demostró)
+
+- **Recorrido en producción con un usuario `CLIENTES_DASH` real**:
+  quedó **inconcluso**, no verificado. El script pide un segundo login
+  manual (misma ventana visible) para esto; la evidencia de la corrida
+  real (rol devuelto `null`, `#admin-page` NO oculto, las 2 escaladas de
+  prueba "no bloqueadas") apunta a que el segundo login reutilizó la
+  sesión de administrador, no una cuenta `CLIENTES_DASH` — no hay a mano
+  una contraseña real de ese tipo de usuario en producción. Repetir en
+  la próxima sesión disponible con esa contraseña a mano (o pedirle al
+  jefe que la comparta por un canal seguro, nunca por el repo/CI).
+- **Barrido visual real** (Playwright local, `seed:demo`: 7 pestañas ×
+  claro/oscuro × 1366×768/1920×1080/2560×1440/móvil 412px + estados
+  mes-sin-datos/mes-incompleto/0-filas): no se llegó a cubrir en esta
+  sesión — excede lo que da el tiempo de una sola fase junto con el
+  resto de lo pedido. Prioridad alta para la próxima sesión disponible.
+- **Barrido de código muerto** a partir del grafo de `graphify` (nodos
+  sin referencias entrantes, verificados con grep): no se llegó a cubrir.
+- **Casos de borde del reemplazo por rango** (Fases 115/116) más allá de
+  los ya cubiertos por `fase116-rango-global-hueco.test.js` (hueco de
+  días, caso real FONIATRIA, skill ausente, impacto exacto): archivo de
+  un solo día, skill NUEVA, re-subida idéntica (0 cambios, idempotente),
+  rango que cruza meses, fecha futura — no se escribieron pruebas
+  dedicadas nuevas en esta fase. La atomicidad ante una falla a la mitad
+  de la carga SÍ se confirmó por lectura de código (no ejecutada con una
+  falla inyectada): `server/tipificaciones.js`, `server/trafico-
+  whatsapp.js` y `server/agendas.js` envuelven cada carga en
+  `db.transaction(...)`, que revierte todo ante cualquier excepción —
+  better-sqlite3 lo garantiza por construcción.
+- **XSS con texto malicioso real** (Playwright local, `<img
+  src=x onerror=...>` / `"><script>...` en campos de texto libre +
+  exports sin fórmulas activas): no se llegó a cubrir con pruebas
+  dinámicas nuevas en esta fase — Fase 102 ya confirmó por lectura de
+  código que `esc()` y `xlsxFilasSeguras`/`xlsxCeldaSegura` cubren todos
+  los módulos (ver `docs/auditoria-seguridad-fase102.md`), pero eso es
+  lectura de código, no un ataque real ejecutado campo por campo.
+- **Zonas horarias** (TZ=UTC vs TZ=America/Bogota: cortes de fecha, "mes
+  en curso", Tipificación con horas como 18:06): no se llegó a cubrir
+  con pruebas dedicadas en esta fase.
+- **Fallas y carreras de UI** (500/red cortada/respuesta vacía en cada
+  pestaña, cambio rápido de pestaña/mes): no se llegó a cubrir.
+- **Hallazgo real corregido en esta fase**: un test de la Fase 117
+  (desempate de `GET /historial` en empates de milisegundo) resultó
+  flaky en CI por un filtro de verificación demasiado amplio — corregido
+  (severidad baja, detalle en `docs/auditoria-seguridad-fase102.md` →
+  Fase 118).
