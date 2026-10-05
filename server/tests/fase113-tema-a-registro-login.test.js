@@ -177,7 +177,14 @@ test('GET /historial desempata eventos con el mismo `ts` por orden de insercion 
 
   const res = await request(app).get('/api/historial').set(auth(adminToken));
   assert.equal(res.status, 200);
-  const empatados = res.body.filter((h) => h.ts === tsFijo);
+  // Fase 118 (hallazgo real, CI): filtrar solo por `ts === tsFijo` es
+  // demasiado amplio -- en una corrida con muchos logins reales de OTRAS
+  // pruebas de este mismo archivo, un evento real puede caer por coincidencia
+  // en el mismo milisegundo exacto que `tsFijo` e inflar el conteo (visto en
+  // CI: 3 en vez de 2). Acotar tambien por `username` a los 2 sinteticos de
+  // esta prueba la vuelve determinista sin depender de que ningun otro test
+  // del archivo corra en un milisegundo distinto.
+  const empatados = res.body.filter((h) => h.ts === tsFijo && (h.username === 'primero_117' || h.username === 'segundo_117'));
   assert.equal(empatados.length, 2);
   // El segundo insertado (id mayor) debe salir ANTES: es el mas nuevo de los
   // dos, aunque compartan exactamente el mismo `ts`.
