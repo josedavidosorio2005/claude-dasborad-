@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.11.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.12.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -26,13 +26,19 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 119, 2026-10-05)
+### Números de control (ORLANT, última verificación Fase 120, 2026-10-05)
 
-Reconfirmados en vivo contra producción (sesión real del usuario, API +
-pantalla): 0 discrepancias, 0 errores de consola, 0 duplicados (Tráfico
-de Llamadas/WhatsApp, por skill/cola+fecha), las 7 pestañas sin canvas
-sin dibujar, Exportar OK en las 7. Se vuelven a confirmar en cada
-revisión final y pueden moverse mes a mes con cargas nuevas de Edwin:
+Reconfirmados en vivo contra producción (dato por dato contra los 3
+archivos reales que envió InCo, no solo totales): 150/150 filas de
+Tráfico de Llamadas, 258/258 de Tráfico de WhatsApp, 34.661/34.661 de
+Tipificación, 0 duplicados, 0 diferencias. Las 7 pestañas Y cada una de
+sus sub-pestañas (no solo la que abre por defecto) dibujan algo real o
+muestran un mensaje claro — ninguna en blanco. Exportar OK en las 7. Se
+vuelven a confirmar en cada revisión final y pueden moverse mes a mes con
+cargas nuevas de Edwin (el AHT de WhatsApp se quitó en la Fase 120 — no
+está en esta tabla porque nunca tuvo un número real que mover; el ATA de
+Llamadas/WhatsApp SÍ cambia de valor en esta fase porque se corrigió cómo
+se pondera, ver `CHANGELOG.md` — ningún número de ESTA tabla se movió):
 
 | Indicador | Valor |
 |---|---|
@@ -171,4 +177,5 @@ mismo orden):
 - Fase 117 — Revisión final integral (seguridad + bugs) antes de entregar ORLANT: 2 arreglos reales (orden del Historial, inyección de fórmulas en la plantilla de Calidad), resto de la plataforma verificado sin hallazgos nuevos (2026-10-05)
 - Fase 118 — Cierra con evidencia lo que la Fase 117 dejó sin demostrar: matriz de acceso de las 113 rutas EJECUTADA (51 pruebas, reconfirma las 3 escaladas críticas de la Fase 102), privacidad del HistCDR completo EJECUTADA con valores centinela, verificación en producción con sesión real, 1 test flaky corregido; barrido visual/código muerto/XSS dinámico/zonas horarias quedan pendientes (2026-10-05)
 - Fase 119 — Deja ORLANT lista para entregarla al cliente: recorrido en producción con la cuenta REAL del cliente (CLIENTES_DASH) confirmado por JWT, cargar un mes nuevo nunca daña los ya cargados (26 pruebas EJECUTADAS, las 7 bases), matriz de acceso de las 7 familias de carga masiva EJECUTADA (1 hallazgo real de bajo riesgo documentado: Tráfico de Llamadas sin campaignAccess por diseño), zonas horarias EJECUTADAS con procesos reales TZ=UTC/TZ=America-Bogota, guía de uso + checklist de aceptación + procedimiento de carga mensual al día; barrido visual/código muerto/XSS dinámico/fallas de UI siguen pendientes (2026-10-05)
+- Fase 120 — Verificación dato por dato de los 3 archivos reales que envió InCo (Llamadas 150 filas, WhatsApp 258 filas, Tipificación 34.661) contra producción, recorriendo TODAS las sub-pestañas (no solo la que abre por defecto, el hueco real que dejaba pasar un AHT de WhatsApp en blanco sin que nadie lo notara); se quitó el AHT de WhatsApp (Wolkvox nunca lo entrega) con migración idempotente + reactivación sin tocar código; 2do hallazgo real: el ATA de Llamadas Y de WhatsApp se promediaba ponderado por el total en vez de por los abandonos reales (corregido, con el efecto numérico documentado); la revisión automática de cada PR ahora también confirma que un aviso de "sin datos" quede visible de verdad, no solo que el canvas esté escondido (2026-10-05)
 

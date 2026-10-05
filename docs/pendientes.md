@@ -1,4 +1,4 @@
-# Pendientes (actualizado Fase 119, 2026-10-05)
+# Pendientes (actualizado Fase 120, 2026-10-05)
 
 Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
 antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
@@ -60,6 +60,13 @@ una:
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
   deja esperando por si algún día se usa? (Fase 115: ya quedaría lista
   con Ago-26/Sep-26 en cuanto se decida destaparla.)
+- **Pedir a Edwin/Wolkvox: el AHT de Tráfico de WhatsApp** (Fase 120,
+  2026-10-05): se confirmó contra los 2 archivos reales de ago-sep/2026
+  (258 filas) que la columna AHT siempre viene vacía ("----") — se quitó
+  de la pestaña y del export (ver `CHANGELOG.md` v1.12.0). Si Wolkvox
+  llega a entregarlo más adelante, reactivarlo es solo volver a poner
+  `mostrarAht:true` en el panel (`PUT /dashboards/config/ORLANT`), sin
+  tocar código.
 - **Nivel de servicio**: Edwin lo mencionó como una base aparte en algún
   momento, pero Tráfico de Llamadas/WhatsApp ya muestra Nivel de Servicio
   a 20s — aclarar con él si se refiere a algo distinto (por hora, un SLA
@@ -180,3 +187,48 @@ implementaron en la Fase 113.
   marcadas explícitamente "Por confirmar" — no se resolvieron en esta
   fase porque dependen de que Edwin las precise, no de nada que se
   pueda verificar desde el código. Sigue pendiente de Edwin.
+
+## De la Fase 120 (verificación dato por dato + AHT de WhatsApp)
+
+- ~~Verificar en producción, dato por dato (no solo totales), los 3
+  archivos reales que envió InCo~~ — **hecho**: 150/150 filas de Tráfico
+  de Llamadas, 258/258 de Tráfico de WhatsApp, 34.661/34.661 de
+  Tipificación (por skill × mes), 0 duplicados, 0 diferencias contra la
+  API en vivo. Ver `scripts/produccion/revision-final.js`.
+- ~~Abrir cada sub-pestaña de las 7 pestañas de ORLANT (no solo la que
+  abre por defecto)~~ — **hecho**, el hueco estructural que señaló el
+  usuario (Fases 112-119 no lo cubrían de forma explícita): todas
+  dibujan algo real o muestran un mensaje claro, ninguna en blanco.
+- ~~AHT de Tráfico de WhatsApp~~ — **quitado** (ver más arriba, "De
+  Edwin").
+- **Hallazgo real corregido**: el ATA (tiempo promedio de abandono) de
+  Tráfico de Llamadas Y de WhatsApp se promediaba ponderado por el TOTAL
+  de llamadas/WhatsApp, en vez de por cuántas realmente se abandonaron —
+  un día de mucho volumen y pocos abandonos diluía el promedio hacia
+  abajo. Corregido en `public/js/trafico-logic.js` y
+  `public/js/trafico-whatsapp-logic.js`; efecto numérico medido contra
+  el archivo real: agosto pasa de 350,92 s a 625,13 s en Llamadas (ver
+  `CHANGELOG.md` v1.12.0).
+- **Hallazgo documentado, NO corregido** (fuera del alcance pedido):
+  `traficoWppResumen` (`public/js/trafico-whatsapp-logic.js`) es una
+  función sin ningún llamador en el código de producción (solo la
+  referencian sus propios tests) que pondera ASA/ATA por el total en vez
+  de por contestados/abandonados — el mismo defecto que se corrigió en
+  las funciones que SÍ se usan. Al no estar conectada a ninguna pantalla
+  no afecta nada visible hoy, pero conviene decidir si se borra (código
+  muerto) o se corrige igual para que no quede una trampa si alguien la
+  conecta más adelante.
+- **No se llegó a cubrir en esta fase** (quedan de las Fases 118/119,
+  sin empeorar ni resolverse):
+  - Barrido visual completo con Playwright (claro/oscuro ×
+    1366×768/1920×1080/móvil 412px × mes con/sin datos, abriendo cada
+    sub-pestaña una por una): se verificó a mano, con el navegador real,
+    el caso concreto de esta fase (AHT de WhatsApp oculto + export sin
+    la columna, con una base sintética que imita el archivo real de
+    Wolkvox) contra un servidor local corriendo de verdad — no la matriz
+    completa de viewports/temas que pedía el usuario.
+  - Barrido de código muerto a partir del grafo de `graphify` (aparte
+    del hallazgo puntual de `traficoWppResumen` arriba, que salió de
+    revisar el código tocado en esta fase, no de un barrido completo).
+  - XSS con texto malicioso real (Playwright dinámico) y fallas/carreras
+    de UI (500/red cortada, cambio rápido de pestaña o mes).
