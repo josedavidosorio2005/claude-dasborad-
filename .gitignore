@@ -52,3 +52,10 @@ release-signing.properties
 # deje ahi por error al tomar capturas de demo en el futuro.
 docs/capturas-demo/**/*.xlsx
 
+# Configuracion local de Claude Code (skills, settings) y el grafo de
+# graphify (Fase 118): graphify-out/ trae rutas absolutas de la maquina
+# local de quien lo genero y es derivado/regenerable (`/graphify .`) --
+# nunca al repo, ver CLAUDE.md -> "graphify".
+.claude/
+graphify-out/
+
