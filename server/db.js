@@ -2599,6 +2599,54 @@ runOnceMigration('historial_login_ip_ua_v1', () => {
   }
 });
 
+// Fase 120: quita el AHT de Trafico de WhatsApp en ORLANT (Wolkvox nunca
+// lo entrega -- confirmado contra los 2 archivos reales de ago-sep/2026,
+// 258 filas, AHT siempre "----", 0 numericas). Marca el panel
+// trafico_whatsapp_combo con mostrarAht:false para que el frontend quite
+// la sub-pestana "AHT", la tarjeta "AHT Promedio" y la columna "AHT (seg)"
+// del export -- SOLO en WhatsApp, Trafico de Llamadas (voz, que SI tiene
+// AHT real) no se toca porque su panel es trafico_combo, no
+// trafico_whatsapp_combo. Reactivar despues de que Wolkvox lo entregue es
+// solo volver a poner mostrarAht:true via PUT /dashboards/config/ORLANT,
+// sin tocar codigo (el lector de WhatsApp sigue leyendo la columna AHT
+// numerica por si llega).
+// Igual que dashboards_config_orlant_trafico_whatsapp_tab_v1 (arriba): si
+// ORLANT ya tiene mostrarAht seteado a lo que sea (false o true) se deja
+// intacto -- evita pisar un ajuste manual hecho despues del deploy. Revisa
+// el campo PANEL y la pestana (tab.key) por separado, nunca solo el tipo
+// de panel, porque la Fase 104 mostro que mezclar ambos niveles en una
+// sola migracion puede dejar pestanas o paneles en un estado intermedio.
+runOnceMigration('dashboards_config_orlant_whatsapp_sin_aht_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con mostrarAht:false
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tabs = layout.tabs || [];
+  const tabWpp = tabs.find((t) => t && t.key === 'trafico_whatsapp');
+  if (!tabWpp) return; // esta instalacion no tiene la pestana de WhatsApp -- nada que hacer
+  let cambio = false;
+  (tabWpp.panels || []).forEach((p) => {
+    if (p && p.tipo === 'trafico_whatsapp_combo' && !Object.prototype.hasOwnProperty.call(p, 'mostrarAht')) {
+      p.mostrarAht = false;
+      cambio = true;
+    }
+  });
+  if (!cambio) return; // ya tenia el campo (por defecto o personalizado) -- nada que hacer
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_whatsapp_sin_aht_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

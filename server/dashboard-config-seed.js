@@ -91,8 +91,22 @@ const ORLANT = {
       // (trafico_whatsapp, db.js) y su propio endpoint. Si esta pestaña ya
       // existe en una base sembrada antes de este cambio, ver la migracion
       // dashboards_config_orlant_trafico_whatsapp_tab_v1 en db.js.
+      //
+      // Fase 120 (decision de InCo, autorizada): Wolkvox NUNCA entrega AHT
+      // para WhatsApp (confirmado contra 2 archivos reales distintos: 258
+      // filas, columna AHT siempre "----") -- la sub-pestaña "AHT" quedaba
+      // en blanco sin ningun mensaje. `mostrarAht:false` apaga esa
+      // sub-pestaña + la tarjeta "AHT Promedio" + la columna "AHT (seg)"
+      // de los exports, SOLO en WhatsApp (Trafico de Llamadas/voz sigue
+      // con `trafico_combo` de arriba, sin este campo -- ahi SI hay dato).
+      // El lector de WhatsApp (trafico-whatsapp-logic.js) sigue leyendo
+      // una columna AHT numerica si algun dia Wolkvox la entrega -- para
+      // reactivar la sub-pestaña, basta con quitar este campo (o ponerlo
+      // en `true`) vía PUT /dashboards/config/ORLANT, sin tocar código.
+      // Ver migracion dashboards_config_orlant_whatsapp_sin_aht_v1 en
+      // db.js para una base ya sembrada antes de este cambio.
       { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
-        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT' },
+        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT', mostrarAht: false },
       ]},
       // Fase 94 (tema B, pedido de Edwin): Agendamiento queda SOLO con datos
       // reales de la tabla `agendas` (server/agendas.js) -- 4 sub-pestañas

@@ -54,6 +54,45 @@ const ESPERADO = {
 // cuentan como "peticion fallida" real.
 const STATUS_IGNORADOS_RE = /\/api\/historial$|\/api\/auth\/login$/;
 
+// Fase 120: referencia por skill/cola x mes, calculada LOCALMENTE a partir
+// de los 3 archivos reales que mando InCo (TIPIFICACIONES.xlsx,
+// LLAMADAS_PARA_PLATAFORMA*.xlsx, WPP_PARA_LA_PLATAFORMA*.xlsx -- 6
+// archivos = 3 contenidos distintos, confirmado por hash/filas). Son
+// AGREGADOS operativos (conteos de llamadas/chats por skill y mes), del
+// mismo nivel de sensibilidad que la tabla "Numeros de control" que ya
+// vive en PROGRESS.md -- nunca un dato de paciente. Sirve para una
+// verificacion "dato por dato" mas fuerte que solo el total: cuenta de
+// filas exacta + suma exacta por skill/mes + 0 duplicados.
+const REFERENCIA_LLAMADAS = {
+  'CALL INBOUND ORLANT 3P': { '2026-08': { total: 4010, contestadas: 3937 }, '2026-09': { total: 4264, contestadas: 4214 } },
+  'CALL INBOUND ORLANT GENERAL': { '2026-08': { total: 4048, contestadas: 3222 }, '2026-09': { total: 4057, contestadas: 3958 } },
+  'REGIMEN ESPECIALES': { '2026-08': { total: 850, contestadas: 802 }, '2026-09': { total: 722, contestadas: 711 } },
+};
+const REFERENCIA_LLAMADAS_FILAS = 150;
+
+const REFERENCIA_WHATSAPP = {
+  'WHATSAPP ORLANT 3P': { '2026-08': { total: 4712, contestados: 4697 }, '2026-09': { total: 5237, contestados: 5225 } },
+  'WHATSAPP ORLANT GENERAL': { '2026-08': { total: 1471, contestados: 1467 }, '2026-09': { total: 1721, contestados: 1718 } },
+  'WHATSAPP AUDIFONOS': { '2026-08': { total: 729, contestados: 729 }, '2026-09': { total: 746, contestados: 746 } },
+  'WHATSAPP FONOAUDIOLOGIA': { '2026-08': { total: 187, contestados: 187 }, '2026-09': { total: 209, contestados: 209 } },
+  'WHATSAPP VESTIBULAR': { '2026-08': { total: 196, contestados: 196 } },
+  'WHATSAPP TINNITUS': { '2026-08': { total: 37, contestados: 37 } },
+  'WHATSAPP FONIATRIA': { '2026-08': { total: 29, contestados: 29 }, '2026-09': { total: 54, contestados: 54 } },
+  'WHATSAPP PAUTAS': { '2026-08': { total: 29, contestados: 28 }, '2026-09': { total: 1, contestados: 1 } },
+};
+const REFERENCIA_WHATSAPP_FILAS = 258;
+const REFERENCIA_WHATSAPP_AHT_NUMERICAS_ESPERADAS = 0; // confirmado local: 258/258 filas traen "----"
+
+const REFERENCIA_TIPIFICACION_SKILL_MES = {
+  'LINEA DE SALIDA': { '2026-08': 6560, '2026-09': 10404 },
+  'CALL INBOUND ORLANT 3P': { '2026-08': 3957, '2026-09': 4229 },
+  'REGIMEN ESPECIALES': { '2026-08': 804, '2026-09': 719 },
+  'CALL INBOUND ORLANT GENERAL': { '2026-08': 3229, '2026-09': 3971 },
+  'CANCELACIONES Y REPROGRAMACION': { '2026-08': 390, '2026-09': 392 },
+  'ATENCION TUTELAS': { '2026-09': 6 },
+};
+const REFERENCIA_TIPIFICACION_FILAS = 34661;
+
 const OCULTAS_ESPERADAS = ['Ordenamiento Médico', 'Recuperación de Cancelados', 'Flujo Mensual', 'Salida', 'Gestión STA'];
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
@@ -118,6 +157,47 @@ async function canvasesSinDibujar(page) {
   });
 }
 
+// Fase 120: veredicto MAS PRECISO por sub-vista -- a diferencia de
+// canvasesSinDibujar() (que SALTA todo el chequeo si aparece CUALQUIER
+// "Sin datos de..." en el panel), esto distingue 3 casos reales:
+//   'dibujo'          -- hay al menos un canvas visible con pixeles reales.
+//   'mensaje_claro'   -- no hay canvas con pixeles, pero el panel SI trae un
+//                        texto explicito tipo "Sin datos..."/"no disponible".
+//   'EN_BLANCO'       -- no hay canvas con pixeles Y NO hay ningun mensaje
+//                        explicando por que (el hallazgo que esta fase
+//                        busca: el AHT de WhatsApp salia asi).
+async function veredictoSubvista(page) {
+  return page.evaluate(() => {
+    const host = document.getElementById('gd-panels');
+    if (!host) return { veredicto: 'sin-panel', texto: '' };
+    const texto = (host.innerText || '').trim();
+    const canvases = Array.from(host.querySelectorAll('canvas')).filter((c) => {
+      const style = getComputedStyle(c);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    let algunConPixeles = false;
+    canvases.forEach((c) => {
+      const rect = c.getBoundingClientRect();
+      if (rect.width < 5 || rect.height < 5) return;
+      let ctx; try { ctx = c.getContext('2d'); } catch (e) { return; }
+      if (!ctx) return;
+      let data; try { data = ctx.getImageData(0, 0, c.width, c.height).data; } catch (e) { return; }
+      for (let i = 3; i < data.length; i += 4) { if (data[i] !== 0) { algunConPixeles = true; break; } }
+    });
+    if (algunConPixeles) return { veredicto: 'dibujo', texto: texto.slice(0, 800), canvases: canvases.length };
+    const hayMensajeExplicito = /sin datos|no disponible|no se entrega|no aplica|sin informaci[oó]n/i.test(texto);
+    // Un host con texto MUY corto (sin tablas/tarjetas/leyendas) y sin
+    // ningun canvas es sospechoso de estar genuinamente vacio aunque no
+    // matchee el patron de mensaje -- se deja igual el texto completo
+    // (recortado) en el reporte para que un humano lo revise.
+    return {
+      veredicto: hayMensajeExplicito ? 'mensaje_claro' : (texto.length < 3 ? 'EN_BLANCO' : 'revisar'),
+      texto: texto.slice(0, 800),
+      canvases: canvases.length,
+    };
+  });
+}
+
 // Fase 118: exportar Excel desde cada pestaña y confirmar que la descarga
 // realmente se dispara (_gdExportExcel usa XLSX.writeFile -- descarga de
 // blob en el cliente, sin ida al servidor).
@@ -174,9 +254,13 @@ async function correrChequeosAdmin(page) {
     log('ADVERTENCIA: siguen activos (puede ser legitimo si ya tienen otra contraseña):', activosConEjemplo.map((u) => u.user).join(', '));
   }
 
-  // ══ 2. Las 7 pestañas de ORLANT: abre cada una, canvas con pixeles, sin errores ══
+  // ══ 2. Las 7 pestañas de ORLANT, Y CADA SUB-VISTA (Fase 120: hallazgo de
+  // fondo -- las Fases 112-119 solo miraban la sub-vista que abre por
+  // defecto; asi se le escapo el AHT de WhatsApp en blanco). ══
   await page.evaluate(() => openGenericDashboard('ORLANT'));
   await page.waitForTimeout(1200);
+  const subvistas = {};
+  const enBlancoSinMensaje = [];
   const nTabs = await page.locator('#gd-tabs .atab').count();
   for (let i = 0; i < nTabs; i++) {
     const tab = page.locator('#gd-tabs .atab').nth(i);
@@ -186,6 +270,25 @@ async function correrChequeosAdmin(page) {
     const malos = await canvasesSinDibujar(page);
     reporte.pestanas[label] = { canvasesSinDibujar: malos };
     malos.forEach((m) => hallazgosCanvas.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
+
+    subvistas[label] = {};
+    const nSub = await page.locator('.gd-subtab-btn').count();
+    if (nSub > 0) {
+      for (let s = 0; s < nSub; s++) {
+        const subBtn = page.locator('.gd-subtab-btn').nth(s);
+        const subLabel = (await subBtn.textContent() || '').trim();
+        await subBtn.click();
+        await page.waitForTimeout(900);
+        const v = await veredictoSubvista(page);
+        subvistas[label][subLabel] = v;
+        if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ' > ' + subLabel + ': "' + v.texto + '"');
+      }
+    } else {
+      const v = await veredictoSubvista(page);
+      subvistas[label]['(sin sub-pestañas)'] = v;
+      if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ': "' + v.texto + '"');
+    }
+
     try {
       const nombreDescarga = await exportarYVerificarDescarga(page);
       exportsOk[label] = { ok: !!nombreDescarga, archivo: nombreDescarga };
@@ -196,6 +299,49 @@ async function correrChequeosAdmin(page) {
     await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
   }
   reporte.exports = exportsOk;
+  reporte.subvistas = subvistas;
+  reporte.enBlancoSinMensaje = enBlancoSinMensaje;
+
+  // ══ 2b. Fase 120: la sub-vista AHT de Tráfico de WhatsApp, puntual --
+  // es el hallazgo original que disparo esta fase. La confirma explicita
+  // aparte, con mas detalle, ademas del barrido generico de arriba. ══
+  await page.locator('#gd-tabs .atab', { hasText: 'Tráfico de WhatsApp' }).first().click().catch(() => {});
+  await page.waitForTimeout(1000);
+  const ahtBtnWpp = page.locator('.gd-subtab-btn', { hasText: 'AHT' }).first();
+  if (await ahtBtnWpp.count()) {
+    await ahtBtnWpp.click();
+    await page.waitForTimeout(900);
+    reporte.ahtWhatsappVeredicto = await veredictoSubvista(page);
+  } else {
+    reporte.ahtWhatsappVeredicto = { veredicto: 'sub-pestaña-no-existe (puede ya estar quitada por el PR de esta fase)' };
+  }
+
+  // ══ 2c. Fase 120: recorte de cabecera a pantalla completa reportado por
+  // InCo (~1878x850) -- confirma si "Dashboard Clínica Orlant" y el titulo
+  // de seccion quedan tapados/cortados, midiendo posiciones reales, no
+  // solo mirando una captura. ══
+  await page.setViewportSize({ width: 1878, height: 850 }).catch(() => {});
+  await page.waitForTimeout(500);
+  reporte.recorteCabecera = await page.evaluate(() => {
+    const out = { };
+    const titulo = document.getElementById('gd-title');
+    const barraFija = document.querySelector('#gd-tabs') || document.querySelector('.gd-header-fija');
+    if (titulo) {
+      const r = titulo.getBoundingClientRect();
+      out.tituloRect = { top: r.top, bottom: r.bottom, visible: r.top >= 0 };
+    }
+    if (barraFija) {
+      const r = barraFija.getBoundingClientRect();
+      out.barraFijaRect = { top: r.top, bottom: r.bottom };
+    }
+    if (titulo && barraFija) {
+      const rt = titulo.getBoundingClientRect(), rb = barraFija.getBoundingClientRect();
+      out.tituloTapadoPorBarra = rt.bottom > rb.top && rt.top < rb.bottom;
+    }
+    return out;
+  });
+  await page.setViewportSize({ width: 1440, height: 900 }).catch(() => {});
+  await page.waitForTimeout(500);
 
   // ══ 3. Numeros de control ══
   await page.evaluate(() => { if (typeof _gdIrAMes === 'function') _gdIrAMes('2026-09'); });
@@ -246,6 +392,69 @@ async function correrChequeosAdmin(page) {
     return typeof esperado === 'number' && Math.abs(real - esperado) > 0.01;
   }).map((k) => `${k}: esperado ${ESPERADO[k]}, real ${n[k]}`);
 
+  // ══ 3b. Fase 120: "dato por dato" contra los 3 archivos reales -- no
+  // solo totales. Cuenta de filas exacta + suma exacta por skill/cola x
+  // mes + 0 duplicados (skill|cola, fecha), para Llamadas, WhatsApp y
+  // Tipificacion (esta ultima por skill x mes, ver REFERENCIA_* arriba). ══
+  const datoPorDato = await page.evaluate(async (ref) => {
+    const out = { llamadas: {}, whatsapp: {}, tipificacion: {} };
+
+    const diario = await apiRequest('GET', '/calidad/nivel-servicio/diario?campana=ORLANT');
+    out.llamadas.filasReales = diario.length;
+    out.llamadas.filasEsperadas = ref.llamadasFilas;
+    const clavesLl = diario.map((r) => r.skillName + '|' + r.fecha);
+    out.llamadas.duplicados = clavesLl.length - new Set(clavesLl).size;
+    out.llamadas.diferencias = [];
+    for (const [skill, porMes] of Object.entries(ref.llamadas)) {
+      for (const [mes, esperado] of Object.entries(porMes)) {
+        const filasSkillMes = diario.filter((r) => r.skillName === skill && r.fecha.slice(0, 7) === mes);
+        const total = filasSkillMes.reduce((a, r) => a + (Number(r.totalLlamadas) || 0), 0);
+        const contestadas = filasSkillMes.reduce((a, r) => a + (Number(r.contestadas) || 0), 0);
+        if (total !== esperado.total || contestadas !== esperado.contestadas) {
+          out.llamadas.diferencias.push(`${skill} ${mes}: esperado ${esperado.total}/${esperado.contestadas}, real ${total}/${contestadas}`);
+        }
+      }
+    }
+
+    const wpp = await apiRequest('GET', '/calidad/trafico/whatsapp?campana=ORLANT');
+    out.whatsapp.filasReales = wpp.length;
+    out.whatsapp.filasEsperadas = ref.whatsappFilas;
+    const clavesW = wpp.map((r) => r.colaWhatsapp + '|' + r.fechaInicio);
+    out.whatsapp.duplicados = clavesW.length - new Set(clavesW).size;
+    out.whatsapp.ahtNumericas = wpp.filter((r) => typeof r.ahtSegundos === 'number' && !isNaN(r.ahtSegundos)).length;
+    out.whatsapp.diferencias = [];
+    for (const [cola, porMes] of Object.entries(ref.whatsapp)) {
+      for (const [mes, esperado] of Object.entries(porMes)) {
+        const filasColaMes = wpp.filter((r) => r.colaWhatsapp === cola && r.fechaInicio.slice(0, 7) === mes);
+        const total = filasColaMes.reduce((a, r) => a + (Number(r.totalWhatsapp) || 0), 0);
+        const contestados = filasColaMes.reduce((a, r) => a + (Number(r.contestados) || 0), 0);
+        if (total !== esperado.total || contestados !== esperado.contestados) {
+          out.whatsapp.diferencias.push(`${cola} ${mes}: esperado ${esperado.total}/${esperado.contestados}, real ${total}/${contestados}`);
+        }
+      }
+    }
+
+    out.tipificacion.filasEsperadas = ref.tipifFilas;
+    out.tipificacion.diferencias = [];
+    let sumaTipifReal = 0;
+    for (const [skill, porMes] of Object.entries(ref.tipificacion)) {
+      for (const [mes, esperado] of Object.entries(porMes)) {
+        const canal = 'LLAMADAS'; // las 3 skills de Tipificacion de este archivo son todas de voz
+        const r = await apiRequest('GET', `/calidad/tipificacion/por-tipo?campana=ORLANT&canal=${canal}&skill=${encodeURIComponent(skill)}&mes=${mes}`);
+        sumaTipifReal += r.total;
+        if (r.total !== esperado) out.tipificacion.diferencias.push(`${skill} ${mes}: esperado ${esperado}, real ${r.total}`);
+      }
+    }
+    out.tipificacion.sumaDeTodosLosSkillMesReferenciados = sumaTipifReal;
+
+    return out;
+  }, {
+    llamadas: REFERENCIA_LLAMADAS, llamadasFilas: REFERENCIA_LLAMADAS_FILAS,
+    whatsapp: REFERENCIA_WHATSAPP, whatsappFilas: REFERENCIA_WHATSAPP_FILAS,
+    tipificacion: REFERENCIA_TIPIFICACION_SKILL_MES, tipifFilas: REFERENCIA_TIPIFICACION_FILAS,
+  });
+  reporte.datoPorDato = datoPorDato;
+
   // ══ 4. Fase 113: mi propio login queda en el Historial + "Ultimo ingreso"
   // se actualiza + "Cambiar mi contrasena" aparece en el menu, SIN usarla ══
   const hist113 = await page.evaluate(() => apiRequest('GET', '/historial'));
@@ -286,9 +495,17 @@ async function correrChequeosAdmin(page) {
   reporte.peticionesFallidas = peticionesFallidas;
   const exportsFallidos = Object.keys(exportsOk).filter((k) => !exportsOk[k].ok);
 
+  const datoPorDatoOk =
+    datoPorDato.llamadas.filasReales === datoPorDato.llamadas.filasEsperadas &&
+    datoPorDato.llamadas.duplicados === 0 && datoPorDato.llamadas.diferencias.length === 0 &&
+    datoPorDato.whatsapp.filasReales === datoPorDato.whatsapp.filasEsperadas &&
+    datoPorDato.whatsapp.duplicados === 0 && datoPorDato.whatsapp.diferencias.length === 0 &&
+    datoPorDato.tipificacion.diferencias.length === 0;
+
   reporte.ok =
     erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 &&
-    fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0;
+    fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
+    datoPorDatoOk && enBlancoSinMensaje.length === 0;
 
   // Cierra sesion admin antes de soltar esta pagina -- nunca deja el
   // navegador logueado como admin al terminar este bloque.

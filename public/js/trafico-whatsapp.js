@@ -41,6 +41,14 @@ var _traficoWpp = {}; // cache por campana: { filas: [...] } (GET /calidad/trafi
 var _traficoWppEstado = {}; // estado de filtros actual por campana (mismo patron que _traficoEstado, trafico.js)
 var _traficoWppAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
 var _traficoWppSubtabActivo = {}; // por campana -> key de subtab activa
+// Fase 120: Wolkvox nunca entrega AHT de WhatsApp (confirmado contra los
+// archivos reales de ago-sep/2026 -- columna AHT siempre "----", 0 filas
+// numericas de 258) -- el panel (p.mostrarAht, dashboard-config-seed.js /
+// migracion dashboards_config_orlant_whatsapp_sin_aht_v1 en server/db.js)
+// puede desactivarlo por campana. Default true (si el campo no viene, ej.
+// un cliente nuevo sin ese ajuste, o Trafico de Llamadas que no usa este
+// archivo) para no romper nada que no se haya migrado explicitamente.
+var _traficoWppMostrarAht = {};
 // Fase 86 (tema 3): mismo patron que _traficoMesSincronizado (trafico.js).
 var _traficoWppMesSincronizado = {};
 var _traficoWppSinDatosMesGlobal = {};
@@ -125,6 +133,9 @@ function _traficoWppGuardarEstadoURL(estado){
 
 async function _traficoWppRenderPanel(p, i) {
   var campana = p.campana;
+  // Fase 120: solo `false` explicito apaga el AHT -- cualquier otro valor
+  // (true, undefined en una instalacion vieja) lo deja encendido.
+  _traficoWppMostrarAht[campana] = (p.mostrarAht !== false);
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
@@ -198,6 +209,14 @@ async function _traficoWppRenderPanel(p, i) {
 
   var GRAN_LABEL = { mes:'Mes', anio:'Año' };
   var subActivo = _traficoWppSubtabActivo[campana] || 'resumen';
+  // Fase 120: si quedo guardado 'aht' de antes de apagarlo (URL vieja
+  // compartida, o estado en memoria de una sesion anterior), cae a Resumen
+  // en vez de intentar mostrar una sub-pestana que ya no existe en el nav.
+  if (subActivo === 'aht' && !_traficoWppMostrarAht[campana]) {
+    subActivo = 'resumen';
+    _traficoWppSubtabActivo[campana] = 'resumen';
+  }
+  var subtabsWpp = _traficoWppMostrarAht[campana] ? TRAFICO_WPP_SUBTABS : TRAFICO_WPP_SUBTABS.filter(function(s){ return s.key !== 'aht'; });
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
@@ -216,7 +235,7 @@ async function _traficoWppRenderPanel(p, i) {
         '</span>' +
       '</div>' +
       '<div class="gd-subtabs" id="tww-subtabs-'+i+'">' +
-        _traficoSubtabsNavHTML('tww', i, subActivo, '_traficoWppSwitchSubtab', 'trafwppsub', TRAFICO_WPP_SUBTABS) +
+        _traficoSubtabsNavHTML('tww', i, subActivo, '_traficoWppSwitchSubtab', 'trafwppsub', subtabsWpp) +
       '</div>' +
       '<div id="tww-content-'+i+'"></div>' +
     '</div>';
@@ -233,6 +252,7 @@ function _traficoWppRenderSubtabContent(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
   var activo = _traficoWppSubtabActivo[campana] || 'resumen';
+  if (activo === 'aht' && !_traficoWppMostrarAht[campana]) activo = 'resumen';
   content.innerHTML = _traficoSubtabContentHTML('tww', i, activo, TRAFICO_WPP_SUBTAB_TITULOS);
   _traficoWppRenderContenido(i);
 }
@@ -240,6 +260,7 @@ function _traficoWppRenderSubtabContent(i){
 function _traficoWppSwitchSubtab(i, key){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
+  if (key === 'aht' && !_traficoWppMostrarAht[campana]) key = 'resumen';
   _traficoWppSubtabActivo[campana] = key;
   var nav = document.getElementById('tww-subtabs-'+i);
   if(nav) Array.prototype.forEach.call(nav.querySelectorAll('.gd-subtab-btn'), function(btn){
@@ -338,7 +359,9 @@ function _traficoWppRenderContenido(i){
   var agregadoComb = estado.combinar ? agregado : traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: true });
 
   _traficoDibujarAbandono('tww', i, agregadoComb);
-  _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);
+  // Fase 120: Wolkvox no entrega AHT de WhatsApp -- ni se dibuja ni se
+  // calcula cuando el panel lo tiene apagado (p.mostrarAht:false).
+  if (_traficoWppMostrarAht[campana]) _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);
   _traficoDibujarAsaAta('tww', i, agregadoComb, _traficoWppFmtTiempo);
   // Fase 87 (tema B) / Fase 90 (tema A): WhatsApp grafica LAS DOS series --
   // 5 minutos como principal/resaltada (primera en la leyenda, linea mas
@@ -362,7 +385,7 @@ function _traficoWppDatosExport(i){
   var campana = host ? host.dataset.campana : null;
   var agregado = _traficoWppAgregadoActual[campana] || [];
   return agregado.map(function(a){
-    return {
+    var fila = {
       Periodo: a.periodo,
       Cola: a.skillName || 'Todas (combinado)',
       'Total WhatsApp': a.totalLlamadas,
@@ -377,8 +400,12 @@ function _traficoWppDatosExport(i){
       '% Service Level 20s': a.serviceLevel20secPct,
       'ASA (seg)': a.asaSegundos,
       'ATA (seg)': a.ataSegundos,
-      'AHT (seg)': a.ahtSegundos,
     };
+    // Fase 120: Wolkvox no entrega AHT de WhatsApp -- la columna se omite
+    // del export cuando el panel lo tiene apagado (p.mostrarAht:false), en
+    // vez de exportar una columna siempre vacia sin explicacion.
+    if (_traficoWppMostrarAht[campana]) fila['AHT (seg)'] = a.ahtSegundos;
+    return fila;
   });
 }
 
