@@ -261,15 +261,18 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
     });
     plan.push({
       tipo: 'trafico', canalFijo: 'whatsapp', hoja: CARGAS_HOJA_TRAFICO_WHATSAPP, titulo: 'Trafico de WhatsApp (Wolkvox)',
-      descripcion: 'Una fila por cola y periodo (FECHA INICIO..FECHA FIN), tal cual el export de WhatsApp de Wolkvox.',
+      descripcion: 'Una fila por cola y DIA, tal cual el export de WhatsApp de Wolkvox (Fase 116).',
       filaUnica: false, columnas: traficoWppCols,
       notasExtra: [
-        'De donde sale: export de WhatsApp de Wolkvox (una fila por cola y periodo, no por dia).',
+        'De donde sale: export diario de WhatsApp de Wolkvox (una fila por cola/skill y dia, igual que Llamadas).',
         'Ejemplo de fila (NO la escribas en esta hoja de datos, es solo referencia):',
-        '  NOMBRE_COLA_WHATSAPP=WHATSAPP ORLANT 3P | FECHA INICIO=2026-08-01 | FECHA FIN=2026-08-31 | ' +
-          'TOTAL WHATSAPP=1500 | WHATSAPP CONTESTADOS=1460',
-        'Si vuelves a subir una cola+periodo que ya existia, se actualiza en el mismo lugar (no se ' +
-          'duplica) — a diferencia de Llamadas, aqui no se pide confirmacion previa, se actualiza directo.',
+        '  SKILL_NAME=WHATSAPP ORLANT 3P | DATE=2026-08-03 | INBOUND_CALLS=161 | ' +
+          'ANSWER_CALLS=158 | ABANDON_CALLS=3 | AHT=----',
+        'Si vuelves a subir una cola+dia que ya existia, se actualiza en el mismo lugar (no se duplica) — ' +
+          'el sistema te muestra antes cuantos registros existentes se van a reemplazar y cuantos se van a ' +
+          'borrar (los dias que ya no vienen en el archivo nuevo, dentro del rango que si trae) y pide que confirmes.',
+        'ASA/ATA/AHT van en SEGUNDOS como numero (acepta separador de miles, ej. "27,554.56"), nunca en formato ' +
+          'de HORA de Excel -- a diferencia de Llamadas. AHT "----" se trata como "sin dato" (nunca 0).',
         'Esta nota manda sobre la seccion general "FORMATOS" de mas abajo para esta hoja: ' +
           'SERVICE_LEVEL_10/20/30SEC/5MIN aceptan "93.55" o "93.55 %" (con o sin el simbolo).',
         // Fase 87 (tema B, nota del jefe: "En WhatsApp el nivel de servicio
@@ -454,8 +457,18 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
 // modulo (traficoColIndexMap / traficoWppColIndexMap), inyectados igual que
 // el resto de parsers de este archivo para no depender de trafico-logic.js
 // ni trafico-whatsapp-logic.js aqui.
-function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp) {
-  var esWhatsapp = colIndexMapWpp(headerRow || []).colaWhatsapp !== undefined;
+//
+// `esWppDiario` (Fase 116, opcional): detector del formato DIARIO real de
+// WhatsApp (traficoWppEsFormatoDiario, trafico-whatsapp-logic.js) -- SKILL_NAME
+// + DATE ahi son AMBIGUOS con voz (los 2 formatos los comparten), asi que
+// colIndexMapWpp().colaWhatsapp no alcanza para distinguirlos; este detector
+// mira ademas INBOUND_CALLS/ANSWER_CALLS (unicas del formato WhatsApp diario,
+// nunca apareren en voz). Sin este parametro, el comportamiento es
+// EXACTAMENTE igual al de siempre (solo formato periodo vs. voz).
+function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp, esWppDiario) {
+  var header = headerRow || [];
+  if (esWppDiario && esWppDiario(header)) return 'whatsapp';
+  var esWhatsapp = colIndexMapWpp(header).colaWhatsapp !== undefined;
   return esWhatsapp ? 'whatsapp' : 'voz';
 }
 

@@ -136,6 +136,38 @@ function tipificacionParseDuracion(v) {
   return Number.isFinite(n) ? Math.round(n) : null;
 }
 
+// Fase 116 (archivo real HistCDR de Edwin, export completo de Wolkvox): DATE
+// ahi trae FECHA Y HORA juntas en una sola celda (serial de Excel con
+// fraccion de dia), a diferencia del formato viejo "hoja DATA" (fecha sola,
+// HORA en columna aparte). Ademas, con cellNF:true (necesario para que
+// Trafico detecte el formato de % real, ver cargas.js) SheetJS convierte esa
+// celda numerica a un objeto Date dentro de XLSX.utils.sheet_to_json(ws,
+// {header:1}) -- mismo hallazgo exacto que WAIT_TIME/AHT en
+// traficoValorCrudoSiFechaBoxeada (trafico-logic.js, Fase 115): esa
+// conversion depende de la zona horaria LOCAL de quien sube el archivo (acá
+// confirmado contra el archivo real: Bogota, -5h, boxea "18:06:08" local
+// como "23:06:07.999Z"), asi que leer HORA desde el objeto Date boxeado con
+// getters UTC daria la hora CORRIDA 5 horas. En vez de eso, se recupera el
+// valor NUMERICO original directamente de la celda cruda (`ws`), que
+// SheetJS nunca altera -- de ahi la aritmetica pura (Math.floor para la
+// fecha, fraccion*86400 para la hora) queda sin ninguna dependencia de zona
+// horaria. Mismos helpers duplicados a proposito (criterio ya establecido en
+// este archivo "gemelo" de trafico-logic.js).
+function tipificacionCeldaRef(fila0based, col0based) {
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + (fila0based + 1);
+}
+function tipificacionValorCrudoSiFechaBoxeada(v, ws, fila0based, col0based) {
+  if (!(v instanceof Date) || !ws) return v;
+  var cell = ws[tipificacionCeldaRef(fila0based, col0based)];
+  return (cell && cell.t === 'n' && typeof cell.v === 'number') ? cell.v : v;
+}
+
 // ── Presentacion (NUNCA se guarda asi, solo para mostrar): "_" -> espacio,
 // y el valor COMPLETO "-" -> "Sin tipificacion". Cualquier otro valor con
 // un "-" que no sea el marcador exacto de "sin tipificar" no se toca
@@ -150,7 +182,13 @@ function tipificacionEtiqueta(valorOriginal) {
 }
 
 // ── Parseo de filas (aoa = array-of-arrays, fila 0 = encabezados) ───────
-function tipificacionParseFilas(aoa) {
+// `ws` (Fase 116, opcional): worksheet CRUDO de SheetJS -- si viene, DATE se
+// recupera sin el boxeo a Date (ver tipificacionValorCrudoSiFechaBoxeada) y,
+// cuando el archivo NO trae columna HORA separada (export completo HistCDR),
+// la hora se saca de la fraccion de dia de ESE MISMO valor de DATE. Sin `ws`
+// (o con el formato viejo, que SI trae HORA aparte), el comportamiento es
+// EXACTAMENTE igual al de siempre.
+function tipificacionParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = tipificacionColIndexMap(aoa[0]);
   var faltantes = TIPIFICACION_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -170,8 +208,18 @@ function tipificacionParseFilas(aoa) {
     var agente = tipificacionNormTexto(row[map.agente]);
     var tipificacion = tipificacionNormTexto(row[map.tipificacion]);
     var skill = tipificacionNormTexto(row[map.skill]);
-    var fecha = tipificacionParseFecha(row[map.fecha]);
-    var hora = map.hora !== undefined ? tipificacionParseHora(row[map.hora]) : null;
+    var fechaCrudo = ws ? tipificacionValorCrudoSiFechaBoxeada(row[map.fecha], ws, i, map.fecha) : row[map.fecha];
+    var fecha = tipificacionParseFecha(fechaCrudo);
+    // Sin columna HORA propia (export completo HistCDR, Fase 116): si DATE
+    // trae fraccion de dia (hora real pegada a la fecha), se saca de ahi --
+    // nunca si la fraccion es exactamente 0 (fecha sin hora, no se inventa
+    // "00:00:00" como si fuera un dato real).
+    var horaDesdeFecha = null;
+    if (map.hora === undefined && typeof fechaCrudo === 'number') {
+      var fraccionFecha = fechaCrudo - Math.floor(fechaCrudo);
+      if (fraccionFecha > 1e-6) horaDesdeFecha = tipificacionParseHora(fechaCrudo);
+    }
+    var hora = map.hora !== undefined ? tipificacionParseHora(row[map.hora]) : horaDesdeFecha;
     var duracionMin = map.duracionMin !== undefined ? tipificacionParseDuracion(row[map.duracionMin]) : null;
 
     if (!agente || !tipificacion || !skill) {
@@ -234,6 +282,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     TIPIFICACION_COLUMNAS: TIPIFICACION_COLUMNAS,
     TIPIFICACION_ORDEN_ARRAY: TIPIFICACION_ORDEN_ARRAY,
+    tipificacionCeldaRef: tipificacionCeldaRef,
+    tipificacionValorCrudoSiFechaBoxeada: tipificacionValorCrudoSiFechaBoxeada,
     tipificacionColIndexMap: tipificacionColIndexMap,
     tipificacionNormTexto: tipificacionNormTexto,
     tipificacionParseFecha: tipificacionParseFecha,

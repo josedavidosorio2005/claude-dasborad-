@@ -99,13 +99,12 @@ function _cargasTraficoColumnas(){
   return TRAFICO_COLUMNAS.map(function(c){ return { key:c.key, label:c.label, opcional: !c.obligatoria }; })
     .concat([{ key:'mes', label:'MES', opcional:true }, { key:'anio', label:'AÑO', opcional:true }]);
 }
-// Fase 66 — columnas EXACTAS de las hojas LLAMADAS/WHATSAPP del archivo
-// unificado de ORLANT (server/tests/fixtures/PLANTILLA_TRAFICO_UNIFICADA_
-// ORLANT.xlsx, la especificacion real que aprobo el cliente — verificado
-// letra por letra contra ese archivo, no reconstruido de memoria).
-// WHATSAPP coincide ademas 12/12 con la plantilla estatica general
-// (server/plantillas/PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx,
-// hoja DATA). LLAMADAS coincide con la estatica general
+// Fase 66 — columnas EXACTAS de la hoja LLAMADAS del archivo unificado de
+// ORLANT (server/tests/fixtures/PLANTILLA_TRAFICO_UNIFICADA_ORLANT.xlsx, la
+// especificacion real que aprobo el cliente — verificado letra por letra
+// contra ese archivo, no reconstruido de memoria). WHATSAPP (funcion de
+// abajo) ya NO coincide con esa plantilla estatica vieja -- ver Fase 116,
+// cambio al formato diario real de Wolkvox. LLAMADAS coincide con la estatica general
 // (PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx) SOLO en las primeras 13
 // columnas -- esa plantilla vieja trae ademas NIVEL DE ATENCION/TASA DE
 // ABNDONO/MES/AÑO al final, que la plantilla unificada NO incluye (decision
@@ -139,32 +138,39 @@ function _cargasTraficoLlamadasColumnasUnificado(){
     { label:'AHT', opcional:true },
   ];
 }
+// Fase 116 (archivo real de Edwin, ago-sep/2026): Wolkvox exporta WhatsApp en
+// el MISMO formato diario que voz (SKILL_NAME + DATE, una fila por cola y
+// dia) -- reemplaza la lista vieja de la plantilla por periodo
+// (NOMBRE_COLA_WHATSAPP/FECHA INICIO/FECHA FIN/TOTAL WHATSAPP/WHATSAPP
+// CONTESTADOS), que traficoWppParseFilas (trafico-whatsapp-logic.js) sigue
+// aceptando igual si alguien llega a subir un archivo viejo con esas
+// columnas (el dispatcher detecta el formato por el encabezado, ver
+// traficoWppEsFormatoDiario) -- solo esta lista (la de la plantilla
+// DESCARGABLE y el reconocimiento por encabezados del modal) pasa a
+// describir el formato real que se usa de ahora en adelante.
 function _cargasTraficoWhatsappColumnasUnificado(){
   return [
-    { label:'NOMBRE_COLA_WHATSAPP', opcional:false },
-    { label:'FECHA INICIO', opcional:false },
-    { label:'FECHA FIN', opcional:false },
-    { label:'TOTAL WHATSAPP', opcional:false },
-    { label:'WHATSAPP CONTESTADOS', opcional:false },
-    { label:'WHATSAPP ABANDONADOS', opcional:true },
+    { label:'SKILL_NAME', opcional:false },
+    { label:'DATE', opcional:false },
+    { label:'INBOUND_CALLS', opcional:false },
+    { label:'ANSWER_CALLS', opcional:false },
+    { label:'ABANDON_CALLS', opcional:true },
     { label:'SERVICE_LEVEL_10SEC', opcional:true },
     { label:'SERVICE_LEVEL_20SEC', opcional:true },
     { label:'SERVICE_LEVEL_30SEC', opcional:true },
     // SERVICE_LEVEL_5MIN (Fase 87, tema B, nota del jefe: "En WhatsApp el
-    // nivel de servicio es de 5 minutos") -- columna opcional nueva; el
-    // cargador (traficoWppColIndexMap, trafico-whatsapp-logic.js) tambien
+    // nivel de servicio es de 5 minutos") -- columna opcional; el cargador
+    // (traficoWppColIndexMapDiario, trafico-whatsapp-logic.js) tambien
     // acepta SERVICE_LEVEL_300SEC/"NIVEL DE SERVICIO 5 MIN" como alias si el
-    // export de Wolkvox trae otro nombre, pero la plantilla siempre ofrece
-    // este (el mas claro para quien la llena a mano).
+    // export de Wolkvox trae otro nombre.
     { label:'SERVICE_LEVEL_5MIN', opcional:true },
-    { label:'ABANDONO', opcional:true },
+    { label:'ABANDON', opcional:true },
     { label:'ASA', opcional:true },
     { label:'ATA', opcional:true },
-    // AHT (Fase 68, Pedido 5, Edwin 23/09): columna opcional nueva -- la
-    // plantilla aprobada por el cliente (12 columnas de arriba) no la
-    // traia. Un archivo viejo sin esta columna sigue cargando igual
-    // (traficoWppParseFilas la trata como opcional -- ver
-    // trafico-whatsapp-logic.js).
+    // WAIT_TIME: Wolkvox la trae pero nunca se lee aqui (Fase 68 retiro Wait
+    // Time de la vista de WhatsApp a pedido de Edwin, no hay columna para
+    // esto en trafico_whatsapp) -- se deja fuera de esta lista a proposito,
+    // una columna que no esta aqui simplemente se ignora sin error.
     { label:'AHT', opcional:true },
   ];
 }
@@ -223,7 +229,7 @@ function _cargasCalidadColumnas(items){
 // cual de los dos es.
 function _cargasParseTraficoAuto(aoa, ws){
   var header = (aoa && aoa[0]) || [];
-  var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap);
+  var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario);
   if(canal === 'whatsapp'){
     var resWpp = traficoWppParseFilas(aoa, ws);
     if(!resWpp.error) resWpp.canal = 'whatsapp';
@@ -418,7 +424,7 @@ async function procesarArchivoConsolidado(input){
   var canalData = null;
   if(wsData){
     var aoaDataHeader = XLSX.utils.sheet_to_json(wsData, {header:1, blankrows:false, defval:null});
-    canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap);
+    canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario);
   }
 
   // Fase 79 (hallazgo real: los archivos ORIGINALES de Edwin traen la hoja
@@ -455,7 +461,7 @@ async function procesarArchivoConsolidado(input){
       var wsCandidata = wb.Sheets[nombre];
       var aoaHeader = XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null});
       if(!cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)) continue;
-      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(aoaHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap) !== h.canalFijo) continue;
+      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(aoaHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }

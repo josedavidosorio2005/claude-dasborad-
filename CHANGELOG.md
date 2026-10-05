@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.11.0 — Octubre 2026
+
+**Novedad: Trafico de WhatsApp acepta el reporte diario real de Wolkvox
+(el mismo formato que ya usa Trafico de Llamadas), y Tipificacion acepta
+el reporte COMPLETO de Wolkvox (HistCDR).** Antes, Trafico de WhatsApp
+solo aceptaba una plantilla con un periodo largo por cola (agosto
+completo, por ejemplo); ahora tambien reconoce el archivo real que
+exporta Wolkvox dia por dia, igual que Llamadas — un archivo viejo con
+el formato de periodo sigue funcionando igual. Tipificacion ahora
+tambien acepta el export completo de Wolkvox (con todas sus columnas,
+incluidas las de datos del paciente) sin sacar la fecha y hora de la
+llamada: esas columnas con datos de pacientes (telefono, comentario,
+identificador de cliente/llamada) nunca salen del navegador ni llegan
+al servidor — el sistema solo toma las columnas que de verdad usa.
+
+**Recordatorio: al subir un archivo de Trafico (Llamadas o WhatsApp) se
+reemplaza todo el periodo que trae el archivo, sin duplicados** (ver
+v1.10.4) — Tipificacion ya funcionaba asi desde que se creo.
+
 ## v1.10.4 — Octubre 2026
 
 **Arreglo: subir un Trafico de Llamadas o de WhatsApp corregido (con un
