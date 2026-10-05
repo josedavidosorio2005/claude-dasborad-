@@ -35,7 +35,13 @@ const MASTER_ADMIN_USER_ESPERADO = 'admin';
 // la Fase 115 (el archivo es el mismo, byte a byte).
 const ESPERADO = {
   tipificacionTotal: 14940 + 19721, // Ago-26 + Sep-26 (export completo HistCDR)
-  llamadasTotal: 17954, llamadasContestadas: 16844, llamadasPendientes: 1110,
+  // Fase 118: estaban en 17954/1110 (3 de mas), desalineados de PROGRESS.md
+  // ("Numeros de control") desde que se corrigieron -- la suma real de
+  // Ago-26 (8.908/7.961/947) + Sep-26 (9.043/8.883/160) es 17951/16844/1107.
+  // Confirmado contra produccion real en la Fase 118 (0 discrepancias tras
+  // este fix); no es un numero que se haya movido en produccion, era el
+  // ESPERADO de este script el que quedo desactualizado.
+  llamadasTotal: 8908 + 9043, llamadasContestadas: 7961 + 8883, llamadasPendientes: 947 + 160,
   // Fase 116: formato diario real de Wolkvox (8 colas) reemplazo la
   // plantilla vieja de periodo -- suma de Ago-26+Sep-26.
   wppTotal: 7390 + 7968, wppContestados: 7370 + 7953, wppPendientes: 20 + 15, wppSl20: null, // SL20 varia por mes, no se suma
@@ -44,6 +50,10 @@ const ESPERADO = {
   rankingEquipoGestiones: 18566, rankingEquipoAgendas: 8319, rankingEquipoEfectividadPct: 44.81,
   efectividadCitasPeriodoAgendas: 1108, efectividadCitasPeriodoAtendidas: 953,
 };
+
+// Fase 118: rutas que SI pueden dar 4xx en el uso normal de este script y no
+// cuentan como "peticion fallida" real.
+const STATUS_IGNORADOS_RE = /\/api\/historial$|\/api\/auth\/login$/;
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
 
@@ -89,9 +99,26 @@ async function canvasesSinDibujar(page) {
   });
 }
 
+// Fase 118: exportar Excel desde cada pestaña y confirmar que la descarga
+// realmente se dispara (_gdExportExcel usa XLSX.writeFile -- descarga de
+// blob en el cliente, sin ida al servidor).
+async function exportarYVerificarDescarga(page) {
+  await page.click('#gd-export-btn');
+  await page.waitForTimeout(200);
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: 15000 }),
+    page.click('#gd-export-menu button:has-text("Excel")'),
+  ]);
+  const nombre = download.suggestedFilename();
+  await download.cancel().catch(() => {}); // no necesitamos guardar el archivo, solo confirmar que se disparo
+  return nombre;
+}
+
 (async () => {
   const erroresConsola = [];
   const hallazgosCanvas = [];
+  const peticionesFallidas = [];
+  const exportsOk = {};
   const reporte = { usuariosEjemplo: {}, pestanas: {}, numeros: {} };
   let ok = true;
   let browser;
@@ -102,6 +129,15 @@ async function canvasesSinDibujar(page) {
     const page = await context.newPage();
     page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
     page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
+    page.on('requestfailed', (req) => {
+      if (STATUS_IGNORADOS_RE.test(req.url())) return;
+      peticionesFallidas.push('requestfailed: ' + req.method() + ' ' + req.url() + ' (' + (req.failure() && req.failure().errorText) + ')');
+    });
+    page.on('response', (res) => {
+      if (res.status() < 400) return;
+      if (STATUS_IGNORADOS_RE.test(res.url())) return;
+      peticionesFallidas.push('http ' + res.status() + ': ' + res.request().method() + ' ' + res.url());
+    });
 
     await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
     const logueado = await esperarLogin(page);
@@ -137,7 +173,17 @@ async function canvasesSinDibujar(page) {
       const malos = await canvasesSinDibujar(page);
       reporte.pestanas[label] = { canvasesSinDibujar: malos };
       malos.forEach((m) => hallazgosCanvas.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
+      try {
+        const nombreDescarga = await exportarYVerificarDescarga(page);
+        exportsOk[label] = { ok: !!nombreDescarga, archivo: nombreDescarga };
+      } catch (e) {
+        exportsOk[label] = { ok: false, error: e.message };
+      }
+      // cierra el menu de exportar si quedo abierto, para no tapar la siguiente pestana
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
     }
+    reporte.exports = exportsOk;
 
     // ══ 3. Numeros de control (misma formula que carga-real-patron.js,
     //    corrida real contra produccion al cerrar la Fase 111) ══
@@ -218,12 +264,62 @@ async function canvasesSinDibujar(page) {
     reporte.erroresConsola = erroresConsola;
     reporte.discrepanciasNumeros = discrepancias;
     reporte.canvasesSinDibujar = hallazgosCanvas;
+    reporte.peticionesFallidas = peticionesFallidas;
+
+    const exportsFallidos = Object.keys(exportsOk).filter((k) => !exportsOk[k].ok);
+
+    // ══ 5. Fase 118: recorrido con un usuario sin admin (CLIENTES_DASH) --
+    // misma sesion del navegador visible, segundo login manual. No se cierra
+    // el browser entre logins (nueva pestaña con un contexto aparte, para no
+    // mezclar cookies con la sesion admin de arriba). ══
+    const page2 = await context.browser().newPage();
+    const erroresConsola2 = [];
+    page2.on('pageerror', (e) => erroresConsola2.push('pageerror: ' + e.message));
+    page2.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola2.push('console.error: ' + m.text()); });
+    await page2.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
+    log('=== AHORA INICIA SESIÓN COMO crodriguez (rol CLIENTES_DASH, sin admin) === (nueva ventana, hasta 10 min)');
+    const logueado2 = await esperarLogin(page2);
+    const clientesDash = { intentado: logueado2 };
+    if (logueado2) {
+      await page2.waitForTimeout(1200);
+      clientesDash.vistaUsuario = await page2.evaluate(() => ({
+        userPageVisible: getComputedStyle(document.getElementById('user-page')).display !== 'none',
+        adminPageOculto: getComputedStyle(document.getElementById('admin-page')).display === 'none',
+        rol: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.rol : null,
+      }));
+      // IDOR / escalada (Fase 102): con el token de este usuario, los
+      // endpoints admin-only deben devolver 403, nunca datos.
+      const escaladas = await page2.evaluate(async () => {
+        async function intentar(method, url) {
+          try { await apiRequest(method, url); return { url, bloqueado: false }; }
+          catch (e) { return { url, bloqueado: e.status === 403 || e.status === 401, status: e.status, mensaje: e.message }; }
+        }
+        return Promise.all([
+          intentar('GET', '/users'),
+          intentar('GET', '/historial'),
+        ]);
+      });
+      clientesDash.escaladasBloqueadas = escaladas;
+      clientesDash.erroresConsola = erroresConsola2;
+      clientesDash.ok =
+        clientesDash.vistaUsuario.userPageVisible &&
+        clientesDash.vistaUsuario.adminPageOculto &&
+        clientesDash.vistaUsuario.rol === 'CLIENTES_DASH' &&
+        escaladas.every((e) => e.bloqueado) &&
+        erroresConsola2.length === 0;
+    } else {
+      log('ADVERTENCIA: no se detecto login de CLIENTES_DASH en 10 min -- recorrido queda SIN VERIFICAR, no se bloquea el resto.');
+    }
+    reporte.clientesDash = clientesDash;
+    await page2.close();
 
     log('=== REPORTE ===');
     console.log(JSON.stringify(reporte, null, 2));
 
-    ok = erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 && fase113Ok;
-    log(ok ? 'OK: 7 pestañas, 0 canvas sin dibujar, 0 errores de consola, números de control exactos, Fase 113 (login/Ultimo ingreso/Cambiar mi contraseña) confirmada.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
+    ok = erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 && fase113Ok &&
+      peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
+      (clientesDash.intentado ? clientesDash.ok : true);
+    log(ok ? 'OK: 7 pestañas, 0 canvas sin dibujar, 0 errores de consola, 0 peticiones fallidas, exports OK, números de control exactos, Fase 113 confirmada, CLIENTES_DASH confirmado.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
   } catch (e) {
     console.error('FALLO:', e.message);
     console.log(JSON.stringify(reporte, null, 2));
