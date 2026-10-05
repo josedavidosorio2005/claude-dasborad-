@@ -361,6 +361,29 @@ test('traficoWppAgregarPorPeriodo: combinado suma volumenes y recalcula % desde 
   assert.equal(p.waitTimeSegundos, null); // WhatsApp nunca tiene este dato
 });
 
+// Fase 120 (mismo hallazgo real que trafico-logic.test.js/traficoAgregar,
+// verificado contra el archivo real de WhatsApp ago-sep/2026): ATA es un
+// tiempo por WhatsApp ABANDONADO, se pondera por `abandonados`, nunca por
+// `totalWhatsapp` -- si pesara (mal) por total (100/50) darian 26.67, bien
+// distinto del correcto (20*8+40*5)/13=16.15.
+test('traficoWppAgregarPorPeriodo: ATA ponderado por ABANDONADOS, no por el total (Fase 120)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 100, contestados: 92, abandonados: 8, ataSegundos: 20 },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 50, contestados: 45, abandonados: 5, ataSegundos: 40 },
+  ];
+  const [p] = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(p.ataSegundos, Math.round(((20 * 8 + 40 * 5) / 13) * 100) / 100);
+});
+
+test('traficoWppAgregarPorPeriodo: un periodo SIN ningun abandono (abandonados:0, ataSegundos:0) no pesa en el promedio (Fase 120)', () => {
+  const filas = [
+    { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 1000, contestados: 1000, abandonados: 0, ataSegundos: 0 },
+    { colaWhatsapp: 'B', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 10, contestados: 5, abandonados: 5, ataSegundos: 300 },
+  ];
+  const [p] = traficoWppAgregarPorPeriodo(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(p.ataSegundos, 300);
+});
+
 test('traficoWppAgregarPorPeriodo: separado (combinar:false) deja una fila por cola, con skillName = la cola', () => {
   const filas = [
     { colaWhatsapp: 'A', fechaInicio: '2026-08-01', fechaFin: '2026-08-31', totalWhatsapp: 100, contestados: 90 },

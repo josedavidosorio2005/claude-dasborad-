@@ -545,11 +545,17 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
   var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'serviceLevel5minPct'];
   // Fase 77 (mismo hallazgo de Edwin que trafico-logic.js/traficoAgregar):
   // AHT/ASA son tiempo por WhatsApp CONTESTADO, no por total -- un chat
-  // abandonado nunca lo atiende un agente. ATA queda por total (sin pedido
-  // de cambiarlo, sin evidencia de que este mal).
-  var PONDERADOS_POR_TOTAL = ['ataSegundos'];
+  // abandonado nunca lo atiende un agente.
+  // Fase 120 (mismo hallazgo real que trafico-logic.js/traficoAgregar,
+  // verificado contra el archivo real de WhatsApp ago-sep/2026): ATA es un
+  // tiempo por WhatsApp ABANDONADO, no por total -- ponderarlo por total
+  // diluye el promedio con periodos de mucho volumen y pocos abandonos.
+  // Ahora pondera por abandonados, igual que AHT/ASA ponderan por
+  // contestados.
+  var PONDERADOS_POR_TOTAL = [];
   var PONDERADOS_POR_CONTESTADAS = ['asaSegundos', 'ahtSegundos'];
-  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS);
+  var PONDERADOS_POR_ABANDONADOS = ['ataSegundos'];
+  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS).concat(PONDERADOS_POR_ABANDONADOS);
 
   filas.forEach(function (f) {
     var periodo = traficoWppPeriodoDe(f.fechaInicio, granularidad);
@@ -566,11 +572,15 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
     var b = buckets[clave];
     var pesoTotal = Number(f.totalWhatsapp) || 0;
     var pesoContestadas = Number(f.contestados) || 0;
+    var pesoAbandonados = Number(f.abandonados) || 0;
     b.totalLlamadas += pesoTotal;
     b.contestadas += pesoContestadas;
     if (f.abandonados != null) { b.llamadasAbandonadas += f.abandonados; b._tieneAbandonadas = true; }
     PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
+    });
+    PONDERADOS_POR_ABANDONADOS.forEach(function (k) {
+      if (f[k] != null && pesoAbandonados > 0) { b['_suma_' + k] += f[k] * pesoAbandonados; b['_peso_' + k] += pesoAbandonados; }
     });
     PONDERADOS_POR_CONTESTADAS.forEach(function (k) {
       if (f[k] != null && pesoContestadas > 0) { b['_suma_' + k] += f[k] * pesoContestadas; b['_peso_' + k] += pesoContestadas; }

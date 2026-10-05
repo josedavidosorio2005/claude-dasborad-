@@ -660,18 +660,44 @@ test('traficoServiceLevelPromedioPeriodo: generica en el campo -- funciona igual
 });
 
 // Fase 77: ASA comparte la misma regla (tiempo hasta que SE CONTESTA,
-// tampoco existe si la llamada nunca se contesto) -- ATA/WAIT_TIME NO
-// cambiaron, siguen ponderados por el total de llamadas.
-test('traficoAgregar: ASA/AHT ponderados por contestadas, ATA/WAIT_TIME ponderados por total (Fase 77)', () => {
+// tampoco existe si la llamada nunca se contesto) -- WAIT_TIME no cambio,
+// sigue ponderado por el total de llamadas.
+test('traficoAgregar: ASA/AHT ponderados por contestadas, WAIT_TIME ponderado por total (Fase 77)', () => {
   const filas = [
-    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 100, contestadas: 50, asaSegundos: 20, ataSegundos: 300, ahtSegundos: 200, waitTimeSegundos: 15 },
-    { fecha: '2026-01-02', skillName: 'A', totalLlamadas: 100, contestadas: 150, asaSegundos: 40, ataSegundos: 300, ahtSegundos: 240, waitTimeSegundos: 15 },
+    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 100, contestadas: 50, asaSegundos: 20, ahtSegundos: 200, waitTimeSegundos: 15 },
+    { fecha: '2026-01-02', skillName: 'A', totalLlamadas: 100, contestadas: 150, asaSegundos: 40, ahtSegundos: 240, waitTimeSegundos: 15 },
   ];
   const [mes] = traficoAgregar(filas, { granularidad: 'mes', combinar: true });
   // ASA/AHT por contestadas (50/150): (50*20+150*40)/200=35 ; (50*200+150*240)/200=230
   assert.equal(mes.asaSegundos, 35);
   assert.equal(mes.ahtSegundos, 230);
-  // ATA/WAIT_TIME por total (100/100, iguales): promedio simple porque el peso es igual en ambas filas
-  assert.equal(mes.ataSegundos, 300);
+  // WAIT_TIME por total (100/100, iguales): promedio simple porque el peso es igual en ambas filas
   assert.equal(mes.waitTimeSegundos, 15);
+});
+
+// Fase 120 (verificacion de produccion, hallazgo real contra el archivo
+// real de ago-sep/2026): ATA (Average Time to Abandon) es un tiempo por
+// llamada ABANDONADA, igual que AHT/ASA lo son por contestada -- ponderarlo
+// por el TOTAL (como quedo en la Fase 77, "sin evidencia de que este mal")
+// diluye el promedio: contra el archivo real, agosto quedaba en 350.92s
+// ponderado por total vs 625.13s ponderado por abandonadas (el correcto) --
+// casi la mitad. Aqui con numeros chicos: si pesara (mal) por total
+// (1000/100) darian 136.36, bien distinto de 420.
+test('traficoAgregar: ATA ponderado por LLAMADAS ABANDONADAS, no por el total (Fase 120, corrige el peso heredado de la Fase 77)', () => {
+  const filas = [
+    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 1000, contestadas: 980, llamadasAbandonadas: 20, ataSegundos: 100 },
+    { fecha: '2026-01-02', skillName: 'A', totalLlamadas: 100, contestadas: 20, llamadasAbandonadas: 80, ataSegundos: 500 },
+  ];
+  const [mes] = traficoAgregar(filas, { granularidad: 'mes', combinar: true });
+  // Ponderado por abandonadas (20/80): (20*100+80*500)/100 = 420
+  assert.equal(mes.ataSegundos, 420);
+});
+
+test('traficoAgregar: un dia SIN ningun abandono (llamadasAbandonadas:0, ataSegundos:0) no pesa en el promedio -- no arrastra el ATA real hacia 0 (Fase 120, el caso real: ~91% de los dias)', () => {
+  const filas = [
+    { fecha: '2026-01-01', skillName: 'A', totalLlamadas: 1000, contestadas: 1000, llamadasAbandonadas: 0, ataSegundos: 0 },
+    { fecha: '2026-01-02', skillName: 'A', totalLlamadas: 10, contestadas: 5, llamadasAbandonadas: 5, ataSegundos: 300 },
+  ];
+  const [mes] = traficoAgregar(filas, { granularidad: 'mes', combinar: true });
+  assert.equal(mes.ataSegundos, 300);
 });

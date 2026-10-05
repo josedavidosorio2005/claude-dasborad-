@@ -432,12 +432,24 @@ function traficoAgregar(filas, opts) {
   // servicio se mide sobre todas las llamadas que entraron). AHT/ASA son
   // tiempo por llamada CONTESTADA (Average Handle Time / Average Speed of
   // Answer) -- una llamada abandonada nunca la atiende un agente, no tiene
-  // AHT ni ASA, asi que no debe pesar en su promedio. ATA/WAIT_TIME quedan
-  // ponderados por total (su definicion no depende de si la llamada se
-  // contesto) -- Edwin no pidio tocarlos y no hay evidencia de que esten mal.
-  var PONDERADOS_POR_TOTAL = ['ataSegundos', 'waitTimeSegundos'];
+  // AHT ni ASA, asi que no debe pesar en su promedio. WAIT_TIME queda
+  // ponderado por total (su definicion no depende de si la llamada se
+  // contesto).
+  // Fase 120 (verificacion contra el archivo real de ago-sep/2026, pedido
+  // explicito de confirmar si el 0.0 de ATA en ~91% de las filas se estaba
+  // tratando bien): ATA (Average Time to Abandon) es un tiempo por llamada
+  // ABANDONADA, igual que AHT/ASA lo son por CONTESTADA -- una llamada que
+  // se contesto nunca abandona, no tiene ATA. Ponderarlo por TOTAL (como
+  // quedo en la Fase 77, "sin evidencia de que este mal") diluye el
+  // promedio con dias de mucho volumen y pocos o ningun abandono: contra el
+  // archivo real, el promedio de agosto quedaba en 350.92s ponderado por
+  // total vs 625.13s ponderado por abandonadas (el numero correcto) --
+  // practicamente la mitad del valor real. Ahora ATA pondera por
+  // llamadasAbandonadas, igual que AHT/ASA ponderan por contestadas.
+  var PONDERADOS_POR_TOTAL = ['waitTimeSegundos'];
   var PONDERADOS_POR_CONTESTADAS = ['asaSegundos', 'ahtSegundos'];
-  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS);
+  var PONDERADOS_POR_ABANDONADAS = ['ataSegundos'];
+  var NUM_PONDERADOS = PONDERADOS_POR_TOTAL.concat(PONDERADOS_POR_CONTESTADAS).concat(PONDERADOS_POR_ABANDONADAS);
 
   filas.forEach(function (f) {
     var periodo = traficoPeriodoDe(f.fecha, granularidad);
@@ -454,11 +466,15 @@ function traficoAgregar(filas, opts) {
     var b = buckets[clave];
     var pesoTotal = Number(f.totalLlamadas) || 0;
     var pesoContestadas = Number(f.contestadas) || 0;
+    var pesoAbandonadas = Number(f.llamadasAbandonadas) || 0;
     b.totalLlamadas += pesoTotal;
     b.contestadas += pesoContestadas;
     if (f.llamadasAbandonadas != null) { b.llamadasAbandonadas += f.llamadasAbandonadas; b._tieneAbandonadas = true; }
     PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
+    });
+    PONDERADOS_POR_ABANDONADAS.forEach(function (k) {
+      if (f[k] != null && pesoAbandonadas > 0) { b['_suma_' + k] += f[k] * pesoAbandonadas; b['_peso_' + k] += pesoAbandonadas; }
     });
     PONDERADOS_POR_CONTESTADAS.forEach(function (k) {
       if (f[k] != null && pesoContestadas > 0) { b['_suma_' + k] += f[k] * pesoContestadas; b['_peso_' + k] += pesoContestadas; }
