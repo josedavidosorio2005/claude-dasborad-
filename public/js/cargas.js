@@ -698,6 +698,16 @@ async function _cargasGuardarTraficoWhatsapp(cliente, r){
 // mes/skill -- ver agendasRangoFechas (agendas-logic.js) y
 // server/agendas.js (que recalcula el mismo rango del lado del servidor,
 // nunca confia en un rango que mande el navegador).
+// Fase 122 (alias de nombre de asesor): frase comun de transparencia para
+// los 3 dialogos de confirmacion que pueden traer agente/asesor (Agendas,
+// Tipificacion, Efectividad de Agendamiento) -- "cantidad, no listado": el
+// nombre real nunca llega hasta aqui (ya lo resolvio el servidor antes de
+// responder el impacto). Cadena vacia si no hubo ningun alias aplicable.
+function _cargasFraseAlias(impacto){
+  if(!impacto || !impacto.filasUnificadasPorAlias) return '';
+  return impacto.filasUnificadasPorAlias+' fila(s) con '+impacto.asesoresUnificadosPorAlias+
+    ' nombre(s) de asesor distinto(s) se van a unificar por alias.';
+}
 function _agendasFmtFechaCorta(fechaHora){
   // "2025-04-01 08:00:00" -> "01/04" (solo lo que el mensaje de
   // confirmacion necesita mostrar, igual al ejemplo del pedido de Edwin).
@@ -711,9 +721,15 @@ async function _cargasGuardarAgendas(cliente, r){
   var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
   try{
     var impacto = await apiRequest('POST','/calidad/agendas/carga/impacto', parsed);
-    if(impacto.filasExistentes > 0){
-      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de agendas ya cargados, del '+
-        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.\n\n¿Continuar y sobrescribir?';
+    var fraseAliasAgendas = _cargasFraseAlias(impacto);
+    if(impacto.filasExistentes > 0 || fraseAliasAgendas){
+      var msg = '';
+      if(impacto.filasExistentes > 0){
+        msg += 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de agendas ya cargados, del '+
+          _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.';
+      }
+      if(fraseAliasAgendas) msg += (msg?' ':'')+fraseAliasAgendas;
+      msg += '\n\n¿Continuar y sobrescribir?';
       if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron las agendas anteriores sin tocar.' };
     }
   }catch(e){ return { ok:false, mensaje: e.message }; }
@@ -733,10 +749,16 @@ async function _cargasGuardarTipificacion(cliente, r){
   var parsed = { campana: cliente, canal: r.canalTipificacion, archivoNombre: _cargasArchivoNombre, filas: filasArray };
   try{
     var impacto = await apiRequest('POST','/calidad/tipificacion/carga/impacto', parsed);
-    if(impacto.filasExistentes > 0){
-      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de tipificacion de '+
-        (r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')+' ya cargados, del '+
-        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.\n\n¿Continuar y sobrescribir?';
+    var fraseAliasTip = _cargasFraseAlias(impacto);
+    if(impacto.filasExistentes > 0 || fraseAliasTip){
+      var msg = '';
+      if(impacto.filasExistentes > 0){
+        msg += 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de tipificacion de '+
+          (r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')+' ya cargados, del '+
+          _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.';
+      }
+      if(fraseAliasTip) msg += (msg?' ':'')+fraseAliasTip;
+      msg += '\n\n¿Continuar y sobrescribir?';
       if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la tipificacion anterior sin tocar.' };
     }
   }catch(e){ return { ok:false, mensaje: e.message }; }
@@ -798,6 +820,8 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
     if(impacto.filasExistentes > 0){
       msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
     }
+    var fraseAliasEA = _cargasFraseAlias(impacto);
+    if(fraseAliasEA) msg += ' ' + fraseAliasEA;
     if(r.advertenciasEfectividad && r.advertenciasEfectividad.length){
       msg += '\n\nAdvertencia -- la columna EFECTIVIDAD del archivo no coincide con el recalculo en ' +
         r.advertenciasEfectividad.length + ' fila(s) (se guarda el recalculo igual):\n' +
