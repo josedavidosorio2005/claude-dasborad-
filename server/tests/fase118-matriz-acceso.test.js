@@ -167,6 +167,10 @@ declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'admin');
+// Fase 122: alias de nombre de asesor -- a diferencia de codificaciones
+// (lectura scoped por campana, escritura admin), aqui las 3 operaciones
+// son admin-only (alta/baja/lista, pedido explicito de InCo).
+declarar(['GET /alias-asesores', 'POST /alias-asesores', 'DELETE /alias-asesores/:id'], 'admin');
 declarar(['GET /metas/cumplimiento', 'GET /metas/mi-meta'], 'scopedRead');
 declarar(['GET /metas'], 'scopedReadOrAdmin'); // con campana: scoped: sin campana: admin
 declarar(['POST /metas', 'PUT /metas/:id', 'DELETE /metas/:id'], 'admin');
@@ -302,7 +306,13 @@ test('Fase 118 2A: rutas "admin" bloquean a los 9 roles no-admin, pasan ADMIN', 
   const adminRutas = Object.entries(POLITICA).filter(([r, p]) => p.tipo === 'admin' && r.startsWith('GET'));
   for (const [ruta] of adminRutas) {
     const [, rawPath] = ruta.split(' ');
-    const url = '/api' + rawPath.replace(':id', '1').replace(':cliente', PROPIA);
+    // Fase 122: GET /alias-asesores exige `campana` en la query (igual que
+    // calidadQuery de /calidad/codificaciones) -- se agrega aqui mismo, de
+    // forma generica para CUALQUIER ruta admin futura que tambien la
+    // necesite, en vez de un caso especial por ruta. Inofensivo para las
+    // rutas admin que no la usan (Zod ignora claves de mas que no esten en
+    // su esquema, ninguna de estas usa `.strict()`).
+    const url = '/api' + rawPath.replace(':id', '1').replace(':cliente', PROPIA) + '?campana=' + encodeURIComponent(PROPIA);
     for (const rol of TODOS_LOS_ROLES) {
       const res = await request(app).get(url).set(auth(rol));
       if (rol === 'ADMIN') assert.notEqual(res.status, 403, `${ruta} con ADMIN no deberia dar 403`);
@@ -452,7 +462,9 @@ test('Fase 118 2A: CLIENTES_DASH -- 0 accesos fuera de ORLANT ni a ningun modulo
   );
   for (const [ruta] of rutasAdminYModulo) {
     const [, rawPath] = ruta.split(' ');
-    const url = '/api' + rawPath.replace(':id', '1').replace(':cliente', PROPIA);
+    // Fase 122: mismo agregado inofensivo de `?campana=` que la prueba de
+    // arriba ("rutas admin bloquean...") -- GET /alias-asesores la exige.
+    const url = '/api' + rawPath.replace(':id', '1').replace(':cliente', PROPIA) + '?campana=' + encodeURIComponent(PROPIA);
     const res = await request(app).get(url).set(auth('CLIENTES_DASH'));
     assert.equal(res.status, 403, `CLIENTES_DASH en ${ruta} deberia dar 403, vino ${res.status}`);
   }
