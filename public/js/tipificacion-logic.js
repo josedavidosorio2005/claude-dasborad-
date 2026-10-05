@@ -20,13 +20,20 @@ var _tipificacionDuplicadosExactos = (typeof require === 'function') ? require('
 // ── Columnas (AGENT_NAME, DATE, HORA, TIME_MIN, DESCRIPTION_COD_ACT,
 // SKILL_NAME) -- MES es una formula de Excel del archivo de Edwin
 // (=TEXT(B2,"MMMM")), se ignora a proposito: el mes sale de DATE.
+// Fase 122 (export HistChat de WhatsApp de Wolkvox, formato NUEVO): ese
+// archivo no trae SKILL_NAME, trae en su lugar "NOMBRE DE SKILL" -- mismo
+// mecanismo de `labelAlt` que ya usa INASISTENCIA_COLUMNAS
+// (inasistencia-logic.js) para ESPECIALIDAD/ESPECIALIDA. Este alias nunca
+// cambia el contrato de guardado (sigue siendo la key `skill`, mismo
+// payload compacto) ni el formato VIEJO (que sigue trayendo SKILL_NAME
+// real): solo amplia que headers reconoce tipificacionColIndexMap.
 var TIPIFICACION_COLUMNAS = [
   { key: 'agente', label: 'AGENT_NAME', obligatoria: true },
   { key: 'fecha', label: 'DATE', obligatoria: true },
   { key: 'hora', label: 'HORA', obligatoria: false },
   { key: 'duracionMin', label: 'TIME_MIN', obligatoria: false },
   { key: 'tipificacion', label: 'DESCRIPTION_COD_ACT', obligatoria: true },
-  { key: 'skill', label: 'SKILL_NAME', obligatoria: true },
+  { key: 'skill', label: 'SKILL_NAME', labelAlt: ['NOMBRE DE SKILL'], obligatoria: true },
 ];
 var TIPIFICACION_COLUMNAS_OBLIGATORIAS = TIPIFICACION_COLUMNAS.filter(function (c) { return c.obligatoria; });
 // Orden fijo del payload compacto (arrays, no objetos) -- ver
@@ -43,7 +50,10 @@ function tipificacionColIndexMap(headerRow) {
   var map = {};
   (headerRow || []).forEach(function (h, i) {
     var n = tipificacionNorm(h);
-    var col = TIPIFICACION_COLUMNAS.filter(function (c) { return tipificacionNorm(c.label) === n; })[0];
+    var col = TIPIFICACION_COLUMNAS.filter(function (c) {
+      if (tipificacionNorm(c.label) === n) return true;
+      return (c.labelAlt || []).some(function (alt) { return tipificacionNorm(alt) === n; });
+    })[0];
     if (col && map[col.key] === undefined) map[col.key] = i;
   });
   return map;
@@ -188,7 +198,11 @@ function tipificacionEtiqueta(valorOriginal) {
 // la hora se saca de la fraccion de dia de ESE MISMO valor de DATE. Sin `ws`
 // (o con el formato viejo, que SI trae HORA aparte), el comportamiento es
 // EXACTAMENTE igual al de siempre.
-function tipificacionParseFilas(aoa, ws) {
+// `canal` (Fase 122, opcional): 'LLAMADAS' o 'WHATSAPP' -- SOLO decide si se
+// aplica la eliminacion de duplicados exactos de la Fase 88 (ver mas abajo).
+// Sin este parametro (o con 'LLAMADAS'), el comportamiento es EXACTAMENTE
+// igual al de siempre.
+function tipificacionParseFilas(aoa, ws, canal) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = tipificacionColIndexMap(aoa[0]);
   var faltantes = TIPIFICACION_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -251,6 +265,22 @@ function tipificacionParseFilas(aoa, ws) {
   // agente/fecha/hora/duracionMin/tipificacion/skill) -- nunca "casi
   // iguales". Se avisa cuantas se quitaron para que la persona pueda
   // cancelar la carga si no esta de acuerdo.
+  //
+  // Fase 122 (hallazgo real, export HistChat de WhatsApp de Wolkvox): esta
+  // regla NUNCA se aplica al canal WHATSAPP. En Wolkvox cada fila de
+  // HistChat es un chat DISTINTO con su propio CONN_ID (que nunca se lee ni
+  // se guarda, ver PRIVACIDAD en el encabezado de este archivo) -- un envio
+  // masivo (ej. NO_CONTESTAN de 3P/CONFIRMACIONES) genera varios chats
+  // reales en el mismo segundo, por el mismo asesor, con la MISMA
+  // tipificacion: identicos en todas las columnas que SI se guardan, pero
+  // NO duplicados. Confirmado contra el archivo real: 226 filas asi, 0
+  // repetidas con la misma tupla agente+fecha+tipificacion+skill (serian
+  // coincidencias reales, no defectos de carga). Llamadas y el formato
+  // viejo de Tipificacion de WhatsApp (que SI trae SKILL_NAME, Fase 77)
+  // siguen aplicando esta regla exactamente igual que siempre.
+  if (canal === 'WHATSAPP') {
+    return { filas: filas, avisos: avisos };
+  }
   var dedup = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas);
   if (dedup.quitadas > 0) {
     avisos.push(
