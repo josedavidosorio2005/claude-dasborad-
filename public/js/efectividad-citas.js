@@ -65,7 +65,7 @@ async function _ecDibujar(campana, i, opciones){
 
   if(avisoEl){
     avisoEl.innerHTML = (!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1)
-      ? _gdAvisoSinDatosMesHtml('Efectividad de Citas', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null)
+      ? _gdAvisoSinDatosMesHtml('Efectividad de Citas', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null, mesNombreLargo)
       : '';
   }
 

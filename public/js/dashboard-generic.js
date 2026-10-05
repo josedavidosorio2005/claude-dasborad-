@@ -824,7 +824,13 @@ document.addEventListener('webkitfullscreenchange', _gdOnFullscreenChange);
 function renderGenericHeader(){
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   var sub = document.getElementById('gd-sub');
-  var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 'Sin datos');
+  // Fase 122 (pedido de Edwin: "con la fecha uno se enreda mucho, que salga
+  // el nombre"): el selector de mes GLOBAL (y este subtitulo) muestran el
+  // nombre completo del mes -- distinto del rotulo corto que siguen usando
+  // los EJES de las graficas de tendencia de 12 meses (_gdResolver modo
+  // 'serie', mas abajo en este archivo: Trafico/Calidad), que nunca pasan
+  // por mesNombreLargo.
+  var mesLbl = _gd.mesSel ? mesNombreLargo(_gd.mesSel) : (_gd.periodos[0] ? mesNombreLargo(_gd.periodos[0]) : 'Sin datos');
   sub.textContent = 'Informe ' + mesLbl + ' — ' + _gd.cliente;
 
   var vw = document.getElementById('gd-vista-wrap');
@@ -838,7 +844,7 @@ function renderGenericHeader(){
 
   var ms = document.getElementById('gd-mes-sel');
   ms.innerHTML = _gd.periodos.length
-    ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('')
+    ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('')
     : '<option value="">Sin datos</option>';
   ms.value = _gd.mesSel || (_gd.periodos[0] || '');
 
@@ -848,7 +854,7 @@ function renderGenericHeader(){
     var verMes = ms.value;
     var previos = _gd.periodos.filter(function(p){ return !verMes || p < verMes; });
     cs.innerHTML = '<option value="">Período anterior (auto)</option>' +
-      previos.map(function(p){ return '<option value="'+p+'">'+_gdMesLbl(p)+'</option>'; }).join('');
+      previos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('');
     cs.value = _gd.compSel && previos.indexOf(_gd.compSel) !== -1 ? _gd.compSel : '';
     if(cs.value !== _gd.compSel) _gd.compSel = cs.value;
   }
@@ -923,11 +929,19 @@ var _gdFinDeMes = gdFinDeMes;
 // mes con datos -- mismo texto/estructura para los 5 paneles autonomos
 // (Fase 86, tema 3): "Sin datos de <etiqueta> para <mes elegido> — el
 // ultimo mes con datos es <ultimo mes> [Ver <ultimo mes>]".
-function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos){
-  var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(_gdMesLbl(mesElegido)) + '.';
+// `formatearMes` (Fase 122, opcional): funcion de formato del mes a usar en
+// este mensaje -- por defecto _gdMesLbl (formato corto, "Sep-26"), que
+// siguen usando los paneles autonomos de siempre (Trafico/Agendas/
+// Tipificacion). Efectividad de Agendamiento/Citas pasan mesNombreLargo
+// (mes-nombre-logic.js) para mostrar el nombre completo ("Septiembre
+// 2026"), pedido textual de Edwin -- sin este parametro, el comportamiento
+// es EXACTAMENTE igual al de siempre.
+function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, formatearMes){
+  var fmt = formatearMes || _gdMesLbl;
+  var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(fmt(mesElegido)) + '.';
   if(ultimoMesConDatos){
-    msg += ' El último mes con datos es ' + esc(_gdMesLbl(ultimoMesConDatos)) +
-      ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(_gdMesLbl(ultimoMesConDatos))+'</button>';
+    msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
+      ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
   }
   return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';
 }
@@ -1492,7 +1506,7 @@ async function _gdExportarEfectividadAgendamiento(p, i){
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
   try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(_gd.mesSel)) || ranking; }catch(e){}
   if(!ranking.filas || !ranking.filas.length){
-    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + _gdMesLbl(_gd.mesSel) + '.' }];
+    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + mesNombreLargo(_gd.mesSel) + '.' }];
   }
   var filas = ranking.filas.map(function(f){
     return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), Gestiones: f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
