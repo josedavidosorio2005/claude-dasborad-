@@ -456,7 +456,15 @@ async function procesarArchivoConsolidado(input){
   var hojasUsadasPorEncabezados = {};
   function _cargasBuscarHojaPorEncabezados(h){
     var esTrafico = h.tipo==='trafico';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !esTrafico && !(h.tipo==='tipificacion' && h.canalTipificacion==='LLAMADAS')) return null;
+    // Fase 122: antes, solo Tipificacion de LLAMADAS se reconocia por
+    // encabezados -- WhatsApp exigia el nombre EXACTO de hoja
+    // (TIPIFICACION_WHATSAPP), asi que un export HistChat de Wolkvox
+    // (hoja "HistChat<fecha>-<hora>", cambia en cada export) nunca se
+    // reconocia. Ahora los 2 canales de tipificacion entran aqui por igual
+    // -- cargasDetectarCanalTipificacion (mas abajo) es quien evita que un
+    // archivo de un canal se cuele en el slot del otro.
+    var esTipificacion = h.tipo==='tipificacion';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !esTrafico && !esTipificacion) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -465,6 +473,12 @@ async function procesarArchivoConsolidado(input){
       var aoaHeader = XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null});
       if(!cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(aoaHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
+      // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
+      // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
+      // SKILL) en el de Llamadas -- cargasEncabezadosCoinciden por si sola
+      // no alcanza a distinguirlos (comparten agente/fecha/tipificacion/
+      // skill-via-alias).
+      if(esTipificacion && h.canalTipificacion && cargasDetectarCanalTipificacion(aoaHeader[0]||[]) !== h.canalTipificacion) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }
@@ -493,7 +507,11 @@ async function procesarArchivoConsolidado(input){
     } else if(h.tipo === 'efectividad_agendamiento'){
       parseFn = function(a){ return efectividadAgendamientoParseFilas(a); };
     } else if(h.tipo === 'tipificacion'){
-      parseFn = tipificacionParseFilas;
+      // Fase 122: el canal (LLAMADAS/WHATSAPP) decide si se aplica la
+      // eliminacion de duplicados exactos de la Fase 88 (ver
+      // tipificacion-logic.js) -- WhatsApp (Wolkvox/HistChat) nunca la
+      // aplica, Llamadas y el formato viejo siguen igual que siempre.
+      parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion); };
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){

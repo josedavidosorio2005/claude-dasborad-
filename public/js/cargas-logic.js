@@ -472,6 +472,31 @@ function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp, e
   return esWhatsapp ? 'whatsapp' : 'voz';
 }
 
+// Fase 122 (ORLANT, export HistChat de WhatsApp de Wolkvox): igual que
+// Trafico (cargasDetectarCanalTrafico, arriba), Tipificacion de Llamadas y
+// de WhatsApp comparten las mismas columnas obligatorias (AGENT_NAME/DATE/
+// DESCRIPTION_COD_ACT/skill) -- sin esto, un archivo de un canal se
+// reconoceria igual de bien para el slot del OTRO canal (el riesgo real que
+// pidio evitar el usuario: "un archivo de voz subido al slot de WhatsApp,
+// o al reves, debe rechazarse, nunca cargarse al canal equivocado").
+// HistCDR (voz, Fase 116) siempre trae SKILL_NAME real; HistChat (WhatsApp,
+// Fase 122) no trae esa columna -- trae en su lugar NOMBRE DE SKILL (ver
+// labelAlt en TIPIFICACION_COLUMNAS, tipificacion-logic.js), ademas de
+// CHANNEL y DATE_CLOSE (propias de Wolkvox para chats, no se leen pero
+// sirven de pista adicional si algun export futuro llegara a traer ambas
+// columnas de skill). El formato VIEJO de 6 columnas (Fase 77) tambien trae
+// SKILL_NAME en los dos canales -- ese formato nunca pasa por esta funcion
+// para WhatsApp porque se reconoce por el nombre EXACTO de hoja
+// (TIPIFICACION_WHATSAPP), nunca por encabezados (ver
+// _cargasBuscarHojaPorEncabezados, cargas.js). Pura: no toca el workbook,
+// solo compara un header ya extraido.
+function cargasDetectarCanalTipificacion(headerRow) {
+  var normalizados = (headerRow || []).map(function (h) { return _cargasNorm(h); });
+  if (normalizados.indexOf('skill_name') !== -1) return 'LLAMADAS';
+  if (normalizados.indexOf('nombre de skill') !== -1) return 'WHATSAPP';
+  return null;
+}
+
 // Fase 66 — decide de que hoja del archivo sale el dato de un slot de
 // Trafico con canal fijo (LLAMADAS o WHATSAPP, plantilla unificada de
 // ORLANT): si el archivo ya trae la hoja con el nombre nuevo, esa manda. Si
@@ -637,6 +662,7 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,
     cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
+    cargasDetectarCanalTipificacion: cargasDetectarCanalTipificacion,
     cargasResolverHojaTrafico: cargasResolverHojaTrafico,
     CARGAS_ORDEN_DESCARGA: CARGAS_ORDEN_DESCARGA,
     cargasPlanSinTipificacionSuperada: cargasPlanSinTipificacionSuperada,
