@@ -14,6 +14,15 @@
 // correr en cada PR en menos de 5 minutos -- la auditoria completa
 // (todos los roles, temas, viewports, exports) es manual, ver
 // verificar-fase102-auditoria-amplia-local.js.
+//
+// Fase 120 (verificacion de produccion que encontro el AHT de WhatsApp en
+// blanco, Part 3 "que esto no vuelva a pasar"): ya recorria cada sub-pestana
+// de cada pestaña (el bucle de `.gd-subtab-btn` de abajo, generico para
+// Trafico voz/WhatsApp Y para cualquier tab.subtabs configurado via
+// dashboard-generic.js) -- lo que faltaba es que un canvas OCULTO a
+// proposito (serie vacia) nunca se revisaba mas alla de "esta oculto, debe
+// estar bien" -- ahora confirma que de verdad quedo un mensaje ".oc-nodata"
+// visible y con texto cerca (ver canvasesSinDibujar).
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -47,7 +56,22 @@ async function canvasesSinDibujar(page) {
     host.querySelectorAll('canvas').forEach((c) => {
       const rect = c.getBoundingClientRect();
       const style = getComputedStyle(c);
-      if (style.display === 'none' || style.visibility === 'hidden') return;
+      if (style.display === 'none' || style.visibility === 'hidden') {
+        // Fase 120 (que esto no vuelva a pasar -- el AHT de WhatsApp quedo
+        // en blanco sin que ninguna verificacion anterior lo notara): hasta
+        // aqui, un canvas OCULTO a proposito (serie vacia, _gdChart lo
+        // esconde y agrega un aviso ".oc-nodata", Fase 90) se daba por bien
+        // manejado sin revisar nada mas -- si por lo que fuera el aviso no
+        // se llegaba a insertar, este chequeo nunca lo habria visto. Ahora
+        // confirma que SI quedo un mensaje visible y con texto cerca.
+        const contenedor = c.closest('.aurora-card') || c.closest('.aurora-chart-wrap') || c.parentElement;
+        const aviso = contenedor ? contenedor.querySelector('.oc-nodata') : null;
+        const avisoVisible = !!(aviso && aviso.offsetParent !== null && aviso.textContent.trim().length > 0);
+        if (!avisoVisible) {
+          out.push({ id: c.id || '(sin id)', motivo: 'oculto-sin-mensaje-de-aviso' });
+        }
+        return;
+      }
       if (rect.width < 5 || rect.height < 5) {
         out.push({ id: c.id || '(sin id)', motivo: 'tamano-cero-en-pantalla', width: rect.width, height: rect.height });
         return;
