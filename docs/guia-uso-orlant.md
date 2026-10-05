@@ -7,7 +7,7 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.10.0**. Esta guía es para quien usa la
+Versión de la plataforma: **1.11.2**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -60,6 +60,9 @@ del todo vas a ver:
   Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez.
 - El botón **Exportar** — descarga a Excel todo lo que estás viendo en la
   pestaña activa (una hoja por gráfica/tabla).
+- El botón de **pantalla completa** — agranda el dashboard para que ocupe
+  toda la pantalla (útil al compartir pantalla en una reunión); un
+  segundo clic (o la tecla Esc) vuelve a la vista normal.
 - El interruptor de **tema oscuro/claro** (en el menú de tu usuario,
   arriba a la derecha) — cambia el color de toda la plataforma, no afecta
   los datos.
