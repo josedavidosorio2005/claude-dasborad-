@@ -110,12 +110,13 @@ function citasAtendidasMesesDelArchivo(filas) {
   return Object.keys(set).sort();
 }
 
-// 'AAAA-MM' -> "Ago-26" -- mismo formato corto que inasistenciaMesLbl/
-// _agendasMesLbl/_gdMesLbl.
-var CITAS_ATENDIDAS_MESES_ABREV = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+// 'AAAA-MM' -> "Agosto 2026" (Fase 122, pedido de Edwin: "que salga el
+// nombre", nunca la fecha corta) -- via mesNombreLargo (mes-nombre-logic.js).
+// Antes era el formato corto "Ago-26" (mismo que inasistenciaMesLbl/
+// _agendasMesLbl/_gdMesLbl); esta funcion solo la usa esta pestaña
+// (Efectividad de Citas), nunca algo compartido con otras pestañas.
 function citasAtendidasMesLbl(mes) {
-  var partes = String(mes || '').split('-');
-  return partes.length === 2 ? (CITAS_ATENDIDAS_MESES_ABREV[parseInt(partes[1], 10) - 1] + '-' + partes[0].slice(2)) : String(mes || '');
+  return _caMesNombre.mesNombreLargo(mes);
 }
 
 // "93,67 %" -- 2 decimales, coma decimal (es-CO) -- mismo criterio que

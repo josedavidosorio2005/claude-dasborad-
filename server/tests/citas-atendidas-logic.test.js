@@ -88,9 +88,9 @@ test('citasAtendidasMesesDelArchivo: meses distintos, ordenados, sin duplicados'
   assert.deepEqual(citasAtendidasMesesDelArchivo(filas), ['2026-01', '2026-03']);
 });
 
-test('citasAtendidasMesLbl: "AAAA-MM" -> "Mes-AA" corto', () => {
-  assert.equal(citasAtendidasMesLbl('2026-01'), 'Ene-26');
-  assert.equal(citasAtendidasMesLbl('2026-03'), 'Mar-26');
+test('citasAtendidasMesLbl: "AAAA-MM" -> nombre completo + año (Fase 122, pedido de Edwin)', () => {
+  assert.equal(citasAtendidasMesLbl('2026-01'), 'Enero 2026');
+  assert.equal(citasAtendidasMesLbl('2026-03'), 'Marzo 2026');
 });
 
 test('citasAtendidasFmtPct: 2 decimales y coma -- control real (93,67 %, 84,32 %, 85,54 %, 86,01 %)', () => {
@@ -115,11 +115,11 @@ test('control real Ene-26 a Mar-26 (dado por Edwin/InCo): ponderado 86,01 % (1.1
   const promedioSimple = (148 / 158 + 527 / 625 + 278 / 325) / 3;
   assert.notEqual(Math.round(promedioSimple * 10000) / 10000, Math.round(ponderado.pct * 10000) / 10000);
 
-  assert.equal(citasAtendidasRangoLbl(filas), 'Ene-26 a Mar-26');
+  assert.equal(citasAtendidasRangoLbl(filas), 'Enero 2026 a Marzo 2026');
 });
 
 test('citasAtendidasRangoLbl: un solo mes -> solo ese mes (sin "a"); sin filas -> cadena vacia', () => {
-  assert.equal(citasAtendidasRangoLbl([{ mes: '2026-01' }]), 'Ene-26');
+  assert.equal(citasAtendidasRangoLbl([{ mes: '2026-01' }]), 'Enero 2026');
   assert.equal(citasAtendidasRangoLbl([]), '');
 });
 

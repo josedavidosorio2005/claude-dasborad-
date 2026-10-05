@@ -74,7 +74,7 @@ async function _eaDibujar(campana, i, opciones){
 
   if(!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1){
     var ultimoConDatos = opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null;
-    if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('efectividad', mesSel, ultimoConDatos);
+    if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('efectividad', mesSel, ultimoConDatos, mesNombreLargo);
     if(tarjetasEl) tarjetasEl.innerHTML = '';
     if(chartWrapEl) chartWrapEl.innerHTML = '';
     _eaUltimoRanking[i] = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };

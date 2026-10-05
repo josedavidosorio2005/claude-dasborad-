@@ -7,7 +7,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { MES_NOMBRE_A_NUM, mesNombreAAAAMM } = require('../../public/js/mes-nombre-logic.js');
+const { MES_NOMBRE_A_NUM, mesNombreAAAAMM, mesNombreLargo, MES_NUM_A_NOMBRE_LARGO } = require('../../public/js/mes-nombre-logic.js');
 
 // "Hoy" fijo para que las pruebas no dependan de la fecha real del sistema
 // -- 2026-10-01 UTC es 2026-09-30 20:00 Colombia (UTC-5), asi que el "hoy
@@ -54,4 +54,33 @@ test('mesNombreAAAAMM: mes no reconocido, vacio o null -> null', () => {
   assert.equal(mesNombreAAAAMM('', null, HOY), null);
   assert.equal(mesNombreAAAAMM(null, null, HOY), null);
   assert.equal(mesNombreAAAAMM(undefined, null, HOY), null);
+});
+
+// ── mesNombreLargo (Fase 122, pedido de Edwin: "que salga el nombre") ───
+test('mesNombreLargo: los 12 meses, nombre completo en español + año de 4 digitos', () => {
+  assert.equal(MES_NUM_A_NOMBRE_LARGO.length, 12);
+  assert.equal(mesNombreLargo('2026-01'), 'Enero 2026');
+  assert.equal(mesNombreLargo('2026-02'), 'Febrero 2026');
+  assert.equal(mesNombreLargo('2026-03'), 'Marzo 2026');
+  assert.equal(mesNombreLargo('2026-04'), 'Abril 2026');
+  assert.equal(mesNombreLargo('2026-05'), 'Mayo 2026');
+  assert.equal(mesNombreLargo('2026-06'), 'Junio 2026');
+  assert.equal(mesNombreLargo('2026-07'), 'Julio 2026');
+  assert.equal(mesNombreLargo('2026-08'), 'Agosto 2026');
+  assert.equal(mesNombreLargo('2026-09'), 'Septiembre 2026');
+  assert.equal(mesNombreLargo('2026-10'), 'Octubre 2026');
+  assert.equal(mesNombreLargo('2026-11'), 'Noviembre 2026');
+  assert.equal(mesNombreLargo('2026-12'), 'Diciembre 2026');
+});
+
+test('mesNombreLargo: un mes NUEVO (ej. octubre, que no tenia datos antes) sale con su nombre sin tocar codigo -- es una tabla, no un caso por mes', () => {
+  assert.equal(mesNombreLargo('2027-10'), 'Octubre 2027');
+});
+
+test('mesNombreLargo: periodos sin dato (vacio, null, formato raro) -- se devuelve tal cual, nunca inventa un mes', () => {
+  assert.equal(mesNombreLargo(''), '');
+  assert.equal(mesNombreLargo(null), '');
+  assert.equal(mesNombreLargo(undefined), '');
+  assert.equal(mesNombreLargo('Sin datos'), 'Sin datos');
+  assert.equal(mesNombreLargo('2026-13'), '2026-13'); // mes invalido, no hay nombre para el indice 12
 });

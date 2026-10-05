@@ -66,7 +66,33 @@ function mesNombreAAAAMM(valorMes, valorAnio, ahora) {
   return (mm > mesActual) ? (String(anioActual - 1) + '-' + mm) : (String(anioActual) + '-' + mm);
 }
 
+// ── 'AAAA-MM' -> "Agosto 2026" (Fase 122, pedido de Edwin: "con la fecha
+// uno se enreda mucho, que salga el nombre") ────────────────────────────
+// Nombre completo del mes en español + año de 4 digitos -- usado en
+// Efectividad de Agendamiento y Efectividad de Citas (selector, tarjetas,
+// titulos de grafica, avisos de "sin datos", exports), y en el selector de
+// mes GLOBAL que comparten las 7 pestañas de ORLANT (el eje de las
+// graficas de tendencia de 12 meses de Trafico/Calidad sigue con el
+// rotulo corto, _gdMesLbl, public/js/dashboard-generic.js -- NUNCA pasa
+// por aqui). Un valor que no se puede reconocer (vacio, formato raro) se
+// devuelve tal cual, nunca se inventa un mes.
+var MES_NUM_A_NOMBRE_LARGO = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+function mesNombreLargo(aaaaMM) {
+  var m = /^(\d{4})-(\d{2})$/.exec(String(aaaaMM == null ? '' : aaaaMM));
+  if (!m) return String(aaaaMM == null ? '' : aaaaMM);
+  var nombre = MES_NUM_A_NOMBRE_LARGO[parseInt(m[2], 10) - 1];
+  return nombre ? (nombre + ' ' + m[1]) : String(aaaaMM);
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { MES_NOMBRE_A_NUM: MES_NOMBRE_A_NUM, mesNombreAAAAMM: mesNombreAAAAMM };
+  module.exports = {
+    MES_NOMBRE_A_NUM: MES_NOMBRE_A_NUM,
+    mesNombreAAAAMM: mesNombreAAAAMM,
+    MES_NUM_A_NOMBRE_LARGO: MES_NUM_A_NOMBRE_LARGO,
+    mesNombreLargo: mesNombreLargo,
+  };
 }
