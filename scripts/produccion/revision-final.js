@@ -27,17 +27,18 @@ const USUARIOS_EJEMPLO = ['crodriguez', 'mlopez', 'jherrera', 'agomez', 'lrios',
 const MASTER_ADMIN_USER_ESPERADO = 'admin';
 
 // Numeros de control esperados -- ver PROGRESS.md -> "Numeros de control".
+// Fase 116 (2026-10-04): Tipificacion y Trafico de WhatsApp al dia con el
+// export real de Wolkvox (Ago-26+Sep-26); el residuo de prueba de la Fase
+// 67 en Trafico de Llamadas se resolvio solo al re-subir con el reemplazo
+// por rango (la fecha real del archivo nuevo reemplazo la fila sintetica
+// en el mismo lugar) -- totales de Trafico de Llamadas sin cambios desde
+// la Fase 115 (el archivo es el mismo, byte a byte).
 const ESPERADO = {
-  tipificacionTotal: 14940,
-  // Fase 115: 2 meses (Ago-26/Sep-26) x 3 lineas (3P/GENERAL/REGIMEN
-  // ESPECIALES, esta ultima nueva desde la Fase 67). Incluye 3 llamadas
-  // (3 abandonadas) de un residuo de prueba de la Fase 67
-  // ("llenado-agosto-produccion.xlsx", fila 2026-08-17 de 3P y GENERAL,
-  // marcada "borrar automatico" y nunca borrada) que el upsert por fecha
-  // exacta no toca porque el archivo real no trae esa fecha -- ver
-  // docs/pendientes.md.
+  tipificacionTotal: 14940 + 19721, // Ago-26 + Sep-26 (export completo HistCDR)
   llamadasTotal: 17954, llamadasContestadas: 16844, llamadasPendientes: 1110,
-  wppTotal: 7305, wppContestados: 7109, wppPendientes: 196, wppSl20: 34.67,
+  // Fase 116: formato diario real de Wolkvox (8 colas) reemplazo la
+  // plantilla vieja de periodo -- suma de Ago-26+Sep-26.
+  wppTotal: 7390 + 7968, wppContestados: 7370 + 7953, wppPendientes: 20 + 15, wppSl20: null, // SL20 varia por mes, no se suma
   agendasTotal: 7426, agendasGeneral: 4643, agendas3p: 2783,
   inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 6.87,
   rankingEquipoGestiones: 18566, rankingEquipoAgendas: 8319, rankingEquipoEfectividadPct: 44.81,
