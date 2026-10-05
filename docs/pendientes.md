@@ -1,4 +1,4 @@
-# Pendientes (actualizado Fase 118, 2026-10-05)
+# Pendientes (actualizado Fase 119, 2026-10-05)
 
 Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
 antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
@@ -91,47 +91,92 @@ implementaron en la Fase 113.
 
 ## De la Fase 118 (cierra con evidencia lo que la Fase 117 no demostró)
 
-- **Recorrido en producción con un usuario `CLIENTES_DASH` real**:
-  quedó **inconcluso**, no verificado. El script pide un segundo login
-  manual (misma ventana visible) para esto; la evidencia de la corrida
-  real (rol devuelto `null`, `#admin-page` NO oculto, las 2 escaladas de
-  prueba "no bloqueadas") apunta a que el segundo login reutilizó la
-  sesión de administrador, no una cuenta `CLIENTES_DASH` — no hay a mano
-  una contraseña real de ese tipo de usuario en producción. Repetir en
-  la próxima sesión disponible con esa contraseña a mano (o pedirle al
-  jefe que la comparta por un canal seguro, nunca por el repo/CI).
+- ~~Recorrido en producción con un usuario `CLIENTES_DASH` real~~ —
+  **hecho en la Fase 119** (2026-10-05): con la cuenta REAL del cliente
+  de ORLANT (creada por el usuario desde la plataforma), confirmada por
+  JWT. Ver "De la Fase 119" abajo.
 - **Barrido visual real** (Playwright local, `seed:demo`: 7 pestañas ×
   claro/oscuro × 1366×768/1920×1080/2560×1440/móvil 412px + estados
-  mes-sin-datos/mes-incompleto/0-filas): no se llegó a cubrir en esta
-  sesión — excede lo que da el tiempo de una sola fase junto con el
-  resto de lo pedido. Prioridad alta para la próxima sesión disponible.
-- **Barrido de código muerto** a partir del grafo de `graphify` (nodos
-  sin referencias entrantes, verificados con grep): no se llegó a cubrir.
-- **Casos de borde del reemplazo por rango** (Fases 115/116) más allá de
-  los ya cubiertos por `fase116-rango-global-hueco.test.js` (hueco de
-  días, caso real FONIATRIA, skill ausente, impacto exacto): archivo de
-  un solo día, skill NUEVA, re-subida idéntica (0 cambios, idempotente),
-  rango que cruza meses, fecha futura — no se escribieron pruebas
-  dedicadas nuevas en esta fase. La atomicidad ante una falla a la mitad
-  de la carga SÍ se confirmó por lectura de código (no ejecutada con una
-  falla inyectada): `server/tipificaciones.js`, `server/trafico-
-  whatsapp.js` y `server/agendas.js` envuelven cada carga en
-  `db.transaction(...)`, que revierte todo ante cualquier excepción —
-  better-sqlite3 lo garantiza por construcción.
-- **XSS con texto malicioso real** (Playwright local, `<img
-  src=x onerror=...>` / `"><script>...` en campos de texto libre +
-  exports sin fórmulas activas): no se llegó a cubrir con pruebas
-  dinámicas nuevas en esta fase — Fase 102 ya confirmó por lectura de
-  código que `esc()` y `xlsxFilasSeguras`/`xlsxCeldaSegura` cubren todos
-  los módulos (ver `docs/auditoria-seguridad-fase102.md`), pero eso es
-  lectura de código, no un ataque real ejecutado campo por campo.
-- **Zonas horarias** (TZ=UTC vs TZ=America/Bogota: cortes de fecha, "mes
-  en curso", Tipificación con horas como 18:06): no se llegó a cubrir
-  con pruebas dedicadas en esta fase.
+  mes-sin-datos/mes-incompleto/0-filas): sigue sin cubrirse — pedido de
+  nuevo en la Fase 119 y tampoco alcanzó el tiempo. Prioridad alta para
+  la próxima sesión disponible.
+- **Barrido de código muerto** a partir del grafo de `graphify`: sigue
+  sin cubrirse (pedido de nuevo en la Fase 119).
+- ~~Casos de borde del reemplazo por rango~~ — **cubiertos en gran parte
+  en la Fase 119**: otra campaña con las mismas fechas no se toca AL
+  ESCRIBIR, orden inverso, falla a mitad de carga inyectada (las 7
+  bases), archivo equivocado en la ventana equivocada, fecha futura
+  (dinámico, las 4 bases que faltaban). Ver
+  `server/tests/fase119-cargas-multi-mes.test.js`. Sin cubrir todavía:
+  archivo de un solo día explícito, re-subida idéntica con aserción de
+  "0 cambios" fila por fila (hoy solo se confirma el conteo), archivo
+  grande de varios meses a la vez (límite de payload por base más allá
+  de Tipificación, que ya lo tenía).
+- **XSS con texto malicioso real** (Playwright local): sigue sin
+  cubrirse con pruebas dinámicas (pedido de nuevo en la Fase 119) — Fase
+  102 confirmó por lectura de código que `esc()`/`xlsxFilasSeguras`
+  cubren todos los módulos, pero eso no es un ataque real ejecutado
+  campo por campo.
+- ~~Zonas horarias~~ — **hecho en la Fase 119**: confirmado con
+  ejecución real (2 procesos Node, TZ=UTC y TZ=America/Bogota) que
+  `fecha-limites.js`/`fecha-limites-logic.js`/`tipificacion-logic.js` dan
+  el mismo resultado bajo las 2 zonas horarias, con un defecto simulado
+  para confirmar que la prueba no es vacía. Ver
+  `server/tests/fase119-zonas-horarias.test.js`.
 - **Fallas y carreras de UI** (500/red cortada/respuesta vacía en cada
-  pestaña, cambio rápido de pestaña/mes): no se llegó a cubrir.
-- **Hallazgo real corregido en esta fase**: un test de la Fase 117
+  pestaña, cambio rápido de pestaña/mes): sigue sin cubrirse (pedido de
+  nuevo en la Fase 119).
+- ~~Las 7 familias de carga masiva fuera de la matriz de acceso
+  dinámica~~ — **hecho en la Fase 119**: ejecutadas de verdad contra los
+  10 roles × propia/ajena. Ver "De la Fase 119" abajo (incluye un
+  hallazgo real, documentado más abajo).
+- **Hallazgo real corregido en la Fase 118**: un test de la Fase 117
   (desempate de `GET /historial` en empates de milisegundo) resultó
   flaky en CI por un filtro de verificación demasiado amplio — corregido
   (severidad baja, detalle en `docs/auditoria-seguridad-fase102.md` →
   Fase 118).
+
+## De la Fase 119 (dejar ORLANT lista para entregarla al cliente)
+
+- **Hallazgo real, severidad BAJA/informativa, documentado y NO
+  corregido** (motivo abajo): `POST /calidad/trafico/carga` (Tráfico de
+  Llamadas) es la ÚNICA de las 7 familias de carga masiva cuyo endpoint
+  no exige `campaignAccess` por campaña puntual — solo el permiso
+  genérico `canLoadData` ("Cargar Datos"). Confirmado con una prueba
+  dedicada: un actor con `cargarDatos` pero solo acceso a ORLANT puede
+  cargar Tráfico de Llamadas mapeado a OTRA campaña (mapeando una skill
+  nueva a ella), mientras que las otras 6 familias bloquean esa misma
+  combinación. No es un descuido — es una decisión EXPLÍCITA y ya
+  documentada de una auditoría anterior (`server/routes/trafico.js`,
+  comentario "Decisión explícita (auditoría 2026-09-15)"): un solo
+  archivo de Tráfico de Llamadas trae varias skills que pueden resolver
+  a campañas distintas vía el mapeo de `trafico-skills.js`, así que el
+  body de esta ruta nunca cargó `campana` explícita. **No se corrige en
+  esta fase** porque arreglarlo exigiría rediseñar el modelo "un
+  archivo, varias skills de varias campañas" que Edwin pidió
+  explícitamente, y el riesgo real hoy es mínimo (CLINICA AURORA y
+  Hospital La María siguen en cero datos reales). Ver
+  `server/tests/fase119-matriz-cargas-masivas.test.js`.
+- **Recorrido en producción con la cuenta REAL del cliente de ORLANT**
+  (`CLIENTES_DASH`): confirmado por JWT (no es admin, no es `null`) —
+  solo ve su dashboard de ORLANT; los 7 endpoints administrativos
+  probados (`/historial`, `/seguridad/alertas`, `/dashboards/config`,
+  `/dashboard/cargas`, `/inventario/items`, `/gerencia/kpis`,
+  `/gh/personal`) dan 403; las 7 pestañas cargan con datos y Exportar
+  funciona en las 7; las 5 pestañas ocultas (Ordenamiento Médico,
+  Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA) NO
+  aparecen; sin ningún aviso "demo"/dato de prueba visible; Calidad:
+  catálogo de codificaciones vacío (0), 37 monitoreos (sin tocar, esperan
+  confirmación de Edwin); "Cambiar mi contraseña" visible y rechaza una
+  contraseña actual incorrecta.
+- **Recorrido de ADMIN no se repitió en esta sesión de la Fase 119** (la
+  cuenta del cliente se usó varias veces seguidas en la ventana
+  pensada para admin) — se apoya en la confirmación completa de ese
+  mismo recorrido horas antes, en la Fase 118, mismo día, sin cambios de
+  código de `server/`/`public/` de por medio.
+- **"Calendario mensual de cargas"** (`docs/guia-uso-orlant.md` → sección
+  5): 4 de 8 filas ("quién la manda"/"de qué sistema sale" para Tráfico
+  de Llamadas, Tráfico de WhatsApp, Tipificación y Agendas) siguen
+  marcadas explícitamente "Por confirmar" — no se resolvieron en esta
+  fase porque dependen de que Edwin las precise, no de nada que se
+  pueda verificar desde el código. Sigue pendiente de Edwin.

@@ -213,3 +213,93 @@ acceso se sumó y restó en el mismo PR que el fix del test flaky). `npm
 audit`: 0 vulnerabilidades antes y después (sin cambios de dependencias).
 5 PRs, uno por tema, CI verde en los 5. Detalle completo en
 `docs/historico/progress-fases.md` → Fase 118.
+
+## Revisión Fase 119 (2026-10-05) — deja ORLANT lista para entregarla al cliente
+
+Objetivo explícito del jefe: (1) entregarle ORLANT al cliente, (2) dejar
+las 7 bases seguras para cargar más meses. No agrega funciones nuevas.
+
+**Verificación en producción con la cuenta REAL del cliente**
+(`scripts/produccion/revision-final.js`, reescrito): a diferencia de la
+Fase 118 (donde el recorrido `CLIENTES_DASH` quedó inconcluso por una
+probable confusión de credenciales), esta fase corrió con la cuenta REAL
+del cliente de ORLANT (creada por el usuario desde la propia
+plataforma). Identidad confirmada por el JWT decodificado (`rol:
+CLIENTES_DASH`, `isMasterAdmin: false`) — el script ahora detecta la
+identidad real de cada ventana de login (ya no asume un orden fijo
+admin→cliente) porque, en la práctica, la cuenta del cliente terminó
+escribiéndose en la primera ventana varias veces seguidas pese al aviso
+en pantalla. Confirmado con esa cuenta real: solo ve su dashboard de
+ORLANT; los 7 endpoints administrativos probados dan 403; las 7 pestañas
+cargan con datos, canvas dibujado y Exportar funcionando; las 5 pestañas
+ocultas no aparecen; sin ningún aviso "demo" visible; Calidad descrita
+(catálogo vacío, 37 monitoreos sin tocar); "Cambiar mi contraseña"
+visible y rechaza una contraseña actual incorrecta. Se corrigieron 2
+falsos negativos del propio script en el camino (un `querySelector` sin
+acotar a la página activa, y ruido de los propios 403 esperados de las
+pruebas de escalada contado como error) — ver el commit para el detalle.
+El recorrido de ADMIN no se repitió esta sesión (la cuenta del cliente
+se usó también en la segunda ventana) — se apoya en la confirmación
+completa de ese mismo recorrido horas antes, en la Fase 118, mismo día.
+
+**Cargas mensuales seguras** (`server/tests/fase119-cargas-multi-mes.test.js`,
+26 pruebas, las 7 bases): falla a mitad de carga inyectada (0 filas a
+medias, confirmado con un monkey-patch real de `db.prepare` que fuerza
+una excepción dentro de la transacción — better-sqlite3 revierte todo);
+otra campaña con las mismas fechas no se toca AL ESCRIBIR (no solo al
+leer); orden inverso (cargar un periodo anterior después de uno más
+reciente); archivo equivocado en la ventana equivocada (400, nunca se
+mezcla). 2 hallazgos de COBERTURA (el código ya se comportaba bien, solo
+faltaba la prueba ejecutada): Efectividad de Agendamiento no tenía la
+prueba de "varios meses reemplaza solo esos meses"; Tráfico de
+Llamadas/WhatsApp, Agendas y Tipificación no tenían una prueba dinámica
+de "fecha futura → 400" — las 4 se agregaron. De paso se confirmó un
+detalle de negocio no obvio: "futura" significa posterior al FIN DEL MES
+EN CURSO, no posterior a "hoy".
+
+**Matriz de acceso de las 7 familias de carga masiva**
+(`server/tests/fase119-matriz-cargas-masivas.test.js`, 9 pruebas): cierra
+el hueco que la Fase 118 dejó explícito (esas 7 solo estaban confirmadas
+por lectura de código). **Hallazgo real, severidad BAJA/informativa,
+documentado y NO corregido**: Tráfico de Llamadas es la única de las 7
+cuya carga no exige `campaignAccess` por campaña puntual — decisión
+EXPLÍCITA y ya documentada de una auditoría anterior (`server/routes/
+trafico.js`, "Decisión explícita, auditoría 2026-09-15"), porque un solo
+archivo trae varias skills que resuelven a campañas distintas vía mapeo.
+No se corrige esta fase: arreglarlo exigiría rediseñar el modelo
+multi-campaña-por-archivo que Edwin pidió, y el riesgo real hoy es
+mínimo (CLINICA AURORA/Hospital La María en cero datos reales). Ver
+`docs/pendientes.md` → "De la Fase 119".
+
+**Zonas horarias** (`server/tests/fase119-zonas-horarias.test.js`, 3
+pruebas): confirmado con EJECUCIÓN real (2 procesos Node, uno con
+`TZ=UTC` y otro con `TZ=America/Bogota`) que `fecha-limites.js`,
+`fecha-limites-logic.js` y `tipificacion-logic.js` dan el mismo
+resultado bajo las 2 zonas horarias — usan exclusivamente métodos
+`getUTC*()` sobre un offset fijo de -5h, nunca la hora local del
+proceso. Defecto simulado (métodos locales sensibles a la TZ) y
+revertido para confirmar que la prueba detecta un problema real: con el
+defecto, una diferencia de un día completo entre los 2 procesos.
+
+**Entrega al cliente**: `docs/procedimiento-carga-mensual.md` (nuevo),
+`CHECKLIST_VERIFICACION_EDWIN.md` (nuevo), guía de uso al día (versión
+1.10.0 → 1.11.2, faltaba mencionar pantalla completa). Confirmado por
+búsqueda (grep) que no hay texto "TODO"/"prueba"/"demo" fuera de lo
+esperado, ni nombres de otras campañas, ni rutas de servidor, en el
+código del frontend que ve un `CLIENTES_DASH` — consistente con el
+chequeo dinámico real contra producción de esta misma fase.
+
+**Fuera de alcance de esta sesión, con motivo documentado** (ver
+`docs/pendientes.md` → "De la Fase 119"): barrido visual completo (7
+pestañas × tema × 4 tamaños de pantalla), barrido de código muerto a
+partir del grafo de `graphify`, XSS dinámico con Playwright, fallas y
+carreras de UI (500/red cortada/cambio rápido de pestaña).
+
+`npm test`: 1071/1071 (1033 previas + 38 nuevas: 26 de cargas
+multi-mes, 9 de la matriz de cargas masivas, 3 de zonas horarias). `npm
+audit`: 0 vulnerabilidades antes y después (sin cambios de
+dependencias). Sin cambio de versión — ningún PR de esta fase toca
+`server/`/`public/` de forma que cambie el comportamiento de la app para
+un usuario real (solo tests, un script de QA ampliado, y docs/HTML de
+contenido). Detalle completo en `docs/historico/progress-fases.md` →
+Fase 119.
