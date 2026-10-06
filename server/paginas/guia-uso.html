@@ -45,7 +45,7 @@
   <div class="wrap">
     <h1>Guía de uso — InConexión Platform (ORLANT)</h1>
     <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
-    <span class="version-pill">Versión de la plataforma: 1.11.2</span>
+    <span class="version-pill">Versión de la plataforma: 1.13.2</span>
   </div>
 </header>
 <div class="wrap">
@@ -75,7 +75,7 @@
 <h2 id="s2">2. El dashboard de ORLANT</h2>
 <p>Al entrar, elige el dashboard de <strong>ORLANT</strong> en el menú principal. Arriba del todo vas a ver:</p>
 <ul>
-  <li>El <strong>selector de MES</strong> — elige el mes que quieres ver (ej. "Ago-26"). Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez.</li>
+  <li>El <strong>selector de MES</strong> — elige el mes que quieres ver, con su nombre completo (ej. "Septiembre 2026"). Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez. A veces un mes aparece como <strong>parcial</strong> (ej. "Julio 2026" solo con datos de Tipificación de WhatsApp) — es normal y esperado cuando a ese mes solo le llegó una parte de los datos, no es un error.</li>
   <li>El botón <strong>Exportar</strong> — descarga a Excel todo lo que estás viendo en la pestaña activa (una hoja por gráfica/tabla).</li>
   <li>El botón de <strong>pantalla completa</strong> — agranda el dashboard para que ocupe toda la pantalla (útil al compartir pantalla en una reunión); un segundo clic (o la tecla Esc) vuelve a la vista normal.</li>
   <li>El interruptor de <strong>tema oscuro/claro</strong> (en el menú de tu usuario, arriba a la derecha) — cambia el color de toda la plataforma, no afecta los datos.</li>
@@ -119,6 +119,7 @@
 <div class="card">
 <h3>Agendamiento</h3>
 <p>"Por especialidad", "Total agendas" y "Agendas por línea" muestran cuántas citas se agendaron, sin un cálculo adicional — son conteos directos agrupados de distinta forma. La 4ª vista, <strong>Ranking de asesores</strong>, es distinta: ordena a los asesores por <strong>% de EFECTIVIDAD de agendamiento = agendas ÷ gestiones</strong> (nunca por cantidad de agendas) — un asesor con pocas gestiones pero casi todas agendadas puede quedar por encima de uno con muchas más gestiones pero menos agendadas. La tarjeta "Efectividad del equipo" es la <strong>suma de todas las agendas ÷ suma de todas las gestiones</strong> (ponderada) — nunca el promedio simple de los % de cada asesor.</p>
+<p>Tanto la tabla de <strong>Agendas</strong> como el <strong>Ranking de Efectividad de Agendamiento</strong> muestran el <strong>nombre real del asesor</strong> — lo ve cualquier usuario con acceso al dashboard de ORLANT (ver <a href="#s7">sección 7</a>). Es normal ver algún asesor por encima del 100% de efectividad (agenda más de lo que cuentan sus gestiones registradas) — no es un error de carga; queda pendiente aclarar si hay agendas que se originan por fuera de las gestiones que se están contando.</p>
 </div>
 <div class="card">
 <h3>Inasistencia</h3>
@@ -127,11 +128,11 @@
 </div>
 <div class="card">
 <h3>Efectividad de Citas</h3>
-<p>El % de <strong>EFECTIVIDAD = citas atendidas ÷ agendas</strong>, un total del mes (no por especialidad ni asesor). Muestra 2 tarjetas: el % del mes elegido arriba, y el % <strong>ponderado</strong> de todo el período que tiene datos cargados (suma de atendidas ÷ suma de agendas de esos meses — nunca el promedio simple de los % de cada mes), con el rango de meses en su etiqueta.</p>
+<p>El % de <strong>EFECTIVIDAD = citas atendidas ÷ agendas</strong>, un total del mes (no por especialidad ni asesor). Muestra 2 tarjetas: el % del mes elegido arriba, y el % <strong>ponderado</strong> de todo el período que tiene datos cargados (suma de atendidas ÷ suma de agendas de esos meses — nunca el promedio simple de los % de cada mes), con el rango de meses en su etiqueta. Hoy esta pestaña solo tiene datos de Enero a Marzo 2026 — Agosto y Septiembre todavía muestran "sin datos" porque falta que llegue ese archivo; en cuanto se cargue, se ven igual que los demás meses.</p>
 </div>
 <div class="card">
 <h3>Tipificación</h3>
-<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional.</p>
+<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes).</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
@@ -165,16 +166,23 @@
 </div>
 <div class="card">
 <h3>Tipificación</h3>
-<p><strong>Qué archivo</strong>: el reporte de tipificación de llamadas/chats de Wolkvox.<br>
-<strong>Hojas</strong>: <code>TIPIFICACION_LLAMADAS</code> y <code>TIPIFICACION_WHATSAPP</code> (independientes, se cargan por separado).<br>
-<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, DESCRIPTION_COD_ACT (el motivo), SKILL_NAME.</p>
+<p><strong>Qué archivo</strong>: el reporte de tipificación de llamadas/chats de Wolkvox. Llamadas y WhatsApp son independientes, se cargan por separado (cada una reemplaza solo su propio canal, nunca el otro).<br>
+<strong>Llamadas</strong> — hoja <code>TIPIFICACION_LLAMADAS</code>, columnas obligatorias AGENT_NAME, DATE, DESCRIPTION_COD_ACT (el motivo), SKILL_NAME.<br>
+<strong>WhatsApp</strong> — el archivo real es el export <strong>"HistChat"</strong> de Wolkvox. La hoja de ese export <strong>cambia de nombre cada vez que se genera</strong> (ej. "HistChat2026-09-30-14h32") — <strong>no hace falta renombrarla</strong>, la plataforma la reconoce igual por sus columnas, no por el nombre de la hoja. Ese archivo trae columnas con datos de contacto del paciente (nombre, correo, teléfono, comentarios de la conversación): la plataforma <strong>nunca las lee ni las guarda</strong> — solo toma el asesor, la fecha y el motivo de contacto.<br>
+<strong>Límite de tamaño por carga</strong>: una carga mensual normal cabe sin problema; si el archivo junta muchos meses de una sola vez y es muy grande, la plataforma avisa ANTES de intentar guardar nada — en ese caso, sube el archivo por meses, uno a la vez.</p>
 </div>
 <div class="card">
 <h3>Agendas</h3>
 <p><strong>Qué archivo</strong>: el reporte de citas agendadas, del sistema de agendamiento de ORLANT.<br>
 <strong>Hoja</strong>: <code>AGENDAS</code>.<br>
 <strong>Columnas obligatorias</strong>: NOMBRE DE AGENTE, SEDE, NOMBRE_EXAMEN, ESPECIALIDAD, PROFESIONAL, FECHA_SOLICITUD, TIPO DE LINEA.<br>
-<strong>Reemplazo</strong>: por el RANGO continuo de fechas que trae el archivo (no por mes).</p>
+<strong>Reemplazo</strong>: por el RANGO continuo de fechas que trae el archivo (no por mes).<br>
+<strong>Límite de tamaño por carga</strong>: igual que Tipificación — una carga mensual normal cabe sin problema; si el archivo junta varios meses de una sola vez y es muy grande, la plataforma avisa ANTES de intentar guardar nada. Sube el archivo por meses, uno a la vez.</p>
+</div>
+<div class="card">
+<h3>Alias de nombre de asesor</h3>
+<p>Cuando el mismo asesor queda escrito de 2 formas distintas en los archivos (ej. con y sin tilde, o con un apellido distinto) en Agendas, Efectividad de Agendamiento o Tipificación, la plataforma puede <strong>unificarlos bajo un solo nombre</strong> para que el Ranking y los reportes no los cuenten como 2 personas diferentes — eso es un "alias". Hoy esto todavía no tiene una pantalla propia (solo lo puede crear o borrar un administrador); si ves un asesor duplicado en el Ranking, avísale a InCo para que agregue el alias.<br>
+<strong>Importante</strong>: borrar un alias NO separa de nuevo los datos que ya quedaron unificados — esos registros ya guardados siguen contando como una sola persona para siempre; borrar el alias solo evita que las cargas futuras se unifiquen de la misma forma.</p>
 </div>
 <div class="card">
 <h3>Efectividad de Agendamiento (Ranking de asesores)</h3>
@@ -208,16 +216,16 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <h2 id="s5">5. Calendario mensual</h2>
 <table>
   <tr><th>Base</th><th>Quién la manda</th><th>De qué sistema sale</th><th>Cuándo se carga</th></tr>
-  <tr><td>Tráfico de Llamadas</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
-  <tr><td>Tráfico de WhatsApp</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
-  <tr><td>Tipificación</td><td>Edwin</td><td>Wolkvox</td><td>Por confirmar</td></tr>
-  <tr><td>Agendas</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Por confirmar</td></tr>
+  <tr><td>Tráfico de Llamadas</td><td>Edwin</td><td>Wolkvox</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
+  <tr><td>Tráfico de WhatsApp</td><td>Edwin</td><td>Wolkvox</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
+  <tr><td>Tipificación</td><td>Edwin</td><td>Wolkvox</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
+  <tr><td>Agendas</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
   <tr><td>Efectividad de Agendamiento</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Inasistencia</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Efectividad de Citas Atendidas</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Calidad</td><td>El equipo de Calidad</td><td>Monitoreos propios</td><td>Continuo, a medida que se hacen</td></tr>
 </table>
-<p><em>(Las columnas "quién la manda" y "de qué sistema sale" se completan con lo que ya sabemos hoy — las columnas "por confirmar" quedan pendientes de que Edwin las precise.)</em></p>
+<p><em>(Las filas en negrita son las que todavía no tienen una frecuencia confirmada — quedan pendientes de que Edwin la precise; el resto ya se confirmó con él.)</em></p>
 
 <h2 id="s6">6. Calidad</h2>
 <ul>
@@ -242,20 +250,16 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <h2 id="s8">8. Pendiente de datos</h2>
 <p>Esto no es un problema de la plataforma — son datos que todavía faltan por llegar:</p>
 <ul>
-  <li>El resumen general todavía no tiene todos los números consolidados.</li>
-  <li>WhatsApp a 5 minutos: falta que llegue el reporte con esa columna.</li>
-  <li>Agendas de 2026: falta la carga de datos reales de este año.</li>
-  <li>Codificaciones de Calidad: falta la lista que va a mandar Edwin.</li>
-  <li>Salida (llamadas/WhatsApp salientes).</li>
-  <li>Ordenamiento médico.</li>
-  <li>Recuperación de cancelados.</li>
+  <li><strong>Efectividad de Citas de agosto y septiembre 2026</strong>: la pestaña sigue mostrando solo Enero-Marzo 2026 hasta que llegue ese archivo.</li>
+  <li><strong>Nivel de servicio de WhatsApp a 5 minutos</strong>: falta que el reporte de Wolkvox traiga esa columna.</li>
+  <li><strong>Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA</strong>: las pantallas ya están construidas, quedan ocultas hasta que llegue el archivo real de cada una.</li>
 </ul>
 
 <h2 id="s9">9. A quién escribir si algo falla</h2>
 <p>Jose David Osorio — (completar).</p>
 
 <a class="back-link" href="/">&larr; Volver a la plataforma</a>
-<footer>InConexión Platform — Guía de uso — versión 1.2.0</footer>
+<footer>InConexión Platform — Guía de uso — versión 1.13.2</footer>
 </div>
 </body>
 </html>
