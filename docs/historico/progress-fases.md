@@ -11911,3 +11911,56 @@ se investigó más a fondo, CI (Node 22) es la referencia real. Todos los
 scripts de investigación de la Parte 3 corrieron contra datos
 SINTÉTICOS locales (`seed:demo`), limpiados de la base local al
 terminar cada uno (sin dejar residuos). Ningún dato real tocado.
+
+### Parte 5 — Cierre: merge, deploy y verificación post-deploy real
+
+PR #315 (Partes 1-3 + versión) mergeado con CI verde (test Node 22,
+docker-build, pantallas). Deploy automático a AWS confirmado en verde.
+Un segundo PR puntual (#316) corrigió, antes de verificar, un hallazgo
+propio encontrado al revisar `scripts/produccion/revision-final.js`: sus
+números esperados de Efectividad de Agendamiento para Sep-26
+(`rankingEquipoGestiones/Agendas/EfectividadPct`) seguían en
+18.566/8.319/44,81 % — los PRELIMINARES de antes de la Fase 122, nunca
+actualizados cuando esa fase cargó el archivo real (Sep-26 real:
+13.146/32.868 = 40,00 %). Correrlo sin corregir habría reportado una
+discrepancia falsa.
+
+**Verificación post-deploy real, con sesión del usuario** (Playwright
+directo, navegador visible, el usuario escribió su contraseña, nunca
+vista ni guardada por el script):
+
+- `GET /api/health` (público, sin sesión): `{"ok":true,"version":"1.13.2","buildId":"1791296578877"}`
+  — versión nueva sirviendo, proceso reiniciado de verdad.
+- **Cuenta ADMINISTRADOR — verificación completa, 0 discrepancias**: las
+  7 pestañas y sus 36 sub-vistas dibujan algo real (`veredicto: "dibujo"`
+  en las 36; la única "sub-pestaña-no-existe" es el AHT de WhatsApp, que
+  la Fase 120 quitó a propósito — esperado, no un hallazgo), 0 paneles en
+  blanco sin mensaje, 0 errores de consola, 0 peticiones fallidas, los 7
+  exports a Excel se dispararon bien. Los 9 números de control
+  coincidieron EXACTO con lo esperado (incluida la corrección de Efectividad
+  de Agendamiento de arriba: 32.868/13.146/40,00 %) y la verificación
+  "dato por dato" por skill/cola × mes (Llamadas, WhatsApp, Tipificación)
+  dio 0 diferencias, 0 duplicados, con el conteo exacto de filas en los 3
+  (150/258/34.661). El login propio quedó en Historial, reciente, con IP
+  y navegador, y el botón "Cambiar mi contraseña" visible.
+- **Cuenta CLIENTES_DASH — NO verificada esta corrida**: la segunda
+  ventana recibió la MISMA cuenta de administrador (el script lo detectó
+  por el JWT y avisó en vez de fallar en silencio) — no se tenía a mano
+  la contraseña del cliente en el momento de la sesión. Coincide con el
+  pendiente ya anotado (`docs/pendientes.md` §1: "Contraseña temporal del
+  usuario CLIENTES_DASH", sigue sin cambiarse). Se puede repetir esta
+  mitad en cualquier momento, sin tocar nada del resto.
+- **No verificado específicamente por este script** (aunque el
+  "dato por dato" de arriba lo respalda indirectamente): el ATA de voz y
+  de WhatsApp por separado, y el desglose mes a mes explícito de
+  Tipificación de WhatsApp (Jul/Ago/Sep) y de Tráfico (Ago vs. Sep por
+  separado) — el script solo arma totales agregados y verificación por
+  skill/cola × mes, no esos 2 cortes puntuales. Ver `docs/pendientes.md`.
+
+### Estado final de la Fase 125
+
+Versión `1.13.2`. 3 PRs: #315 (Partes 1-3 + versión/CHANGELOG), #316
+(fix del script de verificación) y el cierre de esta Parte 5
+(documentación final). Producción confirmada sirviendo `1.13.2` con 0
+discrepancias en el lado de administrador; el lado de CLIENTES_DASH
+queda pendiente de una próxima sesión con esa contraseña.
