@@ -53,23 +53,9 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   verdad (el parser independiente confirma que el formato es válido y el
   contenido correcto, pero no reemplaza abrirlo en la aplicación real).
   Anotado 2026-10-06 (Fase 124), actualizado 2026-10-06 (Fase 125).
-- **Guía de uso (`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`)
-  al día con lo nuevo de la Fase 122-124** — dueño: InCo. Prioridad MEDIA.
-  Falta documentar: Agendas/Efectividad con nombre de asesor, formato
-  HistChat (hoja con nombre variable), alias de asesor (qué es, que no
-  revierte datos ya unificados al borrarse), nombres de mes completos,
-  "Julio 2026" como mes parcial, y marcar explícitamente las filas "por
-  confirmar" del "Calendario mensual de cargas" como pendientes de Edwin
-  (ya existían desde la Fase 119, siguen sin precisar). No se alcanzó a
-  escribir en esta fase por tiempo — contenido para el cliente final, no
-  conviene apurarlo. Anotado 2026-10-06 (Fase 124).
 
 ## 2. Esperando a Edwin (datos/decisiones)
 
-- **Efectividad de Citas de agosto y septiembre/2026** (columnas MES,
-  AGENDAS, ATENDIDAS) — dueño: Edwin (envío) + InCo (carga). Prioridad
-  ALTA. Producción sigue solo con Ene-Mar/2026. Anotado 2026-10-05
-  (reunión), sigue sin llegar.
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
   Salida, Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya
   construidas, ocultas esperando el archivo real). Anotado en fases
@@ -103,19 +89,47 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   aquí solo como recordatorio: si Wolkvox llega a entregarlo, reactivarlo
   es solo `mostrarAht:true` en `PUT /dashboards/config/ORLANT`, sin tocar
   código.
+- **Nivel de Servicio a 5 minutos de WhatsApp** — igual que el AHT de
+  arriba (Fase 126): retirado de pantalla (`mostrarSL5min:false`), el
+  cálculo sigue en el código. Si Wolkvox manda `SERVICE_LEVEL_5MIN`,
+  reactivarlo es `mostrarSL5min:true` en `PUT /dashboards/config/ORLANT`.
+- **Propuesta — indicador de llamadas de salida** (Fase 126, pedido de
+  Edwin reunión 2026-10-06; **SOLO propuesta, pendiente de la base de
+  Edwin** — no se programa nada todavía):
+  - (a) **Dónde encajaría**: una sub-pestaña nueva en Tráfico de
+    Llamadas, junto a Resumen/Abandono/AHT/ASA y ATA/SL 20s — un gráfico
+    simple de mes + cantidad (barra o línea), con % si aplica (salida ÷
+    total gestionado, o salida ÷ entrada — ver pregunta en (d)). Ya existe
+    un tab "Salida" sembrado y oculto en `dashboard-config-seed.js`
+    (líneas ~233-245) del sistema VIEJO de "Gestión de base" — sirve de
+    referencia de intención, pero no de base técnica (ver (c)).
+  - (b) **Columnas de Wolkvox**: lo mínimo sería fecha + skill/línea +
+    cantidad de llamadas de salida (y contestadas, si aplica "nivel de
+    atención" de salida). PII que nunca se leería: cualquier número de
+    teléfono, nombre de paciente/cliente llamado, o resultado/nota de la
+    llamada — igual que Tráfico de Llamadas de entrada hoy, que solo lee
+    agregados por skill/día. Dato curioso ya en el sistema: Tipificación
+    de Llamadas YA tiene un skill llamado "LINEA DE SALIDA" (6.560
+    interacciones en ago-26, 10.404 en sep-26) — no se sabe si es la
+    misma línea que Edwin quiere medir en volumen, o solo coincidencia de
+    nombre (pregunta para él).
+  - (c) **Cargador actual vs. base nueva**: el cargador de Tráfico de
+    Llamadas (`calidad_nivel_servicio_diario`, una fila por skill/día)
+    podría absorberlo SI Wolkvox reporta la línea de salida como un
+    "skill" más en el mismo export diario (igual que distingue 3P/General/
+    Régimen Especiales hoy) — sería el camino más simple, sin tabla
+    nueva. Si en cambio viene en un archivo/formato distinto, hace falta
+    una tabla propia (mismo patrón que Agendas/Inasistencia).
+  - (d) **Preguntas para Edwin**: ¿qué cuenta como "llamada de salida"
+    (cualquier marcación saliente, o solo las que conectan)? ¿el % se
+    saca contra el total de gestiones de ese asesor/día, o contra las
+    llamadas de entrada del mismo período? ¿se necesita por skill/línea
+    separado (3P vs. General) o un total única? ¿viene en el mismo
+    export diario de Wolkvox que Llamadas de entrada, o en un archivo
+    aparte?
 
 ## 3. Esperando decisión de InCo
 
-- **Efectividad de Citas: el mes global cae en un mes sin datos
-  (Septiembre 2026) y se ve un aviso + 2 tarjetas vacías** (hallazgo de
-  InCo, Fase 124). 3 opciones, sin aplicar ninguna sin OK:
-  1. Abrir esa pestaña directo en el último mes CON datos (Marzo 2026),
-     en vez de seguir el mes global de las demás pestañas — **recomendado**,
-     mismo patrón que el ranking de Efectividad de Agendamiento ya usa.
-  2. Ocultar la pestaña hasta que llegue el archivo de ago-sep (igual que
-     las 5 pestañas que esperan base de Edwin).
-  3. Dejarla como está, solo mejorando el texto del aviso.
-  Prioridad MEDIA. Anotado 2026-10-06 (Fase 124).
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
   deja esperando? Prioridad BAJA. Anotado Fase 115 (2026-09-21), sigue
   sin decidirse.
@@ -134,6 +148,21 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
+- **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
+  "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
+  Inasistencia como "especialidades distintas por mes" (17-18) para
+  decidir qué borrar — un proxy liviano, pensado para armar la tabla
+  base×mes rápido. El conteo REAL de filas de la tabla (que varía también
+  por sede y entidad, no solo especialidad) resultó ser **2.312** para
+  Ene-Jul/2026, no ~121 como ese proxy sugería. El endpoint de borrado
+  (`POST /api/admin/borrado-rango`) detectó la discrepancia solo y abortó
+  sin borrar nada (el candado `filasEsperadas` funcionó exactamente para
+  esto) — se pausó, se le mostró el número real al usuario, y se borró
+  recién con su OK explícito sobre esa cifra. No fue un error de la
+  plataforma, fue un error de estimación en el inventario. Para una
+  próxima fase que necesite "cuántas filas hay": usar el dry-run del
+  endpoint de borrado (o una consulta `COUNT(*)` equivalente) como la
+  fuente de verdad, nunca un conteo de categorías distintas como proxy.
 - **`scripts/produccion/revision-final.js` no cubre todavía ATA (voz y
   WhatsApp) ni el desglose mes a mes de Tipificación de WhatsApp
   (Jul/Ago/Sep) ni de Tráfico (Ago vs. Sep por separado)** — confirmado

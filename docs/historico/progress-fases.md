@@ -11964,3 +11964,162 @@ Versión `1.13.2`. 3 PRs: #315 (Partes 1-3 + versión/CHANGELOG), #316
 (documentación final). Producción confirmada sirviendo `1.13.2` con 0
 discrepancias en el lado de administrador; el lado de CLIENTES_DASH
 queda pendiente de una próxima sesión con esa contraseña.
+
+## Fase 126 — Solo agosto y septiembre 2026 + quitar avisos + preparar
+"llamadas de salida" (2026-10-06)
+
+Pedido textual de Edwin (reunión de hoy): "Todos los datos que yo no le
+haya pasado… como pruebas en las plantillas, todo eso hay que
+quitarlo. Solamente dejar agosto y septiembre." Más 2 ajustes de
+pantalla (quitar avisos de Inasistencia y de WhatsApp a 5 min) y una
+propuesta sin programar (llamadas de salida). Regla de oro de siempre:
+nada se marca "verificado" sin haberlo ejecutado; una PARADA OBLIGATORIA
+antes de borrar cualquier dato de producción.
+
+### Parte 1 — Inventario (solo lectura) y plan de borrado
+
+Respaldo de producción confirmado antes de empezar: 11 horas de
+antigüedad, subido a S3 sin error, timer activo (el workflow programado
+había fallado 1 vez el día anterior por un problema de infraestructura
+de GitHub Actions — "runner no disponible" — no del respaldo en sí; se
+re-corrió a mano y salió en verde).
+
+Inventario con sesión real del usuario (solo lectura, por la API —
+nunca SQL directo), base × mes, para las 8 bases de ORLANT:
+
+| Base | Dejar (ago+sep) | Candidato a borrar |
+|---|---|---|
+| Tipificación de Llamadas | Ago 14.940 / Sep 19.721 | — ya estaba limpia |
+| Tipificación de WhatsApp | Ago 12.061 / Sep 13.048 | Jul-26 (71 filas) — caso aparte, el usuario decidió dejarlo |
+| Tráfico de Llamadas | Ago 8.908 / Sep 9.043 | — ya estaba limpia |
+| Tráfico de WhatsApp | Ago 7.390 / Sep 7.968 | — ya estaba limpia |
+| Agendas | Ago 11.040 / Sep 13.146 | Abril-2025: 7.426 filas |
+| Efectividad de Agendamiento | Ago 41,17 % / Sep 40,00 % | — ya estaba limpia |
+| Efectividad de Citas | (ver hallazgo abajo) | Ene/Feb/Mar-2026: 3 filas |
+| Inasistencia | Ago 7,45 % / Sep (parcial) | Ene-Jul-2026: proxy inicial ~121, real 2.312 (ver Parte 2) |
+| Calidad (monitoreos) | — | 37 registros de prueba conocidos, SOLO reportados, nunca tocados |
+
+**Hallazgo que cambió el plan a mitad de la parada**: la premisa de que
+Efectividad de Citas "no tiene ago-sep, falta el archivo de Edwin" ya no
+era cierta — entre el cierre de la Fase 125 y este inventario (mismo
+día), alguien cargó por la interfaz un archivo real con Ago-26
+(11.189/7.896) y Sep-26 (12.194/8.968). Se verificó en Historial
+(`EFECTIVIDAD_CITAS_CARGA`, hoy 15:41 UTC, "0 reemplazada(s)" — una
+carga nueva, no un pisado) antes de confirmar que ago-sep se dejaba
+intacto y solo se borraba Ene-Mar. Agosto coincidía número por número
+con los totales de Inasistencia de ese mes (curioso, nunca explicado del
+todo, pero Septiembre no coincidía con nada — descarta que fuera un
+copiado por error) — el usuario autorizó dejarlo como dato real.
+
+**Mecanismo de borrado — no existía ninguno** para las 7 tablas
+operativas (`agendas`, `tipificaciones`, `inasistencias`,
+`efectividad_agendamiento`, `efectividad_citas`, tráfico voz/WhatsApp):
+solo `DELETE /dashboard/cargas/:id` (otra tabla, el sistema viejo de
+"Gestión de base") y el borrado de monitoreos individuales de Calidad.
+Se propuso en la parada, y el usuario aprobó, un endpoint nuevo
+`POST /api/admin/borrado-rango` con estos candados: solo administrador,
+`campana` siempre `'ORLANT'`, `base` un enum fijo de 8 valores (el SQL
+de tabla/columna sale siempre de un mapa en código, nunca del cuerpo de
+la petición), dry-run por defecto, `filasEsperadas` obligatorio que
+aborta sin borrar si no coincide, transacción, Historial con solo
+conteos.
+
+**Efectividad de Citas vacía (verificado local, antes de saber del
+hallazgo de arriba)**: con 0 filas en local, la pestaña desaparece sola
+del menú (mismo criterio que Agendamiento/Tipificación sin datos) — 0
+canvas en blanco, 0 errores de consola, en claro y oscuro. Quedó sin
+aplicar porque el hallazgo de arriba la volvió innecesaria (la pestaña
+nunca se quedó vacía).
+
+### Parte 1.5 / Parte 2 — Construcción del endpoint y borrado real
+
+PR #318: `POST /api/admin/borrado-rango` (`server/admin-borrado-rango.js`,
+`server/routes/admin.js`, schema en `validation.js`), 11 tests (fallan
+sin el código — la ruta no existía, 404). CI verde, merge, deploy
+confirmado (`/api/health` → `buildId` nuevo).
+
+Borrado real, con sesión del usuario, uno a la vez:
+
+1. **Efectividad de Citas** (2026-01..2026-03): dry-run → 3 filas exacto
+   → confirmado → 3 borradas → verificado: solo quedan Ago-26/Sep-26.
+2. **Agendas** (2025-04..2025-04): dry-run → 7.426 filas exacto →
+   confirmado → 7.426 borradas → verificado: 24.186 total (Ago 11.040 +
+   Sep 13.146), sin Abril-2025.
+3. **Inasistencia** (2026-01..2026-07): dry-run con el proxy del
+   inventario (filasEsperadas:121) → **409, no coincide** (real: 2.312) —
+   el endpoint abortó solo, sin borrar nada. Se reportó el número real al
+   usuario, que autorizó explícitamente con 4 condiciones: (a) confirmar
+   antes de borrar que el universo de meses es exactamente el esperado y
+   que ago/sep no caen en el rango — verificado con una consulta aparte
+   antes del dry-run; (b) `filasEsperadas:2312`; (c) comparar después
+   contra los valores ya calculados en la Parte 1 (Ago-26 11.189 citas /
+   7,45 %, Sep-26 1.483 parcial, período 7,34 % = 930 de 12.672 —
+   corrección: el propio usuario había citado "880 de 12.672" en su
+   condición, tomado de un redondeo impreciso del Part 1.2; el numerador
+   correcto de la fórmula es inasistencia+pendiente = 880+50 = 930, el
+   % final (7,34 %) ya estaba bien calculado en ambos lados). Dry-run →
+   2.312 exacto → confirmado → 2.312 borradas → verificado: Ago-26
+   11.189/7,45 %, Sep-26 1.483, período 7,34 % — **todo cuadró**.
+
+**Corrección documentada** (ver `docs/pendientes.md` §4): el inventario
+de la Parte 1 midió Inasistencia como "especialidades distintas por
+mes" (17-18), un proxy que no es lo mismo que el conteo real de filas
+de la tabla (que también varía por sede y entidad) — de ahí la
+diferencia entre 121 y 2.312. El candado `filasEsperadas` del endpoint
+funcionó exactamente para esto: detectó la discrepancia y nunca dejó
+borrar con un número equivocado.
+
+### Parte 3 — Avisos de Inasistencia y de WhatsApp a 5 minutos
+
+PR #319. Investigado ANTES de tocar nada: la clasificación de avisos de
+Inasistencia (`parcial`/`incompleto`/`sinDatosFiltro`,
+`inasistenciaAvisosPorMes`) ya era 100 % calculada desde los datos
+reales (`inasistenciaMesesFormatoViejo`, SQL `GROUP BY mes HAVING
+SUM(sede != 'SIN DATO') = 0`) — los avisos de los meses de prueba
+desaparecieron solos al borrarlos (Parte 2), sin tocar código. Solo se
+simplificó la REDACCIÓN del aviso `parcial` ("datos parciales (... sin
+sede ni entidad)" → "todavía está incompleto (por ahora solo trae
+...)") — Sep-26 lo sigue mostrando porque sigue siendo cierto (su único
+dato real, "Exámenes Especiales", no trae sede/entidad), confirmado
+contra producción real tras el borrado.
+
+Nivel de Servicio a 5 minutos de WhatsApp: mismo patrón EXACTO que
+`mostrarAht` (Fase 120) — `mostrarSL5min:false` en el panel
+`trafico_whatsapp_combo` + migración idempotente
+(`dashboards_config_orlant_whatsapp_sin_sl5min_v1`) para la base ya
+sembrada. El SL a 20s (que sí llega real) pasa al slot PRINCIPAL de la
+tarjeta/gráfica — se ve igual que Trafico de Llamadas. El cálculo de 5
+min no se borró, solo se dejó de pintar. Verificado local con Playwright
+real (seed:demo, servidor reiniciado para aplicar la migración): claro/
+oscuro/1366×768, 0 menciones a "5 min"/"aún no hay datos" en pantalla ni
+en el export Excel (columna y hoja de aviso ausentes), SL20 como KPI
+principal, 0 errores de consola.
+
+### Parte 4 — Duda de Edwin en Inasistencia (solo reportar)
+
+Por qué el último mes de Inasistencia se ve distinto en la gráfica "Por
+mes" pero no en "Por especialidad": confirmado por lectura de código
+(`_inasistenciaDibujarLineaPorMes`, `inasistencia.js`) que el punto
+hueco + tramo punteado + asterisco en la tabla son exclusivos de la
+gráfica de LÍNEA (tendencia por mes) y dependen de
+`mesesFormatoViejo` — un mes con TODAS sus filas en sede='SIN DATO' se
+marca así para no confundir una tendencia con datos incompletos. La
+vista "Por especialidad" es un gráfico de barras de un solo mes, sin
+concepto de tendencia, así que no tiene ninguna marca equivalente — no
+hay nada que marcar ahí. No es una inconsistencia real, es la diferencia
+esperada entre una vista de tendencia (que necesita avisar antes de
+engañar) y una vista de un solo mes (que no tiene ese riesgo). Con el
+borrado de la Parte 2, Septiembre-2026 es ahora el último mes Y el único
+con ese aviso (antes de borrar, Ene-Jul también lo tenían).
+
+### Parte 6 — Propuesta de llamadas de salida (sin programar)
+
+Propuesta de ≤25 líneas en `docs/pendientes.md` §2 (dónde encajaría,
+columnas de Wolkvox necesarias y cuáles serían PII, si el cargador
+actual de Tráfico de Llamadas podría absorberlo o hace falta tabla
+nueva, preguntas para Edwin) — marcada explícitamente "propuesta,
+pendiente de la base de Edwin". Ningún código nuevo. Dato curioso
+encontrado al investigar: Tipificación de Llamadas ya tiene un skill
+"LINEA DE SALIDA" con volumen real (6.560 en ago-26, 10.404 en sep-26) —
+no se sabe si es la misma línea que Edwin quiere medir en volumen total,
+queda como pregunta para él.

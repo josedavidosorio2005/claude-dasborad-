@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.13.3 — Octubre 2026
+
+**Fase 126: solo quedan los datos oficiales de agosto y septiembre 2026
+— pedido explícito de Edwin.**
+
+- Se quitaron de la plataforma los datos que venían de **plantillas de
+  prueba** (no son datos que Edwin haya mandado como reales): el mes de
+  Abril de 2025 en Agendas, Enero a Marzo de 2026 en Efectividad de
+  Citas, y Enero a Julio de 2026 en Inasistencia. Todo lo demás (agosto,
+  septiembre y el cruce real de julio en Tipificación de WhatsApp) sigue
+  intacto, con los mismos números de siempre.
+- El mismo día llegó el archivo real de Efectividad de Citas de
+  agosto-septiembre — ya está cargado y visible.
+- En Tráfico de WhatsApp ya no aparece el aviso de "Nivel de servicio a
+  5 minutos: aún no hay datos" — se simplificó la pantalla mientras ese
+  dato no esté disponible (vuelve solo, sin avisos, en cuanto llegue).
+- El aviso de un mes con información incompleta en Inasistencia ahora
+  usa un texto más simple, sin palabras técnicas.
+- Limpieza interna: nuevo mecanismo de administrador para borrar datos
+  de prueba por base y rango de meses, con varias verificaciones de
+  seguridad antes de borrar cualquier cosa.
+
 ## v1.13.2 — Octubre 2026
 
 **Fase 125: cierre de lo que quedó pendiente de la Fase 124 — sin

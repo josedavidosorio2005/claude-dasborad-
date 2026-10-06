@@ -8,12 +8,20 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.13.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.13.3` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
 - **Foco actual**: solo **ORLANT** tiene datos reales en producción.
-  Clínica Aurora y Hospital La María siguen en cero.
+  Clínica Aurora y Hospital La María siguen en cero. **Desde la Fase 126**
+  (pedido explícito de Edwin: "todos los datos que yo no le haya pasado...
+  como pruebas en las plantillas, hay que quitarlo"), ORLANT solo tiene
+  **agosto y septiembre de 2026** en todas sus bases (más julio de
+  Tipificación de WhatsApp, real) — los meses de prueba (Ene-Jul/2026 en
+  Inasistencia, Ene-Mar/2026 en Efectividad de Citas, Abril/2025 en
+  Agendas) se borraron por la interfaz, con un endpoint nuevo de solo
+  administrador (`POST /api/admin/borrado-rango`, dry-run + conteo exacto
+  obligatorio).
 - **Pestañas y bases de ORLANT**: 7 pestañas con datos reales (Tráfico de
   Llamadas, Tráfico de WhatsApp, Tipificación, Agendas, Inasistencia,
   Efectividad de Agendamiento, Efectividad de Citas) + Calidad transversal
@@ -30,46 +38,43 @@ narrativo de cada fase, fase por fase, vive en
 - **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
   (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación completa Fase 124, 2026-10-06)
+### Números de control (ORLANT, última verificación completa Fase 126, 2026-10-06)
 
-Reconfirmados contra producción real en la Fase 124 (sesión con el
-usuario, 0 escritura, incluido el alias de asesor: 0 filas con la
-variante "_falla" y 0 grupos de nombres sin unificar en ninguna de las 3
-bases donde aplica): 0 discrepancias en los 9 valores de la tabla de
-abajo, Las 7 pestañas Y cada una de sus sub-pestañas (no solo la que
-abre por defecto) dibujan algo real o muestran un mensaje claro —
-ninguna en blanco — confirmado ahora también en tema oscuro y en
-1920×1080/móvil 412px, que la Fase 122 había dejado sin cubrir. 0
-errores de consola. Ninguna fase desde entonces cargó datos nuevos —
-los números de abajo siguen vigentes.
+**Fase 126** borró los meses de prueba de producción por la interfaz
+(`POST /api/admin/borrado-rango`, dry-run → conteo exacto → confirmar,
+uno a la vez) y reconfirmó con sesión real del usuario tras cada
+borrado: Efectividad de Citas (Ene/Feb/Mar-2026, 3 filas), Agendas
+(Abril/2025, 7.426 filas) e Inasistencia (Ene-Jul/2026, 2.312 filas —
+el inventario previo había estimado ~121 con un proxy equivocado,
+"especialidades distintas" en vez de filas reales; el propio endpoint
+detectó la discrepancia y abortó sin borrar hasta tener el número real y
+el OK explícito, ver `docs/pendientes.md` §4). Verificado después de
+cada borrado: 0 filas fuera del rango pedido, los meses ago-sep intactos
+y con los mismos valores de siempre. Tabla de abajo actualizada con el
+estado resultante — Efectividad de Citas y Agendas ya NO tienen un
+período aparte de meses de prueba, quedan con un solo período real
+(ago-sep) igual que el resto de las bases.
 
-**Fase 125 (mismo día)** reconfirmó, con otra sesión real del usuario y
-`scripts/produccion/revision-final.js`, el subconjunto que ese script
-cubre: Tipificación de Llamadas (34.661), Tráfico de Llamadas y de
-WhatsApp (totales agregados), Inasistencia, Efectividad de Agendamiento
-de Sep-26 (13.146/32.868 = 40,00 %, igual que la fila de abajo) y
-Efectividad de Citas (período 86,01 %) — 0 discrepancias, más una
-verificación "dato por dato" por skill/cola × mes (0 diferencias, 0
-duplicados) que no hace la Fase 124. Solo con la cuenta ADMINISTRADOR —
-la cuenta CLIENTES_DASH quedó sin verificar esta vez (no se tenía la
-contraseña a mano, ver `docs/pendientes.md` §1). No reconfirmó aparte
-Tipificación de WhatsApp, el desglose Ago/Sep de Tráfico de WhatsApp
-(SL20) ni de Agendas, ni el ATA — detalle completo en
+Fases anteriores que ya habían reconfirmado el resto (tema oscuro,
+1920×1080/móvil, alias de asesor, exports, XSS, eje del combo,
+`revision-final.js` dato-por-dato): Fase 124 y Fase 125 — ver
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
-→ Fase 125, Parte 5.
+para el detalle narrativo de cada una. La cuenta CLIENTES_DASH sigue sin
+verificar en ninguna fase reciente (no hay contraseña de cliente a
+mano, ver `docs/pendientes.md` §1).
 
 | Indicador | Valor |
 |---|---|
 | Tipificación de Llamadas (sin cambios desde la Fase 116) | 34.661 (Ago 14.940 / Sep 19.721) |
-| Tipificación de WhatsApp (Fase 122: export HistChat de Wolkvox, nuevo) | 25.180 (Jul 71 / Ago 12.061 / Sep 13.048), 11 skills |
+| Tipificación de WhatsApp (sin cambios desde la Fase 122) | 25.180 (Jul 71 / Ago 12.061 / Sep 13.048), 11 skills |
 | Tráfico de Llamadas (sin cambios desde la Fase 115) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
-| Tráfico de WhatsApp (sin cambios desde la Fase 116) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
-| Agendas (Fase 122: agosto-septiembre/2026, nuevo) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores; Abril 2025 sigue en 7.426 sin cambios |
-| Inasistencia (sin cambios desde la Fase 108) | Ago-26 7,45 %, período 6,87 % |
-| Efectividad de agendamiento (Fase 122: reemplaza el preliminar de Sep-26) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
-| Efectividad de Citas (sin cambios desde la Fase 111 — falta el archivo de ago-sep de Edwin) | Ene 93,67 %, Feb 84,32 %, Mar 85,54 %, período 86,01 % |
+| Tráfico de WhatsApp (sin cambios desde la Fase 116; aviso de SL 5 min retirado de pantalla en la Fase 126) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
+| Agendas (Fase 126: Abril/2025 se borró, queda un solo período real) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores |
+| Inasistencia (Fase 126: Ene-Jul/2026 se borró, "período" ya no mezcla meses de prueba) | Ago-26 7,45 %, período (ago-sep) 7,34 % |
+| Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
+| Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 
-## Índice — fases 0 a 125
+## Índice — fases 0 a 126
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -201,4 +206,5 @@ mismo orden):
 - Fase 123 — Re-carga de TIPIFICACIONES.xlsx para consolidar el alias "_falla" (pendiente de la Fase 122) + identificación de otros 4 archivos reales de Descargas que ya coincidían con lo cargado (se dejaron sin tocar, decisión del usuario) (2026-10-06)
 - Fase 124 — Revisión de errores y bugs probando la página real en producción (lo que la Fase 122 dejó sin cubrir: tema oscuro, 1920×1080, móvil, efecto real del alias, mes parcial de julio) + 1 vulnerabilidad crítica de npm audit corregida + 1 función muerta borrada + reorganización completa de la documentación (`docs/pendientes.md` en 5 secciones, `docs/README.md`, `docs/plantillas-inventario.md` nuevos) (2026-10-06)
 - Fase 125 — Cierre de lo que la Fase 124 dejó sin hacer: corrección del margen de tamaño de carga (era por archivo, no acumulado) + aviso de carga demasiado grande antes de enviar + guía de uso y checklist de Edwin al día + XSS/exports/eje secundario del combo probados de verdad con Playwright contra la página real, no solo lectura de código (2026-10-06)
+- Fase 126 — Pedido de Edwin: borrado de todos los meses de prueba de producción (Inasistencia Ene-Jul/2026, Efectividad de Citas Ene-Mar/2026, Agendas Abril/2025), con un endpoint nuevo de solo administrador (dry-run + conteo exacto obligatorio) construido para la ocasión; retiro del aviso de Nivel de Servicio a 5 minutos de WhatsApp y redacción simplificada del aviso de mes incompleto en Inasistencia; propuesta (sin programar) de un indicador de llamadas de salida (2026-10-06)
 

@@ -44,8 +44,17 @@ const ESPERADO = {
   // Fase 116: formato diario real de Wolkvox (8 colas) reemplazo la
   // plantilla vieja de periodo -- suma de Ago-26+Sep-26.
   wppTotal: 7390 + 7968, wppContestados: 7370 + 7953, wppPendientes: 20 + 15, wppSl20: null, // SL20 varia por mes, no se suma
-  agendasTotal: 7426, agendasGeneral: 4643, agendas3p: 2783,
-  inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 6.87,
+  // Fase 126 (pedido de Edwin, "solo agosto y septiembre"): Abril-2025
+  // (7.426/4.643/2.783) se borro de produccion por la interfaz
+  // (POST /admin/borrado-rango, Parte 2 de esa fase) -- Agendas queda
+  // SOLO con Ago-26 (11.040, 3P 5.076/GENERAL 5.964) + Sep-26 (13.146, 3P
+  // 5.523/GENERAL 7.623) = 24.186 total, 3P 10.599, GENERAL 13.587.
+  agendasTotal: 11040 + 13146, agendasGeneral: 5964 + 7623, agendas3p: 5076 + 5523,
+  // Fase 126: Ene-Jul/2026 (2.312 filas) se borraron por la misma via --
+  // el "periodo" ya no mezcla meses de prueba, queda solo Ago-26+Sep-26
+  // (930 inasistencia+pendiente de 12.672 = 7.34%, confirmado con sesion
+  // real tras el borrado).
+  inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 7.34,
   // Fase 125: estaban en 18566/8319/44.81 -- numeros PRELIMINARES de
   // Sep-26 (antes de la Fase 122), nunca actualizados cuando esa fase
   // reemplazo Efectividad de Agendamiento con el archivo real
@@ -54,7 +63,13 @@ const ESPERADO = {
   // consulta mes=2026-09 (linea 377 de este archivo), por eso el valor
   // correcto es el de Sep-26 solo, no el acumulado ago+sep.
   rankingEquipoGestiones: 32868, rankingEquipoAgendas: 13146, rankingEquipoEfectividadPct: 40.00,
-  efectividadCitasPeriodoAgendas: 1108, efectividadCitasPeriodoAtendidas: 953,
+  // Fase 126: Ene/Feb/Mar-2026 (1.108/953, las plantillas de prueba que
+  // vio Edwin) se borraron por la interfaz. El mismo dia, por fuera de
+  // esta fase, se cargo el archivo real de Ago-Sep/2026 (confirmado por
+  // Historial: carga nueva via la interfaz, "0 reemplazada(s)") -- el
+  // "periodo" ahora es Ago-26 (11.189/7.896) + Sep-26 (12.194/8.968) =
+  // 23.383/16.864 = 72.12%.
+  efectividadCitasPeriodoAgendas: 11189 + 12194, efectividadCitasPeriodoAtendidas: 7896 + 8968,
 };
 
 // Fase 118: rutas que SI pueden dar 4xx en el uso normal de este script y no
@@ -355,10 +370,15 @@ async function correrChequeosAdmin(page) {
   await page.waitForTimeout(800);
   const sinCambios = await page.evaluate(async () => {
     const tipif = await apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS');
-    const porEsp = await apiRequest('GET', '/calidad/agendas/especialidad?campana=ORLANT&mes=2025-04');
-    const porLinea = await apiRequest('GET', '/calidad/agendas/linea?campana=ORLANT&mes=2025-04');
+    // Fase 126: sin filtro de mes -- Abril-2025 ya no existe (borrado por
+    // la interfaz), asi que esto trae el total real de TODOS los meses
+    // que queden (hoy, Ago-26+Sep-26 solamente).
+    const porEsp = await apiRequest('GET', '/calidad/agendas/especialidad?campana=ORLANT');
+    const porLinea = await apiRequest('GET', '/calidad/agendas/linea?campana=ORLANT');
     const totalAgendas = porEsp.reduce((a, r) => a + r.cantidad, 0);
-    const linea = porLinea.filter((r) => r.mes === '2025-04');
+    // Suma TODOS los meses por tipoLinea (ya no un solo mes) -- hoy da
+    // Ago-26+Sep-26, pero no asume cuales meses son.
+    const sumaPorLinea = (tipo) => porLinea.filter((r) => r.tipoLinea === tipo).reduce((a, r) => a + r.cantidad, 0);
     const diario = await apiRequest('GET', '/calidad/nivel-servicio/diario?campana=ORLANT');
     const llamadasTotal = diario.reduce((a, r) => a + (Number(r.totalLlamadas) || 0), 0);
     const llamadasContestadas = diario.reduce((a, r) => a + (Number(r.contestadas) || 0), 0);
@@ -375,8 +395,8 @@ async function correrChequeosAdmin(page) {
       llamadasTotal, llamadasContestadas, llamadasPendientes: llamadasTotal - llamadasContestadas,
       wppTotal, wppContestados, wppPendientes: wppTotal - wppContestados, wppSl20: sl20,
       agendasTotal: totalAgendas,
-      agendasGeneral: (linea.find((r) => r.tipoLinea === 'GENERAL') || {}).cantidad,
-      agendas3p: (linea.find((r) => r.tipoLinea === '3P') || {}).cantidad,
+      agendasGeneral: sumaPorLinea('GENERAL'),
+      agendas3p: sumaPorLinea('3P'),
       inasistenciaAgoPct: inasistAgo.pct,
       inasistenciaPeriodoPct: Math.round((i / t) * 10000) / 100,
     };
