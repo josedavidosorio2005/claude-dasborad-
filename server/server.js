@@ -117,14 +117,28 @@ function createApp() {
   // 14.940 filas en formato array ya pesan ~1.4mb, y el stress-test pedido
   // de 30.000 filas pesa ~2.8mb (supera el limite global). En vez de subir
   // el limite GLOBAL (2mb sigue siendo lo correcto para el resto de rutas,
-  // que no tienen este volumen), solo estas 2 rutas usan un limite mayor
+  // que no tienen este volumen), solo estas rutas usan un limite mayor
   // (8mb, holgado para varios años de crecimiento) -- el resto de la API
   // sigue exactamente en 2mb.
-  const RUTAS_TIPIFICACION_LIMITE_MAYOR = ['/api/calidad/tipificacion/carga', '/api/calidad/tipificacion/carga/impacto'];
+  //
+  // Fase 122 (hallazgo real en produccion): Agendas de ORLANT se diseño
+  // para ~7.500 filas/mes (AGENDAS.xlsx de abril 2025, el unico archivo
+  // real hasta entonces) -- "en arrays el mismo archivo pesa ~35% menos,
+  // con margen comodo" (Fase 78). El archivo real de agosto-septiembre/2026
+  // (2 meses juntos, 24.186 filas) pesa 4.91mb -- mas del doble del limite
+  // global de 2mb. Confirmado al intentar la carga real: 413 "Cuerpo de la
+  // peticion demasiado grande", la carga NUNCA llego a escribir nada (el
+  // body se rechaza completo ANTES del handler). Mismo tratamiento que
+  // Tipificacion: estas 2 rutas de Agendas se agregan a la lista de limite
+  // mayor, en vez de subir el limite global.
+  const RUTAS_LIMITE_MAYOR = [
+    '/api/calidad/tipificacion/carga', '/api/calidad/tipificacion/carga/impacto',
+    '/api/calidad/agendas/carga', '/api/calidad/agendas/carga/impacto',
+  ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
-  const jsonLimiteTipificacion = express.json({ limit: '8mb' });
+  const jsonLimiteMayor = express.json({ limit: '8mb' });
   app.use((req, res, next) => {
-    if (RUTAS_TIPIFICACION_LIMITE_MAYOR.includes(req.path)) return jsonLimiteTipificacion(req, res, next);
+    if (RUTAS_LIMITE_MAYOR.includes(req.path)) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
   });
 

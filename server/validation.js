@@ -502,7 +502,12 @@ const agendasCargaBody = z.object({
   filas: z
     .array(agendasFilaArraySchema)
     .min(1, 'El archivo no tiene filas de datos')
-    .max(20000, 'Demasiadas filas en un solo archivo')
+    // Fase 122 (hallazgo real en produccion): el archivo real de agosto-
+    // septiembre/2026 (2 meses juntos) trae 24.186 filas, por encima del
+    // limite viejo de 20.000 -- subido a 50.000 (igual que Tipificacion,
+    // tipificacionCargaBody) para dar margen a varios meses juntos o mas
+    // volumen por mes.
+    .max(50000, 'Demasiadas filas en un solo archivo')
     // fechaSolicitud = indice 5 de la tupla (AAAA-MM-DD HH:MM:SS -- solo
     // se compara la parte de fecha, los primeros 10 caracteres).
     .superRefine((filas, ctx) => {
