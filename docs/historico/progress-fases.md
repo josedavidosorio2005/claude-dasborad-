@@ -12123,3 +12123,69 @@ encontrado al investigar: Tipificación de Llamadas ya tiene un skill
 "LINEA DE SALIDA" con volumen real (6.560 en ago-26, 10.404 en sep-26) —
 no se sabe si es la misma línea que Edwin quiere medir en volumen total,
 queda como pregunta para él.
+
+### Parte 5 — Documentación y scripts al día
+
+`scripts/produccion/revision-final.js`: Agendas ya no filtra por
+`mes=2025-04` (sumaba un mes que se acababa de borrar) — ahora suma
+TODOS los meses que queden. Efectividad de Citas: `ESPERADO` pasó de
+Ene-Mar (1.108/953, borrados) al nuevo período real Ago-Sep
+(23.383/16.864 = 72,12 %). Inasistencia: `inasistenciaPeriodoPct` de
+6,87 a 7,34. `CHECKLIST_VERIFICACION_EDWIN.md`, la guía de uso (ambas
+copias) y `PROGRESS.md` actualizados con el estado real post-borrado.
+`docs/pendientes.md` cierra 3 ítems resueltos y agrega la lección del
+proxy de inventario de Inasistencia (ver Parte 2). Limpieza de un
+nombre con forma de asesor real que había quedado en
+`efectividad-agendamiento-logic.test.js` desde la Fase 125. PRs #318
+(endpoint), #319 (Parte 3) y #320 (Parte 5) — CI verde en los 3, merge,
+deploy confirmado en cada uno.
+
+### Parte 7 — Verificación final
+
+`npm audit` (completo y `--omit=dev`): 0 vulnerabilidades, en los 3 PRs.
+CI (Node 22 + docker-build + pantallas): verde en los 3. `npm test`
+COMPLETO localmente volvió a quedar inestable en esta máquina (terminó
+sin imprimir el resumen final `# pass`/`# fail`, igual que las Fases 124
+y 125 ya documentaron) — no se investigó más a fondo, CI es la
+referencia real; los archivos tocados por esta fase SÍ se corrieron
+sueltos en verde (74/74).
+
+**Verificación post-deploy real, con sesión del usuario** (3 intentos —
+los 2 primeros expiraron sin detectar login en la ventana de 10 min, el
+3º sí entró):
+
+- `/api/health`: `v1.13.3`, `ok:true`, `buildId` nuevo.
+- **ADMINISTRADOR — 0 discrepancias**: los 9 números de control
+  coincidieron EXACTO con los nuevos valores esperados (incluidos los 3
+  que esta fase cambió: Agendas 24.186, Inasistencia período 7,34 %,
+  Efectividad de Citas período 72,12 %). Las 7 pestañas y sus 36
+  sub-vistas dibujan algo real (0 en blanco, 0 "sub-pestaña-no-existe"
+  inesperada — la única es el AHT de WhatsApp, ya retirado a propósito
+  desde la Fase 120), 0 errores de consola, 0 peticiones fallidas, 7/7
+  exports disparados, verificación "dato por dato" en 0 diferencias.
+  Confirmado en pantalla: el selector de mes de Agendamiento ya NO
+  ofrece Abril-2025; Tipificación ofrece Jul/Ago/Sep-26 (julio real,
+  como se decidió dejarlo); el aviso de Inasistencia de Sep-26 usa la
+  redacción nueva; WhatsApp muestra el Nivel de Servicio a 20s como
+  único/principal, sin ninguna mención a "5 minutos".
+- **CLIENTES_DASH — sin verificar**: la 2ª ventana volvió a recibir la
+  misma cuenta de administrador (igual que la Fase 125) — sigue sin
+  contraseña de cliente a mano.
+- **Hallazgo nuevo de esta verificación** (ver `docs/pendientes.md` §4):
+  el propio script, al armar su diagnóstico de "cada sub-vista dibuja
+  algo real", guarda el texto COMPLETO del panel (incluidos los
+  desplegables de filtro AGENTE/ASESOR) — eso metió nombres reales de
+  asesores de ORLANT en la salida de consola de esta verificación (nunca
+  al repo/commits, pero sí a la transcripción de esta sesión). Anotado
+  como corrección prioritaria, no aplicada todavía por tiempo.
+
+### Estado final de la Fase 126
+
+Versión `1.13.3`. 4 PRs: #318 (endpoint de borrado), #319 (avisos de
+Inasistencia/WhatsApp), #320 (documentación), más el borrado real en
+producción (fuera de cualquier PR, por la interfaz, con sesión del
+usuario). Producción confirmada sirviendo `1.13.3` con 0 discrepancias
+en el lado de administrador; CLIENTES_DASH sigue pendiente de una
+próxima sesión con esa contraseña. Pendiente nuevo de prioridad alta:
+redactar la captura de texto de `revision-final.js` para que deje de
+incluir nombres reales de asesor en su salida.

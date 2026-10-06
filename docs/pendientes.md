@@ -148,6 +148,25 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
+- **`scripts/produccion/revision-final.js` captura texto con nombres
+  reales de asesor en su diagnóstico** — hallazgo de la Fase 126 (Parte
+  7, verificación post-deploy): la función que confirma que cada
+  sub-vista "dibuja algo real" (`host.innerText.slice(0,...)`,
+  guardado en `reporte.admin.subvistas[...][...].texto` para el log de
+  salida) captura el texto COMPLETO del panel, incluidas las listas de
+  los desplegables de filtro (AGENTE/ASESOR) — en Agendamiento,
+  Tipificación y Calidad eso incluye nombres reales de asesores de
+  ORLANT. El dato nunca llega al repo/commits (el script no se
+  commitea con esa salida), pero SÍ queda en la salida de consola de
+  quien corre el script — en esta fase, en la transcripción de la
+  sesión de Claude Code. Prioridad ALTA (es exactamente el tipo de dato
+  que la regla fija de este proyecto dice que nunca debe aparecer fuera
+  de la plataforma). Cómo se cierra: cambiar esa captura para que
+  solo guarde un veredicto (dibujó/no dibujó, cantidad de texto, 0
+  menciones a NaN/undefined) en vez del texto completo, o truncar/
+  redactar cualquier lista de nombres antes de guardarlo. Costo: bajo
+  (un cambio acotado a esa función). Anotado 2026-10-06 (Fase 126), no
+  corregido todavía por tiempo.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
