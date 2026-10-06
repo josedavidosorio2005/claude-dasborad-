@@ -24,7 +24,7 @@ const {
   CARGAS_HOJA_TRAFICO_WHATSAPP,
 } = require('../../public/js/cargas-logic.js');
 const { traficoColIndexMap, traficoParseFilas, traficoAhtPromedioPeriodo } = require('../../public/js/trafico-logic.js');
-const { traficoWppColIndexMap, traficoWppParseFilas, traficoWppResumen } = require('../../public/js/trafico-whatsapp-logic.js');
+const { traficoWppColIndexMap, traficoWppParseFilas } = require('../../public/js/trafico-whatsapp-logic.js');
 
 const FIXTURE_UNIFICADA = path.join(__dirname, 'fixtures', 'PLANTILLA_TRAFICO_UNIFICADA_ORLANT_PRUEBA_AGOSTO_2026.xlsx');
 const FIXTURE_TRAFICO_VOZ = path.join(__dirname, 'fixtures', 'EJEMPLO.xlsx'); // archivo viejo, hoja "DATA", voz
@@ -135,7 +135,7 @@ test('archivo unificado con las 2 hojas llenas: LLAMADAS parsea 50 filas, 2 skil
   assert.equal(Math.round((totAband / totTot) * 10000) / 100, 11.19);
 });
 
-test('archivo unificado: WHATSAPP parsea 5 colas, coincide EXACTO con las Fases 55-56 (7.305/7.109/196, 97.32%/2.68%)', () => {
+test('archivo unificado: WHATSAPP parsea 5 colas (fila a fila, nunca agregadas)', () => {
   const aoa = leerHojaXlsxComoAoA(FIXTURE_UNIFICADA, 'WHATSAPP');
   const res = traficoWppParseFilas(aoa);
   assert.equal(res.error, undefined);
@@ -143,12 +143,6 @@ test('archivo unificado: WHATSAPP parsea 5 colas, coincide EXACTO con las Fases 
   assert.deepEqual(res.colas.sort(), [
     'WHATSAPP AUDIFONOS', 'WHATSAPP FONIATRIA', 'WHATSAPP FONOAUDIOLOGIA', 'WHATSAPP ORLANT 3P', 'WHATSAPP ORLANT GENERAL',
   ]);
-  const resumen = traficoWppResumen(res.filas);
-  assert.equal(resumen.totalWhatsapp, 7305);
-  assert.equal(resumen.contestados, 7109);
-  assert.equal(resumen.abandonados, 196);
-  assert.equal(resumen.nivelAtencionPct, 97.32);
-  assert.equal(resumen.tasaAbandonoPct, 2.68);
 });
 
 test('archivo unificado: "----" en AHT (17/08, 0 contestadas en las 2 skills) queda FUERA del promedio ponderado, nunca cuenta como 0', () => {

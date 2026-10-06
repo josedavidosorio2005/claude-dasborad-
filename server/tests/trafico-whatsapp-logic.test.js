@@ -16,7 +16,6 @@ const {
   traficoWppNumero,
   traficoWppSegundosDesdeFraccionDia,
   traficoWppEsFilaTotal,
-  traficoWppResumen,
   traficoWppFiltrarFilas,
   traficoWppPeriodoDe,
   traficoWppAgregarPorPeriodo,
@@ -82,8 +81,8 @@ test('parseo del archivo REAL (PLANTILLA_TRAFICO_WHATSAPP_EJEMPLO.xlsx, hoja DAT
   assert.equal(orlant3p.asaSegundos, 9230.35);
   assert.equal(orlant3p.ataSegundos, 79125.8);
   // ABANDONO (columna de la plantilla real) NUNCA se parsea -- se recalcula
-  // exacto desde abandonados/total (traficoWppResumen), igual que voz desde
-  // la Fase 45. La fila no debe traer ese campo.
+  // exacto desde abandonados/total (traficoWppAgregarPorPeriodo), igual que
+  // voz desde la Fase 45. La fila no debe traer ese campo.
   assert.equal(orlant3p.abandonoReportado, undefined);
   assert.equal(orlant3p.abandonoPct, undefined);
   // Fase 87 (tema B): este fixture real es de agosto 2026, cargado ANTES de
@@ -145,22 +144,6 @@ test('traficoWppAgregarPorPeriodo: serviceLevel5minPct se agrega ponderado por T
   assert.equal(agregado.length, 1);
   // Ponderado: (100*80+300*90)/400 = 87.5
   assert.equal(agregado[0].serviceLevel5minPct, 87.5);
-});
-
-test('resumen agregado del periodo: suma volumenes primero, recalcula % desde la suma (no promedia % crudos)', () => {
-  const aoa = leerHojaXlsxComoAoA(FIXTURE, 'DATA');
-  const res = traficoWppParseFilas(aoa);
-  const resumen = traficoWppResumen(res.filas);
-  const totalEsperado = 192 + 4844 + 1504 + 31 + 734;
-  const contestadosEsperado = 187 + 4697 + 1467 + 29 + 729;
-  const abandonadosEsperado = 5 + 147 + 37 + 2 + 5;
-  assert.equal(resumen.totalWhatsapp, totalEsperado);
-  assert.equal(resumen.contestados, contestadosEsperado);
-  assert.equal(resumen.abandonados, abandonadosEsperado);
-  assert.equal(resumen.nivelAtencionPct, Math.round((contestadosEsperado / totalEsperado) * 10000) / 100);
-  assert.equal(resumen.tasaAbandonoPct, Math.round((abandonadosEsperado / totalEsperado) * 10000) / 100);
-  // Promedio ponderado por TOTAL WHATSAPP, no promedio simple de las 5 colas.
-  assert.ok(resumen.serviceLevel10secPct > 0 && resumen.serviceLevel10secPct < 100);
 });
 
 test('columnas reordenadas: el emparejamiento sigue siendo por nombre, no por posicion', () => {

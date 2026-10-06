@@ -354,7 +354,7 @@ function traficoWppParseFilasPeriodo(aoa, ws) {
 // Fase 116: formato DIARIO (export real de Wolkvox, SKILL_NAME + DATE, una
 // fila por cola y DIA) -- produce la MISMA forma de fila que el formato
 // periodo (fechaInicio/fechaFin), con fechaInicio===fechaFin===ese dia, para
-// que el resto del pipeline (traficoWppResumen, traficoWppFiltrarFilas,
+// que el resto del pipeline (traficoWppFiltrarFilas,
 // traficoWppAgregarPorPeriodo, y el reemplazo por rango del backend --
 // cargarTraficoWhatsapp, Fase 115) funcione IGUAL sin tener que saber de que
 // formato vino cada fila.
@@ -452,40 +452,6 @@ function traficoWppParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   if (traficoWppEsFormatoDiario(aoa[0])) return traficoWppParseFilasDiario(aoa, ws);
   return traficoWppParseFilasPeriodo(aoa, ws);
-}
-
-// ── Agregado de KPIs para el resumen de un periodo (suma volumenes primero,
-// recalcula % desde esa suma -- nunca promedia los % de las colas). Los
-// SERVICE_LEVEL_* y ASA/ATA se agregan como promedio PONDERADO por
-// TOTAL WHATSAPP, mismo criterio que traficoAgregar en trafico-logic.js. ──
-function traficoWppResumen(filas) {
-  var out = { totalWhatsapp: 0, contestados: 0, abandonados: 0, _tieneAbandonados: false };
-  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'serviceLevel5minPct'];
-  var NUM_PONDERADOS = ['asaSegundos', 'ataSegundos'];
-  PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out['_suma_' + k] = 0; out['_peso_' + k] = 0; });
-
-  filas.forEach(function (f) {
-    var peso = Number(f.totalWhatsapp) || 0;
-    out.totalWhatsapp += peso;
-    out.contestados += Number(f.contestados) || 0;
-    if (f.abandonados != null) { out.abandonados += f.abandonados; out._tieneAbandonados = true; }
-    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) {
-      if (f[k] != null && peso > 0) { out['_suma_' + k] += f[k] * peso; out['_peso_' + k] += peso; }
-    });
-  });
-
-  var r2 = function (n) { return Math.round(n * 100) / 100; };
-  var res = {
-    totalWhatsapp: out.totalWhatsapp,
-    contestados: out.contestados,
-    abandonados: out._tieneAbandonados ? out.abandonados : null,
-    nivelAtencionPct: out.totalWhatsapp > 0 ? r2((out.contestados / out.totalWhatsapp) * 100) : null,
-    tasaAbandonoPct: (out.totalWhatsapp > 0 && out._tieneAbandonados) ? r2((out.abandonados / out.totalWhatsapp) * 100) : null,
-  };
-  PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) {
-    res[k] = out['_peso_' + k] > 0 ? r2(out['_suma_' + k] / out['_peso_' + k]) : null;
-  });
-  return res;
 }
 
 // ── Filtro por cola + rango de fechas (Fase 68, Pedido 5) ───────────────
@@ -645,7 +611,6 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoWppNumero: traficoWppNumero,
     traficoWppSegundosDesdeFraccionDia: traficoWppSegundosDesdeFraccionDia,
     traficoWppParseFilas: traficoWppParseFilas,
-    traficoWppResumen: traficoWppResumen,
     traficoWppFiltrarFilas: traficoWppFiltrarFilas,
     traficoWppPeriodoDe: traficoWppPeriodoDe,
     traficoWppAgregarPorPeriodo: traficoWppAgregarPorPeriodo,
