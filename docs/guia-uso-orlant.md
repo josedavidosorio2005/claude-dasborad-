@@ -366,9 +366,6 @@ por llegar:
 - El resumen general todavía no tiene todos los números consolidados.
 - WhatsApp a 5 minutos: falta que llegue el reporte con esa columna.
 - Agendas de 2026: falta la carga de datos reales de este año.
-- Ranking de asesores: hay una fila llamada "MICHELL GARCIA SERNA_falla"
-  que llegó separada de "MICHELL GARCIA SERNA" en el archivo de Edwin —
-  está pendiente de confirmar con él si son la misma persona.
 - Codificaciones de Calidad: falta la lista que va a mandar Edwin.
 - Salida (llamadas/WhatsApp salientes).
 - Ordenamiento médico.

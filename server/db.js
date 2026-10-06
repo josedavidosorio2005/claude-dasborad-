@@ -405,9 +405,9 @@ CREATE INDEX IF NOT EXISTS idx_efectividad_citas_campana_mes ON efectividad_cita
 
 -- Alias de nombre de asesor (Fase 122, reunion con Edwin 2026-10-05): la
 -- misma persona real puede llegar con mas de un nombre entre archivos (ej.
--- "NATALIA TAMAYO CORREA" en Efectividad de Agendamiento == "ISABEL
--- CORREA" en Agendas) o con una errata puntual de tipeo en Wolkvox (ej.
--- "ESTEFANIA GIRLADO SUAZA"). Se aplica en el SERVIDOR al GUARDAR
+-- "LAURA EJEMPLO TORRES" en Efectividad de Agendamiento == "MARCELA
+-- EJEMPLO RUIZ" en Agendas, nombres ficticios) o con una errata puntual de
+-- tipeo en Wolkvox (ej. "DIANA EJEMPLO SUARZ"). Se aplica en el SERVIDOR al GUARDAR
 -- Tipificacion/Agendas/Efectividad de Agendamiento (ver alias-asesores.js),
 -- nunca reescribe en silencio datos que ya estan guardados -- cambiar un
 -- alias es borrar y volver a crear (alta/baja simple, sin UPDATE).

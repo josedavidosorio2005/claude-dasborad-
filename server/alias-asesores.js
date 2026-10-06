@@ -5,9 +5,10 @@
 // routes/efectividad-agendamiento.js) -- nunca en el navegador, nunca una
 // migracion que reescriba datos ya cargados. Casos reales que la motivan:
 // la misma persona llega con 2 nombres distintos entre archivos (ej.
-// "NATALIA TAMAYO CORREA" en Efectividad de Agendamiento == "ISABEL
-// CORREA" en Agendas) o con una errata puntual de tipeo en Wolkvox (ej.
-// "ESTEFANIA GIRLADO SUAZA", "MICHELL GARCIA SERNA_falla").
+// "LAURA EJEMPLO TORRES" en Efectividad de Agendamiento == "MARCELA
+// EJEMPLO RUIZ" en Agendas) o con una errata puntual de tipeo en Wolkvox
+// (ej. "DIANA EJEMPLO SUARZ", "PEDRO EJEMPLO LOPEZ_falla") -- nombres
+// SIEMPRE ficticios en este archivo, nunca los reales de ORLANT.
 //
 // El alta/baja va por API (routes/alias-asesores.js), solo administrador --
 // nunca por migracion ni seed del repo (un nombre real de asesor no puede

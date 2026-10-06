@@ -1,7 +1,7 @@
 // fase122-efectividad-agendamiento-pct-formato.test.js — Fase 122 (hallazgo
 // real contra el archivo EFECTIVIDAD_EN_AGENDAMIENTO_AGOSTO.xlsx de Edwin):
-// un asesor con efectividad > 100% (SANTIAGO LONDOÑO RUA, agosto: 1337
-// agendas / 1133 gestiones = 118,01%) guarda la celda EFECTIVIDAD como
+// un asesor con efectividad > 100% (nombre ficticio en este archivo, agosto:
+// 1337 agendas / 1133 gestiones = 118,01%) guarda la celda EFECTIVIDAD como
 // 1.180052956751986 con formato REAL de Excel "0%" (confirmado contra el
 // archivo real, solo estructura: celda D17, z:"0%", w:"118%"). La regla
 // vieja ("<=1 es fraccion, >1 ya es porcentaje") adivinaba mal: 1.18 > 1 se
@@ -37,7 +37,7 @@ const HOY = new Date('2026-10-05T12:00:00Z');
 test('_eaCeldaRef: con ws["!ref"]="A3:E22" (header en fila 3, igual que el archivo real), fila 0 de aoa (header) -> fila 3 de Excel', () => {
   const ws = { '!ref': 'A3:E22' };
   assert.equal(_eaCeldaRef(ws, 0, 0), 'A3');
-  assert.equal(_eaCeldaRef(ws, 14, 3), 'D17'); // fila aoa 14 (SANTIAGO, Fase 122) -> Excel D17, confirmado contra el archivo real
+  assert.equal(_eaCeldaRef(ws, 14, 3), 'D17'); // fila aoa 14 (asesor del hallazgo real de la Fase 122) -> Excel D17, confirmado contra el archivo real
 });
 
 test('_eaCeldaRef: sin ws o sin "!ref" -> asume header en fila 1 (comportamiento de siempre, ej. hojas con encabezado normal)', () => {
@@ -59,7 +59,7 @@ test('_eaClasificarCeldaNumerica: sin ws -> null', () => {
 });
 
 // ── _eaPctDesdeCelda: el HALLAZGO REAL, con y sin clasificacion ─────────
-test('HALLAZGO REAL: 1.18 (118%, SANTIAGO) SIN clasificacion -> se adivina mal como 1.2% (comportamiento de ANTES de este fix, documentado a proposito)', () => {
+test('HALLAZGO REAL: 1.18 (118%) SIN clasificacion -> se adivina mal como 1.2% (comportamiento de ANTES de este fix, documentado a proposito)', () => {
   assert.equal(_eaPctDesdeCelda(1.180052956751986), 1.2);
 });
 test('FIX: 1.18 (118%) CON clasificacion "porcentaje" -> 118 (correcto, cubre > 100%)', () => {
