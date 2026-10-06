@@ -12340,20 +12340,62 @@ EDWIN.md` (sin nombres de personas ni rutas internas), `docs/
 pendientes.md` ("Salida" ya no en "Esperando a Edwin" — queda la
 pregunta del denominador del % y de qué significa "3P" para esta base).
 
-### Parte 4 — Carga real en producción: PENDIENTE
+### Parte 4 — Carga real en producción: EJECUTADA
 
-**No ejecutada todavía** — requiere la parada obligatoria (confirmar
-respaldo <24h, mostrar en el chat qué se va a cargar sin nombres de
-personas, y esperar el literal "OK cargar") y después la carga real por
-la interfaz con sesión del usuario, siguiendo el patrón de
-`carga-real-patron.js`. Queda para la continuación de esta fase.
+Respaldo confirmado <24h antes de tocar nada (workflow "Respaldo de
+produccion", modo `estado`: último respaldo local 2026-10-06 04:15 UTC,
+~16.5 h antes de la carga, resultado `success`, subida a S3 `OK`, timer
+activo). Parada obligatoria en el chat (archivo, 2 filas, meses/año que
+mostraría el modal, totales esperados) — el usuario confirmó con "si
+continua y carga esos datos" tras una aclaración (un primer "ok caraga"
+no se tomó como el literal pedido, se pidió confirmar antes de tocar
+producción).
 
-### Estado de la Fase 127 (Partes 1-3)
+Carga real por la interfaz normal "Cargar Datos", con sesión real del
+usuario (patrón de `carga-real-patron.js`, navegador visible, el script
+nunca vio la contraseña): el archivo se reconoció igual que en las
+pruebas (`reconocidaPorEncabezadosComo: "Hoja1"`), el modal de año
+mostró el texto esperado, 2 filas guardadas. Verificado dato por dato
+contra el archivo (API y pantalla): Ago-26 2.169/4.391/747/2.635,
+Sep-26 3.530/6.874/1.277/2.720 — coinciden exacto. Verificación cruzada
+con el skill "LINEA DE SALIDA" de Tipificación de Llamadas: 6.560
+(ago)/10.404 (sep) — coincide exacto con los totales de llamadas del
+archivo de Edwin, confirmando que es la misma línea. Ninguno de los
+números de control existentes cambió (Tipificación Llamadas 34.661,
+Tipificación WhatsApp 25.180 con jul/ago/sep 71/12.061/13.048, Tráfico
+Llamadas y WhatsApp, Agendas 24.186, Efectividad de Agendamiento
+41,17 %/40,00 %, Efectividad de Citas período 72,12 %, Inasistencia
+7,45 %/7,34 %) — 0 discrepancias.
 
-Versión `1.14.0`. Rama `fase-127-salida-llamadas-wpp` (PR pendiente de
-abrir) + PR #322 (corrección de `revision-final.js`, independiente).
-Hallazgo real de esta fase: el buscador de encabezados por rango
-acotado (Fase 122) solo miraba el primer renglón del rango usado de la
-hoja — corregido y cubierto con pruebas de regresión. Producción NO
-tocada todavía — la Parte 4 (carga real) sigue pendiente del "OK cargar"
-explícito del usuario.
+`revision-final.js` (con la corrección de privacidad del PR #322 ya en
+`main`, más los números de control de Salida agregados en un PR corto
+previo, #324) corrido de solo lectura contra producción: las 8 pestañas
+(incluida "Salida") y sus sub-vistas dibujaron algo real, 0 canvas en
+blanco, 0 errores de consola, 0 peticiones fallidas, exports disparados
+en las 8. Lado CLIENTES_DASH sin verificar (no hay contraseña de
+cliente a mano, pendiente ya documentado desde fases anteriores).
+
+**Hallazgo nuevo de esta verificación** (ver `docs/pendientes.md` §4,
+PR #325): el fix de privacidad de la Fase 126/#322 resultó incompleto
+— solo cubría los `<select>` de filtro. La sub-vista "Ranking de
+asesores" de Agendamiento muestra una tabla con nombres reales como su
+contenido PRINCIPAL (no un filtro), y esa tabla volvió a filtrar
+nombres reales de asesor a la consola de esta sesión (nunca al
+repo/commits). Documentado con el alcance correcto y la corrección real
+que hace falta — no aplicada todavía por tiempo.
+
+### Estado final de la Fase 127
+
+Versión `1.14.0`, sirviendo en producción
+(`https://informa.inconexion.com.co/api/health`). PRs: #322 (fix de
+privacidad, previo a esta fase), #323 (Partes 1-3, funcionalidad
+nueva), #324 (números de control de Salida), #325 (documentación del
+hallazgo ampliado de privacidad) — los 4 con CI verde y mergeados.
+Hallazgo real de esta fase (Parte 2): el buscador de encabezados por
+rango acotado (Fase 122) solo miraba el primer renglón del rango usado
+de la hoja — corregido y cubierto con pruebas de regresión. Producción
+con el archivo real de Edwin cargado y verificado dato por dato, 0
+discrepancias en los números de control. Pendiente nuevo (prioridad
+ALTA, sin cambiar código todavía): corregir `revision-final.js` para
+que nunca devuelva texto crudo del DOM en ninguna sub-vista, no solo en
+las que ya se vieron con el problema.

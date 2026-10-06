@@ -22,15 +22,12 @@ narrativo de cada fase, fase por fase, vive en
   Agendas) se borraron por la interfaz, con un endpoint nuevo de solo
   administrador (`POST /api/admin/borrado-rango`, dry-run + conteo exacto
   obligatorio).
-- **Pestañas y bases de ORLANT**: 7 pestañas con datos reales (Tráfico de
+- **Pestañas y bases de ORLANT**: 8 pestañas con datos reales (Tráfico de
   Llamadas, Tráfico de WhatsApp, Tipificación, Agendas, Inasistencia,
-  Efectividad de Agendamiento, Efectividad de Citas) + Calidad transversal
-  — detalle completo (hoja, columnas, de dónde sale, qué pestaña
-  alimenta) en [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
-  **Fase 127**: 8va pestaña, "Salida" (llamadas y WhatsApp de salida,
-  3P/General por mes) — construida y verificada con datos sintéticos;
-  la carga del archivo real de Edwin en producción queda sujeta a la
-  parada obligatoria de esa fase (ver `docs/historico/progress-fases.md`).
+  Efectividad de Agendamiento, Efectividad de Citas, **Salida** desde la
+  Fase 127) + Calidad transversal — detalle completo (hoja, columnas, de
+  dónde sale, qué pestaña alimenta) en
+  [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
   Pestañas ocultas esperando datos de Edwin: ver
   [`docs/pendientes.md`](docs/pendientes.md).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline) en
@@ -42,7 +39,13 @@ narrativo de cada fase, fase por fase, vive en
 - **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
   (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación completa Fase 126, 2026-10-06)
+### Números de control (ORLANT, última verificación completa Fase 127, 2026-10-06)
+
+**Fase 127** cargó en producción el archivo real de Salida de Edwin
+(`FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx`) — verificado dato por
+dato contra el archivo (API y pantalla), con verificación cruzada contra
+el skill "LINEA DE SALIDA" de Tipificación de Llamadas (coincide exacto)
+y 0 discrepancias en el resto de los números de control de abajo.
 
 **Fase 126** borró los meses de prueba de producción por la interfaz
 (`POST /api/admin/borrado-rango`, dry-run → conteo exacto → confirmar,
@@ -77,6 +80,7 @@ mano, ver `docs/pendientes.md` §1).
 | Inasistencia (Fase 126: Ene-Jul/2026 se borró, "período" ya no mezcla meses de prueba) | Ago-26 7,45 %, período (ago-sep) 7,34 % |
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
+| Salida — llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
 
 ## Índice — fases 0 a 126
 
