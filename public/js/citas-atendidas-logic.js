@@ -45,11 +45,50 @@ function _caNumeroEntero(v) {
   return n;
 }
 
+// Fase 122 (mismo hallazgo real que efectividad-agendamiento-logic.js, ahi
+// SI confirmado contra un archivo real: un asesor con efectividad > 100%
+// guarda la celda como una fraccion > 1 con formato "%", y la regla vieja
+// "<=1 es fraccion" adivinaba mal). ATENDIDAS > AGENDAS seria un error de
+// captura (no se espera en el archivo real de esta base), pero se cubre
+// igual por consistencia -- mismo patron exacto que _eaClasificarCeldaNumerica/
+// _eaCeldaRef (efectividad-agendamiento-logic.js) y
+// traficoClasificarCeldaNumerica (trafico-logic.js, Fase 88): leer el
+// FORMATO real de la celda (`z` contiene "%") en vez de adivinar por el
+// valor. Esta hoja tambien puede traer encabezados fuera de la fila 1 de
+// Excel (mismo comentario de cabecera que efectividad-agendamiento-logic.js),
+// de ahi el offset via ws['!ref'].
+function _caFilaExcelInicio(ws) {
+  var m = /^[A-Z]+(\d+):/.exec((ws && ws['!ref']) || '');
+  return m ? parseInt(m[1], 10) : 1;
+}
+function _caCeldaRef(ws, filaAoa0based, col0based) {
+  var fila = _caFilaExcelInicio(ws) + filaAoa0based;
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + fila;
+}
+function _caClasificarCeldaNumerica(ws, filaAoa0based, col0based) {
+  if (!ws) return null;
+  var cell = ws[_caCeldaRef(ws, filaAoa0based, col0based)];
+  if (!cell || cell.t !== 'n') return null;
+  return (cell.z && cell.z.indexOf('%') !== -1) ? 'porcentaje' : 'numero';
+}
+
 // "93,67 %" / "93.67%" / 93.67 / 0.9367 (fraccion de formato % de Excel) ->
 // 93.67 -- mismo criterio que _eaPctDesdeCelda/_inasistenciaPctDesdeCelda.
-function _caPctDesdeCelda(v) {
+// `clasificacion` (Fase 122, opcional): ver _caClasificarCeldaNumerica --
+// sin ella (ws ausente), comportamiento IDENTICO al de siempre.
+function _caPctDesdeCelda(v, clasificacion) {
   if (v === null || v === undefined || v === '') return null;
-  if (typeof v === 'number') return Math.round((v <= 1 ? v * 100 : v) * 100) / 100;
+  if (typeof v === 'number') {
+    if (clasificacion === 'porcentaje') return Math.round(v * 10000) / 100;
+    if (clasificacion === 'numero') return Math.round(v * 100) / 100;
+    return Math.round((v <= 1 ? v * 100 : v) * 100) / 100;
+  }
   var s = String(v).trim().replace('%', '').replace(',', '.').trim();
   if (s === '') return null;
   var n = Number(s);
@@ -59,7 +98,9 @@ function _caPctDesdeCelda(v) {
 // aoa = array-of-arrays ya resuelto por SheetJS (aoa[0] = encabezados).
 // Devuelve { error } si falta una columna obligatoria, o { filas, avisos,
 // advertenciasEfectividad }.
-function citasAtendidasParseFilas(aoa, ahora) {
+// `ws` (Fase 122, opcional): ver efectividadAgendamientoParseFilas -- sin
+// ella, comportamiento IDENTICO al de siempre.
+function citasAtendidasParseFilas(aoa, ahora, ws) {
   var header = (aoa && aoa[0]) || [];
   var map = citasAtendidasColIndexMap(header);
   var faltantes = CITAS_ATENDIDAS_COLUMNAS.filter(function (c) { return c.obligatoria && map[c.key] === undefined; });
@@ -86,7 +127,8 @@ function citasAtendidasParseFilas(aoa, ahora) {
 
     var efRecalcPct = agendas > 0 ? Math.round((atendidas / agendas) * 10000) / 100 : 0;
     if (map.efectividadArchivo !== undefined) {
-      var delArchivo = _caPctDesdeCelda(row[map.efectividadArchivo]);
+      var clasifEf = ws ? _caClasificarCeldaNumerica(ws, r, map.efectividadArchivo) : null;
+      var delArchivo = _caPctDesdeCelda(row[map.efectividadArchivo], clasifEf);
       if (delArchivo !== null && delArchivo !== efRecalcPct) {
         advertenciasEfectividad.push(
           'Fila ' + (r + 1) + ' (' + mes + '): EFECTIVIDAD CITAS ATENDIDAS del archivo (' + delArchivo +
@@ -152,6 +194,9 @@ if (typeof module !== 'undefined' && module.exports) {
     CITAS_ATENDIDAS_COLUMNAS: CITAS_ATENDIDAS_COLUMNAS,
     CITAS_ATENDIDAS_ORDEN_ARRAY: CITAS_ATENDIDAS_ORDEN_ARRAY,
     citasAtendidasColIndexMap: citasAtendidasColIndexMap,
+    _caCeldaRef: _caCeldaRef,
+    _caClasificarCeldaNumerica: _caClasificarCeldaNumerica,
+    _caPctDesdeCelda: _caPctDesdeCelda,
     citasAtendidasParseFilas: citasAtendidasParseFilas,
     citasAtendidasFilaComoArray: citasAtendidasFilaComoArray,
     citasAtendidasMesesDelArchivo: citasAtendidasMesesDelArchivo,

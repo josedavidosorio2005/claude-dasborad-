@@ -505,7 +505,12 @@ async function procesarArchivoConsolidado(input){
     } else if(h.tipo === 'agendas'){
       parseFn = agendasParseFilas;
     } else if(h.tipo === 'efectividad_agendamiento'){
-      parseFn = function(a){ return efectividadAgendamientoParseFilas(a); };
+      // Fase 122: `ws` (2do param de cargasProcesarHoja) para que la
+      // columna EFECTIVIDAD use el formato real de celda (ver
+      // efectividad-agendamiento-logic.js) -- `ahora` (2do param real de la
+      // funcion) se deja en null, la hora REAL del sistema (mismo
+      // comportamiento que siempre, nunca se le paso `ahora` desde aqui).
+      parseFn = function(a, w){ return efectividadAgendamientoParseFilas(a, null, w); };
     } else if(h.tipo === 'tipificacion'){
       // Fase 122: el canal (LLAMADAS/WHATSAPP) decide si se aplica la
       // eliminacion de duplicados exactos de la Fase 88 (ver
@@ -515,7 +520,9 @@ async function procesarArchivoConsolidado(input){
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){
-      parseFn = function(a){ return citasAtendidasParseFilas(a); };
+      // Fase 122: mismo motivo que efectividad_agendamiento -- `ws` para el
+      // formato real de la celda EFECTIVIDAD CITAS ATENDIDAS.
+      parseFn = function(a, w){ return citasAtendidasParseFilas(a, null, w); };
     } else {
       parseFn = _cargasParseTraficoAuto;
     }

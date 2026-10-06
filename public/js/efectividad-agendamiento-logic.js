@@ -62,11 +62,67 @@ function _eaNumeroEntero(v) {
   return n;
 }
 
+// Fase 122 (hallazgo real, EFECTIVIDAD_EN_AGENDAMIENTO_AGOSTO.xlsx): un
+// asesor con efectividad > 100% (ej. SANTIAGO LONDOÑO RUA, 118%) guarda la
+// celda EFECTIVIDAD como 1.180052956751986 con formato real de Excel "0%"
+// -- la vieja regla "<=1 es fraccion, >1 ya es porcentaje" adivinaba mal
+// para estos casos (1.18 > 1 se tomaba como "ya es porcentaje", dando 1.2%
+// en vez de 118%, y la plataforma avisaba "no coincide con el recalculo"
+// sobre un archivo que en realidad SI coincidia). Mismo patron ya
+// establecido para esto en Trafico (traficoClasificarCeldaNumerica,
+// trafico-logic.js, Fase 88): leer el FORMATO real de la celda (`z`
+// contiene "%") en vez de adivinar por el valor.
+//
+// A diferencia de Trafico (header en la fila 1 de Excel), esta hoja trae
+// sus 2 primeras filas de Excel totalmente vacias y los encabezados en la
+// fila 3 (ver cabecera de este archivo) -- la celda cruda real de la fila
+// `r` de `aoa` NO esta en la fila `r` de Excel, sino en
+// (fila de inicio del rango usado de la hoja) + r. `_eaFilaExcelInicio` lee
+// ws['!ref'] (ej. "A3:E22") con una expresion regular simple -- sin
+// depender de la libreria XLSX aqui (este archivo es logica pura, sin DOM
+// ni dependencias, para poder probarse con node:test sin cargar un
+// navegador ni SheetJS).
+function _eaFilaExcelInicio(ws) {
+  var m = /^[A-Z]+(\d+):/.exec((ws && ws['!ref']) || '');
+  return m ? parseInt(m[1], 10) : 1;
+}
+function _eaCeldaRef(ws, filaAoa0based, col0based) {
+  var fila = _eaFilaExcelInicio(ws) + filaAoa0based;
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + fila;
+}
+// 'porcentaje' si la celda es numerica (t:'n') y su formato (z) contiene
+// "%" (guarda la FRACCION, se multiplica x100); 'numero' si es numerica sin
+// ese formato; null sin informacion de formato (ws ausente, celda de
+// texto/vacia) -- en null, _eaPctDesdeCelda cae al comportamiento de
+// SIEMPRE (adivina por el valor, igual que antes de esta fase).
+function _eaClasificarCeldaNumerica(ws, filaAoa0based, col0based) {
+  if (!ws) return null;
+  var cell = ws[_eaCeldaRef(ws, filaAoa0based, col0based)];
+  if (!cell || cell.t !== 'n') return null;
+  return (cell.z && cell.z.indexOf('%') !== -1) ? 'porcentaje' : 'numero';
+}
+
 // "97,36 %" / "97.36%" / 97.36 / 0.9736 (fraccion de formato % de Excel) ->
 // 97.36 -- mismo criterio que _inasistenciaPctDesdeCelda.
-function _eaPctDesdeCelda(v) {
+// `clasificacion` (Fase 122, opcional): resultado de
+// _eaClasificarCeldaNumerica para ESTA celda -- 'porcentaje' fuerza x100
+// sin importar la magnitud (cubre > 100%); 'numero' toma el valor tal cual;
+// sin clasificacion (ws ausente), sigue el criterio viejo "<=1 es fraccion"
+// EXACTAMENTE igual que antes de esta fase (nunca cambia el resultado de
+// una prueba vieja que no pasa `ws`).
+function _eaPctDesdeCelda(v, clasificacion) {
   if (v === null || v === undefined || v === '') return null;
-  if (typeof v === 'number') return Math.round((v <= 1 ? v * 100 : v) * 10) / 10;
+  if (typeof v === 'number') {
+    if (clasificacion === 'porcentaje') return Math.round(v * 1000) / 10;
+    if (clasificacion === 'numero') return Math.round(v * 10) / 10;
+    return Math.round((v <= 1 ? v * 100 : v) * 10) / 10;
+  }
   var s = String(v).trim().replace('%', '').replace(',', '.').trim();
   if (s === '') return null;
   var n = Number(s);
@@ -77,7 +133,12 @@ function _eaPctDesdeCelda(v) {
 // la fila que sea del Excel original -- ver cabecera del archivo). Devuelve
 // { error } si falta una columna obligatoria, o { filas, avisos,
 // advertenciasEfectividad }.
-function efectividadAgendamientoParseFilas(aoa, ahora) {
+// `ws` (Fase 122, opcional): worksheet CRUDO de SheetJS -- si viene, la
+// columna EFECTIVIDAD usa su FORMATO real de celda para decidir si
+// multiplicar x100 (ver _eaClasificarCeldaNumerica), cubriendo asesores con
+// efectividad > 100%. Sin `ws`, el comportamiento es EXACTAMENTE igual al
+// de siempre.
+function efectividadAgendamientoParseFilas(aoa, ahora, ws) {
   var header = (aoa && aoa[0]) || [];
   var map = efectividadAgendamientoColIndexMap(header);
   var faltantes = EFECTIVIDAD_AGENDAMIENTO_COLUMNAS.filter(function (c) { return c.obligatoria && map[c.key] === undefined; });
@@ -107,7 +168,8 @@ function efectividadAgendamientoParseFilas(aoa, ahora) {
 
     var efRecalcPct = gestiones > 0 ? Math.round((agendas / gestiones) * 1000) / 10 : 0;
     if (map.efectividadArchivo !== undefined) {
-      var delArchivo = _eaPctDesdeCelda(row[map.efectividadArchivo]);
+      var clasifEf = ws ? _eaClasificarCeldaNumerica(ws, r, map.efectividadArchivo) : null;
+      var delArchivo = _eaPctDesdeCelda(row[map.efectividadArchivo], clasifEf);
       if (delArchivo !== null && delArchivo !== efRecalcPct) {
         advertenciasEfectividad.push(
           'Fila ' + (r + 1) + ' (' + asesor + '): EFECTIVIDAD del archivo (' + delArchivo +
@@ -148,6 +210,9 @@ if (typeof module !== 'undefined' && module.exports) {
     EFECTIVIDAD_AGENDAMIENTO_COLUMNAS: EFECTIVIDAD_AGENDAMIENTO_COLUMNAS,
     EFECTIVIDAD_AGENDAMIENTO_ORDEN_ARRAY: EFECTIVIDAD_AGENDAMIENTO_ORDEN_ARRAY,
     efectividadAgendamientoColIndexMap: efectividadAgendamientoColIndexMap,
+    _eaCeldaRef: _eaCeldaRef,
+    _eaClasificarCeldaNumerica: _eaClasificarCeldaNumerica,
+    _eaPctDesdeCelda: _eaPctDesdeCelda,
     efectividadAgendamientoParseFilas: efectividadAgendamientoParseFilas,
     efectividadAgendamientoFilaComoArray: efectividadAgendamientoFilaComoArray,
     efectividadAgendamientoFmtPct: efectividadAgendamientoFmtPct,
