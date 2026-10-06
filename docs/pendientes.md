@@ -138,25 +138,35 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- **`scripts/produccion/revision-final.js` captura texto con nombres
-  reales de asesor en su diagnóstico** — hallazgo de la Fase 126 (Parte
-  7, verificación post-deploy): la función que confirma que cada
-  sub-vista "dibuja algo real" (`host.innerText.slice(0,...)`,
-  guardado en `reporte.admin.subvistas[...][...].texto` para el log de
-  salida) captura el texto COMPLETO del panel, incluidas las listas de
-  los desplegables de filtro (AGENTE/ASESOR) — en Agendamiento,
-  Tipificación y Calidad eso incluye nombres reales de asesores de
-  ORLANT. El dato nunca llega al repo/commits (el script no se
-  commitea con esa salida), pero SÍ queda en la salida de consola de
-  quien corre el script — en esta fase, en la transcripción de la
-  sesión de Claude Code. Prioridad ALTA (es exactamente el tipo de dato
-  que la regla fija de este proyecto dice que nunca debe aparecer fuera
-  de la plataforma). Cómo se cierra: cambiar esa captura para que
-  solo guarde un veredicto (dibujó/no dibujó, cantidad de texto, 0
-  menciones a NaN/undefined) en vez del texto completo, o truncar/
-  redactar cualquier lista de nombres antes de guardarlo. Costo: bajo
-  (un cambio acotado a esa función). Anotado 2026-10-06 (Fase 126), no
-  corregido todavía por tiempo.
+- **`scripts/produccion/revision-final.js` sigue capturando texto con
+  nombres reales de asesor en su diagnóstico — el alcance del hallazgo
+  de la Fase 126 era INCOMPLETO** (hallazgo de la Fase 126, Parte 7;
+  re-confirmado y AMPLIADO en la Fase 127, Parte 4): la función que
+  confirma que cada sub-vista "dibuja algo real" (`veredictoSubvista`,
+  `host.innerText.slice(0,800)` de un clon del panel, guardado en
+  `reporte.admin.subvistas[...][...].texto` para el log de salida)
+  captura el texto COMPLETO del panel. La Fase 126 solo identificó una
+  fuente (las listas de los desplegables de filtro AGENTE/ASESOR) y la
+  Fase 127 (PR #322) la corrigió quitando los `<select>` del clon antes
+  de leer `innerText` — esa parte quedó bien resuelta. Pero al correr el
+  script de nuevo en la Fase 127 (Parte 4, verificación post-carga de
+  Salida) volvieron a aparecer nombres reales: la sub-vista "Ranking de
+  asesores" de Agendamiento muestra una TABLA con nombres reales como su
+  contenido PRINCIPAL (no un filtro) — esa tabla nunca pasó por el fix
+  del `<select>` porque no es un `<select>`. Mismo efecto que antes: el
+  dato nunca llega al repo/commits, pero sí a la consola de quien corre
+  el script (en la Fase 127, de nuevo en la transcripción de la sesión
+  de Claude Code). Prioridad ALTA, sin cambios. Cómo se cierra de verdad
+  esta vez: no alcanza con quitar los `<select>` — hace falta o (a) que
+  `veredictoSubvista` nunca devuelva texto crudo del DOM, solo un
+  veredicto booleano + conteo de caracteres + si matchea NaN/undefined/
+  mensajes "sin datos" (todo calculado DENTRO del `page.evaluate`, nunca
+  el texto en sí), o (b) una lista explícita de sub-vistas conocidas por
+  mostrar nombres (Ranking de asesores, y cualquier futura tabla
+  nominal) que se excluyen de la captura de texto por completo. Costo:
+  bajo-medio (la opción (a) es más simple y cierra la clase completa de
+  problema, no solo los casos ya vistos). Anotado 2026-10-06 (Fase 126),
+  ampliado 2026-10-06 (Fase 127) — sigue sin corregirse por completo.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
