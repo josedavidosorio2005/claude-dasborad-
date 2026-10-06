@@ -223,6 +223,7 @@ function createApp() {
   api.use(require('./routes/historial'));
   api.use(require('./routes/seguridad'));
   api.use(require('./routes/guia'));
+  api.use(require('./routes/admin'));
 
   // 404 JSON para rutas de API desconocidas (antes del fallback SPA).
   api.use((req, res) => res.status(404).json({ error: 'Recurso no encontrado' }));

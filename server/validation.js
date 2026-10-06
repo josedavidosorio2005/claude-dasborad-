@@ -179,6 +179,31 @@ const mesSchema = z
   .string()
   .regex(/^\d{4}-\d{2}$/, 'El mes debe tener formato AAAA-MM');
 
+// Fase 126 (pedido de Edwin: quitar los meses de prueba, dejar solo
+// ago-sep/2026 real): borrado de produccion por base + rango de meses.
+// `base` es un enum FIJO (nunca texto libre -- ver admin-borrado-rango.js,
+// TABLAS, para por que eso evita inyeccion SQL). `campana` es SIEMPRE
+// 'ORLANT' por ahora -- candado explicito para que este camino nunca
+// pueda tocar Aurora/HLM/otro cliente, aunque alguien lo intente a mano
+// contra la API. `filasEsperadas` es obligatorio: el servidor aborta sin
+// borrar nada si el conteo real no coincide (ver routes/admin.js).
+// `confirmar` por defecto false -- sin eso, la peticion es un dry-run
+// (cuenta, no borra).
+const borradoRangoBody = z
+  .object({
+    base: z.enum([
+      'agendas', 'tipificacion_llamadas', 'tipificacion_whatsapp',
+      'trafico_llamadas', 'trafico_whatsapp', 'inasistencia',
+      'efectividad_agendamiento', 'efectividad_citas',
+    ], { error: 'base invalida' }),
+    campana: z.literal('ORLANT', { error: 'Este borrado solo esta habilitado para ORLANT' }),
+    mesDesde: mesSchema,
+    mesHasta: mesSchema,
+    filasEsperadas: z.number().int().min(0),
+    confirmar: z.boolean().optional().default(false),
+  })
+  .refine((b) => b.mesDesde <= b.mesHasta, { message: 'mesDesde debe ser <= mesHasta', path: ['mesDesde'] });
+
 const respuestaSchema = z.enum(['SI', 'NO', 'N/A', '']);
 
 // answers: { "1": "SI", "2": "NO", ... } — claves numericas, valores acotados.
@@ -1060,5 +1085,6 @@ module.exports = {
     gerenciaCargaBody,
     ghPersonalBody,
     ghPersonalUpdate,
+    borradoRangoBody,
   },
 };
