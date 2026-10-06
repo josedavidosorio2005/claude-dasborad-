@@ -184,7 +184,12 @@ function _inasistenciaFiltroActivoTxt(estado){
 function _inasistenciaAvisoHtml(a, estado){
   var texto;
   if(a.tipo === 'parcial'){
-    texto = inasistenciaMesLbl(a.mes) + ': datos parciales (solo ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + ', sin sede ni entidad).';
+    // Fase 126 (pedido de Edwin, redaccion simple): antes decia "datos
+    // parciales (... sin sede ni entidad)" -- "sede ni entidad" es jerga
+    // tecnica del archivo, no algo que el cliente necesite entender. El
+    // mensaje sigue siendo honesto (el mes SI esta incompleto) pero sin
+    // explicar el motivo tecnico.
+    texto = inasistenciaMesLbl(a.mes) + ': todavía está incompleto (por ahora solo trae ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + ').';
   } else if(a.tipo === 'incompleto'){
     texto = inasistenciaMesLbl(a.mes) + ': solo incluye ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + '.';
   } else {

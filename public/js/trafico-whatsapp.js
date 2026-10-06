@@ -49,6 +49,16 @@ var _traficoWppSubtabActivo = {}; // por campana -> key de subtab activa
 // un cliente nuevo sin ese ajuste, o Trafico de Llamadas que no usa este
 // archivo) para no romper nada que no se haya migrado explicitamente.
 var _traficoWppMostrarAht = {};
+// Fase 126 (pedido de Edwin): el nivel de servicio a 5 minutos sigue sin
+// dato real (Wolkvox no manda SERVICE_LEVEL_5MIN todavia) -- mismo patron
+// EXACTO que _traficoWppMostrarAht de arriba (p.mostrarSL5min,
+// dashboard-config-seed.js / migracion dashboards_config_orlant_whatsapp_sin_sl5min_v1
+// en server/db.js). Con esto en false, la pestana se ve exactamente como
+// si WhatsApp solo hubiera tenido SIEMPRE el SL a 20s (nunca un hueco/
+// aviso) -- el calculo de 5 min NO se borra, solo se deja de pintar; basta
+// con mostrarSL5min:true (o la columna llega) para que vuelva a verse sin
+// tocar codigo.
+var _traficoWppMostrarSL5min = {};
 // Fase 86 (tema 3): mismo patron que _traficoMesSincronizado (trafico.js).
 var _traficoWppMesSincronizado = {};
 var _traficoWppSinDatosMesGlobal = {};
@@ -136,6 +146,7 @@ async function _traficoWppRenderPanel(p, i) {
   // Fase 120: solo `false` explicito apaga el AHT -- cualquier otro valor
   // (true, undefined en una instalacion vieja) lo deja encendido.
   _traficoWppMostrarAht[campana] = (p.mostrarAht !== false);
+  _traficoWppMostrarSL5min[campana] = (p.mostrarSL5min !== false);
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
@@ -339,17 +350,29 @@ function _traficoWppRenderContenido(i){
   // pidio el jefe), 20s es la que YA existe en Wolkvox. Si 5 min viene
   // null (sin esa columna cargada), NUNCA se reemplaza por el de 20s --
   // serian umbrales distintos, se muestra "sin dato" en vez de inventar.
-  var nivelServicio5min = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel5minPct');
   var nivelServicio20s = traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
+  // Fase 126: con mostrarSL5min:false, el SL a 20s pasa al slot PRINCIPAL
+  // (mismo patron que Trafico de Llamadas, que solo tiene un nivel de
+  // servicio) -- nunca un slot "2" vacio ni el aviso de 5 min.
+  var mostrarSL5 = _traficoWppMostrarSL5min[campana];
+  var nivelServicio5min = mostrarSL5 ? traficoWppServiceLevelPromedioPeriodo(filtradas, 'serviceLevel5minPct') : null;
   var SIN_DATO_5MIN_MSG = TRAFICO_WPP_SIN_DATO_5MIN_MSG;
 
-  _traficoDibujarKpis('tww', i, { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio5min, nivelServicio2: nivelServicio20s },
-    { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados',
-      nivelServicioLabel: 'Nivel de Servicio (5 min)',
-      nivelServicioNota: 'Porcentaje de WhatsApp contestados dentro de los primeros 5 minutos (300 segundos), ponderado por el total de WhatsApp del periodo/filtro actual.',
-      nivelServicioSinDatoMsg: SIN_DATO_5MIN_MSG,
-      nivelServicio2Label: 'Nivel de Servicio (20 s)',
-      nivelServicio2Nota: 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.' }, campana);
+  var kpiTotales = { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono };
+  var kpiLabels = { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados' };
+  if (mostrarSL5) {
+    kpiTotales.nivelServicio = nivelServicio5min; kpiTotales.nivelServicio2 = nivelServicio20s;
+    kpiLabels.nivelServicioLabel = 'Nivel de Servicio (5 min)';
+    kpiLabels.nivelServicioNota = 'Porcentaje de WhatsApp contestados dentro de los primeros 5 minutos (300 segundos), ponderado por el total de WhatsApp del periodo/filtro actual.';
+    kpiLabels.nivelServicioSinDatoMsg = SIN_DATO_5MIN_MSG;
+    kpiLabels.nivelServicio2Label = 'Nivel de Servicio (20 s)';
+    kpiLabels.nivelServicio2Nota = 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.';
+  } else {
+    kpiTotales.nivelServicio = nivelServicio20s;
+    kpiLabels.nivelServicioLabel = 'Nivel de Servicio (20 s)';
+    kpiLabels.nivelServicioNota = 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.';
+  }
+  _traficoDibujarKpis('tww', i, kpiTotales, kpiLabels, campana);
 
   _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
 
@@ -370,8 +393,14 @@ function _traficoWppRenderContenido(i){
   // DENTRO del area de la grafica (nunca en blanco). Llamadas sigue
   // llamando esta misma funcion sin el 4to/5to/6to argumento -- 1 sola
   // serie a 20s, sin cambios (trafico.js).
-  _traficoDibujarSL('tww', i, agregadoComb, 'serviceLevel5minPct', 'Nivel de servicio a 5 min (tolerancia WhatsApp)',
-    { campo: 'serviceLevel20secPct', labelSerie: 'Nivel de servicio a 20 s', sinDatoMsg: SIN_DATO_5MIN_MSG });
+  if (mostrarSL5) {
+    _traficoDibujarSL('tww', i, agregadoComb, 'serviceLevel5minPct', 'Nivel de servicio a 5 min (tolerancia WhatsApp)',
+      { campo: 'serviceLevel20secPct', labelSerie: 'Nivel de servicio a 20 s', sinDatoMsg: SIN_DATO_5MIN_MSG });
+  } else {
+    // Mismo patron que Trafico de Llamadas (trafico.js): una sola serie,
+    // sin la segunda linea de 20s ni el aviso de 5 min.
+    _traficoDibujarSL('tww', i, agregadoComb, 'serviceLevel20secPct', 'Nivel de servicio a 20 s');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -394,13 +423,19 @@ function _traficoWppDatosExport(i){
       '% Nivel de Atencion': a.nivelAtencionPct,
       '% Tasa de Abandono': a.tasaAbandonoPct,
       // Fase 87 (tema B) / Fase 90 (tema A): WhatsApp exporta LOS DOS
-      // niveles de servicio (Llamadas sigue exportando solo el de 20s,
-      // sin cambios, trafico.js).
+      // niveles de servicio cuando estan activos (Llamadas sigue
+      // exportando solo el de 20s, sin cambios, trafico.js).
       '% Service Level 5 min': a.serviceLevel5minPct,
       '% Service Level 20s': a.serviceLevel20secPct,
       'ASA (seg)': a.asaSegundos,
       'ATA (seg)': a.ataSegundos,
     };
+    // Fase 126: igual que AHT (mismo patron, p.mostrarAht, justo debajo),
+    // la columna de 5 min se quita del export cuando el panel la tiene
+    // apagada (p.mostrarSL5min:false) en vez de exportar una columna
+    // siempre vacia sin explicacion. `delete` en vez de nunca agregarla
+    // para no reordenar las demas columnas cuando SI esta activa.
+    if (!_traficoWppMostrarSL5min[campana]) delete fila['% Service Level 5 min'];
     // Fase 120: Wolkvox no entrega AHT de WhatsApp -- la columna se omite
     // del export cuando el panel lo tiene apagado (p.mostrarAht:false), en
     // vez de exportar una columna siempre vacia sin explicacion.
@@ -419,8 +454,12 @@ function _traficoWppExportExcel(i){
   xlsxAgregarAvisoDemo(wb);
   // Fase 94 (tema C): mismo aviso que la tarjeta/grafica, "en Exportar" --
   // si NINGUNA fila exportada trae SL 5 min, una hoja aparte lo explica
-  // (una columna en blanco sin contexto no dice nada de por que).
-  if(datos.length && datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; })){
+  // (una columna en blanco sin contexto no dice nada de por que). Fase
+  // 126: con mostrarSL5min:false la columna ni siquiera existe en `datos`
+  // (ver _traficoWppDatosExport) -- este aviso tampoco debe aparecer, el
+  // export se ve igual que si WhatsApp nunca hubiera tenido ese campo.
+  var campanaExport = host ? host.dataset.campana : null;
+  if(_traficoWppMostrarSL5min[campanaExport] !== false && datos.length && datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; })){
     var wsAviso = XLSX.utils.aoa_to_sheet([['NIVEL DE SERVICIO A 5 MINUTOS'], [_traficoWppMensajeSinDatoSL5Texto()]]);
     XLSX.utils.book_append_sheet(wb, wsAviso, 'AVISO_SL_5MIN');
   }
@@ -444,8 +483,9 @@ function _traficoWppExportPrint(i){
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
     : '';
   // Fase 94 (tema C): mismo aviso que la tarjeta/grafica, "en Exportar" --
-  // si NINGUNA fila exportada trae SL 5 min, una nota lo explica.
-  var sinSL5 = datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; });
+  // si NINGUNA fila exportada trae SL 5 min, una nota lo explica. Fase 126:
+  // nunca si mostrarSL5min:false (ver _traficoWppExportExcel, mismo criterio).
+  var sinSL5 = _traficoWppMostrarSL5min[campana] !== false && datos.every(function(r){ return r['% Service Level 5 min']===null || r['% Service Level 5 min']===undefined; });
   var avisoSl5Html = sinSL5
     ? '<div style="background:#fef3c7;color:#92400e;padding:8px 12px;border-radius:6px;margin-bottom:16px;font-size:12px">'+esc(_traficoWppMensajeSinDatoSL5Texto())+'</div>'
     : '';
