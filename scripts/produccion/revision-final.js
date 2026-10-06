@@ -70,6 +70,14 @@ const ESPERADO = {
   // "periodo" ahora es Ago-26 (11.189/7.896) + Sep-26 (12.194/8.968) =
   // 23.383/16.864 = 72.12%.
   efectividadCitasPeriodoAgendas: 11189 + 12194, efectividadCitasPeriodoAtendidas: 7896 + 8968,
+  // Fase 127 (Parte 4, carga real del archivo de Salida de Edwin):
+  // 2.169/4.391/747/2.635 (ago) + 3.530/6.874/1.277/2.720 (sep) -- y la
+  // verificacion cruzada contra el skill "LINEA DE SALIDA" de
+  // Tipificacion de Llamadas, que coincide EXACTO con los totales de
+  // llamadas del archivo de Edwin.
+  salidaLlamadasAgo: 2169 + 4391, salidaLlamadasSep: 3530 + 6874,
+  salidaWppAgo: 747 + 2635, salidaWppSep: 1277 + 2720,
+  salidaLineaDeSalidaAgo: 6560, salidaLineaDeSalidaSep: 10404,
 };
 
 // Fase 118: rutas que SI pueden dar 4xx en el uso normal de este script y no
@@ -291,7 +299,7 @@ async function correrChequeosAdmin(page) {
     log('ADVERTENCIA: siguen activos (puede ser legitimo si ya tienen otra contraseña):', activosConEjemplo.map((u) => u.user).join(', '));
   }
 
-  // ══ 2. Las 7 pestañas de ORLANT, Y CADA SUB-VISTA (Fase 120: hallazgo de
+  // ══ 2. Las pestañas de ORLANT (8 desde la Fase 127), Y CADA SUB-VISTA (Fase 120: hallazgo de
   // fondo -- las Fases 112-119 solo miraban la sub-vista que abre por
   // defecto; asi se le escapo el AHT de WhatsApp en blanco). ══
   await page.evaluate(() => openGenericDashboard('ORLANT'));
@@ -418,6 +426,14 @@ async function correrChequeosAdmin(page) {
   });
   const ranking = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana=ORLANT&mes=2026-09'));
   const citasPorMes = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-citas/mensual?campana=ORLANT'));
+  // Fase 127 (Parte 4): Salida (tabla propia, carga mensual del archivo de
+  // Edwin) + la verificacion cruzada contra el skill "LINEA DE SALIDA" de
+  // Tipificacion de Llamadas -- nunca la misma fuente, solo un cruce.
+  const salidaMensual = await page.evaluate(() => apiRequest('GET', '/calidad/salida/mensual?campana=ORLANT'));
+  const salidaAgo = salidaMensual.find((f) => f.mes === '2026-08') || {};
+  const salidaSep = salidaMensual.find((f) => f.mes === '2026-09') || {};
+  const lineaSalidaAgo = await page.evaluate(() => apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS&mes=2026-08&skill=' + encodeURIComponent('LINEA DE SALIDA')));
+  const lineaSalidaSep = await page.evaluate(() => apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS&mes=2026-09&skill=' + encodeURIComponent('LINEA DE SALIDA')));
   reporte.numeros = {
     ...sinCambios,
     rankingEquipoGestiones: ranking.equipo.gestiones,
@@ -425,6 +441,12 @@ async function correrChequeosAdmin(page) {
     rankingEquipoEfectividadPct: Math.round(ranking.equipo.efectividad * 10000) / 100,
     efectividadCitasPeriodoAgendas: citasPorMes.reduce((s, f) => s + f.agendas, 0),
     efectividadCitasPeriodoAtendidas: citasPorMes.reduce((s, f) => s + f.atendidas, 0),
+    salidaLlamadasAgo: (salidaAgo.llamadas3p || 0) + (salidaAgo.llamadasGeneral || 0),
+    salidaLlamadasSep: (salidaSep.llamadas3p || 0) + (salidaSep.llamadasGeneral || 0),
+    salidaWppAgo: (salidaAgo.wpp3p || 0) + (salidaAgo.wppGeneral || 0),
+    salidaWppSep: (salidaSep.wpp3p || 0) + (salidaSep.wppGeneral || 0),
+    salidaLineaDeSalidaAgo: lineaSalidaAgo.total,
+    salidaLineaDeSalidaSep: lineaSalidaSep.total,
   };
 
   const n = reporte.numeros;
@@ -611,7 +633,7 @@ async function correrChequeosCliente(page) {
   clientesDash.pestanasVisibles = etiquetasTabs;
   clientesDash.pestanasOcultasFiltradas = OCULTAS_ESPERADAS.filter((o) => etiquetasTabs.includes(o));
 
-  // Recorre las 7 pestañas reales: canvas con pixeles, Exportar funciona,
+  // Recorre las pestañas reales: canvas con pixeles, Exportar funciona,
   // sin aviso "demo"/dato de prueba visible.
   const hallazgosCanvasCliente = [];
   const exportsCliente = {};
