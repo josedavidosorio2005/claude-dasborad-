@@ -114,13 +114,47 @@ function agendasParseFechaSolicitud(v) {
 
 var AGENDAS_TIPOS_LINEA = ['3P', 'GENERAL'];
 
+// Fase 122 (hallazgo real contra el archivo AGENDAS_DE_AGOSTO_Y_SEPTIEMBRE.xlsx):
+// igual que DATE en Tipificacion (tipificacionValorCrudoSiFechaBoxeada,
+// Fase 116) y WAIT_TIME/AHT en Trafico (traficoValorCrudoSiFechaBoxeada,
+// Fase 115), FECHA_SOLICITUD en este archivo es una celda NUMERICA
+// (serial de Excel con fraccion de dia) con formato de fecha ("dd/mm/yyyy")
+// -- con cellNF:true (necesario para que Trafico detecte el % real, ver
+// cargas.js) SheetJS la convierte a un objeto Date dentro de
+// XLSX.utils.sheet_to_json(ws,{header:1}). Sin este fix, CADA fila del
+// archivo real quedaba rechazada ("FECHA_SOLICITUD invalida"): antes de
+// esta fase, agendasParseFilas nunca recibia `ws` y nunca sabia leer un
+// Date boxeado (ni plain number ni string lo cubren). Mismos helpers
+// duplicados a proposito (criterio ya establecido en este repo: cada
+// *-logic.js que los necesita trae su propia copia, ver tipificacion-logic.js/
+// trafico-logic.js).
+function agendasCeldaRef(fila0based, col0based) {
+  var col = '';
+  var n = col0based;
+  do {
+    col = String.fromCharCode(65 + (n % 26)) + col;
+    n = Math.floor(n / 26) - 1;
+  } while (n >= 0);
+  return col + (fila0based + 1);
+}
+function agendasValorCrudoSiFechaBoxeada(v, ws, fila0based, col0based) {
+  if (!(v instanceof Date) || !ws) return v;
+  var cell = ws[agendasCeldaRef(fila0based, col0based)];
+  return (cell && cell.t === 'n' && typeof cell.v === 'number') ? cell.v : v;
+}
+
 // ── Parseo de filas (aoa = array-of-arrays, fila 0 = encabezados) ───────
 // Devuelve { error } si falta una columna obligatoria, o { filas, avisos,
 // entidadesAgrupadas, entidadesSinDato } -- `filas` ya trae NOMBRE_ENTIDAD
 // anonimizada (ver agendasAplicarPrivacidadEntidad, aplicada aqui mismo
 // antes de devolver, para que ningun caller externo pueda "olvidarse" del
 // paso de privacidad).
-function agendasParseFilas(aoa) {
+// `ws` (Fase 122, opcional): worksheet CRUDO de SheetJS -- si viene, y
+// FECHA_SOLICITUD llega boxeada a Date, se recupera el serial numerico
+// real desde la celda cruda (ver agendasValorCrudoSiFechaBoxeada). Sin
+// `ws` (o con el formato de siempre, texto o numero plano), el
+// comportamiento es EXACTAMENTE igual al de siempre.
+function agendasParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = agendasColIndexMap(aoa[0]);
   var faltantes = AGENDAS_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
@@ -146,7 +180,8 @@ function agendasParseFilas(aoa) {
     var profesional = agendasNormTexto(row[map.profesional]);
     var tipoLinea = agendasNormTexto(row[map.tipoLinea]);
     var entidad = map.entidad !== undefined ? agendasNormTexto(row[map.entidad]) : '';
-    var fechaSolicitud = agendasParseFechaSolicitud(row[map.fechaSolicitud]);
+    var fechaCrudaSolicitud = ws ? agendasValorCrudoSiFechaBoxeada(row[map.fechaSolicitud], ws, i, map.fechaSolicitud) : row[map.fechaSolicitud];
+    var fechaSolicitud = agendasParseFechaSolicitud(fechaCrudaSolicitud);
 
     if (!sede || !examen || !especialidad || !profesional) {
       avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (sede/examen/especialidad/profesional), se omitio.');
@@ -283,6 +318,8 @@ if (typeof module !== 'undefined' && module.exports) {
     AGENDAS_TIPOS_LINEA: AGENDAS_TIPOS_LINEA,
     agendasColIndexMap: agendasColIndexMap,
     agendasNormTexto: agendasNormTexto,
+    agendasCeldaRef: agendasCeldaRef,
+    agendasValorCrudoSiFechaBoxeada: agendasValorCrudoSiFechaBoxeada,
     agendasFechaHoraDesdeSerial: agendasFechaHoraDesdeSerial,
     agendasParseFechaSolicitud: agendasParseFechaSolicitud,
     agendasParseFilas: agendasParseFilas,
