@@ -206,6 +206,12 @@ declarar(['GET /dashboards/config', 'GET /dashboards/config/:cliente', 'POST /da
 declarar(['GET /dashboard/:cliente'], 'skip'); // gate por adapter.permiso variable segun el cliente -- cubierto indirectamente via can('Inventario'|'Gerencia'|'GestionHumana') en sus rutas propias
 declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'dataLoaderGlobal');
 
+// Fase 126: borrado de produccion por base+rango, solo administrador
+// completo (ver server/tests/fase126-admin-borrado-rango.test.js para la
+// matriz de candados especifica de esta ruta: dry-run, conteo esperado,
+// campana fija a ORLANT, etc).
+declarar(['POST /admin/borrado-rango'], 'admin');
+
 // Inventario / Gerencia / Gestion Humana (modulos internos globales, sin campana)
 declarar(['GET /inventario/items', 'GET /inventario/resumen', 'GET /inventario/movimientos'], 'modulo:Inventario');
 declarar(['POST /inventario/items', 'PUT /inventario/items/:id', 'DELETE /inventario/items/:id', 'POST /inventario/movimientos', 'POST /inventario/carga-items', 'POST /inventario/carga-movimientos'], 'modulo:Inventario');
