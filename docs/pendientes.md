@@ -1,301 +1,253 @@
-# Pendientes (actualizado Fase 122, 2026-10-06)
+# Pendientes (reorganizado Fase 124, 2026-10-06)
 
-Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
-antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
-punto, si existe, está en `docs/historico/progress-fases.md`.
+Un solo lugar para lo que falta. Reorganizado en 5 secciones (antes era
+cronológico por fase) para que se vea de un vistazo qué bloquea la
+entrega a Edwin, qué depende de él, qué depende de una decisión de InCo,
+y qué es deuda técnica con costo/riesgo ya estimado. Lo ya cerrado no se
+deja aquí — queda en `docs/historico/progress-fases.md`. Cada ítem tiene
+dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
-## De la Fase 122 (prioridad ALTA las 2 primeras)
+## 1. Antes de entregar a Edwin
 
-- **Plantillas oficiales (después de la entrega, pedido explícito de
-  Edwin: "eso lo vemos después"):** las plantillas que descarga hoy la
-  plataforma (ej. Tipificación = solo "tipificación y cantidad") no
-  coinciden con las que Edwin definió ni con las que él realmente manda
-  (los exports directos de Wolkvox: HistCDR, HistChat...). Hoy InCo carga
-  por código, por eso no se ha notado. Falta: una carpeta de plantillas
-  oficiales (una por base, versionada) y que Isabel (quien maneja
-  Wolkvox) pueda descargar la plantilla, pegar el export y subirlo sin
-  ayuda de InCo. Antes de construir nada, reunir qué plantilla manda hoy
-  cada una de las 9 bases (ver `docs/inventario-bases-orlant.md`) vs. lo
-  que acepta el lector real.
-- **Efectividad de Citas de agosto y septiembre/2026:** en la reunión del
-  2026-10-05 quedó "nos falta agendamiento y efectividad de citas" — la
-  Fase 122 cargó Agendas y Efectividad de Agendamiento, pero el archivo
-  de Citas Atendidas/Efectividad de Citas de ago-sep todavía no ha
-  llegado de Edwin. Producción sigue solo con Ene-Mar/2026. Pedírselo.
-- ~~**Re-carga del archivo de voz para consolidar el alias "_falla"**~~ —
-  **hecho** (2026-10-06, autorizado explícitamente en el chat): re-carga
-  de `TIPIFICACIONES.xlsx` por la interfaz normal de "Cargar Datos de
-  Dashboards" en producción
-  (`scripts/produccion/fase122-recarga-tipificacion-alias-falla.js`).
-  Confirmado antes/después por API: 34.661 filas antes y después (sin
-  duplicar ni perder nada), 494 filas con 1 variante de nombre de asesor
-  unificadas por el alias (23 → 22 nombres distintos), 0 asesores con la
-  variante "_falla" restante, 0 errores de consola.
-- **Verificación visual completa pendiente** (no alcanzó tras resolver 3
-  hallazgos reales en producción, Parte 2 — ver
-  `docs/historico/progress-fases.md` → Fase 122): tema oscuro; viewports
-  1920×1080 y móvil 412px; el gráfico/ranking de Efectividad de
-  Agendamiento con los asesores sobre 100% dibujados correctamente (más
-  allá de que el canvas existe); exports de Tipificación y Efectividad
-  (solo se verificó la estructura del export de Agendas); abrir el
-  archivo descargado real de cada export (solo se verificó la función
-  que arma los datos, no el archivo final).
-
-## De Edwin (datos reales)
-
-Pestañas ya construidas, esperando el archivo real — ver
-`docs/inventario-bases-orlant.md` para la hoja/columnas exactas de cada
-una:
-
-- **Ordenamiento Médico** y **Recuperación de Cancelados** (parte de la
-  pestaña Agendamiento).
-- **Flujo Mensual** — probablemente redundante con Tráfico de
-  Llamadas/WhatsApp (que ya cubre lo mismo, automático); preguntar a
-  Edwin si se puede retirar del todo en vez de solo dejarla oculta.
-- **Salida** (llamadas/WhatsApp de salida, diaria).
-- **Gestión STA** — necesita 2 fuentes (`sta_categorias` + parte del
-  archivo de agendamiento).
-
-## De AWS
-
-- **Fase 97, parte de AWS: pausada** — falta la **Política 1 de IAM**
-  (agregar `s3:ListBucket` + `s3:GetObject` al usuario
-  `inconexion-instance`, acotado al prefijo `db-backups/*` del bucket de
-  backups — JSON ya armado en `docs/aws-permisos-pendientes.md`). Bloquea
-  la prueba real de restauración de backups
-  (`.github/workflows/verificar-restore-backup-produccion.yml`). Necesita
-  credenciales de AWS a mano para aplicarse — no se puede hacer desde
-  una sesión de Claude Code sin eso.
-- **Inventario y respaldo de la cuenta AWS vieja** (`934685482338`): sin
-  empezar — necesita las credenciales de esa cuenta.
-- ~~`inconexion-backup.timer` está `inactive` en producción~~ — **resuelto
-  en la Fase 114** (2026-10-02, URGENTE, autorizado): las 2 unidades nunca
-  se habían instalado en la instancia nueva (no solo "no habilitadas" —
-  no existían en `/etc/systemd/system/`). `respaldo-produccion.yml` las
-  instaló desde `deploy/` y activó el timer (`enabled`+`active`, próxima
-  corrida 03:15 hora del servidor = 10:15 p.m. Colombia, el servidor corre
-  en UTC). Respaldo de hoy verificado (`integrity_check: ok`, conteos
-  coinciden con los números de control de `PROGRESS.md`), subida a S3 OK.
-  `salud-servidor.yml` ahora también falla si el timer no está `enabled`
-  (antes solo miraba `is-active`), para que esto no vuelva a pasar
-  desapercibido.
-
-## Decisiones pendientes del usuario
-
-- ~~**Residuo de prueba de la Fase 67 en producción**~~ — **resuelto en la
-  Fase 116** (2026-10-04): al re-subir Tráfico de Llamadas con el
-  reemplazo por rango (Fase 115), el 2026-08-17 real del archivo nuevo
-  reemplazó la fila sintética en el mismo lugar (no quedó huérfana porque
-  esa fecha SÍ viene en el archivo real). Ver también el hallazgo nuevo de
-  la Fase 116 abajo.
-- **Pedir a Edwin: Tráfico de WhatsApp con `SERVICE_LEVEL_5MIN`** (Fase
-  116, 2026-10-04): el export diario real de Wolkvox que mandó para
-  agosto-septiembre/2026 no trae esa columna (solo 10/20/30s) — la
-  pestaña sigue mostrando el aviso de "sin dato" para el nivel de
-  servicio a 5 minutos en WhatsApp (pedido del jefe, Fase 87). Pedirle
-  que la agregue (umbral de 300s en Wolkvox) en el próximo export.
-- **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
-  deja esperando por si algún día se usa? (Fase 115: ya quedaría lista
-  con Ago-26/Sep-26 en cuanto se decida destaparla.)
-- **Pedir a Edwin/Wolkvox: el AHT de Tráfico de WhatsApp** (Fase 120,
-  2026-10-05): se confirmó contra los 2 archivos reales de ago-sep/2026
-  (258 filas) que la columna AHT siempre viene vacía ("----") — se quitó
-  de la pestaña y del export (ver `CHANGELOG.md` v1.12.0). Si Wolkvox
-  llega a entregarlo más adelante, reactivarlo es solo volver a poner
-  `mostrarAht:true` en el panel (`PUT /dashboards/config/ORLANT`), sin
-  tocar código.
-- **Nivel de servicio**: Edwin lo mencionó como una base aparte en algún
-  momento, pero Tráfico de Llamadas/WhatsApp ya muestra Nivel de Servicio
-  a 20s — aclarar con él si se refiere a algo distinto (por hora, un SLA
-  interno de InCo, una línea específica) antes de construir nada nuevo.
-- **Pregunta a Edwin (Fase 122): efectividad de agendamiento > 100%.**
-  Varios asesores quedan con efectividad por encima de 100% en los
-  archivos reales de agosto y septiembre/2026 (confirmado que no es un
-  error de carga — la plataforma recalcula agendas/gestiones y el
-  archivo de Edwin ya trae esos mismos números). Pregunta de negocio:
-  ¿estos asesores agendan por fuera de las gestiones que se están
-  contando?
-- **Pregunta a Edwin (Fase 122): "hay que quitar esa letra".** En la
-  reunión del 2026-10-05, cerca del tema del nivel de servicio de
-  WhatsApp, Edwin mencionó algo sobre "quitar una letra" — InCo no
-  recordaba a qué se refería exactamente. No se cambió nada por esto;
-  preguntarle la próxima vez que se hable con él.
-- **Nivel de servicio de WhatsApp a 5 minutos**: sigue mostrando el
-  aviso de "aún no hay datos para este período" (Wolkvox no entrega esa
-  columna en el export real) — Edwin lo habla con el jefe, queda así
-  hasta que haya una decisión.
-
-## Heredados (de fases anteriores, sin resolver)
-
-- **Contraseña temporal del usuario CLIENTES_DASH**: cambiarla antes de
-  entregar la plataforma a Edwin — decisión y ejecución del usuario
-  (contraseñas nunca se escriben en el repo, commits ni logs).
-- **Visibilidad de nombres de asesor para CLIENTES_DASH**: desde la Fase
+- **Contraseña temporal del usuario CLIENTES_DASH** — dueño: InCo. Prioridad
+  ALTA. Cómo se cierra: InCo la cambia desde la propia plataforma (nunca
+  queda en el repo/commits/logs). Anotado 2026-10-02 (Fase 112), sigue sin
+  hacerse.
+- **Visibilidad de nombres de asesor para CLIENTES_DASH** — dueño: InCo
+  (decisión) + InCo (ejecución si aplica). Prioridad ALTA — desde la Fase
   122, Agendas y Efectividad de Agendamiento muestran el nombre real del
-  asesor (antes solo Tipificación lo hacía) — decidir con el usuario si
-  la cuenta del cliente (`CLIENTES_DASH`) debe seguir viendo esos
-  nombres o si hay que redactarlos para ese rol.
-- **37 monitoreos de prueba de Calidad**: siguen en producción, sin
-  tocar, esperando confirmación de Edwin sobre si son datos reales o de
-  prueba (ver Fase 119).
+  asesor a CUALQUIER rol con acceso a ORLANT, incluido CLIENTES_DASH
+  (antes solo Tipificación lo hacía). Cómo se cierra: decidir con el
+  usuario si la cuenta del cliente debe seguir viendo esos nombres o si
+  hay que redactarlos para ese rol. Anotado 2026-10-06 (Fase 124, antes
+  solo mencionado como pendiente de decisión en la Fase 122).
+- **37 monitoreos de prueba de Calidad** — dueño: Edwin (confirmación) +
+  InCo (borrado si aplica). Prioridad MEDIA. Siguen en producción, sin
+  tocar (regla fija: no se tocan sin pedido explícito). Cómo se cierra:
+  Edwin confirma si son datos reales o de prueba; si son de prueba, InCo
+  los borra por la interfaz normal. Anotado 2026-09-24 (Fase 71/119),
+  reconfirmado sin tocar en la Fase 124 (2026-10-06).
+- **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
+  Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
+  fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA. El primer
+  intento (Fase 124) falló por un bug del propio script de verificación
+  (`download.saveAs()` sin `downloadsPath` configurado) — ya corregido en
+  `scripts/produccion/fase124-parte1b-exports.js`, pendiente de
+  reintentar con una sesión real (se puede hacer junto con la
+  verificación post-deploy de esta misma fase). Anotado 2026-10-06.
+- **Guía de uso (`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`)
+  al día con lo nuevo de la Fase 122-124** — dueño: InCo. Prioridad MEDIA.
+  Falta documentar: Agendas/Efectividad con nombre de asesor, formato
+  HistChat (hoja con nombre variable), alias de asesor (qué es, que no
+  revierte datos ya unificados al borrarse), nombres de mes completos,
+  "Julio 2026" como mes parcial, y marcar explícitamente las filas "por
+  confirmar" del "Calendario mensual de cargas" como pendientes de Edwin
+  (ya existían desde la Fase 119, siguen sin precisar). No se alcanzó a
+  escribir en esta fase por tiempo — contenido para el cliente final, no
+  conviene apurarlo. Anotado 2026-10-06 (Fase 124).
 
-## Mejoras propuestas (no pedidas todavía, para cuando haya espacio)
+## 2. Esperando a Edwin (datos/decisiones)
 
-Ninguna pendiente por ahora — "Cambiar mi contraseña" y el registro de
-inicios de sesión (las dos únicas que había en esta lista) se
-implementaron en la Fase 113.
+- **Efectividad de Citas de agosto y septiembre/2026** (columnas MES,
+  AGENDAS, ATENDIDAS) — dueño: Edwin (envío) + InCo (carga). Prioridad
+  ALTA. Producción sigue solo con Ene-Mar/2026. Anotado 2026-10-05
+  (reunión), sigue sin llegar.
+- **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
+  Salida, Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya
+  construidas, ocultas esperando el archivo real). Anotado en fases
+  anteriores (ver `docs/inventario-bases-orlant.md`).
+- **Pregunta a Edwin: efectividad de agendamiento > 100%** — dueño:
+  Edwin. Prioridad MEDIA. Varios asesores quedan por encima de 100% en
+  los archivos reales de ago-sep/2026 (confirmado de nuevo en la Fase
+  124: ago 3 asesores sobre 100% — máx 180.97% —, sep 2 asesores — máx
+  387.31% —, el combo/ranking los dibuja completos y con formato
+  correcto). No es error de carga. Pregunta de negocio: ¿agendan por
+  fuera de las gestiones que se están contando? Anotado 2026-10-05.
+- **Pregunta a Edwin: "hay que quitar esa letra"** — dueño: Edwin.
+  Prioridad BAJA. Mención suelta en la reunión del 2026-10-05, sin
+  precisar a qué se refería. Preguntarle la próxima vez.
+- **Nivel de servicio de WhatsApp a 5 minutos** (`SERVICE_LEVEL_5MIN`) —
+  dueño: Edwin/Wolkvox + el jefe (decisión). Prioridad MEDIA. El export
+  diario real no trae esa columna; Edwin lo habla con el jefe. Anotado
+  2026-10-04 (Fase 116).
+- **Plantillas oficiales versionadas** — dueño: Edwin (pedido explícito:
+  "eso lo vemos después de la entrega") + InCo. Prioridad BAJA por ahora.
+  Ver `docs/plantillas-inventario.md` (Fase 124) para el inventario
+  completo de diferencias entre lo que la plataforma descarga hoy, lo que
+  el lector real exige, y lo que Edwin/Wolkvox mandan en la práctica.
+- **AHT de Tráfico de WhatsApp** — ya resuelto (quitado, Fase 120) — sigue
+  aquí solo como recordatorio: si Wolkvox llega a entregarlo, reactivarlo
+  es solo `mostrarAht:true` en `PUT /dashboards/config/ORLANT`, sin tocar
+  código.
 
-## De la Fase 117 (revisión final integral) — demostrado en la Fase 118
+## 3. Esperando decisión de InCo
 
-- ~~Verificación en producción con sesión real~~ — **hecho en la Fase
-  118** (2026-10-05): `scripts/produccion/revision-final.js` corrió
-  contra producción con sesión real del usuario — 0 discrepancias de
-  números de control, 0 errores de consola, 0 canvas sin dibujar, 0
-  peticiones fallidas, Exportar OK en las 7 pestañas, Fase 113
-  confirmada. Ver el recorrido `CLIENTES_DASH` abajo (de la Fase 118),
-  que quedó aparte, inconcluso.
-- ~~Matriz completa de IDOR (10 roles × módulos)~~ — **hecho en la Fase
-  118**: `server/tests/fase118-matriz-acceso.test.js` (51 pruebas),
-  inventario programático de las 113 rutas reales + política declarada
-  + ejecución real contra los 10 roles de `seed:demo`. Detalle en
-  `docs/auditoria-seguridad-fase102.md` → Fase 118.
-- ~~Barrido visual de las 7 pestañas × claro/oscuro × tamaños de
-  pantalla~~ y ~~barrido de código muerto~~ — **siguen pendientes**, ver
-  "De la Fase 118" abajo (no se llegaron a cubrir tampoco en esta fase).
+- **Efectividad de Citas: el mes global cae en un mes sin datos
+  (Septiembre 2026) y se ve un aviso + 2 tarjetas vacías** (hallazgo de
+  InCo, Fase 124). 3 opciones, sin aplicar ninguna sin OK:
+  1. Abrir esa pestaña directo en el último mes CON datos (Marzo 2026),
+     en vez de seguir el mes global de las demás pestañas — **recomendado**,
+     mismo patrón que el ranking de Efectividad de Agendamiento ya usa.
+  2. Ocultar la pestaña hasta que llegue el archivo de ago-sep (igual que
+     las 5 pestañas que esperan base de Edwin).
+  3. Dejarla como está, solo mejorando el texto del aviso.
+  Prioridad MEDIA. Anotado 2026-10-06 (Fase 124).
+- **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
+  deja esperando? Prioridad BAJA. Anotado Fase 115 (2026-09-21), sigue
+  sin decidirse.
+- **Nivel de servicio** (posible base aparte que mencionó Edwin) —
+  aclarar si se refiere a algo distinto de lo que ya existe (SL 20s en
+  Tráfico). Prioridad BAJA. Anotado en fases anteriores.
+- **Tráfico de Llamadas sin `campaignAccess` en la carga** (solo
+  `canLoadData` genérico) — hallazgo de severidad BAJA de la Fase 119,
+  **re-ejecutado y confirmado igual en la Fase 124**
+  (`server/tests/fase119-matriz-cargas-masivas.test.js`, 9/9 pass). Es la
+  ÚNICA de las 7 familias de carga masiva sin ese control puntual — fue
+  una decisión explícita documentada (un archivo de Tráfico trae varias
+  skills que pueden resolver a campañas distintas). Arreglarlo exige
+  rediseñar ese modelo. **No se toca sin tu OK explícito** (regla fija de
+  esta fase). Riesgo real hoy: bajo (Aurora/HLM siguen en cero datos).
 
-## De la Fase 118 (cierra con evidencia lo que la Fase 117 no demostró)
+## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- ~~Recorrido en producción con un usuario `CLIENTES_DASH` real~~ —
-  **hecho en la Fase 119** (2026-10-05): con la cuenta REAL del cliente
-  de ORLANT (creada por el usuario desde la plataforma), confirmada por
-  JWT. Ver "De la Fase 119" abajo.
-- **Barrido visual real** (Playwright local, `seed:demo`: 7 pestañas ×
-  claro/oscuro × 1366×768/1920×1080/2560×1440/móvil 412px + estados
-  mes-sin-datos/mes-incompleto/0-filas): sigue sin cubrirse — pedido de
-  nuevo en la Fase 119 y tampoco alcanzó el tiempo. Prioridad alta para
-  la próxima sesión disponible.
-- **Barrido de código muerto** a partir del grafo de `graphify`: sigue
-  sin cubrirse (pedido de nuevo en la Fase 119).
-- ~~Casos de borde del reemplazo por rango~~ — **cubiertos en gran parte
-  en la Fase 119**: otra campaña con las mismas fechas no se toca AL
-  ESCRIBIR, orden inverso, falla a mitad de carga inyectada (las 7
-  bases), archivo equivocado en la ventana equivocada, fecha futura
-  (dinámico, las 4 bases que faltaban). Ver
-  `server/tests/fase119-cargas-multi-mes.test.js`. Sin cubrir todavía:
-  archivo de un solo día explícito, re-subida idéntica con aserción de
-  "0 cambios" fila por fila (hoy solo se confirma el conteo), archivo
-  grande de varios meses a la vez (límite de payload por base más allá
-  de Tipificación, que ya lo tenía).
-- **XSS con texto malicioso real** (Playwright local): sigue sin
-  cubrirse con pruebas dinámicas (pedido de nuevo en la Fase 119) — Fase
-  102 confirmó por lectura de código que `esc()`/`xlsxFilasSeguras`
-  cubren todos los módulos, pero eso no es un ataque real ejecutado
-  campo por campo.
-- ~~Zonas horarias~~ — **hecho en la Fase 119**: confirmado con
-  ejecución real (2 procesos Node, TZ=UTC y TZ=America/Bogota) que
-  `fecha-limites.js`/`fecha-limites-logic.js`/`tipificacion-logic.js` dan
-  el mismo resultado bajo las 2 zonas horarias, con un defecto simulado
-  para confirmar que la prueba no es vacía. Ver
-  `server/tests/fase119-zonas-horarias.test.js`.
-- **Fallas y carreras de UI** (500/red cortada/respuesta vacía en cada
-  pestaña, cambio rápido de pestaña/mes): sigue sin cubrirse (pedido de
-  nuevo en la Fase 119).
-- ~~Las 7 familias de carga masiva fuera de la matriz de acceso
-  dinámica~~ — **hecho en la Fase 119**: ejecutadas de verdad contra los
-  10 roles × propia/ajena. Ver "De la Fase 119" abajo (incluye un
-  hallazgo real, documentado más abajo).
-- **Hallazgo real corregido en la Fase 118**: un test de la Fase 117
-  (desempate de `GET /historial` en empates de milisegundo) resultó
-  flaky en CI por un filtro de verificación demasiado amplio — corregido
-  (severidad baja, detalle en `docs/auditoria-seguridad-fase102.md` →
-  Fase 118).
+- **Margen de tamaño de carga: Agendas se queda sin margen en ~1-2 meses**
+  (hallazgo nuevo, Fase 124, con el único número REAL medido hasta hoy —
+  el resto de esta tabla es estimado, ver abajo). El archivo real de
+  ago-sep/2026 (24.186 filas, 2 meses) pesa **4,91 MB confirmado** contra
+  el límite de 8 MB de esa ruta (`RUTAS_LIMITE_MAYOR`, `server/server.js`)
+  — eso deja ~212,9 bytes/fila. Con el ritmo de crecimiento reciente
+  (ago 11.040 + sep 13.146 ≈ 12.100 filas/mes) el margen que queda
+  (8−4,91 MB ≈ 3,09 MB ≈ 15.200 filas más) se agota en **~1,3 meses** —
+  por debajo del umbral de 6 meses que pidió esta fase.
+  - Tipificación de voz: ~3,2 MB para 34.661 filas (número dado, no
+    remedido en esta fase — el intento de remedirlo con el archivo real
+    local falló por un error del script de medición, no de la
+    plataforma) contra el mismo límite de 8 MB → ~96,8 bytes/fila,
+    margen ≈ 4,8 MB ≈ 52.000 filas más. Con (ago 14.940 + sep 19.721) /
+    2 ≈ 17.330 filas/mes, el margen dura **~3 meses** — también por
+    debajo de 6 meses.
+  - Tipificación de WhatsApp, Tráfico (Llamadas/WhatsApp), Inasistencia y
+    Efectividad (Agendamiento/Citas): **no medido en esta fase** (el
+    script de medición falló antes de llegar a estos) — pero estructural-
+    mente tienen muchas menos columnas por fila y/o muchas menos filas
+    totales que Agendas/Tipificación de voz (ej. Tráfico nunca pasó de
+    258 filas reales), así que es muy poco probable que estén cerca del
+    límite de 2 MB global. Pendiente confirmar con una medición real.
+  - **Propuesta (NO aplicada):** subir el límite de la ruta de Agendas de
+    8 MB a, por ejemplo, 16 MB — mismo patrón ya usado 2 veces (Fase 77 y
+    Fase 122), costo mínimo (1 línea en `server.js`, sin dependencias
+    nuevas), riesgo bajo (ya hay precedente, no cambia el comportamiento
+    para archivos chicos). Es un parche temporal, no la solución de
+    fondo (carga por lotes/paginada), que NO se implementa en esta fase
+    por ser un cambio de arquitectura grande. Necesita tu OK porque toca
+    un límite de la API en producción.
+- **No hay UI de administración para alias de asesor** — hoy el alta,
+  lista y borrada de alias solo existen por API directa
+  (`/api/alias-asesores`), nunca desde una pantalla — confirmado
+  revisando todo `public/` (ningún archivo de frontend lo referencia).
+  Edwin no puede corregir un typo de asesor nuevo el mes que viene sin
+  pedirle a InCo que corra una llamada directa a la API. Costo de una
+  pantalla simple (tabla + alta + borrado, mismo patrón que el catálogo
+  de codificaciones de Calidad): medio. Riesgo: bajo. No pedido todavía.
+- **Alias de asesor no se aplica en Calidad** (el campo `ASESOR` de la
+  carga masiva de monitoreos) — confirmado revisando el código
+  (`aplicarAliasAFilas` solo se llama desde `agendas.js`,
+  `efectividad-agendamiento.js` y `tipificaciones.js`, nunca desde
+  Calidad). Inasistencia y Efectividad de Citas NO tienen columna de
+  nombre de asesor en absoluto (estructuralmente no aplica ahí). Efecto:
+  si el mismo asesor llega con 2 variantes de nombre en una carga masiva
+  de Calidad, Calidad lo seguiría mostrando separado aunque
+  Agendas/Efectividad/Tipificación ya lo unifiquen. Severidad baja (solo
+  afecta la carga masiva opcional de Calidad, no el registro manual
+  monitoreo por monitoreo). Costo de extenderlo: bajo (una línea más,
+  mismo patrón). No pedido todavía.
+- **`npm test` local se vuelve inestable en la máquina de InCo** —
+  confirmado de nuevo en la Fase 124: una corrida completa produjo
+  decenas de `ETIMEDOUT` en pruebas de supertest (`fase95-tema-c-alerta-
+  asesor.test.js`, `gestion-humana.test.js`, `historial.test.js`,
+  `inasistencia-carga.test.js`, entre otras) y terminó sin imprimir el
+  resumen final (`# pass`/`# fail`) — no es un bug de esas pruebas (la
+  misma suite corre en verde en CI, Node 22, en cada PR reciente): es un
+  límite de recursos de esta máquina en particular (ya documentado como
+  conocido antes de esta fase). No se investigó más a fondo (saldría caro
+  diagnosticar límites del sistema operativo/antivirus de una máquina
+  específica) — **CI (Node 22) sigue siendo la referencia real**, como ya
+  indica `CLAUDE.md`.
+- **Cobertura con Playwright real para las 9 bases, con archivos
+  SINTÉTICOS con la forma exacta de los reales** (hoja con nombre
+  variable tipo `HistChat<fecha>-<hora>`, celdas de fecha boxeadas,
+  porcentajes >100%, encabezados en fila 3, hoja de 30.000 filas, hoja
+  vacía con formato) — **NO construido en esta fase**: es, en sí mismo,
+  un proyecto de varios días (un arnés nuevo por base, con fixtures
+  sintéticos a medida). La Fase 124 SÍ corrió un barrido real contra
+  PRODUCCIÓN (no sintético) de lo que la 122 había dejado sin ver — ver
+  `scripts/produccion/fase124-parte1-pendientes-fase122.js` — pero eso es
+  distinto de un arnés local reutilizable fase tras fase con datos
+  sintéticos. Costo estimado: alto (días, no horas). Riesgo de NO
+  tenerlo: medio — ya se demostró en la Fase 122 que un defecto puede
+  pasar pruebas unitarias en verde y solo aparecer con el archivo real en
+  la página real. Propuesta: empezar por las 2 bases que ya mostraron
+  defectos reales (Tipificación de WhatsApp por el `labelAlt` perdido, y
+  Agendas por el límite de tamaño), no las 9 de una vez.
+- **Fallas de red/500/carreras de la interfaz (doble clic en "Confirmar
+  carga", cerrar el modal a mitad de carga, token vencido a mitad de una
+  carga, archivo corrupto/0 bytes/hoja vacía)** — **NO cubierto en esta
+  fase** por el mismo motivo de alcance (sería un arnés Playwright nuevo,
+  grande, con interceptación de red simulando cada falla). Pedido de
+  nuevo desde la Fase 118/119, sigue sin cubrirse. Costo estimado: medio-
+  alto. Riesgo de NO tenerlo: bajo-medio (las escrituras ya usan
+  `db.transaction`, confirmado por lectura de código en las 9 bases, pero
+  nunca ejecutado con una falla inyectada a mitad de carga en esta fase
+  particular — sí se ejecutó esa prueba en fases anteriores para algunas
+  bases, ver Fase 119).
+- **Casos de borde del reemplazo por rango, matriz completa × 9 bases**
+  (archivo de 1 solo día, skill/cola nueva, cruce de mes, mes parcial,
+  re-subida idéntica fila por fila, 2 meses cuando ya existe 1, fecha
+  futura, atomicidad con falla inyectada) — cubierto PARCIALMENTE en
+  fases anteriores (Fase 119: las 7 bases principales, ver
+  `server/tests/fase119-cargas-multi-mes.test.js`); **no se repitió ni se
+  completó la matriz entera en la Fase 124** por tiempo. Costo de
+  completar lo que falta (archivo de 1 día explícito, re-subida idéntica
+  con aserción "0 cambios" fila por fila, archivo de varios meses de una
+  sola vez): medio.
+- **XSS dinámico campo por campo con payloads reales** (`<img onerror>`,
+  `"><script>`, `javascript:`) en tablas/tooltips/leyendas/mensajes de
+  carga/exports/Historial — **NO ejecutado en esta fase** (pedido de
+  nuevo desde la Fase 118). La Fase 102 confirmó por LECTURA de código
+  que `esc()`/`xlsxFilasSeguras` cubren todos los módulos, pero eso no es
+  un ataque real ejecutado. Costo: medio (un arnés Playwright que suba un
+  archivo con esos payloads en cada campo de texto y lea el DOM
+  renderizado). Riesgo de NO tenerlo: bajo (ya hay cobertura por lectura
+  de código + sanitización demostrada en los exports de esta y fases
+  anteriores — nunca se encontró una fuga real).
+- **Código muerto fuera del hallazgo puntual de esta fase** — se borró
+  `traficoWppResumen` (confirmado sin llamadores, Fase 124). Un barrido
+  completo con `graphify` del resto del código (funciones/archivos sin
+  referencias, estilos sin uso, endpoints sin cliente) sigue sin hacerse
+  — pedido desde la Fase 118/119/120, sigue sin alcanzar el tiempo.
 
-## De la Fase 119 (dejar ORLANT lista para entregarla al cliente)
+## 5. Después de la entrega (no pedido todavía)
 
-- **Hallazgo real, severidad BAJA/informativa, documentado y NO
-  corregido** (motivo abajo): `POST /calidad/trafico/carga` (Tráfico de
-  Llamadas) es la ÚNICA de las 7 familias de carga masiva cuyo endpoint
-  no exige `campaignAccess` por campaña puntual — solo el permiso
-  genérico `canLoadData` ("Cargar Datos"). Confirmado con una prueba
-  dedicada: un actor con `cargarDatos` pero solo acceso a ORLANT puede
-  cargar Tráfico de Llamadas mapeado a OTRA campaña (mapeando una skill
-  nueva a ella), mientras que las otras 6 familias bloquean esa misma
-  combinación. No es un descuido — es una decisión EXPLÍCITA y ya
-  documentada de una auditoría anterior (`server/routes/trafico.js`,
-  comentario "Decisión explícita (auditoría 2026-09-15)"): un solo
-  archivo de Tráfico de Llamadas trae varias skills que pueden resolver
-  a campañas distintas vía el mapeo de `trafico-skills.js`, así que el
-  body de esta ruta nunca cargó `campana` explícita. **No se corrige en
-  esta fase** porque arreglarlo exigiría rediseñar el modelo "un
-  archivo, varias skills de varias campañas" que Edwin pidió
-  explícitamente, y el riesgo real hoy es mínimo (CLINICA AURORA y
-  Hospital La María siguen en cero datos reales). Ver
-  `server/tests/fase119-matriz-cargas-masivas.test.js`.
-- **Recorrido en producción con la cuenta REAL del cliente de ORLANT**
-  (`CLIENTES_DASH`): confirmado por JWT (no es admin, no es `null`) —
-  solo ve su dashboard de ORLANT; los 7 endpoints administrativos
-  probados (`/historial`, `/seguridad/alertas`, `/dashboards/config`,
-  `/dashboard/cargas`, `/inventario/items`, `/gerencia/kpis`,
-  `/gh/personal`) dan 403; las 7 pestañas cargan con datos y Exportar
-  funciona en las 7; las 5 pestañas ocultas (Ordenamiento Médico,
-  Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA) NO
-  aparecen; sin ningún aviso "demo"/dato de prueba visible; Calidad:
-  catálogo de codificaciones vacío (0), 37 monitoreos (sin tocar, esperan
-  confirmación de Edwin); "Cambiar mi contraseña" visible y rechaza una
-  contraseña actual incorrecta.
-- **Recorrido de ADMIN no se repitió en esta sesión de la Fase 119** (la
-  cuenta del cliente se usó varias veces seguidas en la ventana
-  pensada para admin) — se apoya en la confirmación completa de ese
-  mismo recorrido horas antes, en la Fase 118, mismo día, sin cambios de
-  código de `server/`/`public/` de por medio.
-- **"Calendario mensual de cargas"** (`docs/guia-uso-orlant.md` → sección
-  5): 4 de 8 filas ("quién la manda"/"de qué sistema sale" para Tráfico
-  de Llamadas, Tráfico de WhatsApp, Tipificación y Agendas) siguen
-  marcadas explícitamente "Por confirmar" — no se resolvieron en esta
-  fase porque dependen de que Edwin las precise, no de nada que se
-  pueda verificar desde el código. Sigue pendiente de Edwin.
-
-## De la Fase 120 (verificación dato por dato + AHT de WhatsApp)
-
-- ~~Verificar en producción, dato por dato (no solo totales), los 3
-  archivos reales que envió InCo~~ — **hecho**: 150/150 filas de Tráfico
-  de Llamadas, 258/258 de Tráfico de WhatsApp, 34.661/34.661 de
-  Tipificación (por skill × mes), 0 duplicados, 0 diferencias contra la
-  API en vivo. Ver `scripts/produccion/revision-final.js`.
-- ~~Abrir cada sub-pestaña de las 7 pestañas de ORLANT (no solo la que
-  abre por defecto)~~ — **hecho**, el hueco estructural que señaló el
-  usuario (Fases 112-119 no lo cubrían de forma explícita): todas
-  dibujan algo real o muestran un mensaje claro, ninguna en blanco.
-- ~~AHT de Tráfico de WhatsApp~~ — **quitado** (ver más arriba, "De
-  Edwin").
-- **Hallazgo real corregido**: el ATA (tiempo promedio de abandono) de
-  Tráfico de Llamadas Y de WhatsApp se promediaba ponderado por el TOTAL
-  de llamadas/WhatsApp, en vez de por cuántas realmente se abandonaron —
-  un día de mucho volumen y pocos abandonos diluía el promedio hacia
-  abajo. Corregido en `public/js/trafico-logic.js` y
-  `public/js/trafico-whatsapp-logic.js`; efecto numérico medido contra
-  el archivo real: agosto pasa de 350,92 s a 625,13 s en Llamadas (ver
-  `CHANGELOG.md` v1.12.0).
-- **Hallazgo documentado, NO corregido** (fuera del alcance pedido):
-  `traficoWppResumen` (`public/js/trafico-whatsapp-logic.js`) es una
-  función sin ningún llamador en el código de producción (solo la
-  referencian sus propios tests) que pondera ASA/ATA por el total en vez
-  de por contestados/abandonados — el mismo defecto que se corrigió en
-  las funciones que SÍ se usan. Al no estar conectada a ninguna pantalla
-  no afecta nada visible hoy, pero conviene decidir si se borra (código
-  muerto) o se corrige igual para que no quede una trampa si alguien la
-  conecta más adelante.
-- **No se llegó a cubrir en esta fase** (quedan de las Fases 118/119,
-  sin empeorar ni resolverse):
-  - Barrido visual completo con Playwright (claro/oscuro ×
-    1366×768/1920×1080/móvil 412px × mes con/sin datos, abriendo cada
-    sub-pestaña una por una): se verificó a mano, con el navegador real,
-    el caso concreto de esta fase (AHT de WhatsApp oculto + export sin
-    la columna, con una base sintética que imita el archivo real de
-    Wolkvox) contra un servidor local corriendo de verdad — no la matriz
-    completa de viewports/temas que pedía el usuario.
-  - Barrido de código muerto a partir del grafo de `graphify` (aparte
-    del hallazgo puntual de `traficoWppResumen` arriba, que salió de
-    revisar el código tocado en esta fase, no de un barrido completo).
-  - XSS con texto malicioso real (Playwright dinámico) y fallas/carreras
-    de UI (500/red cortada, cambio rápido de pestaña o mes).
+- **Fase de plantillas oficiales** (carpeta versionada, que Isabel pueda
+  descargar/pegar/subir sin ayuda de InCo) — pedido explícito de Edwin:
+  "eso lo vemos después". Ver `docs/plantillas-inventario.md` (Fase 124)
+  para el inventario que esa fase va a necesitar.
+- **Barrido visual completo** (claro/oscuro × 1366×768/1920×1080/móvil
+  412px × mes con/sin datos, las 7 pestañas × todas las sub-pestañas) —
+  la Fase 124 SÍ cubrió tema oscuro + 1920×1080 + móvil para las 7
+  pestañas/sub-vistas (0 errores de consola, 0 peticiones fallidas, 0
+  canvas sin dibujar en los 5 combos nuevos) contra producción real, pero
+  fue un chequeo automático (consola + canvas con píxeles), no una
+  revisión visual humana de cada combinación una por una. Queda para
+  después si se quiere ese nivel de detalle.
+- **Inventario y respaldo de la cuenta AWS vieja** (`934685482338`) —
+  necesita credenciales de esa cuenta, sin empezar.
+- **Política 1 de IAM pendiente** (`s3:ListBucket`+`s3:GetObject`
+  acotado) — bloquea la prueba real de restauración de backups. Necesita
+  credenciales de AWS a mano.
+- **Clínica Aurora / Hospital La María** — siguen en cero datos reales,
+  no es un pendiente operativo, es el estado esperado hasta que haya
+  pedido real.
+- **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv` 18) —
+  decisión del usuario, no se tocan sin pedirlo.
+- **Keystore** — sin tocar, fuera de alcance de esta fase (regla fija).

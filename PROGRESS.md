@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.13.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.13.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -24,22 +24,26 @@ narrativo de cada fase, fase por fase, vive en
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline) en
   [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
-  (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
+  (reorganizado en la Fase 124 en 5 secciones: antes de entregar a Edwin,
+  esperando a Edwin, esperando decisión de InCo, técnico con costo/riesgo,
+  después de la entrega).
+- **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
+  (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación Fase 122, 2026-10-06)
+### Números de control (ORLANT, última verificación Fase 124, 2026-10-06)
 
-Reconfirmados en vivo contra producción (dato por dato contra los 4
-archivos reales que envió InCo, no solo totales, incluido el cruce
-completo asesor por asesor entre Agendas y Efectividad de Agendamiento —
-0 diferencias): 25.180/25.180 filas de Tipificación de WhatsApp,
-24.186/24.186 de Agendas, 19/20 asesores de Efectividad de Agendamiento
-(agosto/septiembre). Las 7 pestañas Y cada una de sus sub-pestañas (no
-solo la que abre por defecto) dibujan algo real o muestran un mensaje
-claro — ninguna en blanco. 0 errores de consola. Se vuelven a confirmar en
-cada revisión final y pueden moverse mes a mes con cargas nuevas de Edwin
-(Tipificación de Llamadas, Tráfico, Inasistencia y Efectividad de Citas
-NO cambiaron en esta fase — confirmado, siguen con los mismos valores de
-la Fase 120):
+Reconfirmados contra producción real en la Fase 124 (sesión con el
+usuario, 0 escritura, incluido el alias de asesor: 0 filas con la
+variante "_falla" y 0 grupos de nombres sin unificar en ninguna de las 3
+bases donde aplica): 0 discrepancias en los 9 valores de la tabla de
+abajo, Las 7 pestañas Y cada una de sus sub-pestañas (no solo la que
+abre por defecto) dibujan algo real o muestran un mensaje claro —
+ninguna en blanco — confirmado ahora también en tema oscuro y en
+1920×1080/móvil 412px, que la Fase 122 había dejado sin cubrir. 0
+errores de consola. La Fase 124 no cargó datos nuevos — solo verificó
+(ver [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
+→ Fase 124) y corrigió 1 vulnerabilidad crítica de `npm audit` + 1
+función muerta, sin cambiar ningún número de abajo:
 
 | Indicador | Valor |
 |---|---|
@@ -182,4 +186,5 @@ mismo orden):
 - Fase 120 — Verificación dato por dato de los 3 archivos reales que envió InCo (Llamadas 150 filas, WhatsApp 258 filas, Tipificación 34.661) contra producción, recorriendo TODAS las sub-pestañas (no solo la que abre por defecto, el hueco real que dejaba pasar un AHT de WhatsApp en blanco sin que nadie lo notara); se quitó el AHT de WhatsApp (Wolkvox nunca lo entrega) con migración idempotente + reactivación sin tocar código; 2do hallazgo real: el ATA de Llamadas Y de WhatsApp se promediaba ponderado por el total en vez de por los abandonos reales (corregido, con el efecto numérico documentado); la revisión automática de cada PR ahora también confirma que un aviso de "sin datos" quede visible de verdad, no solo que el canvas esté escondido (2026-10-05)
 - Fase 122 — Carga real de ORLANT de agosto-septiembre/2026 (Tipificación de WhatsApp, Agendas, Efectividad de Agendamiento) + pedidos de la reunión con Edwin (alias de nombre de asesor, nombre completo del mes); 3 hallazgos reales encontrados y corregidos al cargar los archivos reales (límite de tamaño de Agendas, el navegador sin responder con archivos grandes de 1 sola hoja, y un defecto que bloqueaba SIEMPRE el reconocimiento de Tipificación de WhatsApp) (2026-10-06)
 - Fase 123 — Re-carga de TIPIFICACIONES.xlsx para consolidar el alias "_falla" (pendiente de la Fase 122) + identificación de otros 4 archivos reales de Descargas que ya coincidían con lo cargado (se dejaron sin tocar, decisión del usuario) (2026-10-06)
+- Fase 124 — Revisión de errores y bugs probando la página real en producción (lo que la Fase 122 dejó sin cubrir: tema oscuro, 1920×1080, móvil, efecto real del alias, mes parcial de julio) + 1 vulnerabilidad crítica de npm audit corregida + 1 función muerta borrada + reorganización completa de la documentación (`docs/pendientes.md` en 5 secciones, `docs/README.md`, `docs/plantillas-inventario.md` nuevos) (2026-10-06)
 

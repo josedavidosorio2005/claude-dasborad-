@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.13.1 — Octubre 2026
+
+**Fase 124: revisión general de errores y seguridad antes de la entrega
+— sin cambios visibles para el usuario.**
+
+- Se cerró una alerta de seguridad crítica de una librería externa
+  (parche menor, sin afectar ninguna función).
+- Se confirmó, probando directamente sobre la plataforma real en
+  producción, que todo lo nuevo de la Fase 122 (tema oscuro, pantallas
+  grandes y celular, asesores con más del 100% de efectividad, el
+  selector de mes, el mes parcial de julio, y el alias de nombre de
+  asesor) funciona correctamente — 0 errores encontrados.
+- Limpieza interna: se quitó una función de cálculo que ya no se usaba
+  en ninguna pantalla.
+
 ## v1.13.0 — Octubre 2026
 
 **Fase 122: se cargaron en producción los 4 archivos reales de ORLANT que
