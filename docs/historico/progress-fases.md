@@ -11750,10 +11750,32 @@ Resultado:
 crítica). `npm test` completo: ver Parte 0 (inestable en esta máquina,
 CI es la referencia). CI del PR de esta fase: ver estado final abajo.
 
+### Parte 4 — Cierre y verificación post-deploy (EJECUTADA)
+
+PR #313 mergeado con CI verde (test Node 22, docker-build, pantallas).
+Deploy automático a AWS confirmado (`gh run view`, job `deploy` en verde,
+1m24s). Verificación post-deploy real, con sesión del usuario:
+`/api/health` → `v1.13.1`, `ok:true`, `buildId` nuevo (proceso
+reiniciado de verdad). Recorrido de las 7 pestañas: 0 canvas sin
+dibujar, 0 errores de consola, 0 peticiones fallidas. Números de control
+re-confirmados sin cambios (Tipificación Llamadas 34.661, WhatsApp
+25.180, 3 alias, 0 filas "_falla").
+
+El reintento de los 4 exports reales (con `download.path()` +
+`downloadsPath` en el `launch()`, corrigiendo el bug del primer intento)
+**volvió a fallar con el mismo error** ("Cannot access file"), en la
+MISMA sesión donde el resto del recorrido funcionó perfecto — descarta
+que sea un problema de la plataforma; parece una interacción puntual de
+Playwright/Chromium con descargas en este entorno Windows. Queda anotado
+en `docs/pendientes.md` §1 con una sugerencia distinta para la próxima
+vez (inspeccionar el evento de descarga antes de `path()`, o verificarlo
+a mano en vez de seguir automatizándolo).
+
 ### Estado final de la Fase 124
 
 Versión `1.13.1` (parche — fix de seguridad + limpieza, sin función
-nueva). Un solo PR (código + docs + scripts, dado el volumen y que todo
-es de la misma fase). Lista completa de lo NO verificado y por qué, en
+nueva). 2 PRs: #313 (código + docs + scripts principales) y el cierre de
+esta Parte 4 (verificación post-deploy + ajuste del pendiente de
+exports). Lista completa de lo NO verificado y por qué, en
 `docs/pendientes.md` §4 y en el informe final entregado al usuario en el
 chat.
