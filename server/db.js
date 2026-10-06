@@ -2669,6 +2669,47 @@ runOnceMigration('dashboards_config_orlant_whatsapp_sin_aht_v1', () => {
   }
 });
 
+// Fase 126 (pedido de Edwin): quita el Nivel de Servicio a 5 minutos de
+// Trafico de WhatsApp en ORLANT -- Wolkvox sigue sin mandar
+// SERVICE_LEVEL_5MIN. Mismo patron EXACTO que
+// dashboards_config_orlant_whatsapp_sin_aht_v1 (arriba): marca el panel
+// trafico_whatsapp_combo con mostrarSL5min:false (si no tiene ya el campo
+// seteado a lo que sea -- nunca pisa un ajuste manual) para que el
+// frontend deje de mostrar la tarjeta/serie/aviso de 5 min y pase el SL a
+// 20s al lugar principal, igual que Trafico de Llamadas. Reactivarlo
+// despues de que Wolkvox lo entregue es solo volver a poner
+// mostrarSL5min:true via PUT /dashboards/config/ORLANT, sin tocar codigo.
+runOnceMigration('dashboards_config_orlant_whatsapp_sin_sl5min_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // ORLANT no existe todavia -> el seed ya la crea con mostrarSL5min:false
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tabs = layout.tabs || [];
+  const tabWpp = tabs.find((t) => t && t.key === 'trafico_whatsapp');
+  if (!tabWpp) return; // esta instalacion no tiene la pestana de WhatsApp -- nada que hacer
+  let cambio = false;
+  (tabWpp.panels || []).forEach((p) => {
+    if (p && p.tipo === 'trafico_whatsapp_combo' && !Object.prototype.hasOwnProperty.call(p, 'mostrarSL5min')) {
+      p.mostrarSL5min = false;
+      cambio = true;
+    }
+  });
+  if (!cambio) return; // ya tenia el campo (por defecto o personalizado) -- nada que hacer
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_whatsapp_sin_sl5min_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

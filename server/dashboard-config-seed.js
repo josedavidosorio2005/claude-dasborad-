@@ -105,8 +105,17 @@ const ORLANT = {
       // en `true`) vía PUT /dashboards/config/ORLANT, sin tocar código.
       // Ver migracion dashboards_config_orlant_whatsapp_sin_aht_v1 en
       // db.js para una base ya sembrada antes de este cambio.
+      // Fase 126 (pedido de Edwin): el Nivel de Servicio a 5 minutos sigue
+      // sin dato real (Wolkvox todavia no manda SERVICE_LEVEL_5MIN) --
+      // `mostrarSL5min:false` apaga esa tarjeta/serie + la columna del
+      // export, mismo patron EXACTO que `mostrarAht` arriba. El SL a 20s
+      // (que SI llega real) pasa a ser el nivel de servicio PRINCIPAL en
+      // vez de quedar como secundario -- se ve igual que si WhatsApp
+      // nunca hubiera tenido el campo de 5 min. Ver migracion
+      // dashboards_config_orlant_whatsapp_sin_sl5min_v1 en db.js para una
+      // base ya sembrada antes de este cambio.
       { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
-        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT', mostrarAht: false },
+        { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT', mostrarAht: false, mostrarSL5min: false },
       ]},
       // Fase 94 (tema B, pedido de Edwin): Agendamiento queda SOLO con datos
       // reales de la tabla `agendas` (server/agendas.js) -- 4 sub-pestañas
