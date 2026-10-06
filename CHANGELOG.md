@@ -4,6 +4,44 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.13.0 — Octubre 2026
+
+**Fase 122: se cargaron en producción los 4 archivos reales de ORLANT que
+faltaban de agosto y septiembre/2026 (Tipificación de WhatsApp, Agendas,
+Efectividad de Agendamiento de los 2 meses) y se aplicaron los pedidos de
+la reunión con Edwin.**
+
+- **Tipificación de WhatsApp ya se puede cargar.** El export real de
+  Wolkvox para WhatsApp (formato "HistChat") no se reconocía antes —
+  ahora sí, sin importar el nombre de la hoja (cambia en cada descarga).
+  25.180 conversaciones de WhatsApp cargadas (julio a septiembre/2026).
+- **Nuevo: alias de nombre de asesor.** Cuando la misma persona llega con
+  dos nombres distintos entre archivos, o con una errata de tipeo puntual
+  en Wolkvox, un administrador puede registrar la equivalencia una sola
+  vez — la plataforma guarda siempre el nombre correcto, en todas las
+  bases, sin tener que corregir cada archivo a mano.
+- **En Efectividad de Agendamiento y Efectividad de Citas, el mes ya
+  muestra su nombre completo** ("Septiembre 2026" en vez de "Sep-26") —
+  pedido textual de Edwin. El selector de mes de arriba (compartido por
+  las 7 pestañas) también lo muestra así.
+- Cargados agosto y septiembre/2026 de Agendas (24.186 citas) y de
+  Efectividad de Agendamiento (equipo: agosto 41,17 %, septiembre 40,00 %)
+  — reemplaza el dato preliminar de septiembre que venía de un archivo
+  anterior.
+- **3 arreglos reales encontrados al cargar los archivos reales** (antes
+  de que llegaran a mostrarse mal en pantalla): un archivo grande de
+  Agendas se rechazaba por superar el límite de tamaño de la plataforma;
+  un archivo con muchas filas en una sola hoja podía dejar el navegador
+  sin responder varios minutos al subirlo; y el reconocimiento de la hoja
+  de WhatsApp (ver arriba) tenía un defecto que lo bloqueaba siempre, no
+  solo a veces.
+- Verificado en producción, con la sesión real del administrador: los 4
+  archivos cargados coinciden exacto con los números ya revisados contra
+  los archivos de origen (incluido el cruce completo, asesor por asesor,
+  entre Agendas y Efectividad de Agendamiento — 0 diferencias); las 7
+  pestañas y sus sub-pestañas siguen mostrando datos reales; 0 errores en
+  pantalla.
+
 ## v1.12.0 — Octubre 2026
 
 **Fase 120: se revisaron en produccion, dato por dato, los 3 archivos que

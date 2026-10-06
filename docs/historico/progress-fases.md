@@ -11326,3 +11326,147 @@ vulnerabilidades antes y después (sin cambios de dependencias). Esta
 fase SÍ cambia el comportamiento visible de la app (se quita una
 sub-pestaña y una columna de export, y un número en pantalla cambia de
 valor) → sube de versión MENOR: v1.11.2 → v1.12.0.
+
+## Fase 122 — Carga real de ago-sep/2026 de ORLANT + pedidos de la reunión con Edwin (2026-10-06)
+
+Prompt de 4 partes: cargar los 4 archivos reales que faltaban
+(Tipificación de WhatsApp, Agendas, Efectividad de Agendamiento de agosto
+y de septiembre) y aplicar 3 pedidos de la reunión del día con Edwin
+(nombre del mes completo en Efectividad, alias de nombre de asesor, dejar
+el aviso de "sin dato" del nivel de servicio de WhatsApp a 5 minutos
+intacto). Regla explícita del usuario: recalcular localmente, con un
+script de solo lectura, los números que InCo ya había analizado de los 4
+archivos ANTES de usarlos como "esperado" — ese paso encontró 2 hallazgos
+reales que habrían bloqueado o corrompido la carga, antes incluso de
+tocar producción.
+
+### Parte 1 — Código (5 PRs, uno por tema)
+
+- **1.1 (#301)**: Tipificación de WhatsApp reconoce el export HistChat de
+  Wolkvox (hoja "HistChat" + fecha/hora, cambia en cada descarga) vía
+  reconocimiento por encabezados — antes exigía el nombre exacto
+  TIPIFICACION_WHATSAPP. Nueva función distingue HistChat (columnas
+  CHANNEL/DATE_CLOSE/NOMBRE DE SKILL, sin SKILL_NAME) de HistCDR (voz).
+  La eliminación de duplicados exactos de la Fase 88 deja de aplicarse al
+  canal WhatsApp (en Wolkvox cada fila es un chat distinto con su propio
+  CONN_ID, nunca leído ni guardado; un envío masivo genera filas
+  idénticas en los campos guardados sin ser duplicados reales — 226
+  filas así en el archivo real).
+- **1.2 (#302)**: tabla de alias de asesor (alias → canónico, por
+  campaña), aplicada en el servidor al guardar Tipificación/Agendas/
+  Efectividad de Agendamiento. Alta/baja/lista por API, solo
+  administrador, nunca por migración ni seed (nombres reales no pueden
+  vivir en el código fuente). Reglas: un alias no puede apuntar a sí
+  mismo ni a otro alias (sin cadenas, sin ciclos); un canónico que
+  todavía no aparece en ningún archivo cargado se acepta igual, con
+  advertencia. La confirmación de la carga dice cuántas filas/asesores se
+  unificaron — cantidad, nunca el nombre. PR #303 (hotfix): un byte NUL
+  quedó por accidente en un archivo del servidor al mezclar un separador
+  de texto; sin efecto en producción (un NUL es un carácter válido en un
+  string de JS), corregido igual.
+- **1.3 (#304)**: nombre completo del mes ("Septiembre 2026" en vez de
+  "Sep-26") en Efectividad de Agendamiento/Citas y en el selector de mes
+  global — pedido textual de Edwin. Los ejes de las gráficas de
+  tendencia de 12 meses (Tráfico/Calidad) siguen con el rótulo corto.
+  Verificado visualmente en local (demo, Playwright, nunca producción):
+  sin desborde a 1366×768 ni móvil 412px.
+- **1.4 (#305, hallazgo real)**: al verificar localmente el archivo real
+  de Agendas antes de usarlo, el parseo rechazaba las 24.186 filas
+  completas — FECHA_SOLICITUD es una celda numérica con formato de fecha
+  que SheetJS boxea a Date (mismo mecanismo que ya motivó los fixes de
+  fecha de las Fases 115/116, nunca antes necesario en Agendas porque el
+  archivo de abril 2025 no lo tenía). Se agregó la misma recuperación del
+  valor crudo desde la celda original.
+- **1.5 (#306, hallazgo real)**: InCo esperaba "0 advertencias de
+  EFECTIVIDAD" en los 2 archivos, pero el código generaba 3 (agosto) y 2
+  (septiembre) para los asesores con efectividad > 100% — la celda guarda
+  la fracción (ej. 1,18) con formato de Excel "%", pero la regla vieja
+  ("≤1 es fracción, >1 ya es porcentaje") adivinaba mal para estos casos
+  (1,2% en vez de 118%). Mismo patrón ya establecido en Tráfico (Fase
+  88): leer el formato real de la celda. Mismo fix aplicado al lector de
+  Citas Atendidas por consistencia (sin archivo real que lo ejercite
+  todavía).
+- **Paso 0 (#307)**: nombres reales de asesor que se habían colado en
+  comentarios/un header de test de 1.2 y 1.5, reemplazados por nombres
+  ficticios; la guía de uso ya no dice que la fila "_falla" queda
+  separada (el alias la unifica automáticamente).
+
+### Parte 2 — Cargas reales en producción (con sesión real del usuario)
+
+Alta de los 3 alias reales por el endpoint de administración (conteo
+confirmado: 3) y carga de Efectividad de Agendamiento agosto (19 filas) y
+septiembre (20 filas, reemplaza el preliminar de 44,81%) — ambas
+guardadas sin incidentes.
+
+Al cargar Agendas, la plataforma devolvió 413 "Cuerpo de la petición
+demasiado grande" — hallazgo real en producción, no detectado por el
+script de verificación local (que no mide el payload HTTP real). Causa:
+Agendas se diseñó para ~7.500 filas/mes (abril 2025); el archivo real (2
+meses juntos, 24.186 filas) pesa 4,91 MB, más del doble del límite global
+de 2 MB, y por encima del límite de 20.000 filas que tenía el validador.
+Hotfix #308 (urgente, en caliente): mismo tratamiento que Tipificación
+(Fase 77) — las 2 rutas de Agendas suben a 8 MB, el límite de filas sube
+a 50.000.
+
+Al reintentar con Agendas ya corregida, Tipificación de WhatsApp quedó
+con el resultado de la vista previa vacío más de 3 minutos sin ningún
+error. Medido en Node: el mismo trabajo tarda ~6,6 s — no era lógica, era
+rendimiento. Causa: el reconocimiento por encabezados releía la hoja
+COMPLETA (25.180 filas) una vez POR CADA uno de los 8 slots del plan de
+carga, solo para mirar la primera fila. Hotfix #309 (urgente): acotar el
+rango leído a la primera fila del rango usado de la hoja — mismo
+resultado exacto, de 2,8 s a 0,096 ms para las 8 pasadas.
+
+Con el rendimiento arreglado, el reintento reveló el problema real: la
+vista previa seguía vacía, pero ahora en ~3 s y sin error — todos los
+slots del plan devolvían "no coincide". Instrumentando el código con
+marcas de tiempo directo en producción: la comparación de encabezados
+daba falso para Tipificación de WhatsApp. Hotfix #310 (urgente, el
+hallazgo real de fondo): la función que arma las columnas del plan de
+carga real nunca copiaba el alias de nombre de columna agregado en la
+Parte 1.1 — esa función (la que de verdad arma el plan en la página,
+nunca cubierta por los tests unitarios de 1.1 porque el archivo de cargas
+del navegador no tiene modo doble ni exportación para Node) seguía
+copiando solo el nombre principal de cada columna. Nueva prueba con un
+sandbox mínimo (única forma de probar ese archivo en Node) reproduce el
+hallazgo exacto: falla contra el código viejo, pasa con el fix.
+
+Con los 3 hotfixes desplegados, la carga de Tipificación de WhatsApp
+terminó en 4,5 s: 25.180 filas, canal WHATSAPP, 78 filas de un asesor con
+errata de tipeo unificadas por alias (79 en total, correcto). Resultado
+final de las 4 cargas, exacto contra lo esperado: Efectividad agosto
+19/26.814/11.040/41,17%; Efectividad septiembre 20/32.868/13.146/40,00%;
+Agendas 24.186 filas (1.563 agrupadas por privacidad + 1 sin entidad);
+Tipificación de WhatsApp 25.180 filas (jul 71/ago 12.061/sep 13.048), 11
+skills, Llamadas sigue en 34.661 sin tocar. La re-carga del archivo de
+voz (para consolidar la variante "_falla" del alias) quedó pendiente —
+no se recibió la confirmación expresa del usuario en el chat para ese
+paso puntual.
+
+### Parte 3 — Verificación en producción (solo lectura)
+
+Ejecutado: números de control (Tipificación Llamadas 34.661 sin cambios,
+Tráfico/Inasistencia/Efectividad de Citas sin cambios, Agendas abril 2025
+sigue en 7.426); cruce COMPLETO Agendas↔Efectividad por asesor y mes (19
+comparados/0 diferencias en agosto, 20/0 en septiembre — no solo el caso
+del alias); las 7 pestañas y sus sub-pestañas (tema claro, 1366×768) con
+canvas visible y con tamaño real en todas; selector de mes con nombres
+completos ("Septiembre 2026"… "Abril 2025"); "Julio 2026" con 71 filas en
+Tipificación de WhatsApp; export de Agendas sin columnas de PII; 0
+errores de consola, 0 peticiones fallidas.
+
+No verificado (no alcanzó en esta fase, después de 8 sesiones de login
+reales para resolver los 3 hallazgos de la Parte 2): tema oscuro;
+viewports 1920×1080 y móvil 412px; el gráfico/ranking de Efectividad con
+los asesores sobre 100% dibujados correctamente (más allá de que el
+canvas existe); exports de Tipificación y Efectividad (solo se verificó
+Agendas); contenido descargado real de los exports (solo su estructura
+vía la función de exportar, no el archivo final abierto).
+
+### Parte 4 — Cierre
+
+9 PRs en total: #301 a #307 (Parte 1 + Paso 0), #308 a #310 (hotfixes
+urgentes de la Parte 2), más este PR de cierre. `npm audit`: 0
+vulnerabilidades (sin cambios de dependencias). Esta fase trae función
+nueva (alias de asesor) y un cambio visual (nombre del mes) → sube de
+versión MENOR: v1.12.0 → v1.13.0.

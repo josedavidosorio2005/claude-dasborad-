@@ -1,6 +1,6 @@
 # Inventario de bases de ORLANT (Fase 112, 2026-10-02)
 
-Estado actual de las 8 bases que alimentan el dashboard de ORLANT —
+Estado actual de las 9 bases que alimentan el dashboard de ORLANT —
 reemplaza la versión de la Fase 70/71 (2026-09-24, archivada en
 `docs/historico/`), que describía un momento en el que la mayoría de
 estas pestañas todavía estaban ocultas y sin datos reales. Hoy **las 7
@@ -11,13 +11,14 @@ Fuentes usadas: `public/js/*-logic.js` (parseo de cada archivo, lado
 navegador), `server/validation.js` (esquema Zod de cada endpoint de
 carga, lado servidor).
 
-## Las 8 bases
+## Las 9 bases
 
 | Base | Hoja (archivo Excel) | Columnas | De dónde sale | Cada cuánto | Pestaña que alimenta |
 |---|---|---|---|---|---|
 | **Tráfico de Llamadas** | `LLAMADAS` | Columnas de Wolkvox (skill, fecha, llamadas recibidas/atendidas, `SERVICE_LEVEL_20SEC`, `SERVICE_LEVEL_5MIN`, AHT...) | Export directo de Wolkvox | Mensual | Tráfico de Llamadas |
 | **Tráfico de WhatsApp** | `WHATSAPP` | Mismo patrón que Llamadas, por cola de WhatsApp | Export directo de Wolkvox | Mensual | Tráfico de WhatsApp |
-| **Tipificación** | `TIPIFICACION_LLAMADAS` / `TIPIFICACION_WHATSAPP` (una hoja por canal; la hoja vieja `tipificacion` en minúscula sigue aceptándose si todavía llega así) | Categoría/código de tipificación por gestión, fecha, canal | Export de Wolkvox / sistema de Edwin | Mensual | Tipificación |
+| **Tipificación de Llamadas** | `TIPIFICACION_LLAMADAS`, o el export completo HistCDR de Wolkvox (se reconoce por encabezados — `SKILL_NAME` + `TYPE_INTERACTION` — sin importar el nombre de la hoja); la hoja vieja `tipificacion` en minúscula sigue aceptándose si todavía llega así | `AGENT_NAME`, `DATE` (fecha y hora juntas en el export completo), `DESCRIPTION_COD_ACT`, `SKILL_NAME` | Export de Wolkvox / sistema de Edwin | Mensual | Tipificación |
+| **Tipificación de WhatsApp** | `TIPIFICACION_WHATSAPP`, o el export HistChat de Wolkvox (Fase 122 — hoja `HistChat<fecha>-<hora>`, cambia en cada descarga; se reconoce por encabezados: `CHANNEL`/`DATE_CLOSE`/`NOMBRE DE SKILL`, sin `SKILL_NAME`) | `AGENT_NAME`, `DATE`, `DESCRIPTION_COD_ACT`, `NOMBRE DE SKILL` (alias de `SKILL_NAME`) — el export completo trae otras ~29 columnas con datos de pacientes/asesores (teléfono, correo, DNI, comentarios...) que la plataforma NUNCA lee ni guarda | Export de Wolkvox | Mensual | Tipificación |
 | **Agendas** | `AGENDAS` | `NOMBRE DE AGENTE`, `SEDE`, `NOMBRE_EXAMEN`, `ESPECIALIDAD`, `PROFESIONAL`, `FECHA_SOLICITUD`, `TIPO DE LINEA`, `NOMBRE_ENTIDAD` (opcional) | Sistema de agendamiento de Edwin | Mensual | Agendas (y Efectividad de Agendamiento, Ranking de asesores) |
 | **Inasistencia (por cita)** | `Hoja1` (desde la Fase 108 — una fila por cita; el formato agregado viejo de las Fases 98–106 ya NO se acepta en cargas nuevas, aunque las filas ya cargadas en ese formato se conservan) | `SEDE`, `ESPECIALIDAD` (o `ESPECIALIDA`, sin la D — se tolera), `FECHA_CITA`, `NOMBRE ENTIDAD`, `CITEST` (`C`=cancelada, `I`=inasistencia, `P`=pendiente, `T`=atendida) | Sistema de agendamiento de Edwin | Mensual | Inasistencia |
 | **Efectividad de Agendamiento** | `EFECTIVIDAD_AGENDAMIENTO` | `NOMBRE DE AGENTE`, `MES`, `CANTIDAD DE GESTIONES`, `AGENDAS` (la columna `EFECTIVIDAD` del archivo se ignora — siempre se recalcula en servidor) | Reporte de gestión por asesor de Edwin | Mensual | Agendamiento → Ranking de asesores (por efectividad, Fase 111) |
@@ -31,6 +32,19 @@ carga, lado servidor).
   agendamiento) pero son **4 archivos/hojas distintos** — no un solo
   `resumen` como en la versión vieja de este documento (ese formato
   agregado se retiró).
+- **Alias de nombre de asesor** (Fase 122): cuando la misma persona llega
+  con dos nombres distintos entre Agendas/Efectividad de Agendamiento/
+  Tipificación, o con una errata de tipeo puntual en Wolkvox, un
+  administrador registra la equivalencia una sola vez
+  (`/api/alias-asesores`, nunca por migración ni seed) — la plataforma
+  guarda siempre el nombre canónico en las 3 bases. Ver
+  `server/alias-asesores.js`.
+- **Privacidad de `NOMBRE_ENTIDAD`** (Agendas): una entidad que aparece
+  menos de 5 veces en el archivo que se está subiendo se agrupa como
+  `PARTICULAR / OTRA` antes de guardarse (el umbral se calcula sobre
+  TODO el archivo de una sola vez, no por mes/periodo) — confirmado
+  contra el archivo real de agosto-septiembre/2026: 1.563 de 24.186
+  filas agrupadas así, 1 fila sin entidad.
 - El mes de cada fila se valida contra el calendario real (nunca un mes
   futuro) y contra duplicados — ver `server/validation.js` y las pruebas
   de carga de cada base (`server/tests/*-carga.test.js`).
