@@ -8,8 +8,8 @@
 // Montado bajo '/calidad/tipificacion' para heredar el middleware de
 // no-cache de '/calidad' (mismo motivo que routes/agendas.js) -- se monta
 // en server.js despues de routes/agendas. El limite de tamano de body mas
-// grande para /carga y /carga/impacto vive en server.js (Fase 77, ver
-// RUTAS_TIPIFICACION_LIMITE_MAYOR), no aqui.
+// grande para /carga y /carga/impacto vive en server.js (Fase 77, Fase 122,
+// ver RUTAS_LIMITE_MAYOR), no aqui.
 const express = require('express');
 const db = require('../db');
 const { requireActor, campaignAccess, canLoadData } = require('../auth');
