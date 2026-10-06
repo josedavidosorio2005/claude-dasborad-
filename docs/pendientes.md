@@ -29,20 +29,25 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   reconfirmado sin tocar en la Fase 124 (2026-10-06).
 - **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
   Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
-  fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA. 2 intentos
-  en la Fase 124: el primero falló por `download.saveAs()` sin
-  `downloadsPath`; corregido (`download.path()` + `downloadsPath` en el
-  `launch()`) y reintentado en la verificación post-deploy — **volvió a
-  fallar con el mismo error** ("Cannot access file"). No parece ser un
-  problema de la plataforma (el recorrido post-deploy en la misma sesión,
-  con la misma cuenta, funcionó perfecto: 0 errores, números iguales) —
-  parece una interacción puntual de Playwright/Chromium con el manejo de
-  descargas en este entorno Windows concreto. Para la próxima vez:
-  probar `page.waitForEvent('download')` seguido de inspeccionar
-  `download.suggestedFilename()`/`download.url()` antes de llamar a
-  `path()`, o verificar manualmente (clic humano en "Exportar > Excel"
-  y abrir el archivo descargado por fuera del script) en vez de seguir
-  automatizando este paso puntual. Anotado 2026-10-06.
+  fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA, reducida en
+  la Fase 125. La descarga automática SÍ funcionó en la Fase 125 (local,
+  `download.saveAs()` normal, sin el error "Cannot access file" que la
+  Fase 124 vio 2 veces contra producción — parece confirmarse que fue una
+  interacción puntual Playwright/Chromium/Windows contra ESE entorno, no
+  un problema reproducible). Con eso, la Fase 125 releyó 3 exports reales
+  (Agendas, Ranking de Efectividad de Agendamiento, Tipificación de
+  Llamadas) con un parser de ZIP/XML independiente
+  (`server/tests/helpers/xlsx-lite.js`, no la misma librería SheetJS que
+  escribe el archivo): abren correctamente, cuadran con la tabla en
+  pantalla, sin columnas de PII (sede/examen/profesional/entidad de
+  Agendas no aparecen en ningún export — solo se usan para agregación) y
+  con las celdas de fórmula neutralizadas de verdad en el archivo (no solo
+  en memoria). **Sigue pendiente**: Efectividad de Citas y Tipificación de
+  WhatsApp (sin datos sintéticos probados en esta fase) y el único paso
+  que sigue siendo manual — abrir el archivo en Excel/LibreOffice de
+  verdad (el parser independiente confirma que el formato es válido y el
+  contenido correcto, pero no reemplaza abrirlo en la aplicación real).
+  Anotado 2026-10-06 (Fase 124), actualizado 2026-10-06 (Fase 125).
 - **Guía de uso (`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`)
   al día con lo nuevo de la Fase 122-124** — dueño: InCo. Prioridad MEDIA.
   Falta documentar: Agendas/Efectividad con nombre de asesor, formato
@@ -70,7 +75,13 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   124: ago 3 asesores sobre 100% — máx 180.97% —, sep 2 asesores — máx
   387.31% —, el combo/ranking los dibuja completos y con formato
   correcto). No es error de carga. Pregunta de negocio: ¿agendan por
-  fuera de las gestiones que se están contando? Anotado 2026-10-05.
+  fuera de las gestiones que se están contando? Anotado 2026-10-05. El
+  punto técnico que la Fase 124 había dejado "no verificado" (si el eje
+  secundario recorta la línea/etiquetas con valores tan altos) se
+  confirmó en la Fase 125 con datos sintéticos de 118%/181%/387%: Chart.js
+  autoescala el eje con margen real (ej. tope de 400% con un máximo de
+  387% en los datos) y la captura de pantalla no muestra ningún recorte —
+  **no es un defecto**, solo falta la respuesta de negocio de Edwin.
 - **Pregunta a Edwin: "hay que quitar esa letra"** — dueño: Edwin.
   Prioridad BAJA. Mención suelta en la reunión del 2026-10-05, sin
   precisar a qué se refería. Preguntarle la próxima vez.
@@ -194,17 +205,25 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   la página real. Propuesta: empezar por las 2 bases que ya mostraron
   defectos reales (Tipificación de WhatsApp por el `labelAlt` perdido, y
   Agendas por el límite de tamaño), no las 9 de una vez.
-- **Fallas de red/500/carreras de la interfaz (doble clic en "Confirmar
-  carga", cerrar el modal a mitad de carga, token vencido a mitad de una
-  carga, archivo corrupto/0 bytes/hoja vacía)** — **NO cubierto en esta
-  fase** por el mismo motivo de alcance (sería un arnés Playwright nuevo,
-  grande, con interceptación de red simulando cada falla). Pedido de
-  nuevo desde la Fase 118/119, sigue sin cubrirse. Costo estimado: medio-
-  alto. Riesgo de NO tenerlo: bajo-medio (las escrituras ya usan
-  `db.transaction`, confirmado por lectura de código en las 9 bases, pero
-  nunca ejecutado con una falla inyectada a mitad de carga en esta fase
-  particular — sí se ejecutó esa prueba en fases anteriores para algunas
-  bases, ver Fase 119).
+- **Fallas de red/500/carreras de la interfaz (cerrar el modal a mitad de
+  carga, token vencido a mitad de una carga, archivo corrupto/0 bytes/hoja
+  vacía)** — **NO cubierto en esta fase** por el mismo motivo de alcance
+  (sería un arnés Playwright nuevo, grande, con interceptación de red
+  simulando cada falla). Pedido de nuevo desde la Fase 118/119, sigue sin
+  cubrirse. Costo estimado: medio-alto. Riesgo de NO tenerlo: bajo-medio
+  (las escrituras ya usan `db.transaction`, confirmado por lectura de
+  código en las 9 bases, pero nunca ejecutado con una falla inyectada a
+  mitad de carga en esta fase particular — sí se ejecutó esa prueba en
+  fases anteriores para algunas bases, ver Fase 119).
+  El caso del **doble clic en "Confirmar carga"** sí se revisó en la Fase
+  125 (por lectura de código, no con clics reales): `guardarCarga()` pasa
+  por `withButtonLoading()` (`public/js/ui-core.js`), que pone
+  `btn.disabled=true` de forma SÍNCRONA antes de cualquier `await` — un
+  segundo clic sobre un botón ya deshabilitado nunca llega a disparar su
+  manejador (comportamiento del navegador, no de esta app). Es una prueba
+  estructural (imposible por construcción), no solo "no se observó en la
+  prueba" — pero sigue sin un test automatizado que lo deje fijado como
+  regresión.
 - **Casos de borde del reemplazo por rango, matriz completa × 9 bases**
   (archivo de 1 solo día, skill/cola nueva, cruce de mes, mes parcial,
   re-subida idéntica fila por fila, 2 meses cuando ya existe 1, fecha
@@ -215,16 +234,37 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   completar lo que falta (archivo de 1 día explícito, re-subida idéntica
   con aserción "0 cambios" fila por fila, archivo de varios meses de una
   sola vez): medio.
-- **XSS dinámico campo por campo con payloads reales** (`<img onerror>`,
-  `"><script>`, `javascript:`) en tablas/tooltips/leyendas/mensajes de
-  carga/exports/Historial — **NO ejecutado en esta fase** (pedido de
-  nuevo desde la Fase 118). La Fase 102 confirmó por LECTURA de código
-  que `esc()`/`xlsxFilasSeguras` cubren todos los módulos, pero eso no es
-  un ataque real ejecutado. Costo: medio (un arnés Playwright que suba un
-  archivo con esos payloads en cada campo de texto y lea el DOM
-  renderizado). Riesgo de NO tenerlo: bajo (ya hay cobertura por lectura
-  de código + sanitización demostrada en los exports de esta y fases
-  anteriores — nunca se encontró una fuga real).
+- **XSS dinámico campo por campo con payloads reales — EJECUTADO
+  parcialmente en la Fase 125** (hasta la Fase 124 solo se había
+  confirmado por lectura de código). Con Playwright real contra el
+  servidor local (`seed:demo`), payloads (`<img src=x onerror=alert(...)>`,
+  `"><script>...</script>`, `'><svg onload=alert(...)>`, inyección de
+  fórmula `=2+2+cmd|...`) cargados vía API en: **Agendas** (especialidad,
+  tipo de línea), **Efectividad de Agendamiento** (nombre de asesor, en
+  tabla + categoría de la gráfica + leyenda + buscador de asesor) y
+  **Tipificación de Llamadas** (motivo). En los 3: 0 diálogos nativos
+  (`alert`/`confirm`) disparados, 0 `<img>`/`<script>`/`onmouseover`/
+  `onload` reales creados en el DOM (el payload queda como texto literal
+  escapado) y el Excel exportado de cada vista — releído con un parser de
+  ZIP/XML independiente del que escribe el archivo
+  (`server/tests/helpers/xlsx-lite.js`, no SheetJS) — trae el payload
+  como texto plano, y la celda de fórmula queda neutralizada con una
+  comilla simple por delante (`'=2+2+cmd...`), confirmando que la
+  protección sobrevive al archivo real, no solo en memoria.
+  **No verificado en esta fase** (queda para una próxima pasada): los
+  campos de Agendas que no se renderizan en ninguna vista del dashboard
+  hoy (sede, examen, profesional, entidad — solo se usan para agregación,
+  no aparecen en pantalla ni en export, así que no se pudo confirmar su
+  escape visualmente, aunque pasan por el mismo `esc()`/`xlsxCeldaSegura`
+  que el resto), el campo SKILL de Tipificación, el canal WhatsApp (sin
+  datos sintéticos cargados), el nombre de archivo en Historial (la
+  carga sintética con nombre payload no apareció en la primera página del
+  listado dentro del tiempo de esta prueba — no se confirmó ni se
+  descartó), Calidad, y el export a PDF. Costo de cerrar el resto: bajo
+  (mismo patrón, más tiempo). Riesgo de lo que falta: bajo (misma función
+  `esc()`/`xlsxFilasSeguras` ya demostrada en los campos sí probados, sin
+  ninguna ruta de renderizado distinta conocida para los campos que
+  faltan).
 - **Código muerto fuera del hallazgo puntual de esta fase** — se borró
   `traficoWppResumen` (confirmado sin llamadores, Fase 124). Un barrido
   completo con `graphify` del resto del código (funciones/archivos sin

@@ -11801,3 +11801,113 @@ intenta subir varios meses juntos (`public/js/cargas.js`): si el payload
 estimado supera el 85 % del límite de su ruta, avisa ANTES de enviar en
 vez de dejar que lo resuelva solo el 413 del servidor (que ya tenía un
 mensaje claro desde la Fase 122, confirmado de nuevo sin duplicarlo).
+
+## Fase 125 — Cierre de lo que la Fase 124 dejó sin hacer (2026-10-06)
+
+Pedido del usuario, mientras llegan los datos de Edwin: corregir un
+hallazgo mal planteado de la Fase 124 (arriba), poner al día la guía de
+uso del cliente, y avanzar lo que esa fase declaró explícitamente "no
+verificado" o "no cubierto", con la misma regla de oro: nada se marca
+"verificado" sin haberlo ejecutado de verdad. Ningún dato real tocado —
+todo con datos sintéticos, locales. Producción solo se toca en modo
+lectura al cierre (Parte 5).
+
+### Parte 1 — Corrección del margen de tamaño de carga
+
+Ver la nota de corrección más arriba, al final de la Fase 124. Resumen:
+el límite de 8 MB es por carga, no acumulado — se retiró la propuesta de
+subir a 16 MB (no aplicada, no hacía falta) y se agregó un aviso del
+cliente antes de enviar un archivo que de verdad supera el 85 % del
+límite de su ruta (`cargasPayloadDemasiadoGrande`,
+`public/js/cargas-logic.js`, con test que falla sin la función y pasa
+con ella, `server/tests/fase125-aviso-payload-grande.test.js`).
+
+### Parte 2 — Guía de uso al día
+
+`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html` (mismo
+contenido, verificado sirviendo igual: `GET /api/guia-uso` con sesión
+real contra el servidor local, no solo lectura del archivo) y
+`CHECKLIST_VERIFICACION_EDWIN.md` actualizados con: nombre de asesor en
+Agendas/Efectividad de Agendamiento, formato HistChat de Tipificación de
+WhatsApp (hoja con nombre variable, columnas de paciente nunca leídas),
+qué es un alias de asesor y que borrarlo no revierte lo ya unificado,
+meses con nombre completo, "Julio 2026" como mes parcial esperado,
+Efectividad de Citas "sin datos" para ago-sep, y el límite práctico de
+filas por carga de la Parte 1. Se marcaron en negrita las filas "por
+confirmar" del Calendario mensual de cargas y se quitaron 3 ítems de
+"Pendiente de datos" que ya estaban resueltos en fases anteriores pero
+la guía nunca había actualizado (resumen general, Agendas 2026,
+codificaciones de Calidad).
+
+### Parte 3 — Seguridad y robustez con la página real
+
+**3.1 (XSS dinámico) — EJECUTADO parcialmente, con Playwright real
+contra el servidor local**, no solo lectura de código (que era lo único
+que había hasta la Fase 124). Payloads (`<img onerror>`,
+`"><script>`, `'><svg onload>`, inyección de fórmula `=2+2+cmd|...`)
+cargados vía API en Agendas (especialidad, línea), Efectividad de
+Agendamiento (nombre de asesor — tabla, categoría de gráfica, leyenda,
+buscador) y Tipificación de Llamadas (motivo). Resultado en los 3: 0
+diálogos nativos disparados, 0 `<img>/<script>/onload` reales en el DOM,
+y el .xlsx exportado de cada vista — releído con un parser de ZIP/XML
+independiente del que escribe el archivo (`xlsx-lite.js`, no SheetJS) —
+trae el payload como texto plano y la celda de fórmula neutralizada con
+comilla simple por delante, en el archivo real, no solo en memoria.
+Pendiente (detalle y motivo en `docs/pendientes.md` §4): los campos de
+Agendas que ninguna vista renderiza hoy (sede/examen/profesional/
+entidad), el campo SKILL de Tipificación, el canal WhatsApp, el nombre de
+archivo en Historial (intentado, no concluyente dentro del tiempo de esta
+prueba), Calidad y el export a PDF.
+
+**3.4 (eje secundario del combo, >100 %) — RESUELTO, ya no es un
+"no verificado".** Con datos sintéticos de 118 %/181 %/387 % de
+efectividad: la configuración real del chart (`chart.scales.y2`, leída
+con `Chart.getChart()`, no el `_gd.charts` interno que falló en la Fase
+124) muestra que Chart.js autoescala el eje con margen (tope de 400 %
+con máximo real de 387 %), y la captura de pantalla confirma que la
+línea y sus etiquetas se ven completas, sin recorte. No es un defecto —
+solo queda pendiente la respuesta de negocio de Edwin (¿por qué hay
+asesores sobre el 100 %?).
+
+**3.2 (doble clic en "Confirmar carga")** — confirmado por lectura de
+código que es estructuralmente imposible, no solo "no observado":
+`guardarCarga()` pasa por `withButtonLoading()`
+(`public/js/ui-core.js`), que deshabilita el botón de forma SÍNCRONA
+antes de cualquier `await` — un segundo clic sobre un botón ya
+deshabilitado nunca dispara su manejador. El resto de 3.2 (modal cerrado
+a mitad de carga, token vencido a mitad de carga, archivo corrupto/0
+bytes) y 3.3 completo (matriz de bordes del reemplazo por rango en las 9
+bases) **no se cubrieron en esta fase** — mismo motivo de alcance que la
+Fase 124 (arnés Playwright grande con interceptación de red), sin
+cambios en el costo/riesgo ya estimado en `docs/pendientes.md` §4.
+
+**3.5 (exports reales)** — la descarga automática SÍ funcionó esta vez
+(`download.saveAs()` normal, sin el error "Cannot access file" de la
+Fase 124 contra producción — parece haber sido una interacción puntual
+de ESE entorno). Releídos con el parser independiente (ver 3.1): Agendas,
+Ranking de Efectividad de Agendamiento y Tipificación de Llamadas abren
+bien, cuadran con la pantalla, sin columnas de PII. Falta Efectividad de
+Citas y Tipificación de WhatsApp (sin datos sintéticos en esta fase), y
+sigue pendiente el único paso que de verdad requiere una persona: abrir
+el archivo en Excel/LibreOffice real (ver `docs/pendientes.md` §1).
+
+### Parte 4 — Arnés de página real para las 3 bases de mayor riesgo
+
+**NO construido en esta fase** — el tiempo se priorizó en ejecutar
+pruebas reales puntuales (Parte 3) en vez de construir el arnés
+reutilizable. Sigue documentado en `docs/pendientes.md` §4 con el mismo
+alcance propuesto (Tipificación de WhatsApp/HistChat, Agendas con fecha
+boxeada, Efectividad de Agendamiento con porcentajes >100 % y hoja
+extra), listo para retomarse.
+
+### Verificación
+
+Archivos nuevos/tocados: `node --test` de los específicos (payload
+grande, cargas-logic, agendas-logic, body-size-limit de Agendas/
+Tipificación, guía de uso) en verde. `node --test` COMPLETO localmente
+quedó inestable otra vez en esta máquina (igual que la Fase 124 ya
+documentó, `ETIMEDOUT` en pruebas de supertest que sí pasan en CI) — no
+se investigó más a fondo, CI (Node 22) es la referencia real. Todos los
+scripts de investigación de la Parte 3 corrieron contra datos
+SINTÉTICOS locales (`seed:demo`), limpiados de la base local al
+terminar cada uno (sin dejar residuos). Ningún dato real tocado.
