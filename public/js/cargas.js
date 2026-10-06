@@ -226,6 +226,12 @@ function _cargasEfectividadAgendamientoColumnasUnificado(){
 function _cargasCitasAtendidasColumnasUnificado(){
   return CITAS_ATENDIDAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria, ocultaEnPlantilla: !!c.ocultaEnPlantilla }; });
 }
+// Fase 127 (ORLANT, pedido textual de Edwin) — columnas de la hoja SALIDA:
+// las 5 son obligatorias (ningun total se recalcula, a diferencia de
+// Efectividad de Agendamiento/Citas Atendidas).
+function _cargasSalidaColumnasUnificado(){
+  return SALIDA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -280,7 +286,8 @@ async function onCargaClienteChange(){
     var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
     var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
     var citasAtendidasCols = esUnificado ? _cargasCitasAtendidasColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols);
+    var salidaCols = esUnificado ? _cargasSalidaColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -475,30 +482,21 @@ async function procesarArchivoConsolidado(input){
     // -- cargasDetectarCanalTipificacion (mas abajo) es quien evita que un
     // archivo de un canal se cuele en el slot del otro.
     var esTipificacion = h.tipo==='tipificacion';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && !esTrafico && !esTipificacion) return null;
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
       if(hojasReclamadasPorNombre[nombre] || hojasUsadasPorEncabezados[nombre]) continue;
       var wsCandidata = wb.Sheets[nombre];
       // Fase 122 (hallazgo real: archivo de 25.180 filas, 33 columnas --
-      // esta funcion corre UNA VEZ POR CADA slot del plan de ORLANT (8),
-      // y antes releia la hoja COMPLETA cada vez solo para mirar aoa[0] --
-      // confirmado que eso colgaba el navegador mas de 3 minutos con un
-      // archivo real, aunque en Node tardara "solo" ~3s. Con `range`
-      // acotado a la PRIMERA fila del rango usado de la hoja (ws['!ref']),
-      // SheetJS decodifica unicamente esa fila -- mismo resultado exacto
-      // (confirmado contra el archivo real), de 2.8s a <1ms para 8 pasadas.
-      // Sin '!ref' (hoja realmente vacia), se cae al comportamiento de
-      // siempre.
-      var headerRow0;
-      if(wsCandidata['!ref']){
-        var rangoHoja = XLSX.utils.decode_range(wsCandidata['!ref']);
-        var rangoEncabezado = { s:{r:rangoHoja.s.r, c:rangoHoja.s.c}, e:{r:rangoHoja.s.r, c:rangoHoja.e.c} };
-        headerRow0 = (XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null, range:rangoEncabezado})[0]) || [];
-      } else {
-        headerRow0 = (XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null})[0]) || [];
-      }
+      // esta funcion corre UNA VEZ POR CADA slot del plan de ORLANT -- antes
+      // releia la hoja COMPLETA cada vez solo para mirar aoa[0], confirmado
+      // que eso colgaba el navegador mas de 3 minutos con un archivo real)
+      // + Fase 127 (correccion de un hallazgo real con Playwright: acotar a
+      // UN SOLO renglon rompia con un encabezado que no esta en la primera
+      // fila del rango usado de la hoja, ej. renglones vacios antes -- ver
+      // cargasLeerEncabezadoAcotado, cargas-logic.js, para el detalle).
+      var headerRow0 = cargasLeerEncabezadoAcotado(XLSX.utils, wsCandidata, 20);
       if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
@@ -551,6 +549,12 @@ async function procesarArchivoConsolidado(input){
       // Fase 122: mismo motivo que efectividad_agendamiento -- `ws` para el
       // formato real de la celda EFECTIVIDAD CITAS ATENDIDAS.
       parseFn = function(a, w){ return citasAtendidasParseFilas(a, null, w); };
+    } else if(h.tipo === 'salida'){
+      // Fase 127: en la vista previa se usa la inferencia de año SILENCIOSA
+      // de siempre (anioForzado=null) -- la confirmacion/correccion explicita
+      // del año (pedido textual de Edwin) ocurre en _cargasGuardarSalida,
+      // justo antes de guardar, nunca aqui.
+      parseFn = function(a){ return salidaParseFilas(a, null); };
     } else {
       parseFn = _cargasParseTraficoAuto;
     }
@@ -906,6 +910,60 @@ async function _cargasGuardarCitasAtendidas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 127 (ORLANT, pedido textual de Edwin): mismo patron impacto ->
+// confirmar -> guardar de _cargasGuardarCitasAtendidas, pero con un paso
+// ADICIONAL antes: el MES del archivo nunca trae año (igual que Efectividad
+// de Agendamiento/Citas Atendidas), y aqui Edwin pidio EXPLICITAMENTE poder
+// ver y corregir a que año resuelve cada mes antes de guardar -- nunca
+// adivinarlo en silencio como en esas otras 2 bases.
+async function _cargasGuardarSalida(cliente, r){
+  var filas = r.filas;
+  var textoAnio = salidaTextoConfirmacionAnio(filas);
+  var msgAnio = 'Se va a interpretar el MES de cada fila asi:\n\n' + textoAnio + '\n\n¿Es correcto el año?';
+  if(!confirm(msgAnio)){
+    var anioCorregido = prompt('Escribe el año correcto (4 digitos, ej. 2026) para TODAS las filas de este archivo:');
+    if(anioCorregido === null) return { ok:false, mensaje:'Carga cancelada.' };
+    anioCorregido = anioCorregido.trim();
+    if(!/^\d{4}$/.test(anioCorregido)){
+      return { ok:false, mensaje:'Carga cancelada: "'+anioCorregido+'" no es un año valido (4 digitos).' };
+    }
+    filas = filas.map(function(f){
+      return Object.assign({}, f, { mes: mesNombreAAAAMM(f.mesTexto, anioCorregido, null) });
+    });
+    var mesesInvalidos = filas.filter(function(f){ return !f.mes; });
+    if(mesesInvalidos.length){
+      return { ok:false, mensaje:'Carga cancelada: no se pudo interpretar el MES de '+mesesInvalidos.length+' fila(s) con ese año.' };
+    }
+    var vistos = {};
+    for(var i=0;i<filas.length;i++){
+      if(vistos[filas[i].mes]) return { ok:false, mensaje:'Carga cancelada: con ese año, 2 filas resuelven al mismo mes ('+salidaMesLbl(filas[i].mes)+').' };
+      vistos[filas[i].mes] = true;
+    }
+    var textoAnioCorregido = salidaTextoConfirmacionAnio(filas);
+    if(!confirm('Se va a interpretar el MES de cada fila asi:\n\n'+textoAnioCorregido+'\n\n¿Continuar con esta correccion?')){
+      return { ok:false, mensaje:'Carga cancelada.' };
+    }
+  }
+
+  var filasArray = filas.map(salidaFilaComoArray);
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  var meses = salidaMesesDelArchivo(filas);
+
+  try{
+    var impacto = await apiRequest('POST','/calidad/salida/carga/impacto', parsed);
+    var msg = 'Se cargará como ' + meses.map(salidaMesLbl).join(', ') + '.';
+    if(impacto.filasExistentes > 0){
+      msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
+    }
+    msg += '\n\n¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'Se dejo la salida anterior sin tocar.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/salida/carga', parsed);
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(salidaMesLbl).join(', ')+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 async function guardarCarga(){
   if(!_cargasResultados.length){ showToast('Primero sube un archivo'); return; }
   var cliente = document.getElementById('carga-cliente').value;
@@ -932,6 +990,7 @@ async function guardarCarga(){
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
+      else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
       else res = await _cargasGuardarTrafico(r);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));

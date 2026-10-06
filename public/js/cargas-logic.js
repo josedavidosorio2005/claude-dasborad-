@@ -58,6 +58,43 @@ function cargasEncabezadosCoinciden(headerRow, columnas) {
     });
 }
 
+// Fase 122 (perf, hallazgo real: archivo de 25.180 filas/33 columnas
+// colgaba el navegador >3min releyendo la hoja COMPLETA una vez por cada
+// slot del plan solo para mirar aoa[0]) + Fase 127 (correccion de un
+// hallazgo real con Playwright: la version de la Fase 122 acotaba el rango
+// a UN SOLO renglon -- el PRIMERO del rango usado de la hoja (ws['!ref']),
+// asumiendo que ese renglon siempre es el encabezado. Cierto para el
+// archivo real de esa fase, pero falso en general: si el rango usado
+// incluye renglones vacios/con formato ANTES del encabezado -- como el
+// archivo real de Salida de Edwin, MES sin año, encabezado en la fila 3 con
+// 2 filas vacias antes -- leer solo ese primer renglon devolvia [] y la
+// hoja nunca se reconocia por encabezados ("El archivo no tiene datos en
+// ninguna hoja reconocida" con un archivo perfectamente valido).
+//
+// Ahora se decodifican los primeros `maxFilas` renglones del rango usado
+// (20 por defecto -- sigue siendo barato, unas pocas decenas de celdas,
+// nunca la hoja completa) y `blankrows:false` salta los renglones vacios
+// hasta encontrar el primero con contenido -- mismo resultado que leer la
+// hoja completa (XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false})[0]),
+// acotado por tamaño. `[]` si la hoja no tiene '!ref' (realmente vacia) o
+// ningun renglon de los primeros `maxFilas` tiene contenido.
+//
+// `XLSXutils` se recibe por parametro (nunca requerido aqui) para que este
+// archivo siga sin depender de SheetJS en el navegador (sigue siendo
+// cargas.js quien decide que libreria usar) -- en las pruebas de Node se le
+// pasa el XLSX.utils vendorizado (public/js/vendor/), nunca el paquete npm
+// `xlsx` (ver server/tests/helpers/xlsx-lite.js para por que: ese paquete
+// falla `npm audit`).
+function cargasLeerEncabezadoAcotado(XLSXutils, ws, maxFilas) {
+  if (!ws || !ws['!ref']) {
+    return (ws && XLSXutils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null })[0]) || [];
+  }
+  var rango = XLSXutils.decode_range(ws['!ref']);
+  var filaFin = Math.min(rango.s.r + (maxFilas || 20), rango.e.r);
+  var rangoEncabezado = { s: { r: rango.s.r, c: rango.s.c }, e: { r: filaFin, c: rango.e.c } };
+  return (XLSXutils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null, range: rangoEncabezado })[0]) || [];
+}
+
 function cargasParseFilaUnica(spec, aoa) {
   // Formato vertical: [ [label, valor], ... ]  (se ignora una fila de encabezado si dice "metrica")
   var obj = {};
@@ -222,6 +259,14 @@ var CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO = 'EFECTIVIDAD_AGENDAMIENTO';
 // atendidas), hoja propia -- mismo gate que CARGAS_HOJA_INASISTENCIA (solo
 // cuando citasAtendidasCols viene, hoy solo ORLANT).
 var CARGAS_HOJA_CITAS_ATENDIDAS = 'CITAS_ATENDIDAS';
+// Fase 127 (ORLANT, pedido textual de Edwin: "las llamadas de salida estan
+// muy bajas"): un total mensual de LINEA 3P/GENERAL y WHATSAPP 3P/GENERAL de
+// SALIDA -- hoja propia, mismo gate que CARGAS_HOJA_CITAS_ATENDIDAS (solo
+// cuando salidaCols viene, hoy solo ORLANT). El archivo de Edwin
+// (FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx) trae su unica hoja llamada
+// "Hoja1", nunca "SALIDA" -- por eso este tipo entra tambien al mecanismo de
+// reconocimiento por encabezados (_cargasBuscarHojaPorEncabezados, cargas.js).
+var CARGAS_HOJA_SALIDA = 'SALIDA';
 
 // secciones: { key: {titulo,cadencia,periodo,filaUnica,columnas,descripcion} }
 // (la misma forma que devuelve GET /dashboard/secciones/:cliente).
@@ -242,7 +287,7 @@ var CARGAS_HOJA_CITAS_ATENDIDAS = 'CITAS_ATENDIDAS';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -407,6 +452,28 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema te ' +
           'muestra antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo archivo ' +
           'mas de una vez.',
+      ],
+    });
+  }
+  // Fase 127 (ORLANT, pedido textual de Edwin): total mensual de LINEA
+  // 3P/GENERAL y WHATSAPP 3P/GENERAL de SALIDA -- hoja propia, solo cuando
+  // salidaCols viene (hoy solo ORLANT, mismo gate que citasAtendidasCols).
+  // Ninguna columna se recalcula (a diferencia de Efectividad de
+  // Agendamiento/Citas Atendidas): los 4 totales del archivo de Edwin se
+  // guardan tal cual.
+  if (salidaCols) {
+    plan.push({
+      tipo: 'salida', hoja: CARGAS_HOJA_SALIDA, titulo: 'Salida (Llamadas y WhatsApp)',
+      descripcion: 'Un total del mes de LINEA 3P/GENERAL y WHATSAPP 3P/GENERAL de salida.',
+      filaUnica: false, columnas: salidaCols,
+      notasExtra: [
+        'De donde sale: el consolidado mensual de llamadas y WhatsApp de SALIDA (no de entrada).',
+        'MES: nombre del mes en español (ej. "AGOSTO"), sin año -- el sistema muestra antes de guardar a ' +
+          'que año resuelve cada mes (ej. "AGOSTO → Agosto 2026") y permite corregirlo, nunca lo adivina ' +
+          'en silencio.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista de los MESES que trae este archivo (el sistema ' +
+          'te muestra antes como quedaria, y pide que confirmes) -- nunca duplica, aunque subas el mismo ' +
+          'archivo mas de una vez.',
       ],
     });
   }
@@ -632,6 +699,7 @@ var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
   CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
+  CARGAS_HOJA_SALIDA,
 ];
 // Fase 84 (pedido explicito, confirmado con el usuario): la hoja
 // "tipificacion" (minuscula, la de ANTES de la Fase 77) ya no alimenta
@@ -663,6 +731,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     cargasColPorLabel: cargasColPorLabel,
     cargasEncabezadosCoinciden: cargasEncabezadosCoinciden,
+    cargasLeerEncabezadoAcotado: cargasLeerEncabezadoAcotado,
     cargasParseFilaUnica: cargasParseFilaUnica,
     cargasParseMultiFila: cargasParseMultiFila,
     cargasDetectarFormulaSinValor: cargasDetectarFormulaSinValor,
@@ -679,6 +748,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
+    CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,

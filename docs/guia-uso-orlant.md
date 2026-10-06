@@ -7,7 +7,7 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.13.3**. Esta guía es para quien usa la
+Versión de la plataforma: **1.14.0**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -76,7 +76,7 @@ del todo vas a ver:
   arriba a la derecha) — cambia el color de toda la plataforma, no afecta
   los datos.
 
-### Las 7 pestañas
+### Las 8 pestañas
 
 | Pestaña | Qué muestra |
 |---|---|
@@ -86,6 +86,7 @@ del todo vas a ver:
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Tipificación** | Cómo se clasificó cada llamada/chat (motivo de contacto). |
+| **Salida** | Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Calidad** | Monitoreo de calidad de los asesores, con su nota y resultados. |
 
 Cada pestaña que tiene varias vistas las muestra como **sub-pestañas**
@@ -188,6 +189,17 @@ período que tiene datos cargados (suma de atendidas ÷ suma de agendas de
 esos meses — nunca el promedio simple de los % de cada mes), con el rango
 de meses en su etiqueta. Hoy esta pestaña tiene Agosto y Septiembre 2026
 — igual que el resto de la plataforma, solo los meses oficiales.
+
+**Salida**: el total del mes de llamadas y WhatsApp de **salida** (que la
+campaña hace hacia afuera, no las que recibe), separado por línea 3P y
+Línea General. Muestra 2 tarjetas (total de llamadas y total de WhatsApp
+del mes elegido, con la variación contra el mes anterior cuando hay con
+qué comparar) y 2 gráficas de barras (una para llamadas, otra para
+WhatsApp) — con pocos meses de historia, una gráfica de barras por mes se
+lee mejor que una línea de tendencia. La tabla de abajo también muestra
+qué porcentaje de cada mes fue 3P vs. Línea General (participación DENTRO
+de ese mismo mes — no hay todavía un indicador de salida contra el total
+de gestión, por eso no aparece aquí).
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor
@@ -346,6 +358,24 @@ evita que las cargas futuras se unifiquen de la misma forma.
   reemplazan esos 3 meses completos, sin tocar ningún otro mes ya
   cargado.
 
+### Salida (Llamadas y WhatsApp)
+
+- **Qué archivo**: el consolidado mensual de llamadas y WhatsApp de
+  SALIDA de Edwin — un total del mes, no una fila por llamada/chat.
+- **Hoja**: cualquier nombre (la plataforma la reconoce por sus
+  columnas) — el archivo real de Edwin trae una sola hoja llamada
+  "Hoja1", con el encabezado en la fila 3 (2 filas vacías antes).
+- **Columnas obligatorias**: MES, LINEA 3P, LINEA GENERAL, WHATSAPP 3P,
+  WHATSAPP GENERAL.
+- **El mes no trae año** (igual que Efectividad de Agendamiento/Citas):
+  antes de guardar, la plataforma muestra a qué año resolvió cada mes
+  (ej. "AGOSTO → Agosto 2026") y pregunta si es correcto — si no lo es,
+  pide el año correcto y vuelve a intentarlo. Nunca lo adivina en
+  silencio.
+- **Reemplazo**: por MES — si el archivo trae Agosto y Septiembre, se
+  reemplazan esos 2 meses completos, sin tocar ningún otro mes ya
+  cargado.
+
 ### Calidad
 
 - La carga normal es **un monitoreo a la vez**, desde el formulario (ver
@@ -367,6 +397,7 @@ evita que las cargas futuras se unifiquen de la misma forma.
 | Efectividad de Agendamiento | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Inasistencia | Edwin | Sistema de agendamiento ORLANT | Mensual, después de cerrado el mes |
 | Efectividad de Citas Atendidas | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
+| Salida (Llamadas y WhatsApp) | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Calidad | El equipo de Calidad | Monitoreos propios | Continuo, a medida que se hacen |
 
 *(Las filas en negrita son las que todavía no tienen una frecuencia
@@ -415,10 +446,8 @@ por llegar:
 - **Nivel de servicio de WhatsApp a 5 minutos**: falta que el reporte de
   Wolkvox traiga esa columna.
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
-  Salida, Gestión STA**: las pantallas ya están construidas, quedan
-  ocultas hasta que llegue el archivo real de cada una. La de "Salida"
-  (llamadas/WhatsApp salientes) está en estudio — Edwin va a mandar una
-  base nueva para eso.
+  Gestión STA**: las pantallas ya están construidas, quedan ocultas
+  hasta que llegue el archivo real de cada una.
 
 ## 9. A quién escribir si algo falla
 

@@ -223,25 +223,24 @@ const ORLANT = {
         { key: 'llamadasgeneral', label: 'Llamadas Línea General', indices: [2] },
         { key: 'wppgeneral', label: 'WhatsApp Línea General', indices: [3] },
       ]},
-      // Salida (graficas 4-7 del PDF de InCo, 2026-09-18): el PDF sugiere
-      // "pueden ir integradas... y se puede mirar cada linea por medio de un
-      // filtro" en vez de 4 graficas separadas — filtroSerie (dashboard-
-      // generic.js) hace exactamente eso: una grafica, un selector de Linea
-      // General/3P, "Total: N" de la linea que se este viendo. Reemplaza los
-      // 4 paneles anteriores (misma fuente/campos, solo cambia la
-      // presentacion — ver PROGRESS.md de esta fase).
+      // Fase 127 (ORLANT, pedido textual de Edwin: "las llamadas de salida
+      // estan muy bajas, hay que revisarlo"): esta pestana estaba sembrada
+      // desde antes (graficas 4-7 del PDF de InCo, 2026-09-18) pero NUNCA
+      // tuvo datos reales -- leia `dashboard_cargas` generico por DIA
+      // (salida_general/salida_3p/wpp_salida_general/wpp_salida_3p), y el
+      // archivo real de Edwin (FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx)
+      // es un total MENSUAL, no diario -- no se podia subir tal cual. Se
+      // reemplazan los 2 paneles `line`/filtroSerie viejos por un unico
+      // panel dedicado `salida_panel` (tabla `salida_mensual`, server/
+      // salida.js) que trae sus propias 2 graficas de barras agrupadas
+      // (3P vs General) para Llamadas y WhatsApp -- mismo criterio que
+      // agendas_panel/inasistencia_panel/efectividad_citas_panel (un panel
+      // autonomo, no una `fuente` generica). Sigue oculta por defecto
+      // (destapada en memoria solo cuando ya hay datos, ver _gdBootstrap,
+      // dashboard-generic.js) -- migracion idempotente en db.js para quien
+      // ya tenia esta config sembrada con los paneles viejos.
       { key: 'salida', label: 'Salida', oculta: true, panels: [
-        { tipo: 'line', titulo: 'Llamadas de salida', filtroSerie: true, series: [
-          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_general' } },
-          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'salida_3p' } },
-        ]},
-        { tipo: 'line', titulo: 'WhatsApp de salida', filtroSerie: true, series: [
-          { label: 'Línea General', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_general' } },
-          { label: 'Línea 3P', fuente: { s: 'salida', modo: 'filas', x: 'fecha', campo: 'wpp_salida_3p' } },
-        ]},
-      ], subtabs: [
-        { key: 'llamadas', label: 'Llamadas de Salida', indices: [0] },
-        { key: 'whatsapp', label: 'WhatsApp de Salida', indices: [1] },
+        { tipo: 'salida_panel', campana: 'ORLANT', titulo: 'Salida (Llamadas y WhatsApp)' },
       ]},
       // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia con datos
       // REALES (tabla `inasistencias`, server/inasistencia.js) -- reemplaza

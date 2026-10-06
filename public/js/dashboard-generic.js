@@ -605,7 +605,7 @@ async function _gdBootstrap(){
   // CADA tipo de panel presentes en la config de este cliente (nunca
   // hardcodeado a un cliente puntual) y se junta la lista de TODAS las
   // fuentes de datos mensuales.
-  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasEfectividadCitas = {}, campanasTipificacion = {};
+  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasEfectividadCitas = {}, campanasTipificacion = {}, campanasSalida = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){
       if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanasCalidad[p.campana] = true;
@@ -616,6 +616,7 @@ async function _gdBootstrap(){
       if(p.tipo === 'inasistencia_panel') campanasInasistencia[p.campana || _gd.cliente] = true;
       if(p.tipo === 'efectividad_citas_panel') campanasEfectividadCitas[p.campana || _gd.cliente] = true;
       if(p.tipo === 'tipificacion_panel') campanasTipificacion[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'salida_panel') campanasSalida[p.campana || _gd.cliente] = true;
     });
   });
   // Precarga de Trafico de Llamadas para cualquier KPI de la franja global
@@ -637,7 +638,7 @@ async function _gdBootstrap(){
   // mesesAgendas/mesesTipificacion/tabs.oculta son seguros en paralelo
   // porque JS es de un solo hilo (nunca hay dos tareas escribiendo a la
   // vez, solo turnos intercalados en cada await).
-  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesEfectividadCitas = [], mesesTipificacion = [];
+  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesEfectividadCitas = [], mesesTipificacion = [], mesesSalida = [];
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
@@ -715,6 +716,22 @@ async function _gdBootstrap(){
       }catch(e){ /* se queda oculta / sin esos meses */ }
     })());
   });
+  // Fase 127 (pedido textual de Edwin): "Salida" sigue el MISMO criterio
+  // que Agendas/Inasistencia/Efectividad de Citas -- se destapa en memoria
+  // solo cuando ya hay datos reales cargados (tabla salida_mensual), nunca
+  // escribiendo ese cambio en el servidor.
+  Object.keys(campanasSalida).forEach(function(campSal){
+    tareasBootstrap.push((async function(){
+      try{
+        var salOp = await apiRequest('GET', '/calidad/salida/opciones?campana='+encodeURIComponent(campSal));
+        if(salOp && salOp.meses) mesesSalida = mesesSalida.concat(salOp.meses);
+        if(campSal === _gd.cliente && salOp && salOp.meses && salOp.meses.length){
+          var tabSalida = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'salida'; });
+          if(tabSalida) tabSalida.oculta = false;
+        }
+      }catch(e){ /* se queda oculta / sin esos meses */ }
+    })());
+  });
   Object.keys(campanasTipificacion).forEach(function(campTip){
     tareasBootstrap.push((async function(){
       try{
@@ -755,7 +772,7 @@ async function _gdBootstrap(){
   // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
-  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad]);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida]);
   _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
@@ -1056,12 +1073,13 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
       // tipificacion_panel (Fase 77, ORLANT), efectividad_agendamiento_panel
-      // y efectividad_citas_panel (Fase 111) siguen el mismo criterio.
+      // y efectividad_citas_panel (Fase 111), salida_panel (Fase 127) siguen
+      // el mismo criterio.
       html += '<div id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
@@ -1070,7 +1088,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1110,6 +1128,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'inasistencia_panel'){ _inasistenciaRenderPanel(p, i); return; }
   if(p.tipo === 'efectividad_citas_panel'){ _efectividadCitasRenderPanel(p, i); return; }
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
+  if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1535,6 +1554,31 @@ async function _gdExportarEfectividadCitas(p, i){
   return [{ titulo: titulo, tipo: 'tabla', filas: out }];
 }
 
+// Salida (Fase 127, pedido textual de Edwin): 2 hojas separadas (Llamadas/
+// WhatsApp), una fila por mes -- mismo criterio de "nunca mezclar datos de
+// naturaleza distinta en una sola hoja" que Tipificacion (justo abajo).
+// Participacion 3P dentro del total de ESE mismo mes (nunca un denominador
+// de entrada/gestion, Edwin no lo definio).
+async function _gdExportarSalida(p, i){
+  var campana = p.campana;
+  var filas = [];
+  try{ filas = await apiRequest('GET', '/calidad/salida/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  if(!filas.length){
+    return [{ titulo: 'Salida', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Salida para el periodo actual.' }];
+  }
+  function pct(parte, total){ return total>0 ? gdFmtValor(Math.round(parte/total*1000)/10,'%') : '—'; }
+  var llamadas = filas.map(function(f){
+    return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, 'Total': f.llamadas3p+f.llamadasGeneral, '% 3P': pct(f.llamadas3p, f.llamadas3p+f.llamadasGeneral) };
+  });
+  var whatsapp = filas.map(function(f){
+    return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, 'Total': f.wpp3p+f.wppGeneral, '% 3P': pct(f.wpp3p, f.wpp3p+f.wppGeneral) };
+  });
+  return [
+    { titulo: 'Llamadas de Salida', tipo: 'tabla', filas: llamadas },
+    { titulo: 'WhatsApp de Salida', tipo: 'tabla', filas: whatsapp },
+  ];
+}
+
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
 // (Llamadas y WhatsApp) por separado -- si una no tiene datos, se dice
 // (nunca se omite en silencio). Mismo estado compartido/por-canal que ya
@@ -1663,6 +1707,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'inasistencia_panel'){ out = out.concat(await _gdExportarInasistencia(p, i)); continue; }
     if(p.tipo === 'efectividad_citas_panel'){ out = out.concat(await _gdExportarEfectividadCitas(p, i)); continue; }
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
+    if(p.tipo === 'salida_panel'){ out = out.concat(await _gdExportarSalida(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

@@ -194,7 +194,7 @@ const borradoRangoBody = z
     base: z.enum([
       'agendas', 'tipificacion_llamadas', 'tipificacion_whatsapp',
       'trafico_llamadas', 'trafico_whatsapp', 'inasistencia',
-      'efectividad_agendamiento', 'efectividad_citas',
+      'efectividad_agendamiento', 'efectividad_citas', 'salida',
     ], { error: 'base invalida' }),
     campana: z.literal('ORLANT', { error: 'Este borrado solo esta habilitado para ORLANT' }),
     mesDesde: mesSchema,
@@ -778,6 +778,41 @@ const efectividadCitasQuery = z.object({
   campana: campanaSchema,
 });
 
+// Fase 127 (pedido de Edwin): Llamadas y WhatsApp de Salida. `mes`
+// SIEMPRE llega ya resuelto a 'AAAA-MM' (el navegador le agrega el año
+// que el usuario confirmo en el modal de impacto -- el archivo real de
+// Edwin, FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx, nunca trae año) --
+// mesSchema ya exige ese formato, asi que un mes sin año resuelto nunca
+// pasa de aqui.
+const salidaEnteroNoNegativo = z.number().int().min(0).max(10000000);
+const salidaFilaArraySchema = z.tuple([
+  mesSchema, // mes
+  salidaEnteroNoNegativo, // llamadas3p
+  salidaEnteroNoNegativo, // llamadasGeneral
+  salidaEnteroNoNegativo, // wpp3p
+  salidaEnteroNoNegativo, // wppGeneral
+]);
+
+const salidaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(salidaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(1000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0] + '-01')) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0] + '-01'), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const salidaQuery = z.object({
+  campana: campanaSchema,
+});
+
 const inasistenciaFiltrosQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
@@ -1072,6 +1107,8 @@ module.exports = {
     aliasAsesorBody,
     efectividadCitasCargaBody,
     efectividadCitasQuery,
+    salidaCargaBody,
+    salidaQuery,
     calidadQuery,
     cargaBody,
     dashboardConfigBody,

@@ -1,17 +1,19 @@
-# Inventario de bases de ORLANT (Fase 112, 2026-10-02)
+# Inventario de bases de ORLANT (Fase 112, 2026-10-02; Fase 127 agrega Salida)
 
-Estado actual de las 9 bases que alimentan el dashboard de ORLANT —
+Estado actual de las 10 bases que alimentan el dashboard de ORLANT —
 reemplaza la versión de la Fase 70/71 (2026-09-24, archivada en
 `docs/historico/`), que describía un momento en el que la mayoría de
 estas pestañas todavía estaban ocultas y sin datos reales. Hoy **las 7
 pestañas de ORLANT tienen datos reales** (ver `CLAUDE.md` para los
-números de control vigentes).
+números de control vigentes); la Fase 127 agrega una 8va ("Salida"),
+construida y verificada con datos sintéticos — su carga real en
+producción queda sujeta a la parada obligatoria de esa fase.
 
 Fuentes usadas: `public/js/*-logic.js` (parseo de cada archivo, lado
 navegador), `server/validation.js` (esquema Zod de cada endpoint de
 carga, lado servidor).
 
-## Las 9 bases
+## Las 10 bases
 
 | Base | Hoja (archivo Excel) | Columnas | De dónde sale | Cada cuánto | Pestaña que alimenta |
 |---|---|---|---|---|---|
@@ -23,6 +25,7 @@ carga, lado servidor).
 | **Inasistencia (por cita)** | `Hoja1` (desde la Fase 108 — una fila por cita; el formato agregado viejo de las Fases 98–106 ya NO se acepta en cargas nuevas, aunque las filas ya cargadas en ese formato se conservan) | `SEDE`, `ESPECIALIDAD` (o `ESPECIALIDA`, sin la D — se tolera), `FECHA_CITA`, `NOMBRE ENTIDAD`, `CITEST` (`C`=cancelada, `I`=inasistencia, `P`=pendiente, `T`=atendida) | Sistema de agendamiento de Edwin | Mensual | Inasistencia |
 | **Efectividad de Agendamiento** | `EFECTIVIDAD_AGENDAMIENTO` | `NOMBRE DE AGENTE`, `MES`, `CANTIDAD DE GESTIONES`, `AGENDAS` (la columna `EFECTIVIDAD` del archivo se ignora — siempre se recalcula en servidor) | Reporte de gestión por asesor de Edwin | Mensual | Agendamiento → Ranking de asesores (por efectividad, Fase 111) |
 | **Efectividad de Citas** | `CITAS_ATENDIDAS` | `MES`, `AGENDAS`, `ATENDIDAS` (la columna `EFECTIVIDAD CITAS ATENDIDAS` del archivo se ignora — siempre se recalcula en servidor) | Sistema de agendamiento de Edwin | Mensual | Efectividad de Citas |
+| **Salida (Llamadas y WhatsApp)** (Fase 127) | `SALIDA`, o cualquier hoja que traiga los encabezados correctos sin importar su nombre (el archivo real de Edwin trae su única hoja llamada `Hoja1`, con el encabezado en la fila 3, 2 filas vacías antes) | `MES`, `LINEA 3P`, `LINEA GENERAL`, `WHATSAPP 3P`, `WHATSAPP GENERAL` — un total agregado del mes, nunca una fila por llamada/chat | Consolidado mensual de llamadas y WhatsApp de salida de Edwin | Mensual | Salida |
 | **Calidad** | Registro manual (monitoreo por monitoreo, roles CALIDAD/SUPERVISOR) + carga masiva opcional (`ASESOR`, `FECHA`, `CANAL`, `ID LLAMADA`, `TELEFONO`, `EVALUADOR`, `OBSERVACIONES` + columnas dinámicas por ítem de la plantilla de evaluación) | Evaluación directa del evaluador, o carga masiva de resultados ya evaluados | Continuo (no mensual — cada monitoreo se registra cuando ocurre) | Calidad |
 
 ## Notas
@@ -50,5 +53,15 @@ carga, lado servidor).
   de carga de cada base (`server/tests/*-carga.test.js`).
 - Las pestañas ocultas que todavía esperan datos de Edwin (no están en
   esta tabla porque no tienen base propia confirmada): Ordenamiento
-  Médico, Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA
-  — ver `server/dashboard-config-seed.js` (`oculta: true`).
+  Médico, Recuperación de Cancelados, Flujo Mensual, Gestión STA — ver
+  `server/dashboard-config-seed.js` (`oculta: true`). Salida ya tiene
+  base propia (Fase 127) pero sigue el mismo criterio de visibilidad que
+  Efectividad de Citas/Inasistencia: oculta hasta que haya datos
+  cargados, nunca por decisión manual.
+- **Año del MES en Salida, Efectividad de Agendamiento y Efectividad de
+  Citas** (Fase 111/127): ninguno de estos 3 archivos trae año en la
+  columna MES — la plataforma infiere el año más reciente en que ese mes
+  no sea futuro. A diferencia de las otras 2 bases (que lo resuelven en
+  silencio), Salida muestra esa resolución ("AGOSTO → Agosto 2026") en
+  el modal de confirmación antes de guardar y permite corregirla — pedido
+  textual de Edwin en la Fase 127.

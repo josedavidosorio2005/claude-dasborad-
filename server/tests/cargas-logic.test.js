@@ -28,6 +28,7 @@ const {
   cargasDetectarCanalTrafico,
   CARGAS_HOJA_TRAFICO,
   CARGAS_HOJA_CALIDAD,
+  cargasLeerEncabezadoAcotado,
 } = require('../../public/js/cargas-logic.js');
 const { traficoColIndexMap, traficoParseFilas } = require('../../public/js/trafico-logic.js');
 const { traficoWppColIndexMap, traficoWppParseFilas } = require('../../public/js/trafico-whatsapp-logic.js');
@@ -405,3 +406,58 @@ test('cargasProcesarHoja: pasa de largo campos extra del parser (ej. `canal`) si
   assert.equal(r.canal, 'whatsapp');
   assert.deepEqual(r.colas, ['X']);
 });
+
+// cargasLeerEncabezadoAcotado — Fase 127, hallazgo real con Playwright
+// contra un archivo sintetico de la forma EXACTA del archivo de Salida de
+// Edwin (MES sin año, encabezado en la fila 3, 2 filas vacias antes, hoja
+// "Hoja1"): subido por la pagina real, el archivo (perfectamente valido)
+// nunca se reconocia -- "El archivo no tiene datos en ninguna hoja
+// reconocida". La version vieja de este codigo (Fase 122, antes de esta
+// funcion existir) acotaba la lectura del encabezado a UN SOLO renglon (el
+// PRIMERO del rango usado de la hoja) asumiendo que ese renglon siempre es
+// el encabezado -- cierto para el archivo real de esa fase, falso aqui
+// porque el rango usado de la hoja arranca ANTES del encabezado real. Usa
+// el XLSX vendorizado (public/js/vendor/) para construir el .xlsx
+// sintetico, nunca el paquete npm `xlsx` (ver tests/helpers/xlsx-lite.js
+// para por que: ese paquete falla `npm audit`).
+{
+  const XLSX = require('../../public/js/vendor/xlsx-0.20.3.full.min.js');
+  const HEADER_SALIDA = ['MES', 'LINEA 3P', 'LINEA GENERAL', 'WHATSAPP 3P', 'WHATSAPP GENERAL'];
+
+  function hojaConEncabezadoEnFila3() {
+    return XLSX.utils.aoa_to_sheet([
+      [], [], HEADER_SALIDA,
+      ['AGOSTO', 100, 200, 50, 80],
+      ['SEPTIEMBRE', 150, 300, 75, 120],
+    ]);
+  }
+
+  test('cargasLeerEncabezadoAcotado: reproduce el bug real -- con maxFilas=1 (comportamiento viejo de la Fase 122) el encabezado en la fila 3 nunca se ve', () => {
+    const ws = hojaConEncabezadoEnFila3();
+    const header = cargasLeerEncabezadoAcotado(XLSX.utils, ws, 1);
+    assert.deepEqual(header, [], 'con el codigo viejo (1 solo renglon), el encabezado real (fila 3) queda fuera de rango -- esto documenta el bug, no el comportamiento deseado');
+  });
+
+  test('cargasLeerEncabezadoAcotado: con maxFilas=20 (codigo nuevo) SI encuentra el encabezado aunque no este en la primera fila del rango usado', () => {
+    const ws = hojaConEncabezadoEnFila3();
+    const header = cargasLeerEncabezadoAcotado(XLSX.utils, ws, 20);
+    assert.deepEqual(header, HEADER_SALIDA);
+  });
+
+  test('cargasLeerEncabezadoAcotado: igual al resultado de leer la hoja COMPLETA (mismo criterio que antes de la optimizacion de la Fase 122)', () => {
+    const ws = hojaConEncabezadoEnFila3();
+    const completo = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null })[0];
+    const acotado = cargasLeerEncabezadoAcotado(XLSX.utils, ws, 20);
+    assert.deepEqual(acotado, completo);
+  });
+
+  test('cargasLeerEncabezadoAcotado: encabezado en la PRIMERA fila (caso comun) sigue funcionando igual que siempre', () => {
+    const ws = XLSX.utils.aoa_to_sheet([HEADER_SALIDA, ['AGOSTO', 1, 2, 3, 4]]);
+    assert.deepEqual(cargasLeerEncabezadoAcotado(XLSX.utils, ws, 20), HEADER_SALIDA);
+    assert.deepEqual(cargasLeerEncabezadoAcotado(XLSX.utils, ws, 1), HEADER_SALIDA);
+  });
+
+  test('cargasLeerEncabezadoAcotado: hoja sin "!ref" (realmente vacia) -> [], nunca revienta', () => {
+    assert.deepEqual(cargasLeerEncabezadoAcotado(XLSX.utils, {}, 20), []);
+  });
+}

@@ -115,7 +115,10 @@ const REFERENCIA_TIPIFICACION_SKILL_MES = {
 };
 const REFERENCIA_TIPIFICACION_FILAS = 34661;
 
-const OCULTAS_ESPERADAS = ['Ordenamiento Médico', 'Recuperación de Cancelados', 'Flujo Mensual', 'Salida', 'Gestión STA'];
+// Fase 127: "Salida" ya no esta en esta lista -- tiene base propia desde
+// esta fase, igual que Efectividad de Citas/Inasistencia (oculta solo
+// hasta que haya datos cargados, nunca por decision manual).
+const OCULTAS_ESPERADAS = ['Ordenamiento Médico', 'Recuperación de Cancelados', 'Flujo Mensual', 'Gestión STA'];
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
 

@@ -21,6 +21,10 @@ const TABLAS = {
   inasistencia: { tabla: 'inasistencias', columnaMes: 'mes', extra: '' },
   efectividad_agendamiento: { tabla: 'efectividad_agendamiento', columnaMes: 'mes', extra: '' },
   efectividad_citas: { tabla: 'efectividad_citas', columnaMes: 'mes', extra: '' },
+  // Fase 127: misma forma exacta que efectividad_citas (mes directo, sin
+  // substr), agregado al mapa por consistencia con el resto de bases --
+  // no se usa en esta fase (no hay nada que borrar todavia).
+  salida: { tabla: 'salida_mensual', columnaMes: 'mes', extra: '' },
 };
 
 const BASES_VALIDAS = Object.keys(TABLAS);
