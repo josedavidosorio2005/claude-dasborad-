@@ -470,15 +470,32 @@ async function procesarArchivoConsolidado(input){
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
       if(hojasReclamadasPorNombre[nombre] || hojasUsadasPorEncabezados[nombre]) continue;
       var wsCandidata = wb.Sheets[nombre];
-      var aoaHeader = XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null});
-      if(!cargasEncabezadosCoinciden(aoaHeader[0]||[], h.columnas)) continue;
-      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(aoaHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
+      // Fase 122 (hallazgo real: archivo de 25.180 filas, 33 columnas --
+      // esta funcion corre UNA VEZ POR CADA slot del plan de ORLANT (8),
+      // y antes releia la hoja COMPLETA cada vez solo para mirar aoa[0] --
+      // confirmado que eso colgaba el navegador mas de 3 minutos con un
+      // archivo real, aunque en Node tardara "solo" ~3s. Con `range`
+      // acotado a la PRIMERA fila del rango usado de la hoja (ws['!ref']),
+      // SheetJS decodifica unicamente esa fila -- mismo resultado exacto
+      // (confirmado contra el archivo real), de 2.8s a <1ms para 8 pasadas.
+      // Sin '!ref' (hoja realmente vacia), se cae al comportamiento de
+      // siempre.
+      var headerRow0;
+      if(wsCandidata['!ref']){
+        var rangoHoja = XLSX.utils.decode_range(wsCandidata['!ref']);
+        var rangoEncabezado = { s:{r:rangoHoja.s.r, c:rangoHoja.s.c}, e:{r:rangoHoja.s.r, c:rangoHoja.e.c} };
+        headerRow0 = (XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null, range:rangoEncabezado})[0]) || [];
+      } else {
+        headerRow0 = (XLSX.utils.sheet_to_json(wsCandidata, {header:1, blankrows:false, defval:null})[0]) || [];
+      }
+      if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
+      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
       // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
       // SKILL) en el de Llamadas -- cargasEncabezadosCoinciden por si sola
       // no alcanza a distinguirlos (comparten agente/fecha/tipificacion/
       // skill-via-alias).
-      if(esTipificacion && h.canalTipificacion && cargasDetectarCanalTipificacion(aoaHeader[0]||[]) !== h.canalTipificacion) continue;
+      if(esTipificacion && h.canalTipificacion && cargasDetectarCanalTipificacion(headerRow0) !== h.canalTipificacion) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }
