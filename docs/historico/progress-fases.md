@@ -11542,3 +11542,218 @@ terminal en vez de reintentar a ciegas.
 de código — solo este PR de documentación + el script nuevo en
 `scripts/produccion/` (ambos exigen rama + PR + CI verde igual que
 cualquier cambio, por la regla de "nada de commits directos a `main`").
+
+## Fase 124 — Revisión de errores y bugs (con la página real) y dejar todo organizado (2026-10-06)
+
+Pedido del usuario: una revisión honesta de errores/bugs antes de
+entregar ORLANT, probando la página real (no solo funciones sueltas —
+lección de la Fase 122, donde 3 defectos reales solo aparecieron al
+cargar en producción pese a tener pruebas unitarias en verde), y dejar
+el proyecto ordenado. Regla de oro seguida en todo esta fase: no se
+escribe "verificado" sobre nada que no se haya ejecutado de verdad; lo
+que no se alcanzó queda explícito como "no verificado" con el motivo.
+
+### Parte 0 — Punto de partida
+
+- `git pull` al día, rama `fase124-revision-errores-bugs`.
+- `npm test` local: una corrida completa (sin el buffer de `tail`, que
+  escondía el avance real) terminó en decenas de `ETIMEDOUT` en pruebas
+  de `supertest` (`fase95-tema-c-alerta-asesor.test.js`,
+  `gestion-humana.test.js`, `historial.test.js`,
+  `inasistencia-carga.test.js`, entre otras) y sin imprimir el resumen
+  final — confirma lo que ya advertía `CLAUDE.md`: la suite local es
+  inestable por recursos de esta máquina en particular. No es una
+  regresión (la misma suite corrió en verde en CI, Node 22, en el PR
+  anterior, #312) — se documenta como hallazgo de entorno, no se
+  investiga más a fondo (saldría caro diagnosticar límites de SO de una
+  máquina puntual), y se confía en CI como referencia real, tal como
+  indica la regla ya escrita.
+- Lectura de `PROGRESS.md`, `docs/pendientes.md`,
+  `docs/historico/progress-fases.md` (Fases 118-123) y
+  `docs/inventario-bases-orlant.md`.
+- Estado real de producción confirmado (ver Parte 1 abajo, que lo cubre
+  con más detalle que un simple `/api/health`).
+
+### Parte 1 — Lo que quedó sin verificar en la Fase 122 (EJECUTADO, con sesión real del usuario)
+
+`scripts/produccion/fase124-parte1-pendientes-fase122.js` — Playwright
+directo, headless:false, login manual del usuario en producción (el
+script nunca vio la contraseña). Tras 2 intentos donde la ventana de
+Chromium no llegó a verse desde la sesión de Claude Code (sin pantalla
+real accesible), el 3er intento sí detectó el login y corrió completo.
+Resultado:
+
+- **Números de control**: 0 discrepancias contra los 9 valores vigentes
+  (Tipificación Llamadas/WhatsApp, Agendas abril-2025, Efectividad de
+  Agendamiento ago/sep, Inasistencia, Efectividad de Citas, alias
+  registrados).
+- **Alias de asesor**: 3 registrados (esperado). 0 grupos de nombres que
+  normalicen igual pero sigan distintos en Tipificación de Llamadas,
+  Tipificación de WhatsApp, Agendas, Efectividad de Agendamiento (ago y
+  sep) — confirma que el alias consolidó de verdad, sin imprimir ningún
+  nombre real.
+- **Efectividad de Agendamiento con asesores >100%**: ago 3 asesores
+  sobre 100% (máx 180,97%), sep 2 asesores (máx 387,31%) — coincide con
+  lo que reportó el usuario. El canvas dibuja con píxeles reales en
+  ambos meses, y el texto del panel trae 20-21 coincidencias del patrón
+  "NN,NN %" (formato coma + 2 decimales). No se pudo confirmar
+  estructuralmente que el eje secundario del combo no recorta (el
+  chequeo por `_gd.charts` no encontró el id esperado) — **no
+  verificado** ese punto puntual, el resto de la pregunta sí.
+- **Selector de mes**: 10 meses con nombre completo ("Septiembre
+  2026"… "Abril 2025"), sin desborde horizontal en 1366×768 ni en
+  412px.
+- **Mes parcial "Julio 2026"** (71 filas, solo Tipificación de
+  WhatsApp): 0 errores de consola nuevos, 0 peticiones fallidas; las 7
+  pestañas muestran o un gráfico real (Inasistencia, Efectividad de
+  Citas, Tipificación) o un mensaje claro de "sin datos" (Tráfico de
+  Llamadas/WhatsApp, Agendamiento, Calidad) — nada en blanco sin
+  explicación.
+- **Tema oscuro + 1920×1080 + móvil 412px** (los 3 combos que la Fase
+  122 no llegó a cubrir, más 2 combos extra cruzando tema×viewport): 0
+  errores de consola, 0 peticiones fallidas, 0 canvas sin dibujar en
+  ninguna de las 7 pestañas/sub-vistas, en los 5 combos.
+- **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
+  Efectividad de Citas y Agendas**: el primer intento FALLÓ — no por la
+  plataforma, sino por un bug del propio script
+  (`download.saveAs()` sin `downloadsPath` configurado en el navegador,
+  "Cannot access file"). Corregido (`download.path()` + `downloadsPath`
+  en el `launch()`) en `fase124-parte1-pendientes-fase122.js` y en un
+  script de seguimiento dedicado,
+  `scripts/produccion/fase124-parte1b-exports.js` — **queda pendiente
+  reintentarlo** con una sesión real (ver `docs/pendientes.md` §1).
+
+### Parte 2 — Revisión de errores y bugs
+
+- **2.1 (arnés sintético para las 9 bases)**: NO construido — es un
+  proyecto de varios días en sí mismo (ver costo/riesgo en
+  `docs/pendientes.md` §4). La Parte 1 de arriba cubrió, en cambio, un
+  barrido real contra PRODUCCIÓN de lo que la 122 dejó sin ver, que es
+  distinto pero cubre parte de la misma motivación.
+- **2.2 (límites de tamaño)**: con el único número REAL confirmado hasta
+  hoy (Agendas: 24.186 filas = 4,91 MB contra el límite de 8 MB,
+  confirmado por el 413 real de la Fase 122) y el ritmo de crecimiento
+  reciente, el margen de Agendas se agota en **~1,3 meses** — por debajo
+  del umbral de 6 meses pedido. Tipificación de voz (con el número dado,
+  no remedido — el intento de remedirlo con el archivo real local falló
+  por un error del script, no de la plataforma) queda en **~3 meses**.
+  El resto de las bases no se midió (estructuralmente muy por debajo del
+  límite de 2MB). Propuesta sin aplicar: subir el límite de Agendas de 8
+  a 16 MB (mismo patrón ya usado 2 veces), necesita OK explícito. Un 413
+  real SÍ muestra hoy un mensaje entendible (confirmado en la Fase 122:
+  "Cuerpo de la petición demasiado grande", 0 datos a medias) — no se
+  re-ejecutó esa prueba puntual en esta fase, se confía en lo ya
+  demostrado.
+- **2.3 (alias de asesor) — EJECUTADO localmente, no solo leído**: GET/
+  POST/DELETE de `/alias-asesores` con SUPERVISOR, CALIDAD y
+  CLIENTES_DASH → 403 en los 3 roles (solo administrador, sin excepción
+  por campaña — el modelo de permisos de este proyecto no tiene un
+  "admin acotado a una campaña", así que no aplica un `campaignAccess`
+  adicional). Sin token → 401. `Cache-Control: no-store` confirmado en la
+  respuesta real. Reglas de alta ejecutadas de verdad: alias apuntando a
+  sí mismo → 400, canónico que ya es alias de otra fila (cadena/ciclo) →
+  400, alias duplicado → 409, mismo alias con mayúsculas/tildes/espacios
+  distintos → 409 igual (comparación normalizada funciona). Zod, logEvent
+  (auditoría en Historial) y limitador de intentos (limitador global de
+  `/api`, `server.js`) confirmados por lectura de código. Hallazgos
+  reales documentados en `docs/pendientes.md` §4: no hay ninguna pantalla
+  de administración para alias (solo API directa), y el alias no se
+  aplica en la carga masiva de Calidad (sí en Agendas/Efectividad/
+  Tipificación; Inasistencia y Efectividad de Citas no tienen columna de
+  asesor, no aplica). Borrar un alias no revierte los datos ya
+  unificados (confirmado por el propio comentario del código fuente,
+  diseño intencional, sin soft-delete).
+- **2.4 (seguridad)**: `npm audit` (con y sin dev) resolvió **1
+  vulnerabilidad CRÍTICA** (`proxy-addr` 2.0.7→2.0.8, transitiva de
+  `express`, parche — no una dependencia mayor). Cabeceras confirmadas
+  EN VIVO contra producción real (no solo leídas): HSTS
+  (`max-age=31536000; includeSubDomains; preload`), CSP presente,
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`.
+  Secretos: escaneado el árbol con patrones de claves AWS/privadas/
+  contraseñas hardcodeadas — el único hallazgo son las contraseñas de
+  los usuarios de ejemplo ya conocidas y ya resueltas en la Fase 110
+  (desactivados en producción, no es un hallazgo nuevo). Historial de
+  git: ningún `.xlsx` con nombre de archivo real, solo fixtures/ejemplos
+  claramente marcados como tales. Tráfico de Llamadas sin
+  `campaignAccess` en la carga: **re-ejecutada** la prueba dedicada de la
+  Fase 119 (`fase119-matriz-cargas-masivas.test.js`, 9/9 pass) — sigue
+  igual, decisión explícita documentada, no se toca sin OK (regla fija
+  de esta fase). **XSS dinámico campo por campo: NO ejecutado** en esta
+  fase (ver costo/riesgo en pendientes).
+- **2.5 (fallas de red/500/carreras de UI)**: NO cubierto en esta fase
+  (ver costo/riesgo en pendientes) — sigue pendiente desde la Fase
+  118/119.
+- **2.6 (casos de borde del reemplazo por rango)**: no se repitió la
+  matriz completa de la Fase 119 en esta fase por tiempo; lo que esa fase
+  ya ejecutó sigue vigente (no cambió código de escritura desde
+  entonces).
+- **2.7 (exactitud de lo mostrado)**: Efectividad de Agendamiento de
+  septiembre recalculada a mano desde los agregados reales
+  (13.146/32.868): da 39,9963...%, que redondeado a 2 decimales da
+  exactamente "40,00%" — confirma el caso que el propio pedido de esta
+  fase anticipó ("40,00% = 39,996%"), sin defecto. El resto de fórmulas
+  (ASA/ATA/AHT ponderados, formato es-CO) ya se verificó y corrigió en
+  fases anteriores (118-120) y no se repitió a fondo por tiempo.
+- **2.8 (código muerto) — HECHO**: `traficoWppResumen`
+  (`public/js/trafico-whatsapp-logic.js`) confirmado sin ningún llamador
+  fuera de sus propios tests (grep en todo `public/`/`server/`) — tenía
+  el mismo defecto de ponderación del ATA/ASA que ya se corrigió en
+  `traficoWppAgregarPorPeriodo` (la función que SÍ se usa, Fase 120).
+  Borrada la función, su export, y ajustados los 2 archivos de test que
+  la usaban (uno se borró por completo porque su nombre describía
+  exactamente los números de `resumen`; el otro se renombró para
+  reflejar solo lo que sigue comprobando). `node --test` de los 2
+  archivos afectados: 54/54 pass. Un barrido completo de código muerto
+  con `graphify` sobre el resto del repo NO se hizo (pedido de nuevo
+  desde la Fase 118, sigue sin alcanzar el tiempo).
+- **2.9 (usabilidad, Efectividad de Citas en un mes sin datos)**: 3
+  opciones propuestas, ninguna aplicada — ver `docs/pendientes.md` §3
+  (recomendación: abrir esa pestaña directo en el último mes con datos).
+
+### Parte 3 — Dejar todo organizado
+
+- `docs/pendientes.md` reescrito por completo en 5 secciones (Antes de
+  entregar a Edwin · Esperando a Edwin · Esperando decisión de InCo ·
+  Técnico con costo/riesgo · Después de la entrega), con dueño,
+  prioridad, cómo se cierra y fecha en cada ítem; lo ya cerrado se quitó
+  (queda en este archivo).
+- `docs/plantillas-inventario.md` (nuevo, solo lectura): de las 9 bases,
+  solo Tráfico de Llamadas/WhatsApp tienen una plantilla descargable
+  hoy — y ninguna de las 2 coincide con el formato diario real que manda
+  Wolkvox. Las otras 7 bases nunca tuvieron plantilla (siempre se subió
+  el export nativo de Wolkvox/del sistema de agendamiento, reconocido
+  por encabezados).
+- `docs/README.md` (nuevo): índice de una página, vigente vs. histórico.
+- Higiene del repo: `.agents/`, `.codex/` y `AGENTS.md` (sin seguimiento
+  en el árbol) resultaron ser la configuración de Codex CLI en paralelo
+  a Claude Code sobre este mismo repo (`AGENTS.md` espeja `CLAUDE.md`;
+  `.agents/skills/graphify/` espeja `.claude/skills/graphify/`;
+  `.codex/hooks.json` espeja los hooks de `.claude/`) — no son basura ni
+  datos sensibles. **No se commitearon ni se borraron** (decisión del
+  usuario, no de esta fase): si se van a seguir usando ambos agentes en
+  este repo, lo natural es commitearlos (igual que `CLAUDE.md`, el repo
+  es público y no hay secretos); si fue una prueba puntual, van a
+  `.gitignore`. Confirmado: `graphify-out/` y `.claude/` siguen
+  ignorados; `docs/capturas-demo/` sigue con 0 archivos trackeados; no
+  se encontró ningún `.xlsx` con nombre de archivo real en el árbol ni
+  en el historial de git (todos son fixtures/ejemplos con nombre
+  explícito de prueba).
+- **No se alcanzó a actualizar** la guía de uso
+  (`docs/guia-uso-orlant.md` / `server/paginas/guia-uso.html`) con lo
+  nuevo de la Fase 122-124 — queda anotado en `docs/pendientes.md` §1
+  (contenido de cara al cliente, no conviene apurarlo).
+
+### Verificación
+
+`node --test` de los archivos tocados (código muerto): 54/54 pass.
+`npm audit --omit=dev` y completo: 0 vulnerabilidades (antes: 1
+crítica). `npm test` completo: ver Parte 0 (inestable en esta máquina,
+CI es la referencia). CI del PR de esta fase: ver estado final abajo.
+
+### Estado final de la Fase 124
+
+Versión `1.13.1` (parche — fix de seguridad + limpieza, sin función
+nueva). Un solo PR (código + docs + scripts, dado el volumen y que todo
+es de la misma fase). Lista completa de lo NO verificado y por qué, en
+`docs/pendientes.md` §4 y en el informe final entregado al usuario en el
+chat.
