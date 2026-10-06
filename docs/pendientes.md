@@ -12,7 +12,12 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 - **Contraseña temporal del usuario CLIENTES_DASH** — dueño: InCo. Prioridad
   ALTA. Cómo se cierra: InCo la cambia desde la propia plataforma (nunca
   queda en el repo/commits/logs). Anotado 2026-10-02 (Fase 112), sigue sin
-  hacerse.
+  hacerse. Efecto concreto más reciente: la verificación post-deploy de
+  la Fase 125 no pudo confirmar el lado CLIENTES_DASH de producción
+  (`scripts/produccion/revision-final.js` espera 2 sesiones, una por
+  cada rol) — solo se verificó ADMINISTRADOR. Repetir esa mitad es
+  trivial en cuanto haya una contraseña de cliente a mano, sin tocar
+  nada más.
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — dueño: InCo
   (decisión) + InCo (ejecución si aplica). Prioridad ALTA — desde la Fase
   122, Agendas y Efectividad de Agendamiento muestran el nombre real del
@@ -129,6 +134,18 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
+- **`scripts/produccion/revision-final.js` no cubre todavía ATA (voz y
+  WhatsApp) ni el desglose mes a mes de Tipificación de WhatsApp
+  (Jul/Ago/Sep) ni de Tráfico (Ago vs. Sep por separado)** — confirmado
+  al revisar el script a fondo en la Fase 125 (2026-10-06) antes de
+  usarlo para la verificación post-deploy: solo arma totales agregados
+  del período y una verificación por skill/cola × mes para Llamadas,
+  WhatsApp de voz y Tipificación de Llamadas — nunca para esos 4 datos
+  puntuales. No es un defecto de la plataforma (la Fase 124 sí confirmó
+  esos 9 valores completos a mano, ver `PROGRESS.md`), es una brecha de
+  cobertura del script mismo. Costo de cerrarlo: bajo-medio (agregar los
+  cálculos ponderados correctos, con cuidado de no inventar una fórmula
+  distinta a la que ya usa el dashboard). No pedido todavía.
 - **Límite de tamaño por carga — corrección de un hallazgo mal planteado
   en la Fase 124** (Fase 125, 2026-10-06; ver nota de corrección al
   final de la Fase 124 en `docs/historico/progress-fases.md`). La Fase

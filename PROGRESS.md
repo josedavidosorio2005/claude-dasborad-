@@ -30,7 +30,7 @@ narrativo de cada fase, fase por fase, vive en
 - **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
   (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación Fase 124, 2026-10-06)
+### Números de control (ORLANT, última verificación completa Fase 124, 2026-10-06)
 
 Reconfirmados contra producción real en la Fase 124 (sesión con el
 usuario, 0 escritura, incluido el alias de asesor: 0 filas con la
@@ -40,10 +40,23 @@ abajo, Las 7 pestañas Y cada una de sus sub-pestañas (no solo la que
 abre por defecto) dibujan algo real o muestran un mensaje claro —
 ninguna en blanco — confirmado ahora también en tema oscuro y en
 1920×1080/móvil 412px, que la Fase 122 había dejado sin cubrir. 0
-errores de consola. La Fase 124 no cargó datos nuevos — solo verificó
-(ver [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
-→ Fase 124) y corrigió 1 vulnerabilidad crítica de `npm audit` + 1
-función muerta, sin cambiar ningún número de abajo:
+errores de consola. Ninguna fase desde entonces cargó datos nuevos —
+los números de abajo siguen vigentes.
+
+**Fase 125 (mismo día)** reconfirmó, con otra sesión real del usuario y
+`scripts/produccion/revision-final.js`, el subconjunto que ese script
+cubre: Tipificación de Llamadas (34.661), Tráfico de Llamadas y de
+WhatsApp (totales agregados), Inasistencia, Efectividad de Agendamiento
+de Sep-26 (13.146/32.868 = 40,00 %, igual que la fila de abajo) y
+Efectividad de Citas (período 86,01 %) — 0 discrepancias, más una
+verificación "dato por dato" por skill/cola × mes (0 diferencias, 0
+duplicados) que no hace la Fase 124. Solo con la cuenta ADMINISTRADOR —
+la cuenta CLIENTES_DASH quedó sin verificar esta vez (no se tenía la
+contraseña a mano, ver `docs/pendientes.md` §1). No reconfirmó aparte
+Tipificación de WhatsApp, el desglose Ago/Sep de Tráfico de WhatsApp
+(SL20) ni de Agendas, ni el ATA — detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
+→ Fase 125, Parte 5.
 
 | Indicador | Valor |
 |---|---|
