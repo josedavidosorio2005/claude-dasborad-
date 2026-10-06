@@ -63,7 +63,8 @@ function _eaNumeroEntero(v) {
 }
 
 // Fase 122 (hallazgo real, EFECTIVIDAD_EN_AGENDAMIENTO_AGOSTO.xlsx): un
-// asesor con efectividad > 100% (ej. SANTIAGO LONDOÑO RUA, 118%) guarda la
+// asesor con efectividad > 100% (ej. "JORGE EJEMPLO MARTINEZ", nombre
+// ficticio, 118%) guarda la
 // celda EFECTIVIDAD como 1.180052956751986 con formato real de Excel "0%"
 // -- la vieja regla "<=1 es fraccion, >1 ya es porcentaje" adivinaba mal
 // para estos casos (1.18 > 1 se tomaba como "ya es porcentaje", dando 1.2%

@@ -3,9 +3,9 @@
 // patron que el catalogo de codificaciones de Calidad (routes/calidad.js,
 // Fase 95 tema B): Zod + auditado en el historial + Cache-Control: no-store.
 //
-// Las 3 entradas iniciales (NATALIA TAMAYO CORREA -> ISABEL CORREA,
-// ESTEFANIA GIRLADO SUAZA -> ESTEFANIA GIRALDO SUAZA, MICHELL GARCIA
-// SERNA_falla -> MICHELL GARCIA SERNA) se cargan por ESTE endpoint con la
+// Las 3 entradas reales de ORLANT (2 nombres distintos para la misma
+// persona entre archivos, 1 errata de tipeo en Wolkvox, 1 variante
+// "_falla" de una carga anterior) se cargan por ESTE endpoint con la
 // sesion real del usuario administrador -- nunca por migracion ni seed del
 // repo (un nombre real de asesor no puede vivir en el codigo fuente).
 'use strict';

@@ -689,9 +689,10 @@ const efectividadAgendamientoOpcionesQuery = z.object({
 
 // ── Alias de nombre de asesor (Fase 122, reunion con Edwin 2026-10-05) ──
 // La misma persona real puede llegar con mas de un nombre entre archivos
-// (ej. "NATALIA TAMAYO CORREA" en Efectividad == "ISABEL CORREA" en
-// Agendas) o con una errata de tipeo puntual -- nunca se escribe un nombre
-// real de asesor en este archivo (son solo los patrones de validacion).
+// (ej. "LAURA EJEMPLO TORRES" en Efectividad == "MARCELA EJEMPLO RUIZ" en
+// Agendas, nombres ficticios) o con una errata de tipeo puntual -- nunca se
+// escribe un nombre real de asesor en este archivo (son solo los patrones
+// de validacion).
 const nombreAsesorSchema = z
   .string(reqStr('El nombre es obligatorio'))
   .trim()
