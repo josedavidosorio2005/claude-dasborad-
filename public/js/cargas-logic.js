@@ -9,6 +9,27 @@
 
 function _cargasNorm(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
 
+// Fase 125: Agendas y Tipificacion son las 2 rutas con limite mayor (8mb,
+// RUTAS_LIMITE_MAYOR en server/server.js) porque traen muchas mas filas que
+// el resto -- pero ese limite es por carga (una peticion HTTP), no
+// acumulado: lo que ya quedo guardado en la base no cuenta contra el limite
+// de la carga siguiente (corrige un hallazgo mal planteado de la Fase 124,
+// ver docs/pendientes.md §4). Solo aprieta si alguien sube varios meses
+// juntos en un unico archivo. En vez de dejar que el servidor responda 413
+// (ya tiene un mensaje claro, ver server.js linea ~313), se avisa ANTES de
+// enviar nada si el payload estimado ya supera el 85% del limite de esa
+// ruta -- evita una espera larga para terminar en el mismo error, y deja
+// claro que no se guardo nada.
+var CARGAS_LIMITE_MAYOR_BYTES = 8 * 1024 * 1024;
+var CARGAS_UMBRAL_AVISO_TAMANO = 0.85;
+var CARGAS_MSG_PAYLOAD_GRANDE = 'Este archivo es muy grande para una sola carga. Subelo por meses (uno a la vez); si junta varios meses, partelo antes de cargar. No se guardo nada.';
+
+function cargasPayloadDemasiadoGrande(parsed, limiteBytes) {
+  var texto = JSON.stringify(parsed);
+  var bytes = (typeof TextEncoder !== 'undefined') ? new TextEncoder().encode(texto).length : texto.length;
+  return bytes > limiteBytes * CARGAS_UMBRAL_AVISO_TAMANO;
+}
+
 function cargasColPorLabel(spec, label) {
   var n = _cargasNorm(label);
   return spec.columnas.find(function (c) { return _cargasNorm(c.label) === n || _cargasNorm(c.key) === n; }) || null;
@@ -667,5 +688,8 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_ORDEN_DESCARGA: CARGAS_ORDEN_DESCARGA,
     cargasPlanSinTipificacionSuperada: cargasPlanSinTipificacionSuperada,
     cargasPlanOrdenParaDescarga: cargasPlanOrdenParaDescarga,
+    cargasPayloadDemasiadoGrande: cargasPayloadDemasiadoGrande,
+    CARGAS_LIMITE_MAYOR_BYTES: CARGAS_LIMITE_MAYOR_BYTES,
+    CARGAS_MSG_PAYLOAD_GRANDE: CARGAS_MSG_PAYLOAD_GRANDE,
   };
 }

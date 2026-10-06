@@ -11779,3 +11779,25 @@ esta Parte 4 (verificación post-deploy + ajuste del pendiente de
 exports). Lista completa de lo NO verificado y por qué, en
 `docs/pendientes.md` §4 y en el informe final entregado al usuario en el
 chat.
+
+### Corrección (Fase 125, 2026-10-06)
+
+El hallazgo "2.2 (límites de tamaño)" de esta fase estaba mal planteado:
+trataba el límite de 8 MB de `RUTAS_LIMITE_MAYOR` como si fuera un
+margen ACUMULADO que se va agotando con cada carga mensual nueva. No lo
+es — `express.json({limit:'8mb'})` limita cada petición HTTP
+individualmente; lo que ya quedó guardado en la base no se resta de ese
+límite en la carga siguiente. Una carga mensual normal de Agendas
+(~12.100 filas/mes ≈ 2,5 MB) o de Tipificación de voz (~17.300
+filas/mes) cabe con margen amplio en cualquier mes futuro — el límite
+solo aprieta si alguien sube varios meses juntos en un único archivo
+(~39.000+ filas de Agendas, ~86.000+ de Tipificación de voz). La
+propuesta de subir el límite a 16 MB (nunca aplicada) se retiró: no hace
+falta para el patrón de carga real (un mes a la vez). Detalle corregido
+y tabla de referencia (bytes/fila medidos vs. estimados, máximo de filas
+por carga) en `docs/pendientes.md` §4. La Fase 125 agregó, de todos
+modos, un aviso del lado del cliente antes de enviar si alguien sí
+intenta subir varios meses juntos (`public/js/cargas.js`): si el payload
+estimado supera el 85 % del límite de su ruta, avisa ANTES de enviar en
+vez de dejar que lo resuelva solo el 413 del servidor (que ya tenía un
+mensaje claro desde la Fase 122, confirmado de nuevo sin duplicarlo).

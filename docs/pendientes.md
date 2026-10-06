@@ -118,37 +118,34 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- **Margen de tamaño de carga: Agendas se queda sin margen en ~1-2 meses**
-  (hallazgo nuevo, Fase 124, con el único número REAL medido hasta hoy —
-  el resto de esta tabla es estimado, ver abajo). El archivo real de
-  ago-sep/2026 (24.186 filas, 2 meses) pesa **4,91 MB confirmado** contra
-  el límite de 8 MB de esa ruta (`RUTAS_LIMITE_MAYOR`, `server/server.js`)
-  — eso deja ~212,9 bytes/fila. Con el ritmo de crecimiento reciente
-  (ago 11.040 + sep 13.146 ≈ 12.100 filas/mes) el margen que queda
-  (8−4,91 MB ≈ 3,09 MB ≈ 15.200 filas más) se agota en **~1,3 meses** —
-  por debajo del umbral de 6 meses que pidió esta fase.
-  - Tipificación de voz: ~3,2 MB para 34.661 filas (número dado, no
-    remedido en esta fase — el intento de remedirlo con el archivo real
-    local falló por un error del script de medición, no de la
-    plataforma) contra el mismo límite de 8 MB → ~96,8 bytes/fila,
-    margen ≈ 4,8 MB ≈ 52.000 filas más. Con (ago 14.940 + sep 19.721) /
-    2 ≈ 17.330 filas/mes, el margen dura **~3 meses** — también por
-    debajo de 6 meses.
-  - Tipificación de WhatsApp, Tráfico (Llamadas/WhatsApp), Inasistencia y
-    Efectividad (Agendamiento/Citas): **no medido en esta fase** (el
-    script de medición falló antes de llegar a estos) — pero estructural-
-    mente tienen muchas menos columnas por fila y/o muchas menos filas
-    totales que Agendas/Tipificación de voz (ej. Tráfico nunca pasó de
-    258 filas reales), así que es muy poco probable que estén cerca del
-    límite de 2 MB global. Pendiente confirmar con una medición real.
-  - **Propuesta (NO aplicada):** subir el límite de la ruta de Agendas de
-    8 MB a, por ejemplo, 16 MB — mismo patrón ya usado 2 veces (Fase 77 y
-    Fase 122), costo mínimo (1 línea en `server.js`, sin dependencias
-    nuevas), riesgo bajo (ya hay precedente, no cambia el comportamiento
-    para archivos chicos). Es un parche temporal, no la solución de
-    fondo (carga por lotes/paginada), que NO se implementa en esta fase
-    por ser un cambio de arquitectura grande. Necesita tu OK porque toca
-    un límite de la API en producción.
+- **Límite de tamaño por carga — corrección de un hallazgo mal planteado
+  en la Fase 124** (Fase 125, 2026-10-06; ver nota de corrección al
+  final de la Fase 124 en `docs/historico/progress-fases.md`). La Fase
+  124 trató el límite de 8 MB de `RUTAS_LIMITE_MAYOR` (`server/server.js`)
+  como si fuera un margen ACUMULADO que se agota carga tras carga, y
+  proponía subirlo a 16 MB. Está mal planteado: ese límite
+  (`express.json({limit:'8mb'})`) es por CARGA — un solo archivo/petición
+  — no acumulado; lo que ya quedó guardado en la base no cuenta contra él
+  en la carga siguiente. Una carga mensual normal cabe con margen amplio
+  en cualquier mes futuro; el límite solo aprieta si alguien sube varios
+  meses juntos en un único archivo. **Se retira la propuesta de subir a
+  16 MB** — no hace falta con el patrón de carga real (un mes a la vez).
+
+  | Ruta | Bytes/fila | Medido o estimado | Máximo de filas por carga (límite 8 MB) |
+  |---|---|---|---|
+  | Agendas (`/calidad/agendas/carga`) | 212,9 | **medido** (archivo real ago-sep/2026: 4,91 MB / 24.186 filas) | ≈ 39.000 (≈ 3 meses juntos al ritmo actual de ~12.100 filas/mes) |
+  | Tipificación de voz (`/calidad/tipificacion/carga`) | 96,8 | **estimado** (3,2 MB / 34.661 filas, dato de fases anteriores — el intento de remedirlo con el archivo real falló por un error del script, no de la plataforma) | ≈ 86.000 (≈ 5 meses juntos al ritmo actual de ~17.300 filas/mes) |
+  | Tipificación de WhatsApp, Tráfico (Llamadas/WhatsApp), Inasistencia, Efectividad (Agendamiento/Citas) | — | **no medido** — usan el límite global de 2 MB; estructuralmente muchas menos columnas y/o filas (Tráfico nunca pasó de 258 filas reales) | no calculado, muy poco probable que se acerquen |
+
+  **Regla práctica:** subir un mes a la vez; si hay que subir varios
+  meses juntos, partir el archivo por mes antes de cargar. La Fase 125
+  agregó un aviso del lado del cliente antes de enviar
+  (`public/js/cargas.js`): si el payload estimado de Agendas o
+  Tipificación supera el 85 % del límite de su ruta, avisa ANTES de
+  enviar ("este archivo es muy grande para una sola carga... no se
+  guardó nada") en vez de dejar que lo resuelva solo el 413 del
+  servidor — ese 413 ya tenía un mensaje claro desde la Fase 122
+  (confirmado de nuevo en la Fase 125, sin duplicarlo).
 - **No hay UI de administración para alias de asesor** — hoy el alta,
   lista y borrada de alias solo existen por API directa
   (`/api/alias-asesores`), nunca desde una pantalla — confirmado

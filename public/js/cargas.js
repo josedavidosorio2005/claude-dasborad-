@@ -754,6 +754,9 @@ async function _cargasGuardarAgendas(cliente, r){
   // validation.js (agendasCargaBody) y agendas-logic.js (agendasFilaComoArray).
   var filasArray = r.filas.map(agendasFilaComoArray);
   var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
   try{
     var impacto = await apiRequest('POST','/calidad/agendas/carga/impacto', parsed);
     var fraseAliasAgendas = _cargasFraseAlias(impacto);
@@ -782,6 +785,9 @@ async function _cargasGuardarAgendas(cliente, r){
 async function _cargasGuardarTipificacion(cliente, r){
   var filasArray = r.filas.map(tipificacionFilaComoArray);
   var parsed = { campana: cliente, canal: r.canalTipificacion, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
   try{
     var impacto = await apiRequest('POST','/calidad/tipificacion/carga/impacto', parsed);
     var fraseAliasTip = _cargasFraseAlias(impacto);
