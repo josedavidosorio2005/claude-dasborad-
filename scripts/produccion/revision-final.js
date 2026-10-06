@@ -192,7 +192,19 @@ async function veredictoSubvista(page) {
   return page.evaluate(() => {
     const host = document.getElementById('gd-panels');
     if (!host) return { veredicto: 'sin-panel', texto: '' };
-    const texto = (host.innerText || '').trim();
+    // Fase 127 (corrige un hallazgo de privacidad de la Fase 126, Parte
+    // 7): `host.innerText` traia el texto COMPLETO del panel, incluidas
+    // las listas de los desplegables de filtro AGENTE/ASESOR -- en
+    // Agendamiento/Tipificacion/Calidad eso son nombres reales de
+    // asesores de ORLANT, que terminaban en este `texto` (guardado en el
+    // reporte y mandado a consola al final del script). Se clona el host
+    // y se quitan los <select> ANTES de leer innerText -- el resto del
+    // texto (titulos, tarjetas, tablas, avisos de "sin datos") sigue
+    // intacto para que la deteccion de NaN/undefined/mensajes siga
+    // funcionando igual.
+    const clon = host.cloneNode(true);
+    clon.querySelectorAll('select').forEach((s) => s.remove());
+    const texto = (clon.innerText || '').trim();
     const canvases = Array.from(host.querySelectorAll('canvas')).filter((c) => {
       const style = getComputedStyle(c);
       return style.display !== 'none' && style.visibility !== 'hidden';
