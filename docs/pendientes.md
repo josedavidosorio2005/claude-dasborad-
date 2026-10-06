@@ -1,8 +1,43 @@
-# Pendientes (actualizado Fase 120, 2026-10-05)
+# Pendientes (actualizado Fase 122, 2026-10-06)
 
 Un solo lugar para lo que falta — reemplaza los pendientes sueltos que
 antes vivían repartidos en `PROGRESS.md`. El detalle histórico de cada
 punto, si existe, está en `docs/historico/progress-fases.md`.
+
+## De la Fase 122 (prioridad ALTA las 2 primeras)
+
+- **Plantillas oficiales (después de la entrega, pedido explícito de
+  Edwin: "eso lo vemos después"):** las plantillas que descarga hoy la
+  plataforma (ej. Tipificación = solo "tipificación y cantidad") no
+  coinciden con las que Edwin definió ni con las que él realmente manda
+  (los exports directos de Wolkvox: HistCDR, HistChat...). Hoy InCo carga
+  por código, por eso no se ha notado. Falta: una carpeta de plantillas
+  oficiales (una por base, versionada) y que Isabel (quien maneja
+  Wolkvox) pueda descargar la plantilla, pegar el export y subirlo sin
+  ayuda de InCo. Antes de construir nada, reunir qué plantilla manda hoy
+  cada una de las 9 bases (ver `docs/inventario-bases-orlant.md`) vs. lo
+  que acepta el lector real.
+- **Efectividad de Citas de agosto y septiembre/2026:** en la reunión del
+  2026-10-05 quedó "nos falta agendamiento y efectividad de citas" — la
+  Fase 122 cargó Agendas y Efectividad de Agendamiento, pero el archivo
+  de Citas Atendidas/Efectividad de Citas de ago-sep todavía no ha
+  llegado de Edwin. Producción sigue solo con Ene-Mar/2026. Pedírselo.
+- **Re-carga del archivo de voz para consolidar el alias "_falla"**: la
+  Parte 2 de la Fase 122 registró el alias correspondiente, pero la
+  re-carga de `TIPIFICACIONES.xlsx` (mismo archivo ya en producción, para
+  que el alias se aplique a esas 494 filas ya guardadas) quedó sin hacer
+  — no se recibió la confirmación expresa del usuario en el chat para
+  ese paso puntual. Resultado esperado al hacerla: sigue en 34.661 filas,
+  0 filas con esa variante.
+- **Verificación visual completa pendiente** (no alcanzó tras resolver 3
+  hallazgos reales en producción, Parte 2 — ver
+  `docs/historico/progress-fases.md` → Fase 122): tema oscuro; viewports
+  1920×1080 y móvil 412px; el gráfico/ranking de Efectividad de
+  Agendamiento con los asesores sobre 100% dibujados correctamente (más
+  allá de que el canvas existe); exports de Tipificación y Efectividad
+  (solo se verificó la estructura del export de Agendas); abrir el
+  archivo descargado real de cada export (solo se verificó la función
+  que arma los datos, no el archivo final).
 
 ## De Edwin (datos reales)
 
@@ -71,6 +106,36 @@ una:
   momento, pero Tráfico de Llamadas/WhatsApp ya muestra Nivel de Servicio
   a 20s — aclarar con él si se refiere a algo distinto (por hora, un SLA
   interno de InCo, una línea específica) antes de construir nada nuevo.
+- **Pregunta a Edwin (Fase 122): efectividad de agendamiento > 100%.**
+  Varios asesores quedan con efectividad por encima de 100% en los
+  archivos reales de agosto y septiembre/2026 (confirmado que no es un
+  error de carga — la plataforma recalcula agendas/gestiones y el
+  archivo de Edwin ya trae esos mismos números). Pregunta de negocio:
+  ¿estos asesores agendan por fuera de las gestiones que se están
+  contando?
+- **Pregunta a Edwin (Fase 122): "hay que quitar esa letra".** En la
+  reunión del 2026-10-05, cerca del tema del nivel de servicio de
+  WhatsApp, Edwin mencionó algo sobre "quitar una letra" — InCo no
+  recordaba a qué se refería exactamente. No se cambió nada por esto;
+  preguntarle la próxima vez que se hable con él.
+- **Nivel de servicio de WhatsApp a 5 minutos**: sigue mostrando el
+  aviso de "aún no hay datos para este período" (Wolkvox no entrega esa
+  columna en el export real) — Edwin lo habla con el jefe, queda así
+  hasta que haya una decisión.
+
+## Heredados (de fases anteriores, sin resolver)
+
+- **Contraseña temporal del usuario CLIENTES_DASH**: cambiarla antes de
+  entregar la plataforma a Edwin — decisión y ejecución del usuario
+  (contraseñas nunca se escriben en el repo, commits ni logs).
+- **Visibilidad de nombres de asesor para CLIENTES_DASH**: desde la Fase
+  122, Agendas y Efectividad de Agendamiento muestran el nombre real del
+  asesor (antes solo Tipificación lo hacía) — decidir con el usuario si
+  la cuenta del cliente (`CLIENTES_DASH`) debe seguir viendo esos
+  nombres o si hay que redactarlos para ese rol.
+- **37 monitoreos de prueba de Calidad**: siguen en producción, sin
+  tocar, esperando confirmación de Edwin sobre si son datos reales o de
+  prueba (ver Fase 119).
 
 ## Mejoras propuestas (no pedidas todavía, para cuando haya espacio)
 

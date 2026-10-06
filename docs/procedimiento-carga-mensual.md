@@ -98,7 +98,17 @@ sin errores, Exportar funciona y los números de control coinciden.
   que se haya hecho desde entonces (otro usuario, otro monitoreo de
   Calidad, etc.).
 
-## 6. Qué protege la plataforma automáticamente (no hace falta que lo
+## 6. Si la misma persona aparece con dos nombres distintos
+
+Si en Agendas, Tipificación o Efectividad de Agendamiento la misma
+persona llega con dos nombres distintos entre archivos (por ejemplo, un
+cambio de apellido o una errata de tipeo en Wolkvox), pídele a un
+administrador que registre esa equivalencia una sola vez (pantalla de
+administración → Alias de asesor). Desde ese momento, la plataforma
+guarda siempre el nombre correcto en las 3 bases — no hace falta corregir
+cada archivo a mano antes de subirlo.
+
+## 7. Qué protege la plataforma automáticamente (no hace falta que lo
    verifiques a mano)
 
 - Un archivo con una **fecha futura** se rechaza fila por fila (nunca se

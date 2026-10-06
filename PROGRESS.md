@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.12.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.13.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -26,29 +26,31 @@ narrativo de cada fase, fase por fase, vive en
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
   (de Edwin, de AWS, decisiones del usuario, mejoras propuestas).
 
-### Números de control (ORLANT, última verificación Fase 120, 2026-10-05)
+### Números de control (ORLANT, última verificación Fase 122, 2026-10-06)
 
-Reconfirmados en vivo contra producción (dato por dato contra los 3
-archivos reales que envió InCo, no solo totales): 150/150 filas de
-Tráfico de Llamadas, 258/258 de Tráfico de WhatsApp, 34.661/34.661 de
-Tipificación, 0 duplicados, 0 diferencias. Las 7 pestañas Y cada una de
-sus sub-pestañas (no solo la que abre por defecto) dibujan algo real o
-muestran un mensaje claro — ninguna en blanco. Exportar OK en las 7. Se
-vuelven a confirmar en cada revisión final y pueden moverse mes a mes con
-cargas nuevas de Edwin (el AHT de WhatsApp se quitó en la Fase 120 — no
-está en esta tabla porque nunca tuvo un número real que mover; el ATA de
-Llamadas/WhatsApp SÍ cambia de valor en esta fase porque se corrigió cómo
-se pondera, ver `CHANGELOG.md` — ningún número de ESTA tabla se movió):
+Reconfirmados en vivo contra producción (dato por dato contra los 4
+archivos reales que envió InCo, no solo totales, incluido el cruce
+completo asesor por asesor entre Agendas y Efectividad de Agendamiento —
+0 diferencias): 25.180/25.180 filas de Tipificación de WhatsApp,
+24.186/24.186 de Agendas, 19/20 asesores de Efectividad de Agendamiento
+(agosto/septiembre). Las 7 pestañas Y cada una de sus sub-pestañas (no
+solo la que abre por defecto) dibujan algo real o muestran un mensaje
+claro — ninguna en blanco. 0 errores de consola. Se vuelven a confirmar en
+cada revisión final y pueden moverse mes a mes con cargas nuevas de Edwin
+(Tipificación de Llamadas, Tráfico, Inasistencia y Efectividad de Citas
+NO cambiaron en esta fase — confirmado, siguen con los mismos valores de
+la Fase 120):
 
 | Indicador | Valor |
 |---|---|
-| Tipificación (Fase 116: export completo HistCDR, Ago-26+Sep-26) | 14.940 / 19.721 |
-| Tráfico de Llamadas (Ago-26+Sep-26, 3 líneas — 3P/GENERAL/REGIMEN ESPECIALES, sin el residuo de la Fase 67) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
-| Tráfico de WhatsApp (Fase 116: formato diario real de Wolkvox, 8 colas) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
-| Agendas | 7.426 (General 4.643 / 3P 2.783) |
-| Inasistencia | Ago-26 7,45 %, período 6,87 % |
-| Efectividad de agendamiento | Sep-26 44,81 % (18.566 / 8.319) |
-| Efectividad de Citas | Ene 93,67 %, Feb 84,32 %, Mar 85,54 %, período 86,01 % |
+| Tipificación de Llamadas (sin cambios desde la Fase 116) | 34.661 (Ago 14.940 / Sep 19.721) |
+| Tipificación de WhatsApp (Fase 122: export HistChat de Wolkvox, nuevo) | 25.180 (Jul 71 / Ago 12.061 / Sep 13.048), 11 skills |
+| Tráfico de Llamadas (sin cambios desde la Fase 115) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
+| Tráfico de WhatsApp (sin cambios desde la Fase 116) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
+| Agendas (Fase 122: agosto-septiembre/2026, nuevo) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores; Abril 2025 sigue en 7.426 sin cambios |
+| Inasistencia (sin cambios desde la Fase 108) | Ago-26 7,45 %, período 6,87 % |
+| Efectividad de agendamiento (Fase 122: reemplaza el preliminar de Sep-26) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
+| Efectividad de Citas (sin cambios desde la Fase 111 — falta el archivo de ago-sep de Edwin) | Ene 93,67 %, Feb 84,32 %, Mar 85,54 %, período 86,01 % |
 
 ## Índice — fases 0 a 113
 
@@ -178,4 +180,5 @@ mismo orden):
 - Fase 118 — Cierra con evidencia lo que la Fase 117 dejó sin demostrar: matriz de acceso de las 113 rutas EJECUTADA (51 pruebas, reconfirma las 3 escaladas críticas de la Fase 102), privacidad del HistCDR completo EJECUTADA con valores centinela, verificación en producción con sesión real, 1 test flaky corregido; barrido visual/código muerto/XSS dinámico/zonas horarias quedan pendientes (2026-10-05)
 - Fase 119 — Deja ORLANT lista para entregarla al cliente: recorrido en producción con la cuenta REAL del cliente (CLIENTES_DASH) confirmado por JWT, cargar un mes nuevo nunca daña los ya cargados (26 pruebas EJECUTADAS, las 7 bases), matriz de acceso de las 7 familias de carga masiva EJECUTADA (1 hallazgo real de bajo riesgo documentado: Tráfico de Llamadas sin campaignAccess por diseño), zonas horarias EJECUTADAS con procesos reales TZ=UTC/TZ=America-Bogota, guía de uso + checklist de aceptación + procedimiento de carga mensual al día; barrido visual/código muerto/XSS dinámico/fallas de UI siguen pendientes (2026-10-05)
 - Fase 120 — Verificación dato por dato de los 3 archivos reales que envió InCo (Llamadas 150 filas, WhatsApp 258 filas, Tipificación 34.661) contra producción, recorriendo TODAS las sub-pestañas (no solo la que abre por defecto, el hueco real que dejaba pasar un AHT de WhatsApp en blanco sin que nadie lo notara); se quitó el AHT de WhatsApp (Wolkvox nunca lo entrega) con migración idempotente + reactivación sin tocar código; 2do hallazgo real: el ATA de Llamadas Y de WhatsApp se promediaba ponderado por el total en vez de por los abandonos reales (corregido, con el efecto numérico documentado); la revisión automática de cada PR ahora también confirma que un aviso de "sin datos" quede visible de verdad, no solo que el canvas esté escondido (2026-10-05)
+- Fase 122 — Carga real de ORLANT de agosto-septiembre/2026 (Tipificación de WhatsApp, Agendas, Efectividad de Agendamiento) + pedidos de la reunión con Edwin (alias de nombre de asesor, nombre completo del mes); 3 hallazgos reales encontrados y corregidos al cargar los archivos reales (límite de tamaño de Agendas, el navegador sin responder con archivos grandes de 1 sola hoja, y un defecto que bloqueaba SIEMPRE el reconocimiento de Tipificación de WhatsApp) (2026-10-06)
 
