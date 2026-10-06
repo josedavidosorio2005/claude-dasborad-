@@ -12189,3 +12189,171 @@ en el lado de administrador; CLIENTES_DASH sigue pendiente de una
 próxima sesión con esa contraseña. Pendiente nuevo de prioridad alta:
 redactar la captura de texto de `revision-final.js` para que deje de
 incluir nombres reales de asesor en su salida.
+
+## Fase 127 — Indicador de llamadas y WhatsApp de SALIDA (archivo de
+Edwin ya recibido)
+
+Pedido textual de Edwin: "las llamadas de salida están muy bajas, hay
+que revisarlo" — pidió un indicador simple, "el mes y la cantidad", con
+porcentaje si aplica, junto a Tráfico de Llamadas. Archivo recibido:
+`FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx` (local, nunca al repo),
+mismas particularidades que Efectividad de Agendamiento/Citas de la Fase
+111: encabezado en la fila 3 (2 filas vacías antes), mes en mayúsculas
+sin año, hoja "Hoja1", 2 filas de datos (Agosto/Septiembre).
+
+### Parte 1 — Diseño (sin parar)
+
+- **(a) Dónde vive**: la pestaña "Salida" ya existía, sembrada y oculta,
+  con 2 paneles `line`/filtroSerie leyendo `dashboard_cargas` genérico
+  POR DÍA — nunca tuvo datos reales, y el archivo de Edwin es MENSUAL.
+  Se mantiene la pestaña (mismo lugar) pero se reemplazan sus paneles por
+  uno dedicado (`salida_panel`, tabla nueva `salida_mensual`) — mismo
+  patrón que Agendas/Inasistencia/Efectividad de Agendamiento/Efectividad
+  de Citas, nunca la vía genérica.
+- **(b) Cómo se guarda**: tabla propia `salida_mensual` (campana, mes
+  AAAA-MM, llamadas3p, llamadasGeneral, wpp3p, wppGeneral, UNIQUE
+  campana+mes) — se descartó adaptar el cargador genérico a modo
+  mensual por ser más riesgoso que ~15 líneas de esquema dedicado.
+- **(c) Cómo se grafica**: con solo 2 meses, una línea de tendencia no se
+  lee — 2 gráficas de barras agrupadas por mes (3P vs. General), una para
+  Llamadas y otra para WhatsApp, más 2 tarjetas (total del mes +
+  variación vs. mes anterior cuando hay con qué comparar).
+- **(d) Porcentaje**: Edwin no definió el denominador — **no se
+  inventó**. Se muestra solo lo que no requiere inventar nada: el total
+  del mes, la variación mes a mes, y la participación 3P/General DENTRO
+  del total de salida de ese mismo mes. La pregunta del denominador (y si
+  "3P" significa lo mismo que en el resto de la plataforma) queda
+  abierta en `docs/pendientes.md`.
+
+### Parte 2 — Carga del archivo
+
+Backend: `server/salida.js` (reemplazo por MES, transaccional, mismo
+patrón que `efectividad-citas.js`), tabla en `server/db.js`,
+`server/routes/salida.js`, esquemas Zod en `server/validation.js`
+(enteros ≥0, rechaza mes futuro/duplicado/formato inválido), entrada en
+`admin-borrado-rango.js` (`TABLAS.salida`, consistencia con el resto,
+sin usarse esta fase). Frontend: `public/js/salida-logic.js` (parseo
+puro, 18 pruebas) con una capacidad nueva frente a Efectividad de
+Agendamiento/Citas: **`anioForzado`** — Edwin pidió explícitamente poder
+confirmar/corregir a qué año resuelve cada mes (esas 2 bases lo resuelven
+en silencio); `salidaTextoConfirmacionAnio()` arma el texto "AGOSTO →
+Agosto 2026" para el modal. `public/js/salida.js` (panel: 2 tarjetas + 2
+gráficas de barras agrupadas + tabla, tema claro/oscuro, responsive).
+Reconocimiento por encabezados (MES+LINEA 3P+LINEA GENERAL+WHATSAPP
+3P+WHATSAPP GENERAL), sin depender del nombre de hoja.
+
+**Hallazgo real con Playwright** (exactamente el motivo por el que esta
+fase exige probar en la página real, no solo pruebas unitarias): un
+archivo sintético con la forma EXACTA del real (header fila 3, 2 filas
+vacías antes, hoja "Hoja1") subido por la interfaz real daba "El archivo
+no tiene datos en ninguna hoja reconocida" — un archivo perfectamente
+válido. Causa: `_cargasBuscarHojaPorEncabezados` (cargas.js, optimización
+de la Fase 122) acotaba la lectura del encabezado a UN SOLO renglón — el
+PRIMERO del rango usado de la hoja (`ws['!ref']`) — asumiendo que ese
+renglón siempre es el encabezado. Cierto para el archivo real de la Fase
+122, falso aquí: el rango usado de la hoja arranca ANTES del encabezado
+real. Corregido: la lectura ahora decodifica los primeros 20 renglones
+del rango usado (`cargasLeerEncabezadoAcotado`, extraída a
+`cargas-logic.js` para poder probarla en Node, nunca el paquete npm
+`xlsx` — se usa el vendorizado de `public/js/vendor/`, requerible
+directamente en Node, confirmado), `blankrows:false` salta los renglones
+vacíos hasta encontrar el primero con contenido — mismo resultado que
+leer la hoja completa, acotado por tamaño. 5 pruebas nuevas en
+`cargas-logic.test.js` (reproduce el bug con `maxFilas=1`, lo corrige con
+`maxFilas=20`, confirma que da igual que leer la hoja completa, confirma
+que el caso común — encabezado en la primera fila — sigue igual, hoja
+sin `!ref` no revienta).
+
+**Verificación en la página real** (servidor AISLADO en `:3002`, base
+`seed:demo` recién sembrada en una copia aparte — nunca la base de
+desarrollo real ni datos reales de clientes; Playwright directo desde
+Node, nunca la extensión de Claude in Chrome): con el fix,
+- Archivo de forma exacta (2 meses, números sintéticos): el modal de
+  confirmación de año mostró el texto exacto esperado ("AGOSTO → Agosto
+  2026\nSEPTIEMBRE → Septiembre 2026"), el de impacto mostró "Se cargará
+  como Agosto 2026, Septiembre 2026...", guardado confirmado ("2 fila(s)
+  guardadas"), la pestaña "Salida" se destapó sola y dibujó las 2
+  tarjetas + 2 gráficas de barras con los datos correctos, **0 canvas en
+  blanco**, verificado en claro, oscuro (con el toggle REAL de tema,
+  `toggleTema()` — reasigna la paleta de Chart.js y vuelve a dibujar),
+  1366×768 y móvil (390×844, sin scroll horizontal).
+- Un nombre de hoja distinto de "Hoja1" ("DATOS"): reconocido igual por
+  encabezados (`reconocidaPorEncabezadosComo: "DATOS"`).
+- Un valor negativo en una fila: omitida con el aviso exacto esperado
+  ("LINEA 3P/LINEA GENERAL/WHATSAPP 3P/WHATSAPP GENERAL inválido..."),
+  el resto del archivo siguió cargando.
+
+**No reproducido en la página real** (solo cubierto por
+`salida-logic.test.js`, pruebas unitarias puras): mayúsculas/tildes
+variantes del nombre de mes, un solo mes, 3 meses, mes duplicado, celda
+vacía — por tiempo, se consideró que estos casos ejercitan exactamente la
+misma función de parseo (`salidaParseFilas`) que el camino feliz ya
+probó en el navegador real, y el riesgo que la Fase 122 identificó (fallas
+de SheetJS/DOM que las pruebas unitarias no ven) ya quedó cubierto por el
+hallazgo de arriba.
+
+Visibilidad: la pestaña "Salida" se destapa en memoria solo cuando
+`salidaOpciones(...).meses.length > 0` (mismo criterio que Efectividad de
+Citas/Inasistencia), nunca por decisión manual. Migración idempotente
+`dashboards_config_orlant_salida_panel_v1` (`server/db.js`) para
+instalaciones que ya tenían el tab sembrado con los paneles viejos —
+detecta la forma vieja reconocible, reemplaza por `salida_panel`, deja
+intacta cualquier personalización no reconocida; 4 pruebas (forma nueva
+igual a la config actual, no reposiciona el tab, nunca toca un cliente
+distinto de ORLANT, idempotente). Export (Excel): 2 hojas separadas
+(Llamadas/WhatsApp de Salida), sin celdas peligrosas (valores numéricos y
+nombres de mes, nada que empiece con `=+-@`).
+
+### Parte 3 — Antes de producción
+
+**Corrección previa, PR corto separado** (#322, pedido explícito del
+usuario antes de correr `revision-final.js` contra producción en la
+Parte 4): `veredictoSubvista()` (`scripts/produccion/revision-final.js`)
+guardaba el texto COMPLETO de cada panel (`host.innerText`) en el
+reporte, incluidas las listas de los desplegables de filtro
+AGENTE/ASESOR — nombres reales de asesores de ORLANT que nunca llegaron
+al repo pero sí a la consola de quien corrió el script (hallazgo de la
+Fase 126, Parte 7). Corregido: se clona el panel y se quitan los
+`<select>` antes de leer `innerText` — verificado directamente en
+Chromium headless que un nodo desconectado con los `<select>` removidos
+excluye el texto de sus `<option>` sin afectar la detección de mensajes
+"sin datos"/NaN.
+
+Pruebas: 18 (`salida-logic.test.js`) + 13 (`salida-carga.test.js`,
+incluida una con los totales de control reales de Edwin — 6.560/10.404
+llamadas, 3.382/3.997 WhatsApp — como control, con números sintéticos
+por fila) + 5 (`cargasLeerEncabezadoAcotado`, regresión del hallazgo de
+arriba) + 4 (migración) + actualización de 2 pruebas de "lista cerrada"
+(`mes-global-logic.test.js`, `dashboard-generic-export-fase85-lista-
+cerrada.test.js`) para incluir `salida_panel` — todas verdes al correrlas
+sueltas. `npm test` COMPLETO localmente no terminó en un tiempo razonable
+(mismo patrón de inestabilidad ya documentado en las Fases 124-126) — no
+investigado más a fondo, CI (Node 22) es la referencia real. `npm audit`
+(completo y `--omit=dev`): 0 vulnerabilidades.
+
+Versión `1.14.0` (funcionalidad nueva visible). `CHANGELOG.md`,
+`PROGRESS.md`, esta entrada, `docs/inventario-bases-orlant.md` (10
+bases), `docs/procedimiento-carga-mensual.md` (archivo mensual, header
+fila 3, confirmación de año), `docs/guia-uso-orlant.md` +
+`server/paginas/guia-uso.html` (8 pestañas), `CHECKLIST_VERIFICACION_
+EDWIN.md` (sin nombres de personas ni rutas internas), `docs/
+pendientes.md` ("Salida" ya no en "Esperando a Edwin" — queda la
+pregunta del denominador del % y de qué significa "3P" para esta base).
+
+### Parte 4 — Carga real en producción: PENDIENTE
+
+**No ejecutada todavía** — requiere la parada obligatoria (confirmar
+respaldo <24h, mostrar en el chat qué se va a cargar sin nombres de
+personas, y esperar el literal "OK cargar") y después la carga real por
+la interfaz con sesión del usuario, siguiendo el patrón de
+`carga-real-patron.js`. Queda para la continuación de esta fase.
+
+### Estado de la Fase 127 (Partes 1-3)
+
+Versión `1.14.0`. Rama `fase-127-salida-llamadas-wpp` (PR pendiente de
+abrir) + PR #322 (corrección de `revision-final.js`, independiente).
+Hallazgo real de esta fase: el buscador de encabezados por rango
+acotado (Fase 122) solo miraba el primer renglón del rango usado de la
+hoja — corregido y cubierto con pruebas de regresión. Producción NO
+tocada todavía — la Parte 4 (carga real) sigue pendiente del "OK cargar"
+explícito del usuario.

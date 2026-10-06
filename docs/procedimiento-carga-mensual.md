@@ -41,6 +41,7 @@ pestañas a medias:
 | 5 | Efectividad de Agendamiento | Agendamiento → Ranking de asesores |
 | 6 | Inasistencia | Inasistencia |
 | 7 | Efectividad de Citas Atendidas | Efectividad de Citas |
+| 8 | Salida (Llamadas y WhatsApp) | Salida |
 
 Todas se suben desde la misma pantalla: **"Cargar Datos"** (menú
 principal) → cliente **ORLANT** → descarga la **plantilla consolidada**
@@ -67,6 +68,14 @@ diálogo (por ejemplo, subiste el archivo equivocado, o un mes que no
 querías tocar), **cancela y revisa el archivo antes de confirmar** — en
 ese punto todavía no se ha guardado nada.
 
+**Salida de llamadas y WhatsApp — confirmación del año**: el archivo de
+Salida (como el de Efectividad de Agendamiento y Efectividad de Citas)
+trae el mes en texto, sin año (ej. "AGOSTO"). Antes del diálogo de la
+sección anterior, Salida muestra un diálogo aparte con a qué año resolvió
+cada mes (ej. "AGOSTO → Agosto 2026") y pregunta si es correcto — **si
+no lo es, cancela ese diálogo y la plataforma pide el año correcto para
+volver a intentarlo**, nunca lo adivina en silencio.
+
 ## 4. Qué verificar después de cargar
 
 Después de confirmar, compara los números que muestra el dashboard contra
@@ -78,8 +87,9 @@ cambie de valor — si eso pasa, para y avisa, no sigas cargando.
 
 También puedes correr, desde una sesión de Claude Code en este repo,
 `scripts/produccion/revision-final.js` — abre un navegador, pide que
-inicies sesión a mano, y confirma solo-lectura que las 7 pestañas cargan
-sin errores, Exportar funciona y los números de control coinciden.
+inicies sesión a mano, y confirma solo-lectura que las pestañas con
+datos cargan sin errores, Exportar funciona y los números de control
+coinciden.
 
 ## 5. Si algo salió mal: cómo volver atrás
 
@@ -123,6 +133,7 @@ cada archivo a mano antes de subirlo.
   se guarda nada.
 - Volver a subir exactamente el mismo archivo no duplica nada.
 
-(Las 7 bases tienen pruebas automáticas permanentes que confirman todo
-esto cada vez que se cambia el código — `server/tests/fase119-cargas-
-multi-mes.test.js`.)
+(Las bases de esta tabla tienen pruebas automáticas permanentes que
+confirman todo esto cada vez que se cambia el código —
+`server/tests/fase119-cargas-multi-mes.test.js` y, para Salida,
+`server/tests/salida-carga.test.js`.)

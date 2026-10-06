@@ -55,7 +55,7 @@ test('GD_EXPORT_TIPOS_SOPORTADOS cubre exactamente los tipos de panel de ORLANT 
     assert.ok(soportados.has(t), `ORLANT usa el tipo de panel "${t}" y no esta soportado por el exportador`);
   }
   // Las pestanas autonomas de ORLANT (Fases 77-78-98) deben estar cubiertas.
-  for (const esperado of ['tipificacion_panel', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'calidad_kpis', 'trafico_combo', 'trafico_whatsapp_combo']) {
+  for (const esperado of ['tipificacion_panel', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'salida_panel', 'calidad_kpis', 'trafico_combo', 'trafico_whatsapp_combo']) {
     assert.ok(tiposOrlant.has(esperado), `este test asumia que ORLANT usa "${esperado}" -- revisar si el layout de ORLANT cambio`);
   }
 });

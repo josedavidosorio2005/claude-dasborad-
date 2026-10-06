@@ -45,7 +45,7 @@
   <div class="wrap">
     <h1>Guía de uso — InConexión Platform (ORLANT)</h1>
     <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
-    <span class="version-pill">Versión de la plataforma: 1.13.3</span>
+    <span class="version-pill">Versión de la plataforma: 1.14.0</span>
     <p style="margin:8px 0 0;font-size:0.82rem;opacity:0.95">Desde octubre de 2026, la plataforma solo tiene datos oficiales de <strong>agosto y septiembre de 2026</strong> (más julio de Tipificación de WhatsApp, real). Los datos de meses anteriores que venían en las plantillas de prueba ya se quitaron.</p>
   </div>
 </header>
@@ -82,7 +82,7 @@
   <li>El interruptor de <strong>tema oscuro/claro</strong> (en el menú de tu usuario, arriba a la derecha) — cambia el color de toda la plataforma, no afecta los datos.</li>
 </ul>
 
-<h3>Las 7 pestañas</h3>
+<h3>Las 8 pestañas</h3>
 <table>
   <tr><th>Pestaña</th><th>Qué muestra</th></tr>
   <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
@@ -91,6 +91,7 @@
   <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Efectividad de Citas</strong></td><td>El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto).</td></tr>
+  <tr><td><strong>Salida</strong></td><td>Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General) — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Calidad</strong></td><td>Monitoreo de calidad de los asesores, con su nota y resultados.</td></tr>
 </table>
 <p>Cada pestaña que tiene varias vistas las muestra como <strong>sub-pestañas</strong> justo debajo del nombre de la pestaña principal — haz clic para cambiar entre ellas, sin perder el mes ni los filtros que ya elegiste.</p>
@@ -130,6 +131,10 @@
 <div class="card">
 <h3>Efectividad de Citas</h3>
 <p>El % de <strong>EFECTIVIDAD = citas atendidas ÷ agendas</strong>, un total del mes (no por especialidad ni asesor). Muestra 2 tarjetas: el % del mes elegido arriba, y el % <strong>ponderado</strong> de todo el período que tiene datos cargados (suma de atendidas ÷ suma de agendas de esos meses — nunca el promedio simple de los % de cada mes), con el rango de meses en su etiqueta. Hoy esta pestaña tiene Agosto y Septiembre 2026 — igual que el resto de la plataforma, solo los meses oficiales.</p>
+</div>
+<div class="card">
+<h3>Salida</h3>
+<p>El total del mes de llamadas y WhatsApp de <strong>salida</strong> (que la campaña hace hacia afuera, no las que recibe), separado por línea 3P y Línea General. Muestra 2 tarjetas (total de llamadas y total de WhatsApp del mes elegido, con la variación contra el mes anterior cuando hay con qué comparar) y 2 gráficas de barras (una para llamadas, otra para WhatsApp) — con pocos meses de historia, una gráfica de barras por mes se lee mejor que una línea de tendencia. La tabla de abajo también muestra qué porcentaje de cada mes fue 3P vs. Línea General (participación DENTRO de ese mismo mes — no hay todavía un indicador de salida contra el total de gestión).</p>
 </div>
 <div class="card">
 <h3>Tipificación</h3>
@@ -210,6 +215,14 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <strong>Reemplazo</strong>: por MES — si el archivo trae Enero, Febrero y Marzo, se reemplazan esos 3 meses completos.</p>
 </div>
 <div class="card">
+<h3>Salida (Llamadas y WhatsApp)</h3>
+<p><strong>Qué archivo</strong>: el consolidado mensual de llamadas y WhatsApp de SALIDA de Edwin — un total del mes, no una fila por llamada/chat.<br>
+<strong>Hoja</strong>: cualquier nombre (la plataforma la reconoce por sus columnas) — el archivo real de Edwin trae una sola hoja llamada "Hoja1", con el encabezado en la fila 3 (2 filas vacías antes).<br>
+<strong>Columnas obligatorias</strong>: MES, LINEA 3P, LINEA GENERAL, WHATSAPP 3P, WHATSAPP GENERAL.<br>
+<strong>El mes no trae año</strong> (igual que Efectividad de Agendamiento/Citas): antes de guardar, la plataforma muestra a qué año resolvió cada mes (ej. "AGOSTO → Agosto 2026") y pregunta si es correcto — si no lo es, pide el año correcto y vuelve a intentarlo. Nunca lo adivina en silencio.<br>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.</p>
+</div>
+<div class="card">
 <h3>Calidad</h3>
 <p>La carga normal es <strong>un monitoreo a la vez</strong>, desde el formulario (ver <a href="#s6">sección 6</a>) — no es una carga de archivo mensual como las demás bases. También existe una <strong>carga masiva</strong> desde Excel (3 hojas: "Monitoreos" para diligenciar, "Diccionario" con la lista de preguntas de referencia, "Resumen por Asesor" de consulta) para cuando hay muchos monitoreos para subir de una vez.</p>
 </div>
@@ -224,6 +237,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
   <tr><td>Efectividad de Agendamiento</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Inasistencia</td><td>Edwin</td><td>Sistema de agendamiento ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Efectividad de Citas Atendidas</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
+  <tr><td>Salida (Llamadas y WhatsApp)</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Calidad</td><td>El equipo de Calidad</td><td>Monitoreos propios</td><td>Continuo, a medida que se hacen</td></tr>
 </table>
 <p><em>(Las filas en negrita son las que todavía no tienen una frecuencia confirmada — quedan pendientes de que Edwin la precise; el resto ya se confirmó con él.)</em></p>
@@ -252,14 +266,14 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p>Esto no es un problema de la plataforma — son datos que todavía faltan por llegar:</p>
 <ul>
   <li><strong>Nivel de servicio de WhatsApp a 5 minutos</strong>: falta que el reporte de Wolkvox traiga esa columna.</li>
-  <li><strong>Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual, Salida, Gestión STA</strong>: las pantallas ya están construidas, quedan ocultas hasta que llegue el archivo real de cada una. La de "Salida" (llamadas/WhatsApp salientes) está en estudio — Edwin va a mandar una base nueva para eso.</li>
+  <li><strong>Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual, Gestión STA</strong>: las pantallas ya están construidas, quedan ocultas hasta que llegue el archivo real de cada una.</li>
 </ul>
 
 <h2 id="s9">9. A quién escribir si algo falla</h2>
 <p>Jose David Osorio — (completar).</p>
 
 <a class="back-link" href="/">&larr; Volver a la plataforma</a>
-<footer>InConexión Platform — Guía de uso — versión 1.13.3</footer>
+<footer>InConexión Platform — Guía de uso — versión 1.14.0</footer>
 </div>
 </body>
 </html>

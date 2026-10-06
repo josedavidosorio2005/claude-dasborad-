@@ -194,6 +194,8 @@ declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resum
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');
 declarar(['POST /calidad/efectividad-citas/carga/impacto', 'POST /calidad/efectividad-citas/carga'], 'cargaManual');
+declarar(['GET /calidad/salida/opciones', 'GET /calidad/salida/mensual'], 'scopedRead');
+declarar(['POST /calidad/salida/carga/impacto', 'POST /calidad/salida/carga'], 'cargaManual');
 
 // Umbrales
 declarar(['GET /umbrales'], 'open');

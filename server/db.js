@@ -403,6 +403,30 @@ CREATE TABLE IF NOT EXISTS efectividad_citas (
 );
 CREATE INDEX IF NOT EXISTS idx_efectividad_citas_campana_mes ON efectividad_citas(campana, mes);
 
+-- Llamadas y WhatsApp de Salida (Fase 127, pedido de Edwin: "las llamadas
+-- de salida estan muy bajas"). Un total AGREGADO por mes, ya separado por
+-- linea (3P/General) y canal -- nunca una fila por llamada/chat (el
+-- archivo real de Edwin, FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx,
+-- solo trae 1 fila por mes). Mismo patron EXACTO que efectividad_citas
+-- (reemplazo por MES). El archivo nunca trae año -- 'mes' SIEMPRE llega
+-- ya resuelto a 'AAAA-MM' desde el navegador (el usuario confirma el año
+-- en el modal de impacto antes de guardar, ver public/js/salida-logic.js
+-- y server/routes/salida.js); el servidor nunca adivina un año.
+CREATE TABLE IF NOT EXISTS salida_mensual (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  mes TEXT NOT NULL,                 -- 'AAAA-MM'
+  llamadas3p INTEGER NOT NULL,
+  llamadasGeneral INTEGER NOT NULL,
+  wpp3p INTEGER NOT NULL,
+  wppGeneral INTEGER NOT NULL,
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  UNIQUE(campana, mes)
+);
+CREATE INDEX IF NOT EXISTS idx_salida_mensual_campana_mes ON salida_mensual(campana, mes);
+
 -- Alias de nombre de asesor (Fase 122, reunion con Edwin 2026-10-05): la
 -- misma persona real puede llegar con mas de un nombre entre archivos (ej.
 -- "LAURA EJEMPLO TORRES" en Efectividad de Agendamiento == "MARCELA
@@ -2707,6 +2731,65 @@ runOnceMigration('dashboards_config_orlant_whatsapp_sin_sl5min_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_whatsapp_sin_sl5min_v1 aplicada.');
+  }
+});
+
+// "Salida" de ORLANT (Fase 127, pedido textual de Edwin: "las llamadas de
+// salida estan muy bajas, hay que revisarlo"): el tab ya estaba sembrado
+// (oculto) desde el PDF de InCo (2026-09-18) con 2 paneles `line`/
+// filtroSerie leyendo dashboard_cargas generico POR DIA -- el archivo real
+// de Edwin es MENSUAL, nunca tuvo datos reales. Pasa a un unico panel
+// dedicado (`salida_panel`, tabla nueva `salida_mensual`, server/salida.js).
+// Mismo patron de deteccion de "forma vieja reconocible" que
+// dashboards_config_orlant_efectividad_citas_v1 (arriba): si no calza
+// EXACTO, se deja intacta y solo se loguea (podria ser una personalizacion).
+// Sin reposicionamiento de tab (a diferencia de esa migracion) -- "Salida"
+// se queda donde ya estaba en el orden de ORLANT.
+runOnceMigration('dashboards_config_orlant_salida_panel_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetSalida = (target.layout.tabs || []).find((t) => t.key === 'salida');
+  if (!targetSalida) return;
+
+  const tabs = layout.tabs || [];
+  const tabSalida = tabs.find((t) => t && t.key === 'salida');
+  if (!tabSalida) return; // no deberia pasar (el seed siempre lo trae oculto) -- nada que migrar
+
+  const panelesViejos = tabSalida.panels || [];
+  const yaEsNuevo = panelesViejos.length === 1 && panelesViejos[0] && panelesViejos[0].tipo === 'salida_panel';
+  const esViejoReconocible = panelesViejos.length === 2 &&
+    panelesViejos[0] && panelesViejos[0].tipo === 'line' && panelesViejos[0].filtroSerie === true && panelesViejos[0].titulo === 'Llamadas de salida' &&
+    panelesViejos[1] && panelesViejos[1].tipo === 'line' && panelesViejos[1].filtroSerie === true && panelesViejos[1].titulo === 'WhatsApp de salida';
+
+  if (yaEsNuevo) return; // ya tenia la forma nueva -- nada que hacer
+
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_salida_panel_v1: el tab "salida" no coincide con la forma esperada (vieja ni nueva) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  tabSalida.label = targetSalida.label;
+  tabSalida.panels = JSON.parse(JSON.stringify(targetSalida.panels));
+  delete tabSalida.subtabs;
+  layout.tabs = tabs;
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_salida_panel_v1 aplicada.');
   }
 });
 

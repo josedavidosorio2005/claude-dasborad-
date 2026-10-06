@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.13.3` (ver `server/package.json`, expuesta en
+- **Versión**: `1.14.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -27,6 +27,10 @@ narrativo de cada fase, fase por fase, vive en
   Efectividad de Agendamiento, Efectividad de Citas) + Calidad transversal
   — detalle completo (hoja, columnas, de dónde sale, qué pestaña
   alimenta) en [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
+  **Fase 127**: 8va pestaña, "Salida" (llamadas y WhatsApp de salida,
+  3P/General por mes) — construida y verificada con datos sintéticos;
+  la carga del archivo real de Edwin en producción queda sujeta a la
+  parada obligatoria de esa fase (ver `docs/historico/progress-fases.md`).
   Pestañas ocultas esperando datos de Edwin: ver
   [`docs/pendientes.md`](docs/pendientes.md).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline) en
@@ -207,4 +211,5 @@ mismo orden):
 - Fase 124 — Revisión de errores y bugs probando la página real en producción (lo que la Fase 122 dejó sin cubrir: tema oscuro, 1920×1080, móvil, efecto real del alias, mes parcial de julio) + 1 vulnerabilidad crítica de npm audit corregida + 1 función muerta borrada + reorganización completa de la documentación (`docs/pendientes.md` en 5 secciones, `docs/README.md`, `docs/plantillas-inventario.md` nuevos) (2026-10-06)
 - Fase 125 — Cierre de lo que la Fase 124 dejó sin hacer: corrección del margen de tamaño de carga (era por archivo, no acumulado) + aviso de carga demasiado grande antes de enviar + guía de uso y checklist de Edwin al día + XSS/exports/eje secundario del combo probados de verdad con Playwright contra la página real, no solo lectura de código (2026-10-06)
 - Fase 126 — Pedido de Edwin: borrado de todos los meses de prueba de producción (Inasistencia Ene-Jul/2026, Efectividad de Citas Ene-Mar/2026, Agendas Abril/2025), con un endpoint nuevo de solo administrador (dry-run + conteo exacto obligatorio) construido para la ocasión; retiro del aviso de Nivel de Servicio a 5 minutos de WhatsApp y redacción simplificada del aviso de mes incompleto en Inasistencia; propuesta (sin programar) de un indicador de llamadas de salida (2026-10-06)
+- Fase 127 — Indicador de Llamadas y WhatsApp de SALIDA (archivo mensual de Edwin): nueva pestaña "Salida" (tabla propia `salida_mensual`, confirmación explícita del año del mes antes de guardar, nunca en silencio); hallazgo real con Playwright contra un archivo sintético de la forma exacta del real (encabezado en la fila 3, 2 filas vacías antes) -- un archivo válido no se reconocía porque el buscador de encabezados por rango acotado solo miraba el primer renglón del rango usado de la hoja, corregido y cubierto con pruebas; carga real en producción sujeta a parada obligatoria y al "OK cargar" explícito del usuario (2026-10-06)
 

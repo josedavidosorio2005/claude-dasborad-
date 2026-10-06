@@ -57,9 +57,11 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 ## 2. Esperando a Edwin (datos/decisiones)
 
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
-  Salida, Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya
-  construidas, ocultas esperando el archivo real). Anotado en fases
-  anteriores (ver `docs/inventario-bases-orlant.md`).
+  Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya construidas,
+  ocultas esperando el archivo real). Anotado en fases anteriores (ver
+  `docs/inventario-bases-orlant.md`). "Salida" ya no está en esta lista
+  — tiene base propia desde la Fase 127 (ver preguntas abiertas más
+  abajo).
 - **Pregunta a Edwin: efectividad de agendamiento > 100%** — dueño:
   Edwin. Prioridad MEDIA. Varios asesores quedan por encima de 100% en
   los archivos reales de ago-sep/2026 (confirmado de nuevo en la Fase
@@ -93,40 +95,28 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   arriba (Fase 126): retirado de pantalla (`mostrarSL5min:false`), el
   cálculo sigue en el código. Si Wolkvox manda `SERVICE_LEVEL_5MIN`,
   reactivarlo es `mostrarSL5min:true` en `PUT /dashboards/config/ORLANT`.
-- **Propuesta — indicador de llamadas de salida** (Fase 126, pedido de
-  Edwin reunión 2026-10-06; **SOLO propuesta, pendiente de la base de
-  Edwin** — no se programa nada todavía):
-  - (a) **Dónde encajaría**: una sub-pestaña nueva en Tráfico de
-    Llamadas, junto a Resumen/Abandono/AHT/ASA y ATA/SL 20s — un gráfico
-    simple de mes + cantidad (barra o línea), con % si aplica (salida ÷
-    total gestionado, o salida ÷ entrada — ver pregunta en (d)). Ya existe
-    un tab "Salida" sembrado y oculto en `dashboard-config-seed.js`
-    (líneas ~233-245) del sistema VIEJO de "Gestión de base" — sirve de
-    referencia de intención, pero no de base técnica (ver (c)).
-  - (b) **Columnas de Wolkvox**: lo mínimo sería fecha + skill/línea +
-    cantidad de llamadas de salida (y contestadas, si aplica "nivel de
-    atención" de salida). PII que nunca se leería: cualquier número de
-    teléfono, nombre de paciente/cliente llamado, o resultado/nota de la
-    llamada — igual que Tráfico de Llamadas de entrada hoy, que solo lee
-    agregados por skill/día. Dato curioso ya en el sistema: Tipificación
-    de Llamadas YA tiene un skill llamado "LINEA DE SALIDA" (6.560
-    interacciones en ago-26, 10.404 en sep-26) — no se sabe si es la
-    misma línea que Edwin quiere medir en volumen, o solo coincidencia de
-    nombre (pregunta para él).
-  - (c) **Cargador actual vs. base nueva**: el cargador de Tráfico de
-    Llamadas (`calidad_nivel_servicio_diario`, una fila por skill/día)
-    podría absorberlo SI Wolkvox reporta la línea de salida como un
-    "skill" más en el mismo export diario (igual que distingue 3P/General/
-    Régimen Especiales hoy) — sería el camino más simple, sin tabla
-    nueva. Si en cambio viene en un archivo/formato distinto, hace falta
-    una tabla propia (mismo patrón que Agendas/Inasistencia).
-  - (d) **Preguntas para Edwin**: ¿qué cuenta como "llamada de salida"
-    (cualquier marcación saliente, o solo las que conectan)? ¿el % se
-    saca contra el total de gestiones de ese asesor/día, o contra las
-    llamadas de entrada del mismo período? ¿se necesita por skill/línea
-    separado (3P vs. General) o un total única? ¿viene en el mismo
-    export diario de Wolkvox que Llamadas de entrada, o en un archivo
-    aparte?
+- **Indicador de llamadas y WhatsApp de Salida — construido en la Fase
+  127** (pedido textual de Edwin: "las llamadas de salida están muy
+  bajas, hay que revisarlo"; archivo recibido
+  `FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx`). Ya no es una propuesta:
+  nueva pestaña "Salida" (tabla propia `salida_mensual`), cargador con
+  confirmación explícita del año del mes antes de guardar. Verificado
+  "LINEA DE SALIDA" de Tipificación de Llamadas: los totales mensuales
+  del archivo de Edwin coinciden EXACTO con ese skill (6.560 en ago-26,
+  10.404 en sep-26) — confirmado como la misma línea. Preguntas que
+  Edwin no definió y la plataforma **no inventó**:
+  - **Denominador del %**: Edwin pidió "un indicador simple, el mes y la
+    cantidad, con porcentaje si aplica" pero nunca dijo contra qué
+    denominador (¿salida ÷ gestión total del asesor/día? ¿salida ÷
+    llamadas de entrada del mismo período?). Hoy la plataforma muestra
+    solo lo que no requiere inventar un denominador: el total del mes,
+    la variación contra el mes anterior, y la participación de 3P/General
+    DENTRO del total de salida de ese mismo mes. Falta la respuesta de
+    Edwin para agregar un % contra otra base.
+  - **Qué significa "3P"**: se asume el mismo significado que en el
+    resto de la plataforma (Línea 3P vs. Línea General, igual que
+    Tráfico/Agendas), pero nunca se confirmó explícitamente para Salida
+    — preguntar a Edwin si aplica el mismo criterio.
 
 ## 3. Esperando decisión de InCo
 

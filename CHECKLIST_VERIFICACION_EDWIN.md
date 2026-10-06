@@ -5,7 +5,7 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://informa.inconexion.com.co** — versión **1.13.3**.
+Plataforma: **https://informa.inconexion.com.co** — versión **1.14.0**.
 
 > Desde la Fase 126, la plataforma solo tiene datos oficiales de
 > **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
@@ -15,9 +15,9 @@ Plataforma: **https://informa.inconexion.com.co** — versión **1.13.3**.
 ## 1. Entrar y ver el dashboard
 
 - [ ] Puedo entrar con mi usuario y contraseña.
-- [ ] Al entrar veo el dashboard de **ORLANT** con las **7 pestañas**:
+- [ ] Al entrar veo el dashboard de **ORLANT** con las **8 pestañas**:
       Tráfico de Llamadas, Tráfico de WhatsApp, Agendamiento, Inasistencia,
-      Efectividad de Citas, Tipificación, Calidad.
+      Efectividad de Citas, Tipificación, Salida, Calidad.
 - [ ] El botón de **pantalla completa** agranda el dashboard y lo
       achica de vuelta.
 - [ ] Puedo cambiar entre **tema claro y oscuro**.
@@ -80,6 +80,18 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       de servicio a 5 minutos" ni a "aún no hay datos para este
       período" — el Nivel de Servicio a 20 segundos es el único que se
       muestra (el de 5 minutos vuelve solo cuando Wolkvox lo entregue).
+
+## 4.2 Salida (Llamadas y WhatsApp)
+
+- [ ] Veo una pestaña **"Salida"** con 2 tarjetas (total de llamadas y
+      total de WhatsApp de salida del mes elegido) y 2 gráficas de
+      barras (Llamadas, WhatsApp), con Línea 3P y Línea General por mes.
+- [ ] Al subir el archivo mensual de Salida, antes de guardar la
+      plataforma me pregunta si el año que infirió para cada mes es
+      correcto (ej. "AGOSTO → Agosto 2026") — si no lo es, puedo
+      corregirlo ahí mismo, nunca se adivina en silencio.
+- [ ] Los números que veo en pantalla coinciden con los del archivo que
+      subí.
 
 ## 5. Carga de un archivo de prueba
 

@@ -16,7 +16,7 @@
 // tipo de panel autonomo nuevo y se olvida agregarlo aqui, "Comparar
 // contra" quedaria visible donde no aplica -- ver la prueba de lista
 // cerrada en mes-global-logic.test.js.
-var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'calidad_kpis', 'calidad_pie'];
+var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie'];
 
 // true si TODOS los paneles visibles (de la pestana o sub-pestana activa)
 // son de tipo autonomo -- en ese caso "Comparar contra" se esconde y se

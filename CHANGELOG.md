@@ -4,6 +4,26 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.14.0 — Octubre 2026
+
+**Fase 127: nuevo indicador de Llamadas y WhatsApp de Salida — pedido
+textual de Edwin ("las llamadas de salida están muy bajas, hay que
+revisarlo").**
+
+- Nueva pestaña **"Salida"** en el dashboard de ORLANT: muestra, mes a
+  mes, el total de llamadas y de WhatsApp de salida (3P y Línea
+  General), con la variación contra el mes anterior cuando hay con qué
+  compararla. Solo aparece cuando ya hay datos cargados.
+- Se puede cargar el archivo mensual de Salida desde "Cargar Datos"
+  (mismo lugar de siempre). Como el mes del archivo no trae año, la
+  plataforma **muestra y pide confirmar** a qué año corresponde cada
+  mes antes de guardar — nunca lo adivina en silencio, y se puede
+  corregir si hace falta.
+- Corrección interna: un archivo válido con el encabezado más abajo de
+  la primera fila de la hoja (como el de Salida) podía no reconocerse
+  ("El archivo no tiene datos en ninguna hoja reconocida") — ya se
+  corrigió y quedó cubierto con pruebas para que no vuelva a pasar.
+
 ## v1.13.3 — Octubre 2026
 
 **Fase 126: solo quedan los datos oficiales de agosto y septiembre 2026
