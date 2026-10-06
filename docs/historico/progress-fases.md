@@ -11470,3 +11470,75 @@ urgentes de la Parte 2), más este PR de cierre. `npm audit`: 0
 vulnerabilidades (sin cambios de dependencias). Esta fase trae función
 nueva (alias de asesor) y un cambio visual (nombre del mes) → sube de
 versión MENOR: v1.12.0 → v1.13.0.
+
+## Fase 123 — Re-carga de TIPIFICACIONES.xlsx para consolidar el alias "_falla" (2026-10-06)
+
+Cierra el único pendiente que dejó abierto la Parte 2 de la Fase 122: la
+re-carga de `TIPIFICACIONES.xlsx` (mismo archivo real de Tipificación de
+Llamadas/HistCDR ya en producción) para que el alias de nombre de asesor
+registrado en la Fase 122 se aplique también a las filas ya guardadas con
+la variante "_falla". No se tocó código ni dependencias — solo datos, por
+eso no hay cambio de versión ni entrada en `CHANGELOG.md`.
+
+El usuario adjuntó en el chat 5 archivos reales de Descargas pidiendo
+"subí los datos, evitá duplicados, que quede funcional en producción".
+Antes de tocar producción, cada archivo se corrió en LOCAL (`seed:demo`)
+contra la misma lógica de reconocimiento por encabezados que usa la
+plataforma (`public/js/cargas-logic.js`, vía el modal real "Cargar Datos
+de Dashboards" con Playwright, sin guardar nada) para identificar qué
+era cada uno sin adivinar:
+
+| Archivo | Se reconoció como | Filas | Conclusión |
+|---|---|---|---|
+| EFECTIVIDAD EN AGENDAMIENTO AGOSTO.xlsx | Efectividad de Agendamiento, Ago-26 | 19 | Ya coincide con lo cargado en la Fase 122 — se omitió (decisión del usuario) |
+| EFECTIVIDAD EN AGENDAMIENTO SEPTIEMBRE.xlsx | Efectividad de Agendamiento, Sep-26 | 20 | No se pidió explícitamente — se omitió |
+| **TIPIFICACIONES.xlsx** | Tipificación de Llamadas (HistCDR) | 34.661 | Coincide exacto con el pendiente de la Fase 122 → **se subió** |
+| LLAMADAS PARA PLATAFORMA (2).xlsx | Tráfico de Llamadas | 150 | Ya coincide con lo cargado — se omitió (decisión del usuario) |
+| WPP PARA LA PLATAFORMA (1).xlsx | Tráfico de WhatsApp | 258 | Ya coincide con lo cargado — se omitió (decisión del usuario) |
+| WPP PARA LA PLATAFORMA.xlsx (sin número) | Tráfico de WhatsApp | 135 | NO coincide con las 258 ya cargadas (versión vieja/parcial) — se dejó explícitamente SIN subir, a pedido del usuario, para no pisar datos correctos con una versión incompleta |
+
+Solo `TIPIFICACIONES.xlsx` se subió, con autorización explícita del
+usuario en el chat para ese archivo puntual.
+
+### Carga real (con sesión real del usuario, producción)
+
+`scripts/produccion/fase122-recarga-tipificacion-alias-falla.js` (patrón
+de `scripts/produccion/carga-real-patron.js`: Playwright directo desde
+Node, headless:false, el usuario inicia sesión a mano en
+`https://informa.inconexion.com.co`, el script nunca ve la contraseña).
+Antes de la carga real se ensayó el mismo flujo completo (subir, guardar,
+verificar) contra LOCAL con `seed:demo` para confirmar que los selectores
+y la lógica de guardado funcionan — en local no hay alias registrados
+para ORLANT, así que ese ensayo no podía demostrar la consolidación en sí,
+solo la mecánica del flujo.
+
+Resultado real contra producción, verificado por API antes/después
+(mismo patrón que la Fase 111/122 — nunca el listado completo de
+nombres, solo conteos):
+
+- **Antes**: 34.661 filas, 1 asesor con la variante "_falla" (23 nombres
+  de asesor distintos para el canal LLAMADAS).
+- **Diálogo de confirmación real** (replace-by-range, antes de guardar):
+  "Esta carga va a REEMPLAZAR 34661 registro(s) de tipificacion de
+  Llamadas ya cargados, del 01/08 al 30/09. 494 fila(s) con 1 nombre(s)
+  de asesor distinto(s) se van a unificar por alias."
+- **Después**: 34.661 filas (idéntico — reemplazo por rango de fecha,
+  sin duplicados), **0 asesores con la variante "_falla"** (22 nombres
+  distintos), 0 errores de consola.
+
+Dos intentos previos de correr este mismo script directamente desde la
+sesión de Claude Code (sin terminal propia del usuario) agotaron el
+timeout de 10 minutos esperando el login — esa sesión no tiene pantalla
+real visible para el usuario. El 3er intento, corrido igual desde la
+sesión (a pedido explícito del usuario tras preguntarle), sí detectó el
+login y completó todo el flujo — se deja como dato para la próxima vez
+que haga falta una carga real: si el login no se detecta en los primeros
+minutos, preguntar si conviene que el usuario lo corra desde su propia
+terminal en vez de reintentar a ciegas.
+
+### Verificación
+
+`docs/pendientes.md` actualizado (pendiente marcado como hecho). Sin PR
+de código — solo este PR de documentación + el script nuevo en
+`scripts/produccion/` (ambos exigen rama + PR + CI verde igual que
+cualquier cambio, por la regla de "nada de commits directos a `main`").

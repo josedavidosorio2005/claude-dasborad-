@@ -22,13 +22,15 @@ punto, si existe, está en `docs/historico/progress-fases.md`.
   Fase 122 cargó Agendas y Efectividad de Agendamiento, pero el archivo
   de Citas Atendidas/Efectividad de Citas de ago-sep todavía no ha
   llegado de Edwin. Producción sigue solo con Ene-Mar/2026. Pedírselo.
-- **Re-carga del archivo de voz para consolidar el alias "_falla"**: la
-  Parte 2 de la Fase 122 registró el alias correspondiente, pero la
-  re-carga de `TIPIFICACIONES.xlsx` (mismo archivo ya en producción, para
-  que el alias se aplique a esas 494 filas ya guardadas) quedó sin hacer
-  — no se recibió la confirmación expresa del usuario en el chat para
-  ese paso puntual. Resultado esperado al hacerla: sigue en 34.661 filas,
-  0 filas con esa variante.
+- ~~**Re-carga del archivo de voz para consolidar el alias "_falla"**~~ —
+  **hecho** (2026-10-06, autorizado explícitamente en el chat): re-carga
+  de `TIPIFICACIONES.xlsx` por la interfaz normal de "Cargar Datos de
+  Dashboards" en producción
+  (`scripts/produccion/fase122-recarga-tipificacion-alias-falla.js`).
+  Confirmado antes/después por API: 34.661 filas antes y después (sin
+  duplicar ni perder nada), 494 filas con 1 variante de nombre de asesor
+  unificadas por el alias (23 → 22 nombres distintos), 0 asesores con la
+  variante "_falla" restante, 0 errores de consola.
 - **Verificación visual completa pendiente** (no alcanzó tras resolver 3
   hallazgos reales en producción, Parte 2 — ver
   `docs/historico/progress-fases.md` → Fase 122): tema oscuro; viewports
