@@ -46,7 +46,14 @@ const ESPERADO = {
   wppTotal: 7390 + 7968, wppContestados: 7370 + 7953, wppPendientes: 20 + 15, wppSl20: null, // SL20 varia por mes, no se suma
   agendasTotal: 7426, agendasGeneral: 4643, agendas3p: 2783,
   inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 6.87,
-  rankingEquipoGestiones: 18566, rankingEquipoAgendas: 8319, rankingEquipoEfectividadPct: 44.81,
+  // Fase 125: estaban en 18566/8319/44.81 -- numeros PRELIMINARES de
+  // Sep-26 (antes de la Fase 122), nunca actualizados cuando esa fase
+  // reemplazo Efectividad de Agendamiento con el archivo real
+  // ago-sep/2026 (Sep-26 real: 13.146 agendas / 32.868 gestiones =
+  // 40.00%, ver PROGRESS.md "Numeros de control"). Esta rama del script
+  // consulta mes=2026-09 (linea 377 de este archivo), por eso el valor
+  // correcto es el de Sep-26 solo, no el acumulado ago+sep.
+  rankingEquipoGestiones: 32868, rankingEquipoAgendas: 13146, rankingEquipoEfectividadPct: 40.00,
   efectividadCitasPeriodoAgendas: 1108, efectividadCitasPeriodoAtendidas: 953,
 };
 
