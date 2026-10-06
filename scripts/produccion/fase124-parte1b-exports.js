@@ -43,6 +43,35 @@ async function esperarLogin(page) {
   return false;
 }
 
+function instalarListeners(page, erroresConsola, peticionesFallidas) {
+  page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
+  page.on('requestfailed', (req) => peticionesFallidas.push('requestfailed: ' + req.url()));
+  page.on('response', (res) => { if (res.status() >= 400 && !/\/api\/auth\/login$/.test(res.url())) peticionesFallidas.push('http ' + res.status() + ': ' + res.url()); });
+}
+
+async function canvasesSinDibujar(page) {
+  return page.evaluate(() => {
+    const out = [];
+    const host = document.getElementById('gd-panels');
+    if (!host) return out;
+    if (/Sin datos de/.test(host.innerText)) return out;
+    host.querySelectorAll('canvas').forEach((c) => {
+      const rect = c.getBoundingClientRect();
+      const style = getComputedStyle(c);
+      if (style.display === 'none' || style.visibility === 'hidden') return;
+      if (rect.width < 5 || rect.height < 5) { out.push({ id: c.id || '(sin id)', motivo: 'tamano-cero' }); return; }
+      let ctx; try { ctx = c.getContext('2d'); } catch (e) { return; }
+      if (!ctx) return;
+      let data; try { data = ctx.getImageData(0, 0, c.width, c.height).data; } catch (e) { return; }
+      let tienePixel = false;
+      for (let i = 3; i < data.length; i += 4) { if (data[i] !== 0) { tienePixel = true; break; } }
+      if (!tienePixel) out.push({ id: c.id || '(sin id)', motivo: 'sin-pixeles' });
+    });
+    return out;
+  });
+}
+
 function analizarExport(rutaArchivo) {
   const wb = XLSX.readFile(rutaArchivo);
   const hojas = {};
@@ -71,6 +100,9 @@ function analizarExport(rutaArchivo) {
     browser = await chromium.launch({ headless: false, downloadsPath: DESCARGAS_DIR });
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
     const page = await context.newPage();
+    const erroresConsola = [];
+    const peticionesFallidas = [];
+    instalarListeners(page, erroresConsola, peticionesFallidas);
 
     await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
     const logueado = await esperarLogin(page);
@@ -78,10 +110,42 @@ function analizarExport(rutaArchivo) {
     log('Login detectado (ADMIN).');
     await page.waitForTimeout(1000);
 
+    // ══ Verificación post-deploy (Fase 124, Parte 4): recorrido de las 7
+    // pestañas + números de control, DESPUÉS del deploy de v1.13.1 (borrado
+    // de código muerto en trafico-whatsapp-logic.js, dependencia proxy-addr
+    // actualizada) -- confirma que nada se rompió con el deploy real. ══
     await page.evaluate(() => openGenericDashboard('ORLANT'));
     await page.waitForTimeout(1200);
     await page.evaluate(() => { if (typeof _gdIrAMes === 'function') _gdIrAMes('2026-09'); });
     await page.waitForTimeout(800);
+
+    reporte.postDeploy = { pestanas: {} };
+    const nTabs = await page.locator('#gd-tabs .atab').count();
+    for (let i = 0; i < nTabs; i++) {
+      const tab = page.locator('#gd-tabs .atab').nth(i);
+      const label = ((await tab.textContent()) || '').trim();
+      await tab.click();
+      await page.waitForTimeout(900);
+      reporte.postDeploy.pestanas[label] = await canvasesSinDibujar(page);
+    }
+    reporte.postDeploy.numeros = await page.evaluate(async () => {
+      const tipifLl = await apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=LLAMADAS');
+      const tipifWpp = await apiRequest('GET', '/calidad/tipificacion/por-tipo?campana=ORLANT&canal=WHATSAPP');
+      const alias = await apiRequest('GET', '/alias-asesores?campana=ORLANT');
+      const opcLl = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=ORLANT&canal=LLAMADAS');
+      const health = await apiRequest('GET', '/health').catch(() => null);
+      return {
+        tipifLlTotal: tipifLl.total, tipifWppTotal: tipifWpp.total,
+        aliasCount: alias.length, tipifLlFalla: opcLl.agentes.filter((a) => /_falla/i.test(a)).length,
+        healthVersion: health ? health.version : null, healthOk: health ? health.ok : null,
+      };
+    });
+    const nd = reporte.postDeploy.numeros;
+    reporte.postDeploy.ok =
+      erroresConsola.length === 0 && peticionesFallidas.length === 0 &&
+      Object.values(reporte.postDeploy.pestanas).every((m) => m.length === 0) &&
+      nd.tipifLlTotal === 34661 && nd.tipifWppTotal === 25180 && nd.aliasCount === 3 && nd.tipifLlFalla === 0;
+    log('Post-deploy:', JSON.stringify({ ok: reporte.postDeploy.ok, numeros: nd, erroresConsola: erroresConsola.length, peticionesFallidas: peticionesFallidas.length }));
 
     async function descargarYAbrir(tabText, subText, nombreArchivo) {
       await page.locator('#gd-tabs .atab', { hasText: tabText }).first().click().catch(() => {});
@@ -126,9 +190,9 @@ function analizarExport(rutaArchivo) {
     }
 
     await page.evaluate(() => apiRequest('POST', '/auth/logout').catch(() => {}));
-    console.log('=== REPORTE EXPORTS ===');
+    console.log('=== REPORTE EXPORTS + POST-DEPLOY ===');
     console.log(JSON.stringify(reporte, null, 2));
-    ok = Object.values(reporte.exports).every((e) => e.ok);
+    ok = reporte.postDeploy.ok && Object.values(reporte.exports).every((e) => e.ok);
   } catch (e) {
     console.error('FALLO:', e.message);
     console.log(JSON.stringify(reporte, null, 2));

@@ -29,12 +29,20 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   reconfirmado sin tocar en la Fase 124 (2026-10-06).
 - **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
   Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
-  fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA. El primer
-  intento (Fase 124) falló por un bug del propio script de verificación
-  (`download.saveAs()` sin `downloadsPath` configurado) — ya corregido en
-  `scripts/produccion/fase124-parte1b-exports.js`, pendiente de
-  reintentar con una sesión real (se puede hacer junto con la
-  verificación post-deploy de esta misma fase). Anotado 2026-10-06.
+  fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA. 2 intentos
+  en la Fase 124: el primero falló por `download.saveAs()` sin
+  `downloadsPath`; corregido (`download.path()` + `downloadsPath` en el
+  `launch()`) y reintentado en la verificación post-deploy — **volvió a
+  fallar con el mismo error** ("Cannot access file"). No parece ser un
+  problema de la plataforma (el recorrido post-deploy en la misma sesión,
+  con la misma cuenta, funcionó perfecto: 0 errores, números iguales) —
+  parece una interacción puntual de Playwright/Chromium con el manejo de
+  descargas en este entorno Windows concreto. Para la próxima vez:
+  probar `page.waitForEvent('download')` seguido de inspeccionar
+  `download.suggestedFilename()`/`download.url()` antes de llamar a
+  `path()`, o verificar manualmente (clic humano en "Exportar > Excel"
+  y abrir el archivo descargado por fuera del script) en vez de seguir
+  automatizando este paso puntual. Anotado 2026-10-06.
 - **Guía de uso (`docs/guia-uso-orlant.md` y `server/paginas/guia-uso.html`)
   al día con lo nuevo de la Fase 122-124** — dueño: InCo. Prioridad MEDIA.
   Falta documentar: Agendas/Efectividad con nombre de asesor, formato
