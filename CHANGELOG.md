@@ -4,6 +4,31 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.13.2 — Octubre 2026
+
+**Fase 125: cierre de lo que quedó pendiente de la Fase 124 — sin
+cambios visibles para la operación diaria, salvo un aviso nuevo al
+cargar archivos muy grandes.**
+
+- Se corrigió una explicación mal planteada sobre el tamaño máximo de un
+  archivo por carga (el límite es por archivo, no se va acumulando mes a
+  mes — no había ningún problema real).
+- Al subir un archivo de Agendas o Tipificación que junta demasiados
+  meses de una sola vez, la plataforma ahora avisa ANTES de intentar
+  guardarlo (en vez de dejarlo pensando y fallar al final).
+- La guía de uso y el checklist de verificación quedaron al día con lo de
+  las últimas fases: nombre del asesor visible en Agendas y en el
+  Ranking, formato del archivo de Tipificación de WhatsApp, qué es un
+  alias de nombre de asesor, y los meses con nombre completo.
+- Revisión de seguridad con la página real (no solo lectura de código):
+  se probaron varios intentos de inyectar código malicioso a través de
+  archivos cargados (nombres de asesor, motivos, especialidades) — en
+  ningún caso se logró ejecutar nada, todo quedó como texto normal, tanto
+  en pantalla como en los archivos Excel descargados.
+- Se confirmó que la gráfica de "Ranking de asesores" no recorta ningún
+  dato ni etiqueta, incluso con asesores muy por encima del 100% de
+  efectividad.
+
 ## v1.13.1 — Octubre 2026
 
 **Fase 124: revisión general de errores y seguridad antes de la entrega
