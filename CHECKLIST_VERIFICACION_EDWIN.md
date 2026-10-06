@@ -5,7 +5,12 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://informa.inconexion.com.co** — versión **1.13.2**.
+Plataforma: **https://informa.inconexion.com.co** — versión **1.13.3**.
+
+> Desde la Fase 126, la plataforma solo tiene datos oficiales de
+> **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
+> WhatsApp, real). Los meses de prueba que venían en las plantillas
+> (Enero-Julio 2026 y Abril 2025, según la base) ya se borraron.
 
 ## 1. Entrar y ver el dashboard
 
@@ -28,10 +33,10 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 | Tipificación de WhatsApp (Jul-26 + Ago-26 + Sep-26) | 71 + 12.061 + 13.048 = 25.180 |
 | Tráfico de Llamadas | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
 | Tráfico de WhatsApp | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
-| Agendas (ago-sep/2026) | 24.186 (Ago 11.040 / Sep 13.146) — Abril 2025 sigue por separado en 7.426 |
-| Inasistencia | Ago-26 7,45 %, período 6,87 % |
+| Agendas (ago-sep/2026, único período — Abril 2025 ya se borró) | 24.186 (Ago 11.040 / Sep 13.146) |
+| Inasistencia | Ago-26 7,45 %, período (ago-sep) 7,34 % |
 | Efectividad de agendamiento | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
-| Efectividad de Citas | Ene 93,67 %, Feb 84,32 %, Mar 85,54 %, período 86,01 % (Ago-Sep todavía sin datos, ver punto 4) |
+| Efectividad de Citas (ago-sep/2026, único período — Ene-Mar ya se borró) | Ago 11.189 agendas / 7.896 atendidas · Sep 12.194 / 8.968 · período 72,12 % |
 
 - [ ] Los números de arriba coinciden con lo que muestra cada pestaña.
 - [ ] Si algún número no coincide, lo escribo aquí y aviso antes de
@@ -58,7 +63,9 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       especialidad").
 - [ ] Puedo filtrar por Sede, Especialidad y Entidad.
 - [ ] Si un mes trae menos datos que el resto, sale un aviso explicándolo
-      (no un error raro ni una gráfica vacía sin explicación).
+      (no un error raro ni una gráfica vacía sin explicación) — el texto
+      es simple ("todavía está incompleto..."), sin palabras técnicas
+      como "sede" o "entidad".
 
 ## 4.1 Selector de mes y Efectividad de Citas
 
@@ -66,9 +73,13 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       "Septiembre 2026"), nunca una abreviatura ni un número solo.
 - [ ] "Julio 2026" aparece marcado como mes parcial (solo trae
       Tipificación de WhatsApp) — es esperado, no un error.
-- [ ] En **Efectividad de Citas**, Agosto y Septiembre 2026 muestran
-      "sin datos" — es esperado hasta que llegue ese archivo (no afecta
-      Enero-Marzo 2026, que sí tienen datos).
+- [ ] El selector de mes solo ofrece Agosto y Septiembre 2026 (más Julio
+      2026 parcial) — ningún mes de 2025 ni Enero-Julio 2026, que ya se
+      borraron por ser datos de prueba.
+- [ ] En **Tráfico de WhatsApp**, ya no aparece ninguna mención a "Nivel
+      de servicio a 5 minutos" ni a "aún no hay datos para este
+      período" — el Nivel de Servicio a 20 segundos es el único que se
+      muestra (el de 5 minutos vuelve solo cuando Wolkvox lo entregue).
 
 ## 5. Carga de un archivo de prueba
 

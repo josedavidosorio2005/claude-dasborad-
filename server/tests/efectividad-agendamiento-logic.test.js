@@ -81,13 +81,13 @@ test('EFECTIVIDAD del archivo NO coincide con el recalculo -> advertencia explic
 test('una fila "_falla" nunca se funde con el asesor real del mismo nombre base -- queda tal cual, como una fila distinta', () => {
   const aoa = [
     HEADER,
-    ['MICHELL GARCIA SERNA', 'SEPTIEMBRE', 1002, 965, 965 / 1002],
-    ['MICHELL GARCIA SERNA_falla', 'SEPTIEMBRE', 494, 254, 254 / 494],
+    ['ASESOR FICTICIO QUINCE', 'SEPTIEMBRE', 1002, 965, 965 / 1002],
+    ['ASESOR FICTICIO QUINCE_falla', 'SEPTIEMBRE', 494, 254, 254 / 494],
   ];
   const r = efectividadAgendamientoParseFilas(aoa, HOY);
   assert.equal(r.filas.length, 2);
-  assert.equal(r.filas[0].asesor, 'MICHELL GARCIA SERNA');
-  assert.equal(r.filas[1].asesor, 'MICHELL GARCIA SERNA_falla');
+  assert.equal(r.filas[0].asesor, 'ASESOR FICTICIO QUINCE');
+  assert.equal(r.filas[1].asesor, 'ASESOR FICTICIO QUINCE_falla');
 });
 
 test('fila sin NOMBRE DE AGENTE se omite con un aviso', () => {

@@ -7,9 +7,14 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.13.2**. Esta guía es para quien usa la
+Versión de la plataforma: **1.13.3**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
+
+> Desde octubre de 2026, la plataforma solo tiene datos oficiales de
+> **agosto y septiembre de 2026** (más julio de Tipificación de WhatsApp,
+> que sí es real). Los datos de meses anteriores que venían en las
+> plantillas de prueba ya se quitaron.
 
 ## Índice
 
@@ -76,7 +81,7 @@ del todo vas a ver:
 | Pestaña | Qué muestra |
 |---|---|
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
-| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp (incluye Nivel de Servicio a 5 minutos, además del de 20 segundos), con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio. No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
+| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
@@ -122,12 +127,12 @@ explicando que no hay datos para ese mes (y un botón para ir directo al
   contestadas** (una llamada abandonada nunca tuvo un AHT, así que no
   cuenta en ese promedio).
 
-**Tráfico de WhatsApp**: los mismos indicadores que Llamadas, más el
-**Nivel de Servicio a 5 minutos** (mismo cálculo que el de 20 segundos,
-pero con esa ventana de tiempo — es el que más le importa a WhatsApp),
-**excepto el AHT**: Wolkvox no entrega ese dato para WhatsApp, así que esa
-sub-pestaña no aparece (si algún día llega, se puede reactivar sin
-cambiar nada más).
+**Tráfico de WhatsApp**: los mismos indicadores que Llamadas, con el
+Nivel de Servicio a 20 segundos, **excepto el AHT**: Wolkvox no entrega
+ese dato para WhatsApp, así que esa sub-pestaña no aparece. Wolkvox
+tampoco entrega todavía el Nivel de Servicio a 5 minutos (la ventana de
+tiempo que más le importa a WhatsApp) — cuando llegue ese dato, se puede
+activar sin tocar nada más de la plataforma.
 
 **Agendamiento**: "Por especialidad", "Total agendas" y "Agendas por
 línea" muestran cuántas citas se agendaron, sin un cálculo adicional —
@@ -181,10 +186,8 @@ agendas**, un total del mes (no por especialidad ni asesor). Muestra 2
 tarjetas: el % del mes elegido arriba, y el % **ponderado** de todo el
 período que tiene datos cargados (suma de atendidas ÷ suma de agendas de
 esos meses — nunca el promedio simple de los % de cada mes), con el rango
-de meses en su etiqueta. Hoy esta pestaña solo tiene datos de Enero a
-Marzo 2026 — Agosto y Septiembre todavía muestran "sin datos" porque
-falta que llegue ese archivo; en cuanto se cargue, se ven igual que los
-demás meses, sin que haya que hacer nada más.
+de meses en su etiqueta. Hoy esta pestaña tiene Agosto y Septiembre 2026
+— igual que el resto de la plataforma, solo los meses oficiales.
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor
@@ -409,13 +412,13 @@ desde la misma lista y edítalo.
 Esto no es un problema de la plataforma — son datos que todavía faltan
 por llegar:
 
-- **Efectividad de Citas de agosto y septiembre 2026**: la pestaña sigue
-  mostrando solo Enero-Marzo 2026 hasta que llegue ese archivo.
 - **Nivel de servicio de WhatsApp a 5 minutos**: falta que el reporte de
   Wolkvox traiga esa columna.
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
   Salida, Gestión STA**: las pantallas ya están construidas, quedan
-  ocultas hasta que llegue el archivo real de cada una.
+  ocultas hasta que llegue el archivo real de cada una. La de "Salida"
+  (llamadas/WhatsApp salientes) está en estudio — Edwin va a mandar una
+  base nueva para eso.
 
 ## 9. A quién escribir si algo falla
 
