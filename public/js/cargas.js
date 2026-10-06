@@ -188,15 +188,26 @@ function _cargasAgendasColumnasUnificado(){
 // tipificacion-logic.js). Mismo set de columnas para las 2 hojas -- lo que
 // cambia entre Llamadas y WhatsApp es solo el canal (nota aparte en
 // INSTRUCCIONES), no la estructura.
+//
+// Fase 122 (hallazgo real, HALLAZGO GRAVE en produccion): esta funcion
+// NUNCA copiaba `labelAlt` (solo `label`/`opcional`) -- la columna `skill`
+// de TIPIFICACION_COLUMNAS gano `labelAlt: ['NOMBRE DE SKILL']` en la Parte
+// 1.1 de esta misma fase (export HistChat de Wolkvox, que no trae
+// SKILL_NAME), pero cargasEncabezadosCoinciden (cargas-logic.js) nunca
+// llegaba a verlo: el reconocimiento por encabezados de WhatsApp SIEMPRE
+// fallaba en la pagina real, aunque las pruebas unitarias de
+// tipificacionColIndexMap/cargasDetectarCanalTipificacion (que no pasan
+// por esta funcion) seguian en verde. Confirmado contra produccion real:
+// con `labelAlt` conservado, el archivo real se reconoce correctamente.
 function _cargasTipificacionColumnasUnificado(){
-  return TIPIFICACION_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+  return TIPIFICACION_COLUMNAS.map(function(c){ return { label:c.label, labelAlt:c.labelAlt, opcional: !c.obligatoria }; });
 }
 // Fase 98 (ORLANT, pedido urgente de Edwin) — columnas de la hoja
 // INASISTENCIA: conserva `labelAlt` (ej. ESPECIALIDAD/ESPECIALIDA) para que
 // cargasEncabezadosCoinciden (Fase 79, reconocer la hoja por encabezados
 // aunque no se llame "INASISTENCIA") tambien acepte los alias -- a
-// diferencia de _cargasAgendasColumnasUnificado/_cargasTipificacionColumnasUnificado,
-// que no tienen columnas con mas de un nombre aceptado.
+// diferencia de _cargasAgendasColumnasUnificado (AGENDAS_COLUMNAS no tiene
+// ninguna columna con mas de un nombre aceptado hoy).
 function _cargasInasistenciaColumnasUnificado(){
   return INASISTENCIA_COLUMNAS.map(function(c){ return { label:c.label, labelAlt:c.labelAlt, opcional: !c.obligatoria }; });
 }
