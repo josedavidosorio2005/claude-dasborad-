@@ -20,7 +20,11 @@
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 
-const BASE = 'https://informa.inconexion.com.co';
+// Fase 128 (Parte 2): APP_URL permite correr este mismo script contra un
+// servidor local con datos sinteticos, desde la prueba automatica de
+// privacidad (scripts/qa/fase128-parte2-privacidad-revision-final.js) --
+// nunca cambia el comportamiento real contra produccion (default intacto).
+const BASE = process.env.APP_URL || 'https://informa.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 const USUARIOS_EJEMPLO = ['crodriguez', 'mlopez', 'jherrera', 'agomez', 'lrios', 'psuarez'];
 // Usuario del admin maestro (config.js: MASTER_ADMIN_USER, default 'admin') --
@@ -199,23 +203,28 @@ async function canvasesSinDibujar(page) {
 //   'EN_BLANCO'       -- no hay canvas con pixeles Y NO hay ningun mensaje
 //                        explicando por que (el hallazgo que esta fase
 //                        busca: el AHT de WhatsApp salia asi).
+//
+// Fase 128 (Parte 2, corrige por CONSTRUCCION el hallazgo de privacidad
+// ampliado en la Fase 127 Parte 4 -- la Fase 127 solo habia quitado los
+// <select> del clon, pero la tabla "Ranking de asesores" nunca paso por
+// ahi porque no es un <select>, es su contenido PRINCIPAL): esta funcion
+// ya NUNCA devuelve texto crudo del DOM, para ninguna sub-vista, sin
+// importar que tabla/ranking/leyenda exista hoy o se agregue despues --
+// todo lo que sale es un conteo, un numero o un veredicto de una lista
+// fija (nunca una lista de "lugares conocidos que hay que excluir", que es
+// exactamente el patron que se le escapo a la Fase 126/127). El texto se
+// LEE y se MIDE/CLASIFICA adentro de este mismo page.evaluate, pero nunca
+// cruza la frontera de vuelta a Node -- si algun dia hace falta leer un
+// valor real para depurar, se hace a mano, nunca se vuelve a guardar en
+// el reporte. `filasTabla` (conteo de <tr>, no su contenido) es lo que
+// reemplaza a "leer la tabla para ver si tiene algo" -- contar elementos,
+// no leerlos.
 async function veredictoSubvista(page) {
   return page.evaluate(() => {
     const host = document.getElementById('gd-panels');
-    if (!host) return { veredicto: 'sin-panel', texto: '' };
-    // Fase 127 (corrige un hallazgo de privacidad de la Fase 126, Parte
-    // 7): `host.innerText` traia el texto COMPLETO del panel, incluidas
-    // las listas de los desplegables de filtro AGENTE/ASESOR -- en
-    // Agendamiento/Tipificacion/Calidad eso son nombres reales de
-    // asesores de ORLANT, que terminaban en este `texto` (guardado en el
-    // reporte y mandado a consola al final del script). Se clona el host
-    // y se quitan los <select> ANTES de leer innerText -- el resto del
-    // texto (titulos, tarjetas, tablas, avisos de "sin datos") sigue
-    // intacto para que la deteccion de NaN/undefined/mensajes siga
-    // funcionando igual.
-    const clon = host.cloneNode(true);
-    clon.querySelectorAll('select').forEach((s) => s.remove());
-    const texto = (clon.innerText || '').trim();
+    if (!host) return { veredicto: 'sin-panel', canvases: 0, filasTabla: 0, longitudTexto: 0 };
+    const texto = (host.innerText || '').trim();
+    const filasTabla = host.querySelectorAll('table tr').length;
     const canvases = Array.from(host.querySelectorAll('canvas')).filter((c) => {
       const style = getComputedStyle(c);
       return style.display !== 'none' && style.visibility !== 'hidden';
@@ -229,16 +238,18 @@ async function veredictoSubvista(page) {
       let data; try { data = ctx.getImageData(0, 0, c.width, c.height).data; } catch (e) { return; }
       for (let i = 3; i < data.length; i += 4) { if (data[i] !== 0) { algunConPixeles = true; break; } }
     });
-    if (algunConPixeles) return { veredicto: 'dibujo', texto: texto.slice(0, 800), canvases: canvases.length };
+    if (algunConPixeles) return { veredicto: 'dibujo', canvases: canvases.length, filasTabla, longitudTexto: texto.length };
     const hayMensajeExplicito = /sin datos|no disponible|no se entrega|no aplica|sin informaci[oó]n/i.test(texto);
     // Un host con texto MUY corto (sin tablas/tarjetas/leyendas) y sin
     // ningun canvas es sospechoso de estar genuinamente vacio aunque no
-    // matchee el patron de mensaje -- se deja igual el texto completo
-    // (recortado) en el reporte para que un humano lo revise.
+    // matchee el patron de mensaje -- `longitudTexto` (un numero) es
+    // suficiente para que un humano decida si vale la pena mirarlo a
+    // mano en el navegador, sin necesidad de guardar el texto en si.
     return {
       veredicto: hayMensajeExplicito ? 'mensaje_claro' : (texto.length < 3 ? 'EN_BLANCO' : 'revisar'),
-      texto: texto.slice(0, 800),
       canvases: canvases.length,
+      filasTabla,
+      longitudTexto: texto.length,
     };
   });
 }
@@ -326,12 +337,12 @@ async function correrChequeosAdmin(page) {
         await page.waitForTimeout(900);
         const v = await veredictoSubvista(page);
         subvistas[label][subLabel] = v;
-        if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ' > ' + subLabel + ': "' + v.texto + '"');
+        if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ' > ' + subLabel + ' (longitud texto: ' + v.longitudTexto + ')');
       }
     } else {
       const v = await veredictoSubvista(page);
       subvistas[label]['(sin sub-pestañas)'] = v;
-      if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ': "' + v.texto + '"');
+      if (v.veredicto === 'EN_BLANCO') enBlancoSinMensaje.push(label + ' (longitud texto: ' + v.longitudTexto + ')');
     }
 
     try {
@@ -645,8 +656,10 @@ async function correrChequeosCliente(page) {
     await page.waitForTimeout(1200);
     const malos = await canvasesSinDibujar(page);
     malos.forEach((m) => hallazgosCanvasCliente.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
-    const textoPanel = await page.evaluate(() => (document.getElementById('gd-panels') || {}).innerText || '');
-    if (/\bdemo\b|datos? de prueba|ficticio/i.test(textoPanel)) avisosDemo.push(label);
+    // Fase 128 (Parte 2): el regex se evalua DENTRO del navegador -- solo
+    // sale un booleano, el texto del panel nunca cruza a Node.
+    const tieneAvisoDemo = await page.evaluate(() => /\bdemo\b|datos? de prueba|ficticio/i.test((document.getElementById('gd-panels') || {}).innerText || ''));
+    if (tieneAvisoDemo) avisosDemo.push(label);
     try {
       const nombreDescarga = await exportarYVerificarDescarga(page);
       exportsCliente[label] = { ok: !!nombreDescarga };
@@ -724,7 +737,25 @@ async function paginaFresca(browser) {
   return { context, page };
 }
 
-(async () => {
+// Fase 128 (Parte 2): exporta las funciones que leen el DOM para que la
+// prueba automatica de privacidad (scripts/qa/fase128-parte2-privacidad-
+// revision-final.js) pueda correrlas de verdad contra un servidor local
+// con datos sinteticos, en vez de reimplementarlas aparte (lo que se
+// desalinearia con el codigo real tarde o temprano). `require.main ===
+// module` evita que este bloque (que abre un navegador VISIBLE y espera
+// un login real) se dispare solo por requerir el archivo desde la prueba.
+module.exports = {
+  veredictoSubvista,
+  canvasesSinDibujar,
+  correrChequeosAdmin,
+  correrChequeosCliente,
+  paginaFresca,
+  esperarLoginYDecodificar,
+  esAdmin,
+  esClienteDash,
+};
+
+if (require.main === module) (async () => {
   const reporte = {};
   let ok = true;
   let browser;

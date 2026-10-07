@@ -55,13 +55,20 @@ async function esperarLogin(page) {
   const reporte = { antes: {}, carga: {}, despues: {} };
   let ok = true;
   let browser;
-  let ultimoDialogMsg = '';
+  // Fase 128 (Parte 2): mismo criterio aplicado a scripts/produccion/
+  // carga-real-patron.js -- nunca el texto completo del dialogo, solo los
+  // numeros que trae.
+  let ultimoDialogResumen = null;
 
   try {
     browser = await chromium.launch({ headless: false });
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
-    page.on('dialog', (d) => { ultimoDialogMsg = d.message(); d.accept(); });
+    page.on('dialog', (d) => {
+      const msg = d.message();
+      ultimoDialogResumen = { numeros: (msg.match(/\d+/g) || []).map(Number), mencionaReemplazo: /reemplaz/i.test(msg), mencionaBorrado: /se borran/i.test(msg) };
+      d.accept();
+    });
     page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
     page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
 
@@ -110,14 +117,23 @@ async function esperarLogin(page) {
 
     await page.click('#cargas-overlay button:has-text("Guardar carga")');
     await page.waitForTimeout(3000);
-    const toast = (await page.locator('#toast').innerText().catch(() => '')).trim();
-    reporte.carga.confirmacionMostrada = ultimoDialogMsg;
-    reporte.carga.toast = toast;
-    reporte.carga.guardadoOk = /✓/.test(toast) && !/✗/.test(toast);
-    log('Confirmación mostrada:', ultimoDialogMsg.replace(/\n/g, ' | '));
-    log('TIPIFICACIONES guardado:', toast.replace(/\n/g, ' | '));
+    // Fase 128 (Parte 2): mismo criterio -- solo numeros/booleano, nunca
+    // el texto completo del toast.
+    const resToast = await page.evaluate(() => {
+      const t = (document.getElementById('toast') || {}).innerText || '';
+      const ok = /✓/.test(t) && !/✗/.test(t);
+      const mIns = t.match(/(\d+)\s*insertad/i);
+      const mReemp = t.match(/(\d+)\s*reemplaz/i);
+      return { ok, insertadas: mIns ? Number(mIns[1]) : null, reemplazadas: mReemp ? Number(mReemp[1]) : null };
+    });
+    reporte.carga.confirmacionMostrada = ultimoDialogResumen;
+    reporte.carga.guardadoOk = resToast.ok;
+    reporte.carga.insertadas = resToast.insertadas;
+    reporte.carga.reemplazadas = resToast.reemplazadas;
+    log('Confirmación mostrada:', JSON.stringify(ultimoDialogResumen));
+    log('TIPIFICACIONES guardado:', JSON.stringify(resToast));
     await shot(page, '2-guardado-tipificacion.png');
-    if (!reporte.carga.guardadoOk) throw new Error('El guardado no fue OK: ' + toast);
+    if (!reporte.carga.guardadoOk) throw new Error('El guardado no fue OK: ' + JSON.stringify(resToast));
 
     await page.evaluate(() => closeCargas());
     await page.waitForTimeout(500);

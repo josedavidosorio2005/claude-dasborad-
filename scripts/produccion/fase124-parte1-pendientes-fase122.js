@@ -259,8 +259,13 @@ async function recorrerTabsYSubtabs(page, nombreCombo, erroresConsola, peticione
           return { id, scales, nDatasets: (ch.data && ch.data.datasets ? ch.data.datasets.length : 0) };
         });
       });
-      const textoPanel = await page.evaluate(() => (document.getElementById('gd-panels') || {}).innerText || '');
-      const formatosComaPct = (textoPanel.match(/\d{1,3},\d{2}\s?%/g) || []).length;
+      // Fase 128 (Parte 2): el conteo se calcula DENTRO del navegador --
+      // el texto del panel nunca cruza a Node, mismo criterio aplicado a
+      // scripts/produccion/revision-final.js.
+      const formatosComaPct = await page.evaluate(() => {
+        const texto = (document.getElementById('gd-panels') || {}).innerText || '';
+        return (texto.match(/\d{1,3},\d{2}\s?%/g) || []).length;
+      });
       reporte.efectividadMayor100[periodo] = {
         asesoresSobre100EnAPI: sobre100.length,
         maxEfectividadPct: Math.round(Math.max(...filas.map((f) => f.efectividad)) * 10000) / 100,
