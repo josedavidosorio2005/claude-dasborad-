@@ -26,19 +26,6 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   usuario si la cuenta del cliente debe seguir viendo esos nombres o si
   hay que redactarlos para ese rol. Anotado 2026-10-06 (Fase 124, antes
   solo mencionado como pendiente de decisión en la Fase 122).
-- **37 monitoreos de prueba de Calidad — CONFIRMADOS, borrado en curso**
-  — dueño: InCo (ejecución). Prioridad ALTA. Edwin confirmó en la
-  reunión de validación del 2026-10-06 (Fase 128, Parte 3) que son de
-  prueba — entrega los datos reales el 2026-10-07. Mecanismo construido:
-  nueva base `monitoreos` en `POST /api/admin/borrado-rango` (mismo
-  candado de siempre: dry-run obligatorio, `filasEsperadas` exacto, solo
-  ORLANT), respaldo manual confirmado (S3 OK) antes del cambio. Falta
-  ejecutar contra producción real: dry-run con sesión real del usuario →
-  mostrar el conteo real por mes → "sí" explícito del usuario → borrado
-  real → confirmar Calidad en 0 sin errores. Anotado 2026-09-24 (Fase
-  71/119), reconfirmado sin tocar en la Fase 124 (2026-10-06), mecanismo
-  construido y confirmación obtenida en la Fase 128 (2026-10-06) — sigue
-  sin ejecutarse el borrado real.
 - **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
   Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
   fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA, reducida en
@@ -63,6 +50,16 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 2. Esperando a Edwin (datos/decisiones)
 
+- **Calidad de ORLANT — archivo real de monitoreos** — dueño: Edwin.
+  Prioridad ALTA. Los 37 monitoreos de prueba se borraron de producción
+  el 2026-10-07 (Fase 128, Parte 3, EJECUTADO: dry-run → "sí" explícito
+  del usuario → borrado real → Calidad confirmada en 0 sin errores).
+  Edwin entrega el archivo real de monitoreos. Cómo se carga: ya no
+  hace falta ningún cambio de código — la carga masiva de Calidad por
+  Excel ya funciona para ORLANT (tiene su propia rúbrica activa, 17
+  ítems), mismo camino que ya usa CARTERA INTERNA — ver
+  `docs/plantillas-inventario.md` → "Calidad de ORLANT" para el formato
+  exacto.
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
   Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya construidas,
   ocultas esperando el archivo real). Anotado en fases anteriores (ver
