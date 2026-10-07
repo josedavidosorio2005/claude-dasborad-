@@ -187,6 +187,17 @@ function cargasDetectarFormulaSinValor(ws) {
       var fila = _cargasParseAddr(addr).row;
       var etiquetaCell = ws['A' + fila];
       var etiqueta = etiquetaCell && etiquetaCell.v != null && etiquetaCell.v !== '' ? String(etiquetaCell.v) : null;
+      // Fase 130 (hallazgo real, archivo de Calidad): una plantilla real
+      // puede traer filas MUY por debajo de los datos reales con formulas
+      // ya extendidas (copiadas) pero nunca llenadas -- sin nada en la
+      // columna A/identificadora de esa fila. Los parsers de "una fila por
+      // registro" (cmParseRows incluido) ya ignoran solas esas filas por no
+      // traer su campo obligatorio (ASESOR/SKILL_NAME/SEDE/..., siempre en
+      // columna A) -- no tiene sentido tumbar TODA la hoja por una formula
+      // de una fila que el parser real ni siquiera va a mirar. Una fila
+      // real rota SIEMPRE trae su columna A (el parser la exige), asi que
+      // esto no esconde un error genuino, solo el ruido de filas plantilla.
+      if (!etiqueta) continue;
       return {
         celda: addr,
         formula: cell.f,

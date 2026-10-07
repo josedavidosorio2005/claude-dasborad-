@@ -85,3 +85,57 @@ interfaz normal — nunca un archivo a mano por fuera de esto:**
 No se necesita ninguna fase nueva ni pantalla nueva para esto — es
 exactamente el mismo camino que ya existe, simplemente nunca se había
 usado con un archivo real de ORLANT hasta ahora.
+
+### Actualización — el archivo real que manda Edwin cada mes (Fase 130, Parte 4 + cierre)
+
+El archivo real (`Copia de CALIDAD_CLINICA_ORLANT_2026 - <Mes>.xlsx`) NO es
+la plantilla plana que genera "Descargar plantilla" — trae su propio
+formato, con 3 hojas: **Diccionario de Ítems** (17 ítems con peso y
+críticos, de referencia), **Monitoreos** (la que se carga) y **Resumen por
+Asesor** (de apoyo — ver advertencia abajo, nunca se usa como fuente).
+
+- **Encabezado real en la fila 4** (no la 1): las 3 filas de arriba son
+  título/leyenda/encabezado agrupado por categoría — `cmDetectarFilaEncabezado`
+  busca, entre las primeras 10 filas, la primera que resuelva ASESOR+FECHA.
+- **Columnas fijas con nombre distinto al de la plantilla plana**:
+  `NOMBRE DEL ASESOR` (no `ASESOR`), `ID / LLAMADA - WPP` (no `ID LLAMADA`),
+  `# TELEFONO` (no `TELEFONO`) — `labelAlt` en `CM_COLUMNAS_FIJAS`
+  (`calidad-carga-masiva-logic.js`) acepta ambas formas sin que Edwin tenga
+  que editar el archivo.
+- **Cada ítem va numerado y con su peso en el encabezado** (ej. "⚠️ 3.
+  Valida entidad y derechos\n(7%)", el emoji marca los críticos) — el
+  emparejamiento es por el NÚMERO al principio (`cmHeaderItemNumero`),
+  robusto al emoji/salto de línea/texto exacto; cae al nombre exacto solo
+  si el encabezado no trae número (la plantilla plana de siempre).
+- **La hoja Monitoreos trae ~126 filas más debajo de los datos reales**,
+  pre-armadas con fórmulas y sin `ASESOR` — se omiten solas (cada una
+  genera un aviso "ASESOR vacío, se omitió", nunca se cuentan como dato).
+- **"Resumen por Asesor" no es confiable como fuente** (al menos un
+  asesor puede mostrar "# Monitoreos = 0" con un promedio distinto de 0
+  por un error de fórmula de esa hoja) — por diseño, la plataforma SIEMPRE
+  calcula desde `Monitoreos`, nunca lee esa hoja.
+- **Datos sensibles de este archivo, ya manejados por el diseño actual**:
+  `NOMBRE DEL ASESOR` y `EVALUADOR` (nombres), `# TELEFONO` e `ID /
+  LLAMADA - WPP` (identificador de Wolkvox) y `OBSERVACIONES` (texto
+  libre, puede traer datos de paciente). **Hallazgo para decisión del
+  usuario** (no corregido en esta fase, no se cambia sin su OK): el diseño
+  YA guarda `telefono` e `idLlamada` en la tabla `monitoreos` — para
+  TODAS las campañas con carga masiva de Calidad, no solo ORLANT — y el
+  formulario de alta manual (`cf-telefono`) también lo pide; ninguno de
+  los 2 se muestra en ninguna tabla/export hoy (confirmado por lectura de
+  código), pero si la regla de "nunca guardar # Teléfono" aplica hacia
+  adelante, es un cambio de diseño que toca varias campañas activas, no
+  solo la carga de hoy.
+- **Idempotencia confirmada**: por (campaña, asesor, fecha, ID LLAMADA) —
+  volver a subir el mismo archivo actualiza esos monitoreos en vez de
+  duplicarlos, siempre que la fila traiga ID de llamada (en el archivo
+  real de septiembre, las 95 filas lo traen).
+- **Verificado contra el archivo real de septiembre/2026** (solo
+  encabezados/tipos/conteos, nunca una fila): 95 monitoreos reconocidos,
+  19 asesores distintos, 1 evaluador, un solo mes (2026-09), 17 ítems
+  todos emparejados por número. El PUNTAJE OBTENIDO que trae el archivo
+  (fórmula de Excel, valor guardado) coincide EXACTO, fila por fila, con
+  el recálculo del servidor usando la rúbrica activa de ORLANT (promedio
+  94,79 en ambos lados) — la clasificación recalculada también coincide
+  con lo esperado (82 SOBRESALIENTE / 13 NO CRÍTICO, 93 sin fallos
+  críticos / 2 con 1 crítico).
