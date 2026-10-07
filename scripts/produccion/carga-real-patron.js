@@ -48,11 +48,22 @@ async function esperarLogin(page) {
   return false;
 }
 
+// Fase 128 (Parte 2, mismo criterio aplicado a scripts/produccion/
+// revision-final.js): el toast de confirmacion es un mensaje de sistema
+// (nunca trae nombres), pero por construccion -- nunca por lista de
+// lugares -- esta funcion tampoco deja salir texto crudo del DOM. El
+// conteo de filas insertadas/reemplazadas se extrae DENTRO del navegador;
+// solo salen numeros y un booleano.
 async function guardarCargaActual(page) {
   await page.click('#cargas-overlay button:has-text("Guardar carga")');
   await page.waitForTimeout(2000);
-  const toast = (await page.locator('#toast').innerText().catch(() => '')).trim();
-  return toast;
+  return page.evaluate(() => {
+    const t = (document.getElementById('toast') || {}).innerText || '';
+    const ok = /✓/.test(t) && !/✗/.test(t);
+    const mIns = t.match(/(\d+)\s*insertad/i);
+    const mReemp = t.match(/(\d+)\s*reemplaz/i);
+    return { ok, insertadas: mIns ? Number(mIns[1]) : null, reemplazadas: mReemp ? Number(mReemp[1]) : null };
+  });
 }
 
 (async () => {
@@ -61,13 +72,21 @@ async function guardarCargaActual(page) {
   const reporte = { efectividadAgendamiento: {}, efectividadCitas: {}, verificacionDashboard: {} };
   let ok = true;
   let browser;
-  let ultimoDialogMsg = '';
+  // Fase 128 (Parte 2): el dialogo de confirmacion es un mensaje de
+  // sistema con numeros ("N existente(s) se reemplazan"), nunca nombres --
+  // por construccion, igual se extraen solo los numeros que trae, nunca
+  // el texto completo.
+  let ultimoDialogResumen = null;
 
   try {
     browser = await chromium.launch({ headless: false });
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
-    page.on('dialog', (d) => { ultimoDialogMsg = d.message(); d.accept(); });
+    page.on('dialog', (d) => {
+      const msg = d.message();
+      ultimoDialogResumen = { numeros: (msg.match(/\d+/g) || []).map(Number), mencionaReemplazo: /reemplaz/i.test(msg), mencionaBorrado: /se borran/i.test(msg) };
+      d.accept();
+    });
     page.on('pageerror', (e) => erroresConsola.push('pageerror: ' + e.message));
     page.on('console', (m) => { if (m.type() === 'error' && !/favicon/i.test(m.text())) erroresConsola.push('console.error: ' + m.text()); });
 
@@ -101,16 +120,17 @@ async function guardarCargaActual(page) {
     log('Preview EFECTIVIDAD_AGENDAMIENTO:', JSON.stringify(reporte.efectividadAgendamiento.preview));
     if (filaEA.filas.length !== 20) throw new Error('Se esperaban 20 filas en EFECTIVIDAD_AGENDAMIENTO.xlsx, llegaron ' + filaEA.filas.length + ' -- ABORTA sin guardar.');
 
-    const toastEA = await guardarCargaActual(page);
-    reporte.efectividadAgendamiento.confirmacionMostrada = ultimoDialogMsg;
-    reporte.efectividadAgendamiento.toast = toastEA;
-    reporte.efectividadAgendamiento.guardadoOk = /✓/.test(toastEA) && !/✗/.test(toastEA);
-    log('EFECTIVIDAD_AGENDAMIENTO guardado:', toastEA.replace(/\n/g, ' | '));
+    const resEA = await guardarCargaActual(page);
+    reporte.efectividadAgendamiento.confirmacionMostrada = ultimoDialogResumen;
+    reporte.efectividadAgendamiento.guardadoOk = resEA.ok;
+    reporte.efectividadAgendamiento.insertadas = resEA.insertadas;
+    reporte.efectividadAgendamiento.reemplazadas = resEA.reemplazadas;
+    log('EFECTIVIDAD_AGENDAMIENTO guardado:', JSON.stringify(resEA));
     await shot(page, '2-guardado-efectividad-agendamiento.png');
-    if (!reporte.efectividadAgendamiento.guardadoOk) throw new Error('El guardado de EFECTIVIDAD_AGENDAMIENTO no fue OK: ' + toastEA);
+    if (!reporte.efectividadAgendamiento.guardadoOk) throw new Error('El guardado de EFECTIVIDAD_AGENDAMIENTO no fue OK: ' + JSON.stringify(resEA));
 
     // ══ 2. CARGAR CITAS_ATENDIDAS.xlsx ═════════════════════════════════════
-    ultimoDialogMsg = '';
+    ultimoDialogResumen = null;
     log('Subiendo CITAS_ATENDIDAS.xlsx (archivo real de Edwin)...');
     await page.setInputFiles('#carga-file', ARCHIVO_EC);
     await page.waitForTimeout(2000);
@@ -128,13 +148,14 @@ async function guardarCargaActual(page) {
     log('Preview CITAS_ATENDIDAS:', JSON.stringify(reporte.efectividadCitas.preview));
     if (filaEC.filas.length !== 3) throw new Error('Se esperaban 3 filas en CITAS_ATENDIDAS.xlsx, llegaron ' + filaEC.filas.length + ' -- ABORTA sin guardar.');
 
-    const toastEC = await guardarCargaActual(page);
-    reporte.efectividadCitas.confirmacionMostrada = ultimoDialogMsg;
-    reporte.efectividadCitas.toast = toastEC;
-    reporte.efectividadCitas.guardadoOk = /✓/.test(toastEC) && !/✗/.test(toastEC);
-    log('CITAS_ATENDIDAS guardado:', toastEC.replace(/\n/g, ' | '));
+    const resEC = await guardarCargaActual(page);
+    reporte.efectividadCitas.confirmacionMostrada = ultimoDialogResumen;
+    reporte.efectividadCitas.guardadoOk = resEC.ok;
+    reporte.efectividadCitas.insertadas = resEC.insertadas;
+    reporte.efectividadCitas.reemplazadas = resEC.reemplazadas;
+    log('CITAS_ATENDIDAS guardado:', JSON.stringify(resEC));
     await shot(page, '4-guardado-efectividad-citas.png');
-    if (!reporte.efectividadCitas.guardadoOk) throw new Error('El guardado de CITAS_ATENDIDAS no fue OK: ' + toastEC);
+    if (!reporte.efectividadCitas.guardadoOk) throw new Error('El guardado de CITAS_ATENDIDAS no fue OK: ' + JSON.stringify(resEC));
 
     await page.evaluate(() => closeCargas());
     await page.waitForTimeout(500);
@@ -182,7 +203,9 @@ async function guardarCargaActual(page) {
     await page.evaluate(() => switchGenericTab('efectividad'));
     await page.waitForTimeout(1500);
     await shot(page, '6-efectividad-citas-produccion-mes-sep.png');
-    const avisoEc = await page.$eval('[id^="ec-aviso-"]', (el) => el.textContent.trim()).catch(() => '');
+    // Fase 128 (Parte 2): solo booleano -- coincide o no con el mensaje
+    // esperado de "sin datos para el mes", nunca el texto completo.
+    const avisoEc = await page.$eval('[id^="ec-aviso-"]', (el) => /sin datos/i.test(el.textContent)).catch(() => false);
     await page.evaluate(() => { if (typeof _gdIrAMes === 'function') _gdIrAMes('2026-03'); });
     await page.waitForTimeout(1200);
     await shot(page, '7-efectividad-citas-produccion-mar26.png');
