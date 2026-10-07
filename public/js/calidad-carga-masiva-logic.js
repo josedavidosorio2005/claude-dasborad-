@@ -11,29 +11,87 @@
 // ver ese archivo para el criterio de "fecha futura".
 var _cmFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
 
+// Fase 130 (Parte 4): la plantilla REAL que manda Edwin cada mes no es el
+// archivo plano que genera descargarPlantillaMonitoreos (ASESOR, FECHA,
+// ...) -- tiene estilo (filas de titulo/leyenda, encabezados agrupados por
+// categoria) y usa textos mas largos/descriptivos para algunas columnas
+// fijas. `labelAlt` deja aceptar esas variantes SIN que Edwin tenga que
+// editar el archivo cada mes -- mismo patron que labelAlt en
+// INASISTENCIA_COLUMNAS (inasistencia-logic.js).
 var CM_COLUMNAS_FIJAS = [
-  { key: 'asesor', label: 'ASESOR' },
+  { key: 'asesor', label: 'ASESOR', labelAlt: ['NOMBRE DEL ASESOR'] },
   { key: 'fecha', label: 'FECHA' },
   { key: 'canal', label: 'CANAL' },
-  { key: 'idLlamada', label: 'ID LLAMADA' },
-  { key: 'telefono', label: 'TELEFONO' },
+  { key: 'idLlamada', label: 'ID LLAMADA', labelAlt: ['ID / LLAMADA - WPP', 'ID/LLAMADA - WPP'] },
+  { key: 'telefono', label: 'TELEFONO', labelAlt: ['# TELEFONO'] },
   { key: 'evaluador', label: 'EVALUADOR' },
-  { key: 'observaciones', label: 'OBSERVACIONES' },
+  { key: 'observaciones', label: 'OBSERVACIONES', labelAlt: ['OBSERVACIONES GENERALES'] },
 ];
 var CM_LABELS_OBLIGATORIAS = ['asesor', 'fecha'];
+// Cuantas filas (desde el principio de la hoja) se revisan buscando el
+// encabezado real -- suficiente para el layout real (titulo + leyenda +
+// encabezado agrupado + encabezado real = 4 filas antes de los datos),
+// con margen.
+var CM_MAX_FILAS_BUSCAR_ENCABEZADO = 10;
 
-function _cmNorm(s){ return String(s==null?'':s).trim().toLowerCase(); }
+// Trim + minusculas + sin tildes (NFD y quita las marcas diacriticas) --
+// asi "Teléfono"/"TELÉFONO"/"telefono" son la misma columna, y los nombres
+// de item en español (con o sin tilde, como los escriba quien edite la
+// plantilla en Gestion de Usuarios/Calidad) matchean igual.
+var CM_DIACRITICOS_RE = /[̀-ͯ]/g;
+function _cmNorm(s){
+  return String(s==null?'':s).trim().toLowerCase().normalize('NFD').replace(CM_DIACRITICOS_RE, '');
+}
+
+// Un encabezado de item en el archivo real viene como
+// "⚠️ 3. Valida entidad y derechos\r\n(7%)" (criticos llevan el emoji de
+// advertencia) o "1. Guion de saludo\r\n(5%)" (no criticos) -- el NUMERO
+// al principio es el identificador estable del item (coincide con `n` en
+// calidad-plantillas-seed.js); el texto despues del numero puede cambiar
+// de redaccion sin que el emparejamiento se rompa. Devuelve el numero o
+// null si el encabezado no empieza con uno (ej. las columnas fijas, o
+// PUNTAJE/CLASIFICACION/OBSERVACIONES GENERALES al final de la hoja real).
+function cmHeaderItemNumero(h){
+  var s = String(h==null?'':h).trim();
+  var m = /^[^\d]{0,4}(\d{1,2})[.)]/.exec(s);
+  return m ? parseInt(m[1], 10) : null;
+}
 
 function cmColIndexMap(headerRow, items){
   var map = { fijas: {}, items: {} };
   (headerRow||[]).forEach(function(h, i){
     var n = _cmNorm(h);
-    var fija = CM_COLUMNAS_FIJAS.find(function(c){ return _cmNorm(c.label)===n; });
+    var fija = CM_COLUMNAS_FIJAS.find(function(c){
+      if(_cmNorm(c.label)===n) return true;
+      return (c.labelAlt||[]).some(function(alt){ return _cmNorm(alt)===n; });
+    });
     if(fija && map.fijas[fija.key]===undefined){ map.fijas[fija.key] = i; return; }
-    var item = items.find(function(it){ return _cmNorm(it.label)===n; });
+    // Primero por NUMERO (robusto al emoji/salto de linea/peso -- ver
+    // cmHeaderItemNumero); si el encabezado no trae numero (ej. la
+    // plantilla plana que genera esta misma plataforma), cae al nombre
+    // exacto del item, igual que antes de la Fase 130.
+    var numero = cmHeaderItemNumero(h);
+    var item = (numero!=null ? items.find(function(it){ return it.n===numero; }) : null) ||
+      items.find(function(it){ return _cmNorm(it.label)===n; });
     if(item && map.items[item.n]===undefined) map.items[item.n] = i;
   });
   return map;
+}
+
+// Busca, entre las primeras `CM_MAX_FILAS_BUSCAR_ENCABEZADO` filas de la
+// hoja, la primera que resuelva LAS 2 columnas obligatorias (asesor+fecha)
+// -- la plantilla plana de esta plataforma la tiene en la fila 0; el
+// archivo real de Edwin trae antes 3 filas de titulo/leyenda/encabezado
+// agrupado por categoria (Fase 130, Parte 4). Devuelve el indice de fila
+// (0 si no hay nada que detectar, ej. hoja vacia) -- nunca null, para que
+// el llamador no tenga que manejar un caso aparte.
+function cmDetectarFilaEncabezado(aoa, items){
+  var limite = Math.min(aoa.length, CM_MAX_FILAS_BUSCAR_ENCABEZADO);
+  for(var i=0;i<limite;i++){
+    var map = cmColIndexMap(aoa[i], items);
+    if(CM_LABELS_OBLIGATORIAS.every(function(k){ return map.fijas[k]!==undefined; })) return i;
+  }
+  return 0;
 }
 
 function cmParseFecha(v){
@@ -61,11 +119,15 @@ function cmParseRespuesta(v){
   return '';
 }
 
-// aoa: array-of-arrays de la hoja "Monitoreos" (fila 0 = encabezados).
-// items: plantilla de calificacion de la campana (n, cat, label, weight, critico).
+// aoa: array-of-arrays de la hoja "Monitoreos" -- el encabezado real NO
+// siempre es la fila 0 (Fase 130, Parte 4: el archivo real de Edwin trae
+// titulo/leyenda/encabezado agrupado por categoria ANTES del encabezado
+// real, ver cmDetectarFilaEncabezado). items: plantilla de calificacion de
+// la campana (n, cat, label, weight, critico).
 function cmParseRows(aoa, items){
   if(!aoa || !aoa.length) return { error: 'La hoja "Monitoreos" esta vacia' };
-  var map = cmColIndexMap(aoa[0], items);
+  var filaEncabezado = cmDetectarFilaEncabezado(aoa, items);
+  var map = cmColIndexMap(aoa[filaEncabezado], items);
   var faltantes = CM_LABELS_OBLIGATORIAS.filter(function(k){ return map.fijas[k]===undefined; });
   if(faltantes.length){
     var labels = faltantes.map(function(k){ return CM_COLUMNAS_FIJAS.find(function(c){ return c.key===k; }).label; });
@@ -78,7 +140,7 @@ function cmParseRows(aoa, items){
 
   var filas = [];
   var avisos = [];
-  for(var i=1;i<aoa.length;i++){
+  for(var i=filaEncabezado+1;i<aoa.length;i++){
     var row = aoa[i];
     if(!row || row.every(function(v){ return v===''||v==null; })) continue;
     var fila = i+1;
@@ -121,7 +183,9 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CM_COLUMNAS_FIJAS: CM_COLUMNAS_FIJAS,
     CM_LABELS_OBLIGATORIAS: CM_LABELS_OBLIGATORIAS,
+    cmHeaderItemNumero: cmHeaderItemNumero,
     cmColIndexMap: cmColIndexMap,
+    cmDetectarFilaEncabezado: cmDetectarFilaEncabezado,
     cmParseFecha: cmParseFecha,
     cmParseRespuesta: cmParseRespuesta,
     cmParseRows: cmParseRows,

@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.3 — Octubre 2026
+
+**Fase 130 (Parte 4): la carga masiva de Calidad acepta la plantilla real
+que manda Edwin cada mes, sin que la tenga que editar.**
+
+- Corregido: el archivo real de Calidad trae título, leyenda y un
+  encabezado agrupado por categoría antes del encabezado real, usa
+  "Nombre del Asesor" en vez de "ASESOR", y cada pregunta de la
+  calificación lleva su número y el peso ("1. Guion de saludo (5%)") en
+  vez del texto exacto que esperaba el sistema. Antes esto hacía que el
+  archivo se rechazara por completo. Ya se reconoce el encabezado real
+  (no importa en qué fila esté) y cada pregunta por su número, sin
+  depender del texto exacto.
+
 ## v1.15.2 — Octubre 2026
 
 **Fase 130 (Parte 2): el archivo de Inasistencia de agosto y septiembre
