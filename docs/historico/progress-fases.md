@@ -12795,3 +12795,113 @@ solo, limpio, varias veces; atribuido a la carga de la máquina tras
 muchas corridas de Chromium/Playwright en la misma sesión, no a una
 regresión -- CI de GitHub en una máquina limpia es la verificación
 final).
+
+### Cierre — restauración real ejecutada (Opción B) + verificación final
+
+Con el PR del hallazgo del `Date` mergeado y desplegado (confirmado
+`GET /api/health` → `"version":"1.15.1"`), se ejecutó la Opción B
+completa que el usuario aprobó, con un "sí" explícito antes de cada
+escritura real y respaldo manual confirmado antes de la primera:
+
+- **Respaldo manual** (`respaldo-produccion.yml`, modo `respaldar-ahora`):
+  `integrity_check: ok`, `S3: OK` -- antes de tocar nada.
+- **Paso 1 (real)**: se volvió a subir el archivo real completo ene-ago
+  por la interfaz normal (modal "Cargar Datos de Dashboards", ORLANT) --
+  el preview en el navegador, revisado ANTES de aceptar el diálogo de
+  confirmación, ya daba exacto 2.664 filas totales y Ago-26 en
+  352 filas/54 entidades/11.189 citas/786 inasistencias (coincide con
+  los números que el dry-run anterior ya había mostrado). Diálogo real
+  aceptado programáticamente (`page.on('dialog')`), nunca forzado a
+  false esta vez -- a propósito, porque el usuario ya dijo "sí". Toast:
+  "✓ Inasistencia: 2664 fila(s) guardadas (Ene-26...Ago-26)", 0 errores
+  de consola. Verificado después por API: los 8 meses (Ene-26 a Ago-26)
+  con los totales exactos del preview, Sep-26 sin cambios
+  (1.483/94/2), 126 entidades distintas en total (global, antes de
+  borrar ene-jul).
+- **Paso 2 (dry-run, antes de borrar)**: `POST /admin/borrado-rango`
+  SIN `confirmar` (dry-run por diseño del propio servidor, nunca
+  escribe) -- base `inasistencia`, ORLANT, Ene-26 a Jul-26,
+  `filasEsperadas:2312`. Respuesta: `{"dryRun":true,"filas":2312,...}` --
+  coincide EXACTO con lo que la Fase 126 ya había borrado una vez antes
+  (mismo archivo). Cruce independiente (lectura, sin relación con el
+  endpoint de borrado): Tipificación de WhatsApp de Jul-26 sigue en
+  71 -- confirma que el candado de `base` (admin-borrado-rango.js, el
+  SQL solo puede tocar la tabla de la base pedida) funciona también en
+  los datos reales, no solo en el código. 0 peticiones de escritura
+  bloqueadas (no se intentó ninguna fuera del propio dry-run).
+- **Paso 2 (real, con el "sí")**: mismo `POST /admin/borrado-rango`,
+  ahora con `confirmar:true` -- el servidor revalida el conteo real
+  DENTRO de la misma transacción antes de borrar (protección contra que
+  algo cambiara entre el dry-run y el borrado real). Respuesta:
+  `{"ok":true,"borradas":2312}`.
+- **Verificación final** (solo lectura, con bloqueo de red de cualquier
+  escritura instalado por si acaso -- 0 se intentaron): meses presentes
+  en Inasistencia = exactamente `["2026-08","2026-09"]`; Ago-26
+  11.189/786/48, pct 7,45 %, 18 especialidades; entidades distintas
+  (ahora global = solo las de agosto) = 54; Sep-26 sin cambios
+  (1.483/94/2, 1 especialidad); Tipificación de WhatsApp Jul-26 sigue en
+  71; las 2 sub-pestañas de Inasistencia ("Resumen por mes" y "Por
+  especialidad") dibujan con píxeles reales; 0 errores de consola.
+  **0 hallazgos.**
+
+### Las 3 preguntas que quedaban sin responder
+
+**(a) Privacidad del script de diagnóstico** -- confirmado con
+`git log --all -- scripts/produccion/fase129-diagnostico-inasistencia-agosto.js`:
+un solo commit en todo el historial, y ese commit YA tenía el fix (la
+versión con el bug nunca se `git add`/commit, nunca se pusheó, nunca
+entró a un PR ni a un log de CI -- ningún workflow de `.github/`
+referencia ese script). El PR #334 corrigió el patrón por construcción
+(selección de campos dentro de `page.evaluate`) y agregó
+`server/tests/fase129-scripts-produccion-sin-texto-crudo.test.js`, que
+corre en CI y falla si cualquier script de `scripts/produccion/`
+(presente o futuro) reenvía crudo un endpoint `.../opciones`.
+
+**(b) Por qué septiembre tiene solo 1.483 citas y 1 especialidad** --
+el archivo real que Edwin ha enviado hasta ahora (confirmado por hash
+idéntico al usado en la Fase 108) trae únicamente Ene-26 a Ago-26 en
+`Hoja1` -- **cero filas de septiembre**. No es una carga parcial, un
+archivo distinto, ni un filtro escondiendo datos: Edwin simplemente no
+ha exportado septiembre todavía en el formato nuevo (una fila por
+cita). Lo que queda en producción para septiembre es el agregado viejo
+de la Fase 98-106 (antes de que existiera el formato `Hoja1`), intacto
+porque ningún archivo real de septiembre en el formato nuevo ha
+llegado. Anotado en `docs/pendientes.md` §2 (dueño: Edwin, prioridad
+MEDIA).
+
+**(c) El `console.error 401`** -- no se reprodujo en una segunda
+corrida idéntica contra producción (0 peticiones 401, token con ~8h de
+vigencia restante, sin relación con el bloqueo de escritura de la
+verificación, que tampoco intentó ninguna petición en esa corrida).
+Tratado como ruido transitorio de la primera corrida -- no se encontró
+una causa real que señalar, y no volvió a aparecer en ninguna de las
+~8 corridas de verificación de lectura que siguieron en esta misma
+fase.
+
+### Estado final de la Fase 129
+
+Versión `1.15.1`. 3 PRs: #333 (corrección del dry-run inseguro que
+causó el incidente), #334 (auditoría de privacidad generalizada +
+arreglo real del `Date`), y el PR de cierre (scripts de ejecución real
+de la restauración + esta actualización de `PROGRESS.md`/
+`docs/historico/progress-fases.md`). `npm test` en verde en CI (máquina
+limpia) en los 2 primeros PRs. Scripts de un solo uso de esta fase
+(`scripts/produccion/fase129-*.js`, 7 archivos) quedan en el repo por
+ahora -- mismo criterio que los de fases anteriores que tampoco se
+archivaron de inmediato (`fase122-recarga-tipificacion-alias-falla.js`,
+`fase124-parte1-pendientes-fase122.js`, `fase124-parte1b-exports.js`,
+`fase128-parte3-calidad-monitoreos-prueba.js`, todos siguen en
+`scripts/produccion/`) -- se archivan en bloque cuando estorben
+(`scripts/README.md`), no fase por fase. Confirmado con un `grep` final
+sobre los 7 archivos: ninguno contiene ni imprime un nombre real.
+
+Pendiente real, documentado, NO corregido en esta fase (fuera del
+pedido concreto de hoy): el mismo patrón de parseo de fecha
+(number/string solamente) que causó el bug de Inasistencia existe en 8
+módulos más que comparten la misma lectura con `cellNF:true` -- riesgo
+latente de que un archivo real con una columna de fecha formateada
+como fecha de Excel (en vez de número) falle en silencio igual que
+pasó aquí. Septiembre de Inasistencia sigue esperando el archivo real
+de Edwin en el formato nuevo (`docs/pendientes.md` §2). La cuenta
+CLIENTES_DASH sigue sin verificar (pendiente de siempre, sin
+contraseña de cliente a mano).
