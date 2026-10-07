@@ -4,6 +4,30 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.0 — Octubre 2026
+
+**Fase 128: cambios pedidos por Edwin en la reunión de validación de
+hoy, más seguridad y orden interno.**
+
+- La pestaña **"Salida" se renombra a "Llamadas y WhatsApp de salida"**
+  (más claro) y se mueve justo al lado de "Tráfico de WhatsApp" — antes
+  quedaba al final del menú. Los números no cambian, solo el nombre y la
+  posición.
+- Corrección de seguridad: el script interno que revisa producción
+  después de cada cambio ya no puede, por ningún motivo, imprimir
+  nombres reales de asesores en su reporte — antes, si alguien corría
+  ese chequeo, la tabla "Ranking de asesores" terminaba en el reporte
+  con nombres reales. Ahora ese script solo cuenta y clasifica, nunca
+  copia texto de la pantalla.
+- Herramienta nueva, solo para administradores: una forma segura de
+  borrar datos de prueba de Calidad (monitoreos) por rango de fechas,
+  con el mismo candado de siempre (primero cuenta cuántos se borrarían
+  y solo borra si ese número se confirma exacto) — se usó para retirar
+  los monitoreos de prueba de ORLANT antes de que lleguen los datos
+  reales.
+- Orden interno: limpieza de ramas de trabajo ya cerradas, y la versión
+  interna del proyecto quedó al día en todos los archivos que la usan.
+
 ## v1.14.0 — Octubre 2026
 
 **Fase 127: nuevo indicador de Llamadas y WhatsApp de Salida — pedido

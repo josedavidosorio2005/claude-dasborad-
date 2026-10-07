@@ -26,12 +26,19 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   usuario si la cuenta del cliente debe seguir viendo esos nombres o si
   hay que redactarlos para ese rol. Anotado 2026-10-06 (Fase 124, antes
   solo mencionado como pendiente de decisión en la Fase 122).
-- **37 monitoreos de prueba de Calidad** — dueño: Edwin (confirmación) +
-  InCo (borrado si aplica). Prioridad MEDIA. Siguen en producción, sin
-  tocar (regla fija: no se tocan sin pedido explícito). Cómo se cierra:
-  Edwin confirma si son datos reales o de prueba; si son de prueba, InCo
-  los borra por la interfaz normal. Anotado 2026-09-24 (Fase 71/119),
-  reconfirmado sin tocar en la Fase 124 (2026-10-06).
+- **37 monitoreos de prueba de Calidad — CONFIRMADOS, borrado en curso**
+  — dueño: InCo (ejecución). Prioridad ALTA. Edwin confirmó en la
+  reunión de validación del 2026-10-06 (Fase 128, Parte 3) que son de
+  prueba — entrega los datos reales el 2026-10-07. Mecanismo construido:
+  nueva base `monitoreos` en `POST /api/admin/borrado-rango` (mismo
+  candado de siempre: dry-run obligatorio, `filasEsperadas` exacto, solo
+  ORLANT), respaldo manual confirmado (S3 OK) antes del cambio. Falta
+  ejecutar contra producción real: dry-run con sesión real del usuario →
+  mostrar el conteo real por mes → "sí" explícito del usuario → borrado
+  real → confirmar Calidad en 0 sin errores. Anotado 2026-09-24 (Fase
+  71/119), reconfirmado sin tocar en la Fase 124 (2026-10-06), mecanismo
+  construido y confirmación obtenida en la Fase 128 (2026-10-06) — sigue
+  sin ejecutarse el borrado real.
 - **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
   Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
   fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA, reducida en
@@ -96,15 +103,20 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   cálculo sigue en el código. Si Wolkvox manda `SERVICE_LEVEL_5MIN`,
   reactivarlo es `mostrarSL5min:true` en `PUT /dashboards/config/ORLANT`.
 - **Indicador de llamadas y WhatsApp de Salida — construido en la Fase
-  127** (pedido textual de Edwin: "las llamadas de salida están muy
-  bajas, hay que revisarlo"; archivo recibido
+  127, renombrado y reubicado en la Fase 128 (Parte 1)** (pedido textual
+  de Edwin: "las llamadas de salida están muy bajas, hay que
+  revisarlo"; archivo recibido
   `FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx`). Ya no es una propuesta:
-  nueva pestaña "Salida" (tabla propia `salida_mensual`), cargador con
-  confirmación explícita del año del mes antes de guardar. Verificado
-  "LINEA DE SALIDA" de Tipificación de Llamadas: los totales mensuales
-  del archivo de Edwin coinciden EXACTO con ese skill (6.560 en ago-26,
-  10.404 en sep-26) — confirmado como la misma línea. Preguntas que
-  Edwin no definió y la plataforma **no inventó**:
+  pestaña **"Llamadas y WhatsApp de salida"** (tabla propia
+  `salida_mensual`, antes llamada solo "Salida" — renombrada por pedido
+  textual de Edwin en la reunión de validación del 2026-10-06, el
+  nombre corto no se entendía como concepto; reubicada junto a "Tráfico
+  de WhatsApp"), cargador con confirmación explícita del año del mes
+  antes de guardar. Verificado "LINEA DE SALIDA" de Tipificación de
+  Llamadas: los totales mensuales del archivo de Edwin coinciden EXACTO
+  con ese skill (6.560 en ago-26, 10.404 en sep-26) — confirmado como la
+  misma línea. Preguntas que Edwin no definió y la plataforma **no
+  inventó**:
   - **Denominador del %**: Edwin pidió "un indicador simple, el mes y la
     cantidad, con porcentaje si aplica" pero nunca dijo contra qué
     denominador (¿salida ÷ gestión total del asesor/día? ¿salida ÷
@@ -117,6 +129,14 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
     resto de la plataforma (Línea 3P vs. Línea General, igual que
     Tráfico/Agendas), pero nunca se confirmó explícitamente para Salida
     — preguntar a Edwin si aplica el mismo criterio.
+  - **Total acumulado además del filtro por mes** (pedido de Edwin,
+    mencionado en la reunión de validación del 2026-10-06, a futuro —
+    **NO implementar todavía**, queda anotado para cuando se pida
+    formalmente): hoy la pestaña solo muestra mes por mes (con la
+    variación contra el mes anterior) — Edwin mencionó que más adelante
+    quiere ver también un acumulado del período completo, igual que
+    "Efectividad de Citas" ya tiene su % ponderado del período. Sin
+    alcance ni fecha definida todavía.
 
 ## 3. Esperando decisión de InCo
 
@@ -138,35 +158,6 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- **`scripts/produccion/revision-final.js` sigue capturando texto con
-  nombres reales de asesor en su diagnóstico — el alcance del hallazgo
-  de la Fase 126 era INCOMPLETO** (hallazgo de la Fase 126, Parte 7;
-  re-confirmado y AMPLIADO en la Fase 127, Parte 4): la función que
-  confirma que cada sub-vista "dibuja algo real" (`veredictoSubvista`,
-  `host.innerText.slice(0,800)` de un clon del panel, guardado en
-  `reporte.admin.subvistas[...][...].texto` para el log de salida)
-  captura el texto COMPLETO del panel. La Fase 126 solo identificó una
-  fuente (las listas de los desplegables de filtro AGENTE/ASESOR) y la
-  Fase 127 (PR #322) la corrigió quitando los `<select>` del clon antes
-  de leer `innerText` — esa parte quedó bien resuelta. Pero al correr el
-  script de nuevo en la Fase 127 (Parte 4, verificación post-carga de
-  Salida) volvieron a aparecer nombres reales: la sub-vista "Ranking de
-  asesores" de Agendamiento muestra una TABLA con nombres reales como su
-  contenido PRINCIPAL (no un filtro) — esa tabla nunca pasó por el fix
-  del `<select>` porque no es un `<select>`. Mismo efecto que antes: el
-  dato nunca llega al repo/commits, pero sí a la consola de quien corre
-  el script (en la Fase 127, de nuevo en la transcripción de la sesión
-  de Claude Code). Prioridad ALTA, sin cambios. Cómo se cierra de verdad
-  esta vez: no alcanza con quitar los `<select>` — hace falta o (a) que
-  `veredictoSubvista` nunca devuelva texto crudo del DOM, solo un
-  veredicto booleano + conteo de caracteres + si matchea NaN/undefined/
-  mensajes "sin datos" (todo calculado DENTRO del `page.evaluate`, nunca
-  el texto en sí), o (b) una lista explícita de sub-vistas conocidas por
-  mostrar nombres (Ranking de asesores, y cualquier futura tabla
-  nominal) que se excluyen de la captura de texto por completo. Costo:
-  bajo-medio (la opción (a) es más simple y cierra la clase completa de
-  problema, no solo los casos ya vistos). Anotado 2026-10-06 (Fase 126),
-  ampliado 2026-10-06 (Fase 127) — sigue sin corregirse por completo.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
