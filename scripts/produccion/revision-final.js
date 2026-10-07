@@ -54,11 +54,21 @@ const ESPERADO = {
   // SOLO con Ago-26 (11.040, 3P 5.076/GENERAL 5.964) + Sep-26 (13.146, 3P
   // 5.523/GENERAL 7.623) = 24.186 total, 3P 10.599, GENERAL 13.587.
   agendasTotal: 11040 + 13146, agendasGeneral: 5964 + 7623, agendas3p: 5076 + 5523,
-  // Fase 126: Ene-Jul/2026 (2.312 filas) se borraron por la misma via --
-  // el "periodo" ya no mezcla meses de prueba, queda solo Ago-26+Sep-26
-  // (930 inasistencia+pendiente de 12.672 = 7.34%, confirmado con sesion
-  // real tras el borrado).
-  inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 7.34,
+  // Fase 130 (Parte 2): carga real del archivo de ago-sep/2026 de Edwin
+  // (Hoja1, encabezados "FECHA CITA"/sede "SEDE 34 (AUDIFONOS)" normalizada
+  // a "SEDE 34") -- Sep-26 deja el agregado viejo (1.483 citas, 1 sola
+  // "especialidad") y pasa a datos reales por cita, igual que Ago-26.
+  // Verificado exacto contra el archivo real (lector independiente, sin
+  // SheetJS) antes de cargar: Ago-26 11.189 citas/2.459 C/786 I/48 P/
+  // 7.896 T/18 especialidades; Sep-26 12.194/2.416/749/61/8.968/19
+  // especialidades; por sede Sep-26 Principal 7.212, Sede 34 3.297,
+  // Rionegro 766, Poblado 824, Llanogrande 95 (los 2 meses quedan con una
+  // sola "SEDE 34", sin el "(AUDIFONOS)" del archivo). "Periodo" ahora es
+  // Ago-26+Sep-26 real por cita: (834+810) inasistencia+pendiente de
+  // 23.383 = 7.03%.
+  inasistenciaAgoPct: 7.45, inasistenciaPeriodoPct: 7.03,
+  inasistenciaSepTotal: 12194, inasistenciaSepCancelada: 2416, inasistenciaSepInasistencia: 749,
+  inasistenciaSepPendiente: 61, inasistenciaSepAtendidas: 8968, inasistenciaSepEspecialidades: 19,
   // Fase 125: estaban en 18566/8319/44.81 -- numeros PRELIMINARES de
   // Sep-26 (antes de la Fase 122), nunca actualizados cuando esa fase
   // reemplazo Efectividad de Agendamiento con el archivo real
@@ -420,7 +430,10 @@ async function correrChequeosAdmin(page) {
     const wppTotal = wpp.reduce((a, r) => a + (Number(r.totalWhatsapp) || 0), 0);
     const wppContestados = wpp.reduce((a, r) => a + (Number(r.contestados) || 0), 0);
     const sl20 = (typeof traficoWppServiceLevelPromedioPeriodo === 'function') ? traficoWppServiceLevelPromedioPeriodo(wpp, 'serviceLevel20secPct') : null;
+    const inasistOpc = await apiRequest('GET', '/calidad/inasistencia/opciones?campana=ORLANT');
     const inasistAgo = await apiRequest('GET', '/calidad/inasistencia/resumen?campana=ORLANT&mes=2026-08');
+    const inasistSep = await apiRequest('GET', '/calidad/inasistencia/resumen?campana=ORLANT&mes=2026-09');
+    const inasistEspSep = await apiRequest('GET', '/calidad/inasistencia/especialidad?campana=ORLANT&mes=2026-09');
     const inasistTodos = await apiRequest('GET', '/calidad/inasistencia/mensual?campana=ORLANT');
     const i = inasistTodos.reduce((s, f) => s + f.inasistencia + f.pendiente, 0);
     const t = inasistTodos.reduce((s, f) => s + f.total, 0);
@@ -433,6 +446,15 @@ async function correrChequeosAdmin(page) {
       agendas3p: sumaPorLinea('3P'),
       inasistenciaAgoPct: inasistAgo.pct,
       inasistenciaPeriodoPct: Math.round((i / t) * 10000) / 100,
+      inasistenciaSepTotal: inasistSep.total,
+      inasistenciaSepCancelada: inasistSep.cancelada,
+      inasistenciaSepInasistencia: inasistSep.inasistencia,
+      inasistenciaSepPendiente: inasistSep.pendiente,
+      inasistenciaSepAtendidas: inasistSep.atendidas,
+      inasistenciaSepEspecialidades: inasistEspSep.length,
+      inasistenciaMeses: inasistOpc.meses,
+      inasistenciaSedes: inasistOpc.sedes,
+      inasistenciaMesesFormatoViejo: inasistOpc.mesesFormatoViejo,
     };
   });
   const ranking = await page.evaluate(() => apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana=ORLANT&mes=2026-09'));
@@ -564,6 +586,23 @@ async function correrChequeosAdmin(page) {
     fase113.miLoginEnHistorial && fase113.miLoginReciente && fase113.miLoginTieneIpYNavegador &&
     fase113.ultimoIngresoActualizado !== false && fase113.botonCambiarPasswordVisible;
 
+  // Fase 130 (Parte 2): Inasistencia debe quedar SOLO en ago-sep/2026 (sin
+  // formato viejo, sin ningun otro mes) y con una sola "SEDE 34" en el
+  // filtro (nunca partida en "SEDE 34"/"SEDE 34 (AUDIFONOS)"). Solo
+  // conteos/nombres de sede (nunca una entidad ni un nombre real) -- las
+  // sedes son ubicaciones fisicas, no datos personales.
+  const inasistSedes = n.inasistenciaSedes || [];
+  reporte.inasistenciaIntegridad = {
+    meses: n.inasistenciaMeses,
+    soloAgoSep: JSON.stringify(n.inasistenciaMeses) === JSON.stringify(['2026-08', '2026-09']),
+    sedes: inasistSedes,
+    sede34Unica: inasistSedes.includes('SEDE 34') && !inasistSedes.some((s) => s !== 'SEDE 34' && s.indexOf('SEDE 34') === 0),
+    sinFormatoViejo: (n.inasistenciaMesesFormatoViejo || []).length === 0,
+  };
+  const inasistenciaIntegridadOk =
+    reporte.inasistenciaIntegridad.soloAgoSep && reporte.inasistenciaIntegridad.sede34Unica &&
+    reporte.inasistenciaIntegridad.sinFormatoViejo;
+
   reporte.erroresConsola = erroresConsola;
   reporte.discrepanciasNumeros = discrepancias;
   reporte.canvasesSinDibujar = hallazgosCanvas;
@@ -580,7 +619,7 @@ async function correrChequeosAdmin(page) {
   reporte.ok =
     erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 &&
     fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
-    datoPorDatoOk && enBlancoSinMensaje.length === 0;
+    datoPorDatoOk && enBlancoSinMensaje.length === 0 && inasistenciaIntegridadOk;
 
   // Cierra sesion admin antes de soltar esta pagina -- nunca deja el
   // navegador logueado como admin al terminar este bloque.

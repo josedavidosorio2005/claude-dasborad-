@@ -32,7 +32,14 @@
 const METODOS_ESCRITURA = ['POST', 'PUT', 'PATCH', 'DELETE'];
 const METODOS_ESCRITURA_SET = new Set(METODOS_ESCRITURA);
 
-function esPeticionDeEscrituraBloqueable(method, url) {
+// `rutasExactasPermitidas` (opcional) -- rutas adicionales que un script
+// concreto necesita dejar pasar porque el PROPIO script controla el body
+// de la peticion (ej. un dry-run que llama a `/admin/borrado-rango` con
+// `confirmar:false` escrito literal en el codigo de Node, nunca leido del
+// DOM/dialog de la pagina -- a diferencia del incidente real, aqui no hay
+// ningun valor que dependa de `window.confirm()`). Comparacion EXACTA de
+// pathname, nunca un prefijo ni una regex amplia.
+function esPeticionDeEscrituraBloqueable(method, url, rutasExactasPermitidas) {
   if (!METODOS_ESCRITURA_SET.has(String(method || '').toUpperCase())) return false;
   let pathname;
   try {
@@ -40,7 +47,9 @@ function esPeticionDeEscrituraBloqueable(method, url) {
   } catch (e) {
     pathname = String(url || '');
   }
-  return !/\/impacto$/.test(pathname);
+  if (/\/impacto$/.test(pathname)) return false;
+  if (Array.isArray(rutasExactasPermitidas) && rutasExactasPermitidas.includes(pathname)) return false;
+  return true;
 }
 
 // Instala las 2 defensas sobre una página de Playwright ya abierta.
@@ -48,10 +57,10 @@ function esPeticionDeEscrituraBloqueable(method, url) {
 // push de cada petición de escritura real que haya intentado salir
 // (idealmente queda vacío siempre: la defensa 1 ya debería haber evitado
 // que la app intentara la petición).
-async function instalarDryRunSeguro(page, peticionesBloqueadas) {
+async function instalarDryRunSeguro(page, peticionesBloqueadas, rutasExactasPermitidas) {
   await page.route('**/*', (route) => {
     const req = route.request();
-    if (esPeticionDeEscrituraBloqueable(req.method(), req.url())) {
+    if (esPeticionDeEscrituraBloqueable(req.method(), req.url(), rutasExactasPermitidas)) {
       peticionesBloqueadas.push({ method: req.method(), url: req.url() });
       return route.abort();
     }

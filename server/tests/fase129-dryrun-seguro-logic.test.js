@@ -54,6 +54,26 @@ test('una URL invalida no revienta la funcion (se trata como string, sigue clasi
   assert.doesNotThrow(() => esPeticionDeEscrituraBloqueable('POST', 'no-es-una-url-valida'));
 });
 
+// Fase 130: un script de dry-run puede necesitar dejar pasar UNA ruta mas,
+// propia de su caso (ej. `/admin/borrado-rango` con `confirmar:false`
+// escrito literal en Node) -- un allowlist exacto, nunca un prefijo ni una
+// regex amplia, y solo si se pasa explicitamente (compatible hacia atras).
+test('rutasExactasPermitidas: una ruta extra SI se deja pasar cuando se pasa explicitamente', () => {
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango', ['/admin/borrado-rango']), false);
+});
+
+test('rutasExactasPermitidas: sin el parametro, la misma ruta se sigue bloqueando (compatible hacia atras)', () => {
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango'), true);
+});
+
+test('rutasExactasPermitidas: una ruta que NO esta en la lista se sigue bloqueando', () => {
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/otra-ruta', ['/admin/borrado-rango']), true);
+});
+
+test('rutasExactasPermitidas: comparacion EXACTA de pathname, un prefijo no basta', () => {
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango-falso', ['/admin/borrado-rango']), true);
+});
+
 // Documenta la CAUSA RAIZ del incidente: page.exposeFunction envuelve el
 // valor de retorno en una Promise, y una Promise SIEMPRE es truthy -- por
 // eso `if (!confirm(msg))` nunca abortaba. La defensa correcta (ver
