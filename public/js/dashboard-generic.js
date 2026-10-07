@@ -716,9 +716,11 @@ async function _gdBootstrap(){
       }catch(e){ /* se queda oculta / sin esos meses */ }
     })());
   });
-  // Fase 127 (pedido textual de Edwin): "Salida" sigue el MISMO criterio
-  // que Agendas/Inasistencia/Efectividad de Citas -- se destapa en memoria
-  // solo cuando ya hay datos reales cargados (tabla salida_mensual), nunca
+  // Fase 127 (pedido textual de Edwin): "Salida" (renombrada en la Fase 128,
+  // Parte 1, a "Llamadas y WhatsApp de salida" -- el `key` interno sigue
+  // siendo 'salida') sigue el MISMO criterio que Agendas/Inasistencia/
+  // Efectividad de Citas -- se destapa en memoria solo cuando ya hay datos
+  // reales cargados (tabla salida_mensual), nunca
   // escribiendo ese cambio en el servidor.
   Object.keys(campanasSalida).forEach(function(campSal){
     tareasBootstrap.push((async function(){
@@ -1564,7 +1566,7 @@ async function _gdExportarSalida(p, i){
   var filas = [];
   try{ filas = await apiRequest('GET', '/calidad/salida/mensual?campana='+encodeURIComponent(campana)) || []; }catch(e){}
   if(!filas.length){
-    return [{ titulo: 'Salida', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Salida para el periodo actual.' }];
+    return [{ titulo: 'Llamadas y WhatsApp de salida', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Llamadas y WhatsApp de salida para el periodo actual.' }];
   }
   function pct(parte, total){ return total>0 ? gdFmtValor(Math.round(parte/total*1000)/10,'%') : '—'; }
   var llamadas = filas.map(function(f){
@@ -1574,8 +1576,8 @@ async function _gdExportarSalida(p, i){
     return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, 'Total': f.wpp3p+f.wppGeneral, '% 3P': pct(f.wpp3p, f.wpp3p+f.wppGeneral) };
   });
   return [
-    { titulo: 'Llamadas de Salida', tipo: 'tabla', filas: llamadas },
-    { titulo: 'WhatsApp de Salida', tipo: 'tabla', filas: whatsapp },
+    { titulo: 'Llamadas de salida', tipo: 'tabla', filas: llamadas },
+    { titulo: 'WhatsApp de salida', tipo: 'tabla', filas: whatsapp },
   ];
 }
 

@@ -30,14 +30,14 @@ async function _salidaRenderPanel(p, i){
   var campana = p.campana;
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
-  var titulo = p.titulo || 'Salida (Llamadas y WhatsApp)';
+  var titulo = p.titulo || 'Llamadas y WhatsApp de salida';
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
   var opciones = await _salCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Salida cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Salida desde "Cargar Datos".</div></div>';
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Llamadas y WhatsApp de salida cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Llamadas y WhatsApp de salida desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -75,7 +75,7 @@ async function _salDibujar(campana, i, opciones){
 
   if(avisoEl){
     avisoEl.innerHTML = (!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1)
-      ? _gdAvisoSinDatosMesHtml('Salida', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null, mesNombreLargo)
+      ? _gdAvisoSinDatosMesHtml('Llamadas y WhatsApp de salida', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null, mesNombreLargo)
       : '';
   }
 

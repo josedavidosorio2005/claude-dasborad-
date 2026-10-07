@@ -67,20 +67,23 @@ const ORLANT = {
       // Fase 94 (tema A, pedido de Edwin): orden de las pestañas VISIBLES
       // (las `oculta:true` no aparecen en el menu, pero su posicion en este
       // array SI importa para cuando se destapan en memoria -- Agendamiento,
-      // Inasistencia y Tipificacion, ver _gdBootstrap en dashboard-generic.js):
-      // Trafico de Llamadas -> Trafico de WhatsApp -> Agendamiento ->
-      // Inasistencia (Fase 98) -> Tipificacion -> Calidad. La pestaña activa
-      // por defecto es SIEMPRE la primera VISIBLE del array
-      // (renderGenericTabs/_gdBootstrap toman `_gdTabsVisibles()[0]`) -- por
-      // eso 'trafico' va primero: ninguna de las autonomas puede ganarle el
-      // primer lugar aunque se destape antes de que el usuario mire, porque
-      // siguen despues en este mismo array. Las pestañas ocultas restantes
-      // (Ordenamiento Medico, Recuperacion de Cancelados, Flujo, Salida,
-      // Gestion STA, Efectividad Citas) van al final, en cualquier orden (no
-      // aparecen en el menu, su posicion no importa). Ver las migraciones
-      // idempotentes dashboards_config_orlant_orden_pestanas_v1/_v2 en
-      // db.js -- produccion ya tenia dashboards_config sembrado, este orden
-      // nuevo del seed nunca le habria llegado solo.
+      // Inasistencia, Tipificacion y Salida, ver _gdBootstrap en
+      // dashboard-generic.js): Trafico de Llamadas -> Trafico de WhatsApp ->
+      // Llamadas y WhatsApp de salida (Fase 128, Parte 1 -- antes "Salida" al
+      // final) -> Agendamiento -> Inasistencia (Fase 98) -> Tipificacion ->
+      // Calidad. La pestaña activa por defecto es SIEMPRE la primera VISIBLE
+      // del array (renderGenericTabs/_gdBootstrap toman
+      // `_gdTabsVisibles()[0]`) -- por eso 'trafico' va primero: ninguna de
+      // las autonomas puede ganarle el primer lugar aunque se destape antes
+      // de que el usuario mire, porque siguen despues en este mismo array.
+      // Las pestañas ocultas restantes (Ordenamiento Medico, Recuperacion de
+      // Cancelados, Flujo, Gestion STA, Efectividad Citas) van al final, en
+      // cualquier orden (no aparecen en el menu, su posicion no importa).
+      // Ver las migraciones idempotentes
+      // dashboards_config_orlant_orden_pestanas_v1/_v2 y
+      // dashboards_config_orlant_salida_label_orden_v1 en db.js --
+      // produccion ya tenia dashboards_config sembrado, este orden nuevo del
+      // seed nunca le habria llegado solo.
       { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
         { tipo: 'trafico_combo', campana: 'ORLANT' },
       ]},
@@ -116,6 +119,21 @@ const ORLANT = {
       // base ya sembrada antes de este cambio.
       { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [
         { tipo: 'trafico_whatsapp_combo', campana: 'ORLANT', mostrarAht: false, mostrarSL5min: false },
+      ]},
+      // Fase 128 (Parte 1, pedido textual de Edwin en la reunion de
+      // validacion: "Salida" no se entendia como concepto -- se renombra a
+      // "Llamadas y WhatsApp de salida" (pestaña + titulo del panel +
+      // exports + guia + checklist, server/dashboard-config-seed.js,
+      // public/js/salida.js, public/js/dashboard-generic.js) y se reubica
+      // aqui, justo despues de "Tráfico de WhatsApp" (antes vivia al final,
+      // junto a las pestañas sin base propia -- ya no corresponde, "Salida"
+      // SI tiene base real desde la Fase 127). Sigue oculta por defecto
+      // (destapada en memoria solo cuando ya hay datos, _gdBootstrap,
+      // dashboard-generic.js) -- migracion idempotente
+      // dashboards_config_orlant_salida_label_orden_v1 en db.js para quien
+      // ya tenia esta config sembrada con el nombre/posicion viejos.
+      { key: 'salida', label: 'Llamadas y WhatsApp de salida', oculta: true, panels: [
+        { tipo: 'salida_panel', campana: 'ORLANT', titulo: 'Llamadas y WhatsApp de salida' },
       ]},
       // Fase 94 (tema B, pedido de Edwin): Agendamiento queda SOLO con datos
       // reales de la tabla `agendas` (server/agendas.js) -- 4 sub-pestañas
@@ -222,25 +240,6 @@ const ORLANT = {
         { key: 'wpp3p', label: 'WhatsApp 3P', indices: [1] },
         { key: 'llamadasgeneral', label: 'Llamadas Línea General', indices: [2] },
         { key: 'wppgeneral', label: 'WhatsApp Línea General', indices: [3] },
-      ]},
-      // Fase 127 (ORLANT, pedido textual de Edwin: "las llamadas de salida
-      // estan muy bajas, hay que revisarlo"): esta pestana estaba sembrada
-      // desde antes (graficas 4-7 del PDF de InCo, 2026-09-18) pero NUNCA
-      // tuvo datos reales -- leia `dashboard_cargas` generico por DIA
-      // (salida_general/salida_3p/wpp_salida_general/wpp_salida_3p), y el
-      // archivo real de Edwin (FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx)
-      // es un total MENSUAL, no diario -- no se podia subir tal cual. Se
-      // reemplazan los 2 paneles `line`/filtroSerie viejos por un unico
-      // panel dedicado `salida_panel` (tabla `salida_mensual`, server/
-      // salida.js) que trae sus propias 2 graficas de barras agrupadas
-      // (3P vs General) para Llamadas y WhatsApp -- mismo criterio que
-      // agendas_panel/inasistencia_panel/efectividad_citas_panel (un panel
-      // autonomo, no una `fuente` generica). Sigue oculta por defecto
-      // (destapada en memoria solo cuando ya hay datos, ver _gdBootstrap,
-      // dashboard-generic.js) -- migracion idempotente en db.js para quien
-      // ya tenia esta config sembrada con los paneles viejos.
-      { key: 'salida', label: 'Salida', oculta: true, panels: [
-        { tipo: 'salida_panel', campana: 'ORLANT', titulo: 'Salida (Llamadas y WhatsApp)' },
       ]},
       // Fase 98 (ORLANT, pedido URGENTE de Edwin): Inasistencia con datos
       // REALES (tabla `inasistencias`, server/inasistencia.js) -- reemplaza

@@ -41,7 +41,7 @@ pestañas a medias:
 | 5 | Efectividad de Agendamiento | Agendamiento → Ranking de asesores |
 | 6 | Inasistencia | Inasistencia |
 | 7 | Efectividad de Citas Atendidas | Efectividad de Citas |
-| 8 | Salida (Llamadas y WhatsApp) | Salida |
+| 8 | Salida (Llamadas y WhatsApp) | Llamadas y WhatsApp de salida |
 
 Todas se suben desde la misma pantalla: **"Cargar Datos"** (menú
 principal) → cliente **ORLANT** → descarga la **plantilla consolidada**
@@ -68,7 +68,7 @@ diálogo (por ejemplo, subiste el archivo equivocado, o un mes que no
 querías tocar), **cancela y revisa el archivo antes de confirmar** — en
 ese punto todavía no se ha guardado nada.
 
-**Salida de llamadas y WhatsApp — confirmación del año**: el archivo de
+**Llamadas y WhatsApp de salida — confirmación del año**: el archivo de
 Salida (como el de Efectividad de Agendamiento y Efectividad de Citas)
 trae el mes en texto, sin año (ej. "AGOSTO"). Antes del diálogo de la
 sección anterior, Salida muestra un diálogo aparte con a qué año resolvió
