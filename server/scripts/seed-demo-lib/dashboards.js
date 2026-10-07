@@ -720,17 +720,41 @@ const PLANTILLA_OPTS = {
   'TELEVENTAS COMFAMA': { tipo: 'ventas', metaContact: 70, metaConv: 15 },
   'PANTERA MAIKERS': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'ANDRES YEPES': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
-  'MOBILIZE': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
+  // MOBILIZE salio de aqui en la Fase 131 (Parte 2): ya no tiene la forma
+  // generica de "ventas" (secciones resumen/diario/tipificacion/asesores),
+  // su dashboard real es Flujo de Llamadas (automatico, Trafico) + Calidad
+  // -- mismo motivo por el que ORLANT/CLINICA AURORA/HOSPITAL LA MARIA
+  // tampoco estan en este mapa, cada uno tiene su propia funcion de seed
+  // dedicada (seedOrlant/seedAurora/seedHospitalLaMaria) o, como MOBILIZE,
+  // ninguna todavia.
   'ALBERTO LINERO GO': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'INFONDO': { tipo: 'cobranza', metaCobertura: 90, metaPromesas: 60 },
   'SASCHA FITNESS': { tipo: 'atencion', salidaCampo: 'pedidos' },
   'BIVETT': { tipo: 'atencion', salidaCampo: 'agendas' },
 };
 
+// MOBILIZE: su unica "seccion" es un placeholder tecnico (ver el comentario
+// de MOBILIZE en dashboard-config-seed.js -- `secciones` no admite un
+// objeto vacio) sin ningun flujo real detras. Se siembra solo para que el
+// seed de demo cubra TODAS las secciones de TODOS los clientes
+// (seed-demo.test.js: "los 12 dashboards de cliente quedan con carga en
+// TODAS sus secciones"), sin fingir un flujo que Mobilize no tiene.
+function seedMobilizeNotas(db, { cargadoPorNombre }) {
+  const cfg = configDe('MOBILIZE');
+  MESES.forEach((mes) => {
+    cargarSeccion(db, {
+      cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: mes,
+      filas: [{ nota: 'Sin uso -- Mobilize funciona 100% automatico (Trafico de Llamadas + Calidad).' }],
+      spec: cfg.secciones.notas, cargadoPorNombre,
+    });
+  });
+}
+
 function seedDashboards(db, { cargadoPorNombre }) {
   seedOrlant(db, { cargadoPorNombre });
   seedAurora(db, { cargadoPorNombre });
   seedHospitalLaMaria(db, { cargadoPorNombre });
+  seedMobilizeNotas(db, { cargadoPorNombre });
   for (const [cliente, opts] of Object.entries(PLANTILLA_OPTS)) {
     if (opts.tipo === 'ventas') seedVentas(db, cliente, opts, { cargadoPorNombre });
     else if (opts.tipo === 'cobranza') seedCobranza(db, cliente, opts, { cargadoPorNombre });

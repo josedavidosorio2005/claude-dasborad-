@@ -3011,6 +3011,57 @@ runOnceMigration('cliente_movilize_renombrado_mobilize_v1', () => {
   }
 });
 
+// Fase 131 (Parte 2, pedido de Edwin): MOBILIZE reemplaza la plantilla
+// generica de "ventas" de M3 (base_asignada/contactados/conversion/
+// asesores -- nunca aplico a su operacion real, ver el comentario de donde
+// salio en dashboard-plantillas-cliente.js) por su dashboard real (Flujo de
+// Llamadas con trafico_combo + Calidad, ver el objeto MOBILIZE en
+// dashboard-config-seed.js). Defensiva por forma, igual que las migraciones
+// de reemplazo de ORLANT (salida_panel, efectividad_citas): solo reemplaza
+// si la fila en produccion todavia coincide EXACTO con la forma vieja
+// reconocible de plantillaVentas (un tab "asesores" Y una seccion
+// "asesores", combinacion que ninguna otra forma tiene) -- si ya se
+// reemplazo antes (reconocido por el tab "flujo" con un panel
+// trafico_combo) o un admin la personalizo a otra cosa desde el
+// constructor visual, se deja intacta y se loguea, nunca se pisa a ciegas.
+runOnceMigration('dashboards_config_mobilize_flujo_llamadas_v1', () => {
+  const row = db.prepare('SELECT cliente, secciones, layout FROM dashboards_config WHERE cliente = ?').get('MOBILIZE');
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let secciones;
+  let layout;
+  try {
+    secciones = JSON.parse(row.secciones || '{}');
+    layout = JSON.parse(row.layout || '{}');
+  } catch (e) {
+    return;
+  }
+
+  const tabFlujo = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const yaEsNueva = tabFlujo && Array.isArray(tabFlujo.panels) && tabFlujo.panels.some((p) => p && p.tipo === 'trafico_combo');
+  if (yaEsNueva) return; // ya migrada (o sembrada ya con la forma nueva)
+
+  const tabAsesores = (layout.tabs || []).find((t) => t && t.key === 'asesores');
+  const esViejaReconocible = !!tabAsesores && !!(secciones && secciones.asesores);
+  if (!esViejaReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_flujo_llamadas_v1: la fila de MOBILIZE no coincide con la forma vieja reconocible (plantillaVentas) ni con la nueva -- se deja intacta, revisar a mano.');
+    }
+    return;
+  }
+
+  const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+  if (!target) return;
+  db.prepare('UPDATE dashboards_config SET secciones = ?, layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(target.secciones),
+    JSON.stringify(target.layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_flujo_llamadas_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

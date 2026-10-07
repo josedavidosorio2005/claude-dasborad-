@@ -495,10 +495,94 @@ const HLM = {
   },
 };
 
-// M3 (Fase A2): 9 dashboards de cliente mas, por plantilla estandar de contact
+// ── MOBILIZE ────────────────────────────────────────────────
+// Fase 131 (Parte 2, pedido de Edwin): dashboard real de Mobilize, no la
+// plantilla generica de "ventas" de M3 (ver el comentario de donde salio,
+// dashboard-plantillas-cliente.js) -- Mobilize es un cliente de FLUJO DE
+// LLAMADAS (cola/skill), no de televentas. "Flujo de Llamadas" reusa tal
+// cual el mismo motor/panel de ORLANT (trafico_combo, trafico-skills.js/
+// trafico-logic.js -- su propio export de Volvox mapea por skill a la
+// campana MOBILIZE igual que cualquier otra) con 4 ajustes, todos opciones
+// NUEVAS y opcionales del panel (ORLANT/CLINICA AURORA/HOSPITAL LA MARIA no
+// las pasan, asi que su comportamiento no cambia en nada):
+//   - `etiquetaLinea`/`etiquetaLineaPlural`: el filtro dice "Tipo de línea"
+//     (el nombre real de su columna), no "Skill".
+//   - `subtabs`/`subtabsTitulos`: orden pedido por Edwin (Resumen -> Nivel
+//     de Servicio 80-20 -> Abandono -> ASA -> AHT, AHT al final) en vez del
+//     orden de siempre (Resumen/Abandono/AHT/ASA y ATA/Nivel de Servicio).
+//     "asa" (sin ATA, que "se guarda pero no se grafica") es una sub-pestaña
+//     nueva, independiente de "asaata" -- ver _traficoDibujarAsaAta en
+//     trafico.js. SL10/SL30/WAIT_TIME ya no se grafican para NADIE desde la
+//     Fase 68 (se siguen guardando igual) -- nada que apagar aqui.
+//   - `resumenOcultar`: el resumen principal de Mobilize es SOLO
+//     ingresadas/contestadas/abandonadas/nivel de atencion (pedido
+//     explicito de Edwin) -- se quitan las tarjetas de tasa de abandono y
+//     nivel de servicio, que ya tienen su PROPIA sub-pestaña con su propio
+//     resumen (`resumenPorSeccion`, siguiente punto).
+//   - `resumenPorSeccion`: cada sub-pestaña de detalle (SL/Abandono/ASA/
+//     AHT) trae su propio numero acumulado del periodo/filtro actual
+//     ENCIMA de su grafica, no solo el chart solo -- pedido textual de
+//     Edwin ("cada sección con SU resumen acumulado debajo, no un solo
+//     resumen arriba").
+// Sin pestaña de Trafico de WhatsApp (Mobilize no tiene WhatsApp). Sin
+// pestaña de Tipificacion todavia (CDR, llega en la Parte 3 de esta misma
+// fase -- necesita su propio motor de lectura, igual que Trafico aqui).
+// Calidad usa la plantilla GENERICA de contact center (plantillaGenerica,
+// calidad-plantillas-seed.js) -- Edwin no dio todavia criterios propios de
+// calificacion para Mobilize, mismo caso que Andres Yepes/Sascha Fitness/
+// Bivett.
+const MOBILIZE = {
+  cliente: 'MOBILIZE',
+  titulo: 'Dashboard Mobilize',
+  vista: null,
+  // Sin carga manual real (Gestion de base): todo lo real de Mobilize sale
+  // de Trafico (automatico, por skill) y Calidad (su propio formulario) --
+  // a diferencia de ORLANT, Mobilize no tiene ningun tab viejo que todavia
+  // dependa de una hoja "resumen" generica. "notas" es un PLACEHOLDER
+  // tecnico, no un flujo real: `secciones` no admite un objeto vacio
+  // (validation.js, dashboardConfigBody.secciones, "El dashboard necesita
+  // entre 1 y 30 secciones" -- lo exige CUALQUIER PUT /dashboards/config/
+  // :cliente, incluido guardar sin cambiar nada desde el constructor visual
+  // del admin, hallazgo real de esta misma fase). Nunca se le pide nada al
+  // admin de Mobilize en la pantalla de carga -- queda ahi sin uso real.
+  secciones: {
+    notas: {
+      titulo: 'Notas (sin uso)',
+      descripcion: 'Placeholder tecnico -- Mobilize no tiene carga manual, todo sale de Trafico/Calidad.',
+      cadencia: 'mensual', periodo: 'mes', filaUnica: true,
+      columnas: [{ key: 'nota', label: 'Nota', tipo: 'texto' }],
+    },
+  },
+  layout: {
+    kpis: [],
+    tabs: [
+      { key: 'flujo', label: 'Flujo de Llamadas', panels: [
+        { tipo: 'trafico_combo', campana: 'MOBILIZE',
+          etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
+          resumenOcultar: ['tasaAbandono', 'nivelServicio'],
+          resumenPorSeccion: true,
+          subtabs: [
+            { key: 'resumen', label: 'Resumen' },
+            { key: 'sl', label: 'Nivel de Servicio' },
+            { key: 'abandono', label: 'Abandono' },
+            { key: 'asa', label: 'ASA' },
+            { key: 'aht', label: 'AHT' },
+          ],
+          subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
+        },
+      ]},
+      { key: 'calidad', label: 'Calidad', panels: [
+        { tipo: 'calidad_kpis', campana: 'MOBILIZE' },
+        { tipo: 'calidad_pie', campana: 'MOBILIZE', titulo: 'Distribución de clasificación' },
+      ]},
+    ],
+  },
+};
+
+// M3 (Fase A2): 8 dashboards de cliente mas, por plantilla estandar de contact
 // center. Se afinan desde el constructor visual, no aqui.
 const { CONFIGS_CLIENTE } = require('./dashboard-plantillas-cliente');
 
-const CONFIGS = [ORLANT, AURORA, HLM, ...CONFIGS_CLIENTE];
+const CONFIGS = [ORLANT, AURORA, HLM, MOBILIZE, ...CONFIGS_CLIENTE];
 
 module.exports = { CONFIGS };

@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.16.3 — Octubre 2026
+
+**Fase 131 (Parte 2): el dashboard de Mobilize ya muestra su Flujo de
+Llamadas real, en el orden que pidió Edwin.**
+
+- Nuevo: la pestaña "Flujo de Llamadas" de Mobilize reutiliza el mismo
+  motor ya probado con ORLANT (Tráfico de Llamadas) — mismos filtros por
+  mes/día/tipo de línea, sin WhatsApp (Mobilize no lo tiene).
+- El orden que pidió Edwin: Resumen (ingresadas, contestadas, abandonadas,
+  nivel de atención), Nivel de Servicio 80-20, % Abandono, ASA y AHT (al
+  final) — cada sección con su propio número acumulado del período, no
+  solo un resumen arriba.
+- ASA y ATA ya se leen aunque vengan como texto en el archivo (antes solo
+  se aceptaban como número); ATA se guarda pero no se grafica (pedido de
+  Edwin).
+- Se agregó un aviso de seguridad: si "Nivel de Atención" o "% Abandono"
+  llegaran a dar más de 100% al cargar un archivo, la plataforma avisa
+  antes de confirmar la carga (nunca inventa ni corrige el número solo).
+
 ## v1.16.2 — Octubre 2026
 
 **Fase 131 (Parte 1): el cliente "Movilize" se escribía mal — ahora dice
