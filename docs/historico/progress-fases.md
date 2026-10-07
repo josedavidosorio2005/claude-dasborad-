@@ -12905,3 +12905,332 @@ pasó aquí. Septiembre de Inasistencia sigue esperando el archivo real
 de Edwin en el formato nuevo (`docs/pendientes.md` §2). La cuenta
 CLIENTES_DASH sigue sin verificar (pendiente de siempre, sin
 contraseña de cliente a mano).
+
+## Fase 130 — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras (2026-10-07)
+
+Pedido original: seguir la carga real de Calidad de ORLANT (95
+monitoreos reales de septiembre/2026) + varios pedidos puntuales que
+salieron de la reunión con Edwin del 2026-10-07 + cierre con
+verificación completa en producción, con las 2 cuentas (ADMIN y
+CLIENTES_DASH). 8 PRs (#336 a #343).
+
+### Parte 2 (PR #336, v1.15.2) — Inasistencia acepta "FECHA CITA" y normaliza SEDE 34
+
+El archivo real de ago-sep/2026 de Edwin trae el encabezado de fecha
+como "FECHA CITA" (con espacio) en vez de "FECHA_CITA" — se agregó como
+alias, sin dejar de aceptar el anterior. La sede 34 viene como "SEDE 34
+(AUDIFONOS)" — se normaliza quitando el paréntesis final, para que no
+quede partida en 2 valores de filtro distintos (antes el filtro
+mostraba "SEDE 34" y "SEDE 34 (AUDIFONOS)" como si fueran sedes
+diferentes). `node --test tests/inasistencia-logic.test.js` -> 47/47 OK
+(5 pruebas nuevas). Verificado contra el archivo real por fuera del
+repo, con un lector independiente (sin SheetJS): Ago 11.189 citas/2.459
+canceladas/786 inasistencias/48 pendientes/7.896 atendidas/18
+especialidades; Sep 12.194/2.416/749/61/8.968/19 especialidades; por
+sede en septiembre: Principal 7.212, Sede 34 3.297, Rionegro 766,
+Poblado 824, Llanogrande 95.
+
+### Parte 3 (PR #339, v1.15.4) — quita el aviso "incompleto" de Inasistencia
+
+Pedido textual de Edwin en la reunión: "quitar esos comentarios" — los
+avisos naranja que aparecían en Inasistencia por diferencias de
+especialidades entre meses. `inasistenciaAvisosPorMes`
+(`public/js/inasistencia-logic.js`) ya no clasifica un mes como
+"incompleto" solo porque tenga menos especialidades que el mes más
+completo del rango filtrado — con archivos reales completos mes a mes,
+esa diferencia es variación de negocio normal (una especialidad/sede no
+operó ese mes), no un dato faltante. El aviso viejo además cambiaba de
+mes al que le "achacaba" la incompletitud según cuál tuviera más
+categorías ese período, lo que lo hacía más confuso que útil. Se
+mantienen los 2 avisos que sí siguen siendo útiles: "parcial" (mes 100%
+en el formato agregado viejo, antes del archivo real por cita) y
+"sinDatosFiltro" (el filtro de sede/especialidad/entidad activo deja un
+mes sin filas). `public/js/inasistencia.js` ya no renderiza el texto de
+"incompleto". Test actualizado: el caso que antes esperaba
+`tipo:'incompleto'` ahora espera `avisos: []`.
+
+### Parte 4 (PR #337, v1.15.3) — carga masiva de Calidad acepta la plantilla real de Edwin
+
+El archivo real trae título/leyenda/encabezado agrupado antes del
+encabezado real (no está en la fila 0), usa "Nombre del Asesor" en vez
+de "ASESOR", y cada ítem de la plantilla de calificación viene numerado
+con su peso ("1. Guion de saludo (5%)"), con los ítems críticos
+marcados con un emoji de advertencia. `cmDetectarFilaEncabezado`
+encuentra el encabezado real aunque no sea la fila 0; `cmColIndexMap`
+empareja cada ítem por su número (ignorando emoji/salto de línea/peso)
+con reserva al nombre exacto para la plantilla plana de siempre (nunca
+rompe la carga de una plantilla que no trae esos adornos).
+
+### Cierre de scripts (PR #338) — trabajo de una sesión anterior subido sin PR
+
+Una sesión anterior de Claude Code había dejado commiteado localmente,
+sin PR, el trabajo de extender `revision-final.js` y 6 scripts nuevos
+de un solo uso. Este PR lo sube:
+
+- `revision-final.js`: ahora verifica Inasistencia completa ago+sep
+  (totales, cancelada/inasistencia/pendiente/atendidas, especialidades
+  de septiembre), que `/calidad/inasistencia/opciones` reporte EXACTO
+  `['2026-08','2026-09']` (sin formato viejo ni otros meses) y que "SEDE
+  34" quede única en el filtro.
+- 6 scripts nuevos (`scripts/produccion/fase130-*.js`): inventario de
+  meses por base (solo lectura), dry-run + ejecución real del borrado de
+  Tipificación de WhatsApp de julio-26 (71 filas, confirmadas por 2
+  caminos independientes antes de borrar), dry-run + ejecución real de
+  la carga de Inasistencia ago-sep, y una verificación de administrador
+  que reutiliza `correrChequeosAdmin` de `revision-final.js` sin
+  duplicar lógica.
+- Corregido por construcción: uno de los 6 scripts reinventaba su propio
+  bloqueador de red de dry-run en vez de usar `lib/dry-run-seguro.js`
+  (regla fija desde el incidente de la Fase 129, que exige que TODO
+  dry-run use ese único helper auditado) — se generalizó el helper con
+  un allowlist exacto de rutas adicionales permitidas, con 4 pruebas
+  nuevas, y se usó ahí.
+
+Los 6 scripts pasan la prueba estática
+`fase129-scripts-produccion-sin-texto-crudo.test.js` (nunca reenvían
+texto crudo de un endpoint `.../opciones`).
+
+### Cierre carga Calidad (PR #340, v1.15.5) — ya no se rechaza por filas de plantilla sin llenar
+
+Hallazgo real al intentar la carga real de los 95 monitoreos de
+septiembre/2026 (pantalla "Cargar Datos de Dashboards" -> ORLANT): el
+archivo real trae, muy por debajo de los datos reales, ~126 filas de
+plantilla con la fórmula de PUNTAJE OBTENIDO ya copiada pero nunca
+diligenciada (sin ASESOR). `cargasDetectarFormulaSinValor` escaneaba
+TODA la hoja por cualquier celda con fórmula sin valor cacheado — una
+sola celda así en una fila de plantilla tumbaba TODA la hoja ("El
+archivo no tiene datos en ninguna hoja reconocida"), aunque las 95
+filas reales estuvieran perfectas. Corregido por construcción: si la
+fila de la celda con fórmula sin valor NO tiene nada en su columna A (el
+campo identificador que todo parser de "una fila por registro" ya
+exige — ASESOR/SKILL_NAME/SEDE/...), no se reporta como error. Una fila
+real rota SIEMPRE trae su columna A, así que esto no esconde un error
+genuino, solo el ruido de filas de plantilla. 2 pruebas nuevas cubren
+ambos casos. Incluye también 2 scripts de cierre
+(`fase130-cierre-verificacion-completa.js`,
+`fase130-ejecutar-calidad-carga-real.js`) y la actualización de
+`docs/plantillas-inventario.md` con las particularidades reales del
+archivo de Calidad.
+
+### Cierre observaciones (PR #341, v1.15.6) — hasta 500 caracteres + fix del script de carga
+
+Segundo hallazgo real durante la misma carga: el servidor rechazaba el
+guardado con "Too big: expected string to have <=200 characters" — el
+campo OBSERVACIONES de la plantilla real trae notas en prosa del
+evaluador (4 de las 95 filas superan 200 caracteres, máximo real 235).
+`server/validation.js` sube `observaciones` (en `createMonitoreoBody` y
+`updateMonitoreoBody`) a `max(500)` — mismo límite que ya usa
+"observaciones" en Inventario, no inventado. El resto de campos de
+texto corto de Calidad (idLlamada/telefono/codificacion/evaluador) se
+quedan en 200 — el archivo real nunca se acerca a ese límite ahí. 7
+pruebas nuevas en `validation.test.js`. De paso corrigió un bug del
+propio script de cierre (no de la app): `fase130-ejecutar-calidad-
+carga-real.js` bloqueaba por igualdad literal de ruta
+(`/monitoreos/bulk`) en vez de por sufijo — el servidor expone la ruta
+bajo `/api`, así que el bloqueador de red del PROPIO script abortaba el
+guardado real, disfrazado de "no se pudo conectar con el servidor".
+Corregido con el mismo patrón de sufijo que ya usa el resto de
+`scripts/produccion/`.
+
+### Nueva gráfica en Calidad (PR #342, v1.16.0) — nombre y % promedio por asesor
+
+Pedido de Edwin en la reunión del 2026-10-07: en la pestaña Calidad,
+además de los indicadores de siempre y la torta de clasificación, una
+barra horizontal con el nombre de cada asesor y su % promedio de
+puntaje, ordenada de mayor a menor, SIN número de monitoreos. Aprobado
+con 3 condiciones:
+
+1. **Roles/CLIENTES_DASH**: confirmado que el panel hereda el mismo
+   `campaignAccess` que `calidad_kpis`/`calidad_pie` (sin distinción por
+   rol) — el mismo público que YA ve nombres reales en
+   Agendas/Efectividad de Agendamiento desde la Fase 122 (pendiente de
+   decisión ya documentado, extendido en `docs/pendientes.md`). No se
+   cambió ningún permiso al agregar el panel.
+2. **Selector de mes**: el panel reusa el mismo `arr` ya filtrado por
+   `_calDashEstado` (mes/asesor/fecha) que sus 2 hermanos — el promedio
+   nunca mezcla meses, por construcción.
+3. **Pruebas + verificación real**: `calDashPromedioPorAsesor` (función
+   pura) probada con asesores ficticios, incluido uno con un solo
+   monitoreo; verificado contra un servidor LOCAL con datos ficticios
+   (nunca producción) en claro/oscuro y 1366x768 — barras con píxeles
+   reales, 0 errores de consola, el texto "monitoreo(s)" nunca aparece
+   en pantalla.
+
+Hallazgo real durante la implementación: la migración aditiva nueva
+(`dashboards_config_orlant_calidad_bar_asesores_v1`) inicialmente
+agregaba el panel a CUALQUIER tab "calidad" de ORLANT — correr la suite
+completa de migraciones encontró que `orlant-orden-pestanas-
+migracion.test.js` ya sembraba un tab "calidad" propio con una forma
+distinta; la migración se corrigió para no asumir la forma del tab y
+solo agregar el panel si no existe ya.
+
+### Verificación de cierre (continuación de esta misma fase, sesión del 2026-10-07)
+
+Al retomar la fase (sesión nueva, la anterior se quedó sin cupo), se
+verificó primero si los 95 monitoreos reales de Calidad YA estaban en
+producción, antes de intentar cargar nada: `GET /monitoreos?campana=
+ORLANT&mes=2026-09` con sesión de administrador, solo lectura (sin
+imprimir ningún nombre, solo conteos y el promedio). Resultado: 95
+monitoreos totales, 19 asesores distintos, 1 evaluador, promedio 94,79
+% (82 sobresaliente, 13 no crítico, 0 crítico) — exacto contra lo
+esperado. Ya estaban cargados de la sesión anterior; no hizo falta
+cargar nada en esta.
+
+#### Parte 7 (PR #343, v1.16.1) — el limitador de tasa ya no bloquea a toda una oficina
+
+Al correr `revision-final.js` para la verificación final, la TERCERA
+corrida seguida falló con "Demasiadas peticiones. Intenta de nuevo mas
+tarde." — el límite de tasa global de la API (`apiLimiter`, 300
+peticiones/15min, SOLO por IP) se agotó a mitad de la corrida (cada
+corrida completa del bloque ADMIN hace ~70 peticiones; 3 corridas
+seguidas en pocos minutos pasaron de 300). El mismo día, el usuario
+reportó que en pruebas reales, con varios clientes entrando, aparecía
+"demasiados intentos"/"demasiadas peticiones" en el uso normal — mismo
+síntoma, autorizó explícitamente tocar la configuración del limitador.
+
+**Diagnóstico (solo lectura, con login real, antes de cambiar nada):**
+- Se listaron los 3 limitadores existentes: `apiLimiter` (global, 300
+  peticiones/15min, clave = IP, sin distinción autenticado/anónimo),
+  `loginLimiter` (20 intentos/15min, clave = IP, ya tenía
+  `skipSuccessfulRequests`), `changePasswordLimiter` (igual a login).
+- `trust proxy`: se sospechó que pudiera estar mal configurado (toda la
+  gente detrás de la IP interna de Caddy en vez de la real) — un script
+  liviano de un solo uso (2 peticiones: login + `GET /historial`, nunca
+  un `revision-final.js` completo, para no volver a gastar la cuota
+  recién liberada) confirmó que ya estaba bien (`TRUST_PROXY=1`): la IP
+  que ve el servidor para mi propio login se clasifica como "pública
+  (parece IP real de cliente)", no como un rango privado/Docker. La
+  arquitectura (Lightsail de una sola instancia, Caddy ->
+  `reverse_proxy app:3000` en la misma red de docker-compose, sin ALB ni
+  CDN delante) corresponde exactamente a "1 solo salto de proxy", que es
+  lo que `TRUST_PROXY=1` asume. No se tocó, no hacía falta.
+- Causa real confirmada: contar SOLO por IP hace que una oficina entera
+  (varios clientes reales detrás del mismo NAT) comparta un único cupo
+  — una revisión administrativa completa (~70 peticiones) ya se come
+  casi un cuarto del cupo global.
+
+**Cambios (PR #343, con tests, CI verde):**
+- **API general**: dividida en 2 cupos mutuamente excluyentes (cada
+  petición cuenta en uno solo, nunca en los dos, decidido por `skip` en
+  cada limitador según si la petición trae un JWT válido):
+  - Autenticado (`authLimiter`) -> clave POR USUARIO (identidad
+    decodificada del JWT, sin ir a la base de datos — nunca se usa para
+    permisos, eso sigue siendo `requireActor` en cada ruta), límite
+    `RATE_LIMIT_MAX_AUTENTICADO` (nueva variable de entorno, default
+    1.500/15min — una revisión completa del dashboard hace ~70
+    peticiones, con margen amplio).
+  - Sin sesión (`anonLimiter`) -> clave por IP, sin cambios
+    (`RATE_LIMIT_MAX`, 300/15min).
+- **Login**: clave ahora IP + usuario INTENTADO (el que viene en el
+  body, nunca uno ya resuelto en BD — el middleware corre antes de
+  `validate()`), usando el helper `ipKeyGenerator` de la librería (no
+  `req.ip` crudo, para que una IPv6 no se pueda variar dentro de la
+  misma subred para esquivar el límite). Quien se equivoca de
+  contraseña en SU cuenta ya no frena a nadie más de su oficina.
+  `LOGIN_RATE_LIMIT_MAX` bajado de 20 a 10 (ya no hace falta un número
+  tan alto por usuario). Sigue contando SOLO fallidos
+  (`skipSuccessfulRequests`, sin cambios — un login correcto nunca
+  cuenta). Mensaje nuevo: dice los minutos exactos que faltan para
+  reintentar (antes, texto genérico "en unos minutos"), calculado de
+  `req.rateLimit.resetTime`.
+- `changePasswordLimiter` no se tocó (sigue por IP, mismo límite
+  compartido `LOGIN_RATE_LIMIT_MAX` — ahora 10 en vez de 20, efecto
+  colateral aceptado: ya era más que suficiente para su propósito de
+  "adivinar tu propia contraseña actual").
+- Variables de entorno nuevas/cambiadas con su default, documentadas en
+  `app.env.example`/`server/.env.example`.
+
+**Tests nuevos**: "dos usuarios distintos desde la misma IP no se
+bloquean entre sí en el login" y "autenticado por usuario no comparte
+cupo con el límite anónimo por IP" (`rate-limit-api-general.test.js`,
+nuevo). El test existente de login (bloquea tras agotar el máximo del
+MISMO usuario) sigue en verde. 62 tests dirigidos (rate-limit, auth,
+historial, cambio de contraseña, dashboard) en verde localmente — la
+corrida completa de `npm test` en esta máquina se colgó sin terminar
+(problema YA documentado en `docs/pendientes.md`, no nuevo de esta
+fase); CI (Node 22, máquina limpia) confirmó los 3 jobs en verde.
+`npm audit`: 0 vulnerabilidades.
+
+**Despliegue**: PR #343 mergeado a `main`. El primer intento de CI en
+`main` quedó en "cancelled" porque el job `pantallas` se colgó bajando
+paquetes de apt para instalar Chromium (timeout de 5 min, puro flake de
+infraestructura del runner de GitHub — nunca llegó a ejecutar nada de
+la app, ni de este cambio). Se reintentó SOLO ese job
+(`gh run rerun --failed`) y pasó; con los 3 jobs en verde, `deploy.yml`
+se disparó solo y terminó exitoso. `/api/health` confirmó
+`version: "1.16.1"` en producción.
+
+**Verificación final con `revision-final.js` (después del deploy):**
+- Bloque **ADMIN**: corrido 2 veces en esta fase (antes de encontrar el
+  límite de tasa agotado en la 3ra), ambas idénticas — `ok:true`, 0
+  discrepancias en los números de control, 0 canvas en blanco, 0
+  errores de consola, exports disparados en las 8 pestañas, integridad
+  de Inasistencia correcta (solo `['2026-08','2026-09']`, "SEDE 34"
+  única, sin formato viejo).
+- Bloque **CLIENTES_DASH**: tuvo 2 traspiés reales, documentados aquí
+  para que no se repitan sin reconocerlos:
+  1. Las primeras 2 corridas completas de `revision-final.js` de esta
+     sesión (antes del fix de la Parte 7) no llegaron a completar la
+     ventana 2 — el límite de tasa se agotó a mitad de camino (ver
+     arriba), dejando `clientesDash: null`. No fue un problema del
+     login en sí, sino de la cuota ya diagnosticada y corregida en esta
+     misma fase.
+  2. Ya con el fix desplegado, se construyó un script aparte
+     (`fase130-parte8-verificacion-clientes-dash.js`, reutiliza
+     `correrChequeosCliente`/`paginaFresca`/`esperarLoginYDecodificar`/
+     `esClienteDash` de `revision-final.js` sin duplicar lógica) para
+     correr SOLO el bloque del cliente, sin repetir el de ADMIN que ya
+     había pasado 2 veces. Las primeras 2 aperturas de esa ventana
+     detectaron por el JWT la cuenta de ADMINISTRADOR, no la del
+     cliente — probable autocompletado del navegador llenando el campo
+     de usuario con "admin" antes de que se corrigiera a mano (el mismo
+     patrón de confusión de credenciales ya documentado en los
+     comentarios del propio `revision-final.js` desde la Fase 119). Al
+     tercer intento, con el campo de usuario corregido a mano, se
+     confirmó la identidad CLIENTES_DASH por JWT y el bloque corrió
+     completo: `ok:true`. Vista de usuario correcta (`#user-page`
+     visible, `#admin-page` oculto, rol `CLIENTES_DASH` en el frontend),
+     las 7 rutas de escalada de privilegios probadas (historial,
+     alertas de seguridad, config de dashboards, cargas, inventario,
+     gerencia, gestión humana) bloqueadas con 403, las 8 pestañas
+     visibles (ninguna de las 4 que deben seguir ocultas se filtró), 0
+     canvas en blanco, exports disparados en las 8, 0 avisos de
+     "demo"/datos de prueba visibles, Calidad visible con 95 monitoreos
+     (`codificacionesCount` en 0, sin catálogo configurado — no es un
+     error), 0 nombres en la salida del script en ningún momento, botón
+     "Cambiar mi contraseña" visible y rechaza una contraseña actual
+     incorrecta (401), 0 errores de consola, 0 peticiones fallidas.
+
+### No verificado / pendiente de decisión (anotado en `docs/pendientes.md`)
+
+- **19 asesores reales de Calidad de septiembre sin usuario ASESOR en la
+  plataforma** (dueño InCo/Edwin, prioridad MEDIA) — la carga masiva
+  nunca los exige, no bloquea nada, pero ninguno puede ver "Mis
+  Resultados" todavía.
+- **`# Teléfono` e `ID/Llamada-Wpp` guardados en `monitoreos`** —
+  decisión del usuario 2026-10-07: dejarlo así por ahora, no se tocó.
+- **Preguntas abiertas de "Llamadas y WhatsApp de salida"** (denominador
+  del %, si "3P" significa lo mismo que en el resto de la plataforma,
+  acumulado del período además del filtro por mes) — esperando
+  respuesta de Edwin, no inventado.
+- **Export a Excel del panel nuevo de Calidad** (nombre + % por asesor)
+  — decisión pendiente de InCo, excluido del botón "Exportar" a
+  propósito (es una superficie de privacidad nueva que nadie pidió
+  todavía).
+- **Riesgo residual del limitador de tasa**: el tráfico SIN sesión
+  (login, `/health`) sigue contando por IP, sin cambios en esta fase —
+  3 opciones anotadas en `docs/pendientes.md` (subir el límite, extender
+  la clave por usuario donde aplique, excluir `GET` livianos) para una
+  decisión futura si hace falta cerrarlo también.
+
+### Estado final de la Fase 130
+
+Versión `1.16.1`. 8 PRs (#336-#343), CI verde en todos (el único fallo
+visto en todo el ciclo fue el flake de infraestructura del job
+`pantallas` en el run de `main` después del merge del PR #343,
+resuelto con un reintento, sin relación con el código). Scripts de un
+solo uso de esta fase (`scripts/produccion/fase130-*.js`, 8 archivos)
+quedan en el repo por ahora, mismo criterio que los de fases anteriores
+— se archivan en bloque cuando estorben (`scripts/README.md`), no fase
+por fase. Confirmado que ninguno imprime ni contiene un nombre real.
+PROGRESS.md y `docs/pendientes.md` actualizados en el mismo cierre.

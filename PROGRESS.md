@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.15.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.16.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -40,18 +40,28 @@ narrativo de cada fase, fase por fase, vive en
 - **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
   (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación completa Fase 128, 2026-10-07)
+### Números de control (ORLANT, última verificación completa Fase 130, 2026-10-07)
 
-**Fase 128** corrió `revision-final.js` (ya con el fix de privacidad de
-la Parte 2) contra producción real con sesión del usuario: las 8
-pestañas (incluida "Llamadas y WhatsApp de salida", nombre y posición
-nuevos confirmados) dibujaron algo real, 0 canvas en blanco, 0 errores
-de consola, 0 peticiones fallidas, exports disparados en las 8, y **0
-discrepancias en los números de control de abajo** — Salida sigue
-exacta tras el renombre/reubicación. 0 nombres reales en el reporte
-(confirmado a mano, línea por línea, antes de mostrarle nada al
-usuario). Lado CLIENTES_DASH sin verificar (sin contraseña de cliente a
-mano, mismo pendiente de siempre, ver `docs/pendientes.md` §1).
+**Fase 130** corrió `revision-final.js` contra producción real, las 2
+cuentas (ADMIN y CLIENTES_DASH, con sesión real de cada una): las 8
+pestañas dibujaron algo real, 0 canvas en blanco, 0 errores de consola,
+0 peticiones fallidas, exports disparados en las 8, y **0 discrepancias
+en los números de control de abajo**. 0 nombres reales en ningún
+reporte (confirmado línea por línea antes de mostrar nada al usuario).
+Inasistencia de septiembre pasó del agregado viejo (1.483 citas, 1 sola
+"especialidad") al archivo real por cita (12.194 citas, 19
+especialidades) — Parte 2 de esta fase. Calidad de ORLANT tiene ahora
+los 95 monitoreos reales de septiembre/2026 (confirmado ya cargados al
+retomar esta fase, no hizo falta cargar nada en esta sesión) y una
+gráfica nueva (nombre + % promedio por asesor, Parte 6). Esta misma
+fase (Parte 7) también corrigió el limitador de tasa de la API: antes
+contaba solo por IP, así que una oficina entera (o una revisión
+administrativa completa, ~70 peticiones) podía agotar el cupo
+compartido de todos — ahora quien tiene sesión cuenta por usuario, con
+un cupo propio. Detalle completo, con los 2 traspiés reales de la
+verificación (límite de tasa agotado por corridas repetidas, y 2
+autocompletados del navegador que metieron la cuenta de administrador
+en la ventana del cliente) en la sección de esta fase, más abajo.
 
 Después, con el "sí" explícito del usuario sobre el conteo exacto que
 mostró el dry-run (37, un solo mes, 2026-09): **se borraron los 37
@@ -100,10 +110,135 @@ mano, ver `docs/pendientes.md` §1).
 | Tráfico de Llamadas (sin cambios desde la Fase 115) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
 | Tráfico de WhatsApp (sin cambios desde la Fase 116; aviso de SL 5 min retirado de pantalla en la Fase 126) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
 | Agendas (Fase 126: Abril/2025 se borró, queda un solo período real) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores |
-| Inasistencia (Fase 129: solo ago-sep, archivo real ene-ago restaurado y vuelto a limpiar de ene-jul — umbral de privacidad original) | Ago-26 11.189/786/48, 7,45 %, 18 especialidades, 54 entidades · Sep-26 1.483/94/2 (sin cambios, formato viejo, 1 especialidad) |
+| Inasistencia (Fase 129: solo ago-sep, archivo real ene-ago restaurado y vuelto a limpiar de ene-jul — umbral de privacidad original. Fase 130 Parte 2: septiembre pasa del agregado viejo al archivo real por cita) | Ago-26 11.189/786/48, 7,45 %, 18 especialidades, 54 entidades · Sep-26 12.194/749/61, 19 especialidades · período (ago+sep) 7,03 % |
+| Calidad (Fase 130: carga real de monitoreos de septiembre/2026 — confirmado ya cargado al retomar esta fase) | Sep-26: 95 monitoreos, 19 asesores distintos, 1 evaluador, promedio 94,79 % (82 sobresaliente, 13 no crítico, 0 crítico) |
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
+
+Pedido original: seguir la carga real de Calidad de ORLANT (95
+monitoreos de septiembre/2026) + varios pedidos puntuales de la reunión
+con Edwin del 2026-10-07 + cierre con verificación completa en
+producción. 8 PRs (#336-#343):
+
+- **Parte 2** (#336, v1.15.2): Inasistencia acepta el encabezado real
+  "FECHA CITA" (con espacio, alias del ya existente) y normaliza "SEDE
+  34 (AUDIFONOS)" a "SEDE 34" (antes quedaba partida en 2 valores de
+  filtro). Verificado contra el archivo real por fuera del repo (lector
+  independiente, sin SheetJS): Ago 11.189/2.459/786/48/7.896/18
+  especialidades, Sep 12.194/2.416/749/61/8.968/19 especialidades.
+- **Parte 3** (#339, v1.15.4): pedido explícito de Edwin ("quitar esos
+  comentarios") — el aviso naranja de mes "incompleto" en Inasistencia
+  se quitó: con archivos reales completos mes a mes, que un mes tenga
+  menos especialidades que otro es variación de negocio normal, no un
+  dato faltante. Los avisos "parcial" y "sin datos por el filtro" se
+  mantienen, siguen siendo útiles.
+- **Parte 4** (#337, v1.15.3): la carga masiva de Calidad reconoce la
+  plantilla real de Edwin (encabezado agrupado antes del real, "Nombre
+  del Asesor" en vez de "ASESOR", cada ítem numerado con su peso y los
+  críticos con emoji) — detecta el encabezado real aunque no esté en la
+  fila 0, empareja cada ítem por su número ignorando emoji/salto de
+  línea/peso.
+- **Cierre de scripts** (#338): subió trabajo de una sesión anterior que
+  había quedado commiteado localmente sin PR — `revision-final.js`
+  extendido (Inasistencia completa ago+sep, meses exactos
+  `['2026-08','2026-09']`, "SEDE 34" única) + 6 scripts de un solo uso
+  (inventario de meses, borrado real de Tipificación de WhatsApp de
+  julio — 71 filas confirmadas por 2 caminos independientes —, carga
+  real de Inasistencia ago-sep). Corregido por construcción: uno de los
+  6 scripts reinventaba su propio bloqueador de red de dry-run en vez de
+  usar `lib/dry-run-seguro.js` (regla fija desde el incidente de la Fase
+  129) — se generalizó el helper con un allowlist de rutas adicionales.
+- **Cierre carga Calidad** (#340, v1.15.5): hallazgo real al intentar la
+  carga de los 95 monitoreos reales — el archivo trae, muy por debajo de
+  los datos reales, ~126 filas de plantilla con la fórmula del puntaje
+  ya copiada pero nunca diligenciada (sin asesor), y eso tumbaba TODA la
+  hoja ("no tiene datos en ninguna hoja reconocida"). Corregido por
+  construcción: una celda con fórmula sin valor solo cuenta como error
+  si su fila SÍ tiene el campo identificador (asesor) lleno — una fila
+  de plantilla vacía nunca lo tiene, una fila real rota siempre lo tiene.
+- **Cierre observaciones** (#341, v1.15.6): segundo hallazgo real de la
+  misma carga — el campo "Observaciones" rechazaba notas de más de 200
+  caracteres (4 de las 95 filas reales superan ese límite, máximo real
+  235). Subido a 500 caracteres, mismo límite que ya usa Inventario. De
+  paso, corrigió un bug del propio script de cierre (no de la app): su
+  bloqueador de red comparaba la ruta `/monitoreos/bulk` literal, pero
+  el servidor la expone bajo `/api` — abortaba el guardado real
+  disfrazado de "no se pudo conectar con el servidor".
+- **Nueva gráfica** (#342, v1.16.0): pedido de Edwin — en Calidad, además
+  de los indicadores y la torta de siempre, una barra horizontal con el
+  nombre de cada asesor y su % promedio de puntaje (sin número de
+  monitoreos), respetando el mismo filtro de mes que sus 2 hermanos.
+  Aprobado con 3 condiciones (acceso igual al resto del dashboard,
+  selector de mes respetado por construcción, probado con datos
+  ficticios antes de tocar producción) — las 3 confirmadas.
+
+**Verificación de cierre** (continuación de esta misma fase,
+2026-10-07): al retomarla, los 95 monitoreos reales de septiembre YA
+estaban en producción (confirmado solo lectura: 95 total / 19 asesores
+distintos / 1 evaluador / 94,79 % promedio — 82 sobresaliente, 13 no
+crítico, 0 crítico — exacto contra lo esperado), así que no hizo falta
+cargar nada en esta sesión.
+
+- **Parte 7** (#343, v1.16.1) — hallazgo real: `revision-final.js`
+  agotó el límite de tasa global de la API (300 peticiones/15min, SOLO
+  por IP) a mitad de una corrida, el mismo día que el usuario reportó
+  que varios clientes reales veían "demasiadas peticiones"/"demasiados
+  intentos" en el uso normal. Diagnóstico (solo lectura, con login
+  real): `trust proxy` ya estaba bien configurado (confirmado contra
+  producción: la IP que ve el servidor es la real del cliente, no la
+  interna de Caddy) — la causa real era contar solo por IP, así que una
+  oficina entera comparte un único cupo. Corregido: el límite general de
+  la API se dividió en 2 cupos mutuamente excluyentes (autenticado por
+  USUARIO, 1.500/15min por defecto; sin sesión por IP, sin cambios,
+  300/15min); el login ahora cuenta por IP + usuario intentado (antes
+  solo IP), con el máximo bajado de 20 a 10 (ya no hace falta un número
+  alto por usuario) y un mensaje que dice los minutos exactos que faltan
+  para reintentar. 2 tests nuevos confirman que 2 usuarios distintos
+  desde la misma IP ya no se bloquean entre sí (en login y en la API
+  general). Desplegado y confirmado en producción (`/api/health` →
+  `1.16.1`).
+- **Verificación final con `revision-final.js`** (después del deploy de
+  la Parte 7): el bloque ADMIN corrió 2 veces, idéntico — `ok:true`, 0
+  discrepancias en los números de control, 0 canvas en blanco, 0
+  errores de consola, exports disparados en las 8 pestañas, integridad
+  de Inasistencia correcta (solo ago-sep, "SEDE 34" única). El bloque
+  CLIENTES_DASH tuvo 2 traspiés reales antes de completarse: en las
+  primeras 2 corridas de esta misma sesión, la segunda ventana no llegó
+  a completarse porque la cuota de tasa (recién diagnosticada en la
+  Parte 7) se agotó a mitad de camino; ya con el fix desplegado, las 2
+  primeras aperturas de la ventana del cliente detectaron por error la
+  cuenta de ADMINISTRADOR (autocompletado del navegador llenando el
+  usuario "admin" antes de que se corrigiera a mano — el mismo patrón ya
+  documentado en el propio script desde la Fase 119). Al tercer intento,
+  CLIENTES_DASH se verificó completo: `ok:true`, las 8 pestañas
+  visibles, 0 canvas en blanco, 0 avisos de demo, "Llamadas y WhatsApp
+  de salida" junto a "Tráfico de WhatsApp", Calidad visible con los 95
+  monitoreos (sin nombres), cambio de contraseña visible y rechaza una
+  contraseña actual incorrecta, las 7 rutas de escalada de privilegios
+  probadas bloqueadas con 403, 0 errores de consola.
+
+**No verificado / pendiente de decisión en esta fase** (anotado en
+`docs/pendientes.md`, con dueño y prioridad):
+- 19 asesores reales de Calidad de septiembre sin usuario ASESOR en la
+  plataforma (dueño InCo/Edwin) — la carga masiva nunca los exige.
+- `# Teléfono` e `ID/Llamada-Wpp` guardados en `monitoreos` — decisión
+  del usuario 2026-10-07: dejarlo así por ahora, sin tocar.
+- Preguntas abiertas de "Llamadas y WhatsApp de salida" (denominador del
+  %, si "3P" significa lo mismo que en el resto de la plataforma,
+  acumulado del período) — esperando respuesta de Edwin.
+- Export a Excel del panel nuevo de Calidad — decisión pendiente,
+  excluido del botón "Exportar" a propósito (superficie de privacidad
+  nueva que nadie pidió todavía).
+- Riesgo residual del limitador de tasa: el tráfico SIN sesión (login,
+  `/health`) sigue contando por IP, sin cambios — 3 opciones anotadas
+  para una decisión futura si hace falta cerrarlo también.
+
+Versión final `1.16.1`. Detalle narrativo completo (incluidos los 2
+traspiés de la verificación, con su causa exacta) en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
 ### Fase 129 (cerrada) — incidente real de escritura accidental + 2 hallazgos reales corregidos, Inasistencia restaurada
 
@@ -166,7 +301,7 @@ que ninguno imprime ni contiene un nombre real. Detalle narrativo
 completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
-## Índice — fases 0 a 129
+## Índice — fases 0 a 130
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -302,4 +437,5 @@ mismo orden):
 - Fase 127 — Indicador de Llamadas y WhatsApp de SALIDA (archivo mensual de Edwin): nueva pestaña "Salida" (tabla propia `salida_mensual`, confirmación explícita del año del mes antes de guardar, nunca en silencio); hallazgo real con Playwright contra un archivo sintético de la forma exacta del real (encabezado en la fila 3, 2 filas vacías antes) -- un archivo válido no se reconocía porque el buscador de encabezados por rango acotado solo miraba el primer renglón del rango usado de la hoja, corregido y cubierto con pruebas; carga real en producción sujeta a parada obligatoria y al "OK cargar" explícito del usuario (2026-10-06)
 - Fase 128 — 4 pedidos de la reunión de validación con Edwin del 2026-10-06: Parte 1, pestaña "Salida" renombrada a "Llamadas y WhatsApp de salida" y reubicada junto a Tráfico de WhatsApp (migración idempotente nueva, reposición incondicional por el mismo criterio que `orden_pestanas_v2` -- hallazgo real: gatearla al label viejo habría dejado mal ubicada cualquier instalación nueva); Parte 2, corrección por construcción del hallazgo de privacidad de `revision-final.js` (`veredictoSubvista` ya nunca devuelve texto crudo del DOM, solo conteos/veredicto de lista fija -- cierra la clase completa del problema, no solo el caso de "Ranking de asesores"), con prueba automática nueva que confirma con un nombre ficticio que no se filtra; mismo criterio aplicado al resto de `scripts/produccion/`; Parte 3, nueva base `monitoreos` en el borrado por rango (mismo endpoint auditado de la Fase 126) para retirar los 37 monitoreos de prueba de Calidad confirmados por Edwin, con respaldo manual confirmado antes del cambio; Parte 4, housekeeping (30 ramas locales ya mergeadas, lockfile al día, `.gitignore` de la configuración local de Codex); verificación real en producción EJECUTADA (2026-10-07): `revision-final.js` corrido con sesión real del usuario (0 nombres, 0 discrepancias, Salida confirmada), y los 37 monitoreos de prueba de Calidad borrados de verdad tras el "sí" explícito del usuario sobre el conteo exacto (37, 2026-09) — Calidad de ORLANT queda en 0, "Sin datos" visible, 0 errores (2026-10-06/07)
 - Fase 129 — Recarga de Inasistencia de ORLANT: incidente real de escritura accidental en producción (dry-run con `page.exposeFunction` -- corregido por construcción con `dry-run-seguro.js`), auditoría completa de privacidad del incidente (nunca llegó al repo/PR/CI), y hallazgo real nuevo (v1.15.1): una celda de fecha con formato Excel llegaba como objeto `Date` por un efecto secundario de `cellNF:true`, bloqueando en silencio cualquier re-carga del archivo completo -- corregido; Inasistencia restaurada al umbral de privacidad original (Ago-26 352 filas/54 entidades/11.189/786/7,45 %, ene-jul vueltos a borrar, septiembre intacto) (2026-10-07)
+- Fase 130 — Calidad real de septiembre/2026 (95 monitoreos) + pedidos de la reunión con Edwin del 2026-10-07 (Inasistencia acepta "FECHA CITA"/normaliza SEDE 34, quita el aviso "incompleto", nueva gráfica de nombre+% promedio por asesor en Calidad) + 2 hallazgos reales corrigiendo la carga masiva de Calidad (filas de plantilla sin diligenciar, observaciones hasta 500 caracteres) + Parte 7: el limitador de tasa de la API ya no bloquea a toda una oficina por el error de una sola persona (ahora cuenta por usuario autenticado, no por IP); verificación final completa en producción (ADMIN y CLIENTES_DASH) EJECUTADA, con 2 traspiés reales documentados (límite de tasa agotado por corridas repetidas, autocompletado del navegador) antes de confirmarla en verde (2026-10-07)
 
