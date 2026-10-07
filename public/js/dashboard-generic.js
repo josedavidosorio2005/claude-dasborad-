@@ -1121,7 +1121,7 @@ function _gdRenderPanel(p, i){
     return;
   }
 
-  if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie'){ _gdRenderCalidad(p, i); return; }
+  if(p.tipo === 'calidad_kpis' || p.tipo === 'calidad_pie' || p.tipo === 'calidad_bar_asesores'){ _gdRenderCalidad(p, i); return; }
 
   if(p.tipo === 'trafico_combo'){ _traficoRenderPanel(p, i); return; }
   if(p.tipo === 'trafico_whatsapp_combo'){ _traficoWppRenderPanel(p, i); return; }
@@ -1412,6 +1412,26 @@ function _gdRenderCalidad(p, i){
       '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+r.clasificacion+'</div><div class="kl">Clasificacion General</div></div>';
     return;
   }
+  if(p.tipo === 'calidad_bar_asesores'){
+    // Fase 130 (pedido de Edwin): nombre + % promedio por asesor, barras
+    // horizontales ordenadas de mayor a menor -- NUNCA el numero de
+    // monitoreos (ni dataset, ni tooltip, ni eje: calDashPromedioPorAsesor
+    // ni siquiera lo calcula). Mismo `arr` ya filtrado por mes/asesor/fecha
+    // que calidad_kpis/calidad_pie -- el promedio nunca mezcla meses.
+    var porAsesor = calDashPromedioPorAsesor(arr);
+    var labelsAsesores = porAsesor.map(function(x){ return textoFormatoNombre(x.asesor); });
+    var valoresAsesores = porAsesor.map(function(x){ return x.promedio; });
+    var optsBar = loFmt(loBar(), '%');
+    optsBar.indexAxis = 'y';
+    optsBar.scales.x = { ticks:{ font:{ size:7 } } };
+    optsBar.scales.y = { ticks:{ font:{ size:7 } } };
+    loDatalabelsAuto(optsBar);
+    _gdChart('gd-c'+i, { type:'bar',
+      data:{ labels: labelsAsesores, datasets:[{ label:'Promedio', data: valoresAsesores,
+        backgroundColor: labelsAsesores.map(function(l){ return paletaColorPara(l); }), borderRadius:3 }] },
+      options: optsBar });
+    return;
+  }
   // calidad_pie — clasificacion cualitativa fija (sobresaliente/no critico/
   // critico), no la paleta categorica: colores intencionalmente iguales al
   // semaforo (verde/naranja/rojo = bueno/medio/malo), pero es una decision
@@ -1692,6 +1712,11 @@ async function _gdDatosPanelesTab(){
     }
     if(p.tipo === 'calidad_kpis'){ out = out.concat(_gdExportarCalidad(p, i)); continue; }
     if(p.tipo === 'calidad_pie'){ continue; } // misma data que calidad_kpis, ver comentario arriba
+    // Fase 130: la barra por asesor (nombre + %) queda FUERA del export a
+    // proposito -- un Excel con nombre+nota es una superficie de privacidad
+    // nueva (quien lo descarga se lo lleva) que nadie pidio todavia; se deja
+    // anotado en docs/pendientes.md para que el usuario decida si hace falta.
+    if(p.tipo === 'calidad_bar_asesores'){ continue; }
     if(p.tipo === 'trafico_combo'){
       var dT = (typeof _traficoDatosExport === 'function') ? _traficoDatosExport(i) : [];
       out.push(dT.length ? { titulo: 'Trafico de Llamadas', tipo: 'tabla', filas: dT }

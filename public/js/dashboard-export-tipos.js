@@ -9,7 +9,7 @@
 // agrega a algun panel y no se le da soporte aqui Y en
 // _gdDatosPanelesTab, esa prueba falla.
 var GD_EXPORT_TIPOS_SOPORTADOS = [
-  'kpi_row', 'calidad_kpis', 'calidad_pie', 'trafico_combo', 'trafico_whatsapp_combo',
+  'kpi_row', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'trafico_combo', 'trafico_whatsapp_combo',
   'agendas_panel', 'efectividad_agendamiento_panel', 'tipificacion_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'salida_panel', 'nota_kpi', 'pie', 'tabla', 'line', 'bar', 'area', 'combo',
 ];
 

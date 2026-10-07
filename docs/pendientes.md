@@ -22,10 +22,17 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   (decisión) + InCo (ejecución si aplica). Prioridad ALTA — desde la Fase
   122, Agendas y Efectividad de Agendamiento muestran el nombre real del
   asesor a CUALQUIER rol con acceso a ORLANT, incluido CLIENTES_DASH
-  (antes solo Tipificación lo hacía). Cómo se cierra: decidir con el
-  usuario si la cuenta del cliente debe seguir viendo esos nombres o si
-  hay que redactarlos para ese rol. Anotado 2026-10-06 (Fase 124, antes
-  solo mencionado como pendiente de decisión en la Fase 122).
+  (antes solo Tipificación lo hacía). **Desde la Fase 130, Calidad
+  también** — el panel nuevo "Promedio de calidad por asesor" (nombre +
+  % de puntaje, sin número de monitoreos) usa el mismo filtro de acceso
+  por campaña que el resto del dashboard de ORLANT (`campaignAccess`,
+  sin distinción por rol) — no se cambió ningún permiso al agregarlo,
+  solo se confirmó que el panel hereda exactamente el mismo público que
+  ya veía Agendas/Efectividad. Cómo se cierra: decidir con el usuario si
+  la cuenta del cliente debe seguir viendo esos nombres (ahora también
+  con su nota de calidad) o si hay que redactarlos para ese rol. Anotado
+  2026-10-06 (Fase 124, antes solo mencionado como pendiente de decisión
+  en la Fase 122), actualizado 2026-10-07 (Fase 130).
 - **Exports reales (Excel) de Tipificación, Efectividad de Agendamiento,
   Efectividad de Citas y Agendas: abrir el archivo real y revisar PII /
   fórmulas / columnas vacías** — dueño: InCo. Prioridad MEDIA, reducida en
@@ -50,29 +57,32 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 2. Esperando a Edwin (datos/decisiones)
 
-- **Calidad de ORLANT — archivo real de monitoreos** — dueño: Edwin.
-  Prioridad ALTA. Los 37 monitoreos de prueba se borraron de producción
-  el 2026-10-07 (Fase 128, Parte 3, EJECUTADO: dry-run → "sí" explícito
-  del usuario → borrado real → Calidad confirmada en 0 sin errores).
-  Edwin entrega el archivo real de monitoreos. Cómo se carga: ya no
-  hace falta ningún cambio de código — la carga masiva de Calidad por
-  Excel ya funciona para ORLANT (tiene su propia rúbrica activa, 17
-  ítems), mismo camino que ya usa CARTERA INTERNA — ver
-  `docs/plantillas-inventario.md` → "Calidad de ORLANT" para el formato
-  exacto.
-- **Inasistencia de ORLANT — septiembre 2026 en el formato nuevo (Hoja1)**
-  — dueño: Edwin. Prioridad MEDIA. Hoy septiembre sigue con el agregado
-  viejo de la Fase 98-106 (1.483 citas, 1 sola "especialidad" —
-  EXAMENES ESPECIALES —, `sede`/`entidad` = 'SIN DATO'): el archivo real
-  que Edwin ha enviado hasta ahora (`INASISTENCIA NUEVA PARA MONTAR
-  (1).xlsx`, confirmado por hash idéntico al ya usado en la Fase 108)
-  solo trae enero a agosto de 2026 en `Hoja1` — ninguna fila de
-  septiembre — así que no es una carga parcial ni un filtro que esconde
-  datos, es que ese archivo nunca trajo septiembre. Falta que Edwin
-  envíe el archivo completo de septiembre con el mismo formato de
-  `Hoja1` (columnas SEDE, ESPECIALIDA, FECHA_CITA, NOMBRE ENTIDAD,
-  CITEST, una fila por cita) para reemplazar el agregado viejo (anotado
-  2026-10-07, Fase 129).
+- **19 asesores del archivo real de Calidad sin usuario ASESOR en la
+  plataforma** — dueño: InCo/Edwin. Prioridad MEDIA. La carga masiva de
+  Calidad (`POST /monitoreos/bulk`) guarda el nombre de asesor como
+  texto libre, nunca requiere un usuario — no bloquea nada — pero
+  ninguno de los 19 asesores reales de septiembre puede todavía ver su
+  propia nota ("Mis Resultados") porque no tiene cuenta. Cómo se cierra:
+  crear esos usuarios (rol ASESOR, campaña ORLANT) cuando InCo/Edwin lo
+  pida — no se crean solos. Anotado 2026-10-07 (Fase 130).
+- **Observaciones de Calidad: hallazgo de diseño, no corregido, requiere
+  decisión** — dueño: InCo (decisión). Prioridad MEDIA. El diseño actual
+  guarda `# Teléfono` e `ID/Llamada-Wpp` en la tabla `monitoreos` (todas
+  las campañas con Calidad, no solo ORLANT) y el formulario manual
+  también los pide — contradice la regla de "nunca guardar # Teléfono"
+  de esta fase. Ninguno se muestra en tablas/exports hoy; el campo
+  `observaciones` (texto libre del evaluador, puede traer datos de
+  paciente) SÍ lo ve el propio asesor en "Mis Resultados" (su propia
+  nota, diseño ya existente, no de esta fase) — nunca CLIENTES_DASH.
+  Decisión del usuario 2026-10-07: dejarlo así por ahora — no se tocó.
+  Anotado 2026-10-07 (Fase 130).
+- **Export a Excel del panel "Promedio de calidad por asesor"** — dueño:
+  InCo (decisión). Prioridad BAJA. El panel nuevo (Fase 130) queda FUERA
+  del botón "Exportar" a propósito — un Excel con nombre + nota es una
+  superficie de privacidad nueva (quien lo descarga se lo lleva) que
+  nadie pidió todavía. Si hace falta, es un cambio chico
+  (`_gdExportarCalidad`/`dashboard-generic.js`). Anotado 2026-10-07
+  (Fase 130).
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
   Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya construidas,
   ocultas esperando el archivo real). Anotado en fases anteriores (ver

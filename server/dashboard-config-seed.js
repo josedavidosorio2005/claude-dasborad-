@@ -229,6 +229,9 @@ const ORLANT = {
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'ORLANT' },
         { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación' },
+        // Fase 130 (pedido de Edwin): nombre + % promedio por asesor, sin
+        // numero de monitoreos -- ver calDashPromedioPorAsesor.
+        { tipo: 'calidad_bar_asesores', campana: 'ORLANT', titulo: 'Promedio de calidad por asesor' },
       ]},
       { key: 'flujo', label: 'Flujo Mensual', oculta: true, panels: [
         lineP('Llamadas 3P por mes', 'llamadas_3p'),

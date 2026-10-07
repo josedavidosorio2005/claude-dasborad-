@@ -86,6 +86,14 @@ const PATRONES_PROHIBIDOS = [/incompleto/i, /\bparcial\b/i, /\bjul(io)?\b/i, /ju
     if (!logueado) throw new Error('Se agotó el tiempo de espera de login.');
     log('Login detectado, corriendo los chequeos completos de cierre...');
 
+    // (Nota: NO se instala un bloqueador de red general aqui -- correrChequeosAdmin
+    // ya recorre las 8 pestañas de un dashboard real, que dispara peticiones
+    // propias de la app (ej. marcar avisos vistos) ajenas a esta verificacion;
+    // bloquearlas por accidente rompe el chequeo en vez de protegerlo. El
+    // UNICO POST que este script hace es el dry-run de /admin/borrado-rango
+    // mas abajo, con confirmar:false escrito literal en Node -- no necesita
+    // un bloqueador, el propio servidor garantiza que un dry-run nunca borra.)
+
     // 1. correrChequeosAdmin reusado tal cual.
     const admin = await correrChequeosAdmin(page);
     reporte.admin = {
@@ -172,7 +180,24 @@ const PATRONES_PROHIBIDOS = [/incompleto/i, /\bparcial\b/i, /\bjul(io)?\b/i, /ju
       };
     }
 
-    reporte.ok = admin.ok && avisosEncontrados.length === 0 && reporte.salidaTab.justoDespuesDeTraficoWpp && reporte.salidaTab.label === 'Llamadas y WhatsApp de salida';
+    // 5. Decision pendiente del usuario (Fase 129): cuantas filas de
+    // Inasistencia quedan en agosto/2026 DESPUES de la recarga de hoy (Parte
+    // 2) -- dry-run del mismo endpoint auditado (nunca borra sin
+    // confirmar:true). El servidor SIEMPRE exige que filasEsperadas coincida
+    // exacto (incluso en dry-run) -- como no sabemos el numero de antemano,
+    // se manda un valor absurdamente alto a proposito (pasa la validacion
+    // del schema, que solo exige entero >= 0, pero nunca va a coincidir): el
+    // servidor responde 409 con el conteo REAL en el cuerpo del error (nunca
+    // borra nada, el 409 es el camino esperado aqui, no una falla).
+    const dryRunAgosto = await page.evaluate(() => apiRequest('POST', '/admin/borrado-rango', {
+      base: 'inasistencia', campana: 'ORLANT', mesDesde: '2026-08', mesHasta: '2026-08',
+      filasEsperadas: 999999999, confirmar: false,
+    }).catch((e) => ({ filas: e && e.data ? e.data.real : null, dryRun: false, via409: true })));
+    reporte.inasistenciaAgostoFilas = { filas: dryRunAgosto.filas, dryRun: dryRunAgosto.dryRun === true, via409: !!dryRunAgosto.via409 };
+    log('Inasistencia Ago-26, filas (sede x especialidad x entidad) tras la recarga de hoy:', dryRunAgosto.filas);
+
+    reporte.ok = admin.ok && avisosEncontrados.length === 0 && reporte.salidaTab.justoDespuesDeTraficoWpp &&
+      reporte.salidaTab.label === 'Llamadas y WhatsApp de salida' && typeof dryRunAgosto.filas === 'number';
 
     console.log('\n=== REPORTE DE CIERRE FASE 130 (JSON, sin nombres) ===');
     console.log(JSON.stringify(reporte, null, 2));
