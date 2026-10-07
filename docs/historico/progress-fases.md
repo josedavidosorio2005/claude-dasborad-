@@ -12526,3 +12526,38 @@ usuario (Parte 2), y el dry-run + borrado real de los monitoreos de
 prueba de Calidad con el "sí" explícito del usuario (Parte 3) — las 3
 necesitan una sesión real del usuario, se coordinan juntas después del
 cierre de código.
+
+### Verificación en producción — Partes 1-3, EJECUTADA (2026-10-07)
+
+Con el usuario presente (login real, 3 ventanas de navegador visible,
+nunca vio el script ni guardó su contraseña):
+
+**Parte 1 + Parte 2 (una sola corrida de `revision-final.js`, ya con
+el fix de privacidad):** admin corrido completo — las 8 pestañas
+(incluida "Llamadas y WhatsApp de salida") dibujaron algo real, 0
+canvas en blanco, 0 errores de consola, 0 peticiones fallidas, exports
+disparados en las 8, 0 discrepancias en los números de control (Salida
+exacta: Ago 6.560 llamadas/3.382 WhatsApp, Sep 10.404/3.997). Revisado
+a mano, línea por línea, el reporte completo (617 líneas, incluidas
+las 2 corridas de la ventana admin) antes de mostrarle nada al
+usuario: **0 nombres reales en ningún lado** — confirma que el fix de la Parte 2
+cierra el hallazgo de verdad, no solo en la prueba sintética local.
+Lado CLIENTES_DASH sin verificar otra vez (la segunda ventana recibió
+la misma cuenta de administrador en vez de la del cliente — sigue
+siendo el mismo pendiente de siempre, falta la contraseña de cliente).
+
+**Parte 3:** dry-run contra producción real mostró **37 monitoreos,
+un solo mes (2026-09)** — coincide exacto con lo que Edwin confirmó.
+`cronograma_metas` de ORLANT: 0 filas (nada que verificar ahí).
+Mostrado el conteo al usuario, con su "sí" explícito se ejecutó el
+borrado real (`{"ok":true,"borradas":37}`). Verificado después: Calidad
+de ORLANT en 0 monitoreos (confirmado también por `GET /monitoreos` vía
+API, no solo la pantalla), mensaje "Sin datos" visible, 0 errores de
+consola/página/peticiones fallidas. Calidad queda esperando el archivo
+real de Edwin (entrega prevista 2026-10-07) — ver `docs/pendientes.md`
+§2, camino de carga ya documentado (`docs/plantillas-inventario.md`),
+sin necesitar ningún cambio de código.
+
+Las 3 verificaciones quedan EJECUTADAS. Único pendiente que sigue sin
+resolverse de esta fase: la contraseña de `CLIENTES_DASH` (no es nuevo,
+ya estaba anotado desde la Fase 112).

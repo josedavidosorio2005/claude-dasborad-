@@ -40,7 +40,29 @@ narrativo de cada fase, fase por fase, vive en
 - **Mapa de la documentación**: [`docs/README.md`](docs/README.md)
   (Fase 124) — qué hay en `docs/`, qué es vigente y qué es histórico.
 
-### Números de control (ORLANT, última verificación completa Fase 127, 2026-10-06)
+### Números de control (ORLANT, última verificación completa Fase 128, 2026-10-07)
+
+**Fase 128** corrió `revision-final.js` (ya con el fix de privacidad de
+la Parte 2) contra producción real con sesión del usuario: las 8
+pestañas (incluida "Llamadas y WhatsApp de salida", nombre y posición
+nuevos confirmados) dibujaron algo real, 0 canvas en blanco, 0 errores
+de consola, 0 peticiones fallidas, exports disparados en las 8, y **0
+discrepancias en los números de control de abajo** — Salida sigue
+exacta tras el renombre/reubicación. 0 nombres reales en el reporte
+(confirmado a mano, línea por línea, antes de mostrarle nada al
+usuario). Lado CLIENTES_DASH sin verificar (sin contraseña de cliente a
+mano, mismo pendiente de siempre, ver `docs/pendientes.md` §1).
+
+Después, con el "sí" explícito del usuario sobre el conteo exacto que
+mostró el dry-run (37, un solo mes, 2026-09): **se borraron los 37
+monitoreos de prueba de Calidad de ORLANT** (`POST /api/admin/borrado-
+rango`, base `monitoreos` nueva de la Parte 3) — `cronograma_metas` de
+ORLANT ya estaba en 0 filas (nada que verificar ahí) y el Historial no
+se tocó (el endpoint solo agrega un evento de resumen). Verificado
+después: Calidad de ORLANT en 0 monitoreos, mensaje "Sin datos"
+visible, 0 errores de consola/página/peticiones fallidas. Calidad
+queda esperando el archivo real de Edwin (entrega prevista
+2026-10-07).
 
 **Fase 127** cargó en producción el archivo real de Salida de Edwin
 (`FLUJO_LLAMADAS_Y_WPP_DE_SALIDA_POR_MES.xlsx`) — verificado dato por
@@ -217,5 +239,5 @@ mismo orden):
 - Fase 125 — Cierre de lo que la Fase 124 dejó sin hacer: corrección del margen de tamaño de carga (era por archivo, no acumulado) + aviso de carga demasiado grande antes de enviar + guía de uso y checklist de Edwin al día + XSS/exports/eje secundario del combo probados de verdad con Playwright contra la página real, no solo lectura de código (2026-10-06)
 - Fase 126 — Pedido de Edwin: borrado de todos los meses de prueba de producción (Inasistencia Ene-Jul/2026, Efectividad de Citas Ene-Mar/2026, Agendas Abril/2025), con un endpoint nuevo de solo administrador (dry-run + conteo exacto obligatorio) construido para la ocasión; retiro del aviso de Nivel de Servicio a 5 minutos de WhatsApp y redacción simplificada del aviso de mes incompleto en Inasistencia; propuesta (sin programar) de un indicador de llamadas de salida (2026-10-06)
 - Fase 127 — Indicador de Llamadas y WhatsApp de SALIDA (archivo mensual de Edwin): nueva pestaña "Salida" (tabla propia `salida_mensual`, confirmación explícita del año del mes antes de guardar, nunca en silencio); hallazgo real con Playwright contra un archivo sintético de la forma exacta del real (encabezado en la fila 3, 2 filas vacías antes) -- un archivo válido no se reconocía porque el buscador de encabezados por rango acotado solo miraba el primer renglón del rango usado de la hoja, corregido y cubierto con pruebas; carga real en producción sujeta a parada obligatoria y al "OK cargar" explícito del usuario (2026-10-06)
-- Fase 128 — 4 pedidos de la reunión de validación con Edwin del 2026-10-06: Parte 1, pestaña "Salida" renombrada a "Llamadas y WhatsApp de salida" y reubicada junto a Tráfico de WhatsApp (migración idempotente nueva, reposición incondicional por el mismo criterio que `orden_pestanas_v2` -- hallazgo real: gatearla al label viejo habría dejado mal ubicada cualquier instalación nueva); Parte 2, corrección por construcción del hallazgo de privacidad de `revision-final.js` (`veredictoSubvista` ya nunca devuelve texto crudo del DOM, solo conteos/veredicto de lista fija -- cierra la clase completa del problema, no solo el caso de "Ranking de asesores"), con prueba automática nueva que confirma con un nombre ficticio que no se filtra; mismo criterio aplicado al resto de `scripts/produccion/`; Parte 3, nueva base `monitoreos` en el borrado por rango (mismo endpoint auditado de la Fase 126) para retirar los 37 monitoreos de prueba de Calidad confirmados por Edwin, con respaldo manual confirmado antes del cambio; Parte 4, housekeeping (30 ramas locales ya mergeadas, lockfile al día, `.gitignore` de la configuración local de Codex) (2026-10-06)
+- Fase 128 — 4 pedidos de la reunión de validación con Edwin del 2026-10-06: Parte 1, pestaña "Salida" renombrada a "Llamadas y WhatsApp de salida" y reubicada junto a Tráfico de WhatsApp (migración idempotente nueva, reposición incondicional por el mismo criterio que `orden_pestanas_v2` -- hallazgo real: gatearla al label viejo habría dejado mal ubicada cualquier instalación nueva); Parte 2, corrección por construcción del hallazgo de privacidad de `revision-final.js` (`veredictoSubvista` ya nunca devuelve texto crudo del DOM, solo conteos/veredicto de lista fija -- cierra la clase completa del problema, no solo el caso de "Ranking de asesores"), con prueba automática nueva que confirma con un nombre ficticio que no se filtra; mismo criterio aplicado al resto de `scripts/produccion/`; Parte 3, nueva base `monitoreos` en el borrado por rango (mismo endpoint auditado de la Fase 126) para retirar los 37 monitoreos de prueba de Calidad confirmados por Edwin, con respaldo manual confirmado antes del cambio; Parte 4, housekeeping (30 ramas locales ya mergeadas, lockfile al día, `.gitignore` de la configuración local de Codex); verificación real en producción EJECUTADA (2026-10-07): `revision-final.js` corrido con sesión real del usuario (0 nombres, 0 discrepancias, Salida confirmada), y los 37 monitoreos de prueba de Calidad borrados de verdad tras el "sí" explícito del usuario sobre el conteo exacto (37, 2026-09) — Calidad de ORLANT queda en 0, "Sin datos" visible, 0 errores (2026-10-06/07)
 
