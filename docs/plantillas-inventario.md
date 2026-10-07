@@ -46,3 +46,42 @@ exige realmente el lector (`public/js/*-logic.js` +
   bases y confirmar que coincide con la columna "en la práctica" de esta
   tabla — esta tabla sale de lo que InCo ha recibido hasta ahora, no de
   una confirmación nueva con Wolkvox.
+
+## Calidad de ORLANT — qué necesita Edwin para la carga real (Fase 128, Parte 3)
+
+Confirmado en la reunión de hoy: los 37 monitoreos de Calidad de ORLANT
+en producción son de prueba (se retiran en esta misma fase, ver
+`docs/pendientes.md`); Edwin entrega los datos reales de Calidad mañana.
+No hace falta construir nada nuevo — **la carga masiva de Calidad ya
+funciona para ORLANT sin cambios de código**, con la misma plantilla y
+mecanismo que ya usa "CARTERA INTERNA" (la primera campaña con este
+camino, ver README.md §13): ORLANT ya tiene su propia rúbrica activa
+(`ITEMS_ORLANT`, 17 ítems, `server/calidad-plantillas-seed.js`) desde
+antes, y la carga masiva (`public/js/calidad-carga-masiva.js`,
+`POST /api/monitoreos/bulk`) nunca estuvo limitada a una sola campaña —
+cualquier campaña con rúbrica activa ya la tiene disponible.
+
+**Cómo lo sube Edwin (o quien registre los monitoreos reales), por la
+interfaz normal — nunca un archivo a mano por fuera de esto:**
+1. Módulo **Calidad** → campaña **ORLANT** → pestaña **"Carga Masiva
+   (Excel)"** → botón **"Descargar plantilla"**.
+2. El archivo trae 3 hojas: **Monitoreos** (la única que se procesa — una
+   fila por monitoreo real), **Diccionario** (de referencia: ítem,
+   categoría, peso %, crítico — los 17 de ORLANT) y **Resumen por
+   Asesor** (de apoyo, se calcula solo).
+3. Columnas fijas de la hoja Monitoreos: `ASESOR`, `FECHA` (obligatorias),
+   `CANAL`, `ID LLAMADA`, `TELEFONO`, `EVALUADOR`, `OBSERVACIONES`
+   (opcionales) — más una columna `SI`/`NO`/`N/A` por cada uno de los 17
+   ítems de la rúbrica de ORLANT (el encabezado exacto de cada columna es
+   el texto del ítem, tal cual aparece en la hoja Diccionario).
+4. El puntaje/clasificación/fallos se calculan siempre en el servidor
+   (`calidad-logic.js`) a partir de las respuestas — nunca se suben ni se
+   confían los que traiga el archivo.
+5. Es idempotente por (campaña, asesor, fecha, ID LLAMADA) cuando la fila
+   trae un ID de llamada — volver a subir el mismo archivo actualiza esos
+   monitoreos en vez de duplicarlos (igual que Cartera Interna). Sin ID de
+   llamada, esas filas siempre se insertan.
+
+No se necesita ninguna fase nueva ni pantalla nueva para esto — es
+exactamente el mismo camino que ya existe, simplemente nunca se había
+usado con un archivo real de ORLANT hasta ahora.
