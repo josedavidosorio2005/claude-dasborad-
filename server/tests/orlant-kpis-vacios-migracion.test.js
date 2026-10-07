@@ -35,7 +35,7 @@ const KPIS_ORLANT_VIEJO = [
 ];
 // Otro cliente cualquiera -- confirma que la migracion no toca clientes
 // fuera de ORLANT (pedido explicito: los demas clientes conservan su
-// franja). MOVILIZE a proposito: no aparece en ninguna otra migracion de
+// franja). OTRO CLIENTE SIN RELACION a proposito: no aparece en ninguna otra migracion de
 // kpis de este archivo (ni Fase 45 ni Fase 59), asi que este titulo no se
 // puede confundir con el efecto de otra migracion distinta.
 const KPIS_OTRO_VIEJO = [{ titulo: 'Llamadas Entrada', fuente: {}, formato: 'miles' }];
@@ -70,7 +70,7 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(layoutCon(KPIS_ORLANT_VIEJO)), now, now);
-insertar.run('MOVILIZE', 'Dashboard Movilize', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
+insertar.run('OTRO CLIENTE SIN RELACION', 'Dashboard Otro Cliente Sin Relacion', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -98,7 +98,7 @@ test('migracion dashboards_config_orlant_kpis_vacios_v1: ORLANT queda con la fra
 });
 
 test('migracion dashboards_config_orlant_kpis_vacios_v1: nunca toca otro cliente', () => {
-  assert.deepEqual(kpisDe('MOVILIZE'), ['Llamadas Entrada']);
+  assert.deepEqual(kpisDe('OTRO CLIENTE SIN RELACION'), ['Llamadas Entrada']);
 });
 
 test('migracion dashboards_config_orlant_kpis_vacios_v1: nunca toca tabs/panels, solo el array kpis', () => {

@@ -710,7 +710,7 @@ alguien lo pidiera explícitamente).
 | TELEVENTAS COMFAMA | resumen, diario, tipificación, asesores | Sí | Sí |
 | PANTERA MAIKERS | resumen, diario, tipificación, asesores | **No** (no está en `CAMPANAS_CALIDAD`) | No |
 | ANDRES YEPES | resumen, diario, tipificación, asesores | Sí (genérica) | Sí |
-| MOVILIZE | resumen, diario, tipificación, asesores | Sí (genérica) | Sí |
+| MOBILIZE | resumen, diario, tipificación, asesores | Sí (genérica) | Sí |
 | ALBERTO LINERO GO | resumen, diario, tipificación, asesores | **No** | No |
 | INFONDO (cobranza) | resumen, diario, tipificación, asesores | Sí | Sí |
 | SASCHA FITNESS (atención) | resumen, diario, tipificación | Sí (genérica) | Sí |
@@ -930,7 +930,7 @@ campañas tienen los mismos paneles):
 
 | Tipo de panel | Campañas | Filtro nuevo |
 |---|---|---|
-| `calidad_kpis`/`calidad_pie` (asesor, fecha reales en `CAL_DB`) | Las 9 con pestaña Calidad: ORLANT, CLINICA AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, ANDRES YEPES, MOVILIZE, INFONDO, SASCHA FITNESS, BIVETT | Asesor (multi-select) + Desde/Hasta |
+| `calidad_kpis`/`calidad_pie` (asesor, fecha reales en `CAL_DB`) | Las 9 con pestaña Calidad: ORLANT, CLINICA AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, ANDRES YEPES, MOBILIZE, INFONDO, SASCHA FITNESS, BIVETT | Asesor (multi-select) + Desde/Hasta |
 | `pie` / `bar` con `modo:'filas'` sobre un campo categórico (tipificación, asesor, entidad, categoría de STA/demanda) | Las 12 (todas tienen al menos un panel de tipificación) | Categorías a incluir (multi-select) |
 | `line`/`area` con `modo:'filas', x:'fecha'` (líneas diarias) | Las 12 con al menos una sección diaria (todas menos alguna variante mínima) | Desde/Hasta (días dentro del mes cargado) |
 | `line`/`bar`/`area` con `modo:'serie'` (tendencia mensual) | Las 12 | Sin filtro nuevo — ya lo controla el selector de mes superior, no hay un campo adicional que filtrar |

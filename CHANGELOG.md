@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.16.2 — Octubre 2026
+
+**Fase 131 (Parte 1): el cliente "Movilize" se escribía mal — ahora dice
+"Mobilize", su nombre real.**
+
+- Corregido: en toda la plataforma (su dashboard, los permisos de sus
+  usuarios, Calidad) el cliente aparecía escrito "MOVILIZE" en vez de
+  "MOBILIZE". Se corrigió el nombre en todas partes.
+- Ningún usuario de Mobilize perdió su acceso con este cambio.
+
 ## v1.16.1 — Octubre 2026
 
 **Fase 130 (Parte 7): el límite de "demasiadas peticiones" ya no bloquea a

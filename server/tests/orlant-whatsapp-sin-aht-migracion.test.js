@@ -33,12 +33,12 @@ function layoutViejo() {
 }
 
 // Otro cliente: la migracion nunca debe tocarlo, ni aunque tenga un panel
-// del mismo tipo (MOVILIZE a proposito, igual que en el test de kpis).
+// del mismo tipo (OTRO CLIENTE SIN RELACION a proposito, igual que en el test de kpis).
 function layoutOtroCliente() {
   return {
     kpis: [],
     tabs: [
-      { key: 'trafico_whatsapp', label: 'Trafico de WhatsApp', panels: [{ tipo: 'trafico_whatsapp_combo', campana: 'MOVILIZE' }] },
+      { key: 'trafico_whatsapp', label: 'Trafico de WhatsApp', panels: [{ tipo: 'trafico_whatsapp_combo', campana: 'OTRO CLIENTE SIN RELACION' }] },
     ],
   };
 }
@@ -80,7 +80,7 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(layoutViejo()), now, now);
-insertar.run('MOVILIZE', 'Dashboard Movilize', null, '{}', JSON.stringify(layoutOtroCliente()), now, now);
+insertar.run('OTRO CLIENTE SIN RELACION', 'Dashboard Otro Cliente Sin Relacion', null, '{}', JSON.stringify(layoutOtroCliente()), now, now);
 insertar.run('AURORA', 'Dashboard Aurora', null, '{}', JSON.stringify(layoutYaPersonalizado()), now, now);
 pre.close();
 
@@ -110,8 +110,8 @@ test('migracion dashboards_config_orlant_whatsapp_sin_aht_v1: ORLANT (sin el cam
   assert.equal(panelWppDe('ORLANT').mostrarAht, false);
 });
 
-test('migracion dashboards_config_orlant_whatsapp_sin_aht_v1: nunca toca otro cliente (MOVILIZE queda sin el campo)', () => {
-  assert.equal(Object.prototype.hasOwnProperty.call(panelWppDe('MOVILIZE'), 'mostrarAht'), false);
+test('migracion dashboards_config_orlant_whatsapp_sin_aht_v1: nunca toca otro cliente (OTRO CLIENTE SIN RELACION queda sin el campo)', () => {
+  assert.equal(Object.prototype.hasOwnProperty.call(panelWppDe('OTRO CLIENTE SIN RELACION'), 'mostrarAht'), false);
 });
 
 test('migracion dashboards_config_orlant_whatsapp_sin_aht_v1: nunca pisa un valor ya personalizado (AURORA sigue en true)', () => {

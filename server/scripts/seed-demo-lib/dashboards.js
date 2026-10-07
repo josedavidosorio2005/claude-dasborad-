@@ -720,7 +720,7 @@ const PLANTILLA_OPTS = {
   'TELEVENTAS COMFAMA': { tipo: 'ventas', metaContact: 70, metaConv: 15 },
   'PANTERA MAIKERS': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'ANDRES YEPES': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
-  'MOVILIZE': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
+  'MOBILIZE': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'ALBERTO LINERO GO': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'INFONDO': { tipo: 'cobranza', metaCobertura: 90, metaPromesas: 60 },
   'SASCHA FITNESS': { tipo: 'atencion', salidaCampo: 'pedidos' },

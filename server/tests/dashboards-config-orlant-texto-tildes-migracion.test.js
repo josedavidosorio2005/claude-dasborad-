@@ -99,7 +99,7 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(LAYOUT_ORLANT_VIEJO), now, now);
-insertar.run('MOVILIZE', 'Dashboard Movilize', null, '{}', JSON.stringify(LAYOUT_OTRO_VIEJO), now, now);
+insertar.run('OTRO CLIENTE SIN RELACION', 'Dashboard Otro Cliente Sin Relacion', null, '{}', JSON.stringify(LAYOUT_OTRO_VIEJO), now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -128,8 +128,8 @@ test('migracion dashboards_config_orlant_texto_tildes_v1: la columna `titulo` (a
 });
 
 test('migracion dashboards_config_orlant_texto_tildes_v1: `titulo` de otro cliente NUNCA se toca', () => {
-  const row = db.prepare('SELECT titulo FROM dashboards_config WHERE cliente = ?').get('MOVILIZE');
-  assert.equal(row.titulo, 'Dashboard Movilize');
+  const row = db.prepare('SELECT titulo FROM dashboards_config WHERE cliente = ?').get('OTRO CLIENTE SIN RELACION');
+  assert.equal(row.titulo, 'Dashboard Otro Cliente Sin Relacion');
 });
 
 test('migracion dashboards_config_orlant_texto_tildes_v1: tabs de nivel superior con tildes/capitalizacion correcta', () => {
@@ -186,9 +186,9 @@ test('migracion dashboards_config_orlant_texto_tildes_v1: subtabs y titulos/labe
 });
 
 test('migracion dashboards_config_orlant_texto_tildes_v1: NUNCA toca otro cliente, aunque el texto coincida exacto', () => {
-  const layout = layoutDe('MOVILIZE');
-  assert.equal(layout.tabs[0].label, 'Tipificacion', 'MOVILIZE conserva su texto viejo tal cual');
-  assert.equal(layout.tabs[1].label, 'Trafico de Llamadas', 'MOVILIZE conserva su texto viejo tal cual');
+  const layout = layoutDe('OTRO CLIENTE SIN RELACION');
+  assert.equal(layout.tabs[0].label, 'Tipificacion', 'OTRO CLIENTE SIN RELACION conserva su texto viejo tal cual');
+  assert.equal(layout.tabs[1].label, 'Trafico de Llamadas', 'OTRO CLIENTE SIN RELACION conserva su texto viejo tal cual');
 });
 
 test('migracion dashboards_config_orlant_texto_tildes_v1: `key`/`tipo`/`campana` (identificadores, no texto de interfaz) no cambian', () => {

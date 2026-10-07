@@ -18,7 +18,7 @@ const CLIENTES_LIST = [
   'TELEVENTAS COMFAMA',
   'PANTERA MAIKERS',
   'ANDRES YEPES',
-  'MOVILIZE',
+  'MOBILIZE',
   'SASCHA FITNESS',
   'ALBERTO LINERO GO',
   'INFONDO',
@@ -32,7 +32,7 @@ const CAMPANAS_CALIDAD = [
   'TELEVENTAS SURA',
   'TELEVENTAS COMFAMA',
   'ANDRES YEPES',
-  'MOVILIZE',
+  'MOBILIZE',
   'SASCHA FITNESS',
   'INFONDO',
   'BIVETT',
@@ -2917,6 +2917,97 @@ runOnceMigration('dashboards_config_orlant_calidad_bar_asesores_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_orlant_calidad_bar_asesores_v1 aplicada.');
+  }
+});
+
+// Fase 131 (Parte 1, pedido de Edwin): el cliente se escribia "MOVILIZE" en
+// todo el codigo -- se corrige al nombre real de su marca, "MOBILIZE".
+// dashboards_config.cliente y calidad_plantillas.campana son UNIQUE, y la
+// semilla generica de arriba (CONFIGS/PLANTILLAS, "idempotente por
+// cliente/campana que aun no exista") ya corrio ANTES de esta migracion en
+// este mismo arranque -- en cuanto dashboard-plantillas-cliente.js y
+// calidad-plantillas-seed.js pasaron a usar 'MOBILIZE', ese seed generico
+// crea solo una fila NUEVA para 'MOBILIZE' (nunca pudo haber sido
+// personalizada por un admin: 'MOBILIZE' no existia como concepto antes de
+// este deploy). Por eso, si existe la fila VIEJA ('MOVILIZE', que SI puede
+// traer personalizaciones de un admin de antes de este cambio) y TAMBIEN
+// quedo la fila generica nueva ('MOBILIZE') recien sembrada, se descarta la
+// generica y se renombra la vieja -- asi ninguna personalizacion se pierde
+// y no queda una fila duplicada ni un choque de UNIQUE.
+runOnceMigration('cliente_movilize_renombrado_mobilize_v1', () => {
+  const ts = new Date().toISOString();
+  let tocado = false;
+
+  const dashboardViejo = db.prepare('SELECT id FROM dashboards_config WHERE cliente = ?').get('MOVILIZE');
+  if (dashboardViejo) {
+    const dashboardGenericoNuevo = db.prepare('SELECT id FROM dashboards_config WHERE cliente = ?').get('MOBILIZE');
+    if (dashboardGenericoNuevo) db.prepare('DELETE FROM dashboards_config WHERE id = ?').run(dashboardGenericoNuevo.id);
+    const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+    db.prepare('UPDATE dashboards_config SET cliente = ?, titulo = ?, updatedAt = ? WHERE id = ?').run(
+      'MOBILIZE',
+      target ? target.titulo : 'Dashboard Mobilize',
+      ts,
+      dashboardViejo.id
+    );
+    tocado = true;
+  }
+
+  const plantillaVieja = db.prepare('SELECT id FROM calidad_plantillas WHERE campana = ?').get('MOVILIZE');
+  if (plantillaVieja) {
+    const plantillaGenericaNueva = db.prepare('SELECT id FROM calidad_plantillas WHERE campana = ?').get('MOBILIZE');
+    if (plantillaGenericaNueva) db.prepare('DELETE FROM calidad_plantillas WHERE id = ?').run(plantillaGenericaNueva.id);
+    db.prepare('UPDATE calidad_plantillas SET campana = ?, updatedAt = ? WHERE id = ?').run('MOBILIZE', ts, plantillaVieja.id);
+    tocado = true;
+  }
+
+  // Resto de tablas con columna campana/cliente: ninguna de estas se siembra
+  // sola para un cliente nuevo (solo las dos de arriba), asi que un simple
+  // UPDATE basta -- hoy casi seguro 0 filas (MOBILIZE nunca tuvo datos
+  // reales cargados como MOVILIZE), pero se cubre por si acaso.
+  const TABLAS_CAMPANA = [
+    'calidad_codificaciones', 'monitoreos', 'cronograma_metas',
+    'calidad_nivel_servicio', 'calidad_nivel_servicio_diario', 'trafico_whatsapp',
+    'agendas', 'tipificaciones', 'inasistencias', 'efectividad_agendamiento',
+    'efectividad_citas', 'salida_mensual', 'alias_asesores', 'trafico_skill_mapeo',
+    'gestion_humana_personal',
+  ];
+  TABLAS_CAMPANA.forEach((tabla) => {
+    const info = db.prepare(`UPDATE ${tabla} SET campana = ? WHERE campana = ?`).run('MOBILIZE', 'MOVILIZE');
+    if (info.changes) tocado = true;
+  });
+  const infoCargas = db.prepare('UPDATE dashboard_cargas SET cliente = ? WHERE cliente = ?').run('MOBILIZE', 'MOVILIZE');
+  if (infoCargas.changes) tocado = true;
+
+  // Permisos de usuario (withScopedPerms, arriba): las claves
+  // cliente_MOVILIZE/campana_MOVILIZE se renombran SIN tocar su valor --
+  // ningun usuario pierde el acceso que ya tenia.
+  const usuarios = db.prepare('SELECT id, perms FROM users').all();
+  const actualizarUser = db.prepare('UPDATE users SET perms = ? WHERE id = ?');
+  usuarios.forEach((u) => {
+    let perms;
+    try {
+      perms = JSON.parse(u.perms || '{}');
+    } catch (_) {
+      return;
+    }
+    let cambiado = false;
+    ['cliente_', 'campana_'].forEach((prefix) => {
+      const viejaKey = prefix + 'MOVILIZE';
+      if (Object.prototype.hasOwnProperty.call(perms, viejaKey)) {
+        const nuevaKey = prefix + 'MOBILIZE';
+        if (perms[nuevaKey] === undefined) perms[nuevaKey] = perms[viejaKey];
+        delete perms[viejaKey];
+        cambiado = true;
+      }
+    });
+    if (cambiado) {
+      actualizarUser.run(JSON.stringify(perms), u.id);
+      tocado = true;
+    }
+  });
+
+  if (tocado && !config.isTest) {
+    console.log('[db] Migracion cliente_movilize_renombrado_mobilize_v1 aplicada.');
   }
 });
 

@@ -109,7 +109,7 @@ const ITEMS_COMFAMA = [
 
 // Plantilla generica estandar (10 items, pesos suman 100) para las campanas de
 // M3 (dashboard-plantillas-cliente.js) que tienen pestana de Calidad pero no
-// tenian una plantilla de calificacion propia (ANDRES YEPES, MOVILIZE, SASCHA
+// tenian una plantilla de calificacion propia (ANDRES YEPES, MOBILIZE, SASCHA
 // FITNESS, BIVETT): sin esto, POST /monitoreos fallaba con "Esa campana no
 // tiene plantilla de calificacion" y su pestana de Calidad quedaba vacia. No
 // habia definicion de negocio para estas 4, asi que se usa un formato
@@ -138,7 +138,7 @@ const PLANTILLAS = [
   { campana: 'CARTERA INTERNA', engine: 'standard', items: ITEMS_CARTERA },
   { campana: 'TELEVENTAS COMFAMA', engine: 'standard', items: ITEMS_COMFAMA },
   { campana: 'ANDRES YEPES', engine: 'standard', items: plantillaGenerica() },
-  { campana: 'MOVILIZE', engine: 'standard', items: plantillaGenerica() },
+  { campana: 'MOBILIZE', engine: 'standard', items: plantillaGenerica() },
   { campana: 'SASCHA FITNESS', engine: 'standard', items: plantillaGenerica() },
   { campana: 'BIVETT', engine: 'standard', items: plantillaGenerica() },
 ];
