@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.4 — Octubre 2026
+
+**Fase 130 (Parte 3): se quita el aviso de "mes incompleto" en
+Inasistencia — pedido de Edwin.**
+
+- En Inasistencia, un mes ya no se marca con un aviso solo por tener
+  menos especialidades que otro mes. Ahora que los archivos reales
+  llegan completos mes a mes, que una especialidad no haya operado en
+  un mes puntual es una variación normal del negocio, no un dato que
+  falte. Se mantienen los avisos que sí siguen siendo útiles: un mes
+  en el formato viejo (antes del archivo real por cita) y un filtro
+  que deja un mes sin ninguna fila.
+
 ## v1.15.3 — Octubre 2026
 
 **Fase 130 (Parte 4): la carga masiva de Calidad acepta la plantilla real

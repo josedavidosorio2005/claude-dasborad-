@@ -380,7 +380,12 @@ test('inasistenciaAvisosPorMes: un mes 100% formato viejo se marca "parcial", nu
   assert.deepEqual(avisos[0].especialidades, ['EXAMENES ESPECIALES']);
 });
 
-test('inasistenciaAvisosPorMes: un mes con menos especialidades pero CON sede/entidad real se marca "incompleto"', () => {
+// Fase 130 (Parte 3, pedido de Edwin): un mes con MENOS especialidades que
+// otro (pero con datos reales, sede/entidad reales) ya NO se marca como
+// aviso -- con archivos reales completos mes a mes, esa diferencia es una
+// variacion de negocio normal (esa especialidad no opero ese mes), no un
+// dato incompleto. Reemplaza el test viejo de "se marca incompleto".
+test('inasistenciaAvisosPorMes: un mes con menos especialidades que otro, pero con datos reales, NO genera aviso (Fase 130)', () => {
   const agregado = inasistenciaAgregarPorMes([
     { mes: '2026-08', especialidad: 'AUDIFONOS', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
     { mes: '2026-08', especialidad: 'AUDIOLOGIA', cancelada: 0, inasistencia: 1, pendiente: 0, atendidas: 9, total: 10 },
@@ -388,9 +393,7 @@ test('inasistenciaAvisosPorMes: un mes con menos especialidades pero CON sede/en
   ]);
   // '2026-09' NO esta en mesesFormatoViejo -- tiene datos reales, solo que menos especialidades.
   const avisos = inasistenciaAvisosPorMes(agregado, ['2026-08', '2026-09'], []);
-  assert.equal(avisos.length, 1);
-  assert.equal(avisos[0].mes, '2026-09');
-  assert.equal(avisos[0].tipo, 'incompleto');
+  assert.deepEqual(avisos, []);
 });
 
 test('inasistenciaAvisosPorMes: un mes que existe en el universo pero el filtro lo dejo sin filas -> "sinDatosFiltro"', () => {
