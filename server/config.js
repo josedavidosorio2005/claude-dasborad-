@@ -80,14 +80,29 @@ const schema = z
     // 'false' | 'true' | numero de saltos de proxy | lista de IPs/subredes.
     TRUST_PROXY: z.string().default(isProd ? '1' : 'false'),
 
+    // Fase 130 (Parte 7): limite general de la API, SOLO para peticiones SIN
+    // sesion (clave = IP) -- login, /health, estaticos. Un usuario
+    // autenticado nunca cuenta contra este (ver RATE_LIMIT_MAX_AUTENTICADO).
     RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
     RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+    // Fase 130 (Parte 7, hallazgo real: revision-final.js agoto el limite
+    // global de 300/15min el mismo dia que varios clientes reales se
+    // quejaron de "demasiadas peticiones"): limite de la API para
+    // peticiones CON sesion valida, con clave POR USUARIO (no por IP) --
+    // asi una oficina entera detras de la misma IP nunca comparte un solo
+    // cupo. 1500 da margen comodo: una revision completa del dashboard
+    // (los 8 tabs + exports + numeros de control) hace ~70 peticiones.
+    RATE_LIMIT_MAX_AUTENTICADO: z.coerce.number().int().positive().default(1500),
     LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce
       .number()
       .int()
       .positive()
       .default(15 * 60 * 1000),
-    LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+    // Fase 130 (Parte 7): bajado de 20 a 10 -- ahora cuenta por (IP +
+    // usuario intentado), no solo por IP, asi que ya no hace falta un
+    // numero tan alto para no frenar a una oficina compartida: cada
+    // usuario tiene su propio cupo de 10 fallidos.
+    LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
 
     BACKUP_DIR: z.string().optional(),
   })
@@ -153,6 +168,7 @@ const config = Object.freeze({
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     max: env.RATE_LIMIT_MAX,
+    maxAutenticado: env.RATE_LIMIT_MAX_AUTENTICADO,
   },
   loginRateLimit: {
     windowMs: env.LOGIN_RATE_LIMIT_WINDOW_MS,

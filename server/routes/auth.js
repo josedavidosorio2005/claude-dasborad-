@@ -3,7 +3,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const config = require('../config');
 const db = require('../db');
 const { signToken, requireActor } = require('../auth');
@@ -29,16 +29,45 @@ const router = express.Router();
 // compara contra una password real, solo sirve para igualar el tiempo).
 const DUMMY_HASH_PARA_TIMING = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
 
-// Mismo limitador de login que tenia server.js: solo penaliza intentos
-// FALLIDOS (skipSuccessfulRequests), asi una oficina detras de una sola IP
-// no se autobloquea al usar la app.
+// Fase 130 (Parte 7, hallazgo real: "demasiados intentos" bloqueaba a toda
+// una oficina por el error de UNA sola persona, porque la llave era solo
+// la IP): ahora la llave es IP + usuario INTENTADO (el que viene en el
+// body, nunca uno ya resuelto en BD -- este middleware corre ANTES de
+// validate()/el handler, asi que toma el texto crudo tal cual llego).
+// Alguien que se equivoca de contrasena en SU cuenta ya no frena a nadie
+// mas de su oficina, y un intento contra un usuario que ni existe cuenta
+// aparte de un intento contra uno real. Sigue penalizando SOLO fallidos
+// (skipSuccessfulRequests) -- un login correcto nunca cuenta.
+function claveLoginPorIpYUsuario(req) {
+  const usuarioIntentado = typeof req.body?.user === 'string' ? req.body.user.trim().toLowerCase().slice(0, 100) : '';
+  // ipKeyGenerator (no req.ip crudo): normaliza IPv6 a su subred, igual que
+  // el keyGenerator por defecto de la libreria -- evita el aviso
+  // ERR_ERL_KEY_GEN_IPV6 (alguien podria variar su IPv6 dentro de la misma
+  // subred para esquivar el limite si se compara el string tal cual).
+  return `${ipKeyGenerator(req.ip)}:${usuarioIntentado}`;
+}
+
+// Mensaje claro de cuanto falta para reintentar (minutos, en vez del texto
+// generico "en unos minutos" de antes) -- `req.rateLimit.resetTime` lo
+// calcula express-rate-limit a partir de la ventana configurada.
+function manejarLoginBloqueado(req, res, _next, options) {
+  const resetTime = req.rateLimit && req.rateLimit.resetTime;
+  const minutos = resetTime ? Math.max(1, Math.ceil((resetTime.getTime() - Date.now()) / 60000)) : null;
+  res.status(options.statusCode).json({
+    error: minutos
+      ? `Demasiados intentos. Intenta de nuevo en ${minutos} minuto${minutos === 1 ? '' : 's'}.`
+      : 'Demasiados intentos. Intenta de nuevo en unos minutos.',
+  });
+}
+
 const loginLimiter = rateLimit({
   windowMs: config.loginRateLimit.windowMs,
   max: config.loginRateLimit.max,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
-  message: { error: 'Demasiados intentos. Intenta de nuevo en unos minutos.' },
+  keyGenerator: claveLoginPorIpYUsuario,
+  handler: manejarLoginBloqueado,
 });
 
 // Fase 113 (tema A): cada intento de login queda en el Historial (exitoso o

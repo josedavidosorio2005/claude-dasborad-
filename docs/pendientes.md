@@ -347,6 +347,36 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   referencias, estilos sin uso, endpoints sin cliente) sigue sin hacerse
   — pedido desde la Fase 118/119/120, sigue sin alcanzar el tiempo.
 
+- **Limitador de la API para tráfico SIN sesión — sigue por IP, no por
+  usuario** — dueño: InCo (decisión). Prioridad BAJA/MEDIA. La Fase 130
+  (Parte 7) separó el limitador general en dos cupos: quien YA inició
+  sesión cuenta por usuario (1.500 peticiones/15 min, nunca comparte cupo
+  con sus compañeros de oficina); quien todavía NO inició sesión (la
+  página de login, `/api/health`, un token vencido) sigue contando por
+  IP, sin cambios (300 peticiones/15 min). Eso resuelve el caso real que
+  disparó esta fase (una revisión administrativa completa, ~70
+  peticiones, agotando el cupo compartido de toda una oficina) pero deja
+  abierto un caso más chico: muchas personas iniciando sesión casi al
+  mismo tiempo desde la misma IP (ej. toda una oficina al inicio del día)
+  todavía comparten ese cupo de 300 antes de autenticarse. Opciones para
+  cuando se quiera cerrar esto también (ninguna aplicada todavía):
+  1. **Subir el límite anónimo** (ej. 300 → 600/15 min). Riesgo: bajo,
+     pero sigue siendo un número arbitrario — solo corre el problema más
+     lejos, no lo elimina.
+  2. **Extender la clave por usuario también a rutas sin sesión que lo
+     permitan** (ej. `/api/auth/login` ya tiene su propio limitador por
+     IP+usuario desde esta misma fase — ver más arriba — así que el
+     riesgo real hoy es solo peticiones genéricas sin sesión, no login).
+     Riesgo: bajo, pero no hay "usuario" que identificar antes de que
+     alguien se autentique, así que no aplica igual que para el tráfico
+     autenticado.
+  3. **Excluir del limitador los `GET` de solo lectura más livianos**
+     (ej. `/api/health`) **del cupo anónimo**. Riesgo: bajo para ese caso
+     puntual, pero hay que revisar caso por caso cuáles rutas anónimas
+     existen hoy antes de excluir cualquiera (evitar abrir una puerta a
+     abuso real sin límite).
+  Anotado 2026-10-07 (Fase 130, Parte 7).
+
 ## 5. Después de la entrega (no pedido todavía)
 
 - **Fase de plantillas oficiales** (carpeta versionada, que Isabel pueda

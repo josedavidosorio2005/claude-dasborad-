@@ -31,8 +31,9 @@ setEnvDefault('MASTER_ADMIN_PASSWORD_HASH', bcrypt.hashSync(MASTER_PASSWORD, 10)
 setEnvDefault('DB_PATH', tmpDb);
 setEnvDefault('TRUST_PROXY', 'false');
 // Limites altos por defecto para no interferir con las pruebas funcionales;
-// el test de rate-limit los baja antes de requerir este modulo.
+// los tests de rate-limit los bajan antes de requerir este modulo.
 setEnvDefault('RATE_LIMIT_MAX', '10000');
+setEnvDefault('RATE_LIMIT_MAX_AUTENTICADO', '10000'); // Fase 130 (Parte 7)
 setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const { createApp } = require('../server');
