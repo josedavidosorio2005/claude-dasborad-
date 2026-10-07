@@ -100,44 +100,73 @@ mano, ver `docs/pendientes.md` §1).
 | Tráfico de Llamadas (sin cambios desde la Fase 115) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
 | Tráfico de WhatsApp (sin cambios desde la Fase 116; aviso de SL 5 min retirado de pantalla en la Fase 126) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
 | Agendas (Fase 126: Abril/2025 se borró, queda un solo período real) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores |
-| Inasistencia (Fase 126: Ene-Jul/2026 se borró, "período" ya no mezcla meses de prueba) | Ago-26 7,45 %, período (ago-sep) 7,34 % |
+| Inasistencia (Fase 129: solo ago-sep, archivo real ene-ago restaurado y vuelto a limpiar de ene-jul — umbral de privacidad original) | Ago-26 11.189/786/48, 7,45 %, 18 especialidades, 54 entidades · Sep-26 1.483/94/2 (sin cambios, formato viejo, 1 especialidad) |
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
 
-### Fase 129 (en curso) — incidente real de escritura accidental en producción
+### Fase 129 (cerrada) — incidente real de escritura accidental + 2 hallazgos reales corregidos, Inasistencia restaurada
 
-Al preparar un dry-run de solo-lectura (recarga de Inasistencia de
-ORLANT, solo agosto 2026), el script usó `page.exposeFunction` para
-forzar `window.confirm` a `false` -- eso envuelve el retorno en una
-Promise (siempre *truthy*), así que el guard de la app nunca cortó y el
-script terminó escribiendo en producción sin el "sí" explícito del
-usuario ni respaldo previo. Impacto real verificado: agosto quedó con los MISMOS
-totales/CITEST/por-sede que ya tenía (11.189, 7,45 %, archivo
-byte-idéntico al ya cargado en la Fase 108); septiembre intacto; solo
-cambió el umbral de privacidad de entidades (352→324 filas, 54→29
-entidades visibles, más citas agrupadas en "PARTICULAR / OTRA":
-744→789) — sin pérdida de datos. Corregido por construcción con 2
-defensas independientes (`scripts/produccion/lib/dry-run-seguro.js`,
-probado con `server/tests/fase129-dryrun-seguro-logic.test.js`).
-Auditoría de privacidad del incidente (git log completo): el script con
-el bug nunca se commiteó/pusheó/entró a un PR o a CI — solo existió en
-stdout local, ya scrubado. Regla por construcción generalizada + prueba
-estática nueva en CI para cualquier script de `scripts/produccion/` que
-reenvíe crudo un endpoint `.../opciones`. Hallazgo real nuevo (v1.15.1,
+Pedido original: recargar Inasistencia de ORLANT (solo agosto). Durante
+la preparación, un script de dry-run escribió en producción por
+accidente sin el "sí" del usuario ni respaldo previo (`page.exposeFunction`
+envuelve el retorno en una Promise, siempre *truthy*, así que el guard
+de la app nunca cortó). Impacto real: sin pérdida de datos (el archivo
+era byte-idéntico al ya cargado en la Fase 108), solo cambió el umbral
+de privacidad de entidades. Corregido por construcción con 2 defensas
+independientes (`scripts/produccion/lib/dry-run-seguro.js`). Auditoría
+de privacidad completa (`git log --all`): el script que imprimió
+`opciones.entidades` crudo nunca se commiteó/pusheó/entró a un PR o a
+CI — solo existió en stdout local, ya scrubado. Regla generalizada +
+prueba estática nueva en CI (`fase129-scripts-produccion-sin-texto-crudo.test.js`)
+para cualquier script de `scripts/produccion/` que reenvíe crudo un
+endpoint `.../opciones`.
+
+Hallazgo real nuevo, encontrado al preparar la restauración (v1.15.1,
 parche): subir el archivo completo de Inasistencia (varios meses)
-fallaba con "ninguna fila válida" — una celda de fecha con formato
-Excel llegaba como objeto `Date` en vez de número por un efecto
-secundario de `cellNF:true` (necesario para Tráfico); corregido en
-`inasistencia-logic.js`. El mismo patrón late en 8 módulos más
+fallaba con "ninguna fila válida" — una celda FECHA_CITA con formato de
+fecha de Excel llegaba como objeto `Date` nativo en vez de número, por
+un efecto secundario de `cellNF:true` (necesario para Tráfico, no
+relacionado con `cellDates`); corregido en `inasistencia-logic.js`
+(getters LOCALES, nunca UTC). El mismo patrón late en 8 módulos más
 (agendas/calidad/citas-atendidas/efectividad-agendamiento/tipificación/
-tráfico/tráfico-WhatsApp/metas) — no tocados todavía, pendiente de
-decisión. Pendiente: decisión del usuario sobre si agosto se queda en
-324/29 o se restaura a 352/54 (Opción B aprobada, dry-run en curso).
-Detalle completo en
+tráfico/tráfico-WhatsApp/metas) — **no tocados en esta fase, pendiente
+de decisión** (riesgo documentado, no corregido).
+
+Con el fix desplegado (v1.15.1 en producción), se restauró Inasistencia
+al alcance de privacidad original (Opción B, aprobada y ejecutada con
+"sí" explícito en cada paso, respaldo manual confirmado antes): Paso 1,
+se re-subió el archivo real completo ene-ago (2.664 filas, confirmado
+exacto contra el preview antes de guardar) — agosto quedó en
+352 filas/54 entidades/11.189 citas/786 inasistencias/7,45 %, igual que
+la Fase 108 original; septiembre no se tocó (reemplazo por mes, nunca
+toca meses fuera del archivo). Paso 2, dry-run del borrado por rango
+(mismo endpoint auditado de la Fase 126, base `inasistencia` únicamente
+— no puede tocar otra tabla por diseño, y se cruzó además con una
+lectura independiente de Tipificación de WhatsApp de julio) confirmó
+exactamente 2.312 filas antes de borrar; con el "sí", se borraron esas
+2.312 filas de ene-jul. Verificación final: Inasistencia solo con
+ago-sep (ago 352/54/11.189/786/7,45 %, sep 1.483/94/2 sin cambios),
+Tipificación de WhatsApp de julio sigue en 71, 2 sub-pestañas con
+dibujo real, 0 errores de consola. Septiembre sigue en el agregado
+viejo (Fase 98-106, 1 "especialidad") porque el archivo real que Edwin
+ha enviado nunca trajo septiembre en el formato nuevo — anotado en
+`docs/pendientes.md` §2 (dueño: Edwin). El `console.error 401` visto en
+una corrida de verificación no se reprodujo en una segunda corrida
+idéntica — sin causa real confirmada, tratado como ruido transitorio.
+
+PRs #333 (corrección del dry-run inseguro), #334 (auditoría de
+privacidad + arreglo del `Date`) y el de cierre de esta fase (scripts de
+ejecución real + esta actualización). Versión final `1.15.1`. Scripts de un
+solo uso de esta fase (`scripts/produccion/fase129-*.js`) quedan en el
+repo por ahora, mismo criterio que los de fases anteriores
+(`fase122-...`, `fase124-...`, `fase128-...`) — se archivan en bloque
+cuando estorben, no fase por fase (ver `scripts/README.md`); confirmado
+que ninguno imprime ni contiene un nombre real. Detalle narrativo
+completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
-## Índice — fases 0 a 128
+## Índice — fases 0 a 129
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -272,4 +301,5 @@ mismo orden):
 - Fase 126 — Pedido de Edwin: borrado de todos los meses de prueba de producción (Inasistencia Ene-Jul/2026, Efectividad de Citas Ene-Mar/2026, Agendas Abril/2025), con un endpoint nuevo de solo administrador (dry-run + conteo exacto obligatorio) construido para la ocasión; retiro del aviso de Nivel de Servicio a 5 minutos de WhatsApp y redacción simplificada del aviso de mes incompleto en Inasistencia; propuesta (sin programar) de un indicador de llamadas de salida (2026-10-06)
 - Fase 127 — Indicador de Llamadas y WhatsApp de SALIDA (archivo mensual de Edwin): nueva pestaña "Salida" (tabla propia `salida_mensual`, confirmación explícita del año del mes antes de guardar, nunca en silencio); hallazgo real con Playwright contra un archivo sintético de la forma exacta del real (encabezado en la fila 3, 2 filas vacías antes) -- un archivo válido no se reconocía porque el buscador de encabezados por rango acotado solo miraba el primer renglón del rango usado de la hoja, corregido y cubierto con pruebas; carga real en producción sujeta a parada obligatoria y al "OK cargar" explícito del usuario (2026-10-06)
 - Fase 128 — 4 pedidos de la reunión de validación con Edwin del 2026-10-06: Parte 1, pestaña "Salida" renombrada a "Llamadas y WhatsApp de salida" y reubicada junto a Tráfico de WhatsApp (migración idempotente nueva, reposición incondicional por el mismo criterio que `orden_pestanas_v2` -- hallazgo real: gatearla al label viejo habría dejado mal ubicada cualquier instalación nueva); Parte 2, corrección por construcción del hallazgo de privacidad de `revision-final.js` (`veredictoSubvista` ya nunca devuelve texto crudo del DOM, solo conteos/veredicto de lista fija -- cierra la clase completa del problema, no solo el caso de "Ranking de asesores"), con prueba automática nueva que confirma con un nombre ficticio que no se filtra; mismo criterio aplicado al resto de `scripts/produccion/`; Parte 3, nueva base `monitoreos` en el borrado por rango (mismo endpoint auditado de la Fase 126) para retirar los 37 monitoreos de prueba de Calidad confirmados por Edwin, con respaldo manual confirmado antes del cambio; Parte 4, housekeeping (30 ramas locales ya mergeadas, lockfile al día, `.gitignore` de la configuración local de Codex); verificación real en producción EJECUTADA (2026-10-07): `revision-final.js` corrido con sesión real del usuario (0 nombres, 0 discrepancias, Salida confirmada), y los 37 monitoreos de prueba de Calidad borrados de verdad tras el "sí" explícito del usuario sobre el conteo exacto (37, 2026-09) — Calidad de ORLANT queda en 0, "Sin datos" visible, 0 errores (2026-10-06/07)
+- Fase 129 — Recarga de Inasistencia de ORLANT: incidente real de escritura accidental en producción (dry-run con `page.exposeFunction` -- corregido por construcción con `dry-run-seguro.js`), auditoría completa de privacidad del incidente (nunca llegó al repo/PR/CI), y hallazgo real nuevo (v1.15.1): una celda de fecha con formato Excel llegaba como objeto `Date` por un efecto secundario de `cellNF:true`, bloqueando en silencio cualquier re-carga del archivo completo -- corregido; Inasistencia restaurada al umbral de privacidad original (Ago-26 352 filas/54 entidades/11.189/786/7,45 %, ene-jul vueltos a borrar, septiembre intacto) (2026-10-07)
 
