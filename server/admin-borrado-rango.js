@@ -25,6 +25,15 @@ const TABLAS = {
   // substr), agregado al mapa por consistencia con el resto de bases --
   // no se usa en esta fase (no hay nada que borrar todavia).
   salida: { tabla: 'salida_mensual', columnaMes: 'mes', extra: '' },
+  // Fase 128 (Parte 3): `monitoreos` ya trae `mes` (YYYY-MM) como columna
+  // propia (db.js), igual que `efectividad_citas`/`salida` -- mismo
+  // candado de siempre (solo ORLANT, via validation.js). Esto borra SOLO
+  // filas de `monitoreos`; `cronograma_metas` (metas/cumplimiento) es una
+  // tabla independiente sin fila por monitoreo y nunca se toca aqui -- el
+  // cumplimiento que muestre Calidad despues de un borrado se recalcula
+  // solo contra lo que quede (0 monitoreos -> 0% de cumplimiento), sin que
+  // haga falta borrar ni ajustar cronograma_metas.
+  monitoreos: { tabla: 'monitoreos', columnaMes: 'mes', extra: '' },
 };
 
 const BASES_VALIDAS = Object.keys(TABLAS);

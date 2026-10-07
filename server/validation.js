@@ -195,6 +195,14 @@ const borradoRangoBody = z
       'agendas', 'tipificacion_llamadas', 'tipificacion_whatsapp',
       'trafico_llamadas', 'trafico_whatsapp', 'inasistencia',
       'efectividad_agendamiento', 'efectividad_citas', 'salida',
+      // Fase 128 (Parte 3, pedido explicito de Edwin confirmado en la
+      // reunion de validacion de hoy: los 37 monitoreos de Calidad de
+      // ORLANT en produccion son de prueba, entrega los datos reales
+      // mañana): mismo candado de siempre (solo ORLANT, dry-run +
+      // filasEsperadas obligatorio) -- `cronograma_metas` (metas/
+      // cumplimiento) NO se toca por este camino, es una tabla
+      // independiente sin fila por monitoreo (ver admin-borrado-rango.js).
+      'monitoreos',
     ], { error: 'base invalida' }),
     campana: z.literal('ORLANT', { error: 'Este borrado solo esta habilitado para ORLANT' }),
     mesDesde: mesSchema,
