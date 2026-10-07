@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.16.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.16.3` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -115,6 +115,110 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 131 (EN CURSO) — Cliente Mobilize (entrega: mostrar antes del 15/10) + marca InConexion®
+
+Pedido original: Edwin revisa avances con Mobilize el 2026-10-08. Orden de
+prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
+("Última actualización") → 5 (marca InConexion®).
+
+**Hecho, mergeado a `main` y DESPLEGADO en producción (confirmado por
+`/api/health`, no solo CI):**
+- **Parte 1** (#345, v1.16.2): el cliente se escribía "MOVILIZE" en todo el
+  código -- corregido a su nombre real, "MOBILIZE" (listas de
+  clientes/campañas, plantilla de dashboard, plantilla de Calidad).
+  Migración idempotente nueva (`cliente_movilize_renombrado_mobilize_v1`,
+  `server/db.js`) renombra la fila ya sembrada en producción (en
+  `dashboards_config`, `calidad_plantillas`, y cualquier tabla con datos
+  por campaña/cliente) conservando cualquier personalización de admin y
+  renombrando las claves de permisos de cada usuario sin tocar su valor --
+  nadie perdió acceso. CI encontró 6 fallas reales (5 tests históricos que
+  usaban "MOVILIZE" como placeholder de "cliente sin relación" + 1 test
+  que SÍ dependía del nombre viejo por diseño) -- corregidas en el mismo
+  PR, documentado en su commit.
+- **Parte 2** (#347, v1.16.3): pestaña "Flujo de Llamadas" de Mobilize,
+  reusando **tal cual** el motor de Tráfico de Llamadas de ORLANT
+  (`trafico_combo`, `trafico-skills.js`/`trafico-logic.js`) -- mismo
+  mapeo de skill a campaña. `trafico-logic.js` ganó soporte de alias de
+  encabezado por columna (Mobilize trae "TIPO DE LINEA"/"DÍA"/"LLAMADAS
+  INGRESADAS"/"NIVEL DE SERVICIO 80 - 20"/"% ABANDONO" en vez de los
+  nombres de ORLANT -- un solo motor para los 2), ASA/ATA como texto de
+  reloj (además de número), y un aviso nuevo (nunca cambia el valor) si
+  NIVEL DE ATENCION o % ABANDONO superan 100% al tratarlos como fracción.
+  El panel `trafico_combo` ganó opciones opcionales nuevas (`etiquetaLinea`,
+  `subtabs`, `subtabsTitulos`, `resumenOcultar`, `resumenPorSeccion`) --
+  sin pasarlas, ORLANT/CLINICA AURORA/HOSPITAL LA MARIA quedan exactamente
+  igual (confirmado: el fixture real de ORLANT, `trafico-logic.test.js`,
+  sigue 60/60 sin cambios). Con ellas, Mobilize muestra el orden pedido
+  por Edwin (Resumen → Nivel de Servicio 80-20 → Abandono → ASA → AHT, AHT
+  al final), "Tipo de línea" en vez de "Skill", y un resumen acumulado
+  propio en cada sub-pestaña de detalle. CI encontró 1 falla real más
+  (`secciones` no admite un objeto vacío, límite del schema de
+  `validation.js` -- se agregó una sección placeholder "notas" sin ningún
+  flujo real) -- corregida en el mismo PR.
+  **Verificado dato por dato contra el archivo REAL de septiembre**
+  (`PLANTILLA_DE_FLUJO_DE_LLAMADAS_MOBILIZE.xlsx`, ya en
+  `C:\Users\filid\Documents\datos-inconexion\mobilize\`, confirmado solo
+  estructura/conteos): 27 filas, 25 días distintos, SKILL SAC 24 + Skill
+  Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas -- el
+  parser real de `trafico-logic.js` corrido contra el archivo da 0 avisos
+  y los mismos totales exactos.
+  Housekeeping de PRs: se abrieron por error 2 PRs contra el mismo branch
+  (#346 contra `main` antes de que la Parte 1 mergeara -- quedó en
+  conflicto por el squash-merge de GitHub; #347 apilado sobre la Parte 1).
+  Se cerró #346 sin mergear (mismo branch, 0 commits exclusivos) y #347 se
+  rebaseó sobre el `main` ya actualizado y se mergeó con CI verde.
+
+**Decidido con el usuario, pendiente de construir (Parte 3 — Tipificación
+CDR de Mobilize) y de confirmar con Edwin:**
+- Archivo real ya confirmado (solo estructura/conteos, en
+  `PLANTILLA_CDR.xlsx`): hoja de datos con nombre que cambia cada export
+  ("HistCDR<fecha>"; "Hoja1" es una tabla dinámica, se ignora), 171 filas,
+  104 inbound / 67 outbound_ma, 3 agentes, 21 `DESCRIPTION_COD_ACT`
+  distintos, skills SAC 101 / Llamadas de salida 67 / Key Account 3,
+  `HUNG_UP` agent 94 / customer 77.
+- **Hallazgo real en el archivo de septiembre, pendiente de confirmar con
+  Edwin**: una fila trae `DESCRIPTION_COD_ACT = "PRUEBA"` (`COD_ACT = 400`)
+  -- parece una fila de prueba mezclada con los datos reales. Decisión
+  tomada: se excluye por defecto, con una lista de codificaciones
+  excluidas CONFIGURABLE (no hardcodeada), y el preview de carga debe
+  decir cuántas filas se excluyeron y por qué.
+- `COD_ACT` NO es siempre numérico (una fila real trae `COD_ACT =
+  "TIMEOUTACW"`, texto) -- se guarda como texto/referencia, nunca se
+  valida como entero.
+- **Regla de "conectada" para Llamadas salientes** (CDR,
+  `TYPE_INTERACTION = outbound_ma`, 67 filas reales de septiembre):
+  Regla A (`TIME_SEC > 0`) es **inútil contra el archivo real** -- las 67
+  filas tienen `TIME_SEC > 0`, da 67/0 sin ningún poder de discriminación.
+  Regla B (codificación distinta de "Cliente_no_contesta") da 52
+  conectadas / 15 no conectadas, sí discrimina. Decisión tomada: Regla B
+  por defecto, configurable (lista de codificaciones de "no conectada"),
+  se descarta la Regla A. Pendiente de confirmar con Edwin.
+- Nada de esto se ha escrito en código todavía (ni esquema de base de
+  datos, ni parser, ni panel) -- se retomó la sesión que iba a
+  construirlo con el contexto ya muy cargado; se prefirió cerrar en limpio
+  (este resumen) en vez de apurar un motor que toca CDR real sin el
+  contexto fresco necesario.
+
+**Sin empezar todavía:**
+- **Parte 6** (carga real de septiembre de Mobilize): bloqueada hasta que
+  la Parte 3 (Tipificación) esté lista -- ambas comparten el mismo motor
+  de lectura del CDR. Dry-run obligatorio con los números de control de
+  arriba antes de cualquier "OK cargar". Falta confirmar si existe un
+  usuario CLIENTES_DASH de Mobilize ya creado (no crear uno sin el OK
+  explícito del usuario).
+- **Parte 4** ("Última actualización" visible en cada dashboard).
+- **Parte 5** (marca InConexion®: tipografía Quicksand, colores oficiales,
+  logo — los archivos de marca de
+  `C:\Users\filid\Documents\datos-inconexion\marca\` **todavía no están
+  ahí**, carpeta vacía a la fecha de este resumen).
+
+**Siguiente sesión, retomar por**: construir la Parte 3 (Tipificación
+CDR) con las 3 decisiones ya tomadas arriba (sin volver a preguntarlas),
+mismo patrón que la Parte 2 (extender lo que ya existe --
+`tipificaciones.js`/`tipificacion-logic.js`/`validation.js`, mismo motor
+de ORLANT -- en vez de un motor nuevo), con sus propios tests, su propio
+PR, y verificación contra el archivo real ya confirmado arriba.
 
 ### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
 
