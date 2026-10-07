@@ -121,8 +121,17 @@ test('migracion dashboards_config_aht_real_trafico_v1: nunca toca otros KPIs del
   assert.deepEqual(titulos, ['Base asignada', 'AHT Promedio', 'Ventas']);
 });
 
-test('migracion dashboards_config_aht_real_trafico_v1: MOVILIZE ya tenia la fuente nueva -- queda intacta, sin error ni duplicado', () => {
-  const k = kpiAhtDe('MOVILIZE');
+// Fase 131 (Parte 1): la fila se siembra como 'MOVILIZE' (el nombre literal
+// que el CLIENTES hardcodeado de esta migracion, ya aplicada en produccion,
+// sigue teniendo -- una migracion `runOnceMigration` nunca se reescribe) --
+// pero la migracion NUEVA de esa misma fase (cliente_movilize_renombrado_
+// mobilize_v1, mas abajo en db.js) la renombra a 'MOBILIZE' en el mismo
+// arranque, asi que para cuando este test consulta, ya vive bajo ese nombre
+// nuevo. El contenido (incluido el `campana: 'MOVILIZE'` de adentro de la
+// fuente, que ninguna de las 2 migraciones toca) sigue intacto -- esta
+// migracion nunca lo pisa, solo lo deja igual.
+test('migracion dashboards_config_aht_real_trafico_v1: MOVILIZE ya tenia la fuente nueva -- queda intacta, sin error ni duplicado (renombrada a MOBILIZE por la Fase 131)', () => {
+  const k = kpiAhtDe('MOBILIZE');
   assert.deepEqual(k.fuente, { s: 'trafico', modo: 'trafico_aht', campana: 'MOVILIZE' });
 });
 
