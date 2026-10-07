@@ -94,6 +94,29 @@ async function esperarLogin(page) {
     log('Calidad -- canvas en blanco (debe ser 0):', malosCalidad.length, JSON.stringify(malosCalidad));
     log('Calidad -- veredicto de la vista:', veredictoCalidad.veredicto);
 
+    // 1b. Panel nuevo calidad_bar_asesores (Fase 130, pedido de Edwin): con
+    // los 95 monitoreos reales ya cargados, confirma que dibuja con
+    // pixeles reales y que el texto "monitoreo(s)" NUNCA aparece en su
+    // card (nunca el numero de monitoreos, ni el nombre de ningun asesor
+    // se imprime aqui -- solo un booleano y un conteo de caracteres).
+    const barInfo = await page.evaluate(() => {
+      const tab = (window._gd.config.layout.tabs || []).find((t) => t.key === 'calidad');
+      const idx = (tab.panels || []).findIndex((p) => p.tipo === 'calidad_bar_asesores');
+      if (idx === -1) return { existe: false };
+      const c = document.getElementById('gd-c' + idx);
+      let pixeles = 0;
+      if (c) {
+        const ctx = c.getContext('2d');
+        const data = ctx.getImageData(0, 0, c.width, c.height).data;
+        for (let i = 0; i < data.length; i += 4) { if (data[i + 3] !== 0) { pixeles++; if (pixeles > 20) break; } }
+      }
+      const card = c ? c.closest('.aurora-card') : null;
+      const texto = card ? card.innerText : '';
+      return { existe: true, pixeles, sinMonitoreos: !/monitoreo/i.test(texto), longitudTexto: texto.length };
+    });
+    reporte.calidadBarAsesores = barInfo;
+    log('Panel "Promedio de calidad por asesor" -- existe/pixeles/sin texto "monitoreo":', JSON.stringify(barInfo));
+
     // 2. Inasistencia Ago-26, filas reales tras la recarga de hoy -- via el
     // 409 del dry-run (nunca borra, el servidor siempre devuelve el conteo
     // real en el cuerpo del error cuando filasEsperadas no coincide).
@@ -127,7 +150,8 @@ async function esperarLogin(page) {
     }
 
     reporte.erroresConsola = erroresConsola;
-    reporte.ok = malosCalidad.length === 0 && erroresConsola.length === 0 && typeof dryRunAgosto.filas === 'number';
+    reporte.ok = malosCalidad.length === 0 && erroresConsola.length === 0 && typeof dryRunAgosto.filas === 'number' &&
+      barInfo.existe && barInfo.pixeles > 0 && barInfo.sinMonitoreos;
 
     console.log('\n=== REPORTE MINIMO DE CIERRE (JSON, sin nombres) ===');
     console.log(JSON.stringify(reporte, null, 2));
