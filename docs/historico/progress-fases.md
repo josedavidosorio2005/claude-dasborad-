@@ -12399,3 +12399,130 @@ discrepancias en los números de control. Pendiente nuevo (prioridad
 ALTA, sin cambiar código todavía): corregir `revision-final.js` para
 que nunca devuelva texto crudo del DOM en ninguna sub-vista, no solo en
 las que ya se vieron con el problema.
+
+## Fase 128 — 4 pedidos de la reunión de validación con Edwin (2026-10-06)
+
+Sesión nueva (otra cuenta), continuación directa de la revisión de
+estado completa hecha al arrancar: main sano, v1.14.0, CI/deploy
+verdes, sin hallazgos críticos nuevos. Edwin pidió 4 cosas en la
+reunión de validación de hoy — cada una en su propia rama/PR, CI verde
+antes de mergear, deploy automático y verificación después.
+
+### Parte 1 — Renombra "Salida" a "Llamadas y WhatsApp de salida" y la reubica (PR #327)
+
+Pedido textual: el nombre corto "Salida" no se entendía como concepto.
+Se renombra en TODO lo visible (pestaña, título del panel, hojas del
+export Excel, guía de uso, checklist de Edwin, textos de ayuda) y se
+reubica justo después de "Tráfico de WhatsApp" — antes vivía al final
+del array, junto a las pestañas sin base propia (ya no correspondía,
+Salida sí tiene datos reales desde la Fase 127).
+
+Migración idempotente nueva (`dashboards_config_orlant_salida_label_
+orden_v1`, `server/db.js`). **Hallazgo real al probar esto contra una
+base local recién sembrada**: las migraciones de orden más viejas
+(`orden_pestanas_v1/_v2`, Fase 94/98; `efectividad_citas_v1`, Fase 111)
+agrupan cualquier tab fuera de su propio orden fijo en "el resto" y lo
+mandan al final del array — eso incluye a "salida", **aunque la fila
+sea nueva y ya haya nacido con el label/panel correctos desde el
+seed**. Si la reubicación de la migración nueva dependiera de
+reconocer el label viejo 'Salida' (igual que el renombre), una
+instalación nueva se habría quedado para siempre mal ubicada. Se separó
+en 2 pasos independientes: el renombre sigue protegido (solo actúa si
+el label es exactamente el default viejo — podría ser una
+personalización de un admin), pero la reubicación es **incondicional
+sobre la posición**, mismo criterio que `orden_pestanas_v2` (que
+tampoco tiene ese candado). Esto obligó a actualizar 2 pruebas
+existentes que asumían la posición final del array sin contar con la
+pestaña de Salida entrando al prefijo fijo.
+
+Verificado localmente con Playwright (claro/oscuro × 1366×768/1920×1080/
+móvil 412px, base recién sembrada): pestaña en la posición correcta,
+texto sin cortes, 0 errores de consola, export con las hojas "Llamadas
+de salida"/"WhatsApp de salida" (nombre nuevo) releídas con el parser
+de ZIP/XML independiente de las pruebas. CI verde, deploy confirmado
+(`buildId` nuevo en `/api/health`).
+
+### Parte 2 — Privacidad de `revision-final.js`, corregida por construcción (PR #328)
+
+Cierra el hallazgo de `docs/pendientes.md` §4 (ALTA, ampliado en la
+Fase 127 Parte 4): `veredictoSubvista` guardaba `host.innerText`
+(recortado a 800 caracteres) para CUALQUIER sub-vista — la tabla
+"Ranking de asesores" terminaba con nombres reales en el reporte. Se
+corrige por construcción, no por lista de lugares: la función ya nunca
+devuelve texto crudo, solo `veredicto` (de una lista fija), `canvases`,
+`filasTabla` (conteo, no contenido) y `longitudTexto` (un número) —
+cierra la clase COMPLETA del problema, no solo el caso ya visto. El
+chequeo de "aviso de demo visible" (cuenta cliente) también se movió
+adentro del `page.evaluate`. Mismo criterio aplicado al resto de
+`scripts/produccion/` (`carga-real-patron.js`,
+`fase122-recarga-tipificacion-alias-falla.js`,
+`fase124-parte1-pendientes-fase122.js` — `fase124-parte1b-exports.js`
+ya era seguro, confirmado sin cambios).
+
+Prueba automática nueva (`scripts/qa/fase128-parte2-privacidad-
+revision-final.js`): corre las funciones REALES de `revision-final.js`
+(exportadas ahora vía `module.exports`, con `require.main === module`
+para que el navegador real nunca se dispare al requerir el archivo
+desde una prueba) contra un servidor local con un nombre ficticio muy
+distintivo cargado en Ranking de Asesores, Agendas y Tipificación.
+Verificado ANTES del fix que la tabla de Ranking sí renderiza el nombre
+(`filasTabla:2`, `longitudTexto:258`) — confirma que la prueba ejercita
+el camino vulnerable de verdad, no un caso vacío. Con el fix: el
+nombre no aparece en ningún lado del reporte completo. CI verde,
+deploy confirmado.
+
+### Parte 3 — Nueva base `monitoreos` en el borrado por rango (PR #329)
+
+Edwin confirmó en la reunión que los 37 monitoreos de Calidad de
+ORLANT en producción son de prueba; entrega los datos reales mañana.
+Se extiende el mismo endpoint auditado de la Fase 126
+(`POST /api/admin/borrado-rango`: dry-run por defecto, `filasEsperadas`
+obligatorio, solo ORLANT, transacción) con una base nueva
+`monitoreos` — mismo candado de siempre, nunca una vía nueva ni SQL a
+mano. `cronograma_metas` (metas/cumplimiento) es una tabla
+independiente sin fila por monitoreo y nunca se toca por este camino;
+el Historial de auditoría tampoco (el endpoint solo AGREGA un evento
+de resumen, nunca borra entradas existentes).
+
+Respaldo manual confirmado ANTES del cambio (workflow "Respaldo de
+producción", modo `respaldar-ahora`, `S3: OK`). Pruebas nuevas
+(`server/tests/fase126-admin-borrado-rango.test.js`): dry-run, borrado
+real con `cronograma_metas` intacto, Historial sin nombre de asesor ni
+de evaluador. Script de producción nuevo
+(`scripts/produccion/fase128-parte3-calidad-monitoreos-prueba.js`):
+dry-run SIEMPRE seguro por defecto (descubre el conteo real mes a mes
+sin arriesgar nada, pidiendo `filasEsperadas:0` a propósito y leyendo
+el conteo real del cuerpo del error 409) + el borrado real solo si 3
+variables de entorno coinciden EXACTO con lo que el dry-run de esa
+misma corrida mostró. Verificado en local con datos sintéticos de
+`seed:demo`: el dry-run reporta el conteo real por mes sin tocar nada,
+y Calidad renderiza "Sin datos" sin errores cuando ORLANT queda en 0
+monitoreos. CI verde, deploy confirmado.
+
+**Pendiente de esta parte** (no ejecutado todavía, necesita sesión real
+del usuario): correr el dry-run contra producción real, mostrar el
+conteo real por mes, esperar el "sí" explícito del usuario, ejecutar el
+borrado real, y verificar Calidad en 0 sin errores en producción real.
+
+### Parte 4 — Housekeeping (PR #330)
+
+30 ramas locales ya mergeadas (cada una confirmada MERGED vía
+`gh pr list --search head:<rama> --state merged` antes de borrar) —
+ninguna existía ya en el remoto (`git ls-remote --heads origin` solo
+traía `main`, la limpieza del lado remoto ya había pasado sola).
+`server/package-lock.json` tenía el campo `version` un paso atrás del
+`package.json` real (drift de antes de esta fase, sin ningún cambio de
+dependencias). `.gitignore` nuevo para `.agents/`, `.codex/` y
+`AGENTS.md` (configuración local de Codex para este repo, espejo de
+`CLAUDE.md`/`.claude/`).
+
+### Estado final de la Fase 128
+
+Versión `1.15.0`. PRs #327-330, los 4 con CI verde y mergeados, deploy
+automático confirmado después de cada uno. Pendiente real: la
+verificación visual en producción de la pestaña renombrada (Parte 1),
+la corrida real de `revision-final.js` contra producción con login del
+usuario (Parte 2), y el dry-run + borrado real de los monitoreos de
+prueba de Calidad con el "sí" explícito del usuario (Parte 3) — las 3
+necesitan una sesión real del usuario, se coordinan juntas después del
+cierre de código.
