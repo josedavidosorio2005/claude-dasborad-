@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.2 — Octubre 2026
+
+**Fase 130 (Parte 2): el archivo de Inasistencia de agosto y septiembre
+sube sin tener que editarlo.**
+
+- Corregido: el archivo real de Inasistencia cambio sus encabezados
+  ("FECHA CITA" en vez de "FECHA_CITA", y la sede "Sede 34" ahora viene
+  con una aclaracion entre parentesis, "SEDE 34 (AUDIFONOS)"). Antes
+  esto hacia que el archivo no se reconociera, o que "Sede 34" quedara
+  partida en 2 sedes distintas en los filtros. Ya se reconoce igual que
+  antes, sin que Edwin tenga que tocar el archivo.
+
 ## v1.15.1 — Octubre 2026
 
 **Fase 129: arreglo real al subir el archivo de Inasistencia.**

@@ -40,16 +40,18 @@ var _inasistenciaAgendasLogic = (typeof require === 'function') ? require('./age
 
 // ── Columnas de la hoja de Inasistencia (formato nuevo, Fase 108) ───────
 // Emparejamiento por NOMBRE de columna, nunca por posicion. ESPECIALIDAD
-// acepta tambien "ESPECIALIDA" (sin la D -- asi viene en el archivo real
-// de Edwin, ver `labelAlt`). Las 5 son obligatorias: sin SEDE/FECHA_CITA/
-// CITEST la fila no se puede ubicar en el tiempo ni clasificar; ESPECIALIDAD
-// y NOMBRE ENTIDAD vacias se conservan igual con un valor "SIN ..." (nunca
-// se descarta una cita real solo por eso, mismo criterio que "SIN ASESOR"
-// de Agendas, Fase 104).
+// acepta tambien "ESPECIALIDA" (sin la D -- asi venia el archivo real de
+// Edwin hasta la Fase 129). FECHA_CITA acepta tambien "FECHA CITA" (con
+// espacio en vez de guion bajo -- asi cambio el encabezado real en el
+// archivo de ago-sep/2026 de la Fase 130, mismos datos). Las 5 son
+// obligatorias: sin SEDE/FECHA_CITA/CITEST la fila no se puede ubicar en el
+// tiempo ni clasificar; ESPECIALIDAD y NOMBRE ENTIDAD vacias se conservan
+// igual con un valor "SIN ..." (nunca se descarta una cita real solo por
+// eso, mismo criterio que "SIN ASESOR" de Agendas, Fase 104).
 var INASISTENCIA_COLUMNAS = [
   { key: 'sede', label: 'SEDE', obligatoria: true },
   { key: 'especialidad', label: 'ESPECIALIDAD', labelAlt: ['ESPECIALIDA'], obligatoria: true },
-  { key: 'fecha', label: 'FECHA_CITA', obligatoria: true },
+  { key: 'fecha', label: 'FECHA_CITA', labelAlt: ['FECHA CITA'], obligatoria: true },
   { key: 'entidad', label: 'NOMBRE ENTIDAD', obligatoria: true },
   { key: 'citest', label: 'CITEST', obligatoria: true },
 ];
@@ -97,6 +99,17 @@ function inasistenciaColIndexMap(headerRow) {
 // mismo criterio que agendasNormTexto.
 function inasistenciaNormTexto(v) {
   return String(v == null ? '' : v).trim().replace(/\s+/g, ' ');
+}
+
+// Quita un paréntesis final de SEDE, ej. "SEDE 34 (AUDIFONOS)" -> "SEDE 34"
+// -- asi vino el archivo real de ago-sep/2026 de la Fase 130 (el nombre
+// completo de la sede, con una aclaracion entre parentesis que antes no
+// traia); sin esto, la misma sede quedaria partida en 2 valores distintos
+// del filtro ("SEDE 34" de meses viejos vs "SEDE 34 (AUDIFONOS)" de este
+// archivo) en vez de una sola. Solo el ULTIMO parentesis al final del
+// texto (nunca uno en medio, que si podria ser parte real del nombre).
+function inasistenciaNormSede(v) {
+  return inasistenciaNormTexto(v).replace(/\s*\([^()]*\)\s*$/, '').trim();
 }
 
 // Serial de Excel (sin hora) -> 'AAAA-MM-DD' -- aritmetica directa sobre
@@ -194,7 +207,7 @@ function inasistenciaParseFilas(aoa, ahora) {
     var filaNum = i + 1;
     totalFilasConDatos++;
 
-    var sedeCruda = inasistenciaNormTexto(row[map.sede]).toUpperCase();
+    var sedeCruda = inasistenciaNormSede(row[map.sede]).toUpperCase();
     var especialidadCruda = inasistenciaNormTexto(row[map.especialidad]).toUpperCase();
     var entidad = inasistenciaNormTexto(row[map.entidad]);
     var fecha = inasistenciaParseFechaCita(row[map.fecha]);
@@ -440,6 +453,7 @@ if (typeof module !== 'undefined' && module.exports) {
     INASISTENCIA_CITEST_UMBRAL_RECHAZO: INASISTENCIA_CITEST_UMBRAL_RECHAZO,
     inasistenciaColIndexMap: inasistenciaColIndexMap,
     inasistenciaNormTexto: inasistenciaNormTexto,
+    inasistenciaNormSede: inasistenciaNormSede,
     inasistenciaParseFechaCita: inasistenciaParseFechaCita,
     inasistenciaParseFilas: inasistenciaParseFilas,
     inasistenciaFilaComoArray: inasistenciaFilaComoArray,

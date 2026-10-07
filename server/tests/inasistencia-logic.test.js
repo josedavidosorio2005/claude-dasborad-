@@ -27,6 +27,7 @@ const {
   inasistenciaRangoLbl,
   inasistenciaAvisosPorMes,
   inasistenciaOrdenarBaseBaja,
+  inasistenciaNormSede,
 } = require('../../public/js/inasistencia-logic.js');
 
 // "Hoy" fijo para que el rechazo de fecha futura sea determinista.
@@ -49,6 +50,19 @@ test('INASISTENCIA_COLUMNAS: las 5 son obligatorias, ESPECIALIDAD tiene "ESPECIA
   assert.ok(INASISTENCIA_COLUMNAS.every((c) => c.obligatoria));
   const esp = INASISTENCIA_COLUMNAS.find((c) => c.key === 'especialidad');
   assert.ok(esp.labelAlt.includes('ESPECIALIDA'));
+});
+
+// Fase 130 (Parte 2): el archivo real de ago-sep/2026 trae el encabezado de
+// fecha como "FECHA CITA" (con espacio), no "FECHA_CITA" (guion bajo) --
+// ambos deben resolver a la misma columna.
+test('inasistenciaColIndexMap: FECHA_CITA y "FECHA CITA" (con espacio, archivo real ago-sep/2026) resuelven a la misma columna', () => {
+  assert.equal(inasistenciaColIndexMap(header()).fecha, 2);
+  assert.equal(inasistenciaColIndexMap(['SEDE', 'ESPECIALIDAD', 'FECHA CITA', 'NOMBRE ENTIDAD', 'CITEST']).fecha, 2);
+});
+
+test('INASISTENCIA_COLUMNAS: FECHA_CITA tiene "FECHA CITA" como alias', () => {
+  const fecha = INASISTENCIA_COLUMNAS.find((c) => c.key === 'fecha');
+  assert.ok(fecha.labelAlt.includes('FECHA CITA'));
 });
 
 test('INASISTENCIA_ORDEN_ARRAY: orden fijo [mes, sede, especialidad, entidad, cancelada, inasistencia, pendiente, atendidas, total]', () => {
@@ -146,6 +160,31 @@ test('inasistenciaParseFilas: SEDE/ESPECIALIDAD vacias se guardan igual, agrupad
   assert.equal(res.filas[0].especialidad, 'SIN ESPECIALIDAD');
   assert.ok(res.avisos.some((a) => /SIN SEDE/.test(a)));
   assert.ok(res.avisos.some((a) => /SIN ESPECIALIDAD/.test(a)));
+});
+
+// Fase 130 (Parte 2): el archivo real de ago-sep/2026 trae SEDE 34 como
+// "SEDE 34 (AUDIFONOS)" -- una sola sede, nunca partida en 2 valores de
+// filtro distintos solo por la aclaracion entre parentesis.
+test('inasistenciaNormSede: quita un parentesis final, nunca uno en medio del nombre', () => {
+  assert.equal(inasistenciaNormSede('SEDE 34 (AUDIFONOS)'), 'SEDE 34');
+  assert.equal(inasistenciaNormSede('  SEDE 34 (AUDIFONOS)  '), 'SEDE 34');
+  assert.equal(inasistenciaNormSede('SEDE PRINCIPAL'), 'SEDE PRINCIPAL');
+  assert.equal(inasistenciaNormSede('SEDE (CENTRO) 34'), 'SEDE (CENTRO) 34');
+  assert.equal(inasistenciaNormSede(''), '');
+  assert.equal(inasistenciaNormSede(null), '');
+});
+
+test('inasistenciaParseFilas: SEDE 34 (AUDIFONOS) y SEDE 34 agregan a LA MISMA sede, nunca a 2 valores distintos', () => {
+  const aoa = [
+    header(),
+    ['SEDE 34 (AUDIFONOS)', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+    ['SEDE 34', 'AUDIFONOS', 46234, 'EPS UNO', 'T'],
+  ];
+  const res = inasistenciaParseFilas(aoa, AHORA);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas.length, 1);
+  assert.equal(res.filas[0].sede, 'SEDE 34');
+  assert.equal(res.filas[0].total, 2);
 });
 
 test('inasistenciaParseFilas: NOMBRE ENTIDAD vacio -> "SIN ENTIDAD" (nunca se descarta la cita)', () => {
