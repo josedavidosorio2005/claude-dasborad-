@@ -12676,3 +12676,122 @@ privacidad, no una corrección de un error. Ene-jul 2026 existen en el
 archivo real que envió Edwin pero esta fase, por decisión explícita del
 usuario, NO los cargó (quedan fuera, igual que desde el borrado de la
 Fase 126) — anotado en `docs/pendientes.md`.
+
+### Continuación — auditoría de privacidad del incidente + hallazgo real nuevo: el archivo completo ene-ago no se podía volver a cargar
+
+Pedido explícito del usuario tras el incidente, antes de cualquier otra
+escritura: **(1)** nunca repetir un nombre real en la respuesta; **(2)**
+confirmar si el script con el bug de privacidad (el que imprimió
+`opciones.entidades` crudo) o su salida quedaron en el repo/commit/PR/
+logs de CI; **(3)** corregirlo por construcción, con prueba, y aplicar
+la regla a todo script NUEVO de `scripts/produccion/` con una prueba en
+CI; **(4)** explicar por qué septiembre sigue en 1.483/1 especialidad;
+**(5)** investigar el `console.error 401` de solo lectura.
+
+**(2) Auditoría del repo** — `git log --all` sobre
+`fase129-diagnostico-inasistencia-agosto.js` muestra **un solo commit**
+(el ya mergeado en el PR de la corrección anterior), y ese commit YA
+tenía el `delete reporte.opciones.entidades` antes del dump — la versión
+con el bug nunca se ejecutó `git add`/commit, nunca se pusheó, nunca
+entró a un PR. `git grep` sobre **todos** los commits del historial para
+fragmentos de los nombres reales que se vieron en pantalla: 0
+coincidencias. Ningún workflow de `.github/` referencia ese script (CI
+nunca lo corre). Conclusión: el bug existió solo en la salida de un
+proceso local (stdout + un archivo de tarea en una carpeta temporal de
+sesión, ya sobrescrito a 0 bytes) y en el contexto de esta conversación
+— nunca en el repo, GitHub, ni CI.
+
+**(3) Corrección por construcción, generalizada** —
+`fase129-diagnostico-inasistencia-agosto.js` reescrito: la selección de
+campos seguros de `.../opciones` pasa DENTRO del `page.evaluate` (el
+valor crudo de `entidades` nunca cruza a Node), mismo criterio que
+`veredictoSubvista` (`revision-final.js`). Nueva prueba ESTÁTICA (sin
+navegador) `server/tests/fase129-scripts-produccion-sin-texto-crudo.test.js`:
+detecta, en cualquier script de `scripts/produccion/*.js` (los de hoy Y
+cualquiera que se agregue después), la forma exacta del incidente — un
+`page.evaluate` que reenvía crudo el resultado de un endpoint
+`.../opciones` sin seleccionar campos — y falla la prueba si aparece.
+Alcance deliberadamente acotado a `.../opciones` (la clase de endpoint
+del incidente real); documentado como pendiente, NO cubierto todavía,
+un hallazgo real pre-existente (no de esta fase) en `carga-real-patron.js`:
+su reporte de "Ranking de Asesores" sí incluye `asesor: top.asesor` /
+`bottom.asesor` (nombre real) en el JSON que termina en consola —
+reportado al usuario, sin tocar ese archivo sin que lo pida.
+`fase129-verificacion-post-incidente.js` (escrito en esta misma fase)
+tenía el mismo patrón exacto contra `.../opciones` -- corregido igual.
+
+**(4) Septiembre, explicado** — releyendo el archivo real completo
+(`inasistenciaParseFilas` sobre las 83.006 filas), los meses presentes
+son únicamente 2026-01 a 2026-08 — **cero filas de septiembre** en el
+archivo que Edwin ha enviado hasta ahora. No es una carga parcial ni un
+filtro escondiendo datos: Edwin simplemente no ha vuelto a exportar
+septiembre en el formato nuevo (`Hoja1`, una fila por cita). Lo que
+queda en producción para septiembre (1.483 citas, 1 "especialidad")
+es el agregado viejo de la Fase 98-106, intacto desde antes de la Fase
+108 porque ningún archivo real de septiembre en el formato nuevo ha
+llegado todavía. Anotado en `docs/pendientes.md` §2 (dueño: Edwin).
+
+**(5) El `console.error 401`** — no se reprodujo en una segunda corrida
+idéntica (0 peticiones 401, token con ~8h de vigencia restante, nada
+relacionado con expiración ni con el bloqueo de escritura de la
+verificación). Tratado como un posible ruido transitorio de la primera
+corrida, no un bug confirmado — no se encontró una causa real que
+señalar.
+
+**Hallazgo real nuevo, encontrado al preparar el dry-run de restauración
+(Opción B aprobada por el usuario: re-subir el ene-ago completo para
+recuperar el umbral de privacidad de 352/54, seguido de un borrado-rango
+de ene-jul)**: el dry-run con el script ya corregido (confirm síncrono +
+bloqueo de red) terminó en **"sin fila inasistencia en el plan"** contra
+producción real — parecía un cuelgue (40-90s sin respuesta). Reproducido
+LOCAL (servidor de demo, sin producción, login automático con
+credenciales de demo ya existentes) con instrumentación directa del
+código real (`console.log` temporal en `cargas.js`, revertido después):
+**no es un cuelgue** — el flujo completo termina en ~2-3 segundos,
+pero `inasistenciaParseFilas` devuelve `"Ninguna fila valida"` para las
+83.006 filas. Causa raíz aislada con un script de comparación de
+opciones de `XLSX.read`: la lectura real de `cargas.js` usa
+`cellNF:true` (necesario para que Trafico detecte el formato de
+porcentaje de una celda, Fase 88) — en la versión vendorizada de
+SheetJS de este repo, esa sola opción hace que una celda de FECHA_CITA
+con formato de fecha de Excel llegue como un objeto `Date` nativo en vez
+del serial numérico de siempre (confirmado: `cellDates:false` NO lo
+revierte; es un efecto secundario propio de `cellNF`, no relacionado con
+`cellDates`). `inasistenciaParseFechaCita` solo sabía leer number/string
+-- con el `Date`, devolvía `null` para TODAS las filas, disparando el
+rechazo completo ("Ninguna fila valida") con un archivo perfectamente
+válido. Corregido (`public/js/inasistencia-logic.js`): rama nueva para
+`v instanceof Date`, leída con los getters LOCALES (`getFullYear/
+getMonth/getDate`, nunca `getUTC*`) -- SheetJS construye ese objeto
+interpretando el serial con el reloj local del navegador (documentado
+así por la librería), así que los getters locales son la única lectura
+que siempre redondea ida y vuelta al mismo año/mes/día sin importar en
+qué zona horaria esté el navegador de quien sube el archivo. 2 pruebas
+nuevas en `inasistencia-logic.test.js`. Verificado de nuevo, ahora
+offline con las opciones EXACTAS de `cargas.js`: `error: undefined`,
+2.664 filas agregadas, 1 solo aviso (el resumen de privacidad) — y
+contra el navegador real (local, mismo arnés de instrumentación): el
+`.map()` de los 14 slots del plan termina en ~1,8 s, `inasistencia` con
+`error:null, filas:2664`.
+
+**Este hallazgo es más amplio que Inasistencia**: al menos 8 módulos más
+(`agendas-logic.js`, `calidad-carga-masiva-logic.js`,
+`citas-atendidas-logic.js`, `dashboard-generic.js`,
+`efectividad-agendamiento-logic.js`, `metas.js`, `tipificacion-logic.js`,
+`trafico-logic.js`, `trafico-whatsapp-logic.js`) tienen el mismo patrón
+de parseo de fecha (solo number/string) y comparten la MISMA lectura con
+`cellNF:true` -- quedan con el mismo riesgo latente (un archivo real con
+una columna de fecha formateada como fecha de Excel, en vez de número
+simple, podría fallar en silencio igual que Inasistencia) hasta que se
+audite cada uno por separado. No se tocaron en esta fase (fuera del
+pedido concreto de hoy) -- reportado al usuario, pendiente de decidir si
+se arregla ahora o se deja para una fase aparte.
+
+Versión `1.15.1` (parche, arreglo real), `CHANGELOG.md` actualizado.
+`npm test` local, 1.232+2 pruebas nuevas en verde (con flakiness
+ambiental de `ETIMEDOUT` en pruebas de servidor HTTP efímero sin
+relación con el cambio -- confirmado corriendo `inasistencia-logic.test.js`
+solo, limpio, varias veces; atribuido a la carga de la máquina tras
+muchas corridas de Chromium/Playwright en la misma sesión, no a una
+regresión -- CI de GitHub en una máquina limpia es la verificación
+final).

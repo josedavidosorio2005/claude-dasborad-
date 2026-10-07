@@ -6,9 +6,20 @@
 // de Claude in Chrome (regla fija del proyecto, CLAUDE.md). El usuario
 // inicia sesión a mano; el script nunca ve ni escribe la contraseña.
 //
-// PRIVACIDAD: nunca imprime NOMBRE ENTIDAD ni ningún nombre -- solo
-// conteos, porcentajes y estados (mismo criterio que
-// scripts/produccion/revision-final.js, Fase 128 Parte 2).
+// PRIVACIDAD, por construcción (corregido tras un incidente real: la
+// version anterior SI dejaba pasar `opciones.entidades` -- la lista de
+// entidades/pacientes reales -- hasta Node, y solo la borraba con un
+// `delete` justo antes del dump final; una linea nueva entre medio habria
+// podido imprimirla antes de llegar a ese `delete`). Ahora la extraccion
+// de campos seguros pasa DENTRO de page.evaluate -- el valor crudo de
+// `entidades` NUNCA cruza al lado de Node, ni siquiera un instante (mismo
+// criterio que `veredictoSubvista`, scripts/produccion/revision-final.js:
+// nunca se trae un objeto crudo del servidor/DOM, siempre se devuelve un
+// objeto YA reducido a conteos/numeros/estados de una lista fija).
+// `server/tests/fase129-scripts-produccion-sin-texto-crudo.test.js` falla
+// en CI si un script nuevo de scripts/produccion/ vuelve a tener la forma
+// del bug original (un page.evaluate que reenvia el resultado crudo de
+// apiRequest sin pasar por una seleccion explicita de campos).
 'use strict';
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
@@ -44,26 +55,33 @@ async function esperarLogin(page) {
     log('Login detectado, continuando automáticamente.');
     await page.waitForTimeout(500);
 
-    // ── Opciones (universo de meses/sedes/especialidades/entidades, y
-    // mesesFormatoViejo) ──────────────────────────────────────────────
-    reporte.opciones = await page.evaluate(() =>
-      apiRequest('GET', '/calidad/inasistencia/opciones?campana=ORLANT')
-    );
-    // Nunca imprimir la lista de entidades (puede sonar a nombres) -- solo
-    // su conteo.
+    // ── Opciones -- la seleccion de campos pasa DENTRO de page.evaluate,
+    // `o.entidades` (la lista real) nunca sale del navegador. ──────────
+    reporte.opciones = await page.evaluate(async () => {
+      const o = await apiRequest('GET', '/calidad/inasistencia/opciones?campana=ORLANT');
+      return {
+        meses: o.meses,
+        sedes: o.sedes,
+        especialidadesCount: o.especialidades.length,
+        entidadesCount: o.entidades.length,
+        mesesFormatoViejo: o.mesesFormatoViejo,
+      };
+    });
     log('Meses en producción:', JSON.stringify(reporte.opciones.meses));
     log('Sedes en producción:', JSON.stringify(reporte.opciones.sedes));
-    log('Especialidades (conteo):', reporte.opciones.especialidades.length);
-    log('Entidades (conteo, nunca la lista):', reporte.opciones.entidades.length);
+    log('Especialidades (conteo):', reporte.opciones.especialidadesCount);
+    log('Entidades (conteo, nunca la lista):', reporte.opciones.entidadesCount);
     log('Meses en formato viejo (sede/entidad=SIN DATO):', JSON.stringify(reporte.opciones.mesesFormatoViejo));
 
-    // ── Resumen de AGOSTO 2026 (sin filtros) ─────────────────────────
+    // ── Resumen de AGOSTO 2026 (sin filtros) -- ya son solo numeros ──
     reporte.resumenAgo = await page.evaluate(() =>
       apiRequest('GET', '/calidad/inasistencia/resumen?campana=ORLANT&mes=2026-08')
     );
     log('Resumen Ago-26 (sin filtros):', JSON.stringify(reporte.resumenAgo));
 
-    // ── Por especialidad de AGOSTO 2026 ──────────────────────────────
+    // ── Por especialidad de AGOSTO 2026 -- "especialidad" es una
+    // categoria medica de una lista fija (AUDIFONOS, FONOAUDIOLOGIA...),
+    // nunca un nombre de persona/entidad -- seguro de imprimir completo. ──
     reporte.especialidadAgo = await page.evaluate(() =>
       apiRequest('GET', '/calidad/inasistencia/especialidad?campana=ORLANT&mes=2026-08')
     );
@@ -86,7 +104,8 @@ async function esperarLogin(page) {
     log('Por sede, Ago-26 (producción):', JSON.stringify(reporte.porSede, null, 2));
 
     // ── Mensual (todos los meses, sin filtro de mes -- para ver
-    // Septiembre y confirmar que esta fase no lo toca) ───────────────
+    // Septiembre y confirmar que esta fase no lo toca) -- solo mes/
+    // especialidad/conteos, nunca entidad. ────────────────────────────
     reporte.mensual = await page.evaluate(() =>
       apiRequest('GET', '/calidad/inasistencia/mensual?campana=ORLANT')
     );
@@ -99,11 +118,7 @@ async function esperarLogin(page) {
     log('Resumen mensual agregado en producción (todas las especialidades por mes):', JSON.stringify(porMes, null, 2));
 
     reporte.ok = true;
-    // Por construccion, nunca un dump del objeto completo (asi nunca se
-    // puede filtrar opciones.entidades por accidente): se borra antes de
-    // que exista la posibilidad de volcarlo en algun lado.
-    delete reporte.opciones.entidades;
-    console.log('\n=== REPORTE COMPLETO (JSON, sin la lista de entidades) ===');
+    console.log('\n=== REPORTE COMPLETO (JSON) ===');
     console.log(JSON.stringify(reporte, null, 2));
   } catch (e) {
     console.error('FALLO:', e.message);

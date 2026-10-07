@@ -119,7 +119,33 @@ function _inasistenciaSerialAFecha(serial) {
 // asume mm/dd/aaaa en locale en-US -- Fase 90). Tambien acepta texto ya en
 // formato ISO o un serial de Excel como texto.
 var INASISTENCIA_FECHA_TEXTO_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+// Fase 129 (hallazgo real en producción con el archivo real de Edwin,
+// 83.006 filas): la carga consolidada SIEMPRE lee el Excel con
+// `cellNF:true` (necesario para Trafico, nunca para Inasistencia --
+// cargas.js) -- en la version vendorizada de SheetJS de este repo, esa
+// sola opción hace que una celda con formato de FECHA (sin importar
+// cellDates, confirmado: cellDates:false NO lo revierte) llegue como un
+// objeto `Date` nativo en vez del serial numerico de siempre. Antes de
+// este fix, `inasistenciaParseFechaCita` solo sabia leer number/string,
+// asi que TODAS las filas del archivo real quedaban con "FECHA_CITA
+// invalida", disparando el rechazo completo de la carga ("Ninguna fila
+// valida") -- un archivo perfectamente valido parecia "no reconocido".
+// `Date.getFullYear/getMonth/getDate` (LOCALES, nunca getUTC*): SheetJS
+// construye este objeto interpretando el serial con el reloj LOCAL del
+// navegador (documentado así por la propia librería) -- leerlo con los
+// getters LOCALES es la unica lectura que siempre redondea ida y vuelta
+// al mismo año/mes/día sin importar en que zona horaria corra el
+// navegador de quien sube el archivo (los getters UTC si pueden
+// desplazar el día si el navegador no esta en UTC-5).
+function _inasistenciaFechaDesdeDateLocal(d) {
+  if (isNaN(d.getTime())) return null;
+  var y = d.getFullYear();
+  if (y < 1970 || y > 2200) return null;
+  var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
+  return y + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
 function inasistenciaParseFechaCita(v) {
+  if (v instanceof Date) return _inasistenciaFechaDesdeDateLocal(v);
   if (typeof v === 'number') return _inasistenciaSerialAFecha(v);
   if (typeof v === 'string') {
     var t = v.trim();

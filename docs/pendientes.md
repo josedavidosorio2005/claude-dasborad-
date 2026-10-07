@@ -60,6 +60,19 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   ítems), mismo camino que ya usa CARTERA INTERNA — ver
   `docs/plantillas-inventario.md` → "Calidad de ORLANT" para el formato
   exacto.
+- **Inasistencia de ORLANT — septiembre 2026 en el formato nuevo (Hoja1)**
+  — dueño: Edwin. Prioridad MEDIA. Hoy septiembre sigue con el agregado
+  viejo de la Fase 98-106 (1.483 citas, 1 sola "especialidad" —
+  EXAMENES ESPECIALES —, `sede`/`entidad` = 'SIN DATO'): el archivo real
+  que Edwin ha enviado hasta ahora (`INASISTENCIA NUEVA PARA MONTAR
+  (1).xlsx`, confirmado por hash idéntico al ya usado en la Fase 108)
+  solo trae enero a agosto de 2026 en `Hoja1` — ninguna fila de
+  septiembre — así que no es una carga parcial ni un filtro que esconde
+  datos, es que ese archivo nunca trajo septiembre. Falta que Edwin
+  envíe el archivo completo de septiembre con el mismo formato de
+  `Hoja1` (columnas SEDE, ESPECIALIDA, FECHA_CITA, NOMBRE ENTIDAD,
+  CITEST, una fila por cita) para reemplazar el agregado viejo (anotado
+  2026-10-07, Fase 129).
 - **Ordenamiento Médico, Recuperación de Cancelados, Flujo Mensual,
   Gestión STA** — dueño: Edwin. Prioridad BAJA (pestañas ya construidas,
   ocultas esperando el archivo real). Anotado en fases anteriores (ver

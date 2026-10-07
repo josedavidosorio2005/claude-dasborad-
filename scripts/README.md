@@ -55,7 +55,31 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - Nunca escriben en producción salvo que el script sea explícitamente de
   carga (y aun así, solo por la interfaz normal — ver CLAUDE.md).
 - Nunca imprimen datos reales de clientes individuales (nombres,
-  teléfonos) — solo estructura/conteos/agregados.
+  teléfonos) — solo estructura/conteos/agregados. **Por construcción**
+  (Fase 129, tras un incidente real: un script que SÍ traía
+  `opciones.entidades` crudo hasta Node y confiaba en un `delete` manual
+  justo antes del dump final — fragil, una línea nueva en medio lo habría
+  vuelto a exponer): la selección de campos seguros de cualquier endpoint
+  `.../opciones` (u otro que pueda traer texto por registro —
+  entidad/asesor/examen/profesional/usuario) va **dentro** del
+  `page.evaluate`, nunca después — el valor crudo no debe cruzar nunca al
+  lado de Node, ni siquiera un instante (mismo criterio que
+  `veredictoSubvista`, `revision-final.js`: nunca un objeto crudo del
+  servidor/DOM, siempre uno ya reducido a conteos/números/estados de una
+  lista fija). `server/tests/fase129-scripts-produccion-sin-texto-crudo.test.js`
+  falla en CI si un script (nuevo o existente) tiene un `page.evaluate`
+  cuyo cuerpo completo es, sin ningún otro paso, un reenvío crudo de un
+  endpoint `.../opciones` — alcance acotado a esa forma exacta, no un
+  linter general; sigue pendiente auditar otros endpoints con el mismo
+  riesgo (`.../ranking`, `/users`, `/historial`) en los scripts que no
+  tocó esa fase.
+- Un script que hace un dry-run (preview sin guardar) usa
+  `scripts/produccion/lib/dry-run-seguro.js` (Fase 129, mismo incidente):
+  nunca `page.exposeFunction` para forzar `window.confirm` — siempre
+  envuelve el retorno en una Promise (truthy), así que el guard real de
+  la app nunca corta. 2 defensas independientes: confirm síncrono vía
+  `page.evaluate` + bloqueo de red (`page.route`) de cualquier escritura
+  real, con el script fallando ruidosamente si una llega a intentarse.
 - Si un script necesita una credencial de prueba local, la lee de
   `server/data/seed-demo-credenciales.txt` (gitignored) — nunca la pide
   por variable de entorno en texto plano.

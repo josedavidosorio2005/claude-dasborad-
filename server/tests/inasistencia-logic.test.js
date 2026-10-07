@@ -76,6 +76,28 @@ test('inasistenciaParseFechaCita: invalida -> null', () => {
   assert.equal(inasistenciaParseFechaCita(null), null);
 });
 
+// Fase 129 (hallazgo real en producción, archivo real de 83.006 filas):
+// la carga consolidada lee el Excel con `cellNF:true` (necesario para
+// Trafico) -- en la versión vendorizada de SheetJS de este repo, eso
+// hace que una celda de FECHA_CITA con formato de fecha llegue como un
+// objeto `Date` nativo, no como el serial numérico de siempre. Antes de
+// este fix, esa rama no existía y TODAS las filas del archivo real
+// quedaban "invalidas", disparando el rechazo completo de la carga
+// ("Ninguna fila valida") con un archivo perfectamente bueno.
+test('inasistenciaParseFechaCita: objeto Date nativo (SheetJS con cellNF:true) -> AAAA-MM-DD, mismo resultado que el serial equivalente', () => {
+  assert.equal(inasistenciaParseFechaCita(new Date(2026, 1, 27)), '2026-02-27'); // mes 1 = febrero (0-indexado)
+  assert.equal(inasistenciaParseFechaCita(new Date(2026, 7, 5)), '2026-08-05');
+  // Mismo resultado sin importar la hora que traiga el objeto (solo
+  // interesa la fecha local, nunca la hora) -- replica el caso real
+  // observado (serial con un resto de horas, ej. "05:00:00Z" en una
+  // maquina en America/Bogota).
+  assert.equal(inasistenciaParseFechaCita(new Date(2026, 1, 27, 5, 0, 0)), '2026-02-27');
+});
+
+test('inasistenciaParseFechaCita: un Date invalido (Invalid Date) -> null', () => {
+  assert.equal(inasistenciaParseFechaCita(new Date('esto-no-es-una-fecha')), null);
+});
+
 // ── inasistenciaParseFilas: columnas/estructura ──────────────────────────
 test('inasistenciaParseFilas: falta una columna obligatoria -> error explicito, nunca 500', () => {
   const aoa = [['SEDE', 'ESPECIALIDAD', 'FECHA_CITA'], ['SEDE 1', 'AUDIFONOS', 46234]];
