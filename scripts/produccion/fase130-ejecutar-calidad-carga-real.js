@@ -63,7 +63,10 @@ async function esperarLogin(page) {
       const req = route.request();
       const m = req.method();
       const pathname = new URL(req.url()).pathname;
-      const permitido = pathname === '/monitoreos/bulk';
+      // El servidor expone las rutas bajo un prefijo (API_BASE, ej. "/api")
+      // -- se compara por sufijo exacto, igual que el resto de scripts de
+      // scripts/produccion/, nunca por igualdad literal de la ruta completa.
+      const permitido = /\/monitoreos\/bulk$/.test(pathname);
       if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(m) && !permitido) {
         peticionesBloqueadas.push(m + ' ' + pathname);
         return route.abort();
@@ -113,12 +116,20 @@ async function esperarLogin(page) {
       var resultados = window._cargasResultados || [];
       var tipos = resultados.map(function (r) { return { tipo: r.tipo, filas: r.filas ? r.filas.length : 0, titulo: r.titulo, error: r.error || null, vacia: !!r.vacia }; });
       var calidad = resultados.filter(function (r) { return r.tipo === 'calidad'; });
+      // El plan consolidado de ORLANT SIEMPRE trae 14 "slots" (uno por tipo
+      // de base posible) -- un archivo de SOLO Calidad hace que los otros 13
+      // reporten "hoja ausente" (error, sin filas), eso es NORMAL y esperado
+      // para este archivo, no una senal de alarma. Lo que SI importa:
+      // ninguna OTRA seccion debe traer filas>0 (eso si seria una senal de
+      // que el archivo se reconocio donde no debia).
+      var otrasConFilas = resultados.filter(function (r) { return r.tipo !== 'calidad' && r.filas && r.filas.length > 0; });
       return {
         totalSecciones: resultados.length,
         tipos: tipos,
         calidadSecciones: calidad.length,
         calidadFilas: calidad.length === 1 && calidad[0].filas ? calidad[0].filas.length : null,
         calidadError: calidad.length === 1 ? (calidad[0].error || null) : null,
+        otrasSeccionesConFilas: otrasConFilas.map(function (r) { return { tipo: r.tipo, filas: r.filas.length }; }),
       };
     });
     log('Preview ANTES de guardar:', JSON.stringify(previewCheck));
@@ -126,11 +137,11 @@ async function esperarLogin(page) {
     if (previewCheck.calidadSecciones !== 1 || previewCheck.calidadFilas !== FILAS_ESPERADAS) {
       throw new Error('El preview NO tiene EXACTO 1 seccion de Calidad con 95 filas -- NO SE GUARDA: ' + JSON.stringify(previewCheck));
     }
-    if (previewCheck.totalSecciones !== 1) {
-      throw new Error('El archivo trajo mas secciones reconocidas de las esperadas (solo deberia ser Calidad) -- NO SE GUARDA: ' + JSON.stringify(previewCheck));
+    if (previewCheck.otrasSeccionesConFilas.length > 0) {
+      throw new Error('Alguna OTRA seccion (no Calidad) trajo filas -- NO SE GUARDA: ' + JSON.stringify(previewCheck));
     }
 
-    log('Preview OK (1 sola seccion, Calidad, 95 filas). Guardando de verdad (guardarCarga())...');
+    log('Preview OK (Calidad con 95 filas, ninguna otra seccion con datos). Guardando de verdad (guardarCarga())...');
     await page.evaluate(() => guardarCarga());
     await page.waitForTimeout(3000);
 

@@ -225,6 +225,12 @@ const answersSchema = z
   });
 
 const textoCortoOpt = z.string().trim().max(200).optional().default('');
+// Fase 130 (hallazgo real): el archivo real de Calidad de Edwin trae notas
+// de evaluador en prosa -- 4 de 95 filas reales superaron el limite viejo de
+// 200 caracteres (maximo real: 235). Mismo limite ya usado para el campo
+// "observaciones" de Inventario (inventarioItemBody, mas abajo) -- no un
+// numero inventado para esta fase.
+const textoObservacionesOpt = z.string().trim().max(500).optional().default('');
 
 // El puntaje/clasificacion/fallos NO se aceptan del cliente: los calcula el servidor.
 const createMonitoreoBody = z.object({
@@ -248,7 +254,7 @@ const createMonitoreoBody = z.object({
   // de la sesion) -- sigue en el schema porque la carga masiva historica
   // (POST /monitoreos/bulk) SI necesita el evaluador real de cada fila.
   evaluador: z.string().trim().max(120).optional().default(''),
-  observaciones: textoCortoOpt,
+  observaciones: textoObservacionesOpt,
   answers: answersSchema,
 });
 
@@ -288,7 +294,7 @@ const updateMonitoreoBody = z
     // evaluador original nunca cambia) -- se deja en el schema solo para
     // no romper un body viejo que todavia lo mande; se ignora en la ruta.
     evaluador: z.string().trim().max(120).optional(),
-    observaciones: z.string().trim().max(200).optional(),
+    observaciones: z.string().trim().max(500).optional(),
     answers: answersSchema.optional(),
   })
   .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
