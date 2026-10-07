@@ -27,7 +27,7 @@ const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
 const db = require('./db');
-const { requireActor } = require('./auth');
+const { requireActor, identidadParaLimiteDeTasa } = require('./auth');
 const { wrap } = require('./routes/shared');
 // Fase 95 (tema D): version de la app, unica fuente de verdad
 // (package.json) -- se expone en /health y en el pie de la interfaz.
@@ -150,16 +150,40 @@ function createApp() {
   // ── Rate limiting ──────────────────────────────────────────
   // Global sobre toda la API para frenar abuso; login mas estricto encima
   // (ese limitador vive junto a la ruta de login, en routes/auth.js).
-  const apiLimiter = rateLimit({
+  //
+  // Fase 130 (Parte 7, hallazgo real en produccion): un solo limitador por
+  // IP hacia que una oficina entera (varios clientes reales detras del
+  // mismo NAT) compartiera un unico cupo de 300 peticiones/15min -- una
+  // revision administrativa completa (~70 peticiones) ya se comia casi un
+  // cuarto de ese cupo compartido. Ahora son DOS limitadores mutuamente
+  // excluyentes (cada peticion cuenta en uno solo, nunca en los dos):
+  //   - authLimiter: peticion CON sesion valida -- clave POR USUARIO
+  //     (identidadParaLimiteDeTasa), limite holgado (RATE_LIMIT_MAX_AUTENTICADO).
+  //   - anonLimiter: peticion SIN sesion (o con token invalido/expirado) --
+  //     clave por IP, limite sin cambios (RATE_LIMIT_MAX).
+  // `skip` decide cual aplica; como ninguno de los dos vuelve a decodificar
+  // el token en el otro (misma funcion, mismo resultado), nunca se cuenta
+  // una peticion dos veces.
+  const authLimiter = rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.maxAutenticado,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => !identidadParaLimiteDeTasa(req),
+    keyGenerator: (req) => identidadParaLimiteDeTasa(req),
+    message: { error: 'Demasiadas peticiones. Intenta de nuevo mas tarde.' },
+  });
+  const anonLimiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.max,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: (req) => !!identidadParaLimiteDeTasa(req),
     message: { error: 'Demasiadas peticiones. Intenta de nuevo mas tarde.' },
   });
 
   const api = express.Router();
-  app.use('/api', apiLimiter, api);
+  app.use('/api', authLimiter, anonLimiter, api);
 
   // Fase 79 (hallazgo real: una pestana abierta desde antes de un deploy
   // sigue con el JS viejo en memoria -- un deploy real no puede "empujar"

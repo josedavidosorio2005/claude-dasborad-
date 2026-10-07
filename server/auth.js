@@ -77,6 +77,26 @@ function requirePermission(action) {
   };
 }
 
+// Fase 130 (Parte 7): identidad LIGERA para el limitador de tasa general
+// (server.js) -- solo decodifica el JWT (sin ir a la base de datos, a
+// diferencia de getActor/requireActor) para poder clasificar la peticion
+// como "autenticada" ANTES de que corra ninguna ruta. Nunca se usa para
+// decidir permisos (eso sigue siendo requireActor/requirePermission en
+// cada ruta) -- esto solo elige la LLAVE del contador de peticiones. Un
+// token invalido/expirado/ausente devuelve null (la peticion cae en el
+// limitador por IP, igual que cualquier anonimo).
+function identidadParaLimiteDeTasa(req) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
+    return decoded.isMasterAdmin ? 'admin' : `u${decoded.userId}`;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Middleware: carga el actor fresco en req.actor (sin exigir un permiso concreto).
 // Lo usan los endpoints del modulo de Calidad, que despues hacen sus propios
 // chequeos por campana con los helpers de abajo.
@@ -166,6 +186,7 @@ module.exports = {
   can,
   requirePermission,
   requireActor,
+  identidadParaLimiteDeTasa,
   campaignAccess,
   canEvaluateCampaign,
   canManageMonitoreos,

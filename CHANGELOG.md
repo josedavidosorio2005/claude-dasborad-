@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.16.1 — Octubre 2026
+
+**Fase 130 (Parte 7): el límite de "demasiadas peticiones" ya no bloquea a
+toda una oficina por el error de una sola persona.**
+
+- Corregido: cuando varias personas de la misma oficina o cliente usan la
+  plataforma al mismo tiempo (comparten una sola conexión a internet),
+  antes podían bloquearse entre sí con el mensaje "demasiadas peticiones"
+  o "demasiados intentos", aunque cada una estuviera usando la app de
+  forma normal.
+- Ahora, quien ya inició sesión tiene su propio cupo de uso (no comparte
+  el de sus compañeros de oficina). El aviso de "demasiados intentos" al
+  iniciar sesión también es independiente por cada usuario, y ahora dice
+  cuántos minutos faltan para volver a intentar.
+
 ## v1.16.0 — Octubre 2026
 
 **Fase 130: nueva gráfica en Calidad — nombre y nota promedio por
