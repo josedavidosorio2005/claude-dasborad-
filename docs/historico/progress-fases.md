@@ -12561,3 +12561,118 @@ sin necesitar ningún cambio de código.
 Las 3 verificaciones quedan EJECUTADAS. Único pendiente que sigue sin
 resolverse de esta fase: la contraseña de `CLIENTES_DASH` (no es nuevo,
 ya estaba anotado desde la Fase 112).
+
+## Fase 129 — Recarga de Inasistencia de ORLANT (solo agosto 2026) + incidente real de escritura accidental en producción (2026-10-07, en curso)
+
+Pedido del usuario: Edwin reportó que en el dashboard de Inasistencia
+"solo aparecen algunas cosas" de agosto; recargar SOLO agosto 2026 con
+el archivo real (`INASISTENCIA NUEVA PARA MONTAR (1).xlsx`, idéntico por
+hash al ya usado el 2026-10-01 — Hoja1, 83.006 filas, ene-ago 2026),
+nunca imprimiendo `NOMBRE ENTIDAD` ni ningún nombre.
+
+### Diagnóstico (solo lectura)
+
+El archivo real, parseado con el parser REAL de producción
+(`inasistenciaParseFilas`), da para agosto EXACTO lo mismo que ya estaba
+cargado desde la Fase 108 (2026-10-01): total 11.189, C=2.459/I=786/
+P=48/T=7.896, 18 especialidades, por sede Principal 6.367/417 · Sede 34
+3.384/263 · Poblado 754/67 · Rionegro 584/30 · Llanogrande 100/9 —
+confirmado contra producción real por API antes de tocar nada. No había
+ninguna discrepancia de datos: la diferencia de porcentaje que reportó
+el usuario (7,45 % en pantalla vs. 7,02 % calculando a mano) es la
+fórmula documentada `(inasistencia+pendiente)/total`, nunca un bug —
+InCo pidió explícitamente contar los "pendientes" (sin confirmar si
+asistió) como parte del numerador. El formato del archivo encaja tal
+cual (hoja `Hoja1`, encabezado `ESPECIALIDA` sin la D, `FECHA_CITA`
+serial de Excel, `CITEST` C/I/P/T) — el parser reconoce la hoja por
+encabezados, nunca por posición, así que `Hoja2` (la tabla dinámica que
+el archivo trae primero en el orden de hojas) se ignora sola. La
+hipótesis más probable del "solo aparecen algunas cosas" (sin forma de
+confirmarla sin ver la pantalla de Edwin): Septiembre sigue en el
+formato agregado viejo (Fase 98-106, una sola especialidad,
+`sede`/`entidad`='SIN DATO') y desaparece de cualquier vista filtrada
+por sede/especialidad/entidad — fácil de confundir con "falta algo de
+agosto" si el selector de mes no está donde se espera.
+
+### Incidente: escritura real en producción sin autorización ni respaldo previo
+
+Al preparar el Paso 2 (dry-run del archivo filtrado solo-agosto por la
+interfaz real, sin guardar), el script usó `page.exposeFunction` para
+forzar `window.confirm` a `false` antes de llegar al POST real de
+guardado. **`page.exposeFunction` siempre envuelve el valor de retorno
+en una Promise** (aunque la función de Node sea síncrona) — y una
+Promise es *truthy*. El código real (`_cargasGuardarInasistencia`,
+`public/js/cargas.js`) hace `if (!confirm(msg)) return;`: con
+`confirm(msg)` devolviendo una Promise, el `if` nunca se cumplió, y el
+"dry-run" terminó llamando al POST real de guardado — **se escribió en
+producción sin el "sí" explícito del usuario y sin respaldo previo**,
+justo lo que el Paso 3 del pedido existía para evitar.
+
+**Impacto real, verificado después (nunca restaurado, solo leído):**
+- El automático diario (`inconexion-backup.timer`, 03:15) corrió a las
+  **2026-10-07 03:16** (servidor), `SERVICIO_RESULT=success`,
+  `BACKUP_S3=OK` — confirmado disparando `salud-servidor.yml`
+  manualmente. Es **anterior** (~10 h) a la escritura accidental
+  (~13:30 UTC / ~08:30 Colombia).
+- Respaldo manual tomado DESPUÉS del incidente (`respaldo-produccion.yml`,
+  modo `respaldar-ahora`): `integrity_check: ok`, `S3: OK` — protege el
+  estado actual de cara a adelante.
+- Agosto en producción, verificado por API después del incidente:
+  total 11.189, C=2.459/I=786/P=48/T=7.896, 7,45 %, 18 especialidades,
+  por sede exacto a los números de control — **idéntico** en todos los
+  agregados a como estaba antes (el archivo es byte-idéntico al ya
+  cargado en la Fase 108). Septiembre sin cambios (1.483/94/2,
+  1 especialidad) — la carga solo tocó `mes IN ('2026-08')`, por diseño
+  del reemplazo (`cargarInasistencias`, `server/inasistencia.js`).
+  Visualmente, las 2 sub-pestañas de Inasistencia dibujan con datos
+  reales (0 canvas en blanco). Lo único que SÍ cambió: la fila de la
+  tabla `inasistencias` pasó de 352 a 324 combinaciones
+  (sede×especialidad×entidad) porque el umbral de privacidad
+  (`agendasAplicarPrivacidadEntidad`, <5 citas → "PARTICULAR / OTRA") se
+  recalculó sobre el archivo de SOLO agosto en vez del archivo completo
+  ene-ago que usó la Fase 108 — **menos** entidades distintas quedan
+  visibles en el filtro (54 → 29) y **más** citas quedan agrupadas bajo
+  "PARTICULAR / OTRA" (744 → 789 de 11.189) -- una mejora de privacidad,
+  no una pérdida de datos, reconstruido sin tocar producción (re-parseo
+  offline del mismo archivo con los 2 alcances) y cruzado contra el
+  propio mensaje de confirmación capturado en el incidente ("352
+  registro(s) ya cargados") y contra la lectura en vivo después (29
+  entidades). Pendiente: el usuario decide si esto se queda así o si se
+  revierte agosto a las 352 filas de antes.
+
+### Corrección por construcción
+
+`scripts/produccion/lib/dry-run-seguro.js` (nuevo, reusado por los
+scripts de dry-run de `scripts/produccion/`): 2 defensas
+INDEPENDIENTES, cualquiera de las 2 sola ya evita la escritura real —
+(1) un `window.confirm` forzado a `false` de forma **síncrona**,
+inyectado con `page.evaluate` (nunca `exposeFunction`); (2) un
+interceptor `page.route('**/*', ...)` que aborta cualquier POST/PUT/
+PATCH/DELETE que no termine en `/impacto` (los únicos POST documentados
+como "no escribe nada" en todo el repo: `impactoAgendas`/
+`impactoTipificaciones`/`impactoInasistencias`/...) — y el script que
+lo usa falla RUIDOSAMENTE si alguna petición de escritura real llega a
+intentarse (nunca debería pasar; si pasa, es la prueba de que la
+defensa 1 falló, como en este incidente). `esPeticionDeEscrituraBloqueable`
+es lógica PURA (sin Playwright) para poder probarla sin navegador —
+`server/tests/fase129-dryrun-seguro-logic.test.js` (12 pruebas nuevas,
+1.225 → en este archivo; incluye una prueba que documenta la causa raíz
+exacta: una Promise siempre es *truthy*). Antes de volver a confiar en
+el mecanismo, se verificó offline (sin servidor, sin login, sin
+producción, página en blanco con Playwright) que el guard
+`if (!confirm(msg))` corta de verdad con el override nuevo, y que
+`page.route` aborta de verdad un POST directo — las 2 defensas probadas
+por separado, con éxito, antes de documentar esta fase como cerrada en
+este punto.
+
+### Estado al momento de escribir esta entrada
+
+Código en rama con PR, `npm test` local 1.225/1.225 en verde antes de
+abrir el PR. Pendiente de esta fase: el "sí"/"no" del usuario sobre si
+agosto se queda con el agrupamiento de privacidad nuevo (324 filas) o
+se revierte a como estaba (352 filas) — ningún dato se perdió en
+cualquier caso, es una decisión sobre el alcance del umbral de
+privacidad, no una corrección de un error. Ene-jul 2026 existen en el
+archivo real que envió Edwin pero esta fase, por decisión explícita del
+usuario, NO los cargó (quedan fuera, igual que desde el borrado de la
+Fase 126) — anotado en `docs/pendientes.md`.

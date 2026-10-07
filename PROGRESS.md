@@ -105,6 +105,25 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
 
+### Fase 129 (en curso) — incidente real de escritura accidental en producción
+
+Al preparar un dry-run de solo-lectura (recarga de Inasistencia de
+ORLANT, solo agosto 2026), el script usó `page.exposeFunction` para
+forzar `window.confirm` a `false` -- eso envuelve el retorno en una
+Promise (siempre *truthy*), así que el guard de la app nunca cortó y el
+script terminó escribiendo en producción sin el "sí" explícito del
+usuario ni respaldo previo. Impacto real verificado: agosto quedó con los MISMOS
+totales/CITEST/por-sede que ya tenía (11.189, 7,45 %, archivo
+byte-idéntico al ya cargado en la Fase 108); septiembre intacto; solo
+cambió el umbral de privacidad de entidades (352→324 filas, 54→29
+entidades visibles, más citas agrupadas en "PARTICULAR / OTRA":
+744→789) — sin pérdida de datos. Corregido por construcción con 2
+defensas independientes (`scripts/produccion/lib/dry-run-seguro.js`,
+probado con `server/tests/fase129-dryrun-seguro-logic.test.js`).
+Pendiente: decisión del usuario sobre si agosto se queda así o se
+revierte. Detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
 ## Índice — fases 0 a 128
 
 Título de cada fase (detalle completo en
