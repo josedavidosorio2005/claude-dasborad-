@@ -151,10 +151,12 @@ function _inasistenciaTarjetaHtml(titulo, valor){
 // -- la del periodo completo y la del mes elegido arriba, cada una con su
 // propia etiqueta de rango para que nunca se confunda una con la otra).
 // Aviso automatico por mes: 'parcial' (100% formato viejo, Fase 98-106,
-// sin sede/entidad real), 'incompleto' (menos especialidades que el mas
-// completo del rango, pero con datos reales) o 'sinDatosFiltro' (el mes
-// existe pero el filtro de sede/especialidad/entidad lo dejo sin filas) --
-// ver inasistenciaAvisosPorMes, inasistencia-logic.js.
+// sin sede/entidad real) o 'sinDatosFiltro' (el mes existe pero el filtro
+// de sede/especialidad/entidad lo dejo sin filas) -- ver
+// inasistenciaAvisosPorMes, inasistencia-logic.js. ('incompleto' se retiro
+// en la Fase 130, Parte 3: con archivos reales completos, menos
+// especialidades que otro mes es variacion de negocio normal, no un dato
+// incompleto.)
 async function _inasistenciaRenderPorMes(host, campana, i, titulo, opciones){
   var estado = _inasistenciaEstado[campana] || {};
   var html = '<div class="aurora-card">';
@@ -190,8 +192,6 @@ function _inasistenciaAvisoHtml(a, estado){
     // mensaje sigue siendo honesto (el mes SI esta incompleto) pero sin
     // explicar el motivo tecnico.
     texto = inasistenciaMesLbl(a.mes) + ': todavía está incompleto (por ahora solo trae ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + ').';
-  } else if(a.tipo === 'incompleto'){
-    texto = inasistenciaMesLbl(a.mes) + ': solo incluye ' + (a.especialidades||[]).map(textoFormatoNombre).join(', ') + '.';
   } else {
     texto = inasistenciaMesLbl(a.mes) + ' no tiene datos por ' + _inasistenciaFiltroActivoTxt(estado) + '.';
   }

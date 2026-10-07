@@ -385,15 +385,19 @@ function inasistenciaRangoLbl(agregado) {
 // nuevo de InCo, una fila por cita):
 //   - 'parcial': el mes es 100% formato viejo (`mesesFormatoViejo`, que
 //     trae el servidor en /opciones -- TODAS sus filas tienen sede/
-//     entidad='SIN DATO'). Nunca se clasifica TAMBIEN como 'incompleto'
-//     para el mismo mes -- ya queda explicado por si solo.
-//   - 'incompleto': el mes trae MENOS especialidades que el mas completo
-//     del rango YA FILTRADO, pero SI tiene sede/entidad real (ej. un mes
-//     recien empezado) -- mismo criterio que antes de esta fase.
+//     entidad='SIN DATO').
 //   - 'sinDatosFiltro': el mes tiene datos en general (esta en
 //     `mesesTodos`, la lista SIN filtrar de /opciones) pero el filtro de
 //     sede/especialidad/entidad activo lo dejo sin ninguna fila -- por
 //     eso no aparece en `agregado`.
+// Fase 130 (Parte 3, pedido de Edwin de quitar comentarios/avisos del
+// dashboard): el tipo 'incompleto' (un mes con MENOS especialidades que el
+// mas completo del rango) se retiro -- con archivos reales completos mes a
+// mes, que un mes tenga menos especialidades que otro es una diferencia de
+// negocio normal (esa sede/especialidad simplemente no opero ese mes), no
+// un dato incompleto; dejarlo encendido solo habria cambiado de mes al que
+// le "faltan datos" segun cual tuviera mas especialidades ese periodo, en
+// vez de resolver la queja real.
 // `agregado` es la salida de inasistenciaAgregarPorMes (YA filtrada);
 // `mesesTodos`/`mesesFormatoViejo` son el universo SIN filtrar (campos de
 // /calidad/inasistencia/opciones) -- nunca se recalculan aqui, siempre
@@ -402,13 +406,11 @@ function inasistenciaAvisosPorMes(agregado, mesesTodos, mesesFormatoViejo) {
   var lista = agregado || [];
   var esFormatoViejo = {};
   (mesesFormatoViejo || []).forEach(function (m) { esFormatoViejo[m] = true; });
-  var max = lista.reduce(function (a, m) { return Math.max(a, (m.especialidades || []).length); }, 0);
 
   var avisos = lista
     .filter(function (m) { return (m.especialidades || []).length > 0; })
     .map(function (m) {
       if (esFormatoViejo[m.mes]) return { mes: m.mes, tipo: 'parcial', especialidades: m.especialidades };
-      if (max && m.especialidades.length < max) return { mes: m.mes, tipo: 'incompleto', especialidades: m.especialidades };
       return null;
     })
     .filter(function (a) { return a; });
