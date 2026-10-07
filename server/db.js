@@ -2793,6 +2793,86 @@ runOnceMigration('dashboards_config_orlant_salida_panel_v1', () => {
   }
 });
 
+// Fase 128 (Parte 1, pedido textual de Edwin en la reunion de validacion):
+// renombra la pestaña "Salida" a "Llamadas y WhatsApp de salida" (label del
+// tab + titulo de su panel) y la reubica justo despues de "trafico_whatsapp"
+// -- antes vivia al final del array, junto a las pestañas sin base propia.
+// Renombrar y reubicar son pasos INDEPENDIENTES, a proposito (hallazgo real
+// al probar esto en local contra una base recien sembrada): las migraciones
+// de reubicacion mas viejas (dashboards_config_orlant_orden_pestanas_v1/_v2,
+// dashboards_config_orlant_efectividad_citas_v1) agrupan cualquier tab que
+// no sea parte de su propio orden fijo en "el resto" y lo mandan al final
+// del array -- eso incluye a "salida", AUNQUE la fila sea nueva y ya haya
+// nacido con el label/panel correctos desde CONFIGS. Si la reubicacion de
+// esta migracion dependiera de "el label todavia dice el default viejo", un
+// ORLANT recien creado (nace ya con el label nuevo, nunca pasa por el
+// 'Salida' viejo) se habria quedado para siempre mal ubicado. Por eso la
+// reubicacion es INCONDICIONAL sobre la posicion (mismo criterio que
+// dashboards_config_orlant_orden_pestanas_v2: ninguna de esas migraciones de
+// orden tiene guard de "podria ser una personalizacion" tampoco). El
+// renombre si sigue gateado -- si el label ya no es el default 'Salida' o el
+// panel no tiene el titulo exacto que dejaba
+// dashboards_config_orlant_salida_panel_v1, se deja el NOMBRE intacto
+// (podria ser una personalizacion de un admin).
+runOnceMigration('dashboards_config_orlant_salida_label_orden_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el nombre/orden nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  if (!target) return;
+  const targetSalida = (target.layout.tabs || []).find((t) => t.key === 'salida');
+  if (!targetSalida) return;
+
+  const tabs = layout.tabs || [];
+  let tabSalida = tabs.find((t) => t && t.key === 'salida');
+  if (!tabSalida) return;
+
+  let cambio = false;
+
+  const panelViejoReconocible = Array.isArray(tabSalida.panels) && tabSalida.panels.length === 1 &&
+    tabSalida.panels[0] && tabSalida.panels[0].tipo === 'salida_panel' &&
+    tabSalida.panels[0].titulo === 'Salida (Llamadas y WhatsApp)';
+  if (tabSalida.label === 'Salida' && panelViejoReconocible) {
+    tabSalida.label = targetSalida.label;
+    tabSalida.panels = JSON.parse(JSON.stringify(targetSalida.panels));
+    cambio = true;
+  } else if (!config.isTest && tabSalida.label !== targetSalida.label) {
+    console.log('[db] Migracion dashboards_config_orlant_salida_label_orden_v1: el tab "salida" no coincide con la forma esperada -- se deja el nombre intacto, revisar a mano.');
+  }
+
+  const idxTraficoWpp = tabs.findIndex((t) => t && t.key === 'trafico_whatsapp');
+  if (idxTraficoWpp === -1) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_salida_label_orden_v1: no se encontro "trafico_whatsapp", no se reubica.');
+    }
+  } else {
+    const idxSalidaActual = tabs.findIndex((t) => t && t.key === 'salida');
+    if (idxSalidaActual !== idxTraficoWpp + 1) {
+      const tabExtraido = tabs.splice(idxSalidaActual, 1)[0];
+      const nuevoIdxTraficoWpp = tabs.findIndex((t) => t && t.key === 'trafico_whatsapp');
+      tabs.splice(nuevoIdxTraficoWpp + 1, 0, tabExtraido);
+      cambio = true;
+    }
+  }
+
+  if (!cambio) return;
+  layout.tabs = tabs;
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_salida_label_orden_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

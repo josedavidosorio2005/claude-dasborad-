@@ -98,16 +98,32 @@ test('migracion dashboards_config_orlant_salida_panel_v1: el panel pasa de line/
   assert.ok(tab);
   assert.deepEqual(tab.panels, targetSalida.panels);
   assert.equal(tab.panels[0].tipo, 'salida_panel');
-  assert.equal(tab.label, 'Salida');
+  // Fase 128 (Parte 1): dashboards_config_orlant_salida_label_orden_v1
+  // corre despues de esta en la misma carga de db.js y renombra el label
+  // -- se compara contra la config ACTUAL (targetSalida.label), no contra
+  // el literal viejo 'Salida', para no quedar desalineado la proxima vez
+  // que cambie el nombre.
+  assert.equal(tab.label, targetSalida.label);
   assert.equal(tab.subtabs, undefined, 'el panel nuevo no usa subtabs -- dibuja sus 2 graficas el mismo');
 });
 
-test('migracion dashboards_config_orlant_salida_panel_v1: no reposiciona el tab (a diferencia de efectividad_citas_v1) -- "salida" se queda donde ya estaba', () => {
+// Fase 128 (Parte 1): dashboards_config_orlant_salida_label_orden_v1 SI
+// reposiciona "salida" (justo despues de 'trafico_whatsapp'), de forma
+// INCONDICIONAL sobre la posicion -- este fixture no tenia esa pestaña,
+// pero dashboards_config_orlant_trafico_whatsapp_tab_v1 (Fase 50, corre
+// antes en la misma carga de db.js) la agrega al final si falta, asi que
+// para cuando la migracion de Salida corre, el ancla SI existe y "salida"
+// SI se reubica justo despues. El titulo de este test (heredado de la Fase
+// 127, cuando esa migracion nunca reposicionaba nada) queda desactualizado
+// a proposito -- ver orlant-salida-label-orden-migracion.test.js para la
+// prueba dedicada de reubicacion.
+test('migracion dashboards_config_orlant_salida_panel_v1: no reposiciona ELLA MISMA el tab (esa migracion vieja nunca lo hizo) -- la reubicacion final la hace la migracion de la Fase 128, no esta', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
   const layout = JSON.parse(row.layout);
-  const idxCalidad = layout.tabs.findIndex((t) => t.key === 'calidad');
+  const idxTraficoWpp = layout.tabs.findIndex((t) => t.key === 'trafico_whatsapp');
   const idxSalida = layout.tabs.findIndex((t) => t.key === 'salida');
-  assert.equal(idxSalida, idxCalidad + 1);
+  assert.ok(idxTraficoWpp !== -1, 'trafico_whatsapp_tab_v1 debio agregarla');
+  assert.equal(idxSalida, idxTraficoWpp + 1);
 });
 
 test('migracion dashboards_config_orlant_salida_panel_v1: nunca toca un tab "salida" que no coincide con la forma vieja reconocible', () => {

@@ -16,8 +16,9 @@ Plataforma: **https://informa.inconexion.com.co** — versión **1.14.0**.
 
 - [ ] Puedo entrar con mi usuario y contraseña.
 - [ ] Al entrar veo el dashboard de **ORLANT** con las **8 pestañas**:
-      Tráfico de Llamadas, Tráfico de WhatsApp, Agendamiento, Inasistencia,
-      Efectividad de Citas, Tipificación, Salida, Calidad.
+      Tráfico de Llamadas, Tráfico de WhatsApp, Llamadas y WhatsApp de
+      salida, Agendamiento, Inasistencia, Efectividad de Citas,
+      Tipificación, Calidad.
 - [ ] El botón de **pantalla completa** agranda el dashboard y lo
       achica de vuelta.
 - [ ] Puedo cambiar entre **tema claro y oscuro**.
@@ -81,9 +82,10 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       período" — el Nivel de Servicio a 20 segundos es el único que se
       muestra (el de 5 minutos vuelve solo cuando Wolkvox lo entregue).
 
-## 4.2 Salida (Llamadas y WhatsApp)
+## 4.2 Llamadas y WhatsApp de salida
 
-- [ ] Veo una pestaña **"Salida"** con 2 tarjetas (total de llamadas y
+- [ ] Veo una pestaña **"Llamadas y WhatsApp de salida"**, justo al lado
+      de "Tráfico de WhatsApp", con 2 tarjetas (total de llamadas y
       total de WhatsApp de salida del mes elegido) y 2 gráficas de
       barras (Llamadas, WhatsApp), con Línea 3P y Línea General por mes.
 - [ ] Al subir el archivo mensual de Salida, antes de guardar la

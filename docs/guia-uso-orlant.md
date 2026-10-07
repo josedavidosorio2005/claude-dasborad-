@@ -86,7 +86,7 @@ del todo vas a ver:
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Tipificación** | Cómo se clasificó cada llamada/chat (motivo de contacto). |
-| **Salida** | Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
+| **Llamadas y WhatsApp de salida** | Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General) — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Calidad** | Monitoreo de calidad de los asesores, con su nota y resultados. |
 
 Cada pestaña que tiene varias vistas las muestra como **sub-pestañas**
@@ -190,7 +190,7 @@ esos meses — nunca el promedio simple de los % de cada mes), con el rango
 de meses en su etiqueta. Hoy esta pestaña tiene Agosto y Septiembre 2026
 — igual que el resto de la plataforma, solo los meses oficiales.
 
-**Salida**: el total del mes de llamadas y WhatsApp de **salida** (que la
+**Llamadas y WhatsApp de salida**: el total del mes de llamadas y WhatsApp de **salida** (que la
 campaña hace hacia afuera, no las que recibe), separado por línea 3P y
 Línea General. Muestra 2 tarjetas (total de llamadas y total de WhatsApp
 del mes elegido, con la variación contra el mes anterior cuando hay con
@@ -358,7 +358,7 @@ evita que las cargas futuras se unifiquen de la misma forma.
   reemplazan esos 3 meses completos, sin tocar ningún otro mes ya
   cargado.
 
-### Salida (Llamadas y WhatsApp)
+### Llamadas y WhatsApp de salida
 
 - **Qué archivo**: el consolidado mensual de llamadas y WhatsApp de
   SALIDA de Edwin — un total del mes, no una fila por llamada/chat.
@@ -397,7 +397,7 @@ evita que las cargas futuras se unifiquen de la misma forma.
 | Efectividad de Agendamiento | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Inasistencia | Edwin | Sistema de agendamiento ORLANT | Mensual, después de cerrado el mes |
 | Efectividad de Citas Atendidas | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
-| Salida (Llamadas y WhatsApp) | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
+| Llamadas y WhatsApp de salida | Edwin | Resumen propio de ORLANT | Mensual, después de cerrado el mes |
 | Calidad | El equipo de Calidad | Monitoreos propios | Continuo, a medida que se hacen |
 
 *(Las filas en negrita son las que todavía no tienen una frecuencia
