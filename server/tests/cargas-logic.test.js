@@ -106,6 +106,34 @@ test('cargasDetectarFormulaSinValor: una formula CON valor real cacheado (t dist
   assert.equal(cargasDetectarFormulaSinValor(ws), null);
 });
 
+// Fase 130 (hallazgo real, archivo de Calidad de Edwin): la hoja "Monitoreos"
+// trae 95 filas de datos reales + ~126 filas MUY por debajo, pre-armadas con
+// formulas de PUNTAJE OBTENIDO copiadas pero nunca llenadas (sin ASESOR, la
+// columna A de esa hoja) -- cmParseRows ya las ignora solas por no traer su
+// campo obligatorio. Antes de este fix, UNA fila filler con formula sin
+// valor tumbaba TODA la hoja ("El archivo no tiene datos en ninguna hoja
+// reconocida"), aunque las 95 filas reales estuvieran perfectas.
+test('cargasDetectarFormulaSinValor: una formula sin valor en una fila SIN columna A (fila plantilla, nunca llenada) NO tumba la hoja', () => {
+  const ws = {
+    A1: { v: 'Nombre del Asesor' }, B1: { v: 'Puntaje' },
+    A2: { v: 'Asesor de ejemplo' }, B2: { t: 'n', v: 95 }, // fila real, con valor literal
+    // fila 3: plantilla copiada mas abajo, SIN asesor (columna A vacia/ausente).
+    B3: { t: 'z', f: 'IFERROR(IF(COUNTA(C3:D3)=0,"",1),"")', v: 0 },
+  };
+  assert.equal(cargasDetectarFormulaSinValor(ws), null);
+});
+
+test('cargasDetectarFormulaSinValor: una formula sin valor SI tumba la hoja cuando la fila SI tiene columna A (fila real rota)', () => {
+  const ws = {
+    A1: { v: 'Nombre del Asesor' }, B1: { v: 'Puntaje' },
+    A2: { v: 'Asesor real' }, B2: { t: 'z', f: 'IFERROR(IF(COUNTA(C2:D2)=0,"",1),"")', v: 0 },
+  };
+  const r = cargasDetectarFormulaSinValor(ws);
+  assert.ok(r, 'una fila real con columna A llena SI debe seguir detectandose');
+  assert.equal(r.celda, 'B2');
+  assert.equal(r.etiqueta, 'Asesor real');
+});
+
 test('cargasParseFilaUnica: el archivo con valores literales SI se parsea correctamente (camino feliz)', () => {
   const aoa = leerHojaXlsxComoAoA(FIXTURE_LITERALES, 'Datos');
   const res = cargasParseFilaUnica(SPEC_RESUMEN_VENTAS, aoa);

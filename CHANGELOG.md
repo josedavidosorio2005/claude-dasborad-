@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.5 — Octubre 2026
+
+**Fase 130 (cierre): la carga real de Calidad por "Cargar Datos" ya no se
+rechaza por filas de plantilla sin llenar.**
+
+- Corregido: el archivo real de Calidad trae, muy por debajo de los
+  monitoreos reales, varias filas de plantilla con la fórmula del puntaje
+  ya copiada pero nunca diligenciada (sin nombre de asesor). Antes, eso
+  hacía que el sistema rechazara el archivo completo ("no tiene datos en
+  ninguna hoja reconocida"), aunque los monitoreos reales estuvieran bien.
+  Ya se ignoran esas filas de plantilla, igual que ya se ignoraban al
+  cargar Calidad por su pantalla propia.
+
 ## v1.15.4 — Octubre 2026
 
 **Fase 130 (Parte 3): se quita el aviso de "mes incompleto" en
