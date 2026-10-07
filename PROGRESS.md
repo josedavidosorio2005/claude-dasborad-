@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.15.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.15.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -120,8 +120,21 @@ entidades visibles, más citas agrupadas en "PARTICULAR / OTRA":
 744→789) — sin pérdida de datos. Corregido por construcción con 2
 defensas independientes (`scripts/produccion/lib/dry-run-seguro.js`,
 probado con `server/tests/fase129-dryrun-seguro-logic.test.js`).
-Pendiente: decisión del usuario sobre si agosto se queda así o se
-revierte. Detalle completo en
+Auditoría de privacidad del incidente (git log completo): el script con
+el bug nunca se commiteó/pusheó/entró a un PR o a CI — solo existió en
+stdout local, ya scrubado. Regla por construcción generalizada + prueba
+estática nueva en CI para cualquier script de `scripts/produccion/` que
+reenvíe crudo un endpoint `.../opciones`. Hallazgo real nuevo (v1.15.1,
+parche): subir el archivo completo de Inasistencia (varios meses)
+fallaba con "ninguna fila válida" — una celda de fecha con formato
+Excel llegaba como objeto `Date` en vez de número por un efecto
+secundario de `cellNF:true` (necesario para Tráfico); corregido en
+`inasistencia-logic.js`. El mismo patrón late en 8 módulos más
+(agendas/calidad/citas-atendidas/efectividad-agendamiento/tipificación/
+tráfico/tráfico-WhatsApp/metas) — no tocados todavía, pendiente de
+decisión. Pendiente: decisión del usuario sobre si agosto se queda en
+324/29 o se restaura a 352/54 (Opción B aprobada, dry-run en curso).
+Detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
 ## Índice — fases 0 a 128

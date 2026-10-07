@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.15.1 — Octubre 2026
+
+**Fase 129: arreglo real al subir el archivo de Inasistencia.**
+
+- Corregido: subir el archivo completo de Inasistencia (varios meses
+  juntos) podía terminar en "el archivo no tiene datos reconocidos",
+  aunque el archivo fuera perfectamente válido. La causa: cuando la
+  columna de fecha de la cita venía con formato de fecha de Excel (en
+  vez de un número simple), el sistema no sabía leerla y descartaba
+  todas las filas sin avisar bien por qué. Ya se reconoce ese formato
+  igual que los demás.
+
 ## v1.15.0 — Octubre 2026
 
 **Fase 128: cambios pedidos por Edwin en la reunión de validación de

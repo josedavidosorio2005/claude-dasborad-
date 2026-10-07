@@ -95,9 +95,14 @@ async function esperarLogin(page) {
       if (sepTotales[k] !== CONTROL_SEP_ANTES[k]) hallazgos.push(`Sep-26 ${k}: esperado (sin cambios) ${CONTROL_SEP_ANTES[k]}, real ${sepTotales[k]}`);
     });
 
-    // ── Entidades (SOLO el conteo, nunca la lista) ───────────────────
-    const opciones = await page.evaluate(() => apiRequest('GET', '/calidad/inasistencia/opciones?campana=ORLANT'));
-    log('Entidades distintas (conteo, ahora, global Ago+Sep):', opciones.entidades.length);
+    // ── Entidades -- la seleccion de campos pasa DENTRO de
+    // page.evaluate, la lista real nunca sale del navegador (ver
+    // server/tests/fase129-scripts-produccion-sin-texto-crudo.test.js). ──
+    const opciones = await page.evaluate(async () => {
+      const o = await apiRequest('GET', '/calidad/inasistencia/opciones?campana=ORLANT');
+      return { entidadesCount: o.entidades.length, mesesFormatoViejo: o.mesesFormatoViejo };
+    });
+    log('Entidades distintas (conteo, ahora, global Ago+Sep):', opciones.entidadesCount);
     log('Meses en formato viejo:', JSON.stringify(opciones.mesesFormatoViejo));
 
     // ── Visual: pestaña Inasistencia, las 2 sub-pestañas, sin canvas en
