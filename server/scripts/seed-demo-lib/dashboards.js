@@ -733,10 +733,28 @@ const PLANTILLA_OPTS = {
   'BIVETT': { tipo: 'atencion', salidaCampo: 'agendas' },
 };
 
+// MOBILIZE: su unica "seccion" es un placeholder tecnico (ver el comentario
+// de MOBILIZE en dashboard-config-seed.js -- `secciones` no admite un
+// objeto vacio) sin ningun flujo real detras. Se siembra solo para que el
+// seed de demo cubra TODAS las secciones de TODOS los clientes
+// (seed-demo.test.js: "los 12 dashboards de cliente quedan con carga en
+// TODAS sus secciones"), sin fingir un flujo que Mobilize no tiene.
+function seedMobilizeNotas(db, { cargadoPorNombre }) {
+  const cfg = configDe('MOBILIZE');
+  MESES.forEach((mes) => {
+    cargarSeccion(db, {
+      cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: mes,
+      filas: [{ nota: 'Sin uso -- Mobilize funciona 100% automatico (Trafico de Llamadas + Calidad).' }],
+      spec: cfg.secciones.notas, cargadoPorNombre,
+    });
+  });
+}
+
 function seedDashboards(db, { cargadoPorNombre }) {
   seedOrlant(db, { cargadoPorNombre });
   seedAurora(db, { cargadoPorNombre });
   seedHospitalLaMaria(db, { cargadoPorNombre });
+  seedMobilizeNotas(db, { cargadoPorNombre });
   for (const [cliente, opts] of Object.entries(PLANTILLA_OPTS)) {
     if (opts.tipo === 'ventas') seedVentas(db, cliente, opts, { cargadoPorNombre });
     else if (opts.tipo === 'cobranza') seedCobranza(db, cliente, opts, { cargadoPorNombre });
