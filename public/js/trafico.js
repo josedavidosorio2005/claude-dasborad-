@@ -345,6 +345,14 @@ async function renderTraficoCobertura(){
 var _trafico = {};          // cache por campana: { campana: { filas:[...], skills:[...] } }
 var _traficoEstado = {};    // estado de filtros actual por campana
 var _traficoAgregadoActual = {}; // ultimo agregado calculado por campana (para exportar)
+// Fase 131 (Parte 2, Mobilize): config del panel (`p` de dashboard-config-
+// seed.js) por indice `i` -- para que _traficoSwitchSubtab/_traficoRenderSubtabContent/
+// _traficoAplicarFiltros (que solo reciben `i`, no `p`) puedan releer las
+// opciones opcionales de ESE panel (subtabs/subtabsTitulos/etiquetaLinea/
+// resumenPorSeccion) sin tener que volver a buscarlas en `_gd.config`. Sin
+// estas opciones (ORLANT/CLINICA AURORA/HOSPITAL LA MARIA, que no las
+// pasan), el comportamiento es EXACTAMENTE igual al de siempre.
+var _traficoPanelConfig = {};
 // Fase 86 (tema 3): el selector MES de arriba desliza la ventana movil de
 // 12 meses de este panel (el mes elegido se vuelve el FIN de la ventana --
 // se mantiene el diseno de tendencia de la Fase 68, solo cambia donde
@@ -536,6 +544,7 @@ function _traficoLineaPrincipalCambio(prefijo, i){
 async function _traficoRenderPanel(p, i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
+  _traficoPanelConfig[i] = p;
   var campana = _traficoCampanaPanel(p);
   var sede = _traficoSedePanel();
   var claveEstado = _traficoClaveEstado(campana, sede);
@@ -623,11 +632,17 @@ async function _traficoRenderPanel(p, i){
 
   var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' };
   var subActivo = _traficoSubtabActivo[claveEstado] || 'resumen';
+  // Fase 131 (Parte 2, Mobilize): `p.etiquetaLinea`/`p.etiquetaLineaPlural`
+  // (opcionales) cambian SOLO el texto del filtro de linea -- Mobilize dice
+  // "Tipo de línea" (su propio nombre de columna) en vez de "Skill". Sin
+  // pasarlos, sigue "Skill"/"líneas" de siempre.
+  var etiquetaLinea = p.etiquetaLinea || 'Skill';
+  var etiquetaLineaPlural = p.etiquetaLineaPlural || 'líneas';
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
-        '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, 'Skill', 'líneas')+'</span>' +
+        '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
@@ -645,7 +660,7 @@ async function _traficoRenderPanel(p, i){
       // a la vez, mismo patron .gd-subtabs que las pestanas normales del
       // dashboard (dashboard-generic.js).
       '<div class="gd-subtabs" id="tv-subtabs-'+i+'">' +
-        _traficoSubtabsNavHTML('tv', i, subActivo, '_traficoSwitchSubtab', 'trafsub') +
+        _traficoSubtabsNavHTML('tv', i, subActivo, '_traficoSwitchSubtab', 'trafsub', p.subtabs) +
       '</div>' +
       '<div id="tv-content-'+i+'"></div>' +
     '</div>';
@@ -671,6 +686,11 @@ var TRAFICO_SUBTAB_TITULOS = {
   aht: 'AHT — tiempo promedio de atencion',
   asaata: 'ASA y ATA — tiempo promedio de respuesta y de abandono',
   sl: 'Nivel de Servicio a 20 segundos',
+  // Fase 131 (Parte 2, Mobilize): sub-pestaña "ASA" sola (sin ATA) -- ver
+  // _traficoDibujarAsaAta(..., soloAsa) mas abajo. Disponible para cualquier
+  // panel (no solo Mobilize), pero nadie mas la referencia en su `subtabs`
+  // hoy, asi que no cambia nada para ORLANT/AURORA/HLM.
+  asa: 'ASA — tiempo promedio de respuesta',
 };
 // Fase 87 (tema B) / Fase 90 (tema A): mismos 4 titulos salvo "sl" --
 // WhatsApp grafica LAS DOS series (20s, que ya existe en Wolkvox, y 5
@@ -681,6 +701,7 @@ var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
 });
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
+  asa: '-canvas-asa-',
 };
 // Fase 77 (pedido de Edwin/Jairo, 25/09): en la reunion del 25/09 los
 // valores MENSUALES de SL y AHT que muestra la plataforma no coincidian con
@@ -694,7 +715,12 @@ var TRAFICO_NOTA_PONDERADO = 'Valor del mes ponderado por volumen de llamadas (n
 // `titulos` (Fase 87, tema B) es opcional -- sin pasarlo, usa
 // TRAFICO_SUBTAB_TITULOS (Llamadas, sin cambios); WhatsApp pasa
 // TRAFICO_WPP_SUBTAB_TITULOS.
-function _traficoSubtabContentHTML(prefijo, i, activo, titulos){
+// `resumenSeccionId` (opcional, Fase 131 Parte 2, pedido de Edwin para
+// Mobilize: "cada sección con SU resumen acumulado debajo, no un solo
+// resumen arriba") -- reserva un slot ANTES del canvas para un numero
+// acumulado del periodo/filtro actual de ESA seccion (SL/Abandono/ASA/AHT).
+// Sin pasarlo (ORLANT/AURORA/HLM), no se agrega nada -- igual que siempre.
+function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId){
   titulos = titulos || TRAFICO_SUBTAB_TITULOS;
   if(activo === 'resumen'){
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
@@ -703,7 +729,9 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos){
   var nota = (activo === 'sl' || activo === 'aht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
+  var resumenSeccion = resumenSeccionId ? '<div id="'+resumenSeccionId+'" class="aurora-kpis" style="margin-bottom:10px"></div>' : '';
   return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
+    resumenSeccion +
     '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
 }
 function _traficoRenderSubtabContent(i){
@@ -714,7 +742,10 @@ function _traficoRenderSubtabContent(i){
   var sede = host ? (host.dataset.sede || null) : null;
   var claveEstado = _traficoClaveEstado(campana, sede);
   var activo = _traficoSubtabActivo[claveEstado] || 'resumen';
-  content.innerHTML = _traficoSubtabContentHTML('tv', i, activo);
+  var p = _traficoPanelConfig[i] || {};
+  var titulos = p.subtabsTitulos ? Object.assign({}, TRAFICO_SUBTAB_TITULOS, p.subtabsTitulos) : TRAFICO_SUBTAB_TITULOS;
+  var resumenSeccionId = p.resumenPorSeccion ? ('tv-resumen-sec-'+i) : null;
+  content.innerHTML = _traficoSubtabContentHTML('tv', i, activo, titulos, resumenSeccionId);
   _traficoRenderContenido(campana, sede, i);
 }
 
@@ -776,8 +807,9 @@ function _traficoAplicarFiltros(i){
   // 2+ lineas en el comparador y aplicar, el desplegable principal seguia
   // mostrando la opcion de antes en vez de "Varias lineas" (Fase 64,
   // hallazgo #2).
+  var pCfg = _traficoPanelConfig[i] || {};
   var skillbar = document.getElementById('tv-f-skillbar-'+i);
-  if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tv', i, skillsDisponibles, estado.skills, 'Skill', 'líneas');
+  if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tv', i, skillsDisponibles, estado.skills, pCfg.etiquetaLinea || 'Skill', pCfg.etiquetaLineaPlural || 'líneas');
   _traficoRenderContenido(campana, sede, i);
 }
 
@@ -822,9 +854,16 @@ function _traficoFmtTiempoMMSS(v){
 // `labels.nivelServicio2Nota` (opcional, Fase 90 tema A, solo WhatsApp):
 // SEGUNDA tarjeta de nivel de servicio -- WhatsApp muestra "(5 min)" y
 // "(20 s)" a la vez (Llamadas nunca pasa esto, sigue con 1 sola tarjeta).
-function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
+// `ocultar` (opcional, Fase 131 Parte 2, pedido de Edwin para Mobilize: el
+// resumen principal solo trae ingresadas/contestadas/abandonadas/nivel de
+// atencion -- tasa de abandono y nivel de servicio tienen su PROPIA
+// sub-pestaña con su propio resumen, ver _traficoRenderContenido) -- array
+// con 'tasaAbandono'/'nivelServicio' para quitar esas tarjetas de ESTE
+// panel. Sin pasarlo (ORLANT/AURORA/HLM), siguen las 6 tarjetas de siempre.
+function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
   var kpisEl = document.getElementById(prefijo+'-kpis-'+i);
   if(!kpisEl) return;
+  ocultar = ocultar || [];
   var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
   var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
   var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (totales.nivelAtencion===null?'':totales.nivelAtencion>=90?'kpi-green':totales.nivelAtencion>=70?'kpi-org':'kpi-red');
@@ -838,7 +877,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
   // cargarDatos o admin). Compatible con un string plano (sin detalle,
   // como usaba esta funcion antes de esta fase).
   var nsSinDato = '';
-  if(totales.nivelServicio===null && labels.nivelServicioSinDatoMsg){
+  if(totales.nivelServicio===null && labels.nivelServicioSinDatoMsg && ocultar.indexOf('nivelServicio')===-1){
     var msg = labels.nivelServicioSinDatoMsg;
     var principal = (typeof msg === 'object') ? msg.principal : msg;
     var puedeVerDetalle = (typeof msg === 'object') && msg.detalle && typeof canLoadData === 'function' && canLoadData();
@@ -859,8 +898,8 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana){
     '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
     '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
     '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
-    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>'+
-    '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>'+
+    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>')+
+    (ocultar.indexOf('nivelServicio')!==-1 ? '' : '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>')+
     tarjeta2+
     nsSinDato;
 }
@@ -969,7 +1008,11 @@ function _traficoDibujarAht(prefijo, i, agregadoComb, fmtTiempo){
   }
 }
 
-function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo){
+// `soloAsa` (opcional, Fase 131 Parte 2, pedido de Edwin para Mobilize: ATA
+// "se guarda pero no se grafica"): dibuja solo la serie ASA, en el canvas de
+// la sub-pestaña "asa" en vez de "asaata". Sin pasarlo (ORLANT/AURORA/HLM),
+// sigue dibujando las 2 series en "asaata", exactamente igual que siempre.
+function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
   var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
   var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
   var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
@@ -979,12 +1022,15 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo){
   else oAsaAta.plugins.datalabels = { display:false };
   oAsaAta.scales.y.ticks.callback = fmt;
   oAsaAta.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmt(ctx.parsed.y); } } };
+  var datasets = [
+    { label:'ASA', data: agregadoComb.map(function(a){return a.asaSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+  ];
+  if(!soloAsa){
+    datasets.push({ label:'ATA', data: agregadoComb.map(function(a){return a.ataSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false });
+  }
+  var canvasId = prefijo+(soloAsa?'-canvas-asa-':'-canvas-asaata-')+i;
   if(typeof _gdChart === 'function'){
-    _gdChart(prefijo+'-canvas-asaata-'+i, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
-      datasets:[
-        { label:'ASA', data: agregadoComb.map(function(a){return a.asaSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
-        { label:'ATA', data: agregadoComb.map(function(a){return a.ataSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
-      ] }, options: oAsaAta });
+    _gdChart(canvasId, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}), datasets: datasets }, options: oAsaAta });
   }
 }
 
@@ -1089,10 +1135,11 @@ function _traficoRenderContenido(campana, sede, i){
   // de arriba) -- nunca un promedio simple de los % por dia.
   var nivelServicio = traficoServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
 
+  var pCfgKpis = _traficoPanelConfig[i] || {};
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
     { total: 'Total Llamadas', contestadas: 'Llamadas Contestadas', abandonadas: 'Llamadas Abandonadas',
       nivelServicioLabel: 'Nivel de Servicio (20 s)',
-      nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana);
+      nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar);
 
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
 
@@ -1106,7 +1153,46 @@ function _traficoRenderContenido(campana, sede, i){
   _traficoDibujarAbandono('tv', i, agregadoComb);
   _traficoDibujarAht('tv', i, agregadoComb);
   _traficoDibujarAsaAta('tv', i, agregadoComb);
+  _traficoDibujarAsaAta('tv', i, agregadoComb, null, true); // sub-pestaña "asa" sola (Mobilize) -- no-op si su canvas no esta en el DOM
   _traficoDibujarSL('tv', i, agregadoComb);
+
+  // Fase 131 (Parte 2, pedido de Edwin para Mobilize): "cada sección con SU
+  // resumen acumulado debajo" -- un numero del PERIODO/FILTRO YA aplicado
+  // (mismo `filtradas`/`nivelServicio` de arriba, nunca un promedio simple
+  // de los valores diarios) junto al titulo de la sub-pestaña activa de
+  // SL/Abandono/ASA/AHT. Solo si el panel lo pide (`p.resumenPorSeccion`) --
+  // ORLANT/AURORA/HLM no lo piden, asi que para ellos este bloque no hace
+  // nada (el div ni siquiera existe en su DOM).
+  var pCfgResumen = _traficoPanelConfig[i] || {};
+  if(pCfgResumen.resumenPorSeccion){
+    var elResumenSec = document.getElementById('tv-resumen-sec-'+i);
+    if(elResumenSec){
+      var activoSec = _traficoSubtabActivo[claveEstado] || 'resumen';
+      // ASA es tiempo por llamada CONTESTADA, igual que AHT (ver
+      // traficoAgregar/traficoAhtPromedioPeriodo, trafico-logic.js) --
+      // mismo ponderado por `contestadas`, nunca un promedio simple de los
+      // valores diarios.
+      var pesoAsa = 0, sumaAsa = 0;
+      filtradas.forEach(function(f){
+        var w = Number(f.contestadas) || 0;
+        if(f.asaSegundos != null && w > 0){ sumaAsa += f.asaSegundos * w; pesoAsa += w; }
+      });
+      var asaProm = pesoAsa > 0 ? Math.round((sumaAsa / pesoAsa) * 100) / 100 : null;
+      var ahtProm = traficoAhtPromedioPeriodo(filtradas);
+      var htmlSec = '';
+      if(activoSec === 'sl'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de Servicio del periodo</div></div>';
+      } else if(activoSec === 'abandono'){
+        htmlSec = '<div class="aurora-kpi kpi-red"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas Abandonadas</div></div>' +
+          '<div class="aurora-kpi kpi-red"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">% Abandono del periodo</div></div>';
+      } else if(activoSec === 'asa'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
+      } else if(activoSec === 'aht'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
+      }
+      elResumenSec.innerHTML = htmlSec;
+    }
+  }
 }
 
 // Fase 68, Pedidos 3/4 (Edwin, 23/09): la tabla de exportacion (Excel/PDF)

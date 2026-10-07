@@ -307,14 +307,21 @@ function plantillaAtencion(cliente, titulo, opts) {
 }
 
 // ════════════════════════════════════════════════════════════
-// Los 9 dashboards (M3). Supuestos documentados en AWS_DEPLOY_REPORT.md.
+// 8 de los dashboards de M3 (Supuestos documentados en AWS_DEPLOY_REPORT.md)
+// -- MOBILIZE salio de aqui en la Fase 131 Parte 2 (ver comentario arriba).
 // ════════════════════════════════════════════════════════════
 const CONFIGS_CLIENTE = [
   plantillaVentas('TELEVENTAS SURA', 'Dashboard Televentas Sura', { calidad: true, metaContact: 70, metaConv: 15 }),
   plantillaVentas('TELEVENTAS COMFAMA', 'Dashboard Televentas Comfama', { calidad: true, metaContact: 70, metaConv: 15 }),
   plantillaVentas('PANTERA MAIKERS', 'Dashboard Pantera Maikers', { calidad: false, metaContact: 65, metaConv: 12 }),
   plantillaVentas('ANDRES YEPES', 'Dashboard Andres Yepes', { calidad: true, metaContact: 65, metaConv: 12 }),
-  plantillaVentas('MOBILIZE', 'Dashboard Mobilize', { calidad: true, metaContact: 65, metaConv: 12 }),
+  // MOBILIZE sale de esta plantilla generica de "ventas" en la Fase 131
+  // (Parte 2, pedido de Edwin): su dashboard real es Flujo de llamadas
+  // (Trafico) + Tipificacion (CDR), sin ninguna de las secciones de ventas
+  // salientes (base asignada/contactados/conversion) que nunca aplicaron a
+  // su operacion -- ver el objeto MOBILIZE dedicado en
+  // dashboard-config-seed.js, mismo patron que ORLANT/CLINICA AURORA/
+  // HOSPITAL LA MARIA.
   plantillaVentas('ALBERTO LINERO GO', 'Dashboard Alberto Linero Go', { calidad: false, metaContact: 65, metaConv: 12 }),
   plantillaCobranza('INFONDO', 'Dashboard Infondo', { calidad: true, metaCobertura: 90, metaPromesas: 60 }),
   plantillaAtencion('SASCHA FITNESS', 'Dashboard Sascha Fitness', { calidad: true, salidaLabel: 'Pedidos', salidaCampo: 'pedidos' }),

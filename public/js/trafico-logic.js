@@ -23,14 +23,21 @@ var _traficoFechaLimites = (typeof require === 'function') ? require('./fecha-li
 // posicion: si Volvox reordena o agrega columnas, esto sigue funcionando.
 // Solo 4 son obligatorias; el resto, si faltan, la metrica queda NULL (no
 // en 0 — 0% es un dato real, "sin dato" es otra cosa).
+// `aliases` (opcional, Fase 131 Parte 2): nombres alternativos de la MISMA
+// columna que trae otro cliente con su propio export -- Mobilize (Volvox
+// tambien, pero con sus propios encabezados) usa "TIPO DE LINEA"/"DÍA"/
+// "LLAMADAS INGRESADAS"/"NIVEL DE SERVICIO 80 - 20"/"% ABANDONO" en vez de
+// los nombres de ORLANT. `label` sigue siendo el nombre principal (el que
+// aparece en los mensajes de error) -- agregar un alias nunca cambia el
+// comportamiento para un archivo que solo trae el nombre de siempre.
 var TRAFICO_COLUMNAS = [
-  { key: 'skillName', label: 'SKILL_NAME', obligatoria: true },
-  { key: 'fecha', label: 'DATE', obligatoria: true },
-  { key: 'totalLlamadas', label: 'TOTAL LLAMADAS', obligatoria: true },
+  { key: 'skillName', label: 'SKILL_NAME', aliases: ['TIPO DE LINEA'], obligatoria: true },
+  { key: 'fecha', label: 'DATE', aliases: ['DÍA', 'DIA'], obligatoria: true },
+  { key: 'totalLlamadas', label: 'TOTAL LLAMADAS', aliases: ['LLAMADAS INGRESADAS'], obligatoria: true },
   { key: 'contestadas', label: 'LLAMADAS CONTESTADAS', obligatoria: true },
   { key: 'llamadasAbandonadas', label: 'LLAMADAS ABANDONADAS' },
   { key: 'serviceLevel10secPct', label: 'SERVICE_LEVEL_10SEC' },
-  { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC' },
+  { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC', aliases: ['NIVEL DE SERVICIO 80 - 20'] },
   { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
   // ABANDON (columna propia de Volvox) se dejo de leer en la Fase 45: no se
   // graficaba ni se exportaba en ningun lado -- tasaAbandonoPct (mas abajo)
@@ -38,12 +45,14 @@ var TRAFICO_COLUMNAS = [
   // depender del % que reporta Volvox. El campo sigue existiendo en la
   // columna calidad_nivel_servicio_diario.abandonPct de la base (cargas
   // viejas lo conservan); solo se retiro de este parseo hacia adelante.
+  // Mobilize tambien trae esta misma columna de Volvox (mismo criterio:
+  // no se lee) ademas de su propia "% ABANDONO" (alias de tasaAbandonoPct).
   { key: 'asaSegundos', label: 'ASA' },
   { key: 'ataSegundos', label: 'ATA' },
   { key: 'waitTimeSegundos', label: 'WAIT_TIME' },
   { key: 'ahtSegundos', label: 'AHT' },
   { key: 'nivelAtencionPct', label: 'NIVEL DE ATENCION' },
-  { key: 'tasaAbandonoPct', label: 'TASA DE ABNDONO' }, // sic: asi viene de Volvox, no "corregir"
+  { key: 'tasaAbandonoPct', label: 'TASA DE ABNDONO', aliases: ['% ABANDONO'] }, // sic: asi viene de Volvox, no "corregir"
 ];
 var TRAFICO_COLUMNAS_OBLIGATORIAS = TRAFICO_COLUMNAS.filter(function (c) { return c.obligatoria; });
 
@@ -81,7 +90,10 @@ function traficoColIndexMap(headerRow) {
   var map = {};
   (headerRow || []).forEach(function (h, i) {
     var n = traficoNorm(h);
-    var col = TRAFICO_COLUMNAS.filter(function (c) { return traficoNorm(c.label) === n; })[0];
+    var col = TRAFICO_COLUMNAS.filter(function (c) {
+      if (traficoNorm(c.label) === n) return true;
+      return (c.aliases || []).some(function (a) { return traficoNorm(a) === n; });
+    })[0];
     if (col && map[col.key] === undefined) map[col.key] = i;
   });
   return map;
@@ -247,6 +259,25 @@ function traficoNumero(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+// ASA/ATA de Mobilize vienen como TEXTO (a diferencia de ORLANT, donde ya
+// son numericos) -- intenta primero traficoNumero tal cual (texto numerico
+// plano, "5" -> 5, o un numero real: nunca cambia el comportamiento de
+// ORLANT) y, solo si eso falla, interpreta el texto como "H:MM:SS" o
+// "MM:SS" (formato de reloj) y lo convierte a segundos. Cualquier otro
+// texto que no calce ninguno de los dos -> null (sin dato), nunca un
+// numero inventado.
+var TRAFICO_TIEMPO_TEXTO_RE = /^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/;
+function traficoSegundosDesdeTextoOTexto(v) {
+  var n = traficoNumero(v);
+  if (n !== null) return n;
+  if (typeof v !== 'string') return null;
+  var m = TRAFICO_TIEMPO_TEXTO_RE.exec(v.trim());
+  if (!m) return null;
+  var a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+  if (m[3] !== undefined) return a * 3600 + b * 60 + parseInt(m[3], 10); // H:MM:SS
+  return a * 60 + b; // MM:SS
+}
+
 // ── Parseo de filas (aoa = array-of-arrays, como devuelve
 // XLSX.utils.sheet_to_json(ws, {header:1}), fila 0 = encabezados) ───────
 //
@@ -301,6 +332,18 @@ function traficoParseFilas(aoa, ws) {
     });
   }
 
+  // Fase 131 (Parte 2, pedido explicito de Edwin: "confirma si es fraccion o
+  // porcentaje" para NIVEL DE ATENCION/% ABANDONO de Mobilize): estas 2
+  // columnas SIEMPRE se tratan como fraccion (0.95 -> 95%, traficoPctDesdeFraccion,
+  // sin excepcion -- igual que siempre, ORLANT no cambia). Si la columna real
+  // ya viniera en escala 0-100 (ej. 95 sin dividir), el resultado se iria por
+  // encima de 100%, algo imposible para un porcentaje real -- se avisa UNA
+  // vez por columna para revisar antes de confirmar la carga, sin tocar el
+  // valor guardado (mismo criterio que el aviso de columnas SERVICE_LEVEL_*
+  // ambiguas, Fase 88, mas abajo).
+  var huboNivelAtencionSobre100 = false;
+  var huboTasaAbandonoSobre100 = false;
+
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
     if (!row || row.every(function (v) { return v === '' || v == null; })) continue;
@@ -338,8 +381,8 @@ function traficoParseFilas(aoa, ws) {
       ['serviceLevel10secPct', traficoPctDesdeTexto, null],
       ['serviceLevel20secPct', traficoPctDesdeTexto, null],
       ['serviceLevel30secPct', traficoPctDesdeTexto, null],
-      ['asaSegundos', traficoNumero, null],
-      ['ataSegundos', traficoNumero, null],
+      ['asaSegundos', traficoSegundosDesdeTextoOTexto, null],
+      ['ataSegundos', traficoSegundosDesdeTextoOTexto, null],
       ['waitTimeSegundos', traficoSegundosDesdeFraccionDia, null],
       ['ahtSegundos', traficoSegundosDesdeFraccionDia, null],
       ['nivelAtencionPct', traficoPctDesdeFraccion, null],
@@ -354,9 +397,19 @@ function traficoParseFilas(aoa, ws) {
       if (val !== null) fila[key] = post ? post(val) : val;
     });
 
+    if (fila.nivelAtencionPct !== undefined && fila.nivelAtencionPct > 100) huboNivelAtencionSobre100 = true;
+    if (fila.tasaAbandonoPct !== undefined && fila.tasaAbandonoPct > 100) huboTasaAbandonoSobre100 = true;
+
     filas.push(fila);
     skillsSet[skillName] = true;
     mesesSet[fecha.slice(0, 7)] = true;
+  }
+
+  if (huboNivelAtencionSobre100) {
+    avisos.push('La columna "NIVEL DE ATENCION" dio mas de 100% en al menos una fila al tratarla como fraccion (0.95 -> 95%) -- revisa si en el archivo ya viene en escala 0-100 antes de confirmar la carga.');
+  }
+  if (huboTasaAbandonoSobre100) {
+    avisos.push('La columna "' + (map.tasaAbandonoPct !== undefined ? aoa[0][map.tasaAbandonoPct] : 'TASA DE ABNDONO/% ABANDONO') + '" dio mas de 100% en al menos una fila al tratarla como fraccion (0.05 -> 5%) -- revisa si en el archivo ya viene en escala 0-100 antes de confirmar la carga.');
   }
 
   if (filas.length === 0) return { error: 'El archivo no tiene filas de datos validas.' };
@@ -637,6 +690,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPctDesdeTexto: traficoPctDesdeTexto,
     traficoPctDesdeFraccion: traficoPctDesdeFraccion,
     traficoNumero: traficoNumero,
+    traficoSegundosDesdeTextoOTexto: traficoSegundosDesdeTextoOTexto,
     traficoCeldaRef: traficoCeldaRef,
     traficoClasificarCeldaNumerica: traficoClasificarCeldaNumerica,
     traficoValorCrudoSiFechaBoxeada: traficoValorCrudoSiFechaBoxeada,

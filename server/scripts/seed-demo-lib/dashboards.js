@@ -720,7 +720,13 @@ const PLANTILLA_OPTS = {
   'TELEVENTAS COMFAMA': { tipo: 'ventas', metaContact: 70, metaConv: 15 },
   'PANTERA MAIKERS': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'ANDRES YEPES': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
-  'MOBILIZE': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
+  // MOBILIZE salio de aqui en la Fase 131 (Parte 2): ya no tiene la forma
+  // generica de "ventas" (secciones resumen/diario/tipificacion/asesores),
+  // su dashboard real es Flujo de Llamadas (automatico, Trafico) + Calidad
+  // -- mismo motivo por el que ORLANT/CLINICA AURORA/HOSPITAL LA MARIA
+  // tampoco estan en este mapa, cada uno tiene su propia funcion de seed
+  // dedicada (seedOrlant/seedAurora/seedHospitalLaMaria) o, como MOBILIZE,
+  // ninguna todavia.
   'ALBERTO LINERO GO': { tipo: 'ventas', metaContact: 65, metaConv: 12 },
   'INFONDO': { tipo: 'cobranza', metaCobertura: 90, metaPromesas: 60 },
   'SASCHA FITNESS': { tipo: 'atencion', salidaCampo: 'pedidos' },
