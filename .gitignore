@@ -59,3 +59,12 @@ docs/capturas-demo/**/*.xlsx
 .claude/
 graphify-out/
 
+# Configuracion local de Codex (Fase 128, Parte 4): mismo motivo que
+# .claude/ arriba -- AGENTS.md es el espejo de CLAUDE.md para sesiones de
+# Codex en este repo, .agents/skills/ y .codex/hooks.json son su copia
+# local del skill de graphify + el hook que lo obliga -- configuracion de
+# la maquina de quien los uso, nunca del repo.
+.agents/
+.codex/
+AGENTS.md
+
