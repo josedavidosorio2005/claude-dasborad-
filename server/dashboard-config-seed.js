@@ -535,13 +535,24 @@ const MOBILIZE = {
   cliente: 'MOBILIZE',
   titulo: 'Dashboard Mobilize',
   vista: null,
-  // Sin carga manual (Gestion de base): todo lo real de Mobilize sale de
-  // Trafico (automatico, por skill) y Calidad (su propio formulario) -- a
-  // diferencia de ORLANT, Mobilize no tiene ningun tab viejo que todavia
-  // dependa de una hoja "resumen" generica. Un objeto vacio es un valor
-  // soportado (GET /dashboard/secciones/:cliente, cargas.js: "Esta campana
-  // no tiene secciones configuradas").
-  secciones: {},
+  // Sin carga manual real (Gestion de base): todo lo real de Mobilize sale
+  // de Trafico (automatico, por skill) y Calidad (su propio formulario) --
+  // a diferencia de ORLANT, Mobilize no tiene ningun tab viejo que todavia
+  // dependa de una hoja "resumen" generica. "notas" es un PLACEHOLDER
+  // tecnico, no un flujo real: `secciones` no admite un objeto vacio
+  // (validation.js, dashboardConfigBody.secciones, "El dashboard necesita
+  // entre 1 y 30 secciones" -- lo exige CUALQUIER PUT /dashboards/config/
+  // :cliente, incluido guardar sin cambiar nada desde el constructor visual
+  // del admin, hallazgo real de esta misma fase). Nunca se le pide nada al
+  // admin de Mobilize en la pantalla de carga -- queda ahi sin uso real.
+  secciones: {
+    notas: {
+      titulo: 'Notas (sin uso)',
+      descripcion: 'Placeholder tecnico -- Mobilize no tiene carga manual, todo sale de Trafico/Calidad.',
+      cadencia: 'mensual', periodo: 'mes', filaUnica: true,
+      columnas: [{ key: 'nota', label: 'Nota', tipo: 'texto' }],
+    },
+  },
   layout: {
     kpis: [],
     tabs: [
