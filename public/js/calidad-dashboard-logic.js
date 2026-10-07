@@ -49,11 +49,35 @@ function calDashAsesoresDistintos(monitoreos) {
   return Object.keys(vistos).sort();
 }
 
+// Fase 130 (pedido de Edwin, vista de Calidad): promedio de puntaje POR
+// asesor, para la barra horizontal "nombre + %" -- deliberadamente NUNCA
+// incluye el numero de monitoreos (ni como campo, ni en ningun calculo
+// visible), para que no haya forma de que se cuele en un tooltip/eje mas
+// adelante. Recibe los monitoreos YA FILTRADOS por mes/fecha/asesor (mismo
+// `arr` que ya usan calidad_kpis/calidad_pie, _gdRenderCalidad) -- el
+// promedio nunca mezcla meses porque nunca ve datos fuera de ese filtro.
+// Orden: de mayor a menor promedio (pedido explicito, "ordenadas").
+function calDashPromedioPorAsesor(monitoreos) {
+  var sumas = {};
+  var cuentas = {};
+  (monitoreos || []).forEach(function (m) {
+    if (!m.asesor) return;
+    sumas[m.asesor] = (sumas[m.asesor] || 0) + m.puntaje;
+    cuentas[m.asesor] = (cuentas[m.asesor] || 0) + 1;
+  });
+  return Object.keys(sumas)
+    .map(function (asesor) {
+      return { asesor: asesor, promedio: Math.round((sumas[asesor] / cuentas[asesor]) * 10) / 10 };
+    })
+    .sort(function (a, b) { return b.promedio - a.promedio; });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     calDashFiltrarMonitoreos: calDashFiltrarMonitoreos,
     calDashResumen: calDashResumen,
     calDashAsesoresDistintos: calDashAsesoresDistintos,
+    calDashPromedioPorAsesor: calDashPromedioPorAsesor,
   };
 }

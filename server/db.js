@@ -2873,6 +2873,53 @@ runOnceMigration('dashboards_config_orlant_salida_label_orden_v1', () => {
   }
 });
 
+// Fase 130 (pedido de Edwin, aprobado): agrega el panel `calidad_bar_asesores`
+// (nombre + % promedio por asesor, sin numero de monitoreos) al tab "calidad"
+// de ORLANT que YA existe en produccion -- el seed (CONFIGS) solo aplica a
+// instalaciones nuevas. Migracion ADITIVA, no reemplaza nada: si el panel ya
+// esta (reinicio repetido, u otra instancia que ya corrio esto), no hace
+// nada; si el tab no existe o no tiene panels, se deja intacto (no deberia
+// pasar, pero sin asumir la forma exacta como las migraciones de reemplazo).
+runOnceMigration('dashboards_config_orlant_calidad_bar_asesores_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el panel nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tabCalidad = (layout.tabs || []).find((t) => t && t.key === 'calidad');
+  if (!tabCalidad || !Array.isArray(tabCalidad.panels)) return;
+  const yaTiene = tabCalidad.panels.some((p) => p && p.tipo === 'calidad_bar_asesores');
+  if (yaTiene) return;
+  // Mismo criterio de cautela que las migraciones de reemplazo (salida_panel,
+  // efectividad_citas): solo se toca un tab "calidad" que calza EXACTO con
+  // la forma estandar (kpis + pie, en ese orden, nada mas) -- un tab
+  // personalizado a mano (otro panel, otro orden, otros paneles extra) se
+  // deja intacto, solo se loguea, nunca se asume su forma.
+  const esEstandarReconocible = tabCalidad.panels.length === 2 &&
+    tabCalidad.panels[0] && tabCalidad.panels[0].tipo === 'calidad_kpis' &&
+    tabCalidad.panels[1] && tabCalidad.panels[1].tipo === 'calidad_pie';
+  if (!esEstandarReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_calidad_bar_asesores_v1: el tab "calidad" no coincide con la forma estandar (kpis+pie) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  tabCalidad.panels.push({ tipo: 'calidad_bar_asesores', campana: 'ORLANT', titulo: 'Promedio de calidad por asesor' });
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_calidad_bar_asesores_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

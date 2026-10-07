@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.16.0 — Octubre 2026
+
+**Fase 130: nueva gráfica en Calidad — nombre y nota promedio por
+asesor.**
+
+- En la pestaña Calidad de ORLANT, además de los indicadores de siempre
+  y la torta de clasificación, ahora hay una gráfica de barras con el
+  nombre de cada asesor y su puntaje promedio (%), ordenada de mayor a
+  menor. Nunca muestra cuántos monitoreos tiene cada uno. Respeta el
+  mismo filtro de mes/asesor/fecha que ya tenía la pestaña.
+
 ## v1.15.6 — Octubre 2026
 
 **Fase 130 (cierre): las notas del evaluador en Calidad ya aceptan el
