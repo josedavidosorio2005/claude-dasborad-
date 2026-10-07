@@ -11,7 +11,10 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const { leerHojaXlsxComoAoA } = require('./helpers/xlsx-lite');
 const {
+  CM_COLUMNAS_FIJAS,
   cmColIndexMap,
+  cmHeaderItemNumero,
+  cmDetectarFilaEncabezado,
   cmParseFecha,
   cmParseRespuesta,
   cmParseRows,
@@ -20,6 +23,7 @@ const { PLANTILLAS } = require('../calidad-plantillas-seed.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'cartera-fixture.xlsx');
 const ITEMS_CARTERA = PLANTILLAS.find((p) => p.campana === 'CARTERA INTERNA').items;
+const ITEMS_ORLANT = PLANTILLAS.find((p) => p.campana === 'ORLANT').items;
 
 test('cmParseFecha: formatos aceptados y rechazados', () => {
   assert.equal(cmParseFecha('2026-09-01'), '2026-09-01');
@@ -100,4 +104,92 @@ test('cmParseRows: hoja vacia o sin columnas obligatorias -> error legible', () 
   assert.match(cmParseRows([], ITEMS_CARTERA).error, /vacia/i);
   const sinAsesor = [['FECHA', 'CANAL'], ['2026-09-01', 'LLAMADA']];
   assert.match(cmParseRows(sinAsesor, ITEMS_CARTERA).error, /ASESOR/);
+});
+
+// ── Fase 130, Parte 4: plantilla REAL de ORLANT (Edwin) ──────────────────
+// El archivo real que manda Edwin cada mes NO es el .xlsx plano que genera
+// esta plataforma (descargarPlantillaMonitoreos): trae titulo + leyenda +
+// un encabezado agrupado por categoria ANTES del encabezado real, usa
+// "Nombre del Asesor" en vez de "ASESOR", y cada item lleva su numero +
+// un salto de linea + el peso en "(%)" (los criticos ademas con un emoji
+// de advertencia al principio). Replica ese layout EXACTO con nombres
+// ficticios -- nunca el archivo real -- para que Edwin pueda seguir
+// subiendo el archivo de cada mes sin editarlo.
+function _headerItemReal(it) {
+  var prefijo = it.critico ? '⚠️ ' : '';
+  return prefijo + it.n + '. ' + it.label + '\r\n(' + it.weight + '%)';
+}
+
+function _hojaMonitoreosRealSintetica(filasDatos) {
+  const nCols = 6 + ITEMS_ORLANT.length + 5; // fijas + items + columnas de resultado
+  const filaTitulo = ['PLANTILLA DE CALIDAD — CLÍNICA FICTICIA  |  MONITOREOS DE LLAMADAS', ...Array(nCols - 1).fill(null)];
+  const filaLeyenda = ['SI = cumple  |  NO = no cumple  |  N/A = no aplica', ...Array(nCols - 1).fill(null)];
+  const filaCategorias = ['INFORMACIÓN GENERAL', null, null, null, null, null, ...ITEMS_ORLANT.map((it) => it.cat), 'PUNTAJE', 'CLASIFICACIÓN', 'FALLOS', 'NIVEL CRÍTICO', 'OBSERVACIONES'];
+  const filaEncabezado = [
+    'Nombre del Asesor', 'Fecha', 'ID / Llamada - Wpp', '# Teléfono', 'Codificación', 'Evaluador',
+    ...ITEMS_ORLANT.map(_headerItemReal),
+    'PUNTAJE\r\nOBTENIDO', 'NIVEL DE\r\nCALIDAD', '# FALLOS EN\r\nÍTEMS CRÍTICOS', 'ALERTA\r\nÍTEMS CRÍTICOS', 'OBSERVACIONES GENERALES',
+  ];
+  return [filaTitulo, filaLeyenda, filaCategorias, filaEncabezado, ...filasDatos];
+}
+
+test('cmHeaderItemNumero: extrae el numero ignorando el emoji de advertencia, el salto de linea y el peso', () => {
+  assert.equal(cmHeaderItemNumero('1. Guion de saludo\r\n(5%)'), 1);
+  assert.equal(cmHeaderItemNumero('⚠️ 3. Valida entidad y derechos\r\n(7%)'), 3);
+  assert.equal(cmHeaderItemNumero('17. Gestion correcta pacientes 3P\r\n(10%)'), 17);
+  assert.equal(cmHeaderItemNumero('OBSERVACIONES GENERALES'), null);
+  assert.equal(cmHeaderItemNumero('# FALLOS EN\r\nÍTEMS CRÍTICOS'), null);
+  assert.equal(cmHeaderItemNumero('ASESOR'), null);
+});
+
+test('cmDetectarFilaEncabezado: encuentra el encabezado real aunque no sea la fila 0 (titulo+leyenda+categorias antes)', () => {
+  const aoa = _hojaMonitoreosRealSintetica([]);
+  assert.equal(cmDetectarFilaEncabezado(aoa, ITEMS_ORLANT), 3);
+});
+
+test('cmDetectarFilaEncabezado: la plantilla plana (encabezado en la fila 0) sigue funcionando igual que antes', () => {
+  const header = CM_COLUMNAS_FIJAS.map((c) => c.label).concat(ITEMS_ORLANT.map((it) => it.label));
+  assert.equal(cmDetectarFilaEncabezado([header], ITEMS_ORLANT), 0);
+});
+
+test('cmColIndexMap: "Nombre del Asesor" y "# Teléfono" (plantilla real) resuelven a asesor/telefono', () => {
+  const aoa = _hojaMonitoreosRealSintetica([]);
+  const map = cmColIndexMap(aoa[3], ITEMS_ORLANT);
+  assert.equal(map.fijas.asesor, 0);
+  assert.equal(map.fijas.telefono, 3);
+  assert.equal(Object.keys(map.items).length, ITEMS_ORLANT.length);
+});
+
+test('cmParseRows: plantilla REAL completa de ORLANT (titulo/leyenda/categorias + encabezado numerado) -- parsea 2 monitoreos ficticios sin error', () => {
+  const filasDatos = [
+    [
+      'Asesor Ficticio Uno', '2026-09-12', 'ID-FICT-001', '3000000001', 'Audiología', 'Evaluador Ficticio',
+      ...ITEMS_ORLANT.map(() => 'SI'),
+      97, '🟢 SOBRESALIENTE', 0, '✅ SIN FALLOS CRÍTICOS', 'Observacion de prueba uno',
+    ],
+    [
+      'Asesor Ficticio Dos', '2026-09-13', 'ID-FICT-002', '3000000002', 'Audiología', 'Evaluador Ficticio',
+      ...ITEMS_ORLANT.map((it) => (it.n === 3 ? 'NO' : 'SI')), // falla el item critico #3 a proposito
+      0, '🔴 CRITICO', 1, '⚠️ CON FALLOS CRÍTICOS', 'Observacion de prueba dos',
+    ],
+  ];
+  const aoa = _hojaMonitoreosRealSintetica(filasDatos);
+  const res = cmParseRows(aoa, ITEMS_ORLANT);
+  assert.equal(res.error, undefined, JSON.stringify(res));
+  assert.equal(res.filas.length, 2);
+  assert.deepEqual(res.avisos, []);
+
+  const f1 = res.filas.find((f) => f.idLlamada === 'ID-FICT-001');
+  assert.equal(f1.asesor, 'Asesor Ficticio Uno');
+  assert.equal(f1.fecha, '2026-09-12');
+  assert.equal(f1.telefono, '3000000001');
+  assert.equal(f1.evaluador, 'Evaluador Ficticio');
+  assert.equal(f1.observaciones, 'Observacion de prueba uno');
+  assert.equal(Object.keys(f1.answers).length, ITEMS_ORLANT.length);
+  assert.equal(f1.answers[1], 'SI');
+  assert.equal(f1.answers[17], 'SI');
+
+  const f2 = res.filas.find((f) => f.idLlamada === 'ID-FICT-002');
+  assert.equal(f2.answers[3], 'NO'); // item critico fallado a proposito
+  assert.equal(f2.answers[1], 'SI');
 });
