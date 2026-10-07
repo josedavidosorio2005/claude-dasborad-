@@ -291,7 +291,7 @@ npm run seed:demo:limpiar     # borra EXACTAMENTE lo que sembró — nada más
 
 - Los 12 dashboards de cliente (`ORLANT`, `HOSPITAL LA MARIA`, `CLINICA AURORA`,
   `TELEVENTAS SURA`, `TELEVENTAS COMFAMA`, `PANTERA MAIKERS`, `ANDRES YEPES`,
-  `MOVILIZE`, `SASCHA FITNESS`, `ALBERTO LINERO GO`, `INFONDO`, `BIVETT`), con
+  `MOBILIZE`, `SASCHA FITNESS`, `ALBERTO LINERO GO`, `INFONDO`, `BIVETT`), con
   carga en **todas** sus secciones y los 6 meses de histórico.
 - Nivel de Servicio diario (`calidad_nivel_servicio_diario`) con el formato
   real del conmutador (skill por campaña, lunes-viernes ~150-250 llamadas,
@@ -593,7 +593,7 @@ cd server && npm run seed:demo:limpiar
 - No hay recuperación de contraseña por correo (se gestiona vía admin).
 - La CSP permite `'unsafe-inline'` en scripts porque `public/index.html` usa
   manejadores inline; `xlsx` se carga desde `cdnjs`, Chart.js va embebido.
-- Métricas de negocio de algunos clientes (PANTERA MAIKERS, MOVILIZE) y la
+- Métricas de negocio de algunos clientes (PANTERA MAIKERS, MOBILIZE) y la
   dirección de las metas de Gerencia están **pendientes de confirmación**; ver
   [`docs/historico/LAUNCH_REPORT.md`](docs/historico/LAUNCH_REPORT.md) §4. Se ajustan desde el constructor
   visual sin programar.

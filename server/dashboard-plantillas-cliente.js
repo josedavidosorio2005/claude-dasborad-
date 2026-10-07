@@ -314,7 +314,7 @@ const CONFIGS_CLIENTE = [
   plantillaVentas('TELEVENTAS COMFAMA', 'Dashboard Televentas Comfama', { calidad: true, metaContact: 70, metaConv: 15 }),
   plantillaVentas('PANTERA MAIKERS', 'Dashboard Pantera Maikers', { calidad: false, metaContact: 65, metaConv: 12 }),
   plantillaVentas('ANDRES YEPES', 'Dashboard Andres Yepes', { calidad: true, metaContact: 65, metaConv: 12 }),
-  plantillaVentas('MOVILIZE', 'Dashboard Movilize', { calidad: true, metaContact: 65, metaConv: 12 }),
+  plantillaVentas('MOBILIZE', 'Dashboard Mobilize', { calidad: true, metaContact: 65, metaConv: 12 }),
   plantillaVentas('ALBERTO LINERO GO', 'Dashboard Alberto Linero Go', { calidad: false, metaContact: 65, metaConv: 12 }),
   plantillaCobranza('INFONDO', 'Dashboard Infondo', { calidad: true, metaCobertura: 90, metaPromesas: 60 }),
   plantillaAtencion('SASCHA FITNESS', 'Dashboard Sascha Fitness', { calidad: true, salidaLabel: 'Pedidos', salidaCampo: 'pedidos' }),
