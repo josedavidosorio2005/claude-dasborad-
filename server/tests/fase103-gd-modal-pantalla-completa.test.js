@@ -103,12 +103,25 @@ test('state.js: la cabecera del dashboard de cliente se corre igual que el navba
   // fijo se quedaba corto y el banner volvia a tapar la cabecera. Ahora se
   // mide la altura REAL del banner (getBoundingClientRect) en vez de asumir
   // un numero -- corrige cualquier ancho, incluido un resize en caliente.
+  //
+  // Fase 133 (2do hallazgo, mas grave): correr .aurora-header con
+  // style.top=Xpx (como se hacia antes) NO le reserva espacio extra a
+  // #gd-tabs (su hermano siguiente en el HTML) -- el header "stuck"
+  // quedaba pintado ENCIMA de las pestanas (mismo DOM, z-index mas alto),
+  // Playwright lo confirmo: un clic en la 1ra pestana agarraba el boton
+  // Exportar en su lugar. Arreglo real: el offset ahora se le da al MODAL
+  // completo (#gd-modal, margin-top + height recalculado), nunca al
+  // header -- header y pestanas quedan en el mismo marco de referencia,
+  // cero invasion posible sea cual sea la altura real de cada uno.
   const res = await request(app).get('/js/state.js');
   assert.equal(res.status, 200);
   assert.match(res.text, /function renderSeedDemoBanner\(\)/);
   assert.match(res.text, /function aplicarOffsetSeedDemoBanner\(\)/);
-  assert.match(res.text, /querySelector\('#gd-modal \.aurora-header'\)/);
   assert.match(res.text, /getBoundingClientRect\(\)\.height/);
+  assert.match(res.text, /getElementById\('gd-modal'\)/);
+  assert.match(res.text, /gdModal\.style\.marginTop/);
+  assert.match(res.text, /gdModal\.style\.height/);
+  assert.ok(!/gdHeader\.style\.top/.test(res.text), 'el header ya no deberia correrse a si mismo (eso tapaba las pestanas) -- el offset va en el modal completo');
   assert.ok(!/'34px'/.test(res.text), 'no deberia quedar el offset viejo hardcodeado en 34px');
   // Un resize de ventana (o rotar el telefono) tiene que reaplicar el
   // offset -- el wrap del banner puede cambiar con el ancho.

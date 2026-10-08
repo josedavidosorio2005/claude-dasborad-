@@ -136,13 +136,39 @@ function ensureSeedDemoBannerEl() {
 // alcanza. Medir la altura REAL del banner (getBoundingClientRect) en vez
 // de asumir un numero fijo corrige esto en cualquier ancho, incluido un
 // cambio de orientacion o de tamano de ventana en caliente.
+//
+// Fase 133 (2do hallazgo real, mas grave, encontrado auditando el primer
+// arreglo): correr el header con top:Xpx (position:sticky) NO le reserva
+// espacio extra en el flujo normal a sus hermanos -- #gd-tabs (la fila de
+// pestanas, justo despues de .aurora-header en el HTML) seguia calculando
+// su posicion como si el header NUNCA se hubiera corrido, asi que con un
+// header movil mas alto (varias filas por el wrap de la Parte 1) + un
+// offset real de hasta 68px, el header "stuck" invadia visualmente la
+// fila de pestanas (tapandola por su z-index mas alto, aunque el DOM
+// siguiera ahi -- confirmado con Playwright: el click a la 1ra pestana
+// agarraba el boton Exportar en su lugar). La cabecera de .navbar (fuera
+// de un modal) no tiene este problema porque el contenido de abajo ya
+// trae suficiente padding propio para absorber el offset -- este
+// problema es especifico de #gd-modal, que SI depende de que su propio
+// contenido (incluidas las pestanas) quede exactamente debajo del header.
+// Arreglo: en vez de correr el header, se le da el espacio al MODAL
+// completo (margin-top), para que el header (sticky top:0 real, sin
+// offset) y sus hermanos queden en el mismo marco de referencia -- cero
+// invasion posible, sea cual sea la altura real del header o el banner.
 function aplicarOffsetSeedDemoBanner() {
   var el = document.getElementById('seed-demo-banner');
   var alto = (seedDemoActivo && el) ? Math.ceil(el.getBoundingClientRect().height) : 0;
   var topPx = alto ? alto + 'px' : '';
   document.querySelectorAll('.navbar').forEach(function (nb) { nb.style.top = topPx; });
-  var gdHeader = document.querySelector('#gd-modal .aurora-header');
-  if (gdHeader) gdHeader.style.top = topPx;
+  // margin-top EMPUJA el modal hacia abajo -- height se reduce en la misma
+  // medida para que el borde de abajo no quede fuera del viewport (el
+  // modal ya tiene overflow-y:auto, con margin-top solo y SIN este ajuste
+  // de height su contenido de mas abajo quedaria inalcanzable).
+  var gdModal = document.getElementById('gd-modal');
+  if (gdModal) {
+    gdModal.style.marginTop = topPx;
+    gdModal.style.height = alto ? 'calc(100dvh - ' + alto + 'px)' : '';
+  }
 }
 
 function renderSeedDemoBanner() {
