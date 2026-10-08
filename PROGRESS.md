@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.17.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.18.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -226,19 +226,30 @@ prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
   de consola). No se creó ningún usuario CLIENTES_DASH de Mobilize (no se
   ha pedido).
 
-**Sin empezar todavía:**
-- **Parte 4** ("Última actualización" visible en cada dashboard).
-- **Parte 5** (marca InConexion®: tipografía Quicksand, colores oficiales,
-  logo — los archivos de marca de
-  `C:\Users\filid\Documents\datos-inconexion\marca\` **todavía no están
-  ahí**, carpeta vacía a la fecha de este resumen).
+- **Parte 4** (v1.18.0, 2026-10-08): "Última actualización: <fecha> <hora>"
+  (hora Colombia) visible en cada dashboard, con la fecha de la carga MAS
+  RECIENTE de ese cliente en cualquiera de sus 10 fuentes de datos reales
+  (`GET /dashboard/ultima-actualizacion`, mismo gate que ver el dashboard
+  en sí). Hallazgo real evitado con un test dedicado: el formato de fecha
+  `DD/MM/AAAA HH:MM:SS` que usa toda la plataforma NO ordena
+  lexicográficamente por fecha real -- se usa el orden real de inserción
+  (`id DESC`) en cada tabla, nunca `MAX(fecha)` como texto. Resaltado con
+  borde de color (naranja Mobilize, verde de marca InConexion `#74B859`
+  en el resto) sobre texto en el token ya vetado para contraste AA del
+  header (fondo fijo de marca, no cambia con el tema claro/oscuro).
+  Verificado visualmente con Playwright local (servidor + datos de demo,
+  no producción): ORLANT y MOBILIZE, claro y oscuro, 0 errores de
+  consola.
 
-**Siguiente sesión, retomar por**: Parte 4 (marca de "Última
-actualización" por cliente, hora Colombia, resaltado naranja Mobilize/
-verde InConexion en los demás) y luego Parte 5 (marca InConexion®, si ya
-llegaron los archivos a la carpeta de marca). Las Partes 1-3 y 6 de
-Mobilize ya están hechas, mergeadas, desplegadas y con datos reales
-cargados y verificados -- no hace falta repetir nada de eso.
+**Sin empezar todavía:**
+- **Parte 5** (marca InConexion®: tipografía Quicksand, colores oficiales,
+  logo — pendiente de que lleguen los archivos a
+  `C:\Users\filid\Documents\datos-inconexion\marca\`).
+
+**Siguiente sesión, retomar por**: Parte 5 (marca InConexion®), en cuanto
+lleguen los archivos a la carpeta de marca. Las Partes 1-4 y 6 de Mobilize
+ya están hechas, mergeadas, desplegadas y con datos reales cargados y
+verificados -- no hace falta repetir nada de eso.
 
 ### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
 
