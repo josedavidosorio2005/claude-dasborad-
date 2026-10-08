@@ -91,12 +91,26 @@ document.getElementById('cargas-overlay').addEventListener('click',function(e){ 
 // ── Columnas de Trafico/Calidad normalizadas a {key?,label,opcional} para
 // que el plan y la hoja INSTRUCCIONES usen siempre el mismo criterio
 // (Trafico trae `obligatoria`; Gestion de base y esto de aqui usan `opcional`).
+//
+// Fase 131 (Parte "carga real de Mobilize", MISMO bug de fondo que el
+// "HALLAZGO GRAVE" de la Fase 122 en _cargasTipificacionColumnasUnificado,
+// ver su comentario arriba): esta funcion NUNCA copiaba los alias de
+// columna -- TRAFICO_COLUMNAS (trafico-logic.js) los guarda en una
+// propiedad con OTRO nombre, `aliases` (Parte 2 de esta misma fase, para
+// que Mobilize use "TIPO DE LINEA"/"DÍA"/"LLAMADAS INGRESADAS"/etc. en vez
+// de los nombres de ORLANT), pero cargasEncabezadosCoinciden
+// (cargas-logic.js) solo sabe leer `labelAlt`. Confirmado contra
+// produccion real con el archivo real de septiembre de Mobilize (hoja
+// "HistQueue<fecha>", nunca "DATA"): sin este mapeo, el reconocimiento por
+// encabezados SIEMPRE fallaba ("El archivo no tiene datos en ninguna hoja
+// reconocida") aunque traficoColIndexMap/traficoParseFilas (que no pasan
+// por esta funcion) ya soportaban esos mismos alias desde la Parte 2.
 function _cargasTraficoColumnas(){
   // MES/AÑO al final son informativas (Volvox las trae, nadie las parsea:
   // traficoColIndexMap las ignora sin problema) — se agregan solo para que
   // la hoja DATA de esta plantilla se vea igual que la plantilla oficial ya
   // aprobada por el cliente (server/plantillas/PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx).
-  return TRAFICO_COLUMNAS.map(function(c){ return { key:c.key, label:c.label, opcional: !c.obligatoria }; })
+  return TRAFICO_COLUMNAS.map(function(c){ return { key:c.key, label:c.label, labelAlt:c.aliases, opcional: !c.obligatoria }; })
     .concat([{ key:'mes', label:'MES', opcional:true }, { key:'anio', label:'AÑO', opcional:true }]);
 }
 // Fase 66 — columnas EXACTAS de la hoja LLAMADAS del archivo unificado de
