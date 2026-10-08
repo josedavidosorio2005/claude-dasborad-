@@ -127,23 +127,36 @@ function ensureSeedDemoBannerEl() {
   return el;
 }
 
+// Fase 133 (hallazgo real, 412px): el offset de abajo estaba fijo en
+// "34px" (la altura del banner en una sola linea) -- a 412px de ancho la
+// frase completa del banner NO entra en una linea y el texto hace wrap a
+// 2, con una altura real mas cerca de 56-60px. Con el offset fijo en 34,
+// el banner (z-index 4000) tapaba la parte de arriba del navbar/cabecera
+// del dashboard en movil -- nunca en escritorio/tablet, donde una linea
+// alcanza. Medir la altura REAL del banner (getBoundingClientRect) en vez
+// de asumir un numero fijo corrige esto en cualquier ancho, incluido un
+// cambio de orientacion o de tamano de ventana en caliente.
+function aplicarOffsetSeedDemoBanner() {
+  var el = document.getElementById('seed-demo-banner');
+  var alto = (seedDemoActivo && el) ? Math.ceil(el.getBoundingClientRect().height) : 0;
+  var topPx = alto ? alto + 'px' : '';
+  document.querySelectorAll('.navbar').forEach(function (nb) { nb.style.top = topPx; });
+  var gdHeader = document.querySelector('#gd-modal .aurora-header');
+  if (gdHeader) gdHeader.style.top = topPx;
+}
+
 function renderSeedDemoBanner() {
   var el = ensureSeedDemoBannerEl();
   el.classList.toggle('hidden', !seedDemoActivo);
-  // El navbar de cada pantalla tambien es sticky top:0 (misma tecnica) — sin
-  // esto, al hacer scroll el navbar quedaria pegado justo debajo del banner
-  // en el mismo punto y el banner (con mas z-index) lo taparia parcialmente.
-  document.querySelectorAll('.navbar').forEach(function (nb) {
-    nb.style.top = seedDemoActivo ? '34px' : '';
-  });
-  // Fase 103 (hallazgo real probando con datos de demo): el dashboard de
-  // cliente (#gd-modal) ahora es a pantalla completa, asi que su cabecera
-  // sticky arranca en el y=0 real del viewport -- el banner de arriba
-  // (z-index 4000, mas alto que el del dashboard) le tapaba la parte de
-  // arriba. Mismo ajuste que ya existia para .navbar.
-  var gdHeader = document.querySelector('#gd-modal .aurora-header');
-  if (gdHeader) gdHeader.style.top = seedDemoActivo ? '34px' : '';
+  aplicarOffsetSeedDemoBanner();
 }
+
+// Un cambio de ancho de viewport (redimensionar la ventana o rotar el
+// telefono) puede cambiar cuantas lineas ocupa el banner -- se reaplica el
+// offset real cada vez, sin volver a golpear el servidor.
+window.addEventListener('resize', function () {
+  if (seedDemoActivo) aplicarOffsetSeedDemoBanner();
+});
 
 function resetData() {
   showToast('El restablecimiento de datos de ejemplo ahora se hace desde el servidor (ver README), para no borrar datos reales por accidente.');

@@ -96,9 +96,21 @@ test('state.js: la cabecera del dashboard de cliente se corre igual que el navba
   // ahora arranca justo en el y=0 del viewport (antes, siendo una ventana
   // flotante mas chica y centrada, nunca llegaba hasta ahi). Mismo ajuste
   // que ya existia para .navbar.
+  //
+  // Fase 133 (hallazgo real, 412px): el offset fijo "34px" asumia que el
+  // banner siempre ocupa 1 sola linea -- a 412px de ancho el texto completo
+  // no entra y hace wrap a 2 lineas (~56-60px reales), asi que el offset
+  // fijo se quedaba corto y el banner volvia a tapar la cabecera. Ahora se
+  // mide la altura REAL del banner (getBoundingClientRect) en vez de asumir
+  // un numero -- corrige cualquier ancho, incluido un resize en caliente.
   const res = await request(app).get('/js/state.js');
   assert.equal(res.status, 200);
   assert.match(res.text, /function renderSeedDemoBanner\(\)/);
+  assert.match(res.text, /function aplicarOffsetSeedDemoBanner\(\)/);
   assert.match(res.text, /querySelector\('#gd-modal \.aurora-header'\)/);
-  assert.match(res.text, /gdHeader\.style\.top = seedDemoActivo \? '34px' : ''/);
+  assert.match(res.text, /getBoundingClientRect\(\)\.height/);
+  assert.ok(!/'34px'/.test(res.text), 'no deberia quedar el offset viejo hardcodeado en 34px');
+  // Un resize de ventana (o rotar el telefono) tiene que reaplicar el
+  // offset -- el wrap del banner puede cambiar con el ancho.
+  assert.match(res.text, /addEventListener\('resize',/);
 });
