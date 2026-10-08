@@ -67,22 +67,51 @@ function aplicarTemaCharts(){
 }
 aplicarTemaCharts();
 
+// Fase 133 (Parte 5, WCAG 1.1.1): un <canvas> es una imagen sin texto
+// alternativo por defecto -- un lector de pantalla no anuncia nada de lo
+// que dibuja Chart.js. Se llama DESPUES de crear cada Chart (los 3
+// `new Chart(...)` de dashboard-generic.js/calidad.js/mis-resultados.js).
+// El texto viene del titulo que YA esta visible al lado del canvas (el
+// humano y el lector de pantalla terminan sabiendo lo mismo, nunca una
+// descripcion inventada aparte) -- primero intenta el titulo del propio
+// grafico (plugins.title.text, cuando el grafico lo trae), si no busca el
+// encabezado visible mas cercano (.aurora-card-title/.aurora-chart-title
+// en el mismo .aurora-card/contenedor), si no cae a un texto generico por
+// tipo de grafico. Nunca lanza si falta algo (chart.config puede variar).
+function gdEtiquetarCanvasChart(chartInstance){
+  try{
+    var el = chartInstance && chartInstance.canvas;
+    if(!el) return;
+    var titulo = null;
+    try{ titulo = chartInstance.options && chartInstance.options.plugins && chartInstance.options.plugins.title && chartInstance.options.plugins.title.text; }catch(e){}
+    if(!titulo){
+      var cont = el.closest('.aurora-card') || el.closest('.aurora-chart-wrap') || el.parentElement;
+      var h = cont && cont.querySelector('.aurora-card-title,.aurora-chart-title');
+      if(h) titulo = h.textContent;
+    }
+    var tipoTxt = {bar:'de barras',line:'de lineas',doughnut:'circular',pie:'circular',radar:'de radar'}[chartInstance.config && chartInstance.config.type] || '';
+    var label = 'Gráfica' + (tipoTxt?' '+tipoTxt:'') + (titulo?': '+String(titulo).trim():'');
+    el.setAttribute('role','img');
+    el.setAttribute('aria-label', label);
+  }catch(e){}
+}
+
 function lo(t,xrot){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{
-      legend:{position:'bottom',labels:{font:{size:8},boxWidth:10,padding:6}},
-      title:{display:!!t,text:t,font:{size:9,weight:'bold'},color:CD},
+      legend:{position:'bottom',labels:{font:{size:12},boxWidth:10,padding:6}},
+      title:{display:!!t,text:t,font:{size:12,weight:'bold'},color:CD},
       datalabels:{
         display:true, align:'top', anchor:'top', offset:2,
-        font:{size:8,weight:'bold'}, color:CD,
+        font:{size:12,weight:'bold'}, color:CD,
         backgroundColor:function(){return CHART_DL_BG;},
         borderRadius:2, padding:{top:1,bottom:1,left:2,right:2},
         formatter:function(v){return v===null||v===undefined?'':v;}
       }
     },
     scales:{
-      y:{grid:{color:CHART_GRID},ticks:{font:{size:8},color:CHART_TICK}},
-      x:{grid:{display:false},ticks:{font:{size:7},color:CHART_TICK,maxRotation:xrot||50}}
+      y:{grid:{color:CHART_GRID},ticks:{font:{size:12},color:CHART_TICK}},
+      x:{grid:{display:false},ticks:{font:{size:12},color:CHART_TICK,maxRotation:xrot||50}}
     },
     layout:{padding:{top:20}}
   };
@@ -170,9 +199,9 @@ function loDatalabelsAuto(o, formatter){
 function loPie(t){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{
-      legend:{position:'right',labels:{font:{size:8},boxWidth:10,padding:4}},
-      title:{display:!!t,text:t,font:{size:9},color:CD},
-      datalabels:{display:true,color:'#fff',font:{size:8,weight:'bold'}, formatter:_loPctDeTotal}
+      legend:{position:'right',labels:{font:{size:12},boxWidth:10,padding:4}},
+      title:{display:!!t,text:t,font:{size:12},color:CD},
+      datalabels:{display:true,color:'#fff',font:{size:12,weight:'bold'}, formatter:_loPctDeTotal}
     }};
 }
 // ═══════════════════════════════════════════════════════════

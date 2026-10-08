@@ -535,6 +535,7 @@ function _gdChart(canvasId, cfg){
   if(note) note.remove();
   el.style.display = '';
   _gd.charts[canvasId] = new Chart(el, cfg);
+  if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_gd.charts[canvasId]);
 }
 
 // ── Apertura ────────────────────────────────────────────────
@@ -1228,7 +1229,7 @@ function _gdRenderPanel(p, i){
     // solo se pisa el datalabel (numero crudo) por el de "% del total"
     // (loBarPct, charts.js), sin perder el resto del formato.
     if(!esLinea && p.pctDeTotal) opts.plugins.datalabels.formatter = loBarPct().plugins.datalabels.formatter;
-    if(eff==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:7}}}; opts.scales.y={ticks:{font:{size:7}}}; }
+    if(eff==='bar' && p.horizontal){ opts.indexAxis='y'; opts.scales.x={ticks:{font:{size:12}}}; opts.scales.y={ticks:{font:{size:12}}}; }
     // Auto-ocultado (Fase 47, mismo helper de Fase 45): evita que las
     // etiquetas se amontonen en paneles densos (ej. una linea diaria de un
     // mes completo), sin perder el formatter ya calculado arriba.
@@ -1268,13 +1269,13 @@ function _gdRenderPanel(p, i){
       }
     });
     o.scales = {
-      y:{ position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-      y2:{ position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
-      x:{ grid:{display:false}, ticks:{font:{size:8}} }
+      y:{ position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
+      y2:{ position:'right', grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+      x:{ grid:{display:false}, ticks:{font:{size:12}} }
     };
     // v+'%' sin redondear mostraba ruido de punto flotante en el eje y en el
     // datalabel de la linea -- gdFmtValor(v,'%') redondea a 1 decimal.
-    o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+    o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
       formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
     loDatalabelsAuto(o);
     _gdChart(canvasId, { data:{ labels: labels2, datasets: ds }, options: o });
@@ -1456,8 +1457,8 @@ function _gdRenderCalidad(p, i){
     var valoresAsesores = porAsesor.map(function(x){ return x.promedio; });
     var optsBar = loFmt(loBar(), '%');
     optsBar.indexAxis = 'y';
-    optsBar.scales.x = { ticks:{ font:{ size:7 } } };
-    optsBar.scales.y = { ticks:{ font:{ size:7 } } };
+    optsBar.scales.x = { ticks:{ font:{ size:12 } } };
+    optsBar.scales.y = { ticks:{ font:{ size:12 } } };
     loDatalabelsAuto(optsBar);
     _gdChart('gd-c'+i, { type:'bar',
       data:{ labels: labelsAsesores, datasets:[{ label:'Promedio', data: valoresAsesores,
