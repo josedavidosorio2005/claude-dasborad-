@@ -25,8 +25,17 @@ function nowStr() {
 // EXACTO con TIPIFICACION_ORDEN_ARRAY (public/js/tipificacion-logic.js) y
 // con tipificacionFilaArraySchema (validation.js). Los 3 definen el mismo
 // contrato; cambiar el orden en uno sin los otros 2 mezclaria columnas en
-// silencio.
-const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill'];
+// silencio. Las 5 ultimas (Fase 131, Parte 3) son del CDR de Mobilize,
+// todas opcionales -- ORLANT las guarda como null, igual que siempre.
+const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId'];
+
+// Fase 131, Parte 3 (configurable, mismo criterio que
+// TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO en tipificacion-logic.js -- el
+// servidor nunca requiere ese archivo, asi que la lista se repite aqui,
+// literal, a proposito): codificaciones que, en una llamada SALIENTE
+// (tipoInteraccion='outbound_ma'), cuentan como "NO conectada". Cualquier
+// otra codificacion en una saliente cuenta como "conectada".
+const SALIDA_NO_CONECTADA = ['Cliente_no_contesta'];
 
 function filaArrayAObjeto(arr) {
   const obj = {};
@@ -85,8 +94,10 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
   const del = db.prepare('DELETE FROM tipificaciones WHERE campana = ? AND canal = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
     `INSERT INTO tipificaciones
-       (campana, canal, agente, fecha, hora, duracionMin, tipificacion, skill, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana,@canal,@agente,@fecha,@hora,@duracionMin,@tipificacion,@skill,@archivoNombre,@cargadoPorNombre,@createdAt)`
+       (campana, canal, agente, fecha, hora, duracionMin, tipificacion, skill,
+        duracionSeg, codAct, tipoInteraccion, hungUp, skillId, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana,@canal,@agente,@fecha,@hora,@duracionMin,@tipificacion,@skill,
+             @duracionSeg,@codAct,@tipoInteraccion,@hungUp,@skillId,@archivoNombre,@cargadoPorNombre,@createdAt)`
   );
 
   let borradas = 0;
@@ -98,6 +109,11 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
         agente: f.agente, fecha: f.fecha, hora: f.hora == null ? null : f.hora,
         duracionMin: f.duracionMin == null ? null : f.duracionMin,
         tipificacion: f.tipificacion, skill: f.skill,
+        duracionSeg: f.duracionSeg == null ? null : f.duracionSeg,
+        codAct: f.codAct == null ? null : f.codAct,
+        tipoInteraccion: f.tipoInteraccion == null ? null : f.tipoInteraccion,
+        hungUp: f.hungUp == null ? null : f.hungUp,
+        skillId: f.skillId == null ? null : f.skillId,
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }
@@ -136,6 +152,12 @@ function tipificacionesWhereClausulas(q) {
     clausulas.push('skill = @skill');
     params.skill = q.skill;
   }
+  // Fase 131, Parte 3 (Mobilize): filtro Entrante/Saliente -- ORLANT nunca
+  // lo manda (su archivo no trae TYPE_INTERACTION), sin cambio alguno.
+  if (q.tipoInteraccion) {
+    clausulas.push('tipoInteraccion = @tipoInteraccion');
+    params.tipoInteraccion = q.tipoInteraccion;
+  }
   return { where: clausulas.join(' AND '), params };
 }
 
@@ -170,6 +192,26 @@ function tipificacionesPorTipo(db, q) {
   return agruparTop10YOtras(conteo);
 }
 
+// Fase 131, Parte 3 (Mobilize): tarjetas de SALIDA -- total/conectadas/no
+// conectadas de las llamadas SALIENTES (tipoInteraccion='outbound_ma') que
+// respetan los filtros de mes/rango/agente/skill (nunca el filtro de
+// Entrante/Saliente del panel -- esta tarjeta es SIEMPRE sobre salientes).
+// "Conectada" = Regla B (ver SALIDA_NO_CONECTADA arriba): su codificacion
+// NO esta en la lista de "no conectada". Canal siempre 'LLAMADAS' (Mobilize
+// no tiene WhatsApp).
+function tipificacionesResumenSalida(db, q) {
+  const { where, params } = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma' });
+  const total = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where}`).get(params).n;
+  if (!total) return { total: 0, conectadas: 0, noConectadas: 0 };
+  const placeholders = SALIDA_NO_CONECTADA.map((_, i) => `@noConectada${i}`).join(', ');
+  const paramsNoConectadas = { ...params };
+  SALIDA_NO_CONECTADA.forEach((v, i) => { paramsNoConectadas['noConectada' + i] = v; });
+  const noConectadas = db
+    .prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where} AND tipificacion IN (${placeholders})`)
+    .get(paramsNoConectadas).n;
+  return { total, conectadas: total - noConectadas, noConectadas };
+}
+
 // Valores distintos para los filtros ("Todos" + seleccion) + si hay datos
 // (meses.length) -- tambien lo usa dashboard-generic.js para decidir si el
 // tab "Tipificacion" se destapa (ver _gdBootstrap): SIN filtrar por canal,
@@ -198,6 +240,7 @@ module.exports = {
   impactoTipificaciones,
   cargarTipificaciones,
   tipificacionesPorTipo,
+  tipificacionesResumenSalida,
   tipificacionesOpciones,
   tieneAlgunaTipificacion,
   agruparTop10YOtras,

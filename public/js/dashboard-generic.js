@@ -1609,8 +1609,13 @@ async function _gdExportarTipificacion(p, i){
   var campana = p.campana;
   var compartido = _tipificacionEstadoCompartido[i] || {};
   var out = [];
-  for(var c=0; c<TIPIFICACION_CANALES.length; c++){
-    var def = TIPIFICACION_CANALES[c];
+  // Fase 131 (Mobilize): respeta `soloCanal` -- un cliente sin WhatsApp
+  // (Mobilize) nunca exporta una hoja "Sin datos de WhatsApp" que no
+  // corresponde a su operacion real. ORLANT (sin soloCanal) sigue
+  // exportando las 2, exactamente igual que siempre.
+  var canalesAUsar = (_tipificacionCanalesPorPanel && _tipificacionCanalesPorPanel[i]) || (p.soloCanal ? TIPIFICACION_CANALES.filter(function(c){ return c.canal === p.soloCanal; }) : TIPIFICACION_CANALES);
+  for(var c=0; c<canalesAUsar.length; c++){
+    var def = canalesAUsar[c];
     var deCanal = _tipificacionEstadoCanal[i+'::'+def.canal] || {};
     var resultado = { datos: [], total: 0 };
     try{ resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, def.canal, compartido, deCanal)) || resultado; }catch(e){}

@@ -298,7 +298,13 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // siguen aceptandose para ORLANT: ver el fallback en procesarArchivoConsolidado
 // (public/js/cargas.js), que es quien resuelve a que hoja real del archivo
 // corresponde cada entrada del plan.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols) {
+// `tipificacionOpcionesLlamadas` (Fase 131, Parte 3, opcional): se adjunta
+// SOLO a la hoja de Tipificacion de Llamadas (nunca a WhatsApp -- Mobilize
+// no tiene) como `h.opcionesTipificacion`, para que cargas.js lo reenvie a
+// tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
+// parametro (el caso de ORLANT), queda `undefined` -- comportamiento
+// EXACTAMENTE igual al de siempre.
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -503,7 +509,7 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
     plan.push({
       tipo: 'tipificacion', canalTipificacion: 'LLAMADAS', hoja: CARGAS_HOJA_TIPIFICACION_LLAMADAS, titulo: 'Tipificación de Llamadas',
       descripcion: 'Una fila por llamada tipificada, tal cual el export de Wolkvox.',
-      filaUnica: false, columnas: tipificacionCols,
+      filaUnica: false, columnas: tipificacionCols, opcionesTipificacion: tipificacionOpcionesLlamadas,
       notasExtra: [
         'De donde sale: export de tipificacion de llamadas de Wolkvox (una fila por llamada).',
         notaVolumen,

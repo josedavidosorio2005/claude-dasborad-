@@ -3062,6 +3062,81 @@ runOnceMigration('dashboards_config_mobilize_flujo_llamadas_v1', () => {
   }
 });
 
+// Fase 131 (Parte 3, Tipificacion CDR de Mobilize): agrega el tab oculto
+// "tipificacion" a la fila de MOBILIZE YA migrada por
+// dashboards_config_mobilize_flujo_llamadas_v1 (esa migracion corrio una
+// sola vez, en el deploy de la Parte 2 -- CONFIGS ya tiene el tab nuevo,
+// pero la fila real de produccion no, asi que hay que empujarlo aparte,
+// mismo patron que dashboards_config_orlant_agendamiento_edwin_v1 con
+// "ordenamiento_medico"/"recuperacion_cancelados"). Idempotente: si el tab
+// ya existe (ya se agrego, o un admin lo agrego/edito a mano), no se toca
+// nada.
+runOnceMigration('dashboards_config_mobilize_tipificacion_tab_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el tab nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+  if (!target) return;
+  const targetTipificacion = (target.layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!targetTipificacion) return;
+
+  const tabs = layout.tabs || [];
+  if (tabs.some((t) => t.key === 'tipificacion')) return; // ya existe -- nada que hacer
+
+  // Mismo criterio que el resto de migraciones de ORLANT (ej.
+  // dashboards_config_orlant_agendamiento_edwin_v1): solo se toca una fila
+  // reconocible como el dashboard REAL de Mobilize (tab "flujo" con su
+  // panel trafico_combo, el que deja dashboards_config_mobilize_flujo_
+  // llamadas_v1) -- si un admin ya reemplazo el layout por algo
+  // completamente distinto, se deja intacto, nunca se le inyecta un tab
+  // que no pidio.
+  const tabFlujo = tabs.find((t) => t.key === 'flujo');
+  const esReconocible = tabFlujo && (tabFlujo.panels || []).some((p) => p.tipo === 'trafico_combo');
+  if (!esReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_tipificacion_tab_v1: el layout de MOBILIZE no coincide con la forma esperada (sin tab "flujo" con trafico_combo) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  tabs.push(JSON.parse(JSON.stringify(targetTipificacion)));
+  layout.tabs = tabs;
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_tipificacion_tab_v1 aplicada.');
+  }
+});
+
+// Fase 131 (Parte 3, Tipificacion CDR de Mobilize): amplia `tipificaciones`
+// con las 5 columnas del CDR real de Wolkvox que ORLANT nunca trae en su
+// propio archivo (mismo criterio que calidad_nivel_servicio_diario_trafico_v1
+// arriba -- nunca se agregan directo al CREATE TABLE para que esta migracion
+// funcione igual en una base nueva o en una que ya tenia filas). Todas
+// nullable: opcionales, "sin dato" (NULL) nunca se confunde con un valor
+// real (ej. codAct="0" es un dato real distinto de "no vino en el archivo").
+runOnceMigration('tipificaciones_cdr_mobilize_v1', () => {
+  db.exec(`
+    ALTER TABLE tipificaciones ADD COLUMN duracionSeg INTEGER;
+    ALTER TABLE tipificaciones ADD COLUMN codAct TEXT;
+    ALTER TABLE tipificaciones ADD COLUMN tipoInteraccion TEXT;
+    ALTER TABLE tipificaciones ADD COLUMN hungUp TEXT;
+    ALTER TABLE tipificaciones ADD COLUMN skillId TEXT;
+  `);
+  if (!config.isTest) {
+    console.log('[db] Migracion tipificaciones_cdr_mobilize_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -112,12 +112,16 @@ test('Fase 118 2B.1: tipificacionParseFilas/tipificacionFilaComoArray nunca incl
     assert.ok(!payloadJson.includes(v), `el objeto fila no debe contener: ${v}`);
     assert.ok(!arrayJson.includes(v), `el payload array (lo que se manda al servidor) no debe contener: ${v}`);
   });
-  assert.deepEqual(Object.keys(filaObj).sort(), ['agente', 'duracionMin', 'fecha', 'hora', 'skill', 'tipificacion'].sort());
+  // Fase 131 (Parte 3): 5 claves nuevas, legitimas (ninguna es PII).
+  assert.deepEqual(
+    Object.keys(filaObj).sort(),
+    ['agente', 'codAct', 'duracionMin', 'duracionSeg', 'fecha', 'hora', 'hungUp', 'skill', 'skillId', 'tipificacion', 'tipoInteraccion'].sort()
+  );
 });
 
-test('Fase 118 2B.2: el servidor RECHAZA (400) una fila con un 7mo elemento (cliente comprometido saltandose el navegador)', async () => {
+test('Fase 118 2B.2: el servidor RECHAZA (400) una fila con un 12vo elemento (cliente comprometido saltandose el navegador)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const filaConCentinelaColado = ['Asesor Centinela', '2026-09-10', '18:06:08', 4, 'AGENDADA_InConexion', 'LINEA DEMO FASE 118', CENTINELAS.TELEPHONE];
+  const filaConCentinelaColado = ['Asesor Centinela', '2026-09-10', '18:06:08', 4, 'AGENDADA_InConexion', 'LINEA DEMO FASE 118', null, null, null, null, null, CENTINELAS.TELEPHONE];
   const res = await request(app)
     .post('/api/calidad/tipificacion/carga')
     .set(auth(admin))
@@ -154,9 +158,14 @@ test('Fase 118 2B.3-2B.6: carga legitima -- SQLite, Historial y GET /por-tipo nu
   Object.values(CENTINELAS).forEach((v) => {
     assert.ok(!filaJson.includes(v), `la fila guardada en SQLite no debe contener: ${v}`);
   });
+  // Fase 131 (Parte 3): 5 columnas nuevas en la tabla, todas legitimas.
   assert.deepEqual(
     Object.keys(fila).sort(),
-    ['id', 'campana', 'canal', 'agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'archivoNombre', 'cargadoPorNombre', 'createdAt'].sort()
+    [
+      'id', 'campana', 'canal', 'agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill',
+      'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId',
+      'archivoNombre', 'cargadoPorNombre', 'createdAt',
+    ].sort()
   );
 
   // 2B.5 -- Historial: el evento TIPIFICACION_CARGA no trae ningun centinela.

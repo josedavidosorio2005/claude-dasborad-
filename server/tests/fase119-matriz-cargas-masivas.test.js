@@ -124,7 +124,7 @@ const FAMILIAS = [
   {
     nombre: 'Tipificación',
     endpoint: '/api/calidad/tipificacion/carga',
-    bodyFn: async (campana) => ({ campana, canal: 'LLAMADAS', filas: [['Asesor Matriz', '2026-03-10', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL MATRIZ']] }),
+    bodyFn: async (campana) => ({ campana, canal: 'LLAMADAS', filas: [['Asesor Matriz', '2026-03-10', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL MATRIZ', null, null, null, null, null]] }),
   },
   {
     nombre: 'Agendas',

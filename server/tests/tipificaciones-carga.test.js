@@ -12,9 +12,11 @@ const { agruparTop10YOtras } = require('../tipificaciones');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
-// [agente, fecha, hora, duracionMin, tipificacion, skill]
+// [agente, fecha, hora, duracionMin, tipificacion, skill,
+//  duracionSeg, codAct, tipoInteraccion, hungUp, skillId] -- las 5 ultimas
+// (Fase 131, Parte 3, CDR de Mobilize) van null aqui: ORLANT nunca las trae.
 function fila(over) {
-  const base = ['ASESOR 01', '2025-04-15', '18:06:08', 3, 'AGENDADA_InConexion', 'LLAMADAS DE SALIDA'];
+  const base = ['ASESOR 01', '2025-04-15', '18:06:08', 3, 'AGENDADA_InConexion', 'LLAMADAS DE SALIDA', null, null, null, null, null];
   return Object.assign([], base, over);
 }
 

@@ -55,7 +55,7 @@ test('setup: token admin', async () => {
 // ══════════════════════════════════════════════════════════════════
 
 test('Fase 119 2.A Tipificación: falla a mitad de la carga -- 0 filas a medias (transaccion revertida completa)', async () => {
-  const filaTip = (over) => Object.assign(['Asesor Previo', '2026-01-10', '10:00:00', 3, 'AGENDADA_InConexion', 'SKILL_FALLA_TIP'], over || {});
+  const filaTip = (over) => Object.assign(['Asesor Previo', '2026-01-10', '10:00:00', 3, 'AGENDADA_InConexion', 'SKILL_FALLA_TIP', null, null, null, null, null], over || {});
   // Carga previa legitima, para confirmar que tampoco se pierde lo que ya estaba.
   const previa = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken))
     .send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [filaTip()] });
@@ -147,13 +147,13 @@ test('Fase 119 2.A Trafico de Llamadas: falla a mitad de la carga -- 0 filas a m
 // ══════════════════════════════════════════════════════════════════
 
 test('Fase 119 2.B Tipificación: cargar ORLANT nunca toca CLINICA AURORA en el mismo rango de fechas', async () => {
-  const filaAurora = ['Asesor Aurora', '2026-01-20', '09:00:00', 2, 'AGENDADA_InConexion', 'SKILL_AURORA_TIP'];
+  const filaAurora = ['Asesor Aurora', '2026-01-20', '09:00:00', 2, 'AGENDADA_InConexion', 'SKILL_AURORA_TIP', null, null, null, null, null];
   const aurora = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken))
     .send({ campana: 'CLINICA AURORA', canal: 'LLAMADAS', filas: [filaAurora] });
   assert.equal(aurora.status, 201, JSON.stringify(aurora.body));
   const antesAurora = contarFilas('tipificaciones', 'CLINICA AURORA');
 
-  const filaOrlant = ['Asesor Orlant', '2026-01-20', '09:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORLANT_TIP'];
+  const filaOrlant = ['Asesor Orlant', '2026-01-20', '09:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORLANT_TIP', null, null, null, null, null];
   const orlant = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken))
     .send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [filaOrlant] });
   assert.equal(orlant.status, 201, JSON.stringify(orlant.body));
@@ -248,8 +248,8 @@ test('Fase 119 2.B Trafico de Llamadas: 2 skills mapeadas a campañas distintas,
 // ══════════════════════════════════════════════════════════════════
 
 test('Fase 119 2.C Tipificación: cargar un rango ANTERIOR despues de uno mas reciente no daña ninguno de los 2', async () => {
-  const reciente = ['Asesor Reciente', '2026-07-15', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORDEN_TIP'];
-  const anterior = ['Asesor Anterior', '2026-06-10', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORDEN_TIP'];
+  const reciente = ['Asesor Reciente', '2026-07-15', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORDEN_TIP', null, null, null, null, null];
+  const anterior = ['Asesor Anterior', '2026-06-10', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL_ORDEN_TIP', null, null, null, null, null];
   const r1 = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken)).send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [reciente] });
   assert.equal(r1.status, 201);
   const r2 = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken)).send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [anterior] });
@@ -347,7 +347,7 @@ test('Fase 119 2.E Agendas: fecha futura (mes siguiente) -> 400 (confirmacion di
 
 test('Fase 119 2.E Tipificación: fecha futura (mes siguiente) -> 400 (confirmacion dinamica, hallazgo: faltaba esta prueba)', async () => {
   const res = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken))
-    .send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [['Asesor X', primerDiaMesSiguiente(), '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL X']] });
+    .send({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [['Asesor X', primerDiaMesSiguiente(), '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL X', null, null, null, null, null]] });
   assert.equal(res.status, 400, JSON.stringify(res.body));
 });
 
@@ -370,6 +370,6 @@ test('Fase 119 2.F: subir una fila con forma de Tipificación (array de 6) a la 
 
 test('Fase 119 2.F: canal LLAMADAS vs WHATSAPP de Tipificación -- un canal invalido se rechaza, nunca se guarda en el otro', async () => {
   const res = await request(app).post('/api/calidad/tipificacion/carga').set(auth(adminToken))
-    .send({ campana: 'ORLANT', canal: 'VIDEOLLAMADA', filas: [['Asesor X', '2026-01-01', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL X']] });
+    .send({ campana: 'ORLANT', canal: 'VIDEOLLAMADA', filas: [['Asesor X', '2026-01-01', '10:00:00', 2, 'AGENDADA_InConexion', 'SKILL X', null, null, null, null, null]] });
   assert.equal(res.status, 400, JSON.stringify(res.body));
 });
