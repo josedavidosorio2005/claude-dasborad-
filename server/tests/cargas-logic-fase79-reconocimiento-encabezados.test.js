@@ -17,7 +17,7 @@ const { AGENDAS_COLUMNAS } = require('../../public/js/agendas-logic.js');
 const { TIPIFICACION_COLUMNAS } = require('../../public/js/tipificacion-logic.js');
 const { EFECTIVIDAD_AGENDAMIENTO_COLUMNAS } = require('../../public/js/efectividad-agendamiento-logic.js');
 const { CITAS_ATENDIDAS_COLUMNAS } = require('../../public/js/citas-atendidas-logic.js');
-const { traficoColIndexMap } = require('../../public/js/trafico-logic.js');
+const { traficoColIndexMap, TRAFICO_COLUMNAS } = require('../../public/js/trafico-logic.js');
 const { traficoWppColIndexMap } = require('../../public/js/trafico-whatsapp-logic.js');
 
 function comoColumnasPlan(columnas) {
@@ -163,4 +163,28 @@ test('cargasEncabezadosCoinciden: columnas de Trafico de Llamadas nunca calzan c
     { label: 'WHATSAPP CONTESTADOS', opcional: false },
   ];
   assert.ok(!cargasEncabezadosCoinciden(headerLlamadas, columnasWhatsapp));
+});
+
+// Fase 131 (Parte "carga real de Mobilize", MISMO bug de fondo que el
+// "HALLAZGO GRAVE" de la Fase 122, ver el comentario de
+// _cargasTipificacionColumnasUnificado en cargas.js): TRAFICO_COLUMNAS
+// (trafico-logic.js) guarda los alias de Mobilize en una propiedad
+// `aliases` -- cargasEncabezadosCoinciden solo sabe leer `labelAlt`. Esta
+// prueba fija el mapeo correcto (`labelAlt:c.aliases`, el mismo que ya usa
+// _cargasTraficoColumnas() en cargas.js tras el fix) contra el encabezado
+// REAL de septiembre/2026 de Mobilize (hoja "HistQueue20261007-144402",
+// confirmado contra el archivo real, solo estructura -- sin ninguna fila
+// real de datos aqui).
+test('cargasEncabezadosCoinciden: hoja "HistQueue<fecha>" con los alias reales de Mobilize (TIPO DE LINEA/DÍA/LLAMADAS INGRESADAS/NIVEL DE SERVICIO 80 - 20/% ABANDONO) calza con las columnas de Trafico', () => {
+  const header = ['TIPO DE LINEA', 'DÍA', 'LLAMADAS INGRESADAS', 'LLAMADAS CONTESTADAS', 'LLAMADAS ABANDONADAS',
+    'SERVICE_LEVEL_10SEC', 'NIVEL DE SERVICIO 80 - 20', 'SERVICE_LEVEL_30SEC', 'ABANDON', 'ASA', 'ATA', 'WAIT_TIME', 'AHT',
+    'NIVEL DE ATENCION', '% ABANDONO'];
+  const columnasTrafico = TRAFICO_COLUMNAS.map((c) => ({ label: c.label, labelAlt: c.aliases, opcional: !c.obligatoria }));
+  assert.ok(cargasEncabezadosCoinciden(header, columnasTrafico));
+});
+
+test('cargasEncabezadosCoinciden: (regresion) el mismo encabezado de Mobilize NO calza si se pierde labelAlt -- asi fallaba antes del fix', () => {
+  const header = ['TIPO DE LINEA', 'DÍA', 'LLAMADAS INGRESADAS', 'LLAMADAS CONTESTADAS'];
+  const columnasSinAlias = TRAFICO_COLUMNAS.filter((c) => c.obligatoria).map((c) => ({ label: c.label, opcional: false }));
+  assert.ok(!cargasEncabezadosCoinciden(header, columnasSinAlias));
 });

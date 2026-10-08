@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.16.4 — Octubre 2026
+
+**Fase 131: la carga real del Flujo de Llamadas de Mobilize no se podía
+subir desde la pantalla — ya se puede.**
+
+- Corregido: al intentar subir el archivo real de Mobilize (que trae su
+  hoja con un nombre que cambia cada vez, no "DATA"), la plataforma decía
+  "El archivo no tiene datos en ninguna hoja reconocida" aunque el archivo
+  estuviera bien. La pantalla de carga no sabía reconocer los nombres de
+  columna propios de Mobilize ("TIPO DE LINEA", "DÍA", etc.) que ya se
+  habían agregado en la versión anterior — ahora sí los reconoce.
+
 ## v1.16.3 — Octubre 2026
 
 **Fase 131 (Parte 2): el dashboard de Mobilize ya muestra su Flujo de
