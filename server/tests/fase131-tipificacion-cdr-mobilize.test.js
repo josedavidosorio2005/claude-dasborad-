@@ -21,7 +21,12 @@ const {
   tipificacionParseFilas,
   tipificacionEsConectada,
 } = require('../../public/js/tipificacion-logic.js');
-const db = require('../db');
+// ./helpers fija las variables de entorno (JWT_SECRET/MASTER_ADMIN_
+// PASSWORD_HASH/DB_PATH/...) ANTES de requerir ../db -- requerir ../db
+// directo (sin pasar por helpers) revienta en un entorno limpio (CI) que
+// no tiene esas variables ya puestas por otro archivo (cada archivo de
+// test corre en su propio proceso, Node no comparte env entre ellos).
+const { db } = require('./helpers');
 const { tipificacionesResumenSalida, cargarTipificaciones } = require('../tipificaciones');
 
 // Header real de Mobilize (20 columnas, mismo export HistCDR de Wolkvox que
