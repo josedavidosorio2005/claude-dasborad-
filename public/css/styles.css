@@ -526,6 +526,14 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
 .aurora-header{background:var(--c-brand);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-radius:18px 18px 0 0;flex-shrink:0;}
 .aurora-header h2{color:var(--c-surface);font-size:1.05rem;font-weight:700;margin:0;}
 .aurora-header .aurora-sub{color:var(--c-on-primary-soft);font-size:0.78rem;margin-top:2px;}
+/* Fase 131 (Parte 4): "Ultima actualizacion" -- texto en --c-on-primary-soft
+   (mismo token YA usado arriba para texto legible sobre el header, que es
+   SIEMPRE fondo oscuro de marca -- --c-brand no cambia con el tema --
+   contraste AA garantizado en claro/oscuro por construccion, sin inventar
+   un color nuevo). El "resaltado" es el borde izquierdo de color: naranja
+   para Mobilize, verde de marca InConexion (#74B859) para el resto.*/
+.gd-ultima-act{color:var(--c-on-primary-soft);font-size:0.72rem;font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid #74B859;background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
+.gd-ultima-act-mobilize{border-left-color:#f97316;}
 .aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-surface);border-radius:6px;padding:6px 14px;font-size:0.82rem;cursor:pointer;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 

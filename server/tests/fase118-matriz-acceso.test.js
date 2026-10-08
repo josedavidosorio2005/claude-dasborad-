@@ -203,6 +203,7 @@ declarar(['POST /umbrales', 'PUT /umbrales/:id', 'DELETE /umbrales/:id'], 'admin
 
 // Dashboards
 declarar(['GET /dashboard/clientes'], 'open');
+declarar(['GET /dashboard/ultima-actualizacion'], 'scopedRead'); // Fase 131 Parte 4, mismo gate que GET /dashboard/:cliente (clienteAccess)
 declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLoaderGlobal');
 declarar(['GET /dashboards/config', 'GET /dashboards/config/:cliente', 'POST /dashboards/config', 'PUT /dashboards/config/:cliente', 'DELETE /dashboards/config/:cliente'], 'admin');
 declarar(['GET /dashboard/:cliente'], 'skip'); // gate por adapter.permiso variable segun el cliente -- cubierto indirectamente via can('Inventario'|'Gerencia'|'GestionHumana') en sus rutas propias
