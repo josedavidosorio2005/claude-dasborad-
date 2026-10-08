@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.18.0 — Octubre 2026
+
+**Fase 131 (Parte 4): cada dashboard ahora muestra cuándo se cargó por
+última vez.**
+
+- Nuevo: en la parte de arriba de cada dashboard aparece "Última
+  actualización: [fecha y hora]", en hora de Colombia — la fecha de la
+  carga más reciente de ese cliente (sin importar de qué pestaña venga).
+- Resaltado con un borde de color: naranja para Mobilize, verde
+  InConexion para el resto de clientes.
+- Si un cliente todavía no tiene ningún dato real cargado, simplemente no
+  aparece (nunca se inventa una fecha).
+
 ## v1.17.0 — Octubre 2026
 
 **Fase 131 (Parte 3): Mobilize ya tiene su pestaña de Tipificación

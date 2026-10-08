@@ -671,6 +671,14 @@ const tipificacionSalidaResumenQuery = z.object({
   skill: z.string().trim().max(200).optional(),
 });
 
+// ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
+// `campana` (no `cliente`, por consistencia con el resto de endpoints de
+// solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
+// real sea el `cliente` de dashboards_config, mismo campo).
+const ultimaActualizacionQuery = z.object({
+  campana: campanaSchema,
+});
+
 // ── Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin) ───────────
 // Filas como ARRAY, mismo motivo que Agendas/Tipificacion. Orden FIJO, debe
 // coincidir con INASISTENCIA_ORDEN_ARRAY (inasistencia-logic.js) y con
@@ -1144,6 +1152,7 @@ module.exports = {
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,
     tipificacionSalidaResumenQuery,
+    ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,
     efectividadAgendamientoCargaBody,

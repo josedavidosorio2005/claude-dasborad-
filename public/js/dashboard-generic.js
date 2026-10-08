@@ -651,6 +651,15 @@ async function _gdBootstrap(){
     tareasBootstrap.push((async function(){ try{ if(typeof _traficoWppCargarDatos === 'function') await _traficoWppCargarDatos(campW); }catch(e){} })());
   });
   tareasBootstrap.push(_gdCargarUmbrales());
+  // Fase 131 (Parte 4, pedido explicito): "Ultima actualizacion" = la
+  // carga mas reciente de ESTE cliente, en cualquiera de sus fuentes de
+  // datos reales -- independiente del resto (un fallo aqui nunca debe
+  // tumbar el resto del dashboard).
+  _gd.ultimaActualizacion = null;
+  tareasBootstrap.push((async function(){
+    try{ _gd.ultimaActualizacion = await apiRequest('GET', '/dashboard/ultima-actualizacion?campana='+encodeURIComponent(_gd.cliente)); }
+    catch(e){ _gd.ultimaActualizacion = null; }
+  })());
 
   // Agendas/Tipificacion: ademas de juntar sus meses (abajo), este mismo
   // GET ya destapa el tab en memoria cuando corresponde (Fases 77/78 --
@@ -851,6 +860,20 @@ function renderGenericHeader(){
   // por mesNombreLargo.
   var mesLbl = _gd.mesSel ? mesNombreLargo(_gd.mesSel) : (_gd.periodos[0] ? mesNombreLargo(_gd.periodos[0]) : 'Sin datos');
   sub.textContent = 'Informe ' + mesLbl + ' — ' + _gd.cliente;
+
+  // Fase 131 (Parte 4): "Ultima actualizacion" -- resaltado naranja para
+  // Mobilize, verde InConexion (#74B859, color de marca) para el resto.
+  // Oculto si el cliente todavia no tiene ninguna carga real (nunca
+  // inventa una fecha ni muestra un estado vacio confuso).
+  var elUa = document.getElementById('gd-ultima-act');
+  var fechaUa = _gd.ultimaActualizacion && _gd.ultimaActualizacion.fechaColombia;
+  if(fechaUa){
+    elUa.textContent = 'Última actualización: ' + fechaUa.slice(0, 16); // sin segundos
+    elUa.className = 'gd-ultima-act' + (_gd.cliente === 'MOBILIZE' ? ' gd-ultima-act-mobilize' : '');
+    elUa.style.display = '';
+  } else {
+    elUa.style.display = 'none';
+  }
 
   var vw = document.getElementById('gd-vista-wrap');
   if(_gd.config.vista){

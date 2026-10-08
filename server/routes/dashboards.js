@@ -10,6 +10,7 @@ const { validate, schemas } = require('../validation');
 const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
 const { recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
+const { obtenerUltimaActualizacion } = require('../ultima-actualizacion');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -101,6 +102,27 @@ router.get(
   wrap((req, res) => {
     const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
     res.json({ clientes: rows.map((r) => r.cliente) });
+  })
+);
+
+// Fase 131 (Parte 4, pedido explicito): "Ultima actualizacion" visible en
+// cada dashboard -- la carga mas reciente de ESE cliente, en cualquiera de
+// las 10 fuentes de datos reales (ver ultima-actualizacion.js). Mismo gate
+// que ver el dashboard en si (clienteAccess) -- quien puede abrir el
+// dashboard de un cliente puede ver cuando se actualizo por ultima vez.
+router.get(
+  '/dashboard/ultima-actualizacion',
+  requireActor,
+  validate(schemas.ultimaActualizacionQuery, 'query'),
+  wrap((req, res) => {
+    const cliente = req.query.campana;
+    if (!ADAPTERS[cliente] && !getConfigRow(cliente)) {
+      return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
+    }
+    if (!clienteAccess(req.actor, cliente)) {
+      return res.status(403).json({ error: 'Sin acceso a este dashboard' });
+    }
+    res.json(obtenerUltimaActualizacion(db, cliente));
   })
 );
 
