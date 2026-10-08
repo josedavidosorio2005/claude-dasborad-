@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.16.4` (ver `server/package.json`, expuesta en
+- **Versión**: `1.17.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -198,60 +198,47 @@ prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
   pestaña "Flujo de Llamadas" junto a "Calidad", sin ninguna pestaña de
   WhatsApp, 0 errores de consola.
 
-**Decidido con el usuario, pendiente de construir (Parte 3 — Tipificación
-CDR de Mobilize) y de confirmar con Edwin:**
-- Archivo real ya confirmado (solo estructura/conteos, en
-  `PLANTILLA_CDR.xlsx`): hoja de datos con nombre que cambia cada export
-  ("HistCDR<fecha>"; "Hoja1" es una tabla dinámica, se ignora), 171 filas,
-  104 inbound / 67 outbound_ma, 3 agentes, 21 `DESCRIPTION_COD_ACT`
-  distintos, skills SAC 101 / Llamadas de salida 67 / Key Account 3,
-  `HUNG_UP` agent 94 / customer 77.
-- **Hallazgo real en el archivo de septiembre, pendiente de confirmar con
-  Edwin**: una fila trae `DESCRIPTION_COD_ACT = "PRUEBA"` (`COD_ACT = 400`)
-  -- parece una fila de prueba mezclada con los datos reales. Decisión
-  tomada: se excluye por defecto, con una lista de codificaciones
-  excluidas CONFIGURABLE (no hardcodeada), y el preview de carga debe
-  decir cuántas filas se excluyeron y por qué.
-- `COD_ACT` NO es siempre numérico (una fila real trae `COD_ACT =
-  "TIMEOUTACW"`, texto) -- se guarda como texto/referencia, nunca se
-  valida como entero.
-- **Regla de "conectada" para Llamadas salientes** (CDR,
-  `TYPE_INTERACTION = outbound_ma`, 67 filas reales de septiembre):
-  Regla A (`TIME_SEC > 0`) es **inútil contra el archivo real** -- las 67
-  filas tienen `TIME_SEC > 0`, da 67/0 sin ningún poder de discriminación.
-  Regla B (codificación distinta de "Cliente_no_contesta") da 52
-  conectadas / 15 no conectadas, sí discrimina. Decisión tomada: Regla B
-  por defecto, configurable (lista de codificaciones de "no conectada"),
-  se descarta la Regla A. Pendiente de confirmar con Edwin.
-- Nada de esto se ha escrito en código todavía (ni esquema de base de
-  datos, ni parser, ni panel) -- se retomó la sesión que iba a
-  construirlo con el contexto ya muy cargado; se prefirió cerrar en limpio
-  (este resumen) en vez de apurar un motor que toca CDR real sin el
-  contexto fresco necesario.
+- **Parte 3 + Parte 6** (Tipificación CDR de Mobilize + su carga real,
+  v1.17.0, 2026-10-08): construida reusando el motor de ORLANT, contrato
+  de 3 archivos extendido con 5 columnas NUEVAS y OPCIONALES
+  (`duracionSeg`/`codAct`/`tipoInteraccion`/`hungUp`/`skillId` --
+  `tipificacion-logic.js`/`tipificaciones.js`/`validation.js`, ORLANT
+  nunca las trae, su comportamiento queda exactamente igual, suite
+  completa 1300/1300 antes y después). Decisiones tomadas con el usuario,
+  **todavía pendientes de confirmar con Edwin**: se excluyen por defecto
+  las filas "PRUEBA" (lista configurable) y "conectada" en salientes =
+  Regla B (codificación distinta de "Cliente_no_contesta", configurable).
+  Nuevo panel de Tipificación para Mobilize (torta + tabla de mayor a
+  menor + filtros de agente/skill/Entrante-Saliente/mes + 3 tarjetas de
+  llamadas salientes) via 4 opciones opcionales del panel ya existente
+  `tipificacion_panel` -- ORLANT sin pasarlas queda igual. Migración
+  idempotente nueva (`dashboards_config_mobilize_tipificacion_tab_v1`)
+  agrega el tab oculto a la fila ya desplegada de MOBILIZE.
+  **Carga real de septiembre/2026 hecha y verificada en producción**: el
+  archivo real (`PLANTILLA_CDR.xlsx`) trae 171 filas (104 inbound/67
+  outbound_ma); tras excluir 4 de "PRUEBA" quedan **167** (103 inbound/64
+  outbound_ma), 20 codificaciones distintas, `COD_ACT` siempre texto
+  (confirmado con un valor real no numérico, "TIMEOUTACW"). Guardado real
+  confirmado por la API (`/calidad/tipificacion/por-tipo` → 167, 11
+  categorías top10+Otras; `/calidad/tipificacion/resumen-salida` → 64
+  salientes/49 conectadas/15 no conectadas, exacto) y visualmente (tab
+  "Tipificación" visible junto a "Flujo de Llamadas"/"Calidad", 0 errores
+  de consola). No se creó ningún usuario CLIENTES_DASH de Mobilize (no se
+  ha pedido).
 
 **Sin empezar todavía:**
-- **Parte 6** (carga real de septiembre de Mobilize): bloqueada hasta que
-  la Parte 3 (Tipificación) esté lista -- ambas comparten el mismo motor
-  de lectura del CDR. Dry-run obligatorio con los números de control de
-  arriba antes de cualquier "OK cargar". Falta confirmar si existe un
-  usuario CLIENTES_DASH de Mobilize ya creado (no crear uno sin el OK
-  explícito del usuario).
 - **Parte 4** ("Última actualización" visible en cada dashboard).
 - **Parte 5** (marca InConexion®: tipografía Quicksand, colores oficiales,
   logo — los archivos de marca de
   `C:\Users\filid\Documents\datos-inconexion\marca\` **todavía no están
   ahí**, carpeta vacía a la fecha de este resumen).
 
-**Siguiente sesión, retomar por**: construir la Parte 3 (Tipificación
-CDR) con las 3 decisiones ya tomadas arriba (sin volver a preguntarlas),
-mismo patrón que la Parte 2 (extender lo que ya existe --
-`tipificaciones.js`/`tipificacion-logic.js`/`validation.js`, mismo motor
-de ORLANT -- en vez de un motor nuevo), con sus propios tests, su propio
-PR, y verificación contra el archivo real ya confirmado arriba. La Parte
-6 (carga real del CDR) queda bloqueada hasta que la Parte 3 exista, igual
-que antes -- lo único que cambió es que la carga real del FLUJO DE
-LLAMADAS (control de la reunión de mañana 2026-10-09) ya está hecha y
-verificada (ver arriba), así que no hace falta repetirla.
+**Siguiente sesión, retomar por**: Parte 4 (marca de "Última
+actualización" por cliente, hora Colombia, resaltado naranja Mobilize/
+verde InConexion en los demás) y luego Parte 5 (marca InConexion®, si ya
+llegaron los archivos a la carpeta de marca). Las Partes 1-3 y 6 de
+Mobilize ya están hechas, mergeadas, desplegadas y con datos reales
+cargados y verificados -- no hace falta repetir nada de eso.
 
 ### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
 
