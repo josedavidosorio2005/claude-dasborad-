@@ -701,6 +701,7 @@ function ccmk(id,cfg){
   var el=document.getElementById(id); if(!el) return;
   if(_cc[id]) try{_cc[id].destroy();}catch(e){}
   _cc[id]=new Chart(el,cfg);
+  if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_cc[id]);
 }
 
 async function descargarReporteGeneral(){

@@ -137,10 +137,13 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show'); clearTimeout(t._t);
   t._t=setTimeout(function(){t.classList.remove('show');},3000);
 }
+// Fase 133 (Parte 5, WCAG 4.1.2): el aria-label se actualiza con el
+// estado real -- "Mostrar"/"Ocultar contrasena" segun lo que el click
+// vaya a HACER (no lo que ya esta pasando), igual que el icono.
 function toggleEye(inputId,btn){
   var inp=document.getElementById(inputId);
-  if(inp.type==='password'){inp.type='text';btn.textContent='X';}
-  else{inp.type='password';btn.innerHTML='&#128065;';}
+  if(inp.type==='password'){inp.type='text';btn.textContent='X';btn.setAttribute('aria-label','Ocultar contrasena');}
+  else{inp.type='password';btn.innerHTML='&#128065;';btn.setAttribute('aria-label','Mostrar contrasena');}
 }
 
 // ═══════════════════════════════════════════════════════════

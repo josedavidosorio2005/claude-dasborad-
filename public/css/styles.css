@@ -38,8 +38,12 @@
   --c-brand-gray-dark:#575756; --c-brand-gray-mid:#878787; --c-brand-gray-light:#B2B2B2;
   --c-primary:#0d4a5e; --c-primary-mid:#1a7a9e; --c-primary-light:#5bb8d4;
   --c-primary-darker:#0a3d50; --c-primary-soft:#4aaccc;
-  --grad-brand:linear-gradient(135deg,var(--c-brand) 0%,var(--c-primary-mid) 60%,var(--c-primary-light) 100%);
-  --grad-btn:linear-gradient(90deg,var(--c-brand),var(--c-primary-mid));
+  /* Fase 133 (Parte 5): sin degradados decorativos -- login y botones de
+     marca pasan a color SOLIDO. Se dejan los 2 nombres de token (3 usos:
+     #login-page, .btn-login, .btn-primary) para no tocar cada regla una
+     por una -- ahora ambos resuelven directo a --c-brand, sin gradiente. */
+  --grad-brand:var(--c-brand);
+  --grad-btn:var(--c-brand);
 
   /* Superficies y fondos */
   --c-surface:#fff; --c-bg:#f0f4f8; --c-surface-subtle:#f7fbfd;
@@ -72,6 +76,13 @@
   --c-success-text:#17703b; --c-warning-text:#8f4a00; --c-danger-text:#b02a1d;
   --c-accent:#ffd54f;  --c-accent-bg:#fff8e1;    --c-purple:#8e44ad;
   --c-info-bg:#eaf4fb;  --c-on-primary-soft:#a8d8ea;
+
+  /* Anillo de foco (WCAG 2.4.7/2.4.11) -- reusa --c-primary-mid (ya es un
+     token por tema) porque pasa >=3:1 contra --c-surface/--c-bg en los 2
+     temas (4.86/4.40 claro, 5.34/6.27 oscuro). Sobre --c-brand (navbar,
+     siempre oscuro) NO alcanza (2.31) -- ahi se usa --c-on-brand en vez
+     de --c-focus, ver la seccion ".navbar *:focus-visible" mas abajo. */
+  --c-focus:var(--c-primary-mid);
 
   /* Borde de CONTROL (input/select/boton de filtro) -- WCAG 1.4.11, 3:1
      minimo contra la superficie donde se dibuja. Los bordes DECORATIVOS de
@@ -280,7 +291,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .pass-wrap input{padding-right:44px;}
 .btn-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--c-text-muted);font-size:var(--fs-body-lg);padding:0;line-height:1;}
 .btn-login{width:100%;padding:13px;background:var(--grad-btn);color:var(--c-on-brand);border:none;border-radius:8px;font-size:var(--fs-body-lg);font-weight:700;cursor:pointer;margin-top:8px;transition:opacity 0.2s;}
-.btn-login:hover{opacity:0.88;}
+.btn-login:hover{background:var(--c-primary-darker);}
 .login-error{color:var(--c-danger-dark);font-size:var(--fs-small);margin-top:10px;display:none;}
 
 /* ── NAVBAR ── */
@@ -449,7 +460,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .search-bar{display:flex;align-items:center;background:var(--c-bg);border:1.5px solid var(--c-border);border-radius:7px;padding:0 10px;gap:6px;}
 .search-bar input{border:none;background:transparent;padding:7px 0;font-size:var(--fs-small);color:var(--c-primary);outline:none;width:180px;}
 .btn-primary{background:var(--grad-btn);color:var(--c-on-brand);border:none;border-radius:6px;padding:8px 16px;font-size:var(--fs-small);font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.2s;}
-.btn-primary:hover{opacity:0.88;}
+.btn-primary:hover{background:var(--c-primary-darker);}
 .btn-reset{background:var(--c-surface);color:var(--c-danger-dark);border:1.5px solid #e0b0b0;border-radius:6px;padding:6px 12px;font-size:var(--fs-note);font-weight:600;cursor:pointer;}
 .btn-reset:hover{background:var(--c-danger-bg);}
 
@@ -895,6 +906,24 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
   .aurora-header > div:first-child > div:first-child{min-width:0;}
 }
 
+/* Objetivos tactiles (Fase 133, Parte 5, WCAG 2.5.8/2.2 "target size
+   minimum") -- escritorio >=24x24px (casi todo ya cumple, se deja
+   explicito para no depender de que el padding de cada boton alcance por
+   casualidad); movil (<=768px) >=44x44px en los controles PRINCIPALES
+   nombrados en el prompt: cerrar/exportar del dashboard, el selector de
+   MES, y las pestanas. Las sub-pestanas (.gd-subtab-btn) y los botones
+   chicos de tabla (btn-sm) se quedan como estan -- son secundarios, muy
+   numerosos en una fila, y agrandarlos a 44px rompe el layout de tabla. */
+button,.btn-sm,.atab,.aurora-close,select,.theme-toggle,
+.navbar-menu-toggle,.navbar-profile-toggle{min-height:24px;min-width:24px;}
+@media(max-width:768px){
+  .aurora-close,#gd-mes-sel,#gd-export-btn,.atab,
+  .navbar-menu-toggle,.navbar-profile-toggle,.theme-toggle{
+    min-height:44px;min-width:44px;
+  }
+  .atab{padding-top:14px;padding-bottom:14px;}
+}
+
 /* ═══════════════════════════════════════════════════════════
    COMPONENTES DE ESTADO REUTILIZABLES
    Un solo lugar para: "próximamente", cargando, vacío.
@@ -945,3 +974,45 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 
 /* Botón en curso — el texto lo cambia el JS ("Guardando…"); aquí solo el aspecto deshabilitado */
 .btn-primary[disabled],.btn-cancel[disabled],.btn-sm[disabled]{opacity:0.6;cursor:progress;}
+
+/* ═══════════════════════════════════════════════════════════
+   FOCO VISIBLE (Fase 133, Parte 5, WCAG 2.4.7/2.4.11) — va al
+   final del archivo A PROPOSITO: varias reglas de arriba usan
+   `outline:none` sin reemplazo (.ig input/select, .search-bar input,
+   .hist-filter-sel, .aurora-filters select) -- :focus-visible aqui
+   tiene la MISMA especificidad (0,1,0) que esas reglas de clase, asi
+   que solo gana por venir despues en el archivo. Cubre cualquier
+   elemento interactivo nativo (button/a/select/input) o con tabindex
+   -- no hace falta listar cada clase de boton/pestaña/filtro a mano.
+   ═══════════════════════════════════════════════════════════ */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--c-focus);
+  outline-offset: 2px;
+}
+/* Sobre el navbar (fondo --c-brand, siempre oscuro, 2.31:1 contra
+   --c-focus) el anillo pasa a --c-on-brand (blanco fijo, 11.22:1). */
+.navbar *:focus-visible, .aurora-header *:focus-visible,
+.theme-toggle-fab:focus-visible {
+  outline-color: var(--c-on-brand);
+}
+/* Celdas/filas clicables (sin ser <button>/<a> reales) que ya usan
+   tabindex="0" + onkeydown en el HTML -- mismo anillo, radio chico
+   para no desbordar la celda. */
+[role="button"]:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 1px; border-radius: 3px; }
+
+/* Movimiento reducido (WCAG 2.3.3) -- el unico @keyframes real de la
+   plataforma es el spinner de carga (infinito); el resto son
+   transiciones cortas de opacidad/color/borde, no movimiento grande.
+   El snippet estandar (apagar duracion/iteracion de TODO) es inofensivo
+   incluso para esas transiciones cortas -- simplemente se vuelven
+   instantaneas en vez de animadas. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

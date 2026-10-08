@@ -954,9 +954,9 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
 
   var o = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   o.scales = {
-    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-    y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
-    x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
+    y2: { position:'right', min:0, max:100, grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:12}, maxRotation:60} },
   };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function(v, ctx){
     if(v===null||v===undefined) return '';
@@ -978,9 +978,9 @@ function _traficoDibujarAbandono(prefijo, i, agregadoComb){
   var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
   var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oAband.scales = {
-    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-    y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
-    x: { grid:{display:false}, ticks:{font:{size:8}, maxRotation:60} },
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
+    y2: { position:'right', min:0, grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:12}, maxRotation:60} },
   };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAband, function(v, ctx){
     if(v===null||v===undefined) return '';

@@ -11,6 +11,7 @@ function mrmk(id,cfg){
   var el=document.getElementById(id); if(!el) return;
   if(_mrc[id]) try{_mrc[id].destroy();}catch(e){}
   _mrc[id]=new Chart(el,cfg);
+  if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_mrc[id]);
 }
 // Los monitoreos del asesor logueado — MIGRADO A SERVIDOR: GET /api/monitoreos/mios
 // (el servidor empareja por nombre y devuelve solo los del usuario autenticado).

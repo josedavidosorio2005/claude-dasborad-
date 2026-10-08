@@ -130,11 +130,11 @@ function _eaDibujarGrafica(i, filas){
     }
   });
   o.scales = {
-    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:8}} },
-    y2: { position:'right', grid:{display:false}, ticks:{font:{size:8}, callback:function(v){ return gdFmtValor(v,'%'); }} },
-    x: { grid:{display:false}, ticks:{font:{size:7}} },
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
+    y2: { position:'right', grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:12}} },
   };
-  o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:7,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+  o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
     formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
