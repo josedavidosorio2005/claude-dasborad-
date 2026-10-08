@@ -8,8 +8,13 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.18.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.19.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
+- **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
+  fuera del repo, nunca commiteados), favicon en `public/favicon*`,
+  tipografía Quicksand autoalojada en `public/fonts/`, tokens de color
+  oficiales al inicio de `public/css/styles.css` (`--c-brand`,
+  `--c-brand-blue`, `--c-brand-green`, `--c-brand-gray-*`) — Fase 132.
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
 - **Foco actual**: solo **ORLANT** tiene datos reales en producción.
@@ -116,140 +121,40 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
 
-### Fase 131 (EN CURSO) — Cliente Mobilize (entrega: mostrar antes del 15/10) + marca InConexion®
+### Fase 131 (cerrada) — Cliente Mobilize: Flujo de Llamadas, Tipificación CDR, "Última actualización"
 
-Pedido original: Edwin revisa avances con Mobilize el 2026-10-08. Orden de
-prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
-("Última actualización") → 5 (marca InConexion®).
+Partes 1, 2, 3, 4 y 6 (detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+cliente renombrado de "MOVILIZE" a "MOBILIZE" en todo el código y en
+producción (migración idempotente, sin que nadie perdiera acceso);
+pestaña "Flujo de Llamadas" reusando el motor de Tráfico de ORLANT;
+pestaña "Tipificación" reusando el motor de ORLANT (CDR, 5 columnas
+nuevas opcionales); "Última actualización" visible en cada dashboard
+(naranja Mobilize, verde de marca el resto). Carga real de
+septiembre/2026 hecha y verificada contra producción en las 2 bases
+(Flujo de Llamadas 27 filas, Tipificación 167 filas tras excluir
+"PRUEBA"). La Parte 5 (marca InConexión®) se separó como **Fase 132** al
+llegar los archivos de diseño.
 
-**Hecho, mergeado a `main` y DESPLEGADO en producción (confirmado por
-`/api/health`, no solo CI):**
-- **Parte 1** (#345, v1.16.2): el cliente se escribía "MOVILIZE" en todo el
-  código -- corregido a su nombre real, "MOBILIZE" (listas de
-  clientes/campañas, plantilla de dashboard, plantilla de Calidad).
-  Migración idempotente nueva (`cliente_movilize_renombrado_mobilize_v1`,
-  `server/db.js`) renombra la fila ya sembrada en producción (en
-  `dashboards_config`, `calidad_plantillas`, y cualquier tabla con datos
-  por campaña/cliente) conservando cualquier personalización de admin y
-  renombrando las claves de permisos de cada usuario sin tocar su valor --
-  nadie perdió acceso. CI encontró 6 fallas reales (5 tests históricos que
-  usaban "MOVILIZE" como placeholder de "cliente sin relación" + 1 test
-  que SÍ dependía del nombre viejo por diseño) -- corregidas en el mismo
-  PR, documentado en su commit.
-- **Parte 2** (#347, v1.16.3): pestaña "Flujo de Llamadas" de Mobilize,
-  reusando **tal cual** el motor de Tráfico de Llamadas de ORLANT
-  (`trafico_combo`, `trafico-skills.js`/`trafico-logic.js`) -- mismo
-  mapeo de skill a campaña. `trafico-logic.js` ganó soporte de alias de
-  encabezado por columna (Mobilize trae "TIPO DE LINEA"/"DÍA"/"LLAMADAS
-  INGRESADAS"/"NIVEL DE SERVICIO 80 - 20"/"% ABANDONO" en vez de los
-  nombres de ORLANT -- un solo motor para los 2), ASA/ATA como texto de
-  reloj (además de número), y un aviso nuevo (nunca cambia el valor) si
-  NIVEL DE ATENCION o % ABANDONO superan 100% al tratarlos como fracción.
-  El panel `trafico_combo` ganó opciones opcionales nuevas (`etiquetaLinea`,
-  `subtabs`, `subtabsTitulos`, `resumenOcultar`, `resumenPorSeccion`) --
-  sin pasarlas, ORLANT/CLINICA AURORA/HOSPITAL LA MARIA quedan exactamente
-  igual (confirmado: el fixture real de ORLANT, `trafico-logic.test.js`,
-  sigue 60/60 sin cambios). Con ellas, Mobilize muestra el orden pedido
-  por Edwin (Resumen → Nivel de Servicio 80-20 → Abandono → ASA → AHT, AHT
-  al final), "Tipo de línea" en vez de "Skill", y un resumen acumulado
-  propio en cada sub-pestaña de detalle. CI encontró 1 falla real más
-  (`secciones` no admite un objeto vacío, límite del schema de
-  `validation.js` -- se agregó una sección placeholder "notas" sin ningún
-  flujo real) -- corregida en el mismo PR.
-  **Verificado dato por dato contra el archivo REAL de septiembre**
-  (`PLANTILLA_DE_FLUJO_DE_LLAMADAS_MOBILIZE.xlsx`, ya en
-  `C:\Users\filid\Documents\datos-inconexion\mobilize\`, confirmado solo
-  estructura/conteos): 27 filas, 25 días distintos, SKILL SAC 24 + Skill
-  Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas -- el
-  parser real de `trafico-logic.js` corrido contra el archivo da 0 avisos
-  y los mismos totales exactos.
-  Housekeeping de PRs: se abrieron por error 2 PRs contra el mismo branch
-  (#346 contra `main` antes de que la Parte 1 mergeara -- quedó en
-  conflicto por el squash-merge de GitHub; #347 apilado sobre la Parte 1).
-  Se cerró #346 sin mergear (mismo branch, 0 commits exclusivos) y #347 se
-  rebaseó sobre el `main` ya actualizado y se mergeó con CI verde.
+### Fase 132 (cerrada) — Marca InConexión®: logo, colores oficiales y tipografía
 
-- **Carga real de septiembre/2026** (v1.16.4, 2026-10-08): al preparar la
-  carga con dry-run (`scripts/produccion/fase131-dryrun-carga-flujo-
-  mobilize.js`) se encontro un bug real -- la pantalla "Cargar Datos de
-  Dashboards" NUNCA reconocia el archivo real de Mobilize (su hoja trae un
-  nombre que cambia cada export, "HistQueue<fecha>", nunca "DATA"):
-  "El archivo no tiene datos en ninguna hoja reconocida", aunque el
-  parser aislado (`traficoParseFilas`) ya soportara los alias de columna
-  de Mobilize desde la Parte 2. Causa: `_cargasTraficoColumnas()`
-  (`public/js/cargas.js`) nunca propagaba esos alias (`TRAFICO_COLUMNAS.
-  aliases`) hacia `cargasEncabezadosCoinciden` (que solo lee `labelAlt`)
-  -- el MISMO bug de fondo que el "HALLAZGO GRAVE" ya documentado de la
-  Fase 122 en Tipificacion, esta vez en Trafico. Corregido en una linea
-  (PR #349, 2 pruebas nuevas que fijan el encabezado real de Mobilize y la
-  regresion exacta), desplegado y reconfirmado con el dry-run contra
-  produccion real ya con el fix (reconocida como
-  "reconocidaPorEncabezadosComo": "HistQueue20261007-144402", 0 avisos,
-  mismos totales exactos, 0 filas escritas).
-  Con el "sí" explícito del usuario (mapear las 2 líneas ANTES de cargar,
-  para que nunca queden en SIN_ASIGNAR): "SKILL SAC" y "Skill Key Account"
-  se mapearon a la campaña MOBILIZE (`PUT /calidad/trafico/skills/...`,
-  0 filas movidas porque no existía nada previo) y se guardaron las 27
-  filas reales (`scripts/produccion/fase131-carga-real-flujo-mobilize.js`).
-  Verificado después, contra producción real: API
-  (`/calidad/nivel-servicio/diario?campana=MOBILIZE`) en 27 filas, SAC 24
-  + Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas (exacto
-  contra el control del archivo) y el dashboard de Mobilize mostrando la
-  pestaña "Flujo de Llamadas" junto a "Calidad", sin ninguna pestaña de
-  WhatsApp, 0 errores de consola.
-
-- **Parte 3 + Parte 6** (Tipificación CDR de Mobilize + su carga real,
-  v1.17.0, 2026-10-08): construida reusando el motor de ORLANT, contrato
-  de 3 archivos extendido con 5 columnas NUEVAS y OPCIONALES
-  (`duracionSeg`/`codAct`/`tipoInteraccion`/`hungUp`/`skillId` --
-  `tipificacion-logic.js`/`tipificaciones.js`/`validation.js`, ORLANT
-  nunca las trae, su comportamiento queda exactamente igual, suite
-  completa 1300/1300 antes y después). Decisiones tomadas con el usuario,
-  **todavía pendientes de confirmar con Edwin**: se excluyen por defecto
-  las filas "PRUEBA" (lista configurable) y "conectada" en salientes =
-  Regla B (codificación distinta de "Cliente_no_contesta", configurable).
-  Nuevo panel de Tipificación para Mobilize (torta + tabla de mayor a
-  menor + filtros de agente/skill/Entrante-Saliente/mes + 3 tarjetas de
-  llamadas salientes) via 4 opciones opcionales del panel ya existente
-  `tipificacion_panel` -- ORLANT sin pasarlas queda igual. Migración
-  idempotente nueva (`dashboards_config_mobilize_tipificacion_tab_v1`)
-  agrega el tab oculto a la fila ya desplegada de MOBILIZE.
-  **Carga real de septiembre/2026 hecha y verificada en producción**: el
-  archivo real (`PLANTILLA_CDR.xlsx`) trae 171 filas (104 inbound/67
-  outbound_ma); tras excluir 4 de "PRUEBA" quedan **167** (103 inbound/64
-  outbound_ma), 20 codificaciones distintas, `COD_ACT` siempre texto
-  (confirmado con un valor real no numérico, "TIMEOUTACW"). Guardado real
-  confirmado por la API (`/calidad/tipificacion/por-tipo` → 167, 11
-  categorías top10+Otras; `/calidad/tipificacion/resumen-salida` → 64
-  salientes/49 conectadas/15 no conectadas, exacto) y visualmente (tab
-  "Tipificación" visible junto a "Flujo de Llamadas"/"Calidad", 0 errores
-  de consola). No se creó ningún usuario CLIENTES_DASH de Mobilize (no se
-  ha pedido).
-
-- **Parte 4** (v1.18.0, 2026-10-08): "Última actualización: <fecha> <hora>"
-  (hora Colombia) visible en cada dashboard, con la fecha de la carga MAS
-  RECIENTE de ese cliente en cualquiera de sus 10 fuentes de datos reales
-  (`GET /dashboard/ultima-actualizacion`, mismo gate que ver el dashboard
-  en sí). Hallazgo real evitado con un test dedicado: el formato de fecha
-  `DD/MM/AAAA HH:MM:SS` que usa toda la plataforma NO ordena
-  lexicográficamente por fecha real -- se usa el orden real de inserción
-  (`id DESC`) en cada tabla, nunca `MAX(fecha)` como texto. Resaltado con
-  borde de color (naranja Mobilize, verde de marca InConexion `#74B859`
-  en el resto) sobre texto en el token ya vetado para contraste AA del
-  header (fondo fijo de marca, no cambia con el tema claro/oscuro).
-  Verificado visualmente con Playwright local (servidor + datos de demo,
-  no producción): ORLANT y MOBILIZE, claro y oscuro, 0 errores de
-  consola.
-
-**Sin empezar todavía:**
-- **Parte 5** (marca InConexion®: tipografía Quicksand, colores oficiales,
-  logo — pendiente de que lleguen los archivos a
-  `C:\Users\filid\Documents\datos-inconexion\marca\`).
-
-**Siguiente sesión, retomar por**: Parte 5 (marca InConexion®), en cuanto
-lleguen los archivos a la carpeta de marca. Las Partes 1-4 y 6 de Mobilize
-ya están hechas, mergeadas, desplegadas y con datos reales cargados y
-verificados -- no hace falta repetir nada de eso.
+Cambio puramente visual (detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+logo real (con el símbolo de red y el ®) en login/navbar/bienvenida, con
+versión clara/oscura donde el fondo cambia de verdad con el tema;
+favicon nuevo; `--c-brand` (navbar/botones/headers) pasa al teal OFICIAL
+muestreado del logo (`#004150`, mejora el contraste con texto blanco);
+tipografía Quicksand autoalojada (nunca Google Fonts), 4 pesos, ~61KB.
+`--c-primary` (texto en >100 reglas) se dejó intacto a propósito — ya
+era casi idéntico, tocarlo no aportaba nada visible. 10 pruebas nuevas
++ suite completa 1321/1321, `npm audit` en 0, auditoría amplia local
+(`scripts/qa/auditoria-amplia-local.js`) en 0 hallazgos, capturas
+Playwright propias revisadas una por una (claro/oscuro/1366×768/móvil).
+2 hallazgos de contraste **pre-existentes** encontrados y NO corregidos
+(fuera de alcance de esta fase, pertenecen a la Fase 121 de diseño/
+accesibilidad): `.toast`/`.btn-login`/`.btn-primary` en tema oscuro, y
+el encabezado del dashboard montándose en móvil — ambos confirmados
+idénticos con la letra vieja, no los causó este cambio.
 
 ### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
 
@@ -436,7 +341,7 @@ que ninguno imprime ni contiene un nombre real. Detalle narrativo
 completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
-## Índice — fases 0 a 130
+## Índice — fases 0 a 132
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -573,4 +478,6 @@ mismo orden):
 - Fase 128 — 4 pedidos de la reunión de validación con Edwin del 2026-10-06: Parte 1, pestaña "Salida" renombrada a "Llamadas y WhatsApp de salida" y reubicada junto a Tráfico de WhatsApp (migración idempotente nueva, reposición incondicional por el mismo criterio que `orden_pestanas_v2` -- hallazgo real: gatearla al label viejo habría dejado mal ubicada cualquier instalación nueva); Parte 2, corrección por construcción del hallazgo de privacidad de `revision-final.js` (`veredictoSubvista` ya nunca devuelve texto crudo del DOM, solo conteos/veredicto de lista fija -- cierra la clase completa del problema, no solo el caso de "Ranking de asesores"), con prueba automática nueva que confirma con un nombre ficticio que no se filtra; mismo criterio aplicado al resto de `scripts/produccion/`; Parte 3, nueva base `monitoreos` en el borrado por rango (mismo endpoint auditado de la Fase 126) para retirar los 37 monitoreos de prueba de Calidad confirmados por Edwin, con respaldo manual confirmado antes del cambio; Parte 4, housekeeping (30 ramas locales ya mergeadas, lockfile al día, `.gitignore` de la configuración local de Codex); verificación real en producción EJECUTADA (2026-10-07): `revision-final.js` corrido con sesión real del usuario (0 nombres, 0 discrepancias, Salida confirmada), y los 37 monitoreos de prueba de Calidad borrados de verdad tras el "sí" explícito del usuario sobre el conteo exacto (37, 2026-09) — Calidad de ORLANT queda en 0, "Sin datos" visible, 0 errores (2026-10-06/07)
 - Fase 129 — Recarga de Inasistencia de ORLANT: incidente real de escritura accidental en producción (dry-run con `page.exposeFunction` -- corregido por construcción con `dry-run-seguro.js`), auditoría completa de privacidad del incidente (nunca llegó al repo/PR/CI), y hallazgo real nuevo (v1.15.1): una celda de fecha con formato Excel llegaba como objeto `Date` por un efecto secundario de `cellNF:true`, bloqueando en silencio cualquier re-carga del archivo completo -- corregido; Inasistencia restaurada al umbral de privacidad original (Ago-26 352 filas/54 entidades/11.189/786/7,45 %, ene-jul vueltos a borrar, septiembre intacto) (2026-10-07)
 - Fase 130 — Calidad real de septiembre/2026 (95 monitoreos) + pedidos de la reunión con Edwin del 2026-10-07 (Inasistencia acepta "FECHA CITA"/normaliza SEDE 34, quita el aviso "incompleto", nueva gráfica de nombre+% promedio por asesor en Calidad) + 2 hallazgos reales corrigiendo la carga masiva de Calidad (filas de plantilla sin diligenciar, observaciones hasta 500 caracteres) + Parte 7: el limitador de tasa de la API ya no bloquea a toda una oficina por el error de una sola persona (ahora cuenta por usuario autenticado, no por IP); verificación final completa en producción (ADMIN y CLIENTES_DASH) EJECUTADA, con 2 traspiés reales documentados (límite de tasa agotado por corridas repetidas, autocompletado del navegador) antes de confirmarla en verde (2026-10-07)
+- Fase 131 — Cliente Mobilize: pestañas "Flujo de Llamadas" y "Tipificación" reusando el motor de ORLANT, "Última actualización" visible en cada dashboard (naranja Mobilize/verde de marca el resto), carga real de septiembre/2026 verificada en producción (2026-10-08)
+- Fase 132 — Marca InConexión®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
 

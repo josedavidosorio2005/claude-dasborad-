@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.19.0 — Octubre 2026
+
+**Fase 132: la plataforma ya usa el logo, los colores y la letra
+oficiales de InConexión®.**
+
+- Nuevo logo de verdad (con el símbolo de red y el ®) en el inicio de
+  sesión, en el menú de arriba de cada pantalla y en la bienvenida —
+  antes era un logo provisional. Cambia solo entre claro/oscuro para
+  verse siempre bien.
+- El ícono de pestaña del navegador (favicon) ya no es el genérico del
+  navegador — ahora es el símbolo de InConexión.
+- Letra nueva en toda la plataforma (Quicksand, la de la marca) en vez
+  de la letra del sistema operativo. Se revisó que ningún numero, tabla
+  ni tarjeta se corte o se desordene con la letra nueva, en pantalla
+  grande y en celular.
+- El color principal (el teal de la barra de arriba, los botones y los
+  encabezados de cada tablero) pasa a ser el oficial de la marca — un
+  poco mas oscuro, se lee mejor todavia. El verde de "Última
+  actualización" sigue exactamente igual.
+- Nada de esto cambia ningún dato, ningún numero ni ningún export —
+  es solo la imagen de la plataforma.
+
 ## v1.18.0 — Octubre 2026
 
 **Fase 131 (Parte 4): cada dashboard ahora muestra cuándo se cargó por

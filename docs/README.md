@@ -30,6 +30,9 @@ proyecto, ver [`PROGRESS.md`](../PROGRESS.md) en la raíz del repo.
   como está hoy en el código.
 - **[aws-permisos-pendientes.md](aws-permisos-pendientes.md)** — guía
   (sin aplicar nada) para el dueño de la cuenta AWS, permisos que faltan.
+- **[marca.md](marca.md)** — dónde viven el logo, el favicon, los colores
+  oficiales y la tipografía (Fase 132): qué archivo usar en cada sitio y
+  los tokens CSS de marca.
 
 ## Históricos — fotos de un momento, no se reescriben
 

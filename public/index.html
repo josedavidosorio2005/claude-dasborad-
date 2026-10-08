@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>InConexion Platform</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
 <script>
 // Fija el tema ANTES del primer paint (evita parpadeo de tema incorrecto).
 // El resto de la logica de tema vive en js/theme.js.
@@ -35,7 +39,8 @@
 <!-- LOGIN -->
 <div id="login-page">
   <div class="login-box">
-    <img class="login-logo" src="img/logo-inconexion.png" alt="InConexion">
+    <img class="login-logo logo-light" src="img/marca/logo-horizontal-color.png" srcset="img/marca/logo-horizontal-color.png 1x, img/marca/logo-horizontal-color@2x.png 2x" alt="InConexion" width="220" height="44">
+    <img class="login-logo logo-dark" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="220" height="44">
     <h2>Acceso a la Plataforma</h2>
     <div class="ig"><label>Usuario</label><input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="off"></div>
     <div class="ig">
@@ -55,7 +60,7 @@
 <div id="admin-page" class="app-page">
   <nav class="navbar">
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
-    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/navbar-icon.png" alt="InConexion"><span class="navbar-logo-text">InConexion</span></div>
+    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion</span></div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <span class="save-flash" id="save-flash">Guardado</span>
@@ -691,7 +696,7 @@
 <!-- USER DASHBOARD -->
 <div id="user-page">
   <nav class="navbar">
-    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/navbar-icon.png" alt="InConexion"><span class="navbar-logo-text">InConexion</span></div>
+    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion</span></div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
@@ -707,7 +712,7 @@
   </nav>
   <div class="user-page-body">
     <div class="user-welcome">
-      <img class="user-logo" src="img/logo-inconexion.png" alt="InConexion">
+      <img class="user-logo" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="320" height="64">
       <h1 id="welcome-name">Bienvenido</h1>
       <p>Selecciona un modulo para continuar</p>
     </div>
@@ -1406,7 +1411,7 @@
 <div id="asesor-page" class="app-page">
   <nav class="navbar">
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
-    <div class="navbar-logo-text">InConexion &mdash; Portal Asesor</div>
+    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion &mdash; Portal Asesor</span></div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
@@ -1477,7 +1482,7 @@
 <div id="supervisor-page" class="app-page">
   <nav class="navbar">
     <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
-    <div class="navbar-logo-text">InConexion &mdash; Portal Supervisor</div>
+    <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion &mdash; Portal Supervisor</span></div>
     <div class="navbar-right">
       <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
       <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>

@@ -9,7 +9,23 @@
      en modo oscuro (mas claro) porque la mayoria de sus usos en este
      archivo son texto/acento sobre una superficie (tarjeta, tabla) que en
      oscuro deja de ser blanca. */
-  --c-brand:#0d4a5e;
+  /* Fase 132: --c-brand pasa del teal aproximado de siempre (#0d4a5e) al
+     teal OFICIAL de marca (#004150, muestreado de los archivos de logo
+     reales) -- mismo uso de siempre (navbar, botones, headers de
+     tablero), mejora el contraste con texto blanco (9.73:1 -> 11.22:1 en
+     ambos temas, ya que --c-brand nunca se redefine en oscuro). --c-primary
+     NO se toca: ya es casi identico al oficial (diferencia imperceptible)
+     y lo usan >100 reglas de texto funcional en todo el tablero -- tocarlo
+     no aporta nada visible y multiplica el riesgo de esta fase.
+     --c-brand-blue y --c-brand-gray-* son los otros colores oficiales del
+     logo (azul #3DA2DB, grises #575756/#878787/#B2B2B2) -- documentados
+     aqui para quien los necesite (variantes de logo, graficas futuras),
+     pero el azul NO se usa como texto sobre fondo claro (2.84:1, no pasa
+     AA) y los grises no reemplazan --c-text-muted (ya afinado). */
+  --c-brand:#004150;
+  --c-brand-blue:#3DA2DB;
+  --c-brand-green:#74B859;
+  --c-brand-gray-dark:#575756; --c-brand-gray-mid:#878787; --c-brand-gray-light:#B2B2B2;
   --c-primary:#0d4a5e; --c-primary-mid:#1a7a9e; --c-primary-light:#5bb8d4;
   --c-primary-darker:#0a3d50; --c-primary-soft:#4aaccc;
   --grad-brand:linear-gradient(135deg,var(--c-brand) 0%,var(--c-primary-mid) 60%,var(--c-primary-light) 100%);
@@ -41,7 +57,7 @@
   --shadow-lg:0 8px 40px rgba(var(--shadow-rgb),0.2);
 
   /* Tipografía */
-  --font-sans:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+  --font-sans:'Quicksand','Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
 
   /* Escala de espaciado (base 4px) — usar en reglas nuevas */
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
@@ -91,6 +107,22 @@
 
   color-scheme:dark;
 }
+
+/* ── Tipografia de marca (Fase 132) ──
+   Quicksand autoalojada (public/fonts/, OFL -- ver LICENSE-quicksand.txt),
+   NUNCA Google Fonts en runtime (privacidad + la CSP de server.js solo
+   permite 'self'/data: en font-src). Solo 4 pesos latin (400/500/600/700,
+   ~61KB total en woff2) -- ni latin-ext ni vietnamese, la plataforma es en
+   espanol. font-display:swap evita texto invisible mientras carga. */
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:400;font-display:swap;src:url('../fonts/quicksand-latin-400.woff2') format('woff2');}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:500;font-display:swap;src:url('../fonts/quicksand-latin-500.woff2') format('woff2');}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:600;font-display:swap;src:url('../fonts/quicksand-latin-600.woff2') format('woff2');}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:700;font-display:swap;src:url('../fonts/quicksand-latin-700.woff2') format('woff2');}
+/* Numeros tabulares (ancho fijo por digito) en KPIs y celdas de tabla --
+   Quicksand es redondeada y mas ancha que Segoe UI, sin esto una columna
+   de numeros se desalinea levemente al cambiar de digito. */
+.stat-num,.aurora-kpi .kv,.aurora-kpi .kpi-val,.qi-preview .qi-pill .qv,
+.aurora-table tbody td,.aurora-rank-table td,.perm-table td{font-variant-numeric:tabular-nums;}
 
 /* ── Fase 99 (hallazgo real en producción, Brave/Windows): el selector MES
    de arriba (y el resto de selects del encabezado de cada módulo) fuerza
@@ -177,7 +209,15 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 /* ── LOGIN ── */
 #login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--grad-brand);}
 .login-box{background:var(--c-surface);border-radius:18px;padding:48px 52px;box-shadow:0 8px 40px rgba(var(--shadow-rgb),0.22);width:420px;max-width:95vw;text-align:center;}
-.login-logo{width:220px;margin-bottom:30px;}
+.login-logo{width:220px;height:44px;margin-bottom:30px;}
+/* .login-box (la tarjeta) cambia de fondo con el tema (blanco en claro,
+   teal oscuro en #132c35 oscuro, ver --c-surface) -- el logo necesita la
+   version a color sobre claro y la version blanca sobre oscuro. Las dos
+   imagenes van siempre en el DOM (mismo ancho/alto -> sin salto de layout
+   al cambiar de tema) y se alternan con display. */
+.login-logo.logo-dark{display:none;}
+[data-theme="dark"] .login-logo.logo-light{display:none;}
+[data-theme="dark"] .login-logo.logo-dark{display:inline-block;}
 .login-box h2{color:var(--c-primary);font-size:1rem;margin-bottom:26px;font-weight:500;}
 .ig{margin-bottom:16px;text-align:left;}
 .ig label{font-size:0.75rem;color:var(--c-text-2);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;}
@@ -531,8 +571,9 @@ tbody td{padding:10px 16px;font-size:0.86rem;color:var(--c-text);}
    SIEMPRE fondo oscuro de marca -- --c-brand no cambia con el tema --
    contraste AA garantizado en claro/oscuro por construccion, sin inventar
    un color nuevo). El "resaltado" es el borde izquierdo de color: naranja
-   para Mobilize, verde de marca InConexion (#74B859) para el resto.*/
-.gd-ultima-act{color:var(--c-on-primary-soft);font-size:0.72rem;font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid #74B859;background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
+   para Mobilize, verde de marca InConexion (--c-brand-green, Fase 132)
+   para el resto.*/
+.gd-ultima-act{color:var(--c-on-primary-soft);font-size:0.72rem;font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-brand-green);background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
 .gd-ultima-act-mobilize{border-left-color:#f97316;}
 .aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-surface);border-radius:6px;padding:6px 14px;font-size:0.82rem;cursor:pointer;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
