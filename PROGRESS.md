@@ -1,4 +1,4 @@
-# PROGRESS — InConexión Platform
+# PROGRESS — InConexion® Platform
 
 Fuente de verdad del avance. Desde la Fase 112, este archivo es un
 **resumen corto, que se actualiza en el sitio** (no aditivo) — el detalle
@@ -8,13 +8,17 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.20.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.20.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
   tipografía Quicksand autoalojada en `public/fonts/`, tokens de color
   oficiales al inicio de `public/css/styles.css` (`--c-brand`,
   `--c-brand-blue`, `--c-brand-green`, `--c-brand-gray-*`) — Fase 132.
+  El nombre se escribe siempre "InConexion®" (sin tilde, con ®) — Fase
+  132 (cierre), 4 pruebas nuevas en
+  `server/tests/fase132-07-marca-registrada.test.js` que fallan si
+  vuelve a aparecer "InConexión" o el nombre sin ® en `index.html`.
 - **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133):
   [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) — tokens de
   color/tipografía/foco/objetivos táctiles, regla del semáforo vs.
@@ -138,10 +142,10 @@ nuevas opcionales); "Última actualización" visible en cada dashboard
 (naranja Mobilize, verde de marca el resto). Carga real de
 septiembre/2026 hecha y verificada contra producción en las 2 bases
 (Flujo de Llamadas 27 filas, Tipificación 167 filas tras excluir
-"PRUEBA"). La Parte 5 (marca InConexión®) se separó como **Fase 132** al
+"PRUEBA"). La Parte 5 (marca InConexion®) se separó como **Fase 132** al
 llegar los archivos de diseño.
 
-### Fase 132 (cerrada) — Marca InConexión®: logo, colores oficiales y tipografía
+### Fase 132 (cerrada) — Marca InConexion®: logo, colores oficiales y tipografía
 
 Cambio puramente visual (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
@@ -382,7 +386,7 @@ mismo orden):
 - Fase 26 — Fix: la cascada de borrado de dashboards ya no borra los Excel cargados (PRs #40-43, 2026-09-16)
 - Fase 27 — Botón "Previsualizar" + filtros y colores estables en gráficas (PRs #44-46, 2026-09-16)
 - Fase 28 — Auditoría de solo lectura de las 3 campañas prioritarias (PR #47, 2026-09-16)
-- Fase 29 — Auditoría general de la plataforma ("Radiografía InConexión") + 4 mejoras técnicas (2026-09-17)
+- Fase 29 — Auditoría general de la plataforma ("Radiografía InConexion®") + 4 mejoras técnicas (2026-09-17)
 - Fase 30 — Cierre del resto de la lista de auditoría (deps mayores) + fix de `main` roto + auditoría del flujo de carga (PRs #55-57, 2026-09-17)
 - Fase 31 — Fix: una hoja renombrada en la plantilla consolidada ya no se pierde en silencio (2026-09-17)
 - Fase 32 — Pantalla de mapeo manual de skill de Wolkvox → campaña (2026-09-17)
@@ -484,5 +488,5 @@ mismo orden):
 - Fase 129 — Recarga de Inasistencia de ORLANT: incidente real de escritura accidental en producción (dry-run con `page.exposeFunction` -- corregido por construcción con `dry-run-seguro.js`), auditoría completa de privacidad del incidente (nunca llegó al repo/PR/CI), y hallazgo real nuevo (v1.15.1): una celda de fecha con formato Excel llegaba como objeto `Date` por un efecto secundario de `cellNF:true`, bloqueando en silencio cualquier re-carga del archivo completo -- corregido; Inasistencia restaurada al umbral de privacidad original (Ago-26 352 filas/54 entidades/11.189/786/7,45 %, ene-jul vueltos a borrar, septiembre intacto) (2026-10-07)
 - Fase 130 — Calidad real de septiembre/2026 (95 monitoreos) + pedidos de la reunión con Edwin del 2026-10-07 (Inasistencia acepta "FECHA CITA"/normaliza SEDE 34, quita el aviso "incompleto", nueva gráfica de nombre+% promedio por asesor en Calidad) + 2 hallazgos reales corrigiendo la carga masiva de Calidad (filas de plantilla sin diligenciar, observaciones hasta 500 caracteres) + Parte 7: el limitador de tasa de la API ya no bloquea a toda una oficina por el error de una sola persona (ahora cuenta por usuario autenticado, no por IP); verificación final completa en producción (ADMIN y CLIENTES_DASH) EJECUTADA, con 2 traspiés reales documentados (límite de tasa agotado por corridas repetidas, autocompletado del navegador) antes de confirmarla en verde (2026-10-07)
 - Fase 131 — Cliente Mobilize: pestañas "Flujo de Llamadas" y "Tipificación" reusando el motor de ORLANT, "Última actualización" visible en cada dashboard (naranja Mobilize/verde de marca el resto), carga real de septiembre/2026 verificada en producción (2026-10-08)
-- Fase 132 — Marca InConexión®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
+- Fase 132 — Marca InConexion®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
 

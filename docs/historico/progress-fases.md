@@ -1,4 +1,4 @@
-# Histórico de fases — InConexión Platform
+# Histórico de fases — InConexion® Platform
 
 > Desde la Fase 112, este es el documento **aditivo** de verdad (el
 > detalle narrativo de cada fase, fase por fase, nunca se reescribe). El
@@ -1489,13 +1489,13 @@ además mezcla asesores/evaluadores de prueba (`Asesor Prueba 01-04`,
 `Evaluador QA Prueba`) con los reales — quedó documentado como hallazgo
 abierto, no resuelto en esta fase (ver Fase 29).
 
-## Fase 29 — Auditoría general de la plataforma ("Radiografía InConexión") + 4 mejoras técnicas (2026-09-17)
+## Fase 29 — Auditoría general de la plataforma ("Radiografía InConexion®") + 4 mejoras técnicas (2026-09-17)
 
 Pedido de InCo: un paso atrás de todo lo anterior — no una funcionalidad
 puntual, sino un diagnóstico completo de la plataforma (funcionalidad, UX,
 código, seguridad, documentación) verificado contra el código real y contra
 producción, con una lista priorizada de mejoras. Entregado como reporte
-("Radiografía InConexión", no versionado en el repo — es un documento de
+("Radiografía InConexion®", no versionado en el repo — es un documento de
 decisión, no código). Hallazgo central: esta misma bitácora
 (`PROGRESS.md`) llevaba ~21 PRs sin actualizarse (Fases 23-28 de arriba,
 backfilled en esta misma fase) — incluido el bug real de la Fase 26 y la
@@ -5203,7 +5203,7 @@ sí:
    código a una pestaña abierta, hace falta recargar la página.
 2. **`Cache-Control: public, max-age=300`** en JS/CSS sin huella de
    versión en el nombre (decisión deliberada de una fase anterior,
-   documentada en `server.js`, "Radiografía InConexión #3"): incluso una
+   documentada en `server.js`, "Radiografía InConexion® #3"): incluso una
    recarga normal dentro de esa ventana de 5 minutos podía servir JS
    viejo desde el caché del navegador **sin pasar por el servidor**.
 
@@ -6397,7 +6397,7 @@ Tráfico) ni de ningún otro cliente se tocó.
   líneas) coincide EXACTO con el que ya reportó la Fase 77. Los otros 8
   "clientes" de la lista son datos de DEMOSTRACIÓN sembrados localmente
   (`scripts/seed-demo.js`, 142 filas idénticas cada uno, mismo rango de
-  fechas, sin AHT) — no son campañas reales de InConexión (los únicos 2
+  fechas, sin AHT) — no son campañas reales de InConexion® (los únicos 2
   clientes reales aparte de ORLANT, Clínica Aurora y Hospital La María,
   siguen en cero tanto en producción como en esta base local: la fila
   "CLINICA AURORA" de la tabla de arriba es la campaña de DEMO de ese
@@ -13365,12 +13365,12 @@ ver más abajo).
 
 Versión `1.18.0`. Partes 1, 2, 3, 4 y 6 cerradas, mergeadas y
 desplegadas, con datos reales de septiembre/2026 cargados y verificados
-contra producción. La Parte 5 (marca InConexión®) estaba bloqueada por
+contra producción. La Parte 5 (marca InConexion®) estaba bloqueada por
 los archivos de diseño (`C:\Users\filid\Documents\datos-inconexion\
 marca\` seguía vacía al cerrar esta fase) -- se retomó y cerró aparte,
 como **Fase 132**, el mismo día que llegaron los archivos.
 
-## Fase 132 — Marca InConexión®: logo, colores oficiales y tipografía (2026-10-08)
+## Fase 132 — Marca InConexion®: logo, colores oficiales y tipografía (2026-10-08)
 
 Pedido original: Parte 5 de la Fase 131, separada en su propia fase al
 llegar los 12 archivos de marca (logo horizontal + isotipo, varias

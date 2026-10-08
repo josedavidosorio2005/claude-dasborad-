@@ -1,4 +1,4 @@
-# LAUNCH_REPORT — InConexión Platform
+# LAUNCH_REPORT — InConexion® Platform
 
 Fecha: **2026-09-09** · Rama: `main`
 

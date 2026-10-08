@@ -1,4 +1,4 @@
-# Sistema de diseño — InConexión Platform (Fase 133)
+# Sistema de diseño — InConexion® Platform (Fase 133)
 
 Referencia de los tokens de color/tipografía/espaciado de
 `public/css/styles.css`, la regla de los 2 sistemas de color, y cómo

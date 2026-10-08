@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.20.1 — Octubre 2026
+
+**Fase 132 (cierre): el nombre de la marca ya se escribe igual en todas
+partes — "InConexion®", sin tilde y siempre con el símbolo ®.**
+
+- El menú de arriba de las 4 pantallas (Administrador, Cliente, Asesor,
+  Supervisor) ya muestra el símbolo ® junto al nombre, chiquito, sin
+  mover nada ni partir el texto en el teléfono.
+- Se corrigió el nombre en todos los documentos de la plataforma donde
+  todavía tenía tilde ("InConexión") — ahora dice "InConexion®" en
+  todos.
+- Nada de esto cambia ningún dato ni ningún número — es solo el nombre
+  de la marca, escrito siempre igual.
+
 ## v1.20.0 — Octubre 2026
 
 **Fase 133: mejor lectura — textos y semáforo con más contraste,
@@ -32,14 +46,14 @@ tipografía ordenada, gráficas con colores más distinguibles.**
 ## v1.19.0 — Octubre 2026
 
 **Fase 132: la plataforma ya usa el logo, los colores y la letra
-oficiales de InConexión®.**
+oficiales de InConexion®.**
 
 - Nuevo logo de verdad (con el símbolo de red y el ®) en el inicio de
   sesión, en el menú de arriba de cada pantalla y en la bienvenida —
   antes era un logo provisional. Cambia solo entre claro/oscuro para
   verse siempre bien.
 - El ícono de pestaña del navegador (favicon) ya no es el genérico del
-  navegador — ahora es el símbolo de InConexión.
+  navegador — ahora es el símbolo de InConexion®.
 - Letra nueva en toda la plataforma (Quicksand, la de la marca) en vez
   de la letra del sistema operativo. Se revisó que ningún numero, tabla
   ni tarjeta se corte o se desordene con la letra nueva, en pantalla

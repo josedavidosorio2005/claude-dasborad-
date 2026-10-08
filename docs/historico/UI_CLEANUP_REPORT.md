@@ -1,4 +1,4 @@
-# UI_CLEANUP_REPORT — InConexión Platform
+# UI_CLEANUP_REPORT — InConexion® Platform
 
 Mejora de interfaz (clara e intuitiva), buenas prácticas y limpieza de código.
 **No se agregó ninguna funcionalidad de negocio nueva. No se tocó la lógica de permisos
