@@ -69,9 +69,15 @@ async function esperarLogin(page) {
     await page.waitForTimeout(1000);
 
     // ══ 1. Opciones de Tipificacion de MOBILIZE ANTES (debe estar vacio) ══
-    const opAntes = await page.evaluate(() => apiRequest('GET', '/calidad/tipificacion/opciones?campana=MOBILIZE&canal=LLAMADAS'));
+    // Fase 129 (regla fija): nunca reenviar crudo el resultado de un
+    // endpoint ".../opciones" (aqui, `agentes`/`skills` -- nombres reales)
+    // -- se reduce a conteos DENTRO del propio page.evaluate.
+    const opAntes = await page.evaluate(async () => {
+      const o = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=MOBILIZE&canal=LLAMADAS');
+      return { mesesCount: (o.meses || []).length, agentesCount: (o.agentes || []).length, skillsCount: (o.skills || []).length };
+    });
     reporte.opcionesAntes = opAntes;
-    log('Opciones MOBILIZE/LLAMADAS antes:', JSON.stringify(opAntes));
+    log('Opciones MOBILIZE/LLAMADAS antes (solo conteos):', JSON.stringify(opAntes));
 
     // ══ 2. Abrir modal, seleccionar MOBILIZE, subir el archivo real ═══════
     await page.evaluate(() => openCargas());
@@ -141,14 +147,17 @@ async function esperarLogin(page) {
 
     // ══ 5. Opciones de Tipificacion de MOBILIZE DESPUES (debe seguir vacio) ═
     await page.evaluate(() => closeCargas()).catch(() => {});
-    const opDespues = await page.evaluate(() => apiRequest('GET', '/calidad/tipificacion/opciones?campana=MOBILIZE&canal=LLAMADAS'));
+    const opDespues = await page.evaluate(async () => {
+      const o = await apiRequest('GET', '/calidad/tipificacion/opciones?campana=MOBILIZE&canal=LLAMADAS');
+      return { mesesCount: (o.meses || []).length, agentesCount: (o.agentes || []).length, skillsCount: (o.skills || []).length };
+    });
     reporte.opcionesDespues = opDespues;
-    log('Opciones MOBILIZE/LLAMADAS despues del dry-run:', JSON.stringify(opDespues));
+    log('Opciones MOBILIZE/LLAMADAS despues del dry-run (solo conteos):', JSON.stringify(opDespues));
 
     ok =
       controlOk &&
       reporte.intentoGuardarBloqueado.huboPeticionDeEscrituraBloqueada &&
-      (!opAntes.meses || !opAntes.meses.length) && (!opDespues.meses || !opDespues.meses.length) &&
+      opAntes.mesesCount === 0 && opDespues.mesesCount === 0 &&
       erroresConsola.length === 0;
     reporte.ok = ok;
 
