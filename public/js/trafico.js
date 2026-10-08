@@ -866,8 +866,16 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
   ocultar = ocultar || [];
   var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
   var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
-  var clsNivel = semNivel ? _gdSemaforoClase(semNivel) : (totales.nivelAtencion===null?'':totales.nivelAtencion>=90?'kpi-green':totales.nivelAtencion>=70?'kpi-org':'kpi-red');
+  var colorNivelFallback = totales.nivelAtencion===null?null:totales.nivelAtencion>=90?'verde':totales.nivelAtencion>=70?'amarillo':'rojo';
+  var colorNivel = semNivel || colorNivelFallback;
+  var clsNivel = colorNivel ? _gdSemaforoClase(colorNivel) : '';
+  var badgeNivel = (typeof semaforoBadgeHtml === 'function' && colorNivel) ? semaforoBadgeHtml(colorNivel) : '';
   var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
+  // El badge de Abandono solo aplica cuando hay un umbral REAL configurado
+  // (semAband) -- sin umbral, clsAband siempre es rojo fijo (no es un
+  // semaforo por meta, es un acento visual constante para esa tarjeta;
+  // el texto "Tasa de Abandono"/"Llamadas Abandonadas" ya dice que es).
+  var badgeAband = (typeof semaforoBadgeHtml === 'function' && semAband) ? semaforoBadgeHtml(semAband) : '';
   var nsNota = labels.nivelServicioNota
     ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
@@ -896,9 +904,9 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
   kpisEl.innerHTML =
     '<div class="aurora-kpi"><div class="kv">'+totales.total.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.total)+'</div></div>'+
     '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
-    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
-    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
-    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>')+
+    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+badgeAband+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
+    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+badgeNivel+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
+    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+badgeAband+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>')+
     (ocultar.indexOf('nivelServicio')!==-1 ? '' : '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>')+
     tarjeta2+
     nsSinDato;

@@ -43,6 +43,33 @@ function semaforoClaseCss(color) {
   return color === 'verde' ? 'kpi-green' : color === 'amarillo' ? 'kpi-org' : color === 'rojo' ? 'kpi-red' : '';
 }
 
+// Fase 133 (WCAG 1.4.1, "el color no puede ser el UNICO medio visual"):
+// el semaforo (celdas/tarjetas KPI coloreadas por umbral) no puede
+// depender solo del tono para decirle a alguien si un numero esta bien o
+// mal -- symbol/texto son el segundo medio. Formas DISTINTAS a proposito
+// (no el mismo set ▲/▼ que ya usa la flecha de tendencia en la misma
+// tarjeta, ver dashboard-generic.js _gdKpiCardHtml) para que no se
+// confundan a simple vista. NUNCA toca semaforoColorDe/semaforoClaseCss
+// -- la clasificacion de color queda IDENTICA a antes (ver prueba
+// dedicada en semaforo-logic.test.js).
+function semaforoSimboloDe(color) {
+  return color === 'verde' ? '●' : color === 'amarillo' ? '◆' : color === 'rojo' ? '■' : '';
+}
+
+function semaforoTextoAccesibleDe(color) {
+  return color === 'verde' ? 'Cumple la meta' : color === 'amarillo' ? 'Cerca de la meta' : color === 'rojo' ? 'No cumple la meta' : '';
+}
+
+// HTML listo para anteponer al valor de una celda/tarjeta de semaforo --
+// '' si color es null/'' (sin umbral configurado, no hay nada que marcar).
+// Sigue siendo texto->texto (sin DOM): construye un string, no lo inserta.
+function semaforoBadgeHtml(color) {
+  var simbolo = semaforoSimboloDe(color);
+  if (!simbolo) return '';
+  return '<span class="gd-sem-simbolo" aria-hidden="true">' + simbolo + '</span>' +
+    '<span class="sr-only">' + semaforoTextoAccesibleDe(color) + ': </span>';
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -50,5 +77,8 @@ if (typeof module !== 'undefined' && module.exports) {
     semaforoUmbralPara: semaforoUmbralPara,
     semaforoMetricaKey: semaforoMetricaKey,
     semaforoClaseCss: semaforoClaseCss,
+    semaforoSimboloDe: semaforoSimboloDe,
+    semaforoTextoAccesibleDe: semaforoTextoAccesibleDe,
+    semaforoBadgeHtml: semaforoBadgeHtml,
   };
 }

@@ -566,10 +566,10 @@ function renderCalResumenTable(){
       var prom = Math.round((d.sum/d.count)*10)/10;
       var clasif = prom<70 ? '🔴 CRITICO' : (prom<90 ? '🟡 NO CRITICO' : '🟢 SOBRESALIENTE');
       var alerta = d.fallos===0 ? '✅ SIN FALLOS CRITICOS' : (d.fallos<=1 ? '⚠️ ALERTA' : '🚨 CRITICO FRECUENTE');
-      var promCls = (typeof _gdSemaforoClase === 'function' && typeof _gdSemaforoColor === 'function')
-        ? _gdSemaforoClase(_gdSemaforoColor(prom, { metrica: 'qa_promedio', campana: _ccampana }))
-        : '';
-      html += '<tr><td>'+esc(textoFormatoNombre(n))+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
+      var promColor = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(prom, { metrica: 'qa_promedio', campana: _ccampana }) : null;
+      var promCls = (typeof _gdSemaforoClase === 'function' && promColor) ? _gdSemaforoClase(promColor) : '';
+      var promBadge = (typeof semaforoBadgeHtml === 'function' && promColor) ? semaforoBadgeHtml(promColor) : '';
+      html += '<tr><td>'+esc(textoFormatoNombre(n))+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+promBadge+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
     });
   }
   document.getElementById('cal-resumen-table').innerHTML = html;
@@ -584,12 +584,14 @@ function renderCalKpis(){
   var mesMeta = _cmesFiltro || new Date().toISOString().slice(0,7);
   var totalLabel = _cmesFiltro ? 'Monitoreos ('+_cmesFiltro+')' : 'Monitoreos Totales (todos los meses)';
 
-  var promCardColor = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: _ccampana }) : null;
-  var promCardCls = (typeof _gdSemaforoClase === 'function' && promCardColor) ? _gdSemaforoClase(promCardColor)
-    : (promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red');
+  var promCardColorReal = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: _ccampana }) : null;
+  var promCardColorFallback = promedio>=90?'verde':promedio>=70?'amarillo':'rojo';
+  var promCardCls = (typeof _gdSemaforoClase === 'function' && promCardColorReal) ? _gdSemaforoClase(promCardColorReal)
+    : (promCardColorFallback==='verde'?'kpi-green':promCardColorFallback==='amarillo'?'kpi-org':'kpi-red');
+  var promCardBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(promCardColorReal || promCardColorFallback) : '';
   var html =
     '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">'+totalLabel+'</div></div>'+
-    '<div class="aurora-kpi '+promCardCls+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Promedio Puntaje</div></div>'+
+    '<div class="aurora-kpi '+promCardCls+'"><div class="kv">'+promCardBadge+(total?promedio:'—')+'</div><div class="kl">Promedio Puntaje</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+criticos+'</div><div class="kl">Monitoreos Criticos Absolutos</div></div>';
 
   if(currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR')){
@@ -598,16 +600,18 @@ function renderCalKpis(){
     if(!mia){
       html += '<div class="aurora-kpi kpi-org"><div class="kv" style="font-size:0.85rem">Sin meta asignada</div><div class="kl">Mi Meta Individual ('+mesMeta+')</div></div>';
     } else {
+      var miaColor = mia.pct>=100?'verde':'amarillo';
       html += '<div class="aurora-kpi kpi-pur"><div class="kv">'+mia.realizados+' / '+mia.meta+'</div><div class="kl">Mi Meta Individual ('+mesMeta+')</div></div>'+
-        '<div class="aurora-kpi '+(mia.pct>=100?'kpi-green':'kpi-org')+'"><div class="kv">'+mia.pct+'%</div><div class="kl">Mi Cumplimiento Total ('+mesMeta+')</div></div>'+
+        '<div class="aurora-kpi '+(miaColor==='verde'?'kpi-green':'kpi-org')+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(miaColor):'')+mia.pct+'%</div><div class="kl">Mi Cumplimiento Total ('+mesMeta+')</div></div>'+
         '<div class="aurora-kpi"><div class="kv">'+mia.realizadosLlamada+' / '+mia.metaLlamada+'</div><div class="kl">Mi Cumplimiento Llamada'+(mia.pctLlamadaCompl!==null?' ('+mia.pctLlamadaCompl+'%)':'')+'</div></div>'+
         (mia.auditaWpp ? '<div class="aurora-kpi"><div class="kv">'+mia.realizadosWpp+' / '+mia.metaWpp+'</div><div class="kl">Mi Cumplimiento WhatsApp'+(mia.pctWppCompl!==null?' ('+mia.pctWppCompl+'%)':'')+'</div></div>' : '');
     }
   } else {
     var lideres = calLideresCumplimiento(_ccampana, mesMeta);
     var promedioCumpl = lideres.length ? Math.round(lideres.reduce(function(a,l){return a+l.pct;},0)/lideres.length) : 0;
+    var promedioCumplColor = promedioCumpl>=100?'verde':'amarillo';
     html += '<div class="aurora-kpi kpi-pur"><div class="kv">'+lideres.length+'</div><div class="kl">Personas con Meta ('+mesMeta+')</div></div>'+
-      '<div class="aurora-kpi '+(promedioCumpl>=100?'kpi-green':'kpi-org')+'"><div class="kv">'+promedioCumpl+'%</div><div class="kl">Cumplimiento Promedio ('+mesMeta+')</div></div>';
+      '<div class="aurora-kpi '+(promedioCumplColor==='verde'?'kpi-green':'kpi-org')+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(promedioCumplColor):'')+promedioCumpl+'%</div><div class="kl">Cumplimiento Promedio ('+mesMeta+')</div></div>';
   }
   document.getElementById('cal-kpis-strip').innerHTML = html;
 }
