@@ -4,6 +4,31 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.20.0 — Octubre 2026
+
+**Fase 133: mejor lectura — textos y semáforo con más contraste,
+tipografía ordenada, gráficas con colores más distinguibles.**
+
+- Los textos grises (notas, etiquetas, subtítulos) se leen mejor en
+  modo claro — eran demasiado tenues para algunas personas.
+- El semáforo (verde/amarillo/rojo de las tarjetas y tablas) ahora
+  también trae un símbolo (●/◆/■) además del color, para quien no
+  distingue bien los colores.
+- Las gráficas con varias líneas/colas/asesores usan colores nuevos,
+  pensados para que cualquiera los distinga (antes dos series podían
+  verse casi igual).
+- El texto de las gráficas (números, leyendas) es más grande y legible.
+- Botones y enlaces ahora muestran un aro de color al navegar con el
+  teclado (Tab), y los botones de mostrar/ocultar contraseña y las
+  gráficas son más claros para quien usa un lector de pantalla.
+- En el teléfono, los botones principales (cerrar, exportar, el
+  selector de mes, las pestañas) son más grandes y fáciles de tocar.
+- 2 corrección real encontrada en el camino: en el teléfono, a veces el
+  encabezado del dashboard tapaba la primera pestaña y no se podía
+  hacer clic — ya no pasa.
+- Nada de esto cambia ningún dato ni ningún número — es solo la forma
+  en que se ve y se usa la plataforma.
+
 ## v1.19.0 — Octubre 2026
 
 **Fase 132: la plataforma ya usa el logo, los colores y la letra
