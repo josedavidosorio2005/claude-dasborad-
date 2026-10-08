@@ -8,13 +8,18 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.19.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.20.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
   tipografía Quicksand autoalojada en `public/fonts/`, tokens de color
   oficiales al inicio de `public/css/styles.css` (`--c-brand`,
   `--c-brand-blue`, `--c-brand-green`, `--c-brand-gray-*`) — Fase 132.
+- **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133):
+  [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) — tokens de
+  color/tipografía/foco/objetivos táctiles, regla del semáforo vs.
+  paleta categórica, cómo agregar un color nuevo sin romper el
+  contraste.
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
 - **Foco actual**: solo **ORLANT** tiene datos reales en producción.

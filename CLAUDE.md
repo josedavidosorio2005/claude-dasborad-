@@ -155,6 +155,12 @@ asumir en qué quedó una fase anterior.
 - El repositorio es público por decisión del jefe (29/09/2026); no
   reportarlo como pendiente.
 
+## Sistema de diseño
+
+- Tokens de color/tipografía/foco/objetivos táctiles (WCAG 2.1 AA,
+  Fase 133): [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md).
+  Antes de agregar un color nuevo, leerlo.
+
 ## Versión y CHANGELOG
 
 - La versión de la app vive en un solo lugar: `server/package.json`

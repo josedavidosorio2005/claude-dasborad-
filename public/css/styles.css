@@ -699,7 +699,13 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .gd-subtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
 .gd-subtab-btn{padding:6px 14px;font-size:var(--fs-note);font-weight:600;color:var(--c-text-2);border:1px solid var(--c-border);border-radius:999px;background:var(--c-surface);cursor:pointer;white-space:nowrap;transition:all 0.2s;}
 .gd-subtab-btn:hover{color:var(--c-primary);border-color:var(--c-primary-mid);}
-.gd-subtab-btn.on{color:#fff;background:var(--c-primary-mid);border-color:var(--c-primary-mid);}
+/* Fase 133 (Parte 6, hallazgo real de la prueba de regresion): texto
+   blanco sobre --c-primary-mid daba 2.73:1 en tema oscuro (#3fa8cc, claro
+   a proposito para servir de TEXTO sobre superficie oscura en otros usos
+   -- aqui se usaba al reves, como FONDO, y el blanco encima ya no
+   alcanzaba). --c-brand (fijo, 11.22:1 con blanco en los 2 temas) resuelve
+   igual de bien el "seleccionado" sin crear un token nuevo. */
+.gd-subtab-btn.on{color:var(--c-on-brand);background:var(--c-brand);border-color:var(--c-brand);}
 
 /* Chart cards grid */
 .aurora-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -755,7 +761,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* ── Preferencia de grafico por panel (M2) ── */
 .gd-panel-tools{display:flex;gap:3px;margin-left:auto;}
 .gd-panel-tools button{border:1px solid var(--c-border);background:var(--c-surface-subtle);color:var(--c-text-2);font-size:var(--fs-note);font-weight:700;border-radius:4px;padding:2px 6px;cursor:pointer;line-height:1.4;}
-.gd-panel-tools button.on{background:var(--c-primary-mid);color:#fff;border-color:var(--c-primary-mid);}
+.gd-panel-tools button.on{background:var(--c-brand);color:var(--c-on-brand);border-color:var(--c-brand);}
 .aurora-card-title.gd-flex{display:flex;align-items:center;gap:8px;}
 
 /* ── AURORA DASHBOARD MODAL ── */
