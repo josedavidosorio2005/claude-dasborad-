@@ -1,6 +1,6 @@
 # Auditoría de seguridad y bugs — Fase 102 (Octubre 2026)
 
-Escaneo completo de seguridad y de bugs de InConexión Platform, pedido para
+Escaneo completo de seguridad y de bugs de InConexion® Platform, pedido para
 revisar todo lo que se agregó desde las últimas auditorías (Fases 72 y 81
 de seguridad, Fase 88 de bugs): el selector de MES global, WhatsApp con 2
 niveles de servicio, el dominio nuevo, Calidad (fecha/evaluador bloqueados,

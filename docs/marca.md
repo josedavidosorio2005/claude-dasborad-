@@ -1,4 +1,4 @@
-# Marca InConexión® (Fase 132)
+# Marca InConexion® (Fase 132)
 
 Dónde viven los archivos de marca y los tokens de color/tipografía, para
 no tener que ir al código cada vez. Los originales de diseño (PNG a

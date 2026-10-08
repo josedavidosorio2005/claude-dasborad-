@@ -1,4 +1,4 @@
-# InConexión Platform
+# InConexion® Platform
 
 App completa (frontend + backend real) para un contact center / BPO: gestión de
 usuarios, roles y permisos, **control de Calidad**, **cronograma de metas**,

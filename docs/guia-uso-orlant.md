@@ -1,4 +1,4 @@
-# Guía de uso — InConexión Platform (ORLANT)
+# Guía de uso — InConexion® Platform (ORLANT)
 
 > Este archivo es el espejo legible en GitHub de la guía REAL que ve el
 > usuario dentro de la plataforma: `server/paginas/guia-uso.html` (servida
