@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.16.3` (ver `server/package.json`, expuesta en
+- **Versión**: `1.16.4` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
@@ -169,6 +169,35 @@ prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
   Se cerró #346 sin mergear (mismo branch, 0 commits exclusivos) y #347 se
   rebaseó sobre el `main` ya actualizado y se mergeó con CI verde.
 
+- **Carga real de septiembre/2026** (v1.16.4, 2026-10-08): al preparar la
+  carga con dry-run (`scripts/produccion/fase131-dryrun-carga-flujo-
+  mobilize.js`) se encontro un bug real -- la pantalla "Cargar Datos de
+  Dashboards" NUNCA reconocia el archivo real de Mobilize (su hoja trae un
+  nombre que cambia cada export, "HistQueue<fecha>", nunca "DATA"):
+  "El archivo no tiene datos en ninguna hoja reconocida", aunque el
+  parser aislado (`traficoParseFilas`) ya soportara los alias de columna
+  de Mobilize desde la Parte 2. Causa: `_cargasTraficoColumnas()`
+  (`public/js/cargas.js`) nunca propagaba esos alias (`TRAFICO_COLUMNAS.
+  aliases`) hacia `cargasEncabezadosCoinciden` (que solo lee `labelAlt`)
+  -- el MISMO bug de fondo que el "HALLAZGO GRAVE" ya documentado de la
+  Fase 122 en Tipificacion, esta vez en Trafico. Corregido en una linea
+  (PR #349, 2 pruebas nuevas que fijan el encabezado real de Mobilize y la
+  regresion exacta), desplegado y reconfirmado con el dry-run contra
+  produccion real ya con el fix (reconocida como
+  "reconocidaPorEncabezadosComo": "HistQueue20261007-144402", 0 avisos,
+  mismos totales exactos, 0 filas escritas).
+  Con el "sí" explícito del usuario (mapear las 2 líneas ANTES de cargar,
+  para que nunca queden en SIN_ASIGNAR): "SKILL SAC" y "Skill Key Account"
+  se mapearon a la campaña MOBILIZE (`PUT /calidad/trafico/skills/...`,
+  0 filas movidas porque no existía nada previo) y se guardaron las 27
+  filas reales (`scripts/produccion/fase131-carga-real-flujo-mobilize.js`).
+  Verificado después, contra producción real: API
+  (`/calidad/nivel-servicio/diario?campana=MOBILIZE`) en 27 filas, SAC 24
+  + Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas (exacto
+  contra el control del archivo) y el dashboard de Mobilize mostrando la
+  pestaña "Flujo de Llamadas" junto a "Calidad", sin ninguna pestaña de
+  WhatsApp, 0 errores de consola.
+
 **Decidido con el usuario, pendiente de construir (Parte 3 — Tipificación
 CDR de Mobilize) y de confirmar con Edwin:**
 - Archivo real ya confirmado (solo estructura/conteos, en
@@ -218,7 +247,11 @@ CDR) con las 3 decisiones ya tomadas arriba (sin volver a preguntarlas),
 mismo patrón que la Parte 2 (extender lo que ya existe --
 `tipificaciones.js`/`tipificacion-logic.js`/`validation.js`, mismo motor
 de ORLANT -- en vez de un motor nuevo), con sus propios tests, su propio
-PR, y verificación contra el archivo real ya confirmado arriba.
+PR, y verificación contra el archivo real ya confirmado arriba. La Parte
+6 (carga real del CDR) queda bloqueada hasta que la Parte 3 exista, igual
+que antes -- lo único que cambió es que la carga real del FLUJO DE
+LLAMADAS (control de la reunión de mañana 2026-10-09) ya está hecha y
+verificada (ver arriba), así que no hace falta repetirla.
 
 ### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
 
