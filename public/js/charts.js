@@ -14,18 +14,37 @@ if (typeof Chart !== 'undefined') {
   Chart.defaults.font.family = (typeof TEXTO_FUENTE !== 'undefined') ? TEXTO_FUENTE : "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
 }
 
-var CD='#0d4a5e',CM='#1a7a9e',CG='#27ae60',CR='#e74c3c',CO='#e67e22',CP='#8e44ad';
-var PC=[CD,CM,CG,CO,CR,CP,'#16a085','#f39c12','#2980b9','#c0392b','#7f8c8d','#1abc9c'];
+// Fase 133: CG/CO bajaron de luminosidad (2.87/2.85:1 -> 3.49/3.92:1 contra
+// blanco, mismo cambio y mismos valores que --c-success/--c-warning en
+// styles.css -- un donut/barra de "verde/ambar" (ej. distribucion de
+// Sobresaliente/No Critico/Critico) es un objeto grafico, WCAG 1.4.11 exige
+// 3:1 igual que un control). CR ya pasaba (3.82), sin cambio.
+var CD='#0d4a5e',CM='#1a7a9e',CG='#1f9d55',CR='#e74c3c',CO='#c26a00',CP='#8e44ad';
+
+// Fase 133 (Parte 3, WCAG 1.4.1 + 1.4.11): PC/PC_DARK ya NO reusan CG/CO/CR
+// (el mismo tono exacto del semaforo) en ninguna de sus 12 posiciones -- una
+// grafica categorica (ej. "llamadas por skill") no puede parecer un
+// semaforo de bien/regular/mal sin que nadie lo haya pedido. Paleta nueva
+// generada con una busqueda real (maximizar la distancia perceptual minima
+// CIELAB bajo vision tipica + 3 simulaciones de daltonismo -- ver
+// public/js/contraste-logic.js), restringida a matices fuera del semaforo
+// (teal/azul/indigo/purpura/magenta/marron) y con contraste >=3:1 contra
+// las superficies donde se dibuja. Minimo real medido entre las primeras 8
+// series: 20.1:1 ΔE en el peor caso (protanopia), muy por encima del
+// ejemplo del prompt (ΔE>=12). Detalle completo en docs/sistema-de-diseno.md.
+var PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
 
 // Set alterno de la paleta categorica para modo oscuro (paleta-logic.js no
 // cambia: sigue derivando el INDICE de forma determinista por hash de la
 // etiqueta -- lo unico que cambia aqui es a que color resuelve cada
-// indice, para que se distingan sobre un fondo oscuro).
-var PC_DARK=['#5fc9ea','#7dd6f0','#4ade80','#fbbf24','#f87171','#c084fc','#2dd4bf','#fb923c','#60a5fa','#f472b6','#94a3b8','#34d399'];
+// indice, para que se distingan sobre un fondo oscuro). Misma busqueda que
+// PC, minimo real medido: ΔE 17.5:1 (peor caso, tritanopia).
+var PC_DARK=['#428a78','#a457db','#abeded','#d9c68c','#ac6939','#9898cd','#53c6a9','#a99670','#bf9540','#cb4da1','#adc7eb','#9e79d2'];
 
 // Colores de eje/leyenda/fondo-de-datalabel que lo()/loPie() usaban como
-// literales sueltos -- ahora tambien reasignables por tema.
-var CHART_GRID='#f0f4f8', CHART_TICK='#7a9ba8', CHART_DL_BG='rgba(255,255,255,0.75)';
+// literales sueltos -- ahora tambien reasignables por tema. CHART_TICK
+// (claro) baja igual que --c-text-muted en styles.css (2.97 -> 5.38:1).
+var CHART_GRID='#f0f4f8', CHART_TICK='#4f6f7d', CHART_DL_BG='rgba(255,255,255,0.75)';
 
 // Puente con theme.js: reasigna CD/CM/CG/CR/CO/CP/PC (y CHART_GRID/TICK/
 // DL_BG) segun el tema actual. El resto de este archivo y de
@@ -41,9 +60,9 @@ function aplicarTemaCharts(){
     PC=PC_DARK;
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
   } else {
-    CD='#0d4a5e'; CM='#1a7a9e'; CG='#27ae60'; CR='#e74c3c'; CO='#e67e22'; CP='#8e44ad';
-    PC=[CD,CM,CG,CO,CR,CP,'#16a085','#f39c12','#2980b9','#c0392b','#7f8c8d','#1abc9c'];
-    CHART_GRID='#f0f4f8'; CHART_TICK='#7a9ba8'; CHART_DL_BG='rgba(255,255,255,0.75)';
+    CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
+    PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
+    CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
   }
 }
 aplicarTemaCharts();
