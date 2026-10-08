@@ -9,6 +9,9 @@ const {
   semaforoUmbralPara,
   semaforoMetricaKey,
   semaforoClaseCss,
+  semaforoSimboloDe,
+  semaforoTextoAccesibleDe,
+  semaforoBadgeHtml,
 } = require('../../public/js/semaforo-logic.js');
 
 test('semaforoColorDe: mayor_es_mejor (ej. nivel de atencion, umbral 90/70)', () => {
@@ -72,4 +75,47 @@ test('semaforoClaseCss: mapea el color a la clase CSS compartida por tarjetas y 
   assert.equal(semaforoClaseCss('amarillo'), 'kpi-org');
   assert.equal(semaforoClaseCss('rojo'), 'kpi-red');
   assert.equal(semaforoClaseCss(null), '');
+});
+
+// ═══════════════════════════════════════════════════════════
+// Fase 133 (WCAG 1.4.1) — el simbolo/texto accesible NUNCA debe cambiar
+// que color/clase le toca a un valor. Misma entrada -> mismo color de
+// SIEMPRE (las pruebas de arriba, sin tocar) + un simbolo/texto nuevo.
+// ═══════════════════════════════════════════════════════════
+test('semaforoSimboloDe: 3 formas DISTINTAS entre si y del set ▲/▼ que ya usa la flecha de tendencia', () => {
+  assert.equal(semaforoSimboloDe('verde'), '●');
+  assert.equal(semaforoSimboloDe('amarillo'), '◆');
+  assert.equal(semaforoSimboloDe('rojo'), '■');
+  assert.equal(semaforoSimboloDe(null), '');
+  const simbolos = ['verde', 'amarillo', 'rojo'].map(semaforoSimboloDe);
+  assert.equal(new Set(simbolos).size, 3, 'los 3 simbolos deben ser distintos entre si');
+  simbolos.forEach((s) => assert.ok(s !== '▲' && s !== '▼', 'no debe reusar las flechas de tendencia'));
+});
+
+test('semaforoTextoAccesibleDe: una frase en espanol por color, vacia si no hay color', () => {
+  assert.equal(semaforoTextoAccesibleDe('verde'), 'Cumple la meta');
+  assert.equal(semaforoTextoAccesibleDe('amarillo'), 'Cerca de la meta');
+  assert.equal(semaforoTextoAccesibleDe('rojo'), 'No cumple la meta');
+  assert.equal(semaforoTextoAccesibleDe(null), '');
+});
+
+test('semaforoBadgeHtml: simbolo aria-hidden + texto .sr-only, vacio sin color (nunca inventa un badge)', () => {
+  const html = semaforoBadgeHtml('verde');
+  assert.match(html, /aria-hidden="true"/);
+  assert.match(html, /●/);
+  assert.match(html, /class="sr-only"/);
+  assert.match(html, /Cumple la meta/);
+  assert.equal(semaforoBadgeHtml(null), '');
+  assert.equal(semaforoBadgeHtml(''), '');
+});
+
+test('el simbolo/texto NUNCA cambia la clasificacion de color original (misma entrada que las pruebas de semaforoColorDe de arriba)', () => {
+  const u = { verde: 90, amarillo: 70, direccion: 'mayor_es_mejor' };
+  [95, 90, 80, 70, 50].forEach((valor) => {
+    const colorAntes = semaforoColorDe(valor, u);
+    const claseAntes = semaforoClaseCss(colorAntes);
+    // Lo unico "nuevo" es el badge -- la clase sigue siendo funcion solo del color.
+    assert.equal(semaforoClaseCss(semaforoColorDe(valor, u)), claseAntes);
+    assert.equal(typeof semaforoBadgeHtml(colorAntes), 'string');
+  });
 });

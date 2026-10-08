@@ -89,10 +89,14 @@ async function renderMisResultados(){
   var fallosTotal = arr.reduce(function(a,m){return a+(m.fallos||0);},0);
   var clasifGeneral = total===0 ? '—' : (promedio<70?'🔴 CRITICO':promedio<90?'🟡 NO CRITICO':'🟢 SOBRESALIENTE');
 
+  var promColorMr = promedio>=90?'verde':promedio>=70?'amarillo':'rojo';
+  var promClsMr = promColorMr==='verde'?'kpi-green':promColorMr==='amarillo'?'kpi-org':'kpi-red';
+  // "Clasificacion General" ya trae su propio emoji+palabra (clasifGeneral,
+  // arriba) -- WCAG 1.4.1 ya esta cubierto ahi, sin badge para no duplicar.
   document.getElementById('mr-kpis').innerHTML =
     '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados'+(_mrMesFiltro?' ('+_mrMesFiltro+')':'')+'</div></div>'+
-    '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv">'+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio</div></div>'+
-    '<div class="aurora-kpi '+(promedio>=90?'kpi-green':promedio>=70?'kpi-org':'kpi-red')+'"><div class="kv" style="font-size:1rem">'+clasifGeneral+'</div><div class="kl">Clasificacion General</div></div>'+
+    '<div class="aurora-kpi '+promClsMr+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(promColorMr):'')+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio</div></div>'+
+    '<div class="aurora-kpi '+promClsMr+'"><div class="kv" style="font-size:1rem">'+clasifGeneral+'</div><div class="kl">Clasificacion General</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+fallosTotal+'</div><div class="kl">Total Fallos Criticos</div></div>';
 
   mrmk('mr-ch-clasif',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});

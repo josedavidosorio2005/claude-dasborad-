@@ -461,13 +461,16 @@ function _gdKpiCardHtml(k){
 
   var txt = (cur === null || cur === undefined) ? '—' : _gdFmt(cur, k.formato);
   var semColor = _gdSemaforoColor(cur, k);
-  var cls;
+  var cls, semBadge = '';
   if(semColor){
     cls = _gdSemaforoClase(semColor);
+    semBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(semColor) : '';
   } else if(k.semaforo && cur !== null && cur !== undefined){
     // Compatibilidad: KPI con el semaforo binario viejo (un solo umbral
     // quemado en la config) y sin fila en umbrales_semaforo todavia.
-    cls = _gdNum(cur) >= k.semaforo ? 'kpi-green' : 'kpi-red';
+    var binOk = _gdNum(cur) >= k.semaforo;
+    cls = binOk ? 'kpi-green' : 'kpi-red';
+    semBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(binOk ? 'verde' : 'rojo') : '';
   } else {
     cls = k.cls || '';
   }
@@ -495,7 +498,7 @@ function _gdKpiCardHtml(k){
 
   return '<div class="aurora-kpi gd-kpi ' + cls + (alerta ? ' gd-kpi-alerta' : '') + '">' +
     (alerta ? '<div class="gd-kpi-flag" title="Valor fuera del rango esperado">⚠</div>' : '') +
-    '<div class="kv">' + txt + '</div><div class="kl">' + esc(k.titulo) + '</div>' +
+    '<div class="kv">' + semBadge + txt + '</div><div class="kl">' + esc(k.titulo) + '</div>' +
     trendHtml + metaHtml + '</div>';
 }
 
@@ -1427,12 +1430,19 @@ function _gdRenderCalidad(p, i){
     // 'qa_promedio' via umbrales_semaforo (default global 90/70, editable
     // desde el panel de administracion); si no hay umbral configurado cae
     // al mismo corte 90/70 que este panel siempre uso, para no perder color.
-    var qaColor = _gdSemaforoColor(r.total ? r.promedio : null, { metrica: 'qa_promedio', campana: camp });
-    var qaCls = qaColor ? _gdSemaforoClase(qaColor) : (r.promedio>=90?'kpi-green':r.promedio>=70?'kpi-org':'kpi-red');
+    // qaColor (y por lo tanto qaCls) se calcula IGUAL que siempre -- umbral
+    // configurado si existe, si no el mismo corte 90/70 sobre r.promedio
+    // (sin mirar r.total, igual que antes) -- no se toca esa clasificacion.
+    // qaBadge (Fase 133, WCAG 1.4.1) usa ese mismo color para decidir el
+    // simbolo -- nunca un color aparte.
+    var qaColor = _gdSemaforoColor(r.total ? r.promedio : null, { metrica: 'qa_promedio', campana: camp })
+      || (r.promedio>=90?'verde':r.promedio>=70?'amarillo':'rojo');
+    var qaCls = _gdSemaforoClase(qaColor);
+    var qaBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(qaColor) : '';
     el.innerHTML =
       '<div class="aurora-kpi"><div class="kv">'+r.total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+(r.total?r.promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+r.clasificacion+'</div><div class="kl">Clasificacion General</div></div>';
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+qaBadge+(r.total?r.promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
+      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+qaBadge+r.clasificacion+'</div><div class="kl">Clasificacion General</div></div>';
     return;
   }
   if(p.tipo === 'calidad_bar_asesores'){

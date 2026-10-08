@@ -100,7 +100,8 @@ function renderGerPanel(){
     var conMeta = _gerKpis.filter(function(k){ return k.meta !== null && k.meta !== undefined; });
     if(conMeta.length > 0){
       var cumpleMeta = conMeta.filter(function(k){ return k.valor >= k.meta; }).length;
-      html += '<div class="aurora-kpi '+(cumpleMeta===conMeta.length?'kpi-green':'kpi-org')+'"><div class="kv">'+cumpleMeta+'/'+conMeta.length+'</div><div class="kl">Cumplen Meta</div></div>';
+      var cumpleMetaColor = cumpleMeta===conMeta.length?'verde':'amarillo';
+      html += '<div class="aurora-kpi '+(cumpleMetaColor==='verde'?'kpi-green':'kpi-org')+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(cumpleMetaColor):'')+cumpleMeta+'/'+conMeta.length+'</div><div class="kl">Cumplen Meta</div></div>';
     }
     html += '<div class="aurora-kpi kpi-pur"><div class="kv">'+catNames.length+'</div><div class="kl">Categorias</div></div>';
   }
@@ -116,16 +117,18 @@ function renderGerPanel(){
       panelsHtml += '<div class="aurora-card"><div class="aurora-card-title">'+esc(cat)+'</div>';
       panelsHtml += '<div class="aurora-kpis" style="margin-top:8px">';
       kpis.forEach(function(k){
-        var cls = '';
+        var cls = '', badge = '';
         if(k.meta !== null && k.meta !== undefined){
-          cls = k.valor >= k.meta ? 'kpi-green' : (k.valor >= k.meta * 0.8 ? 'kpi-org' : 'kpi-red');
+          var kColor = k.valor >= k.meta ? 'verde' : (k.valor >= k.meta * 0.8 ? 'amarillo' : 'rojo');
+          cls = kColor==='verde'?'kpi-green':kColor==='amarillo'?'kpi-org':'kpi-red';
+          badge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(kColor) : '';
         }
         var valFmt = k.unidad === '%' ? (Math.round(k.valor * 100) / 100) + '%' :
                      k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
           '<div style="font-size:0.72rem;color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
-        panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
+        panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+badge+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';
     });
