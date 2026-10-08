@@ -13234,3 +13234,255 @@ quedan en el repo por ahora, mismo criterio que los de fases anteriores
 — se archivan en bloque cuando estorben (`scripts/README.md`), no fase
 por fase. Confirmado que ninguno imprime ni contiene un nombre real.
 PROGRESS.md y `docs/pendientes.md` actualizados en el mismo cierre.
+
+## Fase 131 — Cliente Mobilize (Flujo de Llamadas, Tipificación CDR, "Última actualización") (2026-10-08)
+
+Pedido original: Edwin revisa avances con Mobilize el 2026-10-08. Orden de
+prioridad pedido: Parte 1 → 2 → 3 → 6 (lo que Edwin revisa) → 4
+("Última actualización") → 5 (marca InConexion®, separada como Fase 132 —
+ver más abajo).
+
+**Hecho, mergeado a `main` y DESPLEGADO en producción (confirmado por
+`/api/health`, no solo CI):**
+- **Parte 1** (#345, v1.16.2): el cliente se escribía "MOVILIZE" en todo el
+  código -- corregido a su nombre real, "MOBILIZE" (listas de
+  clientes/campañas, plantilla de dashboard, plantilla de Calidad).
+  Migración idempotente nueva (`cliente_movilize_renombrado_mobilize_v1`,
+  `server/db.js`) renombra la fila ya sembrada en producción (en
+  `dashboards_config`, `calidad_plantillas`, y cualquier tabla con datos
+  por campaña/cliente) conservando cualquier personalización de admin y
+  renombrando las claves de permisos de cada usuario sin tocar su valor --
+  nadie perdió acceso. CI encontró 6 fallas reales (5 tests históricos que
+  usaban "MOVILIZE" como placeholder de "cliente sin relación" + 1 test
+  que SÍ dependía del nombre viejo por diseño) -- corregidas en el mismo
+  PR, documentado en su commit.
+- **Parte 2** (#347, v1.16.3): pestaña "Flujo de Llamadas" de Mobilize,
+  reusando **tal cual** el motor de Tráfico de Llamadas de ORLANT
+  (`trafico_combo`, `trafico-skills.js`/`trafico-logic.js`) -- mismo
+  mapeo de skill a campaña. `trafico-logic.js` ganó soporte de alias de
+  encabezado por columna (Mobilize trae "TIPO DE LINEA"/"DÍA"/"LLAMADAS
+  INGRESADAS"/"NIVEL DE SERVICIO 80 - 20"/"% ABANDONO" en vez de los
+  nombres de ORLANT -- un solo motor para los 2), ASA/ATA como texto de
+  reloj (además de número), y un aviso nuevo (nunca cambia el valor) si
+  NIVEL DE ATENCION o % ABANDONO superan 100% al tratarlos como fracción.
+  El panel `trafico_combo` ganó opciones opcionales nuevas (`etiquetaLinea`,
+  `subtabs`, `subtabsTitulos`, `resumenOcultar`, `resumenPorSeccion`) --
+  sin pasarlas, ORLANT/CLINICA AURORA/HOSPITAL LA MARIA quedan exactamente
+  igual (confirmado: el fixture real de ORLANT, `trafico-logic.test.js`,
+  sigue 60/60 sin cambios). Con ellas, Mobilize muestra el orden pedido
+  por Edwin (Resumen → Nivel de Servicio 80-20 → Abandono → ASA → AHT, AHT
+  al final), "Tipo de línea" en vez de "Skill", y un resumen acumulado
+  propio en cada sub-pestaña de detalle. CI encontró 1 falla real más
+  (`secciones` no admite un objeto vacío, límite del schema de
+  `validation.js` -- se agregó una sección placeholder "notas" sin ningún
+  flujo real) -- corregida en el mismo PR.
+  **Verificado dato por dato contra el archivo REAL de septiembre**
+  (`PLANTILLA_DE_FLUJO_DE_LLAMADAS_MOBILIZE.xlsx`, ya en
+  `C:\Users\filid\Documents\datos-inconexion\mobilize\`, confirmado solo
+  estructura/conteos): 27 filas, 25 días distintos, SKILL SAC 24 + Skill
+  Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas -- el
+  parser real de `trafico-logic.js` corrido contra el archivo da 0 avisos
+  y los mismos totales exactos.
+  Housekeeping de PRs: se abrieron por error 2 PRs contra el mismo branch
+  (#346 contra `main` antes de que la Parte 1 mergeara -- quedó en
+  conflicto por el squash-merge de GitHub; #347 apilado sobre la Parte 1).
+  Se cerró #346 sin mergear (mismo branch, 0 commits exclusivos) y #347 se
+  rebaseó sobre el `main` ya actualizado y se mergeó con CI verde.
+
+- **Carga real de septiembre/2026** (v1.16.4, 2026-10-08): al preparar la
+  carga con dry-run (`scripts/produccion/fase131-dryrun-carga-flujo-
+  mobilize.js`) se encontro un bug real -- la pantalla "Cargar Datos de
+  Dashboards" NUNCA reconocia el archivo real de Mobilize (su hoja trae un
+  nombre que cambia cada export, "HistQueue<fecha>", nunca "DATA"):
+  "El archivo no tiene datos en ninguna hoja reconocida", aunque el
+  parser aislado (`traficoParseFilas`) ya soportara los alias de columna
+  de Mobilize desde la Parte 2. Causa: `_cargasTraficoColumnas()`
+  (`public/js/cargas.js`) nunca propagaba esos alias (`TRAFICO_COLUMNAS.
+  aliases`) hacia `cargasEncabezadosCoinciden` (que solo lee `labelAlt`)
+  -- el MISMO bug de fondo que el "HALLAZGO GRAVE" ya documentado de la
+  Fase 122 en Tipificacion, esta vez en Trafico. Corregido en una linea
+  (PR #349, 2 pruebas nuevas que fijan el encabezado real de Mobilize y la
+  regresion exacta), desplegado y reconfirmado con el dry-run contra
+  produccion real ya con el fix (reconocida como
+  "reconocidaPorEncabezadosComo": "HistQueue20261007-144402", 0 avisos,
+  mismos totales exactos, 0 filas escritas).
+  Con el "sí" explícito del usuario (mapear las 2 líneas ANTES de cargar,
+  para que nunca queden en SIN_ASIGNAR): "SKILL SAC" y "Skill Key Account"
+  se mapearon a la campaña MOBILIZE (`PUT /calidad/trafico/skills/...`,
+  0 filas movidas porque no existía nada previo) y se guardaron las 27
+  filas reales (`scripts/produccion/fase131-carga-real-flujo-mobilize.js`).
+  Verificado después, contra producción real: API
+  (`/calidad/nivel-servicio/diario?campana=MOBILIZE`) en 27 filas, SAC 24
+  + Key Account 3, 104 ingresadas/104 contestadas/0 abandonadas (exacto
+  contra el control del archivo) y el dashboard de Mobilize mostrando la
+  pestaña "Flujo de Llamadas" junto a "Calidad", sin ninguna pestaña de
+  WhatsApp, 0 errores de consola.
+
+- **Parte 3 + Parte 6** (Tipificación CDR de Mobilize + su carga real,
+  v1.17.0, 2026-10-08): construida reusando el motor de ORLANT, contrato
+  de 3 archivos extendido con 5 columnas NUEVAS y OPCIONALES
+  (`duracionSeg`/`codAct`/`tipoInteraccion`/`hungUp`/`skillId` --
+  `tipificacion-logic.js`/`tipificaciones.js`/`validation.js`, ORLANT
+  nunca las trae, su comportamiento queda exactamente igual, suite
+  completa 1300/1300 antes y después). Decisiones tomadas con el usuario,
+  **todavía pendientes de confirmar con Edwin**: se excluyen por defecto
+  las filas "PRUEBA" (lista configurable) y "conectada" en salientes =
+  Regla B (codificación distinta de "Cliente_no_contesta", configurable).
+  Nuevo panel de Tipificación para Mobilize (torta + tabla de mayor a
+  menor + filtros de agente/skill/Entrante-Saliente/mes + 3 tarjetas de
+  llamadas salientes) via 4 opciones opcionales del panel ya existente
+  `tipificacion_panel` -- ORLANT sin pasarlas queda igual. Migración
+  idempotente nueva (`dashboards_config_mobilize_tipificacion_tab_v1`)
+  agrega el tab oculto a la fila ya desplegada de MOBILIZE.
+  **Carga real de septiembre/2026 hecha y verificada en producción**: el
+  archivo real (`PLANTILLA_CDR.xlsx`) trae 171 filas (104 inbound/67
+  outbound_ma); tras excluir 4 de "PRUEBA" quedan **167** (103 inbound/64
+  outbound_ma), 20 codificaciones distintas, `COD_ACT` siempre texto
+  (confirmado con un valor real no numérico, "TIMEOUTACW"). Guardado real
+  confirmado por la API (`/calidad/tipificacion/por-tipo` → 167, 11
+  categorías top10+Otras; `/calidad/tipificacion/resumen-salida` → 64
+  salientes/49 conectadas/15 no conectadas, exacto) y visualmente (tab
+  "Tipificación" visible junto a "Flujo de Llamadas"/"Calidad", 0 errores
+  de consola). No se creó ningún usuario CLIENTES_DASH de Mobilize (no se
+  ha pedido).
+
+- **Parte 4** (v1.18.0, 2026-10-08): "Última actualización: <fecha> <hora>"
+  (hora Colombia) visible en cada dashboard, con la fecha de la carga MAS
+  RECIENTE de ese cliente en cualquiera de sus 10 fuentes de datos reales
+  (`GET /dashboard/ultima-actualizacion`, mismo gate que ver el dashboard
+  en sí). Hallazgo real evitado con un test dedicado: el formato de fecha
+  `DD/MM/AAAA HH:MM:SS` que usa toda la plataforma NO ordena
+  lexicográficamente por fecha real -- se usa el orden real de inserción
+  (`id DESC`) en cada tabla, nunca `MAX(fecha)` como texto. Resaltado con
+  borde de color (naranja Mobilize, verde de marca InConexion `#74B859`
+  en el resto) sobre texto en el token ya vetado para contraste AA del
+  header (fondo fijo de marca, no cambia con el tema claro/oscuro).
+  Verificado visualmente con Playwright local (servidor + datos de demo,
+  no producción): ORLANT y MOBILIZE, claro y oscuro, 0 errores de
+  consola.
+
+### Estado final de la Fase 131
+
+Versión `1.18.0`. Partes 1, 2, 3, 4 y 6 cerradas, mergeadas y
+desplegadas, con datos reales de septiembre/2026 cargados y verificados
+contra producción. La Parte 5 (marca InConexión®) estaba bloqueada por
+los archivos de diseño (`C:\Users\filid\Documents\datos-inconexion\
+marca\` seguía vacía al cerrar esta fase) -- se retomó y cerró aparte,
+como **Fase 132**, el mismo día que llegaron los archivos.
+
+## Fase 132 — Marca InConexión®: logo, colores oficiales y tipografía (2026-10-08)
+
+Pedido original: Parte 5 de la Fase 131, separada en su propia fase al
+llegar los 12 archivos de marca (logo horizontal + isotipo, varias
+variantes de color) a `C:\Users\filid\Documents\datos-inconexion\marca\`.
+Cambio puramente visual -- sin tocar datos, exports ni funciones.
+
+**Diseño (decidido antes de tocar código):**
+- Logo: versión a color en el login con tema claro (la tarjeta es
+  blanca); versión blanca en el login con tema oscuro (la tarjeta pasa a
+  `#132c35`) y en la pantalla de bienvenida (`user-page`, fondo degradado
+  oscuro fijo en los 2 temas); isotipo blanco en el navbar de las 4
+  vistas con navbar (Admin, Cliente/`user-page`, Asesor, Supervisor --
+  las 2 últimas no tenían ningún ícono antes, solo texto). Favicon desde
+  `isotipo-color-sobre-fondo-oscuro.png` (ya trae su propio fondo teal
+  horneado -- se ve igual de bien en una pestaña de navegador clara u
+  oscura).
+- Colores: `--c-brand` (navbar/botones/headers de tablero, el único token
+  que NUNCA cambia con el tema) pasa del teal aproximado de siempre
+  (`#0d4a5e`) al teal OFICIAL muestreado de los archivos reales
+  (`#004150`) -- contraste con texto blanco mejora de 9.73:1 a 11.22:1.
+  `--c-primary` (texto/acento, >100 reglas en todo el tablero) se dejó
+  intacto a propósito: ya es casi idéntico al oficial (diferencia
+  imperceptible) y tocarlo multiplicaba el riesgo sin beneficio visible.
+  Se agregaron `--c-brand-blue` (`#3DA2DB`) y `--c-brand-gray-dark/mid/
+  light` (`#575756`/`#878787`/`#B2B2B2`) como tokens documentados del
+  resto de la paleta oficial -- el azul NO se usa como texto sobre fondo
+  claro (2.84:1, no pasa AA) así que no se forzó en ningún componente.
+  `--c-brand-green` (`#74B859`) tokeniza el verde que la Parte 4 de la
+  Fase 131 ya usaba como literal suelto en `.gd-ultima-act` -- mismo
+  valor exacto, cero cambio visual, solo ahora es un token reutilizable.
+- Tipografía: Quicksand autoalojada (nunca Google Fonts -- privacidad +
+  la CSP de `server.js` solo permite `'self'`/`data:` en `font-src`),
+  obtenida con `npm pack @fontsource/quicksand` en una carpeta temporal
+  fuera del repo (nunca se agregó a `package.json`), solo 4 pesos latin
+  (400/500/600/700, sin latin-ext ni vietnamese -- la plataforma es en
+  español), ~61KB en total. `font-variant-numeric:tabular-nums` agregado
+  a los números de KPIs/tablas para que no se desalineen al cambiar de
+  dígito con la nueva letra (más ancha que Segoe UI).
+
+**Hecho:**
+- `public/img/marca/` (8 PNG, generados con `sharp` desde los originales
+  en `datos-inconexion\marca\`, nunca copiados tal cual): logo horizontal
+  color/blanco a 600px + @2x 1200px, isotipo blanco a 128px + @2x 256px
+  (navbar), isotipo color a 256px + @2x 512px (reservado, sin uso en la
+  UI todavía). Las otras 8 variantes de los 12 archivos originales (una
+  tinta/grises/negro, pensadas para impresión/PDF) NO se copiaron a
+  `public/` -- nada en la plataforma las consume hoy (no hay exports PDF
+  en la app), quedan disponibles en la carpeta de marca fuera del repo
+  para cuando haga falta.
+- `public/favicon.ico` (16/32/48 multi-tamaño) + `favicon-32/180/192.png`,
+  generados desde `isotipo-color-sobre-fondo-oscuro.png` con fondo teal
+  oficial de relleno (`fit:'contain'`, sin recortar el símbolo).
+  `<link rel="icon">`/`apple-touch-icon` nuevos en `public/index.html`.
+- `public/index.html`: los 2 `<img class="navbar-logo-icon">` existentes
+  (Admin, `user-page`) apuntan a `img/marca/isotipo-blanco.png`; se
+  agregó el mismo ícono a los navbars de Asesor y Supervisor (antes solo
+  tenían texto). Login con 2 `<img>` (clara/oscura, mismo ancho/alto,
+  alternadas por CSS según `[data-theme]` -- sin salto de layout).
+  `img/logo-inconexion.png` y `img/navbar-icon.png` (los 2 archivos
+  viejos) borrados del repo, sin referencias rotas.
+- `public/css/styles.css`: `--c-brand` actualizado, tokens nuevos de
+  paleta, `@font-face` de Quicksand (`font-display:swap`) + regla de
+  `tabular-nums`, reglas de alternancia claro/oscuro del logo del login.
+- `public/fonts/`: 4 `.woff2` de Quicksand + `LICENSE-quicksand.txt`
+  (SIL OFL 1.1, con atribución a The Quicksand Project Authors).
+
+**Verificado:**
+- Suite completa del backend: 1321/1321 (10 pruebas nuevas en
+  `server/tests/fase132-marca-inconexion.test.js`: favicon referenciado
+  y servido, imágenes viejas sin referencias, las 4 navbars con isotipo,
+  logo claro/oscuro con mismo ancho/alto, fuente autoalojada sin Google
+  Fonts, ningún PNG de marca por encima de 150KB -- detecta si alguna vez
+  se copia un original sin optimizar --, presupuesto de fuentes <100KB,
+  verde tokenizado, teal oficial). `npm audit`: 0 vulnerabilidades
+  (`sharp`/`png-to-ico`/`@fontsource/quicksand` se usaron solo en una
+  carpeta temporal fuera del repo para generar los archivos finales,
+  nunca se agregaron a `server/package.json`).
+- `scripts/qa/auditoria-amplia-local.js` (recorrido completo existente,
+  no escrito para esta fase) contra `localhost:3000` con `seed:demo`:
+  **0 hallazgos** -- 0 errores de consola/página, 0 peticiones fallidas,
+  0 texto sospechoso, 0 canvas sin dibujar, exports Excel válidos, en
+  ORLANT (claro/oscuro/escritorio/móvil) y los 9 roles de demo.
+- Capturas Playwright propias (claro/oscuro): login, navbar de
+  Admin/Supervisor/Asesor/Cliente, pestañas de ORLANT disponibles en el
+  demo (Tráfico de Llamadas, Inasistencia, Efectividad de Citas, Calidad
+  -- Tipificación y Agendas NO están habilitadas para ORLANT en los datos
+  de `seed:demo` actuales, así que no se pudieron capturar: comparten
+  exactamente el mismo motor/clases CSS que las pestañas sí verificadas,
+  ningún estilo de esta fase es específico de una pestaña) y el dashboard
+  de Mobilize (badge naranja de "Última actualización" confirmado
+  distinto del verde de ORLANT). Revisadas una por una: logo y colores
+  correctos en ambos temas, 0 texto cortado, números alineados
+  (`tabular-nums`). También 1366×768 y móvil (412×915, Admin + Calidad de
+  ORLANT): 0 scroll horizontal en ningún caso.
+- **2 hallazgos de contraste pre-existentes, NO corregidos (fuera de
+  alcance -- pertenecen a la Fase 121 de diseño/accesibilidad, no a esta
+  fase de marca)**: en tema oscuro, `.toast`/`.btn-login`/`.btn-primary`
+  usan `color:var(--c-surface)` (oscuro en tema oscuro, `#132c35`) sobre
+  `var(--c-brand)` (también oscuro, fijo) -- ya fallaba AA antes de esta
+  fase (1.50:1 con el teal viejo), el cambio de tono lo deja en 1.30:1,
+  visualmente ya era ilegible antes. Confirmado con capturas comparativas
+  que NO es un efecto de Quicksand. El recorte del encabezado del
+  dashboard en móvil (el título se monta con "Última actualización") es
+  igual de la Fase 131 Parte 4, confirmado idéntico forzando Segoe UI en
+  la misma pantalla -- tampoco es de esta fase.
+- **No verificado**: producción real (pendiente del deploy + pasada
+  visual con sesión real del usuario, ver cierre de esta fase en
+  `PROGRESS.md`). Exports Excel/PDF: no hay ningún PDF en la plataforma
+  hoy (nada que revisar); los Excel no llevan logo ni cambian de
+  contenido con esta fase.
+
+### Estado final de la Fase 132
+
+Ver el resumen corto y el resultado de producción en `PROGRESS.md` (se
+completa al cerrar el PR y confirmar el deploy).
