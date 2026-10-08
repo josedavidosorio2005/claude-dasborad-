@@ -188,7 +188,7 @@ declarar(['GET /calidad/agendas/opciones', 'GET /calidad/agendas/especialidad', 
 declarar(['POST /calidad/agendas/carga/impacto', 'POST /calidad/agendas/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-agendamiento/opciones', 'GET /calidad/efectividad-agendamiento/ranking'], 'scopedRead');
 declarar(['POST /calidad/efectividad-agendamiento/carga/impacto', 'POST /calidad/efectividad-agendamiento/carga'], 'cargaManual');
-declarar(['GET /calidad/tipificacion/opciones', 'GET /calidad/tipificacion/por-tipo'], 'scopedRead');
+declarar(['GET /calidad/tipificacion/opciones', 'GET /calidad/tipificacion/por-tipo', 'GET /calidad/tipificacion/resumen-salida'], 'scopedRead');
 declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacion/carga'], 'cargaManual');
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');

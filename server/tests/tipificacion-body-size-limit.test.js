@@ -12,10 +12,12 @@ const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
-// [agente, fecha, hora, duracionMin, tipificacion, skill]
+// [agente, fecha, hora, duracionMin, tipificacion, skill,
+//  duracionSeg, codAct, tipoInteraccion, hungUp, skillId] -- las 5 ultimas
+// (Fase 131, Parte 3, CDR de Mobilize) van null aqui: ORLANT nunca las trae.
 function filaTipificacion(i) {
   const dia = String((i % 28) + 1).padStart(2, '0');
-  return ['ASESOR_DE_PRUEBA_TAMANO_' + (i % 21), '2021-01-' + dia, '18:06:08', 3, 'TIPIFICACION_DE_PRUEBA_' + (i % 62), 'LLAMADAS DE SALIDA'];
+  return ['ASESOR_DE_PRUEBA_TAMANO_' + (i % 21), '2021-01-' + dia, '18:06:08', 3, 'TIPIFICACION_DE_PRUEBA_' + (i % 62), 'LLAMADAS DE SALIDA', null, null, null, null, null];
 }
 
 test('Fase 77: 15.000 filas de Tipificacion (~1.4mb, supera el limite GLOBAL de 2mb solo si el body fuera objeto, aqui en array) se aceptan sin 413', async () => {

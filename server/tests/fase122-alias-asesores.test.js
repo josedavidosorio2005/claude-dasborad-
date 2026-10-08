@@ -174,7 +174,7 @@ test('Tipificacion: el alias se aplica al guardar -- el nombre guardado es el CA
   const campana = campanaFicticia();
   await request(app).post('/api/alias-asesores').set(auth(admin)).send({ campana, alias: 'AGENTE VIEJO TIP', canonico: 'AGENTE CANONICO TIP' });
 
-  const fila = ['AGENTE VIEJO TIP', '2026-08-05', null, null, 'NO_CONTESTAN', 'SKILL DEMO'];
+  const fila = ['AGENTE VIEJO TIP', '2026-08-05', null, null, 'NO_CONTESTAN', 'SKILL DEMO', null, null, null, null, null];
   const impacto = await request(app).post('/api/calidad/tipificacion/carga/impacto').set(auth(admin)).send({ campana, canal: 'LLAMADAS', filas: [fila] });
   assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
   assert.equal(impacto.body.filasUnificadasPorAlias, 1);

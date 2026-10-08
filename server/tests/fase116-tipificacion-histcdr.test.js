@@ -127,7 +127,15 @@ test('Privacidad: el archivo HistCDR completo (20 columnas) nunca deja pasar TEL
   assert.ok(!res.error, JSON.stringify(res));
 
   const filaObj = res.filas[0];
-  assert.deepEqual(Object.keys(filaObj).sort(), ['agente', 'duracionMin', 'fecha', 'hora', 'skill', 'tipificacion'].sort());
+  // Fase 131 (Parte 3): 5 claves nuevas, legitimas (ninguna es PII -- ver
+  // TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS en tipificacion-logic.js). Las
+  // 7 columnas PROHIBIDAS (DESTINY/TELEPHONE/COST/CUSTOMER_ID/CONN_ID/
+  // CAMPAIGN_ID/COMMENT, mas COD_ACT_2/DESCRIPTION_COD_ACT_2) sigue sin
+  // aparecer ninguna.
+  assert.deepEqual(
+    Object.keys(filaObj).sort(),
+    ['agente', 'codAct', 'duracionMin', 'duracionSeg', 'fecha', 'hora', 'hungUp', 'skill', 'skillId', 'tipificacion', 'tipoInteraccion'].sort()
+  );
 
   const payloadJson = JSON.stringify(filaObj);
   const arrayJson = JSON.stringify(tipificacionFilaComoArray(filaObj));

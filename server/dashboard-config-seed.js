@@ -524,9 +524,27 @@ const HLM = {
 //     ENCIMA de su grafica, no solo el chart solo -- pedido textual de
 //     Edwin ("cada sección con SU resumen acumulado debajo, no un solo
 //     resumen arriba").
-// Sin pestaña de Trafico de WhatsApp (Mobilize no tiene WhatsApp). Sin
-// pestaña de Tipificacion todavia (CDR, llega en la Parte 3 de esta misma
-// fase -- necesita su propio motor de lectura, igual que Trafico aqui).
+// Sin pestaña de Trafico de WhatsApp (Mobilize no tiene WhatsApp).
+// Tipificacion (Parte 3 de esta misma fase): CDR real de Wolkvox (export
+// completo HistCDR, hoja con nombre dinamico "HistCDR<fecha>"), MISMO
+// motor que ORLANT (tipificacion_panel, tipificacion-logic.js/
+// tipificaciones.js/validation.js) con 4 opciones NUEVAS y opcionales del
+// panel (ORLANT no las pasa, su comportamiento no cambia en nada):
+//   - `soloCanal: 'LLAMADAS'`: Mobilize no tiene WhatsApp -- una sola
+//     mitad, a todo el ancho (nunca el grid de 2 columnas de ORLANT).
+//   - `mostrarFiltroTipo`: desplegable Entrante/Saliente (TYPE_INTERACTION).
+//   - `mostrarTablaDetalle`: tabla de mayor a menor debajo del pie (ORLANT
+//     sigue sin tabla, pedido explicito de la Fase 77).
+//   - `mostrarTarjetasSalida`: 3 tarjetas (total/conectadas/no conectadas)
+//     de las llamadas SALIENTES (Regla B: "Cliente_no_contesta" es la
+//     unica codificacion que cuenta como "no conectada", configurable).
+// La exclusion de filas de prueba (DESCRIPTION_COD_ACT="PRUEBA") y la
+// lista de "no conectada" se configuran en la CARGA (cargas.js/
+// tipificacion-logic.js), no aqui -- este panel solo CONSUME lo que ya
+// quedo guardado.
+// Oculta por defecto (igual que ORLANT, Fase 77): se destapa en memoria
+// solo cuando ya hay datos reales cargados (_gdBootstrap,
+// dashboard-generic.js), nunca escribiendo este cambio en el servidor.
 // Calidad usa la plantilla GENERICA de contact center (plantillaGenerica,
 // calidad-plantillas-seed.js) -- Edwin no dio todavia criterios propios de
 // calificacion para Mobilize, mismo caso que Andres Yepes/Sascha Fitness/
@@ -569,6 +587,11 @@ const MOBILIZE = {
             { key: 'aht', label: 'AHT' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
+        },
+      ]},
+      { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
+        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'MOBILIZE',
+          soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
         },
       ]},
       { key: 'calidad', label: 'Calidad', panels: [

@@ -583,15 +583,24 @@ const agendasFiltrosQuery = z.object({
 // limite de tamano especifico de esta ruta en server.js. Orden FIJO, debe
 // coincidir con TIPIFICACION_ORDEN_ARRAY (tipificacion-logic.js) y con
 // CAMPOS_FILA (server/tipificaciones.js):
-//   [agente, fecha, hora, duracionMin, tipificacion, skill]
+//   [agente, fecha, hora, duracionMin, tipificacion, skill,
+//    duracionSeg, codAct, tipoInteraccion, hungUp, skillId]
 // hora/duracionMin son OPCIONALES (null si el archivo no trae un valor
 // valido -- no todas las filas del archivo real de Edwin tienen HORA
 // legible, y TIME_MIN no bloquea nada, se guarda para uso futuro).
+// Las 5 ULTIMAS (Fase 131, Parte 3, Tipificacion CDR de Mobilize) son
+// TODAS opcionales -- ORLANT nunca las trae, llegan null.
 const tipificacionTextoObligatorio = z.string().trim().min(1).max(200);
 const tipificacionHoraSchema = z
   .string()
   .regex(/^\d{2}:\d{2}:\d{2}$/, 'HORA debe tener formato HH:MM:SS')
   .nullable();
+// codAct/hungUp/skillId: texto libre corto (nunca numero -- COD_ACT trae al
+// menos un valor real no numerico, "TIMEOUTACW"). tipoInteraccion: solo los
+// 3 valores que produce tipificacionParseFilas (nunca el texto crudo del
+// archivo -- esa normalizacion ya ocurre en el navegador).
+const tipificacionCdrTextoOpcional = z.string().trim().min(1).max(100).nullable();
+const tipificacionTipoInteraccionSchema = z.enum(['inbound', 'outbound_ma', 'otro']).nullable();
 const tipificacionFilaArraySchema = z.tuple([
   tipificacionTextoObligatorio, // agente
   fechaSchema, // fecha
@@ -599,6 +608,11 @@ const tipificacionFilaArraySchema = z.tuple([
   z.number().int().min(0).max(100000).nullable(), // duracionMin
   tipificacionTextoObligatorio, // tipificacion (valor original, incluido "-")
   tipificacionTextoObligatorio, // skill
+  z.number().int().min(0).max(100000).nullable(), // duracionSeg
+  tipificacionCdrTextoOpcional, // codAct
+  tipificacionTipoInteraccionSchema, // tipoInteraccion
+  tipificacionCdrTextoOpcional, // hungUp
+  tipificacionCdrTextoOpcional, // skillId
 ]);
 
 const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
@@ -625,6 +639,9 @@ const tipificacionCargaBody = z.object({
 // mitad -- ver public/js/tipificacion.js. `canal` siempre obligatorio: el
 // dashboard SIEMPRE pide un canal a la vez (las 2 mitades del panel hacen
 // 2 llamadas independientes), nunca "ambos" en una sola consulta.
+// `tipoInteraccion` (Fase 131, Parte 3, opcional): filtro Entrante/Saliente
+// del panel de Mobilize -- ORLANT nunca lo manda (su archivo no trae esta
+// columna), queda sin filtrar por tipo de interaccion, igual que siempre.
 const tipificacionFiltrosQuery = z.object({
   campana: campanaSchema,
   canal: tipificacionCanalSchema,
@@ -633,11 +650,25 @@ const tipificacionFiltrosQuery = z.object({
   hasta: fechaSchema.optional(),
   agente: z.string().trim().max(200).optional(),
   skill: z.string().trim().max(200).optional(),
+  tipoInteraccion: z.enum(['inbound', 'outbound_ma', 'otro']).optional(),
 });
 
 const tipificacionOpcionesQuery = z.object({
   campana: campanaSchema,
   canal: tipificacionCanalSchema,
+});
+
+// Tarjetas de SALIDA (Fase 131, Parte 3, Mobilize): mismos filtros que
+// tipificacionFiltrosQuery MENOS tipoInteraccion (siempre implicito
+// 'outbound_ma' -- es la tarjeta de salida, no tiene sentido pedirle otro
+// tipo) y MENOS canal (siempre LLAMADAS -- Mobilize no tiene WhatsApp).
+const tipificacionSalidaResumenQuery = z.object({
+  campana: campanaSchema,
+  mes: mesSchema.optional(),
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  agente: z.string().trim().max(200).optional(),
+  skill: z.string().trim().max(200).optional(),
 });
 
 // ── Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin) ───────────
@@ -1112,6 +1143,7 @@ module.exports = {
     tipificacionCargaBody,
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,
+    tipificacionSalidaResumenQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,
     efectividadAgendamientoCargaBody,

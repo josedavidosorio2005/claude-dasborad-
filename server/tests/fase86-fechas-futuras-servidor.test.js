@@ -56,7 +56,7 @@ test('POST /calidad/tipificacion/carga (TIPIFICACION_LLAMADAS): fila con fecha f
     .send({
       campana: 'ORLANT',
       canal: 'LLAMADAS',
-      filas: [['ASESOR FASE86', '2099-06-15', null, null, 'TIPIFICACION X', 'SKILL X']],
+      filas: [['ASESOR FASE86', '2099-06-15', null, null, 'TIPIFICACION X', 'SKILL X', null, null, null, null, null]],
     });
   assert.equal(res.status, 400);
   assert.match(res.body.error, /2099-06-15/);

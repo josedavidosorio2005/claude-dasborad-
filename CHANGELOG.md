@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.17.0 — Octubre 2026
+
+**Fase 131 (Parte 3): Mobilize ya tiene su pestaña de Tipificación
+(motivos de llamada), igual que ORLANT.**
+
+- Nueva pestaña "Tipificación" en el dashboard de Mobilize: torta con los
+  motivos de llamada (de mayor a menor, con cantidad y %), filtros por
+  asesor, línea, mes y Entrante/Saliente.
+- Nuevo: 3 tarjetas con el total de llamadas salientes, cuántas se
+  conectaron con el cliente y cuántas no — pensadas para las llamadas de
+  gestión de salida.
+- Al cargar, las filas marcadas como "PRUEBA" en el archivo se excluyen
+  solas (y la pantalla avisa cuántas se excluyeron).
+
 ## v1.16.4 — Octubre 2026
 
 **Fase 131: la carga real del Flujo de Llamadas de Mobilize no se podía

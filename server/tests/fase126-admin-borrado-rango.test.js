@@ -122,7 +122,7 @@ test('borrado real de Agendas: borra SOLO el rango pedido, deja el resto intacto
 
 test('borrado real de Tipificacion de Llamadas: respeta el canal (nunca toca WhatsApp del mismo mes)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const filaTip = (agente, fecha) => [agente, fecha, '08:00:00', 5, 'MOTIVO_PRUEBA', 'SKILL_PRUEBA'];
+  const filaTip = (agente, fecha) => [agente, fecha, '08:00:00', 5, 'MOTIVO_PRUEBA', 'SKILL_PRUEBA', null, null, null, null, null];
   await cargarTipificacion(admin, 'ORLANT', 'LLAMADAS', [filaTip('A1', '2020-07-01'), filaTip('A2', '2020-07-02')]);
   await cargarTipificacion(admin, 'ORLANT', 'WHATSAPP', [filaTip('A3', '2020-07-03')]);
 

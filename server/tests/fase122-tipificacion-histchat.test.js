@@ -182,7 +182,15 @@ test('Privacidad: el archivo HistChat completo (33 columnas, con PII ficticia) n
   assert.ok(!res.error, JSON.stringify(res));
 
   const filaObj = res.filas[0];
-  assert.deepEqual(Object.keys(filaObj).sort(), ['agente', 'duracionMin', 'fecha', 'hora', 'skill', 'tipificacion'].sort());
+  // Fase 131 (Parte 3): 5 claves nuevas, legitimas -- HistChat SI trae
+  // COD_ACT/SKILL_ID (se leen), pero no TIME_SEC/TYPE_INTERACTION/HUNG_UP
+  // (quedan null). Ninguna de las columnas PII de la lista de arriba
+  // (CUSTOMER_*/COMMENTS/COMMENT/EXTRA_FIELD/USER_ID/AGENT_DNI/BSUID/
+  // CONN_ID/ROUTING) aparece como clave.
+  assert.deepEqual(
+    Object.keys(filaObj).sort(),
+    ['agente', 'codAct', 'duracionMin', 'duracionSeg', 'fecha', 'hora', 'hungUp', 'skill', 'skillId', 'tipificacion', 'tipoInteraccion'].sort()
+  );
 
   const payloadJson = JSON.stringify(filaObj);
   const arrayJson = JSON.stringify(tipificacionFilaComoArray(filaObj));

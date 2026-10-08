@@ -22,7 +22,7 @@ const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
 // Tipificaciones: [agente, fecha, hora, duracionMin, tipificacion, skill]
 function filaTipif(over) {
-  const base = ['ASESOR RANGO', '2025-04-15', '18:06:08', 3, 'AGENDADA_InConexion', 'LLAMADAS DE SALIDA'];
+  const base = ['ASESOR RANGO', '2025-04-15', '18:06:08', 3, 'AGENDADA_InConexion', 'LLAMADAS DE SALIDA', null, null, null, null, null];
   return Object.assign([], base, over);
 }
 

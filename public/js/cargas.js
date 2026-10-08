@@ -36,6 +36,12 @@ var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoCon
 // para extenderlo (mismo criterio "no tocar a nadie mas sin que se pida").
 var CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT'];
 
+// Fase 131 (Parte 3): campanas con Tipificacion (CDR de Wolkvox) que NO
+// usan la plantilla unificada de Trafico de 2 hojas -- gate INDEPENDIENTE
+// de CARGAS_CLIENTES_TRAFICO_UNIFICADO (ver onCargaClienteChange). Agregar
+// otro cliente aqui es la unica accion necesaria para extenderlo.
+var CARGAS_CLIENTES_TIPIFICACION_EXTRA = ['MOBILIZE'];
+
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
 // JS que ya estaba en memoria del navegador no reconocia esas hojas, y
@@ -296,12 +302,24 @@ async function onCargaClienteChange(){
     // ORLANT) -- no un flag propio, para no multiplicar listas de clientes
     // que hay que mantener en sincronia.
     var agendasCols = esUnificado ? _cargasAgendasColumnasUnificado() : null;
-    var tipificacionCols = esUnificado ? _cargasTipificacionColumnasUnificado() : null;
+    // Fase 131 (Parte 3): Mobilize necesita Tipificacion (CDR de Wolkvox,
+    // mismo motor de ORLANT) SIN usar la plantilla unificada de Trafico de
+    // 2 hojas (su Trafico sigue en la hoja generica "DATA", gate
+    // `esUnificado` de arriba) -- gate PROPIO, no se reusa `esUnificado`
+    // para no mezclar 2 decisiones independientes (que plantilla de
+    // Trafico usa vs. si tiene Tipificacion).
+    var tieneTipificacionExtra = CARGAS_CLIENTES_TIPIFICACION_EXTRA.indexOf(cliente) !== -1;
+    var tipificacionCols = (esUnificado || tieneTipificacionExtra) ? _cargasTipificacionColumnasUnificado() : null;
+    // Mobilize: excluye por defecto las filas de prueba mezcladas con datos
+    // reales (DESCRIPTION_COD_ACT="PRUEBA", lista configurable -- ver
+    // TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, tipificacion-logic.js). ORLANT
+    // nunca pasa esto (undefined), ninguna fila se excluye, igual que siempre.
+    var tipificacionOpcionesLlamadas = tieneTipificacionExtra ? { codificacionesExcluidas: TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO } : undefined;
     var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
     var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
     var citasAtendidasCols = esUnificado ? _cargasCitasAtendidasColumnasUnificado() : null;
     var salidaCols = esUnificado ? _cargasSalidaColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols);
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -556,7 +574,7 @@ async function procesarArchivoConsolidado(input){
       // eliminacion de duplicados exactos de la Fase 88 (ver
       // tipificacion-logic.js) -- WhatsApp (Wolkvox/HistChat) nunca la
       // aplica, Llamadas y el formato viejo siguen igual que siempre.
-      parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion); };
+      parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion, h.opcionesTipificacion); };
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){

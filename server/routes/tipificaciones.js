@@ -18,6 +18,7 @@ const {
   impactoTipificaciones,
   cargarTipificaciones,
   tipificacionesPorTipo,
+  tipificacionesResumenSalida,
   tipificacionesOpciones,
 } = require('../tipificaciones');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -51,6 +52,23 @@ router.get(
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
     res.json(tipificacionesPorTipo(db, req.query));
+  })
+);
+
+// Fase 131, Parte 3 (Mobilize): tarjetas de SALIDA (total/conectadas/no
+// conectadas de llamadas salientes) -- mismos filtros de mes/rango/
+// agente/skill que /por-tipo, canal siempre LLAMADAS, siempre sobre
+// tipoInteraccion='outbound_ma' (nunca el filtro Entrante/Saliente del
+// panel, que es independiente).
+router.get(
+  '/calidad/tipificacion/resumen-salida',
+  requireActor,
+  validate(schemas.tipificacionSalidaResumenQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(tipificacionesResumenSalida(db, req.query));
   })
 );
 
