@@ -1,1 +1,1 @@
-INFO modalPassVisible=true
+INFO scroll real: abierto antes=1 despues=0 (deberia ser 1 -> 0)

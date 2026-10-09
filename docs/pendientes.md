@@ -172,6 +172,17 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 3. Esperando decisión de InCo
 
+- **`.github/workflows/fase134-dry-run.yml` sin subir al repo** — el
+  workflow del dry-run de la Fase 134 (toca AWS/SSH: abre el puerto 22
+  del servidor para correr el script contra una copia del último
+  respaldo) quedó escrito pero nunca se commiteó (ver Fase 137, Parte A,
+  PR #381). CLAUDE.md pide consultar ANTES de tocar cualquier workflow
+  nuevo o existente, sin excepción de "ya reutiliza un mecanismo ya
+  auditado" — así que sigue fuera del repo. Prioridad BAJA (la migración
+  que este dry-run habría probado ya se desplegó y se verificó sin
+  pérdida de datos). Cómo se cierra: decides si quieres que se suba (el
+  script en sí ya fue revisado, solo imprime conteos, nunca una fila
+  real) o si prefieres que se descarte del todo.
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
   deja esperando? Prioridad BAJA. Anotado Fase 115 (2026-09-21), sigue
   sin decidirse.
