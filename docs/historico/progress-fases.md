@@ -13486,3 +13486,150 @@ Cambio puramente visual -- sin tocar datos, exports ni funciones.
 
 Ver el resumen corto y el resultado de producción en `PROGRESS.md` (se
 completa al cerrar el PR y confirmar el deploy).
+
+## Fase 133 — Accesibilidad visual WCAG 2.1 AA: contraste, semáforo, paleta de gráficas, tipografía, foco y objetivos táctiles (2026-10-08)
+
+Pedido original: el Anexo A de la Fase 121, re-medido contra el código
+REAL después de la Fase 132 (el teal oficial `#004150` cambia varios
+números de contraste respecto al anexo viejo, escrito con la v1.12.0).
+6 partes, 6 PRs (#356-#361), cada una con su propio tramo de pruebas
+nuevas y su propia corrida de Playwright — detalle de cada una abajo.
+
+**Parte 1 — Tokens de color accesibles (PR #356):** `public/js/
+contraste-logic.js` nuevo (función real de contraste WCAG por luminancia
+relativa, doble modo Node/navegador — nada medido "a ojo"). Tokens de
+texto corregidos en modo claro (`--c-text-muted` 2.97→5.38:1, `--c-text-
+2` 4.13→5.37:1, `--c-text-muted2` 4.28→5.05:1) y de relleno (`--c-
+success`/`--c-warning` 2.87/2.85→3.49/3.92:1, sus variantes `-dark`
+4.31/3.80→5.27/4.83:1). Tokens nuevos: `--c-success-text`/`--c-warning-
+text`/`--c-danger-text` (texto corto sobre celda tintada del semáforo),
+`--c-border-control` (bordes de input/select, antes 1.25-1.92:1, WCAG
+1.4.11). 2 hallazgos reales cerrados de paso, pendientes desde la Fase
+132: ~19 reglas (navbar completo, headers de tabla, `.toast`/`.btn-
+login`/`.btn-primary`, `.aurora-close`) usaban `color:var(--c-surface)`
+asumiendo "blanco" cuando ese token SÍ cambia con el tema — token nuevo
+`--c-on-brand` (blanco fijo); y el encabezado del dashboard se montaba
+en móvil (412px) por `.aurora-header` sin `flex-wrap` + un offset fijo
+en 34px que no contaba que el banner de demo hace wrap a 2 líneas ahí.
+Suite: 1321/1321.
+
+**Parte 2 — El semáforo ya no depende solo del color, WCAG 1.4.1 (PR
+#357):** `semaforo-logic.js` gana 3 funciones (`semaforoSimboloDe`/
+`semaforoTextoAccesibleDe`/`semaforoBadgeHtml`) sin tocar nunca la
+clasificación de color existente (prueba dedicada que lo confirma). 3
+símbolos (●/◆/■), deliberadamente distintos de las flechas ▲/▼ de
+tendencia en la misma tarjeta. Cableado solo donde el color era el
+ÚNICO portador del significado — no se tocó donde ya había texto visible
+(Activo/Retirado, Sí/No). Suite: 1325/1325 (4 pruebas nuevas).
+
+**Parte 3 — Paleta categórica de gráficas sin tonos del semáforo (PR
+#358):** la paleta categórica de `charts.js` (PC/PC_DARK) reusaba en sus
+índices 2/3/4 los mismos tonos exactos del semáforo — una gráfica de
+colas/asesores podía leerse sin querer como "bien/regular/mal". Paleta
+nueva generada por búsqueda real (maximiza la distancia perceptual
+CIELAB mínima bajo visión típica + protanopia/deuteranopia/tritanopia
+simuladas), restringida a matices fuera del semáforo. Mínimo real medido
+entre las primeras 8 series: 20,1 (claro) / 17,5 (oscuro) — el pedido
+original pedía ≥12 "por ejemplo". `paleta-logic.js` (el mapeo etiqueta→
+índice) no se tocó, solo a qué color resuelve cada índice. Suite:
+1340/1340 (10 pruebas nuevas).
+
+**Parte 4 — Escala tipográfica + bug real de header tapando las
+pestañas en móvil (PR #359):** tokens nuevos `--fs-note` (12px, el PISO
+— ningún texto queda por debajo) a `--fs-display` (32px), 8 pasos. 118
+declaraciones `font-size` sueltas (41 valores distintos, ~10px a 48px)
+migradas al token más cercano con un script, sin dejar ningún valor
+suelto. `font-weight:800` (8 usos) → `700`, el más pesado que Quicksand
+carga de verdad. **Hallazgo real serio, no estaba en el pedido original,
+encontrado auditando**: el offset que corre el header bajo el banner de
+demo no reservaba espacio para `#gd-tabs` (su hermano en el HTML) — con
+el header más alto (por el wrap de la Parte 1 + Quicksand) el header
+quedaba pintado ENCIMA de las pestañas, y un clic en la primera pestaña
+agarraba el botón Exportar en su lugar: no solo visual,
+bloqueaba la interacción real. Arreglo de raíz: el offset lo recibe el
+modal completo (`margin-top` + `height` recalculado), nunca el header
+solo. Suite: 1340 (1 falla aislada no reproducible por corrida,
+inestabilidad local conocida — CI Node 22 es la referencia).
+
+**Parte 5 — Sin degradados + foco visible + nombres accesibles +
+objetivos táctiles (PR #360):** `--grad-brand`/`--grad-btn` pasan a
+color sólido. Foco visible (WCAG 2.4.7/2.4.11): token `--c-focus` +
+regla global `:focus-visible` que gana por cascada sobre los 4
+`outline:none` existentes (en el navbar, donde `--c-focus` no llega a
+3:1 contra el fondo fijo, el anillo usa `--c-on-brand`). Nombres
+accesibles: los 7 `.btn-eye` ganan `aria-label` dinámico; las 16
+gráficas ganan `role="img"` + `aria-label` derivado del título ya
+visible. Objetivos táctiles (WCAG 2.5.8): escritorio ≥24×24px, móvil
+(≤768px) ≥44×44px en cerrar/exportar/mes/pestañas. Movimiento reducido
+(WCAG 2.3.3) vía `prefers-reduced-motion:reduce`. De paso, un pendiente
+real de la Parte 4 ya mergeada: las 30 etiquetas de Chart.js en 7-9px
+(Chart.js dibuja en canvas, no lee `--fs-*` de CSS) suben al piso de
+12px. Suite: 1349/1349 (9 pruebas nuevas).
+
+**Parte 6 — Prueba de regresión WCAG comprehensiva + `docs/sistema-de-
+diseno.md` + cierre v1.20.0 (PR #361):** `server/tests/fase133-parte6-
+regresion-wcag.test.js` re-mide, contra los tokens REALES de `styles.
+css`/`charts.js` (nunca copiados a mano), toda la lista del pedido
+original. **Hallazgo real de esta misma prueba, en su primera corrida**:
+texto blanco sobre `--c-primary-mid` daba 2,73:1 en tema oscuro —
+`.gd-subtab-btn.on`/`.gd-panel-tools button.on` lo usaban como FONDO, al
+revés de su propósito (texto claro sobre superficie oscura). Corregido a
+`--c-brand` (fijo, 11,22:1 en los 2 temas), mismo "look" de seleccionado,
+sin inventar un token nuevo. `docs/sistema-de-diseno.md` nuevo (los 2
+sistemas de color, tabla de tokens con su contraste medido, escala
+tipográfica, foco, objetivos táctiles), enlazado desde `CLAUDE.md`.
+Versión 1.20.0 + `CHANGELOG.md`. **No hecho, requiere autorización**:
+extender el job "pantallas" de `.github/workflows/ci.yml` con foco/
+nombres accesibles — CLAUDE.md exige consultar antes de tocar CI/
+workflows, anotado en `docs/sistema-de-diseno.md`. Suite: 1361/1361 (13
+pruebas nuevas).
+
+**Verificado (cada parte, detalle arriba):** Playwright propio por
+parte (foco con Tab de teclado real, no `.focus()` programático;
+`aria-label` verificado en gráficas renderizadas; capturas 1366×768 y
+móvil 412px antes/después de cada fix visual); `scripts/qa/auditoria-
+amplia-local.js` en 0 hallazgos en las partes 4 y 5. CI Node 22 verde en
+las 6 PRs.
+
+**No verificado en esta fase**: producción real. La pasada visual con
+sesión real del usuario para Fase 132 + Fase 133 juntas (ya en
+producción como v1.20.0 desde el deploy de la Parte 6) se hizo después,
+como parte del cierre de la Fase 132 — ver más abajo.
+
+### Estado final de la Fase 133
+
+Ver PROGRESS.md.
+
+## Fase 132 (cierre, Parte 7) — El nombre de marca va sin tilde y siempre con el ® (2026-10-08)
+
+Pedido original: el manual de marca dice "InConexion®" (sin tilde,
+siempre con el símbolo ®) — la Fase 132 y la 133 habían quedado con
+"InConexión" (con tilde) en la documentación y sin el ® en el navbar.
+1 PR (#362).
+
+**Hecho:** "InConexión" → "InConexion®" en `CHANGELOG.md`, `PROGRESS.md`,
+los 3 archivos de `docs/historico/` que lo usaban, `docs/guia-uso-
+orlant.md`, `server/paginas/guia-uso.html`, `docs/marca.md`, `docs/
+sistema-de-diseno.md` y `README.md` — nunca en `CLAUDE.md`/`AGENTS.md`
+(son reglas internas, no texto de cara al usuario) ni en el `alt=` de
+las imágenes de logo (el PNG ya trae el ® dibujado, no se duplica) ni en
+"InConexion SAS" (nombre legal de la empresa, no el uso de marca). ® como
+superíndice discreto agregado a `.navbar-logo-text` en las 4 vistas con
+navbar (Admin, Cliente, Asesor, Supervisor) y al `<title>` de la pestaña.
+4 pruebas nuevas (`fase132-07-marca-registrada.test.js`) que leen
+`index.html` real y fallan si esto se rompe otra vez. Versión 1.20.0 →
+1.20.1. Suite completa: 1365/1365, `npm audit` en 0.
+
+**Verificado en producción real** (Playwright visible, login real con la
+cuenta de administrador, `scripts/produccion/fase132-07-verificacion-
+visual-marca.js`): logo del navbar carga, color de fondo el teal oficial,
+`.navbar-logo-text` muestra "InConexion®" en claro Y en oscuro, 0 errores
+de consola/página. **No verificado en esa misma pasada**: las pestañas
+de ORLANT (Tráfico de Llamadas/Inasistencia/Calidad) — el selector no las
+encontró en la pantalla de aterrizaje de la cuenta admin (hace falta
+entrar primero al cliente) y no se repitió el login solo para eso; riesgo
+bajo, este PR no tocó código de dashboards.
+
+### Estado final de la Fase 132 (cierre)
+
+Ver el resumen corto en `PROGRESS.md`.
