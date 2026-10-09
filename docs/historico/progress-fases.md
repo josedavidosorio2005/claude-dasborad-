@@ -14139,3 +14139,111 @@ Usuarios) y F10 (iconos emoji del sidebar) quedan documentados en
 de esta fase. `docs/sistema-de-diseno.md` ampliado con los tokens de
 movimiento, componentes base y la especificación completa de cada PR.
 Ningún servidor local quedó corriendo en segundo plano al terminar.
+
+## Fase 138 — Reunión con Edwin (9-oct): meses en español, logo de Orlant, Tipificación de Orlant = Mobilize, ASA+AHT juntos, y "Llamadas de ingreso únicas" de Mobilize (2026-10-09)
+
+Pedido: varios ajustes puntuales surgidos de la reunión con Edwin del
+2026-10-09, divididos en 4 PRs independientes para que cada uno se
+pudiera revisar y mergear por separado.
+
+### PR 1 (#386, v1.27.0) — mes en español + logo de Orlant
+
+Los selectores de mes de Calidad y "Mis Resultados" mostraban el valor
+crudo ("2026-09") en vez del nombre completo en español, a diferencia
+del selector principal del tablero y el de "Comparar contra" — unificado
+a "Septiembre 2026". El encabezado del tablero de Orlant ganó su propio
+logo (provisional, construido a partir de lo que mandó Edwin por
+WhatsApp — se reemplaza cuando llegue el original en alta resolución),
+igual que Mobilize ya lo tenía desde la Fase 132 (Parte 8).
+
+### PR 2 (#387, v1.28.0) — Tipificación de Orlant = Mobilize, ASA+AHT juntos en Mobilize
+
+El panel de Tipificación de Orlant (sigue oculto del menú) mostraba 2
+tortas (Llamadas y WhatsApp) sin filtro ni tabla de detalle; se igualó
+al patrón que ya usaba Mobilize: 1 sola torta de Llamadas, filtro por
+tipo, tabla de detalle y las tarjetas de llamadas de salida. La
+información de WhatsApp no se borra, solo deja de graficarse en este
+panel en particular. En Flujo de Llamadas de Mobilize, las sub-pestañas
+"ASA" y "AHT" (antes separadas) se unificaron en una sola ("ASA y AHT"),
+con las 2 tarjetas de promedio y las 2 líneas de tendencia juntas —
+mismo estilo que ya usa Orlant para "ASA y ATA". Ningún número cargado
+cambia, solo cómo se muestra.
+
+### PR 3 (#388, v1.29.0) — "Llamadas de ingreso únicas" de Mobilize
+
+El punto principal de la fase. Nuevo panel en la mitad izquierda de
+Flujo de Llamadas de Mobilize: 3 tarjetas (Contestadas/Abandonadas/Total
+únicas) + gráfica de barras por mes (3 series). "Única" = un mismo
+número de teléfono que llama varias veces el mismo día cuenta 1 sola vez
+(si llama en días distintos, cuenta aparte en cada día). Filtros
+Desde/Hasta/Skill para todos; filtro por Asesor solo para roles internos
+(CLIENTES_DASH no lo ve). **Privacidad dura**: TELEPHONE se usa solo en
+memoria del navegador para deduplicar — nunca llega al servidor (la
+tabla no tiene esa columna), nunca se guarda, nunca se exporta ni se
+muestra; esquema Zod cerrado (tupla de 4, sin `.rest()`) rechaza un 5º
+elemento con 400. Carga integrada al flujo existente de "Cargar Datos"
+(mismo patrón que Tipificación CDR: reemplazo por rango de fecha,
+idempotente). Plantilla oficial
+`server/plantillas/PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx`, documentada
+en `docs/plantillas-inventario.md`. Migración idempotente agrega el
+panel al `dashboards_config` ya sembrado de MOBILIZE en producción.
+`node --test` completo: 1457/1457 pasando (34 pruebas nuevas: 7 casos
+sintéticos pedidos explícitamente, privacidad con centinelas, migración,
+agregación). Verificado en local con datos sintéticos (nunca
+commiteados): 3 tarjetas + gráfica combinada funcionando, filtro Asesor
+confirmado oculto para `demo_clientes_dash`, 412px claro/oscuro sin
+overflow horizontal, 0 errores de consola. **Este PR no carga el archivo
+real** (queda con datos sintéticos de demo hasta un "OK cargar" aparte,
+con dry-run y verificación contra los números de control 88/51/139) y
+**no construye la mitad derecha** ("Llamadas de salida", Edwin todavía
+no mandó ese archivo).
+
+**Incidente real en el deploy de este PR**: el merge a `main` pasó CI en
+verde (el PR había pasado CI antes de mergear), pero el job
+`docker-build` de la CI de `main` falló con `429 Too Many Requests` de
+Docker Hub al intentar bajar `node:22-bookworm`/`node:22-bookworm-slim`
+(límite de descargas anónimas desde los runners de GitHub, no un
+problema del código del PR). `DEPLOY_PLACEHOLDER`
+
+### PR 4 (#DEPLOY_PR4_NUM, documentación) — cómo sacar las llamadas únicas desde Wolkvox
+
+Sesión nueva (la anterior se quedó sin tokens a mitad de la Fase 138).
+Agrega a la guía de uso (`docs/guia-uso-orlant.md` y su espejo real
+`server/paginas/guia-uso.html`, editados juntos) una nueva subsección
+"Llamadas Únicas (Mobilize)" con el paso a paso para sacar de Wolkvox
+los 3 reportes que arman el archivo: contestadas de ingreso (Reportes →
+CDR → "1. Detalle de las llamadas", quitando las de salida —número con
+guion— y los duplicados del mismo número el mismo día), abandonadas
+(Skills & Servicios → "2. Llamadas abandonadas" por skill, con
+`SKILL_NAME = NO CONTESTADAS`) y salientes no conectadas (CDR → "5.
+Detalle de las llamadas para las no conectadas", todavía sin cargar —
+Edwin no ha mandado ese archivo). Captura de referencia
+(`docs/img/guia-uso/wolkvox-cdr-mobilize.png` / `public/img/guia/
+wolkvox-cdr-mobilize.png`) del menú CDR de Wolkvox con los reportes 1 y
+5 resaltados — sin ningún dato de cliente real, solo nombres de reportes
+del propio Wolkvox. Versión `1.29.1` (sube porque el cambio toca una
+página que sirve la app, `server/paginas/guia-uso.html`, no solo
+`docs/`). Sin cambios de código de producto ni de datos.
+
+### No verificado en esta fase (anotado en `docs/pendientes.md`, con dueño)
+
+- El significado exacto de "nombre de asesor" en las filas NO CONTESTADAS
+  de Llamadas Únicas (una llamada abandonada no tiene asesor que la
+  atendió) — pendiente de Edwin.
+- Si el filtro de skill del panel de Llamadas Únicas aplica también a las
+  abandonadas, o solo a las contestadas — pendiente de Edwin.
+- Qué significa exactamente "tipo de línea" que mencionó Edwin para
+  Mobilize — pendiente de Edwin.
+- Si "ATA" que mencionó Edwin es lo mismo que AHT — pendiente de Edwin.
+- Cuándo manda Edwin el archivo de "Llamadas de salida" (conectadas/no
+  conectadas) de Mobilize, que construye la mitad derecha del panel
+  (ahí aplica la Regla B, todavía sin confirmar con él) — pendiente de
+  Edwin.
+- La carga real del archivo `CONTESTADAS UNICAS.xlsx` de septiembre
+  (fuera de Downloads, nunca en el repo) — pendiente del "OK cargar"
+  explícito del usuario, no se hizo en esta sesión. `CARGA_REAL_PLACEHOLDER`
+- La dependencia de la encuesta/"guanid" de Mobilize para el 15 de
+  octubre la trabajan otras personas — sin datos todavía, fuera del
+  control de esta fase.
+
+Ningún servidor local quedó corriendo en segundo plano al terminar.

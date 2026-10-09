@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.29.1 — Octubre 2026
+
+**Fase 138 (PR4): la guía de uso ya explica cómo armar el archivo de
+"Llamadas Únicas" de Mobilize.**
+
+- Nueva sección en la guía de uso (dentro de la plataforma y en el
+  repositorio) con el paso a paso para sacar de Wolkvox los 3 reportes
+  que arman el archivo de Llamadas Únicas de Mobilize (contestadas de
+  ingreso, abandonadas y salientes no conectadas), con una captura de
+  pantalla de referencia.
+- Sin cambios de código ni de datos — solo documentación.
+
 ## v1.29.0 — Octubre 2026
 
 **Fase 138 (PR3): nueva sección "Llamadas de ingreso únicas" en el tablero

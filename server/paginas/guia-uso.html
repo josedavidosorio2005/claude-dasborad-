@@ -45,7 +45,7 @@
   <div class="wrap">
     <h1>Guía de uso — InConexion® Platform (ORLANT)</h1>
     <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
-    <span class="version-pill">Versión de la plataforma: 1.26.0</span>
+    <span class="version-pill">Versión de la plataforma: 1.29.1</span>
     <p style="margin:8px 0 0;font-size:0.82rem;opacity:0.95">Desde octubre de 2026, la plataforma solo tiene datos oficiales de <strong>agosto y septiembre de 2026</strong> (más julio de Tipificación de WhatsApp, real). Los datos de meses anteriores que venían en las plantillas de prueba ya se quitaron.</p>
   </div>
 </header>
@@ -226,6 +226,21 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <h3>Calidad</h3>
 <p>La carga normal es <strong>un monitoreo a la vez</strong>, desde el formulario (ver <a href="#s6">sección 6</a>) — no es una carga de archivo mensual como las demás bases. También existe una <strong>carga masiva</strong> desde Excel (3 hojas: "Monitoreos" para diligenciar, "Diccionario" con la lista de preguntas de referencia, "Resumen por Asesor" de consulta) para cuando hay muchos monitoreos para subir de una vez.</p>
 </div>
+<div class="card">
+<h3>Llamadas Únicas (Mobilize)</h3>
+<p><strong>Qué archivo</strong>: el mismo patrón que las demás bases de Wolkvox, pero este archivo hay que armarlo a mano combinando 3 reportes distintos de Wolkvox (ver abajo cómo sacarlos) — Edwin es quien hace esa combinación antes de subir.<br>
+<strong>Hoja</strong>: <code>LLAMADAS_UNICAS</code> de la plantilla oficial (<code>PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx</code>, descargable desde "Cargar Datos" eligiendo el cliente Mobilize).<br>
+<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las filas de llamadas <strong>abandonadas</strong> van con SKILL_NAME = NO CONTESTADAS.<br>
+<strong>Privacidad</strong>: TELEPHONE se usa solo un instante, en la computadora de quien sube el archivo, para no contar dos veces una misma llamada del mismo número el mismo día — nunca llega al servidor, nunca se guarda, nunca se exporta ni se muestra en ninguna pantalla.<br>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Septiembre, se reemplaza ese mes completo.</p>
+<p><strong>Cómo sacar las llamadas únicas desde Wolkvox, paso a paso:</strong></p>
+<ol>
+  <li><strong>Contestadas de ingreso</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "1. Detalle de las llamadas". De ahí se quitan dos cosas antes de pegarlas en la plantilla: las llamadas de salida (el número de teléfono trae un guion) y los duplicados del mismo número el mismo día (no de todo el mes — si el mismo número llama dos días distintos, cuenta en cada uno).</li>
+  <li><strong>Abandonadas</strong>: en Wolkvox, Skills &amp; Servicios → reporte "2. Llamadas abandonadas", filtrando por skill. Esas filas van a la plantilla con SKILL_NAME = NO CONTESTADAS.</li>
+  <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas" (esta parte todavía no se carga en la plataforma — queda para cuando Edwin mande ese archivo aparte).</li>
+</ol>
+<figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
+</div>
 
 <h2 id="s5">5. Calendario mensual</h2>
 <table>
@@ -273,7 +288,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p>Jose David Osorio — (completar).</p>
 
 <a class="back-link" href="/">&larr; Volver a la plataforma</a>
-<footer>InConexion® Platform — Guía de uso — versión 1.26.0</footer>
+<footer>InConexion® Platform — Guía de uso — versión 1.29.1</footer>
 </div>
 </body>
 </html>
