@@ -179,6 +179,49 @@ var MOTION_MODALES_ESC = {
   'dashcfg-overlay': function () { if (typeof closeDashCfgModal === 'function') closeDashCfgModal(); },
   'gd-overlay': function () { if (typeof closeGenericDashboard === 'function') closeGenericDashboard(); },
 };
+
+// Fase 137 (Parte C, bug real encontrado al investigar un hallazgo de
+// produccion): un popup interno ad-hoc (hoy el unico es #gd-export-menu
+// del boton "Exportar", dashboard-generic.js -- un <div> simple con
+// document.body.appendChild, NUNCA parte de MOTION_OVERLAY_STACK) no
+// tenia forma de "avisarle" al Escape global que acababa de cerrarse --
+// asi que un Escape sin relacion (ej. el que scripts/produccion/
+// revision-final.js presiona por costumbre despues de exportar, de
+// cuando Escape todavia no hacia nada) terminaba cerrando el dashboard
+// ENTERO. Reproducido localmente: en el commit justo antes del PR #377
+// (F04), ese Escape nunca tocaba #gd-overlay; en el commit de ahi en
+// adelante, #gd-overlay pierde la clase "show" ~360ms despues de ese
+// mismo Escape -- confirmado que #gd-export-menu YA no existia en el
+// DOM en el momento exacto del Escape (el propio boton "Excel" ya lo
+// habia cerrado con su toggle), asi que un popup NO tiene que seguir
+// abierto para que este bug ocurra.
+//
+// Arreglo con 2 partes, igual que un <select> nativo (Escape cierra el
+// desplegable abierto, nunca el dialogo que lo contiene):
+//   1) Si hay un popup interno TODAVIA abierto (registrado via
+//      motionRegistrarPopupInterno), Escape lo cierra a EL y nada mas.
+//   2) Si un popup interno se cerro hace MUY poco (<400ms, por click,
+//      clic afuera, o por el Escape del punto 1) -- el caso real de
+//      arriba, donde ya no queda nada registrado para el punto 1 -- ese
+//      Escape se da por "ya gastado" en vez de cascadear al overlay.
+//      400ms cubre con margen la secuencia sincronica de un clic que
+//      cierra el popup seguido de un Escape de costumbre, sin ser tan
+//      largo como para tragarse un Escape genuino y deliberado del
+//      usuario unos segundos despues.
+var MOTION_POPUPS_INTERNOS = [];
+var MOTION_POPUP_CERRADO_HACE = 0;
+var MOTION_GRACIA_POPUP_MS = 400;
+function motionRegistrarPopupInterno(id, cerrarFn) {
+  motionDesregistrarPopupInterno(id, false);
+  MOTION_POPUPS_INTERNOS.push({ id: id, cerrar: cerrarFn });
+}
+function motionDesregistrarPopupInterno(id, marcarCierre) {
+  var i = -1;
+  for (var k = 0; k < MOTION_POPUPS_INTERNOS.length; k++) { if (MOTION_POPUPS_INTERNOS[k].id === id) { i = k; break; } }
+  if (i > -1) MOTION_POPUPS_INTERNOS.splice(i, 1);
+  if (marcarCierre !== false) MOTION_POPUP_CERRADO_HACE = Date.now();
+}
+
 // typeof document !== 'undefined': mismo patron dual navegador/Node que
 // el resto del archivo -- Node (server/tests/fase136-pr4-base-
 // movimiento.test.js hace require() directo de este archivo) no tiene
@@ -187,6 +230,12 @@ var MOTION_MODALES_ESC = {
 if (typeof document !== 'undefined') {
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    if (MOTION_POPUPS_INTERNOS.length) {
+      var popup = MOTION_POPUPS_INTERNOS[MOTION_POPUPS_INTERNOS.length - 1];
+      popup.cerrar();
+      return; // consumido por el popup -- nunca cierra el overlay en el mismo Escape
+    }
+    if (Date.now() - MOTION_POPUP_CERRADO_HACE < MOTION_GRACIA_POPUP_MS) return;
     // De atras hacia adelante: el ultimo de la pila es el de mas arriba.
     // Si por lo que sea quedo un id en la pila cuyo overlay YA no tiene
     // .show (ej. se cerro por otro camino sin pasar por motionCerrarModal),
@@ -208,5 +257,10 @@ if (typeof document !== 'undefined') {
 // Doble modo: global en el navegador (los modulos se cargan por
 // <script>), y require() en Node para pruebas de regresion.
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { motionExit: motionExit, motionEnter: motionEnter, motionAbrirModal: motionAbrirModal, motionCerrarModal: motionCerrarModal };
+  module.exports = {
+    motionExit: motionExit, motionEnter: motionEnter, motionAbrirModal: motionAbrirModal, motionCerrarModal: motionCerrarModal,
+    motionRegistrarPopupInterno: motionRegistrarPopupInterno, motionDesregistrarPopupInterno: motionDesregistrarPopupInterno,
+    _popupsInternos: function () { return MOTION_POPUPS_INTERNOS; },
+    _popupCerradoHace: function () { return MOTION_POPUP_CERRADO_HACE; },
+  };
 }

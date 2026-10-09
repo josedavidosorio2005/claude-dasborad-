@@ -165,9 +165,40 @@ vuelve al botón que abrió el menú), objetivos táctiles ≥44px en móvil,
 sin desbordar a 412px — verificado en navegador real (Playwright):
 Escape cierra y devuelve el foco, clic afuera cierra, elegir una acción
 por teclado cierra el menú y dispara la acción real (confirmado con
-"Cambiar contraseña", que abrió el modal de siempre). 15 pruebas
-nuevas (`fase137-f07-menu-acciones-usuarios.test.js`) + regresión de
-Fase 133/136 en verde (38 pruebas). Versión `1.26.0`.
+"Cambiar contraseña", que abrió el modal de siempre). 17 pruebas
+nuevas (`fase137-f07-menu-acciones-usuarios.test.js`, incluidos 2
+retoques tras el "OK F07": `font-family:inherit` y cierre del menú al
+hacer scroll/redimensionar) + regresión de Fase 133/136 en verde.
+Versión `1.26.0`.
+
+**Incidente real durante el merge de la Parte B**: PR #382 se mergeó
+con un commit viejo — la API de GitHub (`head.sha`) quedó atrasada más
+de 10 minutos tras un push real y confirmado (`git ls-remote`),
+produciendo un deploy a producción sin los 2 retoques del "OK F07".
+Corregido con un PR de fast-follow (#383) en minutos; regla nueva en
+`CLAUDE.md` (`gh pr merge` siempre con `--match-head-commit`, verificado
+contra `git ls-remote` antes).
+
+**Parte C (producción, solo lectura) — hallazgo real confirmado y
+corregido:** `revision-final.js` original falló 2 veces (Fase 136) y una
+3ª vez justo después de este deploy, siempre en el mismo punto (clic en
+la 2ª pestaña de ORLANT, justo después de exportar). **Causa real
+encontrada y reproducida en local** (commit actual vs. el commit justo
+antes del PR #377): el Escape global que cierra modales (F04, Fase 136)
+no distinguía un popup interno (`#gd-export-menu`, el menú de
+"Exportar") de los 6 modales grandes — un Escape de costumbre que
+`revision-final.js` presiona después de exportar (de cuando Escape
+todavía no hacía nada) cerraba el dashboard ENTERO de ORLANT en vez de
+solo el popup (que, confirmado, ya estaba cerrado por su propio botón
+"Excel" en el momento exacto del Escape). Corregido en
+`motion-helpers.js`: un popup interno todavía abierto intercepta Escape
+primero; un popup cerrado hace <400ms por cualquier camino (clic,
+clic afuera, o su propio Escape) deja ese Escape "gastado" sin cascadear
+al overlay. 4 pruebas nuevas que fallan sin el arreglo, confirmadas con
+`git stash`. **Reproducción de punta a punta tras el fix: 0 errores,
+`correrChequeosAdmin()` completo en las 8 pestañas reales.** La
+atribución anterior ("arranque en frío tras deploy") era incorrecta —
+corregida en `docs/pendientes.md`.
 
 ### Fase 136 (cerrada) — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135
 
