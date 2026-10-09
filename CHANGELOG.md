@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.24.0 — Octubre 2026
+
+**Fase 136 (PR 7): "Mis Resultados de Calidad" ya no se ve vacío sin
+explicación cuando no hay monitoreos, y el ícono de tema da una
+pequeña confirmación al cambiarlo.**
+
+- Cuando un asesor (o un reporte de Calidad) todavía no tiene
+  monitoreos cargados, el gráfico de clasificación ahora dice
+  claramente "Sin datos... todavía" en vez de verse vacío sin
+  explicación.
+- El ícono de cambiar tema (luna/sol) ahora gira suavemente al hacer
+  clic, confirmando que el cambio se aplicó.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.23.0 — Octubre 2026
 
 **Fase 136 (PR 6): las pestañas de un dashboard ahora cambian con una

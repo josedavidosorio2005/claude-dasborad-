@@ -13,6 +13,26 @@ function mrmk(id,cfg){
   _mrc[id]=new Chart(el,cfg);
   if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_mrc[id]);
 }
+// Fase 136 (PR 7, F09): alterna entre el <canvas> real y un mensaje "Sin
+// datos de <etiqueta> todavia." -- mismo texto que ya usa
+// dashboard-generic.js para el resto de la plataforma (_gdAvisoSinDatos
+// MesHtml), para que un hueco en blanco nunca se vea distinto segun la
+// vista. Reconstruye el <canvas> con el MISMO id al volver a haber
+// datos (si no, mrmk() no encontraria el elemento la proxima vez).
+function mrMostrarSinDatosOCanvas(canvasId, hayDatos, etiqueta){
+  var host = document.getElementById(canvasId);
+  var wrap = host ? host.parentElement : document.querySelector('[data-mr-wrap-de="'+canvasId+'"]');
+  if(!wrap) return;
+  if(hayDatos){
+    if(!document.getElementById(canvasId)){
+      wrap.innerHTML = '<canvas id="'+canvasId+'"></canvas>';
+    }
+  } else {
+    if(_mrc[canvasId]){ try{_mrc[canvasId].destroy();}catch(e){} delete _mrc[canvasId]; }
+    wrap.setAttribute('data-mr-wrap-de', canvasId);
+    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px">Sin datos de '+esc(etiqueta)+' todavia.</div>';
+  }
+}
 // Los monitoreos del asesor logueado — MIGRADO A SERVIDOR: GET /api/monitoreos/mios
 // (el servidor empareja por nombre y devuelve solo los del usuario autenticado).
 var _misMonitoreosAll = [];
@@ -100,7 +120,16 @@ async function renderMisResultados(){
     '<div class="aurora-kpi '+promClsMr+'"><div class="kv" style="font-size:1rem">'+clasifGeneral+'</div><div class="kl">Clasificacion General</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+fallosTotal+'</div><div class="kl">Total Fallos Criticos</div></div>';
 
-  mrmk('mr-ch-clasif',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
+  // Fase 136 (PR 7, F09 de la auditoria de la Fase 135): sin monitoreos,
+  // un doughnut de 3 valores en 0 no dibuja ningun sector -- quedaba un
+  // area en blanco sin explicacion, distinto del resto de la plataforma
+  // (que SI avisa "Sin datos..." en ese caso, ver dashboard-generic.js
+  // _gdAvisoSinDatosMesHtml). Mismo texto/patron, aplicado aqui porque
+  // esta vista (portal Asesor) no pasa por ese motor de paneles.
+  mrMostrarSinDatosOCanvas('mr-ch-clasif', total > 0, 'Distribucion de Clasificacion');
+  if (total > 0) {
+    mrmk('mr-ch-clasif',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
+  }
 
   var labels = arr.map(function(m,i){ return m.fecha || ('#'+(i+1)); });
   var puntajes = arr.map(function(m){ return m.puntaje; });
