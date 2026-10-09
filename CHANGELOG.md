@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.28.0 — Octubre 2026
+
+**Fase 138 (PR2): Tipificación de Orlant ahora se ve igual que la de
+Mobilize, y ASA + AHT de Mobilize se ven juntos en una sola gráfica.**
+
+- El panel de Tipificación de Orlant (sigue oculto del menú, como antes)
+  ahora muestra: 1 sola torta de Llamadas, filtro por tipo, tabla de
+  detalle y las tarjetas de llamadas de salida — igual que ya se veía en
+  Mobilize. Antes mostraba 2 tortas (Llamadas y WhatsApp) sin filtro ni
+  tabla. La información de WhatsApp no se borra, solo deja de graficarse
+  en este panel.
+- En Flujo de Llamadas de Mobilize, las sub-pestañas "ASA" y "AHT" (antes
+  separadas) ahora son una sola ("ASA y AHT"), con las 2 tarjetas de
+  promedio y las 2 líneas de tendencia juntas — mismo estilo que ya usa
+  Orlant para "ASA y ATA".
+- Nada de esto cambia ningún número ya cargado — solo cómo se muestra.
+
 ## v1.27.0 — Octubre 2026
 
 **Fase 138 (PR1): el selector de mes ahora muestra el nombre completo en

@@ -3234,6 +3234,94 @@ runOnceMigration('fase134_borrar_clientes_v1', () => {
   }
 });
 
+// Fase 138 (PR2, pedido de Edwin 09/10): el panel de Tipificacion de ORLANT
+// pasa a tener las mismas opciones que ya tenia Mobilize (1 torta Llamadas +
+// filtro + tabla de detalle + tarjetas de salida, en vez de las 2 tortas
+// Llamadas/WhatsApp lado a lado de Fase 77) -- decision explicita del
+// usuario, sabiendo que la torta de WhatsApp deja de verse EN ESTE panel
+// (sus datos siguen intactos en la tabla `tipificaciones`). Defensiva: si
+// el panel de ORLANT ya tiene `soloCanal` (ya migrado, o editado a mano),
+// no se toca nada.
+runOnceMigration('dashboards_config_orlant_tipificacion_opciones_mobilize_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'tipificacion');
+  if (!tab) return;
+  const yaTiene = (tab.panels || []).some((p) => p && p.soloCanal);
+  if (yaTiene) return; // ya migrado, o editado a mano -- no se pisa
+  const esViejoReconocible = (tab.panels || []).length === 1 && tab.panels[0] && tab.panels[0].tipo === 'tipificacion_panel';
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1: el panel de ORLANT no coincide con la forma esperada (vieja ni nueva) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  const targetTab = target && (target.layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!targetTab) return;
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'ORLANT'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1 aplicada.');
+  }
+});
+
+// Fase 138 (PR2, pedido de Edwin 09/10): en Flujo de Llamadas de Mobilize,
+// las sub-pestañas "ASA" y "AHT" (Fase 131, separadas) se combinan en 1 sola
+// ("asaaht") -- confirmado que la plantilla real de Flujo trae AHT antes de
+// construir esto. Defensiva: si el panel ya tiene "asaaht" entre sus
+// subtabs (ya migrado, o editado a mano), no se toca nada.
+runOnceMigration('dashboards_config_mobilize_flujo_asaaht_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  if (!tab) return;
+  const panel = (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo');
+  if (!panel) return;
+  const yaTiene = (panel.subtabs || []).some((s) => s && s.key === 'asaaht');
+  if (yaTiene) return; // ya migrado, o editado a mano -- no se pisa
+  const esViejoReconocible = (panel.subtabs || []).some((s) => s && s.key === 'asa') && (panel.subtabs || []).some((s) => s && s.key === 'aht');
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_flujo_asaaht_v1: el panel de MOBILIZE no coincide con la forma esperada (vieja ni nueva) -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+  const targetTab = target && (target.layout.tabs || []).find((t) => t.key === 'flujo');
+  const targetPanel = targetTab && (targetTab.panels || []).find((p) => p.tipo === 'trafico_combo');
+  if (!targetPanel) return;
+  panel.subtabs = JSON.parse(JSON.stringify(targetPanel.subtabs));
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_flujo_asaaht_v1 aplicada.');
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -223,8 +223,16 @@ const ORLANT = {
       // 'tipificacion') sigue funcionando exactamente igual que antes si
       // alguien la vuelve a subir (compatibilidad hacia atras) — solo deja
       // de tener un panel que la muestre en ESTE tab de ORLANT.
+      // Fase 138 (PR2, pedido de Edwin 09/10): mismas opciones que ya tenia
+      // Mobilize (1 torta + filtro + tabla de detalle + tarjetas de salida,
+      // en vez de las 2 tortas Llamadas/WhatsApp lado a lado de Fase 77) --
+      // decision explicita del usuario de dejar ORLANT igual a Mobilize,
+      // sabiendo que la torta de WhatsApp deja de verse EN ESTE panel (sus
+      // datos siguen en la tabla `tipificaciones`, solo no se grafican aqui).
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
-        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT' },
+        { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT',
+          soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
+        },
       ]},
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'ORLANT' },
@@ -424,12 +432,16 @@ const MOBILIZE = {
           etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
           resumenOcultar: ['tasaAbandono', 'nivelServicio'],
           resumenPorSeccion: true,
+          // Fase 138 (PR2, pedido de Edwin 09/10): ASA y AHT antes eran 2
+          // sub-pestanas separadas (Fase 131) -- ahora van juntas en 1 sola
+          // ("asaaht", confirmado que la plantilla real de Flujo trae AHT
+          // antes de construir esto), mismo patron que "asaata" (Llamadas de
+          // ORLANT) ya usaba para ASA+ATA.
           subtabs: [
             { key: 'resumen', label: 'Resumen' },
             { key: 'sl', label: 'Nivel de Servicio' },
             { key: 'abandono', label: 'Abandono' },
-            { key: 'asa', label: 'ASA' },
-            { key: 'aht', label: 'AHT' },
+            { key: 'asaaht', label: 'ASA y AHT' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
         },
