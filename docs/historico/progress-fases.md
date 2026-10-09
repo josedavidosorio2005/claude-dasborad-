@@ -13814,3 +13814,253 @@ app (sigue en 1.21.0) porque no tocó código del producto — un solo PR de
 documentación y capturas, sin ningún otro cambio. El servidor local de
 auditoría (puerto 3099) se apagó al terminar; no quedó ningún proceso en
 segundo plano.
+
+## Fase 136 — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135 (2026-10-08/09)
+
+Pedido: ejecutar el plan de la auditoría de la Fase 135 (`docs/auditoria-ui-fase135.md`)
+para que la plataforma se vea moderna, premium y profesional — jerarquía
+visual, espaciado, tipografía, botones, cards, menús/pestañas,
+formularios, hover/focus/active, transiciones entre secciones,
+microinteracciones, con movimiento suave y sobrio — sin perder
+funcionalidad, sin cambiar ningún número y sin empeorar lo logrado en la
+Fase 133 (contraste AA, foco visible, objetivos táctiles,
+`prefers-reduced-motion`). El pedido ajustó el orden de la auditoría
+(bugs primero, apariencia después, lo riesgoso al final), excluyó F07
+(agrupar acciones de Usuarios, depende de permisos por rol) y F10
+(iconos emoji del sidebar, decisión de marca), y puso 2 ítems aparte:
+F08 (toast de error en login) investigado sin tocar sesiones/permisos, y
+F11 (pantalla completa) verificado sin animación continua. Librería de
+movimiento: `motion` (sucesor JS-plano de Framer Motion) solo si se usa
+para algo real — si CSS puro resolvía todo, no vendorizar nada.
+
+Un PR por tema, rama propia, CI Node 22 verde, versión y CHANGELOG en
+cada PR que tocara código. 9 PRs de código + ajustes de review, todos
+mergeables sin "OK" adicional salvo el de modales (más riesgoso, el
+único que tocaba los 6 overlays de la plataforma a la vez).
+
+### PR 1 (#369, F01, v1.21.1) — pestañas de ORLANT no se superponen en móvil
+
+Bug real confirmado por captura en la Fase 135
+(`docs/capturas-demo/fase135-antes/09-responsive/orlant-mobile.png`):
+`#gd-tabs .atab` se comprimía hasta superponerse a 412px. Arreglo CSS
+puro: `flex-shrink:0` en `.atab` (deja que `#gd-tabs` — que ya tenía
+`overflow-x:auto` — haga scroll horizontal en vez de comprimir el
+texto). Sin tocar la lógica JS de las pestañas.
+
+### PR 2 (#370, F02, v1.21.2) — CLS real al abrir Calidad/Cargar Datos
+
+La auditoría midió CLS 0.8131 al abrir el dashboard de ORLANT (0 tareas
+largas >50ms — el salto es 100% de layout, no de JavaScript lento).
+`#cal-kpis-strip` y `#cargas-modal` reservan `min-height` desde el
+principio (el espacio se ve igual de lleno, sin el salto cuando el
+fetch llega).
+
+### PR 3 (#371, F05/F13, v1.21.3) — tokens de espaciado/radios/sombras
+
+Adopta los tokens `--r-*`/`--shadow-*` que ya existían (Fase 133) pero
+no se usaban en todos lados — sin cambios visuales reales (1-2px en
+algunos radios sueltos). F13 (un `@keyframes` sin uso visible) se
+confirmó con `grep` (incluido JS) como código muerto real y se retiró.
+
+### PR 4 (#372, v1.21.4) — base de movimiento, SIN vendorizar `motion`
+
+Tokens `--dur-fast`/`--dur-medium`/`--dur-slow` (120/200/320ms) +
+`--ease-out`/`--ease-in-out` (curvas `cubic-bezier` de la especificación
+de la Fase 135), interruptor global `html[data-motion="off"]` (se suma a
+`prefers-reduced-motion`, nunca lo reemplaza) y `motion-helpers.js`
+(`motionEnter`/`motionExit`, vainilla, sin dependencias). **Decisión
+real de esta fase**: `motion` v11.15.0 se había estimado en 22 KB gzip
+en la Fase 135; medido de nuevo con la última versión estable publicada
+hace ≥14 días (v13.4.2, único build autoalojable sin bundler), el peso
+real es **49 KB gzip — más del doble**. Los 2 casos de uso reales de
+esta fase (salida de modales, transición entre pestañas) se resuelven
+igual sin esa librería — no se vendorizó nada, 0 KB añadidos.
+
+### PR 5 (#373, v1.22.0) — componentes base: botones, formularios, menú lateral
+
+Sin renombrar clases ni tocar lógica JS, todo por CSS con los tokens de
+los PR 3/4: feedback de prensado (`:active{transform:scale(0.97)}`,
+`--dur-fast`/`--ease-out`) en los 6 botones más frecuentes
+(`.btn-primary`/`.btn-login`/`.btn-cancel`/`.btn-logout`/`.btn-sm`/
+`.btn-close-modal`) sin tocar `.btn-reset`/`.btn-eye` (iconos sueltos,
+acción rara); formularios (`.ig input/select`, `.aurora-filters select`,
+`.qi-select`) con el mismo radio (`--r-sm`); menú lateral con indicador
+más claro (barra de color, no solo fondo).
+
+### PR 6 (#374, F03, v1.23.0) — transición entre pestañas + configuración central de Chart.js
+
+F03 (hallazgo real de la Fase 135): **0 módulos** configuraban
+`animation` en ningún `new Chart(...)` de toda la app — cada gráfica
+usaba el default de Chart.js (~1000ms, `easeOutQuart`), repetido en
+**cada** cambio de mes/filtro/tema porque `renderGenericTab` siempre
+hace `.destroy()` + recrea, nunca `.update()`. `charts.js` centraliza
+`Chart.defaults.animation.duration = 200ms` (0 si
+`prefers-reduced-motion`/`data-motion="off"`, chequeado aparte porque
+Chart.js dibuja en `<canvas>`, la regla CSS global no lo alcanza) — un
+solo lugar para los ~20 `new Chart(...)` de la app. `#gd-panels` gana
+una transición de entrada (`opacity`/`translateY(4px)`, `--dur-medium`)
+al cambiar de pestaña/sub-pestaña — **nunca** al cambiar mes/filtro/tema
+(regla de "nada que retrase ver un número" de la especificación).
+
+### PR 7 (#375, F09, v1.24.0) — microinteracciones + estados vacíos consistentes
+
+F09 (hallazgo real de la Fase 135): un `doughnut` de Chart.js con los 3
+valores en 0 no dibujaba ningún sector — quedaba un área en blanco sin
+explicación en "Mis Resultados de Calidad" (portal Asesor) y "Reportes"
+de Calidad (admin), a diferencia del resto de la plataforma (que sí
+avisa "Sin datos..."). Corregido con el mismo patrón que ya usaba
+`dashboard-generic.js`. El ícono de tema (luna/sol) ahora gira 180° al
+hacer clic real (`toggleTema()`, nunca dentro de `aplicarTema()` que
+también se llama programáticamente al cargar la página). "Copiar" y
+"Exportar" se dejaron sin tocar — no existe función de copiar en la
+plataforma hoy (no se inventó una nueva) y exportar ya avisa por toast
+si falla (un toast de éxito sería redundante con el indicador nativo de
+descarga del navegador).
+
+### F08 + F11 (#376, v1.24.1) — toast "No autenticado" en login + verificación de pantalla completa
+
+F08: alguien cambiaba de tema (claro/oscuro) ANTES de iniciar sesión y a
+veces veía un toast de error ("No se pudieron cargar tus resultados: No
+autenticado") en la pantalla de login — inofensivo (no exponía nada)
+pero confuso. Causa real: `refrescarGraficasTema()` se disparaba sin
+sesión. Corregido con un guard al principio de esa función (sin tocar
+reglas de autenticación/sesiones/permisos, confirmado con una prueba que
+reconfirma que `authToken` sigue siendo la misma variable de `api.js`,
+sin mecanismo nuevo). F11: el botón de pantalla completa correcto
+verificado — el modo pantalla completa no recibe ninguna animación
+continua ni larga (ninguna de las animaciones de esta fase es infinita;
+el único `@keyframes` real de la plataforma, el spinner de carga, nunca
+se usa dentro de `#gd-modal` en pantalla completa).
+
+### PR 8 (#377, F04, v1.25.0) — modales unificados: entrada/salida animada + Escape
+
+El de mayor riesgo de la fase — los 6 modales/overlays de la plataforma
+(Calidad, Supervisar Líder, Cargar Datos, constructor de dashboards,
+dashboard de cliente, detalle de monitoreo) comparten ahora la misma
+transición de entrada/salida (`motionAbrirModal()`/`motionCerrarModal()`
+en `motion-helpers.js`, `--dur-slow` 320ms + `--ease-out`,
+`scale(0.97↔1)` + `opacity`) sin tocar la lógica de abrir/cerrar en sí
+(nunca se reemplaza el `overlay.classList.add/remove('show')` ni el
+orden de lo que cada `open*()`/`close*()` ya hacía, incluido
+`exitFullscreen()` antes de cerrar el dashboard de cliente). Escape es
+un atajo **nuevo** (ninguno de los 6 lo tenía) — `MOTION_OVERLAY_STACK`
+(pila de overlays realmente abiertos) permite que sepa cuál cerrar
+primero cuando hay anidamiento real (Calidad puede abrir "Supervisar
+Líder" encima de sí misma sin cerrarse primero, hallazgo real al
+probar). Pasó el checklist de `review-animations` (Emil Kowalski) sin
+bloqueos: modales exentos de origen/asimetría, solo propiedades GPU,
+cubierto por el `prefers-reduced-motion`/`data-motion="off"` global ya
+existente.
+
+**"OK modales" con 2 condiciones** (dadas tras revisar capturas y
+probar los 4 flujos reales), ambas resueltas en el mismo PR antes de
+mergear:
+
+1. El estado base (sin clase) de los 6 modales era **invisible**
+   (`opacity:0`) — si `motion-helpers.js` no cargaba (red, CSP,
+   bloqueo), `motionAbrirModal()` nunca se llamaba (el caller ya se
+   protegía con `typeof === 'function'`) y el modal quedaba invisible
+   para siempre: justo lo contrario de *progressive enhancement*.
+   Corregido: el estado base ahora es **visible**
+   (`opacity:1;scale(1)`), y `.motion-modal-hidden` (antes
+   `.motion-modal-show`, semántica invertida) es el estado transitorio
+   en las 2 direcciones. Verificado en navegador real con
+   `motion-helpers.js` bloqueado (`route.abort()`): el modal se ve
+   pixel-igual al caso normal.
+2. `motionCerrarModal` podía ocultar un modal que se había vuelto a
+   abrir MIENTRAS su salida anterior seguía esperando `transitionend`/el
+   salvavidas de 400ms. Corregido con `modal._motionGen` (contador en
+   el propio elemento, incrementado en cada `motionAbrirModal`) — una
+   salida vieja se reconoce a sí misma como obsoleta si la generación ya
+   cambió cuando por fin le toca ejecutar `cerrarReal()`. Verificado en
+   navegador real: Escape para cerrar + reabrir a los 80ms (antes de los
+   320ms de salida) — el overlay se sigue mostrando.
+
+20 pruebas nuevas (`fase136-pr8-modales-unificados.test.js`, 7 tras el
+ajuste del "OK modales") + 69 pruebas relacionadas (fase103/105 gd-modal,
+F01/F02/F08, Fase133 contraste/foco/movimiento reducido) en verde en las
+2 rondas. 24 capturas antes/después (claro/oscuro × escritorio/fullhd/
+móvil) de los 4 flujos reales contra servidor local (seed:demo) en
+`docs/capturas-demo/fase136-despues/pr8-modales-unificados/`, revisadas
+una por una: 0 errores de consola, 0 peticiones fallidas, ningún modal
+en blanco.
+
+### PR 9 — descartado, sin candidato real
+
+La auditoría de la Fase 135 ya lo anticipaba como un resultado válido
+probable ("casi toda la superficie de esta app son dashboards densos de
+datos, donde el usuario pidió explícitamente NO usar aparición al
+scroll"). Revisados los únicos candidatos plausibles al cerrar esta
+fase: Inventario/Gerencia/Gestión Humana son KPI-strips + tablas (mismo
+caso, excluidas por la misma regla); la grilla de selección de cliente
+(supervisor/cliente) tiene hoy solo 1-2 tarjetas (solo ORLANT+MOBILIZE
+como clientes reales), nada que quede fuera de pantalla para revelar.
+**Descartado, sin vendorizar nada ni escribir código.**
+
+### Skills
+
+`ui-ux-pro-max-skill` (pedida como guía principal para los PR 3/5/7)
+**sigue sin estar instalada** — mismo hueco documentado en la Fase 135,
+no se instaló por cuenta propia. Las skills de Emil Kowalski
+(`review-animations`, `animation-vocabulary`, `emil-design-eng`) se
+usaron como referencia de verdad: el checklist de `review-animations`
+(los "10 estándares no negociables") se pasó contra el diff antes de
+abrir cada PR de movimiento, sin bloqueos en ninguno.
+
+### Verificación de cierre en producción (2026-10-09, solo lectura)
+
+Tras el deploy automático de PR 8 (confirmado `GET /api/health` →
+`version:"1.25.0"`), verificación con Playwright directo desde Node
+(headless:false, navegador visible — nunca la extensión de Claude in
+Chrome), reutilizando los helpers ya auditados de
+`scripts/produccion/revision-final.js` más chequeos nuevos específicos
+de esta fase (MOBILIZE, tema oscuro, viewport móvil, los 3 modales del
+PR 8 con Escape). El usuario inició sesión a mano (2 intentos — el
+primer intento de login se agotó sin que nadie estuviera frente al
+computador); nunca se vio ni se guardó la contraseña, sin `storageState`
+ni cookies persistidas.
+
+**Confirmado en vivo, 0 errores de consola/peticiones fallidas**:
+MOBILIZE (3 pestañas, 0 canvas en blanco en claro y en oscuro), tema
+oscuro aplicado correctamente, los 3 modales del PR 8 abren/cierran con
+Escape (Cargar Datos ~1.2s, Previsualizar/Editar ORLANT visibles), F01
+(pestañas de ORLANT en móvil 412px) confirmado sin superposición.
+
+**Hallazgo real, no resuelto en esta fase** (documentado en
+`docs/pendientes.md` §4): `correrChequeosAdmin` (el chequeo de datos/
+canvas/exports de `revision-final.js`, sin relación con el PR 8) falló
+2 veces seguidas — con reintento automático de por medio — al hacer clic
+en la 2ª pestaña de ORLANT justo después de la 1ª, con el botón
+reportado como "not stable" durante los 30s completos de espera. **No
+reproduce en local** con `seed:demo` (las 5 pestañas clicadas en
+sucesión, <40ms cada una). Revisando el CSS se encontró que `.atab`
+tiene `transition:all 0.2s` desde antes de la Fase 136 (la auditoría de
+la Fase 135 no lo marcó, no estaba entre sus 13 hallazgos) — exactamente
+el patrón que `review-animations` marca como bloqueo directo. Hipótesis
+más probable, NO confirmada: con contenido real más alto que el de
+demo, el primer tab puede empujar la página al punto donde
+aparece/desaparece la barra de scroll vertical, y el redimensionado
+"responsive" de Chart.js reacciona a ese cambio de ancho en un ciclo que
+no se asienta. **No es una regresión de esta fase** — ningún PR de la
+Fase 136 toca `.atab` ni la lógica de cambio de pestaña, el
+`transition:all` ya existía. La segunda ventana (CLIENTES_DASH) no se
+pudo verificar esta vez (seguía sin la contraseña temporal, pendiente de
+InCo desde fases anteriores — ver `docs/pendientes.md` §1).
+
+El `mobilizeFilas` (conteo de filas de MOBILIZE) medido durante esta
+verificación (6 y 11 en las 2 tablas con datos) **no coincide** con los
+27/167 esperados (Fase 131) — pero el método de conteo usado
+(`document.querySelectorAll('table')`, sin aislar la tabla activa ni
+contemplar paginación) es poco fiable, confirmado como una limitación
+del script de verificación, no como una discrepancia de datos real.
+Descartado como hallazgo, anotado como "no medido con precisión" (regla
+de oro: no se reporta "verificado" sobre algo que no se midió bien).
+
+### Cierre
+
+Versión final `1.25.0`. F07 (agrupar las 4 acciones por fila de
+Usuarios) y F10 (iconos emoji del sidebar) quedan documentados en
+`docs/pendientes.md` §3 como decisiones del usuario, fuera de alcance
+de esta fase. `docs/sistema-de-diseno.md` ampliado con los tokens de
+movimiento, componentes base y la especificación completa de cada PR.
+Ningún servidor local quedó corriendo en segundo plano al terminar.
