@@ -51,13 +51,37 @@ function renderUsers(filter){
     // atenuados+"disabled" cuando faltaba el permiso -- el candado real
     // vive en el servidor (editarUsuarios/cambiarPassword/
     // suspenderUsuarios/eliminarUsuarios), asi que un boton visible que
-    // solo iba a devolver 403 es puro ruido. Ahora cada boton solo se
-    // pinta si el actor tiene ESE permiso puntual.
+    // solo iba a devolver 403 es puro ruido. Cada boton/item solo se
+    // pinta si el actor tiene ESE permiso puntual -- eso NO cambia en la
+    // Fase 137 (F07), solo se reorganiza la presentacion.
+    //
+    // Fase 137 (Parte B, F07): "Editar" queda visible como accion
+    // principal (la mas frecuente); Contrasena/Suspender-Activar/
+    // Eliminar se agrupan en un menu "kebab" (row-actions.js, patron
+    // WAI-ARIA "menu button") -- MISMOS handlers, MISMAS condiciones de
+    // permiso que antes, solo el contenedor cambia. Cada item lleva
+    // rowActionsCerrarTodos() antes de su accion real para que el menu
+    // se cierre al elegir algo (el listener de "clic afuera" de
+    // row-actions.js no alcanza a un clic DENTRO del menu). "Eliminar"
+    // va aparte visualmente (.danger, separador) por ser la accion mas
+    // riesgosa.
+    var menuId='row-actions-menu-'+u.id;
+    var kebabId='row-actions-kebab-'+u.id;
+    var itemsMenu=
+      (canPass?'<button type="button" role="menuitem" class="row-actions-menu-item" tabindex="-1" onclick="rowActionsCerrarTodos();openPassModal('+u.id+')">Cambiar contrasena</button>':'')+
+      (canSusp?'<button type="button" role="menuitem" class="row-actions-menu-item" tabindex="-1" onclick="rowActionsCerrarTodos();toggleActive('+u.id+')">'+sl+'</button>':'')+
+      (canDel?'<button type="button" role="menuitem" class="row-actions-menu-item danger" tabindex="-1" onclick="rowActionsCerrarTodos();openDeleteModal('+u.id+')">Eliminar</button>':'');
+    var kebab=itemsMenu?(
+      '<button type="button" class="row-actions-kebab" id="'+kebabId+'" aria-haspopup="true" aria-expanded="false" aria-controls="'+menuId+'" aria-label="Mas acciones para '+esc(u.nombre)+'" onclick="rowActionsClickBoton(event,this)" onkeydown="rowActionsTecladoBoton(event,this)">'+
+      '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>'+
+      '</button>'+
+      '<div role="menu" id="'+menuId+'" class="row-actions-menu" aria-labelledby="'+kebabId+'" onkeydown="rowActionsTecladoMenu(event,this)">'+
+      itemsMenu+
+      '</div>'
+    ):'';
     var botones=
       (canEdit?'<button class="btn-sm btn-edit" onclick="openEditModal('+u.id+')">Editar</button>':'')+
-      (canPass?'<button class="btn-sm btn-pass" onclick="openPassModal('+u.id+')">Contrasena</button>':'')+
-      (canSusp?'<button class="btn-sm '+sc+'" onclick="toggleActive('+u.id+')">'+sl+'</button>':'')+
-      (canDel?'<button class="btn-sm btn-delete" onclick="openDeleteModal('+u.id+')">Eliminar</button>':'');
+      kebab;
     // Fase 113 (tema A): "Ultimo ingreso", solo admin completo (el servidor
     // ya omite `lastLogin` para cualquier otro rol -- aqui solo se decide si
     // se pinta la celda, en sincronia con el <th> que se esconde en
@@ -73,7 +97,7 @@ function renderUsers(filter){
       '<td><span class="dot '+(u.active?'dot-on':'dot-off')+'"></span>'+(u.active?'Activo':'Suspendido')+'</td>'+
       '<td style="font-size:0.78rem;color:var(--c-text-muted)">'+esc(u.createdAt||'-')+'</td>'+
       celdaUltimoIngreso+
-      '<td><div class="action-btns">'+(botones||'<span style="font-size:0.76rem;color:var(--c-text-muted)">Sin acciones disponibles</span>')+'</div></td></tr>';
+      '<td><div class="row-actions">'+(botones||'<span style="font-size:0.76rem;color:var(--c-text-muted)">Sin acciones disponibles</span>')+'</div></td></tr>';
   }).join('');
   updateStats();
 }
