@@ -1,0 +1,106 @@
+name: Fase 134 — Inventario de clientes en producción (solo lectura)
+
+# Fase 134, Paso 1 (autorizado explícitamente por el usuario, 2026-10-09):
+# antes de decidir el borrado de todos los clientes menos ORLANT y
+# MOBILIZE, hace falta saber cuántas filas tiene cada tabla por cliente y
+# cuántos usuarios tienen acceso a cada uno — en producción real, no solo
+# en el código. Reutiliza EXACTAMENTE el mismo mecanismo ya auditado de
+# audit-instance.yml/salud-servidor.yml/respaldo-produccion.yml (rol OIDC,
+# apertura temporal del puerto 22 solo para la IP de este runner, cerrado
+# al final con if: always(), secrets SSH de siempre) — no abre acceso
+# nuevo ni expone credenciales fuera de este pipeline.
+#
+# SOLO LECTURA: corre contra el último respaldo LOCAL ya existente en el
+# servidor (un archivo aparte, nunca la base viva `inconexion.db`) con
+# `server/scripts/fase134-inventario-produccion.js --local <respaldo>`,
+# abierto en modo readonly. Ningún comando de este workflow escribe nada
+# en el servidor. El repo es público: el script solo imprime conteos
+# (números) por tabla/cliente/rol — nunca una fila real, nunca un nombre
+# de persona.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  inventario:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+
+    steps:
+      - name: Autenticar en AWS (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Abrir SSH (22) para la IP de este runner
+        id: fw
+        env:
+          LS_INSTANCE: inconexion-prod
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')"
+          echo "IP del runner: $RUNNER_IP"
+          BEFORE="$(aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates' --output json | jq -c .)"
+          { echo 'before<<__FW__'; echo "$BEFORE"; echo '__FW__'; } >> "$GITHUB_OUTPUT"
+          NEW="$(echo "$BEFORE" | jq -c --arg ip "$RUNNER_IP/32" '
+            map({
+              fromPort, toPort, protocol,
+              cidrs: (if (.fromPort == 22 and .protocol == "tcp")
+                        then ((.cidrs // []) + [$ip] | unique)
+                        else (.cidrs // []) end),
+              ipv6Cidrs: (.ipv6Cidrs // []),
+              cidrListAliases: (.cidrListAliases // [])
+            })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+
+      - name: Inventario (solo lectura, contra el ultimo respaldo local)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            BACKUP_DIR_HOST="/opt/inconexion/data/backups"
+            ULTIMO=$(sudo -n ls -1 "$BACKUP_DIR_HOST" 2>/dev/null | grep -E '^inconexion-[0-9]{8}-[0-9]{6}\.db$' | sort | tail -1)
+            if [ -z "$ULTIMO" ]; then
+              echo "::error::No se encontro ningun respaldo local en $BACKUP_DIR_HOST."
+              exit 1
+            fi
+            EPOCH=$(sudo -n stat -c '%Y' "$BACKUP_DIR_HOST/$ULTIMO")
+            AHORA=$(date +%s)
+            echo "Respaldo usado: fecha $(date -d "@$EPOCH" '+%Y-%m-%d %H:%M') (hace $(( (AHORA - EPOCH) / 3600 ))h) -- informativo, este inventario no escribe nada."
+            cd /opt/inconexion
+            docker compose exec -T app node scripts/fase134-inventario-produccion.js --local "/app/server/data/backups/$ULTIMO"
+
+      - name: Cerrar SSH (22) — revertir el firewall al estado previo
+        if: always() && steps.fw.outputs.before != ''
+        env:
+          LS_INSTANCE: inconexion-prod
+          FW_BEFORE: ${{ steps.fw.outputs.before }}
+        run: |
+          set -euo pipefail
+          NEW="$(printf '%s' "$FW_BEFORE" | jq -c '
+            map({ fromPort, toPort, protocol,
+                  cidrs: (.cidrs // []),
+                  ipv6Cidrs: (.ipv6Cidrs // []),
+                  cidrListAliases: (.cidrListAliases // []) })')"
+          aws lightsail put-instance-public-ports \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
+          echo "Puerto 22 tras revertir:"
+          aws lightsail get-instance-port-states \
+            --region "$AWS_REGION" --instance-name "$LS_INSTANCE" \
+            --query 'portStates[?fromPort==`22`].cidrs' --output json
