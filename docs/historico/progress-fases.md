@@ -13676,3 +13676,11 @@ esta fase en `PROGRESS.md`).
 
 Ver el resumen corto y el resultado de producción en `PROGRESS.md` (se
 completa al cerrar el PR y confirmar el deploy).
+
+**Addendum (mismo día, tras el deploy)**: PR #364 mergeado, CI verde,
+desplegado (`/api/health` confirmó v1.21.0 en producción). Verificado en
+producción real (Playwright visible, login real con la cuenta de
+administrador, `scripts/produccion/fase132-08-verificacion-visual-logo-
+mobilize.js`): el logo de Mobilize aparece en su propio dashboard
+(140×25, carga sin error) y NO aparece en el de ORLANT, 0 errores de
+consola en los 2.
