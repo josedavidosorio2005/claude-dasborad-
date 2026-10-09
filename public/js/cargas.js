@@ -74,6 +74,7 @@ async function openCargas(){
     showToast('No tienes permiso para cargar datos'); return;
   }
   document.getElementById('cargas-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('cargas-modal');
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
   _cargasAvisarSiVersionVieja();
@@ -91,7 +92,11 @@ async function openCargas(){
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();
 }
-function closeCargas(){ document.getElementById('cargas-overlay').classList.remove('show'); }
+function closeCargas(){
+  var cerrarReal = function(){ document.getElementById('cargas-overlay').classList.remove('show'); };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('cargas-modal', cerrarReal);
+  else cerrarReal();
+}
 document.getElementById('cargas-overlay').addEventListener('click',function(e){ if(e.target===this) closeCargas(); });
 
 // ── Columnas de Trafico/Calidad normalizadas a {key?,label,opcional} para

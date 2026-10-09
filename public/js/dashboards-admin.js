@@ -84,8 +84,13 @@ async function openDashCfgModal(cliente){
   document.getElementById('dashcfg-modal-title').textContent = cliente ? ('Editar dashboard — '+cliente) : 'Nuevo dashboard';
   _dcRender();
   document.getElementById('dashcfg-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('dashcfg-modal');
 }
-function closeDashCfgModal(){ document.getElementById('dashcfg-overlay').classList.remove('show'); }
+function closeDashCfgModal(){
+  var cerrarReal = function(){ document.getElementById('dashcfg-overlay').classList.remove('show'); };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('dashcfg-modal', cerrarReal);
+  else cerrarReal();
+}
 
 function _dcNuevaSeccion(){
   return { key:'resumen', titulo:'Resumen mensual', cadencia:'mensual', periodo:'mes', filaUnica:true,

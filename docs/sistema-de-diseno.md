@@ -284,6 +284,48 @@ redundante con eso, no se agregó.
 **Cambio de mes**: sigue siendo instantáneo a propósito — no se toca
 (ver PR 6, Paso 4 de la auditoría: "nada que retrase ver un número").
 
+## Modales unificados (Fase 136, PR 8, F04)
+
+**F04 (hallazgo real de la Fase 135)**: los 6 modales/overlays de la
+plataforma (Calidad, Supervisar Líder, Cargar Datos, constructor de
+dashboards, dashboard de cliente, detalle de monitoreo) aparecían/
+desaparecían de golpe — cada uno hacía su propio
+`overlay.classList.add/remove('show')` (display:none↔flex) sin ninguna
+transición, porque `display` no es una propiedad animable por CSS solo.
+
+**Mecanismo**: `motionAbrirModal(modalId)`/`motionCerrarModal(modalId,
+cerrarReal)` (`motion-helpers.js`) envuelven ese cambio sin tocarlo —
+nunca reemplazan la clase `.show` del overlay ni el orden de lo que cada
+`open*()`/`close*()` ya hacía. Agregan/quitan `.motion-modal-show` en el
+**hijo real** (`#calidad-modal`, etc.), que tiene su propia transición
+`opacity`/`transform: scale(0.97→1)` con `--dur-slow` (320ms, la más
+lenta de la especificación — PR 8 usó el tope alto del rango 200–500ms
+de modales porque son ventanas grandes, no un toast) + `--ease-out`.
+`motionCerrarModal` espera a que termine esa transición de salida antes
+de llamar `cerrarReal()` (el cierre real: quitar `.show` del overlay,
+destruir charts, restaurar el scroll de fondo, etc. — exactamente lo que
+cada `close*()` ya hacía, en el mismo orden).
+
+**Anidamiento real encontrado al probar**: Calidad puede abrir
+"Supervisar Líder" encima de sí misma sin cerrarse primero. Por eso
+existe `MOTION_OVERLAY_STACK` (pila de overlays realmente abiertos, en
+orden) — sin ella, **Escape** no sabría cuál de los 2 cerrar primero.
+Escape es un atajo **nuevo** (ninguno de los 6 modales lo tenía antes,
+solo el botón "X Cerrar" y el clic fuera, que siguen intactos) — cierra
+siempre el mismo `close*()` de siempre del overlay de más arriba.
+
+**Por qué no es una regresión de accesibilidad vs. review-animations**:
+modales son "ocasional" (no 100+/día, no un atajo de teclado existente
+que se le agregue movimiento) → movimiento estándar está permitido;
+`scale(0.97)` nunca `scale(0)`; mismo `--ease-out` en entrada y salida
+(los modales están exentos de la regla de "más lento al entrar, rápido
+al responder" — esa es para gestos de press-and-hold, no para abrir/
+cerrar un diálogo); `transform-origin` por defecto (centro) es correcto
+porque los modales están exentos de anclarse a su disparador; solo
+`opacity`/`transform` (GPU); cubierto por el mismo
+`prefers-reduced-motion`/`data-motion="off"` global (selector `*`, ver
+abajo) que todo lo demás.
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

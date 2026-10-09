@@ -870,6 +870,24 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 #gd-modal{background:var(--c-bg);border-radius:0;width:100%;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
 #gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
 
+/* Fase 136 (PR 8, F04): entrada/salida animada de los 6 modales/overlays
+   -- CSS solo no puede animar el toggle display:none/flex que ya usan
+   (ver docs/auditoria-ui-fase135.md, Paso 1), asi que motion-helpers.js
+   (motionEnter/motionExit) agrega/quita .motion-modal-show en el hijo
+   real (#calidad-modal, etc.), SIN tocar la clase .show del overlay (el
+   mecanismo de display:none/flex de arriba sigue exactamente igual,
+   intacto). --dur-slow (320ms, la mas lenta de la especificacion --
+   tabla de la auditoria: modales 200-500ms) + --ease-out, scale(0.97)
+   nunca scale(0) (review-animations: "nada aparece de la nada"). El
+   estado BASE (sin la clase) es invisible -- antes de la primera
+   apertura no importa (el overlay padre esta en display:none). */
+#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal,#gd-modal{
+  opacity:0;transform:scale(0.97);transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out);
+}
+#calidad-modal.motion-modal-show,#detalle-monitoreo-modal.motion-modal-show,#supervisar-lider-modal.motion-modal-show,#cargas-modal.motion-modal-show,#dashcfg-modal.motion-modal-show,#gd-modal.motion-modal-show{
+  opacity:1;transform:scale(1);
+}
+
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
    al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */
