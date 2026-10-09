@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.21.3 — Octubre 2026
+
+**Fase 136 (PR 3): orden interno del código de estilos — nada se ve
+distinto.**
+
+- Varios valores de diseño que se repetían una y otra vez (esquinas
+  redondeadas, sombras) ahora están nombrados una sola vez y se
+  reutilizan — más fácil de mantener a futuro.
+- No cambia absolutamente nada de lo que se ve en pantalla.
+
 ## v1.21.2 — Octubre 2026
 
 **Fase 136 (PR 2): el panel de Calidad y la ventana de "Cargar Datos" ya
