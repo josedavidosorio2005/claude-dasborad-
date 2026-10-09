@@ -126,6 +126,17 @@
   /* Radios */
   --r-sm:6px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-pill:20px;
 
+  /* Movimiento (Fase 136, PR 4) -- especificacion completa en
+     docs/auditoria-ui-fase135.md ("Especificacion de movimiento") y
+     docs/sistema-de-diseno.md. 3 duraciones, 2 curvas, sin rebotes --
+     pensadas para un tablero de datos denso (crisp), no una app de
+     consumo. Usar SIEMPRE estos tokens en vez de un numero suelto. */
+  --dur-fast:120ms;   /* feedback de prensado/hover */
+  --dur-medium:200ms; /* dropdowns, pestañas, microinteracciones */
+  --dur-slow:320ms;   /* modales/paneles grandes */
+  --ease-out:cubic-bezier(0.23,1,0.32,1);     /* entradas -- el default para casi todo */
+  --ease-in-out:cubic-bezier(0.77,0,0.175,1); /* movimiento ya en pantalla (ej. contenido que cambia de posicion) */
+
   /* Fase 99: le dice al navegador que dibuje los controles nativos (la
      lista emergente de un <select>, el scrollbar...) en modo claro -- sin
      esto, la lista hereda el `color` que tenga puesto el <select> (varios
@@ -1058,4 +1069,18 @@ summary:focus-visible {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Fase 136 (PR 4): interruptor MANUAL de movimiento, aparte de
+   prefers-reduced-motion (que ya cubre la preferencia del sistema
+   operativo del usuario). Mismo mecanismo exacto, pero activable a mano
+   -- ej. soporte/QA, o un apagado de emergencia si algo de movimiento
+   falla en produccion -- con <html data-motion="off">. No reemplaza a
+   prefers-reduced-motion, se suma: cualquiera de los 2 activos apaga el
+   movimiento. */
+html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

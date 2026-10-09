@@ -124,6 +124,70 @@ fuera del alcance "aditivo" de este PR. Si se necesita una escala nueva,
 debe decidirse fase por fase, revisando cada media query tocada con
 captura antes/después.
 
+## Movimiento (Fase 136, PR 4)
+
+**Decisión de librería — actualizada con números reales de esta fase.**
+La auditoría de la Fase 135 (`docs/auditoria-ui-fase135.md`, Paso 1)
+estimó `motion` (sucesor JS-plano de Framer Motion) vendorizado en
+**22 KB gzip** (v11.15.0) y recomendó usarlo para salidas animadas de
+modales y transición entre pestañas. Verificado de nuevo en esta fase
+con la última versión estable publicada hace ≥14 días (`npm view motion
+version time`, v13.4.2, 2026-09-23): el único build autoalojable sin
+bundler (`dist/motion.js`, variable global `Motion`) pesa **49 KB gzip
+real** — más del doble. Los 2 casos de uso reales de esta fase (salida
+de modales, transición entre pestañas) no necesitan física de resortes,
+`inView` ni scroll-linked animation — **se resuelven igual con CSS +
+`public/js/motion-helpers.js`** (vanilla, ~1.5 KB gzip, sin
+dependencias): `motionExit(el, onDone)` quita la clase de estado
+(dispara la transición CSS de salida) y espera `transitionend` antes de
+llamar `onDone` (donde el caller oculta el elemento); `motionEnter(el)`
+agrega la clase un frame después de que el elemento ya es visible, para
+que el navegador sí anime desde el estado inicial. **No se vendorizó
+`motion`** — si en una fase futura aparece un candidato real de
+`inView`/`stagger`/`scroll` (aparición al hacer scroll, Fase 135 Paso 3,
+PR 8), se reevalúa con el mismo método (descargar en una carpeta fuera
+del repo, medir gzip real, decidir con números).
+
+### Especificación
+
+3 duraciones, 2 curvas (sin rebotes — un tablero de datos denso es
+"crisp", no "juguetón"):
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--dur-fast` | 120ms | Feedback de prensado/hover |
+| `--dur-medium` | 200ms | Dropdowns, pestañas, microinteracciones |
+| `--dur-slow` | 320ms | Modales/paneles grandes |
+| `--ease-out` | `cubic-bezier(0.23,1,0.32,1)` | Entradas — el default para casi todo |
+| `--ease-in-out` | `cubic-bezier(0.77,0,0.175,1)` | Movimiento ya en pantalla (contenido que cambia de posición) |
+
+**Qué anima:** `opacity` y `transform` (`translateY`/`scale`) únicamente.
+Entradas desde `scale(0.95)` + `opacity:0` (nunca `scale(0)`).
+
+**Qué NUNCA anima** (lista completa y su justificación en
+`docs/auditoria-ui-fase135.md`, Paso 4): números/KPIs con valores
+intermedios falsos; filas de tablas largas; Chart.js en cada `.update()`
+de datos ya cargados; nada en modo pantalla completa/TV; nada iniciado
+por teclado; `width`/`height`/`top`/`left` (fuerzan layout).
+
+### Interruptor global de apagado
+
+```html
+<html data-motion="off">
+```
+
+Mismo mecanismo exacto que `prefers-reduced-motion` (que cubre la
+preferencia del sistema operativo), pero activable a mano — un apagado
+de emergencia si algo de movimiento falla en producción, o para
+soporte/QA. Los dos son independientes: cualquiera de los 2 activos
+apaga el movimiento (`animation-duration`/`transition-duration` caen a
+0.01ms). **Probado de verdad en navegador** (Playwright, forzando
+`reducedMotion:'reduce'` del contexto real Y fijando el atributo a
+mano) — con cualquiera de los 2 activos, `.atab` mide
+`transition-duration` real de `0.00001s` (vs `0.2s` sin ninguna
+preferencia) y el dashboard/Calidad se siguen abriendo y usando bien, 0
+errores de página.
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:
