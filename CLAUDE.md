@@ -33,6 +33,15 @@ asumir en qué quedó una fase anterior.
   PR y CI en verde antes de mergear — sin excepción de "es solo un doc".
   (Precedente real: Fase 85 cerró con un commit directo a `main`,
   `a440176`, solo `PROGRESS.md` — no debió pasar por fuera de un PR.)
+- Ningún PR con migración destructiva o borrado de datos se mergea sin
+  el "OK borrar" escrito del usuario en el chat, y el merge de esos PRs
+  lo hace el usuario. Antes de cualquier migración destructiva:
+  inventario + dry-run con cifras, y respaldo de menos de 24 h.
+  (Precedente real: Fase 134 — el PR del borrado de 12 clientes se
+  mergeó y desplegó a producción sin el dry-run ni el "OK borrar"
+  planeados; la verificación posterior no encontró pérdida de datos,
+  pero el incidente de proceso se documentó recién en la Fase 137 — ver
+  `docs/historico/progress-fases.md`.)
 - Todo cambio sigue el ciclo completo: rama nueva → tests → CI verde
   (Node 22 + docker-build) → `npm audit` limpio → PR → merge →
   deploy automático (AWS vía OIDC) → verificación en producción real
