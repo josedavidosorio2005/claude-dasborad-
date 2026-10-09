@@ -22,7 +22,9 @@ narrativo de cada fase, fase por fase, vive en
   Logo de Mobilize (provisional, ver `docs/pendientes.md`) en el
   encabezado de su propio dashboard, nunca en los demás clientes —
   Fase 132 (Parte 8), `public/img/clientes/mobilize-logo.png` + `@2x`,
-  prueba en `server/tests/fase132-08-logo-mobilize.test.js`.
+  prueba en `server/tests/fase132-08-logo-mobilize.test.js`. Verificado
+  en producción real (login de administrador, Playwright visible):
+  logo visible solo en MOBILIZE, 0 errores de consola.
 - **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133):
   [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) — tokens de
   color/tipografía/foco/objetivos táctiles, regla del semáforo vs.
