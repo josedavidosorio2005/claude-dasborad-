@@ -5,7 +5,7 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://informa.inconexion.com.co** — versión **1.15.0**.
+Plataforma: **https://informa.inconexion.com.co** — versión **1.26.0**.
 
 > Desde la Fase 126, la plataforma solo tiene datos oficiales de
 > **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
@@ -35,7 +35,7 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 | Tráfico de Llamadas | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 |
 | Tráfico de WhatsApp | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % |
 | Agendas (ago-sep/2026, único período — Abril 2025 ya se borró) | 24.186 (Ago 11.040 / Sep 13.146) |
-| Inasistencia | Ago-26 7,45 %, período (ago-sep) 7,34 % |
+| Inasistencia | Ago-26 7,45 %, período (ago+sep) 7,03 % |
 | Efectividad de agendamiento | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (ago-sep/2026, único período — Ene-Mar ya se borró) | Ago 11.189 agendas / 7.896 atendidas · Sep 12.194 / 8.968 · período 72,12 % |
 
@@ -134,7 +134,27 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       cargados son los que esperamos — si ves algo que parece un dato de
       prueba, avisa antes de dar por buena esta casilla.
 
-## 9. Algo no cuadra
+## 9. Lo nuevo desde la última revisión (marca, movimiento y Usuarios)
+
+- [ ] Arriba a la izquierda veo el **logo real de InConexión®** (con el
+      símbolo ® junto al nombre) — nunca el nombre escrito solo, ni con
+      tilde ("InConexión" con tilde ya no se usa en ningún lado).
+- [ ] Al cambiar de pestaña dentro de un dashboard (ej. de "Tráfico de
+      Llamadas" a "Calidad"), el contenido nuevo aparece con una
+      transición suave, no con un salto brusco.
+- [ ] Al abrir o cerrar cualquier ventana emergente (Calidad, Cargar
+      Datos, el constructor de dashboards, el dashboard de un cliente,
+      el detalle de un monitoreo, o "Supervisar Líder"), se ve con una
+      pequeña animación de entrada/salida — y se puede cerrar con la
+      tecla **Escape**, con el botón "X Cerrar", o haciendo clic afuera.
+- [ ] En **Gestión de Usuarios**, cada fila ahora muestra el botón
+      "Editar" y, al lado, un ícono de 3 puntos (⋮) — al hacer clic ahí
+      aparece un menú con "Cambiar contraseña", "Suspender"/"Activar" y
+      "Eliminar". Sigo viendo exactamente las mismas acciones que antes,
+      solo organizadas distinto — si algo que antes podías hacer ya no
+      aparece, avisa antes de seguir.
+
+## 10. Algo no cuadra
 
 Si cualquier casilla de arriba no se puede marcar, escribe aquí qué viste
 y en qué pantalla, y avisa al equipo antes de dar por cerrada la

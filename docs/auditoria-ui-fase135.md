@@ -543,3 +543,28 @@ petición de red por instrucción de una skill.
 - **Estados de carga explícitos** (spinners mientras una petición está en
   vuelo) — no se interceptó la red para alargar artificialmente una
   respuesta y capturar ese momento exacto.
+
+---
+
+## Estado final de los 13 hallazgos (actualizado en la Fase 137, Parte D)
+
+Tabla de cierre — qué pasó con cada hallazgo de la tabla del Paso 3, con
+el PR que lo cerró (o la razón de por qué sigue abierto/se descartó).
+Ninguno de estos se tocó al escribir esta tabla — es solo un resumen de
+lo que ya se hizo en otros PRs.
+
+| ID | Estado | PR / dónde se cerró | Nota |
+|---|---|---|---|
+| F01 | ✅ Hecho | Fase 136, PR 1 (#369) | Pestañas de ORLANT en móvil: `flex-shrink:0` + `overflow-x:auto` ya existente. Verificado en producción (Fase 136, cierre). |
+| F02 | ✅ Hecho | Fase 136, PR 2 (#370) | CLS reservando espacio en `#cal-kpis-strip`/`#cargas-modal`. |
+| F03 | ✅ Hecho | Fase 136, PR 6 (#374) | `Chart.defaults.animation.duration` centralizado (200ms, 0 con `prefers-reduced-motion`/`data-motion="off"`). |
+| F04 | ✅ Hecho | Fase 136, PR 8 (#377) + Fase 137, Parte C (#384) | Modales unificados con Escape. El PR 8 original introdujo un bug real (Escape global cerraba el dashboard de ORLANT por un popup interno sin relación) — encontrado en producción y corregido en la Fase 137, Parte C. Ver la entrada de esa fase en `docs/historico/progress-fases.md`. |
+| F05 | ✅ Hecho | Fase 136, PR 3 (#371) | Era un hallazgo parcialmente incorrecto: la escala de espaciado/radios/sombras YA EXISTÍA como tokens — el problema real era de adopción (7→47 usos). Corregido donde el valor coincidía exacto, sin cambio visual. |
+| F06 | ⏳ Pendiente | — | **Explícitamente NO tocado** (PR 3, por decisión técnica, no un olvido): sin preprocesador CSS no hay forma segura de usar una variable dentro de la condición de un `@media`, y cambiar un breakpoint real sin poder confirmar "cambio visual cero" rompía el alcance aditivo de ese PR. Sigue en `docs/pendientes.md` §3 (técnico, sin dueño). |
+| F07 | ✅ Hecho | Fase 137, Parte B (#382/#383) | Menú de acciones por fila en Gestión de Usuarios, mismos permisos de antes. (El PR #382 original se mergeó con un commit atrasado por un problema de sincronización de la API de GitHub — corregido con el fast-follow #383 en minutos; ver el incidente documentado en `CLAUDE.md` y `docs/historico/progress-fases.md`.) |
+| F08 | ✅ Hecho | Fase 136, commit `340e42d` (PR #376) | Toast de "No autenticado" en login corregido con un guard de `authToken` en `refrescarGraficasTema()`. Verificado en navegador real, antes/después. |
+| F09 | ✅ Hecho | Fase 136, PR 7 (#375) | "Sin datos..." consistente en los doughnuts vacíos del portal Asesor/Calidad. |
+| F10 | ⏳ Pendiente — decisión del usuario | — | Iconos emoji del sidebar → SVG monocromos. Postura explícita del usuario: no antes del demo de Mobilize (mediados de octubre). En `docs/pendientes.md` §1 (esperando decisión del usuario). |
+| F11 | ✅ Hecho (con 1 sub-ítem sin verificar) | Fase 136, commit `340e42d` (PR #376) | Pantalla completa real confirmada con el botón correcto y `document.fullscreenElement` (no una captura) — 0 animaciones continuas activas en ese modo. El propio navegador intercepta Escape de forma nativa para salir de pantalla completa (antes de que llegue a la página) — por eso **no se pudo confirmar con el teclado simulado de Playwright**; queda anotado como "no verificado" con esa limitación, no como "funciona" ni "no funciona". |
+| F12 | — (no es un hallazgo de diseño) | Incorporado en la Fase 135 misma | Corrección de alcance (pestañas reales de ORLANT/Mobilize vs. las que el pedido original asumía) — ya se usó para planificar la Fase 136, no había nada que "cerrar" aparte. |
+| F13 | ❌ Descartado — falso positivo confirmado | Fase 136, PR 3 (#371); re-confirmado en la Fase 137, Parte D | Grep completo repetido (CSS + JS, buscando cualquier referencia dinámica a un nombre de `@keyframes`): solo existe `@keyframes spin` (usado por el spinner de carga) — la palabra "real" del hallazgo original solo aparecía dentro de un comentario, nunca fue un nombre de `@keyframes` de verdad. Nada que borrar, no se tocó nada. |
