@@ -22,7 +22,28 @@ const {
 const { PLANTILLAS } = require('../calidad-plantillas-seed.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'cartera-fixture.xlsx');
-const ITEMS_CARTERA = PLANTILLAS.find((p) => p.campana === 'CARTERA INTERNA').items;
+// Fase 134: CARTERA INTERNA se elimino de PLANTILLAS (ya no es un cliente de
+// produccion) -- pero el fixture .xlsx de abajo sigue siendo datos REALES de
+// prueba con esta forma exacta de 14 items (labels/orden), asi que la lista
+// queda fija aqui en vez de derivarla de PLANTILLAS. La logica que se prueba
+// (cmColIndexMap/cmParseRows/etc, public/js/calidad-carga-masiva-logic.js)
+// es generica -- no le importa si la campana existe en produccion hoy.
+const ITEMS_CARTERA = [
+  { n: 1, cat: 'APERTURA', label: 'Saludo', weight: 5, critico: false },
+  { n: 2, cat: 'APERTURA', label: 'Grabacion de la llamada o chat', weight: 7, critico: false },
+  { n: 3, cat: 'APERTURA', label: 'Motivo de la llamada', weight: 9, critico: false },
+  { n: 4, cat: 'COMUNICACION', label: 'Comunicacion oral y cumplimiento de parametros de cobranza', weight: 9, critico: false },
+  { n: 5, cat: 'GESTION', label: 'Buen uso de los argumentos - Persuade al cliente', weight: 7, critico: true },
+  { n: 6, cat: 'GESTION', label: 'Objeciones', weight: 9, critico: true },
+  { n: 7, cat: 'GESTION', label: 'Liquidacion del credito', weight: 12, critico: true },
+  { n: 8, cat: 'GESTION', label: 'Resolucion de la llamada - dudas', weight: 5, critico: false },
+  { n: 9, cat: 'GESTION', label: 'Medios de pago', weight: 13, critico: true },
+  { n: 10, cat: 'LEGAL', label: 'Habeas data', weight: 5, critico: false },
+  { n: 11, cat: 'GESTION', label: 'Documenta gestion de la llamada', weight: 5, critico: false },
+  { n: 12, cat: 'COMUNICACION', label: 'Ortografia', weight: 5, critico: false },
+  { n: 13, cat: 'CIERRE', label: 'Cierre de la llamada', weight: 6, critico: false },
+  { n: 14, cat: 'TIEMPOS', label: 'Tiempo de retoma de llamada', weight: 3, critico: false },
+];
 const ITEMS_ORLANT = PLANTILLAS.find((p) => p.campana === 'ORLANT').items;
 
 test('cmParseFecha: formatos aceptados y rechazados', () => {

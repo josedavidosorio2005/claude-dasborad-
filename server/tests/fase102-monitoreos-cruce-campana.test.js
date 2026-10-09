@@ -52,21 +52,21 @@ test('un asesor NO ve ni marca como visto el monitoreo de OTRA campana aunque el
   assert.equal(createAsesor.status, 201, JSON.stringify(createAsesor.body));
   const tokenAsesor = await tokenFor(userOrlant, 'ClaveAsesor1234');
 
-  // Un monitoreo de carga masiva en OTRA campana (CARTERA INTERNA), con el
+  // Un monitoreo de carga masiva en OTRA campana (MOBILIZE), con el
   // MISMO nombre de asesor (persona distinta, coincidencia real posible) --
   // POST /monitoreos/bulk nunca completa asesorUserId.
-  const tokenCalCartera = await calidadUser(admin, 'CARTERA INTERNA', 'cartera');
+  const tokenCalCartera = await calidadUser(admin, 'MOBILIZE', 'cartera');
   const bulkCartera = await request(app)
     .post('/api/monitoreos/bulk')
     .set(auth(tokenCalCartera))
     .send({
-      campana: 'CARTERA INTERNA',
-      filas: [{ asesor: NOMBRE_COMPARTIDO, fecha: '2026-09-01', canal: 'LLAMADA', idLlamada, answers: respuestasTodoSi('CARTERA INTERNA') }],
+      campana: 'MOBILIZE',
+      filas: [{ asesor: NOMBRE_COMPARTIDO, fecha: '2026-09-01', canal: 'LLAMADA', idLlamada, answers: respuestasTodoSi('MOBILIZE') }],
     });
   assert.equal(bulkCartera.status, 201, JSON.stringify(bulkCartera.body));
   assert.equal(bulkCartera.body.insertadas, 1);
 
-  const listaCartera = await request(app).get('/api/monitoreos?campana=' + encodeURIComponent('CARTERA INTERNA')).set(auth(tokenCalCartera));
+  const listaCartera = await request(app).get('/api/monitoreos?campana=' + encodeURIComponent('MOBILIZE')).set(auth(tokenCalCartera));
   const monitoreoCartera = listaCartera.body.find((m) => m.idLlamada === idLlamada);
   assert.ok(monitoreoCartera, 'el monitoreo de carga masiva debe existir');
   assert.equal(monitoreoCartera.asesorUserId, null, 'precondicion: la carga masiva nunca completa asesorUserId');

@@ -340,161 +340,6 @@ const ORLANT = {
   },
 };
 
-// ── CLINICA AURORA ──────────────────────────────────────────
-const dailyLine = (titulo, seccion, campo, unidad) => ({
-  tipo: 'line', titulo, unidad,
-  series: [{ label: titulo, fuente: { s: seccion, modo: 'filas', x: 'fecha', campo } }],
-});
-
-const AURORA = {
-  cliente: 'CLINICA AURORA',
-  titulo: 'Dashboard Clinica Aurora',
-  vista: null,
-  secciones: SECCIONES['CLINICA AURORA'],
-  layout: {
-    // Llamadas Entrada / Nivel Atencion / Abandonos se retiraron de aqui en
-    // la Fase 45 (pedido de Edwin): duplicaban, en nombre y concepto, el
-    // resumen de la pestana "Trafico de Llamadas" (Total Llamadas/Nivel de
-    // Atencion/Llamadas Abandonadas, mismo dato pero calculado desde la
-    // carga automatica de Wolkvox en vez de esta carga mensual manual) —
-    // esa informacion ahora vive SOLO en el resumen de Trafico. AHT Promedio
-    // se mantiene aqui "por ahora" (pedido explicito, no es definitivo).
-    kpis: [
-      kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org', mejorDireccion: 'baja' }),
-      kpi('WhatsApp Entrada', ultimo('hist_whatsapp'), 'miles'),
-      kpi('Nivel Ate. WPP', ultimo('nivel_atencion_wpp'), 'porcentaje', { cls: 'kpi-green', metrica: 'nivel_atencion' }),
-      kpi('Total Agendas', ultimo('total_agendas'), 'miles', { cls: 'kpi-pur' }),
-      kpi('Efectividad', ultimo('efectividad'), 'porcentaje', { cls: 'kpi-org' }),
-      kpi('Llamadas Salida', ultimo('llamadas_salida'), 'miles', { cls: 'kpi-red' }),
-      kpi('WhatsApp Salida', ultimo('wpp_salida'), 'miles'),
-    ],
-    tabs: [
-      { key: 'llamadas', label: 'Llamadas Entrada', panels: [
-        dailyLine('Llamadas ingresadas por dia', 'llamadas', 'llamadas_ingresadas'),
-        dailyLine('% Contestadas', 'llamadas', 'pct_contestadas', '%'),
-        dailyLine('% Abandonadas', 'llamadas', 'pct_abandonadas', '%'),
-        { tipo: 'line', titulo: 'AHT por dia (seg)', unidad: 'tiempo', series: [{ label: 'AHT (seg)', fuente: { s: 'llamadas', modo: 'filas', x: 'fecha', campo: 'aht_segundos' } }] },
-      ]},
-      { key: 'wpp', label: 'WhatsApp Entrada', panels: [
-        dailyLine('WhatsApp ingresados por dia', 'llamadas', 'wpp_ingresados'),
-      ]},
-      { key: 'agendas', label: 'Agendas', panels: [
-        dailyLine('Agendas via llamada', 'agendas', 'agendas_llamada'),
-        dailyLine('Agendas via WhatsApp', 'agendas', 'agendas_whatsapp'),
-        lineP('Wolkvox — agendas por mes', 'agendas_wolkvox'),
-        { tipo: 'bar', titulo: 'Agendas por especialidad', horizontal: true, series: [{ label: 'Agendas', fuente: { s: 'agendas_categorias', modo: 'filas', x: 'categoria', campo: 'valor', filtro: { dimension: 'ESPECIALIDAD' } } }] },
-        { tipo: 'bar', titulo: 'Agendas por asesor', series: [{ label: 'Agendas', fuente: { s: 'agendas_categorias', modo: 'filas', x: 'categoria', campo: 'valor', filtro: { dimension: 'ASESOR' } } }] },
-        lineP('% Inasistencia por mes', 'inasistencia_pct', { unidad: '%' }),
-        { tipo: 'bar', titulo: '% Inasistencia por especialidad', horizontal: true, unidad: '%', series: [{ label: '% Inasistencia', fuente: { s: 'agendas_categorias', modo: 'filas', x: 'categoria', campo: 'valor', filtro: { dimension: 'INASISTENCIA_ESPECIALIDAD' } } }] },
-      ]},
-      { key: 'tipificacion', label: 'Tipificacion', panels: [
-        { tipo: 'pie', titulo: 'Tipificacion Llamada Entrada', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { canal: 'LLAMADA_ENTRADA' } } },
-        { tipo: 'pie', titulo: 'Tipificacion Llamada Salida', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { canal: 'LLAMADA_SALIDA' } } },
-        { tipo: 'pie', titulo: 'Tipificacion WhatsApp Entrada', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { canal: 'WPP_ENTRADA' } } },
-        { tipo: 'pie', titulo: 'Tipificacion WhatsApp Salida', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { canal: 'WPP_SALIDA' } } },
-        { tipo: 'pie', titulo: 'Encuestas', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad', filtro: { canal: 'ENCUESTAS' } } },
-      ]},
-      { key: 'salida', label: 'Salida', panels: [
-        dailyLine('Llamadas de salida por dia', 'salida', 'llamadas_salida'),
-        dailyLine('WhatsApp de salida por dia', 'salida', 'wpp_salida'),
-      ]},
-      { key: 'manager', label: 'Manager', panels: [
-        { tipo: 'combo', titulo: 'Agendas Manager e incremento', barras: [{ label: 'Cantidad', fuente: serie('agendas_manager') }], linea: { label: '% Incremento', fuente: serie('agendas_manager', { transform: 'incremento' }) } },
-        lineP('Errores de gestion por mes', 'errores_gestion'),
-        { tipo: 'line', titulo: 'Historico de flujo', series: [
-          { label: 'Llamadas', fuente: serie('hist_llamadas') },
-          { label: 'WhatsApp', fuente: serie('hist_whatsapp') },
-          { label: 'Total', fuente: serie('hist_llamadas', { formula: 'a+b', a: 'hist_llamadas', b: 'hist_whatsapp' }) },
-        ]},
-      ]},
-      { key: 'sabados', label: 'Sabados', panels: [
-        { tipo: 'line', titulo: 'Llamadas los sabados', series: [{ label: 'Llamadas', fuente: { s: 'sabados', modo: 'filas', x: 'fecha', campo: 'llamadas' } }] },
-        { tipo: 'line', titulo: 'WhatsApp los sabados', series: [{ label: 'WhatsApp', fuente: { s: 'sabados', modo: 'filas', x: 'fecha', campo: 'whatsapp' } }] },
-      ]},
-      { key: 'calidad', label: 'Calidad', panels: [
-        { tipo: 'calidad_kpis', campana: 'CLINICA AURORA' },
-        { tipo: 'calidad_pie', campana: 'CLINICA AURORA', titulo: 'Distribucion de clasificacion' },
-      ]},
-      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
-        { tipo: 'trafico_combo', campana: 'CLINICA AURORA' },
-      ]},
-    ],
-  },
-};
-
-// ── HOSPITAL LA MARIA (dos sedes) ───────────────────────────
-const hd = (titulo, campo, unidad) => ({
-  tipo: 'line', titulo, unidad,
-  series: [{ label: titulo, fuente: { s: 'dia', modo: 'filas', x: 'fecha', campo } }],
-});
-
-const HLM = {
-  cliente: 'HOSPITAL LA MARIA',
-  titulo: 'Dashboard Hospital La Maria',
-  vista: {
-    campo: 'sede',
-    label: 'Sede',
-    opciones: [
-      { valor: 'CASTILLA', label: 'Sede Castilla' },
-      { valor: 'SEDE33', label: 'Sede 33' },
-    ],
-  },
-  secciones: SECCIONES['HOSPITAL LA MARIA'],
-  layout: {
-    // Llamadas Ingresadas / Nivel Atencion Llamadas / Llamadas Contestadas /
-    // Llamadas Abandonadas se retiraron de aqui en la Fase 45 (pedido de
-    // Edwin): coinciden literalmente con las tarjetas del resumen de la
-    // pestana "Trafico de Llamadas" (mismo dato, calculado desde la carga
-    // automatica de Wolkvox en vez de esta carga mensual manual) — esa
-    // informacion ahora vive SOLO en el resumen de Trafico. AHT Promedio
-    // (mas abajo) se mantiene "por ahora" (pedido explicito, no definitivo).
-    kpis: [
-      kpi('WhatsApp Ingresados', ultimo('wpp_ingresados'), 'miles'),
-      kpi('Agendas via WhatsApp', ultimo('agendas_wpp'), 'miles', { cls: 'kpi-pur' }),
-      kpi('Agendas via Llamada', ultimo('agendas_llamada'), 'miles', { cls: 'kpi-pur' }),
-      kpi('Total Agendas', { s: 'resumen', modo: 'ultimo', formula: 'a+b', a: 'agendas_wpp', b: 'agendas_llamada' }, 'miles', { cls: 'kpi-org' }),
-      kpi('AHT Promedio', ultimo('aht_segundos'), 'tiempo_mmss', { cls: 'kpi-org' }),
-    ],
-    tabs: [
-      { key: 'llamadas', label: 'Llamadas y WhatsApp', panels: [
-        hd('Llamadas ingresadas por dia', 'llamadas_ingresadas'),
-        hd('% Contestadas', 'pct_contestadas', '%'),
-        hd('% Abandonadas', 'pct_abandonadas', '%'),
-        hd('WhatsApp ingresados por dia', 'wpp_ingresados'),
-      ]},
-      { key: 'agendamiento', label: 'Agendamiento', panels: [
-        hd('Agendas via WhatsApp', 'agendas_wpp'),
-        hd('Agendas via llamada', 'agendas_llamada'),
-        { tipo: 'line', titulo: 'AHT por dia (seg)', unidad: 'tiempo', series: [{ label: 'AHT (seg)', fuente: { s: 'dia', modo: 'filas', x: 'fecha', campo: 'aht_segundos' } }] },
-      ]},
-      { key: 'tipificacion', label: 'Tipificacion', panels: [
-        { tipo: 'pie', titulo: 'Tipificacion', fuente: { s: 'tipificacion', modo: 'filas', x: 'tipificacion', campo: 'cantidad' } },
-      ]},
-      { key: 'demanda', label: 'Demanda Insatisfecha', panels: [
-        { tipo: 'bar', titulo: 'Llamadas IVR sin agenda', series: [{ label: 'Llamadas IVR', fuente: { s: 'demanda', modo: 'filas', x: 'categoria', campo: 'llamadas', filtro: { dimension: 'IVR' } } }] },
-        { tipo: 'bar', titulo: 'Demanda por especialidad', series: [
-          { label: 'Llamadas', fuente: { s: 'demanda', modo: 'filas', x: 'categoria', campo: 'llamadas', filtro: { dimension: 'ESPECIALIDAD' } } },
-          { label: 'WhatsApp', fuente: { s: 'demanda', modo: 'filas', x: 'categoria', campo: 'whatsapp', filtro: { dimension: 'ESPECIALIDAD' } } },
-        ]},
-      ]},
-      { key: 'entidades', label: 'Entidades', panels: [
-        { tipo: 'pie', titulo: 'Flujo llamadas por entidad', fuente: { s: 'entidades', modo: 'filas', x: 'entidad', campo: 'cantidad', filtro: { canal: 'LLAMADA' } } },
-        { tipo: 'pie', titulo: 'Flujo WhatsApp por entidad', fuente: { s: 'entidades', modo: 'filas', x: 'entidad', campo: 'cantidad', filtro: { canal: 'WPP' } } },
-      ]},
-      // Sin "campana" fija: el panel trafico_combo carga TODO el trafico de
-      // "HOSPITAL LA MARIA" (una sola campana) y filtra client-side por sede
-      // usando la misma vista de arriba (vistaSel = 'CASTILLA'/'SEDE33', ver
-      // _traficoRenderPanel en public/js/trafico.js) — el mapeo de skills de
-      // Volvox asigna cada skill a la campana "HOSPITAL LA MARIA" + su sede
-      // (campo `sede` en trafico_skill_mapeo), nunca a una campana distinta
-      // por sede. Ver docs/ARQUITECTURA.md.
-      { key: 'trafico', label: 'Trafico de Llamadas', panels: [
-        { tipo: 'trafico_combo' },
-      ]},
-    ],
-  },
-};
-
 // ── MOBILIZE ────────────────────────────────────────────────
 // Fase 131 (Parte 2, pedido de Edwin): dashboard real de Mobilize, no la
 // plantilla generica de "ventas" de M3 (ver el comentario de donde salio,
@@ -602,10 +447,11 @@ const MOBILIZE = {
   },
 };
 
-// M3 (Fase A2): 8 dashboards de cliente mas, por plantilla estandar de contact
-// center. Se afinan desde el constructor visual, no aqui.
-const { CONFIGS_CLIENTE } = require('./dashboard-plantillas-cliente');
-
-const CONFIGS = [ORLANT, AURORA, HLM, MOBILIZE, ...CONFIGS_CLIENTE];
+// Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
+// usuario, 2026-10-09) -- CLINICA AURORA/HOSPITAL LA MARIA (arriba) y los 8
+// dashboards de plantilla estandar que vivian en dashboard-plantillas-
+// cliente.js (M3/Fase A2, ninguno con datos reales) se quitaron del todo,
+// archivo incluido, para que ningun deploy/migracion los vuelva a crear.
+const CONFIGS = [ORLANT, MOBILIZE];
 
 module.exports = { CONFIGS };

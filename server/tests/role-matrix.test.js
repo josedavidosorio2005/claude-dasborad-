@@ -101,8 +101,7 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   await t.test('CLIENTES_DASH: dashboards de cliente sí, config y módulos no', async () => {
     const tok = await tokenFor('agomez', SEED.agomez);
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 200);
-    assert.equal(await G(tok, '/api/dashboard/INFONDO'), 200);
-    assert.equal(await G(tok, '/api/dashboard/BIVETT'), 200);
+    assert.equal(await G(tok, '/api/dashboard/MOBILIZE'), 200);
     assert.equal(await G(tok, '/api/dashboards/config'), 403);
     assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
@@ -122,14 +121,14 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   await t.test('SUPERVISOR: evalúa su campaña, no otra', async () => {
     const tok = await crearUsuario(admin, 'SUPERVISOR', { campana_ORLANT: true });
     assert.equal(await G(tok, '/api/monitoreos?campana=ORLANT'), 200);
-    assert.equal(await G(tok, '/api/monitoreos?campana=INFONDO'), 403);
+    assert.equal(await G(tok, '/api/monitoreos?campana=MOBILIZE'), 403);
     const ev = await request(app).post('/api/monitoreos').set(auth(tok)).send({
       campana: 'ORLANT', asesor: 'Asesor RM', fecha: '2026-08-10', canal: 'LLAMADA',
       answers: { '1': 'SI' },
     });
     assert.ok([201, 400].includes(ev.status), 'evaluar ORLANT no debe dar 403: ' + ev.status);
     const evOtra = await request(app).post('/api/monitoreos').set(auth(tok)).send({
-      campana: 'INFONDO', asesor: 'Asesor RM', fecha: '2026-08-10', canal: 'LLAMADA', answers: { '1': 'SI' },
+      campana: 'MOBILIZE', asesor: 'Asesor RM', fecha: '2026-08-10', canal: 'LLAMADA', answers: { '1': 'SI' },
     });
     assert.equal(evOtra.status, 403);
   });

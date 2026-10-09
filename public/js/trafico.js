@@ -125,12 +125,10 @@ async function guardarTrafico(){
 // directamente por _gd.vistaSel sin tabla de traduccion. Si se agrega otro
 // dashboard con "vista" que tambien necesite trafico por sede, se registra
 // aqui igual.
-var TRAFICO_CAMPANAS_MULTISEDE = {
-  'HOSPITAL LA MARIA': [
-    { valor: 'CASTILLA', label: 'Sede Castilla' },
-    { valor: 'SEDE33', label: 'Sede 33' },
-  ],
-};
+// Fase 134: HOSPITAL LA MARIA (la unica campana multi-sede que hubo) se
+// elimino -- queda vacio, listo para la proxima campana con "vista" que
+// necesite trafico por sede.
+var TRAFICO_CAMPANAS_MULTISEDE = {};
 
 function _traficoCampanasAsignables(){
   var base = (typeof CAMPANAS_CALIDAD !== 'undefined') ? CAMPANAS_CALIDAD : [];

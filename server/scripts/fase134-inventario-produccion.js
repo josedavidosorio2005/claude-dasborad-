@@ -98,6 +98,10 @@ function inventarioUsuarios(db) {
   // Por rol: cuantos usuarios tienen al menos 1 permiso campana_X/cliente_X
   // true para alguno de los 12 clientes a borrar.
   const porRolConAccesoABorrar = {};
+  // Por CLIENTE a borrar, por rol: cuantos usuarios tienen ESE permiso
+  // puntual (lo que pidio el usuario: desglose por cliente, no solo total).
+  const porClientePorRol = {};
+  CLIENTES_A_BORRAR.forEach((c) => { porClientePorRol[c] = {}; });
   // Por rol: de esos, cuantos quedarian con CERO acceso campana_*/cliente_*
   // total (a cualquier cliente, incluido ORLANT/MOBILIZE) si se quitan
   // justo los permisos de los 12 clientes a borrar.
@@ -116,6 +120,11 @@ function inventarioUsuarios(db) {
     const tieneAccesoABorrar = nombresConAcceso.some((n) => CLIENTES_A_BORRAR.includes(n));
     if (tieneAccesoABorrar) {
       porRolConAccesoABorrar[u.rol] = (porRolConAccesoABorrar[u.rol] || 0) + 1;
+      nombresConAcceso.forEach((n) => {
+        if (CLIENTES_A_BORRAR.includes(n)) {
+          porClientePorRol[n][u.rol] = (porClientePorRol[n][u.rol] || 0) + 1;
+        }
+      });
       const quedaria = nombresConAcceso.filter((n) => !CLIENTES_A_BORRAR.includes(n));
       if (quedaria.length === 0) {
         porRolQuedariaSinAcceso[u.rol] = (porRolQuedariaSinAcceso[u.rol] || 0) + 1;
@@ -126,6 +135,13 @@ function inventarioUsuarios(db) {
       porRolAsesorCampanaABorrar[u.rol] = (porRolAsesorCampanaABorrar[u.rol] || 0) + 1;
     }
   }
+
+  console.log('Usuarios con permiso, POR CLIENTE a borrar y por rol:');
+  CLIENTES_A_BORRAR.forEach((c) => {
+    const porRol = porClientePorRol[c];
+    const entradas = Object.entries(porRol);
+    console.log(`  ${c}: ${entradas.length ? entradas.map(([r, n]) => `${r}=${n}`).join(' ') : '(ninguno)'}`);
+  });
 
   console.log('Usuarios (cualquier rol) con permiso campana_X/cliente_X=true a ALGUNO de los 12 clientes a borrar:');
   for (const [rol, n] of Object.entries(porRolConAccesoABorrar)) console.log(`  ${rol}: ${n}`);
