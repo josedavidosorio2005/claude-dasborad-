@@ -7,7 +7,7 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.26.0**. Esta guía es para quien usa la
+Versión de la plataforma: **1.29.1**. Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -385,6 +385,42 @@ evita que las cargas futuras se unifiquen de la misma forma.
   para diligenciar, "Diccionario" con la lista de preguntas de
   referencia, "Resumen por Asesor" de consulta) para cuando hay muchos
   monitoreos para subir de una vez.
+
+### Llamadas Únicas (Mobilize)
+
+- **Qué archivo**: el mismo patrón que las demás bases de Wolkvox, pero
+  este archivo hay que armarlo a mano combinando 3 reportes distintos de
+  Wolkvox (ver más abajo cómo sacarlos) — Edwin es quien hace esa
+  combinación antes de subir.
+- **Hoja**: `LLAMADAS_UNICAS` de la plantilla oficial
+  (`PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx`, descargable desde "Cargar
+  Datos" eligiendo el cliente **Mobilize**).
+- **Columnas obligatorias**: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las
+  filas de llamadas **abandonadas** van con `SKILL_NAME = NO CONTESTADAS`.
+- **Privacidad**: TELEPHONE se usa solo un instante, en la computadora de
+  quien sube el archivo, para no contar dos veces una misma llamada del
+  mismo número el mismo día — nunca llega al servidor, nunca se guarda,
+  nunca se exporta ni se muestra en ninguna pantalla.
+- **Reemplazo**: por MES — si el archivo trae Septiembre, se reemplaza
+  ese mes completo.
+
+**Cómo sacar las llamadas únicas desde Wolkvox, paso a paso:**
+
+1. **Contestadas de ingreso**: en Wolkvox, Reportes → pestaña **CDR** →
+   reporte **"1. Detalle de las llamadas"**. De ahí se quitan dos cosas
+   antes de pegarlas en la plantilla: las llamadas de **salida** (el
+   número de teléfono trae un guion) y los **duplicados del mismo número
+   el mismo día** (no de todo el mes — si el mismo número llama dos días
+   distintos, cuenta en cada uno).
+2. **Abandonadas**: en Wolkvox, **Skills & Servicios** → reporte **"2.
+   Llamadas abandonadas"**, filtrando por skill. Esas filas van a la
+   plantilla con `SKILL_NAME = NO CONTESTADAS`.
+3. **Salientes no conectadas**: en Wolkvox, Reportes → pestaña **CDR** →
+   reporte **"5. Detalle de las llamadas para las no conectadas"** (esta
+   parte todavía no se carga en la plataforma — queda para cuando Edwin
+   mande ese archivo aparte).
+
+![Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados](img/guia-uso/wolkvox-cdr-mobilize.png)
 
 ## 5. Calendario mensual
 

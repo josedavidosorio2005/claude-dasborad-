@@ -16,6 +16,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   la Fase 137 (Parte C) no pudo confirmar el lado CLIENTES_DASH de
   producción (`scripts/produccion/revision-final.js` espera 2 sesiones,
   una por cada rol) — solo se verificó ADMINISTRADOR, en verde.
+- **"OK cargar" de las Llamadas Únicas de Mobilize (septiembre/2026)** —
+  Prioridad ALTA. El panel "Llamadas de ingreso únicas" de Mobilize
+  (Fase 138, PR3, v1.29.0) está en producción con datos de demostración
+  únicamente — el archivo real (`CONTESTADAS UNICAS.xlsx`, en Downloads,
+  nunca en el repo) está listo para cargar con dry-run y verificación
+  contra los números de control (88 contestadas / 51 abandonadas / 139
+  total). Cómo se cierra: escribes "OK cargar" en el chat.
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a
@@ -129,6 +136,31 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   que se usa hoy (688×124) se ve bien solo hasta ~150px de ancho.
   Cuando llegue el original de Edwin, se regenera igual que el logo de
   InConexion (Fase 132).
+- **5 preguntas de la reunión del 2026-10-09 (Fase 138) sobre "Llamadas
+  de ingreso únicas" de Mobilize** — Prioridad MEDIA (no bloquean el
+  panel ya construido, que queda con datos de demo hasta el "OK cargar"):
+  - **Nombre de asesor en las filas NO CONTESTADAS**: una llamada
+    abandonada no tiene asesor que la atendió — falta confirmar qué
+    espera Edwin que vaya en AGENT_NAME para esas filas (vacío, un valor
+    fijo, el del skill).
+  - **Filtro de skill y las abandonadas**: sin confirmar si el filtro de
+    Skill del panel debe aplicar también a las llamadas abandonadas o
+    solo a las contestadas.
+  - **"Tipo de línea" en Mobilize**: Edwin mencionó este término en la
+    reunión, sin precisar a qué se refiere ni si es un dato nuevo a
+    cargar.
+  - **"ATA" de Mobilize**: sin confirmar si es lo mismo que AHT (ya
+    existe en Mobilize desde el PR 2 de esta fase) o un indicador
+    distinto.
+  - **Archivo de "Llamadas de salida" (conectadas/no conectadas) de
+    Mobilize**: construye la mitad derecha del panel de Flujo de
+    Llamadas — Edwin todavía no lo ha mandado; ahí aplica la Regla B de
+    deduplicación, que tampoco está confirmada con él todavía.
+- **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
+  octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
+  fase): lo están trabajando fuera de esta línea de trabajo y todavía no
+  hay datos — riesgo de plazo que no depende del equipo de la
+  plataforma.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
