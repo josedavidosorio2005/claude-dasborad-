@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.21.4 — Octubre 2026
+
+**Fase 136 (PR 4): base interna para las próximas animaciones — nada se
+ve distinto todavía.**
+
+- Se preparó la base de código para los próximos cambios de movimiento
+  (transiciones, pestañas, modales) que vienen en los siguientes PRs.
+- No se usó ninguna librería externa: se evaluó la opción, pesaba más de
+  lo esperado (49 KB), y se resolvió igual de bien sin agregar nada de
+  peso.
+- No cambia absolutamente nada de lo que se ve en pantalla todavía.
+
 ## v1.21.3 — Octubre 2026
 
 **Fase 136 (PR 3): orden interno del código de estilos — nada se ve
