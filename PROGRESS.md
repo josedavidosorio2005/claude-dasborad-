@@ -136,6 +136,45 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
 
+### Fase 135 (cerrada) — Auditoría completa de UI/UX y movimiento (solo auditoría, nada del producto cambió)
+
+Pedido: auditar jerarquía/espaciado/tipografía/componentes/estados,
+decidir qué librería de movimiento usar, y dejar un informe + capturas
+demo para que el usuario decida la Fase 136 — **sin tocar código del
+producto, sin instalar nada, sin tocar producción**. Entregable:
+[`docs/auditoria-ui-fase135.md`](docs/auditoria-ui-fase135.md) (resumen
+ejecutivo, decisión de librería con números reales, inventario de
+consistencia contado con `grep`, 13 hallazgos con evidencia, línea base
+de rendimiento medida con CDP, especificación de movimiento y plan de 8
+PRs temáticos para la Fase 136) + 49 capturas en
+`docs/capturas-demo/fase135-antes/` (seed:demo, nunca producción).
+
+**Paso 1 (librería):** confirmado con números reales (descarga en una
+carpeta temporal fuera del repo, borrada al terminar) que `motion`
+(sucesor JS-plano de Framer Motion) vendorizado pesa **22 KB gzip**,
+encaja en `public/js/vendor/` igual que Chart.js, sin tocar la CSP actual
+(`scriptSrc 'self'`). Recomendación: CSS puro para hover/focus/active/tap
++ `motion` vendorizado para aparición al scroll/entradas escalonadas;
+migrar a React queda documentado como descartado (esfuerzo/riesgo, sin
+beneficio que `motion` no dé ya).
+
+**Hallazgos más relevantes:** bug real de responsive (pestañas de ORLANT
+se superponen a 412px, severidad alta), CLS de 0.81 al abrir un dashboard
+(0 tareas largas >50ms — el salto es de layout, no de JavaScript lento),
+Chart.js sin configuración de animación propia en ningún módulo (usa el
+default ~1000ms en cada refresco), 5 sistemas de modal/overlay
+independientes sin una sola transición compartida, y sin escala de
+espaciado/radios/sombras (60 valores de `padding` distintos, 20 de
+`border-radius`, pese a que ya existen 65 tokens de color/tipografía
+desde la Fase 133). `ui-ux-pro-max-skill` (pedida como guía principal) no
+está instalada — documentado el hueco y el comando sugerido, sin
+instalarla. Detalle completo, con la discrepancia real encontrada entre
+las pestañas que el pedido asumía y las que existen hoy en ORLANT/
+Mobilize, en `docs/auditoria-ui-fase135.md`.
+
+Esta fase **no cambia la versión de la app** (1.21.0 sin cambios) — no
+tocó código del producto, solo documentación y capturas demo.
+
 ### Fase 131 (cerrada) — Cliente Mobilize: Flujo de Llamadas, Tipificación CDR, "Última actualización"
 
 Partes 1, 2, 3, 4 y 6 (detalle completo en
@@ -495,4 +534,5 @@ mismo orden):
 - Fase 130 — Calidad real de septiembre/2026 (95 monitoreos) + pedidos de la reunión con Edwin del 2026-10-07 (Inasistencia acepta "FECHA CITA"/normaliza SEDE 34, quita el aviso "incompleto", nueva gráfica de nombre+% promedio por asesor en Calidad) + 2 hallazgos reales corrigiendo la carga masiva de Calidad (filas de plantilla sin diligenciar, observaciones hasta 500 caracteres) + Parte 7: el limitador de tasa de la API ya no bloquea a toda una oficina por el error de una sola persona (ahora cuenta por usuario autenticado, no por IP); verificación final completa en producción (ADMIN y CLIENTES_DASH) EJECUTADA, con 2 traspiés reales documentados (límite de tasa agotado por corridas repetidas, autocompletado del navegador) antes de confirmarla en verde (2026-10-07)
 - Fase 131 — Cliente Mobilize: pestañas "Flujo de Llamadas" y "Tipificación" reusando el motor de ORLANT, "Última actualización" visible en cada dashboard (naranja Mobilize/verde de marca el resto), carga real de septiembre/2026 verificada en producción (2026-10-08)
 - Fase 132 — Marca InConexion®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
+- Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, sin tocar producto ni producción): decisión de librería de movimiento con números reales (`motion` vendorizado, 22 KB gzip), inventario de consistencia contado con `grep`, 13 hallazgos con evidencia (bug de responsive en pestañas de ORLANT a 412px, CLS 0.81 al abrir un dashboard, Chart.js sin config de animación propia, 5 sistemas de modal sin transición compartida), línea base de rendimiento medida y plan de 8 PRs para la Fase 136 (2026-10-08)
 
