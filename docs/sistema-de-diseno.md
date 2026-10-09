@@ -188,6 +188,32 @@ mano) — con cualquiera de los 2 activos, `.atab` mide
 preferencia) y el dashboard/Calidad se siguen abriendo y usando bien, 0
 errores de página.
 
+## Componentes base (Fase 136, PR 5)
+
+Sin renombrar clases ni tocar lógica JS — solo CSS, con los tokens de
+los PR 3/4.
+
+- **Botones**: feedback de prensado (`:active{transform:scale(0.97)}`,
+  `--dur-fast`/`--ease-out`) en los 6 más frecuentes (`.btn-primary`,
+  `.btn-login`, `.btn-cancel`, `.btn-logout`, `.btn-sm` — y sus
+  variantes de color `.btn-edit/-suspend/-activate/-delete/-pass` —,
+  `.btn-close-modal`). `.btn-reset`/`.btn-eye` (iconos sueltos, acción
+  rara) se dejaron sin tocar a propósito — no se anima por animar.
+- **Formularios**: `.ig input/select` y `.aurora-filters select` pasan
+  de radios sueltos (8px/7px) a `var(--r-sm)`, igual que `.qi-select`
+  (que ya lo usaba desde la Fase 133). Único cambio visual real de este
+  PR (1-2px) — el resto es aditivo.
+- **Cards/KPIs**: `.stat-card` (Usuarios) y `.aurora-kpi` ya compartían
+  `--r-md`/`--shadow-sm`/borde-izquierdo de acento desde antes (Fase 133
+  + PR 3) — no hacía falta tocar nada. Ninguna card es clicable hoy
+  (confirmado por grep de `onclick`) — no se agregó hover de elevación,
+  no hay nada que indicar.
+- **Menú lateral**: el estado activo dependía solo de color/negrita
+  (igual que `:hover`, ambiguo). Ahora tiene un indicador propio
+  (`border-left:3px solid var(--c-brand)`) que `:hover` nunca tiene.
+- **Pestañas**: ya resuelto en el PR 1 (F01) y objetivos táctiles ≥44px
+  en móvil ya existían desde la Fase 133 — nada que agregar aquí.
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.22.0 — Octubre 2026
+
+**Fase 136 (PR 5): botones, formularios y menú más consistentes y con
+mejor respuesta al tacto/clic.**
+
+- Los botones principales ahora dan un pequeño "rebote" visual al
+  hacerles clic — confirma que la plataforma recibió la acción.
+- El menú lateral ahora marca con más claridad en qué sección estás (una
+  barra de color a la izquierda, no solo el fondo resaltado).
+- Los campos de formulario y filtros quedan con el mismo estilo de
+  esquina redondeada en toda la plataforma.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.21.4 — Octubre 2026
 
 **Fase 136 (PR 4): base interna para las próximas animaciones — nada se
