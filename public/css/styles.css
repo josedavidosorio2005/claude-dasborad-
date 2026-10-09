@@ -787,6 +787,14 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    propia regla mas abajo, a pantalla completa. Los otros 5 modales de esta
    lista se quedan EXACTAMENTE igual (ventana flotante centrada). */
 #calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal{background:var(--c-bg);border-radius:18px;width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:0 20px 60px rgba(var(--shadow-rgb),0.35);display:flex;flex-direction:column;}
+/* Fase 136 (F02, corrige el numero real de CLS de la Fase 135 -- ver
+   docs/auditoria-ui-fase135.md: el 0.81 reportado ahi NO aislaba la
+   apertura de ORLANT, que en realidad ya mide 0.014; el salto real
+   (CLS 0.14, medido con PerformanceObserver/layout-shift) esta aqui: la
+   tabla "Cargas registradas" llega por fetch despues del primer pintado,
+   #cargas-modal pasa de ~501px a 768px (pantalla completa) cuando se
+   puebla. min-height reserva el espacio tipico de antemano. */
+#cargas-modal{min-height:70vh;}
 
 /* Fase 103 (pedido de InCo, "ver mejor las graficas"): el dashboard de
    cliente ya no es una ventana flotante -- ocupa toda la ventana del
@@ -857,6 +865,15 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 
 /* KPI cards */
 .aurora-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:20px 24px 0;}
+/* Fase 136 (F02): #cal-kpis-strip (Modulo de Calidad) empieza vacio y se
+   llena por fetch despues del primer pintado -- medido con
+   PerformanceObserver/layout-shift: 108px de alto una vez poblado, 0 al
+   abrir, CLS 0.67 (el mayor de toda la auditoria). min-height reserva
+   ese espacio de antemano para que no empuje el resto del panel hacia
+   abajo cuando llegan los datos. No toca #gd-kpis (dashboard de
+   cliente): ORLANT y Mobilize hoy no usan esa franja (kpis:[], Fase 68)
+   -- nada que reservar ahi todavia. */
+#cal-kpis-strip{min-height:108px;}
 .aurora-kpi{background:var(--c-surface);border-radius:10px;padding:16px 14px;box-shadow:0 2px 8px rgba(var(--shadow-rgb),0.07);border-left:3px solid var(--c-primary-mid);position:relative;overflow:hidden;}
 .aurora-kpi .kpi-val{font-size:var(--fs-kpi);font-weight:700;color:var(--c-primary);line-height:1;}
 .aurora-kpi .kpi-lbl{font-size:var(--fs-note);color:var(--c-text-muted);margin-top:5px;text-transform:uppercase;letter-spacing:0.05em;}

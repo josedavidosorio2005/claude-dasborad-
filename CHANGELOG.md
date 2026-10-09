@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.21.2 — Octubre 2026
+
+**Fase 136 (PR 2): el panel de Calidad y la ventana de "Cargar Datos" ya
+no dan un salto visual al abrir.**
+
+- Al abrir el módulo de Calidad o la ventana de "Cargar Datos", el
+  contenido a veces "saltaba" de tamaño un instante después de abrirse
+  (mientras cargaban los datos), lo que se sentía brusco.
+- Ahora el espacio se reserva desde el principio — se ve igual de lleno,
+  pero sin el salto.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.21.1 — Octubre 2026
 
 **Fase 136 (PR 1): las pestañas del dashboard ya no se superponen en el
