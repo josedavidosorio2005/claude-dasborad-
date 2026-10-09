@@ -35,23 +35,25 @@ async function js(archivo) {
 test('CSS: los 6 modales tienen la transicion de entrada/salida (--dur-slow + --ease-out, opacity/transform solo)', async () => {
   const texto = await css();
   const selectorBase = MODALES.map((id) => '#' + id).join(',');
-  const selectorShow = MODALES.map((id) => '#' + id + '.motion-modal-show').join(',');
+  const selectorHidden = MODALES.map((id) => '#' + id + '.motion-modal-hidden').join(',');
   assert.ok(texto.includes(selectorBase + '{'), 'deberia existir una regla con los 6 selectores base juntos');
-  assert.ok(texto.includes(selectorShow + '{'), 'deberia existir una regla con los 6 selectores .motion-modal-show juntos');
+  assert.ok(texto.includes(selectorHidden + '{'), 'deberia existir una regla con los 6 selectores .motion-modal-hidden juntos');
 
   const base = texto.match(/#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal,#gd-modal\{([^}]*)\}/);
   assert.ok(base, 'deberia encontrar la regla base');
-  assert.match(base[1], /opacity:\s*0/);
-  assert.match(base[1], /transform:\s*scale\(0\.97\)/, 'nunca scale(0) -- nada aparece de la nada');
+  // Ajuste tras "OK modales": el estado BASE (sin la clase) es VISIBLE --
+  // si motion-helpers.js no carga, el modal nunca debe quedar invisible.
+  assert.match(base[1], /opacity:\s*1/, 'el estado base debe ser visible (progressive enhancement)');
+  assert.match(base[1], /transform:\s*scale\(1\)/);
   assert.match(base[1], /transition:\s*opacity var\(--dur-slow\) var\(--ease-out\),transform var\(--dur-slow\) var\(--ease-out\)/);
   // Nunca width/height/top/left ni "transition:all" en esta regla.
   assert.ok(!/\b(width|height|top|left)\s*:/.test(base[1]));
   assert.ok(!/transition:\s*all/.test(base[1]));
 
-  const show = texto.match(/#calidad-modal\.motion-modal-show,#detalle-monitoreo-modal\.motion-modal-show,#supervisar-lider-modal\.motion-modal-show,#cargas-modal\.motion-modal-show,#dashcfg-modal\.motion-modal-show,#gd-modal\.motion-modal-show\{([^}]*)\}/);
-  assert.ok(show, 'deberia encontrar la regla .motion-modal-show');
-  assert.match(show[1], /opacity:\s*1/);
-  assert.match(show[1], /transform:\s*scale\(1\)/);
+  const hidden = texto.match(/#calidad-modal\.motion-modal-hidden,#detalle-monitoreo-modal\.motion-modal-hidden,#supervisar-lider-modal\.motion-modal-hidden,#cargas-modal\.motion-modal-hidden,#dashcfg-modal\.motion-modal-hidden,#gd-modal\.motion-modal-hidden\{([^}]*)\}/);
+  assert.ok(hidden, 'deberia encontrar la regla .motion-modal-hidden (estado transitorio)');
+  assert.match(hidden[1], /opacity:\s*0/);
+  assert.match(hidden[1], /transform:\s*scale\(0\.97\)/, 'nunca scale(0) -- nada aparece de la nada');
 });
 
 test('motion-helpers.js: motionAbrirModal/motionCerrarModal se exportan y se sirven', async () => {
@@ -110,13 +112,7 @@ test('index.html: los 6 pares overlay/modal siguen anidados igual (modal hijo di
   }
 });
 
-test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (EventTarget real de Node, sin jsdom)', async () => {
-  if (typeof global.requestAnimationFrame !== 'function') {
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-  }
-  delete require.cache[path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js')];
-  const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
-
+function crearElementoFalso() {
   class ElementoFalso extends EventTarget {
     constructor(id, parent) {
       super();
@@ -130,27 +126,94 @@ test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (E
       };
     }
   }
+  return ElementoFalso;
+}
+
+test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (EventTarget real de Node, sin jsdom) -- base visible, .motion-modal-hidden es el transitorio', async () => {
+  if (typeof global.requestAnimationFrame !== 'function') {
+    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+  }
+  delete require.cache[path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js')];
+  const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
+  const ElementoFalso = crearElementoFalso();
 
   const overlay = new ElementoFalso('calidad-overlay');
   const modal = new ElementoFalso('calidad-modal', overlay);
   overlay.classList.add('show');
 
   let cerrado = false;
-  mod.motionAbrirModal.length; // existe como funcion con 1 parametro
   // motionAbrirModal busca el elemento por id via document.getElementById,
   // asi que se simula un document minimo para esta prueba puntual.
   const registro = { 'calidad-modal': modal, 'calidad-overlay': overlay };
   global.document = { getElementById: (id) => registro[id] || null };
 
+  assert.equal(modal.classList.contains('motion-modal-hidden'), false, 'antes de abrir, sin la clase transitoria -- CSS ya lo muestra visible por defecto');
+
   mod.motionAbrirModal('calidad-modal');
+  assert.equal(modal.classList.contains('motion-modal-hidden'), true, 'motionAbrirModal agrega la clase transitoria de inmediato (estado "antes" para que el navegador tenga algo que animar)');
   await new Promise((r) => setTimeout(r, 60));
-  assert.equal(modal.classList.contains('motion-modal-show'), true, 'deberia agregar la clase de entrada');
+  assert.equal(modal.classList.contains('motion-modal-hidden'), false, 'y la quita 2 frames despues -- vuelve al estado base (visible)');
 
   mod.motionCerrarModal('calidad-modal', () => { cerrado = true; overlay.classList.remove('show'); });
+  assert.equal(modal.classList.contains('motion-modal-hidden'), true, 'motionCerrarModal agrega la clase transitoria de inmediato (dispara la salida)');
   assert.equal(cerrado, false, 'no deberia cerrar de inmediato -- espera la transicion de salida');
   modal.dispatchEvent(new Event('transitionend'));
   assert.equal(cerrado, true, 'deberia llamar cerrarReal cuando termina la transicion de salida');
   assert.equal(overlay.classList.contains('show'), false);
+
+  delete global.document;
+});
+
+test('progressive enhancement: si motion-helpers.js no carga, el modal se ve igual de bien (el caller nunca llama motionAbrirModal/motionCerrarModal)', async () => {
+  // No requiere motion-helpers.js en absoluto -- replica exactamente el
+  // guard real de cada open*/close* ("typeof motionAbrirModal ===
+  // 'function'"). Si el script no cargo, esa condicion es false y la
+  // clase .motion-modal-hidden nunca se agrega -- el modal se queda en
+  // su estado CSS base, que ahora es visible (ver prueba de CSS arriba).
+  const ElementoFalso = crearElementoFalso();
+  const modal = new ElementoFalso('calidad-modal');
+  const overlayClasses = new Set(['show']); // overlay.classList.add('show') ya corrio, sin JS de motion de por medio
+
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('calidad-modal');
+
+  assert.equal(modal.classList.contains('motion-modal-hidden'), false, 'sin motion-helpers.js, el modal nunca gana la clase invisible-transitoria');
+  assert.equal(overlayClasses.has('show'), true, 'el overlay se sigue mostrando igual -- el modal es visible por el CSS base, no por JS');
+});
+
+test('reabrir un modal mientras su salida anterior sigue esperando transitionend NO lo debe ocultar (hallazgo real del "OK modales")', async () => {
+  if (typeof global.requestAnimationFrame !== 'function') {
+    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+  }
+  delete require.cache[path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js')];
+  const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
+  const ElementoFalso = crearElementoFalso();
+
+  const overlay = new ElementoFalso('calidad-overlay');
+  const modal = new ElementoFalso('calidad-modal', overlay);
+  overlay.classList.add('show');
+  const registro = { 'calidad-modal': modal, 'calidad-overlay': overlay };
+  global.document = { getElementById: (id) => registro[id] || null };
+
+  // Abre, deja que termine de entrar.
+  mod.motionAbrirModal('calidad-modal');
+  await new Promise((r) => setTimeout(r, 60));
+
+  // Empieza a cerrar (salida en curso, esperando transitionend)...
+  let cerradoViejo = false;
+  mod.motionCerrarModal('calidad-modal', () => { cerradoViejo = true; overlay.classList.remove('show'); });
+
+  // ...pero el usuario (o la app) lo vuelve a abrir ANTES de que la
+  // transicion de salida termine -- el reabrir es mas rapido que los
+  // 320ms de --dur-slow, un caso real (doble clic, Escape seguido de
+  // reabrir desde otro lado).
+  mod.motionAbrirModal('calidad-modal');
+
+  // Ahora SI llega (tarde) el transitionend de la salida vieja -- no debe
+  // ocultar el modal que se volvio a abrir.
+  modal.dispatchEvent(new Event('transitionend'));
+
+  assert.equal(cerradoViejo, false, 'cerrarReal de la salida VIEJA nunca deberia ejecutarse -- el modal se reabrio mientras tanto');
+  assert.equal(overlay.classList.contains('show'), true, 'el overlay se debe seguir mostrando -- el reabrir gano');
 
   delete global.document;
 });
