@@ -61,7 +61,7 @@ const LAYOUT_VIEJO = {
 // distinta a la forma vieja reconocible) -- la migracion debe dejarlo
 // intacto, igual que las demas migraciones de ORLANT.
 const AGENDAMIENTO_PERSONALIZADO = { key: 'agendamiento', label: 'Agendamiento', panels: [{ tipo: 'combo', titulo: 'Panel a mano' }] };
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [AGENDAMIENTO_PERSONALIZADO] };
 
 const pre = new Database(tmpDb);

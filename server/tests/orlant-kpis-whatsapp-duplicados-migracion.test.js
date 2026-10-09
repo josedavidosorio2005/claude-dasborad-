@@ -68,7 +68,7 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(layoutCon(KPIS_ORLANT_VIEJO)), now, now);
-insertar.run('BIVETT', 'Dashboard Bivett', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
+insertar.run('MOBILIZE', 'Dashboard Bivett', null, '{}', JSON.stringify(layoutCon(KPIS_OTRO_VIEJO)), now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -109,8 +109,8 @@ test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: el estado 
   assert.deepEqual(kpisDe('ORLANT'), []);
 });
 
-test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: nunca toca otro cliente (BIVETT no es ORLANT, aunque tenga el mismo titulo)', () => {
-  assert.deepEqual(kpisDe('BIVETT'), ['WhatsApp 3P']);
+test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: nunca toca otro cliente (MOBILIZE no es ORLANT, aunque tenga el mismo titulo)', () => {
+  assert.deepEqual(kpisDe('MOBILIZE'), ['WhatsApp 3P']);
 });
 
 test('migracion dashboards_config_orlant_kpis_whatsapp_duplicados_v1: nunca toca tabs/panels, solo el array kpis', () => {

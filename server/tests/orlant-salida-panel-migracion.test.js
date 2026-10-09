@@ -48,7 +48,7 @@ const LAYOUT_VIEJO = { kpis: [], tabs: [OTRO_TAB, SALIDA_VIEJO] };
 // Escenario 2: un tab "salida" personalizado (no coincide con la forma
 // vieja reconocible) -- la migracion debe dejarlo intacto.
 const SALIDA_PERSONALIZADO = { key: 'salida', label: 'Salida a mano', panels: [{ tipo: 'bar', titulo: 'Panel a mano' }] };
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [SALIDA_PERSONALIZADO] };
 
 const pre = new Database(tmpDb);

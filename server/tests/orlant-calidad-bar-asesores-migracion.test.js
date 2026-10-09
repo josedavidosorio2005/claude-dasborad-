@@ -34,11 +34,11 @@ const CALIDAD_VIEJO = {
 const OTRO_TAB = { key: 'trafico_whatsapp', label: 'Tráfico de WhatsApp', panels: [] };
 const LAYOUT_VIEJO = { kpis: [], tabs: [OTRO_TAB, CALIDAD_VIEJO] };
 
-// Escenario 2: otra campaña con su propio tab "calidad" (CLINICA AURORA, por
+// Escenario 2: otra campaña con su propio tab "calidad" (MOBILIZE, por
 // ejemplo) -- la migracion es exclusiva de ORLANT (query WHERE cliente =
 // 'ORLANT'), nunca debe tocarla.
-const OTRO_CLIENTE = 'BIVETT';
-const CALIDAD_OTRO_CLIENTE = { key: 'calidad', label: 'Calidad', panels: [{ tipo: 'calidad_kpis', campana: 'BIVETT' }] };
+const OTRO_CLIENTE = 'MOBILIZE';
+const CALIDAD_OTRO_CLIENTE = { key: 'calidad', label: 'Calidad', panels: [{ tipo: 'calidad_kpis', campana: 'MOBILIZE' }] };
 const LAYOUT_OTRO = { kpis: [], tabs: [CALIDAD_OTRO_CLIENTE] };
 
 const pre = new Database(tmpDb);

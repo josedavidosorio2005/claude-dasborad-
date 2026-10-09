@@ -60,7 +60,7 @@ const AGENDAMIENTO_PERSONALIZADO = {
   ],
   subtabs: [{ key: 'personalizado', label: 'Personalizado', indices: [3] }],
 };
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [AGENDAMIENTO_PERSONALIZADO] };
 
 const pre = new Database(tmpDb);
