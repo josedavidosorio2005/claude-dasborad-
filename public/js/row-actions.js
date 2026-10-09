@@ -56,14 +56,24 @@ function rowActionsAbrir(boton) {
   ROW_ACTIONS_ABIERTO = { menu: menu, boton: boton };
 }
 
+// {preventScroll:true} en TODOS los .focus() de este archivo (hallazgo
+// real al re-capturar el "OK F07" en movil, con el fix de cerrar en
+// scroll ya puesto): el menu es position:fixed, ya esta bien
+// posicionado en pantalla -- pero su HIJO real sigue viviendo en el DOM
+// dentro de .table-wrap (que tiene su propio scroll horizontal). Sin
+// preventScroll, el navegador intenta "revelar" el elemento recien
+// enfocado desplazando .table-wrap (aunque ya se vea bien, fijo, en
+// otro lugar de la pantalla) -- ese scroll disparaba el listener nuevo
+// de scroll/resize y cerraba el menu que se acababa de abrir y
+// enfocar, en el mismo instante.
 function rowActionsEnfocarPrimero(menu) {
   var item = menu.querySelector ? menu.querySelector('[role="menuitem"]') : null;
-  if (item && item.focus) item.focus();
+  if (item && item.focus) item.focus({ preventScroll: true });
 }
 function rowActionsEnfocarUltimo(menu) {
   var items = menu.querySelectorAll ? menu.querySelectorAll('[role="menuitem"]') : [];
   var last = items[items.length - 1];
-  if (last && last.focus) last.focus();
+  if (last && last.focus) last.focus({ preventScroll: true });
 }
 
 // Clic en el boton kebab: si su menu ya esta abierto, actua como cierre
@@ -101,11 +111,11 @@ function rowActionsTecladoMenu(e, menu) {
   if (k === 'ArrowDown' || k === 'Down') {
     if (e.preventDefault) e.preventDefault();
     var next = items[(idx + 1 + items.length) % items.length];
-    if (next) next.focus();
+    if (next) next.focus({ preventScroll: true });
   } else if (k === 'ArrowUp' || k === 'Up') {
     if (e.preventDefault) e.preventDefault();
     var prev = items[(idx - 1 + items.length) % items.length];
-    if (prev) prev.focus();
+    if (prev) prev.focus({ preventScroll: true });
   } else if (k === 'Home') {
     if (e.preventDefault) e.preventDefault();
     rowActionsEnfocarPrimero(menu);
@@ -135,6 +145,22 @@ if (typeof document !== 'undefined') {
     if (m.contains(e.target) || b.contains(e.target)) return;
     rowActionsCerrarTodos();
   });
+}
+
+// Hallazgo real (revision del usuario sobre el PR 8 original de este
+// mismo archivo): el menu es position:fixed (ver rowActionsPosicionar,
+// arriba) -- su posicion se calcula UNA vez, al abrirse, contra el
+// boton que lo disparo. Si la pagina (o .table-wrap, que tiene su
+// propio scroll horizontal) se desplaza, o la ventana cambia de
+// tamano, el menu se queda flotando en el mismo lugar de la pantalla,
+// lejos de la fila real. Mas simple y mas seguro que reposicionarlo en
+// cada evento: cerrarlo. `scroll` no hace bubble, pero SI se puede
+// capturar en la fase de captura de `window` sin importar en que
+// elemento anidado (como .table-wrap) haya ocurrido -- por eso el
+// `true` final (useCapture), no un listener normal.
+if (typeof window !== 'undefined') {
+  window.addEventListener('scroll', function () { rowActionsCerrarTodos(); }, true);
+  window.addEventListener('resize', function () { rowActionsCerrarTodos(); });
 }
 
 // Doble modo: global en el navegador, require() en Node para pruebas.

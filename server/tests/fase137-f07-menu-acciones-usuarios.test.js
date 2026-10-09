@@ -93,6 +93,14 @@ test('CSS: .row-actions-menu usa --dur-fast/--ease-out, solo opacity/transform (
   assert.match(texto, /html\[data-motion="off"\] \*, html\[data-motion="off"\] \*::before, html\[data-motion="off"\] \*::after/);
 });
 
+test('CSS: .row-actions-menu-item usa font-family:inherit -- sin esto, un <button> toma la fuente por defecto del navegador, no Quicksand', async () => {
+  const res = await request(app).get('/css/styles.css');
+  const texto = res.text;
+  const regla = texto.match(/\.row-actions-menu-item\{([^}]*)\}/);
+  assert.ok(regla, 'deberia existir la regla .row-actions-menu-item');
+  assert.match(regla[1], /font-family:inherit/);
+});
+
 test('CSS: objetivos tactiles >=44px en movil para el boton kebab y cada item del menu (F07, WCAG 2.5.8)', async () => {
   const res = await request(app).get('/css/styles.css');
   const texto = res.text;
@@ -296,4 +304,48 @@ test('rowActionsTecladoBoton: Enter/Espacio/ArrowDown en el boton abren el menu 
   assert.equal(dom.documentoFalso.activeElement, item1);
 
   delete global.document;
+});
+
+// Hallazgo real tras revisar las capturas del "OK F07": el menu es
+// position:fixed, calculado UNA vez contra el boton al abrirse -- si la
+// pagina (o .table-wrap, que tiene su propio scroll horizontal) se
+// desplaza, o la ventana cambia de tamano, queda flotando lejos de su
+// fila real. Se cierra en vez de reposicionarse.
+function construirVentanaFalsa() {
+  var handlers = {};
+  return {
+    addEventListener: function (tipo, fn, _useCapture) {
+      handlers[tipo] = handlers[tipo] || [];
+      handlers[tipo].push(fn);
+    },
+    disparar: function (tipo) { (handlers[tipo] || []).forEach((fn) => fn({})); },
+  };
+}
+
+test('scroll/resize de la ventana cierran cualquier menu abierto (el menu es position:fixed, no se reposiciona solo)', () => {
+  var dom = construirDomFalso();
+  global.document = dom.documentoFalso;
+  var ventanaFalsa = construirVentanaFalsa();
+  global.window = ventanaFalsa;
+  var mod = cargarRowActions();
+
+  var menu = new dom.ElementoFalso({ id: 'menuScroll' });
+  var boton = new dom.ElementoFalso({ id: 'kebabScroll' });
+  boton.setAttribute('aria-controls', 'menuScroll');
+
+  mod.rowActionsAbrir(boton);
+  assert.equal(menu.classList.contains('row-actions-menu-show'), true, 'precondicion: el menu deberia quedar abierto');
+
+  ventanaFalsa.disparar('scroll');
+  assert.equal(menu.classList.contains('row-actions-menu-show'), false, 'un scroll de la pagina/.table-wrap deberia cerrar el menu abierto');
+  assert.equal(boton.getAttribute('aria-expanded'), 'false');
+
+  // Vuelve a abrir para probar resize por separado.
+  mod.rowActionsAbrir(boton);
+  assert.equal(menu.classList.contains('row-actions-menu-show'), true);
+  ventanaFalsa.disparar('resize');
+  assert.equal(menu.classList.contains('row-actions-menu-show'), false, 'redimensionar la ventana deberia cerrar el menu abierto');
+
+  delete global.document;
+  delete global.window;
 });
