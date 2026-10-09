@@ -122,7 +122,8 @@ function calFilterByMonth(arr, month){
 }
 function calMonthSelectOptions(months, selected){
   return '<option value="">Todos los meses</option>' + months.map(function(mo){
-    return '<option value="'+mo+'"'+(mo===selected?' selected':'')+'>'+mo+'</option>';
+    var etiqueta = (typeof mesNombreLargo === 'function') ? mesNombreLargo(mo) : mo;
+    return '<option value="'+mo+'"'+(mo===selected?' selected':'')+'>'+etiqueta+'</option>';
   }).join('');
 }
 
