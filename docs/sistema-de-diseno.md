@@ -1,4 +1,4 @@
-# Sistema de diseño — InConexion® Platform (Fase 133)
+# Sistema de diseño — InConexion® Platform (Fase 133, ampliado Fase 136)
 
 Referencia de los tokens de color/tipografía/espaciado de
 `public/css/styles.css`, la regla de los 2 sistemas de color, y cómo
@@ -71,6 +71,58 @@ tamaños (`font:{size:N}` en `charts.js` y cada módulo de dashboard) son
 números JS sueltos, con el mismo piso de 12px aplicado a mano.
 `font-variant-numeric: tabular-nums` en números de KPI/tabla para que
 las columnas alineen.
+
+## Espaciado, radios y sombras (Fase 136, PR 3)
+
+**Corrección sobre la auditoría de la Fase 135**
+(`docs/auditoria-ui-fase135.md`, Paso 2): esa auditoría reportó "sin
+escala de espaciado/radios/sombras". Eso era incorrecto — la escala
+**ya existía** en `:root` desde antes de la Fase 136 (`--space-1..10`,
+`--r-sm/md/lg/xl/pill`, `--shadow-sm/md/lg`), el problema real era de
+**adopción**: solo 7 usos de `--space-*`, 4 de `--r-pill`, 1 de
+`--shadow-md` contra 60 declaraciones de `padding`, 36 de `margin`, 20 de
+`border-radius` y 19 de `box-shadow` sueltas en el resto del archivo.
+
+| Token | Valor | Uso |
+|---|---|---|
+| `--space-1` … `--space-10` | 4/8/12/16/20/24/32/40px (base 4px) | Espaciado nuevo — usar en vez de un número suelto |
+| `--r-sm` | 6px | Botones, inputs, tarjetas chicas |
+| `--r-md` | 10px | Tarjetas, gráficas |
+| `--r-lg` | 14px | Paneles grandes |
+| `--r-xl` | 18px | Modales/overlays grandes (ventana flotante) |
+| `--r-pill` | 20px | Insignias, botones redondeados (no confundir con `999px`, el pill TOTALMENTE circular de `.gd-subtab-btn`, que es otro valor y no se tocó) |
+| `--shadow-sm` | `0 2px 8px rgba(var(--shadow-rgb),0.07)` | Tarjetas pequeñas |
+| `--shadow-md` | `0 2px 12px rgba(var(--shadow-rgb),0.1)` | Tarjetas medianas |
+| `--shadow-lg` | `0 8px 40px rgba(var(--shadow-rgb),0.2)` | Paneles grandes |
+| `--shadow-xl` | `0 20px 60px rgba(var(--shadow-rgb),0.35)` (**nuevo, Fase 136**) | Overlays a pantalla completa (Calidad/Cargas/constructor de dashboards) — ya se repetía idéntico 3 veces sin nombre |
+
+La Fase 136 (PR 3) migró las **coincidencias exactas** (mismo valor
+numérico, cero cambio visual posible) de `border-radius`/`box-shadow` a
+estos tokens — nunca un valor que no calzara exacto, para no arriesgar
+una regresión visual. Quedan sueltos a propósito: valores que no son
+múltiplo de la escala (3/4/5/7/9/12/17px — organicos, probablemente
+ajustes finos caso por caso de fases anteriores) y las esquinas
+compuestas (`18px 18px 0 0`, etc. — no se puede reemplazar una esquina
+con `var()` sin tocar las otras 3, que pueden ser `0`).
+
+**z-index**: 10 valores distintos (2/50/100/250/290/300/500/600/1000/
+3000), sin tokens. **No se tocó en la Fase 136** — a diferencia de
+radio/sombra, no hay forma de confirmar "cambio cero" sin revisar cada
+capa una por una (qué se superpone a qué, en qué orden), y el riesgo de
+romper un apilamiento visual no vale la pena para un PR que se definió
+"aditivo, sin cambios visuales". Candidato para una fase futura
+dedicada, con su propia verificación capa por capa.
+
+**Breakpoints** (`@media`): 5 valores distintos (480/520/700/768/769px),
+sin una escala única. **Tampoco se tocó** — esta app no tiene paso de
+build/preprocesador CSS, así que no existe una forma de usar una
+variable DENTRO de la condición de un `@media` sin herramientas que este
+repo no tiene (`@custom-media` requiere PostCSS). Cambiar a mano
+cualquiera de los 5 valores existentes podría mover el punto exacto
+donde una vista cambia de layout — eso SÍ sería un cambio visual real,
+fuera del alcance "aditivo" de este PR. Si se necesita una escala nueva,
+debe decidirse fase por fase, revisando cada media query tocada con
+captura antes/después.
 
 ## Foco visible (WCAG 2.4.7/2.4.11)
 

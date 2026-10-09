@@ -56,7 +56,13 @@ test('los otros 5 modales (Calidad/Cargas/constructor/detalle de monitoreo/super
     assert.ok(selector.includes(id), `${id} deberia seguir compartiendo la regla de ventana flotante`);
   });
   assert.match(m[1], /max-width:\s*1180px/, 'los otros modales deberian seguir limitados a 1180px (sin cambios)');
-  assert.match(m[1], /border-radius:\s*18px/, 'los otros modales deberian seguir con esquinas redondeadas (sin cambios)');
+  // Fase 136 (F05): el valor literal 18px paso a var(--r-xl) -- mismo
+  // valor computado (token nuevo, cero cambio visual), por eso la prueba
+  // confirma el token Y que --r-xl siga resolviendo a 18px, en vez de
+  // solo buscar el numero suelto.
+  assert.match(m[1], /border-radius:\s*var\(--r-xl\)/, 'los otros modales deberian seguir con esquinas redondeadas, ahora via el token --r-xl (sin cambio visual)');
+  const root = texto.match(/:root\{([\s\S]*?)\n\}/)[1];
+  assert.match(root, /--r-xl:\s*18px/, '--r-xl deberia seguir resolviendo a 18px -- si cambia, el modal cambia de verdad');
 });
 
 test('boton de pantalla completa: existe en el HTML, oculto por defecto (se muestra solo si el navegador soporta la Fullscreen API)', async () => {
