@@ -13684,3 +13684,133 @@ administrador, `scripts/produccion/fase132-08-verificacion-visual-logo-
 mobilize.js`): el logo de Mobilize aparece en su propio dashboard
 (140×25, carga sin error) y NO aparece en el de ORLANT, 0 errores de
 consola en los 2.
+
+## Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, 2026-10-08)
+
+Pedido del usuario: antes de cambiar nada visual, auditar la plataforma
+completa (jerarquía, espaciado, tipografía, componentes, formularios,
+estados, transiciones, rendimiento) y decidir con números reales qué
+librería de movimiento usar, dejando un informe para que el usuario
+apruebe la Fase 136 ("OK mejoras") antes de tocar código. Regla explícita
+del pedido: **esta fase no modifica el producto** — solo lee, mide,
+captura con datos demo y escribe. Mobilize se muestra a su cliente a
+mediados de octubre de 2026; cualquier mejora futura debe ser segura y
+reversible.
+
+**Pre-flight:** `git status`/`git branch -a`/`git log` confirmaron 3
+archivos sin commitear de una sesión anterior (`fase134-dry-run-*`) que
+se dejaron intactos sin tocar, 0 PRs abiertos, producción respondiendo
+(`/api/health` → `ok:true`, v1.21.0).
+
+**Paso 1 — librería de movimiento:** el repo es JS plano confirmado (65
+`<script>` en `public/index.html`, sin React/Vue/Angular, CSP de Helmet
+con `scriptSrc: ["'self'", "'unsafe-inline'"]`, sin ningún CDN permitido
+— `server/server.js:85-105`). Se descargó el paquete real `motion`
+(sucesor JS-plano de Framer Motion) con `npm pack motion@11.15.0` en una
+carpeta temporal fuera del repo (`/tmp/motion-check-fase135`, borrada al
+terminar, nada quedó en el working tree ni se instaló en el proyecto): el
+build UMD autoalojable (`dist/motion.js`, variable global `Motion` con
+`animate`/`inView`/`scroll`/`stagger`) pesa 64.7 KB sin comprimir y
+**22.3 KB gzip real**, MIT. Encajaría en `public/js/vendor/` exactamente
+igual que Chart.js, sin ningún cambio de CSP (ya es `'self'`).
+Recomendación con números: CSS puro (0 KB) para hover/focus/active/tap y
+transiciones simples; `motion` vendorizado solo para lo que CSS no
+resuelve bien (aparición al scroll con `inView`, entradas escalonadas con
+`stagger`); migrar a React + Framer Motion queda documentado como
+descartado (reescribir 65 scripts antes de la demo de Mobilize de
+mediados de octubre es el tipo de riesgo que el usuario pidió evitar, sin
+ningún beneficio que la build JS-plano de `motion` no dé ya).
+
+**Paso 2 — inventario de consistencia** (contado con `grep` sobre
+`public/css/styles.css`, 1030 líneas, 473 reglas, 65 tokens
+`--c-*`/`--fs-*` ya existentes desde la Fase 133): 13 clases `.btn-*`
+distintas sin jerarquía primario/secundario/peligro documentada, **0**
+clases `.card` reusables en CSS, **5** sistemas de modal/overlay
+independientes (`dashcfg-*`, `gd-*`, `calidad-*`, `cargas-*`, `.modal`
+genérico) cada uno con su propio CSS, **20** valores de `border-radius`
+distintos (solo 1 token real reusado, `--r-pill`, 4 usos), **19** de
+`box-shadow`, **10** de `z-index`, **60** de `padding`, **36** de
+`margin` — sin ninguna escala de espaciado/radios/sombras pese a que la
+Fase 133 ya dejó tokens de color/tipografía sólidos. Solo **24**
+`transition` y **1** `animation` (el spinner) en todo el archivo — la app
+casi no anima hoy. `grep` de `animation:`/`duration:` en todo
+`public/js/*.js` (fuera de `vendor/`) confirmó **0** coincidencias: la
+app nunca sobreescribe el default de Chart.js (~1000ms, se repite en cada
+`.update()`, incluido cualquier cambio de mes/filtro). La regla
+`prefers-reduced-motion` ya existe y es correcta
+(`styles.css:1023-1028`).
+
+**Paso 3 — auditoría visual y de rendimiento:** servidor local levantado
+en el puerto **3099** (nunca el 3000, para no chocar con un servidor de
+desarrollo del usuario) con `npm run seed:demo` ya sembrado (datos de una
+corrida anterior, sin recrear usuarios). Guion de captura de un solo uso
+(no se guardó en el repo) con Playwright directo desde Node
+(`server/node_modules/playwright` 1.63.0, ya instalado — nada nuevo) tomó
+**49 capturas** en `docs/capturas-demo/fase135-antes/` (login
+claro/oscuro en 3 resoluciones, shell de admin, Usuarios, Cargar Datos,
+Calidad, las 5 pestañas reales de ORLANT con sus sub-pestañas en
+claro/oscuro, las 2 pestañas reales de Mobilize, navbars de Cliente/
+Asesor/Supervisor, y vistas responsive en 1920×1080/412px) + métricas de
+rendimiento reales vía Chrome DevTools Protocol. Revisadas visualmente
+una por una una muestra representativa (no las 49) — documentado
+explícitamente cuáles sí y cuáles no, para no reportar "verificado" sobre
+algo no revisado.
+
+Hallazgo real más grave: las pestañas de ORLANT (`#gd-tabs .atab`) se
+**superponen e ilegibles** a 412px de ancho (texto encimado, sin wrap ni
+scroll) — confirmado por captura directa
+(`docs/capturas-demo/fase135-antes/09-responsive/orlant-mobile.png`), no
+solo por el script. Segundo hallazgo real: CLS (desplazamiento de layout)
+de **0.8131** al abrir el dashboard de ORLANT (umbral "malo" es >0.25),
+medido con `PerformanceObserver({type:'layout-shift'})` — pero **0**
+tareas largas (>50ms) en el mismo intervalo (`PerformanceObserver
+({type:'longtask'})`), así que el salto es 100% de layout sin reservar
+espacio, no de JavaScript lento. Discrepancia real encontrada vs. lo que
+el pedido original asumía: "Agendamiento" (ORLANT) y "Tipificación"
+(Mobilize) **no existen** como pestañas visibles hoy — confirmado por
+código (`server/db.js:1521-1533`, comentario explícito de que
+"Agendamiento" está oculta a propósito desde la Fase 68) y por las
+capturas reales (ORLANT expone 5 pestañas, Mobilize 2) — documentado para
+que la Fase 136 no planifique sobre vistas que no están.
+
+**Otros hallazgos** (13 en total, tabla completa con severidad/esfuerzo/
+riesgo/propuesta en `docs/auditoria-ui-fase135.md`): Chart.js sin
+configuración de animación propia (candidato directo a la regla de
+"nunca parpadear al refrescar" del usuario); los 5 sistemas de modal sin
+una sola transición de apertura/cierre compartida; un toast de error
+("No se pudieron cargar tus resultados: No autenticado") visto en la
+pantalla de login sin sesión iniciada (hallazgo funcional, no de
+animación, anotado aparte); estados vacíos inconsistentes entre vistas;
+breakpoints de `@media` sin escala única (`480/520/700/768/769px`); y un
+`@keyframes real` sin uso visible, candidato a código muerto a confirmar.
+
+**Skills:** `ui-ux-pro-max-skill` (pedida como guía principal) **no
+está instalada** — se buscó en `~/.claude-trabajo/skills/` (existe la
+carpeta, con las skills de Emil Kowalski) y en `~/.agents/skills/` (no
+existe esa carpeta en esta máquina); no se instaló nada por cuenta
+propia, se documentó el hueco y el comando sugerido para que el usuario
+decida. Las skills de Emil Kowalski relevantes para esta app web
+(`animation-vocabulary`, `find-animation-opportunities`,
+`review-animations`, `improve-animations`, secciones de
+`emil-design-eng`) se leyeron completas directamente desde
+`~/.claude-trabajo/skills/` (no aparecen en la lista de skills invocables
+de la sesión, así que se aplicaron a mano en vez de invocarlas con la
+herramienta `Skill`) y dieron los valores exactos de duración/easing de
+la especificación de movimiento (120/200/320ms, dos curvas
+`cubic-bezier` sin rebotes) y el criterio de las 4 preguntas (Frecuencia/
+Propósito/Velocidad/Función) detrás de la lista de "nunca animar".
+`apple-design`/`prototype`/`animate` se descartaron a propósito (son de
+implementación, corresponden a la Fase 136, no a esta auditoría de solo
+lectura); `break-ui` se leyó solo el frontmatter.
+
+**Entregable:** [`docs/auditoria-ui-fase135.md`](../auditoria-ui-fase135.md)
+(resumen ejecutivo, decisión de librería, inventario, tabla de 13
+hallazgos, lista de "nunca animar", línea base de rendimiento,
+especificación de movimiento con interruptor global `data-motion="off"`,
+y plan de 8 PRs temáticos ordenados para la Fase 136, cada uno con
+archivos/pruebas/reversión) + 49 capturas demo en
+`docs/capturas-demo/fase135-antes/`. Esta fase no cambia la versión de la
+app (sigue en 1.21.0) porque no tocó código del producto — un solo PR de
+documentación y capturas, sin ningún otro cambio. El servidor local de
+auditoría (puerto 3099) se apagó al terminar; no quedó ningún proceso en
+segundo plano.
