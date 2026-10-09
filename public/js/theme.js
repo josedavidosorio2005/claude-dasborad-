@@ -51,7 +51,22 @@ function toggleTema(){
 // Cada bloque es independiente y a prueba de fallos: si el modulo no esta
 // cargado en esta pagina (ASESOR/SUPERVISOR no tienen dashboard-generic.js
 // abierto, etc.) simplemente no hace nada.
+// Fase 136 (F08, hallazgo real de la Fase 135 -- un toast "No se pudieron
+// cargar tus resultados: No autenticado" aparecia en la pantalla de
+// login, antes de iniciar sesion): las 4 paginas (#admin-page/#user-page/
+// #asesor-page/#supervisor-page) viven TODAS en el DOM a la vez, ocultas
+// con CSS -- document.getElementById('mr-kpis') encuentra el elemento
+// aunque el Portal Asesor nunca se haya abierto. Cambiar el tema ANTES de
+// iniciar sesion (cambioReal=true en aplicarTema) disparaba
+// renderMisResultados(), que llama a GET /monitoreos/mios (requiere
+// sesion) -- sin sesion, el 401 termina en un toast visible en la
+// pantalla de login. Nunca se toco ninguna regla de autenticacion/
+// sesion/permiso: authToken (api.js, variable en memoria, ya existia) es
+// la misma fuente de verdad que ya usa el resto de la app para saber si
+// hay sesion -- este guard solo evita llamar a una funcion que pide datos
+// autenticados cuando YA SABEMOS que no hay sesion todavia.
 function refrescarGraficasTema(){
+  if(typeof authToken === 'undefined' || !authToken) return;
   try{
     if(typeof _gd !== 'undefined' && _gd.tab && typeof renderGenericTab === 'function'){
       renderGenericTab(_gd.tab);

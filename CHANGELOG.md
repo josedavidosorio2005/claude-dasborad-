@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.24.1 — Octubre 2026
+
+**Fase 136 (F08): ya no aparece un aviso de error en la pantalla de
+login.**
+
+- Si alguien cambiaba el tema (claro/oscuro) antes de iniciar sesión,
+  a veces aparecía un aviso de error abajo a la derecha ("No se
+  pudieron cargar tus resultados..."). Era inofensivo — no exponía
+  nada — pero confundía.
+- Ya no aparece. Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.24.0 — Octubre 2026
 
 **Fase 136 (PR 7): "Mis Resultados de Calidad" ya no se ve vacío sin
