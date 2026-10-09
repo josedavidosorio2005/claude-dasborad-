@@ -13,13 +13,17 @@
 # node:22 (imagen completa) trae las herramientas de compilacion por si
 # better-sqlite3 necesitara compilar el binario nativo.
 # (Node 22: el AWS SDK v3 pedira >=22 despues de ene-2027; ver AWS_DEPLOY_REPORT.md.)
-FROM node:22-bookworm AS deps
+# Imagen bajada del espejo publico de Amazon (public.ecr.aws), no de Docker
+# Hub directo: mismo contenido oficial, pero sin el limite de descargas
+# anonimas de Docker Hub que empezo a dar 429 desde los runners de GitHub
+# (9-oct-2026).
+FROM public.ecr.aws/docker/library/node:22-bookworm AS deps
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # ── Etapa 2: runtime ────────────────────────────────────────
-FROM node:22-bookworm-slim AS runtime
+FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 # curl para el HEALTHCHECK
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
