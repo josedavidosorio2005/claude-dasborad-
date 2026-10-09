@@ -202,38 +202,53 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- **Hallazgo nuevo, verificación de cierre de la Fase 136 (2026-10-09)
-  contra producción real**: `scripts/produccion/revision-final.js`
+- **Hallazgo real, verificación de cierre de la Fase 136 (2026-10-09)
+  contra producción real, prioridad ALTA (corrección de atribución
+  2026-10-09, ver abajo)**: `scripts/produccion/revision-final.js`
   (`correrChequeosAdmin`) falló 2 veces seguidas (con reintento) al hacer
   clic en la 2ª pestaña de ORLANT ("Tráfico de WhatsApp") justo después de
   la 1ª — Playwright reporta el botón como "not stable" (su posición
   sigue cambiando) durante los 30s completos de espera. **No reproduce en
-  local** con `seed:demo` (las 5 pestañas clicadas en sucesión, <40ms cada
-  una, sin problema) — solo contra producción, con los datos reales
-  (mucho más grandes) de ORLANT. Revisando el CSS: `.atab` (`styles.css`,
-  línea ~741) tiene `transition:all 0.2s` desde antes de la Fase
-  136 — la auditoría de la Fase 135 no lo marcó porque no es de los 13
-  hallazgos que buscaba. Es justo el patrón que `review-animations`
-  marca como bloqueo directo ("transition: all" es una animación de
-  propiedad sin acotar). Hipótesis más probable (NO confirmada, haría
-  falta una sesión de producción dedicada a medirlo): con contenido real
-  más alto que el de demo, el primer tab puede empujar la página justo al
-  punto donde aparece/desaparece la barra de scroll vertical, y el
-  redimensionado "responsive" de Chart.js reacciona a ese cambio de
-  ancho — si el punto es inestable (oscila), el layout de `#gd-tabs`
-  nunca se asienta. Esto **no es una regresión de esta fase**: ni el PR 8
-  (modales) ni ningún otro PR de la Fase 136 tocan `.atab` o la lógica de
-  cambio de pestaña — el `transition:all` ya existía. Prioridad BAJA/MEDIA
-  (el resto de la Fase 136 sí se verificó en vivo sin problema: MOBILIZE,
-  tema oscuro, los 3 modales del PR 8 con Escape, F01 en móvil — 0
-  errores de consola/peticiones fallidas en esos chequeos). Cómo se
-  cierra: una sesión dedicada que mida `getBoundingClientRect()` del
-  botón en varios frames seguidos mientras se reproduce (diagnóstico ya
-  escrito, sin usar, en el scratchpad de esta sesión) para confirmar la
-  causa real antes de tocar el CSS; de paso, cambiar ese `transition:all`
-  por las propiedades puntuales (`color`,`border-bottom-color`,
-  `background`) sin esperar a confirmar la causa, porque es una limpieza
-  correcta de todos modos.
+  local** con `seed:demo`.
+
+  **Corrección real (2026-10-09)**: la primera nota de este hallazgo decía
+  "no es una regresión de esta fase — ningún PR de la Fase 136 toca
+  `.atab`". Es **incorrecto** — el PR 1 (#369, F01) sí cambió `.atab`
+  (agregó `flex-shrink:0`) y el PR 6 (#374, F03) sí agregó
+  `motionEnter(document.getElementById('gd-panels'))` en
+  `switchGenericTab`/`switchGenericSubtab`
+  (`dashboard-generic.js:1091`/`:1111`) — ambos SÍ son candidatos reales
+  de esta fase y no debieron descartarse sin medir. Tratado como posible
+  regresión, prioridad ALTA, hasta confirmar o descartar con evidencia.
+
+  **Diagnóstico dedicado ejecutado (2026-10-09, sesión aparte, solo
+  lectura)**: reproduce exactamente la secuencia de `correrChequeosAdmin`
+  (abrir ORLANT, clic en tab 0, esperar 1.2s, muestrear 3s el `rect` del
+  botón de tab 1 + `opacity`/`pointer-events` de `#gd-panels` +
+  `elementFromPoint` en su centro antes de intentar el clic real),
+  primero con el movimiento normal y después con `data-motion="off"`
+  puesto en caliente (sin recargar — `authToken`, api.js, vive solo en
+  memoria, nunca en `localStorage`; un `reload()` habría cerrado la
+  sesión de verdad) + `Chart.defaults.animation.duration=0`. **Esta vez
+  NO reprodujo**: en los 2 casos, el botón de tab 1 tuvo el mismo `rect`
+  en las ~30 muestras (3s), `opacity` de `#gd-panels` siempre en 1,
+  nunca interceptado, clic exitoso en <50ms ambas veces. No se pudo
+  confirmar la hipótesis del `transition:all`/scrollbar con esta
+  corrida — parece más intermitente (dependiente de momento/timing de
+  red) que un bug determinístico de CSS, pero una sola corrida limpia
+  **no descarta** el hallazgo original (2 fallos seguidos en la corrida
+  anterior tampoco se explican solos). `.atab{transition:all 0.2s}`
+  (`styles.css`, línea ~741, preexistente a la Fase 136) sigue siendo un
+  candidato razonable y además un patrón que `review-animations` marca
+  como bloqueo directo — vale la limpieza (propiedades puntuales en vez
+  de `all`) independientemente de si resulta ser la causa.
+
+  **Sigue sin confirmarse**. Cómo se cierra: correr `correrChequeosAdmin`
+  (o el diagnóstico de esta sesión, guardado en el scratchpad) varias
+  veces seguidas en una misma sesión para medir si es realmente
+  intermitente (y con qué frecuencia) antes de decidir si amerita un fix
+  de código — no tocar `.atab`/`motionEnter(#gd-panels)` sin esa
+  confirmación.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
