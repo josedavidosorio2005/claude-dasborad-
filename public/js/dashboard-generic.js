@@ -1955,9 +1955,17 @@ function _fmtCell(v){ return v === null || v === undefined || v === '' ? '' : (t
 // igual que fixed -- absolute podia desalinearse si la pagina estaba
 // scrolleada) + z-index por encima del overlay, y un cierre al hacer clic
 // afuera para que no quede pegado en pantalla.
+// Fase 137 (Parte C, bug real de Escape): este es el UNICO popup
+// interno ad-hoc de los 6 modales (nunca parte de MOTION_OVERLAY_STACK)
+// -- se registra en motion-helpers.js al abrirse y se desregistra al
+// cerrarse (en los 3 caminos: toggle de este mismo boton, clic afuera, y
+// Escape) para que el Escape global cierre PRIMERO este popup (si sigue
+// abierto) o se de por "gastado" un instante despues de que se cierre
+// por cualquier otro camino -- nunca cascadea a cerrar el dashboard
+// entero. Ver motion-helpers.js para el detalle completo del hallazgo.
 function _gdExport(){
   var m = document.getElementById('gd-export-menu');
-  if(m){ m.remove(); document.removeEventListener('click', _gdExportClickAfuera, true); return; }
+  if(m){ m.remove(); document.removeEventListener('click', _gdExportClickAfuera, true); if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu'); return; }
   var btn = document.getElementById('gd-export-btn');
   m = document.createElement('div');
   m.id = 'gd-export-menu';
@@ -1970,6 +1978,7 @@ function _gdExport(){
   m.style.left = Math.max(8, r.right - 160) + 'px';
   m.style.width = '160px';
   document.body.appendChild(m);
+  if (typeof motionRegistrarPopupInterno === 'function') motionRegistrarPopupInterno('gd-export-menu', _gdExport);
   setTimeout(function(){ document.addEventListener('click', _gdExportClickAfuera, true); }, 0);
 }
 function _gdExportClickAfuera(ev){
@@ -1979,4 +1988,5 @@ function _gdExportClickAfuera(ev){
   if(m.contains(ev.target) || (btn && btn.contains(ev.target))) return;
   m.remove();
   document.removeEventListener('click', _gdExportClickAfuera, true);
+  if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu');
 }

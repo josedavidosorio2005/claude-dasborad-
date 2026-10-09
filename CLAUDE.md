@@ -42,6 +42,20 @@ asumir en qué quedó una fase anterior.
   planeados; la verificación posterior no encontró pérdida de datos,
   pero el incidente de proceso se documentó recién en la Fase 137 — ver
   `docs/historico/progress-fases.md`.)
+- **Antes de `gh pr merge`, confirmar que la API de GitHub no quedó
+  atrasada**: correr `git ls-remote origin <rama>` y comparar ese SHA
+  contra `gh api repos/<owner>/<repo>/pulls/<N> --jq '.head.sha'` — si no
+  coinciden, esperar y reintentar antes de mergear, nunca mergear a
+  ciegas. Mergear siempre con `gh pr merge <N> --merge --match-head-commit
+  <sha-de-ls-remote>` (la bandera hace que GitHub rechace el merge si su
+  `head.sha` interno no coincide con el que se le pasa, en vez de
+  mergear silenciosamente el commit viejo que tenía cacheado).
+  (Precedente real: Fase 137, PR #382 — la API del PR quedó mostrando un
+  commit viejo (sin 2 retoques ya aprobados) más de 10 minutos después
+  de un push real y confirmado con `git ls-remote`; `gh pr merge` sin
+  `--match-head-commit` mergeó ese commit viejo, desplegando a producción
+  sin los retoques. Se corrigió con un PR de fast-follow — ver
+  `docs/historico/progress-fases.md`.)
 - Todo cambio sigue el ciclo completo: rama nueva → tests → CI verde
   (Node 22 + docker-build) → `npm audit` limpio → PR → merge →
   deploy automático (AWS vía OIDC) → verificación en producción real

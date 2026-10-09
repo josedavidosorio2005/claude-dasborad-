@@ -207,77 +207,46 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
-- **Hallazgo real, verificación de cierre de la Fase 136 (2026-10-09)
-  contra producción real, prioridad ALTA (corrección de atribución
-  2026-10-09, ver abajo)**: `scripts/produccion/revision-final.js`
-  (`correrChequeosAdmin`) falló 2 veces seguidas (con reintento) al hacer
-  clic en la 2ª pestaña de ORLANT ("Tráfico de WhatsApp") justo después de
-  la 1ª — Playwright reporta el botón como "not stable" (su posición
-  sigue cambiando) durante los 30s completos de espera. **No reproduce en
-  local** con `seed:demo`.
+- **RESUELTO (Fase 137, Parte C, 2026-10-09) — inestabilidad al cambiar
+  de pestaña en ORLANT justo después de exportar.** Historial completo:
+  `revision-final.js` falló 3 veces en total (2 en la Fase 136, 1 más al
+  cerrar esta fase) siempre en el mismo punto — clic en la 2ª pestaña de
+  ORLANT, justo después de exportar en la 1ª. Dos rondas de diagnóstico
+  con clics sueltos (sin exportar ni Escape) nunca reprodujeron el fallo
+  (6/6 limpio, 64/64 limpio), lo que en su momento se atribuyó
+  (incorrectamente) a "arranque en frío tras deploy".
 
-  **Corrección real (2026-10-09)**: la primera nota de este hallazgo decía
-  "no es una regresión de esta fase — ningún PR de la Fase 136 toca
-  `.atab`". Es **incorrecto** — el PR 1 (#369, F01) sí cambió `.atab`
-  (agregó `flex-shrink:0`) y el PR 6 (#374, F03) sí agregó
-  `motionEnter(document.getElementById('gd-panels'))` en
-  `switchGenericTab`/`switchGenericSubtab`
-  (`dashboard-generic.js:1091`/`:1111`) — ambos SÍ son candidatos reales
-  de esta fase y no debieron descartarse sin medir. Tratado como posible
-  regresión, prioridad ALTA, hasta confirmar o descartar con evidencia.
+  **Causa real, encontrada y confirmada con reproducción en local**
+  (seed:demo, commit actual vs. el commit justo antes del PR #377, F04):
+  el recorrido REAL de `correrChequeosAdmin` no es solo "clic en tab" —
+  es tab → sub-pestañas → exportar → **Escape** → siguiente tab. Ese
+  Escape, pensado originalmente para cerrar el menú interno de
+  "Exportar" (`#gd-export-menu`, de cuando Escape todavía no hacía nada),
+  desde el PR #377 cae en el manejador GLOBAL de Escape
+  (`motion-helpers.js`) que cierra el modal/overlay de más arriba — y
+  como `#gd-export-menu` nunca fue parte de ese sistema de modales
+  (`MOTION_OVERLAY_STACK`), ese Escape termina cerrando el dashboard
+  ENTERO de ORLANT en vez de solo el popup. Confirmado con instrumentación
+  real: en el commit pre-#377, `gd-overlay` nunca pierde `.show`; en el
+  commit actual, lo pierde ~360ms después de ese mismo Escape — y en el
+  momento exacto del Escape, `#gd-export-menu` YA no existía en el DOM
+  (el propio botón "Excel" ya lo había cerrado con su toggle), así que
+  el popup no necesita seguir abierto para que el bug ocurra.
 
-  **Diagnóstico dedicado ejecutado (2026-10-09, sesión aparte, solo
-  lectura)**: reproduce exactamente la secuencia de `correrChequeosAdmin`
-  (abrir ORLANT, clic en tab 0, esperar 1.2s, muestrear 3s el `rect` del
-  botón de tab 1 + `opacity`/`pointer-events` de `#gd-panels` +
-  `elementFromPoint` en su centro antes de intentar el clic real),
-  primero con el movimiento normal y después con `data-motion="off"`
-  puesto en caliente (sin recargar — `authToken`, api.js, vive solo en
-  memoria, nunca en `localStorage`; un `reload()` habría cerrado la
-  sesión de verdad) + `Chart.defaults.animation.duration=0`. **Esta vez
-  NO reprodujo**: en los 2 casos, el botón de tab 1 tuvo el mismo `rect`
-  en las ~30 muestras (3s), `opacity` de `#gd-panels` siempre en 1,
-  nunca interceptado, clic exitoso en <50ms ambas veces. No se pudo
-  confirmar la hipótesis del `transition:all`/scrollbar con esta
-  corrida — parece más intermitente (dependiente de momento/timing de
-  red) que un bug determinístico de CSS, pero una sola corrida limpia
-  **no descarta** el hallazgo original (2 fallos seguidos en la corrida
-  anterior tampoco se explican solos). `.atab{transition:all 0.2s}`
-  (`styles.css`, línea ~741, preexistente a la Fase 136) sigue siendo un
-  candidato razonable y además un patrón que `review-animations` marca
-  como bloqueo directo — vale la limpieza (propiedades puntuales en vez
-  de `all`) independientemente de si resulta ser la causa.
+  **Arreglo** (`motion-helpers.js` + `dashboard-generic.js`): registro de
+  "popups internos" — un popup todavía abierto intercepta Escape primero
+  (nunca cascadea al overlay); un popup cerrado hace <400ms por
+  cualquier camino (clic, clic afuera, o su propio Escape) deja ese
+  Escape "gastado" sin cerrar el overlay. 4 pruebas nuevas que fallan
+  sin el arreglo (confirmado con `git stash`). **Reproducción de punta a
+  punta tras el fix: `correrChequeosAdmin()` completo, 0 errores, en las
+  8 pestañas reales — confirmado en producción con `revision-final.js`
+  original.**
 
-  **Medición de frecuencia ejecutada (2026-10-09, sesión aparte, solo
-  lectura)**: el mismo recorrido de `correrChequeosAdmin` (abrir ORLANT,
-  clic por las 8 pestañas reales — Tráfico de Llamadas/Tráfico de
-  WhatsApp/Llamadas y WhatsApp de salida/Agendamiento/Inasistencia/
-  Efectividad de Citas/Tipificación/Calidad) repetido **8 veces seguidas**
-  en la misma sesión ya logueada (64 clics en total, con el mismo
-  diagnóstico de `rect`/`opacity`/intercepción listo para capturar
-  evidencia si fallaba de nuevo): **0 fallos de 64 (0,0 %)**, cada clic
-  resuelto en 11–60ms. Sumado a la corrida anterior (también limpia, 2/2),
-  van **6 intentos limpios seguidos de 1** sin reproducir, contra los 2
-  fallos reales de la verificación original.
-
-  **Lectura honesta de la evidencia**: con 64 clics consecutivos sin un
-  solo fallo, ya NO parece un bug determinístico de CSS/`motionEnter`
-  esperando a cualquier clic — si lo fuera, debería haber fallado al
-  menos una vez en 64 intentos. La explicación más plausible ahora es
-  que los 2 fallos originales fueron específicos del **momento exacto**
-  en que ocurrieron: la primerísima sesión de producción después del
-  deploy recién hecho del PR 8 (contenedor recién reiniciado, primera
-  petición real tras el despliegue — posible arranque en frío de la
-  instancia/caché del sistema de archivos, no relacionado con el código
-  de esta fase). No se pudo confirmar esa hipótesis tampoco (haría falta
-  medir justo después de un deploy nuevo, no se fuerza un deploy solo
-  para esto). **Prioridad bajada de ALTA a BAJA** — sigue sin una causa
-  de código confirmada, y la evidencia ahora pesa más hacia "condición
-  transitoria del momento" que hacia una regresión reproducible. `.atab
-  {transition:all 0.2s}` sigue siendo una limpieza válida por separado
-  (patrón que `review-animations` marca directo), sin relación confirmada
-  con este hallazgo — se deja para cuando se toque `.atab` por otra razón,
-  no como arreglo de este hallazgo puntual.
+  `.atab{transition:all 0.2s}` (`styles.css`, preexistente a la Fase
+  136) nunca fue la causa — sigue siendo una limpieza de estilo válida
+  por separado (patrón que `review-animations` marca directo), pospuesta
+  hasta después del demo de Mobilize (ver Parte E, "OK limpieza atab").
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
