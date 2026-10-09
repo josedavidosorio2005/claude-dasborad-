@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.25.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.26.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -145,6 +145,29 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 137 (en curso) — Cierra lo pendiente que se puede hacer desde el código
+
+**Parte A (cerrada):** cierre retroactivo de la Fase 134 — ver su
+entrada propia más abajo y en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
+**Parte B (F07, cerrada):** en Gestión de Usuarios, los 4 botones del
+mismo peso por fila (Editar/Contraseña/Suspender/Eliminar) se
+reorganizan — "Editar" queda visible como acción principal,
+"Cambiar contraseña"/"Suspender-Activar"/"Eliminar" se agrupan en un
+menú (ícono de 3 puntos, SVG, patrón WAI-ARIA "menu button" —
+`public/js/row-actions.js`, reutilizable). **Ningún permiso cambia** —
+cada acción sigue gateada por exactamente la misma condición de antes
+(`canEdit`/`canPass`/`canSusp`/`canDel`), solo se reorganiza dónde vive
+el botón. Accesible por teclado completo (Enter/flechas/Escape, foco
+vuelve al botón que abrió el menú), objetivos táctiles ≥44px en móvil,
+sin desbordar a 412px — verificado en navegador real (Playwright):
+Escape cierra y devuelve el foco, clic afuera cierra, elegir una acción
+por teclado cierra el menú y dispara la acción real (confirmado con
+"Cambiar contraseña", que abrió el modal de siempre). 15 pruebas
+nuevas (`fase137-f07-menu-acciones-usuarios.test.js`) + regresión de
+Fase 133/136 en verde (38 pruebas). Versión `1.26.0`.
 
 ### Fase 136 (cerrada) — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135
 

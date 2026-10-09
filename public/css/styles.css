@@ -525,7 +525,6 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .dot-off{background:var(--c-danger);}
 
 /* ── ACTION BUTTONS ── */
-.action-btns{display:flex;gap:4px;flex-wrap:wrap;}
 .btn-sm{padding:4px 9px;border-radius:5px;font-size:var(--fs-note);font-weight:600;cursor:pointer;border:none;white-space:nowrap;transition:opacity 0.2s;}
 .btn-sm:hover:not([disabled]){opacity:0.78;}
 .btn-edit{background:var(--c-info-bg);color:var(--c-primary-mid);}
@@ -533,6 +532,39 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .btn-activate{background:var(--c-success-bg);color:var(--c-success-dark);}
 .btn-delete{background:var(--c-danger-bg);color:var(--c-danger-dark);}
 .btn-pass{background:#f0f0fa;color:#5e5ea8;}
+
+/* Fase 137 (Parte B, F07): menu de acciones por fila (boton "kebab",
+   SVG, nunca emoji) en Gestion de Usuarios -- antes 4 botones del mismo
+   peso por fila (Editar/Contrasena/Suspender/Eliminar); ahora "Editar"
+   queda visible como accion principal y las demas se agrupan en este
+   menu (logica WAI-ARIA "menu button" en row-actions.js), sin cambiar
+   NINGUN permiso -- cada accion sigue gateada por exactamente la misma
+   condicion de antes, el menu solo reorganiza. position:fixed (no
+   absolute): .table-wrap tiene overflow-x:auto, que por la regla de
+   CSS computa overflow-y:auto tambien -- un hijo absolute que se saliera
+   del alto visible quedaria cortado a la mitad. */
+.row-actions{display:flex;align-items:center;gap:4px;}
+.row-actions-kebab{display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;padding:0;border:none;border-radius:var(--r-sm);
+  background:none;color:var(--c-text-muted);cursor:pointer;
+  transition:background var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);}
+.row-actions-kebab:hover,.row-actions-kebab[aria-expanded="true"]{background:var(--c-surface-subtle);color:var(--c-text);}
+.row-actions-kebab svg{width:18px;height:18px;pointer-events:none;}
+.row-actions-menu{position:fixed;top:0;left:0;min-width:180px;background:var(--c-surface);
+  border:1px solid var(--c-border);border-radius:var(--r-md);box-shadow:var(--shadow-md);
+  z-index:80;overflow:hidden;opacity:0;transform:scale(0.95);transform-origin:top right;
+  pointer-events:none;
+  transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);}
+.row-actions-menu.row-actions-menu-show{opacity:1;transform:scale(1);pointer-events:auto;}
+.row-actions-menu-item{display:block;width:100%;text-align:left;padding:10px 14px;
+  border:none;background:none;cursor:pointer;font-size:var(--fs-note);font-weight:600;color:var(--c-text);}
+.row-actions-menu-item:hover,.row-actions-menu-item:focus-visible{background:var(--c-surface-subtle);}
+.row-actions-menu-item.danger{color:var(--c-danger-dark);border-top:1px solid var(--c-border-soft2);}
+.row-actions-menu-item.danger:hover,.row-actions-menu-item.danger:focus-visible{background:var(--c-danger-bg);}
+@media(max-width:768px){
+  .row-actions-kebab{min-width:44px;min-height:44px;width:44px;height:44px;}
+  .row-actions-menu-item{padding:13px 16px;min-height:44px;}
+}
 
 /* ── ROLES GRID ── */
 .roles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;padding:20px;}

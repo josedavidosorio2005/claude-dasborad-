@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.26.0 — Octubre 2026
+
+**Fase 137 (Parte B, F07): en Gestión de Usuarios, las acciones de
+cada fila quedan mejor organizadas.**
+
+- "Editar" sigue siendo el botón principal, visible como antes.
+- "Cambiar contraseña", "Suspender/Activar" y "Eliminar" ahora están
+  agrupadas en un menú (el ícono de 3 puntos ⋮) — menos botones
+  sueltos en cada fila, más fácil de leer la tabla.
+- El menú se puede usar solo con el teclado (abrir con Enter, moverse
+  con las flechas, cerrar con Escape) y se ve bien en el celular.
+- Nadie pierde ni gana ninguna acción — quien hoy puede editar,
+  cambiar contraseña, suspender o eliminar un usuario, sigue
+  pudiendo hacerlo exactamente igual. Solo cambia dónde está el
+  botón.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.25.0 — Octubre 2026
 
 **Fase 136 (PR 8): abrir y cerrar las ventanas (Calidad, Cargar Datos,

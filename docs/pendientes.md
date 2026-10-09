@@ -188,12 +188,6 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   rediseñar ese modelo. **No se toca sin tu OK explícito** (regla fija de
   esta fase). Riesgo real hoy: bajo (Aurora/HLM siguen en cero datos).
 
-- **F07 (auditoría UI Fase 135) — agrupar las 4 acciones por fila de
-  Usuarios** (hoy 4 botones sueltos: Editar/Permisos/Historial/Eliminar)
-  **en un menú**. Prioridad BAJA. No se hizo en la Fase 136 por decisión
-  explícita del usuario — depende de permisos por rol (qué acciones ve
-  cada rol en esa fila) y agruparlas sin revisar eso primero podría
-  cambiar sin querer qué ve cada uno. Anotado 2026-10-09 (Fase 136, PR 8).
 - **F10 (auditoría UI Fase 135) — iconos emoji del menú lateral**
   (&#128101; Usuarios, &#128230; Inventario, etc.). Prioridad BAJA. No se
   tocó en la Fase 136 por decisión explícita del usuario: es una decisión
