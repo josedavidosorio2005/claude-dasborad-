@@ -62,8 +62,151 @@ function motionEnter(el, claseShow) {
   });
 }
 
+// Fase 136 (PR 8, F04): los 6 modales/overlays que comparten el mismo
+// toggle display:none/flex (.show en el overlay, ver styles.css) usan
+// este mismo par -- mantiene la LOGICA de abrir/cerrar de cada
+// open*/close* exactamente igual (nunca se toca el .classList.add/
+// remove('show') del overlay en si, ni el orden de lo que cada funcion
+// ya hacia antes/despues), solo envuelve el momento en que el modal
+// se vuelve visible/invisible con la clase .motion-modal-hidden en su
+// HIJO real (#calidad-modal, etc.).
+//
+// Ajustado tras "OK modales" (2 condiciones del usuario, 2026-10-09):
+// NO se reutiliza motionEnter/motionExit (esas asumen que el estado BASE
+// -- sin la clase -- es invisible; aqui el estado base de un modal es
+// VISIBLE a proposito -- ver styles.css -- para que un modal real nunca
+// dependa de que este script cargue para no quedar invisible).
+// .motion-modal-hidden es el estado transitorio, en las 2 direcciones:
+// agregarla dispara la transicion DE visible A oculto (usada tanto al
+// EMPEZAR a entrar como al terminar de salir), quitarla dispara la
+// transicion DE oculto A visible (entrada).
+//
+// Pila de overlays REALMENTE abiertos, en el orden en que se abrieron --
+// hallazgo real probando este PR: Calidad puede abrir "Supervisar Lider"
+// ENCIMA de si misma sin cerrarse primero (calidad-overlay se queda con
+// .show mientras supervisar-lider-overlay tambien lo tiene) -- un
+// anidamiento real que ya existia antes de este PR, no algo nuevo. Sin
+// esta pila, Escape no podria saber cual de los 2 overlays visibles es
+// el de ARRIBA (el que el usuario espera cerrar primero).
+var MOTION_OVERLAY_STACK = [];
+function _motionOverlayDe(modal) {
+  return (modal && modal.parentElement && modal.parentElement.id) ? modal.parentElement.id : null;
+}
+// motionAbrirModal: llamar DESPUES de overlay.classList.add('show') --
+// el orden dentro de cada open*() no importa, mientras la clase 'show'
+// ya este puesta (si no, el modal esta en display:none y la transicion
+// no se ve).
+//
+// modal._motionGen (contador de generacion, en el propio elemento):
+// hallazgo real al probar el "OK modales" -- si el modal se vuelve a
+// abrir MIENTRAS una salida anterior todavia esta esperando su
+// transitionend/el salvavidas de motionCerrarModal, esa salida vieja no
+// debe ocultar el modal que el usuario acaba de volver a abrir.
+// Incrementar la generacion aqui y comparar en motionCerrarModal (mas
+// abajo) es como esa salida vieja se reconoce a si misma como obsoleta.
+function motionAbrirModal(modalId) {
+  var modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal._motionGen = (modal._motionGen || 0) + 1;
+  modal.classList.add('motion-modal-hidden');
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      modal.classList.remove('motion-modal-hidden');
+    });
+  });
+  var overlayId = _motionOverlayDe(modal);
+  if (overlayId) {
+    var i = MOTION_OVERLAY_STACK.indexOf(overlayId);
+    if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
+    MOTION_OVERLAY_STACK.push(overlayId);
+  }
+}
+// motionCerrarModal: reemplaza el closeX() completo -- hace la
+// transicion de salida del modal y SOLO DESPUES llama a cerrarReal()
+// (la funcion que el caller pasa, con el overlay.classList.remove
+// ('show') y cualquier otra cosa que el close* original ya hiciera,
+// en el mismo orden de siempre). Si el modal no existe en el DOM,
+// cerrarReal() se llama de inmediato (nunca deja algo a medias).
+function motionCerrarModal(modalId, cerrarReal) {
+  var modal = document.getElementById(modalId);
+  if (!modal) { cerrarReal(); return; }
+  var genAlCerrar = modal._motionGen || 0;
+  var listo = false;
+  function terminar() {
+    if (listo) return;
+    listo = true;
+    modal.removeEventListener('transitionend', alTerminarTransicion);
+    // Si motionAbrirModal se llamo de nuevo despues de esta (la
+    // generacion ya no es la misma), esta salida quedo obsoleta: el
+    // modal se volvio a abrir mientras tanto y NO se debe ocultar.
+    if ((modal._motionGen || 0) !== genAlCerrar) return;
+    var overlayId = _motionOverlayDe(modal);
+    if (overlayId) {
+      var i = MOTION_OVERLAY_STACK.indexOf(overlayId);
+      if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
+    }
+    cerrarReal();
+  }
+  function alTerminarTransicion(e) {
+    if (e.target !== modal) return;
+    terminar();
+  }
+  modal.addEventListener('transitionend', alTerminarTransicion);
+  // Mismo salvavidas de 400ms que motionExit (--dur-slow con margen) --
+  // si transitionend no dispara por lo que sea, no deja el cierre
+  // atascado.
+  setTimeout(terminar, 400);
+  modal.classList.add('motion-modal-hidden');
+}
+
+// Fase 136 (PR 8): Escape cierra el modal/overlay de MAS ARRIBA (el
+// ultimo abierto que sigue abierto, via MOTION_OVERLAY_STACK) --
+// hallazgo real al armar el checklist de prueba de este PR (abrir/
+// cerrar/guardar/cancelar/Esc/clic fuera): NINGUNO de los 6 modales
+// tenia un atajo de teclado para cerrar, solo el boton "X Cerrar" y el
+// clic fuera (ya existian, sin tocar). Siempre el mismo close*() de
+// siempre -- nunca un camino nuevo de cierre, solo un disparador nuevo.
+// Si el foco esta en un <input>/<select>/<textarea> dentro del modal,
+// Escape lo cierra igual (es el comportamiento esperado de un dialogo)
+// -- la UNICA excepcion es si hay un <input type="date"> con su propio
+// calendario nativo abierto, que el navegador ya intercepta con su
+// propio Escape antes de que llegue aqui.
+var MOTION_MODALES_ESC = {
+  'calidad-overlay': function () { if (typeof closeCalidad === 'function') closeCalidad(); },
+  'detalle-monitoreo-overlay': function () { if (typeof closeDetalleMonitoreo === 'function') closeDetalleMonitoreo(); },
+  'supervisar-lider-overlay': function () { if (typeof closeSupervisionLider === 'function') closeSupervisionLider(); },
+  'cargas-overlay': function () { if (typeof closeCargas === 'function') closeCargas(); },
+  'dashcfg-overlay': function () { if (typeof closeDashCfgModal === 'function') closeDashCfgModal(); },
+  'gd-overlay': function () { if (typeof closeGenericDashboard === 'function') closeGenericDashboard(); },
+};
+// typeof document !== 'undefined': mismo patron dual navegador/Node que
+// el resto del archivo -- Node (server/tests/fase136-pr4-base-
+// movimiento.test.js hace require() directo de este archivo) no tiene
+// `document` global, y un addEventListener de nivel de modulo (no
+// dentro de una funcion) se ejecutaria apenas se cargue el archivo.
+if (typeof document !== 'undefined') {
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    // De atras hacia adelante: el ultimo de la pila es el de mas arriba.
+    // Si por lo que sea quedo un id en la pila cuyo overlay YA no tiene
+    // .show (ej. se cerro por otro camino sin pasar por motionCerrarModal),
+    // se descarta y se sigue probando el siguiente -- nunca se queda
+    // atascado en una entrada vieja.
+    while (MOTION_OVERLAY_STACK.length) {
+      var overlayId = MOTION_OVERLAY_STACK[MOTION_OVERLAY_STACK.length - 1];
+      var ov = document.getElementById(overlayId);
+      if (ov && ov.classList.contains('show')) {
+        var cerrar = MOTION_MODALES_ESC[overlayId];
+        if (cerrar) cerrar();
+        return;
+      }
+      MOTION_OVERLAY_STACK.pop();
+    }
+  });
+}
+
 // Doble modo: global en el navegador (los modulos se cargan por
 // <script>), y require() en Node para pruebas de regresion.
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { motionExit: motionExit, motionEnter: motionEnter };
+  module.exports = { motionExit: motionExit, motionEnter: motionEnter, motionAbrirModal: motionAbrirModal, motionCerrarModal: motionCerrarModal };
 }

@@ -1,0 +1,6 @@
+DEBUG calidad btn count=1 visible=true (light/desktop)
+DEBUG calidad btn count=1 visible=true (dark/desktop)
+DEBUG calidad btn count=1 visible=true (light/fullhd)
+DEBUG calidad btn count=1 visible=true (dark/fullhd)
+DEBUG calidad btn count=1 visible=true (light/mobile)
+DEBUG calidad btn count=1 visible=true (dark/mobile)

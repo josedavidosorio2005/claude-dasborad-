@@ -870,6 +870,31 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 #gd-modal{background:var(--c-bg);border-radius:0;width:100%;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
 #gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
 
+/* Fase 136 (PR 8, F04): entrada/salida animada de los 6 modales/overlays
+   -- CSS solo no puede animar el toggle display:none/flex que ya usan
+   (ver docs/auditoria-ui-fase135.md, Paso 1), asi que motion-helpers.js
+   (motionAbrirModal/motionCerrarModal) agrega/quita .motion-modal-hidden
+   en el hijo real (#calidad-modal, etc.), SIN tocar la clase .show del
+   overlay (el mecanismo de display:none/flex de arriba sigue exactamente
+   igual, intacto). --dur-slow (320ms, la mas lenta de la especificacion
+   -- tabla de la auditoria: modales 200-500ms) + --ease-out, scale(0.97)
+   nunca scale(0) (review-animations: "nada aparece de la nada").
+   Ajustado tras "OK modales" (2 condiciones del usuario, 2026-10-09): el
+   estado BASE (sin la clase) es VISIBLE -- si motion-helpers.js no carga
+   (red, CSP, bloqueo), motionAbrirModal() nunca se llama (cada caller ya
+   se protege con "typeof motionAbrirModal === 'function'") y el modal se
+   ve igual de bien, solo sin el efecto de entrada. Antes el estado base
+   era invisible: un modal real dependia de que este script cargara para
+   NO quedar invisible -- lo opuesto de progressive enhancement.
+   .motion-modal-hidden es el estado TRANSITORIO (justo antes de entrar /
+   al terminar de salir), nunca el estado por defecto. */
+#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal,#gd-modal{
+  opacity:1;transform:scale(1);transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out);
+}
+#calidad-modal.motion-modal-hidden,#detalle-monitoreo-modal.motion-modal-hidden,#supervisar-lider-modal.motion-modal-hidden,#cargas-modal.motion-modal-hidden,#dashcfg-modal.motion-modal-hidden,#gd-modal.motion-modal-hidden{
+  opacity:0;transform:scale(0.97);
+}
+
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
    al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */

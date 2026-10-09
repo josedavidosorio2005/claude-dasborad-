@@ -284,6 +284,71 @@ redundante con eso, no se agregó.
 **Cambio de mes**: sigue siendo instantáneo a propósito — no se toca
 (ver PR 6, Paso 4 de la auditoría: "nada que retrase ver un número").
 
+## Modales unificados (Fase 136, PR 8, F04)
+
+**F04 (hallazgo real de la Fase 135)**: los 6 modales/overlays de la
+plataforma (Calidad, Supervisar Líder, Cargar Datos, constructor de
+dashboards, dashboard de cliente, detalle de monitoreo) aparecían/
+desaparecían de golpe — cada uno hacía su propio
+`overlay.classList.add/remove('show')` (display:none↔flex) sin ninguna
+transición, porque `display` no es una propiedad animable por CSS solo.
+
+**Mecanismo**: `motionAbrirModal(modalId)`/`motionCerrarModal(modalId,
+cerrarReal)` (`motion-helpers.js`) envuelven ese cambio sin tocarlo —
+nunca reemplazan la clase `.show` del overlay ni el orden de lo que cada
+`open*()`/`close*()` ya hacía. Agregan/quitan `.motion-modal-hidden` en
+el **hijo real** (`#calidad-modal`, etc.), que tiene su propia
+transición `opacity`/`transform: scale(0.97↔1)` con `--dur-slow` (320ms,
+la más lenta de la especificación — PR 8 usó el tope alto del rango
+200–500ms de modales porque son ventanas grandes, no un toast) +
+`--ease-out`. `motionCerrarModal` espera a que termine esa transición de
+salida antes de llamar `cerrarReal()` (el cierre real: quitar `.show`
+del overlay, destruir charts, restaurar el scroll de fondo, etc. —
+exactamente lo que cada `close*()` ya hacía, en el mismo orden).
+
+**Estado base VISIBLE, ajustado tras "OK modales" (2 condiciones del
+usuario, 2026-10-09)**: la primera versión de este PR dejaba el estado
+base (sin ninguna clase) **invisible** — un modal real dependía de que
+`motion-helpers.js` cargara para no quedarse en blanco, justo lo
+contrario de *progressive enhancement*. Ahora el estado base de los 6
+modales es **visible** (`opacity:1;transform:scale(1)`) y
+`.motion-modal-hidden` es el estado **transitorio** (antes de entrar / al
+terminar de salir) en las dos direcciones — agregarla dispara la
+transición hacia oculto, quitarla la dispara hacia visible. Si
+`motion-helpers.js` no carga, cada `open*()`/`close*()` ya se protege con
+`typeof motionAbrirModal === 'function'`: esa condición da `false`, la
+clase nunca se agrega, y el modal se ve igual de bien, solo sin el efecto
+de entrada.
+
+**Reabrir durante la salida (segunda condición del "OK modales")**: si
+el modal se vuelve a abrir mientras una salida anterior todavía está
+esperando su `transitionend`/salvavidas de 400ms, esa salida vieja
+**no** debe ocultar el modal recién reabierto. `modal._motionGen` (un
+contador en el propio elemento) se incrementa en cada `motionAbrirModal`;
+`motionCerrarModal` guarda la generación vigente al empezar a cerrar y,
+cuando por fin le toca ejecutar `cerrarReal()`, si la generación ya
+cambió, se aborta sin tocar nada — la salida quedó obsoleta.
+
+**Anidamiento real encontrado al probar**: Calidad puede abrir
+"Supervisar Líder" encima de sí misma sin cerrarse primero. Por eso
+existe `MOTION_OVERLAY_STACK` (pila de overlays realmente abiertos, en
+orden) — sin ella, **Escape** no sabría cuál de los 2 cerrar primero.
+Escape es un atajo **nuevo** (ninguno de los 6 modales lo tenía antes,
+solo el botón "X Cerrar" y el clic fuera, que siguen intactos) — cierra
+siempre el mismo `close*()` de siempre del overlay de más arriba.
+
+**Por qué no es una regresión de accesibilidad vs. review-animations**:
+modales son "ocasional" (no 100+/día, no un atajo de teclado existente
+que se le agregue movimiento) → movimiento estándar está permitido;
+`scale(0.97)` nunca `scale(0)`; mismo `--ease-out` en entrada y salida
+(los modales están exentos de la regla de "más lento al entrar, rápido
+al responder" — esa es para gestos de press-and-hold, no para abrir/
+cerrar un diálogo); `transform-origin` por defecto (centro) es correcto
+porque los modales están exentos de anclarse a su disparador; solo
+`opacity`/`transform` (GPU); cubierto por el mismo
+`prefers-reduced-motion`/`data-motion="off"` global (selector `*`, ver
+abajo) que todo lo demás.
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

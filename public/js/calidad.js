@@ -232,6 +232,7 @@ function populateCalCampanaSelect(){
 
 async function openCalidad(){
   document.getElementById('calidad-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('calidad-modal');
   await calLoadPlantillas();
   await _calCargarClientesConDashboard();
   populateCalCampanaSelect();
@@ -251,7 +252,9 @@ async function openCalidad(){
   switchCalTab(defaultTab);
 }
 function closeCalidad(){
-  document.getElementById('calidad-overlay').classList.remove('show');
+  var cerrarReal = function(){ document.getElementById('calidad-overlay').classList.remove('show'); };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('calidad-modal', cerrarReal);
+  else cerrarReal();
 }
 document.getElementById('calidad-overlay').addEventListener('click',function(e){ if(e.target===this) closeCalidad(); });
 
@@ -758,7 +761,9 @@ async function descargarReporteGeneral(){
 }
 
 function closeSupervisionLider(){
-  document.getElementById('supervisar-lider-overlay').classList.remove('show');
+  var cerrarReal = function(){ document.getElementById('supervisar-lider-overlay').classList.remove('show'); };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('supervisar-lider-modal', cerrarReal);
+  else cerrarReal();
 }
 document.getElementById('supervisar-lider-overlay').addEventListener('click',function(e){ if(e.target===this) closeSupervisionLider(); });
 
@@ -797,6 +802,7 @@ function verSupervisionLider(camp, mes, liderNombre){
   }
   document.getElementById('sl-monitoreos-table').innerHTML = html;
   document.getElementById('supervisar-lider-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('supervisar-lider-modal');
 }
 
 function renderCalReportes(){

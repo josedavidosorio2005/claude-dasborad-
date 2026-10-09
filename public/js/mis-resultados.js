@@ -150,7 +150,9 @@ async function renderMisResultados(){
 }
 
 function closeDetalleMonitoreo(){
-  document.getElementById('detalle-monitoreo-overlay').classList.remove('show');
+  var cerrarReal = function(){ document.getElementById('detalle-monitoreo-overlay').classList.remove('show'); };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('detalle-monitoreo-modal', cerrarReal);
+  else cerrarReal();
 }
 document.getElementById('detalle-monitoreo-overlay').addEventListener('click',function(e){ if(e.target===this) closeDetalleMonitoreo(); });
 
@@ -191,5 +193,6 @@ function verDetalleMonitoreo(idx){
   document.getElementById('dm-items-wrap').innerHTML = html;
 
   document.getElementById('detalle-monitoreo-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('detalle-monitoreo-modal');
   marcarMonitoreoVisto(m.id);
 }

@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.25.0 — Octubre 2026
+
+**Fase 136 (PR 8): abrir y cerrar las ventanas (Calidad, Cargar Datos,
+Supervisar Líder, constructor de dashboards, dashboard de cliente,
+detalle de monitoreo) ahora se ve suave, no de golpe.**
+
+- Las 6 ventanas emergentes de la plataforma ahora aparecen y se cierran
+  con una pequeña transición, en vez de aparecer/desaparecer de un
+  salto.
+- Nuevo: la tecla **Escape** también cierra la ventana que esté abierta
+  (antes solo se podía cerrar con el botón o haciendo clic afuera).
+- Nada de esto cambia ningún dato, ningún número, ni cómo se usan estas
+  ventanas — solo se ve más suave.
+
 ## v1.24.1 — Octubre 2026
 
 **Fase 136 (F08): ya no aparece un aviso de error en la pantalla de

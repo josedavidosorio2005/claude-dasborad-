@@ -560,6 +560,7 @@ function _gdBloquearScrollFondo(bloquear){
 async function openGenericDashboard(cliente){
   _gdBloquearScrollFondo(true);
   document.getElementById('gd-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('gd-modal');
   document.getElementById('gd-title').textContent = 'Cargando…';
   document.getElementById('gd-kpis').innerHTML = '';
   document.getElementById('gd-tabs').innerHTML = '';
@@ -582,6 +583,7 @@ async function openGenericDashboard(cliente){
 async function openGenericDashboardPreview(config){
   _gdBloquearScrollFondo(true);
   document.getElementById('gd-overlay').classList.add('show');
+  if (typeof motionAbrirModal === 'function') motionAbrirModal('gd-modal');
   document.getElementById('gd-kpis').innerHTML = '';
   document.getElementById('gd-tabs').innerHTML = '';
   document.getElementById('gd-panels').innerHTML = '';
@@ -802,9 +804,19 @@ function closeGenericDashboard(){
   // navegador, hay que salir primero -- si no, el navegador se queda en
   // fullscreen mostrando lo que sea que quede detras (el overlay ya oculto).
   if(document.fullscreenElement) document.exitFullscreen();
-  document.getElementById('gd-overlay').classList.remove('show');
-  Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
-  _gdBloquearScrollFondo(false);
+  // Fase 136 (PR 8, F04): el ORDEN de lo que ya hacia esta funcion no
+  // cambia -- exitFullscreen() sigue yendo primero, igual que antes. Lo
+  // unico nuevo es que ocultar el overlay/destruir los charts/
+  // desbloquear el scroll ahora espera a que termine la transicion de
+  // salida del modal (motionCerrarModal), en vez de pasar en el mismo
+  // instante del clic.
+  var cerrarReal = function(){
+    document.getElementById('gd-overlay').classList.remove('show');
+    Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
+    _gdBloquearScrollFondo(false);
+  };
+  if (typeof motionCerrarModal === 'function') motionCerrarModal('gd-modal', cerrarReal);
+  else cerrarReal();
 }
 document.getElementById('gd-overlay').addEventListener('click',function(e){ if(e.target===this) closeGenericDashboard(); });
 
