@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.27.0 — Octubre 2026
+
+**Fase 138 (PR1): el selector de mes ahora muestra el nombre completo en
+español, y el tablero de Orlant ya tiene su propio logo.**
+
+- Los selectores de mes de Calidad y de "Mis Resultados" ahora muestran
+  "Septiembre 2026" en vez de "2026-09" — igual que ya mostraban el
+  selector principal del tablero y el de "Comparar contra". No cambia
+  ningún dato, solo cómo se ve el mes.
+- El encabezado del tablero de Orlant ahora muestra el logo de Orlant,
+  igual que el de Mobilize ya lo muestra desde antes. El logo es
+  **provisional** (una versión simple a partir de lo que mandó Edwin por
+  WhatsApp) — se reemplaza cuando llegue el original en alta resolución.
+
 ## v1.26.0 — Octubre 2026
 
 **Fase 137 (Parte B, F07): en Gestión de Usuarios, las acciones de

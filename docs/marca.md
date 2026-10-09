@@ -26,6 +26,17 @@ negro — pensadas para impresión/PDF) no tienen copia en `public/`:
 ningún export de la plataforma las usa hoy (no hay PDFs). Si hace falta
 una, se genera igual que las de arriba desde la carpeta de marca.
 
+## Logo de cliente en el encabezado del tablero (`public/img/clientes/`)
+
+Distinto de los logos de marca InConexion de arriba — es el logo del
+**cliente** (Mobilize, Orlant) que `renderGenericHeader()`
+(`public/js/dashboard-generic.js`) pone junto al título del tablero.
+`mobilize-logo.png` (+@2x) es definitivo. `orlant-logo-blanco.png`
+(+@2x, Fase 138/PR1) es **PROVISIONAL**: generado por software (resize
+simple, sin retoque de diseño) a partir del archivo que mandó Edwin por
+WhatsApp el 09/10/2026 — reemplazar cuando llegue el original en alta
+resolución.
+
 ## Colores oficiales (`public/css/styles.css`, bloque `:root` al inicio)
 
 Muestreados de los archivos de logo reales, no de memoria:

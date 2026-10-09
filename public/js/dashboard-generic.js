@@ -876,6 +876,18 @@ function renderGenericHeader(){
       elLogo.src = 'img/clientes/mobilize-logo.png';
       elLogo.srcset = 'img/clientes/mobilize-logo.png 1x, img/clientes/mobilize-logo@2x.png 2x';
       elLogo.alt = 'Mobilize';
+      elLogo.width = 140; elLogo.height = 25;
+      elLogo.style.display = '';
+    } else if(_gd.cliente === 'ORLANT'){
+      // Fase 138 (PR1): logo blanco de Orlant -- provisional (ver
+      // docs/marca.md), mismo alto que el de Mobilize (25px/50px a 2x),
+      // ancho segun su propia relacion de aspecto para no deformarlo.
+      // width/height explicitos para que no haya salto de layout mientras
+      // carga (igual que Mobilize, arriba).
+      elLogo.src = 'img/clientes/orlant-logo-blanco.png';
+      elLogo.srcset = 'img/clientes/orlant-logo-blanco.png 1x, img/clientes/orlant-logo-blanco@2x.png 2x';
+      elLogo.alt = 'Orlant';
+      elLogo.width = 64; elLogo.height = 25;
       elLogo.style.display = '';
     } else {
       elLogo.style.display = 'none';
