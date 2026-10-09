@@ -611,7 +611,7 @@ async function _gdBootstrap(){
   // CADA tipo de panel presentes en la config de este cliente (nunca
   // hardcodeado a un cliente puntual) y se junta la lista de TODAS las
   // fuentes de datos mensuales.
-  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasEfectividadCitas = {}, campanasTipificacion = {}, campanasSalida = {};
+  var campanasCalidad = {}, campanasTraficoLlamadas = {}, campanasTraficoWpp = {}, campanasAgendas = {}, campanasEfectividadAgendamiento = {}, campanasInasistencia = {}, campanasEfectividadCitas = {}, campanasTipificacion = {}, campanasSalida = {}, campanasLlamadasUnicas = {};
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){
       if(p.tipo && p.tipo.indexOf('calidad')===0 && p.campana) campanasCalidad[p.campana] = true;
@@ -623,6 +623,7 @@ async function _gdBootstrap(){
       if(p.tipo === 'efectividad_citas_panel') campanasEfectividadCitas[p.campana || _gd.cliente] = true;
       if(p.tipo === 'tipificacion_panel') campanasTipificacion[p.campana || _gd.cliente] = true;
       if(p.tipo === 'salida_panel') campanasSalida[p.campana || _gd.cliente] = true;
+      if(p.tipo === 'llamadas_unicas_panel') campanasLlamadasUnicas[p.campana || _gd.cliente] = true;
     });
   });
   // Precarga de Trafico de Llamadas para cualquier KPI de la franja global
@@ -644,7 +645,7 @@ async function _gdBootstrap(){
   // mesesAgendas/mesesTipificacion/tabs.oculta son seguros en paralelo
   // porque JS es de un solo hilo (nunca hay dos tareas escribiendo a la
   // vez, solo turnos intercalados en cada await).
-  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesEfectividadCitas = [], mesesTipificacion = [], mesesSalida = [];
+  var mesesAgendas = [], mesesEfectividadAgendamiento = [], mesesInasistencia = [], mesesEfectividadCitas = [], mesesTipificacion = [], mesesSalida = [], mesesLlamadasUnicas = [];
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
@@ -765,6 +766,18 @@ async function _gdBootstrap(){
       }catch(e){ /* se queda oculta / sin esos meses */ }
     })());
   });
+  // Fase 138, PR3 (Mobilize): Llamadas Unicas vive en un panel DENTRO del
+  // tab "flujo" (ya siempre visible) -- a diferencia de Agendas/Tipificacion/
+  // Inasistencia/Salida (tabs ocultos que se destapan solos), aqui solo hace
+  // falta juntar sus meses para el selector global, nunca tocar `oculta`.
+  Object.keys(campanasLlamadasUnicas).forEach(function(campLu){
+    tareasBootstrap.push((async function(){
+      try{
+        var luOp = await apiRequest('GET', '/calidad/llamadas-unicas/opciones?campana='+encodeURIComponent(campLu));
+        if(luOp && luOp.meses) mesesLlamadasUnicas = mesesLlamadasUnicas.concat(luOp.meses);
+      }catch(e){ /* sin datos o sin acceso -- el panel muestra su propio aviso */ }
+    })());
+  });
 
   await Promise.all(tareasBootstrap);
 
@@ -789,7 +802,7 @@ async function _gdBootstrap(){
   // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
-  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida]);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida, mesesLlamadasUnicas]);
   _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
@@ -1154,13 +1167,14 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
       // tipificacion_panel (Fase 77, ORLANT), efectividad_agendamiento_panel
-      // y efectividad_citas_panel (Fase 111), salida_panel (Fase 127) siguen
-      // el mismo criterio.
+      // y efectividad_citas_panel (Fase 111), salida_panel (Fase 127),
+      // llamadas_unicas_panel (Fase 138, PR3, Mobilize) siguen el mismo
+      // criterio.
       html += '<div id="gd-p'+i+'"></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
@@ -1169,7 +1183,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1210,6 +1224,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'efectividad_citas_panel'){ _efectividadCitasRenderPanel(p, i); return; }
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
+  if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1687,6 +1702,24 @@ async function _gdExportarSalida(p, i){
   ];
 }
 
+// Llamadas Unicas (Fase 138, PR3, Mobilize): 1 sola tabla, por mes -- mismo
+// criterio que _gdExportarSalida (no respeta los filtros Desde/Hasta/Skill/
+// Asesor del panel, exporta el total mensual completo). El telefono nunca
+// llega hasta aqui (ya no existe desde que se cargo, ver llamadas-unicas.js
+// del servidor).
+async function _gdExportarLlamadasUnicas(p, i){
+  var campana = p.campana;
+  var porMes = [];
+  try{ porMes = await apiRequest('GET', '/calidad/llamadas-unicas/por-mes?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  if(!porMes.length){
+    return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'aviso', filas: [], mensaje: 'Sin llamadas únicas cargadas todavía.' }];
+  }
+  var filas = porMes.map(function(m){
+    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total únicas': m.total, 'Contestadas únicas': m.contestadas, 'Abandonadas únicas': m.abandonadas };
+  });
+  return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }];
+}
+
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
 // (Llamadas y WhatsApp) por separado -- si una no tiene datos, se dice
 // (nunca se omite en silencio). Mismo estado compartido/por-canal que ya
@@ -1826,6 +1859,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'efectividad_citas_panel'){ out = out.concat(await _gdExportarEfectividadCitas(p, i)); continue; }
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'salida_panel'){ out = out.concat(await _gdExportarSalida(p, i)); continue; }
+    if(p.tipo === 'llamadas_unicas_panel'){ out = out.concat(await _gdExportarLlamadasUnicas(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

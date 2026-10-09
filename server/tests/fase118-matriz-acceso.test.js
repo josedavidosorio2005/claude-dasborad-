@@ -193,6 +193,11 @@ declarar(['GET /calidad/efectividad-agendamiento/opciones', 'GET /calidad/efecti
 declarar(['POST /calidad/efectividad-agendamiento/carga/impacto', 'POST /calidad/efectividad-agendamiento/carga'], 'cargaManual');
 declarar(['GET /calidad/tipificacion/opciones', 'GET /calidad/tipificacion/por-tipo', 'GET /calidad/tipificacion/resumen-salida'], 'scopedRead');
 declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacion/carga'], 'cargaManual');
+// Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas --
+// mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
+declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');
+declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas-unicas/carga'], 'cargaManual');
+declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');

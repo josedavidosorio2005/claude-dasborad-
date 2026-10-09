@@ -257,6 +257,14 @@ var CARGAS_HOJA_AGENDAS = 'AGENDAS';
 // tipificacionCols viene, hoy solo ORLANT).
 var CARGAS_HOJA_TIPIFICACION_LLAMADAS = 'TIPIFICACION_LLAMADAS';
 var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
+// Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas de
+// ingreso (contestadas/abandonadas deduplicadas por dia+telefono) -- hoja
+// propia, solo cuando llamadasUnicasCols viene (hoy solo Mobilize). El
+// archivo real de Edwin es un export CRUDO de Wolkvox (hoja "HistCDR...",
+// nombre que cambia en cada export) -- igual que Tipificacion, se reconoce
+// por encabezados si el nombre exacto "LLAMADAS_UNICAS" no esta (ver
+// _cargasBuscarHojaPorEncabezados, cargas.js).
+var CARGAS_HOJA_LLAMADAS_UNICAS = 'LLAMADAS_UNICAS';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
@@ -304,7 +312,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -536,6 +544,27 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
   }
+  // Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas
+  // de ingreso -- hoja propia, solo cuando llamadasUnicasCols viene (hoy
+  // solo Mobilize).
+  if (llamadasUnicasCols) {
+    plan.push({
+      tipo: 'llamadas_unicas', hoja: CARGAS_HOJA_LLAMADAS_UNICAS, titulo: 'Llamadas Únicas (ingreso)',
+      descripcion: 'Una fila por llamada de ingreso (contestada o abandonada), tal cual el export de Wolkvox.',
+      filaUnica: false, columnas: llamadasUnicasCols,
+      notasExtra: [
+        'De donde sale: CDR de Wolkvox (Reportes → CDR → "1. Detalle de las llamadas", quitando las ' +
+          'de salida) + Skills & Servicios → "2. Llamadas abandonadas" (SKILL_NAME = NO CONTESTADAS), ' +
+          'unificados en una sola hoja con las columnas AGENT_NAME, DATE, TELEPHONE, SKILL_NAME.',
+        'TELEPHONE se usa SOLO para quitar llamadas repetidas del MISMO numero en el MISMO dia -- ' +
+          'nunca se guarda, nunca se exporta, nunca se muestra. Un numero que llama 2 veces el mismo ' +
+          'dia cuenta 1 sola vez; en dias distintos cuenta aparte.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
+          'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
   if (!traficoWppCols) {
     plan.push({
       tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
@@ -714,7 +743,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 // ni el orden de la "vista previa" al subir un archivo.
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
-  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
   CARGAS_HOJA_SALIDA,
 ];
@@ -764,6 +793,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_CITAS_ATENDIDAS: CARGAS_HOJA_CITAS_ATENDIDAS,
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
+    CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,

@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.29.0 — Octubre 2026
+
+**Fase 138 (PR3): nueva sección "Llamadas de ingreso únicas" en el tablero
+de Mobilize.**
+
+- Arriba de Flujo de Llamadas, Mobilize ahora muestra 3 tarjetas
+  (Contestadas únicas, Abandonadas únicas, Total únicas) y una gráfica de
+  barras por mes — "única" quiere decir que un mismo número de teléfono
+  que llama varias veces el mismo día cuenta una sola vez (si llama en
+  días distintos, sí cuenta aparte en cada día).
+- Filtros por fecha, por skill y (solo para el equipo de InConexión, no
+  para el usuario de Mobilize) por asesor.
+- El número de teléfono nunca se guarda, nunca se exporta y nunca se
+  muestra en ninguna pantalla — se usa solo un instante, en la
+  computadora de quien sube el archivo, para no contar una misma llamada
+  dos veces.
+- Esta sección queda lista en el código y probada con datos de prueba,
+  pero **sin ningún dato real todavía** — el archivo real de Edwin se
+  carga en un paso aparte, solo cuando él confirme por escrito.
+- La mitad derecha ("Llamadas de salida") queda pendiente — Edwin todavía
+  no ha mandado ese archivo.
+
 ## v1.28.0 — Octubre 2026
 
 **Fase 138 (PR2): Tipificación de Orlant ahora se ve igual que la de

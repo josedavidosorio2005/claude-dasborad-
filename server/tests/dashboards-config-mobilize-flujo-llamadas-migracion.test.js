@@ -101,8 +101,11 @@ test('migracion dashboards_config_mobilize_flujo_llamadas_v1: el tab "flujo" nue
   const layout = JSON.parse(row.layout);
   const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
   assert.ok(tabFlujo);
-  assert.equal(tabFlujo.panels[0].tipo, 'trafico_combo');
-  assert.equal(tabFlujo.panels[0].campana, 'MOBILIZE');
+  // Fase 138, PR3: "flujo" gano un 1er panel llamadas_unicas_panel -- se
+  // busca el trafico_combo explicitamente en vez de asumir panels[0].
+  const panelTrafico = tabFlujo.panels.find((p) => p.tipo === 'trafico_combo');
+  assert.ok(panelTrafico, 'debe seguir existiendo un panel trafico_combo');
+  assert.equal(panelTrafico.campana, 'MOBILIZE');
 });
 
 test('migracion dashboards_config_mobilize_flujo_llamadas_v1: nunca toca otro cliente con la misma forma vieja (OTRO CLIENTE CON ASESORES intacto)', () => {

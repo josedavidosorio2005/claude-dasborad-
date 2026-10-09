@@ -671,6 +671,49 @@ const tipificacionSalidaResumenQuery = z.object({
   skill: z.string().trim().max(200).optional(),
 });
 
+// ── Llamadas Unicas de Mobilize (Fase 138, PR3, pedido de Edwin 09/10/2026) ──
+// Filas como ARRAY, mismo patron que Tipificacion -- orden FIJO, debe
+// coincidir con LLAMADAS_UNICAS_ORDEN_ARRAY (llamadas-unicas-logic.js) y con
+// CAMPOS_FILA (llamadas-unicas.js). A proposito, el telefono NUNCA aparece
+// en esta tupla -- el navegador lo usa solo en memoria para deduplicar
+// (dia, telefono) y nunca lo incluye en la fila que manda al servidor.
+const llamadasUnicasTipoSchema = z.enum(['CONTESTADA', 'ABANDONADA'], { error: 'tipo debe ser CONTESTADA o ABANDONADA' });
+const llamadasUnicasFilaArraySchema = z.tuple([
+  tipificacionTextoObligatorio, // agente
+  fechaSchema, // fecha
+  llamadasUnicasTipoSchema, // tipo
+  tipificacionTextoObligatorio, // skill
+]);
+
+const llamadasUnicasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(llamadasUnicasFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    // fecha = indice 1 de la tupla.
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+const llamadasUnicasFiltrosQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  agente: z.string().trim().max(200).optional(),
+  skill: z.string().trim().max(200).optional(),
+});
+
+const llamadasUnicasOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1152,6 +1195,9 @@ module.exports = {
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,
     tipificacionSalidaResumenQuery,
+    llamadasUnicasCargaBody,
+    llamadasUnicasFiltrosQuery,
+    llamadasUnicasOpcionesQuery,
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,
