@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.23.0 — Octubre 2026
+
+**Fase 136 (PR 6): las pestañas de un dashboard ahora cambian con una
+transición suave, y las gráficas no "parpadean" al cambiar de mes o
+filtro.**
+
+- Al cambiar de pestaña (Tráfico de Llamadas, Calidad, etc.) dentro de
+  un dashboard, el contenido nuevo aparece con un desvanecimiento suave
+  en vez de un salto brusco.
+- Cambiar de mes, filtro o tema sigue siendo instantáneo a propósito —
+  eso lo usan mucho para revisar cifras rápido, no debía hacerse
+  esperar.
+- Las gráficas ya no vuelven a animarse de cero cada vez que se
+  refresca un dato — solo la primera vez, de forma breve.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.22.0 — Octubre 2026
 
 **Fase 136 (PR 5): botones, formularios y menú más consistentes y con

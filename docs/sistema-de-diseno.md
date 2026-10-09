@@ -214,6 +214,38 @@ los PR 3/4.
 - **Pestañas**: ya resuelto en el PR 1 (F01) y objetivos táctiles ≥44px
   en móvil ya existían desde la Fase 133 — nada que agregar aquí.
 
+## Transición entre pestañas y Chart.js (Fase 136, PR 6)
+
+**`#gd-panels` (dashboard de cliente)**: `switchGenericTab`/
+`switchGenericSubtab` (`dashboard-generic.js`) llaman a `motionEnter()`
+después de reemplazar el contenido vía `innerHTML` — fade +
+`translateY(4px→0)`, `--dur-medium`/`--ease-out`. **Acotado a cambio de
+pestaña/sub-pestaña real** — las otras 4 llamadas a `renderGenericTab`
+(`onGdMesChange`, `onGdCompChange`, `onGdVistaChange`, `_gdIrAMes`) y el
+refresco de gráficas al cambiar de tema (`theme.js`) son cambios de
+*filtro*, no de sección — un supervisor los usa para leer una cifra
+rápido, no deben esperar una animación (Paso 4 de la auditoría: "nada
+que retrase ver un número"). El "exit" de la pestaña vieja no se anima
+por separado — desaparece instantáneo junto con el `innerHTML` (el
+contenido va a destruirse de todas formas). `transform` nunca cuenta
+para CLS (verificado: 0.0 antes y después de este PR).
+
+**Chart.js (F03)**: config central en `charts.js`
+(`Chart.defaults.animation.duration`), antes inexistente en los ~20
+`new Chart(...)` de toda la app. Como esta app siempre hace
+`.destroy()` + `new Chart(...)` fresco (nunca `.update()` sobre una
+instancia), el default de Chart.js (~1000ms) se repetía en cada cambio
+de mes/filtro/tema, no solo al abrir un dashboard — de ahí el
+"parpadeo" de la auditoría. Ahora: 200ms sin preferencia, **0ms con
+`prefers-reduced-motion`/`data-motion="off"`** — Chart.js dibuja en
+`<canvas>`, fuera del alcance de la regla CSS global de apagado, así
+que se chequea aparte. Límite conocido: se lee una sola vez al cargar
+la página — si se cambia `data-motion` a mano a mitad de sesión (sin
+recargar), los charts que ya existen no se enteran hasta el próximo
+refresco de página (verificado con `addInitScript`: el atributo debe
+estar puesto ANTES de que `charts.js` corra, mismo requisito de tiempo
+que `data-theme`).
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

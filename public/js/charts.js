@@ -12,6 +12,33 @@
 // --font-sans en styles.css (Chart.js no puede leer una variable CSS).
 if (typeof Chart !== 'undefined') {
   Chart.defaults.font.family = (typeof TEXTO_FUENTE !== 'undefined') ? TEXTO_FUENTE : "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
+  // Fase 136 (PR 6, F03): hallazgo real de la auditoria de la Fase 135 --
+  // 0 modulos configuraban animation en ningun `new Chart(...)`, asi que
+  // cada grafica usaba el default de Chart.js (~1000ms, easeOutQuart).
+  // En esta app TODA grafica se crea con `new Chart(...)` fresco --
+  // nunca `.update()` sobre una instancia existente (renderGenericTab,
+  // dashboard-generic.js, siempre hace `.destroy()` + recrea) -- asi que
+  // ese default de 1000ms se repetia en CADA cambio de mes/filtro/tema,
+  // no solo la primera vez que se abre un dashboard. 200ms (--dur-medium
+  // en CSS, mismo valor que la transicion de pestanas del PR 6) es lo
+  // bastante corto para no sentirse como demora al cambiar de mes/filtro
+  // (la regla de "nada que retrase ver un numero", Paso 4 de la
+  // auditoria) y lo bastante presente para que una grafica nueva no
+  // aparezca de golpe. Config CENTRAL -- un solo lugar para los ~20
+  // `new Chart(...)` de toda la app (dashboard-generic.js, calidad.js,
+  // charts.js), ninguno la sobreescribe hoy. Respeta prefers-reduced-
+  // motion/data-motion="off" -- Chart.js dibuja en <canvas>, la regla
+  // CSS global de apagado (styles.css) NO lo alcanza (no es transition/
+  // animation CSS), asi que se chequea aqui aparte. Limite conocido:
+  // esto se lee UNA vez al cargar la pagina -- si alguien cambia
+  // data-motion a mano a mitad de sesion (sin recargar), los charts que
+  // ya existen no se enteran hasta el proximo refresco de pagina.
+  var _reducirMovimiento = false;
+  try {
+    _reducirMovimiento = document.documentElement.getAttribute('data-motion') === 'off' ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) {}
+  Chart.defaults.animation.duration = _reducirMovimiento ? 0 : 200;
 }
 
 // Fase 133: CG/CO bajaron de luminosidad (2.87/2.85:1 -> 3.49/3.92:1 contra
