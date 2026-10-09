@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.21.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.25.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -25,11 +25,13 @@ narrativo de cada fase, fase por fase, vive en
   prueba en `server/tests/fase132-08-logo-mobilize.test.js`. Verificado
   en producción real (login de administrador, Playwright visible):
   logo visible solo en MOBILIZE, 0 errores de consola.
-- **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133):
-  [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) — tokens de
-  color/tipografía/foco/objetivos táctiles, regla del semáforo vs.
-  paleta categórica, cómo agregar un color nuevo sin romper el
-  contraste.
+- **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133, ampliado
+  en la Fase 136 con tokens/especificación de movimiento y componentes
+  base): [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) —
+  tokens de color/tipografía/foco/objetivos táctiles, regla del semáforo
+  vs. paleta categórica, cómo agregar un color nuevo sin romper el
+  contraste, duraciones/easings/interruptor `data-motion="off"` y los
+  6 modales unificados.
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
 - **Foco actual**: solo **ORLANT** tiene datos reales en producción.
@@ -135,6 +137,50 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 136 (cerrada) — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135
+
+Ejecuta el plan de `docs/auditoria-ui-fase135.md`: jerarquía visual,
+espaciado, tipografía, botones, cards, menús/pestañas, formularios,
+hover/focus/active, transiciones entre secciones y microinteracciones,
+movimiento suave y sobrio — sin cambiar ningún número ni empeorar lo
+logrado en la Fase 133 (contraste AA, foco visible, objetivos táctiles,
+`prefers-reduced-motion`). 9 PRs de código (#369-#377, detalle completo
+de cada uno en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+F01 (pestañas de ORLANT no se superponen en móvil), F02 (CLS real al
+abrir Calidad/Cargar Datos, de 0.81 a reservado), tokens de espaciado/
+radios/sombras, base de movimiento (tokens + interruptor
+`data-motion="off"`, **sin vendorizar** `motion` — medido en 49 KB gzip
+real, más del doble de lo estimado en la Fase 135, sin necesitarlo para
+los 2 casos de uso reales), componentes base (botones/formularios/menú
+lateral), F03 (transición entre pestañas + configuración central de
+animación de Chart.js, antes 0 módulos la configuraban), F09
+(microinteracciones + "Sin datos" consistente), F08+F11 (toast de error
+en login antes de iniciar sesión corregido; pantalla completa
+verificada), y F04 (**PR 8, el de mayor riesgo**: los 6 modales/overlays
+de la plataforma comparten entrada/salida animada + Escape nuevo,
+aprobado con "OK modales" tras 2 condiciones resueltas en el mismo PR —
+estado base ahora visible por *progressive enhancement*, y ya no se
+oculta un modal que se reabrió durante su propia salida). PR 9
+(aparición al scroll) se descartó explícitamente — sin candidato real,
+tal como anticipaba la propia auditoría.
+
+**Verificación de cierre en producción** (2026-10-09, solo lectura,
+Playwright visible, sesión real del usuario): confirmado en vivo 0
+errores de consola/peticiones fallidas en MOBILIZE (3 pestañas, claro y
+oscuro), tema oscuro, los 3 modales del PR 8 con Escape, y F01 en móvil
+412px. **Un hallazgo real sin resolver** quedó documentado en
+`docs/pendientes.md` §4: el chequeo de datos/canvas de
+`revision-final.js` (sin relación con el PR 8) falló al cambiar de
+pestaña en ORLANT con datos reales (no reproduce en local) — se
+encontró `transition:all` en `.atab`, preexistente a esta fase, como
+sospechoso principal, sin confirmar la causa exacta todavía. La cuenta
+CLIENTES_DASH sigue sin verificar (contraseña temporal pendiente de
+InCo). F07 y F10 (fuera de alcance, decisión explícita del usuario)
+quedan en `docs/pendientes.md` §3.
+
+Versión final `1.25.0`.
 
 ### Fase 135 (cerrada) — Auditoría completa de UI/UX y movimiento (solo auditoría, nada del producto cambió)
 
@@ -334,68 +380,12 @@ Versión final `1.16.1`. Detalle narrativo completo (incluidos los 2
 traspiés de la verificación, con su causa exacta) en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
-### Fase 129 (cerrada) — incidente real de escritura accidental + 2 hallazgos reales corregidos, Inasistencia restaurada
+(Fase 129 — detalle narrativo movido a
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
+al cerrar la Fase 136, para no dejar crecer este resumen sin límite —
+ver su línea en el índice más abajo.)
 
-Pedido original: recargar Inasistencia de ORLANT (solo agosto). Durante
-la preparación, un script de dry-run escribió en producción por
-accidente sin el "sí" del usuario ni respaldo previo (`page.exposeFunction`
-envuelve el retorno en una Promise, siempre *truthy*, así que el guard
-de la app nunca cortó). Impacto real: sin pérdida de datos (el archivo
-era byte-idéntico al ya cargado en la Fase 108), solo cambió el umbral
-de privacidad de entidades. Corregido por construcción con 2 defensas
-independientes (`scripts/produccion/lib/dry-run-seguro.js`). Auditoría
-de privacidad completa (`git log --all`): el script que imprimió
-`opciones.entidades` crudo nunca se commiteó/pusheó/entró a un PR o a
-CI — solo existió en stdout local, ya scrubado. Regla generalizada +
-prueba estática nueva en CI (`fase129-scripts-produccion-sin-texto-crudo.test.js`)
-para cualquier script de `scripts/produccion/` que reenvíe crudo un
-endpoint `.../opciones`.
-
-Hallazgo real nuevo, encontrado al preparar la restauración (v1.15.1,
-parche): subir el archivo completo de Inasistencia (varios meses)
-fallaba con "ninguna fila válida" — una celda FECHA_CITA con formato de
-fecha de Excel llegaba como objeto `Date` nativo en vez de número, por
-un efecto secundario de `cellNF:true` (necesario para Tráfico, no
-relacionado con `cellDates`); corregido en `inasistencia-logic.js`
-(getters LOCALES, nunca UTC). El mismo patrón late en 8 módulos más
-(agendas/calidad/citas-atendidas/efectividad-agendamiento/tipificación/
-tráfico/tráfico-WhatsApp/metas) — **no tocados en esta fase, pendiente
-de decisión** (riesgo documentado, no corregido).
-
-Con el fix desplegado (v1.15.1 en producción), se restauró Inasistencia
-al alcance de privacidad original (Opción B, aprobada y ejecutada con
-"sí" explícito en cada paso, respaldo manual confirmado antes): Paso 1,
-se re-subió el archivo real completo ene-ago (2.664 filas, confirmado
-exacto contra el preview antes de guardar) — agosto quedó en
-352 filas/54 entidades/11.189 citas/786 inasistencias/7,45 %, igual que
-la Fase 108 original; septiembre no se tocó (reemplazo por mes, nunca
-toca meses fuera del archivo). Paso 2, dry-run del borrado por rango
-(mismo endpoint auditado de la Fase 126, base `inasistencia` únicamente
-— no puede tocar otra tabla por diseño, y se cruzó además con una
-lectura independiente de Tipificación de WhatsApp de julio) confirmó
-exactamente 2.312 filas antes de borrar; con el "sí", se borraron esas
-2.312 filas de ene-jul. Verificación final: Inasistencia solo con
-ago-sep (ago 352/54/11.189/786/7,45 %, sep 1.483/94/2 sin cambios),
-Tipificación de WhatsApp de julio sigue en 71, 2 sub-pestañas con
-dibujo real, 0 errores de consola. Septiembre sigue en el agregado
-viejo (Fase 98-106, 1 "especialidad") porque el archivo real que Edwin
-ha enviado nunca trajo septiembre en el formato nuevo — anotado en
-`docs/pendientes.md` §2 (dueño: Edwin). El `console.error 401` visto en
-una corrida de verificación no se reprodujo en una segunda corrida
-idéntica — sin causa real confirmada, tratado como ruido transitorio.
-
-PRs #333 (corrección del dry-run inseguro), #334 (auditoría de
-privacidad + arreglo del `Date`) y el de cierre de esta fase (scripts de
-ejecución real + esta actualización). Versión final `1.15.1`. Scripts de un
-solo uso de esta fase (`scripts/produccion/fase129-*.js`) quedan en el
-repo por ahora, mismo criterio que los de fases anteriores
-(`fase122-...`, `fase124-...`, `fase128-...`) — se archivan en bloque
-cuando estorben, no fase por fase (ver `scripts/README.md`); confirmado
-que ninguno imprime ni contiene un nombre real. Detalle narrativo
-completo en
-[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
-
-## Índice — fases 0 a 132
+## Índice — fases 0 a 136
 
 Título de cada fase (detalle completo en
 [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md),
@@ -535,4 +525,5 @@ mismo orden):
 - Fase 131 — Cliente Mobilize: pestañas "Flujo de Llamadas" y "Tipificación" reusando el motor de ORLANT, "Última actualización" visible en cada dashboard (naranja Mobilize/verde de marca el resto), carga real de septiembre/2026 verificada en producción (2026-10-08)
 - Fase 132 — Marca InConexion®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
 - Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, sin tocar producto ni producción): decisión de librería de movimiento con números reales (`motion` vendorizado, 22 KB gzip), inventario de consistencia contado con `grep`, 13 hallazgos con evidencia (bug de responsive en pestañas de ORLANT a 412px, CLS 0.81 al abrir un dashboard, Chart.js sin config de animación propia, 5 sistemas de modal sin transición compartida), línea base de rendimiento medida y plan de 8 PRs para la Fase 136 (2026-10-08)
+- Fase 136 — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135 (F01 pestañas móviles, F02 CLS, tokens, base de movimiento sin vendorizar `motion` -- 49 KB gzip real, más del doble de lo estimado --, componentes base, F03 transición de pestañas + Chart.js, F09 microinteracciones, F08+F11 toast de login + pantalla completa, y F04 modales unificados con Escape, el PR de mayor riesgo, aprobado con "OK modales" tras 2 condiciones de progressive enhancement/reabrir-durante-salida); PR 9 (scroll) descartado sin candidato real; verificación de cierre en producción confirmó MOBILIZE/tema oscuro/modales/F01 en vivo, con 1 hallazgo sin resolver (inestabilidad real, no reproducible en local, al cambiar de pestaña en ORLANT -- documentado, no es regresión de esta fase) (2026-10-09)
 

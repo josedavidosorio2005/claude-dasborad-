@@ -202,6 +202,38 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
 
 ## 4. Técnico (con costo y riesgo — ninguno aplicado sin pedirlo)
 
+- **Hallazgo nuevo, verificación de cierre de la Fase 136 (2026-10-09)
+  contra producción real**: `scripts/produccion/revision-final.js`
+  (`correrChequeosAdmin`) falló 2 veces seguidas (con reintento) al hacer
+  clic en la 2ª pestaña de ORLANT ("Tráfico de WhatsApp") justo después de
+  la 1ª — Playwright reporta el botón como "not stable" (su posición
+  sigue cambiando) durante los 30s completos de espera. **No reproduce en
+  local** con `seed:demo` (las 5 pestañas clicadas en sucesión, <40ms cada
+  una, sin problema) — solo contra producción, con los datos reales
+  (mucho más grandes) de ORLANT. Revisando el CSS: `.atab` (`styles.css`,
+  línea ~741) tiene `transition:all 0.2s` desde antes de la Fase
+  136 — la auditoría de la Fase 135 no lo marcó porque no es de los 13
+  hallazgos que buscaba. Es justo el patrón que `review-animations`
+  marca como bloqueo directo ("transition: all" es una animación de
+  propiedad sin acotar). Hipótesis más probable (NO confirmada, haría
+  falta una sesión de producción dedicada a medirlo): con contenido real
+  más alto que el de demo, el primer tab puede empujar la página justo al
+  punto donde aparece/desaparece la barra de scroll vertical, y el
+  redimensionado "responsive" de Chart.js reacciona a ese cambio de
+  ancho — si el punto es inestable (oscila), el layout de `#gd-tabs`
+  nunca se asienta. Esto **no es una regresión de esta fase**: ni el PR 8
+  (modales) ni ningún otro PR de la Fase 136 tocan `.atab` o la lógica de
+  cambio de pestaña — el `transition:all` ya existía. Prioridad BAJA/MEDIA
+  (el resto de la Fase 136 sí se verificó en vivo sin problema: MOBILIZE,
+  tema oscuro, los 3 modales del PR 8 con Escape, F01 en móvil — 0
+  errores de consola/peticiones fallidas en esos chequeos). Cómo se
+  cierra: una sesión dedicada que mida `getBoundingClientRect()` del
+  botón en varios frames seguidos mientras se reproduce (diagnóstico ya
+  escrito, sin usar, en el scratchpad de esta sesión) para confirmar la
+  causa real antes de tocar el CSS; de paso, cambiar ese `transition:all`
+  por las propiedades puntuales (`color`,`border-bottom-color`,
+  `background`) sin esperar a confirmar la causa, porque es una limpieza
+  correcta de todos modos.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
