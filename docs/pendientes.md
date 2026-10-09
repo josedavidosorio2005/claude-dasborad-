@@ -243,12 +243,36 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
   como bloqueo directo — vale la limpieza (propiedades puntuales en vez
   de `all`) independientemente de si resulta ser la causa.
 
-  **Sigue sin confirmarse**. Cómo se cierra: correr `correrChequeosAdmin`
-  (o el diagnóstico de esta sesión, guardado en el scratchpad) varias
-  veces seguidas en una misma sesión para medir si es realmente
-  intermitente (y con qué frecuencia) antes de decidir si amerita un fix
-  de código — no tocar `.atab`/`motionEnter(#gd-panels)` sin esa
-  confirmación.
+  **Medición de frecuencia ejecutada (2026-10-09, sesión aparte, solo
+  lectura)**: el mismo recorrido de `correrChequeosAdmin` (abrir ORLANT,
+  clic por las 8 pestañas reales — Tráfico de Llamadas/Tráfico de
+  WhatsApp/Llamadas y WhatsApp de salida/Agendamiento/Inasistencia/
+  Efectividad de Citas/Tipificación/Calidad) repetido **8 veces seguidas**
+  en la misma sesión ya logueada (64 clics en total, con el mismo
+  diagnóstico de `rect`/`opacity`/intercepción listo para capturar
+  evidencia si fallaba de nuevo): **0 fallos de 64 (0,0 %)**, cada clic
+  resuelto en 11–60ms. Sumado a la corrida anterior (también limpia, 2/2),
+  van **6 intentos limpios seguidos de 1** sin reproducir, contra los 2
+  fallos reales de la verificación original.
+
+  **Lectura honesta de la evidencia**: con 64 clics consecutivos sin un
+  solo fallo, ya NO parece un bug determinístico de CSS/`motionEnter`
+  esperando a cualquier clic — si lo fuera, debería haber fallado al
+  menos una vez en 64 intentos. La explicación más plausible ahora es
+  que los 2 fallos originales fueron específicos del **momento exacto**
+  en que ocurrieron: la primerísima sesión de producción después del
+  deploy recién hecho del PR 8 (contenedor recién reiniciado, primera
+  petición real tras el despliegue — posible arranque en frío de la
+  instancia/caché del sistema de archivos, no relacionado con el código
+  de esta fase). No se pudo confirmar esa hipótesis tampoco (haría falta
+  medir justo después de un deploy nuevo, no se fuerza un deploy solo
+  para esto). **Prioridad bajada de ALTA a BAJA** — sigue sin una causa
+  de código confirmada, y la evidencia ahora pesa más hacia "condición
+  transitoria del momento" que hacia una regresión reproducible. `.atab
+  {transition:all 0.2s}` sigue siendo una limpieza válida por separado
+  (patrón que `review-animations` marca directo), sin relación confirmada
+  con este hallazgo — se deja para cuando se toque `.atab` por otra razón,
+  no como arreglo de este hallazgo puntual.
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: el inventario de la Parte 1 de esa fase midió
   Inasistencia como "especialidades distintas por mes" (17-18) para
