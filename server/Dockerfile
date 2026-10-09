@@ -1,6 +1,10 @@
-# syntax=docker/dockerfile:1
+# syntax=public.ecr.aws/docker/dockerfile:1
 #
 # Imagen de produccion para el backend de InConexion Platform.
+# (La directiva de syntax tambien se baja del espejo publico de Amazon --
+# docker.io/docker/dockerfile dio 504 Gateway Timeout dos veces seguidas
+# desde los runners de GitHub, 9-oct-2026, el mismo dia del 429 del FROM
+# node de mas abajo.)
 #
 # IMPORTANTE: el contexto de build debe ser la RAIZ del repo (no server/),
 # porque la imagen necesita tanto server/ como public/. Construir con:
