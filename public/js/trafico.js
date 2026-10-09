@@ -689,6 +689,11 @@ var TRAFICO_SUBTAB_TITULOS = {
   // panel (no solo Mobilize), pero nadie mas la referencia en su `subtabs`
   // hoy, asi que no cambia nada para ORLANT/AURORA/HLM.
   asa: 'ASA — tiempo promedio de respuesta',
+  // Fase 138 (PR2, pedido de Edwin 09/10): ASA+AHT juntos en 1 sub-pestaña
+  // (reemplaza las 2 separadas "asa"/"aht" que tenia Mobilize desde la
+  // Fase 131) -- mismo patron que "asaata" (ver _traficoDibujarAsaAht mas
+  // abajo). Disponible para cualquier panel, pero solo Mobilize la usa hoy.
+  asaaht: 'ASA y AHT — tiempo promedio de respuesta y de atención',
 };
 // Fase 87 (tema B) / Fase 90 (tema A): mismos 4 titulos salvo "sl" --
 // WhatsApp grafica LAS DOS series (20s, que ya existe en Wolkvox, y 5
@@ -699,7 +704,7 @@ var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
 });
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
-  asa: '-canvas-asa-',
+  asa: '-canvas-asa-', asaaht: '-canvas-asaaht-',
 };
 // Fase 77 (pedido de Edwin/Jairo, 25/09): en la reunion del 25/09 los
 // valores MENSUALES de SL y AHT que muestra la plataforma no coincidian con
@@ -724,7 +729,7 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
   }
-  var nota = (activo === 'sl' || activo === 'aht')
+  var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
   var resumenSeccion = resumenSeccionId ? '<div id="'+resumenSeccionId+'" class="aurora-kpis" style="margin-bottom:10px"></div>' : '';
@@ -1040,6 +1045,30 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
   }
 }
 
+// Fase 138 (PR2, pedido de Edwin 09/10, Mobilize): ASA y AHT juntos en 1
+// sola grafica -- mismo patron que _traficoDibujarAsaAta (ASA+ATA), aqui
+// con ahtSegundos en vez de ataSegundos. No-op si su canvas no esta en el
+// DOM (ORLANT/AURORA/HLM no piden esta sub-pestaña).
+function _traficoDibujarAsaAht(prefijo, i, agregadoComb, fmtTiempo){
+  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
+  var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
+  var oAsaAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+  if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oAsaAht, fmtDL);
+  else oAsaAht.plugins.datalabels = { display:false };
+  oAsaAht.scales.y.ticks.callback = fmt;
+  oAsaAht.plugins.tooltip = { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmt(ctx.parsed.y); } } };
+  var datasets = [
+    { label:'ASA', data: agregadoComb.map(function(a){return a.asaSegundos;}), borderColor: CDl, backgroundColor: CDl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+    { label:'AHT', data: agregadoComb.map(function(a){return a.ahtSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false },
+  ];
+  var canvasId = prefijo+'-canvas-asaaht-'+i;
+  if(typeof _gdChart === 'function'){
+    _gdChart(canvasId, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}), datasets: datasets }, options: oAsaAht });
+  }
+}
+
 // Solo SL 20s en Llamadas (Fase 68, Pedido 3): serviceLevel10secPct/
 // serviceLevel30secPct se siguen calculando y guardando igual en ambos
 // canales, solo dejaron de graficarse aqui. Llamadas llama esta funcion
@@ -1159,7 +1188,8 @@ function _traficoRenderContenido(campana, sede, i){
   _traficoDibujarAbandono('tv', i, agregadoComb);
   _traficoDibujarAht('tv', i, agregadoComb);
   _traficoDibujarAsaAta('tv', i, agregadoComb);
-  _traficoDibujarAsaAta('tv', i, agregadoComb, null, true); // sub-pestaña "asa" sola (Mobilize) -- no-op si su canvas no esta en el DOM
+  _traficoDibujarAsaAta('tv', i, agregadoComb, null, true); // sub-pestaña "asa" sola -- no-op si su canvas no esta en el DOM
+  _traficoDibujarAsaAht('tv', i, agregadoComb); // sub-pestaña "asaaht" (Mobilize, Fase 138) -- no-op si su canvas no esta en el DOM
   _traficoDibujarSL('tv', i, agregadoComb);
 
   // Fase 131 (Parte 2, pedido de Edwin para Mobilize): "cada sección con SU
@@ -1195,6 +1225,9 @@ function _traficoRenderContenido(campana, sede, i){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
       } else if(activoSec === 'aht'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
+      } else if(activoSec === 'asaaht'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>' +
+          '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
       }
       elResumenSec.innerHTML = htmlSec;
     }
