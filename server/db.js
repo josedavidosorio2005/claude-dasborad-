@@ -319,6 +319,31 @@ CREATE TABLE IF NOT EXISTS tipificaciones (
 );
 CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificaciones(campana, canal, fecha);
 
+-- Llamadas unicas de Mobilize (Fase 138, PR3, pedido de Edwin 09/10/2026):
+-- llamadas de INGRESO deduplicadas por (dia, telefono) -- un mismo numero
+-- que llama 2 veces el mismo dia cuenta 1 sola vez; dias distintos cuentan
+-- aparte. El telefono SOLO se usa EN MEMORIA, en el navegador, para ese
+-- deduplicado (public/js/llamadas-unicas-logic.js) -- a proposito, esta
+-- tabla NO TIENE columna de telefono: nunca llega al servidor, nunca se
+-- guarda, nunca se exporta (ver server/tests/fase138-pr3-llamadas-unicas-*
+-- .test.js, que falla si algun INSERT algun dia llegara a incluirlo).
+-- 'tipo' viene de SKILL_NAME = 'NO CONTESTADAS' (normalizado mayusculas/
+-- acentos/espacios) -> ABANDONADA; cualquier otro valor -> CONTESTADA (su
+-- 'skill' real se guarda tal cual; las abandonadas guardan skill='Abandonadas',
+-- nunca el SKILL_NAME crudo "NO CONTESTADAS" -- ver llamadasUnicasParseFilas).
+CREATE TABLE IF NOT EXISTS llamadas_unicas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  fecha TEXT NOT NULL,               -- 'AAAA-MM-DD'
+  tipo TEXT NOT NULL,                -- CONTESTADA | ABANDONADA
+  skill TEXT NOT NULL,
+  agente TEXT NOT NULL,              -- AGENT_NAME tal cual (alias aplicado, ver aplicarAliasAFilas)
+  archivoNombre TEXT NOT NULL DEFAULT '',
+  cargadoPorNombre TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_llamadas_unicas_campana_fecha ON llamadas_unicas(campana, fecha);
+
 -- Inasistencia de ORLANT (Fase 98, pedido urgente de Edwin; Fase 108,
 -- pedido textual de InCo: "que se pueda filtrar por sede, especialidad,
 -- nombre entidad"): un total AGREGADO por (mes,sede,especialidad,entidad)
@@ -3319,6 +3344,48 @@ runOnceMigration('dashboards_config_mobilize_flujo_asaaht_v1', () => {
   );
   if (!config.isTest) {
     console.log('[db] Migracion dashboards_config_mobilize_flujo_asaaht_v1 aplicada.');
+  }
+});
+
+// Fase 138 (PR3, pedido de Edwin 09/10/2026): agrega el panel
+// "llamadas_unicas_panel" al tab "flujo" de MOBILIZE, PRIMERO en el array
+// (fila superior, mitad izquierda -- ver docs/pendientes.md). Idempotente:
+// si el panel ya existe, no se toca nada. Nunca pisa un panel personalizado
+// -- solo AGREGA al array, nunca reemplaza los que ya estaban.
+runOnceMigration('dashboards_config_mobilize_llamadas_unicas_panel_v1', () => {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con el panel nuevo
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  if (!tab) return;
+  const yaTiene = (tab.panels || []).some((p) => p && p.tipo === 'llamadas_unicas_panel');
+  if (yaTiene) return;
+  // Defensiva (mismo criterio que las demas migraciones de dashboards_config):
+  // solo se agrega el panel nuevo si el tab "flujo" ya tiene la forma
+  // reconocible real (un panel trafico_combo) -- un fixture de prueba u otra
+  // forma personalizada se deja intacta, nunca se le antepone nada a ciegas.
+  const esViejoReconocible = (tab.panels || []).some((p) => p && p.tipo === 'trafico_combo');
+  if (!esViejoReconocible) {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_llamadas_unicas_panel_v1: el tab "flujo" de MOBILIZE no tiene un panel trafico_combo reconocible -- se deja intacto, revisar a mano.');
+    }
+    return;
+  }
+
+  tab.panels = [{ tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' }, ...(tab.panels || [])];
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_llamadas_unicas_panel_v1 aplicada.');
   }
 });
 

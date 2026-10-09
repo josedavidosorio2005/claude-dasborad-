@@ -82,7 +82,15 @@ test('migracion dashboards_config_mobilize_tipificacion_tab_v1: agrega el tab "t
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('MOBILIZE');
   const layout = JSON.parse(row.layout);
   assert.equal(layout.tabs.length, 3);
-  assert.deepEqual(layout.tabs[0], LAYOUT_PARTE_2.tabs[0], 'el tab "flujo" original no se toco');
+  // Fase 138, PR3 (misma carga de db.js): este MISMO fixture (flujo con un
+  // panel trafico_combo reconocible) tambien recibe el panel nuevo
+  // llamadas_unicas_panel, PRIMERO en el array -- efecto esperado y
+  // correcto de esa migracion, no un error de esta. Se verifica que el
+  // panel trafico_combo original sigue intacto DENTRO del array ya mas
+  // largo (en vez de asumir que "flujo" completo quedo sin tocar).
+  const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
+  assert.deepEqual(tabFlujo.panels.find((p) => p.tipo === 'trafico_combo'), LAYOUT_PARTE_2.tabs[0].panels[0], 'el panel trafico_combo original no se toco');
+  assert.ok(tabFlujo.panels.some((p) => p.tipo === 'llamadas_unicas_panel'), 'gana el panel llamadas_unicas_panel (Fase 138, PR3)');
   assert.deepEqual(layout.tabs[1], LAYOUT_PARTE_2.tabs[1], 'el tab "calidad" original no se toco');
   const tabTipif = layout.tabs.find((t) => t.key === 'tipificacion');
   assert.ok(tabTipif, 'el tab "tipificacion" debe existir ahora');
