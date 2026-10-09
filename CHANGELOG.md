@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.21.0 — Octubre 2026
+
+**Fase 132 (Parte 8): el dashboard de Mobilize ya muestra su propio
+logo en el encabezado.**
+
+- El logo de Mobilize aparece arriba a la izquierda, dentro del
+  encabezado teal, solo en su propio dashboard — ningún otro cliente
+  cambia.
+- Es un logo **provisional** (una captura chica que mandaron, se ve
+  bien hasta cierto tamaño) — en cuanto Edwin mande el original en
+  alta resolución, se reemplaza sin que nadie note el cambio.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.20.1 — Octubre 2026
 
 **Fase 132 (cierre): el nombre de la marca ya se escribe igual en todas

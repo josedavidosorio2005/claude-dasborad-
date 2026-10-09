@@ -854,6 +854,24 @@ document.addEventListener('fullscreenchange', _gdOnFullscreenChange);
 document.addEventListener('webkitfullscreenchange', _gdOnFullscreenChange);
 
 function renderGenericHeader(){
+  // Fase 132 (Parte 8): logo de Mobilize en el encabezado -- unica
+  // version (clara, para fondo oscuro) porque .aurora-header es SIEMPRE
+  // var(--c-brand) (teal fijo, no cambia con el tema). Provisional: ver
+  // docs/pendientes.md (falta el original en alta resolucion de Edwin).
+  var elLogo = document.getElementById('gd-cliente-logo');
+  if(elLogo){
+    if(_gd.cliente === 'MOBILIZE'){
+      elLogo.src = 'img/clientes/mobilize-logo.png';
+      elLogo.srcset = 'img/clientes/mobilize-logo.png 1x, img/clientes/mobilize-logo@2x.png 2x';
+      elLogo.alt = 'Mobilize';
+      elLogo.style.display = '';
+    } else {
+      elLogo.style.display = 'none';
+      elLogo.removeAttribute('src');
+      elLogo.removeAttribute('srcset');
+      elLogo.alt = '';
+    }
+  }
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   var sub = document.getElementById('gd-sub');
   // Fase 122 (pedido de Edwin: "con la fecha uno se enreda mucho, que salga

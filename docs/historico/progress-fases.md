@@ -13633,3 +13633,46 @@ bajo, este PR no tocó código de dashboards.
 ### Estado final de la Fase 132 (cierre)
 
 Ver el resumen corto en `PROGRESS.md`.
+
+## Fase 132 (Parte 8) — Logo de Mobilize en el encabezado de su propio dashboard (2026-10-08)
+
+Pedido original: Edwin mandó 2 archivos provisionales a
+`datos-inconexion\marca\` (`mobilize-logo-fondo-oscuro.png`/`-fondo-
+claro.png`, 688×124, transparentes — una captura chica, se ve bien solo
+hasta ~150px de ancho). Mostrar el logo SOLO en el encabezado del
+dashboard de Mobilize (los demás clientes no cambian).
+
+**Hecho:** `.aurora-header` (el encabezado del dashboard genérico) es
+SIEMPRE `var(--c-brand)` (teal fijo, no cambia con el tema, igual que el
+navbar) — por eso se usa una sola versión del logo (la clara, "fondo-
+oscuro.png", pensada para fondo oscuro), sin alternar claro/oscuro como
+el logo del login (que sí vive sobre un fondo que cambia). `<img
+id="gd-cliente-logo">` nuevo en `public/index.html` (oculto por defecto,
+`display:none` inline), `renderGenericHeader()`
+(`dashboard-generic.js`) le pone `src`/`srcset`/`alt="Mobilize"` y lo
+muestra SOLO si `_gd.cliente === 'MOBILIZE'`, lo oculta y le quita el
+`src` para cualquier otro cliente. `public/img/clientes/mobilize-
+logo.png` (140×25) + `@2x` (280×50) generados con `sharp` en una
+carpeta temporal fuera del repo (igual que el logo de InConexion en la
+Fase 132) — nunca se commiteó el original. `.gd-cliente-logo` nueva en
+`styles.css` (`max-width:140px`). `docs/pendientes.md` anotado: logo
+provisional, falta el original en alta resolución de Edwin.
+
+**Verificado:** suite completa 1368/1368 (3 pruebas nuevas,
+`fase132-08-logo-mobilize.test.js`, que fallan si el `<img>` desaparece
+del HTML o si los archivos `mobilize-logo.png`/`@2x` dejan de existir de
+verdad en `public/img/clientes/`), `npm audit` en 0. Verificación visual
+local (Playwright headless contra un servidor local con `seed:demo`,
+cuenta ADMIN real vía `openGenericDashboard()`): el logo aparece en el
+dashboard de MOBILIZE (140px, `naturalWidth=140`, carga sin error) y NO
+aparece en el de ORLANT (`display:none`, sin `src`), 0 errores de
+consola en los 2.
+
+**No verificado en esta fase todavía**: producción real (pendiente del
+deploy + la pasada visual con sesión real del usuario — ver cierre de
+esta fase en `PROGRESS.md`).
+
+### Estado final de la Fase 132 (Parte 8)
+
+Ver el resumen corto y el resultado de producción en `PROGRESS.md` (se
+completa al cerrar el PR y confirmar el deploy).
