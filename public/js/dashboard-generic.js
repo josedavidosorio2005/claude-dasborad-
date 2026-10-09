@@ -1062,12 +1062,21 @@ document.getElementById('gd-panels').addEventListener('click', function(e){
   if(subBtn) switchGenericSubtab(subBtn.dataset.gdsubtab);
 });
 
+// Fase 136 (PR 6): transicion de entrada SOLO al cambiar de pestana/sub-
+// pestana real (aqui y en switchGenericSubtab) -- NUNCA en
+// onGdMesChange/onGdCompChange/onGdVistaChange/_gdIrAMes ni en el
+// listener de theme.js, que tambien llaman a renderGenericTab() pero son
+// cambios de FILTRO (mes/comparar/vista), no de seccion -- un supervisor
+// los usa para leer una cifra rapido, frecuentes, no deben esperar una
+// animacion (ver docs/auditoria-ui-fase135.md, Paso 4: "nada que retrase
+// ver un numero"). motionEnter() esta en motion-helpers.js.
 function switchGenericTab(key){
   _gd.tab = key;
   _gd.subtab = null; // cada pestana nueva empieza en su primera sub-pestana (si tiene)
   document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(key);
+  if (typeof motionEnter === 'function') motionEnter(document.getElementById('gd-panels'));
   _gdActualizarCompararContra();
 }
 
@@ -1087,6 +1096,7 @@ function switchGenericSubtab(key){
   _gd.subtab = key;
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(_gd.tab);
+  if (typeof motionEnter === 'function') motionEnter(document.getElementById('gd-panels'));
   _gdActualizarCompararContra();
 }
 

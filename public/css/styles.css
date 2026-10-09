@@ -735,7 +735,16 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Tab panels */
 .atab-panel{display:none;padding:16px 18px 20px;}
 .atab-panel.visible{display:block;}
-#gd-panels{padding:16px 18px 20px;}
+/* Fase 136 (PR 6): transicion de entrada al cambiar de pestana/sub-
+   pestana (switchGenericTab/switchGenericSubtab en dashboard-generic.js
+   llaman a motionEnter() despues de reemplazar el contenido via
+   innerHTML -- el "exit" de la pestana vieja no se anima por separado,
+   desaparece instantaneo junto con el innerHTML, que es aceptable: el
+   contenido esta a punto de destruirse de todas formas, no hay nada que
+   preservar visualmente). Solo opacity/transform (GPU), --dur-medium
+   (200ms, tabla de la especificacion para pestanas) + --ease-out. */
+#gd-panels{padding:16px 18px 20px;opacity:0;transform:translateY(4px);transition:opacity var(--dur-medium) var(--ease-out),transform var(--dur-medium) var(--ease-out);}
+#gd-panels.motion-show{opacity:1;transform:translateY(0);}
 #gd-panels .aurora-kpis{padding:0;background:none;border:none;margin-bottom:14px;}
 
 /* Sub-pestanas dentro de una pestana (Fase 40) -- un nivel visualmente mas
