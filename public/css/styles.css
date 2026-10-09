@@ -689,7 +689,17 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 
 /* Tabs */
 .aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;flex-shrink:0;}
-.atab{padding:10px 16px;font-size:var(--fs-small);font-weight:600;color:var(--c-text-2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.2s;}
+/* Fase 136 (F01, hallazgo real de la Fase 135: a 412px las pestañas se
+   superponían ilegibles). Causa real: el min-width:24/44px de objetivos
+   táctiles (línea ~930, Fase 133) es un valor EXPLÍCITO -- sustituye el
+   min-width:auto que por defecto protege a un flex item de encogerse por
+   debajo del ancho de su propio texto (que aquí no envuelve por
+   white-space:nowrap). Sin esa protección, flex-shrink:1 (el default)
+   comprimía cada pestaña hasta superponer su texto con la siguiente, en
+   vez de activar el overflow-x:auto que .aurora-tabs ya tenía. Con
+   flex-shrink:0 cada pestaña conserva su ancho natural y el scroll
+   horizontal que ya existía pasa a funcionar de verdad. */
+.atab{padding:10px 16px;font-size:var(--fs-small);font-weight:600;color:var(--c-text-2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;flex-shrink:0;transition:all 0.2s;}
 .atab:hover{color:var(--c-primary);background:var(--c-surface-subtle);}
 .atab.atab-active{color:var(--c-primary);border-bottom-color:var(--c-primary-mid);background:var(--c-info-bg);}
 

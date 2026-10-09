@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.21.1 — Octubre 2026
+
+**Fase 136 (PR 1): las pestañas del dashboard ya no se superponen en el
+celular.**
+
+- En pantallas angostas (celular), las pestañas de un dashboard (Tráfico
+  de Llamadas, Calidad, etc.) a veces se veían con el texto encimado,
+  difícil de leer.
+- Ahora, si no caben todas en la pantalla, se puede deslizar el dedo
+  para verlas una por una — nada se superpone.
+- Nada de esto cambia ningún dato ni ningún número.
+
 ## v1.21.0 — Octubre 2026
 
 **Fase 132 (Parte 8): el dashboard de Mobilize ya muestra su propio
