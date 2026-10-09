@@ -29,7 +29,18 @@ function aplicarTema(t){
   if(cambioReal) refrescarGraficasTema();
 }
 
+// Fase 136 (PR 7): microinteraccion SOLO en el clic real del usuario
+// (nunca cuando aplicarTema() se llama programaticamente -- ej. al
+// restaurar el tema guardado al cargar la pagina, o desde un script de
+// verificacion -- eso no es una accion que el usuario necesite ver
+// confirmada). Un giro de 180 grados, 200ms, en el propio icono -- el
+// contenido del dashboard NO se re-anima (refrescarGraficasTema() sigue
+// sin pasar por motionEnter, ver PR 6).
 function toggleTema(){
+  document.querySelectorAll('.theme-toggle').forEach(function(btn){
+    btn.classList.add('theme-spin');
+    setTimeout(function(){ btn.classList.remove('theme-spin'); }, 250);
+  });
   aplicarTema(temaActual() === 'dark' ? 'light' : 'dark');
 }
 

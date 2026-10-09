@@ -246,6 +246,44 @@ refresco de página (verificado con `addInitScript`: el atributo debe
 estar puesto ANTES de que `charts.js` corra, mismo requisito de tiempo
 que `data-theme`).
 
+## Microinteracciones y estados vacíos (Fase 136, PR 7)
+
+**F09 (hallazgo real de la Fase 135)**: un `doughnut` de Chart.js con
+los 3 valores en 0 (`Sobresaliente`/`No Crítico`/`Crítico`) no dibuja
+ningún sector — quedaba un área en blanco sin explicación en 2 vistas
+("Mis Resultados de Calidad" del portal Asesor, y "Reportes" de Calidad
+del admin), a diferencia del resto de la plataforma (que sí avisa "Sin
+datos..."). `mrMostrarSinDatosOCanvas()`
+(`mis-resultados.js`)/`ccMostrarSinDatosOCanvas()` (`calidad.js`)
+alternan entre el `<canvas>` real y el mismo texto que ya usa
+`dashboard-generic.js` para el resto de los paneles ("Sin datos de
+&lt;etiqueta&gt; todavía.") — un hueco en blanco nunca se ve distinto
+según la vista.
+
+**Guardado** (`.save-flash`, ya existía): solo se tokenizó la duración
+(0.3s suelto → `var(--dur-medium)`).
+
+**Cambio de tema**: el ícono (luna/sol) ahora gira 180° (200ms,
+`--dur-medium`/`--ease-out`) al hacer clic — antes cambiaba de golpe. La
+clase `.theme-spin` se agrega **solo en `toggleTema()`** (el clic real
+del usuario), nunca dentro de `aplicarTema()` (que también se llama
+programáticamente — restaurar el tema guardado al cargar la página, o
+un script de verificación — eso no es una acción que el usuario
+necesite ver confirmada). El contenido del dashboard sigue sin
+re-animarse al cambiar de tema (ver PR 6).
+
+**Copiar**: no existe ninguna función de copiar al portapapeles en la
+plataforma hoy — no se inventó una nueva (fuera de alcance: esta fase
+mejora lo que ya existe, no agrega funciones).
+
+**Exportar**: ya avisa con un toast si la exportación falla
+(`_gdExportExcel`); el éxito lo confirma el propio navegador (indicador
+nativo de descarga) — un toast adicional de "exportado" sería
+redundante con eso, no se agregó.
+
+**Cambio de mes**: sigue siendo instantáneo a propósito — no se toca
+(ver PR 6, Paso 4 de la auditoría: "nada que retrase ver un número").
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

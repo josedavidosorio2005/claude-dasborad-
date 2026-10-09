@@ -703,6 +703,23 @@ function ccmk(id,cfg){
   _cc[id]=new Chart(el,cfg);
   if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_cc[id]);
 }
+// Fase 136 (PR 7, F09): mismo helper y mismo texto que
+// mrMostrarSinDatosOCanvas (mis-resultados.js) -- un doughnut de 3
+// valores en 0 no dibuja ningun sector, quedaba en blanco sin avisar.
+function ccMostrarSinDatosOCanvas(canvasId, hayDatos, etiqueta){
+  var host = document.getElementById(canvasId);
+  var wrap = host ? host.parentElement : document.querySelector('[data-cc-wrap-de="'+canvasId+'"]');
+  if(!wrap) return;
+  if(hayDatos){
+    if(!document.getElementById(canvasId)){
+      wrap.innerHTML = '<canvas id="'+canvasId+'"></canvas>';
+    }
+  } else {
+    if(_cc[canvasId]){ try{_cc[canvasId].destroy();}catch(e){} delete _cc[canvasId]; }
+    wrap.setAttribute('data-cc-wrap-de', canvasId);
+    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px">Sin datos de '+esc(etiqueta)+' todavia.</div>';
+  }
+}
 
 async function descargarReporteGeneral(){
   if(typeof XLSX==='undefined'){ showToast('No se pudo cargar el generador de Excel. Verifique su conexion a internet e intente de nuevo.'); return; }
@@ -796,7 +813,10 @@ function renderCalReportes(){
     '<div class="aurora-kpi kpi-red"><div class="kv">'+critico+'</div><div class="kl">🔴 Critico</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+arr.length+'</div><div class="kl">Total Evaluados'+(_cmesFiltro?' ('+_cmesFiltro+')':'')+'</div></div>';
 
-  ccmk('cch-clasificacion',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
+  ccMostrarSinDatosOCanvas('cch-clasificacion', arr.length > 0, 'Distribucion de Clasificacion');
+  if (arr.length > 0) {
+    ccmk('cch-clasificacion',{type:'doughnut',data:{labels:['Sobresaliente','No Critico','Critico'],datasets:[{data:[sobresaliente,noCritico,critico],backgroundColor:[CG,CO,CR]}]},options:loDatalabelsAuto(loPie())});
+  }
 
   var lideres = calLideresCumplimiento(_ccampana, curMonth);
   var nombres = lideres.map(function(l){return l.liderNombre;});

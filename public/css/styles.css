@@ -222,7 +222,14 @@
 select option,select optgroup{color:var(--c-text);background-color:var(--c-surface);}
 
 /* ── Toggle de tema (navbar + login) ── */
-.theme-toggle{background:none;border:none;color:var(--c-on-brand);font-size:var(--fs-h3);line-height:1;padding:4px 8px;cursor:pointer;border-radius:var(--r-sm);}
+/* Fase 136 (PR 7): microinteraccion de "cambio de tema" -- el icono
+   (luna/sol) giraba sin transicion, de golpe. Un giro corto (200ms,
+   --dur-medium) en el propio boton cuando cambia -- no en el contenido
+   del dashboard (ese sigue siendo instantaneo, Paso 4 de la auditoria:
+   el cambio de tema NO debe re-disparar el fade de #gd-panels, ver PR
+   6). Clase .theme-spin la agrega/quita toggleTema() (theme.js). */
+.theme-toggle{background:none;border:none;color:var(--c-on-brand);font-size:var(--fs-h3);line-height:1;padding:4px 8px;cursor:pointer;border-radius:var(--r-sm);display:inline-block;transition:transform var(--dur-medium) var(--ease-out);}
+.theme-toggle.theme-spin{transform:rotate(180deg);}
 .theme-toggle:hover{background:rgba(255,255,255,0.12);}
 .theme-toggle-fab{position:fixed;top:18px;right:18px;background:var(--c-surface);color:var(--c-primary);border:1.5px solid var(--c-border);width:40px;height:40px;border-radius:50%;font-size:var(--fs-h3);box-shadow:var(--shadow-md);z-index:50;cursor:pointer;}
 .theme-toggle-fab:hover{background:var(--c-surface-subtle);}
@@ -341,7 +348,10 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 .btn-logout:hover{background:rgba(255,255,255,0.22);}
 .navbar-help-link{background:rgba(255,255,255,0.12);color:var(--c-on-brand);border:none;border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;text-decoration:none;display:inline-block;}
 .navbar-help-link:hover{background:rgba(255,255,255,0.22);}
-.save-flash{font-size:var(--fs-note);color:#2ecc71;font-weight:700;opacity:0;transition:opacity 0.3s;white-space:nowrap;}
+/* Fase 136 (PR 7): transicion tokenizada (--dur-medium, antes 0.3s
+   suelto -- 100ms de diferencia, imperceptible) para la microinteraccion
+   de "Guardado" (saveData(), state.js: aparece, se queda 1.6s, se va). */
+.save-flash{font-size:var(--fs-note);color:#2ecc71;font-weight:700;opacity:0;transition:opacity var(--dur-medium) var(--ease-out);white-space:nowrap;}
 .save-flash.show{opacity:1;}
 
 /* Botón hamburguesa: abre/cierra el sidebar. Hasta la Fase 46 solo existía
