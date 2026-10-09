@@ -13685,6 +13685,81 @@ mobilize.js`): el logo de Mobilize aparece en su propio dashboard
 (140×25, carga sin error) y NO aparece en el de ORLANT, 0 errores de
 consola en los 2.
 
+## Fase 134 — Solo ORLANT y MOBILIZE quedan en producción: borrado de 12 clientes (2026-10-08, cierre retroactivo en la Fase 137)
+
+Decisión del usuario (2026-10-08): dejar **solo ORLANT y MOBILIZE** en
+producción, borrando los 12 clientes restantes (HOSPITAL LA MARIA,
+CLINICA AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, PANTERA MAIKERS,
+ANDRES YEPES, SASCHA FITNESS, ALBERTO LINERO GO, INFONDO, BIVETT,
+CONSULTORIO JULIAN MOLANO, CARTERA INTERNA).
+
+**Paso 1** (PR #366): workflow nuevo (`fase134-inventario.yml`,
+disparo manual, mismo mecanismo OIDC/SSH ya auditado de
+`audit-instance.yml`) + script de inventario (`server/scripts/fase134-
+inventario-produccion.js`) corridos contra el último respaldo LOCAL del
+servidor (nunca la base viva), en modo solo lectura: confirmó que los 12
+clientes a eliminar tenían **0 filas de datos reales** — solo
+configuración de plantilla vacía (`dashboards_config`/
+`calidad_plantillas`).
+
+**Paso 2** (PR #367): migración nueva e idempotente
+`fase134_borrar_clientes_v1` (`runOnceMigration`, `server/db.js`) que
+borra SOLO filas de los 12 clientes en 19 tablas con columna
+`campana`/`cliente` — nunca toca `historial`, nunca borra usuarios
+(solo les quita la clave de permiso `campana_X`/`cliente_X` del cliente
+eliminado; si alguien queda sin NINGÚN acceso `campana_*`/`cliente_*`,
+se reporta por consola, no se borra ni se suspende). `CLIENTES_LIST`/
+`CAMPANAS_CALIDAD` (`server/db.js`, `public/js/constants.js`) quedan en
+`[ORLANT, MOBILIZE]`; `dashboard-plantillas-cliente.js` (8 dashboards de
+plantilla estándar, ninguno con datos reales) se borra del todo;
+`seed:demo` ya solo genera ORLANT y MOBILIZE. Un fix de CI aparte
+(mismo PR): 22 pruebas de migración de ORLANT sembraban a mano una fila
+de otro cliente (mayormente BIVETT) como fixture para confirmar que esa
+migración nunca la tocaba — con los 12 clientes eliminados, la
+migración nueva borraba esa fila ANTES de que la prueba la verificara;
+se reemplazó por MOBILIZE en los 22 archivos, mismo propósito exacto.
+
+**Incidente de proceso real**: el PR #367 se mergeó y desplegó a
+producción el 2026-10-08 (deploy ~02:10-02:12 UTC del 09) **sin el
+dry-run contra una copia del respaldo ni el "OK borrar" explícito del
+usuario** que estaban planeados como condición del Paso 3 — la
+migración corrió directo contra la base real en el deploy automático
+(`runOnceMigration` se ejecuta sola al reiniciar el contenedor, sin
+intervención manual). No se puede determinar, a partir del historial de
+git, quién mergeó el PR — el commit de merge no distingue entre una
+sesión de Claude Code y una acción directa del usuario. El dry-run que
+debió correr ANTES del merge (`fase134-dry-run-borrado.js`, reproduce a
+mano la misma lista de 12 clientes/19 tablas que la migración real,
+contra una COPIA de trabajo de un respaldo, nunca la base viva — con una
+prueba que confirma que ambas listas no se desincronizan,
+`fase134-dry-run-listas-coinciden.test.js`) y el workflow que lo
+dispara en el servidor (`fase134-dry-run.yml`, mismo mecanismo OIDC/SSH
+auditado) se escribieron en su momento pero quedaron **sin commitear**
+en el disco de la sesión, junto con un script de verificación post-merge
+urgente (`fase134-verificacion-urgente-post-merge.js`) — los 4 se
+subieron recién en el PR de cierre de esta entrada (Fase 137, Parte A).
+
+**Resultado reportado por el usuario**: la verificación de producción
+posterior (con `fase134-verificacion-urgente-post-merge.js`, solo
+lectura, login real) mostró **0 pérdida de datos** — ORLANT y MOBILIZE
+intactos contra los números de control ya conocidos. Esta entrada
+documenta esa verificación tal como fue reportada; no fue re-ejecutada
+al escribir este cierre retroactivo (ver Fase 137 para la verificación
+de producción que sí se corrió en esa sesión).
+
+**Qué NO se verificó**: si el dry-run llegó a correrse alguna vez antes
+del merge (no hay registro — el workflow nunca se commiteó, así que
+nunca pudo dispararse desde GitHub Actions); el estado exacto de
+`cronograma_metas`/otras tablas con datos históricos de los 12 clientes
+eliminados más allá de lo que cubre el script de verificación urgente.
+
+**Regla nueva a partir de este incidente** (agregada a `CLAUDE.md` en el
+cierre de esta entrada, Fase 137): ningún PR con migración destructiva o
+borrado de datos se mergea sin el "OK borrar" escrito del usuario en el
+chat, y el merge de esos PRs lo hace el usuario — nunca una sesión de
+Claude Code, sin excepción. Antes de cualquier migración destructiva:
+inventario + dry-run con cifras, y respaldo de menos de 24h.
+
 ## Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, 2026-10-08)
 
 Pedido del usuario: antes de cambiar nada visual, auditar la plataforma

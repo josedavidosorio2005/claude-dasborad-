@@ -34,8 +34,16 @@ narrativo de cada fase, fase por fase, vive en
   6 modales unificados.
 - **Producción**: `https://informa.inconexion.com.co` (único dominio
   desde la Fase 93, 29/09/2026).
-- **Foco actual**: solo **ORLANT** tiene datos reales en producción.
-  Clínica Aurora y Hospital La María siguen en cero. **Desde la Fase 126**
+- **Foco actual**: **solo ORLANT y MOBILIZE** existen en producción —
+  desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
+  filas de datos reales, solo configuración de plantilla vacía) se
+  borraron del todo (`fase134_borrar_clientes_v1`, `CLIENTES_LIST` en
+  `server/db.js` quedó en `[ORLANT, MOBILIZE]`) — no quedan "en cero",
+  dejaron de existir en el código. Esa fase se cerró retroactivamente en
+  la Fase 137 (incidente de proceso real: el PR se mergeó sin el
+  dry-run/"OK borrar" planeados — ver
+  [`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
+  y la regla nueva en `CLAUDE.md`). **Desde la Fase 126**
   (pedido explícito de Edwin: "todos los datos que yo no le haya pasado...
   como pruebas en las plantillas, hay que quitarlo"), ORLANT solo tiene
   **agosto y septiembre de 2026** en todas sus bases (más julio de
@@ -524,6 +532,7 @@ mismo orden):
 - Fase 130 — Calidad real de septiembre/2026 (95 monitoreos) + pedidos de la reunión con Edwin del 2026-10-07 (Inasistencia acepta "FECHA CITA"/normaliza SEDE 34, quita el aviso "incompleto", nueva gráfica de nombre+% promedio por asesor en Calidad) + 2 hallazgos reales corrigiendo la carga masiva de Calidad (filas de plantilla sin diligenciar, observaciones hasta 500 caracteres) + Parte 7: el limitador de tasa de la API ya no bloquea a toda una oficina por el error de una sola persona (ahora cuenta por usuario autenticado, no por IP); verificación final completa en producción (ADMIN y CLIENTES_DASH) EJECUTADA, con 2 traspiés reales documentados (límite de tasa agotado por corridas repetidas, autocompletado del navegador) antes de confirmarla en verde (2026-10-07)
 - Fase 131 — Cliente Mobilize: pestañas "Flujo de Llamadas" y "Tipificación" reusando el motor de ORLANT, "Última actualización" visible en cada dashboard (naranja Mobilize/verde de marca el resto), carga real de septiembre/2026 verificada en producción (2026-10-08)
 - Fase 132 — Marca InConexion®: logo real, favicon, teal oficial de marca (`#004150`) y tipografía Quicksand autoalojada; cambio puramente visual, 2 hallazgos de contraste pre-existentes documentados sin corregir (fuera de alcance, pertenecen a la Fase 121) (2026-10-08)
+- Fase 134 — Solo ORLANT y MOBILIZE quedan en producción: borrado de los otros 12 clientes (0 filas de datos reales, solo plantilla vacía), migración idempotente `fase134_borrar_clientes_v1`; **incidente de proceso real** (cierre retroactivo en la Fase 137): el PR se mergeó y desplegó sin el dry-run ni el "OK borrar" planeados — verificación posterior reportó 0 pérdida de datos; regla nueva en `CLAUDE.md` a partir de esto (2026-10-08)
 - Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, sin tocar producto ni producción): decisión de librería de movimiento con números reales (`motion` vendorizado, 22 KB gzip), inventario de consistencia contado con `grep`, 13 hallazgos con evidencia (bug de responsive en pestañas de ORLANT a 412px, CLS 0.81 al abrir un dashboard, Chart.js sin config de animación propia, 5 sistemas de modal sin transición compartida), línea base de rendimiento medida y plan de 8 PRs para la Fase 136 (2026-10-08)
 - Fase 136 — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135 (F01 pestañas móviles, F02 CLS, tokens, base de movimiento sin vendorizar `motion` -- 49 KB gzip real, más del doble de lo estimado --, componentes base, F03 transición de pestañas + Chart.js, F09 microinteracciones, F08+F11 toast de login + pantalla completa, y F04 modales unificados con Escape, el PR de mayor riesgo, aprobado con "OK modales" tras 2 condiciones de progressive enhancement/reabrir-durante-salida); PR 9 (scroll) descartado sin candidato real; verificación de cierre en producción confirmó MOBILIZE/tema oscuro/modales/F01 en vivo, con 1 hallazgo sin resolver (inestabilidad real, no reproducible en local, al cambiar de pestaña en ORLANT -- documentado, no es regresión de esta fase) (2026-10-09)
 

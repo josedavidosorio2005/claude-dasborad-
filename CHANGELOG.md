@@ -131,6 +131,22 @@ logo en el encabezado.**
   alta resolución, se reemplaza sin que nadie note el cambio.
 - Nada de esto cambia ningún dato ni ningún número.
 
+**Fase 134: solo ORLANT y MOBILIZE quedan en la plataforma — se
+quitaron 12 clientes que no tenían ningún dato real cargado.**
+(Nota agregada en la Fase 137 — esto se desplegó junto con lo de arriba
+en esta misma versión, pero no se había escrito en su momento.)
+
+- Los otros 12 clientes de la plataforma nunca tuvieron datos reales
+  cargados (solo quedaba la plantilla vacía) — se quitaron del todo
+  para que la plataforma muestre solo lo que de verdad se usa.
+- Nadie perdió acceso a ORLANT ni a MOBILIZE; nada de sus datos
+  cambió.
+- Esto se hizo sin la doble verificación que usamos siempre antes de
+  borrar algo (una prueba en seco primero, y la confirmación explícita
+  de Edwin/InCo después) — fue un error de proceso. La revisión
+  posterior confirmó que ORLANT y MOBILIZE quedaron intactos, pero a
+  partir de ahora ningún borrado de datos se hace sin esos 2 pasos.
+
 ## v1.20.1 — Octubre 2026
 
 **Fase 132 (cierre): el nombre de la marca ya se escribe igual en todas
