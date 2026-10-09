@@ -1,7 +1,8 @@
 // seed-demo.test.js — cubre las garantias del seed de demo (scripts/seed-demo.js):
 //  - idempotente (correrlo dos veces no duplica nada)
 //  - seed:demo:limpiar deja la base como estaba (solo borra lo marcado)
-//  - los 12 clientes quedan con carga en TODAS sus secciones
+//  - los clientes configurados (Fase 134: solo ORLANT y MOBILIZE) quedan con
+//    carga en TODAS sus secciones
 //  - el mensual de Nivel de Servicio que produce el seed coincide con el que
 //    produce el endpoint real de carga diaria, para las mismas filas.
 //
@@ -75,12 +76,16 @@ test('el seed de demo es idempotente: correrlo dos veces no duplica nada', () =>
   assert.equal(r3.cal.monitoreosCreados + r3.ns.diarioCreados + r3.inv.itemsCreados + r3.ger.kpisCreados + r3.gh.creados, 0);
 });
 
-test('los 12 dashboards de cliente quedan con carga en TODAS sus secciones', () => {
+test('los dashboards de cliente (Fase 134: solo ORLANT y MOBILIZE) quedan con carga en TODAS sus secciones', () => {
   correrSeedCompleto();
   const rows = db.prepare('SELECT DISTINCT cliente, seccion FROM dashboard_cargas').all();
   const cargados = new Set(rows.map((r) => r.cliente + '|' + r.seccion));
 
-  assert.equal(CLIENTES_LIST.length, 12, 'sanity check: deberian ser 12 clientes configurados');
+  assert.deepEqual(
+    CLIENTES_LIST.slice().sort(),
+    ['MOBILIZE', 'ORLANT'],
+    'sanity check (Fase 134): solo deberian quedar ORLANT y MOBILIZE configurados'
+  );
   for (const cfg of CONFIGS) {
     for (const seccionKey of Object.keys(cfg.secciones)) {
       assert.ok(

@@ -50,18 +50,18 @@ test('Fase 82: POST /dashboard/cargas exige clienteAccess del cliente AL QUE SE 
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   // Mismo shape que REPORTES real: cargarDatos global + SOLO campana_ORLANT.
   // Secciones/periodo elegidos a proposito para no chocar con otras pruebas
-  // de este archivo que tambien usan ORLANT/CLINICA AURORA (ORLANT tipificacion,
-  // CLINICA AURORA tipificacion, ambas con MES, ya las usan otras pruebas).
+  // de este archivo que tambien usan ORLANT/MOBILIZE (ORLANT tipificacion,
+  // MOBILIZE notas, ambas con MES, ya las usan otras pruebas).
   const loader = await makeUser(admin, { rol: 'REPORTES', perms: { cargarDatos: true, campana_ORLANT: true } });
 
-  // Sin acceso a CLINICA AURORA -> 403, y la base no cambia.
+  // Sin acceso a MOBILIZE -> 403, y la base no cambia.
   const sinAcceso = await request(app).post('/api/dashboard/cargas').set(auth(loader.token)).send({
-    cliente: 'CLINICA AURORA', seccion: 'sabados', cadencia: 'mensual', periodo: MES,
-    filas: [{ fecha: `${MES}-06`, llamadas: 3, whatsapp: 2 }],
+    cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: MES,
+    filas: [{ nota: 'x' }],
   });
   assert.equal(sinAcceso.status, 403, JSON.stringify(sinAcceso.body));
-  const listaAurora = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(admin));
-  assert.equal(listaAurora.body.filter((c) => c.periodo === MES && c.seccion === 'sabados').length, 0, 'el intento sin acceso NO debio escribir nada');
+  const listaAurora = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('MOBILIZE')).set(auth(admin));
+  assert.equal(listaAurora.body.filter((c) => c.periodo === MES && c.seccion === 'notas').length, 0, 'el intento sin acceso NO debio escribir nada');
 
   // CON acceso a ORLANT (su propio cliente) -> sigue funcionando igual que siempre.
   const conAcceso = await request(app).post('/api/dashboard/cargas').set(auth(loader.token)).send({
@@ -72,8 +72,8 @@ test('Fase 82: POST /dashboard/cargas exige clienteAccess del cliente AL QUE SE 
 
   // ADMIN (isFullAdmin) sigue pudiendo subir a CUALQUIER cliente, sin excepcion.
   const comoAdmin = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
-    cliente: 'CLINICA AURORA', seccion: 'sabados', cadencia: 'mensual', periodo: MES,
-    filas: [{ fecha: `${MES}-06`, llamadas: 3, whatsapp: 2 }],
+    cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: MES,
+    filas: [{ nota: 'x' }],
   });
   assert.equal(comoAdmin.status, 201, JSON.stringify(comoAdmin.body));
 });
@@ -122,12 +122,12 @@ test('Fase 81: GET /dashboard/cargas no manda el CONTENIDO de un cliente sin cli
   const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } }); // sin ningun cliente_/campana_
 
   const c1 = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
-    cliente: 'CLINICA AURORA', seccion: 'tipificacion', cadencia: 'mensual', periodo: MES,
-    filas: [{ canal: 'LLAMADA_ENTRADA', tipificacion: 'X', cantidad: 5 }],
+    cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: '2026-07',
+    filas: [{ nota: 'x' }],
   });
   assert.equal(c1.status, 201, JSON.stringify(c1.body));
 
-  const sinAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(loader.token));
+  const sinAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('MOBILIZE')).set(auth(loader.token));
   assert.equal(sinAcceso.status, 200);
   const fila = sinAcceso.body.find((c) => c.id === c1.body.id);
   assert.ok(fila, 'la carga debe seguir apareciendo en la lista (metadata global a proposito)');
@@ -135,8 +135,8 @@ test('Fase 81: GET /dashboard/cargas no manda el CONTENIDO de un cliente sin cli
   assert.equal(fila.filasCount, 1, 'el conteo si debe seguir disponible (para no duplicar cargas)');
 
   // Con acceso al cliente, el contenido completo SI viaja (nada cambia para el flujo normal).
-  await request(app).put('/api/users/' + loader.id + '/perms').set(auth(admin)).send({ perms: { Calidad: true, cargarDatos: true, ['campana_CLINICA AURORA']: true } });
-  const conAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(loader.token));
+  await request(app).put('/api/users/' + loader.id + '/perms').set(auth(admin)).send({ perms: { Calidad: true, cargarDatos: true, ['campana_MOBILIZE']: true } });
+  const conAcceso = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('MOBILIZE')).set(auth(loader.token));
   const fila2 = conAcceso.body.find((c) => c.id === c1.body.id);
   assert.equal(fila2.filas.length, 1, 'con acceso, el contenido si debe viajar completo');
 });
@@ -150,15 +150,15 @@ test('Fase 81: DELETE /dashboard/cargas/:id exige clienteAccess del cliente DE E
   const loader = await makeUser(admin, { rol: 'CALIDAD', perms: { Calidad: true, cargarDatos: true } }); // sin ningun cliente_/campana_
 
   const c1 = await request(app).post('/api/dashboard/cargas').set(auth(admin)).send({
-    cliente: 'CLINICA AURORA', seccion: 'llamadas', cadencia: 'diaria', periodo: MES,
-    filas: [{ fecha: `${MES}-01`, llamadas_ingresadas: 1, pct_contestadas: 90, pct_abandonadas: 10, aht_segundos: 60, wpp_ingresados: 1 }],
+    cliente: 'MOBILIZE', seccion: 'notas', cadencia: 'mensual', periodo: '2026-08',
+    filas: [{ nota: 'x' }],
   });
   assert.equal(c1.status, 201, JSON.stringify(c1.body));
 
   const delSinAcceso = await request(app).delete('/api/dashboard/cargas/' + c1.body.id).set(auth(loader.token));
   assert.equal(delSinAcceso.status, 403, JSON.stringify(delSinAcceso.body));
 
-  const sigueAhi = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('CLINICA AURORA')).set(auth(admin));
+  const sigueAhi = await request(app).get('/api/dashboard/cargas?cliente=' + encodeURIComponent('MOBILIZE')).set(auth(admin));
   assert.ok(sigueAhi.body.some((c) => c.id === c1.body.id), 'el intento sin acceso NO debe haber borrado la carga');
 
   const delConAdmin = await request(app).delete('/api/dashboard/cargas/' + c1.body.id).set(auth(admin));
@@ -281,23 +281,6 @@ test('acceso al dashboard: sin cliente_ORLANT -> 403; con permiso -> 200', async
 
   assert.equal((await request(app).get('/api/dashboard/ORLANT').set(auth(sin.token))).status, 403);
   assert.equal((await request(app).get('/api/dashboard/ORLANT').set(auth(con.token))).status, 200);
-});
-
-test('M3: los dashboards de cliente nuevos respetan la misma logica de permisos', async () => {
-  const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const sin = await makeUser(admin, { perms: { ClientesDash: true } });
-  const con = await makeUser(admin, { perms: { ClientesDash: true, cliente_INFONDO: true } });
-
-  assert.equal((await request(app).get('/api/dashboard/INFONDO').set(auth(sin.token))).status, 403);
-  const ok = await request(app).get('/api/dashboard/INFONDO').set(auth(con.token));
-  assert.equal(ok.status, 200);
-  assert.ok(ok.body.config.layout.tabs.some((t) => t.key === 'recaudo'));
-  // El dashboard de SASCHA usa la plantilla de atencion y expone su KPI de pedidos.
-  const sascha = await request(app)
-    .get('/api/dashboards/config/' + encodeURIComponent('SASCHA FITNESS'))
-    .set(auth(admin));
-  assert.equal(sascha.status, 200);
-  assert.ok(sascha.body.layout.kpis.some((k) => k.titulo === 'Pedidos'));
 });
 
 test('usuario semilla de dashboard cliente conserva acceso explicito a ORLANT', async () => {
@@ -578,38 +561,18 @@ test('DELETE /api/dashboards/config/:cliente borra la configuracion pero NUNCA l
   await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
 });
 
-test('Aurora y HLM tienen secciones definidas', async () => {
+test('dashboard/clientes y dashboard/secciones: solo ORLANT y MOBILIZE (Fase 134)', async () => {
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const cl = await request(app).get('/api/dashboard/clientes').set(auth(t));
-  // Los 3 dashboards migrados + los 9 de cliente de M3 (Fase A2).
-  ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT', 'TELEVENTAS SURA', 'INFONDO', 'BIVETT']
-    .forEach((c) => assert.ok(cl.body.clientes.includes(c), 'falta ' + c));
-  assert.equal(cl.body.clientes.length, 12);
+  assert.deepEqual(cl.body.clientes.slice().sort(), ['MOBILIZE', 'ORLANT']);
 
-  const au = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('CLINICA AURORA')).set(auth(t));
-  assert.equal(au.status, 200);
-  assert.ok(au.body.secciones.resumen && au.body.secciones.sabados);
+  const orl = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('ORLANT')).set(auth(t));
+  assert.equal(orl.status, 200);
+  assert.ok(orl.body.secciones.resumen);
 
-  const hlm = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(t));
-  assert.ok(hlm.body.secciones.dia && hlm.body.secciones.entidades);
-});
-
-test('HLM: carga por sede y lectura', async () => {
-  const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const c = await request(app)
-    .post('/api/dashboard/cargas')
-    .set(auth(admin))
-    .send({
-      cliente: 'HOSPITAL LA MARIA', seccion: 'resumen', cadencia: 'mensual', periodo: '2026-06',
-      filas: [
-        { sede: 'CASTILLA', llamadas_ingresadas: 14293, nivel_atencion: 76, llamadas_contestadas: 11030, llamadas_abandonadas: 3263, wpp_ingresados: 13926, agendas_wpp: 1450, agendas_llamada: 2109, aht_segundos: 199 },
-        { sede: 'SEDE33', llamadas_ingresadas: 1602, nivel_atencion: 90, llamadas_contestadas: 1467, llamadas_abandonadas: 135, wpp_ingresados: 0, agendas_wpp: 0, agendas_llamada: 288, aht_segundos: 104, llamadas_salida: 6704, wpp_salida: 362 },
-      ],
-    });
-  assert.equal(c.status, 201, JSON.stringify(c.body));
-  assert.equal(c.body.filas.length, 2);
-  const dash = await request(app).get('/api/dashboard/' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
-  assert.equal(dash.body.secciones.resumen[0].filas.length, 2);
+  const mob = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('MOBILIZE')).set(auth(t));
+  assert.equal(mob.status, 200);
+  assert.ok(mob.body.secciones.notas);
 });
 
 test('tipificacion multi-fila y borrado', async () => {

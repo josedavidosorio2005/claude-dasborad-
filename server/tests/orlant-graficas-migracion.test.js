@@ -60,7 +60,7 @@ const LAYOUT_VIEJO = {
 // Escenario 2: la migracion es EXCLUSIVA de ORLANT (query hardcodeada por
 // cliente) — otro cliente cualquiera con su propio layout nunca deberia
 // tocarse, ni siquiera leerse.
-const OTRO_CLIENTE = 'ALBERTO LINERO GO';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO_CLIENTE = {
   kpis: [],
   tabs: [{ key: 'salida', label: 'Salida', panels: [{ tipo: 'line', titulo: 'Lo que sea', series: [] }] }],

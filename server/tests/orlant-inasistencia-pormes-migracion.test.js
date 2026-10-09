@@ -85,7 +85,7 @@ pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 ).run('ORLANT', 'Dashboard Clinica Orlant', null, '{}', JSON.stringify(LAYOUT_VIEJO), now, now);
 
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 pre.prepare(
   `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
    VALUES (?,?,?,?,?,1,?,?)`

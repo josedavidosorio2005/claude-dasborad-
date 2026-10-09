@@ -2,17 +2,16 @@
 // Se carga como <script src> global y en orden; todas las funciones son globales
 // y se invocan desde manejadores del HTML. No cambiar el orden de carga.
 
-var CLIENTES_LIST = [
-  'ORLANT','HOSPITAL LA MARIA','CLINICA AURORA','TELEVENTAS SURA',
-  'TELEVENTAS COMFAMA','PANTERA MAIKERS','ANDRES YEPES','MOBILIZE',
-  'SASCHA FITNESS','ALBERTO LINERO GO','INFONDO','BIVETT'
-];
-var CAMPANAS_CALIDAD = ['ORLANT','HOSPITAL LA MARIA','CLINICA AURORA','TELEVENTAS SURA','TELEVENTAS COMFAMA','ANDRES YEPES','MOBILIZE','SASCHA FITNESS','INFONDO','BIVETT','CONSULTORIO JULIAN MOLANO','CARTERA INTERNA'];
+// Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
+// usuario, 2026-10-09) -- deben coincidir EXACTO con server/db.js
+// (CLIENTES_LIST/CAMPANAS_CALIDAD).
+var CLIENTES_LIST = ['ORLANT', 'MOBILIZE'];
+var CAMPANAS_CALIDAD = ['ORLANT', 'MOBILIZE'];
 
 // Campanas que tienen plantilla de calificacion de Calidad en el servidor.
 // Debe coincidir con server/calidad-plantillas-seed.js. El detalle de cada
 // plantilla (items, pesos, motor) se pide por API (GET /api/calidad/plantillas).
-var CAMPANAS_CON_PLANTILLA = ['ORLANT','INFONDO','TELEVENTAS SURA','CLINICA AURORA','CARTERA INTERNA','TELEVENTAS COMFAMA','ANDRES YEPES','MOBILIZE','SASCHA FITNESS','BIVETT'];
+var CAMPANAS_CON_PLANTILLA = ['ORLANT', 'MOBILIZE'];
 
 // soon:true  -> el módulo aparece en el dashboard pero todavía no está construido.
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.
@@ -25,8 +24,10 @@ var DASH_MODULES = [
 ];
 
 // Dashboards de cliente que ya están construidos. El resto de CLIENTES_LIST
-// se muestra como "Próximamente" hasta que tenga su propio informe.
-var BUILT_CLIENT_DASHBOARDS = ['CLINICA AURORA', 'ORLANT', 'HOSPITAL LA MARIA'];
+// se muestra como "Próximamente" hasta que tenga su propio informe. Valor
+// inicial (antes de que dashboards-core.js lo reemplace con la lista real
+// del servidor) -- hoy los 2 unicos clientes YA estan construidos.
+var BUILT_CLIENT_DASHBOARDS = ['ORLANT', 'MOBILIZE'];
 
 var ADMIN_ACTIONS = [
   {key:'crearUsuarios',    label:'Crear usuarios'},

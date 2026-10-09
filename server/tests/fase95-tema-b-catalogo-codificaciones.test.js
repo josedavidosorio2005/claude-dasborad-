@@ -128,11 +128,11 @@ test('PUT /api/calidad/codificaciones/:id: un no-admin no puede desactivar/react
 
 test('POST /api/monitoreos: campana SIN catalogo -> codificacion sigue siendo texto libre (regresion)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const { token } = await calidadUser(admin, 'INFONDO', 'libre');
+  const { token } = await calidadUser(admin, 'MOBILIZE', 'libre');
   const res = await request(app)
     .post('/api/monitoreos')
     .set(auth(token))
-    .send({ campana: 'INFONDO', asesor: 'Alguien', fecha: FECHA, codificacion: 'Cualquier cosa 123', answers: RESP_TODO_SI });
+    .send({ campana: 'MOBILIZE', asesor: 'Alguien', fecha: FECHA, codificacion: 'Cualquier cosa 123', answers: RESP_TODO_SI });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   assert.equal(res.body.codificacion, 'Cualquier cosa 123');
 });
@@ -161,7 +161,7 @@ test('POST /api/monitoreos: campana CON catalogo -> valor valido se acepta (norm
 
 test('PUT /api/monitoreos/:id: si el body no trae codificacion, no se re-valida (la fila conserva la que tenia)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const campana = 'CARTERA INTERNA';
+  const campana = 'MOBILIZE';
   const { token } = await calidadUser(admin, campana, 'sinRevalidar');
   const create = await request(app)
     .post('/api/monitoreos')

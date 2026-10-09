@@ -11,8 +11,8 @@
 //    (mas ADMIN) -- cada uno sembrado con acceso SOLO a la campana/cliente
 //    'ORLANT' via seedUsers() de scripts/seed-demo-lib/users.js -- y
 //    compara el status real contra la politica declarada, incluyendo
-//    'CLINICA AURORA' como campana/cliente AJENA (debe bloquear a
-//    cualquiera que no sea ADMIN).
+//    'MOBILIZE' como campana/cliente AJENA (debe bloquear a cualquiera que
+//    no sea ADMIN).
 // 3) Para las escrituras, cubre con body valido (ver validation.js) los
 //    casos de mayor riesgo: las 3 escaladas CRITICAS de la Fase 102
 //    (usuarios/permisos), el limite canEvaluateCampaign/canManageMonitoreos
@@ -63,7 +63,10 @@ const { seedUsers } = require('../scripts/seed-demo-lib/users');
 const app = createApp();
 
 const PROPIA = 'ORLANT';
-const AJENA = 'CLINICA AURORA'; // existe en CLIENTES_LIST/CAMPANAS_CALIDAD real, nunca sembrada para estos actores
+// Fase 134: solo ORLANT y MOBILIZE quedan en CLIENTES_LIST/CAMPANAS_CALIDAD
+// real -- MOBILIZE reemplaza a CLINICA AURORA (eliminada) como la campana
+// AJENA, real pero nunca sembrada para estos actores.
+const AJENA = 'MOBILIZE';
 
 let tokens = {}; // rol -> token
 let actores = {}; // rol -> {id, user, rol}

@@ -70,7 +70,7 @@ pre.prepare(
 pre.prepare(
   `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
    VALUES (?,?,?,?,?,1,?,?)`
-).run('CLINICA AURORA', 'Dashboard Clinica Aurora', null, JSON.stringify(SECCIONES_OTRO), '{"kpis":[],"tabs":[]}', now, now);
+).run('MOBILIZE', 'Dashboard Clinica Aurora', null, JSON.stringify(SECCIONES_OTRO), '{"kpis":[],"tabs":[]}', now, now);
 // `_v1` ya corrida -- por eso hace falta `_v2` para reparar el estado corrupto.
 pre.prepare('INSERT INTO schema_migrations (name, appliedAt) VALUES (?, ?)').run('dashboards_config_orlant_resumen_trafico_opcional_v1', now);
 pre.close();
@@ -116,7 +116,7 @@ test('migracion _v2: nunca toca columnas que no son de trafico (total_agendas si
 });
 
 test('migracion _v2: nunca toca otro cliente', () => {
-  const row = db.prepare("SELECT secciones FROM dashboards_config WHERE cliente = 'CLINICA AURORA'").get();
+  const row = db.prepare("SELECT secciones FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
   assert.deepEqual(JSON.parse(row.secciones), SECCIONES_OTRO);
 });
 

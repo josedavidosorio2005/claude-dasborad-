@@ -42,7 +42,7 @@ const LAYOUT_VIEJO = { kpis: [], tabs: [INASISTENCIA, STA, EFECTIVIDAD_VIEJO] };
 // Escenario 2: un tab "efectividad" personalizado (no coincide con la
 // forma vieja reconocible) -- la migracion debe dejarlo intacto.
 const EFECTIVIDAD_PERSONALIZADO = { key: 'efectividad', label: 'Personalizado', panels: [{ tipo: 'bar', titulo: 'Panel a mano' }] };
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [{ key: 'inasistencia', label: 'Inasistencia', panels: [] }, EFECTIVIDAD_PERSONALIZADO] };
 
 const pre = new Database(tmpDb);

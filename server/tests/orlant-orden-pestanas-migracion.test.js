@@ -39,7 +39,7 @@ const LAYOUT_VIEJO = {
   ],
 };
 
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [tab('flujo', false), tab('calidad', false)] };
 
 const pre = new Database(tmpDb);

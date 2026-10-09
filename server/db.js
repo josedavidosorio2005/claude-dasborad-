@@ -10,34 +10,22 @@ const { CONFIGS } = require('./dashboard-config-seed');
 const DB_PATH =
   config.dbPath || path.join(__dirname, 'data', 'inconexion.db');
 
+// Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
+// usuario, 2026-10-09) -- los otros 10 clientes (HOSPITAL LA MARIA, CLINICA
+// AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, PANTERA MAIKERS, ANDRES
+// YEPES, SASCHA FITNESS, ALBERTO LINERO GO, INFONDO, BIVETT) y las 2
+// campanas que solo tenian plantilla de Calidad sin dashboard propio
+// (CONSULTORIO JULIAN MOLANO, CARTERA INTERNA) se quitaron de estas listas
+// para que NINGUN deploy/migracion los vuelva a crear -- ver la migracion
+// fase134_borrar_clientes_v1 mas abajo, que borra sus filas ya sembradas.
 const CLIENTES_LIST = [
   'ORLANT',
-  'HOSPITAL LA MARIA',
-  'CLINICA AURORA',
-  'TELEVENTAS SURA',
-  'TELEVENTAS COMFAMA',
-  'PANTERA MAIKERS',
-  'ANDRES YEPES',
   'MOBILIZE',
-  'SASCHA FITNESS',
-  'ALBERTO LINERO GO',
-  'INFONDO',
-  'BIVETT',
 ];
 
 const CAMPANAS_CALIDAD = [
   'ORLANT',
-  'HOSPITAL LA MARIA',
-  'CLINICA AURORA',
-  'TELEVENTAS SURA',
-  'TELEVENTAS COMFAMA',
-  'ANDRES YEPES',
   'MOBILIZE',
-  'SASCHA FITNESS',
-  'INFONDO',
-  'BIVETT',
-  'CONSULTORIO JULIAN MOLANO',
-  'CARTERA INTERNA',
 ];
 
 function withScopedPerms(base, prefix, values) {
@@ -3134,6 +3122,115 @@ runOnceMigration('tipificaciones_cdr_mobilize_v1', () => {
   `);
   if (!config.isTest) {
     console.log('[db] Migracion tipificaciones_cdr_mobilize_v1 aplicada.');
+  }
+});
+
+// Fase 134 (decision del usuario, 2026-10-09): "dejar SOLO 2 clientes,
+// ORLANT y MOBILIZE. Todos los demas clientes/dashboards se BORRAN". El
+// inventario de produccion (Paso 1, scripts/fase134-inventario-
+// produccion.js) confirmo 0 filas de datos reales en estos 12 -- solo
+// configuracion de plantilla vacia/demo (dashboards_config, calidad_
+// plantillas) -- asi que se borra directo, sin pedir confirmacion
+// adicional por cliente (regla que fijo el propio usuario para este caso).
+//
+// Idempotente: una vez que las filas ya no existen, un DELETE WHERE IN (...)
+// no encuentra nada que borrar en la segunda corrida (0 changes), y
+// runOnceMigration ademas no vuelve a ejecutar el cuerpo una vez que queda
+// marcada en schema_migrations -- doble seguro, igual que el resto de
+// migraciones de este archivo.
+//
+// Usuarios: NUNCA se borra ni se suspende ninguno aqui -- solo se les quita
+// la clave de permiso campana_<cliente>/cliente_<cliente> de los 12
+// eliminados (si la tenian). Si un usuario queda sin NINGUNA clave
+// campana_*/cliente_* despues de esto, se reporta por consola (conteo, sin
+// nombres) para que quede en el informe de cierre -- no se toca mas.
+//
+// El Historial de auditoria (tabla `historial`) NO se toca -- no es un
+// dato de cliente, es el registro de acciones de la plataforma.
+const CLIENTES_ELIMINADOS_FASE134 = [
+  'HOSPITAL LA MARIA',
+  'CLINICA AURORA',
+  'TELEVENTAS SURA',
+  'TELEVENTAS COMFAMA',
+  'PANTERA MAIKERS',
+  'ANDRES YEPES',
+  'SASCHA FITNESS',
+  'ALBERTO LINERO GO',
+  'INFONDO',
+  'BIVETT',
+  'CONSULTORIO JULIAN MOLANO',
+  'CARTERA INTERNA',
+];
+
+runOnceMigration('fase134_borrar_clientes_v1', () => {
+  const placeholders = CLIENTES_ELIMINADOS_FASE134.map(() => '?').join(',');
+  const conteos = {};
+
+  const TABLAS_CAMPANA_FASE134 = [
+    'calidad_plantillas', 'calidad_codificaciones', 'monitoreos', 'cronograma_metas',
+    'calidad_nivel_servicio', 'calidad_nivel_servicio_diario', 'trafico_whatsapp',
+    'agendas', 'tipificaciones', 'inasistencias', 'efectividad_agendamiento',
+    'efectividad_citas', 'salida_mensual', 'alias_asesores', 'trafico_skill_mapeo',
+    'gestion_humana_personal', 'umbrales_semaforo',
+  ];
+  const TABLAS_CLIENTE_FASE134 = ['dashboard_cargas', 'dashboards_config'];
+
+  const tx = db.transaction(() => {
+    TABLAS_CAMPANA_FASE134.forEach((tabla) => {
+      const info = db
+        .prepare(`DELETE FROM ${tabla} WHERE campana IN (${placeholders})`)
+        .run(...CLIENTES_ELIMINADOS_FASE134);
+      conteos[tabla] = info.changes;
+    });
+    TABLAS_CLIENTE_FASE134.forEach((tabla) => {
+      const info = db
+        .prepare(`DELETE FROM ${tabla} WHERE cliente IN (${placeholders})`)
+        .run(...CLIENTES_ELIMINADOS_FASE134);
+      conteos[tabla] = info.changes;
+    });
+
+    // Permisos: quita SOLO las claves campana_<X>/cliente_<X> de los 12
+    // eliminados. Nunca borra el usuario, nunca toca otras claves (otros
+    // modulos, ORLANT/MOBILIZE, flags de admin, etc.).
+    const usuarios = db.prepare('SELECT id, rol, perms FROM users').all();
+    const actualizarUser = db.prepare('UPDATE users SET perms = ? WHERE id = ?');
+    let usuariosConPermisoQuitado = 0;
+    const quedaronSinAccesoPorRol = {};
+    usuarios.forEach((u) => {
+      let perms;
+      try {
+        perms = JSON.parse(u.perms || '{}');
+      } catch (_) {
+        return;
+      }
+      let cambiado = false;
+      CLIENTES_ELIMINADOS_FASE134.forEach((cliente) => {
+        ['campana_', 'cliente_'].forEach((prefix) => {
+          const key = prefix + cliente;
+          if (Object.prototype.hasOwnProperty.call(perms, key)) {
+            delete perms[key];
+            cambiado = true;
+          }
+        });
+      });
+      if (cambiado) {
+        actualizarUser.run(JSON.stringify(perms), u.id);
+        usuariosConPermisoQuitado++;
+        const quedaAlgo = Object.keys(perms).some(
+          (k) => (k.startsWith('campana_') || k.startsWith('cliente_')) && perms[k] === true
+        );
+        if (!quedaAlgo) {
+          quedaronSinAccesoPorRol[u.rol] = (quedaronSinAccesoPorRol[u.rol] || 0) + 1;
+        }
+      }
+    });
+    conteos.usuarios_con_permiso_quitado = usuariosConPermisoQuitado;
+    conteos.usuarios_quedaron_sin_acceso_por_rol = quedaronSinAccesoPorRol;
+  });
+  tx();
+
+  if (!config.isTest) {
+    console.log('[db] Migracion fase134_borrar_clientes_v1 aplicada. Filas borradas:', JSON.stringify(conteos));
   }
 });
 

@@ -64,10 +64,12 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('MOBILIZE', 'Dashboard Mobilize', null, JSON.stringify(SECCIONES_VIEJAS), JSON.stringify(LAYOUT_VIEJO), now, now);
-// Otro cliente con un tab "asesores" real (ANDRES YEPES, plantillaVentas) --
+// Otro cliente cualquiera con la misma forma vieja (un tab "asesores") --
 // la migracion de MOBILIZE nunca debe tocarlo, solo lee/escribe el cliente
-// 'MOBILIZE' por nombre.
-insertar.run('ANDRES YEPES', 'Dashboard Andres Yepes', null, JSON.stringify(SECCIONES_VIEJAS), JSON.stringify(LAYOUT_VIEJO), now, now);
+// 'MOBILIZE' por nombre. Nombre inventado (Fase 134: ya no hay un segundo
+// cliente real de plantilla de ventas) a proposito, para no depender de
+// ningun cliente real de la lista.
+insertar.run('OTRO CLIENTE CON ASESORES', 'Dashboard Otro', null, JSON.stringify(SECCIONES_VIEJAS), JSON.stringify(LAYOUT_VIEJO), now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -103,8 +105,8 @@ test('migracion dashboards_config_mobilize_flujo_llamadas_v1: el tab "flujo" nue
   assert.equal(tabFlujo.panels[0].campana, 'MOBILIZE');
 });
 
-test('migracion dashboards_config_mobilize_flujo_llamadas_v1: nunca toca otro cliente con la misma forma vieja (ANDRES YEPES intacto)', () => {
-  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ANDRES YEPES');
+test('migracion dashboards_config_mobilize_flujo_llamadas_v1: nunca toca otro cliente con la misma forma vieja (OTRO CLIENTE CON ASESORES intacto)', () => {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('OTRO CLIENTE CON ASESORES');
   assert.deepEqual(JSON.parse(row.layout), LAYOUT_VIEJO);
 });
 

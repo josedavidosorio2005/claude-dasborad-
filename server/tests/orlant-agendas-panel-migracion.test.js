@@ -50,7 +50,7 @@ const LAYOUT_VIEJO = {
 // cantidad de paneles DISTINTA (nunca deberia pasar en la practica -- este
 // tab no se edita desde el constructor -- pero la migracion debe dejarlo
 // intacto en vez de romper los indices, igual que las demas migraciones).
-const OTRO_CLIENTE = 'BIVETT';
+const OTRO_CLIENTE = 'MOBILIZE';
 const LAYOUT_OTRO = { kpis: [], tabs: [{ key: 'flujo', label: 'Flujo', panels: panelesDummy(2) }] };
 
 const pre = new Database(tmpDb);

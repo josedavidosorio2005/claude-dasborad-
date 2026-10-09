@@ -66,7 +66,7 @@ const insertar = pre.prepare(
    VALUES (?,?,?,?,?,1,?,?)`
 );
 insertar.run('ORLANT', 'Dashboard Clinica Orlant', null, JSON.stringify(SECCIONES_ORLANT_VIEJO), '{"kpis":[],"tabs":[]}', now, now);
-insertar.run('CLINICA AURORA', 'Dashboard Clinica Aurora', null, JSON.stringify(SECCIONES_OTRO), '{"kpis":[],"tabs":[]}', now, now);
+insertar.run('MOBILIZE', 'Dashboard Clinica Aurora', null, JSON.stringify(SECCIONES_OTRO), '{"kpis":[],"tabs":[]}', now, now);
 pre.close();
 
 function setEnvDefault(key, value) {
@@ -116,7 +116,7 @@ test('migracion dashboards_config_orlant_resumen_inasist_opcional_v1: nunca toca
 });
 
 test('migracion dashboards_config_orlant_resumen_inasist_opcional_v1: nunca toca otro cliente', () => {
-  const row = db.prepare("SELECT secciones FROM dashboards_config WHERE cliente = 'CLINICA AURORA'").get();
+  const row = db.prepare("SELECT secciones FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
   assert.deepEqual(JSON.parse(row.secciones), SECCIONES_OTRO);
 });
 
