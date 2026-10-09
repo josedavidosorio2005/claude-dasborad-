@@ -640,6 +640,12 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    para el resto.*/
 .gd-ultima-act{color:var(--c-on-primary-soft);font-size:var(--fs-note);font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-brand-green);background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
 .gd-ultima-act-mobilize{border-left-color:#f97316;}
+/* Logo del cliente en el encabezado del dashboard (hoy solo Mobilize,
+   Fase 132 Parte 8) -- oculto por defecto (display:none inline en el
+   HTML), JS lo muestra solo para ese cliente. .aurora-header es SIEMPRE
+   var(--c-brand) (teal fijo, no cambia con el tema) -- una sola version
+   del logo (clara, para fondo oscuro), sin alternar con el tema. */
+.gd-cliente-logo{display:block;max-width:140px;height:auto;margin-bottom:4px;}
 .aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:6px;padding:6px 14px;font-size:var(--fs-small);cursor:pointer;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 

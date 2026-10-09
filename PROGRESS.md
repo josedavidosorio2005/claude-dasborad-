@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.20.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.21.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -19,6 +19,10 @@ narrativo de cada fase, fase por fase, vive en
   132 (cierre), 4 pruebas nuevas en
   `server/tests/fase132-07-marca-registrada.test.js` que fallan si
   vuelve a aparecer "InConexión" o el nombre sin ® en `index.html`.
+  Logo de Mobilize (provisional, ver `docs/pendientes.md`) en el
+  encabezado de su propio dashboard, nunca en los demás clientes —
+  Fase 132 (Parte 8), `public/img/clientes/mobilize-logo.png` + `@2x`,
+  prueba en `server/tests/fase132-08-logo-mobilize.test.js`.
 - **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133):
   [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) — tokens de
   color/tipografía/foco/objetivos táctiles, regla del semáforo vs.

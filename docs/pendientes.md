@@ -158,6 +158,18 @@ dueño, prioridad, cómo se cierra, y la fecha en que se anotó.
     "Efectividad de Citas" ya tiene su % ponderado del período. Sin
     alcance ni fecha definida todavía.
 
+- **Logo de Mobilize: provisional, falta el original en alta
+  resolución** — dueño: Edwin. Prioridad BAJA (ya en producción, no
+  bloquea nada). El logo que muestra el encabezado del dashboard de
+  Mobilize (`public/img/clientes/mobilize-logo.png` + `@2x`) sale de
+  `mobilize-logo-fondo-oscuro.png`/`mobilize-logo-fondo-claro.png`
+  (688×124, transparente) — una captura chica, provisional: se ve bien
+  solo hasta ~150px de ancho (por eso el límite de 140px en el
+  dashboard). Cuando llegue el original real de Edwin en alta
+  resolución, regenerar los 2 archivos igual que se hizo con el logo de
+  InConexion (Fase 132, `sharp` en una carpeta temporal fuera del repo,
+  nunca el original al repo). Anotado 2026-10-08 (Fase 132, Parte 8).
+
 ## 3. Esperando decisión de InCo
 
 - **Flujo Mensual**: ¿se retira del todo (código + pestaña oculta) o se
