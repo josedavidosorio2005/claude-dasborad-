@@ -61,7 +61,25 @@ function llamadasUnicasColIndexMap(headerRow) {
 // criterio que tipificacionParseFecha (tipificacion-logic.js), duplicado a
 // proposito (mismo criterio ya establecido en el repo para estos "archivos
 // gemelos" de Wolkvox).
+//
+// Fase 139 (hallazgo real, ensayo local de la carga de septiembre): la
+// pantalla de carga lee el Excel con sheetStubs/cellNF (cargas.js), y con
+// esas opciones SheetJS entrega la DATE del archivo real de Wolkvox como
+// objeto `Date` nativo -- antes solo se leia number/string, asi que las 139
+// filas quedaban "DATE invalida" y la carga no tenia ninguna fila. Mismo bug
+// y mismo arreglo que Inasistencia (_inasistenciaFechaDesdeDateLocal,
+// inasistencia-logic.js): getters LOCALES (nunca getUTC*), porque SheetJS
+// arma ese Date con el reloj local del navegador.
+function _llamadasUnicasFechaDesdeDateLocal(d) {
+  if (isNaN(d.getTime())) return null;
+  var y = d.getFullYear();
+  if (y < 1970 || y > 2200) return null;
+  var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
+  return y + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+}
+
 function llamadasUnicasParseFecha(v) {
+  if (v instanceof Date) return _llamadasUnicasFechaDesdeDateLocal(v);
   if (typeof v === 'number') {
     var n = Math.floor(v);
     var ms = Math.round((n - 25569) * 86400000);
