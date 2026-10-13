@@ -15,6 +15,8 @@ Plataforma: **https://informa.inconexion.com.co** — versión **1.26.0**.
 ## 1. Entrar y ver el dashboard
 
 - [ ] Puedo entrar con mi usuario y contraseña.
+- [ ] La pantalla de ingreso dice **SInCo**, con el logo de InConexion®
+      pequeño en la esquina inferior derecha.
 - [ ] Al entrar veo el dashboard de **ORLANT** con las **8 pestañas**:
       Tráfico de Llamadas, Tráfico de WhatsApp, Llamadas y WhatsApp de
       salida, Agendamiento, Inasistencia, Efectividad de Citas,
