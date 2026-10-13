@@ -14621,3 +14621,40 @@ abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
   acceso. Ensayo local con datos sintéticos (colas de llamadas mezcladas,
   TIEMPO equivocada): conteos exactos, 0 errores de consola, sin scroll
   horizontal; capturas antes/después fuera del repo.
+
+## Fase 142 — Cargas reales en producción y verificación (2026-10-14)
+
+Autorizadas por el usuario en el chat ("OK cargar salida", "OK cargar
+tiempos"). Producción en v1.34.0; respaldo automático del 2026-10-13
+03:18 UTC (menos de 24 h). Navegador visible, sesión escrita por el
+usuario, por la interfaz normal (Cargar Datos). En los dos casos el
+impacto se pidió ANTES de guardar (endpoint de solo lectura) y solo se
+guardó si vista previa e impacto cuadraban con los conteos de control.
+Ensayo completo previo en local con los mismos archivos (datos borrados
+de la base local al terminar). Archivos en `C:\Users\filid\datos-inconexion`
+(fuera del repo).
+
+- **Llamadas de salida de Mobilize, septiembre**: vista previa 111 filas
+  válidas = 52 no conectadas + 59 conectadas, 46 duplicados quitados (misma
+  llamada repetida el mismo día), 0 avisos, 23 días, 3 asesores; 0
+  existentes, 1–30 sep. Después de guardar: tarjetas 111 / 52 / 59, barras
+  de septiembre con las 3 series, detalle por asesor (3) y por día (23)
+  sumando 111, filtros Asesor y Desde/Hasta funcionando. Ingreso sigue en
+  88 / 0 / 88, Tipificación de Mobilize en 167, Flujo de Llamadas y ORLANT
+  iguales. **20 pares día+teléfono aparecen en ambos tipos** (el mismo
+  número tuvo ese día una llamada conectada y otra no conectada): por la
+  regla "una vez por día + teléfono + tipo" cuentan una vez en cada tipo;
+  solo se reporta, no se resuelve. Pendientes de Edwin: filas de prueba,
+  52 vs 51, tipo de línea.
+- **Tipificación de ORLANT (verificación pendiente de la Fase 141)**: torta
+  a la izquierda y tabla a la derecha en escritorio, torta arriba y tabla
+  abajo en móvil, claro y oscuro; torta y tabla suman lo mismo (19.721);
+  sin scroll horizontal.
+- **WhatsApp tiempos de ORLANT**: comparación previa (solo lectura) con los
+  "WhatsApp contestados" que ya tenía el tablero: agosto 7.370 y septiembre
+  7.953 — idénticos al detalle, 0 diferencia. Agosto: 7.370 filas
+  (9.374 de colas de llamadas ignoradas), 2.979 / 152 / 196 / 119 / 3.924,
+  24 días. Septiembre: 7.953, 3.553 / 255 / 287 / 146 / 3.712, 26 días.
+  En pantalla: agosto 40,4 % y septiembre 44,7 % en 0–3 minutos. ORLANT
+  igual (8 pestañas, tarjetas iguales), exportación Excel válida.
+- 0 errores de consola en toda la sesión.

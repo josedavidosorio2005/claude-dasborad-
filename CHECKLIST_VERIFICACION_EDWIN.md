@@ -218,3 +218,5 @@ verificación:
 - [ ] Agosto 2026 muestra 40,4 % en 0–3 minutos y septiembre 2026 44,7 %
       (después de la carga real).
 - [ ] Cambiar el Mes o la Cola actualiza las barras.
+- [ ] En **Llamadas Únicas** de Mobilize, la mitad de salida muestra
+      111 en total, 52 no conectadas y 59 conectadas (septiembre 2026).
