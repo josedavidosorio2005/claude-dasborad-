@@ -14312,3 +14312,82 @@ abandonadas. Cada cosa va en su propio apartado.
   de la cola."
 - "Llamadas de salida" sigue sin construir (falta el archivo de Edwin);
   cuando llegue, va en la misma pestaña "Llamadas Únicas".
+
+## Fase 139 (cierre) — salto de pestañas, scripts, guía y opciones para los 429 (2026-10-13)
+
+Preparación para la presentación del 14/10 a los jefes.
+
+- **Dominio**: al 2026-10-13 el workflow "Dominio de produccion" solo
+  corrió en modo `revisar` para informa (CORS_ORIGIN todavía con informa
+  + sinco). El modo `quitar` lo dispara el usuario; después se mergea el
+  PR #396 (guía/documentos a solo sinco).
+- **Salto de pestañas (PR #400, espera "OK aviso")**: en la verificación
+  en vivo, las pestañas de Mobilize se movían un instante después de
+  dibujarse. Medido con Playwright fotograma a fotograma (posición de
+  layout de `#gd-tabs` desde su primer dibujo; Mobilize y ORLANT,
+  escritorio y móvil, claro y oscuro, base demo local con Mobilize sin
+  `dashboard_cargas` como en producción): ORLANT→Mobilize −30 px,
+  Mobilize→ORLANT +14 px. Causa: el logo del cliente en la cabecera
+  (`.gd-cliente-logo{height:auto}` anulaba la reserva de alto del `<img>`
+  mientras cargaba el logo nuevo, y mientras tanto se veía el logo del
+  cliente anterior). El aviso amarillo de "sin datos" NO era la causa: se
+  dibuja en el mismo paso síncrono que las pestañas. Arreglo: alto fijo
+  de 25 px + `object-fit:contain` y el logo oculto (`visibility`, sin
+  transición) hasta que carga el correcto. Después: 0 px en los 16 casos,
+  0 errores de consola. Pruebas: `fase139-salto-pestanas-logo.test.js` y
+  una comprobación con Chromium real en el job `pantallas`
+  (`.github/scripts/ci-pantallas-orlant.js`), ambas fallan sin el arreglo.
+- **Scripts (PR #401)**: `revision-final.js` abre cada dashboard
+  esperando pestañas dibujadas y una activa, después de cada clic espera
+  que quede activa ESA pestaña (reporta si quedó otra), cierra con
+  "X Cerrar", confirma Llamadas Únicas 88/51/139 (skill Abandonadas
+  0/51/51; 1–15 sep 43/19/62) por API y en las tarjetas, y con
+  CLIENTES_DASH revisa Mobilize según su acceso (sin filtro Asesor,
+  mismos números). `fase128-parte2-privacidad` vuelve a correr (fila de
+  Tipificación en el formato de 11 columnas) y cubre también Llamadas
+  Únicas. `fase128-parte1` pasa sin cambios; se propone archivarlo.
+- **Guía**: capturas regeneradas con base demo limpia (01-login con
+  navegador visible: SInCo, logo de InConexion® pequeño abajo a la
+  derecha; 02–06 sin ventana). Título de la guía: "SInCo (ORLANT y
+  Mobilize)".
+
+### Opciones para los 429 al bajar imágenes Docker (sin implementar)
+
+Hoy `server/Dockerfile` baja `node:22-bookworm` y `node:22-bookworm-slim`
+de `public.ecr.aws` **sin iniciar sesión**. Los runners de GitHub
+comparten IP, así que el límite anónimo se agota y sale 429 (el
+2026-10-13 hubo que relanzar 3 veces). Afecta a `ci.yml` (job
+`docker-build`, sin credenciales AWS) y a `deploy.yml` (build en el
+runner). El servidor no baja estas imágenes: recibe la imagen ya
+construida desde el ECR privado.
+
+1. **Cuenta gratuita de Docker Hub + secreto.** Volver el `FROM` a
+   `node:22-…` de Docker Hub e iniciar sesión antes del build con
+   `docker/login-action` (fijada a SHA) usando 2 secretos nuevos
+   (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, token de solo lectura).
+   Toca: `server/Dockerfile`, `ci.yml` (docker-build), `deploy.yml`,
+   secretos del repo. Sin IAM. Riesgo: bajo; el límite pasa a ser por
+   cuenta (no por IP compartida); la cuenta queda a nombre de una
+   persona. Los PR desde forks no ven secretos (hoy no hay forks).
+2. **Login a ECR Public con las credenciales AWS que ya usa el deploy.**
+   `aws-actions/amazon-ecr-login` con `registry-type: public` (región
+   `us-east-1`). Permisos IAM que le faltarían al rol del deploy:
+   `ecr-public:GetAuthorizationToken` y `sts:GetServiceBearerToken`
+   (recurso `*`). Toca: `deploy.yml`; y para CI, `ci.yml` necesitaría
+   `id-token: write` y que la política de confianza del rol acepte
+   ramas de PR (hoy el rol es para deploy) — más superficie de IAM.
+   Riesgo: medio (cambios de IAM y de confianza OIDC).
+3. **Espejo propio en GHCR.** Un workflow nuevo (manual + semanal) baja
+   las 2 imágenes de node y las sube a
+   `ghcr.io/<dueño>/node:22-bookworm(-slim)` (paquete público, permiso
+   `packages: write` solo en ese workflow); el `Dockerfile` usa ese
+   `FROM`, y CI/deploy inician sesión con `GITHUB_TOKEN`
+   (`packages: read`). Toca: `server/Dockerfile`, workflow nuevo,
+   `ci.yml`, `deploy.yml`. Sin IAM ni cuentas externas. Riesgo: bajo-
+   medio; hay que mantener el espejo al día (parches de seguridad de
+   node), y si el workflow del espejo falla se sigue usando la última
+   copia.
+
+**Recomendación: opción 1** (el cambio más chico, sin IAM y sin nada
+nuevo que mantener). La 3 es la alternativa si no se quiere una cuenta
+externa. Decisión del usuario, después de la presentación.

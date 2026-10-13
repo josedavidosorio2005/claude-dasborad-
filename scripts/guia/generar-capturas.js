@@ -43,7 +43,9 @@ async function shot(page, name) {
   fs.mkdirSync(DIR_PUBLIC, { recursive: true });
   const creds = leerCredenciales();
 
-  const browser = await chromium.launch({ headless: true });
+  // Fase 139: VISIBLE=1 abre el navegador a la vista (para revisar la captura
+  // mientras se toma); por defecto, sin ventana. Siempre base demo local.
+  const browser = await chromium.launch({ headless: process.env.VISIBLE !== '1' });
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
