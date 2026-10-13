@@ -82,8 +82,8 @@ del todo vas a ver:
 
 | Pestaña | Qué muestra |
 |---|---|
-| **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
-| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
+| **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Flujo de Llamadas, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
+| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Flujo de WhatsApp, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
@@ -205,7 +205,10 @@ de gestión, por eso no aparece aquí).
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor
-también aparece aquí (ya era así desde antes).
+también aparece aquí (ya era así desde antes). En computador, la gráfica
+de torta queda a la izquierda y el cuadro con cada motivo, su cantidad y
+su % a la derecha; en el celular, la torta va arriba y el cuadro debajo.
+Los dos responden a los mismos filtros, así que siempre suman lo mismo.
 
 **Calidad**: cada monitoreo responde una lista de preguntas con peso
 propio (SI / NO / N/A). Un SI o un N/A suma el peso completo de esa

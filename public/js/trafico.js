@@ -372,8 +372,13 @@ var _traficoSubtabActivo = {}; // sub-pestana activa por claveEstado (campana[::
 // graficarse/mostrarse. Cambio en el componente compartido: aplica a todos
 // los clientes (decision de como se muestran las metricas, no un dato de
 // un cliente).
+// Fase 141 (pedido de Edwin, reunion 13/10): la sub-pestana 'resumen' se
+// muestra como "Flujo de Llamadas" / "Flujo de WhatsApp" -- "Resumen" se
+// entendia como resumen de TODO el tablero. Solo cambia el texto visible:
+// la key 'resumen' (estado, ids del DOM, config guardada) sigue igual.
+var TRAFICO_LABEL_RESUMEN = { tv: 'Flujo de Llamadas', tww: 'Flujo de WhatsApp' };
 var TRAFICO_SUBTABS = [
-  { key: 'resumen', label: 'Resumen' },
+  { key: 'resumen', label: TRAFICO_LABEL_RESUMEN.tv },
   { key: 'abandono', label: 'Abandono' },
   { key: 'aht', label: 'AHT' },
   { key: 'asaata', label: 'ASA y ATA' },
@@ -387,6 +392,7 @@ var TRAFICO_SUBTABS = [
 // blanco): la pastilla vuelve a un nombre generico -- adentro se grafican
 // LAS DOS series (20s, que ya existe, y 5 min, resaltada).
 var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
+  if(s.key === 'resumen') return { key: 'resumen', label: TRAFICO_LABEL_RESUMEN.tww };
   return s.key === 'sl' ? { key: 'sl', label: 'Nivel de Servicio' } : s;
 });
 
@@ -397,9 +403,13 @@ var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
 // compartir estado entre canales. `subtabs` (Fase 87, tema B) es opcional --
 // sin pasarlo, usa TRAFICO_SUBTABS (Llamadas, sin cambios); WhatsApp pasa
 // TRAFICO_WPP_SUBTABS.
+// Fase 141: la pastilla 'resumen' siempre usa TRAFICO_LABEL_RESUMEN, aunque
+// la config del panel (Mobilize, `p.subtabs` en dashboards_config) todavia
+// traiga label 'Resumen' guardado -- asi no hace falta migrar datos.
 function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr, subtabs){
   return (subtabs || TRAFICO_SUBTABS).map(function(s){
-    return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
+    var label = (s.key === 'resumen' && TRAFICO_LABEL_RESUMEN[prefijo]) ? TRAFICO_LABEL_RESUMEN[prefijo] : s.label;
+    return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(label)+'</button>';
   }).join('');
 }
 
