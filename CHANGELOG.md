@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.0 — Octubre 2026
+
+**Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**
+
+- En Orlant → Tráfico de WhatsApp → "Nivel de Servicio", ya no se ve una
+  línea de porcentaje por mes. Ahora se ve qué porcentaje de las
+  conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y más de 10 minutos,
+  con la cantidad de cada rango, el total del mes y una tarjeta con el
+  "% contestado en 0–3 minutos".
+- Se puede elegir el mes y la cola. Por defecto se ve el mes elegido
+  arriba; si ese mes no tiene datos, el último que sí tenga.
+- En "Cargar Datos" de Orlant se puede subir el archivo de tiempos de
+  Wolkvox. La plataforma toma solo las colas de WhatsApp y calcula el
+  rango con los segundos de cada conversación (no usa la columna
+  TIEMPO del archivo).
+- Mientras no se cargue ese archivo, la sub-pestaña lo dice claramente,
+  sin números inventados. Llamadas y Mobilize no cambian.
+
 ## v1.33.0 — Octubre 2026
 
 **Fase 141: Llamadas de salida de Mobilize.**

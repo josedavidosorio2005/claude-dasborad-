@@ -270,6 +270,9 @@ var CARGAS_HOJA_LLAMADAS_UNICAS = 'LLAMADAS_UNICAS';
 // Mobilize). Igual que Llamadas Unicas, se reconoce por encabezados si el
 // nombre exacto no esta (el archivo real de Edwin trae una sola hoja).
 var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
+// Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
+// conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
+var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
@@ -317,7 +320,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -588,6 +591,23 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
   }
+  // Fase 142 (punto 4, ORLANT): WhatsApp tiempos -- hoja propia, solo cuando
+  // whatsappTiemposCols viene (hoy solo ORLANT).
+  if (whatsappTiemposCols) {
+    plan.push({
+      tipo: 'whatsapp_tiempos', hoja: CARGAS_HOJA_WHATSAPP_TIEMPOS, titulo: 'WhatsApp tiempos de respuesta',
+      descripcion: 'Una fila por conversacion de WhatsApp contestada (export HistQueue de Wolkvox), con fecha y hora.',
+      filaUnica: false, columnas: whatsappTiemposCols,
+      notasExtra: [
+        'Columnas: SKILL_NAME, DATE (con hora), RESULT y ANSWER_TIME (segundos). La columna TIEMPO del archivo, si viene, se ignora: ' +
+          'el rango (0-3, 3-5, 5-8, 8-10, 10+ minutos) lo calcula la plataforma con ANSWER_TIME.',
+        'Solo se cargan las colas cuyo nombre empieza por WHATSAPP; las demas filas (colas de llamadas) se ignoran y la vista previa ' +
+          'dice cuantas fueron. RESULT distinto de ANSWER se omite con aviso.',
+        'Al guardar, la carga REEMPLAZA lo que ya exista entre la primera y la ultima fecha de este archivo -- cargar un mes ' +
+          'nunca borra otro mes.',
+      ],
+    });
+  }
   if (!traficoWppCols) {
     plan.push({
       tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
@@ -766,7 +786,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 // ni el orden de la "vista previa" al subir un archivo.
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
-  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA, CARGAS_HOJA_WHATSAPP_TIEMPOS,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
   CARGAS_HOJA_SALIDA,
 ];
@@ -818,6 +838,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
+    CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,

@@ -47,6 +47,8 @@ var CARGAS_CLIENTES_TIPIFICACION_EXTRA = ['MOBILIZE'];
 var CARGAS_CLIENTES_LLAMADAS_UNICAS = ['MOBILIZE'];
 // Fase 141 (Parte C): Llamadas de salida, mismo gate que Llamadas Unicas.
 var CARGAS_CLIENTES_LLAMADAS_SALIDA = ['MOBILIZE'];
+// Fase 142 (punto 4): WhatsApp tiempos de respuesta, solo ORLANT.
+var CARGAS_CLIENTES_WHATSAPP_TIEMPOS = ['ORLANT'];
 
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
@@ -274,6 +276,10 @@ function _cargasLlamadasUnicasColumnasUnificado(){
 function _cargasLlamadasSalidaColumnasUnificado(){
   return LLAMADAS_SALIDA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 142 (punto 4, ORLANT) — columnas de la hoja WHATSAPP_TIEMPOS.
+function _cargasWhatsappTiemposColumnasUnificado(){
+  return WPP_TIEMPOS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -347,7 +353,8 @@ async function onCargaClienteChange(){
     var tieneLlamadasUnicas = CARGAS_CLIENTES_LLAMADAS_UNICAS.indexOf(cliente) !== -1;
     var llamadasUnicasCols = tieneLlamadasUnicas ? _cargasLlamadasUnicasColumnasUnificado() : null;
     var llamadasSalidaCols = CARGAS_CLIENTES_LLAMADAS_SALIDA.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols);
+    var whatsappTiemposCols = CARGAS_CLIENTES_WHATSAPP_TIEMPOS.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -544,7 +551,8 @@ async function procesarArchivoConsolidado(input){
     var esTipificacion = h.tipo==='tipificacion';
     var esLlamadasUnicas = h.tipo==='llamadas_unicas';
     var esLlamadasSalida = h.tipo==='llamadas_salida';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida) return null;
+    var esWhatsappTiempos = h.tipo==='whatsapp_tiempos';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esWhatsappTiempos) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -612,6 +620,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = llamadasUnicasParseFilas;
     } else if(h.tipo === 'llamadas_salida'){
       parseFn = llamadasSalidaParseFilas;
+    } else if(h.tipo === 'whatsapp_tiempos'){
+      parseFn = wppTiemposParseFilas;
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){
@@ -665,6 +675,12 @@ function _cargasEstadoLabel(r){
   // Fase 79: cuando la hoja no traia el nombre esperado pero sus
   // encabezados calzaron exacto con el formato (archivo ORIGINAL de
   // Edwin, hoja "DATA"), se dice explicitamente cual hoja se uso.
+  // Fase 142 (punto 4): WhatsApp tiempos -- solo conteos (ignoradas por no
+  // ser WhatsApp, dias y cantidad por rango), nunca filas.
+  if(r.tipo==='whatsapp_tiempos' && r.porRango){
+    extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+r.dias+' día(s); por rango: '+
+      WPP_TIEMPOS_RANGOS.map(function(x){ return x.label+' '+r.porRango[x.key]; }).join(', ');
+  }
   var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
   return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;
 }
@@ -679,7 +695,8 @@ function _renderPreviewCarga(){
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
       (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))))));
+      (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -916,6 +933,27 @@ async function _cargasGuardarLlamadasUnicas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 142 (punto 4, ORLANT): mismo patron impacto -> confirmar -> guardar.
+async function _cargasGuardarWhatsappTiempos(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/whatsapp-tiempos/carga/impacto', parsed);
+    if(impacto.filasExistentes > 0){
+      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de tiempos de WhatsApp ya cargados, del '+
+        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+', por '+impacto.filasNuevas+' registro(s) nuevos.\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron los tiempos de WhatsApp anteriores sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/whatsapp-tiempos/carga', parsed);
+    if(typeof _wppTiemposOpciones !== 'undefined') _wppTiemposOpciones = {}; // invalida el cache de la vista abierta
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 // Fase 141 (Parte C, Mobilize): mismo patron impacto -> confirmar -> guardar
 // de _cargasGuardarLlamadasUnicas. `r.filas` ya son arrays.
 async function _cargasGuardarLlamadasSalida(cliente, r){
@@ -1120,6 +1158,7 @@ async function guardarCarga(){
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='llamadas_unicas') res = await _cargasGuardarLlamadasUnicas(cliente, r);
       else if(r.tipo==='llamadas_salida') res = await _cargasGuardarLlamadasSalida(cliente, r);
+      else if(r.tipo==='whatsapp_tiempos') res = await _cargasGuardarWhatsappTiempos(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);

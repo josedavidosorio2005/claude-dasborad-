@@ -264,6 +264,14 @@ function _traficoWppRenderSubtabContent(i){
   var campana = host ? host.dataset.campana : null;
   var activo = _traficoWppSubtabActivo[campana] || 'resumen';
   if (activo === 'aht' && !_traficoWppMostrarAht[campana]) activo = 'resumen';
+  // Fase 142 (punto 4, ORLANT): "Nivel de Servicio" se muestra por rangos de
+  // minutos (whatsapp-tiempos.js), con su propio filtro de Mes/Cola.
+  if (activo === 'sl' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(campana)) {
+    content.innerHTML = '';
+    _wppTiemposRender(i, campana);
+    return;
+  }
+  if (typeof _wppTiemposFiltrosPanel === 'function') _wppTiemposFiltrosPanel(i, false);
   content.innerHTML = _traficoSubtabContentHTML('tww', i, activo, TRAFICO_WPP_SUBTAB_TITULOS);
   _traficoWppRenderContenido(i);
 }
@@ -317,6 +325,8 @@ function _traficoWppRenderContenido(i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
   var campana = host.dataset.campana;
+  // Fase 142: con la vista de rangos activa, los filtros del panel no aplican.
+  if (typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)) return;
   var estado = _traficoWppEstado[campana];
   var datosCampana = _traficoWpp[campana] || { filas: [] };
   var filtradas = traficoWppFiltrarFilas(datosCampana.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
@@ -445,6 +455,7 @@ function _traficoWppDatosExport(i){
 }
 
 function _traficoWppExportExcel(i){
+  if(typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)){ _wppTiemposExportExcel(i); return; }
   if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
   var datos = _traficoWppDatosExport(i);
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
@@ -468,6 +479,7 @@ function _traficoWppExportExcel(i){
 }
 
 function _traficoWppExportPrint(i){
+  if(typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)){ _wppTiemposExportPrint(i); return; }
   var datos = _traficoWppDatosExport(i);
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
   var host = document.getElementById('gd-p'+i);

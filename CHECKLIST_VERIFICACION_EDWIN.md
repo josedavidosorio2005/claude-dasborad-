@@ -209,3 +209,12 @@ verificación:
       llamadas de salida cargadas todavía", sin números.
 - [ ] El usuario de Mobilize no ve el filtro por asesor ni el detalle por
       asesor/día de la mitad de salida; el equipo de InConexión sí.
+
+## Fase 142 — WhatsApp de Orlant por tiempo de respuesta
+
+- [ ] En Orlant → Tráfico de WhatsApp → **Nivel de Servicio** se ven 5
+      barras (0-3, 3-5, 5-8, 8-10, más de 10 minutos) con % y cantidad, y
+      la tarjeta "% contestado en 0–3 minutos".
+- [ ] Agosto 2026 muestra 40,4 % en 0–3 minutos y septiembre 2026 44,7 %
+      (después de la carga real).
+- [ ] Cambiar el Mes o la Cola actualiza las barras.

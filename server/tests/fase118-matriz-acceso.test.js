@@ -205,6 +205,10 @@ declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mis
 declarar(['GET /calidad/llamadas-salida/opciones', 'GET /calidad/llamadas-salida/resumen', 'GET /calidad/llamadas-salida/por-mes'], 'scopedRead');
 declarar(['GET /calidad/llamadas-salida/detalle'], 'scopedReadInterno');
 declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas-salida/carga'], 'cargaManual');
+// Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.
+declarar(['GET /calidad/whatsapp-tiempos/opciones'], 'scopedRead');
+declarar(['GET /calidad/whatsapp-tiempos/rangos'], 'scopedRead');
+declarar(['POST /calidad/whatsapp-tiempos/carga/impacto', 'POST /calidad/whatsapp-tiempos/carga'], 'cargaManual');
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');
@@ -244,6 +248,7 @@ const EXTRA_QUERY = {
   'GET /calidad/efectividad-agendamiento/ranking': { mes: '2026-09' },
   'GET /calidad/tipificacion/opciones': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/por-tipo': { canal: 'LLAMADAS' },
+  'GET /calidad/whatsapp-tiempos/rangos': { mes: '2026-09' },
 };
 
 const rutasReales = inventarioRutas();

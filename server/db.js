@@ -3464,6 +3464,28 @@ runOnceMigration('dashboards_config_mobilize_llamadas_unicas_tab_v1', migrarMobi
 // por (dia, telefono, tipo) -- ver public/js/llamadas-salida-logic.js.
 // 'tipo' sale de SKILL_ID: CONECTADA | NO_CONECTADA. 'tipificacion' es
 // DESCRIPTION_COD_ACT tal cual.
+// Fase 142 (punto 4): ORLANT WhatsApp -- detalle por conversacion (fecha,
+// hora, cola, segundos hasta ser contestada) para el Nivel de Servicio por
+// rangos de minutos. Tabla NUEVA, solo CREATE ... IF NOT EXISTS: no toca
+// trafico_whatsapp ni ningun dato existente (los % mensuales que ya hay se
+// conservan). Sin telefonos ni nombres (el archivo de origen no los trae).
+runOnceMigration('fase142_whatsapp_tiempos_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS whatsapp_tiempos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      hora INTEGER NOT NULL,
+      segundos INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_whatsapp_tiempos_campana_fecha ON whatsapp_tiempos(campana, fecha);
+  `);
+});
+
 runOnceMigration('fase141_llamadas_salida_tabla_v1', () => {
   db.exec(`
     CREATE TABLE IF NOT EXISTS llamadas_salida (
