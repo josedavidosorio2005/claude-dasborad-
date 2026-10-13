@@ -14458,3 +14458,38 @@ excluye explícitamente dashboards y pantallas de aplicación.
 - **Estado**: PR abierto, sin mergear: el merge despliega a producción
   y las mejoras visuales estaban pospuestas hasta después del demo de
   Mobilize.
+
+## Fase 141 — Cambios de la reunión con Edwin del 13/10 (2026-10-13)
+
+Pedido en 5 partes (A → B → C; D y E solo preparación). Contexto: las
+"51 abandonadas" de Llamadas Únicas de septiembre eran llamadas de SALIDA
+no conectadas (filas `SKILL_NAME = NO CONTESTADAS`), no entrantes
+abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
+
+### Parte A — Renombres y Tipificación lado a lado (v1.32.0)
+
+- **"Resumen" → "Flujo de Llamadas" / "Flujo de WhatsApp"**: solo el texto
+  visible de la sub-pestaña `resumen` (`TRAFICO_LABEL_RESUMEN`,
+  `public/js/trafico.js`). La key, los ids del DOM y la config guardada no
+  cambian. MOBILIZE trae su propia lista de sub-pestañas en
+  `dashboards_config` con label "Resumen": `_traficoSubtabsNavHTML`
+  rotula la key `resumen` igual para todos, así que no hizo falta
+  migración. No se tocaron otros "Resumen" que no son esa sub-pestaña
+  ("Resumen por mes" de Inasistencia, "Resumen por Asesor" de Calidad,
+  "Resumen propio de ORLANT" de la tabla de fuentes). Los nombres de
+  exportación (`Trafico_WhatsApp_*.xlsx`) no decían "Resumen";
+  `revision-final.js` y `scripts/qa/*` no buscan ese texto.
+- **Tipificación (ORLANT y MOBILIZE, mismo componente)**: con tabla de
+  detalle, torta a la izquierda y tabla a la derecha (`.tipif-pie-tabla`,
+  50/50, 340px de alto los dos, la tabla hace scroll con el encabezado
+  fijo); en móvil se apilan (torta arriba). La tabla ya respondía a los
+  mismos filtros que la torta (las dos salen de la misma respuesta de
+  `/calidad/tipificacion/por-tipo`); la prueba nueva lo fija con
+  167 = 103 entrantes + 64 salientes.
+- **Pruebas**: `server/tests/fase141-flujo-tipificacion.test.js` (6).
+  `npm test` completo en verde.
+- **Capturas** ANTES/DESPUÉS locales (seed:demo en una base temporal
+  fuera del repo; Tipificación y Tráfico de MOBILIZE/WhatsApp con datos
+  sintéticos solo para ver el diseño), escritorio 1440 y móvil 412, claro
+  y oscuro: 0 errores de consola, sin scroll horizontal. No se
+  commitean.

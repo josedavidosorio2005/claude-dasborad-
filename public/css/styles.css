@@ -1314,3 +1314,16 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
   #gd-panels .aurora-kpi,#gd-panels .aurora-card{transition-delay:0s !important;}
 }
 html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panels .aurora-card{transition-delay:0s !important;}
+
+/* ═══ Fase 141 — Tipificacion: torta a la izquierda, tabla a la derecha ═══
+   (pedido de Edwin, reunion 13/10). 50/50 en escritorio, misma altura
+   visual que el canvas (340px; la tabla hace scroll si tiene mas filas);
+   en movil (<=700px, mismo corte que .aurora-grid-2) se apilan: torta
+   arriba, tabla abajo. Sin animacion nueva. */
+.tipif-pie-tabla{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;}
+.tipif-pie-tabla .tipif-tabla .table-wrap{margin:0;max-height:340px;overflow:auto;}
+.tipif-pie-tabla .tipif-tabla thead th{position:sticky;top:0;z-index:1;}
+@media(max-width:700px){
+  .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
+  .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
+}

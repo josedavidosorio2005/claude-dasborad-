@@ -167,9 +167,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     existe en Mobilize desde el PR 2 de esta fase) o un indicador
     distinto.
   - **Archivo de "Llamadas de salida" (conectadas/no conectadas) de
-    Mobilize**: construye la mitad derecha del panel de Flujo de
-    Llamadas — Edwin todavía no lo ha mandado; ahí aplica la Regla B de
-    deduplicación, que tampoco está confirmada con él todavía.
+    Mobilize**: llegó el 2026-10-13 (septiembre). Va como mitad derecha
+    de la pestaña "Llamadas Únicas" (Fase 141, Parte C). Antes de
+    cargarlo faltan 3 respuestas de Edwin: ¿se excluyen las filas
+    "PRUEBA" y "TIMEOUTACW"?, ¿por qué 51 vs. 52 no conectadas únicas?, y
+    qué es el "tipo de línea" (el archivo no lo trae).
 - **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
   octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
   fase): lo están trabajando fuera de esta línea de trabajo y todavía no
