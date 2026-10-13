@@ -49,7 +49,7 @@ function leerAsesoresDelArchivoReal() {
   return { asesoresNorm: new Set(res.filas.map((f) => f.asesor.trim().toLowerCase())) };
 }
 
-const BASE = process.env.APP_URL || 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || process.env.APP_URL || 'https://sinco.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }

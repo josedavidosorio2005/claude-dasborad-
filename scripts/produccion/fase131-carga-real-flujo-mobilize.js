@@ -29,7 +29,7 @@ const path = require('path');
 const fs = require('fs');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const ARCHIVO = 'C:/Users/filid/Documents/datos-inconexion/mobilize/PLANTILLA_DE_FLUJO_DE_LLAMADAS_MOBILIZE.xlsx';
 const OUT_DIR = 'C:/Users/filid/Documents/datos-inconexion/mobilize/capturas-carga-flujo';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;

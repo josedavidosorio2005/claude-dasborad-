@@ -12,8 +12,10 @@ cómo se llegó aquí, o para reconstruir todo desde cero, usar el histórico.
   (`934685482338`) quedó solo con un bucket S3 de backups viejos y los
   usuarios/rol IAM — sin instancia activa (confirmado Fase 93,
   29/09/2026).
-- **Dominio único de producción: `https://informa.inconexion.com.co`**
-  (duckdns se retiró el 29/09/2026, Fase 93 — no volver a usarlo). Para
+- **Dominio único de producción: `https://sinco.inconexion.com.co`**
+  (desde la Fase 139, 13/10/2026; el dominio anterior se retiró a
+  propósito — su registro DNS ya no existe. duckdns se retiró el
+  29/09/2026, Fase 93 — no volver a usar ninguno de los dos). Para
   agregar/quitar un dominio, el workflow `dominio-produccion.yml` — nunca
   a mano (ver `CLAUDE.md`).
 

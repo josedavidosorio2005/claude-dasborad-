@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.30.1 — Octubre 2026
+
+**Fase 139: la dirección de la plataforma es solo sinco.inconexion.com.co.**
+
+- La guía de uso ahora dice que la plataforma (SInCo) se abre en
+  **https://sinco.inconexion.com.co**. La dirección anterior ya no existe.
+- Nada más cambia: tableros, datos y forma de entrar son los mismos.
+
 ## v1.30.0 — Octubre 2026
 
 **Fase 139: la plataforma ahora se llama SInCo.**

@@ -27,7 +27,7 @@ const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 const { instalarDryRunSeguro, leerConfirmsCapturados } = require(path.join(__dirname, 'lib', 'dry-run-seguro.js'));
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 const ARCHIVO_AGOSTO = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\bases edwin\\inasistencia\\INASISTENCIA_SOLO_AGOSTO_2026.xlsx';
 

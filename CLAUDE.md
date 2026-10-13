@@ -73,10 +73,12 @@ asumir en qué quedó una fase anterior.
 
 ## Producción
 
-- **Producción: `https://informa.inconexion.com.co` (único dominio).**
-  duckdns se retiró el 29/09/2026 (Fase 93); no volver a usarlo — no
-  queda como alterno, no redirige, no sirve la app por ningún otro nombre
-  ni por la IP directa.
+- **Producción: `https://sinco.inconexion.com.co` (único dominio, desde
+  la Fase 139, 13/10/2026).** El dominio anterior ("informa") se retiró
+  a propósito (su registro DNS ya no existe) y duckdns se retiró el
+  29/09/2026 (Fase 93); no volver a usar ninguno — no quedan como
+  alterno, no redirigen, la app no se sirve por ningún otro nombre ni
+  por la IP directa.
 - **Para agregar o quitar un dominio, usar el workflow
   `dominio-produccion.yml`** (modo `revisar` primero, después `aplicar` o
   `quitar`) — nunca a mano por SSH. Agrega/quita el dominio del Caddyfile
@@ -172,9 +174,10 @@ asumir en qué quedó una fase anterior.
 
 ## Alcance del proyecto
 
-- Foco actual: **solo ORLANT** tiene datos reales en producción. Clínica
-  Aurora y Hospital La María siguen en cero — no inventar datos ni
-  adelantarse a pedidos que no han llegado.
+- Foco actual: en producción solo existen **ORLANT y MOBILIZE** (los dos
+  con datos reales). Los otros 12 clientes, incluidas Clínica Aurora y
+  Hospital La María, se borraron en la Fase 134 (no tenían datos reales)
+  — no inventar datos ni adelantarse a pedidos que no han llegado.
 - El repositorio es público por decisión del jefe (29/09/2026); no
   reportarlo como pendiente.
 

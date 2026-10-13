@@ -32,7 +32,7 @@ técnico, solo explica qué hace cada pantalla y cómo se usa.
 
 ## 1. Cómo entrar
 
-La plataforma vive en **https://informa.inconexion.com.co**. Ábrela en el
+La plataforma (SInCo) vive en **https://sinco.inconexion.com.co**. Ábrela en el
 navegador (Chrome, Edge o similar) como cualquier página web.
 
 En la pantalla de inicio escribe tu **usuario** y tu **contraseña**, y

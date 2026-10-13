@@ -32,8 +32,8 @@ narrativo de cada fase, fase por fase, vive en
   vs. paleta categórica, cómo agregar un color nuevo sin romper el
   contraste, duraciones/easings/interruptor `data-motion="off"` y los
   6 modales unificados.
-- **Producción**: `https://informa.inconexion.com.co` (único dominio
-  desde la Fase 93, 29/09/2026).
+- **Producción**: `https://sinco.inconexion.com.co` (único dominio
+  desde la Fase 139, 13/10/2026).
 - **Foco actual**: **solo ORLANT y MOBILIZE** existen en producción —
   desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
   filas de datos reales, solo configuración de plantilla vacía) se

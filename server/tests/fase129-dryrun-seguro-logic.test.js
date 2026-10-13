@@ -18,36 +18,36 @@ const {
 } = require('../../scripts/produccion/lib/dry-run-seguro.js');
 
 test('GET nunca se bloquea, sin importar la ruta', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('GET', 'https://informa.inconexion.com.co/calidad/inasistencia/carga'), false);
-  assert.equal(esPeticionDeEscrituraBloqueable('get', 'https://informa.inconexion.com.co/calidad/inasistencia/carga/impacto'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('GET', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('get', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga/impacto'), false);
 });
 
 test('POST al endpoint real de guardado SI se bloquea', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/inasistencia/carga'), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga'), true);
 });
 
 test('POST a un endpoint que termina en /impacto NO se bloquea (documentado "no escribe nada")', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/inasistencia/carga/impacto'), false);
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/agendas/carga/impacto'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga/impacto'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/agendas/carga/impacto'), false);
 });
 
 test('un nombre de endpoint que contiene "impacto" pero no termina asi SI se bloquea (nunca un match parcial)', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/impacto-falso/carga'), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/impacto-falso/carga'), true);
 });
 
 test('query string en la URL no rompe el chequeo de /impacto', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/inasistencia/carga/impacto?x=1'), false);
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/calidad/inasistencia/carga?x=1'), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga/impacto?x=1'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga?x=1'), true);
 });
 
 for (const metodo of METODOS_ESCRITURA) {
   test(`${metodo} a un endpoint que no es /impacto se bloquea`, () => {
-    assert.equal(esPeticionDeEscrituraBloqueable(metodo, 'https://informa.inconexion.com.co/calidad/inasistencia/carga'), true);
+    assert.equal(esPeticionDeEscrituraBloqueable(metodo, 'https://sinco.inconexion.com.co/calidad/inasistencia/carga'), true);
   });
 }
 
 test('metodos de lectura (HEAD) nunca se bloquean', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('HEAD', 'https://informa.inconexion.com.co/calidad/inasistencia/carga'), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('HEAD', 'https://sinco.inconexion.com.co/calidad/inasistencia/carga'), false);
 });
 
 test('una URL invalida no revienta la funcion (se trata como string, sigue clasificando por metodo)', () => {
@@ -59,19 +59,19 @@ test('una URL invalida no revienta la funcion (se trata como string, sigue clasi
 // escrito literal en Node) -- un allowlist exacto, nunca un prefijo ni una
 // regex amplia, y solo si se pasa explicitamente (compatible hacia atras).
 test('rutasExactasPermitidas: una ruta extra SI se deja pasar cuando se pasa explicitamente', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango', ['/admin/borrado-rango']), false);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/admin/borrado-rango', ['/admin/borrado-rango']), false);
 });
 
 test('rutasExactasPermitidas: sin el parametro, la misma ruta se sigue bloqueando (compatible hacia atras)', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango'), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/admin/borrado-rango'), true);
 });
 
 test('rutasExactasPermitidas: una ruta que NO esta en la lista se sigue bloqueando', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/otra-ruta', ['/admin/borrado-rango']), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/admin/otra-ruta', ['/admin/borrado-rango']), true);
 });
 
 test('rutasExactasPermitidas: comparacion EXACTA de pathname, un prefijo no basta', () => {
-  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://informa.inconexion.com.co/admin/borrado-rango-falso', ['/admin/borrado-rango']), true);
+  assert.equal(esPeticionDeEscrituraBloqueable('POST', 'https://sinco.inconexion.com.co/admin/borrado-rango-falso', ['/admin/borrado-rango']), true);
 });
 
 // Documenta la CAUSA RAIZ del incidente: page.exposeFunction envuelve el

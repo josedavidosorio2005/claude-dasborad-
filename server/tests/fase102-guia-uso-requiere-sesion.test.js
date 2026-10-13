@@ -2,7 +2,7 @@
 // seguridad, hallazgo real). La guia de uso (docs/guia-uso-orlant.md,
 // public antes) se servia como archivo ESTATICO por express.static, sin
 // pasar por ningun middleware de auth -- cualquiera con la URL
-// (https://informa.inconexion.com.co/guia-uso.html) la veia sin iniciar
+// (https://<dominio de produccion>/guia-uso.html) la veia sin iniciar
 // sesion: nombre del cliente y la estructura exacta (archivo/hoja/columnas
 // obligatorias) de cada base que carga ORLANT. Ahora vive fuera de
 // public/ (server/paginas/guia-uso.html) y solo se entrega por

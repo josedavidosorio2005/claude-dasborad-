@@ -35,9 +35,12 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 ## scripts/produccion/ — solo lectura contra producción
 
 - **`revision-final.js`** — recorrido de verificación en
-  `https://informa.inconexion.com.co` con sesión real (navegador visible,
-  "INICIA SESIÓN AHORA"), 0 escritura. Actualízalo cuando cambien las
-  pestañas o los números de control a confirmar.
+  producción (`BASE_URL`, default `https://sinco.inconexion.com.co`) con
+  sesión real (navegador visible, "INICIA SESIÓN AHORA"), 0 escritura.
+  Recorre ORLANT y MOBILIZE; `SOLO_ADMIN=1` corre solo con la cuenta de
+  admin. Actualízalo cuando cambien las pestañas o los números de control
+  a confirmar. Todos los scripts de esta carpeta toman `BASE_URL` (default
+  sinco).
 - **`carga-real-patron.js`** — patrón de referencia para una carga real en
   producción: siempre por la interfaz normal de la plataforma (nunca
   directo a la base de datos ni por un workflow — ver CLAUDE.md), con el

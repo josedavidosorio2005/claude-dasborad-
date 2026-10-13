@@ -23,7 +23,7 @@ const fs = require('fs');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 const { correrChequeosAdmin } = require('./revision-final.js');
 
-const BASE = process.env.APP_URL || 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || process.env.APP_URL || 'https://sinco.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 const ARCHIVO_CALIDAD = 'C:\\Users\\filid\\Downloads\\Copia de CALIDAD_CLINICA_ORLANT_2026 - Septiembre.xlsx';
 

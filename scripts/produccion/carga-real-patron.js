@@ -23,7 +23,7 @@ const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 const fs = require('fs');
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const DIR_EDWIN = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\bases edwin';
 const OUT_DIR = path.join(DIR_EDWIN, 'capturas-produccion', 'fase111-efectividad');
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
