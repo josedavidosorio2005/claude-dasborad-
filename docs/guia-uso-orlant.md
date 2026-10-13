@@ -1,4 +1,4 @@
-# Guía de uso — InConexion® Platform (ORLANT)
+# Guía de uso — SInCo (ORLANT y Mobilize)
 
 > Este archivo es el espejo legible en GitHub de la guía REAL que ve el
 > usuario dentro de la plataforma: `server/paginas/guia-uso.html` (servida
@@ -7,7 +7,8 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.29.1**. Esta guía es para quien usa la
+Versión de la plataforma: **1.30.3**. La plataforma se llama **SInCo** (de
+InConexion®). Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.
 
@@ -35,7 +36,8 @@ técnico, solo explica qué hace cada pantalla y cómo se usa.
 La plataforma vive en **https://informa.inconexion.com.co**. Ábrela en el
 navegador (Chrome, Edge o similar) como cualquier página web.
 
-En la pantalla de inicio escribe tu **usuario** y tu **contraseña**, y
+La pantalla de inicio dice **SInCo**, con el logo de InConexion® pequeño
+en la esquina inferior derecha. Escribe tu **usuario** y tu **contraseña**, y
 presiona "Iniciar sesión". Cada persona tiene su propio usuario, con
 acceso solo a lo que le corresponde (ver [sección 7](#7-usuarios-y-permisos-solo-administrador)).
 

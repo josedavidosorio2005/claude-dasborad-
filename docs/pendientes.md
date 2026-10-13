@@ -15,7 +15,35 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   hacerse. Efecto concreto más reciente: la verificación de cierre de
   la Fase 137 (Parte C) no pudo confirmar el lado CLIENTES_DASH de
   producción (`scripts/produccion/revision-final.js` espera 2 sesiones,
-  una por cada rol) — solo se verificó ADMINISTRADOR, en verde.
+  una por cada rol) — solo se verificó ADMINISTRADOR, en verde. Igual en
+  la Fase 139 (2026-10-13): el lado del cliente de Llamadas Únicas
+  (filtro Asesor oculto, mismos números que el admin) se confirmó en
+  local con el usuario demo; en producción queda pendiente hasta que
+  cambies la contraseña y avises (`revision-final.js` ya lo revisa).
+- **Retirar informa.inconexion.com.co** — Prioridad ALTA (antes de
+  notificar la URL nueva). Cómo se cierra: GitHub → Actions → "Dominio de
+  produccion" → Run workflow en `main` con dominio
+  `informa.inconexion.com.co` y modo `quitar`. Después se mergea el PR
+  #396 (guía y documentos a solo sinco). Al 2026-10-13 solo había corrido
+  el modo `revisar` (CORS_ORIGIN todavía con informa + sinco).
+- **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
+  MEDIA (hoy se resuelve relanzando el job). Tres opciones escritas en la
+  Fase 139 (cuenta gratuita de Docker Hub + secreto; login a ECR Public
+  con el rol AWS del deploy; espejo propio en GHCR) — ver
+  `docs/historico/progress-fases.md`, Fase 139 (cierre). Toca
+  `ci.yml`/`deploy.yml` y quizá IAM: decisión tuya, después de la
+  presentación.
+- **Archivar `scripts/qa/fase128-parte1-salida-rename-responsive.js`** —
+  Prioridad BAJA. QA de un solo uso de la Fase 128 (sigue pasando, pero
+  ya no aporta sobre `auditoria-amplia-local.js` + el job `pantallas`).
+  Se archiva con un tag `archivo/...` solo con tu OK.
+- **Rama abandonada `fase131-parte1-renombrar-movilize-mobilize-2026-10-07`**
+  — Prioridad BAJA. Sigue en GitHub; no se borra sin tu OK.
+- **`GET /calidad/llamadas-unicas/opciones` devuelve nombres de asesor a
+  roles cliente** — decidido el 2026-10-13: se deja así, como pidió
+  Edwin (la pantalla oculta el filtro Asesor a CLIENTES_DASH, pero la
+  lista igual viaja en esa respuesta). Si cambias de idea, cerrarlo es
+  un filtro por rol en ese endpoint.
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a
