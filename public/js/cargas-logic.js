@@ -265,6 +265,11 @@ var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
 // por encabezados si el nombre exacto "LLAMADAS_UNICAS" no esta (ver
 // _cargasBuscarHojaPorEncabezados, cargas.js).
 var CARGAS_HOJA_LLAMADAS_UNICAS = 'LLAMADAS_UNICAS';
+// Fase 141 (Parte C, Mobilize): Llamadas de salida (conectadas/no
+// conectadas) -- hoja propia, solo cuando llamadasSalidaCols viene (hoy solo
+// Mobilize). Igual que Llamadas Unicas, se reconoce por encabezados si el
+// nombre exacto no esta (el archivo real de Edwin trae una sola hoja).
+var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
@@ -312,7 +317,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -565,6 +570,24 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
   }
+  // Fase 141 (Parte C, Mobilize): Llamadas de salida -- hoja propia, solo
+  // cuando llamadasSalidaCols viene (hoy solo Mobilize).
+  if (llamadasSalidaCols) {
+    plan.push({
+      tipo: 'llamadas_salida', hoja: CARGAS_HOJA_LLAMADAS_SALIDA, titulo: 'Llamadas de salida',
+      descripcion: 'Una fila por llamada de salida (conectada o no conectada), tal cual el export de Wolkvox.',
+      filaUnica: false, columnas: llamadasSalidaCols,
+      notasExtra: [
+        'Columnas: AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (tipificacion) y SKILL_ID, que debe decir ' +
+          '"LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite con aviso).',
+        'TELEPHONE se usa SOLO para contar una vez el mismo numero el mismo dia (por separado si fue conectada ' +
+          'y no conectada) -- nunca se guarda, nunca se exporta, nunca se muestra.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
+          'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
   if (!traficoWppCols) {
     plan.push({
       tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
@@ -743,7 +766,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 // ni el orden de la "vista previa" al subir un archivo.
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
-  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
   CARGAS_HOJA_SALIDA,
 ];
@@ -794,6 +817,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
+    CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,

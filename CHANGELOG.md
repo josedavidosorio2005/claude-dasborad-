@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.33.0 — Octubre 2026
+
+**Fase 141: Llamadas de salida de Mobilize.**
+
+- La pestaña **Llamadas Únicas** de Mobilize ahora tiene dos mitades: a la
+  izquierda las llamadas de ingreso (como antes) y a la derecha las
+  **Llamadas de salida**. En el celular se ven una debajo de la otra.
+- Las tarjetas de ingreso ahora van en este orden: Total, Contestadas y
+  Abandonadas. Las de salida: Total llamadas de salida, No conectadas y
+  Conectadas. Cada mitad tiene su gráfica de barras por mes y sus filtros
+  de fecha.
+- El equipo de InConexion también ve el detalle por asesor y por día de
+  las llamadas de salida. El usuario de Mobilize ve los totales, sin
+  nombres de asesor.
+- En "Cargar Datos" de Mobilize se puede subir el archivo de llamadas de
+  salida de Wolkvox. Cada teléfono se cuenta una vez por día (por separado
+  si fue conectada y no conectada) y el número de teléfono nunca se
+  guarda. Se pueden cargar varios meses.
+- Mientras no se cargue ese archivo, la mitad derecha dice "Sin llamadas
+  de salida cargadas todavía", sin números inventados.
+
 ## v1.31.0 — Octubre 2026
 
 **Fase 140: retoques visuales en toda la plataforma.**

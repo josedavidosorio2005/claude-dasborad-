@@ -198,6 +198,13 @@ declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacio
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');
 declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas-unicas/carga'], 'cargaManual');
 declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
+// Fase 141, Parte C (Mobilize): Llamadas de salida -- mismo patron que
+// Llamadas Unicas. /detalle ademas exige rol interno (CLIENTES_DASH con
+// acceso a la campana recibe 403): esa regla se prueba en
+// fase141-llamadas-salida-api.test.js, no en esta matriz.
+declarar(['GET /calidad/llamadas-salida/opciones', 'GET /calidad/llamadas-salida/resumen', 'GET /calidad/llamadas-salida/por-mes'], 'scopedRead');
+declarar(['GET /calidad/llamadas-salida/detalle'], 'scopedReadInterno');
+declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas-salida/carga'], 'cargaManual');
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');

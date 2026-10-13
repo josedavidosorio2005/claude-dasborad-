@@ -14458,3 +14458,43 @@ excluye explícitamente dashboards y pantallas de aplicación.
 - **Estado**: PR abierto, sin mergear: el merge despliega a producción
   y las mejoras visuales estaban pospuestas hasta después del demo de
   Mobilize.
+
+## Fase 141 — Parte C: Llamadas de salida de Mobilize (2026-10-13)
+
+- **Tabla nueva** `llamadas_salida` (campana, fecha, tipo
+  CONECTADA/NO_CONECTADA, agente, tipificacion, archivoNombre,
+  cargadoPorNombre, createdAt) + índice, con `runOnceMigration`
+  (`fase141_llamadas_salida_tabla_v1`, solo `CREATE ... IF NOT EXISTS`).
+  Sin columna de teléfono.
+- **Parser en el navegador** (`public/js/llamadas-salida-logic.js`):
+  columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT, SKILL_ID sin
+  importar mayúsculas/espacios; SKILL_ID → CONECTADA/NO_CONECTADA (otro
+  valor se omite con aviso); filas vacías ignoradas; única = día +
+  teléfono + tipo; reporta (sin resolver) cuántos día+teléfono aparecen
+  en ambos tipos. El teléfono nunca sale del parser.
+- **API** `/calidad/llamadas-salida/` (`opciones`, `resumen`, `por-mes`,
+  `detalle`, `carga/impacto`, `carga`), Zod, `canLoadData` +
+  `campaignAccess`, reemplazo por campaña + rango de fechas del archivo
+  en una transacción. Nombres de asesor solo para roles internos: a
+  `CLIENTES_DASH` no le llega `agentes` en `opciones`, filtrar por
+  `agente` le da 403 y `detalle` también.
+- **Panel**: `llamadas_unicas_panel` pasa a 2 mitades (`.lu-mitades`):
+  ingreso a la izquierda (tarjetas ahora Total / Contestadas /
+  Abandonadas) y salida a la derecha (Total llamadas de salida / No
+  conectadas / Conectadas), barras por mes, Desde/Hasta, Asesor y detalle
+  por asesor y por día solo internos, estado vacío "Sin llamadas de
+  salida cargadas todavía". Sin panel nuevo ni migración de config. La
+  exportación agrega el resumen mensual de salida (sin nombres).
+- **Cargar Datos**: hoja "Llamadas de salida" para MOBILIZE, reconocida
+  por encabezados (un CDR con SKILL_NAME nunca entra a ese slot).
+  Arreglo de paso: la carga de Llamadas Únicas invalidaba un caché con un
+  nombre que no existía (`_llamadasUnicasCache`); ahora limpia
+  `_llamadasUnicasOpciones`.
+- **Archivo real de septiembre** (revisado local, solo conteos): 157
+  filas, 111 únicas (59 conectadas + 52 no conectadas), 1–30 sep, 0
+  avisos, 20 pares día+teléfono en ambos tipos, 3 filas únicas
+  "PRUEBA" y 1 "TIMEOUTACW". **No se cargó**: espera "OK salida" (merge)
+  y después "OK cargar salida", y antes las respuestas de Edwin.
+- **Pruebas**: `server/tests/fase141-llamadas-salida.test.js` (parser,
+  migración, API, permisos, plan de carga, panel) + matriz de acceso
+  (`fase118-matriz-acceso.test.js`) con las 6 rutas nuevas.

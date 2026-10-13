@@ -197,3 +197,14 @@ verificación:
 ```
 (espacio para notas)
 ```
+
+## Fase 141 — Llamadas de salida (Mobilize)
+
+- [ ] En **Llamadas Únicas** de Mobilize, las llamadas de ingreso quedan a
+      la izquierda (tarjetas en orden: Total, Contestadas, Abandonadas) y
+      las **Llamadas de salida** a la derecha (Total, No conectadas,
+      Conectadas). En el celular, una debajo de la otra.
+- [ ] Antes de cargar el archivo de salida, la mitad derecha dice "Sin
+      llamadas de salida cargadas todavía", sin números.
+- [ ] El usuario de Mobilize no ve el filtro por asesor ni el detalle por
+      asesor/día de la mitad de salida; el equipo de InConexión sí.
