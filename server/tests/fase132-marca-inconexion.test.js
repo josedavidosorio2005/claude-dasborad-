@@ -55,14 +55,19 @@ test('las 4 paginas con navbar (admin/user/asesor/supervisor) traen el isotipo d
   assert.equal(matches.length, 4, 'se esperaban 4 navbars con el isotipo de marca (admin, user, asesor, supervisor)');
 });
 
-test('el logo del login tiene version clara y oscura, con el mismo ancho/alto (sin salto de layout)', async () => {
+// Fase 139: el logo grande del login (version clara + oscura dentro de la
+// tarjeta) se reemplazo por el nombre SInCo + un logo pequeno en la esquina,
+// sobre el fondo teal fijo (igual en los 2 temas) -- por eso basta la
+// version blanca. Se sigue exigiendo ancho/alto declarados (sin salto de
+// layout).
+test('login y bienvenida traen el logo pequeno de esquina, version blanca, con ancho/alto', async () => {
   const res = await request(app).get('/');
-  const claro = res.text.match(/<img class="login-logo logo-light"[^>]*width="(\d+)"[^>]*height="(\d+)"/);
-  const oscuro = res.text.match(/<img class="login-logo logo-dark"[^>]*width="(\d+)"[^>]*height="(\d+)"/);
-  assert.ok(claro, 'no se encontro el logo claro del login');
-  assert.ok(oscuro, 'no se encontro el logo oscuro del login');
-  assert.equal(claro[1], oscuro[1], 'el logo claro y oscuro deberian declarar el mismo ancho');
-  assert.equal(claro[2], oscuro[2], 'el logo claro y oscuro deberian declarar el mismo alto');
+  const esquinas = [...res.text.matchAll(/<img class="marca-esquina" src="(img\/marca\/[^"]+)"[^>]*width="(\d+)" height="(\d+)"/g)];
+  assert.equal(esquinas.length, 2, 'se esperaba el logo de esquina en el login y en la bienvenida');
+  esquinas.forEach((m) => {
+    assert.equal(m[1], 'img/marca/logo-horizontal-blanco.png');
+    assert.ok(Number(m[2]) <= 140, 'el logo de esquina deberia ser pequeno (<=140px de ancho)');
+  });
 });
 
 test('la fuente Quicksand esta autoalojada (public/fonts/), nunca se carga desde Google Fonts', async () => {

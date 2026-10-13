@@ -293,18 +293,19 @@ select option,select optgroup{color:var(--c-text);background-color:var(--c-surfa
 body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
 
 /* ── LOGIN ── */
-#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--grad-brand);}
+#login-page{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--grad-brand);padding:var(--space-10) var(--space-4) calc(var(--space-10) + 24px);}
 .login-box{background:var(--c-surface);border-radius:var(--r-xl);padding:48px 52px;box-shadow:0 8px 40px rgba(var(--shadow-rgb),0.22);width:420px;max-width:95vw;text-align:center;}
-.login-logo{width:220px;height:44px;margin-bottom:30px;}
-/* .login-box (la tarjeta) cambia de fondo con el tema (blanco en claro,
-   teal oscuro en #132c35 oscuro, ver --c-surface) -- el logo necesita la
-   version a color sobre claro y la version blanca sobre oscuro. Las dos
-   imagenes van siempre en el DOM (mismo ancho/alto -> sin salto de layout
-   al cambiar de tema) y se alternan con display. */
-.login-logo.logo-dark{display:none;}
-[data-theme="dark"] .login-logo.logo-light{display:none;}
-[data-theme="dark"] .login-logo.logo-dark{display:inline-block;}
-.login-box h2{color:var(--c-primary);font-size:var(--fs-body-lg);margin-bottom:26px;font-weight:500;}
+/* Fase 139: nombre de la plataforma (APP_NAME en js/constants.js). Mismo
+   --c-primary que ya usaba el titulo del login -- AA en los 2 temas sobre
+   --c-surface. Sin animacion (nada que apagar con data-motion). */
+.app-name{font-family:var(--font-sans);font-weight:var(--fw-bold);letter-spacing:0.01em;line-height:1.1;}
+.app-name-login{color:var(--c-primary);font-size:calc(var(--fs-display) * 1.25);margin-bottom:var(--space-8);}
+/* Logo de InConexion® pequeno en la esquina inferior derecha del login y
+   de la bienvenida. Version blanca: los 2 fondos son teal en ambos temas
+   (--grad-brand y el degradado de #user-page). El padding inferior de la
+   pagina le reserva el espacio para que nunca tape el formulario ni los
+   modulos, tampoco en movil. */
+.marca-esquina{position:absolute;right:var(--space-4);bottom:var(--space-4);width:120px;height:24px;opacity:0.9;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.25));pointer-events:none;}
 .ig{margin-bottom:16px;text-align:left;}
 .ig label{font-size:var(--fs-note);color:var(--c-text-2);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;}
 /* Fase 136 (PR 5): border-radius unificado a --r-sm (6px) -- antes 8px
@@ -642,10 +643,10 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .hist-filter-sel{padding:7px 12px;border:1.5px solid var(--c-border);border-radius:7px;font-size:var(--fs-small);color:var(--c-primary);background:var(--c-bg);outline:none;cursor:pointer;}
 
 /* ── USER DASHBOARD ── */
-#user-page{display:none;min-height:100vh;background:linear-gradient(160deg,var(--c-primary-darker) 0%,var(--c-primary-mid) 55%,var(--c-primary-soft) 100%);}
-.user-page-body{min-height:calc(100vh - 62px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
+#user-page{display:none;position:relative;min-height:100vh;background:linear-gradient(160deg,var(--c-primary-darker) 0%,var(--c-primary-mid) 55%,var(--c-primary-soft) 100%);}
+.user-page-body{min-height:calc(100vh - 62px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px calc(40px + 24px + var(--space-4));}
 .user-welcome{text-align:center;margin-bottom:44px;}
-.user-logo{width:320px;max-width:80vw;margin-bottom:24px;filter:drop-shadow(0 6px 20px rgba(0,0,0,0.2));}
+.app-name-bienvenida{color:var(--c-on-brand);font-size:calc(var(--fs-display) * 1.5);margin-bottom:var(--space-4);text-shadow:0 2px 8px rgba(0,0,0,0.2);}
 .user-welcome h1{color:var(--c-on-brand);font-size:var(--fs-kpi);font-weight:700;margin-bottom:6px;text-shadow:0 2px 8px rgba(0,0,0,0.15);}
 .user-welcome p{color:rgba(255,255,255,0.72);font-size:var(--fs-body-lg);}
 .dash-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;width:100%;max-width:700px;}

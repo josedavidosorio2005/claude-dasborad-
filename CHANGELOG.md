@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.30.0 — Octubre 2026
+
+**Fase 139: la plataforma ahora se llama SInCo.**
+
+- La pantalla de ingreso y la pantalla de bienvenida muestran el nombre
+  **SInCo**, y la pestaña del navegador también dice SInCo.
+- El logo de InConexion® queda pequeño en la esquina inferior derecha de
+  esas dos pantallas.
+- Se quitó el texto "Acceso a la plataforma" de la pantalla de ingreso.
+- Nada más cambia: los tableros, los datos y la forma de entrar son los
+  mismos.
+
 ## v1.29.1 — Octubre 2026
 
 **Fase 138 (PR4): la guía de uso ya explica cómo armar el archivo de
