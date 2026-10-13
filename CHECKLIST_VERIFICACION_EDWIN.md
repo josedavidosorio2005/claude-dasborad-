@@ -154,7 +154,30 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       solo organizadas distinto — si algo que antes podías hacer ya no
       aparece, avisa antes de seguir.
 
-## 10. Algo no cuadra
+## 10. Fase 138 (9-oct): reunión con Edwin — Mobilize, Orlant y meses en español
+
+- [ ] En Calidad y en "Mis Resultados", el selector de mes muestra el
+      nombre completo en español (ej. "Septiembre 2026"), igual que ya lo
+      mostraba el selector principal del tablero.
+- [ ] El encabezado del tablero de **Orlant** ya muestra el logo de
+      Orlant (versión provisional, a partir de lo que mandó Edwin por
+      WhatsApp) — igual que el de Mobilize ya lo mostraba.
+- [ ] El panel de **Tipificación de Orlant** ahora se ve igual que el de
+      Mobilize: 1 sola torta de Llamadas, filtro por tipo, tabla de
+      detalle y las tarjetas de llamadas de salida (antes mostraba 2
+      tortas sin filtro ni tabla).
+- [ ] En Flujo de Llamadas de **Mobilize**, "ASA" y "AHT" ahora son una
+      sola sub-pestaña ("ASA y AHT"), con las 2 tarjetas de promedio y
+      las 2 líneas de tendencia juntas.
+- [ ] En Flujo de Llamadas de **Mobilize**, arriba, veo el panel
+      **"Llamadas de ingreso únicas"** con 3 tarjetas (Contestadas,
+      Abandonadas, Total) y una gráfica de barras por mes — por ahora con
+      datos de demostración, todavía sin el archivo real de Edwin
+      cargado.
+- [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
+      de InConexión, nunca para el usuario de Mobilize.
+
+## 11. Algo no cuadra
 
 Si cualquier casilla de arriba no se puede marcar, escribe aquí qué viste
 y en qué pantalla, y avisa al equipo antes de dar por cerrada la

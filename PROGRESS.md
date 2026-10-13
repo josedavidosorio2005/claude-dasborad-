@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.26.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.29.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -145,6 +145,25 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 138 (en curso) — Reunión con Edwin (9-oct): Mobilize/Orlant
+
+4 PRs independientes (detalle narrativo completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+PR1 (#386, v1.27.0) mes "Mes Año" en español en Calidad/Mis Resultados +
+logo provisional de Orlant; PR2 (#387, v1.28.0) Tipificación de Orlant
+igualada a la de Mobilize + ASA y AHT de Mobilize juntos en una sub-
+pestaña; PR3 (#388, v1.29.0) panel **"Llamadas de ingreso únicas"** de
+Mobilize (3 tarjetas + gráfica por mes, deduplicado por día+teléfono,
+privacidad dura del teléfono) — mergeado con datos de demo, el archivo
+real queda esperando un "OK cargar" explícito; PR4 (documentación) guía
+de uso con el paso a paso para sacar de Wolkvox los 3 reportes que arman
+ese archivo. **Deploy de PR3/`main` bloqueado por un 429 de Docker Hub**
+(límite de descargas anónimas de `node:22-bookworm` desde los runners de
+GitHub, no un problema del código) — estado del reintento en
+`docs/historico/progress-fases.md`, Fase 138. Pendientes reales abiertos
+(5 preguntas a Edwin sobre el panel de Llamadas Únicas + la carga real)
+en `docs/pendientes.md`.
 
 ### Fase 137 (en curso) — Cierra lo pendiente que se puede hacer desde el código
 
