@@ -238,9 +238,15 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <ol>
   <li><strong>Contestadas de ingreso</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "1. Detalle de las llamadas". De ahí se quitan dos cosas antes de pegarlas en la plantilla: las llamadas de salida (el número de teléfono trae un guion) y los duplicados del mismo número el mismo día (no de todo el mes — si el mismo número llama dos días distintos, cuenta en cada uno).</li>
   <li><strong>Abandonadas</strong>: en Wolkvox, Skills &amp; Servicios → reporte "2. Llamadas abandonadas", filtrando por skill. Esas filas van a la plantilla con SKILL_NAME = NO CONTESTADAS.</li>
-  <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas" (esta parte todavía no se carga en la plataforma — queda para cuando Edwin mande ese archivo aparte).</li>
+  <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas". Estas llamadas <strong>no van en este archivo</strong>: van en el archivo de "Llamadas de salida" (ver abajo).</li>
 </ol>
 <figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
+<h3>Llamadas de salida (Mobilize)</h3>
+<p><strong>Dónde se ve</strong>: en la misma pestaña "Llamadas Únicas", mitad derecha (las de ingreso quedan a la izquierda; en el celular, una debajo de la otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no conectadas y Llamadas de salida conectadas, una gráfica de barras por mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro por asesor y el detalle por asesor y por día; el usuario del cliente no ve nombres de asesor.<br>
+<strong>Qué archivo</strong>: el export de Wolkvox con las columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y SKILL_ID, que debe decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite y se avisa). Se sube desde "Cargar Datos" eligiendo Mobilize; la plataforma reconoce la hoja por sus columnas.<br>
+<strong>Cómo cuenta</strong>: una sola vez cada teléfono por día, por separado si ese día hubo llamada conectada y no conectada.<br>
+<strong>Privacidad</strong>: igual que en Llamadas Únicas, TELEPHONE nunca llega al servidor.<br>
+<strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántos registros va a reemplazar). Se pueden cargar varios meses, uno a la vez.</p>
 </div>
 
 <h2 id="s5">5. Calendario mensual</h2>

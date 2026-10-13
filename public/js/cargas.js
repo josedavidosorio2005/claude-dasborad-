@@ -45,6 +45,8 @@ var CARGAS_CLIENTES_TIPIFICACION_EXTRA = ['MOBILIZE'];
 // Fase 138, PR3 (pedido de Edwin 09/10/2026): campanas con hoja de Llamadas
 // Unicas -- mismo gate independiente que CARGAS_CLIENTES_TIPIFICACION_EXTRA.
 var CARGAS_CLIENTES_LLAMADAS_UNICAS = ['MOBILIZE'];
+// Fase 141 (Parte C): Llamadas de salida, mismo gate que Llamadas Unicas.
+var CARGAS_CLIENTES_LLAMADAS_SALIDA = ['MOBILIZE'];
 
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
@@ -267,6 +269,11 @@ function _cargasSalidaColumnasUnificado(){
 function _cargasLlamadasUnicasColumnasUnificado(){
   return LLAMADAS_UNICAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 141 (Parte C, Mobilize) — columnas de la hoja LLAMADAS_SALIDA (ver
+// llamadas-salida-logic.js).
+function _cargasLlamadasSalidaColumnasUnificado(){
+  return LLAMADAS_SALIDA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -339,7 +346,8 @@ async function onCargaClienteChange(){
     // mezclar 2 decisiones independientes.
     var tieneLlamadasUnicas = CARGAS_CLIENTES_LLAMADAS_UNICAS.indexOf(cliente) !== -1;
     var llamadasUnicasCols = tieneLlamadasUnicas ? _cargasLlamadasUnicasColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols);
+    var llamadasSalidaCols = CARGAS_CLIENTES_LLAMADAS_SALIDA.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -535,7 +543,8 @@ async function procesarArchivoConsolidado(input){
     // archivo de un canal se cuele en el slot del otro.
     var esTipificacion = h.tipo==='tipificacion';
     var esLlamadasUnicas = h.tipo==='llamadas_unicas';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas) return null;
+    var esLlamadasSalida = h.tipo==='llamadas_salida';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -558,6 +567,9 @@ async function procesarArchivoConsolidado(input){
       // no alcanza a distinguirlos (comparten agente/fecha/tipificacion/
       // skill-via-alias).
       if(esTipificacion && h.canalTipificacion && cargasDetectarCanalTipificacion(headerRow0) !== h.canalTipificacion) continue;
+      // Fase 141: un CDR de Tipificacion (trae SKILL_NAME, y puede traer
+      // TELEPHONE/SKILL_ID) nunca debe colarse en el slot de salida.
+      if(esLlamadasSalida && (headerRow0 || []).some(function(c){ return String(c == null ? '' : c).trim().toUpperCase() === 'SKILL_NAME'; })) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }
@@ -598,6 +610,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion, h.opcionesTipificacion); };
     } else if(h.tipo === 'llamadas_unicas'){
       parseFn = llamadasUnicasParseFilas;
+    } else if(h.tipo === 'llamadas_salida'){
+      parseFn = llamadasSalidaParseFilas;
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){
@@ -664,7 +678,8 @@ function _renderPreviewCarga(){
       (r.tipo==='inasistencia' ? 'Inasistencia' :
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))));
+      (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -896,8 +911,36 @@ async function _cargasGuardarLlamadasUnicas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var respLu = await apiRequest('POST','/calidad/llamadas-unicas/carga', parsed);
-    if(typeof _llamadasUnicasCache !== 'undefined') _llamadasUnicasCache = {}; // invalida el cache del panel abierto
+    if(typeof _llamadasUnicasOpciones !== 'undefined') _llamadasUnicasOpciones = {}; // invalida el cache del panel abierto (Fase 141: antes apuntaba a un nombre que no existe)
     return { ok:true, mensaje: respLu.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(respLu.desde)+' al '+_agendasFmtFechaCorta(respLu.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
+// Fase 141 (Parte C, Mobilize): mismo patron impacto -> confirmar -> guardar
+// de _cargasGuardarLlamadasUnicas. `r.filas` ya son arrays.
+async function _cargasGuardarLlamadasSalida(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/llamadas-salida/carga/impacto', parsed);
+    var fraseAlias = _cargasFraseAlias(impacto);
+    if(impacto.filasExistentes > 0 || fraseAlias){
+      var msg = '';
+      if(impacto.filasExistentes > 0){
+        msg += 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de llamadas de salida ya cargados, del '+
+          _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+', por '+impacto.filasNuevas+' registro(s) nuevos.';
+      }
+      if(fraseAlias) msg += (msg?' ':'')+fraseAlias;
+      msg += '\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron las llamadas de salida anteriores sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/llamadas-salida/carga', parsed);
+    if(typeof _llamadasSalidaOpciones !== 'undefined') _llamadasSalidaOpciones = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -1076,6 +1119,7 @@ async function guardarCarga(){
       else if(r.tipo==='efectividad_agendamiento') res = await _cargasGuardarEfectividadAgendamiento(cliente, r);
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='llamadas_unicas') res = await _cargasGuardarLlamadasUnicas(cliente, r);
+      else if(r.tipo==='llamadas_salida') res = await _cargasGuardarLlamadasSalida(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);

@@ -14493,3 +14493,73 @@ abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
   sintéticos solo para ver el diseño), escritorio 1440 y móvil 412, claro
   y oscuro: 0 errores de consola, sin scroll horizontal. No se
   commitean.
+## Fase 141 — Parte C: Llamadas de salida de Mobilize (2026-10-13)
+
+- **Tabla nueva** `llamadas_salida` (campana, fecha, tipo
+  CONECTADA/NO_CONECTADA, agente, tipificacion, archivoNombre,
+  cargadoPorNombre, createdAt) + índice, con `runOnceMigration`
+  (`fase141_llamadas_salida_tabla_v1`, solo `CREATE ... IF NOT EXISTS`).
+  Sin columna de teléfono.
+- **Parser en el navegador** (`public/js/llamadas-salida-logic.js`):
+  columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT, SKILL_ID sin
+  importar mayúsculas/espacios; SKILL_ID → CONECTADA/NO_CONECTADA (otro
+  valor se omite con aviso); filas vacías ignoradas; única = día +
+  teléfono + tipo; reporta (sin resolver) cuántos día+teléfono aparecen
+  en ambos tipos. El teléfono nunca sale del parser.
+- **API** `/calidad/llamadas-salida/` (`opciones`, `resumen`, `por-mes`,
+  `detalle`, `carga/impacto`, `carga`), Zod, `canLoadData` +
+  `campaignAccess`, reemplazo por campaña + rango de fechas del archivo
+  en una transacción. Nombres de asesor solo para roles internos: a
+  `CLIENTES_DASH` no le llega `agentes` en `opciones`, filtrar por
+  `agente` le da 403 y `detalle` también.
+- **Panel**: `llamadas_unicas_panel` pasa a 2 mitades (`.lu-mitades`):
+  ingreso a la izquierda (tarjetas ahora Total / Contestadas /
+  Abandonadas) y salida a la derecha (Total llamadas de salida / No
+  conectadas / Conectadas), barras por mes, Desde/Hasta, Asesor y detalle
+  por asesor y por día solo internos, estado vacío "Sin llamadas de
+  salida cargadas todavía". Sin panel nuevo ni migración de config. La
+  exportación agrega el resumen mensual de salida (sin nombres).
+- **Cargar Datos**: hoja "Llamadas de salida" para MOBILIZE, reconocida
+  por encabezados (un CDR con SKILL_NAME nunca entra a ese slot).
+  Arreglo de paso: la carga de Llamadas Únicas invalidaba un caché con un
+  nombre que no existía (`_llamadasUnicasCache`); ahora limpia
+  `_llamadasUnicasOpciones`.
+- **Archivo real de septiembre** (revisado local, solo conteos): 157
+  filas, 111 únicas (59 conectadas + 52 no conectadas), 1–30 sep, 0
+  avisos, 20 pares día+teléfono en ambos tipos, 3 filas únicas
+  "PRUEBA" y 1 "TIMEOUTACW". **No se cargó**: espera "OK salida" (merge)
+  y después "OK cargar salida", y antes las respuestas de Edwin.
+- **Pruebas**: `server/tests/fase141-llamadas-salida.test.js` (parser,
+  migración, API, permisos, plan de carga, panel) + matriz de acceso
+  (`fase118-matriz-acceso.test.js`) con las 6 rutas nuevas.
+
+## Fase 141 — Parte B: corrección de Llamadas Únicas de septiembre en producción (2026-10-13)
+
+- **Causa**: las "51 abandonadas" cargadas el 13/10 eran un error de la
+  fuente — Edwin había pasado llamadas de SALIDA no conectadas (filas con
+  `SKILL_NAME = NO CONTESTADAS`), no entrantes abandonadas. En
+  septiembre no hubo abandonadas reales.
+- **Autorización**: "OK reemplazar septiembre" del usuario, en el chat.
+  Producción en v1.32.0; respaldo del 2026-10-13 03:18 (menos de 24 h,
+  subida a S3 OK según salud-servidor.yml).
+- **Cómo**: por la interfaz normal (Cargar Datos → Mobilize → Llamadas
+  Únicas), navegador visible, sesión escrita por el usuario. El archivo
+  corregido de Edwin (fuera del repo) dio en la vista previa 88 filas
+  válidas: 88 contestadas, 0 abandonadas, 25 días, 0 avisos (las 51 filas
+  vacías del Excel se ignoraron sin aviso). El impacto (solo lectura)
+  confirmó el reemplazo de 139 filas por 88, del 1 al 30 de septiembre.
+  La carga reemplaza por campaña + rango de fechas del archivo en una
+  transacción; el archivo viejo cubría el mismo rango, así que no quedó
+  ninguna fila vieja afuera.
+- **Primer intento cancelado sin guardar**: el script de la carga leía
+  el impacto con el diálogo de confirmación ya abierto (el navegador no
+  entrega la respuesta en ese momento) y, por seguridad, canceló. Se
+  corrigió (impacto pedido antes de guardar), se ensayó completo en local
+  con los mismos archivos y el segundo intento salió bien.
+- **Resultado (139 → 88)**: Llamadas Únicas 88 contestadas / 0
+  abandonadas / 88 total; barras de septiembre con las 3 series
+  (abandonadas en 0); filtros Desde/Hasta/Skill presentes (Skill ya no
+  ofrece "Abandonadas"); Tipificación de Mobilize sigue en 167; Flujo de
+  Llamadas y ORLANT idénticos antes y después; 0 errores de consola.
+- **Pendiente**: la propuesta de rechazar `NO CONTESTADAS` en el parser
+  queda para decisión del usuario (docs/pendientes.md).

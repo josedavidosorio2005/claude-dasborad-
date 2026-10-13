@@ -842,6 +842,11 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-plans li{font-size:var(--fs-small);color:#5d4037;margin-bottom:4px;margin-left:16px;}
 
 @media(max-width:700px){.aurora-grid-2,.aurora-grid-3{grid-template-columns:1fr;}.aurora-kpis{gap:6px;}}
+/* Fase 141 (Parte C): Llamadas Unicas de Mobilize -- ingreso a la izquierda,
+   salida a la derecha; minmax(0,1fr) para que una tabla ancha de detalle
+   nunca empuje la grilla fuera de la pantalla (apiladas en movil). */
+.aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+@media(max-width:700px){.aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr);}}
 
 /* ── KPI cards con analisis (M1 / Fase A6) ── */
 .aurora-kpi.gd-kpi{position:relative;display:flex;flex-direction:column;gap:2px;padding:12px 14px;}

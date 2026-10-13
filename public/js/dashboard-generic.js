@@ -1729,7 +1729,20 @@ async function _gdExportarLlamadasUnicas(p, i){
   var filas = porMes.map(function(m){
     return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total únicas': m.total, 'Contestadas únicas': m.contestadas, 'Abandonadas únicas': m.abandonadas };
   });
-  return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }];
+  return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }].concat(await _gdExportarLlamadasSalida(campana));
+}
+
+// Fase 141 (Parte C): la mitad de salida exporta solo el resumen por mes
+// (sin nombres de asesor, para cualquier rol).
+async function _gdExportarLlamadasSalida(campana){
+  var porMes = [];
+  try{ porMes = await apiRequest('GET', '/calidad/llamadas-salida/por-mes?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  if(!porMes.length){
+    return [{ titulo: 'Llamadas de salida', tipo: 'aviso', filas: [], mensaje: 'Sin llamadas de salida cargadas todavía.' }];
+  }
+  return [{ titulo: 'Llamadas de salida', tipo: 'tabla', filas: porMes.map(function(m){
+    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total llamadas de salida': m.total, 'No conectadas': m.noConectadas, 'Conectadas': m.conectadas };
+  }) }];
 }
 
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades

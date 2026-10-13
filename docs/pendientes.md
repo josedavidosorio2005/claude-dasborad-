@@ -98,6 +98,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv`
   18) — no se tocan sin que lo pidas explícitamente.
 
+- **Propuesta (Fase 141): rechazar `SKILL_NAME = NO CONTESTADAS` en
+  Llamadas Únicas** — Prioridad MEDIA. Hoy ese valor se interpreta como
+  llamada abandonada, y eso fue justo lo que causó el error de
+  septiembre (eran llamadas de salida no conectadas). Propuesta: que la
+  carga lo rechace con el mensaje "NO CONTESTADAS es una llamada de
+  SALIDA no conectada; cárgala en Llamadas de salida" hasta que Edwin
+  defina el archivo real de abandonadas entrantes. Cómo se cierra:
+  decides si se aplica. No se cambió nada todavía.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **19 asesores del archivo real de Calidad sin usuario ASESOR en la
@@ -153,10 +162,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   panel ya construido, con septiembre/2026 real cargado desde el
   2026-10-13; vive en su propia pestaña "Llamadas Únicas" desde la Fase
   139):
-  - **Nombre de asesor en las filas NO CONTESTADAS**: una llamada
-    abandonada no tiene asesor que la atendió — falta confirmar qué
-    espera Edwin que vaya en AGENT_NAME para esas filas (vacío, un valor
-    fijo, el del skill).
+  - **Archivo real de llamadas ABANDONADAS de ingreso**: las filas
+    "NO CONTESTADAS" que se cargaron al principio eran llamadas de SALIDA
+    no conectadas (corregido el 2026-10-13, Fase 141 Parte B). Falta que
+    Edwin defina de dónde salen las abandonadas entrantes reales.
   - **Filtro de skill y las abandonadas**: sin confirmar si el filtro de
     Skill del panel debe aplicar también a las llamadas abandonadas o
     solo a las contestadas.
@@ -167,11 +176,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     existe en Mobilize desde el PR 2 de esta fase) o un indicador
     distinto.
   - **Archivo de "Llamadas de salida" (conectadas/no conectadas) de
-    Mobilize**: llegó el 2026-10-13 (septiembre). Va como mitad derecha
-    de la pestaña "Llamadas Únicas" (Fase 141, Parte C). Antes de
-    cargarlo faltan 3 respuestas de Edwin: ¿se excluyen las filas
-    "PRUEBA" y "TIMEOUTACW"?, ¿por qué 51 vs. 52 no conectadas únicas?, y
-    qué es el "tipo de línea" (el archivo no lo trae).
+    Mobilize**: llegó el 2026-10-13 (septiembre) y la mitad derecha de
+    la pestaña "Llamadas Únicas" ya está construida (Fase 141, Parte C).
+    Antes de cargarlo faltan 3 respuestas de Edwin: ¿se excluyen las
+    filas "PRUEBA" (3) y "TIMEOUTACW" (1)?, ¿por qué él cuenta 51 no
+    conectadas únicas y la plataforma 52?, y qué es el "tipo de línea"
+    (el archivo no lo trae). También queda por decidir (tuyo) si se
+    guarda el teléfono para trazabilidad, como pidió Edwin — por defecto
+    NO.
 - **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
   octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
   fase): lo están trabajando fuera de esta línea de trabajo y todavía no

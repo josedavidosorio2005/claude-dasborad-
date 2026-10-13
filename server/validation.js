@@ -714,6 +714,45 @@ const llamadasUnicasOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// ── Llamadas de salida de Mobilize (Fase 141, Parte C) ──────────────────
+// Mismo patron que Llamadas Unicas: filas como ARRAY con orden FIJO, debe
+// coincidir con LLAMADAS_SALIDA_ORDEN_ARRAY (llamadas-salida-logic.js) y con
+// CAMPOS_FILA (llamadas-salida.js). El telefono NUNCA aparece en la tupla.
+const llamadasSalidaTipoSchema = z.enum(['CONECTADA', 'NO_CONECTADA'], { error: 'tipo debe ser CONECTADA o NO_CONECTADA' });
+const llamadasSalidaFilaArraySchema = z.tuple([
+  tipificacionTextoObligatorio, // agente
+  fechaSchema, // fecha
+  llamadasSalidaTipoSchema, // tipo
+  tipificacionTextoObligatorio, // tipificacion (DESCRIPTION_COD_ACT)
+]);
+
+const llamadasSalidaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(llamadasSalidaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+const llamadasSalidaFiltrosQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  agente: z.string().trim().max(200).optional(),
+});
+
+const llamadasSalidaOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1198,6 +1237,9 @@ module.exports = {
     llamadasUnicasCargaBody,
     llamadasUnicasFiltrosQuery,
     llamadasUnicasOpcionesQuery,
+    llamadasSalidaCargaBody,
+    llamadasSalidaFiltrosQuery,
+    llamadasSalidaOpcionesQuery,
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,

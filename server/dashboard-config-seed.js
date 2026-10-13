@@ -455,6 +455,8 @@ const MOBILIZE = {
       // visible (sin `oculta`) -- el panel ya trae su propio aviso "Sin
       // llamadas unicas cargadas todavia". Cuando Edwin mande el archivo de
       // "Llamadas de salida", su panel va en ESTA misma pestaña, despues del
+      // [Fase 141: ya construido DENTRO de llamadas_unicas_panel, mitad
+      // derecha -- sin panel nuevo ni migracion de config.]
       // de ingreso (ingreso a la izquierda, salida a la derecha) -- hoy no
       // hay ningun panel de salida, nunca una mitad vacia.
       { key: 'llamadas_unicas', label: 'Llamadas Únicas', panels: [

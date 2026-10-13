@@ -9,15 +9,20 @@
 // del 09/10 que lo ponia encima de Flujo de Llamadas): pestaña PROPIA
 // "Llamadas Únicas" de Mobilize -- cuenta distinto que Flujo (CDR
 // deduplicado por dia+telefono vs. todas las llamadas de la cola), por eso
-// no comparten pantalla y el panel lo aclara bajo su titulo. "Llamadas de
-// salida" queda SIN CONSTRUIR a proposito -- Edwin todavia no mando ese
-// archivo; cuando llegue, su panel va en ESTA misma pestaña (ingreso a la
-// izquierda, salida a la derecha). Nunca se muestra una mitad vacia ni se
-// inventan cifras en un dashboard de cliente (ver docs/pendientes.md).
+// no comparten pantalla y el panel lo aclara bajo su titulo.
+//
+// Fase 141 (Parte C, reunion con Edwin del 13/10/2026): el panel tiene 2
+// mitades -- ingreso a la izquierda (lo de siempre) y "Llamadas de salida" a
+// la derecha (tabla llamadas_salida, ver llamadas-salida-logic.js), apiladas
+// en movil. Cada mitad tiene sus propios filtros y su propio estado vacio;
+// nunca se inventan cifras. Nombres de asesor (filtro y detalle) SOLO para
+// roles internos, en las dos mitades.
 'use strict';
 
 var _llamadasUnicasOpciones = {}; // cache por campana: { meses, agentes, skills }
 var _llamadasUnicasEstado = {};   // estado de filtros actual por campana
+var _llamadasSalidaOpciones = {}; // Fase 141: cache por campana: { meses, agentes? }
+var _llamadasSalidaEstado = {};   // Fase 141: filtros de la mitad de salida, por campana
 
 // Aviso bajo el titulo (Fase 139): en español simple, por que este numero no
 // coincide con Flujo de Llamadas.
@@ -48,47 +53,59 @@ function _llamadasUnicasOptionsHtml(valores, seleccionado) {
   }).join('');
 }
 
+// Filtro/detalle de asesor: SOLO roles internos (pedido explicito de Edwin
+// -- CLIENTES_DASH no ve nombres de asesor aqui; ver docs/pendientes.md).
+function _llamadasUnicasEsInterno() {
+  return typeof currentUser === 'undefined' || !currentUser || currentUser.rol !== 'CLIENTES_DASH';
+}
+
+function _llamadasUnicasSinDatosHtml(texto) {
+  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">' + texto +
+    (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') +
+    '</div>';
+}
+
 async function _llamadasUnicasRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
   var campana = p.campana || _gd.cliente;
   host.dataset.campana = campana;
+  host.innerHTML = '<div class="aurora-grid-2 lu-mitades">' +
+    '<div class="aurora-card" id="lu-ing-' + i + '"></div>' +
+    '<div class="aurora-card" id="ls-sal-' + i + '"></div>' +
+    '</div>';
+  await Promise.all([_llamadasUnicasRenderIngreso(campana, i), _llamadasSalidaRenderMitad(campana, i)]);
+}
 
+async function _llamadasUnicasRenderIngreso(campana, i) {
+  var mitad = document.getElementById('lu-ing-' + i);
+  if (!mitad) return;
   var op = await _llamadasUnicasCargarOpciones(campana);
   if (!op.meses || !op.meses.length) {
-    host.innerHTML = '<div class="aurora-card">' + _llamadasUnicasTituloHtml() +
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin llamadas únicas cargadas todavía' +
-      (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') +
-      '</div></div>';
+    mitad.innerHTML = _llamadasUnicasTituloHtml() + _llamadasUnicasSinDatosHtml('Sin llamadas únicas cargadas todavía');
     return;
   }
 
   if (!_llamadasUnicasEstado[campana]) _llamadasUnicasEstado[campana] = { desde: '', hasta: '', skill: '', agente: '' };
   var estado = _llamadasUnicasEstado[campana];
 
-  // Filtro de asesor: SOLO roles internos (pedido explicito de Edwin --
-  // por defecto, CLIENTES_DASH no ve nombres de asesor aqui; la decision
-  // definitiva de si algun dia los vera sigue pendiente del usuario, ver
-  // docs/pendientes.md).
-  var esInterno = !currentUser || currentUser.rol !== 'CLIENTES_DASH';
+  var esInterno = _llamadasUnicasEsInterno();
   var filtroAsesor = esInterno
     ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Asesor</label>' +
       '<select id="lu-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
     : '';
 
-  host.innerHTML =
-    '<div class="aurora-card">' +
-      _llamadasUnicasTituloHtml() +
-      '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-        '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-        '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
-        '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
-        filtroAsesor +
-        '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
-      '</div>' +
-      '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
-      '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '"></canvas></div>' +
-    '</div>';
+  mitad.innerHTML =
+    _llamadasUnicasTituloHtml() +
+    '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
+      '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
+      filtroAsesor +
+      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
+    '</div>' +
+    '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
+    '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '"></canvas></div>';
 
   await _llamadasUnicasRenderContenido(campana, i);
 }
@@ -105,13 +122,14 @@ function _llamadasUnicasAplicarFiltros(i) {
   _llamadasUnicasRenderContenido(campana, i);
 }
 
+// Fase 141 (pedido de Edwin, 13/10): orden total / contestadas / abandonadas.
 function _llamadasUnicasDibujarKpis(i, resumen) {
   var el = document.getElementById('lu-kpis-' + i);
   if (!el) return;
   el.innerHTML =
-    '<div class="aurora-kpi"><div class="kv">' + resumen.contestadas.toLocaleString('es-CO') + '</div><div class="kl">Contestadas únicas</div></div>' +
-    '<div class="aurora-kpi kpi-red"><div class="kv">' + resumen.abandonadas.toLocaleString('es-CO') + '</div><div class="kl">Abandonadas únicas</div></div>' +
-    '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total únicas</div></div>';
+    '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total únicas</div></div>' +
+    '<div class="aurora-kpi kpi-green"><div class="kv">' + resumen.contestadas.toLocaleString('es-CO') + '</div><div class="kl">Contestadas únicas</div></div>' +
+    '<div class="aurora-kpi kpi-red"><div class="kv">' + resumen.abandonadas.toLocaleString('es-CO') + '</div><div class="kl">Abandonadas únicas</div></div>';
 }
 
 function _llamadasUnicasDibujarBarras(i, porMes) {
@@ -147,4 +165,123 @@ async function _llamadasUnicasRenderContenido(campana, i) {
   } catch (e) { /* el panel se queda con los KPIs/grafica en 0 — nunca inventa un numero */ }
   _llamadasUnicasDibujarKpis(i, resumen);
   _llamadasUnicasDibujarBarras(i, porMes);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Fase 141 (Parte C): mitad derecha -- Llamadas de salida
+// ═══════════════════════════════════════════════════════════════════
+var LLAMADAS_SALIDA_AVISO = 'Cuenta una sola vez cada teléfono por día, por separado si la llamada fue conectada y no conectada.';
+
+function _llamadasSalidaTituloHtml() {
+  return '<div class="aurora-card-title">Llamadas de salida</div>' +
+    '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px">' + LLAMADAS_SALIDA_AVISO + '</p>';
+}
+
+async function _llamadasSalidaCargarOpciones(campana) {
+  if (_llamadasSalidaOpciones[campana]) return _llamadasSalidaOpciones[campana];
+  var op = { meses: [] };
+  try { op = (await apiRequest('GET', '/calidad/llamadas-salida/opciones?campana=' + encodeURIComponent(campana))) || op; }
+  catch (e) { /* sin datos o sin acceso -- la mitad muestra su propio aviso vacio */ }
+  _llamadasSalidaOpciones[campana] = op;
+  return op;
+}
+
+async function _llamadasSalidaRenderMitad(campana, i) {
+  var mitad = document.getElementById('ls-sal-' + i);
+  if (!mitad) return;
+  var op = await _llamadasSalidaCargarOpciones(campana);
+  if (!op.meses || !op.meses.length) {
+    mitad.innerHTML = _llamadasSalidaTituloHtml() + _llamadasUnicasSinDatosHtml('Sin llamadas de salida cargadas todavía');
+    return;
+  }
+  if (!_llamadasSalidaEstado[campana]) _llamadasSalidaEstado[campana] = { desde: '', hasta: '', agente: '' };
+  var estado = _llamadasSalidaEstado[campana];
+  var esInterno = _llamadasUnicasEsInterno();
+  var filtroAsesor = esInterno
+    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Asesor</label>' +
+      '<select id="ls-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
+    : '';
+  mitad.innerHTML =
+    _llamadasSalidaTituloHtml() +
+    '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
+      '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      filtroAsesor +
+      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
+    '</div>' +
+    '<div class="aurora-kpis" id="ls-kpis-' + i + '"></div>' +
+    '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '"></canvas></div>' +
+    (esInterno ? '<div id="ls-detalle-' + i + '"></div>' : '');
+  await _llamadasSalidaRenderContenido(campana, i);
+}
+
+function _llamadasSalidaAplicarFiltros(i) {
+  var host = document.getElementById('gd-p' + i);
+  var campana = host.dataset.campana;
+  function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  _llamadasSalidaEstado[campana] = { desde: v('ls-f-desde-' + i), hasta: v('ls-f-hasta-' + i), agente: v('ls-f-agente-' + i) };
+  _llamadasSalidaRenderContenido(campana, i);
+}
+
+// Orden pedido (Edwin, 13/10): total / no conectadas / conectadas.
+function _llamadasSalidaKpisHtml(resumen) {
+  return '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total llamadas de salida</div></div>' +
+    '<div class="aurora-kpi kpi-red"><div class="kv">' + resumen.noConectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
+    '<div class="aurora-kpi kpi-green"><div class="kv">' + resumen.conectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida conectadas</div></div>';
+}
+
+function _llamadasSalidaDibujarBarras(i, porMes) {
+  var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
+  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
+  var COl = (typeof CO !== 'undefined') ? CO : '#e67e22';
+  var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
+  o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y || 0).toLocaleString('es-CO'); } } };
+  if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function (v) { return (v === null || v === undefined) ? '' : v.toLocaleString('es-CO'); });
+  else o.plugins.datalabels = { display: false };
+  var datasets = [
+    { type: 'bar', label: 'Total', data: porMes.map(function (m) { return m.total; }), backgroundColor: CDl, borderRadius: 3 },
+    { type: 'bar', label: 'No conectadas', data: porMes.map(function (m) { return m.noConectadas; }), backgroundColor: COl, borderRadius: 3 },
+    { type: 'bar', label: 'Conectadas', data: porMes.map(function (m) { return m.conectadas; }), backgroundColor: CGl, borderRadius: 3 },
+  ];
+  if (typeof _gdChart === 'function') {
+    _gdChart('ls-canvas-' + i, { data: { labels: porMes.map(function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m.periodo) : m.periodo; }), datasets: datasets }, options: o });
+  }
+}
+
+// Detalle por asesor y por dia (solo roles internos; el servidor tambien lo
+// exige). Mismo patron visual que la tabla de Tipificacion.
+function _llamadasSalidaDetalleHtml(detalle) {
+  function tabla(titulo, col, filas, etiqueta) {
+    if (!filas.length) return '';
+    return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">' + titulo + '</div>' +
+      '<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="aurora-table"><thead><tr><th style="text-align:left">' + col + '</th><th>Total</th><th>No conectadas</th><th>Conectadas</th></tr></thead><tbody>' +
+      filas.map(function (r) {
+        return '<tr><td>' + esc(etiqueta(r)) + '</td><td>' + r.total.toLocaleString('es-CO') + '</td><td>' + r.noConectadas.toLocaleString('es-CO') + '</td><td>' + r.conectadas.toLocaleString('es-CO') + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+  return tabla('Detalle por asesor', 'Asesor', detalle.porAsesor || [], function (r) { return textoFormatoNombre(r.agente); }) +
+    tabla('Detalle por día', 'Día', detalle.porDia || [], function (r) { return _llamadasUnicasFmtFechaCorta(r.fecha); });
+}
+
+async function _llamadasSalidaRenderContenido(campana, i) {
+  var estado = _llamadasSalidaEstado[campana] || {};
+  var esInterno = _llamadasUnicasEsInterno();
+  var q = 'campana=' + encodeURIComponent(campana) +
+    (estado.desde ? '&desde=' + encodeURIComponent(estado.desde) : '') +
+    (estado.hasta ? '&hasta=' + encodeURIComponent(estado.hasta) : '') +
+    (esInterno && estado.agente ? '&agente=' + encodeURIComponent(estado.agente) : '');
+  var resumen = { total: 0, noConectadas: 0, conectadas: 0 };
+  var porMes = [];
+  var detalle = null;
+  try {
+    resumen = (await apiRequest('GET', '/calidad/llamadas-salida/resumen?' + q)) || resumen;
+    porMes = (await apiRequest('GET', '/calidad/llamadas-salida/por-mes?' + q)) || [];
+    if (esInterno) detalle = await apiRequest('GET', '/calidad/llamadas-salida/detalle?' + q);
+  } catch (e) { /* tarjetas/grafica en 0 -- nunca inventa un numero */ }
+  var elKpis = document.getElementById('ls-kpis-' + i);
+  if (elKpis) elKpis.innerHTML = _llamadasSalidaKpisHtml(resumen);
+  _llamadasSalidaDibujarBarras(i, porMes);
+  var elDet = document.getElementById('ls-detalle-' + i);
+  if (elDet) elDet.innerHTML = detalle ? _llamadasSalidaDetalleHtml(detalle) : '';
 }

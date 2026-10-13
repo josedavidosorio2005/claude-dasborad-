@@ -3456,6 +3456,31 @@ function migrarMobilizeLlamadasUnicasATabPropio() {
 }
 runOnceMigration('dashboards_config_mobilize_llamadas_unicas_tab_v1', migrarMobilizeLlamadasUnicasATabPropio);
 
+// Fase 141 (Parte C, reunion con Edwin del 13/10/2026): Llamadas de salida
+// de Mobilize (mitad derecha de la pestaña "Llamadas Únicas"). Tabla NUEVA e
+// independiente de llamadas_unicas -- solo CREATE ... IF NOT EXISTS, nunca
+// toca ninguna tabla ni dato existente. Igual que llamadas_unicas, NO TIENE
+// columna de telefono: el navegador lo usa solo en memoria para deduplicar
+// por (dia, telefono, tipo) -- ver public/js/llamadas-salida-logic.js.
+// 'tipo' sale de SKILL_ID: CONECTADA | NO_CONECTADA. 'tipificacion' es
+// DESCRIPTION_COD_ACT tal cual.
+runOnceMigration('fase141_llamadas_salida_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llamadas_salida (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      tipificacion TEXT NOT NULL DEFAULT '',
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_llamadas_salida_campana_fecha ON llamadas_salida(campana, fecha);
+  `);
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

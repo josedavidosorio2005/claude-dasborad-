@@ -425,11 +425,34 @@ evita que las cargas futuras se unifiquen de la misma forma.
    Llamadas abandonadas"**, filtrando por skill. Esas filas van a la
    plantilla con `SKILL_NAME = NO CONTESTADAS`.
 3. **Salientes no conectadas**: en Wolkvox, Reportes → pestaña **CDR** →
-   reporte **"5. Detalle de las llamadas para las no conectadas"** (esta
-   parte todavía no se carga en la plataforma — queda para cuando Edwin
-   mande ese archivo aparte).
+   reporte **"5. Detalle de las llamadas para las no conectadas"**. Estas
+   llamadas **no van en este archivo**: van en el archivo de "Llamadas de
+   salida" (ver abajo).
 
 ![Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados](img/guia-uso/wolkvox-cdr-mobilize.png)
+
+### Llamadas de salida (Mobilize)
+
+- **Dónde se ve**: en la misma pestaña "Llamadas Únicas", mitad derecha
+  (las de ingreso quedan a la izquierda; en el celular, una debajo de la
+  otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no
+  conectadas y Llamadas de salida conectadas, una gráfica de barras por
+  mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro
+  por asesor y el detalle por asesor y por día; el usuario del cliente no
+  ve nombres de asesor.
+- **Qué archivo**: el export de Wolkvox con las columnas AGENT_NAME, DATE,
+  TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y SKILL_ID, que debe
+  decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO
+  CONECTADAS" (cualquier otro valor se omite y se avisa). Se sube desde
+  "Cargar Datos" eligiendo Mobilize; la plataforma reconoce la hoja por
+  sus columnas.
+- **Cómo cuenta**: una sola vez cada teléfono por día, por separado si
+  ese día hubo llamada conectada y no conectada.
+- **Privacidad**: igual que en Llamadas Únicas, TELEPHONE nunca llega al
+  servidor.
+- **Reemplazo**: se reemplaza lo que ya exista entre la primera y la
+  última fecha del archivo (la plataforma muestra antes cuántos registros
+  va a reemplazar). Se pueden cargar varios meses, uno a la vez.
 
 ## 5. Calendario mensual
 
