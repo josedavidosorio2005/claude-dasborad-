@@ -24,7 +24,9 @@ const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_mo
 // servidor local con datos sinteticos, desde la prueba automatica de
 // privacidad (scripts/qa/fase128-parte2-privacidad-revision-final.js) --
 // nunca cambia el comportamiento real contra produccion (default intacto).
-const BASE = process.env.APP_URL || 'https://informa.inconexion.com.co';
+// Fase 139: BASE_URL (APP_URL queda como alias, lo usa esa prueba local);
+// default el unico dominio de produccion, sinco (informa se retiro).
+const BASE = process.env.BASE_URL || process.env.APP_URL || 'https://sinco.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 const USUARIOS_EJEMPLO = ['crodriguez', 'mlopez', 'jherrera', 'agomez', 'lrios', 'psuarez'];
 // Usuario del admin maestro (config.js: MASTER_ADMIN_USER, default 'admin') --
@@ -143,6 +145,20 @@ const REFERENCIA_TIPIFICACION_FILAS = 34661;
 const OCULTAS_ESPERADAS = ['Ordenamiento Médico', 'Recuperación de Cancelados', 'Flujo Mensual', 'Gestión STA'];
 
 function log(...args) { console.log(new Date().toISOString(), ...args); }
+
+// Fase 139: Escape (tras exportar) debe cerrar SOLO el menu de exportar,
+// nunca el dashboard entero (bug de las Fases 136/137, ya resuelto -- esto
+// evita que vuelva sin que nadie lo note).
+async function dashboardSigueAbierto(page) {
+  return page.evaluate(() => {
+    const ov = document.getElementById('gd-overlay');
+    return !!ov && ov.classList.contains('show');
+  });
+}
+
+// Fase 139: numeros de control de Mobilize (Fase 131/138). Tipificacion =
+// CDR real de Wolkvox (167 interacciones: 103 entrantes + 64 salientes).
+const ESPERADO_MOBILIZE = { tipificacionTotal: 167, tipificacionEntrantes: 103, tipificacionSalientes: 64 };
 
 // Espera un login (cualquiera) y devuelve la identidad real decodificada del
 // JWT -- nunca confia solo en `currentUser` del front (puede quedar null en
@@ -302,6 +318,7 @@ async function correrChequeosAdmin(page) {
   instalarListeners(page, erroresConsola, peticionesFallidas);
   const exportsOk = {};
   const hallazgosCanvas = [];
+  const escapeCerroDashboard = [];
   const reporte = { pestanas: {} };
 
   // ══ 1. Usuarios de ejemplo (Fase 110): ninguno activo con la clave de ejemplo ══
@@ -362,6 +379,12 @@ async function correrChequeosAdmin(page) {
       exportsOk[label] = { ok: false, error: e.message };
     }
     await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(300);
+    if (!(await dashboardSigueAbierto(page))) {
+      escapeCerroDashboard.push('ORLANT > ' + label);
+      await page.evaluate(() => openGenericDashboard('ORLANT'));
+      await page.waitForTimeout(1200);
+    }
     await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
   }
   reporte.exports = exportsOk;
@@ -552,6 +575,110 @@ async function correrChequeosAdmin(page) {
   });
   reporte.datoPorDato = datoPorDato;
 
+  // ══ 3c. Fase 139: MOBILIZE -- todas sus pestañas/sub-vistas (Flujo con el
+  // panel "Llamadas únicas" de la Fase 138 PR3 y la sub-pestaña "ASA y AHT"
+  // del PR2; Tipificacion), exportar + Escape, y sus numeros de control.
+  // Igual que arriba: solo conteos/veredictos, nunca texto del DOM. ══
+  const mobilize = { pestanas: {}, subvistas: {}, exports: {} };
+  const enBlancoMobilize = [];
+  await page.evaluate(() => openGenericDashboard('MOBILIZE'));
+  await page.waitForTimeout(1500);
+  const nTabsMob = await page.locator('#gd-tabs .atab').count();
+  for (let i = 0; i < nTabsMob; i++) {
+    const tab = page.locator('#gd-tabs .atab').nth(i);
+    const label = (await tab.textContent() || '').trim();
+    await tab.click();
+    await page.waitForTimeout(1500);
+    const malos = await canvasesSinDibujar(page);
+    mobilize.pestanas[label] = { canvasesSinDibujar: malos };
+    malos.forEach((m) => hallazgosCanvas.push('MOBILIZE ' + label + ': ' + m.motivo + ' (' + m.id + ')'));
+    mobilize.subvistas[label] = {};
+    const nSub = await page.locator('.gd-subtab-btn').count();
+    const subs = nSub > 0 ? nSub : 1;
+    for (let s = 0; s < subs; s++) {
+      let subLabel = '(sin sub-pestañas)';
+      if (nSub > 0) {
+        const subBtn = page.locator('.gd-subtab-btn').nth(s);
+        subLabel = (await subBtn.textContent() || '').trim();
+        await subBtn.click();
+        await page.waitForTimeout(900);
+      }
+      const v = await veredictoSubvista(page);
+      mobilize.subvistas[label][subLabel] = v;
+      if (v.veredicto === 'EN_BLANCO') enBlancoMobilize.push(label + ' > ' + subLabel);
+    }
+    try {
+      const nombreDescarga = await exportarYVerificarDescarga(page);
+      mobilize.exports[label] = { ok: !!nombreDescarga, archivo: nombreDescarga };
+    } catch (e) {
+      mobilize.exports[label] = { ok: false, error: e.message };
+    }
+    await page.keyboard.press('Escape').catch(() => {});
+    await page.waitForTimeout(300);
+    if (!(await dashboardSigueAbierto(page))) {
+      escapeCerroDashboard.push('MOBILIZE > ' + label);
+      await page.evaluate(() => openGenericDashboard('MOBILIZE'));
+      await page.waitForTimeout(1500);
+    }
+    await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
+  }
+  mobilize.tieneSubtabAsaAht = Object.values(mobilize.subvistas).some((s) => Object.keys(s).includes('ASA y AHT'));
+
+  // Panel "Llamadas únicas" (Flujo de Llamadas): 3 tarjetas, barras por mes
+  // con 3 series, filtros Desde/Hasta/Skill. El filtro Asesor existe para
+  // roles internos (esta sesion es admin) y NO para CLIENTES_DASH -- eso
+  // ultimo solo se puede ver con la cuenta del cliente (queda anotado).
+  await page.locator('#gd-tabs .atab', { hasText: 'Flujo de Llamadas' }).first().click().catch(() => {});
+  await page.waitForTimeout(1500);
+  mobilize.llamadasUnicas = await page.evaluate(() => {
+    const k = document.querySelector('[id^="lu-kpis-"]');
+    if (!k) {
+      // Sin datos cargados el panel muestra SOLO su aviso (llamadas-unicas.js,
+      // sin tarjetas ni filtros) -- correcto antes de la carga real. Solo
+      // sale un booleano, nunca el texto.
+      const host = document.querySelector('[data-campana="MOBILIZE"]');
+      const avisoSinDatos = !!host && /Sin llamadas únicas cargadas/.test(host.innerText || '');
+      return { panel: avisoSinDatos ? 'sin-datos' : false };
+    }
+    const i = k.id.replace('lu-kpis-', '');
+    const canvas = document.getElementById('lu-canvas-' + i);
+    const chart = canvas && window.Chart && Chart.getChart(canvas);
+    return {
+      panel: true,
+      tarjetas: k.querySelectorAll('.aurora-kpi').length,
+      seriesBarras: chart ? chart.data.datasets.length : 0,
+      filtroDesde: !!document.getElementById('lu-f-desde-' + i),
+      filtroHasta: !!document.getElementById('lu-f-hasta-' + i),
+      filtroSkill: !!document.getElementById('lu-f-skill-' + i),
+      filtroAsesorParaAdmin: !!document.getElementById('lu-f-agente-' + i),
+    };
+  });
+  mobilize.llamadasUnicasTotales = await page.evaluate(() => apiRequest('GET', '/calidad/llamadas-unicas/resumen?campana=MOBILIZE'));
+
+  mobilize.numeros = await page.evaluate(async () => {
+    const base = '/calidad/tipificacion/por-tipo?campana=MOBILIZE&canal=LLAMADAS';
+    const total = await apiRequest('GET', base);
+    const entr = await apiRequest('GET', base + '&tipoInteraccion=inbound');
+    const sal = await apiRequest('GET', base + '&tipoInteraccion=outbound_ma');
+    return { tipificacionTotal: total.total, tipificacionEntrantes: entr.total, tipificacionSalientes: sal.total };
+  });
+  const discrepanciasMobilize = Object.keys(ESPERADO_MOBILIZE)
+    .filter((k) => mobilize.numeros[k] !== ESPERADO_MOBILIZE[k])
+    .map((k) => `MOBILIZE ${k}: esperado ${ESPERADO_MOBILIZE[k]}, real ${mobilize.numeros[k]}`);
+  discrepancias.push(...discrepanciasMobilize);
+  const lu = mobilize.llamadasUnicas;
+  // Antes de la carga real (total 0) basta el aviso de "sin datos"; con
+  // datos cargados se exige el panel completo.
+  const luOk = (lu.panel === 'sin-datos' && mobilize.llamadasUnicasTotales.total === 0) ||
+    (lu.panel === true && lu.tarjetas === 3 && lu.seriesBarras === 3 && lu.filtroDesde && lu.filtroHasta &&
+      lu.filtroSkill && lu.filtroAsesorParaAdmin);
+  mobilize.ok =
+    luOk && mobilize.tieneSubtabAsaAht && discrepanciasMobilize.length === 0 &&
+    enBlancoMobilize.length === 0 && Object.values(mobilize.exports).every((e) => e.ok);
+  mobilize.enBlancoSinMensaje = enBlancoMobilize;
+  reporte.mobilize = mobilize;
+  reporte.escapeCerroDashboard = escapeCerroDashboard;
+
   // ══ 4. Fase 113: mi propio login queda en el Historial + "Ultimo ingreso"
   // se actualiza + "Cambiar mi contrasena" aparece en el menu, SIN usarla ══
   const hist113 = await page.evaluate(() => apiRequest('GET', '/historial'));
@@ -619,7 +746,8 @@ async function correrChequeosAdmin(page) {
   reporte.ok =
     erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 &&
     fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
-    datoPorDatoOk && enBlancoSinMensaje.length === 0 && inasistenciaIntegridadOk;
+    datoPorDatoOk && enBlancoSinMensaje.length === 0 && inasistenciaIntegridadOk &&
+    mobilize.ok && escapeCerroDashboard.length === 0;
 
   // Cierra sesion admin antes de soltar esta pagina -- nunca deja el
   // navegador logueado como admin al terminar este bloque.
@@ -836,6 +964,20 @@ if (require.main === module) (async () => {
     // aborta -- avisa claro y se queda con lo que ya tiene de la ventana 1
     // (nunca se pierde un recorrido que SI se completo bien). ──
     const falta = primeraFue === 'admin' ? 'cliente' : 'admin';
+    // Fase 139: SOLO_ADMIN=1 -- corrida solo con la cuenta de admin (ej.
+    // mientras la contraseña temporal de CLIENTES_DASH no se haya cambiado).
+    // La mitad del cliente queda SIN VERIFICAR, nunca se da por buena.
+    if (process.env.SOLO_ADMIN === '1' && primeraFue === 'admin') {
+      log('SOLO_ADMIN=1: no se abre la 2da ventana -- CLIENTES_DASH queda SIN VERIFICAR en esta corrida.');
+      reporte.admin = reporteAdmin;
+      reporte.clientesDash = 'SIN VERIFICAR (SOLO_ADMIN=1)';
+      log('=== REPORTE COMPLETO ===');
+      console.log(JSON.stringify(reporte, null, 2));
+      ok = reporteAdmin.ok;
+      log(ok ? 'OK (solo admin): 0 discrepancias, 0 errores, exports OK. CLIENTES_DASH pendiente.' : 'REVISAR -- ver discrepancias/hallazgos arriba.');
+      process.exitCode = ok ? 0 : 1; // el `return` salta el process.exit del final (el finally igual cierra el navegador)
+      return;
+    }
     const { context: ctx2, page: page2 } = await paginaFresca(browser);
     const mensaje2 = falta === 'admin'
       ? 'con TU CUENTA DE ADMINISTRADOR (en la ventana anterior entraste con la del cliente -- ahora toca la tuya)'
