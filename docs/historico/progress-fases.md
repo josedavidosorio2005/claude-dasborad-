@@ -14247,3 +14247,41 @@ página que sirve la app, `server/paginas/guia-uso.html`, no solo
   control de esta fase.
 
 Ningún servidor local quedó corriendo en segundo plano al terminar.
+
+## Fase 139 (en curso) — Carga real de Llamadas Únicas de Mobilize, septiembre/2026 (2026-10-13)
+
+Autorizada con "OK cargar" del usuario (2026-10-13). Hecha por la
+interfaz normal (Cargar Datos → MOBILIZE → archivo), navegador visible,
+el usuario escribió su contraseña; nunca SQL ni workflow. Respaldo
+diario de la instancia de ese mismo día (03:18 UTC, menos de 24 h,
+subida a S3 OK). El archivo real nunca entró al repo, a logs, a PRs ni a
+capturas — solo se imprimieron conteos.
+
+- **Bug encontrado antes de tocar producción** (ensayo local con el
+  archivo real): la pantalla de carga lee el Excel con
+  `sheetStubs/cellNF` y SheetJS entrega la DATE de Wolkvox como objeto
+  `Date`; `llamadasUnicasParseFecha` solo leía number/string → las 139
+  filas salían "DATE inválida". Arreglado en el PR #397 (v1.30.1), mismo
+  patrón que Inasistencia, con prueba de regresión.
+- **Dry-run (vista previa + impacto en servidor)**: 139 filas = 88
+  contestadas (SKILL SAC 85 + Skill Key Account 3) + 51 abandonadas;
+  2026-09-01 → 2026-09-30; 25 días con contestadas; 0 avisos; 0
+  duplicados día+teléfono; 0 filas ya existentes; sin alias de agente.
+- **Guardado** (2026-10-13 15:46 UTC): resumen en el servidor 88 / 51 /
+  139. El teléfono no llegó al servidor (la tabla no tiene esa columna).
+- **Verificación en pantalla** (Mobilize → Flujo de Llamadas → "Llamadas
+  de ingreso únicas"): tarjetas 88 / 51 / 139; barras de Septiembre 2026
+  con las 3 series (139 / 88 / 51); filtros Desde/Hasta/Skill/Asesor
+  presentes para admin; Skill=Abandonadas → 0 / 51 / 51; 1–15 sep → 43
+  / 19 / 62. Tipificación de Mobilize intacta (167 = 103 entrantes + 64
+  salientes); ORLANT intacto (8 pestañas, números de control y dato por
+  dato sin discrepancias, exports OK, Escape no cierra el dashboard); 0
+  errores de consola/CORS. El filtro Asesor oculto para CLIENTES_DASH se
+  confirmó en local con el usuario demo (en producción, la cuenta real
+  del cliente sigue sin verificar).
+- **Decisión del usuario sobre el nombre de agente en las abandonadas**
+  (opción 1): se guarda y se ve en el filtro Asesor, solo para roles
+  internos, como lo pidió Edwin — sin cambio de código. Nota: el endpoint
+  `/calidad/llamadas-unicas/opciones` igual devuelve la lista de agentes
+  a cualquier rol con acceso a Mobilize (la pantalla la oculta para
+  CLIENTES_DASH).
