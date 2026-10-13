@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 #
 # Imagen de produccion para el backend de InConexion Platform.
 #
