@@ -16,6 +16,28 @@
 // ventana se escribio cada cuenta -- la segunda ventana exige la
 // identidad que todavia falte (si se repite la misma cuenta, lo dice
 // claro y no sigue).
+//
+// COMO CORRERLO (desde la raiz del repo, con server/node_modules instalado):
+//
+//   node scripts/produccion/revision-final.js
+//       Produccion (https://sinco.inconexion.com.co). Abre un Chrome
+//       VISIBLE con "INICIA SESION AHORA": tecleas tu la contrasena (el
+//       script nunca la ve ni la guarda). Ventana 1: admin o CLIENTES_DASH
+//       (lo detecta por el JWT); ventana 2: la cuenta que falte.
+//
+//   SOLO_ADMIN=1 node scripts/produccion/revision-final.js
+//       Solo la cuenta de admin; CLIENTES_DASH queda "SIN VERIFICAR".
+//       (PowerShell: $env:SOLO_ADMIN='1'; node scripts/produccion/revision-final.js)
+//
+//   BASE_URL=http://localhost:3000 node scripts/produccion/revision-final.js
+//       Contra otro servidor (APP_URL sirve igual, es el alias viejo).
+//
+// Fase 139 (salto de pestanas): cada clic en una pestana/sub-pestana espera
+// a que ESA quede activa (si queda otra, lo reporta en
+// "pestanaEquivocadaTrasClic"), cada dashboard se abre esperando a que haya
+// pestanas dibujadas y una activa (nunca depende del aviso amarillo de "sin
+// datos" ni de una espera fija) y se cierra con su boton "X Cerrar", como
+// lo haria un usuario.
 'use strict';
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
@@ -156,9 +178,80 @@ async function dashboardSigueAbierto(page) {
   });
 }
 
+// Fase 139: abre un dashboard y espera a que este LISTO -- pestanas
+// dibujadas y una activa. openGenericDashboard vacia #gd-tabs en el acto,
+// asi que nunca se confunde con las pestanas del dashboard anterior. No
+// depende del aviso amarillo de "sin datos" (puede estar o no).
+async function abrirDashboard(page, cliente) {
+  await page.evaluate((c) => openGenericDashboard(c), cliente);
+  await page.waitForFunction(() => {
+    const ov = document.getElementById('gd-overlay');
+    return !!ov && ov.classList.contains('show') && !!document.querySelector('#gd-tabs .atab.atab-active');
+  }, null, { timeout: 60000 });
+}
+
+// Fase 139: cierra el dashboard con su boton "X Cerrar" (como un usuario)
+// y espera a que el overlay se oculte de verdad.
+async function cerrarDashboard(page) {
+  await page.locator('#gd-modal button.aurora-close', { hasText: 'Cerrar' }).first().click();
+  await page.waitForFunction(() => {
+    const ov = document.getElementById('gd-overlay');
+    return !ov || !ov.classList.contains('show');
+  }, null, { timeout: 10000 });
+}
+
+// Fase 139: clic en una pestana (o sub-pestana) y espera a que quede ACTIVA
+// ESA misma. Si queda otra (p. ej. porque las pestanas se movieron justo
+// antes del clic), lo anota en `registro` -- solo etiquetas de pestana,
+// nunca texto del panel.
+async function clicYEsperarActiva(page, locator, label, selectorActiva, registro) {
+  await locator.click();
+  const ok = await page.waitForFunction(([sel, l]) => {
+    const a = document.querySelector(sel);
+    return !!a && a.textContent.trim() === l;
+  }, [selectorActiva, label], { timeout: 10000 }).then(() => true).catch(() => false);
+  if (!ok) {
+    const activa = await page.evaluate((sel) => { const a = document.querySelector(sel); return a ? a.textContent.trim() : null; }, selectorActiva);
+    registro.push(label + ' -> quedo activa: ' + activa);
+  }
+  return ok;
+}
+const ACTIVA_TAB = '#gd-tabs .atab.atab-active';
+const ACTIVA_SUBTAB = '.gd-subtab-btn.on';
+
 // Fase 139: numeros de control de Mobilize (Fase 131/138). Tipificacion =
 // CDR real de Wolkvox (167 interacciones: 103 entrantes + 64 salientes).
 const ESPERADO_MOBILIZE = { tipificacionTotal: 167, tipificacionEntrantes: 103, tipificacionSalientes: 64 };
+// Fase 139: Llamadas Unicas de Mobilize (carga real de septiembre, solo
+// conteos): contestadas/abandonadas/total sin filtro, con el filtro de
+// skill "Abandonadas" y con Desde/Hasta 1-15 sep.
+const ESPERADO_LLAMADAS_UNICAS = {
+  todo: { contestadas: 88, abandonadas: 51, total: 139 },
+  skillAbandonadas: { contestadas: 0, abandonadas: 51, total: 51 },
+  sep1a15: { contestadas: 43, abandonadas: 19, total: 62 },
+};
+// Se calcula SIEMPRE dentro del navegador con la sesion de quien corre (admin
+// o cliente) -- solo conteos, nunca filas.
+async function llamadasUnicasConteos(page) {
+  return page.evaluate(async () => {
+    const b = '/calidad/llamadas-unicas/resumen?campana=MOBILIZE';
+    const solo = (r) => ({ contestadas: r.contestadas, abandonadas: r.abandonadas, total: r.total });
+    return {
+      todo: solo(await apiRequest('GET', b)),
+      skillAbandonadas: solo(await apiRequest('GET', b + '&skill=Abandonadas')),
+      sep1a15: solo(await apiRequest('GET', b + '&desde=2026-09-01&hasta=2026-09-15')),
+    };
+  });
+}
+function discrepanciasLlamadasUnicas(conteos, prefijo) {
+  const out = [];
+  for (const [caso, esp] of Object.entries(ESPERADO_LLAMADAS_UNICAS)) {
+    for (const [k, v] of Object.entries(esp)) {
+      if (!conteos[caso] || conteos[caso][k] !== v) out.push(`${prefijo} llamadasUnicas.${caso}.${k}: esperado ${v}, real ${conteos[caso] && conteos[caso][k]}`);
+    }
+  }
+  return out;
+}
 
 // Espera un login (cualquiera) y devuelve la identidad real decodificada del
 // JWT -- nunca confia solo en `currentUser` del front (puede quedar null en
@@ -319,6 +412,7 @@ async function correrChequeosAdmin(page) {
   const exportsOk = {};
   const hallazgosCanvas = [];
   const escapeCerroDashboard = [];
+  const pestanaEquivocada = [];
   const reporte = { pestanas: {} };
 
   // ══ 1. Usuarios de ejemplo (Fase 110): ninguno activo con la clave de ejemplo ══
@@ -340,15 +434,14 @@ async function correrChequeosAdmin(page) {
   // ══ 2. Las pestañas de ORLANT (8 desde la Fase 127), Y CADA SUB-VISTA (Fase 120: hallazgo de
   // fondo -- las Fases 112-119 solo miraban la sub-vista que abre por
   // defecto; asi se le escapo el AHT de WhatsApp en blanco). ══
-  await page.evaluate(() => openGenericDashboard('ORLANT'));
-  await page.waitForTimeout(1200);
+  await abrirDashboard(page, 'ORLANT');
   const subvistas = {};
   const enBlancoSinMensaje = [];
   const nTabs = await page.locator('#gd-tabs .atab').count();
   for (let i = 0; i < nTabs; i++) {
     const tab = page.locator('#gd-tabs .atab').nth(i);
     const label = (await tab.textContent() || '').trim();
-    await tab.click();
+    await clicYEsperarActiva(page, tab, label, ACTIVA_TAB, pestanaEquivocada);
     await page.waitForTimeout(1200);
     const malos = await canvasesSinDibujar(page);
     reporte.pestanas[label] = { canvasesSinDibujar: malos };
@@ -360,7 +453,7 @@ async function correrChequeosAdmin(page) {
       for (let s = 0; s < nSub; s++) {
         const subBtn = page.locator('.gd-subtab-btn').nth(s);
         const subLabel = (await subBtn.textContent() || '').trim();
-        await subBtn.click();
+        await clicYEsperarActiva(page, subBtn, subLabel, ACTIVA_SUBTAB, pestanaEquivocada);
         await page.waitForTimeout(900);
         const v = await veredictoSubvista(page);
         subvistas[label][subLabel] = v;
@@ -382,8 +475,7 @@ async function correrChequeosAdmin(page) {
     await page.waitForTimeout(300);
     if (!(await dashboardSigueAbierto(page))) {
       escapeCerroDashboard.push('ORLANT > ' + label);
-      await page.evaluate(() => openGenericDashboard('ORLANT'));
-      await page.waitForTimeout(1200);
+      await abrirDashboard(page, 'ORLANT');
     }
     await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
   }
@@ -581,13 +673,13 @@ async function correrChequeosAdmin(page) {
   // Igual que arriba: solo conteos/veredictos, nunca texto del DOM. ══
   const mobilize = { pestanas: {}, subvistas: {}, exports: {} };
   const enBlancoMobilize = [];
-  await page.evaluate(() => openGenericDashboard('MOBILIZE'));
-  await page.waitForTimeout(1500);
+  await cerrarDashboard(page); // ORLANT se cierra con su boton antes de abrir Mobilize
+  await abrirDashboard(page, 'MOBILIZE');
   const nTabsMob = await page.locator('#gd-tabs .atab').count();
   for (let i = 0; i < nTabsMob; i++) {
     const tab = page.locator('#gd-tabs .atab').nth(i);
     const label = (await tab.textContent() || '').trim();
-    await tab.click();
+    await clicYEsperarActiva(page, tab, label, ACTIVA_TAB, pestanaEquivocada);
     await page.waitForTimeout(1500);
     const malos = await canvasesSinDibujar(page);
     mobilize.pestanas[label] = { canvasesSinDibujar: malos };
@@ -600,7 +692,7 @@ async function correrChequeosAdmin(page) {
       if (nSub > 0) {
         const subBtn = page.locator('.gd-subtab-btn').nth(s);
         subLabel = (await subBtn.textContent() || '').trim();
-        await subBtn.click();
+        await clicYEsperarActiva(page, subBtn, subLabel, ACTIVA_SUBTAB, pestanaEquivocada);
         await page.waitForTimeout(900);
       }
       const v = await veredictoSubvista(page);
@@ -617,8 +709,7 @@ async function correrChequeosAdmin(page) {
     await page.waitForTimeout(300);
     if (!(await dashboardSigueAbierto(page))) {
       escapeCerroDashboard.push('MOBILIZE > ' + label);
-      await page.evaluate(() => openGenericDashboard('MOBILIZE'));
-      await page.waitForTimeout(1500);
+      await abrirDashboard(page, 'MOBILIZE');
     }
     await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
   }
@@ -630,10 +721,10 @@ async function correrChequeosAdmin(page) {
   // ultimo solo se puede ver con la cuenta del cliente (queda anotado).
   // Fase 139: el panel vive en su pestaña propia "Llamadas Únicas" (ya no
   // encima de Flujo de Llamadas) -- y Flujo debe quedar SIN ese panel.
-  await page.locator('#gd-tabs .atab', { hasText: 'Flujo de Llamadas' }).first().click().catch(() => {});
+  await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Flujo de Llamadas' }).first(), 'Flujo de Llamadas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
   await page.waitForTimeout(1500);
   mobilize.flujoSinPanelUnicas = await page.evaluate(() => !document.querySelector('[id^="lu-kpis-"]') && !document.querySelector('[data-campana="MOBILIZE"] .lu-aviso'));
-  await page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first().click().catch(() => {});
+  await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first(), 'Llamadas Únicas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
   await page.waitForTimeout(1500);
   mobilize.tieneTabLlamadasUnicas = await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).some((t) => t.textContent.trim() === 'Llamadas Únicas'));
   mobilize.llamadasUnicas = await page.evaluate(() => {
@@ -652,6 +743,8 @@ async function correrChequeosAdmin(page) {
     return {
       panel: true,
       tarjetas: k.querySelectorAll('.aurora-kpi').length,
+      // Solo los 3 numeros de las tarjetas (contestadas/abandonadas/total).
+      valoresTarjetas: Array.from(k.querySelectorAll('.aurora-kpi .kv')).map((e) => Number(e.textContent.replace(/[^0-9]/g, ''))),
       seriesBarras: chart ? chart.data.datasets.length : 0,
       filtroDesde: !!document.getElementById('lu-f-desde-' + i),
       filtroHasta: !!document.getElementById('lu-f-hasta-' + i),
@@ -659,7 +752,8 @@ async function correrChequeosAdmin(page) {
       filtroAsesorParaAdmin: !!document.getElementById('lu-f-agente-' + i),
     };
   });
-  mobilize.llamadasUnicasTotales = await page.evaluate(() => apiRequest('GET', '/calidad/llamadas-unicas/resumen?campana=MOBILIZE'));
+  mobilize.llamadasUnicasConteos = await llamadasUnicasConteos(page);
+  mobilize.llamadasUnicasTotales = mobilize.llamadasUnicasConteos.todo;
 
   mobilize.numeros = await page.evaluate(async () => {
     const base = '/calidad/tipificacion/por-tipo?campana=MOBILIZE&canal=LLAMADAS';
@@ -671,13 +765,16 @@ async function correrChequeosAdmin(page) {
   const discrepanciasMobilize = Object.keys(ESPERADO_MOBILIZE)
     .filter((k) => mobilize.numeros[k] !== ESPERADO_MOBILIZE[k])
     .map((k) => `MOBILIZE ${k}: esperado ${ESPERADO_MOBILIZE[k]}, real ${mobilize.numeros[k]}`);
+  discrepanciasMobilize.push(...discrepanciasLlamadasUnicas(mobilize.llamadasUnicasConteos, 'MOBILIZE'));
   discrepancias.push(...discrepanciasMobilize);
   const lu = mobilize.llamadasUnicas;
-  // Antes de la carga real (total 0) basta el aviso de "sin datos"; con
-  // datos cargados se exige el panel completo.
-  const luOk = (lu.panel === 'sin-datos' && mobilize.llamadasUnicasTotales.total === 0) ||
-    (lu.panel === true && lu.tarjetas === 3 && lu.seriesBarras === 3 && lu.filtroDesde && lu.filtroHasta &&
-      lu.filtroSkill && lu.filtroAsesorParaAdmin);
+  // Fase 139: septiembre ya esta cargado -- se exige el panel completo
+  // (antes bastaba el aviso de "sin datos" con total 0) y que las tarjetas
+  // muestren los mismos numeros que el API.
+  const esp = ESPERADO_LLAMADAS_UNICAS.todo;
+  const luOk = lu.panel === true && lu.tarjetas === 3 && lu.seriesBarras === 3 && lu.filtroDesde && lu.filtroHasta &&
+    lu.filtroSkill && lu.filtroAsesorParaAdmin &&
+    JSON.stringify(lu.valoresTarjetas) === JSON.stringify([esp.contestadas, esp.abandonadas, esp.total]);
   mobilize.ok =
     luOk && mobilize.tieneTabLlamadasUnicas && mobilize.flujoSinPanelUnicas &&
     mobilize.tieneSubtabAsaAht && discrepanciasMobilize.length === 0 &&
@@ -685,6 +782,9 @@ async function correrChequeosAdmin(page) {
   mobilize.enBlancoSinMensaje = enBlancoMobilize;
   reporte.mobilize = mobilize;
   reporte.escapeCerroDashboard = escapeCerroDashboard;
+  await cerrarDashboard(page);
+  reporte.cerroConBoton = !(await dashboardSigueAbierto(page));
+  reporte.pestanaEquivocadaTrasClic = pestanaEquivocada;
 
   // ══ 4. Fase 113: mi propio login queda en el Historial + "Ultimo ingreso"
   // se actualiza + "Cambiar mi contrasena" aparece en el menu, SIN usarla ══
@@ -754,7 +854,8 @@ async function correrChequeosAdmin(page) {
     erroresConsola.length === 0 && discrepancias.length === 0 && hallazgosCanvas.length === 0 &&
     fase113Ok && peticionesFallidas.length === 0 && exportsFallidos.length === 0 &&
     datoPorDatoOk && enBlancoSinMensaje.length === 0 && inasistenciaIntegridadOk &&
-    mobilize.ok && escapeCerroDashboard.length === 0;
+    mobilize.ok && escapeCerroDashboard.length === 0 &&
+    pestanaEquivocada.length === 0 && reporte.cerroConBoton;
 
   // Cierra sesion admin antes de soltar esta pagina -- nunca deja el
   // navegador logueado como admin al terminar este bloque.
@@ -806,46 +907,101 @@ async function correrChequeosCliente(page) {
   peticionesFallidas.length = antesPeticiones;
   clientesDash.escaladasBloqueadas = escaladas;
 
+  // Fase 139: a que dashboards tiene acceso esta cuenta (403 = sin acceso).
+  // Solo booleanos. Un 403 de "sin acceso" es el resultado esperado: no
+  // cuenta como ruido (mismo criterio que las escaladas de arriba).
+  const antesConsola0 = erroresConsola.length;
+  const antesPeticiones0 = peticionesFallidas.length;
+  clientesDash.acceso = await page.evaluate(async () => {
+    const out = {};
+    for (const c of ['ORLANT', 'MOBILIZE']) {
+      try { await apiRequest('GET', '/dashboard/' + c); out[c] = true; } catch (e) { out[c] = e.status === 403 ? false : 'error ' + e.status; }
+    }
+    return out;
+  });
+  erroresConsola.length = antesConsola0;
+  peticionesFallidas.length = antesPeticiones0;
+  const pestanaEquivocada = [];
+  clientesDash.pestanaEquivocadaTrasClic = pestanaEquivocada;
+
+  // Fase 139: Mobilize desde la cuenta del cliente -- el filtro Asesor de
+  // Llamadas Unicas NO aparece y los numeros coinciden con los del admin.
+  if (clientesDash.acceso.MOBILIZE === true) {
+    await abrirDashboard(page, 'MOBILIZE');
+    const mob = { pestanas: await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).map((t) => t.textContent.trim())) };
+    await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first(), 'Llamadas Únicas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
+    await page.waitForTimeout(1500);
+    mob.llamadasUnicasPanel = await page.evaluate(() => {
+      const k = document.querySelector('[id^="lu-kpis-"]');
+      if (!k) return { panel: false };
+      const i = k.id.replace('lu-kpis-', '');
+      return {
+        panel: true,
+        valoresTarjetas: Array.from(k.querySelectorAll('.aurora-kpi .kv')).map((e) => Number(e.textContent.replace(/[^0-9]/g, ''))),
+        filtroAsesorVisible: !!document.getElementById('lu-f-agente-' + i),
+        filtroSkill: !!document.getElementById('lu-f-skill-' + i),
+      };
+    });
+    mob.llamadasUnicasConteos = await llamadasUnicasConteos(page);
+    mob.discrepancias = discrepanciasLlamadasUnicas(mob.llamadasUnicasConteos, 'CLIENTE MOBILIZE');
+    const e = ESPERADO_LLAMADAS_UNICAS.todo;
+    mob.ok = mob.llamadasUnicasPanel.panel === true && mob.llamadasUnicasPanel.filtroAsesorVisible === false &&
+      JSON.stringify(mob.llamadasUnicasPanel.valoresTarjetas) === JSON.stringify([e.contestadas, e.abandonadas, e.total]) &&
+      mob.discrepancias.length === 0;
+    clientesDash.mobilize = mob;
+    await cerrarDashboard(page);
+  } else {
+    clientesDash.mobilize = 'sin acceso (no aplica)';
+  }
+
   // Pestañas visibles: solo las 7 con datos reales, nunca las 5 que esperan
   // base de Edwin (dashboard-config-seed.js: oculta:true).
-  await page.evaluate(() => openGenericDashboard('ORLANT'));
-  await page.waitForTimeout(1200);
-  const nTabsCliente = await page.locator('#gd-tabs .atab').count();
-  const etiquetasTabs = [];
-  for (let i = 0; i < nTabsCliente; i++) {
-    etiquetasTabs.push(((await page.locator('#gd-tabs .atab').nth(i).textContent()) || '').trim());
-  }
-  clientesDash.pestanasVisibles = etiquetasTabs;
-  clientesDash.pestanasOcultasFiltradas = OCULTAS_ESPERADAS.filter((o) => etiquetasTabs.includes(o));
-
-  // Recorre las pestañas reales: canvas con pixeles, Exportar funciona,
-  // sin aviso "demo"/dato de prueba visible.
-  const hallazgosCanvasCliente = [];
-  const exportsCliente = {};
-  const avisosDemo = [];
-  for (let i = 0; i < nTabsCliente; i++) {
-    const tab = page.locator('#gd-tabs .atab').nth(i);
-    const label = ((await tab.textContent()) || '').trim();
-    await tab.click();
-    await page.waitForTimeout(1200);
-    const malos = await canvasesSinDibujar(page);
-    malos.forEach((m) => hallazgosCanvasCliente.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
-    // Fase 128 (Parte 2): el regex se evalua DENTRO del navegador -- solo
-    // sale un booleano, el texto del panel nunca cruza a Node.
-    const tieneAvisoDemo = await page.evaluate(() => /\bdemo\b|datos? de prueba|ficticio/i.test((document.getElementById('gd-panels') || {}).innerText || ''));
-    if (tieneAvisoDemo) avisosDemo.push(label);
-    try {
-      const nombreDescarga = await exportarYVerificarDescarga(page);
-      exportsCliente[label] = { ok: !!nombreDescarga };
-    } catch (e) {
-      exportsCliente[label] = { ok: false, error: e.message };
+  if (clientesDash.acceso.ORLANT === true) {
+    await abrirDashboard(page, 'ORLANT');
+    const nTabsCliente = await page.locator('#gd-tabs .atab').count();
+    const etiquetasTabs = [];
+    for (let i = 0; i < nTabsCliente; i++) {
+      etiquetasTabs.push(((await page.locator('#gd-tabs .atab').nth(i).textContent()) || '').trim());
     }
-    await page.keyboard.press('Escape').catch(() => {});
-    await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
+    clientesDash.pestanasVisibles = etiquetasTabs;
+    clientesDash.pestanasOcultasFiltradas = OCULTAS_ESPERADAS.filter((o) => etiquetasTabs.includes(o));
+
+    // Recorre las pestañas reales: canvas con pixeles, Exportar funciona,
+    // sin aviso "demo"/dato de prueba visible.
+    const hallazgosCanvasCliente = [];
+    const exportsCliente = {};
+    const avisosDemo = [];
+    for (let i = 0; i < nTabsCliente; i++) {
+      const tab = page.locator('#gd-tabs .atab').nth(i);
+      const label = ((await tab.textContent()) || '').trim();
+      await clicYEsperarActiva(page, tab, label, ACTIVA_TAB, pestanaEquivocada);
+      await page.waitForTimeout(1200);
+      const malos = await canvasesSinDibujar(page);
+      malos.forEach((m) => hallazgosCanvasCliente.push(label + ': ' + m.motivo + ' (' + m.id + ')'));
+      // Fase 128 (Parte 2): el regex se evalua DENTRO del navegador -- solo
+      // sale un booleano, el texto del panel nunca cruza a Node.
+      const tieneAvisoDemo = await page.evaluate(() => /\bdemo\b|datos? de prueba|ficticio/i.test((document.getElementById('gd-panels') || {}).innerText || ''));
+      if (tieneAvisoDemo) avisosDemo.push(label);
+      try {
+        const nombreDescarga = await exportarYVerificarDescarga(page);
+        exportsCliente[label] = { ok: !!nombreDescarga };
+      } catch (e) {
+        exportsCliente[label] = { ok: false, error: e.message };
+      }
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
+    }
+    clientesDash.canvasesSinDibujar = hallazgosCanvasCliente;
+    clientesDash.exports = exportsCliente;
+    clientesDash.avisosDemoVisibles = avisosDemo;
+    await cerrarDashboard(page);
+  } else {
+    clientesDash.orlant = 'sin acceso (no aplica)';
+    clientesDash.pestanasOcultasFiltradas = [];
+    clientesDash.canvasesSinDibujar = [];
+    clientesDash.exports = {};
+    clientesDash.avisosDemoVisibles = [];
   }
-  clientesDash.canvasesSinDibujar = hallazgosCanvasCliente;
-  clientesDash.exports = exportsCliente;
-  clientesDash.avisosDemoVisibles = avisosDemo;
 
   // Calidad: solo DESCRIBE lo que el cliente ve (catalogo de
   // codificaciones, cantidad de monitoreos) -- nunca toca nada, los 37
@@ -890,9 +1046,12 @@ async function correrChequeosCliente(page) {
     clientesDash.vistaUsuario.rolFrontend === 'CLIENTES_DASH' &&
     escaladas.every((e) => e.bloqueado) &&
     clientesDash.pestanasOcultasFiltradas.length === 0 &&
-    hallazgosCanvasCliente.length === 0 &&
-    Object.values(exportsCliente).every((e) => e.ok) &&
-    avisosDemo.length === 0 &&
+    clientesDash.canvasesSinDibujar.length === 0 &&
+    Object.values(clientesDash.exports).every((e) => e.ok) &&
+    clientesDash.avisosDemoVisibles.length === 0 &&
+    (clientesDash.acceso.ORLANT === true || clientesDash.acceso.MOBILIZE === true) &&
+    (clientesDash.mobilize === 'sin acceso (no aplica)' || clientesDash.mobilize.ok) &&
+    pestanaEquivocada.length === 0 &&
     clientesDash.cambiarPassword.visible && clientesDash.cambiarPassword.rechazoContrasenaActualIncorrecta === true &&
     erroresConsola.length === 0 && peticionesFallidas.length === 0;
 
