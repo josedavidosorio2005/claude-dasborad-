@@ -166,15 +166,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - **"ATA" de Mobilize**: sin confirmar si es lo mismo que AHT (ya
     existe en Mobilize desde el PR 2 de esta fase) o un indicador
     distinto.
-  - **Archivo de "Llamadas de salida" (conectadas/no conectadas) de
-    Mobilize**: llegó el 2026-10-13 (septiembre) y la mitad derecha de
-    la pestaña "Llamadas Únicas" ya está construida (Fase 141, Parte C).
-    Antes de cargarlo faltan 3 respuestas de Edwin: ¿se excluyen las
-    filas "PRUEBA" (3) y "TIMEOUTACW" (1)?, ¿por qué él cuenta 51 no
+  - **Llamadas de salida de Mobilize (septiembre cargado el 2026-10-14,
+    Fase 142)**: se cargó tal cual lo mandó Edwin (111 = 52 no conectadas
+    + 59 conectadas). Faltan 3 respuestas de Edwin: ¿se excluyen las
+    filas "PRUEBA" (3) y "TIMEOUTACW" (1)? (todas son conectadas; sin
+    ellas quedaría 52 / 55 / 107 — se corrige recargando un Excel limpio,
+    la carga reemplaza por rango de fechas), ¿por qué él cuenta 51 no
     conectadas únicas y la plataforma 52?, y qué es el "tipo de línea"
-    (el archivo no lo trae). También queda por decidir (tuyo) si se
-    guarda el teléfono para trazabilidad, como pidió Edwin — por defecto
-    NO.
+    (el archivo no lo trae). El teléfono no se guarda (decisión del
+    usuario, 13/10).
 - **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
   octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
   fase): lo están trabajando fuera de esta línea de trabajo y todavía no
