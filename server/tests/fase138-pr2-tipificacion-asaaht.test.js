@@ -54,11 +54,12 @@ test('dashboard-config-seed.js: el tab de Tipificacion de ORLANT sigue oculto (s
 });
 
 test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaaht" en vez de "asa"+"aht" por separado', () => {
-  // Fase 138, PR3: el tab "flujo" gano un 1er panel llamadas_unicas_panel
-  // (fila superior) -- el panel trafico_combo (que trae los subtabs) ya no
-  // es necesariamente panels[0], se busca por tipo explicitamente.
+  // Fase 139: "flujo" vuelve a tener SOLO el trafico_combo (Llamadas Unicas
+  // tiene su propio tab); se sigue buscando por tipo, y ademas se exige que
+  // sea el unico panel.
   const c = CONFIGS.find((x) => x.cliente === 'MOBILIZE');
   const t = c.layout.tabs.find((x) => x.key === 'flujo');
+  assert.deepEqual(t.panels.map((p) => p.tipo), ['trafico_combo']);
   const panel = t.panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
   assert.ok(keys.indexOf('asaaht') !== -1, 'falta la sub-pestaña combinada "asaaht"');
@@ -189,9 +190,9 @@ test('migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1: no t
 test('migracion dashboards_config_mobilize_flujo_asaaht_v1: el panel de MOBILIZE queda con "asaaht" en vez de "asa"+"aht"', () => {
   const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
   const layout = JSON.parse(row.layout);
-  // Fase 138, PR3: la migracion de llamadas_unicas_panel (misma carga de
-  // db.js) antepone su propio panel al array -- se busca el trafico_combo
-  // explicitamente en vez de asumir panels[0].
+  // Fase 138 PR3 / Fase 139: las migraciones de llamadas_unicas_panel (misma
+  // carga de db.js) pasan por "flujo" y terminan en su tab propio -- se
+  // busca el trafico_combo por tipo en vez de asumir panels[0].
   const panel = layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
   assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaaht']);

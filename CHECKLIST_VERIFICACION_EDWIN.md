@@ -169,11 +169,16 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 - [ ] En Flujo de Llamadas de **Mobilize**, "ASA" y "AHT" ahora son una
       sola sub-pestaña ("ASA y AHT"), con las 2 tarjetas de promedio y
       las 2 líneas de tendencia juntas.
-- [ ] En Flujo de Llamadas de **Mobilize**, arriba, veo el panel
-      **"Llamadas de ingreso únicas"** con 3 tarjetas (Contestadas,
-      Abandonadas, Total) y una gráfica de barras por mes — por ahora con
-      datos de demostración, todavía sin el archivo real de Edwin
-      cargado.
+- [ ] **Mobilize** tiene una pestaña propia, **"Llamadas Únicas"**, justo
+      después de Flujo de Llamadas, con 3 tarjetas (Contestadas,
+      Abandonadas, Total) y una gráfica de barras por mes. Septiembre
+      2026 muestra 88 contestadas, 51 abandonadas y 139 en total.
+- [ ] Debajo del título de esa pestaña dice que se cuenta una sola vez
+      cada teléfono por día, y que por eso no coincide con Flujo de
+      Llamadas.
+- [ ] **Flujo de Llamadas** de Mobilize se ve como antes (Resumen, Nivel
+      de Servicio, Abandono, ASA y AHT), sin el panel de llamadas únicas
+      encima.
 - [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
       de InConexión, nunca para el usuario de Mobilize.
 
