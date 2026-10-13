@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.31.0 — Octubre 2026
+
+**Fase 140: retoques visuales en toda la plataforma.**
+
+- Los botones, cajas de texto y listas desplegables ahora usan la misma
+  letra de la marca que el resto de la pantalla (antes usaban la letra
+  de Windows y se notaba la diferencia).
+- Los filtros de los tableros (Skill, Desde, Hasta, Granularidad,
+  Asesor…) tienen ahora el mismo aspecto que el resto de la plataforma.
+  Los botones Excel y PDF de cada gráfica se ven bien también en modo
+  oscuro.
+- En los tableros de Orlant y Mobilize ya no aparece una franja blanca
+  vacía entre el encabezado y las pestañas.
+- En la pantalla de bienvenida, cuando hay un solo módulo, ahora queda
+  centrado.
+- Al cambiar de pestaña, las tarjetas aparecen con una entrada suave y
+  rápida. Al cambiar un filtro o el mes, los números se actualizan al
+  instante, sin animación. Si el computador tiene activada la opción de
+  reducir el movimiento, no hay animación.
+- Nada más cambia: los números, las pestañas, los permisos y las
+  exportaciones son los mismos.
+
 ## v1.30.5 — Octubre 2026
 
 **Fase 139: la dirección de la plataforma es solo sinco.inconexion.com.co.**

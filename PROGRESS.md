@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.30.5` (ver `server/package.json`, expuesta en
+- **Versión**: `1.31.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -145,6 +145,18 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 140 (en curso) — Pulido visual (13-oct)
+
+Capa aditiva al final de `public/css/styles.css` (v1.31.0), sin tocar
+tokens, colores de marca, Quicksand ni contrastes de la Fase 133:
+controles con la fuente de marca, filtros de los tableros con estilo
+propio, `.btn-sm` neutro (Excel/PDF), sin franja vacía de `#gd-kpis`,
+bienvenida centrada, entrada escalonada de tarjetas solo al cambiar de
+pestaña. `.atab` no se tocó (sigue esperando "OK limpieza atab"). PR
+abierto, **sin mergear**: el merge despliega a producción y la Fase 139
+dejó los cambios visuales para después del demo de Mobilize. Detalle en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
 ### Fase 139 (en curso) — SInCo, Llamadas Únicas y cierre antes de la presentación (13-oct)
 
