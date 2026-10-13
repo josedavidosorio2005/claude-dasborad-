@@ -4,7 +4,7 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
-## v1.30.3 — Octubre 2026
+## v1.30.2 — Octubre 2026
 
 **Fase 139: "Llamadas Únicas" de Mobilize ahora tiene su propia pestaña.**
 
