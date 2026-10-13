@@ -14391,3 +14391,32 @@ construida desde el ECR privado.
 **Recomendación: opción 1** (el cambio más chico, sin IAM y sin nada
 nuevo que mantener). La 3 es la alternativa si no se quiere una cuenta
 externa. Decisión del usuario, después de la presentación.
+
+## Fase 139 (cierre, segunda parte) — informa retirado y limpieza (2026-10-13)
+
+- **PR #400** (v1.30.4) y **PR #396** (v1.30.5, con OK explícito del
+  usuario antes del modo `quitar`, porque informa ya no resolvía en DNS)
+  mergeados con `--match-head-commit`. Verificación en vivo con la sesión
+  del usuario (v1.30.4, contexto sin caché): ORLANT→Mobilize→ORLANT→
+  Mobilize, una sola posición de las pestañas por apertura, 0 fotogramas
+  con logo viejo, todos los clics en la pestaña correcta, 0 errores.
+- **informa retirado del servidor**: workflow "Dominio de produccion",
+  modo `quitar` (corrida 38442769446, autorizada explícitamente por el
+  usuario), verde. Respaldo de Caddyfile y app.env, Caddyfile válido y
+  recargado, `CORS_ORIGIN` = solo `https://sinco.inconexion.com.co`, app
+  recreada (`/api/health` 1.30.5), ningún actualizador de informa en
+  cron/systemd. Verificado desde fuera: salud OK, certificado de sinco
+  válido hasta 2027-01-07, CORS acepta sinco y rechaza informa, http→https
+  308, página de ingreso sin errores de consola. Monitor de producción y
+  Salud del servidor en verde.
+- **`scripts/qa/fase128-parte1-salida-rename-responsive.js` se queda**:
+  `revision-final.js` no cubre lo mismo — no revisa el nombre/posición de
+  la pestaña "Llamadas y WhatsApp de salida", que su botón no se corte en
+  3 tamaños × claro/oscuro, ni los nombres de las hojas del Excel
+  exportado (solo que la descarga ocurre).
+- **Rama `fase131-parte1-renombrar-movilize-mobilize-2026-10-07` borrada**
+  de GitHub: misma base que el PR #345, mismos 15 archivos (+355/−34) y 0
+  líneas añadidas que no estén en el #345 (era la misma rama, mergeada con
+  otros SHA). No se perdió nada.
+- **429 de Docker**: el usuario eligió la opción 1 (Docker Hub). PR en
+  borrador, sin mergear hasta "OK mergear 429".

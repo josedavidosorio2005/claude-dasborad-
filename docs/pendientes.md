@@ -20,27 +20,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
-- **Quitar informa.inconexion.com.co del servidor** — Prioridad MEDIA.
-  Su DNS ya no existe (NXDOMAIN, 2026-10-13) y la guía/documentos ya
-  dicen solo sinco (PR #396, v1.30.5, mergeado con tu OK antes de este
-  paso). Falta limpiar el Caddyfile real y `CORS_ORIGIN` (todavía con
-  informa + sinco). Cómo se cierra: GitHub → Actions → "Dominio de
-  produccion" → Run workflow en `main` con dominio
-  `informa.inconexion.com.co` y modo `quitar`; después se verifica sinco
-  (salud, certificado, CORS solo con sinco).
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
-  MEDIA (hoy se resuelve relanzando el job). Tres opciones escritas en la
-  Fase 139 (cuenta gratuita de Docker Hub + secreto; login a ECR Public
-  con el rol AWS del deploy; espejo propio en GHCR) — ver
-  `docs/historico/progress-fases.md`, Fase 139 (cierre). Toca
-  `ci.yml`/`deploy.yml` y quizá IAM: decisión tuya, después de la
-  presentación.
-- **Archivar `scripts/qa/fase128-parte1-salida-rename-responsive.js`** —
-  Prioridad BAJA. QA de un solo uso de la Fase 128 (sigue pasando, pero
-  ya no aporta sobre `auditoria-amplia-local.js` + el job `pantallas`).
-  Se archiva con un tag `archivo/...` solo con tu OK.
-- **Rama abandonada `fase131-parte1-renombrar-movilize-mobilize-2026-10-07`**
-  — Prioridad BAJA. Sigue en GitHub; no se borra sin tu OK.
+  MEDIA (hoy se resuelve relanzando el job). Elegiste la opción 1 (cuenta
+  gratuita de Docker Hub): PR en borrador con `docker/login-action`
+  condicionado a que existan los secretos `DOCKERHUB_USERNAME` y
+  `DOCKERHUB_TOKEN`. Cómo se cierra: creas el token y los 2 secretos
+  (pasos en la descripción de ese PR) y escribes "OK mergear 429".
+  Las 3 opciones están en `docs/historico/progress-fases.md`, Fase 139
+  (cierre).
 - **`GET /calidad/llamadas-unicas/opciones` devuelve nombres de asesor a
   roles cliente** — decidido el 2026-10-13: se deja así, como pidió
   Edwin (la pantalla oculta el filtro Asesor a CLIENTES_DASH, pero la
