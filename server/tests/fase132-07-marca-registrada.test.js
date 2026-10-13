@@ -32,10 +32,13 @@ test('las 4 navbars (Admin, Cliente, Asesor, Supervisor) muestran InConexion®',
   });
 });
 
-test('el <title> de la pestaña usa InConexion®', () => {
+// Fase 139: el <title> paso a ser el nombre de la plataforma (SInCo), no la
+// marca de la empresa -- lo comprueba fase139-sinco-nombre.test.js. Aqui
+// solo se cuida que, si algun dia vuelve a nombrar la marca, lleve el ®.
+test('el <title> de la pestaña, si nombra la marca, usa InConexion®', () => {
   const m = html.match(/<title>([^<]+)<\/title>/);
   assert.ok(m, 'no se encontró <title>');
-  assert.equal(m[1], 'InConexion® Platform');
+  assert.doesNotMatch(m[1], /InConexion(?!®)/);
 });
 
 test('ningún texto visible de index.html usa el nombre de marca sin ® (fuera de las excepciones documentadas)', () => {

@@ -2,6 +2,22 @@
 // Se carga como <script src> global y en orden; todas las funciones son globales
 // y se invocan desde manejadores del HTML. No cambiar el orden de carga.
 
+// Fase 139: nombre visible de la plataforma, escrito EXACTO asi (S, I y C
+// mayusculas). Unica fuente: lo usan el <title>, la pantalla de ingreso y
+// la de bienvenida (todo elemento con data-app-name). El texto que trae
+// index.html es solo el respaldo sin JS -- la prueba
+// fase139-sinco-nombre.test.js exige que coincida con esta constante.
+// La marca de la empresa (InConexion®, navbar y logo) no cambia.
+var APP_NAME = 'SInCo';
+
+function aplicarNombreApp() {
+  document.title = APP_NAME;
+  document.querySelectorAll('[data-app-name]').forEach(function (el) {
+    el.textContent = APP_NAME;
+  });
+}
+aplicarNombreApp();
+
 // Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
 // usuario, 2026-10-09) -- deben coincidir EXACTO con server/db.js
 // (CLIENTES_LIST/CAMPANAS_CALIDAD).
