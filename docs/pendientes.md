@@ -16,13 +16,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   la Fase 137 (Parte C) no pudo confirmar el lado CLIENTES_DASH de
   producción (`scripts/produccion/revision-final.js` espera 2 sesiones,
   una por cada rol) — solo se verificó ADMINISTRADOR, en verde.
-- **"OK cargar" de las Llamadas Únicas de Mobilize (septiembre/2026)** —
-  Prioridad ALTA. El panel "Llamadas de ingreso únicas" de Mobilize
-  (Fase 138, PR3, v1.29.0) está en producción con datos de demostración
-  únicamente — el archivo real (`CONTESTADAS UNICAS.xlsx`, en Downloads,
-  nunca en el repo) está listo para cargar con dry-run y verificación
-  contra los números de control (88 contestadas / 51 abandonadas / 139
-  total). Cómo se cierra: escribes "OK cargar" en el chat.
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a
@@ -258,3 +251,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Clínica Aurora / Hospital La María**: ya no existen en la
   plataforma desde la Fase 134 (se borraron junto con los otros 10
   clientes sin datos reales) — no es un pendiente operativo.
+- **Llamadas Únicas de Mobilize, septiembre/2026: CARGADAS** (Fase 139,
+  2026-10-13, "OK cargar"): 139 = 88 contestadas + 51 abandonadas, 25
+  días con contestadas. El nombre de agente de las abandonadas se queda
+  visible solo para roles internos (decisión del usuario, opción 1).
+  Detalle en `docs/historico/progress-fases.md`.

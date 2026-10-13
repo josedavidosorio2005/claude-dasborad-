@@ -5,7 +5,7 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.1**.
+Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.2**.
 
 > Desde la Fase 126, la plataforma solo tiene datos oficiales de
 > **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
