@@ -158,10 +158,15 @@ async function _tipificacionRenderPanel(p, i){
     }
     html += '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_tipificacionAplicarFiltroCanal('+i+',\''+c.canal+'\')">Aplicar</button></div>';
     html += '</div>';
-    html += '<div id="tipif-canal-contenido-'+i+'-'+c.canal+'">' +
+    // Fase 141 (pedido de Edwin, reunion 13/10): con tabla, torta a la
+    // izquierda y tabla a la derecha (50/50, .tipif-pie-tabla en
+    // styles.css); en movil se apilan (torta arriba, tabla abajo). Las dos
+    // salen del MISMO resultado de /por-tipo (mismos filtros, mismos totales).
+    if(p.mostrarTablaDetalle) html += '<div class="tipif-pie-tabla">';
+    html += '<div id="tipif-canal-contenido-'+i+'-'+c.canal+'" class="tipif-pie">' +
       '<div class="aurora-chart-wrap" style="height:340px"><canvas id="tipif-c-'+i+'-'+c.canal+'"></canvas></div></div>';
     if(p.mostrarTablaDetalle){
-      html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" style="margin-top:10px"></div>';
+      html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" class="tipif-tabla"></div></div>';
     }
     html += '</div>';
   });

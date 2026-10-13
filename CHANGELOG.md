@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.32.0 — Octubre 2026
+
+**Fase 141: nombres más claros y Tipificación lado a lado (reunión del 13 de octubre).**
+
+- En Tráfico de Llamadas (Orlant) y en Flujo de Llamadas (Mobilize), la
+  primera sub-pestaña ya no se llama "Resumen": ahora dice **"Flujo de
+  Llamadas"**. En Tráfico de WhatsApp dice **"Flujo de WhatsApp"**.
+  "Resumen" se confundía con un resumen de todo el tablero, y no lo es.
+- En **Tipificación** (Orlant y Mobilize), en el computador la gráfica de
+  torta queda a la izquierda y el cuadro con cada motivo a la derecha,
+  del mismo tamaño. En el celular, la torta va arriba y el cuadro debajo.
+  Los dos responden a los mismos filtros y siempre suman lo mismo.
+- Nada más cambia: los números, los filtros, las exportaciones y los
+  permisos son los mismos.
+
 ## v1.31.0 — Octubre 2026
 
 **Fase 140: retoques visuales en toda la plataforma.**

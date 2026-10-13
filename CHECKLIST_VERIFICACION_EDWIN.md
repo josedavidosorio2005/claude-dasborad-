@@ -178,7 +178,7 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 - [ ] Debajo del título de esa pestaña dice que se cuenta una sola vez
       cada teléfono por día, y que por eso no coincide con Flujo de
       Llamadas.
-- [ ] **Flujo de Llamadas** de Mobilize se ve como antes (Resumen, Nivel
+- [ ] **Flujo de Llamadas** de Mobilize se ve como antes (Flujo de Llamadas, Nivel
       de Servicio, Abandono, ASA y AHT), sin el panel de llamadas únicas
       encima.
 - [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
