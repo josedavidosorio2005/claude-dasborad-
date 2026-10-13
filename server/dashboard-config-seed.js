@@ -427,13 +427,12 @@ const MOBILIZE = {
   layout: {
     kpis: [],
     tabs: [
+      // Fase 139 (decision del usuario 13/10/2026, supera el diseño del
+      // 09/10): "Flujo de Llamadas" vuelve a ser SOLO trafico_combo, igual
+      // que antes de la Fase 138 PR3 -- "Llamadas Unicas" cuenta distinto
+      // (CDR deduplicado por dia+telefono vs. todas las llamadas de la
+      // cola) y vive en su propia pestaña, la siguiente.
       { key: 'flujo', label: 'Flujo de Llamadas', panels: [
-        // Fase 138 (PR3, pedido de Edwin 09/10): Llamadas Unicas de ingreso
-        // va PRIMERO (fila superior, mitad izquierda del diseño pedido --
-        // la mitad derecha "Llamadas de salida" queda sin construir hasta
-        // que Edwin mande ese archivo, ver docs/pendientes.md), el resto de
-        // Flujo (trafico_combo) queda DEBAJO, sin cambios.
-        { tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' },
         { tipo: 'trafico_combo', campana: 'MOBILIZE',
           etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
           resumenOcultar: ['tasaAbandono', 'nivelServicio'],
@@ -451,6 +450,15 @@ const MOBILIZE = {
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
         },
+      ]},
+      // Fase 139: pestaña propia de Llamadas Unicas (Fase 138 PR3), SIEMPRE
+      // visible (sin `oculta`) -- el panel ya trae su propio aviso "Sin
+      // llamadas unicas cargadas todavia". Cuando Edwin mande el archivo de
+      // "Llamadas de salida", su panel va en ESTA misma pestaña, despues del
+      // de ingreso (ingreso a la izquierda, salida a la derecha) -- hoy no
+      // hay ningun panel de salida, nunca una mitad vacia.
+      { key: 'llamadas_unicas', label: 'Llamadas Únicas', panels: [
+        { tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' },
       ]},
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
         { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'MOBILIZE',

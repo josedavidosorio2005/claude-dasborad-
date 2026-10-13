@@ -5,15 +5,27 @@
 // Mismo patron que tipificacion.js (filtros + tarjetas + grafica, fetch a
 // agregados ya calculados en el servidor -- nunca filas crudas).
 //
-// Diseño pedido: mitad IZQUIERDA de la fila superior de Flujo de Llamadas
-// ("Llamadas de ingreso unicas"). La mitad DERECHA ("Llamadas de salida")
-// queda SIN CONSTRUIR a proposito -- Edwin todavia no mando ese archivo
-// ("ahorita lo saco y te lo comparto"); nunca se muestra una mitad vacia ni
-// se inventan cifras en un dashboard de cliente (ver docs/pendientes.md).
+// Ubicacion (Fase 139, decision del usuario 13/10/2026, supera el diseño
+// del 09/10 que lo ponia encima de Flujo de Llamadas): pestaña PROPIA
+// "Llamadas Únicas" de Mobilize -- cuenta distinto que Flujo (CDR
+// deduplicado por dia+telefono vs. todas las llamadas de la cola), por eso
+// no comparten pantalla y el panel lo aclara bajo su titulo. "Llamadas de
+// salida" queda SIN CONSTRUIR a proposito -- Edwin todavia no mando ese
+// archivo; cuando llegue, su panel va en ESTA misma pestaña (ingreso a la
+// izquierda, salida a la derecha). Nunca se muestra una mitad vacia ni se
+// inventan cifras en un dashboard de cliente (ver docs/pendientes.md).
 'use strict';
 
 var _llamadasUnicasOpciones = {}; // cache por campana: { meses, agentes, skills }
 var _llamadasUnicasEstado = {};   // estado de filtros actual por campana
+
+// Aviso bajo el titulo (Fase 139): en español simple, por que este numero no
+// coincide con Flujo de Llamadas.
+var LLAMADAS_UNICAS_AVISO = 'Cuenta una sola vez cada teléfono por día. No coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.';
+function _llamadasUnicasTituloHtml() {
+  return '<div class="aurora-card-title">Llamadas de ingreso únicas</div>' +
+    '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px">' + LLAMADAS_UNICAS_AVISO + '</p>';
+}
 
 function _llamadasUnicasFmtFechaCorta(f) {
   if (!f) return '';
@@ -44,7 +56,7 @@ async function _llamadasUnicasRenderPanel(p, i) {
 
   var op = await _llamadasUnicasCargarOpciones(campana);
   if (!op.meses || !op.meses.length) {
-    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Llamadas de ingreso únicas</div>' +
+    host.innerHTML = '<div class="aurora-card">' + _llamadasUnicasTituloHtml() +
       '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin llamadas únicas cargadas todavía' +
       (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') +
       '</div></div>';
@@ -66,7 +78,7 @@ async function _llamadasUnicasRenderPanel(p, i) {
 
   host.innerHTML =
     '<div class="aurora-card">' +
-      '<div class="aurora-card-title">Llamadas de ingreso únicas</div>' +
+      _llamadasUnicasTituloHtml() +
       '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
         '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
         '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +

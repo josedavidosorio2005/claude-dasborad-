@@ -1,10 +1,17 @@
 // fase138-pr3-llamadas-unicas-panel-migracion.test.js — prueba la migracion
 // `dashboards_config_mobilize_llamadas_unicas_panel_v1` (server/db.js),
 // Fase 138 (PR3, pedido de Edwin 09/10/2026): agrega el panel
-// "llamadas_unicas_panel" PRIMERO en el array de paneles del tab "flujo" de
-// MOBILIZE. Mismo patron de prueba que
+// "llamadas_unicas_panel" a MOBILIZE. Mismo patron de prueba que
 // fase138-pr2-tipificacion-asaaht.test.js: sembrar el layout VIEJO
 // reconocible a mano *antes* de requerir db.js, verificar "despues".
+//
+// Fase 139 (decision del usuario 13/10/2026): en la MISMA carga de db.js
+// corre despues `dashboards_config_mobilize_llamadas_unicas_tab_v1`, que
+// saca el panel de "flujo" a su propio tab "llamadas_unicas". Lo que esta
+// prueba siempre comprobo (el panel se agrega una sola vez, el
+// trafico_combo y "calidad" quedan intactos, otro cliente / forma no
+// reconocible nunca se toca, idempotente) se sigue comprobando, ahora sobre
+// el estado FINAL: panel en su tab propio, "flujo" como antes de la PR3.
 'use strict';
 
 const os = require('os');
@@ -73,36 +80,45 @@ setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
 
-test('migracion dashboards_config_mobilize_llamadas_unicas_panel_v1: agrega el panel PRIMERO en "flujo", sin tocar el trafico_combo existente', () => {
-  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
-  const layout = JSON.parse(row.layout);
-  const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
-  assert.equal(tabFlujo.panels.length, 2);
-  assert.equal(tabFlujo.panels[0].tipo, 'llamadas_unicas_panel');
-  assert.equal(tabFlujo.panels[0].campana, 'MOBILIZE');
-  assert.deepEqual(tabFlujo.panels[1], LAYOUT_MOBILIZE.tabs[0].panels[0], 'el panel trafico_combo original (con sus opciones) sigue intacto');
+function layoutMobilize(conDb) {
+  return JSON.parse((conDb || db).prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get().layout);
+}
+
+test('migraciones de llamadas unicas: el panel se agrega UNA vez, en su tab propio, justo despues de "flujo"', () => {
+  const layout = layoutMobilize();
+  // (la migracion del tab "tipificacion", misma carga de db.js, le agrega
+  // ademas su propio tab a este fixture -- no es parte de esta prueba)
+  assert.deepEqual(layout.tabs.map((t) => t.key).filter((k) => k !== 'tipificacion'), ['flujo', 'llamadas_unicas', 'calidad']);
+  const tabLu = layout.tabs[1];
+  assert.equal(tabLu.label, 'Llamadas Únicas');
+  assert.deepEqual(tabLu.panels, [{ tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' }]);
+  const todos = layout.tabs.flatMap((t) => t.panels).filter((p) => p.tipo === 'llamadas_unicas_panel');
+  assert.equal(todos.length, 1, 'un solo panel de llamadas unicas en todo el dashboard');
 });
 
-test('migracion dashboards_config_mobilize_llamadas_unicas_panel_v1: no toca el tab "calidad" de MOBILIZE', () => {
-  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
-  const layout = JSON.parse(row.layout);
-  const tabCalidad = layout.tabs.find((t) => t.key === 'calidad');
+test('migraciones de llamadas unicas: "flujo" queda EXACTAMENTE como antes (solo el trafico_combo original, con sus opciones)', () => {
+  const tabFlujo = layoutMobilize().tabs.find((t) => t.key === 'flujo');
+  assert.deepEqual(tabFlujo, LAYOUT_MOBILIZE.tabs[0]);
+});
+
+test('migraciones de llamadas unicas: no tocan el tab "calidad" de MOBILIZE', () => {
+  const tabCalidad = layoutMobilize().tabs.find((t) => t.key === 'calidad');
   assert.deepEqual(tabCalidad, LAYOUT_MOBILIZE.tabs[1]);
 });
 
-test('migracion dashboards_config_mobilize_llamadas_unicas_panel_v1: nunca toca otro cliente, ni uno con "flujo" en forma NO reconocible', () => {
+test('migraciones de llamadas unicas: nunca tocan otro cliente, ni uno con "flujo" en forma NO reconocible', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
   assert.deepEqual(JSON.parse(row.layout), LAYOUT_OTRO, 'un "flujo" sin trafico_combo reconocible nunca se toca');
 });
 
-test('migracion dashboards_config_mobilize_llamadas_unicas_panel_v1: idempotente -- reabrir la base no duplica el panel', () => {
+test('migraciones de llamadas unicas: idempotentes -- reabrir la base no duplica el panel ni el tab', () => {
+  const antes = layoutMobilize();
   db.closeDb();
   delete require.cache[require.resolve('../db')];
   const db2 = require('../db');
-  const row = db2.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
-  const layout = JSON.parse(row.layout);
-  const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
-  assert.equal(tabFlujo.panels.filter((p) => p.tipo === 'llamadas_unicas_panel').length, 1);
+  const despues = layoutMobilize(db2);
+  assert.deepEqual(despues, antes);
+  db2.closeDb();
 });
 
 test.after(() => {

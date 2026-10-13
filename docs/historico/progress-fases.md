@@ -14285,3 +14285,30 @@ capturas — solo se imprimieron conteos.
   `/calidad/llamadas-unicas/opciones` igual devuelve la lista de agentes
   a cualquier rol con acceso a Mobilize (la pantalla la oculta para
   CLIENTES_DASH).
+
+## Fase 139 (en curso) — "Llamadas Únicas" sale de Flujo de Llamadas a su propia pestaña (2026-10-13)
+
+Decisión del usuario (13/10/2026, supera el diseño del 09/10): al ver el
+panel cargado en producción, Flujo de Llamadas mezclaba dos cosas que
+cuentan distinto. La plantilla de Flujo de septiembre (cola de Wolkvox,
+27 filas) suma 104 ingresadas = 104 contestadas, 0 abandonadas; Llamadas
+Únicas (CDR deduplicado por día+teléfono) da 88 contestadas + 51
+abandonadas. Cada cosa va en su propio apartado.
+
+- Seed: el tab `flujo` de MOBILIZE vuelve a ser solo `trafico_combo`
+  (sub-pestañas Resumen / Nivel de Servicio / Abandono / ASA y AHT, sin
+  cambios); tab nuevo `llamadas_unicas` ("Llamadas Únicas") justo después,
+  siempre visible (el panel trae su propio aviso de "sin datos").
+- Migración nueva `dashboards_config_mobilize_llamadas_unicas_tab_v1`
+  (`server/db.js`): crea el tab propio con el panel que estaba en `flujo`
+  y, en cualquier caso, quita de `flujo` todo `llamadas_unicas_panel`.
+  Hace falta lo segundo porque en una base NUEVA la migración vieja
+  `..._panel_v1` (no se edita: ya corrió en producción) vuelve a anteponer
+  el panel en `flujo` después del seed. Probado: base nueva == base en
+  estado de producción == seed; idempotente; defensiva; nunca toca la
+  tabla `llamadas_unicas`.
+- Panel: línea bajo el título — "Cuenta una sola vez cada teléfono por
+  día. No coincide con Flujo de Llamadas, que cuenta todas las llamadas
+  de la cola."
+- "Llamadas de salida" sigue sin construir (falta el archivo de Edwin);
+  cuando llegue, va en la misma pestaña "Llamadas Únicas".

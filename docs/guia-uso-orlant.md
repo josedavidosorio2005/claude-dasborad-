@@ -388,6 +388,10 @@ evita que las cargas futuras se unifiquen de la misma forma.
 
 ### Llamadas Únicas (Mobilize)
 
+- **Dónde se ve**: en el tablero de Mobilize, pestaña propia **"Llamadas
+  Únicas"** (justo después de Flujo de Llamadas). Cuenta una sola vez
+  cada teléfono por día, así que no coincide con Flujo de Llamadas, que
+  cuenta todas las llamadas de la cola.
 - **Qué archivo**: el mismo patrón que las demás bases de Wolkvox, pero
   este archivo hay que armarlo a mano combinando 3 reportes distintos de
   Wolkvox (ver más abajo cómo sacarlos) — Edwin es quien hace esa
