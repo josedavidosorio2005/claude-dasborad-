@@ -29,6 +29,8 @@ jobs:
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
       ECR_REPOSITORY: inconexion
+      # Fase 139 (429 al bajar node): solo un booleano, nunca el token.
+      HAY_DOCKERHUB: ${{ secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
@@ -45,13 +47,24 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd  # v2
 
+      # Sin los 2 secretos se salta y el build baja node de ECR Public como
+      # siempre (default del Dockerfile).
+      - name: Login en Docker Hub (solo si existen los secretos)
+        if: env.HAY_DOCKERHUB == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build y push de la imagen
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
           SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           IMAGE="$REGISTRY/$ECR_REPOSITORY"
-          docker build -f server/Dockerfile -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
+          ARGS=""
+          if [ "$HAY_DOCKERHUB" = "true" ]; then ARGS="--build-arg NODE_REGISTRY=docker.io/library"; fi
+          docker build $ARGS -f server/Dockerfile -t "$IMAGE:$SHA" -t "$IMAGE:latest" .
           docker push "$IMAGE:$SHA"
           docker push "$IMAGE:latest"
           echo "IMAGE=$IMAGE:$SHA" >> "$GITHUB_ENV"
