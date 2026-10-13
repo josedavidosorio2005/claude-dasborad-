@@ -14564,6 +14564,26 @@ abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
 - **Pendiente**: la propuesta de rechazar `NO CONTESTADAS` en el parser
   queda para decisión del usuario (docs/pendientes.md).
 
+## Fase 142 — Rechazo de "NO CONTESTADAS" en Llamadas Únicas (v1.33.1, 2026-10-14)
+
+- **Decisión del usuario** (13/10, noche): `SKILL_NAME = NO CONTESTADAS` ya
+  no se interpreta como abandonada (fue la causa del error de septiembre,
+  Fase 141 Parte B).
+- **Opción elegida, la más segura**: una sola fila así hace que el parser
+  devuelva `error` para la hoja completa (sin filas parciales). La vista
+  previa lo muestra en rojo con el mensaje "NO CONTESTADAS es una llamada
+  de SALIDA no conectada; cárgala en Llamadas de salida." + cuántas filas
+  y sus números (hasta 10), y "Guardar" no envía esa hoja. Nada se borra
+  ni se cambia de lo ya cargado.
+- El servidor sigue aceptando el tipo ABANDONADA (para cuando Edwin defina
+  la fuente real de abandonadas entrantes); solo cambia el parser.
+- La plantilla oficial ya no trae la fila de ejemplo "NO CONTESTADAS".
+- **Pruebas**: casos 3/7 y 4/7 de `fase138-pr3-llamadas-unicas.test.js`
+  reescritos para la regla nueva (más 4b y 4c); las de integración siguen
+  probando ABANDONADA mandando la tupla directa al servidor; las de fecha
+  (Fase 139) usan otro skill; prueba nueva
+  `fase142-no-contestadas-rechazo.test.js` (Cargar Datos no guarda la
+  hoja).
 ## Fase 142 — Punto 4: ORLANT WhatsApp, Nivel de Servicio por rangos de minutos (v1.34.0, 2026-10-14)
 
 - **Pedido de Edwin (13/10)**: en WhatsApp de ORLANT, el Nivel de Servicio

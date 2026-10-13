@@ -30,9 +30,12 @@ var LLAMADAS_UNICAS_COLUMNAS_OBLIGATORIAS = LLAMADAS_UNICAS_COLUMNAS.filter(func
 // incluye 'telefono'.
 var LLAMADAS_UNICAS_ORDEN_ARRAY = ['agente', 'fecha', 'tipo', 'skill'];
 
-// Marca de llamada abandonada: SKILL_NAME = "NO CONTESTADAS" (Edwin,
-// confirmado contra el archivo real) -- comparacion insensible a mayusculas/
-// acentos/espacios (la fuente puede variar: "No contestadas", "NO  CONTESTADAS"...).
+// SKILL_NAME = "NO CONTESTADAS" (comparacion insensible a mayusculas/
+// acentos/espacios). Hasta la Fase 141 marcaba una llamada abandonada; desde
+// la Fase 142 se RECHAZA (ver llamadasUnicasParseFilas): son llamadas de
+// salida no conectadas y van en "Llamadas de salida". Las abandonadas
+// entrantes siguen sin fuente definida por Edwin -- el servidor sigue
+// aceptando tipo ABANDONADA y la etiqueta "Abandonadas" para cuando la haya.
 function _llamadasUnicasNormalizarParaComparar(s) {
   return String(s == null ? '' : s)
     .trim()
@@ -42,6 +45,7 @@ function _llamadasUnicasNormalizarParaComparar(s) {
 }
 var LLAMADAS_UNICAS_SKILL_ABANDONADA = 'no contestadas';
 var LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA = 'Abandonadas';
+var LLAMADAS_UNICAS_MSG_NO_CONTESTADAS = 'NO CONTESTADAS es una llamada de SALIDA no conectada; cárgala en Llamadas de salida.';
 
 function llamadasUnicasNormTexto(v) {
   return String(v == null ? '' : v).trim().replace(/\s+/g, ' ');
@@ -127,6 +131,7 @@ function llamadasUnicasParseFilas(aoa) {
 
   var crudas = [];
   var avisos = [];
+  var filasNoContestadas = [];
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
     if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
@@ -154,17 +159,31 @@ function llamadasUnicasParseFilas(aoa) {
       continue;
     }
 
-    var esAbandonada = _llamadasUnicasNormalizarParaComparar(skillCrudo) === LLAMADAS_UNICAS_SKILL_ABANDONADA;
+    // Fase 142 (decision del usuario, 13/10/2026): SKILL_NAME = NO
+    // CONTESTADAS ya NO se interpreta como abandonada -- en septiembre esas
+    // filas eran llamadas de SALIDA no conectadas (Fase 141, Parte B). Se
+    // juntan aqui y, si hay alguna, el archivo completo se rechaza abajo.
+    if (_llamadasUnicasNormalizarParaComparar(skillCrudo) === LLAMADAS_UNICAS_SKILL_ABANDONADA) {
+      filasNoContestadas.push(filaNum);
+      continue;
+    }
     crudas.push({
       agente: agente,
       fecha: fecha,
       telefono: telefono,
-      tipo: esAbandonada ? 'ABANDONADA' : 'CONTESTADA',
-      // Abandonadas SIEMPRE se guardan como "Abandonadas" (nunca el
-      // SKILL_NAME crudo "NO CONTESTADAS") -- pedido explicito: se muestran
-      // en el filtro de skill como "Abandonadas".
-      skill: esAbandonada ? LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA : skillCrudo,
+      tipo: 'CONTESTADA',
+      skill: skillCrudo,
     });
+  }
+
+  // Opcion mas segura (Fase 142): una sola fila NO CONTESTADAS bloquea la
+  // hoja completa (nunca una carga parcial que deje el mes a medias). La
+  // vista previa muestra el error y "Guardar" no envia esta hoja.
+  if (filasNoContestadas.length) {
+    var muestra = filasNoContestadas.slice(0, 10).join(', ') + (filasNoContestadas.length > 10 ? '…' : '');
+    return {
+      error: LLAMADAS_UNICAS_MSG_NO_CONTESTADAS + ' (' + filasNoContestadas.length + ' fila(s): ' + muestra + ')',
+    };
   }
 
   // Deduplicado por (dia, telefono) -- "unica" = una sola vez por dia, sin
@@ -191,6 +210,7 @@ if (typeof module !== 'undefined' && module.exports) {
     LLAMADAS_UNICAS_COLUMNAS: LLAMADAS_UNICAS_COLUMNAS,
     LLAMADAS_UNICAS_ORDEN_ARRAY: LLAMADAS_UNICAS_ORDEN_ARRAY,
     LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA: LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA,
+    LLAMADAS_UNICAS_MSG_NO_CONTESTADAS: LLAMADAS_UNICAS_MSG_NO_CONTESTADAS,
     llamadasUnicasColIndexMap: llamadasUnicasColIndexMap,
     llamadasUnicasParseFecha: llamadasUnicasParseFecha,
     llamadasUnicasParseFilas: llamadasUnicasParseFilas,

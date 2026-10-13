@@ -231,13 +231,13 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p><strong>Dónde se ve</strong>: en el tablero de Mobilize, pestaña propia <strong>"Llamadas Únicas"</strong> (justo después de Flujo de Llamadas). Cuenta una sola vez cada teléfono por día, así que no coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.<br>
 <strong>Qué archivo</strong>: el mismo patrón que las demás bases de Wolkvox, pero este archivo hay que armarlo a mano combinando 3 reportes distintos de Wolkvox (ver abajo cómo sacarlos) — Edwin es quien hace esa combinación antes de subir.<br>
 <strong>Hoja</strong>: <code>LLAMADAS_UNICAS</code> de la plantilla oficial (<code>PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx</code>, descargable desde "Cargar Datos" eligiendo el cliente Mobilize).<br>
-<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las filas de llamadas <strong>abandonadas</strong> van con SKILL_NAME = NO CONTESTADAS.<br>
+<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. <strong>No se aceptan filas con SKILL_NAME = NO CONTESTADAS</strong>: esas son llamadas de salida no conectadas y van en "Llamadas de salida". Si el archivo trae alguna, la vista previa lo avisa y esa hoja no se guarda.<br>
 <strong>Privacidad</strong>: TELEPHONE se usa solo un instante, en la computadora de quien sube el archivo, para no contar dos veces una misma llamada del mismo número el mismo día — nunca llega al servidor, nunca se guarda, nunca se exporta ni se muestra en ninguna pantalla.<br>
 <strong>Reemplazo</strong>: por MES — si el archivo trae Septiembre, se reemplaza ese mes completo.</p>
 <p><strong>Cómo sacar las llamadas únicas desde Wolkvox, paso a paso:</strong></p>
 <ol>
   <li><strong>Contestadas de ingreso</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "1. Detalle de las llamadas". De ahí se quitan dos cosas antes de pegarlas en la plantilla: las llamadas de salida (el número de teléfono trae un guion) y los duplicados del mismo número el mismo día (no de todo el mes — si el mismo número llama dos días distintos, cuenta en cada uno).</li>
-  <li><strong>Abandonadas</strong>: en Wolkvox, Skills &amp; Servicios → reporte "2. Llamadas abandonadas", filtrando por skill. Esas filas van a la plantilla con SKILL_NAME = NO CONTESTADAS.</li>
+  <li><strong>Abandonadas</strong>: todavía no se cargan. Edwin está definiendo de qué reporte salen las abandonadas de ingreso (las filas "NO CONTESTADAS" eran llamadas de salida, por eso ya no se aceptan aquí).</li>
   <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas". Estas llamadas <strong>no van en este archivo</strong>: van en el archivo de "Llamadas de salida" (ver abajo).</li>
 </ol>
 <figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
