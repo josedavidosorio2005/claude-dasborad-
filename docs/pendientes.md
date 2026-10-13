@@ -58,7 +58,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   control puntual — decisión explícita ya documentada (un archivo de
   Tráfico trae varias skills que pueden resolver a campañas distintas).
   Arreglarlo exige rediseñar ese modelo — **no se toca sin tu OK
-  explícito**. Riesgo real hoy: bajo (Aurora/HLM siguen en cero datos).
+  explícito**. Riesgo real hoy: bajo (desde la Fase 134 en producción
+  solo quedan ORLANT y MOBILIZE; Aurora/HLM ya no existen — ver
+  "Decisiones de esta fase" al final).
 - **F10 (auditoría UI Fase 135) — iconos emoji del menú lateral** (ej.
   Usuarios, Inventario). Prioridad BAJA. No se tocó en la Fase 136 por
   decisión explícita tuya: es una decisión de marca (seguir con emoji
