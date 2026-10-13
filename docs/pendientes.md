@@ -133,7 +133,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   InConexion (Fase 132).
 - **5 preguntas de la reunión del 2026-10-09 (Fase 138) sobre "Llamadas
   de ingreso únicas" de Mobilize** — Prioridad MEDIA (no bloquean el
-  panel ya construido, que queda con datos de demo hasta el "OK cargar"):
+  panel ya construido, con septiembre/2026 real cargado desde el
+  2026-10-13; vive en su propia pestaña "Llamadas Únicas" desde la Fase
+  139):
   - **Nombre de asesor en las filas NO CONTESTADAS**: una llamada
     abandonada no tiene asesor que la atendió — falta confirmar qué
     espera Edwin que vaya en AGENT_NAME para esas filas (vacío, un valor
@@ -256,3 +258,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   días con contestadas. El nombre de agente de las abandonadas se queda
   visible solo para roles internos (decisión del usuario, opción 1).
   Detalle en `docs/historico/progress-fases.md`.
+- **Llamadas Únicas en su propia pestaña** (decisión del usuario,
+  2026-10-13, supera el diseño del 2026-10-09 que lo ponía encima de Flujo
+  de Llamadas): Mobilize → "Llamadas Únicas" es una pestaña aparte, y
+  "Flujo de Llamadas" volvió a quedar como antes de la Fase 138 PR3. Son
+  fuentes y criterios distintos (cola de Wolkvox vs. CDR deduplicado por
+  día+teléfono), por eso no comparten pantalla; el panel lo aclara bajo
+  su título. Cuando llegue el archivo de "Llamadas de salida", su panel
+  va en esa misma pestaña (ingreso a la izquierda, salida a la derecha).

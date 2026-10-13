@@ -3389,6 +3389,73 @@ runOnceMigration('dashboards_config_mobilize_llamadas_unicas_panel_v1', () => {
   }
 });
 
+// Fase 139 (decision del usuario 13/10/2026, supera el diseño del 09/10):
+// "Llamadas Unicas" sale de "Flujo de Llamadas" a su propia pestaña
+// (`llamadas_unicas`, justo despues de `flujo`); Flujo vuelve a ser solo
+// trafico_combo. SOLO cambia el layout de dashboards_config de MOBILIZE --
+// nunca la tabla llamadas_unicas ni ningun dato cargado.
+//
+// Ojo: no basta con "si el tab nuevo ya existe, no hacer nada". En una base
+// NUEVA el seed ya trae el tab nuevo, pero la migracion vieja
+// (..._panel_v1, arriba, que no se edita porque ya corrio en produccion)
+// corre DESPUES del seed y vuelve a anteponer el panel en Flujo. Por eso
+// esta migracion: (1) si el tab nuevo NO existe, lo crea con el panel que
+// estaba en Flujo; (2) en ambos casos, quita de Flujo cualquier
+// llamadas_unicas_panel. Asi una base nueva y una base de produccion
+// terminan con el MISMO layout. Idempotente (correrla 2 veces = igual).
+// Defensiva: ante una forma no reconocible, no toca nada y lo registra.
+function migrarMobilizeLlamadasUnicasATabPropio() {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return false;
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return false;
+  }
+  const avisar = (motivo) => {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_llamadas_unicas_tab_v1: ' + motivo + ' -- se deja intacto, revisar a mano.');
+    }
+  };
+  const tabs = layout.tabs || [];
+  const iFlujo = tabs.findIndex((t) => t && t.key === 'flujo');
+  if (iFlujo === -1) { avisar('MOBILIZE no tiene tab "flujo"'); return false; }
+  const flujo = tabs[iFlujo];
+  const esLu = (p) => p && p.tipo === 'llamadas_unicas_panel';
+  const luEnFlujo = (flujo.panels || []).filter(esLu);
+  const restoFlujo = (flujo.panels || []).filter((p) => !esLu(p));
+  const tabLu = tabs.find((t) => t && t.key === 'llamadas_unicas');
+
+  if (tabLu) {
+    if (!(tabLu.panels || []).some(esLu)) { avisar('el tab "llamadas_unicas" existe pero no tiene el panel de llamadas unicas'); return false; }
+    if (!luEnFlujo.length) return false; // ya esta como debe
+  } else {
+    if (!luEnFlujo.length) { avisar('no hay panel de llamadas unicas en "flujo" ni tab propio'); return false; }
+  }
+  if (!restoFlujo.length) { avisar('"flujo" quedaria sin ningun panel'); return false; }
+
+  flujo.panels = restoFlujo;
+  if (!tabLu) {
+    const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+    const targetTab = target && (target.layout.tabs || []).find((t) => t.key === 'llamadas_unicas');
+    const label = (targetTab && targetTab.label) || 'Llamadas Únicas';
+    tabs.splice(iFlujo + 1, 0, { key: 'llamadas_unicas', label, panels: [luEnFlujo[0]] });
+  }
+  layout.tabs = tabs;
+
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_llamadas_unicas_tab_v1 aplicada.');
+  }
+  return true;
+}
+runOnceMigration('dashboards_config_mobilize_llamadas_unicas_tab_v1', migrarMobilizeLlamadasUnicasATabPropio);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3401,3 +3468,5 @@ function closeDb() {
 module.exports = db;
 module.exports.closeDb = closeDb;
 module.exports.DB_PATH = DB_PATH;
+// Fase 139: expuesta solo para probar la idempotencia (correrla 2 veces).
+module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUnicasATabPropio;

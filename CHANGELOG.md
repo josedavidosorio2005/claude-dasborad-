@@ -4,13 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
-## v1.30.2 — Octubre 2026
+## v1.30.3 — Octubre 2026
 
 **Fase 139: la dirección de la plataforma es solo sinco.inconexion.com.co.**
 
 - La guía de uso ahora dice que la plataforma (SInCo) se abre en
   **https://sinco.inconexion.com.co**. La dirección anterior ya no existe.
 - Nada más cambia: tableros, datos y forma de entrar son los mismos.
+
+## v1.30.2 — Octubre 2026
+
+**Fase 139: "Llamadas Únicas" de Mobilize ahora tiene su propia pestaña.**
+
+- En el tablero de Mobilize hay una pestaña nueva, **"Llamadas Únicas"**,
+  justo después de Flujo de Llamadas, con las mismas 3 tarjetas, la
+  gráfica por mes y los filtros de siempre.
+- **Flujo de Llamadas quedó como antes**, sin el panel de llamadas únicas
+  encima.
+- Debajo del título de Llamadas Únicas ahora dice por qué sus números no
+  coinciden con Flujo de Llamadas: aquí se cuenta una sola vez cada
+  teléfono por día; en Flujo se cuentan todas las llamadas de la cola.
+- No cambia ningún número ya cargado: solo dónde se ve.
 
 ## v1.30.1 — Octubre 2026
 

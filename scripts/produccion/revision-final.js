@@ -575,9 +575,9 @@ async function correrChequeosAdmin(page) {
   });
   reporte.datoPorDato = datoPorDato;
 
-  // ══ 3c. Fase 139: MOBILIZE -- todas sus pestañas/sub-vistas (Flujo con el
-  // panel "Llamadas únicas" de la Fase 138 PR3 y la sub-pestaña "ASA y AHT"
-  // del PR2; Tipificacion), exportar + Escape, y sus numeros de control.
+  // ══ 3c. Fase 139: MOBILIZE -- todas sus pestañas/sub-vistas (Flujo con la
+  // sub-pestaña "ASA y AHT" del PR2; "Llamadas Únicas" en su pestaña propia;
+  // Tipificacion), exportar + Escape, y sus numeros de control.
   // Igual que arriba: solo conteos/veredictos, nunca texto del DOM. ══
   const mobilize = { pestanas: {}, subvistas: {}, exports: {} };
   const enBlancoMobilize = [];
@@ -624,12 +624,18 @@ async function correrChequeosAdmin(page) {
   }
   mobilize.tieneSubtabAsaAht = Object.values(mobilize.subvistas).some((s) => Object.keys(s).includes('ASA y AHT'));
 
-  // Panel "Llamadas únicas" (Flujo de Llamadas): 3 tarjetas, barras por mes
+  // Panel "Llamadas únicas" (pestaña propia): 3 tarjetas, barras por mes
   // con 3 series, filtros Desde/Hasta/Skill. El filtro Asesor existe para
   // roles internos (esta sesion es admin) y NO para CLIENTES_DASH -- eso
   // ultimo solo se puede ver con la cuenta del cliente (queda anotado).
+  // Fase 139: el panel vive en su pestaña propia "Llamadas Únicas" (ya no
+  // encima de Flujo de Llamadas) -- y Flujo debe quedar SIN ese panel.
   await page.locator('#gd-tabs .atab', { hasText: 'Flujo de Llamadas' }).first().click().catch(() => {});
   await page.waitForTimeout(1500);
+  mobilize.flujoSinPanelUnicas = await page.evaluate(() => !document.querySelector('[id^="lu-kpis-"]') && !document.querySelector('[data-campana="MOBILIZE"] .lu-aviso'));
+  await page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first().click().catch(() => {});
+  await page.waitForTimeout(1500);
+  mobilize.tieneTabLlamadasUnicas = await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).some((t) => t.textContent.trim() === 'Llamadas Únicas'));
   mobilize.llamadasUnicas = await page.evaluate(() => {
     const k = document.querySelector('[id^="lu-kpis-"]');
     if (!k) {
@@ -673,7 +679,8 @@ async function correrChequeosAdmin(page) {
     (lu.panel === true && lu.tarjetas === 3 && lu.seriesBarras === 3 && lu.filtroDesde && lu.filtroHasta &&
       lu.filtroSkill && lu.filtroAsesorParaAdmin);
   mobilize.ok =
-    luOk && mobilize.tieneSubtabAsaAht && discrepanciasMobilize.length === 0 &&
+    luOk && mobilize.tieneTabLlamadasUnicas && mobilize.flujoSinPanelUnicas &&
+    mobilize.tieneSubtabAsaAht && discrepanciasMobilize.length === 0 &&
     enBlancoMobilize.length === 0 && Object.values(mobilize.exports).every((e) => e.ok);
   mobilize.enBlancoSinMensaje = enBlancoMobilize;
   reporte.mobilize = mobilize;
