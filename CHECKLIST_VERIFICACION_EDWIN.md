@@ -5,7 +5,7 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.3**.
+Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.5**.
 
 > Desde la Fase 126, la plataforma solo tiene datos oficiales de
 > **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
@@ -15,6 +15,8 @@ Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.3**.
 ## 1. Entrar y ver el dashboard
 
 - [ ] Puedo entrar con mi usuario y contraseña.
+- [ ] La pantalla de ingreso dice **SInCo**, con el logo de InConexion®
+      pequeño en la esquina inferior derecha.
 - [ ] Al entrar veo el dashboard de **ORLANT** con las **8 pestañas**:
       Tráfico de Llamadas, Tráfico de WhatsApp, Llamadas y WhatsApp de
       salida, Agendamiento, Inasistencia, Efectividad de Citas,
@@ -181,6 +183,10 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       encima.
 - [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
       de InConexión, nunca para el usuario de Mobilize.
+- [ ] Al abrir el tablero de Mobilize o de Orlant (sobre todo al pasar de
+      uno al otro), las pestañas quedan quietas desde que aparecen: no se
+      mueven hacia arriba ni hacia abajo, y nunca se ve por un instante
+      el logo del otro cliente.
 
 ## 11. Algo no cuadra
 

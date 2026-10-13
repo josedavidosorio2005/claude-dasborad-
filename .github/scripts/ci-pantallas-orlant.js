@@ -92,6 +92,43 @@ async function canvasesSinDibujar(page) {
   });
 }
 
+// Fase 139 (hallazgo real en produccion, Mobilize): las pestanas se movian
+// ~14px hacia abajo un instante DESPUES de dibujarse -- el logo del cliente
+// en la cabecera media 11px de alto mientras su imagen cargaba y 25px al
+// terminar (la regla CSS `height:auto` anulaba la reserva de width/height
+// del <img>), y un clic rapido caia en otra pestana. Abre el dashboard y
+// registra, fotograma a fotograma desde el PRIMER dibujo de #gd-tabs, su
+// posicion de layout (offsetTop: no la afecta la animacion de apertura del
+// modal, que es solo transform). Devuelve las posiciones distintas vistas
+// y si en algun fotograma se vio el logo de OTRO cliente (el navegador
+// conserva la imagen anterior mientras carga la nueva: un <img> visible
+// con complete === false esta mostrando la imagen VIEJA).
+async function posicionesPestanasAlAbrir(page, cliente) {
+  return page.evaluate((c) => new Promise((resolve) => {
+    const vistas = [];
+    let logoAjeno = false;
+    let frames = 0;
+    let conTabs = 0;
+    openGenericDashboard(c); // vacia #gd-tabs en el acto: nada viejo se mide
+    const tick = () => {
+      const tabs = document.getElementById('gd-tabs');
+      if (tabs && tabs.querySelector('.atab')) {
+        conTabs++;
+        const aviso = !!document.getElementById('gd-nodata-banner');
+        const k = tabs.offsetTop;
+        if (!vistas.length || vistas[vistas.length - 1].top !== k) vistas.push({ top: k, aviso, frameConTabs: conTabs });
+        const logo = document.getElementById('gd-cliente-logo');
+        const st = logo && getComputedStyle(logo);
+        if (logo && st.display !== 'none' && st.visibility !== 'hidden' && !logo.complete) logoAjeno = true;
+      }
+      // ~1.5s desde que aparecen las pestanas (el logo se retrasa 600ms).
+      if (++frames < 600 && conTabs < 90) requestAnimationFrame(tick);
+      else resolve({ vistas, logoAjeno });
+    };
+    requestAnimationFrame(tick);
+  }), cliente);
+}
+
 (async () => {
   fs.mkdirSync(CAPTURAS_DIR, { recursive: true });
   const admin = leerAdmin();
@@ -158,6 +195,52 @@ async function canvasesSinDibujar(page) {
         }
       }
     }
+
+    // Fase 139: las pestanas no se mueven despues de su primer dibujo, ni
+    // con el aviso amarillo "sin datos" (Mobilize en produccion no tiene
+    // dashboard_cargas -- se simula vaciando `secciones`) ni mientras carga
+    // el logo del cliente (se retrasa a proposito, como la primera visita
+    // sin cache). Cada orden (ORLANT->Mobilize y Mobilize->ORLANT) en un
+    // contexto NUEVO, sin cache de imagenes: en la pagina de arriba los
+    // logos ya quedaron en cache y el salto no se veria. Antes del arreglo
+    // fallaba con +14px (ORLANT) y -30px (Mobilize).
+    for (const orden of [['ORLANT', 'MOBILIZE'], ['MOBILIZE', 'ORLANT']]) {
+      ctxActual = 'salto de pestanas ' + orden.join('->');
+      const ctxSalto = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const pSalto = await ctxSalto.newPage();
+      pSalto.on('pageerror', (err) => hallazgos.push({ tipo: 'pageerror', ctx: ctxActual, msg: err.message }));
+      await pSalto.route('**/img/clientes/**', async (route) => {
+        await new Promise((r) => setTimeout(r, 600));
+        await route.continue();
+      });
+      await pSalto.route(/\/api\/dashboard\/MOBILIZE$/, async (route) => {
+        const r = await route.fetch();
+        const j = await r.json();
+        j.secciones = {};
+        await route.fulfill({ response: r, json: j });
+      });
+      await pSalto.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 30000 });
+      await pSalto.fill('#username', admin.user);
+      await pSalto.fill('#password', admin.password);
+      await pSalto.click('button.btn-login');
+      await pSalto.waitForTimeout(1000);
+      for (const cliente of orden) {
+        ctxActual = 'salto de pestanas ' + orden.join('->') + ' > ' + cliente;
+        const { vistas, logoAjeno } = await posicionesPestanasAlAbrir(pSalto, cliente);
+        if (logoAjeno) hallazgos.push({ tipo: 'logo-viejo-o-a-medio-cargar-visible', ctx: ctxActual });
+        if (!vistas.length) hallazgos.push({ tipo: 'salto-pestanas-sin-pestanas', ctx: ctxActual });
+        else if (vistas.length > 1) {
+          hallazgos.push({ tipo: 'salto-pestanas', ctx: ctxActual, posiciones: vistas });
+          await pSalto.screenshot({ path: path.join(CAPTURAS_DIR, `fallo-salto-${orden.join('-')}-${cliente}.png`) }).catch(() => {});
+        }
+        if (cliente === 'MOBILIZE' && vistas.length && !vistas[0].aviso) {
+          hallazgos.push({ tipo: 'salto-pestanas-aviso-no-estaba-en-primer-dibujo', ctx: ctxActual });
+        }
+        await pSalto.evaluate(() => closeGenericDashboard());
+        await pSalto.waitForTimeout(600);
+      }
+      await ctxSalto.close();
+    }
   } catch (e) {
     hallazgos.push({ tipo: 'excepcion', ctx: ctxActual, error: e.message });
     await page.screenshot({ path: path.join(CAPTURAS_DIR, 'fallo-excepcion.png') }).catch(() => {});
@@ -168,7 +251,7 @@ async function canvasesSinDibujar(page) {
   console.log('=== RESULTADO ===');
   console.log(JSON.stringify({ totalHallazgos: hallazgos.length, hallazgos }, null, 2));
   if (hallazgos.length === 0) {
-    console.log('OK: ORLANT completo (admin, claro, escritorio) sin errores de consola, peticiones fallidas ni canvas sin dibujar.');
+    console.log('OK: ORLANT completo (admin, claro, escritorio) sin errores de consola, peticiones fallidas ni canvas sin dibujar; pestanas de ORLANT/Mobilize sin salto al abrir.');
   }
   process.exit(hallazgos.length ? 1 : 0);
 })();

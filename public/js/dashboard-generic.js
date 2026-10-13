@@ -884,6 +884,18 @@ function renderGenericHeader(){
   // var(--c-brand) (teal fijo, no cambia con el tema). Provisional: ver
   // docs/pendientes.md (falta el original en alta resolucion de Edwin).
   var elLogo = document.getElementById('gd-cliente-logo');
+  // Fase 139 (hallazgo de la verificacion del salto de pestanas): al pasar
+  // de un cliente a otro, el navegador sigue pintando la imagen ANTERIOR
+  // hasta que termina de cargar la nueva -- Mobilize mostraba un instante
+  // el logo de Orlant (y al reves). Si la imagen cambia, se oculta
+  // (visibility, el espacio sigue reservado: alto fijo en styles.css) hasta
+  // que cargue la correcta. Sin transicion.
+  var nuevoLogo = _gd.cliente === 'MOBILIZE' ? 'img/clientes/mobilize-logo.png'
+    : _gd.cliente === 'ORLANT' ? 'img/clientes/orlant-logo-blanco.png' : null;
+  if(elLogo && nuevoLogo && elLogo.getAttribute('src') !== nuevoLogo){
+    elLogo.style.visibility = 'hidden';
+    elLogo.onload = elLogo.onerror = function(){ elLogo.style.visibility = ''; };
+  }
   if(elLogo){
     if(_gd.cliente === 'MOBILIZE'){
       elLogo.src = 'img/clientes/mobilize-logo.png';

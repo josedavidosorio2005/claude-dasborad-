@@ -6,11 +6,12 @@
 // la extension de Claude in Chrome, ver CLAUDE.md). Carga, vía la API real
 // con el usuario `demo_ADMIN`, un nombre FICTICIO y muy distintivo
 // ("Zzqlovnik Wyrdstanhoff", no existe ningun asesor real con ese nombre)
-// en 3 lugares distintos de ORLANT:
+// en 4 lugares (3 de ORLANT y 1 de Mobilize):
 //   - efectividad_agendamiento (alimenta la tabla "Ranking de asesores" --
 //     el hallazgo real de la Fase 126/127 que esta prueba cierra),
 //   - agendas (ASESOR -- alimenta filtros/leyenda de "Agendas por línea"),
-//   - tipificaciones (AGENTE -- alimenta el filtro de Tipificación).
+//   - tipificaciones (AGENTE -- alimenta el filtro de Tipificación),
+//   - llamadas_unicas de MOBILIZE (AGENTE -- filtro Asesor, Fase 139).
 //
 // Despues corre las MISMAS funciones que usa
 // scripts/produccion/revision-final.js contra produccion
@@ -64,13 +65,24 @@ async function inyectarDatosSinteticos(page, nombre) {
       archivoNombre: 'fase128-parte2-sintetico.xlsx',
       filas: [[nombreFicticio, 'SEDE SINTETICA', 'EXAMEN SINTETICO', 'ESPECIALIDAD SINTETICA', 'PROFESIONAL SINTETICO', '2026-09-15 10:00:00', '3P', 'SIN ENTIDAD']],
     });
+    // Fase 139: formato actual de Tipificacion (11 columnas desde la Fase
+    // 131, CDR de Wolkvox): agente, fecha, hora, duracionMin, tipificacion,
+    // skill, duracionSeg, codAct, tipoInteraccion, hungUp, skillId -- ORLANT
+    // no trae las 5 ultimas (null), igual que su archivo real.
     const tipificacion = await apiRequest('POST', '/calidad/tipificacion/carga', {
       campana: 'ORLANT',
       canal: 'LLAMADAS',
       archivoNombre: 'fase128-parte2-sintetico.xlsx',
-      filas: [[nombreFicticio, '2026-09-15', '10:00:00', 60, 'CONTACTO EFECTIVO', 'SKILL SINTETICO']],
+      filas: [[nombreFicticio, '2026-09-15', '10:00:00', 60, 'CONTACTO EFECTIVO', 'SKILL SINTETICO', null, null, null, null, null]],
     });
-    return { efectividad, agendas, tipificacion };
+    // Fase 139: Llamadas Unicas de Mobilize (pestaña propia; su filtro Asesor
+    // lista nombres para roles internos) -- revision-final.js ahora la lee.
+    const llamadasUnicas = await apiRequest('POST', '/calidad/llamadas-unicas/carga', {
+      campana: 'MOBILIZE',
+      archivoNombre: 'fase128-parte2-sintetico.xlsx',
+      filas: [[nombreFicticio, '2026-09-15', 'CONTESTADA', 'SKILL SINTETICO']],
+    });
+    return { efectividad, agendas, tipificacion, llamadasUnicas };
   }, nombre);
 }
 
@@ -95,7 +107,7 @@ async function main() {
   await login(page0, admin.user, admin.password);
   const inyeccion = await inyectarDatosSinteticos(page0, NOMBRE_FICTICIO);
   console.log('[fase128-parte2] datos sinteticos cargados:', JSON.stringify({
-    efectividad: inyeccion.efectividad.insertadas, agendas: inyeccion.agendas.insertadas, tipificacion: inyeccion.tipificacion.insertadas,
+    efectividad: inyeccion.efectividad.insertadas, agendas: inyeccion.agendas.insertadas, tipificacion: inyeccion.tipificacion.insertadas, llamadasUnicas: inyeccion.llamadasUnicas.insertadas,
   }));
   await ctx0.close();
 
