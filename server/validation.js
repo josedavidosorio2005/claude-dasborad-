@@ -753,6 +753,42 @@ const llamadasSalidaOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// ── ORLANT WhatsApp: tiempos de respuesta por conversacion (Fase 142) ────
+// Tupla de orden FIJO = WPP_TIEMPOS_ORDEN_ARRAY (whatsapp-tiempos-logic.js)
+// y CAMPOS_FILA (whatsapp-tiempos.js). Sin telefonos ni nombres.
+const whatsappTiemposFilaArraySchema = z.tuple([
+  z.string().trim().min(1).max(200).regex(/^WHATSAPP/i, { message: 'solo colas de WhatsApp' }), // skill
+  fechaSchema, // fecha
+  z.number().int().min(0).max(23), // hora
+  z.number().int().min(0).max(10000000), // segundos (ANSWER_TIME)
+]);
+
+const whatsappTiemposCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(whatsappTiemposFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(100000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+const whatsappTiemposOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+const whatsappTiemposRangosQuery = z.object({
+  campana: campanaSchema,
+  mes: z.string().regex(/^\d{4}-\d{2}$/, { message: 'mes debe ser AAAA-MM' }),
+  skill: z.string().trim().max(200).optional(),
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1240,6 +1276,9 @@ module.exports = {
     llamadasSalidaCargaBody,
     llamadasSalidaFiltrosQuery,
     llamadasSalidaOpcionesQuery,
+    whatsappTiemposCargaBody,
+    whatsappTiemposOpcionesQuery,
+    whatsappTiemposRangosQuery,
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,

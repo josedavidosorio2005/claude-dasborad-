@@ -14584,3 +14584,40 @@ abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
   (Fase 139) usan otro skill; prueba nueva
   `fase142-no-contestadas-rechazo.test.js` (Cargar Datos no guarda la
   hoja).
+## Fase 142 — Punto 4: ORLANT WhatsApp, Nivel de Servicio por rangos de minutos (v1.34.0, 2026-10-14)
+
+- **Pedido de Edwin (13/10)**: en WhatsApp de ORLANT, el Nivel de Servicio
+  por rangos de tiempo (no una línea mensual de %), mes actual por
+  defecto, filtro de mes, y guardar el detalle con fecha y hora.
+- **Tabla nueva** `whatsapp_tiempos` (campana, skill, fecha, hora,
+  segundos, archivoNombre, cargadoPorNombre, createdAt) + índice
+  (campana, fecha), `runOnceMigration('fase142_whatsapp_tiempos_tabla_v1')`,
+  solo `CREATE ... IF NOT EXISTS`. `trafico_whatsapp` no se toca (sus %
+  mensuales se conservan, solo dejan de graficarse en esa sub-pestaña).
+- **Parser en el navegador** (`whatsapp-tiempos-logic.js`): SKILL_NAME,
+  DATE (Date con getters locales, serial o texto), RESULT, ANSWER_TIME.
+  Rango calculado con los cortes de Edwin (≤180, ≤300, ≤480, ≤600, >600 s);
+  la columna TIEMPO se ignora (en agosto su fórmula apunta a la fecha).
+  Solo colas que empiezan por WHATSAPP (las demás se cuentan como
+  ignoradas); RESULT ≠ ANSWER se omite con aviso; filas vacías ignoradas.
+- **Verificación con los archivos reales (local, solo conteos)**: agosto
+  7.370 filas WhatsApp (9.374 ignoradas), 2.979/152/196/119/3.924, 24
+  días, 40,4 % en 0–3; septiembre 7.953, 3.553/255/287/146/3.712, 26 días,
+  44,7 % — idéntico a los conteos de control del usuario. **No se cargó**
+  (espera "OK tiempos" y luego "OK cargar tiempos").
+- **API** `/calidad/whatsapp-tiempos/{opciones,rangos,carga/impacto,carga}`,
+  Zod (solo colas WHATSAPP, hora 0–23, segundos ≥ 0), `canLoadData` +
+  `campaignAccess`, reemplazo por campaña + rango de fechas en una
+  transacción. Todo agregado en SQL.
+- **Vista**: sub-pestaña "Nivel de Servicio" de WhatsApp, solo ORLANT
+  (`WPP_TIEMPOS_CAMPANAS`): Mes y Cola propios, tarjeta "% contestado en
+  0–3 minutos", total del mes, barras horizontales por franja (% y
+  cantidad) y tabla; estado vacío claro. Mes: coherente con el selector
+  MES de arriba (como Tipificación) — toma ese mes si tiene detalle; si
+  no, el último mes con detalle no futuro, y lo dice en una nota. Los
+  filtros propios del panel (Cola/Desde/Hasta/Granularidad) se esconden
+  en esa sub-pestaña. Excel/PDF del panel exportan los rangos.
+- **Pruebas**: `fase142-whatsapp-tiempos.test.js` (16) + matriz de
+  acceso. Ensayo local con datos sintéticos (colas de llamadas mezcladas,
+  TIEMPO equivocada): conteos exactos, 0 errores de consola, sin scroll
+  horizontal; capturas antes/después fuera del repo.

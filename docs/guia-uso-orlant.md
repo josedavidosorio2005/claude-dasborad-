@@ -83,7 +83,7 @@ del todo vas a ver:
 | Pestaña | Qué muestra |
 |---|---|
 | **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Flujo de Llamadas, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
-| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Flujo de WhatsApp, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
+| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Flujo de WhatsApp, Abandono, ASA y ATA, Nivel de Servicio (en Orlant: el porcentaje de conversaciones contestadas en cada rango de tiempo — 0-3, 3-5, 5-8, 8-10 y más de 10 minutos — de un mes, con filtro de Mes y de Cola; por defecto el mes elegido arriba, o el último con datos). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
@@ -432,6 +432,21 @@ evita que las cargas futuras se unifiquen de la misma forma.
    salida" (ver abajo).
 
 ![Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados](img/guia-uso/wolkvox-cdr-mobilize.png)
+
+### WhatsApp tiempos de respuesta (Orlant)
+
+- **Dónde se ve**: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio":
+  qué porcentaje de las conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y
+  más de 10 minutos, en un mes.
+- **Qué archivo**: el export de Wolkvox con la hoja de detalle (columnas
+  SKILL_NAME, DATE con hora, RESULT y ANSWER_TIME en segundos). Si el
+  archivo trae además una hoja de tabla dinámica, se ignora. La columna
+  TIEMPO, si viene, también se ignora: el rango lo calcula la plataforma
+  con ANSWER_TIME.
+- **Qué se carga**: solo las colas cuyo nombre empieza por WHATSAPP; las
+  demás (colas de llamadas) se ignoran y la vista previa dice cuántas
+  fueron. Se sube desde "Cargar Datos" eligiendo Orlant; cada carga
+  reemplaza solo sus propias fechas.
 
 ### Llamadas de salida (Mobilize)
 

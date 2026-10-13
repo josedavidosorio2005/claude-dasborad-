@@ -181,6 +181,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   hay datos — riesgo de plazo que no depende del equipo de la
   plataforma.
 
+- **Otro pendiente de ORLANT que mencionó Edwin ("otra cuenta distinta a la
+  tarjeta")** — sin entender todavía; lo pregunta el usuario. No se tocó.
+
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
