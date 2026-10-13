@@ -559,7 +559,8 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       filaUnica: false, columnas: llamadasUnicasCols,
       notasExtra: [
         'De donde sale: CDR de Wolkvox (Reportes → CDR → "1. Detalle de las llamadas", quitando las ' +
-          'de salida) + Skills & Servicios → "2. Llamadas abandonadas" (SKILL_NAME = NO CONTESTADAS), ' +
+          'de salida). Filas con SKILL_NAME = NO CONTESTADAS se RECHAZAN (son llamadas de salida no ' +
+          'conectadas: van en la hoja "Llamadas de salida"); las abandonadas de ingreso aun no tienen fuente. ' +
           'unificados en una sola hoja con las columnas AGENT_NAME, DATE, TELEPHONE, SKILL_NAME.',
         'TELEPHONE se usa SOLO para quitar llamadas repetidas del MISMO numero en el MISMO dia -- ' +
           'nunca se guarda, nunca se exporta, nunca se muestra. Un numero que llama 2 veces el mismo ' +

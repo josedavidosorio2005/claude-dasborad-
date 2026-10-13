@@ -404,8 +404,10 @@ evita que las cargas futuras se unifiquen de la misma forma.
 - **Hoja**: `LLAMADAS_UNICAS` de la plantilla oficial
   (`PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx`, descargable desde "Cargar
   Datos" eligiendo el cliente **Mobilize**).
-- **Columnas obligatorias**: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las
-  filas de llamadas **abandonadas** van con `SKILL_NAME = NO CONTESTADAS`.
+- **Columnas obligatorias**: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. **No se
+  aceptan filas con `SKILL_NAME = NO CONTESTADAS`**: esas son llamadas de
+  salida no conectadas y van en "Llamadas de salida". Si el archivo trae
+  alguna, la vista previa lo avisa y esa hoja no se guarda.
 - **Privacidad**: TELEPHONE se usa solo un instante, en la computadora de
   quien sube el archivo, para no contar dos veces una misma llamada del
   mismo número el mismo día — nunca llega al servidor, nunca se guarda,
@@ -421,9 +423,9 @@ evita que las cargas futuras se unifiquen de la misma forma.
    número de teléfono trae un guion) y los **duplicados del mismo número
    el mismo día** (no de todo el mes — si el mismo número llama dos días
    distintos, cuenta en cada uno).
-2. **Abandonadas**: en Wolkvox, **Skills & Servicios** → reporte **"2.
-   Llamadas abandonadas"**, filtrando por skill. Esas filas van a la
-   plantilla con `SKILL_NAME = NO CONTESTADAS`.
+2. **Abandonadas**: todavía no se cargan. Edwin está definiendo de qué
+   reporte salen las abandonadas de ingreso (las filas "NO CONTESTADAS" eran
+   llamadas de salida, por eso ya no se aceptan aquí).
 3. **Salientes no conectadas**: en Wolkvox, Reportes → pestaña **CDR** →
    reporte **"5. Detalle de las llamadas para las no conectadas"**. Estas
    llamadas **no van en este archivo**: van en el archivo de "Llamadas de

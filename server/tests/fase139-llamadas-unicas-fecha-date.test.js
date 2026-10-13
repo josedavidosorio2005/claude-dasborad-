@@ -38,12 +38,12 @@ test('filas con DATE como objeto Date se cargan (no quedan "DATE invalida")', ()
   const res = llamadasUnicasParseFilas([
     HEADER,
     ['Asesor Sintetico', new Date(2026, 8, 1), 3000000001, 'SKILL SAC'],
-    ['Asesor Sintetico', new Date(2026, 8, 2), 3000000002, 'NO CONTESTADAS'],
+    ['Asesor Sintetico', new Date(2026, 8, 2), 3000000002, 'Skill Key Account'],
   ]);
   assert.equal(res.avisos.length, 0);
   assert.deepEqual(res.filas, [
     ['Asesor Sintetico', '2026-09-01', 'CONTESTADA', 'SKILL SAC'],
-    ['Asesor Sintetico', '2026-09-02', 'ABANDONADA', 'Abandonadas'],
+    ['Asesor Sintetico', '2026-09-02', 'CONTESTADA', 'Skill Key Account'],
   ]);
 });
 
@@ -52,7 +52,7 @@ test('ida y vuelta con SheetJS y las MISMAS opciones de lectura de cargas.js', (
   const ws = XLSX.utils.aoa_to_sheet([
     HEADER,
     ['Asesor Sintetico', new Date(2026, 8, 1), 3000000001, 'SKILL SAC'],
-    ['Asesor Sintetico', new Date(2026, 8, 15), 3000000002, 'NO CONTESTADAS'],
+    ['Asesor Sintetico', new Date(2026, 8, 15), 3000000002, 'Skill Key Account'],
   ], { cellDates: true });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'HistCDR20261001');

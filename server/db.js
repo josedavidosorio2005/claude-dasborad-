@@ -327,6 +327,8 @@ CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificacio
 -- tabla NO TIENE columna de telefono: nunca llega al servidor, nunca se
 -- guarda, nunca se exporta (ver server/tests/fase138-pr3-llamadas-unicas-*
 -- .test.js, que falla si algun INSERT algun dia llegara a incluirlo).
+-- [Fase 142: el parser ya NO genera ABANDONADA -- NO CONTESTADAS se rechaza;
+-- el tipo queda para cuando haya fuente real de abandonadas entrantes.]
 -- 'tipo' viene de SKILL_NAME = 'NO CONTESTADAS' (normalizado mayusculas/
 -- acentos/espacios) -> ABANDONADA; cualquier otro valor -> CONTESTADA (su
 -- 'skill' real se guarda tal cual; las abandonadas guardan skill='Abandonadas',

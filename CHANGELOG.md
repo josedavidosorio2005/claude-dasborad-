@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.33.1 — Octubre 2026
+
+**Fase 142: Llamadas Únicas ya no acepta filas "NO CONTESTADAS".**
+
+- Si el archivo de Llamadas Únicas trae filas con SKILL_NAME = NO
+  CONTESTADAS, la plataforma ahora avisa: "NO CONTESTADAS es una llamada
+  de SALIDA no conectada; cárgala en Llamadas de salida." y no guarda esa
+  hoja. Así no se vuelve a repetir el error de septiembre, donde esas
+  llamadas se contaron como abandonadas.
+- La plantilla de Llamadas Únicas ya no trae el ejemplo "NO CONTESTADAS".
+- Nada más cambia: los datos ya cargados y las demás pestañas siguen igual.
+
 ## v1.33.0 — Octubre 2026
 
 **Fase 141: Llamadas de salida de Mobilize.**
