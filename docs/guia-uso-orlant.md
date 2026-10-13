@@ -7,7 +7,7 @@
 > PR (`scripts/guia/generar-pdf.js` regenera el PDF a partir de la versión
 > HTML real, no de este `.md`).
 
-Versión de la plataforma: **1.30.3**. La plataforma se llama **SInCo** (de
+Versión de la plataforma: **1.30.4**. La plataforma se llama **SInCo** (de
 InConexion®). Esta guía es para quien usa la
 plataforma todos los días (Edwin, Jairo y el equipo) — no tiene nada
 técnico, solo explica qué hace cada pantalla y cómo se usa.

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.30.4 — Octubre 2026
+
+**Fase 139: las pestañas de los tableros ya no "saltan" al abrir.**
+
+- Al abrir el tablero de Mobilize u Orlant, las pestañas (Flujo de
+  Llamadas, Llamadas Únicas, Calidad…) se movían un poco hacia arriba o
+  hacia abajo un instante después de aparecer, mientras cargaba el logo
+  del cliente. Si uno hacía clic muy rápido, podía caer en otra pestaña.
+  Ahora quedan quietas desde el primer momento.
+- Tampoco se ve ya, por un instante, el logo del otro cliente al pasar de
+  un tablero a otro.
+- Nada más cambia: los números, las pestañas y los avisos son los mismos.
+
 ## v1.30.3 — Octubre 2026
 
 **Fase 139: la guía de uso ya dice SInCo y tiene las pantallas nuevas.**

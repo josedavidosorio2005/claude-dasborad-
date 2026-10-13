@@ -183,6 +183,10 @@ repositorio tiene siempre la versión más reciente de esta tabla):
       encima.
 - [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
       de InConexión, nunca para el usuario de Mobilize.
+- [ ] Al abrir el tablero de Mobilize o de Orlant (sobre todo al pasar de
+      uno al otro), las pestañas quedan quietas desde que aparecen: no se
+      mueven hacia arriba ni hacia abajo, y nunca se ve por un instante
+      el logo del otro cliente.
 
 ## 11. Algo no cuadra
 
