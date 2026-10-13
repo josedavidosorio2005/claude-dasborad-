@@ -349,6 +349,31 @@ porque los modales están exentos de anclarse a su disparador; solo
 `prefers-reduced-motion`/`data-motion="off"` global (selector `*`, ver
 abajo) que todo lo demás.
 
+## Pulido visual (Fase 140)
+
+Bloque aditivo al final de `styles.css`. Reglas que quedan fijas para
+lo que se agregue después:
+
+- **Controles de formulario**: `button,input,select,textarea` heredan
+  `font-family` (los navegadores no lo hacen por defecto). Un control
+  nuevo ya sale con Quicksand sin hacer nada.
+- **Filtros dentro de un panel** (`#gd-panels`/`.aurora-card`): estilo
+  base con `:where()` (especificidad 0): borde `--c-border-control`,
+  `--r-sm`, `--fs-small`, alto mínimo 32px. Una clase propia o un
+  `style=""` en línea siempre le gana; no hace falta repetir ese estilo.
+- **`.btn-sm` sin variante** (Excel/PDF, acciones secundarias):
+  `--c-surface-alt` + `--c-text` + borde `--c-border`. Si agregas una
+  variante nueva de color (`.btn-xxx`), súmala a la lista `:not(...)` de
+  esa regla.
+- **Entrada escalonada de tarjetas**: solo con transición ligada a
+  `#gd-panels.motion-show`, nunca con `@keyframes` (se re-dispararía en
+  cada redibujado por filtro). Todo retraso (`transition-delay`/
+  `animation-delay`) nuevo debe anularse también con
+  `prefers-reduced-motion` y `data-motion="off"`: los apagados globales
+  solo anulan la duración, no el retraso.
+- **Animación de entrada en un elemento con `:hover` que usa
+  `transform`**: `animation-fill-mode: backwards`, nunca `both`.
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

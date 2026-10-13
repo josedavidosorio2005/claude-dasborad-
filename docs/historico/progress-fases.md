@@ -14420,3 +14420,41 @@ externa. Decisión del usuario, después de la presentación.
   otros SHA). No se perdió nada.
 - **429 de Docker**: el usuario eligió la opción 1 (Docker Hub). PR en
   borrador, sin mergear hasta "OK mergear 429".
+
+## Fase 140 — Pulido visual (2026-10-13)
+
+Pedido: mejorar el acabado visual del frontend (skill de rediseño
+`redesign-existing-projects` de Taste Skill) sin afectar la
+funcionalidad. La skill `design-taste-frontend` v2 se descartó porque
+excluye explícitamente dashboards y pantallas de aplicación.
+
+- **Restricciones respetadas**: sin framework ni build nuevos, CSP solo
+  `'self'`, Quicksand y el teal de marca intactos (la skill sugiere cambiar
+  la fuente, pero aquí es parte de la marca), sin degradados decorativos
+  nuevos (decisión de la Fase 133), iconos emoji sin tocar (F10, decisión
+  de marca), `.atab{transition:all}` sin tocar (espera "OK limpieza
+  atab").
+- **Diagnóstico** con capturas locales (`seed:demo` en una base temporal
+  fuera del repo, puerto 3099, claro/oscuro, 1440px y 412px, las 5
+  pestañas de ORLANT): (1) botones/campos/selects con la fuente del
+  sistema, no Quicksand; (2) filtros de los paneles con estilo crudo del
+  navegador; (3) `.btn-sm` sin variante (Excel/PDF) gris del navegador,
+  peor en oscuro; (4) franja vacía de `#gd-kpis` entre cabecera y
+  pestañas; (5) módulo único de bienvenida pegado a la izquierda; (6)
+  tarjetas casi fundidas con el fondo en oscuro; (7) `transition:all` en
+  sub-pestañas/tarjetas de rol/cliente/módulo.
+- **Cambio**: un solo bloque aditivo al final de `public/css/styles.css`
+  ("PULIDO VISUAL (Fase 140)"), 11 puntos comentados uno por uno. Los
+  estilos de controles usan `:where()` (especificidad 0) para que
+  cualquier clase o estilo en línea existente siga ganando. La entrada
+  escalonada de tarjetas es una transición ligada a `.motion-show` (que
+  `motionEnter()` solo reinicia al cambiar de pestaña/sub-pestaña), así
+  que un cambio de filtro o de mes no anima nada; su retraso se anula
+  con `prefers-reduced-motion` y con `data-motion="off"`. La entrada de
+  `.dash-btn` usa `backwards` (con `both` anulaba el `:hover`).
+- **Verificación**: capturas después: 0 errores de consola/página;
+  `npm test` 1481/1481 antes de la prueba nueva;
+  `server/tests/fase140-pulido-visual.test.js` (7 pruebas) en verde.
+- **Estado**: PR abierto, sin mergear: el merge despliega a producción
+  y las mejoras visuales estaban pospuestas hasta después del demo de
+  Mobilize.
