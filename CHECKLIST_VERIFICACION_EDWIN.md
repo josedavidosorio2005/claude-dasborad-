@@ -174,7 +174,8 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 - [ ] **Mobilize** tiene una pestaña propia, **"Llamadas Únicas"**, justo
       después de Flujo de Llamadas, con 3 tarjetas (Contestadas,
       Abandonadas, Total) y una gráfica de barras por mes. Septiembre
-      2026 muestra 88 contestadas, 51 abandonadas y 139 en total.
+      2026 muestra 88 contestadas, 0 abandonadas y 88 en total (corregido el
+      13/10: las 51 "abandonadas" eran llamadas de salida no conectadas).
 - [ ] Debajo del título de esa pestaña dice que se cuenta una sola vez
       cada teléfono por día, y que por eso no coincide con Flujo de
       Llamadas.

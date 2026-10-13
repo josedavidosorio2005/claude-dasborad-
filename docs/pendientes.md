@@ -98,6 +98,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv`
   18) — no se tocan sin que lo pidas explícitamente.
 
+- **Propuesta (Fase 141): rechazar `SKILL_NAME = NO CONTESTADAS` en
+  Llamadas Únicas** — Prioridad MEDIA. Hoy ese valor se interpreta como
+  llamada abandonada, y eso fue justo lo que causó el error de
+  septiembre (eran llamadas de salida no conectadas). Propuesta: que la
+  carga lo rechace con el mensaje "NO CONTESTADAS es una llamada de
+  SALIDA no conectada; cárgala en Llamadas de salida" hasta que Edwin
+  defina el archivo real de abandonadas entrantes. Cómo se cierra:
+  decides si se aplica. No se cambió nada todavía.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **19 asesores del archivo real de Calidad sin usuario ASESOR en la
@@ -153,10 +162,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   panel ya construido, con septiembre/2026 real cargado desde el
   2026-10-13; vive en su propia pestaña "Llamadas Únicas" desde la Fase
   139):
-  - **Nombre de asesor en las filas NO CONTESTADAS**: una llamada
-    abandonada no tiene asesor que la atendió — falta confirmar qué
-    espera Edwin que vaya en AGENT_NAME para esas filas (vacío, un valor
-    fijo, el del skill).
+  - **Archivo real de llamadas ABANDONADAS de ingreso**: las filas
+    "NO CONTESTADAS" que se cargaron al principio eran llamadas de SALIDA
+    no conectadas (corregido el 2026-10-13, Fase 141 Parte B). Falta que
+    Edwin defina de dónde salen las abandonadas entrantes reales.
   - **Filtro de skill y las abandonadas**: sin confirmar si el filtro de
     Skill del panel debe aplicar también a las llamadas abandonadas o
     solo a las contestadas.

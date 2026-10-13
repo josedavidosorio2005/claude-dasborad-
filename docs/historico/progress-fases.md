@@ -14532,3 +14532,34 @@ abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
 - **Pruebas**: `server/tests/fase141-llamadas-salida.test.js` (parser,
   migración, API, permisos, plan de carga, panel) + matriz de acceso
   (`fase118-matriz-acceso.test.js`) con las 6 rutas nuevas.
+
+## Fase 141 — Parte B: corrección de Llamadas Únicas de septiembre en producción (2026-10-13)
+
+- **Causa**: las "51 abandonadas" cargadas el 13/10 eran un error de la
+  fuente — Edwin había pasado llamadas de SALIDA no conectadas (filas con
+  `SKILL_NAME = NO CONTESTADAS`), no entrantes abandonadas. En
+  septiembre no hubo abandonadas reales.
+- **Autorización**: "OK reemplazar septiembre" del usuario, en el chat.
+  Producción en v1.32.0; respaldo del 2026-10-13 03:18 (menos de 24 h,
+  subida a S3 OK según salud-servidor.yml).
+- **Cómo**: por la interfaz normal (Cargar Datos → Mobilize → Llamadas
+  Únicas), navegador visible, sesión escrita por el usuario. El archivo
+  corregido de Edwin (fuera del repo) dio en la vista previa 88 filas
+  válidas: 88 contestadas, 0 abandonadas, 25 días, 0 avisos (las 51 filas
+  vacías del Excel se ignoraron sin aviso). El impacto (solo lectura)
+  confirmó el reemplazo de 139 filas por 88, del 1 al 30 de septiembre.
+  La carga reemplaza por campaña + rango de fechas del archivo en una
+  transacción; el archivo viejo cubría el mismo rango, así que no quedó
+  ninguna fila vieja afuera.
+- **Primer intento cancelado sin guardar**: el script de la carga leía
+  el impacto con el diálogo de confirmación ya abierto (el navegador no
+  entrega la respuesta en ese momento) y, por seguridad, canceló. Se
+  corrigió (impacto pedido antes de guardar), se ensayó completo en local
+  con los mismos archivos y el segundo intento salió bien.
+- **Resultado (139 → 88)**: Llamadas Únicas 88 contestadas / 0
+  abandonadas / 88 total; barras de septiembre con las 3 series
+  (abandonadas en 0); filtros Desde/Hasta/Skill presentes (Skill ya no
+  ofrece "Abandonadas"); Tipificación de Mobilize sigue en 167; Flujo de
+  Llamadas y ORLANT idénticos antes y después; 0 errores de consola.
+- **Pendiente**: la propuesta de rechazar `NO CONTESTADAS` en el parser
+  queda para decisión del usuario (docs/pendientes.md).
