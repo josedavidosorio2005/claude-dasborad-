@@ -24,7 +24,7 @@ on:
         description: 'Dominio a agregar/quitar (para aplicar: el DNS A ya debe apuntar a la instancia)'
         required: true
         type: string
-        default: informa.inconexion.com.co
+        default: sinco.inconexion.com.co
       modo:
         description: 'revisar (solo lectura) / aplicar (agrega dominio) / quitar (retira dominio)'
         required: true

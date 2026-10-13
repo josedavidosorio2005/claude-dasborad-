@@ -24,7 +24,7 @@ const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 const { instalarDryRunSeguro, leerConfirmsCapturados } = require(path.join(__dirname, 'lib', 'dry-run-seguro.js'));
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const ARCHIVO = 'C:/Users/filid/Documents/datos-inconexion/mobilize/PLANTILLA_CDR.xlsx';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 

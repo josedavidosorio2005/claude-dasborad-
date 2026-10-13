@@ -1,5 +1,5 @@
 // sin-duckdns.test.js — Fase 93. duckdns se retiro de produccion por
-// completo (29/09/2026): produccion es solo https://informa.inconexion.com.co.
+// completo (29/09/2026): produccion es solo https://sinco.inconexion.com.co (desde la Fase 139).
 // Esta prueba de guardia falla si alguien reintroduce una referencia activa
 // a duckdns en las rutas que SI son funcionales (server/, public/, deploy/,
 // .github/workflows/, .github/scripts/, README.md) -- por ejemplo, un

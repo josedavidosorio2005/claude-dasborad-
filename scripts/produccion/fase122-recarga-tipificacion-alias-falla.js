@@ -25,7 +25,7 @@ const path = require('path');
 const fs = require('fs');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const ARCHIVO = 'C:\\Users\\filid\\Downloads\\TIPIFICACIONES.xlsx';
 const OUT_DIR = 'C:\\Users\\filid\\Documents\\trabajo inconexion\\bases edwin\\capturas-produccion\\fase122-tipificacion-realias';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;

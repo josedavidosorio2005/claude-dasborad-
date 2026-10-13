@@ -5,7 +5,7 @@
 > español simple, sin nada técnico. Si algo no coincide con lo que
 > esperabas, avisa antes de seguir usando esa parte.
 
-Plataforma: **https://informa.inconexion.com.co** — versión **1.26.0**.
+Plataforma: **https://sinco.inconexion.com.co** — versión **1.30.5**.
 
 > Desde la Fase 126, la plataforma solo tiene datos oficiales de
 > **agosto y septiembre 2026** (más el cruce de julio de Tipificación de
@@ -124,9 +124,9 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 
 ## 7. Dominio
 
-- [ ] La plataforma solo responde en **https://informa.inconexion.com.co**
-      — el dominio viejo (`duckdns`) ya no funciona ni redirige a ningún
-      lado.
+- [ ] La plataforma solo responde en **https://sinco.inconexion.com.co**
+      — los dominios viejos ("informa" y `duckdns`) ya
+      no funcionan ni redirigen a ningún lado.
 
 ## 8. Calidad (si aplica a tu usuario)
 

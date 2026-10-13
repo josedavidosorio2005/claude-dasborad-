@@ -10,7 +10,7 @@
 const path = require('path');
 const { chromium } = require(path.join(__dirname, '..', '..', 'server', 'node_modules', 'playwright'));
 
-const BASE = 'https://informa.inconexion.com.co';
+const BASE = process.env.BASE_URL || 'https://sinco.inconexion.com.co';
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 // Números de control de agosto (dados por el usuario, confirmados contra

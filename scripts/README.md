@@ -36,8 +36,10 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 
 - **`revision-final.js`** — recorrido de verificación en
   `https://sinco.inconexion.com.co` con sesión real (navegador visible,
-  "INICIA SESIÓN AHORA"), 0 escritura. Actualízalo cuando cambien las
-  pestañas o los números de control a confirmar. Cada clic espera a que
+  "INICIA SESIÓN AHORA"), 0 escritura. Recorre ORLANT y MOBILIZE.
+  Actualízalo cuando cambien las pestañas o los números de control a
+  confirmar. Todos los scripts de esta carpeta toman `BASE_URL` (default
+  sinco). Cada clic espera a que
   esa pestaña quede activa (reporta si quedó otra), los dashboards se
   cierran con su botón "X Cerrar" y nada depende del aviso amarillo de
   "sin datos" (Fase 139).

@@ -20,12 +20,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
-- **Retirar informa.inconexion.com.co** — Prioridad ALTA (antes de
-  notificar la URL nueva). Cómo se cierra: GitHub → Actions → "Dominio de
+- **Quitar informa.inconexion.com.co del servidor** — Prioridad MEDIA.
+  Su DNS ya no existe (NXDOMAIN, 2026-10-13) y la guía/documentos ya
+  dicen solo sinco (PR #396, v1.30.5, mergeado con tu OK antes de este
+  paso). Falta limpiar el Caddyfile real y `CORS_ORIGIN` (todavía con
+  informa + sinco). Cómo se cierra: GitHub → Actions → "Dominio de
   produccion" → Run workflow en `main` con dominio
-  `informa.inconexion.com.co` y modo `quitar`. Después se mergea el PR
-  #396 (guía y documentos a solo sinco). Al 2026-10-13 solo había corrido
-  el modo `revisar` (CORS_ORIGIN todavía con informa + sinco).
+  `informa.inconexion.com.co` y modo `quitar`; después se verifica sinco
+  (salud, certificado, CORS solo con sinco).
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
   MEDIA (hoy se resuelve relanzando el job). Tres opciones escritas en la
   Fase 139 (cuenta gratuita de Docker Hub + secreto; login a ECR Public
