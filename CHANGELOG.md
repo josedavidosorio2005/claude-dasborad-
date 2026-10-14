@@ -20,6 +20,44 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Nada más cambia: lo que se ve con el mouse, las exportaciones y los datos
   son los mismos.
 
+## v1.34.2 — Octubre 2026
+
+**Fase 144 (A2): la plataforma se puede usar con el teclado.**
+
+- Las opciones del menú de la izquierda (Usuarios, Permisos, Cargar Datos…)
+  ahora se alcanzan con la tecla Tab y se abren con Enter o la barra
+  espaciadora. Antes solo funcionaban con el mouse.
+- En la pantalla de bienvenida, la tarjeta "Dashboard Clientes" y las
+  tarjetas de cada cliente también se abren con el teclado.
+- En los tableros, las pestañas se recorren con las flechas izquierda y
+  derecha y se abren con Enter. Los lectores de pantalla ahora dicen cuál
+  pestaña está abierta.
+- El selector de mes y los demás selectores de los encabezados muestran un
+  borde visible cuando se llega a ellos con el teclado.
+- En el celular, el botón ☰ indica si el menú está abierto y la tecla Esc lo
+  cierra.
+- Nada más cambia: el aspecto con el mouse, los números, los permisos y las
+  exportaciones son los mismos.
+
+## v1.34.1 — Octubre 2026
+
+**Fase 144 (A1): Tráfico siempre muestra el período del mes elegido.**
+
+- En Orlant → Tráfico de Llamadas, Orlant → Tráfico de WhatsApp y Mobilize
+  → Flujo de Llamadas, al elegir un mes arriba la gráfica y las tarjetas
+  terminan en ese mes y **se quedan así** aunque uno vuelva a hacer clic en
+  la pestaña, vaya a otra y regrese, o cierre y abra el tablero. Antes, al
+  volver a la pestaña, se mostraban todos los meses cargados sin avisar.
+- Debajo del título de cada uno de esos paneles ahora dice qué fechas se
+  están mostrando, por ejemplo "Mostrando: 01/04/2026 – 31/08/2026". Las
+  tarjetas suman ese período.
+- Si el mes elegido no tiene datos, el aviso "Sin datos… Ver <mes>" se
+  mantiene hasta que se cambie de mes o se pulse "Ver".
+- Si uno escribe Desde y Hasta a mano y pulsa "Aplicar filtros", esas fechas
+  se respetan como siempre.
+- Nada más cambia: los números de cada período, las exportaciones y los
+  permisos son los mismos.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**

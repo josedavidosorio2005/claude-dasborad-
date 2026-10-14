@@ -374,6 +374,34 @@ lo que se agregue después:
 - **Animación de entrada en un elemento con `:hover` que usa
   `transform`**: `animation-fill-mode: backwards`, nunca `both`.
 
+## Rango visible en paneles con ventana de fechas (Fase 144, A1)
+
+Un panel cuyas tarjetas suman un **rango** (no solo "el mes" del
+encabezado) dice ese rango bajo su título: `.trafico-rango` ("Mostrando:
+dd/mm/aaaa – dd/mm/aaaa", `--fs-small`, `--c-text-muted`, cifras
+tabulares). El texto sale de `traficoRangoTexto()` (`trafico-logic.js`) y
+se actualiza en cada dibujo y al aplicar filtros. Hoy lo usan Tráfico de
+Llamadas, Tráfico de WhatsApp y Flujo de Llamadas de Mobilize; cualquier
+panel nuevo con ventana de fechas debe mostrarlo igual.
+
+## Teclado: controles y pestañas (Fase 144, A2)
+
+- **Todo lo clicable se opera con teclado.** Si un control no puede ser un
+  `<button>` (opción `<a>` del menú lateral, tarjeta `.dash-btn`/
+  `.client-card`), lleva `role="button" tabindex="0"`; Enter y Espacio lo
+  activan solos (manejador delegado en `public/js/a11y-teclado.js`). Nunca
+  `outline:none` en línea: el anillo lo pone la regla global (blanco sobre
+  fondos teal fijos).
+- **Pestañas** (`.aurora-tabs` + `.atab`, `.gd-subtabs` + `.gd-subtab-btn`):
+  `a11y-teclado.js` les da `role="tablist"`/`"tab"`, `aria-selected`,
+  `tabindex` itinerante y ←/→/Inicio/Fin con **activación manual** (patrón
+  WAI-ARIA APG: los paneles se arman al vuelo). Se sincroniza con la clase
+  que ya marca la activa (`atab-active` / `on`), así que una barra nueva con
+  esas clases queda accesible sin código extra. `#gd-panels` es el
+  `tabpanel` de las pestañas del tablero.
+- Menú lateral: `aria-current="page"` en la opción activa; el botón ☰ dice
+  `aria-expanded` y Escape cierra el menú móvil.
+
 ## Diálogos y menús de botón (Fase 144, A3)
 
 - Los 6 overlays de `motion-helpers.js` (tablero, Calidad, Supervisar

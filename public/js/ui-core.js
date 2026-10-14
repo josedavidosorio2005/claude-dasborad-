@@ -77,6 +77,8 @@ function closeSidebar(){
   document.querySelectorAll('.app-page.sidebar-open').forEach(function(p){
     p.classList.remove('sidebar-open');
   });
+  // Fase 144 (A2): el boton ☰ dice si el menu esta abierto (a11y-teclado.js).
+  if(typeof a11ySincronizarToggleSidebar === 'function') a11ySincronizarToggleSidebar();
 }
 function toggleNavbarProfile(btn){
   var wrap = btn.closest('.navbar-right');
@@ -106,7 +108,7 @@ function showSection(sec){
     var el=document.getElementById('section-'+s);
     var mel=document.getElementById('menu-'+s);
     if(el) el.classList.toggle('hidden',s!==sec);
-    if(mel) mel.classList.toggle('active',s===sec);
+    if(mel){ mel.classList.toggle('active',s===sec); if(s===sec) mel.setAttribute('aria-current','page'); else mel.removeAttribute('aria-current'); }
   });
   if(sec==='perms') showRolesView();
   if(sec==='hist'){ loadHist().then(function(){ renderHist(); }); }

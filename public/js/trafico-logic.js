@@ -444,6 +444,58 @@ function traficoVentana12Meses(maxDispFecha, minDispFecha) {
   return desde;
 }
 
+// Fase 144 (A1, hallazgo D03 de la Fase 143): decide QUE rango muestra un
+// panel de trafico (Llamadas, WhatsApp, Flujo de Mobilize) en CADA dibujo.
+// Antes, el selector MES solo fijaba el rango la primera vez (Fase 86): el
+// rango quedaba en memoria pero el siguiente dibujo (clic en la misma
+// pestaña, ir y volver, cerrar y reabrir) volvia a leer la URL -- sin fechas
+// -- y caia al rango por defecto de TODOS los datos, sin aviso, debajo de un
+// encabezado que seguia diciendo el mes elegido.
+//
+// Reglas (en este orden):
+//  1. Si el mes global cambio desde la ultima sincronizacion -> ventana de
+//     12 meses que TERMINA en ese mes (Fase 86). Si ese mes no tiene datos,
+//     `sinDatosMes` = true (el panel muestra el aviso con "Ver <ultimo mes>").
+//  2. Si no cambio y ya hay un estado en memoria (`estadoPrevio`) -> se
+//     reusa TAL CUAL: sea el rango del mes, el aviso, o un rango que el
+//     usuario puso a mano con "Aplicar filtros" (Fase 77, siempre se respeta).
+//  3. Primer dibujo sin mes global: estado de la URL; lo que falte, con la
+//     ventana por defecto (ultimos 12 meses con datos).
+//
+// `opts`: { mesSel ('YYYY-MM'|null), mesSincronizado, estadoPrevio,
+// sinDatosPrevio, estadoURL, minDisp, maxDisp, tieneDatosMes (bool, lo
+// calcula quien llama: cada canal define "tiene datos de ese mes" distinto) }.
+// Devuelve { estado (copia nueva), sinDatosMes, sincronizar, origen }.
+function traficoFinDeMes(mes) {
+  var y = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7));
+  var d = new Date(Date.UTC(y, m, 0));
+  return mes + '-' + String(d.getUTCDate()).padStart(2, '0');
+}
+function traficoDecidirRango(opts) {
+  var base = opts.estadoPrevio || opts.estadoURL || {};
+  var estado = Object.assign({}, base);
+  if (opts.mesSel && opts.mesSincronizado !== opts.mesSel) {
+    estado.hasta = traficoFinDeMes(opts.mesSel);
+    estado.desde = traficoVentana12Meses(estado.hasta, opts.minDisp);
+    return { estado: estado, sinDatosMes: !opts.tieneDatosMes, sincronizar: true, origen: 'mes' };
+  }
+  if (opts.estadoPrevio) {
+    return { estado: estado, sinDatosMes: !!opts.sinDatosPrevio, sincronizar: false, origen: 'previo' };
+  }
+  var origen = estado.desde || estado.hasta ? 'url' : 'defecto';
+  if (!estado.desde) estado.desde = traficoVentana12Meses(opts.maxDisp, opts.minDisp);
+  if (!estado.hasta) estado.hasta = opts.maxDisp;
+  return { estado: estado, sinDatosMes: false, sincronizar: false, origen: origen };
+}
+
+// Texto del rango que se esta mostrando, para el subtitulo del panel
+// ("Mostrando: 01/04/2026 – 30/09/2026"). Fechas 'YYYY-MM-DD' -> dd/mm/aaaa,
+// el mismo formato que ya ven en los campos Desde/Hasta.
+function traficoRangoTexto(desde, hasta) {
+  var f = function (s) { return s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '—'; };
+  return 'Mostrando: ' + f(desde) + ' – ' + f(hasta);
+}
+
 // ── Agregacion por granularidad (dia/mes/anio) + combinar/separar skills ──
 //
 // SIEMPRE suma los volumenes primero y recalcula los % desde esa suma —
@@ -696,6 +748,9 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoValorCrudoSiFechaBoxeada: traficoValorCrudoSiFechaBoxeada,
     traficoParseFilas: traficoParseFilas,
     traficoVentana12Meses: traficoVentana12Meses,
+    traficoFinDeMes: traficoFinDeMes,
+    traficoDecidirRango: traficoDecidirRango,
+    traficoRangoTexto: traficoRangoTexto,
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,
