@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.8 — Octubre 2026
+
+**Fase 144 (A8): tarjetas de indicadores parejas y casillas más fáciles de tocar.**
+
+- En la fila de indicadores de arriba (por ejemplo "Total llamadas",
+  "Llamadas contestadas", "Tasa de abandono"), todos los títulos se ven
+  ahora con la misma letra. Antes unos salían en negrita y otros no, según
+  el color del semáforo. El color del semáforo sigue en la rayita de la
+  izquierda de cada tarjeta.
+- En Tráfico de Llamadas y de WhatsApp, "Ver skills por separado" y
+  "Comparar varias…" tienen un espacio para hacer clic más alto, más
+  cómodo en el celular. Se ven igual.
+- Ningún número, filtro ni color de semáforo cambia.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**

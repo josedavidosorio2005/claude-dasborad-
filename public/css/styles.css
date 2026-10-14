@@ -750,11 +750,22 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Mismo vocabulario de color, esta vez para un <span> suelto (ej. estado de
    item/tipo de movimiento en Inventario) -- sin esta regla base, esas clases
    solo tenian estilo cuando iban prefijadas por "td." o ".aurora-kpi.", asi
-   que el span quedaba sin ningun color en ningun tema. */
-.kpi-green{color:var(--c-success-text);font-weight:700;}
-.kpi-org{color:var(--c-warning-text);font-weight:700;}
-.kpi-red{color:var(--c-danger-text);font-weight:700;}
-.kpi-pur{color:var(--c-purple);font-weight:700;}
+   que el span quedaba sin ningun color en ningun tema.
+   Fase 144 (A8, D18): sin aplicarse a la tarjeta .aurora-kpi entera -- ahi
+   el semaforo es solo el borde izquierdo; antes la negrita se heredaba a la
+   etiqueta (.kl) y en una misma fila unas salian finas y otras en negrita.
+   :where() deja la especificidad igual que antes (0,1,0). */
+.kpi-green:not(:where(.aurora-kpi)){color:var(--c-success-text);font-weight:700;}
+.kpi-org:not(:where(.aurora-kpi)){color:var(--c-warning-text);font-weight:700;}
+.kpi-red:not(:where(.aurora-kpi)){color:var(--c-danger-text);font-weight:700;}
+.kpi-pur:not(:where(.aurora-kpi)){color:var(--c-purple);font-weight:700;}
+
+/* Fase 144 (A8, D16, WCAG 2.5.8): "Ver skills/colas por separado" y
+   "Comparar varias..." de Trafico median 16 px de alto (checkbox 13x13).
+   El area clicable (la etiqueta entera / el summary) llega a 24 px sin
+   cambiar letra ni color. */
+.filtro-check{display:inline-flex;align-items:center;gap:4px;min-height:24px;cursor:pointer;}
+.filtro-summary{padding:4px 0;}
 
 /* Oculto a la vista, legible por lector de pantalla -- tecnica estandar
    (no display:none/visibility:hidden, que lo sacan tambien del arbol de
