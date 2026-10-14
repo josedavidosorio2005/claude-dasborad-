@@ -649,7 +649,11 @@ async function _gdBootstrap(){
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
-    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); }catch(e){} })());
+    // Fase 145: _gdCalCargada solo queda en true si la carga TERMINO bien --
+    // asi "Todavia no hay monitoreos" (_gdRenderCalidad) nunca sale por un
+    // error de red, solo cuando la campaña de verdad tiene 0 monitoreos.
+    _gdCalCargada[camp] = false;
+    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); _gdCalCargada[camp] = true; }catch(e){} })());
   });
   Object.keys(campanasTraficoLlamadas).forEach(function(campT){
     tareasBootstrap.push((async function(){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} })());
@@ -1468,9 +1472,24 @@ function _calDashAplicarFiltros(camp, i){
   if(tab) renderGenericTab(tab.key);
 }
 
+var _gdCalCargada = {};
 function _gdRenderCalidad(p, i){
   var camp = p.campana;
   var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+
+  // Fase 145: la campaña no tiene NINGUN monitoreo (Mobilize hoy). Mismo
+  // aviso de A6 (.gd-aviso-mes, role="status"), pero con un texto que no
+  // culpa al mes elegido: "Todavia no hay monitoreos de calidad para X".
+  if(!todos.length && _gdCalCargada[camp]){
+    if(p.tipo === 'calidad_kpis'){
+      var fElVacio = document.getElementById('gd-f'+i); if(fElVacio) fElVacio.innerHTML = '';
+      var elVacio = document.getElementById('gd-p'+i);
+      if(elVacio) elVacio.innerHTML = '<div class="gd-aviso-mes" role="status">'+esc(calDashTextoSinMonitoreos(camp))+'</div>';
+    } else {
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos todavía.');
+    }
+    return;
+  }
   var asesoresDisp = calDashAsesoresDistintos(todos);
   var estado = _calDashEstado(camp, todos);
 
