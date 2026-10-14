@@ -126,7 +126,7 @@ function _salDibujarGrafica(canvasId, filas, campo3p, campoGeneral, tituloEje){
 function _salTablaHtml(filas, mesSel){
   if(!filas.length) return '';
   function celda(tag, txt, mes){
-    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
   }
   function pct(parte, total){ return total>0 ? gdFmtValor(Math.round(parte/total*1000)/10,'%') : '—'; }
   function fila(label, valores){

@@ -189,7 +189,7 @@ function _renderTraficoSkillsTable(){
     }).join('');
     var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
-      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
+      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:var(--fs-note);margin-left:4px">sin asignar</span>')+'</td>' +
       '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
         ' <select id="tv-skill-sede-'+idx+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
@@ -330,7 +330,7 @@ async function renderTraficoCobertura(){
     var meses = r.meses.slice().sort(function(a,b){ return a.mes<b.mes?-1:1; });
     var badges = meses.map(function(m){
       return '<span title="'+esc(m.filas)+' fila(s) — '+esc(m.archivoNombre||'')+' ('+esc(m.cargadoPorNombre||'')+')" ' +
-        'style="display:inline-block;background:var(--c-success-bg);color:var(--c-success-dark);border-radius:4px;padding:2px 7px;font-size:0.72rem;margin:2px 3px 2px 0">' +
+        'style="display:inline-block;background:var(--c-success-bg);color:var(--c-success-dark);border-radius:4px;padding:2px 7px;font-size:var(--fs-note);margin:2px 3px 2px 0">' +
         '&#10003; '+esc(m.mes)+'</span>';
     }).join('');
     return '<tr><td>'+esc(r.skillName)+'</td><td>'+campanaLabel+'</td><td>'+meses.length+' mes(es)</td><td>'+badges+'</td></tr>';
@@ -512,7 +512,7 @@ function _traficoClaveEstado(campana, sede){
 // ya era generica (no lee nada de trafico.js, solo los 2 arrays que recibe).
 function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta, etiquetaPlural){
   var modo = traficoModoDisplaySkills(datosLineas, estadoLineas);
-  return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
+  return '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
       '<select id="'+prefijo+'-f-skill-'+i+'" style="min-width:200px" onchange="_traficoLineaPrincipalCambio(\''+prefijo+'\','+i+')">' +
         '<option value=""'+(modo.todas?' selected':'')+'>Todas las '+esc(etiquetaPlural)+'</option>' +
         // Fase 87 (tema C): el `value` sigue siendo el nombre ORIGINAL (los
@@ -527,7 +527,7 @@ function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta
         '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
           datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
         '</select>' +
-        '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
+        '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
       '</div>' +
     '</details>';
 }
@@ -645,11 +645,11 @@ async function _traficoRenderPanel(p, i){
       '<p class="trafico-rango" id="tv-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tv-f-gran-'+i+'">' + ['dia','mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
           '<label style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
@@ -887,7 +887,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
   // el texto "Tasa de Abandono"/"Llamadas Abandonadas" ya dice que es).
   var badgeAband = (typeof semaforoBadgeHtml === 'function' && semAband) ? semaforoBadgeHtml(semAband) : '';
   var nsNota = labels.nivelServicioNota
-    ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
+    ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
   // Fase 94 (tema C): 2 niveles de texto -- `principal` (para cualquiera
   // que mire el dashboard) y, en linea aparte y mas chica, `detalle` (como
@@ -901,13 +901,13 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
     var puedeVerDetalle = (typeof msg === 'object') && msg.detalle && typeof canLoadData === 'function' && canLoadData();
     nsSinDato = '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:2px;font-size:0.78rem;color:var(--c-warning-dark,#92400e)">'+esc(principal)+'</div>';
     if(puedeVerDetalle){
-      nsSinDato += '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:1px;font-size:0.7rem;color:var(--c-text-muted)">'+esc(msg.detalle)+'</div>';
+      nsSinDato += '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:1px;font-size:var(--fs-note);color:var(--c-text-muted)">'+esc(msg.detalle)+'</div>';
     }
   }
   var tarjeta2 = '';
   if(totales.nivelServicio2 !== undefined){
     var ns2Nota = labels.nivelServicio2Nota
-      ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
+      ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
       : '';
     tarjeta2 = '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio2===null?'—':totales.nivelServicio2+'%')+'</div><div class="kl">'+esc(labels.nivelServicio2Label||'Nivel de Servicio')+ns2Nota+'</div></div>';
   }

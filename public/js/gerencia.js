@@ -127,7 +127,7 @@ function renderGerPanel(){
                      k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
-          '<div style="font-size:0.72rem;color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
+          '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
         panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+badge+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';

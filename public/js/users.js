@@ -41,10 +41,10 @@ function renderUsers(filter){
     var extra='';
     if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
-      extra='<div style="font-size:0.72rem;color:'+(asignadas.length?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
+      extra='<div style="font-size:var(--fs-note);color:'+(asignadas.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (asignadas.length? '&#9989; '+asignadas.join(', ') : '&#9888; Sin campanas asignadas')+'</div>';
     } else if(u.rol==='ASESOR'){
-      extra='<div style="font-size:0.72rem;color:'+(u.asesorCampana?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
+      extra='<div style="font-size:var(--fs-note);color:'+(u.asesorCampana?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (u.asesorCampana? '&#9989; '+esc(u.asesorCampana) : '&#9888; Sin operacion asignada')+'</div>';
     }
     // Fase 83 (hallazgo real): estos 4 botones se pintaban SIEMPRE, solo

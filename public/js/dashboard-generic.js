@@ -1207,8 +1207,8 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
-      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
-      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:var(--c-text-2);line-height:1.5"></div>' : '';
+      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:var(--fs-note);color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
+      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:var(--fs-note);color:var(--c-text-2);line-height:1.5"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
         '<span>' + esc(x.p.titulo || '') + '</span>' + totalSpan + tools + '</div>' + filtroDiv +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';

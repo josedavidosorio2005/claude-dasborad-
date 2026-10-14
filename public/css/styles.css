@@ -76,6 +76,10 @@
   --c-success-text:#17703b; --c-warning-text:#8f4a00; --c-danger-text:#b02a1d;
   --c-accent:#ffd54f;  --c-accent-bg:#fff8e1;    --c-purple:#8e44ad;
   --c-info-bg:#eaf4fb;  --c-on-primary-soft:#a8d8ea;
+  /* Fase 144 (A5): texto del badge de rol CLIENTES_DASH sobre su fondo
+     #fef9e2 -- 5.85:1 (antes #9e7a00 suelto, 3.79:1, no pasaba AA). En
+     oscuro el badge ya tenia su propio color (#ffd54f), sin cambio. */
+  --c-badge-clientes-text:#7a5d00;
 
   /* Anillo de foco (WCAG 2.4.7/2.4.11) -- reusa --c-primary-mid (ya es un
      token por tema) porque pasa >=3:1 contra --c-surface/--c-bg en los 2
@@ -517,9 +521,9 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .badge{display:inline-block;padding:2px 9px;border-radius:var(--r-pill);font-size:var(--fs-note);font-weight:700;white-space:nowrap;}
 .badge-ADMIN{background:#fff3cd;color:#856404;}
 .badge-CALIDAD{background:var(--c-success-bg);color:var(--c-success-dark);}
-.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary);}
 .badge-GERENCIA{background:var(--c-danger-bg);color:var(--c-danger-dark);}
-.badge-CLIENTES_DASH{background:#fef9e2;color:#9e7a00;}
+.badge-CLIENTES_DASH{background:#fef9e2;color:var(--c-badge-clientes-text);}
 .badge-AUX_ADMIN{background:#e8f0fb;color:#1a4a9e;}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
 .dot-on{background:var(--c-success);}
@@ -528,7 +532,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 /* ── ACTION BUTTONS ── */
 .btn-sm{padding:4px 9px;border-radius:5px;font-size:var(--fs-note);font-weight:600;cursor:pointer;border:none;white-space:nowrap;transition:opacity 0.2s;}
 .btn-sm:hover:not([disabled]){opacity:0.78;}
-.btn-edit{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.btn-edit{background:var(--c-info-bg);color:var(--c-primary);}
 .btn-suspend{background:var(--c-warning-bg);color:var(--c-warning-dark);}
 .btn-activate{background:var(--c-success-bg);color:var(--c-success-dark);}
 .btn-delete{background:var(--c-danger-bg);color:var(--c-danger-dark);}
@@ -1361,3 +1365,14 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    tamaños (hallazgo D06). Se corta solo en .aurora-tabs: .atab sigue
    congelada hasta "OK limpieza atab". .aurora-close ("X Cerrar",
    "Exportar") ya no se parte en 2 lineas (D25). */
+
+/* ═══ Fase 144 (A5) — contraste AA y piso de 12px ═══
+   Version de la app en la barra superior (hallazgo D07: 2.08:1 con el
+   --c-text-muted que tenia en linea, sobre el teal fijo --c-brand). En
+   escritorio va sobre --c-brand: blanco al 78% = 7.45:1. En movil (<=768)
+   vive dentro del menu desplegable sobre --c-surface: --c-text-muted =
+   5.38:1 claro / 5.39:1 oscuro. Medido con contraste-logic.js. */
+.navbar-app-version{font-size:var(--fs-note);color:rgba(255,255,255,0.78);margin-left:4px;}
+@media(max-width:768px){ .navbar-right .navbar-app-version{color:var(--c-text-muted);} }
+/* Contador de las tarjetas de rol (Permisos) en oscuro: 4.23:1 -> 6.19:1. */
+[data-theme="dark"] .role-count{color:var(--c-text-2);}
