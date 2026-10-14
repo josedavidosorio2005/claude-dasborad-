@@ -571,7 +571,6 @@ async function _traficoRenderPanel(p, i){
     return;
   }
 
-  var estado = _traficoEstadoDesdeURL();
   var fechasDisponibles = datos.filas.map(function(f){ return f.fecha; }).sort();
   var minDisp = fechasDisponibles[0], maxDisp = fechasDisponibles[fechasDisponibles.length-1];
   // Fase 86 (tema 2, hallazgo real Fase 85): una fila vieja con fecha
@@ -580,44 +579,38 @@ async function _traficoRenderPanel(p, i){
   // fin del mes en curso, hora Colombia (fecha-limites-logic.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
 
-  // Fase 86 (tema 3): si el selector MES de arriba cambio desde la ultima
-  // vez que se sincronizo ESTE panel, manda sobre el filtro propio --
-  // desliza la ventana de 12 meses para que TERMINE en el mes elegido. Si
-  // ese mes no tiene ninguna fila (no solo "el rango exacto quedo vacio",
-  // que Fase 77 respeta a proposito si el usuario lo eligio a mano dentro
-  // de la pestana), se muestra el aviso con boton al ultimo mes con datos
-  // en vez de un panel en blanco sin explicacion.
-  if(_gd.mesSel && _traficoMesSincronizado[claveEstado] !== _gd.mesSel){
-    _traficoMesSincronizado[claveEstado] = _gd.mesSel;
-    var tieneDatosMesGlobal = fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; });
-    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
-    // cacheado: asi Exportar (_traficoDatosExport) pide/lee ese mismo mes
-    // y, si vuelve vacio, cae solo en su propio aviso -- nunca un mes
-    // viejo distinto de lo que se ve en pantalla.
-    estado.hasta = _gdFinDeMes(_gd.mesSel);
-    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
-    _traficoEstado[claveEstado] = estado;
-    if(!tieneDatosMesGlobal){
-      _traficoSinDatosMesGlobal[claveEstado] = true;
-      _traficoAgregadoActual[claveEstado] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
-      host.dataset.campana = campana;
-      host.dataset.sede = sede || '';
-      return;
-    }
-    _traficoSinDatosMesGlobal[claveEstado] = false;
+  // Fase 86 (tema 3) + Fase 144 (A1): el selector MES de arriba desliza la
+  // ventana de 12 meses para que TERMINE en el mes elegido, y ese rango se
+  // MANTIENE en todos los dibujos siguientes (clic en la misma pestaña, ir y
+  // volver, cerrar y reabrir) hasta que cambie el mes o el usuario aplique
+  // otro rango a mano (Fase 77, siempre se respeta). La decision es pura y
+  // testeable: traficoDecidirRango (trafico-logic.js). Si el mes elegido no
+  // tiene filas, el aviso "Sin datos... Ver <ultimo mes>" se mantiene igual.
+  var decision = traficoDecidirRango({
+    mesSel: _gd.mesSel,
+    mesSincronizado: _traficoMesSincronizado[claveEstado],
+    estadoPrevio: _traficoEstado[claveEstado] || null,
+    sinDatosPrevio: _traficoSinDatosMesGlobal[claveEstado],
+    estadoURL: _traficoEstadoDesdeURL(),
+    minDisp: minDisp,
+    maxDisp: maxDisp,
+    tieneDatosMes: !!_gd.mesSel && fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; }),
+  });
+  var estado = decision.estado;
+  if(decision.sincronizar) _traficoMesSincronizado[claveEstado] = _gd.mesSel;
+  _traficoSinDatosMesGlobal[claveEstado] = decision.sinDatosMes;
+  _traficoEstado[claveEstado] = estado;
+  if(decision.sinDatosMes){
+    // Se limpia el agregado cacheado: asi Exportar (_traficoDatosExport)
+    // pide/lee ese mismo mes y, si vuelve vacio, cae solo en su propio
+    // aviso -- nunca un mes viejo distinto de lo que se ve en pantalla.
+    _traficoAgregadoActual[claveEstado] = [];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
+      _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+    host.dataset.campana = campana;
+    host.dataset.sede = sede || '';
+    return;
   }
-  // Ventana movil de 12 meses (pedido de Edwin, llamada 2026-09-15): el
-  // valor POR DEFECTO de "Desde" (cuando el usuario no eligio nada, ni en
-  // esta carga de pagina ni antes via "Aplicar filtros") nunca es el inicio
-  // de TODO el historico — son los ultimos 12 meses calendario con datos.
-  // El campo "Desde"/"Hasta" sigue siendo el filtro explicito de siempre:
-  // en cuanto el usuario lo usa, esa eleccion queda en la URL y manda sobre
-  // este default (ver traficoVentana12Meses, trafico-logic.js).
-  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
-  if(!estado.desde) estado.desde = desdeDefault;
-  if(!estado.hasta) estado.hasta = maxDisp;
   // Fase 77 (bug real reportado por Edwin, 25/09): el estado de filtros vive
   // en la URL (?tv_...) compartido por CUALQUIER panel trafico_combo de la
   // pagina, asi que un rango sin ningun dato para ESTE panel puede venir de
@@ -649,6 +642,7 @@ async function _traficoRenderPanel(p, i){
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>' +
+      '<p class="trafico-rango" id="tv-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
@@ -823,6 +817,9 @@ function _traficoAplicarFiltros(i){
   var pCfg = _traficoPanelConfig[i] || {};
   var skillbar = document.getElementById('tv-f-skillbar-'+i);
   if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tv', i, skillsDisponibles, estado.skills, pCfg.etiquetaLinea || 'Skill', pCfg.etiquetaLineaPlural || 'líneas');
+  // Fase 144 (A1): el subtitulo siempre dice el rango que se esta mostrando.
+  var rangoEl = document.getElementById('tv-rango-'+i);
+  if(rangoEl) rangoEl.textContent = traficoRangoTexto(estado.desde, estado.hasta);
   _traficoRenderContenido(campana, sede, i);
 }
 
