@@ -68,3 +68,9 @@ graphify-out/
 .codex/
 AGENTS.md
 
+
+# Snapshots y capturas temporales de Playwright CLI (Fase 143): las genera
+# `playwright-cli` en la carpeta desde donde se corre (paginas .yml, .png,
+# trazas) al verificar visualmente en local -- nunca al repo, ver CLAUDE.md
+# -> "Capturas de pantalla".
+.playwright-cli/
