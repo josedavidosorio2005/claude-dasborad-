@@ -726,7 +726,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    renderGenericHeader (140 Mobilize / 64 Orlant); object-fit evita
    deformar un logo futuro con otra proporcion. */
 .gd-cliente-logo{display:block;max-width:140px;height:25px;object-fit:contain;margin-bottom:4px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* KPI strip */
@@ -768,7 +768,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .gd-sem-simbolo{margin-right:4px;font-size:0.85em;}
 
 /* Tabs */
-.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;flex-shrink:0;}
+.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;}
 /* Fase 136 (F01, hallazgo real de la Fase 135: a 412px las pestañas se
    superponían ilegibles). Causa real: el min-width:24/44px de objetivos
    táctiles (línea ~930, Fase 133) es un valor EXPLÍCITO -- sustituye el
@@ -973,7 +973,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-header{background:var(--c-brand);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-radius:18px 18px 0 0;flex-shrink:0;}
 .aurora-header h2{color:var(--c-on-brand);font-size:var(--fs-h3);font-weight:700;margin:0;}
 .aurora-header .aurora-sub{color:var(--c-on-primary-soft);font-size:var(--fs-small);margin-top:2px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* Filter bar */
@@ -1332,3 +1332,12 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
 }
+
+/* ═══ Fase 144 (A4) ═══
+   .aurora-tabs: overflow-x:auto obliga al navegador a calcular tambien
+   overflow-y:auto, y el margin-bottom:-2px de .atab (que dibuja la pestaña
+   activa sobre el borde) dejaba 2px de "desborde" vertical -> aparecia una
+   barra de scroll vertical con flechas ▲▼ junto a las pestañas en TODOS los
+   tamaños (hallazgo D06). Se corta solo en .aurora-tabs: .atab sigue
+   congelada hasta "OK limpieza atab". .aurora-close ("X Cerrar",
+   "Exportar") ya no se parte en 2 lineas (D25). */

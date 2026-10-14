@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.4 — Octubre 2026
+
+**Fase 144 (A4): pestañas sin barrita de desplazamiento y "X Cerrar" en una sola línea.**
+
+- Junto a las pestañas de los tableros (Tráfico de Llamadas, Tráfico de
+  WhatsApp…) ya no aparece una barrita vertical con flechas ▲▼ a la derecha.
+- El botón "X Cerrar" (del tablero y de Cargar Datos) ya no se parte en dos
+  renglones en computadores y tabletas.
+- Nada más cambia.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**
