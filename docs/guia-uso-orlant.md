@@ -399,10 +399,11 @@ evita que las cargas futuras se unifiquen de la misma forma.
   (tiempo promedio de atención, aparte). Cada una trae arriba su número
   del período elegido.
 - **ATA sin abandonos**: ATA es el tiempo promedio hasta que la persona
-  cuelga sin ser atendida. Si en el período no hubo llamadas abandonadas
-  (como septiembre de 2026 en Mobilize, cuya plantilla trae además ATA en
-  0), no hay promedio que calcular y se muestra "—"; la plataforma no lo
-  oculta ni lo inventa.
+  cuelga sin ser atendida. Si en el período hay datos pero **ninguna llamada
+  abandonada** (como septiembre de 2026 en Mobilize), ATA se muestra como
+  **0:00** en la tarjeta, en la gráfica y en la exportación (decisión de
+  Edwin, 14/10/2026). Si el período no tiene datos, sale el aviso de "sin
+  datos" de siempre.
 
 ### Llamadas Únicas (Mobilize)
 

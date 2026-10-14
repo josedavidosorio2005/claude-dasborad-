@@ -13,6 +13,8 @@
 // fecha-limites-logic.js: global en el navegador, require() en Node --
 // ver ese archivo para el criterio de "fecha futura".
 var _traficoWppFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+// Fase 146: regla compartida de ATA con 0 abandonos (trafico-logic.js).
+var _traficoWppLogicaLlamadas = (typeof require === 'function') ? require('./trafico-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // ── Columnas de la plantilla real de WhatsApp (hoja DATA) ───────────────
 // Solo 5 obligatorias (cola + las 2 fechas del periodo + total + contestados);
@@ -542,6 +544,7 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
     b.totalLlamadas += pesoTotal;
     b.contestadas += pesoContestadas;
     if (f.abandonados != null) { b.llamadasAbandonadas += f.abandonados; b._tieneAbandonadas = true; }
+    if (f.ataSegundos != null) { b._ataReportado = true; if (Number(f.ataSegundos) !== 0) b._ataDistintoDeCero = true; }
     PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
     });
@@ -569,6 +572,13 @@ function traficoWppAgregarPorPeriodo(filas, opts) {
       waitTimeSegundos: null,
     };
     PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
+    // Fase 146 (decision de Edwin): con datos pero 0 abandonos, ATA = 0
+    // (0:00) -- misma regla que Llamadas (traficoAtaCeroSinAbandonos,
+    // trafico-logic.js).
+    if (out.ataSegundos === null && _traficoWppLogicaLlamadas.traficoAtaCeroSinAbandonos({
+      total: b.totalLlamadas, abandonadas: b._tieneAbandonadas ? b.llamadasAbandonadas : null,
+      ataReportado: !!b._ataReportado, ataDistintoDeCero: !!b._ataDistintoDeCero,
+    })) out.ataSegundos = 0;
     return out;
   }).sort(function (a, b) {
     if (a.periodo !== b.periodo) return a.periodo < b.periodo ? -1 : 1;
