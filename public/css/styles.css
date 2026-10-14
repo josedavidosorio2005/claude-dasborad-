@@ -1332,3 +1332,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
 }
+
+/* ═══ Fase 144 (A1) — rango que se esta mostrando en Trafico ═══
+   Subtitulo "Mostrando: dd/mm/aaaa – dd/mm/aaaa" bajo el titulo de los
+   paneles de Trafico (Llamadas, WhatsApp, Flujo de Mobilize): las tarjetas
+   y la grafica suman ESE rango, no solo el mes del encabezado. Solo tokens
+   existentes (--c-text-muted sobre --c-surface ya mide >=4.5:1). */
+.trafico-rango{margin:-4px 0 10px;font-size:var(--fs-small);color:var(--c-text-muted);font-variant-numeric:tabular-nums;}
