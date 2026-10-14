@@ -52,7 +52,10 @@ test('trafico.js: "ASA y ATA" de Mobilize muestra su resumen (ASA y ATA ponderad
   const src = fs.readFileSync(path.join(PUBLIC_JS, 'trafico.js'), 'utf8');
   assert.match(src, /activoSec === 'asaata'[\s\S]{0,400}ASA promedio del periodo[\s\S]{0,200}ATA promedio del periodo/);
   assert.match(src, /activoSec === 'aht'[\s\S]{0,300}AHT promedio del periodo/);
-  assert.match(src, /var w = Number\(f\.llamadasAbandonadas\) \|\| 0;\s*\n\s*if\(f\.ataSegundos != null && w > 0\)/,
+  // Fase 146: la tarjeta usa la funcion compartida traficoAtaPromedioPeriodo
+  // (ponderada por abandonadas, igual que traficoAgregar) -- la ponderacion
+  // se prueba en fase146-ata-cero-sin-abandonos.test.js.
+  assert.match(src, /var ataProm = traficoAtaPromedioPeriodo\(filtradas\);/,
     'ATA pondera por llamadas abandonadas, igual que traficoAgregar');
   // las 2 vistas ya existian (ORLANT): titulo y canvas propios
   assert.match(src, /asaata: '-canvas-asaata-'/);

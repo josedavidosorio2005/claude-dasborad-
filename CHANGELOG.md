@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.37.1 — Octubre 2026
+
+**Fase 146: ATA en 0:00 cuando no hubo llamadas abandonadas.**
+
+- En "ASA y ATA" (Flujo de Llamadas de Mobilize y Tráfico de Orlant), si el
+  período tiene datos pero ninguna llamada abandonada, el ATA ahora se ve
+  como **0:00** (antes "—"): en la tarjeta, en la gráfica y en el Excel.
+  Así lo pidió Edwin.
+- Si el período no tiene datos, sigue saliendo el aviso de "sin datos".
+- Cuando sí hay abandonos, el ATA se calcula igual que siempre. ASA, AHT y
+  las demás cifras no cambian.
+
 ## v1.37.0 — Octubre 2026
 
 **Fase 146: logo junto a "SInCo" y palabras con tilde.**

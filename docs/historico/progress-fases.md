@@ -14820,3 +14820,26 @@ Diagnóstico de solo lectura primero, sin arriesgar la entrega de Mobilize
   hecha). Quedan sin tocar los textos que arma el JS (varios son
   encabezados de plantillas/exportaciones que Edwin usa).
 - Capturas de la guía regeneradas (login y bienvenida nuevos).
+
+## Fase 146 (continuación) — ATA en 0:00 sin abandonos (v1.37.1, 2026-10-14)
+
+Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
+0 llamadas abandonadas, ATA = 0:00 en vez de "—".
+
+- Regla única `traficoAtaCeroSinAbandonos` (`trafico-logic.js`): hay datos
+  (total > 0) y las abandonadas reportadas suman 0 → ATA 0. Si la columna de
+  abandonadas no viene, solo vale 0 cuando todo el ATA reportado es 0 (nunca
+  se pone 0 encima de un ATA real). Sin datos → sigue null (aviso de "sin
+  datos").
+- Se aplica en `traficoAgregar` (gráfica y exportación de Llamadas), en el
+  agregado de WhatsApp (`traficoWppAgregarPorPeriodo`, ORLANT) y en la
+  tarjeta (`traficoAtaPromedioPeriodo`, que reemplaza el cálculo en línea de
+  `trafico.js`). ASA, AHT y el resto no cambian; con abandonos, el promedio
+  ponderado de siempre.
+- Prueba nueva `fase146-ata-cero-sin-abandonos.test.js` (0 abandonos → 0
+  en mes y en cada día; con abandonos → promedio; sin datos → null;
+  WhatsApp igual; exportación toma el mismo valor). Suite 1629/1629.
+- Visual (demo con septiembre en 0 abandonos y ATA 0, agosto con
+  abandonos): solo septiembre, tarjeta "—" → 0:00 y punto de la gráfica
+  hueco → 0; agosto sigue en 0:40; 0 errores de consola. Capturas fuera del
+  repo (`datos-inconexion/diagnostico-ui/fase146/ata-cero/`).

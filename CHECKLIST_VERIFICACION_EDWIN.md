@@ -226,10 +226,10 @@ verificación:
 - [ ] En Mobilize → **Flujo de Llamadas** se ven 5 sub-pestañas, en este
       orden: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y ATA**
       y **AHT** (antes "ASA y AHT" iban juntos).
-- [ ] "ASA y ATA" muestra ATA como **"—"** en septiembre 2026: la
-      plantilla de Flujo de Mobilize trae ATA en 0 y **0 llamadas
-      abandonadas** ese mes, y sin abandonos no hay promedio de ATA
-      (corregido en la Fase 146; antes esta línea decía "0:00").
+- [ ] "ASA y ATA" muestra ATA en **0:00** en septiembre 2026: ese mes no
+      hubo llamadas abandonadas, y Edwin decidió (14/10) que en ese caso se
+      vea 0:00 — en la tarjeta, en la gráfica (punto en 0) y en el Excel.
+      [Fase 146, v1.37.1: antes se veía "—".]
 - [ ] "AHT" muestra su propio promedio y su línea de tendencia.
 - [ ] La pestaña que antes decía "Llamadas Únicas" ahora dice **"Llamadas
       Únicas y de Salida"** (los números no cambian: 88 / 0 / 88 de
