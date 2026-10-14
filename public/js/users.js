@@ -41,10 +41,10 @@ function renderUsers(filter){
     var extra='';
     if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
-      extra='<div style="font-size:0.72rem;color:'+(asignadas.length?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
+      extra='<div style="font-size:var(--fs-note);color:'+(asignadas.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (asignadas.length? '&#9989; '+asignadas.join(', ') : '&#9888; Sin campanas asignadas')+'</div>';
     } else if(u.rol==='ASESOR'){
-      extra='<div style="font-size:0.72rem;color:'+(u.asesorCampana?'var(--c-success)':'var(--c-danger-dark)')+';margin-top:2px">'+
+      extra='<div style="font-size:var(--fs-note);color:'+(u.asesorCampana?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         (u.asesorCampana? '&#9989; '+esc(u.asesorCampana) : '&#9888; Sin operacion asignada')+'</div>';
     }
     // Fase 83 (hallazgo real): estos 4 botones se pintaban SIEMPRE, solo
@@ -249,7 +249,7 @@ async function saveUserModal(){
       closeUserModal();
       renderUsers(document.getElementById('user-search').value); renderRoles();
       showToast('Usuario creado correctamente');
-    }catch(e){ showToast(e.message); }
+    }catch(e){ showToast(e.message, 'error'); }
 
   } else {
     if(!isFullAdmin()&&!can('editarUsuarios')){showToast('Sin permiso');return;}
@@ -278,7 +278,7 @@ async function saveUserModal(){
       closeUserModal();
       renderUsers(document.getElementById('user-search').value); renderRoles();
       showToast('Usuario actualizado');
-    }catch(e){ showToast(e.message); }
+    }catch(e){ showToast(e.message, 'error'); }
   }
 }
 
@@ -315,7 +315,7 @@ async function savePass(){
     await withButtonLoading(btnP,'Cambiando...',function(){ return apiRequest('PUT','/users/'+id+'/password',{password:np}); });
     closeModal('modal-pass');
     showToast('Contrasena actualizada');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 async function toggleActive(id){
@@ -327,7 +327,7 @@ async function toggleActive(id){
     renderUsers(document.getElementById('user-search').value); renderRoles();
     if(currentRole) renderPermTable(currentRole,document.getElementById('perm-user-search').value);
     showToast(u.active?'Usuario activado':'Usuario suspendido');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 async function confirmDelete(){
@@ -340,7 +340,7 @@ async function confirmDelete(){
     closeModal('modal-delete');
     renderUsers(document.getElementById('user-search').value); renderRoles();
     showToast('Usuario eliminado');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════

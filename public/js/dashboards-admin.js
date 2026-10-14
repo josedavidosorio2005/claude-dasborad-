@@ -18,7 +18,7 @@ async function renderDashboardsSection(){
   var tbody = document.getElementById('dashcfg-tbody');
   var noRes = document.getElementById('dashcfg-no-results');
   var rows = [];
-  try{ rows = await apiRequest('GET', '/dashboards/config'); }catch(e){ showToast(e.message); }
+  try{ rows = await apiRequest('GET', '/dashboards/config'); }catch(e){ showToast(e.message, 'error'); }
   if(!rows.length){ tbody.innerHTML = ''; noRes.classList.remove('hidden'); return; }
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
@@ -60,7 +60,7 @@ async function deleteDashCfg(cliente){
   // dashboard para el mismo cliente, esos datos se ven de inmediato.
   if(!confirm('Eliminar la configuracion del dashboard de '+cliente+'? Los datos ya cargados (Excel de meses anteriores) NO se borran -- si vuelves a crear el dashboard de este cliente, se veran de nuevo.')) return;
   try{ await apiRequest('DELETE', '/dashboards/config/'+encodeURIComponent(cliente)); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Configuracion del dashboard eliminada (los datos cargados se conservaron)');
   await loadDashboardClientes();
   renderDashboardsSection();
@@ -73,7 +73,7 @@ async function openDashCfgModal(cliente){
     try{
       var cfg = await apiRequest('GET', '/dashboards/config/'+encodeURIComponent(cliente));
       _dcState = _dcFromConfig(cfg);
-    }catch(e){ showToast(e.message); return; }
+    }catch(e){ showToast(e.message, 'error'); return; }
   } else {
     var libres = CLIENTES_LIST.filter(function(c){ return BUILT_CLIENT_DASHBOARDS.indexOf(c)===-1; });
     _dcState = { cliente:libres[0] || '', titulo:'', vista:null,
@@ -218,22 +218,22 @@ function _dcRender(){
   var clientesLibres = CLIENTES_LIST.filter(function(c){ return c===_dcEditCliente || BUILT_CLIENT_DASHBOARDS.indexOf(c)===-1; });
   var h = '';
   h += '<div class="form-row">'+
-    '<div class="ig"><label>Cliente</label>'+
+    '<div class="ig"><label for="dc-cliente">Cliente</label>'+
       (_dcEditCliente
-        ? '<input type="text" value="'+esc(_dcEditCliente)+'" disabled>'
+        ? '<input type="text" value="'+esc(_dcEditCliente)+'" aria-label="Cliente" disabled>'
         : '<select id="dc-cliente" onchange="_dcSet(\'cliente\',this.value)">'+clientesLibres.map(function(c){ return '<option'+(c===st.cliente?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select>')+
     '</div>'+
-    '<div class="ig"><label>Titulo del dashboard</label><input type="text" value="'+esc(st.titulo)+'" oninput="_dcSet(\'titulo\',this.value)"></div>'+
+    '<div class="ig"><label>Titulo del dashboard</label><input aria-label="Titulo del dashboard" type="text" value="'+esc(st.titulo)+'" oninput="_dcSet(\'titulo\',this.value)"></div>'+
   '</div>';
 
   // Vista
   h += '<div class="section-card" style="margin:8px 0"><label style="font-weight:600"><input type="checkbox" '+(st.vista?'checked':'')+' onchange="_dcToggleVista(this.checked)"> Este cliente tiene sub-vistas (ej. sedes)</label>';
   if(st.vista){
     h += '<div class="form-row" style="margin-top:8px">'+
-      '<div class="ig"><label>Columna (en los Excel)</label><input type="text" value="'+esc(st.vista.campo)+'" oninput="_dcVista(\'campo\',this.value)"></div>'+
-      '<div class="ig"><label>Etiqueta del selector</label><input type="text" value="'+esc(st.vista.label)+'" oninput="_dcVista(\'label\',this.value)"></div>'+
+      '<div class="ig"><label>Columna (en los Excel)</label><input aria-label="Columna (en los Excel)" type="text" value="'+esc(st.vista.campo)+'" oninput="_dcVista(\'campo\',this.value)"></div>'+
+      '<div class="ig"><label>Etiqueta del selector</label><input aria-label="Etiqueta del selector" type="text" value="'+esc(st.vista.label)+'" oninput="_dcVista(\'label\',this.value)"></div>'+
     '</div><div class="ig"><label>Opciones (una por linea, formato VALOR=Etiqueta)</label>'+
-      '<textarea rows="3" oninput="_dcVistaOpts(this.value)">'+st.vista.opciones.map(function(o){ return esc(o.valor)+'='+esc(o.label); }).join('\n')+'</textarea></div>';
+      '<textarea aria-label="Opciones (una por linea, formato VALOR=Etiqueta)" rows="3" oninput="_dcVistaOpts(this.value)">'+st.vista.opciones.map(function(o){ return esc(o.valor)+'='+esc(o.label); }).join('\n')+'</textarea></div>';
   }
   h += '</div>';
 
@@ -241,19 +241,19 @@ function _dcRender(){
   h += '<h4 style="margin:14px 0 6px">Secciones (plantillas de Excel)</h4>';
   st.secciones.forEach(function(s, si){
     h += '<div class="section-card" style="margin-bottom:8px"><div class="form-row">'+
-      '<div class="ig"><label>Clave (sin espacios)</label><input type="text" value="'+esc(s.key)+'" oninput="_dcSec('+si+',\'key\',this.value)"></div>'+
-      '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(s.titulo)+'" oninput="_dcSec('+si+',\'titulo\',this.value)"></div>'+
-      '<div class="ig"><label>Cadencia</label><select onchange="_dcSec('+si+',\'cadencia\',this.value)">'+_opt(_DC_CADENCIAS,s.cadencia)+'</select></div>'+
-      '<div class="ig"><label>Periodo</label><select onchange="_dcSec('+si+',\'periodo\',this.value)">'+_opt(_DC_PERIODOS,s.periodo)+'</select></div>'+
-      '<div class="ig"><label>Fila unica</label><input type="checkbox" '+(s.filaUnica?'checked':'')+' onchange="_dcSec('+si+',\'filaUnica\',this.checked)"></div>'+
+      '<div class="ig"><label>Clave (sin espacios)</label><input aria-label="Clave (sin espacios)" type="text" value="'+esc(s.key)+'" oninput="_dcSec('+si+',\'key\',this.value)"></div>'+
+      '<div class="ig"><label>Titulo</label><input aria-label="Titulo" type="text" value="'+esc(s.titulo)+'" oninput="_dcSec('+si+',\'titulo\',this.value)"></div>'+
+      '<div class="ig"><label>Cadencia</label><select aria-label="Cadencia" onchange="_dcSec('+si+',\'cadencia\',this.value)">'+_opt(_DC_CADENCIAS,s.cadencia)+'</select></div>'+
+      '<div class="ig"><label>Periodo</label><select aria-label="Periodo" onchange="_dcSec('+si+',\'periodo\',this.value)">'+_opt(_DC_PERIODOS,s.periodo)+'</select></div>'+
+      '<div class="ig"><label>Fila unica</label><input aria-label="Fila unica" type="checkbox" '+(s.filaUnica?'checked':'')+' onchange="_dcSec('+si+',\'filaUnica\',this.checked)"></div>'+
     '</div>';
     h += '<div style="padding-left:8px">';
     s.columnas.forEach(function(c, ci){
       h += '<div class="form-row" style="align-items:end">'+
-        '<div class="ig"><label>Columna (clave)</label><input type="text" value="'+esc(c.key)+'" oninput="_dcCol('+si+','+ci+',\'key\',this.value)"></div>'+
-        '<div class="ig"><label>Etiqueta</label><input type="text" value="'+esc(c.label)+'" oninput="_dcCol('+si+','+ci+',\'label\',this.value)"></div>'+
-        '<div class="ig"><label>Tipo</label><select onchange="_dcCol('+si+','+ci+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_COL,c.tipo)+'</select></div>'+
-        '<div class="ig"><label>Opcional</label><input type="checkbox" '+(c.opcional?'checked':'')+' onchange="_dcCol('+si+','+ci+',\'opcional\',this.checked)"></div>'+
+        '<div class="ig"><label>Columna (clave)</label><input aria-label="Columna (clave)" type="text" value="'+esc(c.key)+'" oninput="_dcCol('+si+','+ci+',\'key\',this.value)"></div>'+
+        '<div class="ig"><label>Etiqueta</label><input aria-label="Etiqueta" type="text" value="'+esc(c.label)+'" oninput="_dcCol('+si+','+ci+',\'label\',this.value)"></div>'+
+        '<div class="ig"><label>Tipo</label><select aria-label="Tipo" onchange="_dcCol('+si+','+ci+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_COL,c.tipo)+'</select></div>'+
+        '<div class="ig"><label>Opcional</label><input aria-label="Opcional" type="checkbox" '+(c.opcional?'checked':'')+' onchange="_dcCol('+si+','+ci+',\'opcional\',this.checked)"></div>'+
         '<button class="btn-sm btn-delete" onclick="_dcDelCol('+si+','+ci+')">x</button>'+
       '</div>';
     });
@@ -271,8 +271,8 @@ function _dcRender(){
   h += '<h4 style="margin:14px 0 6px">Pestanas y paneles</h4>';
   st.tabs.forEach(function(t, ti){
     h += '<div class="section-card" style="margin-bottom:8px"><div class="form-row">'+
-      '<div class="ig"><label>Clave pestana</label><input type="text" value="'+esc(t.key)+'" oninput="_dcTab('+ti+',\'key\',this.value)"></div>'+
-      '<div class="ig"><label>Etiqueta</label><input type="text" value="'+esc(t.label)+'" oninput="_dcTab('+ti+',\'label\',this.value)"></div>'+
+      '<div class="ig"><label>Clave pestana</label><input aria-label="Clave pestana" type="text" value="'+esc(t.key)+'" oninput="_dcTab('+ti+',\'key\',this.value)"></div>'+
+      '<div class="ig"><label>Etiqueta</label><input aria-label="Etiqueta" type="text" value="'+esc(t.label)+'" oninput="_dcTab('+ti+',\'label\',this.value)"></div>'+
       '<button class="btn-sm btn-delete" onclick="_dcDelTab('+ti+')">Eliminar pestana</button>'+
     '</div><div style="padding-left:8px">';
     t.panels.forEach(function(p, pi){ h += _dcRenderPanelRow(ti, pi, p); });
@@ -285,14 +285,14 @@ function _dcRender(){
 
 function _dcRenderFuenteRow(kind, k, ki){
   return '<div class="form-row" style="align-items:end">'+
-    '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(k.titulo)+'" oninput="_dcKpi('+ki+',\'titulo\',this.value)"></div>'+
-    '<div class="ig"><label>Seccion</label><select onchange="_dcKpi('+ki+',\'s\',this.value)">'+_opt(_seccionKeys(),k.s)+'</select></div>'+
-    '<div class="ig"><label>Modo</label><select onchange="_dcKpi('+ki+',\'modo\',this.value)">'+_opt(_DC_MODOS,k.modo)+'</select></div>'+
-    '<div class="ig"><label>Campo</label><input type="text" value="'+esc(k.campo)+'" oninput="_dcKpi('+ki+',\'campo\',this.value)"></div>'+
-    '<div class="ig"><label>Formula (opcional, ej. campo_a/campo_b*100)</label><input type="text" value="'+esc(k.formula)+'" oninput="_dcKpi('+ki+',\'formula\',this.value)"></div>'+
-    '<div class="ig"><label>Formato</label><select onchange="_dcKpi('+ki+',\'formato\',this.value)">'+_opt(_DC_FORMATOS,k.formato)+'</select></div>'+
-    '<div class="ig"><label>Meta (numero o columna)</label><input type="text" value="'+esc(k.meta)+'" oninput="_dcKpi('+ki+',\'meta\',this.value)"></div>'+
-    '<div class="ig"><label>Mejor si</label><select onchange="_dcKpi('+ki+',\'direccion\',this.value)">'+_opt(['mayor','menor'],k.direccion||'mayor')+'</select></div>'+
+    '<div class="ig"><label>Titulo</label><input aria-label="Titulo" type="text" value="'+esc(k.titulo)+'" oninput="_dcKpi('+ki+',\'titulo\',this.value)"></div>'+
+    '<div class="ig"><label>Seccion</label><select aria-label="Seccion" onchange="_dcKpi('+ki+',\'s\',this.value)">'+_opt(_seccionKeys(),k.s)+'</select></div>'+
+    '<div class="ig"><label>Modo</label><select aria-label="Modo" onchange="_dcKpi('+ki+',\'modo\',this.value)">'+_opt(_DC_MODOS,k.modo)+'</select></div>'+
+    '<div class="ig"><label>Campo</label><input aria-label="Campo" type="text" value="'+esc(k.campo)+'" oninput="_dcKpi('+ki+',\'campo\',this.value)"></div>'+
+    '<div class="ig"><label>Formula (opcional, ej. campo_a/campo_b*100)</label><input aria-label="Formula (opcional, ej. campo_a/campo_b*100)" type="text" value="'+esc(k.formula)+'" oninput="_dcKpi('+ki+',\'formula\',this.value)"></div>'+
+    '<div class="ig"><label>Formato</label><select aria-label="Formato" onchange="_dcKpi('+ki+',\'formato\',this.value)">'+_opt(_DC_FORMATOS,k.formato)+'</select></div>'+
+    '<div class="ig"><label>Meta (numero o columna)</label><input aria-label="Meta (numero o columna)" type="text" value="'+esc(k.meta)+'" oninput="_dcKpi('+ki+',\'meta\',this.value)"></div>'+
+    '<div class="ig"><label>Mejor si</label><select aria-label="Mejor si" onchange="_dcKpi('+ki+',\'direccion\',this.value)">'+_opt(['mayor','menor'],k.direccion||'mayor')+'</select></div>'+
     '<button class="btn-sm btn-delete" onclick="_dcDelKpi('+ki+')">x</button>'+
   '</div>';
 }
@@ -302,24 +302,24 @@ function _dcRenderPanelRow(ti, pi, p){
     '<button class="btn-sm btn-edit" onclick="_dcMovePanel('+ti+','+pi+',1)" title="Bajar">&#9660;</button>';
   if(p._raw){
     return '<div class="form-row"><div class="ig" style="flex:1"><label>Panel avanzado (JSON) — '+esc(p.titulo||'')+'</label>'+
-      '<textarea rows="4" oninput="_dcPanel('+ti+','+pi+',\'_raw\',this.value)">'+esc(p._raw)+'</textarea></div>'+
+      '<textarea aria-label="Panel avanzado (JSON) — '+esc(p.titulo||'')+'" rows="4" oninput="_dcPanel('+ti+','+pi+',\'_raw\',this.value)">'+esc(p._raw)+'</textarea></div>'+
       mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
   }
   var esCalidad = p.tipo==='calidad_kpis' || p.tipo==='calidad_pie';
   var h = '<div class="form-row" style="align-items:end">'+
-    '<div class="ig"><label>Tipo</label><select onchange="_dcPanel('+ti+','+pi+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_PANEL,p.tipo)+'</select></div>'+
-    '<div class="ig"><label>Titulo</label><input type="text" value="'+esc(p.titulo)+'" oninput="_dcPanel('+ti+','+pi+',\'titulo\',this.value)"></div>';
+    '<div class="ig"><label>Tipo</label><select aria-label="Tipo" onchange="_dcPanel('+ti+','+pi+',\'tipo\',this.value)">'+_opt(_DC_TIPOS_PANEL,p.tipo)+'</select></div>'+
+    '<div class="ig"><label>Titulo</label><input aria-label="Titulo" type="text" value="'+esc(p.titulo)+'" oninput="_dcPanel('+ti+','+pi+',\'titulo\',this.value)"></div>';
   if(esCalidad){
-    h += '<div class="ig"><label>Campana de Calidad</label><input type="text" value="'+esc(p.campana)+'" oninput="_dcPanel('+ti+','+pi+',\'campana\',this.value)"></div>';
+    h += '<div class="ig"><label>Campana de Calidad</label><input aria-label="Campana de Calidad" type="text" value="'+esc(p.campana)+'" oninput="_dcPanel('+ti+','+pi+',\'campana\',this.value)"></div>';
   } else {
-    h += '<div class="ig"><label>Seccion</label><select onchange="_dcPanel('+ti+','+pi+',\'s\',this.value)">'+_opt(_seccionKeys(),p.s)+'</select></div>'+
-      (p.tipo==='pie' || p.tipo==='tabla' ? '' : '<div class="ig"><label>Modo</label><select onchange="_dcPanel('+ti+','+pi+',\'modo\',this.value)">'+_opt(_DC_MODOS,p.modo)+'</select></div>')+
-      (p.tipo==='tabla' ? '' : '<div class="ig"><label>Campo</label><input type="text" value="'+esc(p.campo)+'" oninput="_dcPanel('+ti+','+pi+',\'campo\',this.value)"></div>')+
-      '<div class="ig"><label>Etiqueta X (filas/pie)</label><input type="text" value="'+esc(p.x)+'" oninput="_dcPanel('+ti+','+pi+',\'x\',this.value)"></div>'+
-      '<div class="ig"><label>Filtro (k=v,k2=v2)</label><input type="text" value="'+esc(p.filtro)+'" oninput="_dcPanel('+ti+','+pi+',\'filtro\',this.value)"></div>'+
-      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Formula</label><input type="text" value="'+esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
-      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Unidad</label><input type="text" placeholder="% / tiempo" value="'+esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
-      (p.tipo==='bar' ? '<div class="ig"><label>Horizontal</label><input type="checkbox" '+(p.horizontal?'checked':'')+' onchange="_dcPanel('+ti+','+pi+',\'horizontal\',this.checked)"></div>' : '');
+    h += '<div class="ig"><label>Seccion</label><select aria-label="Seccion" onchange="_dcPanel('+ti+','+pi+',\'s\',this.value)">'+_opt(_seccionKeys(),p.s)+'</select></div>'+
+      (p.tipo==='pie' || p.tipo==='tabla' ? '' : '<div class="ig"><label>Modo</label><select aria-label="Modo" onchange="_dcPanel('+ti+','+pi+',\'modo\',this.value)">'+_opt(_DC_MODOS,p.modo)+'</select></div>')+
+      (p.tipo==='tabla' ? '' : '<div class="ig"><label>Campo</label><input aria-label="Campo" type="text" value="'+esc(p.campo)+'" oninput="_dcPanel('+ti+','+pi+',\'campo\',this.value)"></div>')+
+      '<div class="ig"><label>Etiqueta X (filas/pie)</label><input aria-label="Etiqueta X (filas/pie)" type="text" value="'+esc(p.x)+'" oninput="_dcPanel('+ti+','+pi+',\'x\',this.value)"></div>'+
+      '<div class="ig"><label>Filtro (k=v,k2=v2)</label><input aria-label="Filtro (k=v,k2=v2)" type="text" value="'+esc(p.filtro)+'" oninput="_dcPanel('+ti+','+pi+',\'filtro\',this.value)"></div>'+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Formula</label><input aria-label="Formula" type="text" value="'+esc(p.formula)+'" oninput="_dcPanel('+ti+','+pi+',\'formula\',this.value)"></div>' : '')+
+      (p.tipo==='line'||p.tipo==='area' ? '<div class="ig"><label>Unidad</label><input aria-label="Unidad" type="text" placeholder="% / tiempo" value="'+esc(p.unidad)+'" oninput="_dcPanel('+ti+','+pi+',\'unidad\',this.value)"></div>' : '')+
+      (p.tipo==='bar' ? '<div class="ig"><label>Horizontal</label><input aria-label="Horizontal" type="checkbox" '+(p.horizontal?'checked':'')+' onchange="_dcPanel('+ti+','+pi+',\'horizontal\',this.checked)"></div>' : '');
   }
   h += mov+'<button class="btn-sm btn-delete" onclick="_dcDelPanel('+ti+','+pi+')">x</button></div>';
   return h;
@@ -379,7 +379,7 @@ async function saveDashCfg(){
         ? apiRequest('PUT', '/dashboards/config/'+encodeURIComponent(_dcEditCliente), body)
         : apiRequest('POST', '/dashboards/config', body);
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast('Dashboard guardado');
   closeDashCfgModal();
   await loadDashboardClientes();

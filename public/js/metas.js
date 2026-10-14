@@ -162,7 +162,7 @@ async function saveMetaMes(){
         await apiRequest('POST','/metas', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast((_editingMetaId?'Meta actualizada para ':'Meta individual guardada para ')+' '+camp+' — '+mes);
   _editingMetaId = null;
   await renderMetasSection();
@@ -180,7 +180,7 @@ async function deleteMetaMes(id){
   if(!confirm('Eliminar esta meta individual?')) return;
   try{
     await apiRequest('DELETE','/metas/'+id);
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   if(_editingMetaId===id) _editingMetaId = null;
   await renderMetasSection();
 }
@@ -323,7 +323,7 @@ async function saveNivelServicio(){
         await apiRequest('POST','/calidad/nivel-servicio', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast((_editingNivelServicioId?'Nivel de servicio actualizado para ':'Nivel de servicio guardado para ')+camp+' — '+mes);
   _editingNivelServicioId = null;
   await renderNivelServicioSection();
@@ -341,7 +341,7 @@ async function deleteNivelServicio(id){
   if(!confirm('Eliminar este registro de nivel de servicio?')) return;
   try{
     await apiRequest('DELETE','/calidad/nivel-servicio/'+id);
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   if(_editingNivelServicioId===id) _editingNivelServicioId = null;
   await renderNivelServicioSection();
 }
@@ -451,7 +451,7 @@ async function procesarArchivoNivelServicioDiario(input){
   }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
   var res = _nsdParseRows(aoa);
-  if(res.error){ showToast(res.error); input.value=''; return; }
+  if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _nsdParsed = { campana: campana, archivoNombre: file.name, filas: res.filas };
   _renderPreviewNivelServicioDiario(file.name, res.filas, res.avisos||[]);
@@ -481,7 +481,7 @@ async function guardarNivelServicioDiario(){
   var resp;
   try{
     resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/calidad/nivel-servicio/carga-diaria', _nsdParsed); });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   var meses = ((resp && resp.mensual) || []).map(function(m){ return m.mes; }).join(', ');
   showToast('Carga guardada: '+((resp && resp.diario && resp.diario.insertadas) || 0)+' fila(s). Mes(es) recalculado(s): '+(meses||'-'));
   cancelarPreviewNivelServicioDiario();

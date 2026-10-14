@@ -53,7 +53,11 @@ runtime). `--fw-regular`/`-medium`/`-semibold`/`-bold` son esos mismos 4
 pesos — nunca declarar 800/300, Quicksand no los tiene cargados.
 
 Escala (`--fs-*`), 8 pasos, **`--fs-note` (0.75rem/12px) es el piso
-absoluto** — ningún texto de la plataforma baja de ahí:
+absoluto** — ningún texto de la plataforma baja de ahí (verificado por
+`server/tests/fase144-a5-contraste-12px.test.js`). Dos excepciones
+explícitas: las plantillas de **impresión/PDF** exportado (funciones
+`*Print`, en px: cambiarlas cambiaría la exportación) y el ® del
+logotipo "InConexion®" (parte de la marca):
 
 | Token | Tamaño | Uso |
 |---|---|---|
@@ -418,9 +422,16 @@ panel nuevo con ventana de fechas debe mostrarlo igual.
   ↑/↓/Inicio/Fin, Tab o Escape lo cierran y devuelven el foco al botón. Se
   agrega dentro del overlay (no en `<body>`), para no quedar fuera del
   diálogo.
-- Pendiente (no entró en A3): los otros 10 diálogos que no usan
-  `motion-helpers.js` (Inventario, Gerencia, Gestión Humana, selector de
-  clientes y las ventanas `.modal-overlay` de usuario/ítem/KPI…).
+- **Diálogos sin animación (Fase 144, A3b):** los 9 que se abren con
+  `classList.add/remove('show')` (selector de clientes, usuario,
+  contraseña, eliminar, ítem y movimiento de Inventario, persona de Gestión
+  Humana, KPI de Gerencia y "Cambiar mi contraseña") llevan el mismo
+  `role="dialog" aria-modal="true" aria-labelledby` (su `<h3>`) y el mismo
+  trato de foco/`inert`/Tab/Escape. No se tocan sus open/close: un
+  `MutationObserver` sobre la clase `show` (`MOTION_DIALOGOS_SIMPLES` en
+  `motion-helpers.js`) llama `motionAbrirDialogo`/`motionCerrarDialogo`, sin
+  agregarles animación. Un diálogo nuevo de este tipo se agrega a ese mapa
+  con su función de cierre.
 
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
@@ -439,6 +450,36 @@ Móvil (≤768px) ≥44×44px en los controles PRINCIPALES: cerrar/exportar
 del dashboard, el selector de MES, las pestañas. Sub-pestañas y botones
 chicos de tabla (`.btn-sm`) se quedan como están — son secundarios y muy
 numerosos en una fila.
+
+Checkbox y `<summary>` sueltos dentro de un filtro (Fase 144, A8): el área
+clicable es la etiqueta entera — `.filtro-check` (`inline-flex`,
+`min-height:24px`) en el `<label>` que envuelve el checkbox y
+`.filtro-summary` (`padding:4px 0`) en el `<summary>`. No cambian letra
+ni color.
+
+**Semáforo en tarjetas KPI (Fase 144, A8):** en `.aurora-kpi` el semáforo es
+solo el borde izquierdo (`.aurora-kpi.kpi-green`, etc.). La regla suelta
+`.kpi-green/org/red/pur` (color + negrita) es para `<span>` y `<td>` y
+excluye la tarjeta con `:not(:where(.aurora-kpi))`; así todas las etiquetas
+de una fila de KPI se ven iguales.
+
+## Nombres de campos y avisos (WCAG 1.3.1/4.1.2/4.1.3, Fase 144 A7)
+
+- **Todo campo tiene nombre accesible.** Si hay texto visible encima, va
+  `<label for="<id del campo>">` (en los filtros que arman los JS, el
+  `for` repite la misma expresion del `id`, ej. `for="tv-f-desde-'+i+'"`).
+  Si el campo no tiene texto visible propio (buscadores, selectores de una
+  tabla, el multiple de "Comparar"), `aria-label` con un texto corto. Nunca
+  se usa el `placeholder` como nombre. Iconos decorativos al lado
+  (la lupa) con `aria-hidden="true"`.
+- **Avisos (toast).** `#toast` es `role="status" aria-live="polite"`;
+  `showToast(msg, tipo)` lo cambia a `role="alert"` (interrumpe) cuando
+  es error: `tipo === 'error'` o el texto empieza con "No se pudo…" /
+  "Error…" (`toast-logic.js`). Los `catch` que muestran `e.message`
+  llaman `showToast(e.message, 'error')`. El aspecto no cambia.
+- Prueba: `server/tests/fase144-a7-etiquetas-toast.test.js` revisa
+  `index.html` y todos los JS de vistas: un campo nuevo sin nombre la
+  pone en rojo.
 
 ## Movimiento reducido (WCAG 2.3.3)
 

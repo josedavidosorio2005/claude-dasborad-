@@ -4,6 +4,76 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.4 — Octubre 2026
+
+Seis mejoras de la Fase 144 que se publicaron juntas en esta versión.
+
+**Fase 144 (A3b): las demás ventanas también se usan bien con el teclado.**
+
+- Lo que ya se arregló para el tablero, Cargar Datos y Calidad ahora también
+  aplica a las ventanas de crear o editar usuario, cambiar contraseña,
+  eliminar usuario, Inventario (ítem y movimiento), Gestión Humana, los
+  indicadores de Gerencia, el selector de clientes y "Cambiar mi
+  contraseña".
+- Al abrir una de ellas, la tecla Tab se queda dentro de la ventana, la
+  tecla Escape la cierra y el cursor vuelve al botón que la abrió.
+- Se ven y funcionan igual con el ratón: clic afuera sigue cerrándolas.
+
+**Fase 144 (A8): tarjetas de indicadores parejas y casillas más fáciles de tocar.**
+
+- En la fila de indicadores de arriba (por ejemplo "Total llamadas",
+  "Llamadas contestadas", "Tasa de abandono"), todos los títulos se ven
+  ahora con la misma letra. Antes unos salían en negrita y otros no, según
+  el color del semáforo. El color del semáforo sigue en la rayita de la
+  izquierda de cada tarjeta.
+- En Tráfico de Llamadas y de WhatsApp, "Ver skills por separado" y
+  "Comparar varias…" tienen un espacio para hacer clic más alto, más
+  cómodo en el celular. Se ven igual.
+- Ningún número, filtro ni color de semáforo cambia.
+
+**Fase 144 (A7): los lectores de pantalla leen el nombre de cada campo y los avisos.**
+
+- Cada casilla de filtro (Desde, Hasta, Mes, Agente, Sede, Cola, los
+  buscadores, Cargar Datos, el inicio de sesión, etc.) quedó unida a su
+  título. Para quien usa un lector de pantalla, ahora dice "Desde" o
+  "Contraseña" en vez de solo "campo de fecha" o "campo de texto". Y al
+  hacer clic en el título, el cursor se pone en la casilla.
+- Los avisos que salen abajo a la derecha ("Guardado", "No se pudo…")
+  ahora también se leen en voz alta; los de error se anuncian de inmediato.
+- Ningún texto, color, número ni filtro cambia: se ve igual que antes.
+
+**Fase 144 (A6): cuando un mes no tiene datos, se ve claro.**
+
+- En Calidad, si el mes elegido arriba todavía no tiene monitoreos, el aviso
+  "Sin datos de Calidad para Oct-26… Ver Sep-26" ahora se ve en una sola
+  línea a lo ancho (antes quedaba apretado en una esquina, en cinco
+  renglones).
+- Las gráficas de ese mes ya no quedan en blanco: dicen "Sin monitoreos en
+  octubre 2026."
+- El botón "Ver Sep-26" sigue llevando al último mes con datos.
+- Nada más cambia.
+
+**Fase 144 (A5): textos más legibles.**
+
+- La versión de la plataforma (arriba a la derecha) ahora se lee bien; antes
+  casi no se veía sobre la barra azul oscuro.
+- El botón "Editar" de Usuarios, los rótulos de rol (por ejemplo
+  "Inventario" y "Dashboard Clientes") y el texto verde de campañas
+  asignadas tienen ahora más contraste.
+- Ningún texto de las pantallas queda por debajo del tamaño mínimo de la
+  plataforma: las etiquetas pequeñas de los filtros de Tráfico (Desde,
+  Hasta, Granularidad…) y otras notas crecen un poco.
+- Los PDF que se descargan no cambian.
+- Nada más cambia: datos, permisos y exportaciones son los mismos.
+
+**Fase 144 (A4): pestañas sin barrita de desplazamiento y "X Cerrar" en una sola línea.**
+
+- Junto a las pestañas de los tableros (Tráfico de Llamadas, Tráfico de
+  WhatsApp…) ya no aparece una barrita vertical con flechas ▲▼ a la derecha.
+- El botón "X Cerrar" (del tablero y de Cargar Datos) ya no se parte en dos
+  renglones en computadores y tabletas.
+- Nada más cambia.
+
 ## v1.34.3 — Octubre 2026
 
 **Fase 144 (A3): las ventanas (tablero, Cargar Datos, Calidad…) se usan bien con el teclado.**

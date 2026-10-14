@@ -191,6 +191,8 @@ var MOTION_MODALES_ESC = {
   'dashcfg-overlay': function () { if (typeof closeDashCfgModal === 'function') closeDashCfgModal(); },
   'gd-overlay': function () { if (typeof closeGenericDashboard === 'function') closeGenericDashboard(); },
 };
+// Fase 144 (A3b): Escape tambien cierra los 9 dialogos sin animacion
+// (MOTION_DIALOGOS_SIMPLES, mas abajo) -- se agregan al cargar el archivo.
 
 // Fase 137 (Parte C, bug real encontrado al investigar un hallazgo de
 // produccion): un popup interno ad-hoc (hoy el unico es #gd-export-menu
@@ -313,6 +315,59 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
   });
 }
 
+// ── Fase 144 (A3b): los 9 dialogos que no pasan por motionAbrirModal ──
+// Clientes, Usuario/Contrasena/Eliminar, Inventario (item y movimiento),
+// Gestion Humana, Gerencia (KPI) y "Cambiar mi contrasena" se abren y
+// cierran con classList.add/remove('show') desde varios archivos y sin
+// animacion. Mismo trato que A3 (pila, fondo inerte, foco adentro, Tab que
+// da la vuelta, Escape, foco de vuelta al cerrar), SIN agregarles animacion:
+// un MutationObserver sobre su clase `show` cubre todos los caminos de
+// apertura/cierre (boton, clic en el fondo, guardar) sin tocar cada open/close.
+var MOTION_DIALOGOS_SIMPLES = {
+  'clients-modal-overlay': function () { if (typeof closeClientsModal === 'function') closeClientsModal(); },
+  'modal-user': function () { if (typeof closeUserModal === 'function') closeUserModal(); },
+  'modal-pass': function () { if (typeof closeModal === 'function') closeModal('modal-pass'); },
+  'modal-delete': function () { if (typeof closeModal === 'function') closeModal('modal-delete'); },
+  'inv-item-modal': function () { if (typeof closeInvItemModal === 'function') closeInvItemModal(); },
+  'gh-person-modal': function () { if (typeof closeGhPersonModal === 'function') closeGhPersonModal(); },
+  'inv-mov-modal': function () { if (typeof closeInvMovModal === 'function') closeInvMovModal(); },
+  'ger-kpi-modal': function () { if (typeof closeGerKpiModal === 'function') closeGerKpiModal(); },
+  'modal-change-own-password': function () { if (typeof closeModal === 'function') closeModal('modal-change-own-password'); },
+};
+// overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
+// .clients-modal) es el contenedor que recibe el foco, como en A3.
+function motionAbrirDialogo(overlay) {
+  var caja = overlay && overlay.firstElementChild;
+  if (!caja) return;
+  var activo = document.activeElement;
+  if (activo && activo !== document.body && !overlay.contains(activo)) caja._motionDisparador = activo;
+  var i = MOTION_OVERLAY_STACK.indexOf(overlay.id);
+  if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
+  MOTION_OVERLAY_STACK.push(overlay.id);
+  _motionAplicarInert();
+  _motionEnfocar(caja, true);
+}
+function motionCerrarDialogo(overlay) {
+  var i = MOTION_OVERLAY_STACK.indexOf(overlay.id);
+  if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
+  _motionAplicarInert();
+  if (overlay.firstElementChild) _motionDevolverFoco(overlay.firstElementChild);
+}
+Object.keys(MOTION_DIALOGOS_SIMPLES).forEach(function (id) { MOTION_MODALES_ESC[id] = MOTION_DIALOGOS_SIMPLES[id]; });
+if (typeof document !== 'undefined' && typeof document.getElementById === 'function' && typeof MutationObserver === 'function') {
+  Object.keys(MOTION_DIALOGOS_SIMPLES).forEach(function (id) {
+    var ov = document.getElementById(id);
+    if (!ov) return;
+    var abierto = ov.classList.contains('show');
+    new MutationObserver(function () {
+      var ahora = ov.classList.contains('show');
+      if (ahora === abierto) return;
+      abierto = ahora;
+      if (ahora) motionAbrirDialogo(ov); else motionCerrarDialogo(ov);
+    }).observe(ov, { attributes: true, attributeFilter: ['class'] });
+  });
+}
+
 // typeof document !== 'undefined': mismo patron dual navegador/Node que
 // el resto del archivo -- Node (server/tests/fase136-pr4-base-
 // movimiento.test.js hace require() directo de este archivo) no tiene
@@ -350,6 +405,8 @@ if (typeof document !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     motionExit: motionExit, motionEnter: motionEnter, motionAbrirModal: motionAbrirModal, motionCerrarModal: motionCerrarModal,
+    motionAbrirDialogo: motionAbrirDialogo, motionCerrarDialogo: motionCerrarDialogo, MOTION_DIALOGOS_SIMPLES: MOTION_DIALOGOS_SIMPLES,
+    _modalesEsc: function () { return MOTION_MODALES_ESC; },
     motionRegistrarPopupInterno: motionRegistrarPopupInterno, motionDesregistrarPopupInterno: motionDesregistrarPopupInterno,
     _popupsInternos: function () { return MOTION_POPUPS_INTERNOS; },
     _popupCerradoHace: function () { return MOTION_POPUP_CERRADO_HACE; },

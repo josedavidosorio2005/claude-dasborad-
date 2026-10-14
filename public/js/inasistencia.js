@@ -78,11 +78,11 @@ function _inasistenciaOptionsHtml(valores, seleccionado){
 // con una opción conocida, se trata como "Todos" (_inasistenciaLeerFiltros).
 function _inasistenciaFiltrosHtml(i, vista, opciones, estado){
   var html = '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
-  html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label>Sede</label><select id="inasist-f-sede-'+i+'">'+_inasistenciaOptionsHtml(opciones.sedes, estado.sede)+'</select></div>';
+  html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="inasist-f-sede-'+i+'">Sede</label><select id="inasist-f-sede-'+i+'">'+_inasistenciaOptionsHtml(opciones.sedes, estado.sede)+'</select></div>';
   if(vista === 'pormes'){
-    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Especialidad</label><select id="inasist-f-especialidad-'+i+'">'+_inasistenciaOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
+    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="inasist-f-especialidad-'+i+'">Especialidad</label><select id="inasist-f-especialidad-'+i+'">'+_inasistenciaOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
   }
-  html += '<div class="ig" style="min-width:200px;margin-bottom:0"><label>Entidad</label><input list="inasist-dl-entidad-'+i+'" id="inasist-f-entidad-'+i+'" value="'+esc(estado.entidad||'')+'" placeholder="Todas">' +
+  html += '<div class="ig" style="min-width:200px;margin-bottom:0"><label for="inasist-f-entidad-'+i+'">Entidad</label><input list="inasist-dl-entidad-'+i+'" id="inasist-f-entidad-'+i+'" value="'+esc(estado.entidad||'')+'" placeholder="Todas">' +
     '<datalist id="inasist-dl-entidad-'+i+'">'+(opciones.entidades||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_inasistenciaAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
@@ -206,7 +206,7 @@ async function _inasistenciaDibujarPorMes(campana, i, opciones){
   if(estado.especialidad) params.set('especialidad', estado.especialidad);
   if(estado.entidad) params.set('entidad', estado.entidad);
   var datos = [];
-  try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+params.toString()) || []; }catch(e){ showToast(e.message); }
+  try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+params.toString()) || []; }catch(e){ showToast(e.message, 'error'); }
   var agregado = inasistenciaAgregarPorMes(datos);
   var mesSel = estado.mes;
   var mesesFormatoViejo = opciones.mesesFormatoViejo || [];
@@ -303,7 +303,7 @@ function _inasistenciaDibujarLineaPorMes(canvasId, agregado, mesSel, esFormatoVi
 function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
   if(!agregado.length) return '';
   function celda(tag, txt, mes){
-    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
   }
   var encabezados = agregado.map(function(a){ return celda('th', inasistenciaMesLbl(a.mes) + (esFormatoViejo[a.mes]?' *':''), a.mes); }).join('');
   var filaPct = agregado.map(function(a){ return celda('td', inasistenciaFmtPct(a.pct), a.mes); }).join('');
@@ -353,7 +353,7 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
   if(estado.sede) params.set('sede', estado.sede);
   if(estado.entidad) params.set('entidad', estado.entidad);
   var filas = [];
-  try{ filas = await apiRequest('GET','/calidad/inasistencia/especialidad?'+params.toString()) || []; }catch(e){ showToast(e.message); }
+  try{ filas = await apiRequest('GET','/calidad/inasistencia/especialidad?'+params.toString()) || []; }catch(e){ showToast(e.message, 'error'); }
 
   var conPct = filas.map(function(f){
     return { especialidad: f.especialidad, pct: inasistenciaPctPonderado(f.inasistencia, f.pendiente, f.total), total: f.total };

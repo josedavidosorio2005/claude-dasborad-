@@ -76,6 +76,10 @@
   --c-success-text:#17703b; --c-warning-text:#8f4a00; --c-danger-text:#b02a1d;
   --c-accent:#ffd54f;  --c-accent-bg:#fff8e1;    --c-purple:#8e44ad;
   --c-info-bg:#eaf4fb;  --c-on-primary-soft:#a8d8ea;
+  /* Fase 144 (A5): texto del badge de rol CLIENTES_DASH sobre su fondo
+     #fef9e2 -- 5.85:1 (antes #9e7a00 suelto, 3.79:1, no pasaba AA). En
+     oscuro el badge ya tenia su propio color (#ffd54f), sin cambio. */
+  --c-badge-clientes-text:#7a5d00;
 
   /* Anillo de foco (WCAG 2.4.7/2.4.11) -- reusa --c-primary-mid (ya es un
      token por tema) porque pasa >=3:1 contra --c-surface/--c-bg en los 2
@@ -517,9 +521,9 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .badge{display:inline-block;padding:2px 9px;border-radius:var(--r-pill);font-size:var(--fs-note);font-weight:700;white-space:nowrap;}
 .badge-ADMIN{background:#fff3cd;color:#856404;}
 .badge-CALIDAD{background:var(--c-success-bg);color:var(--c-success-dark);}
-.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary);}
 .badge-GERENCIA{background:var(--c-danger-bg);color:var(--c-danger-dark);}
-.badge-CLIENTES_DASH{background:#fef9e2;color:#9e7a00;}
+.badge-CLIENTES_DASH{background:#fef9e2;color:var(--c-badge-clientes-text);}
 .badge-AUX_ADMIN{background:#e8f0fb;color:#1a4a9e;}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
 .dot-on{background:var(--c-success);}
@@ -528,7 +532,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 /* ── ACTION BUTTONS ── */
 .btn-sm{padding:4px 9px;border-radius:5px;font-size:var(--fs-note);font-weight:600;cursor:pointer;border:none;white-space:nowrap;transition:opacity 0.2s;}
 .btn-sm:hover:not([disabled]){opacity:0.78;}
-.btn-edit{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.btn-edit{background:var(--c-info-bg);color:var(--c-primary);}
 .btn-suspend{background:var(--c-warning-bg);color:var(--c-warning-dark);}
 .btn-activate{background:var(--c-success-bg);color:var(--c-success-dark);}
 .btn-delete{background:var(--c-danger-bg);color:var(--c-danger-dark);}
@@ -726,7 +730,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    renderGenericHeader (140 Mobilize / 64 Orlant); object-fit evita
    deformar un logo futuro con otra proporcion. */
 .gd-cliente-logo{display:block;max-width:140px;height:25px;object-fit:contain;margin-bottom:4px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* KPI strip */
@@ -750,11 +754,22 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Mismo vocabulario de color, esta vez para un <span> suelto (ej. estado de
    item/tipo de movimiento en Inventario) -- sin esta regla base, esas clases
    solo tenian estilo cuando iban prefijadas por "td." o ".aurora-kpi.", asi
-   que el span quedaba sin ningun color en ningun tema. */
-.kpi-green{color:var(--c-success-text);font-weight:700;}
-.kpi-org{color:var(--c-warning-text);font-weight:700;}
-.kpi-red{color:var(--c-danger-text);font-weight:700;}
-.kpi-pur{color:var(--c-purple);font-weight:700;}
+   que el span quedaba sin ningun color en ningun tema.
+   Fase 144 (A8, D18): sin aplicarse a la tarjeta .aurora-kpi entera -- ahi
+   el semaforo es solo el borde izquierdo; antes la negrita se heredaba a la
+   etiqueta (.kl) y en una misma fila unas salian finas y otras en negrita.
+   :where() deja la especificidad igual que antes (0,1,0). */
+.kpi-green:not(:where(.aurora-kpi)){color:var(--c-success-text);font-weight:700;}
+.kpi-org:not(:where(.aurora-kpi)){color:var(--c-warning-text);font-weight:700;}
+.kpi-red:not(:where(.aurora-kpi)){color:var(--c-danger-text);font-weight:700;}
+.kpi-pur:not(:where(.aurora-kpi)){color:var(--c-purple);font-weight:700;}
+
+/* Fase 144 (A8, D16, WCAG 2.5.8): "Ver skills/colas por separado" y
+   "Comparar varias..." de Trafico median 16 px de alto (checkbox 13x13).
+   El area clicable (la etiqueta entera / el summary) llega a 24 px sin
+   cambiar letra ni color. */
+.filtro-check{display:inline-flex;align-items:center;gap:4px;min-height:24px;cursor:pointer;}
+.filtro-summary{padding:4px 0;}
 
 /* Oculto a la vista, legible por lector de pantalla -- tecnica estandar
    (no display:none/visibility:hidden, que lo sacan tambien del arbol de
@@ -768,7 +783,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .gd-sem-simbolo{margin-right:4px;font-size:0.85em;}
 
 /* Tabs */
-.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;flex-shrink:0;}
+.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;}
 /* Fase 136 (F01, hallazgo real de la Fase 135: a 412px las pestañas se
    superponían ilegibles). Causa real: el min-width:24/44px de objetivos
    táctiles (línea ~930, Fase 133) es un valor EXPLÍCITO -- sustituye el
@@ -973,7 +988,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-header{background:var(--c-brand);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-radius:18px 18px 0 0;flex-shrink:0;}
 .aurora-header h2{color:var(--c-on-brand);font-size:var(--fs-h3);font-weight:700;margin:0;}
 .aurora-header .aurora-sub{color:var(--c-on-primary-soft);font-size:var(--fs-small);margin-top:2px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* Filter bar */
@@ -1352,3 +1367,32 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    (tabindex="-1", motion-helpers.js) para que el lector de pantalla anuncie
    el titulo. No se le quita el anillo: con teclado, la regla global de
    [tabindex]:focus-visible marca el dialogo, que es justo donde esta el foco. */
+
+/* ═══ Fase 144 (A4) ═══
+   .aurora-tabs: overflow-x:auto obliga al navegador a calcular tambien
+   overflow-y:auto, y el margin-bottom:-2px de .atab (que dibuja la pestaña
+   activa sobre el borde) dejaba 2px de "desborde" vertical -> aparecia una
+   barra de scroll vertical con flechas ▲▼ junto a las pestañas en TODOS los
+   tamaños (hallazgo D06). Se corta solo en .aurora-tabs: .atab sigue
+   congelada hasta "OK limpieza atab". .aurora-close ("X Cerrar",
+   "Exportar") ya no se parte en 2 lineas (D25). */
+
+/* ═══ Fase 144 (A5) — contraste AA y piso de 12px ═══
+   Version de la app en la barra superior (hallazgo D07: 2.08:1 con el
+   --c-text-muted que tenia en linea, sobre el teal fijo --c-brand). En
+   escritorio va sobre --c-brand: blanco al 78% = 7.45:1. En movil (<=768)
+   vive dentro del menu desplegable sobre --c-surface: --c-text-muted =
+   5.38:1 claro / 5.39:1 oscuro. Medido con contraste-logic.js. */
+.navbar-app-version{font-size:var(--fs-note);color:rgba(255,255,255,0.78);margin-left:4px;}
+@media(max-width:768px){ .navbar-right .navbar-app-version{color:var(--c-text-muted);} }
+/* Contador de las tarjetas de rol (Permisos) en oscuro: 4.23:1 -> 6.19:1. */
+[data-theme="dark"] .role-count{color:var(--c-text-2);}
+
+/* ═══ Fase 144 (A6) — mes sin datos ═══
+   Aviso "Sin datos de X para <mes>. ... [Ver <mes>]" (role="status"): a lo
+   ancho de la grilla de tarjetas KPI (antes encajado en una celda de ~150px)
+   y un panel de grafica sin datos con una sola linea centrada (sin canvas
+   vacio). Solo tokens existentes. */
+.gd-aviso-mes{text-align:center;color:var(--c-text-muted);padding:24px 8px;font-size:var(--fs-body-lg);}
+.aurora-kpis > .gd-aviso-mes{grid-column:1 / -1;flex-basis:100%;}
+.gd-panel-vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px;}

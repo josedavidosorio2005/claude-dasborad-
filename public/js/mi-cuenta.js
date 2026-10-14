@@ -35,6 +35,6 @@ async function submitCambiarPasswordPropia() {
     closeModal('modal-change-own-password');
     showToast('Contrasena actualizada');
   } catch (e) {
-    showToast(e.message);
+    showToast(e.message, 'error');
   }
 }

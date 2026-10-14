@@ -319,7 +319,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estadoS = _gdSerieFiltro[key] || {};
     var actual = gdSerieSeleccionada(p.series, estadoS.label);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-serief-'+i+'">' +
+      '<div><label for="gd-serief-'+i+'">Linea</label><select id="gd-serief-'+i+'">' +
         p.series.map(function(s){ return '<option value="'+esc(s.label)+'"'+(actual && actual.label===s.label?' selected':'')+'>'+esc(s.label)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -333,7 +333,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var disponiblesU = gdValoresDistintos(base.filas, base.campo);
     var actualU = gdValorFiltroUnico(disponiblesU, (_gdUnicoFiltro[key]||{}).valor);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-unicof-'+i+'">' +
+      '<div><label for="gd-unicof-'+i+'">Linea</label><select id="gd-unicof-'+i+'">' +
         disponiblesU.map(function(v){ return '<option value="'+esc(v)+'"'+(v===actualU?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -346,7 +346,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estado = _gdCatFiltro[key] || {};
     var incluidas = (estado.incluidas && estado.incluidas.length) ? estado.incluidas : disponibles;
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
+      '<div><label for="gd-catf-'+i+'">Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
         disponibles.map(function(v){ return '<option value="'+esc(v)+'"'+(incluidas.indexOf(v)!==-1?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -360,8 +360,8 @@ function _gdRenderFiltroBar(p, i, tipo){
   var estadoF = _gdFechaFiltro[key] || {};
   var desde = estadoF.desde || minF, hasta = estadoF.hasta || maxF;
   host.innerHTML = '<div class="gd-panel-filtro">' +
-    '<div><label>Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
-    '<div><label>Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-desde-'+i+'">Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-hasta-'+i+'">Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
     '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
   '</div>';
 }
@@ -1056,7 +1056,23 @@ function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, format
     msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
       ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
   }
-  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';
+  // Fase 144 (A6, hallazgo D05): clase en vez de estilo en linea + role="status"
+  // (lo anuncia un lector de pantalla). Dentro de la grilla de tarjetas KPI
+  // (.aurora-kpis) ocupa TODO el ancho -- antes quedaba encajado en una celda
+  // de ~150px, partido en 5 renglones (Calidad con el mes en curso sin datos).
+  return '<div class="gd-aviso-mes" role="status">'+msg+'</div>';
+}
+
+// Fase 144 (A6): un panel de grafica sin datos para el mes elegido muestra
+// UNA linea de texto en vez de un <canvas> vacio sin explicacion (mismo
+// criterio F09 de la Fase 136 que ya usan Calidad y Mis Resultados).
+function _gdPanelVacioEnCanvas(i, texto){
+  var canvasId = 'gd-c'+i;
+  var c = document.getElementById(canvasId);
+  var wrap = c ? c.parentElement : null;
+  if(!wrap) return;
+  if(_gd.charts[canvasId]){ try{ _gd.charts[canvasId].destroy(); }catch(e){} delete _gd.charts[canvasId]; }
+  wrap.innerHTML = '<div class="gd-panel-vacio">'+esc(texto)+'</div>';
 }
 
 function renderGenericBanner(){
@@ -1207,8 +1223,8 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
-      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
-      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:var(--c-text-2);line-height:1.5"></div>' : '';
+      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:var(--fs-note);color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
+      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:var(--fs-note);color:var(--c-text-2);line-height:1.5"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
         '<span>' + esc(x.p.titulo || '') + '</span>' + totalSpan + tools + '</div>' + filtroDiv +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';
@@ -1480,8 +1496,13 @@ function _gdRenderCalidad(p, i){
       var fElAviso = document.getElementById('gd-f'+i); if(fElAviso) fElAviso.innerHTML = '';
       var elAviso = document.getElementById('gd-p'+i);
       if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', _gd.mesSel, ultimoMesCal);
+    } else {
+      // calidad_pie / calidad_bar_asesores: una linea de texto en vez de un
+      // canvas vacio (Fase 144, A6) -- el aviso con "Ver <mes>" ya esta arriba.
+      var mesTxt = (typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel;
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos en ' + String(mesTxt).toLowerCase() + '.');
     }
-    return; // calidad_pie: no dibuja nada -- evita un donut vacio sin explicacion
+    return;
   }
 
   if(!estado.asesores) estado.asesores = asesoresDisp.slice();
@@ -1495,14 +1516,14 @@ function _gdRenderCalidad(p, i){
     var fEl = document.getElementById('gd-f'+i);
     if(fEl){
       fEl.innerHTML = '<div class="gd-panel-filtro">' +
-        '<div><label>Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
+        '<div><label for="cd-f-asesor-'+i+'">Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
           // Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL del
           // asesor (los filtros tienen que seguir funcionando igual); solo
           // el texto visible pasa por textoFormatoNombre.
           asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(a))+'</option>'; }).join('') +
         '</select></div>' +
-        '<div><label>Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label>Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="cd-f-desde-'+i+'">Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="cd-f-hasta-'+i+'">Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<button class="btn-sm" data-calapply data-camp="'+esc(camp)+'" data-i="'+i+'">Aplicar filtros</button>' +
       '</div>';
     }

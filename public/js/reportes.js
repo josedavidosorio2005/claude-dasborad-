@@ -26,7 +26,7 @@ function renderReportesRoleSection(filter){
     var cells = '<td>'+esc(u.nombre)+' (@'+esc(u.user)+')</td>';
     CAMPANAS_CALIDAD.forEach(function(c){
       var checked = u.perms['campana_'+c]===true;
-      cells += '<td><input type="checkbox" '+(checked?'checked':'')+' onchange="toggleReportesCampana('+u.id+',\''+c+'\',this.checked)"></td>';
+      cells += '<td><input type="checkbox" aria-label="'+esc(c)+' — '+esc(u.nombre)+'" '+(checked?'checked':'')+' onchange="toggleReportesCampana('+u.id+',\''+c+'\',this.checked)"></td>';
     });
     cells += '<td>'+(u.active?'Activo':'Suspendido')+'</td>';
     return '<tr>'+cells+'</tr>';

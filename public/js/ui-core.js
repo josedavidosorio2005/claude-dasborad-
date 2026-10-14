@@ -134,8 +134,12 @@ function updateStats(){
 // ═══════════════════════════════════════════════════════════
 // TOAST + EYE
 // ═══════════════════════════════════════════════════════════
-function showToast(msg){
+// Fase 144 (A7, D12): role/aria-live segun toastAtributos (toast-logic.js) --
+// avisos normales como status (polite), errores como alert. tipo: 'error'|'ok'
+// (opcional; sin el, se reconoce por el texto).
+function showToast(msg, tipo){
   var t=document.getElementById('toast');
+  if(typeof toastAtributos==='function'){ var a=toastAtributos(msg, tipo); t.setAttribute('role',a.role); t.setAttribute('aria-live',a['aria-live']); }
   t.textContent=msg; t.classList.add('show'); clearTimeout(t._t);
   t._t=setTimeout(function(){t.classList.remove('show');},3000);
 }
