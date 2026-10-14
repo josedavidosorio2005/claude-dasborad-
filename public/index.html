@@ -39,13 +39,17 @@
 <!-- LOGIN -->
 <div id="login-page">
   <div class="login-box">
+    <div class="login-isotipo">
+      <img class="isotipo-tema-claro" src="img/marca/isotipo-color.png" srcset="img/marca/isotipo-color.png 1x, img/marca/isotipo-color@2x.png 2x" alt="InConexion" width="50" height="48">
+      <img class="isotipo-tema-oscuro" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="50" height="48">
+    </div>
     <h1 class="app-name app-name-login" data-app-name>SInCo</h1>
     <div class="ig"><label for="username">Usuario</label><input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="off"></div>
     <div class="ig">
-      <label for="password">Contrasena</label>
+      <label for="password">Contraseña</label>
       <div class="pass-wrap">
-        <input type="password" id="password" placeholder="Ingrese su contrasena">
-        <button class="btn-eye" type="button" onclick="toggleEye('password',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <input type="password" id="password" placeholder="Ingrese su contraseña">
+        <button class="btn-eye" type="button" onclick="toggleEye('password',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
@@ -69,7 +73,7 @@
         <span class="navbar-role" id="nb-role-admin"></span>
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
-        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -182,13 +186,13 @@
                 <option value="SUSPENDIDO">Usuario suspendido</option>
                 <option value="ACTIVADO">Usuario activado</option>
                 <option value="ELIMINADO">Usuario eliminado</option>
-                <option value="PASSWORD">Cambio de contrasena</option>
+                <option value="PASSWORD">Cambio de contraseña</option>
                 <option value="PERMISOS">Cambio de permisos</option>
                 <option value="__LOGINS__">Inicios de sesion</option>
                 <option value="LOGIN_OK">Inicio de sesion exitoso</option>
                 <option value="LOGIN_FALLIDO">Inicio de sesion fallido</option>
                 <option value="LOGOUT">Cierre de sesion</option>
-                <option value="PASSWORD_PROPIA">Cambio de contrasena (propio)</option>
+                <option value="PASSWORD_PROPIA">Cambio de contraseña (propio)</option>
                 <option value="MONITOREO">Calidad: monitoreo creado</option>
                 <option value="MONITOREO_EDIT">Calidad: monitoreo editado</option>
                 <option value="MONITOREO_DEL">Calidad: monitoreo eliminado</option>
@@ -704,7 +708,7 @@
         <span class="navbar-role" id="nb-role-dash"></span>
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
-        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -748,10 +752,10 @@
     </div>
     <div class="form-row">
       <div class="ig">
-        <label for="mu-pass">Contrasena</label>
+        <label for="mu-pass">Contraseña</label>
         <div class="pass-wrap">
           <input type="password" id="mu-pass" placeholder="••••••••">
-          <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)" aria-label="Mostrar contrasena">&#128065;</button>
+          <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)" aria-label="Mostrar contraseña">&#128065;</button>
         </div>
         <small id="mu-pass-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">Dejar en blanco para no cambiar</small>
       </div>
@@ -799,23 +803,23 @@
   </div>
 </div>
 
-<!-- MODAL: Cambiar contrasena -->
+<!-- MODAL: Cambiar contraseña -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-pass-title" id="modal-pass">
   <div class="modal">
-    <h3 id="modal-pass-title">Cambiar Contrasena</h3>
+    <h3 id="modal-pass-title">Cambiar Contraseña</h3>
     <input type="hidden" id="pass-id">
     <div class="ig">
-      <label for="pass-new">Nueva Contrasena</label>
+      <label for="pass-new">Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="pass-new" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('pass-new',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('pass-new',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <div class="ig">
       <label for="pass-confirm">Confirmar</label>
       <div class="pass-wrap">
         <input type="password" id="pass-confirm" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('pass-confirm',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('pass-confirm',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <div class="modal-btns">
@@ -1421,7 +1425,7 @@
         <span class="navbar-role" id="nb-role-asesor">ASESOR</span>
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
-        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -1492,7 +1496,7 @@
         <span class="navbar-role" id="nb-role-supervisor">SUPERVISOR</span>
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
-        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contrasena</button>
+        <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
       </div>
     </div>
@@ -1605,26 +1609,26 @@
      cualquier rol, igual que el toast de abajo. -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-change-own-password-title" id="modal-change-own-password">
   <div class="modal">
-    <h3 id="modal-change-own-password-title">Cambiar mi Contrasena</h3>
+    <h3 id="modal-change-own-password-title">Cambiar mi Contraseña</h3>
     <div class="ig">
-      <label for="cop-actual">Contrasena Actual</label>
+      <label for="cop-actual">Contraseña Actual</label>
       <div class="pass-wrap">
         <input type="password" id="cop-actual" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <div class="ig">
-      <label for="cop-nueva">Nueva Contrasena</label>
+      <label for="cop-nueva">Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="cop-nueva" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <div class="ig">
-      <label for="cop-confirmar">Confirmar Nueva Contrasena</label>
+      <label for="cop-confirmar">Confirmar Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="cop-confirmar" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)" aria-label="Mostrar contrasena">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)" aria-label="Mostrar contraseña">&#128065;</button>
       </div>
     </div>
     <div class="modal-btns">
