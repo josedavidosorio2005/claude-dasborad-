@@ -304,19 +304,27 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    --c-surface. Sin animacion (nada que apagar con data-motion). */
 .app-name{font-family:var(--font-sans);font-weight:var(--fw-bold);letter-spacing:0.01em;line-height:1.1;}
 .app-name-login{color:var(--c-primary);font-size:calc(var(--fs-display) * 1.25);margin-bottom:var(--space-8);}
-/* Fase 145 (pedido de Edwin): isotipo de InConexion dentro de la tarjeta del
-   login, centrado encima de "SInCo". Color en tema claro, blanco en oscuro
-   (la tarjeta es --c-surface: clara u oscura segun el tema). Alto FIJO
-   (48px, ancho 50px = proporcion real 128x123) reservado por CSS y por
-   width/height en el <img>: la tarjeta no salta cuando la imagen llega
-   tarde (mismo criterio que el logo del encabezado, Fase 139). El tema se
-   fija antes del primer dibujo (<head>), asi que nunca se ve el logo del
-   otro tema. */
-.login-isotipo{height:48px;margin:0 auto var(--space-4);}
-.login-isotipo img{display:block;width:50px;height:48px;margin:0 auto;}
-.login-isotipo .isotipo-tema-oscuro{display:none;}
-[data-theme="dark"] .login-isotipo .isotipo-tema-claro{display:none;}
-[data-theme="dark"] .login-isotipo .isotipo-tema-oscuro{display:block;}
+/* Fase 146 (pedido de Edwin, reunion 14/10): el isotipo de InConexion va a
+   la IZQUIERDA de "SInCo", en la misma linea, centrado verticalmente con el
+   texto y un poco mas alto que las letras; el conjunto, centrado. Antes
+   (Fase 145) iba encima. Tamaño FIJO por CSS y por width/height en cada
+   <img> (no salta cuando la imagen llega tarde, criterio de la Fase 139).
+   - Login (tarjeta --c-surface): isotipo de color en claro, blanco en
+     oscuro. Texto 40px -> isotipo 36px de alto (proporcion real 128x123).
+   - Bienvenida (fondo teal en los 2 temas): isotipo blanco siempre. Texto
+     48px -> isotipo 44px.
+   flex-wrap:nowrap y tamaños fijos: a 375px el conjunto mide ~170px (login)
+   y ~200px (bienvenida), cabe en una linea con margen. */
+.marca-sinco{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:var(--space-3);}
+.marca-sinco img{display:block;flex:none;object-fit:contain;}
+.marca-sinco .app-name{margin:0;}
+.marca-sinco-login{margin-bottom:var(--space-8);}
+.marca-sinco-login img{width:38px;height:36px;}
+.marca-sinco-login .isotipo-tema-oscuro{display:none;}
+[data-theme="dark"] .marca-sinco-login .isotipo-tema-claro{display:none;}
+[data-theme="dark"] .marca-sinco-login .isotipo-tema-oscuro{display:block;}
+.marca-sinco-bienvenida{margin-bottom:var(--space-4);}
+.marca-sinco-bienvenida img{width:46px;height:44px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.2));}
 /* Logo de InConexion® pequeno en la esquina inferior derecha del login y
    de la bienvenida. Version blanca: los 2 fondos son teal en ambos temas
    (--grad-brand y el degradado de #user-page). El padding inferior de la

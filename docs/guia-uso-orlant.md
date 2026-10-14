@@ -36,9 +36,9 @@ técnico, solo explica qué hace cada pantalla y cómo se usa.
 La plataforma (SInCo) vive en **https://sinco.inconexion.com.co**. Ábrela en el
 navegador (Chrome, Edge o similar) como cualquier página web.
 
-La pantalla de inicio muestra el logo de InConexion® encima de **SInCo**,
-dentro de la tarjeta (a color en tema claro, blanco en tema oscuro), y
-otro logo pequeño en la esquina inferior derecha. Escribe tu **usuario** y
+La pantalla de inicio muestra, dentro de la tarjeta, el logo de InConexion®
+a la izquierda de **SInCo**, en la misma línea (a color en tema claro,
+blanco en tema oscuro), y otro logo pequeño en la esquina inferior derecha. Escribe tu **usuario** y
 tu **contraseña**, y presiona "Ingresar". Cada persona tiene su propio usuario, con
 acceso solo a lo que le corresponde (ver [sección 7](#7-usuarios-y-permisos-solo-administrador)).
 

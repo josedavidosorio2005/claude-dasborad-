@@ -15,23 +15,38 @@ const html = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(PUB, 'css', 'styles.css'), 'utf8');
 const loginBox = html.slice(html.indexOf('<div class="login-box">'), html.indexOf('<div class="login-error"'));
 
-test('login: isotipo dentro de la tarjeta, antes de "SInCo", color + blanco con @2x, alt y tamaño fijo', () => {
-  const iLogo = loginBox.indexOf('<div class="login-isotipo">');
-  const iTitulo = loginBox.indexOf('<h1 class="app-name app-name-login"');
-  assert.ok(iLogo !== -1 && iLogo < iTitulo, 'el isotipo va encima de "SInCo", dentro de .login-box');
-  assert.match(loginBox, /<img class="isotipo-tema-claro" src="img\/marca\/isotipo-color\.png" srcset="img\/marca\/isotipo-color\.png 1x, img\/marca\/isotipo-color@2x\.png 2x" alt="InConexion" width="50" height="48">/);
-  assert.match(loginBox, /<img class="isotipo-tema-oscuro" src="img\/marca\/isotipo-blanco\.png" srcset="img\/marca\/isotipo-blanco\.png 1x, img\/marca\/isotipo-blanco@2x\.png 2x" alt="InConexion" width="50" height="48">/);
+// Fase 146 (pedido de Edwin, 14/10): el isotipo ya no va ENCIMA de "SInCo"
+// sino a su IZQUIERDA, en la misma linea, dentro de un contenedor flex
+// centrado (.marca-sinco). Estas 2 pruebas reemplazan las de la Fase 145.
+test('login: isotipo a la IZQUIERDA de "SInCo" en el mismo contenedor, color + blanco con @2x, alt y tamaño fijo', () => {
+  const iCont = loginBox.indexOf('<div class="marca-sinco marca-sinco-login">');
+  const iClaro = loginBox.indexOf('<img class="isotipo-tema-claro"');
+  const iOscuro = loginBox.indexOf('<img class="isotipo-tema-oscuro"');
+  const iTitulo = loginBox.indexOf('<h1 class="app-name app-name-login" data-app-name>SInCo</h1>');
+  const iFin = loginBox.indexOf('</div>', iTitulo);
+  assert.ok(iCont !== -1 && iCont < iClaro && iClaro < iOscuro && iOscuro < iTitulo && iTitulo < iFin, 'logo(s) y luego "SInCo", dentro de .marca-sinco-login');
+  assert.equal(loginBox.indexOf('login-isotipo'), -1, 'ya no queda el contenedor de la Fase 145 (logo encima)');
+  assert.ok(loginBox.includes("<img class=\"isotipo-tema-claro\" src=\"img/marca/isotipo-color.png\" srcset=\"img/marca/isotipo-color.png 1x, img/marca/isotipo-color@2x.png 2x\" alt=\"InConexion\" width=\"38\" height=\"36\">"), "<img class=\"isotipo-tema-claro\" src=\"img/marca/isotipo-color.png\" srcset=\"img/marca/isotipo-color.png 1x, img/marca/isotipo-color@2x.png 2x\" alt=\"InConexion\" width=\"38\" height=\"36\">");
+  assert.ok(loginBox.includes("<img class=\"isotipo-tema-oscuro\" src=\"img/marca/isotipo-blanco.png\" srcset=\"img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x\" alt=\"InConexion\" width=\"38\" height=\"36\">"), "<img class=\"isotipo-tema-oscuro\" src=\"img/marca/isotipo-blanco.png\" srcset=\"img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x\" alt=\"InConexion\" width=\"38\" height=\"36\">");
   for (const f of ['isotipo-color.png', 'isotipo-color@2x.png', 'isotipo-blanco.png', 'isotipo-blanco@2x.png']) {
     assert.ok(fs.existsSync(path.join(PUB, 'img', 'marca', f)), f);
   }
 });
 
-test('login: el alto del isotipo esta reservado en CSS (no salta) y cada tema muestra solo su version', () => {
-  assert.match(css, /\.login-isotipo\{height:48px;/);
-  assert.match(css, /\.login-isotipo img\{display:block;width:50px;height:48px;/);
-  assert.match(css, /\.login-isotipo \.isotipo-tema-oscuro\{display:none;\}/);
-  assert.match(css, /\[data-theme="dark"\] \.login-isotipo \.isotipo-tema-claro\{display:none;\}/);
-  assert.match(css, /\[data-theme="dark"\] \.login-isotipo \.isotipo-tema-oscuro\{display:block;\}/);
+test('login y bienvenida: una sola linea centrada, tamaño reservado en CSS (no salta), cada tema con su isotipo', () => {
+  assert.ok(css.includes(".marca-sinco{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:var(--space-3);}"), ".marca-sinco{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:var(--space-3);}");
+  assert.ok(css.includes(".marca-sinco img{display:block;flex:none;object-fit:contain;}"), ".marca-sinco img{display:block;flex:none;object-fit:contain;}");
+  assert.ok(css.includes(".marca-sinco-login img{width:38px;height:36px;}"), ".marca-sinco-login img{width:38px;height:36px;}");
+  assert.ok(css.includes(".marca-sinco-login .isotipo-tema-oscuro{display:none;}"), ".marca-sinco-login .isotipo-tema-oscuro{display:none;}");
+  assert.ok(css.includes("[data-theme=\"dark\"] .marca-sinco-login .isotipo-tema-claro{display:none;}"), "[data-theme=\"dark\"] .marca-sinco-login .isotipo-tema-claro{display:none;}");
+  assert.ok(css.includes("[data-theme=\"dark\"] .marca-sinco-login .isotipo-tema-oscuro{display:block;}"), "[data-theme=\"dark\"] .marca-sinco-login .isotipo-tema-oscuro{display:block;}");
+  assert.ok(css.includes(".marca-sinco-bienvenida img{width:46px;height:44px;"), ".marca-sinco-bienvenida img{width:46px;height:44px;");
+  assert.ok(!css.includes('.login-isotipo'), 'sin reglas viejas de la Fase 145');
+  // Bienvenida: isotipo BLANCO (fondo teal en los 2 temas) a la izquierda de "SInCo"
+  const bienv = html.slice(html.indexOf('<div class="user-welcome">'), html.indexOf('<h1 id="welcome-name">'));
+  const bienvPlano = bienv.replace(/\s+/g, ' ');
+  assert.ok(bienvPlano.includes("<div class=\"marca-sinco marca-sinco-bienvenida\"> <img src=\"img/marca/isotipo-blanco.png\" srcset=\"img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x\" alt=\"InConexion\" width=\"46\" height=\"44\"> <div class=\"app-name app-name-bienvenida\" data-app-name>SInCo</div> </div>"), "<div class=\"marca-sinco marca-sinco-bienvenida\"> <img src=\"img/marca/isotipo-blanco.png\" srcset=\"img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x\" alt=\"InConexion\" width=\"46\" height=\"44\"> <div class=\"app-name app-name-bienvenida\" data-app-name>SInCo</div> </div>");
+  assert.doesNotMatch(bienv, /isotipo-color/);
 });
 
 test('el logo pequeño de la esquina del login sigue igual', () => {
@@ -57,4 +72,22 @@ test('ids, for y funciones de los campos de contraseña no cambian', () => {
   }
   assert.match(html, /onclick="abrirCambiarPasswordModal\(\)"/);
   assert.match(html, /<option value="PASSWORD">Cambio de contraseña<\/option>/);
+});
+
+// Fase 146 (pedido de Edwin): tildes en los textos VISIBLES de index.html.
+test('index.html: textos visibles con tilde; ids, for, value y nombres de campos sin cambios', () => {
+  for (const t of ['>Cerrar Sesión<', '>Selecciona un módulo para continuar<', 'Gestión de Usuarios', '>Último ingreso<', 'Campaña']) {
+    assert.ok(html.includes(t), t);
+  }
+  const visible = html
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, '')
+    .match(/>[^<>]+<|(?:placeholder|aria-label|title|alt)="[^"]*"/g)
+    .join(' ');
+  for (const w of ['Sesion', 'modulo', 'Gestion', 'Campana', 'campana', 'Periodo', 'Ultimo', 'Metrica', 'Categoria', 'Codificacion', 'Configuracion', 'automaticamente', 'Telefono', 'Pestanas']) {
+    assert.doesNotMatch(visible, new RegExp('(?<![\\wÀ-ÿ])' + w + '(?![\\wÀ-ÿ])'), 'queda "' + w + '" sin tilde en un texto visible');
+  }
+  // lo que NO se toca: ids/for/name/value con "campana", "gestion", "periodo"
+  for (const a of ['id="gh-campana"', 'for="gh-campana"', 'id="carga-periodo"', 'id="cal-campana-sel"', 'id="meta-campana-sel"']) {
+    assert.ok(html.includes(a), a);
+  }
 });

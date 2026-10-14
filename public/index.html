@@ -39,11 +39,11 @@
 <!-- LOGIN -->
 <div id="login-page">
   <div class="login-box">
-    <div class="login-isotipo">
-      <img class="isotipo-tema-claro" src="img/marca/isotipo-color.png" srcset="img/marca/isotipo-color.png 1x, img/marca/isotipo-color@2x.png 2x" alt="InConexion" width="50" height="48">
-      <img class="isotipo-tema-oscuro" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="50" height="48">
+    <div class="marca-sinco marca-sinco-login">
+      <img class="isotipo-tema-claro" src="img/marca/isotipo-color.png" srcset="img/marca/isotipo-color.png 1x, img/marca/isotipo-color@2x.png 2x" alt="InConexion" width="38" height="36">
+      <img class="isotipo-tema-oscuro" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="38" height="36">
+      <h1 class="app-name app-name-login" data-app-name>SInCo</h1>
     </div>
-    <h1 class="app-name app-name-login" data-app-name>SInCo</h1>
     <div class="ig"><label for="username">Usuario</label><input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="off"></div>
     <div class="ig">
       <label for="password">Contraseña</label>
@@ -74,7 +74,7 @@
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
-        <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
+        <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
       </div>
     </div>
   </nav>
@@ -92,7 +92,7 @@
         <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
         <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" role="button" tabindex="0" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
         <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
-        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestion Humana</a></li>
+        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestión Humana</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -100,8 +100,8 @@
 
       <!-- USERS SECTION -->
       <div id="section-users">
-        <div class="page-title">Gestion de Usuarios</div>
-        <div class="page-subtitle">Los cambios se guardan automaticamente. Cada accion queda registrada en el Historial.</div>
+        <div class="page-title">Gestión de Usuarios</div>
+        <div class="page-subtitle">Los cambios se guardan automáticamente. Cada acción queda registrada en el Historial.</div>
         <div class="aux-banner hidden" id="aux-banner">
           &#128274; <div><strong>Modo Auxiliar Admin</strong> — Solo ves las acciones y los roles a los que tienes acceso.</div>
         </div>
@@ -126,7 +126,7 @@
             </div>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th id="th-ultimo-ingreso" class="hidden">Ultimo ingreso</th><th>Acciones</th></tr></thead>
+            <table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th>Creado</th><th id="th-ultimo-ingreso" class="hidden">Último ingreso</th><th>Acciones</th></tr></thead>
             <tbody id="users-tbody"></tbody></table>
           </div>
           <div class="no-results hidden" id="no-results">No se encontraron usuarios.</div>
@@ -136,7 +136,7 @@
       <!-- PERMISSIONS SECTION -->
       <div id="section-perms" class="hidden">
         <div id="perms-roles-view">
-          <div class="page-title">Gestion de Permisos</div>
+          <div class="page-title">Gestión de Permisos</div>
           <div class="page-subtitle">Selecciona un rol para configurar los permisos individuales de cada usuario.</div>
           <div class="section-card">
             <div class="section-header">
@@ -188,10 +188,10 @@
                 <option value="ELIMINADO">Usuario eliminado</option>
                 <option value="PASSWORD">Cambio de contraseña</option>
                 <option value="PERMISOS">Cambio de permisos</option>
-                <option value="__LOGINS__">Inicios de sesion</option>
-                <option value="LOGIN_OK">Inicio de sesion exitoso</option>
-                <option value="LOGIN_FALLIDO">Inicio de sesion fallido</option>
-                <option value="LOGOUT">Cierre de sesion</option>
+                <option value="__LOGINS__">Inicios de sesión</option>
+                <option value="LOGIN_OK">Inicio de sesión exitoso</option>
+                <option value="LOGIN_FALLIDO">Inicio de sesión fallido</option>
+                <option value="LOGOUT">Cierre de sesión</option>
                 <option value="PASSWORD_PROPIA">Cambio de contraseña (propio)</option>
                 <option value="MONITOREO">Calidad: monitoreo creado</option>
                 <option value="MONITOREO_EDIT">Calidad: monitoreo editado</option>
@@ -203,9 +203,9 @@
                 <option value="NIVEL_SERVICIO_EDIT">Calidad: nivel de servicio editado</option>
                 <option value="NIVEL_SERVICIO_DEL">Calidad: nivel de servicio eliminado</option>
                 <option value="NIVEL_SERVICIO_CARGA_DIARIA">Calidad: nivel de servicio — carga diaria (Excel)</option>
-                <option value="DASHBOARD_CONFIG">Dashboard: configuracion creada</option>
-                <option value="DASHBOARD_CONFIG_EDIT">Dashboard: configuracion editada</option>
-                <option value="DASHBOARD_CONFIG_DEL">Dashboard: configuracion eliminada</option>
+                <option value="DASHBOARD_CONFIG">Dashboard: configuración creada</option>
+                <option value="DASHBOARD_CONFIG_EDIT">Dashboard: configuración editada</option>
+                <option value="DASHBOARD_CONFIG_DEL">Dashboard: configuración eliminada</option>
                 <option value="DASHBOARD_CARGA">Dashboard: carga de Excel</option>
                 <option value="DASHBOARD_CARGA_EDIT">Dashboard: carga de Excel reemplazada</option>
                 <option value="DASHBOARD_CARGA_DEL">Dashboard: carga de Excel eliminada</option>
@@ -219,9 +219,9 @@
                 <option value="GER_KPI_EDIT">Gerencia: indicador editado</option>
                 <option value="GER_KPI_DEL">Gerencia: indicador eliminado</option>
                 <option value="GER_CARGA">Gerencia: carga de Excel</option>
-                <option value="GH_PERSONAL">Gestion Humana: persona creada</option>
-                <option value="GH_PERSONAL_EDIT">Gestion Humana: persona editada</option>
-                <option value="GH_PERSONAL_DEL">Gestion Humana: persona eliminada</option>
+                <option value="GH_PERSONAL">Gestión Humana: persona creada</option>
+                <option value="GH_PERSONAL_EDIT">Gestión Humana: persona editada</option>
+                <option value="GH_PERSONAL_DEL">Gestión Humana: persona eliminada</option>
               </select>
               <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel">&#11015; Descargar</button>
             </div>
@@ -229,7 +229,7 @@
           <div class="table-wrap">
             <table><thead><tr>
               <th>Fecha y Hora</th><th>Usuario afectado</th><th>Rol</th>
-              <th>Accion</th><th>Realizado por</th><th>Detalle</th>
+              <th>Acción</th><th>Realizado por</th><th>Detalle</th>
             </tr></thead>
             <tbody id="hist-tbody"></tbody></table>
           </div>
@@ -244,7 +244,7 @@
       <!-- CRONOGRAMA Y METAS DE MONITOREO SECTION — admin only -->
       <div id="section-metas" class="hidden">
         <div class="page-title">Cronograma y Metas de Monitoreo</div>
-        <div class="page-subtitle">Se programa mes a mes, por lider responsable y campana, igual que el cronograma de InConexion SAS. Los campos de meta por asesor, meta diaria y metas semanales se calculan automaticamente.</div>
+        <div class="page-subtitle">Se programa mes a mes, por líder responsable y campaña, igual que el cronograma de InConexion SAS. Los campos de meta por asesor, meta diaria y metas semanales se calculan automáticamente.</div>
 
         <div class="aurora-tabs" id="metas-tabs" style="margin-bottom:20px">
           <button class="atab atab-active" data-metastab="cronograma" onclick="switchMetasTab('cronograma')">Cronograma</button>
@@ -261,19 +261,19 @@
             <div class="ig"><label for="meta-mes-input">Mes</label>
               <input type="month" id="meta-mes-input">
             </div>
-            <div class="ig"><label for="meta-campana-sel">Campana</label>
+            <div class="ig"><label for="meta-campana-sel">Campaña</label>
               <select id="meta-campana-sel" onchange="populateMetaLiderSelect()"></select>
             </div>
-            <div class="ig"><label for="meta-lider-input">Lider Responsable / Persona a Cargo</label>
+            <div class="ig"><label for="meta-lider-input">Líder Responsable / Persona a Cargo</label>
               <select id="meta-lider-input"></select>
-              <small style="color:var(--c-text-muted);font-size:0.75rem">Solo usuarios con rol CALIDAD o SUPERVISOR que tengan acceso a la campana seleccionada.</small>
+              <small style="color:var(--c-text-muted);font-size:0.75rem">Solo usuarios con rol CALIDAD o SUPERVISOR que tengan acceso a la campaña seleccionada.</small>
             </div>
           </div>
           <div class="form-row">
             <div class="ig"><label for="meta-asesores-input">Cantidad de Asesores</label>
               <input type="number" id="meta-asesores-input" min="1" style="max-width:140px">
             </div>
-            <div class="ig"><label for="meta-dias-input">Prom. Dias Laborales</label>
+            <div class="ig"><label for="meta-dias-input">Prom. Días Laborales</label>
               <input type="number" id="meta-dias-input" min="1" style="max-width:140px" value="19">
             </div>
             <div class="ig"><label for="meta-valor-input">Meta Mes Monitoreo Grupal</label>
@@ -304,7 +304,7 @@
           </div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Lider</th><th>Campana</th><th>Mes</th><th>Asesores</th><th>Dias Lab.</th>
+              <th>Líder</th><th>Campaña</th><th>Mes</th><th>Asesores</th><th>Días Lab.</th>
               <th>Meta Grupal</th><th>Meta/Asesor</th><th>Meta Diaria</th>
               <th>Sem.1</th><th>Sem.2</th><th>Sem.3</th><th>Sem.4</th>
               <th>WPP/Chat</th><th>%Auditar</th><th></th>
@@ -324,7 +324,7 @@
             <div class="ig"><label for="ns-mes-input">Mes</label>
               <input type="month" id="ns-mes-input">
             </div>
-            <div class="ig"><label for="ns-campana-sel">Campana</label>
+            <div class="ig"><label for="ns-campana-sel">Campaña</label>
               <select id="ns-campana-sel"></select>
             </div>
             <div class="ig"><label for="ns-contestadas-input">Llamadas contestadas en &le;20s</label>
@@ -338,18 +338,18 @@
           <div class="modal-btns">
             <button class="btn-primary" id="ns-save-btn" onclick="saveNivelServicio()">Guardar Nivel de Servicio del Mes</button>
           </div>
-          <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Este formulario manual es el respaldo para meses sin archivo. Si tienes el export diario del conmutador, usa la carga por Excel de abajo — calcula el mes automaticamente y reemplaza lo que hayas cargado a mano para ese mes.</p>
+          <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Este formulario manual es el respaldo para meses sin archivo. Si tienes el export diario del conmutador, usa la carga por Excel de abajo — calcula el mes automáticamente y reemplaza lo que hayas cargado a mano para ese mes.</p>
         </div>
         <div class="section-card">
           <div class="section-header">
             <h3>Cargar Nivel de Servicio desde Excel (export diario del conmutador)</h3>
             <div class="header-actions">
-              <span class="badge-legacy">Metodo anterior — 1 campana</span>
+              <span class="badge-legacy">Método anterior — 1 campaña</span>
             </div>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campana. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada dia, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los dias cargados de ese mes. Si tienes el export completo de Wolkvox con varias skills/campanas a la vez, usa mejor <b>Trafico / Wolkvox</b> arriba — esta carga sigue aqui como respaldo para cuando solo tienes el reporte simple de una campana.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campaña. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada día, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los días cargados de ese mes. Si tienes el export completo de Wolkvox con varias skills/campañas a la vez, usa mejor <b>Trafico / Wolkvox</b> arriba — esta carga sigue aquí como respaldo para cuando solo tienes el reporte simple de una campaña.</div>
           <div class="form-row">
-            <div class="ig"><label for="nsd-campana-sel">Campana</label>
+            <div class="ig"><label for="nsd-campana-sel">Campaña</label>
               <select id="nsd-campana-sel"></select>
             </div>
             <div class="ig"><label for="nsd-file">Archivo Excel (.xlsx)</label>
@@ -375,7 +375,7 @@
             <h3>Historial de Nivel de Servicio</h3>
             <div class="header-actions">
               <select class="hist-filter-sel" id="ns-campana-filter" aria-label="Filtrar por campaña" onchange="renderNivelServicioHistory()">
-                <option value="">Todas las campanas</option>
+                <option value="">Todas las campañas</option>
               </select>
               <select class="hist-filter-sel" id="ns-mes-filter" aria-label="Filtrar por mes" onchange="renderNivelServicioHistory()">
                 <option value="">Todos los meses</option>
@@ -384,7 +384,7 @@
           </div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Campana</th><th>Mes</th><th>Contestadas &le;20s</th><th>Total llamadas</th>
+              <th>Campaña</th><th>Mes</th><th>Contestadas &le;20s</th><th>Total llamadas</th>
               <th>% Nivel de Servicio</th><th>Cumple (&ge;80%)</th><th></th>
             </tr></thead>
             <tbody id="ns-history-tbody"></tbody></table>
@@ -400,9 +400,9 @@
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">
             La plantilla de Trafico (hoja "DATA") ahora se descarga desde <b>Cargar Datos &rarr; plantilla
-            consolidada</b> de cualquier campana. Llenala con los datos de Wolkvox Manager (Skills &amp; Servicios
-            &rarr; "Llamadas y Nivel de Servicio por Hora", agrupado por dia) y subela aqui — puede traer varias
-            skills y varios meses a la vez; cada skill se enruta a su campana segun el mapeo de abajo, una skill
+            consolidada</b> de cualquier campaña. Llenala con los datos de Wolkvox Manager (Skills &amp; Servicios
+            &rarr; "Llamadas y Nivel de Servicio por Hora", agrupado por día) y subela aquí — puede traer varias
+            skills y varios meses a la vez; cada skill se enruta a su campaña segun el mapeo de abajo, una skill
             nueva se guarda igual, marcada "sin asignar", hasta que la mapees.
           </div>
           <div class="form-row">
@@ -415,7 +415,7 @@
             <div class="page-subtitle" id="tv-preview-resumen" style="margin:0 0 8px 0"></div>
             <div class="table-wrap">
               <table><thead><tr>
-                <th>Fecha</th><th>Skill</th><th>Total Llamadas</th><th>Contestadas</th><th>Nivel Atencion</th>
+                <th>Fecha</th><th>Skill</th><th>Total Llamadas</th><th>Contestadas</th><th>Nivel Atención</th>
               </tr></thead>
               <tbody id="tv-preview-tbody"></tbody></table>
             </div>
@@ -430,13 +430,13 @@
             <h3>Trafico de WhatsApp — carga de la plantilla real</h3>
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">
-            Descarga la plantilla oficial desde <a href="#" onclick="descargarPlantillaTraficoWpp();return false">aqui</a>
+            Descarga la plantilla oficial desde <a href="#" onclick="descargarPlantillaTraficoWpp();return false">aquí</a>
             (hoja "DATA"), llenala con una fila por cada COLA de WhatsApp y PERIODO que reportes (ej. un mes completo
-            — nunca un dato por dia) y subela aqui. A diferencia de Trafico de Llamadas, esta plantilla no tiene
-            mapeo de skill: elige la campana antes de subir el archivo.
+            — nunca un dato por día) y subela aquí. A diferencia de Trafico de Llamadas, esta plantilla no tiene
+            mapeo de skill: elige la campaña antes de subir el archivo.
           </div>
           <div class="form-row">
-            <div class="ig"><label for="tww-campana-sel">Campana</label>
+            <div class="ig"><label for="tww-campana-sel">Campaña</label>
               <select id="tww-campana-sel"></select>
             </div>
             <div class="ig"><label for="tww-file">Archivo Excel (.xlsx) ya lleno</label>
@@ -462,12 +462,12 @@
           <div class="section-header">
             <h3>Registrar skill nuevo</h3>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Registra el SKILL_NAME real de Wolkvox y su campana ANTES de subir un archivo de Trafico -- cuando llegue una carga que lo mencione, el sistema ya sabe a que campana pertenece, en vez de guardarlo "sin asignar" hasta que lo mapees a mano.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Registra el SKILL_NAME real de Wolkvox y su campaña ANTES de subir un archivo de Trafico -- cuando llegue una carga que lo mencione, el sistema ya sabe a que campaña pertenece, en vez de guardarlo "sin asignar" hasta que lo mapees a mano.</div>
           <div class="form-row">
             <div class="ig"><label for="tv-skill-nuevo-nombre">SKILL_NAME (tal como aparece en Wolkvox)</label>
               <input type="text" id="tv-skill-nuevo-nombre" placeholder="Ej: CALL_INBOUND_AURORA" autocomplete="off">
             </div>
-            <div class="ig"><label for="tv-skill-nuevo-campana">Campana</label>
+            <div class="ig"><label for="tv-skill-nuevo-campana">Campaña</label>
               <select id="tv-skill-nuevo-campana" onchange="_traficoToggleSedeSelNuevo()"></select>
             </div>
             <div class="ig" id="tv-skill-nuevo-sede-wrap" style="display:none"><label for="tv-skill-nuevo-sede">Sede</label>
@@ -480,25 +480,25 @@
         </div>
         <div class="section-card">
           <div class="section-header">
-            <h3>Mapeo de Skills (Wolkvox) &rarr; Campana</h3>
+            <h3>Mapeo de Skills (Wolkvox) &rarr; Campaña</h3>
             <div class="header-actions">
               <select class="hist-filter-sel" id="tv-skills-campana-filter" aria-label="Filtrar por campaña" onchange="_renderTraficoSkillsTable()">
-                <option value="">Todas las campanas</option>
+                <option value="">Todas las campañas</option>
               </select>
               <button class="btn-sm" onclick="renderTraficoSkills()">Actualizar</button>
             </div>
           </div>
-          <div class="page-subtitle" style="margin:-4px 0 14px 0">Los nombres de skill los define Wolkvox y cambian con el tiempo: aqui se asignan a una campana/cliente, sin tocar codigo. Las que aparecen "sin asignar" quedan guardadas igual, solo que su trafico no se ve en ningun dashboard hasta que las mapees.</div>
+          <div class="page-subtitle" style="margin:-4px 0 14px 0">Los nombres de skill los define Wolkvox y cambian con el tiempo: aquí se asignan a una campaña/cliente, sin tocar código. Las que aparecen "sin asignar" quedan guardadas igual, solo que su trafico no se ve en ningun dashboard hasta que las mapees.</div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Skill (Wolkvox)</th><th>Campana asignada</th><th>Filas guardadas</th><th></th>
+              <th>Skill (Wolkvox)</th><th>Campaña asignada</th><th>Filas guardadas</th><th></th>
             </tr></thead>
             <tbody id="tv-skills-tbody"></tbody></table>
           </div>
         </div>
         <div class="section-card">
           <div class="section-header">
-            <h3>Control de Cargas por Periodo</h3>
+            <h3>Control de Cargas por Período</h3>
             <div class="header-actions">
               <button class="btn-sm" onclick="renderTraficoCobertura()">Actualizar</button>
             </div>
@@ -506,7 +506,7 @@
           <div class="page-subtitle" style="margin:-4px 0 14px 0">Que meses de trafico ya estan cargados por skill, para saber que falta antes de pedirle una base nueva a Wolkvox. Solo lectura — la carga en si se hace arriba.</div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Skill (Wolkvox)</th><th>Campana / Sede</th><th>Cobertura</th><th>Meses cargados</th>
+              <th>Skill (Wolkvox)</th><th>Campaña / Sede</th><th>Cobertura</th><th>Meses cargados</th>
             </tr></thead>
             <tbody id="tv-cobertura-tbody"></tbody></table>
           </div>
@@ -520,13 +520,13 @@
            tabla via GET /api/umbrales (dashboard-generic.js). -->
       <div id="section-umbrales" class="hidden">
         <div class="page-title">Umbrales de Semaforo</div>
-        <div class="page-subtitle">Define de que color se pinta cada metrica en los dashboards (verde/amarillo/rojo) segun que tan bien o mal esta el valor. Un umbral sin campana especifica es el <strong>default global</strong> para esa metrica; uno con campana lo sobreescribe solo ahi. Los cambios se ven en los dashboards al instante, sin desplegar.</div>
+        <div class="page-subtitle">Define de que color se pinta cada métrica en los dashboards (verde/amarillo/rojo) segun que tan bien o mal esta el valor. Un umbral sin campaña especifica es el <strong>default global</strong> para esa métrica; uno con campaña lo sobreescribe solo ahi. Los cambios se ven en los dashboards al instante, sin desplegar.</div>
         <div class="section-card">
           <div class="section-header">
             <h3 id="umbral-form-title">Nuevo umbral</h3>
           </div>
           <div class="form-row">
-            <div class="ig"><label for="umbral-metrica-input">Metrica</label>
+            <div class="ig"><label for="umbral-metrica-input">Métrica</label>
               <input type="text" id="umbral-metrica-input" list="umbral-metricas-conocidas" placeholder="ej: nivel_atencion" oninput="previewUmbral()">
               <datalist id="umbral-metricas-conocidas">
                 <option value="nivel_atencion">
@@ -535,16 +535,16 @@
                 <option value="service_level">
                 <option value="cumplimiento_meta">
               </datalist>
-              <small style="color:var(--c-text-muted);font-size:0.75rem">Debe coincidir con el identificador de metrica del KPI (ver <code>metrica</code> en la configuracion del dashboard). Las 5 sugeridas ya vienen con default global.</small>
+              <small style="color:var(--c-text-muted);font-size:0.75rem">Debe coincidir con el identificador de métrica del KPI (ver <code>métrica</code> en la configuración del dashboard). Las 5 sugeridas ya vienen con default global.</small>
             </div>
-            <div class="ig"><label for="umbral-campana-sel">Campana (opcional)</label>
+            <div class="ig"><label for="umbral-campana-sel">Campaña (opcional)</label>
               <select id="umbral-campana-sel">
-                <option value="">— Todas las campanas (default global) —</option>
+                <option value="">— Todas las campañas (default global) —</option>
               </select>
             </div>
-            <div class="ig"><label for="umbral-direccion-sel">Direccion</label>
+            <div class="ig"><label for="umbral-direccion-sel">Dirección</label>
               <select id="umbral-direccion-sel" onchange="previewUmbral()">
-                <option value="mayor_es_mejor">Mayor es mejor (ej. nivel de atencion)</option>
+                <option value="mayor_es_mejor">Mayor es mejor (ej. nivel de atención)</option>
                 <option value="menor_es_mejor">Menor es mejor (ej. tasa de abandono)</option>
               </select>
             </div>
@@ -560,14 +560,14 @@
           <div class="qi-preview" id="umbral-preview"></div>
           <div class="modal-btns">
             <button class="btn-primary" onclick="saveUmbral()">Guardar Umbral</button>
-            <button class="btn-cancel hidden" id="umbral-cancel-btn" onclick="cancelEditUmbral()">Cancelar edicion</button>
+            <button class="btn-cancel hidden" id="umbral-cancel-btn" onclick="cancelEditUmbral()">Cancelar edición</button>
           </div>
         </div>
         <div class="section-card">
           <div class="section-header"><h3>Umbrales configurados</h3></div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Metrica</th><th>Campana</th><th>Verde</th><th>Amarillo</th><th>Direccion</th><th></th>
+              <th>Métrica</th><th>Campaña</th><th>Verde</th><th>Amarillo</th><th>Dirección</th><th></th>
             </tr></thead>
             <tbody id="umbrales-tbody"></tbody></table>
           </div>
@@ -578,7 +578,7 @@
       <!-- ROL REPORTES SECTION — admin only -->
       <div id="section-reportesrole" class="hidden">
         <div class="page-title">Rol Reportes — Permisos</div>
-        <div class="page-subtitle">Los usuarios con rol REPORTES solo ven resultados y reportes (sin plantilla de calificacion). Configura a que campanas tiene acceso cada uno.</div>
+        <div class="page-subtitle">Los usuarios con rol REPORTES solo ven resultados y reportes (sin plantilla de calificación). Configura a que campañas tiene acceso cada uno.</div>
         <div class="section-card">
           <div class="section-header">
             <h3>Usuarios con rol REPORTES</h3>
@@ -594,14 +594,14 @@
       <!-- DASHBOARDS SECTION — admin: crear/editar dashboards de cliente por configuracion -->
       <div id="section-dashboards" class="hidden">
         <div class="page-title">Dashboards de Cliente</div>
-        <div class="page-subtitle">Cada dashboard se define por configuracion (secciones de Excel + paneles). Crear uno nuevo no requiere programar.</div>
+        <div class="page-subtitle">Cada dashboard se define por configuración (secciones de Excel + paneles). Crear uno nuevo no requiere programar.</div>
         <div class="section-card">
           <div class="section-header">
             <h3>Dashboards configurados</h3>
             <button class="btn-primary" onclick="openDashCfgModal()">+ Nuevo dashboard</button>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Cliente</th><th>Titulo</th><th>Pestanas</th><th>Paneles</th><th>Actualizado</th><th></th></tr></thead>
+            <table><thead><tr><th>Cliente</th><th>Titulo</th><th>Pestañas</th><th>Paneles</th><th>Actualizado</th><th></th></tr></thead>
             <tbody id="dashcfg-tbody"></tbody></table>
           </div>
           <div class="no-results hidden" id="dashcfg-no-results">Aun no hay dashboards configurados.</div>
@@ -631,19 +631,19 @@
 
       <!-- INVENTARIO SECTION -->
       <div id="section-inventario" class="hidden">
-        <div class="page-title">Gestion de Inventario</div>
+        <div class="page-title">Gestión de Inventario</div>
         <div class="page-subtitle">Control de stock: items, movimientos y cargas masivas desde Excel.</div>
         <div class="stats-grid" id="inv-admin-stats"></div>
         <div class="section-card">
           <div class="section-header">
             <h3>Items de Inventario</h3>
             <div class="header-actions">
-              <button class="btn-cancel" onclick="openInventario()">Ver modulo completo</button>
+              <button class="btn-cancel" onclick="openInventario()">Ver módulo completo</button>
               <button class="btn-primary" onclick="invNuevoItem()">+ Nuevo item</button>
             </div>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Nombre</th><th>Categoria</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr></thead>
+            <table><thead><tr><th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr></thead>
             <tbody id="inv-admin-tbody"></tbody></table>
           </div>
         </div>
@@ -651,8 +651,8 @@
 
       <!-- GESTION HUMANA SECTION -->
       <div id="section-gestionhumana" class="hidden">
-        <div class="page-title">Gestion Humana</div>
-        <div class="page-subtitle">Registro de personal por campana: ingresos, salidas, rotacion, costo de nomina y rentabilidad.</div>
+        <div class="page-title">Gestión Humana</div>
+        <div class="page-subtitle">Registro de personal por campaña: ingresos, salidas, rotacion, costo de nomina y rentabilidad.</div>
         <div class="stats-grid" id="gh-admin-stats"></div>
         <div class="section-card">
           <div class="section-header">
@@ -664,7 +664,7 @@
           </div>
           <div class="table-wrap">
             <table><thead><tr>
-              <th>Nombre</th><th>Cargo</th><th>Campana</th><th>Ingreso</th><th>Salida</th>
+              <th>Nombre</th><th>Cargo</th><th>Campaña</th><th>Ingreso</th><th>Salida</th>
               <th>Estado</th><th>Costo/mes</th><th></th>
             </tr></thead>
             <tbody id="gh-admin-tbody"></tbody></table>
@@ -679,14 +679,14 @@
         <div class="stats-grid" id="ger-admin-stats"></div>
         <div class="section-card">
           <div class="section-header">
-            <h3>Indicadores del Periodo</h3>
+            <h3>Indicadores del Período</h3>
             <div class="header-actions">
-              <button class="btn-cancel" onclick="openGerencia()">Ver modulo completo</button>
+              <button class="btn-cancel" onclick="openGerencia()">Ver módulo completo</button>
               <button class="btn-primary ger-write-only" onclick="gerNuevoKpi()">+ Nuevo indicador</button>
             </div>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Periodo</th><th>Nombre</th><th>Categoria</th><th>Valor</th><th>Unidad</th><th>Meta</th><th></th></tr></thead>
+            <table><thead><tr><th>Período</th><th>Nombre</th><th>Categoría</th><th>Valor</th><th>Unidad</th><th>Meta</th><th></th></tr></thead>
             <tbody id="ger-admin-tbody"></tbody></table>
           </div>
         </div>
@@ -709,21 +709,24 @@
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
-        <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
+        <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
       </div>
     </div>
   </nav>
   <div class="user-page-body">
     <div class="user-welcome">
-      <div class="app-name app-name-bienvenida" data-app-name>SInCo</div>
+      <div class="marca-sinco marca-sinco-bienvenida">
+        <img src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="46" height="44">
+        <div class="app-name app-name-bienvenida" data-app-name>SInCo</div>
+      </div>
       <h1 id="welcome-name">Bienvenido</h1>
-      <p>Selecciona un modulo para continuar</p>
+      <p>Selecciona un módulo para continuar</p>
     </div>
     <div class="dash-grid" id="dash-grid"></div>
     <div class="empty-state hidden" id="dash-grid-vacio" style="max-width:520px;margin:0 auto">
       <div class="es-icon">&#128274;</div>
-      <div class="es-title">No tienes modulos asignados</div>
-      <div class="es-hint">Contacta al administrador para que te asigne acceso a un modulo.</div>
+      <div class="es-title">No tienes módulos asignados</div>
+      <div class="es-hint">Contacta al administrador para que te asigne acceso a un módulo.</div>
     </div>
   </div>
   <img class="marca-esquina" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="120" height="24">
@@ -774,20 +777,20 @@
       </div>
     </div>
     <div class="client-perms-section" id="mu-asesor-note" style="display:none">
-      <h4>Campana / Operacion del asesor</h4>
+      <h4>Campaña / Operación del asesor</h4>
       <div class="form-row">
-        <div class="ig"><label for="mu-asesor-campana">A que campana pertenece este asesor</label>
+        <div class="ig"><label for="mu-asesor-campana">A que campaña pertenece este asesor</label>
           <select id="mu-asesor-campana"></select>
         </div>
       </div>
-      <p style="font-size:0.78rem;color:var(--c-text-muted)">El nombre completo debe coincidir exactamente con el nombre del asesor tal como lo escribe la persona de Calidad al calificar. Ademas, solo se mostraran los monitoreos registrados en la campana seleccionada arriba.</p>
+      <p style="font-size:0.78rem;color:var(--c-text-muted)">El nombre completo debe coincidir exactamente con el nombre del asesor tal como lo escribe la persona de Calidad al calificar. Ademas, solo se mostraran los monitoreos registrados en la campaña seleccionada arriba.</p>
     </div>
     <div class="client-perms-section" id="mu-client-perms">
       <h4>Acceso a clientes</h4>
       <div class="client-perm-grid" id="mu-client-perm-grid"></div>
     </div>
     <div class="client-perms-section" id="mu-campaign-perms">
-      <h4>Acceso a campanas de Calidad</h4>
+      <h4>Acceso a campañas de Calidad</h4>
       <div class="client-perm-grid" id="mu-campaign-perm-grid"></div>
     </div>
     <div class="client-perms-section" id="mu-cargar-datos-section">
@@ -835,7 +838,7 @@
     <h3 id="modal-delete-title">Eliminar Usuario</h3>
     <input type="hidden" id="delete-id">
     <p style="color:var(--c-text-2);margin-bottom:8px">Eliminar a <strong id="delete-name" style="color:var(--c-primary)"></strong>?</p>
-    <p style="color:var(--c-danger-dark);font-size:0.82rem">Esta accion no se puede deshacer. Quedara registro en el Historial.</p>
+    <p style="color:var(--c-danger-dark);font-size:0.82rem">Esta acción no se puede deshacer. Quedara registro en el Historial.</p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeModal('modal-delete')">Cancelar</button>
       <button class="btn-primary" style="background:linear-gradient(90deg,var(--c-danger-dark),var(--c-danger))" onclick="confirmDelete()">Eliminar</button>
@@ -886,8 +889,8 @@
     <div class="aurora-header">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div>
-          <h2 id="calidad-modal-title">Modulo de Calidad</h2>
-          <div class="aurora-sub" id="cal-sub-label">Monitoreo y evaluacion por campana</div>
+          <h2 id="calidad-modal-title">Módulo de Calidad</h2>
+          <div class="aurora-sub" id="cal-sub-label">Monitoreo y evaluación por campaña</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label for="cal-campana-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">CAMPANA:</label>
@@ -911,7 +914,7 @@
       <button class="atab" data-ctab="monitoreos" onclick="switchCalTab('monitoreos')">Monitoreos</button>
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
       <button class="atab" data-ctab="reportes" onclick="switchCalTab('reportes')">Reportes</button>
-      <button class="atab" data-ctab="config" id="ctab-btn-config" onclick="switchCalTab('config')">Configuracion</button>
+      <button class="atab" data-ctab="config" id="ctab-btn-config" onclick="switchCalTab('config')">Configuración</button>
     </div>
 
     <div id="cpanel-nuevo" class="atab-panel visible">
@@ -920,23 +923,23 @@
         <div class="form-row">
           <div class="ig"><label for="cf-asesor">Nombre del Asesor</label>
             <select id="cf-asesor"></select>
-            <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campana. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
+            <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campaña. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
           </div>
           <div class="ig"><label for="cf-fecha">Fecha</label><input type="date" id="cf-fecha" disabled>
-            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Se registra automaticamente con la fecha de hoy.</small>
+            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Se registra automáticamente con la fecha de hoy.</small>
           </div>
         </div>
         <div class="form-row">
           <div class="ig"><label for="cf-idllamada">ID / Llamada - Wpp</label><input type="text" id="cf-idllamada" placeholder="Ej: ID-98745"></div>
-          <div class="ig"><label for="cf-telefono"># Telefono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
+          <div class="ig"><label for="cf-telefono"># Teléfono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
         </div>
         <div class="form-row">
-          <div class="ig"><label for="cf-codificacion">Codificacion</label>
+          <div class="ig"><label for="cf-codificacion">Codificación</label>
             <input type="text" id="cf-codificacion" placeholder="Ej: POS">
-            <select id="cf-codificacion-select" aria-label="Codificacion" style="display:none"></select>
+            <select id="cf-codificacion-select" aria-label="Codificación" style="display:none"></select>
           </div>
           <div class="ig"><label for="cf-evaluador">Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
-            <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesion; no se puede cambiar.</small>
+            <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesión; no se puede cambiar.</small>
           </div>
         </div>
         <div class="form-row">
@@ -963,7 +966,7 @@
     <div id="cpanel-carga" class="atab-panel">
       <div class="aurora-card">
         <div class="aurora-card-title">Cargar monitoreos desde Excel</div>
-        <div class="aurora-sub">Descarga la plantilla de esta campana (hoja <strong>Monitoreos</strong> para diligenciar, + <strong>Diccionario</strong> y <strong>Resumen por Asesor</strong> de apoyo), llenala y vuelve a subirla. Solo se procesa la hoja "Monitoreos"; las otras dos son de referencia.</div>
+        <div class="aurora-sub">Descarga la plantilla de esta campaña (hoja <strong>Monitoreos</strong> para diligenciar, + <strong>Diccionario</strong> y <strong>Resumen por Asesor</strong> de apoyo), llenala y vuelve a subirla. Solo se procesa la hoja "Monitoreos"; las otras dos son de referencia.</div>
         <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
           <button class="btn-cancel" onclick="descargarPlantillaMonitoreos()">Descargar plantilla (Excel)</button>
           <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
@@ -1003,7 +1006,7 @@
       <div class="aurora-kpis" id="cal-reportes-kpis"></div>
       <div class="aurora-grid-2">
         <div class="aurora-card">
-          <div class="aurora-card-title">Distribucion de Clasificacion</div>
+          <div class="aurora-card-title">Distribución de Clasificación</div>
           <div class="aurora-chart-wrap" style="height:220px"><canvas id="cch-clasificacion"></canvas></div>
         </div>
         <div class="aurora-card">
@@ -1016,8 +1019,8 @@
         <table class="aurora-rank-table" id="cal-cumplimiento-table"></table>
       </div>
       <div class="aurora-card" style="background:var(--c-surface-subtle)">
-        <div class="aurora-card-title">Reporte General de Cumplimiento (Todas las Campanas)</div>
-        <p style="font-size:0.82rem;color:var(--c-text)">Descarga un Excel con <strong>una hoja completa por cada campana/operacion</strong> (no todo mezclado en una sola hoja), con el cumplimiento de Calidad/Supervisor desglosado por Llamada y WhatsApp, para el mes seleccionado en el filtro de arriba.</p>
+        <div class="aurora-card-title">Reporte General de Cumplimiento (Todas las Campañas)</div>
+        <p style="font-size:0.82rem;color:var(--c-text)">Descarga un Excel con <strong>una hoja completa por cada campaña/operación</strong> (no todo mezclado en una sola hoja), con el cumplimiento de Calidad/Supervisor desglosado por Llamada y WhatsApp, para el mes seleccionado en el filtro de arriba.</p>
         <div class="modal-btns">
           <button class="btn-primary" onclick="descargarReporteGeneral()">Descargar Reporte General (Excel)</button>
         </div>
@@ -1028,16 +1031,16 @@
       <div class="aurora-card">
         <div class="aurora-card-title">Cronograma y Meta del Mes Actual</div>
         <div class="qi-preview" id="cf-cronograma-preview"></div>
-        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">El cronograma completo (lider, asesores, dias laborales, metas semanales, WhatsApp/Chat) se programa mes a mes desde Admin &gt; Cronograma y Metas de Monitoreo.</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">El cronograma completo (líder, asesores, días laborales, metas semanales, WhatsApp/Chat) se programa mes a mes desde Admin &gt; Cronograma y Metas de Monitoreo.</p>
       </div>
       <div class="aurora-card">
-        <div class="aurora-card-title">Usuarios con acceso a esta campana (rol CALIDAD)</div>
+        <div class="aurora-card-title">Usuarios con acceso a esta campaña (rol CALIDAD)</div>
         <table class="aurora-rank-table" id="cal-permisos-table"></table>
-        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Para dar o quitar acceso, edite el usuario desde Gestion de Usuarios (rol CALIDAD) y marque/desmarque la campana correspondiente.</p>
+        <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">Para dar o quitar acceso, edite el usuario desde Gestión de Usuarios (rol CALIDAD) y marque/desmarque la campaña correspondiente.</p>
       </div>
       <div class="aurora-card">
-        <div class="aurora-card-title">Codificaciones validas de esta campana</div>
-        <p style="font-size:0.78rem;color:var(--c-text-muted)">Mientras esta campana no tenga ninguna codificacion aqui, el campo "Codificacion" del monitoreo sigue siendo texto libre. En cuanto agregue al menos una, el formulario la muestra como lista desplegable. Nunca se borra una codificacion (romperia monitoreos viejos): solo se desactiva o reactiva.</p>
+        <div class="aurora-card-title">Codificaciones validas de esta campaña</div>
+        <p style="font-size:0.78rem;color:var(--c-text-muted)">Mientras esta campaña no tenga ninguna codificación aquí, el campo "Codificación" del monitoreo sigue siendo texto libre. En cuanto agregue al menos una, el formulario la muestra como lista desplegable. Nunca se borra una codificación (romperia monitoreos viejos): solo se desactiva o reactiva.</p>
         <div class="ig"><label for="cf-cod-nuevas">Pegar codificaciones nuevas (una por linea)</label>
           <textarea id="cf-cod-nuevas" rows="4" placeholder="POS&#10;NO CONTESTA&#10;NUMERO EQUIVOCADO"></textarea>
         </div>
@@ -1061,7 +1064,7 @@
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <div>
           <h2>&#128230; Inventario</h2>
-          <div class="aurora-sub">Gestion de stock, movimientos y control de items</div>
+          <div class="aurora-sub">Gestión de stock, movimientos y control de items</div>
         </div>
       </div>
       <div style="display:flex;gap:8px">
@@ -1153,10 +1156,10 @@
     <h3 id="inv-modal-title">Nuevo Item de Inventario</h3>
     <div class="form-row">
       <div class="ig"><label for="inv-nombre">Nombre *</label><input type="text" id="inv-nombre" placeholder="Ej: Audifonos Logitech"></div>
-      <div class="ig"><label for="inv-categoria">Categoria</label><input type="text" id="inv-categoria" placeholder="Ej: Equipos"></div>
+      <div class="ig"><label for="inv-categoria">Categoría</label><input type="text" id="inv-categoria" placeholder="Ej: Equipos"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label for="inv-descripcion">Descripcion</label><input type="text" id="inv-descripcion" placeholder="Descripcion breve"></div>
+      <div class="ig"><label for="inv-descripcion">Descripción</label><input type="text" id="inv-descripcion" placeholder="Descripción breve"></div>
     </div>
     <div class="form-row">
       <div class="ig"><label for="inv-cantidad">Cantidad *</label><input type="number" id="inv-cantidad" min="0" value="0"></div>
@@ -1171,7 +1174,7 @@
       </div>
     </div>
     <div class="form-row">
-      <div class="ig"><label for="inv-ubicacion">Ubicacion</label><input type="text" id="inv-ubicacion" placeholder="Ej: Bodega Central"></div>
+      <div class="ig"><label for="inv-ubicacion">Ubicación</label><input type="text" id="inv-ubicacion" placeholder="Ej: Bodega Central"></div>
       <div class="ig"><label for="inv-proveedor">Proveedor</label><input type="text" id="inv-proveedor" placeholder="Ej: Logitech"></div>
       <div class="ig"><label for="inv-costo">Costo Unitario</label><input type="number" id="inv-costo" min="0" step="0.01" placeholder="0"></div>
     </div>
@@ -1191,11 +1194,11 @@
     <h3 id="gh-modal-title">Nueva persona</h3>
     <div class="form-row">
       <div class="ig"><label for="gh-nombre">Nombre *</label><input type="text" id="gh-nombre" placeholder="Nombre completo"></div>
-      <div class="ig"><label for="gh-documento">Documento</label><input type="text" id="gh-documento" placeholder="Cedula / ID"></div>
+      <div class="ig"><label for="gh-documento">Documento</label><input type="text" id="gh-documento" placeholder="Cédula / ID"></div>
     </div>
     <div class="form-row">
       <div class="ig"><label for="gh-cargo">Cargo</label><input type="text" id="gh-cargo" placeholder="Ej: Asesor"></div>
-      <div class="ig"><label for="gh-campana">Campana / area *</label><input type="text" id="gh-campana" placeholder="Ej: ORLANT"></div>
+      <div class="ig"><label for="gh-campana">Campaña / área *</label><input type="text" id="gh-campana" placeholder="Ej: ORLANT"></div>
       <div class="ig"><label for="gh-supervisor">Supervisor</label><input type="text" id="gh-supervisor" placeholder="Nombre del supervisor"></div>
     </div>
     <div class="form-row">
@@ -1211,7 +1214,7 @@
     <div class="form-row">
       <div class="ig" style="flex:1"><label for="gh-observaciones">Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
     </div>
-    <p style="font-size:0.78rem;color:var(--c-text-muted);margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campana del dashboard.</p>
+    <p style="font-size:0.78rem;color:var(--c-text-muted);margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campaña del dashboard.</p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeGhPersonModal()">Cancelar</button>
       <button class="btn-primary" onclick="ghGuardarPersona()">Guardar</button>
@@ -1299,7 +1302,7 @@
       <div class="aurora-kpis" id="ger-carga-status"></div>
       <div class="aurora-card">
         <div class="aurora-card-title">Carga masiva de Indicadores</div>
-        <p style="font-size:0.82rem;color:var(--c-text-muted);margin-bottom:10px">Descarga la plantilla, llena los KPIs del mes en Excel y sube el archivo. Si un indicador ya existe para ese periodo, se actualiza.</p>
+        <p style="font-size:0.82rem;color:var(--c-text-muted);margin-bottom:10px">Descarga la plantilla, llena los KPIs del mes en Excel y sube el archivo. Si un indicador ya existe para ese período, se actualiza.</p>
         <div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap">
           <button class="btn-cancel" onclick="gerDescargarPlantilla()">Descargar plantilla</button>
           <label class="btn-primary" style="cursor:pointer;display:inline-flex;align-items:center">
@@ -1318,8 +1321,8 @@
   <div id="gestionhumana-modal">
     <div class="aurora-header">
       <div>
-        <h2>&#128101; Gestion Humana</h2>
-        <div class="aurora-sub">Personal por campana: ingresos, salidas, rotacion y costo de nomina</div>
+        <h2>&#128101; Gestión Humana</h2>
+        <div class="aurora-sub">Personal por campaña: ingresos, salidas, rotacion y costo de nomina</div>
       </div>
       <div style="display:flex;gap:8px">
         <button class="aurora-close" onclick="closeGestionHumana();openGenericDashboard('GESTION_HUMANA')">Ver dashboard</button>
@@ -1343,10 +1346,10 @@
   <div class="modal" style="max-width:520px">
     <h3 id="ger-kpi-modal-title">Nuevo Indicador</h3>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label for="ger-kpi-nombre">Nombre del indicador *</label><input type="text" id="ger-kpi-nombre" placeholder="Ej: Nivel de atencion promedio"></div>
+      <div class="ig" style="flex:1"><label for="ger-kpi-nombre">Nombre del indicador *</label><input type="text" id="ger-kpi-nombre" placeholder="Ej: Nivel de atención promedio"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label for="ger-kpi-categoria">Categoria</label><input type="text" id="ger-kpi-categoria" value="General" placeholder="Ej: Operaciones, Financiero..."></div>
+      <div class="ig"><label for="ger-kpi-categoria">Categoría</label><input type="text" id="ger-kpi-categoria" value="General" placeholder="Ej: Operaciones, Financiero..."></div>
       <div class="ig"><label for="ger-kpi-valor">Valor *</label><input type="number" id="ger-kpi-valor" step="any"></div>
     </div>
     <div class="form-row">
@@ -1369,7 +1372,7 @@
     <div class="aurora-header">
       <div>
         <h2 id="cargas-modal-title">Cargar Datos de Dashboards</h2>
-        <div class="aurora-sub">Una sola plantilla por cliente, con una hoja por tipo de dato (Gestion de base, Calidad, Trafico). Las hojas que no apliquen pueden quedar vacias. Si ya hay una carga para ese cliente/sección/periodo, se pide confirmación antes de reemplazarla.</div>
+        <div class="aurora-sub">Una sola plantilla por cliente, con una hoja por tipo de dato (Gestión de base, Calidad, Trafico). Las hojas que no apliquen pueden quedar vacias. Si ya hay una carga para ese cliente/sección/período, se pide confirmación antes de reemplazarla.</div>
       </div>
       <button class="aurora-close" onclick="closeCargas()">X Cerrar</button>
     </div>
@@ -1381,7 +1384,7 @@
         <div class="ig"><label for="carga-cliente">Cliente</label>
           <select id="carga-cliente" onchange="onCargaClienteChange()"></select>
         </div>
-        <div class="ig"><label for="carga-periodo">Periodo (mes) — para las hojas de Gestion de base</label>
+        <div class="ig"><label for="carga-periodo">Período (mes) — para las hojas de Gestión de base</label>
           <input type="month" id="carga-periodo">
         </div>
       </div>
@@ -1406,7 +1409,7 @@
     </div>
 
     <div class="aurora-card">
-      <div class="aurora-card-title">Cargas registradas (Gestion de base)</div>
+      <div class="aurora-card-title">Cargas registradas (Gestión de base)</div>
       <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-existentes-table"></table></div>
     </div>
   </div>
@@ -1426,7 +1429,7 @@
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
-        <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
+        <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
       </div>
     </div>
   </nav>
@@ -1451,7 +1454,7 @@
       <!-- RESULTADOS DE CALIDAD SECTION -->
       <div id="asesor-section-calidad">
         <div class="page-title">Mis Resultados de Calidad</div>
-        <div class="page-subtitle">Consulta en tiempo real tus monitoreos de calidad. Mas adelante se agregaran aqui otras secciones (novedades, reportes, etc.).</div>
+        <div class="page-subtitle">Consulta en tiempo real tus monitoreos de calidad. Más adelante se agregarán aquí otras secciones (novedades, reportes, etc.).</div>
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px;background:var(--c-surface-alt);border-radius:8px;padding:6px 12px">
@@ -1464,7 +1467,7 @@
 
         <div class="aurora-grid-2">
           <div class="aurora-card">
-            <div class="aurora-card-title">Distribucion de Clasificacion</div>
+            <div class="aurora-card-title">Distribución de Clasificación</div>
             <div class="aurora-chart-wrap" style="height:220px"><canvas id="mr-ch-clasif"></canvas></div>
           </div>
           <div class="aurora-card">
@@ -1497,7 +1500,7 @@
         <span class="navbar-app-version"></span>
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
-        <button class="btn-logout" onclick="doLogout()">Cerrar Sesion</button>
+        <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
       </div>
     </div>
   </nav>
@@ -1515,14 +1518,14 @@
       <!-- DASHBOARDS SECTION -->
       <div id="supervisor-section-dashboards">
         <div class="page-title">Mis Dashboards</div>
-        <div class="page-subtitle">Campanas / clientes a las que tienes acceso.</div>
+        <div class="page-subtitle">Campañas / clientes a las que tienes acceso.</div>
         <div class="clients-grid" id="supervisor-clients-grid"></div>
       </div>
 
       <!-- CALIDAD SECTION -->
       <div id="supervisor-section-calidad" style="display:none">
         <div class="page-title">Calidad</div>
-        <div class="page-subtitle">Realiza monitoreos y consulta resultados de las campanas asignadas.</div>
+        <div class="page-subtitle">Realiza monitoreos y consulta resultados de las campañas asignadas.</div>
 
         <div class="aurora-card">
           <div class="aurora-card-title">Mi Meta de Monitoreo — Mes Actual</div>
@@ -1530,10 +1533,10 @@
         </div>
 
         <div class="aurora-card" style="max-width:520px">
-          <div class="aurora-card-title">Modulo de Calidad</div>
-          <p style="font-size:0.85rem;color:var(--c-text);line-height:1.5">Desde aqui puedes registrar nuevos monitoreos y consultar el historial, resumenes y reportes de las campanas que tienes asignadas.</p>
+          <div class="aurora-card-title">Módulo de Calidad</div>
+          <p style="font-size:0.85rem;color:var(--c-text);line-height:1.5">Desde aquí puedes registrar nuevos monitoreos y consultar el historial, resumenes y reportes de las campañas que tienes asignadas.</p>
           <div class="modal-btns" style="margin-top:10px">
-            <button class="btn-primary" onclick="openCalidad()">Abrir Modulo de Calidad</button>
+            <button class="btn-primary" onclick="openCalidad()">Abrir Módulo de Calidad</button>
           </div>
         </div>
       </div>
@@ -1554,21 +1557,21 @@
     </div>
 
     <div class="aurora-card">
-      <div class="aurora-card-title">Informacion General</div>
+      <div class="aurora-card-title">Información General</div>
       <div class="form-row">
         <div class="ig"><label>Asesor</label><div class="dm-readonly" id="dm-asesor"></div></div>
         <div class="ig"><label>Fecha</label><div class="dm-readonly" id="dm-fecha"></div></div>
       </div>
       <div class="form-row">
-        <div class="ig"><label>Campana</label><div class="dm-readonly" id="dm-campana"></div></div>
+        <div class="ig"><label>Campaña</label><div class="dm-readonly" id="dm-campana"></div></div>
         <div class="ig"><label>Evaluador</label><div class="dm-readonly" id="dm-evaluador"></div></div>
       </div>
       <div class="form-row">
         <div class="ig"><label>ID / Llamada - Wpp</label><div class="dm-readonly" id="dm-idllamada"></div></div>
-        <div class="ig"><label># Telefono</label><div class="dm-readonly" id="dm-telefono"></div></div>
+        <div class="ig"><label># Teléfono</label><div class="dm-readonly" id="dm-telefono"></div></div>
       </div>
       <div class="form-row">
-        <div class="ig"><label>Codificacion</label><div class="dm-readonly" id="dm-codificacion"></div></div>
+        <div class="ig"><label>Codificación</label><div class="dm-readonly" id="dm-codificacion"></div></div>
         <div class="ig"><label>Canal Auditado</label><div class="dm-readonly" id="dm-canal"></div></div>
       </div>
     </div>
@@ -1589,7 +1592,7 @@
   <div id="supervisar-lider-modal">
     <div class="aurora-header">
       <div>
-        <h2 id="supervisar-lider-modal-title">Supervision Individual</h2>
+        <h2 id="supervisar-lider-modal-title">Supervisión Individual</h2>
         <div class="aurora-sub" id="sl-sub-label"></div>
       </div>
       <button class="aurora-close" onclick="closeSupervisionLider()">X Cerrar</button>

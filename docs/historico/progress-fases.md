@@ -14792,3 +14792,31 @@ Diagnóstico de solo lectura primero, sin arriesgar la entrega de Mobilize
   Salida", Flujo de Mobilize, ATA "—" sin abandonos); checklist (ATA y
   login); capturas de la guía regeneradas con la demo (Flujo de Llamadas,
   8 pestañas, login con logo).
+
+## Fase 146 (continuación) — "OK auditoría", logo junto a "SInCo" y tildes (v1.37.0, 2026-10-14)
+
+- **#426 y #427 mergeados** ("OK auditoría"): pruebas de tiempos de la Fase
+  136 con reloj simulado, `*.pem`/`*.key` en `.gitignore` y
+  `revision-final.js` recorriendo el mes de control.
+- **"OK seed tipificación" NO aplicado, y por qué**: al prepararlo apareció
+  que el hallazgo de la auditoría era equivocado. El tablero destapa sola
+  cada pestaña oculta que ya tiene datos (`_gdBootstrap`,
+  `dashboard-generic.js`), así que Tipificación se ve en producción con
+  `oculta: true` en la configuración, igual que en una base nueva con
+  datos. Quitar `oculta` del seed sin migración habría dejado el seed
+  distinto de producción. Se corrigió `docs/pendientes.md`.
+- **Logo junto a "SInCo"** (pedido de Edwin, reunión del 14/10): login y
+  bienvenida con el isotipo a la izquierda, misma línea, conjunto centrado
+  (`.marca-sinco`). Login: color en claro / blanco en oscuro, 38×36;
+  bienvenida: blanco, 46×44. Medido en 375 y 1440 px, claro y oscuro: logo a
+  la izquierda, centros verticales alineados, conjunto centrado, 0 desborde,
+  0 saltos con la imagen retrasada 700 ms, 0 errores de consola.
+- **Tildes**: 131 textos visibles de `public/index.html` (texto entre
+  etiquetas, `placeholder`, `aria-label`, `title`, `alt`), sin tocar
+  `id`/`for`/`name`/`value`/`onclick`/`data-*` (verificado con un diff de
+  atributos). Ningún `<option>` sin `value` cambió. Ninguna prueba, ni
+  `revision-final.js`, ni el chequeo de pantallas buscaba los textos viejos.
+  Prueba nueva que falla si vuelve un texto visible sin tilde (contraprueba
+  hecha). Quedan sin tocar los textos que arma el JS (varios son
+  encabezados de plantillas/exportaciones que Edwin usa).
+- Capturas de la guía regeneradas (login y bienvenida nuevos).

@@ -99,18 +99,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv`
   18) — no se tocan sin que lo pidas explícitamente.
 
-- **Tipificación oculta en el seed, visible en producción** (Fase 146,
-  auditoría) — Prioridad MEDIA. En `server/dashboard-config-seed.js` la
-  pestaña Tipificación está `oculta: true` en ORLANT y en MOBILIZE, pero en
-  producción se ve en los dos (y en Mobilize va después de Calidad): alguien
-  la destapó desde el constructor de dashboards y no quedó anotado. Una base
-  creada desde cero la dejaría oculta. Cómo se cierra: decides si el seed
-  debe quedar igual a producción (quitar `oculta` y fijar el orden; ajustar
-  las pruebas que hoy exigen que siga oculta) — "OK seed tipificación".
-- **Textos sin tilde en la interfaz** (Fase 146) — Prioridad BAJA. ~65
-  palabras visibles en `public/index.html` sin tilde ("Cerrar Sesion",
-  "Gestion", "Campana", "Codificacion", "modulo", "automaticamente"…), más
-  las que arman los JS. Cambio visible: se prepara en un PR y espera tu OK.
+- **Textos sin tilde que arma el JavaScript** (Fase 146) — Prioridad BAJA.
+  Los textos fijos de `public/index.html` ya llevan tilde (v1.37.0). Quedan
+  los que arman los archivos `public/js/*.js` (títulos de tablas, avisos,
+  encabezados de exportación). Varios son **encabezados de plantillas y
+  exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
+  "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
 
@@ -311,6 +305,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   con datos antes de recorrer.
 - **`*.pem` no está en `.gitignore`** (Fase 146) — Prioridad BAJA; hoy no
   hay ninguno en el repo.
+
+- **Corrección (Fase 146)**: el hallazgo "Tipificación oculta en el seed pero
+  visible en producción" era un **error del diagnóstico**. El tablero destapa
+  sola cada pestaña oculta que ya tiene datos (`dashboard-generic.js`,
+  `_gdBootstrap`: Tipificación, Salida, Agendamiento, Inasistencia,
+  Efectividad), así que `oculta: true` en el seed es lo correcto: sin datos
+  no se muestra, con datos sí. No hay diferencia entre seed y producción y
+  no se cambió nada.
 
 ## Decisiones de esta fase (sin pendiente — ya resueltas, quedan aquí solo como referencia)
 
