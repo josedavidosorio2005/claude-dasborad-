@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.35.0 — Octubre 2026
+
+**Fase 145: ajustes de Mobilize que pidió Edwin para la entrega.**
+
+- En Mobilize → Flujo de Llamadas, "ASA y AHT" se separó en dos
+  sub-pestañas: **"ASA y ATA"** (igual a la que ya tiene Orlant) y
+  **"AHT"** aparte. El orden queda: Flujo de Llamadas, Nivel de Servicio,
+  Abandono, ASA y ATA, AHT.
+- En septiembre, "ASA y ATA" muestra ATA en 0:00 porque la plantilla de
+  Flujo de Mobilize trae esa columna en 0 todos los días. La plataforma lo
+  muestra tal cual, sin ocultarlo ni inventar otro valor.
+- La pestaña "Llamadas Únicas" ahora se llama **"Llamadas Únicas y de
+  Salida"**. Los números no cambian.
+- El tablero de Mobilize ya no muestra el aviso amarillo de "todavía no
+  tiene datos cargados", que salía aunque sí había datos.
+- En la torta de Tipificación (Orlant y Mobilize) los porcentajes se leen
+  bien en todas las porciones: letra oscura sobre los colores claros y
+  blanca sobre los oscuros. Los colores de la torta no cambian.
+
 ## v1.34.4 — Octubre 2026
 
 Seis mejoras de la Fase 144 que se publicaron juntas en esta versión.

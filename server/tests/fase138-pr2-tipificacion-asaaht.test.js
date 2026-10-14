@@ -53,7 +53,7 @@ test('dashboard-config-seed.js: el tab de Tipificacion de ORLANT sigue oculto (s
   assert.equal(t.panels[0].titulo, 'Tipificación');
 });
 
-test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaaht" en vez de "asa"+"aht" por separado', () => {
+test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaata" + "aht" (Fase 145), sin "asaaht" ni "asa" suelto', () => {
   // Fase 139: "flujo" vuelve a tener SOLO el trafico_combo (Llamadas Unicas
   // tiene su propio tab); se sigue buscando por tipo, y ademas se exige que
   // sea el unico panel.
@@ -62,10 +62,12 @@ test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaaht" en 
   assert.deepEqual(t.panels.map((p) => p.tipo), ['trafico_combo']);
   const panel = t.panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
-  assert.ok(keys.indexOf('asaaht') !== -1, 'falta la sub-pestaña combinada "asaaht"');
+  // Fase 145 (pedido de Edwin 14/10): "ASA y AHT" se reemplaza por "ASA y
+  // ATA" + "AHT" aparte.
+  assert.equal(keys.indexOf('asaaht'), -1, '"asaaht" ya no deberia estar (Fase 145)');
   assert.equal(keys.indexOf('asa'), -1, '"asa" por separado ya no deberia estar');
-  assert.equal(keys.indexOf('aht'), -1, '"aht" por separado ya no deberia estar');
-  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaaht']);
+  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht']);
+  assert.deepEqual(panel.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT']);
 });
 
 // ── Parte 2: trafico.js (global-en-navegador, igual patron que fase132-08) ─
@@ -187,7 +189,7 @@ test('migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1: no t
   assert.deepEqual(calidad.panels, LAYOUT_ORLANT_VIEJO.tabs[1].panels);
 });
 
-test('migracion dashboards_config_mobilize_flujo_asaaht_v1: el panel de MOBILIZE queda con "asaaht" en vez de "asa"+"aht"', () => {
+test('migraciones asaaht_v1 + asaata_aht_v1 (Fase 145): el panel viejo de MOBILIZE ("asa"+"aht") termina en "asaata"+"aht", igual que el seed', () => {
   const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
   const layout = JSON.parse(row.layout);
   // Fase 138 PR3 / Fase 139: las migraciones de llamadas_unicas_panel (misma
@@ -195,7 +197,7 @@ test('migracion dashboards_config_mobilize_flujo_asaaht_v1: el panel de MOBILIZE
   // busca el trafico_combo por tipo en vez de asumir panels[0].
   const panel = layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
-  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaaht']);
+  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht']);
   // resumenOcultar/resumenPorSeccion/subtabsTitulos (otras opciones del
   // mismo panel) no se pierden en el reemplazo.
   assert.deepEqual(panel.resumenOcultar, ['tasaAbandono', 'nivelServicio']);

@@ -1080,7 +1080,10 @@ function renderGenericBanner(){
   var hayCargas = Object.keys(_gd.cargas).some(function(s){ return (_gd.cargas[s]||[]).length; });
   var esModulo = _gd.cliente === 'INVENTARIO' || _gd.cliente === 'GERENCIA';
   var ex = document.getElementById('gd-nodata-banner');
-  if(hayCargas || esModulo){ if(ex) ex.remove(); return; }
+  // Fase 145: un dashboard solo de paneles autonomos (Mobilize) nunca
+  // muestra este aviso -- ver gdMostrarAvisoSinCargas (mes-global-logic.js).
+  var layoutGd = (_gd.config && _gd.config.layout) || {};
+  if(esModulo || !gdMostrarAvisoSinCargas(layoutGd, hayCargas)){ if(ex) ex.remove(); return; }
   if(ex) return;
   var d = document.createElement('div');
   d.id = 'gd-nodata-banner';

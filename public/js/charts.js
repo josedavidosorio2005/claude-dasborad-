@@ -223,12 +223,30 @@ function loDatalabelsAuto(o, formatter){
   if(formatter) o.plugins.datalabels.formatter = formatter;
   return o;
 }
+// Fase 145 (pedido de Edwin): el % de cada porcion de una torta ya no es
+// siempre blanco -- se elige por contraste con el color de ESA porcion
+// (contrasteTextoSobreRelleno, contraste-logic.js): texto oscuro sobre
+// porciones claras, blanco sobre oscuras, y un contorno fino del otro color
+// solo si ninguno de los dos llega a 4.5:1. CHART_DL_OSCURO = --c-bg del
+// tema oscuro (#0a1e25), el tono mas oscuro del sistema: es el que mas
+// porciones deja en >=4.5:1 (con --c-text #2a4a58 casi ninguna llegaba).
+// La paleta y la torta no cambian.
+var CHART_DL_OSCURO='#0a1e25';
+function _loPieDlEleccion(ctx){
+  var bg = ctx && ctx.dataset ? ctx.dataset.backgroundColor : null;
+  var relleno = Array.isArray(bg) ? bg[ctx.dataIndex] : bg;
+  if(typeof contrasteTextoSobreRelleno !== 'function') return { color:'#fff', halo:null };
+  return contrasteTextoSobreRelleno(relleno, CHART_DL_OSCURO, '#ffffff');
+}
+function _loPieDlColor(ctx){ return _loPieDlEleccion(ctx).color; }
+function _loPieDlHalo(ctx){ return _loPieDlEleccion(ctx).halo || 'transparent'; }
+function _loPieDlHaloAncho(ctx){ return _loPieDlEleccion(ctx).halo ? 3 : 0; }
 function loPie(t){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{
       legend:{position:'right',labels:{font:{size:12},boxWidth:10,padding:4}},
       title:{display:!!t,text:t,font:{size:12},color:CD},
-      datalabels:{display:true,color:'#fff',font:{size:12,weight:'bold'}, formatter:_loPctDeTotal}
+      datalabels:{display:true,color:_loPieDlColor,textStrokeColor:_loPieDlHalo,textStrokeWidth:_loPieDlHaloAncho,font:{size:12,weight:'bold'}, formatter:_loPctDeTotal}
     }};
 }
 // ═══════════════════════════════════════════════════════════

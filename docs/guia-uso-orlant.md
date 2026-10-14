@@ -391,10 +391,20 @@ evita que las cargas futuras se unifiquen de la misma forma.
   referencia, "Resumen por Asesor" de consulta) para cuando hay muchos
   monitoreos para subir de una vez.
 
+### Flujo de Llamadas (Mobilize)
+
+- **Sub-pestañas**: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y
+  ATA** (tiempo promedio de respuesta y de abandono, juntos) y **AHT**
+  (tiempo promedio de atención, aparte). Cada una trae arriba su número
+  del período elegido.
+- **ATA en 0:00**: si la plantilla de Flujo trae la columna ATA en 0 (como
+  la de septiembre de Mobilize), la plataforma muestra 0:00 tal cual —
+  no lo oculta ni lo calcula de otra forma.
+
 ### Llamadas Únicas (Mobilize)
 
 - **Dónde se ve**: en el tablero de Mobilize, pestaña propia **"Llamadas
-  Únicas"** (justo después de Flujo de Llamadas). Cuenta una sola vez
+  Únicas y de Salida"** (justo después de Flujo de Llamadas). Cuenta una sola vez
   cada teléfono por día, así que no coincide con Flujo de Llamadas, que
   cuenta todas las llamadas de la cola.
 - **Qué archivo**: el mismo patrón que las demás bases de Wolkvox, pero
@@ -450,7 +460,7 @@ evita que las cargas futuras se unifiquen de la misma forma.
 
 ### Llamadas de salida (Mobilize)
 
-- **Dónde se ve**: en la misma pestaña "Llamadas Únicas", mitad derecha
+- **Dónde se ve**: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha
   (las de ingreso quedan a la izquierda; en el celular, una debajo de la
   otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no
   conectadas y Llamadas de salida conectadas, una gráfica de barras por

@@ -1222,6 +1222,17 @@ function _traficoRenderContenido(campana, sede, i){
       });
       var asaProm = pesoAsa > 0 ? Math.round((sumaAsa / pesoAsa) * 100) / 100 : null;
       var ahtProm = traficoAhtPromedioPeriodo(filtradas);
+      // Fase 145 (Mobilize, "ASA y ATA"): ATA es tiempo por llamada
+      // ABANDONADA -- mismo ponderado que traficoAgregar (PONDERADOS_POR_
+      // ABANDONADAS, trafico-logic.js), nunca un promedio simple. Si la
+      // plantilla trae ATA en 0 (Flujo de Mobilize de septiembre), se ve
+      // 0:00 tal cual: no se oculta ni se inventa.
+      var pesoAta = 0, sumaAta = 0;
+      filtradas.forEach(function(f){
+        var w = Number(f.llamadasAbandonadas) || 0;
+        if(f.ataSegundos != null && w > 0){ sumaAta += f.ataSegundos * w; pesoAta += w; }
+      });
+      var ataProm = pesoAta > 0 ? Math.round((sumaAta / pesoAta) * 100) / 100 : null;
       var htmlSec = '';
       if(activoSec === 'sl'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de Servicio del periodo</div></div>';
@@ -1232,6 +1243,9 @@ function _traficoRenderContenido(campana, sede, i){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
       } else if(activoSec === 'aht'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
+      } else if(activoSec === 'asaata'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>' +
+          '<div class="aurora-kpi"><div class="kv">'+(ataProm===null?'—':_traficoFmtTiempoMMSS(ataProm))+'</div><div class="kl">ATA promedio del periodo</div></div>';
       } else if(activoSec === 'asaaht'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>' +
           '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
