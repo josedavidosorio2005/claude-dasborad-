@@ -226,8 +226,10 @@ verificación:
 - [ ] En Mobilize → **Flujo de Llamadas** se ven 5 sub-pestañas, en este
       orden: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y ATA**
       y **AHT** (antes "ASA y AHT" iban juntos).
-- [ ] "ASA y ATA" muestra ATA en **0:00** en septiembre 2026: la plantilla
-      de Flujo de Mobilize trae la columna ATA en 0 en todos los días.
+- [ ] "ASA y ATA" muestra ATA como **"—"** en septiembre 2026: la
+      plantilla de Flujo de Mobilize trae ATA en 0 y **0 llamadas
+      abandonadas** ese mes, y sin abandonos no hay promedio de ATA
+      (corregido en la Fase 146; antes esta línea decía "0:00").
 - [ ] "AHT" muestra su propio promedio y su línea de tendencia.
 - [ ] La pestaña que antes decía "Llamadas Únicas" ahora dice **"Llamadas
       Únicas y de Salida"** (los números no cambian: 88 / 0 / 88 de
@@ -237,3 +239,12 @@ verificación:
 - [ ] En **Tipificación** (Orlant y Mobilize) los porcentajes de la torta
       se leen bien en todas las porciones: letra oscura sobre los colores
       claros y blanca sobre los oscuros, en tema claro y oscuro.
+- [ ] La pantalla de ingreso muestra el logo de InConexion dentro de la
+      tarjeta, encima de "SInCo" (a color en tema claro, blanco en oscuro),
+      y la tarjeta no se mueve mientras carga. El logo pequeño de la esquina
+      sigue igual.
+- [ ] En toda la plataforma dice **"Contraseña"** (con ñ): ingreso, crear
+      usuario, "Cambiar mi contraseña", "Contraseña Actual", "Nueva
+      Contraseña" y "Confirmar Nueva Contraseña".
+- [ ] En Mobilize → Calidad, mientras no haya monitoreos, dice "Todavía no
+      hay monitoreos de calidad para Mobilize."

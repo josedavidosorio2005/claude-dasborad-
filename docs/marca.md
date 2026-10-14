@@ -1,4 +1,7 @@
-# Marca InConexion® (Fase 132)
+# Marca InConexion® (Fase 132, al día en la Fase 146)
+
+La plataforma se llama **SInCo** (Sistema de Información InConexión); la
+marca de la empresa es **InConexion®** (sin tilde, con ®).
 
 Dónde viven los archivos de marca y los tokens de color/tipografía, para
 no tener que ir al código cada vez. Los originales de diseño (PNG a
@@ -10,12 +13,18 @@ fuera del repo, en `C:\Users\filid\Documents\datos-inconexion\marca\`.
 Generados desde los originales con `sharp` (resize + PNG optimizado, sin
 metadatos). 8 archivos, 1x + @2x cada uno:
 
-| Archivo | Uso |
+| Archivo | Uso (actualizado Fase 146) |
 |---|---|
-| `logo-horizontal-color.png` (+@2x) | Login, tema **claro** (la tarjeta es blanca) |
-| `logo-horizontal-blanco.png` (+@2x) | Login tema **oscuro** (tarjeta `#132c35`) y pantalla de bienvenida (`user-page`, fondo degradado oscuro fijo en los 2 temas) |
-| `isotipo-blanco.png` (+@2x) | Navbar de las 4 vistas con navbar (Admin, Cliente, Asesor, Supervisor) — fondo siempre `var(--c-brand)` (teal fijo, no cambia con el tema) |
-| `isotipo-color.png` (+@2x) | Reservado para un futuro avatar — sin uso en la UI todavía |
+| `isotipo-color.png` (+@2x) | **Login, tema claro**: dentro de la tarjeta, centrado encima de "SInCo", 48 px de alto (Fase 145) |
+| `isotipo-blanco.png` (+@2x) | **Login, tema oscuro** (mismo lugar) y navbar de las 4 vistas con navbar (Admin, Cliente, Asesor, Supervisor) — fondo de la navbar siempre teal fijo |
+| `logo-horizontal-blanco.png` (+@2x) | Logo pequeño en la esquina inferior derecha del login y de la bienvenida (`.marca-esquina`, 120×24, fondo teal en los 2 temas) |
+| `logo-horizontal-color.png` (+@2x) | Sin uso en la interfaz hoy (reservado) |
+
+El isotipo del login tiene alto fijo reservado por CSS (`.login-isotipo`)
+y `width`/`height` en cada `<img>`, así la tarjeta no salta mientras
+carga la imagen. El tema se fija antes del primer dibujo, así que nunca se
+ve el isotipo del otro tema. En la bienvenida **no** se repite el isotipo:
+ya está en la navbar, y el de color casi no se distingue sobre su fondo.
 
 El favicon (`public/favicon.ico` + `favicon-32/180/192.png`) sale de
 `isotipo-color-sobre-fondo-oscuro.png` (ya trae su propio fondo teal

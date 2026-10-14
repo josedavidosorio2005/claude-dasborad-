@@ -1,4 +1,4 @@
-# Procedimiento de carga mensual (ORLANT)
+# Procedimiento de carga mensual (ORLANT y Mobilize)
 
 > Guía corta para quien va a subir un mes nuevo de datos a producción
 > (Edwin, Jairo o quien haga la carga). En español simple, sin nada
@@ -42,6 +42,24 @@ pestañas a medias:
 | 6 | Inasistencia | Inasistencia |
 | 7 | Efectividad de Citas Atendidas | Efectividad de Citas |
 | 8 | Salida (Llamadas y WhatsApp) | Llamadas y WhatsApp de salida |
+| 9 | WhatsApp tiempos de respuesta (detalle por conversación, Fase 142) | Tráfico de WhatsApp → Nivel de Servicio (rangos de minutos) |
+
+**Mobilize** (mismo botón "Cargar Datos", cliente **MOBILIZE**):
+
+| # | Base | Pestaña que alimenta |
+|---|---|---|
+| 1 | Flujo de Llamadas (plantilla de Flujo, hoja HistQueue) | Flujo de Llamadas (5 sub-pestañas) |
+| 2 | Tipificación (CDR de Wolkvox) | Tipificación |
+| 3 | Llamadas Únicas (ingreso: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME) | Llamadas Únicas y de Salida → mitad izquierda |
+| 4 | Llamadas de salida (AGENT_NAME, DATE, TELEPHONE, SKILL_ID, DESCRIPTION_COD_ACT) | Llamadas Únicas y de Salida → mitad derecha |
+
+En Llamadas Únicas y en Llamadas de salida el **teléfono se usa solo en el
+navegador** para contar una vez cada número por día; nunca se envía ni se
+guarda. Las 3 cargas nuevas (Llamadas Únicas, Llamadas de salida y WhatsApp
+tiempos) reemplazan por mes o por rango de fechas y muestran el impacto
+(cuántas filas se reemplazan) **antes** de guardar. Detalle de columnas y
+reglas: `docs/guia-uso-orlant.md` → secciones "Llamadas Únicas",
+"Llamadas de salida" y "WhatsApp tiempos de respuesta".
 
 Todas se suben desde la misma pantalla: **"Cargar Datos"** (menú
 principal) → cliente **ORLANT** → descarga la **plantilla consolidada**
