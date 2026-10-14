@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.9 — Octubre 2026
+
+**Fase 144 (A3b): las demás ventanas también se usan bien con el teclado.**
+
+- Lo que ya se arregló para el tablero, Cargar Datos y Calidad ahora también
+  aplica a las ventanas de crear o editar usuario, cambiar contraseña,
+  eliminar usuario, Inventario (ítem y movimiento), Gestión Humana, los
+  indicadores de Gerencia, el selector de clientes y "Cambiar mi
+  contraseña".
+- Al abrir una de ellas, la tecla Tab se queda dentro de la ventana, la
+  tecla Escape la cierra y el cursor vuelve al botón que la abrió.
+- Se ven y funcionan igual con el ratón: clic afuera sigue cerrándolas.
+
 ## v1.34.3 — Octubre 2026
 
 **Fase 144 (A3): las ventanas (tablero, Cargar Datos, Calidad…) se usan bien con el teclado.**

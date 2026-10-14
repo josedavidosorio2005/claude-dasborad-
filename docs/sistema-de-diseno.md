@@ -390,9 +390,16 @@ lo que se agregue después:
   ↑/↓/Inicio/Fin, Tab o Escape lo cierran y devuelven el foco al botón. Se
   agrega dentro del overlay (no en `<body>`), para no quedar fuera del
   diálogo.
-- Pendiente (no entró en A3): los otros 10 diálogos que no usan
-  `motion-helpers.js` (Inventario, Gerencia, Gestión Humana, selector de
-  clientes y las ventanas `.modal-overlay` de usuario/ítem/KPI…).
+- **Diálogos sin animación (Fase 144, A3b):** los 9 que se abren con
+  `classList.add/remove('show')` (selector de clientes, usuario,
+  contraseña, eliminar, ítem y movimiento de Inventario, persona de Gestión
+  Humana, KPI de Gerencia y "Cambiar mi contraseña") llevan el mismo
+  `role="dialog" aria-modal="true" aria-labelledby` (su `<h3>`) y el mismo
+  trato de foco/`inert`/Tab/Escape. No se tocan sus open/close: un
+  `MutationObserver` sobre la clase `show` (`MOTION_DIALOGOS_SIMPLES` en
+  `motion-helpers.js`) llama `motionAbrirDialogo`/`motionCerrarDialogo`, sin
+  agregarles animación. Un diálogo nuevo de este tipo se agrega a ese mapa
+  con su función de cierre.
 
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
