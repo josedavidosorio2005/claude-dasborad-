@@ -444,6 +444,18 @@ del dashboard, el selector de MES, las pestañas. Sub-pestañas y botones
 chicos de tabla (`.btn-sm`) se quedan como están — son secundarios y muy
 numerosos en una fila.
 
+Checkbox y `<summary>` sueltos dentro de un filtro (Fase 144, A8): el área
+clicable es la etiqueta entera — `.filtro-check` (`inline-flex`,
+`min-height:24px`) en el `<label>` que envuelve el checkbox y
+`.filtro-summary` (`padding:4px 0`) en el `<summary>`. No cambian letra
+ni color.
+
+**Semáforo en tarjetas KPI (Fase 144, A8):** en `.aurora-kpi` el semáforo es
+solo el borde izquierdo (`.aurora-kpi.kpi-green`, etc.). La regla suelta
+`.kpi-green/org/red/pur` (color + negrita) es para `<span>` y `<td>` y
+excluye la tarjeta con `:not(:where(.aurora-kpi))`; así todas las etiquetas
+de una fila de KPI se ven iguales.
+
 ## Nombres de campos y avisos (WCAG 1.3.1/4.1.2/4.1.3, Fase 144 A7)
 
 - **Todo campo tiene nombre accesible.** Si hay texto visible encima, va

@@ -239,7 +239,7 @@ async function _traficoWppRenderPanel(p, i) {
         '<div><label for="tww-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tww-f-gran-'+i+'">' + ['mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
         '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
-          '<label style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
+          '<label class="filtro-check" style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoWppAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
           '<button class="btn-sm" onclick="_traficoWppExportExcel('+i+')">Excel</button>' +

@@ -522,7 +522,7 @@ function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta
         (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias '+esc(etiquetaPlural)+' (ver "Comparar" abajo)</option>' : '') +
       '</select></div>' +
     '<details id="'+prefijo+'-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
-      '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
+      '<summary class="filtro-summary" style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
       '<div style="margin-top:8px;max-width:340px">' +
         '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" aria-label="Comparar varias '+esc(etiquetaPlural)+' especificas" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
           datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
@@ -650,7 +650,7 @@ async function _traficoRenderPanel(p, i){
         '<div><label for="tv-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tv-f-gran-'+i+'">' + ['dia','mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
         '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
-          '<label style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
+          '<label class="filtro-check" style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
           '<button class="btn-sm" onclick="_traficoExportExcel('+i+')">Excel</button>' +
