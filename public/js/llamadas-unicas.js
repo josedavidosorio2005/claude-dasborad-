@@ -91,16 +91,16 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
 
   var esInterno = _llamadasUnicasEsInterno();
   var filtroAsesor = esInterno
-    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Asesor</label>' +
+    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="lu-f-agente-' + i + '">Asesor</label>' +
       '<select id="lu-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
     : '';
 
   mitad.innerHTML =
     _llamadasUnicasTituloHtml() +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-      '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-      '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
-      '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
+      '<div class="ig" style="margin-bottom:0"><label for="lu-f-desde-' + i + '">Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig" style="margin-bottom:0"><label for="lu-f-hasta-' + i + '">Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="lu-f-skill-' + i + '">Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
       filtroAsesor +
       '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
@@ -198,14 +198,14 @@ async function _llamadasSalidaRenderMitad(campana, i) {
   var estado = _llamadasSalidaEstado[campana];
   var esInterno = _llamadasUnicasEsInterno();
   var filtroAsesor = esInterno
-    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Asesor</label>' +
+    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="ls-f-agente-' + i + '">Asesor</label>' +
       '<select id="ls-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
     : '';
   mitad.innerHTML =
     _llamadasSalidaTituloHtml() +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-      '<div class="ig" style="margin-bottom:0"><label>Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-      '<div class="ig" style="margin-bottom:0"><label>Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig" style="margin-bottom:0"><label for="ls-f-desde-' + i + '">Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig" style="margin-bottom:0"><label for="ls-f-hasta-' + i + '">Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
       filtroAsesor +
       '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +

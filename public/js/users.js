@@ -249,7 +249,7 @@ async function saveUserModal(){
       closeUserModal();
       renderUsers(document.getElementById('user-search').value); renderRoles();
       showToast('Usuario creado correctamente');
-    }catch(e){ showToast(e.message); }
+    }catch(e){ showToast(e.message, 'error'); }
 
   } else {
     if(!isFullAdmin()&&!can('editarUsuarios')){showToast('Sin permiso');return;}
@@ -278,7 +278,7 @@ async function saveUserModal(){
       closeUserModal();
       renderUsers(document.getElementById('user-search').value); renderRoles();
       showToast('Usuario actualizado');
-    }catch(e){ showToast(e.message); }
+    }catch(e){ showToast(e.message, 'error'); }
   }
 }
 
@@ -315,7 +315,7 @@ async function savePass(){
     await withButtonLoading(btnP,'Cambiando...',function(){ return apiRequest('PUT','/users/'+id+'/password',{password:np}); });
     closeModal('modal-pass');
     showToast('Contrasena actualizada');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 async function toggleActive(id){
@@ -327,7 +327,7 @@ async function toggleActive(id){
     renderUsers(document.getElementById('user-search').value); renderRoles();
     if(currentRole) renderPermTable(currentRole,document.getElementById('perm-user-search').value);
     showToast(u.active?'Usuario activado':'Usuario suspendido');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 async function confirmDelete(){
@@ -340,7 +340,7 @@ async function confirmDelete(){
     closeModal('modal-delete');
     renderUsers(document.getElementById('user-search').value); renderRoles();
     showToast('Usuario eliminado');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════

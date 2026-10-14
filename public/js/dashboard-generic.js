@@ -319,7 +319,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estadoS = _gdSerieFiltro[key] || {};
     var actual = gdSerieSeleccionada(p.series, estadoS.label);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-serief-'+i+'">' +
+      '<div><label for="gd-serief-'+i+'">Linea</label><select id="gd-serief-'+i+'">' +
         p.series.map(function(s){ return '<option value="'+esc(s.label)+'"'+(actual && actual.label===s.label?' selected':'')+'>'+esc(s.label)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -333,7 +333,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var disponiblesU = gdValoresDistintos(base.filas, base.campo);
     var actualU = gdValorFiltroUnico(disponiblesU, (_gdUnicoFiltro[key]||{}).valor);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-unicof-'+i+'">' +
+      '<div><label for="gd-unicof-'+i+'">Linea</label><select id="gd-unicof-'+i+'">' +
         disponiblesU.map(function(v){ return '<option value="'+esc(v)+'"'+(v===actualU?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -346,7 +346,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estado = _gdCatFiltro[key] || {};
     var incluidas = (estado.incluidas && estado.incluidas.length) ? estado.incluidas : disponibles;
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
+      '<div><label for="gd-catf-'+i+'">Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
         disponibles.map(function(v){ return '<option value="'+esc(v)+'"'+(incluidas.indexOf(v)!==-1?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -360,8 +360,8 @@ function _gdRenderFiltroBar(p, i, tipo){
   var estadoF = _gdFechaFiltro[key] || {};
   var desde = estadoF.desde || minF, hasta = estadoF.hasta || maxF;
   host.innerHTML = '<div class="gd-panel-filtro">' +
-    '<div><label>Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
-    '<div><label>Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-desde-'+i+'">Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-hasta-'+i+'">Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
     '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
   '</div>';
 }
@@ -1495,14 +1495,14 @@ function _gdRenderCalidad(p, i){
     var fEl = document.getElementById('gd-f'+i);
     if(fEl){
       fEl.innerHTML = '<div class="gd-panel-filtro">' +
-        '<div><label>Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
+        '<div><label for="cd-f-asesor-'+i+'">Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
           // Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL del
           // asesor (los filtros tienen que seguir funcionando igual); solo
           // el texto visible pasa por textoFormatoNombre.
           asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(a))+'</option>'; }).join('') +
         '</select></div>' +
-        '<div><label>Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label>Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="cd-f-desde-'+i+'">Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="cd-f-hasta-'+i+'">Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<button class="btn-sm" data-calapply data-camp="'+esc(camp)+'" data-i="'+i+'">Aplicar filtros</button>' +
       '</div>';
     }

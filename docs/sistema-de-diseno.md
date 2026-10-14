@@ -392,6 +392,24 @@ del dashboard, el selector de MES, las pestañas. Sub-pestañas y botones
 chicos de tabla (`.btn-sm`) se quedan como están — son secundarios y muy
 numerosos en una fila.
 
+## Nombres de campos y avisos (WCAG 1.3.1/4.1.2/4.1.3, Fase 144 A7)
+
+- **Todo campo tiene nombre accesible.** Si hay texto visible encima, va
+  `<label for="<id del campo>">` (en los filtros que arman los JS, el
+  `for` repite la misma expresion del `id`, ej. `for="tv-f-desde-'+i+'"`).
+  Si el campo no tiene texto visible propio (buscadores, selectores de una
+  tabla, el multiple de "Comparar"), `aria-label` con un texto corto. Nunca
+  se usa el `placeholder` como nombre. Iconos decorativos al lado
+  (la lupa) con `aria-hidden="true"`.
+- **Avisos (toast).** `#toast` es `role="status" aria-live="polite"`;
+  `showToast(msg, tipo)` lo cambia a `role="alert"` (interrumpe) cuando
+  es error: `tipo === 'error'` o el texto empieza con "No se pudo…" /
+  "Error…" (`toast-logic.js`). Los `catch` que muestran `e.message`
+  llaman `showToast(e.message, 'error')`. El aspecto no cambia.
+- Prueba: `server/tests/fase144-a7-etiquetas-toast.test.js` revisa
+  `index.html` y todos los JS de vistas: un campo nuevo sin nombre la
+  pone en rojo.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/

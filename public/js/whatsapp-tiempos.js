@@ -87,10 +87,10 @@ async function _wppTiemposRender(i, campana) {
 
   content.innerHTML = titulo +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-      '<div class="ig" style="min-width:160px;margin-bottom:0"><label>Mes</label><select id="wtt-f-mes-' + i + '">' +
+      '<div class="ig" style="min-width:160px;margin-bottom:0"><label for="wtt-f-mes-' + i + '">Mes</label><select id="wtt-f-mes-' + i + '">' +
         op.meses.slice().reverse().map(function (m) { return '<option value="' + esc(m) + '"' + (m === estado.mes ? ' selected' : '') + '>' + esc(_wppTiemposMesLbl(m)) + '</option>'; }).join('') +
       '</select></div>' +
-      '<div class="ig" style="min-width:200px;margin-bottom:0"><label>Cola</label><select id="wtt-f-skill-' + i + '"><option value="">Todas</option>' +
+      '<div class="ig" style="min-width:200px;margin-bottom:0"><label for="wtt-f-skill-' + i + '">Cola</label><select id="wtt-f-skill-' + i + '"><option value="">Todas</option>' +
         (op.skills || []).map(function (s) { return '<option value="' + esc(s) + '"' + (s === estado.skill ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
       '</select></div>' +
       '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_wppTiemposAplicar(' + i + ')">Aplicar filtros</button></div>' +

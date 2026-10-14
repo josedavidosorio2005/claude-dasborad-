@@ -89,7 +89,7 @@ async function openCargas(){
   try{
     var r = await apiRequest('GET','/dashboard/clientes');
     _cargasClientes = (r && r.clientes) || [];
-  }catch(e){ _cargasClientes = []; showToast(e.message); }
+  }catch(e){ _cargasClientes = []; showToast(e.message, 'error'); }
   try{
     var plantillas = await apiRequest('GET','/calidad/plantillas') || [];
     _cargasCalidadPorCampana = {};
@@ -311,7 +311,7 @@ async function onCargaClienteChange(){
   _cargasPlan = [];
   if(cliente){
     try{ _cargasSpec = await apiRequest('GET','/dashboard/secciones/'+encodeURIComponent(cliente)); }
-    catch(e){ showToast(e.message); }
+    catch(e){ showToast(e.message, 'error'); }
   }
   var calidad = cliente ? (_cargasCalidadPorCampana[cliente] || null) : null;
   var calidadCols = calidad ? _cargasCalidadColumnas(calidad.items) : null;
@@ -1203,7 +1203,7 @@ async function renderCargasExistentes(){
 async function eliminarCarga(id){
   if(!confirm('Eliminar esta carga? El dashboard dejara de mostrar esos datos.')) return;
   try{ await apiRequest('DELETE','/dashboard/cargas/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Carga eliminada');
   renderCargasExistentes();
 }

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.7 — Octubre 2026
+
+**Fase 144 (A7): los lectores de pantalla leen el nombre de cada campo y los avisos.**
+
+- Cada casilla de filtro (Desde, Hasta, Mes, Agente, Sede, Cola, los
+  buscadores, Cargar Datos, el inicio de sesión, etc.) quedó unida a su
+  título. Para quien usa un lector de pantalla, ahora dice "Desde" o
+  "Contraseña" en vez de solo "campo de fecha" o "campo de texto". Y al
+  hacer clic en el título, el cursor se pone en la casilla.
+- Los avisos que salen abajo a la derecha ("Guardado", "No se pudo…")
+  ahora también se leen en voz alta; los de error se anuncian de inmediato.
+- Ningún texto, color, número ni filtro cambia: se ve igual que antes.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**

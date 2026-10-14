@@ -58,7 +58,7 @@ async function procesarArchivoMonitoreos(input){
   }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
   var res = cmParseRows(aoa, items);
-  if(res.error){ showToast(res.error); input.value=''; return; }
+  if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _cmParsed = { campana: _ccampana, archivoNombre: file.name, filas: res.filas };
   _renderPreviewMonitoreos(file.name, res.filas, res.avisos||[]);
@@ -92,7 +92,7 @@ async function guardarMonitoreosMasivo(){
   var resp;
   try{
     resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/monitoreos/bulk', _cmParsed); });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast('Carga guardada: '+(resp.insertadas||0)+' nueva(s), '+(resp.actualizadas||0)+' actualizada(s), '+(resp.omitidas||0)+' omitida(s).');
   cancelarPreviewMonitoreos();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
