@@ -233,8 +233,14 @@ async function posicionesPestanasAlAbrir(page, cliente) {
           hallazgos.push({ tipo: 'salto-pestanas', ctx: ctxActual, posiciones: vistas });
           await pSalto.screenshot({ path: path.join(CAPTURAS_DIR, `fallo-salto-${orden.join('-')}-${cliente}.png`) }).catch(() => {});
         }
-        if (cliente === 'MOBILIZE' && vistas.length && !vistas[0].aviso) {
-          hallazgos.push({ tipo: 'salto-pestanas-aviso-no-estaba-en-primer-dibujo', ctx: ctxActual });
+        // Fase 145 (pedido de Edwin): Mobilize sin cargas genericas (igual que
+        // en produccion) ya NO muestra el aviso amarillo "todavia no tiene
+        // datos cargados" -- sus paneles son todos autonomos y traen su propio
+        // aviso de "sin datos" (gdMostrarAvisoSinCargas). Antes este chequeo
+        // exigia el aviso en el primer dibujo; ahora exige que no aparezca en
+        // NINGUN dibujo. El chequeo de salto de pestanas de arriba no cambia.
+        if (cliente === 'MOBILIZE' && vistas.some((v) => v.aviso)) {
+          hallazgos.push({ tipo: 'aviso-falso-sin-datos-en-mobilize', ctx: ctxActual });
         }
         await pSalto.evaluate(() => closeGenericDashboard());
         await pSalto.waitForTimeout(600);
