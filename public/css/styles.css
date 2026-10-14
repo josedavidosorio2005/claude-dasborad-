@@ -1333,6 +1333,26 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
 }
 
+/* ═══ Fase 144 (A1) — rango que se esta mostrando en Trafico ═══
+   Subtitulo "Mostrando: dd/mm/aaaa – dd/mm/aaaa" bajo el titulo de los
+   paneles de Trafico (Llamadas, WhatsApp, Flujo de Mobilize): las tarjetas
+   y la grafica suman ESE rango, no solo el mes del encabezado. Solo tokens
+   existentes (--c-text-muted sobre --c-surface ya mide >=4.5:1). */
+.trafico-rango{margin:-4px 0 10px;font-size:var(--fs-small);color:var(--c-text-muted);font-variant-numeric:tabular-nums;}
+
+/* ═══ Fase 144 (A2) — teclado ═══
+   Las tarjetas de modulo/cliente (.dash-btn, .client-card) ahora reciben
+   foco (role="button" tabindex="0", a11y-teclado.js). Sobre el fondo teal
+   fijo de la bienvenida --c-focus no llega a 3:1 -> mismo criterio que la
+   navbar: anillo con --c-on-brand. */
+#user-page .dash-btn:focus-visible{outline:3px solid var(--c-on-brand);outline-offset:3px;}
+
+/* ═══ Fase 144 (A3) — dialogos ═══
+   Al abrir uno de los 6 dialogos el foco entra a su contenedor
+   (tabindex="-1", motion-helpers.js) para que el lector de pantalla anuncie
+   el titulo. No se le quita el anillo: con teclado, la regla global de
+   [tabindex]:focus-visible marca el dialogo, que es justo donde esta el foco. */
+
 /* ═══ Fase 144 (A4) ═══
    .aurora-tabs: overflow-x:auto obliga al navegador a calcular tambien
    overflow-y:auto, y el margin-bottom:-2px de .atab (que dibuja la pestaña

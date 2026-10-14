@@ -170,7 +170,7 @@ function showAsesorSection(sec){
     var el=document.getElementById('asesor-section-'+s);
     var mel=document.getElementById('asesor-menu-'+s);
     if(el) el.style.display = (s===sec) ? 'block' : 'none';
-    if(mel) mel.classList.toggle('active', s===sec);
+    if(mel){ mel.classList.toggle('active', s===sec); if(s===sec) mel.setAttribute('aria-current','page'); else mel.removeAttribute('aria-current'); }
   });
   if(sec==='calidad') renderMisResultados();
 }
@@ -187,7 +187,7 @@ function showSupervisorSection(sec){
     var el=document.getElementById('supervisor-section-'+s);
     var mel=document.getElementById('supervisor-menu-'+s);
     if(el) el.style.display = (s===sec) ? 'block' : 'none';
-    if(mel) mel.classList.toggle('active', s===sec);
+    if(mel){ mel.classList.toggle('active', s===sec); if(s===sec) mel.setAttribute('aria-current','page'); else mel.removeAttribute('aria-current'); }
   });
   if(sec==='dashboards') renderSupervisorClientsGrid();
   if(sec==='calidad') renderSupervisorMetaTable();
@@ -201,7 +201,7 @@ function renderSupervisorClientsGrid(){
     var hasPerm = currentUser && currentUser.perms['cliente_'+c]===true;
     if(!hasPerm) return;
     var built = BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1;
-    html+='<div class="client-card'+(built?'':' client-soon')+'" data-cliente="'+c+'" onclick="openClientByEl(this)">'+
+    html+='<div class="client-card'+(built?'':' client-soon')+'" data-cliente="'+c+'" role="button" tabindex="0" onclick="openClientByEl(this)">'+
       '<div class="client-name">'+c+'</div>'+
       (built?'':'<div class="client-soon-label">Proximamente</div>')+'</div>';
   });

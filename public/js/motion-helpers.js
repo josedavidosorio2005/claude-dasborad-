@@ -107,6 +107,10 @@ function _motionOverlayDe(modal) {
 function motionAbrirModal(modalId) {
   var modal = document.getElementById(modalId);
   if (!modal) return;
+  // Fase 144 (A3): recordar QUE control abrio el dialogo (para devolverle
+  // el foco al cerrar) -- solo si el foco estaba FUERA de este dialogo.
+  var activo = document.activeElement;
+  if (activo && activo !== document.body && modal.parentElement && typeof modal.parentElement.contains === 'function' && !modal.parentElement.contains(activo)) modal._motionDisparador = activo;
   modal._motionGen = (modal._motionGen || 0) + 1;
   modal.classList.add('motion-modal-hidden');
   requestAnimationFrame(function () {
@@ -120,6 +124,9 @@ function motionAbrirModal(modalId) {
     if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
     MOTION_OVERLAY_STACK.push(overlayId);
   }
+  // Fase 144 (A3): fondo inerte y foco DENTRO del dialogo.
+  _motionAplicarInert();
+  _motionEnfocar(modal, true);
 }
 // motionCerrarModal: reemplaza el closeX() completo -- hace la
 // transicion de salida del modal y SOLO DESPUES llama a cerrarReal()
@@ -146,6 +153,11 @@ function motionCerrarModal(modalId, cerrarReal) {
       if (i > -1) MOTION_OVERLAY_STACK.splice(i, 1);
     }
     cerrarReal();
+    // Fase 144 (A3): se libera el fondo y el foco vuelve al control que
+    // abrio el dialogo (si sigue en pantalla); si no, al dialogo que quede
+    // abierto debajo (ej. Calidad bajo "Supervisar Lider").
+    _motionAplicarInert();
+    _motionDevolverFoco(modal);
   }
   function alTerminarTransicion(e) {
     if (e.target !== modal) return;
@@ -220,6 +232,85 @@ function motionDesregistrarPopupInterno(id, marcarCierre) {
   for (var k = 0; k < MOTION_POPUPS_INTERNOS.length; k++) { if (MOTION_POPUPS_INTERNOS[k].id === id) { i = k; break; } }
   if (i > -1) MOTION_POPUPS_INTERNOS.splice(i, 1);
   if (marcarCierre !== false) MOTION_POPUP_CERRADO_HACE = Date.now();
+}
+
+// ── Fase 144 (A3, hallazgo D04 de la Fase 143): foco de los dialogos ──
+// Antes el foco se quedaba DETRAS del dialogo abierto (31 de 45 Tab
+// recorrian la tabla de Usuarios oculta bajo el tablero) y al cerrar caia
+// en <body>. Ahora, con el patron "Dialog (Modal)" de la WAI-ARIA APG
+// (consultado en Context7, /w3c/wai-aria-practices):
+//  - los 6 overlays llevan role="dialog" aria-modal="true" aria-labelledby
+//    (index.html);
+//  - al abrir: el resto de la pagina queda `inert` (sin foco ni clics) y el
+//    foco entra al dialogo;
+//  - Tab / Shift+Tab dan la vuelta DENTRO del dialogo de mas arriba;
+//  - al cerrar: se libera el fondo y el foco vuelve al control que lo abrio.
+// Solo se marca/desmarca `inert` en elementos que este codigo marco
+// (data-motion-inert): nunca toca un `inert` puesto por otra parte.
+var MOTION_SEL_ENFOCABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+function _motionOverlayArriba() {
+  for (var i = MOTION_OVERLAY_STACK.length - 1; i >= 0; i--) {
+    var ov = document.getElementById(MOTION_OVERLAY_STACK[i]);
+    if (ov && ov.classList.contains('show')) return ov;
+  }
+  return null;
+}
+// Las pruebas de Node (Fases 136/137) ejecutan esta logica con elementos
+// simulados minimos (sin focus/hasAttribute/querySelectorAll): todo lo de
+// foco/inert se salta si el DOM no lo ofrece, igual que el resto del archivo.
+function _motionEnfocar(el, comoContenedor) {
+  if (!el || typeof el.focus !== 'function') return;
+  if (comoContenedor && typeof el.hasAttribute === 'function' && !el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+}
+function _motionAplicarInert() {
+  if (typeof document === 'undefined' || !document.body || typeof document.querySelectorAll !== 'function') return;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-motion-inert]'), function (el) {
+    el.removeAttribute('inert');
+    el.removeAttribute('data-motion-inert');
+  });
+  var arriba = _motionOverlayArriba();
+  if (!arriba) return;
+  // Desde el dialogo hasta <body>: en cada nivel, los HERMANOS quedan
+  // inertes (el dialogo puede estar anidado, ej. #dashcfg-overlay vive
+  // dentro de #admin-page). El aviso #toast nunca: debe seguir oyendose.
+  var nodo = arriba;
+  while (nodo && nodo !== document.body && nodo.parentElement) {
+    Array.prototype.forEach.call(nodo.parentElement.children, function (h) {
+      if (h === nodo || h.tagName === 'SCRIPT' || h.id === 'toast' || h.hasAttribute('inert')) return;
+      h.setAttribute('inert', '');
+      h.setAttribute('data-motion-inert', '1');
+    });
+    nodo = nodo.parentElement;
+  }
+}
+function _motionEnfocables(raiz) {
+  return Array.prototype.filter.call(raiz.querySelectorAll(MOTION_SEL_ENFOCABLE), function (el) {
+    return el.getClientRects().length > 0 && !el.closest('[inert]');
+  });
+}
+function _motionDevolverFoco(modal) {
+  var d = modal._motionDisparador;
+  modal._motionDisparador = null;
+  if (d && d.isConnected && typeof d.getClientRects === 'function' && d.getClientRects().length && !d.closest('[inert]')) {
+    _motionEnfocar(d, false);
+    return;
+  }
+  var arriba = _motionOverlayArriba();
+  if (arriba) _motionEnfocar(arriba.firstElementChild, true);
+}
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    var arriba = _motionOverlayArriba();
+    if (!arriba) return;
+    var lista = _motionEnfocables(arriba);
+    if (!lista.length) { e.preventDefault(); return; }
+    var primero = lista[0], ultimo = lista[lista.length - 1], a = document.activeElement;
+    if (!arriba.contains(a)) { e.preventDefault(); primero.focus(); return; }
+    if (e.shiftKey && (a === primero || a === arriba.firstElementChild)) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && a === ultimo) { e.preventDefault(); primero.focus(); }
+  });
 }
 
 // typeof document !== 'undefined': mismo patron dual navegador/Node que

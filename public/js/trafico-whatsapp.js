@@ -164,7 +164,6 @@ async function _traficoWppRenderPanel(p, i) {
   datosCampana.filas.forEach(function(f){ if(!vistoCola[f.colaWhatsapp]){ vistoCola[f.colaWhatsapp]=true; colas.push(f.colaWhatsapp); } });
   colas.sort();
 
-  var estado = _traficoWppEstadoDesdeURL();
   // Mismo criterio que Llamadas (traficoVentana12Meses, trafico-logic.js):
   // por defecto, los ultimos 12 meses CALENDARIO con datos -- aqui sobre
   // fechaInicio de cada periodo cargado, no sobre un dia individual.
@@ -180,35 +179,36 @@ async function _traficoWppRenderPanel(p, i) {
   // debe arrastrar la ventana por defecto (ver trafico.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
 
-  // Fase 86 (tema 3): mismo patron que trafico.js -- el selector MES de
-  // arriba desliza la ventana de 12 meses (el mes elegido = el FIN de la
-  // ventana). Un periodo "tiene datos" de ese mes si SE SOLAPA con el, no
-  // solo si empieza justo ese dia 1 (mismo criterio que
-  // traficoWppFiltrarFilas).
-  if(_gd.mesSel && _traficoWppMesSincronizado[campana] !== _gd.mesSel){
-    _traficoWppMesSincronizado[campana] = _gd.mesSel;
-    var inicioMesGlobalWpp = _gd.mesSel + '-01', finMesGlobalWpp = _gdFinDeMes(_gd.mesSel);
-    var tieneDatosMesGlobalWpp = datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; });
-    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
-    // cacheado: asi Exportar (_traficoWppDatosExport) queda consistente
-    // con lo que se ve en pantalla -- ver el comentario equivalente en
-    // trafico.js.
-    estado.hasta = finMesGlobalWpp;
-    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
-    _traficoWppEstado[campana] = estado;
-    if(!tieneDatosMesGlobalWpp){
-      _traficoWppSinDatosMesGlobal[campana] = true;
-      _traficoWppAgregadoActual[campana] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
-      host.dataset.campana = campana;
-      return;
-    }
-    _traficoWppSinDatosMesGlobal[campana] = false;
+  // Fase 86 (tema 3) + Fase 144 (A1): mismo patron y misma decision pura que
+  // trafico.js (traficoDecidirRango, trafico-logic.js) -- el rango del mes
+  // elegido se mantiene en todos los dibujos siguientes. Un periodo "tiene
+  // datos" de ese mes si SE SOLAPA con el, no solo si empieza justo ese dia 1
+  // (mismo criterio que traficoWppFiltrarFilas).
+  var inicioMesGlobalWpp = _gd.mesSel ? _gd.mesSel + '-01' : null;
+  var finMesGlobalWpp = _gd.mesSel ? traficoFinDeMes(_gd.mesSel) : null;
+  var decision = traficoDecidirRango({
+    mesSel: _gd.mesSel,
+    mesSincronizado: _traficoWppMesSincronizado[campana],
+    estadoPrevio: _traficoWppEstado[campana] || null,
+    sinDatosPrevio: _traficoWppSinDatosMesGlobal[campana],
+    estadoURL: _traficoWppEstadoDesdeURL(),
+    minDisp: minDisp,
+    maxDisp: maxDisp,
+    tieneDatosMes: !!_gd.mesSel && datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; }),
+  });
+  var estado = decision.estado;
+  if(decision.sincronizar) _traficoWppMesSincronizado[campana] = _gd.mesSel;
+  _traficoWppSinDatosMesGlobal[campana] = decision.sinDatosMes;
+  _traficoWppEstado[campana] = estado;
+  if(decision.sinDatosMes){
+    // Se limpia el agregado cacheado: asi Exportar (_traficoWppDatosExport)
+    // queda consistente con lo que se ve en pantalla (ver trafico.js).
+    _traficoWppAgregadoActual[campana] = [];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
+      _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+    host.dataset.campana = campana;
+    return;
   }
-  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
-  if(!estado.desde) estado.desde = desdeDefault;
-  if(!estado.hasta) estado.hasta = maxDisp;
   // Fase 77: ya NO se sustituye en silencio un rango sin datos por el rango
   // por defecto -- ver el comentario equivalente en trafico.js
   // (_traficoRenderPanel) para el bug real que esto corregia (Septiembre
@@ -231,6 +231,7 @@ async function _traficoWppRenderPanel(p, i) {
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
+      '<p class="trafico-rango" id="tww-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
         '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
@@ -315,6 +316,9 @@ function _traficoWppAplicarFiltros(i){
   _traficoWppGuardarEstadoURL(estado);
   var skillbar = document.getElementById('tww-f-skillbar-'+i);
   if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tww', i, colasDisponibles, estado.skills, 'Cola', 'colas');
+  // Fase 144 (A1): el subtitulo siempre dice el rango que se esta mostrando.
+  var rangoEl = document.getElementById('tww-rango-'+i);
+  if(rangoEl) rangoEl.textContent = traficoRangoTexto(estado.desde, estado.hasta);
   _traficoWppRenderContenido(i);
 }
 

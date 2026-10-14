@@ -22,7 +22,7 @@ function renderDashGrid(){
     var cls='dash-btn '+m.cls;
     var corner='';
     if(m.soon){ cls+=' mod-soon'; corner='<div class="dash-soon">Proximamente</div>'; }
-    return '<div class="'+cls+'" onclick="onDashBtn(\''+m.key+'\')">'+corner+
+    return '<div class="'+cls+'" role="button" tabindex="0" onclick="onDashBtn(\''+m.key+'\')">'+corner+
       '<div class="dash-icon">'+m.icon+'</div>'+
       '<div class="dash-label">'+m.label+'</div>'+
       '<div class="dash-sub">'+m.sub+'</div></div>';
@@ -30,7 +30,7 @@ function renderDashGrid(){
   // Tile extra para quien puede cargar datos operativos de los dashboards.
   var puedeCargar = typeof canLoadData==='function' && canLoadData() && !isFullAdmin();
   if(puedeCargar){
-    grid.innerHTML += '<div class="dash-btn mod-clientes" onclick="openCargas()">'+
+    grid.innerHTML += '<div class="dash-btn mod-clientes" role="button" tabindex="0" onclick="openCargas()">'+
       '<div class="dash-icon">&#128228;</div>'+
       '<div class="dash-label">Cargar Datos</div>'+
       '<div class="dash-sub">Subir Excel de los dashboards</div></div>';
@@ -74,7 +74,7 @@ function openClientsModal(){
     if(!built){ cls+=' client-soon'; tag='<div class="client-soon-label">Proximamente</div>'; }
     // "Proximamente" se deja clicable para explicar el estado -- ya no hay
     // tarjetas sin acceso que mostrar.
-    html+='<div class="'+cls+'" data-cliente="'+c+'" onclick="openClientByEl(this)">'+
+    html+='<div class="'+cls+'" data-cliente="'+c+'" role="button" tabindex="0" onclick="openClientByEl(this)">'+
       '<div class="client-name">'+c+'</div>'+tag+'</div>';
   }
   grid.innerHTML=html||'<div class="empty-state"><div class="es-icon">&#128193;</div>'+
