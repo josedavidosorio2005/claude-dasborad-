@@ -374,6 +374,16 @@ lo que se agregue después:
 - **Animación de entrada en un elemento con `:hover` que usa
   `transform`**: `animation-fill-mode: backwards`, nunca `both`.
 
+## Rango visible en paneles con ventana de fechas (Fase 144, A1)
+
+Un panel cuyas tarjetas suman un **rango** (no solo "el mes" del
+encabezado) dice ese rango bajo su título: `.trafico-rango` ("Mostrando:
+dd/mm/aaaa – dd/mm/aaaa", `--fs-small`, `--c-text-muted`, cifras
+tabulares). El texto sale de `traficoRangoTexto()` (`trafico-logic.js`) y
+se actualiza en cada dibujo y al aplicar filtros. Hoy lo usan Tráfico de
+Llamadas, Tráfico de WhatsApp y Flujo de Llamadas de Mobilize; cualquier
+panel nuevo con ventana de fechas debe mostrarlo igual.
+
 ## Teclado: controles y pestañas (Fase 144, A2)
 
 - **Todo lo clicable se opera con teclado.** Si un control no puede ser un
