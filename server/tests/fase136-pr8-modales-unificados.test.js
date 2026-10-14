@@ -129,10 +129,14 @@ function crearElementoFalso() {
   return ElementoFalso;
 }
 
-test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (EventTarget real de Node, sin jsdom) -- base visible, .motion-modal-hidden es el transitorio', async () => {
-  if (typeof global.requestAnimationFrame !== 'function') {
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-  }
+test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (EventTarget real de Node, sin jsdom) -- base visible, .motion-modal-hidden es el transitorio', async (t) => {
+  // Fase 146: reloj simulado (mock.timers) en vez del real -- ver
+  // fase136-pr4-base-movimiento.test.js. Avance exacto: 1 frame no basta,
+  // 2 frames si.
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const rafAntes = global.requestAnimationFrame;
+  global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+  t.after(() => { global.requestAnimationFrame = rafAntes; });
   delete require.cache[path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js')];
   const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
   const ElementoFalso = crearElementoFalso();
@@ -151,7 +155,9 @@ test('motionAbrirModal/motionCerrarModal: logica real con elementos simulados (E
 
   mod.motionAbrirModal('calidad-modal');
   assert.equal(modal.classList.contains('motion-modal-hidden'), true, 'motionAbrirModal agrega la clase transitoria de inmediato (estado "antes" para que el navegador tenga algo que animar)');
-  await new Promise((r) => setTimeout(r, 60));
+  t.mock.timers.tick(16);
+  assert.equal(modal.classList.contains('motion-modal-hidden'), true, 'con UN solo frame todavia sigue la clase transitoria');
+  t.mock.timers.tick(16);
   assert.equal(modal.classList.contains('motion-modal-hidden'), false, 'y la quita 2 frames despues -- vuelve al estado base (visible)');
 
   mod.motionCerrarModal('calidad-modal', () => { cerrado = true; overlay.classList.remove('show'); });
@@ -180,10 +186,14 @@ test('progressive enhancement: si motion-helpers.js no carga, el modal se ve igu
   assert.equal(overlayClasses.has('show'), true, 'el overlay se sigue mostrando igual -- el modal es visible por el CSS base, no por JS');
 });
 
-test('reabrir un modal mientras su salida anterior sigue esperando transitionend NO lo debe ocultar (hallazgo real del "OK modales")', async () => {
-  if (typeof global.requestAnimationFrame !== 'function') {
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-  }
+test('reabrir un modal mientras su salida anterior sigue esperando transitionend NO lo debe ocultar (hallazgo real del "OK modales")', async (t) => {
+  // Fase 146: reloj simulado (mock.timers) en vez del real -- ver
+  // fase136-pr4-base-movimiento.test.js. Avance exacto: 1 frame no basta,
+  // 2 frames si.
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const rafAntes = global.requestAnimationFrame;
+  global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+  t.after(() => { global.requestAnimationFrame = rafAntes; });
   delete require.cache[path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js')];
   const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
   const ElementoFalso = crearElementoFalso();
@@ -196,7 +206,7 @@ test('reabrir un modal mientras su salida anterior sigue esperando transitionend
 
   // Abre, deja que termine de entrar.
   mod.motionAbrirModal('calidad-modal');
-  await new Promise((r) => setTimeout(r, 60));
+  t.mock.timers.tick(32);
 
   // Empieza a cerrar (salida en curso, esperando transitionend)...
   let cerradoViejo = false;
@@ -214,6 +224,13 @@ test('reabrir un modal mientras su salida anterior sigue esperando transitionend
 
   assert.equal(cerradoViejo, false, 'cerrarReal de la salida VIEJA nunca deberia ejecutarse -- el modal se reabrio mientras tanto');
   assert.equal(overlay.classList.contains('show'), true, 'el overlay se debe seguir mostrando -- el reabrir gano');
+
+  // Fase 146: con el reloj simulado tambien se puede comprobar el salvavidas
+  // de 400ms de la salida VIEJA (con el reloj real nunca se esperaba): al
+  // vencer, tampoco debe cerrar el modal que se volvio a abrir.
+  t.mock.timers.tick(400);
+  assert.equal(cerradoViejo, false, 'el salvavidas de la salida vieja tampoco deberia cerrar el modal reabierto');
+  assert.equal(overlay.classList.contains('show'), true);
 
   delete global.document;
 });

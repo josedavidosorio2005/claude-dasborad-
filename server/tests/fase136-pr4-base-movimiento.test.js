@@ -68,12 +68,19 @@ test('motion-helpers.js: no depende de ninguna libreria externa (sin require/imp
   assert.ok(!/from ['"][a-z]/.test(js.text), 'no deberia haber ningun import de paquete externo');
 });
 
-test('motionExit/motionEnter: logica real con un elemento simulado (EventTarget real de Node, sin jsdom)', async () => {
+test('motionExit/motionEnter: logica real con un elemento simulado (EventTarget real de Node, sin jsdom)', async (t) => {
+  // Fase 146: reloj SIMULADO (node:test mock.timers) en vez del reloj real --
+  // con la suite en paralelo y la CPU saturada, los setTimeout reales se
+  // atrasaban mas que el margen de la prueba (50ms) y fallaba sin que el
+  // codigo estuviera mal. Con el reloj simulado el avance es exacto, asi que
+  // la prueba ahora tambien exige el limite justo (399ms no, 400ms si).
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   // Node no trae requestAnimationFrame (es una API de navegador) -- se
   // poliriza solo para esta prueba; en el navegador real siempre existe.
-  if (typeof global.requestAnimationFrame !== 'function') {
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
-  }
+  // Resuelve setTimeout al llamarse, asi que usa el reloj simulado.
+  const rafAntes = global.requestAnimationFrame;
+  global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+  t.after(() => { global.requestAnimationFrame = rafAntes; });
   const mod = require(path.join(__dirname, '..', '..', 'public', 'js', 'motion-helpers.js'));
   class ElementoFalso extends EventTarget {
     constructor() {
@@ -101,7 +108,9 @@ test('motionExit/motionEnter: logica real con un elemento simulado (EventTarget 
   const el2 = new ElementoFalso();
   let terminado2 = false;
   mod.motionExit(el2, () => { terminado2 = true; });
-  await new Promise((r) => setTimeout(r, 450));
+  t.mock.timers.tick(399);
+  assert.equal(terminado2, false, 'antes de los 400ms el salvavidas todavia no deberia haber cerrado');
+  t.mock.timers.tick(1);
   assert.equal(terminado2, true, 'el salvavidas de 400ms deberia llamar onDone aunque transitionend nunca dispare');
 
   // motionEnter: agrega la clase (en el frame siguiente, asincrono).
@@ -109,6 +118,8 @@ test('motionExit/motionEnter: logica real con un elemento simulado (EventTarget 
   el3.classList.remove('motion-show');
   mod.motionEnter(el3);
   assert.equal(el3.classList.contains('motion-show'), false, 'no deberia agregar la clase en el mismo tick (necesita un frame para que el navegador vea el estado inicial)');
-  await new Promise((r) => setTimeout(r, 100));
+  t.mock.timers.tick(16);
+  assert.equal(el3.classList.contains('motion-show'), false, 'con UN solo frame todavia no (hacen falta 2)');
+  t.mock.timers.tick(16);
   assert.equal(el3.classList.contains('motion-show'), true, 'deberia agregar la clase despues de los 2 requestAnimationFrame');
 });
