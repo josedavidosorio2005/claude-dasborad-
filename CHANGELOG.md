@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.2 — Octubre 2026
+
+**Fase 144 (A2): la plataforma se puede usar con el teclado.**
+
+- Las opciones del menú de la izquierda (Usuarios, Permisos, Cargar Datos…)
+  ahora se alcanzan con la tecla Tab y se abren con Enter o la barra
+  espaciadora. Antes solo funcionaban con el mouse.
+- En la pantalla de bienvenida, la tarjeta "Dashboard Clientes" y las
+  tarjetas de cada cliente también se abren con el teclado.
+- En los tableros, las pestañas se recorren con las flechas izquierda y
+  derecha y se abren con Enter. Los lectores de pantalla ahora dicen cuál
+  pestaña está abierta.
+- El selector de mes y los demás selectores de los encabezados muestran un
+  borde visible cuando se llega a ellos con el teclado.
+- En el celular, el botón ☰ indica si el menú está abierto y la tecla Esc lo
+  cierra.
+- Nada más cambia: el aspecto con el mouse, los números, los permisos y las
+  exportaciones son los mismos.
+
 ## v1.34.1 — Octubre 2026
 
 **Fase 144 (A1): Tráfico siempre muestra el período del mes elegido.**

@@ -1339,3 +1339,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    y la grafica suman ESE rango, no solo el mes del encabezado. Solo tokens
    existentes (--c-text-muted sobre --c-surface ya mide >=4.5:1). */
 .trafico-rango{margin:-4px 0 10px;font-size:var(--fs-small);color:var(--c-text-muted);font-variant-numeric:tabular-nums;}
+
+/* ═══ Fase 144 (A2) — teclado ═══
+   Las tarjetas de modulo/cliente (.dash-btn, .client-card) ahora reciben
+   foco (role="button" tabindex="0", a11y-teclado.js). Sobre el fondo teal
+   fijo de la bienvenida --c-focus no llega a 3:1 -> mismo criterio que la
+   navbar: anillo con --c-on-brand. */
+#user-page .dash-btn:focus-visible{outline:3px solid var(--c-on-brand);outline-offset:3px;}
