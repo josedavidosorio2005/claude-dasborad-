@@ -304,6 +304,19 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    --c-surface. Sin animacion (nada que apagar con data-motion). */
 .app-name{font-family:var(--font-sans);font-weight:var(--fw-bold);letter-spacing:0.01em;line-height:1.1;}
 .app-name-login{color:var(--c-primary);font-size:calc(var(--fs-display) * 1.25);margin-bottom:var(--space-8);}
+/* Fase 145 (pedido de Edwin): isotipo de InConexion dentro de la tarjeta del
+   login, centrado encima de "SInCo". Color en tema claro, blanco en oscuro
+   (la tarjeta es --c-surface: clara u oscura segun el tema). Alto FIJO
+   (48px, ancho 50px = proporcion real 128x123) reservado por CSS y por
+   width/height en el <img>: la tarjeta no salta cuando la imagen llega
+   tarde (mismo criterio que el logo del encabezado, Fase 139). El tema se
+   fija antes del primer dibujo (<head>), asi que nunca se ve el logo del
+   otro tema. */
+.login-isotipo{height:48px;margin:0 auto var(--space-4);}
+.login-isotipo img{display:block;width:50px;height:48px;margin:0 auto;}
+.login-isotipo .isotipo-tema-oscuro{display:none;}
+[data-theme="dark"] .login-isotipo .isotipo-tema-claro{display:none;}
+[data-theme="dark"] .login-isotipo .isotipo-tema-oscuro{display:block;}
 /* Logo de InConexion® pequeno en la esquina inferior derecha del login y
    de la bienvenida. Version blanca: los 2 fondos son teal en ambos temas
    (--grad-brand y el degradado de #user-page). El padding inferior de la

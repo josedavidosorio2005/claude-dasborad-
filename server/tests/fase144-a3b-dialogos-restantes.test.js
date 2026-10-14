@@ -31,7 +31,7 @@ test('index.html: los 9 dialogos son role="dialog" aria-modal="true" con su titu
 });
 
 test('los textos de los titulos no cambian', () => {
-  for (const t of ['Dashboard Clientes', 'Cambiar Contrasena', 'Eliminar Usuario', 'Registrar Movimiento', 'Cambiar mi Contrasena']) {
+  for (const t of ['Dashboard Clientes', 'Cambiar Contraseña', 'Eliminar Usuario', 'Registrar Movimiento', 'Cambiar mi Contraseña']) {
     assert.match(html, new RegExp('<h3 id="[^"]+">' + t + '</h3>'), t);
   }
 });

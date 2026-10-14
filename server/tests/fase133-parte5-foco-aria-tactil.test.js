@@ -84,8 +84,9 @@ test('ui-core.js: toggleEye actualiza el aria-label segun el estado real (Mostra
   assert.equal(res.status, 200);
   const fn = res.text.match(/function toggleEye\(inputId,btn\)\{([\s\S]*?)\n\}/);
   assert.ok(fn);
-  assert.match(fn[1], /aria-label','Ocultar contrasena'/);
-  assert.match(fn[1], /aria-label','Mostrar contrasena'/);
+  // Fase 145: con ñ.
+  assert.match(fn[1], /aria-label','Ocultar contraseña'/);
+  assert.match(fn[1], /aria-label','Mostrar contraseña'/);
 });
 
 test('charts.js: gdEtiquetarCanvasChart existe y los 3 new Chart(...) la llaman (role="img" + aria-label en cada grafica)', async () => {

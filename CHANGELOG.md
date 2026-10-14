@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.36.0 — Octubre 2026
+
+**Fase 145: logo de InConexion en la pantalla de ingreso y "Contraseña" con ñ.**
+
+- En la pantalla de ingreso, el logo de InConexion aparece dentro de la
+  tarjeta, encima de "SInCo": a color en tema claro y blanco en tema
+  oscuro. La tarjeta no se mueve mientras carga el logo. El logo pequeño
+  de abajo a la derecha sigue igual.
+- "Contrasena" ahora se escribe "Contraseña" en toda la plataforma: ingreso,
+  crear usuario, "Cambiar Contraseña", "Cambiar mi Contraseña", "Contraseña
+  Actual", "Nueva Contraseña" y "Confirmar Nueva Contraseña".
+- Nada más cambia: usuarios, contraseñas y datos siguen igual.
+
 ## v1.35.1 — Octubre 2026
 
 **Fase 145: Calidad de Mobilize dice claramente que todavía no hay monitoreos.**
