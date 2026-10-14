@@ -1332,3 +1332,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
 }
+
+
+/* ═══ Fase 144 (A3) — dialogos ═══
+   Al abrir uno de los 6 dialogos el foco entra a su contenedor
+   (tabindex="-1", motion-helpers.js) para que el lector de pantalla anuncie
+   el titulo. No se le quita el anillo: con teclado, la regla global de
+   [tabindex]:focus-visible marca el dialogo, que es justo donde esta el foco. */

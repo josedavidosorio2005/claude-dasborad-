@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.3 — Octubre 2026
+
+**Fase 144 (A3): las ventanas (tablero, Cargar Datos, Calidad…) se usan bien con el teclado.**
+
+- Al abrir un tablero, Cargar Datos, Calidad o el detalle de un monitoreo,
+  el teclado queda dentro de esa ventana: la tecla Tab ya no se va a la
+  pantalla de atrás, que queda bloqueada mientras la ventana esté abierta.
+- Al cerrar la ventana (con la X o con Esc), el cursor vuelve al botón con
+  el que se abrió.
+- El botón "Exportar" del tablero abre su menú con Enter, el cursor queda en
+  "Excel (.xlsx)", las flechas pasan a "PDF / Imprimir" y Esc o Tab cierran
+  solo el menú (el tablero sigue abierto).
+- Los lectores de pantalla ahora anuncian el nombre de cada ventana.
+- Nada más cambia: lo que se ve con el mouse, las exportaciones y los datos
+  son los mismos.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**
