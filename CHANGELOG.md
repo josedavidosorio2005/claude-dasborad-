@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.6 — Octubre 2026
+
+**Fase 144 (A6): cuando un mes no tiene datos, se ve claro.**
+
+- En Calidad, si el mes elegido arriba todavía no tiene monitoreos, el aviso
+  "Sin datos de Calidad para Oct-26… Ver Sep-26" ahora se ve en una sola
+  línea a lo ancho (antes quedaba apretado en una esquina, en cinco
+  renglones).
+- Las gráficas de ese mes ya no quedan en blanco: dicen "Sin monitoreos en
+  octubre 2026."
+- El botón "Ver Sep-26" sigue llevando al último mes con datos.
+- Nada más cambia.
+
 ## v1.34.5 — Octubre 2026
 
 **Fase 144 (A5): textos más legibles.**

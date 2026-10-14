@@ -1056,7 +1056,23 @@ function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, format
     msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
       ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
   }
-  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';
+  // Fase 144 (A6, hallazgo D05): clase en vez de estilo en linea + role="status"
+  // (lo anuncia un lector de pantalla). Dentro de la grilla de tarjetas KPI
+  // (.aurora-kpis) ocupa TODO el ancho -- antes quedaba encajado en una celda
+  // de ~150px, partido en 5 renglones (Calidad con el mes en curso sin datos).
+  return '<div class="gd-aviso-mes" role="status">'+msg+'</div>';
+}
+
+// Fase 144 (A6): un panel de grafica sin datos para el mes elegido muestra
+// UNA linea de texto en vez de un <canvas> vacio sin explicacion (mismo
+// criterio F09 de la Fase 136 que ya usan Calidad y Mis Resultados).
+function _gdPanelVacioEnCanvas(i, texto){
+  var canvasId = 'gd-c'+i;
+  var c = document.getElementById(canvasId);
+  var wrap = c ? c.parentElement : null;
+  if(!wrap) return;
+  if(_gd.charts[canvasId]){ try{ _gd.charts[canvasId].destroy(); }catch(e){} delete _gd.charts[canvasId]; }
+  wrap.innerHTML = '<div class="gd-panel-vacio">'+esc(texto)+'</div>';
 }
 
 function renderGenericBanner(){
@@ -1480,8 +1496,13 @@ function _gdRenderCalidad(p, i){
       var fElAviso = document.getElementById('gd-f'+i); if(fElAviso) fElAviso.innerHTML = '';
       var elAviso = document.getElementById('gd-p'+i);
       if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', _gd.mesSel, ultimoMesCal);
+    } else {
+      // calidad_pie / calidad_bar_asesores: una linea de texto en vez de un
+      // canvas vacio (Fase 144, A6) -- el aviso con "Ver <mes>" ya esta arriba.
+      var mesTxt = (typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel;
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos en ' + String(mesTxt).toLowerCase() + '.');
     }
-    return; // calidad_pie: no dibuja nada -- evita un donut vacio sin explicacion
+    return;
   }
 
   if(!estado.asesores) estado.asesores = asesoresDisp.slice();

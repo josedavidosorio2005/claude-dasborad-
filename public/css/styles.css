@@ -1376,3 +1376,12 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 @media(max-width:768px){ .navbar-right .navbar-app-version{color:var(--c-text-muted);} }
 /* Contador de las tarjetas de rol (Permisos) en oscuro: 4.23:1 -> 6.19:1. */
 [data-theme="dark"] .role-count{color:var(--c-text-2);}
+
+/* ═══ Fase 144 (A6) — mes sin datos ═══
+   Aviso "Sin datos de X para <mes>. ... [Ver <mes>]" (role="status"): a lo
+   ancho de la grilla de tarjetas KPI (antes encajado en una celda de ~150px)
+   y un panel de grafica sin datos con una sola linea centrada (sin canvas
+   vacio). Solo tokens existentes. */
+.gd-aviso-mes{text-align:center;color:var(--c-text-muted);padding:24px 8px;font-size:var(--fs-body-lg);}
+.aurora-kpis > .gd-aviso-mes{grid-column:1 / -1;flex-basis:100%;}
+.gd-panel-vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px;}
