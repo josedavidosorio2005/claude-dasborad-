@@ -74,3 +74,7 @@ AGENTS.md
 # trazas) al verificar visualmente en local -- nunca al repo, ver CLAUDE.md
 # -> "Capturas de pantalla".
 .playwright-cli/
+
+# Fase 146 (auditoria): llaves/certificados nunca al repo
+*.pem
+*.key
