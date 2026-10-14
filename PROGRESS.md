@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.35.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.36.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -635,3 +635,4 @@ mismo orden):
 - Fase 142 — Carga real de Llamadas de salida de Mobilize (septiembre), rechazo de "NO CONTESTADAS" en Llamadas Únicas, y Nivel de Servicio de WhatsApp de ORLANT por rangos de minutos (2026-10-14)
 - Fase 144 — Bloque A de UI/accesibilidad publicado: A1–A3 uno por uno (v1.34.1–1.34.3) y A4–A8 + A3b juntos en v1.34.4 por el 429 del registro de imágenes (2026-10-14)
 - Fase 145 — Ajustes de Mobilize para la entrega: "ASA y ATA" + "AHT", "Llamadas Únicas y de Salida", sin aviso amarillo falso, % legibles en las tortas; verificado en producción (v1.35.0, 2026-10-14)
+- Fase 146 — Auditoría de seguridad y bugs (0 críticos, 0 altos) + README y documentación al día (v1.36.1, 2026-10-14)

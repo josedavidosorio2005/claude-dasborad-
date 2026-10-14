@@ -1,4 +1,4 @@
-# docs/ — índice (Fase 124, 2026-10-06)
+# docs/ — índice (Fase 124, 2026-10-06; al día en la Fase 146, 2026-10-14)
 
 Mapa de una página de qué hay en `docs/`: qué está **vigente** (se sigue
 actualizando, confía en esto) y qué es **histórico** (foto de un momento
@@ -30,6 +30,10 @@ proyecto, ver [`PROGRESS.md`](../PROGRESS.md) en la raíz del repo.
   como está hoy en el código.
 - **[aws-permisos-pendientes.md](aws-permisos-pendientes.md)** — guía
   (sin aplicar nada) para el dueño de la cuenta AWS, permisos que faltan.
+- **[sistema-de-diseno.md](sistema-de-diseno.md)** — tokens de color,
+  tipografía, foco, objetivos táctiles, teclado, diálogos, avisos de "sin
+  datos" y reglas WCAG 2.1 AA. Leerlo antes de agregar un color o un
+  componente.
 - **[marca.md](marca.md)** — dónde viven el logo, el favicon, los colores
   oficiales y la tipografía (Fase 132): qué archivo usar en cada sitio y
   los tokens CSS de marca.

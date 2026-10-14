@@ -14730,3 +14730,65 @@ de dos (M1 y M2), como pidió el usuario.
   - 0 errores de consola.
   - Calidad de Mobilize no mostró tarjetas ni gráfica en septiembre.
     Sin errores; no se revisó más a fondo en esta pasada.
+
+## Fase 146 — Auditoría de seguridad y bugs + documentación al día (v1.36.1, 2026-10-14)
+
+Diagnóstico de solo lectura primero, sin arriesgar la entrega de Mobilize
+(jueves 15). **0 hallazgos críticos, 0 altos.**
+
+- **Dependencias**: `npm audit` 0 vulnerabilidades (completo y
+  `--omit=dev`). `npm outdated`: solo parches/menores (AWS SDK, express
+  5.3, zod 4.6.7, playwright…); better-sqlite3 13 y dotenv 18 siguen
+  congelados.
+- **Secretos**: nada en el árbol ni en los últimos 150 commits (llaves AWS,
+  llaves privadas, JWT, tokens de GitHub/Slack, hashes bcrypt). Las
+  contraseñas de ejemplo de `server/db.js` son las conocidas de la Fase 110
+  (solo fuera de producción, con red de seguridad). `.gitignore` cubre
+  `.env`, `.playwright-cli/`, `graphify-out/`, `.claude/`;
+  `datos-inconexion` vive fuera del repo; `*.pem` no está (anotado).
+- **Autorización**: la matriz de la Fase 118 recorre el router real y
+  falla si una ruta no tiene política; las 16 rutas de Llamadas Únicas,
+  Llamadas de salida y WhatsApp tiempos están declaradas y los GET se
+  ejecutan con los 10 roles, campaña propia y ajena. Las cargas (POST) usan
+  `canLoadData` + `campaignAccess` (leído en el código).
+- **Validación y SQL**: Zod en body y query de las 3 familias; filas como
+  tuplas fijas de 4 campos (el teléfono no puede llegar al servidor). En
+  SQL solo se interpolan constantes del código (nombres de columna, franjas
+  de minutos); todo valor del usuario va como parámetro.
+- **XSS**: copia de la base demo con texto malicioso real
+  (`<img src=x onerror=…>`) en agentes, skills, tipificaciones, asesores,
+  colas, nombres de archivo; recorrido de todas las pestañas y
+  sub-pestañas de ORLANT y Mobilize, Cargar Datos e Historial, 1440 y 375
+  px: 66 vistas, 0 ejecuciones, 0 `<img onerror>` reales en el DOM, el
+  texto se ve escapado en filtros y tablas, 0 errores de consola.
+- **Exportaciones**: todas las que llevan datos pasan por
+  `xlsxFilasSeguras`; las que no, son plantillas con textos fijos.
+- **Privacidad**: asesores de salida solo a roles internos (detalle bloqueado
+  a CLIENTES_DASH). Sigue el pendiente conocido: `GET
+  /calidad/llamadas-unicas/opciones` devuelve nombres a roles cliente
+  (decisión del usuario).
+- **Producción** (solo lectura, sin login): CSP, HSTS con preload,
+  X-Frame-Options/`frame-ancestors`, Referrer-Policy, nosniff; http→https
+  308; CORS solo con sinco; certificado hasta el 07/01/2027; "informa" ya no
+  resuelve.
+- **Límites**: JSON 2 MB (8 MB solo Tipificación y Agendas), login 10
+  intentos por ventana, limitador autenticado y anónimo en la API.
+- **Bugs**: suite 1622/1622; `revision-final.js` contra la demo local: 0
+  errores de consola, 0 peticiones fallidas, 0 canvas en blanco, exports OK
+  (las discrepancias son los números de control de producción contra datos
+  sintéticos). Migraciones: 3 arranques sobre una copia de la demo dejan
+  esquema, `dashboards_config` (incluido `updatedAt`), las 58 migraciones y
+  los conteos idénticos; base nueva == base migrada salvo fechas.
+- **Hallazgos medios/bajos** (en `docs/pendientes.md`): Tipificación oculta
+  en el seed pero visible en producción; pruebas de tiempos de la Fase 136
+  inestables (causa y arreglo propuesto); CSP con `'unsafe-inline'`; textos
+  sin tilde; código sin uso (vistas "asaaht"/"asa"); `revision-final.js`
+  sin elegir mes; `*.pem` en `.gitignore`.
+- **Documentación**: README reescrito (SInCo, 2 clientes, Wolkvox, sin
+  Hospital La María); `docs/ARQUITECTURA.md` (tablas y rutas nuevas, §12
+  paneles autónomos y avisos); `docs/marca.md` (isotipo en el login);
+  `docs/procedimiento-carga-mensual.md` (cargas de Mobilize y WhatsApp
+  tiempos); guía (login con logo, "Ingresar", "Llamadas Únicas y de
+  Salida", Flujo de Mobilize, ATA "—" sin abandonos); checklist (ATA y
+  login); capturas de la guía regeneradas con la demo (Flujo de Llamadas,
+  8 pestañas, login con logo).

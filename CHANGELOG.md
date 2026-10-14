@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.36.1 — Octubre 2026
+
+**Fase 146: la guía de uso al día.**
+
+- Las imágenes de la guía ahora muestran la plataforma como se ve hoy: la
+  pantalla de ingreso con el logo, "Flujo de Llamadas" y las 8 pestañas de
+  Orlant.
+- La guía explica el Flujo de Llamadas de Mobilize (ASA y ATA, AHT aparte)
+  y usa el nombre nuevo de la pestaña "Llamadas Únicas y de Salida".
+- Aclaración sobre ATA en Mobilize: ATA es el tiempo promedio hasta que la
+  persona cuelga sin ser atendida. En septiembre no hubo llamadas
+  abandonadas, así que no hay promedio y la plataforma muestra "—" (no
+  "0:00" como decía la nota de la versión 1.35.0).
+- Nada más cambia en la plataforma.
+
 ## v1.36.0 — Octubre 2026
 
 **Fase 145: logo de InConexion en la pantalla de ingreso y "Contraseña" con ñ.**

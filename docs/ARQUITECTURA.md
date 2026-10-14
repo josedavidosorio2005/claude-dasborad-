@@ -1,4 +1,7 @@
-# Arquitectura — InConexion Platform
+# Arquitectura — SInCo (InConexion®)
+
+> Actualizado en la Fase 146 (2026-10-14): nombre SInCo, Wolkvox, tablas y
+> rutas de las Fases 138–145 (§2, §9) y paneles autónomos (§12).
 
 > Foto completa del sistema tal como está hoy en el código, para alguien que
 > no lo escribió y tiene que mantenerlo o extenderlo sin preguntar. Esto
@@ -136,10 +139,17 @@ con el tiempo sin que este documento tenga que actualizarse línea por línea.
 | `monitoreos` | Un monitoreo de Calidad por asesor/campaña/fecha, con las respuestas y el puntaje ya calculado en el servidor (nunca confía en el puntaje que mande el cliente). Ver §6 para la carga masiva. |
 | `cronograma_metas` | Metas mensuales de monitoreo por campaña/líder responsable (cuántos monitoreos debe hacer cada quien). |
 | `calidad_nivel_servicio` | Nivel de servicio **mensual** por campaña (contestadas ≤20s / total del mes) — se recalcula siempre a partir de `calidad_nivel_servicio_diario`, nunca se edita a mano cuando hay datos diarios. |
-| `calidad_nivel_servicio_diario` | Nivel de servicio **diario** por campaña/skill, tal cual viene del export del conmutador/PBX (incluye las columnas ampliadas del export real de Volvox — ver §5). Es la tabla que sobrevivió a la decisión de Volvox: se extendió en vez de crear una tabla nueva, porque ya compartía la llave natural (campaña+fecha+skill) y el flujo de recálculo mensual. |
-| `trafico_skill_mapeo` | Mapeo administrable de `SKILL_NAME` (tal cual lo nombra Volvox) → campaña/cliente de InConexion — ver §5. |
+| `calidad_nivel_servicio_diario` | Nivel de servicio **diario** por campaña/skill, tal cual viene del export del conmutador/PBX (incluye las columnas ampliadas del export real de Wolkvox — ver §5). Es la tabla que sobrevivió a la decisión de Wolkvox: se extendió en vez de crear una tabla nueva, porque ya compartía la llave natural (campaña+fecha+skill) y el flujo de recálculo mensual. |
+| `trafico_skill_mapeo` | Mapeo administrable de `SKILL_NAME` (tal cual lo nombra Wolkvox) → campaña/cliente de InConexion — ver §5. |
 | `seed_demo_marcas` | Ledger de qué filas sembró `scripts/seed-demo.js` (para poder borrar exactamente eso con `seed:demo:limpiar`). También es lo que enciende/apaga el banner global de "datos de demostración" — ver §11. |
 | `gerencia_kpis`, `inventario_items`, `inventario_movimientos`, `gestion_humana_personal` | Datos propios de los 3 módulos administrativos (Gerencia, Inventario, Gestión Humana), que se ven con el mismo motor de dashboard que las campañas de cliente vía adaptadores — ver §4. |
+| `tipificaciones` | Tipificación por llamada/chat (Wolkvox CDR / HistChat), por campaña y canal. Alimenta la torta y la tabla de Tipificación. |
+| `trafico_whatsapp` | Tráfico diario de WhatsApp por cola (Tráfico de WhatsApp de ORLANT). |
+| `agendas`, `efectividad_agendamiento`, `inasistencias`, `efectividad_citas`, `salida_mensual` | Bases propias de las pestañas de ORLANT (ver `docs/inventario-bases-orlant.md`). |
+| `llamadas_unicas` | Fase 138: llamadas de ingreso de Mobilize, **ya deduplicadas en el navegador** por día + teléfono + tipo (CONTESTADA/ABANDONADA). Guarda agente, fecha, tipo y skill — **nunca el teléfono**. |
+| `llamadas_salida` | Fase 141: llamadas de salida de Mobilize (CONECTADA/NO_CONECTADA, agente, tipificación). Mismo criterio: sin teléfono. Los nombres de agente solo se devuelven a roles internos. |
+| `whatsapp_tiempos` | Fase 142: una fila por conversación de WhatsApp contestada (cola, fecha, hora, segundos hasta contestar) para el Nivel de Servicio por rangos de minutos de ORLANT. Sin teléfonos ni nombres. |
+| `alias_asesores`, `calidad_codificaciones`, `app_config` | Alias de nombres de asesor, codificaciones de Calidad y configuración general. |
 | `schema_migrations` | Ledger de qué migraciones (`runOnceMigration`) ya corrieron, para que cada una se aplique una sola vez incluso en una base que lleva meses corriendo. |
 
 ---
@@ -345,14 +355,14 @@ alerta por rango (`k.alerta.min/max/caidaPct`), y color por umbral (§3) —
 todo esto es del motor compartido, no algo que cada dashboard implemente
 por separado. Lo que **no** trae hoy de forma genérica (y quedó fuera de la
 Fase 19, ver `PROGRESS.md`): rango de fechas / granularidad día-mes-año como
-la de Tráfico Volvox (§5), drill-down por clic, y tooltips con comparación —
+la de Tráfico Wolkvox (§5), drill-down por clic, y tooltips con comparación —
 esos existen hoy solo para el panel de Tráfico.
 
 ---
 
-## 5. Tráfico de llamadas — Volvox (`public/js/trafico-logic.js`)
+## 5. Tráfico de llamadas — Wolkvox (`public/js/trafico-logic.js`)
 
-Carga el export real de Volvox (hoja `DATA`) tal cual se descarga, sin
+Carga el export real de Wolkvox (hoja `DATA`) tal cual se descarga, sin
 recortar ni reordenar columnas, y lo agrega en el navegador por día, mes o
 año para la gráfica y los KPIs del panel `trafico_combo`.
 
@@ -360,7 +370,7 @@ año para la gráfica y los KPIs del panel `trafico_combo`.
 
 `traficoColIndexMap` empareja cada columna esperada
 (`TRAFICO_COLUMNAS` en `trafico-logic.js`) por su **nombre de encabezado**,
-no por su posición en la fila — si Volvox reordena o agrega columnas al
+no por su posición en la fila — si Wolkvox reordena o agrega columnas al
 export, el parseo sigue funcionando. Solo 4 columnas son obligatorias
 (`SKILL_NAME`, `DATE`, `TOTAL LLAMADAS`, `LLAMADAS CONTESTADAS`); el resto,
 si falta, la métrica correspondiente queda `null` — nunca `0` (0% es un dato
@@ -372,7 +382,7 @@ real, "no vino esa columna" es otra cosa distinta).
 para las métricas que sí tienen numerador/denominador disponibles
 (`nivelAtencionPct = contestadas/total`, `tasaAbandonoPct =
 abandonadas/total`) **suma los volúmenes del período primero y recalcula el
-% después** — nunca promedia los porcentajes diarios. Para las que Volvox ya
+% después** — nunca promedia los porcentajes diarios. Para las que Wolkvox ya
 reporta como % o duración sin numerador propio disponible aquí
 (`serviceLevel*Pct`, `asaSegundos`, etc.), se usa un promedio
 **ponderado por volumen de llamadas** del período — la mejor aproximación
@@ -440,7 +450,7 @@ duplica a mano.
 
 ### El panel `trafico_combo`: tráfico embebido en el dashboard de cada campaña
 
-Desde la Fase 18 (tráfico Volvox), cualquier dashboard de cliente puede
+Desde la Fase 18 (tráfico Wolkvox), cualquier dashboard de cliente puede
 declarar un panel de tipo `trafico_combo` en su `layout.tabs[].panels`
 (`dashboards_config`) — no es una pantalla aparte: es el mismo modal de
 dashboard del cliente, con su propia pestaña. El panel trae de fábrica todo
@@ -461,7 +471,7 @@ consolidación justo abajo: eso cambió el 2026-09-15).
 ⚠️ **Consolidación de sede (2026-09-15, auditoría contra el pedido de
 Edwin — módulo "Flujo de Llamadas"): la sede es un atributo del dato, NO una
 campaña distinta.** Antes de esta fecha, Hospital La María (la única
-campaña multi-sede hoy) usaba un atajo: el tráfico Volvox fabricaba 2
+campaña multi-sede hoy) usaba un atajo: el tráfico Wolkvox fabricaba 2
 campañas falsas, `"HOSPITAL LA MARIA CASTILLA"` / `"HOSPITAL LA MARIA
 SEDE33"`, y `auth.js` necesitaba un mapeo especial (`CAMPANA_BASE_MULTISEDE`)
 solo para que el permiso de la campaña real diera acceso a esas variantes.
@@ -469,7 +479,7 @@ Eso era inconsistente con cómo el propio dashboard operativo (los datos de
 Excel de `dashboard_cargas`) ya trataba la sede desde antes: como un campo
 `sede` en cada fila, filtrable por `dashboards_config.vista`, con UNA sola
 campaña. La migración `hlm_sede_consolidacion_v1` (`server/db.js`) llevó el
-tráfico Volvox al mismo patrón:
+tráfico Wolkvox al mismo patrón:
 
 - `calidad_nivel_servicio_diario` y `calidad_nivel_servicio` (el agregado
   mensual) ganaron una columna `sede` (nullable — `NULL` para el resto de
@@ -690,7 +700,7 @@ por tipo de dato**, dentro del mismo `.xlsx`.
 |---|---|---|
 | Gestión de base (KPIs/resumen mensual + secciones propias de cada cliente) | **Variable por campaña** — cada `dashboards_config.secciones` define sus propias columnas (de 3 a 7 secciones según el cliente) | `cargas-logic.js` (`cargasParseFilaUnica`/`cargasParseMultiFila`), spec en `dashboard-secciones.js` / `dashboard-plantillas-cliente.js`, guardado vía `POST /dashboard/cargas` |
 | Calidad (Monitoreos, ítems ponderados) | **Variable por campaña** — el diccionario de ítems/pesos cambia (`calidad_plantillas.items`); columnas fijas (Asesor/Fecha/Canal/...) + 1 columna por ítem | `calidad-carga-masiva-logic.js` (`cmParseRows`), plantilla en `calidad-plantillas-seed.js`, guardado vía `POST /monitoreos/bulk` |
-| Tráfico de llamadas (Volvox, hoja DATA) | **Universal** — mismas 15 columnas para cualquier campaña; la campaña de cada fila la decide el mapeo de skill (§5), nunca el archivo | `trafico-logic.js` (`traficoParseFilas`), guardado vía `POST /calidad/trafico/carga` |
+| Tráfico de llamadas (Wolkvox, hoja DATA) | **Universal** — mismas 15 columnas para cualquier campaña; la campaña de cada fila la decide el mapeo de skill (§5), nunca el archivo | `trafico-logic.js` (`traficoParseFilas`), guardado vía `POST /calidad/trafico/carga` |
 | Nivel de Servicio Diario (NSD, `metas.js`) | Universal — lee la MISMA hoja "DATA" que Tráfico, pero solo extrae `SERVICE_LEVEL_20SEC` (subconjunto estrecho, sin desglose por skill-mapeo) | `metas.js` (`_nsdParseRows`), guardado vía `POST /calidad/nivel-servicio/diario` |
 | "Cartera" (formato propio) | **No existe tal formato** — `CARTERA INTERNA` es una campaña de Calidad normal, con su propio diccionario de ítems (`ITEMS_CARTERA`) igual que las otras 9; fue la primera en usar la carga masiva de Calidad, nada más | (mismo que Calidad arriba) |
 
@@ -698,7 +708,7 @@ por tipo de dato**, dentro del mismo `.xlsx`.
 lee ya lo cubre la hoja de Tráfico (misma hoja "DATA", mismas columnas,
 Tráfico además hace el enrutamiento por skill que NSD no hace) — es
 funcionalmente una herramienta más angosta y anterior a la integración con
-Volvox. Se documenta aquí como redundancia conocida; retirarlo es una
+Wolkvox. Se documenta aquí como redundancia conocida; retirarlo es una
 decisión de negocio aparte (no se apagó una función en producción sin que
 alguien lo pidiera explícitamente).
 
@@ -983,7 +993,7 @@ monitoreos de 37 a 5 (capturas de esa corrida: tag de archivo
 
 Para el resto de la API (usuarios, dashboards de cliente, permisos,
 historial, etc.) ver directamente `server/routes/` — esta tabla cubre
-solo lo agregado en Tráfico Volvox y Semáforo/Cartera, que no estaba
+solo lo agregado en Tráfico Wolkvox y Semáforo/Cartera, que no estaba
 documentado en ningún lado hasta ahora.
 
 | Endpoint | Método | Para qué | Quién puede |
@@ -994,12 +1004,20 @@ documentado en ningún lado hasta ahora.
 | `/api/umbrales/:id` | DELETE | Borra un umbral | Solo administrador |
 | `/api/monitoreos/bulk` | POST | Carga masiva de monitoreos de Calidad (§6) | Rol CALIDAD/SUPERVISOR (o admin) con permiso sobre esa campaña |
 | `/api/seed-demo/estado` | GET | `{activo, marcas}` — si hay datos de demostración sembrados (pinta el banner global, §11) | Cualquier actor autenticado |
-| `/api/calidad/trafico/carga` | POST | Carga el export de Volvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
+| `/api/calidad/trafico/carga` | POST | Carga el export de Wolkvox (multi-skill, multi-mes) | `canLoadData` (admin o rol con el permiso "Cargar Datos") |
 | `/api/calidad/trafico/carga/impacto` | POST | Cuenta, por (skill,mes) del archivo, cuántas filas ya existen y se reemplazarían — no escribe nada (control de cargas, §5) | `canLoadData` |
 | `/api/calidad/trafico/cobertura` | GET | Por skill, qué meses ya tienen tráfico cargado (control de cargas, §5) | `canLoadData` |
 | `/api/calidad/trafico/plantilla` | GET | Descarga la plantilla oficial de tráfico (archivo real, nunca regenerado) | `canLoadData` |
 | `/api/calidad/trafico/skills` | GET | Lista el mapeo skill → campaña (+ sede) | `canLoadData` |
 | `/api/calidad/trafico/skills/:skillName` | PUT | Reasigna una skill a otra campaña/sede (reatribuye el histórico ya guardado) | `canLoadData` |
+| `/api/calidad/llamadas-unicas/{opciones,resumen,por-mes}` | GET | Filtros, tarjetas y barras de Llamadas Únicas (Mobilize) | Acceso a la campaña (`campaignAccess`). Nota: `opciones` devuelve nombres de asesor también a roles cliente (decisión registrada en `docs/pendientes.md`) |
+| `/api/calidad/llamadas-unicas/plantilla` | GET | Plantilla oficial (archivo real) | `canLoadData` |
+| `/api/calidad/llamadas-unicas/carga` (+ `/impacto`) | POST | Carga / impacto previo (no escribe) | `canLoadData` + `campaignAccess` |
+| `/api/calidad/llamadas-salida/{opciones,resumen,por-mes}` | GET | Llamadas de salida; filtro por agente solo para roles internos | `campaignAccess` |
+| `/api/calidad/llamadas-salida/detalle` | GET | Detalle por asesor y por día | Solo roles internos (no CLIENTES_DASH) |
+| `/api/calidad/llamadas-salida/carga` (+ `/impacto`) | POST | Carga / impacto previo | `canLoadData` + `campaignAccess` |
+| `/api/calidad/whatsapp-tiempos/{opciones,rangos}` | GET | Meses/colas y las 5 franjas (0–3, 3–5, 5–8, 8–10, >10 min) de un mes | `campaignAccess` |
+| `/api/calidad/whatsapp-tiempos/carga` (+ `/impacto`) | POST | Carga / impacto previo | `canLoadData` + `campaignAccess` |
 | `/api/calidad/nivel-servicio/diario` | GET | Filas diarias de nivel de servicio de una campaña (el navegador agrega, ver §5) | Cualquier actor con acceso a esa campaña |
 
 ---
@@ -1073,7 +1091,7 @@ Cosas que alguien podría "corregir" por accidente sin este contexto:
   campo, y asumir una (ej. `campana+asesor+fecha`) rompería el caso legítimo
   de varios monitoreos el mismo día.
 - **`calidad_nivel_servicio_diario` se extendió en vez de crear una tabla
-  nueva para Volvox** (§2, §5) — ya compartía la llave natural
+  nueva para Wolkvox** (§2, §5) — ya compartía la llave natural
   (campaña+fecha+skill) y el flujo de recálculo mensual con la carga simple
   anterior; las columnas nuevas se agregaron por migración (`ALTER TABLE`),
   nunca directo en el `CREATE TABLE`, para que funcione igual en una base
@@ -1118,3 +1136,44 @@ Cosas que alguien podría "corregir" por accidente sin este contexto:
   viendo solo lo suyo), es que el estado de filtros vive en la URL de la
   página, compartido por cualquier panel `trafico_combo`; el motor lo
   detecta y descarta el filtro heredado si no aplica a la campaña nueva.
+
+---
+
+## 12. Paneles autónomos y avisos de "sin datos" (Fases 138–146)
+
+Un dashboard mezcla dos clases de paneles:
+
+- **De resumen** (`kpi_row`, `line`, `bar`, `pie`, `combo`, `tabla`,
+  `nota_kpi`): leen las cargas genéricas de `dashboard_cargas`
+  (`_gd.cargas`).
+- **Autónomos** (`GD_TIPOS_AUTONOMOS`, `public/js/mes-global-logic.js`):
+  Tráfico de Llamadas/WhatsApp, Agendas, Efectividad, Inasistencia,
+  Tipificación, Salida, Calidad y Llamadas Únicas. Piden sus propios datos
+  por API, tienen sus filtros y su propio aviso de "sin datos".
+
+Reglas que se deben conservar al agregar un panel:
+
+1. **Aviso amarillo global** ("Este dashboard todavía no tiene datos
+   cargados…", `renderGenericBanner`): solo sale si el dashboard tiene algo
+   que depende de cargas genéricas y no hay ninguna
+   (`gdMostrarAvisoSinCargas`). Mobilize, que solo tiene paneles autónomos,
+   nunca lo muestra (Fase 145). Un tipo de panel autónomo nuevo **debe**
+   agregarse a `GD_TIPOS_AUTONOMOS`; si no, este aviso y "Comparar contra"
+   se comportan como si fuera de resumen.
+2. **Mes sin datos** (Fase 144, A6): aviso `.gd-aviso-mes` (`role="status"`)
+   a lo ancho, con botón "Ver <último mes con datos>"; las gráficas sin datos
+   muestran una línea de texto (`_gdPanelVacioEnCanvas`), nunca un canvas
+   vacío.
+3. **Campaña sin ningún dato** (Calidad, Fase 145): "Todavía no hay
+   monitoreos de calidad para <cliente>." — solo si la carga terminó bien
+   (un error de red nunca muestra ese texto).
+4. **Rango visible** (Fase 144, A1): los paneles con ventana de fechas
+   muestran "Mostrando: dd/mm/aaaa – dd/mm/aaaa" (`.trafico-rango`).
+
+Sub-pestañas de Tráfico: la configuración del panel (`subtabs`) elige
+entre las vistas `resumen` (se ve como "Flujo de Llamadas"/"Flujo de
+WhatsApp"), `sl`, `abandono`, `aht`, `asaata`; existen además `asa` y
+`asaaht`, hoy sin uso (Mobilize pasó a "ASA y ATA" + "AHT" en la Fase 145).
+Los cambios de `dashboards_config` en producción van siempre por migración
+idempotente (`runOnceMigration`), y la base nueva (seed) y la migrada deben
+terminar con el mismo layout.

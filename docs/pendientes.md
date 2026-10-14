@@ -99,6 +99,19 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv`
   18) — no se tocan sin que lo pidas explícitamente.
 
+- **Tipificación oculta en el seed, visible en producción** (Fase 146,
+  auditoría) — Prioridad MEDIA. En `server/dashboard-config-seed.js` la
+  pestaña Tipificación está `oculta: true` en ORLANT y en MOBILIZE, pero en
+  producción se ve en los dos (y en Mobilize va después de Calidad): alguien
+  la destapó desde el constructor de dashboards y no quedó anotado. Una base
+  creada desde cero la dejaría oculta. Cómo se cierra: decides si el seed
+  debe quedar igual a producción (quitar `oculta` y fijar el orden; ajustar
+  las pruebas que hoy exigen que siga oculta) — "OK seed tipificación".
+- **Textos sin tilde en la interfaz** (Fase 146) — Prioridad BAJA. ~65
+  palabras visibles en `public/index.html` sin tilde ("Cerrar Sesion",
+  "Gestion", "Campana", "Codificacion", "modulo", "automaticamente"…), más
+  las que arman los JS. Cambio visible: se prepara en un PR y espera tu OK.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **19 asesores del archivo real de Calidad sin usuario ASESOR en la
@@ -270,6 +283,34 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   humana una por una) — ya cubierto por chequeos automáticos (consola +
   canvas con píxeles, 0 hallazgos), pero no por ojo humano en cada
   combinación. Queda para después si se quiere ese nivel de detalle.
+
+- **Pruebas de tiempos de modales de la Fase 136 inestables bajo carga**
+  (Fase 146) — Prioridad MEDIA. Causa: miden con el reloj real (un
+  `requestAnimationFrame` simulado de 16 ms ×2 contra esperas de 60/100 ms,
+  y la red de seguridad de 400 ms contra una espera de 450 ms); con la CPU
+  saturada (suite en paralelo) los temporizadores se atrasan más que ese
+  margen. Arreglo: temporizadores simulados de `node:test` (`mock.timers`)
+  y una cola de frames manual, con avance exacto — la prueba queda más
+  estricta, no más débil. Archivos: `fase136-pr4-base-movimiento.test.js`,
+  `fase136-pr8-modales-unificados.test.js`.
+- **CSP con `'unsafe-inline'` en `script-src`** (Fase 146) — Prioridad
+  MEDIA, aceptada por ahora. Hace falta porque `index.html` tiene 144
+  manejadores `onclick=` en línea (`server/server.js:80-93` lo explica).
+  Mitigado: todo texto de datos pasa por `esc()` (probado con texto
+  malicioso real en la Fase 146: 66 vistas, nada se ejecutó). Cerrarlo es
+  migrar esos manejadores a `addEventListener` — trabajo grande, después de
+  la entrega.
+- **Código sin uso** (Fase 146) — Prioridad BAJA: las vistas de Tráfico
+  "asaaht" (ASA y AHT) y "asa" sola ya no las usa ninguna configuración
+  (`public/js/trafico.js`: `_traficoDibujarAsaAht`, sus títulos y su rama
+  de resumen). Se pueden quitar cuando convenga.
+- **`revision-final.js` no elige el mes** (Fase 146) — Prioridad BAJA.
+  Contra una base cuyo mes por defecto no tiene Tráfico (la demo local
+  abre en octubre), reporta "sub-pestañas de Flujo" como falla. En
+  producción no pasa (abre en septiembre). Arreglo: elegir el último mes
+  con datos antes de recorrer.
+- **`*.pem` no está en `.gitignore`** (Fase 146) — Prioridad BAJA; hoy no
+  hay ninguno en el repo.
 
 ## Decisiones de esta fase (sin pendiente — ya resueltas, quedan aquí solo como referencia)
 

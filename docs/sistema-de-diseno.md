@@ -481,6 +481,13 @@ de una fila de KPI se ven iguales.
   `index.html` y todos los JS de vistas: un campo nuevo sin nombre la
   pone en rojo.
 
+## Logo en el login (Fase 145)
+
+Isotipo dentro de la tarjeta del login, encima de "SInCo": color en tema
+claro, blanco en oscuro, 48 px de alto **reservado** por CSS
+(`.login-isotipo`) para que la tarjeta no salte. Qué archivo usar en cada
+lugar: [`marca.md`](marca.md).
+
 ## Texto sobre porciones de torta (Fase 145)
 
 El % encima de cada porción (`loPie`, `charts.js`) no es un color fijo:

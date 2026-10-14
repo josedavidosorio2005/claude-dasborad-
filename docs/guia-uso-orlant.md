@@ -36,9 +36,10 @@ técnico, solo explica qué hace cada pantalla y cómo se usa.
 La plataforma (SInCo) vive en **https://sinco.inconexion.com.co**. Ábrela en el
 navegador (Chrome, Edge o similar) como cualquier página web.
 
-La pantalla de inicio dice **SInCo**, con el logo de InConexion® pequeño
-en la esquina inferior derecha. Escribe tu **usuario** y tu **contraseña**, y
-presiona "Iniciar sesión". Cada persona tiene su propio usuario, con
+La pantalla de inicio muestra el logo de InConexion® encima de **SInCo**,
+dentro de la tarjeta (a color en tema claro, blanco en tema oscuro), y
+otro logo pequeño en la esquina inferior derecha. Escribe tu **usuario** y
+tu **contraseña**, y presiona "Ingresar". Cada persona tiene su propio usuario, con
 acceso solo a lo que le corresponde (ver [sección 7](#7-usuarios-y-permisos-solo-administrador)).
 
 **Si olvidaste la contraseña**: hoy la plataforma no tiene un botón de
@@ -397,9 +398,11 @@ evita que las cargas futuras se unifiquen de la misma forma.
   ATA** (tiempo promedio de respuesta y de abandono, juntos) y **AHT**
   (tiempo promedio de atención, aparte). Cada una trae arriba su número
   del período elegido.
-- **ATA en 0:00**: si la plantilla de Flujo trae la columna ATA en 0 (como
-  la de septiembre de Mobilize), la plataforma muestra 0:00 tal cual —
-  no lo oculta ni lo calcula de otra forma.
+- **ATA sin abandonos**: ATA es el tiempo promedio hasta que la persona
+  cuelga sin ser atendida. Si en el período no hubo llamadas abandonadas
+  (como septiembre de 2026 en Mobilize, cuya plantilla trae además ATA en
+  0), no hay promedio que calcular y se muestra "—"; la plataforma no lo
+  oculta ni lo inventa.
 
 ### Llamadas Únicas (Mobilize)
 
