@@ -78,17 +78,17 @@
     <aside class="sidebar">
       <div class="sidebar-title">Panel Admin</div>
       <ul class="sidebar-menu" id="sidebar-menu">
-        <li><a id="menu-users" onclick="showSection('users')" class="active"><span class="s-icon">&#128101;</span> Usuarios</a></li>
-        <li id="menu-perms-li"><a id="menu-perms" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
-        <li id="menu-hist-li" class="hidden"><a id="menu-hist" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
-        <li id="menu-metas-li" class="hidden"><a id="menu-metas" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
-        <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" onclick="showSection('umbrales')"><span class="s-icon">&#128994;</span> Umbrales</a></li>
-        <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" onclick="showSection('reportesrole')"><span class="s-icon">&#128200;</span> Rol Reportes</a></li>
-        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" onclick="openCargas()"><span class="s-icon">&#128228;</span> Cargar Datos</a></li>
-        <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
-        <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
-        <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
-        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestion Humana</a></li>
+        <li><a id="menu-users" role="button" tabindex="0" onclick="showSection('users')" class="active"><span class="s-icon">&#128101;</span> Usuarios</a></li>
+        <li id="menu-perms-li"><a id="menu-perms" role="button" tabindex="0" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
+        <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
+        <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
+        <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon">&#128994;</span> Umbrales</a></li>
+        <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon">&#128200;</span> Rol Reportes</a></li>
+        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCargas()"><span class="s-icon">&#128228;</span> Cargar Datos</a></li>
+        <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
+        <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" role="button" tabindex="0" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
+        <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
+        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestion Humana</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -852,15 +852,15 @@
         </div>
         <div id="gd-vista-wrap" style="display:none;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label id="gd-vista-label" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">VISTA:</label>
-          <select id="gd-vista-sel" onchange="onGdVistaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+          <select id="gd-vista-sel" onchange="onGdVistaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+          <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div id="gd-comp-wrap" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">COMPARAR CONTRA:</label>
-          <select id="gd-comp-sel" onchange="onGdCompChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+          <select id="gd-comp-sel" onchange="onGdCompChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div id="gd-comp-nota" style="display:none;color:#a8d8ea;font-size:0.78rem;font-style:italic;padding:6px 4px">La comparación aplica a las pestañas de resumen</div>
       </div>
@@ -887,12 +887,12 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">CAMPANA:</label>
-          <select id="cal-campana-sel" onchange="onCalCampanaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
+          <select id="cal-campana-sel" onchange="onCalCampanaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-          <select id="cal-mes-sel" onchange="onCalMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
+          <select id="cal-mes-sel" onchange="onCalMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
           </select>
         </div>
       </div>
@@ -1080,11 +1080,11 @@
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
             <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">CATEGORIA:</label>
-            <select id="inv-filtro-cat" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+            <select id="inv-filtro-cat" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
             <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">ESTADO:</label>
-            <select id="inv-filtro-estado" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px">
+            <select id="inv-filtro-estado" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
               <option value="">Todos</option>
               <option value="Disponible">Disponible</option>
               <option value="En Uso">En Uso</option>
@@ -1256,7 +1256,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">PERIODO:</label>
-          <select id="ger-periodo-sel" onchange="onGerPeriodoChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;outline:none;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
+          <select id="ger-periodo-sel" onchange="onGerPeriodoChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
       </div>
       <div style="display:flex;gap:8px">
@@ -1430,7 +1430,7 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="asesor-sidebar-menu">
-        <li><a id="asesor-menu-calidad" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon">&#127942;</span> Resultados de Calidad
+        <li><a id="asesor-menu-calidad" role="button" tabindex="0" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon">&#127942;</span> Resultados de Calidad
           <span id="asesor-menu-calidad-badge" class="hidden" style="background:#e74c3c;color:#fff;border-radius:10px;padding:1px 7px;font-size:0.7rem;font-weight:700;margin-left:6px"></span>
         </a></li>
       </ul>
@@ -1452,7 +1452,7 @@
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px;background:var(--c-surface-alt);border-radius:8px;padding:6px 12px">
             <label style="color:var(--c-primary);font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
-            <select id="mr-mes-sel" onchange="onMrMesChange()" style="border:none;background:transparent;color:var(--c-primary);font-size:0.84rem;font-weight:600;outline:none;cursor:pointer"></select>
+            <select id="mr-mes-sel" onchange="onMrMesChange()" style="border:none;background:transparent;color:var(--c-primary);font-size:0.84rem;font-weight:600;cursor:pointer"></select>
           </div>
         </div>
 
@@ -1501,8 +1501,8 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
-        <li><a id="supervisor-menu-dashboards" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon">&#129309;</span> Dashboards</a></li>
-        <li><a id="supervisor-menu-calidad" onclick="showSupervisorSection('calidad')"><span class="s-icon">&#10003;</span> Calidad</a></li>
+        <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon">&#129309;</span> Dashboards</a></li>
+        <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon">&#10003;</span> Calidad</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -1714,5 +1714,7 @@
 <script src="js/inventario.js"></script>
 <script src="js/gerencia.js"></script>
 <script src="js/gestion-humana.js"></script>
+<script src="js/a11y-logic.js"></script>
+<script src="js/a11y-teclado.js"></script>
 </body>
 </html>

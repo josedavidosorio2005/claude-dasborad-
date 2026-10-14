@@ -1332,3 +1332,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
 }
+
+/* ═══ Fase 144 (A2) — teclado ═══
+   Las tarjetas de modulo/cliente (.dash-btn, .client-card) ahora reciben
+   foco (role="button" tabindex="0", a11y-teclado.js). Sobre el fondo teal
+   fijo de la bienvenida --c-focus no llega a 3:1 -> mismo criterio que la
+   navbar: anillo con --c-on-brand. */
+#user-page .dash-btn:focus-visible{outline:3px solid var(--c-on-brand);outline-offset:3px;}
