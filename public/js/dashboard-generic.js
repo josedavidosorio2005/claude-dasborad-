@@ -2034,22 +2034,65 @@ function _fmtCell(v){ return v === null || v === undefined || v === '' ? '' : (t
 // abierto) o se de por "gastado" un instante despues de que se cierre
 // por cualquier otro camino -- nunca cascadea a cerrar el dashboard
 // entero. Ver motion-helpers.js para el detalle completo del hallazgo.
+// Fase 144 (A3, hallazgo D11): menu de boton accesible (patron "Menu
+// Button" de la WAI-ARIA APG, consultado en Context7): aria-expanded en el
+// boton, role="menu"/"menuitem", el foco ENTRA al primer item al abrir
+// (antes hacian falta 12 Tab para llegar), flechas/Inicio/Fin entre items,
+// Tab o Escape lo cierran y devuelven el foco a "Exportar". El menu ahora se
+// agrega DENTRO de #gd-overlay (el dialogo, role="dialog" aria-modal) en vez
+// de colgar de <body>: fuera del dialogo un lector de pantalla no lo veria.
+// #gd-overlay ocupa toda la pantalla (inset:0), asi que las coordenadas
+// position:fixed del menu siguen siendo las mismas de siempre; y desde la
+// Fase 103 la pantalla completa es la pagina entera, sin el problema de
+// clics que obligo a colgarlo de <body>.
+function _gdExportCerrar(devolverFoco){
+  var m = document.getElementById('gd-export-menu');
+  var btn = document.getElementById('gd-export-btn');
+  if(!m) return;
+  var focoDentro = m.contains(document.activeElement);
+  m.remove();
+  document.removeEventListener('click', _gdExportClickAfuera, true);
+  if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu');
+  if(btn){
+    btn.setAttribute('aria-expanded', 'false');
+    if(devolverFoco || focoDentro) btn.focus();
+  }
+}
+function _gdExportTeclado(ev){
+  var m = document.getElementById('gd-export-menu');
+  if(!m) return;
+  var items = Array.prototype.slice.call(m.querySelectorAll('[role="menuitem"]'));
+  var i = items.indexOf(document.activeElement);
+  var sig = -1;
+  if(ev.key === 'ArrowDown') sig = (i + 1) % items.length;
+  else if(ev.key === 'ArrowUp') sig = (i - 1 + items.length) % items.length;
+  else if(ev.key === 'Home') sig = 0;
+  else if(ev.key === 'End') sig = items.length - 1;
+  else if(ev.key === 'Tab'){ ev.preventDefault(); _gdExportCerrar(true); return; }
+  if(sig >= 0){ ev.preventDefault(); items[sig].focus(); }
+}
 function _gdExport(){
   var m = document.getElementById('gd-export-menu');
-  if(m){ m.remove(); document.removeEventListener('click', _gdExportClickAfuera, true); if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu'); return; }
+  if(m){ _gdExportCerrar(false); return; }
   var btn = document.getElementById('gd-export-btn');
   m = document.createElement('div');
   m.id = 'gd-export-menu';
+  m.setAttribute('role', 'menu');
+  m.setAttribute('aria-labelledby', 'gd-export-btn');
   m.style.cssText = 'position:fixed;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;box-shadow:0 8px 30px rgba(var(--shadow-rgb),.2);z-index:700;overflow:hidden;font-size:0.85rem';
   m.innerHTML =
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
+    '<button role="menuitem" tabindex="-1" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
+    '<button role="menuitem" tabindex="-1" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
   var r = btn.getBoundingClientRect();
   m.style.top = (r.bottom + 6) + 'px';
   m.style.left = Math.max(8, r.right - 160) + 'px';
   m.style.width = '160px';
-  document.body.appendChild(m);
-  if (typeof motionRegistrarPopupInterno === 'function') motionRegistrarPopupInterno('gd-export-menu', _gdExport);
+  (document.getElementById('gd-overlay') || document.body).appendChild(m);
+  m.addEventListener('keydown', _gdExportTeclado);
+  btn.setAttribute('aria-expanded', 'true');
+  var primero = m.querySelector('[role="menuitem"]');
+  if(primero) primero.focus();
+  if (typeof motionRegistrarPopupInterno === 'function') motionRegistrarPopupInterno('gd-export-menu', function(){ _gdExportCerrar(true); });
   setTimeout(function(){ document.addEventListener('click', _gdExportClickAfuera, true); }, 0);
 }
 function _gdExportClickAfuera(ev){
@@ -2057,7 +2100,5 @@ function _gdExportClickAfuera(ev){
   var btn = document.getElementById('gd-export-btn');
   if(!m) return;
   if(m.contains(ev.target) || (btn && btn.contains(ev.target))) return;
-  m.remove();
-  document.removeEventListener('click', _gdExportClickAfuera, true);
-  if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu');
+  _gdExportCerrar(false);
 }

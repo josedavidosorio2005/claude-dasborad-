@@ -1346,3 +1346,9 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    fijo de la bienvenida --c-focus no llega a 3:1 -> mismo criterio que la
    navbar: anillo con --c-on-brand. */
 #user-page .dash-btn:focus-visible{outline:3px solid var(--c-on-brand);outline-offset:3px;}
+
+/* ═══ Fase 144 (A3) — dialogos ═══
+   Al abrir uno de los 6 dialogos el foco entra a su contenedor
+   (tabindex="-1", motion-helpers.js) para que el lector de pantalla anuncie
+   el titulo. No se le quita el anillo: con teclado, la regla global de
+   [tabindex]:focus-visible marca el dialogo, que es justo donde esta el foco. */

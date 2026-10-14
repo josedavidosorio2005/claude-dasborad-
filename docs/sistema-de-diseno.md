@@ -402,6 +402,26 @@ panel nuevo con ventana de fechas debe mostrarlo igual.
 - Menú lateral: `aria-current="page"` en la opción activa; el botón ☰ dice
   `aria-expanded` y Escape cierra el menú móvil.
 
+## Diálogos y menús de botón (Fase 144, A3)
+
+- Los 6 overlays de `motion-helpers.js` (tablero, Calidad, Supervisar
+  Líder, Cargar Datos, constructor de dashboards, detalle de monitoreo)
+  son `role="dialog" aria-modal="true" aria-labelledby="<h2 del título>"`.
+  `motionAbrirModal` guarda el control que lo abrió, deja `inert` el resto
+  de la página (sube hasta `<body>`; nunca el `#toast`), y lleva el foco al
+  contenedor; Tab/Shift+Tab dan la vuelta dentro del diálogo de más arriba;
+  `motionCerrarModal` libera el fondo y devuelve el foco. Un diálogo nuevo
+  que use ese par de funciones queda accesible sin código extra — solo
+  agregar el `role`/`aria-labelledby` en su overlay.
+- Menú de botón (hoy: "Exportar"): `aria-haspopup="menu"` + `aria-expanded`
+  en el botón, `role="menu"`/`"menuitem"`, el foco entra al primer ítem,
+  ↑/↓/Inicio/Fin, Tab o Escape lo cierran y devuelven el foco al botón. Se
+  agrega dentro del overlay (no en `<body>`), para no quedar fuera del
+  diálogo.
+- Pendiente (no entró en A3): los otros 10 diálogos que no usan
+  `motion-helpers.js` (Inventario, Gerencia, Gestión Humana, selector de
+  clientes y las ventanas `.modal-overlay` de usuario/ítem/KPI…).
+
 ## Foco visible (WCAG 2.4.7/2.4.11)
 
 Regla global al final de `styles.css`:

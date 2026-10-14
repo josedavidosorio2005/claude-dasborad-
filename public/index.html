@@ -605,7 +605,7 @@
       </div>
 
       <!-- DASHBOARD BUILDER MODAL — constructor visual (Fase A6) -->
-      <div id="dashcfg-overlay">
+      <div role="dialog" aria-modal="true" aria-labelledby="dashcfg-modal-title" id="dashcfg-overlay">
         <div id="dashcfg-modal">
           <div class="aurora-header">
             <div>
@@ -840,7 +840,7 @@
 </div>
 
 <!-- ══ DASHBOARD DE CLIENTE (generico, por configuracion) ══════════════════════════════ -->
-<div id="gd-overlay">
+<div role="dialog" aria-modal="true" aria-labelledby="gd-title" id="gd-overlay">
   <div id="gd-modal">
     <div class="aurora-header">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -865,7 +865,7 @@
         <div id="gd-comp-nota" style="display:none;color:#a8d8ea;font-size:0.78rem;font-style:italic;padding:6px 4px">La comparación aplica a las pestañas de resumen</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="aurora-close" id="gd-export-btn" onclick="exportGenericDashboard()">Exportar</button>
+        <button class="aurora-close" id="gd-export-btn" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()">Exportar</button>
         <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa">&#9974;</button>
         <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
       </div>
@@ -877,12 +877,12 @@
 </div>
 
 <!-- ══ CALIDAD MODULE MODAL ══════════════════════════════ -->
-<div id="calidad-overlay">
+<div role="dialog" aria-modal="true" aria-labelledby="calidad-modal-title" id="calidad-overlay">
   <div id="calidad-modal">
     <div class="aurora-header">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div>
-          <h2>Modulo de Calidad</h2>
+          <h2 id="calidad-modal-title">Modulo de Calidad</h2>
           <div class="aurora-sub" id="cal-sub-label">Monitoreo y evaluacion por campana</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
@@ -1360,11 +1360,11 @@
 </div>
 
 <!-- ══ CARGA DE DATOS DE DASHBOARDS (permiso cargarDatos) ══════════════════════════════ -->
-<div id="cargas-overlay">
+<div role="dialog" aria-modal="true" aria-labelledby="cargas-modal-title" id="cargas-overlay">
   <div id="cargas-modal">
     <div class="aurora-header">
       <div>
-        <h2>Cargar Datos de Dashboards</h2>
+        <h2 id="cargas-modal-title">Cargar Datos de Dashboards</h2>
         <div class="aurora-sub">Una sola plantilla por cliente, con una hoja por tipo de dato (Gestion de base, Calidad, Trafico). Las hojas que no apliquen pueden quedar vacias. Si ya hay una carga para ese cliente/sección/periodo, se pide confirmación antes de reemplazarla.</div>
       </div>
       <button class="aurora-close" onclick="closeCargas()">X Cerrar</button>
@@ -1539,11 +1539,11 @@
 </div>
 
 <!-- ══ DETALLE DE MONITOREO (solo lectura, rol ASESOR) ══════════════════════════════ -->
-<div id="detalle-monitoreo-overlay">
+<div role="dialog" aria-modal="true" aria-labelledby="detalle-monitoreo-modal-title" id="detalle-monitoreo-overlay">
   <div id="detalle-monitoreo-modal">
     <div class="aurora-header">
       <div>
-        <h2>Detalle del Monitoreo</h2>
+        <h2 id="detalle-monitoreo-modal-title">Detalle del Monitoreo</h2>
         <div class="aurora-sub" id="dm-sub-label">Vista de solo lectura</div>
       </div>
       <button class="aurora-close" onclick="closeDetalleMonitoreo()">X Cerrar</button>
@@ -1581,11 +1581,11 @@
 </div>
 
 <!-- ══ SUPERVISAR LIDER (drill-down individual, Admin/Gerencia/Reportes) ══════════════════════════════ -->
-<div id="supervisar-lider-overlay">
+<div role="dialog" aria-modal="true" aria-labelledby="supervisar-lider-modal-title" id="supervisar-lider-overlay">
   <div id="supervisar-lider-modal">
     <div class="aurora-header">
       <div>
-        <h2>Supervision Individual</h2>
+        <h2 id="supervisar-lider-modal-title">Supervision Individual</h2>
         <div class="aurora-sub" id="sl-sub-label"></div>
       </div>
       <button class="aurora-close" onclick="closeSupervisionLider()">X Cerrar</button>
