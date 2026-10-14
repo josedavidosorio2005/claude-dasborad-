@@ -27,7 +27,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   `DOCKERHUB_TOKEN`. Cómo se cierra: creas el token y los 2 secretos
   (pasos en la descripción de ese PR) y escribes "OK mergear 429".
   Las 3 opciones están en `docs/historico/progress-fases.md`, Fase 139
-  (cierre).
+  (cierre). El 2026-10-14 (Fase 145) el 429 de `public.ecr.aws` volvió
+  a tumbar el docker-build 4 veces; en cada caso pasó al relanzar el job.
 - **`GET /calidad/llamadas-unicas/opciones` devuelve nombres de asesor a
   roles cliente** — decidido el 2026-10-13: se deja así, como pidió
   Edwin (la pantalla oculta el filtro Asesor a CLIENTES_DASH, pero la
@@ -163,9 +164,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - **"Tipo de línea" en Mobilize**: Edwin mencionó este término en la
     reunión, sin precisar a qué se refiere ni si es un dato nuevo a
     cargar.
-  - **"ATA" de Mobilize**: sin confirmar si es lo mismo que AHT (ya
-    existe en Mobilize desde el PR 2 de esta fase) o un indicador
-    distinto.
+  - **"ATA" de Mobilize** (actualizado 2026-10-14, Fase 145): resuelto
+    como indicador distinto, a pedido de Edwin. Flujo de Llamadas tiene
+    "ASA y ATA" y "AHT" por separado. **Falta confirmar con Edwin cómo
+    debe verse ATA en septiembre**: la plantilla de Flujo (hoja HistQueue)
+    trae ATA = 0 en las 27 filas, y producción lo guardó así (27/27 en 0,
+    verificado en solo lectura). Pero esa misma plantilla trae **0
+    llamadas abandonadas** en septiembre, y ATA es "tiempo promedio hasta
+    abandonar" (se pondera por abandonadas, igual que en ORLANT). Sin
+    abandonos no hay promedio, así que la tarjeta y la gráfica muestran
+    "—" en vez de "0:00". Si Edwin prefiere ver "0:00" en ese caso, es un
+    cambio chico en `trafico.js` (solo Mobilize o para todos).
   - **Llamadas de salida de Mobilize (septiembre cargado el 2026-10-14,
     Fase 142)**: se cargó tal cual lo mandó Edwin (111 = 52 no conectadas
     + 59 conectadas). Faltan 3 respuestas de Edwin: ¿se excluyen las

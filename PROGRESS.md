@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.34.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.35.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -633,3 +633,5 @@ mismo orden):
 - Fase 136 — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135 (F01 pestañas móviles, F02 CLS, tokens, base de movimiento sin vendorizar `motion` -- 49 KB gzip real, más del doble de lo estimado --, componentes base, F03 transición de pestañas + Chart.js, F09 microinteracciones, F08+F11 toast de login + pantalla completa, y F04 modales unificados con Escape, el PR de mayor riesgo, aprobado con "OK modales" tras 2 condiciones de progressive enhancement/reabrir-durante-salida); PR 9 (scroll) descartado sin candidato real; verificación de cierre en producción confirmó MOBILIZE/tema oscuro/modales/F01 en vivo, con 1 hallazgo sin resolver (inestabilidad real, no reproducible en local, al cambiar de pestaña en ORLANT -- documentado, no es regresión de esta fase) (2026-10-09)
 - Fase 141 — Reunión con Edwin del 13/10: "Flujo de Llamadas"/"Flujo de WhatsApp" y Tipificación lado a lado (Parte A); corrección de Llamadas Únicas de septiembre (Parte B); mitad "Llamadas de salida" en la pestaña Llamadas Únicas de Mobilize (Parte C) (2026-10-13)
 - Fase 142 — Carga real de Llamadas de salida de Mobilize (septiembre), rechazo de "NO CONTESTADAS" en Llamadas Únicas, y Nivel de Servicio de WhatsApp de ORLANT por rangos de minutos (2026-10-14)
+- Fase 144 — Bloque A de UI/accesibilidad publicado: A1–A3 uno por uno (v1.34.1–1.34.3) y A4–A8 + A3b juntos en v1.34.4 por el 429 del registro de imágenes (2026-10-14)
+- Fase 145 — Ajustes de Mobilize para la entrega: "ASA y ATA" + "AHT", "Llamadas Únicas y de Salida", sin aviso amarillo falso, % legibles en las tortas; verificado en producción (v1.35.0, 2026-10-14)

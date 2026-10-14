@@ -14658,3 +14658,75 @@ de la base local al terminar). Archivos en `C:\Users\filid\datos-inconexion`
   En pantalla: agosto 40,4 % y septiembre 44,7 % en 0–3 minutos. ORLANT
   igual (8 pestañas, tarjetas iguales), exportación Excel válida.
 - 0 errores de consola en toda la sesión.
+
+## Fase 144 — Bloque A publicado (v1.34.1 a v1.34.4, 2026-10-14)
+
+Después de la presentación, con OK del usuario. Orden real:
+
+- #411 A1 (v1.34.1), #412 A2 (v1.34.2) y #413 A3 (v1.34.3), uno por uno:
+  en cada rama `git merge origin/main` (sin rebase), suite completa,
+  CI verde, `gh pr merge --match-head-commit` contra `git ls-remote`,
+  deploy y `/api/health` sin caché antes del siguiente.
+- El docker-build de #414 falló 2 veces seguidas por el 429 de
+  `public.ecr.aws`. Para gastar menos descargas, el usuario pidió juntar
+  A4, A5, A6, A7, A8 y A3b en **una sola rama** (`fase144-bloque-a-resto`,
+  PR #420) con **una sola versión, v1.34.4**, y las 6 entradas del
+  CHANGELOG bajo ella. Choques resueltos: CSS y docs solo aditivos;
+  `index.html` (A2 + A5, el enlace "Resultados de Calidad" del asesor);
+  y líneas de A7/A8 contra A2 + A5 en `index.html`, `trafico.js` y
+  `trafico-whatsapp.js`: se tomó la línea de A7/A8 con los cambios de
+  A2 (sin `outline:none`) y A5 (`var(--fs-note)`), verificado con
+  `git diff --word-diff`. Suite 1596/1596, CI verde al primer intento.
+  GitHub marcó #414–#419 como mergeados solos (sus commits entraron con
+  #420); cada uno tiene un comentario que apunta a #420.
+
+## Fase 145 — Ajustes de Mobilize para la entrega (v1.35.0, 2026-10-14)
+
+Pedidos de Edwin del 14/10, con OK del usuario. Un solo PR (#421) en vez
+de dos (M1 y M2), como pidió el usuario.
+
+- **M1**: en Flujo de Llamadas de Mobilize, "ASA y AHT" pasa a ser "ASA y
+  ATA" (vista `asaata` de ORLANT) + "AHT" aparte. La pestaña "Llamadas
+  Únicas" pasa a llamarse "Llamadas Únicas y de Salida" (la key no
+  cambia). Seed y migración nueva idempotente
+  `dashboards_config_mobilize_flujo_asaata_aht_v1` (solo toca la forma
+  conocida; si encuentra otra forma, la deja y lo registra en el log).
+  Base nueva == base migrada (probado).
+- **M2**: el aviso amarillo "todavía no tiene datos cargados" solo sale
+  si el dashboard tiene algo que depende de cargas genéricas
+  (`gdMostrarAvisoSinCargas`); Mobilize ya no lo muestra y ORLANT no
+  cambia. El % de cada porción de las tortas se elige por contraste
+  (`contrasteTextoSobreRelleno`): `#0a1e25` o blanco, y un contorno solo
+  donde ninguno llega a 4,5:1 (4 tonos medios de la paleta oscura).
+- **CI**: `.github/scripts/ci-pantallas-orlant.js` exigía el aviso
+  amarillo en el primer dibujo de Mobilize (Fase 139), justo el aviso
+  falso que se quitó. Con OK explícito del usuario ahora exige que no
+  aparezca; el chequeo de salto de pestañas sigue igual.
+- Suite 1614/1614. Verificación local (demo sintética, Brave): 375 y 1440
+  px antes/después (claro; las tortas también en oscuro) y la pasada
+  pendiente del Bloque A a 768 px en oscuro (sin scroll horizontal;
+  flechas en pestañas, Exportar, Cargar Datos y Escape con el foco que
+  vuelve; 0 errores de consola). Capturas fuera del repo
+  (`datos-inconexion/diagnostico-ui/fase145/`).
+- **Producción (v1.35.0)**, una sesión de solo lectura (Brave visible,
+  contraseña escrita por el usuario, 102 s, sin capturas):
+  - **Mobilize**: sin aviso amarillo (ni al reabrir). Flujo con 5
+    sub-pestañas: Flujo de Llamadas, Nivel de Servicio, Abandono, ASA y
+    ATA, AHT. El rango "01/09/2026 – 30/09/2026" no cambia con la misma
+    pestaña, al ir y volver, ni al cerrar y reabrir. ASA 0:01, AHT 5:29.
+    **ATA**: la carga guardó 0 en las 27 filas de septiembre, pero
+    septiembre tiene 0 abandonadas, así que ATA se muestra "—" (ver
+    `docs/pendientes.md`). "Llamadas Únicas y de Salida": 88 / 88 / 0 de
+    ingreso y 111 / 52 / 59 de salida. Tipificación 167, sin contorno, el
+    % con menos contraste en 4,65:1.
+  - **ORLANT**: 8 pestañas. Tráfico de Llamadas y de WhatsApp en agosto y
+    septiembre con el rango estable. WhatsApp Nivel de Servicio 40,4 %
+    (agosto) y 44,7 % (septiembre). Tipificación 19.721 con el % con menos
+    contraste en 4,65:1.
+  - **Teclado**: 11 opciones del menú lateral con foco, pestañas con
+    flechas, Exportar (foco en "Excel (.xlsx)", Escape cierra solo el menú
+    y el foco vuelve) y Cargar Datos (Tab se queda dentro 12/12, Escape
+    cierra y el foco vuelve).
+  - 0 errores de consola.
+  - Calidad de Mobilize no mostró tarjetas ni gráfica en septiembre.
+    Sin errores; no se revisó más a fondo en esta pasada.
