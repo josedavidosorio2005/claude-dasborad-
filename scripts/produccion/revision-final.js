@@ -188,6 +188,18 @@ async function abrirDashboard(page, cliente) {
     const ov = document.getElementById('gd-overlay');
     return !!ov && ov.classList.contains('show') && !!document.querySelector('#gd-tabs .atab.atab-active');
   }, null, { timeout: 60000 });
+  // Fase 146: recorre SIEMPRE el mes de los numeros de control (REVISION_MES,
+  // por defecto 2026-09), no el mes por defecto del tablero -- contra una
+  // base cuyo mes por defecto no tiene Trafico (la demo local abre en
+  // octubre), "Flujo de Llamadas" mostraba su aviso de "sin datos" y el
+  // chequeo de sub-pestañas fallaba sin que nada estuviera mal.
+  const mesRevision = process.env.REVISION_MES || '2026-09';
+  if (await page.locator('#gd-mes-sel option[value="' + mesRevision + '"]').count()) {
+    if ((await page.inputValue('#gd-mes-sel')) !== mesRevision) {
+      await page.selectOption('#gd-mes-sel', mesRevision);
+      await page.waitForTimeout(2000);
+    }
+  }
 }
 
 // Fase 139: cierra el dashboard con su boton "X Cerrar" (como un usuario)
