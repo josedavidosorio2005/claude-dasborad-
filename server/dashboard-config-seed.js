@@ -442,11 +442,18 @@ const MOBILIZE = {
           // ("asaaht", confirmado que la plantilla real de Flujo trae AHT
           // antes de construir esto), mismo patron que "asaata" (Llamadas de
           // ORLANT) ya usaba para ASA+ATA.
+          // Fase 145 (pedido de Edwin 14/10): "ASA y AHT" se separa otra vez,
+          // ahora como "ASA y ATA" (la misma vista "asaata" que ya usa
+          // Llamadas de ORLANT) y "AHT" aparte (vista "aht"). La vista
+          // "asaaht" sigue existiendo en trafico.js, solo deja de usarse aqui.
+          // Migracion para la base ya sembrada:
+          // dashboards_config_mobilize_flujo_asaata_aht_v1 (db.js).
           subtabs: [
             { key: 'resumen', label: 'Resumen' },
             { key: 'sl', label: 'Nivel de Servicio' },
             { key: 'abandono', label: 'Abandono' },
-            { key: 'asaaht', label: 'ASA y AHT' },
+            { key: 'asaata', label: 'ASA y ATA' },
+            { key: 'aht', label: 'AHT' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
         },
@@ -459,7 +466,9 @@ const MOBILIZE = {
       // derecha -- sin panel nuevo ni migracion de config.]
       // de ingreso (ingreso a la izquierda, salida a la derecha) -- hoy no
       // hay ningun panel de salida, nunca una mitad vacia.
-      { key: 'llamadas_unicas', label: 'Llamadas Únicas', panels: [
+      // Fase 145 (pedido de Edwin 14/10): el texto de la pestaña dice tambien
+      // "de Salida" (la mitad derecha, Fase 141). La key no cambia.
+      { key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida', panels: [
         { tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' },
       ]},
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [

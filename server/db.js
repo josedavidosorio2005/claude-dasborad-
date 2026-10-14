@@ -3505,6 +3505,76 @@ runOnceMigration('fase141_llamadas_salida_tabla_v1', () => {
   `);
 });
 
+// Fase 145 (pedido de Edwin 14/10/2026, entrega de Mobilize): en Flujo de
+// Llamadas de Mobilize la sub-pestaña "ASA y AHT" ("asaaht", Fase 138 PR2)
+// se reemplaza por 2: "ASA y ATA" ("asaata", la misma vista de ORLANT) y
+// "AHT" ("aht", propia), y la pestaña "Llamadas Únicas" pasa a decir
+// "Llamadas Únicas y de Salida" (solo el texto; la key llamadas_unicas no
+// cambia). Defensiva, cada cambio por separado: solo se toca la forma
+// conocida (subtabs exactamente con "asaaht" / label exactamente "Llamadas
+// Únicas"); si ya esta en la forma nueva no hace nada, y si la forma no es
+// ninguna de las 2 se deja intacta y se registra en el log. El resultado
+// queda igual al seed (CONFIGS), asi base nueva y base migrada coinciden.
+function migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas() {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const avisar = (motivo) => {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_flujo_asaata_aht_v1: ' + motivo + ' -- se deja intacto, revisar a mano.');
+    }
+  };
+  const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+  const targetTabs = (target && target.layout.tabs) || [];
+  const targetFlujo = targetTabs.find((t) => t.key === 'flujo');
+  const targetPanel = targetFlujo && (targetFlujo.panels || []).find((p) => p.tipo === 'trafico_combo');
+  const targetLu = targetTabs.find((t) => t.key === 'llamadas_unicas');
+  if (!targetPanel || !targetLu) return;
+  let cambio = false;
+
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo');
+  if (!panel) {
+    avisar('no se encontro el trafico_combo de "flujo"');
+  } else {
+    const keys = (panel.subtabs || []).map((s) => s && s.key);
+    const yaNuevo = keys.indexOf('asaata') !== -1 && keys.indexOf('aht') !== -1 && keys.indexOf('asaaht') === -1;
+    const esViejo = keys.join(',') === 'resumen,sl,abandono,asaaht';
+    if (esViejo) {
+      panel.subtabs = JSON.parse(JSON.stringify(targetPanel.subtabs));
+      cambio = true;
+    } else if (!yaNuevo) {
+      avisar('las sub-pestañas de "flujo" no coinciden con la forma esperada (' + keys.join(',') + ')');
+    }
+  }
+
+  const tabLu = (layout.tabs || []).find((t) => t && t.key === 'llamadas_unicas');
+  if (!tabLu) {
+    avisar('no hay pestaña "llamadas_unicas"');
+  } else if (tabLu.label === 'Llamadas Únicas') {
+    tabLu.label = targetLu.label;
+    cambio = true;
+  } else if (tabLu.label !== targetLu.label) {
+    avisar('la pestaña "llamadas_unicas" tiene otro nombre');
+  }
+
+  if (!cambio) return;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_flujo_asaata_aht_v1 aplicada.');
+  }
+}
+runOnceMigration('dashboards_config_mobilize_flujo_asaata_aht_v1', migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3519,3 +3589,5 @@ module.exports.closeDb = closeDb;
 module.exports.DB_PATH = DB_PATH;
 // Fase 139: expuesta solo para probar la idempotencia (correrla 2 veces).
 module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUnicasATabPropio;
+// Fase 145: idem.
+module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas;

@@ -220,3 +220,20 @@ verificación:
 - [ ] Cambiar el Mes o la Cola actualiza las barras.
 - [ ] En **Llamadas Únicas** de Mobilize, la mitad de salida muestra
       111 en total, 52 no conectadas y 59 conectadas (septiembre 2026).
+
+## Fase 145 — Ajustes de Mobilize para la entrega
+
+- [ ] En Mobilize → **Flujo de Llamadas** se ven 5 sub-pestañas, en este
+      orden: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y ATA**
+      y **AHT** (antes "ASA y AHT" iban juntos).
+- [ ] "ASA y ATA" muestra ATA en **0:00** en septiembre 2026: la plantilla
+      de Flujo de Mobilize trae la columna ATA en 0 en todos los días.
+- [ ] "AHT" muestra su propio promedio y su línea de tendencia.
+- [ ] La pestaña que antes decía "Llamadas Únicas" ahora dice **"Llamadas
+      Únicas y de Salida"** (los números no cambian: 88 / 0 / 88 de
+      ingreso y 111 / 52 / 59 de salida, septiembre 2026).
+- [ ] En el tablero de Mobilize ya **no** sale el aviso amarillo "Este
+      dashboard todavía no tiene datos cargados…".
+- [ ] En **Tipificación** (Orlant y Mobilize) los porcentajes de la torta
+      se leen bien en todas las porciones: letra oscura sobre los colores
+      claros y blanca sobre los oscuros, en tema claro y oscuro.

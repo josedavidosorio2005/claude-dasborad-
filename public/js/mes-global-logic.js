@@ -29,6 +29,26 @@ function gdTodosAutonomos(panelesVisibles) {
   return lista.every(function (p) { return GD_TIPOS_AUTONOMOS.indexOf(p && p.tipo) !== -1; });
 }
 
+// Fase 145 (pedido de Edwin): el aviso amarillo "Este dashboard todavia no
+// tiene datos cargados" (renderGenericBanner, dashboard-generic.js) solo
+// mira las cargas GENERICAS (_gd.cargas) -- Mobilize usa solo paneles
+// autonomos (Trafico, Llamadas Unicas/Salida, Tipificacion, Calidad), que
+// leen sus propios datos y ya traen su aviso de "sin datos", asi que el
+// aviso salia aunque si habia datos. Ahora solo sale si el dashboard tiene
+// algo que DEPENDE de las cargas genericas (tarjetas KPI de arriba o algun
+// panel no autonomo, en cualquier pestana, incluso oculta) y no hay
+// ninguna carga.
+function gdDependeDeCargasGenericas(layout) {
+  var l = layout || {};
+  if ((l.kpis || []).length) return true;
+  return (l.tabs || []).some(function (t) {
+    return ((t && t.panels) || []).some(function (p) { return GD_TIPOS_AUTONOMOS.indexOf(p && p.tipo) === -1; });
+  });
+}
+function gdMostrarAvisoSinCargas(layout, hayCargas) {
+  return !hayCargas && gdDependeDeCargasGenericas(layout);
+}
+
 // Ultimo dia de un mes ('AAAA-MM' -> 'AAAA-MM-DD') -- usado por las 3
 // pestanas de TENDENCIA (Trafico Llamadas/WhatsApp, Calidad) al
 // sincronizarse con el selector MES de arriba: el mes elegido se vuelve el
@@ -83,5 +103,7 @@ if (typeof module !== 'undefined' && module.exports) {
     gdFinDeMes: gdFinDeMes,
     gdMesesUnion: gdMesesUnion,
     gdMesPorDefecto: gdMesPorDefecto,
+    gdDependeDeCargasGenericas: gdDependeDeCargasGenericas,
+    gdMostrarAvisoSinCargas: gdMostrarAvisoSinCargas,
   };
 }

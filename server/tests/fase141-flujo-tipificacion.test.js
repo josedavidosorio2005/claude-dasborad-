@@ -64,10 +64,11 @@ test('Mobilize: aunque su config guardada traiga label "Resumen", la pastilla se
   const s = cargarNavTrafico();
   const subtabsGuardadas = [
     { key: 'resumen', label: 'Resumen' }, { key: 'sl', label: 'Nivel de Servicio' },
-    { key: 'abandono', label: 'Abandono' }, { key: 'asaaht', label: 'ASA y AHT' },
+    { key: 'abandono', label: 'Abandono' }, { key: 'asaata', label: 'ASA y ATA' },
+    { key: 'aht', label: 'AHT' },
   ];
   const html = s.nav('tv', 3, 'resumen', '_traficoSwitchSubtab', 'trafsub', subtabsGuardadas);
-  assert.deepEqual(textosBotones(html), ['Flujo de Llamadas', 'Nivel de Servicio', 'Abandono', 'ASA y AHT']);
+  assert.deepEqual(textosBotones(html), ['Flujo de Llamadas', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT']);
   assert.equal(subtabsGuardadas[0].label, 'Resumen', 'la config recibida no se modifica');
 });
 

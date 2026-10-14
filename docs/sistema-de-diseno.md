@@ -481,6 +481,15 @@ de una fila de KPI se ven iguales.
   `index.html` y todos los JS de vistas: un campo nuevo sin nombre la
   pone en rojo.
 
+## Texto sobre porciones de torta (Fase 145)
+
+El % encima de cada porción (`loPie`, `charts.js`) no es un color fijo:
+`contrasteTextoSobreRelleno(relleno, CHART_DL_OSCURO)` (`contraste-logic.js`)
+elige entre `#0a1e25` (`--c-bg` del tema oscuro) y blanco el que más
+contraste da con ESA porción. Si ninguno llega a 4.5:1 (unos pocos tonos
+medios de `PC_DARK`), agrega un contorno de 3px del otro color. No se
+cambia la paleta para arreglar un texto encima de ella.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/
