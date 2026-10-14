@@ -365,7 +365,7 @@ function renderCalItemsForm(){
     items.filter(function(it){return it.cat===cat;}).forEach(function(it){
       html += '<div class="qi-row">'+
         '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(it.weight)+'%)</span></div>'+
-        '<select class="qi-select" id="cf-item-'+esc(it.n)+'" onchange="renderCalPreview()">'+
+        '<select class="qi-select" id="cf-item-'+esc(it.n)+'" aria-label="'+esc(it.n)+'. '+esc(it.label)+'" onchange="renderCalPreview()">'+
           '<option value="">—</option><option value="SI">SI</option><option value="NO">NO</option><option value="N/A">N/A</option>'+
         '</select></div>';
     });
@@ -516,7 +516,7 @@ async function submitMonitoreo(){
         await apiRequest('POST','/monitoreos', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(editing ? 'Monitoreo actualizado correctamente' : 'Monitoreo guardado correctamente');
   resetCalForm();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
@@ -528,7 +528,7 @@ async function calMonitoreosDelete(id){
   if(!confirm('Eliminar este monitoreo?')) return;
   try{
     await apiRequest('DELETE','/monitoreos/'+id);
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   await loadCalData(_ccampana, _cmesFiltro || undefined);
   renderCalMonitoreosTable();
   renderCalKpis();
@@ -686,7 +686,7 @@ async function calCodificacionesAgregar(){
     renderCalCodifCampoForm('');
     var msg = r.creadas.length+' agregada(s)'+(r.yaExistian.length? ', '+r.yaExistian.length+' ya existian (se omitieron)':'');
     showToast(msg);
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 async function calCodificacionToggle(id, activo){
@@ -697,7 +697,7 @@ async function calCodificacionToggle(id, activo){
     renderCalCodificacionesAdmin();
     renderCalCodifCampoForm('');
     showToast(activo ? 'Codificacion reactivada' : 'Codificacion desactivada');
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 var _cc = {};

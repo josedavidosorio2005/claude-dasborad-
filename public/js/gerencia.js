@@ -216,7 +216,7 @@ async function gerGuardarKpi(){
         await apiRequest('POST','/gerencia/kpis', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(_gerEditId ? 'Indicador actualizado' : 'Indicador creado');
   closeGerKpiModal();
   await loadGerData();
@@ -232,7 +232,7 @@ async function gerEliminarKpi(id){
   if(!k) return;
   if(!confirm('Eliminar el indicador "'+k.nombre+'" de '+k.periodo+'?')) return;
   try{ await apiRequest('DELETE','/gerencia/kpis/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Indicador eliminado');
   await loadGerData();
   renderGerPanel();
@@ -295,7 +295,7 @@ async function gerProcesarArchivo(input){
     await withButtonLoading(btn, 'Cargando '+kpis.length+' indicadores...', async function(){
       await apiRequest('POST','/gerencia/carga', { periodo: _gerPeriodoSel, kpis: kpis });
     });
-  }catch(e){ showToast(e.message); input.value=''; return; }
+  }catch(e){ showToast(e.message, 'error'); input.value=''; return; }
   showToast(kpis.length+' indicadores cargados para '+_gerPeriodoSel);
   input.value = '';
   await loadGerData();

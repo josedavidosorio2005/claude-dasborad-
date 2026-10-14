@@ -71,7 +71,7 @@ async function _salDibujar(campana, i, opciones){
 
   var filas = [];
   try{ filas = await apiRequest('GET','/calidad/salida/mensual?campana='+encodeURIComponent(campana)) || []; }
-  catch(e){ showToast(e.message); }
+  catch(e){ showToast(e.message, 'error'); }
 
   if(avisoEl){
     avisoEl.innerHTML = (!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1)

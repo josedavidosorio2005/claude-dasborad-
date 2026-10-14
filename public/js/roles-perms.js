@@ -108,7 +108,7 @@ async function persistPerms(u, label, action){
   try{
     await apiRequest('PUT','/users/'+u.id+'/perms',{perms:u.perms});
     showToast(action+': '+label+' - '+u.nombre);
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 function togglePerm(el){

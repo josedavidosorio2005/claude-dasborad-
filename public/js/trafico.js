@@ -41,7 +41,7 @@ async function procesarArchivoTrafico(input){
   }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
   var res = traficoParseFilas(aoa, ws);
-  if(res.error){ showToast(res.error); input.value=''; return; }
+  if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _tvParsed = { archivoNombre: file.name, filas: res.filas };
   _renderPreviewTrafico(file.name, res);
@@ -76,7 +76,7 @@ function cancelarPreviewTrafico(){
 async function _traficoConfirmarImpacto(){
   var impacto;
   try{ impacto = await apiRequest('POST','/calidad/trafico/carga/impacto', _tvParsed); }
-  catch(e){ showToast(e.message); return false; }
+  catch(e){ showToast(e.message, 'error'); return false; }
   var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0; });
   if(!afectados.length) return true;
   var detalle = afectados.map(function(p){ return '• ' + p.skillName + ' — ' + p.mes + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
@@ -95,7 +95,7 @@ async function guardarTrafico(){
   var resp;
   try{
     resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/calidad/trafico/carga', _tvParsed); });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   var msg = resp.insertadas + ' fila(s) guardadas en ' + resp.campanas.length + ' campana(s)';
   if(resp.skillsSinAsignar && resp.skillsSinAsignar.length){
     msg += '. ' + resp.skillsSinAsignar.length + ' skill(s) nueva(s) sin asignar: ' + resp.skillsSinAsignar.join(', ');
@@ -190,8 +190,8 @@ function _renderTraficoSkillsTable(){
     var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
       '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:var(--fs-note);margin-left:4px">sin asignar</span>')+'</td>' +
-      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
-        ' <select id="tv-skill-sede-'+idx+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
+      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" aria-label="Campaña de '+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
+        ' <select id="tv-skill-sede-'+idx+'" aria-label="Sede de '+esc(r.skillName)+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
       '<td><button class="btn-sm" onclick="guardarMapeoSkill('+idx+')">Guardar</button></td>' +
       '</tr>';
@@ -231,7 +231,7 @@ async function guardarMapeoSkill(idx){
   try{
     var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana, sede: sede });
     showToast('Mapeo guardado. '+resp.movidas+' fila(s) reatribuidas, '+resp.mesesRecalculados.length+' mes(es) recalculado(s).');
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   _trafico = {}; // invalida cache: el trafico de esta skill ya vive en otra campana/sede
   if(typeof renderNivelServicioSection === 'function') await renderNivelServicioSection();
   else {
@@ -290,14 +290,14 @@ async function registrarNuevoMapeoSkill(){
     sedesDisponibles: TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [],
     skillsExistentes: _traficoSkillsCache.map(function(r){ return r.skillName; }),
   });
-  if(v.error){ showToast(v.error); return; }
+  if(v.error){ showToast(v.error, 'error'); return; }
 
   var btn = document.getElementById('tv-skill-nuevo-btn');
   try{
     await withButtonLoading(btn, 'Registrando...', function(){
       return apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(v.skillName), { campana: v.campana, sede: v.sede });
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
 
   var campanaLabel = v.campana + (v.sede ? ' — ' + v.sede : '');
   showToast('Skill "'+v.skillName+'" registrado y asignado a '+campanaLabel+'. Quedara listo para cuando llegue trafico con este nombre.');
@@ -512,7 +512,7 @@ function _traficoClaveEstado(campana, sede){
 // ya era generica (no lee nada de trafico.js, solo los 2 arrays que recibe).
 function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta, etiquetaPlural){
   var modo = traficoModoDisplaySkills(datosLineas, estadoLineas);
-  return '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
+  return '<div><label for="'+prefijo+'-f-skill-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
       '<select id="'+prefijo+'-f-skill-'+i+'" style="min-width:200px" onchange="_traficoLineaPrincipalCambio(\''+prefijo+'\','+i+')">' +
         '<option value=""'+(modo.todas?' selected':'')+'>Todas las '+esc(etiquetaPlural)+'</option>' +
         // Fase 87 (tema C): el `value` sigue siendo el nombre ORIGINAL (los
@@ -524,7 +524,7 @@ function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta
     '<details id="'+prefijo+'-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
       '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
       '<div style="margin-top:8px;max-width:340px">' +
-        '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
+        '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" aria-label="Comparar varias '+esc(etiquetaPlural)+' especificas" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
           datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
         '</select>' +
         '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
@@ -645,9 +645,9 @@ async function _traficoRenderPanel(p, i){
       '<p class="trafico-rango" id="tv-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+        '<div><label for="tv-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="tv-f-hasta-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="tv-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tv-f-gran-'+i+'">' + ['dia','mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
         '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
           '<label style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +

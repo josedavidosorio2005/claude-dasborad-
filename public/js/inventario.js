@@ -193,7 +193,7 @@ async function invGuardarItem(){
         await apiRequest('POST','/inventario/items', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(_invEditId ? 'Item actualizado' : 'Item creado');
   closeInvItemModal();
   await loadInvData();
@@ -209,7 +209,7 @@ async function invEliminarItem(id){
   if(!it) return;
   if(!confirm('Eliminar "'+it.nombre+'" y todos sus movimientos?')) return;
   try{ await apiRequest('DELETE','/inventario/items/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Item eliminado');
   await loadInvData();
   renderInvFiltros();
@@ -273,7 +273,7 @@ async function invGuardarMovimiento(){
     await withButtonLoading(btn, 'Registrando...', async function(){
       await apiRequest('POST','/inventario/movimientos', body);
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast('Movimiento registrado');
   closeInvMovModal();
   await loadInvData();
@@ -347,7 +347,7 @@ async function invProcesarArchivoItems(input){
     await withButtonLoading(btn, 'Cargando '+items.length+' items...', async function(){
       await apiRequest('POST','/inventario/carga-items', { items: items });
     });
-  }catch(e){ showToast(e.message); input.value=''; return; }
+  }catch(e){ showToast(e.message, 'error'); input.value=''; return; }
   showToast(items.length+' items cargados correctamente');
   input.value = '';
   await loadInvData();
@@ -384,7 +384,7 @@ async function invProcesarArchivoMovimientos(input){
     await withButtonLoading(btn, 'Cargando '+movimientos.length+' movimientos...', async function(){
       await apiRequest('POST','/inventario/carga-movimientos', { movimientos: movimientos });
     });
-  }catch(e){ showToast(e.message); input.value=''; return; }
+  }catch(e){ showToast(e.message, 'error'); input.value=''; return; }
   showToast(movimientos.length+' movimientos cargados correctamente');
   input.value = '';
   await loadInvData();

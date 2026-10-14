@@ -234,9 +234,9 @@ async function _traficoWppRenderPanel(p, i) {
       '<p class="trafico-rango" id="tww-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+        '<div><label for="tww-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="tww-f-hasta-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="tww-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tww-f-gran-'+i+'">' + ['mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
         '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
           '<label style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
@@ -539,7 +539,7 @@ async function procesarArchivoTraficoWpp(input) {
   } catch (e) { showToast('El archivo no es un Excel valido'); input.value = ''; return; }
 
   var res = traficoWppParseFilas(aoa, ws);
-  if (res.error) { showToast(res.error); input.value = ''; return; }
+  if (res.error) { showToast(res.error, 'error'); input.value = ''; return; }
 
   var campana = document.getElementById('tww-campana-sel').value;
   _twwParsed = { campana: campana, archivoNombre: file.name, filas: res.filas };
@@ -572,7 +572,7 @@ function cancelarPreviewTraficoWpp() {
 async function _traficoWppConfirmarImpacto() {
   var impacto;
   try { impacto = await apiRequest('POST', '/calidad/trafico/whatsapp/carga/impacto', _twwParsed); }
-  catch (e) { showToast(e.message); return false; }
+  catch (e) { showToast(e.message, 'error'); return false; }
   var afectados = (impacto || []).filter(function (p) { return p.filasExistentes > 0; });
   if (!afectados.length) return true;
   var detalle = afectados.map(function (p) { return '• ' + p.colaWhatsapp + ' — ' + p.fechaInicio + ' a ' + p.fechaFin + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
@@ -591,7 +591,7 @@ async function guardarTraficoWpp() {
   var resp;
   try {
     resp = await withButtonLoading(btn, 'Guardando...', function () { return apiRequest('POST', '/calidad/trafico/whatsapp/carga', _twwParsed); });
-  } catch (e) { showToast(e.message); return; }
+  } catch (e) { showToast(e.message, 'error'); return; }
   showToast(resp.insertadas + ' fila(s) guardadas (' + resp.colas.length + ' cola(s))');
   cancelarPreviewTraficoWpp();
   delete _traficoWpp[_twwParsed && _twwParsed.campana]; // invalida el cache del panel del dashboard

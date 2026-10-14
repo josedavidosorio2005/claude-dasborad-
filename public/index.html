@@ -40,9 +40,9 @@
 <div id="login-page">
   <div class="login-box">
     <h1 class="app-name app-name-login" data-app-name>SInCo</h1>
-    <div class="ig"><label>Usuario</label><input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="off"></div>
+    <div class="ig"><label for="username">Usuario</label><input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="off"></div>
     <div class="ig">
-      <label>Contrasena</label>
+      <label for="password">Contrasena</label>
       <div class="pass-wrap">
         <input type="password" id="password" placeholder="Ingrese su contrasena">
         <button class="btn-eye" type="button" onclick="toggleEye('password',this)" aria-label="Mostrar contrasena">&#128065;</button>
@@ -116,7 +116,7 @@
           <div class="section-header">
             <h3>Lista de Usuarios</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="user-search" placeholder="Buscar..." oninput="filterUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="user-search" aria-label="Buscar usuarios" placeholder="Buscar..." oninput="filterUsers()"></div>
               <button class="btn-primary" id="btn-create-user" onclick="openCreateModal()">+ Nuevo Usuario</button>
               <button class="btn-reset hidden" id="btn-reset" onclick="resetData()">&#8635; Restablecer</button>
             </div>
@@ -137,7 +137,7 @@
           <div class="section-card">
             <div class="section-header">
               <h3>Roles disponibles</h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="role-search" placeholder="Buscar rol..." oninput="filterRoles()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="role-search" aria-label="Buscar roles" placeholder="Buscar rol..." oninput="filterRoles()"></div>
             </div>
             <div class="roles-grid" id="roles-grid"></div>
           </div>
@@ -149,7 +149,7 @@
           <div id="regular-perm-card" class="section-card">
             <div class="section-header">
               <h3 id="detail-table-title"></h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="perm-user-search" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="perm-user-search" aria-label="Buscar usuario para permisos" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
             </div>
             <div class="perm-wrap">
               <table class="perm-table"><thead><tr id="perm-thead"></tr></thead><tbody id="perm-tbody"></tbody></table>
@@ -159,7 +159,7 @@
           <div id="aux-perm-card" class="section-card hidden">
             <div class="section-header" style="border-bottom:none;padding-bottom:12px">
               <h3 id="aux-user-title">Usuarios Auxiliar Admin</h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="aux-user-search" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="aux-user-search" aria-label="Buscar auxiliares" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
             </div>
             <div id="aux-users-container"></div>
           </div>
@@ -174,8 +174,8 @@
           <div class="section-header">
             <h3>Registro de eventos</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="hist-search" placeholder="Buscar..." oninput="filterHist()"></div>
-              <select class="hist-filter-sel" id="hist-filter" onchange="filterHist()">
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="hist-search" aria-label="Buscar en el historial" placeholder="Buscar..." oninput="filterHist()"></div>
+              <select class="hist-filter-sel" id="hist-filter" aria-label="Filtrar por tipo de evento" onchange="filterHist()">
                 <option value="">Todos los eventos</option>
                 <option value="CREADO">Usuario creado</option>
                 <option value="EDITADO">Usuario editado</option>
@@ -254,33 +254,33 @@
             <h3>Programar mes</h3>
           </div>
           <div class="form-row">
-            <div class="ig"><label>Mes</label>
+            <div class="ig"><label for="meta-mes-input">Mes</label>
               <input type="month" id="meta-mes-input">
             </div>
-            <div class="ig"><label>Campana</label>
+            <div class="ig"><label for="meta-campana-sel">Campana</label>
               <select id="meta-campana-sel" onchange="populateMetaLiderSelect()"></select>
             </div>
-            <div class="ig"><label>Lider Responsable / Persona a Cargo</label>
+            <div class="ig"><label for="meta-lider-input">Lider Responsable / Persona a Cargo</label>
               <select id="meta-lider-input"></select>
               <small style="color:var(--c-text-muted);font-size:0.75rem">Solo usuarios con rol CALIDAD o SUPERVISOR que tengan acceso a la campana seleccionada.</small>
             </div>
           </div>
           <div class="form-row">
-            <div class="ig"><label>Cantidad de Asesores</label>
+            <div class="ig"><label for="meta-asesores-input">Cantidad de Asesores</label>
               <input type="number" id="meta-asesores-input" min="1" style="max-width:140px">
             </div>
-            <div class="ig"><label>Prom. Dias Laborales</label>
+            <div class="ig"><label for="meta-dias-input">Prom. Dias Laborales</label>
               <input type="number" id="meta-dias-input" min="1" style="max-width:140px" value="19">
             </div>
-            <div class="ig"><label>Meta Mes Monitoreo Grupal</label>
+            <div class="ig"><label for="meta-valor-input">Meta Mes Monitoreo Grupal</label>
               <input type="number" id="meta-valor-input" min="1" style="max-width:140px" oninput="previewMetaCalc()">
             </div>
           </div>
           <div class="form-row">
-            <div class="ig"><label>WhatsApp o Chat</label>
+            <div class="ig"><label for="meta-whatsapp-sel">WhatsApp o Chat</label>
               <select id="meta-whatsapp-sel"><option value="NO">NO</option><option value="SI">SI</option></select>
             </div>
-            <div class="ig"><label>% de WhatsApp o Chats a Auditar</label>
+            <div class="ig"><label for="meta-pctwpp-input">% de WhatsApp o Chats a Auditar</label>
               <input type="number" id="meta-pctwpp-input" min="0" max="100" style="max-width:140px" placeholder="Ej: 30">
             </div>
           </div>
@@ -293,7 +293,7 @@
           <div class="section-header">
             <h3>Cronograma Programado</h3>
             <div class="header-actions">
-              <select class="hist-filter-sel" id="metas-mes-filter" onchange="renderMetasHistory()">
+              <select class="hist-filter-sel" id="metas-mes-filter" aria-label="Filtrar por mes" onchange="renderMetasHistory()">
                 <option value="">Todos los meses</option>
               </select>
             </div>
@@ -317,16 +317,16 @@
             <h3>Nivel de Servicio (llamadas contestadas en &le;20 segundos)</h3>
           </div>
           <div class="form-row">
-            <div class="ig"><label>Mes</label>
+            <div class="ig"><label for="ns-mes-input">Mes</label>
               <input type="month" id="ns-mes-input">
             </div>
-            <div class="ig"><label>Campana</label>
+            <div class="ig"><label for="ns-campana-sel">Campana</label>
               <select id="ns-campana-sel"></select>
             </div>
-            <div class="ig"><label>Llamadas contestadas en &le;20s</label>
+            <div class="ig"><label for="ns-contestadas-input">Llamadas contestadas en &le;20s</label>
               <input type="number" id="ns-contestadas-input" min="0" style="max-width:160px" oninput="previewNivelServicio()">
             </div>
-            <div class="ig"><label>Llamadas totales del mes</label>
+            <div class="ig"><label for="ns-totales-input">Llamadas totales del mes</label>
               <input type="number" id="ns-totales-input" min="0" style="max-width:160px" oninput="previewNivelServicio()">
             </div>
           </div>
@@ -345,10 +345,10 @@
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">Sube el reporte diario por skill/campana. El sistema toma <b>SERVICE_LEVEL_20SEC</b> de cada dia, estima las llamadas contestadas en &le;20s, y recalcula el % mensual sumando todos los dias cargados de ese mes. Si tienes el export completo de Wolkvox con varias skills/campanas a la vez, usa mejor <b>Trafico / Wolkvox</b> arriba — esta carga sigue aqui como respaldo para cuando solo tienes el reporte simple de una campana.</div>
           <div class="form-row">
-            <div class="ig"><label>Campana</label>
+            <div class="ig"><label for="nsd-campana-sel">Campana</label>
               <select id="nsd-campana-sel"></select>
             </div>
-            <div class="ig"><label>Archivo Excel (.xlsx)</label>
+            <div class="ig"><label for="nsd-file">Archivo Excel (.xlsx)</label>
               <input type="file" id="nsd-file" accept=".xlsx,.xls" onchange="procesarArchivoNivelServicioDiario(this)">
             </div>
           </div>
@@ -370,10 +370,10 @@
           <div class="section-header">
             <h3>Historial de Nivel de Servicio</h3>
             <div class="header-actions">
-              <select class="hist-filter-sel" id="ns-campana-filter" onchange="renderNivelServicioHistory()">
+              <select class="hist-filter-sel" id="ns-campana-filter" aria-label="Filtrar por campaña" onchange="renderNivelServicioHistory()">
                 <option value="">Todas las campanas</option>
               </select>
-              <select class="hist-filter-sel" id="ns-mes-filter" onchange="renderNivelServicioHistory()">
+              <select class="hist-filter-sel" id="ns-mes-filter" aria-label="Filtrar por mes" onchange="renderNivelServicioHistory()">
                 <option value="">Todos los meses</option>
               </select>
             </div>
@@ -402,7 +402,7 @@
             nueva se guarda igual, marcada "sin asignar", hasta que la mapees.
           </div>
           <div class="form-row">
-            <div class="ig"><label>Archivo Excel (.xlsx) ya lleno</label>
+            <div class="ig"><label for="tv-file">Archivo Excel (.xlsx) ya lleno</label>
               <input type="file" id="tv-file" accept=".xlsx,.xls" onchange="procesarArchivoTrafico(this)">
             </div>
           </div>
@@ -432,10 +432,10 @@
             mapeo de skill: elige la campana antes de subir el archivo.
           </div>
           <div class="form-row">
-            <div class="ig"><label>Campana</label>
+            <div class="ig"><label for="tww-campana-sel">Campana</label>
               <select id="tww-campana-sel"></select>
             </div>
-            <div class="ig"><label>Archivo Excel (.xlsx) ya lleno</label>
+            <div class="ig"><label for="tww-file">Archivo Excel (.xlsx) ya lleno</label>
               <input type="file" id="tww-file" accept=".xlsx,.xls" onchange="procesarArchivoTraficoWpp(this)">
             </div>
           </div>
@@ -460,13 +460,13 @@
           </div>
           <div class="page-subtitle" style="margin:-4px 0 14px 0">Registra el SKILL_NAME real de Wolkvox y su campana ANTES de subir un archivo de Trafico -- cuando llegue una carga que lo mencione, el sistema ya sabe a que campana pertenece, en vez de guardarlo "sin asignar" hasta que lo mapees a mano.</div>
           <div class="form-row">
-            <div class="ig"><label>SKILL_NAME (tal como aparece en Wolkvox)</label>
+            <div class="ig"><label for="tv-skill-nuevo-nombre">SKILL_NAME (tal como aparece en Wolkvox)</label>
               <input type="text" id="tv-skill-nuevo-nombre" placeholder="Ej: CALL_INBOUND_AURORA" autocomplete="off">
             </div>
-            <div class="ig"><label>Campana</label>
+            <div class="ig"><label for="tv-skill-nuevo-campana">Campana</label>
               <select id="tv-skill-nuevo-campana" onchange="_traficoToggleSedeSelNuevo()"></select>
             </div>
-            <div class="ig" id="tv-skill-nuevo-sede-wrap" style="display:none"><label>Sede</label>
+            <div class="ig" id="tv-skill-nuevo-sede-wrap" style="display:none"><label for="tv-skill-nuevo-sede">Sede</label>
               <select id="tv-skill-nuevo-sede"></select>
             </div>
           </div>
@@ -478,7 +478,7 @@
           <div class="section-header">
             <h3>Mapeo de Skills (Wolkvox) &rarr; Campana</h3>
             <div class="header-actions">
-              <select class="hist-filter-sel" id="tv-skills-campana-filter" onchange="_renderTraficoSkillsTable()">
+              <select class="hist-filter-sel" id="tv-skills-campana-filter" aria-label="Filtrar por campaña" onchange="_renderTraficoSkillsTable()">
                 <option value="">Todas las campanas</option>
               </select>
               <button class="btn-sm" onclick="renderTraficoSkills()">Actualizar</button>
@@ -522,7 +522,7 @@
             <h3 id="umbral-form-title">Nuevo umbral</h3>
           </div>
           <div class="form-row">
-            <div class="ig"><label>Metrica</label>
+            <div class="ig"><label for="umbral-metrica-input">Metrica</label>
               <input type="text" id="umbral-metrica-input" list="umbral-metricas-conocidas" placeholder="ej: nivel_atencion" oninput="previewUmbral()">
               <datalist id="umbral-metricas-conocidas">
                 <option value="nivel_atencion">
@@ -533,12 +533,12 @@
               </datalist>
               <small style="color:var(--c-text-muted);font-size:0.75rem">Debe coincidir con el identificador de metrica del KPI (ver <code>metrica</code> en la configuracion del dashboard). Las 5 sugeridas ya vienen con default global.</small>
             </div>
-            <div class="ig"><label>Campana (opcional)</label>
+            <div class="ig"><label for="umbral-campana-sel">Campana (opcional)</label>
               <select id="umbral-campana-sel">
                 <option value="">— Todas las campanas (default global) —</option>
               </select>
             </div>
-            <div class="ig"><label>Direccion</label>
+            <div class="ig"><label for="umbral-direccion-sel">Direccion</label>
               <select id="umbral-direccion-sel" onchange="previewUmbral()">
                 <option value="mayor_es_mejor">Mayor es mejor (ej. nivel de atencion)</option>
                 <option value="menor_es_mejor">Menor es mejor (ej. tasa de abandono)</option>
@@ -546,10 +546,10 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="ig"><label>Valor verde</label>
+            <div class="ig"><label for="umbral-verde-input">Valor verde</label>
               <input type="number" step="any" id="umbral-verde-input" style="max-width:140px" oninput="previewUmbral()">
             </div>
-            <div class="ig"><label>Valor amarillo</label>
+            <div class="ig"><label for="umbral-amarillo-input">Valor amarillo</label>
               <input type="number" step="any" id="umbral-amarillo-input" style="max-width:140px" oninput="previewUmbral()">
             </div>
           </div>
@@ -578,7 +578,7 @@
         <div class="section-card">
           <div class="section-header">
             <h3>Usuarios con rol REPORTES</h3>
-            <div class="search-bar"><span style="color:var(--c-text-muted)">&#128269;</span><input type="text" id="reportes-user-search" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
+            <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="reportes-user-search" aria-label="Buscar usuario en reportes" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
           </div>
           <div class="perm-wrap">
             <table class="perm-table"><thead><tr id="reportes-perm-thead"></tr></thead><tbody id="reportes-perm-tbody"></tbody></table>
@@ -743,19 +743,19 @@
     <input type="hidden" id="mu-id">
     <input type="hidden" id="mu-mode"> <!-- create | edit -->
     <div class="form-row">
-      <div class="ig"><label>Nombre completo</label><input type="text" id="mu-nombre" placeholder="Ej: Maria Gonzalez"></div>
-      <div class="ig"><label>Usuario</label><input type="text" id="mu-user" placeholder="Ej: mgonzalez"></div>
+      <div class="ig"><label for="mu-nombre">Nombre completo</label><input type="text" id="mu-nombre" placeholder="Ej: Maria Gonzalez"></div>
+      <div class="ig"><label for="mu-user">Usuario</label><input type="text" id="mu-user" placeholder="Ej: mgonzalez"></div>
     </div>
     <div class="form-row">
       <div class="ig">
-        <label>Contrasena</label>
+        <label for="mu-pass">Contrasena</label>
         <div class="pass-wrap">
           <input type="password" id="mu-pass" placeholder="••••••••">
           <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)" aria-label="Mostrar contrasena">&#128065;</button>
         </div>
         <small id="mu-pass-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">Dejar en blanco para no cambiar</small>
       </div>
-      <div class="ig"><label>Rol</label>
+      <div class="ig"><label for="mu-rol">Rol</label>
         <select id="mu-rol" onchange="onRolChange()">
           <option value="ADMIN">ADMINISTRADOR</option>
           <option value="CALIDAD">CALIDAD</option>
@@ -772,7 +772,7 @@
     <div class="client-perms-section" id="mu-asesor-note" style="display:none">
       <h4>Campana / Operacion del asesor</h4>
       <div class="form-row">
-        <div class="ig"><label>A que campana pertenece este asesor</label>
+        <div class="ig"><label for="mu-asesor-campana">A que campana pertenece este asesor</label>
           <select id="mu-asesor-campana"></select>
         </div>
       </div>
@@ -805,14 +805,14 @@
     <h3>Cambiar Contrasena</h3>
     <input type="hidden" id="pass-id">
     <div class="ig">
-      <label>Nueva Contrasena</label>
+      <label for="pass-new">Nueva Contrasena</label>
       <div class="pass-wrap">
         <input type="password" id="pass-new" placeholder="••••••••">
         <button class="btn-eye" type="button" onclick="toggleEye('pass-new',this)" aria-label="Mostrar contrasena">&#128065;</button>
       </div>
     </div>
     <div class="ig">
-      <label>Confirmar</label>
+      <label for="pass-confirm">Confirmar</label>
       <div class="pass-wrap">
         <input type="password" id="pass-confirm" placeholder="••••••••">
         <button class="btn-eye" type="button" onclick="toggleEye('pass-confirm',this)" aria-label="Mostrar contrasena">&#128065;</button>
@@ -851,15 +851,15 @@
           <div id="gd-ultima-act" class="gd-ultima-act" style="display:none"></div>
         </div>
         <div id="gd-vista-wrap" style="display:none;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label id="gd-vista-label" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">VISTA:</label>
+          <label for="gd-vista-sel" id="gd-vista-label" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">VISTA:</label>
           <select id="gd-vista-sel" onchange="onGdVistaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
+          <label for="gd-mes-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
           <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div id="gd-comp-wrap" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">COMPARAR CONTRA:</label>
+          <label for="gd-comp-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">COMPARAR CONTRA:</label>
           <select id="gd-comp-sel" onchange="onGdCompChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
         <div id="gd-comp-nota" style="display:none;color:#a8d8ea;font-size:0.78rem;font-style:italic;padding:6px 4px">La comparación aplica a las pestañas de resumen</div>
@@ -886,12 +886,12 @@
           <div class="aurora-sub" id="cal-sub-label">Monitoreo y evaluacion por campana</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">CAMPANA:</label>
+          <label for="cal-campana-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">CAMPANA:</label>
           <select id="cal-campana-sel" onchange="onCalCampanaChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
+          <label for="cal-mes-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
           <select id="cal-mes-sel" onchange="onCalMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
           </select>
         </div>
@@ -914,24 +914,24 @@
       <div class="aurora-card">
         <div class="aurora-card-title" id="cf-form-title">Datos generales del monitoreo</div>
         <div class="form-row">
-          <div class="ig"><label>Nombre del Asesor</label>
+          <div class="ig"><label for="cf-asesor">Nombre del Asesor</label>
             <select id="cf-asesor"></select>
             <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campana. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
           </div>
-          <div class="ig"><label>Fecha</label><input type="date" id="cf-fecha" disabled>
+          <div class="ig"><label for="cf-fecha">Fecha</label><input type="date" id="cf-fecha" disabled>
             <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Se registra automaticamente con la fecha de hoy.</small>
           </div>
         </div>
         <div class="form-row">
-          <div class="ig"><label>ID / Llamada - Wpp</label><input type="text" id="cf-idllamada" placeholder="Ej: ID-98745"></div>
-          <div class="ig"><label># Telefono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
+          <div class="ig"><label for="cf-idllamada">ID / Llamada - Wpp</label><input type="text" id="cf-idllamada" placeholder="Ej: ID-98745"></div>
+          <div class="ig"><label for="cf-telefono"># Telefono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
         </div>
         <div class="form-row">
-          <div class="ig"><label>Codificacion</label>
+          <div class="ig"><label for="cf-codificacion">Codificacion</label>
             <input type="text" id="cf-codificacion" placeholder="Ej: POS">
-            <select id="cf-codificacion-select" style="display:none"></select>
+            <select id="cf-codificacion-select" aria-label="Codificacion" style="display:none"></select>
           </div>
-          <div class="ig"><label>Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
+          <div class="ig"><label for="cf-evaluador">Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
             <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesion; no se puede cambiar.</small>
           </div>
         </div>
@@ -948,7 +948,7 @@
       <div id="cf-items-wrap"></div>
       <div class="qi-preview" id="cf-preview"></div>
       <div class="aurora-card">
-        <div class="ig"><label>Observaciones generales</label><input type="text" id="cf-observaciones" placeholder="Opcional"></div>
+        <div class="ig"><label for="cf-observaciones">Observaciones generales</label><input type="text" id="cf-observaciones" placeholder="Opcional"></div>
         <div class="modal-btns" style="margin-top:10px">
           <button class="btn-cancel" onclick="resetCalForm()">Limpiar</button>
           <button class="btn-primary" onclick="submitMonitoreo()">Guardar Monitoreo</button>
@@ -1034,7 +1034,7 @@
       <div class="aurora-card">
         <div class="aurora-card-title">Codificaciones validas de esta campana</div>
         <p style="font-size:0.78rem;color:var(--c-text-muted)">Mientras esta campana no tenga ninguna codificacion aqui, el campo "Codificacion" del monitoreo sigue siendo texto libre. En cuanto agregue al menos una, el formulario la muestra como lista desplegable. Nunca se borra una codificacion (romperia monitoreos viejos): solo se desactiva o reactiva.</p>
-        <div class="ig"><label>Pegar codificaciones nuevas (una por linea)</label>
+        <div class="ig"><label for="cf-cod-nuevas">Pegar codificaciones nuevas (una por linea)</label>
           <textarea id="cf-cod-nuevas" rows="4" placeholder="POS&#10;NO CONTESTA&#10;NUMERO EQUIVOCADO"></textarea>
         </div>
         <div class="modal-btns">
@@ -1079,11 +1079,11 @@
       <div class="aurora-card">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-            <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">CATEGORIA:</label>
+            <label for="inv-filtro-cat" style="color:#a8d8ea;font-size:0.75rem;font-weight:700">CATEGORIA:</label>
             <select id="inv-filtro-cat" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
           </div>
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-            <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700">ESTADO:</label>
+            <label for="inv-filtro-estado" style="color:#a8d8ea;font-size:0.75rem;font-weight:700">ESTADO:</label>
             <select id="inv-filtro-estado" onchange="onInvFiltroChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px">
               <option value="">Todos</option>
               <option value="Disponible">Disponible</option>
@@ -1148,16 +1148,16 @@
   <div class="modal" style="max-width:580px">
     <h3 id="inv-modal-title">Nuevo Item de Inventario</h3>
     <div class="form-row">
-      <div class="ig"><label>Nombre *</label><input type="text" id="inv-nombre" placeholder="Ej: Audifonos Logitech"></div>
-      <div class="ig"><label>Categoria</label><input type="text" id="inv-categoria" placeholder="Ej: Equipos"></div>
+      <div class="ig"><label for="inv-nombre">Nombre *</label><input type="text" id="inv-nombre" placeholder="Ej: Audifonos Logitech"></div>
+      <div class="ig"><label for="inv-categoria">Categoria</label><input type="text" id="inv-categoria" placeholder="Ej: Equipos"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Descripcion</label><input type="text" id="inv-descripcion" placeholder="Descripcion breve"></div>
+      <div class="ig"><label for="inv-descripcion">Descripcion</label><input type="text" id="inv-descripcion" placeholder="Descripcion breve"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Cantidad *</label><input type="number" id="inv-cantidad" min="0" value="0"></div>
-      <div class="ig"><label>Unidad</label><input type="text" id="inv-unidad" value="un" placeholder="un, kg, lt..."></div>
-      <div class="ig"><label>Estado</label>
+      <div class="ig"><label for="inv-cantidad">Cantidad *</label><input type="number" id="inv-cantidad" min="0" value="0"></div>
+      <div class="ig"><label for="inv-unidad">Unidad</label><input type="text" id="inv-unidad" value="un" placeholder="un, kg, lt..."></div>
+      <div class="ig"><label for="inv-estado">Estado</label>
         <select id="inv-estado">
           <option value="Disponible">Disponible</option>
           <option value="En Uso">En Uso</option>
@@ -1167,12 +1167,12 @@
       </div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Ubicacion</label><input type="text" id="inv-ubicacion" placeholder="Ej: Bodega Central"></div>
-      <div class="ig"><label>Proveedor</label><input type="text" id="inv-proveedor" placeholder="Ej: Logitech"></div>
-      <div class="ig"><label>Costo Unitario</label><input type="number" id="inv-costo" min="0" step="0.01" placeholder="0"></div>
+      <div class="ig"><label for="inv-ubicacion">Ubicacion</label><input type="text" id="inv-ubicacion" placeholder="Ej: Bodega Central"></div>
+      <div class="ig"><label for="inv-proveedor">Proveedor</label><input type="text" id="inv-proveedor" placeholder="Ej: Logitech"></div>
+      <div class="ig"><label for="inv-costo">Costo Unitario</label><input type="number" id="inv-costo" min="0" step="0.01" placeholder="0"></div>
     </div>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="inv-observaciones" placeholder="Notas adicionales"></div>
+      <div class="ig" style="flex:1"><label for="inv-observaciones">Observaciones</label><input type="text" id="inv-observaciones" placeholder="Notas adicionales"></div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeInvItemModal()">Cancelar</button>
@@ -1186,26 +1186,26 @@
   <div class="modal" style="max-width:620px">
     <h3 id="gh-modal-title">Nueva persona</h3>
     <div class="form-row">
-      <div class="ig"><label>Nombre *</label><input type="text" id="gh-nombre" placeholder="Nombre completo"></div>
-      <div class="ig"><label>Documento</label><input type="text" id="gh-documento" placeholder="Cedula / ID"></div>
+      <div class="ig"><label for="gh-nombre">Nombre *</label><input type="text" id="gh-nombre" placeholder="Nombre completo"></div>
+      <div class="ig"><label for="gh-documento">Documento</label><input type="text" id="gh-documento" placeholder="Cedula / ID"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Cargo</label><input type="text" id="gh-cargo" placeholder="Ej: Asesor"></div>
-      <div class="ig"><label>Campana / area *</label><input type="text" id="gh-campana" placeholder="Ej: ORLANT"></div>
-      <div class="ig"><label>Supervisor</label><input type="text" id="gh-supervisor" placeholder="Nombre del supervisor"></div>
+      <div class="ig"><label for="gh-cargo">Cargo</label><input type="text" id="gh-cargo" placeholder="Ej: Asesor"></div>
+      <div class="ig"><label for="gh-campana">Campana / area *</label><input type="text" id="gh-campana" placeholder="Ej: ORLANT"></div>
+      <div class="ig"><label for="gh-supervisor">Supervisor</label><input type="text" id="gh-supervisor" placeholder="Nombre del supervisor"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Fecha de ingreso *</label><input type="date" id="gh-ingreso"></div>
-      <div class="ig"><label>Fecha de salida</label><input type="date" id="gh-salida"></div>
-      <div class="ig"><label>Motivo de salida</label><input type="text" id="gh-motivo" placeholder="Solo si se retiro"></div>
+      <div class="ig"><label for="gh-ingreso">Fecha de ingreso *</label><input type="date" id="gh-ingreso"></div>
+      <div class="ig"><label for="gh-salida">Fecha de salida</label><input type="date" id="gh-salida"></div>
+      <div class="ig"><label for="gh-motivo">Motivo de salida</label><input type="text" id="gh-motivo" placeholder="Solo si se retiro"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Costo por hora *</label><input type="number" id="gh-costo-hora" min="0" step="1" placeholder="0"></div>
-      <div class="ig"><label>Horas / mes</label><input type="number" id="gh-horas-mes" min="0" step="1" value="192"></div>
-      <div class="ig"><label>Salario (opcional)</label><input type="number" id="gh-salario" min="0" step="1" placeholder="Informativo"></div>
+      <div class="ig"><label for="gh-costo-hora">Costo por hora *</label><input type="number" id="gh-costo-hora" min="0" step="1" placeholder="0"></div>
+      <div class="ig"><label for="gh-horas-mes">Horas / mes</label><input type="number" id="gh-horas-mes" min="0" step="1" value="192"></div>
+      <div class="ig"><label for="gh-salario">Salario (opcional)</label><input type="number" id="gh-salario" min="0" step="1" placeholder="Informativo"></div>
     </div>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
+      <div class="ig" style="flex:1"><label for="gh-observaciones">Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
     </div>
     <p style="font-size:0.78rem;color:var(--c-text-muted);margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campana del dashboard.</p>
     <div class="modal-btns">
@@ -1220,10 +1220,10 @@
   <div class="modal" style="max-width:520px">
     <h3>Registrar Movimiento</h3>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label>Item *</label><select id="inv-mov-item"></select></div>
+      <div class="ig" style="flex:1"><label for="inv-mov-item">Item *</label><select id="inv-mov-item"></select></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Tipo *</label>
+      <div class="ig"><label for="inv-mov-tipo">Tipo *</label>
         <select id="inv-mov-tipo">
           <option value="Entrada">Entrada</option>
           <option value="Salida">Salida</option>
@@ -1231,12 +1231,12 @@
           <option value="Transferencia">Transferencia</option>
         </select>
       </div>
-      <div class="ig"><label>Cantidad *</label><input type="number" id="inv-mov-cantidad" min="1"></div>
-      <div class="ig"><label>Fecha *</label><input type="date" id="inv-mov-fecha"></div>
+      <div class="ig"><label for="inv-mov-cantidad">Cantidad *</label><input type="number" id="inv-mov-cantidad" min="1"></div>
+      <div class="ig"><label for="inv-mov-fecha">Fecha *</label><input type="date" id="inv-mov-fecha"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Motivo</label><input type="text" id="inv-mov-motivo" placeholder="Ej: Compra, Prestamo..."></div>
-      <div class="ig"><label>Destino</label><input type="text" id="inv-mov-destino" placeholder="Para transferencias"></div>
+      <div class="ig"><label for="inv-mov-motivo">Motivo</label><input type="text" id="inv-mov-motivo" placeholder="Ej: Compra, Prestamo..."></div>
+      <div class="ig"><label for="inv-mov-destino">Destino</label><input type="text" id="inv-mov-destino" placeholder="Para transferencias"></div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeInvMovModal()">Cancelar</button>
@@ -1255,7 +1255,7 @@
           <div class="aurora-sub">Indicadores ejecutivos mensuales</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
-          <label style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">PERIODO:</label>
+          <label for="ger-periodo-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">PERIODO:</label>
           <select id="ger-periodo-sel" onchange="onGerPeriodoChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
       </div>
@@ -1339,18 +1339,18 @@
   <div class="modal" style="max-width:520px">
     <h3 id="ger-kpi-modal-title">Nuevo Indicador</h3>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label>Nombre del indicador *</label><input type="text" id="ger-kpi-nombre" placeholder="Ej: Nivel de atencion promedio"></div>
+      <div class="ig" style="flex:1"><label for="ger-kpi-nombre">Nombre del indicador *</label><input type="text" id="ger-kpi-nombre" placeholder="Ej: Nivel de atencion promedio"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Categoria</label><input type="text" id="ger-kpi-categoria" value="General" placeholder="Ej: Operaciones, Financiero..."></div>
-      <div class="ig"><label>Valor *</label><input type="number" id="ger-kpi-valor" step="any"></div>
+      <div class="ig"><label for="ger-kpi-categoria">Categoria</label><input type="text" id="ger-kpi-categoria" value="General" placeholder="Ej: Operaciones, Financiero..."></div>
+      <div class="ig"><label for="ger-kpi-valor">Valor *</label><input type="number" id="ger-kpi-valor" step="any"></div>
     </div>
     <div class="form-row">
-      <div class="ig"><label>Unidad</label><input type="text" id="ger-kpi-unidad" placeholder="%, USD, horas..."></div>
-      <div class="ig"><label>Meta (opcional)</label><input type="number" id="ger-kpi-meta" step="any" placeholder="Sin meta"></div>
+      <div class="ig"><label for="ger-kpi-unidad">Unidad</label><input type="text" id="ger-kpi-unidad" placeholder="%, USD, horas..."></div>
+      <div class="ig"><label for="ger-kpi-meta">Meta (opcional)</label><input type="number" id="ger-kpi-meta" step="any" placeholder="Sin meta"></div>
     </div>
     <div class="form-row">
-      <div class="ig" style="flex:1"><label>Observaciones</label><input type="text" id="ger-kpi-obs" placeholder="Notas adicionales"></div>
+      <div class="ig" style="flex:1"><label for="ger-kpi-obs">Observaciones</label><input type="text" id="ger-kpi-obs" placeholder="Notas adicionales"></div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeGerKpiModal()">Cancelar</button>
@@ -1374,10 +1374,10 @@
 
     <div class="aurora-card">
       <div class="form-row">
-        <div class="ig"><label>Cliente</label>
+        <div class="ig"><label for="carga-cliente">Cliente</label>
           <select id="carga-cliente" onchange="onCargaClienteChange()"></select>
         </div>
-        <div class="ig"><label>Periodo (mes) — para las hojas de Gestion de base</label>
+        <div class="ig"><label for="carga-periodo">Periodo (mes) — para las hojas de Gestion de base</label>
           <input type="month" id="carga-periodo">
         </div>
       </div>
@@ -1451,7 +1451,7 @@
 
         <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:8px;background:var(--c-surface-alt);border-radius:8px;padding:6px 12px">
-            <label style="color:var(--c-primary);font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
+            <label for="mr-mes-sel" style="color:var(--c-primary);font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
             <select id="mr-mes-sel" onchange="onMrMesChange()" style="border:none;background:transparent;color:var(--c-primary);font-size:0.84rem;font-weight:600;cursor:pointer"></select>
           </div>
         </div>
@@ -1607,21 +1607,21 @@
   <div class="modal">
     <h3>Cambiar mi Contrasena</h3>
     <div class="ig">
-      <label>Contrasena Actual</label>
+      <label for="cop-actual">Contrasena Actual</label>
       <div class="pass-wrap">
         <input type="password" id="cop-actual" placeholder="••••••••">
         <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)" aria-label="Mostrar contrasena">&#128065;</button>
       </div>
     </div>
     <div class="ig">
-      <label>Nueva Contrasena</label>
+      <label for="cop-nueva">Nueva Contrasena</label>
       <div class="pass-wrap">
         <input type="password" id="cop-nueva" placeholder="••••••••">
         <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)" aria-label="Mostrar contrasena">&#128065;</button>
       </div>
     </div>
     <div class="ig">
-      <label>Confirmar Nueva Contrasena</label>
+      <label for="cop-confirmar">Confirmar Nueva Contrasena</label>
       <div class="pass-wrap">
         <input type="password" id="cop-confirmar" placeholder="••••••••">
         <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)" aria-label="Mostrar contrasena">&#128065;</button>
@@ -1634,7 +1634,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Librerias: Chart.js + plugin de etiquetas (antes inline) -->
 <script src="js/theme.js"></script>
@@ -1679,6 +1679,7 @@
 <script src="js/dashboards-logic.js"></script>
 <script src="js/state.js"></script>
 <script src="js/session.js"></script>
+<script src="js/toast-logic.js"></script>
 <script src="js/ui-core.js"></script>
 <script src="js/users.js"></script>
 <script src="js/roles-perms.js"></script>

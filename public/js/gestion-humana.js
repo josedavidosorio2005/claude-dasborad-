@@ -144,7 +144,7 @@ async function ghGuardarPersona(){
         ? apiRequest('PUT','/gh/personal/'+_ghEditId, body)
         : apiRequest('POST','/gh/personal', body);
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(_ghEditId ? 'Persona actualizada' : 'Persona agregada');
   closeGhPersonModal();
   await loadGhData();
@@ -157,7 +157,7 @@ async function ghEliminarPersona(id){
   if(!p) return;
   if(!confirm('Eliminar a "'+p.nombre+'" del registro de personal? Esto borra su historial de ingreso/salida.')) return;
   try{ await apiRequest('DELETE','/gh/personal/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Persona eliminada');
   await loadGhData();
   renderGhStats();

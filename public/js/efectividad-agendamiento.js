@@ -51,7 +51,7 @@ async function _efectividadAgendamientoRenderPanel(p, i){
   html += '<div id="ea-aviso-'+i+'"></div>';
   html += '<div id="ea-tarjetas-wrap-'+i+'"></div>';
   html += '<div id="ea-chart-wrap-'+i+'"></div>';
-  html += '<div class="search-bar" style="max-width:260px;margin:14px 0 12px"><input type="text" id="ea-buscar-'+i+'" placeholder="Buscar asesor…" oninput="_eaBuscarInput('+i+', this.value)"></div>';
+  html += '<div class="search-bar" style="max-width:260px;margin:14px 0 12px"><input type="text" id="ea-buscar-'+i+'" aria-label="Buscar asesor" placeholder="Buscar asesor…" oninput="_eaBuscarInput('+i+', this.value)"></div>';
   html += '<div class="table-wrap"><table class="aurora-table" id="ea-tabla-'+i+'"><thead><tr>' +
     '<th>Puesto</th><th style="text-align:left">Asesor</th><th>Gestiones</th><th>Agendas</th><th>% Efectividad</th>' +
     '</tr></thead><tbody></tbody></table></div>';
@@ -85,7 +85,7 @@ async function _eaDibujar(campana, i, opciones){
 
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
   try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesSel)) || ranking; }
-  catch(e){ showToast(e.message); }
+  catch(e){ showToast(e.message, 'error'); }
   _eaUltimoRanking[i] = ranking;
   _eaBusqueda[i] = '';
   var buscarEl = document.getElementById('ea-buscar-'+i);

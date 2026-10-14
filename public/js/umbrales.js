@@ -126,7 +126,7 @@ async function saveUmbral(){
         await apiRequest('POST','/umbrales', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast((_editingUmbralId?'Umbral actualizado: ':'Umbral guardado: ')+metrica);
   cancelEditUmbral();
   await renderUmbralesSection();
@@ -143,7 +143,7 @@ async function deleteUmbral(id){
   if(!confirm('Eliminar este umbral? Los KPI que lo usaban quedaran sin color hasta que se configure otro.')) return;
   try{
     await apiRequest('DELETE','/umbrales/'+id);
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   if(_editingUmbralId===id) cancelEditUmbral();
   await renderUmbralesSection();
 }
