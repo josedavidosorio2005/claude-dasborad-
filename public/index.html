@@ -726,10 +726,10 @@
 </div>
 
 <!-- CLIENTS MODAL -->
-<div class="clients-modal-overlay" id="clients-modal-overlay">
+<div class="clients-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="clients-modal-title" id="clients-modal-overlay">
   <div class="clients-modal">
     <div class="clients-modal-header">
-      <h3>Dashboard Clientes</h3>
+      <h3 id="clients-modal-title">Dashboard Clientes</h3>
       <button class="btn-close-modal" onclick="closeClientsModal()">X Cerrar</button>
     </div>
     <div class="clients-grid" id="clients-grid"></div>
@@ -737,7 +737,7 @@
 </div>
 
 <!-- MODAL: Crear/Editar usuario -->
-<div class="modal-overlay" id="modal-user">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-user-title" id="modal-user">
   <div class="modal">
     <h3 id="modal-user-title">Crear Usuario</h3>
     <input type="hidden" id="mu-id">
@@ -800,9 +800,9 @@
 </div>
 
 <!-- MODAL: Cambiar contrasena -->
-<div class="modal-overlay" id="modal-pass">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-pass-title" id="modal-pass">
   <div class="modal">
-    <h3>Cambiar Contrasena</h3>
+    <h3 id="modal-pass-title">Cambiar Contrasena</h3>
     <input type="hidden" id="pass-id">
     <div class="ig">
       <label for="pass-new">Nueva Contrasena</label>
@@ -826,9 +826,9 @@
 </div>
 
 <!-- MODAL: Eliminar -->
-<div class="modal-overlay" id="modal-delete">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-delete-title" id="modal-delete">
   <div class="modal">
-    <h3>Eliminar Usuario</h3>
+    <h3 id="modal-delete-title">Eliminar Usuario</h3>
     <input type="hidden" id="delete-id">
     <p style="color:var(--c-text-2);margin-bottom:8px">Eliminar a <strong id="delete-name" style="color:var(--c-primary)"></strong>?</p>
     <p style="color:var(--c-danger-dark);font-size:0.82rem">Esta accion no se puede deshacer. Quedara registro en el Historial.</p>
@@ -1144,7 +1144,7 @@
 </div>
 
 <!-- MODAL: Nuevo/Editar Item -->
-<div class="modal-overlay" id="inv-item-modal">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="inv-modal-title" id="inv-item-modal">
   <div class="modal" style="max-width:580px">
     <h3 id="inv-modal-title">Nuevo Item de Inventario</h3>
     <div class="form-row">
@@ -1182,7 +1182,7 @@
 </div>
 
 <!-- MODAL: Nueva/Editar Persona (Gestion Humana) -->
-<div class="modal-overlay" id="gh-person-modal">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gh-modal-title" id="gh-person-modal">
   <div class="modal" style="max-width:620px">
     <h3 id="gh-modal-title">Nueva persona</h3>
     <div class="form-row">
@@ -1216,9 +1216,9 @@
 </div>
 
 <!-- MODAL: Nuevo Movimiento -->
-<div class="modal-overlay" id="inv-mov-modal">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="inv-mov-modal-title" id="inv-mov-modal">
   <div class="modal" style="max-width:520px">
-    <h3>Registrar Movimiento</h3>
+    <h3 id="inv-mov-modal-title">Registrar Movimiento</h3>
     <div class="form-row">
       <div class="ig" style="flex:1"><label for="inv-mov-item">Item *</label><select id="inv-mov-item"></select></div>
     </div>
@@ -1335,7 +1335,7 @@
 </div>
 
 <!-- MODAL: Nuevo/Editar KPI -->
-<div class="modal-overlay" id="ger-kpi-modal">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ger-kpi-modal-title" id="ger-kpi-modal">
   <div class="modal" style="max-width:520px">
     <h3 id="ger-kpi-modal-title">Nuevo Indicador</h3>
     <div class="form-row">
@@ -1603,9 +1603,9 @@
 
 <!-- Fase 113 (tema B): global (fuera de los 4 app-page) -- reusable desde
      cualquier rol, igual que el toast de abajo. -->
-<div class="modal-overlay" id="modal-change-own-password">
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-change-own-password-title" id="modal-change-own-password">
   <div class="modal">
-    <h3>Cambiar mi Contrasena</h3>
+    <h3 id="modal-change-own-password-title">Cambiar mi Contrasena</h3>
     <div class="ig">
       <label for="cop-actual">Contrasena Actual</label>
       <div class="pass-wrap">
