@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.35.1 — Octubre 2026
+
+**Fase 145: Calidad de Mobilize dice claramente que todavía no hay monitoreos.**
+
+- En la pestaña Calidad de un cliente que todavía no tiene ningún monitoreo
+  de calidad (hoy Mobilize), ahora sale "Todavía no hay monitoreos de
+  calidad para Mobilize." Antes decía "Sin datos de Calidad para" el mes
+  elegido, y parecía que solo faltaba ese mes.
+- Cuando Mobilize tenga sus primeros monitoreos, la pestaña se ve igual que
+  la de Orlant. Orlant no cambia.
+
 ## v1.35.0 — Octubre 2026
 
 **Fase 145: ajustes de Mobilize que pidió Edwin para la entrega.**

@@ -73,11 +73,22 @@ function calDashPromedioPorAsesor(monitoreos) {
 }
 
 // Doble modo: global en el navegador, require() en Node para las pruebas.
+// Fase 145 (Calidad sin monitoreos): texto del aviso cuando una campaña
+// todavia no tiene NINGUN monitoreo de calidad (ni en el mes elegido ni en
+// ningun otro). Antes salia "Sin datos de Calidad para <mes>", que hacia
+// pensar que solo faltaba ese mes. El nombre va como se escribe en la
+// interfaz ("MOBILIZE" -> "Mobilize").
+function calDashTextoSinMonitoreos(campana) {
+  var nombre = String(campana || '').trim().toLowerCase().replace(/(^|[\s-])(\S)/g, function (m, sep, letra) { return sep + letra.toUpperCase(); });
+  return 'Todavía no hay monitoreos de calidad' + (nombre ? ' para ' + nombre : '') + '.';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     calDashFiltrarMonitoreos: calDashFiltrarMonitoreos,
     calDashResumen: calDashResumen,
     calDashAsesoresDistintos: calDashAsesoresDistintos,
     calDashPromedioPorAsesor: calDashPromedioPorAsesor,
+    calDashTextoSinMonitoreos: calDashTextoSinMonitoreos,
   };
 }
