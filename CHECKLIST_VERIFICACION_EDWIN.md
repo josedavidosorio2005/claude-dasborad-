@@ -240,7 +240,8 @@ verificación:
       se leen bien en todas las porciones: letra oscura sobre los colores
       claros y blanca sobre los oscuros, en tema claro y oscuro.
 - [ ] La pantalla de ingreso muestra el logo de InConexion dentro de la
-      tarjeta, encima de "SInCo" (a color en tema claro, blanco en oscuro),
+      tarjeta, encima de "SInCo" (a color en tema claro, blanco en oscuro)
+      [Fase 146: ahora va a la IZQUIERDA, ver abajo],
       y la tarjeta no se mueve mientras carga. El logo pequeño de la esquina
       sigue igual.
 - [ ] En toda la plataforma dice **"Contraseña"** (con ñ): ingreso, crear
@@ -248,3 +249,13 @@ verificación:
       Contraseña" y "Confirmar Nueva Contraseña".
 - [ ] En Mobilize → Calidad, mientras no haya monitoreos, dice "Todavía no
       hay monitoreos de calidad para Mobilize."
+
+## Fase 146 — Logo junto a "SInCo" y tildes
+
+- [ ] En la pantalla de ingreso, el logo de InConexion está a la **izquierda**
+      de "SInCo", en la misma línea, centrado con el texto (a color en tema
+      claro, blanco en oscuro). En el celular cabe en una línea.
+- [ ] En la bienvenida, lo mismo: logo blanco a la izquierda de "SInCo".
+- [ ] Los textos llevan tilde: "Cerrar Sesión", "Selecciona un módulo para
+      continuar", "Gestión de Usuarios", "Campaña", "Último ingreso",
+      "Período", "Categoría", "Codificación"…

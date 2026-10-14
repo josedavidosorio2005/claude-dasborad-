@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.37.0 — Octubre 2026
+
+**Fase 146: logo junto a "SInCo" y palabras con tilde.**
+
+- En la pantalla de ingreso, el logo de InConexion ahora va a la izquierda
+  de "SInCo", en la misma línea (antes iba encima). A color en tema claro y
+  blanco en tema oscuro.
+- En la pantalla de bienvenida también aparece el logo blanco a la
+  izquierda de "SInCo".
+- En el celular, el logo y "SInCo" caben en una sola línea, y nada se mueve
+  mientras carga la imagen. El logo pequeño de la esquina sigue igual.
+- Los textos de la plataforma ahora llevan tilde: "Cerrar Sesión",
+  "Selecciona un módulo", "Gestión de Usuarios", "Campaña", "Último
+  ingreso", "Período", "Categoría", entre otros.
+- Las plantillas y exportaciones de Excel no cambian sus encabezados.
+
 ## v1.36.1 — Octubre 2026
 
 **Fase 146: la guía de uso al día.**
