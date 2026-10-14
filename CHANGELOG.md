@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.34.5 — Octubre 2026
+
+**Fase 144 (A5): textos más legibles.**
+
+- La versión de la plataforma (arriba a la derecha) ahora se lee bien; antes
+  casi no se veía sobre la barra azul oscuro.
+- El botón "Editar" de Usuarios, los rótulos de rol (por ejemplo
+  "Inventario" y "Dashboard Clientes") y el texto verde de campañas
+  asignadas tienen ahora más contraste.
+- Ningún texto de las pantallas queda por debajo del tamaño mínimo de la
+  plataforma: las etiquetas pequeñas de los filtros de Tráfico (Desde,
+  Hasta, Granularidad…) y otras notas crecen un poco.
+- Los PDF que se descargan no cambian.
+- Nada más cambia: datos, permisos y exportaciones son los mismos.
+
 ## v1.34.0 — Octubre 2026
 
 **Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**

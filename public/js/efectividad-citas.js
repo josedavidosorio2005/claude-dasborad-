@@ -124,7 +124,7 @@ function _ecDibujarGrafica(i, filas){
 function _ecTablaHtml(filas, mesSel){
   if(!filas.length) return '';
   function celda(tag, txt, mes){
-    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
   }
   var encabezados = filas.map(function(f){ return celda('th', citasAtendidasMesLbl(f.mes), f.mes); }).join('');
   var filaPct = filas.map(function(f){ return celda('td', citasAtendidasFmtPct(f.agendas>0?f.atendidas/f.agendas:null), f.mes); }).join('');

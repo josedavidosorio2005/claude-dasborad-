@@ -66,7 +66,7 @@ function renderGhTabla(){
         : '<span class="kpi-red" style="font-weight:600">Retirado</span>';
       var costo = p.costo_mes ? '$'+Number(p.costo_mes).toLocaleString('es-CO') : '-';
       html += '<tr>'+
-        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:0.74rem;color:var(--c-text-muted)">'+esc(p.documento)+'</span>':'')+'</td>'+
+        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:var(--fs-note);color:var(--c-text-muted)">'+esc(p.documento)+'</span>':'')+'</td>'+
         '<td>'+esc(p.cargo||'-')+'</td>'+
         '<td>'+esc(p.campana)+'</td>'+
         '<td>'+esc(p.fecha_ingreso)+'</td>'+

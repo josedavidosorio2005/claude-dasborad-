@@ -53,7 +53,11 @@ runtime). `--fw-regular`/`-medium`/`-semibold`/`-bold` son esos mismos 4
 pesos — nunca declarar 800/300, Quicksand no los tiene cargados.
 
 Escala (`--fs-*`), 8 pasos, **`--fs-note` (0.75rem/12px) es el piso
-absoluto** — ningún texto de la plataforma baja de ahí:
+absoluto** — ningún texto de la plataforma baja de ahí (verificado por
+`server/tests/fase144-a5-contraste-12px.test.js`). Dos excepciones
+explícitas: las plantillas de **impresión/PDF** exportado (funciones
+`*Print`, en px: cambiarlas cambiaría la exportación) y el ® del
+logotipo "InConexion®" (parte de la marca):
 
 | Token | Tamaño | Uso |
 |---|---|---|

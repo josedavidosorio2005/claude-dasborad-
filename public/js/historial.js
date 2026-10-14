@@ -48,7 +48,7 @@ function renderHist(filter,tipo){
     return '<tr>'+
       '<td style="white-space:nowrap;font-size:0.79rem;color:var(--c-text-2)">'+esc(h.fecha)+'</td>'+
       '<td><strong style="color:var(--c-primary);font-size:0.84rem">'+esc(h.nombre)+'</strong><br>'+
-        '<span style="font-size:0.74rem;color:var(--c-text-muted);font-family:monospace">@'+esc(h.username)+'</span></td>'+
+        '<span style="font-size:var(--fs-note);color:var(--c-text-muted);font-family:monospace">@'+esc(h.username)+'</span></td>'+
       '<td style="font-size:0.78rem;color:var(--c-text)">'+esc(h.rol)+'</td>'+
       '<td><span class="hist-badge hb-'+esc(h.accion)+'">'+esc(h.accion)+'</span></td>'+
       '<td style="font-size:0.82rem;color:var(--c-text)">'+esc(h.actor)+'</td>'+

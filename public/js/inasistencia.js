@@ -303,7 +303,7 @@ function _inasistenciaDibujarLineaPorMes(canvasId, agregado, mesSel, esFormatoVi
 function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
   if(!agregado.length) return '';
   function celda(tag, txt, mes){
-    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
   }
   var encabezados = agregado.map(function(a){ return celda('th', inasistenciaMesLbl(a.mes) + (esFormatoViejo[a.mes]?' *':''), a.mes); }).join('');
   var filaPct = agregado.map(function(a){ return celda('td', inasistenciaFmtPct(a.pct), a.mes); }).join('');
