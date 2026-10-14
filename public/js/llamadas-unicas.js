@@ -35,6 +35,8 @@ function _llamadasUnicasTituloHtml() {
 function _llamadasUnicasFmtFechaCorta(f) {
   if (!f) return '';
   var p = f.split('-');
+  // Fase 147: el mes en letras ('3 sep 2026'), no 03/09/26.
+  if (p.length === 3 && typeof fechaDiaCorta === 'function') return fechaDiaCorta(f, true);
   return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0].slice(2)) : f;
 }
 
@@ -53,11 +55,20 @@ function _llamadasUnicasOptionsHtml(valores, seleccionado) {
   }).join('');
 }
 
-// Filtro/detalle de asesor: SOLO roles internos (pedido explicito de Edwin
-// -- CLIENTES_DASH no ve nombres de asesor aqui; ver docs/pendientes.md).
+// Filtro/detalle de asesor: roles internos siempre. Fase 147 ("OK nombres
+// para cliente", pedido de Edwin): el cliente de estas campañas TAMBIEN los
+// ve (mismo criterio y misma lista cerrada que el servidor,
+// CAMPANAS_ASESOR_VISIBLE_CLIENTE en routes/llamadas-salida.js).
+var LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE = ['MOBILIZE'];
 function _llamadasUnicasEsInterno() {
   return typeof currentUser === 'undefined' || !currentUser || currentUser.rol !== 'CLIENTES_DASH';
 }
+function _llamadasUnicasVeAsesores(campana) {
+  return _llamadasUnicasEsInterno() || LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE.indexOf(campana) !== -1;
+}
+// Fase 147: el archivo de salida no trae skill real (SKILL_ID es el tipo),
+// asi que el filtro de la mitad de salida es por Tipo.
+var LS_TIPOS = [{ v: 'CONECTADA', t: 'Conectada' }, { v: 'NO_CONECTADA', t: 'No conectada' }];
 
 function _llamadasUnicasSinDatosHtml(texto) {
   return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">' + texto +
@@ -89,7 +100,7 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
   if (!_llamadasUnicasEstado[campana]) _llamadasUnicasEstado[campana] = { desde: '', hasta: '', skill: '', agente: '' };
   var estado = _llamadasUnicasEstado[campana];
 
-  var esInterno = _llamadasUnicasEsInterno();
+  var esInterno = _llamadasUnicasVeAsesores(campana);
   var filtroAsesor = esInterno
     ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="lu-f-agente-' + i + '">Asesor</label>' +
       '<select id="lu-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
@@ -194,9 +205,13 @@ async function _llamadasSalidaRenderMitad(campana, i) {
     mitad.innerHTML = _llamadasSalidaTituloHtml() + _llamadasUnicasSinDatosHtml('Sin llamadas de salida cargadas todavía');
     return;
   }
-  if (!_llamadasSalidaEstado[campana]) _llamadasSalidaEstado[campana] = { desde: '', hasta: '', agente: '' };
+  if (!_llamadasSalidaEstado[campana]) _llamadasSalidaEstado[campana] = { desde: '', hasta: '', agente: '', tipo: '' };
   var estado = _llamadasSalidaEstado[campana];
-  var esInterno = _llamadasUnicasEsInterno();
+  var esInterno = _llamadasUnicasVeAsesores(campana);
+  var filtroTipo = '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="ls-f-tipo-' + i + '">Tipo</label>' +
+    '<select id="ls-f-tipo-' + i + '"><option value="">Todos</option>' +
+    LS_TIPOS.map(function (x) { return '<option value="' + x.v + '"' + (estado.tipo === x.v ? ' selected' : '') + '>' + x.t + '</option>'; }).join('') +
+    '</select></div>';
   var filtroAsesor = esInterno
     ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="ls-f-agente-' + i + '">Asesor</label>' +
       '<select id="ls-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
@@ -206,6 +221,7 @@ async function _llamadasSalidaRenderMitad(campana, i) {
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
       '<div class="ig" style="margin-bottom:0"><label for="ls-f-desde-' + i + '">Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
       '<div class="ig" style="margin-bottom:0"><label for="ls-f-hasta-' + i + '">Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      filtroTipo +
       filtroAsesor +
       '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
@@ -219,7 +235,7 @@ function _llamadasSalidaAplicarFiltros(i) {
   var host = document.getElementById('gd-p' + i);
   var campana = host.dataset.campana;
   function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
-  _llamadasSalidaEstado[campana] = { desde: v('ls-f-desde-' + i), hasta: v('ls-f-hasta-' + i), agente: v('ls-f-agente-' + i) };
+  _llamadasSalidaEstado[campana] = { desde: v('ls-f-desde-' + i), hasta: v('ls-f-hasta-' + i), agente: v('ls-f-agente-' + i), tipo: v('ls-f-tipo-' + i) };
   _llamadasSalidaRenderContenido(campana, i);
 }
 
@@ -266,10 +282,11 @@ function _llamadasSalidaDetalleHtml(detalle) {
 
 async function _llamadasSalidaRenderContenido(campana, i) {
   var estado = _llamadasSalidaEstado[campana] || {};
-  var esInterno = _llamadasUnicasEsInterno();
+  var esInterno = _llamadasUnicasVeAsesores(campana);
   var q = 'campana=' + encodeURIComponent(campana) +
     (estado.desde ? '&desde=' + encodeURIComponent(estado.desde) : '') +
     (estado.hasta ? '&hasta=' + encodeURIComponent(estado.hasta) : '') +
+    (estado.tipo ? '&tipo=' + encodeURIComponent(estado.tipo) : '') +
     (esInterno && estado.agente ? '&agente=' + encodeURIComponent(estado.agente) : '');
   var resumen = { total: 0, noConectadas: 0, conectadas: 0 };
   var porMes = [];

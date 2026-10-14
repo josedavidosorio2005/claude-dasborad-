@@ -29,11 +29,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Las 3 opciones están en `docs/historico/progress-fases.md`, Fase 139
   (cierre). El 2026-10-14 (Fase 145) el 429 de `public.ecr.aws` volvió
   a tumbar el docker-build 4 veces; en cada caso pasó al relanzar el job.
-- **`GET /calidad/llamadas-unicas/opciones` devuelve nombres de asesor a
-  roles cliente** — decidido el 2026-10-13: se deja así, como pidió
-  Edwin (la pantalla oculta el filtro Asesor a CLIENTES_DASH, pero la
-  lista igual viaja en esa respuesta). Si cambias de idea, cerrarlo es
-  un filtro por rol en ese endpoint.
+- **Nombres de asesor para el cliente en Llamadas Únicas y de Salida** —
+  decidido el 2026-10-14 (Fase 147, "OK nombres para cliente"): el cliente
+  de **Mobilize** ve y filtra por asesor en las dos mitades (lista cerrada
+  `CAMPANAS_ASESOR_VISIBLE_CLIENTE`). El cliente de otra campaña no ve
+  nombres de salida. Si se quiere abrir a otra campaña, se agrega a esa
+  lista con OK.
+- **Skill en Llamadas de salida** (Fase 147) — esperando a Edwin: el
+  archivo de salida no trae un skill real (SKILL_ID dice "LLAMADAS DE
+  SALIDA CONECTADAS/NO CONECTADAS"), así que hoy el filtro es por Tipo.
+  Para filtrar por skill hace falta que Edwin mande el archivo de salida
+  con una columna de skill.
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a

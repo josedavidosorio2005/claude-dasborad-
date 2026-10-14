@@ -492,7 +492,12 @@ function traficoDecidirRango(opts) {
 // ("Mostrando: 01/04/2026 – 30/09/2026"). Fechas 'YYYY-MM-DD' -> dd/mm/aaaa,
 // el mismo formato que ya ven en los campos Desde/Hasta.
 function traficoRangoTexto(desde, hasta) {
-  var f = function (s) { return s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '—'; };
+  // Fase 147 (pedido de Edwin): el mes en letras ('1 abr 2026'), no dd/mm/aaaa.
+  var f = function (s) {
+    if (!(s && /^\d{4}-\d{2}-\d{2}$/.test(s))) return '—';
+    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return parseInt(s.slice(8, 10), 10) + ' ' + MESES[parseInt(s.slice(5, 7), 10) - 1] + ' ' + s.slice(0, 4);
+  };
   return 'Mostrando: ' + f(desde) + ' – ' + f(hasta);
 }
 

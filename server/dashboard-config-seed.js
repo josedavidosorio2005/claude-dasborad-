@@ -476,6 +476,9 @@ const MOBILIZE = {
           soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
         },
       ]},
+      // Fase 147 (pedido de Edwin): Calidad SIEMPRE al final en Mobilize (una
+      // pestaña nueva, como Encuesta, va ANTES de esta). Migracion para la
+      // base ya sembrada: dashboards_config_mobilize_calidad_al_final_v1.
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'MOBILIZE' },
         { tipo: 'calidad_pie', campana: 'MOBILIZE', titulo: 'Distribución de clasificación' },

@@ -464,6 +464,13 @@ evita que las cargas futuras se unifiquen de la misma forma.
 
 ### Llamadas de salida (Mobilize)
 
+- **Filtros (Fase 147)**: cada mitad tiene sus propios filtros. Ingreso:
+  Desde, Hasta, Skill y Asesor. Salida: Desde, Hasta, **Tipo** (Conectada /
+  No conectada) y Asesor. El archivo de salida no trae un skill real (su
+  columna SKILL_ID dice si fue conectada o no), por eso el filtro es por
+  Tipo. El filtro y el detalle por **Asesor** los ve también el usuario de
+  Mobilize (pedido de Edwin, 14/10/2026).
+
 - **Dónde se ve**: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha
   (las de ingreso quedan a la izquierda; en el celular, una debajo de la
   otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no

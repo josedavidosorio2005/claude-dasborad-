@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.38.0 — Octubre 2026
+
+**Fase 147: ajustes de la reunión con Edwin.**
+
+- Los meses se ven con su nombre: "Septiembre 2026" en las gráficas y en
+  los avisos, y por día "15 sep". Los archivos de Excel no cambian.
+- "Última actualización" ahora se ve en naranja en el encabezado de los
+  tableros, para que la fecha resalte.
+- En Mobilize, Calidad queda siempre como la última pestaña.
+- En "Llamadas Únicas y de Salida", el usuario de Mobilize ahora puede
+  filtrar por asesor en las dos mitades y ver el detalle por asesor.
+- En la mitad de salida hay un filtro nuevo por Tipo (Conectada / No
+  conectada). El archivo de salida no trae el skill, por eso todavía no
+  se puede filtrar por skill ahí.
+
 ## v1.37.1 — Octubre 2026
 
 **Fase 146: ATA en 0:00 cuando no hubo llamadas abandonadas.**

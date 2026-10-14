@@ -110,10 +110,14 @@ test('las fuentes autoalojadas en conjunto no superan ~100KB (presupuesto de ren
   assert.ok(total < 100 * 1024, `las 4 fuentes pesan ${(total / 1024).toFixed(1)}KB en total, por encima del presupuesto de 100KB`);
 });
 
-test('el verde de "Ultima actualizacion" usa el token de marca --c-brand-green (no un literal suelto)', () => {
+// Fase 147 (pedido de Edwin): "Ultima actualizacion" pasa de borde verde a
+// texto + borde NARANJA (--c-actualizacion). Se sigue exigiendo un TOKEN, nunca
+// un hex suelto; el contraste se mide en fase133-parte6-regresion-wcag.
+test('"Ultima actualizacion" usa el token --c-actualizacion (no un literal suelto); --c-brand-green sigue siendo el verde oficial', () => {
   const css = fs.readFileSync(path.join(PUBLIC_DIR, 'css', 'styles.css'), 'utf8');
   assert.match(css, /--c-brand-green:#74B859/i, 'falta el token --c-brand-green con el verde oficial');
-  assert.match(css, /\.gd-ultima-act\{[^}]*border-left:3px solid var\(--c-brand-green\)/, '.gd-ultima-act deberia usar var(--c-brand-green), no el hex suelto');
+  assert.match(css, /--c-actualizacion:#FF8C1A;/i);
+  assert.match(css, /\.gd-ultima-act\{color:var\(--c-actualizacion\);[^}]*border-left:3px solid var\(--c-actualizacion\)/, '.gd-ultima-act deberia usar var(--c-actualizacion), no un hex suelto');
 });
 
 test('--c-brand es el teal oficial de marca (#004150)', () => {

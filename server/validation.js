@@ -747,6 +747,10 @@ const llamadasSalidaFiltrosQuery = z.object({
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
   agente: z.string().trim().max(200).optional(),
+  // Fase 147: el archivo de salida no trae skill real (SKILL_ID dice
+  // "LLAMADAS DE SALIDA CONECTADAS/NO CONECTADAS" = el tipo), asi que el
+  // filtro pedido como "Skill" es por Tipo.
+  tipo: llamadasSalidaTipoSchema.optional(),
 });
 
 const llamadasSalidaOpcionesQuery = z.object({

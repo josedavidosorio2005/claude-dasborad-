@@ -53,6 +53,7 @@ const T = {}; // T.claro.textoSecundario etc.
     brand: tok(CLARO, '--c-brand'), // fijo, nunca se redefine en oscuro
     primaryMid: tok(bloque, '--c-primary-mid'),
     onPrimarySoft: tok(bloque, '--c-on-primary-soft'),
+    actualizacion: tok(bloque, '--c-actualizacion'),
     onBrand: tok(CLARO, '--c-on-brand'), // fijo
     successText: tok(bloque, '--c-success-text'),
     warningText: tok(bloque, '--c-warning-text'),
@@ -103,6 +104,25 @@ test('ningun selector usa --c-primary-mid como FONDO con texto blanco/on-brand e
     const decl = m[2];
     assert.ok(!/color:\s*(#fff\b|white\b|var\(--c-on-brand\))/.test(decl), `${m[1].trim()} usa --c-primary-mid de fondo con texto blanco -- 2.73:1 en tema oscuro`);
   });
+});
+
+// Fase 147: "Ultima actualizacion" en naranja (--c-actualizacion), excepcion
+// documentada a "naranja solo para el semaforo". Se mide contra el header
+// (--c-brand) y contra el fondo REAL del recuadro: --c-brand con un velo
+// negro del 20% (rgba(0,0,0,0.2) en .gd-ultima-act).
+test('--c-actualizacion >= 4.5:1 sobre --c-brand y sobre el fondo del recuadro, en los 2 temas', () => {
+  const oscurecer = (hex, a) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - a)).toString(16).padStart(2, '0')).join('');
+  ['CLARO', 'OSCURO'].forEach((tema) => {
+    const t = T[tema];
+    assert.ok(t.actualizacion, tema + ': falta --c-actualizacion');
+    const r1 = medir(t.actualizacion, t.brand);
+    const r2 = medir(t.actualizacion, oscurecer(t.brand, 0.2));
+    assert.ok(r1 >= 4.5, tema + ' actualizacion vs brand = ' + r1.toFixed(2));
+    assert.ok(r2 >= 4.5, tema + ' actualizacion vs recuadro = ' + r2.toFixed(2));
+  });
+  const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'styles.css'), 'utf8');
+  assert.ok(css.includes('.gd-ultima-act{color:var(--c-actualizacion);'), 'el texto usa el token');
+  assert.ok(css.includes('background:rgba(0,0,0,0.2);'), 'el recuadro usa el velo negro medido arriba');
 });
 
 test('--c-on-primary-soft >= 4.5:1 sobre --c-brand (texto del header del dashboard, ej. "Ultima actualizacion")', () => {

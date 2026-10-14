@@ -32,6 +32,16 @@ function esRolInterno(actor) {
   return !!actor && (actor.isMasterAdmin || actor.rol !== 'CLIENTES_DASH');
 }
 
+// Fase 147 ("OK nombres para cliente", pedido de Edwin): el rol cliente
+// (CLIENTES_DASH) de estas campañas SI ve y filtra por nombre de asesor.
+// Lista cerrada y explicita -- un cliente de cualquier otra campaña (hoy
+// ORLANT) sigue sin ver nombres. Siempre se llama DESPUES de
+// campaignAccess(actor, campana): sin acceso a la campaña ya hubo 403.
+const CAMPANAS_ASESOR_VISIBLE_CLIENTE = ['MOBILIZE'];
+function puedeVerAsesores(actor, campana) {
+  return esRolInterno(actor) || CAMPANAS_ASESOR_VISIBLE_CLIENTE.includes(campana);
+}
+
 function sinAcceso(res) {
   return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
 }
@@ -45,7 +55,7 @@ router.get(
   validate(schemas.llamadasSalidaOpcionesQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    res.json(llamadasSalidaOpciones(db, req.query.campana, { incluirAgentes: esRolInterno(req.actor) }));
+    res.json(llamadasSalidaOpciones(db, req.query.campana, { incluirAgentes: puedeVerAsesores(req.actor, req.query.campana) }));
   })
 );
 
@@ -55,7 +65,7 @@ router.get(
   validate(schemas.llamadasSalidaFiltrosQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    if (req.query.agente && !esRolInterno(req.actor)) return soloInternos(res);
+    if (req.query.agente && !puedeVerAsesores(req.actor, req.query.campana)) return soloInternos(res);
     res.json(llamadasSalidaResumen(db, req.query));
   })
 );
@@ -66,7 +76,7 @@ router.get(
   validate(schemas.llamadasSalidaFiltrosQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    if (req.query.agente && !esRolInterno(req.actor)) return soloInternos(res);
+    if (req.query.agente && !puedeVerAsesores(req.actor, req.query.campana)) return soloInternos(res);
     res.json(llamadasSalidaPorMes(db, req.query));
   })
 );
@@ -78,7 +88,7 @@ router.get(
   validate(schemas.llamadasSalidaFiltrosQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    if (!esRolInterno(req.actor)) return soloInternos(res);
+    if (!puedeVerAsesores(req.actor, req.query.campana)) return soloInternos(res);
     res.json(llamadasSalidaDetalle(db, req.query));
   })
 );
@@ -124,3 +134,4 @@ router.post(
 );
 
 module.exports = router;
+module.exports.CAMPANAS_ASESOR_VISIBLE_CLIENTE = CAMPANAS_ASESOR_VISIBLE_CLIENTE;

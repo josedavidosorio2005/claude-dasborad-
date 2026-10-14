@@ -259,3 +259,16 @@ verificación:
 - [ ] Los textos llevan tilde: "Cerrar Sesión", "Selecciona un módulo para
       continuar", "Gestión de Usuarios", "Campaña", "Último ingreso",
       "Período", "Categoría", "Codificación"…
+
+## Fase 147 — Ajustes de la reunión (parte A)
+
+- [ ] Los meses se ven con nombre: "Septiembre 2026" en los ejes de las
+      gráficas (por ejemplo Flujo de Llamadas → Nivel de Servicio) y en los
+      avisos; por día, "15 sep". "Mostrando: 1 abr 2026 – 30 sep 2026".
+- [ ] "Última actualización" se ve en **naranja** en el encabezado del
+      tablero (Orlant y Mobilize).
+- [ ] En Mobilize, **Calidad** es la última pestaña: Flujo de Llamadas ·
+      Llamadas Únicas y de Salida · Tipificación · Calidad.
+- [ ] En "Llamadas Únicas y de Salida", el usuario de Mobilize ve el filtro
+      **Asesor** en las dos mitades y el detalle por asesor; la mitad de
+      salida tiene además el filtro **Tipo** (Conectada / No conectada).

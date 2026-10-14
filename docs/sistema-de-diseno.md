@@ -481,6 +481,24 @@ de una fila de KPI se ven iguales.
   `index.html` y todos los JS de vistas: un campo nuevo sin nombre la
   pone en rojo.
 
+## "Última actualización" en naranja (Fase 147) — excepción documentada
+
+Regla general: el naranja es del **semáforo**. Única excepción, pedida por
+Edwin ("naranja zapote para que se vea la fecha"): el texto y el borde de
+"Última actualización" en el encabezado del tablero usan
+`--c-actualizacion` (#FF8C1A). Contraste: 4,82:1 sobre `--c-brand` y
+5,76:1 sobre el fondo real del recuadro (`--c-brand` + velo negro 20 %),
+en claro y oscuro (el encabezado no cambia con el tema). Medido en
+`fase133-parte6-regresion-wcag.test.js`. No se usa en ningún otro lugar.
+
+## Fechas con nombre (Fase 147)
+
+Todo lo que se **ve** muestra el mes con nombre: "Septiembre 2026", y por
+día "15 sep" (`periodoLegible`/`fechaDiaCorta`, `mes-nombre-logic.js`).
+Las gráficas lo hacen solas (complemento `periodoLegible` de Chart.js en
+`charts.js`, ejes y tooltips). Los datos, filtros, campos Desde/Hasta,
+nombres de archivo y encabezados de exportación siguen con AAAA-MM.
+
 ## Logo junto a "SInCo" (Fase 145, cambiado en la Fase 146)
 
 Login y bienvenida: isotipo a la **izquierda** de "SInCo", en la misma línea,

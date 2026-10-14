@@ -1029,7 +1029,7 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
 
   try{
     var impacto = await apiRequest('POST','/calidad/efectividad-agendamiento/carga/impacto', parsed);
-    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + ' (' + r.filas.length + ' asesor(es)).';
+    var msg = 'Se cargará como ' + meses.map(_gdMesLargo).join(', ') + ' (' + r.filas.length + ' asesor(es)).';
     if(impacto.filasExistentes > 0){
       msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
     }
@@ -1046,7 +1046,7 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/efectividad-agendamiento/carga', parsed);
-    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLargo).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -1059,7 +1059,7 @@ async function _cargasGuardarCitasAtendidas(cliente, r){
 
   try{
     var impacto = await apiRequest('POST','/calidad/efectividad-citas/carga/impacto', parsed);
-    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + '.';
+    var msg = 'Se cargará como ' + meses.map(_gdMesLargo).join(', ') + '.';
     if(impacto.filasExistentes > 0){
       msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
     }
@@ -1074,7 +1074,7 @@ async function _cargasGuardarCitasAtendidas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/efectividad-citas/carga', parsed);
-    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLargo).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
