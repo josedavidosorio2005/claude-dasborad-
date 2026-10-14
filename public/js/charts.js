@@ -10,6 +10,24 @@
 // carga antes que este archivo) es la fuente unica del mismo valor para los
 // dos -- cambiar la tipografia del dashboard es cambiar TEXTO_FUENTE ahi Y
 // --font-sans en styles.css (Chart.js no puede leer una variable CSS).
+// Fase 147 (pedido de Edwin, reunion 14/10: "las fechas con nombre, no con
+// numero"): toda grafica con etiquetas AAAA-MM o AAAA-MM-DD las muestra como
+// "Septiembre 2026" / "15 sep" (periodoLegible, mes-nombre-logic.js) en el
+// eje y en el tooltip. Solo cambia lo que se VE: los datos, los filtros y las
+// exportaciones siguen con AAAA-MM. Un solo lugar para Mobilize y ORLANT.
+var CHART_RE_PERIODO = /^\d{4}-\d{2}(-\d{2})?$/;
+function chartEtiquetasLegibles(labels) {
+  if (!Array.isArray(labels) || typeof periodoLegible !== 'function') return labels;
+  return labels.map(function (l) { return (typeof l === 'string' && CHART_RE_PERIODO.test(l)) ? periodoLegible(l) : l; });
+}
+if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
+  Chart.register({
+    id: 'periodoLegible',
+    beforeUpdate: function (chart) {
+      if (chart && chart.data && Array.isArray(chart.data.labels)) chart.data.labels = chartEtiquetasLegibles(chart.data.labels);
+    },
+  });
+}
 if (typeof Chart !== 'undefined') {
   Chart.defaults.font.family = (typeof TEXTO_FUENTE !== 'undefined') ? TEXTO_FUENTE : "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
   // Fase 136 (PR 6, F03): hallazgo real de la auditoria de la Fase 135 --

@@ -94,6 +94,7 @@ function llamadasSalidaWhereClausulas(q) {
   if (q.desde) { clausulas.push('fecha >= @desde'); params.desde = q.desde; }
   if (q.hasta) { clausulas.push('fecha <= @hasta'); params.hasta = q.hasta; }
   if (q.agente) { clausulas.push('agente = @agente'); params.agente = q.agente; }
+  if (q.tipo) { clausulas.push('tipo = @tipo'); params.tipo = q.tipo; }
   return { where: clausulas.join(' AND '), params };
 }
 

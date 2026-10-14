@@ -109,8 +109,8 @@ test('traficoDecidirRango no muta los objetos que recibe', () => {
   assert.deepEqual(previo, copia);
 });
 
-test('traficoRangoTexto: dd/mm/aaaa como en los campos Desde/Hasta', () => {
-  assert.equal(traficoRangoTexto('2026-04-01', '2026-09-30'), 'Mostrando: 01/04/2026 – 30/09/2026');
+test('traficoRangoTexto: el mes en letras (Fase 147, pedido de Edwin)', () => {
+  assert.equal(traficoRangoTexto('2026-04-01', '2026-09-30'), 'Mostrando: 1 abr 2026 – 30 sep 2026');
   assert.equal(traficoRangoTexto('', null), 'Mostrando: — – —');
 });
 

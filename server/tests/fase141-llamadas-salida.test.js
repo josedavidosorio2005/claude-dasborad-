@@ -145,23 +145,62 @@ test('API: una fila con un 5to elemento (telefono colado) se rechaza con 400', a
   assert.equal(mal.status, 400, 'tipo fuera de CONECTADA/NO_CONECTADA');
 });
 
-test('API: rol cliente (CLIENTES_DASH) ve totales pero NUNCA nombres de asesor', async () => {
+// Fase 147 ("OK nombres para cliente", pedido de Edwin): el cliente
+// (CLIENTES_DASH) CON acceso a MOBILIZE ve y filtra por asesor. Antes esta
+// prueba exigia lo contrario.
+test('API: cliente de MOBILIZE (CLIENTES_DASH) ve la lista de asesores, filtra por asesor y ve el detalle; no puede cargar', async () => {
   const cli = await tokenFor('agomez', SEED.agomez);
   const op = await request(app).get('/api/calidad/llamadas-salida/opciones').query({ campana: 'MOBILIZE' }).set(auth(cli));
   assert.equal(op.status, 200);
   assert.ok(Array.isArray(op.body.meses));
-  assert.equal(op.body.agentes, undefined, 'sin lista de asesores para el cliente');
-  const resumen = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE' }).set(auth(cli));
-  assert.equal(resumen.status, 200);
+  assert.ok(op.body.agentes.includes('Asesor Uno'), 'lista de asesores para el cliente de Mobilize');
   const porAgente = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', agente: 'Asesor Uno' }).set(auth(cli));
-  assert.equal(porAgente.status, 403);
+  assert.equal(porAgente.status, 200);
   const porMesAgente = await request(app).get('/api/calidad/llamadas-salida/por-mes').query({ campana: 'MOBILIZE', agente: 'Asesor Uno' }).set(auth(cli));
-  assert.equal(porMesAgente.status, 403);
+  assert.equal(porMesAgente.status, 200);
   const detalle = await request(app).get('/api/calidad/llamadas-salida/detalle').query({ campana: 'MOBILIZE' }).set(auth(cli));
-  assert.equal(detalle.status, 403);
-  assert.ok(!JSON.stringify([op.body, resumen.body, detalle.body]).includes('Asesor'));
+  assert.equal(detalle.status, 200);
+  assert.ok(detalle.body.porAsesor.some((r) => r.agente === 'Asesor Uno'));
   const carga = await request(app).post('/api/calidad/llamadas-salida/carga').set(auth(cli)).send({ campana: 'MOBILIZE', filas: filasSept() });
   assert.equal(carga.status, 403, 'sin permiso de Cargar Datos');
+});
+
+test('API: un cliente SIN acceso a MOBILIZE (solo ORLANT) no ve nada de Mobilize, y en ORLANT no ve nombres de asesor', async () => {
+  // Cliente igual a agomez pero solo con ORLANT.
+  const base = db.prepare("SELECT * FROM users WHERE user = 'agomez'").get();
+  const perms = JSON.parse(base.perms);
+  Object.keys(perms).forEach((k) => { if (/MOBILIZE/.test(k)) perms[k] = false; });
+  const cols = Object.keys(base).filter((c) => c !== 'id');
+  const fila = Object.assign({}, base, { user: 'cli_solo_orlant_f147', perms: JSON.stringify(perms) });
+  db.prepare('DELETE FROM users WHERE user = ?').run('cli_solo_orlant_f147');
+  db.prepare('INSERT INTO users (' + cols.join(',') + ') VALUES (' + cols.map((c) => '@' + c).join(',') + ')').run(fila);
+  const cli = await tokenFor('cli_solo_orlant_f147', SEED.agomez);
+  for (const ruta of ['opciones', 'resumen', 'por-mes', 'detalle']) {
+    const r = await request(app).get('/api/calidad/llamadas-salida/' + ruta).query({ campana: 'MOBILIZE' }).set(auth(cli));
+    assert.equal(r.status, 403, 'MOBILIZE ' + ruta);
+    assert.ok(!JSON.stringify(r.body).includes('Asesor'));
+  }
+  const opO = await request(app).get('/api/calidad/llamadas-salida/opciones').query({ campana: 'ORLANT' }).set(auth(cli));
+  assert.equal(opO.status, 200);
+  assert.equal(opO.body.agentes, undefined, 'ORLANT no esta en la lista: el cliente no recibe nombres');
+  const detO = await request(app).get('/api/calidad/llamadas-salida/detalle').query({ campana: 'ORLANT' }).set(auth(cli));
+  assert.equal(detO.status, 403);
+  const agO = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'ORLANT', agente: 'X' }).set(auth(cli));
+  assert.equal(agO.status, 403);
+  db.prepare('DELETE FROM users WHERE user = ?').run('cli_solo_orlant_f147');
+});
+
+test('API: filtro por Tipo (Conectada / No conectada) en la mitad de salida (Fase 147: el archivo no trae skill real)', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const todo = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE' }).set(auth(admin));
+  const con = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', tipo: 'CONECTADA' }).set(auth(admin));
+  const sin = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', tipo: 'NO_CONECTADA' }).set(auth(admin));
+  assert.equal(con.status, 200);
+  assert.equal(con.body.noConectadas, 0);
+  assert.equal(sin.body.conectadas, 0);
+  assert.equal(con.body.total + sin.body.total, todo.body.total);
+  const mal = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', tipo: 'OTRO' }).set(auth(admin));
+  assert.equal(mal.status, 400);
 });
 
 test('API: rol interno con acceso ve la lista de asesores; sin acceso a la campana = 403', async () => {
@@ -197,7 +236,7 @@ function escHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-async function renderPanel({ rol, respuestas }) {
+async function renderPanel({ rol, respuestas, campana = 'MOBILIZE' }) {
   const elementos = {};
   const pedidos = [];
   const sandbox = {
@@ -219,7 +258,7 @@ async function renderPanel({ rol, respuestas }) {
   };
   vm.createContext(sandbox);
   vm.runInContext(PANEL_JS, sandbox);
-  await sandbox._llamadasUnicasRenderPanel({ campana: 'MOBILIZE' }, 7);
+  await sandbox._llamadasUnicasRenderPanel({ campana }, 7);
   return { html: elementos['gd-p7'].innerHTML, ingreso: elementos['lu-ing-7'].innerHTML, salida: elementos['ls-sal-7'].innerHTML, elementos, pedidos };
 }
 
@@ -258,8 +297,20 @@ test('Panel: rol interno ve filtro Asesor y detalle por asesor/dia en la mitad d
   assert.match(r.elementos['ls-detalle-7'].innerHTML, /Detalle por asesor[\s\S]*Asesor Uno[\s\S]*Detalle por día[\s\S]*01\/09\/26/);
 });
 
-test('Panel: rol cliente no ve filtro Asesor, no pide /detalle y no recibe ningun nombre', async () => {
+// Fase 147: el cliente de MOBILIZE ve el filtro Asesor en las dos mitades y
+// el detalle; el cliente de otra campaña no (lista cerrada, igual que el
+// servidor). La mitad de salida tiene ademas el filtro Tipo.
+test('Panel: cliente de MOBILIZE ve filtro Asesor en las 2 mitades, filtro Tipo y el detalle', async () => {
   const r = await renderPanel({ rol: 'CLIENTES_DASH', respuestas: CON_DATOS });
+  assert.match(r.ingreso, /id="lu-f-agente-7"/);
+  assert.match(r.salida, /id="ls-f-agente-7"/);
+  assert.match(r.salida, /id="ls-f-tipo-7"[\s\S]*Conectada[\s\S]*No conectada/);
+  assert.ok(r.pedidos.some((u) => u.indexOf('/detalle') !== -1));
+  assert.match(r.elementos['ls-detalle-7'].innerHTML, /Detalle por asesor/);
+});
+
+test('Panel: cliente de OTRA campaña no ve filtro Asesor, no pide /detalle y no recibe ningun nombre', async () => {
+  const r = await renderPanel({ rol: 'CLIENTES_DASH', respuestas: CON_DATOS, campana: 'ORLANT' });
   assert.ok(!/ls-f-agente|lu-f-agente/.test(r.ingreso + r.salida));
   assert.ok(!r.pedidos.some((u) => u.indexOf('/detalle') !== -1));
   assert.equal(r.elementos['ls-detalle-7'].innerHTML, '');

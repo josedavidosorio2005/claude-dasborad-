@@ -203,6 +203,13 @@ declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mis
 // acceso a la campana recibe 403): esa regla se prueba en
 // fase141-llamadas-salida-api.test.js, no en esta matriz.
 declarar(['GET /calidad/llamadas-salida/opciones', 'GET /calidad/llamadas-salida/resumen', 'GET /calidad/llamadas-salida/por-mes'], 'scopedRead');
+// Fase 147 ("OK nombres para cliente"): /detalle y el filtro por agente se
+// abren TAMBIEN al cliente con acceso a MOBILIZE (lista cerrada
+// CAMPANAS_ASESOR_VISIBLE_CLIENTE). Esta matriz siembra a todos con acceso
+// SOLO a ORLANT, asi que fija lo que NO debe cambiar: el cliente de ORLANT
+// sigue en 403 en ORLANT (scopedReadInterno) y MOBILIZE sigue ajena (403)
+// para todo no-admin. El caso del cliente de MOBILIZE (200) y el de un
+// cliente solo-ORLANT contra MOBILIZE estan en fase141-llamadas-salida.test.js.
 declarar(['GET /calidad/llamadas-salida/detalle'], 'scopedReadInterno');
 declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas-salida/carga'], 'cargaManual');
 // Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.

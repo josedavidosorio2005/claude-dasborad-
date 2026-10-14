@@ -3575,6 +3575,33 @@ function migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_asaata_aht_v1', migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas);
 
+// Fase 147 (pedido de Edwin, reunion 14/10): en Mobilize, Calidad SIEMPRE
+// es la ultima pestaña (orden: Flujo de Llamadas, Llamadas Unicas y de
+// Salida, Tipificacion, [Encuesta], Calidad). En produccion quedo
+// "... Calidad, Tipificacion" porque dashboards_config_mobilize_tipificacion_
+// tab_v1 agrego Tipificacion al FINAL. Solo cambia el orden: mueve la
+// pestaña "calidad" (tal cual, sin tocar sus paneles) al final. Idempotente:
+// si ya es la ultima, no hace nada; si no existe, lo registra y no toca nada.
+function migrarMobilizeCalidadAlFinal() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout.tabs || [];
+  const i = tabs.findIndex((t) => t && t.key === 'calidad');
+  if (i === -1) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_calidad_al_final_v1: MOBILIZE no tiene pestaña "calidad" -- se deja intacto, revisar a mano.');
+    return;
+  }
+  if (i === tabs.length - 1) return; // ya es la ultima
+  const [calidad] = tabs.splice(i, 1);
+  tabs.push(calidad);
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_calidad_al_final_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_calidad_al_final_v1', migrarMobilizeCalidadAlFinal);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3591,3 +3618,5 @@ module.exports.DB_PATH = DB_PATH;
 module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUnicasATabPropio;
 // Fase 145: idem.
 module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas;
+// Fase 147: idem.
+module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;

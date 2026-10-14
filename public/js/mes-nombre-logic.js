@@ -87,9 +87,33 @@ function mesNombreLargo(aaaaMM) {
   return nombre ? (nombre + ' ' + m[1]) : String(aaaaMM);
 }
 
+// Fase 147 (pedido de Edwin, reunion 14/10: "las fechas con nombre, no con
+// numero"): rotulos legibles para ejes, tooltips, tablas y avisos.
+//   '2026-09'    -> 'Septiembre 2026' (mesNombreLargo)
+//   '2026-09-15' -> '15 sep'  (o '15 sep 2026' con conAnio)
+//   cualquier otra cosa (año '2026', texto) -> igual
+// Solo es para MOSTRAR: los datos, filtros y exportaciones siguen con
+// AAAA-MM / AAAA-MM-DD.
+var MES_NUM_A_NOMBRE_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function fechaDiaCorta(aaaaMMdd, conAnio) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(aaaaMMdd == null ? '' : aaaaMMdd));
+  if (!m) return String(aaaaMMdd == null ? '' : aaaaMMdd);
+  var mes = MES_NUM_A_NOMBRE_CORTO[parseInt(m[2], 10) - 1];
+  if (!mes) return String(aaaaMMdd);
+  return parseInt(m[3], 10) + ' ' + mes + (conAnio ? ' ' + m[1] : '');
+}
+function periodoLegible(p) {
+  var s = String(p == null ? '' : p);
+  if (/^\d{4}-\d{2}$/.test(s)) return mesNombreLargo(s);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return fechaDiaCorta(s);
+  return s;
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    fechaDiaCorta: fechaDiaCorta,
+    periodoLegible: periodoLegible,
     MES_NOMBRE_A_NUM: MES_NOMBRE_A_NUM,
     mesNombreAAAAMM: mesNombreAAAAMM,
     MES_NUM_A_NOMBRE_LARGO: MES_NUM_A_NOMBRE_LARGO,

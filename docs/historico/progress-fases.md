@@ -14843,3 +14843,32 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   abandonos): solo septiembre, tarjeta "—" → 0:00 y punto de la gráfica
   hueco → 0; agosto sigue en 0:40; 0 errores de consola. Capturas fuera del
   repo (`datos-inconexion/diagnostico-ui/fase146/ata-cero/`).
+
+## Fase 147, Parte A — Ajustes de la reunión con Edwin (v1.38.0, 2026-10-14)
+
+- **Fechas con nombre**: complemento global de Chart.js (`periodoLegible`,
+  ejes y tooltips de todas las gráficas: AAAA-MM → "Septiembre 2026",
+  AAAA-MM-DD → "15 sep"); avisos de mes sin datos, comparación, título del
+  PDF y avisos de Cargar Datos con el mes completo; "Mostrando: 1 abr 2026 –
+  30 sep 2026"; tabla por día de Llamadas Únicas "3 sep 2026". Sin cambios
+  en datos, filtros, Desde/Hasta, nombres de archivo ni encabezados de
+  exportación.
+- **"Última actualización" en naranja**: token `--c-actualizacion`
+  (#FF8C1A), texto y borde, velo negro 20 % (con el velo blanco anterior
+  bajaba a 3,86:1; ahora 5,76:1). Prueba de contraste en
+  `fase133-parte6-regresion-wcag`. Excepción documentada.
+- **Calidad al final en Mobilize**: migración nueva
+  `dashboards_config_mobilize_calidad_al_final_v1` (producción tenía
+  "... Calidad, Tipificación"); base migrada == seed.
+- **Asesor para el cliente de Mobilize** ("OK nombres para cliente"):
+  `puedeVerAsesores` = rol interno o campaña en
+  `CAMPANAS_ASESOR_VISIBLE_CLIENTE` (['MOBILIZE']), siempre después de
+  `campaignAccess`. Pruebas: cliente de Mobilize 200 en /opciones (con
+  agentes), /detalle y filtro; cliente solo-ORLANT 403 en todo Mobilize y sin
+  nombres en ORLANT.
+- **Skill en salida**: no existe skill real en los datos (SKILL_ID = tipo);
+  se agregó filtro **Tipo** (Conectada / No conectada) y queda pedido a
+  Edwin un archivo con skill.
+- Suite 1640/1640. Capturas antes/después 375 y 1440, claro y oscuro (base
+  demo con el orden de pestañas de producción), fuera del repo; 0 errores
+  de consola.

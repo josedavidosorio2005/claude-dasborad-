@@ -14,7 +14,12 @@ var _gd = {
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function _gdNum(v){ var n = typeof v==='number'?v:Number(v); return Number.isFinite(n)?n:0; }
 function _gdMesLbl(p){ var x=String(p||'').split('-'); return x.length<2?(p||''):((_GD_MESES[parseInt(x[1],10)-1]||x[1])+'-'+x[0].slice(2)); }
-function _gdDiaLbl(f){ var x=String(f||'').split('-'); return x.length>=3?(parseInt(x[2],10)+'/'+parseInt(x[1],10)):String(f||''); }
+// Fase 147: dia con el mes en letras ('15 sep'), ver periodoLegible.
+function _gdDiaLbl(f){ return (typeof fechaDiaCorta === 'function') ? fechaDiaCorta(String(f||'')) : String(f||''); }
+// Fase 147: mes con nombre completo ('Septiembre 2026') para lo que se VE
+// (avisos, comparacion, titulo del PDF). _gdMesLbl (corto) queda solo para
+// nombres de archivo exportado y datos de exportacion.
+function _gdMesLargo(p){ return (typeof mesNombreLargo === 'function') ? mesNombreLargo(p) : _gdMesLbl(p); }
 function _gdUp(v){ return String(v==null?'':v).trim().toUpperCase().replace(/\s+/g,''); }
 
 function _gdFmt(v, formato){
@@ -119,7 +124,7 @@ function _gdResolver(f, extra){
     var cargas = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
     var tope = _gd.mesSel || (cargas.length ? cargas[cargas.length-1].periodo : null);
     if(tope) cargas = cargas.filter(function(c){ return c.periodo <= tope; });
-    var labels = cargas.map(function(c){ return _gdMesLbl(c.periodo); });
+    var labels = cargas.map(function(c){ return _gdMesLargo(c.periodo); });
     var values = cargas.map(function(c){ return _gdEvalCampo(_gdPickFila(c.filas), f); });
     if(f.transform === 'incremento'){
       values = values.map(function(v,i){ return i===0 ? null : (values[i-1] ? Math.round(((_gdNum(v)-_gdNum(values[i-1]))/_gdNum(values[i-1]))*100) : null); });
@@ -483,7 +488,7 @@ function _gdKpiCardHtml(k){
     var pctTxt = vari.pct === null ? '' : (vari.pct > 0 ? '+' : '') + vari.pct + '%';
     var absTxt = _gdFmt(Math.abs(vari.abs), k.formato);
     trendHtml = '<div class="gd-kpi-trend ' + tcls + '">' + arrow + ' ' + (pctTxt ? pctTxt + ' ' : '') +
-      '<span>(' + (vari.abs >= 0 ? '+' : '-') + absTxt + ') vs ' + (comp.periodo ? _gdMesLbl(comp.periodo) : 'periodo anterior') + '</span></div>';
+      '<span>(' + (vari.abs >= 0 ? '+' : '-') + absTxt + ') vs ' + (comp.periodo ? _gdMesLargo(comp.periodo) : 'periodo anterior') + '</span></div>';
   }
 
   var metaHtml = '';
@@ -1054,7 +1059,7 @@ var _gdFinDeMes = gdFinDeMes;
 // 2026"), pedido textual de Edwin -- sin este parametro, el comportamiento
 // es EXACTAMENTE igual al de siempre.
 function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, formatearMes){
-  var fmt = formatearMes || _gdMesLbl;
+  var fmt = formatearMes || _gdMesLargo;
   var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(fmt(mesElegido)) + '.';
   if(ultimoMesConDatos){
     msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
@@ -2046,7 +2051,7 @@ async function _gdExportPrint(){
       'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
       avisoHtml +
       '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
-      (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
+      (_gd.compSel ? ' · comparado con ' + esc(_gdMesLargo(_gd.compSel)) : '') + '</p>' +
       '<h2>Indicadores principales</h2>' + tblKpis +
       '<h2>' + esc(tab ? tab.label : '') + '</h2>' + secs +
       '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +

@@ -76,6 +76,13 @@
   --c-success-text:#17703b; --c-warning-text:#8f4a00; --c-danger-text:#b02a1d;
   --c-accent:#ffd54f;  --c-accent-bg:#fff8e1;    --c-purple:#8e44ad;
   --c-info-bg:#eaf4fb;  --c-on-primary-soft:#a8d8ea;
+  /* Fase 147 (pedido de Edwin: "naranja zapote para que se vea la fecha"):
+     texto y borde de "Ultima actualizacion" en el header del dashboard.
+     EXCEPCION documentada a "naranja solo para el semaforo" (ver
+     docs/sistema-de-diseno.md). 4.82:1 sobre --c-brand, 5.76:1 sobre el
+     fondo real del recuadro (--c-brand + velo negro 20%). Mismo valor en
+     los 2 temas: el header no cambia con el tema. */
+  --c-actualizacion:#FF8C1A;
   /* Fase 144 (A5): texto del badge de rol CLIENTES_DASH sobre su fondo
      #fef9e2 -- 5.85:1 (antes #9e7a00 suelto, 3.79:1, no pasaba AA). En
      oscuro el badge ya tenia su propio color (#ffd54f), sin cambio. */
@@ -178,6 +185,7 @@
   --c-success-text:#4ade80; --c-warning-text:#fbbf24; --c-danger-text:#fca5a5;
   --c-accent:#ffd54f;  --c-accent-bg:#3a2f0a;    --c-purple:#c084fc;
   --c-info-bg:#122f42;  --c-on-primary-soft:#7dd6f0;
+  --c-actualizacion:#FF8C1A;
 
   /* Fase 133: borde de control -- #2a4a56 (--c-border) solo daba 1.54:1
      contra --c-surface oscuro, por debajo del 3:1 minimo. */
@@ -735,8 +743,12 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    un color nuevo). El "resaltado" es el borde izquierdo de color: naranja
    para Mobilize, verde de marca InConexion (--c-brand-green, Fase 132)
    para el resto.*/
-.gd-ultima-act{color:var(--c-on-primary-soft);font-size:var(--fs-note);font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-brand-green);background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
-.gd-ultima-act-mobilize{border-left-color:#f97316;}
+/* Fase 147 (pedido de Edwin): etiqueta Y fecha en naranja (--c-actualizacion)
+   para todos los clientes, con un velo NEGRO del 20% de fondo -- con el velo
+   blanco anterior (8%) el naranja bajaba a 3.86:1; con el negro queda en
+   5.76:1 (AA). */
+.gd-ultima-act{color:var(--c-actualizacion);font-size:var(--fs-note);font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-actualizacion);background:rgba(0,0,0,0.2);border-radius:0 5px 5px 0;display:inline-block;}
+.gd-ultima-act-mobilize{border-left-color:var(--c-actualizacion);}
 /* Logo del cliente en el encabezado del dashboard (hoy solo Mobilize,
    Fase 132 Parte 8) -- oculto por defecto (display:none inline en el
    HTML), JS lo muestra solo para ese cliente. .aurora-header es SIEMPRE
