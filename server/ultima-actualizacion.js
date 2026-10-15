@@ -7,7 +7,7 @@
 // Calidad, etc, cada una con su propio `campana`/`cliente` + createdAt),
 // y "Gestion de base" (secciones genericas) vive aparte en
 // `dashboard_cargas` (columna `cargadoEn`, no `createdAt`). Este archivo
-// junta las 10 fuentes y devuelve la MAS RECIENTE para un cliente dado.
+// junta las 14 fuentes (10 hasta la Fase 149) y devuelve la MAS RECIENTE para un cliente dado.
 //
 // `createdAt`/`cargadoEn` se guardan con la hora LOCAL DEL PROCESO
 // (nowStr(), duplicado en cada modulo de carga -- ver agendas.js/
@@ -35,6 +35,14 @@ const FUENTES = [
   { tabla: 'efectividad_citas', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'salida_mensual', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'dashboard_cargas', campoCampana: 'cliente', campoFecha: 'cargadoEn' },
+  // Fase 150 (OK del usuario, 15/10/2026): las bases nuevas de Mobilize y la
+  // de WhatsApp por rangos de ORLANT tambien cuentan -- antes la Encuesta del
+  // 15/10 no movia la fecha de Mobilize (seguia en 08/10). Mismo createdAt
+  // con nowStr() que el resto.
+  { tabla: 'encuestas', campoCampana: 'campana', campoFecha: 'createdAt' },
+  { tabla: 'llamadas_unicas', campoCampana: 'campana', campoFecha: 'createdAt' },
+  { tabla: 'llamadas_salida', campoCampana: 'campana', campoFecha: 'createdAt' },
+  { tabla: 'whatsapp_tiempos', campoCampana: 'campana', campoFecha: 'createdAt' },
 ];
 
 const RE_FECHA_PROCESO = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;
@@ -51,7 +59,7 @@ function parseFechaProcesoComoUtc(str) {
 
 // Fecha/hora de la carga mas reciente de `cliente`, ya en hora Colombia
 // ('DD/MM/AAAA HH:MM:SS'), o null si el cliente no tiene ninguna carga
-// todavia en ninguna de las 10 fuentes.
+// todavia en ninguna de las fuentes.
 function obtenerUltimaActualizacion(db, cliente) {
   let masReciente = null; // Date (UTC)
   for (const f of FUENTES) {

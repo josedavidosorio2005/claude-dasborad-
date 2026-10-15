@@ -15029,3 +15029,31 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   no incluye `encuestas`, `llamadas_unicas`, `llamadas_salida` ni
   `whatsapp_tiempos`, por eso Mobilize seguía en 08/10 tras cargar la
   Encuesta.
+
+## Fase 150 — Pendientes de la 149 (v1.41.2, 2026-10-15)
+
+- **"Última actualización"** (OK del usuario): `FUENTES` de
+  `server/ultima-actualizacion.js` suma `encuestas`, `llamadas_unicas`,
+  `llamadas_salida` y `whatsapp_tiempos` (14 fuentes). Prueba
+  `fase150-ultima-actualizacion-fuentes.test.js`: cada tabla nueva con una
+  carga más reciente mueve la fecha (caso Mobilize: Encuesta del 15/10 vs.
+  Tipificación del 08/10); una carga vieja en esas tablas o una carga de
+  otra campaña no la mueve (caso ORLANT).
+- **One & Done**: eje X con el mes en letras (`mesNombreLargo`); un error
+  de `GET /calidad/encuestas/fcr` muestra "No se pudo cargar One & Done"
+  (`role="alert"`, `--c-danger-text`) y vacía la tabla para exportar, en
+  vez de "Sin encuestas en el período"; `_traficoExportTitulo` le da el
+  título "One & Done" a la tabla en el Exportar del tablero, en el Excel
+  (hoja y nombre de archivo) y en el PDF de esa sub-pestaña. Prueba
+  `fase150-one-and-done-ajustes.test.js`. Revisado en local (base demo, 1440
+  y 375 px, oscuro): etiquetas legibles (inclinadas a 375 px), 0 errores de
+  consola y sin scroll horizontal.
+- **8 MB**: `/calidad/llamadas-unicas/carga` y `/calidad/whatsapp-tiempos/carga`
+  (y sus `/impacto`) entran a `RUTAS_LIMITE_MAYOR`. Prueba
+  `fase150-limite-8mb-unicas-whatsapp.test.js`.
+- **Excel de WhatsApp por rangos** (`whatsapp-tiempos.js`): sin
+  `xlsxFilasSeguras` no exporta y avisa con un error (igual que la Encuesta).
+- **graphify**: `graphify update .` no corre en este equipo. El comando
+  `graphify` no está instalado, el `python.exe` del PATH es solo el acceso
+  directo de Microsoft Store (no hay Python instalado) y el repo no tiene
+  `graphify-out/`. No se arregló (pedido del usuario).
