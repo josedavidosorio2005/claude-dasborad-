@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.40.0 — Octubre 2026
+
+**Fase 147 (parte C): solución en primer contacto (FCR) en Mobilize.**
+
+- En **Flujo de Llamadas** hay una tarjeta nueva, "Solución en primer
+  contacto (FCR)": de las encuestas del mes, cuántas dijeron que su
+  solicitud se resolvió en la primera llamada (pregunta 3 = Sí).
+- La tarjeta siempre muestra la cuenta, por ejemplo "3 de 45 encuestas",
+  para que se entienda de dónde sale el porcentaje. Si el mes no tiene
+  encuestas, dice "Sin encuestas este mes".
+- Por ahora se calcula sobre todas las encuestas del mes, como pidió Edwin.
+  Si se prefiere contar solo a quienes respondieron la pregunta 3, se
+  cambia en la configuración, sin tocar la plataforma.
+
 ## v1.39.0 — Octubre 2026
 
 **Fase 147 (parte B): encuesta de satisfacción de Mobilize.**

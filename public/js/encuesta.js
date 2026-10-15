@@ -265,6 +265,44 @@ function _encuestaExportPrint(i) {
   setTimeout(function () { w.focus(); w.print(); }, 300);
 }
 
+// ── Parte C: "Solución en primer contacto (FCR)" en Flujo de Llamadas ──
+// La llama _traficoRenderContenido (trafico.js) en la sub-pestaña "Flujo de
+// Llamadas" cuando el panel trae `fcrBase` ('total' = todas las encuestas
+// del mes, pedido de Edwin; 'respondieron' = solo las que contestaron la
+// pregunta 3). Mes de la tarjeta = el del final del rango del panel; los
+// demas meses del rango con encuestas van en una linea aparte. Siempre con
+// la fraccion ("3 de 45 encuestas") para que se entienda.
+var ENCUESTA_FCR_NOTA = 'Encuestas en las que el usuario dijo que su solicitud se resolvió en este primer contacto (pregunta 3 = Sí).';
+async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
+  var kpis = document.getElementById('tv-kpis-' + i);
+  if (!kpis) return;
+  // Una tarjeta mas al final de la fila de tarjetas de Flujo de Llamadas
+  // (_traficoDibujarKpis reescribe esa fila en cada filtro: se vuelve a poner).
+  var el = document.getElementById('tv-fcr-' + i);
+  if (!el) {
+    kpis.insertAdjacentHTML('beforeend', '<div class="aurora-kpi enc-fcr" id="tv-fcr-' + i + '"></div>');
+    el = document.getElementById('tv-fcr-' + i);
+  }
+  var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base === 'respondieron' ? 'respondieron' : 'total') +
+    (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
+  var porMes = [];
+  try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; } catch (e) { porMes = []; }
+  var mesFin = hasta ? hasta.slice(0, 7) : (porMes.length ? porMes[porMes.length - 1].periodo : '');
+  var t = encuestaFcrTarjeta(porMes, mesFin);
+  var mesLbl = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  var nota = ' <span title="' + esc(ENCUESTA_FCR_NOTA) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>';
+  var cuerpo = t.sinEncuestas
+    ? '<div class="kv">—</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div><div class="enc-fcr-sub">' + esc(mesLbl(t.mes)) + ': Sin encuestas este mes</div>'
+    : '<div class="kv">' + esc(encuestaFmtPct(t.pct)) + '</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div>' +
+      '<div class="enc-fcr-sub">' + esc(mesLbl(t.mes)) + ': ' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + '</div>';
+  var otros = t.otros.length
+    ? '<div class="enc-fcr-otros">Otros meses: ' + t.otros.map(function (m) {
+        return esc(mesLbl(m.periodo)) + ' ' + esc(encuestaFmtPct(m.pct)) + ' (' + esc(encuestaFcrFraccion(m.si, m.den, m.base)) + ')';
+      }).join(' · ') + '</div>'
+    : '';
+  el.innerHTML = cuerpo + otros;
+}
+
 if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
   var _encuestaOv = document.getElementById('modal-encuesta-preguntas');
   if (_encuestaOv && typeof _encuestaOv.addEventListener === 'function') _encuestaOv.addEventListener('click', function (e) { if (e.target === this) _encuestaCerrarPreguntas(); });

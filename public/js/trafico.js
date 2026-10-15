@@ -1184,6 +1184,9 @@ function _traficoRenderContenido(campana, sede, i){
       nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar);
 
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
+  // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
+  // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
+  if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
   // combinar:true), sin depender del checkbox "Ver skills por separado" de

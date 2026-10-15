@@ -14906,3 +14906,24 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   Excel descargado, 0 errores de consola. Capturas fuera del repo
   (`datos-inconexion/diagnostico-ui/fase147/parte-b/`).
 - **Carga real en producción: pendiente del "OK cargar encuesta".**
+
+## Fase 147, Parte C — FCR en Flujo de Llamadas de Mobilize (v1.40.0, 2026-10-15)
+
+- Tarjeta "Solución en primer contacto (FCR)" al final de las tarjetas de la
+  sub-pestaña "Flujo de Llamadas" (`_encuestaDibujarFcr`, encuesta.js;
+  enganchada en `_traficoRenderContenido` solo si el panel trae
+  `fcrBase`). Fuente: `GET /calidad/encuestas/fcr` (Q03 = 1 sobre la
+  base). Mes de la tarjeta = el del final del rango Desde/Hasta del panel;
+  los demás meses del rango con encuestas, debajo. Siempre con la fracción;
+  sin encuestas: "Sin encuestas este mes".
+- Base configurable sin código: `fcrBase: 'total'` (por defecto, pedido de
+  Edwin: 3 ÷ 45 = 6,7 % con el archivo real) o `'respondieron'` (3 ÷ 4 =
+  75 %). Seed + migración `dashboards_config_mobilize_flujo_fcr_v1` (solo
+  agrega el campo si falta; nunca pisa una base elegida; solo la forma de
+  producción).
+- No se agregó la serie mensual a la gráfica (se dejó solo la tarjeta, más
+  clara con 1 mes de encuestas).
+- Pruebas `fase147-c-fcr.test.js` (6). Verificación local (Brave, 1440 y
+  375, claro y oscuro): tarjeta dentro de la fila de tarjetas, ausente en
+  las otras sub-pestañas, sin scroll horizontal, 0 errores. Capturas fuera
+  del repo (`datos-inconexion/diagnostico-ui/fase147/parte-c/`).

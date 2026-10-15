@@ -456,6 +456,12 @@ const MOBILIZE = {
             { key: 'aht', label: 'AHT' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
+          // Fase 147 (Parte C): tarjeta "Solucion en primer contacto (FCR)"
+          // desde la Encuesta. Base 'total' (todas las encuestas del mes,
+          // pedido de Edwin) o 'respondieron' (solo las que contestaron la
+          // pregunta 3) -- se cambia aqui o en el constructor, sin codigo.
+          // Migracion: dashboards_config_mobilize_flujo_fcr_v1 (db.js).
+          fcrBase: 'total',
         },
       ]},
       // Fase 139: pestaña propia de Llamadas Unicas (Fase 138 PR3), SIEMPRE
