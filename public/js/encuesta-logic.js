@@ -250,8 +250,54 @@ function encuestaFcrFraccion(si, den, base) {
   return si + ' de ' + den + (base === 'respondieron' ? ' que respondieron la pregunta 3' : ' encuestas');
 }
 
+// ── Fase 147 (Parte D): sub-pestaña "One & Done" de Flujo de Llamadas ──
+// Meses (AAAA-MM) del rango Desde/Hasta del panel; sin rango, los meses que
+// trae `porMes`. Asi un mes del rango sin encuestas tambien aparece.
+function encuestaMesesRango(desde, hasta, porMes) {
+  var conDatos = (porMes || []).map(function (m) { return m.periodo; }).sort();
+  var ini = desde ? String(desde).slice(0, 7) : conDatos[0];
+  var fin = hasta ? String(hasta).slice(0, 7) : conDatos[conDatos.length - 1];
+  if (!ini || !fin || ini > fin) return conDatos;
+  var out = [];
+  var a = Number(ini.slice(0, 4)), m = Number(ini.slice(5, 7));
+  while (out.length < 120) {
+    var p = a + '-' + (m < 10 ? '0' + m : '' + m);
+    if (p > fin) break;
+    out.push(p);
+    m++;
+    if (m > 12) { m = 1; a++; }
+  }
+  return out;
+}
+
+// Una barra por mes: % One & Done (Q03 = 1 / base) con su fraccion. Mes sin
+// encuestas = { sinEncuestas: true, pct: null } (nunca 0 % inventado).
+function encuestaOneAndDoneSerie(porMes, meses, base) {
+  var porPeriodo = {};
+  (porMes || []).forEach(function (m) { porPeriodo[m.periodo] = m; });
+  return (meses || []).map(function (p) {
+    var m = porPeriodo[p];
+    if (!m || !m.total) return { periodo: p, sinEncuestas: true, pct: null, si: 0, den: 0, total: 0, respondieron: 0, base: base };
+    var f = encuestaFcr(m.si, m.total, m.respondieron, base);
+    return { periodo: p, sinEncuestas: false, pct: f.pct, si: m.si, den: f.den, total: m.total, respondieron: m.respondieron, base: base };
+  });
+}
+
+// "Respuestas de la pregunta 3" del periodo: Si / No / Sin respuesta, en
+// cantidad y en % sobre TODAS las encuestas del periodo.
+function encuestaQ3Desglose(porMes) {
+  var total = 0, si = 0, respondieron = 0;
+  (porMes || []).forEach(function (m) { total += m.total || 0; si += m.si || 0; respondieron += m.respondieron || 0; });
+  var pct = function (n) { return total > 0 ? Math.round((n / total) * 1000) / 10 : null; };
+  var no = respondieron - si, sinRespuesta = total - respondieron;
+  return { total: total, si: si, no: no, sinRespuesta: sinRespuesta, pctSi: pct(si), pctNo: pct(no), pctSinRespuesta: pct(sinRespuesta) };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    encuestaMesesRango: encuestaMesesRango,
+    encuestaOneAndDoneSerie: encuestaOneAndDoneSerie,
+    encuestaQ3Desglose: encuestaQ3Desglose,
     ENCUESTA_COLUMNAS: ENCUESTA_COLUMNAS,
     ENCUESTA_ORDEN_ARRAY: ENCUESTA_ORDEN_ARRAY,
     ENCUESTA_COMENTARIO_MAX: ENCUESTA_COMENTARIO_MAX,

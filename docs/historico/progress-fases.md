@@ -14970,3 +14970,22 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   429. Rama actualizada con `git merge origin/main` (sin rebase ni force
   push), v1.40.1. Sin los secretos el paso de login se salta y node se baja
   de ECR Public como antes.
+
+## Fase 147 (parte D) — Sub-pestaña "One & Done" en Flujo de Llamadas de Mobilize (v1.41.0, 2026-10-15)
+
+- Pedido de Edwin: One & Done (FCR, pregunta 3 = Sí) en su propia gráfica.
+  Sub-pestaña nueva al final del `trafico_combo` de MOBILIZE: Flujo de
+  Llamadas · Nivel de Servicio · Abandono · ASA y ATA · AHT · One & Done.
+  Seed + migración nueva `dashboards_config_mobilize_flujo_oneanddone_v1`
+  (solo la forma de producción de la Fase 145; cualquier otra se deja
+  intacta y se registra). ORLANT no cambia.
+- Vista (`_encuestaDibujarOneAndDone`, encuesta.js): tarjeta del mes del
+  final del rango, barras por mes (eje 0–100 %, % encima, fracción en el
+  tooltip), desglose Sí / No / Sin respuesta de la pregunta 3, "Sin
+  encuestas este mes" por mes y estado vacío para todo el rango. Reutiliza
+  `GET /calidad/encuestas/fcr` con la misma `fcrBase` que la tarjeta FCR
+  (mismo número). Sin rutas ni permisos nuevos. Exportación de esa
+  sub-pestaña con `xlsxFilasSeguras`, igual que las demás.
+- Pruebas: `fase147-d-one-and-done.test.js` (lógica con las 2 bases, mes
+  sin encuestas, división por cero, migración idempotente, ORLANT intacto,
+  base migrada = seed) y ajustadas las 2 que fijaban las 5 sub-pestañas.

@@ -514,6 +514,12 @@ evita que las cargas futuras se unifiquen de la misma forma.
 - **Privacidad**: el archivo no trae teléfonos; si alguna vez los trae, la
   plataforma los ignora antes de enviar nada. El filtro y la columna de
   asesor los ve también el usuario de Mobilize.
+- **One & Done** (sub-pestaña de Flujo de Llamadas, la última): barras por
+  mes con el % de encuestas con la pregunta 3 en "Sí", con la misma base
+  que la tarjeta FCR (mismo número). Arriba, la tarjeta del mes del final
+  del rango ("Septiembre 2026: 6,7 % (3 de 45 encuestas)"); debajo, las
+  respuestas de la pregunta 3 (Sí / No / Sin respuesta). Un mes sin
+  encuestas dice "Sin encuestas este mes".
 - **FCR en Flujo de Llamadas**: en la sub-pestaña "Flujo de Llamadas" hay
   una tarjeta "Solución en primer contacto (FCR)" = encuestas con la
   pregunta 3 en "Sí" ÷ todas las encuestas del mes (o, si se configura

@@ -3677,6 +3677,31 @@ function migrarMobilizeFlujoFcr() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_fcr_v1', migrarMobilizeFlujoFcr);
 
+// Fase 147 (Parte D, pedido de Edwin): sub-pestaña "One & Done" AL FINAL del
+// trafico_combo de MOBILIZE (tab "flujo"). Solo agrega esa sub-pestaña: las
+// 5 existentes, fcrBase y lo demas no se tocan. Solo la forma reconocible de
+// produccion (las 5 sub-pestañas de la Fase 145, en ese orden); cualquier
+// otra se deja intacta y se registra. Idempotente.
+const MOBILIZE_FLUJO_SUBTABS_F145 = ['resumen', 'sl', 'abandono', 'asaata', 'aht'];
+function migrarMobilizeFlujoOneAndDone() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  const keys = panel && Array.isArray(panel.subtabs) ? panel.subtabs.map((s) => s && s.key) : null;
+  if (keys && keys.includes('oneanddone')) return;
+  if (!keys || keys.join(',') !== MOBILIZE_FLUJO_SUBTABS_F145.join(',')) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_oneanddone_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  panel.subtabs.push({ key: 'oneanddone', label: 'One & Done' });
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_oneanddone_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_flujo_oneanddone_v1', migrarMobilizeFlujoOneAndDone);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3697,3 +3722,4 @@ module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaA
 module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
 module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
 module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;
+module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;

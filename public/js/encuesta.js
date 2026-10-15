@@ -303,6 +303,82 @@ async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
   el.innerHTML = cuerpo + otros;
 }
 
+// ── Fase 147 (Parte D): sub-pestaña "One & Done" de Flujo de Llamadas ──
+// Mismo endpoint y misma base que la tarjeta FCR (_encuestaDibujarFcr), asi
+// el % es identico. Barras por mes (paleta categorica, sin semaforo: no hay
+// meta), tarjeta con el mes del final del rango y el desglose de la
+// pregunta 3 debajo.
+var _encuestaOadUltimo = {}; // por indice de panel: serie para exportar
+async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
+  var elKpi = document.getElementById('tv-oad-kpi-' + i);
+  var elQ3 = document.getElementById('tv-oad-q3-' + i);
+  base = base === 'respondieron' ? 'respondieron' : 'total';
+  var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base) +
+    (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
+  var porMes = [];
+  try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; } catch (e) { porMes = []; }
+  var mesLbl = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  var serie = encuestaOneAndDoneSerie(porMes, encuestaMesesRango(desde, hasta, porMes), base);
+  _encuestaOadUltimo[i] = serie;
+  var d = encuestaQ3Desglose(porMes);
+  if (!d.total) {
+    if (elKpi) elKpi.innerHTML = '';
+    if (elQ3) elQ3.textContent = '';
+    var wrap = document.getElementById('tv-canvas-oad-' + i);
+    if (wrap && wrap.parentNode) wrap.parentNode.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin encuestas en el período seleccionado. Cuando se cargue la Encuesta de satisfacción, aquí aparecerá One &amp; Done por mes.</div>';
+    return;
+  }
+  var mesFin = hasta ? String(hasta).slice(0, 7) : serie[serie.length - 1].periodo;
+  var t = encuestaFcrTarjeta(porMes, mesFin);
+  if (elKpi) {
+    elKpi.innerHTML = '<div class="aurora-kpi enc-oad"><div class="kv">' + (t.sinEncuestas ? '—' : esc(encuestaFmtPct(t.pct))) + '</div>' +
+      '<div class="kl">One &amp; Done — ' + esc(mesLbl(t.mes)) + ': ' +
+      (t.sinEncuestas ? 'Sin encuestas este mes' : esc(encuestaFmtPct(t.pct)) + ' (' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + ')') + '</div></div>';
+  }
+  var sinMes = serie.filter(function (s) { return s.sinEncuestas; }).map(function (s) { return mesLbl(s.periodo); });
+  if (elQ3) {
+    elQ3.innerHTML = '<strong>Respuestas de la pregunta 3</strong> del período: ' +
+      'Sí ' + d.si.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctSi)) + ') · ' +
+      'No ' + d.no.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctNo)) + ') · ' +
+      'Sin respuesta ' + d.sinRespuesta.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctSinRespuesta)) + ')' +
+      (sinMes.length ? '<br>' + esc(sinMes.join(', ')) + ': Sin encuestas este mes' : '');
+  }
+  var color = (typeof PC !== 'undefined' && PC.length) ? PC[0] : '#29564b';
+  var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
+  o.plugins = o.plugins || {};
+  o.plugins.legend = { display: false };
+  o.scales = {
+    y: { min: 0, max: 100, grid: { color: (typeof CHART_GRID !== 'undefined' ? CHART_GRID : '#f0f4f8') }, ticks: { font: { size: 12 }, callback: function (v) { return v + ' %'; } } },
+    x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+  };
+  o.plugins.tooltip = { callbacks: { label: function (ctx) {
+    var s = serie[ctx.dataIndex];
+    return s.sinEncuestas ? 'Sin encuestas este mes' : encuestaFmtPct(s.pct) + ' (' + encuestaFcrFraccion(s.si, s.den, s.base) + ')';
+  } } };
+  o.plugins.datalabels = { display: function (ctx) { return serie[ctx.dataIndex] && !serie[ctx.dataIndex].sinEncuestas; }, anchor: 'end', align: 'end',
+    formatter: function (v) { return encuestaFmtPct(v); } };
+  if (typeof _gdChart === 'function') {
+    _gdChart('tv-canvas-oad-' + i, {
+      type: 'bar',
+      data: { labels: serie.map(function (s) { return s.periodo; }), datasets: [{ label: 'One & Done', data: serie.map(function (s) { return s.pct; }), backgroundColor: color, borderRadius: 3 }] },
+      options: o,
+    });
+  }
+}
+
+function _encuestaOadDatosExport(i) {
+  return (_encuestaOadUltimo[i] || []).map(function (s) {
+    return {
+      Periodo: s.periodo,
+      'One & Done (%)': s.sinEncuestas ? 'Sin encuestas este mes' : s.pct,
+      'Pregunta 3 = Sí': s.si,
+      'Base': s.den,
+      'Encuestas del mes': s.total,
+      'Respondieron la pregunta 3': s.respondieron,
+    };
+  });
+}
+
 if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
   var _encuestaOv = document.getElementById('modal-encuesta-preguntas');
   if (_encuestaOv && typeof _encuestaOv.addEventListener === 'function') _encuestaOv.addEventListener('click', function (e) { if (e.target === this) _encuestaCerrarPreguntas(); });
