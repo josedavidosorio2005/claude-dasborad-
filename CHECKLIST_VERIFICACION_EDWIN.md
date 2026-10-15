@@ -272,3 +272,19 @@ verificación:
 - [ ] En "Llamadas Únicas y de Salida", el usuario de Mobilize ve el filtro
       **Asesor** en las dos mitades y el detalle por asesor; la mitad de
       salida tiene además el filtro **Tipo** (Conectada / No conectada).
+
+## Fase 147 — Encuesta de Mobilize (parte B)
+
+- [ ] En Mobilize, la pestaña **Encuesta** está antes de Calidad (Calidad
+      sigue de última).
+- [ ] Se ven 4 recuadros, "Pregunta 1" a "Pregunta 4", cada uno con sus
+      barras (todas las respuestas posibles, aunque tengan 0), el número
+      sobre cada barra y debajo "N respondieron · M sin respuesta".
+- [ ] El botón **Preguntas de la encuesta** muestra el texto de las 5
+      preguntas y se cierra con "Cerrar" o con Escape.
+- [ ] Al final, **Comentarios** con fecha, skill, asesor y el comentario.
+- [ ] Los filtros Desde/Hasta, Skill y Asesor cambian las 4 gráficas y los
+      comentarios a la vez.
+- [ ] Cargar Datos → Mobilize: al subir el archivo de Wolkvox, la vista
+      previa dice cuántas encuestas hay y los conteos por pregunta, y antes
+      de guardar pregunta si se continúa.

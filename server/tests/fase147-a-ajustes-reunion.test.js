@@ -68,6 +68,9 @@ const tmpDb = path.join(os.tmpdir(), `inconexion-fase147a-${process.pid}-${crypt
 const SEED_M = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
 // Forma de PRODUCCION: ... calidad, tipificacion (la migracion de la Fase 131 la agrego al final)
 const LAYOUT_PROD = JSON.parse(JSON.stringify(SEED_M.layout));
+// (Fase 147 Parte B: produccion todavia no tiene "encuesta" -- la agrega su
+// propia migracion, dashboards_config_mobilize_encuesta_tab_v1.)
+LAYOUT_PROD.tabs = LAYOUT_PROD.tabs.filter((t) => t.key !== 'encuesta');
 {
   const i = LAYOUT_PROD.tabs.findIndex((t) => t.key === 'calidad');
   const [cal] = LAYOUT_PROD.tabs.splice(i, 1);

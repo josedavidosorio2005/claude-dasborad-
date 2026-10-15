@@ -20,6 +20,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
+- **Carga real de la Encuesta de Mobilize** (Fase 147, Parte B) — esperando
+  tu "OK cargar encuesta". Ensayada en local con el archivo real (45 filas,
+  1–22 sep, 2 comentarios). Antes de cargar: respaldo de menos de 24 h y
+  vista previa con los mismos conteos; si Edwin manda otra versión del
+  archivo, los conteos cambian y se avisan antes de guardar.
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
   MEDIA (hoy se resuelve relanzando el job). Elegiste la opción 1 (cuenta
   gratuita de Docker Hub): PR en borrador con `docker/login-action`

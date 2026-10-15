@@ -3602,6 +3602,58 @@ function migrarMobilizeCalidadAlFinal() {
 }
 runOnceMigration('dashboards_config_mobilize_calidad_al_final_v1', migrarMobilizeCalidadAlFinal);
 
+// Fase 147 (Parte B): Mobilize, Encuesta de satisfaccion post-llamada
+// (export HistIVR de Wolkvox). Tabla NUEVA, solo CREATE ... IF NOT EXISTS:
+// no toca ningun dato existente. q1..q4 NULL = sin respuesta. Sin telefonos
+// (el archivo no los trae; si una version futura los trae, el navegador los
+// ignora y nunca llegan aqui).
+runOnceMigration('fase147_encuestas_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS encuestas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      agente TEXT NOT NULL DEFAULT '',
+      skill TEXT NOT NULL DEFAULT '',
+      q1 INTEGER,
+      q2 INTEGER,
+      q3 INTEGER,
+      q4 INTEGER,
+      comentario TEXT NOT NULL DEFAULT '',
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_encuestas_campana_fecha ON encuestas(campana, fecha);
+  `);
+});
+
+// Fase 147 (Parte B): pestaña "Encuesta" de Mobilize, justo ANTES de Calidad
+// (Calidad siempre al final). Idempotente: si ya existe, no hace nada. Solo
+// toca la forma reconocible de produccion (pestaña "llamadas_unicas" con su
+// panel y pestaña "calidad"); cualquier otra forma se deja intacta y se
+// registra, igual que las demas migraciones de config.
+function migrarMobilizeEncuestaTab() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout.tabs || [];
+  if (tabs.some((t) => t && t.key === 'encuesta')) return;
+  const i = tabs.findIndex((t) => t && t.key === 'calidad');
+  const tieneLu = tabs.some((t) => t && t.key === 'llamadas_unicas' && (t.panels || []).some((p) => p && p.tipo === 'llamadas_unicas_panel'));
+  if (i === -1 || !tieneLu) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_encuesta_tab_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  const tab = { key: 'encuesta', label: 'Encuesta', panels: [{ tipo: 'encuesta_panel', campana: 'MOBILIZE' }] };
+  tabs.splice(i, 0, tab);
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_encuesta_tab_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_encuesta_tab_v1', migrarMobilizeEncuestaTab);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3620,3 +3672,4 @@ module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUn
 module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas;
 // Fase 147: idem.
 module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
+module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;

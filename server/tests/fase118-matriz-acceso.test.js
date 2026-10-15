@@ -212,6 +212,11 @@ declarar(['GET /calidad/llamadas-salida/opciones', 'GET /calidad/llamadas-salida
 // cliente solo-ORLANT contra MOBILIZE estan en fase141-llamadas-salida.test.js.
 declarar(['GET /calidad/llamadas-salida/detalle'], 'scopedReadInterno');
 declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas-salida/carga'], 'cargaManual');
+// Fase 147 (Parte B): Encuesta de Mobilize -- lectura scoped por campana
+// (agentes/filtro por asesor con la misma regla puedeVerAsesores, probada en
+// fase147-b-encuesta.test.js), carga cargaManual.
+declarar(['GET /calidad/encuestas/opciones', 'GET /calidad/encuestas/resumen', 'GET /calidad/encuestas/comentarios', 'GET /calidad/encuestas/fcr'], 'scopedRead');
+declarar(['POST /calidad/encuestas/carga/impacto', 'POST /calidad/encuestas/carga'], 'cargaManual');
 // Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.
 declarar(['GET /calidad/whatsapp-tiempos/opciones'], 'scopedRead');
 declarar(['GET /calidad/whatsapp-tiempos/rangos'], 'scopedRead');

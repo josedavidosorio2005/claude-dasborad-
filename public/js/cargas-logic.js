@@ -273,6 +273,8 @@ var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
 // Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
+// Fase 147 (Parte B, Mobilize): Encuesta de satisfaccion.
+var CARGAS_HOJA_ENCUESTA = 'ENCUESTA';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
@@ -320,7 +322,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -609,6 +611,23 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       ],
     });
   }
+  // Fase 147 (Parte B, Mobilize): Encuesta -- hoja propia, solo cuando
+  // encuestaCols viene (hoy solo Mobilize).
+  if (encuestaCols) {
+    plan.push({
+      tipo: 'encuesta', hoja: CARGAS_HOJA_ENCUESTA, titulo: 'Encuesta de satisfacción',
+      descripcion: 'Una fila por encuesta respondida, tal cual el export de Wolkvox (Reportes → numeral 4, hoja HistIVR).',
+      filaUnica: false, columnas: encuestaCols,
+      notasExtra: [
+        'Columnas: AGENT_NAME, SKILL_NAME, DATE, Q01 (0 a 10), Q02 (1 a 5), Q03 (1 = Sí, 2 = No), Q04 (1 a 5) y VOICE_MESSAGE ' +
+          '(comentario, opcional). "-" o "--" = sin respuesta. Un valor fuera de rango queda como sin respuesta, con aviso.',
+        'Puedes subir el archivo de Wolkvox tal cual: el encabezado se encuentra aunque no esté en la primera fila, y se ignoran ' +
+          'las demás columnas y hojas (por ejemplo, la tabla dinámica).',
+        'Al guardar, la carga REEMPLAZA lo que ya exista entre la primera y la última DATE de este archivo (el sistema te muestra ' +
+          'antes cuántas encuestas se reemplazan y pide que confirmes): para corregir una base, vuelve a subirla con esta misma plantilla.',
+      ],
+    });
+  }
   if (!traficoWppCols) {
     plan.push({
       tipo: 'trafico', hoja: CARGAS_HOJA_TRAFICO, titulo: 'Trafico (Llamadas o WhatsApp)',
@@ -787,7 +806,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 // ni el orden de la "vista previa" al subir un archivo.
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
-  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA, CARGAS_HOJA_WHATSAPP_TIEMPOS,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA, CARGAS_HOJA_WHATSAPP_TIEMPOS, CARGAS_HOJA_ENCUESTA,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
   CARGAS_HOJA_SALIDA,
 ];
@@ -840,6 +859,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
+    CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,

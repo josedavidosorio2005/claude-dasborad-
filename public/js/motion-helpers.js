@@ -333,6 +333,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'inv-mov-modal': function () { if (typeof closeInvMovModal === 'function') closeInvMovModal(); },
   'ger-kpi-modal': function () { if (typeof closeGerKpiModal === 'function') closeGerKpiModal(); },
   'modal-change-own-password': function () { if (typeof closeModal === 'function') closeModal('modal-change-own-password'); },
+  // Fase 147 (Parte B): textos de la encuesta de Mobilize.
+  'modal-encuesta-preguntas': function () { if (typeof _encuestaCerrarPreguntas === 'function') _encuestaCerrarPreguntas(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.

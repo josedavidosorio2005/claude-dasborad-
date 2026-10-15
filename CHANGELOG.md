@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.39.0 — Octubre 2026
+
+**Fase 147 (parte B): encuesta de satisfacción de Mobilize.**
+
+- Pestaña nueva **Encuesta** en Mobilize (antes de Calidad): una gráfica
+  por cada una de las 4 preguntas, con cuántas personas eligieron cada
+  respuesta, cuántas respondieron y cuántas no.
+- Al final, los **comentarios** que dejaron los usuarios, con fecha, skill
+  y asesor.
+- Filtros por fecha (Desde/Hasta), skill y asesor, y un botón para ver el
+  texto completo de las preguntas.
+- Se carga desde **Cargar Datos → Mobilize** con el archivo de Wolkvox tal
+  cual (o con la plantilla). Para corregir una base, se vuelve a subir: la
+  plataforma reemplaza esas fechas y avisa antes cuántas encuestas cambia.
+- Se puede exportar a Excel o PDF.
+
 ## v1.38.0 — Octubre 2026
 
 **Fase 147: ajustes de la reunión con Edwin.**

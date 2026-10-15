@@ -895,6 +895,16 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    nunca empuje la grilla fuera de la pantalla (apiladas en movil). */
 .aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 @media(max-width:700px){.aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr);}}
+/* Fase 147 (Parte B): Encuesta de Mobilize -- 4 preguntas en 2x2 (escritorio)
+   y una debajo de otra en movil (mismo corte de .aurora-grid-2). */
+.aurora-grid-2.enc-preguntas{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+@media(max-width:700px){.aurora-grid-2.enc-preguntas{grid-template-columns:minmax(0,1fr);}}
+.enc-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.enc-pie,.enc-total{margin:6px 0 0;color:var(--c-text-2);font-size:var(--fs-small);}
+.enc-pregunta .enc-pie{text-align:center;}
+.enc-tabla-comentarios td{white-space:normal;overflow-wrap:anywhere;}
+.enc-preguntas-lista{margin:8px 0 0;padding-left:20px;color:var(--c-text);line-height:1.5;}
+.enc-preguntas-lista li{margin-bottom:10px;}
 
 /* ── KPI cards con analisis (M1 / Fase A6) ── */
 .aurora-kpi.gd-kpi{position:relative;display:flex;flex-direction:column;gap:2px;padding:12px 14px;}

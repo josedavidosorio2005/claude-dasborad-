@@ -94,7 +94,7 @@ test('"flujo" queda solo con trafico_combo; sus sub-pestañas terminan en la for
 
 test('el tab "llamadas_unicas" queda justo despues de "flujo", visible, con el panel de ingreso', () => {
   const tabs = layoutMobilize().tabs;
-  assert.deepEqual(tabs.map((t) => t.key), ['flujo', 'llamadas_unicas', 'tipificacion', 'calidad']);
+  assert.deepEqual(tabs.map((t) => t.key), ['flujo', 'llamadas_unicas', 'tipificacion', 'encuesta', 'calidad']); // Fase 147 (Parte B): Encuesta antes de Calidad
   assert.equal(tabs[1].label, 'Llamadas Únicas y de Salida'); // Fase 145: solo el texto
   assert.equal(tabs[1].oculta, undefined, 'siempre visible: el panel trae su propio aviso de "sin datos"');
   assert.deepEqual(tabs[1].panels, [{ tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' }]);
