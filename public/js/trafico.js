@@ -741,7 +741,7 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
     return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+'</div>' +
       '<div id="'+prefijo+'-oad-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
-      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3"></p>';
+      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>';
   }
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
