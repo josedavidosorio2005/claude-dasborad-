@@ -288,6 +288,10 @@ verificación:
 - [ ] Cargar Datos → Mobilize: al subir el archivo de Wolkvox, la vista
       previa dice cuántas encuestas hay y los conteos por pregunta, y antes
       de guardar pregunta si se continúa.
+- [ ] **Siempre se sube el mes completo** (del día 1 al último día con
+      encuestas). La carga reemplaza todo lo que haya entre la primera y la
+      última fecha del archivo: los días de ese rango que no vengan en el
+      archivo se borran.
 
 ## Fase 147 — One & Done en Flujo de Llamadas (parte D)
 

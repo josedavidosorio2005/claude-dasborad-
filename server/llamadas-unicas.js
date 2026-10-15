@@ -147,15 +147,17 @@ function llamadasUnicasPorMes(db, q) {
 
 // Valores distintos para los filtros (skill incluye "Abandonadas" si hay
 // alguna fila de ese tipo) + meses con datos (para que el panel sepa si
-// mostrar el estado vacio).
-function llamadasUnicasOpciones(db, campana) {
+// mostrar el estado vacio). La lista de asesores va SOLO si `incluirAgentes`
+// (la ruta lo decide con puedeVerAsesores, Fase 149).
+function llamadasUnicasOpciones(db, campana, { incluirAgentes } = {}) {
   const distintos = (columna) =>
     db.prepare(`SELECT DISTINCT ${columna} AS v FROM llamadas_unicas WHERE campana = ? ORDER BY v`).all(campana).map((r) => r.v);
-  return {
+  const out = {
     meses: db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_unicas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
-    agentes: distintos('agente'),
     skills: distintos('skill'),
   };
+  if (incluirAgentes) out.agentes = distintos('agente');
+  return out;
 }
 
 module.exports = {

@@ -224,6 +224,9 @@ function _encuestaDatosExport(campana) {
 
 function _encuestaExportExcel(i) {
   if (typeof XLSX === 'undefined') { showToast('No se pudo cargar el generador de Excel.'); return; }
+  // Fase 149 (auditoria 148): sin la proteccion anti-formula NO se exporta
+  // (antes caia en silencio a las filas crudas, con comentarios de texto libre).
+  if (typeof xlsxFilasSeguras !== 'function') { showToast('No se pudo preparar el Excel de forma segura. Recarga la página e inténtalo de nuevo.', 'error'); return; }
   var host = document.getElementById('gd-p' + i);
   var campana = host ? host.dataset.campana : '';
   var bloques = _encuestaDatosExport(campana);
@@ -232,7 +235,7 @@ function _encuestaExportExcel(i) {
   if (typeof xlsxAgregarAvisoDemo === 'function') xlsxAgregarAvisoDemo(wb);
   bloques.forEach(function (b) {
     var filas = b.filas.length ? b.filas : [{ Aviso: 'Sin comentarios con estos filtros.' }];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(typeof xlsxFilasSeguras === 'function' ? xlsxFilasSeguras(filas) : filas), b.hoja);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(filas)), b.hoja);
   });
   XLSX.writeFile(wb, 'Encuesta_' + String(campana).replace(/\s+/g, '_') + '.xlsx');
 }

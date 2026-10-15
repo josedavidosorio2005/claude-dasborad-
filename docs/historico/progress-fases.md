@@ -14989,3 +14989,43 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
 - Pruebas: `fase147-d-one-and-done.test.js` (lógica con las 2 bases, mes
   sin encuestas, división por cero, migración idempotente, ORLANT intacto,
   base migrada = seed) y ajustadas las 2 que fijaban las 5 sub-pestañas.
+
+## Fase 149 — Arreglos de la auditoría 148, revisión del #434 y barra de pestañas (v1.41.1, 2026-10-15)
+
+- **Auditoría 148, medio**: `GET /calidad/llamadas-unicas/opciones` ya no
+  devuelve `agentes` a quien no pasa `puedeVerAsesores` (misma regla y misma
+  lista cerrada `CAMPANAS_ASESOR_VISIBLE_CLIENTE` que Salida y Encuesta), y
+  `?agente=` en `/resumen` y `/por-mes` da 403 en ese caso. Matriz de acceso
+  ampliada (`fase118-matriz-acceso.test.js`): las 3 rutas `/opciones` y las 6
+  rutas con `?agente=` de Llamadas Únicas, Salida y Encuesta × 10 roles ×
+  propia/ajena. Las 2 pruebas nuevas fallan sin el arreglo (comprobado).
+- **Bajo**: `/calidad/encuestas/carga` y `/carga/impacto` entran a
+  `RUTAS_LIMITE_MAYOR` (8 MB, igual que `CARGAS_LIMITE_MAYOR_BYTES` del
+  navegador). Prueba: `fase149-encuestas-body-size-limit.test.js`.
+- **Bajo**: el Excel de la Encuesta (`_encuestaExportExcel`) ya no cae a filas
+  crudas si falta `xlsxFilasSeguras`: no exporta y avisa con un error.
+  Prueba: `fase149-encuesta-export-seguro.test.js`.
+- **Bajo, sin cambio**: `cargarDatos` asignable a CLIENTES_DASH, anotado en
+  `docs/pendientes.md` (bloque 3).
+- **Guía y checklist**: al cargar la Encuesta, subir siempre el mes completo
+  (el reemplazo borra los días del rango que no vengan en el archivo).
+- **Barra de pestañas cortada** (reproducida en la base demo, 1440 px, claro y
+  oscuro): el encabezado del tablero es sticky y la barra no, así que al
+  desplazar se metía debajo. Ahora `#gd-tabs` es sticky desde 768 px con
+  `top: var(--gd-header-h)`, que mide `_gdObservarAlturaHeader`
+  (ResizeObserver) en `dashboard-generic.js`. En 375 px no cambia (el
+  encabezado ya ocupa ~300 px). Verificado a 1440/768/375, ambos temas:
+  barra visible con scroll 0/40/400, 0 errores de consola, sin scroll
+  horizontal.
+- **Revisión del #434 (One & Done)** con los criterios de la 148: 0 críticos,
+  0 altos. Sin rutas ni permisos nuevos (`/calidad/encuestas/fcr`, scoped, sin
+  nombres); HTML escapado; exportación con `xlsxFilasSeguras`; migración
+  conservadora e idempotente. Bajos sin arreglar: con la sub-pestaña One &
+  Done activa, el "Exportar" del tablero completo pone la tabla de One & Done
+  bajo el título "Tráfico de Llamadas"; un error de red se muestra como "Sin
+  encuestas en el período"; el eje X usa "2026-09" en vez del mes en letras.
+- **"Última actualización"** (solo propuesta, sin cambio):
+  `server/ultima-actualizacion.js` toma la carga más reciente de 10 tablas;
+  no incluye `encuestas`, `llamadas_unicas`, `llamadas_salida` ni
+  `whatsapp_tiempos`, por eso Mobilize seguía en 08/10 tras cargar la
+  Encuesta.
