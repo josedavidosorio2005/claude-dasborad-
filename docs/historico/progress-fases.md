@@ -14956,3 +14956,17 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
 - Pendientes nuevos en `docs/pendientes.md`: filtro Asesor con el usuario
   cliente de Mobilize, denominador del FCR con Camila, IP del puerto 22 de
   Lightsail; sigue el archivo de salida con skill (pedir a Edwin).
+
+## Fase 147 — Revisión con el cliente de Mobilize y unificación de ramas (v1.40.1, 2026-10-15)
+
+- **Revisión con el usuario cliente de Mobilize** en producción (solo
+  lectura, sin capturas, 09:21): ve solo MOBILIZE; sin Cargar Datos (botón
+  oculto, no abre); pestañas Flujo de Llamadas · Llamadas Únicas y de Salida
+  · Tipificación · Encuesta · Calidad; Encuesta con 45 encuestas, 4 gráficas
+  y 2 comentarios; FCR de septiembre "6,7 % · 3 de 45 encuestas"; filtro
+  Asesor en las dos mitades (3 asesores en cada lista); 0 errores de consola.
+  Se quita ese pendiente.
+- **PR #403** ("OK mergear 403"): login opcional en Docker Hub contra los
+  429. Rama actualizada con `git merge origin/main` (sin rebase ni force
+  push), v1.40.1. Sin los secretos el paso de login se salta y node se baja
+  de ECR Public como antes.

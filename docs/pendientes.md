@@ -20,11 +20,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
-- **Filtro Asesor sin revisar con el usuario cliente de Mobilize** (Fase
-  147) — en producción solo se revisó con la sesión de administrador (filtro
-  Asesor presente en las dos mitades de "Llamadas Únicas y de Salida"). Falta
-  entrar con el usuario cliente de Mobilize y confirmar que ve el filtro y el
-  detalle por asesor (las pruebas automáticas ya lo cubren).
 - **Denominador del FCR por confirmar con Camila** (Fase 147, Parte C) —
   hoy la tarjeta usa la base "total" (todas las encuestas del mes, pedido de
   Edwin: 3 de 45 = 6,7 % en septiembre). La otra opción es "respondieron"
@@ -36,10 +31,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   antes. Confirmar a quién pertenece y si debe seguir ahí.
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
   MEDIA (hoy se resuelve relanzando el job). Elegiste la opción 1 (cuenta
-  gratuita de Docker Hub): PR en borrador con `docker/login-action`
-  condicionado a que existan los secretos `DOCKERHUB_USERNAME` y
-  `DOCKERHUB_TOKEN`. Cómo se cierra: creas el token y los 2 secretos
-  (pasos en la descripción de ese PR) y escribes "OK mergear 429".
+  gratuita de Docker Hub): el login condicionado (`docker/login-action`,
+  solo si existen los secretos `DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`)
+  ya está en `main` desde la v1.40.1 (PR #403, 15/10/2026). Mientras no
+  existan los 2 secretos, el paso se salta y node se baja de ECR Public
+  como siempre. Cómo se cierra: creas el token y los 2 secretos (pasos en la
+  descripción del PR #403); el siguiente deploy ya inicia sesión.
   Las 3 opciones están en `docs/historico/progress-fases.md`, Fase 139
   (cierre). El 2026-10-14 (Fase 145) el 429 de `public.ecr.aws` volvió
   a tumbar el docker-build 4 veces; en cada caso pasó al relanzar el job.
