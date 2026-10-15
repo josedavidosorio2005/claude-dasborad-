@@ -101,6 +101,12 @@ router.put(
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+    // Fase 151: mismo limite que PUT /users/:id/password -- una cuenta
+    // ADMIN/AUX_ADMIN solo la edita un administrador completo (cualquier
+    // campo: contrasena, usuario, nombre, permisos).
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede editar un usuario ADMIN o AUX_ADMIN' });
+    }
     const { nombre, user, rol, password, perms, asesorCampana } = req.body;
     if (user && user === MASTER_ADMIN_USER) return res.status(400).json({ error: 'Nombre de usuario reservado' });
     if (user) {
@@ -135,7 +141,10 @@ router.put(
     const effectiveRol = rol ?? row.rol;
     const basePerms = perms ?? JSON.parse(row.perms || '{}');
     db.prepare(
-      `UPDATE users SET nombre=?, user=?, rol=?, password_hash=?, perms=?, asesorCampana=? WHERE id=?`
+      // Fase 151: una contrasena nueva tambien cierra las sesiones abiertas
+      // de esa cuenta (igual que PUT /users/:id/password).
+      `UPDATE users SET nombre=?, user=?, rol=?, password_hash=?, perms=?, asesorCampana=?,
+         token_version = token_version + ? WHERE id=?`
     ).run(
       nombre ?? row.nombre,
       user ?? row.user,
@@ -143,6 +152,7 @@ router.put(
       newHash,
       JSON.stringify(applyRolePermDefaults(effectiveRol, basePerms)),
       asesorCampana ?? row.asesorCampana,
+      password ? 1 : 0,
       id
     );
     const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
