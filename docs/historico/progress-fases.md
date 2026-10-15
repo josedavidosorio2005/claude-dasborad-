@@ -14927,3 +14927,32 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   375, claro y oscuro): tarjeta dentro de la fila de tarjetas, ausente en
   las otras sub-pestañas, sin scroll horizontal, 0 errores. Capturas fuera
   del repo (`datos-inconexion/diagnostico-ui/fase147/parte-c/`).
+
+## Fase 147 — Cierre: carga real de la Encuesta de Mobilize (2026-10-15)
+
+- **Autorización**: "OK cargar encuesta" del usuario, con respaldo previo
+  (`respaldo-produccion.yml`, modo `respaldar-ahora`, autorizado solo esa
+  vez): respaldo nuevo del 15/10/2026 13:51:27 UTC, 24,5 MB,
+  `integrity_check: ok`, subida a S3 OK.
+- **Carga** por la interfaz normal (Cargar Datos → Mobilize), navegador
+  visible, sesión iniciada por el usuario. Los 2 primeros intentos se
+  detuvieron antes de la vista previa sin guardar nada: el script elegía
+  Mobilize antes de que terminara de llenarse la lista de clientes (carrera
+  de tiempos del script, no de la plataforma). Corregido esperando a que el
+  plan real traiga la hoja de Encuesta.
+- **Vista previa** (exacta a lo esperado): 45 filas, 18 días; Q01 9→3, 10→2,
+  sin respuesta 40; Q02 5→5, sin respuesta 40; Q03 Sí 3, No 1, sin respuesta
+  41; Q04 4→1, 5→3, sin respuesta 41; 2 comentarios; 0 avisos; ninguna otra
+  hoja con datos. Antes había 0 encuestas; lo guardado coincide. FCR de
+  septiembre 3 de 45 = 6,7 %. Q04 confirmada por el usuario como respuestas
+  reales.
+- **Revisión de solo lectura** en la misma sesión (sin capturas): pestañas
+  Flujo de Llamadas · Llamadas Únicas y de Salida · Tipificación · Encuesta ·
+  Calidad (al final); Encuesta con 4 gráficas pintadas, 2 comentarios y el
+  diálogo de preguntas (5, foco adentro, Escape); tarjeta FCR "Septiembre
+  2026: 3 de 45 encuestas"; "Última actualización" en naranja (#FF8C1A);
+  meses con nombre en selector y eje; filtro Asesor en las dos mitades (con
+  sesión de administrador). 0 errores de consola.
+- Pendientes nuevos en `docs/pendientes.md`: filtro Asesor con el usuario
+  cliente de Mobilize, denominador del FCR con Camila, IP del puerto 22 de
+  Lightsail; sigue el archivo de salida con skill (pedir a Edwin).
