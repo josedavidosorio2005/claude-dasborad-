@@ -698,6 +698,10 @@ var TRAFICO_SUBTAB_TITULOS = {
   // Fase 131) -- mismo patron que "asaata" (ver _traficoDibujarAsaAht mas
   // abajo). Disponible para cualquier panel, pero solo Mobilize la usa hoy.
   asaaht: 'ASA y AHT — tiempo promedio de respuesta y de atención',
+  // Fase 147 (Parte D, pedido de Edwin): One & Done (FCR) en su propia
+  // grafica -- solo Mobilize la pide en su `subtabs`. La dibuja
+  // _encuestaDibujarOneAndDone (encuesta.js) desde GET /calidad/encuestas/fcr.
+  oneanddone: 'One & Done — solución en primer contacto',
 };
 // Fase 87 (tema B) / Fase 90 (tema A): mismos 4 titulos salvo "sl" --
 // WhatsApp grafica LAS DOS series (20s, que ya existe en Wolkvox, y 5
@@ -708,7 +712,7 @@ var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
 });
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
-  asa: '-canvas-asa-', asaaht: '-canvas-asaaht-',
+  asa: '-canvas-asa-', asaaht: '-canvas-asaaht-', oneanddone: '-canvas-oad-',
 };
 // Fase 77 (pedido de Edwin/Jairo, 25/09): en la reunion del 25/09 los
 // valores MENSUALES de SL y AHT que muestra la plataforma no coincidian con
@@ -732,6 +736,12 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
   if(activo === 'resumen'){
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
       '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
+  }
+  if(activo === 'oneanddone'){
+    return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+'</div>' +
+      '<div id="'+prefijo+'-oad-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
+      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
+      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>';
   }
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
@@ -1187,6 +1197,10 @@ function _traficoRenderContenido(campana, sede, i){
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
   // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
   if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
+  // Fase 147 (Parte D): sub-pestaña "One & Done" -- no-op si su canvas no
+  // esta en el DOM (otra sub-pestaña activa u otro cliente). Misma base que
+  // la tarjeta FCR, asi el numero es identico.
+  if(document.getElementById('tv-canvas-oad-'+i) && typeof _encuestaDibujarOneAndDone === 'function') _encuestaDibujarOneAndDone(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase || 'total');
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
   // combinar:true), sin depender del checkbox "Ver skills por separado" de
@@ -1266,6 +1280,10 @@ function _traficoDatosExport(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
   var sede = host ? (host.dataset.sede || null) : null;
+  // Fase 147 (Parte D): en la sub-pestaña "One & Done" se exporta su tabla.
+  if((_traficoSubtabActivo[_traficoClaveEstado(campana, sede)] || 'resumen') === 'oneanddone' && typeof _encuestaOadDatosExport === 'function'){
+    return _encuestaOadDatosExport(i);
+  }
   var agregado = _traficoAgregadoActual[_traficoClaveEstado(campana, sede)] || [];
   return agregado.map(function(a){
     return {

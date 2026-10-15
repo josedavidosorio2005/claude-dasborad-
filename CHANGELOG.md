@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.41.0 — Octubre 2026
+
+**Fase 147 (parte D): sub-pestaña "One & Done" en Mobilize.**
+
+- En **Flujo de Llamadas** hay una sub-pestaña nueva, la última: "One &
+  Done". Muestra en una gráfica de barras, mes por mes, el porcentaje de
+  encuestas en las que el usuario dijo que su solicitud se resolvió en el
+  primer contacto (pregunta 3 = Sí).
+- Arriba hay una tarjeta con el mes en letras, por ejemplo "Septiembre
+  2026: 6,7 % (3 de 45 encuestas)". Al pasar el mouse por una barra se ve
+  esa misma cuenta.
+- Debajo aparece cuántas encuestas dijeron Sí, No o no respondieron la
+  pregunta 3, para que se entienda por qué el porcentaje puede ser bajo.
+- Es el mismo número de la tarjeta FCR, que sigue igual. Las otras cinco
+  sub-pestañas y la pestaña Encuesta tampoco cambian.
+
 ## v1.40.1 — Octubre 2026
 
 **Mejora interna: publicar cambios con menos fallas.**

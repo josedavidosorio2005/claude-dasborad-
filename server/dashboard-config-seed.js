@@ -454,6 +454,10 @@ const MOBILIZE = {
             { key: 'abandono', label: 'Abandono' },
             { key: 'asaata', label: 'ASA y ATA' },
             { key: 'aht', label: 'AHT' },
+            // Fase 147 (Parte D, pedido de Edwin): One & Done (FCR) en su
+            // propia grafica. Migracion: dashboards_config_mobilize_flujo_
+            // oneanddone_v1 (db.js).
+            { key: 'oneanddone', label: 'One & Done' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
           // Fase 147 (Parte C): tarjeta "Solucion en primer contacto (FCR)"

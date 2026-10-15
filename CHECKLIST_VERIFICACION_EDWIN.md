@@ -289,6 +289,16 @@ verificación:
       previa dice cuántas encuestas hay y los conteos por pregunta, y antes
       de guardar pregunta si se continúa.
 
+## Fase 147 — One & Done en Flujo de Llamadas (parte D)
+
+- [ ] En Mobilize → Flujo de Llamadas, la última sub-pestaña es **One & Done**.
+- [ ] Muestra la tarjeta "One & Done — Septiembre 2026: 6,7 % (3 de 45
+      encuestas)" y una barra por mes con el % encima.
+- [ ] Debajo dice cuántas encuestas respondieron Sí, No o no respondieron
+      la pregunta 3.
+- [ ] El % es el mismo de la tarjeta FCR de la sub-pestaña "Flujo de Llamadas".
+- [ ] Las otras 5 sub-pestañas se ven igual que antes.
+
 ## Fase 147 — FCR en Flujo de Llamadas (parte C)
 
 - [ ] En Mobilize → Flujo de Llamadas (sub-pestaña "Flujo de Llamadas")
