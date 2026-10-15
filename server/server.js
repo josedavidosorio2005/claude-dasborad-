@@ -131,9 +131,16 @@ function createApp() {
   // body se rechaza completo ANTES del handler). Mismo tratamiento que
   // Tipificacion: estas 2 rutas de Agendas se agregan a la lista de limite
   // mayor, en vez de subir el limite global.
+  //
+  // Fase 149 (auditoria 148, hallazgo bajo): la Encuesta de Mobilize ya se
+  // valida en el navegador con el limite mayor (CARGAS_LIMITE_MAYOR_BYTES,
+  // 8mb) -- un archivo de 2-8mb pasaba el aviso del navegador y despues el
+  // servidor lo rechazaba con 413. Se alinea el servidor (carga e impacto,
+  // que mandan el mismo body).
   const RUTAS_LIMITE_MAYOR = [
     '/api/calidad/tipificacion/carga', '/api/calidad/tipificacion/carga/impacto',
     '/api/calidad/agendas/carga', '/api/calidad/agendas/carga/impacto',
+    '/api/calidad/encuestas/carga', '/api/calidad/encuestas/carga/impacto',
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
   const jsonLimiteMayor = express.json({ limit: '8mb' });

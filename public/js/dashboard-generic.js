@@ -562,8 +562,25 @@ function _gdBloquearScrollFondo(bloquear){
   document.body.style.overflow = bloquear ? 'hidden' : '';
 }
 
+// Fase 149 (punto 7): alto real del encabezado sticky del tablero en
+// --gd-header-h, para que la barra de pestañas (sticky desde 768px, ver
+// styles.css) quede justo debajo y nunca tapada. Se observa una sola vez:
+// el alto cambia con los filtros visibles (VISTA, COMPARAR) y con el wrap.
+var _gdHeaderObservado = false;
+function _gdObservarAlturaHeader(){
+  if (_gdHeaderObservado) return;
+  var modal = document.getElementById('gd-modal');
+  var head = modal && modal.querySelector('.aurora-header');
+  if (!head) return;
+  _gdHeaderObservado = true;
+  var fijar = function(){ modal.style.setProperty('--gd-header-h', head.offsetHeight + 'px'); };
+  fijar();
+  if (typeof ResizeObserver === 'function') new ResizeObserver(fijar).observe(head);
+}
+
 async function openGenericDashboard(cliente){
   _gdBloquearScrollFondo(true);
+  _gdObservarAlturaHeader();
   document.getElementById('gd-overlay').classList.add('show');
   if (typeof motionAbrirModal === 'function') motionAbrirModal('gd-modal');
   document.getElementById('gd-title').textContent = 'Cargando…';
@@ -587,6 +604,7 @@ async function openGenericDashboard(cliente){
 // y, si el cliente ya existe, sus cargas reales; si no, se ve la estructura vacia.
 async function openGenericDashboardPreview(config){
   _gdBloquearScrollFondo(true);
+  _gdObservarAlturaHeader();
   document.getElementById('gd-overlay').classList.add('show');
   if (typeof motionAbrirModal === 'function') motionAbrirModal('gd-modal');
   document.getElementById('gd-kpis').innerHTML = '';

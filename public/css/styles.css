@@ -976,6 +976,17 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    que `100%` no resolveria igual de bien. */
 #gd-modal{background:var(--c-bg);border-radius:0;width:100%;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
 #gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
+/* Fase 149 (punto 7): el encabezado es sticky pero la barra de pestañas
+   principales no -- al desplazar el tablero la barra se metia DEBAJO del
+   encabezado y se veia cortada por arriba (1440px, ambos temas). Ahora se
+   queda pegada justo debajo del encabezado: --gd-header-h lo mide
+   dashboard-generic.js (_gdObservarAlturaHeader), porque el alto del
+   encabezado cambia con los filtros que muestra y al hacer wrap. Solo desde
+   768px: en movil el encabezado ya ocupa ~300px y sumarle la barra fija
+   dejaria muy poco tablero visible. Mismo aspecto (fondo, borde, pestañas). */
+@media (min-width:768px){
+  #gd-modal #gd-tabs{position:sticky;top:var(--gd-header-h,0px);z-index:1;}
+}
 
 /* Fase 136 (PR 8, F04): entrada/salida animada de los 6 modales/overlays
    -- CSS solo no puede animar el toggle display:none/flex que ya usan

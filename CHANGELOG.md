@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.41.1 — Octubre 2026
+
+**Fase 149: arreglos de la revisión de seguridad y un detalle visual.**
+
+- En **Llamadas Únicas** de un cliente distinto de Mobilize, el usuario
+  del cliente ya no recibe la lista de nombres de asesor, ni siquiera por
+  detrás de la pantalla. Es la misma regla que ya tenían Llamadas de
+  Salida y Encuesta. En Mobilize nada cambia: el cliente sigue viendo y
+  filtrando por asesor.
+- La carga de la **Encuesta** acepta archivos de hasta 8 MB, el mismo
+  límite que ya avisaba la pantalla. Antes un archivo de entre 2 y 8 MB
+  pasaba el aviso y después fallaba.
+- Si el Excel de la Encuesta no se puede preparar de forma segura, ahora
+  avisa con un error en vez de descargar un archivo sin protección.
+- En los tableros, la barra de pestañas principales (Flujo de Llamadas ·
+  Llamadas Únicas y de Salida · Tipificación · Encuesta · Calidad) ya no se
+  esconde debajo del encabezado al bajar: queda fija justo debajo, en
+  computador y tableta. En el celular se ve igual que antes.
+- Recordatorio en la guía: al cargar la Encuesta, **suba siempre el mes
+  completo**. Los días del rango que no vengan en el archivo se borran.
+
 ## v1.41.0 — Octubre 2026
 
 **Fase 147 (parte D): sub-pestaña "One & Done" en Mobilize.**

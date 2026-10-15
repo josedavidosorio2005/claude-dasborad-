@@ -211,6 +211,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **El permiso "Cargar Datos" se puede dar a un usuario cliente
+  (CLIENTES_DASH)** — hallazgo bajo de la auditoría de la Fase 148
+  (`canLoadData`, `server/auth.js`: basta `perms.cargarDatos === true`,
+  sin mirar el rol). Hoy ningún cliente lo tiene y solo lo asigna un
+  administrador desde Gestión de Usuarios; con él, un cliente podría
+  reemplazar datos de su propia campaña (siempre limitado por
+  `campaignAccess`). Decidido en la Fase 149 (15/10/2026): no se cambia;
+  queda anotado. Cómo se cierra, si se pide: que `canLoadData` (o la
+  pantalla de permisos) excluya el rol CLIENTES_DASH. Costo: bajo.
+  Anotado 2026-10-15.
+
 - **Lección de la Fase 126 — "conteo de filas" no es lo mismo que
   "categorías distintas"**: un proxy liviano ("especialidades distintas
   por mes") subestimó por mucho el conteo real de filas antes de un

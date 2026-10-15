@@ -510,7 +510,10 @@ evita que las cargas futuras se unifiquen de la misma forma.
 - **Reemplazo**: se reemplaza lo que ya exista entre la primera y la
   última fecha del archivo (la plataforma muestra antes cuántas encuestas
   va a reemplazar y los conteos por pregunta, y pide confirmar). Así se
-  corrige una base: se vuelve a subir.
+  corrige una base: se vuelve a subir. **Suba siempre el mes completo**:
+  los días de ese rango que no vengan en el archivo se borran (por
+  ejemplo, un archivo con solo el 1 y el 30 de septiembre deja en blanco
+  del 2 al 29).
 - **Privacidad**: el archivo no trae teléfonos; si alguna vez los trae, la
   plataforma los ignora antes de enviar nada. El filtro y la columna de
   asesor los ve también el usuario de Mobilize.

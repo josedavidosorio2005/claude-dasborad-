@@ -20,6 +20,15 @@ const {
   llamadasUnicasOpciones,
 } = require('../llamadas-unicas');
 const { wrap, logEvent, actorLabel } = require('./shared');
+// Fase 149 (auditoria 148, hallazgo medio): nombres de asesor con la misma
+// regla que Salida y Encuesta -- el cliente de una campaña fuera de
+// CAMPANAS_ASESOR_VISIBLE_CLIENTE (hoy ORLANT) no recibe la lista ni
+// puede filtrar por ?agente=.
+const { puedeVerAsesores } = require('./llamadas-salida');
+
+function soloInternos(res) {
+  return res.status(403).json({ error: 'El detalle por asesor solo esta disponible para el equipo interno' });
+}
 
 const router = express.Router();
 
@@ -52,7 +61,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(llamadasUnicasOpciones(db, req.query.campana));
+    res.json(llamadasUnicasOpciones(db, req.query.campana, { incluirAgentes: puedeVerAsesores(req.actor, req.query.campana) }));
   })
 );
 
@@ -65,6 +74,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
+    if (req.query.agente && !puedeVerAsesores(req.actor, req.query.campana)) return soloInternos(res);
     res.json(llamadasUnicasResumen(db, req.query));
   })
 );
@@ -78,6 +88,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
+    if (req.query.agente && !puedeVerAsesores(req.actor, req.query.campana)) return soloInternos(res);
     res.json(llamadasUnicasPorMes(db, req.query));
   })
 );

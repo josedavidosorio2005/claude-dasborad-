@@ -519,3 +519,55 @@ test('Fase 118 2A: CLIENTES_DASH -- 0 accesos fuera de ORLANT ni a ningun modulo
     assert.equal(res.status, 403, `CLIENTES_DASH en ${ruta}?campana=AJENA deberia dar 403, vino ${res.status}`);
   }
 });
+
+// ══════════════════════════════════════════════════════════════════
+// Fase 149 (auditoria 148, hallazgo medio): nombres de asesor en Mobilize
+// -- Llamadas Unicas, Llamadas de salida y Encuesta usan la MISMA regla
+// puedeVerAsesores. Esta matriz siembra a todos con acceso SOLO a ORLANT
+// (fuera de CAMPANAS_ASESOR_VISIBLE_CLIENTE): el cliente (CLIENTES_DASH)
+// pasa el campaignAccess pero NO recibe la lista de asesores ni puede
+// filtrar por ?agente=; los roles internos con acceso SI. MOBILIZE sigue
+// ajena (403) para todo no-admin, como en el resto de la matriz.
+// ══════════════════════════════════════════════════════════════════
+const RUTAS_OPCIONES_ASESOR = ['/calidad/llamadas-unicas/opciones', '/calidad/llamadas-salida/opciones', '/calidad/encuestas/opciones'];
+const RUTAS_FILTRO_AGENTE = [
+  '/calidad/llamadas-unicas/resumen', '/calidad/llamadas-unicas/por-mes',
+  '/calidad/llamadas-salida/resumen', '/calidad/llamadas-salida/por-mes',
+  '/calidad/encuestas/resumen', '/calidad/encuestas/comentarios',
+];
+
+test('Fase 149: /opciones de Llamadas Unicas, Salida y Encuesta -- lista de asesores solo para quien puedeVerAsesores (10 roles x propia/ajena)', async () => {
+  for (const ruta of RUTAS_OPCIONES_ASESOR) {
+    for (const rol of TODOS_LOS_ROLES) {
+      for (const campana of [PROPIA, AJENA]) {
+        const res = await request(app).get('/api' + ruta + '?campana=' + campana).set(auth(rol));
+        const conAcceso = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarScoped(rol));
+        if (!conAcceso) {
+          assert.equal(res.status, 403, `${rol} ${campana} ${ruta}`);
+          continue;
+        }
+        assert.equal(res.status, 200, `${rol} ${campana} ${ruta}: ${JSON.stringify(res.body)}`);
+        if (rol === 'CLIENTES_DASH') assert.equal(res.body.agentes, undefined, `${ruta}: el cliente de ${campana} no recibe nombres de asesor`);
+        else assert.ok(Array.isArray(res.body.agentes), `${ruta}: ${rol} (interno) recibe la lista de asesores`);
+      }
+    }
+  }
+});
+
+test('Fase 149: filtro ?agente= de Llamadas Unicas, Salida y Encuesta -- 403 para el cliente de ORLANT, pasa para internos con acceso', async () => {
+  for (const ruta of RUTAS_FILTRO_AGENTE) {
+    for (const rol of TODOS_LOS_ROLES) {
+      for (const campana of [PROPIA, AJENA]) {
+        const res = await request(app).get('/api' + ruta + '?campana=' + campana + '&agente=Asesor%20X').set(auth(rol));
+        const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarScoped(rol) && rol !== 'CLIENTES_DASH');
+        if (deberiaPasar) assert.equal(res.status, 200, `${rol} ${campana} ${ruta}?agente=: ${JSON.stringify(res.body)}`);
+        else assert.equal(res.status, 403, `${rol} ${campana} ${ruta}?agente= deberia dar 403, vino ${res.status}`);
+      }
+      // Sin ?agente= el cliente de ORLANT sigue viendo los agregados de su campaña.
+      if (rol === 'CLIENTES_DASH') {
+        const sinFiltro = await request(app).get('/api' + ruta + '?campana=' + PROPIA).set(auth(rol));
+        assert.equal(sinFiltro.status, 200, `${ruta} sin ?agente= para el cliente`);
+      }
+    }
+  }
+});
