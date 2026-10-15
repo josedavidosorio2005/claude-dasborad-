@@ -793,6 +793,57 @@ const whatsappTiemposRangosQuery = z.object({
   skill: z.string().trim().max(200).optional(),
 });
 
+// ── Mobilize Encuesta de satisfaccion (Fase 147, Parte B) ───────────────
+// Tupla de orden FIJO = ENCUESTA_ORDEN_ARRAY (encuesta-logic.js) y
+// CAMPOS_FILA (encuestas.js). null = sin respuesta. Sin telefonos.
+const encuestaRespuesta = (min, max) => z.number().int().min(min).max(max).nullable();
+const encuestaFilaArraySchema = z.tuple([
+  fechaSchema, // fecha
+  z.string().trim().max(200), // agente ('' si no vino)
+  z.string().trim().max(200), // skill ('' si no vino)
+  encuestaRespuesta(0, 10), // q1
+  encuestaRespuesta(1, 5), // q2
+  encuestaRespuesta(1, 2), // q3 (1 = Si, 2 = No)
+  encuestaRespuesta(1, 5), // q4
+  z.string().trim().max(1000), // comentario ('' si no hay)
+]);
+
+const encuestasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(encuestaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(100000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0]), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const encuestasOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+const encuestasFiltrosQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  skill: z.string().trim().max(200).optional(),
+  agente: z.string().trim().max(200).optional(),
+});
+
+// Parte C: la base del FCR la decide la config del panel (fcrBase).
+const encuestasFcrQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  base: z.enum(['total', 'respondieron']).optional(),
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1283,6 +1334,10 @@ module.exports = {
     whatsappTiemposCargaBody,
     whatsappTiemposOpcionesQuery,
     whatsappTiemposRangosQuery,
+    encuestasCargaBody,
+    encuestasOpcionesQuery,
+    encuestasFiltrosQuery,
+    encuestasFcrQuery,
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,

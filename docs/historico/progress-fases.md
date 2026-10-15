@@ -14872,3 +14872,37 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
 - Suite 1640/1640. Capturas antes/después 375 y 1440, claro y oscuro (base
   demo con el orden de pestañas de producción), fuera del repo; 0 errores
   de consola.
+
+## Fase 147, Parte B — Encuesta de Mobilize (v1.39.0, 2026-10-15)
+
+- **Datos**: tabla nueva `encuestas` (migración `fase147_encuestas_tabla_v1`,
+  solo CREATE ... IF NOT EXISTS): campana, fecha, agente, skill, q1..q4 (NULL
+  = sin respuesta), comentario (máx. 1000), archivoNombre, cargadoPorNombre,
+  createdAt. Sin teléfonos.
+- **Carga**: Cargar Datos → Mobilize, hoja "ENCUESTA" (plantilla con las
+  mismas columnas del export). Lector en el navegador
+  (`encuesta-logic.js`): encuentra el encabezado en las primeras 20 filas,
+  "-"/"--" = sin respuesta, fuera de rango = sin respuesta con aviso, solo
+  lee sus 8 columnas (cualquier otra, p. ej. teléfono, nunca viaja). Zod
+  (`encuestasCargaBody`), canLoadData + campaignAccess, impacto de solo
+  lectura con conteos y confirmación siempre, reemplazo por campaña + rango
+  de fechas en una transacción.
+- **Pantalla**: pestaña "Encuesta" antes de Calidad (seed + migración
+  `dashboards_config_mobilize_encuesta_tab_v1`, solo la forma reconocible
+  de producción). Filtros Desde/Hasta/Skill/Asesor, 4 recuadros (barras con
+  todos los valores, número sobre cada barra, "N respondieron · M sin
+  respuesta"), comentarios escapados, diálogo "Preguntas de la encuesta"
+  (patrón A3b), Excel/PDF y "Exportar" de la pestaña (`xlsxFilasSeguras`).
+  Asesor con la misma regla `puedeVerAsesores` de la Parte A.
+- **Ensayo local con el archivo real** (por la interfaz, solo conteos): 45
+  filas, 18 días (1–22 sep), 2 skills, 3 asesores, 0 avisos; Q01 9→3, 10→2,
+  sin respuesta 40; Q02 5→5, sin respuesta 40; Q03 Sí 3, No 1, sin respuesta
+  41; Q04 4→1, 5→3, sin respuesta 41; 2 comentarios. FCR 3/45 = 6,7 % (total)
+  y 3/4 = 75 % (respondieron). Reemplazo con un archivo sintético del mismo
+  rango: 45 reemplazadas.
+- Suite 1664/1664. Verificación visual local (Brave, 1440 y 375, claro y
+  oscuro, archivo sintético): 4 gráficas pintadas, diálogo con foco adentro,
+  fondo inerte, Escape cierra y devuelve el foco, sin scroll horizontal,
+  Excel descargado, 0 errores de consola. Capturas fuera del repo
+  (`datos-inconexion/diagnostico-ui/fase147/parte-b/`).
+- **Carga real en producción: pendiente del "OK cargar encuesta".**

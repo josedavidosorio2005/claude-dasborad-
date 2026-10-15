@@ -49,6 +49,8 @@ var CARGAS_CLIENTES_LLAMADAS_UNICAS = ['MOBILIZE'];
 var CARGAS_CLIENTES_LLAMADAS_SALIDA = ['MOBILIZE'];
 // Fase 142 (punto 4): WhatsApp tiempos de respuesta, solo ORLANT.
 var CARGAS_CLIENTES_WHATSAPP_TIEMPOS = ['ORLANT'];
+// Fase 147 (Parte B): Encuesta de satisfaccion, solo Mobilize.
+var CARGAS_CLIENTES_ENCUESTA = ['MOBILIZE'];
 
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
@@ -280,6 +282,11 @@ function _cargasLlamadasSalidaColumnasUnificado(){
 function _cargasWhatsappTiemposColumnasUnificado(){
   return WPP_TIEMPOS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 147 (Parte B, Mobilize) — columnas de la hoja ENCUESTA (ver
+// encuesta-logic.js).
+function _cargasEncuestaColumnasUnificado(){
+  return ENCUESTA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -354,7 +361,8 @@ async function onCargaClienteChange(){
     var llamadasUnicasCols = tieneLlamadasUnicas ? _cargasLlamadasUnicasColumnasUnificado() : null;
     var llamadasSalidaCols = CARGAS_CLIENTES_LLAMADAS_SALIDA.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
     var whatsappTiemposCols = CARGAS_CLIENTES_WHATSAPP_TIEMPOS.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols);
+    var encuestaCols = CARGAS_CLIENTES_ENCUESTA.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -552,7 +560,8 @@ async function procesarArchivoConsolidado(input){
     var esLlamadasUnicas = h.tipo==='llamadas_unicas';
     var esLlamadasSalida = h.tipo==='llamadas_salida';
     var esWhatsappTiempos = h.tipo==='whatsapp_tiempos';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esWhatsappTiempos) return null;
+    var esEncuesta = h.tipo==='encuesta';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esWhatsappTiempos && !esEncuesta) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -567,7 +576,11 @@ async function procesarArchivoConsolidado(input){
       // fila del rango usado de la hoja, ej. renglones vacios antes -- ver
       // cargasLeerEncabezadoAcotado, cargas-logic.js, para el detalle).
       var headerRow0 = cargasLeerEncabezadoAcotado(XLSX.utils, wsCandidata, 20);
-      if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
+      // Fase 147 (Parte B): el export de la encuesta trae una fila de textos
+      // sueltos ANTES del encabezado -- se busca en las primeras 20 filas.
+      if(esEncuesta){
+        if(encuestaBuscarEncabezado(_cargasPrimerasFilas(wsCandidata, 20), 20) === -1) continue;
+      } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
       // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
@@ -582,6 +595,15 @@ async function procesarArchivoConsolidado(input){
       return nombre;
     }
     return null;
+  }
+
+  // Primeras maxFilas filas con contenido de una hoja (acotado, nunca la
+  // hoja completa -- mismo criterio de cargasLeerEncabezadoAcotado).
+  function _cargasPrimerasFilas(ws, maxFilas){
+    if(!ws || !ws['!ref']) return [];
+    var rg = XLSX.utils.decode_range(ws['!ref']);
+    var rango = { s: rg.s, e: { r: Math.min(rg.s.r + maxFilas, rg.e.r), c: rg.e.c } };
+    return XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:null, range: rango });
   }
 
   _cargasResultados = _cargasPlan.map(function(h){
@@ -622,6 +644,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = llamadasSalidaParseFilas;
     } else if(h.tipo === 'whatsapp_tiempos'){
       parseFn = wppTiemposParseFilas;
+    } else if(h.tipo === 'encuesta'){
+      parseFn = encuestaParseFilas;
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){
@@ -681,6 +705,10 @@ function _cargasEstadoLabel(r){
     extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+r.dias+' día(s); por rango: '+
       WPP_TIEMPOS_RANGOS.map(function(x){ return x.label+' '+r.porRango[x.key]; }).join(', ');
   }
+  // Fase 147 (Parte B): Encuesta -- solo conteos por pregunta, nunca filas.
+  if(r.tipo==='encuesta' && r.conteos){
+    extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
+  }
   var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
   return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;
 }
@@ -696,7 +724,8 @@ function _renderPreviewCarga(){
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
       (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
       (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))))));
+      (r.tipo==='encuesta' ? 'Encuesta' :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -954,6 +983,28 @@ async function _cargasGuardarWhatsappTiempos(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 147 (Parte B, Mobilize): impacto (solo lectura) -> confirmar SIEMPRE,
+// con los conteos por pregunta -> guardar (reemplazo por rango de fechas).
+async function _cargasGuardarEncuesta(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/encuestas/carga/impacto', parsed);
+    var msg = 'Se van a guardar '+impacto.filasNuevas+' encuesta(s) del '+_agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+
+      ' ('+impacto.dias+' día(s)).\n'+encuestaResumenTexto(impacto.conteos)+'.\n\n'+
+      (impacto.filasExistentes > 0 ? 'Esto REEMPLAZA '+impacto.filasExistentes+' encuesta(s) ya cargadas en esas fechas.\n\n' : 'No hay encuestas cargadas en esas fechas.\n\n')+
+      '¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'No se guardó nada; las encuestas anteriores siguen igual.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/encuestas/carga', parsed);
+    if(typeof _encuestaOpciones !== 'undefined') _encuestaOpciones = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' encuesta(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
 // Fase 141 (Parte C, Mobilize): mismo patron impacto -> confirmar -> guardar
 // de _cargasGuardarLlamadasUnicas. `r.filas` ya son arrays.
 async function _cargasGuardarLlamadasSalida(cliente, r){
@@ -1159,6 +1210,7 @@ async function guardarCarga(){
       else if(r.tipo==='llamadas_unicas') res = await _cargasGuardarLlamadasUnicas(cliente, r);
       else if(r.tipo==='llamadas_salida') res = await _cargasGuardarLlamadasSalida(cliente, r);
       else if(r.tipo==='whatsapp_tiempos') res = await _cargasGuardarWhatsappTiempos(cliente, r);
+      else if(r.tipo==='encuesta') res = await _cargasGuardarEncuesta(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);

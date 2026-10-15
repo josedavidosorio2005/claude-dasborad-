@@ -1207,7 +1207,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
@@ -1223,7 +1223,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1265,6 +1265,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
+  if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1780,6 +1781,18 @@ async function _gdExportarLlamadasUnicas(p, i){
   return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }].concat(await _gdExportarLlamadasSalida(campana));
 }
 
+// Fase 147 (Parte B): Encuesta -- una tabla por pregunta + comentarios, con
+// los filtros que el panel tiene aplicados (_encuestaDatosExport, encuesta.js).
+function _gdExportarEncuesta(p, i){
+  var campana = p.campana || _gd.cliente;
+  var bloques = (typeof _encuestaDatosExport === 'function') ? _encuestaDatosExport(campana) : [];
+  if(!bloques.length) return [{ titulo: 'Encuesta', tipo: 'aviso', filas: [], mensaje: 'Sin encuestas para los filtros actuales.' }];
+  return bloques.map(function(b){
+    return b.filas.length ? { titulo: 'Encuesta — '+b.titulo, tipo: 'tabla', filas: b.filas }
+      : { titulo: 'Encuesta — '+b.titulo, tipo: 'aviso', filas: [], mensaje: 'Sin comentarios con estos filtros.' };
+  });
+}
+
 // Fase 141 (Parte C): la mitad de salida exporta solo el resumen por mes
 // (sin nombres de asesor, para cualquier rol).
 async function _gdExportarLlamadasSalida(campana){
@@ -1933,6 +1946,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'salida_panel'){ out = out.concat(await _gdExportarSalida(p, i)); continue; }
     if(p.tipo === 'llamadas_unicas_panel'){ out = out.concat(await _gdExportarLlamadasUnicas(p, i)); continue; }
+    if(p.tipo === 'encuesta_panel'){ out = out.concat(_gdExportarEncuesta(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

@@ -492,6 +492,29 @@ evita que las cargas futuras se unifiquen de la misma forma.
   última fecha del archivo (la plataforma muestra antes cuántos registros
   va a reemplazar). Se pueden cargar varios meses, uno a la vez.
 
+### Encuesta (Mobilize)
+
+- **Dónde se ve**: pestaña "Encuesta" de Mobilize (antes de Calidad). Un
+  solo juego de filtros para toda la pestaña: Desde, Hasta, Skill y Asesor.
+  Cuatro recuadros, uno por pregunta, con una barra por cada respuesta
+  posible (0 a 10, 1 a 5 o Sí/No — aunque tenga 0) y debajo cuántos
+  respondieron y cuántos no. Al final, los comentarios con texto (fecha,
+  skill, asesor). El botón "Preguntas de la encuesta" muestra el texto
+  completo de las preguntas.
+- **Qué archivo**: el export de Wolkvox (Reportes → numeral 4, hoja
+  "HistIVR…") con las columnas AGENT_NAME, SKILL_NAME, DATE, Q01, Q02,
+  Q03, Q04 y VOICE_MESSAGE. Se sube tal cual desde "Cargar Datos" eligiendo
+  Mobilize: el encabezado se encuentra aunque no esté en la fila 1, y la
+  hoja de la tabla dinámica se ignora. "-" o "--" = sin respuesta; un valor
+  fuera de rango queda como sin respuesta y se avisa.
+- **Reemplazo**: se reemplaza lo que ya exista entre la primera y la
+  última fecha del archivo (la plataforma muestra antes cuántas encuestas
+  va a reemplazar y los conteos por pregunta, y pide confirmar). Así se
+  corrige una base: se vuelve a subir.
+- **Privacidad**: el archivo no trae teléfonos; si alguna vez los trae, la
+  plataforma los ignora antes de enviar nada. El filtro y la columna de
+  asesor los ve también el usuario de Mobilize.
+
 ## 5. Calendario mensual
 
 | Base | Quién la manda | De qué sistema sale | Cuándo se carga |

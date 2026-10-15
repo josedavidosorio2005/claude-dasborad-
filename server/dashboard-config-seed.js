@@ -476,6 +476,13 @@ const MOBILIZE = {
           soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
         },
       ]},
+      // Fase 147 (Parte B): Encuesta de satisfaccion post-llamada (tabla
+      // `encuestas`). Siempre visible: el panel trae su propio estado vacio.
+      // Migracion para la base ya sembrada:
+      // dashboards_config_mobilize_encuesta_tab_v1 (db.js).
+      { key: 'encuesta', label: 'Encuesta', panels: [
+        { tipo: 'encuesta_panel', campana: 'MOBILIZE' },
+      ]},
       // Fase 147 (pedido de Edwin): Calidad SIEMPRE al final en Mobilize (una
       // pestaña nueva, como Encuesta, va ANTES de esta). Migracion para la
       // base ya sembrada: dashboards_config_mobilize_calidad_al_final_v1.

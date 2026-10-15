@@ -135,3 +135,5 @@ router.post(
 
 module.exports = router;
 module.exports.CAMPANAS_ASESOR_VISIBLE_CLIENTE = CAMPANAS_ASESOR_VISIBLE_CLIENTE;
+// Fase 147 (Parte B): la Encuesta de Mobilize usa la MISMA regla de nombres.
+module.exports.puedeVerAsesores = puedeVerAsesores;
