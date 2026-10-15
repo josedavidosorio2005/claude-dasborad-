@@ -184,13 +184,16 @@ function _wppTiemposDatosExport(campana) {
 
 function _wppTiemposExportExcel(i) {
   if (typeof XLSX === 'undefined') { showToast('No se pudo cargar el generador de Excel.'); return; }
+  // Fase 150 (igual que la Encuesta, Fase 149): sin la proteccion
+  // anti-formula NO se exporta (antes caia en silencio a las filas crudas).
+  if (typeof xlsxFilasSeguras !== 'function') { showToast('No se pudo preparar el Excel de forma segura. Recarga la página e inténtalo de nuevo.', 'error'); return; }
   var host = document.getElementById('gd-p' + i);
   var campana = host ? host.dataset.campana : '';
   var datos = _wppTiemposDatosExport(campana);
   if (!datos.length) { showToast('No hay datos para exportar con estos filtros.'); return; }
   var wb = XLSX.utils.book_new();
   if (typeof xlsxAgregarAvisoDemo === 'function') xlsxAgregarAvisoDemo(wb);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(typeof xlsxFilasSeguras === 'function' ? xlsxFilasSeguras(datos) : datos), 'NivelServicioTiempos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'NivelServicioTiempos');
   XLSX.writeFile(wb, 'WhatsApp_Nivel_Servicio_Tiempos_' + String(campana).replace(/\s+/g, '_') + '_' + (_wppTiemposUltimo[campana] || {}).mes + '.xlsx');
 }
 

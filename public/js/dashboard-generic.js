@@ -1947,8 +1947,10 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'calidad_bar_asesores'){ continue; }
     if(p.tipo === 'trafico_combo'){
       var dT = (typeof _traficoDatosExport === 'function') ? _traficoDatosExport(i) : [];
-      out.push(dT.length ? { titulo: 'Trafico de Llamadas', tipo: 'tabla', filas: dT }
-        : { titulo: 'Trafico de Llamadas', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Trafico de Llamadas para el periodo/filtros actuales.' });
+      // Fase 150: con la sub-pestaña One & Done activa, la tabla va con su titulo.
+      var tT = (typeof _traficoExportTitulo === 'function') ? _traficoExportTitulo(i) : 'Trafico de Llamadas';
+      out.push(dT.length ? { titulo: tT, tipo: 'tabla', filas: dT }
+        : { titulo: tT, tipo: 'aviso', filas: [], mensaje: 'Sin datos de ' + tT + ' para el periodo/filtros actuales.' });
       continue;
     }
     if(p.tipo === 'trafico_whatsapp_combo'){

@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.41.2 — Octubre 2026
+
+**Fase 150: ajustes pendientes de la revisión anterior.**
+
+- **"Última actualización"** ahora también cuenta las cargas de Encuesta,
+  Llamadas Únicas, Llamadas de Salida y Tiempos de WhatsApp. En Mobilize ya
+  muestra la carga más reciente (la Encuesta del 15/10), no la del 08/10.
+  En ORLANT la fecha no cambia mientras no haya cargas más nuevas.
+- **One & Done**: la gráfica muestra los meses en letras ("Septiembre
+  2026"). Si falla la conexión, ahora dice que no se pudo cargar, en vez de
+  "Sin encuestas". Al exportar con One & Done abierta, la tabla se llama
+  "One & Done" y no "Tráfico de Llamadas".
+- La carga de **Llamadas Únicas** y de **Tiempos de WhatsApp** acepta
+  archivos de hasta 8 MB, el mismo límite que ya avisaba la pantalla.
+- El Excel de **Tiempos de WhatsApp** avisa con un error si no se puede
+  preparar de forma segura, en vez de descargar un archivo sin protección.
+
 ## v1.41.1 — Octubre 2026
 
 **Fase 149: arreglos de la revisión de seguridad y un detalle visual.**

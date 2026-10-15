@@ -141,6 +141,10 @@ function createApp() {
     '/api/calidad/tipificacion/carga', '/api/calidad/tipificacion/carga/impacto',
     '/api/calidad/agendas/carga', '/api/calidad/agendas/carga/impacto',
     '/api/calidad/encuestas/carga', '/api/calidad/encuestas/carga/impacto',
+    // Fase 150: mismo desfase que tenia la Encuesta (8mb en el navegador,
+    // 2mb aqui) en Llamadas Unicas y en WhatsApp por rangos de minutos.
+    '/api/calidad/llamadas-unicas/carga', '/api/calidad/llamadas-unicas/carga/impacto',
+    '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
   const jsonLimiteMayor = express.json({ limit: '8mb' });

@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.41.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.41.2` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -639,3 +639,4 @@ mismo orden):
 - Fase 147 — Reunión con Edwin del 14/10: meses con nombre, "Última actualización" en naranja, Calidad al final en Mobilize, Asesor para el cliente de Mobilize y filtro Tipo en salida (Parte A, v1.38.0); pestaña "Encuesta" de Mobilize con carga desde Cargar Datos (Parte B, v1.39.0; carga real hecha el 15/10: 45 encuestas de septiembre); tarjeta "Solución en primer contacto (FCR)" en Flujo de Llamadas (Parte C, v1.40.0); sub-pestaña "One & Done" (Parte D, v1.41.0) (2026-10-15)
 - Fase 148 — Auditoría de solo lectura de `120ba7d..main` (#430–#433, #403): 0 críticos, 0 altos, 1 medio y 3 bajos, sin PR (2026-10-15)
 - Fase 149 — Arreglos de la auditoría 148 (nombres de asesor en Llamadas Únicas por regla del servidor, límite de 8 MB para la Encuesta, Excel de la Encuesta sin exportación insegura), revisión del #434, barra de pestañas fija bajo el encabezado del tablero (v1.41.1, 2026-10-15)
+- Fase 150 — Pendientes de la 149: "Última actualización" cuenta también Encuesta, Llamadas Únicas, Salida y WhatsApp por rangos; One & Done con meses en letras, error de red visible y su propio título al exportar; límite de 8 MB en Llamadas Únicas y WhatsApp por rangos; Excel de WhatsApp por rangos sin exportación insegura (v1.41.2, 2026-10-15)

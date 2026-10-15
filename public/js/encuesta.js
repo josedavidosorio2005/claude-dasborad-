@@ -319,8 +319,18 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
   var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base) +
     (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
   var porMes = [];
-  try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; } catch (e) { porMes = []; }
   var mesLbl = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  // Fase 150: un error de red/servidor NO se disfraza de "Sin encuestas":
+  // se dice que no se pudo cargar (y no queda nada viejo para exportar).
+  try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; }
+  catch (e) {
+    _encuestaOadUltimo[i] = [];
+    if (elKpi) elKpi.innerHTML = '';
+    if (elQ3) elQ3.textContent = '';
+    var wrapErr = document.getElementById('tv-canvas-oad-' + i);
+    if (wrapErr && wrapErr.parentNode) wrapErr.parentNode.innerHTML = '<div role="alert" style="text-align:center;color:var(--c-danger-text);padding:24px 8px">No se pudo cargar One &amp; Done. Revisa la conexión y vuelve a aplicar los filtros.</div>';
+    return;
+  }
   var serie = encuestaOneAndDoneSerie(porMes, encuestaMesesRango(desde, hasta, porMes), base);
   _encuestaOadUltimo[i] = serie;
   var d = encuestaQ3Desglose(porMes);
@@ -363,7 +373,8 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
   if (typeof _gdChart === 'function') {
     _gdChart('tv-canvas-oad-' + i, {
       type: 'bar',
-      data: { labels: serie.map(function (s) { return s.periodo; }), datasets: [{ label: 'One & Done', data: serie.map(function (s) { return s.pct; }), backgroundColor: color, borderRadius: 3 }] },
+      // Fase 150: eje X con el mes en letras ("Septiembre 2026", pedido de Edwin).
+      data: { labels: serie.map(function (s) { return mesLbl(s.periodo); }), datasets: [{ label: 'One & Done', data: serie.map(function (s) { return s.pct; }), backgroundColor: color, borderRadius: 3 }] },
       options: o,
     });
   }

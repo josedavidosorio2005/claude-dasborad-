@@ -107,7 +107,7 @@ router.get(
 
 // Fase 131 (Parte 4, pedido explicito): "Ultima actualizacion" visible en
 // cada dashboard -- la carga mas reciente de ESE cliente, en cualquiera de
-// las 10 fuentes de datos reales (ver ultima-actualizacion.js). Mismo gate
+// las fuentes de datos reales (ver ultima-actualizacion.js). Mismo gate
 // que ver el dashboard en si (clienteAccess) -- quien puede abrir el
 // dashboard de un cliente puede ver cuando se actualizo por ultima vez.
 router.get(

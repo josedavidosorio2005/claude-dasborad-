@@ -1276,14 +1276,24 @@ function _traficoRenderContenido(campana, sede, i){
 // sigue calculando/guardando, solo deja de mostrarse" (serviceLevel10secPct/
 // serviceLevel30secPct/waitTimeSegundos siguen en `agregado`, solo no se
 // incluyen en las columnas exportadas).
+// Fase 147 (Parte D): con la sub-pestaña "One & Done" activa se exporta su
+// tabla. Fase 150: y con su propio titulo ("One & Done", no "Trafico de
+// Llamadas") en el Excel, el PDF y el Exportar del tablero completo.
+function _traficoExportEsOneAndDone(i){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var sede = host ? (host.dataset.sede || null) : null;
+  return (_traficoSubtabActivo[_traficoClaveEstado(campana, sede)] || 'resumen') === 'oneanddone' && typeof _encuestaOadDatosExport === 'function';
+}
+function _traficoExportTitulo(i){
+  return _traficoExportEsOneAndDone(i) ? 'One & Done' : 'Trafico de Llamadas';
+}
+
 function _traficoDatosExport(i){
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : null;
   var sede = host ? (host.dataset.sede || null) : null;
-  // Fase 147 (Parte D): en la sub-pestaña "One & Done" se exporta su tabla.
-  if((_traficoSubtabActivo[_traficoClaveEstado(campana, sede)] || 'resumen') === 'oneanddone' && typeof _encuestaOadDatosExport === 'function'){
-    return _encuestaOadDatosExport(i);
-  }
+  if(_traficoExportEsOneAndDone(i)) return _encuestaOadDatosExport(i);
   var agregado = _traficoAgregadoActual[_traficoClaveEstado(campana, sede)] || [];
   return agregado.map(function(a){
     return {
@@ -1310,8 +1320,9 @@ function _traficoExportExcel(i){
   var campana = host ? host.dataset.campana : 'trafico';
   var wb = XLSX.utils.book_new();
   xlsxAgregarAvisoDemo(wb);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'Trafico');
-  XLSX.writeFile(wb, 'Trafico_Llamadas_'+String(campana).replace(/\s+/g,'_')+'.xlsx');
+  var oad = _traficoExportEsOneAndDone(i);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), oad ? 'One & Done' : 'Trafico');
+  XLSX.writeFile(wb, (oad ? 'One_and_Done_' : 'Trafico_Llamadas_')+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
 
 function _traficoExportPrint(i){
@@ -1319,6 +1330,7 @@ function _traficoExportPrint(i){
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : '';
+  var tituloPdf = _traficoExportEsOneAndDone(i) ? 'One &amp; Done' : 'Tráfico de Llamadas';
   var w = window.open('', '_blank');
   if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
   var cols = Object.keys(datos[0]);
@@ -1329,12 +1341,12 @@ function _traficoExportPrint(i){
     ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">'+
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'
     : '';
-  w.document.write('<!doctype html><html><head><title>Tráfico de Llamadas — '+esc(campana)+'</title>'+
+  w.document.write('<!doctype html><html><head><title>'+tituloPdf+' — '+esc(campana)+'</title>'+
     '<style>body{font-family:Segoe UI,system-ui,sans-serif;color:#2a4a58;margin:28px}h1{color:#0d4a5e;font-size:18px}'+
     'table{border-collapse:collapse;width:100%;margin:10px 0 22px;font-size:11px}th{background:#0d4a5e;color:#fff;padding:6px 8px;text-align:left}'+
     'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>'+
     avisoHtml +
-    '<h1>Tráfico de Llamadas — '+esc(campana)+'</h1>'+tabla+
+    '<h1>'+tituloPdf+' — '+esc(campana)+'</h1>'+tabla+
     '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — '+new Date().toLocaleString('es-CO')+'</p>'+
     '</body></html>');
   w.document.close();
