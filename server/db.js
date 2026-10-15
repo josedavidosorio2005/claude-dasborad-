@@ -3654,6 +3654,29 @@ function migrarMobilizeEncuestaTab() {
 }
 runOnceMigration('dashboards_config_mobilize_encuesta_tab_v1', migrarMobilizeEncuestaTab);
 
+// Fase 147 (Parte C): tarjeta FCR en "Flujo de Llamadas" de Mobilize. Solo
+// agrega `fcrBase: 'total'` (pedido de Edwin) al trafico_combo de MOBILIZE
+// del tab "flujo" si todavia no tiene el campo -- nunca pisa una base ya
+// elegida. Solo la forma reconocible de produccion (resumenPorSeccion, la
+// de la Fase 131); cualquier otra se deja intacta.
+function migrarMobilizeFlujoFcr() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE' && p.resumenPorSeccion === true);
+  if (!panel) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_fcr_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  if (Object.prototype.hasOwnProperty.call(panel, 'fcrBase')) return;
+  panel.fcrBase = 'total';
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_fcr_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_flujo_fcr_v1', migrarMobilizeFlujoFcr);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3673,3 +3696,4 @@ module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaA
 // Fase 147: idem.
 module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
 module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
+module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;

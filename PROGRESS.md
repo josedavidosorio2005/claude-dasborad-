@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.39.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.40.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -636,4 +636,4 @@ mismo orden):
 - Fase 144 — Bloque A de UI/accesibilidad publicado: A1–A3 uno por uno (v1.34.1–1.34.3) y A4–A8 + A3b juntos en v1.34.4 por el 429 del registro de imágenes (2026-10-14)
 - Fase 145 — Ajustes de Mobilize para la entrega: "ASA y ATA" + "AHT", "Llamadas Únicas y de Salida", sin aviso amarillo falso, % legibles en las tortas; verificado en producción (v1.35.0, 2026-10-14)
 - Fase 146 — Auditoría de seguridad y bugs (0 críticos, 0 altos) + README y documentación al día (v1.36.1, 2026-10-14)
-- Fase 147 — Reunión con Edwin del 14/10: meses con nombre, "Última actualización" en naranja, Calidad al final en Mobilize, Asesor para el cliente de Mobilize y filtro Tipo en salida (Parte A, v1.38.0); pestaña "Encuesta" de Mobilize con carga desde Cargar Datos (Parte B, v1.39.0; carga real en espera del "OK cargar encuesta") (2026-10-15)
+- Fase 147 — Reunión con Edwin del 14/10: meses con nombre, "Última actualización" en naranja, Calidad al final en Mobilize, Asesor para el cliente de Mobilize y filtro Tipo en salida (Parte A, v1.38.0); pestaña "Encuesta" de Mobilize con carga desde Cargar Datos (Parte B, v1.39.0; carga real en espera del "OK cargar encuesta"); tarjeta "Solución en primer contacto (FCR)" en Flujo de Llamadas (Parte C, v1.40.0) (2026-10-15)

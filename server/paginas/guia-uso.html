@@ -258,7 +258,8 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <h3>Encuesta (Mobilize)</h3>
 <p><strong>Dónde se ve</strong>: pestaña "Encuesta" de Mobilize (antes de Calidad), con un solo juego de filtros (Desde, Hasta, Skill y Asesor). Cuatro recuadros, uno por pregunta, con una barra por cada respuesta posible (aunque tenga 0) y debajo cuántos respondieron y cuántos no; al final, los comentarios con texto. El botón "Preguntas de la encuesta" muestra el texto de las preguntas.<br>
 <strong>Qué archivo</strong>: el export de Wolkvox (Reportes → numeral 4, hoja "HistIVR…") con AGENT_NAME, SKILL_NAME, DATE, Q01, Q02, Q03, Q04 y VOICE_MESSAGE. Se sube tal cual desde "Cargar Datos" eligiendo Mobilize; el encabezado se encuentra aunque no esté en la fila 1 y la tabla dinámica se ignora. "-" o "--" = sin respuesta.<br>
-<strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántas encuestas va a reemplazar y pide confirmar); para corregir una base, se vuelve a subir.</p>
+<strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántas encuestas va a reemplazar y pide confirmar); para corregir una base, se vuelve a subir.<br>
+<strong>FCR en Flujo de Llamadas</strong>: la tarjeta "Solución en primer contacto (FCR)" = encuestas con la pregunta 3 en "Sí" ÷ todas las encuestas del mes (configurable para contar solo a quienes respondieron la pregunta 3). Siempre muestra la cuenta, por ejemplo "3 de 45 encuestas"; si el mes no tiene encuestas dice "Sin encuestas este mes".</p>
 </div>
 
 <h2 id="s5">5. Calendario mensual</h2>

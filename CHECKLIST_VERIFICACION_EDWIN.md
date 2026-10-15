@@ -288,3 +288,13 @@ verificación:
 - [ ] Cargar Datos → Mobilize: al subir el archivo de Wolkvox, la vista
       previa dice cuántas encuestas hay y los conteos por pregunta, y antes
       de guardar pregunta si se continúa.
+
+## Fase 147 — FCR en Flujo de Llamadas (parte C)
+
+- [ ] En Mobilize → Flujo de Llamadas (sub-pestaña "Flujo de Llamadas")
+      aparece la tarjeta **Solución en primer contacto (FCR)** con el % y
+      debajo "Mes: N de M encuestas".
+- [ ] Si el mes elegido no tiene encuestas, la tarjeta dice "Sin encuestas
+      este mes".
+- [ ] En las otras sub-pestañas (Nivel de Servicio, Abandono, ASA y ATA,
+      AHT) la tarjeta no aparece.

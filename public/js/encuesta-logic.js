@@ -223,6 +223,33 @@ function encuestaFcr(si, total, respondieron, base) {
   return { num: si, den: den, pct: den > 0 ? Math.round((si / den) * 1000) / 10 : null };
 }
 
+// Tarjeta FCR de Flujo de Llamadas (Parte C): el mes objetivo (el del final
+// del rango del panel) y, aparte, los demas meses del rango que tienen
+// encuestas. `porMes` = respuesta de GET /calidad/encuestas/fcr.
+function encuestaFcrTarjeta(porMes, mesObjetivo) {
+  var lista = (porMes || []).slice().sort(function (a, b) { return a.periodo < b.periodo ? -1 : 1; });
+  var obj = lista.filter(function (m) { return m.periodo === mesObjetivo; })[0] || null;
+  return {
+    mes: mesObjetivo,
+    sinEncuestas: !obj || !obj.total,
+    pct: obj ? obj.pct : null,
+    si: obj ? obj.si : 0,
+    den: obj ? obj.den : 0,
+    base: obj ? obj.base : null,
+    otros: lista.filter(function (m) { return m.periodo !== mesObjetivo && m.total > 0; }),
+  };
+}
+
+// "6,7 %" / "75 %" (coma decimal, como el resto del tablero).
+function encuestaFmtPct(v) {
+  return v === null || v === undefined ? '—' : String(v).replace('.', ',') + ' %';
+}
+
+// "3 de 45 encuestas" (base total) o "3 de 4 que respondieron la pregunta 3".
+function encuestaFcrFraccion(si, den, base) {
+  return si + ' de ' + den + (base === 'respondieron' ? ' que respondieron la pregunta 3' : ' encuestas');
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     ENCUESTA_COLUMNAS: ENCUESTA_COLUMNAS,
@@ -241,5 +268,8 @@ if (typeof module !== 'undefined' && module.exports) {
     encuestaParseFilas: encuestaParseFilas,
     encuestaPlantillaAoA: encuestaPlantillaAoA,
     encuestaFcr: encuestaFcr,
+    encuestaFcrTarjeta: encuestaFcrTarjeta,
+    encuestaFmtPct: encuestaFmtPct,
+    encuestaFcrFraccion: encuestaFcrFraccion,
   };
 }

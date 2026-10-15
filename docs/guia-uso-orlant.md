@@ -514,6 +514,13 @@ evita que las cargas futuras se unifiquen de la misma forma.
 - **Privacidad**: el archivo no trae teléfonos; si alguna vez los trae, la
   plataforma los ignora antes de enviar nada. El filtro y la columna de
   asesor los ve también el usuario de Mobilize.
+- **FCR en Flujo de Llamadas**: en la sub-pestaña "Flujo de Llamadas" hay
+  una tarjeta "Solución en primer contacto (FCR)" = encuestas con la
+  pregunta 3 en "Sí" ÷ todas las encuestas del mes (o, si se configura
+  `fcrBase: 'respondieron'` en el panel, ÷ las que respondieron la
+  pregunta 3). Siempre muestra la cuenta ("3 de 45 encuestas"); el mes es
+  el del final del rango Desde/Hasta del panel, y los demás meses del rango
+  con encuestas van debajo. Sin encuestas: "Sin encuestas este mes".
 
 ## 5. Calendario mensual
 
