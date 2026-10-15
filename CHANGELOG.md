@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.40.1 — Octubre 2026
+
+**Mejora interna: publicar cambios con menos fallas.**
+
+- A veces la publicación de una versión nueva fallaba porque el servicio
+  que entrega las piezas base de la plataforma limitaba las descargas.
+  Ahora la plataforma queda lista para usar una cuenta propia en ese
+  servicio y evitar ese límite. Mientras esa cuenta no se configure, todo
+  sigue funcionando igual que antes.
+- No cambia nada de lo que se ve en los tableros.
+
 ## v1.40.0 — Octubre 2026
 
 **Fase 147 (parte C): solución en primer contacto (FCR) en Mobilize.**

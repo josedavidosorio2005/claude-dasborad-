@@ -16,13 +16,20 @@
 # Hub directo: mismo contenido oficial, pero sin el limite de descargas
 # anonimas de Docker Hub que empezo a dar 429 desde los runners de GitHub
 # (9-oct-2026).
-FROM public.ecr.aws/docker/library/node:22-bookworm AS deps
+# Fase 139 (los 429 llegaron tambien a ECR Public, que limita las descargas
+# anonimas por IP y los runners comparten IP): el registro de la imagen
+# base es un ARG. Por defecto sigue siendo ECR Public (nada cambia si no
+# se pasa nada); ci.yml/deploy.yml pasan docker.io/library SOLO cuando
+# iniciaron sesion en Docker Hub con DOCKERHUB_USERNAME/DOCKERHUB_TOKEN
+# (limite por cuenta, no por IP compartida). Misma imagen oficial de node.
+ARG NODE_REGISTRY=public.ecr.aws/docker/library
+FROM ${NODE_REGISTRY}/node:22-bookworm AS deps
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # ── Etapa 2: runtime ────────────────────────────────────────
-FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS runtime
+FROM ${NODE_REGISTRY}/node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 # curl para el HEALTHCHECK
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
