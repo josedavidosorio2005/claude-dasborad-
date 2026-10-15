@@ -714,6 +714,136 @@ const llamadasUnicasOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// ── Llamadas de salida de Mobilize (Fase 141, Parte C) ──────────────────
+// Mismo patron que Llamadas Unicas: filas como ARRAY con orden FIJO, debe
+// coincidir con LLAMADAS_SALIDA_ORDEN_ARRAY (llamadas-salida-logic.js) y con
+// CAMPOS_FILA (llamadas-salida.js). El telefono NUNCA aparece en la tupla.
+const llamadasSalidaTipoSchema = z.enum(['CONECTADA', 'NO_CONECTADA'], { error: 'tipo debe ser CONECTADA o NO_CONECTADA' });
+const llamadasSalidaFilaArraySchema = z.tuple([
+  tipificacionTextoObligatorio, // agente
+  fechaSchema, // fecha
+  llamadasSalidaTipoSchema, // tipo
+  tipificacionTextoObligatorio, // tipificacion (DESCRIPTION_COD_ACT)
+]);
+
+const llamadasSalidaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(llamadasSalidaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+const llamadasSalidaFiltrosQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  agente: z.string().trim().max(200).optional(),
+  // Fase 147: el archivo de salida no trae skill real (SKILL_ID dice
+  // "LLAMADAS DE SALIDA CONECTADAS/NO CONECTADAS" = el tipo), asi que el
+  // filtro pedido como "Skill" es por Tipo.
+  tipo: llamadasSalidaTipoSchema.optional(),
+});
+
+const llamadasSalidaOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+// ── ORLANT WhatsApp: tiempos de respuesta por conversacion (Fase 142) ────
+// Tupla de orden FIJO = WPP_TIEMPOS_ORDEN_ARRAY (whatsapp-tiempos-logic.js)
+// y CAMPOS_FILA (whatsapp-tiempos.js). Sin telefonos ni nombres.
+const whatsappTiemposFilaArraySchema = z.tuple([
+  z.string().trim().min(1).max(200).regex(/^WHATSAPP/i, { message: 'solo colas de WhatsApp' }), // skill
+  fechaSchema, // fecha
+  z.number().int().min(0).max(23), // hora
+  z.number().int().min(0).max(10000000), // segundos (ANSWER_TIME)
+]);
+
+const whatsappTiemposCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(whatsappTiemposFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(100000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[1])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+const whatsappTiemposOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+const whatsappTiemposRangosQuery = z.object({
+  campana: campanaSchema,
+  mes: z.string().regex(/^\d{4}-\d{2}$/, { message: 'mes debe ser AAAA-MM' }),
+  skill: z.string().trim().max(200).optional(),
+});
+
+// ── Mobilize Encuesta de satisfaccion (Fase 147, Parte B) ───────────────
+// Tupla de orden FIJO = ENCUESTA_ORDEN_ARRAY (encuesta-logic.js) y
+// CAMPOS_FILA (encuestas.js). null = sin respuesta. Sin telefonos.
+const encuestaRespuesta = (min, max) => z.number().int().min(min).max(max).nullable();
+const encuestaFilaArraySchema = z.tuple([
+  fechaSchema, // fecha
+  z.string().trim().max(200), // agente ('' si no vino)
+  z.string().trim().max(200), // skill ('' si no vino)
+  encuestaRespuesta(0, 10), // q1
+  encuestaRespuesta(1, 5), // q2
+  encuestaRespuesta(1, 2), // q3 (1 = Si, 2 = No)
+  encuestaRespuesta(1, 5), // q4
+  z.string().trim().max(1000), // comentario ('' si no hay)
+]);
+
+const encuestasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(encuestaFilaArraySchema)
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(100000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0]), path: [i, 0] });
+        }
+      });
+    }),
+});
+
+const encuestasOpcionesQuery = z.object({
+  campana: campanaSchema,
+});
+
+const encuestasFiltrosQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  skill: z.string().trim().max(200).optional(),
+  agente: z.string().trim().max(200).optional(),
+});
+
+// Parte C: la base del FCR la decide la config del panel (fcrBase).
+const encuestasFcrQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  base: z.enum(['total', 'respondieron']).optional(),
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1198,6 +1328,16 @@ module.exports = {
     llamadasUnicasCargaBody,
     llamadasUnicasFiltrosQuery,
     llamadasUnicasOpcionesQuery,
+    llamadasSalidaCargaBody,
+    llamadasSalidaFiltrosQuery,
+    llamadasSalidaOpcionesQuery,
+    whatsappTiemposCargaBody,
+    whatsappTiemposOpcionesQuery,
+    whatsappTiemposRangosQuery,
+    encuestasCargaBody,
+    encuestasOpcionesQuery,
+    encuestasFiltrosQuery,
+    encuestasFcrQuery,
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,

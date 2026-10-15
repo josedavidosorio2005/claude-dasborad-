@@ -14391,3 +14391,568 @@ construida desde el ECR privado.
 **Recomendación: opción 1** (el cambio más chico, sin IAM y sin nada
 nuevo que mantener). La 3 es la alternativa si no se quiere una cuenta
 externa. Decisión del usuario, después de la presentación.
+
+## Fase 139 (cierre, segunda parte) — informa retirado y limpieza (2026-10-13)
+
+- **PR #400** (v1.30.4) y **PR #396** (v1.30.5, con OK explícito del
+  usuario antes del modo `quitar`, porque informa ya no resolvía en DNS)
+  mergeados con `--match-head-commit`. Verificación en vivo con la sesión
+  del usuario (v1.30.4, contexto sin caché): ORLANT→Mobilize→ORLANT→
+  Mobilize, una sola posición de las pestañas por apertura, 0 fotogramas
+  con logo viejo, todos los clics en la pestaña correcta, 0 errores.
+- **informa retirado del servidor**: workflow "Dominio de produccion",
+  modo `quitar` (corrida 38442769446, autorizada explícitamente por el
+  usuario), verde. Respaldo de Caddyfile y app.env, Caddyfile válido y
+  recargado, `CORS_ORIGIN` = solo `https://sinco.inconexion.com.co`, app
+  recreada (`/api/health` 1.30.5), ningún actualizador de informa en
+  cron/systemd. Verificado desde fuera: salud OK, certificado de sinco
+  válido hasta 2027-01-07, CORS acepta sinco y rechaza informa, http→https
+  308, página de ingreso sin errores de consola. Monitor de producción y
+  Salud del servidor en verde.
+- **`scripts/qa/fase128-parte1-salida-rename-responsive.js` se queda**:
+  `revision-final.js` no cubre lo mismo — no revisa el nombre/posición de
+  la pestaña "Llamadas y WhatsApp de salida", que su botón no se corte en
+  3 tamaños × claro/oscuro, ni los nombres de las hojas del Excel
+  exportado (solo que la descarga ocurre).
+- **Rama `fase131-parte1-renombrar-movilize-mobilize-2026-10-07` borrada**
+  de GitHub: misma base que el PR #345, mismos 15 archivos (+355/−34) y 0
+  líneas añadidas que no estén en el #345 (era la misma rama, mergeada con
+  otros SHA). No se perdió nada.
+- **429 de Docker**: el usuario eligió la opción 1 (Docker Hub). PR en
+  borrador, sin mergear hasta "OK mergear 429".
+
+## Fase 140 — Pulido visual (2026-10-13)
+
+Pedido: mejorar el acabado visual del frontend (skill de rediseño
+`redesign-existing-projects` de Taste Skill) sin afectar la
+funcionalidad. La skill `design-taste-frontend` v2 se descartó porque
+excluye explícitamente dashboards y pantallas de aplicación.
+
+- **Restricciones respetadas**: sin framework ni build nuevos, CSP solo
+  `'self'`, Quicksand y el teal de marca intactos (la skill sugiere cambiar
+  la fuente, pero aquí es parte de la marca), sin degradados decorativos
+  nuevos (decisión de la Fase 133), iconos emoji sin tocar (F10, decisión
+  de marca), `.atab{transition:all}` sin tocar (espera "OK limpieza
+  atab").
+- **Diagnóstico** con capturas locales (`seed:demo` en una base temporal
+  fuera del repo, puerto 3099, claro/oscuro, 1440px y 412px, las 5
+  pestañas de ORLANT): (1) botones/campos/selects con la fuente del
+  sistema, no Quicksand; (2) filtros de los paneles con estilo crudo del
+  navegador; (3) `.btn-sm` sin variante (Excel/PDF) gris del navegador,
+  peor en oscuro; (4) franja vacía de `#gd-kpis` entre cabecera y
+  pestañas; (5) módulo único de bienvenida pegado a la izquierda; (6)
+  tarjetas casi fundidas con el fondo en oscuro; (7) `transition:all` en
+  sub-pestañas/tarjetas de rol/cliente/módulo.
+- **Cambio**: un solo bloque aditivo al final de `public/css/styles.css`
+  ("PULIDO VISUAL (Fase 140)"), 11 puntos comentados uno por uno. Los
+  estilos de controles usan `:where()` (especificidad 0) para que
+  cualquier clase o estilo en línea existente siga ganando. La entrada
+  escalonada de tarjetas es una transición ligada a `.motion-show` (que
+  `motionEnter()` solo reinicia al cambiar de pestaña/sub-pestaña), así
+  que un cambio de filtro o de mes no anima nada; su retraso se anula
+  con `prefers-reduced-motion` y con `data-motion="off"`. La entrada de
+  `.dash-btn` usa `backwards` (con `both` anulaba el `:hover`).
+- **Verificación**: capturas después: 0 errores de consola/página;
+  `npm test` 1481/1481 antes de la prueba nueva;
+  `server/tests/fase140-pulido-visual.test.js` (7 pruebas) en verde.
+- **Estado**: PR abierto, sin mergear: el merge despliega a producción
+  y las mejoras visuales estaban pospuestas hasta después del demo de
+  Mobilize.
+
+## Fase 141 — Cambios de la reunión con Edwin del 13/10 (2026-10-13)
+
+Pedido en 5 partes (A → B → C; D y E solo preparación). Contexto: las
+"51 abandonadas" de Llamadas Únicas de septiembre eran llamadas de SALIDA
+no conectadas (filas `SKILL_NAME = NO CONTESTADAS`), no entrantes
+abandonadas — se corrige en la Parte B con el archivo nuevo de Edwin.
+
+### Parte A — Renombres y Tipificación lado a lado (v1.32.0)
+
+- **"Resumen" → "Flujo de Llamadas" / "Flujo de WhatsApp"**: solo el texto
+  visible de la sub-pestaña `resumen` (`TRAFICO_LABEL_RESUMEN`,
+  `public/js/trafico.js`). La key, los ids del DOM y la config guardada no
+  cambian. MOBILIZE trae su propia lista de sub-pestañas en
+  `dashboards_config` con label "Resumen": `_traficoSubtabsNavHTML`
+  rotula la key `resumen` igual para todos, así que no hizo falta
+  migración. No se tocaron otros "Resumen" que no son esa sub-pestaña
+  ("Resumen por mes" de Inasistencia, "Resumen por Asesor" de Calidad,
+  "Resumen propio de ORLANT" de la tabla de fuentes). Los nombres de
+  exportación (`Trafico_WhatsApp_*.xlsx`) no decían "Resumen";
+  `revision-final.js` y `scripts/qa/*` no buscan ese texto.
+- **Tipificación (ORLANT y MOBILIZE, mismo componente)**: con tabla de
+  detalle, torta a la izquierda y tabla a la derecha (`.tipif-pie-tabla`,
+  50/50, 340px de alto los dos, la tabla hace scroll con el encabezado
+  fijo); en móvil se apilan (torta arriba). La tabla ya respondía a los
+  mismos filtros que la torta (las dos salen de la misma respuesta de
+  `/calidad/tipificacion/por-tipo`); la prueba nueva lo fija con
+  167 = 103 entrantes + 64 salientes.
+- **Pruebas**: `server/tests/fase141-flujo-tipificacion.test.js` (6).
+  `npm test` completo en verde.
+- **Capturas** ANTES/DESPUÉS locales (seed:demo en una base temporal
+  fuera del repo; Tipificación y Tráfico de MOBILIZE/WhatsApp con datos
+  sintéticos solo para ver el diseño), escritorio 1440 y móvil 412, claro
+  y oscuro: 0 errores de consola, sin scroll horizontal. No se
+  commitean.
+## Fase 141 — Parte C: Llamadas de salida de Mobilize (2026-10-13)
+
+- **Tabla nueva** `llamadas_salida` (campana, fecha, tipo
+  CONECTADA/NO_CONECTADA, agente, tipificacion, archivoNombre,
+  cargadoPorNombre, createdAt) + índice, con `runOnceMigration`
+  (`fase141_llamadas_salida_tabla_v1`, solo `CREATE ... IF NOT EXISTS`).
+  Sin columna de teléfono.
+- **Parser en el navegador** (`public/js/llamadas-salida-logic.js`):
+  columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT, SKILL_ID sin
+  importar mayúsculas/espacios; SKILL_ID → CONECTADA/NO_CONECTADA (otro
+  valor se omite con aviso); filas vacías ignoradas; única = día +
+  teléfono + tipo; reporta (sin resolver) cuántos día+teléfono aparecen
+  en ambos tipos. El teléfono nunca sale del parser.
+- **API** `/calidad/llamadas-salida/` (`opciones`, `resumen`, `por-mes`,
+  `detalle`, `carga/impacto`, `carga`), Zod, `canLoadData` +
+  `campaignAccess`, reemplazo por campaña + rango de fechas del archivo
+  en una transacción. Nombres de asesor solo para roles internos: a
+  `CLIENTES_DASH` no le llega `agentes` en `opciones`, filtrar por
+  `agente` le da 403 y `detalle` también.
+- **Panel**: `llamadas_unicas_panel` pasa a 2 mitades (`.lu-mitades`):
+  ingreso a la izquierda (tarjetas ahora Total / Contestadas /
+  Abandonadas) y salida a la derecha (Total llamadas de salida / No
+  conectadas / Conectadas), barras por mes, Desde/Hasta, Asesor y detalle
+  por asesor y por día solo internos, estado vacío "Sin llamadas de
+  salida cargadas todavía". Sin panel nuevo ni migración de config. La
+  exportación agrega el resumen mensual de salida (sin nombres).
+- **Cargar Datos**: hoja "Llamadas de salida" para MOBILIZE, reconocida
+  por encabezados (un CDR con SKILL_NAME nunca entra a ese slot).
+  Arreglo de paso: la carga de Llamadas Únicas invalidaba un caché con un
+  nombre que no existía (`_llamadasUnicasCache`); ahora limpia
+  `_llamadasUnicasOpciones`.
+- **Archivo real de septiembre** (revisado local, solo conteos): 157
+  filas, 111 únicas (59 conectadas + 52 no conectadas), 1–30 sep, 0
+  avisos, 20 pares día+teléfono en ambos tipos, 3 filas únicas
+  "PRUEBA" y 1 "TIMEOUTACW". **No se cargó**: espera "OK salida" (merge)
+  y después "OK cargar salida", y antes las respuestas de Edwin.
+- **Pruebas**: `server/tests/fase141-llamadas-salida.test.js` (parser,
+  migración, API, permisos, plan de carga, panel) + matriz de acceso
+  (`fase118-matriz-acceso.test.js`) con las 6 rutas nuevas.
+
+## Fase 141 — Parte B: corrección de Llamadas Únicas de septiembre en producción (2026-10-13)
+
+- **Causa**: las "51 abandonadas" cargadas el 13/10 eran un error de la
+  fuente — Edwin había pasado llamadas de SALIDA no conectadas (filas con
+  `SKILL_NAME = NO CONTESTADAS`), no entrantes abandonadas. En
+  septiembre no hubo abandonadas reales.
+- **Autorización**: "OK reemplazar septiembre" del usuario, en el chat.
+  Producción en v1.32.0; respaldo del 2026-10-13 03:18 (menos de 24 h,
+  subida a S3 OK según salud-servidor.yml).
+- **Cómo**: por la interfaz normal (Cargar Datos → Mobilize → Llamadas
+  Únicas), navegador visible, sesión escrita por el usuario. El archivo
+  corregido de Edwin (fuera del repo) dio en la vista previa 88 filas
+  válidas: 88 contestadas, 0 abandonadas, 25 días, 0 avisos (las 51 filas
+  vacías del Excel se ignoraron sin aviso). El impacto (solo lectura)
+  confirmó el reemplazo de 139 filas por 88, del 1 al 30 de septiembre.
+  La carga reemplaza por campaña + rango de fechas del archivo en una
+  transacción; el archivo viejo cubría el mismo rango, así que no quedó
+  ninguna fila vieja afuera.
+- **Primer intento cancelado sin guardar**: el script de la carga leía
+  el impacto con el diálogo de confirmación ya abierto (el navegador no
+  entrega la respuesta en ese momento) y, por seguridad, canceló. Se
+  corrigió (impacto pedido antes de guardar), se ensayó completo en local
+  con los mismos archivos y el segundo intento salió bien.
+- **Resultado (139 → 88)**: Llamadas Únicas 88 contestadas / 0
+  abandonadas / 88 total; barras de septiembre con las 3 series
+  (abandonadas en 0); filtros Desde/Hasta/Skill presentes (Skill ya no
+  ofrece "Abandonadas"); Tipificación de Mobilize sigue en 167; Flujo de
+  Llamadas y ORLANT idénticos antes y después; 0 errores de consola.
+- **Pendiente**: la propuesta de rechazar `NO CONTESTADAS` en el parser
+  queda para decisión del usuario (docs/pendientes.md).
+
+## Fase 142 — Rechazo de "NO CONTESTADAS" en Llamadas Únicas (v1.33.1, 2026-10-14)
+
+- **Decisión del usuario** (13/10, noche): `SKILL_NAME = NO CONTESTADAS` ya
+  no se interpreta como abandonada (fue la causa del error de septiembre,
+  Fase 141 Parte B).
+- **Opción elegida, la más segura**: una sola fila así hace que el parser
+  devuelva `error` para la hoja completa (sin filas parciales). La vista
+  previa lo muestra en rojo con el mensaje "NO CONTESTADAS es una llamada
+  de SALIDA no conectada; cárgala en Llamadas de salida." + cuántas filas
+  y sus números (hasta 10), y "Guardar" no envía esa hoja. Nada se borra
+  ni se cambia de lo ya cargado.
+- El servidor sigue aceptando el tipo ABANDONADA (para cuando Edwin defina
+  la fuente real de abandonadas entrantes); solo cambia el parser.
+- La plantilla oficial ya no trae la fila de ejemplo "NO CONTESTADAS".
+- **Pruebas**: casos 3/7 y 4/7 de `fase138-pr3-llamadas-unicas.test.js`
+  reescritos para la regla nueva (más 4b y 4c); las de integración siguen
+  probando ABANDONADA mandando la tupla directa al servidor; las de fecha
+  (Fase 139) usan otro skill; prueba nueva
+  `fase142-no-contestadas-rechazo.test.js` (Cargar Datos no guarda la
+  hoja).
+## Fase 142 — Punto 4: ORLANT WhatsApp, Nivel de Servicio por rangos de minutos (v1.34.0, 2026-10-14)
+
+- **Pedido de Edwin (13/10)**: en WhatsApp de ORLANT, el Nivel de Servicio
+  por rangos de tiempo (no una línea mensual de %), mes actual por
+  defecto, filtro de mes, y guardar el detalle con fecha y hora.
+- **Tabla nueva** `whatsapp_tiempos` (campana, skill, fecha, hora,
+  segundos, archivoNombre, cargadoPorNombre, createdAt) + índice
+  (campana, fecha), `runOnceMigration('fase142_whatsapp_tiempos_tabla_v1')`,
+  solo `CREATE ... IF NOT EXISTS`. `trafico_whatsapp` no se toca (sus %
+  mensuales se conservan, solo dejan de graficarse en esa sub-pestaña).
+- **Parser en el navegador** (`whatsapp-tiempos-logic.js`): SKILL_NAME,
+  DATE (Date con getters locales, serial o texto), RESULT, ANSWER_TIME.
+  Rango calculado con los cortes de Edwin (≤180, ≤300, ≤480, ≤600, >600 s);
+  la columna TIEMPO se ignora (en agosto su fórmula apunta a la fecha).
+  Solo colas que empiezan por WHATSAPP (las demás se cuentan como
+  ignoradas); RESULT ≠ ANSWER se omite con aviso; filas vacías ignoradas.
+- **Verificación con los archivos reales (local, solo conteos)**: agosto
+  7.370 filas WhatsApp (9.374 ignoradas), 2.979/152/196/119/3.924, 24
+  días, 40,4 % en 0–3; septiembre 7.953, 3.553/255/287/146/3.712, 26 días,
+  44,7 % — idéntico a los conteos de control del usuario. **No se cargó**
+  (espera "OK tiempos" y luego "OK cargar tiempos").
+- **API** `/calidad/whatsapp-tiempos/{opciones,rangos,carga/impacto,carga}`,
+  Zod (solo colas WHATSAPP, hora 0–23, segundos ≥ 0), `canLoadData` +
+  `campaignAccess`, reemplazo por campaña + rango de fechas en una
+  transacción. Todo agregado en SQL.
+- **Vista**: sub-pestaña "Nivel de Servicio" de WhatsApp, solo ORLANT
+  (`WPP_TIEMPOS_CAMPANAS`): Mes y Cola propios, tarjeta "% contestado en
+  0–3 minutos", total del mes, barras horizontales por franja (% y
+  cantidad) y tabla; estado vacío claro. Mes: coherente con el selector
+  MES de arriba (como Tipificación) — toma ese mes si tiene detalle; si
+  no, el último mes con detalle no futuro, y lo dice en una nota. Los
+  filtros propios del panel (Cola/Desde/Hasta/Granularidad) se esconden
+  en esa sub-pestaña. Excel/PDF del panel exportan los rangos.
+- **Pruebas**: `fase142-whatsapp-tiempos.test.js` (16) + matriz de
+  acceso. Ensayo local con datos sintéticos (colas de llamadas mezcladas,
+  TIEMPO equivocada): conteos exactos, 0 errores de consola, sin scroll
+  horizontal; capturas antes/después fuera del repo.
+
+## Fase 142 — Cargas reales en producción y verificación (2026-10-14)
+
+Autorizadas por el usuario en el chat ("OK cargar salida", "OK cargar
+tiempos"). Producción en v1.34.0; respaldo automático del 2026-10-13
+03:18 UTC (menos de 24 h). Navegador visible, sesión escrita por el
+usuario, por la interfaz normal (Cargar Datos). En los dos casos el
+impacto se pidió ANTES de guardar (endpoint de solo lectura) y solo se
+guardó si vista previa e impacto cuadraban con los conteos de control.
+Ensayo completo previo en local con los mismos archivos (datos borrados
+de la base local al terminar). Archivos en `C:\Users\filid\datos-inconexion`
+(fuera del repo).
+
+- **Llamadas de salida de Mobilize, septiembre**: vista previa 111 filas
+  válidas = 52 no conectadas + 59 conectadas, 46 duplicados quitados (misma
+  llamada repetida el mismo día), 0 avisos, 23 días, 3 asesores; 0
+  existentes, 1–30 sep. Después de guardar: tarjetas 111 / 52 / 59, barras
+  de septiembre con las 3 series, detalle por asesor (3) y por día (23)
+  sumando 111, filtros Asesor y Desde/Hasta funcionando. Ingreso sigue en
+  88 / 0 / 88, Tipificación de Mobilize en 167, Flujo de Llamadas y ORLANT
+  iguales. **20 pares día+teléfono aparecen en ambos tipos** (el mismo
+  número tuvo ese día una llamada conectada y otra no conectada): por la
+  regla "una vez por día + teléfono + tipo" cuentan una vez en cada tipo;
+  solo se reporta, no se resuelve. Pendientes de Edwin: filas de prueba,
+  52 vs 51, tipo de línea.
+- **Tipificación de ORLANT (verificación pendiente de la Fase 141)**: torta
+  a la izquierda y tabla a la derecha en escritorio, torta arriba y tabla
+  abajo en móvil, claro y oscuro; torta y tabla suman lo mismo (19.721);
+  sin scroll horizontal.
+- **WhatsApp tiempos de ORLANT**: comparación previa (solo lectura) con los
+  "WhatsApp contestados" que ya tenía el tablero: agosto 7.370 y septiembre
+  7.953 — idénticos al detalle, 0 diferencia. Agosto: 7.370 filas
+  (9.374 de colas de llamadas ignoradas), 2.979 / 152 / 196 / 119 / 3.924,
+  24 días. Septiembre: 7.953, 3.553 / 255 / 287 / 146 / 3.712, 26 días.
+  En pantalla: agosto 40,4 % y septiembre 44,7 % en 0–3 minutos. ORLANT
+  igual (8 pestañas, tarjetas iguales), exportación Excel válida.
+- 0 errores de consola en toda la sesión.
+
+## Fase 144 — Bloque A publicado (v1.34.1 a v1.34.4, 2026-10-14)
+
+Después de la presentación, con OK del usuario. Orden real:
+
+- #411 A1 (v1.34.1), #412 A2 (v1.34.2) y #413 A3 (v1.34.3), uno por uno:
+  en cada rama `git merge origin/main` (sin rebase), suite completa,
+  CI verde, `gh pr merge --match-head-commit` contra `git ls-remote`,
+  deploy y `/api/health` sin caché antes del siguiente.
+- El docker-build de #414 falló 2 veces seguidas por el 429 de
+  `public.ecr.aws`. Para gastar menos descargas, el usuario pidió juntar
+  A4, A5, A6, A7, A8 y A3b en **una sola rama** (`fase144-bloque-a-resto`,
+  PR #420) con **una sola versión, v1.34.4**, y las 6 entradas del
+  CHANGELOG bajo ella. Choques resueltos: CSS y docs solo aditivos;
+  `index.html` (A2 + A5, el enlace "Resultados de Calidad" del asesor);
+  y líneas de A7/A8 contra A2 + A5 en `index.html`, `trafico.js` y
+  `trafico-whatsapp.js`: se tomó la línea de A7/A8 con los cambios de
+  A2 (sin `outline:none`) y A5 (`var(--fs-note)`), verificado con
+  `git diff --word-diff`. Suite 1596/1596, CI verde al primer intento.
+  GitHub marcó #414–#419 como mergeados solos (sus commits entraron con
+  #420); cada uno tiene un comentario que apunta a #420.
+
+## Fase 145 — Ajustes de Mobilize para la entrega (v1.35.0, 2026-10-14)
+
+Pedidos de Edwin del 14/10, con OK del usuario. Un solo PR (#421) en vez
+de dos (M1 y M2), como pidió el usuario.
+
+- **M1**: en Flujo de Llamadas de Mobilize, "ASA y AHT" pasa a ser "ASA y
+  ATA" (vista `asaata` de ORLANT) + "AHT" aparte. La pestaña "Llamadas
+  Únicas" pasa a llamarse "Llamadas Únicas y de Salida" (la key no
+  cambia). Seed y migración nueva idempotente
+  `dashboards_config_mobilize_flujo_asaata_aht_v1` (solo toca la forma
+  conocida; si encuentra otra forma, la deja y lo registra en el log).
+  Base nueva == base migrada (probado).
+- **M2**: el aviso amarillo "todavía no tiene datos cargados" solo sale
+  si el dashboard tiene algo que depende de cargas genéricas
+  (`gdMostrarAvisoSinCargas`); Mobilize ya no lo muestra y ORLANT no
+  cambia. El % de cada porción de las tortas se elige por contraste
+  (`contrasteTextoSobreRelleno`): `#0a1e25` o blanco, y un contorno solo
+  donde ninguno llega a 4,5:1 (4 tonos medios de la paleta oscura).
+- **CI**: `.github/scripts/ci-pantallas-orlant.js` exigía el aviso
+  amarillo en el primer dibujo de Mobilize (Fase 139), justo el aviso
+  falso que se quitó. Con OK explícito del usuario ahora exige que no
+  aparezca; el chequeo de salto de pestañas sigue igual.
+- Suite 1614/1614. Verificación local (demo sintética, Brave): 375 y 1440
+  px antes/después (claro; las tortas también en oscuro) y la pasada
+  pendiente del Bloque A a 768 px en oscuro (sin scroll horizontal;
+  flechas en pestañas, Exportar, Cargar Datos y Escape con el foco que
+  vuelve; 0 errores de consola). Capturas fuera del repo
+  (`datos-inconexion/diagnostico-ui/fase145/`).
+- **Producción (v1.35.0)**, una sesión de solo lectura (Brave visible,
+  contraseña escrita por el usuario, 102 s, sin capturas):
+  - **Mobilize**: sin aviso amarillo (ni al reabrir). Flujo con 5
+    sub-pestañas: Flujo de Llamadas, Nivel de Servicio, Abandono, ASA y
+    ATA, AHT. El rango "01/09/2026 – 30/09/2026" no cambia con la misma
+    pestaña, al ir y volver, ni al cerrar y reabrir. ASA 0:01, AHT 5:29.
+    **ATA**: la carga guardó 0 en las 27 filas de septiembre, pero
+    septiembre tiene 0 abandonadas, así que ATA se muestra "—" (ver
+    `docs/pendientes.md`). "Llamadas Únicas y de Salida": 88 / 88 / 0 de
+    ingreso y 111 / 52 / 59 de salida. Tipificación 167, sin contorno, el
+    % con menos contraste en 4,65:1.
+  - **ORLANT**: 8 pestañas. Tráfico de Llamadas y de WhatsApp en agosto y
+    septiembre con el rango estable. WhatsApp Nivel de Servicio 40,4 %
+    (agosto) y 44,7 % (septiembre). Tipificación 19.721 con el % con menos
+    contraste en 4,65:1.
+  - **Teclado**: 11 opciones del menú lateral con foco, pestañas con
+    flechas, Exportar (foco en "Excel (.xlsx)", Escape cierra solo el menú
+    y el foco vuelve) y Cargar Datos (Tab se queda dentro 12/12, Escape
+    cierra y el foco vuelve).
+  - 0 errores de consola.
+  - Calidad de Mobilize no mostró tarjetas ni gráfica en septiembre.
+    Sin errores; no se revisó más a fondo en esta pasada.
+
+## Fase 146 — Auditoría de seguridad y bugs + documentación al día (v1.36.1, 2026-10-14)
+
+Diagnóstico de solo lectura primero, sin arriesgar la entrega de Mobilize
+(jueves 15). **0 hallazgos críticos, 0 altos.**
+
+- **Dependencias**: `npm audit` 0 vulnerabilidades (completo y
+  `--omit=dev`). `npm outdated`: solo parches/menores (AWS SDK, express
+  5.3, zod 4.6.7, playwright…); better-sqlite3 13 y dotenv 18 siguen
+  congelados.
+- **Secretos**: nada en el árbol ni en los últimos 150 commits (llaves AWS,
+  llaves privadas, JWT, tokens de GitHub/Slack, hashes bcrypt). Las
+  contraseñas de ejemplo de `server/db.js` son las conocidas de la Fase 110
+  (solo fuera de producción, con red de seguridad). `.gitignore` cubre
+  `.env`, `.playwright-cli/`, `graphify-out/`, `.claude/`;
+  `datos-inconexion` vive fuera del repo; `*.pem` no está (anotado).
+- **Autorización**: la matriz de la Fase 118 recorre el router real y
+  falla si una ruta no tiene política; las 16 rutas de Llamadas Únicas,
+  Llamadas de salida y WhatsApp tiempos están declaradas y los GET se
+  ejecutan con los 10 roles, campaña propia y ajena. Las cargas (POST) usan
+  `canLoadData` + `campaignAccess` (leído en el código).
+- **Validación y SQL**: Zod en body y query de las 3 familias; filas como
+  tuplas fijas de 4 campos (el teléfono no puede llegar al servidor). En
+  SQL solo se interpolan constantes del código (nombres de columna, franjas
+  de minutos); todo valor del usuario va como parámetro.
+- **XSS**: copia de la base demo con texto malicioso real
+  (`<img src=x onerror=…>`) en agentes, skills, tipificaciones, asesores,
+  colas, nombres de archivo; recorrido de todas las pestañas y
+  sub-pestañas de ORLANT y Mobilize, Cargar Datos e Historial, 1440 y 375
+  px: 66 vistas, 0 ejecuciones, 0 `<img onerror>` reales en el DOM, el
+  texto se ve escapado en filtros y tablas, 0 errores de consola.
+- **Exportaciones**: todas las que llevan datos pasan por
+  `xlsxFilasSeguras`; las que no, son plantillas con textos fijos.
+- **Privacidad**: asesores de salida solo a roles internos (detalle bloqueado
+  a CLIENTES_DASH). Sigue el pendiente conocido: `GET
+  /calidad/llamadas-unicas/opciones` devuelve nombres a roles cliente
+  (decisión del usuario).
+- **Producción** (solo lectura, sin login): CSP, HSTS con preload,
+  X-Frame-Options/`frame-ancestors`, Referrer-Policy, nosniff; http→https
+  308; CORS solo con sinco; certificado hasta el 07/01/2027; "informa" ya no
+  resuelve.
+- **Límites**: JSON 2 MB (8 MB solo Tipificación y Agendas), login 10
+  intentos por ventana, limitador autenticado y anónimo en la API.
+- **Bugs**: suite 1622/1622; `revision-final.js` contra la demo local: 0
+  errores de consola, 0 peticiones fallidas, 0 canvas en blanco, exports OK
+  (las discrepancias son los números de control de producción contra datos
+  sintéticos). Migraciones: 3 arranques sobre una copia de la demo dejan
+  esquema, `dashboards_config` (incluido `updatedAt`), las 58 migraciones y
+  los conteos idénticos; base nueva == base migrada salvo fechas.
+- **Hallazgos medios/bajos** (en `docs/pendientes.md`): Tipificación oculta
+  en el seed pero visible en producción; pruebas de tiempos de la Fase 136
+  inestables (causa y arreglo propuesto); CSP con `'unsafe-inline'`; textos
+  sin tilde; código sin uso (vistas "asaaht"/"asa"); `revision-final.js`
+  sin elegir mes; `*.pem` en `.gitignore`.
+- **Documentación**: README reescrito (SInCo, 2 clientes, Wolkvox, sin
+  Hospital La María); `docs/ARQUITECTURA.md` (tablas y rutas nuevas, §12
+  paneles autónomos y avisos); `docs/marca.md` (isotipo en el login);
+  `docs/procedimiento-carga-mensual.md` (cargas de Mobilize y WhatsApp
+  tiempos); guía (login con logo, "Ingresar", "Llamadas Únicas y de
+  Salida", Flujo de Mobilize, ATA "—" sin abandonos); checklist (ATA y
+  login); capturas de la guía regeneradas con la demo (Flujo de Llamadas,
+  8 pestañas, login con logo).
+
+## Fase 146 (continuación) — "OK auditoría", logo junto a "SInCo" y tildes (v1.37.0, 2026-10-14)
+
+- **#426 y #427 mergeados** ("OK auditoría"): pruebas de tiempos de la Fase
+  136 con reloj simulado, `*.pem`/`*.key` en `.gitignore` y
+  `revision-final.js` recorriendo el mes de control.
+- **"OK seed tipificación" NO aplicado, y por qué**: al prepararlo apareció
+  que el hallazgo de la auditoría era equivocado. El tablero destapa sola
+  cada pestaña oculta que ya tiene datos (`_gdBootstrap`,
+  `dashboard-generic.js`), así que Tipificación se ve en producción con
+  `oculta: true` en la configuración, igual que en una base nueva con
+  datos. Quitar `oculta` del seed sin migración habría dejado el seed
+  distinto de producción. Se corrigió `docs/pendientes.md`.
+- **Logo junto a "SInCo"** (pedido de Edwin, reunión del 14/10): login y
+  bienvenida con el isotipo a la izquierda, misma línea, conjunto centrado
+  (`.marca-sinco`). Login: color en claro / blanco en oscuro, 38×36;
+  bienvenida: blanco, 46×44. Medido en 375 y 1440 px, claro y oscuro: logo a
+  la izquierda, centros verticales alineados, conjunto centrado, 0 desborde,
+  0 saltos con la imagen retrasada 700 ms, 0 errores de consola.
+- **Tildes**: 131 textos visibles de `public/index.html` (texto entre
+  etiquetas, `placeholder`, `aria-label`, `title`, `alt`), sin tocar
+  `id`/`for`/`name`/`value`/`onclick`/`data-*` (verificado con un diff de
+  atributos). Ningún `<option>` sin `value` cambió. Ninguna prueba, ni
+  `revision-final.js`, ni el chequeo de pantallas buscaba los textos viejos.
+  Prueba nueva que falla si vuelve un texto visible sin tilde (contraprueba
+  hecha). Quedan sin tocar los textos que arma el JS (varios son
+  encabezados de plantillas/exportaciones que Edwin usa).
+- Capturas de la guía regeneradas (login y bienvenida nuevos).
+
+## Fase 146 (continuación) — ATA en 0:00 sin abandonos (v1.37.1, 2026-10-14)
+
+Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
+0 llamadas abandonadas, ATA = 0:00 en vez de "—".
+
+- Regla única `traficoAtaCeroSinAbandonos` (`trafico-logic.js`): hay datos
+  (total > 0) y las abandonadas reportadas suman 0 → ATA 0. Si la columna de
+  abandonadas no viene, solo vale 0 cuando todo el ATA reportado es 0 (nunca
+  se pone 0 encima de un ATA real). Sin datos → sigue null (aviso de "sin
+  datos").
+- Se aplica en `traficoAgregar` (gráfica y exportación de Llamadas), en el
+  agregado de WhatsApp (`traficoWppAgregarPorPeriodo`, ORLANT) y en la
+  tarjeta (`traficoAtaPromedioPeriodo`, que reemplaza el cálculo en línea de
+  `trafico.js`). ASA, AHT y el resto no cambian; con abandonos, el promedio
+  ponderado de siempre.
+- Prueba nueva `fase146-ata-cero-sin-abandonos.test.js` (0 abandonos → 0
+  en mes y en cada día; con abandonos → promedio; sin datos → null;
+  WhatsApp igual; exportación toma el mismo valor). Suite 1629/1629.
+- Visual (demo con septiembre en 0 abandonos y ATA 0, agosto con
+  abandonos): solo septiembre, tarjeta "—" → 0:00 y punto de la gráfica
+  hueco → 0; agosto sigue en 0:40; 0 errores de consola. Capturas fuera del
+  repo (`datos-inconexion/diagnostico-ui/fase146/ata-cero/`).
+
+## Fase 147, Parte A — Ajustes de la reunión con Edwin (v1.38.0, 2026-10-14)
+
+- **Fechas con nombre**: complemento global de Chart.js (`periodoLegible`,
+  ejes y tooltips de todas las gráficas: AAAA-MM → "Septiembre 2026",
+  AAAA-MM-DD → "15 sep"); avisos de mes sin datos, comparación, título del
+  PDF y avisos de Cargar Datos con el mes completo; "Mostrando: 1 abr 2026 –
+  30 sep 2026"; tabla por día de Llamadas Únicas "3 sep 2026". Sin cambios
+  en datos, filtros, Desde/Hasta, nombres de archivo ni encabezados de
+  exportación.
+- **"Última actualización" en naranja**: token `--c-actualizacion`
+  (#FF8C1A), texto y borde, velo negro 20 % (con el velo blanco anterior
+  bajaba a 3,86:1; ahora 5,76:1). Prueba de contraste en
+  `fase133-parte6-regresion-wcag`. Excepción documentada.
+- **Calidad al final en Mobilize**: migración nueva
+  `dashboards_config_mobilize_calidad_al_final_v1` (producción tenía
+  "... Calidad, Tipificación"); base migrada == seed.
+- **Asesor para el cliente de Mobilize** ("OK nombres para cliente"):
+  `puedeVerAsesores` = rol interno o campaña en
+  `CAMPANAS_ASESOR_VISIBLE_CLIENTE` (['MOBILIZE']), siempre después de
+  `campaignAccess`. Pruebas: cliente de Mobilize 200 en /opciones (con
+  agentes), /detalle y filtro; cliente solo-ORLANT 403 en todo Mobilize y sin
+  nombres en ORLANT.
+- **Skill en salida**: no existe skill real en los datos (SKILL_ID = tipo);
+  se agregó filtro **Tipo** (Conectada / No conectada) y queda pedido a
+  Edwin un archivo con skill.
+- Suite 1640/1640. Capturas antes/después 375 y 1440, claro y oscuro (base
+  demo con el orden de pestañas de producción), fuera del repo; 0 errores
+  de consola.
+
+## Fase 147, Parte B — Encuesta de Mobilize (v1.39.0, 2026-10-15)
+
+- **Datos**: tabla nueva `encuestas` (migración `fase147_encuestas_tabla_v1`,
+  solo CREATE ... IF NOT EXISTS): campana, fecha, agente, skill, q1..q4 (NULL
+  = sin respuesta), comentario (máx. 1000), archivoNombre, cargadoPorNombre,
+  createdAt. Sin teléfonos.
+- **Carga**: Cargar Datos → Mobilize, hoja "ENCUESTA" (plantilla con las
+  mismas columnas del export). Lector en el navegador
+  (`encuesta-logic.js`): encuentra el encabezado en las primeras 20 filas,
+  "-"/"--" = sin respuesta, fuera de rango = sin respuesta con aviso, solo
+  lee sus 8 columnas (cualquier otra, p. ej. teléfono, nunca viaja). Zod
+  (`encuestasCargaBody`), canLoadData + campaignAccess, impacto de solo
+  lectura con conteos y confirmación siempre, reemplazo por campaña + rango
+  de fechas en una transacción.
+- **Pantalla**: pestaña "Encuesta" antes de Calidad (seed + migración
+  `dashboards_config_mobilize_encuesta_tab_v1`, solo la forma reconocible
+  de producción). Filtros Desde/Hasta/Skill/Asesor, 4 recuadros (barras con
+  todos los valores, número sobre cada barra, "N respondieron · M sin
+  respuesta"), comentarios escapados, diálogo "Preguntas de la encuesta"
+  (patrón A3b), Excel/PDF y "Exportar" de la pestaña (`xlsxFilasSeguras`).
+  Asesor con la misma regla `puedeVerAsesores` de la Parte A.
+- **Ensayo local con el archivo real** (por la interfaz, solo conteos): 45
+  filas, 18 días (1–22 sep), 2 skills, 3 asesores, 0 avisos; Q01 9→3, 10→2,
+  sin respuesta 40; Q02 5→5, sin respuesta 40; Q03 Sí 3, No 1, sin respuesta
+  41; Q04 4→1, 5→3, sin respuesta 41; 2 comentarios. FCR 3/45 = 6,7 % (total)
+  y 3/4 = 75 % (respondieron). Reemplazo con un archivo sintético del mismo
+  rango: 45 reemplazadas.
+- Suite 1664/1664. Verificación visual local (Brave, 1440 y 375, claro y
+  oscuro, archivo sintético): 4 gráficas pintadas, diálogo con foco adentro,
+  fondo inerte, Escape cierra y devuelve el foco, sin scroll horizontal,
+  Excel descargado, 0 errores de consola. Capturas fuera del repo
+  (`datos-inconexion/diagnostico-ui/fase147/parte-b/`).
+- **Carga real en producción: pendiente del "OK cargar encuesta".**
+
+## Fase 147, Parte C — FCR en Flujo de Llamadas de Mobilize (v1.40.0, 2026-10-15)
+
+- Tarjeta "Solución en primer contacto (FCR)" al final de las tarjetas de la
+  sub-pestaña "Flujo de Llamadas" (`_encuestaDibujarFcr`, encuesta.js;
+  enganchada en `_traficoRenderContenido` solo si el panel trae
+  `fcrBase`). Fuente: `GET /calidad/encuestas/fcr` (Q03 = 1 sobre la
+  base). Mes de la tarjeta = el del final del rango Desde/Hasta del panel;
+  los demás meses del rango con encuestas, debajo. Siempre con la fracción;
+  sin encuestas: "Sin encuestas este mes".
+- Base configurable sin código: `fcrBase: 'total'` (por defecto, pedido de
+  Edwin: 3 ÷ 45 = 6,7 % con el archivo real) o `'respondieron'` (3 ÷ 4 =
+  75 %). Seed + migración `dashboards_config_mobilize_flujo_fcr_v1` (solo
+  agrega el campo si falta; nunca pisa una base elegida; solo la forma de
+  producción).
+- No se agregó la serie mensual a la gráfica (se dejó solo la tarjeta, más
+  clara con 1 mes de encuestas).
+- Pruebas `fase147-c-fcr.test.js` (6). Verificación local (Brave, 1440 y
+  375, claro y oscuro): tarjeta dentro de la fila de tarjetas, ausente en
+  las otras sub-pestañas, sin scroll horizontal, 0 errores. Capturas fuera
+  del repo (`datos-inconexion/diagnostico-ui/fase147/parte-c/`).
+
+## Fase 147 — Cierre: carga real de la Encuesta de Mobilize (2026-10-15)
+
+- **Autorización**: "OK cargar encuesta" del usuario, con respaldo previo
+  (`respaldo-produccion.yml`, modo `respaldar-ahora`, autorizado solo esa
+  vez): respaldo nuevo del 15/10/2026 13:51:27 UTC, 24,5 MB,
+  `integrity_check: ok`, subida a S3 OK.
+- **Carga** por la interfaz normal (Cargar Datos → Mobilize), navegador
+  visible, sesión iniciada por el usuario. Los 2 primeros intentos se
+  detuvieron antes de la vista previa sin guardar nada: el script elegía
+  Mobilize antes de que terminara de llenarse la lista de clientes (carrera
+  de tiempos del script, no de la plataforma). Corregido esperando a que el
+  plan real traiga la hoja de Encuesta.
+- **Vista previa** (exacta a lo esperado): 45 filas, 18 días; Q01 9→3, 10→2,
+  sin respuesta 40; Q02 5→5, sin respuesta 40; Q03 Sí 3, No 1, sin respuesta
+  41; Q04 4→1, 5→3, sin respuesta 41; 2 comentarios; 0 avisos; ninguna otra
+  hoja con datos. Antes había 0 encuestas; lo guardado coincide. FCR de
+  septiembre 3 de 45 = 6,7 %. Q04 confirmada por el usuario como respuestas
+  reales.
+- **Revisión de solo lectura** en la misma sesión (sin capturas): pestañas
+  Flujo de Llamadas · Llamadas Únicas y de Salida · Tipificación · Encuesta ·
+  Calidad (al final); Encuesta con 4 gráficas pintadas, 2 comentarios y el
+  diálogo de preguntas (5, foco adentro, Escape); tarjeta FCR "Septiembre
+  2026: 3 de 45 encuestas"; "Última actualización" en naranja (#FF8C1A);
+  meses con nombre en selector y eje; filtro Asesor en las dos mitades (con
+  sesión de administrador). 0 errores de consola.
+- Pendientes nuevos en `docs/pendientes.md`: filtro Asesor con el usuario
+  cliente de Mobilize, denominador del FCR con Camila, IP del puerto 22 de
+  Lightsail; sigue el archivo de salida con skill (pedir a Edwin).

@@ -41,7 +41,7 @@ async function procesarArchivoTrafico(input){
   }catch(e){ showToast('El archivo no es un Excel valido'); input.value=''; return; }
 
   var res = traficoParseFilas(aoa, ws);
-  if(res.error){ showToast(res.error); input.value=''; return; }
+  if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _tvParsed = { archivoNombre: file.name, filas: res.filas };
   _renderPreviewTrafico(file.name, res);
@@ -76,7 +76,7 @@ function cancelarPreviewTrafico(){
 async function _traficoConfirmarImpacto(){
   var impacto;
   try{ impacto = await apiRequest('POST','/calidad/trafico/carga/impacto', _tvParsed); }
-  catch(e){ showToast(e.message); return false; }
+  catch(e){ showToast(e.message, 'error'); return false; }
   var afectados = (impacto||[]).filter(function(p){ return p.filasExistentes>0; });
   if(!afectados.length) return true;
   var detalle = afectados.map(function(p){ return '• ' + p.skillName + ' — ' + p.mes + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
@@ -95,7 +95,7 @@ async function guardarTrafico(){
   var resp;
   try{
     resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/calidad/trafico/carga', _tvParsed); });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   var msg = resp.insertadas + ' fila(s) guardadas en ' + resp.campanas.length + ' campana(s)';
   if(resp.skillsSinAsignar && resp.skillsSinAsignar.length){
     msg += '. ' + resp.skillsSinAsignar.length + ' skill(s) nueva(s) sin asignar: ' + resp.skillsSinAsignar.join(', ');
@@ -189,9 +189,9 @@ function _renderTraficoSkillsTable(){
     }).join('');
     var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
-      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:4px">sin asignar</span>')+'</td>' +
-      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
-        ' <select id="tv-skill-sede-'+idx+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
+      '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:var(--fs-note);margin-left:4px">sin asignar</span>')+'</td>' +
+      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" aria-label="Campaña de '+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
+        ' <select id="tv-skill-sede-'+idx+'" aria-label="Sede de '+esc(r.skillName)+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
       '<td><button class="btn-sm" onclick="guardarMapeoSkill('+idx+')">Guardar</button></td>' +
       '</tr>';
@@ -231,7 +231,7 @@ async function guardarMapeoSkill(idx){
   try{
     var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana, sede: sede });
     showToast('Mapeo guardado. '+resp.movidas+' fila(s) reatribuidas, '+resp.mesesRecalculados.length+' mes(es) recalculado(s).');
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   _trafico = {}; // invalida cache: el trafico de esta skill ya vive en otra campana/sede
   if(typeof renderNivelServicioSection === 'function') await renderNivelServicioSection();
   else {
@@ -290,14 +290,14 @@ async function registrarNuevoMapeoSkill(){
     sedesDisponibles: TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [],
     skillsExistentes: _traficoSkillsCache.map(function(r){ return r.skillName; }),
   });
-  if(v.error){ showToast(v.error); return; }
+  if(v.error){ showToast(v.error, 'error'); return; }
 
   var btn = document.getElementById('tv-skill-nuevo-btn');
   try{
     await withButtonLoading(btn, 'Registrando...', function(){
       return apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(v.skillName), { campana: v.campana, sede: v.sede });
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
 
   var campanaLabel = v.campana + (v.sede ? ' — ' + v.sede : '');
   showToast('Skill "'+v.skillName+'" registrado y asignado a '+campanaLabel+'. Quedara listo para cuando llegue trafico con este nombre.');
@@ -330,7 +330,7 @@ async function renderTraficoCobertura(){
     var meses = r.meses.slice().sort(function(a,b){ return a.mes<b.mes?-1:1; });
     var badges = meses.map(function(m){
       return '<span title="'+esc(m.filas)+' fila(s) — '+esc(m.archivoNombre||'')+' ('+esc(m.cargadoPorNombre||'')+')" ' +
-        'style="display:inline-block;background:var(--c-success-bg);color:var(--c-success-dark);border-radius:4px;padding:2px 7px;font-size:0.72rem;margin:2px 3px 2px 0">' +
+        'style="display:inline-block;background:var(--c-success-bg);color:var(--c-success-dark);border-radius:4px;padding:2px 7px;font-size:var(--fs-note);margin:2px 3px 2px 0">' +
         '&#10003; '+esc(m.mes)+'</span>';
     }).join('');
     return '<tr><td>'+esc(r.skillName)+'</td><td>'+campanaLabel+'</td><td>'+meses.length+' mes(es)</td><td>'+badges+'</td></tr>';
@@ -372,8 +372,13 @@ var _traficoSubtabActivo = {}; // sub-pestana activa por claveEstado (campana[::
 // graficarse/mostrarse. Cambio en el componente compartido: aplica a todos
 // los clientes (decision de como se muestran las metricas, no un dato de
 // un cliente).
+// Fase 141 (pedido de Edwin, reunion 13/10): la sub-pestana 'resumen' se
+// muestra como "Flujo de Llamadas" / "Flujo de WhatsApp" -- "Resumen" se
+// entendia como resumen de TODO el tablero. Solo cambia el texto visible:
+// la key 'resumen' (estado, ids del DOM, config guardada) sigue igual.
+var TRAFICO_LABEL_RESUMEN = { tv: 'Flujo de Llamadas', tww: 'Flujo de WhatsApp' };
 var TRAFICO_SUBTABS = [
-  { key: 'resumen', label: 'Resumen' },
+  { key: 'resumen', label: TRAFICO_LABEL_RESUMEN.tv },
   { key: 'abandono', label: 'Abandono' },
   { key: 'aht', label: 'AHT' },
   { key: 'asaata', label: 'ASA y ATA' },
@@ -387,6 +392,7 @@ var TRAFICO_SUBTABS = [
 // blanco): la pastilla vuelve a un nombre generico -- adentro se grafican
 // LAS DOS series (20s, que ya existe, y 5 min, resaltada).
 var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
+  if(s.key === 'resumen') return { key: 'resumen', label: TRAFICO_LABEL_RESUMEN.tww };
   return s.key === 'sl' ? { key: 'sl', label: 'Nivel de Servicio' } : s;
 });
 
@@ -397,9 +403,13 @@ var TRAFICO_WPP_SUBTABS = TRAFICO_SUBTABS.map(function(s){
 // compartir estado entre canales. `subtabs` (Fase 87, tema B) es opcional --
 // sin pasarlo, usa TRAFICO_SUBTABS (Llamadas, sin cambios); WhatsApp pasa
 // TRAFICO_WPP_SUBTABS.
+// Fase 141: la pastilla 'resumen' siempre usa TRAFICO_LABEL_RESUMEN, aunque
+// la config del panel (Mobilize, `p.subtabs` en dashboards_config) todavia
+// traiga label 'Resumen' guardado -- asi no hace falta migrar datos.
 function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr, subtabs){
   return (subtabs || TRAFICO_SUBTABS).map(function(s){
-    return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(s.label)+'</button>';
+    var label = (s.key === 'resumen' && TRAFICO_LABEL_RESUMEN[prefijo]) ? TRAFICO_LABEL_RESUMEN[prefijo] : s.label;
+    return '<button class="gd-subtab-btn'+(activo===s.key?' on':'')+'" data-'+datasetAttr+'="'+esc(s.key)+'" onclick="'+onclickFn+'('+i+',\''+s.key+'\')">'+esc(label)+'</button>';
   }).join('');
 }
 
@@ -502,7 +512,7 @@ function _traficoClaveEstado(campana, sede){
 // ya era generica (no lee nada de trafico.js, solo los 2 arrays que recibe).
 function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta, etiquetaPlural){
   var modo = traficoModoDisplaySkills(datosLineas, estadoLineas);
-  return '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
+  return '<div><label for="'+prefijo+'-f-skill-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">'+esc(etiqueta)+'</label>' +
       '<select id="'+prefijo+'-f-skill-'+i+'" style="min-width:200px" onchange="_traficoLineaPrincipalCambio(\''+prefijo+'\','+i+')">' +
         '<option value=""'+(modo.todas?' selected':'')+'>Todas las '+esc(etiquetaPlural)+'</option>' +
         // Fase 87 (tema C): el `value` sigue siendo el nombre ORIGINAL (los
@@ -512,12 +522,12 @@ function _traficoFiltroLineaHTML(prefijo, i, datosLineas, estadoLineas, etiqueta
         (modo.subsetParcial ? '<option value="__multi__" selected disabled>Varias '+esc(etiquetaPlural)+' (ver "Comparar" abajo)</option>' : '') +
       '</select></div>' +
     '<details id="'+prefijo+'-f-cmp-wrap-'+i+'" style="flex-basis:100%"'+(modo.subsetParcial?' open':'')+'>' +
-      '<summary style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
+      '<summary class="filtro-summary" style="cursor:pointer;font-size:0.78rem;color:var(--c-text-muted)">Comparar varias '+esc(etiquetaPlural)+' especificas</summary>' +
       '<div style="margin-top:8px;max-width:340px">' +
-        '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
+        '<select multiple id="'+prefijo+'-f-skills-cmp-'+i+'" aria-label="Comparar varias '+esc(etiquetaPlural)+' especificas" size="'+Math.min(6, Math.max(2, datosLineas.length))+'" style="min-width:220px">' +
           datosLineas.map(function(s){ return '<option value="'+esc(s)+'"'+(modo.subsetParcial && estadoLineas.indexOf(s)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(s))+'</option>'; }).join('') +
         '</select>' +
-        '<div style="font-size:0.7rem;color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
+        '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:4px">Elige 2 o más '+esc(etiquetaPlural)+' (Ctrl/Cmd+clic) para verlas separadas y compararlas en la misma gráfica.</div>' +
       '</div>' +
     '</details>';
 }
@@ -561,7 +571,6 @@ async function _traficoRenderPanel(p, i){
     return;
   }
 
-  var estado = _traficoEstadoDesdeURL();
   var fechasDisponibles = datos.filas.map(function(f){ return f.fecha; }).sort();
   var minDisp = fechasDisponibles[0], maxDisp = fechasDisponibles[fechasDisponibles.length-1];
   // Fase 86 (tema 2, hallazgo real Fase 85): una fila vieja con fecha
@@ -570,44 +579,38 @@ async function _traficoRenderPanel(p, i){
   // fin del mes en curso, hora Colombia (fecha-limites-logic.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
 
-  // Fase 86 (tema 3): si el selector MES de arriba cambio desde la ultima
-  // vez que se sincronizo ESTE panel, manda sobre el filtro propio --
-  // desliza la ventana de 12 meses para que TERMINE en el mes elegido. Si
-  // ese mes no tiene ninguna fila (no solo "el rango exacto quedo vacio",
-  // que Fase 77 respeta a proposito si el usuario lo eligio a mano dentro
-  // de la pestana), se muestra el aviso con boton al ultimo mes con datos
-  // en vez de un panel en blanco sin explicacion.
-  if(_gd.mesSel && _traficoMesSincronizado[claveEstado] !== _gd.mesSel){
-    _traficoMesSincronizado[claveEstado] = _gd.mesSel;
-    var tieneDatosMesGlobal = fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; });
-    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
-    // cacheado: asi Exportar (_traficoDatosExport) pide/lee ese mismo mes
-    // y, si vuelve vacio, cae solo en su propio aviso -- nunca un mes
-    // viejo distinto de lo que se ve en pantalla.
-    estado.hasta = _gdFinDeMes(_gd.mesSel);
-    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
-    _traficoEstado[claveEstado] = estado;
-    if(!tieneDatosMesGlobal){
-      _traficoSinDatosMesGlobal[claveEstado] = true;
-      _traficoAgregadoActual[claveEstado] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
-      host.dataset.campana = campana;
-      host.dataset.sede = sede || '';
-      return;
-    }
-    _traficoSinDatosMesGlobal[claveEstado] = false;
+  // Fase 86 (tema 3) + Fase 144 (A1): el selector MES de arriba desliza la
+  // ventana de 12 meses para que TERMINE en el mes elegido, y ese rango se
+  // MANTIENE en todos los dibujos siguientes (clic en la misma pestaña, ir y
+  // volver, cerrar y reabrir) hasta que cambie el mes o el usuario aplique
+  // otro rango a mano (Fase 77, siempre se respeta). La decision es pura y
+  // testeable: traficoDecidirRango (trafico-logic.js). Si el mes elegido no
+  // tiene filas, el aviso "Sin datos... Ver <ultimo mes>" se mantiene igual.
+  var decision = traficoDecidirRango({
+    mesSel: _gd.mesSel,
+    mesSincronizado: _traficoMesSincronizado[claveEstado],
+    estadoPrevio: _traficoEstado[claveEstado] || null,
+    sinDatosPrevio: _traficoSinDatosMesGlobal[claveEstado],
+    estadoURL: _traficoEstadoDesdeURL(),
+    minDisp: minDisp,
+    maxDisp: maxDisp,
+    tieneDatosMes: !!_gd.mesSel && fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; }),
+  });
+  var estado = decision.estado;
+  if(decision.sincronizar) _traficoMesSincronizado[claveEstado] = _gd.mesSel;
+  _traficoSinDatosMesGlobal[claveEstado] = decision.sinDatosMes;
+  _traficoEstado[claveEstado] = estado;
+  if(decision.sinDatosMes){
+    // Se limpia el agregado cacheado: asi Exportar (_traficoDatosExport)
+    // pide/lee ese mismo mes y, si vuelve vacio, cae solo en su propio
+    // aviso -- nunca un mes viejo distinto de lo que se ve en pantalla.
+    _traficoAgregadoActual[claveEstado] = [];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
+      _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+    host.dataset.campana = campana;
+    host.dataset.sede = sede || '';
+    return;
   }
-  // Ventana movil de 12 meses (pedido de Edwin, llamada 2026-09-15): el
-  // valor POR DEFECTO de "Desde" (cuando el usuario no eligio nada, ni en
-  // esta carga de pagina ni antes via "Aplicar filtros") nunca es el inicio
-  // de TODO el historico — son los ultimos 12 meses calendario con datos.
-  // El campo "Desde"/"Hasta" sigue siendo el filtro explicito de siempre:
-  // en cuanto el usuario lo usa, esa eleccion queda en la URL y manda sobre
-  // este default (ver traficoVentana12Meses, trafico-logic.js).
-  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
-  if(!estado.desde) estado.desde = desdeDefault;
-  if(!estado.hasta) estado.hasta = maxDisp;
   // Fase 77 (bug real reportado por Edwin, 25/09): el estado de filtros vive
   // en la URL (?tv_...) compartido por CUALQUIER panel trafico_combo de la
   // pagina, asi que un rango sin ningun dato para ESTE panel puede venir de
@@ -639,14 +642,15 @@ async function _traficoRenderPanel(p, i){
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>' +
+      '<p class="trafico-rango" id="tv-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+        '<div><label for="tv-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="tv-f-hasta-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tv-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="tv-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tv-f-gran-'+i+'">' + ['dia','mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
-          '<label style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
+          '<label class="filtro-check" style="font-size:0.8rem"><input type="checkbox" id="tv-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver skills por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
           '<button class="btn-sm" onclick="_traficoExportExcel('+i+')">Excel</button>' +
@@ -813,6 +817,9 @@ function _traficoAplicarFiltros(i){
   var pCfg = _traficoPanelConfig[i] || {};
   var skillbar = document.getElementById('tv-f-skillbar-'+i);
   if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tv', i, skillsDisponibles, estado.skills, pCfg.etiquetaLinea || 'Skill', pCfg.etiquetaLineaPlural || 'líneas');
+  // Fase 144 (A1): el subtitulo siempre dice el rango que se esta mostrando.
+  var rangoEl = document.getElementById('tv-rango-'+i);
+  if(rangoEl) rangoEl.textContent = traficoRangoTexto(estado.desde, estado.hasta);
   _traficoRenderContenido(campana, sede, i);
 }
 
@@ -880,7 +887,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
   // el texto "Tasa de Abandono"/"Llamadas Abandonadas" ya dice que es).
   var badgeAband = (typeof semaforoBadgeHtml === 'function' && semAband) ? semaforoBadgeHtml(semAband) : '';
   var nsNota = labels.nivelServicioNota
-    ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
+    ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
   // Fase 94 (tema C): 2 niveles de texto -- `principal` (para cualquiera
   // que mire el dashboard) y, en linea aparte y mas chica, `detalle` (como
@@ -894,13 +901,13 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
     var puedeVerDetalle = (typeof msg === 'object') && msg.detalle && typeof canLoadData === 'function' && canLoadData();
     nsSinDato = '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:2px;font-size:0.78rem;color:var(--c-warning-dark,#92400e)">'+esc(principal)+'</div>';
     if(puedeVerDetalle){
-      nsSinDato += '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:1px;font-size:0.7rem;color:var(--c-text-muted)">'+esc(msg.detalle)+'</div>';
+      nsSinDato += '<div style="grid-column:1 / -1;flex-basis:100%;margin-top:1px;font-size:var(--fs-note);color:var(--c-text-muted)">'+esc(msg.detalle)+'</div>';
     }
   }
   var tarjeta2 = '';
   if(totales.nivelServicio2 !== undefined){
     var ns2Nota = labels.nivelServicio2Nota
-      ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.7rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
+      ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
       : '';
     tarjeta2 = '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio2===null?'—':totales.nivelServicio2+'%')+'</div><div class="kl">'+esc(labels.nivelServicio2Label||'Nivel de Servicio')+ns2Nota+'</div></div>';
   }
@@ -1177,6 +1184,9 @@ function _traficoRenderContenido(campana, sede, i){
       nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar);
 
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
+  // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
+  // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
+  if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
   // combinar:true), sin depender del checkbox "Ver skills por separado" de
@@ -1215,6 +1225,15 @@ function _traficoRenderContenido(campana, sede, i){
       });
       var asaProm = pesoAsa > 0 ? Math.round((sumaAsa / pesoAsa) * 100) / 100 : null;
       var ahtProm = traficoAhtPromedioPeriodo(filtradas);
+      // Fase 145 (Mobilize, "ASA y ATA"): ATA es tiempo por llamada
+      // ABANDONADA -- mismo ponderado que traficoAgregar (PONDERADOS_POR_
+      // ABANDONADAS, trafico-logic.js), nunca un promedio simple. Si la
+      // plantilla trae ATA en 0 (Flujo de Mobilize de septiembre), se ve
+      // 0:00 tal cual: no se oculta ni se inventa.
+      // Fase 146 (decision de Edwin): con datos pero 0 abandonos, 0:00 --
+      // traficoAtaPromedioPeriodo (trafico-logic.js), misma regla que la
+      // grafica y la exportacion.
+      var ataProm = traficoAtaPromedioPeriodo(filtradas);
       var htmlSec = '';
       if(activoSec === 'sl'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de Servicio del periodo</div></div>';
@@ -1225,6 +1244,9 @@ function _traficoRenderContenido(campana, sede, i){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
       } else if(activoSec === 'aht'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';
+      } else if(activoSec === 'asaata'){
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>' +
+          '<div class="aurora-kpi"><div class="kv">'+(ataProm===null?'—':_traficoFmtTiempoMMSS(ataProm))+'</div><div class="kl">ATA promedio del periodo</div></div>';
       } else if(activoSec === 'asaaht'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>' +
           '<div class="aurora-kpi"><div class="kv">'+(ahtProm===null?'—':_traficoFmtTiempoMMSS(ahtProm))+'</div><div class="kl">AHT promedio del periodo</div></div>';

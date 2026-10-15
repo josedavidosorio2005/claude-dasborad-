@@ -36,9 +36,10 @@ técnico, solo explica qué hace cada pantalla y cómo se usa.
 La plataforma (SInCo) vive en **https://sinco.inconexion.com.co**. Ábrela en el
 navegador (Chrome, Edge o similar) como cualquier página web.
 
-La pantalla de inicio dice **SInCo**, con el logo de InConexion® pequeño
-en la esquina inferior derecha. Escribe tu **usuario** y tu **contraseña**, y
-presiona "Iniciar sesión". Cada persona tiene su propio usuario, con
+La pantalla de inicio muestra, dentro de la tarjeta, el logo de InConexion®
+a la izquierda de **SInCo**, en la misma línea (a color en tema claro,
+blanco en tema oscuro), y otro logo pequeño en la esquina inferior derecha. Escribe tu **usuario** y
+tu **contraseña**, y presiona "Ingresar". Cada persona tiene su propio usuario, con
 acceso solo a lo que le corresponde (ver [sección 7](#7-usuarios-y-permisos-solo-administrador)).
 
 **Si olvidaste la contraseña**: hoy la plataforma no tiene un botón de
@@ -82,8 +83,8 @@ del todo vas a ver:
 
 | Pestaña | Qué muestra |
 |---|---|
-| **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
-| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
+| **Tráfico de Llamadas** | Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Flujo de Llamadas, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s. |
+| **Tráfico de WhatsApp** | Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Flujo de WhatsApp, Abandono, ASA y ATA, Nivel de Servicio (en Orlant: el porcentaje de conversaciones contestadas en cada rango de tiempo — 0-3, 3-5, 5-8, 8-10 y más de 10 minutos — de un mes, con filtro de Mes y de Cola; por defecto el mes elegido arriba, o el último con datos). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp. |
 | **Agendamiento** | Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento). |
 | **Inasistencia** | El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
 | **Efectividad de Citas** | El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la [sección 3](#3-qué-significa-cada-indicador). |
@@ -205,7 +206,10 @@ de gestión, por eso no aparece aquí).
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor
-también aparece aquí (ya era así desde antes).
+también aparece aquí (ya era así desde antes). En computador, la gráfica
+de torta queda a la izquierda y el cuadro con cada motivo, su cantidad y
+su % a la derecha; en el celular, la torta va arriba y el cuadro debajo.
+Los dos responden a los mismos filtros, así que siempre suman lo mismo.
 
 **Calidad**: cada monitoreo responde una lista de preguntas con peso
 propio (SI / NO / N/A). Un SI o un N/A suma el peso completo de esa
@@ -388,10 +392,23 @@ evita que las cargas futuras se unifiquen de la misma forma.
   referencia, "Resumen por Asesor" de consulta) para cuando hay muchos
   monitoreos para subir de una vez.
 
+### Flujo de Llamadas (Mobilize)
+
+- **Sub-pestañas**: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y
+  ATA** (tiempo promedio de respuesta y de abandono, juntos) y **AHT**
+  (tiempo promedio de atención, aparte). Cada una trae arriba su número
+  del período elegido.
+- **ATA sin abandonos**: ATA es el tiempo promedio hasta que la persona
+  cuelga sin ser atendida. Si en el período hay datos pero **ninguna llamada
+  abandonada** (como septiembre de 2026 en Mobilize), ATA se muestra como
+  **0:00** en la tarjeta, en la gráfica y en la exportación (decisión de
+  Edwin, 14/10/2026). Si el período no tiene datos, sale el aviso de "sin
+  datos" de siempre.
+
 ### Llamadas Únicas (Mobilize)
 
 - **Dónde se ve**: en el tablero de Mobilize, pestaña propia **"Llamadas
-  Únicas"** (justo después de Flujo de Llamadas). Cuenta una sola vez
+  Únicas y de Salida"** (justo después de Flujo de Llamadas). Cuenta una sola vez
   cada teléfono por día, así que no coincide con Flujo de Llamadas, que
   cuenta todas las llamadas de la cola.
 - **Qué archivo**: el mismo patrón que las demás bases de Wolkvox, pero
@@ -401,8 +418,10 @@ evita que las cargas futuras se unifiquen de la misma forma.
 - **Hoja**: `LLAMADAS_UNICAS` de la plantilla oficial
   (`PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx`, descargable desde "Cargar
   Datos" eligiendo el cliente **Mobilize**).
-- **Columnas obligatorias**: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las
-  filas de llamadas **abandonadas** van con `SKILL_NAME = NO CONTESTADAS`.
+- **Columnas obligatorias**: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. **No se
+  aceptan filas con `SKILL_NAME = NO CONTESTADAS`**: esas son llamadas de
+  salida no conectadas y van en "Llamadas de salida". Si el archivo trae
+  alguna, la vista previa lo avisa y esa hoja no se guarda.
 - **Privacidad**: TELEPHONE se usa solo un instante, en la computadora de
   quien sube el archivo, para no contar dos veces una misma llamada del
   mismo número el mismo día — nunca llega al servidor, nunca se guarda,
@@ -418,15 +437,90 @@ evita que las cargas futuras se unifiquen de la misma forma.
    número de teléfono trae un guion) y los **duplicados del mismo número
    el mismo día** (no de todo el mes — si el mismo número llama dos días
    distintos, cuenta en cada uno).
-2. **Abandonadas**: en Wolkvox, **Skills & Servicios** → reporte **"2.
-   Llamadas abandonadas"**, filtrando por skill. Esas filas van a la
-   plantilla con `SKILL_NAME = NO CONTESTADAS`.
+2. **Abandonadas**: todavía no se cargan. Edwin está definiendo de qué
+   reporte salen las abandonadas de ingreso (las filas "NO CONTESTADAS" eran
+   llamadas de salida, por eso ya no se aceptan aquí).
 3. **Salientes no conectadas**: en Wolkvox, Reportes → pestaña **CDR** →
-   reporte **"5. Detalle de las llamadas para las no conectadas"** (esta
-   parte todavía no se carga en la plataforma — queda para cuando Edwin
-   mande ese archivo aparte).
+   reporte **"5. Detalle de las llamadas para las no conectadas"**. Estas
+   llamadas **no van en este archivo**: van en el archivo de "Llamadas de
+   salida" (ver abajo).
 
 ![Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados](img/guia-uso/wolkvox-cdr-mobilize.png)
+
+### WhatsApp tiempos de respuesta (Orlant)
+
+- **Dónde se ve**: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio":
+  qué porcentaje de las conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y
+  más de 10 minutos, en un mes.
+- **Qué archivo**: el export de Wolkvox con la hoja de detalle (columnas
+  SKILL_NAME, DATE con hora, RESULT y ANSWER_TIME en segundos). Si el
+  archivo trae además una hoja de tabla dinámica, se ignora. La columna
+  TIEMPO, si viene, también se ignora: el rango lo calcula la plataforma
+  con ANSWER_TIME.
+- **Qué se carga**: solo las colas cuyo nombre empieza por WHATSAPP; las
+  demás (colas de llamadas) se ignoran y la vista previa dice cuántas
+  fueron. Se sube desde "Cargar Datos" eligiendo Orlant; cada carga
+  reemplaza solo sus propias fechas.
+
+### Llamadas de salida (Mobilize)
+
+- **Filtros (Fase 147)**: cada mitad tiene sus propios filtros. Ingreso:
+  Desde, Hasta, Skill y Asesor. Salida: Desde, Hasta, **Tipo** (Conectada /
+  No conectada) y Asesor. El archivo de salida no trae un skill real (su
+  columna SKILL_ID dice si fue conectada o no), por eso el filtro es por
+  Tipo. El filtro y el detalle por **Asesor** los ve también el usuario de
+  Mobilize (pedido de Edwin, 14/10/2026).
+
+- **Dónde se ve**: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha
+  (las de ingreso quedan a la izquierda; en el celular, una debajo de la
+  otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no
+  conectadas y Llamadas de salida conectadas, una gráfica de barras por
+  mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro
+  por asesor y el detalle por asesor y por día; el usuario del cliente no
+  ve nombres de asesor.
+- **Qué archivo**: el export de Wolkvox con las columnas AGENT_NAME, DATE,
+  TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y SKILL_ID, que debe
+  decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO
+  CONECTADAS" (cualquier otro valor se omite y se avisa). Se sube desde
+  "Cargar Datos" eligiendo Mobilize; la plataforma reconoce la hoja por
+  sus columnas.
+- **Cómo cuenta**: una sola vez cada teléfono por día, por separado si
+  ese día hubo llamada conectada y no conectada.
+- **Privacidad**: igual que en Llamadas Únicas, TELEPHONE nunca llega al
+  servidor.
+- **Reemplazo**: se reemplaza lo que ya exista entre la primera y la
+  última fecha del archivo (la plataforma muestra antes cuántos registros
+  va a reemplazar). Se pueden cargar varios meses, uno a la vez.
+
+### Encuesta (Mobilize)
+
+- **Dónde se ve**: pestaña "Encuesta" de Mobilize (antes de Calidad). Un
+  solo juego de filtros para toda la pestaña: Desde, Hasta, Skill y Asesor.
+  Cuatro recuadros, uno por pregunta, con una barra por cada respuesta
+  posible (0 a 10, 1 a 5 o Sí/No — aunque tenga 0) y debajo cuántos
+  respondieron y cuántos no. Al final, los comentarios con texto (fecha,
+  skill, asesor). El botón "Preguntas de la encuesta" muestra el texto
+  completo de las preguntas.
+- **Qué archivo**: el export de Wolkvox (Reportes → numeral 4, hoja
+  "HistIVR…") con las columnas AGENT_NAME, SKILL_NAME, DATE, Q01, Q02,
+  Q03, Q04 y VOICE_MESSAGE. Se sube tal cual desde "Cargar Datos" eligiendo
+  Mobilize: el encabezado se encuentra aunque no esté en la fila 1, y la
+  hoja de la tabla dinámica se ignora. "-" o "--" = sin respuesta; un valor
+  fuera de rango queda como sin respuesta y se avisa.
+- **Reemplazo**: se reemplaza lo que ya exista entre la primera y la
+  última fecha del archivo (la plataforma muestra antes cuántas encuestas
+  va a reemplazar y los conteos por pregunta, y pide confirmar). Así se
+  corrige una base: se vuelve a subir.
+- **Privacidad**: el archivo no trae teléfonos; si alguna vez los trae, la
+  plataforma los ignora antes de enviar nada. El filtro y la columna de
+  asesor los ve también el usuario de Mobilize.
+- **FCR en Flujo de Llamadas**: en la sub-pestaña "Flujo de Llamadas" hay
+  una tarjeta "Solución en primer contacto (FCR)" = encuestas con la
+  pregunta 3 en "Sí" ÷ todas las encuestas del mes (o, si se configura
+  `fcrBase: 'respondieron'` en el panel, ÷ las que respondieron la
+  pregunta 3). Siempre muestra la cuenta ("3 de 45 encuestas"); el mes es
+  el del final del rango Desde/Hasta del panel, y los demás meses del rango
+  con encuestas van debajo. Sin encuestas: "Sin encuestas este mes".
 
 ## 5. Calendario mensual
 

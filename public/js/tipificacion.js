@@ -131,10 +131,10 @@ async function _tipificacionRenderPanel(p, i){
   var html = '<div class="aurora-card">';
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
   html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
-  html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label>Mes</label><select id="tipif-f-mes-'+i+'">' +
+  html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label for="tipif-f-mes-'+i+'">Mes</label><select id="tipif-f-mes-'+i+'">' +
     mesesCombinados.map(function(m){ return '<option value="'+m+'"'+(m===estado.mes?' selected':'')+'>'+_tipificacionMesLbl(m)+'</option>'; }).join('') + '</select></div>';
-  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label>Desde</label><input type="date" id="tipif-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
-  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label>Hasta</label><input type="date" id="tipif-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
+  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="tipif-f-desde-'+i+'">Desde</label><input type="date" id="tipif-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
+  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="tipif-f-hasta-'+i+'">Hasta</label><input type="date" id="tipif-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_tipificacionAplicarFiltroCompartido('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
 
@@ -151,17 +151,22 @@ async function _tipificacionRenderPanel(p, i){
       html += '<div class="aurora-kpis" id="tipif-salida-'+i+'-'+c.canal+'" style="margin-bottom:12px"></div>';
     }
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
-    html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label>Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
-    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill)+'</select></div>';
+    html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
+    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill)+'</select></div>';
     if(p.mostrarFiltroTipo){
-      html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label>Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
+      html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
     }
     html += '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_tipificacionAplicarFiltroCanal('+i+',\''+c.canal+'\')">Aplicar</button></div>';
     html += '</div>';
-    html += '<div id="tipif-canal-contenido-'+i+'-'+c.canal+'">' +
+    // Fase 141 (pedido de Edwin, reunion 13/10): con tabla, torta a la
+    // izquierda y tabla a la derecha (50/50, .tipif-pie-tabla en
+    // styles.css); en movil se apilan (torta arriba, tabla abajo). Las dos
+    // salen del MISMO resultado de /por-tipo (mismos filtros, mismos totales).
+    if(p.mostrarTablaDetalle) html += '<div class="tipif-pie-tabla">';
+    html += '<div id="tipif-canal-contenido-'+i+'-'+c.canal+'" class="tipif-pie">' +
       '<div class="aurora-chart-wrap" style="height:340px"><canvas id="tipif-c-'+i+'-'+c.canal+'"></canvas></div></div>';
     if(p.mostrarTablaDetalle){
-      html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" style="margin-top:10px"></div>';
+      html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" class="tipif-tabla"></div></div>';
     }
     html += '</div>';
   });
@@ -277,7 +282,7 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   var resultado = { datos: [], total: 0 };
   try{
     resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, canal, compartido, deCanal)) || { datos:[], total:0 };
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 
   var tablaHost = document.getElementById('tipif-tabla-'+i+'-'+canal);
   if(!resultado.total){

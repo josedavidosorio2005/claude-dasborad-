@@ -327,6 +327,8 @@ CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_fecha ON tipificacio
 -- tabla NO TIENE columna de telefono: nunca llega al servidor, nunca se
 -- guarda, nunca se exporta (ver server/tests/fase138-pr3-llamadas-unicas-*
 -- .test.js, que falla si algun INSERT algun dia llegara a incluirlo).
+-- [Fase 142: el parser ya NO genera ABANDONADA -- NO CONTESTADAS se rechaza;
+-- el tipo queda para cuando haya fuente real de abandonadas entrantes.]
 -- 'tipo' viene de SKILL_NAME = 'NO CONTESTADAS' (normalizado mayusculas/
 -- acentos/espacios) -> ABANDONADA; cualquier otro valor -> CONTESTADA (su
 -- 'skill' real se guarda tal cual; las abandonadas guardan skill='Abandonadas',
@@ -3456,6 +3458,225 @@ function migrarMobilizeLlamadasUnicasATabPropio() {
 }
 runOnceMigration('dashboards_config_mobilize_llamadas_unicas_tab_v1', migrarMobilizeLlamadasUnicasATabPropio);
 
+// Fase 141 (Parte C, reunion con Edwin del 13/10/2026): Llamadas de salida
+// de Mobilize (mitad derecha de la pestaña "Llamadas Únicas"). Tabla NUEVA e
+// independiente de llamadas_unicas -- solo CREATE ... IF NOT EXISTS, nunca
+// toca ninguna tabla ni dato existente. Igual que llamadas_unicas, NO TIENE
+// columna de telefono: el navegador lo usa solo en memoria para deduplicar
+// por (dia, telefono, tipo) -- ver public/js/llamadas-salida-logic.js.
+// 'tipo' sale de SKILL_ID: CONECTADA | NO_CONECTADA. 'tipificacion' es
+// DESCRIPTION_COD_ACT tal cual.
+// Fase 142 (punto 4): ORLANT WhatsApp -- detalle por conversacion (fecha,
+// hora, cola, segundos hasta ser contestada) para el Nivel de Servicio por
+// rangos de minutos. Tabla NUEVA, solo CREATE ... IF NOT EXISTS: no toca
+// trafico_whatsapp ni ningun dato existente (los % mensuales que ya hay se
+// conservan). Sin telefonos ni nombres (el archivo de origen no los trae).
+runOnceMigration('fase142_whatsapp_tiempos_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS whatsapp_tiempos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      hora INTEGER NOT NULL,
+      segundos INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_whatsapp_tiempos_campana_fecha ON whatsapp_tiempos(campana, fecha);
+  `);
+});
+
+runOnceMigration('fase141_llamadas_salida_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llamadas_salida (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      tipificacion TEXT NOT NULL DEFAULT '',
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_llamadas_salida_campana_fecha ON llamadas_salida(campana, fecha);
+  `);
+});
+
+// Fase 145 (pedido de Edwin 14/10/2026, entrega de Mobilize): en Flujo de
+// Llamadas de Mobilize la sub-pestaña "ASA y AHT" ("asaaht", Fase 138 PR2)
+// se reemplaza por 2: "ASA y ATA" ("asaata", la misma vista de ORLANT) y
+// "AHT" ("aht", propia), y la pestaña "Llamadas Únicas" pasa a decir
+// "Llamadas Únicas y de Salida" (solo el texto; la key llamadas_unicas no
+// cambia). Defensiva, cada cambio por separado: solo se toca la forma
+// conocida (subtabs exactamente con "asaaht" / label exactamente "Llamadas
+// Únicas"); si ya esta en la forma nueva no hace nada, y si la forma no es
+// ninguna de las 2 se deja intacta y se registra en el log. El resultado
+// queda igual al seed (CONFIGS), asi base nueva y base migrada coinciden.
+function migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas() {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try {
+    layout = JSON.parse(row.layout);
+  } catch (e) {
+    return;
+  }
+  const avisar = (motivo) => {
+    if (!config.isTest) {
+      console.log('[db] Migracion dashboards_config_mobilize_flujo_asaata_aht_v1: ' + motivo + ' -- se deja intacto, revisar a mano.');
+    }
+  };
+  const target = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
+  const targetTabs = (target && target.layout.tabs) || [];
+  const targetFlujo = targetTabs.find((t) => t.key === 'flujo');
+  const targetPanel = targetFlujo && (targetFlujo.panels || []).find((p) => p.tipo === 'trafico_combo');
+  const targetLu = targetTabs.find((t) => t.key === 'llamadas_unicas');
+  if (!targetPanel || !targetLu) return;
+  let cambio = false;
+
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo');
+  if (!panel) {
+    avisar('no se encontro el trafico_combo de "flujo"');
+  } else {
+    const keys = (panel.subtabs || []).map((s) => s && s.key);
+    const yaNuevo = keys.indexOf('asaata') !== -1 && keys.indexOf('aht') !== -1 && keys.indexOf('asaaht') === -1;
+    const esViejo = keys.join(',') === 'resumen,sl,abandono,asaaht';
+    if (esViejo) {
+      panel.subtabs = JSON.parse(JSON.stringify(targetPanel.subtabs));
+      cambio = true;
+    } else if (!yaNuevo) {
+      avisar('las sub-pestañas de "flujo" no coinciden con la forma esperada (' + keys.join(',') + ')');
+    }
+  }
+
+  const tabLu = (layout.tabs || []).find((t) => t && t.key === 'llamadas_unicas');
+  if (!tabLu) {
+    avisar('no hay pestaña "llamadas_unicas"');
+  } else if (tabLu.label === 'Llamadas Únicas') {
+    tabLu.label = targetLu.label;
+    cambio = true;
+  } else if (tabLu.label !== targetLu.label) {
+    avisar('la pestaña "llamadas_unicas" tiene otro nombre');
+  }
+
+  if (!cambio) return;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(
+    JSON.stringify(layout),
+    new Date().toISOString(),
+    'MOBILIZE'
+  );
+  if (!config.isTest) {
+    console.log('[db] Migracion dashboards_config_mobilize_flujo_asaata_aht_v1 aplicada.');
+  }
+}
+runOnceMigration('dashboards_config_mobilize_flujo_asaata_aht_v1', migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas);
+
+// Fase 147 (pedido de Edwin, reunion 14/10): en Mobilize, Calidad SIEMPRE
+// es la ultima pestaña (orden: Flujo de Llamadas, Llamadas Unicas y de
+// Salida, Tipificacion, [Encuesta], Calidad). En produccion quedo
+// "... Calidad, Tipificacion" porque dashboards_config_mobilize_tipificacion_
+// tab_v1 agrego Tipificacion al FINAL. Solo cambia el orden: mueve la
+// pestaña "calidad" (tal cual, sin tocar sus paneles) al final. Idempotente:
+// si ya es la ultima, no hace nada; si no existe, lo registra y no toca nada.
+function migrarMobilizeCalidadAlFinal() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout.tabs || [];
+  const i = tabs.findIndex((t) => t && t.key === 'calidad');
+  if (i === -1) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_calidad_al_final_v1: MOBILIZE no tiene pestaña "calidad" -- se deja intacto, revisar a mano.');
+    return;
+  }
+  if (i === tabs.length - 1) return; // ya es la ultima
+  const [calidad] = tabs.splice(i, 1);
+  tabs.push(calidad);
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_calidad_al_final_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_calidad_al_final_v1', migrarMobilizeCalidadAlFinal);
+
+// Fase 147 (Parte B): Mobilize, Encuesta de satisfaccion post-llamada
+// (export HistIVR de Wolkvox). Tabla NUEVA, solo CREATE ... IF NOT EXISTS:
+// no toca ningun dato existente. q1..q4 NULL = sin respuesta. Sin telefonos
+// (el archivo no los trae; si una version futura los trae, el navegador los
+// ignora y nunca llegan aqui).
+runOnceMigration('fase147_encuestas_tabla_v1', () => {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS encuestas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      agente TEXT NOT NULL DEFAULT '',
+      skill TEXT NOT NULL DEFAULT '',
+      q1 INTEGER,
+      q2 INTEGER,
+      q3 INTEGER,
+      q4 INTEGER,
+      comentario TEXT NOT NULL DEFAULT '',
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_encuestas_campana_fecha ON encuestas(campana, fecha);
+  `);
+});
+
+// Fase 147 (Parte B): pestaña "Encuesta" de Mobilize, justo ANTES de Calidad
+// (Calidad siempre al final). Idempotente: si ya existe, no hace nada. Solo
+// toca la forma reconocible de produccion (pestaña "llamadas_unicas" con su
+// panel y pestaña "calidad"); cualquier otra forma se deja intacta y se
+// registra, igual que las demas migraciones de config.
+function migrarMobilizeEncuestaTab() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout.tabs || [];
+  if (tabs.some((t) => t && t.key === 'encuesta')) return;
+  const i = tabs.findIndex((t) => t && t.key === 'calidad');
+  const tieneLu = tabs.some((t) => t && t.key === 'llamadas_unicas' && (t.panels || []).some((p) => p && p.tipo === 'llamadas_unicas_panel'));
+  if (i === -1 || !tieneLu) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_encuesta_tab_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  const tab = { key: 'encuesta', label: 'Encuesta', panels: [{ tipo: 'encuesta_panel', campana: 'MOBILIZE' }] };
+  tabs.splice(i, 0, tab);
+  layout.tabs = tabs;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_encuesta_tab_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_encuesta_tab_v1', migrarMobilizeEncuestaTab);
+
+// Fase 147 (Parte C): tarjeta FCR en "Flujo de Llamadas" de Mobilize. Solo
+// agrega `fcrBase: 'total'` (pedido de Edwin) al trafico_combo de MOBILIZE
+// del tab "flujo" si todavia no tiene el campo -- nunca pisa una base ya
+// elegida. Solo la forma reconocible de produccion (resumenPorSeccion, la
+// de la Fase 131); cualquier otra se deja intacta.
+function migrarMobilizeFlujoFcr() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE' && p.resumenPorSeccion === true);
+  if (!panel) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_fcr_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  if (Object.prototype.hasOwnProperty.call(panel, 'fcrBase')) return;
+  panel.fcrBase = 'total';
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_fcr_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_flujo_fcr_v1', migrarMobilizeFlujoFcr);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3470,3 +3691,9 @@ module.exports.closeDb = closeDb;
 module.exports.DB_PATH = DB_PATH;
 // Fase 139: expuesta solo para probar la idempotencia (correrla 2 veces).
 module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUnicasATabPropio;
+// Fase 145: idem.
+module.exports.migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas = migrarMobilizeAsaAtaAhtYNombreLlamadasUnicas;
+// Fase 147: idem.
+module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
+module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
+module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;

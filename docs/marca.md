@@ -1,4 +1,7 @@
-# Marca InConexion® (Fase 132)
+# Marca InConexion® (Fase 132, al día en la Fase 146)
+
+La plataforma se llama **SInCo** (Sistema de Información InConexión); la
+marca de la empresa es **InConexion®** (sin tilde, con ®).
 
 Dónde viven los archivos de marca y los tokens de color/tipografía, para
 no tener que ir al código cada vez. Los originales de diseño (PNG a
@@ -10,12 +13,19 @@ fuera del repo, en `C:\Users\filid\Documents\datos-inconexion\marca\`.
 Generados desde los originales con `sharp` (resize + PNG optimizado, sin
 metadatos). 8 archivos, 1x + @2x cada uno:
 
-| Archivo | Uso |
+| Archivo | Uso (actualizado Fase 146) |
 |---|---|
-| `logo-horizontal-color.png` (+@2x) | Login, tema **claro** (la tarjeta es blanca) |
-| `logo-horizontal-blanco.png` (+@2x) | Login tema **oscuro** (tarjeta `#132c35`) y pantalla de bienvenida (`user-page`, fondo degradado oscuro fijo en los 2 temas) |
-| `isotipo-blanco.png` (+@2x) | Navbar de las 4 vistas con navbar (Admin, Cliente, Asesor, Supervisor) — fondo siempre `var(--c-brand)` (teal fijo, no cambia con el tema) |
-| `isotipo-color.png` (+@2x) | Reservado para un futuro avatar — sin uso en la UI todavía |
+| `isotipo-color.png` (+@2x) | **Login, tema claro**: dentro de la tarjeta, a la IZQUIERDA de "SInCo" en la misma línea, 36 px de alto (Fase 146; en la Fase 145 iba encima) |
+| `isotipo-blanco.png` (+@2x) | **Login, tema oscuro** (mismo lugar), **bienvenida** a la izquierda de "SInCo" (44 px, en los 2 temas: el fondo es teal) y navbar de las 4 vistas con navbar |
+| `logo-horizontal-blanco.png` (+@2x) | Logo pequeño en la esquina inferior derecha del login y de la bienvenida (`.marca-esquina`, 120×24, fondo teal en los 2 temas) |
+| `logo-horizontal-color.png` (+@2x) | Sin uso en la interfaz hoy (reservado) |
+
+Login y bienvenida usan el mismo patrón (`.marca-sinco`, `styles.css`): logo +
+"SInCo" en una línea (flex, `align-items:center`, sin salto de línea), el
+conjunto centrado y el logo un poco más alto que las letras. Tamaño fijo por
+CSS y por `width`/`height` en cada `<img>`, así nada salta mientras carga la
+imagen; a 375 px cabe sin desbordar. El tema se fija antes del primer dibujo,
+así que nunca se ve el isotipo del otro tema.
 
 El favicon (`public/favicon.ico` + `favicon-32/180/192.png`) sale de
 `isotipo-color-sobre-fondo-oscuro.png` (ya trae su propio fondo teal

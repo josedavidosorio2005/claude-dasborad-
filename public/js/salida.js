@@ -71,7 +71,7 @@ async function _salDibujar(campana, i, opciones){
 
   var filas = [];
   try{ filas = await apiRequest('GET','/calidad/salida/mensual?campana='+encodeURIComponent(campana)) || []; }
-  catch(e){ showToast(e.message); }
+  catch(e){ showToast(e.message, 'error'); }
 
   if(avisoEl){
     avisoEl.innerHTML = (!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1)
@@ -126,7 +126,7 @@ function _salDibujarGrafica(canvasId, filas, campo3p, campoGeneral, tituloEje){
 function _salTablaHtml(filas, mesSel){
   if(!filas.length) return '';
   function celda(tag, txt, mes){
-    return '<'+tag+(mes===mesSel?' style="font-weight:800"':'')+'>'+esc(txt)+'</'+tag+'>';
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
   }
   function pct(parte, total){ return total>0 ? gdFmtValor(Math.round(parte/total*1000)/10,'%') : '—'; }
   function fila(label, valores){

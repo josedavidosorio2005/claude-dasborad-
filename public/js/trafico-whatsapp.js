@@ -164,7 +164,6 @@ async function _traficoWppRenderPanel(p, i) {
   datosCampana.filas.forEach(function(f){ if(!vistoCola[f.colaWhatsapp]){ vistoCola[f.colaWhatsapp]=true; colas.push(f.colaWhatsapp); } });
   colas.sort();
 
-  var estado = _traficoWppEstadoDesdeURL();
   // Mismo criterio que Llamadas (traficoVentana12Meses, trafico-logic.js):
   // por defecto, los ultimos 12 meses CALENDARIO con datos -- aqui sobre
   // fechaInicio de cada periodo cargado, no sobre un dia individual.
@@ -180,35 +179,36 @@ async function _traficoWppRenderPanel(p, i) {
   // debe arrastrar la ventana por defecto (ver trafico.js).
   if(typeof fechaLimitesRecortar === 'function') maxDisp = fechaLimitesRecortar(maxDisp);
 
-  // Fase 86 (tema 3): mismo patron que trafico.js -- el selector MES de
-  // arriba desliza la ventana de 12 meses (el mes elegido = el FIN de la
-  // ventana). Un periodo "tiene datos" de ese mes si SE SOLAPA con el, no
-  // solo si empieza justo ese dia 1 (mismo criterio que
-  // traficoWppFiltrarFilas).
-  if(_gd.mesSel && _traficoWppMesSincronizado[campana] !== _gd.mesSel){
-    _traficoWppMesSincronizado[campana] = _gd.mesSel;
-    var inicioMesGlobalWpp = _gd.mesSel + '-01', finMesGlobalWpp = _gdFinDeMes(_gd.mesSel);
-    var tieneDatosMesGlobalWpp = datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; });
-    // Se fija el rango SIEMPRE (incluso sin datos) y se limpia el agregado
-    // cacheado: asi Exportar (_traficoWppDatosExport) queda consistente
-    // con lo que se ve en pantalla -- ver el comentario equivalente en
-    // trafico.js.
-    estado.hasta = finMesGlobalWpp;
-    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, minDisp) : minDisp;
-    _traficoWppEstado[campana] = estado;
-    if(!tieneDatosMesGlobalWpp){
-      _traficoWppSinDatosMesGlobal[campana] = true;
-      _traficoWppAgregadoActual[campana] = [];
-      host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
-        _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
-      host.dataset.campana = campana;
-      return;
-    }
-    _traficoWppSinDatosMesGlobal[campana] = false;
+  // Fase 86 (tema 3) + Fase 144 (A1): mismo patron y misma decision pura que
+  // trafico.js (traficoDecidirRango, trafico-logic.js) -- el rango del mes
+  // elegido se mantiene en todos los dibujos siguientes. Un periodo "tiene
+  // datos" de ese mes si SE SOLAPA con el, no solo si empieza justo ese dia 1
+  // (mismo criterio que traficoWppFiltrarFilas).
+  var inicioMesGlobalWpp = _gd.mesSel ? _gd.mesSel + '-01' : null;
+  var finMesGlobalWpp = _gd.mesSel ? traficoFinDeMes(_gd.mesSel) : null;
+  var decision = traficoDecidirRango({
+    mesSel: _gd.mesSel,
+    mesSincronizado: _traficoWppMesSincronizado[campana],
+    estadoPrevio: _traficoWppEstado[campana] || null,
+    sinDatosPrevio: _traficoWppSinDatosMesGlobal[campana],
+    estadoURL: _traficoWppEstadoDesdeURL(),
+    minDisp: minDisp,
+    maxDisp: maxDisp,
+    tieneDatosMes: !!_gd.mesSel && datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; }),
+  });
+  var estado = decision.estado;
+  if(decision.sincronizar) _traficoWppMesSincronizado[campana] = _gd.mesSel;
+  _traficoWppSinDatosMesGlobal[campana] = decision.sinDatosMes;
+  _traficoWppEstado[campana] = estado;
+  if(decision.sinDatosMes){
+    // Se limpia el agregado cacheado: asi Exportar (_traficoWppDatosExport)
+    // queda consistente con lo que se ve en pantalla (ver trafico.js).
+    _traficoWppAgregadoActual[campana] = [];
+    host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
+      _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+    host.dataset.campana = campana;
+    return;
   }
-  var desdeDefault = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(maxDisp, minDisp) : minDisp;
-  if(!estado.desde) estado.desde = desdeDefault;
-  if(!estado.hasta) estado.hasta = maxDisp;
   // Fase 77: ya NO se sustituye en silencio un rango sin datos por el rango
   // por defecto -- ver el comentario equivalente en trafico.js
   // (_traficoRenderPanel) para el bug real que esto corregia (Septiembre
@@ -231,14 +231,15 @@ async function _traficoWppRenderPanel(p, i) {
   host.innerHTML =
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
+      '<p class="trafico-rango" id="tww-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
+        '<div><label for="tww-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="tww-f-hasta-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="tww-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
           '<select id="tww-f-gran-'+i+'">' + ['mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
-        '<div><label style="display:block;font-size:0.72rem;color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
-          '<label style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
+        '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
+          '<label class="filtro-check" style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoWppAplicarFiltros('+i+')">Aplicar filtros</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px">' +
           '<button class="btn-sm" onclick="_traficoWppExportExcel('+i+')">Excel</button>' +
@@ -264,6 +265,14 @@ function _traficoWppRenderSubtabContent(i){
   var campana = host ? host.dataset.campana : null;
   var activo = _traficoWppSubtabActivo[campana] || 'resumen';
   if (activo === 'aht' && !_traficoWppMostrarAht[campana]) activo = 'resumen';
+  // Fase 142 (punto 4, ORLANT): "Nivel de Servicio" se muestra por rangos de
+  // minutos (whatsapp-tiempos.js), con su propio filtro de Mes/Cola.
+  if (activo === 'sl' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(campana)) {
+    content.innerHTML = '';
+    _wppTiemposRender(i, campana);
+    return;
+  }
+  if (typeof _wppTiemposFiltrosPanel === 'function') _wppTiemposFiltrosPanel(i, false);
   content.innerHTML = _traficoSubtabContentHTML('tww', i, activo, TRAFICO_WPP_SUBTAB_TITULOS);
   _traficoWppRenderContenido(i);
 }
@@ -307,6 +316,9 @@ function _traficoWppAplicarFiltros(i){
   _traficoWppGuardarEstadoURL(estado);
   var skillbar = document.getElementById('tww-f-skillbar-'+i);
   if(skillbar) skillbar.innerHTML = _traficoFiltroLineaHTML('tww', i, colasDisponibles, estado.skills, 'Cola', 'colas');
+  // Fase 144 (A1): el subtitulo siempre dice el rango que se esta mostrando.
+  var rangoEl = document.getElementById('tww-rango-'+i);
+  if(rangoEl) rangoEl.textContent = traficoRangoTexto(estado.desde, estado.hasta);
   _traficoWppRenderContenido(i);
 }
 
@@ -317,6 +329,8 @@ function _traficoWppRenderContenido(i){
   var host = document.getElementById('gd-p'+i);
   if(!host) return;
   var campana = host.dataset.campana;
+  // Fase 142: con la vista de rangos activa, los filtros del panel no aplican.
+  if (typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)) return;
   var estado = _traficoWppEstado[campana];
   var datosCampana = _traficoWpp[campana] || { filas: [] };
   var filtradas = traficoWppFiltrarFilas(datosCampana.filas, { skills: estado.skills, desde: estado.desde, hasta: estado.hasta });
@@ -445,6 +459,7 @@ function _traficoWppDatosExport(i){
 }
 
 function _traficoWppExportExcel(i){
+  if(typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)){ _wppTiemposExportExcel(i); return; }
   if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
   var datos = _traficoWppDatosExport(i);
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
@@ -468,6 +483,7 @@ function _traficoWppExportExcel(i){
 }
 
 function _traficoWppExportPrint(i){
+  if(typeof _wppTiemposActivo === 'function' && _wppTiemposActivo(i)){ _wppTiemposExportPrint(i); return; }
   var datos = _traficoWppDatosExport(i);
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
   var host = document.getElementById('gd-p'+i);
@@ -523,7 +539,7 @@ async function procesarArchivoTraficoWpp(input) {
   } catch (e) { showToast('El archivo no es un Excel valido'); input.value = ''; return; }
 
   var res = traficoWppParseFilas(aoa, ws);
-  if (res.error) { showToast(res.error); input.value = ''; return; }
+  if (res.error) { showToast(res.error, 'error'); input.value = ''; return; }
 
   var campana = document.getElementById('tww-campana-sel').value;
   _twwParsed = { campana: campana, archivoNombre: file.name, filas: res.filas };
@@ -556,7 +572,7 @@ function cancelarPreviewTraficoWpp() {
 async function _traficoWppConfirmarImpacto() {
   var impacto;
   try { impacto = await apiRequest('POST', '/calidad/trafico/whatsapp/carga/impacto', _twwParsed); }
-  catch (e) { showToast(e.message); return false; }
+  catch (e) { showToast(e.message, 'error'); return false; }
   var afectados = (impacto || []).filter(function (p) { return p.filasExistentes > 0; });
   if (!afectados.length) return true;
   var detalle = afectados.map(function (p) { return '• ' + p.colaWhatsapp + ' — ' + p.fechaInicio + ' a ' + p.fechaFin + ': ' + p.filasExistentes + ' registro(s) existentes'; }).join('\n');
@@ -575,7 +591,7 @@ async function guardarTraficoWpp() {
   var resp;
   try {
     resp = await withButtonLoading(btn, 'Guardando...', function () { return apiRequest('POST', '/calidad/trafico/whatsapp/carga', _twwParsed); });
-  } catch (e) { showToast(e.message); return; }
+  } catch (e) { showToast(e.message, 'error'); return; }
   showToast(resp.insertadas + ' fila(s) guardadas (' + resp.colas.length + ' cola(s))');
   cancelarPreviewTraficoWpp();
   delete _traficoWpp[_twwParsed && _twwParsed.campana]; // invalida el cache del panel del dashboard

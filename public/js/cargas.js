@@ -45,6 +45,12 @@ var CARGAS_CLIENTES_TIPIFICACION_EXTRA = ['MOBILIZE'];
 // Fase 138, PR3 (pedido de Edwin 09/10/2026): campanas con hoja de Llamadas
 // Unicas -- mismo gate independiente que CARGAS_CLIENTES_TIPIFICACION_EXTRA.
 var CARGAS_CLIENTES_LLAMADAS_UNICAS = ['MOBILIZE'];
+// Fase 141 (Parte C): Llamadas de salida, mismo gate que Llamadas Unicas.
+var CARGAS_CLIENTES_LLAMADAS_SALIDA = ['MOBILIZE'];
+// Fase 142 (punto 4): WhatsApp tiempos de respuesta, solo ORLANT.
+var CARGAS_CLIENTES_WHATSAPP_TIEMPOS = ['ORLANT'];
+// Fase 147 (Parte B): Encuesta de satisfaccion, solo Mobilize.
+var CARGAS_CLIENTES_ENCUESTA = ['MOBILIZE'];
 
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
@@ -85,7 +91,7 @@ async function openCargas(){
   try{
     var r = await apiRequest('GET','/dashboard/clientes');
     _cargasClientes = (r && r.clientes) || [];
-  }catch(e){ _cargasClientes = []; showToast(e.message); }
+  }catch(e){ _cargasClientes = []; showToast(e.message, 'error'); }
   try{
     var plantillas = await apiRequest('GET','/calidad/plantillas') || [];
     _cargasCalidadPorCampana = {};
@@ -267,6 +273,20 @@ function _cargasSalidaColumnasUnificado(){
 function _cargasLlamadasUnicasColumnasUnificado(){
   return LLAMADAS_UNICAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 141 (Parte C, Mobilize) — columnas de la hoja LLAMADAS_SALIDA (ver
+// llamadas-salida-logic.js).
+function _cargasLlamadasSalidaColumnasUnificado(){
+  return LLAMADAS_SALIDA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
+// Fase 142 (punto 4, ORLANT) — columnas de la hoja WHATSAPP_TIEMPOS.
+function _cargasWhatsappTiemposColumnasUnificado(){
+  return WPP_TIEMPOS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
+// Fase 147 (Parte B, Mobilize) — columnas de la hoja ENCUESTA (ver
+// encuesta-logic.js).
+function _cargasEncuestaColumnasUnificado(){
+  return ENCUESTA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 function _cargasCalidadColumnas(items){
   var obligatorias = { asesor:1, fecha:1 };
   return CM_COLUMNAS_FIJAS.map(function(c){ return { key:c.key, label:c.label, opcional: !obligatorias[c.key] }; })
@@ -298,7 +318,7 @@ async function onCargaClienteChange(){
   _cargasPlan = [];
   if(cliente){
     try{ _cargasSpec = await apiRequest('GET','/dashboard/secciones/'+encodeURIComponent(cliente)); }
-    catch(e){ showToast(e.message); }
+    catch(e){ showToast(e.message, 'error'); }
   }
   var calidad = cliente ? (_cargasCalidadPorCampana[cliente] || null) : null;
   var calidadCols = calidad ? _cargasCalidadColumnas(calidad.items) : null;
@@ -339,7 +359,10 @@ async function onCargaClienteChange(){
     // mezclar 2 decisiones independientes.
     var tieneLlamadasUnicas = CARGAS_CLIENTES_LLAMADAS_UNICAS.indexOf(cliente) !== -1;
     var llamadasUnicasCols = tieneLlamadasUnicas ? _cargasLlamadasUnicasColumnasUnificado() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols);
+    var llamadasSalidaCols = CARGAS_CLIENTES_LLAMADAS_SALIDA.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
+    var whatsappTiemposCols = CARGAS_CLIENTES_WHATSAPP_TIEMPOS.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
+    var encuestaCols = CARGAS_CLIENTES_ENCUESTA.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
@@ -535,7 +558,10 @@ async function procesarArchivoConsolidado(input){
     // archivo de un canal se cuele en el slot del otro.
     var esTipificacion = h.tipo==='tipificacion';
     var esLlamadasUnicas = h.tipo==='llamadas_unicas';
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas) return null;
+    var esLlamadasSalida = h.tipo==='llamadas_salida';
+    var esWhatsappTiempos = h.tipo==='whatsapp_tiempos';
+    var esEncuesta = h.tipo==='encuesta';
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esWhatsappTiempos && !esEncuesta) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -550,7 +576,11 @@ async function procesarArchivoConsolidado(input){
       // fila del rango usado de la hoja, ej. renglones vacios antes -- ver
       // cargasLeerEncabezadoAcotado, cargas-logic.js, para el detalle).
       var headerRow0 = cargasLeerEncabezadoAcotado(XLSX.utils, wsCandidata, 20);
-      if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
+      // Fase 147 (Parte B): el export de la encuesta trae una fila de textos
+      // sueltos ANTES del encabezado -- se busca en las primeras 20 filas.
+      if(esEncuesta){
+        if(encuestaBuscarEncabezado(_cargasPrimerasFilas(wsCandidata, 20), 20) === -1) continue;
+      } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
       // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
@@ -558,10 +588,22 @@ async function procesarArchivoConsolidado(input){
       // no alcanza a distinguirlos (comparten agente/fecha/tipificacion/
       // skill-via-alias).
       if(esTipificacion && h.canalTipificacion && cargasDetectarCanalTipificacion(headerRow0) !== h.canalTipificacion) continue;
+      // Fase 141: un CDR de Tipificacion (trae SKILL_NAME, y puede traer
+      // TELEPHONE/SKILL_ID) nunca debe colarse en el slot de salida.
+      if(esLlamadasSalida && (headerRow0 || []).some(function(c){ return String(c == null ? '' : c).trim().toUpperCase() === 'SKILL_NAME'; })) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }
     return null;
+  }
+
+  // Primeras maxFilas filas con contenido de una hoja (acotado, nunca la
+  // hoja completa -- mismo criterio de cargasLeerEncabezadoAcotado).
+  function _cargasPrimerasFilas(ws, maxFilas){
+    if(!ws || !ws['!ref']) return [];
+    var rg = XLSX.utils.decode_range(ws['!ref']);
+    var rango = { s: rg.s, e: { r: Math.min(rg.s.r + maxFilas, rg.e.r), c: rg.e.c } };
+    return XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:null, range: rango });
   }
 
   _cargasResultados = _cargasPlan.map(function(h){
@@ -598,6 +640,12 @@ async function procesarArchivoConsolidado(input){
       parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion, h.opcionesTipificacion); };
     } else if(h.tipo === 'llamadas_unicas'){
       parseFn = llamadasUnicasParseFilas;
+    } else if(h.tipo === 'llamadas_salida'){
+      parseFn = llamadasSalidaParseFilas;
+    } else if(h.tipo === 'whatsapp_tiempos'){
+      parseFn = wppTiemposParseFilas;
+    } else if(h.tipo === 'encuesta'){
+      parseFn = encuestaParseFilas;
     } else if(h.tipo === 'inasistencia'){
       parseFn = inasistenciaParseFilas;
     } else if(h.tipo === 'citas_atendidas'){
@@ -651,6 +699,16 @@ function _cargasEstadoLabel(r){
   // Fase 79: cuando la hoja no traia el nombre esperado pero sus
   // encabezados calzaron exacto con el formato (archivo ORIGINAL de
   // Edwin, hoja "DATA"), se dice explicitamente cual hoja se uso.
+  // Fase 142 (punto 4): WhatsApp tiempos -- solo conteos (ignoradas por no
+  // ser WhatsApp, dias y cantidad por rango), nunca filas.
+  if(r.tipo==='whatsapp_tiempos' && r.porRango){
+    extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+r.dias+' día(s); por rango: '+
+      WPP_TIEMPOS_RANGOS.map(function(x){ return x.label+' '+r.porRango[x.key]; }).join(', ');
+  }
+  // Fase 147 (Parte B): Encuesta -- solo conteos por pregunta, nunca filas.
+  if(r.tipo==='encuesta' && r.conteos){
+    extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
+  }
   var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
   return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;
 }
@@ -664,7 +722,10 @@ function _renderPreviewCarga(){
       (r.tipo==='inasistencia' ? 'Inasistencia' :
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))));
+      (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
+      (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
+      (r.tipo==='encuesta' ? 'Encuesta' :
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -896,8 +957,79 @@ async function _cargasGuardarLlamadasUnicas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var respLu = await apiRequest('POST','/calidad/llamadas-unicas/carga', parsed);
-    if(typeof _llamadasUnicasCache !== 'undefined') _llamadasUnicasCache = {}; // invalida el cache del panel abierto
+    if(typeof _llamadasUnicasOpciones !== 'undefined') _llamadasUnicasOpciones = {}; // invalida el cache del panel abierto (Fase 141: antes apuntaba a un nombre que no existe)
     return { ok:true, mensaje: respLu.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(respLu.desde)+' al '+_agendasFmtFechaCorta(respLu.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
+// Fase 142 (punto 4, ORLANT): mismo patron impacto -> confirmar -> guardar.
+async function _cargasGuardarWhatsappTiempos(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/whatsapp-tiempos/carga/impacto', parsed);
+    if(impacto.filasExistentes > 0){
+      var msg = 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de tiempos de WhatsApp ya cargados, del '+
+        _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+', por '+impacto.filasNuevas+' registro(s) nuevos.\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron los tiempos de WhatsApp anteriores sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/whatsapp-tiempos/carga', parsed);
+    if(typeof _wppTiemposOpciones !== 'undefined') _wppTiemposOpciones = {}; // invalida el cache de la vista abierta
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
+// Fase 147 (Parte B, Mobilize): impacto (solo lectura) -> confirmar SIEMPRE,
+// con los conteos por pregunta -> guardar (reemplazo por rango de fechas).
+async function _cargasGuardarEncuesta(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/encuestas/carga/impacto', parsed);
+    var msg = 'Se van a guardar '+impacto.filasNuevas+' encuesta(s) del '+_agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+
+      ' ('+impacto.dias+' día(s)).\n'+encuestaResumenTexto(impacto.conteos)+'.\n\n'+
+      (impacto.filasExistentes > 0 ? 'Esto REEMPLAZA '+impacto.filasExistentes+' encuesta(s) ya cargadas en esas fechas.\n\n' : 'No hay encuestas cargadas en esas fechas.\n\n')+
+      '¿Continuar?';
+    if(!confirm(msg)) return { ok:false, mensaje: 'No se guardó nada; las encuestas anteriores siguen igual.' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/encuestas/carga', parsed);
+    if(typeof _encuestaOpciones !== 'undefined') _encuestaOpciones = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' encuesta(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
+// Fase 141 (Parte C, Mobilize): mismo patron impacto -> confirmar -> guardar
+// de _cargasGuardarLlamadasUnicas. `r.filas` ya son arrays.
+async function _cargasGuardarLlamadasSalida(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/llamadas-salida/carga/impacto', parsed);
+    var fraseAlias = _cargasFraseAlias(impacto);
+    if(impacto.filasExistentes > 0 || fraseAlias){
+      var msg = '';
+      if(impacto.filasExistentes > 0){
+        msg += 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de llamadas de salida ya cargados, del '+
+          _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+', por '+impacto.filasNuevas+' registro(s) nuevos.';
+      }
+      if(fraseAlias) msg += (msg?' ':'')+fraseAlias;
+      msg += '\n\n¿Continuar y sobrescribir?';
+      if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron las llamadas de salida anteriores sin tocar.' };
+    }
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+  try{
+    var resp = await apiRequest('POST','/calidad/llamadas-salida/carga', parsed);
+    if(typeof _llamadasSalidaOpciones !== 'undefined') _llamadasSalidaOpciones = {}; // invalida el cache del panel abierto
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -948,7 +1080,7 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
 
   try{
     var impacto = await apiRequest('POST','/calidad/efectividad-agendamiento/carga/impacto', parsed);
-    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + ' (' + r.filas.length + ' asesor(es)).';
+    var msg = 'Se cargará como ' + meses.map(_gdMesLargo).join(', ') + ' (' + r.filas.length + ' asesor(es)).';
     if(impacto.filasExistentes > 0){
       msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
     }
@@ -965,7 +1097,7 @@ async function _cargasGuardarEfectividadAgendamiento(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/efectividad-agendamiento/carga', parsed);
-    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLargo).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -978,7 +1110,7 @@ async function _cargasGuardarCitasAtendidas(cliente, r){
 
   try{
     var impacto = await apiRequest('POST','/calidad/efectividad-citas/carga/impacto', parsed);
-    var msg = 'Se cargará como ' + meses.map(_gdMesLbl).join(', ') + '.';
+    var msg = 'Se cargará como ' + meses.map(_gdMesLargo).join(', ') + '.';
     if(impacto.filasExistentes > 0){
       msg += ' Esto va a REEMPLAZAR ' + impacto.filasExistentes + ' registro(s) ya cargados de ese/esos mes(es).';
     }
@@ -993,7 +1125,7 @@ async function _cargasGuardarCitasAtendidas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/efectividad-citas/carga', parsed);
-    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLbl).join(', ')+')' };
+    return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(_gdMesLargo).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -1076,6 +1208,9 @@ async function guardarCarga(){
       else if(r.tipo==='efectividad_agendamiento') res = await _cargasGuardarEfectividadAgendamiento(cliente, r);
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='llamadas_unicas') res = await _cargasGuardarLlamadasUnicas(cliente, r);
+      else if(r.tipo==='llamadas_salida') res = await _cargasGuardarLlamadasSalida(cliente, r);
+      else if(r.tipo==='whatsapp_tiempos') res = await _cargasGuardarWhatsappTiempos(cliente, r);
+      else if(r.tipo==='encuesta') res = await _cargasGuardarEncuesta(cliente, r);
       else if(r.tipo==='inasistencia') res = await _cargasGuardarInasistencia(cliente, r);
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);
@@ -1120,7 +1255,7 @@ async function renderCargasExistentes(){
 async function eliminarCarga(id){
   if(!confirm('Eliminar esta carga? El dashboard dejara de mostrar esos datos.')) return;
   try{ await apiRequest('DELETE','/dashboard/cargas/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Carga eliminada');
   renderCargasExistentes();
 }

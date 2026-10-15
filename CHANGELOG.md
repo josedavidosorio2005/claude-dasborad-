@@ -4,6 +4,349 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.40.0 — Octubre 2026
+
+**Fase 147 (parte C): solución en primer contacto (FCR) en Mobilize.**
+
+- En **Flujo de Llamadas** hay una tarjeta nueva, "Solución en primer
+  contacto (FCR)": de las encuestas del mes, cuántas dijeron que su
+  solicitud se resolvió en la primera llamada (pregunta 3 = Sí).
+- La tarjeta siempre muestra la cuenta, por ejemplo "3 de 45 encuestas",
+  para que se entienda de dónde sale el porcentaje. Si el mes no tiene
+  encuestas, dice "Sin encuestas este mes".
+- Por ahora se calcula sobre todas las encuestas del mes, como pidió Edwin.
+  Si se prefiere contar solo a quienes respondieron la pregunta 3, se
+  cambia en la configuración, sin tocar la plataforma.
+
+## v1.39.0 — Octubre 2026
+
+**Fase 147 (parte B): encuesta de satisfacción de Mobilize.**
+
+- Pestaña nueva **Encuesta** en Mobilize (antes de Calidad): una gráfica
+  por cada una de las 4 preguntas, con cuántas personas eligieron cada
+  respuesta, cuántas respondieron y cuántas no.
+- Al final, los **comentarios** que dejaron los usuarios, con fecha, skill
+  y asesor.
+- Filtros por fecha (Desde/Hasta), skill y asesor, y un botón para ver el
+  texto completo de las preguntas.
+- Se carga desde **Cargar Datos → Mobilize** con el archivo de Wolkvox tal
+  cual (o con la plantilla). Para corregir una base, se vuelve a subir: la
+  plataforma reemplaza esas fechas y avisa antes cuántas encuestas cambia.
+- Se puede exportar a Excel o PDF.
+
+## v1.38.0 — Octubre 2026
+
+**Fase 147: ajustes de la reunión con Edwin.**
+
+- Los meses se ven con su nombre: "Septiembre 2026" en las gráficas y en
+  los avisos, y por día "15 sep". Los archivos de Excel no cambian.
+- "Última actualización" ahora se ve en naranja en el encabezado de los
+  tableros, para que la fecha resalte.
+- En Mobilize, Calidad queda siempre como la última pestaña.
+- En "Llamadas Únicas y de Salida", el usuario de Mobilize ahora puede
+  filtrar por asesor en las dos mitades y ver el detalle por asesor.
+- En la mitad de salida hay un filtro nuevo por Tipo (Conectada / No
+  conectada). El archivo de salida no trae el skill, por eso todavía no
+  se puede filtrar por skill ahí.
+
+## v1.37.1 — Octubre 2026
+
+**Fase 146: ATA en 0:00 cuando no hubo llamadas abandonadas.**
+
+- En "ASA y ATA" (Flujo de Llamadas de Mobilize y Tráfico de Orlant), si el
+  período tiene datos pero ninguna llamada abandonada, el ATA ahora se ve
+  como **0:00** (antes "—"): en la tarjeta, en la gráfica y en el Excel.
+  Así lo pidió Edwin.
+- Si el período no tiene datos, sigue saliendo el aviso de "sin datos".
+- Cuando sí hay abandonos, el ATA se calcula igual que siempre. ASA, AHT y
+  las demás cifras no cambian.
+
+## v1.37.0 — Octubre 2026
+
+**Fase 146: logo junto a "SInCo" y palabras con tilde.**
+
+- En la pantalla de ingreso, el logo de InConexion ahora va a la izquierda
+  de "SInCo", en la misma línea (antes iba encima). A color en tema claro y
+  blanco en tema oscuro.
+- En la pantalla de bienvenida también aparece el logo blanco a la
+  izquierda de "SInCo".
+- En el celular, el logo y "SInCo" caben en una sola línea, y nada se mueve
+  mientras carga la imagen. El logo pequeño de la esquina sigue igual.
+- Los textos de la plataforma ahora llevan tilde: "Cerrar Sesión",
+  "Selecciona un módulo", "Gestión de Usuarios", "Campaña", "Último
+  ingreso", "Período", "Categoría", entre otros.
+- Las plantillas y exportaciones de Excel no cambian sus encabezados.
+
+## v1.36.1 — Octubre 2026
+
+**Fase 146: la guía de uso al día.**
+
+- Las imágenes de la guía ahora muestran la plataforma como se ve hoy: la
+  pantalla de ingreso con el logo, "Flujo de Llamadas" y las 8 pestañas de
+  Orlant.
+- La guía explica el Flujo de Llamadas de Mobilize (ASA y ATA, AHT aparte)
+  y usa el nombre nuevo de la pestaña "Llamadas Únicas y de Salida".
+- Aclaración sobre ATA en Mobilize: ATA es el tiempo promedio hasta que la
+  persona cuelga sin ser atendida. En septiembre no hubo llamadas
+  abandonadas, así que no hay promedio y la plataforma muestra "—" (no
+  "0:00" como decía la nota de la versión 1.35.0).
+- Nada más cambia en la plataforma.
+
+## v1.36.0 — Octubre 2026
+
+**Fase 145: logo de InConexion en la pantalla de ingreso y "Contraseña" con ñ.**
+
+- En la pantalla de ingreso, el logo de InConexion aparece dentro de la
+  tarjeta, encima de "SInCo": a color en tema claro y blanco en tema
+  oscuro. La tarjeta no se mueve mientras carga el logo. El logo pequeño
+  de abajo a la derecha sigue igual.
+- "Contrasena" ahora se escribe "Contraseña" en toda la plataforma: ingreso,
+  crear usuario, "Cambiar Contraseña", "Cambiar mi Contraseña", "Contraseña
+  Actual", "Nueva Contraseña" y "Confirmar Nueva Contraseña".
+- Nada más cambia: usuarios, contraseñas y datos siguen igual.
+
+## v1.35.1 — Octubre 2026
+
+**Fase 145: Calidad de Mobilize dice claramente que todavía no hay monitoreos.**
+
+- En la pestaña Calidad de un cliente que todavía no tiene ningún monitoreo
+  de calidad (hoy Mobilize), ahora sale "Todavía no hay monitoreos de
+  calidad para Mobilize." Antes decía "Sin datos de Calidad para" el mes
+  elegido, y parecía que solo faltaba ese mes.
+- Cuando Mobilize tenga sus primeros monitoreos, la pestaña se ve igual que
+  la de Orlant. Orlant no cambia.
+
+## v1.35.0 — Octubre 2026
+
+**Fase 145: ajustes de Mobilize que pidió Edwin para la entrega.**
+
+- En Mobilize → Flujo de Llamadas, "ASA y AHT" se separó en dos
+  sub-pestañas: **"ASA y ATA"** (igual a la que ya tiene Orlant) y
+  **"AHT"** aparte. El orden queda: Flujo de Llamadas, Nivel de Servicio,
+  Abandono, ASA y ATA, AHT.
+- En septiembre, "ASA y ATA" muestra ATA en 0:00 porque la plantilla de
+  Flujo de Mobilize trae esa columna en 0 todos los días. La plataforma lo
+  muestra tal cual, sin ocultarlo ni inventar otro valor.
+- La pestaña "Llamadas Únicas" ahora se llama **"Llamadas Únicas y de
+  Salida"**. Los números no cambian.
+- El tablero de Mobilize ya no muestra el aviso amarillo de "todavía no
+  tiene datos cargados", que salía aunque sí había datos.
+- En la torta de Tipificación (Orlant y Mobilize) los porcentajes se leen
+  bien en todas las porciones: letra oscura sobre los colores claros y
+  blanca sobre los oscuros. Los colores de la torta no cambian.
+
+## v1.34.4 — Octubre 2026
+
+Seis mejoras de la Fase 144 que se publicaron juntas en esta versión.
+
+**Fase 144 (A3b): las demás ventanas también se usan bien con el teclado.**
+
+- Lo que ya se arregló para el tablero, Cargar Datos y Calidad ahora también
+  aplica a las ventanas de crear o editar usuario, cambiar contraseña,
+  eliminar usuario, Inventario (ítem y movimiento), Gestión Humana, los
+  indicadores de Gerencia, el selector de clientes y "Cambiar mi
+  contraseña".
+- Al abrir una de ellas, la tecla Tab se queda dentro de la ventana, la
+  tecla Escape la cierra y el cursor vuelve al botón que la abrió.
+- Se ven y funcionan igual con el ratón: clic afuera sigue cerrándolas.
+
+**Fase 144 (A8): tarjetas de indicadores parejas y casillas más fáciles de tocar.**
+
+- En la fila de indicadores de arriba (por ejemplo "Total llamadas",
+  "Llamadas contestadas", "Tasa de abandono"), todos los títulos se ven
+  ahora con la misma letra. Antes unos salían en negrita y otros no, según
+  el color del semáforo. El color del semáforo sigue en la rayita de la
+  izquierda de cada tarjeta.
+- En Tráfico de Llamadas y de WhatsApp, "Ver skills por separado" y
+  "Comparar varias…" tienen un espacio para hacer clic más alto, más
+  cómodo en el celular. Se ven igual.
+- Ningún número, filtro ni color de semáforo cambia.
+
+**Fase 144 (A7): los lectores de pantalla leen el nombre de cada campo y los avisos.**
+
+- Cada casilla de filtro (Desde, Hasta, Mes, Agente, Sede, Cola, los
+  buscadores, Cargar Datos, el inicio de sesión, etc.) quedó unida a su
+  título. Para quien usa un lector de pantalla, ahora dice "Desde" o
+  "Contraseña" en vez de solo "campo de fecha" o "campo de texto". Y al
+  hacer clic en el título, el cursor se pone en la casilla.
+- Los avisos que salen abajo a la derecha ("Guardado", "No se pudo…")
+  ahora también se leen en voz alta; los de error se anuncian de inmediato.
+- Ningún texto, color, número ni filtro cambia: se ve igual que antes.
+
+**Fase 144 (A6): cuando un mes no tiene datos, se ve claro.**
+
+- En Calidad, si el mes elegido arriba todavía no tiene monitoreos, el aviso
+  "Sin datos de Calidad para Oct-26… Ver Sep-26" ahora se ve en una sola
+  línea a lo ancho (antes quedaba apretado en una esquina, en cinco
+  renglones).
+- Las gráficas de ese mes ya no quedan en blanco: dicen "Sin monitoreos en
+  octubre 2026."
+- El botón "Ver Sep-26" sigue llevando al último mes con datos.
+- Nada más cambia.
+
+**Fase 144 (A5): textos más legibles.**
+
+- La versión de la plataforma (arriba a la derecha) ahora se lee bien; antes
+  casi no se veía sobre la barra azul oscuro.
+- El botón "Editar" de Usuarios, los rótulos de rol (por ejemplo
+  "Inventario" y "Dashboard Clientes") y el texto verde de campañas
+  asignadas tienen ahora más contraste.
+- Ningún texto de las pantallas queda por debajo del tamaño mínimo de la
+  plataforma: las etiquetas pequeñas de los filtros de Tráfico (Desde,
+  Hasta, Granularidad…) y otras notas crecen un poco.
+- Los PDF que se descargan no cambian.
+- Nada más cambia: datos, permisos y exportaciones son los mismos.
+
+**Fase 144 (A4): pestañas sin barrita de desplazamiento y "X Cerrar" en una sola línea.**
+
+- Junto a las pestañas de los tableros (Tráfico de Llamadas, Tráfico de
+  WhatsApp…) ya no aparece una barrita vertical con flechas ▲▼ a la derecha.
+- El botón "X Cerrar" (del tablero y de Cargar Datos) ya no se parte en dos
+  renglones en computadores y tabletas.
+- Nada más cambia.
+
+## v1.34.3 — Octubre 2026
+
+**Fase 144 (A3): las ventanas (tablero, Cargar Datos, Calidad…) se usan bien con el teclado.**
+
+- Al abrir un tablero, Cargar Datos, Calidad o el detalle de un monitoreo,
+  el teclado queda dentro de esa ventana: la tecla Tab ya no se va a la
+  pantalla de atrás, que queda bloqueada mientras la ventana esté abierta.
+- Al cerrar la ventana (con la X o con Esc), el cursor vuelve al botón con
+  el que se abrió.
+- El botón "Exportar" del tablero abre su menú con Enter, el cursor queda en
+  "Excel (.xlsx)", las flechas pasan a "PDF / Imprimir" y Esc o Tab cierran
+  solo el menú (el tablero sigue abierto).
+- Los lectores de pantalla ahora anuncian el nombre de cada ventana.
+- Nada más cambia: lo que se ve con el mouse, las exportaciones y los datos
+  son los mismos.
+
+## v1.34.2 — Octubre 2026
+
+**Fase 144 (A2): la plataforma se puede usar con el teclado.**
+
+- Las opciones del menú de la izquierda (Usuarios, Permisos, Cargar Datos…)
+  ahora se alcanzan con la tecla Tab y se abren con Enter o la barra
+  espaciadora. Antes solo funcionaban con el mouse.
+- En la pantalla de bienvenida, la tarjeta "Dashboard Clientes" y las
+  tarjetas de cada cliente también se abren con el teclado.
+- En los tableros, las pestañas se recorren con las flechas izquierda y
+  derecha y se abren con Enter. Los lectores de pantalla ahora dicen cuál
+  pestaña está abierta.
+- El selector de mes y los demás selectores de los encabezados muestran un
+  borde visible cuando se llega a ellos con el teclado.
+- En el celular, el botón ☰ indica si el menú está abierto y la tecla Esc lo
+  cierra.
+- Nada más cambia: el aspecto con el mouse, los números, los permisos y las
+  exportaciones son los mismos.
+
+## v1.34.1 — Octubre 2026
+
+**Fase 144 (A1): Tráfico siempre muestra el período del mes elegido.**
+
+- En Orlant → Tráfico de Llamadas, Orlant → Tráfico de WhatsApp y Mobilize
+  → Flujo de Llamadas, al elegir un mes arriba la gráfica y las tarjetas
+  terminan en ese mes y **se quedan así** aunque uno vuelva a hacer clic en
+  la pestaña, vaya a otra y regrese, o cierre y abra el tablero. Antes, al
+  volver a la pestaña, se mostraban todos los meses cargados sin avisar.
+- Debajo del título de cada uno de esos paneles ahora dice qué fechas se
+  están mostrando, por ejemplo "Mostrando: 01/04/2026 – 31/08/2026". Las
+  tarjetas suman ese período.
+- Si el mes elegido no tiene datos, el aviso "Sin datos… Ver <mes>" se
+  mantiene hasta que se cambie de mes o se pulse "Ver".
+- Si uno escribe Desde y Hasta a mano y pulsa "Aplicar filtros", esas fechas
+  se respetan como siempre.
+- Nada más cambia: los números de cada período, las exportaciones y los
+  permisos son los mismos.
+
+## v1.34.0 — Octubre 2026
+
+**Fase 142: Nivel de Servicio de WhatsApp de Orlant por tiempo de respuesta.**
+
+- En Orlant → Tráfico de WhatsApp → "Nivel de Servicio", ya no se ve una
+  línea de porcentaje por mes. Ahora se ve qué porcentaje de las
+  conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y más de 10 minutos,
+  con la cantidad de cada rango, el total del mes y una tarjeta con el
+  "% contestado en 0–3 minutos".
+- Se puede elegir el mes y la cola. Por defecto se ve el mes elegido
+  arriba; si ese mes no tiene datos, el último que sí tenga.
+- En "Cargar Datos" de Orlant se puede subir el archivo de tiempos de
+  Wolkvox. La plataforma toma solo las colas de WhatsApp y calcula el
+  rango con los segundos de cada conversación (no usa la columna
+  TIEMPO del archivo).
+- Mientras no se cargue ese archivo, la sub-pestaña lo dice claramente,
+  sin números inventados. Llamadas y Mobilize no cambian.
+
+## v1.33.1 — Octubre 2026
+
+**Fase 142: Llamadas Únicas ya no acepta filas "NO CONTESTADAS".**
+
+- Si el archivo de Llamadas Únicas trae filas con SKILL_NAME = NO
+  CONTESTADAS, la plataforma ahora avisa: "NO CONTESTADAS es una llamada
+  de SALIDA no conectada; cárgala en Llamadas de salida." y no guarda esa
+  hoja. Así no se vuelve a repetir el error de septiembre, donde esas
+  llamadas se contaron como abandonadas.
+- La plantilla de Llamadas Únicas ya no trae el ejemplo "NO CONTESTADAS".
+- Nada más cambia: los datos ya cargados y las demás pestañas siguen igual.
+
+## v1.33.0 — Octubre 2026
+
+**Fase 141: Llamadas de salida de Mobilize.**
+
+- La pestaña **Llamadas Únicas** de Mobilize ahora tiene dos mitades: a la
+  izquierda las llamadas de ingreso (como antes) y a la derecha las
+  **Llamadas de salida**. En el celular se ven una debajo de la otra.
+- Las tarjetas de ingreso ahora van en este orden: Total, Contestadas y
+  Abandonadas. Las de salida: Total llamadas de salida, No conectadas y
+  Conectadas. Cada mitad tiene su gráfica de barras por mes y sus filtros
+  de fecha.
+- El equipo de InConexion también ve el detalle por asesor y por día de
+  las llamadas de salida. El usuario de Mobilize ve los totales, sin
+  nombres de asesor.
+- En "Cargar Datos" de Mobilize se puede subir el archivo de llamadas de
+  salida de Wolkvox. Cada teléfono se cuenta una vez por día (por separado
+  si fue conectada y no conectada) y el número de teléfono nunca se
+  guarda. Se pueden cargar varios meses.
+- Mientras no se cargue ese archivo, la mitad derecha dice "Sin llamadas
+  de salida cargadas todavía", sin números inventados.
+
+## v1.32.0 — Octubre 2026
+
+**Fase 141: nombres más claros y Tipificación lado a lado (reunión del 13 de octubre).**
+
+- En Tráfico de Llamadas (Orlant) y en Flujo de Llamadas (Mobilize), la
+  primera sub-pestaña ya no se llama "Resumen": ahora dice **"Flujo de
+  Llamadas"**. En Tráfico de WhatsApp dice **"Flujo de WhatsApp"**.
+  "Resumen" se confundía con un resumen de todo el tablero, y no lo es.
+- En **Tipificación** (Orlant y Mobilize), en el computador la gráfica de
+  torta queda a la izquierda y el cuadro con cada motivo a la derecha,
+  del mismo tamaño. En el celular, la torta va arriba y el cuadro debajo.
+  Los dos responden a los mismos filtros y siempre suman lo mismo.
+- Nada más cambia: los números, los filtros, las exportaciones y los
+  permisos son los mismos.
+
+## v1.31.0 — Octubre 2026
+
+**Fase 140: retoques visuales en toda la plataforma.**
+
+- Los botones, cajas de texto y listas desplegables ahora usan la misma
+  letra de la marca que el resto de la pantalla (antes usaban la letra
+  de Windows y se notaba la diferencia).
+- Los filtros de los tableros (Skill, Desde, Hasta, Granularidad,
+  Asesor…) tienen ahora el mismo aspecto que el resto de la plataforma.
+  Los botones Excel y PDF de cada gráfica se ven bien también en modo
+  oscuro.
+- En los tableros de Orlant y Mobilize ya no aparece una franja blanca
+  vacía entre el encabezado y las pestañas.
+- En la pantalla de bienvenida, cuando hay un solo módulo, ahora queda
+  centrado.
+- Al cambiar de pestaña, las tarjetas aparecen con una entrada suave y
+  rápida. Al cambiar un filtro o el mes, los números se actualizan al
+  instante, sin animación. Si el computador tiene activada la opción de
+  reducir el movimiento, no hay animación.
+- Nada más cambia: los números, las pestañas, los permisos y las
+  exportaciones son los mismos.
+
 ## v1.30.5 — Octubre 2026
 
 **Fase 139: la dirección de la plataforma es solo sinco.inconexion.com.co.**

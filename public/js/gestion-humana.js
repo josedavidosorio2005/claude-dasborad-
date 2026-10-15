@@ -66,7 +66,7 @@ function renderGhTabla(){
         : '<span class="kpi-red" style="font-weight:600">Retirado</span>';
       var costo = p.costo_mes ? '$'+Number(p.costo_mes).toLocaleString('es-CO') : '-';
       html += '<tr>'+
-        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:0.74rem;color:var(--c-text-muted)">'+esc(p.documento)+'</span>':'')+'</td>'+
+        '<td><strong>'+esc(p.nombre)+'</strong>'+(p.documento?'<br><span style="font-size:var(--fs-note);color:var(--c-text-muted)">'+esc(p.documento)+'</span>':'')+'</td>'+
         '<td>'+esc(p.cargo||'-')+'</td>'+
         '<td>'+esc(p.campana)+'</td>'+
         '<td>'+esc(p.fecha_ingreso)+'</td>'+
@@ -144,7 +144,7 @@ async function ghGuardarPersona(){
         ? apiRequest('PUT','/gh/personal/'+_ghEditId, body)
         : apiRequest('POST','/gh/personal', body);
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(_ghEditId ? 'Persona actualizada' : 'Persona agregada');
   closeGhPersonModal();
   await loadGhData();
@@ -157,7 +157,7 @@ async function ghEliminarPersona(id){
   if(!p) return;
   if(!confirm('Eliminar a "'+p.nombre+'" del registro de personal? Esto borra su historial de ingreso/salida.')) return;
   try{ await apiRequest('DELETE','/gh/personal/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Persona eliminada');
   await loadGhData();
   renderGhStats();

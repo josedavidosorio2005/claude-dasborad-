@@ -76,6 +76,17 @@
   --c-success-text:#17703b; --c-warning-text:#8f4a00; --c-danger-text:#b02a1d;
   --c-accent:#ffd54f;  --c-accent-bg:#fff8e1;    --c-purple:#8e44ad;
   --c-info-bg:#eaf4fb;  --c-on-primary-soft:#a8d8ea;
+  /* Fase 147 (pedido de Edwin: "naranja zapote para que se vea la fecha"):
+     texto y borde de "Ultima actualizacion" en el header del dashboard.
+     EXCEPCION documentada a "naranja solo para el semaforo" (ver
+     docs/sistema-de-diseno.md). 4.82:1 sobre --c-brand, 5.76:1 sobre el
+     fondo real del recuadro (--c-brand + velo negro 20%). Mismo valor en
+     los 2 temas: el header no cambia con el tema. */
+  --c-actualizacion:#FF8C1A;
+  /* Fase 144 (A5): texto del badge de rol CLIENTES_DASH sobre su fondo
+     #fef9e2 -- 5.85:1 (antes #9e7a00 suelto, 3.79:1, no pasaba AA). En
+     oscuro el badge ya tenia su propio color (#ffd54f), sin cambio. */
+  --c-badge-clientes-text:#7a5d00;
 
   /* Anillo de foco (WCAG 2.4.7/2.4.11) -- reusa --c-primary-mid (ya es un
      token por tema) porque pasa >=3:1 contra --c-surface/--c-bg en los 2
@@ -174,6 +185,7 @@
   --c-success-text:#4ade80; --c-warning-text:#fbbf24; --c-danger-text:#fca5a5;
   --c-accent:#ffd54f;  --c-accent-bg:#3a2f0a;    --c-purple:#c084fc;
   --c-info-bg:#122f42;  --c-on-primary-soft:#7dd6f0;
+  --c-actualizacion:#FF8C1A;
 
   /* Fase 133: borde de control -- #2a4a56 (--c-border) solo daba 1.54:1
      contra --c-surface oscuro, por debajo del 3:1 minimo. */
@@ -300,6 +312,27 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    --c-surface. Sin animacion (nada que apagar con data-motion). */
 .app-name{font-family:var(--font-sans);font-weight:var(--fw-bold);letter-spacing:0.01em;line-height:1.1;}
 .app-name-login{color:var(--c-primary);font-size:calc(var(--fs-display) * 1.25);margin-bottom:var(--space-8);}
+/* Fase 146 (pedido de Edwin, reunion 14/10): el isotipo de InConexion va a
+   la IZQUIERDA de "SInCo", en la misma linea, centrado verticalmente con el
+   texto y un poco mas alto que las letras; el conjunto, centrado. Antes
+   (Fase 145) iba encima. Tamaño FIJO por CSS y por width/height en cada
+   <img> (no salta cuando la imagen llega tarde, criterio de la Fase 139).
+   - Login (tarjeta --c-surface): isotipo de color en claro, blanco en
+     oscuro. Texto 40px -> isotipo 36px de alto (proporcion real 128x123).
+   - Bienvenida (fondo teal en los 2 temas): isotipo blanco siempre. Texto
+     48px -> isotipo 44px.
+   flex-wrap:nowrap y tamaños fijos: a 375px el conjunto mide ~170px (login)
+   y ~200px (bienvenida), cabe en una linea con margen. */
+.marca-sinco{display:flex;align-items:center;justify-content:center;flex-wrap:nowrap;gap:var(--space-3);}
+.marca-sinco img{display:block;flex:none;object-fit:contain;}
+.marca-sinco .app-name{margin:0;}
+.marca-sinco-login{margin-bottom:var(--space-8);}
+.marca-sinco-login img{width:38px;height:36px;}
+.marca-sinco-login .isotipo-tema-oscuro{display:none;}
+[data-theme="dark"] .marca-sinco-login .isotipo-tema-claro{display:none;}
+[data-theme="dark"] .marca-sinco-login .isotipo-tema-oscuro{display:block;}
+.marca-sinco-bienvenida{margin-bottom:var(--space-4);}
+.marca-sinco-bienvenida img{width:46px;height:44px;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.2));}
 /* Logo de InConexion® pequeno en la esquina inferior derecha del login y
    de la bienvenida. Version blanca: los 2 fondos son teal en ambos temas
    (--grad-brand y el degradado de #user-page). El padding inferior de la
@@ -517,9 +550,9 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .badge{display:inline-block;padding:2px 9px;border-radius:var(--r-pill);font-size:var(--fs-note);font-weight:700;white-space:nowrap;}
 .badge-ADMIN{background:#fff3cd;color:#856404;}
 .badge-CALIDAD{background:var(--c-success-bg);color:var(--c-success-dark);}
-.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.badge-INVENTARIO{background:var(--c-info-bg);color:var(--c-primary);}
 .badge-GERENCIA{background:var(--c-danger-bg);color:var(--c-danger-dark);}
-.badge-CLIENTES_DASH{background:#fef9e2;color:#9e7a00;}
+.badge-CLIENTES_DASH{background:#fef9e2;color:var(--c-badge-clientes-text);}
 .badge-AUX_ADMIN{background:#e8f0fb;color:#1a4a9e;}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;}
 .dot-on{background:var(--c-success);}
@@ -528,7 +561,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 /* ── ACTION BUTTONS ── */
 .btn-sm{padding:4px 9px;border-radius:5px;font-size:var(--fs-note);font-weight:600;cursor:pointer;border:none;white-space:nowrap;transition:opacity 0.2s;}
 .btn-sm:hover:not([disabled]){opacity:0.78;}
-.btn-edit{background:var(--c-info-bg);color:var(--c-primary-mid);}
+.btn-edit{background:var(--c-info-bg);color:var(--c-primary);}
 .btn-suspend{background:var(--c-warning-bg);color:var(--c-warning-dark);}
 .btn-activate{background:var(--c-success-bg);color:var(--c-success-dark);}
 .btn-delete{background:var(--c-danger-bg);color:var(--c-danger-dark);}
@@ -710,8 +743,12 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    un color nuevo). El "resaltado" es el borde izquierdo de color: naranja
    para Mobilize, verde de marca InConexion (--c-brand-green, Fase 132)
    para el resto.*/
-.gd-ultima-act{color:var(--c-on-primary-soft);font-size:var(--fs-note);font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-brand-green);background:rgba(255,255,255,0.08);border-radius:0 5px 5px 0;display:inline-block;}
-.gd-ultima-act-mobilize{border-left-color:#f97316;}
+/* Fase 147 (pedido de Edwin): etiqueta Y fecha en naranja (--c-actualizacion)
+   para todos los clientes, con un velo NEGRO del 20% de fondo -- con el velo
+   blanco anterior (8%) el naranja bajaba a 3.86:1; con el negro queda en
+   5.76:1 (AA). */
+.gd-ultima-act{color:var(--c-actualizacion);font-size:var(--fs-note);font-weight:600;margin-top:4px;padding:3px 10px 3px 9px;border-left:3px solid var(--c-actualizacion);background:rgba(0,0,0,0.2);border-radius:0 5px 5px 0;display:inline-block;}
+.gd-ultima-act-mobilize{border-left-color:var(--c-actualizacion);}
 /* Logo del cliente en el encabezado del dashboard (hoy solo Mobilize,
    Fase 132 Parte 8) -- oculto por defecto (display:none inline en el
    HTML), JS lo muestra solo para ese cliente. .aurora-header es SIEMPRE
@@ -726,7 +763,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    renderGenericHeader (140 Mobilize / 64 Orlant); object-fit evita
    deformar un logo futuro con otra proporcion. */
 .gd-cliente-logo{display:block;max-width:140px;height:25px;object-fit:contain;margin-bottom:4px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* KPI strip */
@@ -750,11 +787,22 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Mismo vocabulario de color, esta vez para un <span> suelto (ej. estado de
    item/tipo de movimiento en Inventario) -- sin esta regla base, esas clases
    solo tenian estilo cuando iban prefijadas por "td." o ".aurora-kpi.", asi
-   que el span quedaba sin ningun color en ningun tema. */
-.kpi-green{color:var(--c-success-text);font-weight:700;}
-.kpi-org{color:var(--c-warning-text);font-weight:700;}
-.kpi-red{color:var(--c-danger-text);font-weight:700;}
-.kpi-pur{color:var(--c-purple);font-weight:700;}
+   que el span quedaba sin ningun color en ningun tema.
+   Fase 144 (A8, D18): sin aplicarse a la tarjeta .aurora-kpi entera -- ahi
+   el semaforo es solo el borde izquierdo; antes la negrita se heredaba a la
+   etiqueta (.kl) y en una misma fila unas salian finas y otras en negrita.
+   :where() deja la especificidad igual que antes (0,1,0). */
+.kpi-green:not(:where(.aurora-kpi)){color:var(--c-success-text);font-weight:700;}
+.kpi-org:not(:where(.aurora-kpi)){color:var(--c-warning-text);font-weight:700;}
+.kpi-red:not(:where(.aurora-kpi)){color:var(--c-danger-text);font-weight:700;}
+.kpi-pur:not(:where(.aurora-kpi)){color:var(--c-purple);font-weight:700;}
+
+/* Fase 144 (A8, D16, WCAG 2.5.8): "Ver skills/colas por separado" y
+   "Comparar varias..." de Trafico median 16 px de alto (checkbox 13x13).
+   El area clicable (la etiqueta entera / el summary) llega a 24 px sin
+   cambiar letra ni color. */
+.filtro-check{display:inline-flex;align-items:center;gap:4px;min-height:24px;cursor:pointer;}
+.filtro-summary{padding:4px 0;}
 
 /* Oculto a la vista, legible por lector de pantalla -- tecnica estandar
    (no display:none/visibility:hidden, que lo sacan tambien del arbol de
@@ -768,7 +816,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .gd-sem-simbolo{margin-right:4px;font-size:0.85em;}
 
 /* Tabs */
-.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;flex-shrink:0;}
+.aurora-tabs{display:flex;background:var(--c-surface);border-bottom:2px solid var(--c-border);padding:0 18px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;}
 /* Fase 136 (F01, hallazgo real de la Fase 135: a 412px las pestañas se
    superponían ilegibles). Causa real: el min-width:24/44px de objetivos
    táctiles (línea ~930, Fase 133) es un valor EXPLÍCITO -- sustituye el
@@ -842,6 +890,24 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-plans li{font-size:var(--fs-small);color:#5d4037;margin-bottom:4px;margin-left:16px;}
 
 @media(max-width:700px){.aurora-grid-2,.aurora-grid-3{grid-template-columns:1fr;}.aurora-kpis{gap:6px;}}
+/* Fase 141 (Parte C): Llamadas Unicas de Mobilize -- ingreso a la izquierda,
+   salida a la derecha; minmax(0,1fr) para que una tabla ancha de detalle
+   nunca empuje la grilla fuera de la pantalla (apiladas en movil). */
+.aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+@media(max-width:700px){.aurora-grid-2.lu-mitades{grid-template-columns:minmax(0,1fr);}}
+/* Fase 147 (Parte B): Encuesta de Mobilize -- 4 preguntas en 2x2 (escritorio)
+   y una debajo de otra en movil (mismo corte de .aurora-grid-2). */
+.aurora-grid-2.enc-preguntas{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+@media(max-width:700px){.aurora-grid-2.enc-preguntas{grid-template-columns:minmax(0,1fr);}}
+.enc-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.enc-pie,.enc-total{margin:6px 0 0;color:var(--c-text-2);font-size:var(--fs-small);}
+.enc-pregunta .enc-pie{text-align:center;}
+.enc-tabla-comentarios td{white-space:normal;overflow-wrap:anywhere;}
+.enc-preguntas-lista{margin:8px 0 0;padding-left:20px;color:var(--c-text);line-height:1.5;}
+.enc-preguntas-lista li{margin-bottom:10px;}
+/* Fase 147 (Parte C): tarjeta FCR al final de las tarjetas de Flujo de Llamadas. */
+.enc-fcr-sub{margin-top:4px;color:var(--c-text-2);font-size:var(--fs-small);}
+.enc-fcr-otros{margin-top:4px;color:var(--c-text-muted);font-size:var(--fs-note);}
 
 /* ── KPI cards con analisis (M1 / Fase A6) ── */
 .aurora-kpi.gd-kpi{position:relative;display:flex;flex-direction:column;gap:2px;padding:12px 14px;}
@@ -968,7 +1034,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-header{background:var(--c-brand);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;border-radius:18px 18px 0 0;flex-shrink:0;}
 .aurora-header h2{color:var(--c-on-brand);font-size:var(--fs-h3);font-weight:700;margin:0;}
 .aurora-header .aurora-sub{color:var(--c-on-primary-soft);font-size:var(--fs-small);margin-top:2px;}
-.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;}
+.aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;transition:background 0.2s;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
 /* Filter bar */
@@ -1199,3 +1265,180 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 .btn-primary:active, .btn-login:active, .btn-cancel:active, .btn-logout:active, .btn-sm:active, .btn-close-modal:active {
   transform: scale(0.97);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PULIDO VISUAL (Fase 140) — capa ADITIVA al final del archivo:
+   no cambia ningun token, color de marca, tipografia de marca ni
+   contraste medido (Fase 133), solo corrige donde la interfaz se
+   salia de su propio sistema de diseno. Cada bloque dice el
+   hallazgo real (capturas locales con seed:demo, claro/oscuro,
+   1440px y 412px) que lo motivo.
+   ═══════════════════════════════════════════════════════════ */
+
+/* 1) Botones, campos y selects se dibujaban con la fuente del sistema
+   (Arial/Segoe), no con Quicksand: los controles de formulario NO
+   heredan font-family por defecto en ningun navegador. Visible en
+   "Ingresar", "Cerrar Sesion", "+ Nuevo Usuario", pestanas, filtros y
+   placeholders del login. Solo la familia -- cada regla sigue fijando
+   su propio tamano/peso como antes. */
+button,input,select,textarea,optgroup{font-family:inherit;}
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent-color:var(--c-primary-mid);}
+.page-title,.aurora-header h2,.modal h3,.clients-modal-header h3,.user-welcome h1{text-wrap:balance;letter-spacing:-0.01em;}
+.page-subtitle,.empty-state .es-hint{text-wrap:pretty;}
+
+/* 2) Controles de filtro dentro de los paneles del dashboard (Skill,
+   Desde/Hasta, Granularidad, filtros de Gestion de base...) se veian
+   con el estilo crudo del navegador. :where() deja la especificidad en
+   0: cualquier clase propia (.qi-select, .gd-panel-filtro select, un
+   style="" en linea) sigue ganando exactamente como antes. Borde
+   --c-border-control: el mismo de 3:1 (WCAG 1.4.11) del resto de la
+   plataforma. */
+:where(#gd-panels,.aurora-card) :where(select,input[type=date],input[type=month],input[type=number],input[type=text],input[type=search]){
+  padding:6px 10px;min-height:32px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);
+  background:var(--c-surface);color:var(--c-text);font-size:var(--fs-small);
+  transition:border-color var(--dur-fast) var(--ease-out);}
+:where(#gd-panels,.aurora-card) :where(select,input[type=date],input[type=month],input[type=number],input[type=text],input[type=search]):hover{border-color:var(--c-primary-mid);}
+:where(#gd-panels,.aurora-card) :where(select[multiple]){padding:4px;}
+
+/* 3) .btn-sm SIN variante de color (Excel/PDF de cada panel y otros
+   15 usos) no tenia fondo propio: gris del navegador, y en oscuro un
+   boton gris claro sobre la tarjeta oscura. Las variantes (.btn-edit,
+   .btn-delete, .btn-primary...) no cambian. */
+.btn-sm:not(.btn-primary,.btn-edit,.btn-delete,.btn-cancel,.btn-suspend,.btn-activate,.btn-pass){
+  background:var(--c-surface-alt);color:var(--c-text);border:1px solid var(--c-border);}
+.btn-sm:not(.btn-primary,.btn-edit,.btn-delete,.btn-cancel,.btn-suspend,.btn-activate,.btn-pass):hover:not([disabled]){opacity:1;background:var(--c-hover-bg);border-color:var(--c-primary-mid);color:var(--c-primary);}
+
+/* 4) Franja vacia entre la cabecera del dashboard y las pestanas:
+   #gd-kpis se dibuja con su padding/fondo/borde aunque ORLANT y
+   MOBILIZE no lo usen (kpis:[], Fase 68). Si un cliente futuro trae
+   KPIs, deja de estar :empty y vuelve a verse igual que siempre. */
+#gd-kpis:empty{display:none;}
+
+/* 5) Bienvenida: con un solo modulo (caso real de DASHBOARD CLIENTES)
+   la tarjeta quedaba pegada a la columna izquierda de una grilla de 2.
+   auto-fit + justify-content:center la centra; con 2+ modulos sigue
+   en 2 columnas dentro de los mismos ~700px. */
+.dash-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),330px));justify-content:center;}
+@media(max-width:520px){.dash-grid{grid-template-columns:1fr;}}
+
+/* 6) Tarjetas: un filo de 1px del tono del borde suave, sumado a la
+   sombra de siempre -- en oscuro la tarjeta (#132c35) casi se fundia
+   con el fondo (#0a1e25); en claro es practicamente invisible. */
+.aurora-card,.section-card,.stat-card,.aurora-kpi,.aurora-chart-card,.aurora-table-card,.qi-preview .qi-pill{
+  box-shadow:var(--shadow-sm),0 0 0 1px var(--c-border-soft2);}
+
+/* 7) "transition:all" (anima propiedades sin querer, mas caro para el
+   navegador) -> solo las propiedades que de verdad cambian. .atab se
+   deja COMO ESTA a proposito: su limpieza espera el "OK limpieza atab"
+   (docs/pendientes.md). */
+.gd-subtab-btn{transition:color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);}
+.role-card,.client-card,.canal-btn,.dash-btn{transition:background-color var(--dur-medium) var(--ease-out),border-color var(--dur-medium) var(--ease-out),box-shadow var(--dur-medium) var(--ease-out),transform var(--dur-medium) var(--ease-out),color var(--dur-medium) var(--ease-out);}
+
+/* 8) Feedback de prensado (mismo criterio que los botones, Fase 136
+   PR 5: scale sutil, nunca menor a 0.97) en los controles grandes que
+   no lo tenian. */
+.gd-subtab-btn:active,.canal-btn:active,.client-card:not(.client-soon):active,.role-card:not(.blocked-card):active{transform:scale(0.97);}
+.dash-btn:not(.mod-soon):active{transform:translateY(-2px) scale(0.99);}
+.btn-primary:hover,.btn-login:hover{box-shadow:0 4px 14px rgba(var(--shadow-rgb),0.22);}
+
+/* 9) Aviso flotante (toast): entraba solo con opacidad; ahora sube 8px
+   al aparecer (transform, GPU). */
+.toast{transform:translateY(8px);transition:opacity var(--dur-medium) var(--ease-out),transform var(--dur-medium) var(--ease-out);}
+.toast.show{transform:translateY(0);}
+
+/* 10) Entrada escalonada de tarjetas al cambiar de pestana/sub-pestana.
+   Se apoya en la MISMA clase .motion-show que motionEnter() ya quita y
+   vuelve a poner en #gd-panels SOLO al cambiar de seccion (PR 6, Fase
+   136) -- es transicion, no @keyframes, a proposito: un cambio de
+   filtro (mes, "Aplicar filtros") redibuja con #gd-panels YA en
+   .motion-show, asi que las tarjetas nuevas aparecen al instante, sin
+   parpadeo ("nada que retrase ver un numero", auditoria Fase 135). */
+#gd-panels .aurora-kpi,#gd-panels .aurora-card{transition:opacity var(--dur-slow) var(--ease-out),transform var(--dur-slow) var(--ease-out);}
+#gd-panels:not(.motion-show) .aurora-kpi,#gd-panels:not(.motion-show) .aurora-card{opacity:0;transform:translateY(8px);}
+#gd-panels .aurora-kpi:nth-child(2),#gd-panels .aurora-card:nth-child(2){transition-delay:40ms;}
+#gd-panels .aurora-kpi:nth-child(3),#gd-panels .aurora-card:nth-child(3){transition-delay:80ms;}
+#gd-panels .aurora-kpi:nth-child(4),#gd-panels .aurora-card:nth-child(4){transition-delay:120ms;}
+#gd-panels .aurora-kpi:nth-child(n+5),#gd-panels .aurora-card:nth-child(n+5){transition-delay:150ms;}
+
+/* 11) Entrada del formulario de login y de los modulos de bienvenida
+   (una sola vez, al mostrarse). Solo con movimiento permitido -- sin
+   esto el estado final ya es el visible (progressive enhancement). */
+@keyframes entrada-suave{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: no-preference){
+  html:not([data-motion="off"]) .login-box,
+  html:not([data-motion="off"]) .dash-btn{animation:entrada-suave var(--dur-slow) var(--ease-out) backwards;}
+  /* backwards (no both): al terminar, la animacion suelta el transform
+     -- con both quedaria fijo y anularia el levantado de :hover. */
+  html:not([data-motion="off"]) .dash-btn:nth-child(2){animation-delay:50ms;}
+  html:not([data-motion="off"]) .dash-btn:nth-child(3){animation-delay:100ms;}
+  html:not([data-motion="off"]) .dash-btn:nth-child(n+4){animation-delay:150ms;}
+}
+/* Los apagados de movimiento de arriba (prefers-reduced-motion y
+   data-motion="off") anulan la DURACION pero no el retraso: sin esto
+   una tarjeta esperaria hasta 150ms invisible antes de aparecer. */
+@media (prefers-reduced-motion: reduce){
+  #gd-panels .aurora-kpi,#gd-panels .aurora-card{transition-delay:0s !important;}
+}
+html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panels .aurora-card{transition-delay:0s !important;}
+
+/* ═══ Fase 141 — Tipificacion: torta a la izquierda, tabla a la derecha ═══
+   (pedido de Edwin, reunion 13/10). 50/50 en escritorio, misma altura
+   visual que el canvas (340px; la tabla hace scroll si tiene mas filas);
+   en movil (<=700px, mismo corte que .aurora-grid-2) se apilan: torta
+   arriba, tabla abajo. Sin animacion nueva. */
+.tipif-pie-tabla{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;}
+.tipif-pie-tabla .tipif-tabla .table-wrap{margin:0;max-height:340px;overflow:auto;}
+.tipif-pie-tabla .tipif-tabla thead th{position:sticky;top:0;z-index:1;}
+@media(max-width:700px){
+  .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
+  .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
+}
+
+/* ═══ Fase 144 (A1) — rango que se esta mostrando en Trafico ═══
+   Subtitulo "Mostrando: dd/mm/aaaa – dd/mm/aaaa" bajo el titulo de los
+   paneles de Trafico (Llamadas, WhatsApp, Flujo de Mobilize): las tarjetas
+   y la grafica suman ESE rango, no solo el mes del encabezado. Solo tokens
+   existentes (--c-text-muted sobre --c-surface ya mide >=4.5:1). */
+.trafico-rango{margin:-4px 0 10px;font-size:var(--fs-small);color:var(--c-text-muted);font-variant-numeric:tabular-nums;}
+
+/* ═══ Fase 144 (A2) — teclado ═══
+   Las tarjetas de modulo/cliente (.dash-btn, .client-card) ahora reciben
+   foco (role="button" tabindex="0", a11y-teclado.js). Sobre el fondo teal
+   fijo de la bienvenida --c-focus no llega a 3:1 -> mismo criterio que la
+   navbar: anillo con --c-on-brand. */
+#user-page .dash-btn:focus-visible{outline:3px solid var(--c-on-brand);outline-offset:3px;}
+
+/* ═══ Fase 144 (A3) — dialogos ═══
+   Al abrir uno de los 6 dialogos el foco entra a su contenedor
+   (tabindex="-1", motion-helpers.js) para que el lector de pantalla anuncie
+   el titulo. No se le quita el anillo: con teclado, la regla global de
+   [tabindex]:focus-visible marca el dialogo, que es justo donde esta el foco. */
+
+/* ═══ Fase 144 (A4) ═══
+   .aurora-tabs: overflow-x:auto obliga al navegador a calcular tambien
+   overflow-y:auto, y el margin-bottom:-2px de .atab (que dibuja la pestaña
+   activa sobre el borde) dejaba 2px de "desborde" vertical -> aparecia una
+   barra de scroll vertical con flechas ▲▼ junto a las pestañas en TODOS los
+   tamaños (hallazgo D06). Se corta solo en .aurora-tabs: .atab sigue
+   congelada hasta "OK limpieza atab". .aurora-close ("X Cerrar",
+   "Exportar") ya no se parte en 2 lineas (D25). */
+
+/* ═══ Fase 144 (A5) — contraste AA y piso de 12px ═══
+   Version de la app en la barra superior (hallazgo D07: 2.08:1 con el
+   --c-text-muted que tenia en linea, sobre el teal fijo --c-brand). En
+   escritorio va sobre --c-brand: blanco al 78% = 7.45:1. En movil (<=768)
+   vive dentro del menu desplegable sobre --c-surface: --c-text-muted =
+   5.38:1 claro / 5.39:1 oscuro. Medido con contraste-logic.js. */
+.navbar-app-version{font-size:var(--fs-note);color:rgba(255,255,255,0.78);margin-left:4px;}
+@media(max-width:768px){ .navbar-right .navbar-app-version{color:var(--c-text-muted);} }
+/* Contador de las tarjetas de rol (Permisos) en oscuro: 4.23:1 -> 6.19:1. */
+[data-theme="dark"] .role-count{color:var(--c-text-2);}
+
+/* ═══ Fase 144 (A6) — mes sin datos ═══
+   Aviso "Sin datos de X para <mes>. ... [Ver <mes>]" (role="status"): a lo
+   ancho de la grilla de tarjetas KPI (antes encajado en una celda de ~150px)
+   y un panel de grafica sin datos con una sola linea centrada (sin canvas
+   vacio). Solo tokens existentes. */
+.gd-aviso-mes{text-align:center;color:var(--c-text-muted);padding:24px 8px;font-size:var(--fs-body-lg);}
+.aurora-kpis > .gd-aviso-mes{grid-column:1 / -1;flex-basis:100%;}
+.gd-panel-vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px;}

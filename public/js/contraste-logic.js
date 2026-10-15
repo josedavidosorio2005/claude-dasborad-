@@ -116,6 +116,29 @@ function contrasteDeltaE(hexA, hexB) {
   return Math.sqrt(Math.pow(labA.L - labB.L, 2) + Math.pow(labA.a - labB.a, 2) + Math.pow(labA.b - labB.b, 2));
 }
 
+// Fase 145 (pedido de Edwin: "los porcentajes de la torta no se ven sobre
+// las porciones claras"): color del texto que va ENCIMA de un relleno (el %
+// de cada porcion de una torta). Elige entre el texto oscuro y el claro el
+// que mas contraste da con ese relleno. Si ninguno llega a 4.5:1 (algunos
+// tonos medios de la paleta oscura PC_DARK se quedan en ~4.0-4.3:1 con
+// los dos), devuelve tambien `halo`: el otro color, para un contorno fino
+// alrededor de las letras -- asi el texto contrasta contra su propio
+// contorno, sin cambiar la paleta. Un relleno que no es hex (#rgb/#rrggbb)
+// cae en el claro con halo oscuro (lo mas seguro sin poder medir).
+function contrasteTextoSobreRelleno(rellenoHex, oscuroHex, claroHex) {
+  var claro = claroHex || '#ffffff';
+  var rClaro = contrasteRazon(rellenoHex, claro);
+  var rOscuro = contrasteRazon(rellenoHex, oscuroHex);
+  if (rClaro === null || rOscuro === null) return { color: claro, razon: null, halo: oscuroHex };
+  var usarOscuro = rOscuro > rClaro;
+  var razon = usarOscuro ? rOscuro : rClaro;
+  return {
+    color: usarOscuro ? oscuroHex : claro,
+    razon: razon,
+    halo: razon >= 4.5 ? null : (usarOscuro ? claro : oscuroHex),
+  };
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -125,5 +148,6 @@ if (typeof module !== 'undefined' && module.exports) {
     contrastePasaAA: contrastePasaAA,
     contrasteSimularCvd: contrasteSimularCvd,
     contrasteDeltaE: contrasteDeltaE,
+    contrasteTextoSobreRelleno: contrasteTextoSobreRelleno,
   };
 }

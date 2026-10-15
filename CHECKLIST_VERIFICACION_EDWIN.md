@@ -174,11 +174,12 @@ repositorio tiene siempre la versión más reciente de esta tabla):
 - [ ] **Mobilize** tiene una pestaña propia, **"Llamadas Únicas"**, justo
       después de Flujo de Llamadas, con 3 tarjetas (Contestadas,
       Abandonadas, Total) y una gráfica de barras por mes. Septiembre
-      2026 muestra 88 contestadas, 51 abandonadas y 139 en total.
+      2026 muestra 88 contestadas, 0 abandonadas y 88 en total (corregido el
+      13/10: las 51 "abandonadas" eran llamadas de salida no conectadas).
 - [ ] Debajo del título de esa pestaña dice que se cuenta una sola vez
       cada teléfono por día, y que por eso no coincide con Flujo de
       Llamadas.
-- [ ] **Flujo de Llamadas** de Mobilize se ve como antes (Resumen, Nivel
+- [ ] **Flujo de Llamadas** de Mobilize se ve como antes (Flujo de Llamadas, Nivel
       de Servicio, Abandono, ASA y AHT), sin el panel de llamadas únicas
       encima.
 - [ ] El filtro por **Asesor** de ese panel solo aparece para el equipo
@@ -197,3 +198,103 @@ verificación:
 ```
 (espacio para notas)
 ```
+
+## Fase 141 — Llamadas de salida (Mobilize)
+
+- [ ] En **Llamadas Únicas** de Mobilize, las llamadas de ingreso quedan a
+      la izquierda (tarjetas en orden: Total, Contestadas, Abandonadas) y
+      las **Llamadas de salida** a la derecha (Total, No conectadas,
+      Conectadas). En el celular, una debajo de la otra.
+- [ ] Antes de cargar el archivo de salida, la mitad derecha dice "Sin
+      llamadas de salida cargadas todavía", sin números.
+- [ ] El usuario de Mobilize no ve el filtro por asesor ni el detalle por
+      asesor/día de la mitad de salida; el equipo de InConexión sí.
+
+## Fase 142 — WhatsApp de Orlant por tiempo de respuesta
+
+- [ ] En Orlant → Tráfico de WhatsApp → **Nivel de Servicio** se ven 5
+      barras (0-3, 3-5, 5-8, 8-10, más de 10 minutos) con % y cantidad, y
+      la tarjeta "% contestado en 0–3 minutos".
+- [ ] Agosto 2026 muestra 40,4 % en 0–3 minutos y septiembre 2026 44,7 %
+      (después de la carga real).
+- [ ] Cambiar el Mes o la Cola actualiza las barras.
+- [ ] En **Llamadas Únicas** de Mobilize, la mitad de salida muestra
+      111 en total, 52 no conectadas y 59 conectadas (septiembre 2026).
+
+## Fase 145 — Ajustes de Mobilize para la entrega
+
+- [ ] En Mobilize → **Flujo de Llamadas** se ven 5 sub-pestañas, en este
+      orden: Flujo de Llamadas, Nivel de Servicio, Abandono, **ASA y ATA**
+      y **AHT** (antes "ASA y AHT" iban juntos).
+- [ ] "ASA y ATA" muestra ATA en **0:00** en septiembre 2026: ese mes no
+      hubo llamadas abandonadas, y Edwin decidió (14/10) que en ese caso se
+      vea 0:00 — en la tarjeta, en la gráfica (punto en 0) y en el Excel.
+      [Fase 146, v1.37.1: antes se veía "—".]
+- [ ] "AHT" muestra su propio promedio y su línea de tendencia.
+- [ ] La pestaña que antes decía "Llamadas Únicas" ahora dice **"Llamadas
+      Únicas y de Salida"** (los números no cambian: 88 / 0 / 88 de
+      ingreso y 111 / 52 / 59 de salida, septiembre 2026).
+- [ ] En el tablero de Mobilize ya **no** sale el aviso amarillo "Este
+      dashboard todavía no tiene datos cargados…".
+- [ ] En **Tipificación** (Orlant y Mobilize) los porcentajes de la torta
+      se leen bien en todas las porciones: letra oscura sobre los colores
+      claros y blanca sobre los oscuros, en tema claro y oscuro.
+- [ ] La pantalla de ingreso muestra el logo de InConexion dentro de la
+      tarjeta, encima de "SInCo" (a color en tema claro, blanco en oscuro)
+      [Fase 146: ahora va a la IZQUIERDA, ver abajo],
+      y la tarjeta no se mueve mientras carga. El logo pequeño de la esquina
+      sigue igual.
+- [ ] En toda la plataforma dice **"Contraseña"** (con ñ): ingreso, crear
+      usuario, "Cambiar mi contraseña", "Contraseña Actual", "Nueva
+      Contraseña" y "Confirmar Nueva Contraseña".
+- [ ] En Mobilize → Calidad, mientras no haya monitoreos, dice "Todavía no
+      hay monitoreos de calidad para Mobilize."
+
+## Fase 146 — Logo junto a "SInCo" y tildes
+
+- [ ] En la pantalla de ingreso, el logo de InConexion está a la **izquierda**
+      de "SInCo", en la misma línea, centrado con el texto (a color en tema
+      claro, blanco en oscuro). En el celular cabe en una línea.
+- [ ] En la bienvenida, lo mismo: logo blanco a la izquierda de "SInCo".
+- [ ] Los textos llevan tilde: "Cerrar Sesión", "Selecciona un módulo para
+      continuar", "Gestión de Usuarios", "Campaña", "Último ingreso",
+      "Período", "Categoría", "Codificación"…
+
+## Fase 147 — Ajustes de la reunión (parte A)
+
+- [ ] Los meses se ven con nombre: "Septiembre 2026" en los ejes de las
+      gráficas (por ejemplo Flujo de Llamadas → Nivel de Servicio) y en los
+      avisos; por día, "15 sep". "Mostrando: 1 abr 2026 – 30 sep 2026".
+- [ ] "Última actualización" se ve en **naranja** en el encabezado del
+      tablero (Orlant y Mobilize).
+- [ ] En Mobilize, **Calidad** es la última pestaña: Flujo de Llamadas ·
+      Llamadas Únicas y de Salida · Tipificación · Calidad.
+- [ ] En "Llamadas Únicas y de Salida", el usuario de Mobilize ve el filtro
+      **Asesor** en las dos mitades y el detalle por asesor; la mitad de
+      salida tiene además el filtro **Tipo** (Conectada / No conectada).
+
+## Fase 147 — Encuesta de Mobilize (parte B)
+
+- [ ] En Mobilize, la pestaña **Encuesta** está antes de Calidad (Calidad
+      sigue de última).
+- [ ] Se ven 4 recuadros, "Pregunta 1" a "Pregunta 4", cada uno con sus
+      barras (todas las respuestas posibles, aunque tengan 0), el número
+      sobre cada barra y debajo "N respondieron · M sin respuesta".
+- [ ] El botón **Preguntas de la encuesta** muestra el texto de las 5
+      preguntas y se cierra con "Cerrar" o con Escape.
+- [ ] Al final, **Comentarios** con fecha, skill, asesor y el comentario.
+- [ ] Los filtros Desde/Hasta, Skill y Asesor cambian las 4 gráficas y los
+      comentarios a la vez.
+- [ ] Cargar Datos → Mobilize: al subir el archivo de Wolkvox, la vista
+      previa dice cuántas encuestas hay y los conteos por pregunta, y antes
+      de guardar pregunta si se continúa.
+
+## Fase 147 — FCR en Flujo de Llamadas (parte C)
+
+- [ ] En Mobilize → Flujo de Llamadas (sub-pestaña "Flujo de Llamadas")
+      aparece la tarjeta **Solución en primer contacto (FCR)** con el % y
+      debajo "Mes: N de M encuestas".
+- [ ] Si el mes elegido no tiene encuestas, la tarjeta dice "Sin encuestas
+      este mes".
+- [ ] En las otras sub-pestañas (Nivel de Servicio, Abandono, ASA y ATA,
+      AHT) la tarjeta no aparece.

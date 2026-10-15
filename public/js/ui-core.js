@@ -77,6 +77,8 @@ function closeSidebar(){
   document.querySelectorAll('.app-page.sidebar-open').forEach(function(p){
     p.classList.remove('sidebar-open');
   });
+  // Fase 144 (A2): el boton ☰ dice si el menu esta abierto (a11y-teclado.js).
+  if(typeof a11ySincronizarToggleSidebar === 'function') a11ySincronizarToggleSidebar();
 }
 function toggleNavbarProfile(btn){
   var wrap = btn.closest('.navbar-right');
@@ -106,7 +108,7 @@ function showSection(sec){
     var el=document.getElementById('section-'+s);
     var mel=document.getElementById('menu-'+s);
     if(el) el.classList.toggle('hidden',s!==sec);
-    if(mel) mel.classList.toggle('active',s===sec);
+    if(mel){ mel.classList.toggle('active',s===sec); if(s===sec) mel.setAttribute('aria-current','page'); else mel.removeAttribute('aria-current'); }
   });
   if(sec==='perms') showRolesView();
   if(sec==='hist'){ loadHist().then(function(){ renderHist(); }); }
@@ -132,8 +134,12 @@ function updateStats(){
 // ═══════════════════════════════════════════════════════════
 // TOAST + EYE
 // ═══════════════════════════════════════════════════════════
-function showToast(msg){
+// Fase 144 (A7, D12): role/aria-live segun toastAtributos (toast-logic.js) --
+// avisos normales como status (polite), errores como alert. tipo: 'error'|'ok'
+// (opcional; sin el, se reconoce por el texto).
+function showToast(msg, tipo){
   var t=document.getElementById('toast');
+  if(typeof toastAtributos==='function'){ var a=toastAtributos(msg, tipo); t.setAttribute('role',a.role); t.setAttribute('aria-live',a['aria-live']); }
   t.textContent=msg; t.classList.add('show'); clearTimeout(t._t);
   t._t=setTimeout(function(){t.classList.remove('show');},3000);
 }
@@ -142,8 +148,8 @@ function showToast(msg){
 // vaya a HACER (no lo que ya esta pasando), igual que el icono.
 function toggleEye(inputId,btn){
   var inp=document.getElementById(inputId);
-  if(inp.type==='password'){inp.type='text';btn.textContent='X';btn.setAttribute('aria-label','Ocultar contrasena');}
-  else{inp.type='password';btn.innerHTML='&#128065;';btn.setAttribute('aria-label','Mostrar contrasena');}
+  if(inp.type==='password'){inp.type='text';btn.textContent='X';btn.setAttribute('aria-label','Ocultar contraseña');}
+  else{inp.type='password';btn.innerHTML='&#128065;';btn.setAttribute('aria-label','Mostrar contraseña');}
 }
 
 // ═══════════════════════════════════════════════════════════

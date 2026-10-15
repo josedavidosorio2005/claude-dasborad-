@@ -139,19 +139,19 @@ async function _agendasRenderPanel(p, i){
   var html = '<div class="aurora-card">';
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
   html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
-  html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label>Mes</label><select id="agendas-f-mes-'+i+'">' +
+  html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label for="agendas-f-mes-'+i+'">Mes</label><select id="agendas-f-mes-'+i+'">' +
     '<option value="">Todos</option>' + (opciones.meses||[]).map(function(m){ return '<option value="'+m+'"'+(m===estado.mes?' selected':'')+'>'+_agendasMesLbl(m)+'</option>'; }).join('') + '</select></div>';
-  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label>Fecha de solicitud (desde)</label><input type="date" id="agendas-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
-  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label>Fecha de solicitud (hasta)</label><input type="date" id="agendas-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
-  html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label>Agente</label><select id="agendas-f-asesor-'+i+'">'+_agendasOptionsHtml(opciones.asesores, estado.asesor)+'</select></div>';
-  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label>Sede</label><select id="agendas-f-sede-'+i+'">'+_agendasOptionsHtml(opciones.sedes, estado.sede)+'</select></div>';
-  html += '<div class="ig" style="min-width:160px;margin-bottom:0"><label>Especialidad</label><select id="agendas-f-especialidad-'+i+'">'+_agendasOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
-  html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Nombre del examen</label><input list="agendas-dl-examen-'+i+'" id="agendas-f-examen-'+i+'" value="'+esc(estado.examen||'')+'" placeholder="Todos">' +
+  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="agendas-f-desde-'+i+'">Fecha de solicitud (desde)</label><input type="date" id="agendas-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
+  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="agendas-f-hasta-'+i+'">Fecha de solicitud (hasta)</label><input type="date" id="agendas-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
+  html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="agendas-f-asesor-'+i+'">Agente</label><select id="agendas-f-asesor-'+i+'">'+_agendasOptionsHtml(opciones.asesores, estado.asesor)+'</select></div>';
+  html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="agendas-f-sede-'+i+'">Sede</label><select id="agendas-f-sede-'+i+'">'+_agendasOptionsHtml(opciones.sedes, estado.sede)+'</select></div>';
+  html += '<div class="ig" style="min-width:160px;margin-bottom:0"><label for="agendas-f-especialidad-'+i+'">Especialidad</label><select id="agendas-f-especialidad-'+i+'">'+_agendasOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
+  html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="agendas-f-examen-'+i+'">Nombre del examen</label><input list="agendas-dl-examen-'+i+'" id="agendas-f-examen-'+i+'" value="'+esc(estado.examen||'')+'" placeholder="Todos">' +
     '<datalist id="agendas-dl-examen-'+i+'">'+(opciones.examenes||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
-  html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label>Profesional</label><input list="agendas-dl-prof-'+i+'" id="agendas-f-profesional-'+i+'" value="'+esc(estado.profesional||'')+'" placeholder="Todos">' +
+  html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="agendas-f-profesional-'+i+'">Profesional</label><input list="agendas-dl-prof-'+i+'" id="agendas-f-profesional-'+i+'" value="'+esc(estado.profesional||'')+'" placeholder="Todos">' +
     '<datalist id="agendas-dl-prof-'+i+'">'+(opciones.profesionales||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
-  html += '<div class="ig" style="min-width:120px;margin-bottom:0"><label>Tipo de línea</label><select id="agendas-f-tipolinea-'+i+'">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
-  html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label>Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
+  html += '<div class="ig" style="min-width:120px;margin-bottom:0"><label for="agendas-f-tipolinea-'+i+'">Tipo de línea</label><select id="agendas-f-tipolinea-'+i+'">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
+  html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="agendas-f-entidad-'+i+'">Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
 
@@ -205,7 +205,7 @@ async function _agendasDibujar(campana, i, opciones, vista){
   var datos = [];
   try{
     datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || datos;
-  }catch(e){ showToast(e.message); }
+  }catch(e){ showToast(e.message, 'error'); }
 
   var canvasId = 'agendas-c-'+i;
   if(vista === 'especialidad'){

@@ -188,6 +188,18 @@ async function abrirDashboard(page, cliente) {
     const ov = document.getElementById('gd-overlay');
     return !!ov && ov.classList.contains('show') && !!document.querySelector('#gd-tabs .atab.atab-active');
   }, null, { timeout: 60000 });
+  // Fase 146: recorre SIEMPRE el mes de los numeros de control (REVISION_MES,
+  // por defecto 2026-09), no el mes por defecto del tablero -- contra una
+  // base cuyo mes por defecto no tiene Trafico (la demo local abre en
+  // octubre), "Flujo de Llamadas" mostraba su aviso de "sin datos" y el
+  // chequeo de sub-pestañas fallaba sin que nada estuviera mal.
+  const mesRevision = process.env.REVISION_MES || '2026-09';
+  if (await page.locator('#gd-mes-sel option[value="' + mesRevision + '"]').count()) {
+    if ((await page.inputValue('#gd-mes-sel')) !== mesRevision) {
+      await page.selectOption('#gd-mes-sel', mesRevision);
+      await page.waitForTimeout(2000);
+    }
+  }
 }
 
 // Fase 139: cierra el dashboard con su boton "X Cerrar" (como un usuario)
@@ -668,7 +680,8 @@ async function correrChequeosAdmin(page) {
   reporte.datoPorDato = datoPorDato;
 
   // ══ 3c. Fase 139: MOBILIZE -- todas sus pestañas/sub-vistas (Flujo con la
-  // sub-pestaña "ASA y AHT" del PR2; "Llamadas Únicas" en su pestaña propia;
+  // sub-pestañas "ASA y ATA" + "AHT" (Fase 145, antes "ASA y AHT");
+  // "Llamadas Únicas y de Salida" en su pestaña propia;
   // Tipificacion), exportar + Escape, y sus numeros de control.
   // Igual que arriba: solo conteos/veredictos, nunca texto del DOM. ══
   const mobilize = { pestanas: {}, subvistas: {}, exports: {} };
@@ -713,7 +726,9 @@ async function correrChequeosAdmin(page) {
     }
     await page.evaluate(() => { const m = document.getElementById('gd-export-menu'); if (m) m.remove(); });
   }
-  mobilize.tieneSubtabAsaAht = Object.values(mobilize.subvistas).some((s) => Object.keys(s).includes('ASA y AHT'));
+  // Fase 145: "ASA y AHT" se separo en "ASA y ATA" + "AHT" (orden fijo).
+  const subsFlujo = Object.keys(mobilize.subvistas['Flujo de Llamadas'] || {});
+  mobilize.subtabsFlujoOk = subsFlujo.join('|') === 'Flujo de Llamadas|Nivel de Servicio|Abandono|ASA y ATA|AHT';
 
   // Panel "Llamadas únicas" (pestaña propia): 3 tarjetas, barras por mes
   // con 3 series, filtros Desde/Hasta/Skill. El filtro Asesor existe para
@@ -724,9 +739,9 @@ async function correrChequeosAdmin(page) {
   await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Flujo de Llamadas' }).first(), 'Flujo de Llamadas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
   await page.waitForTimeout(1500);
   mobilize.flujoSinPanelUnicas = await page.evaluate(() => !document.querySelector('[id^="lu-kpis-"]') && !document.querySelector('[data-campana="MOBILIZE"] .lu-aviso'));
-  await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first(), 'Llamadas Únicas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
+  await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas y de Salida' }).first(), 'Llamadas Únicas y de Salida', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
   await page.waitForTimeout(1500);
-  mobilize.tieneTabLlamadasUnicas = await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).some((t) => t.textContent.trim() === 'Llamadas Únicas'));
+  mobilize.tieneTabLlamadasUnicas = await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).some((t) => t.textContent.trim() === 'Llamadas Únicas y de Salida'));
   mobilize.llamadasUnicas = await page.evaluate(() => {
     const k = document.querySelector('[id^="lu-kpis-"]');
     if (!k) {
@@ -777,7 +792,7 @@ async function correrChequeosAdmin(page) {
     JSON.stringify(lu.valoresTarjetas) === JSON.stringify([esp.contestadas, esp.abandonadas, esp.total]);
   mobilize.ok =
     luOk && mobilize.tieneTabLlamadasUnicas && mobilize.flujoSinPanelUnicas &&
-    mobilize.tieneSubtabAsaAht && discrepanciasMobilize.length === 0 &&
+    mobilize.subtabsFlujoOk && discrepanciasMobilize.length === 0 &&
     enBlancoMobilize.length === 0 && Object.values(mobilize.exports).every((e) => e.ok);
   mobilize.enBlancoSinMensaje = enBlancoMobilize;
   reporte.mobilize = mobilize;
@@ -929,7 +944,7 @@ async function correrChequeosCliente(page) {
   if (clientesDash.acceso.MOBILIZE === true) {
     await abrirDashboard(page, 'MOBILIZE');
     const mob = { pestanas: await page.evaluate(() => Array.from(document.querySelectorAll('#gd-tabs .atab')).map((t) => t.textContent.trim())) };
-    await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas' }).first(), 'Llamadas Únicas', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
+    await clicYEsperarActiva(page, page.locator('#gd-tabs .atab', { hasText: 'Llamadas Únicas y de Salida' }).first(), 'Llamadas Únicas y de Salida', ACTIVA_TAB, pestanaEquivocada).catch(() => {});
     await page.waitForTimeout(1500);
     mob.llamadasUnicasPanel = await page.evaluate(() => {
       const k = document.querySelector('[id^="lu-kpis-"]');

@@ -68,7 +68,7 @@
 
 <h2 id="s1">1. Cómo entrar</h2>
 <p>La plataforma (SInCo) vive en <a href="https://sinco.inconexion.com.co">https://sinco.inconexion.com.co</a>. Ábrela en el navegador (Chrome, Edge o similar) como cualquier página web.</p>
-<p>La pantalla de inicio dice <strong>SInCo</strong>, con el logo de InConexion® pequeño en la esquina inferior derecha. Escribe tu <strong>usuario</strong> y tu <strong>contraseña</strong>, y presiona "Iniciar sesión". Cada persona tiene su propio usuario, con acceso solo a lo que le corresponde (ver <a href="#s7">sección 7</a>).</p>
+<p>La pantalla de inicio muestra, dentro de la tarjeta, el logo de InConexion® a la izquierda de <strong>SInCo</strong>, en la misma línea (a color en tema claro, blanco en tema oscuro), y otro logo pequeño en la esquina inferior derecha. Escribe tu <strong>usuario</strong> y tu <strong>contraseña</strong>, y presiona "Ingresar". Cada persona tiene su propio usuario, con acceso solo a lo que le corresponde (ver <a href="#s7">sección 7</a>).</p>
 <p><strong>Si olvidaste la contraseña</strong>: hoy la plataforma no tiene un botón de "recuperar contraseña" — tienes que pedirle a un administrador que te la cambie desde la pantalla de Usuarios (Administración → Usuarios → tu usuario → "Cambiar contraseña"). Avísale por el canal que usen normalmente (no la escribas en un mensaje que quede guardado, para que solo tú la conozcas).</p>
 <p><strong>Cómo cambiar mi contraseña:</strong> si ya la sabes y quieres cambiarla tú mismo (sin pedírselo a un administrador), entra a la plataforma y en el menú de tu usuario (arriba a la derecha) elige <strong>"Cambiar mi contraseña"</strong>. Te va a pedir la contraseña actual, la nueva y que la confirmes. Al cambiarla, cualquier otra sesión que tuvieras abierta (otro equipo, otra pestaña) deja de funcionar — la pantalla donde la cambiaste sigue abierta, sin que tengas que volver a entrar.</p>
 <figure><img src="/img/guia/01-login.png" alt="Pantalla de inicio de sesión"><figcaption>Pantalla de inicio de sesión (datos de demostración).</figcaption></figure>
@@ -85,8 +85,8 @@
 <h3>Las 8 pestañas</h3>
 <table>
   <tr><th>Pestaña</th><th>Qué muestra</th></tr>
-  <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Resumen, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
-  <tr><td><strong>Tráfico de WhatsApp</strong></td><td>Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Resumen, Abandono, ASA y ATA, Nivel de Servicio (a 20 segundos — el de 5 minutos llega cuando Wolkvox lo entregue). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp.</td></tr>
+  <tr><td><strong>Tráfico de Llamadas</strong></td><td>Volumen de llamadas, nivel de servicio y estado (contestadas/abandonadas) del mes, con 5 sub-pestañas: Flujo de Llamadas, Abandono, AHT, ASA y ATA, Nivel de Servicio a 20s.</td></tr>
+  <tr><td><strong>Tráfico de WhatsApp</strong></td><td>Lo mismo que Llamadas, pero para los chats de WhatsApp, con 4 sub-pestañas: Flujo de WhatsApp, Abandono, ASA y ATA, Nivel de Servicio (en Orlant: el porcentaje de conversaciones contestadas en cada rango de tiempo — 0-3, 3-5, 5-8, 8-10 y más de 10 minutos — de un mes, con filtro de Mes y de Cola; por defecto el mes elegido arriba, o el último con datos). No tiene sub-pestaña de AHT — Wolkvox no entrega ese dato para WhatsApp.</td></tr>
   <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento).</td></tr>
   <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Efectividad de Citas</strong></td><td>El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
@@ -138,7 +138,7 @@
 </div>
 <div class="card">
 <h3>Tipificación</h3>
-<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes).</p>
+<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes). En computador, la gráfica de torta queda a la izquierda y el cuadro con cada motivo, su cantidad y su % a la derecha; en el celular, la torta va arriba y el cuadro debajo. Los dos responden a los mismos filtros, así que siempre suman lo mismo.</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
@@ -227,20 +227,39 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p>La carga normal es <strong>un monitoreo a la vez</strong>, desde el formulario (ver <a href="#s6">sección 6</a>) — no es una carga de archivo mensual como las demás bases. También existe una <strong>carga masiva</strong> desde Excel (3 hojas: "Monitoreos" para diligenciar, "Diccionario" con la lista de preguntas de referencia, "Resumen por Asesor" de consulta) para cuando hay muchos monitoreos para subir de una vez.</p>
 </div>
 <div class="card">
+<h3>Flujo de Llamadas (Mobilize)</h3>
+<p><strong>Sub-pestañas</strong>: Flujo de Llamadas, Nivel de Servicio, Abandono, <strong>ASA y ATA</strong> (tiempo promedio de respuesta y de abandono, juntos) y <strong>AHT</strong> (tiempo promedio de atención, aparte). Cada una trae arriba su número del período elegido.<br>
+<strong>ATA sin abandonos</strong>: ATA es el tiempo promedio hasta que la persona cuelga sin ser atendida. Si en el período hay datos pero <strong>ninguna llamada abandonada</strong> (como septiembre de 2026 en Mobilize), ATA se muestra como <strong>0:00</strong> en la tarjeta, en la gráfica y en la exportación. Si el período no tiene datos, sale el aviso de "sin datos" de siempre.</p>
 <h3>Llamadas Únicas (Mobilize)</h3>
-<p><strong>Dónde se ve</strong>: en el tablero de Mobilize, pestaña propia <strong>"Llamadas Únicas"</strong> (justo después de Flujo de Llamadas). Cuenta una sola vez cada teléfono por día, así que no coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.<br>
+<p><strong>Dónde se ve</strong>: en el tablero de Mobilize, pestaña propia <strong>"Llamadas Únicas y de Salida"</strong> (justo después de Flujo de Llamadas). Cuenta una sola vez cada teléfono por día, así que no coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.<br>
 <strong>Qué archivo</strong>: el mismo patrón que las demás bases de Wolkvox, pero este archivo hay que armarlo a mano combinando 3 reportes distintos de Wolkvox (ver abajo cómo sacarlos) — Edwin es quien hace esa combinación antes de subir.<br>
 <strong>Hoja</strong>: <code>LLAMADAS_UNICAS</code> de la plantilla oficial (<code>PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx</code>, descargable desde "Cargar Datos" eligiendo el cliente Mobilize).<br>
-<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. Las filas de llamadas <strong>abandonadas</strong> van con SKILL_NAME = NO CONTESTADAS.<br>
+<strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. <strong>No se aceptan filas con SKILL_NAME = NO CONTESTADAS</strong>: esas son llamadas de salida no conectadas y van en "Llamadas de salida". Si el archivo trae alguna, la vista previa lo avisa y esa hoja no se guarda.<br>
 <strong>Privacidad</strong>: TELEPHONE se usa solo un instante, en la computadora de quien sube el archivo, para no contar dos veces una misma llamada del mismo número el mismo día — nunca llega al servidor, nunca se guarda, nunca se exporta ni se muestra en ninguna pantalla.<br>
 <strong>Reemplazo</strong>: por MES — si el archivo trae Septiembre, se reemplaza ese mes completo.</p>
 <p><strong>Cómo sacar las llamadas únicas desde Wolkvox, paso a paso:</strong></p>
 <ol>
   <li><strong>Contestadas de ingreso</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "1. Detalle de las llamadas". De ahí se quitan dos cosas antes de pegarlas en la plantilla: las llamadas de salida (el número de teléfono trae un guion) y los duplicados del mismo número el mismo día (no de todo el mes — si el mismo número llama dos días distintos, cuenta en cada uno).</li>
-  <li><strong>Abandonadas</strong>: en Wolkvox, Skills &amp; Servicios → reporte "2. Llamadas abandonadas", filtrando por skill. Esas filas van a la plantilla con SKILL_NAME = NO CONTESTADAS.</li>
-  <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas" (esta parte todavía no se carga en la plataforma — queda para cuando Edwin mande ese archivo aparte).</li>
+  <li><strong>Abandonadas</strong>: todavía no se cargan. Edwin está definiendo de qué reporte salen las abandonadas de ingreso (las filas "NO CONTESTADAS" eran llamadas de salida, por eso ya no se aceptan aquí).</li>
+  <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas". Estas llamadas <strong>no van en este archivo</strong>: van en el archivo de "Llamadas de salida" (ver abajo).</li>
 </ol>
 <figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
+<h3>WhatsApp tiempos de respuesta (Orlant)</h3>
+<p><strong>Dónde se ve</strong>: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio": qué porcentaje de las conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y más de 10 minutos, en un mes.<br>
+<strong>Qué archivo</strong>: el export de Wolkvox con la hoja de detalle (columnas SKILL_NAME, DATE con hora, RESULT y ANSWER_TIME en segundos). Si el archivo trae además una hoja de tabla dinámica, se ignora. La columna TIEMPO, si viene, también se ignora: el rango lo calcula la plataforma con ANSWER_TIME.<br>
+<strong>Qué se carga</strong>: solo las colas cuyo nombre empieza por WHATSAPP; las demás (colas de llamadas) se ignoran y la vista previa dice cuántas fueron. Se sube desde "Cargar Datos" eligiendo Orlant; un mes por archivo o varios, cada carga reemplaza solo sus propias fechas.</p>
+<h3>Llamadas de salida (Mobilize)</h3>
+<p><strong>Filtros</strong>: cada mitad tiene sus propios filtros. Ingreso: Desde, Hasta, Skill y Asesor. Salida: Desde, Hasta, <strong>Tipo</strong> (Conectada / No conectada) y Asesor — el archivo de salida no trae un skill real, por eso el filtro es por Tipo. El filtro y el detalle por <strong>Asesor</strong> los ve también el usuario de Mobilize.</p>
+<p><strong>Dónde se ve</strong>: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha (las de ingreso quedan a la izquierda; en el celular, una debajo de la otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no conectadas y Llamadas de salida conectadas, una gráfica de barras por mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro por asesor y el detalle por asesor y por día; el usuario del cliente no ve nombres de asesor.<br>
+<strong>Qué archivo</strong>: el export de Wolkvox con las columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y SKILL_ID, que debe decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite y se avisa). Se sube desde "Cargar Datos" eligiendo Mobilize; la plataforma reconoce la hoja por sus columnas.<br>
+<strong>Cómo cuenta</strong>: una sola vez cada teléfono por día, por separado si ese día hubo llamada conectada y no conectada.<br>
+<strong>Privacidad</strong>: igual que en Llamadas Únicas, TELEPHONE nunca llega al servidor.<br>
+<strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántos registros va a reemplazar). Se pueden cargar varios meses, uno a la vez.</p>
+<h3>Encuesta (Mobilize)</h3>
+<p><strong>Dónde se ve</strong>: pestaña "Encuesta" de Mobilize (antes de Calidad), con un solo juego de filtros (Desde, Hasta, Skill y Asesor). Cuatro recuadros, uno por pregunta, con una barra por cada respuesta posible (aunque tenga 0) y debajo cuántos respondieron y cuántos no; al final, los comentarios con texto. El botón "Preguntas de la encuesta" muestra el texto de las preguntas.<br>
+<strong>Qué archivo</strong>: el export de Wolkvox (Reportes → numeral 4, hoja "HistIVR…") con AGENT_NAME, SKILL_NAME, DATE, Q01, Q02, Q03, Q04 y VOICE_MESSAGE. Se sube tal cual desde "Cargar Datos" eligiendo Mobilize; el encabezado se encuentra aunque no esté en la fila 1 y la tabla dinámica se ignora. "-" o "--" = sin respuesta.<br>
+<strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántas encuestas va a reemplazar y pide confirmar); para corregir una base, se vuelve a subir.<br>
+<strong>FCR en Flujo de Llamadas</strong>: la tarjeta "Solución en primer contacto (FCR)" = encuestas con la pregunta 3 en "Sí" ÷ todas las encuestas del mes (configurable para contar solo a quienes respondieron la pregunta 3). Siempre muestra la cuenta, por ejemplo "3 de 45 encuestas"; si el mes no tiene encuestas dice "Sin encuestas este mes".</p>
 </div>
 
 <h2 id="s5">5. Calendario mensual</h2>

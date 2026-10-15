@@ -20,32 +20,40 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
-- **Quitar informa.inconexion.com.co del servidor** — Prioridad MEDIA.
-  Su DNS ya no existe (NXDOMAIN, 2026-10-13) y la guía/documentos ya
-  dicen solo sinco (PR #396, v1.30.5, mergeado con tu OK antes de este
-  paso). Falta limpiar el Caddyfile real y `CORS_ORIGIN` (todavía con
-  informa + sinco). Cómo se cierra: GitHub → Actions → "Dominio de
-  produccion" → Run workflow en `main` con dominio
-  `informa.inconexion.com.co` y modo `quitar`; después se verifica sinco
-  (salud, certificado, CORS solo con sinco).
+- **Filtro Asesor sin revisar con el usuario cliente de Mobilize** (Fase
+  147) — en producción solo se revisó con la sesión de administrador (filtro
+  Asesor presente en las dos mitades de "Llamadas Únicas y de Salida"). Falta
+  entrar con el usuario cliente de Mobilize y confirmar que ve el filtro y el
+  detalle por asesor (las pruebas automáticas ya lo cubren).
+- **Denominador del FCR por confirmar con Camila** (Fase 147, Parte C) —
+  hoy la tarjeta usa la base "total" (todas las encuestas del mes, pedido de
+  Edwin: 3 de 45 = 6,7 % en septiembre). La otra opción es "respondieron"
+  (solo quienes contestaron la pregunta 3: 3 de 4 = 75 %). Se cambia con
+  `fcrBase` en la config del panel de Flujo de Llamadas, sin código.
+- **IP que queda permitida en el puerto 22 de Lightsail, por confirmar** —
+  al terminar el respaldo manual del 15/10/2026, el workflow dejó el puerto
+  22 abierto solo para una IP, que parece ser la que ya estaba permitida
+  antes. Confirmar a quién pertenece y si debe seguir ahí.
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
-  MEDIA (hoy se resuelve relanzando el job). Tres opciones escritas en la
-  Fase 139 (cuenta gratuita de Docker Hub + secreto; login a ECR Public
-  con el rol AWS del deploy; espejo propio en GHCR) — ver
-  `docs/historico/progress-fases.md`, Fase 139 (cierre). Toca
-  `ci.yml`/`deploy.yml` y quizá IAM: decisión tuya, después de la
-  presentación.
-- **Archivar `scripts/qa/fase128-parte1-salida-rename-responsive.js`** —
-  Prioridad BAJA. QA de un solo uso de la Fase 128 (sigue pasando, pero
-  ya no aporta sobre `auditoria-amplia-local.js` + el job `pantallas`).
-  Se archiva con un tag `archivo/...` solo con tu OK.
-- **Rama abandonada `fase131-parte1-renombrar-movilize-mobilize-2026-10-07`**
-  — Prioridad BAJA. Sigue en GitHub; no se borra sin tu OK.
-- **`GET /calidad/llamadas-unicas/opciones` devuelve nombres de asesor a
-  roles cliente** — decidido el 2026-10-13: se deja así, como pidió
-  Edwin (la pantalla oculta el filtro Asesor a CLIENTES_DASH, pero la
-  lista igual viaja en esa respuesta). Si cambias de idea, cerrarlo es
-  un filtro por rol en ese endpoint.
+  MEDIA (hoy se resuelve relanzando el job). Elegiste la opción 1 (cuenta
+  gratuita de Docker Hub): PR en borrador con `docker/login-action`
+  condicionado a que existan los secretos `DOCKERHUB_USERNAME` y
+  `DOCKERHUB_TOKEN`. Cómo se cierra: creas el token y los 2 secretos
+  (pasos en la descripción de ese PR) y escribes "OK mergear 429".
+  Las 3 opciones están en `docs/historico/progress-fases.md`, Fase 139
+  (cierre). El 2026-10-14 (Fase 145) el 429 de `public.ecr.aws` volvió
+  a tumbar el docker-build 4 veces; en cada caso pasó al relanzar el job.
+- **Nombres de asesor para el cliente en Llamadas Únicas y de Salida** —
+  decidido el 2026-10-14 (Fase 147, "OK nombres para cliente"): el cliente
+  de **Mobilize** ve y filtra por asesor en las dos mitades (lista cerrada
+  `CAMPANAS_ASESOR_VISIBLE_CLIENTE`). El cliente de otra campaña no ve
+  nombres de salida. Si se quiere abrir a otra campaña, se agrega a esa
+  lista con OK.
+- **Skill en Llamadas de salida** (Fase 147) — esperando a Edwin: el
+  archivo de salida no trae un skill real (SKILL_ID dice "LLAMADAS DE
+  SALIDA CONECTADAS/NO CONECTADAS"), así que hoy el filtro es por Tipo.
+  Para filtrar por skill hace falta que Edwin mande el archivo de salida
+  con una columna de skill. **Pendiente pedírselo a Edwin.**
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a
@@ -111,6 +119,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Dependencias mayores congeladas** (`better-sqlite3` 13, `dotenv`
   18) — no se tocan sin que lo pidas explícitamente.
 
+- **Textos sin tilde que arma el JavaScript** (Fase 146) — Prioridad BAJA.
+  Los textos fijos de `public/index.html` ya llevan tilde (v1.37.0). Quedan
+  los que arman los archivos `public/js/*.js` (títulos de tablas, avisos,
+  encabezados de exportación). Varios son **encabezados de plantillas y
+  exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
+  "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **19 asesores del archivo real de Calidad sin usuario ASESOR en la
@@ -166,28 +181,36 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   panel ya construido, con septiembre/2026 real cargado desde el
   2026-10-13; vive en su propia pestaña "Llamadas Únicas" desde la Fase
   139):
-  - **Nombre de asesor en las filas NO CONTESTADAS**: una llamada
-    abandonada no tiene asesor que la atendió — falta confirmar qué
-    espera Edwin que vaya en AGENT_NAME para esas filas (vacío, un valor
-    fijo, el del skill).
+  - **Archivo real de llamadas ABANDONADAS de ingreso**: las filas
+    "NO CONTESTADAS" que se cargaron al principio eran llamadas de SALIDA
+    no conectadas (corregido el 2026-10-13, Fase 141 Parte B). Falta que
+    Edwin defina de dónde salen las abandonadas entrantes reales.
   - **Filtro de skill y las abandonadas**: sin confirmar si el filtro de
     Skill del panel debe aplicar también a las llamadas abandonadas o
     solo a las contestadas.
   - **"Tipo de línea" en Mobilize**: Edwin mencionó este término en la
     reunión, sin precisar a qué se refiere ni si es un dato nuevo a
     cargar.
-  - **"ATA" de Mobilize**: sin confirmar si es lo mismo que AHT (ya
-    existe en Mobilize desde el PR 2 de esta fase) o un indicador
-    distinto.
-  - **Archivo de "Llamadas de salida" (conectadas/no conectadas) de
-    Mobilize**: construye la mitad derecha del panel de Flujo de
-    Llamadas — Edwin todavía no lo ha mandado; ahí aplica la Regla B de
-    deduplicación, que tampoco está confirmada con él todavía.
+  - **"ATA" de Mobilize** — RESUELTO (2026-10-14, Fase 146): indicador
+    distinto de AHT ("ASA y ATA" + "AHT" aparte, Fase 145) y, por decisión
+    de Edwin, con datos pero 0 abandonos se muestra **0:00** (v1.37.1).
+  - **Llamadas de salida de Mobilize (septiembre cargado el 2026-10-14,
+    Fase 142)**: se cargó tal cual lo mandó Edwin (111 = 52 no conectadas
+    + 59 conectadas). Faltan 3 respuestas de Edwin: ¿se excluyen las
+    filas "PRUEBA" (3) y "TIMEOUTACW" (1)? (todas son conectadas; sin
+    ellas quedaría 52 / 55 / 107 — se corrige recargando un Excel limpio,
+    la carga reemplaza por rango de fechas), ¿por qué él cuenta 51 no
+    conectadas únicas y la plataforma 52?, y qué es el "tipo de línea"
+    (el archivo no lo trae). El teléfono no se guarda (decisión del
+    usuario, 13/10).
 - **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
   octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
   fase): lo están trabajando fuera de esta línea de trabajo y todavía no
   hay datos — riesgo de plazo que no depende del equipo de la
   plataforma.
+
+- **Otro pendiente de ORLANT que mencionó Edwin ("otra cuenta distinta a la
+  tarjeta")** — sin entender todavía; lo pregunta el usuario. No se tocó.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
@@ -266,6 +289,42 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   humana una por una) — ya cubierto por chequeos automáticos (consola +
   canvas con píxeles, 0 hallazgos), pero no por ojo humano en cada
   combinación. Queda para después si se quiere ese nivel de detalle.
+
+- **Pruebas de tiempos de modales de la Fase 136 inestables bajo carga**
+  (Fase 146) — Prioridad MEDIA. Causa: miden con el reloj real (un
+  `requestAnimationFrame` simulado de 16 ms ×2 contra esperas de 60/100 ms,
+  y la red de seguridad de 400 ms contra una espera de 450 ms); con la CPU
+  saturada (suite en paralelo) los temporizadores se atrasan más que ese
+  margen. Arreglo: temporizadores simulados de `node:test` (`mock.timers`)
+  y una cola de frames manual, con avance exacto — la prueba queda más
+  estricta, no más débil. Archivos: `fase136-pr4-base-movimiento.test.js`,
+  `fase136-pr8-modales-unificados.test.js`.
+- **CSP con `'unsafe-inline'` en `script-src`** (Fase 146) — Prioridad
+  MEDIA, aceptada por ahora. Hace falta porque `index.html` tiene 144
+  manejadores `onclick=` en línea (`server/server.js:80-93` lo explica).
+  Mitigado: todo texto de datos pasa por `esc()` (probado con texto
+  malicioso real en la Fase 146: 66 vistas, nada se ejecutó). Cerrarlo es
+  migrar esos manejadores a `addEventListener` — trabajo grande, después de
+  la entrega.
+- **Código sin uso** (Fase 146) — Prioridad BAJA: las vistas de Tráfico
+  "asaaht" (ASA y AHT) y "asa" sola ya no las usa ninguna configuración
+  (`public/js/trafico.js`: `_traficoDibujarAsaAht`, sus títulos y su rama
+  de resumen). Se pueden quitar cuando convenga.
+- **`revision-final.js` no elige el mes** (Fase 146) — Prioridad BAJA.
+  Contra una base cuyo mes por defecto no tiene Tráfico (la demo local
+  abre en octubre), reporta "sub-pestañas de Flujo" como falla. En
+  producción no pasa (abre en septiembre). Arreglo: elegir el último mes
+  con datos antes de recorrer.
+- **`*.pem` no está en `.gitignore`** (Fase 146) — Prioridad BAJA; hoy no
+  hay ninguno en el repo.
+
+- **Corrección (Fase 146)**: el hallazgo "Tipificación oculta en el seed pero
+  visible en producción" era un **error del diagnóstico**. El tablero destapa
+  sola cada pestaña oculta que ya tiene datos (`dashboard-generic.js`,
+  `_gdBootstrap`: Tipificación, Salida, Agendamiento, Inasistencia,
+  Efectividad), así que `oculta: true` en el seed es lo correcto: sin datos
+  no se muestra, con datos sí. No hay diferencia entre seed y producción y
+  no se cambió nada.
 
 ## Decisiones de esta fase (sin pendiente — ya resueltas, quedan aquí solo como referencia)
 

@@ -16,7 +16,7 @@
 // tipo de panel autonomo nuevo y se olvida agregarlo aqui, "Comparar
 // contra" quedaria visible donde no aplica -- ver la prueba de lista
 // cerrada en mes-global-logic.test.js.
-var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel'];
+var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel', 'encuesta_panel'];
 
 // true si TODOS los paneles visibles (de la pestana o sub-pestana activa)
 // son de tipo autonomo -- en ese caso "Comparar contra" se esconde y se
@@ -27,6 +27,26 @@ function gdTodosAutonomos(panelesVisibles) {
   var lista = panelesVisibles || [];
   if (!lista.length) return false;
   return lista.every(function (p) { return GD_TIPOS_AUTONOMOS.indexOf(p && p.tipo) !== -1; });
+}
+
+// Fase 145 (pedido de Edwin): el aviso amarillo "Este dashboard todavia no
+// tiene datos cargados" (renderGenericBanner, dashboard-generic.js) solo
+// mira las cargas GENERICAS (_gd.cargas) -- Mobilize usa solo paneles
+// autonomos (Trafico, Llamadas Unicas/Salida, Tipificacion, Calidad), que
+// leen sus propios datos y ya traen su aviso de "sin datos", asi que el
+// aviso salia aunque si habia datos. Ahora solo sale si el dashboard tiene
+// algo que DEPENDE de las cargas genericas (tarjetas KPI de arriba o algun
+// panel no autonomo, en cualquier pestana, incluso oculta) y no hay
+// ninguna carga.
+function gdDependeDeCargasGenericas(layout) {
+  var l = layout || {};
+  if ((l.kpis || []).length) return true;
+  return (l.tabs || []).some(function (t) {
+    return ((t && t.panels) || []).some(function (p) { return GD_TIPOS_AUTONOMOS.indexOf(p && p.tipo) === -1; });
+  });
+}
+function gdMostrarAvisoSinCargas(layout, hayCargas) {
+  return !hayCargas && gdDependeDeCargasGenericas(layout);
 }
 
 // Ultimo dia de un mes ('AAAA-MM' -> 'AAAA-MM-DD') -- usado por las 3
@@ -83,5 +103,7 @@ if (typeof module !== 'undefined' && module.exports) {
     gdFinDeMes: gdFinDeMes,
     gdMesesUnion: gdMesesUnion,
     gdMesPorDefecto: gdMesPorDefecto,
+    gdDependeDeCargasGenericas: gdDependeDeCargasGenericas,
+    gdMostrarAvisoSinCargas: gdMostrarAvisoSinCargas,
   };
 }

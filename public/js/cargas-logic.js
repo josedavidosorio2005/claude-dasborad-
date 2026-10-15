@@ -265,6 +265,16 @@ var CARGAS_HOJA_TIPIFICACION_WHATSAPP = 'TIPIFICACION_WHATSAPP';
 // por encabezados si el nombre exacto "LLAMADAS_UNICAS" no esta (ver
 // _cargasBuscarHojaPorEncabezados, cargas.js).
 var CARGAS_HOJA_LLAMADAS_UNICAS = 'LLAMADAS_UNICAS';
+// Fase 141 (Parte C, Mobilize): Llamadas de salida (conectadas/no
+// conectadas) -- hoja propia, solo cuando llamadasSalidaCols viene (hoy solo
+// Mobilize). Igual que Llamadas Unicas, se reconoce por encabezados si el
+// nombre exacto no esta (el archivo real de Edwin trae una sola hoja).
+var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
+// Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
+// conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
+var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
+// Fase 147 (Parte B, Mobilize): Encuesta de satisfaccion.
+var CARGAS_HOJA_ENCUESTA = 'ENCUESTA';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
 // agregados por mes+especialidad) en su propia hoja -- mismo gate que
 // CARGAS_HOJA_AGENDAS (solo cuando inasistenciaCols viene, hoy solo ORLANT).
@@ -312,7 +322,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -554,7 +564,8 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       filaUnica: false, columnas: llamadasUnicasCols,
       notasExtra: [
         'De donde sale: CDR de Wolkvox (Reportes → CDR → "1. Detalle de las llamadas", quitando las ' +
-          'de salida) + Skills & Servicios → "2. Llamadas abandonadas" (SKILL_NAME = NO CONTESTADAS), ' +
+          'de salida). Filas con SKILL_NAME = NO CONTESTADAS se RECHAZAN (son llamadas de salida no ' +
+          'conectadas: van en la hoja "Llamadas de salida"); las abandonadas de ingreso aun no tienen fuente. ' +
           'unificados en una sola hoja con las columnas AGENT_NAME, DATE, TELEPHONE, SKILL_NAME.',
         'TELEPHONE se usa SOLO para quitar llamadas repetidas del MISMO numero en el MISMO dia -- ' +
           'nunca se guarda, nunca se exporta, nunca se muestra. Un numero que llama 2 veces el mismo ' +
@@ -562,6 +573,58 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
           'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 141 (Parte C, Mobilize): Llamadas de salida -- hoja propia, solo
+  // cuando llamadasSalidaCols viene (hoy solo Mobilize).
+  if (llamadasSalidaCols) {
+    plan.push({
+      tipo: 'llamadas_salida', hoja: CARGAS_HOJA_LLAMADAS_SALIDA, titulo: 'Llamadas de salida',
+      descripcion: 'Una fila por llamada de salida (conectada o no conectada), tal cual el export de Wolkvox.',
+      filaUnica: false, columnas: llamadasSalidaCols,
+      notasExtra: [
+        'Columnas: AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (tipificacion) y SKILL_ID, que debe decir ' +
+          '"LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite con aviso).',
+        'TELEPHONE se usa SOLO para contar una vez el mismo numero el mismo dia (por separado si fue conectada ' +
+          'y no conectada) -- nunca se guarda, nunca se exporta, nunca se muestra.',
+        'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
+          'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
+          'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 142 (punto 4, ORLANT): WhatsApp tiempos -- hoja propia, solo cuando
+  // whatsappTiemposCols viene (hoy solo ORLANT).
+  if (whatsappTiemposCols) {
+    plan.push({
+      tipo: 'whatsapp_tiempos', hoja: CARGAS_HOJA_WHATSAPP_TIEMPOS, titulo: 'WhatsApp tiempos de respuesta',
+      descripcion: 'Una fila por conversacion de WhatsApp contestada (export HistQueue de Wolkvox), con fecha y hora.',
+      filaUnica: false, columnas: whatsappTiemposCols,
+      notasExtra: [
+        'Columnas: SKILL_NAME, DATE (con hora), RESULT y ANSWER_TIME (segundos). La columna TIEMPO del archivo, si viene, se ignora: ' +
+          'el rango (0-3, 3-5, 5-8, 8-10, 10+ minutos) lo calcula la plataforma con ANSWER_TIME.',
+        'Solo se cargan las colas cuyo nombre empieza por WHATSAPP; las demas filas (colas de llamadas) se ignoran y la vista previa ' +
+          'dice cuantas fueron. RESULT distinto de ANSWER se omite con aviso.',
+        'Al guardar, la carga REEMPLAZA lo que ya exista entre la primera y la ultima fecha de este archivo -- cargar un mes ' +
+          'nunca borra otro mes.',
+      ],
+    });
+  }
+  // Fase 147 (Parte B, Mobilize): Encuesta -- hoja propia, solo cuando
+  // encuestaCols viene (hoy solo Mobilize).
+  if (encuestaCols) {
+    plan.push({
+      tipo: 'encuesta', hoja: CARGAS_HOJA_ENCUESTA, titulo: 'Encuesta de satisfacción',
+      descripcion: 'Una fila por encuesta respondida, tal cual el export de Wolkvox (Reportes → numeral 4, hoja HistIVR).',
+      filaUnica: false, columnas: encuestaCols,
+      notasExtra: [
+        'Columnas: AGENT_NAME, SKILL_NAME, DATE, Q01 (0 a 10), Q02 (1 a 5), Q03 (1 = Sí, 2 = No), Q04 (1 a 5) y VOICE_MESSAGE ' +
+          '(comentario, opcional). "-" o "--" = sin respuesta. Un valor fuera de rango queda como sin respuesta, con aviso.',
+        'Puedes subir el archivo de Wolkvox tal cual: el encabezado se encuentra aunque no esté en la primera fila, y se ignoran ' +
+          'las demás columnas y hojas (por ejemplo, la tabla dinámica).',
+        'Al guardar, la carga REEMPLAZA lo que ya exista entre la primera y la última DATE de este archivo (el sistema te muestra ' +
+          'antes cuántas encuestas se reemplazan y pide que confirmes): para corregir una base, vuelve a subirla con esta misma plantilla.',
       ],
     });
   }
@@ -743,7 +806,7 @@ function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
 // ni el orden de la "vista previa" al subir un archivo.
 var CARGAS_ORDEN_DESCARGA = [
   CARGAS_HOJA_TRAFICO_LLAMADAS, CARGAS_HOJA_TRAFICO_WHATSAPP,
-  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS,
+  CARGAS_HOJA_TIPIFICACION_LLAMADAS, CARGAS_HOJA_TIPIFICACION_WHATSAPP, CARGAS_HOJA_LLAMADAS_UNICAS, CARGAS_HOJA_LLAMADAS_SALIDA, CARGAS_HOJA_WHATSAPP_TIEMPOS, CARGAS_HOJA_ENCUESTA,
   CARGAS_HOJA_AGENDAS, CARGAS_HOJA_EFECTIVIDAD_AGENDAMIENTO, CARGAS_HOJA_INASISTENCIA, CARGAS_HOJA_CITAS_ATENDIDAS,
   CARGAS_HOJA_SALIDA,
 ];
@@ -794,6 +857,9 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_TIPIFICACION_LLAMADAS: CARGAS_HOJA_TIPIFICACION_LLAMADAS,
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
+    CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
+    CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
+    CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,
     cargasPlanConsolidado: cargasPlanConsolidado,

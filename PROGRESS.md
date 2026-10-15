@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.30.5` (ver `server/package.json`, expuesta en
+- **Versión**: `1.40.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -145,6 +145,18 @@ mano, ver `docs/pendientes.md` §1).
 | Efectividad de agendamiento (sin cambios desde la Fase 122) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) |
 | Efectividad de Citas (Fase 126: Ene-Mar/2026 se borró; el mismo día llegó el archivo real de ago-sep, cargado por la interfaz — queda un solo período real) | Ago 11.189 agendas/7.896 atendidas · Sep 12.194/8.968 · período 72,12 % |
 | Llamadas y WhatsApp de salida (Fase 127, archivo real de Edwin cargado 2026-10-06; renombrada de "Salida" en la Fase 128) | Llamadas: Ago 6.560 (3P 2.169/General 4.391) · Sep 10.404 (3P 3.530/General 6.874). WhatsApp: Ago 3.382 (3P 747/General 2.635) · Sep 3.997 (3P 1.277/General 2.720). Cruce con "LINEA DE SALIDA" de Tipificación: coincide exacto |
+
+### Fase 140 (en curso) — Pulido visual (13-oct)
+
+Capa aditiva al final de `public/css/styles.css` (v1.31.0), sin tocar
+tokens, colores de marca, Quicksand ni contrastes de la Fase 133:
+controles con la fuente de marca, filtros de los tableros con estilo
+propio, `.btn-sm` neutro (Excel/PDF), sin franja vacía de `#gd-kpis`,
+bienvenida centrada, entrada escalonada de tarjetas solo al cambiar de
+pestaña. `.atab` no se tocó (sigue esperando "OK limpieza atab"). PR
+abierto, **sin mergear**: el merge despliega a producción y la Fase 139
+dejó los cambios visuales para después del demo de Mobilize. Detalle en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
 
 ### Fase 139 (en curso) — SInCo, Llamadas Únicas y cierre antes de la presentación (13-oct)
 
@@ -619,4 +631,9 @@ mismo orden):
 - Fase 134 — Solo ORLANT y MOBILIZE quedan en producción: borrado de los otros 12 clientes (0 filas de datos reales, solo plantilla vacía), migración idempotente `fase134_borrar_clientes_v1`; **incidente de proceso real** (cierre retroactivo en la Fase 137): el PR se mergeó y desplegó sin el dry-run ni el "OK borrar" planeados — verificación posterior reportó 0 pérdida de datos; regla nueva en `CLAUDE.md` a partir de esto (2026-10-08)
 - Fase 135 — Auditoría completa de UI/UX y movimiento (solo auditoría, sin tocar producto ni producción): decisión de librería de movimiento con números reales (`motion` vendorizado, 22 KB gzip), inventario de consistencia contado con `grep`, 13 hallazgos con evidencia (bug de responsive en pestañas de ORLANT a 412px, CLS 0.81 al abrir un dashboard, Chart.js sin config de animación propia, 5 sistemas de modal sin transición compartida), línea base de rendimiento medida y plan de 8 PRs para la Fase 136 (2026-10-08)
 - Fase 136 — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135 (F01 pestañas móviles, F02 CLS, tokens, base de movimiento sin vendorizar `motion` -- 49 KB gzip real, más del doble de lo estimado --, componentes base, F03 transición de pestañas + Chart.js, F09 microinteracciones, F08+F11 toast de login + pantalla completa, y F04 modales unificados con Escape, el PR de mayor riesgo, aprobado con "OK modales" tras 2 condiciones de progressive enhancement/reabrir-durante-salida); PR 9 (scroll) descartado sin candidato real; verificación de cierre en producción confirmó MOBILIZE/tema oscuro/modales/F01 en vivo, con 1 hallazgo sin resolver (inestabilidad real, no reproducible en local, al cambiar de pestaña en ORLANT -- documentado, no es regresión de esta fase) (2026-10-09)
-
+- Fase 141 — Reunión con Edwin del 13/10: "Flujo de Llamadas"/"Flujo de WhatsApp" y Tipificación lado a lado (Parte A); corrección de Llamadas Únicas de septiembre (Parte B); mitad "Llamadas de salida" en la pestaña Llamadas Únicas de Mobilize (Parte C) (2026-10-13)
+- Fase 142 — Carga real de Llamadas de salida de Mobilize (septiembre), rechazo de "NO CONTESTADAS" en Llamadas Únicas, y Nivel de Servicio de WhatsApp de ORLANT por rangos de minutos (2026-10-14)
+- Fase 144 — Bloque A de UI/accesibilidad publicado: A1–A3 uno por uno (v1.34.1–1.34.3) y A4–A8 + A3b juntos en v1.34.4 por el 429 del registro de imágenes (2026-10-14)
+- Fase 145 — Ajustes de Mobilize para la entrega: "ASA y ATA" + "AHT", "Llamadas Únicas y de Salida", sin aviso amarillo falso, % legibles en las tortas; verificado en producción (v1.35.0, 2026-10-14)
+- Fase 146 — Auditoría de seguridad y bugs (0 críticos, 0 altos) + README y documentación al día (v1.36.1, 2026-10-14)
+- Fase 147 — Reunión con Edwin del 14/10: meses con nombre, "Última actualización" en naranja, Calidad al final en Mobilize, Asesor para el cliente de Mobilize y filtro Tipo en salida (Parte A, v1.38.0); pestaña "Encuesta" de Mobilize con carga desde Cargar Datos (Parte B, v1.39.0; carga real hecha el 15/10: 45 encuestas de septiembre); tarjeta "Solución en primer contacto (FCR)" en Flujo de Llamadas (Parte C, v1.40.0) (2026-10-15)

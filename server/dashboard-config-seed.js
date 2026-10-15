@@ -442,22 +442,39 @@ const MOBILIZE = {
           // ("asaaht", confirmado que la plantilla real de Flujo trae AHT
           // antes de construir esto), mismo patron que "asaata" (Llamadas de
           // ORLANT) ya usaba para ASA+ATA.
+          // Fase 145 (pedido de Edwin 14/10): "ASA y AHT" se separa otra vez,
+          // ahora como "ASA y ATA" (la misma vista "asaata" que ya usa
+          // Llamadas de ORLANT) y "AHT" aparte (vista "aht"). La vista
+          // "asaaht" sigue existiendo en trafico.js, solo deja de usarse aqui.
+          // Migracion para la base ya sembrada:
+          // dashboards_config_mobilize_flujo_asaata_aht_v1 (db.js).
           subtabs: [
             { key: 'resumen', label: 'Resumen' },
             { key: 'sl', label: 'Nivel de Servicio' },
             { key: 'abandono', label: 'Abandono' },
-            { key: 'asaaht', label: 'ASA y AHT' },
+            { key: 'asaata', label: 'ASA y ATA' },
+            { key: 'aht', label: 'AHT' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
+          // Fase 147 (Parte C): tarjeta "Solucion en primer contacto (FCR)"
+          // desde la Encuesta. Base 'total' (todas las encuestas del mes,
+          // pedido de Edwin) o 'respondieron' (solo las que contestaron la
+          // pregunta 3) -- se cambia aqui o en el constructor, sin codigo.
+          // Migracion: dashboards_config_mobilize_flujo_fcr_v1 (db.js).
+          fcrBase: 'total',
         },
       ]},
       // Fase 139: pestaña propia de Llamadas Unicas (Fase 138 PR3), SIEMPRE
       // visible (sin `oculta`) -- el panel ya trae su propio aviso "Sin
       // llamadas unicas cargadas todavia". Cuando Edwin mande el archivo de
       // "Llamadas de salida", su panel va en ESTA misma pestaña, despues del
+      // [Fase 141: ya construido DENTRO de llamadas_unicas_panel, mitad
+      // derecha -- sin panel nuevo ni migracion de config.]
       // de ingreso (ingreso a la izquierda, salida a la derecha) -- hoy no
       // hay ningun panel de salida, nunca una mitad vacia.
-      { key: 'llamadas_unicas', label: 'Llamadas Únicas', panels: [
+      // Fase 145 (pedido de Edwin 14/10): el texto de la pestaña dice tambien
+      // "de Salida" (la mitad derecha, Fase 141). La key no cambia.
+      { key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida', panels: [
         { tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' },
       ]},
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
@@ -465,6 +482,16 @@ const MOBILIZE = {
           soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
         },
       ]},
+      // Fase 147 (Parte B): Encuesta de satisfaccion post-llamada (tabla
+      // `encuestas`). Siempre visible: el panel trae su propio estado vacio.
+      // Migracion para la base ya sembrada:
+      // dashboards_config_mobilize_encuesta_tab_v1 (db.js).
+      { key: 'encuesta', label: 'Encuesta', panels: [
+        { tipo: 'encuesta_panel', campana: 'MOBILIZE' },
+      ]},
+      // Fase 147 (pedido de Edwin): Calidad SIEMPRE al final en Mobilize (una
+      // pestaña nueva, como Encuesta, va ANTES de esta). Migracion para la
+      // base ya sembrada: dashboards_config_mobilize_calidad_al_final_v1.
       { key: 'calidad', label: 'Calidad', panels: [
         { tipo: 'calidad_kpis', campana: 'MOBILIZE' },
         { tipo: 'calidad_pie', campana: 'MOBILIZE', titulo: 'Distribución de clasificación' },

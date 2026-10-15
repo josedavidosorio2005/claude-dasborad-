@@ -81,17 +81,21 @@ test('base migrada (produccion) == seed: mismo layout final que una base nueva',
   assert.deepEqual(layoutMobilize(), SEED_MOBILIZE.layout);
 });
 
-test('"flujo" queda solo con trafico_combo y sus sub-pestañas intactas (Resumen / Nivel de Servicio / Abandono / ASA y AHT)', () => {
+test('"flujo" queda solo con trafico_combo; sus sub-pestañas terminan en la forma de la Fase 145 (Resumen / Nivel de Servicio / Abandono / ASA y ATA / AHT)', () => {
   const flujo = layoutMobilize().tabs.find((t) => t.key === 'flujo');
   assert.deepEqual(flujo.panels.map((p) => p.tipo), ['trafico_combo']);
-  assert.deepEqual(flujo.panels[0].subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y AHT']);
-  assert.deepEqual(flujo.panels[0], LAYOUT_PROD.tabs.find((t) => t.key === 'flujo').panels[1], 'el trafico_combo no cambio en nada');
+  // Fase 145: la migracion dashboards_config_mobilize_flujo_asaata_aht_v1
+  // (misma carga de db.js) cambia "ASA y AHT" por "ASA y ATA" + "AHT".
+  assert.deepEqual(flujo.panels[0].subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT']);
+  const { subtabs: _subMigradas, ...restoMigrado } = flujo.panels[0];
+  const { subtabs: _subProd, ...restoProd } = LAYOUT_PROD.tabs.find((t) => t.key === 'flujo').panels[1];
+  assert.deepEqual(restoMigrado, restoProd, 'fuera de las sub-pestañas, el trafico_combo no cambio en nada');
 });
 
 test('el tab "llamadas_unicas" queda justo despues de "flujo", visible, con el panel de ingreso', () => {
   const tabs = layoutMobilize().tabs;
-  assert.deepEqual(tabs.map((t) => t.key), ['flujo', 'llamadas_unicas', 'tipificacion', 'calidad']);
-  assert.equal(tabs[1].label, 'Llamadas Únicas');
+  assert.deepEqual(tabs.map((t) => t.key), ['flujo', 'llamadas_unicas', 'tipificacion', 'encuesta', 'calidad']); // Fase 147 (Parte B): Encuesta antes de Calidad
+  assert.equal(tabs[1].label, 'Llamadas Únicas y de Salida'); // Fase 145: solo el texto
   assert.equal(tabs[1].oculta, undefined, 'siempre visible: el panel trae su propio aviso de "sin datos"');
   assert.deepEqual(tabs[1].panels, [{ tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' }]);
 });

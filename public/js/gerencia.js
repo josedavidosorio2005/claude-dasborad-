@@ -127,7 +127,7 @@ function renderGerPanel(){
                      k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
-          '<div style="font-size:0.72rem;color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
+          '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
         panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+badge+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';
@@ -216,7 +216,7 @@ async function gerGuardarKpi(){
         await apiRequest('POST','/gerencia/kpis', body);
       }
     });
-  }catch(e){ showToast(e.message); return; }
+  }catch(e){ showToast(e.message, 'error'); return; }
   showToast(_gerEditId ? 'Indicador actualizado' : 'Indicador creado');
   closeGerKpiModal();
   await loadGerData();
@@ -232,7 +232,7 @@ async function gerEliminarKpi(id){
   if(!k) return;
   if(!confirm('Eliminar el indicador "'+k.nombre+'" de '+k.periodo+'?')) return;
   try{ await apiRequest('DELETE','/gerencia/kpis/'+id); }
-  catch(e){ showToast(e.message); return; }
+  catch(e){ showToast(e.message, 'error'); return; }
   showToast('Indicador eliminado');
   await loadGerData();
   renderGerPanel();
@@ -295,7 +295,7 @@ async function gerProcesarArchivo(input){
     await withButtonLoading(btn, 'Cargando '+kpis.length+' indicadores...', async function(){
       await apiRequest('POST','/gerencia/carga', { periodo: _gerPeriodoSel, kpis: kpis });
     });
-  }catch(e){ showToast(e.message); input.value=''; return; }
+  }catch(e){ showToast(e.message, 'error'); input.value=''; return; }
   showToast(kpis.length+' indicadores cargados para '+_gerPeriodoSel);
   input.value = '';
   await loadGerData();

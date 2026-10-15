@@ -444,6 +444,63 @@ function traficoVentana12Meses(maxDispFecha, minDispFecha) {
   return desde;
 }
 
+// Fase 144 (A1, hallazgo D03 de la Fase 143): decide QUE rango muestra un
+// panel de trafico (Llamadas, WhatsApp, Flujo de Mobilize) en CADA dibujo.
+// Antes, el selector MES solo fijaba el rango la primera vez (Fase 86): el
+// rango quedaba en memoria pero el siguiente dibujo (clic en la misma
+// pestaña, ir y volver, cerrar y reabrir) volvia a leer la URL -- sin fechas
+// -- y caia al rango por defecto de TODOS los datos, sin aviso, debajo de un
+// encabezado que seguia diciendo el mes elegido.
+//
+// Reglas (en este orden):
+//  1. Si el mes global cambio desde la ultima sincronizacion -> ventana de
+//     12 meses que TERMINA en ese mes (Fase 86). Si ese mes no tiene datos,
+//     `sinDatosMes` = true (el panel muestra el aviso con "Ver <ultimo mes>").
+//  2. Si no cambio y ya hay un estado en memoria (`estadoPrevio`) -> se
+//     reusa TAL CUAL: sea el rango del mes, el aviso, o un rango que el
+//     usuario puso a mano con "Aplicar filtros" (Fase 77, siempre se respeta).
+//  3. Primer dibujo sin mes global: estado de la URL; lo que falte, con la
+//     ventana por defecto (ultimos 12 meses con datos).
+//
+// `opts`: { mesSel ('YYYY-MM'|null), mesSincronizado, estadoPrevio,
+// sinDatosPrevio, estadoURL, minDisp, maxDisp, tieneDatosMes (bool, lo
+// calcula quien llama: cada canal define "tiene datos de ese mes" distinto) }.
+// Devuelve { estado (copia nueva), sinDatosMes, sincronizar, origen }.
+function traficoFinDeMes(mes) {
+  var y = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7));
+  var d = new Date(Date.UTC(y, m, 0));
+  return mes + '-' + String(d.getUTCDate()).padStart(2, '0');
+}
+function traficoDecidirRango(opts) {
+  var base = opts.estadoPrevio || opts.estadoURL || {};
+  var estado = Object.assign({}, base);
+  if (opts.mesSel && opts.mesSincronizado !== opts.mesSel) {
+    estado.hasta = traficoFinDeMes(opts.mesSel);
+    estado.desde = traficoVentana12Meses(estado.hasta, opts.minDisp);
+    return { estado: estado, sinDatosMes: !opts.tieneDatosMes, sincronizar: true, origen: 'mes' };
+  }
+  if (opts.estadoPrevio) {
+    return { estado: estado, sinDatosMes: !!opts.sinDatosPrevio, sincronizar: false, origen: 'previo' };
+  }
+  var origen = estado.desde || estado.hasta ? 'url' : 'defecto';
+  if (!estado.desde) estado.desde = traficoVentana12Meses(opts.maxDisp, opts.minDisp);
+  if (!estado.hasta) estado.hasta = opts.maxDisp;
+  return { estado: estado, sinDatosMes: false, sincronizar: false, origen: origen };
+}
+
+// Texto del rango que se esta mostrando, para el subtitulo del panel
+// ("Mostrando: 01/04/2026 – 30/09/2026"). Fechas 'YYYY-MM-DD' -> dd/mm/aaaa,
+// el mismo formato que ya ven en los campos Desde/Hasta.
+function traficoRangoTexto(desde, hasta) {
+  // Fase 147 (pedido de Edwin): el mes en letras ('1 abr 2026'), no dd/mm/aaaa.
+  var f = function (s) {
+    if (!(s && /^\d{4}-\d{2}-\d{2}$/.test(s))) return '—';
+    var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return parseInt(s.slice(8, 10), 10) + ' ' + MESES[parseInt(s.slice(5, 7), 10) - 1] + ' ' + s.slice(0, 4);
+  };
+  return 'Mostrando: ' + f(desde) + ' – ' + f(hasta);
+}
+
 // ── Agregacion por granularidad (dia/mes/anio) + combinar/separar skills ──
 //
 // SIEMPRE suma los volumenes primero y recalcula los % desde esa suma —
@@ -523,6 +580,7 @@ function traficoAgregar(filas, opts) {
     b.totalLlamadas += pesoTotal;
     b.contestadas += pesoContestadas;
     if (f.llamadasAbandonadas != null) { b.llamadasAbandonadas += f.llamadasAbandonadas; b._tieneAbandonadas = true; }
+    if (f.ataSegundos != null) { b._ataReportado = true; if (Number(f.ataSegundos) !== 0) b._ataDistintoDeCero = true; }
     PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
     });
@@ -549,11 +607,48 @@ function traficoAgregar(filas, opts) {
       tasaAbandonoPct: (b.totalLlamadas > 0 && b._tieneAbandonadas) ? r2((b.llamadasAbandonadas / b.totalLlamadas) * 100) : null,
     };
     PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
+    // Fase 146 (decision de Edwin): con datos pero 0 abandonos, ATA = 0
+    // (0:00), no "sin dato" -- ver traficoAtaCeroSinAbandonos.
+    if (out.ataSegundos === null && traficoAtaCeroSinAbandonos({
+      total: b.totalLlamadas, abandonadas: b._tieneAbandonadas ? b.llamadasAbandonadas : null,
+      ataReportado: !!b._ataReportado, ataDistintoDeCero: !!b._ataDistintoDeCero,
+    })) out.ataSegundos = 0;
     return out;
   }).sort(function (a, b) {
     if (a.periodo !== b.periodo) return a.periodo < b.periodo ? -1 : 1;
     return (a.skillName || '').localeCompare(b.skillName || '');
   });
+}
+
+// Fase 146 (decision de Edwin, 14/10/2026): ATA es el tiempo promedio hasta
+// abandonar, ponderado por llamadas ABANDONADAS. Si en el periodo (o en el
+// punto de la grafica) HAY datos pero 0 abandonos, el promedio no se puede
+// calcular -- Edwin pidio verlo como 0:00 en vez de "—". Solo aplica si:
+//   - hay datos (total > 0), y
+//   - las abandonadas vienen reportadas y suman 0, o, si la columna de
+//     abandonadas no vino, el ATA reportado es 0 en todas las filas (nunca
+//     se inventa un 0 encima de un ATA real).
+// Sin datos del periodo no aplica: sigue el aviso de "sin datos" de siempre.
+function traficoAtaCeroSinAbandonos(o) {
+  if (!o || !(Number(o.total) > 0)) return false;
+  if (o.abandonadas != null) return Number(o.abandonadas) === 0;
+  return !!o.ataReportado && !o.ataDistintoDeCero;
+}
+
+// ATA de un conjunto de filas YA filtradas, colapsado a un solo numero (la
+// tarjeta "ATA promedio del periodo"): mismo ponderado por abandonadas que
+// traficoAgregar y la misma regla de 0 abandonos -> 0. null = sin datos.
+function traficoAtaPromedioPeriodo(filas) {
+  var suma = 0, peso = 0, total = 0, abandonadas = 0, tieneAbandonadas = false, ataReportado = false, ataDistintoDeCero = false;
+  (filas || []).forEach(function (f) {
+    total += Number(f.totalLlamadas) || 0;
+    if (f.llamadasAbandonadas != null) { abandonadas += Number(f.llamadasAbandonadas) || 0; tieneAbandonadas = true; }
+    if (f.ataSegundos != null) { ataReportado = true; if (Number(f.ataSegundos) !== 0) ataDistintoDeCero = true; }
+    var w = Number(f.llamadasAbandonadas) || 0;
+    if (f.ataSegundos != null && w > 0) { suma += f.ataSegundos * w; peso += w; }
+  });
+  if (peso > 0) return Math.round((suma / peso) * 100) / 100;
+  return traficoAtaCeroSinAbandonos({ total: total, abandonadas: tieneAbandonadas ? abandonadas : null, ataReportado: ataReportado, ataDistintoDeCero: ataDistintoDeCero }) ? 0 : null;
 }
 
 // AHT promedio de un conjunto de filas YA filtradas (skill/fecha/sede),
@@ -679,6 +774,8 @@ function traficoValidarNuevoMapeo(input) {
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
+    traficoAtaPromedioPeriodo: traficoAtaPromedioPeriodo,
     TRAFICO_COLUMNAS: TRAFICO_COLUMNAS,
     TRAFICO_COLUMNAS_OBLIGATORIAS: TRAFICO_COLUMNAS_OBLIGATORIAS,
     traficoColIndexMap: traficoColIndexMap,
@@ -696,6 +793,9 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoValorCrudoSiFechaBoxeada: traficoValorCrudoSiFechaBoxeada,
     traficoParseFilas: traficoParseFilas,
     traficoVentana12Meses: traficoVentana12Meses,
+    traficoFinDeMes: traficoFinDeMes,
+    traficoDecidirRango: traficoDecidirRango,
+    traficoRangoTexto: traficoRangoTexto,
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,
     traficoAgregar: traficoAgregar,

@@ -14,7 +14,12 @@ var _gd = {
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function _gdNum(v){ var n = typeof v==='number'?v:Number(v); return Number.isFinite(n)?n:0; }
 function _gdMesLbl(p){ var x=String(p||'').split('-'); return x.length<2?(p||''):((_GD_MESES[parseInt(x[1],10)-1]||x[1])+'-'+x[0].slice(2)); }
-function _gdDiaLbl(f){ var x=String(f||'').split('-'); return x.length>=3?(parseInt(x[2],10)+'/'+parseInt(x[1],10)):String(f||''); }
+// Fase 147: dia con el mes en letras ('15 sep'), ver periodoLegible.
+function _gdDiaLbl(f){ return (typeof fechaDiaCorta === 'function') ? fechaDiaCorta(String(f||'')) : String(f||''); }
+// Fase 147: mes con nombre completo ('Septiembre 2026') para lo que se VE
+// (avisos, comparacion, titulo del PDF). _gdMesLbl (corto) queda solo para
+// nombres de archivo exportado y datos de exportacion.
+function _gdMesLargo(p){ return (typeof mesNombreLargo === 'function') ? mesNombreLargo(p) : _gdMesLbl(p); }
 function _gdUp(v){ return String(v==null?'':v).trim().toUpperCase().replace(/\s+/g,''); }
 
 function _gdFmt(v, formato){
@@ -119,7 +124,7 @@ function _gdResolver(f, extra){
     var cargas = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
     var tope = _gd.mesSel || (cargas.length ? cargas[cargas.length-1].periodo : null);
     if(tope) cargas = cargas.filter(function(c){ return c.periodo <= tope; });
-    var labels = cargas.map(function(c){ return _gdMesLbl(c.periodo); });
+    var labels = cargas.map(function(c){ return _gdMesLargo(c.periodo); });
     var values = cargas.map(function(c){ return _gdEvalCampo(_gdPickFila(c.filas), f); });
     if(f.transform === 'incremento'){
       values = values.map(function(v,i){ return i===0 ? null : (values[i-1] ? Math.round(((_gdNum(v)-_gdNum(values[i-1]))/_gdNum(values[i-1]))*100) : null); });
@@ -319,7 +324,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estadoS = _gdSerieFiltro[key] || {};
     var actual = gdSerieSeleccionada(p.series, estadoS.label);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-serief-'+i+'">' +
+      '<div><label for="gd-serief-'+i+'">Linea</label><select id="gd-serief-'+i+'">' +
         p.series.map(function(s){ return '<option value="'+esc(s.label)+'"'+(actual && actual.label===s.label?' selected':'')+'>'+esc(s.label)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -333,7 +338,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var disponiblesU = gdValoresDistintos(base.filas, base.campo);
     var actualU = gdValorFiltroUnico(disponiblesU, (_gdUnicoFiltro[key]||{}).valor);
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Linea</label><select id="gd-unicof-'+i+'">' +
+      '<div><label for="gd-unicof-'+i+'">Linea</label><select id="gd-unicof-'+i+'">' +
         disponiblesU.map(function(v){ return '<option value="'+esc(v)+'"'+(v===actualU?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -346,7 +351,7 @@ function _gdRenderFiltroBar(p, i, tipo){
     var estado = _gdCatFiltro[key] || {};
     var incluidas = (estado.incluidas && estado.incluidas.length) ? estado.incluidas : disponibles;
     host.innerHTML = '<div class="gd-panel-filtro">' +
-      '<div><label>Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
+      '<div><label for="gd-catf-'+i+'">Categorias</label><select multiple id="gd-catf-'+i+'" size="'+Math.min(5, Math.max(2, disponibles.length))+'">' +
         disponibles.map(function(v){ return '<option value="'+esc(v)+'"'+(incluidas.indexOf(v)!==-1?' selected':'')+'>'+esc(v)+'</option>'; }).join('') +
       '</select></div>' +
       '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
@@ -360,8 +365,8 @@ function _gdRenderFiltroBar(p, i, tipo){
   var estadoF = _gdFechaFiltro[key] || {};
   var desde = estadoF.desde || minF, hasta = estadoF.hasta || maxF;
   host.innerHTML = '<div class="gd-panel-filtro">' +
-    '<div><label>Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
-    '<div><label>Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-desde-'+i+'">Desde</label><input type="date" id="gd-fechaf-desde-'+i+'" value="'+esc(desde)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
+    '<div><label for="gd-fechaf-hasta-'+i+'">Hasta</label><input type="date" id="gd-fechaf-hasta-'+i+'" value="'+esc(hasta)+'" min="'+esc(minF)+'" max="'+esc(maxF)+'"></div>' +
     '<button class="btn-sm" onclick="_gdAplicarFiltroPanel('+i+')">Aplicar</button>' +
   '</div>';
 }
@@ -483,7 +488,7 @@ function _gdKpiCardHtml(k){
     var pctTxt = vari.pct === null ? '' : (vari.pct > 0 ? '+' : '') + vari.pct + '%';
     var absTxt = _gdFmt(Math.abs(vari.abs), k.formato);
     trendHtml = '<div class="gd-kpi-trend ' + tcls + '">' + arrow + ' ' + (pctTxt ? pctTxt + ' ' : '') +
-      '<span>(' + (vari.abs >= 0 ? '+' : '-') + absTxt + ') vs ' + (comp.periodo ? _gdMesLbl(comp.periodo) : 'periodo anterior') + '</span></div>';
+      '<span>(' + (vari.abs >= 0 ? '+' : '-') + absTxt + ') vs ' + (comp.periodo ? _gdMesLargo(comp.periodo) : 'periodo anterior') + '</span></div>';
   }
 
   var metaHtml = '';
@@ -649,7 +654,11 @@ async function _gdBootstrap(){
   var tareasBootstrap = [];
 
   Object.keys(campanasCalidad).forEach(function(camp){
-    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); }catch(e){} })());
+    // Fase 145: _gdCalCargada solo queda en true si la carga TERMINO bien --
+    // asi "Todavia no hay monitoreos" (_gdRenderCalidad) nunca sale por un
+    // error de red, solo cuando la campaña de verdad tiene 0 monitoreos.
+    _gdCalCargada[camp] = false;
+    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); _gdCalCargada[camp] = true; }catch(e){} })());
   });
   Object.keys(campanasTraficoLlamadas).forEach(function(campT){
     tareasBootstrap.push((async function(){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} })());
@@ -1050,13 +1059,29 @@ var _gdFinDeMes = gdFinDeMes;
 // 2026"), pedido textual de Edwin -- sin este parametro, el comportamiento
 // es EXACTAMENTE igual al de siempre.
 function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, formatearMes){
-  var fmt = formatearMes || _gdMesLbl;
+  var fmt = formatearMes || _gdMesLargo;
   var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(fmt(mesElegido)) + '.';
   if(ultimoMesConDatos){
     msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
       ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
   }
-  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">'+msg+'</div>';
+  // Fase 144 (A6, hallazgo D05): clase en vez de estilo en linea + role="status"
+  // (lo anuncia un lector de pantalla). Dentro de la grilla de tarjetas KPI
+  // (.aurora-kpis) ocupa TODO el ancho -- antes quedaba encajado en una celda
+  // de ~150px, partido en 5 renglones (Calidad con el mes en curso sin datos).
+  return '<div class="gd-aviso-mes" role="status">'+msg+'</div>';
+}
+
+// Fase 144 (A6): un panel de grafica sin datos para el mes elegido muestra
+// UNA linea de texto en vez de un <canvas> vacio sin explicacion (mismo
+// criterio F09 de la Fase 136 que ya usan Calidad y Mis Resultados).
+function _gdPanelVacioEnCanvas(i, texto){
+  var canvasId = 'gd-c'+i;
+  var c = document.getElementById(canvasId);
+  var wrap = c ? c.parentElement : null;
+  if(!wrap) return;
+  if(_gd.charts[canvasId]){ try{ _gd.charts[canvasId].destroy(); }catch(e){} delete _gd.charts[canvasId]; }
+  wrap.innerHTML = '<div class="gd-panel-vacio">'+esc(texto)+'</div>';
 }
 
 function renderGenericBanner(){
@@ -1064,7 +1089,10 @@ function renderGenericBanner(){
   var hayCargas = Object.keys(_gd.cargas).some(function(s){ return (_gd.cargas[s]||[]).length; });
   var esModulo = _gd.cliente === 'INVENTARIO' || _gd.cliente === 'GERENCIA';
   var ex = document.getElementById('gd-nodata-banner');
-  if(hayCargas || esModulo){ if(ex) ex.remove(); return; }
+  // Fase 145: un dashboard solo de paneles autonomos (Mobilize) nunca
+  // muestra este aviso -- ver gdMostrarAvisoSinCargas (mes-global-logic.js).
+  var layoutGd = (_gd.config && _gd.config.layout) || {};
+  if(esModulo || !gdMostrarAvisoSinCargas(layoutGd, hayCargas)){ if(ex) ex.remove(); return; }
   if(ex) return;
   var d = document.createElement('div');
   d.id = 'gd-nodata-banner';
@@ -1179,7 +1207,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
@@ -1195,7 +1223,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1207,8 +1235,8 @@ function renderGenericTab(key){
             (t === 'line' ? 'Líneas' : t === 'bar' ? 'Barras' : 'Área') + '</button>';
         }).join('') + '</span>' : '';
       var filtroDiv = _gdPanelFiltroTipo(x.p) ? '<div id="gd-f'+x.i+'"></div>' : '';
-      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:0.72rem;color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
-      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:0.74rem;color:var(--c-text-2);line-height:1.5"></div>' : '';
+      var totalSpan = x.p.filtroSerie ? '<span id="gd-serietot-'+x.i+'" style="font-size:var(--fs-note);color:var(--c-text-muted);font-weight:600;margin-left:10px"></span>' : '';
+      var notasDiv = (x.p.notas && x.p.notas.length) ? '<div id="gd-notas-'+x.i+'" style="padding:10px 4px 2px;font-size:var(--fs-note);color:var(--c-text-2);line-height:1.5"></div>' : '';
       return '<div class="aurora-card"><div class="aurora-card-title' + (tools ? ' gd-flex' : '') + '">' +
         '<span>' + esc(x.p.titulo || '') + '</span>' + totalSpan + tools + '</div>' + filtroDiv +
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';
@@ -1237,6 +1265,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
+  if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
 
   if(p.tipo === 'nota_kpi'){ _gdRenderNotaKpi(p, i); return; }
 
@@ -1449,9 +1478,24 @@ function _calDashAplicarFiltros(camp, i){
   if(tab) renderGenericTab(tab.key);
 }
 
+var _gdCalCargada = {};
 function _gdRenderCalidad(p, i){
   var camp = p.campana;
   var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+
+  // Fase 145: la campaña no tiene NINGUN monitoreo (Mobilize hoy). Mismo
+  // aviso de A6 (.gd-aviso-mes, role="status"), pero con un texto que no
+  // culpa al mes elegido: "Todavia no hay monitoreos de calidad para X".
+  if(!todos.length && _gdCalCargada[camp]){
+    if(p.tipo === 'calidad_kpis'){
+      var fElVacio = document.getElementById('gd-f'+i); if(fElVacio) fElVacio.innerHTML = '';
+      var elVacio = document.getElementById('gd-p'+i);
+      if(elVacio) elVacio.innerHTML = '<div class="gd-aviso-mes" role="status">'+esc(calDashTextoSinMonitoreos(camp))+'</div>';
+    } else {
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos todavía.');
+    }
+    return;
+  }
   var asesoresDisp = calDashAsesoresDistintos(todos);
   var estado = _calDashEstado(camp, todos);
 
@@ -1480,8 +1524,13 @@ function _gdRenderCalidad(p, i){
       var fElAviso = document.getElementById('gd-f'+i); if(fElAviso) fElAviso.innerHTML = '';
       var elAviso = document.getElementById('gd-p'+i);
       if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', _gd.mesSel, ultimoMesCal);
+    } else {
+      // calidad_pie / calidad_bar_asesores: una linea de texto en vez de un
+      // canvas vacio (Fase 144, A6) -- el aviso con "Ver <mes>" ya esta arriba.
+      var mesTxt = (typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel;
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos en ' + String(mesTxt).toLowerCase() + '.');
     }
-    return; // calidad_pie: no dibuja nada -- evita un donut vacio sin explicacion
+    return;
   }
 
   if(!estado.asesores) estado.asesores = asesoresDisp.slice();
@@ -1495,14 +1544,14 @@ function _gdRenderCalidad(p, i){
     var fEl = document.getElementById('gd-f'+i);
     if(fEl){
       fEl.innerHTML = '<div class="gd-panel-filtro">' +
-        '<div><label>Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
+        '<div><label for="cd-f-asesor-'+i+'">Asesor</label><select multiple id="cd-f-asesor-'+i+'" size="'+Math.min(5, Math.max(2, asesoresDisp.length))+'">' +
           // Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL del
           // asesor (los filtros tienen que seguir funcionando igual); solo
           // el texto visible pasa por textoFormatoNombre.
           asesoresDisp.map(function(a){ return '<option value="'+esc(a)+'"'+(estado.asesores.indexOf(a)!==-1?' selected':'')+'>'+esc(textoFormatoNombre(a))+'</option>'; }).join('') +
         '</select></div>' +
-        '<div><label>Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
-        '<div><label>Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
+        '<div><label for="cd-f-desde-'+i+'">Desde</label><input type="date" id="cd-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
+        '<div><label for="cd-f-hasta-'+i+'">Hasta</label><input type="date" id="cd-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<button class="btn-sm" data-calapply data-camp="'+esc(camp)+'" data-i="'+i+'">Aplicar filtros</button>' +
       '</div>';
     }
@@ -1729,7 +1778,32 @@ async function _gdExportarLlamadasUnicas(p, i){
   var filas = porMes.map(function(m){
     return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total únicas': m.total, 'Contestadas únicas': m.contestadas, 'Abandonadas únicas': m.abandonadas };
   });
-  return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }];
+  return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }].concat(await _gdExportarLlamadasSalida(campana));
+}
+
+// Fase 147 (Parte B): Encuesta -- una tabla por pregunta + comentarios, con
+// los filtros que el panel tiene aplicados (_encuestaDatosExport, encuesta.js).
+function _gdExportarEncuesta(p, i){
+  var campana = p.campana || _gd.cliente;
+  var bloques = (typeof _encuestaDatosExport === 'function') ? _encuestaDatosExport(campana) : [];
+  if(!bloques.length) return [{ titulo: 'Encuesta', tipo: 'aviso', filas: [], mensaje: 'Sin encuestas para los filtros actuales.' }];
+  return bloques.map(function(b){
+    return b.filas.length ? { titulo: 'Encuesta — '+b.titulo, tipo: 'tabla', filas: b.filas }
+      : { titulo: 'Encuesta — '+b.titulo, tipo: 'aviso', filas: [], mensaje: 'Sin comentarios con estos filtros.' };
+  });
+}
+
+// Fase 141 (Parte C): la mitad de salida exporta solo el resumen por mes
+// (sin nombres de asesor, para cualquier rol).
+async function _gdExportarLlamadasSalida(campana){
+  var porMes = [];
+  try{ porMes = await apiRequest('GET', '/calidad/llamadas-salida/por-mes?campana='+encodeURIComponent(campana)) || []; }catch(e){}
+  if(!porMes.length){
+    return [{ titulo: 'Llamadas de salida', tipo: 'aviso', filas: [], mensaje: 'Sin llamadas de salida cargadas todavía.' }];
+  }
+  return [{ titulo: 'Llamadas de salida', tipo: 'tabla', filas: porMes.map(function(m){
+    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total llamadas de salida': m.total, 'No conectadas': m.noConectadas, 'Conectadas': m.conectadas };
+  }) }];
 }
 
 // Tipificacion (Fase 77, pedido explicito de esta fase): las 2 mitades
@@ -1872,6 +1946,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'tipificacion_panel'){ out = out.concat(await _gdExportarTipificacion(p, i)); continue; }
     if(p.tipo === 'salida_panel'){ out = out.concat(await _gdExportarSalida(p, i)); continue; }
     if(p.tipo === 'llamadas_unicas_panel'){ out = out.concat(await _gdExportarLlamadasUnicas(p, i)); continue; }
+    if(p.tipo === 'encuesta_panel'){ out = out.concat(_gdExportarEncuesta(p, i)); continue; }
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });
@@ -1990,7 +2065,7 @@ async function _gdExportPrint(){
       'td{padding:5px 8px;border-bottom:1px solid #dde8ef}</style></head><body>' +
       avisoHtml +
       '<h1>' + esc(_gd.config.titulo || _gd.cliente) + '</h1><p>Periodo ' + esc(mesLbl) + ' — ' + esc(_gd.cliente) +
-      (_gd.compSel ? ' · comparado con ' + esc(_gdMesLbl(_gd.compSel)) : '') + '</p>' +
+      (_gd.compSel ? ' · comparado con ' + esc(_gdMesLargo(_gd.compSel)) : '') + '</p>' +
       '<h2>Indicadores principales</h2>' + tblKpis +
       '<h2>' + esc(tab ? tab.label : '') + '</h2>' + secs +
       '<p style="margin-top:30px;color:#7a9ba8;font-size:10px">Generado por InConexion Platform — ' + new Date().toLocaleString('es-CO') + '</p>' +
@@ -2021,22 +2096,65 @@ function _fmtCell(v){ return v === null || v === undefined || v === '' ? '' : (t
 // abierto) o se de por "gastado" un instante despues de que se cierre
 // por cualquier otro camino -- nunca cascadea a cerrar el dashboard
 // entero. Ver motion-helpers.js para el detalle completo del hallazgo.
+// Fase 144 (A3, hallazgo D11): menu de boton accesible (patron "Menu
+// Button" de la WAI-ARIA APG, consultado en Context7): aria-expanded en el
+// boton, role="menu"/"menuitem", el foco ENTRA al primer item al abrir
+// (antes hacian falta 12 Tab para llegar), flechas/Inicio/Fin entre items,
+// Tab o Escape lo cierran y devuelven el foco a "Exportar". El menu ahora se
+// agrega DENTRO de #gd-overlay (el dialogo, role="dialog" aria-modal) en vez
+// de colgar de <body>: fuera del dialogo un lector de pantalla no lo veria.
+// #gd-overlay ocupa toda la pantalla (inset:0), asi que las coordenadas
+// position:fixed del menu siguen siendo las mismas de siempre; y desde la
+// Fase 103 la pantalla completa es la pagina entera, sin el problema de
+// clics que obligo a colgarlo de <body>.
+function _gdExportCerrar(devolverFoco){
+  var m = document.getElementById('gd-export-menu');
+  var btn = document.getElementById('gd-export-btn');
+  if(!m) return;
+  var focoDentro = m.contains(document.activeElement);
+  m.remove();
+  document.removeEventListener('click', _gdExportClickAfuera, true);
+  if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu');
+  if(btn){
+    btn.setAttribute('aria-expanded', 'false');
+    if(devolverFoco || focoDentro) btn.focus();
+  }
+}
+function _gdExportTeclado(ev){
+  var m = document.getElementById('gd-export-menu');
+  if(!m) return;
+  var items = Array.prototype.slice.call(m.querySelectorAll('[role="menuitem"]'));
+  var i = items.indexOf(document.activeElement);
+  var sig = -1;
+  if(ev.key === 'ArrowDown') sig = (i + 1) % items.length;
+  else if(ev.key === 'ArrowUp') sig = (i - 1 + items.length) % items.length;
+  else if(ev.key === 'Home') sig = 0;
+  else if(ev.key === 'End') sig = items.length - 1;
+  else if(ev.key === 'Tab'){ ev.preventDefault(); _gdExportCerrar(true); return; }
+  if(sig >= 0){ ev.preventDefault(); items[sig].focus(); }
+}
 function _gdExport(){
   var m = document.getElementById('gd-export-menu');
-  if(m){ m.remove(); document.removeEventListener('click', _gdExportClickAfuera, true); if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu'); return; }
+  if(m){ _gdExportCerrar(false); return; }
   var btn = document.getElementById('gd-export-btn');
   m = document.createElement('div');
   m.id = 'gd-export-menu';
+  m.setAttribute('role', 'menu');
+  m.setAttribute('aria-labelledby', 'gd-export-btn');
   m.style.cssText = 'position:fixed;background:var(--c-surface);border:1px solid var(--c-border);border-radius:8px;box-shadow:0 8px 30px rgba(var(--shadow-rgb),.2);z-index:700;overflow:hidden;font-size:0.85rem';
   m.innerHTML =
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
-    '<button style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
+    '<button role="menuitem" tabindex="-1" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text)" onclick="_gdExportExcel();_gdExport()">Excel (.xlsx)</button>' +
+    '<button role="menuitem" tabindex="-1" style="display:block;width:100%;text-align:left;padding:9px 16px;border:none;background:none;cursor:pointer;color:var(--c-text);border-top:1px solid var(--c-border-soft2)" onclick="_gdExportPrint();_gdExport()">PDF / Imprimir</button>';
   var r = btn.getBoundingClientRect();
   m.style.top = (r.bottom + 6) + 'px';
   m.style.left = Math.max(8, r.right - 160) + 'px';
   m.style.width = '160px';
-  document.body.appendChild(m);
-  if (typeof motionRegistrarPopupInterno === 'function') motionRegistrarPopupInterno('gd-export-menu', _gdExport);
+  (document.getElementById('gd-overlay') || document.body).appendChild(m);
+  m.addEventListener('keydown', _gdExportTeclado);
+  btn.setAttribute('aria-expanded', 'true');
+  var primero = m.querySelector('[role="menuitem"]');
+  if(primero) primero.focus();
+  if (typeof motionRegistrarPopupInterno === 'function') motionRegistrarPopupInterno('gd-export-menu', function(){ _gdExportCerrar(true); });
   setTimeout(function(){ document.addEventListener('click', _gdExportClickAfuera, true); }, 0);
 }
 function _gdExportClickAfuera(ev){
@@ -2044,7 +2162,5 @@ function _gdExportClickAfuera(ev){
   var btn = document.getElementById('gd-export-btn');
   if(!m) return;
   if(m.contains(ev.target) || (btn && btn.contains(ev.target))) return;
-  m.remove();
-  document.removeEventListener('click', _gdExportClickAfuera, true);
-  if (typeof motionDesregistrarPopupInterno === 'function') motionDesregistrarPopupInterno('gd-export-menu');
+  _gdExportCerrar(false);
 }

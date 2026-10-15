@@ -14,6 +14,7 @@ const {
   LLAMADAS_UNICAS_COLUMNAS,
   LLAMADAS_UNICAS_ORDEN_ARRAY,
   LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA,
+  LLAMADAS_UNICAS_MSG_NO_CONTESTADAS,
   llamadasUnicasColIndexMap,
   llamadasUnicasParseFecha,
   llamadasUnicasParseFilas,
@@ -43,27 +44,44 @@ test('caso 2/7: el mismo numero en DIAS distintos cuenta 2 veces', () => {
   assert.deepEqual(res.filas.map((f) => f[1]), ['2026-09-05', '2026-09-06']);
 });
 
-test('caso 3/7: abandonada (SKILL_NAME=NO CONTESTADAS) vs contestada (cualquier otro skill)', () => {
+// Fase 142 (decision del usuario, 13/10/2026): SKILL_NAME = NO CONTESTADAS
+// ya no es "abandonada" -- eran llamadas de SALIDA no conectadas (Fase 141,
+// Parte B). Una sola fila asi RECHAZA el archivo completo, sin filas parciales.
+test('caso 3/7 (Fase 142): una fila NO CONTESTADAS rechaza el archivo completo con el mensaje claro, sin filas parciales', () => {
   const res = llamadasUnicasParseFilas(aoaDe([
     ['Asesor Uno', '2026-09-05', '3001234567', 'SKILL SAC'],
     ['Asesor Dos', '2026-09-05', '3009999999', 'NO CONTESTADAS'],
+    ['Asesor Uno', '2026-09-06', '3001234568', 'SKILL SAC'],
   ]));
-  assert.equal(res.filas.length, 2);
-  const porTipo = {};
-  res.filas.forEach((f) => { porTipo[f[2]] = (porTipo[f[2]] || 0) + 1; });
-  assert.equal(porTipo.CONTESTADA, 1);
-  assert.equal(porTipo.ABANDONADA, 1);
-  const abandonada = res.filas.find((f) => f[2] === 'ABANDONADA');
-  assert.equal(abandonada[3], LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA, 'la abandonada se guarda con skill="Abandonadas", nunca "NO CONTESTADAS" cruda');
+  assert.equal(res.error, 'NO CONTESTADAS es una llamada de SALIDA no conectada; cárgala en Llamadas de salida. (1 fila(s): 3)');
+  assert.equal(res.error.indexOf(LLAMADAS_UNICAS_MSG_NO_CONTESTADAS), 0);
+  assert.equal(res.filas, undefined, 'nunca devuelve filas parciales');
+  assert.ok(!/3009999999|Asesor/.test(res.error), 'el mensaje no trae telefonos ni nombres');
 });
 
-test('caso 4/7: skill con mayusculas/acentos distintos sigue detectando la marca de abandonada', () => {
+test('caso 4/7 (Fase 142): NO CONTESTADAS con mayusculas/acentos/espacios distintos tambien se rechaza', () => {
   const variantes = ['NO CONTESTADAS', 'no contestadas', 'No Contestadas', 'nó cöntéstádas', '  NO   CONTESTADAS  '];
   variantes.forEach((v, i) => {
     const res = llamadasUnicasParseFilas(aoaDe([[`Asesor ${i}`, '2026-09-0' + (i + 1), '300000000' + i, v]]));
-    assert.equal(res.filas.length, 1, 'variante: ' + v);
-    assert.equal(res.filas[0][2], 'ABANDONADA', 'variante no detectada como abandonada: ' + v);
+    assert.ok(res.error && res.error.indexOf(LLAMADAS_UNICAS_MSG_NO_CONTESTADAS) === 0, 'variante no rechazada: ' + v);
+    assert.equal(res.filas, undefined, 'variante: ' + v);
   });
+});
+
+test('caso 4b/7 (Fase 142): el mensaje cuenta todas las filas y muestra hasta 10 numeros de fila', () => {
+  const filas = [];
+  for (let k = 0; k < 12; k++) filas.push(['Asesor', '2026-09-01', '30000000' + (10 + k), 'NO CONTESTADAS']);
+  const res = llamadasUnicasParseFilas(aoaDe(filas));
+  assert.match(res.error, /\(12 fila\(s\): 2, 3, 4, 5, 6, 7, 8, 9, 10, 11…\)$/);
+});
+
+test('caso 4c/7 (Fase 142): sin filas NO CONTESTADAS, todo sigue siendo CONTESTADA con su skill real', () => {
+  const res = llamadasUnicasParseFilas(aoaDe([
+    ['Asesor Uno', '2026-09-05', '3001234567', 'SKILL SAC'],
+    ['Asesor Dos', '2026-09-05', '3009999999', 'Skill Key Account'],
+  ]));
+  assert.ok(!res.error);
+  assert.deepEqual(res.filas.map((f) => [f[2], f[3]]), [['CONTESTADA', 'SKILL SAC'], ['CONTESTADA', 'Skill Key Account']]);
 });
 
 test('caso 5/7: re-cargar el mismo mes (mismo archivo) no duplica -- probado via el servidor, ver suite de integracion mas abajo', () => {
@@ -201,11 +219,13 @@ test('Privacidad 7: ni server/routes/llamadas-unicas.js ni server/llamadas-unica
 
 test('caso 5/7 (integracion): re-cargar el MISMO archivo del mismo mes no duplica', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const parsed = llamadasUnicasParseFilas(aoaDe([
-    ['Asesor A', '2026-08-01', '3001111111', 'SKILL SAC'],
-    ['Asesor B', '2026-08-02', '3002222222', 'NO CONTESTADAS'],
-  ]));
-  const body = { campana: 'MOBILIZE', archivoNombre: 'agosto.xlsx', filas: parsed.filas };
+  // Fase 142: el parser ya no produce ABANDONADA (NO CONTESTADAS se
+  // rechaza), pero el servidor la sigue aceptando para cuando Edwin defina
+  // la fuente real de abandonadas entrantes -- se manda la tupla directa.
+  const body = { campana: 'MOBILIZE', archivoNombre: 'agosto.xlsx', filas: [
+    ['Asesor A', '2026-08-01', 'CONTESTADA', 'SKILL SAC'],
+    ['Asesor B', '2026-08-02', 'ABANDONADA', LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA],
+  ] };
   const r1 = await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth(admin)).send(body);
   assert.equal(r1.status, 201, JSON.stringify(r1.body));
   const r2 = await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth(admin)).send(body);
@@ -235,11 +255,11 @@ test('caso 6/7 (integracion): cargar OTRO mes no borra el anterior', async () =>
 
 test('GET /resumen y /por-mes agregan correctamente contestadas/abandonadas/total', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const parsed = llamadasUnicasParseFilas(aoaDe([
-    ['Asesor A', '2026-07-01', '3005555551', 'SKILL SAC'],
-    ['Asesor A', '2026-07-02', '3005555552', 'SKILL SAC'],
-    ['Asesor B', '2026-07-03', '3005555553', 'NO CONTESTADAS'],
-  ]));
+  const parsed = { filas: [
+    ['Asesor A', '2026-07-01', 'CONTESTADA', 'SKILL SAC'],
+    ['Asesor A', '2026-07-02', 'CONTESTADA', 'SKILL SAC'],
+    ['Asesor B', '2026-07-03', 'ABANDONADA', LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA],
+  ] };
   await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth(admin)).send({ campana: 'MOBILIZE', archivoNombre: 'jul.xlsx', filas: parsed.filas });
 
   const resumen = await request(app).get('/api/calidad/llamadas-unicas/resumen').query({ campana: 'MOBILIZE', desde: '2026-07-01', hasta: '2026-07-03' }).set(auth(admin));

@@ -198,6 +198,29 @@ declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacio
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');
 declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas-unicas/carga'], 'cargaManual');
 declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
+// Fase 141, Parte C (Mobilize): Llamadas de salida -- mismo patron que
+// Llamadas Unicas. /detalle ademas exige rol interno (CLIENTES_DASH con
+// acceso a la campana recibe 403): esa regla se prueba en
+// fase141-llamadas-salida-api.test.js, no en esta matriz.
+declarar(['GET /calidad/llamadas-salida/opciones', 'GET /calidad/llamadas-salida/resumen', 'GET /calidad/llamadas-salida/por-mes'], 'scopedRead');
+// Fase 147 ("OK nombres para cliente"): /detalle y el filtro por agente se
+// abren TAMBIEN al cliente con acceso a MOBILIZE (lista cerrada
+// CAMPANAS_ASESOR_VISIBLE_CLIENTE). Esta matriz siembra a todos con acceso
+// SOLO a ORLANT, asi que fija lo que NO debe cambiar: el cliente de ORLANT
+// sigue en 403 en ORLANT (scopedReadInterno) y MOBILIZE sigue ajena (403)
+// para todo no-admin. El caso del cliente de MOBILIZE (200) y el de un
+// cliente solo-ORLANT contra MOBILIZE estan en fase141-llamadas-salida.test.js.
+declarar(['GET /calidad/llamadas-salida/detalle'], 'scopedReadInterno');
+declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas-salida/carga'], 'cargaManual');
+// Fase 147 (Parte B): Encuesta de Mobilize -- lectura scoped por campana
+// (agentes/filtro por asesor con la misma regla puedeVerAsesores, probada en
+// fase147-b-encuesta.test.js), carga cargaManual.
+declarar(['GET /calidad/encuestas/opciones', 'GET /calidad/encuestas/resumen', 'GET /calidad/encuestas/comentarios', 'GET /calidad/encuestas/fcr'], 'scopedRead');
+declarar(['POST /calidad/encuestas/carga/impacto', 'POST /calidad/encuestas/carga'], 'cargaManual');
+// Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.
+declarar(['GET /calidad/whatsapp-tiempos/opciones'], 'scopedRead');
+declarar(['GET /calidad/whatsapp-tiempos/rangos'], 'scopedRead');
+declarar(['POST /calidad/whatsapp-tiempos/carga/impacto', 'POST /calidad/whatsapp-tiempos/carga'], 'cargaManual');
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');
@@ -237,6 +260,7 @@ const EXTRA_QUERY = {
   'GET /calidad/efectividad-agendamiento/ranking': { mes: '2026-09' },
   'GET /calidad/tipificacion/opciones': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/por-tipo': { canal: 'LLAMADAS' },
+  'GET /calidad/whatsapp-tiempos/rangos': { mes: '2026-09' },
 };
 
 const rutasReales = inventarioRutas();

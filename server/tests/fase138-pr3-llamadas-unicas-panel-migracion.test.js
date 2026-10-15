@@ -88,9 +88,9 @@ test('migraciones de llamadas unicas: el panel se agrega UNA vez, en su tab prop
   const layout = layoutMobilize();
   // (la migracion del tab "tipificacion", misma carga de db.js, le agrega
   // ademas su propio tab a este fixture -- no es parte de esta prueba)
-  assert.deepEqual(layout.tabs.map((t) => t.key).filter((k) => k !== 'tipificacion'), ['flujo', 'llamadas_unicas', 'calidad']);
+  assert.deepEqual(layout.tabs.map((t) => t.key).filter((k) => k !== 'tipificacion' && k !== 'encuesta'), ['flujo', 'llamadas_unicas', 'calidad']); // Fase 147: + encuesta (su propia migracion)
   const tabLu = layout.tabs[1];
-  assert.equal(tabLu.label, 'Llamadas Únicas');
+  assert.equal(tabLu.label, 'Llamadas Únicas y de Salida'); // Fase 145: solo el texto
   assert.deepEqual(tabLu.panels, [{ tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' }]);
   const todos = layout.tabs.flatMap((t) => t.panels).filter((p) => p.tipo === 'llamadas_unicas_panel');
   assert.equal(todos.length, 1, 'un solo panel de llamadas unicas en todo el dashboard');
