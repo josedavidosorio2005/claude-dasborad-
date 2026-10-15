@@ -20,11 +20,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (filtro Asesor oculto, mismos números que el admin) se confirmó en
   local con el usuario demo; en producción queda pendiente hasta que
   cambies la contraseña y avises (`revision-final.js` ya lo revisa).
-- **Carga real de la Encuesta de Mobilize** (Fase 147, Parte B) — esperando
-  tu "OK cargar encuesta". Ensayada en local con el archivo real (45 filas,
-  1–22 sep, 2 comentarios). Antes de cargar: respaldo de menos de 24 h y
-  vista previa con los mismos conteos; si Edwin manda otra versión del
-  archivo, los conteos cambian y se avisan antes de guardar.
+- **Filtro Asesor sin revisar con el usuario cliente de Mobilize** (Fase
+  147) — en producción solo se revisó con la sesión de administrador (filtro
+  Asesor presente en las dos mitades de "Llamadas Únicas y de Salida"). Falta
+  entrar con el usuario cliente de Mobilize y confirmar que ve el filtro y el
+  detalle por asesor (las pruebas automáticas ya lo cubren).
+- **Denominador del FCR por confirmar con Camila** (Fase 147, Parte C) —
+  hoy la tarjeta usa la base "total" (todas las encuestas del mes, pedido de
+  Edwin: 3 de 45 = 6,7 % en septiembre). La otra opción es "respondieron"
+  (solo quienes contestaron la pregunta 3: 3 de 4 = 75 %). Se cambia con
+  `fcrBase` en la config del panel de Flujo de Llamadas, sin código.
+- **IP que queda permitida en el puerto 22 de Lightsail, por confirmar** —
+  al terminar el respaldo manual del 15/10/2026, el workflow dejó el puerto
+  22 abierto solo para una IP, que parece ser la que ya estaba permitida
+  antes. Confirmar a quién pertenece y si debe seguir ahí.
 - **Descargas de imágenes Docker con error 429 en CI/deploy** — Prioridad
   MEDIA (hoy se resuelve relanzando el job). Elegiste la opción 1 (cuenta
   gratuita de Docker Hub): PR en borrador con `docker/login-action`
@@ -44,7 +53,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   archivo de salida no trae un skill real (SKILL_ID dice "LLAMADAS DE
   SALIDA CONECTADAS/NO CONECTADAS"), así que hoy el filtro es por Tipo.
   Para filtrar por skill hace falta que Edwin mande el archivo de salida
-  con una columna de skill.
+  con una columna de skill. **Pendiente pedírselo a Edwin.**
 - **Visibilidad de nombres de asesor para CLIENTES_DASH** — Prioridad
   ALTA. Desde la Fase 122, Agendas y Efectividad de Agendamiento
   muestran el nombre real del asesor a cualquier rol con acceso a
