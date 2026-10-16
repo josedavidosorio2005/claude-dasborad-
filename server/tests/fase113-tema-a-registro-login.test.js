@@ -70,7 +70,7 @@ test('login fallido contra una cuenta suspendida queda registrado como "Usuario 
 
   await request(app).put(`/api/users/${target.id}/active`).set(auth(adminToken)); // suspende
   const res = await login('agomez', SEED.agomez);
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 401); // Fase 151: 401 generico
 
   const h = await ultimoHist(adminToken);
   assert.equal(h.accion, 'LOGIN_FALLIDO');

@@ -2652,6 +2652,20 @@ runOnceMigration('users_token_version_v1', () => {
 // cierre de sesion (LOGIN_OK/LOGIN_FALLIDO/LOGOUT) -- el resto de acciones
 // (ya existentes) las deja NULL. El navegador se guarda ya RESUMIDO (ej.
 // "Chrome / Windows"), nunca el user-agent crudo completo.
+// Fase 151: cierre de sesion que SI corta el token usado (por su `jti`),
+// sin cerrar las sesiones del mismo usuario en otros equipos. Se guarda
+// solo hasta que el token venceria de todas formas (`exp`, segundos).
+runOnceMigration('tokens_revocados_v1', () => {
+  db.exec(`CREATE TABLE IF NOT EXISTS tokens_revocados (jti TEXT PRIMARY KEY, exp INTEGER NOT NULL)`);
+});
+
+// Fase 151: contrasena asignada por un administrador (cuenta nueva o
+// reseteo) -> la persona debe cambiarla al entrar. Las cuentas existentes
+// quedan en 0 (nadie queda bloqueado por este deploy).
+runOnceMigration('users_debe_cambiar_password_v1', () => {
+  db.exec(`ALTER TABLE users ADD COLUMN debe_cambiar_password INTEGER NOT NULL DEFAULT 0`);
+});
+
 runOnceMigration('historial_login_ip_ua_v1', () => {
   db.exec(`ALTER TABLE historial ADD COLUMN ip TEXT`);
   db.exec(`ALTER TABLE historial ADD COLUMN userAgent TEXT`);

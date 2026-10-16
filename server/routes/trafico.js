@@ -22,6 +22,30 @@ const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
 
+// Fase 151: una carga/impacto/remapeo de Trafico solo toca campanas a las
+// que el actor tiene acceso (campaignAccess), igual que el resto de cargas.
+// Las skills sin asignar (nuevas o nunca mapeadas) no pertenecen a ninguna
+// campana todavia: siguen entrando y quedan bajo SIN_ASIGNAR. Solo lectura
+// (no crea filas de mapeo, a diferencia de resolverCampanasPorSkill).
+function campanaActualDeSkill(skillName) {
+  const row = db.prepare('SELECT campana FROM trafico_skill_mapeo WHERE skillName = ?').get(skillName);
+  return row && row.campana ? row.campana : null;
+}
+function campanasSinAcceso(actor, skillNames) {
+  const sinAcceso = new Set();
+  for (const s of new Set(skillNames)) {
+    const c = campanaActualDeSkill(s);
+    if (c && !campaignAccess(actor, c)) sinAcceso.add(c);
+  }
+  return [...sinAcceso];
+}
+function rechazarSinAcceso(res, campanas) {
+  return res.status(403).json({ error: `Sin acceso a los datos de: ${campanas.join(', ')}` });
+}
+function campanaVisible(actor, campana) {
+  return !campana || campana === traficoSkills.SIN_ASIGNAR || campaignAccess(actor, campana);
+}
+
 // Puntos 11/12 del pedido de Edwin: cargar/eliminar/actualizar bases (y
 // ver el control de cargas de mas abajo) SOLO desde la seccion
 // administrativa, nunca accesible a un usuario normal de dashboard.
@@ -114,6 +138,8 @@ router.post(
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de llamadas' });
     }
     const b = req.body;
+    const sinAccesoCarga = campanasSinAcceso(req.actor, b.filas.map((f) => f.skillName));
+    if (sinAccesoCarga.length) return rechazarSinAcceso(res, sinAccesoCarga);
     const resultado = traficoSkills.cargarTrafico(db, {
       archivoNombre: b.archivoNombre || '',
       cargadoPorNombre: req.actor.nombre || '-',
@@ -139,7 +165,7 @@ router.get(
     if (!canLoadData(req.actor)) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para ver el mapeo de skills' });
     }
-    res.json(traficoSkills.listarSkills(db));
+    res.json(traficoSkills.listarSkills(db).filter((r) => campanaVisible(req.actor, r.campana)));
   })
 );
 
@@ -152,6 +178,9 @@ router.put(
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para editar el mapeo de skills' });
     }
     const skillName = req.params.skillName;
+    const actual = campanaActualDeSkill(skillName);
+    const destinos = [actual, req.body.campana].filter((c) => c && !campaignAccess(req.actor, c));
+    if (destinos.length) return rechazarSinAcceso(res, [...new Set(destinos)]);
     const resultado = traficoSkills.remapearSkill(db, { skillName, campana: req.body.campana, sede: req.body.sede || null });
     logEvent(
       'TRAFICO_SKILL_MAPEO',
@@ -185,7 +214,7 @@ router.get(
       )
       .all();
     const porSkill = new Map();
-    filas.forEach((f) => {
+    filas.filter((f) => campanaVisible(req.actor, f.campana)).forEach((f) => {
       if (!porSkill.has(f.skillName)) {
         porSkill.set(f.skillName, { skillName: f.skillName, campana: f.campana, sede: f.sede, meses: [] });
       }
@@ -217,6 +246,8 @@ router.post(
     if (!canLoadData(req.actor)) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
+    const sinAccesoImpacto = campanasSinAcceso(req.actor, req.body.filas.map((f) => f.skillName));
+    if (sinAccesoImpacto.length) return rechazarSinAcceso(res, sinAccesoImpacto);
     const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas, filasABorrar }
     req.body.filas.forEach((f) => {
       const mes = f.fecha.slice(0, 7);

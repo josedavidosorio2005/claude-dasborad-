@@ -53,7 +53,16 @@ const SEED = {
 
 const request = require('supertest');
 
+// Fase 151: un usuario creado por el admin en una prueba queda con cambio de
+// contrasena obligatorio; las pruebas que solo necesitan "entrar como ese
+// usuario" lo tratan como alguien que ya la cambio. Las pruebas del cambio
+// obligatorio en si (fase151-*) usan request() directo, sin este atajo.
+function marcarPasswordYaCambiada(user) {
+  db.prepare('UPDATE users SET debe_cambiar_password = 0 WHERE user = ?').run(user);
+}
+
 async function login(user, password) {
+  marcarPasswordYaCambiada(user);
   const res = await request(app).post('/api/auth/login').send({ user, password });
   return res;
 }

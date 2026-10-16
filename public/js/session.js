@@ -31,46 +31,59 @@ async function doLogin() {
     var data = await apiRequest('POST', '/auth/login', { user: u, password: p });
     authToken = data.token;
 
-    if (data.user.isMasterAdmin) {
-      currentUser = null; // null = admin maestro
-      await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
-      if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
-      enterAdminPanel();
+    // Fase 151: contrasena asignada por un administrador -> cambiarla antes
+    // de entrar (el servidor no deja hacer nada mas mientras tanto).
+    if (data.user && data.user.debeCambiarPassword) {
+      pedirCambioObligatorioPassword(p, function () { return _entrarTrasLogin(data); });
       return;
     }
-
-    // GET /historial exige isFullAdmin en el servidor (routes/historial.js) --
-    // cualquier rol que no sea ADMIN (AUX_ADMIN, CLIENTES_DASH, ASESOR,
-    // SUPERVISOR, CALIDAD, etc.) recibia 403 aqui en CADA login, siempre
-    // ignorado en silencio (loadHist ya cae a historial=[] con try/catch,
-    // Fase 68/67: el mismo 403 aparecia en las verificaciones de produccion
-    // con el usuario temporal AUX_ADMIN). El resultado final para esos roles
-    // no cambia (la pestana Historial ya estaba oculta para ellos, ver
-    // enterAdminPanel abajo) -- esto solo evita la peticion que de todas
-    // formas iba a fallar.
-    var puedeVerHistorial = data.user.rol === 'ADMIN';
-    await loadData(); if (puedeVerHistorial) await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
-    if (puedeVerHistorial && typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
-    var found = users.find(function(x){ return x.id === data.user.id; });
-    // GET /users filtra perms a {} para quien no administra usuarios/permisos
-    // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
-    // pisar los permisos DEL PROPIO usuario logueado: los que ya trajo el
-    // login (data.user, vía toPublicUser) son siempre los reales y completos.
-    // Sin este merge, ensurePerms() (state.js) rellena los cliente_*/campana_*
-    // que llegan undefined con `false` por defecto, y un usuario con acceso
-    // real a sus clientes/campañas se queda sin ver ninguno tras iniciar sesión.
-    currentUser = found ? Object.assign({}, found, { perms: data.user.perms }) : data.user;
-
-    if (currentUser.rol==='ADMIN' || currentUser.rol==='AUX_ADMIN') { enterAdminPanel(); }
-    else if (currentUser.rol==='ASESOR') { enterAsesorPage(); }
-    else if (currentUser.rol==='SUPERVISOR') { enterSupervisorPage(); }
-    else { enterUserDashboard(); }
+    await _entrarTrasLogin(data);
   } catch(e) {
     err.textContent = e.message || 'Usuario o contrasena incorrectos';
     err.style.display='block';
   } finally {
     if(btn){ btn.disabled=false; btn.textContent='Ingresar'; }
   }
+}
+
+// Resto de la entrada (cargar datos y abrir la pagina del rol), separado de
+// doLogin en la Fase 151 para poder correrlo DESPUES del cambio obligatorio
+// de contrasena.
+async function _entrarTrasLogin(data) {
+  if (data.user.isMasterAdmin) {
+    currentUser = null; // null = admin maestro
+    await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+    if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
+    enterAdminPanel();
+    return;
+  }
+
+  // GET /historial exige isFullAdmin en el servidor (routes/historial.js) --
+  // cualquier rol que no sea ADMIN (AUX_ADMIN, CLIENTES_DASH, ASESOR,
+  // SUPERVISOR, CALIDAD, etc.) recibia 403 aqui en CADA login, siempre
+  // ignorado en silencio (loadHist ya cae a historial=[] con try/catch,
+  // Fase 68/67: el mismo 403 aparecia en las verificaciones de produccion
+  // con el usuario temporal AUX_ADMIN). El resultado final para esos roles
+  // no cambia (la pestana Historial ya estaba oculta para ellos, ver
+  // enterAdminPanel abajo) -- esto solo evita la peticion que de todas
+  // formas iba a fallar.
+  var puedeVerHistorial = data.user.rol === 'ADMIN';
+  await loadData(); if (puedeVerHistorial) await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+  if (puedeVerHistorial && typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
+  var found = users.find(function(x){ return x.id === data.user.id; });
+  // GET /users filtra perms a {} para quien no administra usuarios/permisos
+  // (para no exponer la matriz de permisos ajena) — pero eso NUNCA debe
+  // pisar los permisos DEL PROPIO usuario logueado: los que ya trajo el
+  // login (data.user, vía toPublicUser) son siempre los reales y completos.
+  // Sin este merge, ensurePerms() (state.js) rellena los cliente_*/campana_*
+  // que llegan undefined con `false` por defecto, y un usuario con acceso
+  // real a sus clientes/campañas se queda sin ver ninguno tras iniciar sesión.
+  currentUser = found ? Object.assign({}, found, { perms: data.user.perms }) : data.user;
+
+  if (currentUser.rol==='ADMIN' || currentUser.rol==='AUX_ADMIN') { enterAdminPanel(); }
+  else if (currentUser.rol==='ASESOR') { enterAsesorPage(); }
+  else if (currentUser.rol==='SUPERVISOR') { enterSupervisorPage(); }
+  else { enterUserDashboard(); }
 }
 document.getElementById('password').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 

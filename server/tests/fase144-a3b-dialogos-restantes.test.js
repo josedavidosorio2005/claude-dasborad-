@@ -48,10 +48,13 @@ test('Escape conoce los 9 dialogos y cada uno llama a su funcion de cierre de si
   global.closeModal = (id) => llamadas.push('closeModal:' + id);
   global.closeUserModal = () => llamadas.push('closeUserModal');
   global.closeClientsModal = () => llamadas.push('closeClientsModal');
+  // Fase 151: "Cambiar mi contrasena" pasa por cerrarCambiarPasswordModal
+  // (no se cierra mientras el cambio sea obligatorio).
+  global.cerrarCambiarPasswordModal = () => llamadas.push('cerrarCambiarPasswordModal');
   try {
     esc['modal-delete'](); esc['modal-user'](); esc['clients-modal-overlay'](); esc['modal-change-own-password']();
-  } finally { delete global.closeModal; delete global.closeUserModal; delete global.closeClientsModal; }
-  assert.deepEqual(llamadas, ['closeModal:modal-delete', 'closeUserModal', 'closeClientsModal', 'closeModal:modal-change-own-password']);
+  } finally { delete global.closeModal; delete global.closeUserModal; delete global.closeClientsModal; delete global.cerrarCambiarPasswordModal; }
+  assert.deepEqual(llamadas, ['closeModal:modal-delete', 'closeUserModal', 'closeClientsModal', 'cerrarCambiarPasswordModal']);
 });
 
 test('abrir enfoca el dialogo y recuerda el boton; cerrar le devuelve el foco', () => {

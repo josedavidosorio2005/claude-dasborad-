@@ -89,6 +89,8 @@ function toPublicUser(row) {
     // muestra "Sin registro" para ese caso) -- ver routes/usuarios.js para el
     // filtro adicional que oculta este campo a quien no sea admin completo.
     lastLogin: row.last_login_at || null,
+    // Fase 151: contrasena asignada por un administrador, pendiente de cambio.
+    debeCambiarPassword: !!row.debe_cambiar_password,
   };
 }
 

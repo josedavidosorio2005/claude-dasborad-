@@ -332,7 +332,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'gh-person-modal': function () { if (typeof closeGhPersonModal === 'function') closeGhPersonModal(); },
   'inv-mov-modal': function () { if (typeof closeInvMovModal === 'function') closeInvMovModal(); },
   'ger-kpi-modal': function () { if (typeof closeGerKpiModal === 'function') closeGerKpiModal(); },
-  'modal-change-own-password': function () { if (typeof closeModal === 'function') closeModal('modal-change-own-password'); },
+  // Fase 151: en modo obligatorio (primer ingreso) Escape no lo cierra.
+  'modal-change-own-password': function () { if (typeof cerrarCambiarPasswordModal === 'function') cerrarCambiarPasswordModal(); },
   // Fase 147 (Parte B): textos de la encuesta de Mobilize.
   'modal-encuesta-preguntas': function () { if (typeof _encuestaCerrarPreguntas === 'function') _encuestaCerrarPreguntas(); },
 };

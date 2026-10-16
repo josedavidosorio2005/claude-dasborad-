@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const config = require('../config');
 const db = require('../db');
-const { signToken, requireActor } = require('../auth');
+const { signToken, requireActor, revocarToken } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { fechaLimitesAhoraColombiaStr } = require('../fecha-limites');
 const {
@@ -121,8 +121,11 @@ router.post(
       return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
     }
     if (!row.active) {
+      // Fase 151: mismo 401 generico que una contrasena incorrecta -- un 403
+      // distinto confirmaba que la contrasena probada era la correcta. El
+      // motivo real queda solo en el Historial.
       registrarLogin(req, 'LOGIN_FALLIDO', row, 'Usuario suspendido');
-      return res.status(403).json({ error: 'Usuario suspendido. Contacte al administrador.' });
+      return res.status(401).json({ error: 'Usuario o contrasena incorrectos' });
     }
 
     const ahora = fechaLimitesAhoraColombiaStr();
@@ -179,7 +182,8 @@ router.put(
     }
 
     const hash = await bcrypt.hash(newPassword, 10);
-    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(hash, row.id);
+    // Fase 151: cambiarla tambien cumple el cambio obligatorio pendiente.
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1, debe_cambiar_password = 0 WHERE id = ?').run(hash, row.id);
     const actualizado = db.prepare('SELECT token_version FROM users WHERE id = ?').get(row.id);
 
     logEvent(
@@ -215,6 +219,9 @@ router.post(
       ? { nombre: 'Administrador', user: MASTER_ADMIN_USER, rol: 'ADMIN' }
       : req.actor;
     registrarLogin(req, 'LOGOUT', targetRow, '');
+    // Fase 151: el token de esta sesion deja de servir de inmediato (las
+    // sesiones del mismo usuario en otros equipos siguen abiertas).
+    revocarToken(req.auth);
     res.json({ ok: true });
   })
 );

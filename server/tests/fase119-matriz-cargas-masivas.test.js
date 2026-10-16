@@ -94,7 +94,8 @@ function deberiaPasar(rol, campana, familiaNombre) {
     // No es un bug nuevo -- es la unica de las 7 familias con esta
     // inconsistencia, documentada aqui para que quede visible (ver
     // reporte de cierre de la Fase 119).
-    if (familiaNombre === 'Tráfico de Llamadas') return true;
+    // Fase 151: Tráfico de Llamadas ya exige campaignAccess sobre la
+    // campaña resuelta de cada skill, igual que las otras 6 familias.
     return campana === PROPIA;
   }
   return false;
@@ -164,29 +165,19 @@ for (const familia of FAMILIAS) {
   });
 }
 
-test('Fase 119 3: hallazgo real -- Trafico de Llamadas es la UNICA de las 7 familias sin campaignAccess en la carga (solo canLoadData, por diseño documentado)', async () => {
-  // Confirma explicitamente la asimetria encontrada arriba: REPORTES
-  // (cargarDatos:true, pero SOLO campana_ORLANT en el seed) SI puede
-  // cargar Trafico de Llamadas mapeado a CLINICA AURORA...
+// Fase 151: el hallazgo de la Fase 119 quedo cerrado -- Trafico de Llamadas
+// tambien bloquea a REPORTES (solo campana_${PROPIA}) contra una skill ya
+// mapeada a la campaña AJENA, en la carga y en el calculo de impacto.
+test('Fase 151: Trafico de Llamadas exige campaignAccess de la campaña ya mapeada (carga e impacto)', async () => {
   const skill = 'SKILL_HALLAZGO_' + Date.now();
   await request(app).put('/api/calidad/trafico/skills/' + encodeURIComponent(skill)).set(auth('ADMIN')).send({ campana: AJENA });
-  const traficoAurora = await request(app).post('/api/calidad/trafico/carga').set(auth('REPORTES'))
-    .send({ filas: [{ fecha: '2026-03-15', skillName: skill, totalLlamadas: 5, contestadas: 4, nivelAtencionPct: 80 }] });
-  assert.equal(traficoAurora.status, 201, 'confirma el hallazgo: Trafico de Llamadas no exige campaignAccess, solo canLoadData');
-
-  // ...pero NINGUNA de las otras 6 SI tiene campana explicita en el body
-  // (Tipificacion, con canal propio, confirmada aparte).
-  const otras = [
-    { nombre: 'Trafico de WhatsApp', endpoint: '/api/calidad/trafico/whatsapp/carga', body: { campana: AJENA, filas: [{ colaWhatsapp: 'COLA H', fechaInicio: '2026-03-01', fechaFin: '2026-03-31', totalWhatsapp: 5, contestados: 4 }] } },
-    { nombre: 'Agendas', endpoint: '/api/calidad/agendas/carga', body: { campana: AJENA, filas: [['ASESOR H', 'SEDE H', 'EXAMEN H', 'ESP H', 'DR H', '2026-03-15 10:00:00', 'GENERAL', 'EPS H']] } },
-    { nombre: 'Inasistencia', endpoint: '/api/calidad/inasistencia/carga', body: { campana: AJENA, filas: [['2026-03', 'SEDE H', 'ESP H', 'EPS H', 1, 1, 0, 5, 7]] } },
-    { nombre: 'Efectividad de Agendamiento', endpoint: '/api/calidad/efectividad-agendamiento/carga', body: { campana: AJENA, filas: [['2026-03', 'ASESOR H', 80, 40]] } },
-    { nombre: 'Efectividad de Citas', endpoint: '/api/calidad/efectividad-citas/carga', body: { campana: AJENA, filas: [['2026-03', 60, 30]] } },
-  ];
-  for (const o of otras) {
-    const res = await request(app).post(o.endpoint).set(auth('REPORTES')).send(o.body);
-    assert.equal(res.status, 403, `${o.nombre} SI debe bloquear a REPORTES contra CLINICA AURORA (contraste con Trafico de Llamadas), vino ${res.status}`);
-  }
+  const body = { filas: [{ fecha: '2026-03-15', skillName: skill, totalLlamadas: 5, contestadas: 4, nivelAtencionPct: 80 }] };
+  const carga = await request(app).post('/api/calidad/trafico/carga').set(auth('REPORTES')).send(body);
+  assert.equal(carga.status, 403);
+  const impacto = await request(app).post('/api/calidad/trafico/carga/impacto').set(auth('REPORTES')).send(body);
+  assert.equal(impacto.status, 403);
+  const comoAdmin = await request(app).post('/api/calidad/trafico/carga').set(auth('ADMIN')).send(body);
+  assert.equal(comoAdmin.status, 201);
 });
 
 test('Fase 119 3: CLIENTES_DASH no puede cargar NADA en ninguna de las 7 familias (ni su propia campaña)', async () => {

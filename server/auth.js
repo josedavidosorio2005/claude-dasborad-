@@ -2,6 +2,7 @@
 // IMPORTANTE: nunca confiamos solo en lo que decide la interfaz (el navegador);
 // cada endpoint sensible vuelve a validar el permiso aquí, con los datos reales
 // del usuario tal como están guardados en la base de datos.
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const db = require('./db');
 const config = require('./config');
@@ -18,8 +19,37 @@ const JWT_EXPIRES_IN = config.jwtExpiresIn;
 // solo deja de depender de un default implicito de una dependencia externa.
 const JWT_ALGORITHM = 'HS256';
 
+// Fase 151: cada token lleva un identificador unico (jwtid -> claim `jti`)
+// para que el cierre de sesion pueda revocar ESE token puntual (tabla
+// tokens_revocados) sin cerrar las sesiones del usuario en otros equipos.
 function signToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN, algorithm: JWT_ALGORITHM });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN, algorithm: JWT_ALGORITHM, jwtid: crypto.randomUUID() });
+}
+
+function tokenRevocado(auth) {
+  if (!auth || !auth.jti) return false;
+  return !!db.prepare('SELECT 1 FROM tokens_revocados WHERE jti = ?').get(auth.jti);
+}
+
+// Revoca el token de la peticion actual (cierre de sesion). Limpia de paso
+// los ya vencidos, que de todas formas no servirian.
+function revocarToken(auth) {
+  if (!auth || !auth.jti || !auth.exp) return;
+  const ahora = Math.floor(Date.now() / 1000);
+  db.prepare('DELETE FROM tokens_revocados WHERE exp < ?').run(ahora);
+  db.prepare('INSERT OR IGNORE INTO tokens_revocados (jti, exp) VALUES (?, ?)').run(auth.jti, auth.exp);
+}
+
+// Fase 151: mientras una cuenta tenga una contrasena asignada por un
+// administrador sin cambiar, solo puede cambiarla o cerrar sesion.
+const RUTAS_PERMITIDAS_SIN_CAMBIAR_PASSWORD = ['/api/auth/password', '/api/auth/logout'];
+function bloqueadaPorCambioDePassword(actor, req) {
+  if (!actor || actor.isMasterAdmin || !actor.debe_cambiar_password) return false;
+  const ruta = String(req.originalUrl || '').split('?')[0];
+  return !RUTAS_PERMITIDAS_SIN_CAMBIAR_PASSWORD.includes(ruta);
+}
+function responderCambioDePassword(res) {
+  return res.status(403).json({ error: 'Debes cambiar tu contrasena antes de continuar.', codigo: 'DEBE_CAMBIAR_PASSWORD' });
 }
 
 // Middleware: exige un token válido en el header Authorization: Bearer <token>
@@ -38,6 +68,7 @@ function requireAuth(req, res, next) {
 
 // Carga el usuario "actor" (quien hace la peticion) desde la BD, fresco.
 function getActor(req) {
+  if (tokenRevocado(req.auth)) return null;
   if (req.auth.isMasterAdmin) {
     return { id: null, nombre: 'Administrador', user: config.masterAdminUser, rol: 'ADMIN', isMasterAdmin: true, perms: { isAdmin: true } };
   }
@@ -71,6 +102,7 @@ function requirePermission(action) {
     if (!actor.isMasterAdmin && !actor.active) {
       return res.status(403).json({ error: 'Usuario suspendido. Contacte al administrador.' });
     }
+    if (bloqueadaPorCambioDePassword(actor, req)) return responderCambioDePassword(res);
     if (!can(actor, action)) return res.status(403).json({ error: 'Sin permiso para esta accion' });
     req.actor = actor;
     next();
@@ -117,6 +149,7 @@ function requireActor(req, res, next) {
   if (!actor.isMasterAdmin && !actor.active) {
     return res.status(403).json({ error: 'Usuario suspendido. Contacte al administrador.' });
   }
+  if (bloqueadaPorCambioDePassword(actor, req)) return responderCambioDePassword(res);
   req.actor = actor;
   next();
 }
@@ -180,6 +213,7 @@ function requireDataLoader(req, res, next) {
 
 module.exports = {
   signToken,
+  revocarToken,
   requireAuth,
   getActor,
   isFullAdmin,

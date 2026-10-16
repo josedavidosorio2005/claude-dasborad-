@@ -73,7 +73,9 @@ test('login sin campos -> 400', async () => {
   assert.equal(res.status, 400);
 });
 
-test('usuario suspendido no puede iniciar sesion -> 403', async () => {
+// Fase 151: 401 generico (antes 403) -- un codigo distinto confirmaba que la
+// contrasena probada era la correcta.
+test('usuario suspendido no puede iniciar sesion -> 401 generico', async () => {
   const adminToken = (await login('admin', MASTER_PASSWORD)).body.token;
   const list = await request(app).get('/api/users').set('Authorization', `Bearer ${adminToken}`);
   const target = list.body.find((u) => u.user === 'agomez');
@@ -86,7 +88,8 @@ test('usuario suspendido no puede iniciar sesion -> 403', async () => {
   assert.equal(susp.body.active, false);
 
   const res = await login('agomez', 'cli123');
-  assert.equal(res.status, 403);
+  assert.equal(res.status, 401);
+  assert.equal(res.body.error, 'Usuario o contrasena incorrectos');
 
   // reactivar para no afectar otras pruebas del mismo archivo
   await request(app).put(`/api/users/${target.id}/active`).set('Authorization', `Bearer ${adminToken}`);
