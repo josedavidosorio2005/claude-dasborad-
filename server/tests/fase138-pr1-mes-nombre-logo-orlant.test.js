@@ -16,6 +16,8 @@ const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
 const calidadJs = fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'calidad.js'), 'utf8');
 const dashboardJs = fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'dashboard-generic.js'), 'utf8');
 const html = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
+const { REGISTRO_CLIENTES } = require('../../public/js/registro-clientes.js'); // Fase 153: logos en el registro
+const logoDe = (n) => REGISTRO_CLIENTES.find((c) => c.nombre === n).logo;
 const { mesNombreLargo } = require('../../public/js/mes-nombre-logic.js');
 
 // calidad.js es global-en-navegador (sin module.exports); se extrae SOLO la
@@ -70,21 +72,23 @@ test('index.html: el <img id="gd-cliente-logo"> sigue siendo el mismo elemento c
 });
 
 test('dashboard-generic.js: ORLANT tiene su propio logo (distinto del de MOBILIZE), con alt="Orlant"', () => {
-  assert.match(dashboardJs, /_gd\.cliente === 'ORLANT'/, 'falta el chequeo de cliente ORLANT junto al logo');
-  const rutaMatch = dashboardJs.match(/elLogo\.src = 'img\/clientes\/orlant[^']*\.png'/);
-  assert.ok(rutaMatch, 'no se encontro la ruta del logo de ORLANT asignada a elLogo.src');
-  assert.match(dashboardJs, /elLogo\.alt = 'Orlant'/);
+  // Fase 153 (Paso 2): el logo sale del registro de clientes.
+  assert.match(dashboardJs, /elLogo\.alt = logoCli\.alt \|\| '';/);
+  assert.match(logoDe('ORLANT').src, /^img\/clientes\/orlant[^']*\.png$/);
+  assert.notEqual(logoDe('ORLANT').src, logoDe('MOBILIZE').src);
+  assert.equal(logoDe('ORLANT').alt, 'Orlant');
 });
 
 test('dashboard-generic.js: el logo de ORLANT fija width/height explicitos (sin salto de layout), igual que el de MOBILIZE', () => {
-  const bloqueOrlant = dashboardJs.slice(dashboardJs.indexOf("_gd.cliente === 'ORLANT'"), dashboardJs.indexOf("_gd.cliente === 'ORLANT'") + 900);
-  assert.match(bloqueOrlant, /elLogo\.width = \d+;\s*elLogo\.height = \d+;/);
+  assert.match(dashboardJs, /elLogo\.width = logoCli\.width; elLogo\.height = logoCli\.height;/);
+  assert.equal(logoDe('ORLANT').width, 64);
+  assert.equal(logoDe('ORLANT').height, 25);
+  assert.equal(logoDe('MOBILIZE').width, 140);
 });
 
 test('el archivo del logo de ORLANT (1x y 2x) existe de verdad en public/img/clientes/, y el 2x mide el doble', () => {
-  const rutaMatch = dashboardJs.match(/elLogo\.src = 'img\/clientes\/(orlant[^']*\.png)'/);
-  assert.ok(rutaMatch, 'no se encontro el nombre de archivo del logo de ORLANT');
-  const nombre1x = rutaMatch[1];
+  const nombre1x = logoDe('ORLANT').src.replace('img/clientes/', '');
+  assert.equal('img/clientes/' + nombre1x.replace('.png', '@2x.png'), logoDe('ORLANT').src2x);
   const nombre2x = nombre1x.replace('.png', '@2x.png');
   const p1x = path.join(PUBLIC_DIR, 'img', 'clientes', nombre1x);
   const p2x = path.join(PUBLIC_DIR, 'img', 'clientes', nombre2x);

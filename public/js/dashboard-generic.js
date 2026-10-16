@@ -1097,29 +1097,23 @@ function renderGenericHeader(){
   // el logo de Orlant (y al reves). Si la imagen cambia, se oculta
   // (visibility, el espacio sigue reservado: alto fijo en styles.css) hasta
   // que cargue la correcta. Sin transicion.
-  var nuevoLogo = _gd.cliente === 'MOBILIZE' ? 'img/clientes/mobilize-logo.png'
-    : _gd.cliente === 'ORLANT' ? 'img/clientes/orlant-logo-blanco.png' : null;
+  // Fase 153 (Paso 2): el logo de cada cliente sale del registro de
+  // clientes (LISTAS_REGISTRO.logos, registro-clientes.js). Fase 138 (PR1):
+  // el blanco de Orlant es provisional (ver docs/marca.md), mismo alto que
+  // el de Mobilize (25px/50px a 2x). width/height explicitos para que no
+  // haya salto de layout mientras carga.
+  var logoCli = LISTAS_REGISTRO.logos[_gd.cliente] || null;
+  var nuevoLogo = logoCli ? logoCli.src : null;
   if(elLogo && nuevoLogo && elLogo.getAttribute('src') !== nuevoLogo){
     elLogo.style.visibility = 'hidden';
     elLogo.onload = elLogo.onerror = function(){ elLogo.style.visibility = ''; };
   }
   if(elLogo){
-    if(_gd.cliente === 'MOBILIZE'){
-      elLogo.src = 'img/clientes/mobilize-logo.png';
-      elLogo.srcset = 'img/clientes/mobilize-logo.png 1x, img/clientes/mobilize-logo@2x.png 2x';
-      elLogo.alt = 'Mobilize';
-      elLogo.width = 140; elLogo.height = 25;
-      elLogo.style.display = '';
-    } else if(_gd.cliente === 'ORLANT'){
-      // Fase 138 (PR1): logo blanco de Orlant -- provisional (ver
-      // docs/marca.md), mismo alto que el de Mobilize (25px/50px a 2x),
-      // ancho segun su propia relacion de aspecto para no deformarlo.
-      // width/height explicitos para que no haya salto de layout mientras
-      // carga (igual que Mobilize, arriba).
-      elLogo.src = 'img/clientes/orlant-logo-blanco.png';
-      elLogo.srcset = 'img/clientes/orlant-logo-blanco.png 1x, img/clientes/orlant-logo-blanco@2x.png 2x';
-      elLogo.alt = 'Orlant';
-      elLogo.width = 64; elLogo.height = 25;
+    if(logoCli){
+      elLogo.src = logoCli.src;
+      elLogo.srcset = logoCli.src + ' 1x' + (logoCli.src2x ? ', ' + logoCli.src2x + ' 2x' : '');
+      elLogo.alt = logoCli.alt || '';
+      elLogo.width = logoCli.width; elLogo.height = logoCli.height;
       elLogo.style.display = '';
     } else {
       elLogo.style.display = 'none';
@@ -1149,7 +1143,8 @@ function renderGenericHeader(){
   var fechaUa = _gd.ultimaActualizacion && _gd.ultimaActualizacion.fechaColombia;
   if(fechaUa){
     elUa.textContent = 'Última actualización: ' + fechaUa.slice(0, 16); // sin segundos
-    elUa.className = 'gd-ultima-act' + (_gd.cliente === 'MOBILIZE' ? ' gd-ultima-act-mobilize' : '');
+    var claseUa = LISTAS_REGISTRO.claseUltimaActualizacion[_gd.cliente]; // Fase 153: del registro
+    elUa.className = 'gd-ultima-act' + (claseUa ? ' ' + claseUa : '');
     elUa.style.display = '';
   } else {
     elUa.style.display = 'none';

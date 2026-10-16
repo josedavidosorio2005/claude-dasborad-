@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.3 — Octubre 2026
+
+**Fase 153 (paso 2): qué carga y qué pantalla tiene cada cliente sale de su ficha.**
+
+- Por dentro, las hojas que pide Cargar Datos, si el cliente ve los nombres
+  de los asesores, la vista de WhatsApp por rangos y el logo de cada
+  dashboard ya no están escritos en el código para ORLANT y MOBILIZE: salen
+  de la ficha de cada cliente en la base.
+- No cambia nada de lo que se ve ni de los números.
+
 ## v1.47.2 — Octubre 2026
 
 **Fase 153 (paso 1): la lista de clientes vive en la base de datos.**

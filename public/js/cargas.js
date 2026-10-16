@@ -30,27 +30,14 @@ var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente a
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
 
-// Fase 66: campanas cuya plantilla de Trafico ya viene unificada en 2 hojas
-// (LLAMADAS/WHATSAPP, en vez de la "DATA" generica de una sola hoja). Solo
-// ORLANT por ahora -- agregar otro cliente aqui es la unica accion necesaria
-// para extenderlo (mismo criterio "no tocar a nadie mas sin que se pida").
-var CARGAS_CLIENTES_TRAFICO_UNIFICADO = ['ORLANT'];
-
-// Fase 131 (Parte 3): campanas con Tipificacion (CDR de Wolkvox) que NO
-// usan la plantilla unificada de Trafico de 2 hojas -- gate INDEPENDIENTE
-// de CARGAS_CLIENTES_TRAFICO_UNIFICADO (ver onCargaClienteChange). Agregar
-// otro cliente aqui es la unica accion necesaria para extenderlo.
-var CARGAS_CLIENTES_TIPIFICACION_EXTRA = ['MOBILIZE'];
-
-// Fase 138, PR3 (pedido de Edwin 09/10/2026): campanas con hoja de Llamadas
-// Unicas -- mismo gate independiente que CARGAS_CLIENTES_TIPIFICACION_EXTRA.
-var CARGAS_CLIENTES_LLAMADAS_UNICAS = ['MOBILIZE'];
-// Fase 141 (Parte C): Llamadas de salida, mismo gate que Llamadas Unicas.
-var CARGAS_CLIENTES_LLAMADAS_SALIDA = ['MOBILIZE'];
-// Fase 142 (punto 4): WhatsApp tiempos de respuesta, solo ORLANT.
-var CARGAS_CLIENTES_WHATSAPP_TIEMPOS = ['ORLANT'];
-// Fase 147 (Parte B): Encuesta de satisfaccion, solo Mobilize.
-var CARGAS_CLIENTES_ENCUESTA = ['MOBILIZE'];
+// Hojas especiales por cliente (Fases 66, 131, 138, 141, 142 y 147). Desde
+// la Fase 153 (Paso 2) ya no son listas fijas aqui: salen del registro de
+// clientes (registro-clientes.js, LISTAS_REGISTRO), segun los modulos y
+// parametros de cada cliente:
+//  - traficoUnificado: plantilla de Trafico de 2 hojas (LLAMADAS/WHATSAPP);
+//  - tipificacionExtra: Tipificacion por el CDR de Wolkvox (gate
+//    independiente del anterior, ver onCargaClienteChange);
+//  - llamadasUnicas / llamadasSalida, whatsappTiempos, encuesta.
 
 // Fase 79 (hallazgo real: una carga fallo en produccion porque la pestana
 // llevaba abierta desde ANTES del deploy que agrego las hojas nuevas -- el
@@ -326,11 +313,11 @@ async function onCargaClienteChange(){
     // Fase 66: solo ORLANT usa la plantilla unificada de 2 hojas de Trafico
     // (LLAMADAS/WHATSAPP, columnas EXACTAS de la plantilla oficial) -- el
     // resto de campanas sigue con 1 sola hoja "DATA" tal cual siempre
-    // (CARGAS_CLIENTES_TRAFICO_UNIFICADO controla esto, nunca un cambio
+    // (LISTAS_REGISTRO.traficoUnificado controla esto, nunca un cambio
     // global). traficoCols solo se usa para la hoja LLAMADAS cuando hay
     // plantilla unificada (ver cargasPlanConsolidado) -- por eso aqui va la
     // version "unificado" en vez de la generica.
-    var esUnificado = CARGAS_CLIENTES_TRAFICO_UNIFICADO.indexOf(cliente) !== -1;
+    var esUnificado = LISTAS_REGISTRO.traficoUnificado.indexOf(cliente) !== -1;
     var traficoCols = esUnificado ? _cargasTraficoLlamadasColumnasUnificado() : _cargasTraficoColumnas();
     var traficoWpp = esUnificado ? _cargasTraficoWhatsappColumnasUnificado() : null;
     // Fase 78: agendas usa el MISMO gate que Trafico unificado (hoy solo
@@ -343,7 +330,7 @@ async function onCargaClienteChange(){
     // `esUnificado` de arriba) -- gate PROPIO, no se reusa `esUnificado`
     // para no mezclar 2 decisiones independientes (que plantilla de
     // Trafico usa vs. si tiene Tipificacion).
-    var tieneTipificacionExtra = CARGAS_CLIENTES_TIPIFICACION_EXTRA.indexOf(cliente) !== -1;
+    var tieneTipificacionExtra = LISTAS_REGISTRO.tipificacionExtra.indexOf(cliente) !== -1;
     var tipificacionCols = (esUnificado || tieneTipificacionExtra) ? _cargasTipificacionColumnasUnificado() : null;
     // Mobilize: excluye por defecto las filas de prueba mezcladas con datos
     // reales (DESCRIPTION_COD_ACT="PRUEBA", lista configurable -- ver
@@ -354,14 +341,14 @@ async function onCargaClienteChange(){
     var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
     var citasAtendidasCols = esUnificado ? _cargasCitasAtendidasColumnasUnificado() : null;
     var salidaCols = esUnificado ? _cargasSalidaColumnasUnificado() : null;
-    // Fase 138, PR3: gate propio (CARGAS_CLIENTES_LLAMADAS_UNICAS), mismo
+    // Fase 138, PR3: gate propio (LISTAS_REGISTRO.llamadasUnicas), mismo
     // patron que tieneTipificacionExtra -- no se reusa ese gate para no
     // mezclar 2 decisiones independientes.
-    var tieneLlamadasUnicas = CARGAS_CLIENTES_LLAMADAS_UNICAS.indexOf(cliente) !== -1;
+    var tieneLlamadasUnicas = LISTAS_REGISTRO.llamadasUnicas.indexOf(cliente) !== -1;
     var llamadasUnicasCols = tieneLlamadasUnicas ? _cargasLlamadasUnicasColumnasUnificado() : null;
-    var llamadasSalidaCols = CARGAS_CLIENTES_LLAMADAS_SALIDA.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
-    var whatsappTiemposCols = CARGAS_CLIENTES_WHATSAPP_TIEMPOS.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
-    var encuestaCols = CARGAS_CLIENTES_ENCUESTA.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
+    var llamadasSalidaCols = LISTAS_REGISTRO.llamadasSalida.indexOf(cliente) !== -1 ? _cargasLlamadasSalidaColumnasUnificado() : null;
+    var whatsappTiemposCols = LISTAS_REGISTRO.whatsappTiempos.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
+    var encuestaCols = LISTAS_REGISTRO.encuesta.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
     _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols);
   }
   _cargasResultados = [];

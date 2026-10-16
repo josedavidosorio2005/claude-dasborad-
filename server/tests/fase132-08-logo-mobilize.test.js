@@ -12,6 +12,8 @@ const path = require('path');
 const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public');
 const html = fs.readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8');
 const js = fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'dashboard-generic.js'), 'utf8');
+const { REGISTRO_CLIENTES } = require('../../public/js/registro-clientes.js'); // Fase 153: logos en el registro
+const logoDe = (n) => REGISTRO_CLIENTES.find((c) => c.nombre === n).logo;
 
 test('index.html tiene el <img id="gd-cliente-logo"> en el encabezado del dashboard, oculto por defecto', () => {
   const m = html.match(/<img id="gd-cliente-logo"[^>]*>/);
@@ -21,10 +23,13 @@ test('index.html tiene el <img id="gd-cliente-logo"> en el encabezado del dashbo
 });
 
 test('dashboard-generic.js referencia un logo para MOBILIZE y lo oculta para el resto de clientes', () => {
-  assert.match(js, /_gd\.cliente === 'MOBILIZE'/, 'falta el chequeo de cliente MOBILIZE junto al logo');
-  const rutaMatch = js.match(/elLogo\.src = '([^']+)'/);
-  assert.ok(rutaMatch, 'no se encontro la ruta del logo asignada a elLogo.src');
-  assert.equal(rutaMatch[1], 'img/clientes/mobilize-logo.png');
+  // Fase 153 (Paso 2): el logo sale del registro de clientes; un cliente sin
+  // logo en el registro lo deja oculto.
+  assert.match(js, /var logoCli = LISTAS_REGISTRO\.logos\[_gd\.cliente\] \|\| null;/);
+  assert.match(js, /elLogo\.src = logoCli\.src;/);
+  assert.match(js, /elLogo\.style\.display = 'none';/);
+  assert.equal(logoDe('MOBILIZE').src, 'img/clientes/mobilize-logo.png');
+  assert.equal(logoDe('MOBILIZE').src2x, 'img/clientes/mobilize-logo@2x.png');
 });
 
 test('el archivo del logo de MOBILIZE (1x y 2x) existe de verdad en public/img/clientes/, y el 2x mide el doble', () => {

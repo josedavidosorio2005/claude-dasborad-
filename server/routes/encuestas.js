@@ -5,7 +5,7 @@
 //
 // Nombres de asesor: misma regla que Llamadas de salida (puedeVerAsesores,
 // "OK nombres para cliente" de la Fase 147): roles internos, y el cliente de
-// las campañas de CAMPANAS_ASESOR_VISIBLE_CLIENTE (hoy solo MOBILIZE).
+// las campañas con asesorVisibleCliente en el registro de clientes (hoy solo MOBILIZE).
 // Siempre DESPUES de campaignAccess. Montado bajo '/calidad' para heredar el
 // no-cache.
 'use strict';

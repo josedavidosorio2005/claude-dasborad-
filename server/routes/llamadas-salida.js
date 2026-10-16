@@ -23,6 +23,7 @@ const {
   llamadasSalidaOpciones,
 } = require('../llamadas-salida');
 const { wrap, logEvent, actorLabel } = require('./shared');
+const clientesRegistro = require('../clientes-registro');
 
 const router = express.Router();
 
@@ -34,12 +35,12 @@ function esRolInterno(actor) {
 
 // Fase 147 ("OK nombres para cliente", pedido de Edwin): el rol cliente
 // (CLIENTES_DASH) de estas campañas SI ve y filtra por nombre de asesor.
-// Lista cerrada y explicita -- un cliente de cualquier otra campaña (hoy
-// ORLANT) sigue sin ver nombres. Siempre se llama DESPUES de
-// campaignAccess(actor, campana): sin acceso a la campaña ya hubo 403.
-const CAMPANAS_ASESOR_VISIBLE_CLIENTE = ['MOBILIZE'];
+// Un cliente de cualquier otra campaña (hoy ORLANT) sigue sin ver nombres.
+// Siempre se llama DESPUES de campaignAccess(actor, campana): sin acceso a
+// la campaña ya hubo 403. Fase 153 (Paso 2): ya no es una lista fija aqui;
+// sale del registro de clientes (parametro asesorVisibleCliente).
 function puedeVerAsesores(actor, campana) {
-  return esRolInterno(actor) || CAMPANAS_ASESOR_VISIBLE_CLIENTE.includes(campana);
+  return esRolInterno(actor) || clientesRegistro.asesorVisibleCliente(db, campana);
 }
 
 function sinAcceso(res) {
@@ -134,6 +135,5 @@ router.post(
 );
 
 module.exports = router;
-module.exports.CAMPANAS_ASESOR_VISIBLE_CLIENTE = CAMPANAS_ASESOR_VISIBLE_CLIENTE;
 // Fase 147 (Parte B): la Encuesta de Mobilize usa la MISMA regla de nombres.
 module.exports.puedeVerAsesores = puedeVerAsesores;
