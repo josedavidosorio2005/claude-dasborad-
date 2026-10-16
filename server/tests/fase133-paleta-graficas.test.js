@@ -157,15 +157,60 @@ test('Fase 152 B1: ninguna serie de grafica de los tableros usa los colores del 
   assert.equal(usos.length, 3, 'solo los 3 colores de la torta de clasificacion de Calidad');
 });
 
-test('Fase 152 B1: colores de serie por rol desde la paleta, mismo tono en claro y oscuro', () => {
-  assert.match(texto, /function colorSerie\(rol\)/);
-  assert.match(texto, /rol === 'secundaria'\) return PC\[3\]/);
-  assert.match(texto, /rol === 'linea'\) return PC\[1\]/);
-  // PC[1] (violeta) y PC[3] (caqui) mantienen el tono entre temas.
-  const tono = (hex) => { const n = parseInt(hex.slice(1), 16); const r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255; const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min; if (!d) return 0; let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; return h < 0 ? h + 360 : h; };
-  for (const i of [1, 3]) {
-    const dif = Math.abs(tono(PC[i]) - tono(PC_DARK[i]));
-    assert.ok(Math.min(dif, 360 - dif) < 30, `PC[${i}] cambia de tono entre temas (${PC[i]} vs ${PC_DARK[i]})`);
+// Colores de serie de MARCA (ajuste pedido en la revision de B1), leidos de
+// charts.js para cada tema.
+function seriesDelTema(bloque) {
+  const v = (n) => { const m = bloque.match(new RegExp(n + "='(#[0-9a-fA-F]{6}|null)'|" + n + '=(null)')); return m ? (m[1] || m[2]) : undefined; };
+  return { principal: v('SERIE_PRINCIPAL'), secundaria: v('SERIE_SECUNDARIA'), borde: v('SERIE_SECUNDARIA_BORDE'), linea: v('SERIE_LINEA') };
+}
+const SERIES_CLARO = seriesDelTema(bloqueClaro);
+const SERIES_OSCURO = seriesDelTema(bloqueOscuro);
+const FONDOS = { claro: ['#ffffff', '#f7fbfd'], oscuro: ['#132c35', '#17343e'] };
+
+test('Fase 152 B1: series con los colores de marca (teal, azul solo relleno, morado del sistema)', () => {
+  assert.equal(SERIES_CLARO.principal.toLowerCase(), '#004150');
+  assert.equal(SERIES_CLARO.secundaria.toLowerCase(), '#3da2db');
+  assert.equal(SERIES_OSCURO.secundaria.toLowerCase(), '#3da2db');
+  assert.equal(SERIES_CLARO.linea.toLowerCase(), '#8e44ad', '--c-purple claro');
+  assert.equal(SERIES_OSCURO.linea.toLowerCase(), '#c084fc', '--c-purple oscuro');
+  assert.equal(SERIES_OSCURO.principal.toLowerCase(), '#7dd6f0', 'variante clara del sistema (--c-on-primary-soft)');
+  // El verde de marca y el semaforo nunca son una serie.
+  for (const t of [SERIES_CLARO, SERIES_OSCURO]) {
+    for (const c of [t.principal, t.secundaria, t.linea]) {
+      assert.notEqual(c.toLowerCase(), '#74b859', 'el verde de marca queda para el semaforo');
+      for (const sem of SEMAFORO_CLARO.concat(SEMAFORO_OSCURO)) assert.notEqual(c.toLowerCase(), sem.toLowerCase());
+    }
+  }
+});
+
+test('Fase 152 B1: contraste de cada serie contra el fondo (>= 3:1, WCAG 1.4.11), en claro y oscuro', () => {
+  for (const [tema, ser] of [['claro', SERIES_CLARO], ['oscuro', SERIES_OSCURO]]) {
+    for (const fondo of FONDOS[tema]) {
+      assert.ok(contrasteRazon(ser.principal, fondo) >= 3, `${tema} principal vs ${fondo}`);
+      assert.ok(contrasteRazon(ser.linea, fondo) >= 3, `${tema} linea vs ${fondo}`);
+      // El azul de marca: si no llega a 3:1 (claro: 2,84:1), la barra lleva
+      // un borde que si llega (teal de marca).
+      if (contrasteRazon(ser.secundaria, fondo) < 3) {
+        assert.ok(ser.borde && ser.borde !== 'null', `${tema}: azul sin 3:1 necesita borde`);
+        assert.ok(contrasteRazon(ser.borde, fondo) >= 3, `${tema} borde vs ${fondo}`);
+      }
+    }
+  }
+  assert.ok(contrasteRazon(SERIES_CLARO.secundaria, '#ffffff') < 3, 'documenta por que existe el borde en claro');
+  assert.match(texto, /function estiloBarraSecundaria()/);
+});
+
+test('Fase 152 B1: las series se distinguen entre si (deltaE >= 20), tambien con daltonismo', () => {
+  for (const ser of [SERIES_CLARO, SERIES_OSCURO]) {
+    const pares = [[ser.principal, ser.secundaria], [ser.principal, ser.linea], [ser.secundaria, ser.linea]];
+    for (const [x, y] of pares) {
+      assert.ok(contrasteDeltaE(x, y) >= 20, `${x} vs ${y}: deltaE ${contrasteDeltaE(x, y).toFixed(1)}`);
+    }
+    // Barras vecinas (principal/secundaria): distinguibles con los 3 tipos de daltonismo.
+    for (const tipo of ['protanopia', 'deuteranopia', 'tritanopia']) {
+      const d = contrasteDeltaE(contrasteSimularCvd(ser.principal, tipo), contrasteSimularCvd(ser.secundaria, tipo));
+      assert.ok(d >= 15, `principal/secundaria con ${tipo}: deltaE ${d.toFixed(1)}`);
+    }
   }
 });
 

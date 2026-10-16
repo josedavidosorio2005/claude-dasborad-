@@ -104,24 +104,40 @@ function aplicarTemaCharts(){
     CD='#5fc9ea'; CM='#7dd6f0'; CG='#4ade80'; CR='#f87171'; CO='#fbbf24'; CP='#c084fc';
     PC=PC_DARK;
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
+    SERIE_PRINCIPAL='#7dd6f0'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE=null; SERIE_LINEA='#c084fc';
   } else {
     CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
     PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
     CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
+    SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
   }
 }
+// Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
+var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';
 aplicarTemaCharts();
 
-// Fase 152 (B1): color de SERIE por rol, siempre de la paleta categorica
-// (nunca CG/CO/CR: el semaforo queda solo para lo que se compara contra
-// una meta). Se lee en el momento de dibujar, asi sigue el tema.
-//   'principal'  -> CD (teal de marca: totales)
-//   'secundaria' -> PC[3] (segunda barra; mismo tono en claro y oscuro)
-//   'linea'      -> PC[1] (lineas de % y de tiempo; mismo tono en ambos)
+// Fase 152 (B1): color de SERIE por rol, con los colores de MARCA (nunca
+// CG/CO/CR ni el verde de marca #74B859: el semaforo queda solo para lo
+// que se compara contra una meta). Se lee al dibujar, asi sigue el tema.
+//   'principal'  -> teal de marca #004150 (oscuro: #7dd6f0, variante clara
+//                   del sistema, --c-on-primary-soft)
+//   'secundaria' -> azul de marca #3DA2DB, SOLO como relleno de barras
+//                   (nunca texto). En claro da 2,84:1 contra blanco, por
+//                   eso lleva borde de 1 px en teal (11,2:1) -- ver
+//                   estiloBarraSecundaria. En oscuro da 5,1:1, sin borde.
+//   'linea'      -> morado del sistema (--c-purple: #8e44ad / #c084fc)
+// Contrastes medidos en server/tests/fase133-paleta-graficas.test.js.
 function colorSerie(rol){
-  if(rol === 'secundaria') return PC[3];
-  if(rol === 'linea') return PC[1];
-  return CD;
+  if(rol === 'secundaria') return SERIE_SECUNDARIA;
+  if(rol === 'linea') return SERIE_LINEA;
+  return SERIE_PRINCIPAL;
+}
+// Propiedades de una barra de la serie secundaria (relleno + borde de
+// contraste en claro). Se mezclan en el dataset: Object.assign({...}, ...).
+function estiloBarraSecundaria(){
+  return SERIE_SECUNDARIA_BORDE
+    ? { backgroundColor: SERIE_SECUNDARIA, borderColor: SERIE_SECUNDARIA_BORDE, borderWidth: 1 }
+    : { backgroundColor: SERIE_SECUNDARIA, borderWidth: 0 };
 }
 
 // Fase 152 (B1): linea de meta punteada (dataset de linea, sin plugins

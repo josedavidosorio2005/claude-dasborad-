@@ -9,7 +9,8 @@ sepan que hay nuevo, que se corrigio y que falta.
 **Fase 152: colores de las gráficas y líneas de meta.**
 
 - El verde, el amarillo y el rojo quedan solo para lo que se compara contra
-  una meta. Las demás series usan los colores de la marca y de la paleta.
+  una meta. Las demás series usan los colores de la marca: azul petróleo,
+  azul (solo en barras) y morado para las líneas de porcentaje y tiempo.
 - Las gráficas de Nivel de atención, Tasa de abandono y Nivel de servicio
   muestran una línea punteada con su meta ("Meta 90 %"), tomada de la
   pantalla Umbrales.

@@ -161,7 +161,10 @@ async function _wppTiemposDibujar(i, campana) {
       type: 'bar',
       data: {
         labels: r.rangos.map(function (x) { return x.label; }),
-        datasets: [{ label: '% de conversaciones', data: r.rangos.map(function (x) { return x.pct; }), backgroundColor: r.rangos.map(function (x, k) { return k === 0 ? CGl : CDl; }), borderRadius: 3 }],
+        datasets: [{ label: '% de conversaciones', data: r.rangos.map(function (x) { return x.pct; }), backgroundColor: r.rangos.map(function (x, k) { return k === 0 ? CGl : CDl; }),
+          // Fase 152 (B1): borde de contraste solo en la barra azul de marca (claro).
+          borderColor: r.rangos.map(function (x, k) { var e = (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {}); return k === 0 && e.borderColor ? e.borderColor : 'rgba(0,0,0,0)'; }),
+          borderWidth: r.rangos.map(function (x, k) { var e = (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {}); return k === 0 && e.borderWidth ? e.borderWidth : 0; }), borderRadius: 3 }],
       },
       options: o,
     });

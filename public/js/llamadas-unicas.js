@@ -155,7 +155,7 @@ function _llamadasUnicasDibujarBarras(i, porMes) {
   var datasets = [
     { type: 'bar', label: 'Total únicas', data: porMes.map(function (m) { return m.total; }), backgroundColor: CDl, borderRadius: 3 },
     { type: 'bar', label: 'Contestadas únicas', data: porMes.map(function (m) { return m.contestadas; }), backgroundColor: CGl, borderRadius: 3 },
-    { type: 'bar', label: 'Abandonadas únicas', data: porMes.map(function (m) { return m.abandonadas; }), backgroundColor: COl, borderRadius: 3 },
+    Object.assign({ type: 'bar', label: 'Abandonadas únicas', data: porMes.map(function (m) { return m.abandonadas; }), backgroundColor: COl, borderRadius: 3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
   ];
   if (typeof _gdChart === 'function') {
     _gdChart('lu-canvas-' + i, { data: { labels: porMes.map(function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m.periodo) : m.periodo; }), datasets: datasets }, options: o });
@@ -258,7 +258,7 @@ function _llamadasSalidaDibujarBarras(i, porMes) {
   else o.plugins.datalabels = { display: false };
   var datasets = [
     { type: 'bar', label: 'Total', data: porMes.map(function (m) { return m.total; }), backgroundColor: CDl, borderRadius: 3 },
-    { type: 'bar', label: 'No conectadas', data: porMes.map(function (m) { return m.noConectadas; }), backgroundColor: COl, borderRadius: 3 },
+    Object.assign({ type: 'bar', label: 'No conectadas', data: porMes.map(function (m) { return m.noConectadas; }), backgroundColor: COl, borderRadius: 3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
     { type: 'bar', label: 'Conectadas', data: porMes.map(function (m) { return m.conectadas; }), backgroundColor: CGl, borderRadius: 3 },
   ];
   if (typeof _gdChart === 'function') {

@@ -533,12 +533,22 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 
 ## Colores de serie y líneas de meta (Fase 152, B1)
 
-- **Series:** usan `colorSerie(rol)` (`charts.js`), que siempre sale de la paleta categórica:
-  - `principal` es el teal de marca (`CD`).
-  - `secundaria` es `PC[3]`.
-  - `linea` es `PC[1]`.
-  - Estos dos últimos tienen el mismo tono en claro y oscuro.
-  - Si la serie es una línea o cola identificada por nombre, el color sale de `paletaColorPara(nombre)`.
+- **Series:** usan `colorSerie(rol)` (`charts.js`), con los colores de marca:
+
+  | Rol | Claro | Oscuro |
+  |---|---|---|
+  | `principal` | teal `#004150` (11,2:1 sobre blanco) | `#7dd6f0` (`--c-on-primary-soft`, 8,9:1) |
+  | `secundaria` | azul `#3DA2DB`, solo como **relleno de barras** | azul `#3DA2DB` (5,1:1) |
+  | `linea` (% y tiempos) | morado `#8e44ad` (`--c-purple`, 5,9:1) | `#c084fc` (5,5:1) |
+
+  - En claro el azul da 2,84:1 contra blanco, por debajo del 3:1 de WCAG 1.4.11. Por eso la barra lleva un borde de 1 px en teal (`estiloBarraSecundaria()`). En oscuro no hace falta borde.
+  - Nunca se usa el azul como texto.
+  - Medido en `fase133-paleta-graficas.test.js`:
+    - Cada serie, contra el fondo de su tema.
+    - Entre series: ΔE ≥ 20.
+    - Las barras vecinas, también con daltonismo simulado: ΔE ≥ 15.
+  - El verde de marca `#74B859` y `CG`/`CO`/`CR` nunca son una serie.
+  - Si la serie es una línea o cola identificada por nombre, el color sale de `paletaColorPara(nombre)` (paleta categórica).
 - **Semáforo** (`CG`/`CO`/`CR`, bordes `kpi-green`/`kpi-org`/`kpi-red`): solo para lo que se compara contra una meta. La excepción es la torta de clasificación de Calidad, que usa colores fijos de bueno/medio/malo. Una tarjeta sin meta lleva el borde neutro.
 - **Línea de meta:** `agregarLineaMeta(datasets, opciones, umbral, n, eje, unidad)`.
   - Es un dataset de línea gris punteada (`borderDash [6,4]`), sin plugins nuevos. Su texto va en la leyenda ("Meta 90 %" o "Meta máx. 5 %") y no aparece en el tooltip.

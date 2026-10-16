@@ -244,7 +244,7 @@ async function _agendasDibujar(campana, i, opciones, vista){
       data: { labels: meses.map(_agendasMesLbl),
         datasets: [
           { label:'Línea General', data: meses.map(function(m){ return porMesLinea[m+'|GENERAL'] || 0; }), backgroundColor: CDl, borderRadius:3 },
-          { label:'Línea 3P', data: meses.map(function(m){ return porMesLinea[m+'|3P'] || 0; }), backgroundColor: CGl, borderRadius:3 },
+          Object.assign({ label:'Línea 3P', data: meses.map(function(m){ return porMesLinea[m+'|3P'] || 0; }), backgroundColor: CGl, borderRadius:3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
         ] },
       options: loDatalabelsAuto(o3),
     });

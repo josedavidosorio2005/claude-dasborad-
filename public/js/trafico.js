@@ -970,7 +970,7 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
     labels = agregado.map(function(a){ return a.periodo; });
     datasets = [
       { type:'bar', label:labelTotal, data: agregado.map(function(a){return a.totalLlamadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
-      { type:'bar', label:labelContestadas, data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 },
+      Object.assign({ type:'bar', label:labelContestadas, data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 }, estiloBarraSecundaria()),
       { type:'line', label:'Nivel de Atención', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
     ];
   } else {
