@@ -1379,7 +1379,7 @@ function _gdRenderPanel(p, i){
     // de las barras y fuerza que la linea se dibuje siempre encima -- con
     // varias categorias/series no cambia nada (ver comentario de cabecera
     // de ese archivo).
-    var linCfg = lin ? { label: p.linea.label, data: lin.values||[], color: (typeof CO!=='undefined'?CO:'#e67e22') } : null;
+    var linCfg = lin ? { label: p.linea.label, data: lin.values||[], color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } : null; // Fase 152 (B1)
     var ds = gdComboDatasets(barras, linCfg);
     var o = loBar();
     // Chart.js usa el mismo `order` (gd-combo-logic.js) tambien para

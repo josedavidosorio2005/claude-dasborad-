@@ -227,8 +227,8 @@ function _tipificacionQueryStringSalida(campana, compartido, deCanal){
 function _tipificacionTarjetasSalidaHtml(resumen){
   var pct = resumen.total ? Math.round((resumen.conectadas/resumen.total)*10000)/100 : null;
   return '<div class="aurora-kpi"><div class="kv">'+resumen.total.toLocaleString('es-CO')+'</div><div class="kl">Llamadas de salida</div></div>' +
-    '<div class="aurora-kpi kpi-green"><div class="kv">'+resumen.conectadas.toLocaleString('es-CO')+'</div><div class="kl">Conectadas'+(pct===null?'':' ('+pct+'%)')+'</div></div>' +
-    '<div class="aurora-kpi kpi-red"><div class="kv">'+resumen.noConectadas.toLocaleString('es-CO')+'</div><div class="kl">No conectadas</div></div>';
+    '<div class="aurora-kpi"><div class="kv">'+resumen.conectadas.toLocaleString('es-CO')+'</div><div class="kl">Conectadas'+(pct===null?'':' ('+pct+'%)')+'</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">'+resumen.noConectadas.toLocaleString('es-CO')+'</div><div class="kl">No conectadas</div></div>';
 }
 
 // Fase 131 (Mobilize): tabla de mayor a menor (codificacion legible sin

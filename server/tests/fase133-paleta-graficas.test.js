@@ -136,3 +136,72 @@ test('CHART_TICK (claro) ya no es el gris viejo de bajo contraste (2.97:1) -- co
   const r = contrasteRazon(m[1], '#ffffff');
   assert.ok(r >= 4.5, `CHART_TICK claro (${m[1]}) da ${r.toFixed(2)}:1 contra blanco, por debajo de 4.5:1`);
 });
+
+// ── Fase 152 (B1): semaforo solo con meta; series con la paleta ──────────
+const JS_DIR = path.join(__dirname, '..', '..', 'public', 'js');
+const leerJs = (f) => fs.readFileSync(path.join(JS_DIR, f), 'utf8');
+// Archivos donde CG/CO/CR SI son semaforo a proposito: la torta de
+// clasificacion de Calidad (sobresaliente/no critico/critico, excepcion
+// documentada), la pantalla de Umbrales y la definicion en charts.js.
+const SEMAFORO_PERMITIDO = ['charts.js', 'umbrales.js', 'calidad.js', 'mis-resultados.js', 'dashboard-generic.js'];
+
+test('Fase 152 B1: ninguna serie de grafica de los tableros usa los colores del semaforo (CG/CO/CR)', () => {
+  const archivos = fs.readdirSync(JS_DIR).filter((f) => f.endsWith('.js') && !SEMAFORO_PERMITIDO.includes(f) && !/^vendor|chart\.umd|xlsx/.test(f));
+  for (const f of archivos) {
+    const src = leerJs(f);
+    assert.doesNotMatch(src, /typeof C[GOR] ?!==? ?'undefined'/, `${f} usa CG/CO/CR para una serie`);
+  }
+  // dashboard-generic.js: solo la torta de clasificacion de Calidad.
+  const gd = leerJs('dashboard-generic.js');
+  const usos = gd.match(/typeof C[GOR]!=='undefined'/g) || [];
+  assert.equal(usos.length, 3, 'solo los 3 colores de la torta de clasificacion de Calidad');
+});
+
+test('Fase 152 B1: colores de serie por rol desde la paleta, mismo tono en claro y oscuro', () => {
+  assert.match(texto, /function colorSerie\(rol\)/);
+  assert.match(texto, /rol === 'secundaria'\) return PC\[3\]/);
+  assert.match(texto, /rol === 'linea'\) return PC\[1\]/);
+  // PC[1] (violeta) y PC[3] (caqui) mantienen el tono entre temas.
+  const tono = (hex) => { const n = parseInt(hex.slice(1), 16); const r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255; const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min; if (!d) return 0; let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; return h < 0 ? h + 360 : h; };
+  for (const i of [1, 3]) {
+    const dif = Math.abs(tono(PC[i]) - tono(PC_DARK[i]));
+    assert.ok(Math.min(dif, 360 - dif) < 30, `PC[${i}] cambia de tono entre temas (${PC[i]} vs ${PC_DARK[i]})`);
+  }
+});
+
+test('Fase 152 B1: linea de meta punteada solo desde un umbral configurado', () => {
+  assert.match(texto, /function agregarLineaMeta\(datasets, opciones, umbral, n, yAxisID, unidad\)/);
+  assert.match(texto, /if\(!umbral \|\| umbral\.verde === null/, 'sin umbral no se dibuja');
+  assert.match(texto, /borderDash: \[6, 4\]/);
+  assert.match(texto, /tooltip\.filter = function\(item\)\{ return !item\.dataset\.esMeta; \}/);
+  const traf = leerJs('trafico.js');
+  assert.match(traf, /agregarLineaMeta\(datasets, o, _traficoUmbral\('nivel_atencion', campana\)/);
+  assert.match(traf, /agregarLineaMeta\(dsAband, oAband, _traficoUmbral\('tasa_abandono', campana\)/);
+  assert.match(traf, /_traficoDibujarSL\('tv', i, agregadoComb, null, null, null, _traficoUmbral\('service_level', campana\)\)/);
+  const wpp = leerJs('trafico-whatsapp.js');
+  assert.doesNotMatch(wpp, /service_level/, 'WhatsApp: nivel de servicio sin meta acordada');
+  // La linea punteada queda reservada a la meta.
+  assert.doesNotMatch(traf, /borderDash:\[4,3\]/);
+});
+
+test('Fase 152 B1: tarjetas sin meta con borde neutro (sin verde/rojo fijo)', () => {
+  for (const f of ['llamadas-unicas.js', 'tipificacion.js', 'whatsapp-tiempos.js']) {
+    assert.doesNotMatch(leerJs(f), /aurora-kpi kpi-(green|red)/, f);
+  }
+  const traf = leerJs('trafico.js');
+  assert.doesNotMatch(traf, /cls: 'kpi-green'/);
+  assert.doesNotMatch(traf, /aurora-kpi kpi-red/);
+});
+
+test('Fase 152 B1: barras de comparacion (no tiempo) ordenadas de mayor a menor', () => {
+  assert.match(leerJs('agendas.js'), /if\(vista === 'especialidad'\)\{\n[^\n]*\n\s*datos = datos\.slice\(\)\.sort\(function\(a,b\)\{ return \(b\.cantidad\|\|0\) - \(a\.cantidad\|\|0\); \}\);/);
+});
+
+test('Fase 152 B1: la linea de meta sola no hace que una grafica sin datos parezca con datos', () => {
+  const { gdGraficaEstaVacia } = require('../../public/js/grafica-vacia-logic.js');
+  const cfg = { data: { labels: ['Agosto 2026'], datasets: [{ data: [null] }, { esMeta: true, data: [5] }] } };
+  assert.equal(gdGraficaEstaVacia(cfg), true);
+  cfg.data.datasets[0].data = [3];
+  assert.equal(gdGraficaEstaVacia(cfg), false);
+  assert.match(texto, /if\(!hayDatos\) return;/);
+});

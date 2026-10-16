@@ -112,6 +112,47 @@ function aplicarTemaCharts(){
 }
 aplicarTemaCharts();
 
+// Fase 152 (B1): color de SERIE por rol, siempre de la paleta categorica
+// (nunca CG/CO/CR: el semaforo queda solo para lo que se compara contra
+// una meta). Se lee en el momento de dibujar, asi sigue el tema.
+//   'principal'  -> CD (teal de marca: totales)
+//   'secundaria' -> PC[3] (segunda barra; mismo tono en claro y oscuro)
+//   'linea'      -> PC[1] (lineas de % y de tiempo; mismo tono en ambos)
+function colorSerie(rol){
+  if(rol === 'secundaria') return PC[3];
+  if(rol === 'linea') return PC[1];
+  return CD;
+}
+
+// Fase 152 (B1): linea de meta punteada (dataset de linea, sin plugins
+// nuevos). `valor` sale de un umbral configurado (pantalla Umbrales); sin
+// umbral no se dibuja. Sin etiquetas de datos ni tooltip propio (el
+// texto "Meta 90 %" va en la leyenda).
+function datasetMeta(valor, etiqueta, n, yAxisID){
+  return {
+    type: 'line', label: etiqueta, esMeta: true,
+    data: Array.apply(null, Array(n)).map(function(){ return valor; }),
+    borderColor: CHART_TICK, backgroundColor: CHART_TICK, borderDash: [6, 4], borderWidth: 1.5,
+    pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: yAxisID || 'y',
+    datalabels: { display: false }, order: 99,
+  };
+}
+// Agrega la linea de meta (si hay umbral) y saca la meta del tooltip.
+// unidad: ' %' u otra, solo para el texto de la leyenda.
+function agregarLineaMeta(datasets, opciones, umbral, n, yAxisID, unidad){
+  if(!umbral || umbral.verde === null || umbral.verde === undefined || !n) return;
+  // Sin ningun dato real, la grafica debe seguir viendose "sin datos": la
+  // meta sola no cuenta como dato.
+  var hayDatos = datasets.some(function(d){ return (d.data || []).some(function(v){ return v !== null && v !== undefined; }); });
+  if(!hayDatos) return;
+  var menor = umbral.direccion === 'menor_es_mejor';
+  var txt = (menor ? 'Meta máx. ' : 'Meta ') + String(umbral.verde).replace('.', ',') + (unidad || '');
+  datasets.push(datasetMeta(Number(umbral.verde), txt, n, yAxisID));
+  opciones.plugins = opciones.plugins || {};
+  opciones.plugins.tooltip = opciones.plugins.tooltip || {};
+  opciones.plugins.tooltip.filter = function(item){ return !item.dataset.esMeta; };
+}
+
 // Fase 133 (Parte 5, WCAG 1.1.1): un <canvas> es una imagen sin texto
 // alternativo por defecto -- un lector de pantalla no anuncia nada de lo
 // que dibuja Chart.js. Se llama DESPUES de crear cada Chart (los 3

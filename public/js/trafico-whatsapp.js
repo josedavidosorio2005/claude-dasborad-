@@ -413,14 +413,14 @@ function _traficoWppRenderContenido(i){
   }
   _traficoDibujarKpis('tww', i, kpiTotales, kpiLabels, campana, null, contextoKpis);
 
-  _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
+  _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados', campana);
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado, sin depender del
   // checkbox "Ver colas por separado" de arriba (mismo criterio que
   // Llamadas): son la tendencia de la campana completa.
   var agregadoComb = estado.combinar ? agregado : traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: true });
 
-  _traficoDibujarAbandono('tww', i, agregadoComb);
+  _traficoDibujarAbandono('tww', i, agregadoComb, campana);
   // Fase 120: Wolkvox no entrega AHT de WhatsApp -- ni se dibuja ni se
   // calcula cuando el panel lo tiene apagado (p.mostrarAht:false).
   if (_traficoWppMostrarAht[campana]) _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);

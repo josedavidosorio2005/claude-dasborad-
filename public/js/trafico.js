@@ -902,10 +902,9 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   var metaNivel = kpiMeta(totales.nivelAtencion, umbralDe('nivel_atencion'), { unidad: 'pct' });
   var metaAband = kpiMeta(totales.tasaAbandono, umbralDe('tasa_abandono'), { unidad: 'pct' });
   var metaNs = kpiMeta(totales.nivelServicio, umbralDe(labels.nivelServicioMetrica), { unidad: 'pct' });
-  var semAband = metaAband ? metaAband.color : null;
-  var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
-  // Sin umbral de tasa_abandono, las tarjetas de abandono conservan su
-  // acento rojo fijo (no es semaforo: lo revisa B1, colores).
+  // Fase 152 (B1): el borde de color (semaforo) queda SOLO en las tarjetas
+  // con meta (kpiTarjetaHtml lo pone segun meta.color); los conteos sin meta
+  // (contestadas, abandonadas) quedan con el borde neutro de siempre.
   var nsNota = labels.nivelServicioNota
     ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
@@ -937,10 +936,10 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   var rotulo = ctx.rotuloParcial ? '<div class="gd-mes-parcial kpi-fila-completa">'+esc(ctx.rotuloParcial)+'</div>' : '';
   kpisEl.innerHTML = rotulo +
     kpiTarjetaHtml({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }) +
-    kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, cls: 'kpi-green', variacion: variacion('contestadas', 'num') }) +
-    kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, cls: clsAband, variacion: variacion('abandonadas', 'num', true) }) +
+    kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, variacion: variacion('contestadas', 'num') }) +
+    kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, variacion: variacion('abandonadas', 'num', true) }) +
     kpiTarjetaHtml({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }) +
-    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', cls: clsAband, variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband })) +
+    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband })) +
     (ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs })) +
     tarjeta2 +
     nsSinDato;
@@ -950,13 +949,22 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
 // de Atencion, combinada por periodo o separada por linea (skill/cola)
 // segun el checkbox "Ver por separado". `labelTotal`/`labelContestadas`
 // son el unico texto que cambia por canal.
-function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal, labelContestadas){
+// Fase 152 (B1): umbral configurado (pantalla Umbrales) de una metrica, o
+// null. Sin umbral no hay linea de meta.
+function _traficoUmbral(metrica, campana){
+  return (campana && typeof _gdUmbralPara === 'function') ? _gdUmbralPara(metrica, campana) : null;
+}
+
+// Fase 152 (B1): series con la paleta categorica (colorSerie, charts.js),
+// nunca el semaforo; linea de meta punteada de Nivel de atencion si hay
+// umbral para `campana`.
+function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal, labelContestadas, campana){
   var canvasId = prefijo+'-canvas-'+i;
   var labels, datasets;
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG!=='undefined') ? CG : '#27ae60';
-  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
-  var pal = (typeof PC!=='undefined') ? PC : [CDl,CGl,COl];
+  var CDl = colorSerie('principal');
+  var CGl = colorSerie('secundaria');
+  var COl = colorSerie('linea');
+  var pal = PC;
 
   if(combinar){
     labels = agregado.map(function(a){ return a.periodo; });
@@ -1001,15 +1009,16 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
+  agregarLineaMeta(datasets, o, _traficoUmbral('nivel_atencion', campana), labels.length, 'y2', ' %');
 
   if(typeof _gdChart === 'function'){
     _gdChart(canvasId, { data:{ labels: labels, datasets: datasets }, options: o });
   }
 }
 
-function _traficoDibujarAbandono(prefijo, i, agregadoComb){
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+function _traficoDibujarAbandono(prefijo, i, agregadoComb, campana){
+  var CDl = colorSerie('principal');
+  var COl = colorSerie('linea');
   var oAband = (typeof loBar==='function') ? loBar() : { responsive:true, maintainAspectRatio:false, plugins:{} };
   oAband.scales = {
     y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
@@ -1025,17 +1034,19 @@ function _traficoDibujarAbandono(prefijo, i, agregadoComb){
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
+  var dsAband = [
+    { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
+    { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
+  ];
+  agregarLineaMeta(dsAband, oAband, _traficoUmbral('tasa_abandono', campana), agregadoComb.length, 'y2', ' %');
   if(typeof _gdChart === 'function'){
     _gdChart(prefijo+'-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
-      datasets:[
-        { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
-        { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
-      ] }, options: oAband });
+      datasets: dsAband }, options: oAband });
   }
 }
 
 function _traficoDibujarAht(prefijo, i, agregadoComb, fmtTiempo){
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
+  var CDl = colorSerie('principal');
   var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
   var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
   var oAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
@@ -1055,8 +1066,8 @@ function _traficoDibujarAht(prefijo, i, agregadoComb, fmtTiempo){
 // la sub-pestaña "asa" en vez de "asaata". Sin pasarlo (ORLANT/AURORA/HLM),
 // sigue dibujando las 2 series en "asaata", exactamente igual que siempre.
 function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var CDl = colorSerie('principal');
+  var COl = colorSerie('linea');
   var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
   var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
   var oAsaAta = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
@@ -1081,8 +1092,8 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
 // con ahtSegundos en vez de ataSegundos. No-op si su canvas no esta en el
 // DOM (ORLANT/AURORA/HLM no piden esta sub-pestaña).
 function _traficoDibujarAsaAht(prefijo, i, agregadoComb, fmtTiempo){
-  var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var CDl = colorSerie('principal');
+  var COl = colorSerie('linea');
   var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
   var fmtDL = function(v){ return (v===null||v===undefined) ? '' : fmt(v); };
   var oAsaAht = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
@@ -1116,11 +1127,14 @@ function _traficoDibujarAsaAht(prefijo, i, agregadoComb, fmtTiempo){
 // (una de las 2 series tiene datos) asi que dibuja igual la secundaria --
 // aqui se agrega un aviso especifico DENTRO del area de la grafica
 // (nunca en blanco, nunca se sustituye un umbral por el otro).
-function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra){
+// Fase 152 (B1): `umbralMeta` (opcional) = umbral de la meta de nivel de
+// servicio -- solo Llamadas lo pasa (service_level, 80/20); WhatsApp no
+// tiene meta acordada.
+function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra, umbralMeta){
   campo = campo || 'serviceLevel20secPct';
   labelSerie = labelSerie || 'SL 20s';
-  var CMl = (typeof CM!=='undefined') ? CM : '#1a7a9e';
-  var COl = (typeof CO!=='undefined') ? CO : '#e67e22';
+  var CMl = colorSerie('principal');
+  var COl = colorSerie('linea');
   var oSl = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
   if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oSl, function(v){ return (v===null||v===undefined) ? '' : gdFmtValor(v,'%'); });
   else oSl.plugins.datalabels = { display:false };
@@ -1134,8 +1148,10 @@ function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra){
     { label:labelSerie, data: agregadoComb.map(function(a){return a[campo];}), borderColor: CMl, backgroundColor: CMl, borderWidth: extra ? 3.5 : 2.5, pointRadius: extra ? 4 : 3, tension:0.3, fill:false },
   ];
   if(extra){
-    datasets.push({ label: extra.labelSerie, data: agregadoComb.map(function(a){return a[extra.campo];}), borderColor: COl, backgroundColor: COl, borderWidth:2, pointRadius:3, tension:0.3, fill:false, borderDash:[4,3] });
+    // Fase 152: linea continua (la punteada queda reservada a la meta).
+    datasets.push({ label: extra.labelSerie, data: agregadoComb.map(function(a){return a[extra.campo];}), borderColor: COl, backgroundColor: COl, borderWidth:2, pointRadius:3, tension:0.3, fill:false });
   }
+  agregarLineaMeta(datasets, oSl, umbralMeta || null, agregadoComb.length, 'y', ' %');
   var canvasId = prefijo+'-canvas-sl-'+i;
   if(typeof _gdChart === 'function'){
     _gdChart(canvasId, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}), datasets: datasets }, options: oSl });
@@ -1234,7 +1250,7 @@ function _traficoRenderContenido(campana, sede, i){
       nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
       nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar, contextoKpis);
 
-  _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
+  _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas', campana);
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
   // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
   if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
@@ -1250,12 +1266,12 @@ function _traficoRenderContenido(campana, sede, i){
   // aplicados) y traficoAgregar ya testeado.
   var agregadoComb = estado.combinar ? agregado : traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true });
 
-  _traficoDibujarAbandono('tv', i, agregadoComb);
+  _traficoDibujarAbandono('tv', i, agregadoComb, campana);
   _traficoDibujarAht('tv', i, agregadoComb);
   _traficoDibujarAsaAta('tv', i, agregadoComb);
   _traficoDibujarAsaAta('tv', i, agregadoComb, null, true); // sub-pestaña "asa" sola -- no-op si su canvas no esta en el DOM
   _traficoDibujarAsaAht('tv', i, agregadoComb); // sub-pestaña "asaaht" (Mobilize, Fase 138) -- no-op si su canvas no esta en el DOM
-  _traficoDibujarSL('tv', i, agregadoComb);
+  _traficoDibujarSL('tv', i, agregadoComb, null, null, null, _traficoUmbral('service_level', campana));
 
   // Fase 131 (Parte 2, pedido de Edwin para Mobilize): "cada sección con SU
   // resumen acumulado debajo" -- un numero del PERIODO/FILTRO YA aplicado
@@ -1293,8 +1309,8 @@ function _traficoRenderContenido(campana, sede, i){
       if(activoSec === 'sl'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de servicio del periodo</div></div>';
       } else if(activoSec === 'abandono'){
-        htmlSec = '<div class="aurora-kpi kpi-red"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas abandonadas</div></div>' +
-          '<div class="aurora-kpi kpi-red"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">% Abandono del periodo</div></div>';
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas abandonadas</div></div>' +
+          '<div class="aurora-kpi"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">% Abandono del periodo</div></div>';
       } else if(activoSec === 'asa'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
       } else if(activoSec === 'aht'){

@@ -139,10 +139,10 @@ async function _wppTiemposDibujar(i, campana) {
   }
   var r03 = r.rangos[0];
   if (kpis) kpis.innerHTML =
-    '<div class="aurora-kpi kpi-green"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0–3 minutos</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0–3 minutos</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + r.total.toLocaleString('es-CO') + '</div><div class="kl">Conversaciones contestadas del mes</div></div>';
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
+  var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e'); // Fase 152 (B1): resalta 0–3 min sin usar el verde del semaforo
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.indexAxis = 'y';
   o.scales = o.scales || {};

@@ -139,14 +139,15 @@ function _llamadasUnicasDibujarKpis(i, resumen) {
   if (!el) return;
   el.innerHTML =
     '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total únicas</div></div>' +
-    '<div class="aurora-kpi kpi-green"><div class="kv">' + resumen.contestadas.toLocaleString('es-CO') + '</div><div class="kl">Contestadas únicas</div></div>' +
-    '<div class="aurora-kpi kpi-red"><div class="kv">' + resumen.abandonadas.toLocaleString('es-CO') + '</div><div class="kl">Abandonadas únicas</div></div>';
+    '<div class="aurora-kpi"><div class="kv">' + resumen.contestadas.toLocaleString('es-CO') + '</div><div class="kl">Contestadas únicas</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + resumen.abandonadas.toLocaleString('es-CO') + '</div><div class="kl">Abandonadas únicas</div></div>';
 }
 
 function _llamadasUnicasDibujarBarras(i, porMes) {
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
-  var COl = (typeof CO !== 'undefined') ? CO : '#e67e22';
+  // Fase 152 (B1): paleta categorica (sin meta, no hay semaforo).
+  var CGl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
+  var COl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e');
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y || 0).toLocaleString('es-CO'); } } };
   if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function (v) { return (v === null || v === undefined) ? '' : v.toLocaleString('es-CO'); });
@@ -242,14 +243,15 @@ function _llamadasSalidaAplicarFiltros(i) {
 // Orden pedido (Edwin, 13/10): total / no conectadas / conectadas.
 function _llamadasSalidaKpisHtml(resumen) {
   return '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total llamadas de salida</div></div>' +
-    '<div class="aurora-kpi kpi-red"><div class="kv">' + resumen.noConectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
-    '<div class="aurora-kpi kpi-green"><div class="kv">' + resumen.conectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida conectadas</div></div>';
+    '<div class="aurora-kpi"><div class="kv">' + resumen.noConectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + resumen.conectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida conectadas</div></div>';
 }
 
 function _llamadasSalidaDibujarBarras(i, porMes) {
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
-  var COl = (typeof CO !== 'undefined') ? CO : '#e67e22';
+  // Fase 152 (B1): paleta categorica (sin meta, no hay semaforo).
+  var CGl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
+  var COl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e');
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y || 0).toLocaleString('es-CO'); } } };
   if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function (v) { return (v === null || v === undefined) ? '' : v.toLocaleString('es-CO'); });

@@ -531,6 +531,21 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 - **Mes en curso:** el encabezado y la fila de tarjetas dicen "Octubre 2026 — parcial, hasta el día N". N es el último día con datos cuando la fuente es diaria; si la fuente es mensual, dice "mes en curso, parcial". Las tarjetas dicen "Mes en curso: sin comparación".
 - **Tendencia pequeña (sparkline):** está preparada (`kpiSparklinePuntos`), pero apagada (`KPI_SPARKLINE_ACTIVO`) hasta que haya 3 meses o más con datos.
 
+## Colores de serie y líneas de meta (Fase 152, B1)
+
+- **Series:** usan `colorSerie(rol)` (`charts.js`), que siempre sale de la paleta categórica:
+  - `principal` es el teal de marca (`CD`).
+  - `secundaria` es `PC[3]`.
+  - `linea` es `PC[1]`.
+  - Estos dos últimos tienen el mismo tono en claro y oscuro.
+  - Si la serie es una línea o cola identificada por nombre, el color sale de `paletaColorPara(nombre)`.
+- **Semáforo** (`CG`/`CO`/`CR`, bordes `kpi-green`/`kpi-org`/`kpi-red`): solo para lo que se compara contra una meta. La excepción es la torta de clasificación de Calidad, que usa colores fijos de bueno/medio/malo. Una tarjeta sin meta lleva el borde neutro.
+- **Línea de meta:** `agregarLineaMeta(datasets, opciones, umbral, n, eje, unidad)`.
+  - Es un dataset de línea gris punteada (`borderDash [6,4]`), sin plugins nuevos. Su texto va en la leyenda ("Meta 90 %" o "Meta máx. 5 %") y no aparece en el tooltip.
+  - Solo se dibuja si hay umbral en la pantalla Umbrales y la gráfica tiene datos reales. La meta sola no cuenta como dato (`gdGraficaEstaVacia` la ignora).
+  - La línea punteada queda reservada a la meta; ninguna serie de datos va punteada.
+- **Orden:** las barras de comparación que no son tiempo (por ejemplo, Agendas por especialidad) van de mayor a menor.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/

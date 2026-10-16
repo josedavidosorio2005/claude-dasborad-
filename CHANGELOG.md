@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.44.0 — Octubre 2026
+
+**Fase 152: colores de las gráficas y líneas de meta.**
+
+- El verde, el amarillo y el rojo quedan solo para lo que se compara contra
+  una meta. Las demás series usan los colores de la marca y de la paleta.
+- Las gráficas de Nivel de atención, Tasa de abandono y Nivel de servicio
+  muestran una línea punteada con su meta ("Meta 90 %"), tomada de la
+  pantalla Umbrales.
+- Las tarjetas sin meta (por ejemplo, llamadas contestadas o abandonadas)
+  ya no se pintan de verde o rojo.
+- Agendas por especialidad se ordena de mayor a menor.
+
 ## v1.43.0 — Octubre 2026
 
 **Fase 152: tarjetas de indicadores más claras.**
