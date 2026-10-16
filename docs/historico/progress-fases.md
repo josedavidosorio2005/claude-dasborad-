@@ -15057,3 +15057,45 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   `graphify` no está instalado, el `python.exe` del PATH es solo el acceso
   directo de Microsoft Store (no hay Python instalado) y el repo no tiene
   `graphify-out/`. No se arregló (pedido del usuario).
+
+## Fase 151 — Auditoría de seguridad completa y arreglos (v1.41.3 → v1.42.2, 2026-10-15/16)
+
+- **Auditoría**: código, pipeline, infraestructura (solo lectura, con los
+  workflows autorizados) y producción (solo pasivo, sin sesión). El informe
+  con los hallazgos es **privado y está fuera del repo** (el repo es
+  público). Aquí solo queda qué se cambió.
+- **PR #437 (v1.41.3)**: endurecer la edición de usuarios; un cambio de
+  contraseña desde "Editar usuario" cierra las sesiones de esa cuenta.
+- **PR #438**: el deploy solo corre tras una CI de un push a `main` de este
+  repositorio. El primer deploy después del merge falló por el límite de
+  ECR Public (imagen base) y el reintento pasó.
+- **PR #439 (v1.42.0)**: límites de la gestión de usuarios sobre la cuenta
+  destino y sobre los permisos de gestión (sin auto-suspensión ni
+  auto-borrado); `GET /users` acotado a lo que necesita cada rol; el cierre
+  de sesión invalida ese token (`tokens_revocados`, por `jti`); login con
+  el mismo 401 para cualquier fallo; cambio obligatorio de contraseña
+  después de una asignada por un administrador (`debe_cambiar_password`,
+  las cuentas existentes quedan en 0); Tráfico de Llamadas con
+  `campaignAccess`. Matriz `fase118` ampliada. Verificado en local
+  (Playwright, base sintética): los 10 roles entran igual que antes, sin
+  errores; el cambio obligatorio funciona a 375/768/1440.
+- **PR #440 (v1.42.1, mergeado con el "OK auditoría 151")**: validación de
+  la query efectiva en Express 5, 404 para archivos inexistentes y rutas
+  ocultas, `Permissions-Policy`, umbrales en el Historial, cuentas de
+  ejemplo que no se reactivan con su contraseña pública y logs con menos
+  detalle. Confirmado en producción (pasivo).
+- **PR #441 (v1.42.2)**: `verificar-restore-backup-produccion.yml` verifica
+  la copia local más reciente (`--local-ultimo`), porque la llave de la
+  instancia solo puede subir a S3, a propósito. Corrida del 16/10: 14 copias
+  locales, la más reciente pasa `integrity_check` y tiene datos.
+- **Rama `main` protegida** (ruleset "Proteger main"): exige PR (0
+  aprobaciones) y los checks `test (22)`, `pantallas` y `docker-build`;
+  bloquea force push y borrado; sin bypass.
+- **Revisión de cuentas** (sesión del usuario, solo conteos): sin cuentas
+  de ejemplo ni contraseñas pendientes; ver `docs/pendientes.md` para lo
+  que queda.
+- **Pendientes**: permisos y rotación de la llave de la instancia y sudo
+  (plan privado, lo guía el usuario), límite de intentos de login en la
+  configuración de la instancia, decisión sobre el teléfono en Calidad, CSP
+  sin `unsafe-inline` (plan por etapas, fase aparte). Ver
+  `docs/pendientes.md`.
