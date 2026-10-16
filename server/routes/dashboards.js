@@ -11,6 +11,7 @@ const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
 const { recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
 const { obtenerUltimaActualizacion } = require('../ultima-actualizacion');
+const clientesRegistro = require('../clientes-registro');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -96,12 +97,21 @@ function seccionSpec(cliente, seccionKey) {
 }
 
 // Clientes que tienen dashboard configurado.
+// Fase 153 (Paso 1): devuelve tambien las listas del registro de clientes
+// (clientes-registro.js), que reemplazan a las fijas de constants.js:
+// listaClientes = CLIENTES_LIST y campanasCalidad = CAMPANAS_CALIDAD. Solo
+// nombres (los mismos que ya estaban escritos en el JS publico), nada de
+// modulos ni parametros.
 router.get(
   '/dashboard/clientes',
   requireActor,
   wrap((req, res) => {
     const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
-    res.json({ clientes: rows.map((r) => r.cliente) });
+    res.json({
+      clientes: rows.map((r) => r.cliente),
+      listaClientes: clientesRegistro.listaClientes(db),
+      campanasCalidad: clientesRegistro.campanasCalidad(db),
+    });
   })
 );
 

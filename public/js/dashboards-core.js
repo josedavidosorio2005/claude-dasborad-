@@ -92,10 +92,16 @@ function openClientByEl(el){
 
 // Lista de clientes con dashboard configurado (Fase 3). Se pide al servidor tras
 // el login y reemplaza la lista fija que habia antes en constants.js.
+// Fase 153 (Paso 1): tambien CLIENTES_LIST y CAMPANAS_CALIDAD, que ahora
+// salen del registro de clientes del servidor. Se llama ANTES de loadData
+// (session.js) porque ensurePerms usa esas listas. Si falla, quedan los
+// valores de constants.js.
 async function loadDashboardClientes(){
   try{
     var r = await apiRequest('GET','/dashboard/clientes');
     if(r && Array.isArray(r.clientes)) BUILT_CLIENT_DASHBOARDS = r.clientes;
+    if(r && Array.isArray(r.listaClientes)) CLIENTES_LIST = r.listaClientes;
+    if(r && Array.isArray(r.campanasCalidad)) CAMPANAS_CALIDAD = r.campanasCalidad;
   }catch(e){ /* deja la lista por defecto */ }
 }
 document.getElementById('clients-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeClientsModal();});

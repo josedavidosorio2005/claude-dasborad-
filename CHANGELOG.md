@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.2 — Octubre 2026
+
+**Fase 153 (paso 1): la lista de clientes vive en la base de datos.**
+
+- Por dentro, la lista de clientes (ORLANT y MOBILIZE) ya no está escrita
+  en el código: se guarda en la base. Es el primer paso para poder dar de
+  alta un cliente nuevo sin cambiar el programa.
+- No cambia nada de lo que se ve ni de los números.
+
 ## v1.47.1 — Octubre 2026
 
 **Fase 152 (cierre): porcentajes con coma en todas las pantallas.**

@@ -52,7 +52,7 @@ async function doLogin() {
 async function _entrarTrasLogin(data) {
   if (data.user.isMasterAdmin) {
     currentUser = null; // null = admin maestro
-    await loadData(); await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+    await loadDashboardClientes(); await loadData(); await loadHist(); await loadSeedDemoEstado();
     if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
     enterAdminPanel();
     return;
@@ -68,7 +68,7 @@ async function _entrarTrasLogin(data) {
   // enterAdminPanel abajo) -- esto solo evita la peticion que de todas
   // formas iba a fallar.
   var puedeVerHistorial = data.user.rol === 'ADMIN';
-  await loadData(); if (puedeVerHistorial) await loadHist(); await loadDashboardClientes(); await loadSeedDemoEstado();
+  await loadDashboardClientes(); await loadData(); if (puedeVerHistorial) await loadHist(); await loadSeedDemoEstado();
   if (puedeVerHistorial && typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
   var found = users.find(function(x){ return x.id === data.user.id; });
   // GET /users filtra perms a {} para quien no administra usuarios/permisos
