@@ -49,25 +49,25 @@
       <label for="password">Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="password" placeholder="Ingrese su contraseña">
-        <button class="btn-eye" type="button" onclick="toggleEye('password',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('password',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <div class="login-error" id="login-error"></div>
   </div>
-  <button class="theme-toggle theme-toggle-fab" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
+  <button class="theme-toggle theme-toggle-fab" type="button" onclick="toggleTema()" aria-label="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
   <img class="marca-esquina" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="120" height="24">
 </div>
 
 <!-- ADMIN PANEL -->
 <div id="admin-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-menu"></use></svg></button>
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion<sup>®</sup></span></div>
     <div class="navbar-right">
-      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
       <span class="save-flash" id="save-flash">Guardado</span>
-      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
+      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-user"></use></svg></button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-admin"></span>
         <span class="navbar-role" id="nb-role-admin"></span>
@@ -82,17 +82,17 @@
     <aside class="sidebar">
       <div class="sidebar-title">Panel Admin</div>
       <ul class="sidebar-menu" id="sidebar-menu">
-        <li><a id="menu-users" role="button" tabindex="0" onclick="showSection('users')" class="active"><span class="s-icon">&#128101;</span> Usuarios</a></li>
-        <li id="menu-perms-li"><a id="menu-perms" role="button" tabindex="0" onclick="showSection('perms')"><span class="s-icon">&#128274;</span> Permisos</a></li>
-        <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon">&#128203;</span> Historial</a></li>
-        <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon">&#127919;</span> Metas Calidad</a></li>
-        <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon">&#128994;</span> Umbrales</a></li>
-        <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon">&#128200;</span> Rol Reportes</a></li>
-        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCargas()"><span class="s-icon">&#128228;</span> Cargar Datos</a></li>
-        <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon">&#128441;</span> Dashboards</a></li>
-        <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" role="button" tabindex="0" onclick="showSection('inventario')"><span class="s-icon">&#128230;</span> Inventario</a></li>
-        <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon">&#128202;</span> Gerencia</a></li>
-        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon">&#128101;</span> Gestión Humana</a></li>
+        <li><a id="menu-users" role="button" tabindex="0" onclick="showSection('users')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-users"></use></svg></span> Usuarios</a></li>
+        <li id="menu-perms-li"><a id="menu-perms" role="button" tabindex="0" onclick="showSection('perms')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-lock"></use></svg></span> Permisos</a></li>
+        <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-history"></use></svg></span> Historial</a></li>
+        <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-target"></use></svg></span> Metas Calidad</a></li>
+        <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-gauge"></use></svg></span> Umbrales</a></li>
+        <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trending-up"></use></svg></span> Rol Reportes</a></li>
+        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar Datos</a></li>
+        <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
+        <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" role="button" tabindex="0" onclick="showSection('inventario')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg></span> Inventario</a></li>
+        <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-chart-column"></use></svg></span> Gerencia</a></li>
+        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-contact"></use></svg></span> Gestión Humana</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -120,9 +120,9 @@
           <div class="section-header">
             <h3>Lista de Usuarios</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="user-search" aria-label="Buscar usuarios" placeholder="Buscar..." oninput="filterUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="user-search" aria-label="Buscar usuarios" placeholder="Buscar..." oninput="filterUsers()"></div>
               <button class="btn-primary" id="btn-create-user" onclick="openCreateModal()">+ Nuevo Usuario</button>
-              <button class="btn-reset hidden" id="btn-reset" onclick="resetData()">&#8635; Restablecer</button>
+              <button class="btn-reset hidden" id="btn-reset" onclick="resetData()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-rotate-ccw"></use></svg> Restablecer</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -141,19 +141,19 @@
           <div class="section-card">
             <div class="section-header">
               <h3>Roles disponibles</h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="role-search" aria-label="Buscar roles" placeholder="Buscar rol..." oninput="filterRoles()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="role-search" aria-label="Buscar roles" placeholder="Buscar rol..." oninput="filterRoles()"></div>
             </div>
             <div class="roles-grid" id="roles-grid"></div>
           </div>
         </div>
         <div id="perms-detail-view" class="hidden">
-          <button class="back-btn" onclick="backToRoles()">&#8592; Volver a Roles</button>
+          <button class="back-btn" onclick="backToRoles()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-arrow-left"></use></svg> Volver a Roles</button>
           <div class="page-title" id="detail-title"></div>
           <div class="page-subtitle" id="detail-subtitle"></div>
           <div id="regular-perm-card" class="section-card">
             <div class="section-header">
               <h3 id="detail-table-title"></h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="perm-user-search" aria-label="Buscar usuario para permisos" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="perm-user-search" aria-label="Buscar usuario para permisos" placeholder="Buscar usuario..." oninput="filterPermUsers()"></div>
             </div>
             <div class="perm-wrap">
               <table class="perm-table"><thead><tr id="perm-thead"></tr></thead><tbody id="perm-tbody"></tbody></table>
@@ -163,7 +163,7 @@
           <div id="aux-perm-card" class="section-card hidden">
             <div class="section-header" style="border-bottom:none;padding-bottom:12px">
               <h3 id="aux-user-title">Usuarios Auxiliar Admin</h3>
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="aux-user-search" aria-label="Buscar auxiliares" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="aux-user-search" aria-label="Buscar auxiliares" placeholder="Buscar auxiliar..." oninput="filterAuxUsers()"></div>
             </div>
             <div id="aux-users-container"></div>
           </div>
@@ -178,7 +178,7 @@
           <div class="section-header">
             <h3>Registro de eventos</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="hist-search" aria-label="Buscar en el historial" placeholder="Buscar..." oninput="filterHist()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="hist-search" aria-label="Buscar en el historial" placeholder="Buscar..." oninput="filterHist()"></div>
               <select class="hist-filter-sel" id="hist-filter" aria-label="Filtrar por tipo de evento" onchange="filterHist()">
                 <option value="">Todos los eventos</option>
                 <option value="CREADO">Usuario creado</option>
@@ -223,7 +223,7 @@
                 <option value="GH_PERSONAL_EDIT">Gestión Humana: persona editada</option>
                 <option value="GH_PERSONAL_DEL">Gestión Humana: persona eliminada</option>
               </select>
-              <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel">&#11015; Descargar</button>
+              <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-download"></use></svg> Descargar</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -582,7 +582,7 @@
         <div class="section-card">
           <div class="section-header">
             <h3>Usuarios con rol REPORTES</h3>
-            <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true">&#128269;</span><input type="text" id="reportes-user-search" aria-label="Buscar usuario en reportes" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
+            <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="reportes-user-search" aria-label="Buscar usuario en reportes" placeholder="Buscar usuario..." oninput="filterReportesUsers()"></div>
           </div>
           <div class="perm-wrap">
             <table class="perm-table"><thead><tr id="reportes-perm-thead"></tr></thead><tbody id="reportes-perm-tbody"></tbody></table>
@@ -701,8 +701,8 @@
   <nav class="navbar">
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion<sup>®</sup></span></div>
     <div class="navbar-right">
-      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
-      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
+      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-user"></use></svg></button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-dash"></span>
         <span class="navbar-role" id="nb-role-dash"></span>
@@ -758,7 +758,7 @@
         <label for="mu-pass">Contraseña</label>
         <div class="pass-wrap">
           <input type="password" id="mu-pass" placeholder="••••••••">
-          <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)" aria-label="Mostrar contraseña">&#128065;</button>
+          <button class="btn-eye" type="button" onclick="toggleEye('mu-pass',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
         </div>
         <small id="mu-pass-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">Dejar en blanco para no cambiar</small>
       </div>
@@ -815,14 +815,14 @@
       <label for="pass-new">Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="pass-new" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('pass-new',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('pass-new',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <div class="ig">
       <label for="pass-confirm">Confirmar</label>
       <div class="pass-wrap">
         <input type="password" id="pass-confirm" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('pass-confirm',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('pass-confirm',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <div class="modal-btns">
@@ -884,7 +884,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <button class="aurora-close" id="gd-export-btn" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()">Exportar</button>
-        <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa">&#9974;</button>
+        <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
         <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
       </div>
     </div>
@@ -1429,11 +1429,11 @@
 <!-- ══ PORTAL ASESOR — pagina independiente (rol ASESOR) ══════════════════════════════ -->
 <div id="asesor-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-menu"></use></svg></button>
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion<sup>®</sup> &mdash; Portal Asesor</span></div>
     <div class="navbar-right">
-      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
-      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
+      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-user"></use></svg></button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-asesor"></span>
         <span class="navbar-role" id="nb-role-asesor">ASESOR</span>
@@ -1448,7 +1448,7 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="asesor-sidebar-menu">
-        <li><a id="asesor-menu-calidad" role="button" tabindex="0" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon">&#127942;</span> Resultados de Calidad
+        <li><a id="asesor-menu-calidad" role="button" tabindex="0" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trophy"></use></svg></span> Resultados de Calidad
           <span id="asesor-menu-calidad-badge" class="hidden" style="background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:10px;padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px"></span>
         </a></li>
       </ul>
@@ -1458,7 +1458,7 @@
 
       <!-- Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad sin ver -->
       <div class="aux-banner hidden" id="asesor-alerta-nuevos" style="justify-content:space-between">
-        <div>&#128276; <strong id="asesor-alerta-nuevos-texto"></strong></div>
+        <div><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-bell"></use></svg> <strong id="asesor-alerta-nuevos-texto"></strong></div>
         <button class="btn-sm btn-edit" onclick="asesorVerAlertaNuevos()">Ver</button>
       </div>
 
@@ -1500,11 +1500,11 @@
 <!-- ══ PORTAL SUPERVISOR — pagina independiente (rol SUPERVISOR) ══════════════════════════════ -->
 <div id="supervisor-page" class="app-page">
   <nav class="navbar">
-    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu">&#9776;</button>
+    <button class="navbar-menu-toggle" type="button" onclick="toggleSidebar(this)" aria-label="Mostrar u ocultar el menu"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-menu"></use></svg></button>
     <div class="navbar-brand"><img class="navbar-logo-icon" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="35" height="34"><span class="navbar-logo-text">InConexion<sup>®</sup> &mdash; Portal Supervisor</span></div>
     <div class="navbar-right">
-      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema">&#127769;</button>
-      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta">&#128100;</button>
+      <button class="theme-toggle" type="button" onclick="toggleTema()" aria-label="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
+      <button class="navbar-profile-toggle" type="button" onclick="toggleNavbarProfile(this)" aria-label="Cuenta"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-user"></use></svg></button>
       <div class="navbar-profile-dropdown">
         <span class="navbar-user" id="nb-user-supervisor"></span>
         <span class="navbar-role" id="nb-role-supervisor">SUPERVISOR</span>
@@ -1519,8 +1519,8 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
-        <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon">&#129309;</span> Dashboards</a></li>
-        <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon">&#10003;</span> Calidad</a></li>
+        <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
+        <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -1629,21 +1629,21 @@
       <label for="cop-actual">Contraseña Actual</label>
       <div class="pass-wrap">
         <input type="password" id="cop-actual" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-actual',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <div class="ig">
       <label for="cop-nueva">Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="cop-nueva" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-nueva',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <div class="ig">
       <label for="cop-confirmar">Confirmar Nueva Contraseña</label>
       <div class="pass-wrap">
         <input type="password" id="cop-confirmar" placeholder="••••••••">
-        <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)" aria-label="Mostrar contraseña">&#128065;</button>
+        <button class="btn-eye" type="button" onclick="toggleEye('cop-confirmar',this)" aria-label="Mostrar contraseña"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-eye"></use></svg></button>
       </div>
     </div>
     <div class="modal-btns">
@@ -1667,6 +1667,7 @@
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Librerias: Chart.js + plugin de etiquetas (antes inline) -->
+<script src="js/iconos.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/vendor/chart.umd.min.js"></script>
 <script src="js/vendor/chartjs-plugin-datalabels.min.js"></script>
