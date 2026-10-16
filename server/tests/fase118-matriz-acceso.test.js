@@ -236,6 +236,11 @@ declarar(['POST /umbrales', 'PUT /umbrales/:id', 'DELETE /umbrales/:id'], 'admin
 declarar(['GET /dashboard/clientes'], 'open');
 declarar(['GET /dashboard/ultima-actualizacion'], 'scopedRead'); // Fase 131 Parte 4, mismo gate que GET /dashboard/:cliente (clienteAccess)
 declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLoaderGlobal');
+// Fase 153 (P2, maqueta): Centro de cargas. El resumen por mes exige poder
+// cargar (canLoadData) Y acceso a ese cliente (campaignAccess); la descarga de
+// plantillas solo poder cargar (lista cerrada de archivos, sin datos).
+declarar(['GET /centro-cargas/:cliente'], 'cargaYcliente');
+declarar(['GET /centro-cargas-plantillas/:archivo'], 'dataLoaderGlobal');
 declarar(['GET /dashboards/config', 'GET /dashboards/config/:cliente', 'POST /dashboards/config', 'PUT /dashboards/config/:cliente', 'DELETE /dashboards/config/:cliente'], 'admin');
 declarar(['GET /dashboard/:cliente'], 'skip'); // gate por adapter.permiso variable segun el cliente -- cubierto indirectamente via can('Inventario'|'Gerencia'|'GestionHumana') en sus rutas propias
 declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'dataLoaderGlobal');
@@ -639,6 +644,17 @@ test('Fase 149: filtro ?agente= de Llamadas Unicas, Salida y Encuesta -- 403 par
         const sinFiltro = await request(app).get('/api' + ruta + '?campana=' + PROPIA).set(auth(rol));
         assert.equal(sinFiltro.status, 200, `${ruta} sin ?agente= para el cliente`);
       }
+    }
+  }
+});
+
+test('Fase 153: GET /centro-cargas/:cliente -- solo quien carga datos Y tiene acceso a ese cliente', async () => {
+  for (const rol of TODOS_LOS_ROLES) {
+    for (const campana of [PROPIA, AJENA]) {
+      const res = await request(app).get('/api/centro-cargas/' + encodeURIComponent(campana)).set(auth(rol));
+      const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarDataLoaderGlobal(rol));
+      if (deberiaPasar) assert.equal(res.status, 200, rol + ' ' + campana + ': ' + JSON.stringify(res.body));
+      else assert.equal(res.status, 403, rol + ' ' + campana + ' NO deberia ver el Centro de cargas');
     }
   }
 });
