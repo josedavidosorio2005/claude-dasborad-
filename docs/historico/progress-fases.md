@@ -15058,7 +15058,7 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   directo de Microsoft Store (no hay Python instalado) y el repo no tiene
   `graphify-out/`. No se arregló (pedido del usuario).
 
-## Fase 151 — Auditoría de seguridad completa y arreglos (v1.41.3 → v1.42.2, 2026-10-15/16)
+## Fase 151 — Auditoría de seguridad completa y arreglos (v1.41.3 → v1.42.3, 2026-10-15/16)
 
 - **Auditoría**: código, pipeline, infraestructura (solo lectura, con los
   workflows autorizados) y producción (solo pasivo, sin sesión). El informe
@@ -15088,6 +15088,14 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   la copia local más reciente (`--local-ultimo`), porque la llave de la
   instancia solo puede subir a S3, a propósito. Corrida del 16/10: 14 copias
   locales, la más reciente pasa `integrity_check` y tiene datos.
+- **PR #443 (v1.42.3, OK del usuario)**: el teléfono de los monitoreos de
+  Calidad solo lo reciben CALIDAD, SUPERVISOR, REPORTES y el
+  administrador. CLIENTES_DASH, GERENCIA y el resto reciben las mismas filas
+  sin ese campo, y el asesor lo sigue viendo en sus propios monitoreos.
+  Matriz `fase118` ampliada. Revisado en local: el usuario cliente recibe
+  las filas sin teléfono. El deploy falló una vez por un timeout de SSH y
+  pasó en el reintento. No se dejó de pedir el teléfono ni se borró nada:
+  se decide con Edwin.
 - **Rama `main` protegida** (ruleset "Proteger main"): exige PR (0
   aprobaciones) y los checks `test (22)`, `pantallas` y `docker-build`;
   bloquea force push y borrado; sin bypass.
