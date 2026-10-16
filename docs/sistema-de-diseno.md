@@ -556,6 +556,24 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
   - La línea punteada queda reservada a la meta; ninguna serie de datos va punteada.
 - **Orden:** las barras de comparación que no son tiempo (por ejemplo, Agendas por especialidad) van de mayor a menor.
 
+## "Ver datos" y fracción en los tooltips (Fase 152, B9)
+
+- **Botón:** cada gráfica que pasa por `_gdChart` lleva debajo un botón "Ver datos".
+  - Tiene `aria-haspopup="dialog"` y `aria-label="Ver datos de <título>"`.
+  - Se conecta con `addEventListener`, sin `onclick` en línea.
+  - Se oculta si la gráfica no tiene datos.
+  - Mide 44 px en pantallas de 768 o menos.
+- **Diálogo:** el botón abre `#modal-ver-datos`, que sigue el patrón A3b (`MOTION_DIALOGOS_SIMPLES`: foco, `inert`, Escape y devolver el foco).
+  - Muestra una tabla con `caption`, `th scope="col"` y `th scope="row"`.
+  - Usa los **mismos datos** de la gráfica (`chart.data`), sin pedir nada al servidor.
+  - Cada celda tiene el mismo texto que el tooltip.
+  - La línea de meta no es un dato y no aparece.
+  - La lógica está en `public/js/ver-datos-logic.js`.
+- **Fracción "3 de 45":**
+  - Las tortas y donas la llevan siempre: "Sobresaliente: 30 de 191 (15,7 %)".
+  - Una serie de % la lleva si el dataset trae `fraccion: { num, den }` (por ejemplo, Nivel de atención: contestadas de total). En ese caso el tooltip agrega "(4.325 de 4.547)".
+  - Los % ponderados (Inasistencia) no llevan fracción, porque no son una división simple.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/

@@ -526,6 +526,7 @@ function _gdChart(canvasId, cfg){
   // insertar el aviso.
   var contenedor = (el.closest && (el.closest('.aurora-card') || el.closest('.aurora-chart-wrap'))) || el.parentElement;
   var note = contenedor ? contenedor.querySelector('.oc-nodata') : null;
+  _gdVerDatosBoton(el, canvasId, empty);
   if(empty){
     el.style.display = 'none';
     if(contenedor && !note){
@@ -539,9 +540,102 @@ function _gdChart(canvasId, cfg){
   }
   if(note) note.remove();
   el.style.display = '';
+  _gdAgregarFraccionTooltip(cfg);
   _gd.charts[canvasId] = new Chart(el, cfg);
   if(typeof gdEtiquetarCanvasChart === 'function') gdEtiquetarCanvasChart(_gd.charts[canvasId]);
 }
+
+// ── Fase 152 (B9): fraccion "3 de 45" en los tooltips ────────
+// Tortas/donas: "Sobresaliente: 3 de 45 (6,7 %)". Series de % que traen
+// `fraccion: { num, den }` (ej. Nivel de atencion = contestadas de total):
+// se agrega "(4.325 de 4.547)" al texto de siempre. El resto, sin cambios.
+function _gdAgregarFraccionTooltip(cfg){
+  if(typeof fraccionDePunto !== 'function' || !cfg || !cfg.data) return;
+  var tipo = cfg.type;
+  var ds = cfg.data.datasets || [];
+  var esTorta = tipo === 'pie' || tipo === 'doughnut';
+  if(!esTorta && !ds.some(function(d){ return d.fraccion; })) return;
+  cfg.options = cfg.options || {};
+  cfg.options.plugins = cfg.options.plugins || {};
+  cfg.options.plugins.tooltip = cfg.options.plugins.tooltip || {};
+  var cbs = cfg.options.plugins.tooltip.callbacks = cfg.options.plugins.tooltip.callbacks || {};
+  var previo = cbs.label;
+  cbs.label = function(ctx){
+    var fr = fraccionDePunto(tipo, ctx.dataset, ctx.dataIndex);
+    if(esTorta && !previo){
+      var total = (ctx.dataset.data || []).reduce(function(a, v){ return a + (Number(v) || 0); }, 0);
+      var pct = total ? Math.round((Number(ctx.raw) || 0) / total * 1000) / 10 : null;
+      return (ctx.label ? ctx.label + ': ' : '') + (fr || String(ctx.raw)) + (pct === null ? '' : ' (' + String(pct).replace('.', ',') + ' %)');
+    }
+    var base = previo ? previo.call(this, ctx) : ((ctx.dataset.label ? ctx.dataset.label + ': ' : '') + ctx.formattedValue);
+    if(Array.isArray(base)) base = base.join(' ');
+    return fr && String(base).indexOf(fr) === -1 ? base + ' (' + fr + ')' : base;
+  };
+}
+
+// ── Fase 152 (B9): "Ver datos" en cada grafica ───────────────
+// Un boton pequeno debajo de cada grafica abre un dialogo con la tabla de
+// los MISMOS numeros que ya tiene la grafica (no se pide nada al
+// servidor), con el mismo formato del tooltip. Patron de dialogo A3b
+// (motion-helpers.js, MOTION_DIALOGOS_SIMPLES). Sin onclick en linea.
+function _gdTituloGrafica(el){
+  var card = el.closest ? el.closest('.aurora-card') : null;
+  var t = card ? card.querySelector('.aurora-card-title') : null;
+  var txt = t ? t.textContent.trim() : '';
+  return txt || 'la gráfica';
+}
+function _gdVerDatosBoton(el, canvasId, vacio){
+  var wrap = (el.closest && el.closest('.aurora-chart-wrap')) || el.parentElement;
+  if(!wrap || !wrap.parentElement) return;
+  var btn = wrap.parentElement.querySelector('.btn-ver-datos[data-canvas="' + canvasId + '"]');
+  if(!btn){
+    btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-sm btn-ver-datos';
+    btn.setAttribute('data-canvas', canvasId);
+    btn.setAttribute('aria-haspopup', 'dialog');
+    btn.textContent = 'Ver datos';
+    btn.addEventListener('click', function(){ abrirVerDatos(canvasId); });
+    wrap.insertAdjacentElement('afterend', btn);
+  }
+  btn.setAttribute('aria-label', 'Ver datos de ' + _gdTituloGrafica(el));
+  btn.hidden = !!vacio;
+}
+function abrirVerDatos(canvasId){
+  var chart = _gd.charts[canvasId];
+  var el = document.getElementById(canvasId);
+  if(!chart || !el) return;
+  var tipo = chart.config.type;
+  var cbs = (chart.options.plugins && chart.options.plugins.tooltip && chart.options.plugins.tooltip.callbacks) || {};
+  var horizontal = chart.options.indexAxis === 'y';
+  var labels = chart.data.labels || [];
+  var formatear = function(j, i, v){
+    if(v === null || v === undefined) return '—';
+    var ds = chart.data.datasets[j];
+    var ctx = { chart: chart, dataset: ds, datasetIndex: j, dataIndex: i, raw: v, label: labels[i],
+      formattedValue: (typeof v === 'number' ? v.toLocaleString('es-CO') : String(v)),
+      parsed: (tipo === 'pie' || tipo === 'doughnut') ? v : (horizontal ? { x: v, y: i } : { x: i, y: v }) };
+    var txt;
+    try{ txt = typeof cbs.label === 'function' ? cbs.label.call({ chart: chart }, ctx) : ctx.formattedValue; }catch(e){ txt = ctx.formattedValue; }
+    if(Array.isArray(txt)) txt = txt.join(' ');
+    txt = sinPrefijoSerie(txt, ds.label);
+    return sinPrefijoSerie(txt, labels[i]);
+  };
+  var titulo = _gdTituloGrafica(el);
+  var tabla = verDatosTabla(chart.data, { formatear: formatear, primeraColumna: (tipo === 'pie' || tipo === 'doughnut') ? 'Categoría' : (horizontal ? 'Nombre' : 'Período') });
+  document.getElementById('modal-ver-datos-title').textContent = 'Datos de ' + titulo;
+  document.getElementById('ver-datos-tabla').innerHTML = verDatosHtml(tabla, 'Datos de ' + titulo);
+  openModal('modal-ver-datos');
+}
+function cerrarVerDatos(){ closeModal('modal-ver-datos'); }
+(function(){
+  if(typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
+  var ov = document.getElementById('modal-ver-datos');
+  var cerrar = document.getElementById('ver-datos-cerrar');
+  if(!ov || !cerrar) return;
+  cerrar.addEventListener('click', cerrarVerDatos);
+  ov.addEventListener('click', function(e){ if(e.target === ov) cerrarVerDatos(); });
+})();
 
 // ── Apertura ────────────────────────────────────────────────
 // Fase 105 (hallazgo real de la verificacion final en produccion de la

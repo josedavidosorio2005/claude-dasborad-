@@ -149,7 +149,8 @@ async function _wppTiemposDibujar(i, campana) {
   o.scales.x = Object.assign({}, o.scales.x || {}, { beginAtZero: true, max: 100, ticks: Object.assign({}, (o.scales.x || {}).ticks || {}, { callback: function (v) { return v + '%'; } }) });
   o.plugins = o.plugins || {};
   o.plugins.legend = { display: false };
-  o.plugins.tooltip = { callbacks: { label: function (ctx) { var x = r.rangos[ctx.dataIndex]; return _wppTiemposFmtPct(x.pct) + ' (' + x.cantidad.toLocaleString('es-CO') + ')'; } } };
+  // Fase 152 (B9): fraccion "12 de 340" (antes solo la cantidad).
+  o.plugins.tooltip = { callbacks: { label: function (ctx) { var x = r.rangos[ctx.dataIndex]; var fr = (typeof fraccionTexto === 'function') ? fraccionTexto(x.cantidad, r.total) : null; return _wppTiemposFmtPct(x.pct) + ' (' + (fr || x.cantidad.toLocaleString('es-CO')) + ')'; } } };
   if (o.plugins.datalabels) {
     o.plugins.datalabels.display = true;
     o.plugins.datalabels.anchor = 'end';

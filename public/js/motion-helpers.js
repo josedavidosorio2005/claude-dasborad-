@@ -336,6 +336,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-change-own-password': function () { if (typeof cerrarCambiarPasswordModal === 'function') cerrarCambiarPasswordModal(); },
   // Fase 147 (Parte B): textos de la encuesta de Mobilize.
   'modal-encuesta-preguntas': function () { if (typeof _encuestaCerrarPreguntas === 'function') _encuestaCerrarPreguntas(); },
+  // Fase 152 (B9): "Ver datos" de una grafica.
+  'modal-ver-datos': function () { if (typeof cerrarVerDatos === 'function') cerrarVerDatos(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.
