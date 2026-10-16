@@ -1,6 +1,11 @@
 # Plantillas de cliente — diagnóstico y propuesta (Fase 153)
 
-**Estado: propuesta para revisar con Edwin.** Nada de esto está implementado. Se aplica solo después del "OK plantillas".
+**Estado: propuesta para revisar con Edwin.**
+
+**"OK plantillas parcial" (16/10/2026):**
+- Autorizados solo los pasos 1, 2 y 3 de la sección 2.5 (registro de clientes, listas desde el registro, catálogo y generador de layout), sin cambio visible.
+- Los pasos 4, 5 y 6 esperan las respuestas de Edwin y un OK aparte.
+- Ajustes del usuario en la sección 2.8.
 
 Pedido de Edwin (16/10/2026):
 - Montar los clientes nuevos (Clínica Aurora y luego Hospital La María) desde una **plantilla basada en ORLANT**.
@@ -142,7 +147,7 @@ En la pantalla Dashboards, un botón **"Nuevo cliente desde plantilla"** (solo e
 La acción crea, en una sola transacción y registrada en el Historial:
 1. El cliente en un **registro de clientes en la base**, que reemplaza a las listas fijas.
 2. Su dashboard a partir de la plantilla.
-3. Su plantilla de Calidad (genérica, editable).
+3. Su plantilla de Calidad: **no genérica**; se carga el modelo real del cliente, una por sede si el cliente tiene sedes (ver 2.8).
 
 No crea usuarios ni da permisos: eso lo hace el usuario desde Usuarios. Tampoco carga datos. Así no hace falta tocar el seed ni hacer deploy para dar de alta un cliente.
 
@@ -155,7 +160,7 @@ Una por módulo, con las mismas columnas para todos los clientes, descargables d
 - **Faltan:** WhatsApp por rangos, Tipificación, Agendas, Efectividad de Agendamiento, Inasistencia, Efectividad de Citas, Llamadas de Salida y Encuesta.
 - **Renombrar:** la de Llamadas Únicas, para que no diga "MOBILIZE".
 
-Donde el archivo nativo de Wolkvox ya funciona, la "plantilla" puede ser ese mismo formato con columnas documentadas. Eso se decide con Edwin.
+**Decidido (2.8):** se prefiere el archivo nativo de Wolkvox, con columnas documentadas y detección de encabezado. Una plantilla propia solo donde Wolkvox no tenga export.
 
 ### 2.5 Orden de generalización (PRs pequeños, sin cambio visible primero)
 
@@ -169,7 +174,7 @@ Donde el archivo nativo de Wolkvox ya funciona, la "plantilla" puede ser ese mis
    - Prueba de "foto": el layout generado para ORLANT y MOBILIZE (con sus módulos y sus pestañas específicas) es **igual** al que existe hoy.
    - Si no lo es, sus layouts actuales se quedan como están y la plantilla solo se usa para clientes nuevos.
 4. **"Nuevo cliente desde plantilla"** en la pantalla Dashboards (servidor más interfaz, con Historial y permisos de admin completo).
-5. **Plantillas Excel que faltan.**
+5. **Plantillas de carga que faltan** (archivo nativo de Wolkvox documentado, ver 2.8) y **B10: Cargar Datos por pasos** (venía de la Fase 152).
 6. **Crear Aurora y después HLM**, cada uno con su OK.
 
 Los casos específicos de ORLANT (sincronización del resumen, borrado por rango) **no** se generalizan: quedan como "específicos de ORLANT", con su nombre.
@@ -190,5 +195,17 @@ Los casos específicos de ORLANT (sincronización del resumen, borrado por rango
 2. **Hospital La María:** ¿qué módulos lleva? ¿Sigue siendo **un solo cliente con filtro de sede** (Sede 33 y Castilla), como antes, o dos clientes separados?
 3. **Nombres exactos** de las campañas como deben verse y guardarse. Antes eran "CLINICA AURORA" y "HOSPITAL LA MARIA".
 4. **Reportes propios de cada uno:** los de antes (Manager, Sábados, Demanda Insatisfecha, Entidades) ¿siguen haciendo falta? ¿De qué archivo de Wolkvox salen?
-5. **Plantillas Excel:** ¿usamos los archivos nativos de Wolkvox como formato oficial, o una plantilla propia por módulo?
+5. ~~**Plantillas Excel:** ¿usamos los archivos nativos de Wolkvox como formato oficial, o una plantilla propia por módulo?~~ Respondida: archivo nativo (2.8).
 6. **Metas iniciales** de cada uno, para la pantalla Umbrales.
+
+### 2.8 Ajustes del usuario ("OK plantillas parcial", 16/10/2026)
+
+1. **Calidad sin plantilla genérica para Aurora y HLM.** El usuario entrega sus modelos reales:
+   - Aurora: el modelo de ORLANT estandarizado.
+   - HLM: uno por sede (Sede 33 y Sede Castilla), con ítems distintos.
+
+   El registro de clientes debe prever que un cliente con sedes tenga **una plantilla de Calidad por sede**. En los pasos 1–3 solo se deja el lugar (sedes en los parámetros del cliente); la plantilla por sede se implementa cuando lleguen los modelos.
+2. **Plantillas de carga:** preferir el archivo nativo de Wolkvox con columnas documentadas y detección de encabezado. Plantilla propia solo donde no haya export.
+3. **B10 (Cargar Datos por pasos)** entra en el paso 5.
+
+Pasos 4, 5 y 6: esperan las respuestas de Edwin y el OK del usuario.
