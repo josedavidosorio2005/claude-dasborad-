@@ -1081,7 +1081,7 @@ function _gdAvisoSinDatosMesHtml(etiqueta, mesElegido, ultimoMesConDatos, format
   var msg = 'Sin datos de ' + esc(etiqueta) + ' para ' + esc(fmt(mesElegido)) + '.';
   if(ultimoMesConDatos){
     msg += ' El último mes con datos es ' + esc(fmt(ultimoMesConDatos)) +
-      ' <button class="btn-sm" onclick="_gdIrAMes(\''+esc(ultimoMesConDatos)+'\')">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
+      ' <button class="btn-sm" data-mes="'+esc(ultimoMesConDatos)+'" onclick="_gdIrAMes(this.dataset.mes)">Ver '+esc(fmt(ultimoMesConDatos))+'</button>';
   }
   // Fase 144 (A6, hallazgo D05): clase en vez de estilo en linea + role="status"
   // (lo anuncia un lector de pantalla). Dentro de la grilla de tarjetas KPI

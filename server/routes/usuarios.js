@@ -4,6 +4,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
+const config = require('../config');
 const { requireAuth, requirePermission, requireActor, isFullAdmin, can } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { wrap, nowStr, logEvent, actorLabel, toPublicUser, MASTER_ADMIN_USER } = require('./shared');
@@ -249,6 +250,12 @@ router.put(
       return res.status(403).json({ error: 'Solo un administrador completo puede suspender o activar un usuario ADMIN o AUX_ADMIN' });
     }
     const newActive = row.active ? 0 : 1;
+    // Fase 151: en produccion, una cuenta de ejemplo con su contrasena
+    // publica (suspendida por la red de la Fase 110) no se reactiva hasta
+    // que se le ponga otra contrasena.
+    if (newActive === 1 && config.isProduction && db.tieneContrasenaDeEjemplo(row)) {
+      return res.status(409).json({ error: 'Esta cuenta tiene una contrasena de ejemplo. Cambiala antes de reactivarla.' });
+    }
     db.prepare('UPDATE users SET active = ? WHERE id = ?').run(newActive, id);
     logEvent(newActive ? 'ACTIVADO' : 'SUSPENDIDO', row, actorLabel(req.actor), '');
     res.json({ ok: true, active: !!newActive });

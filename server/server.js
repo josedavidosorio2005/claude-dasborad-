@@ -104,6 +104,14 @@ function createApp() {
     })
   );
 
+  // Fase 151: la app no usa camara, microfono, ubicacion, pagos ni USB --
+  // se niegan explicitamente (pantalla completa sigue permitida: la usan
+  // los dashboards).
+  app.use((req, res, next) => {
+    res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+    next();
+  });
+
   app.use(cors(buildCorsOptions()));
   // Fase 72 (hallazgo N2): 100kb se quedaba corto para cargas reales de
   // Trafico (traficoCargaBody admite hasta 5000 filas, que en JSON ya pasan
@@ -155,7 +163,13 @@ function createApp() {
 
   // Logging de accesos. morgan NO registra cuerpos ni el header Authorization.
   if (!config.isTest) {
-    app.use(morgan(config.isProduction ? 'combined' : 'dev'));
+    // Fase 151: en produccion, mismo formato "combined" pero SIN la query
+    // de la URL (los filtros pueden llevar nombres de asesores, ej.
+    // ?agente=) -- el log va a CloudWatch.
+    morgan.token('ruta-sin-query', (req) => String(req.originalUrl || req.url || '').split('?')[0]);
+    app.use(morgan(config.isProduction
+      ? ':remote-addr - :remote-user [:date[clf]] ":method :ruta-sin-query HTTP/:http-version" :status :res[content-length] ":user-agent"'
+      : 'dev'));
   }
 
   // ── Rate limiting ──────────────────────────────────────────
@@ -341,7 +355,18 @@ function createApp() {
       },
     })
   );
-  app.get('/{*splat}', servirIndice);
+  // Fase 151: un archivo que no existe (ruta con extension, ej.
+  // /package.json) o una ruta con un segmento oculto (ej. /.env,
+  // /.git/config) responde 404 en vez del index de la SPA -- la SPA solo
+  // usa rutas sin extension.
+  app.get('/{*splat}', (req, res, next) => {
+    const segmentos = req.path.split('/').filter(Boolean);
+    const ultimo = segmentos[segmentos.length - 1] || '';
+    if (segmentos.some((seg) => seg.startsWith('.')) || /\.[A-Za-z0-9]+$/.test(ultimo)) {
+      return res.status(404).type('text/plain').send('No encontrado');
+    }
+    return servirIndice(req, res, next);
+  });
 
   // ── Manejo de errores centralizado ────────────────────────
   // Loguea el detalle real en el servidor, responde generico al cliente.

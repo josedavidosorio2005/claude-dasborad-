@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.42.1 — Octubre 2026
+
+**Fase 151: ajustes menores de seguridad.**
+
+- Los cambios de umbrales del semáforo ahora quedan en el Historial.
+- Direcciones que no existen en la plataforma responden "No encontrado".
+- Ajustes internos de seguridad en filtros, registros del servidor y
+  cuentas de ejemplo. Nada cambia en el uso diario.
+
 ## v1.42.0 — Octubre 2026
 
 **Fase 151: más seguridad en usuarios, sesiones y cargas.**
