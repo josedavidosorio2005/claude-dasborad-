@@ -108,3 +108,29 @@ test('el rol cliente (con acceso a TODOS los clientes de antes) no ve Aurora en 
   assert.deepEqual(dashClientesVisibles(lista, u, false), ['ORLANT', 'MOBILIZE']);
   assert.deepEqual(dashClientesVisibles(lista, null, true), ['ORLANT', 'MOBILIZE', AURORA], 'el admin completo si la ve');
 });
+
+test('tablero: Flujo de Llamadas/WhatsApp se destapan solos al tener datos; sin pestanas visibles sale un aviso', () => {
+  const G = require('../../public/js/mes-global-logic.js');
+  const f = fila();
+  const layout = JSON.parse(f.layout);
+  assert.equal(G.gdTodasLasPestanasOcultas(layout), true, 'Aurora sin datos: aviso en vez de pagina en blanco');
+  assert.equal(G.gdDestaparPorDatos(layout, 'trafico_combo', 'ORLANT'), 0, 'solo destapa los paneles de SU campana');
+  assert.equal(G.gdDestaparPorDatos(layout, 'trafico_combo', AURORA), 1);
+  assert.deepEqual(layout.tabs.filter((t) => !t.oculta).map((t) => t.key), ['trafico']);
+  assert.equal(G.gdTodasLasPestanasOcultas(layout), false);
+  assert.equal(G.gdDestaparPorDatos(layout, 'trafico_whatsapp_combo', AURORA), 1);
+  assert.equal(layout.tabs.find((t) => t.key === 'calidad').oculta, true, 'Calidad sigue oculta (sin plantilla todavia)');
+  // ORLANT y MOBILIZE: sus pestanas de Flujo ya estan visibles, no cambia nada.
+  for (const c of ['ORLANT', 'MOBILIZE']) {
+    const l = generarLayout(PERFILES_ACTUALES[c]).layout;
+    const antes = JSON.stringify(l);
+    G.gdDestaparPorDatos(l, 'trafico_combo', c);
+    G.gdDestaparPorDatos(l, 'trafico_whatsapp_combo', c);
+    assert.equal(JSON.stringify(l), antes, c);
+    assert.equal(G.gdTodasLasPestanasOcultas(l), false, c);
+  }
+  const js = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'public', 'js', 'dashboard-generic.js'), 'utf8');
+  assert.match(js, /gdDestaparPorDatos\(_gd\.config\.layout, 'trafico_combo', _gd\.cliente\)/);
+  assert.match(js, /gdDestaparPorDatos\(_gd\.config\.layout, 'trafico_whatsapp_combo', _gd\.cliente\)/);
+  assert.match(js, /if\(!esModulo && gdTodasLasPestanasOcultas\(layoutGd\)\)/);
+});

@@ -1515,3 +1515,6 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .gd-aviso-mes{text-align:center;color:var(--c-text-muted);padding:24px 8px;font-size:var(--fs-body-lg);}
 .aurora-kpis > .gd-aviso-mes{grid-column:1 / -1;flex-basis:100%;}
 .gd-panel-vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center;padding:0 16px;}
+
+/* Fase 153 (P3): aviso de un dashboard nuevo sin datos (todas las pestanas ocultas). */
+.gd-nodata-banner{grid-column:1/-1;background:var(--c-warning-bg);border:1px solid var(--c-warning);border-radius:var(--r-sm);padding:12px 16px;color:var(--c-warning-text);font-size:var(--fs-body);}

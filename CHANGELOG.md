@@ -12,6 +12,9 @@ sepan que hay nuevo, que se corrigio y que falta.
   WhatsApp (iguales a los de ORLANT) y Calidad.
 - Todas sus pestañas empiezan ocultas y sin datos. Por ahora solo la ve el
   administrador; nadie más la ve hasta que se le den permisos.
+- Mientras no tenga datos, su tablero dice "Este dashboard todavía no tiene
+  datos" en vez de quedar en blanco. Flujo de Llamadas y Flujo de WhatsApp
+  aparecen solos cuando se carguen sus datos.
 - Calidad queda pendiente del modelo de evaluación de Aurora.
 - ORLANT y MOBILIZE no cambian.
 
