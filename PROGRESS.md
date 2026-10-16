@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.41.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.42.3` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -640,3 +640,4 @@ mismo orden):
 - Fase 148 — Auditoría de solo lectura de `120ba7d..main` (#430–#433, #403): 0 críticos, 0 altos, 1 medio y 3 bajos, sin PR (2026-10-15)
 - Fase 149 — Arreglos de la auditoría 148 (nombres de asesor en Llamadas Únicas por regla del servidor, límite de 8 MB para la Encuesta, Excel de la Encuesta sin exportación insegura), revisión del #434, barra de pestañas fija bajo el encabezado del tablero (v1.41.1, 2026-10-15)
 - Fase 150 — Pendientes de la 149: "Última actualización" cuenta también Encuesta, Llamadas Únicas, Salida y WhatsApp por rangos; One & Done con meses en letras, error de red visible y su propio título al exportar; límite de 8 MB en Llamadas Únicas y WhatsApp por rangos; Excel de WhatsApp por rangos sin exportación insegura (v1.41.2, 2026-10-15)
+- Fase 151 — Auditoría de seguridad completa (informe privado, fuera del repo) y arreglos: gestión de usuarios con límites sobre la cuenta destino y los permisos de gestión, lista de usuarios acotada por rol, cierre de sesión que invalida la sesión, cambio obligatorio de contraseñas asignadas, deploy solo desde main de este repo, Tráfico con control de campaña, protección de la rama main, verificación de restauración del respaldo local y ajustes menores; dato de contacto de los monitoreos de Calidad solo para roles internos (v1.41.3 → v1.42.3, 2026-10-16)

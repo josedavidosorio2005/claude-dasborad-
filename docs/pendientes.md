@@ -9,6 +9,18 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Teléfono en los monitoreos de Calidad** (Fase 151) — todos los
+  monitoreos guardan el teléfono del cliente final. Desde la v1.42.3 solo lo
+  reciben los roles internos. Falta decidir con Edwin si se deja de pedir,
+  se enmascara o se borran los ya guardados (borrar es destructivo:
+  inventario, dry-run y "OK borrar").
+- **Una cuenta SUPERVISOR que nunca ingresó** (creada el 29/09/2026) —
+  decidir si se suspende.
+- **Llave de AWS de la instancia y sudo del usuario de deploy** (Fase 151,
+  H-08) — revisar permisos mínimos, rotar la llave y limitar sudo. Plan
+  privado fuera del repo; arranca cuando digas "empecemos H-08". Va junto
+  con bajar el límite de intentos de login en la configuración de la
+  instancia (hoy está por encima del valor por defecto del código).
 - **Contraseña temporal del usuario CLIENTES_DASH** — Prioridad ALTA.
   Cómo se cierra: la cambias desde la propia plataforma (nunca queda en
   el repo/commits/logs). Anotado 2026-10-02 (Fase 112), sigue sin
