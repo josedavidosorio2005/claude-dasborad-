@@ -20,6 +20,10 @@ proyecto, ver [`PROGRESS.md`](../PROGRESS.md) en la raíz del repo.
   el lector real vs. qué manda Edwin/Wolkvox en la práctica (Fase 124,
   solo lectura — insumo para la fase de plantillas oficiales que Edwin
   pidió dejar para después de la entrega).
+- **[plantillas/](plantillas/README.md)** — Fase 153: una ficha y una
+  plantilla oficial por módulo del catálogo (archivos separados, formato
+  nativo de Wolkvox), qué bases se pueden reciclar y qué exportar cada mes.
+  Reemplaza como referencia a `plantillas-inventario.md`.
 - **[guia-uso-orlant.md](guia-uso-orlant.md)** — espejo legible en GitHub
   de la guía que ve el cliente real (`server/paginas/guia-uso.html`).
 - **[procedimiento-carga-mensual.md](procedimiento-carga-mensual.md)** —
