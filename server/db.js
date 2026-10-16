@@ -3728,6 +3728,12 @@ function closeDb() {
 module.exports = db;
 module.exports.closeDb = closeDb;
 module.exports.DB_PATH = DB_PATH;
+// Fase 151: true si la cuenta es uno de los 6 usuarios de ejemplo y SIGUE
+// con su contrasena publica (misma lista cerrada que la red de la Fase 110).
+module.exports.tieneContrasenaDeEjemplo = function tieneContrasenaDeEjemplo(row) {
+  const u = row && USUARIOS_EJEMPLO_INSEGUROS.find((x) => x.user === row.user);
+  return !!u && bcrypt.compareSync(u.password, row.password_hash);
+};
 // Fase 139: expuesta solo para probar la idempotencia (correrla 2 veces).
 module.exports.migrarMobilizeLlamadasUnicasATabPropio = migrarMobilizeLlamadasUnicasATabPropio;
 // Fase 145: idem.

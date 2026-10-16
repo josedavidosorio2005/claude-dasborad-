@@ -5,7 +5,12 @@ const express = require('express');
 const db = require('../db');
 const { requireActor, isFullAdmin } = require('../auth');
 const { validate, schemas } = require('../validation');
-const { wrap, nowStr } = require('./shared');
+const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
+
+// Fase 151: cada cambio de umbral queda en el Historial (antes no quedaba).
+function detalleUmbral(r) {
+  return `${r.metrica} / ${r.campana}: verde ${r.verde}, amarillo ${r.amarillo} (${r.direccion})`;
+}
 
 const router = express.Router();
 
@@ -55,6 +60,7 @@ router.post(
         `UPDATE umbrales_semaforo SET verde=?, amarillo=?, direccion=?, updatedAt=? WHERE id=?`
       ).run(b.verde, b.amarillo, b.direccion, now, existing.id);
       const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(existing.id);
+      logEvent('UMBRAL', null, actorLabel(req.actor), 'Actualizado ' + detalleUmbral(row));
       return res.json(toUmbralRow(row));
     }
     const info = db
@@ -64,6 +70,7 @@ router.post(
       )
       .run({ ...b, createdAt: now, updatedAt: now });
     const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(info.lastInsertRowid);
+    logEvent('UMBRAL', null, actorLabel(req.actor), 'Creado ' + detalleUmbral(row));
     res.status(201).json(toUmbralRow(row));
   })
 );
@@ -99,6 +106,7 @@ router.put(
       throw e;
     }
     const updated = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(row.id);
+    logEvent('UMBRAL', null, actorLabel(req.actor), 'Actualizado ' + detalleUmbral(updated));
     res.json(toUmbralRow(updated));
   })
 );
@@ -114,6 +122,7 @@ router.delete(
     const row = db.prepare('SELECT * FROM umbrales_semaforo WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Umbral no encontrado' });
     db.prepare('DELETE FROM umbrales_semaforo WHERE id = ?').run(row.id);
+    logEvent('UMBRAL', null, actorLabel(req.actor), 'Eliminado ' + detalleUmbral(row));
     res.json({ ok: true });
   })
 );

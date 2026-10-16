@@ -167,6 +167,10 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('[verificar-restore] ERROR:', err && err.stack ? err.stack : err);
+  // Fase 151: el log de esta corrida es publico (repo publico) -- solo el
+  // tipo de error y el codigo HTTP, nunca el mensaje crudo de AWS (trae
+  // ARN, cuenta y bucket) ni el stack.
+  const status = err && err.$metadata && err.$metadata.httpStatusCode;
+  console.error(`[verificar-restore] ERROR: ${(err && (err.name || err.code)) || 'Error'}${status ? ` (HTTP ${status})` : ''}`);
   process.exitCode = 1;
 });

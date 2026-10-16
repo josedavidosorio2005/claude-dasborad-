@@ -1287,7 +1287,10 @@ function validate(schema, part = 'body') {
       });
     }
     // Reemplaza con la version parseada/normalizada (trim, defaults, coercion).
-    req[part] = result.data;
+    // Fase 151: en Express 5 `req.query` es un getter del prototipo y una
+    // asignacion simple no tiene efecto -- se define la propiedad en el
+    // propio req para que el handler lea la query ya validada.
+    Object.defineProperty(req, part, { value: result.data, writable: true, configurable: true, enumerable: true });
     next();
   };
 }
