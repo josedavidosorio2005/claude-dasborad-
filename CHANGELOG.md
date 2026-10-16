@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.45.0 — Octubre 2026
+
+**Fase 152: "Ver datos" en cada gráfica.**
+
+- Debajo de cada gráfica hay un botón "Ver datos" que muestra en una tabla
+  los mismos números de la gráfica, para leer la cifra exacta. También
+  sirve con teclado y con lector de pantalla.
+- Al pasar el mouse por un porcentaje se ve de dónde sale. Por ejemplo,
+  Nivel de atención "95,1 % (4.325 de 4.547)", o en las tortas "30 de 191".
+
 ## v1.44.0 — Octubre 2026
 
 **Fase 152: colores de las gráficas y líneas de meta.**

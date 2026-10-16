@@ -971,7 +971,9 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
     datasets = [
       { type:'bar', label:labelTotal, data: agregado.map(function(a){return a.totalLlamadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
       Object.assign({ type:'bar', label:labelContestadas, data: agregado.map(function(a){return a.contestadas;}), backgroundColor: CGl, yAxisID:'y', borderRadius:3 }, estiloBarraSecundaria()),
-      { type:'line', label:'Nivel de Atención', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
+      { type:'line', label:'Nivel de Atención', data: agregado.map(function(a){return a.nivelAtencionPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3,
+        // Fase 152 (B9): "4.325 de 4.547" en el tooltip y en Ver datos.
+        fraccion: { num: agregado.map(function(a){ return a.contestadas; }), den: agregado.map(function(a){ return a.totalLlamadas; }) } },
     ];
   } else {
     var periodos = agregado.map(function(a){ return a.periodo; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
@@ -989,7 +991,8 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
       // porPeriodo) sigue siendo el valor original.
       var skLbl = textoFormatoNombre(sk);
       datasets.push({ type:'bar', label: skLbl+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
-      datasets.push({ type:'line', label: skLbl+' — Nivel de Atención', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3 });
+      datasets.push({ type:'line', label: skLbl+' — Nivel de Atención', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3,
+        fraccion: { num: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].contestadas:null; }), den: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:null; }) } });
     });
     labels = periodos;
   }
@@ -1036,7 +1039,8 @@ function _traficoDibujarAbandono(prefijo, i, agregadoComb, campana){
   } } };
   var dsAband = [
     { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
-    { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3 },
+    { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3,
+      fraccion: { num: agregadoComb.map(function(a){ return a.llamadasAbandonadas; }), den: agregadoComb.map(function(a){ return a.totalLlamadas; }) } },
   ];
   agregarLineaMeta(dsAband, oAband, _traficoUmbral('tasa_abandono', campana), agregadoComb.length, 'y2', ' %');
   if(typeof _gdChart === 'function'){

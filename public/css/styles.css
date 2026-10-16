@@ -789,6 +789,15 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .kpi-meta-rojo{background:var(--c-danger);}
 .gd-mes-parcial{font-size:var(--fs-note);font-weight:600;color:var(--c-text-2);margin:0 0 4px;}
 .kpi-fila-completa{grid-column:1 / -1;flex-basis:100%;}
+/* Fase 152 (B9): "Ver datos" -- boton discreto bajo cada grafica (objetivo
+   tactil >= 44 px en pantallas tactiles, ver regla de objetivos tactiles) y
+   tabla con su propio scroll horizontal. */
+.btn-ver-datos{display:block;margin:6px 0 0 auto;font-size:var(--fs-note);}
+.btn-ver-datos[hidden]{display:none;}
+.modal.modal-ver-datos{width:720px;}
+.ver-datos-scroll{overflow-x:auto;max-height:60vh;overflow-y:auto;margin-bottom:16px;}
+.ver-datos-tabla th[scope="row"]{text-align:left;font-weight:600;white-space:nowrap;}
+.ver-datos-tabla td{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .aurora-kpi.kpi-green{border-left-color:var(--c-success);}
 .aurora-kpi.kpi-red{border-left-color:var(--c-danger);}
 .aurora-kpi.kpi-org{border-left-color:var(--c-warning);}
@@ -1165,7 +1174,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 button,.btn-sm,.atab,.aurora-close,select,.theme-toggle,
 .navbar-menu-toggle,.navbar-profile-toggle{min-height:24px;min-width:24px;}
 @media(max-width:768px){
-  .aurora-close,#gd-mes-sel,#gd-export-btn,.atab,
+  .aurora-close,#gd-mes-sel,#gd-export-btn,.atab,.btn-ver-datos,
   .navbar-menu-toggle,.navbar-profile-toggle,.theme-toggle{
     min-height:44px;min-width:44px;
   }

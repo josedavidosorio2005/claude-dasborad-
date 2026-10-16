@@ -1653,6 +1653,17 @@
   </div>
 </div>
 
+<!-- Fase 152 (B9): "Ver datos" -- tabla con los numeros de una grafica. -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-ver-datos-title" id="modal-ver-datos">
+  <div class="modal modal-ver-datos">
+    <h3 id="modal-ver-datos-title">Datos de la gráfica</h3>
+    <div id="ver-datos-tabla" class="ver-datos-scroll"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" id="ver-datos-cerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Librerias: Chart.js + plugin de etiquetas (antes inline) -->
@@ -1690,6 +1701,7 @@
 <script src="js/salida-logic.js"></script>
 <script src="js/semaforo-logic.js"></script>
 <script src="js/kpi-tarjeta-logic.js"></script>
+<script src="js/ver-datos-logic.js"></script>
 <script src="js/paleta-logic.js"></script>
 <script src="js/gd-filtro-logic.js"></script>
 <script src="js/gd-combo-logic.js"></script>

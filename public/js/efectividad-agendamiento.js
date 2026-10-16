@@ -120,6 +120,8 @@ function _eaDibujarGrafica(i, filas){
   ];
   var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.efectividad*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
   var ds = gdComboDatasets(barras, linea);
+  // Fase 152 (B9): "agendas de gestiones" en el tooltip y en Ver datos.
+  ds.forEach(function(d){ if(d.type === 'line') d.fraccion = { num: filas.map(function(f){ return f.agendas; }), den: filas.map(function(f){ return f.gestiones; }) }; });
   var o = loBar();
   o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {
     generateLabels: function(chart){

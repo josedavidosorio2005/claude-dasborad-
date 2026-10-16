@@ -98,6 +98,8 @@ function _ecDibujarGrafica(i, filas){
   ];
   var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.agendas > 0 ? (f.atendidas/f.agendas*100) : null; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
   var ds = gdComboDatasets(barras, linea);
+  // Fase 152 (B9): "atendidas de agendas" en el tooltip y en Ver datos.
+  ds.forEach(function(d){ if(d.type === 'line') d.fraccion = { num: filas.map(function(f){ return f.atendidas; }), den: filas.map(function(f){ return f.agendas; }) }; });
   var o = loBar();
   o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {
     generateLabels: function(chart){
