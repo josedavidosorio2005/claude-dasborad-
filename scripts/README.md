@@ -61,6 +61,13 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - **`generar-pdf.js`** — arma el PDF final de la guía en
   `trabajo inconexion\entregables\` (fuera del repo).
 
+## scripts/plantillas/ — plantillas de carga por módulo (Fase 153)
+
+- **`modulos.js`** — fuente única: archivo, hoja, descripción y ejemplo
+  inventado de cada columna; las columnas salen del lector de cada módulo.
+- **`generar-plantillas.js`** — genera `server/plantillas/PLANTILLA_<MODULO>.xlsx`.
+- **`generar-fichas.js`** — genera las fichas de `docs/plantillas/`.
+
 ## Convenciones
 
 - Nunca escriben en producción salvo que el script sea explícitamente de
