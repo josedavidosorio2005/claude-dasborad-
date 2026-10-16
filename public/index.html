@@ -88,7 +88,7 @@
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-target"></use></svg></span> Metas Calidad</a></li>
         <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-gauge"></use></svg></span> Umbrales</a></li>
         <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trending-up"></use></svg></span> Rol Reportes</a></li>
-        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar Datos</a></li>
+        <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar Datos</a></li>
         <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
         <li id="menu-inventario-li" class="hidden"><a id="menu-inventario" role="button" tabindex="0" onclick="showSection('inventario')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg></span> Inventario</a></li>
         <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-chart-column"></use></svg></span> Gerencia</a></li>
@@ -883,6 +883,7 @@
         <div id="gd-comp-nota" style="display:none;color:#a8d8ea;font-size:0.78rem;font-style:italic;padding:6px 4px">La comparación aplica a las pestañas de resumen</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
+        <button class="aurora-close hidden" id="gd-actualizar-btn" onclick="centroAbrirDesdeTablero()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-refresh-cw"></use></svg> Actualizar datos</button>
         <button class="aurora-close" id="gd-export-btn" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()">Exportar</button>
         <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
         <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
@@ -1378,6 +1379,29 @@
 </div>
 
 <!-- ══ CARGA DE DATOS DE DASHBOARDS (permiso cargarDatos) ══════════════════════════════ -->
+<!-- Fase 153 (P2, MAQUETA): Centro de cargas (centro-cargas.js). -->
+<div role="dialog" aria-modal="true" aria-labelledby="cc-title" id="centro-overlay">
+  <div id="centro-modal">
+    <div class="aurora-header">
+      <div>
+        <h2 id="cc-title">Centro de cargas</h2>
+        <div class="aurora-sub">Elige el cliente y el módulo; cada mes muestra si ya tiene su base y quién la cargó.</div>
+      </div>
+      <div class="cc-cab-botones">
+        <button class="aurora-close" onclick="ccIrPantallaAnterior()">Pantalla anterior</button>
+        <button class="aurora-close" onclick="closeCentroCargas()">X Cerrar</button>
+      </div>
+    </div>
+    <div class="cc-barra">
+      <div class="ig"><label for="cc-cliente">Cliente</label><select id="cc-cliente" onchange="ccCambiarCliente()"></select></div>
+      <div class="ig"><label for="cc-anio">Año</label><select id="cc-anio" onchange="ccCambiarAnio()"></select></div>
+      <nav class="cc-migas" id="cc-migas" aria-label="Dónde estás"></nav>
+    </div>
+    <div id="cc-body" aria-live="polite"></div>
+    <div id="cc-dialogo"></div>
+  </div>
+</div>
+
 <div role="dialog" aria-modal="true" aria-labelledby="cargas-modal-title" id="cargas-overlay">
   <div id="cargas-modal">
     <div class="aurora-header">
@@ -1732,6 +1756,8 @@
 <script src="js/mis-resultados.js"></script>
 <script src="js/cargas-logic.js"></script>
 <script src="js/cargas.js"></script>
+<script src="js/centro-cargas-logic.js"></script>
+<script src="js/centro-cargas.js"></script>
 <script src="js/contraste-logic.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/dashboard-export-tipos.js"></script>

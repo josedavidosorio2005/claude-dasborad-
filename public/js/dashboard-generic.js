@@ -1126,6 +1126,10 @@ function renderGenericHeader(){
       elLogo.alt = '';
     }
   }
+  // Fase 153 (P2, maqueta): "Actualizar datos" abre el Centro de cargas en
+  // este cliente y modulo; solo para quien puede cargar (nunca el cliente).
+  var btnAct = document.getElementById('gd-actualizar-btn');
+  if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadData === 'function' && canLoadData() && typeof openCentroCargas === 'function'));
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   var sub = document.getElementById('gd-sub');
   // Fase 122 (pedido de Edwin: "con la fecha uno se enreda mucho, que salga
