@@ -56,12 +56,6 @@ async function _salidaRenderPanel(p, i){
 
 // Variacion vs el mes anterior -- vacio (nunca "0%"/"Infinity%") si no hay
 // mes anterior en la base o si ese mes anterior fue 0 (division invalida).
-function _salVariacionTxt(actual, anterior){
-  if(anterior === null || anterior === undefined || !isFinite(anterior) || anterior === 0) return '';
-  var v = (actual - anterior) / anterior * 100;
-  var signo = v > 0 ? '+' : '';
-  return ' ('+signo+gdFmtValor(Math.round(v*10)/10,'%')+' vs mes anterior)';
-}
 
 async function _salDibujar(campana, i, opciones){
   var mesSel = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
@@ -88,11 +82,20 @@ async function _salDibujar(campana, i, opciones){
     } else {
       var totalLlam = delMes.llamadas3p + delMes.llamadasGeneral;
       var totalWpp = delMes.wpp3p + delMes.wppGeneral;
+      // Fase 152 (B8 + B3): solo se compara contra el mes INMEDIATAMENTE
+      // anterior (antes tomaba la fila anterior aunque faltara un mes en
+      // medio) y nunca en el mes en curso (Salida se guarda como totales
+      // mensuales: no hay dia de corte, el rotulo dice "mes en curso").
+      if(anterior && anterior.mes !== gdMesAnterior(delMes.mes)) anterior = null;
       var totalLlamAnt = anterior ? anterior.llamadas3p + anterior.llamadasGeneral : null;
       var totalWppAnt = anterior ? anterior.wpp3p + anterior.wppGeneral : null;
-      tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
-        '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(totalLlam)+'</div><div class="kl">Llamadas de salida · '+esc(salidaMesLbl(delMes.mes))+_salVariacionTxt(totalLlam, totalLlamAnt)+'</div></div>' +
-        '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(totalWpp)+'</div><div class="kl">WhatsApp de salida · '+esc(salidaMesLbl(delMes.mes))+_salVariacionTxt(totalWpp, totalWppAnt)+'</div></div>' +
+      var hoySal = gdHoyLocal();
+      var enCursoSal = gdEsMesEnCurso(delMes.mes, hoySal);
+      var optsSal = { unidad: 'num', mesEnCurso: enCursoSal, mesAnteriorLbl: mesNombreLargo(gdMesAnterior(delMes.mes)).split(' ')[0].toLowerCase() };
+      var rotuloSal = enCursoSal ? '<div class="gd-mes-parcial kpi-fila-completa">'+esc(gdRotuloMesParcial(delMes.mes, hoySal, null, mesNombreLargo))+'</div>' : '';
+      tarjetasEl.innerHTML = '<div class="aurora-kpis">' + rotuloSal +
+        kpiTarjetaHtml({ valor: gdFmtValor(totalLlam), etiqueta: 'Llamadas de salida · '+salidaMesLbl(delMes.mes), variacion: kpiVariacion(totalLlam, totalLlamAnt, optsSal) }) +
+        kpiTarjetaHtml({ valor: gdFmtValor(totalWpp), etiqueta: 'WhatsApp de salida · '+salidaMesLbl(delMes.mes), variacion: kpiVariacion(totalWpp, totalWppAnt, optsSal) }) +
         '</div>';
     }
   }

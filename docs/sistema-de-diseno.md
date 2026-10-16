@@ -517,6 +517,20 @@ contraste da con ESA porción. Si ninguno llega a 4.5:1 (unos pocos tonos
 medios de `PC_DARK`), agrega un contorno de 3px del otro color. No se
 cambia la paleta para arreglar un texto encima de ella.
 
+## Tarjeta KPI ejecutiva (Fase 152, B8 + B3)
+
+Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacion`, `kpiMeta`) y en `public/js/mes-global-logic.js` (`gdMesDelRango`, `gdEsMesEnCurso`, `gdRotuloMesParcial`).
+
+- **Cifra:** usa `--fs-kpi` con números tabulares.
+- **Etiqueta:** en minúscula inicial ("Nivel de atención"), nunca en MAYÚSCULAS.
+- **Variación:** va debajo, contra el **mes anterior**.
+  - Solo aparece si el período es exactamente un mes calendario y el mes anterior tiene datos. Si no se cumple, no se muestra nada (nunca un "0 %" falso).
+  - Los conteos se comparan en %, y los indicadores que ya son % en puntos ("pts").
+  - El color dice si el cambio es bueno o malo; en abandono, que baje es bueno.
+- **Meta:** "Meta 90 %" o "Meta máx. 5 %", con un punto de semáforo **y texto** ("Cumple la meta"). Sale **solo** de los umbrales de la pantalla Umbrales. Sin umbral no hay meta ni semáforo, y no hay cortes quemados en el código.
+- **Mes en curso:** el encabezado y la fila de tarjetas dicen "Octubre 2026 — parcial, hasta el día N". N es el último día con datos cuando la fuente es diaria; si la fuente es mensual, dice "mes en curso, parcial". Las tarjetas dicen "Mes en curso: sin comparación".
+- **Tendencia pequeña (sparkline):** está preparada (`kpiSparklinePuntos`), pero apagada (`KPI_SPARKLINE_ACTIVO`) hasta que haya 3 meses o más con datos.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/

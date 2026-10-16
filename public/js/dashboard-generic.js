@@ -957,7 +957,9 @@ function renderGenericHeader(){
   // 'serie', mas abajo en este archivo: Trafico/Calidad), que nunca pasan
   // por mesNombreLargo.
   var mesLbl = _gd.mesSel ? mesNombreLargo(_gd.mesSel) : (_gd.periodos[0] ? mesNombreLargo(_gd.periodos[0]) : 'Sin datos');
-  sub.textContent = 'Informe ' + mesLbl + ' — ' + _gd.cliente;
+  // Fase 152 (B3): el mes en curso se marca como parcial en el encabezado.
+  var rotuloParcial = (_gd.mesSel && typeof gdRotuloMesParcial === 'function') ? gdRotuloMesParcial(_gd.mesSel, gdHoyLocal(), null, mesNombreLargo) : '';
+  sub.textContent = 'Informe ' + (rotuloParcial || mesLbl) + ' — ' + _gd.cliente;
 
   // Fase 131 (Parte 4): "Ultima actualizacion" -- resaltado naranja para
   // Mobilize, verde InConexion (#74B859, color de marca) para el resto.
@@ -1586,10 +1588,15 @@ function _gdRenderCalidad(p, i){
       || (r.promedio>=90?'verde':r.promedio>=70?'amarillo':'rojo');
     var qaCls = _gdSemaforoClase(qaColor);
     var qaBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(qaColor) : '';
+    // Fase 152 (B8): tarjeta ejecutiva. La meta del puntaje sale SOLO del
+    // umbral qa_promedio (pantalla Umbrales); la tarjeta de clasificacion
+    // conserva su color de siempre (qaCls). Sin variacion: el rango de
+    // Calidad no es un mes calendario (ventana movil de hasta 12 meses).
+    var metaQa = kpiMeta(r.total ? r.promedio : null, _gdUmbralPara('qa_promedio', camp), { unidad: 'num' });
     el.innerHTML =
-      '<div class="aurora-kpi"><div class="kv">'+r.total+'</div><div class="kl">Monitoreos Realizados</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv">'+qaBadge+(r.total?r.promedio:'—')+'</div><div class="kl">Puntaje Promedio de Calidad</div></div>'+
-      '<div class="aurora-kpi '+qaCls+'"><div class="kv" style="font-size:1rem">'+qaBadge+r.clasificacion+'</div><div class="kl">Clasificacion General</div></div>';
+      kpiTarjetaHtml({ valor: String(r.total), etiqueta: 'Monitoreos realizados' }) +
+      kpiTarjetaHtml({ valor: r.total ? String(r.promedio).replace('.', ',') : '—', etiqueta: 'Puntaje promedio de calidad', meta: r.total ? metaQa : null }) +
+      '<div class="aurora-kpi kpi-ejecutiva '+qaCls+'"><div class="kv kv-texto">'+qaBadge+esc(r.clasificacion)+'</div><div class="kl">Clasificación general</div></div>';
     return;
   }
   if(p.tipo === 'calidad_bar_asesores'){
