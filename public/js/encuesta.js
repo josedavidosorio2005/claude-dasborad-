@@ -58,7 +58,7 @@ async function _encuestaRenderPanel(p, i) {
   var op = await _encuestaCargarOpciones(campana);
   if (!op.total) {
     _encuestaUltimo[campana] = null;
-    host.innerHTML = '<div class="aurora-card">' + titulo + '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin encuestas cargadas todavía' +
+    host.innerHTML = '<div class="aurora-card">' + titulo + '<div class="gd-vacio">Sin encuestas cargadas todavía' +
       (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') + '</div></div>';
     return;
   }
@@ -68,7 +68,7 @@ async function _encuestaRenderPanel(p, i) {
   if (estado.skill && (op.skills || []).indexOf(estado.skill) === -1) estado.skill = '';
   if (!ve || (estado.agente && (op.agentes || []).indexOf(estado.agente) === -1)) estado.agente = '';
   var filtroAsesor = ve
-    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="enc-f-agente-' + i + '">Asesor</label>' +
+    ? '<div class="ig ig-filtro"><label for="enc-f-agente-' + i + '">Asesor</label>' +
       '<select id="enc-f-agente-' + i + '">' + _encuestaOptionsHtml(op.agentes, estado.agente, _encuestaNombre) + '</select></div>'
     : '';
   var cuadros = (ENCUESTA_PREGUNTAS || []).map(function (q) {
@@ -78,11 +78,11 @@ async function _encuestaRenderPanel(p, i) {
   }).join('');
   host.innerHTML = '<div class="aurora-card">' + titulo +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:4px">' +
-      '<div class="ig" style="margin-bottom:0"><label for="enc-f-desde-' + i + '">Desde</label><input type="date" id="enc-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-      '<div class="ig" style="margin-bottom:0"><label for="enc-f-hasta-' + i + '">Hasta</label><input type="date" id="enc-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
-      '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="enc-f-skill-' + i + '">Skill</label><select id="enc-f-skill-' + i + '">' + _encuestaOptionsHtml(op.skills, estado.skill) + '</select></div>' +
+      '<div class="ig ig-sm"><label for="enc-f-desde-' + i + '">Desde</label><input type="date" id="enc-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig ig-sm"><label for="enc-f-hasta-' + i + '">Hasta</label><input type="date" id="enc-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig ig-filtro"><label for="enc-f-skill-' + i + '">Skill</label><select id="enc-f-skill-' + i + '">' + _encuestaOptionsHtml(op.skills, estado.skill) + '</select></div>' +
       filtroAsesor +
-      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_encuestaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
+      '<div class="ig ig-sm"><button class="btn-sm" onclick="_encuestaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
       '<div class="ig" style="margin-bottom:0;margin-left:auto"><button class="btn-sm" onclick="_encuestaExportExcel(' + i + ')">Excel</button> ' +
         '<button class="btn-sm" onclick="_encuestaExportPrint(' + i + ')">PDF</button></div>' +
     '</div>' +
@@ -138,10 +138,10 @@ function _encuestaDibujarPregunta(i, q, datos, k) {
 }
 
 function _encuestaComentariosHtml(lista, ve) {
-  if (!lista || !lista.length) return '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">No hay comentarios con estos filtros.</div>';
+  if (!lista || !lista.length) return '<div class="gd-vacio-chico">No hay comentarios con estos filtros.</div>';
   return '<div class="table-wrap" style="max-height:360px;overflow:auto"><table class="aurora-table enc-tabla-comentarios"><thead><tr>' +
-    '<th style="text-align:left">Fecha</th><th style="text-align:left">Skill</th>' + (ve ? '<th style="text-align:left">Asesor</th>' : '') +
-    '<th style="text-align:left">Comentario</th></tr></thead><tbody>' +
+    '<th class="th-izq">Fecha</th><th class="th-izq">Skill</th>' + (ve ? '<th class="th-izq">Asesor</th>' : '') +
+    '<th class="th-izq">Comentario</th></tr></thead><tbody>' +
     lista.map(function (c) {
       return '<tr><td>' + esc(_encuestaFmtFecha(c.fecha)) + '</td><td>' + esc(c.skill || 'Sin dato') + '</td>' +
         (ve ? '<td>' + esc(_encuestaNombre(c.agente)) + '</td>' : '') + '<td style="text-align:left">' + esc(c.comentario) + '</td></tr>';
@@ -338,7 +338,7 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
     if (elKpi) elKpi.innerHTML = '';
     if (elQ3) elQ3.textContent = '';
     var wrap = document.getElementById('tv-canvas-oad-' + i);
-    if (wrap && wrap.parentNode) wrap.parentNode.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin encuestas en el período seleccionado. Cuando se cargue la Encuesta de satisfacción, aquí aparecerá One &amp; Done por mes.</div>';
+    if (wrap && wrap.parentNode) wrap.parentNode.innerHTML = '<div class="gd-vacio">Sin encuestas en el período seleccionado. Cuando se cargue la Encuesta de satisfacción, aquí aparecerá One &amp; Done por mes.</div>';
     return;
   }
   var mesFin = hasta ? String(hasta).slice(0, 7) : serie[serie.length - 1].periodo;

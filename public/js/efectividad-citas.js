@@ -37,7 +37,7 @@ async function _efectividadCitasRenderPanel(p, i){
   var opciones = await _ecCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin Efectividad de citas cargada todavia. Un usuario con permiso de administrador debe subir la hoja CITAS_ATENDIDAS desde "Cargar Datos".</div></div>';
+      '<div class="gd-vacio">Sin Efectividad de citas cargada todavia. Un usuario con permiso de administrador debe subir la hoja CITAS_ATENDIDAS desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -71,7 +71,7 @@ async function _ecDibujar(campana, i, opciones){
 
   if(tarjetasEl){
     if(!filas.length){
-      tarjetasEl.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin datos.</div>';
+      tarjetasEl.innerHTML = '<div class="gd-vacio-chico">Sin datos.</div>';
     } else {
       var ponderado = citasAtendidasPonderado(filas);
       var rangoLbl = citasAtendidasRangoLbl(filas);
@@ -132,7 +132,7 @@ function _ecTablaHtml(filas, mesSel){
   var filaPct = filas.map(function(f){ return celda('td', citasAtendidasFmtPct(f.agendas>0?f.atendidas/f.agendas:null), f.mes); }).join('');
   var filaAgendas = filas.map(function(f){ return celda('td', gdFmtValor(f.agendas), f.mes); }).join('');
   var filaAtendidas = filas.map(function(f){ return celda('td', gdFmtValor(f.atendidas), f.mes); }).join('');
-  return '<div style="overflow-x:auto;margin-top:10px">' +
+  return '<div class="gd-tabla-scroll gd-tabla-mt">' +
     '<table class="aurora-rank-table"><thead><tr><th></th>'+encabezados+'</tr></thead>'+
     '<tbody><tr><td>% Efectividad</td>'+filaPct+'</tr>'+
     '<tr><td>Agendas</td>'+filaAgendas+'</tr>'+

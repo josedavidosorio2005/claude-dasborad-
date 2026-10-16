@@ -66,7 +66,7 @@ async function _wppTiemposRender(i, campana) {
   var op = await _wppTiemposCargarOpciones(campana);
   if (!op.meses || !op.meses.length) {
     _wppTiemposUltimo[campana] = null;
-    content.innerHTML = titulo + '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tiempos de respuesta de WhatsApp cargados todavía' +
+    content.innerHTML = titulo + '<div class="gd-vacio">Sin tiempos de respuesta de WhatsApp cargados todavía' +
       (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') + '</div>';
     return;
   }
@@ -93,7 +93,7 @@ async function _wppTiemposRender(i, campana) {
       '<div class="ig" style="min-width:200px;margin-bottom:0"><label for="wtt-f-skill-' + i + '">Cola</label><select id="wtt-f-skill-' + i + '"><option value="">Todas</option>' +
         (op.skills || []).map(function (s) { return '<option value="' + esc(s) + '"' + (s === estado.skill ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') +
       '</select></div>' +
-      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_wppTiemposAplicar(' + i + ')">Aplicar filtros</button></div>' +
+      '<div class="ig ig-sm"><button class="btn-sm" onclick="_wppTiemposAplicar(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     (estado.nota ? '<p style="color:var(--c-text-muted);font-size:var(--fs-small);margin:0 0 8px">' + esc(estado.nota) + '</p>' : '') +
     '<div class="aurora-kpis" id="wtt-kpis-' + i + '"></div>' +
@@ -133,7 +133,7 @@ async function _wppTiemposDibujar(i, campana) {
   var tabla = document.getElementById('wtt-tabla-' + i);
   if (!r || !r.total) {
     if (kpis) kpis.innerHTML = '';
-    if (tabla) tabla.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin conversaciones de WhatsApp para ' + esc(_wppTiemposMesLbl(estado.mes)) + (estado.skill ? ' en esa cola' : '') + '.</div>';
+    if (tabla) tabla.innerHTML = '<div class="gd-vacio-chico">Sin conversaciones de WhatsApp para ' + esc(_wppTiemposMesLbl(estado.mes)) + (estado.skill ? ' en esa cola' : '') + '.</div>';
     if (typeof _gdChart === 'function') _gdChart('wtt-canvas-' + i, { type: 'bar', data: { labels: [], datasets: [] }, options: {} });
     return;
   }
@@ -146,7 +146,7 @@ async function _wppTiemposDibujar(i, campana) {
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.indexAxis = 'y';
   o.scales = o.scales || {};
-  o.scales.x = Object.assign({}, o.scales.x || {}, { beginAtZero: true, max: 100, ticks: Object.assign({}, (o.scales.x || {}).ticks || {}, { callback: function (v) { return v + '%'; } }) });
+  o.scales.x = Object.assign({}, o.scales.x || {}, { beginAtZero: true, max: 100, ticks: Object.assign({}, (o.scales.x || {}).ticks || {}, { callback: function (v) { return v + ' %'; } }) });
   o.plugins = o.plugins || {};
   o.plugins.legend = { display: false };
   // Fase 152 (B9): fraccion "12 de 340" (antes solo la cantidad).
@@ -170,7 +170,7 @@ async function _wppTiemposDibujar(i, campana) {
       options: o,
     });
   }
-  if (tabla) tabla.innerHTML = '<div class="table-wrap"><table class="aurora-table"><thead><tr><th style="text-align:left">Tiempo de respuesta</th><th>Conversaciones</th><th>%</th></tr></thead><tbody>' +
+  if (tabla) tabla.innerHTML = '<div class="table-wrap"><table class="aurora-table"><thead><tr><th class="th-izq">Tiempo de respuesta</th><th>Conversaciones</th><th>%</th></tr></thead><tbody>' +
     r.rangos.map(function (x) { return '<tr><td>' + esc(x.label) + '</td><td>' + x.cantidad.toLocaleString('es-CO') + '</td><td>' + _wppTiemposFmtPct(x.pct) + '</td></tr>'; }).join('') +
     '<tr><td><strong>Total del mes</strong></td><td><strong>' + r.total.toLocaleString('es-CO') + '</strong></td><td>100 %</td></tr>' +
     '</tbody></table></div>';

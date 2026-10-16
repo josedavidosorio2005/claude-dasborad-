@@ -37,7 +37,7 @@ async function _salidaRenderPanel(p, i){
   var opciones = await _salCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Llamadas y WhatsApp de salida cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Llamadas y WhatsApp de salida desde "Cargar Datos".</div></div>';
+      '<div class="gd-vacio">Sin datos de Llamadas y WhatsApp de salida cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Llamadas y WhatsApp de salida desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -78,7 +78,7 @@ async function _salDibujar(campana, i, opciones){
     var delMes = idx!==-1 ? filas[idx] : null;
     var anterior = idx>0 ? filas[idx-1] : null;
     if(!delMes){
-      tarjetasEl.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin datos.</div>';
+      tarjetasEl.innerHTML = '<div class="gd-vacio-chico">Sin datos.</div>';
     } else {
       var totalLlam = delMes.llamadas3p + delMes.llamadasGeneral;
       var totalWpp = delMes.wpp3p + delMes.wppGeneral;
@@ -145,7 +145,7 @@ function _salTablaHtml(filas, mesSel){
     fila('WhatsApp General', function(f){ return gdFmtValor(f.wppGeneral); }) +
     fila('Total WhatsApp', function(f){ return gdFmtValor(f.wpp3p+f.wppGeneral); }) +
     fila('% 3P (WhatsApp)', function(f){ return pct(f.wpp3p, f.wpp3p+f.wppGeneral); });
-  return '<div style="overflow-x:auto;margin-top:10px">' +
+  return '<div class="gd-tabla-scroll gd-tabla-mt">' +
     '<table class="aurora-rank-table"><thead><tr><th></th>'+encabezados+'</tr></thead>'+
     '<tbody>'+cuerpo+'</tbody></table></div>';
 }

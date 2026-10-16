@@ -242,7 +242,7 @@ function loBar(t){ var o=lo(t); o.plugins.datalabels.align='end'; return o; }
 // total del año, no solo la cantidad cruda).
 function _loPctDeTotal(v, ctx){
   var s = ctx.chart.data.datasets[0].data.reduce(function(a,b){ return a+(b||0); }, 0);
-  return s ? Math.round(v/s*100)+'%' : '';
+  return s ? Math.round(v/s*100)+' %' : ''; // Fase 152 (B4): "12 %"
 }
 function loBarPct(t){
   var o=loBar(t);
@@ -257,7 +257,9 @@ function gdFmtValor(v, unidad){
   if(v===null || v===undefined || v==='') return '';
   var n = typeof v==='number' ? v : Number(v);
   if(!isFinite(n)) return String(v);
-  if(unidad==='%') return (n % 1 !== 0 ? n.toFixed(1) : n) + '%';
+  // Fase 152 (B4): formato es-CO en graficas y tooltips -- coma decimal y
+  // espacio antes del % ("95,1 %"), a lo sumo 1 decimal.
+  if(unidad==='%') return (Math.round(n*10)/10).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' %';
   if(unidad==='tiempo' || unidad==='tiempo_mmss'){ var m=Math.floor(n/60), s=Math.round(n%60); return m+':'+(s<10?'0':'')+s; }
   return Math.round(n*100)/100 === Math.round(n) ? Math.round(n).toLocaleString('es-CO') : (Math.round(n*100)/100).toLocaleString('es-CO');
 }

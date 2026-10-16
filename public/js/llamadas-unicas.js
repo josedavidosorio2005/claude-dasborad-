@@ -29,7 +29,7 @@ var _llamadasSalidaEstado = {};   // Fase 141: filtros de la mitad de salida, po
 var LLAMADAS_UNICAS_AVISO = 'Cuenta una sola vez cada teléfono por día. No coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.';
 function _llamadasUnicasTituloHtml() {
   return '<div class="aurora-card-title">Llamadas de ingreso únicas</div>' +
-    '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px">' + LLAMADAS_UNICAS_AVISO + '</p>';
+    '<p class="lu-aviso">' + LLAMADAS_UNICAS_AVISO + '</p>';
 }
 
 function _llamadasUnicasFmtFechaCorta(f) {
@@ -71,7 +71,7 @@ function _llamadasUnicasVeAsesores(campana) {
 var LS_TIPOS = [{ v: 'CONECTADA', t: 'Conectada' }, { v: 'NO_CONECTADA', t: 'No conectada' }];
 
 function _llamadasUnicasSinDatosHtml(texto) {
-  return '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">' + texto +
+  return '<div class="gd-vacio">' + texto +
     (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') +
     '</div>';
 }
@@ -102,18 +102,18 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
 
   var esInterno = _llamadasUnicasVeAsesores(campana);
   var filtroAsesor = esInterno
-    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="lu-f-agente-' + i + '">Asesor</label>' +
+    ? '<div class="ig ig-filtro"><label for="lu-f-agente-' + i + '">Asesor</label>' +
       '<select id="lu-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
     : '';
 
   mitad.innerHTML =
     _llamadasUnicasTituloHtml() +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-      '<div class="ig" style="margin-bottom:0"><label for="lu-f-desde-' + i + '">Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-      '<div class="ig" style="margin-bottom:0"><label for="lu-f-hasta-' + i + '">Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
-      '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="lu-f-skill-' + i + '">Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
+      '<div class="ig ig-sm"><label for="lu-f-desde-' + i + '">Desde</label><input type="date" id="lu-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig ig-sm"><label for="lu-f-hasta-' + i + '">Hasta</label><input type="date" id="lu-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig ig-filtro"><label for="lu-f-skill-' + i + '">Skill</label><select id="lu-f-skill-' + i + '">' + _llamadasUnicasOptionsHtml(op.skills, estado.skill) + '</select></div>' +
       filtroAsesor +
-      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
+      '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
     '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '"></canvas></div>';
@@ -186,7 +186,7 @@ var LLAMADAS_SALIDA_AVISO = 'Cuenta una sola vez cada teléfono por día, por se
 
 function _llamadasSalidaTituloHtml() {
   return '<div class="aurora-card-title">Llamadas de salida</div>' +
-    '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px">' + LLAMADAS_SALIDA_AVISO + '</p>';
+    '<p class="lu-aviso">' + LLAMADAS_SALIDA_AVISO + '</p>';
 }
 
 async function _llamadasSalidaCargarOpciones(campana) {
@@ -214,17 +214,17 @@ async function _llamadasSalidaRenderMitad(campana, i) {
     LS_TIPOS.map(function (x) { return '<option value="' + x.v + '"' + (estado.tipo === x.v ? ' selected' : '') + '>' + x.t + '</option>'; }).join('') +
     '</select></div>';
   var filtroAsesor = esInterno
-    ? '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="ls-f-agente-' + i + '">Asesor</label>' +
+    ? '<div class="ig ig-filtro"><label for="ls-f-agente-' + i + '">Asesor</label>' +
       '<select id="ls-f-agente-' + i + '">' + _llamadasUnicasOptionsHtml(op.agentes, estado.agente) + '</select></div>'
     : '';
   mitad.innerHTML =
     _llamadasSalidaTituloHtml() +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
-      '<div class="ig" style="margin-bottom:0"><label for="ls-f-desde-' + i + '">Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
-      '<div class="ig" style="margin-bottom:0"><label for="ls-f-hasta-' + i + '">Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
+      '<div class="ig ig-sm"><label for="ls-f-desde-' + i + '">Desde</label><input type="date" id="ls-f-desde-' + i + '" value="' + esc(estado.desde) + '"></div>' +
+      '<div class="ig ig-sm"><label for="ls-f-hasta-' + i + '">Hasta</label><input type="date" id="ls-f-hasta-' + i + '" value="' + esc(estado.hasta) + '"></div>' +
       filtroTipo +
       filtroAsesor +
-      '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
+      '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="ls-kpis-' + i + '"></div>' +
     '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '"></canvas></div>' +
@@ -272,7 +272,7 @@ function _llamadasSalidaDetalleHtml(detalle) {
   function tabla(titulo, col, filas, etiqueta) {
     if (!filas.length) return '';
     return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">' + titulo + '</div>' +
-      '<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="aurora-table"><thead><tr><th style="text-align:left">' + col + '</th><th>Total</th><th>No conectadas</th><th>Conectadas</th></tr></thead><tbody>' +
+      '<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="aurora-table"><thead><tr><th class="th-izq">' + col + '</th><th>Total</th><th>No conectadas</th><th>Conectadas</th></tr></thead><tbody>' +
       filas.map(function (r) {
         return '<tr><td>' + esc(etiqueta(r)) + '</td><td>' + r.total.toLocaleString('es-CO') + '</td><td>' + r.noConectadas.toLocaleString('es-CO') + '</td><td>' + r.conectadas.toLocaleString('es-CO') + '</td></tr>';
       }).join('') +

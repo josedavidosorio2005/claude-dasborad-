@@ -18,9 +18,11 @@ test('.aurora-tabs corta el desborde vertical (overflow-y:hidden) y conserva el 
   assert.match(m[1], /overflow-y:hidden/);
 });
 
-test('.atab NO se toco (sigue congelada hasta "OK limpieza atab"; su margin-bottom:-2px se queda)', () => {
+// Fase 152 (B4, "OK limpieza atab"): solo cambio la transicion; el
+// margin-bottom:-2px (alineado con el borde de la barra) se queda.
+test('.atab: transicion exacta (sin "all") y su margin-bottom:-2px se queda', () => {
   const m = css.match(/\.atab\{([^}]*)\}/);
-  assert.match(m[1], /transition:all 0\.2s/);
+  assert.doesNotMatch(m[1], /transition:all/);
   assert.match(m[1], /margin-bottom:-2px/);
 });
 

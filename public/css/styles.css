@@ -127,6 +127,12 @@
   --fs-note:0.75rem; --fs-small:0.8125rem; --fs-body:0.875rem;
   --fs-body-lg:1rem; --fs-h3:1.125rem; --fs-h2:1.375rem;
   --fs-kpi:1.75rem; --fs-display:2rem;
+  /* Fase 152 (B4): escala de z-index (mismos valores de siempre, ahora con
+     nombre; ver docs/sistema-de-diseno.md). De abajo hacia arriba. */
+  --z-sticky-col:1; --z-sticky-tabs:1; --z-sticky-header:2; --z-sticky-perm:2;
+  --z-fab:50; --z-menu-fila:80; --z-navbar:100; --z-navbar-menu:250;
+  --z-drawer-fondo:290; --z-drawer:300; --z-selector-clientes:500;
+  --z-panel:600; --z-dialogo:1000; --z-toast:3000;
   --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
   --lh-tight:1.25; --lh-body:1.5;
 
@@ -243,7 +249,7 @@ select option,select optgroup{color:var(--c-text);background-color:var(--c-surfa
 .theme-toggle{background:none;border:none;color:var(--c-on-brand);font-size:var(--fs-h3);line-height:1;padding:4px 8px;cursor:pointer;border-radius:var(--r-sm);display:inline-block;transition:transform var(--dur-medium) var(--ease-out);}
 .theme-toggle.theme-spin{transform:rotate(180deg);}
 .theme-toggle:hover{background:rgba(255,255,255,0.12);}
-.theme-toggle-fab{position:fixed;top:18px;right:18px;background:var(--c-surface);color:var(--c-primary);border:1.5px solid var(--c-border);width:40px;height:40px;border-radius:50%;font-size:var(--fs-h3);box-shadow:var(--shadow-md);z-index:50;cursor:pointer;}
+.theme-toggle-fab{position:fixed;top:18px;right:18px;background:var(--c-surface);color:var(--c-primary);border:1.5px solid var(--c-border);width:40px;height:40px;border-radius:50%;font-size:var(--fs-h3);box-shadow:var(--shadow-md);z-index:var(--z-fab);cursor:pointer;}
 .theme-toggle-fab:hover{background:var(--c-surface-subtle);}
 @media(max-width:768px){.theme-toggle{font-size:var(--fs-body-lg);padding:4px 6px;}}
 
@@ -364,7 +370,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    vez de pegar el logo a la izquierda. margin-left:auto en .navbar-right
    (mas abajo) logra el mismo resultado visual de siempre sin importar
    cuantos hijos haya antes. */
-.navbar{background:var(--c-brand);padding:0 28px;display:flex;align-items:center;gap:10px;height:62px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
+.navbar{background:var(--c-brand);padding:0 28px;display:flex;align-items:center;gap:10px;height:62px;position:sticky;top:0;z-index:var(--z-navbar);box-shadow:0 2px 10px rgba(var(--shadow-rgb),0.2);}
 /* El logo original era una sola imagen (símbolo a color + wordmark "InConexion"
    horneado en el mismo PNG, en teal oscuro fijo) -- el texto se perdía por
    contraste sobre el fondo del navbar, también teal oscuro (mismo var(--c-primary)
@@ -493,7 +499,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
     flex-direction:column;align-items:stretch;gap:10px;
     background:var(--c-surface);padding:14px 16px;border-radius:12px;
     min-width:180px;box-shadow:0 10px 30px rgba(var(--shadow-rgb),0.3);
-    z-index:250;
+    z-index:var(--z-navbar-menu);
   }
   .navbar-right.open .navbar-profile-dropdown{display:flex;}
   .navbar-right .navbar-user{color:var(--c-text);font-size:var(--fs-body);font-weight:600;}
@@ -506,12 +512,12 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
   .sidebar{
     position:fixed;top:62px;left:0;bottom:0;width:80%;max-width:300px;
     transform:translateX(-105%);transition:transform 0.25s ease;
-    z-index:300;box-shadow:6px 0 24px rgba(0,0,0,0.3);overflow-y:auto;
+    z-index:var(--z-drawer);box-shadow:6px 0 24px rgba(0,0,0,0.3);overflow-y:auto;
   }
   .app-page.sidebar-open .sidebar{transform:translateX(0);}
   .sidebar-overlay{
     display:none;position:fixed;top:62px;left:0;right:0;bottom:0;
-    background:rgba(8,38,52,0.5);z-index:290;
+    background:rgba(8,38,52,0.5);z-index:var(--z-drawer-fondo);
   }
   .app-page.sidebar-open .sidebar-overlay{display:block;}
 
@@ -586,7 +592,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .row-actions-kebab svg{width:18px;height:18px;pointer-events:none;}
 .row-actions-menu{position:fixed;top:0;left:0;min-width:180px;background:var(--c-surface);
   border:1px solid var(--c-border);border-radius:var(--r-md);box-shadow:var(--shadow-md);
-  z-index:80;overflow:hidden;opacity:0;transform:scale(0.95);transform-origin:top right;
+  z-index:var(--z-menu-fila);overflow:hidden;opacity:0;transform:scale(0.95);transform-origin:top right;
   pointer-events:none;
   transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);}
 .row-actions-menu.row-actions-menu-show{opacity:1;transform:scale(1);pointer-events:auto;}
@@ -623,10 +629,10 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .perm-wrap::-webkit-scrollbar-track{background:var(--c-bg);border-radius:var(--r-sm);}
 .perm-wrap::-webkit-scrollbar-thumb{background:#b8d0dc;border-radius:var(--r-sm);}
 .perm-table{border-collapse:separate;border-spacing:0;width:100%;min-width:max-content;}
-.perm-table .col-user{position:sticky;left:0;z-index:2;background:var(--c-surface-alt);min-width:200px;white-space:nowrap;}
+.perm-table .col-user{position:sticky;left:0;z-index:var(--z-sticky-perm);background:var(--c-surface-alt);min-width:200px;white-space:nowrap;}
 .perm-table tbody .col-user{background:var(--c-surface);border-right:1px solid var(--c-border-soft);}
 .perm-table tbody tr:hover .col-user{background:var(--c-surface-subtle);}
-.perm-table .col-all{position:sticky;left:200px;z-index:2;background:var(--c-surface-alt);min-width:90px;border-right:2px solid var(--c-border);white-space:nowrap;}
+.perm-table .col-all{position:sticky;left:200px;z-index:var(--z-sticky-perm);background:var(--c-surface-alt);min-width:90px;border-right:2px solid var(--c-border);white-space:nowrap;}
 .perm-table tbody .col-all{background:var(--c-surface-alt2);border-right:2px solid var(--c-border);}
 .perm-table tbody tr:hover .col-all{background:var(--c-surface-subtle);}
 .perm-table thead th{background:var(--c-surface-alt);color:var(--c-text-muted2);font-size:var(--fs-note);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:10px 14px;text-align:center;white-space:nowrap;border-bottom:2px solid var(--c-border);}
@@ -698,7 +704,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .dash-btn.mod-clientes:hover{background:rgba(243,156,18,0.28);}
 
 /* ── CLIENTS MODAL ── */
-.clients-modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,50,70,0.6);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.clients-modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,50,70,0.6);z-index:var(--z-selector-clientes);align-items:center;justify-content:center;backdrop-filter:blur(3px);}
 .clients-modal-overlay.show{display:flex;}
 .clients-modal{background:var(--c-surface);border-radius:var(--r-xl);padding:32px;width:600px;max-width:95vw;max-height:85vh;overflow-y:auto;box-shadow:0 16px 56px rgba(var(--shadow-rgb),0.3);}
 .clients-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
@@ -711,7 +717,7 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .client-card .client-name{font-size:var(--fs-body);font-weight:700;color:var(--c-primary);}
 
 /* ── MODALS ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(var(--shadow-rgb),0.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(var(--shadow-rgb),0.45);z-index:var(--z-dialogo);align-items:center;justify-content:center;}
 .modal-overlay.show{display:flex;}
 .modal{background:var(--c-surface);border-radius:var(--r-lg);padding:32px 32px 26px;width:520px;max-width:95vw;box-shadow:0 8px 40px rgba(var(--shadow-rgb),0.2);max-height:92vh;overflow-y:auto;}
 .modal h3{color:var(--c-primary);font-size:var(--fs-body-lg);margin-bottom:20px;font-weight:700;}
@@ -725,12 +731,12 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .client-perm-item{display:flex;align-items:center;gap:8px;font-size:var(--fs-small);color:var(--c-text);background:var(--c-surface);border:1px solid #e0ecf3;border-radius:var(--r-sm);padding:7px 10px;}
 .client-perm-item input[type=checkbox]{accent-color:var(--c-primary-mid);width:15px;height:15px;flex-shrink:0;cursor:pointer;}
 
-.toast{position:fixed;bottom:24px;right:24px;background:var(--c-brand);color:var(--c-on-brand);padding:11px 18px;border-radius:9px;font-size:var(--fs-body);font-weight:500;box-shadow:0 4px 18px rgba(var(--shadow-rgb),0.28);z-index:3000;opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:340px;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--c-brand);color:var(--c-on-brand);padding:11px 18px;border-radius:9px;font-size:var(--fs-body);font-weight:500;box-shadow:0 4px 18px rgba(var(--shadow-rgb),0.28);z-index:var(--z-toast);opacity:0;transition:opacity 0.3s;pointer-events:none;max-width:340px;}
 .toast.show{opacity:1;}
 .hidden{display:none;}
 
 /* ── AURORA DASHBOARD MODAL ── */
-#aurora-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.75);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#aurora-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.75);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #aurora-overlay.show{display:flex;}
 #aurora-modal{background:var(--c-bg);border-radius:var(--r-xl);width:97vw;max-width:1200px;max-height:94vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
 .aurora-header{background:var(--c-brand);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-radius:18px 18px 0 0;flex-shrink:0;}
@@ -789,6 +795,29 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .kpi-meta-rojo{background:var(--c-danger);}
 .gd-mes-parcial{font-size:var(--fs-note);font-weight:600;color:var(--c-text-2);margin:0 0 4px;}
 .kpi-fila-completa{grid-column:1 / -1;flex-basis:100%;}
+/* Fase 152 (B4): clases para estilos en linea que se repetian en los
+   paneles nuevos (Encuesta, One & Done, Llamadas Unicas y de Salida,
+   WhatsApp por rangos, Salida, Citas, Inasistencia). */
+.gd-vacio{text-align:center;color:var(--c-text-muted);padding:24px 8px;}
+.gd-vacio-chico{text-align:center;color:var(--c-text-muted);padding:16px 8px;}
+.ig.ig-sm{margin-bottom:0;}
+.ig.ig-filtro{min-width:170px;margin-bottom:0;}
+.th-izq{text-align:left;}
+.lu-aviso{color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px;}
+/* Fase 152 (B4): tablas del tablero con su propio scroll horizontal (la
+   pagina nunca hace scroll horizontal) y filtros plegables en movil. */
+.gd-tabla-scroll{overflow-x:auto;max-width:100%;}
+.gd-tabla-scroll.gd-tabla-mt{margin-top:10px;}
+.gd-filtros-toggle{display:none;}
+@media(max-width:768px){
+  .gd-filtros-toggle{display:inline-flex;align-items:center;margin-bottom:8px;}
+  .gd-filtros-plegables.gd-filtros-cerrado > :not(.gd-filtros-siempre){display:none !important;}
+  .gd-tabla-scroll table th:first-child,.gd-tabla-scroll table td:first-child{position:sticky;left:0;z-index:var(--z-sticky-col);background:var(--c-surface);}
+  #gd-modal .gd-filtros-toggle,#gd-modal .gd-filtros-plegables .btn-sm,#gd-modal .gd-filtros-plegables .btn-primary,
+  #gd-modal .gd-filtros-plegables select,#gd-modal .gd-filtros-plegables input:not([type="checkbox"]),
+  #gd-modal .gd-subtab-btn{min-height:44px;}
+  #gd-modal .gd-filtros-plegables input[type="checkbox"]{width:22px;height:22px;}
+}
 /* Fase 152 (B9): "Ver datos" -- boton discreto bajo cada grafica (objetivo
    tactil >= 44 px en pantallas tactiles, ver regla de objetivos tactiles) y
    tabla con su propio scroll horizontal. */
@@ -854,7 +883,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    vez de activar el overflow-x:auto que .aurora-tabs ya tenía. Con
    flex-shrink:0 cada pestaña conserva su ancho natural y el scroll
    horizontal que ya existía pasa a funcionar de verdad. */
-.atab{padding:10px 16px;font-size:var(--fs-small);font-weight:600;color:var(--c-text-2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;flex-shrink:0;transition:all 0.2s;}
+.atab{padding:10px 16px;font-size:var(--fs-small);font-weight:600;color:var(--c-text-2);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;flex-shrink:0;transition:color 0.2s,background-color 0.2s,border-color 0.2s;}
 .atab:hover{color:var(--c-primary);background:var(--c-surface-subtle);}
 .atab.atab-active{color:var(--c-primary);border-bottom-color:var(--c-primary-mid);background:var(--c-info-bg);}
 
@@ -963,7 +992,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-card-title.gd-flex{display:flex;align-items:center;gap:8px;}
 
 /* ── AURORA DASHBOARD MODAL ── */
-#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#gd-overlay.show,#dashcfg-overlay.show{display:flex;}
 /* Fase 103: #gd-modal (dashboard de cliente) salio de esta regla -- ver su
    propia regla mas abajo, a pantalla completa. Los otros 5 modales de esta
@@ -1002,7 +1031,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    problema real aparte (recorte por la barra de direcciones en movil)
    que `100%` no resolveria igual de bien. */
 #gd-modal{background:var(--c-bg);border-radius:0;width:100%;height:100dvh;max-width:none;max-height:none;overflow-y:auto;box-shadow:none;display:flex;flex-direction:column;}
-#gd-modal .aurora-header{position:sticky;top:0;z-index:2;border-radius:0;}
+#gd-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;}
 /* Fase 149 (punto 7): el encabezado es sticky pero la barra de pestañas
    principales no -- al desplazar el tablero la barra se metia DEBAJO del
    encabezado y se veia cortada por arriba (1440px, ambos temas). Ahora se
@@ -1012,7 +1041,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    768px: en movil el encabezado ya ocupa ~300px y sumarle la barra fija
    dejaria muy poco tablero visible. Mismo aspecto (fondo, borde, pestañas). */
 @media (min-width:768px){
-  #gd-modal #gd-tabs{position:sticky;top:var(--gd-header-h,0px);z-index:1;}
+  #gd-modal #gd-tabs{position:sticky;top:var(--gd-header-h,0px);z-index:var(--z-sticky-tabs);}
 }
 
 /* Fase 136 (PR 8, F04): entrada/salida animada de los 6 modales/overlays
@@ -1043,7 +1072,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
    al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */
-#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 #inventario-overlay.show,#gerencia-overlay.show,#gestionhumana-overlay.show{display:flex;}
 #inventario-modal,#gerencia-modal,#gestionhumana-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;padding-bottom:18px;}
 .dm-readonly{width:100%;padding:11px 14px;border:1.5px solid #e0eaf0;border-radius:8px;font-size:var(--fs-body-lg);color:var(--c-primary);background:#eef3f6;min-height:20px;}
@@ -1366,9 +1395,9 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
   box-shadow:var(--shadow-sm),0 0 0 1px var(--c-border-soft2);}
 
 /* 7) "transition:all" (anima propiedades sin querer, mas caro para el
-   navegador) -> solo las propiedades que de verdad cambian. .atab se
-   deja COMO ESTA a proposito: su limpieza espera el "OK limpieza atab"
-   (docs/pendientes.md). */
+   navegador) -> solo las propiedades que de verdad cambian. .atab ya
+   tambien (Fase 152, B4, con el "OK limpieza atab"): color, fondo y
+   borde, mismos 0.2s. */
 .gd-subtab-btn{transition:color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out);}
 .role-card,.client-card,.canal-btn,.dash-btn{transition:background-color var(--dur-medium) var(--ease-out),border-color var(--dur-medium) var(--ease-out),box-shadow var(--dur-medium) var(--ease-out),transform var(--dur-medium) var(--ease-out),color var(--dur-medium) var(--ease-out);}
 
@@ -1426,7 +1455,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    arriba, tabla abajo. Sin animacion nueva. */
 .tipif-pie-tabla{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;}
 .tipif-pie-tabla .tipif-tabla .table-wrap{margin:0;max-height:340px;overflow:auto;}
-.tipif-pie-tabla .tipif-tabla thead th{position:sticky;top:0;z-index:1;}
+.tipif-pie-tabla .tipif-tabla thead th{position:sticky;top:0;z-index:var(--z-sticky-col);}
 @media(max-width:700px){
   .tipif-pie-tabla{grid-template-columns:minmax(0,1fr);}
   .tipif-pie-tabla .tipif-tabla .table-wrap{max-height:none;}
