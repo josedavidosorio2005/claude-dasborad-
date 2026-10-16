@@ -166,7 +166,9 @@ test('Cargar Datos: la hoja "WhatsApp tiempos de respuesta" solo aparece cuando 
   const slot = cargasPlanConsolidado(...args, cols).find((h) => h.tipo === 'whatsapp_tiempos');
   assert.equal(slot.hoja, 'WHATSAPP_TIEMPOS');
   const cargasJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'cargas.js'), 'utf8');
-  assert.match(cargasJs, /var CARGAS_CLIENTES_WHATSAPP_TIEMPOS = \['ORLANT'\];/);
+  // Fase 153 (Paso 2): la lista sale del registro de clientes.
+  assert.match(cargasJs, /LISTAS_REGISTRO\.whatsappTiempos\.indexOf\(cliente\)/);
+  assert.deepEqual(require('../../public/js/registro-clientes.js').derivarListasRegistro(require('../../public/js/registro-clientes.js').REGISTRO_CLIENTES).whatsappTiempos, ['ORLANT']);
 });
 
 // ── Vista ─────────────────────────────────────────────────────────────────
@@ -235,7 +237,7 @@ test('Vista: sin ningun mes cargado -> estado vacio claro, sin cifras ni grafica
 });
 
 test('Integracion: solo ORLANT usa esta vista y los botones Excel/PDF del panel exportan los rangos cuando esta activa', () => {
-  assert.match(VISTA_JS, /var WPP_TIEMPOS_CAMPANAS = \['ORLANT'\];/);
+  assert.match(VISTA_JS, /return LISTAS_REGISTRO\.whatsappTiempos\.indexOf\(campana\) !== -1;/); // Fase 153: del registro
   const wpp = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'trafico-whatsapp.js'), 'utf8');
   assert.match(wpp, /if \(activo === 'sl' && typeof wppTiemposUsa === 'function' && wppTiemposUsa\(campana\)\)/);
   assert.match(wpp, /_wppTiemposActivo\(i\)\)\{ _wppTiemposExportExcel\(i\); return; \}/);

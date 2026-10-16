@@ -102,6 +102,7 @@ async function loadDashboardClientes(){
     if(r && Array.isArray(r.clientes)) BUILT_CLIENT_DASHBOARDS = r.clientes;
     if(r && Array.isArray(r.listaClientes)) CLIENTES_LIST = r.listaClientes;
     if(r && Array.isArray(r.campanasCalidad)) CAMPANAS_CALIDAD = r.campanasCalidad;
+    if(r && Array.isArray(r.registro)) aplicarRegistroClientes(r.registro); // Fase 153 (Paso 2)
   }catch(e){ /* deja la lista por defecto */ }
 }
 document.getElementById('clients-modal-overlay').addEventListener('click',function(e){if(e.target===this)closeClientsModal();});

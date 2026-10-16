@@ -274,7 +274,9 @@ test('Cargar Datos: la hoja "Encuesta de satisfacción" solo aparece con sus col
   assert.equal(slot.hoja, 'ENCUESTA');
   assert.deepEqual(slot.columnas.map((c) => c.label), HEADER);
   const cargasJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'cargas.js'), 'utf8');
-  assert.match(cargasJs, /var CARGAS_CLIENTES_ENCUESTA = \['MOBILIZE'\];/);
+  // Fase 153 (Paso 2): la lista sale del registro de clientes.
+  assert.match(cargasJs, /LISTAS_REGISTRO\.encuesta\.indexOf\(cliente\)/);
+  assert.deepEqual(require('../../public/js/registro-clientes.js').derivarListasRegistro(require('../../public/js/registro-clientes.js').REGISTRO_CLIENTES).encuesta, ['MOBILIZE']);
   assert.match(cargasJs, /encuestaBuscarEncabezado\(_cargasPrimerasFilas\(wsCandidata, 20\), 20\)/);
 });
 

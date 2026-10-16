@@ -49,7 +49,7 @@ test('renderGenericHeader oculta el logo (visibility) mientras carga uno nuevo y
     'se vuelve a mostrar al cargar y tambien si falla (nunca queda oculto para siempre)');
   // El ocultar va ANTES de cambiar el src (si no, el onload de una imagen
   // ya en cache podria llegar antes y dejarla oculta).
-  assert.ok(cuerpo.indexOf("elLogo.style.visibility = 'hidden'") < cuerpo.indexOf("elLogo.src = 'img/clientes/mobilize-logo.png'"));
+  assert.ok(cuerpo.indexOf("elLogo.style.visibility = 'hidden'") < cuerpo.indexOf('elLogo.src = logoCli.src;'));
 });
 
 test('el aviso amarillo de "sin datos" se dibuja en el MISMO paso que las pestanas (sin await en medio): nunca aparece despues', () => {

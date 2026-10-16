@@ -255,6 +255,8 @@ async function renderPanel({ rol, respuestas, campana = 'MOBILIZE' }) {
     canLoadData: () => rol === 'ADMIN',
     LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA: 'Abandonadas',
     encodeURIComponent,
+    // Fase 153 (Paso 2): las listas por modulo salen del registro de clientes.
+    LISTAS_REGISTRO: require('../../public/js/registro-clientes.js').derivarListasRegistro(require('../../public/js/registro-clientes.js').REGISTRO_CLIENTES),
   };
   vm.createContext(sandbox);
   vm.runInContext(PANEL_JS, sandbox);

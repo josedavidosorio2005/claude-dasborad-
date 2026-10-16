@@ -99,9 +99,10 @@ function seccionSpec(cliente, seccionKey) {
 // Clientes que tienen dashboard configurado.
 // Fase 153 (Paso 1): devuelve tambien las listas del registro de clientes
 // (clientes-registro.js), que reemplazan a las fijas de constants.js:
-// listaClientes = CLIENTES_LIST y campanasCalidad = CAMPANAS_CALIDAD. Solo
-// nombres (los mismos que ya estaban escritos en el JS publico), nada de
-// modulos ni parametros.
+// listaClientes = CLIENTES_LIST y campanasCalidad = CAMPANAS_CALIDAD.
+// Paso 2: y el registro (modulos, parametros y logo de cada cliente) para
+// las listas por modulo del navegador (registro-clientes.js). Es
+// configuracion, nunca datos de la operacion.
 router.get(
   '/dashboard/clientes',
   requireActor,
@@ -111,6 +112,7 @@ router.get(
       clientes: rows.map((r) => r.cliente),
       listaClientes: clientesRegistro.listaClientes(db),
       campanasCalidad: clientesRegistro.campanasCalidad(db),
+      registro: clientesRegistro.registroParaNavegador(db),
     });
   })
 );

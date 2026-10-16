@@ -143,8 +143,24 @@ function campanasCalidad(db) {
   return leerRegistro(db).filter((c) => c.modulos.includes('calidad')).map((c) => c.nombre);
 }
 
+// Fase 153 (Paso 2): el cliente (rol CLIENTES_DASH) de esta campana ve los
+// nombres de asesor (antes la lista fija CAMPANAS_ASESOR_VISIBLE_CLIENTE de
+// routes/llamadas-salida.js). Una campana fuera del registro: no.
+function asesorVisibleCliente(db, campana) {
+  const c = leerRegistro(db).find((x) => x.nombre === campana);
+  return !!c && c.parametros.asesorVisibleCliente === true;
+}
+
+// Lo que el navegador necesita para armar sus listas por modulo
+// (public/js/registro-clientes.js): sin fechas ni orden interno.
+function registroParaNavegador(db) {
+  return leerRegistro(db).map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo }));
+}
+
 module.exports = {
   REGISTRO_INICIAL,
+  asesorVisibleCliente,
+  registroParaNavegador,
   crearTablaRegistro,
   sembrarRegistro,
   leerRegistro,

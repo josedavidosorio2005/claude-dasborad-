@@ -22,7 +22,7 @@ const {
 const { wrap, logEvent, actorLabel } = require('./shared');
 // Fase 149 (auditoria 148, hallazgo medio): nombres de asesor con la misma
 // regla que Salida y Encuesta -- el cliente de una campaña fuera de
-// CAMPANAS_ASESOR_VISIBLE_CLIENTE (hoy ORLANT) no recibe la lista ni
+// asesorVisibleCliente del registro de clientes (hoy ORLANT) no recibe la lista ni
 // puede filtrar por ?agente=.
 const { puedeVerAsesores } = require('./llamadas-salida');
 

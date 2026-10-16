@@ -75,7 +75,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   assert.deepEqual(r.body.clientes.slice().sort(), ['MOBILIZE', 'ORLANT']);
   assert.deepEqual(r.body.listaClientes, ANTES);
   assert.deepEqual(r.body.campanasCalidad, ANTES);
-  assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes'], 'solo nombres');
+  assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);
   const sin = await request(app).get('/api/dashboard/clientes');
   assert.equal(sin.status, 401);
 });
