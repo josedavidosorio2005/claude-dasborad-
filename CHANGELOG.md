@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.42.0 — Octubre 2026
+
+**Fase 151: más seguridad en usuarios, sesiones y cargas.**
+
+- **Contraseña nueva al primer ingreso:** cuando el administrador crea una
+  cuenta o le pone una contraseña nueva a alguien, esa persona debe elegir
+  su propia contraseña la primera vez que entra. Las cuentas que ya existen
+  no cambian.
+- **Cerrar sesión** ahora deja esa sesión inservible al instante (las
+  sesiones abiertas en otros equipos siguen igual).
+- Los permisos de gestión de usuarios (crear, editar, suspender, eliminar,
+  cambiar contraseñas y permisos) solo los da o quita el administrador.
+  Nadie puede suspenderse ni eliminarse a sí mismo.
+- Cada persona ve en la plataforma solo los usuarios que necesita para su
+  trabajo.
+- La carga de Tráfico de Llamadas respeta las campañas de cada usuario,
+  igual que las demás cargas.
+
 ## v1.41.3 — Octubre 2026
 
 **Fase 151: mejora de seguridad en la gestión de usuarios.**

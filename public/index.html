@@ -1624,6 +1624,7 @@
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-change-own-password-title" id="modal-change-own-password">
   <div class="modal">
     <h3 id="modal-change-own-password-title">Cambiar mi Contraseña</h3>
+    <p id="cop-aviso-obligatorio" class="hidden">Tu contraseña fue asignada por un administrador. Elige una nueva (mínimo 8 caracteres) para entrar a la plataforma.</p>
     <div class="ig">
       <label for="cop-actual">Contraseña Actual</label>
       <div class="pass-wrap">
@@ -1646,7 +1647,7 @@
       </div>
     </div>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeModal('modal-change-own-password')">Cancelar</button>
+      <button class="btn-cancel" onclick="cancelarCambiarPasswordModal()">Cancelar</button>
       <button class="btn-primary" onclick="submitCambiarPasswordPropia()">Cambiar</button>
     </div>
   </div>

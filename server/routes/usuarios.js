@@ -33,6 +33,21 @@ function puedeAsignarRol(actor, rol) {
   return !ROLES_ESTRUCTURALES.includes(rol) || isFullAdmin(actor);
 }
 
+// Fase 151: los permisos de gestion de usuarios (ADMIN_ACTIONS en
+// public/js/constants.js, mas isAdmin) solo los otorga o quita un
+// administrador completo -- sin esto, quien puede crear/editar usuarios
+// le daba a otra cuenta (o a una cuenta nueva propia) cualquiera de ellos.
+// El resto de permisos (modulos, campanas, clientes, cargarDatos) sigue
+// igual que antes.
+const PERMS_GESTION = ['isAdmin', 'crearUsuarios', 'editarUsuarios', 'cambiarPassword', 'suspenderUsuarios', 'eliminarUsuarios', 'gestionPermisos'];
+function permsGestionSinCambio(actor, nuevos, actuales) {
+  if (isFullAdmin(actor)) return true;
+  const n = nuevos || {};
+  const a = actuales || {};
+  return PERMS_GESTION.every((k) => (n[k] === true) === (a[k] === true));
+}
+const ERROR_PERMS_GESTION = 'Solo un administrador completo puede otorgar o quitar permisos de gestion de usuarios';
+
 router.get(
   '/users',
   requireActor,
@@ -54,11 +69,27 @@ router.get(
     // crearUsuarios/editarUsuarios ya ve la lista completa (fullView) pero
     // no este campo en particular.
     const verUltimoIngreso = isFullAdmin(req.actor);
+    if (fullView) {
+      return res.json(rows.map(toPublicUser).map((u) => (verUltimoIngreso ? u : { ...u, lastLogin: undefined })));
+    }
+    // Fase 151: quien no administra usuarios recibe solo su propia fila y
+    // los asesores de SUS campanas (lo unico que usa la interfaz fuera del
+    // panel de administracion: la lista de asesores al registrar un
+    // monitoreo) -- nunca la lista completa con usuarios de otros clientes.
+    const misCampanas = new Set(
+      Object.keys(req.actor.perms || {})
+        .filter((k) => k.startsWith('campana_') && req.actor.perms[k] === true)
+        .map((k) => k.slice('campana_'.length))
+    );
     res.json(
       rows
+        .filter((r) => r.id === req.actor.id || (r.rol === 'ASESOR' && r.asesorCampana && misCampanas.has(r.asesorCampana)))
         .map(toPublicUser)
-        .map((u) => (fullView ? u : { ...u, perms: {} }))
-        .map((u) => (verUltimoIngreso ? u : { ...u, lastLogin: undefined }))
+        .map((u) =>
+          u.id === req.actor.id
+            ? { ...u, perms: {}, lastLogin: undefined }
+            : { id: u.id, nombre: u.nombre, rol: u.rol, active: u.active, asesorCampana: u.asesorCampana, perms: {} }
+        )
     );
   })
 );
@@ -74,14 +105,16 @@ router.post(
     if (!puedeAsignarRol(req.actor, rol)) {
       return res.status(403).json({ error: 'Solo un administrador completo puede crear un usuario ADMIN o AUX_ADMIN' });
     }
+    if (!permsGestionSinCambio(req.actor, perms, {})) return res.status(403).json({ error: ERROR_PERMS_GESTION });
     const exists = db.prepare('SELECT id FROM users WHERE user = ?').get(user);
     if (exists) return res.status(409).json({ error: 'Ese usuario ya existe' });
 
     const hash = await bcrypt.hash(password, 10);
     const info = db
       .prepare(
-        `INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt)
-         VALUES (?,?,?,1,?,?,?,?)`
+        // Fase 151: contrasena puesta por otra persona -> cambio obligatorio al entrar.
+        `INSERT INTO users (nombre, user, rol, active, password_hash, perms, asesorCampana, createdAt, debe_cambiar_password)
+         VALUES (?,?,?,1,?,?,?,?,1)`
       )
       .run(nombre, user, rol, hash, JSON.stringify(applyRolePermDefaults(rol, perms)), asesorCampana || null, nowStr());
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
@@ -136,6 +169,9 @@ router.put(
     if (perms !== undefined && req.actor.id != null && req.actor.id === id) {
       return res.status(403).json({ error: 'No puedes cambiar tus propios permisos' });
     }
+    if (perms !== undefined && !permsGestionSinCambio(req.actor, perms, JSON.parse(row.perms || '{}'))) {
+      return res.status(403).json({ error: ERROR_PERMS_GESTION });
+    }
 
     const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
     const effectiveRol = rol ?? row.rol;
@@ -144,7 +180,7 @@ router.put(
       // Fase 151: una contrasena nueva tambien cierra las sesiones abiertas
       // de esa cuenta (igual que PUT /users/:id/password).
       `UPDATE users SET nombre=?, user=?, rol=?, password_hash=?, perms=?, asesorCampana=?,
-         token_version = token_version + ? WHERE id=?`
+         token_version = token_version + ?, debe_cambiar_password = MAX(debe_cambiar_password, ?) WHERE id=?`
     ).run(
       nombre ?? row.nombre,
       user ?? row.user,
@@ -153,6 +189,7 @@ router.put(
       JSON.stringify(applyRolePermDefaults(effectiveRol, basePerms)),
       asesorCampana ?? row.asesorCampana,
       password ? 1 : 0,
+      password && req.actor.id !== id ? 1 : 0,
       id
     );
     const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
@@ -186,7 +223,9 @@ router.put(
     // queda con la sesion abierta, asi que no hay un token nuevo que devolver:
     // la proxima peticion de ESE usuario con su token viejo simplemente deja
     // de servir (401 generico), como cualquier sesion vencida.
-    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(hash, id);
+    // Fase 151: contrasena puesta por otra persona -> cambio obligatorio al entrar.
+    const debeCambiar = req.actor.id !== id ? 1 : 0;
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1, debe_cambiar_password = MAX(debe_cambiar_password, ?) WHERE id = ?').run(hash, debeCambiar, id);
     logEvent('PASSWORD', row, actorLabel(req.actor), 'Contrasena cambiada');
     res.json({ ok: true });
   })
@@ -201,6 +240,14 @@ router.put(
     const id = req.params.id;
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Fase 151: mismo limite estructural que crear/editar/contrasena, y
+    // nadie se suspende a si mismo (evita un auto-bloqueo).
+    if (req.actor.id != null && req.actor.id === id) {
+      return res.status(403).json({ error: 'No puedes suspenderte a ti mismo' });
+    }
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede suspender o activar un usuario ADMIN o AUX_ADMIN' });
+    }
     const newActive = row.active ? 0 : 1;
     db.prepare('UPDATE users SET active = ? WHERE id = ?').run(newActive, id);
     logEvent(newActive ? 'ACTIVADO' : 'SUSPENDIDO', row, actorLabel(req.actor), '');
@@ -225,6 +272,13 @@ router.put(
     if (req.actor.id != null && req.actor.id === id) {
       return res.status(403).json({ error: 'No puedes cambiar tus propios permisos' });
     }
+    // Fase 151: mismo limite estructural y de permisos de gestion que PUT /users/:id.
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede cambiar los permisos de un usuario ADMIN o AUX_ADMIN' });
+    }
+    if (!permsGestionSinCambio(req.actor, req.body.perms, JSON.parse(row.perms || '{}'))) {
+      return res.status(403).json({ error: ERROR_PERMS_GESTION });
+    }
     db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(req.body.perms), id);
     logEvent('PERMISOS', row, actorLabel(req.actor), 'Permisos actualizados');
     res.json({ ok: true });
@@ -240,6 +294,13 @@ router.delete(
     const id = req.params.id;
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
     if (!row) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Fase 151: mismo limite estructural; nadie se elimina a si mismo.
+    if (req.actor.id != null && req.actor.id === id) {
+      return res.status(403).json({ error: 'No puedes eliminarte a ti mismo' });
+    }
+    if (!puedeAsignarRol(req.actor, row.rol)) {
+      return res.status(403).json({ error: 'Solo un administrador completo puede eliminar un usuario ADMIN o AUX_ADMIN' });
+    }
     db.prepare('DELETE FROM users WHERE id = ?').run(id);
     logEvent('ELIMINADO', row, actorLabel(req.actor), '');
     res.json({ ok: true });

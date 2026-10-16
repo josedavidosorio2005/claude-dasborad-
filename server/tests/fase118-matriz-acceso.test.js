@@ -377,6 +377,46 @@ test('Fase 118 2A: GET /users sin rol de gestion de usuarios NO trae perms ajeno
   assert.equal(resAux.status, 200);
 });
 
+// Fase 151: la lista completa de usuarios es solo para quien gestiona
+// usuarios; el resto recibe su propia fila y, como mucho, los asesores de
+// sus campanas (sin `user` ni `createdAt` ajenos).
+test('Fase 151: GET /users -- lista completa solo ADMIN/AUX_ADMIN; el resto, su fila y asesores de sus campanas', async () => {
+  const total = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+  for (const rol of ['ADMIN', 'AUX_ADMIN', 'ADMIN_MASTER']) {
+    const res = await request(app).get('/api/users').set(auth(rol));
+    assert.equal(res.status, 200);
+    assert.equal(res.body.length, total, `${rol} deberia ver la lista completa`);
+  }
+  for (const rol of TODOS_LOS_ROLES.filter((r) => r !== 'ADMIN' && r !== 'AUX_ADMIN')) {
+    const res = await request(app).get('/api/users').set(auth(rol));
+    assert.equal(res.status, 200);
+    assert.ok(res.body.some((u) => u.id === actores[rol].id), `${rol} deberia recibir su propia fila`);
+    res.body.filter((u) => u.id !== actores[rol].id).forEach((u) => {
+      assert.equal(u.rol, 'ASESOR', `${rol} solo deberia ver asesores ajenos, vino ${u.rol}`);
+      assert.equal(u.user, undefined, `${rol} no deberia ver el usuario de otra persona`);
+    });
+  }
+});
+
+// Fase 151: jerarquia sobre el usuario DESTINO -- ninguna accion de gestion
+// de un no-admin alcanza una cuenta ADMIN/AUX_ADMIN existente.
+test('Fase 151: AUX_ADMIN no edita, resetea, suspende, cambia permisos ni elimina una cuenta ADMIN', async () => {
+  const id = actores.ADMIN.id;
+  const intentos = [
+    request(app).put('/api/users/' + id).set(auth('AUX_ADMIN')).send({ password: 'Tomada#2026xx' }),
+    request(app).put('/api/users/' + id).set(auth('AUX_ADMIN')).send({ nombre: 'Otro nombre' }),
+    request(app).put('/api/users/' + id + '/password').set(auth('AUX_ADMIN')).send({ password: 'Tomada#2026xx' }),
+    request(app).put('/api/users/' + id + '/active').set(auth('AUX_ADMIN')).send({}),
+    request(app).put('/api/users/' + id + '/perms').set(auth('AUX_ADMIN')).send({ perms: {} }),
+    request(app).delete('/api/users/' + id).set(auth('AUX_ADMIN')),
+  ];
+  for (const res of await Promise.all(intentos)) {
+    assert.equal(res.status, 403, `${res.req.method} ${res.req.path} deberia dar 403, vino ${res.status}`);
+  }
+  const fila = db.prepare('SELECT active FROM users WHERE id = ?').get(id);
+  assert.equal(fila.active, 1, 'la cuenta ADMIN sigue activa');
+});
+
 // ══════════════════════════════════════════════════════════════════
 // 4) Calidad: canEvaluateCampaign (crear monitoreo) / canManageMonitoreos (editar/borrar)
 // ══════════════════════════════════════════════════════════════════
