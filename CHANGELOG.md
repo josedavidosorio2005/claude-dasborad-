@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.42.2 — Octubre 2026
+
+**Fase 151: prueba de los respaldos.**
+
+- La revisión automática de respaldos ahora comprueba que la copia más
+  reciente guardada en el servidor se puede abrir y está completa.
+
 ## v1.42.1 — Octubre 2026
 
 **Fase 151: ajustes menores de seguridad.**

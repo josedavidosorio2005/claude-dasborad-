@@ -34,6 +34,9 @@
 // Uso:
 //   docker compose exec -T app node scripts/verificar-restore-backup.js
 //   docker compose exec -T app node scripts/verificar-restore-backup.js --local /app/server/data/backups/inconexion-<ts>.db
+//   docker compose exec -T app node scripts/verificar-restore-backup.js --local-ultimo
+//     (Fase 151: la copia LOCAL mas reciente, misma carpeta que scripts/backup.js;
+//     la instancia solo puede SUBIR a S3, no leer -- minimo privilegio)
 'use strict';
 const fs = require('fs');
 const os = require('os');
@@ -150,8 +153,41 @@ async function modoLocal(rutaLocal) {
   verificarArchivo(rutaLocal);
 }
 
+// Fase 151: copia local mas reciente. Se copia a un temporal (igual que el
+// modo S3) para no crear archivos auxiliares de SQLite junto a los
+// respaldos, se verifica y se borra. Solo imprime fecha y tamano.
+async function modoLocalUltimo() {
+  const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'inconexion.db');
+  const dir = process.env.BACKUP_DIR || path.join(path.dirname(dbPath), 'backups');
+  const archivos = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((f) => /^inconexion-.*\.db$/.test(f)).sort().reverse()
+    : [];
+  if (!archivos.length) {
+    console.error('[verificar-restore] No se encontro ningun respaldo local.');
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`[verificar-restore] Respaldos locales: ${archivos.length}`);
+  const origen = path.join(dir, archivos[0]);
+  const { size, mtime } = fs.statSync(origen);
+  console.log(`[verificar-restore] Respaldo local mas reciente: ${mtime.toISOString()} (${(size / 1024).toFixed(1)} KiB)`);
+  const destino = path.join(os.tmpdir(), 'verificar-restore-' + Date.now() + '.db');
+  fs.copyFileSync(origen, destino);
+  try {
+    verificarArchivo(destino);
+  } finally {
+    for (const suf of ['', '-wal', '-shm']) {
+      try { fs.unlinkSync(destino + suf); } catch (_) {}
+    }
+  }
+}
+
 async function main() {
   const argv = process.argv.slice(2);
+  if (argv.includes('--local-ultimo')) {
+    await modoLocalUltimo();
+    return;
+  }
   const idxLocal = argv.indexOf('--local');
   if (idxLocal !== -1) {
     const ruta = argv[idxLocal + 1];

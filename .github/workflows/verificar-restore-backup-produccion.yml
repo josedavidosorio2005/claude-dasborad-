@@ -12,6 +12,12 @@ name: Verificacion - restauracion real de un backup (produccion, solo lectura)
 # borra el archivo temporal. No escribe en S3, no modifica la base real, no
 # crea usuarios, no sube archivos. Ver server/scripts/verificar-restore-backup.js.
 #
+# Fase 151: la key de la instancia solo tiene s3:PutObject (no puede listar
+# ni leer el bucket, a proposito), asi que el modo S3 nunca podia correr.
+# Ahora verifica la copia LOCAL mas reciente (--local-ultimo): la copia a un
+# temporal, la abre readonly, imprime fecha/tamano/integrity_check/conteos y
+# la borra. Los errores salen sin el mensaje crudo de AWS.
+#
 # Fase 97 (el repo es publico): el script solo imprime nombre de archivo
 # (timestamp), fecha, tamano (KiB), resultado de integrity_check y CONTEOS
 # de filas -- nunca una fila real (nombre, correo, IP, texto libre). Ver el
@@ -64,7 +70,9 @@ jobs:
           aws lightsail put-instance-public-ports \
             --region "$AWS_REGION" --instance-name "$LS_INSTANCE" --port-infos "$NEW"
 
-      - name: Descargar el backup mas reciente de S3 y verificar que abre (solo lectura)
+      # Fase 151: la key de la instancia solo puede SUBIR a S3 (minimo
+      # privilegio), asi que se verifica la copia LOCAL mas reciente.
+      - name: Verificar que el respaldo local mas reciente abre (solo lectura)
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2  # v1
         with:
           host: ${{ secrets.DEPLOY_SSH_HOST }}
@@ -73,7 +81,7 @@ jobs:
           script_stop: true
           script: |
             cd /opt/inconexion
-            docker compose exec -T app node scripts/verificar-restore-backup.js
+            docker compose exec -T app node scripts/verificar-restore-backup.js --local-ultimo
 
       - name: Cerrar SSH (22) — revertir el firewall al estado previo
         if: always() && steps.fw.outputs.before != ''
