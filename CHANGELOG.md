@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.0 — Octubre 2026
+
+**Fase 152: iconos nuevos.**
+
+- El menú y los botones (mostrar contraseña, buscar, tema claro u oscuro,
+  menú, usuario, pantalla completa, descargar, restablecer, volver y
+  alertas) usan iconos de línea en lugar de emojis. Se ven iguales en
+  cualquier equipo y toman el color del tema.
+- "Usuarios" y "Gestión Humana" ya no comparten el mismo icono.
+
 ## v1.46.0 — Octubre 2026
 
 **Fase 152: mejor en celular y tableta.**

@@ -148,8 +148,9 @@ function showToast(msg, tipo){
 // vaya a HACER (no lo que ya esta pasando), igual que el icono.
 function toggleEye(inputId,btn){
   var inp=document.getElementById(inputId);
-  if(inp.type==='password'){inp.type='text';btn.textContent='X';btn.setAttribute('aria-label','Ocultar contraseña');}
-  else{inp.type='password';btn.innerHTML='&#128065;';btn.setAttribute('aria-label','Mostrar contraseña');}
+  // Fase 152 (F10): ojo / ojo tachado (iconos.js) en lugar de emoji y "X".
+  if(inp.type==='password'){inp.type='text';btn.innerHTML=iconoSvg('eye-off');btn.setAttribute('aria-label','Ocultar contraseña');}
+  else{inp.type='password';btn.innerHTML=iconoSvg('eye');btn.setAttribute('aria-label','Mostrar contraseña');}
 }
 
 // ═══════════════════════════════════════════════════════════

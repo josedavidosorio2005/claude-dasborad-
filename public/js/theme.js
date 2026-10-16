@@ -20,7 +20,8 @@ function aplicarTema(t){
   try{ localStorage.setItem(TEMA_KEY, tema); }catch(e){}
   if(typeof aplicarTemaCharts === 'function') aplicarTemaCharts();
   document.querySelectorAll('.theme-toggle').forEach(function(btn){
-    btn.innerHTML = tema === 'dark' ? '&#9728;&#65039;' : '&#127769;';
+    // Fase 152 (F10): iconos SVG de Lucide (iconos.js) en lugar de emojis.
+    btn.innerHTML = (typeof iconoSvg === 'function') ? iconoSvg(tema === 'dark' ? 'sun' : 'moon') : (tema === 'dark' ? '&#9728;&#65039;' : '&#127769;');
     btn.setAttribute('aria-label', tema === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
   });
   // Redibuja las graficas YA renderizadas (si las hay) con los colores del

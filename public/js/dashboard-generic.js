@@ -1054,7 +1054,8 @@ document.getElementById('gd-overlay').addEventListener('click',function(e){ if(e
 // "afuera". Si el navegador no soporta la API (ej. iOS Safari, que no la
 // implementa para iPhone), el boton se queda oculto -- `.hidden` ya viene
 // puesto en el HTML por defecto.
-var GD_FS_ICON_ENTRAR = '⛶', GD_FS_ICON_SALIR = '🗗';
+// Fase 152 (F10): iconos SVG de Lucide (iconos.js) en lugar de ⛶ / 🗗.
+var GD_FS_ICON_ENTRAR = iconoSvg('maximize'), GD_FS_ICON_SALIR = iconoSvg('minimize');
 (function(){
   var btn = document.getElementById('gd-fullscreen-btn');
   if(!btn) return;

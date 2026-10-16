@@ -605,6 +605,18 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 
 Ningún `z-index` va con un número suelto: si un elemento nuevo necesita una capa, usa un token existente o se agrega uno a esta tabla.
 
+## Iconos SVG (Fase 152, F10 — Lucide)
+
+- **Fuente:** los iconos del menú y de los botones son de **Lucide** (licencia ISC, aviso en `public/img/iconos/LICENSE`). Están en un solo archivo dentro del repo, `public/img/iconos/lucide.svg` (un `<symbol id="i-NOMBRE">` por icono, sin CDN: la CSP no admite orígenes externos).
+- **Uso:** siempre con `iconoSvg('nombre')` (`public/js/iconos.js`), o con el mismo marcado en el HTML: `<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-NOMBRE"></use></svg>`.
+  - El icono es decorativo. Lo que dice qué hace el control es el texto visible o el `aria-label` del botón.
+  - Toma el tamaño y el color del texto (`currentColor`, `.icono` a 1,1 em), así que sigue el tema.
+- **Icono nuevo:** se agrega su `<symbol>` al sprite, copiado del paquete oficial `lucide-static` a la misma versión. La prueba `fase152-f10-iconos.test.js` falla si se usa un nombre que no está en el sprite.
+- **Fuera de este cambio** (siguen siendo emojis o símbolos, a propósito):
+  - Los estados de Calidad (🔴🟡🟢, ✅, ❌, ⚠).
+  - Los iconos grandes de los estados vacíos.
+  - Las tarjetas de módulos.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/
