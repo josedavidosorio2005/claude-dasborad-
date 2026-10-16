@@ -96,8 +96,63 @@ function gdMesPorDefecto(mesesPrincipales, mesesTodos) {
   return todos[0] || '';
 }
 
+// ── Fase 152 (B3): mes en curso = parcial ───────────────────
+// `hoy` es 'AAAA-MM-DD' (fecha local de quien mira; la app se usa en
+// Colombia). Un mes que todavia no termina se marca "parcial" y sus
+// tarjetas no se comparan contra el mes anterior.
+function gdMesActual(hoy) {
+  var m = /^(\d{4})-(\d{2})/.exec(String(hoy || ''));
+  return m ? m[1] + '-' + m[2] : '';
+}
+function gdEsMesEnCurso(mes, hoy) {
+  return !!mes && mes === gdMesActual(hoy);
+}
+// Mes anterior de 'AAAA-MM' ('2026-01' -> '2025-12').
+function gdMesAnterior(mes) {
+  var m = /^(\d{4})-(\d{2})$/.exec(String(mes || ''));
+  if (!m) return '';
+  var a = parseInt(m[1], 10);
+  var n = parseInt(m[2], 10) - 1;
+  if (n === 0) { a -= 1; n = 12; }
+  return a + '-' + (n < 10 ? '0' + n : '' + n);
+}
+// Si el rango [desde, hasta] (AAAA-MM-DD) es exactamente UN mes calendario
+// (del dia 1 al ultimo dia, o del 1 en adelante si es el mes en curso),
+// devuelve 'AAAA-MM'; si no, ''. Solo entonces tiene sentido "vs. mes
+// anterior".
+function gdMesDelRango(desde, hasta, hoy) {
+  var d = /^(\d{4}-\d{2})-01$/.exec(String(desde || ''));
+  if (!d || String(hasta || '').slice(0, 7) !== d[1]) return '';
+  if (String(hasta) === gdFinDeMes(d[1])) return d[1];
+  return gdEsMesEnCurso(d[1], hoy) ? d[1] : '';
+}
+// Rotulo del mes en curso: 'Septiembre 2026 — parcial, hasta el día 15'
+// (ultimoDia = ultimo dia con datos, cuando la fuente es diaria) o
+// 'Septiembre 2026 — mes en curso, parcial' (fuente mensual o sin dia).
+// '' si el mes ya cerro. `nombreMes` = mesNombreLargo (mes-nombre-logic.js).
+function gdRotuloMesParcial(mes, hoy, ultimoDia, nombreMes) {
+  if (!gdEsMesEnCurso(mes, hoy)) return '';
+  var nombre = typeof nombreMes === 'function' ? nombreMes(mes) : mes;
+  var dia = /^\d{4}-\d{2}-(\d{2})$/.exec(String(ultimoDia || ''));
+  if (dia && String(ultimoDia).slice(0, 7) === mes) return nombre + ' — parcial, hasta el día ' + parseInt(dia[1], 10);
+  return nombre + ' — mes en curso, parcial';
+}
+// Fecha local 'AAAA-MM-DD' de un Date (por defecto, ahora).
+function gdHoyLocal(fecha) {
+  var f = fecha || new Date();
+  var mm = f.getMonth() + 1;
+  var dd = f.getDate();
+  return f.getFullYear() + '-' + (mm < 10 ? '0' + mm : mm) + '-' + (dd < 10 ? '0' + dd : dd);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    gdMesActual: gdMesActual,
+    gdEsMesEnCurso: gdEsMesEnCurso,
+    gdMesAnterior: gdMesAnterior,
+    gdMesDelRango: gdMesDelRango,
+    gdRotuloMesParcial: gdRotuloMesParcial,
+    gdHoyLocal: gdHoyLocal,
     GD_TIPOS_AUTONOMOS: GD_TIPOS_AUTONOMOS,
     gdTodosAutonomos: gdTodosAutonomos,
     gdFinDeMes: gdFinDeMes,

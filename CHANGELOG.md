@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.43.0 — Octubre 2026
+
+**Fase 152: tarjetas de indicadores más claras.**
+
+- Las cifras de las tarjetas se ven más grandes y los nombres ya no van en
+  mayúsculas.
+- Si se mira un mes completo, cada tarjeta dice cuánto subió o bajó frente
+  al mes anterior. Si el mes anterior no tiene datos, no se muestra nada.
+- Los indicadores con meta (por ejemplo, nivel de atención o nivel de
+  servicio) muestran la meta y si se cumple, con un punto de color y en
+  palabras. Las metas salen de la pantalla Umbrales.
+- El mes que todavía no termina se marca como parcial ("Octubre 2026 —
+  parcial, hasta el día 15") y no se compara con el mes anterior.
+
 ## v1.42.3 — Octubre 2026
 
 **Fase 151: el teléfono de los monitoreos, solo para el equipo interno.**

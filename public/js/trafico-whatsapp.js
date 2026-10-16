@@ -373,20 +373,45 @@ function _traficoWppRenderContenido(i){
   var SIN_DATO_5MIN_MSG = TRAFICO_WPP_SIN_DATO_5MIN_MSG;
 
   var kpiTotales = { total: totalWpp, contestadas: totalContestados, abandonadas: totalAbandonados, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono };
-  var kpiLabels = { total: 'Total WhatsApp', contestadas: 'WhatsApp Contestados', abandonadas: 'WhatsApp Abandonados' };
+  var kpiLabels = { total: 'Total de WhatsApp', contestadas: 'WhatsApp contestados', abandonadas: 'WhatsApp abandonados' };
   if (mostrarSL5) {
     kpiTotales.nivelServicio = nivelServicio5min; kpiTotales.nivelServicio2 = nivelServicio20s;
-    kpiLabels.nivelServicioLabel = 'Nivel de Servicio (5 min)';
+    kpiLabels.nivelServicioLabel = 'Nivel de servicio (5 min)';
     kpiLabels.nivelServicioNota = 'Porcentaje de WhatsApp contestados dentro de los primeros 5 minutos (300 segundos), ponderado por el total de WhatsApp del periodo/filtro actual.';
     kpiLabels.nivelServicioSinDatoMsg = SIN_DATO_5MIN_MSG;
-    kpiLabels.nivelServicio2Label = 'Nivel de Servicio (20 s)';
+    kpiLabels.nivelServicio2Label = 'Nivel de servicio (20 s)';
     kpiLabels.nivelServicio2Nota = 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.';
   } else {
     kpiTotales.nivelServicio = nivelServicio20s;
-    kpiLabels.nivelServicioLabel = 'Nivel de Servicio (20 s)';
+    kpiLabels.nivelServicioLabel = 'Nivel de servicio (20 s)';
     kpiLabels.nivelServicioNota = 'Porcentaje de WhatsApp contestados dentro de los primeros 20 segundos, ponderado por el total de WhatsApp del periodo/filtro actual.';
   }
-  _traficoDibujarKpis('tww', i, kpiTotales, kpiLabels, campana);
+  // Fase 152 (B8 + B3): mismo criterio que Llamadas -- comparacion contra el
+  // mes anterior (mismos filtros) solo si ese mes tiene datos; el mes en
+  // curso va marcado como parcial y sin comparacion. El nivel de servicio
+  // de WhatsApp no tiene meta acordada: sin semaforo ni meta.
+  var hoyKpi = gdHoyLocal();
+  var mesRango = gdMesDelRango(estado.desde, estado.hasta, hoyKpi);
+  var contextoKpis = {};
+  if (mesRango) {
+    if (gdEsMesEnCurso(mesRango, hoyKpi)) {
+      contextoKpis = { mesEnCurso: true, rotuloParcial: gdRotuloMesParcial(mesRango, hoyKpi, null, mesNombreLargo) };
+    } else {
+      var mesAnt = gdMesAnterior(mesRango);
+      var filasAnt = traficoWppFiltrarFilas(datosCampana.filas, { skills: estado.skills, desde: mesAnt + '-01', hasta: gdFinDeMes(mesAnt) });
+      if (filasAnt.length) {
+        var tAnt = filasAnt.reduce(function(a,f){ return a+f.totalWhatsapp; }, 0);
+        var cAnt = filasAnt.reduce(function(a,f){ return a+f.contestados; }, 0);
+        var tieneAbAnt = filasAnt.some(function(f){ return f.abandonados!=null; });
+        var abAnt = tieneAbAnt ? filasAnt.reduce(function(a,f){ return a+(f.abandonados||0); }, 0) : null;
+        contextoKpis.anteriores = { total: tAnt, contestadas: cAnt, abandonadas: abAnt,
+          nivelAtencion: tAnt>0 ? Math.round((cAnt/tAnt)*1000)/10 : null,
+          tasaAbandono: (tAnt>0 && tieneAbAnt) ? Math.round((abAnt/tAnt)*1000)/10 : null };
+      }
+      contextoKpis.mesAnteriorLbl = mesNombreLargo(mesAnt).split(' ')[0].toLowerCase();
+    }
+  }
+  _traficoDibujarKpis('tww', i, kpiTotales, kpiLabels, campana, null, contextoKpis);
 
   _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados');
 

@@ -880,22 +880,32 @@ function _traficoFmtTiempoMMSS(v){
 // sub-pestaña con su propio resumen, ver _traficoRenderContenido) -- array
 // con 'tasaAbandono'/'nivelServicio' para quitar esas tarjetas de ESTE
 // panel. Sin pasarlo (ORLANT/AURORA/HLM), siguen las 6 tarjetas de siempre.
-function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
+// Fase 152 (B8 + B3): `contexto` (opcional) = { anteriores: totales del
+// mes anterior con los mismos filtros (null si ese mes no tiene datos),
+// mesEnCurso, mesAnteriorLbl, rotuloParcial }. Cada tarjeta muestra la
+// variacion contra el mes anterior SOLO si hay mes anterior con datos, y
+// "Mes en curso: sin comparación" mientras el mes no termine. La meta
+// ("Meta 90 %" + punto + texto) sale SOLO de los umbrales configurados
+// (pantalla Umbrales): sin umbral, ni meta ni semaforo -- ya no hay un
+// 90/70 de respaldo quemado en el codigo para Nivel de atencion.
+function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, contexto){
   var kpisEl = document.getElementById(prefijo+'-kpis-'+i);
   if(!kpisEl) return;
   ocultar = ocultar || [];
-  var semNivel = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.nivelAtencion, { metrica:'nivel_atencion', campana: campana }) : null;
-  var semAband = (typeof _gdSemaforoColor==='function') ? _gdSemaforoColor(totales.tasaAbandono, { metrica:'tasa_abandono', campana: campana }) : null;
-  var colorNivelFallback = totales.nivelAtencion===null?null:totales.nivelAtencion>=90?'verde':totales.nivelAtencion>=70?'amarillo':'rojo';
-  var colorNivel = semNivel || colorNivelFallback;
-  var clsNivel = colorNivel ? _gdSemaforoClase(colorNivel) : '';
-  var badgeNivel = (typeof semaforoBadgeHtml === 'function' && colorNivel) ? semaforoBadgeHtml(colorNivel) : '';
+  var ctx = contexto || {};
+  var ant = ctx.anteriores || null;
+  var umbralDe = function(metrica){ return (metrica && typeof _gdUmbralPara === 'function') ? _gdUmbralPara(metrica, campana) : null; };
+  var variacion = function(campo, unidad, mejorBaja){
+    if(ctx.mesEnCurso) return kpiVariacion(null, null, { mesEnCurso: true });
+    return ant ? kpiVariacion(totales[campo], ant[campo], { unidad: unidad, mejorBaja: mejorBaja, mesAnteriorLbl: ctx.mesAnteriorLbl }) : null;
+  };
+  var metaNivel = kpiMeta(totales.nivelAtencion, umbralDe('nivel_atencion'), { unidad: 'pct' });
+  var metaAband = kpiMeta(totales.tasaAbandono, umbralDe('tasa_abandono'), { unidad: 'pct' });
+  var metaNs = kpiMeta(totales.nivelServicio, umbralDe(labels.nivelServicioMetrica), { unidad: 'pct' });
+  var semAband = metaAband ? metaAband.color : null;
   var clsAband = semAband ? _gdSemaforoClase(semAband) : 'kpi-red';
-  // El badge de Abandono solo aplica cuando hay un umbral REAL configurado
-  // (semAband) -- sin umbral, clsAband siempre es rojo fijo (no es un
-  // semaforo por meta, es un acento visual constante para esa tarjeta;
-  // el texto "Tasa de Abandono"/"Llamadas Abandonadas" ya dice que es).
-  var badgeAband = (typeof semaforoBadgeHtml === 'function' && semAband) ? semaforoBadgeHtml(semAband) : '';
+  // Sin umbral de tasa_abandono, las tarjetas de abandono conservan su
+  // acento rojo fijo (no es semaforo: lo revisa B1, colores).
   var nsNota = labels.nivelServicioNota
     ? ' <span title="'+esc(labels.nivelServicioNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
@@ -919,16 +929,20 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar){
     var ns2Nota = labels.nivelServicio2Nota
       ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
       : '';
-    tarjeta2 = '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio2===null?'—':totales.nivelServicio2+'%')+'</div><div class="kl">'+esc(labels.nivelServicio2Label||'Nivel de Servicio')+ns2Nota+'</div></div>';
+    tarjeta2 = kpiTarjetaHtml({ valor: totales.nivelServicio2===null ? '—' : String(totales.nivelServicio2).replace('.', ',')+' %', etiqueta: labels.nivelServicio2Label||'Nivel de servicio', notaHtml: ns2Nota,
+      variacion: ctx.mesEnCurso ? kpiVariacion(null, null, { mesEnCurso: true }) : null });
   }
-  kpisEl.innerHTML =
-    '<div class="aurora-kpi"><div class="kv">'+totales.total.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.total)+'</div></div>'+
-    '<div class="aurora-kpi kpi-green"><div class="kv">'+totales.contestadas.toLocaleString('es-CO')+'</div><div class="kl">'+esc(labels.contestadas)+'</div></div>'+
-    '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+badgeAband+(totales.abandonadas===null?'—':totales.abandonadas.toLocaleString('es-CO'))+'</div><div class="kl">'+esc(labels.abandonadas)+'</div></div>'+
-    '<div class="aurora-kpi '+clsNivel+'"><div class="kv">'+badgeNivel+(totales.nivelAtencion===null?'—':totales.nivelAtencion+'%')+'</div><div class="kl">Nivel de Atención</div></div>'+
-    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : '<div class="aurora-kpi '+clsAband+'"><div class="kv">'+badgeAband+(totales.tasaAbandono===null?'—':totales.tasaAbandono+'%')+'</div><div class="kl">Tasa de Abandono</div></div>')+
-    (ocultar.indexOf('nivelServicio')!==-1 ? '' : '<div class="aurora-kpi"><div class="kv">'+(totales.nivelServicio===null?'—':totales.nivelServicio+'%')+'</div><div class="kl">'+esc(labels.nivelServicioLabel||'Nivel de Servicio')+nsNota+'</div></div>')+
-    tarjeta2+
+  var fmtN = function(n){ return n===null||n===undefined ? '—' : n.toLocaleString('es-CO'); };
+  var fmtP = function(n){ return n===null||n===undefined ? '—' : String(n).replace('.', ',')+' %'; };
+  var rotulo = ctx.rotuloParcial ? '<div class="gd-mes-parcial kpi-fila-completa">'+esc(ctx.rotuloParcial)+'</div>' : '';
+  kpisEl.innerHTML = rotulo +
+    kpiTarjetaHtml({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }) +
+    kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, cls: 'kpi-green', variacion: variacion('contestadas', 'num') }) +
+    kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, cls: clsAband, variacion: variacion('abandonadas', 'num', true) }) +
+    kpiTarjetaHtml({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }) +
+    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', cls: clsAband, variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband })) +
+    (ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs })) +
+    tarjeta2 +
     nsSinDato;
 }
 
@@ -1154,6 +1168,24 @@ function _traficoDibujarSL(prefijo, i, agregadoComb, campo, labelSerie, extra){
   }
 }
 
+// Totales de un conjunto de filas YA filtrado (nunca promedio de % diarios):
+// suma primero, calcula el % despues -- mismo criterio de traficoAgregar.
+// Nivel de servicio a 20s ponderado por el total del mismo rango (Fase 87).
+// Fase 152: extraido para calcular tambien el mes anterior con los mismos
+// filtros (variacion de las tarjetas).
+function _traficoTotalesLlamadas(filas){
+  var total = filas.reduce(function(a,f){ return a+f.totalLlamadas; }, 0);
+  var contestadas = filas.reduce(function(a,f){ return a+f.contestadas; }, 0);
+  var tieneAband = filas.some(function(f){ return f.llamadasAbandonadas!=null; });
+  var abandonadas = tieneAband ? filas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
+  return {
+    total: total, contestadas: contestadas, abandonadas: abandonadas,
+    nivelAtencion: total>0 ? Math.round((contestadas/total)*1000)/10 : null,
+    tasaAbandono: (total>0 && tieneAband) ? Math.round((abandonadas/total)*1000)/10 : null,
+    nivelServicio: traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'),
+  };
+}
+
 function _traficoRenderContenido(campana, sede, i){
   var claveEstado = _traficoClaveEstado(campana, sede);
   var datosCampana = _trafico[campana];
@@ -1174,24 +1206,33 @@ function _traficoRenderContenido(campana, sede, i){
   var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
   _traficoAgregadoActual[claveEstado] = agregado;
 
-  // Totales del periodo YA filtrado (nunca promedio de % diarios): suma
-  // primero, calcula el % despues — mismo criterio de traficoAgregar.
-  var totalLlamadas = filtradas.reduce(function(a,f){ return a+f.totalLlamadas; }, 0);
-  var totalContestadas = filtradas.reduce(function(a,f){ return a+f.contestadas; }, 0);
-  var tieneAbandonadas = filtradas.some(function(f){ return f.llamadasAbandonadas!=null; });
-  var totalAbandonadas = tieneAbandonadas ? filtradas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
-  var nivelAtencion = totalLlamadas>0 ? Math.round((totalContestadas/totalLlamadas)*1000)/10 : null;
-  var tasaAbandono = (totalLlamadas>0 && tieneAbandonadas) ? Math.round((totalAbandonadas/totalLlamadas)*1000)/10 : null;
-  // Fase 87 (tema A): nivel de servicio a 20s, ponderado por el total del
-  // mismo rango YA filtrado (mismo criterio que nivelAtencion/tasaAbandono
-  // de arriba) -- nunca un promedio simple de los % por dia.
-  var nivelServicio = traficoServiceLevelPromedioPeriodo(filtradas, 'serviceLevel20secPct');
+  var tot = _traficoTotalesLlamadas(filtradas);
+  var totalLlamadas = tot.total, totalContestadas = tot.contestadas, totalAbandonadas = tot.abandonadas;
+  var nivelAtencion = tot.nivelAtencion, tasaAbandono = tot.tasaAbandono, nivelServicio = tot.nivelServicio;
+
+  // Fase 152 (B8 + B3): si el rango es UN mes calendario, las tarjetas se
+  // comparan contra el mes anterior con los MISMOS filtros (skills/sede) --
+  // solo si ese mes tiene datos. Si es el mes en curso: rotulo "parcial" y
+  // sin comparacion.
+  var hoyKpi = gdHoyLocal();
+  var mesRango = gdMesDelRango(estado.desde, estado.hasta, hoyKpi);
+  var contextoKpis = {};
+  if(mesRango){
+    if(gdEsMesEnCurso(mesRango, hoyKpi)){
+      var ultimoDiaKpi = filtradas.reduce(function(m,f){ return f.fecha > m ? f.fecha : m; }, '');
+      contextoKpis = { mesEnCurso: true, rotuloParcial: gdRotuloMesParcial(mesRango, hoyKpi, ultimoDiaKpi, mesNombreLargo) };
+    } else {
+      var mesAnt = gdMesAnterior(mesRango);
+      var filasAnt = traficoFiltrarFilas(datos.filas, { skills: estado.skills, desde: mesAnt + '-01', hasta: gdFinDeMes(mesAnt) });
+      contextoKpis = { anteriores: filasAnt.length ? _traficoTotalesLlamadas(filasAnt) : null, mesAnteriorLbl: mesNombreLargo(mesAnt).split(' ')[0].toLowerCase() };
+    }
+  }
 
   var pCfgKpis = _traficoPanelConfig[i] || {};
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
-    { total: 'Total Llamadas', contestadas: 'Llamadas Contestadas', abandonadas: 'Llamadas Abandonadas',
-      nivelServicioLabel: 'Nivel de Servicio (20 s)',
-      nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar);
+    { total: 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
+      nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
+      nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar, contextoKpis);
 
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas');
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
@@ -1250,9 +1291,9 @@ function _traficoRenderContenido(campana, sede, i){
       var ataProm = traficoAtaPromedioPeriodo(filtradas);
       var htmlSec = '';
       if(activoSec === 'sl'){
-        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de Servicio del periodo</div></div>';
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de servicio del periodo</div></div>';
       } else if(activoSec === 'abandono'){
-        htmlSec = '<div class="aurora-kpi kpi-red"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas Abandonadas</div></div>' +
+        htmlSec = '<div class="aurora-kpi kpi-red"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas abandonadas</div></div>' +
           '<div class="aurora-kpi kpi-red"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">% Abandono del periodo</div></div>';
       } else if(activoSec === 'asa'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
