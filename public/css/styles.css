@@ -998,12 +998,12 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .aurora-card-title.gd-flex{display:flex;align-items:center;gap:8px;}
 
 /* ── AURORA DASHBOARD MODAL ── */
-#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#gd-overlay.show,#dashcfg-overlay.show{display:flex;}
+#calidad-overlay,#detalle-monitoreo-overlay,#supervisar-lider-overlay,#cargas-overlay,#centro-overlay,#gd-overlay,#dashcfg-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.7);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#calidad-overlay.show,#detalle-monitoreo-overlay.show,#supervisar-lider-overlay.show,#cargas-overlay.show,#centro-overlay.show,#gd-overlay.show,#dashcfg-overlay.show{display:flex;}
 /* Fase 103: #gd-modal (dashboard de cliente) salio de esta regla -- ver su
    propia regla mas abajo, a pantalla completa. Los otros 5 modales de esta
    lista se quedan EXACTAMENTE igual (ventana flotante centrada). */
-#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#dashcfg-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
+#calidad-modal,#detalle-monitoreo-modal,#supervisar-lider-modal,#cargas-modal,#centro-modal,#dashcfg-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;}
 /* Fase 136 (F02, corrige el numero real de CLS de la Fase 135 -- ver
    docs/auditoria-ui-fase135.md: el 0.81 reportado ahi NO aislaba la
    apertura de ORLANT, que en realidad ya mide 0.014; el salto real
@@ -1518,3 +1518,77 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 
 /* Fase 153 (P3): aviso de un dashboard nuevo sin datos (todas las pestanas ocultas). */
 .gd-nodata-banner{grid-column:1/-1;background:var(--c-warning-bg);border:1px solid var(--c-warning);border-radius:var(--r-sm);padding:12px 16px;color:var(--c-warning-text);font-size:var(--fs-body);}
+
+/* ── Fase 153: Centro de cargas ───────────────────────── */
+#centro-modal{min-height:70vh;position:relative;}
+.cc-cab-botones{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.cc-barra{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;padding:14px 22px 4px;}
+.cc-barra .ig{margin:0;min-width:160px;}
+.cc-migas{flex:1 1 220px;font-size:var(--fs-body);color:var(--c-text-muted);padding-bottom:8px;}
+.cc-migas a{color:var(--c-primary);cursor:pointer;text-decoration:underline;}
+.cc-migas [aria-current]{color:var(--c-text);font-weight:600;}
+#cc-body{padding:8px 22px 26px;}
+.cc-intro{margin:6px 0 14px;color:var(--c-text-2);}
+.cc-cargando{padding:30px;text-align:center;color:var(--c-text-muted);}
+.cc-tarjetas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.cc-tarjeta{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-lg);padding:16px;min-height:44px;cursor:pointer;color:var(--c-text);font:inherit;}
+.cc-tarjeta:hover{border-color:var(--c-primary);box-shadow:var(--shadow-md,0 4px 14px rgba(0,0,0,.08));}
+.cc-tarjeta:focus-visible{outline:3px solid var(--c-focus,var(--c-primary));outline-offset:2px;}
+.cc-tarjeta-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.cc-tarjeta-icono{display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:var(--r-md);background:var(--c-surface-subtle);color:var(--c-primary);}
+.cc-tarjeta-icono .icono{width:20px;height:20px;}
+.cc-tarjeta-nombre{font-weight:700;font-size:var(--fs-body-lg);}
+.cc-tarjeta-dato{color:var(--c-text-2);font-size:var(--fs-body);}
+.cc-tarjeta-sub{color:var(--c-text-muted);font-size:var(--fs-small);}
+.cc-pill{display:inline-block;border-radius:var(--r-pill);padding:2px 10px;font-size:var(--fs-note);font-weight:700;white-space:nowrap;}
+.cc-pill-ok,.cc-pill-cargado{background:var(--c-success-bg);color:var(--c-success-text);}
+.cc-pill-falta,.cc-pill-en_curso{background:var(--c-warning-bg);color:var(--c-warning-text);}
+.cc-pill-vacio,.cc-pill-futuro{background:var(--c-surface-subtle);color:var(--c-text-muted);border:1px solid var(--c-border);}
+.cc-volver{display:inline-flex;align-items:center;gap:6px;margin:4px 0 12px;}
+.cc-carga{margin-bottom:22px;}
+.cc-carga-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
+.cc-carga-cab h3{margin:0;font-size:var(--fs-h3);}
+.cc-carga-anio{color:var(--c-text-muted);font-weight:500;}
+.cc-btn{display:inline-flex;align-items:center;gap:6px;}
+.cc-nota{font-size:var(--fs-small);color:var(--c-text-muted);}
+.cc-aviso{border-radius:var(--r-sm);padding:10px 12px;margin:0 0 12px;font-size:var(--fs-body);background:var(--c-surface-subtle);border:1px solid var(--c-border);}
+.cc-aviso-falta{background:var(--c-warning-bg);color:var(--c-warning-text);border-color:transparent;}
+.cc-aviso-error{background:var(--c-danger-bg);color:var(--c-danger-text);border-color:transparent;}
+.cc-meses{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;}
+.cc-mes{display:flex;flex-direction:column;gap:4px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px;min-height:150px;}
+.cc-mes-con{border-left:4px solid var(--c-success);}
+.cc-mes-en_curso{border-left:4px solid var(--c-warning);}
+.cc-mes-futuro{opacity:.6;}
+.cc-mes-cab{display:flex;justify-content:space-between;align-items:center;gap:6px;}
+.cc-mes-nombre{font-weight:700;}
+.cc-mes-num{font-size:var(--fs-h3);font-weight:700;font-variant-numeric:tabular-nums;color:var(--c-text);}
+.cc-mes-num-vacio{color:var(--c-text-muted);font-weight:500;}
+.cc-mes-meta,.cc-mes-archivo{font-size:var(--fs-note);color:var(--c-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cc-mes-acciones{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:6px;}
+.cc-mes-acciones .cc-accion{flex:1 1 0;}
+.cc-accion{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:44px;min-height:44px;padding:0 10px;border-radius:var(--r-sm);border:1px solid var(--c-border);background:var(--c-surface-subtle);color:var(--c-text);font:inherit;font-size:var(--fs-small);cursor:pointer;}
+.cc-accion:hover{border-color:var(--c-primary);color:var(--c-primary);}
+.cc-accion:focus-visible{outline:3px solid var(--c-focus,var(--c-primary));outline-offset:2px;}
+.cc-mes-acciones .cc-accion-primaria{flex:1 1 100%;}
+.cc-accion-primaria{background:var(--c-brand);border-color:var(--c-brand);color:#fff;}
+.cc-accion-primaria:hover{color:#fff;filter:brightness(1.1);}
+.cc-accion-peligro:hover{border-color:var(--c-danger);color:var(--c-danger-text);}
+.cc-accion .icono{width:16px;height:16px;}
+#cc-dialogo{display:none;position:absolute;inset:0;background:rgba(8,38,52,0.55);align-items:center;justify-content:center;padding:16px;border-radius:inherit;z-index:var(--z-dialogo);}
+#cc-dialogo.show{display:flex;}
+.cc-dialogo-caja{background:var(--c-surface);color:var(--c-text);border-radius:var(--r-lg);max-width:480px;width:100%;padding:20px 22px;box-shadow:var(--shadow-xl);}
+.cc-dialogo-caja h3{margin:0 0 10px;}
+.cc-tranquilo{background:var(--c-success-bg);color:var(--c-success-text);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-body);}
+
+.cc-archivo{display:flex;align-items:center;gap:8px;border:2px dashed var(--c-border);border-radius:var(--r-md);padding:14px;cursor:pointer;margin:10px 0 6px;min-height:44px;}
+.cc-archivo input{position:absolute;opacity:0;width:1px;height:1px;}
+.cc-archivo:focus-within{outline:3px solid var(--c-focus,var(--c-primary));}
+.cc-btn-peligro{background:linear-gradient(90deg,var(--c-danger-dark),var(--c-danger));}
+@media (max-width:600px){
+  .cc-barra{padding:12px 16px 2px;}
+  #cc-body{padding:8px 16px 22px;}
+  .cc-tarjetas{grid-template-columns:1fr;}
+  .cc-meses{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .cc-mes{min-height:140px;padding:10px;}
+  .cc-accion-primaria{font-size:var(--fs-small);}
+}

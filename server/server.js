@@ -271,6 +271,7 @@ function createApp() {
   api.use(require('./routes/efectividad-citas'));
   api.use(require('./routes/salida'));
   api.use(require('./routes/dashboards'));
+  api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas
   api.use(require('./routes/inventario'));
   api.use(require('./routes/gerencia'));
   api.use(require('./routes/gestion-humana'));
