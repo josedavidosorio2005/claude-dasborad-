@@ -17,6 +17,8 @@
 function gdGraficaEstaVacia(cfg) {
   return !cfg || !cfg.data || !cfg.data.labels || cfg.data.labels.length === 0 ||
     (cfg.data.datasets || []).every(function (d) {
+      // Fase 152 (B1): la linea de meta (esMeta) no es un dato.
+      if (d.esMeta) return true;
       return !(d.data || []).some(function (v) { return v !== null && v !== undefined; });
     });
 }

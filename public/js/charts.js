@@ -104,13 +104,71 @@ function aplicarTemaCharts(){
     CD='#5fc9ea'; CM='#7dd6f0'; CG='#4ade80'; CR='#f87171'; CO='#fbbf24'; CP='#c084fc';
     PC=PC_DARK;
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
+    SERIE_PRINCIPAL='#dbe9ee'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE=null; SERIE_LINEA='#c084fc';
   } else {
     CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
     PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
     CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
+    SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
   }
 }
+// Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
+var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';
 aplicarTemaCharts();
+
+// Fase 152 (B1): color de SERIE por rol, con los colores de MARCA (nunca
+// CG/CO/CR ni el verde de marca #74B859: el semaforo queda solo para lo
+// que se compara contra una meta). Se lee al dibujar, asi sigue el tema.
+//   'principal'  -> teal de marca #004150 (oscuro: #dbe9ee, el texto claro
+//                   del sistema, --c-text; elegida en la revision de B1
+//                   porque se separa del azul: deltaE 44)
+//   'secundaria' -> azul de marca #3DA2DB, SOLO como relleno de barras
+//                   (nunca texto). En claro da 2,84:1 contra blanco, por
+//                   eso lleva borde de 1 px en teal (11,2:1) -- ver
+//                   estiloBarraSecundaria. En oscuro da 5,1:1, sin borde.
+//   'linea'      -> morado del sistema (--c-purple: #8e44ad / #c084fc)
+// Contrastes medidos en server/tests/fase133-paleta-graficas.test.js.
+function colorSerie(rol){
+  if(rol === 'secundaria') return SERIE_SECUNDARIA;
+  if(rol === 'linea') return SERIE_LINEA;
+  return SERIE_PRINCIPAL;
+}
+// Propiedades de una barra de la serie secundaria (relleno + borde de
+// contraste en claro). Se mezclan en el dataset: Object.assign({...}, ...).
+function estiloBarraSecundaria(){
+  return SERIE_SECUNDARIA_BORDE
+    ? { backgroundColor: SERIE_SECUNDARIA, borderColor: SERIE_SECUNDARIA_BORDE, borderWidth: 1 }
+    : { backgroundColor: SERIE_SECUNDARIA, borderWidth: 0 };
+}
+
+// Fase 152 (B1): linea de meta punteada (dataset de linea, sin plugins
+// nuevos). `valor` sale de un umbral configurado (pantalla Umbrales); sin
+// umbral no se dibuja. Sin etiquetas de datos ni tooltip propio (el
+// texto "Meta 90 %" va en la leyenda).
+function datasetMeta(valor, etiqueta, n, yAxisID){
+  return {
+    type: 'line', label: etiqueta, esMeta: true,
+    data: Array.apply(null, Array(n)).map(function(){ return valor; }),
+    borderColor: CHART_TICK, backgroundColor: CHART_TICK, borderDash: [6, 4], borderWidth: 1.5,
+    pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, yAxisID: yAxisID || 'y',
+    datalabels: { display: false }, order: 99,
+  };
+}
+// Agrega la linea de meta (si hay umbral) y saca la meta del tooltip.
+// unidad: ' %' u otra, solo para el texto de la leyenda.
+function agregarLineaMeta(datasets, opciones, umbral, n, yAxisID, unidad){
+  if(!umbral || umbral.verde === null || umbral.verde === undefined || !n) return;
+  // Sin ningun dato real, la grafica debe seguir viendose "sin datos": la
+  // meta sola no cuenta como dato.
+  var hayDatos = datasets.some(function(d){ return (d.data || []).some(function(v){ return v !== null && v !== undefined; }); });
+  if(!hayDatos) return;
+  var menor = umbral.direccion === 'menor_es_mejor';
+  var txt = (menor ? 'Meta máx. ' : 'Meta ') + String(umbral.verde).replace('.', ',') + (unidad || '');
+  datasets.push(datasetMeta(Number(umbral.verde), txt, n, yAxisID));
+  opciones.plugins = opciones.plugins || {};
+  opciones.plugins.tooltip = opciones.plugins.tooltip || {};
+  opciones.plugins.tooltip.filter = function(item){ return !item.dataset.esMeta; };
+}
 
 // Fase 133 (Parte 5, WCAG 1.1.1): un <canvas> es una imagen sin texto
 // alternativo por defecto -- un lector de pantalla no anuncia nada de lo

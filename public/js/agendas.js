@@ -209,6 +209,8 @@ async function _agendasDibujar(campana, i, opciones, vista){
 
   var canvasId = 'agendas-c-'+i;
   if(vista === 'especialidad'){
+    // Fase 152 (B1): barras de comparacion (no tiempo) de mayor a menor.
+    datos = datos.slice().sort(function(a,b){ return (b.cantidad||0) - (a.cantidad||0); });
     var o1 = loBar();
     _gdChart(canvasId, {
       type: 'bar',
@@ -224,7 +226,7 @@ async function _agendasDibujar(campana, i, opciones, vista){
     _gdChart(canvasId, {
       type: 'bar',
       data: { labels: datos.map(function(r){ return _agendasMesLbl(r.mes); }),
-        datasets: [{ label:'Agendas', data: datos.map(function(r){ return r.cantidad; }), backgroundColor: (typeof CO!=='undefined'?CO:'#2a9d8f'), borderRadius:3 }] },
+        datasets: [{ label:'Agendas', data: datos.map(function(r){ return r.cantidad; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius:3 }] }, // Fase 152 (B1): sin semaforo
       options: loDatalabelsAuto(o2),
     });
   } else if(vista === 'linea'){
@@ -234,15 +236,15 @@ async function _agendasDibujar(campana, i, opciones, vista){
     var meses = datos.map(function(r){ return r.mes; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
     var porMesLinea = {};
     datos.forEach(function(r){ porMesLinea[r.mes+'|'+r.tipoLinea] = r.cantidad; });
-    var CDl = (typeof CD!=='undefined') ? CD : '#0d4a5e';
-    var CGl = (typeof CG!=='undefined') ? CG : '#27ae60';
+    var CDl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
+    var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e'); // Fase 152 (B1): paleta categorica
     var o3 = loBar();
     _gdChart(canvasId, {
       type: 'bar',
       data: { labels: meses.map(_agendasMesLbl),
         datasets: [
           { label:'Línea General', data: meses.map(function(m){ return porMesLinea[m+'|GENERAL'] || 0; }), backgroundColor: CDl, borderRadius:3 },
-          { label:'Línea 3P', data: meses.map(function(m){ return porMesLinea[m+'|3P'] || 0; }), backgroundColor: CGl, borderRadius:3 },
+          Object.assign({ label:'Línea 3P', data: meses.map(function(m){ return porMesLinea[m+'|3P'] || 0; }), backgroundColor: CGl, borderRadius:3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
         ] },
       options: loDatalabelsAuto(o3),
     });

@@ -531,6 +531,31 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 - **Mes en curso:** el encabezado y la fila de tarjetas dicen "Octubre 2026 — parcial, hasta el día N". N es el último día con datos cuando la fuente es diaria; si la fuente es mensual, dice "mes en curso, parcial". Las tarjetas dicen "Mes en curso: sin comparación".
 - **Tendencia pequeña (sparkline):** está preparada (`kpiSparklinePuntos`), pero apagada (`KPI_SPARKLINE_ACTIVO`) hasta que haya 3 meses o más con datos.
 
+## Colores de serie y líneas de meta (Fase 152, B1)
+
+- **Series:** usan `colorSerie(rol)` (`charts.js`), con los colores de marca:
+
+  | Rol | Claro | Oscuro |
+  |---|---|---|
+  | `principal` | teal `#004150` (11,2:1 sobre blanco) | `#dbe9ee` (`--c-text` del tema oscuro, 11,7:1) |
+  | `secundaria` | azul `#3DA2DB`, solo como **relleno de barras** | azul `#3DA2DB` (5,1:1) |
+  | `linea` (% y tiempos) | morado `#8e44ad` (`--c-purple`, 5,9:1) | `#c084fc` (5,5:1) |
+
+  - En claro el azul da 2,84:1 contra blanco, por debajo del 3:1 de WCAG 1.4.11. Por eso la barra lleva un borde de 1 px en teal (`estiloBarraSecundaria()`). En oscuro no hace falta borde.
+  - Nunca se usa el azul como texto.
+  - Medido en `fase133-paleta-graficas.test.js`:
+    - Cada serie, contra el fondo de su tema.
+    - Entre series: ΔE ≥ 40.
+    - Las barras vecinas, también con daltonismo simulado: ΔE ≥ 30.
+  - El verde de marca `#74B859` y `CG`/`CO`/`CR` nunca son una serie.
+  - Si la serie es una línea o cola identificada por nombre, el color sale de `paletaColorPara(nombre)` (paleta categórica).
+- **Semáforo** (`CG`/`CO`/`CR`, bordes `kpi-green`/`kpi-org`/`kpi-red`): solo para lo que se compara contra una meta. La excepción es la torta de clasificación de Calidad, que usa colores fijos de bueno/medio/malo. Una tarjeta sin meta lleva el borde neutro.
+- **Línea de meta:** `agregarLineaMeta(datasets, opciones, umbral, n, eje, unidad)`.
+  - Es un dataset de línea gris punteada (`borderDash [6,4]`), sin plugins nuevos. Su texto va en la leyenda ("Meta 90 %" o "Meta máx. 5 %") y no aparece en el tooltip.
+  - Solo se dibuja si hay umbral en la pantalla Umbrales y la gráfica tiene datos reales. La meta sola no cuenta como dato (`gdGraficaEstaVacia` la ignora).
+  - La línea punteada queda reservada a la meta; ninguna serie de datos va punteada.
+- **Orden:** las barras de comparación que no son tiempo (por ejemplo, Agendas por especialidad) van de mayor a menor.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/

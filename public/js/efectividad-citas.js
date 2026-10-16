@@ -96,7 +96,7 @@ function _ecDibujarGrafica(i, filas){
     { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: (typeof CM!=='undefined'?CM:'#1a7a9e') },
     { label: 'Atendidas', data: filas.map(function(f){ return f.atendidas; }), color: (typeof CD!=='undefined'?CD:'#0d4a5e') },
   ];
-  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.agendas > 0 ? (f.atendidas/f.agendas*100) : null; }), color: (typeof CO!=='undefined'?CO:'#e67e22') };
+  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.agendas > 0 ? (f.atendidas/f.agendas*100) : null; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
   var ds = gdComboDatasets(barras, linea);
   var o = loBar();
   o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {

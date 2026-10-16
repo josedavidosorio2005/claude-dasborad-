@@ -139,10 +139,10 @@ async function _wppTiemposDibujar(i, campana) {
   }
   var r03 = r.rangos[0];
   if (kpis) kpis.innerHTML =
-    '<div class="aurora-kpi kpi-green"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0–3 minutos</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0–3 minutos</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + r.total.toLocaleString('es-CO') + '</div><div class="kl">Conversaciones contestadas del mes</div></div>';
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  var CGl = (typeof CG !== 'undefined') ? CG : '#27ae60';
+  var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e'); // Fase 152 (B1): resalta 0–3 min sin usar el verde del semaforo
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.indexAxis = 'y';
   o.scales = o.scales || {};
@@ -161,7 +161,10 @@ async function _wppTiemposDibujar(i, campana) {
       type: 'bar',
       data: {
         labels: r.rangos.map(function (x) { return x.label; }),
-        datasets: [{ label: '% de conversaciones', data: r.rangos.map(function (x) { return x.pct; }), backgroundColor: r.rangos.map(function (x, k) { return k === 0 ? CGl : CDl; }), borderRadius: 3 }],
+        datasets: [{ label: '% de conversaciones', data: r.rangos.map(function (x) { return x.pct; }), backgroundColor: r.rangos.map(function (x, k) { return k === 0 ? CGl : CDl; }),
+          // Fase 152 (B1): borde de contraste solo en la barra azul de marca (claro).
+          borderColor: r.rangos.map(function (x, k) { var e = (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {}); return k === 0 && e.borderColor ? e.borderColor : 'rgba(0,0,0,0)'; }),
+          borderWidth: r.rangos.map(function (x, k) { var e = (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {}); return k === 0 && e.borderWidth ? e.borderWidth : 0; }), borderRadius: 3 }],
       },
       options: o,
     });
