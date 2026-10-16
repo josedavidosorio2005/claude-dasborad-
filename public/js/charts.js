@@ -264,6 +264,16 @@ function gdFmtValor(v, unidad){
   return Math.round(n*100)/100 === Math.round(n) ? Math.round(n).toLocaleString('es-CO') : (Math.round(n*100)/100).toLocaleString('es-CO');
 }
 
+// Fase 152 (cierre): porcentaje en formato es-CO para pantallas que no son
+// graficas (Gerencia, Metas, vista previa de cargas): coma decimal, hasta 2
+// decimales y espacio antes del % ("12,35 %"). '' si no hay valor.
+function gdFmtPctEs(v){
+  if(v===null || v===undefined || v==='') return '';
+  var n = typeof v==='number' ? v : Number(v);
+  if(!isFinite(n)) return String(v);
+  return (Math.round(n*100)/100).toLocaleString('es-CO', { maximumFractionDigits: 2 }) + ' %';
+}
+
 // Aplica formato de eje Y + tooltip con el valor exacto a unas opciones base.
 function loFmt(o, unidad){
   o = o || lo();

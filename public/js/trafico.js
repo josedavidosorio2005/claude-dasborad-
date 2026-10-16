@@ -53,7 +53,7 @@ function _renderPreviewTrafico(nombre, res){
     nombre + ' — ' + res.filas.length + ' fila(s) validas, ' + res.skills.length + ' skill(s), ' +
     res.meses.length + ' mes(es) (' + res.meses.join(', ') + ')';
   var html = res.filas.slice(0,60).map(function(f){
-    var nivel = f.nivelAtencionPct===undefined ? '—' : f.nivelAtencionPct+'%';
+    var nivel = f.nivelAtencionPct===undefined ? '—' : gdFmtPctEs(f.nivelAtencionPct);
     return '<tr><td>'+esc(f.fecha)+'</td><td>'+esc(f.skillName)+'</td><td>'+f.totalLlamadas+'</td><td>'+f.contestadas+'</td><td>'+esc(nivel)+'</td></tr>';
   }).join('');
   if(res.filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted)">… y '+(res.filas.length-60)+' filas mas</td></tr>';

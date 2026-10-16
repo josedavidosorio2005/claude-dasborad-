@@ -123,11 +123,11 @@ function renderGerPanel(){
           cls = kColor==='verde'?'kpi-green':kColor==='amarillo'?'kpi-org':'kpi-red';
           badge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(kColor) : '';
         }
-        var valFmt = k.unidad === '%' ? (Math.round(k.valor * 100) / 100) + '%' :
+        var valFmt = k.unidad === '%' ? gdFmtPctEs(k.valor) :
                      k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                      (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
         var metaTxt = (k.meta !== null && k.meta !== undefined) ?
-          '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?k.meta+'%':k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
+          '<div style="font-size:var(--fs-note);color:var(--c-text-muted);margin-top:2px">Meta: '+(k.unidad==='%'?gdFmtPctEs(k.meta):k.unidad==='USD'?'$'+k.meta.toLocaleString('es-CO'):k.meta.toLocaleString('es-CO'))+'</div>' : '';
         panelsHtml += '<div class="aurora-kpi '+cls+'"><div class="kv">'+badge+valFmt+'</div><div class="kl">'+esc(k.nombre)+(k.unidad?' ('+esc(k.unidad)+')':'')+'</div>'+metaTxt+'</div>';
       });
       panelsHtml += '</div></div>';
@@ -145,13 +145,13 @@ function renderGerTabla(){
     html += '<tr><td colspan="8" style="text-align:center;color:var(--c-text-muted)">No hay indicadores para '+_gerPeriodoSel+'</td></tr>';
   } else {
     _gerKpis.forEach(function(k){
-      var valFmt = k.unidad === '%' ? (Math.round(k.valor * 100) / 100) + '%' :
+      var valFmt = k.unidad === '%' ? gdFmtPctEs(k.valor) :
                    k.unidad === 'USD' ? '$' + Number(k.valor).toLocaleString('es-CO') :
                    (Math.round(k.valor * 100) / 100).toLocaleString('es-CO');
       var metaFmt = '-';
       var cumple = '-';
       if(k.meta !== null && k.meta !== undefined){
-        metaFmt = k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta.toLocaleString('es-CO');
+        metaFmt = k.unidad === '%' ? gdFmtPctEs(k.meta) : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta.toLocaleString('es-CO');
         cumple = k.valor >= k.meta ? '<span class="kpi-green" style="font-weight:600">Si</span>' : '<span class="kpi-red" style="font-weight:600">No</span>';
       }
       var acc = _gerCanWrite()
@@ -332,9 +332,9 @@ function renderGerAdminTabla(){
     html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">No hay indicadores para este periodo</td></tr>';
   } else {
     _gerKpis.forEach(function(k){
-      var valFmt = k.unidad === '%' ? k.valor+'%' : k.unidad === 'USD' ? '$'+k.valor.toLocaleString('es-CO') : k.valor;
+      var valFmt = k.unidad === '%' ? gdFmtPctEs(k.valor) : k.unidad === 'USD' ? '$'+k.valor.toLocaleString('es-CO') : k.valor;
       var metaFmt = (k.meta !== null && k.meta !== undefined) ?
-        (k.unidad === '%' ? k.meta+'%' : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta) : '-';
+        (k.unidad === '%' ? gdFmtPctEs(k.meta) : k.unidad === 'USD' ? '$'+k.meta.toLocaleString('es-CO') : k.meta) : '-';
       var acc = _gerCanWrite()
         ? '<button class="btn-sm btn-edit" onclick="gerEditarKpi('+k.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="gerEliminarKpi('+k.id+')">Eliminar</button>'
         : '';
