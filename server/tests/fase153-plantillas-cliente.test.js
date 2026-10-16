@@ -28,8 +28,12 @@ for (const cliente of ['ORLANT', 'MOBILIZE']) {
 }
 
 test('los perfiles usan exactamente los modulos del registro de clientes', () => {
-  for (const c of reg.leerRegistro(db)) {
-    assert.deepEqual(P.PERFILES_ACTUALES[c.nombre].modulos.slice().sort(), c.modulos.slice().sort(), c.nombre);
+  // Fase 153 (P3): CLINICA AURORA tambien esta en el registro, pero no tiene
+  // "perfil actual" (se creo desde la plantilla, ver fase153-crear-aurora).
+  const registro = reg.leerRegistro(db);
+  for (const nombre of Object.keys(P.PERFILES_ACTUALES)) {
+    const c = registro.find((x) => x.nombre === nombre);
+    assert.deepEqual(P.PERFILES_ACTUALES[nombre].modulos.slice().sort(), c.modulos.slice().sort(), nombre);
   }
 });
 
@@ -65,11 +69,13 @@ test('rechaza modulos desconocidos y sub-vistas sin su modulo', () => {
   assert.throws(() => P.generarLayout({ nombre: '', modulos: [] }), /Falta el nombre/);
 });
 
-test('generar no escribe en la base ni crea clientes (tampoco los borrados en la Fase 134)', () => {
+test('generar no escribe en la base ni crea clientes (HLM sigue sin existir)', () => {
   const antes = db.prepare('SELECT COUNT(*) AS n FROM dashboards_config').get().n;
-  P.generarLayout({ nombre: 'CLINICA AURORA', modulos: P.BASE_CONTACT_CENTER });
+  P.generarLayout({ nombre: 'HOSPITAL LA MARIA', modulos: P.BASE_CONTACT_CENTER });
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dashboards_config').get().n, antes);
-  for (const c of ['CLINICA AURORA', 'HOSPITAL LA MARIA']) {
+  // Fase 153 (P3): CLINICA AURORA existe, pero la crea su migracion
+  // (fase153-crear-aurora.test.js), nunca generarLayout.
+  for (const c of ['HOSPITAL LA MARIA']) {
     assert.equal(db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(c), undefined, c);
     assert.equal(db.prepare('SELECT 1 FROM clientes_registro WHERE nombre = ?').get(c), undefined, c);
   }

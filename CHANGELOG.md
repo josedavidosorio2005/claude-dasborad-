@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.5 — Octubre 2026
+
+**Fase 153: Clínica Aurora, lista para empezar a cargar.**
+
+- Se crea el cliente Clínica Aurora con Flujo de Llamadas y Flujo de
+  WhatsApp (iguales a los de ORLANT) y Calidad.
+- Todas sus pestañas empiezan ocultas y sin datos. Por ahora solo la ve el
+  administrador; nadie más la ve hasta que se le den permisos.
+- Calidad queda pendiente del modelo de evaluación de Aurora.
+- ORLANT y MOBILIZE no cambian.
+
 ## v1.47.4 — Octubre 2026
 
 **Fase 153 (paso 3): la plantilla de cliente ya sabe armar un dashboard.**

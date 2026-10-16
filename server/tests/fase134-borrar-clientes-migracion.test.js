@@ -161,9 +161,15 @@ setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 let db = require('../db');
 
 // ── (a) Tras la migracion solo existen ORLANT y MOBILIZE ──────────────────
-test('fase134_borrar_clientes_v1: dashboards_config queda SOLO con ORLANT y MOBILIZE', () => {
+test('fase134_borrar_clientes_v1: dashboards_config queda con ORLANT y MOBILIZE (y la Aurora NUEVA de la Fase 153)', () => {
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
-  assert.deepEqual(clientes, ['MOBILIZE', 'ORLANT']);
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'MOBILIZE', 'ORLANT']);
+  // Fase 153 (P3): la Aurora vieja (sembrada arriba, sin pestanas) se borro;
+  // la que queda es la nueva, creada DESPUES por fase153_crear_clinica_aurora_v1.
+  const aurora = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('CLINICA AURORA');
+  assert.equal(aurora.titulo, 'Dashboard Clínica Aurora');
+  assert.deepEqual(JSON.parse(aurora.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente = ?').get('CLINICA AURORA').c, 0);
 });
 
 test('fase134_borrar_clientes_v1: calidad_plantillas pierde CARTERA INTERNA, conserva ORLANT y MOBILIZE', () => {
@@ -222,7 +228,7 @@ test('fase134_borrar_clientes_v1: idempotente -- reabrir la base (segunda corrid
   db = require('../db');
 
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
-  assert.deepEqual(clientes, ['MOBILIZE', 'ORLANT']);
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'MOBILIZE', 'ORLANT']); // Fase 153 (P3): la Aurora nueva sigue
 
   const u = db.prepare('SELECT * FROM users WHERE user = ?').get('f134_solo_cartera');
   assert.ok(u, 'sigue sin borrarse en la segunda corrida');
