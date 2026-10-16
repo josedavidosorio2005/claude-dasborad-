@@ -5,7 +5,8 @@
 // con filtro de Mes y de Cola. Todo viene agregado del servidor
 // (GET /calidad/whatsapp-tiempos/rangos) -- nunca filas crudas.
 //
-// Solo para las campañas de WPP_TIEMPOS_CAMPANAS (hoy ORLANT); cualquier otra
+// Solo para las campañas con el modulo whatsapp_tiempos en el registro de
+// clientes (Fase 153, LISTAS_REGISTRO.whatsappTiempos; hoy ORLANT); cualquier otra
 // sigue viendo la grafica de siempre. Los % mensuales de Nivel de Servicio ya
 // guardados (trafico_whatsapp) no se tocan, solo dejan de graficarse aqui.
 //
@@ -15,7 +16,6 @@
 // dice en una nota. El filtro de Mes propio solo cambia esta vista.
 'use strict';
 
-var WPP_TIEMPOS_CAMPANAS = ['ORLANT'];
 var WPP_TIEMPOS_AVISO = 'Porcentaje de conversaciones de WhatsApp según el tiempo que tardaron en ser contestadas.';
 var _wppTiemposOpciones = {};        // cache por campana: { meses, skills }
 var _wppTiemposEstado = {};          // por campana: { mes, skill, nota }
@@ -23,7 +23,7 @@ var _wppTiemposMesSincronizado = {}; // por campana: ultimo _gd.mesSel aplicado
 var _wppTiemposUltimo = {};          // por campana: ultima respuesta /rangos (para exportar)
 
 function wppTiemposUsa(campana) {
-  return WPP_TIEMPOS_CAMPANAS.indexOf(campana) !== -1;
+  return LISTAS_REGISTRO.whatsappTiempos.indexOf(campana) !== -1;
 }
 
 // true si en el panel i esta activa la sub-pestaña 'sl' de una campaña con

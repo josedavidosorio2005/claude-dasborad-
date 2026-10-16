@@ -57,14 +57,14 @@ function _llamadasUnicasOptionsHtml(valores, seleccionado) {
 
 // Filtro/detalle de asesor: roles internos siempre. Fase 147 ("OK nombres
 // para cliente", pedido de Edwin): el cliente de estas campañas TAMBIEN los
-// ve (mismo criterio y misma lista cerrada que el servidor,
-// CAMPANAS_ASESOR_VISIBLE_CLIENTE en routes/llamadas-salida.js).
-var LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE = ['MOBILIZE'];
+// ve (mismo criterio que el servidor, puedeVerAsesores en
+// routes/llamadas-salida.js). Fase 153 (Paso 2): la lista sale del registro
+// de clientes (parametro asesorVisibleCliente, LISTAS_REGISTRO).
 function _llamadasUnicasEsInterno() {
   return typeof currentUser === 'undefined' || !currentUser || currentUser.rol !== 'CLIENTES_DASH';
 }
 function _llamadasUnicasVeAsesores(campana) {
-  return _llamadasUnicasEsInterno() || LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE.indexOf(campana) !== -1;
+  return _llamadasUnicasEsInterno() || LISTAS_REGISTRO.asesorVisibleCliente.indexOf(campana) !== -1;
 }
 // Fase 147: el archivo de salida no trae skill real (SKILL_ID es el tipo),
 // asi que el filtro de la mitad de salida es por Tipo.
