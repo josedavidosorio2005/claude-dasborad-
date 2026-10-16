@@ -209,3 +209,16 @@ Los casos específicos de ORLANT (sincronización del resumen, borrado por rango
 3. **B10 (Cargar Datos por pasos)** entra en el paso 5.
 
 Pasos 4, 5 y 6: esperan las respuestas de Edwin y el OK del usuario.
+
+### 2.9 Avance de los pasos 1–3 (16/10/2026)
+
+| Paso | PR | Qué quedó |
+|---|---|---|
+| 1. Registro de clientes | #451 (v1.47.2) | Tabla `clientes_registro` (`server/clientes-registro.js`), sembrada una sola vez con ORLANT y MOBILIZE. `CLIENTES_LIST` y `CAMPANAS_CALIDAD` salen de ahí, en el servidor y en el navegador. |
+| 2. Listas desde el registro | #452 (v1.47.3) | Hojas especiales de Cargar Datos, asesor visible para el cliente (servidor y navegador), WhatsApp por rangos, logos y la clase de "Última actualización" salen de los módulos y parámetros de cada cliente (`public/js/registro-clientes.js`). |
+| 3. Catálogo y generador | (PR del paso 3) | `server/plantillas-cliente.js`: catálogo de 12 módulos, base "Contact center" y `generarLayout`. La prueba de "foto" da el layout de ORLANT y MOBILIZE **idéntico byte a byte** al actual; sus layouts guardados no se tocan. |
+
+**Decisiones de implementación** (para revisar con Edwin antes del paso 4):
+- La pestaña por defecto de cada módulo es la de **ORLANT** (la plantilla "basada en ORLANT" que pidió Edwin). MOBILIZE conserva sus diferencias como **ajustes de su perfil**: Flujo de Llamadas con Resumen, One & Done y FCR; Calidad sin el promedio por asesor. Si Edwin prefiere que un cliente nuevo tenga el Flujo de Llamadas de MOBILIZE (más completo), es cambiar el ajuste por defecto, sin tocar a ORLANT.
+- Se agregó al catálogo **Llamadas y WhatsApp de salida** (`salida`), marcado como **no disponible para clientes nuevos**: lee la hoja manual de ORLANT, con líneas 3P y General.
+- Un cliente nuevo: todas las pestañas ocultas, sin pestañas específicas, sección de carga manual mínima (la misma que MOBILIZE). El esquema del constructor de Dashboards acepta el layout generado.
