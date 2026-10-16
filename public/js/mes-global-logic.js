@@ -49,6 +49,28 @@ function gdMostrarAvisoSinCargas(layout, hayCargas) {
   return !hayCargas && gdDependeDeCargasGenericas(layout);
 }
 
+// Fase 153 (P3, Clinica Aurora): un cliente creado desde la plantilla trae
+// TODAS sus pestanas ocultas. Las de Agendas/Inasistencia/Citas/Salida/
+// Tipificacion ya se destapaban solas al tener datos; esto hace lo mismo
+// con cualquier pestana que tenga un panel de `tipo` para esa campana
+// (Flujo de Llamadas/WhatsApp). Solo en memoria, nunca se guarda. A ORLANT
+// y MOBILIZE no les cambia nada: esas pestanas ya estan visibles.
+function gdDestaparPorDatos(layout, tipo, campana) {
+  var n = 0;
+  ((layout && layout.tabs) || []).forEach(function (t) {
+    var tiene = ((t && t.panels) || []).some(function (p) { return p && p.tipo === tipo && p.campana === campana; });
+    if (tiene && t.oculta) { t.oculta = false; n++; }
+  });
+  return n;
+}
+
+// true si el dashboard tiene pestanas pero ninguna visible (cliente nuevo
+// sin datos todavia): el tablero muestra un aviso en vez de quedar en blanco.
+function gdTodasLasPestanasOcultas(layout) {
+  var tabs = (layout && layout.tabs) || [];
+  return tabs.length > 0 && tabs.every(function (t) { return t && t.oculta; });
+}
+
 // Ultimo dia de un mes ('AAAA-MM' -> 'AAAA-MM-DD') -- usado por las 3
 // pestanas de TENDENCIA (Trafico Llamadas/WhatsApp, Calidad) al
 // sincronizarse con el selector MES de arriba: el mes elegido se vuelve el
@@ -159,6 +181,8 @@ if (typeof module !== 'undefined' && module.exports) {
     gdMesesUnion: gdMesesUnion,
     gdMesPorDefecto: gdMesPorDefecto,
     gdDependeDeCargasGenericas: gdDependeDeCargasGenericas,
+    gdDestaparPorDatos: gdDestaparPorDatos,
+    gdTodasLasPestanasOcultas: gdTodasLasPestanasOcultas,
     gdMostrarAvisoSinCargas: gdMostrarAvisoSinCargas,
   };
 }

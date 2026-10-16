@@ -561,10 +561,10 @@ test('DELETE /api/dashboards/config/:cliente borra la configuracion pero NUNCA l
   await request(app).delete('/api/dashboards/config/' + encodeURIComponent(cliente)).set(auth(admin));
 });
 
-test('dashboard/clientes y dashboard/secciones: solo ORLANT y MOBILIZE (Fase 134)', async () => {
+test('dashboard/clientes y dashboard/secciones: ORLANT y MOBILIZE (Fase 134) + CLINICA AURORA (Fase 153)', async () => {
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const cl = await request(app).get('/api/dashboard/clientes').set(auth(t));
-  assert.deepEqual(cl.body.clientes.slice().sort(), ['MOBILIZE', 'ORLANT']);
+  assert.deepEqual(cl.body.clientes.slice().sort(), ['CLINICA AURORA', 'MOBILIZE', 'ORLANT']);
 
   const orl = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('ORLANT')).set(auth(t));
   assert.equal(orl.status, 200);

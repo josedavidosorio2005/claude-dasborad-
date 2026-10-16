@@ -54,7 +54,7 @@ test('GET /api/dashboard/clientes trae el registro (modulos, parametros, logo)',
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set({ Authorization: 'Bearer ' + t });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE']);
+  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA']); // Fase 153 (P3)
   r.body.registro.forEach((c) => assert.deepEqual(Object.keys(c).sort(), ['logo', 'modulos', 'nombre', 'parametros']));
 });
 

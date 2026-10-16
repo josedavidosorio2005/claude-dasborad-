@@ -3722,6 +3722,54 @@ function migrarMobilizeFlujoOneAndDone() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_oneanddone_v1', migrarMobilizeFlujoOneAndDone);
 
+// Fase 153 (P3, "OK crear Aurora" del usuario): CLINICA AURORA desde la
+// plantilla de cliente (plantillas-cliente.js, Paso 3). Va AL FINAL, despues
+// de fase134_borrar_clientes_v1 (que borro la Aurora vieja, sin datos), asi
+// en una base nueva esa migracion corre primero y no la vuelve a borrar.
+// Solo crea: la ficha en el registro de clientes y su dashboard. Modulos
+// Flujo de Llamadas y Flujo de WhatsApp (pestanas como ORLANT) y Calidad,
+// TODAS ocultas y sin datos. No crea usuarios, ni permisos, ni plantilla de
+// Calidad (su modelo lo entrega el usuario; mientras tanto la pestana sigue
+// oculta). Nadie la ve salvo el admin completo: ningun usuario tiene la
+// clave cliente_/campana_ de Aurora, y una clave que falta = sin acceso.
+// Idempotente: si ya existe la fila (en el registro o en dashboards_config),
+// no la toca.
+const AURORA = {
+  nombre: 'CLINICA AURORA',
+  titulo: 'Dashboard Clínica Aurora',
+  modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'],
+  visibles: [],
+};
+function crearClinicaAurora() {
+  const { generarLayout } = require('./plantillas-cliente');
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  const tx = db.transaction(() => {
+    db.prepare(
+      `INSERT OR IGNORE INTO clientes_registro
+         (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+       VALUES (?, ?, 1, ?, ?, NULL, 1, ?, ?)`
+    ).run(
+      AURORA.nombre,
+      maxOrden + 1,
+      JSON.stringify(AURORA.modulos),
+      JSON.stringify({ sedes: [], asesorVisibleCliente: false, traficoDosHojas: false, especificos: [] }),
+      now,
+      now
+    );
+    if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(AURORA.nombre)) {
+      const cfg = generarLayout(AURORA);
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+      ).run(AURORA.nombre, cfg.titulo, JSON.stringify(cfg.secciones), JSON.stringify(cfg.layout), now, now);
+    }
+  });
+  tx();
+  if (!config.isTest) console.log('[db] Migracion fase153_crear_clinica_aurora_v1 aplicada.');
+}
+runOnceMigration('fase153_crear_clinica_aurora_v1', crearClinicaAurora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3749,3 +3797,6 @@ module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
 module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
 module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;
 module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
+// Fase 153 (P3): idem.
+module.exports.crearClinicaAurora = crearClinicaAurora;
+module.exports.AURORA = AURORA;

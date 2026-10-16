@@ -997,6 +997,10 @@ async function _gdBootstrap(){
   for(var campWp in campanasTraficoWpp){
     ((typeof _traficoWpp!=='undefined' && _traficoWpp[campWp] && _traficoWpp[campWp].filas) || []).forEach(function(f){ mesesTraficoWpp.push(f.fechaInicio); });
   }
+  // Fase 153 (P3): Flujo de Llamadas/WhatsApp se destapan solos cuando ESTE
+  // cliente ya tiene filas (cliente nuevo desde la plantilla, todo oculto).
+  if(typeof _trafico!=='undefined' && _trafico[_gd.cliente] && (_trafico[_gd.cliente].filas || []).length) gdDestaparPorDatos(_gd.config.layout, 'trafico_combo', _gd.cliente);
+  if(typeof _traficoWpp!=='undefined' && _traficoWpp[_gd.cliente] && (_traficoWpp[_gd.cliente].filas || []).length) gdDestaparPorDatos(_gd.config.layout, 'trafico_whatsapp_combo', _gd.cliente);
   var mesesCalidad = [];
   for(var campCal in campanasCalidad){
     ((typeof CAL_DB!=='undefined' && CAL_DB[campCal] && CAL_DB[campCal].monitoreos) || []).forEach(function(m){ mesesCalidad.push(m.fecha); });
@@ -1287,6 +1291,13 @@ function renderGenericBanner(){
   // Fase 145: un dashboard solo de paneles autonomos (Mobilize) nunca
   // muestra este aviso -- ver gdMostrarAvisoSinCargas (mes-global-logic.js).
   var layoutGd = (_gd.config && _gd.config.layout) || {};
+  // Fase 153 (P3): cliente nuevo con todas las pestanas ocultas (Clinica
+  // Aurora antes de su primera carga) -- un aviso en vez de la pagina en blanco.
+  if(!esModulo && gdTodasLasPestanasOcultas(layoutGd)){
+    if(!ex){ ex = document.createElement('div'); ex.id = 'gd-nodata-banner'; ex.className = 'gd-nodata-banner'; host.appendChild(ex); }
+    ex.innerHTML = '<strong>Este dashboard todavía no tiene datos.</strong> Cada pestaña aparece sola cuando se cargan los datos de su módulo (Cargar Datos).';
+    return;
+  }
   if(esModulo || !gdMostrarAvisoSinCargas(layoutGd, hayCargas)){ if(ex) ex.remove(); return; }
   if(ex) return;
   var d = document.createElement('div');
