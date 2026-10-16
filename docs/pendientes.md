@@ -101,16 +101,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   explícito**. Riesgo real hoy: bajo (desde la Fase 134 en producción
   solo quedan ORLANT y MOBILIZE; Aurora/HLM ya no existen — ver
   "Decisiones de esta fase" al final).
-- **F10 (auditoría UI Fase 135) — iconos emoji del menú lateral** (ej.
-  Usuarios, Inventario). Prioridad BAJA. No se tocó en la Fase 136 por
-  decisión explícita tuya: es una decisión de marca (seguir con emoji
-  vs. un set de iconos propio), no un defecto de UI — tu postura: no
-  antes del demo de Mobilize (mediados de octubre).
-- **Limpieza de `.atab{transition:all 0.2s}`** (Fase 137, Parte E) —
-  Prioridad BAJA. Confirmado que NO es la causa del bug de Escape ya
-  resuelto (ver bloque técnico) — sigue siendo una limpieza de estilo
-  válida por separado. Pospuesta hasta después del demo de Mobilize,
-  solo si escribes "OK limpieza atab".
 - **Limitador de la API para tráfico SIN sesión — sigue por IP, no por
   usuario** — Prioridad BAJA/MEDIA. La Fase 130 (Parte 7) separó el
   limitador en 2 cupos: quien ya inició sesión cuenta por usuario (sin
@@ -137,6 +127,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Metas que faltan para el semáforo y la línea de meta** (Fase 152).
+  Sin meta, un indicador no lleva semáforo ni línea punteada. Hoy no
+  tienen meta: FCR (One & Done) de Mobilize, Inasistencia, Efectividad de
+  Citas, Efectividad de Agendamiento. Confirmar también el nivel de
+  servicio de WhatsApp (el umbral sembrado `service_level` 80/65 hoy solo
+  se usa en llamadas). Cómo se cierra: Edwin manda las metas y se cargan
+  en la pantalla Umbrales (sin código). Anotado 16/10/2026.
+- **Tarjetas de Tráfico: mes elegido o ventana de meses** (Fase 152, B8).
+  Hoy las tarjetas suman la ventana de varios meses del filtro (ej. abril
+  a septiembre); la variación contra el mes anterior solo aparece al
+  filtrar un mes. Si Edwin prefiere que las tarjetas muestren siempre el
+  mes elegido arriba (con su variación) y la gráfica conserve la ventana,
+  es un PR aparte (cambia las cifras que muestran las tarjetas).
+  Anotado 16/10/2026.
 - **19 asesores del archivo real de Calidad sin usuario ASESOR en la
   plataforma** — Prioridad MEDIA. La carga masiva de Calidad guarda el
   nombre como texto libre, nunca requiere un usuario — no bloquea
@@ -223,6 +227,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
+  de cada registro (`tipificaciones.hora`). Falta contar en producción,
+  con sesión y solo conteos, cuántas filas tienen la hora llena por
+  campaña y mes, la próxima vez que se entre a producción por otra cosa.
+  Anotado 16/10/2026 (Fase 152, Paso 0).
 - **El permiso "Cargar Datos" se puede dar a un usuario cliente
   (CLIENTES_DASH)** — hallazgo bajo de la auditoría de la Fase 148
   (`canLoadData`, `server/auth.js`: basta `perms.cargarDatos === true`,

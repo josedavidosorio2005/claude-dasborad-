@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.1 — Octubre 2026
+
+**Fase 152 (cierre): porcentajes con coma en todas las pantallas.**
+
+- Gerencia, Metas y la vista previa al cargar Tráfico también escriben los
+  porcentajes con coma ("12,35 %").
+
 ## v1.47.0 — Octubre 2026
 
 **Fase 152: iconos nuevos.**

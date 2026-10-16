@@ -15107,3 +15107,51 @@ Decisión de Edwin: si un período (o un punto de la gráfica) tiene datos pero
   configuración de la instancia, decisión sobre el teléfono en Calidad, CSP
   sin `unsafe-inline` (plan por etapas, fase aparte). Ver
   `docs/pendientes.md`.
+
+## Fase 152 — Mejora gráfica: KPIs, metas, colores, móvil e iconos (v1.43.0 → v1.47.1, 2026-10-16)
+
+Ordena el Bloque B de la auditoría UI (Fase 143/144). Cada PR se detuvo antes
+del merge hasta el "OK Bx" del usuario (Edwin revisa con capturas). Capturas
+antes/después en la base demo (sintética), fuera del repo
+(carpeta datos-inconexion/diagnostico-ui/fase152).
+
+- **Paso 0 (diagnóstico):** ningún indicador principal tiene 3 meses de datos
+  (la tendencia pequeña queda preparada y apagada). Metas configuradas solo
+  en Nivel de atención, Tasa de abandono, Nivel de servicio de llamadas y
+  Puntaje de Calidad. `tipificaciones.hora` permitiría un mapa de calor por
+  hora (fase futura).
+- **#444 B8 + B3 (v1.43.0):** `kpi-tarjeta-logic.js`: cifra a `--fs-kpi`,
+  etiqueta en minúscula inicial, variación contra el mes anterior solo si
+  ese mes tiene datos y el período es un mes calendario, meta con punto y
+  texto solo desde Umbrales (se quitó el 90/70 fijo de Nivel de atención);
+  mes en curso marcado "parcial, hasta el día N" y sin comparación
+  (`mes-global-logic.js`). Salida compara solo con el mes inmediatamente
+  anterior.
+- **#445 B1 (v1.44.0):** series con los colores de marca (`colorSerie`):
+  teal #004150 (oscuro #dbe9ee, elegida entre 2 alternativas), azul
+  #3DA2DB solo como relleno con borde de contraste en claro, líneas en el
+  morado del sistema; semáforo solo con meta; línea de meta punteada
+  (`agregarLineaMeta`) desde Umbrales, que no cuenta como dato; tarjetas
+  sin meta con borde neutro; Agendas por especialidad de mayor a menor.
+  Prueba de paleta con contraste medido y separación entre series (ΔE ≥ 40,
+  ≥ 30 con daltonismo).
+- **#446 B9 (v1.45.0):** "Ver datos" en cada gráfica (diálogo A3b, tabla con
+  los mismos números, sin pedir nada al servidor) y fracción "3 de 45" en
+  tooltips de tortas y de series de % con sus conteos.
+- **#447 B4 (v1.46.0):** móvil/tableta (filtros plegables "Filtros (N)",
+  leyenda debajo, etiquetas a 45°, tablas con scroll propio y primera
+  columna fija, áreas táctiles de 44 px) con un solo potenciador
+  (`MutationObserver`); limpieza (`.atab` con transiciones exactas tras el
+  "OK limpieza atab", estilos en línea repetidos a clases, escala de
+  z-index como tokens); coma decimal en gráficas y tooltips (la exportación
+  de Salida conserva su formato).
+- **#448 F10 (v1.47.0):** iconos SVG de Lucide (ISC) en el menú y los
+  botones, en un sprite dentro del repo (`public/img/iconos/lucide.svg`,
+  `iconos.js`), decorativos y con `currentColor`.
+- **Cierre (v1.47.1):** coma decimal en Gerencia, Metas y la vista previa de
+  carga de Tráfico (`gdFmtPctEs`); `docs/pendientes.md` actualizado.
+- **Deploys:** varios relanzamientos por el 429 de ECR Public (I-04 de la
+  Fase 151); todos terminaron en verde con `/api/health` correcto.
+- **Queda pendiente:** metas que faltan (Edwin); tarjetas de Tráfico por mes
+  elegido o por ventana (Edwin); conteo de horas en Tipificación para el
+  mapa de calor; B10 (Cargar Datos por pasos) pasa a la Fase 153.

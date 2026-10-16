@@ -105,7 +105,7 @@ function renderMetasHistory(){
     return '<tr><td>'+esc(r.liderNombre||'Sin asignar')+'</td><td>'+esc(r.campana)+'</td><td>'+esc(r.mes)+'</td><td>'+r.asesores+'</td><td>'+r.diasLaborales+'</td>'+
       '<td class="peak">'+r.metaGrupal+'</td><td>'+r.metaPorAsesor+'</td><td>'+r.metaDiaria+'</td>'+
       '<td>'+r.semana1+'</td><td>'+r.semana2+'</td><td>'+r.semana3+'</td><td>'+r.semana4+'</td>'+
-      '<td>'+(r.whatsapp?'SI':'NO')+'</td><td>'+(r.whatsapp? (r.pctWhatsapp+'%') : '-')+'</td>'+
+      '<td>'+(r.whatsapp?'SI':'NO')+'</td><td>'+(r.whatsapp? gdFmtPctEs(r.pctWhatsapp) : '-')+'</td>'+
       '<td><button class="btn-sm btn-edit" onclick="editMetaMes('+r.id+')">Editar</button> '+
       '<button class="btn-sm btn-delete" onclick="deleteMetaMes('+r.id+')">Eliminar</button></td></tr>';
   }).join('');
@@ -250,7 +250,7 @@ function previewNivelServicio(){
   var totales = Number(totalesEl.value)||0;
   var pct = totales>0 ? Math.round((contestadas/totales)*1000)/10 : null;
   var cumple = pct===null ? '—' : (pct>=80 ? 'CUMPLE' : 'NO CUMPLE');
-  pv.innerHTML = '<div class="qi-pill"><div class="qv">'+(pct===null?'—':pct+'%')+'</div><div class="ql">NIVEL DE SERVICIO — '+cumple+' (meta 80%)</div></div>';
+  pv.innerHTML = '<div class="qi-pill"><div class="qv">'+(pct===null?'—':gdFmtPctEs(pct))+'</div><div class="ql">NIVEL DE SERVICIO — '+cumple+' (meta 80%)</div></div>';
 }
 
 function renderNivelServicioHistory(){
@@ -272,7 +272,7 @@ function renderNivelServicioHistory(){
   }
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
-    var pctTxt = r.pct===null ? '—' : r.pct+'%';
+    var pctTxt = r.pct===null ? '—' : gdFmtPctEs(r.pct);
     var cumpleTxt = r.cumple===null ? '—' : (r.cumple ? '🟢 SI' : '🔴 NO');
     // Campanas multi-sede (ej. HOSPITAL LA MARIA) pueden tener 2 filas del
     // mismo (campana, mes) — una por sede, nunca sumadas (ver
@@ -460,7 +460,7 @@ async function procesarArchivoNivelServicioDiario(input){
 function _renderPreviewNivelServicioDiario(nombre, filas, avisos){
   document.getElementById('nsd-errores').innerHTML = avisos.map(function(a){ return '&#9888; '+esc(a); }).join('<br>');
   var html = filas.slice(0,60).map(function(f){
-    var pctTxt = f.serviceLevel20secPct===null ? '—' : f.serviceLevel20secPct+'%';
+    var pctTxt = f.serviceLevel20secPct===null ? '—' : gdFmtPctEs(f.serviceLevel20secPct);
     return '<tr><td>'+esc(f.fecha)+'</td><td>'+esc(f.skillName)+'</td><td>'+f.totalLlamadas+'</td><td>'+f.contestadas+'</td><td>'+esc(pctTxt)+'</td></tr>';
   }).join('');
   if(filas.length>60) html += '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted)">… y '+(filas.length-60)+' filas mas</td></tr>';
