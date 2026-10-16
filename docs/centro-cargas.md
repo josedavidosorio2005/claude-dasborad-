@@ -84,7 +84,7 @@ Capturas a 375 y 1440 px, en claro y en oscuro, fuera del repo: `datos-inconexio
 
 `GET /api/centro-cargas/:cliente/:carga/:mes/datos` devuelve las filas tal como están en la base: solo columnas guardadas, sin datos personales. El navegador arma el Excel con `xlsxFilasSeguras`, como las demás exportaciones.
 
-### Permisos (requiere tu OK: toca permisos)
+### Permisos — `cargar_<modulo>` APROBADO (16/10/2026): apagado por defecto para todos; se implementa dentro de los PRs del Centro de cargas, después del "OK centro de cargas"
 
 - **Hoy:**
   - cargar exige `cargarDatos`, un solo permiso para todos los módulos;
