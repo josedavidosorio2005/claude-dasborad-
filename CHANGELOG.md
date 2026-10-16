@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.42.3 — Octubre 2026
+
+**Fase 151: el teléfono de los monitoreos, solo para el equipo interno.**
+
+- El teléfono que se anota en un monitoreo de Calidad solo lo reciben
+  Calidad, Supervisor, Reportes y el administrador. Los usuarios de
+  cliente y de Gerencia ven los mismos monitoreos, sin ese dato. Cada
+  asesor lo sigue viendo en sus propios monitoreos.
+
 ## v1.42.2 — Octubre 2026
 
 **Fase 151: prueba de los respaldos.**

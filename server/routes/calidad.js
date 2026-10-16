@@ -72,6 +72,20 @@ function toPlantilla(row) {
   };
 }
 
+// Fase 151: el telefono del cliente final solo lo reciben los roles que
+// trabajan el monitoreo (CALIDAD, SUPERVISOR, REPORTES) y el administrador.
+// CLIENTES_DASH, GERENCIA y el resto reciben la fila SIN ese campo. El
+// asesor lo sigue viendo en sus propios monitoreos (/monitoreos/mios).
+const ROLES_VEN_TELEFONO = ['CALIDAD', 'SUPERVISOR', 'REPORTES'];
+function puedeVerTelefono(actor) {
+  return isFullAdmin(actor) || (!!actor && ROLES_VEN_TELEFONO.includes(actor.rol));
+}
+function monitoreoPara(actor, row) {
+  const m = toMonitoreo(row);
+  if (!puedeVerTelefono(actor)) delete m.telefono;
+  return m;
+}
+
 function toMonitoreo(row) {
   return {
     id: row.id,
@@ -292,7 +306,7 @@ router.get(
           .prepare('SELECT * FROM monitoreos WHERE campana = ? AND mes = ? ORDER BY id DESC')
           .all(campana, mes)
       : db.prepare('SELECT * FROM monitoreos WHERE campana = ? ORDER BY id DESC').all(campana);
-    res.json(rows.map(toMonitoreo));
+    res.json(rows.map((r) => monitoreoPara(req.actor, r)));
   })
 );
 
@@ -361,7 +375,7 @@ router.post(
       });
     const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(info.lastInsertRowid);
     logCalEvent('MONITOREO', b.asesor, b.campana, req.actor, `Puntaje: ${score.puntaje}`);
-    res.status(201).json(toMonitoreo(row));
+    res.status(201).json(monitoreoPara(req.actor, row));
   })
 );
 
@@ -535,7 +549,7 @@ router.put(
     );
     const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
     logCalEvent('MONITOREO_EDIT', updated.asesor, row.campana, req.actor, `Puntaje: ${score.puntaje}`);
-    res.json(toMonitoreo(updated));
+    res.json(monitoreoPara(req.actor, updated));
   })
 );
 
