@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.41.3 — Octubre 2026
+
+**Fase 151: mejora de seguridad en la gestión de usuarios.**
+
+- Editar a un usuario Administrador o Auxiliar administrativo queda
+  reservado al administrador.
+- Si se cambia la contraseña de alguien desde "Editar usuario", sus
+  sesiones abiertas se cierran y debe volver a entrar con la nueva.
+
 ## v1.41.2 — Octubre 2026
 
 **Fase 150: ajustes pendientes de la revisión anterior.**
