@@ -537,7 +537,7 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 
   | Rol | Claro | Oscuro |
   |---|---|---|
-  | `principal` | teal `#004150` (11,2:1 sobre blanco) | `#7dd6f0` (`--c-on-primary-soft`, 8,9:1) |
+  | `principal` | teal `#004150` (11,2:1 sobre blanco) | `#dbe9ee` (`--c-text` del tema oscuro, 11,7:1) |
   | `secundaria` | azul `#3DA2DB`, solo como **relleno de barras** | azul `#3DA2DB` (5,1:1) |
   | `linea` (% y tiempos) | morado `#8e44ad` (`--c-purple`, 5,9:1) | `#c084fc` (5,5:1) |
 
@@ -545,8 +545,8 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
   - Nunca se usa el azul como texto.
   - Medido en `fase133-paleta-graficas.test.js`:
     - Cada serie, contra el fondo de su tema.
-    - Entre series: ΔE ≥ 20.
-    - Las barras vecinas, también con daltonismo simulado: ΔE ≥ 15.
+    - Entre series: ΔE ≥ 40.
+    - Las barras vecinas, también con daltonismo simulado: ΔE ≥ 30.
   - El verde de marca `#74B859` y `CG`/`CO`/`CR` nunca son una serie.
   - Si la serie es una línea o cola identificada por nombre, el color sale de `paletaColorPara(nombre)` (paleta categórica).
 - **Semáforo** (`CG`/`CO`/`CR`, bordes `kpi-green`/`kpi-org`/`kpi-red`): solo para lo que se compara contra una meta. La excepción es la torta de clasificación de Calidad, que usa colores fijos de bueno/medio/malo. Una tarjeta sin meta lleva el borde neutro.

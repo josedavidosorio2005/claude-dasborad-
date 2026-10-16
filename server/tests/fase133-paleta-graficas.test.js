@@ -173,7 +173,7 @@ test('Fase 152 B1: series con los colores de marca (teal, azul solo relleno, mor
   assert.equal(SERIES_OSCURO.secundaria.toLowerCase(), '#3da2db');
   assert.equal(SERIES_CLARO.linea.toLowerCase(), '#8e44ad', '--c-purple claro');
   assert.equal(SERIES_OSCURO.linea.toLowerCase(), '#c084fc', '--c-purple oscuro');
-  assert.equal(SERIES_OSCURO.principal.toLowerCase(), '#7dd6f0', 'variante clara del sistema (--c-on-primary-soft)');
+  assert.equal(SERIES_OSCURO.principal.toLowerCase(), '#dbe9ee', 'texto claro del sistema en oscuro (--c-text), elegido en la revision de B1');
   // El verde de marca y el semaforo nunca son una serie.
   for (const t of [SERIES_CLARO, SERIES_OSCURO]) {
     for (const c of [t.principal, t.secundaria, t.linea]) {
@@ -204,12 +204,12 @@ test('Fase 152 B1: las series se distinguen entre si (deltaE >= 20), tambien con
   for (const ser of [SERIES_CLARO, SERIES_OSCURO]) {
     const pares = [[ser.principal, ser.secundaria], [ser.principal, ser.linea], [ser.secundaria, ser.linea]];
     for (const [x, y] of pares) {
-      assert.ok(contrasteDeltaE(x, y) >= 20, `${x} vs ${y}: deltaE ${contrasteDeltaE(x, y).toFixed(1)}`);
+      assert.ok(contrasteDeltaE(x, y) >= 40, `${x} vs ${y}: deltaE ${contrasteDeltaE(x, y).toFixed(1)}`);
     }
     // Barras vecinas (principal/secundaria): distinguibles con los 3 tipos de daltonismo.
     for (const tipo of ['protanopia', 'deuteranopia', 'tritanopia']) {
       const d = contrasteDeltaE(contrasteSimularCvd(ser.principal, tipo), contrasteSimularCvd(ser.secundaria, tipo));
-      assert.ok(d >= 15, `principal/secundaria con ${tipo}: deltaE ${d.toFixed(1)}`);
+      assert.ok(d >= 30, `principal/secundaria con ${tipo}: deltaE ${d.toFixed(1)}`);
     }
   }
 });
