@@ -19,8 +19,11 @@ function aplicarNombreApp() {
 aplicarNombreApp();
 
 // Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
-// usuario, 2026-10-09) -- deben coincidir EXACTO con server/db.js
-// (CLIENTES_LIST/CAMPANAS_CALIDAD).
+// usuario, 2026-10-09). Fase 153 (Paso 1): estos valores son solo el
+// respaldo inicial; tras el login loadDashboardClientes (dashboards-core.js)
+// los reemplaza con las listas del registro de clientes del servidor
+// (server/clientes-registro.js). La prueba fase153-registro-clientes exige
+// que coincidan con la semilla del registro.
 var CLIENTES_LIST = ['ORLANT', 'MOBILIZE'];
 var CAMPANAS_CALIDAD = ['ORLANT', 'MOBILIZE'];
 

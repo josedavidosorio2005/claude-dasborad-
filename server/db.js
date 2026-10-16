@@ -10,6 +10,8 @@ const { CONFIGS } = require('./dashboard-config-seed');
 const DB_PATH =
   config.dbPath || path.join(__dirname, 'data', 'inconexion.db');
 
+const clientesRegistro = require('./clientes-registro');
+
 // Fase 134: solo ORLANT y MOBILIZE quedan en produccion (decision del
 // usuario, 2026-10-09) -- los otros 10 clientes (HOSPITAL LA MARIA, CLINICA
 // AURORA, TELEVENTAS SURA, TELEVENTAS COMFAMA, PANTERA MAIKERS, ANDRES
@@ -18,15 +20,9 @@ const DB_PATH =
 // (CONSULTORIO JULIAN MOLANO, CARTERA INTERNA) se quitaron de estas listas
 // para que NINGUN deploy/migracion los vuelva a crear -- ver la migracion
 // fase134_borrar_clientes_v1 mas abajo, que borra sus filas ya sembradas.
-const CLIENTES_LIST = [
-  'ORLANT',
-  'MOBILIZE',
-];
-
-const CAMPANAS_CALIDAD = [
-  'ORLANT',
-  'MOBILIZE',
-];
+// Fase 153 (Paso 1): CLIENTES_LIST y CAMPANAS_CALIDAD ya no son listas
+// fijas: salen del registro de clientes en la base (clientes-registro.js),
+// mas abajo, justo despues de crear las tablas.
 
 function withScopedPerms(base, prefix, values) {
   const out = { ...base };
@@ -638,6 +634,16 @@ CREATE TABLE IF NOT EXISTS umbrales_semaforo (
   UNIQUE(metrica, campana)
 );
 `);
+
+// Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
+// como estaban en las listas fijas) corre una sola vez; despues el registro
+// es la unica fuente de CLIENTES_LIST y CAMPANAS_CALIDAD.
+clientesRegistro.crearTablaRegistro(db);
+runOnceMigration('clientes_registro_v1', () => {
+  clientesRegistro.sembrarRegistro(db);
+});
+const CLIENTES_LIST = clientesRegistro.listaClientes(db);
+const CAMPANAS_CALIDAD = clientesRegistro.campanasCalidad(db);
 
 // Semilla de configuracion de dashboards: idempotente por cliente. Inserta las
 // configuraciones de dashboard-config-seed.js que aun no existan en la tabla
