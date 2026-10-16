@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.47.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.47.4` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -642,3 +642,4 @@ mismo orden):
 - Fase 150 — Pendientes de la 149: "Última actualización" cuenta también Encuesta, Llamadas Únicas, Salida y WhatsApp por rangos; One & Done con meses en letras, error de red visible y su propio título al exportar; límite de 8 MB en Llamadas Únicas y WhatsApp por rangos; Excel de WhatsApp por rangos sin exportación insegura (v1.41.2, 2026-10-15)
 - Fase 151 — Auditoría de seguridad completa (informe privado, fuera del repo) y arreglos: gestión de usuarios con límites sobre la cuenta destino y los permisos de gestión, lista de usuarios acotada por rol, cierre de sesión que invalida la sesión, cambio obligatorio de contraseñas asignadas, deploy solo desde main de este repo, Tráfico con control de campaña, protección de la rama main, verificación de restauración del respaldo local y ajustes menores; dato de contacto de los monitoreos de Calidad solo para roles internos (v1.41.3 → v1.42.3, 2026-10-16)
 - Fase 152 — Mejora gráfica: tarjetas KPI ejecutivas y mes en curso parcial (B8+B3), colores de marca y líneas de meta en las gráficas (B1), "Ver datos" y fracción "3 de 45" en los tooltips (B9), móvil y tableta con filtros plegables, limpieza de estilos y coma decimal (B4), iconos SVG de Lucide (F10) (v1.43.0 → v1.47.1, 2026-10-16)
+- Fase 153 (pasos 1–3, en curso) — Plantillas de cliente: registro de clientes en la base, listas por módulo desde el registro, catálogo de módulos y generador de layout con prueba de "foto" de ORLANT y MOBILIZE; propuesta en `docs/plantillas-cliente.md` (PR #450, sin mergear); pasos 4–6 esperan a Edwin (v1.47.2 → v1.47.4, 2026-10-16)

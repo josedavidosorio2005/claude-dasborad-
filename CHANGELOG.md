@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.47.4 — Octubre 2026
+
+**Fase 153 (paso 3): la plantilla de cliente ya sabe armar un dashboard.**
+
+- Por dentro, la plataforma tiene un catálogo de módulos (Flujo de
+  Llamadas, WhatsApp, Tipificación, Calidad, Agendas, Encuesta…) y puede
+  armar el dashboard de un cliente a partir de los módulos que lleve.
+- Probado: con esa plantilla, los dashboards de ORLANT y MOBILIZE salen
+  exactamente iguales a los de hoy. Todavía no se crea ningún cliente nuevo.
+- No cambia nada de lo que se ve ni de los números.
+
 ## v1.47.3 — Octubre 2026
 
 **Fase 153 (paso 2): qué carga y qué pantalla tiene cada cliente sale de su ficha.**
