@@ -15155,3 +15155,36 @@ antes/después en la base demo (sintética), fuera del repo
 - **Queda pendiente:** metas que faltan (Edwin); tarjetas de Tráfico por mes
   elegido o por ventana (Edwin); conteo de horas en Tipificación para el
   mapa de calor; B10 (Cargar Datos por pasos) pasa a la Fase 153.
+
+## Fase 153 (pasos 1–3) — Plantillas de cliente: registro, listas y generador (v1.47.2 → v1.47.4, 2026-10-16)
+
+Pedido de Edwin: montar los clientes nuevos (Clínica Aurora y después
+Hospital La María) desde una plantilla basada en ORLANT. Diagnóstico y
+propuesta en `docs/plantillas-cliente.md` (PR #450, borrador, sin
+mergear). El usuario dio "OK plantillas parcial" solo para los pasos 1–3,
+sin cambio visible, con tres ajustes: Calidad con el modelo real de cada
+cliente (una plantilla por sede cuando el cliente tenga sedes), archivo
+nativo de Wolkvox como plantilla de carga y B10 en el paso 5.
+
+- **#451 Paso 1 (v1.47.2):** tabla `clientes_registro`
+  (`server/clientes-registro.js`: nombre, si tiene dashboard, módulos,
+  parámetros con sedes previstas y logo), sembrada una sola vez
+  (`clientes_registro_v1`) con ORLANT y MOBILIZE. `CLIENTES_LIST` y
+  `CAMPANAS_CALIDAD` salen de ahí en el servidor y, vía
+  `GET /api/dashboard/clientes`, en el navegador (antes de armar
+  permisos). Brave: 7 roles × 3 anchos, mismas listas, 0 errores.
+- **#452 Paso 2 (v1.47.3):** `public/js/registro-clientes.js` deriva del
+  registro las hojas especiales de Cargar Datos, el asesor visible para
+  el cliente (también `puedeVerAsesores` en el servidor), WhatsApp por
+  rangos, los logos y la clase de "Última actualización". Comparación en
+  Brave de main contra la rama sobre la misma base demo: huella idéntica.
+- **Paso 3 (v1.47.4):** `server/plantillas-cliente.js`: catálogo de 12
+  módulos, base "Contact center" y `generarLayout`. La prueba de foto
+  da el layout de ORLANT y MOBILIZE idéntico byte a byte al que tienen
+  tras todas las migraciones; sus layouts guardados no se tocan. Un
+  cliente nuevo sale con todas las pestañas ocultas y el esquema del
+  constructor lo acepta. No se creó ningún cliente.
+- **Deploys:** el del paso 1 pasó en el intento 2 (429 de ECR Public).
+- **Queda pendiente:** pasos 4 (crear cliente desde la pantalla), 5
+  (plantillas de carga y B10) y 6 (Aurora y HLM, cada uno con su OK),
+  después de las respuestas de Edwin (sección 2.7 del documento).
