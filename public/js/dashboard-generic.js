@@ -526,6 +526,9 @@ function _gdChart(canvasId, cfg){
   // insertar el aviso.
   var contenedor = (el.closest && (el.closest('.aurora-card') || el.closest('.aurora-chart-wrap'))) || el.parentElement;
   var note = contenedor ? contenedor.querySelector('.oc-nodata') : null;
+  // Fase 152 (B4): en movil/tableta, leyenda debajo y etiquetas del eje
+  // inclinadas (filtros-movil-logic.js).
+  if(typeof gdOpcionesGraficaMovil === 'function' && typeof window !== 'undefined') gdOpcionesGraficaMovil(cfg, window.innerWidth);
   _gdVerDatosBoton(el, canvasId, empty);
   if(empty){
     el.style.display = 'none';
@@ -635,6 +638,88 @@ function cerrarVerDatos(){ closeModal('modal-ver-datos'); }
   if(!ov || !cerrar) return;
   cerrar.addEventListener('click', cerrarVerDatos);
   ov.addEventListener('click', function(e){ if(e.target === ov) cerrarVerDatos(); });
+})();
+
+// ── Fase 152 (B4): movil y tableta ───────────────────────────
+// Sin tocar cada panel: un solo potenciador, que corre cada vez que el
+// tablero dibuja algo (MutationObserver sobre #gd-overlay), hace dos cosas:
+//  1) Filtros plegables: la fila de filtros de cada panel (la que contiene
+//     su boton "Aplicar filtros") gana un boton "Filtros (N)" que solo se ve
+//     en pantallas de 768 px o menos; ahi la fila arranca plegada y se
+//     vuelve a plegar al aplicar. Lo que no es un filtro (Excel/PDF) queda
+//     siempre a la vista. En escritorio no cambia nada.
+//  2) Tablas anchas: toda tabla del tablero queda dentro de un contenedor
+//     con su propio scroll horizontal (.gd-tabla-scroll); en movil la
+//     primera columna queda fija. La pagina nunca hace scroll horizontal.
+var _gdFiltrosSeq = 0;
+function _gdCamposFiltro(fila){
+  return Array.prototype.slice.call(fila.querySelectorAll('select, input')).filter(function(c){
+    return c.type !== 'hidden' && c.type !== 'button' && c.type !== 'submit';
+  }).map(function(c){ return { tipo: c.type, valor: c.value, marcado: c.checked }; });
+}
+function _gdEsBotonAplicar(b){
+  return b.hasAttribute('data-calapply') || /^Aplicar( filtros)?$/.test((b.textContent || '').trim());
+}
+function _gdPlegarFiltros(raiz){
+  Array.prototype.forEach.call(raiz.querySelectorAll('button'), function(b){
+    if(!_gdEsBotonAplicar(b)) return;
+    var fila = b.parentElement;
+    if(fila && fila.classList.contains('ig')) fila = fila.parentElement;
+    if(!fila || fila.getAttribute('data-filtros-plegables')) return;
+    fila.setAttribute('data-filtros-plegables', '1');
+    if(!fila.id) fila.id = 'gd-filtros-' + (++_gdFiltrosSeq);
+    fila.classList.add('gd-filtros-plegables', 'gd-filtros-cerrado');
+    Array.prototype.forEach.call(fila.children, function(h){
+      var esFiltro = h.querySelector('select, input') || h.matches('select, input') || h === b || h.contains(b);
+      if(!esFiltro) h.classList.add('gd-filtros-siempre');
+    });
+    var tog = document.createElement('button');
+    tog.type = 'button';
+    tog.className = 'btn-sm gd-filtros-toggle';
+    tog.setAttribute('aria-expanded', 'false');
+    tog.setAttribute('aria-controls', fila.id);
+    var actualizar = function(){ tog.textContent = gdTextoBotonFiltros(gdContarFiltrosActivos(_gdCamposFiltro(fila))); };
+    actualizar();
+    tog.addEventListener('click', function(){
+      var abrir = fila.classList.contains('gd-filtros-cerrado');
+      fila.classList.toggle('gd-filtros-cerrado', !abrir);
+      tog.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    });
+    fila.addEventListener('change', actualizar);
+    b.addEventListener('click', function(){
+      actualizar();
+      fila.classList.add('gd-filtros-cerrado');
+      tog.setAttribute('aria-expanded', 'false');
+    });
+    fila.parentElement.insertBefore(tog, fila);
+  });
+}
+function _gdEnvolverTablas(raiz){
+  Array.prototype.forEach.call(raiz.querySelectorAll('table'), function(t){
+    var padre = t.parentElement;
+    if(!padre || padre.classList.contains('gd-tabla-scroll')) return;
+    var ox = window.getComputedStyle(padre).overflowX;
+    if(ox === 'auto' || ox === 'scroll'){ padre.classList.add('gd-tabla-scroll'); return; }
+    var w = document.createElement('div');
+    w.className = 'gd-tabla-scroll';
+    padre.insertBefore(w, t);
+    w.appendChild(t);
+  });
+}
+(function(){
+  if(typeof document === 'undefined' || typeof MutationObserver !== 'function') return;
+  var raiz = document.getElementById('gd-overlay');
+  if(!raiz || typeof gdContarFiltrosActivos !== 'function') return;
+  var pendiente = false;
+  new MutationObserver(function(){
+    if(pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(function(){
+      pendiente = false;
+      _gdPlegarFiltros(raiz);
+      _gdEnvolverTablas(raiz);
+    });
+  }).observe(raiz, { childList: true, subtree: true });
 })();
 
 // ── Apertura ────────────────────────────────────────────────
@@ -1869,7 +1954,9 @@ async function _gdExportarSalida(p, i){
   if(!filas.length){
     return [{ titulo: 'Llamadas y WhatsApp de salida', tipo: 'aviso', filas: [], mensaje: 'Sin datos de Llamadas y WhatsApp de salida para el periodo actual.' }];
   }
-  function pct(parte, total){ return total>0 ? gdFmtValor(Math.round(parte/total*1000)/10,'%') : '—'; }
+  // Exportacion (Excel/PDF): conserva su formato de siempre ("12.5%") --
+  // el cambio a coma decimal de la Fase 152 (B4) es solo de graficas y tooltips.
+  function pct(parte, total){ if(!(total>0)) return '—'; var n = Math.round(parte/total*1000)/10; return (n % 1 !== 0 ? n.toFixed(1) : n) + '%'; }
   var llamadas = filas.map(function(f){
     return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, 'Total': f.llamadas3p+f.llamadasGeneral, '% 3P': pct(f.llamadas3p, f.llamadas3p+f.llamadasGeneral) };
   });

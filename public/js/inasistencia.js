@@ -80,11 +80,11 @@ function _inasistenciaFiltrosHtml(i, vista, opciones, estado){
   var html = '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
   html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="inasist-f-sede-'+i+'">Sede</label><select id="inasist-f-sede-'+i+'">'+_inasistenciaOptionsHtml(opciones.sedes, estado.sede)+'</select></div>';
   if(vista === 'pormes'){
-    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="inasist-f-especialidad-'+i+'">Especialidad</label><select id="inasist-f-especialidad-'+i+'">'+_inasistenciaOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
+    html += '<div class="ig ig-filtro"><label for="inasist-f-especialidad-'+i+'">Especialidad</label><select id="inasist-f-especialidad-'+i+'">'+_inasistenciaOptionsHtml(opciones.especialidades, estado.especialidad)+'</select></div>';
   }
   html += '<div class="ig" style="min-width:200px;margin-bottom:0"><label for="inasist-f-entidad-'+i+'">Entidad</label><input list="inasist-dl-entidad-'+i+'" id="inasist-f-entidad-'+i+'" value="'+esc(estado.entidad||'')+'" placeholder="Todas">' +
     '<datalist id="inasist-dl-entidad-'+i+'">'+(opciones.entidades||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
-  html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_inasistenciaAplicarFiltros('+i+')">Aplicar filtros</button></div>';
+  html += '<div class="ig ig-sm"><button class="btn-primary" onclick="_inasistenciaAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
   return html;
 }
@@ -132,7 +132,7 @@ async function _inasistenciaRenderPanel(p, i){
   var opciones = await _inasistenciaCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin inasistencia cargada todavia. Un usuario con permiso de administrador debe subir la hoja INASISTENCIA desde "Cargar Datos".</div></div>';
+      '<div class="gd-vacio">Sin inasistencia cargada todavia. Un usuario con permiso de administrador debe subir la hoja INASISTENCIA desde "Cargar Datos".</div></div>';
     return;
   }
   _inasistenciaSincronizarConMesGlobal(campana, opciones);
@@ -219,7 +219,7 @@ async function _inasistenciaDibujarPorMes(campana, i, opciones){
   var wrap = document.getElementById('inasist-tarjetas-wrap-'+i);
   if(wrap){
     if(!agregado.length){
-      wrap.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:16px 8px">Sin datos con estos filtros.</div>';
+      wrap.innerHTML = '<div class="gd-vacio-chico">Sin datos con estos filtros.</div>';
     } else {
       var ponderado = inasistenciaPonderadoTotal(agregado);
       var rangoLbl = inasistenciaRangoLbl(agregado);
@@ -308,7 +308,7 @@ function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
   var encabezados = agregado.map(function(a){ return celda('th', inasistenciaMesLbl(a.mes) + (esFormatoViejo[a.mes]?' *':''), a.mes); }).join('');
   var filaPct = agregado.map(function(a){ return celda('td', inasistenciaFmtPct(a.pct), a.mes); }).join('');
   var filaTotal = agregado.map(function(a){ return celda('td', gdFmtValor(a.total), a.mes); }).join('');
-  return '<div style="overflow-x:auto;margin-top:10px">' +
+  return '<div class="gd-tabla-scroll gd-tabla-mt">' +
     '<table class="aurora-rank-table"><thead><tr><th></th>'+encabezados+'</tr></thead>'+
     '<tbody><tr><td>% de inasistencia</td>'+filaPct+'</tr>'+
     '<tr><td>Total de citas</td>'+filaTotal+'</tr></tbody></table></div>';

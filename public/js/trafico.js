@@ -1311,10 +1311,10 @@ function _traficoRenderContenido(campana, sede, i){
       var ataProm = traficoAtaPromedioPeriodo(filtradas);
       var htmlSec = '';
       if(activoSec === 'sl'){
-        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':nivelServicio+'%')+'</div><div class="kl">Nivel de servicio del periodo</div></div>';
+        htmlSec = '<div class="aurora-kpi"><div class="kv">'+(nivelServicio===null?'—':gdFmtValor(nivelServicio,'%'))+'</div><div class="kl">Nivel de servicio del periodo</div></div>';
       } else if(activoSec === 'abandono'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(totalAbandonadas===null?'—':totalAbandonadas.toLocaleString('es-CO'))+'</div><div class="kl">Llamadas abandonadas</div></div>' +
-          '<div class="aurora-kpi"><div class="kv">'+(tasaAbandono===null?'—':tasaAbandono+'%')+'</div><div class="kl">% Abandono del periodo</div></div>';
+          '<div class="aurora-kpi"><div class="kv">'+(tasaAbandono===null?'—':gdFmtValor(tasaAbandono,'%'))+'</div><div class="kl">% Abandono del periodo</div></div>';
       } else if(activoSec === 'asa'){
         htmlSec = '<div class="aurora-kpi"><div class="kv">'+(asaProm===null?'—':_traficoFmtTiempoMMSS(asaProm))+'</div><div class="kl">ASA promedio del periodo</div></div>';
       } else if(activoSec === 'aht'){

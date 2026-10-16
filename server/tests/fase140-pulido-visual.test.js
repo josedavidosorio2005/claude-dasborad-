@@ -57,9 +57,11 @@ test('la entrada escalonada es transicion ligada a .motion-show (no @keyframes):
   assert.ok(!/#gd-panels[^{]*\{[^}]*animation:/.test(texto), '#gd-panels y sus tarjetas no deberian usar animation (se re-dispararia en cada redibujado)');
 });
 
-test('.atab sigue sin tocar (su limpieza de transition:all espera el "OK limpieza atab", docs/pendientes.md)', async () => {
+// Fase 152 (B4, con el "OK limpieza atab"): ya no anima "all", solo lo que cambia.
+test('.atab anima solo color, fondo y borde (sin transition:all)', async () => {
   const texto = await css();
   const m = texto.match(/\.atab\{([^}]*)\}/);
   assert.ok(m, 'deberia existir la regla .atab');
-  assert.match(m[1], /transition:all 0\.2s/);
+  assert.doesNotMatch(m[1], /transition:all/);
+  assert.match(m[1], /transition:color 0\.2s,background-color 0\.2s,border-color 0\.2s/);
 });

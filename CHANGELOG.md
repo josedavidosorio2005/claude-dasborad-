@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.46.0 — Octubre 2026
+
+**Fase 152: mejor en celular y tableta.**
+
+- En el celular, los filtros de cada panel se guardan detrás de un botón
+  "Filtros (N)"; se abren, se aplican y se vuelven a guardar solos.
+- En pantallas pequeñas, la explicación de colores de cada gráfica va
+  debajo y los nombres del eje se inclinan para que no se monten.
+- Las tablas anchas se mueven de lado por su cuenta, con la primera
+  columna fija, sin que se mueva toda la página.
+- Botones más fáciles de tocar en el celular.
+- Los porcentajes de las gráficas se escriben con coma ("95,1 %").
+
 ## v1.45.0 — Octubre 2026
 
 **Fase 152: "Ver datos" en cada gráfica.**

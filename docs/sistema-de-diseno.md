@@ -574,6 +574,37 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
   - Una serie de % la lleva si el dataset trae `fraccion: { num, den }` (por ejemplo, Nivel de atención: contestadas de total). En ese caso el tooltip agrega "(4.325 de 4.547)".
   - Los % ponderados (Inasistencia) no llevan fracción, porque no son una división simple.
 
+## Móvil y tableta (Fase 152, B4)
+
+- **Filtros plegables (≤ 768 px):** la fila de filtros de cada panel (la que contiene su botón "Aplicar filtros") gana un botón **"Filtros (N)"**.
+  - N es la cantidad de filtros con un valor puesto.
+  - El botón tiene `aria-expanded` y `aria-controls`.
+  - En pantallas chicas la fila arranca plegada y se vuelve a plegar al aplicar. Lo que no es un filtro (Excel, PDF) queda siempre visible.
+  - En escritorio no cambia nada.
+  - Lo hace un solo potenciador en `dashboard-generic.js` (`MutationObserver` sobre `#gd-overlay`), sin tocar cada panel ni agregar `onclick`.
+- **Gráficas (≤ 768 px):** `gdOpcionesGraficaMovil` (`filtros-movil-logic.js`) pone la leyenda **debajo**. Las etiquetas del eje X se inclinan hasta 45° y se saltan las que no caben, con el mismo criterio de One & Done.
+- **Tablas:** toda tabla del tablero va dentro de `.gd-tabla-scroll`, con su propio scroll horizontal. En móvil la primera columna queda fija. La página nunca hace scroll horizontal.
+- **Áreas táctiles:** miden 44 px en móvil (botón de filtros, controles de la fila de filtros y sub-pestañas).
+- **Clases para estilos que se repetían en línea:** `.gd-vacio`, `.gd-vacio-chico`, `.ig-sm`, `.ig-filtro`, `.th-izq`, `.lu-aviso` y `.gd-tabla-scroll.gd-tabla-mt`.
+
+### Escala de z-index (tokens en `:root`, de abajo hacia arriba)
+
+| Token | Valor | Qué es |
+|---|---|---|
+| `--z-sticky-col` / `--z-sticky-tabs` | 1 | Columna fija de tablas; barra de pestañas fija del tablero |
+| `--z-sticky-header` / `--z-sticky-perm` | 2 | Encabezado fijo del tablero; columnas fijas de Permisos |
+| `--z-fab` | 50 | Botón flotante de tema (login) |
+| `--z-menu-fila` | 80 | Menú "⋯" de acciones de una fila |
+| `--z-navbar` | 100 | Barra de navegación |
+| `--z-navbar-menu` | 250 | Menú de usuario de la barra (móvil) |
+| `--z-drawer-fondo` / `--z-drawer` | 290 / 300 | Menú lateral en móvil y su fondo |
+| `--z-selector-clientes` | 500 | Selector de clientes |
+| `--z-panel` | 600 | Paneles a pantalla completa (tablero, Calidad, Cargar Datos…) |
+| `--z-dialogo` | 1000 | Diálogos (`.modal-overlay`, incluido "Ver datos") |
+| `--z-toast` | 3000 | Avisos (toast) |
+
+Ningún `z-index` va con un número suelto: si un elemento nuevo necesita una capa, usa un token existente o se agrega uno a esta tabla.
+
 ## Movimiento reducido (WCAG 2.3.3)
 
 `@media (prefers-reduced-motion: reduce)` apaga `animation-duration`/
