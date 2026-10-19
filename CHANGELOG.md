@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.55.0 — Octubre 2026
+
+**Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
+
+- Dentro de cada tablero hay un botón nuevo, al lado de "Exportar", para
+  cambiar entre modo claro y modo oscuro (ícono de luna o de sol). Lo puede
+  usar cualquiera que vea el tablero, también el cliente, sin salir de él.
+
 ## v1.54.4 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**

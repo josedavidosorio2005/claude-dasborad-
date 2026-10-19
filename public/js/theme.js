@@ -23,6 +23,8 @@ function aplicarTema(t){
     // Fase 152 (F10): iconos SVG de Lucide (iconos.js) en lugar de emojis.
     btn.innerHTML = (typeof iconoSvg === 'function') ? iconoSvg(tema === 'dark' ? 'sun' : 'moon') : (tema === 'dark' ? '&#9728;&#65039;' : '&#127769;');
     btn.setAttribute('aria-label', tema === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+    // Fase 155: el mismo texto al pasar el mouse (boton del tablero).
+    if(btn.hasAttribute('title')) btn.setAttribute('title', tema === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
   });
   // Redibuja las graficas YA renderizadas (si las hay) con los colores del
   // nuevo tema -- necesario tanto en el toggle como en cualquier otra
