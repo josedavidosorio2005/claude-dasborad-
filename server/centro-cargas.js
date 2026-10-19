@@ -147,13 +147,15 @@ function datosDelMes(db, campana, carga, mes) {
 }
 
 // Cuantos registros tiene un mes de una carga y cuantos caen entre dos fechas
-// ('AAAA-MM-DD', inclusive): el aviso de la vista previa del Centro ("se
-// reemplazan esos dias; el resto del mes queda igual"). Solo lectura.
+// (inclusive): el aviso de la vista previa del Centro ("se reemplazan esos
+// dias; el resto del mes queda igual"). Solo lectura. 'AAAA-MM-DD' compara
+// por dia; con hora ('AAAA-MM-DD HH:MM[:SS]', Agendas: su lector reemplaza
+// de la primera a la ultima FECHA_SOLICITUD con hora) compara el valor entero.
 function conteoRango(db, campana, carga, mes, desde, hasta) {
   const filtroSql = carga.filtro ? Object.keys(carga.filtro).map((k) => ` AND ${k} = @f_${k}`).join('') : '';
   const params = { campana, mes, desde, hasta };
   if (carga.filtro) Object.keys(carga.filtro).forEach((k) => { params['f_' + k] = carga.filtro[k]; });
-  const dia = `substr(${carga.fecha}, 1, 10)`;
+  const dia = String(desde).length > 10 ? carga.fecha : `substr(${carga.fecha}, 1, 10)`;
   const r = db.prepare(
     `SELECT COUNT(*) AS enMes, COALESCE(SUM(CASE WHEN ${dia} BETWEEN @desde AND @hasta THEN 1 ELSE 0 END), 0) AS enRango
        FROM ${carga.tabla}

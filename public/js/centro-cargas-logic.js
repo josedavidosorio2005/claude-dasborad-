@@ -94,12 +94,21 @@ function centroHuecos(carga, mesActual) {
 }
 
 // ── PR 4: Subir/Reemplazar DESDE EL MES ─────────────────────────────
-// Cargas del Centro que ya suben con el plan de UN modulo y las filas de UN
-// mes (empezando por las de Mobilize). Cada una dice que renglon del plan
+// Cargas del Centro que suben con el plan de UN modulo y las filas de UN
+// mes: las de Mobilize (v1.51.0) y las de ORLANT. `mensual`: el lector
+// guarda un dato por mes y reemplaza el mes ENTERO (no por dias). Cada una
+// dice que renglon del plan
 // de la pantalla de siempre (cargasPlanConsolidado) le corresponde; el
 // lector, la vista previa y el guardado son los de siempre.
 var CENTRO_CARGA_PLAN = {
   flujo_llamadas: { tipo: 'trafico', canal: 'voz' },
+  flujo_whatsapp: { tipo: 'trafico', canal: 'whatsapp' },
+  whatsapp_tiempos: { tipo: 'whatsapp_tiempos' },
+  agendas: { tipo: 'agendas' },
+  salida: { tipo: 'salida', mensual: true },
+  efectividad_agendamiento: { tipo: 'efectividad_agendamiento', mensual: true },
+  inasistencia: { tipo: 'inasistencia', mensual: true },
+  efectividad_citas: { tipo: 'citas_atendidas', mensual: true },
   tipificacion_llamadas: { tipo: 'tipificacion', canalTipificacion: 'LLAMADAS' },
   tipificacion_whatsapp: { tipo: 'tipificacion', canalTipificacion: 'WHATSAPP' },
   llamadas_unicas: { tipo: 'llamadas_unicas' },
@@ -126,9 +135,9 @@ function centroFiltrarPlan(plan, cargaId) {
 // 'AAAA-MM-DD' de una fila ya leida, segun el lector.
 function centroFechaFila(tipo, f) {
   if (!f) return '';
-  if (tipo === 'llamadas_unicas' || tipo === 'llamadas_salida') return String(f[1] || '');
+  if (tipo === 'llamadas_unicas' || tipo === 'llamadas_salida' || tipo === 'whatsapp_tiempos') return String(f[1] || '');
   if (tipo === 'encuesta') return String(f[0] || '');
-  return String(f.fecha || f.fechaInicio || '');
+  return String(f.fecha || f.fechaInicio || f.fechaSolicitud || f.mes || '');
 }
 
 // Deja en un resultado de cargasProcesarHoja solo las filas del mes (y, en
@@ -141,9 +150,10 @@ function centroFiltrarResultado(r, cargaId, mes, opciones) {
   if (!spec || !r || !r.filas || !r.filas.length) return r;
   var nombreMes = centroNombreMes(mes);
   if (spec.tipo === 'trafico' && r.canal && r.canal !== spec.canal) {
-    return Object.assign({}, r, { filas: undefined, error: 'Este archivo es de WhatsApp; aquí va el de Llamadas.' });
+    return Object.assign({}, r, { filas: undefined, error: spec.canal === 'voz' ? 'Este archivo es de WhatsApp; aquí va el de Llamadas.' : 'Este archivo es de Llamadas; aquí va el de WhatsApp.' });
   }
-  var skills = spec.tipo === 'trafico' && opciones && opciones.skillsDelCliente;
+  // Solo voz reparte filas por skill entre clientes; WhatsApp ya va al cliente elegido.
+  var skills = spec.canal === 'voz' && opciones && opciones.skillsDelCliente;
   var otrosMeses = {};
   var otrasSkills = 0;
   var filas = r.filas.filter(function (f) {
@@ -168,17 +178,27 @@ function centroFiltrarResultado(r, cargaId, mes, opciones) {
   return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas + otrasSkills });
 }
 
-// Primera y ultima fecha ('AAAA-MM-DD') de las filas que quedaron.
+// Primera y ultima fecha de las filas que quedaron, tal como las compara su
+// lector: 'AAAA-MM-DD', o con hora en Agendas (su lector reemplaza de la
+// primera a la ultima FECHA_SOLICITUD con hora, no por dias enteros).
 function centroRangoFilas(cargaId, filas) {
   var spec = CENTRO_CARGA_PLAN[cargaId];
   var desde = null, hasta = null;
   (filas || []).forEach(function (f) {
-    var d = centroFechaFila(spec ? spec.tipo : '', f).slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    var d = centroFechaFila(spec ? spec.tipo : '', f);
+    if (!/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/.test(d)) return;
     if (desde === null || d < desde) desde = d;
     if (hasta === null || d > hasta) hasta = d;
   });
   return desde ? { desde: desde, hasta: hasta } : null;
+}
+
+// Modulos mensuales: un dato por mes, se reemplaza el mes entero.
+function centroEsMensual(cargaId) { return !!(CENTRO_CARGA_PLAN[cargaId] && CENTRO_CARGA_PLAN[cargaId].mensual); }
+function centroTextoReemplazoMensual(mes, conteo) {
+  var nombre = centroNombreMes(mes).split(' ')[0].toLowerCase();
+  if (!conteo || !conteo.enMes) return 'Este módulo se guarda por mes y ' + nombre + ' no tiene datos todavía.';
+  return 'Este módulo se guarda por mes: se reemplaza ' + nombre + ' completo (' + centroTextoRegistros(conteo.enMes) + ' de ahora).';
 }
 
 // Aviso de reemplazo parcial: el lector reemplaza SOLO las fechas que trae
@@ -187,11 +207,19 @@ function centroRangoFilas(cargaId, filas) {
 function centroTextoReemplazoParcial(mes, rango, conteo) {
   var nombre = centroNombreMes(mes).split(' ')[0].toLowerCase();
   var d = Number(rango.desde.slice(8, 10)), h = Number(rango.hasta.slice(8, 10));
-  var trae = d === h ? 'El archivo trae solo el ' + d + ' de ' + nombre + '.' : 'El archivo trae del ' + d + ' al ' + h + ' de ' + nombre + '.';
+  var trae, esos;
+  if (rango.desde.length > 10) {
+    var hh = function (x) { return x.slice(11, 16); };
+    trae = 'El archivo trae del ' + d + ' de ' + nombre + ' a las ' + hh(rango.desde) + ' al ' + h + ' de ' + nombre + ' a las ' + hh(rango.hasta) + '.';
+    esos = ['Se reemplaza ese tramo', 'fuera de él'];
+  } else {
+    trae = d === h ? 'El archivo trae solo el ' + d + ' de ' + nombre + '.' : 'El archivo trae del ' + d + ' al ' + h + ' de ' + nombre + '.';
+    esos = ['Se reemplazan esos días', 'fuera de ellos'];
+  }
   if (!conteo || !conteo.enMes) return trae + ' ' + nombre.charAt(0).toUpperCase() + nombre.slice(1) + ' no tiene datos todavía.';
   var resto = conteo.enMes - conteo.enRango;
-  if (!resto) return trae + ' Se reemplazan esos días; ' + nombre + ' no tiene registros fuera de ellos.';
-  return trae + ' Se reemplazan esos días; el resto de ' + nombre + ' (' + centroTextoRegistros(resto) + ') queda igual.';
+  if (!resto) return trae + ' ' + esos[0] + '; ' + nombre + ' no tiene registros ' + esos[1] + '.';
+  return trae + ' ' + esos[0] + '; el resto de ' + nombre + ' (' + centroTextoRegistros(resto) + ') queda igual.';
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -213,5 +241,7 @@ if (typeof module !== 'undefined' && module.exports) {
     centroFiltrarResultado: centroFiltrarResultado,
     centroRangoFilas: centroRangoFilas,
     centroTextoReemplazoParcial: centroTextoReemplazoParcial,
+    centroEsMensual: centroEsMensual,
+    centroTextoReemplazoMensual: centroTextoReemplazoMensual,
   };
 }

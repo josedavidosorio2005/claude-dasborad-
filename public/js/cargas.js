@@ -681,7 +681,8 @@ async function procesarArchivoConsolidado(input){
   var focoArch = _cargasFocoActivo(cliente);
   if(focoArch){
     var opcFoco = {};
-    if(_cargasResultados.some(function(r){ return r.tipo==='trafico' && r.filas; })){
+    // Solo Flujo de Llamadas (voz) reparte filas por skill entre clientes.
+    if(focoArch.carga==='flujo_llamadas' && _cargasResultados.some(function(r){ return r.tipo==='trafico' && r.filas; })){
       try{
         opcFoco.skillsDelCliente = {};
         (await apiRequest('GET','/calidad/trafico/skills') || []).forEach(function(s){ if(s.campana===cliente) opcFoco.skillsDelCliente[s.skillName] = true; });
@@ -700,10 +701,19 @@ async function procesarArchivoConsolidado(input){
     // archivo; se dice cuales y cuantos registros del mes quedan igual.
     for(var ri=0; ri<_cargasResultados.length; ri++){
       var rr = _cargasResultados[ri];
-      var rango = rr.filas ? centroRangoFilas(focoArch.carga, rr.filas) : null;
+      if(!rr.filas) continue;
+      // Modulos mensuales: el lector reemplaza el mes entero.
+      if(centroEsMensual(focoArch.carga)){
+        try{
+          var conteoMes = await apiRequest('GET','/centro-cargas/'+encodeURIComponent(cliente)+'/'+encodeURIComponent(focoArch.carga)+'/'+focoArch.mes+'/conteo?desde='+focoArch.mes+'-01&hasta='+focoArch.mes+'-31');
+          rr.avisos = [centroTextoReemplazoMensual(focoArch.mes, conteoMes)].concat(rr.avisos || []);
+        }catch(e){ /* sin el conteo, la vista previa sigue con sus avisos de siempre */ }
+        continue;
+      }
+      var rango = centroRangoFilas(focoArch.carga, rr.filas);
       if(!rango) continue;
       try{
-        var conteo = await apiRequest('GET','/centro-cargas/'+encodeURIComponent(cliente)+'/'+encodeURIComponent(focoArch.carga)+'/'+focoArch.mes+'/conteo?desde='+rango.desde+'&hasta='+rango.hasta);
+        var conteo = await apiRequest('GET','/centro-cargas/'+encodeURIComponent(cliente)+'/'+encodeURIComponent(focoArch.carga)+'/'+focoArch.mes+'/conteo?desde='+encodeURIComponent(rango.desde)+'&hasta='+encodeURIComponent(rango.hasta));
         rr.avisos = [centroTextoReemplazoParcial(focoArch.mes, rango, conteo)].concat(rr.avisos || []);
       }catch(e){ /* sin el conteo, la vista previa sigue con sus avisos de siempre */ }
     }
@@ -764,12 +774,16 @@ function _renderPreviewCarga(){
     var tipoLabel = r.tipo==='seccion' ? 'Gestion de base' : (r.tipo==='calidad' ? 'Calidad' :
       (r.tipo==='agendas' ? 'Agendas' :
       (r.tipo==='inasistencia' ? 'Inasistencia' :
+      // Fase 153: sin estas tres, la vista previa las rotulaba "Trafico de Llamadas".
+      (r.tipo==='citas_atendidas' ? 'Efectividad de Citas' :
+      (r.tipo==='efectividad_agendamiento' ? 'Efectividad de Agendamiento' :
+      (r.tipo==='salida' ? 'Salida (Llamadas y WhatsApp)' :
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
       (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
       (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
       (r.tipo==='encuesta' ? 'Encuesta' :
-      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas')))))))));
+      (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))))))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
   }).join('');
   var avisos = [];
@@ -1201,6 +1215,12 @@ async function _cargasGuardarSalida(cliente, r){
     for(var i=0;i<filas.length;i++){
       if(vistos[filas[i].mes]) return { ok:false, mensaje:'Carga cancelada: con ese año, 2 filas resuelven al mismo mes ('+salidaMesLbl(filas[i].mes)+').' };
       vistos[filas[i].mes] = true;
+    }
+    // Centro de cargas (PR 4): con el año corregido, una fila no puede
+    // salirse del mes elegido.
+    var focoSalida = _cargasFocoActivo(cliente);
+    if(focoSalida && filas.some(function(f){ return f.mes !== focoSalida.mes; })){
+      return { ok:false, mensaje:'Carga cancelada: con ese año las filas ya no son de '+centroNombreMes(focoSalida.mes)+'. Súbelas desde ese mes o con la pantalla anterior.' };
     }
     var textoAnioCorregido = salidaTextoConfirmacionAnio(filas);
     if(!confirm('Se va a interpretar el MES de cada fila asi:\n\n'+textoAnioCorregido+'\n\n¿Continuar con esta correccion?')){

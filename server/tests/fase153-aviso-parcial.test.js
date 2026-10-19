@@ -28,6 +28,25 @@ test('texto del aviso: rango, resto del mes y mes vacio', () => {
     'El archivo trae del 2 al 3 de septiembre. Septiembre no tiene datos todavía.');
 });
 
+test('Agendas: su lector reemplaza de la primera a la ultima FECHA_SOLICITUD CON HORA; el aviso y el conteo tambien', async () => {
+  const filas = [{ fechaSolicitud: '2026-08-07 12:00:00' }, { fechaSolicitud: '2026-08-05 10:00:00' }];
+  const rango = L.centroRangoFilas('agendas', filas);
+  assert.deepEqual(rango, { desde: '2026-08-05 10:00:00', hasta: '2026-08-07 12:00:00' });
+  assert.equal(L.centroTextoReemplazoParcial('2026-08', rango, { enMes: 379, enRango: 33 }),
+    'El archivo trae del 5 de agosto a las 10:00 al 7 de agosto a las 12:00. Se reemplaza ese tramo; el resto de agosto (346 registros) queda igual.');
+  // El conteo con hora cuenta igual que el DELETE del lector (fechaSolicitud >= desde AND <= hasta).
+  const { conteoRango, cargaPorId } = require('../centro-cargas');
+  const ins = db.prepare("INSERT INTO agendas (campana, asesor, sede, examen, especialidad, profesional, fechaSolicitud, tipoLinea, entidad, archivoNombre, cargadoPorNombre, createdAt) VALUES ('ORLANT','A','S','E','ES','P',?,'3P','',  'a.xlsx','P','01/08/2026 00:00:00')");
+  ['2026-08-05 09:59:00', '2026-08-05 10:00:00', '2026-08-06 15:00:00', '2026-08-07 12:00:00', '2026-08-07 12:01:00'].forEach((f) => ins.run(f));
+  const c = conteoRango(db, 'ORLANT', cargaPorId('agendas'), '2026-08', rango.desde, rango.hasta);
+  assert.equal(c.enRango, 3, 'solo de 05/08 10:00 a 07/08 12:00, como el lector');
+  assert.equal(c.enMes >= 5, true);
+  const t = await tokenFor('admin', MASTER_PASSWORD);
+  const r = await request(app).get('/api/centro-cargas/ORLANT/agendas/2026-08/conteo?desde=' + encodeURIComponent(rango.desde) + '&hasta=' + encodeURIComponent(rango.hasta)).set(auth(t));
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.enRango, 3);
+});
+
 test('centroRangoFilas: primera y ultima fecha segun el lector', () => {
   assert.deepEqual(L.centroRangoFilas('llamadas_unicas', [['a', '2026-08-07'], ['b', '2026-08-05'], ['c', '2026-08-06']]), { desde: '2026-08-05', hasta: '2026-08-07' });
   assert.deepEqual(L.centroRangoFilas('encuesta', [['2026-08-10'], ['2026-08-02']]), { desde: '2026-08-02', hasta: '2026-08-10' });
@@ -61,6 +80,6 @@ test('GET conteo: registros del mes y en el rango; Tipificacion por canal; permi
 
 test('cableado: la vista previa del Centro antepone el aviso con el conteo del servidor', () => {
   const cargas = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'cargas.js'), 'utf8');
-  assert.match(cargas, /\/conteo\?desde='\+rango\.desde\+'&hasta='\+rango\.hasta/);
+  assert.match(cargas, /\/conteo\?desde='\+encodeURIComponent\(rango\.desde\)\+'&hasta='\+encodeURIComponent\(rango\.hasta\)/);
   assert.match(cargas, /rr\.avisos = \[centroTextoReemplazoParcial\(focoArch\.mes, rango, conteo\)\]/);
 });
