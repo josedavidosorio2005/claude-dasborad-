@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.54.2 — Octubre 2026
+
+**Fase 154: revisión de seguridad.**
+
+- Cada persona recibe solo la lista de los clientes a los que tiene
+  acceso. Antes la lista completa llegaba a todos, aunque la pantalla solo
+  mostrara los propios. Los administradores y quien gestiona usuarios
+  siguen viendo todos.
+- En la pantalla de carga, el selector de cliente ya no ofrece clientes que
+  la persona no puede cargar.
+
 ## v1.54.1 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**
