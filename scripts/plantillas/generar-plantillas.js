@@ -31,6 +31,7 @@ function libro(c) {
     ['Plantilla: ' + c.carga],
     ['De dónde sale', c.origen],
     ['Qué reemplaza al subir', c.reemplazo],
+    ...(c.nota ? [['Cálculos', c.nota]] : []),
     ['Cómo se sube', 'Cargar Datos → cliente → este módulo. El sistema reconoce el archivo por sus columnas, no por el nombre de la hoja ni del archivo.'],
     ['Importante', 'No cambie los nombres de las columnas. Los ejemplos de abajo son inventados: no los copie a la hoja de datos.'],
     [],

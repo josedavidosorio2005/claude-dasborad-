@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.54.5 — Octubre 2026
+
+**Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
+
+- La plantilla de Flujo de Llamadas que se descarga en el Centro de cargas
+  ahora tiene exactamente las mismas columnas, en el mismo orden, que el
+  reporte de Wolkvox (se agregó la columna ABANDON que faltaba). Así se
+  puede pegar el reporte sin modificar nada. Aplica a Mobilize, ORLANT y
+  los clientes nuevos.
+- La hoja de instrucciones de la plantilla aclara que el nivel de atención
+  y la tasa de abandono los calcula el sistema y no hace falta llenarlos.
+
 ## v1.54.4 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**
