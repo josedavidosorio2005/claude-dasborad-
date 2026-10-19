@@ -107,6 +107,8 @@ const schema = z
     // Fase 154: cuantas cargas de datos se procesan a la vez (las demas
     // esperan su turno, ver cargas-simultaneas.js).
     CARGAS_SIMULTANEAS_MAX: z.coerce.number().int().positive().default(2),
+    // Tiempo maximo para terminar de recibir el archivo de una carga (ms).
+    CARGAS_TIEMPO_CUERPO_MS: z.coerce.number().int().positive().default(60000),
 
     BACKUP_DIR: z.string().optional(),
   })
@@ -182,6 +184,7 @@ const config = Object.freeze({
   backupDir: env.BACKUP_DIR || null,
 
   cargasSimultaneasMax: env.CARGAS_SIMULTANEAS_MAX,
+  cargasTiempoCuerpoMs: env.CARGAS_TIEMPO_CUERPO_MS,
 });
 
 module.exports = config;

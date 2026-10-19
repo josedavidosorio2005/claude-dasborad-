@@ -67,6 +67,22 @@ function requireAuth(req, res, next) {
 }
 
 // Carga el usuario "actor" (quien hace la peticion) desde la BD, fresco.
+// Fase 154: el actor de una peticion, o null si no hay sesion valida. Sin
+// responder nada (lo usa el tope de cargas antes de que corra la ruta).
+function actorDeLaPeticion(req) {
+  if (!req.auth) {
+    const header = req.headers.authorization || '';
+    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return null;
+    try {
+      req.auth = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
+    } catch (e) {
+      return null;
+    }
+  }
+  return getActor(req);
+}
+
 function getActor(req) {
   if (tokenRevocado(req.auth)) return null;
   if (req.auth.isMasterAdmin) {
@@ -240,6 +256,7 @@ module.exports = {
   can,
   requirePermission,
   requireActor,
+  actorDeLaPeticion,
   identidadParaLimiteDeTasa,
   campaignAccess,
   canEvaluateCampaign,

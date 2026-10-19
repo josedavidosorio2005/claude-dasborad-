@@ -267,7 +267,11 @@ function createApp() {
   app.use('/api', authLimiter, anonLimiter);
   // Fase 154: tope de cargas simultaneas, despues de la sesion y antes de
   // leer el cuerpo (ver cargas-simultaneas.js).
-  const topeCargas = crearTopeCargas({ max: config.cargasSimultaneasMax, responderSinLeerCuerpo });
+  const topeCargas = crearTopeCargas({
+    max: config.cargasSimultaneasMax,
+    tiempoCuerpoMs: config.cargasTiempoCuerpoMs,
+    responderSinLeerCuerpo,
+  });
   app.use(exigirSesionParaCuerpo);
   app.use(topeCargas.middleware);
   app.use(leerCuerpoJson);
@@ -436,6 +440,9 @@ function createApp() {
   // Loguea el detalle real en el servidor, responde generico al cliente.
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
+    // Fase 154: la respuesta ya salio (ej. el tope de cargas corto una
+    // subida lenta con 408) -- no hay nada mas que responder.
+    if (res.headersSent) return;
     if (err && /CORS/.test(err.message || '')) {
       return res.status(403).json({ error: 'Origen no permitido' });
     }
