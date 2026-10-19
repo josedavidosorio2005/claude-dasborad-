@@ -156,10 +156,56 @@ function createApp() {
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
   const jsonLimiteMayor = express.json({ limit: '8mb' });
-  app.use((req, res, next) => {
+  // Fase 154: el login es la unica ruta que lee un cuerpo sin sesion; su
+  // cuerpo es usuario + contrasena, nunca mas de unos pocos KB.
+  const jsonLogin = express.json({ limit: '16kb' });
+  const RUTA_LOGIN = '/api/auth/login';
+  function tieneCuerpo(req) {
+    return req.headers['transfer-encoding'] !== undefined ||
+      (req.headers['content-length'] !== undefined && req.headers['content-length'] !== '0');
+  }
+  // Responde sin procesar el cuerpo: se descarta tal como llega (cuesta red,
+  // no CPU), para que el navegador reciba la respuesta (ej. "Tu sesion
+  // expiro") en vez de una conexion cortada a mitad de la subida.
+  // Se responde al terminar de llegar (responder antes corta la conexion);
+  // mas de 8 MB (el mayor limite de la API) corta sin esperar.
+  const TOPE_DESCARTE_BYTES = 8 * 1024 * 1024;
+  function responderSinLeerCuerpo(req, res, status, cuerpo) {
+    let recibidos = 0;
+    let respondido = false;
+    const responder = () => {
+      if (respondido) return;
+      respondido = true;
+      res.status(status).json(cuerpo);
+    };
+    if (req.complete) return responder();
+    req.on('data', (trozo) => {
+      recibidos += trozo.length;
+      if (recibidos > TOPE_DESCARTE_BYTES) {
+        res.set('Connection', 'close');
+        responder();
+        req.destroy();
+      }
+    });
+    req.on('end', responder);
+    req.on('error', () => {});
+    req.resume();
+  }
+  // Fase 154: se monta DESPUES de los limitadores de tasa (mas abajo), y sin
+  // sesion valida el cuerpo ni se lee (401) -- antes, cualquiera sin cuenta
+  // hacia procesar un JSON de hasta 8 MB, incluso con el limite ya agotado.
+  function leerCuerpoJson(req, res, next) {
+    if (!tieneCuerpo(req)) return next();
+    if (req.path === RUTA_LOGIN) return jsonLogin(req, res, next);
+    if (!identidadParaLimiteDeTasa(req)) {
+      // Mismos mensajes que requireActor (con token vencido o sin token).
+      const conToken = String(req.headers.authorization || '').startsWith('Bearer ');
+      return responderSinLeerCuerpo(req, res, 401, { error: conToken ? 'Sesion invalida o expirada' : 'No autenticado' });
+    }
+    if (!req.is('application/json')) return responderSinLeerCuerpo(req, res, 415, { error: 'El cuerpo de la peticion debe ser JSON' });
     if (RUTAS_LIMITE_MAYOR.includes(req.path)) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
-  });
+  }
 
   // Logging de accesos. morgan NO registra cuerpos ni el header Authorization.
   if (!config.isTest) {
@@ -189,6 +235,8 @@ function createApp() {
   // `skip` decide cual aplica; como ninguno de los dos vuelve a decodificar
   // el token en el otro (misma funcion, mismo resultado), nunca se cuenta
   // una peticion dos veces.
+  // Fase 154: el 429 se responde sin procesar el cuerpo (ver responderSinLeerCuerpo).
+  const limiteAgotado = (req, res, next, opciones) => responderSinLeerCuerpo(req, res, opciones.statusCode, opciones.message);
   const authLimiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
     max: config.rateLimit.maxAutenticado,
@@ -197,6 +245,7 @@ function createApp() {
     skip: (req) => !identidadParaLimiteDeTasa(req),
     keyGenerator: (req) => identidadParaLimiteDeTasa(req),
     message: { error: 'Demasiadas peticiones. Intenta de nuevo mas tarde.' },
+    handler: limiteAgotado,
   });
   const anonLimiter = rateLimit({
     windowMs: config.rateLimit.windowMs,
@@ -205,10 +254,14 @@ function createApp() {
     legacyHeaders: false,
     skip: (req) => !!identidadParaLimiteDeTasa(req),
     message: { error: 'Demasiadas peticiones. Intenta de nuevo mas tarde.' },
+    handler: limiteAgotado,
   });
 
   const api = express.Router();
-  app.use('/api', authLimiter, anonLimiter, api);
+  // Fase 154: limite de tasa -> cuerpo -> rutas (ver leerCuerpoJson).
+  app.use('/api', authLimiter, anonLimiter);
+  app.use(leerCuerpoJson);
+  app.use('/api', api);
 
   // Fase 79 (hallazgo real: una pestana abierta desde antes de un deploy
   // sigue con el JS viejo en memoria -- un deploy real no puede "empujar"
