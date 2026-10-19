@@ -33,19 +33,27 @@ function friendlyHttpError(status){
 }
 
 async function apiRequest(method, path, body){
-  var res;
-  try {
-    res = await fetch(API_BASE + path, {
-      method: method,
-      headers: apiHeaders(!!body),
-      body: body ? JSON.stringify(body) : undefined
-    });
-  } catch(e){
-    // fetch solo rechaza por fallo de red / CORS / servidor caído
-    throw new Error('No se pudo conectar con el servidor. Revisa tu conexion e intentalo de nuevo.');
+  var res, data;
+  // Fase 154: si el servidor ya tiene el tope de cargas simultaneas lleno,
+  // la carga espera su turno y se reintenta sola (cargas-turno-logic.js).
+  for (var intento = 0; ; intento++) {
+    try {
+      res = await fetch(API_BASE + path, {
+        method: method,
+        headers: apiHeaders(!!body),
+        body: body ? JSON.stringify(body) : undefined
+      });
+    } catch(e){
+      // fetch solo rechaza por fallo de red / CORS / servidor caído
+      throw new Error('No se pudo conectar con el servidor. Revisa tu conexion e intentalo de nuevo.');
+    }
+    data = null;
+    try { data = await res.json(); } catch(e){}
+    var espera = (typeof cargasTurnoEspera === 'function') ? cargasTurnoEspera(res.status, data, intento, res.headers.get('Retry-After')) : null;
+    if (espera === null) break;
+    if (intento === 0 && typeof showToast === 'function') showToast(data.error);
+    await new Promise(function(r){ setTimeout(r, espera); });
   }
-  var data = null;
-  try { data = await res.json(); } catch(e){}
   if (!res.ok) {
     var msg = (data && data.error) ? data.error : friendlyHttpError(res.status);
     var err = new Error(msg);

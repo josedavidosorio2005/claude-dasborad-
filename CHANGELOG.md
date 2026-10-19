@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.54.3 — Octubre 2026
+
+**Fase 154: revisión de seguridad.**
+
+- Si muchas personas suben archivos al mismo tiempo, la plataforma los
+  procesa por turnos para no ponerse lenta. Quien sube ve el aviso "Hay
+  otras cargas en curso. Tu carga espera su turno y sigue sola en unos
+  segundos": no hay que volver a subir nada.
+
 ## v1.54.2 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**

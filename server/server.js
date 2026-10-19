@@ -29,6 +29,7 @@ const config = require('./config');
 const db = require('./db');
 const { requireActor, identidadParaLimiteDeTasa } = require('./auth');
 const { wrap } = require('./routes/shared');
+const { crearTopeCargas } = require('./cargas-simultaneas');
 // Fase 95 (tema D): version de la app, unica fuente de verdad
 // (package.json) -- se expone en /health y en el pie de la interfaz.
 const APP_VERSION = require('./package.json').version;
@@ -194,15 +195,19 @@ function createApp() {
   // Fase 154: se monta DESPUES de los limitadores de tasa (mas abajo), y sin
   // sesion valida el cuerpo ni se lee (401) -- antes, cualquiera sin cuenta
   // hacia procesar un JSON de hasta 8 MB, incluso con el limite ya agotado.
-  function leerCuerpoJson(req, res, next) {
-    if (!tieneCuerpo(req)) return next();
-    if (req.path === RUTA_LOGIN) return jsonLogin(req, res, next);
+  function exigirSesionParaCuerpo(req, res, next) {
+    if (!tieneCuerpo(req) || req.path === RUTA_LOGIN) return next();
     if (!identidadParaLimiteDeTasa(req)) {
       // Mismos mensajes que requireActor (con token vencido o sin token).
       const conToken = String(req.headers.authorization || '').startsWith('Bearer ');
       return responderSinLeerCuerpo(req, res, 401, { error: conToken ? 'Sesion invalida o expirada' : 'No autenticado' });
     }
     if (!req.is('application/json')) return responderSinLeerCuerpo(req, res, 415, { error: 'El cuerpo de la peticion debe ser JSON' });
+    next();
+  }
+  function leerCuerpoJson(req, res, next) {
+    if (!tieneCuerpo(req)) return next();
+    if (req.path === RUTA_LOGIN) return jsonLogin(req, res, next);
     if (RUTAS_LIMITE_MAYOR.includes(req.path)) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
@@ -258,8 +263,13 @@ function createApp() {
   });
 
   const api = express.Router();
-  // Fase 154: limite de tasa -> cuerpo -> rutas (ver leerCuerpoJson).
+  // Fase 154: limite de tasa -> sesion -> tope de cargas -> cuerpo -> rutas.
   app.use('/api', authLimiter, anonLimiter);
+  // Fase 154: tope de cargas simultaneas, despues de la sesion y antes de
+  // leer el cuerpo (ver cargas-simultaneas.js).
+  const topeCargas = crearTopeCargas({ max: config.cargasSimultaneasMax, responderSinLeerCuerpo });
+  app.use(exigirSesionParaCuerpo);
+  app.use(topeCargas.middleware);
   app.use(leerCuerpoJson);
   app.use('/api', api);
 
