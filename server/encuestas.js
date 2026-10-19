@@ -4,6 +4,7 @@
 // crudas, salvo la lista de comentarios con texto. El archivo de origen
 // (Wolkvox, hoja HistIVR) no trae telefonos y esta tabla tampoco los tiene.
 'use strict';
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -85,6 +86,8 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
   );
   let borradas = 0;
   db.transaction(() => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'encuestas', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
     borradas = del.run(campana, desde, hasta).changes;
     for (const f of filasObj) {
       insert.run({

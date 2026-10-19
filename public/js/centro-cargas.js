@@ -7,11 +7,11 @@
 // filas de ese mes (xlsxFilasSeguras) y "Descargar plantilla" la plantilla
 // oficial del modulo. Subir/Reemplazar abren por ahora la pantalla de
 // carga de siempre con el cliente ya elegido (misma lectura y misma vista
-// previa de impacto); Eliminar y Deshacer llegan con las versiones
-// (docs/centro-cargas.md). La pantalla anterior sigue disponible.
+// previa de impacto). PR 2: "Versiones guardadas" y Deshacer (30 dias).
+// Eliminar llega en el PR 3. La pantalla anterior sigue disponible.
 'use strict';
 
-var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null };
+var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null, versiones: [] };
 
 function _ccMesActual() {
   var c = new Date(Date.now() - 5 * 3600 * 1000);
@@ -71,6 +71,9 @@ async function _ccCargar() {
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);
     _cc.modulos = r.modulos || [];
+    // PR 2: versiones guardadas (Deshacer, 30 dias) de este cliente.
+    try { _cc.versiones = (await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/versiones')).versiones || []; }
+    catch (e2) { _cc.versiones = []; }
   } catch (e) {
     body.innerHTML = '<div class="cc-aviso cc-aviso-error">' + esc(e.message) + '</div>';
     return;
@@ -133,10 +136,11 @@ function _ccRenderModulo() {
     var huecos = centroHuecos(c, mesActual);
     html += '<section class="cc-carga" aria-labelledby="cc-carga-' + ci + '">' +
       '<div class="cc-carga-cab"><h3 id="cc-carga-' + ci + '">' + esc(c.nombre) + ' <span class="cc-carga-anio">' + _cc.anio + '</span></h3>' +
+      '<span class="cc-carga-botones">' + (_ccVersionesDe(c.id).length ? '<button type="button" class="btn-cancel cc-btn" onclick="ccVerVersiones(' + ci + ')">' + iconoSvg('rotate-ccw') + ' Versiones guardadas (' + _ccVersionesDe(c.id).length + ')</button>' : '') +
       (c.plantilla
         ? '<button type="button" class="btn-cancel cc-btn" onclick="ccDescargarPlantilla(\'' + esc(c.plantilla) + '\')">' + iconoSvg('download') + ' Descargar plantilla</button>'
         : '<span class="cc-nota">La plantilla de Calidad se descarga desde Calidad (depende de los ítems de cada campaña).</span>') +
-      '</div>';
+      '</span></div>';
     if (huecos.length) html += '<div class="cc-aviso cc-aviso-falta">Faltan meses entre los cargados: ' + esc(huecos.map(function (x) { return centroNombreMes(x).split(' ')[0]; }).join(', ')) + '.</div>';
     html += '<div class="cc-meses">';
     c.meses.forEach(function (x, mi) {
@@ -200,6 +204,44 @@ function centroVolverTrasCarga() {
   if (!_ccVolverA) return;
   var v = _ccVolverA; _ccVolverA = null;
   setTimeout(function () { openCentroCargas(v.cliente, v.modulo); }, 60);
+}
+
+// ── Versiones guardadas y Deshacer (PR 2) ───────────────────────────
+function _ccVersionesDe(cargaId) {
+  return (_cc.versiones || []).filter(function (v) { return v.carga === cargaId && !v.restauradoEn; });
+}
+var CENTRO_MOTIVO = { 'reemplazo': 'antes de reemplazar', 'eliminacion': 'antes de eliminar', 'antes de deshacer': 'antes de deshacer' };
+function ccVerVersiones(ci) {
+  var c = _ccModuloActual().cargas[ci];
+  var lista = _ccVersionesDe(c.id);
+  var html = '<p class="cc-nota">Cada vez que un mes se reemplaza, la base anterior se guarda 30 días. Deshacer devuelve ese mes a como estaba; lo que haya ahora también queda guardado.</p><ul class="cc-versiones">';
+  lista.forEach(function (v) {
+    html += '<li><div><strong>' + esc(centroNombreMes(v.mes)) + '</strong> · ' + esc(centroTextoRegistros(v.registros)) +
+      '<div class="cc-nota">Guardada el ' + esc(centroFechaCorta(v.guardadoEn)) + ' (' + esc(CENTRO_MOTIVO[v.motivo] || v.motivo) + ')' +
+      (v.archivoNombre ? ' · archivo ' + esc(v.archivoNombre) : '') + ' · vence el ' + esc(centroFechaCorta(v.expiraEn).slice(0, 10)) + '</div></div>' +
+      '<button type="button" class="cc-accion" onclick="ccDeshacer(' + ci + ',' + v.id + ')">' + iconoSvg('rotate-ccw') + ' Deshacer</button></li>';
+  });
+  _ccDialogo('Versiones guardadas — ' + esc(c.nombre), html + '</ul>', '<button type="button" class="btn-cancel" onclick="_ccCerrarDialogo()">Cerrar</button>');
+}
+function ccDeshacer(ci, id) {
+  var c = _ccModuloActual().cargas[ci];
+  var v = (_cc.versiones || []).filter(function (x) { return x.id === id; })[0];
+  if (!v) return;
+  var ahora = (c.meses.filter(function (m) { return m.mes === v.mes; })[0] || {}).registros || 0;
+  _ccDialogo('¿Deshacer ' + esc(centroNombreMes(v.mes)) + '?',
+    '<p><strong>' + esc(centroNombreMes(v.mes)) + '</strong> de ' + esc(c.nombre) + ' (' + esc(_cc.cliente) + ') vuelve a como estaba el ' + esc(centroFechaCorta(v.guardadoEn)) + ': <strong>' + esc(centroTextoRegistros(v.registros)) + '</strong>.</p>' +
+    '<p>Se reemplazan los <strong>' + esc(centroTextoRegistros(ahora)) + '</strong> que hay ahora en ese mes.</p>' +
+    '<p class="cc-tranquilo">Lo que hay ahora también se guarda 30 días, y queda en el Historial.</p>',
+    '<button type="button" class="btn-cancel" onclick="_ccCerrarDialogo()">Cancelar</button>' +
+    '<button type="button" class="btn-primary" onclick="_ccConfirmarDeshacer(' + id + ')">Deshacer</button>');
+}
+async function _ccConfirmarDeshacer(id) {
+  _ccCerrarDialogo();
+  try {
+    var r = await apiRequest('POST', '/centro-cargas/versiones/' + id + '/deshacer');
+    showToast('Listo: volvieron ' + centroTextoRegistros(r.restauradas) + ' de ' + centroNombreMes(r.version.mes) + '.');
+  } catch (e) { showToast(e.message, 'error'); }
+  await _ccCargar();
 }
 
 // Descargar lo cargado: las filas de ese mes, tal como estan en la base.

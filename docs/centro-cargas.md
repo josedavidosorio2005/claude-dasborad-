@@ -107,7 +107,7 @@ El Centro no depende de que el archivo sea un Excel: cada carga es "módulo + fi
    - atajo desde el tablero;
    - matriz de acceso ampliada;
    - la pantalla anterior sigue siendo la que sube.
-2. **Versiones (`cargas_versiones`):** respaldo antes de borrar en cada lector, Deshacer y limpieza. Pruebas que fallen antes: reemplazar y deshacer deja exactamente las filas de antes.
+2. **Versiones (`cargas_versiones`):** respaldo antes de borrar en cada lector, Deshacer y limpieza. Pruebas que fallen antes: reemplazar y deshacer deja exactamente las filas de antes. *(Versión 1.49.0: `server/cargas-versiones.js`; el respaldo guarda el MES COMPLETO que toca cada carga — no solo el rango del archivo — para que Deshacer deje el mes exacto; los 12 lectores con reemplazo lo llaman; Calidad no entra.)*
 3. **Eliminar un mes**, con confirmación, Historial y Deshacer.
 4. **Subir y Reemplazar desde el mes**, con el lector y la vista previa de siempre y las filas filtradas a ese mes. Un módulo por PR si hace falta, empezando por los de Mobilize.
 5. **Permisos por módulo para CALIDAD**, solo con tu OK.

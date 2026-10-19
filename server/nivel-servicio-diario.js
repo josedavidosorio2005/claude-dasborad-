@@ -4,6 +4,7 @@
 // scripts/seed-demo.js, asi que hay una sola manera de upsertear filas
 // diarias y recalcular el agregado mensual, nunca dos.
 'use strict';
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -98,6 +99,8 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
   const idsDiario = [];
   const idsBorrados = [];
   const tx = db.transaction((rows) => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'calidad_nivel_servicio_diario', { campana, desde: minFechaGlobal, hasta: maxFechaGlobal, guardadoPorNombre: cargadoPorNombre });
     for (const [skillName, fechas] of fechasPorSkill) {
       const aBorrar = selectEnRango.all(campana, skillName, sede, minFechaGlobal, maxFechaGlobal).filter((r) => !fechas.has(r.fecha));
       if (aBorrar.length) {

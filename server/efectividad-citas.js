@@ -5,6 +5,7 @@
 // (reemplazo por MES) y lectura. Mismo patron que
 // efectividad-agendamiento.js/inasistencia.js.
 'use strict';
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -54,6 +55,8 @@ function cargarEfectividadCitas(db, { campana, archivoNombre, cargadoPorNombre, 
   const tx = db.transaction(() => {
     if (meses.length) {
       const placeholders = meses.map(() => '?').join(',');
+      // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+      respaldarAntesDeCambiar(db, 'efectividad_citas', { campana, meses, guardadoPorNombre: cargadoPorNombre });
       borradas = db.prepare(`DELETE FROM efectividad_citas WHERE campana = ? AND mes IN (${placeholders})`).run(campana, ...meses).changes;
     }
     for (const f of filasObj) {

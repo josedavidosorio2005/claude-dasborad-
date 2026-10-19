@@ -4,6 +4,7 @@
 // El archivo de origen (HistQueue de Wolkvox) no trae telefonos ni nombres,
 // y esta tabla tampoco los tiene.
 'use strict';
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -78,6 +79,8 @@ function cargarWhatsappTiempos(db, { campana, archivoNombre, cargadoPorNombre, f
   );
   let borradas = 0;
   db.transaction(() => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'whatsapp_tiempos', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
     borradas = del.run(campana, desde, hasta).changes;
     for (const f of filasObj) {
       insert.run({

@@ -6,6 +6,7 @@
 
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
 const { aplicarAliasAFilas } = require('./alias-asesores');
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -76,6 +77,8 @@ function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas }) 
 
   let borradas = 0;
   const tx = db.transaction(() => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'agendas', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
     borradas = del.run(campana, desde, hasta).changes;
     for (const f of filasObj) {
       insert.run({

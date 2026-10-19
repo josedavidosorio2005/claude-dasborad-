@@ -12,6 +12,7 @@
 
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
 const { aplicarAliasAFilas } = require('./alias-asesores');
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 const CANALES = ['LLAMADAS', 'WHATSAPP'];
 
@@ -102,6 +103,8 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
 
   let borradas = 0;
   const tx = db.transaction(() => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'tipificaciones', { campana, desde, hasta, filtro: { canal }, guardadoPorNombre: cargadoPorNombre });
     borradas = del.run(campana, canal, desde, hasta).changes;
     for (const f of filasObj) {
       insert.run({
