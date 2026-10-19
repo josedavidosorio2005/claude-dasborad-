@@ -112,7 +112,8 @@ function can(actor, action) {
 
 // Middleware factory: exige que el actor sea admin o tenga el permiso indicado
 function requirePermission(action) {
-  return (req, res, next) => {
+  // Fase 154: con nombre, para que fase154-rutas-con-sesion la reconozca.
+  return function requirePermission(req, res, next) {
     const actor = getActor(req);
     if (!actor) return res.status(401).json({ error: 'No autenticado' });
     if (!actor.isMasterAdmin && !actor.active) {

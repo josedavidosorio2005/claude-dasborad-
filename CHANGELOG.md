@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.54.4 — Octubre 2026
+
+**Fase 154: revisión de seguridad.**
+
+- Revisión automática nueva: si algún día una parte de la plataforma
+  quedara accesible sin iniciar sesión, las pruebas lo detectan antes de
+  publicar. Para quien usa la plataforma no cambia nada.
+
 ## v1.54.3 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**
