@@ -891,6 +891,8 @@
       <div style="display:flex;align-items:center;gap:8px">
         <button class="aurora-close hidden" id="gd-actualizar-btn" onclick="centroAbrirDesdeTablero()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-refresh-cw"></use></svg> Actualizar datos</button>
         <button class="aurora-close" id="gd-export-btn" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()">Exportar</button>
+        <!-- Fase 155: tema claro/oscuro dentro del tablero (el modal tapa la barra de arriba). Mismo mecanismo (theme.js): la clase theme-toggle lo sincroniza. -->
+        <button class="aurora-close theme-toggle gd-tema-btn" id="gd-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
         <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
         <button class="aurora-close" onclick="closeGenericDashboard()">X Cerrar</button>
       </div>

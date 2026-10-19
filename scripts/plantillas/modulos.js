@@ -33,12 +33,13 @@ const CARGAS = [
       SERVICE_LEVEL_10SEC: ['% atendidas en 10 s.', 0.85],
       SERVICE_LEVEL_20SEC: ['% atendidas en 20 s (Mobilize: "NIVEL DE SERVICIO 80 - 20").', 0.9],
       SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', 0.93],
+      ABANDON: ['% de abandono que reporta Wolkvox. Se deja como viene: el sistema no la usa (calcula la tasa de abandono con las llamadas).', 0.07],
       ASA: ['Tiempo promedio de respuesta (segundos o mm:ss).', 12],
       ATA: ['Tiempo promedio hasta el abandono.', 30],
       WAIT_TIME: ['Tiempo de espera.', 15],
       AHT: ['Tiempo promedio de atención.', 210],
-      'NIVEL DE ATENCION': ['% de llamadas atendidas.', 0.93],
-      'TASA DE ABNDONO': ['% de abandono (así viene escrito de Wolkvox; Mobilize: "% ABANDONO").', 0.07],
+      'NIVEL DE ATENCION': ['No hace falta llenarla: el sistema la calcula (contestadas ÷ ingresadas). Si viene llena, no se usa.', ''],
+      'TASA DE ABNDONO': ['No hace falta llenarla: el sistema la calcula (abandonadas ÷ ingresadas). Si viene llena, no se usa. (Así viene escrito de Wolkvox; Mobilize: "% ABANDONO").', ''],
     },
   },
   {
@@ -236,18 +237,26 @@ const CARGAS = [
 const ORIGEN = {
   'PLANTILLA_FLUJO_LLAMADAS.xlsx': {
     origen: 'Wolkvox: reporte de la cola por skill y por día (hoja "HistQueue<fecha>"; ORLANT lo trae en la hoja LLAMADAS). Se sube tal cual.',
+    // Fase 155: una linea en INSTRUCCIONES y en la ficha.
+    nota: 'Nivel de atención y tasa de abandono los calcula el sistema; no hace falta llenarlos.',
     reemplazo: 'Las filas de esos skills en las fechas que trae el archivo.',
   },
   'PLANTILLA_LLAMADAS_UNICAS.xlsx': {
     origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso (sin las de salida).',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"Únicas de ingreso\".",
     reemplazo: 'El mes completo de las fechas del archivo.',
   },
   'PLANTILLA_LLAMADAS_SALIDA.xlsx': {
     origen: 'Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detalle de las llamadas para las no conectadas", con SKILL_ID diciendo cuál es cuál.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"De salida\".",
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': {
     origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoja "HistCDR<fecha>"). Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"Llamadas\".",
     reemplazo: 'Las llamadas de ese cliente entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_ENCUESTA.xlsx': {
@@ -264,6 +273,8 @@ const ORIGEN = {
   },
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': {
     origen: 'Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"WhatsApp\".",
     reemplazo: 'Las conversaciones de ese cliente entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_AGENDAS.xlsx': {
