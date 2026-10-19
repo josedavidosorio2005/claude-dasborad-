@@ -645,6 +645,14 @@ runOnceMigration('clientes_registro_v1', () => {
 const CLIENTES_LIST = clientesRegistro.listaClientes(db);
 const CAMPANAS_CALIDAD = clientesRegistro.campanasCalidad(db);
 
+// Fase 153 (Centro de cargas, PR 2): versiones para Deshacer (30 dias); las
+// vencidas se borran al arrancar (y cada 24 h, server.js).
+require('./cargas-versiones').crearTabla(db);
+{
+  const vencidas = require('./cargas-versiones').purgar(db);
+  if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');
+}
+
 // Semilla de configuracion de dashboards: idempotente por cliente. Inserta las
 // configuraciones de dashboard-config-seed.js que aun no existan en la tabla
 // (asi las plantillas nuevas llegan tambien a bases ya creadas), sin tocar las

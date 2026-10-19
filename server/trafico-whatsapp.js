@@ -7,6 +7,7 @@
 'use strict';
 
 const { recalcularResumenOrlantDesdeTrafico } = require('./resumen-orlant-trafico');
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -87,6 +88,8 @@ function cargarTraficoWhatsapp(db, { campana, archivoNombre, cargadoPorNombre, f
   const idsBorrados = [];
   const mesesBorrados = new Set();
   const tx = db.transaction((rows) => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'trafico_whatsapp', { campana, desde: minFechaInicioGlobal, hasta: maxFechaInicioGlobal, guardadoPorNombre: cargadoPorNombre });
     for (const [colaWhatsapp] of fechasPorCola) {
       const periodosNuevos = periodosPorCola.get(colaWhatsapp);
       const aBorrar = selectEnRango

@@ -399,6 +399,17 @@ function start() {
       `InConexion backend escuchando en http://localhost:${config.port} (${config.nodeEnv})`
     );
   });
+  // Fase 153 (Centro de cargas): las versiones de Deshacer vencen a los 30
+  // dias; ademas de al arrancar (db.js), se limpian una vez al dia.
+  const purgaVersiones = setInterval(() => {
+    try {
+      const n = require('./cargas-versiones').purgar(require('./db'));
+      if (n) console.log(`[cargas_versiones] ${n} version(es) vencida(s) borrada(s).`);
+    } catch (e) {
+      console.error('[cargas_versiones] no se pudo limpiar:', e.message);
+    }
+  }, 24 * 3600 * 1000);
+  purgaVersiones.unref();
 
   let shuttingDown = false;
   function shutdown(signal) {

@@ -12,6 +12,7 @@
 'use strict';
 
 const { aplicarAliasAFilas } = require('./alias-asesores');
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -75,6 +76,8 @@ function cargarLlamadasSalida(db, { campana, archivoNombre, cargadoPorNombre, fi
 
   let borradas = 0;
   const tx = db.transaction(() => {
+    // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+    respaldarAntesDeCambiar(db, 'llamadas_salida', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
     borradas = del.run(campana, desde, hasta).changes;
     for (const f of filasObj) {
       insert.run({

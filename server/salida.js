@@ -6,6 +6,7 @@
 // nunca una fila por llamada/chat. Mismo patrón exacto que
 // efectividad-citas.js (reemplazo por MES, escritura+lectura).
 'use strict';
+const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
 function nowStr() {
   const d = new Date();
@@ -58,6 +59,8 @@ function cargarSalida(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
   const tx = db.transaction(() => {
     if (meses.length) {
       const placeholders = meses.map(() => '?').join(',');
+      // Fase 153 (Centro de cargas, PR 2): guarda el/los mes(es) completo(s) antes de cambiarlos (Deshacer 30 dias).
+      respaldarAntesDeCambiar(db, 'salida_mensual', { campana, meses, guardadoPorNombre: cargadoPorNombre });
       borradas = db.prepare(`DELETE FROM salida_mensual WHERE campana = ? AND mes IN (${placeholders})`).run(campana, ...meses).changes;
     }
     for (const f of filasObj) {

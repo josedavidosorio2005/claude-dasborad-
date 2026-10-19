@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.49.0 — Octubre 2026
+
+**Fase 153: Centro de cargas — Deshacer (segunda parte).**
+
+- Cada vez que se reemplaza la base de un mes (desde el Centro o desde la
+  pantalla anterior), la plataforma **guarda la base de antes durante 30
+  días**.
+- En cada módulo del Centro aparece **"Versiones guardadas"** cuando hay
+  alguna: dice de qué mes es, cuántos registros tenía, de qué archivo venía
+  y hasta cuándo se guarda.
+- **Deshacer** devuelve ese mes exactamente a como estaba, con un aviso
+  antes de hacerlo. Lo que había en ese momento también se guarda 30 días,
+  así que deshacer también se puede deshacer. Queda en el Historial.
+- Se guardan hasta 5 versiones por módulo y mes; las de más de 30 días se
+  borran solas.
+- Eliminar un mes llega en la próxima versión.
+
 ## v1.48.0 — Octubre 2026
 
 **Fase 153: Centro de cargas (primera parte).**
