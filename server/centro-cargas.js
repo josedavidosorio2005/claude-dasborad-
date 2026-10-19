@@ -146,4 +146,20 @@ function datosDelMes(db, campana, carga, mes) {
   return { columnas: cols, filas };
 }
 
-module.exports = { CARGAS_POR_MODULO, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };
+// Cuantos registros tiene un mes de una carga y cuantos caen entre dos fechas
+// ('AAAA-MM-DD', inclusive): el aviso de la vista previa del Centro ("se
+// reemplazan esos dias; el resto del mes queda igual"). Solo lectura.
+function conteoRango(db, campana, carga, mes, desde, hasta) {
+  const filtroSql = carga.filtro ? Object.keys(carga.filtro).map((k) => ` AND ${k} = @f_${k}`).join('') : '';
+  const params = { campana, mes, desde, hasta };
+  if (carga.filtro) Object.keys(carga.filtro).forEach((k) => { params['f_' + k] = carga.filtro[k]; });
+  const dia = `substr(${carga.fecha}, 1, 10)`;
+  const r = db.prepare(
+    `SELECT COUNT(*) AS enMes, COALESCE(SUM(CASE WHEN ${dia} BETWEEN @desde AND @hasta THEN 1 ELSE 0 END), 0) AS enRango
+       FROM ${carga.tabla}
+      WHERE campana = @campana AND substr(${carga.fecha}, 1, 7) = @mes${filtroSql}`
+  ).get(params);
+  return { enMes: r.enMes, enRango: r.enRango };
+}
+
+module.exports = { conteoRango, CARGAS_POR_MODULO, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };

@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.52.0 — Octubre 2026
+
+**Centro de cargas: aviso claro cuando el archivo no trae el mes completo.**
+
+- Al subir o reemplazar un mes desde el Centro, la vista previa dice qué
+  días trae el archivo y cuántos registros del mes quedan igual, por
+  ejemplo: "El archivo trae del 5 al 7 de agosto. Se reemplazan esos días;
+  el resto de agosto (140 registros) queda igual."
+- No cambia cómo se guarda: como siempre, solo se reemplazan los días que
+  trae el archivo.
+
 ## v1.51.0 — Octubre 2026
 
 **Fase 153: Centro de cargas — Subir y Reemplazar desde el mes (cuarta

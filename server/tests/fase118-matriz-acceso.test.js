@@ -239,7 +239,7 @@ declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLo
 // Fase 153 (P2, maqueta): Centro de cargas. El resumen por mes exige poder
 // cargar (canLoadData) Y acceso a ese cliente (campaignAccess); la descarga de
 // plantillas solo poder cargar (lista cerrada de archivos, sin datos).
-declarar(['GET /centro-cargas/:cliente', 'GET /centro-cargas/:cliente/:carga/:mes/datos', 'GET /centro-cargas/:cliente/versiones', 'DELETE /centro-cargas/:cliente/:carga/:mes'], 'cargaYcliente');
+declarar(['GET /centro-cargas/:cliente', 'GET /centro-cargas/:cliente/:carga/:mes/datos', 'GET /centro-cargas/:cliente/versiones', 'GET /centro-cargas/:cliente/:carga/:mes/conteo', 'DELETE /centro-cargas/:cliente/:carga/:mes'], 'cargaYcliente');
 // Deshacer: mismo criterio sobre el cliente de la version (fase153-versiones.test.js).
 declarar(['POST /centro-cargas/versiones/:id/deshacer'], 'cargaYclienteVersion');
 declarar(['GET /centro-cargas-plantillas/:archivo'], 'dataLoaderGlobal');

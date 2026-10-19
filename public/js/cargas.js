@@ -696,6 +696,17 @@ async function procesarArchivoConsolidado(input){
       }
       return f;
     });
+    // Reemplazo parcial: el lector cambia SOLO las fechas que trae el
+    // archivo; se dice cuales y cuantos registros del mes quedan igual.
+    for(var ri=0; ri<_cargasResultados.length; ri++){
+      var rr = _cargasResultados[ri];
+      var rango = rr.filas ? centroRangoFilas(focoArch.carga, rr.filas) : null;
+      if(!rango) continue;
+      try{
+        var conteo = await apiRequest('GET','/centro-cargas/'+encodeURIComponent(cliente)+'/'+encodeURIComponent(focoArch.carga)+'/'+focoArch.mes+'/conteo?desde='+rango.desde+'&hasta='+rango.hasta);
+        rr.avisos = [centroTextoReemplazoParcial(focoArch.mes, rango, conteo)].concat(rr.avisos || []);
+      }catch(e){ /* sin el conteo, la vista previa sigue con sus avisos de siempre */ }
+    }
     if(!_cargasResultados.some(function(r){ return r.filas; })){
       var err = _cargasResultados.filter(function(r){ return r.error; })[0];
       showToast(err ? err.error : 'El archivo no trae datos de ' + focoArch.nombre + '.', 'error');
