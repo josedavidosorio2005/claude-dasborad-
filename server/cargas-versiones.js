@@ -1,7 +1,7 @@
 // cargas-versiones.js — Fase 153 (Centro de cargas, PR 2): "Deshacer"
 // durante 30 dias (diseno aprobado en docs/centro-cargas.md).
 //
-// Antes de que una carga cambie datos (reemplazar, y en el PR 3 eliminar),
+// Antes de que una carga cambie datos (reemplazar, o eliminar un mes),
 // se guarda el MES COMPLETO de esa carga tal como estaba -- una version por
 // cada mes que toca -- en la MISMA transaccion: si el respaldo falla, no se
 // cambia nada. "Deshacer" devuelve ese mes exactamente a como estaba; antes
@@ -138,8 +138,7 @@ function obtener(db, id) {
 }
 
 // Lo que cada lector recalcula a partir de las filas despues de cargar, para
-// un mes que cambio sin pasar por el lector (Deshacer y, en el PR 3,
-// Eliminar). Va dentro de la misma transaccion. Requires perezosos: esos
+// un mes que cambio sin pasar por el lector (Deshacer y Eliminar). Va dentro de la misma transaccion. Requires perezosos: esos
 // modulos requieren este.
 function recalcularDerivados(db, carga, campana, mes) {
   if (carga.id === 'flujo_llamadas') {
@@ -186,6 +185,22 @@ function deshacer(db, id, { actorNombre, ahora } = {}) {
   return { version: _publica(obtener(db, id)), restauradas: filas.length, reemplazadas, guardadaAntes };
 }
 
+// Eliminar un mes (PR 3): en UNA transaccion guarda el mes completo
+// (motivo 'eliminacion'), lo borra y recalcula lo que depende de el. Lanza
+// un Error con `.status` si no se puede. Calidad no entra.
+function eliminarMes(db, carga, campana, mes, { actorNombre, ahora } = {}) {
+  if (!carga || carga.tabla === 'monitoreos') throw Object.assign(new Error('Esta carga se gestiona desde su propio módulo'), { status: 400 });
+  let versionId = null;
+  let eliminadas = 0;
+  db.transaction(() => {
+    versionId = respaldarMes(db, carga, campana, mes, { motivo: 'eliminacion', guardadoPorNombre: actorNombre, ahora });
+    if (!versionId) throw Object.assign(new Error('Ese mes ya no tiene datos'), { status: 409 });
+    eliminadas = db.prepare(`DELETE FROM ${carga.tabla} WHERE ${_where(carga)}`).run(_params(carga, campana, mes)).changes;
+    recalcularDerivados(db, carga, campana, mes);
+  })();
+  return { eliminadas, version: _publica(obtener(db, versionId)) };
+}
+
 // Borra las versiones vencidas. Devuelve cuantas.
 function purgar(db, ahora) {
   return db.prepare('DELETE FROM cargas_versiones WHERE expiraEn <= ?').run((ahora || new Date()).toISOString()).changes;
@@ -193,5 +208,5 @@ function purgar(db, ahora) {
 
 module.exports = {
   DIAS_RETENCION, TOPE_POR_MES, crearTabla, cargaDeTabla, mesesEntre,
-  respaldarMes, respaldarAntesDeCambiar, recalcularDerivados, listar, obtener, deshacer, purgar,
+  respaldarMes, respaldarAntesDeCambiar, recalcularDerivados, listar, obtener, deshacer, eliminarMes, purgar,
 };
