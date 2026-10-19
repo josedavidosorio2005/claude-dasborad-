@@ -93,6 +93,81 @@ function centroHuecos(carga, mesActual) {
   return (carga.meses || []).filter(function (m) { return m.mes > primero && m.mes < mesActual && m.registros === 0; }).map(function (m) { return m.mes; });
 }
 
+// ── PR 4: Subir/Reemplazar DESDE EL MES ─────────────────────────────
+// Cargas del Centro que ya suben con el plan de UN modulo y las filas de UN
+// mes (empezando por las de Mobilize). Cada una dice que renglon del plan
+// de la pantalla de siempre (cargasPlanConsolidado) le corresponde; el
+// lector, la vista previa y el guardado son los de siempre.
+var CENTRO_CARGA_PLAN = {
+  flujo_llamadas: { tipo: 'trafico', canal: 'voz' },
+  tipificacion_llamadas: { tipo: 'tipificacion', canalTipificacion: 'LLAMADAS' },
+  tipificacion_whatsapp: { tipo: 'tipificacion', canalTipificacion: 'WHATSAPP' },
+  llamadas_unicas: { tipo: 'llamadas_unicas' },
+  llamadas_salida: { tipo: 'llamadas_salida' },
+  encuesta: { tipo: 'encuesta' },
+};
+
+function centroSubeDesdeMes(cargaId) { return Object.prototype.hasOwnProperty.call(CENTRO_CARGA_PLAN, cargaId); }
+
+// Los renglones del plan de esa carga (normalmente uno).
+function centroFiltrarPlan(plan, cargaId) {
+  var spec = CENTRO_CARGA_PLAN[cargaId];
+  if (!spec) return plan;
+  return (plan || []).filter(function (h) {
+    if (h.tipo !== spec.tipo) return false;
+    if (spec.canalTipificacion && h.canalTipificacion !== spec.canalTipificacion) return false;
+    // Trafico: el renglon de voz de la plantilla de 2 hojas (ORLANT) o el
+    // generico de una hoja (el canal lo dice el archivo, se revisa al leer).
+    if (spec.tipo === 'trafico' && h.canalFijo && h.canalFijo !== spec.canal) return false;
+    return true;
+  });
+}
+
+// 'AAAA-MM-DD' de una fila ya leida, segun el lector.
+function centroFechaFila(tipo, f) {
+  if (!f) return '';
+  if (tipo === 'llamadas_unicas' || tipo === 'llamadas_salida') return String(f[1] || '');
+  if (tipo === 'encuesta') return String(f[0] || '');
+  return String(f.fecha || f.fechaInicio || '');
+}
+
+// Deja en un resultado de cargasProcesarHoja solo las filas del mes (y, en
+// Flujo de Llamadas, solo las skills de ese cliente) y avisa cuantas se
+// ignoraron. Nunca cambia la fila: solo la deja o la quita.
+// opciones.skillsDelCliente: { 'SKILL': true } (solo Trafico).
+function centroFiltrarResultado(r, cargaId, mes, opciones) {
+  var spec = CENTRO_CARGA_PLAN[cargaId];
+  // Sin filas leidas (el lector las rechazo todas): tal cual, con sus avisos.
+  if (!spec || !r || !r.filas || !r.filas.length) return r;
+  var nombreMes = centroNombreMes(mes);
+  if (spec.tipo === 'trafico' && r.canal && r.canal !== spec.canal) {
+    return Object.assign({}, r, { filas: undefined, error: 'Este archivo es de WhatsApp; aquí va el de Llamadas.' });
+  }
+  var skills = spec.tipo === 'trafico' && opciones && opciones.skillsDelCliente;
+  var otrosMeses = {};
+  var otrasSkills = 0;
+  var filas = r.filas.filter(function (f) {
+    var m = centroFechaFila(spec.tipo, f).slice(0, 7);
+    if (m !== mes) { otrosMeses[m || 'sin fecha'] = (otrosMeses[m || 'sin fecha'] || 0) + 1; return false; }
+    if (skills && !skills[f.skillName]) { otrasSkills++; return false; }
+    return true;
+  });
+  var listaOtros = Object.keys(otrosMeses).sort().map(function (m) {
+    return (/^\d{4}-\d{2}$/.test(m) ? centroNombreMes(m).split(' ')[0].toLowerCase() : m) + ' ' + otrosMeses[m];
+  });
+  if (!filas.length) {
+    var motivo = otrasSkills && !listaOtros.length
+      ? 'Las filas de ' + nombreMes + ' son de skills de otro cliente o sin asignar.'
+      : 'El archivo no trae filas de ' + nombreMes + (listaOtros.length ? ' (trae: ' + listaOtros.join(', ') + ').' : '.');
+    return Object.assign({}, r, { filas: undefined, error: motivo });
+  }
+  var avisos = [];
+  var ignoradas = r.filas.length - filas.length - otrasSkills;
+  if (ignoradas) avisos.push('Solo se cargan las filas de ' + nombreMes + ': se ignoraron ' + ignoradas + ' fila(s) de otros meses (' + listaOtros.join(', ') + ').');
+  if (otrasSkills) avisos.push('Se ignoraron ' + otrasSkills + ' fila(s) de skills de otro cliente o sin asignar (asígnalas en Tráfico o usa la pantalla anterior).');
+  return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas + otrasSkills });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CENTRO_MESES: CENTRO_MESES,
@@ -105,5 +180,10 @@ if (typeof module !== 'undefined' && module.exports) {
     centroResumenModulo: centroResumenModulo,
     centroNombreArchivoDescarga: centroNombreArchivoDescarga,
     centroHuecos: centroHuecos,
+    CENTRO_CARGA_PLAN: CENTRO_CARGA_PLAN,
+    centroSubeDesdeMes: centroSubeDesdeMes,
+    centroFiltrarPlan: centroFiltrarPlan,
+    centroFechaFila: centroFechaFila,
+    centroFiltrarResultado: centroFiltrarResultado,
   };
 }

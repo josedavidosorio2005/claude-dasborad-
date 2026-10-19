@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.51.0 — Octubre 2026
+
+**Fase 153: Centro de cargas — Subir y Reemplazar desde el mes (cuarta
+parte, módulos de Mobilize).**
+
+- En Flujo de Llamadas, Tipificación (llamadas y WhatsApp), Llamadas Únicas,
+  Llamadas de Salida y Encuesta, **Subir** o **Reemplazar** en un mes abre la
+  pantalla de carga solo con ese módulo, y del archivo **solo se cargan las
+  filas de ese mes**. La vista previa dice cuántas filas de otros meses se
+  ignoraron ("se ignoraron 2 fila(s) de otros meses (septiembre 2)"), así que
+  un reemplazo nunca toca otro mes.
+- En Flujo de Llamadas también se ignoran las skills de otro cliente o sin
+  asignar, y se avisa cuántas.
+- La lectura del archivo, la vista previa, la confirmación antes de
+  reemplazar y la base guardada 30 días (Deshacer) son las de siempre.
+- Los demás módulos (los de ORLANT) siguen abriendo la pantalla completa.
+
 ## v1.50.0 — Octubre 2026
 
 **Fase 153: Centro de cargas — Eliminar un mes (tercera parte).**

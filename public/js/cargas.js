@@ -29,6 +29,14 @@ var _cargasCalidadPorCampana = {}; // { campana: {campana,engine,items} } — de
 var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente actual
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
+// Fase 153 (Centro de cargas, PR 4): { cliente, carga, mes, nombre } cuando
+// se llega desde "Subir/Reemplazar" de un mes del Centro: el plan queda con
+// ese modulo y el archivo con las filas de ese mes (centroFiltrarPlan /
+// centroFiltrarResultado, centro-cargas-logic.js). null = pantalla de siempre.
+var _cargasFocoCentro = null;
+function _cargasFocoActivo(cliente){
+  return _cargasFocoCentro && _cargasFocoCentro.cliente === cliente ? _cargasFocoCentro : null;
+}
 
 // Hojas especiales por cliente (Fases 66, 131, 138, 141, 142 y 147). Desde
 // la Fase 153 (Paso 2) ya no son listas fijas aqui: salen del registro de
@@ -93,6 +101,7 @@ function closeCargas(){
   var cerrarReal = function(){ document.getElementById('cargas-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('cargas-modal', cerrarReal);
   else cerrarReal();
+  _cargasFocoCentro = null;
   // Fase 153: si se llego aqui desde el Centro de cargas (Subir/Reemplazar),
   // se vuelve a el en el mismo modulo, con los conteos ya actualizados.
   if (typeof centroVolverTrasCarga === 'function') centroVolverTrasCarga();
@@ -353,12 +362,18 @@ async function onCargaClienteChange(){
     var whatsappTiemposCols = LISTAS_REGISTRO.whatsappTiempos.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
     var encuestaCols = LISTAS_REGISTRO.encuesta.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
     _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols);
+    var foco = _cargasFocoActivo(cliente);
+    if(foco) _cargasPlan = centroFiltrarPlan(_cargasPlan, foco.carga);
   }
   _cargasResultados = [];
   document.getElementById('carga-preview-card').style.display = 'none';
   document.getElementById('carga-file').value = '';
   var desc = document.getElementById('carga-plan-desc');
-  if(!_cargasPlan.length){
+  var focoDesc = _cargasFocoActivo(cliente);
+  if(focoDesc && _cargasPlan.length){
+    desc.textContent = 'Centro de cargas: ' + focoDesc.nombre + ' de ' + centroNombreMes(focoDesc.mes) +
+      '. Del archivo solo se cargan las filas de ese mes; los demás meses no se tocan.';
+  } else if(!_cargasPlan.length){
     desc.textContent = cliente ? 'Esta campana no tiene secciones configuradas.' : '';
   } else {
     desc.textContent = 'Esta plantilla trae ' + _cargasPlan.length + ' hoja(s): ' +
@@ -660,6 +675,34 @@ async function procesarArchivoConsolidado(input){
     if(reconocidaPorEncabezadosComo) res.reconocidaPorEncabezadosComo = reconocidaPorEncabezadosComo;
     return res;
   });
+
+  // Fase 153 (PR 4): desde el Centro, solo las filas de ese mes (y en Flujo
+  // de Llamadas solo las skills de ese cliente).
+  var focoArch = _cargasFocoActivo(cliente);
+  if(focoArch){
+    var opcFoco = {};
+    if(_cargasResultados.some(function(r){ return r.tipo==='trafico' && r.filas; })){
+      try{
+        opcFoco.skillsDelCliente = {};
+        (await apiRequest('GET','/calidad/trafico/skills') || []).forEach(function(s){ if(s.campana===cliente) opcFoco.skillsDelCliente[s.skillName] = true; });
+      }catch(e){ showToast(e.message, 'error'); input.value=''; _cargasResultados = []; return; }
+    }
+    _cargasResultados = _cargasResultados.map(function(r){
+      var f = centroFiltrarResultado(r, focoArch.carga, focoArch.mes, opcFoco);
+      // Encuesta: los conteos de la vista previa, de las filas que quedaron.
+      if(f.tipo==='encuesta' && f.filas && f.centroIgnoradas){
+        f.conteos = encuestaConteos(f.filas);
+        f.dias = Object.keys(f.filas.reduce(function(a, x){ a[x[0]] = true; return a; }, {})).length;
+      }
+      return f;
+    });
+    if(!_cargasResultados.some(function(r){ return r.filas; })){
+      var err = _cargasResultados.filter(function(r){ return r.error; })[0];
+      showToast(err ? err.error : 'El archivo no trae datos de ' + focoArch.nombre + '.', 'error');
+      input.value=''; _cargasResultados = [];
+      return;
+    }
+  }
 
   if(!_cargasResultados.some(function(r){ return r.filas; })){
     var hojasEsperadas = _cargasPlan.map(function(h){ return h.hoja; }).join(', ');
