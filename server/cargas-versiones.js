@@ -137,6 +137,28 @@ function obtener(db, id) {
   return db.prepare('SELECT * FROM cargas_versiones WHERE id = ?').get(id) || null;
 }
 
+// Lo que cada lector recalcula a partir de las filas despues de cargar, para
+// un mes que cambio sin pasar por el lector (Deshacer y, en el PR 3,
+// Eliminar). Va dentro de la misma transaccion. Requires perezosos: esos
+// modulos requieren este.
+function recalcularDerivados(db, carga, campana, mes) {
+  if (carga.id === 'flujo_llamadas') {
+    // Agregado mensual de Nivel de Servicio, por cada sede del mes (las de
+    // antes y las de ahora: una sede que quedo sin filas baja a 0, igual que
+    // al cargar).
+    const { recalcularMensual } = require('./nivel-servicio-diario');
+    const sedes = db.prepare(
+      `SELECT sede FROM calidad_nivel_servicio WHERE campana = @c AND mes = @m
+       UNION SELECT sede FROM calidad_nivel_servicio_diario WHERE campana = @c AND substr(fecha, 1, 7) = @m`
+    ).all({ c: campana, m: mes }).map((r) => r.sede);
+    sedes.forEach((sede) => recalcularMensual(db, campana, mes, undefined, sede));
+  }
+  // ORLANT: su "resumen" manual sigue a Trafico (como al cargar).
+  if (campana === 'ORLANT' && (carga.id === 'flujo_llamadas' || carga.id === 'flujo_whatsapp')) {
+    require('./resumen-orlant-trafico').recalcularResumenOrlantDesdeTrafico(db, mes);
+  }
+}
+
 // Devuelve el mes a como estaba en la version `id`. Lanza un Error con
 // `.status` si no se puede. Transaccion propia.
 function deshacer(db, id, { actorNombre, ahora } = {}) {
@@ -158,6 +180,7 @@ function deshacer(db, id, { actorNombre, ahora } = {}) {
       const ins = db.prepare(`INSERT INTO ${carga.tabla} (${cols.join(', ')}) VALUES (${cols.map((c) => '@' + c).join(', ')})`);
       filas.forEach((f) => { const r = {}; cols.forEach((c) => { r[c] = f[c] === undefined ? null : f[c]; }); ins.run(r); });
     }
+    recalcularDerivados(db, carga, v.campana, v.mes);
     db.prepare('UPDATE cargas_versiones SET restauradoEn = ?, restauradoPorNombre = ? WHERE id = ?').run(t.toISOString(), actorNombre || null, v.id);
   })();
   return { version: _publica(obtener(db, id)), restauradas: filas.length, reemplazadas, guardadaAntes };
@@ -170,5 +193,5 @@ function purgar(db, ahora) {
 
 module.exports = {
   DIAS_RETENCION, TOPE_POR_MES, crearTabla, cargaDeTabla, mesesEntre,
-  respaldarMes, respaldarAntesDeCambiar, listar, obtener, deshacer, purgar,
+  respaldarMes, respaldarAntesDeCambiar, recalcularDerivados, listar, obtener, deshacer, purgar,
 };

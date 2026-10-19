@@ -76,8 +76,12 @@ test('Flujo de Llamadas (actualiza filas, no solo borra): la version es la de AN
   const v = V.listar(db, C, { carga: 'flujo_llamadas', mes: '2026-03' })[0];
   const guardadas = JSON.parse(zlib.gunzipSync(V.obtener(db, v.id).filas).toString());
   assert.equal(guardadas[0].totalLlamadas, 50);
+  const mensual = () => db.prepare("SELECT llamadasTotales FROM calidad_nivel_servicio WHERE campana = ? AND mes = '2026-03' AND sede IS NULL").get(C).llamadasTotales;
+  assert.equal(mensual(), 80);
   V.deshacer(db, v.id, {});
   assert.equal(db.prepare("SELECT totalLlamadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND skillName = 'SKILL Z'").get(C).totalLlamadas, 50);
+  // v1.49.1: el agregado mensual (calidad_nivel_servicio) sigue a las filas diarias, como al cargar.
+  assert.equal(mensual(), 50, 'Deshacer recalcula el agregado mensual de Flujo de Llamadas');
 });
 
 test('si el respaldo falla, la carga no cambia nada (misma transaccion)', () => {
