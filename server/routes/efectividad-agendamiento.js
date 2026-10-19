@@ -10,7 +10,7 @@
 // routes/agendas.
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoEfectividadAgendamiento, cargarEfectividadAgendamiento,
@@ -56,7 +56,7 @@ router.post(
   requireActor,
   validate(schemas.efectividadAgendamientoCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'efectividad_agendamiento')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -72,7 +72,7 @@ router.post(
   requireActor,
   validate(schemas.efectividadAgendamientoCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'efectividad_agendamiento')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir Efectividad de agendamiento' });
     }
     const b = req.body;

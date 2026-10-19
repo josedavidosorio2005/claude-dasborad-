@@ -134,7 +134,8 @@ function enterAdminPanel(){
   if(thUltimoIngreso) thUltimoIngreso.classList.toggle('hidden',!(isMaster||isAdminRole));
 
   var cargasLi=document.getElementById('menu-cargas-li');
-  if(cargasLi) cargasLi.classList.toggle('hidden', !(isMaster||isAdminRole||canLoadData()));
+  // Fase 153 (PR 5): tambien CALIDAD con algun cargar_<modulo> (Centro de cargas).
+  if(cargasLi) cargasLi.classList.toggle('hidden', !(isMaster||isAdminRole||canLoadAnyModule()));
   var dashboardsLi=document.getElementById('menu-dashboards-li');
   if(dashboardsLi) dashboardsLi.classList.toggle('hidden', !(isMaster||isAdminRole));
   var invLi=document.getElementById('menu-inventario-li');

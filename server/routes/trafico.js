@@ -15,7 +15,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const traficoSkills = require('../trafico-skills');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -38,6 +38,19 @@ function campanasSinAcceso(actor, skillNames) {
     if (c && !campaignAccess(actor, c)) sinAcceso.add(c);
   }
   return [...sinAcceso];
+}
+// Fase 153 (PR 5): quien carga solo por su permiso de modulo (CALIDAD con
+// cargar_flujo_llamadas, sin cargarDatos) no puede dejar filas "(SIN
+// ASIGNAR)": esas skills las asigna quien tiene Cargar Datos.
+function rechazarSkillsSinAsignar(actor, res, skillNames) {
+  if (canLoadData(actor)) return false;
+  const sin = [...new Set(skillNames)].filter((s) => {
+    const c = campanaActualDeSkill(s);
+    return !c || c === traficoSkills.SIN_ASIGNAR;
+  });
+  if (!sin.length) return false;
+  res.status(403).json({ error: `Hay skills sin asignar a un cliente (${sin.slice(0, 5).join(', ')}${sin.length > 5 ? '…' : ''}). Las asigna quien tiene el permiso Cargar Datos.` });
+  return true;
 }
 function rechazarSinAcceso(res, campanas) {
   return res.status(403).json({ error: `Sin acceso a los datos de: ${campanas.join(', ')}` });
@@ -134,12 +147,13 @@ router.post(
   requireActor,
   validate(schemas.traficoCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'flujo_llamadas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de llamadas' });
     }
     const b = req.body;
     const sinAccesoCarga = campanasSinAcceso(req.actor, b.filas.map((f) => f.skillName));
     if (sinAccesoCarga.length) return rechazarSinAcceso(res, sinAccesoCarga);
+    if (rechazarSkillsSinAsignar(req.actor, res, b.filas.map((f) => f.skillName))) return;
     const resultado = traficoSkills.cargarTrafico(db, {
       archivoNombre: b.archivoNombre || '',
       cargadoPorNombre: req.actor.nombre || '-',
@@ -162,7 +176,7 @@ router.get(
   '/calidad/trafico/skills',
   requireActor,
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'flujo_llamadas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para ver el mapeo de skills' });
     }
     res.json(traficoSkills.listarSkills(db).filter((r) => campanaVisible(req.actor, r.campana)));
@@ -243,11 +257,12 @@ router.post(
   requireActor,
   validate(schemas.traficoCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'flujo_llamadas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const sinAccesoImpacto = campanasSinAcceso(req.actor, req.body.filas.map((f) => f.skillName));
     if (sinAccesoImpacto.length) return rechazarSinAcceso(res, sinAccesoImpacto);
+    if (rechazarSkillsSinAsignar(req.actor, res, req.body.filas.map((f) => f.skillName))) return;
     const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas, filasABorrar }
     req.body.filas.forEach((f) => {
       const mes = f.fecha.slice(0, 7);

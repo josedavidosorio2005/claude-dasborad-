@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.54.0 — Octubre 2026
+
+**Fase 153: Centro de cargas — permisos de carga por módulo para Calidad.**
+
+- En **Usuarios**, al editar a alguien de **Calidad**, hay una lista nueva:
+  "Puede cargar en el Centro de cargas (por módulo)", con una casilla por
+  módulo (Flujo de Llamadas, Tipificación, Encuesta…). **Todas vienen
+  apagadas**: nadie gana nada hasta que se le marque.
+- Con un módulo marcado, esa persona ve "Cargar Datos" y el Centro de cargas
+  **solo con ese módulo**, y solo en los clientes que ya tiene asignados en
+  "Acceso a campañas de Calidad". Puede subir, reemplazar, eliminar y
+  deshacer en ese módulo; en los demás, no.
+- No ve la "Pantalla anterior" ni la lista de Gestión de base: esas siguen
+  siendo de quien tiene "Puede cargar datos operativos".
+- En Flujo de Llamadas no puede subir skills sin asignar a un cliente: esas
+  las asigna quien tiene "Puede cargar datos operativos".
+- Reportes y los administradores siguen igual: cargan todo.
+
 ## v1.53.0 — Octubre 2026
 
 **Fase 153: Centro de cargas — Subir y Reemplazar desde el mes, ahora

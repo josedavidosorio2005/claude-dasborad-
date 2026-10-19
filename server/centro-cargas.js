@@ -35,6 +35,11 @@ const CARGAS_POR_MODULO = {
   calidad: [{ id: 'calidad', nombre: 'Monitoreos de Calidad', tabla: 'monitoreos', fecha: 'fecha', plantilla: null }],
 };
 
+// Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD
+// (auth.canLoadModule). Calidad no: sus monitoreos tienen su propio permiso
+// (canEvaluateCampaign) y no suben desde el Centro.
+const MODULOS_CON_PERMISO = Object.keys(CARGAS_POR_MODULO).filter((m) => m !== 'calidad');
+
 // Lista cerrada de plantillas que se pueden descargar (nunca una ruta armada
 // con lo que manda el navegador).
 const PLANTILLAS_DESCARGABLES = Object.values(CARGAS_POR_MODULO)
@@ -164,4 +169,4 @@ function conteoRango(db, campana, carga, mes, desde, hasta) {
   return { enMes: r.enMes, enRango: r.enRango };
 }
 
-module.exports = { conteoRango, CARGAS_POR_MODULO, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };
+module.exports = { conteoRango, MODULOS_CON_PERMISO, CARGAS_POR_MODULO, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };

@@ -75,7 +75,10 @@ async function _cargasAvisarSiVersionVieja(){
 }
 
 async function openCargas(){
-  if(!(isFullAdmin() || (currentUser && currentUser.perms && currentUser.perms.cargarDatos))){
+  // Fase 153 (PR 5): sin cargarDatos, solo desde el Centro de cargas y solo
+  // el modulo de su permiso cargar_<modulo> (CALIDAD).
+  var soloFoco = !canLoadData();
+  if(soloFoco && !(_cargasFocoCentro && canLoadModule(centroModuloDeCarga(_cargasFocoCentro.carga)))){
     showToast('No tienes permiso para cargar datos'); return;
   }
   document.getElementById('cargas-overlay').classList.add('show');
@@ -93,6 +96,8 @@ async function openCargas(){
     plantillas.forEach(function(p){ _cargasCalidadPorCampana[p.campana] = p; });
   }catch(e){ _cargasCalidadPorCampana = {}; }
   var selC = document.getElementById('carga-cliente');
+  // PR 5: quien carga por su permiso de modulo solo ve el cliente que eligio en el Centro.
+  if(soloFoco) _cargasClientes = _cargasClientes.filter(function(c){ return c === _cargasFocoCentro.cliente; });
   selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();
@@ -1289,6 +1294,10 @@ async function guardarCarga(){
 }
 
 async function renderCargasExistentes(){
+  // PR 5: la lista de Gestion de base (dashboard_cargas) es solo de cargarDatos.
+  var card = document.getElementById('carga-existentes-card');
+  if(card) card.classList.toggle('hidden', !canLoadData());
+  if(!canLoadData()) return;
   var tbl = document.getElementById('carga-existentes-table');
   if(!tbl) return;
   var cliente = document.getElementById('carga-cliente').value;

@@ -11,7 +11,7 @@
 // despues de routes/calidad.
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -105,7 +105,7 @@ router.post(
   requireActor,
   validate(schemas.agendasCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'agendas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -121,7 +121,7 @@ router.post(
   requireActor,
   validate(schemas.agendasCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'agendas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir agendas' });
     }
     const b = req.body;

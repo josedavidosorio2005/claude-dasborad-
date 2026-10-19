@@ -236,8 +236,9 @@ declarar(['POST /umbrales', 'PUT /umbrales/:id', 'DELETE /umbrales/:id'], 'admin
 declarar(['GET /dashboard/clientes'], 'open');
 declarar(['GET /dashboard/ultima-actualizacion'], 'scopedRead'); // Fase 131 Parte 4, mismo gate que GET /dashboard/:cliente (clienteAccess)
 declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLoaderGlobal');
-// Fase 153 (P2, maqueta): Centro de cargas. El resumen por mes exige poder
-// cargar (canLoadData) Y acceso a ese cliente (campaignAccess); la descarga de
+// Fase 153 (P2, maqueta; PR 5): Centro de cargas. El resumen por mes exige poder
+// cargar (canLoadData, o en CALIDAD su cargar_<modulo>) Y acceso a ese cliente
+// (campaignAccess); la descarga de
 // plantillas solo poder cargar (lista cerrada de archivos, sin datos).
 declarar(['GET /centro-cargas/:cliente', 'GET /centro-cargas/:cliente/:carga/:mes/datos', 'GET /centro-cargas/:cliente/versiones', 'GET /centro-cargas/:cliente/:carga/:mes/conteo', 'DELETE /centro-cargas/:cliente/:carga/:mes'], 'cargaYcliente');
 // Deshacer: mismo criterio sobre el cliente de la version (fase153-versiones.test.js).
@@ -669,5 +670,46 @@ test('Fase 153: GET /centro-cargas/:cliente/:carga/:mes/datos -- mismo criterio 
       if (deberiaPasar) assert.equal(res.status, 200, rol + ' ' + campana + ': ' + JSON.stringify(res.body));
       else assert.equal(res.status, 403, rol + ' ' + campana + ' NO deberia descargar lo cargado');
     }
+  }
+});
+
+// Fase 153 (Centro de cargas, PR 5): cargar_<modulo> para CALIDAD. El seed
+// trae a CALIDAD SIN ningun cargar_ (apagado por defecto): las rutas de carga
+// le dan 403. Con cargar_llamadas_unicas: solo ese modulo y solo su cliente
+// (PROPIA); el resto de roles no cambia (ver fase153-permisos-modulo.test.js
+// para Eliminar/Deshacer/plantillas/Trafico en detalle).
+test('Fase 153 PR 5: CALIDAD sin cargar_<modulo> no sube, no elimina, no deshace; con el permiso, solo ese modulo y su cliente', async () => {
+  const id = actores.CALIDAD.id;
+  const original = db.prepare('SELECT perms FROM users WHERE id = ?').get(id).perms;
+  const lu = (campana) => ({ campana, archivoNombre: 'm.xlsx', filas: [['Asesor M', '2026-08-05', 'CONTESTADA', 'SKILL M']] });
+  const rutasCentro = (campana) => [
+    ['get', '/api/centro-cargas/' + campana],
+    ['get', '/api/centro-cargas/' + campana + '/llamadas_unicas/2026-08/datos'],
+    ['delete', '/api/centro-cargas/' + campana + '/llamadas_unicas/2026-08'],
+    ['post', '/api/centro-cargas/versiones/999999/deshacer'],
+  ];
+  try {
+    assert.ok(!Object.keys(JSON.parse(original || '{}')).some((k) => k.startsWith('cargar_')), 'el seed no trae ningun cargar_');
+    for (const [m, url] of rutasCentro(PROPIA)) {
+      const st = (await request(app)[m](url).set(auth('CALIDAD'))).status;
+      assert.ok(st === 403 || (url.includes('/deshacer') && st === 404), `sin permiso: ${m} ${url} -> ${st}`);
+    }
+    assert.equal((await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth('CALIDAD')).send(lu(PROPIA))).status, 403);
+
+    db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(Object.assign(JSON.parse(original || '{}'), { cargar_llamadas_unicas: true })), id);
+    const centro = await request(app).get('/api/centro-cargas/' + PROPIA).set(auth('CALIDAD'));
+    assert.equal(centro.status, 200, JSON.stringify(centro.body));
+    assert.ok(centro.body.modulos.every((mod) => mod.id === 'llamadas_unicas'), 'solo su modulo');
+    assert.equal((await request(app).get('/api/centro-cargas/' + AJENA).set(auth('CALIDAD'))).status, 403, 'cliente ajeno');
+    assert.equal((await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth('CALIDAD')).send(lu(PROPIA))).status, 201);
+    assert.equal((await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth('CALIDAD')).send(lu(AJENA))).status, 403);
+    assert.equal((await request(app).delete('/api/centro-cargas/' + PROPIA + '/tipificacion_llamadas/2026-08').set(auth('CALIDAD'))).status, 403, 'otro modulo');
+    // Los demas roles del seed siguen igual que antes (sin cargarDatos no entran).
+    for (const rol of ['SUPERVISOR', 'GERENCIA', 'CLIENTES_DASH', 'ASESOR']) {
+      assert.equal((await request(app).get('/api/centro-cargas/' + PROPIA).set(auth(rol))).status, 403, rol);
+    }
+    assert.equal((await request(app).get('/api/centro-cargas/' + PROPIA).set(auth('REPORTES'))).status, 200, 'REPORTES sigue igual');
+  } finally {
+    db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(original, id);
   }
 });

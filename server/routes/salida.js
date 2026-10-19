@@ -7,7 +7,7 @@
 // de '/calidad' -- se monta en server.js despues de routes/efectividad-citas.
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoSalida, cargarSalida,
@@ -50,7 +50,7 @@ router.post(
   requireActor,
   validate(schemas.salidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'salida')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -66,7 +66,7 @@ router.post(
   requireActor,
   validate(schemas.salidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'salida')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir Salida' });
     }
     const b = req.body;

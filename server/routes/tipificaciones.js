@@ -12,7 +12,7 @@
 // ver RUTAS_LIMITE_MAYOR), no aqui.
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoTipificaciones,
@@ -80,7 +80,7 @@ router.post(
   requireActor,
   validate(schemas.tipificacionCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'tipificacion')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -96,7 +96,7 @@ router.post(
   requireActor,
   validate(schemas.tipificacionCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'tipificacion')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir tipificacion' });
     }
     const b = req.body;

@@ -147,6 +147,7 @@ function openEditModal(id){
   if(showAsesorEdit) buildAsesorCampanaSelect(u.asesorCampana);
   document.getElementById('mu-cargar-datos').checked=(u.perms && u.perms.cargarDatos===true);
   syncCargarDatosLock(u.rol);
+  buildCargarModulosCheckboxes(u.perms, u.rol);
   document.getElementById('modal-user').classList.add('show');
 }
 
@@ -162,6 +163,7 @@ function onRolChange(){
   document.getElementById('mu-asesor-note').style.display=showAsesor?'block':'none';
   if(showAsesor) buildAsesorCampanaSelect(null);
   syncCargarDatosLock(rol);
+  buildCargarModulosCheckboxes(null, rol);
 }
 
 // REPORTES siempre puede cargar datos (feedback Edwin 2.1): el backend lo fuerza;
@@ -212,6 +214,33 @@ function getCampaignChecks(){
   return checks;
 }
 
+// Fase 153 (PR 5): cargar_<modulo> por usuario, solo rol CALIDAD (apagado
+// por defecto). El servidor (auth.canLoadModule) es el candado real.
+function buildCargarModulosCheckboxes(existingPerms, rol){
+  var sec=document.getElementById('mu-cargar-modulos-section');
+  if(!sec) return;
+  sec.style.display=(rol==='CALIDAD')?'block':'none';
+  document.getElementById('mu-cargar-modulos-grid').innerHTML=CENTRO_MODULOS_PERMISO.map(function(m){
+    var checked=!!(existingPerms && existingPerms['cargar_'+m.id]===true);
+    return '<label class="client-perm-item">'+
+      '<input type="checkbox" data-cargar-modulo="'+esc(m.id)+'" '+(checked?'checked':'')+'>'+esc(m.nombre)+'</label>';
+  }).join('');
+}
+
+// Pone en `perms` las claves cargar_<modulo>: las marcadas si el rol es
+// CALIDAD; para cualquier otro rol, todas en false.
+function aplicarCargarModulos(perms, rol){
+  var inputs=document.querySelectorAll('#mu-cargar-modulos-grid input[data-cargar-modulo]');
+  var marcadas={};
+  inputs.forEach(function(inp){ marcadas[inp.dataset.cargarModulo]=inp.checked; });
+  CENTRO_MODULOS_PERMISO.forEach(function(m){
+    var on = rol==='CALIDAD' && marcadas[m.id]===true;
+    if(on) perms['cargar_'+m.id]=true;
+    else if(perms['cargar_'+m.id]!==undefined) perms['cargar_'+m.id]=false;
+  });
+  return perms;
+}
+
 function closeUserModal(){
   document.getElementById('modal-user').classList.remove('show');
 }
@@ -241,6 +270,7 @@ async function saveUserModal(){
     var payload={ nombre:nombre, user:user, password:pass, rol:rol,
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
     if(document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
+    aplicarCargarModulos(payload.perms, rol);
     if(rol==='ASESOR') payload.asesorCampana = document.getElementById('mu-asesor-campana').value;
     var btnC=document.querySelector('#modal-user .btn-primary');
     try{
@@ -266,6 +296,7 @@ async function saveUserModal(){
       CAMPANAS_CALIDAD.forEach(function(c){newPerms['campana_'+c]=cac[c]===true;});
     }
     newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
+    aplicarCargarModulos(newPerms, rol);
     var payload={ nombre:nombre, user:user, rol:rol, perms:newPerms };
     if(pass) payload.password=pass;
     if(rol==='ASESOR') payload.asesorCampana=document.getElementById('mu-asesor-campana').value;

@@ -24,6 +24,43 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_bar_asesores: 'calidad',
 };
 
+// Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD,
+// en el orden y con los nombres del catalogo (= MODULOS_CON_PERMISO del
+// servidor, centro-cargas.js; una prueba exige que coincidan). Calidad no.
+var CENTRO_MODULOS_PERMISO = [
+  { id: 'flujo_llamadas', nombre: 'Flujo de Llamadas' },
+  { id: 'flujo_whatsapp', nombre: 'Flujo de WhatsApp' },
+  { id: 'whatsapp_tiempos', nombre: 'WhatsApp por rangos de tiempo' },
+  { id: 'salida', nombre: 'Llamadas y WhatsApp de salida' },
+  { id: 'agendas', nombre: 'Agendas' },
+  { id: 'efectividad_agendamiento', nombre: 'Efectividad de Agendamiento' },
+  { id: 'inasistencia', nombre: 'Inasistencia' },
+  { id: 'efectividad_citas', nombre: 'Efectividad de Citas' },
+  { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida' },
+  { id: 'tipificacion', nombre: 'Tipificación' },
+  { id: 'encuesta', nombre: 'Encuesta' },
+];
+
+// Una carga del Centro -> su modulo del catalogo (dos cargas comparten modulo).
+function centroModuloDeCarga(cargaId) {
+  if (cargaId === 'tipificacion_llamadas' || cargaId === 'tipificacion_whatsapp') return 'tipificacion';
+  if (cargaId === 'llamadas_salida') return 'llamadas_unicas';
+  return cargaId;
+}
+
+// Permisos de carga (mismo criterio que auth.canLoadModule del servidor, que
+// es el candado real): cargarDatos = todos; CALIDAD = sus cargar_<modulo>.
+// `u` = usuario ({ rol, perms }); `esAdmin` = isFullAdmin() del navegador.
+function centroPuedeCargarModulo(u, esAdmin, modulo) {
+  if (esAdmin) return true;
+  var p = (u && u.perms) || {};
+  if (p.cargarDatos === true) return true;
+  return !!(u && u.rol === 'CALIDAD' && p['cargar_' + modulo] === true);
+}
+function centroPuedeCargarAlgo(u, esAdmin) {
+  return CENTRO_MODULOS_PERMISO.some(function (m) { return centroPuedeCargarModulo(u, esAdmin, m.id); });
+}
+
 function centroModuloDeTab(tab) {
   var p = tab && tab.panels && tab.panels[0];
   return (p && CENTRO_PANEL_A_MODULO[p.tipo]) || null;
@@ -227,6 +264,10 @@ if (typeof module !== 'undefined' && module.exports) {
     CENTRO_MESES: CENTRO_MESES,
     CENTRO_PANEL_A_MODULO: CENTRO_PANEL_A_MODULO,
     centroModuloDeTab: centroModuloDeTab,
+    CENTRO_MODULOS_PERMISO: CENTRO_MODULOS_PERMISO,
+    centroModuloDeCarga: centroModuloDeCarga,
+    centroPuedeCargarModulo: centroPuedeCargarModulo,
+    centroPuedeCargarAlgo: centroPuedeCargarAlgo,
     centroNombreMes: centroNombreMes,
     centroEstadoMes: centroEstadoMes,
     centroTextoRegistros: centroTextoRegistros,
