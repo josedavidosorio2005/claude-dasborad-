@@ -16,6 +16,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Las plantillas de esos módulos dicen en la hoja de instrucciones qué
   archivo va en cada carga y de qué reporte de Wolkvox sale cada uno.
 
+## v1.55.0 — Octubre 2026
+
+**Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
+
+- Dentro de cada tablero hay un botón nuevo, al lado de "Exportar", para
+  cambiar entre modo claro y modo oscuro (ícono de luna o de sol). Lo puede
+  usar cualquiera que vea el tablero, también el cliente, sin salir de él.
+
 ## v1.54.5 — Octubre 2026
 
 **Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
