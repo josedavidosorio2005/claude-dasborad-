@@ -3778,6 +3778,25 @@ function crearClinicaAurora() {
 }
 runOnceMigration('fase153_crear_clinica_aurora_v1', crearClinicaAurora);
 
+// Fase 155 (pedido de Edwin, 19/10): nivel de atencion y tasa de abandono de
+// Flujo de Llamadas los calcula el sistema. Las filas ya cargadas guardaban
+// el % que traia el archivo; se recalculan una vez con la misma formula que
+// usan las cargas nuevas (pctAtencionAbandono). Solo toca esas 2 columnas
+// derivadas: ingresadas, contestadas y abandonadas quedan igual.
+function recalcularPctAtencionAbandono() {
+  const { pctAtencionAbandono } = require('./nivel-servicio-diario');
+  const filas = db.prepare('SELECT id, totalLlamadas, contestadas, llamadasAbandonadas FROM calidad_nivel_servicio_diario').all();
+  const upd = db.prepare('UPDATE calidad_nivel_servicio_diario SET nivelAtencionPct = ?, tasaAbandonoPct = ? WHERE id = ?');
+  db.transaction(() => {
+    filas.forEach((f) => {
+      const p = pctAtencionAbandono(f.totalLlamadas, f.contestadas, f.llamadasAbandonadas);
+      upd.run(p.nivelAtencionPct, p.tasaAbandonoPct, f.id);
+    });
+  })();
+  if (!config.isTest) console.log(`[db] Migracion fase155_pct_atencion_abandono_v1 aplicada (${filas.length} fila(s)).`);
+}
+runOnceMigration('fase155_pct_atencion_abandono_v1', recalcularPctAtencionAbandono);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3808,3 +3827,5 @@ module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.AURORA = AURORA;
+// Fase 155: idem (prueba que la migracion es idempotente).
+module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;

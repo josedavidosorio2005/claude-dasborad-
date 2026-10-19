@@ -581,7 +581,8 @@ test('las columnas opcionales ausentes no llegan como 0 sino como null', async (
     .get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('(SIN ASIGNAR)'))
     .set(auth(admin));
   const row = rows.body.find((r) => r.skillName === skill);
-  assert.equal(row.nivelAtencionPct, null);
+  // Fase 155: el nivel de atencion lo calcula el sistema (90 de 100), no es una columna opcional.
+  assert.equal(row.nivelAtencionPct, 90);
   assert.equal(row.serviceLevel20secPct, null);
   assert.equal(row.ahtSegundos, null);
 });

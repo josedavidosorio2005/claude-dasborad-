@@ -22,7 +22,14 @@ function semaforoColorDe(valor, umbral) {
 // Busca en una lista de filas umbrales_semaforo (id,metrica,campana,verde,
 // amarillo,direccion) la que aplica: override por campana primero, si no el
 // default global (campana==='' o null/undefined).
+// Fase 155 (pedido de Edwin, 19/10): el nivel de atencion NO se mide contra
+// una meta -- sin meta no hay semaforo, ni linea de meta, en ningun panel
+// (Flujo de Llamadas/WhatsApp y el resumen de ORLANT). El umbral puede
+// seguir guardado en la pantalla Umbrales, pero no se usa.
+var SEMAFORO_METRICAS_SIN_META = ['nivel_atencion'];
+
 function semaforoUmbralPara(umbrales, metrica, campana) {
+  if (SEMAFORO_METRICAS_SIN_META.indexOf(metrica) !== -1) return null;
   if (!umbrales || !umbrales.length) return null;
   var porCampana = campana
     ? umbrales.find(function (u) { return u.metrica === metrica && u.campana === campana; })
@@ -75,6 +82,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     semaforoColorDe: semaforoColorDe,
     semaforoUmbralPara: semaforoUmbralPara,
+    SEMAFORO_METRICAS_SIN_META: SEMAFORO_METRICAS_SIN_META,
     semaforoMetricaKey: semaforoMetricaKey,
     semaforoClaseCss: semaforoClaseCss,
     semaforoSimboloDe: semaforoSimboloDe,
