@@ -12,10 +12,60 @@ const { cargasPlanConsolidado } = require('../../public/js/cargas-logic.js');
 
 const PUB = path.join(__dirname, '..', '..', 'public', 'js');
 
-test('las cargas de Mobilize suben desde el mes; las demas siguen con la pantalla de siempre', () => {
-  ['flujo_llamadas', 'tipificacion_llamadas', 'tipificacion_whatsapp', 'llamadas_unicas', 'llamadas_salida', 'encuesta']
-    .forEach((id) => assert.ok(L.centroSubeDesdeMes(id), id));
-  ['calidad', 'agendas', 'flujo_whatsapp', 'salida', 'inasistencia'].forEach((id) => assert.equal(L.centroSubeDesdeMes(id), false, id));
+test('todas las cargas suben desde el mes (Mobilize y ORLANT), menos Calidad', () => {
+  const { CARGAS_POR_MODULO } = require('../centro-cargas');
+  const ids = Object.values(CARGAS_POR_MODULO).flat().map((c) => c.id);
+  ids.filter((id) => id !== 'calidad').forEach((id) => assert.ok(L.centroSubeDesdeMes(id), id));
+  assert.equal(L.centroSubeDesdeMes('calidad'), false, 'Calidad tiene su propia carga');
+  assert.deepEqual(Object.keys(L.CENTRO_CARGA_PLAN).sort(), ids.filter((id) => id !== 'calidad').sort(), 'ni de mas ni de menos');
+});
+
+test('el plan real de ORLANT (2 hojas de Trafico y modulos propios) tiene un renglon para cada carga', () => {
+  // Mismos argumentos que onCargaClienteChange arma para ORLANT (plantilla
+  // unificada): Trafico de voz y WhatsApp, Agendas, Tipificacion, Inasistencia,
+  // Efectividad de Agendamiento y de Citas, Salida y WhatsApp tiempos.
+  const c = [{ label: 'X' }];
+  const plan = cargasPlanConsolidado({}, null, c, c, c, c, c, c, c, c, undefined, null, null, c, null);
+  const esperado = {
+    flujo_llamadas: 'LLAMADAS', flujo_whatsapp: 'WHATSAPP', whatsapp_tiempos: 'WHATSAPP_TIEMPOS', agendas: 'AGENDAS',
+    salida: 'SALIDA', efectividad_agendamiento: 'EFECTIVIDAD_AGENDAMIENTO', inasistencia: 'INASISTENCIA',
+    efectividad_citas: 'CITAS_ATENDIDAS', tipificacion_llamadas: 'TIPIFICACION_LLAMADAS', tipificacion_whatsapp: 'TIPIFICACION_WHATSAPP',
+  };
+  Object.keys(esperado).forEach((id) => assert.deepEqual(L.centroFiltrarPlan(plan, id).map((h) => h.hoja), [esperado[id]], id));
+});
+
+test('ORLANT: fecha de cada lector y filtro por mes', () => {
+  assert.equal(L.centroFechaFila('agendas', { fechaSolicitud: '2026-08-04 10:30' }), '2026-08-04 10:30');
+  assert.equal(L.centroFechaFila('whatsapp_tiempos', ['SKILL', '2026-08-05', '10:00', 30]), '2026-08-05');
+  assert.equal(L.centroFechaFila('trafico', { fechaInicio: '2026-08-06', colaWhatsapp: 'C' }), '2026-08-06');
+  ['salida', 'efectividad_agendamiento', 'inasistencia', 'citas_atendidas'].forEach((t) => assert.equal(L.centroFechaFila(t, { mes: '2026-08' }), '2026-08', t));
+  const ag = L.centroFiltrarResultado({ tipo: 'agendas', filas: [{ fechaSolicitud: '2026-08-04 10:30' }, { fechaSolicitud: '2026-09-01 08:00' }], avisos: [] }, 'agendas', '2026-08');
+  assert.equal(ag.filas.length, 1);
+  assert.deepEqual(L.centroRangoFilas('agendas', ag.filas), { desde: '2026-08-04 10:30', hasta: '2026-08-04 10:30' }, 'Agendas con hora, como su lector');
+  const sal = L.centroFiltrarResultado({ tipo: 'salida', filas: [{ mes: '2026-07' }, { mes: '2026-08' }, { mes: '2026-09' }], avisos: [] }, 'salida', '2026-08');
+  assert.deepEqual(sal.filas, [{ mes: '2026-08' }]);
+  assert.match(sal.avisos[0], /se ignoraron 2 fila\(s\) de otros meses \(julio 1, septiembre 1\)/);
+});
+
+test('Flujo de WhatsApp: sin filtro de skills (va al cliente elegido) y nunca un archivo de voz', () => {
+  const filas = [{ fechaInicio: '2026-08-01', colaWhatsapp: 'COLA X' }, { fechaInicio: '2026-07-31', colaWhatsapp: 'COLA X' }];
+  const r = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'whatsapp', filas, avisos: [] }, 'flujo_whatsapp', '2026-08', { skillsDelCliente: {} });
+  assert.equal(r.filas.length, 1, 'las colas de WhatsApp no pasan por el mapeo de skills de voz');
+  const voz = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'voz', filas: [{ fecha: '2026-08-01', skillName: 'S' }], avisos: [] }, 'flujo_whatsapp', '2026-08');
+  assert.equal(voz.error, 'Este archivo es de Llamadas; aquí va el de WhatsApp.');
+});
+
+test('modulos mensuales: se reemplaza el mes entero y el aviso lo dice', () => {
+  ['salida', 'efectividad_agendamiento', 'inasistencia', 'efectividad_citas'].forEach((id) => assert.ok(L.centroEsMensual(id), id));
+  ['agendas', 'flujo_llamadas', 'llamadas_unicas'].forEach((id) => assert.equal(L.centroEsMensual(id), false, id));
+  assert.equal(L.centroTextoReemplazoMensual('2026-08', { enMes: 12, enRango: 0 }), 'Este módulo se guarda por mes: se reemplaza agosto completo (12 registros de ahora).');
+  assert.equal(L.centroTextoReemplazoMensual('2026-08', { enMes: 0, enRango: 0 }), 'Este módulo se guarda por mes y agosto no tiene datos todavía.');
+  const cargas = fs.readFileSync(path.join(PUB, 'cargas.js'), 'utf8');
+  assert.match(cargas, /if\(centroEsMensual\(focoArch\.carga\)\)\{/);
+  // Salida: corregir el año nunca saca una fila del mes elegido en el Centro.
+  assert.match(cargas, /if\(focoSalida && filas\.some\(function\(f\)\{ return f\.mes !== focoSalida\.mes; \}\)\)\{/);
+  // Solo Flujo de Llamadas pide el mapeo de skills.
+  assert.match(cargas, /if\(focoArch\.carga==='flujo_llamadas' && _cargasResultados\.some/);
 });
 
 test('centroFiltrarPlan deja solo el renglon de esa carga', () => {
@@ -34,7 +84,7 @@ test('centroFiltrarPlan deja solo el renglon de esa carga', () => {
   // ORLANT (2 hojas de Trafico): solo la de voz.
   const orlant = [{ tipo: 'trafico', canalFijo: 'voz', hoja: 'LLAMADAS' }, { tipo: 'trafico', canalFijo: 'whatsapp', hoja: 'WHATSAPP' }];
   assert.deepEqual(L.centroFiltrarPlan(orlant, 'flujo_llamadas').map((h) => h.hoja), ['LLAMADAS']);
-  assert.equal(L.centroFiltrarPlan(plan, 'agendas'), plan, 'una carga sin plan propio no cambia nada');
+  assert.equal(L.centroFiltrarPlan(plan, 'calidad'), plan, 'una carga sin plan propio (Calidad) no cambia nada');
 });
 
 test('el plan real de Mobilize (cargasPlanConsolidado) tiene un renglon para cada carga que sube desde el mes', () => {

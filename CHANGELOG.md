@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.53.0 — Octubre 2026
+
+**Fase 153: Centro de cargas — Subir y Reemplazar desde el mes, ahora
+también en los módulos de ORLANT.**
+
+- Flujo de Llamadas y de WhatsApp, WhatsApp por rangos de tiempo, Agendas,
+  Salida, Efectividad de Agendamiento, Inasistencia, Efectividad de Citas y
+  Tipificación: **Subir** o **Reemplazar** en un mes abre la carga solo con
+  ese módulo, y del archivo **solo se cargan las filas de ese mes**, igual
+  que en Mobilize.
+- Los módulos que se guardan **por mes** (Salida, Efectividad de
+  Agendamiento, Inasistencia, Efectividad de Citas) lo dicen en la vista
+  previa: "se reemplaza agosto completo".
+- En **Agendas** el aviso dice el tramo exacto que se reemplaza, con hora:
+  "del 5 de agosto a las 10:00 al 7 de agosto a las 12:00".
+- En Salida, si se corrige el año y las filas quedan en otro mes, la carga
+  se cancela con un aviso (desde el Centro nunca se toca otro mes).
+- En la vista previa de la pantalla de carga, Efectividad de Citas,
+  Efectividad de Agendamiento y Salida ya no aparecen como "Trafico de
+  Llamadas".
+
 ## v1.52.0 — Octubre 2026
 
 **Centro de cargas: aviso claro cuando el archivo no trae el mes completo.**

@@ -63,7 +63,8 @@ router.get(
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
-    const dia = /^\d{4}-\d{2}-\d{2}$/;
+    // Dia, o dia con hora (Agendas reemplaza por FECHA_SOLICITUD con hora).
+    const dia = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/;
     const { desde, hasta } = req.query;
     if (!dia.test(String(desde || '')) || !dia.test(String(hasta || '')) || desde > hasta) {
       return res.status(400).json({ error: 'Fechas inválidas' });
