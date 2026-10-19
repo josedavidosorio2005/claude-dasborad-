@@ -12,7 +12,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { cargarTraficoWhatsapp } = require('../trafico-whatsapp');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -81,7 +81,7 @@ router.post(
   requireActor,
   validate(schemas.traficoWppCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de WhatsApp' });
     }
     const b = req.body;
@@ -123,7 +123,7 @@ router.post(
   requireActor,
   validate(schemas.traficoWppCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;

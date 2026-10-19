@@ -10,7 +10,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoLlamadasUnicas,
@@ -100,7 +100,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasUnicasCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -116,7 +116,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasUnicasCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas unicas' });
     }
     const b = req.body;

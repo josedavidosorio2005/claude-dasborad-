@@ -6,7 +6,7 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoWhatsappTiempos,
@@ -47,7 +47,7 @@ router.post(
   requireActor,
   validate(schemas.whatsappTiemposCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'whatsapp_tiempos')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     if (!campaignAccess(req.actor, req.body.campana)) return sinAcceso(res);
@@ -60,7 +60,7 @@ router.post(
   requireActor,
   validate(schemas.whatsappTiemposCargaBody),
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    if (!canLoadModule(req.actor, 'whatsapp_tiempos')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir tiempos de WhatsApp' });
     }
     const b = req.body;

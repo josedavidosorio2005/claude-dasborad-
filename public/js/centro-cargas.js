@@ -29,7 +29,10 @@ function _ccClientesQuePuedeCargar() {
 }
 
 async function openCentroCargas(cliente, moduloId) {
-  if (!canLoadData()) { showToast('No tienes permiso para cargar datos.', 'error'); return; }
+  if (!canLoadAnyModule()) { showToast('No tienes permiso para cargar datos.', 'error'); return; }
+  // PR 5: la pantalla anterior (todas las hojas a la vez) es solo de quien tiene cargarDatos.
+  var btnAnt = document.getElementById('cc-pantalla-anterior');
+  if (btnAnt) btnAnt.classList.toggle('hidden', !canLoadData());
   var clientes = _ccClientesQuePuedeCargar();
   if (!clientes.length) { showToast('No tienes clientes asignados para cargar.', 'error'); return; }
   _cc.cliente = (cliente && clientes.indexOf(cliente) !== -1) ? cliente : (_cc.cliente && clientes.indexOf(_cc.cliente) !== -1 ? _cc.cliente : clientes[0]);
@@ -73,6 +76,8 @@ async function _ccCargar() {
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);
     _cc.modulos = r.modulos || [];
+    // PR 5: el servidor solo manda los modulos que puede cargar; un modulo pedido (atajo del tablero) que no esta, abre las tarjetas.
+    if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
     // PR 2: versiones guardadas (Deshacer, 30 dias) de este cliente.
     try { _cc.versiones = (await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/versiones')).versiones || []; }
     catch (e2) { _cc.versiones = []; }

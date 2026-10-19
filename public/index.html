@@ -799,6 +799,12 @@
       </label>
       <div id="mu-cargar-datos-reportes-note" class="hint" style="display:none;font-size:0.78rem;color:var(--c-text-muted);margin-top:4px">El rol REPORTES siempre puede cargar datos.</div>
     </div>
+    <!-- Fase 153 (PR 5): solo rol CALIDAD; todas apagadas por defecto. -->
+    <div class="client-perms-section" id="mu-cargar-modulos-section" style="display:none">
+      <h4>Puede cargar en el Centro de cargas (por módulo)</h4>
+      <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Solo en los clientes marcados arriba en "Acceso a campañas de Calidad". Si "Puede cargar datos operativos" está marcado, ya carga todos los módulos.</div>
+      <div class="client-perm-grid" id="mu-cargar-modulos-grid"></div>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeUserModal()">Cancelar</button>
       <button class="btn-primary" onclick="saveUserModal()">Guardar</button>
@@ -1388,7 +1394,7 @@
         <div class="aurora-sub">Elige el cliente y el módulo; cada mes muestra si ya tiene su base y quién la cargó.</div>
       </div>
       <div class="cc-cab-botones">
-        <button class="aurora-close" onclick="ccIrPantallaAnterior()">Pantalla anterior</button>
+        <button class="aurora-close" id="cc-pantalla-anterior" onclick="ccIrPantallaAnterior()">Pantalla anterior</button>
         <button class="aurora-close" onclick="closeCentroCargas()">X Cerrar</button>
       </div>
     </div>
@@ -1443,7 +1449,7 @@
       </div>
     </div>
 
-    <div class="aurora-card">
+    <div class="aurora-card" id="carga-existentes-card">
       <div class="aurora-card-title">Cargas registradas (Gestión de base)</div>
       <div style="overflow-x:auto"><table class="aurora-rank-table" id="carga-existentes-table"></table></div>
     </div>

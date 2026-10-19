@@ -202,6 +202,25 @@ function canLoadData(actor) {
   return !!(actor && actor.perms && actor.perms.cargarDatos === true);
 }
 
+// Fase 153 (Centro de cargas, PR 5): cargar POR MODULO. Quien tiene
+// cargarDatos (REPORTES, ADMIN, o asignado a mano) carga todos los modulos,
+// como siempre. Un usuario CALIDAD sin cargarDatos carga SOLO los modulos
+// con su `cargar_<modulo>` en true (apagado por defecto, se activa por
+// usuario en Usuarios) -- y siempre con campaignAccess al cliente, que cada
+// ruta sigue exigiendo aparte. `modulo` = id del catalogo (centro-cargas.js).
+function canLoadModule(actor, modulo) {
+  if (canLoadData(actor)) return true;
+  return !!(actor && actor.rol === 'CALIDAD' && actor.perms && actor.perms['cargar_' + modulo] === true);
+}
+
+// Puede cargar al menos un modulo (abrir el Centro de cargas). Requiere
+// perezoso: centro-cargas.js depende de la base, como este archivo.
+function canLoadAnyModule(actor) {
+  if (canLoadData(actor)) return true;
+  if (!actor || actor.rol !== 'CALIDAD' || !actor.perms) return false;
+  return require('./centro-cargas').MODULOS_CON_PERMISO.some((m) => actor.perms['cargar_' + m] === true);
+}
+
 function requireDataLoader(req, res, next) {
   requireActor(req, res, () => {
     if (!canLoadData(req.actor)) {
@@ -225,5 +244,7 @@ module.exports = {
   canEvaluateCampaign,
   canManageMonitoreos,
   canLoadData,
+  canLoadModule,
+  canLoadAnyModule,
   requireDataLoader,
 };

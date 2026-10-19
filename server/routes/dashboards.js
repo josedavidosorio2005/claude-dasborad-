@@ -5,7 +5,7 @@
 // sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, isFullAdmin, can, requireDataLoader } = require('../auth');
+const { requireActor, isFullAdmin, can, requireDataLoader, canLoadData, canLoadAnyModule, campaignAccess } = require('../auth');
 const { validate, schemas } = require('../validation');
 const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
@@ -145,10 +145,16 @@ router.get(
 // plantilla de un cliente ajeno. La pantalla que la usa (openCargas,
 // cargas.js) ya exige cargarDatos del lado del navegador; esto lo exige
 // tambien del lado del servidor, que es lo que de verdad protege.
+// Fase 153 (PR 5): tambien la pide la pantalla de carga que abre el Centro
+// para un CALIDAD con su permiso cargar_<modulo> -- a ese, solo de sus
+// clientes. Quien tiene cargarDatos sigue igual.
 router.get(
   '/dashboard/secciones/:cliente',
-  requireDataLoader,
+  requireActor,
   wrap((req, res) => {
+    if (!canLoadData(req.actor) && !(canLoadAnyModule(req.actor) && campaignAccess(req.actor, req.params.cliente))) {
+      return res.status(403).json({ error: 'Sin permiso para cargar datos de dashboards' });
+    }
     const row = getConfigRow(req.params.cliente);
     if (!row) return res.status(404).json({ error: 'Ese cliente no tiene dashboard configurado' });
     res.json({ cliente: req.params.cliente, secciones: JSON.parse(row.secciones || '{}') });

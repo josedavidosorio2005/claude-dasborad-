@@ -2,18 +2,19 @@
 // Resumen por mes de cada modulo de un cliente, filas de un mes, versiones,
 // Deshacer y Eliminar un mes (PR 2 y 3), y
 // las plantillas oficiales (lista cerrada). Quien puede: quien carga datos
-// (canLoadData) Y tiene acceso a ese cliente (campaignAccess); el admin
+// (canLoadData, o en CALIDAD su permiso cargar_<modulo>: canLoadModule)
+// Y tiene acceso a ese cliente (campaignAccess); el admin
 // completo siempre.
 'use strict';
 const path = require('path');
 const express = require('express');
 const db = require('../db');
-const { requireActor, canLoadData, campaignAccess } = require('../auth');
+const { requireActor, canLoadModule, canLoadAnyModule, campaignAccess } = require('../auth');
 const { wrap, logEvent, actorLabel } = require('./shared');
 const versiones = require('../cargas-versiones');
 const clientesRegistro = require('../clientes-registro');
 const { CATALOGO } = require('../plantillas-cliente');
-const { resumenCliente, PLANTILLAS_DESCARGABLES, cargaPorId, datosDelMes, conteoRango } = require('../centro-cargas');
+const { resumenCliente, PLANTILLAS_DESCARGABLES, CARGAS_POR_MODULO, cargaPorId, datosDelMes, conteoRango } = require('../centro-cargas');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get(
   requireActor,
   wrap((req, res) => {
     const cliente = req.params.cliente;
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     const anioActual = new Date().getFullYear();
@@ -30,7 +31,8 @@ router.get(
     if (anio < 2020 || anio > anioActual + 1) return res.status(400).json({ error: 'Año fuera de rango' });
     const modulos = resumenCliente(db, cliente, anio, CATALOGO);
     if (!modulos) return res.status(404).json({ error: 'Ese cliente no está en el registro' });
-    res.json({ cliente, anio, modulos });
+    // PR 5: CALIDAD ve solo los modulos con su cargar_<modulo>.
+    res.json({ cliente, anio, modulos: modulos.filter((m) => canLoadModule(req.actor, m.id)) });
   })
 );
 
@@ -40,12 +42,13 @@ router.get(
   requireActor,
   wrap((req, res) => {
     const { cliente, mes } = req.params;
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
     const carga = cargaPorId(req.params.carga);
     if (!carga) return res.status(404).json({ error: 'Carga desconocida' });
+    if (!canLoadModule(req.actor, carga.modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     const datos = datosDelMes(db, cliente, carga, mes);
     if (!datos) return res.status(404).json({ error: 'Esta carga se descarga desde su propio módulo' });
     res.json({ cliente, carga: carga.id, mes, columnas: datos.columnas, filas: datos.filas });
@@ -59,7 +62,7 @@ router.get(
   requireActor,
   wrap((req, res) => {
     const { cliente, mes } = req.params;
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
@@ -71,6 +74,7 @@ router.get(
     }
     const carga = cargaPorId(req.params.carga);
     if (!carga) return res.status(404).json({ error: 'Carga desconocida' });
+    if (!canLoadModule(req.actor, carga.modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     res.json(Object.assign({ cliente, carga: carga.id, mes, desde, hasta }, conteoRango(db, cliente, carga, mes, desde, hasta)));
   })
 );
@@ -82,12 +86,13 @@ router.get(
   requireActor,
   wrap((req, res) => {
     const cliente = req.params.cliente;
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     const mes = req.query.mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(req.query.mes) ? req.query.mes : undefined;
     const carga = req.query.carga && cargaPorId(String(req.query.carga)) ? String(req.query.carga) : undefined;
-    res.json({ cliente, versiones: versiones.listar(db, cliente, { carga, mes }) });
+    const deSusModulos = (v) => { const c = cargaPorId(v.carga); return !!c && canLoadModule(req.actor, c.modulo); };
+    res.json({ cliente, versiones: versiones.listar(db, cliente, { carga, mes }).filter(deSusModulos) });
   })
 );
 
@@ -100,9 +105,11 @@ router.post(
     const id = Number(req.params.id);
     const v = Number.isInteger(id) && id > 0 ? versiones.obtener(db, id) : null;
     if (!v) return res.status(404).json({ error: 'Esa versión no existe (o ya venció)' });
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, v.campana)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, v.campana)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
+    const cargaV = cargaPorId(v.carga);
+    if (!cargaV || !canLoadModule(req.actor, cargaV.modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     let r;
     try {
       r = versiones.deshacer(db, id, { actorNombre: actorLabel(req.actor) });
@@ -128,12 +135,13 @@ router.delete(
   requireActor,
   wrap((req, res) => {
     const { cliente, mes } = req.params;
-    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
     }
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
     const carga = cargaPorId(req.params.carga);
     if (!carga) return res.status(404).json({ error: 'Carga desconocida' });
+    if (!canLoadModule(req.actor, carga.modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     // Solo un modulo que el cliente tiene en el registro.
     const reg = clientesRegistro.leerRegistro(db).find((c) => c.nombre === cliente);
     if (!reg || !reg.modulos.includes(carga.modulo)) return res.status(404).json({ error: 'Ese cliente no tiene este módulo' });
@@ -155,9 +163,12 @@ router.get(
   '/centro-cargas-plantillas/:archivo',
   requireActor,
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) return res.status(403).json({ error: 'Sin permiso para cargar datos' });
+    if (!canLoadAnyModule(req.actor)) return res.status(403).json({ error: 'Sin permiso para cargar datos' });
     const archivo = PLANTILLAS_DESCARGABLES.find((p) => p === req.params.archivo);
     if (!archivo) return res.status(404).json({ error: 'Plantilla desconocida' });
+    // PR 5: la plantilla de un modulo, solo si puede cargar ese modulo.
+    const deCarga = Object.values(CARGAS_POR_MODULO).flat().find((c) => c.plantilla === archivo);
+    if (!deCarga || !canLoadModule(req.actor, cargaPorId(deCarga.id).modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     res.download(path.join(__dirname, '..', 'plantillas', archivo), archivo);
   })
 );

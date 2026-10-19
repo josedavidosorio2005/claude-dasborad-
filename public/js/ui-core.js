@@ -22,6 +22,14 @@ function canLoadData(){
   if (isFullAdmin()) return true;
   return !!(currentUser && currentUser.perms && currentUser.perms.cargarDatos===true);
 }
+// Fase 153 (PR 5): CALIDAD sin cargarDatos carga solo los modulos con su
+// cargar_<modulo> (centro-cargas-logic.js; el candado real es el servidor).
+function canLoadModule(modulo){
+  return typeof centroPuedeCargarModulo === 'function' && centroPuedeCargarModulo(currentUser, isFullAdmin(), modulo);
+}
+function canLoadAnyModule(){
+  return canLoadData() || (typeof centroPuedeCargarAlgo === 'function' && centroPuedeCargarAlgo(currentUser, isFullAdmin()));
+}
 // Fase 83: se pintaba siempre, solo atenuado+disabled sin el permiso --
 // ahora directamente se esconde (el candado real sigue en el servidor).
 function applyCreateBtn(){
