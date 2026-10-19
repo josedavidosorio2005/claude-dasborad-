@@ -135,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       # Sin los 2 secretos (o en un PR desde un fork, que no los ve) se
-      # salta y el build baja node de ECR Public como siempre.
+      # salta; el paso de build elige el registro de node.
       - name: Login en Docker Hub (solo si existen los secretos)
         if: env.HAY_DOCKERHUB == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
@@ -144,11 +144,33 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build de la imagen Docker
         run: |
-          # Con sesion en Docker Hub, la imagen base sale de ahi (limite por
-          # cuenta); si no, del default del Dockerfile (ECR Public).
-          ARGS=""
-          if [ "$HAY_DOCKERHUB" = "true" ]; then ARGS="--build-arg NODE_REGISTRY=docker.io/library"; fi
-          docker build $ARGS -f server/Dockerfile -t inconexion:ci .
+          # Fase 153 (429 de public.ecr.aws, "Data limit exceeded"): antes del
+          # build se bajan las 2 imagenes base de node del primer registro que
+          # las entregue (2 intentos cada una), en este orden: Docker Hub con
+          # sesion (solo si existen los secretos), mirror.gcr.io, ECR Public y
+          # Docker Hub anonimo. El Dockerfile no cambia: solo NODE_REGISTRY.
+          CANDIDATOS="mirror.gcr.io/library public.ecr.aws/docker/library docker.io/library"
+          if [ "$HAY_DOCKERHUB" = "true" ]; then CANDIDATOS="docker.io/library mirror.gcr.io/library public.ecr.aws/docker/library"; fi
+          NODE_REGISTRY=""
+          for REG in $CANDIDATOS; do
+            TODAS=1
+            for IMG in node:22-bookworm node:22-bookworm-slim; do
+              BAJO=0
+              for INTENTO in 1 2; do
+                if docker pull -q "$REG/$IMG" > /dev/null 2>&1; then BAJO=1; break; fi
+                echo "No se pudo bajar $REG/$IMG (intento $INTENTO de 2)"
+                sleep 10
+              done
+              if [ "$BAJO" != 1 ]; then TODAS=0; break; fi
+            done
+            if [ "$TODAS" = 1 ]; then NODE_REGISTRY="$REG"; break; fi
+          done
+          if [ -z "$NODE_REGISTRY" ]; then echo "::error::Ningun registro entrego las 2 imagenes base de node"; exit 1; fi
+          echo "Registro de la imagen base: $NODE_REGISTRY"
+          for IMG in node:22-bookworm node:22-bookworm-slim; do
+            echo "  $IMG -> $(docker image inspect --format '{{index .RepoDigests 0}}' "$NODE_REGISTRY/$IMG")"
+          done
+          docker build --build-arg NODE_REGISTRY="$NODE_REGISTRY" -f server/Dockerfile -t inconexion:ci .
       - name: Smoke test del contenedor (arranca y responde /api/health)
         run: |
           HASH=$(docker run --rm inconexion:ci node -e "console.log(require('bcryptjs').hashSync('ci-smoke',10))")
