@@ -47,6 +47,11 @@ var TRAFICO_COLUMNAS = [
   // viejas lo conservan); solo se retiro de este parseo hacia adelante.
   // Mobilize tambien trae esta misma columna de Volvox (mismo criterio:
   // no se lee) ademas de su propia "% ABANDONO" (alias de tasaAbandonoPct).
+  // Fase 155 (reunion con Edwin, 19/10): vuelve a la lista, en su posicion
+  // del reporte nativo de Wolkvox, SOLO para que la plantilla tenga las
+  // mismas columnas en el mismo orden que el reporte (se pega sin tocarlo).
+  // `ignorada`: el lector la reconoce pero nunca lee su valor.
+  { key: 'abandonWolkvox', label: 'ABANDON', ignorada: true },
   { key: 'asaSegundos', label: 'ASA' },
   { key: 'ataSegundos', label: 'ATA' },
   { key: 'waitTimeSegundos', label: 'WAIT_TIME' },

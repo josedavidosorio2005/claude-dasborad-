@@ -33,12 +33,13 @@ const CARGAS = [
       SERVICE_LEVEL_10SEC: ['% atendidas en 10 s.', 0.85],
       SERVICE_LEVEL_20SEC: ['% atendidas en 20 s (Mobilize: "NIVEL DE SERVICIO 80 - 20").', 0.9],
       SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', 0.93],
+      ABANDON: ['% de abandono que reporta Wolkvox. Se deja como viene: el sistema no la usa (calcula la tasa de abandono con las llamadas).', 0.07],
       ASA: ['Tiempo promedio de respuesta (segundos o mm:ss).', 12],
       ATA: ['Tiempo promedio hasta el abandono.', 30],
       WAIT_TIME: ['Tiempo de espera.', 15],
       AHT: ['Tiempo promedio de atención.', 210],
-      'NIVEL DE ATENCION': ['% de llamadas atendidas.', 0.93],
-      'TASA DE ABNDONO': ['% de abandono (así viene escrito de Wolkvox; Mobilize: "% ABANDONO").', 0.07],
+      'NIVEL DE ATENCION': ['No hace falta llenarla: el sistema la calcula (contestadas ÷ ingresadas). Si viene llena, no se usa.', ''],
+      'TASA DE ABNDONO': ['No hace falta llenarla: el sistema la calcula (abandonadas ÷ ingresadas). Si viene llena, no se usa. (Así viene escrito de Wolkvox; Mobilize: "% ABANDONO").', ''],
     },
   },
   {
@@ -236,6 +237,8 @@ const CARGAS = [
 const ORIGEN = {
   'PLANTILLA_FLUJO_LLAMADAS.xlsx': {
     origen: 'Wolkvox: reporte de la cola por skill y por día (hoja "HistQueue<fecha>"; ORLANT lo trae en la hoja LLAMADAS). Se sube tal cual.',
+    // Fase 155: una linea en INSTRUCCIONES y en la ficha.
+    nota: 'Nivel de atención y tasa de abandono los calcula el sistema; no hace falta llenarlos.',
     reemplazo: 'Las filas de esos skills en las fechas que trae el archivo.',
   },
   'PLANTILLA_LLAMADAS_UNICAS.xlsx': {

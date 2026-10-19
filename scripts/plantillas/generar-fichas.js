@@ -188,6 +188,7 @@ function ficha(m) {
     L.push('');
     L.push(c.origen);
     L.push('');
+    if (c.nota) { L.push('**' + c.nota + '**'); L.push(''); }
     L.push(h + ' Plantilla oficial');
     L.push('');
     L.push('`server/plantillas/' + c.archivo + '` — hoja `' + c.hoja + '` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.');
