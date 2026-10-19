@@ -9,7 +9,8 @@
 // carga de siempre con el cliente ya elegido (misma lectura y misma vista
 // previa de impacto). PR 2: "Versiones guardadas" y Deshacer (30 dias).
 // PR 3: Eliminar un mes (con confirmacion; la base se guarda 30 dias y el
-// aviso de despues ofrece Deshacer). La pantalla anterior sigue disponible.
+// aviso de despues ofrece Deshacer). PR 4: Subir/Reemplazar desde el mes
+// con el plan de ese modulo y solo las filas de ese mes (CENTRO_CARGA_PLAN). La pantalla anterior sigue disponible.
 'use strict';
 
 var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null, versiones: [] };
@@ -187,18 +188,24 @@ function _ccCerrarDialogo() {
 // Subir/Reemplazar (PR 1): la pantalla de carga de siempre, con el cliente
 // ya elegido -- misma lectura, misma vista previa de impacto y la misma
 // confirmacion antes de reemplazar. Al cerrarla, el Centro se vuelve a abrir
-// en el mismo modulo con los conteos actualizados.
+// en el mismo modulo con los conteos actualizados. PR 4: desde el mes
+// (modulos de Mobilize primero), ver CENTRO_CARGA_PLAN.
 var _ccVolverA = null;
 function ccSubir(ci, mi) {
   var m = _ccModuloActual(), c = m.cargas[ci], x = c.meses[mi];
   _ccVolverA = { cliente: _cc.cliente, modulo: _cc.modulo };
   var cliente = _cc.cliente;
+  // PR 4: las cargas de CENTRO_CARGA_PLAN suben con el plan de ese modulo y
+  // solo las filas de ese mes; las demas, con la pantalla de siempre entera.
+  var desdeMes = centroSubeDesdeMes(c.id);
   closeCentroCargas();
   setTimeout(async function () {
+    _cargasFocoCentro = desdeMes ? { cliente: cliente, carga: c.id, mes: x.mes, nombre: c.nombre } : null;
     await openCargas();
     var sel = document.getElementById('carga-cliente');
     if (sel) { sel.value = cliente; await onCargaClienteChange(); }
-    showToast((x.registros > 0 ? 'Reemplazar ' : 'Subir ') + centroNombreMes(x.mes) + ' de ' + c.nombre + ': elige el archivo aquí. Antes de guardar verás cuántos registros entran y cuántos se reemplazan.');
+    showToast((x.registros > 0 ? 'Reemplazar ' : 'Subir ') + centroNombreMes(x.mes) + ' de ' + c.nombre + ': elige el archivo aquí. ' +
+      (desdeMes ? 'Solo se cargan las filas de ese mes. ' : '') + 'Antes de guardar verás cuántos registros entran y cuántos se reemplazan.');
   }, 60);
 }
 // Lo llama closeCargas (cargas.js) al cerrar la pantalla de carga.
