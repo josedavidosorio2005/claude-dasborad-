@@ -93,6 +93,9 @@ function closeCargas(){
   var cerrarReal = function(){ document.getElementById('cargas-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('cargas-modal', cerrarReal);
   else cerrarReal();
+  // Fase 153: si se llego aqui desde el Centro de cargas (Subir/Reemplazar),
+  // se vuelve a el en el mismo modulo, con los conteos ya actualizados.
+  if (typeof centroVolverTrasCarga === 'function') centroVolverTrasCarga();
 }
 document.getElementById('cargas-overlay').addEventListener('click',function(e){ if(e.target===this) closeCargas(); });
 

@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.48.0 — Octubre 2026
+
+**Fase 153: Centro de cargas (primera parte).**
+
+- "Cargar Datos" abre ahora el **Centro de cargas**: eliges el cliente, ves una
+  tarjeta por módulo y, al abrirla, los 12 meses del año. Cada mes dice si ya
+  tiene su base, cuántos registros, cuándo y quién la cargó, y con qué
+  archivo.
+- En cada mes cargado, **Descargar** baja un Excel con lo que hay guardado.
+  Arriba de cada módulo, **Descargar plantilla** baja la plantilla oficial de
+  ese módulo.
+- **Subir** y **Reemplazar** abren por ahora la pantalla de carga de siempre,
+  ya con el cliente elegido, con la misma vista previa antes de guardar. Al
+  cerrarla vuelves al Centro con los números actualizados.
+- En cada tablero, quien puede cargar ve el botón **"Actualizar datos"** junto
+  a Exportar: abre el Centro en ese cliente y ese módulo. Los clientes no lo
+  ven.
+- La pantalla anterior sigue disponible con el botón "Pantalla anterior".
+- Eliminar un mes y Deshacer (guardar la base anterior 30 días) llegan en la
+  próxima versión.
+
 ## v1.47.5 — Octubre 2026
 
 **Fase 153: Clínica Aurora, lista para empezar a cargar.**
