@@ -1,5 +1,6 @@
 // routes/centro-cargas.js — Fase 153: Centro de cargas.
-// Lectura: resumen por mes de cada modulo de un cliente, filas de un mes y
+// Resumen por mes de cada modulo de un cliente, filas de un mes, versiones,
+// Deshacer y Eliminar un mes (PR 2 y 3), y
 // las plantillas oficiales (lista cerrada). Quien puede: quien carga datos
 // (canLoadData) Y tiene acceso a ese cliente (campaignAccess); el admin
 // completo siempre.
@@ -10,6 +11,7 @@ const db = require('../db');
 const { requireActor, canLoadData, campaignAccess } = require('../auth');
 const { wrap, logEvent, actorLabel } = require('./shared');
 const versiones = require('../cargas-versiones');
+const clientesRegistro = require('../clientes-registro');
 const { CATALOGO } = require('../plantillas-cliente');
 const { resumenCliente, PLANTILLAS_DESCARGABLES, cargaPorId, datosDelMes } = require('../centro-cargas');
 
@@ -90,6 +92,38 @@ router.post(
     const carga = cargaPorId(v.carga);
     logEvent('CENTRO_CARGAS_DESHACER', { nombre: v.campana, user: '-', rol: 'carga' }, actorLabel(req.actor),
       `Deshizo ${carga ? carga.nombre : v.carga} de ${v.mes}: volvieron ${r.restauradas} registros (se reemplazaron ${r.reemplazadas}, que quedan guardados 30 días)`);
+    res.json(r);
+  })
+);
+
+const NOMBRE_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+// Eliminar un mes (PR 3): la base de ese mes se guarda 30 dias (Deshacer) y
+// se borra; los demas meses no se tocan. Queda en el Historial.
+router.delete(
+  '/centro-cargas/:cliente/:carga/:mes',
+  requireActor,
+  wrap((req, res) => {
+    const { cliente, mes } = req.params;
+    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+      return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
+    }
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
+    const carga = cargaPorId(req.params.carga);
+    if (!carga) return res.status(404).json({ error: 'Carga desconocida' });
+    // Solo un modulo que el cliente tiene en el registro.
+    const reg = clientesRegistro.leerRegistro(db).find((c) => c.nombre === cliente);
+    if (!reg || !reg.modulos.includes(carga.modulo)) return res.status(404).json({ error: 'Ese cliente no tiene este módulo' });
+    let r;
+    try {
+      r = versiones.eliminarMes(db, carga, cliente, mes, { actorNombre: actorLabel(req.actor) });
+    } catch (e) {
+      if (e.status) return res.status(e.status).json({ error: e.message });
+      throw e;
+    }
+    const nombreMes = NOMBRE_MES[Number(mes.slice(5, 7)) - 1] + ' ' + mes.slice(0, 4);
+    logEvent('CENTRO_CARGAS_ELIMINAR', { nombre: cliente, user: '-', rol: 'carga' }, actorLabel(req.actor),
+      `Eliminó la base de ${nombreMes} de ${carga.nombre} (${cliente}): ${r.eliminadas} registros (se guarda 30 días para Deshacer)`);
     res.json(r);
   })
 );

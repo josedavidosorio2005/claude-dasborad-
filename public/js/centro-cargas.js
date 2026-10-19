@@ -8,7 +8,8 @@
 // oficial del modulo. Subir/Reemplazar abren por ahora la pantalla de
 // carga de siempre con el cliente ya elegido (misma lectura y misma vista
 // previa de impacto). PR 2: "Versiones guardadas" y Deshacer (30 dias).
-// Eliminar llega en el PR 3. La pantalla anterior sigue disponible.
+// PR 3: Eliminar un mes (con confirmacion; la base se guarda 30 dias y el
+// aviso de despues ofrece Deshacer). La pantalla anterior sigue disponible.
 'use strict';
 
 var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null, versiones: [] };
@@ -160,6 +161,7 @@ function _ccRenderModulo() {
       }
       if (x.registros > 0 && c.id !== 'calidad') {
         html += '<button type="button" class="cc-accion" onclick="ccDescargarCargado(' + ci + ',' + mi + ')" aria-label="Descargar lo cargado de ' + nombre + '" title="Descargar lo cargado">' + iconoSvg('download') + ' Descargar</button>';
+        html += '<button type="button" class="cc-accion cc-accion-peligro cc-accion-icono" onclick="ccEliminar(' + ci + ',' + mi + ')" aria-label="Eliminar la base de ' + nombre + '" title="Eliminar la base de este mes">' + iconoSvg('trash-2') + '</button>';
       }
       html += '</div></div>';
     });
@@ -214,7 +216,7 @@ var CENTRO_MOTIVO = { 'reemplazo': 'antes de reemplazar', 'eliminacion': 'antes 
 function ccVerVersiones(ci) {
   var c = _ccModuloActual().cargas[ci];
   var lista = _ccVersionesDe(c.id);
-  var html = '<p class="cc-nota">Cada vez que un mes se reemplaza, la base anterior se guarda 30 días. Deshacer devuelve ese mes a como estaba; lo que haya ahora también queda guardado.</p><ul class="cc-versiones">';
+  var html = '<p class="cc-nota">Cada vez que un mes se reemplaza o se elimina, la base anterior se guarda 30 días. Deshacer devuelve ese mes a como estaba; lo que haya ahora también queda guardado.</p><ul class="cc-versiones">';
   lista.forEach(function (v) {
     html += '<li><div><strong>' + esc(centroNombreMes(v.mes)) + '</strong> · ' + esc(centroTextoRegistros(v.registros)) +
       '<div class="cc-nota">Guardada el ' + esc(centroFechaCorta(v.guardadoEn)) + ' (' + esc(CENTRO_MOTIVO[v.motivo] || v.motivo) + ')' +
@@ -242,6 +244,31 @@ async function _ccConfirmarDeshacer(id) {
     showToast('Listo: volvieron ' + centroTextoRegistros(r.restauradas) + ' de ' + centroNombreMes(r.version.mes) + '.');
   } catch (e) { showToast(e.message, 'error'); }
   await _ccCargar();
+}
+
+// ── Eliminar un mes (PR 3) ──────────────────────────────────────────
+function ccEliminar(ci, mi) {
+  var c = _ccModuloActual().cargas[ci], x = c.meses[mi];
+  var mes = centroNombreMes(x.mes);
+  _ccDialogo('¿Eliminar ' + esc(mes) + '?',
+    '<p>Se eliminan <strong>' + esc(centroTextoRegistros(x.registros)) + '</strong> de ' + esc(c.nombre) + ' de <strong>' + esc(mes) + '</strong> (' + esc(_cc.cliente) + '). Los demás meses no se tocan.</p>' +
+    '<p class="cc-tranquilo">La base se guarda 30 días: si fue un error, la recuperas con Deshacer. Queda en el Historial.</p>',
+    '<button type="button" class="btn-cancel" onclick="_ccCerrarDialogo()">Cancelar</button>' +
+    '<button type="button" class="btn-primary cc-btn-peligro" onclick="_ccConfirmarEliminar(' + ci + ',' + mi + ')">' + iconoSvg('trash-2') + ' Eliminar</button>');
+}
+async function _ccConfirmarEliminar(ci, mi) {
+  var c = _ccModuloActual().cargas[ci], x = c.meses[mi];
+  _ccCerrarDialogo();
+  var r;
+  try {
+    r = await apiRequest('DELETE', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/' + encodeURIComponent(c.id) + '/' + x.mes);
+  } catch (e) { showToast(e.message, 'error'); await _ccCargar(); return; }
+  await _ccCargar();
+  // Aviso de despues, con Deshacer a mano (el mes quedo vacio: deshacer no pisa nada).
+  _ccDialogo('Listo: ' + esc(centroNombreMes(x.mes)) + ' quedó sin datos',
+    '<p>Se eliminaron <strong>' + esc(centroTextoRegistros(r.eliminadas)) + '</strong> de ' + esc(c.nombre) + '. La base se guarda hasta el ' + esc(centroFechaCorta(r.version.expiraEn).slice(0, 10)) + '.</p>',
+    '<button type="button" class="btn-cancel" onclick="_ccConfirmarDeshacer(' + r.version.id + ')">' + iconoSvg('rotate-ccw') + ' Deshacer</button>' +
+    '<button type="button" class="btn-primary" onclick="_ccCerrarDialogo()">Entendido</button>');
 }
 
 // Descargar lo cargado: las filas de ese mes, tal como estan en la base.

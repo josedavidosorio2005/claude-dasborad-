@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.50.0 — Octubre 2026
+
+**Fase 153: Centro de cargas — Eliminar un mes (tercera parte).**
+
+- Cada mes cargado tiene ahora un botón **Eliminar** (el bote de basura).
+  Antes de borrar, un aviso dice cuántos registros se eliminan, de qué
+  módulo, mes y cliente, y que los demás meses no se tocan.
+- La base eliminada **se guarda 30 días**. Justo después sale un aviso con
+  **Deshacer**, y también queda en "Versiones guardadas".
+- Cada eliminación queda en el Historial: quién, qué módulo, qué mes y
+  cuántos registros.
+- Calidad no se elimina desde aquí (tiene su propia pantalla).
+
 ## v1.49.1 — Octubre 2026
 
 **Arreglo de Deshacer en Flujo de Llamadas.**

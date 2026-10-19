@@ -117,5 +117,6 @@ test('PR 1: Subir/Reemplazar abren la pantalla de carga de siempre y al cerrarla
   assert.doesNotMatch(js, /Maqueta|no se guardó|no se eliminó/i);
   assert.match(js, /await openCargas\(\);/);
   assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'cargas.js'), 'utf8'), /centroVolverTrasCarga\(\)/);
-  assert.doesNotMatch(js, /onclick="ccEliminar/, 'Eliminar llega con las versiones (Deshacer)');
+  // PR 3: Eliminar ya es real (DELETE con confirmacion y Deshacer; fase153-eliminar.test.js).
+  assert.match(js, /apiRequest\('DELETE', '\/centro-cargas\//);
 });

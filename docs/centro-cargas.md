@@ -108,7 +108,7 @@ El Centro no depende de que el archivo sea un Excel: cada carga es "módulo + fi
    - matriz de acceso ampliada;
    - la pantalla anterior sigue siendo la que sube.
 2. **Versiones (`cargas_versiones`):** respaldo antes de borrar en cada lector, Deshacer y limpieza. Pruebas que fallen antes: reemplazar y deshacer deja exactamente las filas de antes. *(Versión 1.49.0: `server/cargas-versiones.js`; el respaldo guarda el MES COMPLETO que toca cada carga — no solo el rango del archivo — para que Deshacer deje el mes exacto; los 12 lectores con reemplazo lo llaman; Calidad no entra.)*
-3. **Eliminar un mes**, con confirmación, Historial y Deshacer.
+3. **Eliminar un mes**, con confirmación, Historial y Deshacer. *(Versión 1.50.0: `DELETE /api/centro-cargas/:cliente/:carga/:mes`, solo módulos que el cliente tiene en el registro; respaldo, borrado y recálculo de lo derivado — total mensual de Flujo de Llamadas, resumen de ORLANT — en una transacción; Calidad no entra.)*
 4. **Subir y Reemplazar desde el mes**, con el lector y la vista previa de siempre y las filas filtradas a ese mes. Un módulo por PR si hace falta, empezando por los de Mobilize.
 5. **Permisos por módulo para CALIDAD**, solo con tu OK.
 6. **Retirar la pantalla anterior** cuando el Centro cubra todos los módulos, también con tu OK.
