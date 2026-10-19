@@ -12,6 +12,8 @@
 
 Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoja "HistCDR<fecha>"). Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios.
 
+**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "Llamadas".**
+
 ### Plantilla oficial
 
 `server/plantillas/PLANTILLA_TIPIFICACION_LLAMADAS.xlsx` — hoja `TIPIFICACION_LLAMADAS` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
@@ -55,6 +57,8 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 ### De dónde sale
 
 Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones.
+
+**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "WhatsApp".**
 
 ### Plantilla oficial
 
