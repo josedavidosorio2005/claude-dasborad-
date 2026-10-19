@@ -243,14 +243,20 @@ const ORIGEN = {
   },
   'PLANTILLA_LLAMADAS_UNICAS.xlsx': {
     origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso (sin las de salida).',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"Únicas de ingreso\".",
     reemplazo: 'El mes completo de las fechas del archivo.',
   },
   'PLANTILLA_LLAMADAS_SALIDA.xlsx': {
     origen: 'Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detalle de las llamadas para las no conectadas", con SKILL_ID diciendo cuál es cuál.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"De salida\".",
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': {
     origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoja "HistCDR<fecha>"). Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"Llamadas\".",
     reemplazo: 'Las llamadas de ese cliente entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_ENCUESTA.xlsx': {
@@ -267,6 +273,8 @@ const ORIGEN = {
   },
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': {
     origen: 'Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones.',
+    notaTitulo: 'Archivos del módulo',
+    nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"WhatsApp\".",
     reemplazo: 'Las conversaciones de ese cliente entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_AGENDAS.xlsx': {

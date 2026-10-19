@@ -13,7 +13,7 @@
 // con el plan de ese modulo y solo las filas de ese mes (CENTRO_CARGA_PLAN). La pantalla anterior sigue disponible.
 'use strict';
 
-var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null, versiones: [] };
+var _cc = { cliente: null, anio: null, modulos: [], modulo: null, foco: null, versiones: [], cargaSel: {} };
 
 function _ccMesActual() {
   var c = new Date(Date.now() - 5 * 3600 * 1000);
@@ -128,6 +128,12 @@ function _ccMesAnterior(mes) {
 }
 
 function ccAbrirModulo(id) { _cc.modulo = id; _ccRender(); }
+function ccElegirCarga(ci) {
+  _cc.cargaSel[_cc.modulo] = ci;
+  _ccRender();
+  var b = document.querySelectorAll('#cc-body .cc-selector-op')[ci];
+  if (b) b.focus();
+}
 function ccVolverTarjetas() { _cc.modulo = null; _ccRender(); }
 
 function _ccModuloActual() {
@@ -139,7 +145,17 @@ function _ccRenderModulo() {
   var mesActual = _ccMesActual();
   document.getElementById('cc-migas').innerHTML = '<a role="button" tabindex="0" onclick="ccVolverTarjetas()">' + esc(_cc.cliente) + '</a> <span aria-hidden="true">›</span> <span aria-current="page">' + esc(m.nombre) + '</span>';
   var html = '<button type="button" class="btn-cancel cc-volver" onclick="ccVolverTarjetas()">' + iconoSvg('arrow-left') + ' Módulos</button>';
+  // Fase 155: con dos archivos, las dos opciones arriba y juntas; se ve una a la vez.
+  var visible = centroCargaVisible(m, _cc.cargaSel[m.id]);
+  if (m.cargas.length > 1) {
+    html += '<div class="cc-selector" role="group" aria-label="Archivo a cargar en ' + esc(m.nombre) + '">' +
+      '<span class="cc-selector-titulo">Este módulo lleva ' + m.cargas.length + ' archivos:</span>' +
+      m.cargas.map(function (c, ci) {
+        return '<button type="button" class="cc-selector-op' + (ci === visible ? ' on' : '') + '" aria-pressed="' + (ci === visible) + '" onclick="ccElegirCarga(' + ci + ')">' + esc(centroEtiquetaCarga(c)) + '</button>';
+      }).join('') + '</div>';
+  }
   m.cargas.forEach(function (c, ci) {
+    if (ci !== visible) return;
     var huecos = centroHuecos(c, mesActual);
     html += '<section class="cc-carga" aria-labelledby="cc-carga-' + ci + '">' +
       '<div class="cc-carga-cab"><h3 id="cc-carga-' + ci + '">' + esc(c.nombre) + ' <span class="cc-carga-anio">' + _cc.anio + '</span></h3>' +

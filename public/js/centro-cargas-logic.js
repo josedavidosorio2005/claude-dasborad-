@@ -259,8 +259,30 @@ function centroTextoReemplazoParcial(mes, rango, conteo) {
   return trae + ' ' + esos[0] + '; el resto de ' + nombre + ' (' + centroTextoRegistros(resto) + ') queda igual.';
 }
 
+// Fase 155 (reunion con Edwin, 19/10): un modulo con DOS archivos muestra
+// arriba las dos opciones juntas (selector), cada una con su cuadricula de
+// meses, Subir/Reemplazar y Descargar plantilla. Nombre corto de cada opcion
+// (si no esta aqui, el nombre completo de la carga).
+var CENTRO_ETIQUETA_CARGA = {
+  llamadas_unicas: 'Únicas de ingreso',
+  llamadas_salida: 'De salida',
+  tipificacion_llamadas: 'Llamadas',
+  tipificacion_whatsapp: 'WhatsApp',
+};
+function centroEtiquetaCarga(c) {
+  return (c && CENTRO_ETIQUETA_CARGA[c.id]) || (c && c.nombre) || '';
+}
+// Indice de la carga que se muestra: la elegida si existe; si no, la primera.
+function centroCargaVisible(modulo, elegida) {
+  var n = modulo && modulo.cargas ? modulo.cargas.length : 0;
+  return (typeof elegida === 'number' && elegida >= 0 && elegida < n) ? elegida : 0;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    CENTRO_ETIQUETA_CARGA: CENTRO_ETIQUETA_CARGA,
+    centroEtiquetaCarga: centroEtiquetaCarga,
+    centroCargaVisible: centroCargaVisible,
     CENTRO_MESES: CENTRO_MESES,
     CENTRO_PANEL_A_MODULO: CENTRO_PANEL_A_MODULO,
     centroModuloDeTab: centroModuloDeTab,

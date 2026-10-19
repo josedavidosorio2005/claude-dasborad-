@@ -1545,6 +1545,14 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc-pill-falta,.cc-pill-en_curso{background:var(--c-warning-bg);color:var(--c-warning-text);}
 .cc-pill-vacio,.cc-pill-futuro{background:var(--c-surface-subtle);color:var(--c-text-muted);border:1px solid var(--c-border);}
 .cc-volver{display:inline-flex;align-items:center;gap:6px;margin:4px 0 12px;}
+/* Fase 155: selector de archivo cuando un modulo lleva dos (Unicas/Salida, Llamadas/WhatsApp). */
+.cc-selector{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px;padding:10px 12px;background:var(--c-surface-subtle);border:1px solid var(--c-border);border-radius:var(--r-md);}
+.cc-selector-titulo{font-weight:600;color:var(--c-text-2);margin-right:4px;}
+/* Elegida: mismos tokens que la pestana activa (.atab-active), validados en claro y oscuro. */
+.cc-selector-op{min-height:44px;padding:8px 18px;border-radius:var(--r-pill);border:1.5px solid var(--c-border);background:var(--c-surface);color:var(--c-text-2);font:inherit;font-weight:600;cursor:pointer;}
+.cc-selector-op:hover{border-color:var(--c-primary-mid);color:var(--c-primary);}
+.cc-selector-op.on{background:var(--c-info-bg);color:var(--c-primary);border:2px solid var(--c-primary-mid);font-weight:700;}
+.cc-selector-op:focus-visible{outline:3px solid var(--c-focus,var(--c-primary));outline-offset:2px;}
 .cc-carga{margin-bottom:22px;}
 .cc-carga-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;}
 .cc-carga-cab h3{margin:0;font-size:var(--fs-h3);}

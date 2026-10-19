@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.56.0 — Octubre 2026
+
+**Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
+
+- Centro de cargas: cuando un módulo lleva dos archivos, ahora se ven los
+  dos juntos arriba, como dos botones: "Únicas de ingreso" y "De salida" en
+  Llamadas Únicas y de Salida, y "Llamadas" y "WhatsApp" en Tipificación.
+  Cada botón muestra sus meses, su Subir/Reemplazar y su Descargar
+  plantilla. Antes el segundo archivo solo se veía bajando.
+- Las plantillas de esos módulos dicen en la hoja de instrucciones qué
+  archivo va en cada carga y de qué reporte de Wolkvox sale cada uno.
+
 ## v1.54.5 — Octubre 2026
 
 **Fase 155: ajustes de la reunión con Edwin (19 de octubre).**

@@ -12,6 +12,8 @@
 
 Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso (sin las de salida).
 
+**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "Únicas de ingreso".**
+
 ### Plantilla oficial
 
 `server/plantillas/PLANTILLA_LLAMADAS_UNICAS.xlsx` — hoja `LLAMADAS_UNICAS` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
@@ -48,6 +50,8 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 ### De dónde sale
 
 Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detalle de las llamadas para las no conectadas", con SKILL_ID diciendo cuál es cuál.
+
+**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "De salida".**
 
 ### Plantilla oficial
 
