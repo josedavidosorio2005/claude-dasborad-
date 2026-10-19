@@ -168,6 +168,32 @@ function centroFiltrarResultado(r, cargaId, mes, opciones) {
   return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas + otrasSkills });
 }
 
+// Primera y ultima fecha ('AAAA-MM-DD') de las filas que quedaron.
+function centroRangoFilas(cargaId, filas) {
+  var spec = CENTRO_CARGA_PLAN[cargaId];
+  var desde = null, hasta = null;
+  (filas || []).forEach(function (f) {
+    var d = centroFechaFila(spec ? spec.tipo : '', f).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    if (desde === null || d < desde) desde = d;
+    if (hasta === null || d > hasta) hasta = d;
+  });
+  return desde ? { desde: desde, hasta: hasta } : null;
+}
+
+// Aviso de reemplazo parcial: el lector reemplaza SOLO las fechas que trae
+// el archivo, el resto del mes queda igual. `conteo` = GET
+// /centro-cargas/:cliente/:carga/:mes/conteo ({ enMes, enRango }).
+function centroTextoReemplazoParcial(mes, rango, conteo) {
+  var nombre = centroNombreMes(mes).split(' ')[0].toLowerCase();
+  var d = Number(rango.desde.slice(8, 10)), h = Number(rango.hasta.slice(8, 10));
+  var trae = d === h ? 'El archivo trae solo el ' + d + ' de ' + nombre + '.' : 'El archivo trae del ' + d + ' al ' + h + ' de ' + nombre + '.';
+  if (!conteo || !conteo.enMes) return trae + ' ' + nombre.charAt(0).toUpperCase() + nombre.slice(1) + ' no tiene datos todavía.';
+  var resto = conteo.enMes - conteo.enRango;
+  if (!resto) return trae + ' Se reemplazan esos días; ' + nombre + ' no tiene registros fuera de ellos.';
+  return trae + ' Se reemplazan esos días; el resto de ' + nombre + ' (' + centroTextoRegistros(resto) + ') queda igual.';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CENTRO_MESES: CENTRO_MESES,
@@ -185,5 +211,7 @@ if (typeof module !== 'undefined' && module.exports) {
     centroFiltrarPlan: centroFiltrarPlan,
     centroFechaFila: centroFechaFila,
     centroFiltrarResultado: centroFiltrarResultado,
+    centroRangoFilas: centroRangoFilas,
+    centroTextoReemplazoParcial: centroTextoReemplazoParcial,
   };
 }

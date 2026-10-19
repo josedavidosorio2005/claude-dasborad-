@@ -13,7 +13,7 @@ const { wrap, logEvent, actorLabel } = require('./shared');
 const versiones = require('../cargas-versiones');
 const clientesRegistro = require('../clientes-registro');
 const { CATALOGO } = require('../plantillas-cliente');
-const { resumenCliente, PLANTILLAS_DESCARGABLES, cargaPorId, datosDelMes } = require('../centro-cargas');
+const { resumenCliente, PLANTILLAS_DESCARGABLES, cargaPorId, datosDelMes, conteoRango } = require('../centro-cargas');
 
 const router = express.Router();
 
@@ -49,6 +49,28 @@ router.get(
     const datos = datosDelMes(db, cliente, carga, mes);
     if (!datos) return res.status(404).json({ error: 'Esta carga se descarga desde su propio módulo' });
     res.json({ cliente, carga: carga.id, mes, columnas: datos.columnas, filas: datos.filas });
+  })
+);
+
+// Vista previa del Centro (reemplazo parcial): registros del mes y cuantos
+// caen entre desde/hasta (las fechas que trae el archivo). Solo lectura.
+router.get(
+  '/centro-cargas/:cliente/:carga/:mes/conteo',
+  requireActor,
+  wrap((req, res) => {
+    const { cliente, mes } = req.params;
+    if (!canLoadData(req.actor) || !campaignAccess(req.actor, cliente)) {
+      return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
+    }
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return res.status(400).json({ error: 'Mes inválido' });
+    const dia = /^\d{4}-\d{2}-\d{2}$/;
+    const { desde, hasta } = req.query;
+    if (!dia.test(String(desde || '')) || !dia.test(String(hasta || '')) || desde > hasta) {
+      return res.status(400).json({ error: 'Fechas inválidas' });
+    }
+    const carga = cargaPorId(req.params.carga);
+    if (!carga) return res.status(404).json({ error: 'Carga desconocida' });
+    res.json(Object.assign({ cliente, carga: carga.id, mes, desde, hasta }, conteoRango(db, cliente, carga, mes, desde, hasta)));
   })
 );
 
