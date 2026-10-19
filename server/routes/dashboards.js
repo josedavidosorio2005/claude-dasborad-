@@ -103,16 +103,23 @@ function seccionSpec(cliente, seccionKey) {
 // Paso 2: y el registro (modulos, parametros y logo de cada cliente) para
 // las listas por modulo del navegador (registro-clientes.js). Es
 // configuracion, nunca datos de la operacion.
+// Fase 154: cada persona recibe solo los clientes a los que tiene acceso
+// (clienteAccess); la lista completa es del administrador y de quien
+// gestiona usuarios (la necesita para asignar clientes) -- mismo criterio
+// que GET /users.
 router.get(
   '/dashboard/clientes',
   requireActor,
   wrap((req, res) => {
+    const a = req.actor;
+    const veTodos = isFullAdmin(a) || can(a, 'gestionPermisos') || can(a, 'crearUsuarios') || can(a, 'editarUsuarios');
+    const suyo = (c) => veTodos || clienteAccess(a, c);
     const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
     res.json({
-      clientes: rows.map((r) => r.cliente),
-      listaClientes: clientesRegistro.listaClientes(db),
-      campanasCalidad: clientesRegistro.campanasCalidad(db),
-      registro: clientesRegistro.registroParaNavegador(db),
+      clientes: rows.map((r) => r.cliente).filter(suyo),
+      listaClientes: clientesRegistro.listaClientes(db).filter(suyo),
+      campanasCalidad: clientesRegistro.campanasCalidad(db).filter(suyo),
+      registro: clientesRegistro.registroParaNavegador(db).filter((c) => suyo(c.nombre)),
     });
   })
 );

@@ -103,10 +103,13 @@ test('el rol cliente (con acceso a TODOS los clientes de antes) no ve Aurora en 
   const { dashClientesVisibles } = require('../../public/js/dashboards-logic.js');
   const t = await tokenFor('agomez', SEED.agomez);
   const lista = (await request(app).get('/api/dashboard/clientes').set(auth(t))).body.listaClientes;
-  assert.ok(lista.includes(AURORA), 'el nombre esta en la lista general');
+  // Fase 154: el servidor ya ni le manda el nombre (antes solo lo ocultaba el navegador).
+  assert.ok(!lista.includes(AURORA), 'el nombre no llega a quien no tiene acceso');
   const u = (await login('agomez', SEED.agomez)).body.user;
   assert.deepEqual(dashClientesVisibles(lista, u, false), ['ORLANT', 'MOBILIZE']);
-  assert.deepEqual(dashClientesVisibles(lista, null, true), ['ORLANT', 'MOBILIZE', AURORA], 'el admin completo si la ve');
+  const ta = await tokenFor('admin', MASTER_PASSWORD);
+  const listaAdmin = (await request(app).get('/api/dashboard/clientes').set(auth(ta))).body.listaClientes;
+  assert.deepEqual(dashClientesVisibles(listaAdmin, null, true), ['ORLANT', 'MOBILIZE', AURORA], 'el admin completo si la ve');
 });
 
 test('tablero: Flujo de Llamadas/WhatsApp se destapan solos al tener datos; sin pestanas visibles sale un aviso', () => {
