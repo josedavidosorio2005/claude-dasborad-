@@ -10,7 +10,6 @@ const db = require('../db');
 const { requireActor, canLoadData, campaignAccess } = require('../auth');
 const { wrap, logEvent, actorLabel } = require('./shared');
 const versiones = require('../cargas-versiones');
-const { recalcularResumenOrlantDesdeTrafico } = require('../resumen-orlant-trafico');
 const { CATALOGO } = require('../plantillas-cliente');
 const { resumenCliente, PLANTILLAS_DESCARGABLES, cargaPorId, datosDelMes } = require('../centro-cargas');
 
@@ -86,10 +85,8 @@ router.post(
       if (e.status) return res.status(e.status).json({ error: e.message });
       throw e;
     }
-    // ORLANT: su "resumen" manual sigue a Trafico (como al cargar).
-    if (v.campana === 'ORLANT' && (v.carga === 'flujo_llamadas' || v.carga === 'flujo_whatsapp')) {
-      recalcularResumenOrlantDesdeTrafico(db, v.mes);
-    }
+    // Agregado mensual de Flujo de Llamadas y "resumen" de ORLANT: ya los
+    // recalculo deshacer() en su transaccion (recalcularDerivados).
     const carga = cargaPorId(v.carga);
     logEvent('CENTRO_CARGAS_DESHACER', { nombre: v.campana, user: '-', rol: 'carga' }, actorLabel(req.actor),
       `Deshizo ${carga ? carga.nombre : v.carga} de ${v.mes}: volvieron ${r.restauradas} registros (se reemplazaron ${r.reemplazadas}, que quedan guardados 30 días)`);

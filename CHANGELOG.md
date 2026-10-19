@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.49.1 — Octubre 2026
+
+**Arreglo de Deshacer en Flujo de Llamadas.**
+
+- Al deshacer un mes de Flujo de Llamadas, el total mensual de Nivel de
+  Servicio ahora también vuelve a como estaba (antes solo volvían los días y
+  el total del mes se quedaba con el del archivo reemplazado).
+
 ## v1.49.0 — Octubre 2026
 
 **Fase 153: Centro de cargas — Deshacer (segunda parte).**
