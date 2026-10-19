@@ -7,15 +7,20 @@ process.env.CARGAS_SIMULTANEAS_MAX = '1'; // solo en este proceso de prueba
 const http = require('http');
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const { app, request, tokenFor, MASTER_PASSWORD, cleanup } = require('./helpers');
+const { app, db, request, tokenFor, MASTER_PASSWORD, cleanup } = require('./helpers');
+const { signToken } = require('../auth');
 const { esRutaDeCarga } = require('../cargas-simultaneas');
 const T = require('../../public/js/cargas-turno-logic.js');
 
 let server;
 let base;
 let token;
+let tokenOtro; // la carga que ocupa el turno es de OTRA persona (1 turno por persona)
 before(async () => {
   token = await tokenFor('admin', MASTER_PASSWORD);
+  db.prepare("INSERT INTO users (nombre, user, rol, active, password_hash, perms, createdAt) VALUES ('Otro', 'f154otro', 'REPORTES', 1, 'x', ?, '2026-10-19')").run(JSON.stringify({ cargarDatos: true, campana_ORLANT: true }));
+  const o = db.prepare("SELECT * FROM users WHERE user = 'f154otro'").get();
+  tokenOtro = signToken({ isMasterAdmin: false, userId: o.id, rol: o.rol, tokenVersion: o.token_version });
   server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
   base = 'http://127.0.0.1:' + server.address().port;
@@ -29,7 +34,7 @@ function cargaEnCurso() {
   const cuerpo = Buffer.from(JSON.stringify({ campana: 'ORLANT', canal: 'LLAMADAS', filas: [] }));
   const req = http.request(base + RUTA, {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'Content-Length': cuerpo.length },
+    headers: { Authorization: 'Bearer ' + tokenOtro, 'Content-Type': 'application/json', 'Content-Length': cuerpo.length },
   });
   const respuesta = new Promise((resolve) => req.on('response', (res) => { res.resume(); res.on('end', () => resolve(res.statusCode)); }));
   req.write(cuerpo.subarray(0, 5));
@@ -47,7 +52,7 @@ test('con el tope lleno: la otra carga recibe 503 con su codigo y Retry-After, s
   assert.equal(res.headers['retry-after'], '3');
   // Lo demas no se frena: una lectura y una escritura que no es carga.
   assert.equal((await conToken(request(base).get('/api/dashboard/clientes'))).status, 200);
-  assert.notEqual((await conToken(request(base).post('/api/auth/logout')).send({})).status, 503);
+  assert.notEqual((await conToken(request(base).post('/api/monitoreos')).send({ campana: 'ORLANT' })).status, 503);
   // Sin sesion sigue siendo 401 (no ocupa ni pide turno).
   assert.equal((await request(base).post(RUTA).send({ campana: 'ORLANT' })).status, 401);
   // Al terminar la primera, el turno se libera.

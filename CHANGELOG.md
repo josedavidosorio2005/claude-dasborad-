@@ -12,6 +12,10 @@ sepan que hay nuevo, que se corrigio y que falta.
   procesa por turnos para no ponerse lenta. Quien sube ve el aviso "Hay
   otras cargas en curso. Tu carga espera su turno y sigue sola en unos
   segundos": no hay que volver a subir nada.
+- Cada persona sube un archivo a la vez; si se abre una segunda carga,
+  espera a que termine la primera.
+- Si una subida se queda a medias (por ejemplo, se cae el internet), la
+  plataforma la cancela al minuto y avisa para intentar de nuevo.
 
 ## v1.54.2 — Octubre 2026
 
