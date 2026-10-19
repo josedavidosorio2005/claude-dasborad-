@@ -32,9 +32,10 @@ test('traficoColIndexMap: reconoce los encabezados de Mobilize por alias (TIPO D
   assert.equal(map.contestadas, 3);
   assert.equal(map.serviceLevel20secPct, 6);
   assert.equal(map.tasaAbandonoPct, 14);
-  // "ABANDON" (columna propia de Volvox, Fase 45: nunca se lee) no mapea a
-  // ninguna clave -- Mobilize no pierde nada por traerla ademas de "% ABANDONO".
-  assert.equal(Object.values(map).includes(8), false);
+  // "ABANDON" (columna propia de Volvox, Fase 45: nunca se lee). Desde la
+  // Fase 155 se reconoce (para que la plantilla tenga el orden de Wolkvox)
+  // pero sigue sin leerse: queda en su clave ignorada, nunca en otra.
+  assert.equal(map.abandonWolkvox, 8);
 });
 
 test('traficoColIndexMap: un archivo de ORLANT (encabezados de siempre) sigue mapeando exactamente igual, sin ningun alias de Mobilize', () => {
