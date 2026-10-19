@@ -24,7 +24,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
   const i134 = orden.indexOf('fase134_borrar_clientes_v1');
   const iAur = orden.indexOf('fase153_crear_clinica_aurora_v1');
   assert.ok(i134 !== -1 && iAur > i134, 'la creacion corre despues del borrado de la Fase 134');
-  assert.equal(iAur, orden.length - 1, 'es la ultima migracion');
+  // Despues de Aurora solo pueden venir migraciones de fases posteriores que no la tocan.
+  const POSTERIORES = ['fase155_pct_atencion_abandono_v1'];
+  assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
   assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'calidad']);

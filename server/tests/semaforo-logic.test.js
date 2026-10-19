@@ -46,12 +46,13 @@ test('semaforoColorDe: direccion por defecto es mayor_es_mejor si no se especifi
 
 test('semaforoUmbralPara: prioriza el override por campana sobre el default global', () => {
   const umbrales = [
-    { metrica: 'nivel_atencion', campana: '', verde: 90, amarillo: 70, direccion: 'mayor_es_mejor' },
-    { metrica: 'nivel_atencion', campana: 'HOSPITAL LA MARIA', verde: 80, amarillo: 60, direccion: 'mayor_es_mejor' },
+    { metrica: 'service_level', campana: '', verde: 90, amarillo: 70, direccion: 'mayor_es_mejor' },
+    { metrica: 'service_level', campana: 'HOSPITAL LA MARIA', verde: 80, amarillo: 60, direccion: 'mayor_es_mejor' },
   ];
-  const global_ = semaforoUmbralPara(umbrales, 'nivel_atencion', 'ORLANT');
+  // (Fase 155: nivel_atencion ya no tiene meta -- el override se prueba con service_level.)
+  const global_ = semaforoUmbralPara(umbrales, 'service_level', 'ORLANT');
   assert.equal(global_.verde, 90);
-  const override = semaforoUmbralPara(umbrales, 'nivel_atencion', 'HOSPITAL LA MARIA');
+  const override = semaforoUmbralPara(umbrales, 'service_level', 'HOSPITAL LA MARIA');
   assert.equal(override.verde, 80);
 });
 

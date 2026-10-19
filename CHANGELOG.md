@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.55.0 — Octubre 2026
+
+**Fase 155: ajustes de la reunión con Edwin (19 de octubre).**
+
+- Flujo de Llamadas: el **nivel de atención** (contestadas ÷ ingresadas) y la
+  **tasa de abandono** (abandonadas ÷ ingresadas) ahora los calcula siempre la
+  plataforma, por día y por mes. Ya no hace falta calcularlos a mano en el
+  Excel: se sube el reporte de Wolkvox tal cual. Si el archivo trae esas
+  columnas, la plataforma no las usa.
+- Si el archivo no trae las llamadas abandonadas, se toman como ingresadas
+  menos contestadas. Un día sin llamadas ingresadas queda "sin dato" (nunca
+  100 % ni 0 %).
+- La tarjeta "Nivel de atención" ya no muestra "Meta 90 %" ni color de
+  semáforo: ese indicador no se mide contra una meta. Aplica a todos los
+  clientes.
+
 ## v1.54.4 — Octubre 2026
 
 **Fase 154: revisión de seguridad.**

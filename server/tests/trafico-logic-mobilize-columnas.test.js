@@ -58,7 +58,10 @@ test('traficoParseFilas: un archivo con encabezados de Mobilize se parsea comple
   assert.equal(r.filas[0].skillName, 'SKILL SAC');
   assert.equal(r.filas[0].totalLlamadas, 10);
   assert.equal(r.filas[0].serviceLevel20secPct, 85);
-  assert.equal(r.filas[0].tasaAbandonoPct, 5); // % ABANDONO 0.05 -> 5% (fraccion, igual que TASA DE ABNDONO de ORLANT -- sin cambios en el parser)
+  // Fase 155: % ABANDONO (0.05) y NIVEL DE ATENCION (0.95) del archivo se
+  // ignoran -- los calcula el sistema desde los conteos (10 de 10 contestadas).
+  assert.equal(r.filas[0].nivelAtencionPct, 100);
+  assert.equal(r.filas[0].tasaAbandonoPct, 0);
 });
 
 test('traficoSegundosDesdeTextoOTexto: numero/texto numerico plano sigue igual que traficoNumero (ORLANT no cambia)', () => {
@@ -84,25 +87,16 @@ test('traficoParseFilas: ASA/ATA como texto de reloj ("00:05") se leen en segund
   assert.equal(r.filas[0].ataSegundos, 70);
 });
 
-test('traficoParseFilas: NIVEL DE ATENCION por encima de 100% al tratarlo como fraccion dispara un aviso (nunca cambia ni descarta el valor)', () => {
-  // Columna YA en escala 0-100 (95, no 0.95) -- traficoPctDesdeFraccion la
-  // multiplica *100 igual que siempre (sin cambios para ORLANT), da 9500%,
-  // numero imposible -- debe avisar, no corregir solo ni fallar.
-  const header = ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS', 'NIVEL DE ATENCION'];
-  const row = ['SAC', '2026-09-01', 10, 10, 95];
-  const r = traficoParseFilas([header, row]);
+// Fase 155: NIVEL DE ATENCION / % ABANDONO del archivo ya no se leen (los
+// calcula el sistema), asi que un valor en escala 0-100 ya no puede dar mas de
+// 100 % ni hace falta el aviso de la Fase 131.
+test('traficoParseFilas: NIVEL DE ATENCION / % ABANDONO en escala 0-100 se ignoran y no dan mas de 100 %', () => {
+  const header = ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS', 'NIVEL DE ATENCION', '% ABANDONO'];
+  const r = traficoParseFilas([header, ['SAC', '2026-09-01', 10, 8, 95, 50]]);
   assert.equal(r.error, undefined);
-  assert.equal(r.filas[0].nivelAtencionPct, 9500);
-  assert.ok(r.avisos.some((a) => a.indexOf('NIVEL DE ATENCION') !== -1 && a.indexOf('100%') !== -1));
-});
-
-test('traficoParseFilas: % ABANDONO por encima de 100% al tratarlo como fraccion tambien dispara su propio aviso', () => {
-  const header = ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS', '% ABANDONO'];
-  const row = ['SAC', '2026-09-01', 10, 10, 50];
-  const r = traficoParseFilas([header, row]);
-  assert.equal(r.error, undefined);
-  assert.equal(r.filas[0].tasaAbandonoPct, 5000);
-  assert.ok(r.avisos.some((a) => a.indexOf('100%') !== -1));
+  assert.equal(r.filas[0].nivelAtencionPct, 80);
+  assert.equal(r.filas[0].tasaAbandonoPct, 20);
+  assert.ok(!r.avisos.some((a) => a.indexOf('100%') !== -1));
 });
 
 test('traficoParseFilas: un periodo normal (0-100% ya esperado) de Mobilize nunca dispara el aviso de "mas de 100%"', () => {

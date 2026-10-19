@@ -1198,10 +1198,15 @@ function _traficoTotalesLlamadas(filas){
   var contestadas = filas.reduce(function(a,f){ return a+f.contestadas; }, 0);
   var tieneAband = filas.some(function(f){ return f.llamadasAbandonadas!=null; });
   var abandonadas = tieneAband ? filas.reduce(function(a,f){ return a+(f.llamadasAbandonadas||0); }, 0) : null;
+  // Fase 155: nivel de atencion y tasa de abandono los calcula el sistema
+  // (suma / suma); sin abandonadas en el archivo, ingresadas - contestadas.
+  var abandCalculo = filas.reduce(function(a,f){ return a+traficoAbandonadasDe(f); }, 0);
+  var pcts = traficoPctAtencionAbandono(total, contestadas, abandCalculo);
+  var r1 = function(n){ return n===null ? null : Math.round(n*10)/10; };
   return {
     total: total, contestadas: contestadas, abandonadas: abandonadas,
-    nivelAtencion: total>0 ? Math.round((contestadas/total)*1000)/10 : null,
-    tasaAbandono: (total>0 && tieneAband) ? Math.round((abandonadas/total)*1000)/10 : null,
+    nivelAtencion: r1(pcts.nivelAtencionPct),
+    tasaAbandono: r1(pcts.tasaAbandonoPct),
     nivelServicio: traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'),
   };
 }

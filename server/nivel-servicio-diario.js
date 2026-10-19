@@ -23,6 +23,22 @@ function nowStr() {
 // Devuelve { diario: { insertadas }, mensual: [ {id,campana,mes,sede,contestadas20s,llamadasTotales,createdAt,updatedAt}, ... ] }
 // (filas crudas de calidad_nivel_servicio, sin el pct/cumple derivado — eso lo
 // agrega el caller con calidad-logic si lo necesita, igual que toNivelServicioRow).
+// Fase 155 (pedido de Edwin, 19/10): nivel de atencion y tasa de abandono
+// los calcula SIEMPRE el sistema, nunca se guardan tal cual vienen del
+// archivo: contestadas / ingresadas y abandonadas / ingresadas (sin
+// abandonadas: ingresadas - contestadas). Ingresadas = 0 -> null (sin dato,
+// nunca 100 % ni 0 %). Misma formula que traficoPctAtencionAbandono
+// (public/js/trafico-logic.js); fase155-calculo-nivel-abandono.test.js
+// exige que las dos den lo mismo.
+function pctAtencionAbandono(total, contestadas, abandonadas) {
+  const t = Number(total) || 0;
+  if (t <= 0) return { nivelAtencionPct: null, tasaAbandonoPct: null };
+  const c = Number(contestadas) || 0;
+  const a = abandonadas == null ? Math.max(0, t - c) : Number(abandonadas) || 0;
+  const r2 = (n) => Math.round(n * 100) / 100;
+  return { nivelAtencionPct: r2((c / t) * 100), tasaAbandonoPct: r2((a / t) * 100) };
+}
+
 function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPorNombre, filas, now }) {
   const ts = now || nowStr();
   sede = sede || null;
@@ -116,6 +132,7 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
     for (const f of rows) {
       const pct = f.serviceLevel20secPct === undefined ? null : f.serviceLevel20secPct;
       const estimado = pct === null ? null : Math.round((pct / 100) * f.totalLlamadas);
+      const calculados = pctAtencionAbandono(f.totalLlamadas, f.contestadas, f.llamadasAbandonadas);
       const params = {
         campana,
         fecha: f.fecha,
@@ -129,8 +146,8 @@ function cargarNivelServicioDiario(db, { campana, sede, archivoNombre, cargadoPo
         serviceLevel10secPct: opcional(f.serviceLevel10secPct),
         serviceLevel30secPct: opcional(f.serviceLevel30secPct),
         abandonPct: opcional(f.abandonPct),
-        nivelAtencionPct: opcional(f.nivelAtencionPct),
-        tasaAbandonoPct: opcional(f.tasaAbandonoPct),
+        nivelAtencionPct: calculados.nivelAtencionPct,
+        tasaAbandonoPct: calculados.tasaAbandonoPct,
         asaSegundos: opcional(f.asaSegundos),
         ataSegundos: opcional(f.ataSegundos),
         ahtSegundos: opcional(f.ahtSegundos),
@@ -210,4 +227,4 @@ function recalcularMensual(db, campana, mes, now, sede) {
   return db.prepare('SELECT * FROM calidad_nivel_servicio WHERE campana = ? AND mes = ? AND sede IS ?').get(campana, mes, sede);
 }
 
-module.exports = { cargarNivelServicioDiario, recalcularMensual };
+module.exports = { cargarNivelServicioDiario, recalcularMensual, pctAtencionAbandono };

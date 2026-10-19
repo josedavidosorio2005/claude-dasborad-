@@ -51,10 +51,34 @@ var TRAFICO_COLUMNAS = [
   { key: 'ataSegundos', label: 'ATA' },
   { key: 'waitTimeSegundos', label: 'WAIT_TIME' },
   { key: 'ahtSegundos', label: 'AHT' },
-  { key: 'nivelAtencionPct', label: 'NIVEL DE ATENCION' },
-  { key: 'tasaAbandonoPct', label: 'TASA DE ABNDONO', aliases: ['% ABANDONO'] }, // sic: asi viene de Volvox, no "corregir"
+  // Fase 155 (pedido de Edwin, 19/10): NIVEL DE ATENCION y TASA DE ABNDONO
+  // los calcula el sistema (traficoPctAtencionAbandono) -- si el archivo las
+  // trae, se reconocen pero su valor se IGNORA (`ignorada`), para que Edwin
+  // suba el reporte de Wolkvox tal cual sin calcularlas a mano.
+  { key: 'nivelAtencionPct', label: 'NIVEL DE ATENCION', ignorada: true },
+  { key: 'tasaAbandonoPct', label: 'TASA DE ABNDONO', aliases: ['% ABANDONO'], ignorada: true }, // sic: asi viene de Volvox, no "corregir"
 ];
 var TRAFICO_COLUMNAS_OBLIGATORIAS = TRAFICO_COLUMNAS.filter(function (c) { return c.obligatoria; });
+
+// Fase 155: nivel de atencion y tasa de abandono SIEMPRE calculados por el
+// sistema (nunca leidos del archivo): suma de contestadas / suma de
+// ingresadas, y abandonadas / ingresadas. Si no vinieron abandonadas, se
+// usan ingresadas - contestadas. Ingresadas = 0 -> null (sin dato, nunca
+// 100 % ni 0 %). Recibe sumas (un dia o un periodo ya sumado).
+function traficoPctAtencionAbandono(total, contestadas, abandonadas) {
+  var t = Number(total) || 0;
+  if (t <= 0) return { nivelAtencionPct: null, tasaAbandonoPct: null };
+  var c = Number(contestadas) || 0;
+  var a = abandonadas == null ? Math.max(0, t - c) : Number(abandonadas) || 0;
+  var r2 = function (n) { return Math.round(n * 100) / 100; };
+  return { nivelAtencionPct: r2((c / t) * 100), tasaAbandonoPct: r2((a / t) * 100) };
+}
+
+// Abandonadas de UNA fila: las del archivo, o ingresadas - contestadas si no vinieron.
+function traficoAbandonadasDe(f) {
+  if (f.llamadasAbandonadas != null) return Number(f.llamadasAbandonadas) || 0;
+  return Math.max(0, (Number(f.totalLlamadas) || 0) - (Number(f.contestadas) || 0));
+}
 
 function traficoNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
@@ -332,17 +356,6 @@ function traficoParseFilas(aoa, ws) {
     });
   }
 
-  // Fase 131 (Parte 2, pedido explicito de Edwin: "confirma si es fraccion o
-  // porcentaje" para NIVEL DE ATENCION/% ABANDONO de Mobilize): estas 2
-  // columnas SIEMPRE se tratan como fraccion (0.95 -> 95%, traficoPctDesdeFraccion,
-  // sin excepcion -- igual que siempre, ORLANT no cambia). Si la columna real
-  // ya viniera en escala 0-100 (ej. 95 sin dividir), el resultado se iria por
-  // encima de 100%, algo imposible para un porcentaje real -- se avisa UNA
-  // vez por columna para revisar antes de confirmar la carga, sin tocar el
-  // valor guardado (mismo criterio que el aviso de columnas SERVICE_LEVEL_*
-  // ambiguas, Fase 88, mas abajo).
-  var huboNivelAtencionSobre100 = false;
-  var huboTasaAbandonoSobre100 = false;
 
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
@@ -385,8 +398,6 @@ function traficoParseFilas(aoa, ws) {
       ['ataSegundos', traficoSegundosDesdeTextoOTexto, null],
       ['waitTimeSegundos', traficoSegundosDesdeFraccionDia, null],
       ['ahtSegundos', traficoSegundosDesdeFraccionDia, null],
-      ['nivelAtencionPct', traficoPctDesdeFraccion, null],
-      ['tasaAbandonoPct', traficoPctDesdeFraccion, null],
     ];
     opcionales.forEach(function (spec) {
       var key = spec[0], parse = spec[1], post = spec[2];
@@ -397,20 +408,15 @@ function traficoParseFilas(aoa, ws) {
       if (val !== null) fila[key] = post ? post(val) : val;
     });
 
-    if (fila.nivelAtencionPct !== undefined && fila.nivelAtencionPct > 100) huboNivelAtencionSobre100 = true;
-    if (fila.tasaAbandonoPct !== undefined && fila.tasaAbandonoPct > 100) huboTasaAbandonoSobre100 = true;
+    var pcts = traficoPctAtencionAbandono(fila.totalLlamadas, fila.contestadas, fila.llamadasAbandonadas);
+    if (pcts.nivelAtencionPct !== null) fila.nivelAtencionPct = pcts.nivelAtencionPct;
+    if (pcts.tasaAbandonoPct !== null) fila.tasaAbandonoPct = pcts.tasaAbandonoPct;
 
     filas.push(fila);
     skillsSet[skillName] = true;
     mesesSet[fecha.slice(0, 7)] = true;
   }
 
-  if (huboNivelAtencionSobre100) {
-    avisos.push('La columna "NIVEL DE ATENCION" dio mas de 100% en al menos una fila al tratarla como fraccion (0.95 -> 95%) -- revisa si en el archivo ya viene en escala 0-100 antes de confirmar la carga.');
-  }
-  if (huboTasaAbandonoSobre100) {
-    avisos.push('La columna "' + (map.tasaAbandonoPct !== undefined ? aoa[0][map.tasaAbandonoPct] : 'TASA DE ABNDONO/% ABANDONO') + '" dio mas de 100% en al menos una fila al tratarla como fraccion (0.05 -> 5%) -- revisa si en el archivo ya viene en escala 0-100 antes de confirmar la carga.');
-  }
 
   if (filas.length === 0) return { error: 'El archivo no tiene filas de datos validas.' };
   return {
@@ -567,7 +573,7 @@ function traficoAgregar(filas, opts) {
     if (!buckets[clave]) {
       var b0 = {
         periodo: periodo, skillName: combinar ? null : f.skillName,
-        totalLlamadas: 0, contestadas: 0, llamadasAbandonadas: 0, _tieneAbandonadas: false,
+        totalLlamadas: 0, contestadas: 0, llamadasAbandonadas: 0, _tieneAbandonadas: false, _abandonadasCalculo: 0,
       };
       PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { b0['_suma_' + k] = 0; b0['_peso_' + k] = 0; });
       buckets[clave] = b0;
@@ -580,6 +586,7 @@ function traficoAgregar(filas, opts) {
     b.totalLlamadas += pesoTotal;
     b.contestadas += pesoContestadas;
     if (f.llamadasAbandonadas != null) { b.llamadasAbandonadas += f.llamadasAbandonadas; b._tieneAbandonadas = true; }
+    b._abandonadasCalculo += traficoAbandonadasDe(f);
     if (f.ataSegundos != null) { b._ataReportado = true; if (Number(f.ataSegundos) !== 0) b._ataDistintoDeCero = true; }
     PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
@@ -603,9 +610,10 @@ function traficoAgregar(filas, opts) {
       totalLlamadas: b.totalLlamadas,
       contestadas: b.contestadas,
       llamadasAbandonadas: b._tieneAbandonadas ? b.llamadasAbandonadas : null,
-      nivelAtencionPct: b.totalLlamadas > 0 ? r2((b.contestadas / b.totalLlamadas) * 100) : null,
-      tasaAbandonoPct: (b.totalLlamadas > 0 && b._tieneAbandonadas) ? r2((b.llamadasAbandonadas / b.totalLlamadas) * 100) : null,
     };
+    var pcts = traficoPctAtencionAbandono(b.totalLlamadas, b.contestadas, b._abandonadasCalculo);
+    out.nivelAtencionPct = pcts.nivelAtencionPct;
+    out.tasaAbandonoPct = pcts.tasaAbandonoPct;
     PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
     // Fase 146 (decision de Edwin): con datos pero 0 abandonos, ATA = 0
     // (0:00), no "sin dato" -- ver traficoAtaCeroSinAbandonos.
@@ -775,6 +783,8 @@ function traficoValidarNuevoMapeo(input) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
+    traficoPctAtencionAbandono: traficoPctAtencionAbandono,
+    traficoAbandonadasDe: traficoAbandonadasDe,
     traficoAtaPromedioPeriodo: traficoAtaPromedioPeriodo,
     TRAFICO_COLUMNAS: TRAFICO_COLUMNAS,
     TRAFICO_COLUMNAS_OBLIGATORIAS: TRAFICO_COLUMNAS_OBLIGATORIAS,
