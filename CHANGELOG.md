@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.58.1 — Octubre 2026
+
+**Fase 160: ejemplos correctos en la plantilla de Flujo de WhatsApp.**
+
+- Los porcentajes de ejemplo ahora van como "40.00 %" y el AHT como hora
+  de Excel (0:06:40). Antes, quien seguía el ejemplo (AHT 400) veía la
+  carga rechazada, porque 400 se lee como 400 días.
+- ASA y ATA siguen en segundos. Los números de los dashboards no cambian.
+
 ## v1.58.0 — Octubre 2026
 
 **Fase 160: ASA y ATA en dos gráficas.**

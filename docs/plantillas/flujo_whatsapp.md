@@ -24,13 +24,13 @@ Wolkvox: reporte de WhatsApp por cola (un período por fila). También se acepta
 | TOTAL WHATSAPP | Sí | Conversaciones que entraron. |  |
 | WHATSAPP CONTESTADOS | Sí | Conversaciones atendidas. |  |
 | WHATSAPP ABANDONADOS | No | Conversaciones sin atender. |  |
-| SERVICE_LEVEL_10SEC | No | % atendidas en 10 s. |  |
-| SERVICE_LEVEL_20SEC | No | % atendidas en 20 s. |  |
-| SERVICE_LEVEL_30SEC | No | % atendidas en 30 s. |  |
-| SERVICE_LEVEL_5MIN | No | % atendidas en 5 min. | SERVICE_LEVEL_300SEC, NIVEL DE SERVICIO 5 MIN |
-| ASA | No | Tiempo promedio de respuesta. |  |
-| ATA | No | Tiempo promedio hasta el abandono. |  |
-| AHT | No | Tiempo promedio de atención. |  |
+| SERVICE_LEVEL_10SEC | No | % atendidas en 10 s. Como porcentaje ("40 %" o celda con formato %). |  |
+| SERVICE_LEVEL_20SEC | No | % atendidas en 20 s. Como porcentaje. |  |
+| SERVICE_LEVEL_30SEC | No | % atendidas en 30 s. Como porcentaje. |  |
+| SERVICE_LEVEL_5MIN | No | % atendidas en 5 min. Como porcentaje. | SERVICE_LEVEL_300SEC, NIVEL DE SERVICIO 5 MIN |
+| ASA | No | Tiempo promedio de respuesta, en segundos. |  |
+| ATA | No | Tiempo promedio hasta el abandono, en segundos. |  |
+| AHT | No | Tiempo promedio de atención, como hora de Excel (h:mm:ss). No en segundos: 400 se leería como 400 días y la carga se rechaza. |  |
 
 ## Cómo detecta el encabezado
 
@@ -48,7 +48,7 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 | NOMBRE_COLA_WHATSAPP | FECHA INICIO | FECHA FIN | TOTAL WHATSAPP | WHATSAPP CONTESTADOS | WHATSAPP ABANDONADOS | SERVICE_LEVEL_10SEC | SERVICE_LEVEL_20SEC | SERVICE_LEVEL_30SEC | SERVICE_LEVEL_5MIN | ASA | ATA | AHT |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| WHATSAPP GENERAL | 2026-08-01 | 2026-08-31 | 900 | 870 | 30 | 0.4 | 0.5 | 0.6 | 0.9 | 60 | 300 | 400 |
+| WHATSAPP GENERAL | 2026-08-01 | 2026-08-31 | 900 | 870 | 30 | 40.00 % | 50.00 % | 60.00 % | 90.00 % | 60 | 300 | 0:06:40 |
 
 ## Notas
 
