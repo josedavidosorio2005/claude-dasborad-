@@ -27,7 +27,7 @@ const rateLimit = require('express-rate-limit');
 
 const config = require('./config');
 const db = require('./db');
-const { requireActor, identidadParaLimiteDeTasa } = require('./auth');
+const { requireActor, identidadParaLimiteDeTasa, actorDeLaPeticion } = require('./auth');
 const { wrap } = require('./routes/shared');
 const { crearTopeCargas, rutaNormalizada } = require('./cargas-simultaneas');
 // Fase 95 (tema D): version de la app, unica fuente de verdad
@@ -201,6 +201,13 @@ function createApp() {
       // Mismos mensajes que requireActor (con token vencido o sin token).
       const conToken = String(req.headers.authorization || '').startsWith('Bearer ');
       return responderSinLeerCuerpo(req, res, 401, { error: conToken ? 'Sesion invalida o expirada' : 'No autenticado' });
+    }
+    // Fase 157: ademas de la firma, una sesion vigente (no cerrada, sin
+    // cambio de clave despues, usuario que existe y activo), como requireActor.
+    const actor = actorDeLaPeticion(req);
+    if (!actor) return responderSinLeerCuerpo(req, res, 401, { error: 'No autenticado' });
+    if (!actor.isMasterAdmin && !actor.active) {
+      return responderSinLeerCuerpo(req, res, 403, { error: 'Usuario suspendido. Contacte al administrador.' });
     }
     if (!req.is('application/json')) return responderSinLeerCuerpo(req, res, 415, { error: 'El cuerpo de la peticion debe ser JSON' });
     next();
