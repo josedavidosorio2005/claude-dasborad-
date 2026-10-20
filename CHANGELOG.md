@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.2 — Octubre 2026
+
+**Fase 157: revisión de seguridad.**
+
+- Ajuste interno: una sesión ya cerrada se rechaza antes de procesar el
+  archivo que se esté subiendo. Para quien usa la plataforma no cambia nada.
+
 ## v1.57.1 — Octubre 2026
 
 **Fase 157: revisión de seguridad.**
