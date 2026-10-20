@@ -3797,6 +3797,49 @@ function recalcularPctAtencionAbandono() {
 }
 runOnceMigration('fase155_pct_atencion_abandono_v1', recalcularPctAtencionAbandono);
 
+// Fase 160 ("OK crear HLM" del usuario): HOSPITAL LA MARIA, un solo cliente,
+// igual que Aurora (Fase 153): ficha en el registro de clientes y su
+// dashboard desde la plantilla, con Flujo de Llamadas, Flujo de WhatsApp y
+// Calidad, todas ocultas y sin datos. Sedes (Sede 33 / Castilla) por definir:
+// queda sin sedes. No crea usuarios, permisos ni plantilla de Calidad: nadie
+// la ve salvo el admin completo. Va despues de fase134_borrar_clientes_v1
+// (que borro la HLM vieja) y de todas las migraciones anteriores, asi en una
+// base nueva nada la vuelve a borrar ni a tocar. Idempotente.
+const HLM = {
+  nombre: 'HOSPITAL LA MARIA',
+  titulo: 'Dashboard Hospital La María',
+  modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'],
+  visibles: [],
+};
+function crearHospitalLaMaria() {
+  const { generarLayout } = require('./plantillas-cliente');
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT OR IGNORE INTO clientes_registro
+         (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+       VALUES (?, ?, 1, ?, ?, NULL, 1, ?, ?)`
+    ).run(
+      HLM.nombre,
+      maxOrden + 1,
+      JSON.stringify(HLM.modulos),
+      JSON.stringify({ sedes: [], asesorVisibleCliente: false, traficoDosHojas: false, especificos: [] }),
+      now,
+      now
+    );
+    if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(HLM.nombre)) {
+      const cfg = generarLayout(HLM);
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+      ).run(HLM.nombre, cfg.titulo, JSON.stringify(cfg.secciones), JSON.stringify(cfg.layout), now, now);
+    }
+  })();
+  if (!config.isTest) console.log('[db] Migracion fase160_crear_hospital_la_maria_v1 aplicada.');
+}
+runOnceMigration('fase160_crear_hospital_la_maria_v1', crearHospitalLaMaria);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3826,6 +3869,7 @@ module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;
 module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
+module.exports.crearHospitalLaMaria = crearHospitalLaMaria;
 module.exports.AURORA = AURORA;
 // Fase 155: idem (prueba que la migracion es idempotente).
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
