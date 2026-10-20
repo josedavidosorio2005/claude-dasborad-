@@ -270,9 +270,6 @@ router.post(
       if (!pares.has(clave)) pares.set(clave, { skillName: f.skillName, mes, filasNuevas: 0 });
       pares.get(clave).filasNuevas++;
     });
-    const stmtExistentes = db.prepare(
-      'SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario WHERE skillName = ? AND substr(fecha,1,7) = ?'
-    );
 
     // Fase 116: rango GLOBAL del archivo completo (nunca por skill) -- ver
     // el comentario en nivel-servicio-diario.js (cargarNivelServicioDiario)
@@ -288,20 +285,24 @@ router.post(
       if (maxFechaGlobal === null || f.fecha > maxFechaGlobal) maxFechaGlobal = f.fecha;
     });
     const stmtEnRango = db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ?');
+    // Fase 156 (B1): filasExistentes cuenta solo las filas ya guardadas
+    // cuya fecha VIENE en el archivo (las que de verdad se reemplazan), no
+    // el mes entero de la skill: el resto del mes fuera del rango queda
+    // igual al guardar, y las del rango que no vienen van a filasABorrar.
     for (const [skillName, fechas] of fechasPorSkill) {
       stmtEnRango.all(skillName, minFechaGlobal, maxFechaGlobal).forEach((r) => {
-        if (fechas.has(r.fecha)) return; // esa fecha SI viene en el archivo -- se reemplaza, no se borra
         const mes = r.fecha.slice(0, 7);
         const clave = skillName + '|' + mes;
         if (!pares.has(clave)) pares.set(clave, { skillName, mes, filasNuevas: 0 });
         const p = pares.get(clave);
-        p.filasABorrar = (p.filasABorrar || 0) + 1;
+        if (fechas.has(r.fecha)) p.filasExistentes = (p.filasExistentes || 0) + 1; // se reemplaza, no se borra
+        else p.filasABorrar = (p.filasABorrar || 0) + 1;
       });
     }
 
     const resultado = [...pares.values()].map((p) => ({
       ...p,
-      filasExistentes: stmtExistentes.get(p.skillName, p.mes).n,
+      filasExistentes: p.filasExistentes || 0,
       filasABorrar: p.filasABorrar || 0,
     }));
     res.json(resultado);
