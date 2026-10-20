@@ -71,7 +71,7 @@ Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoj
 | AGENT_NAME | Sí | Asesor. |  |
 | DATE | Sí | Fecha de la conversación. |  |
 | DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
-| NOMBRE DE SKILL | Sí | Cola de WhatsApp ("NOMBRE DE SKILL" en el export). | NOMBRE DE SKILL |
+| NOMBRE DE SKILL | Sí | Cola de WhatsApp ("NOMBRE DE SKILL" en el export). | SKILL_NAME |
 
 ### Cómo detecta el encabezado
 

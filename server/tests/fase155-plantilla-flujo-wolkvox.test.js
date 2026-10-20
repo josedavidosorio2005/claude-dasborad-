@@ -23,15 +23,24 @@ const MOBILIZE = [
   'SERVICE_LEVEL_10SEC', 'NIVEL DE SERVICIO 80 - 20', 'SERVICE_LEVEL_30SEC', 'ABANDON',
   'ASA', 'ATA', 'WAIT_TIME', 'AHT', 'NIVEL DE ATENCION', '% ABANDONO',
 ];
+// Fase 159 (pedido del 20/10, tras la carga fallida de agosto de Mobilize):
+// la hoja de datos de la plantilla lleva EXACTAMENTE los encabezados del
+// reporte nativo de Wolkvox, en su orden. Los nombres de arriba siguen
+// aceptandose como alias (ultima prueba de este archivo).
+const NATIVO = [
+  'SKILL_NAME', 'DATE', 'INBOUND_CALLS', 'ANSWER_CALLS', 'ABANDON_CALLS',
+  'SERVICE_LEVEL_10SEC', 'SERVICE_LEVEL_20SEC', 'SERVICE_LEVEL_30SEC', 'ABANDON',
+  'ASA', 'ATA', 'WAIT_TIME', 'AHT',
+];
 const NOTA = 'Nivel de atención y tasa de abandono los calcula el sistema; no hace falta llenarlos.';
 
 function libro() {
   return XLSX.read(fs.readFileSync(path.join(RAIZ, 'server', 'plantillas', 'PLANTILLA_FLUJO_LLAMADAS.xlsx')), { type: 'buffer' });
 }
 
-test('PLANTILLA_FLUJO_LLAMADAS: mismas columnas y mismo orden que el reporte de Wolkvox', () => {
+test('PLANTILLA_FLUJO_LLAMADAS: exactamente los encabezados nativos de Wolkvox, en su orden', () => {
   const filas = XLSX.utils.sheet_to_json(libro().Sheets.LLAMADAS, { header: 1, defval: '' });
-  assert.deepEqual(filas[0], WOLKVOX);
+  assert.deepEqual(filas[0], NATIVO);
 });
 
 test('INSTRUCCIONES dice en una linea que nivel y tasa los calcula el sistema', () => {
@@ -42,7 +51,14 @@ test('INSTRUCCIONES dice en una linea que nivel y tasa los calcula el sistema', 
 test('la ficha lista las mismas columnas que la plantilla y la misma linea', () => {
   const ficha = fs.readFileSync(path.join(RAIZ, 'docs', 'plantillas', 'flujo_llamadas.md'), 'utf8');
   assert.ok(ficha.includes(NOTA));
-  WOLKVOX.forEach((c) => assert.ok(ficha.includes('| ' + c + ' |'), 'la ficha no lista ' + c));
+  NATIVO.forEach((c) => assert.ok(ficha.includes('| ' + c + ' |'), 'la ficha no lista ' + c));
+  // INSTRUCCIONES de la plantilla lista las mismas columnas, en el mismo orden.
+  const ins = XLSX.utils.sheet_to_json(libro().Sheets.INSTRUCCIONES, { header: 1, defval: '' });
+  const desde = ins.findIndex((f) => f[0] === 'Columna') + 1;
+  assert.deepEqual(ins.slice(desde, desde + NATIVO.length).map((f) => f[0]), NATIVO);
+  // El encabezado nativo se reconoce como Flujo de Llamadas.
+  const map = T.traficoColIndexMap(NATIVO);
+  ['skillName', 'fecha', 'totalLlamadas', 'contestadas', 'llamadasAbandonadas'].forEach((k) => assert.ok(k in map, 'no reconoce ' + k));
 });
 
 test('lector: reconoce las 15 columnas (ORLANT y Mobilize) y no lee ABANDON ni los %', () => {

@@ -22,7 +22,8 @@ const NOTAS = {
   flujo_llamadas: {
     usan: 'ORLANT y MOBILIZE',
     notas: [
-      'Es el mismo lector para los dos clientes: Mobilize trae otros nombres de columna (TIPO DE LINEA, DÍA, LLAMADAS INGRESADAS, NIVEL DE SERVICIO 80 - 20, % ABANDONO) y el sistema los acepta como alias.',
+      'Es el mismo lector para los dos clientes y el mismo reporte de Wolkvox (SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS, SERVICE_LEVEL_10SEC, SERVICE_LEVEL_20SEC, SERVICE_LEVEL_30SEC, ABANDON, ASA, ATA, WAIT_TIME, AHT). Los nombres de plantillas anteriores (TOTAL LLAMADAS, LLAMADAS INGRESADAS, TIPO DE LINEA, DÍA, NIVEL DE SERVICIO 80 - 20, % ABANDONO…) se siguen aceptando como alias.',
+      'La hoja se reconoce por sus columnas, no por su nombre ("HistQueue<fecha>", "LLAMADAS", "DATA" u otro).',
       'Antes de la primera carga de un cliente hay que asignar sus skills a la campaña (pantalla Tráfico → skills). Un skill sin asignar queda en "SIN_ASIGNAR" y no se ve en ningún tablero.',
       'Una fila de total ("TOTAL", "TOTAL GENERAL") nunca se suma como si fuera una línea.',
       'Un archivo puede traer varios días o meses; el período es el de las fechas que trae.',

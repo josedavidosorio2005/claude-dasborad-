@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.7 — Octubre 2026
+
+**Fase 159: la plantilla de Flujo de Llamadas es igual al reporte de Wolkvox.**
+
+- La hoja de datos de la plantilla trae exactamente los encabezados del
+  reporte de la cola que se descarga de Wolkvox, en el mismo orden:
+  SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS,
+  SERVICE_LEVEL_10SEC, SERVICE_LEVEL_20SEC, SERVICE_LEVEL_30SEC, ABANDON,
+  ASA, ATA, WAIT_TIME y AHT.
+- La ficha y las instrucciones de la plantilla dicen lo mismo. Los nombres
+  de las plantillas anteriores se siguen aceptando.
+- Los números de los dashboards no cambian.
+
 ## v1.57.6 — Octubre 2026
 
 **Fase 159: Flujo de Llamadas acepta el reporte de Wolkvox tal cual.**
