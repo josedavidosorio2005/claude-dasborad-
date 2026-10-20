@@ -11,6 +11,8 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
@@ -39,7 +41,8 @@ router.get(
   validate(schemas.encuestasOpcionesQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    res.json(encuestasOpciones(db, req.query.campana, { incluirAgentes: puedeVerAsesores(req.actor, req.query.campana) }));
+    const incluirAgentes = puedeVerAsesores(req.actor, req.query.campana);
+    res.json(opcionesConCache(db, JSON.stringify(['encuestas', req.query.campana, incluirAgentes]), () => encuestasOpciones(db, req.query.campana, { incluirAgentes })));
   })
 );
 

@@ -8,6 +8,8 @@
 // de '/calidad' -- se monta en server.js despues de routes/calidad.
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
@@ -30,7 +32,7 @@ router.get(
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(inasistenciaOpciones(db, campana));
+    res.json(opcionesConCache(db, JSON.stringify(['inasistencia', campana]), () => inasistenciaOpciones(db, campana)));
   })
 );
 

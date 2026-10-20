@@ -8,6 +8,8 @@
 // routes/efectividad-agendamiento.
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
@@ -26,7 +28,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(efectividadCitasOpciones(db, req.query.campana));
+    res.json(opcionesConCache(db, JSON.stringify(['efectividad-citas', req.query.campana]), () => efectividadCitasOpciones(db, req.query.campana)));
   })
 );
 
