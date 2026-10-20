@@ -97,7 +97,10 @@ async function openCargas(){
   }catch(e){ _cargasCalidadPorCampana = {}; }
   var selC = document.getElementById('carga-cliente');
   // PR 5: quien carga por su permiso de modulo solo ve el cliente que eligio en el Centro.
-  if(soloFoco) _cargasClientes = _cargasClientes.filter(function(c){ return c === _cargasFocoCentro.cliente; });
+  // Fase 159: desde el Centro (Subir/Reemplazar), el cliente queda fijo -- un
+  // cambio accidental de cliente apagaba el filtro de mes sin avisar.
+  if(soloFoco || _cargasFocoCentro) _cargasClientes = _cargasClientes.filter(function(c){ return c === _cargasFocoCentro.cliente; });
+  selC.disabled = !!_cargasFocoCentro;
   selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();
@@ -164,9 +167,11 @@ function _cargasTraficoLlamadasColumnasUnificado(){
   return [
     { label:'SKILL_NAME', opcional:false },
     { label:'DATE', opcional:false },
-    { label:'TOTAL LLAMADAS', opcional:false },
-    { label:'LLAMADAS CONTESTADAS', opcional:false },
-    { label:'LLAMADAS ABANDONADAS', opcional:true },
+    // Fase 159: el reporte nativo de Wolkvox (el mismo de Mobilize) trae
+    // INBOUND_CALLS / ANSWER_CALLS / ABANDON_CALLS en vez de estos nombres.
+    { label:'TOTAL LLAMADAS', labelAlt:['INBOUND_CALLS'], opcional:false },
+    { label:'LLAMADAS CONTESTADAS', labelAlt:['ANSWER_CALLS'], opcional:false },
+    { label:'LLAMADAS ABANDONADAS', labelAlt:['ABANDON_CALLS'], opcional:true },
     { label:'SERVICE_LEVEL_10SEC', opcional:true },
     { label:'SERVICE_LEVEL_20SEC', opcional:true },
     { label:'SERVICE_LEVEL_30SEC', opcional:true },
@@ -303,9 +308,20 @@ function _cargasCalidadColumnas(items){
 // correspondiente, marcando el resultado con `canal` para que la vista
 // previa y el guardado (guardarCarga/_cargasGuardarTraficoWhatsapp) sepan
 // cual de los dos es.
+// Fase 159: canal que eligio la persona en el Centro de cargas (Flujo de
+// Llamadas -> 'voz', Flujo de WhatsApp -> 'whatsapp'), o null fuera del
+// Centro. Decide el canal de un reporte de Wolkvox cuyo encabezado sirve
+// para los dos (ver cargasDetectarCanalTrafico, cargas-logic.js).
+function _cargasCanalElegido(){
+  var sel = document.getElementById('carga-cliente');
+  var foco = _cargasFocoActivo(sel ? sel.value : null);
+  var spec = foco && typeof CENTRO_CARGA_PLAN !== 'undefined' ? CENTRO_CARGA_PLAN[foco.carga] : null;
+  return spec && spec.tipo === 'trafico' ? spec.canal : null;
+}
+
 function _cargasParseTraficoAuto(aoa, ws){
   var header = (aoa && aoa[0]) || [];
-  var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario);
+  var canal = cargasDetectarCanalTrafico(header, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario, _cargasCanalElegido());
   if(canal === 'whatsapp'){
     var resWpp = traficoWppParseFilas(aoa, ws);
     if(!resWpp.error) resWpp.canal = 'whatsapp';
@@ -530,7 +546,7 @@ async function procesarArchivoConsolidado(input){
   var canalData = null;
   if(wsData){
     var aoaDataHeader = XLSX.utils.sheet_to_json(wsData, {header:1, blankrows:false, defval:null});
-    canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario);
+    canalData = cargasDetectarCanalTrafico(aoaDataHeader[0]||[], traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario, _cargasCanalElegido());
   }
 
   // Fase 79 (hallazgo real: los archivos ORIGINALES de Edwin traen la hoja
@@ -591,7 +607,7 @@ async function procesarArchivoConsolidado(input){
       if(esEncuesta){
         if(encuestaBuscarEncabezado(_cargasPrimerasFilas(wsCandidata, 20), 20) === -1) continue;
       } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
-      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario) !== h.canalFijo) continue;
+      if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario, _cargasCanalElegido()) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
       // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
       // SKILL) en el de Llamadas -- cargasEncabezadosCoinciden por si sola
@@ -676,7 +692,16 @@ async function procesarArchivoConsolidado(input){
     // previa, aunque el dato real haya salido de "DATA" (por el fallback
     // de canal o el de encabezados) -- cargasProcesarHoja solo mira si `ws`
     // es null o no, nunca vuelve a buscarla por nombre.
-    var res = cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames);
+    // Fase 159: si ninguna hoja calzo, pero alguna se parece al formato
+    // (le faltan columnas obligatorias), el aviso dice cuales faltan y que
+    // encabezados trae, en vez de "No se encontro la hoja DATA".
+    var diagnostico = null;
+    if(!ws && h.columnas){
+      diagnostico = cargasDiagnosticoSinHoja(h.titulo, wb.SheetNames
+        .filter(function(n){ return !hojasReclamadasPorNombre[n] && !hojasUsadasPorEncabezados[n]; })
+        .map(function(n){ return { nombre: n, encabezado: cargasLeerEncabezadoAcotado(XLSX.utils, wb.Sheets[n], 20) }; }), h.columnas);
+    }
+    var res = cargasProcesarHoja(h, aoa, ws, parseFn, wb.SheetNames, diagnostico);
     if(reconocidaPorEncabezadosComo) res.reconocidaPorEncabezadosComo = reconocidaPorEncabezadosComo;
     return res;
   });
@@ -721,6 +746,9 @@ async function procesarArchivoConsolidado(input){
         var conteo = await apiRequest('GET','/centro-cargas/'+encodeURIComponent(cliente)+'/'+encodeURIComponent(focoArch.carga)+'/'+focoArch.mes+'/conteo?desde='+encodeURIComponent(rango.desde)+'&hasta='+encodeURIComponent(rango.hasta));
         rr.avisos = [centroTextoReemplazoParcial(focoArch.mes, rango, conteo)].concat(rr.avisos || []);
       }catch(e){ /* sin el conteo, la vista previa sigue con sus avisos de siempre */ }
+      // Fase 159: si el archivo no trae el mes completo, se dice claro.
+      var cobertura = centroTextoCobertura(focoArch.mes, rr.filas.map(function(f){ return centroFechaFila(focoArch.carga, f); }), fechaLimitesHoyColombia());
+      if(cobertura) rr.avisos = [cobertura].concat(rr.avisos || []);
     }
     if(!_cargasResultados.some(function(r){ return r.filas; })){
       var err = _cargasResultados.filter(function(r){ return r.error; })[0];
@@ -763,6 +791,14 @@ function _cargasEstadoLabel(r){
   if(r.tipo==='whatsapp_tiempos' && r.porRango){
     extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+r.dias+' día(s); por rango: '+
       WPP_TIEMPOS_RANGOS.map(function(x){ return x.label+' '+r.porRango[x.key]; }).join(', ');
+  }
+  // Fase 159: Flujo de Llamadas -- fechas, skills y llamadas que entran,
+  // para revisar antes de guardar.
+  if(r.tipo==='trafico' && r.canal!=='whatsapp' && r.filas && r.filas.length){
+    var rt = traficoResumenCarga(r.filas);
+    extra = ' — del '+rt.desde+' al '+rt.hasta+' ('+rt.dias+' día(s) con datos); skills: '+rt.skills.join(', ')+
+      '; ingresadas '+rt.ingresadas+', contestadas '+rt.contestadas+', abandonadas '+rt.abandonadas+
+      '; filas omitidas '+(r.avisos||[]).filter(function(a){ return /se omiti/i.test(a); }).length;
   }
   // Fase 147 (Parte B): Encuesta -- solo conteos por pregunta, nunca filas.
   if(r.tipo==='encuesta' && r.conteos){

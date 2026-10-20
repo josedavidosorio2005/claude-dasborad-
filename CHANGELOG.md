@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.6 — Octubre 2026
+
+**Fase 159: Flujo de Llamadas acepta el reporte de Wolkvox tal cual.**
+
+- El reporte de la cola que se descarga de Wolkvox (hoja "HistQueue…", con
+  las columnas INBOUND_CALLS, ANSWER_CALLS y ABANDON_CALLS) ahora se reconoce
+  sin renombrar la hoja ni cambiar encabezados. Antes salía "No se encontró
+  la hoja DATA". Vale igual para ORLANT, que usa el mismo reporte.
+- Si a un archivo le faltan columnas, el aviso dice cuáles faltan y qué
+  encabezados trae, en vez de hablar de la hoja DATA.
+- Antes de guardar, la vista previa muestra las fechas, los skills y las
+  llamadas ingresadas, contestadas y abandonadas, y avisa si el archivo no
+  trae el mes completo (los días que no vienen no se rellenan con cero).
+- Al subir desde el Centro de cargas, el cliente queda fijo durante la carga.
+- Los números de los dashboards no cambian.
+
 ## v1.57.5 — Octubre 2026
 
 **Fase 156: aviso de la carga de Flujo de Llamadas.**

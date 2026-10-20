@@ -33,9 +33,13 @@ var _traficoFechaLimites = (typeof require === 'function') ? require('./fecha-li
 var TRAFICO_COLUMNAS = [
   { key: 'skillName', label: 'SKILL_NAME', aliases: ['TIPO DE LINEA'], obligatoria: true },
   { key: 'fecha', label: 'DATE', aliases: ['DÍA', 'DIA'], obligatoria: true },
-  { key: 'totalLlamadas', label: 'TOTAL LLAMADAS', aliases: ['LLAMADAS INGRESADAS'], obligatoria: true },
-  { key: 'contestadas', label: 'LLAMADAS CONTESTADAS', obligatoria: true },
-  { key: 'llamadasAbandonadas', label: 'LLAMADAS ABANDONADAS' },
+  // Fase 159: INBOUND_CALLS / ANSWER_CALLS / ABANDON_CALLS son los nombres
+  // del reporte nativo de la cola de Wolkvox (hoja "HistQueue<fecha>"),
+  // mismo dato (verificado contra la estructura del archivo real de agosto
+  // de Mobilize: en todas sus filas INBOUND = ANSWER + ABANDON).
+  { key: 'totalLlamadas', label: 'TOTAL LLAMADAS', aliases: ['LLAMADAS INGRESADAS', 'INBOUND_CALLS'], obligatoria: true },
+  { key: 'contestadas', label: 'LLAMADAS CONTESTADAS', aliases: ['ANSWER_CALLS'], obligatoria: true },
+  { key: 'llamadasAbandonadas', label: 'LLAMADAS ABANDONADAS', aliases: ['ABANDON_CALLS'] },
   { key: 'serviceLevel10secPct', label: 'SERVICE_LEVEL_10SEC' },
   { key: 'serviceLevel20secPct', label: 'SERVICE_LEVEL_20SEC', aliases: ['NIVEL DE SERVICIO 80 - 20'] },
   { key: 'serviceLevel30secPct', label: 'SERVICE_LEVEL_30SEC' },
@@ -83,6 +87,23 @@ function traficoPctAtencionAbandono(total, contestadas, abandonadas) {
 function traficoAbandonadasDe(f) {
   if (f.llamadasAbandonadas != null) return Number(f.llamadasAbandonadas) || 0;
   return Math.max(0, (Number(f.totalLlamadas) || 0) - (Number(f.contestadas) || 0));
+}
+
+// Fase 159: resumen de lo que trae una carga de Flujo de Llamadas para la
+// vista previa (antes de guardar). Abandonadas como en el resto del sistema
+// (traficoAbandonadasDe: si la columna no vino, ingresadas - contestadas).
+function traficoResumenCarga(filas) {
+  var fechas = {}, skills = {}, o = { ingresadas: 0, contestadas: 0, abandonadas: 0 };
+  (filas || []).forEach(function (f) {
+    fechas[f.fecha] = true; skills[f.skillName] = true;
+    o.ingresadas += Number(f.totalLlamadas) || 0;
+    o.contestadas += Number(f.contestadas) || 0;
+    o.abandonadas += traficoAbandonadasDe(f);
+  });
+  var lista = Object.keys(fechas).sort();
+  o.desde = lista[0] || null; o.hasta = lista[lista.length - 1] || null; o.dias = lista.length;
+  o.skills = Object.keys(skills).sort();
+  return o;
 }
 
 function traficoNorm(s) {
@@ -330,7 +351,7 @@ function traficoParseFilas(aoa, ws) {
   if (faltantes.length) {
     return {
       error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') +
-        '. Sube el archivo tal cual lo descargas de Volvox (hoja DATA), sin recortar columnas.',
+        '. Sube el reporte tal cual lo descargas de Wolkvox, sin recortar columnas.',
     };
   }
 
@@ -794,6 +815,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
     traficoPctAtencionAbandono: traficoPctAtencionAbandono,
     traficoAbandonadasDe: traficoAbandonadasDe,
+    traficoResumenCarga: traficoResumenCarga,
     traficoAtaPromedioPeriodo: traficoAtaPromedioPeriodo,
     TRAFICO_COLUMNAS: TRAFICO_COLUMNAS,
     TRAFICO_COLUMNAS_OBLIGATORIAS: TRAFICO_COLUMNAS_OBLIGATORIAS,

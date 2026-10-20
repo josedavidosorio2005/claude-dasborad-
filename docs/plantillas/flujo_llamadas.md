@@ -22,9 +22,9 @@ Wolkvox: reporte de la cola por skill y por día (hoja "HistQueue<fecha>"; ORLAN
 |---|---|---|---|
 | SKILL_NAME | Sí | Línea o skill de Wolkvox (Mobilize: "TIPO DE LINEA"). | TIPO DE LINEA |
 | DATE | Sí | Día (Mobilize: "DÍA"). | DÍA, DIA |
-| TOTAL LLAMADAS | Sí | Llamadas que entraron a la cola ese día (Mobilize: "LLAMADAS INGRESADAS"). | LLAMADAS INGRESADAS |
-| LLAMADAS CONTESTADAS | Sí | Llamadas atendidas. |  |
-| LLAMADAS ABANDONADAS | No | Llamadas que colgaron antes de ser atendidas. |  |
+| TOTAL LLAMADAS | Sí | Llamadas que entraron a la cola ese día (Mobilize: "LLAMADAS INGRESADAS"). | LLAMADAS INGRESADAS, INBOUND_CALLS |
+| LLAMADAS CONTESTADAS | Sí | Llamadas atendidas. | ANSWER_CALLS |
+| LLAMADAS ABANDONADAS | No | Llamadas que colgaron antes de ser atendidas. | ABANDON_CALLS |
 | SERVICE_LEVEL_10SEC | No | % atendidas en 10 s. |  |
 | SERVICE_LEVEL_20SEC | No | % atendidas en 20 s (Mobilize: "NIVEL DE SERVICIO 80 - 20"). | NIVEL DE SERVICIO 80 - 20 |
 | SERVICE_LEVEL_30SEC | No | % atendidas en 30 s. |  |
