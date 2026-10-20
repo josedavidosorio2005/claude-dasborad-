@@ -110,7 +110,8 @@ test('CALIDAD CON cargar_llamadas_unicas: solo ese modulo, solo sus clientes', a
   cargarTipificaciones(db, { campana: C, canal: 'LLAMADAS', archivoNombre: 'l2.xlsx', cargadoPorNombre: 'P', filas: [fila('L2')] });
   const vTip = V.listar(db, C, { carga: 'tipificacion_llamadas' })[0].id;
   assert.equal((await request(app).delete('/api/centro-cargas/' + C + '/tipificacion_llamadas/2026-03').set(auth(t))).status, 403);
-  assert.equal((await request(app).post('/api/centro-cargas/versiones/' + vTip + '/deshacer').set(auth(t))).status, 403);
+  // Fase 157 (S-06): una version de un modulo ajeno responde igual que una que no existe.
+  assert.equal((await request(app).post('/api/centro-cargas/versiones/' + vTip + '/deshacer').set(auth(t))).status, 404);
   assert.equal((await request(app).get('/api/centro-cargas/' + C + '/tipificacion_llamadas/2026-03/datos').set(auth(t))).status, 403);
   const vs = (await request(app).get('/api/centro-cargas/' + C + '/versiones').set(auth(t))).body.versiones;
   assert.ok(vs.length > 0 && vs.every((v) => v.carga === 'llamadas_unicas' || v.carga === 'llamadas_salida'), 'solo versiones de su modulo');

@@ -459,7 +459,8 @@ function createApp() {
     if (err && (err.type === 'entity.parse.failed' || err instanceof SyntaxError)) {
       return res.status(400).json({ error: 'JSON invalido' });
     }
-    console.error('[error]', req.method, req.originalUrl, '-', err && err.stack ? err.stack : err);
+    // Fase 157 (S-07): la ruta sin la query (puede traer nombres, ej. ?agente=).
+    console.error('[error]', req.method, String(req.originalUrl || '').split('?')[0], '-', err && err.stack ? err.stack : err);
     res.status(500).json({ error: 'Error interno del servidor' });
   });
 

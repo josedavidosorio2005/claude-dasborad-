@@ -102,14 +102,15 @@ router.post(
   '/centro-cargas/versiones/:id/deshacer',
   requireActor,
   wrap((req, res) => {
+    if (!canLoadAnyModule(req.actor)) return res.status(403).json({ error: 'Sin permiso para cargar datos' });
     const id = Number(req.params.id);
     const v = Number.isInteger(id) && id > 0 ? versiones.obtener(db, id) : null;
-    if (!v) return res.status(404).json({ error: 'Esa versión no existe (o ya venció)' });
-    if (!canLoadAnyModule(req.actor) || !campaignAccess(req.actor, v.campana)) {
-      return res.status(403).json({ error: 'Sin permiso para cargar datos de este cliente' });
+    // Fase 157 (S-06): la version de un cliente o modulo ajeno responde lo
+    // mismo que una que no existe (si no, se podia saber que ids existen).
+    const cargaV = v && cargaPorId(v.carga);
+    if (!v || !campaignAccess(req.actor, v.campana) || !cargaV || !canLoadModule(req.actor, cargaV.modulo)) {
+      return res.status(404).json({ error: 'Esa versión no existe (o ya venció)' });
     }
-    const cargaV = cargaPorId(v.carga);
-    if (!cargaV || !canLoadModule(req.actor, cargaV.modulo)) return res.status(403).json({ error: 'Sin permiso para cargar este módulo' });
     let r;
     try {
       r = versiones.deshacer(db, id, { actorNombre: actorLabel(req.actor) });
