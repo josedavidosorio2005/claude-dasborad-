@@ -29,7 +29,7 @@ const config = require('./config');
 const db = require('./db');
 const { requireActor, identidadParaLimiteDeTasa } = require('./auth');
 const { wrap } = require('./routes/shared');
-const { crearTopeCargas } = require('./cargas-simultaneas');
+const { crearTopeCargas, rutaNormalizada } = require('./cargas-simultaneas');
 // Fase 95 (tema D): version de la app, unica fuente de verdad
 // (package.json) -- se expone en /health y en el pie de la interfaz.
 const APP_VERSION = require('./package.json').version;
@@ -196,7 +196,7 @@ function createApp() {
   // sesion valida el cuerpo ni se lee (401) -- antes, cualquiera sin cuenta
   // hacia procesar un JSON de hasta 8 MB, incluso con el limite ya agotado.
   function exigirSesionParaCuerpo(req, res, next) {
-    if (!tieneCuerpo(req) || req.path === RUTA_LOGIN) return next();
+    if (!tieneCuerpo(req) || rutaNormalizada(req) === RUTA_LOGIN) return next();
     if (!identidadParaLimiteDeTasa(req)) {
       // Mismos mensajes que requireActor (con token vencido o sin token).
       const conToken = String(req.headers.authorization || '').startsWith('Bearer ');
@@ -207,8 +207,8 @@ function createApp() {
   }
   function leerCuerpoJson(req, res, next) {
     if (!tieneCuerpo(req)) return next();
-    if (req.path === RUTA_LOGIN) return jsonLogin(req, res, next);
-    if (RUTAS_LIMITE_MAYOR.includes(req.path)) return jsonLimiteMayor(req, res, next);
+    if (rutaNormalizada(req) === RUTA_LOGIN) return jsonLogin(req, res, next);
+    if (RUTAS_LIMITE_MAYOR.includes(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
 
