@@ -15188,3 +15188,34 @@ nativo de Wolkvox como plantilla de carga y B10 en el paso 5.
 - **Queda pendiente:** pasos 4 (crear cliente desde la pantalla), 5
   (plantillas de carga y B10) y 6 (Aurora y HLM, cada uno con su OK),
   después de las respuestas de Edwin (sección 2.7 del documento).
+
+## Fase 156 — Bugs de la prueba de la carga de agosto de Mobilize (v1.57.4 → v1.57.5, 2026-10-20)
+
+Prueba local de punta a punta del Centro de cargas (base demo, archivos
+sintéticos con los encabezados de las plantillas oficiales): las cinco
+cargas de Mobilize, con agosto, septiembre y un archivo de dos meses,
+más Eliminar y Deshacer, quedaron bien. Salieron cuatro bugs (B1 a B4).
+
+- **B2 (#478, v1.57.4):** Flujo de Llamadas acepta WAIT_TIME y AHT como
+  hora de Excel, segundos o texto H:MM:SS (igual que ASA/ATA), y el error
+  de un tiempo fuera de rango sale en español.
+- **B1 (#479, v1.57.5):** el aviso de confirmación del Flujo
+  (`/calidad/trafico/carga/impacto`, `filasExistentes`) contaba el mes
+  entero de la skill; ahora cuenta solo las filas ya guardadas cuya fecha
+  viene en el archivo. Lo que se guarda y los tableros no cambian. Prueba
+  `fase156-b1-aviso-reemplazo-flujo.test.js` (fallaba antes, pasa
+  después); se ajustó la aserción de `trafico-carga.test.js` que fijaba el
+  conteo anterior (antes un día que se borraba quedaba contado dos veces).
+- **B3 (cerrado sin cambio):** Tipificación no acepta la DATE como objeto
+  `Date` sin la celda cruda, a diferencia de Únicas/Salida. Es a
+  propósito (Fase 116, `fase116-tipificacion-histcdr.test.js`): ahí la
+  DATE trae hora y el `Date` de SheetJS viene corrido unos milisegundos,
+  así que una llamada a medianoche podría caer en el día anterior. La
+  pantalla siempre pasa la celda cruda. Decisión del usuario: no tocarlo.
+- **B4 (no era un bug):** el 401 de consola "al recargar" lo causaba el
+  script de prueba: después de recargar (la sesión vive solo en memoria y
+  se pierde) llamaba al Centro de cargas desde la pantalla de login.
+  Reproducido en local; con el recorrido normal (login y recarga en 375 y
+  1440 px, claro y oscuro) hay 0 errores. No se tocó la sesión.
+- **Verificación:** suite 1962/1962, `npm audit` 0, CI verde, merge con
+  `--match-head-commit`, deploy y `/api/health` = 1.57.5 en producción.
