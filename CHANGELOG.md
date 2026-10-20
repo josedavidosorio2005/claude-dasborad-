@@ -11,7 +11,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 - El reporte de la cola que se descarga de Wolkvox (hoja "HistQueue…", con
   las columnas INBOUND_CALLS, ANSWER_CALLS y ABANDON_CALLS) ahora se reconoce
   sin renombrar la hoja ni cambiar encabezados. Antes salía "No se encontró
-  la hoja DATA".
+  la hoja DATA". Vale igual para ORLANT, que usa el mismo reporte.
 - Si a un archivo le faltan columnas, el aviso dice cuáles faltan y qué
   encabezados trae, en vez de hablar de la hoja DATA.
 - Antes de guardar, la vista previa muestra las fechas, los skills y las

@@ -167,9 +167,11 @@ function _cargasTraficoLlamadasColumnasUnificado(){
   return [
     { label:'SKILL_NAME', opcional:false },
     { label:'DATE', opcional:false },
-    { label:'TOTAL LLAMADAS', opcional:false },
-    { label:'LLAMADAS CONTESTADAS', opcional:false },
-    { label:'LLAMADAS ABANDONADAS', opcional:true },
+    // Fase 159: el reporte nativo de Wolkvox (el mismo de Mobilize) trae
+    // INBOUND_CALLS / ANSWER_CALLS / ABANDON_CALLS en vez de estos nombres.
+    { label:'TOTAL LLAMADAS', labelAlt:['INBOUND_CALLS'], opcional:false },
+    { label:'LLAMADAS CONTESTADAS', labelAlt:['ANSWER_CALLS'], opcional:false },
+    { label:'LLAMADAS ABANDONADAS', labelAlt:['ABANDON_CALLS'], opcional:true },
     { label:'SERVICE_LEVEL_10SEC', opcional:true },
     { label:'SERVICE_LEVEL_20SEC', opcional:true },
     { label:'SERVICE_LEVEL_30SEC', opcional:true },

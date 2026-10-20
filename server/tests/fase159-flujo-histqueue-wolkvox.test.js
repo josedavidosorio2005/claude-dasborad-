@@ -240,3 +240,16 @@ test('guardar el archivo parcial no toca los dias 1-10 ni otro cliente, y los nu
   assert.equal(suma(nuevas, 'llamadasAbandonadas'), 3);
   assert.equal(nuevas.filter((r) => r.ahtSegundos === null).length, 2, 'AHT "----" se guarda vacio, no 0');
 });
+
+// ORLANT usa la plantilla de 2 hojas (LLAMADAS/WHATSAPP): su lista de
+// columnas de LLAMADAS vive en cargas.js. Se lee del archivo real para que la
+// prueba falle si alguien le quita los alias.
+test('ORLANT: la hoja de LLAMADAS (plantilla de 2 hojas) tambien reconoce el reporte nativo de Wolkvox', () => {
+  const fuente = require('fs').readFileSync(require('path').join(__dirname, '../../public/js/cargas.js'), 'utf8');
+  const m = fuente.match(/function _cargasTraficoLlamadasColumnasUnificado\(\)\{[\s\S]*?\n\}/);
+  assert.ok(m, 'no se encontro _cargasTraficoLlamadasColumnasUnificado');
+  const columnasOrlant = new Function(m[0] + '; return _cargasTraficoLlamadasColumnasUnificado();')();
+  assert.equal(CL.cargasEncabezadosCoinciden(ENCABEZADO, columnasOrlant), true);
+  // La plantilla oficial de ORLANT sigue igual.
+  assert.equal(CL.cargasEncabezadosCoinciden(['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS'], columnasOrlant), true);
+});
