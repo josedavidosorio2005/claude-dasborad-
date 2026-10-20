@@ -714,6 +714,14 @@ var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
   asa: '-canvas-asa-', asaaht: '-canvas-asaaht-', oneanddone: '-canvas-oad-',
 };
+// Fase 160 (pedido de Edwin): en Flujo de Llamadas ("tv"), "ASA y ATA" son
+// DOS graficas, una debajo de la otra (ASA en el canvas de siempre, ATA en
+// el suyo), cada una con su titulo y su "Ver datos". WhatsApp ("tww") sigue
+// con las 2 series en una sola grafica.
+var TRAFICO_ASA_ATA_SEPARADAS = [
+  { sufijo: '-canvas-asaata-', titulo: 'ASA — tiempo promedio de respuesta' },
+  { sufijo: '-canvas-ata-', titulo: 'ATA — tiempo promedio de abandono' },
+];
 // Fase 77 (pedido de Edwin/Jairo, 25/09): en la reunion del 25/09 los
 // valores MENSUALES de SL y AHT que muestra la plataforma no coincidian con
 // el promedio simple que Edwin calculaba a mano en Excel (promediar los % o
@@ -747,6 +755,14 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
   var resumenSeccion = resumenSeccionId ? '<div id="'+resumenSeccionId+'" class="aurora-kpis" style="margin-bottom:10px"></div>' : '';
+  if(activo === 'asaata' && prefijo === 'tv'){
+    return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
+      resumenSeccion +
+      TRAFICO_ASA_ATA_SEPARADAS.map(function(g, k){
+        return '<div class="aurora-card-title" style="font-size:0.8rem'+(k?';margin-top:16px':'')+'">'+esc(g.titulo)+'</div>' +
+          '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+g.sufijo+i+'" data-titulo="'+esc(g.titulo)+'"></canvas></div>';
+      }).join('');
+  }
   return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
     resumenSeccion +
     '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
@@ -1069,7 +1085,9 @@ function _traficoDibujarAht(prefijo, i, agregadoComb, fmtTiempo){
 // "se guarda pero no se grafica"): dibuja solo la serie ASA, en el canvas de
 // la sub-pestaña "asa" en vez de "asaata". Sin pasarlo (ORLANT/AURORA/HLM),
 // sigue dibujando las 2 series en "asaata", exactamente igual que siempre.
-function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
+// `separadas` (Fase 160, Flujo de Llamadas): ASA y ATA en 2 graficas (ver
+// TRAFICO_ASA_ATA_SEPARADAS), mismos datos y mismo estilo.
+function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa, separadas){
   var CDl = colorSerie('principal');
   var COl = colorSerie('linea');
   var fmt = fmtTiempo || _traficoFmtTiempoMMSS;
@@ -1086,9 +1104,20 @@ function _traficoDibujarAsaAta(prefijo, i, agregadoComb, fmtTiempo, soloAsa){
     datasets.push({ label:'ATA', data: agregadoComb.map(function(a){return a.ataSegundos;}), borderColor: COl, backgroundColor: COl, borderWidth:2.5, pointRadius:3, tension:0.3, fill:false });
   }
   var canvasId = prefijo+(soloAsa?'-canvas-asa-':'-canvas-asaata-')+i;
-  if(typeof _gdChart === 'function'){
-    _gdChart(canvasId, { type:'line', data:{ labels: agregadoComb.map(function(a){return a.periodo;}), datasets: datasets }, options: oAsaAta });
+  if(typeof _gdChart !== 'function') return;
+  var etiquetas = agregadoComb.map(function(a){return a.periodo;});
+  if(separadas && !soloAsa){
+    datasets.forEach(function(ds, k){
+      var o = (typeof lo==='function') ? lo(null, 60) : { responsive:true, maintainAspectRatio:false, plugins:{} };
+      if(typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, fmtDL);
+      else o.plugins.datalabels = { display:false };
+      o.scales.y.ticks.callback = fmt;
+      o.plugins.tooltip = oAsaAta.plugins.tooltip;
+      _gdChart(prefijo+TRAFICO_ASA_ATA_SEPARADAS[k].sufijo+i, { type:'line', data:{ labels: etiquetas, datasets: [ds] }, options: o });
+    });
+    return;
   }
+  _gdChart(canvasId, { type:'line', data:{ labels: etiquetas, datasets: datasets }, options: oAsaAta });
 }
 
 // Fase 138 (PR2, pedido de Edwin 09/10, Mobilize): ASA y AHT juntos en 1
@@ -1277,7 +1306,7 @@ function _traficoRenderContenido(campana, sede, i){
 
   _traficoDibujarAbandono('tv', i, agregadoComb, campana);
   _traficoDibujarAht('tv', i, agregadoComb);
-  _traficoDibujarAsaAta('tv', i, agregadoComb);
+  _traficoDibujarAsaAta('tv', i, agregadoComb, null, false, true);
   _traficoDibujarAsaAta('tv', i, agregadoComb, null, true); // sub-pestaña "asa" sola -- no-op si su canvas no esta en el DOM
   _traficoDibujarAsaAht('tv', i, agregadoComb); // sub-pestaña "asaaht" (Mobilize, Fase 138) -- no-op si su canvas no esta en el DOM
   _traficoDibujarSL('tv', i, agregadoComb, null, null, null, _traficoUmbral('service_level', campana));
