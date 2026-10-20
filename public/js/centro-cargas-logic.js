@@ -259,6 +259,37 @@ function centroTextoReemplazoParcial(mes, rango, conteo) {
   return trae + ' ' + esos[0] + '; el resto de ' + nombre + ' (' + centroTextoRegistros(resto) + ') queda igual.';
 }
 
+// Fase 159: aviso de mes incompleto. Un reporte de Wolkvox trae solo los
+// dias que tuvieron llamadas (el de agosto de Mobilize arrancaba el 11), y un
+// dia sin fila NO es un dia con cero: se dice claro cuantos dias del mes
+// trae y cuales faltan, para que nadie tome una carga parcial por el mes
+// completo. `fechas`: 'AAAA-MM-DD' de las filas (repetidas da igual).
+// `hoyISO`: en el mes en curso solo se cuenta hasta hoy. null si no falta
+// ningun dia.
+function centroTextoCobertura(mes, fechas, hoyISO) {
+  var nombre = centroNombreMes(mes).split(' ')[0].toLowerCase();
+  var anio = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7));
+  var ultimo = new Date(Date.UTC(anio, m, 0)).getUTCDate();
+  if (hoyISO && hoyISO.slice(0, 7) === mes) ultimo = Number(hoyISO.slice(8, 10));
+  var dias = {};
+  (fechas || []).forEach(function (f) {
+    var s = String(f || '');
+    if (s.slice(0, 7) === mes) dias[Number(s.slice(8, 10))] = true;
+  });
+  var lista = Object.keys(dias).map(Number).filter(function (d) { return d <= ultimo; }).sort(function (x, y) { return x - y; });
+  if (!lista.length || lista.length >= ultimo) return null;
+  var min = lista[0], max = lista[lista.length - 1];
+  var tramo = function (d, h) { return d === h ? 'el ' + d + ' de ' + nombre : 'del ' + d + ' al ' + h + ' de ' + nombre; };
+  var partes = [];
+  if (min > 1) partes.push(tramo(1, min - 1));
+  if (max < ultimo) partes.push(tramo(max + 1, ultimo));
+  var interior = (max - min + 1) - lista.length;
+  var faltan = partes.join(' y ');
+  if (interior) faltan += (partes.length ? ' y ' + interior + ' día(s) más' : interior + ' día(s)') + ' entre el ' + min + ' y el ' + max;
+  return 'Ojo: el archivo no trae ' + nombre + ' completo. Tiene datos de ' + lista.length + ' de ' + ultimo + ' días: faltan ' +
+    faltan + '. Los días que no vienen no se rellenan con cero.';
+}
+
 // Fase 155 (reunion con Edwin, 19/10): un modulo con DOS archivos muestra
 // arriba las dos opciones juntas (selector), cada una con su cuadricula de
 // meses, Subir/Reemplazar y Descargar plantilla. Nombre corto de cada opcion
@@ -283,6 +314,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CENTRO_ETIQUETA_CARGA: CENTRO_ETIQUETA_CARGA,
     centroEtiquetaCarga: centroEtiquetaCarga,
     centroCargaVisible: centroCargaVisible,
+    centroTextoCobertura: centroTextoCobertura,
     CENTRO_MESES: CENTRO_MESES,
     CENTRO_PANEL_A_MODULO: CENTRO_PANEL_A_MODULO,
     centroModuloDeTab: centroModuloDeTab,

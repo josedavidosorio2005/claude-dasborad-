@@ -58,6 +58,38 @@ function cargasEncabezadosCoinciden(headerRow, columnas) {
     });
 }
 
+// Fase 159 (hallazgo real: el reporte nativo de Wolkvox de agosto de
+// Mobilize, hoja "HistQueue<fecha>", traia INBOUND_CALLS en vez de TOTAL
+// LLAMADAS -- la hoja no se reconocia y el aviso decia "No se encontro la
+// hoja DATA", cuando el problema real eran los nombres de columna). Si
+// ninguna hoja calzo con un formato, busca entre las hojas del archivo la que
+// MAS se le parece (al menos 2 columnas obligatorias presentes, pero no
+// todas) y arma un aviso con lo que falta y lo que trae. `hojas`: [{nombre,
+// encabezado}] (encabezado ya extraido). null si ninguna se parece (ej. una
+// hoja INSTRUCCIONES): ahi sigue el aviso de siempre.
+function cargasDiagnosticoSinHoja(titulo, hojas, columnas) {
+  var obligatorias = (columnas || []).filter(function (c) { return !c.opcional; });
+  var nombres = function (c) { return [c.label].concat(c.labelAlt || []); };
+  var mejor = null;
+  (hojas || []).forEach(function (h) {
+    var norm = (h.encabezado || []).map(function (x) { return _cargasNorm(x); });
+    var faltan = obligatorias.filter(function (c) {
+      return !nombres(c).some(function (n) { return norm.indexOf(_cargasNorm(n)) !== -1; });
+    });
+    var presentes = obligatorias.length - faltan.length;
+    if (presentes < 2 || !faltan.length) return;
+    if (!mejor || presentes > mejor.presentes) mejor = { hoja: h, faltan: faltan, presentes: presentes };
+  });
+  if (!mejor) return null;
+  var conAlias = function (c) { return c.labelAlt && c.labelAlt.length ? c.label + ' (o ' + c.labelAlt.join(', ') + ')' : c.label; };
+  var trae = (mejor.hoja.encabezado || []).filter(function (x) { return x != null && String(x).trim() !== ''; })
+    .map(function (x) { return String(x).trim(); });
+  return 'La hoja "' + mejor.hoja.nombre + '" de tu archivo no se reconoce como ' + titulo + ': ' +
+    'le faltan las columnas obligatorias ' + mejor.faltan.map(conAlias).join(', ') + '. ' +
+    'Encabezados que trae: ' + trae.join(', ') + '. ' +
+    'Obligatorias: ' + obligatorias.map(conAlias).join('; ') + '. No se guardo nada.';
+}
+
 // Fase 122 (perf, hallazgo real: archivo de 25.180 filas/33 columnas
 // colgaba el navegador >3min releyendo la hoja COMPLETA una vez por cada
 // slot del plan solo para mirar aoa[0]) + Fase 127 (correccion de un
@@ -662,9 +694,25 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
 // mira ademas INBOUND_CALLS/ANSWER_CALLS (unicas del formato WhatsApp diario,
 // nunca apareren en voz). Sin este parametro, el comportamiento es
 // EXACTAMENTE igual al de siempre (solo formato periodo vs. voz).
-function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp, esWppDiario) {
+// Fase 159 (hallazgo real): el reporte diario de Wolkvox trae los MISMOS
+// encabezados para voz y para WhatsApp (SKILL_NAME, DATE, INBOUND_CALLS,
+// ANSWER_CALLS...) -- el de voz de agosto de Mobilize lo demostro: la Fase
+// 116 suponia que INBOUND_CALLS era solo de WhatsApp. Con un encabezado asi
+// el archivo no dice su canal, y lo decide `canalSiAmbiguo` (opcional): el
+// destino que la persona eligio (Centro de cargas: Flujo de Llamadas -> 'voz',
+// Flujo de WhatsApp -> 'whatsapp'). Sin `canalSiAmbiguo`, o si el
+// encabezado trae una columna que solo tiene WhatsApp (SERVICE_LEVEL_5MIN y
+// sus alias) o la cola del formato de periodo, es 'whatsapp' como siempre.
+function cargasDetectarCanalTrafico(headerRow, colIndexMapVoz, colIndexMapWpp, esWppDiario, canalSiAmbiguo) {
   var header = headerRow || [];
-  if (esWppDiario && esWppDiario(header)) return 'whatsapp';
+  if (esWppDiario && esWppDiario(header)) {
+    var mapVoz = colIndexMapVoz(header);
+    var sirveParaVoz = mapVoz.skillName !== undefined && mapVoz.fecha !== undefined &&
+      mapVoz.totalLlamadas !== undefined && mapVoz.contestadas !== undefined;
+    var soloWhatsapp = header.some(function (h) { return /^(service_level_5min|service_level_300sec|nivel de servicio 5 min)$/.test(_cargasNorm(h)); });
+    if (sirveParaVoz && !soloWhatsapp && (canalSiAmbiguo === 'voz' || canalSiAmbiguo === 'whatsapp')) return canalSiAmbiguo;
+    return 'whatsapp';
+  }
   var esWhatsapp = colIndexMapWpp(header).colaWhatsapp !== undefined;
   return esWhatsapp ? 'whatsapp' : 'voz';
 }
@@ -768,8 +816,12 @@ function cargasHojaVacia(aoa, filaUnica) {
 //    solo a Gestion de base).
 //  - hoja con datos que no pasan su propio parser -> se rechaza SOLO esa
 //    hoja, con el mensaje exacto que ya da ese parser.
-function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo) {
+// `diagnostico` (Fase 159, opcional): aviso de cargasDiagnosticoSinHoja --
+// si viene, reemplaza al "No se encontro la hoja" (el archivo SI trae una
+// hoja de ese formato, solo que con columnas que no se reconocen).
+function cargasProcesarHoja(hojaPlan, aoa, ws, parseFn, nombresHojasArchivo, diagnostico) {
   var base = { tipo: hojaPlan.tipo, hoja: hojaPlan.hoja, titulo: hojaPlan.titulo, canalTipificacion: hojaPlan.canalTipificacion };
+  if (!ws && diagnostico) return Object.assign({}, base, { error: diagnostico });
   if (!ws) {
     var encontradas = (nombresHojasArchivo || []).join(', ') || '(el archivo no tiene ninguna hoja)';
     return Object.assign({}, base, {
@@ -865,6 +917,7 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasPlanConsolidado: cargasPlanConsolidado,
     cargasHojaVacia: cargasHojaVacia,
     cargasProcesarHoja: cargasProcesarHoja,
+    cargasDiagnosticoSinHoja: cargasDiagnosticoSinHoja,
     cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
     cargasDetectarCanalTipificacion: cargasDetectarCanalTipificacion,
     cargasResolverHojaTrafico: cargasResolverHojaTrafico,
