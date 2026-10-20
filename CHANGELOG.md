@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.58.0 — Octubre 2026
+
+**Fase 160: ASA y ATA en dos gráficas.**
+
+- En Flujo de Llamadas (Mobilize y ORLANT), la sub-pestaña "ASA y ATA"
+  muestra dos gráficas, una debajo de la otra: ASA (tiempo promedio de
+  respuesta) arriba y ATA (tiempo promedio de abandono) abajo.
+- Mismos datos y mismo estilo de antes; cada gráfica tiene su "Ver datos".
+- WhatsApp no cambia. Los números de los dashboards no cambian.
+
 ## v1.57.8 — Octubre 2026
 
 **Fase 159: pantalla de subida más clara (pedidos de Edwin).**

@@ -582,6 +582,8 @@ function _gdAgregarFraccionTooltip(cfg){
 // servidor), con el mismo formato del tooltip. Patron de dialogo A3b
 // (motion-helpers.js, MOTION_DIALOGOS_SIMPLES). Sin onclick en linea.
 function _gdTituloGrafica(el){
+  // Fase 160: una grafica que comparte tarjeta con otra trae su propio titulo.
+  if(el.getAttribute && el.getAttribute('data-titulo')) return el.getAttribute('data-titulo');
   var card = el.closest ? el.closest('.aurora-card') : null;
   var t = card ? card.querySelector('.aurora-card-title') : null;
   var txt = t ? t.textContent.trim() : '';
