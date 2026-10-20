@@ -186,11 +186,15 @@ function traficoParseFecha(v) {
 
 // WAIT_TIME / AHT: hora nativa de Excel = fraccion de dia (0.002488... ->
 // 3:35 -> 215s). Vacio -> null (no 0 segundos, que seria un dato real).
+// Fase 156 (B2): como ASA/ATA, tambien texto "H:MM:SS"/"MM:SS" y segundos:
+// un numero >= 1 no puede ser hora de Excel (seria una espera de 24 h o
+// mas), asi que son segundos.
 function traficoSegundosDesdeFraccionDia(v) {
   if (v === null || v === undefined || v === '') return null;
+  if (typeof v === 'string' && TRAFICO_TIEMPO_TEXTO_RE.test(v.trim())) return traficoSegundosDesdeTextoOTexto(v);
   var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
   if (!Number.isFinite(n)) return null;
-  return Math.round(n * 86400);
+  return n >= 1 ? Math.round(n) : Math.round(n * 86400);
 }
 
 // Fase 88: referencia de celda ('A1', 'B2', ...) sin depender de la
