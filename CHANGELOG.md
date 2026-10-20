@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.8 — Octubre 2026
+
+**Fase 159: pantalla de subida más clara (pedidos de Edwin).**
+
+- El cliente elegido se ve resaltado con color.
+- Si entras desde el Centro de cargas, el cliente y el mes quedan fijos: no
+  se pueden cambiar en esa pantalla. Para otro mes o cliente, vuelve al Centro.
+- Se quitó el botón "Pantalla anterior" del Centro de cargas, porque no
+  funcionaba.
+- Los números de los dashboards no cambian.
+
 ## v1.57.7 — Octubre 2026
 
 **Fase 159: la plantilla de Flujo de Llamadas es igual al reporte de Wolkvox.**

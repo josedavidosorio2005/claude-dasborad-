@@ -101,6 +101,15 @@ async function openCargas(){
   // cambio accidental de cliente apagaba el filtro de mes sin avisar.
   if(soloFoco || _cargasFocoCentro) _cargasClientes = _cargasClientes.filter(function(c){ return c === _cargasFocoCentro.cliente; });
   selC.disabled = !!_cargasFocoCentro;
+  // Fase 159 (pedido de Edwin): el cliente elegido se ve resaltado, y desde
+  // el Centro el mes tambien queda fijo (el del mes que se eligio alli).
+  selC.classList.add('carga-campo-elegido');
+  var per = document.getElementById('carga-periodo');
+  per.disabled = !!_cargasFocoCentro;
+  per.classList.toggle('carga-campo-elegido', !!_cargasFocoCentro);
+  if(_cargasFocoCentro){ per.value = _cargasFocoCentro.mes; per.dataset.fijo = '1'; }
+  else if(per.dataset.fijo){ per.value = ''; delete per.dataset.fijo; }
+  selC.title = per.title = _cargasFocoCentro ? 'Fijo: viene del Centro de cargas. Para cambiarlo, vuelve al Centro.' : '';
   selC.innerHTML = _cargasClientes.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('')
     || '<option value="">Sin clientes configurados</option>';
   await onCargaClienteChange();

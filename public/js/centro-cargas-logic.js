@@ -211,7 +211,7 @@ function centroFiltrarResultado(r, cargaId, mes, opciones) {
   var avisos = [];
   var ignoradas = r.filas.length - filas.length - otrasSkills;
   if (ignoradas) avisos.push('Solo se cargan las filas de ' + nombreMes + ': se ignoraron ' + ignoradas + ' fila(s) de otros meses (' + listaOtros.join(', ') + ').');
-  if (otrasSkills) avisos.push('Se ignoraron ' + otrasSkills + ' fila(s) de skills de otro cliente o sin asignar (asígnalas en Tráfico o usa la pantalla anterior).');
+  if (otrasSkills) avisos.push('Se ignoraron ' + otrasSkills + ' fila(s) de skills de otro cliente o sin asignar (asígnalas a este cliente en Tráfico).');
   return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas + otrasSkills });
 }
 

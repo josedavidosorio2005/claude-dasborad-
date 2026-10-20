@@ -17,7 +17,7 @@ Esto reemplaza al B10 ("Cargar Datos por pasos") de la Fase 152.
 
 Capturas a 375 y 1440 px, en claro y en oscuro, fuera del repo: `datos-inconexion/diagnostico-ui/fase153/centro-cargas/`.
 
-1. **Entrada:** el menú "Cargar Datos" abre el Centro de cargas. "Pantalla anterior" lleva a la pantalla de siempre, que se queda hasta que el Centro cubra todos los módulos.
+1. **Entrada:** el menú "Cargar Datos" abre el Centro de cargas. El botón "Pantalla anterior" se quitó en la Fase 159 (no funcionaba); los módulos que el Centro aún no sube por mes siguen abriendo la pantalla de siempre desde su botón Subir.
 2. **Tarjetas de módulos** del cliente:
    - salen del registro de clientes y del catálogo del Paso 3, en el orden del catálogo;
    - cada tarjeta dice cuántos meses del año tienen datos, cuándo fue la última carga y un estado: **"Al día"**, **"Falta septiembre"** (si el mes anterior está vacío) o **"Sin datos todavía"**;
