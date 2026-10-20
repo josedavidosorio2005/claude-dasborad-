@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.1 — Octubre 2026
+
+**Fase 157: revisión de seguridad.**
+
+- Ajuste interno de la protección que reparte el turno entre varias cargas
+  de datos al mismo tiempo. Para quien usa la plataforma no cambia nada.
+
 ## v1.57.0 — Octubre 2026
 
 **Fase 155: ajustes de la reunión con Edwin (19 de octubre).**

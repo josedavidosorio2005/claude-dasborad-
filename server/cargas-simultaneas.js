@@ -39,9 +39,17 @@ const RUTAS_DE_CARGA = [
   { re: /^\/api\/centro-cargas\/[^/]+\/[^/]+\/[^/]+$/, puede: (a) => canLoadAnyModule(a) },
 ];
 
+// Fase 157: la ruta como la compara Express (sin distinguir mayusculas y
+// con barra final opcional), para que otra forma de escribir la misma ruta
+// no se salte el tope.
+function rutaNormalizada(req) {
+  return String(req.path || '').toLowerCase().replace(/(.)\/+$/, '$1');
+}
+
 function reglaDeCarga(req) {
   if (req.method !== 'POST' && req.method !== 'DELETE') return null;
-  return RUTAS_DE_CARGA.find((r) => r.re.test(req.path)) || null;
+  const ruta = rutaNormalizada(req);
+  return RUTAS_DE_CARGA.find((r) => r.re.test(ruta)) || null;
 }
 function esRutaDeCarga(req) {
   return !!reglaDeCarga(req);
@@ -102,4 +110,4 @@ function crearTopeCargas({ max, tiempoCuerpoMs, responderSinLeerCuerpo }) {
   return { middleware, enCurso: () => enCurso };
 }
 
-module.exports = { CODIGO, ESPERA_SUGERIDA_S, RUTAS_DE_CARGA, esRutaDeCarga, crearTopeCargas };
+module.exports = { CODIGO, ESPERA_SUGERIDA_S, RUTAS_DE_CARGA, rutaNormalizada, esRutaDeCarga, crearTopeCargas };
