@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.4 — Octubre 2026
+
+**Fase 156: arreglos para la carga de agosto.**
+
+- Flujo de Llamadas: las columnas WAIT_TIME y AHT ahora se aceptan en los
+  tres formatos (hora de Excel como trae Wolkvox, segundos o texto como
+  0:03:35). Antes, si venían en segundos, la carga completa se rechazaba con
+  un mensaje en inglés. Los archivos de Wolkvox de siempre se leen igual.
+- Si un tiempo viene fuera de rango, el aviso ahora sale en español y dice
+  qué columna revisar.
+
 ## v1.57.3 — Octubre 2026
 
 **Fase 157: revisión de seguridad.**

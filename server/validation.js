@@ -415,7 +415,8 @@ const nivelServicioCargaDiariaBody = z.object({
 // que no sea SKILL_NAME/DATE/TOTAL LLAMADAS/LLAMADAS CONTESTADAS es
 // opcional: si no vino en el archivo, la metrica queda ausente (no 0).
 const pctOpcional = z.number().min(0).max(100).optional();
-const segundosOpcional = z.coerce.number().min(0).max(1000000).optional();
+// Fase 156 (B2): mensaje en espanol (antes salia el de Zod en ingles).
+const segundosOpcional = z.coerce.number().min(0, 'Un tiempo (ASA, ATA, AHT o WAIT_TIME) no puede ser negativo').max(1000000, 'Un tiempo (ASA, ATA, AHT o WAIT_TIME) es demasiado grande: revisa el formato de esa columna en el archivo').optional();
 
 const traficoFilaSchema = z
   .object({
