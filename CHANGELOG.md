@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.57.5 — Octubre 2026
+
+**Fase 156: aviso de la carga de Flujo de Llamadas.**
+
+- Al confirmar una carga de Flujo de Llamadas que trae solo algunos días de
+  un mes ya cargado, el aviso ahora dice cuántos registros se reemplazan de
+  verdad (los días que trae el archivo). Antes contaba el mes completo y
+  exageraba. Lo que se guarda y los números de los tableros no cambian.
+
 ## v1.57.4 — Octubre 2026
 
 **Fase 156: arreglos para la carga de agosto.**

@@ -464,11 +464,11 @@ test('POST /calidad/trafico/carga/impacto informa filasABorrar (dentro del rango
   assert.equal(impacto.status, 200, JSON.stringify(impacto.body));
   const par = impacto.body.find((p) => p.skillName === skill && p.mes === '2026-08');
   assert.ok(par, JSON.stringify(impacto.body));
-  // filasExistentes cuenta TODAS las filas ya cargadas para (skill, mes) --
-  // semantica de siempre, sin cambios (08-01, 08-02 y 08-03 del mes). Lo
-  // nuevo de la Fase 115 es filasABorrar: de esas 3, cual especificamente no
-  // viene en el archivo nuevo y por eso se va a borrar.
-  assert.equal(par.filasExistentes, 3, 'las 3 filas de agosto ya cargadas (semantica sin cambios)');
+  // Fase 156 (B1): filasExistentes cuenta solo las filas ya cargadas cuya
+  // fecha viene en el archivo (08-01 y 08-03, se reemplazan); antes contaba
+  // el mes entero (3). filasABorrar (Fase 115): la que esta dentro del rango
+  // y no viene en el archivo nuevo, y por eso se va a borrar.
+  assert.equal(par.filasExistentes, 2, '08-01 y 08-03 ya cargadas y vienen en el archivo: se reemplazan');
   assert.equal(par.filasABorrar, 1, '08-02 existe, esta dentro del rango 08-01..08-03, y no viene en el archivo nuevo');
 
   // No debe haber escrito/borrado nada todavia.
