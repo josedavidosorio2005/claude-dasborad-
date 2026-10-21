@@ -15219,3 +15219,117 @@ más Eliminar y Deshacer, quedaron bien. Salieron cuatro bugs (B1 a B4).
   1440 px, claro y oscuro) hay 0 errores. No se tocó la sesión.
 - **Verificación:** suite 1962/1962, `npm audit` 0, CI verde, merge con
   `--match-head-commit`, deploy y `/api/health` = 1.57.5 en producción.
+
+## Fase 158 — Rendimiento de las opciones de filtro (v1.59.1, 2026-10-21)
+
+Las rutas `/opciones` de los dashboards (los valores de cada desplegable:
+meses, asesores, skills, sedes...) leen todo el historial del cliente y,
+con 12 meses de datos, tardaban de 0,5 a 7 s cada una, bloqueando el único
+hilo de Node cada vez que alguien abría una pestaña.
+
+- **#481 (lo mergeó el usuario el 21/10):** caché en memoria
+  (`server/cache-opciones.js`) para las 10 rutas `/opciones`. Sin índices
+  nuevos ni cambios de consultas. Clave: módulo + cliente (+ canal o permiso
+  de ver asesores, según la ruta). Se vacía entera con cualquier escritura
+  en la base (`total_changes()` + `PRAGMA data_version`). La versión
+  pasó de 1.57.6 a 1.59.1 al actualizarla con main (la 1.57.6 la usó la
+  Fase 159).
+- **Medición** (equipo local, no el servidor; base sintética de 12 meses;
+  perfil del plan US$7 con 1 GB; k6, uso normal; p95 de lectura):
+  ráfaga de 2 CPU con 5 usuarios 8,2 s → 2,4 s; con 20 usuarios 49,4 s →
+  21,8 s (y 0 errores); con 50 usuarios sigue saturado (60 s → 53 s, 276 →
+  48 errores). Con 0,2 CPU sostenido, 5 usuarios 59 s → 27 s; 20 y 50 siguen
+  saturados (la corrida de 50 del "antes" se cortó). Recorrido secuencial de
+  89 GET: 34,1 s → 6,8 s. El "antes" se midió con el equipo ocupado en
+  otras tareas: sirve para comparar, no como cifra del servidor.
+- **Verificación:** foto de 533 rutas sin diferencias contra main (también
+  la segunda pasada, servida desde la caché), suite 1994/1994, CI verde,
+  deploy (paso `vigente`: "es la cabeza de main") y `/api/health` =
+  1.59.1.
+- **Mejora futura:** que la caché solo se vacíe con escrituras en tablas de
+  datos, no con los inicios de sesión (`docs/pendientes.md`, sección 3).
+
+## Fase 159 — Flujo de Llamadas con el reporte nativo de Wolkvox (v1.57.6 → v1.57.8, 2026-10-20)
+
+Para la carga de agosto de Mobilize con Edwin: el reporte de la cola que
+se descarga de Wolkvox (hoja `HistQueue<fecha>`) no se reconocía y el
+aviso hablaba de una hoja "DATA".
+
+- **#482 (v1.57.6):** `INBOUND_CALLS`, `ANSWER_CALLS` y `ABANDON_CALLS`
+  se aceptan como alias de las columnas de llamadas (las fórmulas no
+  cambian). Desde el Centro de cargas, el destino elegido decide si el
+  reporte diario es de voz o de WhatsApp (traen los mismos encabezados).
+  Si faltan columnas, el aviso dice cuáles faltan y qué encabezados trae.
+  La vista previa del Centro muestra fechas, skills, totales, filas
+  omitidas y si el archivo no trae el mes completo. Prueba
+  `fase159-flujo-histqueue-wolkvox.test.js` (11 casos).
+- **#483 (v1.57.7):** la plantilla `PLANTILLA_FLUJO_LLAMADAS.xlsx` trae
+  los 13 encabezados del reporte nativo, en su orden; los nombres
+  anteriores quedan como alias.
+- **#484 (v1.57.8):** en la pantalla de subida, el cliente elegido se
+  resalta con color y, desde el Centro, el cliente y el mes quedan fijos;
+  se quita "Pantalla anterior" del Centro.
+- **Verificación:** pruebas que fallan antes y pasan después, recorridos
+  en Brave a 1440, 768 y 375 px sin errores de consola, números de los
+  dashboards sin cambios, CI verde, deploy y `/api/health` = 1.57.8.
+
+## Fase 160 — Tareas de Edwin para la primera carga de ORLANT, Aurora y HLM (v1.58.0 → v1.59.0, 2026-10-21)
+
+Producción solo lectura; no se cargó nada.
+
+- **Nivel de servicio del mes (sin cambio de código):** es ponderado,
+  Σ(SL20 × ingresadas) ÷ Σ ingresadas (`traficoServiceLevelPromedioPeriodo`
+  en `public/js/trafico-logic.js` y `recalcularMensual` en
+  `server/nivel-servicio-diario.js`). Agosto de Mobilize: 95,52 %. El
+  88,24 % de Edwin era el promedio simple de las 17 filas, que le da el
+  mismo peso a un día con 2 llamadas que a uno con 500.
+- **#485 (v1.58.0):** ASA y ATA en dos gráficas, una debajo de la otra,
+  en Flujo de Llamadas (Mobilize y ORLANT), cada una con "Ver datos".
+- **#486 (v1.58.1):** ejemplos de la plantilla de Flujo de WhatsApp en el
+  formato que lee el sistema (porcentajes "40.00 %", AHT como hora de
+  Excel; con "AHT 400" la carga se rechazaba).
+- **#488 (v1.58.2):** la plantilla de WhatsApp de Clínica Aurora se
+  rechazaba ("No se encontró la hoja DATA"): su única hoja de Tráfico solo
+  reconocía voz. Ahora todo cliente con el módulo Flujo de WhatsApp usa
+  Tráfico en 2 hojas (LLAMADAS/WHATSAPP), como ORLANT; Agendas,
+  Inasistencia, etc. siguen solo para ORLANT. Prueba
+  `fase160-whatsapp-aurora.test.js`.
+- **#487 (v1.59.0, "OK merge HLM"):** migración idempotente
+  `fase160_crear_hospital_la_maria_v1`, después de
+  `fase134_borrar_clientes_v1`: un solo cliente "HOSPITAL LA MARIA" con
+  Tráfico de Llamadas, Tráfico de WhatsApp y Calidad, todo oculto, sin
+  datos, sin plantilla de Calidad, sin sedes y sin usuarios. Prueba de que
+  ORLANT, MOBILIZE y Aurora no cambian.
+- **Verificación de punta a punta en local** (copia de la base demo,
+  Brave): con una copia del reporte nativo de agosto de Mobilize con
+  skills de prueba, más un archivo sintético con la plantilla de WhatsApp,
+  cargados desde el Centro: ORLANT actualiza flujo, abandono, AHT,
+  ASA/ATA, nivel de servicio y todas las gráficas de WhatsApp (incluida la
+  de tiempos); Aurora y HLM no muestran pestañas antes y, al cargar,
+  aparecen Tráfico de Llamadas y de WhatsApp con todas sus gráficas.
+  0 errores de consola. Foto de 533 rutas contra main: sin diferencias
+  (en HLM, solo su tablero pasa de 404 a 200).
+- **Incidente de deploy y arreglo (#489):** #486 y #488 se mergearon
+  seguidos; el CI de #486 terminó último y su deploy publicó 1.58.1 encima
+  de 1.58.2. Se volvió a correr el CI del último merge y quedó 1.58.2.
+  Regla del usuario desde entonces: un merge a la vez, y no el siguiente
+  hasta ver su versión en `/api/health`. #489 agrega a `deploy.yml` el job
+  `vigente`: compara el commit de su CI con la cabeza real de main (`git
+  ls-remote` a la URL pública, sin token) y el deploy solo corre si
+  coinciden; si no puede leer la cabeza, falla. Prueba
+  `fase160-deploy-cabeza.test.js` (ejecuta el script con un `git` falso).
+  Su propio deploy dijo "OK: 7ee1faf es la cabeza de main" y desplegó.
+- **Push perdido por un incidente de GitHub:** el merge de HLM (15:10 UTC)
+  nunca disparó el CI de main (incidente "Delays for Pull Requests and
+  Webhook deliveries"). Con el OK del usuario se destrabó mergeando #490
+  (solo documentación): su deploy llevó HLM a producción (1.59.0). Tablero
+  de HLM verificado en producción con sesión del usuario, solo lectura: 3
+  pestañas ocultas, 0 filas.
+- **#490:** se quitó del `CLAUDE.md` la sección de graphify (la
+  herramienta no está instalada).
+- **Salud del servidor (21/10, solo lectura):** discos 12 % y 2 %,
+  memoria 39 %, respaldo de 12 h subido a S3, certificado con 78 días. La
+  corrida programada de las 11:00 UTC sale con 4–5 h de retraso (20 y
+  21/10).
+- **Pendiente:** primera carga de Aurora y HLM (lo que falta de Edwin, en
+  `docs/pendientes.md`, sección 2).
