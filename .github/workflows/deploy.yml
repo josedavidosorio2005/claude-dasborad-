@@ -34,10 +34,10 @@ jobs:
         id: cabeza
         env:
           SHA: ${{ github.event.workflow_run.head_sha }}
-          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+        # URL publica, sin credenciales: el repo es publico.
         run: |
-          CABEZA=$(git ls-remote "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" refs/heads/main | cut -f1)
+          CABEZA=$(git ls-remote "https://github.com/${REPO}.git" refs/heads/main | cut -f1)
           if [ -z "$CABEZA" ] || [ -z "$SHA" ]; then
             echo "No se pudo leer la cabeza de main; no se despliega."
             exit 1

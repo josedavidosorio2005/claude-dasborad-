@@ -50,7 +50,6 @@ function correr(cabeza) {
     env: Object.assign({}, process.env, {
       PATH: bin + path.delimiter + process.env.PATH,
       SHA,
-      GH_TOKEN: 'x',
       REPO: 'dueno/repo',
       GITHUB_OUTPUT: out,
     }),
@@ -68,7 +67,8 @@ test('vigente lee la cabeza con git ls-remote (no con la API) y la compara con e
   const v = job('vigente');
   assert.match(v, /es_cabeza: \$\{\{ steps\.cabeza\.outputs\.es_cabeza \}\}/);
   assert.match(v, /SHA: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/);
-  assert.match(v, /git ls-remote .* refs\/heads\/main/);
+  assert.match(v, /git ls-remote "https:\/\/github\.com\/\$\{REPO\}\.git" refs\/heads\/main/);
+  assert.doesNotMatch(v, /token/i, 'URL publica, sin token');
   assert.doesNotMatch(v, /gh api|api\.github\.com/);
 });
 
