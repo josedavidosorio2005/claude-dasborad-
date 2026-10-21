@@ -3797,6 +3797,28 @@ function recalcularPctAtencionAbandono() {
 }
 runOnceMigration('fase155_pct_atencion_abandono_v1', recalcularPctAtencionAbandono);
 
+// Fase 161: indices para las consultas de datos mas lentas (EXPLAIN QUERY
+// PLAN sobre la base sintetica de 12 meses). Todas ya usaban un indice por
+// campana, pero tenian que ir a la tabla fila por fila; estos las cubren
+// (la consulta se resuelve solo con el indice). Los de una sola columna
+// (campana) sirven a "Ultima actualizacion" (WHERE campana = ? ORDER BY id
+// DESC LIMIT 1): un indice ya viene ordenado por rowid dentro de cada
+// campana, asi que no hace falta ordenar. Solo agregan indices: ningun
+// resultado cambia. IF NOT EXISTS: idempotente.
+function crearIndicesFase161() {
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_agendas_campana_fecha_linea ON agendas(campana, fechaSolicitud, tipoLinea);
+    CREATE INDEX IF NOT EXISTS idx_agendas_campana_id ON agendas(campana);
+    CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_canal_tipo ON tipificaciones(campana, canal, tipoInteraccion);
+    CREATE INDEX IF NOT EXISTS idx_tipificaciones_campana_id ON tipificaciones(campana);
+    CREATE INDEX IF NOT EXISTS idx_llamadas_salida_campana_fecha_tipo_agente ON llamadas_salida(campana, fecha, tipo, agente);
+    CREATE INDEX IF NOT EXISTS idx_llamadas_unicas_campana_fecha_tipo ON llamadas_unicas(campana, fecha, tipo);
+    CREATE INDEX IF NOT EXISTS idx_whatsapp_tiempos_campana_id ON whatsapp_tiempos(campana);
+  `);
+  if (!config.isTest) console.log('[db] Migracion fase161_indices_v1 aplicada.');
+}
+runOnceMigration('fase161_indices_v1', crearIndicesFase161);
+
 // Fase 161: contador de version de los DATOS para la cache de opciones
 // (cache-opciones.js). Antes la cache se vaciaba con cualquier escritura,
 // incluidos los inicios de sesion (UPDATE users). Ahora cada tabla de datos
