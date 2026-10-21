@@ -174,10 +174,14 @@ asumir en qué quedó una fase anterior.
 
 ## Alcance del proyecto
 
-- Foco actual: en producción solo existen **ORLANT y MOBILIZE** (los dos
-  con datos reales). Los otros 12 clientes, incluidas Clínica Aurora y
-  Hospital La María, se borraron en la Fase 134 (no tenían datos reales)
-  — no inventar datos ni adelantarse a pedidos que no han llegado.
+- Clientes en producción: **ORLANT y MOBILIZE** (con datos reales),
+  **Clínica Aurora** (creada de nuevo en la Fase 153) y **Hospital La
+  María** (Fase 160, un solo cliente). Aurora y Hospital La María se
+  crearon sin datos, con sus pestañas ocultas y visibles solo para el
+  administrador; su estado al día (datos cargados, pestañas, sedes) está
+  en `PROGRESS.md`. Los otros 12 clientes de antes se borraron en la Fase
+  134 y no existen — no inventar datos ni adelantarse a pedidos que no
+  han llegado.
 - El repositorio es público por decisión del jefe (29/09/2026); no
   reportarlo como pendiente.
 
