@@ -3797,6 +3797,38 @@ function recalcularPctAtencionAbandono() {
 }
 runOnceMigration('fase155_pct_atencion_abandono_v1', recalcularPctAtencionAbandono);
 
+// Fase 161: contador de version de los DATOS para la cache de opciones
+// (cache-opciones.js). Antes la cache se vaciaba con cualquier escritura,
+// incluidos los inicios de sesion (UPDATE users). Ahora cada tabla de datos
+// tiene triggers AFTER INSERT/UPDATE/DELETE que suben datos_version.n, asi
+// que cualquier escritura de datos invalida, venga de la ruta que venga (o
+// de otra conexion); las tablas de abajo no, porque se escriben sin que
+// cambie ningun dato que se muestre. Corre en CADA arranque (todo es IF NOT
+// EXISTS, idempotente) y al final, despues de todas las migraciones: asi
+// cubre tablas nuevas y las que una migracion reconstruya (al reconstruir
+// una tabla sus triggers se pierden).
+const TABLAS_SIN_VERSION_DATOS = ['users', 'historial', 'tokens_revocados', 'schema_migrations', 'seed_demo_marcas', 'datos_version'];
+function asegurarDatosVersion() {
+  db.exec('CREATE TABLE IF NOT EXISTS datos_version (id INTEGER PRIMARY KEY CHECK (id = 1), n INTEGER NOT NULL)');
+  db.prepare('INSERT OR IGNORE INTO datos_version (id, n) VALUES (1, 0)').run();
+  const tablas = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")
+    .all()
+    .map((r) => r.name)
+    .filter((t) => /^[a-z0-9_]+$/.test(t) && !TABLAS_SIN_VERSION_DATOS.includes(t));
+  db.transaction(() => {
+    for (const t of tablas) {
+      for (const op of ['INSERT', 'UPDATE', 'DELETE']) {
+        db.exec(
+          `CREATE TRIGGER IF NOT EXISTS dv_${t}_${op.toLowerCase()} AFTER ${op} ON ${t} ` +
+            'BEGIN UPDATE datos_version SET n = n + 1 WHERE id = 1; END'
+        );
+      }
+    }
+  })();
+}
+asegurarDatosVersion();
+
 // Fase 160 ("OK crear HLM" del usuario): HOSPITAL LA MARIA, un solo cliente,
 // igual que Aurora (Fase 153): ficha en el registro de clientes y su
 // dashboard desde la plantilla, con Flujo de Llamadas, Flujo de WhatsApp y
@@ -3871,5 +3903,8 @@ module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;
 module.exports.AURORA = AURORA;
+// Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
+module.exports.asegurarDatosVersion = asegurarDatosVersion;
+module.exports.TABLAS_SIN_VERSION_DATOS = TABLAS_SIN_VERSION_DATOS;
 // Fase 155: idem (prueba que la migracion es idempotente).
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
