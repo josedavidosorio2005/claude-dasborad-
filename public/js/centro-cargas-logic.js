@@ -177,11 +177,12 @@ function centroFechaFila(tipo, f) {
   return String(f.fecha || f.fechaInicio || f.fechaSolicitud || f.mes || '');
 }
 
-// Deja en un resultado de cargasProcesarHoja solo las filas del mes (y, en
-// Flujo de Llamadas, solo las skills de ese cliente) y avisa cuantas se
-// ignoraron. Nunca cambia la fila: solo la deja o la quita.
-// opciones.skillsDelCliente: { 'SKILL': true } (solo Trafico).
-function centroFiltrarResultado(r, cargaId, mes, opciones) {
+// Deja en un resultado de cargasProcesarHoja solo las filas del mes y avisa
+// cuantas se ignoraron. Nunca cambia la fila: solo la deja o la quita.
+// Fase 163 (pedido de Edwin, 21/10): en Flujo de Llamadas ya no se quitan
+// las skills que el cliente no tenia registradas: el cliente lo define el
+// Centro de cargas (ver centroAvisoSkillsNuevas).
+function centroFiltrarResultado(r, cargaId, mes) {
   var spec = CENTRO_CARGA_PLAN[cargaId];
   // Sin filas leidas (el lector las rechazo todas): tal cual, con sus avisos.
   if (!spec || !r || !r.filas || !r.filas.length) return r;
@@ -189,30 +190,34 @@ function centroFiltrarResultado(r, cargaId, mes, opciones) {
   if (spec.tipo === 'trafico' && r.canal && r.canal !== spec.canal) {
     return Object.assign({}, r, { filas: undefined, error: spec.canal === 'voz' ? 'Este archivo es de WhatsApp; aquí va el de Llamadas.' : 'Este archivo es de Llamadas; aquí va el de WhatsApp.' });
   }
-  // Solo voz reparte filas por skill entre clientes; WhatsApp ya va al cliente elegido.
-  var skills = spec.canal === 'voz' && opciones && opciones.skillsDelCliente;
   var otrosMeses = {};
-  var otrasSkills = 0;
   var filas = r.filas.filter(function (f) {
     var m = centroFechaFila(spec.tipo, f).slice(0, 7);
     if (m !== mes) { otrosMeses[m || 'sin fecha'] = (otrosMeses[m || 'sin fecha'] || 0) + 1; return false; }
-    if (skills && !skills[f.skillName]) { otrasSkills++; return false; }
     return true;
   });
   var listaOtros = Object.keys(otrosMeses).sort().map(function (m) {
     return (/^\d{4}-\d{2}$/.test(m) ? centroNombreMes(m).split(' ')[0].toLowerCase() : m) + ' ' + otrosMeses[m];
   });
   if (!filas.length) {
-    var motivo = otrasSkills && !listaOtros.length
-      ? 'Las filas de ' + nombreMes + ' son de skills de otro cliente o sin asignar.'
-      : 'El archivo no trae filas de ' + nombreMes + (listaOtros.length ? ' (trae: ' + listaOtros.join(', ') + ').' : '.');
+    var motivo = 'El archivo no trae filas de ' + nombreMes + (listaOtros.length ? ' (trae: ' + listaOtros.join(', ') + ').' : '.');
     return Object.assign({}, r, { filas: undefined, error: motivo });
   }
   var avisos = [];
-  var ignoradas = r.filas.length - filas.length - otrasSkills;
+  var ignoradas = r.filas.length - filas.length;
   if (ignoradas) avisos.push('Solo se cargan las filas de ' + nombreMes + ': se ignoraron ' + ignoradas + ' fila(s) de otros meses (' + listaOtros.join(', ') + ').');
-  if (otrasSkills) avisos.push('Se ignoraron ' + otrasSkills + ' fila(s) de skills de otro cliente o sin asignar (asígnalas a este cliente en Tráfico).');
-  return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas + otrasSkills });
+  return Object.assign({}, r, { filas: filas, avisos: avisos.concat(r.avisos || []), centroIgnoradas: ignoradas });
+}
+
+// Fase 163: las skills del archivo que el cliente todavia no tiene se
+// registran solas para el al guardar; la vista previa lo dice antes.
+// `skillsDelCliente`: { 'SKILL': true } (las que ya tiene). null si no hay nuevas.
+function centroAvisoSkillsNuevas(cliente, filas, skillsDelCliente) {
+  var vistas = {};
+  (filas || []).forEach(function (f) { if (f && f.skillName && !(skillsDelCliente || {})[f.skillName]) vistas[f.skillName] = true; });
+  var nuevas = Object.keys(vistas).sort();
+  if (!nuevas.length) return null;
+  return 'Skills nuevas que se registran para ' + cliente + ': ' + nuevas.join(', ') + '.';
 }
 
 // Primera y ultima fecha de las filas que quedaron, tal como las compara su
@@ -334,6 +339,7 @@ if (typeof module !== 'undefined' && module.exports) {
     centroFiltrarPlan: centroFiltrarPlan,
     centroFechaFila: centroFechaFila,
     centroFiltrarResultado: centroFiltrarResultado,
+    centroAvisoSkillsNuevas: centroAvisoSkillsNuevas,
     centroRangoFilas: centroRangoFilas,
     centroTextoReemplazoParcial: centroTextoReemplazoParcial,
     centroEsMensual: centroEsMensual,

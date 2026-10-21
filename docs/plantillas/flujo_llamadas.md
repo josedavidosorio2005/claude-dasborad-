@@ -56,7 +56,7 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 - Es el mismo lector para los dos clientes y el mismo reporte de Wolkvox (SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS, SERVICE_LEVEL_10SEC, SERVICE_LEVEL_20SEC, SERVICE_LEVEL_30SEC, ABANDON, ASA, ATA, WAIT_TIME, AHT). Los nombres de plantillas anteriores (TOTAL LLAMADAS, LLAMADAS INGRESADAS, TIPO DE LINEA, DÍA, NIVEL DE SERVICIO 80 - 20, % ABANDONO…) se siguen aceptando como alias.
 - La hoja se reconoce por sus columnas, no por su nombre ("HistQueue<fecha>", "LLAMADAS", "DATA" u otro).
-- Antes de la primera carga de un cliente hay que asignar sus skills a la campaña (pantalla Tráfico → skills). Un skill sin asignar queda en "SIN_ASIGNAR" y no se ve en ningún tablero.
+- Desde el Centro de cargas, el cliente lo define el Centro: las skills que ese cliente no tiene se registran solas para él (la vista previa dice cuáles) y la skill es por cliente, así que dos clientes pueden tener una skill con el mismo nombre sin mezclarse (Fase 163). En la pantalla de Tráfico de varios clientes, una skill sin asignar queda en "SIN_ASIGNAR" y no se ve en ningún tablero hasta asignarla.
 - Una fila de total ("TOTAL", "TOTAL GENERAL") nunca se suma como si fuera una línea.
 - Un archivo puede traer varios días o meses; el período es el de las fechas que trae.
 

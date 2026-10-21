@@ -187,13 +187,15 @@ test('un archivo de otro modulo no entra como Flujo de Llamadas', () => {
   assert.ok(!CL.cargasEncabezadosCoinciden(unicas, COLUMNAS_TRAFICO), 'Llamadas unicas');
 });
 
-test('cliente equivocado: skills que no son de MOBILIZE se ignoran en el Centro (no se guardan)', () => {
+// Fase 163: el cliente lo define el Centro; las skills que no tiene se
+// registran solas y la vista previa lo dice antes de guardar.
+test('skills que el cliente no tiene: se cargan y la vista previa dice cuales se registran', () => {
   const { ws, aoa } = leer(libroHistQueue());
   const r = Object.assign({ tipo: 'trafico' }, T.traficoParseFilas(aoa, ws));
-  const f = CC.centroFiltrarResultado(r, 'flujo_llamadas', '2026-08', { skillsDelCliente: { 'OTRA SKILL': true } });
-  assert.equal((f.filas || []).length, 0);
-  const g = CC.centroFiltrarResultado(r, 'flujo_llamadas', '2026-08', { skillsDelCliente: { 'SKILL SAC': true, 'Skill Key Account': true } });
-  assert.equal(g.filas.length, 17);
+  const f = CC.centroFiltrarResultado(r, 'flujo_llamadas', '2026-08');
+  assert.equal(f.filas.length, 17);
+  assert.equal(CC.centroAvisoSkillsNuevas('MOBILIZE', f.filas, { 'OTRA SKILL': true }), 'Skills nuevas que se registran para MOBILIZE: SKILL SAC, Skill Key Account.');
+  assert.equal(CC.centroAvisoSkillsNuevas('MOBILIZE', f.filas, { 'SKILL SAC': true, 'Skill Key Account': true }), null);
 });
 
 test('reporte parcial de agosto: la vista previa avisa que no trae el mes completo', () => {
@@ -225,8 +227,8 @@ test('guardar el archivo parcial no toca los dias 1-10 ni otro cliente, y los nu
 
   const { ws, aoa } = leer(libroHistQueue());
   const parsed = Object.assign({ tipo: 'trafico' }, T.traficoParseFilas(aoa, ws));
-  const f = CC.centroFiltrarResultado(parsed, 'flujo_llamadas', '2026-08', { skillsDelCliente: { 'SKILL SAC': true, 'Skill Key Account': true } });
-  const g = await request(app).post('/api/calidad/trafico/carga').set(auth(t)).send({ archivoNombre: 'sintetico.xlsx', filas: f.filas });
+  const f = CC.centroFiltrarResultado(parsed, 'flujo_llamadas', '2026-08');
+  const g = await request(app).post('/api/calidad/trafico/carga').set(auth(t)).send({ campana: 'MOBILIZE', archivoNombre: 'sintetico.xlsx', filas: f.filas });
   assert.equal(g.status, 201, JSON.stringify(g.body));
 
   const sac = leerBase('SKILL SAC');

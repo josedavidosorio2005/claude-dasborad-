@@ -446,7 +446,11 @@ const traficoFilaSchema = z
     }
   });
 
+// Fase 163: `campana` opcional: desde el Centro de cargas de un cliente,
+// todas las filas son de ese cliente (sus skills nuevas se registran solas
+// para el). Sin `campana`, la pantalla de Trafico de siempre.
 const traficoCargaBody = z.object({
+  campana: campanaSchema.optional(),
   archivoNombre: z.string().trim().max(200).optional().default(''),
   filas: z
     .array(traficoFilaSchema)
@@ -456,9 +460,13 @@ const traficoCargaBody = z.object({
 
 const sedeSchema = z.string().trim().min(1).max(60);
 
+// Fase 163: la skill es por cliente. campanaActual = cual mapeo se cambia
+// (null = el sin asignar); nuevo = solo registrar (skill + cliente).
 const traficoSkillMapeoBody = z.object({
   campana: campanaSchema.nullable(),
   sede: sedeSchema.nullable().optional(),
+  campanaActual: campanaSchema.nullable().optional(),
+  nuevo: z.boolean().optional(),
 });
 
 // Trafico de WhatsApp (Fase 50, plantilla real confirmada por Edwin): mismo

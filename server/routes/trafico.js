@@ -27,9 +27,24 @@ const router = express.Router();
 // Las skills sin asignar (nuevas o nunca mapeadas) no pertenecen a ninguna
 // campana todavia: siguen entrando y quedan bajo SIN_ASIGNAR. Solo lectura
 // (no crea filas de mapeo, a diferencia de resolverCampanasPorSkill).
+// Fase 163: la skill es por cliente; sin cliente se resuelve como la carga
+// de siempre (trafico-skills.js, mapeoDeSkill).
 function campanaActualDeSkill(skillName) {
-  const row = db.prepare('SELECT campana FROM trafico_skill_mapeo WHERE skillName = ?').get(skillName);
+  const row = traficoSkills.mapeoDeSkill(db, skillName);
   return row && row.campana ? row.campana : null;
+}
+// Fase 163: carga desde el Centro de un cliente (body.campana). Debe ser un
+// cliente real y con acceso; responde el error y devuelve true si no.
+function rechazarCampanaDeCarga(actor, res, campana) {
+  if (campana === traficoSkills.SIN_ASIGNAR || !db.prepare('SELECT 1 FROM clientes_registro WHERE nombre = ?').get(campana)) {
+    res.status(400).json({ error: `No existe el cliente ${campana}` });
+    return true;
+  }
+  if (!campaignAccess(actor, campana)) {
+    rechazarSinAcceso(res, [campana]);
+    return true;
+  }
+  return false;
 }
 function campanasSinAcceso(actor, skillNames) {
   const sinAcceso = new Set();
@@ -151,21 +166,27 @@ router.post(
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de llamadas' });
     }
     const b = req.body;
-    const sinAccesoCarga = campanasSinAcceso(req.actor, b.filas.map((f) => f.skillName));
-    if (sinAccesoCarga.length) return rechazarSinAcceso(res, sinAccesoCarga);
-    if (rechazarSkillsSinAsignar(req.actor, res, b.filas.map((f) => f.skillName))) return;
+    if (b.campana) {
+      if (rechazarCampanaDeCarga(req.actor, res, b.campana)) return;
+    } else {
+      const sinAccesoCarga = campanasSinAcceso(req.actor, b.filas.map((f) => f.skillName));
+      if (sinAccesoCarga.length) return rechazarSinAcceso(res, sinAccesoCarga);
+      if (rechazarSkillsSinAsignar(req.actor, res, b.filas.map((f) => f.skillName))) return;
+    }
     const resultado = traficoSkills.cargarTrafico(db, {
       archivoNombre: b.archivoNombre || '',
       cargadoPorNombre: req.actor.nombre || '-',
       filas: b.filas,
+      campana: b.campana,
     });
+    const notas = [];
+    if (resultado.skillsSinAsignar.length) notas.push(`${resultado.skillsSinAsignar.length} skill(s) sin asignar: ${resultado.skillsSinAsignar.join(', ')}`);
+    if (resultado.skillsRegistradas.length) notas.push(`skill(s) nuevas registradas para ${b.campana}: ${resultado.skillsRegistradas.join(', ')}`);
     logEvent(
       'TRAFICO_CARGA',
       { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: resultado.campanas.join(', ') },
       actorLabel(req.actor),
-      resultado.skillsSinAsignar.length
-        ? `${resultado.skillsSinAsignar.length} skill(s) sin asignar: ${resultado.skillsSinAsignar.join(', ')}`
-        : ''
+      notas.join('; ')
     );
     res.status(201).json(resultado);
   })
@@ -192,10 +213,18 @@ router.put(
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para editar el mapeo de skills' });
     }
     const skillName = req.params.skillName;
-    const actual = campanaActualDeSkill(skillName);
-    const destinos = [actual, req.body.campana].filter((c) => c && !campaignAccess(req.actor, c));
+    const b = req.body;
+    const actual = b.nuevo ? null : b.campanaActual !== undefined ? b.campanaActual : campanaActualDeSkill(skillName);
+    const destinos = [actual, b.campana].filter((c) => c && !campaignAccess(req.actor, c));
     if (destinos.length) return rechazarSinAcceso(res, [...new Set(destinos)]);
-    const resultado = traficoSkills.remapearSkill(db, { skillName, campana: req.body.campana, sede: req.body.sede || null });
+    const resultado = traficoSkills.remapearSkill(db, {
+      skillName,
+      campana: b.campana,
+      sede: b.sede || null,
+      campanaActual: b.campanaActual,
+      nuevo: b.nuevo === true,
+    });
+    if (resultado.error) return res.status(resultado.status).json({ error: resultado.error });
     logEvent(
       'TRAFICO_SKILL_MAPEO',
       { nombre: skillName, user: '-', rol: req.body.campana || '(sin asignar)' },
@@ -228,11 +257,13 @@ router.get(
       )
       .all();
     const porSkill = new Map();
+    // Fase 163: la misma skill en dos clientes son dos entradas.
     filas.filter((f) => campanaVisible(req.actor, f.campana)).forEach((f) => {
-      if (!porSkill.has(f.skillName)) {
-        porSkill.set(f.skillName, { skillName: f.skillName, campana: f.campana, sede: f.sede, meses: [] });
+      const clave = f.skillName + '|' + f.campana;
+      if (!porSkill.has(clave)) {
+        porSkill.set(clave, { skillName: f.skillName, campana: f.campana, sede: f.sede, meses: [] });
       }
-      porSkill.get(f.skillName).meses.push({
+      porSkill.get(clave).meses.push({
         mes: f.mes,
         filas: f.filas,
         archivoNombre: f.archivoNombre,
@@ -260,9 +291,14 @@ router.post(
     if (!canLoadModule(req.actor, 'flujo_llamadas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
-    const sinAccesoImpacto = campanasSinAcceso(req.actor, req.body.filas.map((f) => f.skillName));
-    if (sinAccesoImpacto.length) return rechazarSinAcceso(res, sinAccesoImpacto);
-    if (rechazarSkillsSinAsignar(req.actor, res, req.body.filas.map((f) => f.skillName))) return;
+    const campanaCarga = req.body.campana;
+    if (campanaCarga) {
+      if (rechazarCampanaDeCarga(req.actor, res, campanaCarga)) return;
+    } else {
+      const sinAccesoImpacto = campanasSinAcceso(req.actor, req.body.filas.map((f) => f.skillName));
+      if (sinAccesoImpacto.length) return rechazarSinAcceso(res, sinAccesoImpacto);
+      if (rechazarSkillsSinAsignar(req.actor, res, req.body.filas.map((f) => f.skillName))) return;
+    }
     const pares = new Map(); // "skill|mes" -> { skillName, mes, filasNuevas, filasABorrar }
     req.body.filas.forEach((f) => {
       const mes = f.fecha.slice(0, 7);
@@ -284,13 +320,18 @@ router.post(
       if (minFechaGlobal === null || f.fecha < minFechaGlobal) minFechaGlobal = f.fecha;
       if (maxFechaGlobal === null || f.fecha > maxFechaGlobal) maxFechaGlobal = f.fecha;
     });
-    const stmtEnRango = db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ?');
+    // Fase 163: desde el Centro de un cliente solo cuentan las filas de ese
+    // cliente (otra campana con una skill del mismo nombre no se toca).
+    const stmtEnRango = campanaCarga
+      ? db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ? AND campana = ?')
+      : db.prepare('SELECT fecha FROM calidad_nivel_servicio_diario WHERE skillName = ? AND fecha BETWEEN ? AND ?');
+    const paramsCampana = campanaCarga ? [campanaCarga] : [];
     // Fase 156 (B1): filasExistentes cuenta solo las filas ya guardadas
     // cuya fecha VIENE en el archivo (las que de verdad se reemplazan), no
     // el mes entero de la skill: el resto del mes fuera del rango queda
     // igual al guardar, y las del rango que no vienen van a filasABorrar.
     for (const [skillName, fechas] of fechasPorSkill) {
-      stmtEnRango.all(skillName, minFechaGlobal, maxFechaGlobal).forEach((r) => {
+      stmtEnRango.all(skillName, minFechaGlobal, maxFechaGlobal, ...paramsCampana).forEach((r) => {
         const mes = r.fecha.slice(0, 7);
         const clave = skillName + '|' + mes;
         if (!pares.has(clave)) pares.set(clave, { skillName, mes, filasNuevas: 0 });

@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.60.0 — Octubre 2026
+
+**Fase 163: el nombre de la skill que se sube es el que se refleja.**
+
+- Al subir Flujo de Llamadas desde el Centro de cargas de un cliente, todas
+  las filas son de ese cliente. Si trae una skill que el cliente todavía no
+  tiene (por ejemplo LINEA ENTRADA o PROGRAMAS ESPECIALES de Hospital La
+  María), se registra sola para ese cliente. La vista previa lo avisa antes
+  de guardar: "Skills nuevas que se registran para ...".
+- Cada cliente tiene sus propias skills: si dos clientes tienen una skill
+  con el mismo nombre, sus números nunca se mezclan.
+- Los tiempos con separador de miles se leen bien en los dos formatos:
+  "1,871.35" y "1.871,35" son 1.871,35 segundos.
+- La pantalla de Tráfico de varios clientes funciona igual que antes.
+- Los números ya cargados no cambian.
+
 ## v1.59.5 — Octubre 2026
 
 **Fase 162: la memoria que usa la plataforma para abrir rápido tiene un límite.**
