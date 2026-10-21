@@ -99,8 +99,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Tráfico trae varias skills que pueden resolver a campañas distintas).
   Arreglarlo exige rediseñar ese modelo — **no se toca sin tu OK
   explícito**. Riesgo real hoy: bajo (desde la Fase 134 en producción
-  solo quedan ORLANT y MOBILIZE; Aurora/HLM ya no existen — ver
-  "Decisiones de esta fase" al final).
+  solo ORLANT y MOBILIZE tienen datos; Clínica Aurora (Fase 153) y
+  Hospital La María (Fase 160) existen sin datos y solo los ve el
+  administrador).
 - **Limitador de la API para tráfico SIN sesión — sigue por IP, no por
   usuario** — Prioridad BAJA/MEDIA. La Fase 130 (Parte 7) separó el
   limitador en 2 cupos: quien ya inició sesión cuenta por usuario (sin
@@ -126,6 +127,23 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Primera carga de Clínica Aurora y Hospital La María** (Fase 160).
+  Ambos tienen Tráfico de Llamadas y Tráfico de WhatsApp listos: las
+  pestañas aparecen solas al cargar (probado de punta a punta en local).
+  Falta de Edwin:
+  - los nombres exactos de las skills de llamadas de cada cliente, tal
+    como salen en Wolkvox (SKILL_NAME). Hay que asignarlas al cliente
+    ANTES de cargar: desde el Centro, Flujo de Llamadas solo guarda las
+    skills ya asignadas a ese cliente;
+  - HLM: si se mide por sede (Sede 33 / Castilla) y qué skills van a cada
+    una — hoy es un solo cliente sin sedes;
+  - los archivos: el reporte nativo de la cola de Wolkvox (llamadas) y la
+    plantilla de Flujo de WhatsApp llena;
+  - quién ve cada cliente (permisos; hoy solo el administrador) y si hay
+    que crear usuarios;
+  - el modelo de Calidad de cada uno (mientras no esté, Calidad sigue
+    oculta).
 
 - **Metas que faltan para el semáforo y la línea de meta** (Fase 152).
   Sin meta, un indicador no lleva semáforo ni línea punteada. Hoy no
@@ -226,6 +244,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   tarjeta")** — sin entender todavía; lo pregunta el usuario. No se tocó.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
+
+- **Caché de las opciones de filtro: que no se vacíe con cualquier
+  escritura** (mejora futura, Fase 158/160). Hoy la caché de las rutas
+  `/opciones` (`server/cache-opciones.js`) se vacía con CUALQUIER
+  escritura en la base, incluidos los inicios de sesión y los registros de
+  auditoría: es correcto (nunca muestra datos viejos), pero con mucha gente
+  entrando a la vez acierta menos. Mejora: vaciarla solo cuando se escribe
+  en tablas de datos (cargas, eliminar, deshacer, borrado por rango,
+  remapeo de skills). Costo: medio; riesgo: que una ruta de escritura nueva
+  olvide avisar — necesita una prueba que recorra todas las tablas de
+  datos. Anotado 21/10/2026.
 
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
@@ -368,9 +397,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ambos resueltos — detalle completo en
   `docs/historico/progress-fases.md` y en la tabla de estado de
   `docs/auditoria-ui-fase135.md`.
-- **Clínica Aurora / Hospital La María**: ya no existen en la
-  plataforma desde la Fase 134 (se borraron junto con los otros 10
-  clientes sin datos reales) — no es un pendiente operativo.
+- **Clínica Aurora / Hospital La María**: se borraron en la Fase 134
+  (no tenían datos reales). Se volvieron a crear vacíos, con el OK del
+  usuario: Aurora en la Fase 153 y HLM en la Fase 160 (un solo cliente,
+  "HOSPITAL LA MARIA", sin sedes por ahora). Lo que falta para su primera
+  carga está en la sección 2.
 - **Llamadas Únicas de Mobilize, septiembre/2026: CARGADAS** (Fase 139,
   2026-10-13, "OK cargar"): 139 = 88 contestadas + 51 abandonadas, 25
   días con contestadas. El nombre de agente de las abandonadas se queda

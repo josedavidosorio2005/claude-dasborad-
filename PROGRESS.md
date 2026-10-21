@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.57.5` (ver `server/package.json`, expuesta en
+- **Versión**: `1.59.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -34,8 +34,12 @@ narrativo de cada fase, fase por fase, vive en
   6 modales unificados.
 - **Producción**: `https://sinco.inconexion.com.co` (único dominio
   desde la Fase 139, 13/10/2026).
-- **Foco actual**: **solo ORLANT y MOBILIZE** existen en producción —
-  desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
+- **Foco actual**: **ORLANT y MOBILIZE** son los únicos clientes con
+  datos. **Clínica Aurora** (Fase 153) y **Hospital La María** (Fase
+  160, un solo cliente, sin sedes por ahora) existen sin datos, con
+  Tráfico de Llamadas, Tráfico de WhatsApp y Calidad ocultos, y solo los
+  ve el administrador; lo que falta para su primera carga está en
+  [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
   filas de datos reales, solo configuración de plantilla vacía) se
   borraron del todo (`fase134_borrar_clientes_v1`, `CLIENTES_LIST` en
   `server/db.js` quedó en `[ORLANT, MOBILIZE]`) — no quedan "en cero",
@@ -644,3 +648,6 @@ mismo orden):
 - Fase 152 — Mejora gráfica: tarjetas KPI ejecutivas y mes en curso parcial (B8+B3), colores de marca y líneas de meta en las gráficas (B1), "Ver datos" y fracción "3 de 45" en los tooltips (B9), móvil y tableta con filtros plegables, limpieza de estilos y coma decimal (B4), iconos SVG de Lucide (F10) (v1.43.0 → v1.47.1, 2026-10-16)
 - Fase 153 (pasos 1–3, en curso) — Plantillas de cliente: registro de clientes en la base, listas por módulo desde el registro, catálogo de módulos y generador de layout con prueba de "foto" de ORLANT y MOBILIZE; propuesta en `docs/plantillas-cliente.md` (de #450, ya en main); pasos 4–6 esperan a Edwin (v1.47.2 → v1.47.4, 2026-10-16)
 - Fase 156 — Bugs de la prueba de la carga de agosto de Mobilize: WAIT_TIME/AHT en los tres formatos (B2) y aviso de reemplazo del Flujo que cuenta solo los días del archivo (B1); B3 cerrado sin cambio (decisión de la Fase 116) y B4 era del script de prueba (v1.57.4 → v1.57.5, 2026-10-20)
+- Fase 158 — Rendimiento: caché en memoria de las opciones de filtro de los dashboards (rutas `/opciones`), que se vacía con cualquier escritura en la base; mismos números (foto sin diferencias) (v1.59.1, 2026-10-21)
+- Fase 159 — Flujo de Llamadas acepta el reporte nativo de la cola de Wolkvox (`HistQueue`), plantilla con sus 13 encabezados y pantalla de subida con cliente y mes fijos desde el Centro (v1.57.6 → v1.57.8, 2026-10-20)
+- Fase 160 — Tareas de Edwin para la primera carga: ASA y ATA en dos gráficas, ejemplos de la plantilla de WhatsApp, Aurora y HLM con Tráfico de WhatsApp en 2 hojas, Hospital La María creado (sin datos, solo admin), deploy que se salta si su commit ya no es la cabeza de main (v1.58.0 → v1.59.0, 2026-10-21)
