@@ -9,9 +9,16 @@
 // ruta) -- nunca se comparte una respuesta entre clientes ni entre quien
 // ve asesores y quien no.
 //
-// Invalidacion: cualquier escritura en la base borra TODA la cache, sin
-// depender de que cada ruta se acuerde de avisar. Se compara una "firma"
-// hecha con dos contadores de SQLite antes de cada lectura:
+// Invalidacion (Fase 161): cualquier escritura de DATOS borra TODA la cache,
+// sin depender de que cada ruta se acuerde de avisar. La firma es
+// datos_version.n, que suben los triggers de cada tabla de datos (ver
+// asegurarDatosVersion en db.js): cargar, eliminar, deshacer, borrado por
+// rango, remapeo de skills o un script en otra conexion. Iniciar sesion
+// (users), la auditoria (historial) y cerrar sesion (tokens_revocados) ya no
+// la vacian.
+//
+// Respaldo (una base sin datos_version, p. ej. una en memoria de las
+// pruebas): la firma de la Fase 158, con dos contadores de SQLite:
 //   - total_changes(): sube con cada fila insertada, cambiada o borrada por
 //     ESTA conexion (cargar, eliminar, deshacer, borrado por rango, remapeo,
 //     y cualquier ruta de escritura futura);
@@ -29,13 +36,20 @@ const porDb = new WeakMap();
 function estadoDe(db) {
   let e = porDb.get(db);
   if (!e) {
-    e = { entradas: new Map(), firma: null, stmtCambios: db.prepare('SELECT total_changes() AS n') };
+    let stmtVersion = null;
+    try {
+      stmtVersion = db.prepare('SELECT n FROM datos_version WHERE id = 1');
+    } catch (_) {
+      /* sin datos_version: firma de respaldo */
+    }
+    e = { entradas: new Map(), firma: null, stmtVersion, stmtCambios: db.prepare('SELECT total_changes() AS n') };
     porDb.set(db, e);
   }
   return e;
 }
 
 function firmaActual(db, e) {
+  if (e.stmtVersion) return 'v' + e.stmtVersion.get().n;
   return db.pragma('data_version', { simple: true }) + ':' + e.stmtCambios.get().n;
 }
 

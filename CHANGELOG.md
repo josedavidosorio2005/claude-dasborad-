@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.59.2 — Octubre 2026
+
+**Fase 161: los filtros siguen rápidos aunque mucha gente entre a la vez.**
+
+- La plataforma recuerda las listas de los filtros (meses, asesores,
+  skills...) y ahora solo las vuelve a calcular cuando cambian datos
+  (cargar, eliminar, deshacer). Antes también las recalculaba cada vez que
+  alguien iniciaba sesión.
+- Los números de los dashboards no cambian.
+
 ## v1.59.1 — Octubre 2026
 
 **Fase 158: dashboards más rápidos.**
