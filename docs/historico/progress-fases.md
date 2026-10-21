@@ -15379,3 +15379,30 @@ con Edwin). Un merge a la vez, cada uno con su deploy y `/api/health`.
 - **Pendiente:** el `CLAUDE.md` todavía dice, en "Alcance del proyecto",
   que Aurora y HLM no existen (se volvieron a crear en las Fases 153 y
   160); queda para que el usuario decida el texto.
+
+## Fase 162 — Tope de memoria de la caché de respuestas y CLAUDE.md al día (v1.59.5, 2026-10-21)
+
+Después de la carga con Edwin del 21/10 (los PRs quedaron listos con CI
+verde durante la reunión y se mergearon cuando el usuario confirmó que
+había terminado). Un merge a la vez, cada uno con su deploy y
+`/api/health`.
+
+- **#496 (v1.59.5):** `server/cache-datos.js` suma un tope total de
+  memoria a los que ya tenía (2 MB por respuesta, 2000 entradas):
+  `CACHE_DATOS_MAX_MB`, 64 MB por defecto. Al pasarlo saca las entradas
+  más viejas (orden de llegada del `Map`) hasta que entre la nueva; una
+  respuesta más grande que el tope entero no se guarda ni vacía la caché.
+  Los bytes se cuentan como el largo del JSON, igual que el tope por
+  respuesta. Prueba `fase162-cache-tope-memoria.test.js` (5 casos, sin
+  base ni servidor): fallan antes y pasan después.
+- **#497 (solo documentación):** `CLAUDE.md` → "Alcance del proyecto"
+  dice ahora que en producción están ORLANT, MOBILIZE, Clínica Aurora
+  (Fase 153) y Hospital La María (Fase 160), y remite a `PROGRESS.md`
+  para el estado de cada uno. Cierra el pendiente de la Fase 161.
+- **Verificación:** suite 2014 → 2019, `npm audit` 0, CI verde. Foto por
+  rol (ADMIN, CLIENTES_DASH, CALIDAD, SUPERVISOR, REPORTES; 1066 rutas
+  cada uno): main contra la rama sin caché 0 diferencias, con caché en dos
+  pasadas 0, y con `CACHE_DATOS_MAX_MB=0.5` 0. Merge con
+  `--match-head-commit`; deploy de #496 con el paso `vigente` ("OK:
+  057eba7 es la cabeza de main") y `/api/health` 1.59.5; después #497
+  (`b49d673`), deploy correcto, sigue 1.59.5.

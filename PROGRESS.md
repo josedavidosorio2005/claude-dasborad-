@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.59.4` (ver `server/package.json`, expuesta en
+- **Versión**: `1.59.5` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -652,3 +652,4 @@ mismo orden):
 - Fase 159 — Flujo de Llamadas acepta el reporte nativo de la cola de Wolkvox (`HistQueue`), plantilla con sus 13 encabezados y pantalla de subida con cliente y mes fijos desde el Centro (v1.57.6 → v1.57.8, 2026-10-20)
 - Fase 161 — Rendimiento antes de la carga con Edwin: la caché de opciones se vacía solo cuando cambian datos (triggers + `datos_version`), índices para las consultas de datos más lentas y caché de respuestas de datos por usuario; foto por rol sin diferencias (v1.59.2 → v1.59.4, 2026-10-21)
 - Fase 160 — Tareas de Edwin para la primera carga: ASA y ATA en dos gráficas, ejemplos de la plantilla de WhatsApp, Aurora y HLM con Tráfico de WhatsApp en 2 hojas, Hospital La María creado (sin datos, solo admin), deploy que se salta si su commit ya no es la cabeza de main (v1.58.0 → v1.59.0, 2026-10-21)
+- Fase 162 — Tope total de memoria (64 MB, `CACHE_DATOS_MAX_MB`) en la caché de respuestas de datos, que saca las entradas más viejas; `CLAUDE.md` corregido: Clínica Aurora y Hospital La María sí existen (v1.59.5, 2026-10-21)
