@@ -17,14 +17,50 @@ permissions:
   contents: read
 
 jobs:
+  # Fase 160 (21/10: dos merges seguidos; el CI del primero termino ULTIMO y
+  # su deploy publico 1.58.1 encima de 1.58.2): `concurrency` ya hace que los
+  # deploys vayan de a uno, pero no impide que el viejo corra al final. Este
+  # job, que corre cuando a esta corrida le toca el turno, compara el commit
+  # de su CI con la cabeza REAL de main (git ls-remote, no la API, que puede
+  # quedar atrasada -- Fase 137). Si main ya avanzo, el deploy se salta: lo
+  # hace la corrida del commit nuevo. Si no se puede leer la cabeza, falla
+  # (nunca despliega a ciegas).
+  vigente:
+    runs-on: ubuntu-latest
+    outputs:
+      es_cabeza: ${{ steps.cabeza.outputs.es_cabeza }}
+    steps:
+      - name: Este commit sigue siendo la cabeza de main?
+        id: cabeza
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        # URL publica, sin credenciales: el repo es publico.
+        run: |
+          CABEZA=$(git ls-remote "https://github.com/${REPO}.git" refs/heads/main | cut -f1)
+          if [ -z "$CABEZA" ] || [ -z "$SHA" ]; then
+            echo "No se pudo leer la cabeza de main; no se despliega."
+            exit 1
+          fi
+          if [ "$CABEZA" = "$SHA" ]; then
+            echo "es_cabeza=true" >> "$GITHUB_OUTPUT"
+            echo "OK: ${SHA:0:7} es la cabeza de main."
+          else
+            echo "es_cabeza=false" >> "$GITHUB_OUTPUT"
+            echo "Se salta: ${SHA:0:7} ya no es la cabeza de main (${CABEZA:0:7}); lo despliega la corrida de ese commit."
+          fi
+
   deploy:
+    needs: vigente
     # Fase 151: solo despliega una corrida de CI que venga de un push a
-    # main de ESTE repositorio.
+    # main de ESTE repositorio. Fase 160: y solo si su commit sigue siendo
+    # la cabeza de main (job `vigente`).
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.head_branch == 'main' &&
-          github.event.workflow_run.head_repository.full_name == github.repository }}
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          needs.vigente.outputs.es_cabeza == 'true' }}
     runs-on: ubuntu-latest
     # Sin `environment:` — el deploy es continuo sin reviewers, y declarar un
     # environment cambia el `sub` del token OIDC a `repo:ORG/REPO:environment:...`,
