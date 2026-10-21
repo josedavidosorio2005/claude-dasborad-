@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.59.3 — Octubre 2026
+
+**Fase 161: gráficas que abren más rápido.**
+
+- Agendas por línea, Llamadas de salida, Llamadas únicas, Tipificación y
+  "Última actualización" consultan la base de forma más directa (índices
+  nuevos). Con 12 meses de datos, las más lentas pasan de más de 1 segundo
+  a unas décimas.
+- Los números de los dashboards no cambian.
+
 ## v1.59.2 — Octubre 2026
 
 **Fase 161: los filtros siguen rápidos aunque mucha gente entre a la vez.**
