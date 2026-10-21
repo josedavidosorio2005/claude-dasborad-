@@ -35,7 +35,8 @@ const CENTINELA_TEL = '3009998877123';
 test('parser: contrato del payload = [agente, fecha, tipo, tipificacion], igual al del servidor y sin telefono', () => {
   assert.deepEqual(LLAMADAS_SALIDA_ORDEN_ARRAY, ['agente', 'fecha', 'tipo', 'tipificacion']);
   assert.deepEqual(CAMPOS_FILA, LLAMADAS_SALIDA_ORDEN_ARRAY);
-  assert.deepEqual(LLAMADAS_SALIDA_COLUMNAS.map((c) => c.label), HEADER);
+  // Fase 163: la columna se llama TIPO (plantilla de Edwin); SKILL_ID sigue valiendo como alias.
+  assert.deepEqual(LLAMADAS_SALIDA_COLUMNAS.map((c) => c.label), ['AGENT_NAME', 'DATE', 'TELEPHONE', 'DESCRIPTION_COD_ACT', 'TIPO']);
 });
 
 test('parser: encabezados sin importar mayusculas ni espacios', () => {
@@ -43,7 +44,7 @@ test('parser: encabezados sin importar mayusculas ni espacios', () => {
   assert.deepEqual(map, { agente: 0, fecha: 1, telefono: 2, tipificacion: 3, tipo: 4 });
 });
 
-test('parser: SKILL_ID -> CONECTADA / NO_CONECTADA (mayusculas/acentos/espacios), otro valor se rechaza con aviso', () => {
+test('parser: SKILL_ID (plantilla vieja, alias de TIPO) -> CONECTADA / NO_CONECTADA (mayusculas/acentos/espacios), otro valor se rechaza con aviso', () => {
   const r = llamadasSalidaParseFilas(aoaDe([
     ['Asesor Uno', '2026-09-01', '3001', 'AGENDO CITA', CON],
     ['Asesor Uno', '2026-09-01', '3002', 'NO CONTESTA', '  llamadas de salida  no conectadas '],
@@ -51,7 +52,7 @@ test('parser: SKILL_ID -> CONECTADA / NO_CONECTADA (mayusculas/acentos/espacios)
   ]));
   assert.deepEqual(r.filas.map((f) => f[2]), ['CONECTADA', 'NO_CONECTADA']);
   assert.equal(r.avisos.length, 1);
-  assert.match(r.avisos[0], /Fila 4: SKILL_ID "NO CONTESTADAS" no es/);
+  assert.match(r.avisos[0], /Fila 4: TIPO "NO CONTESTADAS" no es/);
 });
 
 test('parser: filas totalmente vacias se ignoran sin aviso; columna faltante = error sin filas parciales', () => {
@@ -59,7 +60,7 @@ test('parser: filas totalmente vacias se ignoran sin aviso; columna faltante = e
   assert.equal(r.filas.length, 1);
   assert.equal(r.avisos.length, 0);
   const e = llamadasSalidaParseFilas([['AGENT_NAME', 'DATE', 'TELEPHONE', 'DESCRIPTION_COD_ACT'], ['A', '2026-09-02', '1', 'x']]);
-  assert.match(e.error, /Faltan columnas obligatorias: SKILL_ID/);
+  assert.match(e.error, /Faltan columnas obligatorias: TIPO/);
   assert.equal(e.filas, undefined);
 });
 

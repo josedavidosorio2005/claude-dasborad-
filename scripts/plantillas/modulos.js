@@ -67,10 +67,10 @@ const CARGAS = [
     fuente: { js: 'llamadas-salida-logic.js', variable: 'LLAMADAS_SALIDA_COLUMNAS' },
     columnas: {
       AGENT_NAME: ['Asesor que hizo la llamada.', 'Asesor Ejemplo Uno'],
-      DATE: ['Fecha de la llamada.', '2026-08-01'],
+      DATE: ['Fecha y hora de la llamada. Cuenta el día en hora de Colombia.', '2026-08-01 09:30'],
       TELEPHONE: ['Número llamado. Solo se usa en el navegador; nunca se envía ni se guarda.', '3000000001'],
-      DESCRIPTION_COD_ACT: ['Tipificación de la llamada.', 'Seguimiento'],
-      SKILL_ID: ['"LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS".', 'LLAMADAS DE SALIDA CONECTADAS'],
+      DESCRIPTION_COD_ACT: ['Tipificación de la llamada. "-" o vacío = "Sin tipificación".', 'Seguimiento'],
+      TIPO: ['"Conectada" (sale del CDR, numeral 1) o "No conectada" (sale del reporte "Detalle de llamadas no conectadas", numeral 5).', 'Conectada'],
     },
   },
   {
@@ -255,7 +255,7 @@ const ORIGEN = {
     reemplazo: 'El mes completo de las fechas del archivo.',
   },
   'PLANTILLA_LLAMADAS_SALIDA.xlsx': {
-    origen: 'Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detalle de las llamadas para las no conectadas", con SKILL_ID diciendo cuál es cuál.',
+    origen: 'Wolkvox, dos reportes en una sola hoja: las CONECTADAS salen del CDR → "1. Detalle de las llamadas" (solo las de salida) y las NO CONECTADAS del reporte "5. Detalle de llamadas no conectadas". La columna TIPO dice cuál es cuál: "Conectada" o "No conectada".',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"De salida\".",
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo.',

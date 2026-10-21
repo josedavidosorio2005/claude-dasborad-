@@ -49,7 +49,7 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### De dónde sale
 
-Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detalle de las llamadas para las no conectadas", con SKILL_ID diciendo cuál es cuál.
+Wolkvox, dos reportes en una sola hoja: las CONECTADAS salen del CDR → "1. Detalle de las llamadas" (solo las de salida) y las NO CONECTADAS del reporte "5. Detalle de llamadas no conectadas". La columna TIPO dice cuál es cuál: "Conectada" o "No conectada".
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "De salida".**
 
@@ -62,10 +62,10 @@ Wolkvox: CDR → "1. Detalle de las llamadas" (salientes conectadas) + "5. Detal
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
 | AGENT_NAME | Sí | Asesor que hizo la llamada. |  |
-| DATE | Sí | Fecha de la llamada. |  |
+| DATE | Sí | Fecha y hora de la llamada. Cuenta el día en hora de Colombia. |  |
 | TELEPHONE | Sí | Número llamado. Solo se usa en el navegador; nunca se envía ni se guarda. |  |
-| DESCRIPTION_COD_ACT | Sí | Tipificación de la llamada. |  |
-| SKILL_ID | Sí | "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS". |  |
+| DESCRIPTION_COD_ACT | Sí | Tipificación de la llamada. "-" o vacío = "Sin tipificación". |  |
+| TIPO | Sí | "Conectada" (sale del CDR, numeral 1) o "No conectada" (sale del reporte "Detalle de llamadas no conectadas", numeral 5). | SKILL_ID |
 
 ### Cómo detecta el encabezado
 
@@ -81,9 +81,9 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | TELEPHONE | DESCRIPTION_COD_ACT | SKILL_ID |
+| AGENT_NAME | DATE | TELEPHONE | DESCRIPTION_COD_ACT | TIPO |
 |---|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-08-01 | 3000000001 | Seguimiento | LLAMADAS DE SALIDA CONECTADAS |
+| Asesor Ejemplo Uno | 2026-08-01 09:30 | 3000000001 | Seguimiento | Conectada |
 
 ## Notas
 

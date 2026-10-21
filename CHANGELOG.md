@@ -20,6 +20,22 @@ sepan que hay nuevo, que se corrigio y que falta.
   versión), el tablero muestra una sola tarjeta y una sola barra,
   "Llamadas únicas de ingreso", en vez de tres con el mismo número.
 
+## v1.61.0 — Octubre 2026
+
+**Fase 163: Llamadas de Salida con la plantilla nueva de Edwin.**
+
+- La carga "De salida" reconoce la plantilla de Edwin: AGENT_NAME, DATE,
+  TELEPHONE, DESCRIPTION_COD_ACT y TIPO. TIPO es obligatorio y dice si la
+  llamada fue "Conectada" o "No conectada"; de ahí sale la separación del
+  tablero.
+- DATE puede traer la hora: se toma el día en hora de Colombia, nunca el
+  día anterior.
+- El código de actividad "-" queda como "Sin tipificación".
+- La plantilla descargable trae esos 5 encabezados y una hoja de
+  instrucciones que dice de qué reporte de Wolkvox sale cada tipo.
+- La plantilla anterior (con SKILL_ID) se sigue aceptando.
+- Los números ya cargados no cambian.
+
 ## v1.60.0 — Octubre 2026
 
 **Fase 163: el nombre de la skill que se sube es el que se refleja.**
