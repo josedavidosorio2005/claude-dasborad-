@@ -134,16 +134,24 @@ function _llamadasUnicasAplicarFiltros(i) {
 }
 
 // Fase 141 (pedido de Edwin, 13/10): orden total / contestadas / abandonadas.
+// Fase 163: sin ninguna abandonada en el filtro (lo cargado antes de esta
+// fase no las distinguia), una sola tarjeta "Llamadas únicas de ingreso" en
+// vez de tres con el mismo numero.
+function _llamadasUnicasSoloTotal(resumen) { return !resumen.abandonadas; }
 function _llamadasUnicasDibujarKpis(i, resumen) {
   var el = document.getElementById('lu-kpis-' + i);
   if (!el) return;
+  if (_llamadasUnicasSoloTotal(resumen)) {
+    el.innerHTML = '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Llamadas únicas de ingreso</div></div>';
+    return;
+  }
   el.innerHTML =
     '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total únicas</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + resumen.contestadas.toLocaleString('es-CO') + '</div><div class="kl">Contestadas únicas</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + resumen.abandonadas.toLocaleString('es-CO') + '</div><div class="kl">Abandonadas únicas</div></div>';
 }
 
-function _llamadasUnicasDibujarBarras(i, porMes) {
+function _llamadasUnicasDibujarBarras(i, porMes, soloTotal) {
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
   // Fase 152 (B1): paleta categorica (sin meta, no hay semaforo).
   var CGl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
@@ -157,6 +165,7 @@ function _llamadasUnicasDibujarBarras(i, porMes) {
     { type: 'bar', label: 'Contestadas únicas', data: porMes.map(function (m) { return m.contestadas; }), backgroundColor: CGl, borderRadius: 3 },
     Object.assign({ type: 'bar', label: 'Abandonadas únicas', data: porMes.map(function (m) { return m.abandonadas; }), backgroundColor: COl, borderRadius: 3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
   ];
+  if (soloTotal) datasets = [{ type: 'bar', label: 'Llamadas únicas de ingreso', data: porMes.map(function (m) { return m.total; }), backgroundColor: CDl, borderRadius: 3 }];
   if (typeof _gdChart === 'function') {
     _gdChart('lu-canvas-' + i, { data: { labels: porMes.map(function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m.periodo) : m.periodo; }), datasets: datasets }, options: o });
   }
@@ -176,7 +185,7 @@ async function _llamadasUnicasRenderContenido(campana, i) {
     porMes = (await apiRequest('GET', '/calidad/llamadas-unicas/por-mes?' + q)) || [];
   } catch (e) { /* el panel se queda con los KPIs/grafica en 0 — nunca inventa un numero */ }
   _llamadasUnicasDibujarKpis(i, resumen);
-  _llamadasUnicasDibujarBarras(i, porMes);
+  _llamadasUnicasDibujarBarras(i, porMes, _llamadasUnicasSoloTotal(resumen));
 }
 
 // ═══════════════════════════════════════════════════════════════════

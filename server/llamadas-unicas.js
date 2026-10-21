@@ -159,7 +159,7 @@ function llamadasUnicasOpciones(db, campana, { incluirAgentes } = {}) {
     meses: db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_unicas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
     skills: distintos('skill'),
   };
-  if (incluirAgentes) out.agentes = distintos('agente');
+  if (incluirAgentes) out.agentes = distintos('agente').filter((a) => a !== ''); // Fase 163: las abandonadas no traen asesor
   return out;
 }
 

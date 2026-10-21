@@ -53,7 +53,7 @@ const CARGAS = [
     hoja: 'LLAMADAS_UNICAS',
     fuente: { js: 'llamadas-unicas-logic.js', variable: 'LLAMADAS_UNICAS_COLUMNAS' },
     columnas: {
-      AGENT_NAME: ['Asesor que atendió.', 'Asesor Ejemplo Uno'],
+      AGENT_NAME: ['Asesor que atendió. Vacío en las abandonadas (el reporte de abandonadas no trae asesor): una fila sin asesor cuenta como abandonada.', 'Asesor Ejemplo Uno'],
       DATE: ['Fecha de la llamada.', '2026-08-01'],
       TELEPHONE: ['Número que llamó. Solo se usa en el navegador para contar una vez por día; nunca se envía ni se guarda.', '3000000000'],
       SKILL_NAME: ['Línea o skill.', 'SKILL SAC'],
@@ -249,7 +249,7 @@ const ORIGEN = {
     reemplazo: 'Las filas de esos skills en las fechas que trae el archivo.',
   },
   'PLANTILLA_LLAMADAS_UNICAS.xlsx': {
-    origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso (sin las de salida).',
+    origen: 'Wolkvox, dos reportes en una sola hoja: las CONTESTADAS del CDR → "1. Detalle de las llamadas" (solo las de ingreso, con asesor) y las ABANDONADAS de "Skill y servicios → 2. Detalle llamadas abandonadas" (skill, teléfono y día, con AGENT_NAME vacío).',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Únicas de ingreso\" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) \"De salida\" — Wolkvox, CDR. Esta plantilla es la de \"Únicas de ingreso\".",
     reemplazo: 'El mes completo de las fechas del archivo.',
