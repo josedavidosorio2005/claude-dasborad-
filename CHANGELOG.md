@@ -15,6 +15,17 @@ sepan que hay nuevo, que se corrigio y que falta.
   crearon usuarios. Las sedes (Sede 33 / Castilla) quedan por definir.
 - ORLANT, MOBILIZE y Clínica Aurora no cambian.
 
+## v1.58.2 — Octubre 2026
+
+**Fase 160: Clínica Aurora ya puede cargar Flujo de WhatsApp.**
+
+- Al cargar la plantilla de Flujo de WhatsApp para Clínica Aurora salía
+  "No se encontró la hoja DATA" y la carga no entraba. Ahora Aurora (y
+  todo cliente con Flujo de WhatsApp) usa la misma plantilla que ORLANT.
+- Después de cargar, sus pestañas de Tráfico de Llamadas y de WhatsApp
+  aparecen solas, con todas sus gráficas.
+- ORLANT y Mobilize no cambian. Los números de los dashboards no cambian.
+
 ## v1.58.1 — Octubre 2026
 
 **Fase 160: ejemplos correctos en la plantilla de Flujo de WhatsApp.**
