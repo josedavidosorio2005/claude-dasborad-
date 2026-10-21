@@ -18,6 +18,19 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// Fase 163: la skill es POR CLIENTE (una fila por skillName + campana, ver
+// migrarSkillPorCliente en db.js). Sin cliente (pantalla de Trafico con un
+// archivo de varios clientes) la skill se resuelve como siempre: por su
+// mapeo; si dos clientes tienen una skill con el mismo nombre, gana el mapeo
+// mas viejo (el que ya existia antes de esta fase).
+function mapeoDeSkill(db, skillName) {
+  return (
+    db
+      .prepare('SELECT id, campana, sede FROM trafico_skill_mapeo WHERE skillName = ? ORDER BY (campana IS NULL), id LIMIT 1')
+      .get(skillName) || null
+  );
+}
+
 // Asegura una fila en trafico_skill_mapeo por cada skill vista (si no
 // existe, la crea con campana=NULL) y devuelve skillName -> {campana, sede}
 // resuelto (el mapeo real, o campana=SIN_ASIGNAR si aun no esta mapeada).
@@ -26,14 +39,13 @@ function nowIso() {
 // 'CASTILLA'/'SEDE33', los mismos codigos que dashboards_config.vista usa
 // para esa misma campana — ver docs/ARQUITECTURA.md).
 function resolverCampanasPorSkill(db, skillNames) {
-  const selectStmt = db.prepare('SELECT campana, sede FROM trafico_skill_mapeo WHERE skillName = ?');
   const insertStmt = db.prepare(
     'INSERT INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?, NULL, NULL, ?, ?)'
   );
   const resultado = new Map();
   const ts = nowIso();
   for (const skillName of skillNames) {
-    const row = selectStmt.get(skillName);
+    const row = mapeoDeSkill(db, skillName);
     if (!row) {
       insertStmt.run(skillName, ts, ts);
       resultado.set(skillName, { campana: SIN_ASIGNAR, sede: null });
@@ -44,6 +56,40 @@ function resolverCampanasPorSkill(db, skillNames) {
   return resultado;
 }
 
+// Fase 163 (pedido de Edwin: "el nombre del skill que yo suba es el que se
+// debe reflejar"): desde el Centro de cargas de un cliente, las filas son
+// de ESE cliente. Una skill que ese cliente no tiene se registra sola para
+// el (skillName + campana); nunca toca el mapeo de otro cliente con el mismo
+// nombre. Si la skill estaba "sin asignar" y no tiene filas guardadas, esa
+// fila vacia se quita (ya tiene dueno). Devuelve { resuelto, nuevas }.
+function registrarSkillsDeCliente(db, skillNames, campana) {
+  const ts = nowIso();
+  const select = db.prepare('SELECT sede FROM trafico_skill_mapeo WHERE skillName = ? AND campana = ?');
+  const insert = db.prepare('INSERT INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?, ?, NULL, ?, ?)');
+  const filasSinAsignar = db.prepare('SELECT COUNT(*) AS n FROM calidad_nivel_servicio_diario WHERE skillName = ? AND campana = ?');
+  const borrarSinAsignar = db.prepare('DELETE FROM trafico_skill_mapeo WHERE skillName = ? AND campana IS NULL');
+  const resuelto = new Map();
+  const nuevas = [];
+  for (const skillName of skillNames) {
+    const row = select.get(skillName, campana);
+    if (row) {
+      resuelto.set(skillName, { campana, sede: row.sede || null });
+      continue;
+    }
+    insert.run(skillName, campana, ts, ts);
+    if (!filasSinAsignar.get(skillName, SIN_ASIGNAR).n) borrarSinAsignar.run(skillName);
+    resuelto.set(skillName, { campana, sede: null });
+    nuevas.push(skillName);
+  }
+  return { resuelto, nuevas };
+}
+
+// Solo lectura (vista previa): cuales de estas skills todavia no tiene el cliente.
+function skillsNuevasDeCliente(db, skillNames, campana) {
+  const select = db.prepare('SELECT 1 FROM trafico_skill_mapeo WHERE skillName = ? AND campana = ?');
+  return [...new Set(skillNames)].filter((s) => !select.get(s, campana)).sort();
+}
+
 // Sube filas de trafico ya parseadas (sin campana): resuelve la campana (y
 // sede, si aplica) de cada una por su skill y reutiliza
 // cargarNivelServicioDiario (un upsert por combinacion campana+sede
@@ -52,9 +98,20 @@ function resolverCampanasPorSkill(db, skillNames) {
 // confiar en una fila TOTAL): ya lo filtra traficoParseFilas antes de que
 // esta funcion vea las filas (public/js/trafico-logic.js), asi que aqui
 // todas las filas que llegan ya pasaron esa validacion.
-function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas }) {
+// Fase 163: con `campana` (Centro de cargas de un cliente) todas las filas
+// van a ese cliente y sus skills nuevas se registran solas
+// (registrarSkillsDeCliente); sin `campana`, como siempre.
+function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas, campana }) {
   const skillNames = [...new Set(filas.map((f) => f.skillName))];
-  const resueltoPorSkill = resolverCampanasPorSkill(db, skillNames);
+  let skillsRegistradas = [];
+  let resueltoPorSkill;
+  if (campana) {
+    const r = registrarSkillsDeCliente(db, skillNames, campana);
+    resueltoPorSkill = r.resuelto;
+    skillsRegistradas = r.nuevas;
+  } else {
+    resueltoPorSkill = resolverCampanasPorSkill(db, skillNames);
+  }
 
   const porCampanaSede = new Map(); // clave "campana sede" -> filas
   for (const f of filas) {
@@ -90,21 +147,23 @@ function cargarTrafico(db, { archivoNombre, cargadoPorNombre, filas }) {
   }
 
   const skillsSinAsignar = skillNames.filter((s) => resueltoPorSkill.get(s).campana === SIN_ASIGNAR);
-  return { insertadas, borradas, campanas: [...campanasVistas], skillsSinAsignar, porCampana: resultadosPorCampana, resumenActualizado };
+  return { insertadas, borradas, campanas: [...campanasVistas], skillsSinAsignar, skillsRegistradas, porCampana: resultadosPorCampana, resumenActualizado };
 }
 
 // Skills conocidas para el panel de mapeo del admin, con cuantas filas de
 // trafico tiene cada una guardadas hoy. Las sin mapear (campana IS NULL)
-// primero, para que el admin las vea de una.
+// primero, para que el admin las vea de una. Fase 163: una fila por skill y
+// cliente, y las filas que cuenta son solo las de ese cliente.
 function listarSkills(db) {
   return db
     .prepare(
       `SELECT m.skillName, m.campana, m.sede, m.createdAt, m.updatedAt,
-              (SELECT COUNT(*) FROM calidad_nivel_servicio_diario d WHERE d.skillName = m.skillName) AS filas
+              (SELECT COUNT(*) FROM calidad_nivel_servicio_diario d
+                WHERE d.skillName = m.skillName AND d.campana = IFNULL(m.campana, ?)) AS filas
        FROM trafico_skill_mapeo m
-       ORDER BY (m.campana IS NULL) DESC, m.skillName`
+       ORDER BY (m.campana IS NULL) DESC, m.skillName, m.campana`
     )
-    .all();
+    .all(SIN_ASIGNAR);
 }
 
 // Cambia el mapeo de una skill (campana + sede opcional) y RE-ATRIBUYE su
@@ -114,13 +173,20 @@ function listarSkills(db) {
 // pierde esas llamadas del total, la nueva las gana) para cada mes
 // afectado. `sede` se ignora (queda NULL) si `campana` no es una campana
 // multi-sede — lo decide el caller (server.js), que ya conoce el catalogo.
-function remapearSkill(db, { skillName, campana, sede }) {
+//
+// Fase 163: la skill es por cliente, asi que se dice CUAL mapeo se cambia:
+// `campanaActual` (null = el "sin asignar"). Sin `campanaActual`, el unico
+// mapeo que tenga esa skill (si tiene varios, se rechaza: hay que decir
+// cual). `nuevo: true` (formulario "Registrar skill") solo crea el mapeo
+// (skill + cliente), nunca mueve el de otro cliente. Solo se mueven las
+// filas guardadas del cliente de origen. Devuelve { error, status } si no
+// se puede.
+function remapearSkill(db, { skillName, campana, sede, campanaActual, nuevo }) {
   const ts = nowIso();
   sede = campana ? sede || null : null;
-  const existing = db.prepare('SELECT 1 FROM trafico_skill_mapeo WHERE skillName = ?').get(skillName);
-  if (existing) {
-    db.prepare('UPDATE trafico_skill_mapeo SET campana = ?, sede = ?, updatedAt = ? WHERE skillName = ?').run(campana, sede, ts, skillName);
-  } else {
+  const mapeos = db.prepare('SELECT id, campana, sede FROM trafico_skill_mapeo WHERE skillName = ? ORDER BY id').all(skillName);
+  const yaExiste = (c) => mapeos.find((m) => (m.campana || null) === (c || null));
+  const insertar = () =>
     db.prepare('INSERT INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?,?,?,?,?)').run(
       skillName,
       campana,
@@ -128,20 +194,48 @@ function remapearSkill(db, { skillName, campana, sede }) {
       ts,
       ts
     );
+
+  if (nuevo) {
+    if (yaExiste(campana)) return { error: `La skill "${skillName}" ya está registrada para ${campana || 'sin asignar'}.`, status: 409 };
+    insertar();
+    return { movidas: 0, mesesRecalculados: [] };
   }
 
+  let origen;
+  if (campanaActual !== undefined) {
+    origen = yaExiste(campanaActual);
+    if (!origen) return { error: `La skill "${skillName}" no está registrada para ${campanaActual || 'sin asignar'}.`, status: 404 };
+  } else if (mapeos.length > 1) {
+    return { error: `La skill "${skillName}" está en varios clientes: indica cuál se cambia.`, status: 409 };
+  } else {
+    origen = mapeos[0];
+  }
+  if (!origen) {
+    insertar();
+  } else {
+    const destino = yaExiste(campana);
+    if (destino && destino.id !== origen.id) {
+      return { error: `La skill "${skillName}" ya está registrada para ${campana || 'sin asignar'}.`, status: 409 };
+    }
+    db.prepare('UPDATE trafico_skill_mapeo SET campana = ?, sede = ?, updatedAt = ? WHERE id = ?').run(campana, sede, ts, origen.id);
+  }
+
+  const campanaOrigen = origen ? origen.campana || SIN_ASIGNAR : null;
   const nuevaCampana = campana || SIN_ASIGNAR;
+  // Sin mapeo previo, como antes: cualquier fila guardada de esa skill.
+  const filtroOrigen = campanaOrigen ? ' AND campana = ?' : '';
+  const paramsOrigen = campanaOrigen ? [campanaOrigen] : [];
   const filasAfectadas = db
     .prepare(
       `SELECT DISTINCT campana, sede, substr(fecha,1,7) AS mes FROM calidad_nivel_servicio_diario
-       WHERE skillName = ? AND (campana != ? OR sede IS NOT ?)`
+       WHERE skillName = ?${filtroOrigen} AND (campana != ? OR sede IS NOT ?)`
     )
-    .all(skillName, nuevaCampana, sede);
+    .all(skillName, ...paramsOrigen, nuevaCampana, sede);
   if (!filasAfectadas.length) return { movidas: 0, mesesRecalculados: [] };
 
   const info = db
-    .prepare('UPDATE calidad_nivel_servicio_diario SET campana = ?, sede = ? WHERE skillName = ? AND (campana != ? OR sede IS NOT ?)')
-    .run(nuevaCampana, sede, skillName, nuevaCampana, sede);
+    .prepare(`UPDATE calidad_nivel_servicio_diario SET campana = ?, sede = ? WHERE skillName = ?${filtroOrigen} AND (campana != ? OR sede IS NOT ?)`)
+    .run(nuevaCampana, sede, skillName, ...paramsOrigen, nuevaCampana, sede);
 
   const mesesPorCombinacionVieja = new Map(); // "campana sede" -> Set(meses)
   const todosMeses = new Set();
@@ -175,4 +269,13 @@ function remapearSkill(db, { skillName, campana, sede }) {
   return { movidas: info.changes, mesesRecalculados };
 }
 
-module.exports = { SIN_ASIGNAR, resolverCampanasPorSkill, cargarTrafico, listarSkills, remapearSkill };
+module.exports = {
+  SIN_ASIGNAR,
+  mapeoDeSkill,
+  resolverCampanasPorSkill,
+  registrarSkillsDeCliente,
+  skillsNuevasDeCliente,
+  cargarTrafico,
+  listarSkills,
+  remapearSkill,
+};

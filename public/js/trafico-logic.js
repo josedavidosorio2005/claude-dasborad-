@@ -213,7 +213,7 @@ function traficoParseFecha(v) {
 function traficoSegundosDesdeFraccionDia(v) {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'string' && TRAFICO_TIEMPO_TEXTO_RE.test(v.trim())) return traficoSegundosDesdeTextoOTexto(v);
-  var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+  var n = typeof v === 'number' ? v : traficoTextoANumero(v);
   if (!Number.isFinite(n)) return null;
   return n >= 1 ? Math.round(n) : Math.round(n * 86400);
 }
@@ -306,10 +306,30 @@ function traficoPctDesdeFraccion(v) {
   return Math.round(n * 100 * 100) / 100;
 }
 
+// Fase 163 (archivo real de Hospital La Maria): un numero en texto puede
+// traer separador de miles, en formato de EE. UU. ("1,871.35") o de
+// Colombia ("1.871,35"). Con los dos signos, el ultimo es el decimal y el
+// otro el de miles; con un solo signo repetido ("1,234,567"), es de miles;
+// con uno solo una vez ("5,5" / "884.99"), es el decimal (como siempre en
+// voz). `comaSolaEsMiles`: WhatsApp siempre leyo una coma sola como de miles
+// ("9,230"), y asi sigue.
+function traficoTextoANumero(s, comaSolaEsMiles) {
+  var t = String(s).trim().replace(/\s+/g, '');
+  var coma = t.lastIndexOf(','), punto = t.lastIndexOf('.');
+  if (coma !== -1 && punto !== -1) {
+    t = coma > punto ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  } else if (coma !== -1) {
+    t = comaSolaEsMiles || t.indexOf(',') !== coma ? t.replace(/,/g, '') : t.replace(',', '.');
+  } else if (punto !== -1 && t.indexOf('.') !== punto) {
+    t = t.replace(/\./g, '');
+  }
+  return t === '' ? NaN : Number(t);
+}
+
 // ASA / ATA / TOTAL LLAMADAS / etc.: numero, venga como numero o como texto.
 function traficoNumero(v) {
   if (v === null || v === undefined || v === '') return null;
-  var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
+  var n = typeof v === 'number' ? v : traficoTextoANumero(v);
   return Number.isFinite(n) ? n : null;
 }
 
@@ -785,13 +805,12 @@ function traficoModoDisplaySkills(datosSkills, estadoSkills) {
 // :skillName`, un upsert), asi que la unica responsabilidad de esta
 // funcion es rechazar con un mensaje claro los casos que ni deberian
 // llegar al servidor.
-// `skillsExistentes`: nombres de skill que YA tienen fila en
-// trafico_skill_mapeo (el ultimo GET, ya en el navegador) -- un SKILL_NAME
-// que coincida con uno de ellos se rechaza en vez de dejar que el upsert
-// lo reasigne en silencio: la fila que ya existe muestra su campana/filas
-// actuales a la vista, mas seguro editarla ahi que pisarla desde un
-// formulario que no tiene esa visibilidad (podria mover trafico ya
-// cargado a otra campana por un simple typo que coincida con un skill real).
+// `mapeosExistentes`: filas que YA existen en trafico_skill_mapeo (el
+// ultimo GET, ya en el navegador, { skillName, campana }). Fase 163: la
+// skill es por cliente, asi que solo se rechaza la misma skill en el MISMO
+// cliente (esa se edita en la tabla de abajo); el mismo nombre en otro
+// cliente es valido y se registra aparte (PUT con nuevo:true, nunca mueve
+// el mapeo del otro cliente).
 function traficoValidarNuevoMapeo(input) {
   var skillName = String((input && input.skillName) == null ? '' : input.skillName).trim();
   if (!skillName) return { error: 'Escribe el SKILL_NAME real de Wolkvox.' };
@@ -802,9 +821,9 @@ function traficoValidarNuevoMapeo(input) {
   if (sedesDisponibles.length && !sede) {
     return { error: 'Esta campana tiene mas de una sede: elige cual sede corresponde a este skill.' };
   }
-  var skillsExistentes = (input && input.skillsExistentes) || [];
-  if (skillsExistentes.indexOf(skillName) !== -1) {
-    return { error: 'El skill "' + skillName + '" ya existe en la tabla de abajo — editalo ahi en vez de registrarlo de nuevo.' };
+  var mapeosExistentes = (input && input.mapeosExistentes) || [];
+  if (mapeosExistentes.some(function (m) { return m.skillName === skillName && m.campana === campana; })) {
+    return { error: 'El skill "' + skillName + '" ya existe para ' + campana + ' en la tabla de abajo — editalo ahi en vez de registrarlo de nuevo.' };
   }
   return { ok: true, skillName: skillName, campana: campana, sede: sedesDisponibles.length ? sede : null };
 }
@@ -828,6 +847,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoPctDesdeTexto: traficoPctDesdeTexto,
     traficoPctDesdeFraccion: traficoPctDesdeFraccion,
     traficoNumero: traficoNumero,
+    traficoTextoANumero: traficoTextoANumero,
     traficoSegundosDesdeTextoOTexto: traficoSegundosDesdeTextoOTexto,
     traficoCeldaRef: traficoCeldaRef,
     traficoClasificarCeldaNumerica: traficoClasificarCeldaNumerica,

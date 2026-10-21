@@ -3894,6 +3894,41 @@ function crearHospitalLaMaria() {
 }
 runOnceMigration('fase160_crear_hospital_la_maria_v1', crearHospitalLaMaria);
 
+// Fase 163 (reunion con Edwin, 21/10): la skill es POR CLIENTE. Cada campana
+// nombra sus skills como quiere y entre campanas se repiten (ej. "PROGRAMAS
+// ESPECIALES"), asi que trafico_skill_mapeo deja de tener skillName como
+// clave unica: una fila por (skillName, campana). Las sin asignar
+// (campana NULL) siguen siendo una por skill (indice con IFNULL). Se recrea
+// la tabla conservando cada fila tal cual (mismo orden: el id dice cual
+// mapeo es el mas viejo, el que sigue usando la pantalla de Trafico de
+// varios clientes). Idempotente: si ya tiene `id`, no hace nada.
+function migrarSkillPorCliente() {
+  const cols = db.prepare('PRAGMA table_info(trafico_skill_mapeo)').all().map((c) => c.name);
+  if (cols.includes('id')) return;
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE trafico_skill_mapeo_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        skillName TEXT NOT NULL,
+        campana TEXT,
+        sede TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      );
+      INSERT INTO trafico_skill_mapeo_new (skillName, campana, sede, createdAt, updatedAt)
+        SELECT skillName, campana, sede, createdAt, updatedAt FROM trafico_skill_mapeo ORDER BY createdAt, skillName;
+      DROP TABLE trafico_skill_mapeo;
+      ALTER TABLE trafico_skill_mapeo_new RENAME TO trafico_skill_mapeo;
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_trafico_skill_mapeo_skill_campana
+        ON trafico_skill_mapeo(skillName, IFNULL(campana, ''));
+    `);
+  })();
+  // Al recrear la tabla se pierden sus triggers de datos_version (Fase 161).
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase163_skill_por_cliente_v1 aplicada.');
+}
+runOnceMigration('fase163_skill_por_cliente_v1', migrarSkillPorCliente);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3924,6 +3959,8 @@ module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;
+// Fase 163: idem.
+module.exports.migrarSkillPorCliente = migrarSkillPorCliente;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

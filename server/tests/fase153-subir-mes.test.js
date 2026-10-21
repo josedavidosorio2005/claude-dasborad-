@@ -49,7 +49,7 @@ test('ORLANT: fecha de cada lector y filtro por mes', () => {
 
 test('Flujo de WhatsApp: sin filtro de skills (va al cliente elegido) y nunca un archivo de voz', () => {
   const filas = [{ fechaInicio: '2026-08-01', colaWhatsapp: 'COLA X' }, { fechaInicio: '2026-07-31', colaWhatsapp: 'COLA X' }];
-  const r = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'whatsapp', filas, avisos: [] }, 'flujo_whatsapp', '2026-08', { skillsDelCliente: {} });
+  const r = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'whatsapp', filas, avisos: [] }, 'flujo_whatsapp', '2026-08');
   assert.equal(r.filas.length, 1, 'las colas de WhatsApp no pasan por el mapeo de skills de voz');
   const voz = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'voz', filas: [{ fecha: '2026-08-01', skillName: 'S' }], avisos: [] }, 'flujo_whatsapp', '2026-08');
   assert.equal(voz.error, 'Este archivo es de Llamadas; aquí va el de WhatsApp.');
@@ -133,19 +133,19 @@ test('sin filas de ese mes: error claro y nada que guardar', () => {
   assert.equal(L.centroFiltrarResultado(rechazadas, 'llamadas_unicas', '2026-08'), rechazadas);
 });
 
-test('Flujo de Llamadas: solo skills de ese cliente, y nunca un archivo de WhatsApp', () => {
+// Fase 163: el Centro ya no quita skills (el cliente lo define el Centro;
+// ver fase163-skills-por-cliente.test.js), solo las filas de otro mes.
+test('Flujo de Llamadas: todas las skills del mes, y nunca un archivo de WhatsApp', () => {
   const filas = [
     { fecha: '2026-08-01', skillName: 'SKILL MOBILIZE' },
     { fecha: '2026-08-01', skillName: 'SKILL ORLANT' },
     { fecha: '2026-08-02', skillName: 'SKILL NUEVA' },
     { fecha: '2026-07-31', skillName: 'SKILL MOBILIZE' },
   ];
-  const r = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'voz', filas, avisos: [] }, 'flujo_llamadas', '2026-08', { skillsDelCliente: { 'SKILL MOBILIZE': true } });
-  assert.deepEqual(r.filas.map((f) => f.skillName), ['SKILL MOBILIZE']);
-  assert.equal(r.centroIgnoradas, 3);
-  assert.match(r.avisos[1], /se ignoraron 2 fila\(s\) de skills de otro cliente o sin asignar/i);
-  const soloOtras = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'voz', filas: [filas[1]], avisos: [] }, 'flujo_llamadas', '2026-08', { skillsDelCliente: { 'SKILL MOBILIZE': true } });
-  assert.match(soloOtras.error, /skills de otro cliente/);
+  const r = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'voz', filas, avisos: [] }, 'flujo_llamadas', '2026-08');
+  assert.deepEqual(r.filas.map((f) => f.skillName), ['SKILL MOBILIZE', 'SKILL ORLANT', 'SKILL NUEVA']);
+  assert.equal(r.centroIgnoradas, 1);
+  assert.equal(r.avisos.length, 1);
   const wpp = L.centroFiltrarResultado({ tipo: 'trafico', canal: 'whatsapp', filas: [{ fechaInicio: '2026-08-01' }], avisos: [] }, 'flujo_llamadas', '2026-08');
   assert.equal(wpp.filas, undefined);
   assert.match(wpp.error, /WhatsApp/);
@@ -155,7 +155,9 @@ test('cableado: el Centro fija el foco, la pantalla lo aplica al leer y lo suelt
   const cargas = fs.readFileSync(path.join(PUB, 'cargas.js'), 'utf8');
   const centro = fs.readFileSync(path.join(PUB, 'centro-cargas.js'), 'utf8');
   assert.match(centro, /_cargasFocoCentro = desdeMes \? \{ cliente: cliente, carga: c\.id, mes: x\.mes/);
-  assert.match(cargas, /centroFiltrarResultado\(r, focoArch\.carga, focoArch\.mes, opcFoco\)/);
+  assert.match(cargas, /centroFiltrarResultado\(r, focoArch\.carga, focoArch\.mes\)/);
+  // Fase 163: desde el Centro, Flujo de Llamadas manda el cliente al guardar.
+  assert.match(cargas, /_cargasGuardarTrafico\(r, _cargasFocoActivo\(cliente\) \? cliente : null\)/);
   assert.match(cargas, /_cargasFocoCentro = null;\n {2}\/\/ Fase 153: si se llego aqui desde el Centro/);
   // El guardado es el de siempre: ninguna ruta nueva de escritura.
   assert.doesNotMatch(cargas + centro, /apiRequest\('POST', ?'\/centro-cargas\/[^v]/);
