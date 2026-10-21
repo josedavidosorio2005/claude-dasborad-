@@ -28,6 +28,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const db = require('./db');
 const { requireActor, identidadParaLimiteDeTasa, actorDeLaPeticion } = require('./auth');
+const { crearCacheDatos } = require('./cache-datos');
 const { wrap } = require('./routes/shared');
 const { crearTopeCargas, rutaNormalizada } = require('./cargas-simultaneas');
 // Fase 95 (tema D): version de la app, unica fuente de verdad
@@ -282,6 +283,9 @@ function createApp() {
   app.use(exigirSesionParaCuerpo);
   app.use(topeCargas.middleware);
   app.use(leerCuerpoJson);
+  // Fase 161: cache de las respuestas de datos (ver cache-datos.js).
+  // CACHE_DATOS=0 la apaga (para comparar con y sin cache).
+  if (process.env.CACHE_DATOS !== '0') app.use('/api', crearCacheDatos(db, { actorDeLaPeticion }));
   app.use('/api', api);
 
   // Fase 79 (hallazgo real: una pestana abierta desde antes de un deploy

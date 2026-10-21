@@ -69,4 +69,10 @@ function opcionesConCache(db, clave, calcular) {
   return structuredClone(e.entradas.get(clave));
 }
 
-module.exports = { opcionesConCache };
+// Fase 161: la misma firma la usa la cache de respuestas de datos
+// (cache-datos.js), asi las dos se invalidan juntas.
+function firmaDatos(db) {
+  return firmaActual(db, estadoDe(db));
+}
+
+module.exports = { opcionesConCache, firmaDatos };
