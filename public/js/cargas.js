@@ -360,8 +360,11 @@ async function onCargaClienteChange(){
     // plantilla unificada (ver cargasPlanConsolidado) -- por eso aqui va la
     // version "unificado" en vez de la generica.
     var esUnificado = LISTAS_REGISTRO.traficoUnificado.indexOf(cliente) !== -1;
-    var traficoCols = esUnificado ? _cargasTraficoLlamadasColumnasUnificado() : _cargasTraficoColumnas();
-    var traficoWpp = esUnificado ? _cargasTraficoWhatsappColumnasUnificado() : null;
+    // Fase 160: Trafico en 2 hojas tambien para quien tiene Flujo de WhatsApp
+    // sin el resto de la plantilla de ORLANT (LISTAS_REGISTRO.traficoWhatsapp).
+    var dosHojasTrafico = esUnificado || LISTAS_REGISTRO.traficoWhatsapp.indexOf(cliente) !== -1;
+    var traficoCols = dosHojasTrafico ? _cargasTraficoLlamadasColumnasUnificado() : _cargasTraficoColumnas();
+    var traficoWpp = dosHojasTrafico ? _cargasTraficoWhatsappColumnasUnificado() : null;
     // Fase 78: agendas usa el MISMO gate que Trafico unificado (hoy solo
     // ORLANT) -- no un flag propio, para no multiplicar listas de clientes
     // que hay que mantener en sincronia.
