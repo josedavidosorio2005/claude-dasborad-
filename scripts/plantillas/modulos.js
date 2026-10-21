@@ -124,13 +124,16 @@ const CARGAS = [
       'TOTAL WHATSAPP': ['Conversaciones que entraron.', 900],
       'WHATSAPP CONTESTADOS': ['Conversaciones atendidas.', 870],
       'WHATSAPP ABANDONADOS': ['Conversaciones sin atender.', 30],
-      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s.', 0.4],
-      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s.', 0.5],
-      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', 0.6],
-      SERVICE_LEVEL_5MIN: ['% atendidas en 5 min.', 0.9],
-      ASA: ['Tiempo promedio de respuesta.', 60],
-      ATA: ['Tiempo promedio hasta el abandono.', 300],
-      AHT: ['Tiempo promedio de atención.', 400],
+      // Fase 160: ejemplos en el formato que el lector acepta sin dudas (un
+      // 0.4 sin formato de % queda como dudoso, y un AHT en segundos se lee
+      // como dias y la carga se rechaza).
+      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s. Como porcentaje ("40 %" o celda con formato %).', '40.00 %'],
+      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s. Como porcentaje.', '50.00 %'],
+      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s. Como porcentaje.', '60.00 %'],
+      SERVICE_LEVEL_5MIN: ['% atendidas en 5 min. Como porcentaje.', '90.00 %'],
+      ASA: ['Tiempo promedio de respuesta, en segundos.', 60],
+      ATA: ['Tiempo promedio hasta el abandono, en segundos.', 300],
+      AHT: ['Tiempo promedio de atención, como hora de Excel (h:mm:ss). No en segundos: 400 se leería como 400 días y la carga se rechaza.', '0:06:40'],
     },
   },
   {
