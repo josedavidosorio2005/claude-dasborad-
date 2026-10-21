@@ -235,8 +235,8 @@ function traficoWppPctDesdeTexto(v, clasificacion) {
 function traficoWppNumero(v) {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
-  var s = String(v).trim().replace(/,/g, '');
-  var n = Number(s);
+  // Fase 163: tambien el formato de Colombia ("9.230,35"), ver traficoTextoANumero.
+  var n = _traficoWppLogicaLlamadas.traficoTextoANumero(v, true);
   return Number.isFinite(n) ? n : null;
 }
 

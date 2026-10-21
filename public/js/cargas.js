@@ -718,20 +718,24 @@ async function procesarArchivoConsolidado(input){
     return res;
   });
 
-  // Fase 153 (PR 4): desde el Centro, solo las filas de ese mes (y en Flujo
-  // de Llamadas solo las skills de ese cliente).
+  // Fase 153 (PR 4): desde el Centro, solo las filas de ese mes. Fase 163:
+  // en Flujo de Llamadas todas las skills son de ese cliente; las que no
+  // tiene se registran solas al guardar y la vista previa lo dice antes.
   var focoArch = _cargasFocoActivo(cliente);
   if(focoArch){
-    var opcFoco = {};
-    // Solo Flujo de Llamadas (voz) reparte filas por skill entre clientes.
+    var skillsDelCliente = null;
     if(focoArch.carga==='flujo_llamadas' && _cargasResultados.some(function(r){ return r.tipo==='trafico' && r.filas; })){
       try{
-        opcFoco.skillsDelCliente = {};
-        (await apiRequest('GET','/calidad/trafico/skills') || []).forEach(function(s){ if(s.campana===cliente) opcFoco.skillsDelCliente[s.skillName] = true; });
+        skillsDelCliente = {};
+        (await apiRequest('GET','/calidad/trafico/skills') || []).forEach(function(s){ if(s.campana===cliente) skillsDelCliente[s.skillName] = true; });
       }catch(e){ showToast(e.message, 'error'); input.value=''; _cargasResultados = []; return; }
     }
     _cargasResultados = _cargasResultados.map(function(r){
-      var f = centroFiltrarResultado(r, focoArch.carga, focoArch.mes, opcFoco);
+      var f = centroFiltrarResultado(r, focoArch.carga, focoArch.mes);
+      if(skillsDelCliente && f.tipo==='trafico' && f.filas){
+        var avisoSkills = centroAvisoSkillsNuevas(cliente, f.filas, skillsDelCliente);
+        if(avisoSkills) f.avisos = [avisoSkills].concat(f.avisos || []);
+      }
       // Encuesta: los conteos de la vista previa, de las filas que quedaron.
       if(f.tipo==='encuesta' && f.filas && f.centroIgnoradas){
         f.conteos = encuestaConteos(f.filas);
@@ -884,8 +888,9 @@ async function _cargasGuardarCalidad(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
-async function _cargasGuardarTrafico(r){
+async function _cargasGuardarTrafico(r, campana){
   var parsed = { archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(campana) parsed.campana = campana;
   try{
     var impacto = await apiRequest('POST','/calidad/trafico/carga/impacto', parsed);
     // Fase 115: la carga reemplaza TODO el rango de fechas que trae el
@@ -916,7 +921,8 @@ async function _cargasGuardarTrafico(r){
     _trafico = {}; // invalida el cache de los paneles trafico_combo abiertos
     return { ok:true, mensaje: resp.insertadas+' fila(s) en '+resp.campanas.length+' campana(s)'+
       (resp.borradas ? ', '+resp.borradas+' borrada(s) fuera del archivo nuevo' : '')+
-      (resp.skillsSinAsignar && resp.skillsSinAsignar.length ? '. '+resp.skillsSinAsignar.length+' skill(s) sin asignar' : '') };
+      (resp.skillsSinAsignar && resp.skillsSinAsignar.length ? '. '+resp.skillsSinAsignar.length+' skill(s) sin asignar' : '')+
+      (resp.skillsRegistradas && resp.skillsRegistradas.length ? '. Skills nuevas registradas: '+resp.skillsRegistradas.join(', ') : '') };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -1332,7 +1338,8 @@ async function guardarCarga(){
       else if(r.tipo==='citas_atendidas') res = await _cargasGuardarCitasAtendidas(cliente, r);
       else if(r.tipo==='salida') res = await _cargasGuardarSalida(cliente, r);
       else if(r.canal==='whatsapp') res = await _cargasGuardarTraficoWhatsapp(cliente, r);
-      else res = await _cargasGuardarTrafico(r);
+      // Fase 163: desde el Centro de un cliente, las filas son de ese cliente.
+      else res = await _cargasGuardarTrafico(r, _cargasFocoActivo(cliente) ? cliente : null);
       resumen.push((res.ok ? '✓ ' : '✗ ') + r.titulo + (res.mensaje ? ': '+res.mensaje : ''));
     }
   });

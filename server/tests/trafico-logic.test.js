@@ -469,18 +469,18 @@ test('traficoValidarNuevoMapeo: campana multi-sede sin sede elegida se rechaza',
   assert.match(r.error, /mas de una sede/);
 });
 
-test('traficoValidarNuevoMapeo: SKILL_NAME que ya existe en la tabla se rechaza, no se deja que el upsert lo pise en silencio', () => {
-  const r = traficoValidarNuevoMapeo({
-    skillName: 'CALL_YA_MAPEADO', campana: 'ORLANT',
-    skillsExistentes: ['CALL_YA_MAPEADO', 'OTRO_SKILL'],
-  });
-  assert.match(r.error, /ya existe en la tabla de abajo/);
+test('traficoValidarNuevoMapeo: SKILL_NAME que ya existe para ESE cliente se rechaza; en otro cliente es valido (Fase 163)', () => {
+  const mapeosExistentes = [{ skillName: 'CALL_YA_MAPEADO', campana: 'ORLANT' }, { skillName: 'OTRO_SKILL', campana: null }];
+  const r = traficoValidarNuevoMapeo({ skillName: 'CALL_YA_MAPEADO', campana: 'ORLANT', mapeosExistentes });
+  assert.match(r.error, /ya existe para ORLANT en la tabla de abajo/);
+  const otro = traficoValidarNuevoMapeo({ skillName: 'CALL_YA_MAPEADO', campana: 'HOSPITAL LA MARIA', mapeosExistentes });
+  assert.equal(otro.ok, true);
 });
 
 test('traficoValidarNuevoMapeo: camino feliz -- recorta espacios, no exige sede si la campana no es multi-sede, sede queda null', () => {
   const r = traficoValidarNuevoMapeo({
     skillName: '  CALL_INBOUND_AURORA  ', campana: 'CLINICA AURORA',
-    sedesDisponibles: [], skillsExistentes: ['OTRO_SKILL'],
+    sedesDisponibles: [], mapeosExistentes: [{ skillName: 'OTRO_SKILL', campana: 'CLINICA AURORA' }],
   });
   assert.equal(r.error, undefined);
   assert.equal(r.ok, true);

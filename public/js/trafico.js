@@ -190,7 +190,7 @@ function _renderTraficoSkillsTable(){
     var sedeStyle = sedesCampana.length ? '' : 'display:none';
     return '<tr>' +
       '<td>'+esc(r.skillName)+(r.campana?'':' <span style="background:var(--c-warning-bg);color:var(--c-warning-dark);border-radius:4px;padding:1px 6px;font-size:var(--fs-note);margin-left:4px">sin asignar</span>')+'</td>' +
-      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" aria-label="Campaña de '+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
+      '<td><select id="tv-skill-sel-'+idx+'" data-skill="'+esc(r.skillName)+'" data-campana-actual="'+esc(r.campana||'')+'" aria-label="Campaña de '+esc(r.skillName)+'" onchange="_traficoToggleSedeSel('+idx+')">'+opciones+'</select>' +
         ' <select id="tv-skill-sede-'+idx+'" aria-label="Sede de '+esc(r.skillName)+'" style="'+sedeStyle+'">'+sedeOpciones+'</select></td>' +
       '<td>'+r.filas+'</td>' +
       '<td><button class="btn-sm" onclick="guardarMapeoSkill('+idx+')">Guardar</button></td>' +
@@ -229,7 +229,8 @@ async function guardarMapeoSkill(idx){
   }
   var sede = (campana && sedes.length && sedeSel) ? sedeSel.value : null;
   try{
-    var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana, sede: sede });
+    // Fase 163: la skill es por cliente; se dice cual mapeo se cambia.
+    var resp = await apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(skillName), { campana: campana, sede: sede, campanaActual: sel.dataset.campanaActual || null });
     showToast('Mapeo guardado. '+resp.movidas+' fila(s) reatribuidas, '+resp.mesesRecalculados.length+' mes(es) recalculado(s).');
   }catch(e){ showToast(e.message, 'error'); return; }
   _trafico = {}; // invalida cache: el trafico de esta skill ya vive en otra campana/sede
@@ -288,14 +289,15 @@ async function registrarNuevoMapeoSkill(){
     campana: campSel.value,
     sede: sedeSel ? sedeSel.value : '',
     sedesDisponibles: TRAFICO_CAMPANAS_MULTISEDE[campSel.value] || [],
-    skillsExistentes: _traficoSkillsCache.map(function(r){ return r.skillName; }),
+    mapeosExistentes: _traficoSkillsCache,
   });
   if(v.error){ showToast(v.error, 'error'); return; }
 
   var btn = document.getElementById('tv-skill-nuevo-btn');
   try{
     await withButtonLoading(btn, 'Registrando...', function(){
-      return apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(v.skillName), { campana: v.campana, sede: v.sede });
+      // Fase 163: solo registra (skill + cliente); nunca mueve el de otro cliente.
+      return apiRequest('PUT','/calidad/trafico/skills/'+encodeURIComponent(v.skillName), { campana: v.campana, sede: v.sede, nuevo: true });
     });
   }catch(e){ showToast(e.message, 'error'); return; }
 
