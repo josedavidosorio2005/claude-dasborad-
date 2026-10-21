@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.59.5 — Octubre 2026
+
+**Fase 162: la memoria que usa la plataforma para abrir rápido tiene un límite.**
+
+- Lo que la plataforma recuerda para abrir las pestañas al instante ahora
+  tiene un tope de memoria (64 MB). Si se llena, olvida lo más antiguo
+  primero, así el servidor nunca se queda sin memoria.
+- Los números de los dashboards no cambian.
+
 ## v1.59.4 — Octubre 2026
 
 **Fase 161: las pestañas que ya abriste vuelven a abrir al instante.**

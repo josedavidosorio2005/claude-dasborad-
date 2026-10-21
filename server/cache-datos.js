@@ -13,7 +13,11 @@
 // Solo GET, solo las rutas de la lista y solo respuestas 200. Sin sesion
 // vigente, usuario suspendido o con cambio de clave pendiente, no se toca la
 // cache: la ruta responde como siempre (401/403). Se guarda el JSON ya
-// serializado (no hay que copiarlo), con un tope por respuesta y de entradas.
+// serializado (no hay que copiarlo), con un tope por respuesta, de entradas
+// y (Fase 162) de memoria total: CACHE_DATOS_MAX_MB, 64 por defecto. Al pasar
+// el tope total salen las entradas mas viejas (el Map guarda el orden de
+// llegada). Los bytes se cuentan como el largo del JSON, igual que el tope
+// por respuesta.
 'use strict';
 
 const { firmaDatos } = require('./cache-opciones');
@@ -36,6 +40,12 @@ const RUTAS = [
 ];
 const MAX_ENTRADAS = 2000;
 const MAX_BYTES_RESPUESTA = 2 * 1024 * 1024;
+const MAX_BYTES_TOTAL = 64 * 1024 * 1024;
+
+function topeTotal() {
+  const mb = Number(process.env.CACHE_DATOS_MAX_MB);
+  return mb > 0 ? Math.floor(mb * 1024 * 1024) : MAX_BYTES_TOTAL;
+}
 
 function claveDe(ruta, query, actor) {
   const q = Object.keys(query || {}).sort().map((k) => [k, query[k]]);
@@ -45,16 +55,36 @@ function claveDe(ruta, query, actor) {
   return JSON.stringify([ruta, q, quien]);
 }
 
-function crearCacheDatos(db, { actorDeLaPeticion }) {
+function crearCacheDatos(db, { actorDeLaPeticion, maxBytesTotal = topeTotal() }) {
   const entradas = new Map();
+  let bytes = 0;
   let firma = null;
+  function vaciar() {
+    entradas.clear();
+    bytes = 0;
+  }
+  function guardar(clave, texto) {
+    if (texto.length > maxBytesTotal) return;
+    if (entradas.has(clave)) {
+      bytes -= entradas.get(clave).length;
+      entradas.delete(clave);
+    }
+    if (entradas.size >= MAX_ENTRADAS) vaciar();
+    for (const [k, v] of entradas) {
+      if (bytes + texto.length <= maxBytesTotal) break;
+      entradas.delete(k);
+      bytes -= v.length;
+    }
+    entradas.set(clave, texto);
+    bytes += texto.length;
+  }
   function cacheDatos(req, res, next) {
     if (req.method !== 'GET' || !RUTAS.some((r) => r.test(req.path))) return next();
     const actor = actorDeLaPeticion(req);
     if (!actor || (!actor.isMasterAdmin && (!actor.active || actor.debe_cambiar_password))) return next();
     const actual = firmaDatos(db);
     if (actual !== firma) {
-      entradas.clear();
+      vaciar();
       firma = actual;
     }
     const clave = claveDe(req.path, req.query, actor);
@@ -68,18 +98,16 @@ function crearCacheDatos(db, { actorDeLaPeticion }) {
     res.json = (cuerpo) => {
       if (res.statusCode === 200 && firmaDatos(db) === firma) {
         const texto = JSON.stringify(cuerpo);
-        if (texto !== undefined && texto.length <= MAX_BYTES_RESPUESTA) {
-          if (entradas.size >= MAX_ENTRADAS) entradas.clear();
-          entradas.set(clave, texto);
-        }
+        if (texto !== undefined && texto.length <= MAX_BYTES_RESPUESTA) guardar(clave, texto);
       }
       return json(cuerpo);
     };
     next();
   }
-  cacheDatos.limpiar = () => entradas.clear();
+  cacheDatos.limpiar = vaciar;
   cacheDatos.tamano = () => entradas.size;
+  cacheDatos.bytes = () => bytes;
   return cacheDatos;
 }
 
-module.exports = { crearCacheDatos, RUTAS, claveDe };
+module.exports = { crearCacheDatos, RUTAS, claveDe, MAX_BYTES_TOTAL };
