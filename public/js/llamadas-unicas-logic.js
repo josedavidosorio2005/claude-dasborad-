@@ -97,6 +97,17 @@ function llamadasUnicasParseFecha(v) {
   if (typeof v === 'string') {
     var t = v.trim();
     if (t === '') return null;
+    // Fase 163: DATE con hora (Llamadas de Salida). Con zona (ISO "Z" o
+    // "+hh:mm") se pasa a la hora de Colombia (UTC-5, sin horario de
+    // verano); sin zona, la hora ya es la local y el dia es el que dice.
+    var iso = /^(\d{4}-\d{2}-\d{2})[T ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/i.exec(t);
+    if (iso) {
+      if (!iso[5]) return iso[1];
+      var ms0 = Date.parse(t.replace(' ', 'T'));
+      if (isNaN(ms0)) return null;
+      return new Date(ms0 - 5 * 3600 * 1000).toISOString().slice(0, 10);
+    }
+    t = t.replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?\s*m\.?)?$/i, '');
     if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
     var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
     if (!m) return null;

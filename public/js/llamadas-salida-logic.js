@@ -1,8 +1,11 @@
 // llamadas-salida-logic.js — Llamadas de salida de Mobilize (Fase 141, Parte
 // C, reunion con Edwin del 13/10/2026). Logica PURA (sin DOM) de parseo del
 // archivo real de Wolkvox con columnas AGENT_NAME, DATE, TELEPHONE,
-// DESCRIPTION_COD_ACT (tipificacion) y SKILL_ID ("LLAMADAS DE SALIDA
-// CONECTADAS" / "LLAMADAS DE SALIDA NO CONECTADAS"). Doble modo: global en
+// DESCRIPTION_COD_ACT (tipificacion) y TIPO ("Conectada" / "No conectada"),
+// la plantilla que armo Edwin (Fase 163): las conectadas salen del CDR y las
+// no conectadas del reporte "Detalle de llamadas no conectadas" (numeral 5).
+// La plantilla vieja con SKILL_ID ("LLAMADAS DE SALIDA CONECTADAS" / "NO
+// CONECTADAS") se sigue aceptando. Doble modo: global en
 // el navegador, require() en Node para las pruebas
 // (server/tests/fase141-llamadas-salida-*.test.js).
 //
@@ -21,7 +24,7 @@ var LLAMADAS_SALIDA_COLUMNAS = [
   { key: 'fecha', label: 'DATE', obligatoria: true },
   { key: 'telefono', label: 'TELEPHONE', obligatoria: true },
   { key: 'tipificacion', label: 'DESCRIPTION_COD_ACT', obligatoria: true },
-  { key: 'tipo', label: 'SKILL_ID', obligatoria: true },
+  { key: 'tipo', label: 'TIPO', obligatoria: true, aliases: ['SKILL_ID'] },
 ];
 // Orden fijo del payload compacto (array, no objeto) -- debe coincidir EXACTO
 // con CAMPOS_FILA (server/llamadas-salida.js) y con
@@ -32,9 +35,15 @@ var LLAMADAS_SALIDA_ORDEN_ARRAY = ['agente', 'fecha', 'tipo', 'tipificacion'];
 // SKILL_ID -> tipo guardado. Comparacion insensible a mayusculas/acentos/
 // espacios repetidos; cualquier otro valor se rechaza con aviso.
 var LLAMADAS_SALIDA_TIPOS = {
+  'conectada': 'CONECTADA',
+  'no conectada': 'NO_CONECTADA',
   'llamadas de salida conectadas': 'CONECTADA',
   'llamadas de salida no conectadas': 'NO_CONECTADA',
 };
+// Fase 163: DESCRIPTION_COD_ACT "-" (o vacio) = sin tipificacion.
+function _llamadasSalidaTipificacion(t) {
+  return !t || /^-+$/.test(t) ? 'Sin tipificación' : t;
+}
 
 function _llamadasSalidaNormalizarParaComparar(s) {
   return String(s == null ? '' : s)
@@ -54,7 +63,9 @@ function llamadasSalidaColIndexMap(headerRow) {
   var map = {};
   (headerRow || []).forEach(function (h, i) {
     var n = llamadasSalidaNormTexto(h).toLowerCase().replace(/\s+/g, '_');
-    var col = LLAMADAS_SALIDA_COLUMNAS.filter(function (c) { return c.label.toLowerCase() === n; })[0];
+    var col = LLAMADAS_SALIDA_COLUMNAS.filter(function (c) {
+      return [c.label].concat(c.aliases || []).some(function (l) { return l.toLowerCase() === n; });
+    })[0];
     if (col && map[col.key] === undefined) map[col.key] = i;
   });
   return map;
@@ -92,7 +103,7 @@ function llamadasSalidaParseFilas(aoa) {
 
     var tipo = LLAMADAS_SALIDA_TIPOS[_llamadasSalidaNormalizarParaComparar(skillId)];
     if (!tipo) {
-      avisos.push('Fila ' + filaNum + ': SKILL_ID "' + skillId + '" no es "LLAMADAS DE SALIDA CONECTADAS" ni "LLAMADAS DE SALIDA NO CONECTADAS", se omitio.');
+      avisos.push('Fila ' + filaNum + ': TIPO "' + skillId + '" no es "Conectada" ni "No conectada", se omitio.');
       continue;
     }
     if (!agente) {
@@ -111,7 +122,7 @@ function llamadasSalidaParseFilas(aoa) {
       avisos.push('Fila ' + filaNum + ': DATE ' + fecha + ' esta en el futuro, se omitio.');
       continue;
     }
-    crudas.push({ agente: agente, fecha: fecha, telefono: telefono, tipo: tipo, tipificacion: tipificacion || 'Sin tipificación' });
+    crudas.push({ agente: agente, fecha: fecha, telefono: telefono, tipo: tipo, tipificacion: _llamadasSalidaTipificacion(tipificacion) });
   }
 
   // "Unica" = una sola vez por (dia, telefono, tipo): el mismo numero el
