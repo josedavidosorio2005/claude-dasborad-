@@ -877,8 +877,9 @@ function _traficoFmtTiempoMMSS(v){
 // Fase 87 (tema A, nota del jefe: "siempre tener visible el nivel de
 // servicio, en Resumen"): 6ta tarjeta, siempre presente junto a las demas
 // (antes el nivel de servicio solo se veia entrando a la sub-pestana "Nivel
-// de Servicio a 20s"). `totales.nivelServicio` (ya ponderado por el total
-// del periodo/filtro actual -- traficoServiceLevelPromedioPeriodo/
+// de Servicio a 20s"). `totales.nivelServicio` (del periodo/filtro actual;
+// en llamadas, promedio simple de las filas desde la Fase 163 --
+// traficoServiceLevelPromedioPeriodo/
 // traficoWppServiceLevelPromedioPeriodo, *-logic.js) puede ser null (sin
 // dato para el campo/periodo actual: nunca se inventa ni se aproxima, la
 // tarjeta muestra "—"). `labels.nivelServicioLabel` lleva el umbral en el
@@ -1313,8 +1314,7 @@ function _traficoRenderContenido(campana, sede, i){
 
   // Fase 131 (Parte 2, pedido de Edwin para Mobilize): "cada sección con SU
   // resumen acumulado debajo" -- un numero del PERIODO/FILTRO YA aplicado
-  // (mismo `filtradas`/`nivelServicio` de arriba, nunca un promedio simple
-  // de los valores diarios) junto al titulo de la sub-pestaña activa de
+  // (mismo `filtradas`/`nivelServicio` de arriba) junto al titulo de la sub-pestaña activa de
   // SL/Abandono/ASA/AHT. Solo si el panel lo pide (`p.resumenPorSeccion`) --
   // ORLANT/AURORA/HLM no lo piden, asi que para ellos este bloque no hace
   // nada (el div ni siquiera existe en su DOM).

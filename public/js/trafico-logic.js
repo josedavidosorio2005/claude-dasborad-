@@ -572,7 +572,13 @@ function traficoAgregar(filas, opts) {
 
   var buckets = {};
   var orden = [];
-  var PCT_PONDERADOS = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
+  // Fase 163 (pedido de Edwin, 21/10): el nivel de servicio (SERVICE_LEVEL_
+  // 10/20/30SEC del reporte de Wolkvox) es el PROMEDIO SIMPLE de las filas
+  // (skill-dia) del grupo: por dia y skill, el valor del reporte; en el mes,
+  // el promedio de esas filas. Las filas sin dato no cuentan; las de 0 % si.
+  // Ya no se pondera por llamadas (asi daba igual al nivel de atencion). El
+  // nivel de atencion (contestadas / ingresadas) no cambia.
+  var PCT_PROMEDIO_SIMPLE = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct'];
   // Fase 77 (hallazgo real de Edwin, 25/09): NO todos los numeros de tiempo
   // se ponderan por lo mismo. SL sigue por TOTAL (esta bien: el nivel de
   // servicio se mide sobre todas las llamadas que entraron). AHT/ASA son
@@ -605,7 +611,7 @@ function traficoAgregar(filas, opts) {
         periodo: periodo, skillName: combinar ? null : f.skillName,
         totalLlamadas: 0, contestadas: 0, llamadasAbandonadas: 0, _tieneAbandonadas: false, _abandonadasCalculo: 0,
       };
-      PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { b0['_suma_' + k] = 0; b0['_peso_' + k] = 0; });
+      PCT_PROMEDIO_SIMPLE.concat(NUM_PONDERADOS).forEach(function (k) { b0['_suma_' + k] = 0; b0['_peso_' + k] = 0; });
       buckets[clave] = b0;
       orden.push(clave);
     }
@@ -618,7 +624,10 @@ function traficoAgregar(filas, opts) {
     if (f.llamadasAbandonadas != null) { b.llamadasAbandonadas += f.llamadasAbandonadas; b._tieneAbandonadas = true; }
     b._abandonadasCalculo += traficoAbandonadasDe(f);
     if (f.ataSegundos != null) { b._ataReportado = true; if (Number(f.ataSegundos) !== 0) b._ataDistintoDeCero = true; }
-    PCT_PONDERADOS.concat(PONDERADOS_POR_TOTAL).forEach(function (k) {
+    PCT_PROMEDIO_SIMPLE.forEach(function (k) {
+      if (f[k] != null) { b['_suma_' + k] += Number(f[k]); b['_peso_' + k] += 1; }
+    });
+    PONDERADOS_POR_TOTAL.forEach(function (k) {
       if (f[k] != null && pesoTotal > 0) { b['_suma_' + k] += f[k] * pesoTotal; b['_peso_' + k] += pesoTotal; }
     });
     PONDERADOS_POR_ABANDONADAS.forEach(function (k) {
@@ -644,7 +653,7 @@ function traficoAgregar(filas, opts) {
     var pcts = traficoPctAtencionAbandono(b.totalLlamadas, b.contestadas, b._abandonadasCalculo);
     out.nivelAtencionPct = pcts.nivelAtencionPct;
     out.tasaAbandonoPct = pcts.tasaAbandonoPct;
-    PCT_PONDERADOS.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
+    PCT_PROMEDIO_SIMPLE.concat(NUM_PONDERADOS).forEach(function (k) { out[k] = promedioPonderado(b, k); });
     // Fase 146 (decision de Edwin): con datos pero 0 abandonos, ATA = 0
     // (0:00), no "sin dato" -- ver traficoAtaCeroSinAbandonos.
     if (out.ataSegundos === null && traficoAtaCeroSinAbandonos({
@@ -721,21 +730,19 @@ function traficoAhtPromedioPeriodo(filas) {
 // Fase 87 (tema A, nota del jefe: "siempre tener visible el nivel de
 // servicio, en Resumen"): colapsa un conjunto de filas YA filtradas (el
 // mismo `filtradas` que ya usa la tarjeta "Resumen" para Total/Contestadas/
-// Nivel de Atencion) a UN solo numero ponderado por TOTAL LLAMADAS -- mismo
-// criterio de peso que traficoAgregar usa para serviceLevel10/20/30secPct
-// (el nivel de servicio se mide sobre TODO lo que entro, no solo lo
-// contestado). Generica en `campo` para poder reusarse tal cual con
-// cualquier columna de nivel de servicio (20s hoy; WhatsApp usa su propia
-// version ponderada por TOTAL WHATSAPP, trafico-whatsapp-logic.js). Si
-// ninguna fila trae el campo, devuelve null (nunca 0 ni un numero
-// inventado) -- la tarjeta debe mostrar "—", no un dato que no existe.
+// Nivel de Atencion) a UN solo numero. Fase 163 (pedido de Edwin): el
+// PROMEDIO SIMPLE de las filas (skill-dia) que traen el dato -- el mismo
+// criterio que traficoAgregar usa para serviceLevel10/20/30secPct; las
+// filas sin dato no cuentan y las de 0 % si. Generica en `campo` (20s hoy;
+// WhatsApp usa su propia version, trafico-whatsapp-logic.js). Si ninguna
+// fila trae el campo, devuelve null (nunca 0 ni un numero inventado) -- la
+// tarjeta debe mostrar "—", no un dato que no existe.
 function traficoServiceLevelPromedioPeriodo(filas, campo) {
-  var suma = 0, peso = 0;
+  var suma = 0, n = 0;
   (filas || []).forEach(function (f) {
-    var w = Number(f.totalLlamadas) || 0;
-    if (f[campo] != null && w > 0) { suma += f[campo] * w; peso += w; }
+    if (f[campo] != null) { suma += Number(f[campo]); n++; }
   });
-  return peso > 0 ? Math.round((suma / peso) * 100) / 100 : null;
+  return n > 0 ? Math.round((suma / n) * 100) / 100 : null;
 }
 
 // ── Filtro "Skill": desplegable principal + comparador (Fase 60/65) ─────

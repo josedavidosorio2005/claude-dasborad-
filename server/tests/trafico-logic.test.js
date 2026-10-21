@@ -621,16 +621,16 @@ test('traficoAhtPromedioPeriodo: coincide EXACTO con traficoAgregar (granularida
 });
 
 // ── traficoServiceLevelPromedioPeriodo (Fase 87, tema A: tarjeta "Nivel de
-// Servicio" siempre visible en "Resumen") -- mismo criterio de peso que
-// traficoAgregar usa para serviceLevel10/20/30secPct (ponderado por TOTAL
-// LLAMADAS, no por contestadas -- a diferencia de traficoAhtPromedioPeriodo).
-test('traficoServiceLevelPromedioPeriodo: ponderado por TOTAL LLAMADAS (no un promedio simple de los %)', () => {
+// Servicio" siempre visible en "Resumen") -- mismo criterio que
+// traficoAgregar usa para serviceLevel10/20/30secPct. Fase 163 (pedido de
+// Edwin): promedio SIMPLE de las filas, ya no ponderado por llamadas.
+test('traficoServiceLevelPromedioPeriodo: promedio simple de las filas (Fase 163), no ponderado por llamadas', () => {
   const filas = [
     { totalLlamadas: 100, serviceLevel20secPct: 80 },
     { totalLlamadas: 300, serviceLevel20secPct: 90 },
   ];
-  // Simple (80+90)/2=85 seria incorrecto. Ponderado: (100*80+300*90)/400 = 87.5
-  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 87.5);
+  // Antes, ponderado: (100*80+300*90)/400 = 87.5. Ahora simple: (80+90)/2 = 85.
+  assert.equal(traficoServiceLevelPromedioPeriodo(filas, 'serviceLevel20secPct'), 85);
 });
 
 test('traficoServiceLevelPromedioPeriodo: filas sin el campo se ignoran, no cuentan como 0', () => {
