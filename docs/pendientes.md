@@ -245,17 +245,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
-- **Caché de las opciones de filtro: que no se vacíe con cualquier
-  escritura** (mejora futura, Fase 158/160). Hoy la caché de las rutas
-  `/opciones` (`server/cache-opciones.js`) se vacía con CUALQUIER
-  escritura en la base, incluidos los inicios de sesión y los registros de
-  auditoría: es correcto (nunca muestra datos viejos), pero con mucha gente
-  entrando a la vez acierta menos. Mejora: vaciarla solo cuando se escribe
-  en tablas de datos (cargas, eliminar, deshacer, borrado por rango,
-  remapeo de skills). Costo: medio; riesgo: que una ruta de escritura nueva
-  olvide avisar — necesita una prueba que recorra todas las tablas de
-  datos. Anotado 21/10/2026.
-
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
   con sesión y solo conteos, cuántas filas tienen la hora llena por

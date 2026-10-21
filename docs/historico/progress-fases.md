@@ -15333,3 +15333,49 @@ Producción solo lectura; no se cargó nada.
   21/10).
 - **Pendiente:** primera carga de Aurora y HLM (lo que falta de Edwin, en
   `docs/pendientes.md`, sección 2).
+
+## Fase 161 — Rendimiento antes de la carga con Edwin (v1.59.2 → v1.59.4, 2026-10-21)
+
+Con plazo: todo en producción antes de las 13:45 (a las 14:00 se cargaba
+con Edwin). Un merge a la vez, cada uno con su deploy y `/api/health`.
+
+- **Guía de carga** para la reunión (fuera del repo): qué reporte de
+  Wolkvox va en qué carga del Centro por cliente, las skills a asignar
+  antes (Panel admin → Metas Calidad → Registrar skill nuevo; el código no
+  siembra ninguna), qué debe mostrar la vista previa y qué revisar después.
+- **#492 (v1.59.2):** la caché de opciones se vacía solo cuando cambian
+  datos. Tabla `datos_version` y triggers `AFTER INSERT/UPDATE/DELETE` en
+  cada tabla de datos (no en `users`, `historial`, `tokens_revocados`,
+  `schema_migrations` ni `seed_demo_marcas`); `asegurarDatosVersion()` corre
+  en cada arranque, después de todas las migraciones (`IF NOT EXISTS`). La
+  firma de la caché es ese contador. Prueba
+  `fase161-cache-datos-version.test.js`: cargar, eliminar, deshacer y el
+  borrado por rango invalidan; iniciar y cerrar sesión no.
+- **#493 (v1.59.3):** índices (`fase161_indices_v1`) tras `EXPLAIN QUERY
+  PLAN` sobre la base sintética de 12 meses: cubrientes para Agendas por
+  línea, Tipificación por tipo de interacción, Llamadas de salida y únicas;
+  por campaña para "Última actualización" (`ORDER BY id DESC LIMIT 1` sin
+  ordenar). Agendas por línea 1213 → 211 ms; Última actualización 518 →
+  18 ms; Tipificación resumen de salida 467 → 4 ms. Encuestas no mejoraba:
+  no se tocó. Se ajustó la prueba de orden de migraciones de Aurora para
+  admitir esta (solo índices).
+- **#494 (v1.59.4):** caché de las respuestas de datos
+  (`server/cache-datos.js`): solo GET de una lista de rutas de datos y solo
+  respuestas 200; clave por usuario (ruta + query ordenada + id, rol,
+  permisos, versión del token y estado); misma invalidación; sin sesión
+  vigente, suspendido o con cambio de clave pendiente no se usa.
+  `CACHE_DATOS=0` la apaga. Foto por rol (ADMIN, CLIENTES_DASH, CALIDAD,
+  SUPERVISOR, REPORTES), 533 rutas, dos pasadas, con y sin caché: 0
+  diferencias; y los 5 roles intercalados en el mismo servidor con la caché
+  encendida: 5330 comparaciones, 0 diferencias.
+- **Medición** (equipo local, no el servidor; base sintética; plan US$7 en
+  ráfaga; las dos series seguidas con el equipo libre): p95 de lectura con 5
+  usuarios 3,6 s → 0,51 s; con 20 usuarios 24,9 s → 0,57 s; 0 errores.
+  Recorrido secuencial de 89 GET: 8,7 s → 2,3 s.
+- **Verificación:** en cada PR, prueba que falla antes y pasa después,
+  suite verde (2004 → 2014), foto sin diferencias, `npm audit` 0, CI verde,
+  merge con `--match-head-commit`, deploy (paso `vigente`: "es la cabeza de
+  main") y `/api/health`: 1.59.2, 1.59.3 y 1.59.4 (12:40).
+- **Pendiente:** el `CLAUDE.md` todavía dice, en "Alcance del proyecto",
+  que Aurora y HLM no existen (se volvieron a crear en las Fases 153 y
+  160); queda para que el usuario decida el texto.
