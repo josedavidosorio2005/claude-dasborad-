@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.59.0 — Octubre 2026
+
+**Fase 160: Hospital La María, listo para su primera carga.**
+
+- Se crea el cliente "HOSPITAL LA MARIA" (uno solo), igual que Clínica
+  Aurora: Tráfico de Llamadas, Tráfico de WhatsApp y Calidad, todas ocultas
+  y sin datos. Cada pestaña aparece sola cuando se cargan sus datos.
+- Por ahora solo lo ve el administrador; los permisos se dan aparte. No se
+  crearon usuarios. Las sedes (Sede 33 / Castilla) quedan por definir.
+- ORLANT, MOBILIZE y Clínica Aurora no cambian.
+
 ## v1.58.2 — Octubre 2026
 
 **Fase 160: Clínica Aurora ya puede cargar Flujo de WhatsApp.**

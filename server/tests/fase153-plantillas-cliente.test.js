@@ -69,13 +69,13 @@ test('rechaza modulos desconocidos y sub-vistas sin su modulo', () => {
   assert.throws(() => P.generarLayout({ nombre: '', modulos: [] }), /Falta el nombre/);
 });
 
-test('generar no escribe en la base ni crea clientes (HLM sigue sin existir)', () => {
+test('generar no escribe en la base ni crea clientes', () => {
   const antes = db.prepare('SELECT COUNT(*) AS n FROM dashboards_config').get().n;
-  P.generarLayout({ nombre: 'HOSPITAL LA MARIA', modulos: P.BASE_CONTACT_CENTER });
+  P.generarLayout({ nombre: 'CLIENTE DE PRUEBA F153', modulos: P.BASE_CONTACT_CENTER });
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM dashboards_config').get().n, antes);
-  // Fase 153 (P3): CLINICA AURORA existe, pero la crea su migracion
-  // (fase153-crear-aurora.test.js), nunca generarLayout.
-  for (const c of ['HOSPITAL LA MARIA']) {
+  // Fase 153 (P3) / Fase 160: CLINICA AURORA y HOSPITAL LA MARIA existen,
+  // pero las crean sus migraciones, nunca generarLayout.
+  for (const c of ['CLIENTE DE PRUEBA F153']) {
     assert.equal(db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(c), undefined, c);
     assert.equal(db.prepare('SELECT 1 FROM clientes_registro WHERE nombre = ?').get(c), undefined, c);
   }

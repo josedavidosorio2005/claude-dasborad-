@@ -41,9 +41,9 @@ test('el respaldo del navegador es igual a la semilla del servidor', () => {
 test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(derivarListasRegistro(REGISTRO_CLIENTES))), ANTES);
   // Y con el registro real de la base (lo que recibe el navegador).
-  // Fase 160: en la base tambien esta Aurora (Flujo de WhatsApp, sin el resto de ORLANT).
+  // Fase 160: en la base tambien estan Aurora y HLM (Flujo de WhatsApp, sin el resto de ORLANT).
   const conBase = JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db))));
-  assert.deepEqual(conBase.traficoWhatsapp, ['ORLANT', 'CLINICA AURORA']);
+  assert.deepEqual(conBase.traficoWhatsapp, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
   assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'] }), ANTES);
 });
 
@@ -58,7 +58,7 @@ test('GET /api/dashboard/clientes trae el registro (modulos, parametros, logo)',
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set({ Authorization: 'Bearer ' + t });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA']); // Fase 153 (P3)
+  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']); // Fase 153 (P3) + Fase 160
   r.body.registro.forEach((c) => assert.deepEqual(Object.keys(c).sort(), ['logo', 'modulos', 'nombre', 'parametros']));
 });
 

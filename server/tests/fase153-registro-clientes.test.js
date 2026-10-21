@@ -22,7 +22,8 @@ const ANTES = ['ORLANT', 'MOBILIZE'];
 // migracion (fase153-crear-aurora.test.js), al final de las listas. Lo de
 // ORLANT y MOBILIZE sigue identico.
 const AURORA = 'CLINICA AURORA';
-const CON_AURORA = ANTES.concat([AURORA]);
+// Fase 160: + HOSPITAL LA MARIA, por su propia migracion (fase160-crear-hlm.test.js).
+const CON_AURORA = ANTES.concat([AURORA, 'HOSPITAL LA MARIA']);
 
 function listaDeConstants(nombre) {
   const m = leer('constants.js').match(new RegExp('var ' + nombre + " = \\[([^\\]]*)\\];"));
@@ -78,7 +79,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set(auth(t));
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'MOBILIZE', 'ORLANT']);
+  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
   assert.deepEqual(r.body.listaClientes, CON_AURORA);
   assert.deepEqual(r.body.campanasCalidad, CON_AURORA);
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);

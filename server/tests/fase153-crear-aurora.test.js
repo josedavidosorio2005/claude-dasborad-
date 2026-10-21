@@ -25,7 +25,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
   const iAur = orden.indexOf('fase153_crear_clinica_aurora_v1');
   assert.ok(i134 !== -1 && iAur > i134, 'la creacion corre despues del borrado de la Fase 134');
   // Despues de Aurora solo pueden venir migraciones de fases posteriores que no la tocan.
-  const POSTERIORES = ['fase155_pct_atencion_abandono_v1'];
+  const POSTERIORES = ['fase155_pct_atencion_abandono_v1', 'fase160_crear_hospital_la_maria_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -62,7 +62,8 @@ test('sin plantilla de Calidad (no se inventan items) y sin usuarios ni permisos
 });
 
 test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards iguales a la foto', () => {
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA);
+  // Fase 160: HLM se prueba en fase160-crear-hlm.test.js.
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA');
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
   for (const c of ['ORLANT', 'MOBILIZE']) {
@@ -71,7 +72,7 @@ test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards igu
     assert.equal(JSON.stringify(actual), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
   // Aurora va despues de los dos en las listas.
-  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA]);
+  assert.deepEqual(reg.listaClientes(db).slice(0, 3), ['ORLANT', 'MOBILIZE', AURORA]);
 });
 
 test('idempotente: correrla otra vez no duplica ni pisa un cambio del admin', () => {
@@ -111,7 +112,7 @@ test('el rol cliente (con acceso a TODOS los clientes de antes) no ve Aurora en 
   assert.deepEqual(dashClientesVisibles(lista, u, false), ['ORLANT', 'MOBILIZE']);
   const ta = await tokenFor('admin', MASTER_PASSWORD);
   const listaAdmin = (await request(app).get('/api/dashboard/clientes').set(auth(ta))).body.listaClientes;
-  assert.deepEqual(dashClientesVisibles(listaAdmin, null, true), ['ORLANT', 'MOBILIZE', AURORA], 'el admin completo si la ve');
+  assert.deepEqual(dashClientesVisibles(listaAdmin, null, true).slice(0, 3), ['ORLANT', 'MOBILIZE', AURORA], 'el admin completo si la ve');
 });
 
 test('tablero: Flujo de Llamadas/WhatsApp se destapan solos al tener datos; sin pestanas visibles sale un aviso', () => {
