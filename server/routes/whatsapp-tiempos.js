@@ -6,6 +6,8 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
@@ -28,7 +30,7 @@ router.get(
   validate(schemas.whatsappTiemposOpcionesQuery, 'query'),
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    res.json(whatsappTiemposOpciones(db, req.query.campana));
+    res.json(opcionesConCache(db, JSON.stringify(['whatsapp-tiempos', req.query.campana]), () => whatsappTiemposOpciones(db, req.query.campana)));
   })
 );
 

@@ -11,6 +11,8 @@
 // despues de routes/calidad.
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
@@ -31,7 +33,7 @@ router.get(
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(agendasOpciones(db, campana));
+    res.json(opcionesConCache(db, JSON.stringify(['agendas', campana]), () => agendasOpciones(db, campana)));
   })
 );
 

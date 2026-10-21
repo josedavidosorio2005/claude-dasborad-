@@ -10,6 +10,8 @@
 const path = require('path');
 const express = require('express');
 const db = require('../db');
+// Fase 158: cache de /opciones (ver cache-opciones.js).
+const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
@@ -61,7 +63,8 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(llamadasUnicasOpciones(db, req.query.campana, { incluirAgentes: puedeVerAsesores(req.actor, req.query.campana) }));
+    const incluirAgentes = puedeVerAsesores(req.actor, req.query.campana);
+    res.json(opcionesConCache(db, JSON.stringify(['llamadas-unicas', req.query.campana, incluirAgentes]), () => llamadasUnicasOpciones(db, req.query.campana, { incluirAgentes })));
   })
 );
 

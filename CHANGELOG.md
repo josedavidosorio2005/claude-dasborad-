@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.59.1 — Octubre 2026
+
+**Fase 158: dashboards más rápidos.**
+
+- Los filtros de cada pestaña (meses, asesores, skills, sedes...) ahora
+  abren más rápido: la plataforma recuerda esas listas y solo las vuelve a
+  calcular cuando se carga, se elimina o se deshace algo. Los números de los
+  dashboards no cambian.
+
 ## v1.59.0 — Octubre 2026
 
 **Fase 160: Hospital La María, listo para su primera carga.**
