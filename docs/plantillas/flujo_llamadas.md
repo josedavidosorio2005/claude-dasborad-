@@ -20,21 +20,19 @@ Wolkvox: reporte de la cola por skill y por día (hoja "HistQueue<fecha>"; ORLAN
 
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
-| SKILL_NAME | Sí | Línea o skill de Wolkvox (Mobilize: "TIPO DE LINEA"). | TIPO DE LINEA |
-| DATE | Sí | Día (Mobilize: "DÍA"). | DÍA, DIA |
-| TOTAL LLAMADAS | Sí | Llamadas que entraron a la cola ese día (Mobilize: "LLAMADAS INGRESADAS"). | LLAMADAS INGRESADAS |
-| LLAMADAS CONTESTADAS | Sí | Llamadas atendidas. |  |
-| LLAMADAS ABANDONADAS | No | Llamadas que colgaron antes de ser atendidas. |  |
-| SERVICE_LEVEL_10SEC | No | % atendidas en 10 s. |  |
-| SERVICE_LEVEL_20SEC | No | % atendidas en 20 s (Mobilize: "NIVEL DE SERVICIO 80 - 20"). | NIVEL DE SERVICIO 80 - 20 |
+| SKILL_NAME | Sí | Línea o skill de Wolkvox. | TIPO DE LINEA |
+| DATE | Sí | Día. | DÍA, DIA |
+| INBOUND_CALLS | Sí | Llamadas que entraron a la cola ese día (ingresadas). | TOTAL LLAMADAS, LLAMADAS INGRESADAS |
+| ANSWER_CALLS | Sí | Llamadas atendidas. | LLAMADAS CONTESTADAS |
+| ABANDON_CALLS | No | Llamadas que colgaron antes de ser atendidas. | LLAMADAS ABANDONADAS |
+| SERVICE_LEVEL_10SEC | No | % atendidas en 10 s. Puede venir como texto ("66.67 %"). |  |
+| SERVICE_LEVEL_20SEC | No | % atendidas en 20 s (nivel de servicio 80 - 20). | NIVEL DE SERVICIO 80 - 20 |
 | SERVICE_LEVEL_30SEC | No | % atendidas en 30 s. |  |
 | ABANDON | No | % de abandono que reporta Wolkvox. Se deja como viene: el sistema no la usa (calcula la tasa de abandono con las llamadas). |  |
-| ASA | No | Tiempo promedio de respuesta (segundos o mm:ss). |  |
+| ASA | No | Tiempo promedio de respuesta (segundos, también como texto "11.00"). |  |
 | ATA | No | Tiempo promedio hasta el abandono. |  |
-| WAIT_TIME | No | Tiempo de espera. |  |
-| AHT | No | Tiempo promedio de atención. |  |
-| NIVEL DE ATENCION | No | No hace falta llenarla: el sistema la calcula (contestadas ÷ ingresadas). Si viene llena, no se usa. |  |
-| TASA DE ABNDONO | No | No hace falta llenarla: el sistema la calcula (abandonadas ÷ ingresadas). Si viene llena, no se usa. (Así viene escrito de Wolkvox; Mobilize: "% ABANDONO"). | % ABANDONO |
+| WAIT_TIME | No | Tiempo de espera (hora de Excel o segundos). |  |
+| AHT | No | Tiempo promedio de atención (hora de Excel o segundos). "----" o vacío = sin dato, nunca 0. |  |
 
 ## Cómo detecta el encabezado
 
@@ -50,13 +48,14 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ## Ejemplo (inventado)
 
-| SKILL_NAME | DATE | TOTAL LLAMADAS | LLAMADAS CONTESTADAS | LLAMADAS ABANDONADAS | SERVICE_LEVEL_10SEC | SERVICE_LEVEL_20SEC | SERVICE_LEVEL_30SEC | ABANDON | ASA | ATA | WAIT_TIME | AHT | NIVEL DE ATENCION | TASA DE ABNDONO |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| SKILL SAC | 2026-08-01 | 120 | 112 | 8 | 0.85 | 0.9 | 0.93 | 0.07 | 12 | 30 | 15 | 210 |  |  |
+| SKILL_NAME | DATE | INBOUND_CALLS | ANSWER_CALLS | ABANDON_CALLS | SERVICE_LEVEL_10SEC | SERVICE_LEVEL_20SEC | SERVICE_LEVEL_30SEC | ABANDON | ASA | ATA | WAIT_TIME | AHT |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| SKILL SAC | 2026-08-01 | 120 | 112 | 8 | 66.67 % | 80.00 % | 93.00 % | 0.00% | 11.00 | 30.00 | 0:00:15 | 0:03:30 |
 
 ## Notas
 
-- Es el mismo lector para los dos clientes: Mobilize trae otros nombres de columna (TIPO DE LINEA, DÍA, LLAMADAS INGRESADAS, NIVEL DE SERVICIO 80 - 20, % ABANDONO) y el sistema los acepta como alias.
+- Es el mismo lector para los dos clientes y el mismo reporte de Wolkvox (SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS, SERVICE_LEVEL_10SEC, SERVICE_LEVEL_20SEC, SERVICE_LEVEL_30SEC, ABANDON, ASA, ATA, WAIT_TIME, AHT). Los nombres de plantillas anteriores (TOTAL LLAMADAS, LLAMADAS INGRESADAS, TIPO DE LINEA, DÍA, NIVEL DE SERVICIO 80 - 20, % ABANDONO…) se siguen aceptando como alias.
+- La hoja se reconoce por sus columnas, no por su nombre ("HistQueue<fecha>", "LLAMADAS", "DATA" u otro).
 - Antes de la primera carga de un cliente hay que asignar sus skills a la campaña (pantalla Tráfico → skills). Un skill sin asignar queda en "SIN_ASIGNAR" y no se ve en ningún tablero.
 - Una fila de total ("TOTAL", "TOTAL GENERAL") nunca se suma como si fuera una línea.
 - Un archivo puede traer varios días o meses; el período es el de las fechas que trae.

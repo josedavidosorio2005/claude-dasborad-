@@ -19,6 +19,7 @@ const leer = (r) => fs.readFileSync(path.join(PUB, r), 'utf8');
 // Las listas fijas tal como estaban antes de la Fase 153.
 const ANTES = {
   traficoUnificado: ['ORLANT'], // CARGAS_CLIENTES_TRAFICO_UNIFICADO
+  traficoWhatsapp: ['ORLANT'], // Fase 160: Trafico en 2 hojas por tener Flujo de WhatsApp
   tipificacionExtra: ['MOBILIZE'], // CARGAS_CLIENTES_TIPIFICACION_EXTRA
   llamadasUnicas: ['MOBILIZE'], // CARGAS_CLIENTES_LLAMADAS_UNICAS
   llamadasSalida: ['MOBILIZE'], // CARGAS_CLIENTES_LLAMADAS_SALIDA
@@ -40,7 +41,10 @@ test('el respaldo del navegador es igual a la semilla del servidor', () => {
 test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(derivarListasRegistro(REGISTRO_CLIENTES))), ANTES);
   // Y con el registro real de la base (lo que recibe el navegador).
-  assert.deepEqual(JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db)))), ANTES);
+  // Fase 160: en la base tambien estan Aurora y HLM (Flujo de WhatsApp, sin el resto de ORLANT).
+  const conBase = JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db))));
+  assert.deepEqual(conBase.traficoWhatsapp, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
+  assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'] }), ANTES);
 });
 
 test('servidor: el cliente solo ve nombres de asesor en las campanas marcadas', () => {
@@ -54,7 +58,7 @@ test('GET /api/dashboard/clientes trae el registro (modulos, parametros, logo)',
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set({ Authorization: 'Bearer ' + t });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA']); // Fase 153 (P3)
+  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']); // Fase 153 (P3) + Fase 160
   r.body.registro.forEach((c) => assert.deepEqual(Object.keys(c).sort(), ['logo', 'modulos', 'nombre', 'parametros']));
 });
 

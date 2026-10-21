@@ -24,22 +24,26 @@ const CARGAS = [
     archivo: 'PLANTILLA_FLUJO_LLAMADAS.xlsx',
     hoja: 'LLAMADAS',
     fuente: { js: 'trafico-logic.js', variable: 'TRAFICO_COLUMNAS' },
+    // Fase 159: la hoja de datos lleva EXACTAMENTE los 13 encabezados del
+    // reporte nativo de la cola de Wolkvox, en su orden (el archivo que se
+    // descarga se sube tal cual). Los nombres viejos siguen como alias.
+    usarAlias: { 'TOTAL LLAMADAS': 'INBOUND_CALLS', 'LLAMADAS CONTESTADAS': 'ANSWER_CALLS', 'LLAMADAS ABANDONADAS': 'ABANDON_CALLS' },
+    soloColumnas: ['SKILL_NAME', 'DATE', 'TOTAL LLAMADAS', 'LLAMADAS CONTESTADAS', 'LLAMADAS ABANDONADAS', 'SERVICE_LEVEL_10SEC',
+      'SERVICE_LEVEL_20SEC', 'SERVICE_LEVEL_30SEC', 'ABANDON', 'ASA', 'ATA', 'WAIT_TIME', 'AHT'],
     columnas: {
-      SKILL_NAME: ['Línea o skill de Wolkvox (Mobilize: "TIPO DE LINEA").', 'SKILL SAC'],
-      DATE: ['Día (Mobilize: "DÍA").', '2026-08-01'],
-      'TOTAL LLAMADAS': ['Llamadas que entraron a la cola ese día (Mobilize: "LLAMADAS INGRESADAS").', 120],
+      SKILL_NAME: ['Línea o skill de Wolkvox.', 'SKILL SAC'],
+      DATE: ['Día.', '2026-08-01'],
+      'TOTAL LLAMADAS': ['Llamadas que entraron a la cola ese día (ingresadas).', 120],
       'LLAMADAS CONTESTADAS': ['Llamadas atendidas.', 112],
       'LLAMADAS ABANDONADAS': ['Llamadas que colgaron antes de ser atendidas.', 8],
-      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s.', 0.85],
-      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s (Mobilize: "NIVEL DE SERVICIO 80 - 20").', 0.9],
-      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', 0.93],
-      ABANDON: ['% de abandono que reporta Wolkvox. Se deja como viene: el sistema no la usa (calcula la tasa de abandono con las llamadas).', 0.07],
-      ASA: ['Tiempo promedio de respuesta (segundos o mm:ss).', 12],
-      ATA: ['Tiempo promedio hasta el abandono.', 30],
-      WAIT_TIME: ['Tiempo de espera.', 15],
-      AHT: ['Tiempo promedio de atención.', 210],
-      'NIVEL DE ATENCION': ['No hace falta llenarla: el sistema la calcula (contestadas ÷ ingresadas). Si viene llena, no se usa.', ''],
-      'TASA DE ABNDONO': ['No hace falta llenarla: el sistema la calcula (abandonadas ÷ ingresadas). Si viene llena, no se usa. (Así viene escrito de Wolkvox; Mobilize: "% ABANDONO").', ''],
+      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s. Puede venir como texto ("66.67 %").', '66.67 %'],
+      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s (nivel de servicio 80 - 20).', '80.00 %'],
+      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', '93.00 %'],
+      ABANDON: ['% de abandono que reporta Wolkvox. Se deja como viene: el sistema no la usa (calcula la tasa de abandono con las llamadas).', '0.00%'],
+      ASA: ['Tiempo promedio de respuesta (segundos, también como texto "11.00").', '11.00'],
+      ATA: ['Tiempo promedio hasta el abandono.', '30.00'],
+      WAIT_TIME: ['Tiempo de espera (hora de Excel o segundos).', '0:00:15'],
+      AHT: ['Tiempo promedio de atención (hora de Excel o segundos). "----" o vacío = sin dato, nunca 0.', '0:03:30'],
     },
   },
   {
@@ -120,13 +124,16 @@ const CARGAS = [
       'TOTAL WHATSAPP': ['Conversaciones que entraron.', 900],
       'WHATSAPP CONTESTADOS': ['Conversaciones atendidas.', 870],
       'WHATSAPP ABANDONADOS': ['Conversaciones sin atender.', 30],
-      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s.', 0.4],
-      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s.', 0.5],
-      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s.', 0.6],
-      SERVICE_LEVEL_5MIN: ['% atendidas en 5 min.', 0.9],
-      ASA: ['Tiempo promedio de respuesta.', 60],
-      ATA: ['Tiempo promedio hasta el abandono.', 300],
-      AHT: ['Tiempo promedio de atención.', 400],
+      // Fase 160: ejemplos en el formato que el lector acepta sin dudas (un
+      // 0.4 sin formato de % queda como dudoso, y un AHT en segundos se lee
+      // como dias y la carga se rechaza).
+      SERVICE_LEVEL_10SEC: ['% atendidas en 10 s. Como porcentaje ("40 %" o celda con formato %).', '40.00 %'],
+      SERVICE_LEVEL_20SEC: ['% atendidas en 20 s. Como porcentaje.', '50.00 %'],
+      SERVICE_LEVEL_30SEC: ['% atendidas en 30 s. Como porcentaje.', '60.00 %'],
+      SERVICE_LEVEL_5MIN: ['% atendidas en 5 min. Como porcentaje.', '90.00 %'],
+      ASA: ['Tiempo promedio de respuesta, en segundos.', 60],
+      ATA: ['Tiempo promedio hasta el abandono, en segundos.', 300],
+      AHT: ['Tiempo promedio de atención, como hora de Excel (h:mm:ss). No en segundos: 400 se leería como 400 días y la carga se rechaza.', '0:06:40'],
     },
   },
   {
@@ -312,7 +319,10 @@ function columnasDeCarga(c, requerir) {
       label: col.label,
       encabezado: (c.usarAlias && c.usarAlias[col.label]) || col.label,
       obligatoria: !!col.obligatoria,
-      alias: [].concat(col.aliases || [], col.labelAlt || []),
+      // Si la plantilla usa un alias como encabezado, el nombre oficial pasa
+      // a la lista de "también se acepta como" (Fase 159).
+      alias: [].concat(c.usarAlias && c.usarAlias[col.label] ? [col.label] : [], col.aliases || [], col.labelAlt || [])
+        .filter((a) => a !== ((c.usarAlias && c.usarAlias[col.label]) || col.label)),
       descripcion: (c.columnas[col.label] || [''])[0],
       ejemplo: (c.columnas[col.label] || [])[1],
     }));

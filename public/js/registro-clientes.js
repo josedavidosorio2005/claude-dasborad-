@@ -40,6 +40,11 @@ function _registroParam(c, p) { return (c.parametros || {})[p]; }
 //  - tipificacionExtra: Tipificacion por el CDR de Wolkvox, para quien NO
 //    usa la plantilla de 2 hojas (ahi la Tipificacion viene incluida).
 //  - llamadasUnicas / llamadasSalida: el modulo llamadas_unicas trae las dos.
+//  - traficoWhatsapp (Fase 160): Trafico en 2 hojas (LLAMADAS/WHATSAPP) para
+//    todo cliente con Flujo de WhatsApp, aunque no use el resto de la
+//    plantilla de ORLANT (Clinica Aurora, Hospital La Maria). Sin esto, su
+//    unica hoja de Trafico solo reconocia columnas de voz y la plantilla de
+//    WhatsApp se rechazaba ("No se encontro la hoja DATA").
 function derivarListasRegistro(registro) {
   var r = registro || [];
   function filtro(fn) { return r.filter(fn).map(function (c) { return c.nombre; }); }
@@ -51,6 +56,7 @@ function derivarListasRegistro(registro) {
   });
   return {
     traficoUnificado: filtro(function (c) { return _registroParam(c, 'traficoDosHojas') === true; }),
+    traficoWhatsapp: filtro(function (c) { return _registroParam(c, 'traficoDosHojas') === true || _registroTieneModulo(c, 'flujo_whatsapp'); }),
     tipificacionExtra: filtro(function (c) { return _registroTieneModulo(c, 'tipificacion') && _registroParam(c, 'traficoDosHojas') !== true; }),
     llamadasUnicas: filtro(function (c) { return _registroTieneModulo(c, 'llamadas_unicas'); }),
     llamadasSalida: filtro(function (c) { return _registroTieneModulo(c, 'llamadas_unicas'); }),

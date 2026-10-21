@@ -4,7 +4,7 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
-## v1.57.6 — Octubre 2026
+## v1.59.1 — Octubre 2026
 
 **Fase 158: dashboards más rápidos.**
 
@@ -12,6 +12,87 @@ sepan que hay nuevo, que se corrigio y que falta.
   abren más rápido: la plataforma recuerda esas listas y solo las vuelve a
   calcular cuando se carga, se elimina o se deshace algo. Los números de los
   dashboards no cambian.
+
+## v1.59.0 — Octubre 2026
+
+**Fase 160: Hospital La María, listo para su primera carga.**
+
+- Se crea el cliente "HOSPITAL LA MARIA" (uno solo), igual que Clínica
+  Aurora: Tráfico de Llamadas, Tráfico de WhatsApp y Calidad, todas ocultas
+  y sin datos. Cada pestaña aparece sola cuando se cargan sus datos.
+- Por ahora solo lo ve el administrador; los permisos se dan aparte. No se
+  crearon usuarios. Las sedes (Sede 33 / Castilla) quedan por definir.
+- ORLANT, MOBILIZE y Clínica Aurora no cambian.
+
+## v1.58.2 — Octubre 2026
+
+**Fase 160: Clínica Aurora ya puede cargar Flujo de WhatsApp.**
+
+- Al cargar la plantilla de Flujo de WhatsApp para Clínica Aurora salía
+  "No se encontró la hoja DATA" y la carga no entraba. Ahora Aurora (y
+  todo cliente con Flujo de WhatsApp) usa la misma plantilla que ORLANT.
+- Después de cargar, sus pestañas de Tráfico de Llamadas y de WhatsApp
+  aparecen solas, con todas sus gráficas.
+- ORLANT y Mobilize no cambian. Los números de los dashboards no cambian.
+
+## v1.58.1 — Octubre 2026
+
+**Fase 160: ejemplos correctos en la plantilla de Flujo de WhatsApp.**
+
+- Los porcentajes de ejemplo ahora van como "40.00 %" y el AHT como hora
+  de Excel (0:06:40). Antes, quien seguía el ejemplo (AHT 400) veía la
+  carga rechazada, porque 400 se lee como 400 días.
+- ASA y ATA siguen en segundos. Los números de los dashboards no cambian.
+
+## v1.58.0 — Octubre 2026
+
+**Fase 160: ASA y ATA en dos gráficas.**
+
+- En Flujo de Llamadas (Mobilize y ORLANT), la sub-pestaña "ASA y ATA"
+  muestra dos gráficas, una debajo de la otra: ASA (tiempo promedio de
+  respuesta) arriba y ATA (tiempo promedio de abandono) abajo.
+- Mismos datos y mismo estilo de antes; cada gráfica tiene su "Ver datos".
+- WhatsApp no cambia. Los números de los dashboards no cambian.
+
+## v1.57.8 — Octubre 2026
+
+**Fase 159: pantalla de subida más clara (pedidos de Edwin).**
+
+- El cliente elegido se ve resaltado con color.
+- Si entras desde el Centro de cargas, el cliente y el mes quedan fijos: no
+  se pueden cambiar en esa pantalla. Para otro mes o cliente, vuelve al Centro.
+- Se quitó el botón "Pantalla anterior" del Centro de cargas, porque no
+  funcionaba.
+- Los números de los dashboards no cambian.
+
+## v1.57.7 — Octubre 2026
+
+**Fase 159: la plantilla de Flujo de Llamadas es igual al reporte de Wolkvox.**
+
+- La hoja de datos de la plantilla trae exactamente los encabezados del
+  reporte de la cola que se descarga de Wolkvox, en el mismo orden:
+  SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS,
+  SERVICE_LEVEL_10SEC, SERVICE_LEVEL_20SEC, SERVICE_LEVEL_30SEC, ABANDON,
+  ASA, ATA, WAIT_TIME y AHT.
+- La ficha y las instrucciones de la plantilla dicen lo mismo. Los nombres
+  de las plantillas anteriores se siguen aceptando.
+- Los números de los dashboards no cambian.
+
+## v1.57.6 — Octubre 2026
+
+**Fase 159: Flujo de Llamadas acepta el reporte de Wolkvox tal cual.**
+
+- El reporte de la cola que se descarga de Wolkvox (hoja "HistQueue…", con
+  las columnas INBOUND_CALLS, ANSWER_CALLS y ABANDON_CALLS) ahora se reconoce
+  sin renombrar la hoja ni cambiar encabezados. Antes salía "No se encontró
+  la hoja DATA". Vale igual para ORLANT, que usa el mismo reporte.
+- Si a un archivo le faltan columnas, el aviso dice cuáles faltan y qué
+  encabezados trae, en vez de hablar de la hoja DATA.
+- Antes de guardar, la vista previa muestra las fechas, los skills y las
+  llamadas ingresadas, contestadas y abandonadas, y avisa si el archivo no
+  trae el mes completo (los días que no vienen no se rellenan con cero).
+- Al subir desde el Centro de cargas, el cliente queda fijo durante la carga.
+- Los números de los dashboards no cambian.
 
 ## v1.57.5 — Octubre 2026
 

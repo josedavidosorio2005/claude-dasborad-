@@ -163,7 +163,12 @@ let db = require('../db');
 // ── (a) Tras la migracion solo existen ORLANT y MOBILIZE ──────────────────
 test('fase134_borrar_clientes_v1: dashboards_config queda con ORLANT y MOBILIZE (y la Aurora NUEVA de la Fase 153)', () => {
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
-  assert.deepEqual(clientes, ['CLINICA AURORA', 'MOBILIZE', 'ORLANT']);
+  // Fase 160: + la HLM NUEVA (fase160_crear_hospital_la_maria_v1), creada despues.
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
+  const hlm = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('HOSPITAL LA MARIA');
+  assert.equal(hlm.titulo, 'Dashboard Hospital La María', 'es la HLM nueva, no la vieja');
+  assert.deepEqual(JSON.parse(hlm.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
+  assert.equal(db.prepare('SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente = ?').get('HOSPITAL LA MARIA').c, 0, 'los datos de la HLM vieja no vuelven');
   // Fase 153 (P3): la Aurora vieja (sembrada arriba, sin pestanas) se borro;
   // la que queda es la nueva, creada DESPUES por fase153_crear_clinica_aurora_v1.
   const aurora = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('CLINICA AURORA');
@@ -228,7 +233,7 @@ test('fase134_borrar_clientes_v1: idempotente -- reabrir la base (segunda corrid
   db = require('../db');
 
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
-  assert.deepEqual(clientes, ['CLINICA AURORA', 'MOBILIZE', 'ORLANT']); // Fase 153 (P3): la Aurora nueva sigue
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']); // Fase 153/160: Aurora y HLM nuevas siguen
 
   const u = db.prepare('SELECT * FROM users WHERE user = ?').get('f134_solo_cartera');
   assert.ok(u, 'sigue sin borrarse en la segunda corrida');

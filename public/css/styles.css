@@ -355,6 +355,9 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    formularios es explicito: "una sola apariencia". */
 .ig input,.ig select{width:100%;padding:11px 14px;border:1.5px solid var(--c-border-control);border-radius:var(--r-sm);font-size:var(--fs-body-lg);color:var(--c-primary);outline:none;background:var(--c-surface-subtle);transition:border-color var(--dur-fast) var(--ease-out);}
 .ig input:focus,.ig select:focus{border-color:var(--c-primary-mid);background:var(--c-surface);}
+/* Fase 159: cliente (y mes, desde el Centro de cargas) elegidos en la pantalla de subida. */
+.ig select.carga-campo-elegido,.ig input.carga-campo-elegido{border:2px solid var(--c-primary-mid);background:var(--c-info-bg);color:var(--c-primary);font-weight:var(--fw-semibold);}
+.ig select.carga-campo-elegido:disabled,.ig input.carga-campo-elegido:disabled{opacity:1;cursor:not-allowed;-webkit-text-fill-color:var(--c-primary);}
 .pass-wrap{position:relative;}
 .pass-wrap input{padding-right:44px;}
 .btn-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--c-text-muted);font-size:var(--fs-body-lg);padding:0;line-height:1;}
