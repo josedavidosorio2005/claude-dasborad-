@@ -128,7 +128,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Llamadas Únicas de agosto de Mobilize: volver a cargar** (Fase 163).
+  Desde la v1.62.0 las filas sin asesor cuentan como abandonadas; en la
+  carga de agosto anterior se habían omitido. La hacen el usuario y Edwin
+  por la interfaz, con el archivo de Edwin.
 - **Primera carga de Clínica Aurora y Hospital La María** (Fase 160).
+  Fase 163 (22/10): HLM ya tiene el Flujo de agosto (cargado por el
+  usuario con Edwin, por la interfaz). Aurora sigue sin datos. Lo de abajo sigue abierto para lo que falta.
   Ambos tienen Tráfico de Llamadas y Tráfico de WhatsApp listos: las
   pestañas aparecen solas al cargar (probado de punta a punta en local).
   Falta de Edwin:

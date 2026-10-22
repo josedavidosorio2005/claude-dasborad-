@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.59.5` (ver `server/package.json`, expuesta en
+- **Versión**: `1.64.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -34,12 +34,13 @@ narrativo de cada fase, fase por fase, vive en
   6 modales unificados.
 - **Producción**: `https://sinco.inconexion.com.co` (único dominio
   desde la Fase 139, 13/10/2026).
-- **Foco actual**: **ORLANT y MOBILIZE** son los únicos clientes con
-  datos. **Clínica Aurora** (Fase 153) y **Hospital La María** (Fase
-  160, un solo cliente, sin sedes por ahora) existen sin datos, con
-  Tráfico de Llamadas, Tráfico de WhatsApp y Calidad ocultos, y solo los
-  ve el administrador; lo que falta para su primera carga está en
-  [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
+- **Foco actual**: **ORLANT y MOBILIZE** tienen datos reales.
+  **Hospital La María** (Fase 160, un solo cliente, sin sedes por ahora)
+  tiene desde la Fase 163 (22/10) su primera carga: el Flujo de agosto,
+  subido por el usuario con Edwin por la interfaz. **Clínica Aurora**
+  (Fase 153) sigue sin datos. Los dos solo los ve el administrador; lo
+  que falta está en [`docs/pendientes.md`](docs/pendientes.md) (sección
+  2). Desde la Fase 134 (2026-10-08), los otros 12 clientes (que tenían 0
   filas de datos reales, solo configuración de plantilla vacía) se
   borraron del todo (`fase134_borrar_clientes_v1`, `CLIENTES_LIST` en
   `server/db.js` quedó en `[ORLANT, MOBILIZE]`) — no quedan "en cero",
@@ -653,3 +654,4 @@ mismo orden):
 - Fase 161 — Rendimiento antes de la carga con Edwin: la caché de opciones se vacía solo cuando cambian datos (triggers + `datos_version`), índices para las consultas de datos más lentas y caché de respuestas de datos por usuario; foto por rol sin diferencias (v1.59.2 → v1.59.4, 2026-10-21)
 - Fase 160 — Tareas de Edwin para la primera carga: ASA y ATA en dos gráficas, ejemplos de la plantilla de WhatsApp, Aurora y HLM con Tráfico de WhatsApp en 2 hojas, Hospital La María creado (sin datos, solo admin), deploy que se salta si su commit ya no es la cabeza de main (v1.58.0 → v1.59.0, 2026-10-21)
 - Fase 162 — Tope total de memoria (64 MB, `CACHE_DATOS_MAX_MB`) en la caché de respuestas de datos, que saca las entradas más viejas; `CLAUDE.md` corregido: Clínica Aurora y Hospital La María sí existen (v1.59.5, 2026-10-21)
+- Fase 163 — Pedidos de Edwin del 21/10: la skill es por cliente y el Centro de cargas define el cliente; Llamadas de Salida con su plantilla (TIPO); Llamadas Únicas sin asesor = abandonada; nivel de servicio = promedio simple de SERVICE_LEVEL_20SEC; cada gráfica en su cuadro y un color por sección. Cargado por la interfaz: Flujo de agosto de HLM y Salida de agosto de Mobilize (v1.60.0 → v1.64.0, 2026-10-22)

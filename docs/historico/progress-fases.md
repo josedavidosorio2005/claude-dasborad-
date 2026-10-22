@@ -15406,3 +15406,59 @@ había terminado). Un merge a la vez, cada uno con su deploy y
   `--match-head-commit`; deploy de #496 con el paso `vigente` ("OK:
   057eba7 es la cabeza de main") y `/api/health` 1.59.5; después #497
   (`b49d673`), deploy correcto, sigue 1.59.5.
+
+## Fase 163 — Pedidos de Edwin del 21/10: skills por cliente, Salida con TIPO, Únicas con abandonadas, nivel de servicio y visual por sección (v1.60.0 → v1.64.0, 2026-10-21/22)
+
+Reunión con Edwin del 21/10. Cinco PRs, un merge a la vez y solo sin
+cargas en curso, cada uno con `--match-head-commit` (comparado antes con
+`git ls-remote`), su deploy y `/api/health`. Los PRs que cambian números
+del cliente (#502, #500) esperaron el OK explícito del usuario.
+
+- **#499 (v1.60.0, 21/10):** la skill es por cliente
+  (`trafico_skill_mapeo` con una fila por skill y cliente, migración
+  `fase163_skill_por_cliente_v1`). Desde el Centro de cargas el cliente lo
+  define el Centro y las skills nuevas se registran solas para ese
+  cliente, sin tocar a otro que tenga una skill con el mismo nombre.
+  Números con separador de miles ("1,871.35" / "1.871,35") se leen bien
+  (antes el ASA de HLM se perdía). Foto `main` contra la rama: 0
+  diferencias.
+- **#501 (v1.61.0, 21/10):** Llamadas de Salida con la plantilla de Edwin
+  (AGENT_NAME, DATE con hora, TELEPHONE, DESCRIPTION_COD_ACT, TIPO
+  Conectada/No conectada); "-" = Sin tipificación; el día en hora de
+  Colombia. La plantilla anterior se sigue aceptando.
+- **#502 (v1.62.0, 22/10):** Llamadas Únicas: el asesor no es
+  obligatorio y la fila sin asesor cuenta como abandonada; si en el
+  período no hay abandonadas, una sola tarjeta y una sola barra.
+- **#500 (v1.63.0, 22/10):** nivel de servicio = promedio simple de
+  SERVICE_LEVEL_20SEC de las filas (skill-día) del filtro, pedido de Edwin
+  (Mobilize agosto 88,24 %; ORLANT 3P agosto 85,19 %). La ayuda "?" de la
+  gráfica y de la tarjeta de Llamadas dice ahora "promedio simple"; AHT,
+  ASA y el nivel de servicio de WhatsApp siguen ponderados y su nota no
+  cambia. Prueba de la nota: falla antes, pasa después.
+- **#503 (v1.64.0, 22/10):** cada gráfica en su cuadro con título
+  (`gdGraficaHtml`, `public/js/secciones-logic.js`); color de acento por
+  sección (Llamadas `#1F5F99`/`#7CB7EA`, WhatsApp `#0B6E78`/`#5CC8D0`,
+  Salida `#7A3E9D`/`#C9A0F0`, claro/oscuro), solo en bordes, franjas y
+  puntos, nunca verde; contraste ≥ 4,5:1 contra los tres fondos en los dos
+  temas, medido en `fase163-visual-secciones.test.js`; punto de color en
+  la pestaña; ASA y ATA de WhatsApp en dos gráficas. Capturas antes y
+  después (base demo, septiembre 2026, ORLANT y MOBILIZE, Llamadas /
+  WhatsApp / Salida, 375 y 1440 px, claro y oscuro) fuera del repo: mismos
+  números, 0 errores de consola.
+- **Deploy de #500:** el primer intento falló en "Desplegar en la
+  instancia por SSH" con `dial tcp …:22: i/o timeout`; no llegó a
+  conectarse ni a ejecutar nada, el paso que cierra el puerto 22 sí corrió
+  y producción siguió sana en 1.62.0. Con OK del usuario se reintentó solo
+  el job fallido (`gh run rerun --failed`): salió bien y el cierre del
+  puerto 22 corrió al final. Igual en el deploy de #503.
+- **Salud del servidor (22/10, antes de cargar):** disco del sistema 12 %,
+  de datos 2 %, memoria 38 %; último respaldo 22/10 03:16 (11 h), servicio
+  `success`, subida a S3 OK; certificado con 77 días.
+- **Cargas reales (por la interfaz, el usuario con Edwin, 22/10):** Flujo
+  de agosto de Hospital La María y Llamadas de Salida de agosto de
+  Mobilize. No se verificaron cifras desde esta sesión.
+- **Verificación:** en cada PR suite verde (2028 → 2048), `npm audit` 0,
+  CI verde; `/api/health` 1.62.0, 1.63.0 y 1.64.0.
+- **Pendiente:** volver a cargar las Únicas de agosto de Mobilize (las
+  abandonadas se habían omitido antes de la v1.62.0); primera carga de
+  Clínica Aurora. Ver `docs/pendientes.md`.
