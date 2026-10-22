@@ -34,7 +34,7 @@ function gdClaseSeccion(seccion) {
 // por quien llama (puede traer la nota "?" de la grafica).
 function gdGraficaHtml(tituloHtml, contenidoHtml) {
   return '<section class="gd-grafica">' +
-    (tituloHtml ? '<h4 class="gd-grafica-titulo">' + tituloHtml + '</h4>' : '') +
+    (tituloHtml ? '<h3 class="gd-grafica-titulo">' + tituloHtml + '</h3>' : '') +
     contenidoHtml +
     '</section>';
 }

@@ -30,9 +30,9 @@ test('gdClaseSeccion: clase de la seccion o vacio', () => {
   assert.equal(S.gdClaseSeccion(null), '');
 });
 
-test('gdGraficaHtml: un cuadro con su titulo y el contenido adentro; sin titulo no pinta el h4', () => {
+test('gdGraficaHtml: un cuadro con su titulo y el contenido adentro; sin titulo no pinta el h3 (Fase 164: antes h4)', () => {
   assert.equal(S.gdGraficaHtml('ASA', '<canvas id="x"></canvas>'),
-    '<section class="gd-grafica"><h4 class="gd-grafica-titulo">ASA</h4><canvas id="x"></canvas></section>');
+    '<section class="gd-grafica"><h3 class="gd-grafica-titulo">ASA</h3><canvas id="x"></canvas></section>');
   assert.equal(S.gdGraficaHtml('', '<canvas></canvas>'), '<section class="gd-grafica"><canvas></canvas></section>');
 });
 
