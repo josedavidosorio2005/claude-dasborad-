@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.9 — Octubre 2026
+
+**Fase 164: porcentajes de las tortas sin montarse.**
+
+- En las tortas con muchas porciones (por ejemplo Tipificación), los
+  porcentajes de las porciones pequeñas quedaban uno encima del otro y no
+  se podían leer. Ahora las porciones de menos del 5 % no llevan el número
+  encima, y si dos números chocan se muestra solo uno.
+- El dato de cada porción sigue en la leyenda, al pasar el mouse y en la
+  tabla ("Ver datos"). Los números no cambian.
+
 ## v1.64.6 — Octubre 2026
 
 **Fase 164: botones más fáciles de tocar en el celular.**

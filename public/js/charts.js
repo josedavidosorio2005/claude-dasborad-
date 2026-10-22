@@ -307,7 +307,11 @@ function loFmt(o, unidad){
 // para poder reusarlo en otros modulos sin duplicar el patron.
 function loDatalabelsAuto(o, formatter){
   o.plugins = o.plugins || {};
-  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display:'auto' });
+  // Fase 164 (lote 2): si las opciones ya traen un filtro propio (ej. la
+  // torta, que esconde las porciones chicas), se respeta y se le suma 'auto'.
+  var previo = o.plugins.datalabels && o.plugins.datalabels.display;
+  var display = typeof previo === 'function' ? function(ctx){ return previo(ctx) ? 'auto' : false; } : 'auto';
+  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display:display });
   if(formatter) o.plugins.datalabels.formatter = formatter;
   return o;
 }
@@ -329,12 +333,25 @@ function _loPieDlEleccion(ctx){
 function _loPieDlColor(ctx){ return _loPieDlEleccion(ctx).color; }
 function _loPieDlHalo(ctx){ return _loPieDlEleccion(ctx).halo || 'transparent'; }
 function _loPieDlHaloAncho(ctx){ return _loPieDlEleccion(ctx).halo ? 3 : 0; }
+// Fase 164 (lote 2, visto en produccion a 375 px): las porciones de menos del
+// 5 % del total no llevan su "%" encima -- en una torta de 11 porciones las
+// de 3-5 % montaban sus etiquetas unas sobre otras. Las demas van con
+// 'auto' (el plugin esconde la que choque con otra), asi nunca se montan.
+// El dato sigue en la leyenda, el tooltip y la tabla ("Ver datos").
+var PIE_ETIQUETA_MIN_PCT = 5;
+function loPieMostrarEtiqueta(valor, datos){
+  var total = (datos || []).reduce(function(a, b){ return a + (Number(b) || 0); }, 0);
+  return total > 0 && (Number(valor) || 0) / total * 100 >= PIE_ETIQUETA_MIN_PCT;
+}
+function _loPieDlMostrar(ctx){
+  return loPieMostrarEtiqueta(ctx.dataset.data[ctx.dataIndex], ctx.dataset.data) ? 'auto' : false;
+}
 function loPie(t){
   return {responsive:true,maintainAspectRatio:false,
     plugins:{
       legend:{position:'right',labels:{font:{size:12},boxWidth:10,padding:4}},
       title:{display:!!t,text:t,font:{size:12},color:CD},
-      datalabels:{display:true,color:_loPieDlColor,textStrokeColor:_loPieDlHalo,textStrokeWidth:_loPieDlHaloAncho,font:{size:12,weight:'bold'}, formatter:_loPctDeTotal}
+      datalabels:{display:_loPieDlMostrar,color:_loPieDlColor,textStrokeColor:_loPieDlHalo,textStrokeWidth:_loPieDlHaloAncho,font:{size:12,weight:'bold'}, formatter:_loPctDeTotal}
     }};
 }
 // ═══════════════════════════════════════════════════════════
