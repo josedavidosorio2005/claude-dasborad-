@@ -1531,7 +1531,9 @@ function _gdRenderPanel(p, i){
     if(filtroTipoPie) _gdRenderFiltroBar(p, i, filtroTipoPie);
     var pr = _gdResolver(p.fuente, _gdExtraFiltroPanel(p, i));
     _gdChart(canvasId, { type:'doughnut',
-      data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: (pr.labels||[]).map(function(l){ return paletaColorPara(l); }) }] },
+      // Fase 164 (lote 2): sin colores repetidos dentro de la torta (cada
+      // porcion conserva su color propio salvo choque), igual que Tipificacion.
+      data:{ labels: pr.labels||[], datasets:[{ data: pr.values||[], backgroundColor: paletaColoresSinRepetir(pr.labels||[]) }] },
       options: loDatalabelsAuto(loPie()) });
     _gdRenderNotasPanel(p, i);
     return;

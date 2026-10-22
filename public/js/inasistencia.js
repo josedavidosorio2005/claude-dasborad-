@@ -361,11 +361,14 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
   var ordenadas = inasistenciaOrdenarBaseBaja(conPct, INASISTENCIA_BASE_BAJA_UMBRAL);
 
   var labels = ordenadas.map(function(f){ return textoFormatoNombre(f.especialidad) + (f.baseBaja ? ' *' : ''); });
-  var colores = ordenadas.map(function(f){ return paletaColorPara(f.especialidad); });
+  // Fase 164 (lote 2): una sola serie = un solo color y sin leyenda (como
+  // "Calidad por asesor", D-03); antes cada barra tenia un color distinto.
   var o = loPct(null);
+  o.plugins = o.plugins || {};
+  o.plugins.legend = { display:false };
   _gdChart('inasist-c-porespecialidad-'+i, {
     type: 'bar',
-    data: { labels: labels, datasets: [{ label: '% de inasistencia', data: ordenadas.map(function(f){ return f.pct; }), backgroundColor: colores, borderRadius: 3 }] },
+    data: { labels: labels, datasets: [{ label: '% de inasistencia', data: ordenadas.map(function(f){ return f.pct; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius: 3 }] },
     options: o,
   });
 

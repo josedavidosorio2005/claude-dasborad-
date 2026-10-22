@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.8 — Octubre 2026
+
+**Fase 164: gráficas por especialidad en un solo color.**
+
+- "Agendas por especialidad" e "Inasistencia por especialidad" pintaban
+  cada barra de un color distinto, y dos especialidades podían salir del
+  mismo color. Como cada barra es la misma medida, ahora todas van del
+  mismo color y sin leyenda, igual que "Calidad por asesor".
+- En las tortas de los tableros internos (Gerencia, Inventario, Gestión
+  Humana), dos categorías distintas ya no pueden salir del mismo color.
+- Los números no cambian: solo cambia cómo se ven.
+
 ## v1.64.5 — Octubre 2026
 
 **Fase 164: títulos de las gráficas en orden para los lectores de pantalla.**
