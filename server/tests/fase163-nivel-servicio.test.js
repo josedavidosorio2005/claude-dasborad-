@@ -81,7 +81,8 @@ test('nota de la grafica y de la tarjeta: Llamadas dice promedio simple; AHT y W
   const path = require('path');
   const vm = require('vm');
   const src = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'trafico.js'), 'utf8');
-  const ctx = { esc: (s) => String(s), console };
+  // Fase 163 (punto 5): el cuadro de cada grafica sale de secciones-logic.js.
+  const ctx = { esc: (s) => String(s), gdGraficaHtml: require('../../public/js/secciones-logic.js').gdGraficaHtml, console };
   vm.createContext(ctx);
   vm.runInContext(src, ctx);
   const tituloNota = (html) => (html.match(/<span title="([^"]*)"/) || [])[1];

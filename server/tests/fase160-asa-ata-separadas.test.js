@@ -1,7 +1,8 @@
 // fase160-asa-ata-separadas.test.js — Fase 160 (pedido de Edwin): en Flujo de
 // Llamadas (Mobilize y ORLANT), la sub-pestaña "ASA y ATA" muestra DOS
 // graficas, una debajo de la otra, con los mismos datos y el mismo estilo, y
-// "Ver datos" en cada una (con su propio titulo). WhatsApp no cambia.
+// "Ver datos" en cada una (con su propio titulo). Fase 163: WhatsApp tambien
+// las separa (antes seguia con una sola grafica).
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -19,6 +20,7 @@ function cargar() {
     loDatalabelsAuto: (o) => { o.plugins.datalabels = { display: 'auto' }; },
     // JSON: los arreglos creados dentro del vm son de otro contexto.
     _gdChart: (id, cfg) => { graficas[id] = JSON.parse(JSON.stringify(cfg)); },
+    gdGraficaHtml: require('../../public/js/secciones-logic.js').gdGraficaHtml, // Fase 163
     console,
   };
   vm.createContext(ctx);
@@ -39,6 +41,10 @@ test('Flujo de Llamadas: "ASA y ATA" trae 2 graficas, ASA arriba y ATA abajo, ca
   assert.match(html, /data-titulo="ASA — tiempo promedio de respuesta"/);
   assert.match(html, /data-titulo="ATA — tiempo promedio de abandono"/);
   assert.equal((html.match(/aurora-chart-wrap/g) || []).length, 2, 'un contenedor por grafica (cada uno con su Ver datos)');
+  // Fase 163: cada una en su propio cuadro, con su titulo visible.
+  assert.equal((html.match(/<section class="gd-grafica">/g) || []).length, 2, 'un cuadro por grafica');
+  assert.match(html, /<h4 class="gd-grafica-titulo">ASA — tiempo promedio de respuesta/);
+  assert.match(html, /<h4 class="gd-grafica-titulo">ATA — tiempo promedio de abandono/);
 });
 
 test('mismos datos y mismo estilo: una serie por grafica, con los colores de antes', () => {
@@ -58,12 +64,21 @@ test('mismos datos y mismo estilo: una serie por grafica, con los colores de ant
   assert.equal(ata.type, 'line');
 });
 
-test('WhatsApp sigue con ASA y ATA en una sola grafica', () => {
+test('Fase 163: WhatsApp tambien separa ASA y ATA en 2 graficas (antes era una sola)', () => {
   const { ctx, graficas } = cargar();
   const html = ctx._traficoSubtabContentHTML('tww', 0, 'asaata');
-  assert.equal((html.match(/<canvas/g) || []).length, 1);
-  ctx._traficoDibujarAsaAta('tww', 0, AGREGADO);
-  assert.deepEqual(graficas['tww-canvas-asaata-0'].data.datasets.map((d) => d.label), ['ASA', 'ATA']);
+  assert.equal((html.match(/<canvas/g) || []).length, 2);
+  const asa = html.indexOf('id="tww-canvas-asaata-0"');
+  const ata = html.indexOf('id="tww-canvas-ata-0"');
+  assert.ok(asa !== -1 && ata !== -1 && asa < ata, 'ASA arriba y ATA abajo');
+  assert.equal((html.match(/<section class="gd-grafica">/g) || []).length, 2, 'un cuadro por grafica');
+  ctx._traficoDibujarAsaAta('tww', 0, AGREGADO, null, false, true);
+  assert.deepEqual(graficas['tww-canvas-asaata-0'].data.datasets.map((d) => d.label), ['ASA']);
+  assert.deepEqual(graficas['tww-canvas-ata-0'].data.datasets.map((d) => d.label), ['ATA']);
+  assert.deepEqual(graficas['tww-canvas-ata-0'].data.datasets[0].data, [30, 0]);
+  // Y el panel de WhatsApp las pide separadas.
+  const src = fs.readFileSync(path.join(JS, 'trafico-whatsapp.js'), 'utf8');
+  assert.match(src, /_traficoDibujarAsaAta\('tww', i, agregadoComb, _traficoWppFmtTiempo, false, true\)/);
 });
 
 test('Ver datos usa el titulo propio de cada grafica', () => {

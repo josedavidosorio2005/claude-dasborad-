@@ -45,8 +45,9 @@ async function _salidaRenderPanel(p, i){
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
   html += '<div id="sal-aviso-'+i+'"></div>';
   html += '<div id="sal-tarjetas-wrap-'+i+'"></div>';
-  html += '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-llam-'+i+'"></canvas></div>';
-  html += '<div class="aurora-chart-wrap" style="height:280px;margin-top:14px"><canvas id="sal-wpp-'+i+'"></canvas></div>';
+  // Fase 163: cada grafica en su propio cuadro, con su titulo.
+  html += gdGraficaHtml('Llamadas de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-llam-'+i+'" data-titulo="Llamadas de salida"></canvas></div>');
+  html += gdGraficaHtml('WhatsApp de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-wpp-'+i+'" data-titulo="WhatsApp de salida"></canvas></div>');
   html += '<div id="sal-tabla-'+i+'"></div>';
   html += '</div>';
   host.innerHTML = html;

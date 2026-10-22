@@ -424,7 +424,7 @@ function _traficoWppRenderContenido(i){
   // Fase 120: Wolkvox no entrega AHT de WhatsApp -- ni se dibuja ni se
   // calcula cuando el panel lo tiene apagado (p.mostrarAht:false).
   if (_traficoWppMostrarAht[campana]) _traficoDibujarAht('tww', i, agregadoComb, _traficoWppFmtTiempo);
-  _traficoDibujarAsaAta('tww', i, agregadoComb, _traficoWppFmtTiempo);
+  _traficoDibujarAsaAta('tww', i, agregadoComb, _traficoWppFmtTiempo, false, true); // Fase 163: ASA y ATA en dos graficas
   // Fase 87 (tema B) / Fase 90 (tema A): WhatsApp grafica LAS DOS series --
   // 5 minutos como principal/resaltada (primera en la leyenda, linea mas
   // gruesa), 20 segundos como secundaria (la que ya existe en Wolkvox).

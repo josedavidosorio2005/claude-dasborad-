@@ -1612,3 +1612,40 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc-versiones li>.cc-accion{flex:0 0 auto;white-space:nowrap;width:auto;}
 /* Fase 153 (Centro de cargas, PR 3): Eliminar, solo icono (44 px). */
 .cc-mes-acciones .cc-accion-icono{flex:0 0 44px;padding:0;}
+
+/* ── Fase 163 (punto 5, pedido de Edwin): cada grafica en su cuadro y un
+   color de acento por seccion (Llamadas, WhatsApp, Salida). El acento va
+   solo en bordes, franjas y puntos (nunca como color de texto) y nunca es
+   verde: el verde queda para el semaforo. Contraste medido con
+   contraste-logic.js contra --c-surface / --c-bg / --c-surface-subtle:
+   claro  llamadas #1F5F99 6.66/6.02/6.39 · whatsapp #0B6E78 5.97/5.40/5.74 · salida #7A3E9D 6.99/6.33/6.72
+   oscuro llamadas #7CB7EA 6.82/8.01/6.15 · whatsapp #5CC8D0 7.38/8.67/6.65 · salida #C9A0F0 6.79/7.97/6.12
+   (todos >= 4.5:1, por encima del 3:1 que pide un objeto grafico, WCAG 1.4.11).
+   Prueba: server/tests/fase163-visual-secciones.test.js. */
+:root{ --c-acento-llamadas:#1F5F99; --c-acento-whatsapp:#0B6E78; --c-acento-salida:#7A3E9D; }
+:root[data-theme="dark"]{ --c-acento-llamadas:#7CB7EA; --c-acento-whatsapp:#5CC8D0; --c-acento-salida:#C9A0F0; }
+.gd-sec-llamadas, .gd-tab-sec-llamadas{ --gd-acento:var(--c-acento-llamadas); }
+.gd-sec-whatsapp, .gd-tab-sec-whatsapp{ --gd-acento:var(--c-acento-whatsapp); }
+.gd-sec-salida, .gd-tab-sec-salida{ --gd-acento:var(--c-acento-salida); }
+/* La tarjeta de la seccion: franja de color arriba y un punto junto al titulo. */
+.gd-sec > .aurora-card, .gd-sec .lu-mitades > .aurora-card{ border-top:4px solid var(--gd-acento); }
+.gd-sec .lu-mitades > .aurora-card.gd-sec{ border-top-color:var(--gd-acento); }
+.gd-sec > .aurora-card > .aurora-card-title::before,
+.gd-sec .lu-mitades > .aurora-card .aurora-card-title::before{
+  content:''; display:inline-block; width:10px; height:10px; border-radius:50%;
+  background:var(--gd-acento); margin-right:var(--space-2); vertical-align:middle;
+}
+/* Cada grafica en su propio cuadro: borde, fondo, titulo y franja de la seccion. */
+.gd-grafica{
+  background:var(--c-surface-subtle); border:1px solid var(--c-border);
+  border-left:4px solid var(--gd-acento, var(--c-brand)); border-radius:var(--r-md);
+  padding:var(--space-4); margin-top:var(--space-4);
+}
+.gd-grafica-titulo{ margin:0 0 var(--space-3); font-size:var(--fs-body); font-weight:var(--fw-semibold); color:var(--c-text); }
+.gd-grafica .btn-ver-datos{ margin-top:var(--space-2); }
+/* La pestana de cada seccion lleva su punto de color. */
+.atab[class*="gd-tab-sec-"]::before{
+  content:''; display:inline-block; width:8px; height:8px; border-radius:50%;
+  background:var(--gd-acento); margin-right:6px; vertical-align:middle;
+}
+@media (max-width:480px){ .gd-grafica{ padding:var(--space-3); } }

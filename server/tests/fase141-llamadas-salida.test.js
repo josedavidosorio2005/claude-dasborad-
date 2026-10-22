@@ -251,6 +251,9 @@ async function renderPanel({ rol, respuestas, campana = 'MOBILIZE' }) {
     currentUser: { rol },
     _gd: { cliente: 'MOBILIZE' },
     _gdChart: () => {},
+    // Fase 163: el cuadro de cada grafica sale de secciones-logic.js (en el
+    // navegador se carga antes que este archivo, ver index.html).
+    gdGraficaHtml: require('../../public/js/secciones-logic.js').gdGraficaHtml,
     esc: escHtml,
     textoFormatoNombre: (v) => v,
     canLoadData: () => rol === 'ADMIN',
@@ -281,9 +284,12 @@ function etiquetasKpi(html) {
 
 test('Panel: 2 mitades (ingreso izquierda, salida derecha) en .aurora-grid-2.lu-mitades, cada una con su titulo', async () => {
   const r = await renderPanel({ rol: 'ADMIN', respuestas: CON_DATOS });
-  assert.match(r.html, /<div class="aurora-grid-2 lu-mitades"><div class="aurora-card" id="lu-ing-7"><\/div><div class="aurora-card" id="ls-sal-7"><\/div><\/div>/);
+  assert.match(r.html, /<div class="aurora-grid-2 lu-mitades"><div class="aurora-card" id="lu-ing-7"><\/div><div class="aurora-card gd-sec gd-sec-salida" id="ls-sal-7"><\/div><\/div>/);
   assert.match(r.ingreso, /Llamadas de ingreso únicas/);
   assert.match(r.salida, /Llamadas de salida/);
+  // Fase 163: cada grafica en su propio cuadro, con su titulo.
+  assert.match(r.ingreso, /<section class="gd-grafica"><h4 class="gd-grafica-titulo">Llamadas únicas de ingreso por mes<\/h4><div class="aurora-chart-wrap"[^>]*><canvas id="lu-canvas-7"/);
+  assert.match(r.salida, /<section class="gd-grafica"><h4 class="gd-grafica-titulo">Llamadas de salida por mes<\/h4><div class="aurora-chart-wrap"[^>]*><canvas id="ls-canvas-7"/);
 });
 
 test('Panel: tarjetas en el orden pedido (ingreso: total/contestadas/abandonadas; salida: total/no conectadas/conectadas)', async () => {
