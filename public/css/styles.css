@@ -494,7 +494,7 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    tamaño igual, de más, como red de seguridad para títulos largos. */
 @media(max-width:768px){
   .navbar{padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right));gap:6px;}
-  .navbar-logo-icon{height:26px;}
+  .navbar-logo-icon{height:26px;width:auto;} /* Fase 164 (D-07): sin width:auto el atributo width="35" lo aplastaba (35x26) */
   .navbar-logo-text{font-size:var(--fs-body);}
   .save-flash{display:none;} /* con el perfil colapsado a ícono no hay lugar para este aviso secundario */
 
@@ -1199,6 +1199,16 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
   .aurora-header{flex-wrap:wrap;row-gap:10px;}
   .aurora-header > div:first-child{min-width:0;}
   .aurora-header > div:first-child > div:first-child{min-width:0;}
+  /* Fase 164 (D-01): los botones del tablero (Actualizar, Exportar, tema,
+     pantalla completa, Cerrar) iban en una sola fila sin wrap: en 375 px
+     "X Cerrar" quedaba fuera de la pantalla (x=371). Ahora el grupo envuelve
+     y Cerrar queda fijo arriba a la derecha del encabezado (que ya es
+     sticky, asi que es su referencia), con espacio reservado para que el
+     titulo no pase por debajo. */
+  #gd-modal .aurora-header{padding-left:16px;padding-right:16px;}
+  #gd-modal .gd-header-acciones{flex-wrap:wrap;}
+  #gd-modal #gd-cerrar-btn{position:absolute;top:12px;right:12px;}
+  #gd-modal .aurora-header > div:first-child > div:first-child{padding-right:96px;}
 }
 
 /* Objetivos tactiles (Fase 133, Parte 5, WCAG 2.5.8/2.2 "target size
