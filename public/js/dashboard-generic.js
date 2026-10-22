@@ -1331,7 +1331,9 @@ function _gdTabsVisibles(){
 }
 function renderGenericTabs(){
   document.getElementById('gd-tabs').innerHTML = _gdTabsVisibles().map(function(t){
-    return '<button class="atab" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
+    // Fase 163: la pestana lleva el color de su seccion (Llamadas/WhatsApp/Salida).
+    var sec = gdSeccionDeTipo(t.panels && t.panels[0] && t.panels[0].tipo);
+    return '<button class="atab'+(sec ? ' gd-tab-sec-'+sec : '')+'" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
 }
 
@@ -1426,8 +1428,9 @@ function renderGenericTab(key){
       // tipificacion_panel (Fase 77, ORLANT), efectividad_agendamiento_panel
       // y efectividad_citas_panel (Fase 111), salida_panel (Fase 127),
       // llamadas_unicas_panel (Fase 138, PR3, Mobilize) siguen el mismo
-      // criterio.
-      html += '<div id="gd-p'+i+'"></div>';
+      // criterio. Fase 163: el contenedor lleva el color de su seccion.
+      var claseSec = gdClaseSeccion(gdSeccionDeTipo(p.tipo));
+      html += '<div id="gd-p'+i+'"'+(claseSec ? ' class="'+claseSec+'"' : '')+'></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
       // medico): es texto, no un grafico — mismo criterio que trafico_combo,

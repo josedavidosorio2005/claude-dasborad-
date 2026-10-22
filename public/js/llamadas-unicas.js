@@ -83,7 +83,7 @@ async function _llamadasUnicasRenderPanel(p, i) {
   host.dataset.campana = campana;
   host.innerHTML = '<div class="aurora-grid-2 lu-mitades">' +
     '<div class="aurora-card" id="lu-ing-' + i + '"></div>' +
-    '<div class="aurora-card" id="ls-sal-' + i + '"></div>' +
+    '<div class="aurora-card gd-sec gd-sec-salida" id="ls-sal-' + i + '"></div>' +
     '</div>';
   await Promise.all([_llamadasUnicasRenderIngreso(campana, i), _llamadasSalidaRenderMitad(campana, i)]);
 }
@@ -116,7 +116,7 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
       '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
-    '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '"></canvas></div>';
+    gdGraficaHtml('Llamadas únicas de ingreso por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '" data-titulo="Llamadas únicas de ingreso por mes"></canvas></div>');
 
   await _llamadasUnicasRenderContenido(campana, i);
 }
@@ -227,7 +227,7 @@ async function _llamadasSalidaRenderMitad(campana, i) {
       '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="ls-kpis-' + i + '"></div>' +
-    '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '"></canvas></div>' +
+    gdGraficaHtml('Llamadas de salida por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '" data-titulo="Llamadas de salida por mes"></canvas></div>') +
     (esInterno ? '<div id="ls-detalle-' + i + '"></div>' : '');
   await _llamadasSalidaRenderContenido(campana, i);
 }

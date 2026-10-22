@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.0 — Octubre 2026
+
+**Fase 163: cada gráfica en su cuadro y un color por sección.**
+
+- Cada gráfica va en su propio cuadro, con su título arriba, para que se
+  distinga una de otra.
+- Cada sección tiene su color: Llamadas en azul, WhatsApp en turquesa y
+  Salida en morado. Se ve en la franja de arriba de la tarjeta, en el
+  borde de cada gráfica y en un punto junto al nombre de la pestaña.
+  Funciona en modo claro y oscuro, y se lee bien en los dos.
+- En Tráfico de WhatsApp, "ASA y ATA" ahora son dos gráficas (ASA arriba,
+  ATA abajo), igual que en Llamadas.
+- Los números no cambian: solo cambia cómo se ven.
+
 ## v1.61.0 — Octubre 2026
 
 **Fase 163: Llamadas de Salida con la plantilla nueva de Edwin.**

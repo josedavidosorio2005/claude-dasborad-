@@ -743,31 +743,33 @@ var TRAFICO_NOTA_PONDERADO = 'Valor del mes ponderado por volumen de llamadas (n
 // Sin pasarlo (ORLANT/AURORA/HLM), no se agrega nada -- igual que siempre.
 function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId){
   titulos = titulos || TRAFICO_SUBTAB_TITULOS;
+  // Fase 163: cada grafica va en su propio cuadro (gdGraficaHtml), con su titulo.
   if(activo === 'resumen'){
+    var tituloFlujo = prefijo === 'tww' ? 'Flujo de WhatsApp' : 'Flujo de llamadas';
     return '<div class="aurora-kpis" id="'+prefijo+'-kpis-'+i+'"></div>' +
-      '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'"></canvas></div>';
+      gdGraficaHtml(tituloFlujo, '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'" data-titulo="'+tituloFlujo+'"></canvas></div>');
   }
   if(activo === 'oneanddone'){
-    return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+'</div>' +
+    return gdGraficaHtml(esc(titulos[activo]),
       '<div id="'+prefijo+'-oad-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
-      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>';
+      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>');
   }
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
     ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
   var resumenSeccion = resumenSeccionId ? '<div id="'+resumenSeccionId+'" class="aurora-kpis" style="margin-bottom:10px"></div>' : '';
-  if(activo === 'asaata' && prefijo === 'tv'){
-    return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
-      resumenSeccion +
-      TRAFICO_ASA_ATA_SEPARADAS.map(function(g, k){
-        return '<div class="aurora-card-title" style="font-size:0.8rem'+(k?';margin-top:16px':'')+'">'+esc(g.titulo)+'</div>' +
-          '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+g.sufijo+i+'" data-titulo="'+esc(g.titulo)+'"></canvas></div>';
+  // Fase 163: WhatsApp ("tww") tambien separa ASA y ATA, como Llamadas.
+  if(activo === 'asaata' && (prefijo === 'tv' || prefijo === 'tww')){
+    return resumenSeccion +
+      TRAFICO_ASA_ATA_SEPARADAS.map(function(g){
+        return gdGraficaHtml(esc(g.titulo) + (g.sufijo === '-canvas-asaata-' ? nota : ''),
+          '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+g.sufijo+i+'" data-titulo="'+esc(g.titulo)+'"></canvas></div>');
       }).join('');
   }
-  return '<div class="aurora-card-title" style="font-size:0.85rem">'+esc(titulos[activo])+nota+'</div>' +
-    resumenSeccion +
-    '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'"></canvas></div>';
+  return resumenSeccion +
+    gdGraficaHtml(esc(titulos[activo])+nota,
+      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" data-titulo="'+esc(titulos[activo])+'"></canvas></div>');
 }
 function _traficoRenderSubtabContent(i){
   var content = document.getElementById('tv-content-'+i);
