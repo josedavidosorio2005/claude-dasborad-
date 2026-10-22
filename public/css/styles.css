@@ -710,8 +710,10 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .dash-btn:hover{background:rgba(255,255,255,0.22);transform:translateY(-5px);box-shadow:0 14px 36px rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.45);}
 .dash-icon{font-size:var(--fs-display);line-height:1;}
 /* Fase 164 (lote 2): icono Lucide del modulo (antes emoji), mismo tamaño
-   que el emoji y en el color de marca. Solo el icono: la tarjeta no cambia. */
-.dash-icon .icono{width:1em;height:1em;vertical-align:top;color:var(--c-primary);}
+   que el emoji y en blanco como el titulo de la tarjeta (--c-on-brand; en
+   color de marca quedaba con poco contraste sobre la tarjeta teal en tema
+   claro -- decision del usuario). Solo el icono: la tarjeta no cambia. */
+.dash-icon .icono{width:1em;height:1em;vertical-align:top;color:var(--c-on-brand);}
 .dash-label{font-size:var(--fs-body-lg);font-weight:700;letter-spacing:0.02em;}
 .dash-sub{font-size:var(--fs-note);color:rgba(255,255,255,0.62);margin-top:2px;}
 .dash-btn.mod-calidad{border-color:rgba(39,174,96,0.5);background:rgba(39,174,96,0.15);}
