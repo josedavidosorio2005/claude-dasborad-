@@ -1228,6 +1228,26 @@ button,.btn-sm,.atab,.aurora-close,select,.theme-toggle,
   }
   .atab{padding-top:14px;padding-bottom:14px;}
 }
+/* Fase 164 (D-12): el resto de controles que se tocan en el telefono
+   (medidos a 375 px por debajo de 44): botones chicos de los paneles del
+   tablero (Excel/PDF, "Ver <mes>"), botones y buscadores de las cabeceras
+   de las paginas de administracion, botones de los formularios, Editar y
+   Eliminar de las tablas (con 8 px entre los dos, para no tocar el que
+   borra), el ojo de la contrasena, las migas del Centro de cargas y los
+   enlaces del menu lateral. El encabezado del tablero no se toca. */
+@media(max-width:768px){
+  #gd-panels .btn-sm,#gd-panels .search-bar input,
+  .section-header .btn-primary,.section-header .btn-cancel,.section-header .btn-reset,.section-header .btn-secondary,
+  .section-header .search-bar input,.hist-filter-sel,
+  .modal-btns .btn-primary,.modal-btns .btn-cancel,
+  td .btn-edit,td .btn-delete,.sidebar-menu li a{min-height:44px;}
+  #gd-panels .btn-sm{min-width:44px;}
+  td .btn-edit,td .btn-delete{margin-top:4px;margin-bottom:4px;}
+  td .btn-sm + .btn-sm{margin-left:8px;}
+  .btn-eye{right:0;min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
+  .cc-migas a{display:inline-flex;align-items:center;min-height:44px;}
+  #reportes-perm-tbody input[type="checkbox"]{width:22px;height:22px;}
+}
 
 /* ═══════════════════════════════════════════════════════════
    COMPONENTES DE ESTADO REUTILIZABLES
