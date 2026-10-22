@@ -699,14 +699,37 @@ function _gdPlegarFiltros(raiz){
 function _gdEnvolverTablas(raiz){
   Array.prototype.forEach.call(raiz.querySelectorAll('table'), function(t){
     var padre = t.parentElement;
-    if(!padre || padre.classList.contains('gd-tabla-scroll')) return;
-    var ox = window.getComputedStyle(padre).overflowX;
-    if(ox === 'auto' || ox === 'scroll'){ padre.classList.add('gd-tabla-scroll'); return; }
-    var w = document.createElement('div');
-    w.className = 'gd-tabla-scroll';
-    padre.insertBefore(w, t);
-    w.appendChild(t);
+    if(!padre) return;
+    var cont = padre;
+    if(!padre.classList.contains('gd-tabla-scroll')){
+      var ox = window.getComputedStyle(padre).overflowX;
+      if(ox === 'auto' || ox === 'scroll') padre.classList.add('gd-tabla-scroll');
+      else {
+        cont = document.createElement('div');
+        cont.className = 'gd-tabla-scroll';
+        padre.insertBefore(cont, t);
+        cont.appendChild(t);
+      }
+    }
+    _gdTablaScrollAccesible(cont);
   });
+}
+// Fase 164 (D-10): el contenedor con scroll entra en el orden del teclado y
+// se anuncia con el titulo de su grafica o de su cuadro (sin el "?" de ayuda).
+function _gdTablaScrollAccesible(cont){
+  if(cont.hasAttribute('tabindex')) return;
+  var cuadro = cont.closest('.gd-grafica') || cont.closest('.aurora-card');
+  var tituloEl = cuadro ? cuadro.querySelector('.gd-grafica-titulo, .aurora-card-title') : null;
+  var titulo = '';
+  if(tituloEl){
+    var copia = tituloEl.cloneNode(true);
+    Array.prototype.forEach.call(copia.querySelectorAll('button, .gd-help, [aria-hidden="true"]'), function(b){ b.remove(); });
+    titulo = copia.textContent;
+  }
+  var th = cont.querySelector('th:not(:empty)');
+  var usados = Array.prototype.map.call(document.querySelectorAll('#gd-overlay .gd-tabla-scroll[aria-label]'), function(e){ return e.getAttribute('aria-label'); });
+  var attrs = gdAtributosTablaScroll(titulo, th ? th.textContent : '', usados);
+  Object.keys(attrs).forEach(function(k){ cont.setAttribute(k, attrs[k]); });
 }
 (function(){
   if(typeof document === 'undefined' || typeof MutationObserver !== 'function') return;

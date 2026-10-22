@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.4 — Octubre 2026
+
+**Fase 164: tablas que se recorren con el teclado.**
+
+- Las tablas anchas del tablero (y la vista previa del Centro de cargas)
+  tienen su propia barra para moverse de lado. Antes no se podían
+  alcanzar con la tecla Tab, así que quien usa solo el teclado no veía
+  las columnas de la derecha. Ahora sí: con Tab se llega a la tabla y con
+  las flechas se mueve. Los lectores de pantalla dicen el nombre de la
+  tabla.
+- Los números no cambian. Solo se ve el borde de foco cuando se llega
+  a la tabla con Tab.
+
 ## v1.64.3 — Octubre 2026
 
 **Fase 164: en Calidad se ven todos los asesores.**
