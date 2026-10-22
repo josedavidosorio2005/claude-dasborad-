@@ -817,6 +817,12 @@ function _cargasEstadoLabel(r){
       '; filas omitidas '+(r.avisos||[]).filter(function(a){ return /se omiti/i.test(a); }).length;
   }
   // Fase 147 (Parte B): Encuesta -- solo conteos por pregunta, nunca filas.
+  // Fase 163: Llamadas Unicas -- contestadas (con asesor) y abandonadas
+  // (sin asesor), de las filas que entran, para revisar antes de guardar.
+  if(r.tipo==='llamadas_unicas' && r.filas && r.filas.length){
+    var abandLu = r.filas.filter(function(f){ return f[2]==='ABANDONADA'; }).length;
+    extra = ' — contestadas únicas '+(r.filas.length-abandLu)+', abandonadas únicas (sin asesor) '+abandLu;
+  }
   if(r.tipo==='encuesta' && r.conteos){
     extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
   }

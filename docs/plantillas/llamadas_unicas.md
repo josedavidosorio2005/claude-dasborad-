@@ -10,7 +10,7 @@
 
 ### De dónde sale
 
-Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso (sin las de salida).
+Wolkvox, dos reportes en una sola hoja: las CONTESTADAS del CDR → "1. Detalle de las llamadas" (solo las de ingreso, con asesor) y las ABANDONADAS de "Skill y servicios → 2. Detalle llamadas abandonadas" (skill, teléfono y día, con AGENT_NAME vacío).
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "Únicas de ingreso".**
 
@@ -22,7 +22,7 @@ Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", solo las de ingreso 
 
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
-| AGENT_NAME | Sí | Asesor que atendió. |  |
+| AGENT_NAME | Sí | Asesor que atendió. Vacío en las abandonadas (el reporte de abandonadas no trae asesor): una fila sin asesor cuenta como abandonada. |  |
 | DATE | Sí | Fecha de la llamada. |  |
 | TELEPHONE | Sí | Número que llamó. Solo se usa en el navegador para contar una vez por día; nunca se envía ni se guarda. |  |
 | SKILL_NAME | Sí | Línea o skill. |  |
