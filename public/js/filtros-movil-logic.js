@@ -48,9 +48,28 @@ function gdOpcionesGraficaMovil(cfg, ancho) {
   return cfg;
 }
 
+// Fase 164 (D-10): atributos del contenedor con scroll horizontal de una
+// tabla, para que el teclado lo alcance (y asi pueda desplazarlo con las
+// flechas) y un lector de pantalla lo anuncie con el nombre de la tabla.
+// `titulo` es el titulo visible de la grafica o del cuadro que la contiene;
+// `encabezado`, el texto de la primera cabecera de la tabla (se usa si no
+// hay titulo, o para distinguir dos tablas del mismo cuadro); `usados`, los
+// nombres que ya tienen otras tablas en pantalla (cada nombre, unico).
+function gdAtributosTablaScroll(titulo, encabezado, usados) {
+  var limpio = function (s) { return String(s || '').replace(/\s+/g, ' ').trim(); };
+  var t = limpio(titulo), e = limpio(encabezado);
+  var ya = usados || [];
+  var nombre = 'Tabla' + (t || e ? ': ' + (t || e) : '');
+  if (ya.indexOf(nombre) !== -1 && t && e) nombre = 'Tabla: ' + t + ' (' + e + ')';
+  var base = nombre, n = 2;
+  while (ya.indexOf(nombre) !== -1) nombre = base + ' ' + (n++);
+  return { tabindex: '0', role: 'region', 'aria-label': nombre };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     GD_ANCHO_MOVIL: GD_ANCHO_MOVIL,
+    gdAtributosTablaScroll: gdAtributosTablaScroll,
     gdContarFiltrosActivos: gdContarFiltrosActivos,
     gdTextoBotonFiltros: gdTextoBotonFiltros,
     gdOpcionesGraficaMovil: gdOpcionesGraficaMovil,
