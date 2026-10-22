@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.10 — Octubre 2026
+
+**Fase 164: iconos en vez de emojis.**
+
+- Los emojis de colores (círculos rojo, amarillo y verde, chulos, alertas,
+  teléfono, chat) se veían distinto según el celular o el computador.
+  Ahora son iconos de la misma familia que el resto de la plataforma, en
+  Calidad (monitoreos, resumen por asesor, reportes, configuración),
+  Metas, Mis resultados, la tarjeta de Calidad del tablero, la lista de
+  usuarios y las tarjetas de módulos del inicio.
+- El estado siempre se dice también con la palabra ("Crítico", "Alerta"…)
+  y en la tarjeta del tablero el color sigue saliendo de la meta.
+- Las exportaciones (Excel/PDF) no cambian. Los números no cambian.
+
 ## v1.64.7 — Octubre 2026
 
 - Actualización de seguridad de una dependencia. No cambia nada de lo que

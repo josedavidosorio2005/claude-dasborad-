@@ -280,7 +280,7 @@ function renderNivelServicioHistory(){
     // verian como un duplicado/error; se muestra entre parentesis.
     var campanaTxt = r.campana + (r.sede ? ' (' + r.sede + ')' : '');
     return '<tr><td>'+esc(campanaTxt)+'</td><td>'+esc(r.mes)+'</td><td>'+r.contestadas20s+'</td><td>'+r.llamadasTotales+'</td>'+
-      '<td class="peak">'+esc(pctTxt)+'</td><td>'+esc(cumpleTxt)+'</td>'+
+      '<td class="peak">'+esc(pctTxt)+'</td><td>'+calEstadoHtml(cumpleTxt)+'</td>'+
       '<td><button class="btn-sm btn-edit" onclick="editNivelServicio('+r.id+')">Editar</button> '+
       '<button class="btn-sm btn-delete" onclick="deleteNivelServicio('+r.id+')">Eliminar</button></td></tr>';
   }).join('');

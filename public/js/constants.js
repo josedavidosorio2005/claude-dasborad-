@@ -35,11 +35,11 @@ var CAMPANAS_CON_PLANTILLA = ['ORLANT', 'MOBILIZE'];
 // soon:true  -> el módulo aparece en el dashboard pero todavía no está construido.
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.
 var DASH_MODULES = [
-  {key:'Calidad',      label:'Calidad',           icon:'&#10003;', sub:'Control de Calidad',     cls:'mod-calidad'},
-  {key:'Inventario',   label:'Inventario',         icon:'&#128230;',sub:'Gestion de Stock',        cls:'mod-inventario'},
-  {key:'Gerencia',     label:'Gerencia',           icon:'&#128202;',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia'},
-  {key:'GestionHumana',label:'Gestión Humana',     icon:'&#128101;',sub:'Personal por Campaña',     cls:'mod-gerencia'},
-  {key:'ClientesDash', label:'Dashboard Clientes', icon:'&#129309;',sub:'Seguimiento de Clientes', cls:'mod-clientes'}
+  {key:'Calidad',      label:'Calidad',           icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg>', sub:'Control de Calidad',     cls:'mod-calidad'},
+  {key:'Inventario',   label:'Inventario',         icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg>',sub:'Gestion de Stock',        cls:'mod-inventario'},
+  {key:'Gerencia',     label:'Gerencia',           icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-chart-column"></use></svg>',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia'},
+  {key:'GestionHumana',label:'Gestión Humana',     icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-contact"></use></svg>',sub:'Personal por Campaña',     cls:'mod-gerencia'},
+  {key:'ClientesDash', label:'Dashboard Clientes', icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg>',sub:'Seguimiento de Clientes', cls:'mod-clientes'}
 ];
 
 // Dashboards de cliente que ya están construidos. El resto de CLIENTES_LIST

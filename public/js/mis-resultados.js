@@ -112,12 +112,12 @@ async function renderMisResultados(){
 
   var promColorMr = promedio>=90?'verde':promedio>=70?'amarillo':'rojo';
   var promClsMr = promColorMr==='verde'?'kpi-green':promColorMr==='amarillo'?'kpi-org':'kpi-red';
-  // "Clasificacion General" ya trae su propio emoji+palabra (clasifGeneral,
+  // "Clasificacion General" ya trae su propio icono+palabra (clasifGeneral,
   // arriba) -- WCAG 1.4.1 ya esta cubierto ahi, sin badge para no duplicar.
   document.getElementById('mr-kpis').innerHTML =
     '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados'+(_mrMesFiltro?' ('+_mrMesFiltro+')':'')+'</div></div>'+
     '<div class="aurora-kpi '+promClsMr+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(promColorMr):'')+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio</div></div>'+
-    '<div class="aurora-kpi '+promClsMr+'"><div class="kv" style="font-size:1rem">'+clasifGeneral+'</div><div class="kl">Clasificacion General</div></div>'+
+    '<div class="aurora-kpi '+promClsMr+'"><div class="kv" style="font-size:1rem">'+calEstadoHtml(clasifGeneral)+'</div><div class="kl">Clasificacion General</div></div>'+
     '<div class="aurora-kpi kpi-red"><div class="kv">'+fallosTotal+'</div><div class="kl">Total Fallos Criticos</div></div>';
 
   // Fase 136 (PR 7, F09 de la auditoria de la Fase 135): sin monitoreos,
@@ -142,7 +142,7 @@ async function renderMisResultados(){
     html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">'+(_mrMesFiltro?'No tienes monitoreos en '+_mrMesFiltro:'Aun no tienes monitoreos de calidad registrados')+'</td></tr>';
   } else {
     rows.forEach(function(m,i){
-      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td>'+
+      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="verDetalleMonitoreo('+i+')">Ver Detalle</button></td></tr>';
     });
   }
@@ -166,14 +166,14 @@ function verDetalleMonitoreo(idx){
   document.getElementById('dm-idllamada').textContent = m.idLlamada || '-';
   document.getElementById('dm-telefono').textContent = m.telefono || '-';
   document.getElementById('dm-codificacion').textContent = m.codificacion || '-';
-  document.getElementById('dm-canal').textContent = m.canal==='WPP' ? '💬 WhatsApp / Chat' : '📞 Llamada';
+  document.getElementById('dm-canal').innerHTML = calEstadoHtml(m.canal==='WPP' ? '💬 WhatsApp / Chat' : '📞 Llamada');
   document.getElementById('dm-observaciones').textContent = m.observaciones || '-';
 
   document.getElementById('dm-preview').innerHTML =
     '<div class="qi-pill"><div class="qv">'+m.puntaje+'</div><div class="ql">PUNTAJE OBTENIDO</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.95rem">'+m.clasificacion+'</div><div class="ql">CLASIFICACION</div></div>'+
+    '<div class="qi-pill"><div class="qv" style="font-size:0.95rem">'+calEstadoHtml(m.clasificacion)+'</div><div class="ql">CLASIFICACION</div></div>'+
     '<div class="qi-pill"><div class="qv">'+m.fallos+'</div><div class="ql"># FALLOS CRITICOS</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+m.nivelCritico+'</div><div class="ql">NIVEL CRITICO</div></div>';
+    '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+calEstadoHtml(m.nivelCritico)+'</div><div class="ql">NIVEL CRITICO</div></div>';
 
   var items = (CAL_PLANTILLAS[m.campana] && CAL_PLANTILLAS[m.campana].items) || [];
   var answers = m.answers || {};

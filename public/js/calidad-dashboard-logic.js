@@ -90,8 +90,49 @@ function calDashAltoBarrasAsesores(n) {
   return Math.max(230, 28 * (Number(n) || 0) + 60);
 }
 
+// Fase 164 (lote 2): los textos de estado de Calidad ("🔴 CRITICO",
+// "⚠️ ALERTA", "📞 Llamada"...) los calcula el SERVIDOR, se guardan asi en
+// la base y salen asi en las exportaciones -- no se tocan. Solo EN PANTALLA
+// el emoji del principio se cambia por un icono Lucide del sprite del repo
+// (decorativo, aria-hidden: el estado lo dice la palabra que sigue). `tono`
+// pinta el icono con el color de su estado (critico/medio/ok); con
+// opts.sinColor el icono no trae color propio: lo toma de donde esta (en la
+// tarjeta del tablero, del color de la meta qa_promedio, ver styles.css).
+var CAL_ESTADO_ICONOS = [
+  { emoji: '🔴', icono: 'punto', tono: 'critico' },
+  { emoji: '🟡', icono: 'punto', tono: 'medio' },
+  { emoji: '🟢', icono: 'punto', tono: 'ok' },
+  { emoji: '✅', icono: 'circle-check', tono: 'ok' },
+  { emoji: '⚠️', icono: 'triangle-alert', tono: 'medio' },
+  { emoji: '⚠', icono: 'triangle-alert', tono: 'medio' },
+  { emoji: '🚨', icono: 'octagon-alert', tono: 'critico' },
+  { emoji: '❌', icono: 'circle-x', tono: 'critico' },
+  { emoji: '⛔', icono: 'ban', tono: null },
+  { emoji: '💬', icono: 'message-circle', tono: null },
+  { emoji: '📞', icono: 'phone', tono: null },
+];
+function calIconoHtml(icono, clase) {
+  return '<svg class="icono' + (clase ? ' ' + clase : '') +
+    '" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-' + icono + '"></use></svg>';
+}
+function calEstadoHtml(texto, opts) {
+  var t = String(texto == null ? '' : texto);
+  var escHtml = function (s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+  for (var k = 0; k < CAL_ESTADO_ICONOS.length; k++) {
+    var m = CAL_ESTADO_ICONOS[k];
+    if (t.indexOf(m.emoji) === 0) {
+      var resto = t.slice(m.emoji.length).replace(/^\s+/, '');
+      var tono = m.tono && !(opts && opts.sinColor) ? ' estado-' + m.tono : '';
+      return '<span class="estado-con-icono' + tono + '">' + calIconoHtml(m.icono) + escHtml(resto) + '</span>';
+    }
+  }
+  return escHtml(t);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    calEstadoHtml: calEstadoHtml,
+    calIconoHtml: calIconoHtml,
     calDashAltoBarrasAsesores: calDashAltoBarrasAsesores,
     calDashFiltrarMonitoreos: calDashFiltrarMonitoreos,
     calDashResumen: calDashResumen,
