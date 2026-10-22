@@ -1806,11 +1806,21 @@ function _gdRenderCalidad(p, i){
     var optsBar = loFmt(loBar(), '%');
     optsBar.indexAxis = 'y';
     optsBar.scales.x = { ticks:{ font:{ size:12 } } };
-    optsBar.scales.y = { ticks:{ font:{ size:12 } } };
+    // Fase 164 (D-03, auditoria de diseno): con el alto fijo de 230px Chart.js
+    // saltaba la mitad de los nombres del eje (autoSkip) y cada barra salia de
+    // un color distinto, asi que no se sabia de quien era cada una. Ahora
+    // todos los nombres, un solo color (una sola serie: sin leyenda) y el
+    // alto crece con el numero de asesores (~28px por barra).
+    optsBar.scales.y = { ticks:{ font:{ size:12 }, autoSkip:false } };
+    optsBar.plugins = optsBar.plugins || {};
+    optsBar.plugins.legend = { display:false };
+    var canvasAsesores = document.getElementById('gd-c'+i);
+    var wrapAsesores = canvasAsesores && canvasAsesores.closest ? canvasAsesores.closest('.aurora-chart-wrap') : null;
+    if(wrapAsesores) wrapAsesores.style.height = calDashAltoBarrasAsesores(labelsAsesores.length) + 'px';
     loDatalabelsAuto(optsBar);
     _gdChart('gd-c'+i, { type:'bar',
       data:{ labels: labelsAsesores, datasets:[{ label:'Promedio', data: valoresAsesores,
-        backgroundColor: labelsAsesores.map(function(l){ return paletaColorPara(l); }), borderRadius:3 }] },
+        backgroundColor: colorSerie('principal'), borderRadius:3 }] },
       options: optsBar });
     return;
   }

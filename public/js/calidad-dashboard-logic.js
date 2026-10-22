@@ -83,8 +83,16 @@ function calDashTextoSinMonitoreos(campana) {
   return 'Todavía no hay monitoreos de calidad' + (nombre ? ' para ' + nombre : '') + '.';
 }
 
+// Fase 164 (D-03): alto (px) de la grafica "Promedio de calidad por asesor"
+// para que entren TODOS los nombres del eje: ~28px por barra mas el margen
+// del eje, nunca menos que los 230px de siempre.
+function calDashAltoBarrasAsesores(n) {
+  return Math.max(230, 28 * (Number(n) || 0) + 60);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    calDashAltoBarrasAsesores: calDashAltoBarrasAsesores,
     calDashFiltrarMonitoreos: calDashFiltrarMonitoreos,
     calDashResumen: calDashResumen,
     calDashAsesoresDistintos: calDashAsesoresDistintos,
