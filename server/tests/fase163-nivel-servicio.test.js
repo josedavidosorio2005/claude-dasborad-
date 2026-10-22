@@ -72,3 +72,26 @@ test('los tiempos siguen ponderados como antes (ASA/AHT por contestadas, ATA por
   assert.equal(m.asaSegundos, 25, '(10*10 + 30*30) / 40');
   assert.equal(m.serviceLevel20secPct, 75);
 });
+
+// La nota "?" de la grafica de nivel de servicio de Llamadas ya no puede
+// decir "ponderado por llamadas". AHT/ASA y WhatsApp siguen ponderados, asi
+// que su nota no cambia.
+test('nota de la grafica y de la tarjeta: Llamadas dice promedio simple; AHT y WhatsApp siguen ponderados', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const vm = require('vm');
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'trafico.js'), 'utf8');
+  const ctx = { esc: (s) => String(s), console };
+  vm.createContext(ctx);
+  vm.runInContext(src, ctx);
+  const tituloNota = (html) => (html.match(/<span title="([^"]*)"/) || [])[1];
+  const slLlamadas = tituloNota(ctx._traficoSubtabContentHTML('tv', 0, 'sl'));
+  assert.match(slLlamadas, /Promedio simple de la columna SERVICE_LEVEL_20SEC/);
+  assert.doesNotMatch(slLlamadas, /ponderado por/i);
+  assert.match(tituloNota(ctx._traficoSubtabContentHTML('tv', 0, 'aht')), /ponderado por volumen de llamadas/);
+  assert.match(tituloNota(ctx._traficoSubtabContentHTML('tww', 0, 'sl')), /ponderado por volumen/);
+  // La tarjeta "Nivel de servicio (20 s)" de Llamadas tampoco dice ponderado.
+  const nota = src.match(/nivelServicioMetrica: 'service_level',\s*nivelServicioNota: '([^']*)'/)[1];
+  assert.match(nota, /Promedio simple de la columna SERVICE_LEVEL_20SEC/);
+  assert.doesNotMatch(nota, /ponderado por el total/);
+});

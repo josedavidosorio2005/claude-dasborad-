@@ -19,6 +19,8 @@ sepan que hay nuevo, que se corrigio y que falta.
   línea 3P pasa de 87,7 % a 85,19 %.
 - Cambia en la tarjeta del mes y en las gráficas por mes, por día y por
   skill, en todos los clientes. WhatsApp no cambia.
+- La ayuda (?) de la gráfica y de la tarjeta de nivel de servicio ahora
+  explica que es el promedio simple, ya no "ponderado por llamadas".
 
 ## v1.61.0 — Octubre 2026
 
