@@ -251,6 +251,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Encabezado del tablero muy alto en el teléfono** (visto en
+  producción, Fase 164, 22/10/2026) — a 375 px el encabezado queda fijo
+  arriba y ocupa unos 300 px de 812 (más o menos un tercio de la
+  pantalla al bajar). Es parte de la propuesta visual A/B de la
+  auditoría de la Fase 164, que **espera a Edwin**: no se toca antes.
+- **Etiquetas de porcentaje amontonadas en las porciones pequeñas de las
+  tortas** (visto en producción, Fase 164, 22/10/2026) — en Tipificación
+  las porciones de 3–5 % ponen sus etiquetas unas sobre otras. Se ataca
+  en el lote 2 de la Fase 164 (el dato sigue en la tabla y el tooltip).
 - **Idea: guardar Chromium en caché en el job `pantallas` de CI** — en
   la Fase 164 el paso "Instalar Chromium (Playwright)" (`npx playwright
   install --with-deps chromium`) pasó varias veces del límite de 5

@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.64.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.64.3` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -655,3 +655,4 @@ mismo orden):
 - Fase 160 — Tareas de Edwin para la primera carga: ASA y ATA en dos gráficas, ejemplos de la plantilla de WhatsApp, Aurora y HLM con Tráfico de WhatsApp en 2 hojas, Hospital La María creado (sin datos, solo admin), deploy que se salta si su commit ya no es la cabeza de main (v1.58.0 → v1.59.0, 2026-10-21)
 - Fase 162 — Tope total de memoria (64 MB, `CACHE_DATOS_MAX_MB`) en la caché de respuestas de datos, que saca las entradas más viejas; `CLAUDE.md` corregido: Clínica Aurora y Hospital La María sí existen (v1.59.5, 2026-10-21)
 - Fase 163 — Pedidos de Edwin del 21/10: la skill es por cliente y el Centro de cargas define el cliente; Llamadas de Salida con su plantilla (TIPO); Llamadas Únicas sin asesor = abandonada; nivel de servicio = promedio simple de SERVICE_LEVEL_20SEC; cada gráfica en su cuadro y un color por sección. Cargado por la interfaz: Flujo de agosto de HLM y Salida de agosto de Mobilize (v1.60.0 → v1.64.0, 2026-10-22)
+- Fase 164 (lote 1) — Auditoría de diseño (solo lectura, base sintética) y primer lote: "Cerrar" visible en el teléfono y logo sin aplastar, torta de Tipificación sin colores repetidos y con coma decimal, Calidad por asesor con todos los nombres y un solo color; límite del job `pantallas` de CI de 5 a 15 minutos; revisado en producción a 375 px (v1.64.1 → v1.64.3, 2026-10-22)
