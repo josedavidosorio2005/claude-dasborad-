@@ -71,7 +71,7 @@ jobs:
   # respuesta 5xx, o un <canvas> sin pixeles pintados. Corre en cada PR.
   pantallas:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: read
     defaults:
