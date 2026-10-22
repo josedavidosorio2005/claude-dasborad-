@@ -4,6 +4,11 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.7 — Octubre 2026
+
+- Actualización de seguridad de una dependencia. No cambia nada de lo que
+  se ve ni ningún número.
+
 ## v1.64.5 — Octubre 2026
 
 **Fase 164: títulos de las gráficas en orden para los lectores de pantalla.**
