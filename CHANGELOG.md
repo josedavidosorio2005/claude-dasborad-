@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.3 — Octubre 2026
+
+**Fase 164: en Calidad se ven todos los asesores.**
+
+- La gráfica "Promedio de calidad por asesor" escondía la mitad de los
+  nombres cuando había muchos asesores, y cada barra tenía un color
+  distinto. Ahora se ven todos los nombres, la gráfica crece según cuántos
+  asesores haya y todas las barras van del mismo color.
+- Los números no cambian: solo cambia cómo se ven.
+
 ## v1.64.0 — Octubre 2026
 
 **Fase 163: cada gráfica en su cuadro y un color por sección.**
