@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.2 — Octubre 2026
+
+**Fase 164: Tipificación más fácil de leer.**
+
+- En la torta de Tipificación, dos tipificaciones distintas podían salir
+  del mismo color. Ahora cada una tiene su propio color (las que no
+  chocaban conservan el de siempre).
+- La tabla de Tipificación muestra el porcentaje con coma, como el resto
+  de la plataforma: "24,92 %" en vez de "24.92%".
+- Los números no cambian: solo cambia cómo se ven.
+
 ## v1.64.1 — Octubre 2026
 
 **Fase 164: arreglos del tablero en el celular.**

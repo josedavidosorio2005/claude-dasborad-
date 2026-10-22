@@ -89,6 +89,7 @@ function cargarTipificacion(respuestaPorTipo) {
     loPie: (titulo) => ({ titulo }),
     tipificacionEtiqueta: (t) => String(t).replace(/_/g, ' '),
     paletaColorPara: () => '#000',
+    paletaColoresSinRepetir: (etiquetas) => etiquetas.map(() => '#000'), // Fase 164 (D-02)
     showToast: () => {},
     esc: escHtml,
     textoFormatoNombre: (v) => v,
