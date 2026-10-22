@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.62.0 — Octubre 2026
+
+**Fase 163: Llamadas Únicas de ingreso distingue contestadas y abandonadas.**
+
+- El asesor ya no es obligatorio. Las abandonadas (del reporte "Skill y
+  servicios, numeral 2") no traen asesor: ahora se cargan con el asesor
+  vacío y cuentan como abandonadas. Antes esas filas se omitían; por eso
+  el total era igual a las contestadas y las abandonadas daban 0.
+- Contestadas y abandonadas únicas se cuentan por separado: un mismo
+  teléfono, una vez por día en cada tipo.
+- La vista previa dice cuántas contestadas y cuántas abandonadas trae el
+  archivo antes de guardar.
+- Si en el período no hay abandonadas (como en lo cargado antes de esta
+  versión), el tablero muestra una sola tarjeta y una sola barra,
+  "Llamadas únicas de ingreso", en vez de tres con el mismo número.
+
 ## v1.61.0 — Octubre 2026
 
 **Fase 163: Llamadas de Salida con la plantilla nueva de Edwin.**

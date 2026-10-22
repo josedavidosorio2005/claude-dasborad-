@@ -17,6 +17,12 @@
 
 var _llamadasUnicasFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
 
+// Fase 163 (reunion con Edwin, 21/10): la COLUMNA AGENT_NAME sigue siendo
+// obligatoria, pero el VALOR no. Edwin arma el archivo con dos reportes de
+// Wolkvox: las contestadas del CDR (traen asesor) y las abandonadas de
+// "Skill y servicios, numeral 2: Detalle llamadas abandonadas" (skill,
+// telefono y dia, SIN asesor). Una fila sin asesor es una abandonada y se
+// carga con el asesor vacio (antes se omitia).
 var LLAMADAS_UNICAS_COLUMNAS = [
   { key: 'agente', label: 'AGENT_NAME', obligatoria: true },
   { key: 'fecha', label: 'DATE', obligatoria: true },
@@ -153,8 +159,8 @@ function llamadasUnicasParseFilas(aoa) {
     var telefono = _llamadasUnicasNormalizarTelefono(row[map.telefono]);
     var fecha = llamadasUnicasParseFecha(row[map.fecha]);
 
-    if (!agente || !skillCrudo) {
-      avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (agente/skill), se omitio.');
+    if (!skillCrudo) {
+      avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (skill), se omitio.');
       continue;
     }
     if (!fecha) {
@@ -162,11 +168,11 @@ function llamadasUnicasParseFilas(aoa) {
       continue;
     }
     if (!telefono) {
-      avisos.push('Fila ' + filaNum + ' (' + agente + '): TELEPHONE invalido o vacio, se omitio.');
+      avisos.push('Fila ' + filaNum + ': TELEPHONE invalido o vacio, se omitio.');
       continue;
     }
     if (_llamadasUnicasFechaLimites.fechaLimitesEsFutura(fecha)) {
-      avisos.push('Fila ' + filaNum + ' (' + agente + '): DATE ' + fecha + ' esta en el futuro, se omitio.');
+      avisos.push('Fila ' + filaNum + ': DATE ' + fecha + ' esta en el futuro, se omitio.');
       continue;
     }
 
@@ -182,7 +188,7 @@ function llamadasUnicasParseFilas(aoa) {
       agente: agente,
       fecha: fecha,
       telefono: telefono,
-      tipo: 'CONTESTADA',
+      tipo: agente ? 'CONTESTADA' : 'ABANDONADA', // Fase 163: sin asesor = abandonada
       skill: skillCrudo,
     });
   }
@@ -197,22 +203,33 @@ function llamadasUnicasParseFilas(aoa) {
     };
   }
 
-  // Deduplicado por (dia, telefono) -- "unica" = una sola vez por dia, sin
-  // importar cuantas veces llamo ese numero ESE dia; el mismo numero en un
-  // dia DISTINTO cuenta aparte. Se conserva la PRIMERA fila de cada grupo
-  // (orden estable); el telefono NUNCA llega a `filas` (solo existio para
-  // esta clave, en memoria, hasta aqui).
+  // Deduplicado por (dia, telefono, tipo) -- "unica" = una sola vez por dia,
+  // sin importar cuantas veces llamo ese numero ESE dia; el mismo numero en
+  // un dia DISTINTO cuenta aparte. Fase 163: contestadas y abandonadas se
+  // cuentan por separado (mismo criterio que Llamadas de salida); cuantos
+  // dia+telefono aparecen en los dos tipos solo se informa. Se conserva la
+  // PRIMERA fila de cada grupo (orden estable); el telefono NUNCA llega a
+  // `filas` (solo existio para esta clave, en memoria, hasta aqui).
   var vistos = {};
+  var tiposPorDiaTel = {};
   var filas = [];
   var duplicadosQuitados = 0;
+  var contestadas = 0, abandonadas = 0;
   crudas.forEach(function (f) {
-    var clave = f.fecha + '|' + f.telefono;
+    var diaTel = f.fecha + '|' + f.telefono;
+    tiposPorDiaTel[diaTel] = tiposPorDiaTel[diaTel] || {};
+    tiposPorDiaTel[diaTel][f.tipo] = true;
+    var clave = diaTel + '|' + f.tipo;
     if (vistos[clave]) { duplicadosQuitados++; return; }
     vistos[clave] = true;
+    if (f.tipo === 'ABANDONADA') abandonadas++; else contestadas++;
     filas.push([f.agente, f.fecha, f.tipo, f.skill]);
   });
+  var telefonosEnAmbosTipos = Object.keys(tiposPorDiaTel).filter(function (k) {
+    return tiposPorDiaTel[k].CONTESTADA && tiposPorDiaTel[k].ABANDONADA;
+  }).length;
 
-  return { filas: filas, avisos: avisos, duplicadosQuitados: duplicadosQuitados };
+  return { filas: filas, avisos: avisos, duplicadosQuitados: duplicadosQuitados, contestadas: contestadas, abandonadas: abandonadas, telefonosEnAmbosTipos: telefonosEnAmbosTipos };
 }
 
 // Doble modo: global en el navegador, require() en Node para las pruebas.
