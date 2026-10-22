@@ -241,7 +241,8 @@ function _tipificacionTablaDetalleHtml(datos, total){
   filas.forEach(function(r){
     var pct = total ? Math.round((r.cantidad/total)*10000)/100 : 0;
     var etiqueta = r.esOtras ? r.tipificacion : tipificacionEtiqueta(r.tipificacion);
-    html += '<tr><td>'+esc(etiqueta)+'</td><td>'+r.cantidad.toLocaleString('es-CO')+'</td><td>'+pct.toFixed(2)+'%</td></tr>';
+    // Fase 164 (D-04): coma decimal es-CO ("24,92 %"), mismos 2 decimales.
+    html += '<tr><td>'+esc(etiqueta)+'</td><td>'+r.cantidad.toLocaleString('es-CO')+'</td><td>'+pct.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })+' %</td></tr>';
   });
   html += '</tbody></table></div>';
   return html;
@@ -299,7 +300,11 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
 
   var labels = resultado.datos.map(function(r){ return tipificacionEtiqueta(r.tipificacion); });
   var valores = resultado.datos.map(function(r){ return r.cantidad; });
-  var colores = resultado.datos.map(function(r){ return r.esOtras ? '#9aa0a6' : paletaColorPara(r.tipificacion); });
+  // Fase 164 (D-02): sin colores repetidos dentro de la torta (cada
+  // tipificacion conserva su color propio salvo choque; "Otras" sigue gris).
+  var coloresPropios = paletaColoresSinRepetir(resultado.datos.filter(function(r){ return !r.esOtras; }).map(function(r){ return r.tipificacion; }));
+  var k = 0;
+  var colores = resultado.datos.map(function(r){ return r.esOtras ? '#9aa0a6' : coloresPropios[k++]; });
   var tituloChart = (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' — '+resultado.total.toLocaleString('es-CO')+' registro(s)';
 
   _gdChart('tipif-c-'+i+'-'+canal, {
