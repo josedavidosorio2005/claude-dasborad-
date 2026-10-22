@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.64.1 — Octubre 2026
+
+**Fase 164: arreglos del tablero en el celular.**
+
+- En el celular, el botón "X Cerrar" del tablero se salía de la pantalla.
+  Ahora queda siempre visible arriba a la derecha.
+- El logo de InConexion de la barra de arriba ya no se ve aplastado en
+  celular y tableta.
+- Los números no cambian: solo cambia cómo se ve.
+
 ## v1.64.0 — Octubre 2026
 
 **Fase 163: cada gráfica en su cuadro y un color por sección.**
