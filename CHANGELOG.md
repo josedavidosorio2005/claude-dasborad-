@@ -15,6 +15,15 @@ sepan que hay nuevo, que se corrigio y que falta.
   Eliminar quedan separados para no tocar uno por otro.
 - En el computador no cambia nada. Los números no cambian.
 
+## v1.64.5 — Octubre 2026
+
+**Fase 164: títulos de las gráficas en orden para los lectores de pantalla.**
+
+- Los títulos de cada gráfica quedaban dos niveles por debajo del título
+  del tablero, y eso confunde a quien navega con un lector de pantalla.
+  Ahora siguen el orden correcto.
+- No cambia nada de lo que se ve ni ningún número.
+
 ## v1.64.4 — Octubre 2026
 
 **Fase 164: tablas que se recorren con el teclado.**

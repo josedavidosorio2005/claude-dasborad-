@@ -43,8 +43,8 @@ test('Flujo de Llamadas: "ASA y ATA" trae 2 graficas, ASA arriba y ATA abajo, ca
   assert.equal((html.match(/aurora-chart-wrap/g) || []).length, 2, 'un contenedor por grafica (cada uno con su Ver datos)');
   // Fase 163: cada una en su propio cuadro, con su titulo visible.
   assert.equal((html.match(/<section class="gd-grafica">/g) || []).length, 2, 'un cuadro por grafica');
-  assert.match(html, /<h4 class="gd-grafica-titulo">ASA — tiempo promedio de respuesta/);
-  assert.match(html, /<h4 class="gd-grafica-titulo">ATA — tiempo promedio de abandono/);
+  assert.match(html, /<h3 class="gd-grafica-titulo">ASA — tiempo promedio de respuesta/);
+  assert.match(html, /<h3 class="gd-grafica-titulo">ATA — tiempo promedio de abandono/);
 });
 
 test('mismos datos y mismo estilo: una serie por grafica, con los colores de antes', () => {

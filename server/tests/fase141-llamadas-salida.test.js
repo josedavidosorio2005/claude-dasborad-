@@ -288,8 +288,8 @@ test('Panel: 2 mitades (ingreso izquierda, salida derecha) en .aurora-grid-2.lu-
   assert.match(r.ingreso, /Llamadas de ingreso únicas/);
   assert.match(r.salida, /Llamadas de salida/);
   // Fase 163: cada grafica en su propio cuadro, con su titulo.
-  assert.match(r.ingreso, /<section class="gd-grafica"><h4 class="gd-grafica-titulo">Llamadas únicas de ingreso por mes<\/h4><div class="aurora-chart-wrap"[^>]*><canvas id="lu-canvas-7"/);
-  assert.match(r.salida, /<section class="gd-grafica"><h4 class="gd-grafica-titulo">Llamadas de salida por mes<\/h4><div class="aurora-chart-wrap"[^>]*><canvas id="ls-canvas-7"/);
+  assert.match(r.ingreso, /<section class="gd-grafica"><h3 class="gd-grafica-titulo">Llamadas únicas de ingreso por mes<\/h3><div class="aurora-chart-wrap"[^>]*><canvas id="lu-canvas-7"/);
+  assert.match(r.salida, /<section class="gd-grafica"><h3 class="gd-grafica-titulo">Llamadas de salida por mes<\/h3><div class="aurora-chart-wrap"[^>]*><canvas id="ls-canvas-7"/);
 });
 
 test('Panel: tarjetas en el orden pedido (ingreso: total/contestadas/abandonadas; salida: total/no conectadas/conectadas)', async () => {
