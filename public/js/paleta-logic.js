@@ -45,10 +45,16 @@ function paletaColorPara(etiqueta, paleta) {
 // paleta. Las etiquetas van en el orden de la grafica (la de mas registros
 // primero), asi que la categoria grande conserva su color de siempre. Solo
 // si hay mas etiquetas que colores se repite alguno (no hay otra salida).
+// Fase 164 (lote 2): una etiqueta REPETIDA en la misma grafica (ej. la torta
+// de Gerencia, una porcion por indicador con su categoria como etiqueta)
+// conserva el color que ya tomo: mismo nombre, mismo color.
 function paletaColoresSinRepetir(etiquetas, paleta) {
   var pal = (paleta && paleta.length) ? paleta : (typeof PC !== 'undefined' ? PC : ['#0d4a5e']);
   var usados = {};
+  var porEtiqueta = {};
   return (etiquetas || []).map(function (e) {
+    var clave = String(e);
+    if (Object.prototype.hasOwnProperty.call(porEtiqueta, clave)) return porEtiqueta[clave];
     var c = paletaColorPara(e, pal);
     if (usados[c] && Object.keys(usados).length < pal.length) {
       var i = pal.indexOf(c);
@@ -56,6 +62,7 @@ function paletaColoresSinRepetir(etiquetas, paleta) {
       c = pal[i];
     }
     usados[c] = true;
+    porEtiqueta[clave] = c;
     return c;
   });
 }
