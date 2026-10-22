@@ -688,7 +688,7 @@ const tipificacionSalidaResumenQuery = z.object({
 // (dia, telefono) y nunca lo incluye en la fila que manda al servidor.
 const llamadasUnicasTipoSchema = z.enum(['CONTESTADA', 'ABANDONADA'], { error: 'tipo debe ser CONTESTADA o ABANDONADA' });
 const llamadasUnicasFilaArraySchema = z.tuple([
-  tipificacionTextoObligatorio, // agente
+  z.string().trim().max(200), // agente (Fase 163: vacio en las abandonadas)
   fechaSchema, // fecha
   llamadasUnicasTipoSchema, // tipo
   tipificacionTextoObligatorio, // skill

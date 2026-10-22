@@ -293,8 +293,12 @@ test('Panel: 2 mitades (ingreso izquierda, salida derecha) en .aurora-grid-2.lu-
 });
 
 test('Panel: tarjetas en el orden pedido (ingreso: total/contestadas/abandonadas; salida: total/no conectadas/conectadas)', async () => {
-  const r = await renderPanel({ rol: 'ADMIN', respuestas: CON_DATOS });
-  assert.deepEqual(etiquetasKpi(r.elementos['lu-kpis-7'].innerHTML), [['88', 'Total únicas'], ['88', 'Contestadas únicas'], ['0', 'Abandonadas únicas']]);
+  const conAband = Object.assign({}, CON_DATOS, { '/llamadas-unicas/resumen': { contestadas: 80, abandonadas: 8, total: 88 } });
+  const r = await renderPanel({ rol: 'ADMIN', respuestas: conAband });
+  assert.deepEqual(etiquetasKpi(r.elementos['lu-kpis-7'].innerHTML), [['88', 'Total únicas'], ['80', 'Contestadas únicas'], ['8', 'Abandonadas únicas']]);
+  // Fase 163: sin abandonadas en el filtro, una sola tarjeta (no tres con el mismo numero).
+  const sinAband = await renderPanel({ rol: 'ADMIN', respuestas: CON_DATOS });
+  assert.deepEqual(etiquetasKpi(sinAband.elementos['lu-kpis-7'].innerHTML), [['88', 'Llamadas únicas de ingreso']]);
   assert.deepEqual(etiquetasKpi(r.elementos['ls-kpis-7'].innerHTML), [
     ['111', 'Total llamadas de salida'], ['52', 'Llamadas de salida no conectadas'], ['59', 'Llamadas de salida conectadas'],
   ]);
@@ -331,5 +335,5 @@ test('Panel: sin datos de salida -> estado vacio claro en la mitad derecha, sin 
   assert.match(r.salida, /Sin llamadas de salida cargadas todavía\./);
   assert.ok(!/aurora-kpi/.test(r.salida));
   assert.ok(!r.pedidos.some((u) => u.indexOf('/llamadas-salida/resumen') !== -1));
-  assert.deepEqual(etiquetasKpi(r.elementos['lu-kpis-7'].innerHTML)[0], ['88', 'Total únicas']);
+  assert.deepEqual(etiquetasKpi(r.elementos['lu-kpis-7'].innerHTML)[0], ['88', 'Llamadas únicas de ingreso']);
 });
