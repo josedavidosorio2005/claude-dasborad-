@@ -16,6 +16,22 @@ sepan que hay nuevo, que se corrigio y que falta.
   Humana), dos categorías distintas ya no pueden salir del mismo color.
 - Los números no cambian: solo cambia cómo se ven.
 
+## v1.64.7 — Octubre 2026
+
+- Actualización de seguridad de una dependencia. No cambia nada de lo que
+  se ve ni ningún número.
+
+## v1.64.6 — Octubre 2026
+
+**Fase 164: botones más fáciles de tocar en el celular.**
+
+- En el celular varios botones y campos eran muy pequeños para el dedo
+  (los de Excel/PDF de los paneles, los buscadores, los botones de las
+  páginas de administración, Editar y Eliminar en las tablas, el ojo de
+  la contraseña). Ahora todos tienen un tamaño cómodo, y Editar y
+  Eliminar quedan separados para no tocar uno por otro.
+- En el computador no cambia nada. Los números no cambian.
+
 ## v1.64.5 — Octubre 2026
 
 **Fase 164: títulos de las gráficas en orden para los lectores de pantalla.**
