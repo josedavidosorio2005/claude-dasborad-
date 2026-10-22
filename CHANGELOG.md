@@ -14,6 +14,27 @@ sepan que hay nuevo, que se corrigio y que falta.
   asesores haya y todas las barras van del mismo color.
 - Los números no cambian: solo cambia cómo se ven.
 
+## v1.64.2 — Octubre 2026
+
+**Fase 164: Tipificación más fácil de leer.**
+
+- En la torta de Tipificación, dos tipificaciones distintas podían salir
+  del mismo color. Ahora cada una tiene su propio color (las que no
+  chocaban conservan el de siempre).
+- La tabla de Tipificación muestra el porcentaje con coma, como el resto
+  de la plataforma: "24,92 %" en vez de "24.92%".
+- Los números no cambian: solo cambia cómo se ven.
+
+## v1.64.1 — Octubre 2026
+
+**Fase 164: arreglos del tablero en el celular.**
+
+- En el celular, el botón "X Cerrar" del tablero se salía de la pantalla.
+  Ahora queda siempre visible arriba a la derecha.
+- El logo de InConexion de la barra de arriba ya no se ve aplastado en
+  celular y tableta.
+- Los números no cambian: solo cambia cómo se ve.
+
 ## v1.64.0 — Octubre 2026
 
 **Fase 163: cada gráfica en su cuadro y un color por sección.**

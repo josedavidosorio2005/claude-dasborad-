@@ -37,7 +37,30 @@ function paletaColorPara(etiqueta, paleta) {
   return pal[idx];
 }
 
+// Fase 164 (D-02, auditoria de diseno): con 12 colores y ~9 categorias en
+// una misma torta, el hash casi siempre hace coincidir a dos (en Tipificacion
+// salian dos rosados y dos beige). Colores para UNA grafica: cada etiqueta
+// conserva su color propio (paletaColorPara) salvo que otra etiqueta ANTERIOR
+// de la lista ya lo tenga; entonces toma el siguiente color libre de la
+// paleta. Las etiquetas van en el orden de la grafica (la de mas registros
+// primero), asi que la categoria grande conserva su color de siempre. Solo
+// si hay mas etiquetas que colores se repite alguno (no hay otra salida).
+function paletaColoresSinRepetir(etiquetas, paleta) {
+  var pal = (paleta && paleta.length) ? paleta : (typeof PC !== 'undefined' ? PC : ['#0d4a5e']);
+  var usados = {};
+  return (etiquetas || []).map(function (e) {
+    var c = paletaColorPara(e, pal);
+    if (usados[c] && Object.keys(usados).length < pal.length) {
+      var i = pal.indexOf(c);
+      while (usados[pal[i]]) i = (i + 1) % pal.length;
+      c = pal[i];
+    }
+    usados[c] = true;
+    return c;
+  });
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { paletaColorPara: paletaColorPara };
+  module.exports = { paletaColorPara: paletaColorPara, paletaColoresSinRepetir: paletaColoresSinRepetir };
 }
