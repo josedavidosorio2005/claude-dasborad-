@@ -733,6 +733,11 @@ var TRAFICO_ASA_ATA_SEPARADAS = [
 // este mal. Esta nota es solo aclaratoria (no cambia ningun calculo) para
 // que quede claro por que.
 var TRAFICO_NOTA_PONDERADO = 'Valor del mes ponderado por volumen de llamadas (no es el promedio simple de los días).';
+// Fase 163 (pedido de Edwin): el nivel de servicio de LLAMADAS ya no se
+// pondera -- es el promedio simple de SERVICE_LEVEL_20SEC (ver
+// traficoAgregar). La nota de esa grafica lo dice; AHT/ASA y el nivel de
+// servicio de WhatsApp siguen con TRAFICO_NOTA_PONDERADO.
+var TRAFICO_NOTA_SL_PROMEDIO = 'Promedio simple de la columna SERVICE_LEVEL_20SEC del reporte de Wolkvox: el valor de cada skill y día que entra en el filtro (las filas sin dato no cuentan). No se pondera por llamadas.';
 // `titulos` (Fase 87, tema B) es opcional -- sin pasarlo, usa
 // TRAFICO_SUBTAB_TITULOS (Llamadas, sin cambios); WhatsApp pasa
 // TRAFICO_WPP_SUBTAB_TITULOS.
@@ -753,8 +758,9 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
       '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>';
   }
+  var textoNota = (activo === 'sl' && prefijo === 'tv') ? TRAFICO_NOTA_SL_PROMEDIO : TRAFICO_NOTA_PONDERADO;
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
-    ? ' <span title="'+esc(TRAFICO_NOTA_PONDERADO)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
+    ? ' <span title="'+esc(textoNota)+'" style="cursor:help;color:var(--c-text-muted);font-size:0.78rem;border:1px solid var(--c-border,#999);border-radius:50%;padding:0 5px">?</span>'
     : '';
   var resumenSeccion = resumenSeccionId ? '<div id="'+resumenSeccionId+'" class="aurora-kpis" style="margin-bottom:10px"></div>' : '';
   if(activo === 'asaata' && prefijo === 'tv'){
@@ -879,8 +885,9 @@ function _traficoFmtTiempoMMSS(v){
 // Fase 87 (tema A, nota del jefe: "siempre tener visible el nivel de
 // servicio, en Resumen"): 6ta tarjeta, siempre presente junto a las demas
 // (antes el nivel de servicio solo se veia entrando a la sub-pestana "Nivel
-// de Servicio a 20s"). `totales.nivelServicio` (ya ponderado por el total
-// del periodo/filtro actual -- traficoServiceLevelPromedioPeriodo/
+// de Servicio a 20s"). `totales.nivelServicio` (del periodo/filtro actual;
+// en llamadas, promedio simple de las filas desde la Fase 163 --
+// traficoServiceLevelPromedioPeriodo/
 // traficoWppServiceLevelPromedioPeriodo, *-logic.js) puede ser null (sin
 // dato para el campo/periodo actual: nunca se inventa ni se aproxima, la
 // tarjeta muestra "—"). `labels.nivelServicioLabel` lleva el umbral en el
@@ -1288,7 +1295,7 @@ function _traficoRenderContenido(campana, sede, i){
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
     { total: 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
       nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
-      nivelServicioNota: 'Porcentaje de llamadas contestadas dentro de los primeros 20 segundos, ponderado por el total de llamadas del periodo/filtro actual.' }, campana, pCfgKpis.resumenOcultar, contextoKpis);
+      nivelServicioNota: 'Promedio simple de la columna SERVICE_LEVEL_20SEC del reporte de Wolkvox (llamadas contestadas dentro de los primeros 20 segundos) en el periodo/filtro actual. No se pondera por llamadas.' }, campana, pCfgKpis.resumenOcultar, contextoKpis);
 
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas', campana);
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
@@ -1315,8 +1322,7 @@ function _traficoRenderContenido(campana, sede, i){
 
   // Fase 131 (Parte 2, pedido de Edwin para Mobilize): "cada sección con SU
   // resumen acumulado debajo" -- un numero del PERIODO/FILTRO YA aplicado
-  // (mismo `filtradas`/`nivelServicio` de arriba, nunca un promedio simple
-  // de los valores diarios) junto al titulo de la sub-pestaña activa de
+  // (mismo `filtradas`/`nivelServicio` de arriba) junto al titulo de la sub-pestaña activa de
   // SL/Abandono/ASA/AHT. Solo si el panel lo pide (`p.resumenPorSeccion`) --
   // ORLANT/AURORA/HLM no lo piden, asi que para ellos este bloque no hace
   // nada (el div ni siquiera existe en su DOM).

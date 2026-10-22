@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.63.0 — Octubre 2026
+
+**Fase 163: el nivel de servicio se calcula como lo pide Edwin.**
+
+- Son dos indicadores distintos. El nivel de atención (contestadas ÷
+  ingresadas) sigue igual.
+- El nivel de servicio ahora es el promedio simple de la columna
+  SERVICE_LEVEL_20SEC del reporte de Wolkvox, de las filas (skill y día) que
+  entran en el filtro. Por día se ve el valor del reporte; en el mes, el
+  promedio de esas filas. Las filas sin dato no cuentan; las de 0 % sí.
+- Antes se ponderaba por llamadas. Por eso en agosto de Mobilize daba igual
+  al nivel de atención (95,5 %); ahora da 88,24 %. En ORLANT agosto, la
+  línea 3P pasa de 87,7 % a 85,19 %.
+- Cambia en la tarjeta del mes y en las gráficas por mes, por día y por
+  skill, en todos los clientes. WhatsApp no cambia.
+- La ayuda (?) de la gráfica y de la tarjeta de nivel de servicio ahora
+  explica que es el promedio simple, ya no "ponderado por llamadas".
+
 ## v1.62.0 — Octubre 2026
 
 **Fase 163: Llamadas Únicas de ingreso distingue contestadas y abandonadas.**
