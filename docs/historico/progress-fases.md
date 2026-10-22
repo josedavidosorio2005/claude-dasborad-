@@ -15462,3 +15462,58 @@ del cliente (#502, #500) esperaron el OK explícito del usuario.
 - **Pendiente:** volver a cargar las Únicas de agosto de Mobilize (las
   abandonadas se habían omitido antes de la v1.62.0); primera carga de
   Clínica Aurora. Ver `docs/pendientes.md`.
+
+## Fase 164 (lote 1) — Auditoría de diseño y primer lote de arreglos visuales (v1.64.1 → v1.64.3, 2026-10-22)
+
+**Auditoría (solo lectura).** Se revisó la plataforma en local, sobre una
+copia de la base demo con datos sintéticos, a 375, 768 y 1440 px, en
+tema claro y oscuro, con Playwright (Brave), axe-core y Lighthouse.
+Resultado: 22 hallazgos (D-01 a D-22), falsos positivos descartados, un
+plan por lotes y dos propuestas visuales (A y B). El informe y las
+capturas quedan fuera del repo (`datos-inconexion\fase164\`). La
+propuesta A/B espera a Edwin.
+
+**Lote 1 (aprobado por el usuario).** Tres PRs pequeños, cada uno con
+pruebas que fallan antes y pasan después, capturas antes y después
+(fuera del repo) y la "foto por rol" (6 roles × ORLANT, MOBILIZE y HLM,
+todas las pestañas): 0 diferencias en 179 pantallas y 4.594 valores en
+cada PR. Un merge a la vez, sin cargas en curso, con
+`--match-head-commit` comparado antes con `git ls-remote`.
+
+- **#505 (v1.64.1):** en el teléfono el botón "Cerrar" del tablero
+  quedaba fuera de la pantalla; ahora va fijo arriba a la derecha
+  (x 371 → 285 px a 375 px de ancho). El logo del menú ya no se ve
+  aplastado (35×26 → 27×26).
+- **#506 (v1.64.2):** la torta de Tipificación ya no repite colores entre
+  sus porciones (`paletaColoresSinRepetir`, `public/js/paleta-logic.js`;
+  "Otras" sigue gris) y la tabla muestra los porcentajes con coma decimal
+  ("24,92 %").
+- **#507 (v1.64.3):** "Promedio de calidad por asesor" muestra todos los
+  nombres del eje (la gráfica crece con la cantidad de asesores,
+  `calDashAltoBarrasAsesores`) y las barras van en un solo color, sin
+  leyenda. Sigue siendo una sola serie, solo el promedio (decisión de la
+  Fase 130).
+- **#508 (CI):** el paso "Instalar Chromium (Playwright)" del job
+  `pantallas` se cortó en el límite de 5 minutos tres veces en main (una
+  en el CI de #506 y dos en el de #507), y eso frenó el deploy. El
+  usuario autorizó relanzar el job una vez para #506. Con su OK se subió
+  el límite a 15 minutos (`ci.yml`, solo esa línea). Al mergear #508, el
+  CI de main pasó completo (`pantallas` en 1 min 10 s) y desplegó #507.
+  La idea de guardar Chromium en caché queda en `docs/pendientes.md`.
+- **Fuera del repo:** se apagaron los hooks del plugin impeccable
+  (configuración del usuario) y se borraron `skills-lock.json` y
+  `.aider-desk/` de la raíz (no estaban en git).
+
+**Verificación.** Suite verde en cada PR (2051 → 2061 pruebas), `npm
+audit` 0, CI verde, `/api/health` 1.64.1, 1.64.2 y 1.64.3. **En
+producción**, con la sesión del usuario, solo lectura, a 375 px:
+"Cerrar" visible y sin tapar el título en ORLANT y MOBILIZE; torta de
+Tipificación de septiembre con 11 porciones y 11 colores distintos en
+las dos, y los 11 porcentajes de la tabla con coma decimal; Calidad por
+asesor de ORLANT con los 19 nombres en el eje, un solo color, 592 px de
+alto (MOBILIZE no tiene monitoreos de calidad); 0 errores de consola.
+
+**Visto en el teléfono, sin tocar** (anotado en `docs/pendientes.md`):
+el encabezado del tablero queda fijo y ocupa unos 300 px de 812; en las
+tortas, las etiquetas de porcentaje de las porciones pequeñas se montan
+unas sobre otras.
