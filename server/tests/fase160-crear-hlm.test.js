@@ -30,7 +30,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
   // Despues de HLM solo pueden venir migraciones de fases posteriores que no la tocan.
   const POSTERIORES = ['fase163_skill_por_cliente_v1',
     // Fase 168: solo tocan ORLANT (mapa de skills de WhatsApp y su panel de Tipificacion).
-    'fase168_skills_whatsapp_v1', 'fase168_orlant_tipificacion_dos_canales_v1'];
+    'fase168_skills_whatsapp_v1', 'fase168_orlant_tipificacion_dos_canales_v1',
+    // Fase 170: solo crea la tabla asesor_linea (vacia).
+    'fase170_asesor_linea_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
