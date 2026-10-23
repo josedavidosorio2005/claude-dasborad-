@@ -111,9 +111,14 @@ const GENERADORES = {
     key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida',
     panels: [{ tipo: 'llamadas_unicas_panel', campana }],
   }),
-  tipificacion: (campana) => ({
+  // Fase 168: con Flujo de WhatsApp (ORLANT), Tipificacion lleva las 2 mitades
+  // (CDR de llamadas y de WhatsApp) sin la tabla de detalle; sin WhatsApp
+  // (Mobilize), solo llamadas con la tabla, como desde la Fase 138.
+  tipificacion: (campana, activos) => ({
     key: 'tipificacion', label: 'Tipificación',
-    panels: [{ tipo: 'tipificacion_panel', titulo: 'Tipificación', campana, soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true }],
+    panels: [activos && activos.has('flujo_whatsapp')
+      ? { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana, mostrarFiltroTipo: true, mostrarTarjetasSalida: true }
+      : { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana, soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true }],
   }),
   encuesta: (campana) => ({
     key: 'encuesta', label: 'Encuesta',

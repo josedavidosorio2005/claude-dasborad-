@@ -29,6 +29,7 @@ var _cargasCalidadPorCampana = {}; // { campana: {campana,engine,items} } — de
 var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente actual
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
+var _cargasSkillsWhatsappMapa = null; // Fase 168: {codigo: nombre} de WhatsApp del cliente (HistChat por SKILL_ID)
 // Fase 153 (Centro de cargas, PR 4): { cliente, carga, mes, nombre } cuando
 // se llega desde "Subir/Reemplazar" de un mes del Centro: el plan queda con
 // ese modulo y el archivo con las filas de ese mes (centroFiltrarPlan /
@@ -414,6 +415,57 @@ async function onCargaClienteChange(){
       '. La(s) que no apliquen hoy pueden quedar vacias.';
   }
   renderCargasExistentes();
+  _cargasPintarSkillsWhatsapp(cliente);
+}
+
+// ── Fase 168: skills de WhatsApp (codigo -> nombre), solo administrador ──
+// El HistChat de Wolkvox trae SKILL_ID y no el nombre; este mapa (tabla
+// skills_whatsapp) es el que usa el lector. Se ve solo si el cliente carga
+// Tipificacion de WhatsApp y quien entro es administrador (el servidor
+// tambien lo exige al guardar).
+var _cargasSkillsWppCliente = null;
+function _cargasEsAdmin(){
+  return (typeof isMasterAdmin === 'function' && isMasterAdmin()) || (typeof currentUser !== 'undefined' && currentUser && currentUser.rol === 'ADMIN');
+}
+function _cargasSkillsWppFilaHtml(s){
+  return '<div class="cargas-skills-wpp-fila">' +
+    '<div class="ig"><label>Código (SKILL_ID)</label><input type="text" inputmode="numeric" class="cargas-skills-wpp-codigo" aria-label="Código del skill (SKILL_ID)" value="'+esc(s.codigo)+'"></div>' +
+    '<div class="ig"><label>Nombre del skill</label><input type="text" class="cargas-skills-wpp-nombre" aria-label="Nombre del skill" value="'+esc(s.nombre)+'"></div>' +
+    '<button type="button" class="btn-sm cargas-skills-wpp-quitar" onclick="this.parentNode.remove()" aria-label="Quitar este skill">Quitar</button>' +
+  '</div>';
+}
+async function _cargasPintarSkillsWhatsapp(cliente){
+  var card = document.getElementById('carga-skills-wpp-card');
+  var lista = document.getElementById('carga-skills-wpp-lista');
+  if(!card || !lista) return;
+  var aplica = !!cliente && _cargasEsAdmin() && _cargasPlan.some(function(h){ return h.tipo==='tipificacion' && h.canalTipificacion==='WHATSAPP'; });
+  card.style.display = aplica ? '' : 'none';
+  _cargasSkillsWppCliente = aplica ? cliente : null;
+  if(!aplica) return;
+  lista.innerHTML = '<p class="cargas-skills-wpp-ayuda">Cargando…</p>';
+  try{
+    var r = await apiRequest('GET','/calidad/tipificacion/skills-whatsapp?campana='+encodeURIComponent(cliente));
+    lista.innerHTML = (r.skills || []).map(_cargasSkillsWppFilaHtml).join('') || '';
+  }catch(e){ lista.innerHTML = '<p class="cargas-skills-wpp-ayuda">'+esc(e.message)+'</p>'; }
+}
+function cargasSkillsWppAgregar(){
+  var lista = document.getElementById('carga-skills-wpp-lista');
+  if(!lista) return;
+  lista.insertAdjacentHTML('beforeend', _cargasSkillsWppFilaHtml({ codigo:'', nombre:'' }));
+  var nuevos = lista.querySelectorAll('.cargas-skills-wpp-codigo');
+  if(nuevos.length) nuevos[nuevos.length-1].focus();
+}
+async function cargasSkillsWppGuardar(){
+  if(!_cargasSkillsWppCliente) return;
+  var filas = document.querySelectorAll('#carga-skills-wpp-lista .cargas-skills-wpp-fila');
+  var skills = Array.prototype.map.call(filas, function(fl){
+    return { codigo: fl.querySelector('.cargas-skills-wpp-codigo').value.trim(), nombre: fl.querySelector('.cargas-skills-wpp-nombre').value.trim() };
+  }).filter(function(s){ return s.codigo || s.nombre; });
+  try{
+    var r = await apiRequest('PUT','/calidad/tipificacion/skills-whatsapp', { campana: _cargasSkillsWppCliente, skills: skills });
+    showToast('✓ Skills de WhatsApp guardados: '+(r.skills || []).length+'.');
+    await _cargasPintarSkillsWhatsapp(_cargasSkillsWppCliente);
+  }catch(e){ showToast(e.message, 'error'); }
 }
 
 // ── Plantilla consolidada (descarga) ────────────────────────────
@@ -618,7 +670,9 @@ async function procesarArchivoConsolidado(input){
       // sueltos ANTES del encabezado -- se busca en las primeras 20 filas.
       if(esEncuesta){
         if(encuestaBuscarEncabezado(_cargasPrimerasFilas(wsCandidata, 20), 20) === -1) continue;
-      } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas)) continue;
+      // Fase 168: el HistChat NUEVO (SKILL_ID, sin SKILL_NAME) entra al slot de WhatsApp.
+      } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas) &&
+        !(esTipificacion && h.canalTipificacion==='WHATSAPP' && cargasEsHistChatPorSkillId(headerRow0))) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario, _cargasCanalElegido()) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
       // colarse en el slot de WhatsApp, ni un HistChat (trae NOMBRE DE
@@ -642,6 +696,17 @@ async function procesarArchivoConsolidado(input){
     var rg = XLSX.utils.decode_range(ws['!ref']);
     var rango = { s: rg.s, e: { r: Math.min(rg.s.r + maxFilas, rg.e.r), c: rg.e.c } };
     return XLSX.utils.sheet_to_json(ws, { header:1, blankrows:false, defval:null, range: rango });
+  }
+
+  // Fase 168: mapa codigo -> skill de WhatsApp del cliente (HistChat por
+  // SKILL_ID). Sin mapa (error de red), el lector lo dice en vez de adivinar.
+  _cargasSkillsWhatsappMapa = null;
+  if(_cargasPlan.some(function(h){ return h.tipo==='tipificacion' && h.canalTipificacion==='WHATSAPP'; })){
+    try{
+      var skillsWpp = await apiRequest('GET','/calidad/tipificacion/skills-whatsapp?campana='+encodeURIComponent(cliente));
+      _cargasSkillsWhatsappMapa = {};
+      (skillsWpp.skills || []).forEach(function(s){ _cargasSkillsWhatsappMapa[s.codigo] = s.nombre; });
+    }catch(e){ _cargasSkillsWhatsappMapa = null; }
   }
 
   _cargasResultados = _cargasPlan.map(function(h){
@@ -675,7 +740,12 @@ async function procesarArchivoConsolidado(input){
       // eliminacion de duplicados exactos de la Fase 88 (ver
       // tipificacion-logic.js) -- WhatsApp (Wolkvox/HistChat) nunca la
       // aplica, Llamadas y el formato viejo siguen igual que siempre.
-      parseFn = function(a, w){ return tipificacionParseFilas(a, w, h.canalTipificacion, h.opcionesTipificacion); };
+      parseFn = function(a, w){
+        var opc = h.canalTipificacion === 'WHATSAPP'
+          ? Object.assign({}, h.opcionesTipificacion || {}, { skillsWhatsapp: _cargasSkillsWhatsappMapa })
+          : h.opcionesTipificacion;
+        return tipificacionParseFilas(a, w, h.canalTipificacion, opc);
+      };
     } else if(h.tipo === 'llamadas_unicas'){
       parseFn = llamadasUnicasParseFilas;
     } else if(h.tipo === 'llamadas_salida'){
@@ -737,6 +807,10 @@ async function procesarArchivoConsolidado(input){
         if(avisoSkills) f.avisos = [avisoSkills].concat(f.avisos || []);
       }
       // Encuesta: los conteos de la vista previa, de las filas que quedaron.
+      // Fase 168: Tipificacion -- cuantas de salida, de las filas que quedaron.
+      if(f.tipo==='tipificacion' && f.filas && f.centroIgnoradas){
+        f.salida = f.filas.filter(function(x){ return x.tipoInteraccion==='outbound_ma'; }).length;
+      }
       // Fase 165: WhatsApp tiempos -- igual, rangos y días de las filas que quedaron.
       if(f.tipo==='whatsapp_tiempos' && f.filas && f.centroIgnoradas){
         f.porRango = {};
@@ -809,6 +883,10 @@ function _cargasEstadoLabel(r){
   // Fase 79: cuando la hoja no traia el nombre esperado pero sus
   // encabezados calzaron exacto con el formato (archivo ORIGINAL de
   // Edwin, hoja "DATA"), se dice explicitamente cual hoja se uso.
+  // Fase 168: Tipificacion -- cuantas de salida y cuantas ignoradas por skill.
+  if(r.tipo==='tipificacion' && r.filas && r.filas.length && typeof r.salida === 'number'){
+    extra = ' — de salida: '+r.salida+(r.ignoradasPorSkill ? ', ignoradas por skill: '+r.ignoradasPorSkill : '');
+  }
   // Fase 142 (punto 4): WhatsApp tiempos -- solo conteos (ignoradas por no
   // ser WhatsApp, dias y cantidad por rango), nunca filas.
   if(r.tipo==='whatsapp_tiempos' && r.porRango){

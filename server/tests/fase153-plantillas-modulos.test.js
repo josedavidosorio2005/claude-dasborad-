@@ -26,7 +26,9 @@ const LECTORES = {
   'PLANTILLA_LLAMADAS_UNICAS.xlsx': (a) => JS('llamadas-unicas-logic.js').llamadasUnicasParseFilas(a),
   'PLANTILLA_LLAMADAS_SALIDA.xlsx': (a) => JS('llamadas-salida-logic.js').llamadasSalidaParseFilas(a),
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': (a) => JS('tipificacion-logic.js').tipificacionParseFilas(a, null, 'LLAMADAS'),
-  'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': (a) => JS('tipificacion-logic.js').tipificacionParseFilas(a, null, 'WHATSAPP'),
+  // Fase 168: como en Cargar Datos, el HistChat por SKILL_ID se lee con el mapa de skills (semilla de ORLANT).
+  'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': (a) => JS('tipificacion-logic.js').tipificacionParseFilas(a, null, 'WHATSAPP',
+    { skillsWhatsapp: Object.fromEntries(require('../skills-whatsapp').SEMILLA_ORLANT) }),
   'PLANTILLA_ENCUESTA.xlsx': (a) => JS('encuesta-logic.js').encuestaParseFilas(a),
   'PLANTILLA_FLUJO_WHATSAPP.xlsx': (a) => JS('trafico-whatsapp-logic.js').traficoWppParseFilas(a),
   'PLANTILLA_WHATSAPP_TIEMPOS.xlsx': (a) => JS('whatsapp-tiempos-logic.js').wppTiemposParseFilas(a),
@@ -52,7 +54,9 @@ for (const c of CARGAS) {
     assert.deepEqual(filas[0], cols.map((x) => x.encabezado));
     // Todas las obligatorias del lector estan.
     const lista = JS(c.fuente.js)[c.fuente.variable].filter((x) => x.obligatoria && !x.ocultaEnPlantilla);
-    lista.forEach((x) => assert.ok(cols.some((y) => y.label === x.label), x.label));
+    // Fase 168: una obligatoria puede venir reemplazada (WhatsApp: SKILL_ID en vez de SKILL_NAME).
+    const reemplazo = c.obligatoriaReemplazada || {};
+    lista.forEach((x) => assert.ok(cols.some((y) => y.label === (reemplazo[x.label] || x.label)), x.label));
     // Cada columna tiene descripcion y ejemplo.
     cols.forEach((x) => {
       assert.ok(x.descripcion, 'falta la descripcion de ' + x.label);
@@ -66,7 +70,8 @@ for (const c of CARGAS) {
     if (c.fuente.variable === 'ENCUESTA_COLUMNAS') {
       assert.equal(JS('encuesta-logic.js').encuestaBuscarEncabezado([['texto suelto'], header], 20), 1);
     } else {
-      assert.ok(CL.cargasEncabezadosCoinciden(header, columnas));
+      // Fase 168: mismo criterio que cargas.js -- el HistChat por SKILL_ID entra al slot de WhatsApp.
+      assert.ok(CL.cargasEncabezadosCoinciden(header, columnas) || (c.hoja === 'TIPIFICACION_WHATSAPP' && CL.cargasEsHistChatPorSkillId(header)));
     }
     if (c.fuente.variable === 'TIPIFICACION_COLUMNAS') {
       assert.equal(CL.cargasDetectarCanalTipificacion(header), c.hoja === 'TIPIFICACION_WHATSAPP' ? 'WHATSAPP' : 'LLAMADAS');

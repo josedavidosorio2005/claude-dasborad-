@@ -57,6 +57,10 @@ var TIPIFICACION_COLUMNAS = [
   { key: 'tipoInteraccion', label: 'TYPE_INTERACTION', obligatoria: false },
   { key: 'hungUp', label: 'HUNG_UP', obligatoria: false },
   { key: 'skillId', label: 'SKILL_ID', obligatoria: false },
+  // Fase 168: el export HistChat de WhatsApp (por SKILL_ID) trae CHANNEL
+  // ("whatsapp"). Solo sirve para la plantilla; no se guarda (no esta en
+  // TIPIFICACION_ORDEN_ARRAY).
+  { key: 'canalChat', label: 'CHANNEL', obligatoria: false },
 ];
 var TIPIFICACION_COLUMNAS_OBLIGATORIAS = TIPIFICACION_COLUMNAS.filter(function (c) { return c.obligatoria; });
 // Orden fijo del payload compacto (arrays, no objetos) -- ver
@@ -95,6 +99,33 @@ var TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS = ['TELEPHONE', 'CUSTOMER_ID', 'CON
 var TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO = ['PRUEBA'];
 var TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO = ['Cliente_no_contesta'];
 var TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS = ['inbound', 'outbound_ma'];
+
+// Fase 168 (reunion con Edwin del 23/10: ORLANT se actualiza con solo los 2
+// CDR de Wolkvox, HistCDR y HistChat):
+//   - Llamadas (HistCDR): SKILL_ID/SKILL_NAME = "-" es una llamada de SALIDA
+//     (outbound_ma) y se guarda con el skill LLAMADAS DE SALIDA. Las
+//     internalcall* y las filas sin tipo de interaccion NO cuentan como
+//     salida (quedan con "-").
+//   - WhatsApp (HistChat nuevo): trae SKILL_ID numerico y NO SKILL_NAME. El
+//     nombre sale del mapa codigo -> nombre de WhatsApp de cada cliente
+//     (tabla skills_whatsapp, server/skills-whatsapp.js), que el navegador
+//     pasa en opciones.skillsWhatsapp. SKILL_ID 0 = WhatsApp de SALIDA (se
+//     guarda como outbound_ma); los demas, de entrada (inbound). Un SKILL_ID
+//     fuera del mapa se ignora con UN aviso agrupado.
+var TIPIFICACION_SKILL_SALIDA_LLAMADAS = 'LLAMADAS DE SALIDA';
+var TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP = '0';
+var TIPIFICACION_ETIQUETAS_SKILL = {
+  'LLAMADAS DE SALIDA': 'Llamadas de salida',
+  'WHATSAPP DE SALIDA': 'WhatsApp de salida',
+};
+
+// Texto visible de un skill/cola: los de salida con su nombre fijo; el resto
+// con la regla de nombres de siempre (textoFormatoNombre).
+function tipificacionEtiquetaSkill(skill) {
+  var v = String(skill == null ? '' : skill).trim();
+  if (TIPIFICACION_ETIQUETAS_SKILL[v.toUpperCase()]) return TIPIFICACION_ETIQUETAS_SKILL[v.toUpperCase()];
+  return _tipificacionTexto.textoFormatoNombre(v);
+}
 
 function tipificacionNorm(s) {
   return String(s == null ? '' : s).trim().toLowerCase();
@@ -265,12 +296,19 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var codificacionesExcluidas = (opciones && opciones.codificacionesExcluidas) || [];
   var map = tipificacionColIndexMap(aoa[0]);
-  var faltantes = TIPIFICACION_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
+  // Fase 168: HistChat de WhatsApp por SKILL_ID (sin SKILL_NAME).
+  var porSkillId = canal === 'WHATSAPP' && map.skill === undefined && map.skillId !== undefined;
+  var skillsWhatsapp = (opciones && opciones.skillsWhatsapp) || null;
+  var faltantes = TIPIFICACION_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined && !(porSkillId && c.key === 'skill'); });
   if (faltantes.length) {
     return {
       error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') + '.',
     };
   }
+  if (porSkillId && !skillsWhatsapp) {
+    return { error: 'Este archivo trae SKILL_ID y no SKILL_NAME: falta la tabla de skills de WhatsApp de este cliente (Cargar Datos, "Skills de WhatsApp").' };
+  }
+  var ignoradasPorSkill = {}; // Fase 168 -- {SKILL_ID: cantidad}, un solo aviso al final
 
   var filas = [];
   var avisos = [];
@@ -283,7 +321,19 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
 
     var agente = tipificacionNormTexto(row[map.agente]);
     var tipificacion = tipificacionNormTexto(row[map.tipificacion]);
-    var skill = tipificacionNormTexto(row[map.skill]);
+    var skill;
+    var skillIdWpp = null;
+    if (porSkillId) {
+      skillIdWpp = tipificacionNormTexto(row[map.skillId]);
+      skill = Object.prototype.hasOwnProperty.call(skillsWhatsapp, skillIdWpp) ? tipificacionNormTexto(skillsWhatsapp[skillIdWpp]) : '';
+      if (!skill) {
+        var claveIgn = skillIdWpp || '(vacio)';
+        ignoradasPorSkill[claveIgn] = (ignoradasPorSkill[claveIgn] || 0) + 1;
+        continue;
+      }
+    } else {
+      skill = tipificacionNormTexto(row[map.skill]);
+    }
     var fechaCrudo = ws ? tipificacionValorCrudoSiFechaBoxeada(row[map.fecha], ws, i, map.fecha) : row[map.fecha];
     var fecha = tipificacionParseFecha(fechaCrudo);
     // Sin columna HORA propia (export completo HistCDR, Fase 116): si DATE
@@ -336,7 +386,9 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     var codAct = map.codAct !== undefined && row[map.codAct] != null && String(row[map.codAct]).trim() !== ''
       ? String(row[map.codAct]).trim() : null;
     var tipoInteraccion = null;
-    if (map.tipoInteraccion !== undefined) {
+    if (porSkillId) {
+      tipoInteraccion = skillIdWpp === TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP ? 'outbound_ma' : 'inbound';
+    } else if (map.tipoInteraccion !== undefined) {
       var tipoCrudo = tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase();
       if (tipoCrudo === '') {
         tipoInteraccion = null;
@@ -354,6 +406,11 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       ? String(row[map.hungUp]).trim() : null;
     var skillId = map.skillId !== undefined && row[map.skillId] != null && String(row[map.skillId]).trim() !== ''
       ? String(row[map.skillId]).trim() : null;
+    // Fase 168: "-" en Llamadas = salida, salvo internalcall* o sin tipo.
+    if (!porSkillId && skill === '-' && map.tipoInteraccion !== undefined) {
+      var tipoSalida = tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase();
+      if (tipoSalida && tipoSalida !== '-' && tipoSalida.indexOf('internalcall') !== 0) skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
+    }
 
     filas.push({
       agente: agente, fecha: fecha, hora: hora, duracionMin: duracionMin, tipificacion: tipificacion, skill: skill,
@@ -361,6 +418,12 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     });
   }
 
+  var totalIgnoradasSkill = Object.keys(ignoradasPorSkill).reduce(function (a, k) { return a + ignoradasPorSkill[k]; }, 0);
+  if (totalIgnoradasSkill > 0) {
+    avisos.push(totalIgnoradasSkill + ' fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se ignoraron: ' +
+      Object.keys(ignoradasPorSkill).sort().map(function (k) { return k + ' (' + ignoradasPorSkill[k] + ')'; }).join(', ') +
+      '. Si alguno es de WhatsApp, agréguelo en "Skills de WhatsApp".');
+  }
   var totalExcluidas = Object.keys(excluidasPorCodificacion).reduce(function (a, k) { return a + excluidasPorCodificacion[k]; }, 0);
   if (totalExcluidas > 0) {
     var detalleExclusion = Object.keys(excluidasPorCodificacion).map(function (k) {
@@ -370,7 +433,7 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   }
 
   if (!filas.length) {
-    return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos, excluidas: totalExcluidas };
+    return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill };
   }
   // Fase 88: solo filas EXACTAMENTE iguales en TODAS las columnas (mismo
   // agente/fecha/hora/duracionMin/tipificacion/skill) -- nunca "casi
@@ -389,8 +452,10 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   // coincidencias reales, no defectos de carga). Llamadas y el formato
   // viejo de Tipificacion de WhatsApp (que SI trae SKILL_NAME, Fase 77)
   // siguen aplicando esta regla exactamente igual que siempre.
+  // Fase 168: cuantas son de salida (outbound_ma), para la vista previa.
+  var deSalida = function (lista) { return lista.filter(function (x) { return x.tipoInteraccion === 'outbound_ma'; }).length; };
   if (canal === 'WHATSAPP') {
-    return { filas: filas, avisos: avisos, excluidas: totalExcluidas };
+    return { filas: filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(filas) };
   }
   var dedup = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas);
   if (dedup.quitadas > 0) {
@@ -399,7 +464,7 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       '(mismos valores en TODAS las columnas, incluida fecha y hora) -- se conservo solo 1 de cada una.'
     );
   }
-  return { filas: dedup.filas, avisos: avisos, excluidas: totalExcluidas };
+  return { filas: dedup.filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(dedup.filas) };
 }
 
 // Fase 131, Parte 3: "conectada" para una llamada SALIENTE (outbound_ma) --
@@ -450,5 +515,8 @@ if (typeof module !== 'undefined' && module.exports) {
     TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO: TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO,
     TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO: TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO,
     TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS: TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS,
+    TIPIFICACION_SKILL_SALIDA_LLAMADAS: TIPIFICACION_SKILL_SALIDA_LLAMADAS,
+    TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP: TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP,
+    tipificacionEtiquetaSkill: tipificacionEtiquetaSkill,
   };
 }

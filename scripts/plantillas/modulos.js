@@ -79,13 +79,15 @@ const CARGAS = [
     archivo: 'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx',
     hoja: 'TIPIFICACION_LLAMADAS',
     fuente: { js: 'tipificacion-logic.js', variable: 'TIPIFICACION_COLUMNAS' },
+    // Fase 168: CHANNEL es solo del HistChat de WhatsApp.
+    soloColumnas: ['AGENT_NAME', 'DATE', 'HORA', 'TIME_MIN', 'DESCRIPTION_COD_ACT', 'SKILL_NAME', 'TIME_SEC', 'COD_ACT', 'TYPE_INTERACTION', 'HUNG_UP', 'SKILL_ID'],
     columnas: {
       AGENT_NAME: ['Asesor.', 'Asesor Ejemplo Uno'],
       DATE: ['Fecha de la llamada (la hora va en HORA).', '2026-08-01'],
       HORA: ['Hora, si viene aparte.', '08:15'],
       TIME_MIN: ['Duración en minutos.', 3],
       DESCRIPTION_COD_ACT: ['Motivo o tipificación.', 'Consulta general'],
-      SKILL_NAME: ['Línea o skill (WhatsApp: "NOMBRE DE SKILL").', 'SKILL SAC'],
+      SKILL_NAME: ['Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida.', 'SKILL SAC'],
       TIME_SEC: ['Duración en segundos.', 180],
       COD_ACT: ['Código de la tipificación (texto).', '401'],
       TYPE_INTERACTION: ['"inbound" (entrante) u "outbound_ma" (saliente).', 'inbound'],
@@ -155,16 +157,19 @@ const CARGAS = [
     archivo: 'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx',
     hoja: 'TIPIFICACION_WHATSAPP',
     fuente: { js: 'tipificacion-logic.js', variable: 'TIPIFICACION_COLUMNAS' },
-    // El export HistChat trae "NOMBRE DE SKILL" en vez de SKILL_NAME; por eso
-    // el sistema sabe que es WhatsApp (cargasDetectarCanalTipificacion). Solo
-    // se ponen las columnas que trae ese export.
-    usarAlias: { SKILL_NAME: 'NOMBRE DE SKILL' },
-    soloColumnas: ['AGENT_NAME', 'DATE', 'DESCRIPTION_COD_ACT', 'SKILL_NAME'],
+    // Fase 168: el export HistChat NUEVO de Wolkvox trae SKILL_ID (numero) y
+    // no el nombre del skill; el nombre sale de la tabla "Skills de WhatsApp"
+    // del cliente. Con SKILL_ID + CHANNEL el sistema sabe que es WhatsApp
+    // (cargasEsHistChatPorSkillId). Solo se ponen las columnas que lee.
+    soloColumnas: ['AGENT_NAME', 'DATE', 'DESCRIPTION_COD_ACT', 'SKILL_ID', 'CHANNEL'],
+    // SKILL_ID hace las veces de SKILL_NAME (el nombre sale de la tabla de skills).
+    obligatoriaReemplazada: { SKILL_NAME: 'SKILL_ID' },
     columnas: {
       AGENT_NAME: ['Asesor.', 'Asesor Ejemplo Uno'],
-      DATE: ['Fecha de la conversación.', '2026-08-01'],
+      DATE: ['Fecha de la conversación (en el export viene con la hora).', '2026-09-01'],
       DESCRIPTION_COD_ACT: ['Motivo o tipificación.', 'Agendamiento'],
-      SKILL_NAME: ['Cola de WhatsApp ("NOMBRE DE SKILL" en el export).', 'WHATSAPP GENERAL'],
+      SKILL_ID: ['Número del skill (ver la tabla de skills). 0 = WhatsApp de salida.', '4327'],
+      CHANNEL: ['Canal del chat ("whatsapp").', 'whatsapp'],
     },
   },
   {
@@ -261,7 +266,7 @@ const ORIGEN = {
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': {
-    origen: 'Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoja "HistCDR<fecha>"). Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios.',
+    origen: 'Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan).',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"Llamadas\".",
     reemplazo: 'Las llamadas de ese cliente entre la primera y la última fecha del archivo.',
@@ -282,7 +287,8 @@ const ORIGEN = {
     reemplazo: 'Las fechas que trae el archivo.',
   },
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': {
-    origen: 'Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones.',
+    origen: 'Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se ignora y la vista previa dice cuántos.',
+    notaSkills: 'Tabla de skills de WhatsApp de ORLANT (SKILL_ID = nombre): 0 = WHATSAPP DE SALIDA; 4042 = WHATSAPP PAUTAS; 4047 = WHATSAPP AUDIFONOS; 4061 = WHATSAPP FONOAUDIOLOGIA; 4071 = WHATSAPP FONIATRIA; 4306 = WHATSAPP 3P; 4327 = WHATSAPP GENERAL; 4338 = WHATSAPP CONFIRMACIONES; 4362 = ATENCION TUTELAS. La edita un administrador en Cargar Datos → "Skills de WhatsApp".',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"WhatsApp\".",
     reemplazo: 'Las conversaciones de ese cliente entre la primera y la última fecha del archivo.',

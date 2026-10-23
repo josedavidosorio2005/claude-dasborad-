@@ -1717,3 +1717,13 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .gd-meses-pop .btn-sm{min-height:44px;}
   .gd-meses-btn{min-height:32px;display:flex;align-items:center;}
 }
+
+/* Fase 168: editor de skills de WhatsApp (codigo -> nombre) en Cargar Datos. */
+.cargas-skills-wpp > summary{cursor:pointer;list-style:revert;}
+.cargas-skills-wpp-ayuda{font-size:var(--fs-small);color:var(--c-text-muted);margin:var(--space-2) 0;}
+.cargas-skills-wpp-fila{display:grid;grid-template-columns:minmax(110px,160px) 1fr auto;gap:var(--space-2);align-items:end;margin-bottom:var(--space-2);}
+.cargas-skills-wpp-fila .ig{margin-bottom:0;}
+@media(max-width:768px){
+  .cargas-skills-wpp-fila{grid-template-columns:1fr;padding-bottom:var(--space-2);border-bottom:1px solid var(--c-border);}
+  .cargas-skills-wpp-quitar{min-height:44px;}
+}

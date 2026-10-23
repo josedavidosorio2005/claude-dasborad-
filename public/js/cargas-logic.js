@@ -740,7 +740,22 @@ function cargasDetectarCanalTipificacion(headerRow) {
   var normalizados = (headerRow || []).map(function (h) { return _cargasNorm(h); });
   if (normalizados.indexOf('skill_name') !== -1) return 'LLAMADAS';
   if (normalizados.indexOf('nombre de skill') !== -1) return 'WHATSAPP';
+  if (cargasEsHistChatPorSkillId(headerRow)) return 'WHATSAPP';
   return null;
+}
+
+// Fase 168: el export HistChat NUEVO de Wolkvox trae SKILL_ID (numerico) y
+// NO SKILL_NAME ni NOMBRE DE SKILL. Se reconoce como WhatsApp si trae
+// AGENT_NAME + DATE + DESCRIPTION_COD_ACT + SKILL_ID + una columna propia de
+// los chats (CHANNEL, o CONN_ID junto con DATE_CLOSE). El CDR de llamadas
+// (HistCDR) nunca entra aqui: trae SKILL_NAME (ver arriba) y no DATE_CLOSE ni
+// CHANNEL. Pura: solo mira el encabezado.
+function cargasEsHistChatPorSkillId(headerRow) {
+  var n = (headerRow || []).map(function (h) { return _cargasNorm(h); });
+  var tiene = function (c) { return n.indexOf(c) !== -1; };
+  if (tiene('skill_name') || tiene('nombre de skill')) return false;
+  if (!tiene('agent_name') || !tiene('date') || !tiene('description_cod_act') || !tiene('skill_id')) return false;
+  return tiene('channel') || (tiene('conn_id') && tiene('date_close'));
 }
 
 // Fase 66 — decide de que hoja del archivo sale el dato de un slot de
@@ -921,6 +936,7 @@ if (typeof module !== 'undefined' && module.exports) {
     cargasDiagnosticoSinHoja: cargasDiagnosticoSinHoja,
     cargasDetectarCanalTrafico: cargasDetectarCanalTrafico,
     cargasDetectarCanalTipificacion: cargasDetectarCanalTipificacion,
+    cargasEsHistChatPorSkillId: cargasEsHistChatPorSkillId,
     cargasResolverHojaTrafico: cargasResolverHojaTrafico,
     CARGAS_ORDEN_DESCARGA: CARGAS_ORDEN_DESCARGA,
     cargasPlanSinTipificacionSuperada: cargasPlanSinTipificacionSuperada,

@@ -3929,6 +3929,60 @@ function migrarSkillPorCliente() {
 }
 runOnceMigration('fase163_skill_por_cliente_v1', migrarSkillPorCliente);
 
+// Fase 168 (reunion con Edwin del 23/10): mapa codigo -> nombre de los skills
+// de WhatsApp por cliente (el HistChat nuevo de Wolkvox trae SKILL_ID y no el
+// nombre). Crea la tabla y siembra ORLANT; INSERT OR IGNORE, asi una segunda
+// corrida (o una edicion de un admin) nunca se pisa.
+function crearSkillsWhatsapp() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS skills_whatsapp (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      codigo TEXT NOT NULL,
+      nombre TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_skills_whatsapp_campana_codigo ON skills_whatsapp(campana, codigo);
+  `);
+  const { SEMILLA_ORLANT } = require('./skills-whatsapp');
+  const ins = db.prepare('INSERT OR IGNORE INTO skills_whatsapp (campana, codigo, nombre, updatedAt) VALUES (?, ?, ?, ?)');
+  const ahora = new Date().toISOString();
+  db.transaction(() => { for (const [codigo, nombre] of SEMILLA_ORLANT) ins.run('ORLANT', codigo, nombre, ahora); })();
+  // Triggers de datos_version (Fase 161) para la tabla nueva.
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase168_skills_whatsapp_v1 aplicada.');
+}
+runOnceMigration('fase168_skills_whatsapp_v1', crearSkillsWhatsapp);
+
+// Fase 168 (pedido de Edwin): la pestaña Tipificacion de ORLANT vuelve a
+// tener Llamadas y WhatsApp lado a lado (los 2 CDR), sin la tabla de detalle
+// de abajo; las tarjetas de salida quedan en la mitad de Llamadas. Defensiva
+// (mismo patron que la de la Fase 138): solo cambia el panel si tiene
+// EXACTAMENTE la forma de la Fase 138; si no (ya migrado o editado a mano),
+// no se toca nada.
+function migrarOrlantTipificacionDosCanales() {
+  const row = db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return; // no existe todavia -> el seed ya la crea con la forma nueva
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'tipificacion');
+  if (!tab || !tab.panels || tab.panels.length !== 1) return;
+  const p = tab.panels[0];
+  const esFase138 = p && p.tipo === 'tipificacion_panel' && p.soloCanal === 'LLAMADAS' && p.mostrarTablaDetalle === true &&
+    p.mostrarTarjetasSalida === true && p.mostrarFiltroTipo === true;
+  if (!esFase138) {
+    if (!config.isTest) console.log('[db] Migracion fase168_orlant_tipificacion_dos_canales_v1: el panel no tiene la forma de la Fase 138 -- se deja intacto.');
+    return;
+  }
+  const target = CONFIGS.find((c) => c.cliente === 'ORLANT');
+  const targetTab = target && (target.layout.tabs || []).find((t) => t.key === 'tipificacion');
+  if (!targetTab) return;
+  tab.panels = JSON.parse(JSON.stringify(targetTab.panels));
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'ORLANT');
+  if (!config.isTest) console.log('[db] Migracion fase168_orlant_tipificacion_dos_canales_v1 aplicada.');
+}
+runOnceMigration('fase168_orlant_tipificacion_dos_canales_v1', migrarOrlantTipificacionDosCanales);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -3961,6 +4015,9 @@ module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;
 // Fase 163: idem.
 module.exports.migrarSkillPorCliente = migrarSkillPorCliente;
+// Fase 168: idem (idempotencia).
+module.exports.crearSkillsWhatsapp = crearSkillsWhatsapp;
+module.exports.migrarOrlantTipificacionDosCanales = migrarOrlantTipificacionDosCanales;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

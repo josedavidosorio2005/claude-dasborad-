@@ -15707,3 +15707,70 @@ octubre; Tráfico de Llamadas, Inasistencia y Efectividad de Citas de
 agosto/septiembre a septiembre; las tarjetas de Salida siguen en
 septiembre; Escape no cierra el tablero; "Ver todos" restaura; 0 errores
 de consola.
+
+## Fase 168 — Tipificación con los dos CDR de Wolkvox (v1.67.0, 2026-10-23)
+
+**Pedido de Edwin (reunión del 23/10).** Actualizar ORLANT con solo 2 bases,
+el CDR de llamadas (HistCDR) y el de WhatsApp (HistChat), en vez de 4
+plantillas. Esta fase es la parte de Tipificación.
+
+**Qué se hizo (una sola rama, `fase168-tipificacion-cdr`).**
+- **WhatsApp por SKILL_ID:** el HistChat nuevo trae SKILL_ID numérico y no
+  SKILL_NAME. Se reconoce como WhatsApp con AGENT_NAME + DATE +
+  DESCRIPTION_COD_ACT + SKILL_ID + (CHANNEL o CONN_ID/DATE_CLOSE), sin
+  SKILL_NAME (`cargasEsHistChatPorSkillId`). Los formatos viejos y el CDR
+  de llamadas no cambian. El nombre del skill sale del mapa código →
+  nombre por cliente: tabla `skills_whatsapp`, migración
+  `fase168_skills_whatsapp_v1` con la semilla de ORLANT (0 WHATSAPP DE
+  SALIDA, 4042 PAUTAS, 4047 AUDIFONOS, 4061 FONOAUDIOLOGIA, 4071 FONIATRIA,
+  4306 3P, 4327 GENERAL, 4338 CONFIRMACIONES, 4362 ATENCION TUTELAS).
+  Rutas `GET/PUT /calidad/tipificacion/skills-whatsapp`: lee quien carga
+  Tipificación; cambia solo un administrador desde Cargar Datos → "Skills de
+  WhatsApp" (queda en el Historial). SKILL_ID 0 = salida (`outbound_ma`),
+  el resto entrada (`inbound`). Un SKILL_ID fuera del mapa se ignora con
+  un solo aviso agrupado.
+- **Llamadas:** SKILL_ID/SKILL_NAME "-" = `LLAMADAS DE SALIDA` (se ve
+  "Llamadas de salida"); las `internalcall*` y las filas sin tipo no
+  cuentan.
+- **Meses:** el mes sale de DATE. En el Centro de cargas las filas de otro
+  mes se ignoran con aviso. En Cargar Datos se reemplaza solo el rango de
+  fechas del archivo; nunca el resto de agosto (prueba con datos
+  sintéticos).
+- **Vista de ORLANT:** la tabla de detalle "Codificación / Cantidad / %" se
+  quitó (confirmado en la pantalla real de producción: era el único cuadro
+  bajo la torta). Llamadas y WhatsApp vuelven a ir lado a lado (apiladas en
+  el celular), con Mes arriba y Agente/Skill/Tipo por mitad. Las tarjetas de
+  salida van solo en la mitad de Llamadas. Producción lo recibe con la
+  migración `fase168_orlant_tipificacion_dos_canales_v1`, que solo cambia
+  el panel si tiene exactamente la forma de la Fase 138. La plantilla de
+  layout (`plantillas-cliente.js`) hace lo mismo para clientes con Flujo de
+  WhatsApp; Mobilize no cambia.
+- **Plantillas y guía:** plantilla de WhatsApp con AGENT_NAME, DATE,
+  DESCRIPTION_COD_ACT, SKILL_ID y CHANNEL, más la tabla de skills.
+  Plantilla de llamadas con la regla del "-". Guía (md y html) con de dónde
+  sale cada CDR ("[ruta pendiente de confirmar con Edwin]") y la tabla.
+
+**Verificación.**
+- Prueba nueva `fase168-tipificacion-cdr.test.js` (14): 13 fallan en main.
+  Se ajustaron las pruebas de la Fase 138 (ORLANT ya no es igual a
+  Mobilize), las de contrato de plantillas y la lista de migraciones
+  posteriores de Aurora/HLM.
+- Suite 2126/2126, `npm audit` 0.
+- Local, con los 2 archivos reales de septiembre (fuera del repo, por el
+  Centro de cargas):
+  - CDR de WhatsApp: 13.215 filas reconocidas, 3 ignoradas por skill (4308
+    ×1, 4323 ×2, en un aviso), 4.013 de salida. El Centro carga las 13.118
+    de septiembre (3.997 de salida) e ignora con aviso las 97 del 31/08.
+  - CDR de llamadas: 19.721 filas, 10.399 de salida.
+  - Vista a 375/768/1440, claro y oscuro: dos mitades, sin tabla, tarjetas
+    solo en Llamadas, "Llamadas de salida" y "WhatsApp de salida" en los
+    filtros, 0 errores de consola. Editor de skills probado a 375 y 1440.
+
+**Visto y anotado** (`docs/pendientes.md`): las tarjetas de salida de
+ORLANT dan "0 no conectadas" porque la regla de "no conectada" es la de
+Mobilize ("Cliente_no_contesta"); ORLANT usa "No Contestan" (pregunta a
+Edwin). En producción esas tarjetas muestran hoy 0 llamadas de salida con
+19.721 registros de septiembre (probablemente los datos cargados no traen
+el tipo de llamada; no se verificó). Para que las reglas nuevas se vean hay
+que recargar los 2 CDR de septiembre por el Centro (espera el OK del
+usuario).

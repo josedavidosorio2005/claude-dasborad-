@@ -25,7 +25,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
   const iAur = orden.indexOf('fase153_crear_clinica_aurora_v1');
   assert.ok(i134 !== -1 && iAur > i134, 'la creacion corre despues del borrado de la Fase 134');
   // Despues de Aurora solo pueden venir migraciones de fases posteriores que no la tocan.
-  const POSTERIORES = ['fase155_pct_atencion_abandono_v1', 'fase160_crear_hospital_la_maria_v1', 'fase161_indices_v1', 'fase163_skill_por_cliente_v1'];
+  const POSTERIORES = ['fase155_pct_atencion_abandono_v1', 'fase160_crear_hospital_la_maria_v1', 'fase161_indices_v1', 'fase163_skill_por_cliente_v1',
+    // Fase 168: solo tocan ORLANT (mapa de skills de WhatsApp y su panel de Tipificacion).
+    'fase168_skills_whatsapp_v1', 'fase168_orlant_tipificacion_dos_canales_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

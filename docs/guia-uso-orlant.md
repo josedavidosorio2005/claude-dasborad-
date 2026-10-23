@@ -211,10 +211,11 @@ de gestión, por eso no aparece aquí).
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor
-también aparece aquí (ya era así desde antes). En computador, la gráfica
-de torta queda a la izquierda y el cuadro con cada motivo, su cantidad y
-su % a la derecha; en el celular, la torta va arriba y el cuadro debajo.
-Los dos responden a los mismos filtros, así que siempre suman lo mismo.
+también aparece aquí (ya era así desde antes). La tipificación de
+llamadas y la de WhatsApp van lado a lado en computador (una debajo de la
+otra en el celular), cada una con su torta y sus filtros de asesor, skill
+y tipo (entrante o de salida); el mes es el mismo para las dos. Las
+tarjetas de llamadas de salida van en la mitad de llamadas.
 
 **Calidad**: cada monitoreo responde una lista de preguntas con peso
 propio (SI / NO / N/A). Un SI o un N/A suma el peso completo de esa
@@ -271,19 +272,39 @@ archivo sí se carga.
 
 ### Tipificación
 
-- **Qué archivo**: el reporte de tipificación de llamadas/chats de
-  Wolkvox. Llamadas y WhatsApp son independientes, se cargan por separado
-  (cada una reemplaza solo su propio canal, nunca el otro).
-- **Llamadas** — hoja `TIPIFICACION_LLAMADAS`, columnas obligatorias
-  AGENT_NAME, DATE, DESCRIPTION_COD_ACT (el motivo), SKILL_NAME.
-- **WhatsApp** — el archivo real es el export **"HistChat"** de Wolkvox.
-  La hoja de ese export **cambia de nombre cada vez que se genera** (ej.
-  "HistChat2026-09-30-14h32") — **no hace falta renombrarla**, la
-  plataforma la reconoce igual por sus columnas (no por el nombre de la
-  hoja). Ese archivo trae columnas con datos de contacto del paciente
-  (nombre, correo, teléfono, comentarios de la conversación): la
-  plataforma **nunca las lee ni las guarda** — solo toma el asesor, la
-  fecha y el motivo de contacto (código de tipificación).
+- **Qué archivos**: los dos CDR de Wolkvox, uno de llamadas y uno de
+  WhatsApp. Se cargan por separado: cada uno reemplaza solo su canal y
+  solo las fechas que trae (si el CDR de septiembre trae unas filas del
+  31 de agosto, la vista previa lo dice; el resto de agosto no se toca).
+- **Llamadas** — CDR de llamadas, export completo (hoja "HistCDR…").
+  Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Las filas
+  con SKILL_ID/SKILL_NAME "-" son **Llamadas de salida** (las internalcall
+  no cuentan como salida).
+- **WhatsApp** — CDR de WhatsApp, export **"HistChat"** (hoja
+  "HistChat…", cambia de nombre cada vez; **no hace falta renombrarla**).
+  Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Trae el
+  **número** del skill (SKILL_ID), no su nombre: la plataforma lo traduce
+  con la tabla de skills de WhatsApp del cliente. El 0 es **WhatsApp de
+  salida**; un número que no esté en la tabla se ignora y la vista previa
+  dice cuántos. Un administrador edita la tabla en Cargar Datos →
+  "Skills de WhatsApp". Tabla de ORLANT:
+
+  | SKILL_ID | Skill |
+  |---|---|
+  | 0 | WHATSAPP DE SALIDA (salida) |
+  | 4042 | WHATSAPP PAUTAS |
+  | 4047 | WHATSAPP AUDIFONOS |
+  | 4061 | WHATSAPP FONOAUDIOLOGIA |
+  | 4071 | WHATSAPP FONIATRIA |
+  | 4306 | WHATSAPP 3P |
+  | 4327 | WHATSAPP GENERAL |
+  | 4338 | WHATSAPP CONFIRMACIONES |
+  | 4362 | ATENCION TUTELAS |
+
+- **Privacidad**: los dos archivos traen datos de contacto del paciente
+  (nombre, correo, teléfono, comentarios): la plataforma **nunca los lee
+  ni los guarda** — solo toma el asesor, la fecha, el skill y el motivo
+  de contacto.
 - **Límite de tamaño por carga**: una carga mensual normal cabe sin
   problema; si el archivo junta muchos meses de una sola vez y es muy
   grande, la plataforma avisa ANTES de intentar guardar nada — en ese

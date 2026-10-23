@@ -139,7 +139,7 @@
 </div>
 <div class="card">
 <h3>Tipificación</h3>
-<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes). En computador, la gráfica de torta queda a la izquierda y el cuadro con cada motivo, su cantidad y su % a la derecha; en el celular, la torta va arriba y el cuadro debajo. Los dos responden a los mismos filtros, así que siempre suman lo mismo.</p>
+<p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes). La tipificación de llamadas y la de WhatsApp van lado a lado en computador (una debajo de la otra en el celular), cada una con su torta y sus filtros de asesor, skill y tipo (entrante o de salida); el mes es el mismo para las dos. Las tarjetas de llamadas de salida van en la mitad de llamadas.</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
@@ -173,9 +173,22 @@
 </div>
 <div class="card">
 <h3>Tipificación</h3>
-<p><strong>Qué archivo</strong>: el reporte de tipificación de llamadas/chats de Wolkvox. Llamadas y WhatsApp son independientes, se cargan por separado (cada una reemplaza solo su propio canal, nunca el otro).<br>
-<strong>Llamadas</strong> — hoja <code>TIPIFICACION_LLAMADAS</code>, columnas obligatorias AGENT_NAME, DATE, DESCRIPTION_COD_ACT (el motivo), SKILL_NAME.<br>
-<strong>WhatsApp</strong> — el archivo real es el export <strong>"HistChat"</strong> de Wolkvox. La hoja de ese export <strong>cambia de nombre cada vez que se genera</strong> (ej. "HistChat2026-09-30-14h32") — <strong>no hace falta renombrarla</strong>, la plataforma la reconoce igual por sus columnas, no por el nombre de la hoja. Ese archivo trae columnas con datos de contacto del paciente (nombre, correo, teléfono, comentarios de la conversación): la plataforma <strong>nunca las lee ni las guarda</strong> — solo toma el asesor, la fecha y el motivo de contacto.<br>
+<p><strong>Qué archivos</strong>: los dos CDR de Wolkvox, uno de llamadas y uno de WhatsApp. Se cargan por separado: cada uno reemplaza solo su canal y solo las fechas que trae (si el CDR de septiembre trae unas filas del 31 de agosto, la vista previa lo dice; el resto de agosto no se toca).<br>
+<strong>Llamadas</strong> — CDR de llamadas, export completo (hoja "HistCDR…"). Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Las filas con SKILL_ID/SKILL_NAME "-" son <strong>Llamadas de salida</strong> (las internalcall no cuentan como salida).<br>
+<strong>WhatsApp</strong> — CDR de WhatsApp, export <strong>"HistChat"</strong> (hoja "HistChat…", cambia de nombre cada vez; <strong>no hace falta renombrarla</strong>). Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Trae el <strong>número</strong> del skill (SKILL_ID), no su nombre: la plataforma lo traduce con la tabla de skills de WhatsApp del cliente. El 0 es <strong>WhatsApp de salida</strong>; un número que no esté en la tabla se ignora y la vista previa dice cuántos. Un administrador edita la tabla en Cargar Datos → "Skills de WhatsApp".</p>
+<table>
+  <tr><th>SKILL_ID</th><th>Skill (ORLANT)</th></tr>
+  <tr><td>0</td><td>WHATSAPP DE SALIDA (salida)</td></tr>
+  <tr><td>4042</td><td>WHATSAPP PAUTAS</td></tr>
+  <tr><td>4047</td><td>WHATSAPP AUDIFONOS</td></tr>
+  <tr><td>4061</td><td>WHATSAPP FONOAUDIOLOGIA</td></tr>
+  <tr><td>4071</td><td>WHATSAPP FONIATRIA</td></tr>
+  <tr><td>4306</td><td>WHATSAPP 3P</td></tr>
+  <tr><td>4327</td><td>WHATSAPP GENERAL</td></tr>
+  <tr><td>4338</td><td>WHATSAPP CONFIRMACIONES</td></tr>
+  <tr><td>4362</td><td>ATENCION TUTELAS</td></tr>
+</table>
+<p><strong>Privacidad</strong>: los dos archivos traen datos de contacto del paciente (nombre, correo, teléfono, comentarios): la plataforma <strong>nunca los lee ni los guarda</strong> — solo toma el asesor, la fecha, el skill y el motivo de contacto.<br>
 <strong>Límite de tamaño por carga</strong>: una carga mensual normal cabe sin problema; si el archivo junta muchos meses de una sola vez y es muy grande, la plataforma avisa ANTES de intentar guardar nada — en ese caso, sube el archivo por meses, uno a la vez.</p>
 </div>
 <div class="card">

@@ -19,6 +19,14 @@
 //   - `mostrarTarjetasSalida`: 3 tarjetas (total/conectadas/no conectadas
 //     de las llamadas SALIENTES) -- SIEMPRE sobre salientes, independiente
 //     de lo que el filtro Entrante/Saliente de arriba tenga seleccionado.
+//     Fase 168: solo en la mitad de LLAMADAS (con las 2 mitades, la de
+//     WhatsApp no las lleva: el endpoint es de llamadas).
+//
+// Fase 168 (pedido de Edwin, ORLANT con los 2 CDR): ORLANT vuelve a las 2
+// mitades (Llamadas y WhatsApp lado a lado, apiladas en el celular) con los
+// mismos filtros (Mes arriba; Agente, Skill/Cola y Tipo por mitad) y sin la
+// tabla de detalle. Los skills de salida se ven como "Llamadas de salida" /
+// "WhatsApp de salida" (tipificacionEtiquetaSkill).
 'use strict';
 
 var _tipificacionOpciones = {}; // cache por campana::canal: {meses,agentes,skills}
@@ -67,9 +75,10 @@ function _tipificacionMesLbl(m){
 // Fase 87 (tema C): `value` sigue siendo el nombre ORIGINAL (agente/skill,
 // los filtros tienen que seguir funcionando con el dato tal cual llego de
 // Wolkvox); solo el texto visible pasa por textoFormatoNombre.
-function _tipificacionOptionsHtml(valores, seleccionado){
+function _tipificacionOptionsHtml(valores, seleccionado, etiqueta){
+  var fmt = etiqueta || textoFormatoNombre;
   return '<option value="">Todos</option>' + (valores||[]).map(function(v){
-    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(textoFormatoNombre(v))+'</option>';
+    return '<option value="'+esc(v)+'"'+(v===seleccionado?' selected':'')+'>'+esc(fmt(v))+'</option>';
   }).join('');
 }
 // Fase 131: Entrante/Saliente -- TYPE_INTERACCION normalizado por el
@@ -103,7 +112,7 @@ async function _tipificacionRenderPanel(p, i){
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
       '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tipificación cargada todavia. Un usuario con permiso de administrador debe subir '+
-      (p.soloCanal ? 'el archivo' : 'las hojas TIPIFICACION_LLAMADAS/TIPIFICACION_WHATSAPP')+' desde "Cargar Datos".</div></div>';
+      (p.soloCanal ? 'el archivo' : 'el CDR de llamadas (HistCDR) y el de WhatsApp (HistChat)')+' desde "Cargar Datos".</div></div>';
     return;
   }
 
@@ -147,12 +156,12 @@ async function _tipificacionRenderPanel(p, i){
     var estadoCanal = _tipificacionEstadoCanal[claveCanal];
     html += '<div class="aurora-card">';
     if(esMultiCanal) html += '<div class="aurora-card-title">Tipificación de '+esc(c.titulo)+'</div>';
-    if(p.mostrarTarjetasSalida){
+    if(p.mostrarTarjetasSalida && c.canal === 'LLAMADAS'){
       html += '<div class="aurora-kpis" id="tipif-salida-'+i+'-'+c.canal+'" style="margin-bottom:12px"></div>';
     }
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
-    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill)+'</select></div>';
+    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, tipificacionEtiquetaSkill)+'</select></div>';
     if(p.mostrarFiltroTipo){
       html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
     }
@@ -262,7 +271,7 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   // Fase 131: tarjetas de SALIDA se calculan ANTES del "sin datos" de abajo
   // (dependen solo de que haya datos del canal, no de que el pie tenga
   // algo que mostrar con los filtros actuales de Tipo).
-  if(p.mostrarTarjetasSalida){
+  if(p.mostrarTarjetasSalida && canal === 'LLAMADAS'){
     var hostSalida = document.getElementById('tipif-salida-'+i+'-'+canal);
     if(hostSalida){
       try{
