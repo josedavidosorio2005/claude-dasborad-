@@ -2080,11 +2080,15 @@ async function _gdExportarSalida(p, i){
   // Exportacion (Excel/PDF): conserva su formato de siempre ("12.5%") --
   // el cambio a coma decimal de la Fase 152 (B4) es solo de graficas y tooltips.
   function pct(parte, total){ if(!(total>0)) return '—'; var n = Math.round(parte/total*1000)/10; return (n % 1 !== 0 ? n.toFixed(1) : n) + '%'; }
+  // Fase 170: con CDR, "Sin asignar" (asesores sin linea) suma al total; y se dice la fuente.
+  var fuente = function(v){ return v === 'cdr' ? 'CDR' : 'Archivo mensual'; };
   var llamadas = filas.map(function(f){
-    return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, 'Total': f.llamadas3p+f.llamadasGeneral, '% 3P': pct(f.llamadas3p, f.llamadas3p+f.llamadasGeneral) };
+    var sin = f.llamadasSinAsignar || 0, total = f.llamadas3p + f.llamadasGeneral + sin;
+    return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, 'Sin asignar': sin, 'Total': total, '% 3P': pct(f.llamadas3p, total), 'Fuente': fuente(f.fuenteLlamadas) };
   });
   var whatsapp = filas.map(function(f){
-    return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, 'Total': f.wpp3p+f.wppGeneral, '% 3P': pct(f.wpp3p, f.wpp3p+f.wppGeneral) };
+    var sin = f.wppSinAsignar || 0, total = f.wpp3p + f.wppGeneral + sin;
+    return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, 'Sin asignar': sin, 'Total': total, '% 3P': pct(f.wpp3p, total), 'Fuente': fuente(f.fuenteWpp) };
   });
   return [
     { titulo: 'Llamadas de salida', tipo: 'tabla', filas: llamadas },

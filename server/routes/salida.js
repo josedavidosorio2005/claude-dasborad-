@@ -9,7 +9,8 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
+const { asesoresSalidaDelMes, guardarLineasDelMes } = require('../salida-cdr');
 const { validate, schemas } = require('../validation');
 const {
   impactoSalida, cargarSalida,
@@ -88,6 +89,41 @@ router.post(
       `${resultado.meses.join(', ')} (${resultado.borradas} reemplazada(s))`
     );
     res.status(201).json(resultado);
+  })
+);
+
+// Fase 170: asesores con salidas en un mes (del CDR) y su linea 3P/General.
+// Lo ve quien ve la campana; solo un administrador lo cambia.
+router.get(
+  '/calidad/salida/asesores',
+  requireActor,
+  validate(schemas.salidaAsesoresQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json({ campana: req.query.campana, mes: req.query.mes, asesores: asesoresSalidaDelMes(db, req.query.campana, req.query.mes) });
+  })
+);
+
+router.put(
+  '/calidad/salida/asesores',
+  requireActor,
+  validate(schemas.salidaAsesoresBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo un administrador puede asignar la línea de los asesores' });
+    }
+    const b = req.body;
+    if (!campaignAccess(req.actor, b.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    const r = guardarLineasDelMes(db, { campana: b.campana, mes: b.mes, asignaciones: b.asignaciones, guardadoPorNombre: actorLabel(req.actor) });
+    const n3p = b.asignaciones.filter((a) => a.linea === '3P').length;
+    const nGen = b.asignaciones.filter((a) => a.linea === 'GENERAL').length;
+    logEvent('SALIDA_LINEAS_ASESOR', { nombre: b.campana, user: '-', rol: 'salida' }, actorLabel(req.actor),
+      b.mes + ': ' + n3p + ' asesor(es) en 3P, ' + nGen + ' en General, ' + (b.asignaciones.length - n3p - nGen) + ' sin asignar');
+    res.json({ ...r, asesores: asesoresSalidaDelMes(db, b.campana, b.mes) });
   })
 );
 

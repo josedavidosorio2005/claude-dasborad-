@@ -15821,3 +15821,37 @@ septiembre del CDR (10.399).
 main, pasa en la rama): una sola opción de salida, filtro por cualquiera de
 los 3 nombres = los 3 meses, "-" aparte, WhatsApp igual, datos crudos
 intactos.
+
+## Fase 170 — Salida calculada con los CDR y línea de cada asesor por mes (v1.68.0, 2026-10-23)
+
+**Pedido (Prompt B).** Asignar cada asesor a 3P o General por mes, editable
+por el administrador, y calcular la salida con lo que guarda la Fase 168.
+Decisiones del usuario: en los meses con CDR la pestaña sale del CDR (el
+archivo mensual queda para los meses sin CDR); asesor sin línea = "Sin
+asignar" con aviso; el editor va en la pestaña de salida, solo para el
+administrador.
+
+**Qué cambia.**
+- `server/salida-cdr.js`: llamadas de salida = Tipificación de LLAMADAS con
+  skill LLAMADAS DE SALIDA; WhatsApp de salida = Tipificación de WHATSAPP con
+  `outbound_ma`. Se cuentan por asesor y mes y se reparten según
+  `asesor_linea` (migración `fase170_asesor_linea_v1`, tabla vacía, solo
+  '3P'/'GENERAL'). Se decide por canal: el canal sin CDR en ese mes sigue
+  del archivo (`salida_mensual`). `/calidad/salida/mensual` y `/opciones`
+  devuelven lo combinado (con `fuenteLlamadas`/`fuenteWpp` y "sin asignar").
+- Rutas `GET/PUT /calidad/salida/asesores`: lee quien ve la campaña;
+  guarda solo un administrador (queda en el Historial).
+- Vista (`salida.js`): totales con "Sin asignar", barra "Sin asignar" en
+  las gráficas, filas "sin asignar" y "Fuente" en la tabla, aviso de
+  asesores sin línea. Debajo, solo para el administrador y en meses con
+  CDR, "Línea de cada asesor": la línea al lado del nombre (en el celular
+  se elige sin deslizar), "Copiar del mes anterior" y "Guardar líneas".
+  Excel/PDF con "Sin asignar" y "Fuente".
+
+**Verificación.** Prueba nueva `fase170-salida-por-asesor.test.js`: reparto
+por línea, sin asignar, fuente por canal, solo admin guarda, validación,
+internalcall fuera. Suite completa en verde, `npm audit` 0. Local con el
+CDR real de septiembre: 24 asesores con salidas, 10.399 llamadas y 3.997
+WhatsApp (todo "Sin asignar" al empezar); al asignar 3 a 3P y 3 a General
+el reparto cambia y los totales se mantienen. Revisado a 375/768/1440,
+claro y oscuro, 0 errores.

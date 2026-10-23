@@ -3983,6 +3983,27 @@ function migrarOrlantTipificacionDosCanales() {
 }
 runOnceMigration('fase168_orlant_tipificacion_dos_canales_v1', migrarOrlantTipificacionDosCanales);
 
+// Fase 170 (pedido de Edwin): linea (3P o General) de cada asesor por mes,
+// para repartir la salida calculada del CDR (server/salida-cdr.js). La edita
+// un administrador en la pestaña de salida. Solo crea la tabla (vacia).
+function crearAsesorLinea() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS asesor_linea (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      linea TEXT NOT NULL CHECK (linea IN ('3P', 'GENERAL')),
+      guardadoPorNombre TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_asesor_linea_campana_mes_agente ON asesor_linea(campana, mes, agente);
+  `);
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase170_asesor_linea_v1 aplicada.');
+}
+runOnceMigration('fase170_asesor_linea_v1', crearAsesorLinea);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4018,6 +4039,8 @@ module.exports.migrarSkillPorCliente = migrarSkillPorCliente;
 // Fase 168: idem (idempotencia).
 module.exports.crearSkillsWhatsapp = crearSkillsWhatsapp;
 module.exports.migrarOrlantTipificacionDosCanales = migrarOrlantTipificacionDosCanales;
+// Fase 170: idem.
+module.exports.crearAsesorLinea = crearAsesorLinea;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

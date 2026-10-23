@@ -80,18 +80,19 @@ function cargarSalida(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
 // Valores distintos de Mes + si hay datos -- tambien lo usa el dashboard
 // para decidir si la pestaña "Salida" tiene algo que mostrar (mismo
 // criterio que Efectividad de Citas: aparece sola cuando hay datos).
+// Fase 170: los meses incluyen los que solo tienen CDR (salida-cdr.js).
 function salidaOpciones(db, campana) {
   return {
-    meses: db.prepare('SELECT DISTINCT mes AS v FROM salida_mensual WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
+    meses: require('./salida-cdr').salidaCombinadaPorMes(db, campana).map((f) => f.mes),
   };
 }
 
 // Todos los meses con datos, ordenados -- sin filtros (un total por mes,
 // ya separado por linea/canal).
+// Fase 170: por canal, el CDR (Tipificacion) manda en los meses que lo
+// tienen; el resto sale del archivo mensual. Ver salida-cdr.js.
 function salidaPorMes(db, campana) {
-  return db
-    .prepare('SELECT mes, llamadas3p, llamadasGeneral, wpp3p, wppGeneral FROM salida_mensual WHERE campana = ? ORDER BY mes ASC')
-    .all(campana);
+  return require('./salida-cdr').salidaCombinadaPorMes(db, campana);
 }
 
 module.exports = {

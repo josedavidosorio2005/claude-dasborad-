@@ -626,6 +626,26 @@ const tipificacionFilaArraySchema = z.tuple([
 
 const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
 
+// Fase 170: linea (3P/General) de cada asesor por mes, para la salida del CDR.
+const salidaAsesoresQuery = z.object({ campana: campanaSchema, mes: mesSchema });
+const salidaAsesoresBody = z.object({
+  campana: campanaSchema,
+  mes: mesSchema,
+  asignaciones: z
+    .array(z.object({
+      agente: z.string().trim().min(1).max(200),
+      linea: z.enum(['3P', 'GENERAL']).nullable(),
+    }))
+    .max(500, 'Demasiados asesores')
+    .superRefine((lista, ctx) => {
+      const vistos = {};
+      lista.forEach((a, i) => {
+        if (vistos[a.agente]) ctx.addIssue({ code: 'custom', message: 'El asesor ' + a.agente + ' está repetido', path: [i, 'agente'] });
+        vistos[a.agente] = true;
+      });
+    }),
+});
+
 // Fase 168: mapa codigo -> nombre de los skills de WhatsApp de un cliente
 // (HistChat por SKILL_ID). Codigos de solo digitos y sin repetir.
 const skillsWhatsappQuery = z.object({ campana: campanaSchema });
@@ -1367,6 +1387,8 @@ module.exports = {
     whatsappTiemposOpcionesQuery,
     whatsappTiemposRangosQuery,
     skillsWhatsappQuery,
+    salidaAsesoresQuery,
+    salidaAsesoresBody,
     skillsWhatsappBody,
     encuestasCargaBody,
     encuestasOpcionesQuery,

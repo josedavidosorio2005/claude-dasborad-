@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.68.0 — Octubre 2026
+
+**Fase 170: llamadas y WhatsApp de salida calculados con los CDR, por línea de cada asesor.**
+
+- En los meses que ya tienen los CDR de Wolkvox cargados, la pestaña
+  "Llamadas y WhatsApp de salida" de ORLANT se calcula con ellos, en vez del
+  archivo mensual: las llamadas de salida y los WhatsApp de salida de cada
+  asesor.
+- Cada asesor se asigna a 3P o a General para cada mes. Lo hace el
+  administrador en la misma pestaña ("Línea de cada asesor"), con un botón
+  para copiar las líneas del mes anterior.
+- Mientras un asesor no tenga línea en ese mes, sus salidas se cuentan en
+  "Sin asignar": suman al total, pero no a 3P ni a General, y la pestaña
+  avisa cuántos asesores faltan. Por eso septiembre aparece completo en
+  "Sin asignar" hasta que se asignen las líneas.
+- Los meses sin CDR siguen saliendo del archivo mensual, como siempre. La
+  tabla y el Excel dicen de dónde sale cada mes ("CDR" o "Archivo mensual").
+- Septiembre: 10.399 llamadas y 3.997 WhatsApp de salida. El archivo de
+  Edwin decía 10.404 llamadas; la diferencia son 5 llamadas internas que no
+  cuentan como salida.
+
 ## v1.67.1 — Octubre 2026
 
 **Fase 169: "Llamadas de salida" sale una sola vez en el filtro.**

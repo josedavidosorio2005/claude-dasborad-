@@ -9,6 +9,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Asignar la línea (3P o General) de los asesores de septiembre** (Fase
+  170) — desde la v1.68.0, la salida de septiembre de ORLANT sale del CDR y
+  queda toda en "Sin asignar" (24 asesores) hasta que el administrador elija
+  la línea de cada uno en la pestaña de salida. Edwin tiene que decir qué
+  asesor va en cada línea.
 - **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del
   Centro de cargas (cargar, eliminar, deshacer) quedan en el Historial a
   nombre de "Administrador (@admin)", así que no se pueden atribuir a una
