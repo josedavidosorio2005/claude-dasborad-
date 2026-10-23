@@ -1696,3 +1696,24 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   background:var(--gd-acento); margin-right:6px; vertical-align:middle;
 }
 @media (max-width:480px){ .gd-grafica{ padding:var(--space-3); } }
+
+/* Fase 167 (pedido de Edwin): filtro "Meses" del tablero -- varios meses
+   sueltos lado a lado en las graficas y tablas por mes. Mismo aspecto que el
+   MES de al lado (texto blanco sobre la franja de marca); el desplegable usa
+   la superficie y el texto del tema. */
+.gd-meses{position:relative;}
+.gd-meses-btn{list-style:none;cursor:pointer;color:var(--c-on-brand);font-size:var(--fs-body);font-weight:var(--fw-semibold);background:rgba(255,255,255,0.15);border-radius:4px;padding:2px 22px 2px 6px;position:relative;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+.gd-meses-btn::-webkit-details-marker{display:none;}
+.gd-meses-btn::after{content:'';position:absolute;right:7px;top:50%;width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);}
+.gd-meses[open] .gd-meses-btn::after{transform:translateY(-20%) rotate(225deg);}
+.gd-meses-btn:focus-visible{outline:2px solid var(--c-on-brand);outline-offset:2px;}
+.gd-meses-activo{box-shadow:inset 0 0 0 1.5px var(--c-on-brand);}
+.gd-meses-pop{position:absolute;top:calc(100% + 8px);left:0;z-index:var(--z-menu-fila);min-width:220px;max-height:320px;overflow-y:auto;background:var(--c-surface);color:var(--c-text);border:1px solid var(--c-border);border-radius:var(--r-md);box-shadow:var(--shadow-md);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);}
+.gd-meses-ayuda{margin:0;font-size:var(--fs-note);color:var(--c-text-muted);}
+#gd-meses-lista{display:flex;flex-direction:column;gap:2px;}
+.gd-meses-op{font-size:var(--fs-body);color:var(--c-text);padding:4px 2px;}
+@media(max-width:768px){
+  .gd-meses-op{min-height:44px;}
+  .gd-meses-pop .btn-sm{min-height:44px;}
+  .gd-meses-btn{min-height:32px;display:flex;align-items:center;}
+}

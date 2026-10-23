@@ -8,7 +8,10 @@
 
 var _gd = {
   cliente: null, config: null, cargas: {}, periodos: [],
-  mesSel: '', compSel: '', vistaSel: '', tab: null, subtab: null, charts: {}
+  mesSel: '', compSel: '', vistaSel: '', tab: null, subtab: null, charts: {},
+  // Fase 167: meses elegidos en el filtro "Meses" ([] = todos). Solo cambia
+  // las graficas/tablas por mes (gdFiltrarPorMes), nunca el MES de arriba.
+  mesesSel: []
 };
 
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -128,6 +131,14 @@ function _gdResolver(f, extra){
     var values = cargas.map(function(c){ return _gdEvalCampo(_gdPickFila(c.filas), f); });
     if(f.transform === 'incremento'){
       values = values.map(function(v,i){ return i===0 ? null : (values[i-1] ? Math.round(((_gdNum(v)-_gdNum(values[i-1]))/_gdNum(values[i-1]))*100) : null); });
+    }
+    // Fase 167: filtro "Meses" -- despues del incremento, que se sigue
+    // midiendo contra el mes anterior real (no contra el ultimo elegido).
+    if(_gdMeses().length){
+      var idx = gdFiltrarPorMes(cargas.map(function(c, k){ return { p: c.periodo, k: k }; }), function(x){ return x.p; }, _gdMeses())
+        .map(function(x){ return x.k; });
+      labels = idx.map(function(k){ return labels[k]; });
+      values = idx.map(function(k){ return values[k]; });
     }
     return { labels: labels, values: values };
   }
@@ -826,6 +837,7 @@ async function openGenericDashboardPreview(config){
 
 async function _gdBootstrap(){
   _gd.compSel = '';
+  _gd.mesesSel = [];
   _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
 
   // Fase 90 (tema B, hallazgo real en produccion: el selector "MES" de
@@ -1197,6 +1209,7 @@ function renderGenericHeader(){
     ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('')
     : '<option value="">Sin datos</option>';
   ms.value = _gd.mesSel || (_gd.periodos[0] || '');
+  _gdPintarMeses();
 
   // "Comparar contra": periodo anterior automatico + cualquier periodo previo.
   var cs = document.getElementById('gd-comp-sel');
@@ -1244,6 +1257,65 @@ function onGdMesChange(){
   renderGenericKpis();
   renderGenericTab(_gd.tab);
 }
+// ── Fase 167: filtro "Meses" (varios meses sueltos, lado a lado) ──
+function _gdMeses(){ return (_gd && _gd.mesesSel) || []; }
+
+function _gdPintarMeses(){
+  var lista = document.getElementById('gd-meses-lista');
+  if(!lista) return;
+  _gd.mesesSel = _gdMeses().filter(function(m){ return _gd.periodos.indexOf(m) !== -1; });
+  lista.innerHTML = _gd.periodos.map(function(p){ // mismo orden que el MES (del mas nuevo al mas viejo)
+    return '<label class="filtro-check gd-meses-op"><input type="checkbox" value="'+esc(p)+'"'+(_gd.mesesSel.indexOf(p) !== -1 ? ' checked' : '')+
+      ' onchange="onGdMesesChange()"> '+esc(mesNombreLargo(p))+'</label>';
+  }).join('') || '<p class="gd-meses-ayuda">Sin meses con datos.</p>';
+  _gdMesesBoton();
+}
+
+// Texto del boton y marca de "filtro activo". No redibuja la lista: asi el
+// foco se queda en la casilla que se acaba de marcar (teclado).
+function _gdMesesBoton(){
+  var btn = document.getElementById('gd-meses-btn');
+  if(btn) btn.textContent = gdMesesTexto(_gd.mesesSel, mesNombreLargo);
+  var wrap = document.getElementById('gd-meses-wrap');
+  if(wrap) wrap.classList.toggle('gd-meses-activo', _gdMeses().length > 0);
+}
+
+// La lista se cierra al hacer clic afuera, y con Escape: en fase de CAPTURA,
+// para que ese Escape cierre SOLO la lista y no llegue al Escape de los
+// modales (motion-helpers.js), que cerraria el tablero entero.
+if(typeof document !== 'undefined' && document.addEventListener){
+  document.addEventListener('click', function(e){
+    var det = document.getElementById('gd-meses');
+    if(det && det.open && !det.contains(e.target)) det.open = false;
+  });
+  document.addEventListener('keydown', function(e){
+    var det = document.getElementById('gd-meses');
+    if(e.key !== 'Escape' || !det || !det.open) return;
+    e.stopPropagation();
+    e.preventDefault();
+    det.open = false;
+    var b = document.getElementById('gd-meses-btn');
+    if(b) b.focus();
+  }, true);
+}
+
+function onGdMesesChange(){
+  var marcados = document.querySelectorAll('#gd-meses-lista input:checked');
+  _gd.mesesSel = Array.prototype.map.call(marcados, function(x){ return x.value; }).sort();
+  _gdMesesBoton();
+  renderGenericTab(_gd.tab);
+}
+
+function gdMesesTodos(){
+  _gd.mesesSel = [];
+  _gdPintarMeses();
+  var det = document.getElementById('gd-meses');
+  if(det) det.open = false;
+  var b = document.getElementById('gd-meses-btn');
+  if(b) b.focus();
+  renderGenericTab(_gd.tab);
+}
+
 function onGdCompChange(){
   _gd.compSel = document.getElementById('gd-comp-sel').value;
   renderGenericKpis();

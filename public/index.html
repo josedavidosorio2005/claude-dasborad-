@@ -882,6 +882,18 @@
           <label for="gd-mes-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MES:</label>
           <select id="gd-mes-sel" onchange="onGdMesChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>
         </div>
+        <!-- Fase 167 (pedido de Edwin): varios meses sueltos lado a lado en las graficas y tablas por mes. -->
+        <div id="gd-meses-wrap" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
+          <span id="gd-meses-label" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">MESES:</span>
+          <details id="gd-meses" class="gd-meses">
+            <summary id="gd-meses-btn" class="gd-meses-btn" aria-describedby="gd-meses-ayuda">Todos</summary>
+            <div class="gd-meses-pop" role="group" aria-labelledby="gd-meses-label">
+              <p id="gd-meses-ayuda" class="gd-meses-ayuda">Meses que se muestran en las gráficas y tablas por mes. Las tarjetas siguen el MES de la izquierda.</p>
+              <div id="gd-meses-lista"></div>
+              <button type="button" class="btn-sm" onclick="gdMesesTodos()">Ver todos los meses</button>
+            </div>
+          </details>
+        </div>
         <div id="gd-comp-wrap" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px">
           <label for="gd-comp-sel" style="color:#a8d8ea;font-size:0.75rem;font-weight:700;white-space:nowrap">COMPARAR CONTRA:</label>
           <select id="gd-comp-sel" onchange="onGdCompChange()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:0.84rem;font-weight:600;cursor:pointer;border-radius:4px;padding:2px 6px"></select>

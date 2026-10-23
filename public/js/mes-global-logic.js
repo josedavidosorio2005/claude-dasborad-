@@ -167,8 +167,42 @@ function gdHoyLocal(fecha) {
   return f.getFullYear() + '-' + (mm < 10 ? '0' + mm : mm) + '-' + (dd < 10 ? '0' + dd : dd);
 }
 
+// Fase 167 (pedido de Edwin): filtro "Meses" del tablero -- elegir varios
+// meses sueltos (ej. septiembre y octubre, sin agosto) para VER LADO A LADO
+// en las graficas y tablas que van por mes. No suma meses ni cambia el MES
+// de arriba (tarjetas, comparacion). mesesSel vacio = todos los meses.
+// getMes(item) puede devolver 'AAAA-MM' o 'AAAA-MM-DD' (se mira el mes).
+function gdFiltrarPorMes(lista, getMes, mesesSel) {
+  var arr = lista || [];
+  if (!mesesSel || !mesesSel.length) return arr;
+  var elegidos = {};
+  mesesSel.forEach(function (m) { elegidos[String(m).slice(0, 7)] = true; });
+  return arr.filter(function (x) { return !!elegidos[String(getMes(x) == null ? '' : getMes(x)).slice(0, 7)]; });
+}
+
+// Lo usan los modulos de panel: aplica el filtro "Meses" del tablero abierto
+// (_gd.mesesSel, dashboard-generic.js); sin tablero, la lista tal cual.
+function gdAplicarFiltroMeses(lista, getMes) {
+  var sel = (typeof _gd !== 'undefined' && _gd && _gd.mesesSel) || [];
+  return gdFiltrarPorMes(lista, getMes, sel);
+}
+
+// Texto del boton "Meses": "Todos" o los meses elegidos en orden, con el
+// nombre corto (nombreMes('2026-09') -> 'Septiembre 2026' -> 'Sep 2026').
+function gdMesesTexto(mesesSel, nombreMes) {
+  if (!mesesSel || !mesesSel.length) return 'Todos';
+  return mesesSel.slice().sort().map(function (m) {
+    var n = nombreMes ? String(nombreMes(m)) : m;
+    var partes = n.split(' ');
+    return partes.length === 2 ? partes[0].slice(0, 3) + ' ' + partes[1] : n;
+  }).join(', ');
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    gdFiltrarPorMes: gdFiltrarPorMes,
+    gdMesesTexto: gdMesesTexto,
+    gdAplicarFiltroMeses: gdAplicarFiltroMeses,
     gdMesActual: gdMesActual,
     gdEsMesEnCurso: gdEsMesEnCurso,
     gdMesAnterior: gdMesAnterior,

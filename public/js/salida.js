@@ -101,10 +101,12 @@ async function _salDibujar(campana, i, opciones){
     }
   }
 
-  _salDibujarGrafica('sal-llam-'+i, filas, 'llamadas3p', 'llamadasGeneral', 'Llamadas de salida');
-  _salDibujarGrafica('sal-wpp-'+i, filas, 'wpp3p', 'wppGeneral', 'WhatsApp de salida');
+  // Fase 167: filtro "Meses" -- grafica y tabla; las tarjetas siguen el MES de arriba.
+  var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
+  _salDibujarGrafica('sal-llam-'+i, filasMeses, 'llamadas3p', 'llamadasGeneral', 'Llamadas de salida');
+  _salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp3p', 'wppGeneral', 'WhatsApp de salida');
 
-  if(tablaEl) tablaEl.innerHTML = _salTablaHtml(filas, mesSel);
+  if(tablaEl) tablaEl.innerHTML = _salTablaHtml(filasMeses, mesSel);
 }
 
 // Barras agrupadas por mes (3P vs General) -- con solo 2 meses una linea de

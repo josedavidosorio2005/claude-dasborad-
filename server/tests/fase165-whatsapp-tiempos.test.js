@@ -180,8 +180,9 @@ test('plantilla, manual y Cargar Datos dicen de donde se descarga (Wolkvox > ...
   assert.ok(plan.includes(ruta), 'la pantalla de Cargar Datos tambien lo dice');
 });
 
-test('pendientes: filtro de meses mas dinamico (varios meses sueltos), pedido de Edwin', () => {
+test('pendiente del filtro de meses (Edwin, Fase 165): resuelto en la Fase 167 -- sale de pendientes y la guia lo explica', () => {
   const p = fs.readFileSync(path.join(RAIZ, 'docs', 'pendientes.md'), 'utf8');
-  assert.match(p, /\*\*Filtro de meses más dinámico\*\* \(pedido de Edwin, 23\/10\/2026, Fase\s+165\)/);
-  assert.match(p, /varios meses sueltos a la vez \(por\s+ejemplo septiembre y octubre\)/);
+  assert.doesNotMatch(p, /Filtro de meses más dinámico/);
+  const guia = fs.readFileSync(path.join(RAIZ, 'docs', 'guia-uso-orlant.md'), 'utf8');
+  assert.ok(guia.includes('El filtro **MESES** — para ver varios meses sueltos lado a lado'));
 });
