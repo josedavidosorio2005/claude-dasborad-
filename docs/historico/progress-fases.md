@@ -15577,3 +15577,65 @@ de llegar al servidor: el runner no pudo descargar `drone-ssh` de GitHub
 (`curl: (56)`, red). Producción siguió en 1.64.9 sin problemas; se
 relanzó solo ese job una vez y pasó. Desde afuera, sin sesión: el
 `styles.css` servido pinta los iconos del inicio con `--c-on-brand`.
+
+## Fase 165 — WhatsApp por rangos de tiempo: export de Wolkvox tal cual, rangos por cola y por mes, y carga de octubre de ORLANT (v1.65.0, 2026-10-23)
+
+**Antes de la fase (mismo día).** Se borraron los worktrees viejos
+`fase163\wt` y `fase164\wtm` (sin cambios sin commitear; se quitó primero
+el junction a `node_modules`). Con el OK del usuario se mergeó **#519**:
+el job `pantallas` de CI corre en la imagen oficial de Playwright
+(`v1.63.0-noble`) fijada por digest, sin `npx playwright install
+--with-deps`; el job pasó de hasta 13 minutos a ~1 minuto.
+
+**Pedido de Edwin (23/10).** Al subir el reporte de octubre de "WhatsApp
+por rangos de tiempo" de ORLANT salían miles de avisos "ANSWER_TIME
+inválido o vacío".
+
+**Causa.** El lector solo aceptaba ANSWER_TIME como un número limpio. El
+export crudo de Wolkvox (Skills & Servicios → "10. Detalle de llamadas
+contestadas", 7 columnas) puede traerlo como texto con apóstrofo
+(`'5742`, igual que CONN_ID) o como duración (`00:01:35`): cada fila de
+WhatsApp quedaba omitida con un aviso propio. El archivo que pasó el
+usuario (4 columnas, números limpios) ya cargaba bien con la v1.64.10; el
+error se reprodujo con una variante de 7 columnas armada desde ese archivo
+(5.196 avisos, 0 filas). Dos fallas silenciosas más: con formato de hora
+de Excel todo caía en "0-3 minutos", y "5.742" se leía como 5,7 s.
+
+**#520 (v1.65.0).**
+- ANSWER_TIME acepta número, texto, apóstrofo, `hh:mm:ss`/`mm:ss`, punto
+  o coma de miles, coma decimal y columna con formato de hora (formato
+  real de la celda). Avisos agrupados por motivo (uno por motivo, con las
+  primeras filas). Solo se omiten las filas vacías y la vista previa dice
+  cuántas.
+- Cortes de Edwin: `<180` "0 a 3 minutos", `<300` "3 a 5", `<480` "5 a
+  8", `<600` "8 a 10", resto "10 minutos en adelante" (navegador y SQL;
+  se calculan al consultar, así que valen para lo ya cargado: 180 s
+  exactos pasan a "3 a 5").
+- Nivel de Servicio: tablas por cola (del mes) y por mes (de la cola), con
+  conteo y %; ruta `GET /calidad/whatsapp-tiempos/resumen`; también en
+  Excel y PDF.
+- Plantilla, Cargar Datos, ficha y guía: de dónde se descarga y la tabla
+  de rangos.
+- "Llamadas de salida" y "WhatsApp de salida" con título destacado (18
+  px).
+- Pendiente: filtro de varios meses sueltos (Edwin).
+- Verificación: prueba nueva (10, fallan en main y pasan en la rama),
+  suite 2097/2097, `npm audit` 0, CI verde, `/api/health` 1.65.0. En
+  local, el reporte real por la interfaz: 5.196 filas, 0 avisos; vistas a
+  375/768/1440 en claro y oscuro sin errores.
+
+**Carga real en producción (autorizada por el usuario, 23/10).** Por el
+Centro de cargas (ORLANT → WhatsApp por rangos de tiempo → octubre), con
+la sesión del usuario. Octubre estaba vacío (0 filas, no se reemplazó
+nada). Vista previa confirmada antes de guardar: 5.196 filas de WhatsApp,
+6.876 de otras colas ignoradas, 0 vacías, del 1 al 22 de octubre (18
+días), sin avisos de filas. Guardadas 5.196. Verificado por la API y en
+pantalla: total 5.196, 18 días, 0 a 3 min 2.991 (57,6 %), 3 a 5 153
+(2,9 %), 5 a 8 186 (3,6 %), 8 a 10 109 (2,1 %), 10+ 1.757 (33,8 %); las
+5 colas suman 5.196; 0 errores de consola.
+
+**Hallazgo al verificar** (anotado en `docs/pendientes.md`): con el MES de
+arriba en octubre, el panel de Tráfico de WhatsApp muestra "sin datos"
+porque falta el Flujo de WhatsApp de octubre, y esconde también la
+sub-pestaña "Nivel de Servicio". Hoy se llega con MES en septiembre →
+Nivel de Servicio → Mes = Octubre en su filtro propio.

@@ -257,6 +257,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Nivel de Servicio de WhatsApp escondido si el mes no tiene Flujo de
+  WhatsApp** (visto en producción, Fase 165, 23/10/2026) — con el MES de
+  arriba en octubre, el panel de Tráfico de WhatsApp de ORLANT dice "sin
+  datos" (falta el Flujo de WhatsApp de octubre) y esconde también la
+  sub-pestaña "Nivel de Servicio", aunque los tiempos de octubre sí están
+  cargados. Hoy se ve con MES en septiembre → Nivel de Servicio → Mes =
+  Octubre. Arreglo posible: mostrar las sub-pestañas aunque el Flujo de
+  ese mes no esté. Costo: bajo. No se ha tocado.
 - **Encabezado del tablero muy alto en el teléfono** (visto en
   producción, Fase 164, 22/10/2026) — a 375 px el encabezado queda fijo
   arriba y ocupa unos 300 px de 812 (más o menos un tercio de la
