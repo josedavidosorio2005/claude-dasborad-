@@ -469,6 +469,14 @@ body{font-family:var(--font-sans);background:var(--c-bg);min-height:100vh;}
    iconos.js). Toman el tamano del texto del control y su color
    (currentColor), asi siguen el tema y los estados hover/activo. */
 .icono{width:1.1em;height:1.1em;vertical-align:-0.18em;flex-shrink:0;display:inline-block;}
+/* Fase 164 (lote 2): estados de Calidad/Metas con icono en vez de emoji
+   (calEstadoHtml). El estado siempre lo dice la palabra; el color del icono
+   es el de su estado; en la tarjeta de Calidad del tablero, el de la meta
+   (qa_promedio: la misma clase kpi-red/kpi-org/kpi-green de su borde). */
+.estado-con-icono{display:inline-flex;align-items:center;gap:0.35em;}
+.estado-critico .icono,.kpi-ejecutiva.kpi-red .estado-con-icono .icono{color:var(--c-danger-text);}
+.estado-medio .icono,.kpi-ejecutiva.kpi-org .estado-con-icono .icono{color:var(--c-warning-text);}
+.estado-ok .icono,.kpi-ejecutiva.kpi-green .estado-con-icono .icono{color:var(--c-success-text);}
 .s-icon{display:inline-flex;justify-content:center;}
 .theme-toggle .icono,.navbar-menu-toggle .icono,.navbar-profile-toggle .icono,.btn-eye .icono,#gd-fullscreen-btn .icono{vertical-align:middle;}
 
@@ -701,6 +709,11 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .dash-btn{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1.5px solid rgba(255,255,255,0.2);border-radius:var(--r-pill);padding:38px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:all 0.22s;text-align:center;color:var(--c-on-brand);position:relative;overflow:hidden;}
 .dash-btn:hover{background:rgba(255,255,255,0.22);transform:translateY(-5px);box-shadow:0 14px 36px rgba(0,0,0,0.2);border-color:rgba(255,255,255,0.45);}
 .dash-icon{font-size:var(--fs-display);line-height:1;}
+/* Fase 164 (lote 2): icono Lucide del modulo (antes emoji), mismo tamaño
+   que el emoji y en blanco como el titulo de la tarjeta (--c-on-brand; en
+   color de marca quedaba con poco contraste sobre la tarjeta teal en tema
+   claro -- decision del usuario). Solo el icono: la tarjeta no cambia. */
+.dash-icon .icono{width:1em;height:1em;vertical-align:top;color:var(--c-on-brand);}
 .dash-label{font-size:var(--fs-body-lg);font-weight:700;letter-spacing:0.02em;}
 .dash-sub{font-size:var(--fs-note);color:rgba(255,255,255,0.62);margin-top:2px;}
 .dash-btn.mod-calidad{border-color:rgba(39,174,96,0.5);background:rgba(39,174,96,0.15);}

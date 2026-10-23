@@ -392,9 +392,9 @@ function renderCalPreview(){
   if(!pv) return;
   pv.innerHTML =
     '<div class="qi-pill"><div class="qv">'+(r.puntaje===null?'—':r.puntaje)+'</div><div class="ql">PUNTAJE OBTENIDO</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.95rem">'+r.clasificacion+'</div><div class="ql">CLASIFICACION</div></div>'+
+    '<div class="qi-pill"><div class="qv" style="font-size:0.95rem">'+calEstadoHtml(r.clasificacion)+'</div><div class="ql">CLASIFICACION</div></div>'+
     '<div class="qi-pill"><div class="qv">'+(r.fallos===null?'—':r.fallos)+'</div><div class="ql"># FALLOS CRITICOS</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+r.nivelCritico+'</div><div class="ql">NIVEL CRITICO</div></div>';
+    '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+calEstadoHtml(r.nivelCritico)+'</div><div class="ql">NIVEL CRITICO</div></div>';
 }
 
 function setCanalAuditado(canal){
@@ -542,9 +542,9 @@ function renderCalMonitoreosTable(){
     html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
   } else {
     arr.forEach(function(m){
-      var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
+      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
       html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
-        '<td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.fallos+'</td><td>'+m.nivelCritico+'</td>'+
+        '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):'')+'</tr>';
     });
   }
@@ -573,7 +573,7 @@ function renderCalResumenTable(){
       var promColor = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(prom, { metrica: 'qa_promedio', campana: _ccampana }) : null;
       var promCls = (typeof _gdSemaforoClase === 'function' && promColor) ? _gdSemaforoClase(promColor) : '';
       var promBadge = (typeof semaforoBadgeHtml === 'function' && promColor) ? semaforoBadgeHtml(promColor) : '';
-      html += '<tr><td>'+esc(textoFormatoNombre(n))+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+promBadge+prom+'</td><td>'+clasif+'</td><td>'+d.fallos+'</td><td>'+alerta+'</td></tr>';
+      html += '<tr><td>'+esc(textoFormatoNombre(n))+'</td><td>'+d.count+'</td><td class="peak'+(promCls?' '+promCls:'')+'">'+promBadge+prom+'</td><td>'+calEstadoHtml(clasif)+'</td><td>'+d.fallos+'</td><td>'+calEstadoHtml(alerta)+'</td></tr>';
     });
   }
   document.getElementById('cal-resumen-table').innerHTML = html;
@@ -646,7 +646,7 @@ function renderCalConfig(){
   } else {
     rows.forEach(function(u){
       var acceso = u.perms['campana_'+_ccampana]===true;
-      html += '<tr><td>'+esc(u.nombre)+' (@'+esc(u.user)+')</td><td>'+esc(u.rol)+'</td><td>'+(acceso?'✅ Si':'❌ No')+'</td><td>'+(u.active?'Activo':'Suspendido')+'</td></tr>';
+      html += '<tr><td>'+esc(u.nombre)+' (@'+esc(u.user)+')</td><td>'+esc(u.rol)+'</td><td>'+calEstadoHtml(acceso?'✅ Si':'❌ No')+'</td><td>'+(u.active?'Activo':'Suspendido')+'</td></tr>';
     });
   }
   document.getElementById('cal-permisos-table').innerHTML = html;
@@ -666,7 +666,7 @@ function renderCalCodificacionesAdmin(){
     html += '<tr><td colspan="3" style="text-align:center;color:var(--c-text-muted)">Sin codificaciones cargadas todavia -- el campo sigue siendo texto libre</td></tr>';
   } else {
     rows.forEach(function(c){
-      html += '<tr><td>'+esc(c.valor)+'</td><td>'+(c.activo?'✅ Activa':'⛔ Desactivada')+'</td>'+
+      html += '<tr><td>'+esc(c.valor)+'</td><td>'+calEstadoHtml(c.activo?'✅ Activa':'⛔ Desactivada')+'</td>'+
         '<td><button class="btn-sm '+(c.activo?'btn-delete':'btn-edit')+'" onclick="calCodificacionToggle('+c.id+','+(!c.activo)+')">'+(c.activo?'Desactivar':'Reactivar')+'</button></td></tr>';
     });
   }
@@ -797,8 +797,8 @@ function verSupervisionLider(camp, mes, liderNombre){
     html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados este mes</td></tr>';
   } else {
     misMon.forEach(function(m){
-      var canalLbl = m.canal==='WPP' ? '💬 WPP' : '📞 Llamada';
-      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+m.clasificacion+'</td><td>'+m.nivelCritico+'</td></tr>';
+      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
+      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td></tr>';
     });
   }
   document.getElementById('sl-monitoreos-table').innerHTML = html;
@@ -815,9 +815,9 @@ function renderCalReportes(){
   var critico = arr.filter(function(m){return m.puntaje<70;}).length;
 
   document.getElementById('cal-reportes-kpis').innerHTML =
-    '<div class="aurora-kpi kpi-green"><div class="kv">'+sobresaliente+'</div><div class="kl">🟢 Sobresaliente</div></div>'+
-    '<div class="aurora-kpi kpi-org"><div class="kv">'+noCritico+'</div><div class="kl">🟡 No Critico</div></div>'+
-    '<div class="aurora-kpi kpi-red"><div class="kv">'+critico+'</div><div class="kl">🔴 Critico</div></div>'+
+    '<div class="aurora-kpi kpi-green"><div class="kv">'+sobresaliente+'</div><div class="kl">'+calEstadoHtml('🟢 Sobresaliente')+'</div></div>'+
+    '<div class="aurora-kpi kpi-org"><div class="kv">'+noCritico+'</div><div class="kl">'+calEstadoHtml('🟡 No Critico')+'</div></div>'+
+    '<div class="aurora-kpi kpi-red"><div class="kv">'+critico+'</div><div class="kl">'+calEstadoHtml('🔴 Critico')+'</div></div>'+
     '<div class="aurora-kpi"><div class="kv">'+arr.length+'</div><div class="kl">Total Evaluados'+(_cmesFiltro?' ('+_cmesFiltro+')':'')+'</div></div>';
 
   ccMostrarSinDatosOCanvas('cch-clasificacion', arr.length > 0, 'Distribucion de Clasificacion');

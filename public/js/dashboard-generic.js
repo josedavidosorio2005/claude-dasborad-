@@ -1816,7 +1816,7 @@ function _gdRenderCalidad(p, i){
     el.innerHTML =
       kpiTarjetaHtml({ valor: String(r.total), etiqueta: 'Monitoreos realizados' }) +
       kpiTarjetaHtml({ valor: r.total ? String(r.promedio).replace('.', ',') : '—', etiqueta: 'Puntaje promedio de calidad', meta: r.total ? metaQa : null }) +
-      '<div class="aurora-kpi kpi-ejecutiva '+qaCls+'"><div class="kv kv-texto">'+qaBadge+esc(r.clasificacion)+'</div><div class="kl">Clasificación general</div></div>';
+      '<div class="aurora-kpi kpi-ejecutiva '+qaCls+'"><div class="kv kv-texto">'+qaBadge+calEstadoHtml(r.clasificacion, { sinColor:true })+'</div><div class="kl">Clasificación general</div></div>';
     return;
   }
   if(p.tipo === 'calidad_bar_asesores'){

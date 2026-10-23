@@ -31,7 +31,7 @@ function renderDashGrid(){
   var puedeCargar = typeof canLoadAnyModule==='function' && canLoadAnyModule() && !isFullAdmin();
   if(puedeCargar){
     grid.innerHTML += '<div class="dash-btn mod-clientes" role="button" tabindex="0" onclick="openCentroCargas()">'+
-      '<div class="dash-icon">&#128228;</div>'+
+      '<div class="dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></div>'+
       '<div class="dash-label">Cargar Datos</div>'+
       '<div class="dash-sub">Subir Excel de los dashboards</div></div>';
   }
