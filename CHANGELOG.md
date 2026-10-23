@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.67.1 — Octubre 2026
+
+**Fase 169: "Llamadas de salida" sale una sola vez en el filtro.**
+
+- En Tipificación de llamadas, los meses cargados antes guardaban las
+  llamadas de salida con el nombre "LINEA DE SALIDA" y septiembre ahora las
+  guarda como "Llamadas de salida". En el filtro de skill salían las dos.
+  Ahora sale una sola, "Llamadas de salida", y al elegirla trae las de todos
+  los meses.
+- No se borró ni se cambió ningún dato: solo cómo se agrupan y se muestran.
+
 ## v1.67.0 — Octubre 2026
 
 **Fase 168: Tipificación con los dos CDR de Wolkvox (pedido de Edwin).**
