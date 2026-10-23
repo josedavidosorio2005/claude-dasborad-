@@ -256,25 +256,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   arriba y ocupa unos 300 px de 812 (más o menos un tercio de la
   pantalla al bajar). Es parte de la propuesta visual A/B de la
   auditoría de la Fase 164, que **espera a Edwin**: no se toca antes.
-- **Idea: guardar Chromium en caché en el job `pantallas` de CI** — en
-  la Fase 164 el paso "Instalar Chromium (Playwright)" (`npx playwright
-  install --with-deps chromium`) pasó varias veces del límite de 5
-  minutos y canceló el job en main, frenando el deploy. Se subió el
-  límite a 15 minutos. Ojo: `--with-deps` instala paquetes del sistema
-  con `apt`, y eso puede ser lo lento; guardar en caché solo el
-  navegador (`~/.cache/ms-playwright`, con `actions/cache` fijado a SHA)
-  no evita ese `apt`. Antes de hacerlo, medir cuánto tarda cada parte.
-  Costo: bajo. Anotado 22/10/2026.
-- **Correr el job `pantallas` de CI en la imagen oficial de Playwright,
-  fijada por digest** (pedido del usuario, 22/10/2026). En la Fase 164 el
-  paso "Instalar Chromium" tardó 11–14 minutos en varias corridas (otras,
-  20 s–1 min) y el límite tuvo que subir de 5 a 15 y después a 20 minutos.
-  Con `container: mcr.microsoft.com/playwright@sha256:<digest>` (misma
-  versión que `server/node_modules/playwright`) Chromium y sus paquetes
-  del sistema ya vienen instalados: se quita el `npx playwright install
-  --with-deps`. Fijar por digest (no por tag), como las acciones por SHA
-  (Fase 109). Toca `ci.yml`: se consulta antes. Reemplaza la idea de la
-  caché de arriba. Anotado 22/10/2026.
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
   con sesión y solo conteos, cuántas filas tienen la hora llena por
