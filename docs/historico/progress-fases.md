@@ -15993,3 +15993,45 @@ Puntaje y Fallos son fórmulas que apuntan al libro de Monitoreos.
   (zod 4.6.7, solo el lockfile) y quedó en 0.
 - No se cargó nada en producción: esta parte no tenía autorización de
   carga.
+
+### Fase 173 — Tipificación de septiembre de Mobilize y hora de carga del Centro (2026-10-23, v1.70.1)
+
+Parte 2 del pedido del 23/10: "¿falta septiembre en la Tipificación de
+Mobilize?".
+
+**Revisión en producción (solo lectura, con la sesión del usuario, por la
+API y el tablero).**
+
+| Mes | Registros (llamadas) | Última carga (hora de Colombia) |
+|---|---|---|
+| Agosto | 80 | 23/10, 1:50 p. m. |
+| Septiembre | 167 | 23/10, 2:13 p. m. |
+| Octubre (hasta el 22) | 127 | 23/10, 1:50 p. m. |
+
+- Septiembre tiene datos en 25 días, del 1 al 30, sin huecos raros.
+- En el tablero, MES = Septiembre 2026 muestra 167 registros, la torta y
+  las tarjetas de salida (64 llamadas de salida: 49 conectadas y 15 no
+  conectadas), con 0 errores de consola.
+- WhatsApp: Mobilize no tiene (como siempre).
+- **Conclusión:** septiembre sí está y se ve. Se cargó hacia las 2:13 p. m.
+  del 23/10, unos 23 minutos después de agosto y octubre. Lo más probable es
+  que, al revisarlo antes, todavía no estuviera cargado. No es un error del
+  código y no hizo falta cargar nada.
+
+**Error que sí apareció en la revisión.**
+- El Centro de cargas mostraba la hora de carga 5 horas después de la real.
+- El servidor de producción corre en UTC, y `nowStr()` guarda
+  "dd/mm/aaaa hh:mm:ss" con la hora local del proceso (ya documentado en
+  `server/fecha-limites.js`).
+- `instanteCarga` (`server/centro-cargas.js`) leía ese texto siempre como
+  hora de Colombia (+5 h). Por eso la API decía que septiembre se cargó a las
+  00:13 UTC del 24/10, una hora todavía en el futuro.
+- Ahora el texto se lee en la misma zona en que se escribió. En el equipo
+  local (Colombia) no cambia nada; en producción la hora sale bien.
+- Los datos guardados no se tocan.
+- Prueba nueva `fase173-centro-hora-carga.test.js` (3):
+  - simula el servidor en UTC y en Colombia;
+  - el caso de producción falla sin el arreglo.
+- Se ajustaron 2 valores esperados de `fase153-centro-cargas.test.js`
+  (dependían de la regla de +5 h).
+
