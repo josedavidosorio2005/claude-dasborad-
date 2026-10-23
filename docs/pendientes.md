@@ -9,11 +9,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Recargar en producción los 2 CDR de septiembre de ORLANT** (Fase 168)
-  — para que se vean las reglas nuevas (WhatsApp por SKILL_ID, "Llamadas
-  de salida" y la mitad de WhatsApp). Hoy, en producción, las tarjetas de
-  salida de septiembre dan 0 con 19.721 registros (probablemente sin el tipo
-  de llamada; no verificado). Se hace por el Centro de cargas, con tu OK.
 - **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del
   Centro de cargas (cargar, eliminar, deshacer) quedan en el Historial a
   nombre de "Administrador (@admin)", así que no se pueden atribuir a una

@@ -38,6 +38,18 @@ const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', '
 // otra codificacion en una saliente cuenta como "conectada".
 const SALIDA_NO_CONECTADA = ['Cliente_no_contesta'];
 
+// Fase 169: en Tipificacion de LLAMADAS, los meses cargados antes de la Fase
+// 168 guardan las llamadas de salida con el skill "LINEA DE SALIDA" (o con
+// otra mayuscula); desde la Fase 168 se guardan como "LLAMADAS DE SALIDA".
+// Son el mismo skill: en el filtro salen una sola vez (SKILL_SALIDA) y
+// filtrar por cualquiera de los nombres trae todos. Solo cambia como se
+// agrupan y muestran; los datos guardados no se tocan.
+const SKILL_SALIDA = 'LLAMADAS DE SALIDA';
+const SKILLS_SALIDA_EQUIVALENTES = ['LLAMADAS DE SALIDA', 'LINEA DE SALIDA'];
+function esSkillSalida(skill) {
+  return SKILLS_SALIDA_EQUIVALENTES.includes(String(skill == null ? '' : skill).trim().replace(/\s+/g, ' ').toUpperCase());
+}
+
 function filaArrayAObjeto(arr) {
   const obj = {};
   CAMPOS_FILA.forEach((k, i) => { obj[k] = arr[i]; });
@@ -151,7 +163,10 @@ function tipificacionesWhereClausulas(q) {
     clausulas.push('agente = @agente');
     params.agente = q.agente;
   }
-  if (q.skill) {
+  if (q.skill && q.canal === 'LLAMADAS' && esSkillSalida(q.skill)) {
+    // Fase 169: cualquiera de los nombres de salida trae los de todos los meses.
+    clausulas.push("UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ') + ')');
+  } else if (q.skill) {
     clausulas.push('skill = @skill');
     params.skill = q.skill;
   }
@@ -225,7 +240,11 @@ function tipificacionesOpciones(db, campana, canal) {
   return {
     meses: db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v').all(campana, canal).map((r) => r.v),
     agentes: distintos('agente'),
-    skills: distintos('skill'),
+    // Fase 169: en Llamadas, los nombres de salida de meses anteriores se
+    // muestran una sola vez, como LLAMADAS DE SALIDA.
+    skills: canal === 'LLAMADAS'
+      ? [...new Set(distintos('skill').map((s) => (esSkillSalida(s) ? SKILL_SALIDA : s)))].sort()
+      : distintos('skill'),
   };
 }
 
@@ -238,6 +257,8 @@ function tieneAlgunaTipificacion(db, campana) {
 
 module.exports = {
   CANALES,
+  SKILL_SALIDA,
+  esSkillSalida,
   CAMPOS_FILA,
   filaArrayAObjeto,
   impactoTipificaciones,

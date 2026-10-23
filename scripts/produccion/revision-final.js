@@ -115,7 +115,11 @@ const ESPERADO = {
   // llamadas del archivo de Edwin.
   salidaLlamadasAgo: 2169 + 4391, salidaLlamadasSep: 3530 + 6874,
   salidaWppAgo: 747 + 2635, salidaWppSep: 1277 + 2720,
-  salidaLineaDeSalidaAgo: 6560, salidaLineaDeSalidaSep: 10404,
+  // Fase 168/169: septiembre se recargo con el CDR (23/10). Desde la Fase 168
+  // "-" sin internalcall ni filas sin tipo = salida: 10.399 (el archivo de
+  // Salida de Edwin dice 10.404 -- incluye esas 5). "LINEA DE SALIDA" y
+  // "LLAMADAS DE SALIDA" se consultan juntos (Fase 169).
+  salidaLineaDeSalidaAgo: 6560, salidaLineaDeSalidaSep: 10399,
 };
 
 // Fase 118: rutas que SI pueden dar 4xx en el uso normal de este script y no
@@ -152,7 +156,7 @@ const REFERENCIA_WHATSAPP_FILAS = 258;
 const REFERENCIA_WHATSAPP_AHT_NUMERICAS_ESPERADAS = 0; // confirmado local: 258/258 filas traen "----"
 
 const REFERENCIA_TIPIFICACION_SKILL_MES = {
-  'LINEA DE SALIDA': { '2026-08': 6560, '2026-09': 10404 },
+  'LINEA DE SALIDA': { '2026-08': 6560, '2026-09': 10399 }, // Fase 169: mismo grupo que LLAMADAS DE SALIDA
   'CALL INBOUND ORLANT 3P': { '2026-08': 3957, '2026-09': 4229 },
   'REGIMEN ESPECIALES': { '2026-08': 804, '2026-09': 719 },
   'CALL INBOUND ORLANT GENERAL': { '2026-08': 3229, '2026-09': 3971 },

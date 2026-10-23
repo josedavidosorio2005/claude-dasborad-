@@ -15774,3 +15774,50 @@ Edwin). En producción esas tarjetas muestran hoy 0 llamadas de salida con
 el tipo de llamada; no se verificó). Para que las reglas nuevas se vean hay
 que recargar los 2 CDR de septiembre por el Centro (espera el OK del
 usuario).
+
+### Fase 168 — recarga en producción de los 2 CDR de septiembre de ORLANT (2026-10-23)
+
+Autorizada por el usuario. Por el Centro de cargas (ORLANT → Tipificación →
+septiembre), con su sesión. Antes de guardar se revisó la vista previa: las
+llamadas sí traían el tipo de llamada (19.721 de 19.721 filas) y los conteos
+coincidieron con la prueba local.
+
+| Septiembre | Antes | Después |
+|---|---|---|
+| Tipificación de WhatsApp | 13.048 registros | 13.118 (reemplazó los 13.048) |
+| WhatsApp de salida | — | 3.997 |
+| Tipificación de llamadas | 19.721 registros | 19.721 (reemplazó los 19.721) |
+| Tarjeta "Llamadas de salida" | 0 | 10.399 |
+
+- **WhatsApp:** 13.215 filas reconocidas (13.118 de septiembre + 97 del
+  31/08, que el Centro no carga), 3 ignoradas por skill (4308, 4323) y 4.013
+  de salida (3.997 de septiembre + 16 del 31/08). Los 628 registros de
+  WhatsApp del 31/08 que ya había no se tocaron.
+- **Llamadas:** 19.721 filas y 10.399 de salida. El archivo de Salida de
+  Edwin dice 10.404 para septiembre: incluye las 4 internalcall y la fila sin
+  tipo de llamada con skill "-", que desde la Fase 168 no cuentan. En WhatsApp
+  coincide exacto (3.997).
+- **En pantalla (septiembre):** Llamadas y WhatsApp lado a lado, tortas de
+  19.721 y 13.118 registros, tarjetas con 10.399 de salida, 0 errores de
+  consola. "No conectadas" sigue en 0 (regla de Mobilize; pregunta abierta a
+  Edwin en `docs/pendientes.md`).
+
+## Fase 169 — "Llamadas de salida" unificado en el filtro de skill (v1.67.1, 2026-10-23)
+
+**Hallazgo de la recarga.** En el filtro de skill de Tipificación de
+llamadas salían "Linea De Salida" (meses cargados antes, skill "LINEA DE
+SALIDA") y "Llamadas de salida" (desde la Fase 168).
+
+**Qué cambia (`server/tipificaciones.js`).** En el canal LLAMADAS,
+"LINEA DE SALIDA", "Linea de salida" y "LLAMADAS DE SALIDA" son el mismo
+skill: `/opciones` lo devuelve una sola vez (LLAMADAS DE SALIDA, que la vista
+muestra "Llamadas de salida") y filtrar por cualquiera de los nombres trae
+todos (`UPPER(TRIM(skill)) IN (...)`, también en las tarjetas de salida). Los
+datos guardados no se tocan; WhatsApp no cambia. El script
+`scripts/produccion/revision-final.js` queda con el número de control de
+septiembre del CDR (10.399).
+
+**Verificación.** Prueba nueva `fase169-salida-unificada.test.js` (falla en
+main, pasa en la rama): una sola opción de salida, filtro por cualquiera de
+los 3 nombres = los 3 meses, "-" aparte, WhatsApp igual, datos crudos
+intactos.
