@@ -15639,3 +15639,71 @@ arriba en octubre, el panel de Tráfico de WhatsApp muestra "sin datos"
 porque falta el Flujo de WhatsApp de octubre, y esconde también la
 sub-pestaña "Nivel de Servicio". Hoy se llega con MES en septiembre →
 Nivel de Servicio → Mes = Octubre en su filtro propio.
+
+## Fase 166 — Nivel de Servicio de WhatsApp visible aunque falte el Flujo del mes (v1.65.1, 2026-10-23)
+
+**Hallazgo (al verificar la Fase 165 en producción).** Con el MES de arriba
+en octubre y sin Flujo de WhatsApp de octubre, el panel de Tráfico de
+WhatsApp de ORLANT decía "sin datos" y escondía todas sus sub-pestañas,
+también "Nivel de Servicio", aunque los tiempos de octubre estaban
+cargados.
+
+**#522 (v1.65.1).** `_traficoWppSoloNivelServicio` (`trafico-whatsapp.js`):
+para las campañas con la vista de rangos (`wppTiemposUsa`, hoy ORLANT), si
+falta el Flujo del mes o no hay ningún Flujo cargado, queda el mismo aviso
+y debajo la sub-pestaña "Nivel de Servicio" (activa) con Excel/PDF. Las
+demás campañas y el panel completo no cambian.
+
+**Verificación.** Prueba nueva `fase166-nivel-servicio-sin-flujo.test.js`
+(4, corre el `trafico-whatsapp.js` real en vm): las 2 del arreglo fallan en
+main y pasan en la rama. Suite 2101/2101, `npm audit` 0, CI verde. Local
+(MES = agosto, tiempos sintéticos sin Flujo) a 375 y 1440. **En
+producción, MES = octubre:** aviso + "Nivel de Servicio" activo con
+octubre: 57,6 % en 0 a 3 minutos y 5.196 conversaciones, tablas por cola y
+por mes, 0 errores de consola.
+
+**Incidente (sin pérdida de datos).** La primera verificación en
+producción mostró octubre vacío. El Historial dice que el 23/10 a las
+11:56 (hora Colombia, 16:56 UTC) alguien usó **"Eliminar"** en el Centro
+de cargas sobre octubre de "WhatsApp por rangos de tiempo" de ORLANT, con
+la cuenta compartida **@admin** ("Eliminó la base de Octubre 2026 …: 5196
+registros"). No fue ningún script de la sesión. La base quedó guardada
+para Deshacer (versión 4). Con el OK del usuario se restauró con
+**Deshacer** desde la interfaz (Centro de cargas → Versiones), con su
+sesión: "volvieron 5.196 registros de Octubre 2026", verificado por la
+API (5.196, 18 días, mismos rangos) y en pantalla. No hubo pérdida. Como
+la cuenta es compartida, el cambio no se puede atribuir a una persona
+(anotado en `docs/pendientes.md`).
+
+## Fase 167 — Filtro MESES: varios meses sueltos lado a lado (v1.66.0, 2026-10-23)
+
+**Pedido de Edwin.** Elegir varios meses sueltos (por ejemplo, solo
+septiembre y octubre, sin agosto). Decisión del usuario: **verlos lado a
+lado**, sin sumar meses ni cambiar el MES de arriba.
+
+**#523 (v1.66.0).**
+- Control **MESES** en el encabezado del tablero, junto al MES (una
+  casilla por mes, en el mismo orden que el MES, y "Ver todos los
+  meses"). Lógica pura en `mes-global-logic.js` (`gdFiltrarPorMes`,
+  `gdMesesTexto`, `gdAplicarFiltroMeses`); `_gd.mesesSel` vacío = todos.
+- Se filtran solo las series por mes (gráficas, tablas y su Excel):
+  Tráfico de Llamadas y de WhatsApp (por día o mes; por año no aplica),
+  Salida, Inasistencia, Efectividad de Citas, Agendas (por mes y por
+  línea), Llamadas Únicas y de Salida de Mobilize, "Por mes" de Nivel de
+  Servicio y las series genéricas (el "incremento" se calcula antes de
+  filtrar, contra el mes anterior real). Las tarjetas no cambian.
+- **Arreglo durante la prueba:** Escape para cerrar la lista cerraba el
+  tablero entero (el Escape de los modales recibía la tecla y el foco se
+  perdía al redibujar la lista). Ahora Escape se atiende en fase de
+  captura y solo cierra la lista; marcar una casilla no redibuja la lista.
+- Guía de uso (md y html).
+
+**Verificación.** Prueba nueva `fase167-filtro-meses.test.js` (10): 9
+fallan en main y pasan en la rama. Suite 2111/2111, `npm audit` 0, CI
+verde, `/api/health` 1.66.0. Local a 375/768/1440, claro y oscuro, con
+clics reales. **En producción** (solo lectura, ORLANT, septiembre y
+octubre marcados): Salida de agosto/septiembre/octubre a septiembre y
+octubre; Tráfico de Llamadas, Inasistencia y Efectividad de Citas de
+agosto/septiembre a septiembre; las tarjetas de Salida siguen en
+septiembre; Escape no cierra el tablero; "Ver todos" restaura; 0 errores
+de consola.

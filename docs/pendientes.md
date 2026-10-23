@@ -9,6 +9,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del
+  Centro de cargas (cargar, eliminar, deshacer) quedan en el Historial a
+  nombre de "Administrador (@admin)", así que no se pueden atribuir a una
+  persona (pasó con el "Eliminar" de octubre de WhatsApp por rangos de
+  ORLANT, ya restaurado). Propuesta: usuarios con nombre para quien carga
+  datos. No se aplica sin pedirlo.
 - **Teléfono en los monitoreos de Calidad** (Fase 151) — todos los
   monitoreos guardan el teléfono del cliente final. Desde la v1.42.3 solo lo
   reciben los roles internos. Falta decidir con Edwin si se deja de pedir,
@@ -128,6 +134,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Preguntas abiertas de la reunión del 23/10 (Tipificación con los CDR)**:
+  - ¿`out_pre` cuenta como llamada de salida?
+  - ¿La tipificación se cuenta por registro o por teléfono único?
+  - Rutas exactas en Wolkvox de los dos CDR (llamadas: HistCDR; WhatsApp:
+    HistChat).
+  - Confirmaciones (skill 4338) queda fuera del Nivel de Servicio por
+    ahora: confirmar si se queda así.
 - **Llamadas Únicas de agosto de Mobilize: volver a cargar** (Fase 163).
   Desde la v1.62.0 las filas sin asesor cuentan como abandonadas; en la
   carga de agosto anterior se habían omitido. La hacen el usuario y Edwin
