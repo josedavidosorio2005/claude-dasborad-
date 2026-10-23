@@ -15517,3 +15517,63 @@ alto (MOBILIZE no tiene monitoreos de calidad); 0 errores de consola.
 el encabezado del tablero queda fijo y ocupa unos 300 px de 812; en las
 tortas, las etiquetas de porcentaje de las porciones pequeñas se montan
 unas sobre otras.
+
+## Fase 164 (lote 2) — Accesibilidad, colores, tortas e iconos (v1.64.4 → v1.64.10, 2026-10-22/23)
+
+**Lote 2 (aprobado por el usuario).** Seis PRs de la auditoría, más una
+actualización de seguridad y un ajuste de CI. Cada PR con pruebas que
+fallan antes y pasan después, capturas antes y después fuera del repo y
+la "foto por rol" sin diferencias (179 pantallas, 4.594 valores). Los
+PRs visibles para el cliente (#514, #515, #516) esperaron el OK del
+usuario con las capturas. Un merge a la vez, cada PR puesto al día con
+main antes (chocan en `server/package.json`, el lockfile y
+`CHANGELOG.md`), CI en verde y `--match-head-commit` comparado antes con
+`git ls-remote`.
+
+- **#510 (v1.64.4, D-10):** las tablas con scroll horizontal del tablero
+  y la vista previa del Centro de cargas se pueden enfocar con el
+  teclado (`tabindex="0"`, `role="region"`, nombre "Tabla: <título>").
+  axe `scrollable-region-focusable` 13 → 0.
+- **#511 (v1.64.5, D-11):** el título de cada gráfica pasa de `<h4>` a
+  `<h3>` bajo el `<h2>` del tablero; se ve igual. axe `heading-order`
+  42 → 0.
+- **#512 (v1.64.6, D-12):** áreas táctiles de 44 px en el teléfono
+  (≤768 px, solo CSS): botones de los paneles, buscadores, botones de
+  admin y formularios, Editar/Eliminar separados 8 px, ojo de la
+  contraseña. El encabezado del tablero no se tocó (espera la propuesta
+  A/B).
+- **#513 (v1.64.7):** actualización de seguridad de una dependencia
+  (`ip-address`). No cambia nada visible.
+- **#514 (v1.64.8):** Agendas e Inasistencia por especialidad en un solo
+  color y sin leyenda; las tortas de los tableros internos sin colores
+  repetidos (`paletaColoresSinRepetir`, que ahora le da el mismo color a
+  una etiqueta repetida).
+- **#515 (v1.64.9):** las porciones de menos del 5 % de una torta no
+  llevan el "%" encima y, si dos etiquetas chocan, se esconde una
+  (`charts.js`). El dato sigue en la leyenda, el tooltip y la tabla.
+- **#516 (v1.64.10):** los emojis de pantalla pasan a iconos Lucide del
+  sprite (Calidad, Metas, Mis resultados, tarjeta de Calidad del tablero,
+  lista de usuarios, módulos del inicio). Los iconos del inicio van en
+  blanco, como el título de la tarjeta (`--c-on-brand`, decisión del
+  usuario: en color de marca quedaban con poco contraste). Las
+  exportaciones y los textos que guarda el servidor no cambian.
+- **#517 (CI):** el paso "Instalar Chromium" del job `pantallas` volvió
+  a tardar 11–14 minutos en varias corridas; con el OK del usuario el
+  límite subió de 15 a 20 minutos (`ci.yml`, solo esa línea). En el
+  cierre, el CI de #516 tardó 13 min en ese job y pasó. Correrlo en la
+  imagen oficial de Playwright fijada por digest quedó en
+  `docs/pendientes.md`.
+
+**Interrupción.** El 22/10 el computador se apagó a mitad del lote: ya
+estaban en main #514 y #517 (producción en 1.64.8). El 23/10 se revisó
+el estado (`git fetch`, PRs, CI, worktrees) antes de seguir: #515 ya
+estaba al día con main y en verde y se mergeó; #516 se puso al día con
+main (conflictos solo de versión y CHANGELOG), suite local 2086/2086,
+`npm audit` 0, CI verde, y se mergeó.
+
+**Verificación.** CI verde en cada PR y en main, `/api/health` en 1.64.9
+tras #515 y en 1.64.10 tras #516. El primer deploy de #516 falló antes
+de llegar al servidor: el runner no pudo descargar `drone-ssh` de GitHub
+(`curl: (56)`, red). Producción siguió en 1.64.9 sin problemas; se
+relanzó solo ese job una vez y pasó. Desde afuera, sin sesión: el
+`styles.css` servido pinta los iconos del inicio con `--c-on-brand`.
