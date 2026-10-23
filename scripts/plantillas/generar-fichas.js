@@ -96,7 +96,9 @@ const NOTAS = {
     usan: 'ORLANT (llamadas y WhatsApp) y MOBILIZE (llamadas, CDR completo)',
     notas: [
       'Llamadas y WhatsApp se cargan por separado; cada carga reemplaza solo su canal.',
-      'El sistema distingue el canal por las columnas: el CDR de llamadas trae SKILL_NAME y el HistChat de WhatsApp trae "NOMBRE DE SKILL". Un archivo de un canal nunca se carga en el otro.',
+      'El sistema distingue el canal por las columnas: el CDR de llamadas trae SKILL_NAME; el HistChat de WhatsApp trae SKILL_ID + CHANNEL (o el formato anterior con "NOMBRE DE SKILL"). Un archivo de un canal nunca se carga en el otro.',
+      'WhatsApp (Fase 168): el nombre del skill sale de la tabla "Skills de WhatsApp" del cliente (SKILL_ID → nombre, la edita un administrador en Cargar Datos). SKILL_ID 0 = WhatsApp de salida; un SKILL_ID que no esté en la tabla se ignora con un aviso.',
+      'Llamadas (Fase 168): SKILL_ID/SKILL_NAME "-" = Llamadas de salida; las internalcall no cuentan como salida.',
       'Privacidad: del CDR completo nunca se leen TELEPHONE, CUSTOMER_ID, CONN_ID, AGENT_ID, DESTINY, COST ni COMMENT; del HistChat nunca se leen nombres, correos, teléfonos ni el texto de la conversación.',
       'En el CDR de Mobilize se excluyen las filas de prueba (tipificación "PRUEBA"), y en las salientes "Cliente_no_contesta" cuenta como no conectada.',
       'Si el archivo junta muchos meses y es muy grande, el sistema avisa antes de guardar; hay que subirlo por meses.',
@@ -190,6 +192,7 @@ function ficha(m) {
     L.push(c.origen);
     L.push('');
     if (c.nota) { L.push('**' + c.nota + '**'); L.push(''); }
+    if (c.notaSkills) { L.push(c.notaSkills); L.push(''); }
     L.push(h + ' Plantilla oficial');
     L.push('');
     L.push('`server/plantillas/' + c.archivo + '` — hoja `' + c.hoja + '` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.');

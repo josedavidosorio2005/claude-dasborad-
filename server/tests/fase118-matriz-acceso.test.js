@@ -193,6 +193,10 @@ declarar(['GET /calidad/efectividad-agendamiento/opciones', 'GET /calidad/efecti
 declarar(['POST /calidad/efectividad-agendamiento/carga/impacto', 'POST /calidad/efectividad-agendamiento/carga'], 'cargaManual');
 declarar(['GET /calidad/tipificacion/opciones', 'GET /calidad/tipificacion/por-tipo', 'GET /calidad/tipificacion/resumen-salida'], 'scopedRead');
 declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacion/carga'], 'cargaManual');
+// Fase 168: mapa de skills de WhatsApp -- lo lee quien carga Tipificacion (canLoadModule + campana),
+// solo un administrador lo cambia. Probado aparte en fase168-tipificacion-cdr.test.js.
+declarar(['GET /calidad/tipificacion/skills-whatsapp'], 'cargaManual');
+declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'admin');
 // Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas --
 // mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');

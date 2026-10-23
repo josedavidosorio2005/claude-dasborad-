@@ -28,7 +28,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
   const iHlm = orden.indexOf('fase160_crear_hospital_la_maria_v1');
   assert.ok(i134 !== -1 && iAur > i134 && iHlm > iAur, 'HLM se crea despues del borrado de la Fase 134');
   // Despues de HLM solo pueden venir migraciones de fases posteriores que no la tocan.
-  const POSTERIORES = ['fase163_skill_por_cliente_v1'];
+  const POSTERIORES = ['fase163_skill_por_cliente_v1',
+    // Fase 168: solo tocan ORLANT (mapa de skills de WhatsApp y su panel de Tipificacion).
+    'fase168_skills_whatsapp_v1', 'fase168_orlant_tipificacion_dos_canales_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

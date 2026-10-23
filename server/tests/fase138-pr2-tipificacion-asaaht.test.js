@@ -31,19 +31,19 @@ function tabPanel(cliente, tabKey) {
   return t && t.panels && t.panels[0];
 }
 
-test('dashboard-config-seed.js: el panel de Tipificacion de ORLANT tiene las MISMAS opciones que el de MOBILIZE (salvo campana)', () => {
+// Fase 168 (pedido de Edwin, 23/10): ORLANT deja de tener las mismas opciones
+// que MOBILIZE -- vuelven Llamadas y WhatsApp lado a lado (los 2 CDR), sin la
+// tabla de detalle. MOBILIZE (solo llamadas, con tabla) no cambia.
+test('dashboard-config-seed.js: Tipificacion de ORLANT con las 2 mitades y sin tabla (Fase 168); MOBILIZE igual que en la Fase 138', () => {
   const orlant = tabPanel('ORLANT', 'tipificacion');
   const mobilize = tabPanel('MOBILIZE', 'tipificacion');
   assert.ok(orlant && mobilize);
-  const { campana: campanaO, ...restoO } = orlant;
-  const { campana: campanaM, ...restoM } = mobilize;
-  assert.deepEqual(restoO, restoM);
-  assert.equal(campanaO, 'ORLANT');
-  assert.equal(campanaM, 'MOBILIZE');
-  assert.equal(orlant.soloCanal, 'LLAMADAS');
-  assert.equal(orlant.mostrarFiltroTipo, true);
-  assert.equal(orlant.mostrarTablaDetalle, true);
-  assert.equal(orlant.mostrarTarjetasSalida, true);
+  assert.deepEqual(orlant, { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT', mostrarFiltroTipo: true, mostrarTarjetasSalida: true });
+  assert.equal(mobilize.campana, 'MOBILIZE');
+  assert.equal(mobilize.soloCanal, 'LLAMADAS');
+  assert.equal(mobilize.mostrarFiltroTipo, true);
+  assert.equal(mobilize.mostrarTablaDetalle, true);
+  assert.equal(mobilize.mostrarTarjetasSalida, true);
 });
 
 test('dashboard-config-seed.js: el tab de Tipificacion de ORLANT sigue oculto (sin cambiar el acceso) y el titulo del panel sigue en español', () => {
@@ -171,13 +171,13 @@ setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
 
 const db = require('../db');
 
-test('migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1: el panel de ORLANT queda con las mismas opciones que MOBILIZE', () => {
+test('migraciones de la Fase 138 y la Fase 168 sobre el layout viejo: el panel de ORLANT termina con las 2 mitades y sin tabla', () => {
   const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
   const layout = JSON.parse(row.layout);
   const panel = layout.tabs.find((t) => t.key === 'tipificacion').panels[0];
-  assert.equal(panel.soloCanal, 'LLAMADAS');
+  assert.equal(panel.soloCanal, undefined);
   assert.equal(panel.mostrarFiltroTipo, true);
-  assert.equal(panel.mostrarTablaDetalle, true);
+  assert.equal(panel.mostrarTablaDetalle, undefined);
   assert.equal(panel.mostrarTarjetasSalida, true);
   assert.equal(panel.campana, 'ORLANT');
 });

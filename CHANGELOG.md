@@ -4,6 +4,32 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.67.0 — Octubre 2026
+
+**Fase 168: Tipificación con los dos CDR de Wolkvox (pedido de Edwin).**
+
+- La tipificación de ORLANT ahora se carga con solo dos archivos de
+  Wolkvox: el CDR de llamadas y el CDR de WhatsApp.
+- El CDR de WhatsApp trae el número del skill, no su nombre. La plataforma
+  lo traduce con una tabla de skills de WhatsApp de cada cliente (ORLANT ya
+  la tiene cargada). Un administrador la puede cambiar en Cargar Datos →
+  "Skills de WhatsApp". El 0 es WhatsApp de salida. Si llega un número que
+  no está en la tabla, esas filas no se cargan y la vista previa dice
+  cuántas fueron, en un solo aviso.
+- En el CDR de llamadas, las llamadas sin skill ("-") son las de salida y
+  ahora se ven como "Llamadas de salida". Las llamadas internas no cuentan
+  como salida.
+- Si el archivo de un mes trae unas filas del mes anterior (por ejemplo, el
+  31 de agosto en el de septiembre), solo se reemplazan esas fechas; el
+  resto de agosto no se toca.
+- En la pestaña Tipificación de ORLANT, la de llamadas y la de WhatsApp
+  vuelven a verse lado a lado (una debajo de la otra en el celular), cada
+  una con sus filtros de asesor, skill y tipo (entrante o de salida). Se
+  quitó la tabla de detalle de abajo.
+- La plantilla y la guía dicen de dónde sale cada CDR (la ruta exacta en
+  Wolkvox está pendiente de confirmar con Edwin) e incluyen la tabla de
+  skills.
+
 ## v1.66.0 — Octubre 2026
 
 **Fase 167: ver varios meses sueltos lado a lado (pedido de Edwin).**

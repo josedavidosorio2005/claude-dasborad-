@@ -229,9 +229,13 @@ const ORLANT = {
       // decision explicita del usuario de dejar ORLANT igual a Mobilize,
       // sabiendo que la torta de WhatsApp deja de verse EN ESTE panel (sus
       // datos siguen en la tabla `tipificaciones`, solo no se grafican aqui).
+      // Fase 168 (pedido de Edwin, 23/10): vuelven Llamadas y WhatsApp lado a
+      // lado (los 2 CDR de Wolkvox), sin la tabla de detalle de abajo; las
+      // tarjetas de salida solo en la mitad de Llamadas (tipificacion.js).
+      // Produccion la recibe con fase168_orlant_tipificacion_dos_canales_v1.
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
         { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'ORLANT',
-          soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,
+          mostrarFiltroTipo: true, mostrarTarjetasSalida: true,
         },
       ]},
       { key: 'calidad', label: 'Calidad', panels: [

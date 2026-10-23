@@ -626,6 +626,26 @@ const tipificacionFilaArraySchema = z.tuple([
 
 const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
 
+// Fase 168: mapa codigo -> nombre de los skills de WhatsApp de un cliente
+// (HistChat por SKILL_ID). Codigos de solo digitos y sin repetir.
+const skillsWhatsappQuery = z.object({ campana: campanaSchema });
+const skillsWhatsappBody = z.object({
+  campana: campanaSchema,
+  skills: z
+    .array(z.object({
+      codigo: z.string().trim().regex(/^\d{1,10}$/, 'El código del skill debe ser un número'),
+      nombre: z.string().trim().min(1, 'Falta el nombre del skill').max(100),
+    }))
+    .max(200, 'Demasiados skills')
+    .superRefine((lista, ctx) => {
+      const vistos = {};
+      lista.forEach((s, i) => {
+        if (vistos[s.codigo]) ctx.addIssue({ code: 'custom', message: 'El código ' + s.codigo + ' está repetido', path: [i, 'codigo'] });
+        vistos[s.codigo] = true;
+      });
+    }),
+});
+
 const tipificacionCargaBody = z.object({
   campana: campanaSchema,
   canal: tipificacionCanalSchema,
@@ -1346,6 +1366,8 @@ module.exports = {
     whatsappTiemposCargaBody,
     whatsappTiemposOpcionesQuery,
     whatsappTiemposRangosQuery,
+    skillsWhatsappQuery,
+    skillsWhatsappBody,
     encuestasCargaBody,
     encuestasOpcionesQuery,
     encuestasFiltrosQuery,

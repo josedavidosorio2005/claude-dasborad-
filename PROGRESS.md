@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.66.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.67.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -660,3 +660,4 @@ mismo orden):
 - Fase 165 — WhatsApp por rangos de tiempo: lee el export de Wolkvox tal cual (ANSWER_TIME como texto, con apóstrofo o hh:mm:ss), avisos agrupados, cortes <180/<300/<480/<600, tablas por cola y por mes; títulos de salida más grandes; job `pantallas` en la imagen de Playwright por digest (#519); carga real de octubre de ORLANT: 5.196 conversaciones del 1 al 22/10 (v1.65.0, 2026-10-23)
 - Fase 166 — Nivel de Servicio de WhatsApp visible aunque falte el Flujo del mes; incidente sin pérdida: octubre de ORLANT eliminado con "Eliminar" desde la cuenta compartida @admin y restaurado con Deshacer (5.196) (v1.65.1, 2026-10-23)
 - Fase 167 — Filtro MESES: varios meses sueltos lado a lado en las gráficas y tablas por mes (las tarjetas siguen el MES); Escape ya no cierra el tablero; verificado en producción con septiembre y octubre (v1.66.0, 2026-10-23)
+- Fase 168 — Tipificación con los 2 CDR de Wolkvox: HistChat de WhatsApp por SKILL_ID con mapa de skills por cliente (editable por un admin, semilla ORLANT; 0 = salida; desconocidos se ignoran con un aviso), "-" de llamadas = Llamadas de salida, ORLANT con Llamadas y WhatsApp lado a lado sin tabla de detalle; probado en local con los CDR reales de septiembre (v1.67.0, 2026-10-23)

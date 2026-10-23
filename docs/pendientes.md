@@ -9,6 +9,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Recargar en producción los 2 CDR de septiembre de ORLANT** (Fase 168)
+  — para que se vean las reglas nuevas (WhatsApp por SKILL_ID, "Llamadas
+  de salida" y la mitad de WhatsApp). Hoy, en producción, las tarjetas de
+  salida de septiembre dan 0 con 19.721 registros (probablemente sin el tipo
+  de llamada; no verificado). Se hace por el Centro de cargas, con tu OK.
 - **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del
   Centro de cargas (cargar, eliminar, deshacer) quedan en el Historial a
   nombre de "Administrador (@admin)", así que no se pueden atribuir a una
@@ -141,6 +146,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     HistChat).
   - Confirmaciones (skill 4338) queda fuera del Nivel de Servicio por
     ahora: confirmar si se queda así.
+  - Tarjetas de llamadas de salida de ORLANT (Fase 168): "no conectada" hoy
+    es la regla de Mobilize ("Cliente_no_contesta"), así que ORLANT da 0 no
+    conectadas. ¿Para ORLANT es "No Contestan"? ¿Alguna otra?
 - **Llamadas Únicas de agosto de Mobilize: volver a cargar** (Fase 163).
   Desde la v1.62.0 las filas sin asesor cuentan como abandonadas; en la
   carga de agosto anterior se habían omitido. La hacen el usuario y Edwin

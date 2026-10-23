@@ -10,7 +10,7 @@
 
 ### De dónde sale
 
-Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoja "HistCDR<fecha>"). Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios.
+Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan).
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "Llamadas".**
 
@@ -27,7 +27,7 @@ Wolkvox: Reportes → CDR → "1. Detalle de las llamadas", export completo (hoj
 | HORA | No | Hora, si viene aparte. |  |
 | TIME_MIN | No | Duración en minutos. |  |
 | DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
-| SKILL_NAME | Sí | Línea o skill (WhatsApp: "NOMBRE DE SKILL"). | NOMBRE DE SKILL |
+| SKILL_NAME | Sí | Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida. | NOMBRE DE SKILL |
 | TIME_SEC | No | Duración en segundos. |  |
 | COD_ACT | No | Código de la tipificación (texto). |  |
 | TYPE_INTERACTION | No | "inbound" (entrante) u "outbound_ma" (saliente). |  |
@@ -56,9 +56,11 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### De dónde sale
 
-Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones.
+Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se ignora y la vista previa dice cuántos.
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "WhatsApp".**
+
+Tabla de skills de WhatsApp de ORLANT (SKILL_ID = nombre): 0 = WHATSAPP DE SALIDA; 4042 = WHATSAPP PAUTAS; 4047 = WHATSAPP AUDIFONOS; 4061 = WHATSAPP FONOAUDIOLOGIA; 4071 = WHATSAPP FONIATRIA; 4306 = WHATSAPP 3P; 4327 = WHATSAPP GENERAL; 4338 = WHATSAPP CONFIRMACIONES; 4362 = ATENCION TUTELAS. La edita un administrador en Cargar Datos → "Skills de WhatsApp".
 
 ### Plantilla oficial
 
@@ -69,9 +71,10 @@ Wolkvox: export "HistChat<fecha>". Se sube tal cual (no hay que renombrar la hoj
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
 | AGENT_NAME | Sí | Asesor. |  |
-| DATE | Sí | Fecha de la conversación. |  |
+| DATE | Sí | Fecha de la conversación (en el export viene con la hora). |  |
 | DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
-| NOMBRE DE SKILL | Sí | Cola de WhatsApp ("NOMBRE DE SKILL" en el export). | SKILL_NAME |
+| SKILL_ID | No | Número del skill (ver la tabla de skills). 0 = WhatsApp de salida. |  |
+| CHANNEL | No | Canal del chat ("whatsapp"). |  |
 
 ### Cómo detecta el encabezado
 
@@ -87,14 +90,16 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | DESCRIPTION_COD_ACT | NOMBRE DE SKILL |
-|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-08-01 | Agendamiento | WHATSAPP GENERAL |
+| AGENT_NAME | DATE | DESCRIPTION_COD_ACT | SKILL_ID | CHANNEL |
+|---|---|---|---|---|
+| Asesor Ejemplo Uno | 2026-09-01 | Agendamiento | 4327 | whatsapp |
 
 ## Notas
 
 - Llamadas y WhatsApp se cargan por separado; cada carga reemplaza solo su canal.
-- El sistema distingue el canal por las columnas: el CDR de llamadas trae SKILL_NAME y el HistChat de WhatsApp trae "NOMBRE DE SKILL". Un archivo de un canal nunca se carga en el otro.
+- El sistema distingue el canal por las columnas: el CDR de llamadas trae SKILL_NAME; el HistChat de WhatsApp trae SKILL_ID + CHANNEL (o el formato anterior con "NOMBRE DE SKILL"). Un archivo de un canal nunca se carga en el otro.
+- WhatsApp (Fase 168): el nombre del skill sale de la tabla "Skills de WhatsApp" del cliente (SKILL_ID → nombre, la edita un administrador en Cargar Datos). SKILL_ID 0 = WhatsApp de salida; un SKILL_ID que no esté en la tabla se ignora con un aviso.
+- Llamadas (Fase 168): SKILL_ID/SKILL_NAME "-" = Llamadas de salida; las internalcall no cuentan como salida.
 - Privacidad: del CDR completo nunca se leen TELEPHONE, CUSTOMER_ID, CONN_ID, AGENT_ID, DESTINY, COST ni COMMENT; del HistChat nunca se leen nombres, correos, teléfonos ni el texto de la conversación.
 - En el CDR de Mobilize se excluyen las filas de prueba (tipificación "PRUEBA"), y en las salientes "Cliente_no_contesta" cuenta como no conectada.
 - Si el archivo junta muchos meses y es muy grande, el sistema avisa antes de guardar; hay que subirlo por meses.
