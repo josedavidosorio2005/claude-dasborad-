@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.70.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.70.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -665,3 +665,4 @@ mismo orden):
 - Fase 170 — Llamadas y WhatsApp de salida de ORLANT calculados con los CDR en los meses que los tienen, repartidos en 3P/General por la línea de cada asesor por mes (editor solo administrador; sin línea = "Sin asignar"); el resto de meses sigue con el archivo mensual (v1.68.0, 2026-10-23)
 - Fase 171 — Pedidos de Edwin para Mobilize: "-" de salida = Llamadas de salida en Tipificación; llamadas de salida sin quitar repetidos ni filas sin agente (octubre: 85 = 45 + 40), sin el aviso de mes incompleto; Encuesta sigue el MES; cerrar sesión deja el tablero sin filtros; conectadas/no conectadas en azul/magenta; recarga en producción de la salida de octubre de Mobilize: 54 → 85 (45 conectadas, 40 no conectadas) (v1.69.0, 2026-10-23)
 - Fase 172 — Calidad de Mobilize: carga "Calidad: resumen por asesor" con la plantilla de Edwin (valores calculados de fórmulas, aviso único si hay celdas en error, mes elegido al subir, clasificación y alerta recalculadas), panel al inicio de Calidad con promedio ponderado, monitoreos y fallos, tablas por asesor y por mes con semáforo, exportable; plantilla oficial con instrucciones (v1.70.0, 2026-10-23)
+- Fase 173 — Tipificación de septiembre de Mobilize revisada en producción (sí está: 167 llamadas, cargada el 23/10 hacia las 2:13 p. m., después de agosto y octubre); el Centro de cargas mostraba la hora de carga 5 h tarde en producción (servidor en UTC), corregido (v1.70.1, 2026-10-23)

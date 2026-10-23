@@ -15,8 +15,9 @@ const L = require('../../public/js/centro-cargas-logic.js');
 after(cleanup);
 const auth = (t) => ({ Authorization: 'Bearer ' + t });
 
-test('instanteCarga: ISO en UTC y "dd/mm/aaaa hh:mm:ss" hora Colombia dan el mismo instante', () => {
-  assert.equal(CC.instanteCarga('16/10/2026 08:13:37'), Date.parse('2026-10-16T13:13:37Z'));
+// Fase 173: "dd/mm/aaaa hh:mm:ss" es la hora local del proceso (la de nowStr).
+test('instanteCarga: ISO en UTC y "dd/mm/aaaa hh:mm:ss" en la hora local del proceso', () => {
+  assert.equal(CC.instanteCarga('16/10/2026 08:13:37'), new Date(2026, 9, 16, 8, 13, 37).getTime());
   assert.equal(CC.instanteCarga('2026-10-16T13:13:37.000Z'), Date.parse('2026-10-16T13:13:37Z'));
   assert.equal(CC.instanteCarga('basura'), null);
 });
@@ -34,7 +35,7 @@ test('resumen por mes: registros, ultima carga (la mas reciente aunque el format
   assert.equal(ago.registros, 3);
   assert.equal(ago.archivo, 'nuevo.xlsx', 'la carga mas reciente, no la mayor como texto');
   assert.equal(ago.cargadoPor, 'Persona B');
-  assert.equal(ago.ultimaCarga, '2026-09-15T14:00:00.000Z');
+  assert.equal(ago.ultimaCarga, new Date(2026, 8, 15, 9, 0, 0).toISOString());
   assert.equal(meses.find((m) => m.mes === '2026-07').registros, 0);
   db.prepare("DELETE FROM calidad_nivel_servicio_diario WHERE skillName = 'SKILL X'").run();
 });

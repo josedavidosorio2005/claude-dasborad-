@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.70.1 — Octubre 2026
+
+**Fase 173: hora de la última carga en el Centro de cargas.**
+
+- El Centro de cargas mostraba la hora de cada carga 5 horas después de la
+  real (una carga hecha a las 2:13 p. m. salía a las 7:13 p. m.). Ahora
+  muestra la hora real de Colombia. Los datos cargados no cambian.
+- Revisado: la Tipificación de septiembre de Mobilize sí está cargada (167
+  llamadas, del 1 al 30 de septiembre) y se ve en el tablero.
+
 ## v1.70.0 — Octubre 2026
 
 **Fase 172: Calidad de Mobilize con el resumen por asesor.**

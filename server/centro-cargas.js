@@ -50,10 +50,14 @@ const PLANTILLAS_DESCARGABLES = Object.values(CARGAS_POR_MODULO)
   .filter(Boolean);
 
 // Milisegundos de un createdAt guardado como ISO (UTC) o como
-// "dd/mm/aaaa hh:mm:ss" (hora de Colombia, UTC-5, sin horario de verano).
+// "dd/mm/aaaa hh:mm:ss". Ese texto lo escribe nowStr() con la hora LOCAL DEL
+// PROCESO (ver fecha-limites.js): en produccion el servidor corre en UTC; en
+// un equipo local, en Colombia. Se lee en esa misma zona. Fase 173: antes se
+// leia siempre como Colombia (+5 h) y en produccion el Centro mostraba la
+// hora de carga 5 horas despues de la real.
 function instanteCarga(s) {
   const m = /^(\d{2})\/(\d{2})\/(\d{4})(?: (\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(String(s || '').trim());
-  if (m) return Date.UTC(+m[3], +m[2] - 1, +m[1], (+m[4] || 0) + 5, +m[5] || 0, +m[6] || 0);
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1], +m[4] || 0, +m[5] || 0, +m[6] || 0).getTime();
   const t = Date.parse(s);
   return Number.isNaN(t) ? null : t;
 }
