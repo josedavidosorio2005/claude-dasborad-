@@ -9,6 +9,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Filtro de meses más dinámico** (pedido de Edwin, 23/10/2026, Fase
+  165) — Edwin quiere poder elegir varios meses sueltos a la vez (por
+  ejemplo septiembre y octubre), no solo un mes o un rango continuo. Hoy
+  el tablero filtra por un mes (selector MES de arriba) y algunas vistas
+  por Desde/Hasta. Falta decidir en qué pestañas aplica y cómo se ven los
+  totales con meses no seguidos. No se ha tocado.
 - **Teléfono en los monitoreos de Calidad** (Fase 151) — todos los
   monitoreos guardan el teléfono del cliente final. Desde la v1.42.3 solo lo
   reciben los roles internos. Falta decidir con Edwin si se deja de pedir,

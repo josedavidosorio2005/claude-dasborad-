@@ -15,6 +15,7 @@ const {
   cargarWhatsappTiempos,
   whatsappTiemposOpciones,
   whatsappTiemposRangos,
+  whatsappTiemposResumen,
 } = require('../whatsapp-tiempos');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
@@ -41,6 +42,17 @@ router.get(
   wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
     res.json(whatsappTiemposRangos(db, req.query));
+  })
+);
+
+// Fase 165: por cola (del mes) y por mes (de la cola), mismos filtros que /rangos.
+router.get(
+  '/calidad/whatsapp-tiempos/resumen',
+  requireActor,
+  validate(schemas.whatsappTiemposRangosQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
+    res.json(whatsappTiemposResumen(db, req.query));
   })
 );
 

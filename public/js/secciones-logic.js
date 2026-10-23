@@ -32,9 +32,13 @@ function gdClaseSeccion(seccion) {
 // El cuadro de UNA grafica: titulo + contenido (el .aurora-chart-wrap con su
 // canvas, y lo que vaya pegado a esa grafica). `tituloHtml` ya viene escapado
 // por quien llama (puede traer la nota "?" de la grafica).
-function gdGraficaHtml(tituloHtml, contenidoHtml) {
+// Fase 165: opciones.destacado agranda el titulo (--fs-h3) sin cambiar la
+// etiqueta (sigue siendo <h3>); lo usan "Llamadas de salida" y "WhatsApp de
+// salida" (pedido de Edwin).
+function gdGraficaHtml(tituloHtml, contenidoHtml, opciones) {
+  var clase = 'gd-grafica-titulo' + (opciones && opciones.destacado ? ' gd-grafica-titulo-destacado' : '');
   return '<section class="gd-grafica">' +
-    (tituloHtml ? '<h3 class="gd-grafica-titulo">' + tituloHtml + '</h3>' : '') +
+    (tituloHtml ? '<h3 class="' + clase + '">' + tituloHtml + '</h3>' : '') +
     contenidoHtml +
     '</section>';
 }

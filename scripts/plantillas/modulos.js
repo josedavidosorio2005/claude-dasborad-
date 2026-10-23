@@ -146,7 +146,7 @@ const CARGAS = [
       SKILL_NAME: ['Cola (solo cuentan las que empiezan por WHATSAPP).', 'WHATSAPP GENERAL'],
       DATE: ['Fecha y hora de la conversación.', '2026-08-01 09:05'],
       RESULT: ['Resultado: solo cuentan las ANSWER (contestadas).', 'ANSWER'],
-      ANSWER_TIME: ['Segundos hasta que se contestó.', 140],
+      ANSWER_TIME: ['Segundos hasta que se contestó (número, tal como sale de Wolkvox).', 140],
     },
   },
   {
@@ -275,7 +275,10 @@ const ORIGEN = {
     reemplazo: 'Las filas de esas colas en el rango de fechas de cada fila.',
   },
   'PLANTILLA_WHATSAPP_TIEMPOS.xlsx': {
-    origen: 'Wolkvox: detalle de conversaciones de WhatsApp (hoja "HistQueue<fecha>"). La columna TIEMPO y la hoja de tabla dinámica se ignoran.',
+    // Fase 165: la ruta exacta del reporte y los rangos, en INSTRUCCIONES y en la ficha.
+    origen: 'Wolkvox > Reportes > Skills & Servicios > 10. Detalle de llamadas contestadas (rango de fechas y SKILL = ALL). Se sube tal cual: CONN_ID, SKILL_ID, ANI, la columna TIEMPO y la hoja de tabla dinámica se ignoran.',
+    notaTitulo: 'Rangos',
+    nota: 'El sistema clasifica cada WhatsApp contestado con ANSWER_TIME (segundos), sin fórmulas en el Excel: menos de 180 s = 0 a 3 minutos; menos de 300 s = 3 a 5 minutos; menos de 480 s = 5 a 8 minutos; menos de 600 s = 8 a 10 minutos; 600 s o más = 10 minutos en adelante.',
     reemplazo: 'Las fechas que trae el archivo.',
   },
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': {

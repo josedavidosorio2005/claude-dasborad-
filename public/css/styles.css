@@ -1685,6 +1685,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   padding:var(--space-4); margin-top:var(--space-4);
 }
 .gd-grafica-titulo{ margin:0 0 var(--space-3); font-size:var(--fs-body); font-weight:var(--fw-semibold); color:var(--c-text); }
+/* Fase 165: titulo mas grande (Llamadas / WhatsApp de salida, pedido de Edwin). */
+.gd-grafica-titulo-destacado{ font-size:var(--fs-h3); font-weight:var(--fw-bold); }
+/* Fase 165: el % al lado del conteo en las tablas por cola / por mes de WhatsApp. */
+.wtt-pct{ color:var(--c-text-muted); font-size:var(--fs-small); white-space:nowrap; }
 .gd-grafica .btn-ver-datos{ margin-top:var(--space-2); }
 /* La pestana de cada seccion lleva su punto de color. */
 .atab[class*="gd-tab-sec-"]::before{

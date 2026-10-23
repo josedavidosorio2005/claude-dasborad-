@@ -245,9 +245,19 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 </ol>
 <figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
 <h3>WhatsApp tiempos de respuesta (Orlant)</h3>
-<p><strong>Dónde se ve</strong>: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio": qué porcentaje de las conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y más de 10 minutos, en un mes.<br>
-<strong>Qué archivo</strong>: el export de Wolkvox con la hoja de detalle (columnas SKILL_NAME, DATE con hora, RESULT y ANSWER_TIME en segundos). Si el archivo trae además una hoja de tabla dinámica, se ignora. La columna TIEMPO, si viene, también se ignora: el rango lo calcula la plataforma con ANSWER_TIME.<br>
-<strong>Qué se carga</strong>: solo las colas cuyo nombre empieza por WHATSAPP; las demás (colas de llamadas) se ignoran y la vista previa dice cuántas fueron. Se sube desde "Cargar Datos" eligiendo Orlant; un mes por archivo o varios, cada carga reemplaza solo sus propias fechas.</p>
+<p><strong>Dónde se ve</strong>: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio": qué porcentaje de las conversaciones se contestó en cada rango de minutos, en un mes. Debajo, dos tablas con el conteo y el % de cada rango: <strong>por cola</strong> (el mes elegido) y <strong>por mes</strong> (la cola elegida).<br>
+<strong>De dónde se descarga</strong>: Wolkvox &gt; Reportes &gt; Skills &amp; Servicios &gt; <strong>10. Detalle de llamadas contestadas</strong> (fechas del mes, SKILL = ALL). Se sube tal cual, sin fórmulas: la plataforma lee SKILL_NAME, DATE (con hora), RESULT y ANSWER_TIME (segundos). CONN_ID, SKILL_ID, ANI y la columna TIEMPO, si vienen, se ignoran.</p>
+<table>
+<thead><tr><th>ANSWER_TIME</th><th>Rango</th></tr></thead>
+<tbody>
+<tr><td>menos de 180 s</td><td>0 a 3 minutos</td></tr>
+<tr><td>menos de 300 s</td><td>3 a 5 minutos</td></tr>
+<tr><td>menos de 480 s</td><td>5 a 8 minutos</td></tr>
+<tr><td>menos de 600 s</td><td>8 a 10 minutos</td></tr>
+<tr><td>600 s o más</td><td>10 minutos en adelante</td></tr>
+</tbody>
+</table>
+<p><strong>Qué se carga</strong>: solo las colas cuyo nombre empieza por WHATSAPP; las demás (colas de llamadas) se ignoran y la vista previa dice cuántas fueron, igual que las filas vacías que se omitieron. Se sube desde el Centro de cargas (Orlant → WhatsApp por rangos de tiempo); cada carga reemplaza solo sus propias fechas.</p>
 <h3>Llamadas de salida (Mobilize)</h3>
 <p><strong>Filtros</strong>: cada mitad tiene sus propios filtros. Ingreso: Desde, Hasta, Skill y Asesor. Salida: Desde, Hasta, <strong>Tipo</strong> (Conectada / No conectada) y Asesor — el archivo de salida no trae un skill real, por eso el filtro es por Tipo. El filtro y el detalle por <strong>Asesor</strong> los ve también el usuario de Mobilize.</p>
 <p><strong>Dónde se ve</strong>: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha (las de ingreso quedan a la izquierda; en el celular, una debajo de la otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no conectadas y Llamadas de salida conectadas, una gráfica de barras por mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro por asesor y el detalle por asesor y por día; el usuario del cliente no ve nombres de asesor.<br>

@@ -9,7 +9,9 @@
 
 ## De dónde sale
 
-Wolkvox: detalle de conversaciones de WhatsApp (hoja "HistQueue<fecha>"). La columna TIEMPO y la hoja de tabla dinámica se ignoran.
+Wolkvox > Reportes > Skills & Servicios > 10. Detalle de llamadas contestadas (rango de fechas y SKILL = ALL). Se sube tal cual: CONN_ID, SKILL_ID, ANI, la columna TIEMPO y la hoja de tabla dinámica se ignoran.
+
+**El sistema clasifica cada WhatsApp contestado con ANSWER_TIME (segundos), sin fórmulas en el Excel: menos de 180 s = 0 a 3 minutos; menos de 300 s = 3 a 5 minutos; menos de 480 s = 5 a 8 minutos; menos de 600 s = 8 a 10 minutos; 600 s o más = 10 minutos en adelante.**
 
 ## Plantilla oficial
 
@@ -22,7 +24,7 @@ Wolkvox: detalle de conversaciones de WhatsApp (hoja "HistQueue<fecha>"). La col
 | SKILL_NAME | Sí | Cola (solo cuentan las que empiezan por WHATSAPP). |  |
 | DATE | Sí | Fecha y hora de la conversación. |  |
 | RESULT | Sí | Resultado: solo cuentan las ANSWER (contestadas). |  |
-| ANSWER_TIME | Sí | Segundos hasta que se contestó. |  |
+| ANSWER_TIME | Sí | Segundos hasta que se contestó (número, tal como sale de Wolkvox). |  |
 
 ## Cómo detecta el encabezado
 
@@ -44,6 +46,6 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ## Notas
 
-- Es una sub-vista de Flujo de WhatsApp (Nivel de Servicio por rangos de minutos: 0-3, 3-5, 5-8, 8-10, más de 10).
+- Es una sub-vista de Flujo de WhatsApp (Nivel de Servicio por rangos de minutos: 0 a 3, 3 a 5, 5 a 8, 8 a 10 y 10 minutos en adelante), con conteo y % por rango, por cola y por mes.
 - Solo cuentan las colas cuyo nombre empieza por WHATSAPP y las filas con RESULT = ANSWER; el resto se ignora y la vista previa dice cuántas.
 - El rango lo calcula el sistema con ANSWER_TIME; la columna TIEMPO del archivo se ignora.

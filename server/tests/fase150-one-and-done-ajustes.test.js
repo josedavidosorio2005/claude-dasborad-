@@ -91,6 +91,9 @@ test('Excel de WhatsApp por rangos: sin xlsxFilasSeguras no exporta y muestra un
       toasts: [], escritos: [],
       document: { getElementById: () => ({ dataset: { campana: 'ORLANT' } }) },
       _wppTiemposDatosExport: () => [{ Skill: '=HYPERLINK("x")' }],
+      // Fase 165: hojas "PorCola" y "PorMes", tambien con la proteccion.
+      _wppTiemposDatosPorCola: () => [{ Cola: '=HYPERLINK("y")' }],
+      _wppTiemposDatosPorMes: () => [{ Mes: '=1+1' }],
       _wppTiemposUltimo: { ORLANT: { mes: '2026-09' } },
       XLSX: { utils: { book_new: () => ({ hojas: [] }), json_to_sheet: (f) => f, book_append_sheet: (wb, ws) => wb.hojas.push(ws) }, writeFile: (wb) => ctx.escritos.push(wb) },
     };
@@ -106,4 +109,6 @@ test('Excel de WhatsApp por rangos: sin xlsxFilasSeguras no exporta y muestra un
   const con = correr(true);
   assert.equal(con.escritos.length, 1);
   assert.equal(con.escritos[0].hojas[0][0].Skill, "'=");
+  assert.equal(con.escritos[0].hojas.length, 3);
+  con.escritos[0].hojas.forEach((h) => assert.deepEqual(h[0], { Skill: "'=" }, 'cada hoja pasa por xlsxFilasSeguras'));
 });

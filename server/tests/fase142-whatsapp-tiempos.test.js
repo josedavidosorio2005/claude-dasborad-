@@ -1,8 +1,9 @@
 // fase142-whatsapp-tiempos.test.js — Fase 142 (punto 4, reunion con Edwin del
 // 13/10/2026): ORLANT WhatsApp, Nivel de Servicio por RANGOS de minutos a
 // partir del detalle por conversacion. Cubre parser (Date, columna TIEMPO
-// equivocada ignorada, colas no WhatsApp ignoradas, fronteras 180/181,
-// 300/301, 480/481, 600/601, filas vacias, RESULT != ANSWER), migracion,
+// equivocada ignorada, colas no WhatsApp ignoradas, fronteras 179/180,
+// 299/300, 479/480, 599/600 (Fase 165: limite superior excluido), filas
+// vacias, RESULT != ANSWER), migracion,
 // API (agregados, filtros mes/cola, reemplazo por rango, otro mes intacto,
 // campaignAccess, Zod), plan de carga y la vista. Todo SINTETICO.
 'use strict';
@@ -24,12 +25,12 @@ const auth = (t) => ({ Authorization: `Bearer ${t}` });
 test('contrato: payload [skill, fecha, hora, segundos] igual en navegador y servidor; mismos cortes', () => {
   assert.deepEqual(L.WPP_TIEMPOS_ORDEN_ARRAY, ['skill', 'fecha', 'hora', 'segundos']);
   assert.deepEqual(CAMPOS_FILA, L.WPP_TIEMPOS_ORDEN_ARRAY);
-  assert.deepEqual(RANGOS.map((r) => [r.key, r.label, r.hasta]), L.WPP_TIEMPOS_RANGOS.map((r) => [r.key, r.label, r.hasta]));
-  assert.deepEqual(L.WPP_TIEMPOS_RANGOS.map((r) => r.label), ['0-3 minutos', '3-5 minutos', '5-8 minutos', '8-10 minutos', '10 minutos en adelante']);
+  assert.deepEqual(RANGOS.map((r) => [r.key, r.label, r.menorQue]), L.WPP_TIEMPOS_RANGOS.map((r) => [r.key, r.label, r.menorQue]));
+  assert.deepEqual(L.WPP_TIEMPOS_RANGOS.map((r) => r.label), ['0 a 3 minutos', '3 a 5 minutos', '5 a 8 minutos', '8 a 10 minutos', '10 minutos en adelante']);
 });
 
-test('fronteras de Edwin: <=180, <=300, <=480, <=600, >600 (limite superior incluido)', () => {
-  const esperado = { 0: 'r0_3', 180: 'r0_3', 181: 'r3_5', 300: 'r3_5', 301: 'r5_8', 480: 'r5_8', 481: 'r8_10', 600: 'r8_10', 601: 'r10', 82176: 'r10' };
+test('fronteras de Edwin (Fase 165): <180, <300, <480, <600, resto (limite superior excluido)', () => {
+  const esperado = { 0: 'r0_3', 179: 'r0_3', 180: 'r3_5', 299: 'r3_5', 300: 'r5_8', 479: 'r5_8', 480: 'r8_10', 599: 'r8_10', 600: 'r10', 82176: 'r10' };
   Object.keys(esperado).forEach((s) => assert.equal(L.wppTiemposRangoDe(Number(s)), esperado[s], 'segundos ' + s));
 });
 
@@ -49,7 +50,7 @@ test('la columna TIEMPO del Excel se IGNORA (formula equivocada de agosto): el r
   assert.deepEqual(r.porRango, { r0_3: 1, r3_5: 1, r5_8: 0, r8_10: 0, r10: 0 });
 });
 
-test('colas que no empiezan por WHATSAPP se ignoran y se cuentan (sin error); vacias se ignoran; RESULT != ANSWER con aviso', () => {
+test('colas que no empiezan por WHATSAPP se ignoran y se cuentan (sin error); vacias se omiten y se cuentan; RESULT != ANSWER con aviso agrupado', () => {
   const r = L.wppTiemposParseFilas([HEADER,
     ['WHATSAPP GENERAL', new Date(2026, 7, 4, 9, 0), 'ANSWER', 30, ''],
     ['CALL INBOUND ORLANT 3P', new Date(2026, 7, 4, 9, 0), 'ANSWER', 30, ''],
@@ -60,8 +61,9 @@ test('colas que no empiezan por WHATSAPP se ignoran y se cuentan (sin error); va
   ]);
   assert.equal(r.filas.length, 2);
   assert.equal(r.ignoradasNoWhatsapp, 2);
+  assert.equal(r.vacias, 1);
   assert.equal(r.avisos.length, 1);
-  assert.match(r.avisos[0], /Fila 7: RESULT "ABANDON" no es ANSWER/);
+  assert.equal(r.avisos[0], '1 fila(s) de WhatsApp con RESULT distinto de ANSWER, se omitieron (filas 7).');
   assert.equal(r.dias, 2);
   assert.deepEqual(r.filas[1], ['WhatsApp Citas', '2026-08-05', 10, 700]);
 });
@@ -104,7 +106,7 @@ function filasMes(mes, segundos, skill) {
 
 test('API: impacto + carga + reemplazo por rango; otro mes no se borra; agregados por mes y cola', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const ago = filasMes('08', [10, 180, 181, 300, 301, 480, 481, 600, 601, 5000]);
+  const ago = filasMes('08', [10, 179, 180, 299, 300, 479, 480, 599, 600, 5000]);
   const imp = await request(app).post('/api/calidad/whatsapp-tiempos/carga/impacto').set(auth(admin)).send({ campana: 'ORLANT', filas: ago });
   assert.equal(imp.status, 200, JSON.stringify(imp.body));
   assert.deepEqual(imp.body.porRango, { r0_3: 2, r3_5: 2, r5_8: 2, r8_10: 2, r10: 2 });
@@ -121,7 +123,7 @@ test('API: impacto + carga + reemplazo por rango; otro mes no se borra; agregado
   assert.equal(rAgo.status, 200);
   assert.equal(rAgo.body.total, 10);
   assert.deepEqual(rAgo.body.rangos.map((x) => [x.label, x.cantidad, x.pct]), [
-    ['0-3 minutos', 2, 20], ['3-5 minutos', 2, 20], ['5-8 minutos', 2, 20], ['8-10 minutos', 2, 20], ['10 minutos en adelante', 2, 20]]);
+    ['0 a 3 minutos', 2, 20], ['3 a 5 minutos', 2, 20], ['5 a 8 minutos', 2, 20], ['8 a 10 minutos', 2, 20], ['10 minutos en adelante', 2, 20]]);
   const rSep = await request(app).get('/api/calidad/whatsapp-tiempos/rangos').query({ campana: 'ORLANT', mes: '2026-09' }).set(auth(admin));
   assert.equal(rSep.body.total, 5);
   assert.equal(rSep.body.rangos[0].cantidad, 3);
@@ -216,7 +218,7 @@ test('Vista: mes global sin datos (octubre) -> muestra el ultimo con datos (sept
   assert.match(html, /<option value="2026-09" selected>Septiembre 2026<\/option>/);
   assert.match(html, /No hay tiempos de respuesta cargados para Octubre 2026; se muestra Septiembre 2026\./);
   assert.ok(pedidos.some((u) => /\/rangos\?campana=ORLANT&mes=2026-09$/.test(u)));
-  assert.match(el['wtt-kpis-0'].innerHTML, /44,7 %<\/div><div class="kl">% contestado en 0–3 minutos/);
+  assert.match(el['wtt-kpis-0'].innerHTML, /44,7 %<\/div><div class="kl">% contestado en 0 a 3 minutos/);
   assert.match(el['wtt-kpis-0'].innerHTML, /7\.953<\/div><div class="kl">Conversaciones contestadas del mes/);
   assert.deepEqual(Array.from(graficas[0].cfg.data.labels), ['0-3 minutos', '3-5 minutos', '5-8 minutos', '8-10 minutos', '10 minutos en adelante']);
   assert.equal(graficas[0].cfg.options.indexAxis, 'y');
