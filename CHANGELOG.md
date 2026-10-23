@@ -4,6 +4,31 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.65.0 — Octubre 2026
+
+**Fase 165: WhatsApp por rangos de tiempo, pedido de Edwin.**
+
+- Al subir el reporte de WhatsApp de Wolkvox salían miles de avisos
+  "ANSWER_TIME inválido o vacío" y esas conversaciones no se cargaban. Era
+  porque la plataforma solo entendía el tiempo como un número limpio, y
+  Wolkvox a veces lo trae como texto (con un apóstrofo delante) o como
+  duración (00:01:35). Ahora lee todos esos formatos. Solo se dejan por
+  fuera las filas vacías, y la vista previa dice cuántas fueron.
+- Si algo no se puede leer, sale un solo aviso con cuántas filas fueron y
+  cuáles, en vez de un aviso por fila.
+- Los rangos ahora son: menos de 3 minutos = "0 a 3 minutos", menos de 5 =
+  "3 a 5", menos de 8 = "5 a 8", menos de 10 = "8 a 10" y el resto "10
+  minutos en adelante". Una conversación de 3 minutos exactos ahora cuenta
+  en "3 a 5". Esto aplica también a lo que ya estaba cargado.
+- En "Nivel de Servicio" de WhatsApp hay dos tablas nuevas con la
+  cantidad y el % de cada rango: por cola (del mes) y por mes. También
+  salen en el Excel y el PDF.
+- La plantilla, la pantalla de carga y la guía dicen de dónde se descarga
+  el archivo: Wolkvox > Reportes > Skills & Servicios > 10. Detalle de
+  llamadas contestadas. El archivo se sube tal cual.
+- En "Llamadas y WhatsApp de salida", los títulos "Llamadas de salida" y
+  "WhatsApp de salida" son más grandes.
+
 ## v1.64.10 — Octubre 2026
 
 **Fase 164: iconos en vez de emojis.**

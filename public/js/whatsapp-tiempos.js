@@ -4,6 +4,8 @@
 // contestadas en cada RANGO de minutos (0-3, 3-5, 5-8, 8-10, 10+) de UN mes,
 // con filtro de Mes y de Cola. Todo viene agregado del servidor
 // (GET /calidad/whatsapp-tiempos/rangos) -- nunca filas crudas.
+// Fase 165 (pedido de Edwin): debajo, conteo y % por rango POR COLA (del mes)
+// y POR MES (de la cola elegida), de GET /calidad/whatsapp-tiempos/resumen.
 //
 // Solo para las campañas con el modulo whatsapp_tiempos en el registro de
 // clientes (Fase 153, LISTAS_REGISTRO.whatsappTiempos; hoy ORLANT); cualquier otra
@@ -21,6 +23,7 @@ var _wppTiemposOpciones = {};        // cache por campana: { meses, skills }
 var _wppTiemposEstado = {};          // por campana: { mes, skill, nota }
 var _wppTiemposMesSincronizado = {}; // por campana: ultimo _gd.mesSel aplicado
 var _wppTiemposUltimo = {};          // por campana: ultima respuesta /rangos (para exportar)
+var _wppTiemposUltimoResumen = {};   // por campana: ultima respuesta /resumen (para exportar)
 
 function wppTiemposUsa(campana) {
   return LISTAS_REGISTRO.whatsappTiempos.indexOf(campana) !== -1;
@@ -98,7 +101,8 @@ async function _wppTiemposRender(i, campana) {
     (estado.nota ? '<p style="color:var(--c-text-muted);font-size:var(--fs-small);margin:0 0 8px">' + esc(estado.nota) + '</p>' : '') +
     '<div class="aurora-kpis" id="wtt-kpis-' + i + '"></div>' +
     '<div class="aurora-chart-wrap" style="height:280px"><canvas id="wtt-canvas-' + i + '"></canvas></div>' +
-    '<div id="wtt-tabla-' + i + '" style="margin-top:10px"></div>';
+    '<div id="wtt-tabla-' + i + '" style="margin-top:10px"></div>' +
+    '<div id="wtt-resumen-' + i + '"></div>';
   await _wppTiemposDibujar(i, campana);
 }
 
@@ -126,9 +130,17 @@ async function _wppTiemposDibujar(i, campana) {
   var estado = _wppTiemposEstado[campana];
   var q = 'campana=' + encodeURIComponent(campana) + '&mes=' + encodeURIComponent(estado.mes) +
     (estado.skill ? '&skill=' + encodeURIComponent(estado.skill) : '');
-  var r = null;
-  try { r = await apiRequest('GET', '/calidad/whatsapp-tiempos/rangos?' + q); } catch (e) { r = null; }
+  var r = null, resumen = null;
+  var pedidos = await Promise.all([
+    apiRequest('GET', '/calidad/whatsapp-tiempos/rangos?' + q).catch(function () { return null; }),
+    apiRequest('GET', '/calidad/whatsapp-tiempos/resumen?' + q).catch(function () { return null; }),
+  ]);
+  r = pedidos[0];
+  resumen = pedidos[1];
   _wppTiemposUltimo[campana] = r ? Object.assign({ skill: estado.skill }, r) : null;
+  _wppTiemposUltimoResumen[campana] = resumen ? Object.assign({ skill: estado.skill }, resumen) : null;
+  var resumenEl = document.getElementById('wtt-resumen-' + i);
+  if (resumenEl) resumenEl.innerHTML = _wppTiemposResumenHtml(resumen, estado);
   var kpis = document.getElementById('wtt-kpis-' + i);
   var tabla = document.getElementById('wtt-tabla-' + i);
   if (!r || !r.total) {
@@ -139,7 +151,7 @@ async function _wppTiemposDibujar(i, campana) {
   }
   var r03 = r.rangos[0];
   if (kpis) kpis.innerHTML =
-    '<div class="aurora-kpi"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0–3 minutos</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0 a 3 minutos</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + r.total.toLocaleString('es-CO') + '</div><div class="kl">Conversaciones contestadas del mes</div></div>';
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
   var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e'); // Fase 152 (B1): resalta 0–3 min sin usar el verde del semaforo
@@ -176,6 +188,60 @@ async function _wppTiemposDibujar(i, campana) {
     '</tbody></table></div>';
 }
 
+// Celda "cantidad (pct %)" de un rango.
+function _wppTiemposCelda(x) {
+  return x.cantidad.toLocaleString('es-CO') + ' <span class="wtt-pct">(' + _wppTiemposFmtPct(x.pct) + ')</span>';
+}
+
+// Fase 165: tablas por cola (del mes) y por mes (de la cola). Mismos rangos y
+// mismo formato que la tabla del mes.
+function _wppTiemposTablaGrupos(titulo, primera, grupos, etiqueta) {
+  var cab = '<tr><th class="th-izq">' + esc(primera) + '</th>' +
+    WPP_TIEMPOS_RANGOS.map(function (x) { return '<th>' + esc(x.label) + '</th>'; }).join('') + '<th>Total</th></tr>';
+  var cuerpo = grupos.map(function (g) {
+    return '<tr><td>' + esc(etiqueta(g)) + '</td>' + g.rangos.map(function (x) { return '<td>' + _wppTiemposCelda(x) + '</td>'; }).join('') +
+      '<td><strong>' + g.total.toLocaleString('es-CO') + '</strong></td></tr>';
+  }).join('');
+  return gdGraficaHtml(esc(titulo), '<div class="table-wrap"><table class="aurora-table"><thead>' + cab + '</thead><tbody>' + cuerpo + '</tbody></table></div>');
+}
+
+function _wppTiemposResumenHtml(resumen, estado) {
+  if (!resumen) return '';
+  var html = '';
+  if (resumen.porSkill && resumen.porSkill.length) {
+    html += _wppTiemposTablaGrupos('Por cola — ' + _wppTiemposMesLbl(resumen.mes), 'Cola', resumen.porSkill, function (g) { return g.skill; });
+  }
+  if (resumen.porMes && resumen.porMes.length) {
+    html += _wppTiemposTablaGrupos('Por mes — ' + (estado.skill || 'todas las colas'), 'Mes', resumen.porMes, function (g) { return _wppTiemposMesLbl(g.mes); });
+  }
+  return html ? '<div style="margin-top:14px">' + html + '</div>' : '';
+}
+
+// Filas planas (Excel/PDF) de las tablas por cola y por mes.
+function _wppTiemposDatosGrupos(grupos, primera, etiqueta) {
+  return (grupos || []).map(function (g) {
+    var fila = {};
+    fila[primera] = etiqueta(g);
+    g.rangos.forEach(function (x) { fila[x.label] = x.cantidad; fila[x.label + ' (%)'] = x.pct; });
+    fila.Total = g.total;
+    return fila;
+  });
+}
+
+function _wppTiemposDatosPorCola(campana) {
+  var s = _wppTiemposUltimoResumen[campana];
+  if (!s) return [];
+  return _wppTiemposDatosGrupos(s.porSkill, 'Cola', function (g) { return g.skill; })
+    .map(function (f) { return Object.assign({ Mes: _wppTiemposMesLbl(s.mes) }, f); });
+}
+
+function _wppTiemposDatosPorMes(campana) {
+  var s = _wppTiemposUltimoResumen[campana];
+  if (!s) return [];
+  return _wppTiemposDatosGrupos(s.porMes, 'Mes', function (g) { return _wppTiemposMesLbl(g.mes); })
+    .map(function (f) { return Object.assign({ Cola: s.skill || 'Todas' }, f); });
+}
+
 // ── Exportar (mismo estilo que _traficoWppExportExcel/_traficoWppExportPrint) ──
 function _wppTiemposDatosExport(campana) {
   var r = _wppTiemposUltimo[campana];
@@ -198,6 +264,10 @@ function _wppTiemposExportExcel(i) {
   var wb = XLSX.utils.book_new();
   if (typeof xlsxAgregarAvisoDemo === 'function') xlsxAgregarAvisoDemo(wb);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), 'NivelServicioTiempos');
+  var porCola = _wppTiemposDatosPorCola(campana);
+  if (porCola.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(porCola)), 'PorCola');
+  var porMes = _wppTiemposDatosPorMes(campana);
+  if (porMes.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(porMes)), 'PorMes');
   XLSX.writeFile(wb, 'WhatsApp_Nivel_Servicio_Tiempos_' + String(campana).replace(/\s+/g, '_') + '_' + (_wppTiemposUltimo[campana] || {}).mes + '.xlsx');
 }
 
@@ -208,9 +278,17 @@ function _wppTiemposExportPrint(i) {
   if (!datos.length) { showToast('No hay datos para exportar con estos filtros.'); return; }
   var w = window.open('', '_blank');
   if (!w) { showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
-  var cols = Object.keys(datos[0]);
-  var tabla = '<table><thead><tr>' + cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-    datos.map(function (r) { return '<tr>' + cols.map(function (c) { return '<td>' + esc(c === '%' ? _wppTiemposFmtPct(r[c]) : r[c]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  function tablaPrint(filas) {
+    if (!filas.length) return '';
+    var cols = Object.keys(filas[0]);
+    return '<table><thead><tr>' + cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      filas.map(function (r) { return '<tr>' + cols.map(function (c) { return '<td>' + esc(c === '%' || c.slice(-3) === '(%)' ? _wppTiemposFmtPct(r[c]) : r[c]) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+  var porCola = _wppTiemposDatosPorCola(campana);
+  var porMes = _wppTiemposDatosPorMes(campana);
+  var tabla = tablaPrint(datos) +
+    (porCola.length ? '<h2 style="font-size:14px;color:#0d4a5e">Por cola</h2>' + tablaPrint(porCola) : '') +
+    (porMes.length ? '<h2 style="font-size:14px;color:#0d4a5e">Por mes</h2>' + tablaPrint(porMes) : '');
   var avisoHtml = (typeof seedDemoActivo !== 'undefined' && seedDemoActivo)
     ? '<div style="background:#92400e;color:#fff;text-align:center;padding:8px 12px;font-weight:700;border-radius:6px;margin-bottom:16px">' +
       '⚠ DATOS DE DEMOSTRACIÓN — la información de este documento es de prueba y no corresponde a la operación real.</div>'

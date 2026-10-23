@@ -450,16 +450,28 @@ evita que las cargas futuras se unifiquen de la misma forma.
 ### WhatsApp tiempos de respuesta (Orlant)
 
 - **Dónde se ve**: Tráfico de WhatsApp → sub-pestaña "Nivel de Servicio":
-  qué porcentaje de las conversaciones se contestó en 0-3, 3-5, 5-8, 8-10 y
-  más de 10 minutos, en un mes.
-- **Qué archivo**: el export de Wolkvox con la hoja de detalle (columnas
-  SKILL_NAME, DATE con hora, RESULT y ANSWER_TIME en segundos). Si el
-  archivo trae además una hoja de tabla dinámica, se ignora. La columna
-  TIEMPO, si viene, también se ignora: el rango lo calcula la plataforma
-  con ANSWER_TIME.
+  qué porcentaje de las conversaciones se contestó en cada rango de
+  minutos, en un mes. Debajo, dos tablas con el conteo y el % de cada
+  rango: **por cola** (el mes elegido) y **por mes** (la cola elegida).
+- **De dónde se descarga**: Wolkvox > Reportes > Skills & Servicios >
+  **10. Detalle de llamadas contestadas** (fechas del mes, SKILL = ALL).
+  Se sube tal cual, sin fórmulas: la plataforma lee SKILL_NAME, DATE (con
+  hora), RESULT y ANSWER_TIME (segundos). CONN_ID, SKILL_ID, ANI y la
+  columna TIEMPO, si vienen, se ignoran.
+- **Rangos** (los calcula la plataforma con ANSWER_TIME):
+
+  | ANSWER_TIME | Rango |
+  |---|---|
+  | menos de 180 s | 0 a 3 minutos |
+  | menos de 300 s | 3 a 5 minutos |
+  | menos de 480 s | 5 a 8 minutos |
+  | menos de 600 s | 8 a 10 minutos |
+  | 600 s o más | 10 minutos en adelante |
+
 - **Qué se carga**: solo las colas cuyo nombre empieza por WHATSAPP; las
   demás (colas de llamadas) se ignoran y la vista previa dice cuántas
-  fueron. Se sube desde "Cargar Datos" eligiendo Orlant; cada carga
+  fueron, igual que las filas vacías que se omitieron. Se sube desde el
+  Centro de cargas (Orlant → WhatsApp por rangos de tiempo); cada carga
   reemplaza solo sus propias fechas.
 
 ### Llamadas de salida (Mobilize)

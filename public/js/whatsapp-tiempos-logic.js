@@ -1,19 +1,22 @@
 // whatsapp-tiempos-logic.js — InConexion Platform (Fase 142, punto 4,
 // reunion con Edwin del 13/10/2026). ORLANT, WhatsApp: "Nivel de Servicio"
-// por RANGOS de minutos a partir del detalle por conversacion (export
-// HistQueue de Wolkvox: SKILL_NAME, DATE, RESULT, ANSWER_TIME, TIEMPO).
+// por RANGOS de minutos a partir del detalle por conversacion (export de
+// Wolkvox: Reportes > Skills & Servicios > "10. Detalle de llamadas
+// contestadas" -- SKILL_NAME, DATE, RESULT, ANSWER_TIME; CONN_ID, SKILL_ID,
+// ANI y TIEMPO, si vienen, se ignoran).
 // Logica PURA (sin DOM). Doble modo: global en el navegador, require() en
-// Node para las pruebas (server/tests/fase142-whatsapp-tiempos.test.js).
+// Node para las pruebas (server/tests/fase142-whatsapp-tiempos.test.js y
+// server/tests/fase165-whatsapp-tiempos.test.js).
 //
-// Decisiones (usuario, 13/10):
+// Decisiones (usuario, 13/10; cortes y lectura de ANSWER_TIME, Fase 165):
 //   - El rango SIEMPRE se calcula aqui a partir de ANSWER_TIME (segundos),
-//     con los cortes de Edwin: <=180, <=300, <=480, <=600, >600. La columna
-//     TIEMPO del Excel se IGNORA (en el archivo de agosto la formula apunta a
-//     la fecha y todas las filas salen "10 minutos en adelante").
+//     con los cortes de Edwin (Fase 165): <180, <300, <480, <600, resto. La
+//     columna TIEMPO del Excel se IGNORA (en el archivo de agosto la formula
+//     apunta a la fecha y todas las filas salen "10 minutos en adelante").
 //   - Solo se cargan filas cuyo SKILL_NAME empieza por "WHATSAPP"; las demas
 //     (colas de llamadas mezcladas en el mismo export) se cuentan como
 //     ignoradas, sin ser error. RESULT distinto de ANSWER se omite con aviso.
-//     Filas totalmente vacias se ignoran.
+//     Filas totalmente vacias se omiten y se cuentan.
 //   - El archivo no trae telefonos ni nombres; el payload tampoco.
 'use strict';
 
@@ -29,25 +32,33 @@ var WPP_TIEMPOS_COLUMNAS = [
 // (server/whatsapp-tiempos.js) y whatsappTiemposFilaArraySchema (validation.js).
 var WPP_TIEMPOS_ORDEN_ARRAY = ['skill', 'fecha', 'hora', 'segundos'];
 
-// Cortes de Edwin (segundos, limite superior INCLUIDO). El ultimo no tiene tope.
+// Cortes de Edwin (Fase 165): segundos, limite superior EXCLUIDO (180 s ya es
+// "3 a 5 minutos"). El ultimo no tiene tope. Mismos cortes en
+// server/whatsapp-tiempos.js (RANGOS).
 var WPP_TIEMPOS_RANGOS = [
-  { key: 'r0_3', label: '0-3 minutos', hasta: 180 },
-  { key: 'r3_5', label: '3-5 minutos', hasta: 300 },
-  { key: 'r5_8', label: '5-8 minutos', hasta: 480 },
-  { key: 'r8_10', label: '8-10 minutos', hasta: 600 },
-  { key: 'r10', label: '10 minutos en adelante', hasta: null },
+  { key: 'r0_3', label: '0 a 3 minutos', menorQue: 180 },
+  { key: 'r3_5', label: '3 a 5 minutos', menorQue: 300 },
+  { key: 'r5_8', label: '5 a 8 minutos', menorQue: 480 },
+  { key: 'r8_10', label: '8 a 10 minutos', menorQue: 600 },
+  { key: 'r10', label: '10 minutos en adelante', menorQue: null },
 ];
 
 function wppTiemposRangoDe(segundos) {
   for (var i = 0; i < WPP_TIEMPOS_RANGOS.length; i++) {
     var r = WPP_TIEMPOS_RANGOS[i];
-    if (r.hasta === null || segundos <= r.hasta) return r.key;
+    if (r.menorQue === null || segundos < r.menorQue) return r.key;
   }
   return WPP_TIEMPOS_RANGOS[WPP_TIEMPOS_RANGOS.length - 1].key;
 }
 
 function _wppTiemposNorm(v) {
   return String(v == null ? '' : v).trim().replace(/\s+/g, ' ');
+}
+
+// Wolkvox escribe algunos textos con un apostrofo literal al inicio
+// ('4022.2141..., '5742); se quita antes de leer el valor.
+function _wppTiemposSinApostrofo(v) {
+  return typeof v === 'string' ? v.replace(/^[\s ]*'+/, '') : v;
 }
 
 function wppTiemposColIndexMap(headerRow) {
@@ -99,17 +110,91 @@ function wppTiemposParseFechaHora(v) {
   return null;
 }
 
-// ANSWER_TIME: segundos enteros >= 0 (numero o texto numerico).
-function _wppTiemposSegundos(v) {
-  if (v === null || v === undefined || v === '') return null;
-  var n = typeof v === 'number' ? v : Number(String(v).trim().replace(',', '.'));
-  if (!isFinite(n) || n < 0) return null;
+// Fase 165 (reporte de octubre de ORLANT, "miles de avisos"): antes solo se
+// aceptaba un numero limpio, y el export de Wolkvox puede traer ANSWER_TIME
+// como texto con apostrofo ('5742, igual que CONN_ID) o como duracion
+// ("01:35:42"); cada fila de WhatsApp quedaba omitida con un aviso propio.
+// Ahora se acepta:
+//   - numero o texto numerico, con o sin apostrofo/espacios, con separador
+//     de miles ("5.742" o "5,742" = 5742) o coma decimal ("12,5");
+//   - duracion "hh:mm:ss" o "mm:ss" (texto);
+//   - celda con formato de hora de Excel (ver _wppTiemposColumnaEsHora):
+//     fraccion de dia -> segundos; o un Date de 1899/1900 si SheetJS ya la
+//     convirtio.
+// Devuelve null si la celda esta vacia y NaN si trae algo que no se puede leer.
+var _WPP_TIEMPOS_BASE_HORA = new Date(1899, 11, 30).getTime();
+
+function _wppTiemposVacio(v) {
+  return v === null || v === undefined || (typeof v === 'string' && v.replace(/[\s ']/g, '') === '');
+}
+
+function _wppTiemposSegundos(v, esHora) {
+  if (_wppTiemposVacio(v)) return null;
+  var n;
+  if (v instanceof Date) {
+    if (isNaN(v.getTime()) || v.getFullYear() > 1900) return NaN;
+    n = (v.getTime() - _WPP_TIEMPOS_BASE_HORA) / 1000;
+  } else if (typeof v === 'number') {
+    n = esHora ? v * 86400 : v;
+  } else {
+    var s = String(_wppTiemposSinApostrofo(v)).replace(/[\s ]/g, '');
+    var hms = /^(\d+):(\d{1,2})(?::(\d{1,2}))?$/.exec(s);
+    if (hms) {
+      n = hms[3] === undefined
+        ? parseInt(hms[1], 10) * 60 + parseInt(hms[2], 10)
+        : parseInt(hms[1], 10) * 3600 + parseInt(hms[2], 10) * 60 + parseInt(hms[3], 10);
+    } else if (/^\d{1,3}([.,]\d{3})+$/.test(s)) {
+      n = Number(s.replace(/[.,]/g, ''));
+    } else {
+      n = /^\d+([.,]\d+)?$/.test(s) ? Number(s.replace(',', '.')) : NaN;
+    }
+  }
+  if (!isFinite(n) || n < 0) return NaN;
   return Math.round(n);
 }
 
+// Columna A1 ("A", "AB"...) de un indice 0-based.
+function _wppTiemposLetras(n) {
+  var s = '';
+  for (n = n + 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
+  return s;
+}
+
+// true si la columna ANSWER_TIME tiene formato de hora/duracion de Excel
+// ("[h]:mm:ss", "mm:ss"...) en la mayoria de sus primeras celdas numericas.
+// ws es la hoja cruda de SheetJS (2do argumento de cargasProcesarHoja); sin
+// ws (pruebas, otros llamadores) se asume que no.
+function _wppTiemposColumnaEsHora(ws, col) {
+  if (!ws || !ws['!ref'] || col === undefined) return false;
+  var m = /^([A-Z]+)(\d+)/.exec(String(ws['!ref']));
+  if (!m) return false;
+  var c0 = 0;
+  for (var k = 0; k < m[1].length; k++) c0 = c0 * 26 + (m[1].charCodeAt(k) - 64);
+  var letras = _wppTiemposLetras(c0 - 1 + col);
+  var desde = parseInt(m[2], 10) + 1;
+  var vistas = 0, horas = 0;
+  for (var fila = desde; fila < desde + 400 && vistas < 50; fila++) {
+    var cel = ws[letras + fila];
+    if (!cel || (cel.t !== 'n' && cel.t !== 'd')) continue;
+    vistas++;
+    var z = String(cel.z || '');
+    if (cel.t === 'd' || (/[hs]|mm/i.test(z) && !/general/i.test(z))) horas++;
+  }
+  return vistas > 0 && horas * 2 > vistas;
+}
+
+function _wppTiemposListaFilas(nums) {
+  var muestra = nums.slice(0, 5).join(', ');
+  return nums.length > 5 ? muestra + ' y ' + (nums.length - 5) + ' más' : muestra;
+}
+
 // Devuelve { error } si falta una columna obligatoria. Si no:
-// { filas, avisos, ignoradasNoWhatsapp, porRango: {r0_3,...}, dias }.
-function wppTiemposParseFilas(aoa) {
+// { filas, avisos, ignoradasNoWhatsapp, vacias, porRango: {r0_3,...}, dias }.
+// Fase 165: los avisos van AGRUPADOS por motivo (uno por motivo, con las
+// primeras filas), nunca uno por fila. `vacias` cuenta las filas que se
+// omiten sin ser error: totalmente vacias (tambien las que SheetJS ya no
+// entrega, si se pasa ws) y las de WhatsApp con la celda ANSWER_TIME vacia.
+function wppTiemposParseFilas(aoa, ws) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = wppTiemposColIndexMap(aoa[0]);
   var faltantes = WPP_TIEMPOS_COLUMNAS.filter(function (c) { return c.obligatoria && map[c.key] === undefined; });
@@ -119,27 +204,46 @@ function wppTiemposParseFilas(aoa) {
   var filas = [];
   var avisos = [];
   var ignoradasNoWhatsapp = 0;
+  var vacias = 0;
+  var porMotivo = { tiempo: [], resultado: [], fecha: [], futura: [], sinTiempo: [] };
+  var esHora = _wppTiemposColumnaEsHora(ws, map.segundos);
   var porRango = {};
   WPP_TIEMPOS_RANGOS.forEach(function (r) { porRango[r.key] = 0; });
   var dias = {};
+  // Filas vacias que cargas.js ya no entrega (sheet_to_json con
+  // blankrows:false): las que caben en el rango de la hoja pero no llegaron.
+  var ref = ws && ws['!ref'] ? /^[A-Z]+(\d+):[A-Z]+(\d+)$/.exec(String(ws['!ref'])) : null;
+  if (ref) vacias += Math.max(0, (parseInt(ref[2], 10) - parseInt(ref[1], 10)) - (aoa.length - 1));
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
-    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    if (!row || row.every(_wppTiemposVacio)) { vacias++; continue; }
     var filaNum = i + 1;
-    var skill = _wppTiemposNorm(row[map.skill]);
+    var skill = _wppTiemposNorm(_wppTiemposSinApostrofo(row[map.skill]));
     if (!/^WHATSAPP/i.test(skill)) { ignoradasNoWhatsapp++; continue; }
-    var resultado = _wppTiemposNorm(row[map.resultado]).toUpperCase();
-    if (resultado !== 'ANSWER') { avisos.push('Fila ' + filaNum + ': RESULT "' + resultado + '" no es ANSWER, se omitio.'); continue; }
-    var fh = wppTiemposParseFechaHora(row[map.fecha]);
-    if (!fh) { avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.'); continue; }
-    if (_wppTiemposFechaLimites.fechaLimitesEsFutura(fh.fecha)) { avisos.push('Fila ' + filaNum + ': DATE ' + fh.fecha + ' esta en el futuro, se omitio.'); continue; }
-    var seg = _wppTiemposSegundos(row[map.segundos]);
-    if (seg === null) { avisos.push('Fila ' + filaNum + ': ANSWER_TIME invalido o vacio, se omitio.'); continue; }
+    var resultado = _wppTiemposNorm(_wppTiemposSinApostrofo(row[map.resultado])).toUpperCase();
+    if (resultado !== 'ANSWER') { porMotivo.resultado.push(filaNum); continue; }
+    var fh = wppTiemposParseFechaHora(_wppTiemposSinApostrofo(row[map.fecha]));
+    if (!fh) { porMotivo.fecha.push(filaNum); continue; }
+    if (_wppTiemposFechaLimites.fechaLimitesEsFutura(fh.fecha)) { porMotivo.futura.push(filaNum); continue; }
+    var seg = _wppTiemposSegundos(row[map.segundos], esHora);
+    if (seg === null) { porMotivo.sinTiempo.push(filaNum); vacias++; continue; }
+    if (isNaN(seg)) { porMotivo.tiempo.push(filaNum); continue; }
     filas.push([skill, fh.fecha, fh.hora, seg]);
     porRango[wppTiemposRangoDe(seg)]++;
     dias[fh.fecha] = true;
   }
-  return { filas: filas, avisos: avisos, ignoradasNoWhatsapp: ignoradasNoWhatsapp, porRango: porRango, dias: Object.keys(dias).length };
+  var textos = {
+    tiempo: 'con un ANSWER_TIME que no se pudo leer como segundos',
+    resultado: 'con RESULT distinto de ANSWER',
+    fecha: 'con DATE invalida o vacia',
+    futura: 'con DATE en el futuro',
+    sinTiempo: 'sin ANSWER_TIME (celda vacia)',
+  };
+  Object.keys(textos).forEach(function (k) {
+    var nums = porMotivo[k];
+    if (nums.length) avisos.push(nums.length + ' fila(s) de WhatsApp ' + textos[k] + ', se omitieron (filas ' + _wppTiemposListaFilas(nums) + ').');
+  });
+  return { filas: filas, avisos: avisos, ignoradasNoWhatsapp: ignoradasNoWhatsapp, vacias: vacias, porRango: porRango, dias: Object.keys(dias).length };
 }
 
 // Mes por defecto de la vista: el mes elegido arriba (o el actual) si tiene

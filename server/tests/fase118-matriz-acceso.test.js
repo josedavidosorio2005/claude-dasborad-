@@ -219,7 +219,7 @@ declarar(['GET /calidad/encuestas/opciones', 'GET /calidad/encuestas/resumen', '
 declarar(['POST /calidad/encuestas/carga/impacto', 'POST /calidad/encuestas/carga'], 'cargaManual');
 // Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.
 declarar(['GET /calidad/whatsapp-tiempos/opciones'], 'scopedRead');
-declarar(['GET /calidad/whatsapp-tiempos/rangos'], 'scopedRead');
+declarar(['GET /calidad/whatsapp-tiempos/rangos', 'GET /calidad/whatsapp-tiempos/resumen'], 'scopedRead');
 declarar(['POST /calidad/whatsapp-tiempos/carga/impacto', 'POST /calidad/whatsapp-tiempos/carga'], 'cargaManual');
 declarar(['GET /calidad/inasistencia/opciones', 'GET /calidad/inasistencia/resumen', 'GET /calidad/inasistencia/especialidad', 'GET /calidad/inasistencia/mensual'], 'scopedRead');
 declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistencia/carga'], 'cargaManual');
@@ -269,6 +269,7 @@ const EXTRA_QUERY = {
   'GET /calidad/tipificacion/opciones': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/por-tipo': { canal: 'LLAMADAS' },
   'GET /calidad/whatsapp-tiempos/rangos': { mes: '2026-09' },
+  'GET /calidad/whatsapp-tiempos/resumen': { mes: '2026-09' },
 };
 
 const rutasReales = inventarioRutas();

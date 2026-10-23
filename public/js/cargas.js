@@ -737,6 +737,13 @@ async function procesarArchivoConsolidado(input){
         if(avisoSkills) f.avisos = [avisoSkills].concat(f.avisos || []);
       }
       // Encuesta: los conteos de la vista previa, de las filas que quedaron.
+      // Fase 165: WhatsApp tiempos -- igual, rangos y días de las filas que quedaron.
+      if(f.tipo==='whatsapp_tiempos' && f.filas && f.centroIgnoradas){
+        f.porRango = {};
+        WPP_TIEMPOS_RANGOS.forEach(function(x){ f.porRango[x.key] = 0; });
+        f.filas.forEach(function(x){ f.porRango[wppTiemposRangoDe(x[3])]++; });
+        f.dias = Object.keys(f.filas.reduce(function(a, x){ a[x[1]] = true; return a; }, {})).length;
+      }
       if(f.tipo==='encuesta' && f.filas && f.centroIgnoradas){
         f.conteos = encuestaConteos(f.filas);
         f.dias = Object.keys(f.filas.reduce(function(a, x){ a[x[0]] = true; return a; }, {})).length;
@@ -805,7 +812,7 @@ function _cargasEstadoLabel(r){
   // Fase 142 (punto 4): WhatsApp tiempos -- solo conteos (ignoradas por no
   // ser WhatsApp, dias y cantidad por rango), nunca filas.
   if(r.tipo==='whatsapp_tiempos' && r.porRango){
-    extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+r.dias+' día(s); por rango: '+
+    extra = ' — '+r.ignoradasNoWhatsapp+' fila(s) ignoradas (no son de WhatsApp), '+(r.vacias||0)+' fila(s) vacías omitidas, '+r.dias+' día(s); por rango: '+
       WPP_TIEMPOS_RANGOS.map(function(x){ return x.label+' '+r.porRango[x.key]; }).join(', ');
   }
   // Fase 159: Flujo de Llamadas -- fechas, skills y llamadas que entran,

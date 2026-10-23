@@ -16,16 +16,18 @@ function nowStr() {
 // (public/js/whatsapp-tiempos-logic.js) y whatsappTiemposFilaArraySchema.
 const CAMPOS_FILA = ['skill', 'fecha', 'hora', 'segundos'];
 
-// Mismos cortes que WPP_TIEMPOS_RANGOS (segundos, limite superior incluido).
+// Mismos cortes que WPP_TIEMPOS_RANGOS (Fase 165: segundos, limite superior
+// EXCLUIDO -- <180, <300, <480, <600, resto). Se calculan al consultar, asi
+// que valen tambien para lo ya cargado.
 const RANGOS = [
-  { key: 'r0_3', label: '0-3 minutos', hasta: 180 },
-  { key: 'r3_5', label: '3-5 minutos', hasta: 300 },
-  { key: 'r5_8', label: '5-8 minutos', hasta: 480 },
-  { key: 'r8_10', label: '8-10 minutos', hasta: 600 },
-  { key: 'r10', label: '10 minutos en adelante', hasta: null },
+  { key: 'r0_3', label: '0 a 3 minutos', menorQue: 180 },
+  { key: 'r3_5', label: '3 a 5 minutos', menorQue: 300 },
+  { key: 'r5_8', label: '5 a 8 minutos', menorQue: 480 },
+  { key: 'r8_10', label: '8 a 10 minutos', menorQue: 600 },
+  { key: 'r10', label: '10 minutos en adelante', menorQue: null },
 ];
-const CASE_RANGO = 'CASE ' + RANGOS.filter((r) => r.hasta !== null)
-  .map((r) => `WHEN segundos <= ${r.hasta} THEN '${r.key}'`).join(' ') + " ELSE 'r10' END";
+const CASE_RANGO = 'CASE ' + RANGOS.filter((r) => r.menorQue !== null)
+  .map((r) => `WHEN segundos < ${r.menorQue} THEN '${r.key}'`).join(' ') + " ELSE 'r10' END";
 
 function filaArrayAObjeto(arr) {
   const obj = {};
@@ -47,7 +49,7 @@ function contarPorRango(filasObj) {
   const out = {};
   RANGOS.forEach((r) => { out[r.key] = 0; });
   for (const f of filasObj) {
-    const r = RANGOS.find((x) => x.hasta === null || f.segundos <= x.hasta);
+    const r = RANGOS.find((x) => x.menorQue === null || f.segundos < x.menorQue);
     out[r.key]++;
   }
   return out;
@@ -121,9 +123,50 @@ function whatsappTiemposRangos(db, { campana, mes, skill }) {
   };
 }
 
+// Conteos por grupo (rango x grupo) -> [{ grupo, total, rangos:[{key,label,cantidad,pct}] }].
+function agruparRangos(filas) {
+  const porGrupo = new Map();
+  for (const r of filas) {
+    if (!porGrupo.has(r.grupo)) porGrupo.set(r.grupo, {});
+    porGrupo.get(r.grupo)[r.rango] = r.n;
+  }
+  return [...porGrupo.entries()].map(([grupo, conteo]) => {
+    const total = Object.values(conteo).reduce((a, n) => a + n, 0);
+    return {
+      grupo, total,
+      rangos: RANGOS.map((x) => ({
+        key: x.key, label: x.label, cantidad: conteo[x.key] || 0,
+        pct: total ? Math.round(((conteo[x.key] || 0) / total) * 1000) / 10 : 0,
+      })),
+    };
+  });
+}
+
+// Fase 165 (pedido de Edwin): conteo y % por rango POR COLA (del mes elegido)
+// y POR MES (todos los meses, de la cola elegida o de todas).
+function whatsappTiemposResumen(db, { campana, mes, skill }) {
+  const porSkill = db
+    .prepare(`SELECT skill AS grupo, ${CASE_RANGO} AS rango, COUNT(*) AS n FROM whatsapp_tiempos
+      WHERE campana = @campana AND substr(fecha,1,7) = @mes GROUP BY grupo, rango ORDER BY grupo`)
+    .all({ campana, mes });
+  const clausulas = ['campana = @campana'];
+  const params = { campana };
+  if (skill) { clausulas.push('skill = @skill'); params.skill = skill; }
+  const porMes = db
+    .prepare(`SELECT substr(fecha,1,7) AS grupo, ${CASE_RANGO} AS rango, COUNT(*) AS n FROM whatsapp_tiempos
+      WHERE ${clausulas.join(' AND ')} GROUP BY grupo, rango ORDER BY grupo`)
+    .all(params);
+  return {
+    mes,
+    porSkill: agruparRangos(porSkill).map(({ grupo, ...r }) => ({ skill: grupo, ...r })),
+    porMes: agruparRangos(porMes).map(({ grupo, ...r }) => ({ mes: grupo, ...r })),
+  };
+}
+
 module.exports = {
   CAMPOS_FILA,
   RANGOS,
+  whatsappTiemposResumen,
   impactoWhatsappTiempos,
   cargarWhatsappTiempos,
   whatsappTiemposOpciones,

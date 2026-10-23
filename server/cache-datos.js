@@ -36,7 +36,7 @@ const RUTAS = [
   /^\/calidad\/salida\/mensual$/,
   /^\/calidad\/tipificacion\/(por-tipo|resumen-salida)$/,
   /^\/calidad\/trafico\/whatsapp$/,
-  /^\/calidad\/whatsapp-tiempos\/rangos$/,
+  /^\/calidad\/whatsapp-tiempos\/(rangos|resumen)$/,
 ];
 const MAX_ENTRADAS = 2000;
 const MAX_BYTES_RESPUESTA = 2 * 1024 * 1024;

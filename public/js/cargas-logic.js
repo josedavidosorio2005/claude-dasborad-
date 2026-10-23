@@ -631,11 +631,12 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
   if (whatsappTiemposCols) {
     plan.push({
       tipo: 'whatsapp_tiempos', hoja: CARGAS_HOJA_WHATSAPP_TIEMPOS, titulo: 'WhatsApp tiempos de respuesta',
-      descripcion: 'Una fila por conversacion de WhatsApp contestada (export HistQueue de Wolkvox), con fecha y hora.',
+      descripcion: 'Una fila por conversacion de WhatsApp contestada, con fecha y hora. Se descarga de Wolkvox > Reportes > ' +
+        'Skills & Servicios > 10. Detalle de llamadas contestadas, y se sube tal cual.',
       filaUnica: false, columnas: whatsappTiemposCols,
       notasExtra: [
-        'Columnas: SKILL_NAME, DATE (con hora), RESULT y ANSWER_TIME (segundos). La columna TIEMPO del archivo, si viene, se ignora: ' +
-          'el rango (0-3, 3-5, 5-8, 8-10, 10+ minutos) lo calcula la plataforma con ANSWER_TIME.',
+        'Columnas: SKILL_NAME, DATE (con hora), RESULT y ANSWER_TIME (segundos). CONN_ID, SKILL_ID, ANI y TIEMPO, si vienen, se ignoran: ' +
+          'el rango (0 a 3, 3 a 5, 5 a 8, 8 a 10 y 10 minutos en adelante) lo calcula la plataforma con ANSWER_TIME, sin formulas en el Excel.',
         'Solo se cargan las colas cuyo nombre empieza por WHATSAPP; las demas filas (colas de llamadas) se ignoran y la vista previa ' +
           'dice cuantas fueron. RESULT distinto de ANSWER se omite con aviso.',
         'Al guardar, la carga REEMPLAZA lo que ya exista entre la primera y la ultima fecha de este archivo -- cargar un mes ' +
