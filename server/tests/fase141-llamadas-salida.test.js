@@ -51,8 +51,8 @@ test('parser: SKILL_ID (plantilla vieja, alias de TIPO) -> CONECTADA / NO_CONECT
     ['Asesor Uno', '2026-09-01', '3003', 'X', 'NO CONTESTADAS'],
   ]));
   assert.deepEqual(r.filas.map((f) => f[2]), ['CONECTADA', 'NO_CONECTADA']);
-  assert.equal(r.avisos.length, 1);
-  assert.match(r.avisos[0], /Fila 4: TIPO "NO CONTESTADAS" no es/);
+  // Fase 171: un solo aviso agrupado, con las filas.
+  assert.deepEqual(r.avisos, ['1 fila(s) con un TIPO que no es "Conectada" ni "No conectada", se omitieron (filas 4).']);
 });
 
 test('parser: filas totalmente vacias se ignoran sin aviso; columna faltante = error sin filas parciales', () => {
@@ -64,7 +64,10 @@ test('parser: filas totalmente vacias se ignoran sin aviso; columna faltante = e
   assert.equal(e.filas, undefined);
 });
 
-test('parser: unica = dia + telefono + tipo; reporta (sin resolver) cuantos dia+telefono aparecen en ambos tipos', () => {
+// Fase 171 (pedido de Edwin): cada fila es una llamada de salida -- ya no se
+// deja una sola por dia + telefono + tipo. Se sigue reportando (sin resolver)
+// cuantos dia+telefono aparecen en ambos tipos.
+test('parser: cada fila cuenta (sin quitar repetidos por dia + telefono); reporta cuantos dia+telefono aparecen en ambos tipos', () => {
   const r = llamadasSalidaParseFilas(aoaDe([
     ['Asesor Uno', '2026-09-03', '300 1', 'A', NO],
     ['Asesor Uno', '2026-09-03', '3001', 'A', NO], // mismo dia+tel+tipo -> duplicado
@@ -72,8 +75,8 @@ test('parser: unica = dia + telefono + tipo; reporta (sin resolver) cuantos dia+
     ['Asesor Uno', '2026-09-04', '3001', 'B', CON], // otro dia -> cuenta
     ['Asesor Dos', '2026-09-03', '3002', 'C', CON],
   ]));
-  assert.equal(r.filas.length, 4);
-  assert.equal(r.duplicadosQuitados, 1);
+  assert.equal(r.filas.length, 5);
+  assert.equal(r.duplicadosQuitados, undefined);
   assert.equal(r.telefonosEnAmbosTipos, 1);
   assert.ok(!JSON.stringify(r.filas).includes('3001'), 'el telefono nunca sale del parser');
 });

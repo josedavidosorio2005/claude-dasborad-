@@ -46,6 +46,11 @@ const SALIDA_NO_CONECTADA = ['Cliente_no_contesta'];
 // agrupan y muestran; los datos guardados no se tocan.
 const SKILL_SALIDA = 'LLAMADAS DE SALIDA';
 const SKILLS_SALIDA_EQUIVALENTES = ['LLAMADAS DE SALIDA', 'LINEA DE SALIDA'];
+// Fase 171 (Mobilize): el CDR guarda la salida con SKILL_NAME "-" y
+// TYPE_INTERACTION outbound_ma (filas cargadas antes de la Fase 168). Esas
+// tambien son "Llamadas de salida"; un "-" que no es outbound_ma (internalcall,
+// sin tipo) sigue como "-".
+const COND_SALIDA_SQL = "(UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ') + ") OR (TRIM(skill) = '-' AND tipoInteraccion = 'outbound_ma'))";
 function esSkillSalida(skill) {
   return SKILLS_SALIDA_EQUIVALENTES.includes(String(skill == null ? '' : skill).trim().replace(/\s+/g, ' ').toUpperCase());
 }
@@ -164,8 +169,12 @@ function tipificacionesWhereClausulas(q) {
     params.agente = q.agente;
   }
   if (q.skill && q.canal === 'LLAMADAS' && esSkillSalida(q.skill)) {
-    // Fase 169: cualquiera de los nombres de salida trae los de todos los meses.
-    clausulas.push("UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ') + ')');
+    // Fase 169: cualquiera de los nombres de salida trae los de todos los meses
+    // (Fase 171: tambien el "-" de salida de Mobilize).
+    clausulas.push(COND_SALIDA_SQL);
+  } else if (q.skill && q.canal === 'LLAMADAS' && String(q.skill).trim() === '-') {
+    // Fase 171: "-" queda solo para lo que no es salida (internalcall, sin tipo).
+    clausulas.push("TRIM(skill) = '-' AND (tipoInteraccion IS NULL OR tipoInteraccion <> 'outbound_ma')");
   } else if (q.skill) {
     clausulas.push('skill = @skill');
     params.skill = q.skill;
@@ -243,7 +252,8 @@ function tipificacionesOpciones(db, campana, canal) {
     // Fase 169: en Llamadas, los nombres de salida de meses anteriores se
     // muestran una sola vez, como LLAMADAS DE SALIDA.
     skills: canal === 'LLAMADAS'
-      ? [...new Set(distintos('skill').map((s) => (esSkillSalida(s) ? SKILL_SALIDA : s)))].sort()
+      ? db.prepare(`SELECT DISTINCT CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`)
+        .all(campana, canal).map((r) => r.v)
       : distintos('skill'),
   };
 }

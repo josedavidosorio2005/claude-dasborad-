@@ -1257,6 +1257,41 @@ function onGdMesChange(){
   renderGenericKpis();
   renderGenericTab(_gd.tab);
 }
+// ── Fase 171: al cerrar sesion, el tablero arranca sin filtros ──
+// Varias personas usan el mismo usuario (pedido de Edwin): los filtros de
+// cada panel (mes, cola/skill, asesor, Desde/Hasta, sub-pestaña), sus
+// sincronizaciones con el MES, las caches de datos y los parametros de
+// Trafico en la URL se borran al cerrar sesion. No toca la preferencia de
+// tipo de grafica (no es un filtro) ni el tema.
+var GD_ESTADO_A_REINICIAR = [
+  '_traficoEstado', '_traficoMesSincronizado', '_traficoSinDatosMesGlobal', '_traficoSubtabActivo', '_trafico', '_traficoAgregadoActual',
+  '_traficoWppEstado', '_traficoWppMesSincronizado', '_traficoWppSinDatosMesGlobal', '_traficoWppSubtabActivo', '_traficoWpp', '_traficoWppAgregadoActual',
+  '_tipificacionEstadoCompartido', '_tipificacionEstadoCanal', '_tipificacionMesSincronizado', '_tipificacionSinDatosMesGlobal', '_tipificacionOpciones',
+  '_agendasEstado', '_agendasMesSincronizado', '_agendasSinDatosMesGlobal', '_agendasOpciones',
+  '_inasistenciaEstado', '_inasistenciaOpciones', '_ecOpciones', '_eaOpciones', '_eaBusqueda', '_eaUltimoRanking',
+  '_encuestaEstado', '_encuestaMesSincronizado', '_encuestaOpciones', '_encuestaUltimo', '_encuestaOadUltimo',
+  '_llamadasUnicasEstado', '_llamadasUnicasOpciones', '_llamadasSalidaEstado', '_llamadasSalidaOpciones',
+  '_wppTiemposEstado', '_wppTiemposMesSincronizado', '_wppTiemposOpciones', '_wppTiemposUltimo', '_wppTiemposUltimoResumen',
+  '_calDashFiltro', '_calDashMesSincronizado', '_calDashSinDatosMesGlobal',
+  '_gdCatFiltro', '_gdFechaFiltro', '_gdSerieFiltro', '_gdUnicoFiltro', '_salOpciones', '_salEditor',
+];
+function gdReiniciarFiltros(){
+  var g = (typeof window !== 'undefined') ? window : globalThis;
+  GD_ESTADO_A_REINICIAR.forEach(function(n){
+    if(g[n] && typeof g[n] === 'object' && !Array.isArray(g[n])) Object.keys(g[n]).forEach(function(k){ delete g[n][k]; });
+  });
+  if(typeof _gd !== 'undefined'){
+    _gd.cliente = null; _gd.config = null; _gd.cargas = {}; _gd.periodos = [];
+    _gd.mesSel = ''; _gd.compSel = ''; _gd.vistaSel = ''; _gd.tab = null; _gd.subtab = null; _gd.mesesSel = [];
+  }
+  // Parametros de filtros en la URL (Trafico: tv_*/tww_*): fuera.
+  try{
+    if(g.location && g.location.search && g.history && g.history.replaceState){
+      g.history.replaceState(null, '', g.location.pathname + (g.location.hash || ''));
+    }
+  }catch(e){}
+}
+
 // ── Fase 167: filtro "Meses" (varios meses sueltos, lado a lado) ──
 function _gdMeses(){ return (_gd && _gd.mesesSel) || []; }
 

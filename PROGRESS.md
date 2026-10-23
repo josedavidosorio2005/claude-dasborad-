@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.68.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.69.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -663,3 +663,4 @@ mismo orden):
 - Fase 168 — Tipificación con los 2 CDR de Wolkvox: HistChat de WhatsApp por SKILL_ID con mapa de skills por cliente (editable por un admin, semilla ORLANT; 0 = salida; desconocidos se ignoran con un aviso), "-" de llamadas = Llamadas de salida, ORLANT con Llamadas y WhatsApp lado a lado sin tabla de detalle; probado en local con los CDR reales de septiembre; recarga en producción de los 2 CDR de septiembre: WhatsApp 13.048 → 13.118 (3.997 de salida), llamadas 19.721 → 19.721 con 10.399 de salida (antes 0) (v1.67.0, 2026-10-23)
 - Fase 169 — "Llamadas de salida" sale una sola vez en el filtro de skill de Tipificación de llamadas (LINEA DE SALIDA de meses anteriores + LLAMADAS DE SALIDA), sin tocar datos (v1.67.1, 2026-10-23)
 - Fase 170 — Llamadas y WhatsApp de salida de ORLANT calculados con los CDR en los meses que los tienen, repartidos en 3P/General por la línea de cada asesor por mes (editor solo administrador; sin línea = "Sin asignar"); el resto de meses sigue con el archivo mensual (v1.68.0, 2026-10-23)
+- Fase 171 — Pedidos de Edwin para Mobilize: "-" de salida = Llamadas de salida en Tipificación; llamadas de salida sin quitar repetidos ni filas sin agente (octubre: 85 = 45 + 40), sin el aviso de mes incompleto; Encuesta sigue el MES; cerrar sesión deja el tablero sin filtros; conectadas/no conectadas en azul/magenta (v1.69.0, 2026-10-23)

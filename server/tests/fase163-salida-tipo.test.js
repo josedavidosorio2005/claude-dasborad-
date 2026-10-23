@@ -23,8 +23,8 @@ test('reconoce la plantilla de Edwin con TIPO; sin TIPO no carga nada', () => {
     ['Asesor Dos', '2026-08-05 10:05:00', '3000000004', 'x', 'Otra cosa'],
   ]);
   assert.deepEqual(r.filas.map((f) => f[2]), ['CONECTADA', 'NO_CONECTADA', 'NO_CONECTADA']);
-  assert.equal(r.avisos.length, 1);
-  assert.match(r.avisos[0], /TIPO "Otra cosa" no es "Conectada" ni "No conectada"/);
+  // Fase 171: aviso agrupado por motivo.
+  assert.deepEqual(r.avisos, ['1 fila(s) con un TIPO que no es "Conectada" ni "No conectada", se omitieron (filas 5).']);
   const sin = S.llamadasSalidaParseFilas([HEADER.slice(0, 4), ['A', '2026-08-05', '1', 'x']]);
   assert.match(sin.error, /Faltan columnas obligatorias: TIPO/);
   assert.equal(sin.filas, undefined);

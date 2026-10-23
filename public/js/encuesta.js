@@ -47,6 +47,13 @@ function _encuestaOptionsHtml(valores, seleccionado, formato) {
   }).join('');
 }
 
+// Fase 171 (pedido de Edwin: "solo se cargo septiembre, pero en octubre
+// aparecen datos"): el panel arrancaba sin Desde/Hasta (todo el periodo), asi
+// que cualquier mes mostraba lo cargado. Ahora sigue el MES de arriba como
+// los demas paneles: al cambiar el MES, Desde/Hasta pasan a ese mes; si el
+// mes no tiene encuestas, sale el aviso de siempre con "Ver <ultimo mes>".
+var _encuestaMesSincronizado = {}; // por campana: ultimo _gd.mesSel aplicado
+
 async function _encuestaRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i);
   if (!host) return;
@@ -64,6 +71,19 @@ async function _encuestaRenderPanel(p, i) {
   }
   if (!_encuestaEstado[campana]) _encuestaEstado[campana] = { desde: '', hasta: '', skill: '', agente: '' };
   var estado = _encuestaEstado[campana];
+  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
+  if (mesGlobal && _encuestaMesSincronizado[campana] !== mesGlobal) {
+    _encuestaMesSincronizado[campana] = mesGlobal;
+    estado.desde = mesGlobal + '-01';
+    estado.hasta = (typeof gdFinDeMes === 'function') ? gdFinDeMes(mesGlobal) : mesGlobal + '-31';
+  }
+  var mesesEnc = (op.meses || []).slice().sort();
+  if (mesGlobal && estado.desde === mesGlobal + '-01' && mesesEnc.length && mesesEnc.indexOf(mesGlobal) === -1) {
+    _encuestaUltimo[campana] = null;
+    host.innerHTML = '<div class="aurora-card">' + titulo +
+      _gdAvisoSinDatosMesHtml('Encuesta', mesGlobal, mesesEnc[mesesEnc.length - 1]) + '</div>';
+    return;
+  }
   var ve = _encuestaVeAsesores(campana);
   if (estado.skill && (op.skills || []).indexOf(estado.skill) === -1) estado.skill = '';
   if (!ve || (estado.agente && (op.agentes || []).indexOf(estado.agente) === -1)) estado.agente = '';
