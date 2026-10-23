@@ -185,6 +185,8 @@ async function _llamadasUnicasRenderContenido(campana, i) {
     porMes = (await apiRequest('GET', '/calidad/llamadas-unicas/por-mes?' + q)) || [];
   } catch (e) { /* el panel se queda con los KPIs/grafica en 0 — nunca inventa un numero */ }
   _llamadasUnicasDibujarKpis(i, resumen);
+  // Fase 167: filtro "Meses" -- solo la grafica por mes; las tarjetas no cambian.
+  porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes);
   _llamadasUnicasDibujarBarras(i, porMes, _llamadasUnicasSoloTotal(resumen));
 }
 
@@ -309,6 +311,7 @@ async function _llamadasSalidaRenderContenido(campana, i) {
   } catch (e) { /* tarjetas/grafica en 0 -- nunca inventa un numero */ }
   var elKpis = document.getElementById('ls-kpis-' + i);
   if (elKpis) elKpis.innerHTML = _llamadasSalidaKpisHtml(resumen);
+  porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes); // Fase 167: filtro "Meses"
   _llamadasSalidaDibujarBarras(i, porMes);
   var elDet = document.getElementById('ls-detalle-' + i);
   if (elDet) elDet.innerHTML = detalle ? _llamadasSalidaDetalleHtml(detalle) : '';

@@ -84,9 +84,11 @@ async function _ecDibujar(campana, i, opciones){
     }
   }
 
-  _ecDibujarGrafica(i, filas);
+  // Fase 167: filtro "Meses" -- grafica y tabla; las tarjetas no cambian.
+  var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
+  _ecDibujarGrafica(i, filasMeses);
 
-  if(tablaEl) tablaEl.innerHTML = _ecTablaHtml(filas, mesSel);
+  if(tablaEl) tablaEl.innerHTML = _ecTablaHtml(filasMeses, mesSel);
 }
 
 function _ecDibujarGrafica(i, filas){

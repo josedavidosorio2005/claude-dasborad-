@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.66.0 — Octubre 2026
+
+**Fase 167: ver varios meses sueltos lado a lado (pedido de Edwin).**
+
+- En el tablero, junto al MES, hay un filtro nuevo: **MESES**. Ahí se
+  marcan los meses que se quieren ver, por ejemplo solo septiembre y
+  octubre, sin agosto.
+- Las gráficas y tablas que van por mes muestran solo esos meses, uno al
+  lado del otro: Tráfico de Llamadas y de WhatsApp, Llamadas y WhatsApp de
+  salida, Inasistencia, Efectividad de Citas, Agendas por mes, Llamadas
+  Únicas y de Salida, la tabla "Por mes" de Nivel de Servicio y las
+  gráficas de resumen. Lo exportado a Excel también sale así.
+- No suma meses: las tarjetas de arriba siguen el MES y su comparación
+  contra el mes anterior, como siempre. "Ver todos los meses" lo deja como
+  estaba. Los números no cambian.
+
 ## v1.65.1 — Octubre 2026
 
 **Fase 166: Nivel de Servicio de WhatsApp visible aunque falte el Flujo del mes.**

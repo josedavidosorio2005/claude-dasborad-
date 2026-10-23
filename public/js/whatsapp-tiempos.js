@@ -138,6 +138,8 @@ async function _wppTiemposDibujar(i, campana) {
   r = pedidos[0];
   resumen = pedidos[1];
   _wppTiemposUltimo[campana] = r ? Object.assign({ skill: estado.skill }, r) : null;
+  // Fase 167: filtro "Meses" del tablero en la tabla "Por mes" (y su export).
+  if (resumen && resumen.porMes) resumen.porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(resumen.porMes, function (g) { return g.mes; }) : resumen.porMes);
   _wppTiemposUltimoResumen[campana] = resumen ? Object.assign({ skill: estado.skill }, resumen) : null;
   var resumenEl = document.getElementById('wtt-resumen-' + i);
   if (resumenEl) resumenEl.innerHTML = _wppTiemposResumenHtml(resumen, estado);

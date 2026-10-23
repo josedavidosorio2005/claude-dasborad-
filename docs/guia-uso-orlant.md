@@ -70,6 +70,11 @@ del todo vas a ver:
   (ej. "Julio 2026" solo con datos de Tipificación de WhatsApp) — es normal
   y esperado cuando a ese mes solo le llegó una parte de los datos, no es
   un error.
+- El filtro **MESES** — para ver varios meses sueltos lado a lado (por
+  ejemplo, solo septiembre y octubre, sin agosto). Marca los meses que
+  quieras: las gráficas y tablas que van por mes muestran solo esos meses.
+  No suma meses: las tarjetas siguen el selector de MES. "Ver todos los
+  meses" lo deja como estaba.
 - El botón **Exportar** — descarga a Excel todo lo que estás viendo en la
   pestaña activa (una hoja por gráfica/tabla).
 - El botón de **pantalla completa** — agranda el dashboard para que ocupe

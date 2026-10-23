@@ -374,7 +374,8 @@ function _traficoWppRenderContenido(i){
     if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Tráfico de WhatsApp para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
     return;
   }
-  var agregado = traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
+  // Fase 167: filtro "Meses" (_traficoFiltroMeses, trafico.js) -- las tarjetas salen de `filtradas`.
+  var agregado = _traficoFiltroMeses(traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar }), estado.granularidad);
   _traficoWppAgregadoActual[campana] = agregado;
 
   // Totales del periodo YA filtrado (nunca promedio de % de cada cola):
@@ -449,7 +450,7 @@ function _traficoWppRenderContenido(i){
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado, sin depender del
   // checkbox "Ver colas por separado" de arriba (mismo criterio que
   // Llamadas): son la tendencia de la campana completa.
-  var agregadoComb = estado.combinar ? agregado : traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: true });
+  var agregadoComb = estado.combinar ? agregado : _traficoFiltroMeses(traficoWppAgregarPorPeriodo(filtradas, { granularidad: estado.granularidad, combinar: true }), estado.granularidad);
 
   _traficoDibujarAbandono('tww', i, agregadoComb, campana);
   // Fase 120: Wolkvox no entrega AHT de WhatsApp -- ni se dibuja ni se

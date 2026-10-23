@@ -231,10 +231,12 @@ async function _inasistenciaDibujarPorMes(campana, i, opciones){
     }
   }
 
-  _inasistenciaDibujarLineaPorMes('inasist-c-pormes-'+i, agregado, mesSel, esFormatoViejo);
+  // Fase 167: filtro "Meses" -- grafica y tabla; las tarjetas no cambian.
+  var agregadoMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(agregado, function(a){ return a.mes; }) : agregado);
+  _inasistenciaDibujarLineaPorMes('inasist-c-pormes-'+i, agregadoMeses, mesSel, esFormatoViejo);
 
   var tablaEl = document.getElementById('inasist-tabla-pormes-'+i);
-  if(tablaEl) tablaEl.innerHTML = _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo);
+  if(tablaEl) tablaEl.innerHTML = _inasistenciaTablaHtml(agregadoMeses, mesSel, esFormatoViejo);
 
   var avisoEl = document.getElementById('inasist-aviso-'+i);
   if(avisoEl){

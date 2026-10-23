@@ -415,6 +415,13 @@ function _traficoSubtabsNavHTML(prefijo, i, activo, onclickFn, datasetAttr, subt
   }).join('');
 }
 
+// Fase 167: filtro "Meses" del tablero sobre un agregado por periodo (dia o
+// mes; con granularidad Año no aplica). Lo usa tambien trafico-whatsapp.js.
+function _traficoFiltroMeses(agregado, granularidad){
+  if(granularidad === 'anio' || typeof gdAplicarFiltroMeses !== 'function') return agregado;
+  return gdAplicarFiltroMeses(agregado, function(a){ return a.periodo; });
+}
+
 async function _traficoCargarDatos(campana){
   if(_trafico[campana]) return _trafico[campana];
   var filas = [];
@@ -1268,7 +1275,8 @@ function _traficoRenderContenido(campana, sede, i){
     if(content) content.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Tráfico de Llamadas para el período seleccionado ('+esc(estado.desde)+' a '+esc(estado.hasta)+').</div>';
     return;
   }
-  var agregado = traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar });
+  // Fase 167: filtro "Meses" -- solo las graficas/export; las tarjetas salen de `filtradas`.
+  var agregado = _traficoFiltroMeses(traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar }), estado.granularidad);
   _traficoAgregadoActual[claveEstado] = agregado;
 
   var tot = _traficoTotalesLlamadas(filtradas);
@@ -1313,7 +1321,7 @@ function _traficoRenderContenido(campana, sede, i){
   // arriba: son la tendencia de la campana completa, igual que las pide
   // InCo. Reutiliza el mismo `filtradas` (mismos filtros de skill/fecha ya
   // aplicados) y traficoAgregar ya testeado.
-  var agregadoComb = estado.combinar ? agregado : traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true });
+  var agregadoComb = estado.combinar ? agregado : _traficoFiltroMeses(traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: true }), estado.granularidad);
 
   _traficoDibujarAbandono('tv', i, agregadoComb, campana);
   _traficoDibujarAht('tv', i, agregadoComb);

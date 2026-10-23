@@ -222,6 +222,7 @@ async function _agendasDibujar(campana, i, opciones, vista){
       options: loDatalabelsAuto(o1),
     });
   } else if(vista === 'mensual'){
+    datos = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(datos, function(r){ return r.mes; }) : datos); // Fase 167: filtro "Meses"
     var o2 = loBar();
     _gdChart(canvasId, {
       type: 'bar',
@@ -233,6 +234,7 @@ async function _agendasDibujar(campana, i, opciones, vista){
     // "Agendas por línea" (Fase 94): una serie para Línea General, otra
     // para 3P, por mes -- desde la columna `tipoLinea` real de la tabla
     // agendas (GET /calidad/agendas/linea), YA NO de la hoja "resumen".
+    datos = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(datos, function(r){ return r.mes; }) : datos); // Fase 167: filtro "Meses"
     var meses = datos.map(function(r){ return r.mes; }).filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
     var porMesLinea = {};
     datos.forEach(function(r){ porMesLinea[r.mes+'|'+r.tipoLinea] = r.cantidad; });
