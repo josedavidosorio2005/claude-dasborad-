@@ -18,6 +18,29 @@ sepan que hay nuevo, que se corrigio y que falta.
   y en la tarjeta del tablero el color sigue saliendo de la meta.
 - Las exportaciones (Excel/PDF) no cambian. Los números no cambian.
 
+## v1.64.9 — Octubre 2026
+
+**Fase 164: porcentajes de las tortas sin montarse.**
+
+- En las tortas con muchas porciones (por ejemplo Tipificación), los
+  porcentajes de las porciones pequeñas quedaban uno encima del otro y no
+  se podían leer. Ahora las porciones de menos del 5 % no llevan el número
+  encima, y si dos números chocan se muestra solo uno.
+- El dato de cada porción sigue en la leyenda, al pasar el mouse y en la
+  tabla ("Ver datos"). Los números no cambian.
+
+## v1.64.8 — Octubre 2026
+
+**Fase 164: gráficas por especialidad en un solo color.**
+
+- "Agendas por especialidad" e "Inasistencia por especialidad" pintaban
+  cada barra de un color distinto, y dos especialidades podían salir del
+  mismo color. Como cada barra es la misma medida, ahora todas van del
+  mismo color y sin leyenda, igual que "Calidad por asesor".
+- En las tortas de los tableros internos (Gerencia, Inventario, Gestión
+  Humana), dos categorías distintas ya no pueden salir del mismo color.
+- Los números no cambian: solo cambia cómo se ven.
+
 ## v1.64.7 — Octubre 2026
 
 - Actualización de seguridad de una dependencia. No cambia nada de lo que
