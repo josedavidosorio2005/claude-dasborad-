@@ -9,9 +9,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Volver a subir la salida de agosto y septiembre de Mobilize** (Fase
+  171) — se cargaron cuando el sistema dejaba una sola llamada por día y
+  teléfono, así que les faltan filas. Octubre ya se recargó completo (85).
+  Hace falta el archivo de Edwin de cada mes y tu OK.
 - **Asignar la línea (3P o General) de los asesores de septiembre** (Fase
   170) — desde la v1.68.0, la salida de septiembre de ORLANT sale del CDR y
-  queda toda en "Sin asignar" (24 asesores) hasta que el administrador elija
+  queda toda en "Sin asignar" (22 asesores en producción) hasta que el administrador elija
   la línea de cada uno en la pestaña de salida. Edwin tiene que decir qué
   asesor va en cada línea.
 - **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del

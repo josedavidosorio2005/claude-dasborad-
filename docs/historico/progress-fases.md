@@ -15904,3 +15904,26 @@ claro y oscuro, 0 errores.
   - Encuesta: octubre con aviso y septiembre con 30;
   - cerrar sesión y volver a entrar: sin filtros;
   - colores verificados en la gráfica.
+
+### Fase 171 — recarga en producción de la salida de octubre de Mobilize (2026-10-23)
+
+Autorizada por el usuario. Por el Centro de cargas (MOBILIZE → Llamadas Únicas
+y de Salida → De salida → octubre), con su sesión, con el archivo de Edwin
+(`FLUNO DE LLAMADAS DE SALIDA.xlsx`, el único con ese nombre en la carpeta de
+descargas; fuera del repo). Antes de guardar se confirmó la vista previa: 85
+filas, 45 conectadas, 40 no conectadas y 3 "Sin asesor" (filas 26, 27 y 28).
+El Centro pidió confirmar el reemplazo de los 54 registros que había (del 2
+al 22 de octubre) y se aceptó.
+
+| Octubre | Antes | Después |
+|---|---|---|
+| Total | 54 | 85 |
+| Conectadas | 31 | 45 |
+| No conectadas | 23 | 40 |
+
+Verificado por la API y en la gráfica de octubre (Total 85, Conectadas 45 en
+azul, No conectadas 40 en magenta), con 0 errores de consola. Las tarjetas
+de arriba de esa pestaña suman todo el período del filtro (238 en total), no
+solo octubre. Agosto y septiembre de salida de Mobilize se cargaron con la
+regla anterior (una por día y teléfono): para tenerlos completos hay que
+volver a subir sus archivos (anotado en `docs/pendientes.md`).
