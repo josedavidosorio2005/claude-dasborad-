@@ -105,15 +105,21 @@ function aplicarTemaCharts(){
     PC=PC_DARK;
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
     SERIE_PRINCIPAL='#dbe9ee'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE=null; SERIE_LINEA='#c084fc';
+    SERIE_NO_CONECTADA='#cb4da1';
   } else {
     CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
     PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
     CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
     SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
+    SERIE_NO_CONECTADA='#d22d80';
   }
 }
 // Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
 var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';
+// Fase 171 (pedido de Edwin): "no conectadas" en un color bien distinto del de
+// "conectadas" (azul, SERIE_SECUNDARIA): el magenta de la paleta categorica
+// (nunca verde/ambar/rojo, que son del semaforo).
+var SERIE_NO_CONECTADA='#d22d80';
 aplicarTemaCharts();
 
 // Fase 152 (B1): color de SERIE por rol, con los colores de MARCA (nunca
@@ -131,6 +137,7 @@ aplicarTemaCharts();
 function colorSerie(rol){
   if(rol === 'secundaria') return SERIE_SECUNDARIA;
   if(rol === 'linea') return SERIE_LINEA;
+  if(rol === 'noConectada') return SERIE_NO_CONECTADA;
   return SERIE_PRINCIPAL;
 }
 // Propiedades de una barra de la serie secundaria (relleno + borde de

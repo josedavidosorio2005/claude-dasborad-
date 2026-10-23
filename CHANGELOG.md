@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.69.0 — Octubre 2026
+
+**Fase 171: pedidos de Edwin para Mobilize.**
+
+- **Llamadas de salida:** cada fila del archivo cuenta como una llamada. El
+  archivo de octubre tiene 85 filas (45 conectadas y 40 no conectadas) y
+  ahora entran las 85; antes se tomaban 54 porque se dejaba una sola llamada
+  por número y día, y se descartaban las filas sin asesor. Las filas sin
+  asesor se cargan como "Sin asesor". "No conectada" se reconoce aunque
+  venga con guion, sin espacio o en plural. Solo se dejan por fuera las filas
+  vacías o sin fecha, y se avisa en un solo mensaje.
+- Ya no sale el aviso de "el archivo no trae el mes completo" en llamadas de
+  salida: es normal que haya días sin llamadas.
+- **Tipificación:** las llamadas de salida que venían con skill "-" ahora
+  aparecen y se filtran como "Llamadas de salida".
+- **Encuesta:** cada mes muestra solo sus encuestas. Si un mes no tiene, la
+  pantalla lo dice en vez de mostrar las de otro mes.
+- **Cerrar sesión:** al volver a entrar, el tablero arranca sin los filtros
+  de la persona anterior (mes, skill, asesor, fechas).
+- **Colores:** en la gráfica de llamadas de salida, conectadas (azul) y no
+  conectadas (magenta) tienen colores bien distintos.
+
 ## v1.68.0 — Octubre 2026
 
 **Fase 170: llamadas y WhatsApp de salida calculados con los CDR, por línea de cada asesor.**

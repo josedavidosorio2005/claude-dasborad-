@@ -75,11 +75,35 @@ function _llamadasSalidaNormalizarTelefono(v) {
   return String(v == null ? '' : v).replace(/[^0-9]/g, '');
 }
 
+// Fase 171 (pedido de Edwin, archivo de octubre de Mobilize: 85 filas, 45
+// conectadas y 40 no conectadas, y la vista previa tomaba 54): cada fila del
+// archivo es UNA llamada de salida. Antes se dejaba una sola por (dia,
+// telefono, tipo) -- 28 filas reales se perdian -- y una fila sin
+// AGENT_NAME se omitia (3 filas). Ahora:
+//   - solo se omiten las filas totalmente vacias y las que no se pueden
+//     ubicar (sin DATE valida, con DATE futura o con un TIPO que no es
+//     conectada/no conectada), con UN aviso agrupado por motivo;
+//   - sin AGENT_NAME se carga como "Sin asesor" (un aviso agrupado);
+//   - TIPO acepta mayusculas, acentos, guion/guion bajo, plural y "noconectada".
+// TELEPHONE se sigue leyendo solo para contar (en memoria) cuantos numeros
+// aparecen el mismo dia como conectada Y no conectada; nunca sale de aqui.
+var LLAMADAS_SALIDA_SIN_ASESOR = 'Sin asesor';
+
+function llamadasSalidaTipoDe(valor) {
+  var n = _llamadasSalidaNormalizarParaComparar(valor)
+    .replace(/[-_.\/]+/g, ' ').replace(/\s+/g, ' ').trim()
+    .replace(/\bnoconectadas?\b/g, 'no conectada')
+    .replace(/\bconectadas\b/g, 'conectada');
+  return LLAMADAS_SALIDA_TIPOS[n] || LLAMADAS_SALIDA_TIPOS[n.replace(/^llamadas de salida /, '')] || null;
+}
+
+function _llamadasSalidaListaFilas(nums) {
+  var muestra = nums.slice(0, 5).join(', ');
+  return nums.length > 5 ? muestra + ' y ' + (nums.length - 5) + ' más' : muestra;
+}
+
 // Devuelve { error } si falta una columna obligatoria (nunca filas parciales
-// en ese caso). Si no: { filas, avisos, duplicadosQuitados,
-// telefonosEnAmbosTipos } -- este ultimo SOLO se reporta (cuantos pares
-// dia+telefono aparecen como conectada Y como no conectada el mismo dia),
-// no se resuelve.
+// en ese caso). Si no: { filas, avisos, sinAsesor, telefonosEnAmbosTipos }.
 function llamadasSalidaParseFilas(aoa) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
   var map = llamadasSalidaColIndexMap(aoa[0]);
@@ -88,64 +112,42 @@ function llamadasSalidaParseFilas(aoa) {
     return { error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') + '.' };
   }
 
-  var crudas = [];
+  var filas = [];
   var avisos = [];
+  var omitidas = { tipo: [], fecha: [], futura: [] };
+  var sinAsesor = [];
+  var tiposPorDiaTel = {};
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
-    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined || (typeof v === 'string' && v.trim() === ''); })) continue;
     var filaNum = i + 1;
 
     var agente = llamadasSalidaNormTexto(row[map.agente]);
     var tipificacion = llamadasSalidaNormTexto(row[map.tipificacion]);
-    var skillId = llamadasSalidaNormTexto(row[map.tipo]);
     var telefono = _llamadasSalidaNormalizarTelefono(row[map.telefono]);
     var fecha = _llamadasSalidaUnicas.llamadasUnicasParseFecha(row[map.fecha]);
+    var tipo = llamadasSalidaTipoDe(row[map.tipo]);
 
-    var tipo = LLAMADAS_SALIDA_TIPOS[_llamadasSalidaNormalizarParaComparar(skillId)];
-    if (!tipo) {
-      avisos.push('Fila ' + filaNum + ': TIPO "' + skillId + '" no es "Conectada" ni "No conectada", se omitio.');
-      continue;
+    if (!tipo) { omitidas.tipo.push(filaNum); continue; }
+    if (!fecha) { omitidas.fecha.push(filaNum); continue; }
+    if (_llamadasSalidaFechaLimites.fechaLimitesEsFutura(fecha)) { omitidas.futura.push(filaNum); continue; }
+    if (!agente) { agente = LLAMADAS_SALIDA_SIN_ASESOR; sinAsesor.push(filaNum); }
+    if (telefono) {
+      var diaTel = fecha + '|' + telefono;
+      tiposPorDiaTel[diaTel] = tiposPorDiaTel[diaTel] || {};
+      tiposPorDiaTel[diaTel][tipo] = true;
     }
-    if (!agente) {
-      avisos.push('Fila ' + filaNum + ': falta AGENT_NAME, se omitio.');
-      continue;
-    }
-    if (!fecha) {
-      avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.');
-      continue;
-    }
-    if (!telefono) {
-      avisos.push('Fila ' + filaNum + ': TELEPHONE invalido o vacio, se omitio.');
-      continue;
-    }
-    if (_llamadasSalidaFechaLimites.fechaLimitesEsFutura(fecha)) {
-      avisos.push('Fila ' + filaNum + ': DATE ' + fecha + ' esta en el futuro, se omitio.');
-      continue;
-    }
-    crudas.push({ agente: agente, fecha: fecha, telefono: telefono, tipo: tipo, tipificacion: _llamadasSalidaTipificacion(tipificacion) });
+    filas.push([agente, fecha, tipo, _llamadasSalidaTipificacion(tipificacion)]);
   }
 
-  // "Unica" = una sola vez por (dia, telefono, tipo): el mismo numero el
-  // mismo dia cuenta una vez como conectada y/o una vez como no conectada.
-  // Se conserva la PRIMERA fila de cada grupo (orden estable).
-  var vistos = {};
-  var tiposPorDiaTel = {};
-  var filas = [];
-  var duplicadosQuitados = 0;
-  crudas.forEach(function (f) {
-    var diaTel = f.fecha + '|' + f.telefono;
-    var clave = diaTel + '|' + f.tipo;
-    tiposPorDiaTel[diaTel] = tiposPorDiaTel[diaTel] || {};
-    tiposPorDiaTel[diaTel][f.tipo] = true;
-    if (vistos[clave]) { duplicadosQuitados++; return; }
-    vistos[clave] = true;
-    filas.push([f.agente, f.fecha, f.tipo, f.tipificacion]);
-  });
+  if (omitidas.tipo.length) avisos.push(omitidas.tipo.length + ' fila(s) con un TIPO que no es "Conectada" ni "No conectada", se omitieron (filas ' + _llamadasSalidaListaFilas(omitidas.tipo) + ').');
+  if (omitidas.fecha.length) avisos.push(omitidas.fecha.length + ' fila(s) con DATE invalida o vacia, se omitieron (filas ' + _llamadasSalidaListaFilas(omitidas.fecha) + ').');
+  if (omitidas.futura.length) avisos.push(omitidas.futura.length + ' fila(s) con DATE en el futuro, se omitieron (filas ' + _llamadasSalidaListaFilas(omitidas.futura) + ').');
+  if (sinAsesor.length) avisos.push(sinAsesor.length + ' fila(s) sin AGENT_NAME: se cargan como "' + LLAMADAS_SALIDA_SIN_ASESOR + '" (filas ' + _llamadasSalidaListaFilas(sinAsesor) + ').');
   var telefonosEnAmbosTipos = Object.keys(tiposPorDiaTel).filter(function (k) {
     return tiposPorDiaTel[k].CONECTADA && tiposPorDiaTel[k].NO_CONECTADA;
   }).length;
-
-  return { filas: filas, avisos: avisos, duplicadosQuitados: duplicadosQuitados, telefonosEnAmbosTipos: telefonosEnAmbosTipos };
+  return { filas: filas, avisos: avisos, sinAsesor: sinAsesor.length, telefonosEnAmbosTipos: telefonosEnAmbosTipos };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -154,5 +156,7 @@ if (typeof module !== 'undefined' && module.exports) {
     LLAMADAS_SALIDA_ORDEN_ARRAY: LLAMADAS_SALIDA_ORDEN_ARRAY,
     llamadasSalidaColIndexMap: llamadasSalidaColIndexMap,
     llamadasSalidaParseFilas: llamadasSalidaParseFilas,
+    llamadasSalidaTipoDe: llamadasSalidaTipoDe,
+    LLAMADAS_SALIDA_SIN_ASESOR: LLAMADAS_SALIDA_SIN_ASESOR,
   };
 }

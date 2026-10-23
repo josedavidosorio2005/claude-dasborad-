@@ -15855,3 +15855,52 @@ CDR real de septiembre: 24 asesores con salidas, 10.399 llamadas y 3.997
 WhatsApp (todo "Sin asignar" al empezar); al asignar 3 a 3P y 3 a General
 el reparto cambia y los totales se mantienen. Revisado a 375/768/1440,
 claro y oscuro, 0 errores.
+
+## Fase 171 — Pedidos de Edwin para Mobilize (v1.69.0, 2026-10-23)
+
+1. **Tipificación, "-" = Llamadas de salida.** `server/tipificaciones.js`:
+   en LLAMADAS, una fila con SKILL "-" y `outbound_ma` (cargada antes de la
+   Fase 168) cuenta como LLAMADAS DE SALIDA en el filtro, en `/opciones` y
+   en las tarjetas de salida. Un "-" que no es `outbound_ma` (internalcall,
+   sin tipo) sigue como "-". No se tocan datos. Las cargas nuevas ya lo
+   guardan así desde la Fase 168.
+2. **Llamadas de salida, octubre (archivo real, 85 filas: 45 conectadas y
+   40 no conectadas; la vista previa tomaba 54).** Causas encontradas con el
+   archivo, fuera del repo:
+   - 28 filas se quitaban como "repetidas", porque el lector dejaba una sola
+     por (día, teléfono, tipo), una regla de la Fase 141;
+   - 3 filas sin AGENT_NAME (26, 27 y 28) se omitían.
+
+   No había espacios de más ni variaciones de TIPO. Ahora cada fila cuenta;
+   sin agente se carga como "Sin asesor"; TIPO acepta guion, guion bajo,
+   plural y "noconectada"; solo se omiten las filas vacías o no ubicables,
+   con un aviso agrupado por motivo. El aviso de "mes incompleto" del Centro
+   ya no sale para llamadas de salida (`centroOmiteCobertura`): días sin
+   llamadas de salida son normales. Con el archivo real: 85 filas (45/40),
+   un solo aviso (3 "Sin asesor").
+3. **Encuesta, cada mes con lo suyo.** El panel arrancaba sin Desde/Hasta
+   (todo el período). Ahora sigue el MES de arriba; un mes sin encuestas
+   muestra "Sin datos de Encuesta para <mes>" con el botón al último mes con
+   datos.
+4. **Cerrar sesión = tablero sin filtros.** `gdReiniciarFiltros()`
+   (dashboard-generic.js), llamado desde `doLogout`: vacía los filtros,
+   sincronizaciones y cachés de todos los paneles, reinicia el MES y el
+   filtro MESES, limpia los parámetros de Tráfico en la URL y cierra el
+   tablero, Cargar Datos y el Centro de cargas. La preferencia de tipo de
+   gráfica y el tema se quedan.
+5. **Colores.** `colorSerie('noConectada')` (magenta de la paleta
+   categórica: `#d22d80` en claro, `#cb4da1` en oscuro). En la gráfica de
+   salida de Mobilize: Total en el color principal, Conectadas en azul y No
+   conectadas en magenta. Antes Total y Conectadas eran casi iguales. La
+   gráfica de Llamadas Únicas de ingreso no cambia.
+
+**Verificación.**
+- Prueba nueva `fase171-mobilize-pedidos.test.js` (7): las 7 fallan en
+  main.
+- Se actualizaron las pruebas de las Fases 141 y 163, que fijaban la regla
+  de "una por día y teléfono" y los avisos por fila.
+- Local:
+  - archivo real por el Centro: 85 guardadas (45/40);
+  - Encuesta: octubre con aviso y septiembre con 30;
+  - cerrar sesión y volver a entrar: sin filtros;
+  - colores verificados en la gráfica.

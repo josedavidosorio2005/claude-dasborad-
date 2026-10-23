@@ -618,8 +618,8 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
       notasExtra: [
         'Columnas: AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (tipificacion) y SKILL_ID, que debe decir ' +
           '"LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite con aviso).',
-        'TELEPHONE se usa SOLO para contar una vez el mismo numero el mismo dia (por separado si fue conectada ' +
-          'y no conectada) -- nunca se guarda, nunca se exporta, nunca se muestra.',
+        'Cada fila es una llamada de salida (Fase 171): no se quita ninguna por repetir numero. Sin AGENT_NAME se carga ' +
+          'como "Sin asesor". TELEPHONE nunca se guarda, nunca se exporta, nunca se muestra.',
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
           'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',

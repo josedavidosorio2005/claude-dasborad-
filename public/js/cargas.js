@@ -845,7 +845,7 @@ async function procesarArchivoConsolidado(input){
       }catch(e){ /* sin el conteo, la vista previa sigue con sus avisos de siempre */ }
       // Fase 159: si el archivo no trae el mes completo, se dice claro.
       var cobertura = centroTextoCobertura(focoArch.mes, rr.filas.map(function(f){ return centroFechaFila(focoArch.carga, f); }), fechaLimitesHoyColombia());
-      if(cobertura) rr.avisos = [cobertura].concat(rr.avisos || []);
+      if(cobertura && !centroOmiteCobertura(focoArch.carga)) rr.avisos = [cobertura].concat(rr.avisos || []);
     }
     if(!_cargasResultados.some(function(r){ return r.filas; })){
       var err = _cargasResultados.filter(function(r){ return r.error; })[0];

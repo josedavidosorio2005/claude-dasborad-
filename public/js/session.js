@@ -255,6 +255,12 @@ function doLogout(){
   // limpiar el token -- "fire and forget" (no se espera la respuesta, nunca
   // debe frenar ni poder fallar el cierre de sesion visible para el usuario).
   if(authToken){ apiRequest('POST','/auth/logout').catch(function(){}); }
+  // Fase 171: el tablero vuelve a arrancar sin filtros para la proxima persona.
+  try{ if(typeof closeGenericDashboard === 'function' && _gd && _gd.cliente) closeGenericDashboard(); }catch(e){}
+  // Y cualquier ventana de carga que haya quedado abierta (el Centro se reabre solo tras guardar).
+  try{ if(typeof closeCargas === 'function') closeCargas(); }catch(e){}
+  try{ if(typeof closeCentroCargas === 'function') closeCentroCargas(); }catch(e){}
+  if(typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   currentUser=null; authToken=null; users=[]; historial=[];
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();

@@ -271,6 +271,14 @@ function centroTextoReemplazoParcial(mes, rango, conteo) {
 // completo. `fechas`: 'AAAA-MM-DD' de las filas (repetidas da igual).
 // `hoyISO`: en el mes en curso solo se cuenta hasta hoy. null si no falta
 // ningun dia.
+// Fase 171 (pedido de Edwin): en llamadas de salida es normal que haya dias
+// sin llamadas, asi que el aviso de mes incompleto salia siempre aunque el
+// archivo estuviera bien. Estas cargas no lo llevan.
+var CENTRO_SIN_AVISO_COBERTURA = ['llamadas_salida'];
+function centroOmiteCobertura(cargaId) {
+  return CENTRO_SIN_AVISO_COBERTURA.indexOf(cargaId) !== -1;
+}
+
 function centroTextoCobertura(mes, fechas, hoyISO) {
   var nombre = centroNombreMes(mes).split(' ')[0].toLowerCase();
   var anio = Number(mes.slice(0, 4)), m = Number(mes.slice(5, 7));
@@ -320,6 +328,7 @@ if (typeof module !== 'undefined' && module.exports) {
     centroEtiquetaCarga: centroEtiquetaCarga,
     centroCargaVisible: centroCargaVisible,
     centroTextoCobertura: centroTextoCobertura,
+    centroOmiteCobertura: centroOmiteCobertura,
     CENTRO_MESES: CENTRO_MESES,
     CENTRO_PANEL_A_MODULO: CENTRO_PANEL_A_MODULO,
     centroModuloDeTab: centroModuloDeTab,

@@ -259,18 +259,21 @@ function _llamadasSalidaKpisHtml(resumen) {
 }
 
 function _llamadasSalidaDibujarBarras(i, porMes) {
-  var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
-  // Fase 152 (B1): paleta categorica (sin meta, no hay semaforo).
-  var CGl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
-  var COl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e');
+  // Fase 171 (pedido de Edwin): conectadas y no conectadas en colores bien
+  // distintos -- Total en el principal, Conectadas en azul (secundaria, con
+  // su borde de contraste en claro), No conectadas en magenta. Paleta
+  // categorica: sin verde/rojo de semaforo.
+  var CDl = (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e');
+  var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#3DA2DB');
+  var COl = (typeof colorSerie==='function' ? colorSerie('noConectada') : '#d22d80');
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.parsed.y || 0).toLocaleString('es-CO'); } } };
   if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, function (v) { return (v === null || v === undefined) ? '' : v.toLocaleString('es-CO'); });
   else o.plugins.datalabels = { display: false };
   var datasets = [
     { type: 'bar', label: 'Total', data: porMes.map(function (m) { return m.total; }), backgroundColor: CDl, borderRadius: 3 },
-    Object.assign({ type: 'bar', label: 'No conectadas', data: porMes.map(function (m) { return m.noConectadas; }), backgroundColor: COl, borderRadius: 3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : {})),
-    { type: 'bar', label: 'Conectadas', data: porMes.map(function (m) { return m.conectadas; }), backgroundColor: CGl, borderRadius: 3 },
+    { type: 'bar', label: 'No conectadas', data: porMes.map(function (m) { return m.noConectadas; }), backgroundColor: COl, borderRadius: 3 },
+    Object.assign({ type: 'bar', label: 'Conectadas', data: porMes.map(function (m) { return m.conectadas; }), borderRadius: 3 }, (typeof estiloBarraSecundaria==='function' ? estiloBarraSecundaria() : { backgroundColor: CGl })),
   ];
   if (typeof _gdChart === 'function') {
     _gdChart('ls-canvas-' + i, { data: { labels: porMes.map(function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m.periodo) : m.periodo; }), datasets: datasets }, options: o });
