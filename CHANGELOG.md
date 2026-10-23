@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.65.1 — Octubre 2026
+
+**Fase 166: Nivel de Servicio de WhatsApp visible aunque falte el Flujo del mes.**
+
+- En Tráfico de WhatsApp, si el mes elegido arriba todavía no tenía el
+  Flujo de WhatsApp cargado, la pestaña decía "sin datos" y escondía
+  también "Nivel de Servicio", aunque los tiempos de ese mes ya estuvieran
+  cargados. Ahora se sigue viendo el aviso y, debajo, "Nivel de Servicio"
+  con sus datos y sus botones Excel y PDF.
+- Cuando el Flujo del mes se carga, la pestaña vuelve a mostrarse completa.
+  Los números no cambian.
+
 ## v1.65.0 — Octubre 2026
 
 **Fase 165: WhatsApp por rangos de tiempo, pedido de Edwin.**
