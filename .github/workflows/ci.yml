@@ -72,6 +72,14 @@ jobs:
   pantallas:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Imagen oficial de Playwright, fijada por digest (no por tag), con
+    # Chromium y sus paquetes del sistema ya instalados: se evita el
+    # `npx playwright install --with-deps`, que llego a tardar 11-14 min
+    # (Fase 164). Debe ser la MISMA version que `playwright` en
+    # server/package-lock.json; al subir Playwright, cambiar tag y digest
+    # juntos (digest del indice multi-arquitectura del tag).
+    container:
+      image: mcr.microsoft.com/playwright@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27  # v1.63.0-noble
     permissions:
       contents: read
     defaults:
@@ -89,9 +97,6 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
-
-      - name: Instalar Chromium (Playwright)
-        run: npx playwright install --with-deps chromium
 
       - name: Credenciales efimeras (solo para este job -- config.js las exige incluso para sembrar demo)
         run: |
