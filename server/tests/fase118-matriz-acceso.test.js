@@ -234,6 +234,9 @@ declarar(['POST /calidad/salida/carga/impacto', 'POST /calidad/salida/carga'], '
 // Fase 170: linea 3P/General de los asesores por mes (salida del CDR).
 declarar(['GET /calidad/salida/asesores'], 'scopedRead');
 declarar(['PUT /calidad/salida/asesores'], 'admin');
+// Fase 172: resumen de calidad por asesor (Mobilize).
+declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen/mensual'], 'scopedRead');
+declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
 
 // Umbrales
 declarar(['GET /umbrales'], 'open');

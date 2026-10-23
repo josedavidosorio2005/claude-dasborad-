@@ -28,6 +28,8 @@ const { CONFIGS } = require('./dashboard-config-seed');
 const CATALOGO = [
   { id: 'flujo_llamadas', nombre: 'Flujo de Llamadas', grupo: 'comun', carga: 'Tráfico de Llamadas (Wolkvox)', disponibleParaNuevos: true },
   { id: 'flujo_whatsapp', nombre: 'Flujo de WhatsApp', grupo: 'comun', carga: 'Tráfico de WhatsApp (Wolkvox)', disponibleParaNuevos: true },
+  // Fase 172: sub-vista de Calidad (panel al inicio de su pestaña).
+  { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', grupo: 'opcional', carga: 'Resumen de calidad por asesor (plantilla de Edwin)', requiere: 'calidad', subVista: true, disponibleParaNuevos: true },
   { id: 'whatsapp_tiempos', nombre: 'WhatsApp por rangos de tiempo', grupo: 'opcional', carga: 'Tiempos de respuesta de WhatsApp (Wolkvox)', requiere: 'flujo_whatsapp', subVista: true, disponibleParaNuevos: true },
   // Salida lee la hoja manual "salida" de ORLANT (lineas 3P / General): hasta
   // generalizarla, no se ofrece a clientes nuevos.
@@ -74,6 +76,7 @@ const GENERADORES = {
     panels: [{ tipo: 'trafico_whatsapp_combo', campana, mostrarAht: false, mostrarSL5min: false }],
   }),
   whatsapp_tiempos: () => null, // sub-vista de WhatsApp: sin pestana propia
+  calidad_resumen: () => null, // Fase 172: sub-vista de Calidad (panel en esa pestaña)
   salida: (campana) => ({
     key: 'salida', label: 'Llamadas y WhatsApp de salida',
     panels: [{ tipo: 'salida_panel', campana, titulo: 'Llamadas y WhatsApp de salida' }],
@@ -124,9 +127,11 @@ const GENERADORES = {
     key: 'encuesta', label: 'Encuesta',
     panels: [{ tipo: 'encuesta_panel', campana }],
   }),
-  calidad: (campana) => ({
+  calidad: (campana, activos) => ({
     key: 'calidad', label: 'Calidad',
     panels: [
+      // Fase 172: con el modulo calidad_resumen, el resumen por asesor va primero.
+      ...(activos && activos.has('calidad_resumen') ? [{ tipo: 'calidad_resumen_panel', campana }] : []),
       { tipo: 'calidad_kpis', campana },
       { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
       { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
@@ -217,7 +222,7 @@ const PERFILES_ACTUALES = {
   MOBILIZE: {
     nombre: 'MOBILIZE',
     titulo: 'Dashboard Mobilize',
-    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'llamadas_unicas', 'encuesta'],
+    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
     visibles: ['flujo_llamadas', 'llamadas_unicas', 'encuesta', 'calidad'],
     ajustes: {
       flujo_llamadas: {

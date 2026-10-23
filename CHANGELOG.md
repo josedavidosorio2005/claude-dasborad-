@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.70.0 — Octubre 2026
+
+**Fase 172: Calidad de Mobilize con el resumen por asesor.**
+
+- **Nueva carga "Calidad: resumen por asesor"** (Mobilize), con la plantilla
+  de Edwin: una fila por asesor con # Monitoreos, Puntaje promedio y Total
+  de fallos críticos. El mes se elige al subir y la carga reemplaza solo ese
+  mes (se puede deshacer durante 30 días).
+- La plantilla puede traer fórmulas que apuntan al libro de Monitoreos: el
+  sistema toma los valores ya calculados. Si alguna celda sale en error
+  (#REF!) o vacía, avisa en un solo mensaje: abrir la plantilla junto con el
+  libro de Monitoreos, dejar que calcule y guardarla antes de subirla.
+- La clasificación (Crítico, No crítico, Sobresaliente) y la alerta (Sin
+  fallos críticos, Alerta, Crítico frecuente) se calculan siempre con las
+  mismas reglas del archivo, a partir de los números.
+- **En la pestaña Calidad de Mobilize**, primero sale el resumen: promedio
+  general del mes (ponderado por monitoreos), total de monitoreos y de
+  fallos, una tabla por asesor con colores de semáforo y otra por mes. Sigue
+  el filtro de meses y se exporta a Excel y PDF.
+- Plantilla oficial descargable desde el Centro de cargas, con su hoja de
+  instrucciones.
+
 ## v1.69.0 — Octubre 2026
 
 **Fase 171: pedidos de Edwin para Mobilize.**

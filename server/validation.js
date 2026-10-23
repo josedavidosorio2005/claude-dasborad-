@@ -626,6 +626,22 @@ const tipificacionFilaArraySchema = z.tuple([
 
 const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
 
+// Fase 172: "Calidad: resumen por asesor" (Mobilize). Tupla = CAMPOS_FILA
+// (calidad-resumen.js) y CALIDAD_RESUMEN_ORDEN_ARRAY (calidad-resumen-logic.js).
+const calidadResumenFilaArraySchema = z.tuple([
+  z.string().trim().min(1).max(200), // agente
+  z.number().int().min(0).max(100000), // monitoreos
+  z.number().min(0).max(100), // puntaje promedio (%)
+  z.number().int().min(0).max(100000), // fallos criticos
+]);
+const calidadResumenQuery = z.object({ campana: campanaSchema });
+const calidadResumenCargaBody = z.object({
+  campana: campanaSchema,
+  mes: mesSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(calidadResumenFilaArraySchema).min(1, 'El archivo no tiene asesores').max(2000, 'Demasiadas filas en un solo archivo'),
+});
+
 // Fase 170: linea (3P/General) de cada asesor por mes, para la salida del CDR.
 const salidaAsesoresQuery = z.object({ campana: campanaSchema, mes: mesSchema });
 const salidaAsesoresBody = z.object({
@@ -1388,6 +1404,8 @@ module.exports = {
     whatsappTiemposRangosQuery,
     skillsWhatsappQuery,
     salidaAsesoresQuery,
+    calidadResumenQuery,
+    calidadResumenCargaBody,
     salidaAsesoresBody,
     skillsWhatsappBody,
     encuestasCargaBody,

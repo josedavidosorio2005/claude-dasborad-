@@ -37,6 +37,14 @@ const NOTAS = {
       'La plantilla trae el formato por período; si el archivo nativo diario ya sale de Wolkvox, se sube tal cual.',
     ],
   },
+  calidad_resumen: {
+    usan: 'MOBILIZE',
+    notas: [
+      'Es una sub-vista de Calidad: un panel al inicio de esa pestaña (tarjetas del mes, tabla por asesor y tabla por mes).',
+      'Mientras llega el módulo de calidad completo (detalle por monitoreo), Edwin sube este resumen por asesor.',
+      'Clasificación y Alerta no se leen del texto (traen emojis): se recalculan con los números.',
+    ],
+  },
   whatsapp_tiempos: {
     usan: 'ORLANT',
     notas: [

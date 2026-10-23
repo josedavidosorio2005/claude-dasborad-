@@ -93,9 +93,18 @@ test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: agrega el pane
   assert.deepEqual(tab.panels[2], targetCalidad.panels.find((p) => p.tipo === 'calidad_bar_asesores'));
 });
 
+// Fase 172: fase172_calidad_resumen_v1 (misma carga de db.js) agrega a
+// proposito el panel calidad_resumen_panel al inicio de la pestaña Calidad de
+// MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
+function sinResumenCalidad(x) {
+  const c = JSON.parse(JSON.stringify(x));
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  return c;
+}
+
 test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: nunca toca el tab "calidad" de otra campaña', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
-  assert.deepEqual(JSON.parse(row.layout), LAYOUT_OTRO, 'byte a byte igual -- la query es exclusiva de ORLANT');
+  assert.deepEqual(sinResumenCalidad(JSON.parse(row.layout)), LAYOUT_OTRO, 'igual -- la query es exclusiva de ORLANT');
 });
 
 test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: es idempotente -- correrla dos veces seguidas no duplica el panel', () => {

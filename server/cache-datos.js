@@ -37,6 +37,7 @@ const RUTAS = [
   /^\/calidad\/tipificacion\/(por-tipo|resumen-salida)$/,
   /^\/calidad\/trafico\/whatsapp$/,
   /^\/calidad\/whatsapp-tiempos\/(rangos|resumen)$/,
+  /^\/calidad\/calidad-resumen\/mensual$/, // Fase 172
 ];
 const MAX_ENTRADAS = 2000;
 const MAX_BYTES_RESPUESTA = 2 * 1024 * 1024;

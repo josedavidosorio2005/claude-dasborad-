@@ -343,7 +343,7 @@ test('Integracion: tipo de panel registrado en el tablero, exportacion, mes glob
   const gen = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'dashboard-generic.js'), 'utf8');
   assert.match(gen, /if\(p\.tipo === 'encuesta_panel'\)\{ _encuestaRenderPanel\(p, i\); return; \}/);
   assert.ok(require('../../public/js/dashboard-export-tipos.js').GD_EXPORT_TIPOS_SOPORTADOS.includes('encuesta_panel'));
-  assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), /'encuesta_panel'\]/);
+  assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), /'encuesta_panel'[,\]]/);
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.match(html, /role="dialog" aria-modal="true" aria-labelledby="modal-encuesta-preguntas-title" id="modal-encuesta-preguntas"/);
   assert.ok(html.indexOf('js/encuesta-logic.js') < html.indexOf('js/encuesta.js'));

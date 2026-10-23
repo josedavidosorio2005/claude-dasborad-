@@ -1732,3 +1732,6 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .sal-asesores-ayuda{font-size:var(--fs-small);color:var(--c-text-muted);margin:0 0 var(--space-2);}
 #gd-panels select.sal-linea{min-width:130px;}
 @media(max-width:768px){ #gd-panels select.sal-linea{min-height:44px;} }
+
+/* Fase 172: resumen de calidad por asesor (Mobilize). */
+.cal-res-nota{font-size:var(--fs-small);color:var(--c-text-muted);margin:var(--space-2) 0 0;}
