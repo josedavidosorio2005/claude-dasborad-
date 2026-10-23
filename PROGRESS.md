@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.65.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.66.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -658,3 +658,5 @@ mismo orden):
 - Fase 164 (lote 1) — Auditoría de diseño (solo lectura, base sintética) y primer lote: "Cerrar" visible en el teléfono y logo sin aplastar, torta de Tipificación sin colores repetidos y con coma decimal, Calidad por asesor con todos los nombres y un solo color; límite del job `pantallas` de CI de 5 a 15 minutos; revisado en producción a 375 px (v1.64.1 → v1.64.3, 2026-10-22)
 - Fase 164 (lote 2) — Tablas con scroll enfocables con el teclado, títulos de gráfica como h3, áreas táctiles de 44 px en el teléfono, barras por especialidad en un solo color y tortas sin colores repetidos, porcentajes de las tortas sin montarse, emojis por iconos Lucide (los del inicio en blanco); actualización de seguridad de una dependencia; límite del job `pantallas` de CI de 15 a 20 minutos (v1.64.4 → v1.64.10, 2026-10-22/23)
 - Fase 165 — WhatsApp por rangos de tiempo: lee el export de Wolkvox tal cual (ANSWER_TIME como texto, con apóstrofo o hh:mm:ss), avisos agrupados, cortes <180/<300/<480/<600, tablas por cola y por mes; títulos de salida más grandes; job `pantallas` en la imagen de Playwright por digest (#519); carga real de octubre de ORLANT: 5.196 conversaciones del 1 al 22/10 (v1.65.0, 2026-10-23)
+- Fase 166 — Nivel de Servicio de WhatsApp visible aunque falte el Flujo del mes; incidente sin pérdida: octubre de ORLANT eliminado con "Eliminar" desde la cuenta compartida @admin y restaurado con Deshacer (5.196) (v1.65.1, 2026-10-23)
+- Fase 167 — Filtro MESES: varios meses sueltos lado a lado en las gráficas y tablas por mes (las tarjetas siguen el MES); Escape ya no cierra el tablero; verificado en producción con septiembre y octubre (v1.66.0, 2026-10-23)
