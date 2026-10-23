@@ -78,6 +78,15 @@ const { CONFIGS } = require('../dashboard-config-seed');
 const targetMobilize = CONFIGS.find((c) => c.cliente === 'MOBILIZE');
 const targetTipificacion = targetMobilize.layout.tabs.find((t) => t.key === 'tipificacion');
 
+// Fase 172: fase172_calidad_resumen_v1 (misma carga de db.js) agrega a
+// proposito el panel calidad_resumen_panel al inicio de la pestaña Calidad de
+// MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
+function sinResumenCalidad(x) {
+  const c = JSON.parse(JSON.stringify(x));
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  return c;
+}
+
 test('migracion dashboards_config_mobilize_tipificacion_tab_v1: agrega el tab "tipificacion" (oculto) sin tocar flujo/calidad', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('MOBILIZE');
   const layout = JSON.parse(row.layout);
@@ -92,7 +101,7 @@ test('migracion dashboards_config_mobilize_tipificacion_tab_v1: agrega el tab "t
   const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
   assert.deepEqual(tabFlujo, LAYOUT_PARTE_2.tabs[0], 'el tab "flujo" original queda intacto (solo su trafico_combo)');
   assert.deepEqual(layout.tabs.map((t) => t.key).slice(0, 2), ['flujo', 'llamadas_unicas'], 'el panel de llamadas unicas vive en su tab propio, despues de flujo');
-  assert.deepEqual(layout.tabs.find((t) => t.key === 'calidad'), LAYOUT_PARTE_2.tabs[1], 'el tab "calidad" original no se toco');
+  assert.deepEqual(sinResumenCalidad(layout.tabs.find((t) => t.key === 'calidad')), LAYOUT_PARTE_2.tabs[1], 'el tab "calidad" original no se toco');
   const tabTipif = layout.tabs.find((t) => t.key === 'tipificacion');
   assert.ok(tabTipif, 'el tab "tipificacion" debe existir ahora');
   assert.equal(tabTipif.oculta, true, 'nace oculto -- se destapa en memoria solo cuando ya hay datos');

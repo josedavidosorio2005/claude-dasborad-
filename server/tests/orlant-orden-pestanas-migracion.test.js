@@ -117,9 +117,18 @@ test('migracion dashboards_config_orlant_orden_pestanas_v1: no toca panels/subta
   }
 });
 
+// Fase 172: fase172_calidad_resumen_v1 (misma carga de db.js) agrega a
+// proposito el panel calidad_resumen_panel al inicio de la pestaña Calidad de
+// MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
+function sinResumenCalidad(x) {
+  const c = JSON.parse(JSON.stringify(x));
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  return c;
+}
+
 test('migracion dashboards_config_orlant_orden_pestanas_v1: nunca toca otro cliente', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
-  assert.deepEqual(JSON.parse(row.layout), LAYOUT_OTRO);
+  assert.deepEqual(sinResumenCalidad(JSON.parse(row.layout)), LAYOUT_OTRO);
 });
 
 test('migracion dashboards_config_orlant_orden_pestanas_v1: es idempotente -- correrla dos veces seguidas da el mismo resultado', () => {

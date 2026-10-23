@@ -305,6 +305,7 @@ var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
 // Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
+var CARGAS_HOJA_CALIDAD_RESUMEN = 'CALIDAD_RESUMEN'; // Fase 172
 // Fase 147 (Parte B, Mobilize): Encuesta de satisfaccion.
 var CARGAS_HOJA_ENCUESTA = 'ENCUESTA';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
@@ -354,7 +355,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -623,6 +624,21 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
           'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 172 (Mobilize): "Calidad: resumen por asesor" -- la plantilla de
+  // Edwin (una fila por asesor, valores calculados de formulas). El mes lo
+  // elige quien sube (Centro o campo Periodo); reemplaza ese mes.
+  if (calidadResumenCols) {
+    plan.push({
+      tipo: 'calidad_resumen', hoja: CARGAS_HOJA_CALIDAD_RESUMEN, titulo: 'Calidad: resumen por asesor',
+      descripcion: 'Una fila por asesor: # Monitoreos, Prom. Puntaje (%) y Total Fallos Críticos (los valores ya calculados del archivo de Edwin).',
+      filaUnica: false, columnas: calidadResumenCols,
+      notasExtra: [
+        'El mes lo eliges al subir (en el Centro de cargas, la tarjeta del mes; aquí, el campo Período). La carga reemplaza solo ese mes.',
+        'Clasificación y Alerta se recalculan con los números: puntaje <70 Crítico, <90 No crítico, si no Sobresaliente; fallos 0 Sin fallos críticos, 1 Alerta, más de 1 Crítico frecuente.',
+        'Si una celda viene en error (#REF!) o vacía: ' + 'abra la plantilla junto con el libro de Monitoreos, deje que calcule y guárdela antes de subirla.',
       ],
     });
   }
@@ -927,6 +943,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
+    CARGAS_HOJA_CALIDAD_RESUMEN: CARGAS_HOJA_CALIDAD_RESUMEN,
     CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,

@@ -21,6 +21,7 @@ Las plantillas viejas (`PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx`, `PLANTILLA_TRA
 |---|---|---|---|
 | Flujo de Llamadas | [flujo_llamadas](flujo_llamadas.md) | `PLANTILLA_FLUJO_LLAMADAS.xlsx` | ORLANT, MOBILIZE |
 | Flujo de WhatsApp | [flujo_whatsapp](flujo_whatsapp.md) | `PLANTILLA_FLUJO_WHATSAPP.xlsx` | ORLANT |
+| Calidad: resumen por asesor | [calidad_resumen](calidad_resumen.md) | `PLANTILLA_CALIDAD_RESUMEN.xlsx` | MOBILIZE |
 | WhatsApp por rangos de tiempo | [whatsapp_tiempos](whatsapp_tiempos.md) | `PLANTILLA_WHATSAPP_TIEMPOS.xlsx` | ORLANT |
 | Llamadas y WhatsApp de salida | [salida](salida.md) | `PLANTILLA_SALIDA_MENSUAL.xlsx` | ORLANT (pendiente de generalizar) |
 | Agendas | [agendas](agendas.md) | `PLANTILLA_AGENDAS.xlsx` | ORLANT |

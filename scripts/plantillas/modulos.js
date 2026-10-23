@@ -139,6 +139,23 @@ const CARGAS = [
     },
   },
   {
+    // Fase 172: resumen por asesor (plantilla de Edwin). Clasificacion y Alerta
+    // son opcionales: el sistema las recalcula con los numeros.
+    modulo: 'calidad_resumen',
+    carga: 'Calidad: resumen por asesor',
+    archivo: 'PLANTILLA_CALIDAD_RESUMEN.xlsx',
+    hoja: 'CALIDAD_RESUMEN',
+    fuente: { js: 'calidad-resumen-logic.js', variable: 'CALIDAD_RESUMEN_COLUMNAS' },
+    columnas: {
+      'Nombre del Asesor': ['Nombre del asesor (puede traer "← Escribir aquí" en el encabezado).', 'Asesor Ejemplo Uno'],
+      '# Monitoreos': ['Cantidad de monitoreos del asesor en el mes (puede ser fórmula ya calculada).', 11],
+      'Prom. Puntaje (%)': ['Puntaje promedio del asesor, de 0 a 100 (puede ser fórmula ya calculada).', 96.5],
+      'Clasificación': ['Opcional: el sistema la recalcula con el puntaje.', 'Sobresaliente'],
+      'Alerta Críticos': ['Opcional: el sistema la recalcula con los fallos.', 'Alerta'],
+      'Total Fallos Críticos': ['Cantidad de fallos críticos del asesor en el mes (puede ser fórmula ya calculada).', 1],
+    },
+  },
+  {
     modulo: 'whatsapp_tiempos',
     carga: 'WhatsApp por rangos de tiempo',
     archivo: 'PLANTILLA_WHATSAPP_TIEMPOS.xlsx',
@@ -278,6 +295,12 @@ const ORIGEN = {
   'PLANTILLA_FLUJO_WHATSAPP.xlsx': {
     origen: 'Wolkvox: reporte de WhatsApp por cola (un período por fila). También se acepta el formato diario de Wolkvox (SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS…).',
     reemplazo: 'Las filas de esas colas en el rango de fechas de cada fila.',
+  },
+  'PLANTILLA_CALIDAD_RESUMEN.xlsx': {
+    origen: 'Resumen por asesor que arma Edwin a partir de su libro de Monitoreos (una fila por asesor). Si las columnas son fórmulas a ese libro, ábralo junto con la plantilla, deje que calcule y guárdela antes de subirla: el sistema lee los valores ya calculados.',
+    notaTitulo: 'Cálculos',
+    nota: 'El mes se elige al subir (Centro de cargas: la tarjeta del mes). Clasificación y Alerta se recalculan con los números: puntaje <70 Crítico, <90 No crítico, si no Sobresaliente; fallos críticos 0 Sin fallos críticos, 1 Alerta, más de 1 Crítico frecuente. El promedio general del mes es ponderado por el número de monitoreos.',
+    reemplazo: 'El mes elegido completo (los demás meses no se tocan).',
   },
   'PLANTILLA_WHATSAPP_TIEMPOS.xlsx': {
     // Fase 165: la ruta exacta del reporte y los rangos, en INSTRUCCIONES y en la ficha.

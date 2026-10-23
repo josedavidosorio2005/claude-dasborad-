@@ -32,6 +32,7 @@ const LECTORES = {
   'PLANTILLA_ENCUESTA.xlsx': (a) => JS('encuesta-logic.js').encuestaParseFilas(a),
   'PLANTILLA_FLUJO_WHATSAPP.xlsx': (a) => JS('trafico-whatsapp-logic.js').traficoWppParseFilas(a),
   'PLANTILLA_WHATSAPP_TIEMPOS.xlsx': (a) => JS('whatsapp-tiempos-logic.js').wppTiemposParseFilas(a),
+  'PLANTILLA_CALIDAD_RESUMEN.xlsx': (a) => JS('calidad-resumen-logic.js').calidadResumenParseFilas(a), // Fase 172
   'PLANTILLA_AGENDAS.xlsx': (a) => JS('agendas-logic.js').agendasParseFilas(a),
   'PLANTILLA_EFECTIVIDAD_AGENDAMIENTO.xlsx': (a) => JS('efectividad-agendamiento-logic.js').efectividadAgendamientoParseFilas(a, AHORA),
   'PLANTILLA_INASISTENCIA.xlsx': (a) => JS('inasistencia-logic.js').inasistenciaParseFilas(a, AHORA),

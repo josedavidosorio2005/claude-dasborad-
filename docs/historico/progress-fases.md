@@ -15927,3 +15927,69 @@ de arriba de esa pestaña suman todo el período del filtro (238 en total), no
 solo octubre. Agosto y septiembre de salida de Mobilize se cargaron con la
 regla anterior (una por día y teléfono): para tenerlos completos hay que
 volver a subir sus archivos (anotado en `docs/pendientes.md`).
+
+### Fase 172 — Calidad de Mobilize: resumen por asesor (2026-10-23, v1.70.0)
+
+Pedido de Edwin (Parte 1 del pedido del 23/10, prioridad para el lunes).
+Mobilize entrega la calidad del mes como una plantilla de una hoja con una
+fila por asesor: Nombre del Asesor, # Monitoreos, Prom. Puntaje (%),
+Clasificación, Alerta Críticos y Total Fallos Críticos. # Monitoreos,
+Puntaje y Fallos son fórmulas que apuntan al libro de Monitoreos.
+
+**Qué se hizo.**
+1. **Módulo nuevo `calidad_resumen`** en el catálogo de plantillas
+   (opcional, requiere Calidad). Mobilize lo tiene en el registro; ORLANT no.
+   La migración `fase172_calidad_resumen_v1` crea la tabla
+   `calidad_resumen_asesor` (campaña, mes, asesor, monitoreos, puntaje,
+   fallos), agrega el módulo a Mobilize y pone el panel al inicio de su
+   pestaña Calidad.
+2. **Lector** (`public/js/calidad-resumen-logic.js`):
+   - reconoce el encabezado por nombre, sin "← Escribir aquí", espacios,
+     tildes ni mayúsculas;
+   - toma el valor ya calculado de las fórmulas;
+   - si una celda está en error (#REF!, #¡REF!) o vacía, la fila se omite
+     con UN solo aviso agrupado: "Abra la plantilla junto con el libro de
+     Monitoreos, deje que calcule y guárdela antes de subirla.";
+   - recorta los nombres y junta repetidos.
+3. **Reglas**, siempre recalculadas a partir de los números (no se lee el
+   texto del archivo):
+   - clasificación: menos de 70 Crítico, menos de 90 No crítico, si no
+     Sobresaliente;
+   - alerta: 0 Sin fallos críticos, 1 Alerta, más de 1 Crítico frecuente.
+4. **Carga**: por el Centro de cargas (MOBILIZE → Calidad: resumen por
+   asesor → el mes) o por Cargar Datos con el selector de período. El mes
+   lo elige quien sube y la carga reemplaza solo ese mes, con respaldo para
+   Deshacer (30 días).
+5. **Vista**, al inicio de la pestaña Calidad de Mobilize:
+   - tarjetas del promedio general del mes (ponderado por # monitoreos, con
+     semáforo), monitoreos y fallos críticos;
+   - tabla por asesor y tabla por mes, con los colores y símbolos del
+     semáforo de la Fase 164, en claro y oscuro;
+   - la tabla por mes respeta el filtro MESES, y un mes sin datos muestra el
+     aviso con "Ver <último mes>";
+   - exporta a Excel y PDF.
+6. **Plantilla oficial** `PLANTILLA_CALIDAD_RESUMEN.xlsx` (generada con
+   `scripts/plantillas`, con hoja INSTRUCCIONES) y su ficha en
+   `docs/plantillas/calidad_resumen.md`.
+
+**Verificación.**
+- Prueba nueva `fase172-calidad-resumen.test.js` (6), con datos
+  inventados: fórmulas con valor calculado, una celda en error, nombres con
+  espacios al final, encabezado con "←", bordes de las reglas, carga que
+  reemplaza solo el mes, permisos, migración idempotente y panel.
+- Se ajustaron las pruebas que fijaban la pestaña Calidad de Mobilize, la
+  lista de módulos, las fuentes de "Última actualización" (15) y la matriz
+  de acceso.
+- Suite completa en verde.
+- Local, con el archivo real de octubre (fuera del repo), por el Centro de
+  cargas:
+  - 3 asesores, 34 monitoreos (11 / 12 / 11), fallos 0 / 1 / 1;
+  - promedio general 97,35 %, los 3 Sobresaliente; alertas: Sin fallos,
+    Alerta, Alerta; ningún aviso;
+  - la pantalla se revisó en 375, 768 y 1440 px, en claro y oscuro, sin
+    scroll horizontal de la página y con 0 errores de consola.
+- `npm audit` marcó un aviso nuevo y alto de `zod` (GHSA-mrhx-c7xc-m3w5,
+  memoria con colecciones enormes). Se corrigió con `npm audit fix`
+  (zod 4.6.7, solo el lockfile) y quedó en 0.
+- No se cargó nada en producción: esta parte no tenía autorización de
+  carga.

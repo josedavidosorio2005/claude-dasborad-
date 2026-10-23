@@ -101,9 +101,18 @@ test('migraciones de llamadas unicas: "flujo" queda EXACTAMENTE como antes (solo
   assert.deepEqual(tabFlujo, LAYOUT_MOBILIZE.tabs[0]);
 });
 
+// Fase 172: fase172_calidad_resumen_v1 (misma carga de db.js) agrega a
+// proposito el panel calidad_resumen_panel al inicio de la pestaña Calidad de
+// MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
+function sinResumenCalidad(x) {
+  const c = JSON.parse(JSON.stringify(x));
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  return c;
+}
+
 test('migraciones de llamadas unicas: no tocan el tab "calidad" de MOBILIZE', () => {
   const tabCalidad = layoutMobilize().tabs.find((t) => t.key === 'calidad');
-  assert.deepEqual(tabCalidad, LAYOUT_MOBILIZE.tabs[1]);
+  assert.deepEqual(sinResumenCalidad(tabCalidad), LAYOUT_MOBILIZE.tabs[1]);
 });
 
 test('migraciones de llamadas unicas: nunca tocan otro cliente, ni uno con "flujo" en forma NO reconocible', () => {

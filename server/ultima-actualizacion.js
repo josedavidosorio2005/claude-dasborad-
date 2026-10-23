@@ -43,6 +43,7 @@ const FUENTES = [
   { tabla: 'llamadas_unicas', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'llamadas_salida', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'whatsapp_tiempos', campoCampana: 'campana', campoFecha: 'createdAt' },
+  { tabla: 'calidad_resumen_asesor', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 172
 ];
 
 const RE_FECHA_PROCESO = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;

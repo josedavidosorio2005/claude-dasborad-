@@ -30,6 +30,8 @@ const CARGAS_POR_MODULO = {
     { id: 'tipificacion_whatsapp', nombre: 'Tipificación de WhatsApp', tabla: 'tipificaciones', fecha: 'fecha', filtro: { canal: 'WHATSAPP' }, plantilla: 'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx' },
   ],
   encuesta: [{ id: 'encuesta', nombre: 'Encuesta', tabla: 'encuestas', fecha: 'fecha', plantilla: 'PLANTILLA_ENCUESTA.xlsx' }],
+  // Fase 172: resumen por asesor de la plantilla de Edwin (Mobilize). Mensual.
+  calidad_resumen: [{ id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', tabla: 'calidad_resumen_asesor', fecha: 'mes', plantilla: 'PLANTILLA_CALIDAD_RESUMEN.xlsx' }],
   // Calidad: la plantilla depende de los items de cada campana (se descarga
   // desde Calidad), por eso no hay archivo fijo.
   calidad: [{ id: 'calidad', nombre: 'Monitoreos de Calidad', tabla: 'monitoreos', fecha: 'fecha', plantilla: null }],

@@ -41,7 +41,7 @@ test('resumen por mes: registros, ultima carga (la mas reciente aunque el format
 
 test('Tipificacion: un conteo por canal; los modulos salen del registro, en el orden del catalogo', () => {
   const mods = CC.resumenCliente(db, 'MOBILIZE', 2026, CATALOGO);
-  assert.deepEqual(mods.map((m) => m.id), ['llamadas_unicas', 'tipificacion', 'encuesta', 'calidad', 'flujo_llamadas'].sort((a, b) => CATALOGO.findIndex((x) => x.id === a) - CATALOGO.findIndex((x) => x.id === b)));
+  assert.deepEqual(mods.map((m) => m.id), ['llamadas_unicas', 'tipificacion', 'encuesta', 'calidad', 'calidad_resumen', 'flujo_llamadas'].sort((a, b) => CATALOGO.findIndex((x) => x.id === a) - CATALOGO.findIndex((x) => x.id === b)));
   assert.deepEqual(mods.find((m) => m.id === 'tipificacion').cargas.map((c) => c.id), ['tipificacion_llamadas', 'tipificacion_whatsapp']);
   assert.equal(CC.resumenCliente(db, 'NO EXISTE', 2026, CATALOGO), null);
 });

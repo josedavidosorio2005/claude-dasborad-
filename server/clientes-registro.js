@@ -48,7 +48,8 @@ const REGISTRO_INICIAL = [
     nombre: 'MOBILIZE',
     orden: 2,
     dashboard: 1,
-    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'llamadas_unicas', 'encuesta'],
+    // Fase 172: calidad_resumen (resumen por asesor de la plantilla de Edwin).
+    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
     parametros: {
       sedes: [],
       asesorVisibleCliente: true,

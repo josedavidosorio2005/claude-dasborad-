@@ -4004,6 +4004,52 @@ function crearAsesorLinea() {
 }
 runOnceMigration('fase170_asesor_linea_v1', crearAsesorLinea);
 
+// Fase 172 (pedido de Edwin): "Calidad: resumen por asesor" de Mobilize.
+// 1) La tabla (una fila por cliente + mes + asesor).
+// 2) El modulo calidad_resumen en el registro de MOBILIZE (despues de calidad).
+// 3) El panel calidad_resumen_panel al inicio de la pestaña Calidad de
+//    MOBILIZE. Idempotente: si ya esta, no hace nada; no toca a ORLANT.
+function crearCalidadResumen() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS calidad_resumen_asesor (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      monitoreos INTEGER NOT NULL,
+      puntaje REAL NOT NULL,
+      fallos INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_calidad_resumen_campana_mes_agente ON calidad_resumen_asesor(campana, mes, agente);
+  `);
+  asegurarDatosVersion();
+  const reg = db.prepare("SELECT modulos FROM clientes_registro WHERE nombre = 'MOBILIZE'").get();
+  if (reg) {
+    let modulos = [];
+    try { modulos = JSON.parse(reg.modulos) || []; } catch (e) { modulos = []; }
+    if (!modulos.includes('calidad_resumen')) {
+      const i = modulos.indexOf('calidad');
+      modulos.splice(i === -1 ? modulos.length : i + 1, 0, 'calidad_resumen');
+      db.prepare("UPDATE clientes_registro SET modulos = ? WHERE nombre = 'MOBILIZE'").run(JSON.stringify(modulos));
+    }
+  }
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (row) {
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { layout = null; }
+    const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+    if (tab && !(tab.panels || []).some((p) => p && p.tipo === 'calidad_resumen_panel')) {
+      tab.panels = [{ tipo: 'calidad_resumen_panel', campana: 'MOBILIZE' }].concat(tab.panels || []);
+      db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'MOBILIZE'").run(JSON.stringify(layout), new Date().toISOString());
+    }
+  }
+  if (!config.isTest) console.log('[db] Migracion fase172_calidad_resumen_v1 aplicada.');
+}
+runOnceMigration('fase172_calidad_resumen_v1', crearCalidadResumen);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4041,6 +4087,8 @@ module.exports.crearSkillsWhatsapp = crearSkillsWhatsapp;
 module.exports.migrarOrlantTipificacionDosCanales = migrarOrlantTipificacionDosCanales;
 // Fase 170: idem.
 module.exports.crearAsesorLinea = crearAsesorLinea;
+// Fase 172: idem.
+module.exports.crearCalidadResumen = crearCalidadResumen;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

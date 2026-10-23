@@ -22,6 +22,7 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_kpis: 'calidad',
   calidad_pie: 'calidad',
   calidad_bar_asesores: 'calidad',
+  calidad_resumen_panel: 'calidad_resumen', // Fase 172
 };
 
 // Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD,
@@ -39,6 +40,7 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida' },
   { id: 'tipificacion', nombre: 'Tipificación' },
   { id: 'encuesta', nombre: 'Encuesta' },
+  { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
 ];
 
 // Una carga del Centro -> su modulo del catalogo (dos cargas comparten modulo).
@@ -151,6 +153,8 @@ var CENTRO_CARGA_PLAN = {
   llamadas_unicas: { tipo: 'llamadas_unicas' },
   llamadas_salida: { tipo: 'llamadas_salida' },
   encuesta: { tipo: 'encuesta' },
+  // Fase 172: la plantilla no trae fecha por fila; el mes es el de la tarjeta.
+  calidad_resumen: { tipo: 'calidad_resumen', mensual: true, sinFecha: true },
 };
 
 function centroSubeDesdeMes(cargaId) { return Object.prototype.hasOwnProperty.call(CENTRO_CARGA_PLAN, cargaId); }
@@ -186,6 +190,7 @@ function centroFiltrarResultado(r, cargaId, mes) {
   var spec = CENTRO_CARGA_PLAN[cargaId];
   // Sin filas leidas (el lector las rechazo todas): tal cual, con sus avisos.
   if (!spec || !r || !r.filas || !r.filas.length) return r;
+  if (spec.sinFecha) return r; // Fase 172: todas las filas son del mes elegido
   var nombreMes = centroNombreMes(mes);
   if (spec.tipo === 'trafico' && r.canal && r.canal !== spec.canal) {
     return Object.assign({}, r, { filas: undefined, error: spec.canal === 'voz' ? 'Este archivo es de WhatsApp; aquí va el de Llamadas.' : 'Este archivo es de Llamadas; aquí va el de WhatsApp.' });
