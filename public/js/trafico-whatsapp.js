@@ -141,6 +141,33 @@ function _traficoWppGuardarEstadoURL(estado){
   window.history.replaceState(null, '', url);
 }
 
+// Fase 166 (visto en produccion en la Fase 165): si al mes elegido (o a la
+// campana) le falta el Flujo de WhatsApp, el panel decia "sin datos" y
+// escondia TODAS sus sub-pestanas -- tambien "Nivel de Servicio", aunque los
+// tiempos de ese mes si estuvieran cargados (tienen su propia carga). Para
+// las campanas con esa vista (wppTiemposUsa), se deja el mismo aviso y,
+// debajo, solo la sub-pestana "Nivel de Servicio" con sus botones Excel/PDF.
+// Devuelve false si la campana no usa esa vista (el llamador sigue igual).
+function _traficoWppSoloNivelServicio(host, i, campana, avisoHtml) {
+  if (typeof wppTiemposUsa !== 'function' || !wppTiemposUsa(campana)) return false;
+  _traficoWppSubtabActivo[campana] = 'sl';
+  host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' + avisoHtml +
+    '<div class="trafico-filtros" style="display:flex;justify-content:flex-end;margin:10px 0 12px">' +
+      '<span style="display:flex;gap:6px">' +
+        '<button class="btn-sm" onclick="_traficoWppExportExcel('+i+')">Excel</button>' +
+        '<button class="btn-sm" onclick="_traficoWppExportPrint('+i+')">PDF</button>' +
+      '</span>' +
+    '</div>' +
+    '<div class="gd-subtabs" id="tww-subtabs-'+i+'">' +
+      _traficoSubtabsNavHTML('tww', i, 'sl', '_traficoWppSwitchSubtab', 'trafwppsub', TRAFICO_WPP_SUBTABS.filter(function(s){ return s.key === 'sl'; })) +
+    '</div>' +
+    '<div id="tww-content-'+i+'"></div>' +
+  '</div>';
+  host.dataset.campana = campana;
+  _traficoWppRenderSubtabContent(i);
+  return true;
+}
+
 async function _traficoWppRenderPanel(p, i) {
   var campana = p.campana;
   // Fase 120: solo `false` explicito apaga el AHT -- cualquier otro valor
@@ -154,6 +181,8 @@ async function _traficoWppRenderPanel(p, i) {
 
   var datosCampana = await _traficoWppCargarDatos(campana);
   if (!datosCampana.filas.length) {
+    var avisoSinFlujo = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Flujo de WhatsApp cargados todavia.</div>';
+    if (_traficoWppSoloNivelServicio(host, i, campana, avisoSinFlujo)) return;
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
       '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Tráfico de WhatsApp desde "Cargar Datos".</div></div>';
     return;
@@ -204,8 +233,10 @@ async function _traficoWppRenderPanel(p, i) {
     // Se limpia el agregado cacheado: asi Exportar (_traficoWppDatosExport)
     // queda consistente con lo que se ve en pantalla (ver trafico.js).
     _traficoWppAgregadoActual[campana] = [];
+    var avisoMes = _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7));
+    if (_traficoWppSoloNivelServicio(host, i, campana, avisoMes)) return;
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
-      _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      avisoMes + '</div>';
     host.dataset.campana = campana;
     return;
   }
