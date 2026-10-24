@@ -16208,3 +16208,29 @@ pestañas) y Mobilize (5), a 375, 768 y 1440 px, claro y oscuro:
 - 0 desbordes a lo ancho en las 13 pestañas, en los 6 tamaños y temas; 0
   errores de consola. Tipificación de ORLANT a 375 px muestra 10.791 / 5.687 /
   5.104; capturas fuera del repo.
+
+### Fase 176 — Tablero en el celular: fecha y subtítulo en una línea (2026-10-24, v1.72.1)
+
+Ajuste de la Fase 175, pedido por el usuario. En producción, a 375 px, el
+encabezado medía 166 px en ORLANT y 180 en Mobilize (151 en local): "Última
+actualización: dd/mm/aaaa hh:mm" usaba 2 líneas y, en Mobilize, también el
+subtítulo ("Informe Octubre 2026 — mes en curso, parcial — MOBILIZE").
+
+**Cambio (solo ≤480 px):**
+- La fecha va corta: "Act. 24/10 08:30" (`gdUltimaActTexto`; "Act." es un
+  `<abbr title="Última actualización">`). Escritorio y tablet: la versión
+  larga de siempre.
+- El subtítulo oculta " — CLIENTE" (el cliente ya está en el logo y el
+  título; va en su propio span).
+- El espacio reservado a "Cerrar" pasa del bloque entero a las filas del
+  logo y el título (`margin-right:96px`), y "Cerrar" sube 4 px (top 6 px)
+  para no rozar el subtítulo.
+
+**Verificación local** (base demo, Playwright, 375 px, claro y oscuro, ORLANT
+y Mobilize, también forzando el mes en curso "parcial"): encabezado de 151 px
+en todos los casos, subtítulo y fecha en 1 línea, "Cerrar" sin tocar título,
+subtítulo ni fecha, sin desborde, 0 errores de consola. Comparación píxel a
+píxel contra `main` (worktree temporal) en 481, 768, 769, 1024 y 1440 px,
+claro y oscuro, ORLANT y Mobilize: 20/20 idénticas.
+
+**Pruebas.** Nueva `server/tests/fase176-ultima-act-celular.test.js` (3).

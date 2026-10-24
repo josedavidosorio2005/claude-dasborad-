@@ -1188,6 +1188,15 @@ function _gdFiltrosHeaderTexto(){
   });
 })();
 
+// Fase 176: "Ultima actualizacion" en largo ("Última actualización: dd/mm/aaaa
+// hh:mm", escritorio) o corto ("dd/mm hh:mm", sin el año, para el telefono).
+// `fecha` viene del servidor como "dd/mm/aaaa hh:mm:ss" (hora de Colombia).
+function gdUltimaActTexto(fecha, corto){
+  var f = String(fecha || '');
+  if(!corto) return 'Última actualización: ' + f.slice(0, 16); // sin segundos
+  return /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/.test(f) ? f.slice(0, 5) + ' ' + f.slice(11, 16) : f.slice(0, 16);
+}
+
 function renderGenericHeader(){
   _gdFiltrosHeaderTexto();
   // Fase 132 (Parte 8): logo de Mobilize en el encabezado -- unica
@@ -1241,7 +1250,9 @@ function renderGenericHeader(){
   var mesLbl = _gd.mesSel ? mesNombreLargo(_gd.mesSel) : (_gd.periodos[0] ? mesNombreLargo(_gd.periodos[0]) : 'Sin datos');
   // Fase 152 (B3): el mes en curso se marca como parcial en el encabezado.
   var rotuloParcial = (_gd.mesSel && typeof gdRotuloMesParcial === 'function') ? gdRotuloMesParcial(_gd.mesSel, gdHoyLocal(), null, mesNombreLargo) : '';
-  sub.textContent = 'Informe ' + (rotuloParcial || mesLbl) + ' — ' + _gd.cliente;
+  // Fase 176: el " — CLIENTE" va en su propio span; en el telefono se oculta
+  // (el cliente ya esta en el logo y el titulo) para que quepa en una linea.
+  sub.innerHTML = esc('Informe ' + (rotuloParcial || mesLbl)) + '<span class="gd-sub-cliente"> — ' + esc(_gd.cliente) + '</span>';
 
   // Fase 131 (Parte 4): "Ultima actualizacion" -- resaltado naranja para
   // Mobilize, verde InConexion (#74B859, color de marca) para el resto.
@@ -1250,7 +1261,10 @@ function renderGenericHeader(){
   var elUa = document.getElementById('gd-ultima-act');
   var fechaUa = _gd.ultimaActualizacion && _gd.ultimaActualizacion.fechaColombia;
   if(fechaUa){
-    elUa.textContent = 'Última actualización: ' + fechaUa.slice(0, 16); // sin segundos
+    // Fase 176: version larga (escritorio) y corta "Act. dd/mm hh:mm" (telefono,
+    // styles.css), para que quepa en una linea a 375 px.
+    elUa.innerHTML = '<span class="gd-ua-largo">' + esc(gdUltimaActTexto(fechaUa, false)) + '</span>' +
+      '<span class="gd-ua-corto"><abbr title="Última actualización">Act.</abbr> ' + esc(gdUltimaActTexto(fechaUa, true)) + '</span>';
     var claseUa = LISTAS_REGISTRO.claseUltimaActualizacion[_gd.cliente]; // Fase 153: del registro
     elUa.className = 'gd-ultima-act' + (claseUa ? ' ' + claseUa : '');
     elUa.style.display = '';

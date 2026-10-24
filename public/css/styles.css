@@ -1780,3 +1780,18 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #gd-modal .gd-filtros-corto{display:inline;}
   #gd-modal .gd-header-acciones .gd-filtros-header-btn{padding:0 8px;}
 }
+
+/* Fase 176: "Ultima actualizacion" y el subtitulo, una linea cada uno a
+   375 px: version corta de la fecha ("Act. 24/10 08:30"), sin " — CLIENTE"
+   en el subtitulo (ya esta en el logo y el titulo) y el espacio de "Cerrar"
+   reservado solo en las filas del logo y el titulo (Cerrar sube 4 px para no
+   rozar el subtitulo). En escritorio y tablet se ve la version larga. */
+.gd-ua-corto{display:none;}
+.gd-ua-corto abbr{text-decoration:none;}
+@media(max-width:480px){
+  #gd-modal .gd-ua-largo,#gd-modal .gd-sub-cliente{display:none;}
+  #gd-modal .gd-ua-corto{display:inline;}
+  #gd-modal .aurora-header > div:first-child > div:first-child{padding-right:0;}
+  #gd-modal .gd-cliente-logo,#gd-modal .aurora-header h2{margin-right:96px;}
+  #gd-modal #gd-cerrar-btn{top:6px;}
+}

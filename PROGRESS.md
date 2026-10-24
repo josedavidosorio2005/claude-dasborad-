@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.72.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.72.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -680,3 +680,4 @@ mismo orden):
 - Fase 173 — Tipificación de septiembre de Mobilize revisada en producción (sí está: 167 llamadas, cargada el 23/10 hacia las 2:13 p. m., después de agosto y octubre); el Centro de cargas mostraba la hora de carga 5 h tarde en producción (servidor en UTC), corregido (v1.70.1, 2026-10-23)
 - Fase 174 — ORLANT: out_pre cuenta como llamada de salida (no como entrada de CANCELACIONES), "no conectada" por cliente (ORLANT NO_CONTESTAN + BUZON, Mobilize Cliente_no_contesta), salida por registro escrita como regla, plantillas de CDR con las 20/32 columnas de Wolkvox; septiembre local: 10.791 de salida, 5.104 no conectadas (v1.71.0, 2026-10-24)
 - Fase 175 — Tablero en el celular: encabezado compacto hasta 768 px (354 → 151 px a 375 px), filtros plegados en el botón "Filtros: <mes>", Actualizar/Exportar solo con icono; escritorio idéntico píxel a píxel; sin desbordes en ORLANT y Mobilize a 375/768 px, claro y oscuro (v1.72.0, 2026-10-24)
+- Fase 176 — Tablero en el celular (ajuste): a 375 px "Última actualización" en corto ("Act. 24/10 08:30") y el subtítulo sin " — CLIENTE", cada uno en una línea; encabezado de 166–180 a ~151 px en ORLANT y Mobilize; escritorio y tablet idénticos píxel a píxel (v1.72.1, 2026-10-24)
