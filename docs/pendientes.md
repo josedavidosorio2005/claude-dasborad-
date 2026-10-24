@@ -143,6 +143,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **CDR de octubre de ORLANT (llamadas y WhatsApp)** (24/10/2026) — faltan
+  los archivos: en Descargas solo están los de septiembre (`CDR LLAMADAS
+  ORLANT`, `CDR WHATSAPP ORLANT`, `CDR ORLANT SEPTIEMBRE`, ya cargados).
+  La carga por el Centro está autorizada; se hace al recibirlos, con la
+  vista previa primero (out_pre = salida, no conectada = NO_CONTESTAN +
+  BUZON).
+
 - **Preguntas abiertas de la reunión del 23/10 (Tipificación con los CDR)**.
   Edwin ya respondió `out_pre`, "no conectada", registro o teléfono único y
   la tabla de detalle quitada (Fase 174, ver la bitácora). Quedan:
