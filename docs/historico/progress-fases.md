@@ -16234,3 +16234,14 @@ píxel contra `main` (worktree temporal) en 481, 768, 769, 1024 y 1440 px,
 claro y oscuro, ORLANT y Mobilize: 20/20 idénticas.
 
 **Pruebas.** Nueva `server/tests/fase176-ultima-act-celular.test.js` (3).
+
+**Deploy y verificación en producción (2026-10-24).** PR #538 mergeado con
+`--match-head-commit`. El deploy falló el primer intento por red (`dial tcp
+:22: i/o timeout`, antes de tocar el servidor); se relanzó una vez y salió
+bien. `/api/health` → `1.72.1`. Revisión en solo lectura (Playwright desde
+Node, login manual del usuario, escrituras de la API bloqueadas) a 375 px,
+claro y oscuro: encabezado de **151 px** en ORLANT (Septiembre 2026) y en
+Mobilize (Octubre 2026, "mes en curso, parcial"); subtítulo y "Act. dd/mm
+hh:mm" en 1 línea; el `abbr` dice "Última actualización"; "Cerrar" sin tocar
+título, subtítulo ni fecha; sin desborde; 0 errores de consola. Capturas fuera
+del repo.
