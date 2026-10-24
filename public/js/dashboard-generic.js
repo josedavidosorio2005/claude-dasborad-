@@ -1064,6 +1064,7 @@ function closeGenericDashboard(){
   // navegador, hay que salir primero -- si no, el navegador se queda en
   // fullscreen mostrando lo que sea que quede detras (el overlay ya oculto).
   if(document.fullscreenElement) document.exitFullscreen();
+  gdFiltrosHeaderToggle(false); // Fase 175: el tablero siguiente abre con los filtros plegados
   // Fase 136 (PR 8, F04): el ORDEN de lo que ya hacia esta funcion no
   // cambia -- exitFullscreen() sigue yendo primero, igual que antes. Lo
   // unico nuevo es que ocultar el overlay/destruir los charts/
@@ -1126,7 +1127,69 @@ function _gdOnFullscreenChange(){
 document.addEventListener('fullscreenchange', _gdOnFullscreenChange);
 document.addEventListener('webkitfullscreenchange', _gdOnFullscreenChange);
 
+// Fase 175: filtros del encabezado plegados en el boton "Filtros" hasta
+// 768 px (en escritorio el boton no se ve y los filtros siguen a la vista,
+// ver styles.css). El boton dice el mes elegido; elegir MES, VISTA o
+// COMPARAR cierra el panel (MESES no: ahi se marcan varios).
+function gdFiltrosHeaderToggle(abrir){
+  var cont = document.getElementById('gd-filtros-header');
+  var btn = document.getElementById('gd-filtros-btn');
+  if(!cont || !btn) return;
+  var desdeBoton = typeof abrir !== 'boolean';
+  if(desdeBoton) abrir = !cont.classList.contains('gd-filtros-abierto');
+  cont.classList.toggle('gd-filtros-abierto', abrir);
+  btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  // En el DOM el panel va antes del boton (asi el escritorio no cambia):
+  // al abrirlo, el foco pasa al primer filtro visible; Esc lo devuelve.
+  if(desdeBoton && abrir){
+    var primero = Array.prototype.find.call(cont.querySelectorAll('select, summary'), function(el){ return el.offsetParent !== null; });
+    if(primero) primero.focus();
+  }
+}
+function _gdFiltrosHeaderTexto(){
+  var txt = document.getElementById('gd-filtros-btn-txt');
+  if(!txt) return;
+  var mes = _gd.mesSel ? ((typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel) : '';
+  var nMeses = _gdMeses().length;
+  var extra = nMeses ? ' · ' + nMeses + (nMeses === 1 ? ' mes' : ' meses') : '';
+  var detalle = (mes || '') + extra;
+  // En el telefono (styles.css) se ocultan "Filtros:" y el nombre largo del
+  // mes ("Sep 2026" en vez de "Septiembre 2026"); el nombre completo queda en
+  // aria-label.
+  var partes = mes.split(' ');
+  var corto = partes.length === 2 ? partes[0].slice(0, 3) + ' ' + partes[1] : mes;
+  txt.innerHTML = '<span class="gd-filtros-prefijo">Filtros' + (detalle ? ': ' : '') + '</span>' +
+    '<span class="gd-filtros-largo">' + esc(mes) + '</span><span class="gd-filtros-corto">' + esc(corto) + '</span>' + esc(extra);
+  var btn = document.getElementById('gd-filtros-btn');
+  if(btn) btn.setAttribute('aria-label', 'Filtros' + (detalle ? ': ' + detalle : ''));
+}
+(function(){
+  var cont = document.getElementById('gd-filtros-header');
+  if(!cont) return;
+  cont.addEventListener('change', function(e){
+    if(e.target && e.target.tagName === 'SELECT' && cont.classList.contains('gd-filtros-abierto')){
+      gdFiltrosHeaderToggle(false);
+      var btn = document.getElementById('gd-filtros-btn');
+      if(btn) btn.focus();
+    }
+    _gdFiltrosHeaderTexto();
+  });
+  cont.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape' || !cont.classList.contains('gd-filtros-abierto')) return;
+    var det = document.getElementById('gd-meses');
+    if(det && det.open) return; // primero cierra la lista de MESES (su propio Esc)
+    // Este Esc solo pliega los filtros: no debe llegar a motion-helpers.js,
+    // que cerraria el tablero entero.
+    e.stopPropagation();
+    e.preventDefault();
+    gdFiltrosHeaderToggle(false);
+    var btn = document.getElementById('gd-filtros-btn');
+    if(btn) btn.focus();
+  });
+})();
+
 function renderGenericHeader(){
+  _gdFiltrosHeaderTexto();
   // Fase 132 (Parte 8): logo de Mobilize en el encabezado -- unica
   // version (clara, para fondo oscuro) porque .aurora-header es SIEMPRE
   // var(--c-brand) (teal fijo, no cambia con el tema). Provisional: ver
@@ -1311,6 +1374,7 @@ function _gdPintarMeses(){
 function _gdMesesBoton(){
   var btn = document.getElementById('gd-meses-btn');
   if(btn) btn.textContent = gdMesesTexto(_gd.mesesSel, mesNombreLargo);
+  _gdFiltrosHeaderTexto(); // Fase 175
   var wrap = document.getElementById('gd-meses-wrap');
   if(wrap) wrap.classList.toggle('gd-meses-activo', _gdMeses().length > 0);
 }

@@ -1735,3 +1735,48 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 
 /* Fase 172: resumen de calidad por asesor (Mobilize). */
 .cal-res-nota{font-size:var(--fs-small);color:var(--c-text-muted);margin:var(--space-2) 0 0;}
+
+/* Fase 175: encabezado del tablero compacto en el celular y la tablet
+   (hasta 768 px). Antes ocupaba 354 px de 812 a 375 px (315 de 1024 a
+   768): titulo, MES, MESES, COMPARAR, la nota y 5 botones en varias filas.
+   Ahora: logo y titulo mas chicos, "Cerrar" arriba a la derecha y una sola
+   fila de botones; los filtros quedan plegados en "Filtros: <mes>"
+   (gdFiltrosHeaderToggle). En escritorio no cambia nada: el contenedor de
+   los filtros es display:contents (sus hijos siguen siendo items del mismo
+   flex) y el boton "Filtros" y el icono de Exportar no se muestran. */
+.gd-filtros-header{display:contents;}
+#gd-modal .gd-filtros-header-btn,#gd-modal .gd-icono-movil{display:none;}
+@media(max-width:768px){
+  #gd-modal .aurora-header{flex-wrap:wrap;row-gap:8px;padding:10px 16px;}
+  /* El bloque de titulo + filtros se "abre" (display:contents, contra su
+     estilo en linea) para ordenar: titulo, fila de botones y, debajo del
+     boton "Filtros", el panel de filtros. */
+  #gd-modal .aurora-header > div:first-child{display:contents !important;}
+  #gd-modal .aurora-header > div:first-child > div:first-child{flex:1 1 100%;min-width:0;padding-right:96px;order:1;}
+  #gd-modal .gd-header-acciones{order:2;}
+  #gd-modal .gd-cliente-logo{height:18px;max-width:100px;margin-bottom:2px;}
+  #gd-modal .aurora-header h2{font-size:var(--fs-body-lg);line-height:1.25;}
+  #gd-modal .aurora-header .aurora-sub{font-size:var(--fs-note);}
+  #gd-modal .gd-ultima-act{font-size:var(--fs-note);padding:2px 8px 2px 7px;margin-top:3px;}
+  #gd-modal #gd-cerrar-btn{position:absolute;top:10px;right:16px;}
+  #gd-modal .gd-filtros-header{display:none;}
+  #gd-modal .gd-filtros-header.gd-filtros-abierto{display:grid;grid-template-columns:1fr;gap:8px;flex:1 1 100%;min-width:0;order:3;}
+  #gd-modal .gd-filtros-header > div{justify-content:space-between;}
+  #gd-modal .gd-filtros-header select{min-height:44px;max-width:65%;}
+  #gd-modal .gd-header-acciones{flex:1 1 100%;flex-wrap:nowrap;gap:6px;min-width:0;}
+  #gd-modal .gd-header-acciones .aurora-close{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;white-space:nowrap;}
+  #gd-modal .gd-header-acciones .aurora-close.hidden{display:none;}
+  #gd-modal .gd-header-acciones .gd-filtros-header-btn{flex:1 1 auto;min-width:0;justify-content:flex-start;}
+  #gd-modal .gd-filtros-corto{display:none;}
+  #gd-modal .gd-filtros-header-btn[aria-expanded="true"]{background:rgba(255,255,255,0.28);}
+  #gd-filtros-btn-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  #gd-modal .gd-header-acciones .gd-btn-txt{display:none;}
+  #gd-modal .gd-icono-movil{display:inline-block;}
+}
+/* En el telefono el boton muestra solo el mes (el icono ya dice "filtros"; el
+   nombre completo va en aria-label). */
+@media(max-width:480px){
+  #gd-modal .gd-filtros-prefijo,#gd-modal .gd-filtros-largo{display:none;}
+  #gd-modal .gd-filtros-corto{display:inline;}
+  #gd-modal .gd-header-acciones .gd-filtros-header-btn{padding:0 8px;}
+}

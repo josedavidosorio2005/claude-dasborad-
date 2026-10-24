@@ -16157,3 +16157,42 @@ Fase 172). Nota de origen: los dos CDR dicen Wolkvox + "[ruta pendiente de
 confirmar con Edwin]"; tiempos y salida, su reporte de Wolkvox; calidad, el
 libro de Monitoreos de Edwin. Nada falló: sin cambios de código. Los CDR de
 octubre de ORLANT siguen sin llegar (anotado en `docs/pendientes.md`).
+
+### Fase 175 — Tablero en el celular: encabezado compacto (2026-10-24, v1.72.0)
+
+Pendiente "Versión para el celular" (Edwin, 23/10: incómoda en su teléfono).
+Lo pidió el usuario el 24/10 (antes esperaba la propuesta A/B de la Fase 164).
+
+**Antes** (local, base demo sintética, Playwright): encabezado de 354 px a
+375 px de ancho (los datos empezaban en 422 de 812) y de 315 px a 768 px,
+contra 131 px en escritorio. Ninguna pestaña de ORLANT ni de Mobilize se
+desbordaba a lo ancho (375/768/1440, claro y oscuro).
+
+**Cambio (solo hasta 768 px; escritorio igual):**
+- Los filtros del encabezado (MES, MESES, VISTA, COMPARAR y la nota de
+  comparación) van en `#gd-filtros-header`. En escritorio es
+  `display:contents`: sus hijos siguen en el mismo flex, sin cambio visual.
+- Hasta 768 px quedan plegados en el botón "Filtros: <mes>" (icono Lucide
+  `sliders-horizontal`, agregado al sprite), que abre el panel debajo de la
+  fila de botones. En el teléfono (≤480 px) el botón dice solo el mes corto
+  ("Sep 2026"); el nombre completo va en `aria-label`.
+- Elegir MES, VISTA o COMPARAR cierra el panel y devuelve el foco al botón;
+  MESES no lo cierra (se marcan varios). Al abrir, el foco pasa al primer
+  filtro (en el DOM el panel va antes del botón); Esc lo cierra sin cerrar el
+  tablero (`stopPropagation`, el Esc global de `motion-helpers.js`). Cerrar
+  el tablero lo deja plegado.
+- Logo de 18 px, título en `--fs-body-lg`, "Cerrar" arriba a la derecha,
+  una sola fila de botones de 44 px; Actualizar y Exportar solo con icono
+  (con `aria-label`). Sin colores nuevos.
+
+**Después:** encabezado de 151 px a 375 px (datos en 219) y a 768 px (datos
+en 185). Sin desbordes en ninguna pestaña de ORLANT ni de Mobilize a
+375/768/1440, claro y oscuro; 0 errores de consola. Escritorio comparado
+píxel a píxel contra `main` (worktree temporal, mismos datos demo) en 769,
+1024 y 1440 px, claro y oscuro, ORLANT y Mobilize: encabezado y pantalla
+completa idénticos en las 12 combinaciones.
+
+**Pruebas.** Nueva `server/tests/fase175-tablero-celular.test.js` (7):
+estructura y ARIA del HTML, CSS de escritorio sin cambios y de ≤768/≤480 px,
+sin colores nuevos, y el comportamiento de `gdFiltrosHeaderToggle` y
+`_gdFiltrosHeaderTexto` con un DOM mínimo.
