@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.1 — Octubre 2026
+
+**Fase 176: encabezado del celular todavía más corto.**
+
+- En el teléfono, la fecha de la última actualización ahora dice, por
+  ejemplo, "Act. 24/10 08:30" en una sola línea, y el informe ya no repite
+  el nombre del cliente (ya está en el logo y el título). El encabezado
+  queda más bajo y se ven antes los datos. En el computador no cambia nada.
+
 ## v1.72.0 — Octubre 2026
 
 **Fase 175: el tablero se ve mejor en el celular.**
