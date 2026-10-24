@@ -97,8 +97,17 @@ var TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS = ['TELEPHONE', 'CUSTOMER_ID', 'CON
 //     67 salientes -- la Regla A, TIME_SEC>0, se descarto por inutil: el
 //     archivo real trae las 67 con TIME_SEC>0, sin poder de discriminacion).
 var TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO = ['PRUEBA'];
+// Fase 174: es solo el valor por defecto (Mobilize). Cada cliente puede
+// tener el suyo en el registro (parametros.salidaNoConectada, ver
+// tipificacionNoConectadaDe); ORLANT usa NO_CONTESTAN y BUZON.
 var TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO = ['Cliente_no_contesta'];
 var TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS = ['inbound', 'outbound_ma'];
+// Fase 174 (regla confirmada por Edwin): "out_pre" (llamada de salida
+// preprogramada; en ORLANT llega con el skill 4070 CANCELACIONES Y
+// REPROGRAMACION) tambien es una llamada de SALIDA. Se guarda como
+// outbound_ma con el skill LLAMADAS DE SALIDA, asi no cuenta ademas como
+// entrada de CANCELACIONES. Su SKILL_ID original (4070) se conserva.
+var TIPIFICACION_CDR_TIPO_INTERACCION_SALIDA = ['outbound_ma', 'out_pre'];
 
 // Fase 168 (reunion con Edwin del 23/10: ORLANT se actualiza con solo los 2
 // CDR de Wolkvox, HistCDR y HistChat):
@@ -155,6 +164,9 @@ function tipificacionNormTexto(v) {
 }
 
 // ── DATE: texto "dd/mm/aaaa" o serial de Excel (fecha, sin hora) ────────
+// Fase 174: tambien texto "aaaa-mm-dd hh:mm[:ss]" (fecha y hora juntas, como
+// las puede entregar la API de Wolkvox); la hora se lee aparte.
+var TIPIFICACION_FECHA_HORA_TEXTO_RE = /^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}:\d{2}(?::\d{2})?)$/;
 function tipificacionParseFecha(v) {
   if (typeof v === 'number') {
     var n = Math.floor(v); // DATE no trae hora -- por si algun archivo la trajera pegada, se descarta (HORA es columna aparte)
@@ -170,6 +182,8 @@ function tipificacionParseFecha(v) {
     var t = v.trim();
     if (t === '') return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    var fh = TIPIFICACION_FECHA_HORA_TEXTO_RE.exec(t);
+    if (fh) return fh[1];
     var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
     if (!m) return null;
     var dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), aaaa = parseInt(m[3], 10);
@@ -344,6 +358,9 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     if (map.hora === undefined && typeof fechaCrudo === 'number') {
       var fraccionFecha = fechaCrudo - Math.floor(fechaCrudo);
       if (fraccionFecha > 1e-6) horaDesdeFecha = tipificacionParseHora(fechaCrudo);
+    } else if (map.hora === undefined && typeof fechaCrudo === 'string') {
+      var fhTexto = TIPIFICACION_FECHA_HORA_TEXTO_RE.exec(fechaCrudo.trim());
+      if (fhTexto) horaDesdeFecha = tipificacionParseHora(fhTexto[2]);
     }
     var hora = map.hora !== undefined ? tipificacionParseHora(row[map.hora]) : horaDesdeFecha;
     var duracionMin = map.duracionMin !== undefined ? tipificacionParseDuracion(row[map.duracionMin]) : null;
@@ -392,6 +409,8 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       var tipoCrudo = tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase();
       if (tipoCrudo === '') {
         tipoInteraccion = null;
+      } else if (TIPIFICACION_CDR_TIPO_INTERACCION_SALIDA.indexOf(tipoCrudo) !== -1) {
+        tipoInteraccion = 'outbound_ma';
       } else if (TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS.indexOf(tipoCrudo) !== -1) {
         tipoInteraccion = tipoCrudo;
       } else {
@@ -410,6 +429,10 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     if (!porSkillId && skill === '-' && map.tipoInteraccion !== undefined) {
       var tipoSalida = tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase();
       if (tipoSalida && tipoSalida !== '-' && tipoSalida.indexOf('internalcall') !== 0) skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
+    }
+    // Fase 174: out_pre es salida aunque traiga skill (ORLANT: CANCELACIONES Y REPROGRAMACION).
+    if (!porSkillId && canal === 'LLAMADAS' && map.tipoInteraccion !== undefined && tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase() === 'out_pre') {
+      skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
     }
 
     filas.push({
@@ -478,6 +501,13 @@ function tipificacionEsConectada(tipificacionValor, listaNoConectada) {
   return lista.indexOf(tipificacionValor) === -1;
 }
 
+// Fase 174: lista de "no conectada" del cliente (parametros del registro de
+// clientes, salidaNoConectada); sin ese parametro, la de siempre.
+function tipificacionNoConectadaDe(parametros) {
+  var l = parametros && parametros.salidaNoConectada;
+  return Array.isArray(l) && l.length ? l : TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO;
+}
+
 function tipificacionFilaComoArray(f) {
   return TIPIFICACION_ORDEN_ARRAY.map(function (k) { return f[k]; });
 }
@@ -511,10 +541,12 @@ if (typeof module !== 'undefined' && module.exports) {
     tipificacionFilaComoArray: tipificacionFilaComoArray,
     tipificacionRangoFechas: tipificacionRangoFechas,
     tipificacionEsConectada: tipificacionEsConectada,
+    tipificacionNoConectadaDe: tipificacionNoConectadaDe,
     TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS: TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS,
     TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO: TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO,
     TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO: TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO,
     TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS: TIPIFICACION_CDR_TIPO_INTERACCION_VALIDOS,
+    TIPIFICACION_CDR_TIPO_INTERACCION_SALIDA: TIPIFICACION_CDR_TIPO_INTERACCION_SALIDA,
     TIPIFICACION_SKILL_SALIDA_LLAMADAS: TIPIFICACION_SKILL_SALIDA_LLAMADAS,
     TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP: TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP,
     tipificacionEtiquetaSkill: tipificacionEtiquetaSkill,

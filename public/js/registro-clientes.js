@@ -20,14 +20,15 @@ var REGISTRO_CLIENTES = [
     modulos: ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'tipificacion', 'calidad',
       'agendas', 'efectividad_agendamiento', 'inasistencia', 'efectividad_citas', 'salida'],
     parametros: { sedes: [], asesorVisibleCliente: false, traficoDosHojas: true,
-      especificos: ['orlant_pestanas_manuales', 'orlant_resumen_trafico', 'borrado_por_rango'] },
+      especificos: ['orlant_pestanas_manuales', 'orlant_resumen_trafico', 'borrado_por_rango'],
+      salidaNoConectada: ['NO_CONTESTAN', 'BUZON'] }, // Fase 174
     logo: { src: 'img/clientes/orlant-logo-blanco.png', src2x: 'img/clientes/orlant-logo-blanco@2x.png', alt: 'Orlant', width: 64, height: 25 }
   },
   {
     nombre: 'MOBILIZE',
     modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
     parametros: { sedes: [], asesorVisibleCliente: true, traficoDosHojas: false, especificos: [],
-      claseUltimaActualizacion: 'gd-ultima-act-mobilize' },
+      claseUltimaActualizacion: 'gd-ultima-act-mobilize', salidaNoConectada: ['Cliente_no_contesta'] }, // Fase 174
     logo: { src: 'img/clientes/mobilize-logo.png', src2x: 'img/clientes/mobilize-logo@2x.png', alt: 'Mobilize', width: 140, height: 25 }
   }
 ];

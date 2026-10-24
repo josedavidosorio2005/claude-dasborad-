@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.71.0 — Octubre 2026
+
+**Fase 174: reglas de ORLANT que confirmó Edwin.**
+
+- Las llamadas "out_pre" del CDR de ORLANT (marcador predictivo, llegan con
+  el skill CANCELACIONES Y REPROGRAMACION) ahora cuentan como **llamadas de
+  salida**: en Tipificación (filtro "Llamadas de salida" y tarjetas) y en la
+  salida por asesor (3P / General). Ya no cuentan además como entrada de
+  CANCELACIONES. Para los meses ya cargados, se ve al volver a cargar el CDR.
+- **"No conectada" ahora depende del cliente.** En ORLANT son NO_CONTESTAN y
+  BUZON (siguen separadas en la torta); en Mobilize sigue siendo
+  "Cliente no contesta".
+- Las plantillas de "CDR de llamadas" y "CDR de WhatsApp" traen ahora todas
+  las columnas del export de Wolkvox (20 y 32), en el mismo orden, aunque el
+  sistema solo use algunas. Así se puede subir el archivo tal cual sale de
+  Wolkvox.
+- El CDR también se puede subir con la fecha y la hora juntas como texto
+  ("2026-09-01 08:15:00").
+
 ## v1.70.1 — Octubre 2026
 
 **Fase 173: hora de la última carga en el Centro de cargas.**

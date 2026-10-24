@@ -10,7 +10,7 @@
 
 ### De dónde sale
 
-Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan).
+Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan). TYPE_INTERACTION "out_pre" también es Llamada de salida, aunque traiga skill (ORLANT: 4070 CANCELACIONES Y REPROGRAMACION).
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "Llamadas".**
 
@@ -23,16 +23,25 @@ Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pend
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
 | AGENT_NAME | Sí | Asesor. |  |
-| DATE | Sí | Fecha de la llamada (la hora va en HORA). |  |
-| HORA | No | Hora, si viene aparte. |  |
-| TIME_MIN | No | Duración en minutos. |  |
-| DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
-| SKILL_NAME | Sí | Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida. | NOMBRE DE SKILL |
+| DATE | Sí | Fecha y hora de la llamada. |  |
+| DESTINY | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| TELEPHONE | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| COST | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
 | TIME_SEC | No | Duración en segundos. |  |
+| TIME_MIN | No | Duración en minutos. |  |
 | COD_ACT | No | Código de la tipificación (texto). |  |
-| TYPE_INTERACTION | No | "inbound" (entrante) u "outbound_ma" (saliente). |  |
+| DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. En una llamada de salida, el cliente define cuáles cuentan como "no conectada" (ORLANT: NO_CONTESTAN y BUZON). |  |
+| COD_ACT_2 | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| DESCRIPTION_COD_ACT_2 | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| TYPE_INTERACTION | No | "inbound" (entrante), "outbound_ma" u "out_pre" (salientes: las dos cuentan como Llamadas de salida). Las "internalcall" no cuentan como salida. |  |
+| CUSTOMER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | HUNG_UP | No | Quién colgó ("agent" o "customer"). |  |
+| CAMPAIGN_ID | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| CONN_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | SKILL_ID | No | Identificador técnico de la línea. |  |
+| SKILL_NAME | Sí | Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida. | NOMBRE DE SKILL |
+| AGENT_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| COMMENT | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 
 ### Cómo detecta el encabezado
 
@@ -48,9 +57,9 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | HORA | TIME_MIN | DESCRIPTION_COD_ACT | SKILL_NAME | TIME_SEC | COD_ACT | TYPE_INTERACTION | HUNG_UP | SKILL_ID |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-08-01 | 08:15 | 3 | Consulta general | SKILL SAC | 180 | 401 | inbound | customer | 101 |
+| AGENT_NAME | DATE | DESTINY | TELEPHONE | COST | TIME_SEC | TIME_MIN | COD_ACT | DESCRIPTION_COD_ACT | COD_ACT_2 | DESCRIPTION_COD_ACT_2 | TYPE_INTERACTION | CUSTOMER_ID | HUNG_UP | CAMPAIGN_ID | CONN_ID | SKILL_ID | SKILL_NAME | AGENT_ID | COMMENT |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Asesor Ejemplo Uno | 2026-08-01 08:15:00 | 3000000001 | 3000000001 | 0 | 180 | 3 | 401 | Consulta general | - | - | inbound | 1000000001 | customer | - | EJEMPLO-0001 | 101 | SKILL SAC | 0000 |  |
 
 ## Tipificación de WhatsApp (HistChat)
 
@@ -70,11 +79,38 @@ Tabla de skills de WhatsApp de ORLANT (SKILL_ID = nombre): 0 = WHATSAPP DE SALID
 
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
-| AGENT_NAME | Sí | Asesor. |  |
-| DATE | Sí | Fecha de la conversación (en el export viene con la hora). |  |
-| DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
-| SKILL_ID | No | Número del skill (ver la tabla de skills). 0 = WhatsApp de salida. |  |
+| CONN_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | CHANNEL | No | Canal del chat ("whatsapp"). |  |
+| DATE | Sí | Fecha y hora de la conversación. |  |
+| DATE_CLOSE | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| ROUTING | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| CUSTOMER_NAME | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CUSTOMER_EMAIL | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CUSTOMER_PHONE | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CUSTOMER_CHARS | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| ASSIGNMENT_TIME | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| AGENT_AVERAGE_RESPONSE_TIME | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| AGENT_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| AGENT_NAME | Sí | Asesor. |  |
+| AGENT_CHARS | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| TIME_ON_AGENT | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| CHAT_DURATION | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| COD_ACT | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| DESCRIPTION_COD_ACT | Sí | Motivo o tipificación. |  |
+| TRANSFER | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| TRANSFER_TYPE | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| COMMENTS | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CUSTOMER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| SKILL_ID | No | Número del skill (ver la tabla de skills). 0 = WhatsApp de salida. |  |
+| FIRST RESPONSE TIME | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| LAST_PARTICIPANT_WHO_SPOKE | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| EXTRA_FIELD | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| COMMENT | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| USER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| FEELING | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| AGENT_DNI | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| AGENT_ANSWERS | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| BSUID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 
 ### Cómo detecta el encabezado
 
@@ -90,9 +126,9 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | DESCRIPTION_COD_ACT | SKILL_ID | CHANNEL |
-|---|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-09-01 | Agendamiento | 4327 | whatsapp |
+| CONN_ID | CHANNEL | DATE | DATE_CLOSE | ROUTING | CUSTOMER_NAME | CUSTOMER_EMAIL | CUSTOMER_PHONE | CUSTOMER_CHARS | ASSIGNMENT_TIME | AGENT_AVERAGE_RESPONSE_TIME | AGENT_ID | AGENT_NAME | AGENT_CHARS | TIME_ON_AGENT | CHAT_DURATION | COD_ACT | DESCRIPTION_COD_ACT | TRANSFER | TRANSFER_TYPE | COMMENTS | CUSTOMER_ID | SKILL_ID | FIRST RESPONSE TIME | LAST_PARTICIPANT_WHO_SPOKE | EXTRA_FIELD | COMMENT | USER_ID | FEELING | AGENT_DNI | AGENT_ANSWERS | BSUID |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| EJEMPLO-0001 | whatsapp | 2026-09-01 08:15:00 | 2026-09-01 08:30:00 | - | Cliente Ejemplo | cliente@ejemplo.com | 3000000001 | 0 | 0 | 0 | 0000 | Asesor Ejemplo Uno | 0 | 0 | 0 | 401 | Agendamiento | - | - |  | 1000000001 | 4327 | 0 | - |  |  | 0000 | - | 0000 | 0 | - |
 
 ## Notas
 
