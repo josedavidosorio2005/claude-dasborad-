@@ -158,9 +158,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - Confirmaciones (skill 4338) queda fuera del Nivel de Servicio por
     ahora: confirmar si se queda así.
 - **Versión para el celular** (Fase 174, 23/10/2026) — a Edwin le pareció
-  incómoda en su teléfono. Va con la propuesta visual A/B de la Fase 164
-  (encabezado muy alto en el teléfono, sección 3). Falta que Edwin diga
-  qué pantallas usa más en el celular.
+  incómoda en su teléfono. Primer paso hecho en la Fase 175 (v1.72.0): el
+  encabezado del tablero pasó de 354 a 151 px a 375 px, con los filtros
+  plegados en un botón. Falta que Edwin lo pruebe en su teléfono y diga qué
+  pantallas usa más en el celular (para seguir con esas).
 - **Llamadas Únicas de Mobilize desde el CDR** (Fase 174) — hoy Edwin arma
   a mano el archivo de Únicas filtrando el CDR. El CDR ya trae lo necesario
   (ver "Reciclar bases" en `docs/plantillas/README.md`). Falta que Edwin
@@ -291,11 +292,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
-- **Encabezado del tablero muy alto en el teléfono** (visto en
-  producción, Fase 164, 22/10/2026) — a 375 px el encabezado queda fijo
-  arriba y ocupa unos 300 px de 812 (más o menos un tercio de la
-  pantalla al bajar). Es parte de la propuesta visual A/B de la
-  auditoría de la Fase 164, que **espera a Edwin**: no se toca antes.
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
   con sesión y solo conteos, cuántas filas tienen la hora llena por

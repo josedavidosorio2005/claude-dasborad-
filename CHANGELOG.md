@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.0 — Octubre 2026
+
+**Fase 175: el tablero se ve mejor en el celular.**
+
+- En el teléfono, el encabezado del tablero (logo, título y filtros) ocupaba
+  más de la mitad de la pantalla antes de llegar a los datos. Ahora es
+  compacto: logo y título más pequeños, una sola fila de botones y los
+  filtros (MES, MESES, COMPARAR) guardados en un botón que dice el mes
+  elegido, por ejemplo "Sep 2026". Al tocarlo se abren; al elegir un mes se
+  cierran solos.
+- Lo mismo en tabletas (hasta 768 px de ancho). En el computador no cambia
+  nada.
+
 ## v1.71.0 — Octubre 2026
 
 **Fase 174: reglas de ORLANT que confirmó Edwin.**

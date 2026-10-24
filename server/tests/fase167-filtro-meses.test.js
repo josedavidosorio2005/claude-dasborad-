@@ -86,6 +86,7 @@ test('_gdPintarMeses: una casilla por mes (del mas nuevo al mas viejo), marca lo
     document: { getElementById: (id) => (el[id] = el[id] || { id, innerHTML: '', textContent: '', classList: { toggle: (c, v) => { el[id].activo = v; } } }) },
     esc: (s) => String(s), mesNombreLargo: (m) => NOMBRE[m] || m,
     gdMesesTexto: L.gdMesesTexto,
+    _gdFiltrosHeaderTexto: () => {}, // Fase 175: texto del boton "Filtros" (probado en fase175-tablero-celular)
   };
   vm.createContext(ctx);
   vm.runInContext(['function _gdMeses()', 'function _gdPintarMeses()', 'function _gdMesesBoton()'].map((f) => extraer(src, f)).join('\n'), ctx);
