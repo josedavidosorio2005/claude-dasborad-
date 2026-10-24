@@ -116,9 +116,16 @@ function calidadResumenParseFilas(aoa, ws) {
     }
     if (vistos[agente.toUpperCase()]) { repetidos.push(i + 1); continue; }
     vistos[agente.toUpperCase()] = true;
-    filas.push([agente, Math.round(mon), Math.round(pun * 100) / 100, Math.round(fal)]);
+    filas.push([agente, Math.round(mon), pun, Math.round(fal)]);
   }
   var avisos = [];
+  // Fase 177 (auditoria): si TODOS los puntajes estan entre 0 y 1 (y alguno
+  // es mayor que 0), la celda trae la fraccion (0,85) y no el porcentaje
+  // (85): se pasa a porcentaje con un aviso. Sin esto, todos salian "Crítico".
+  var enFraccion = filas.length > 0 &&
+    filas.every(function (f) { return f[2] <= 1; }) && filas.some(function (f) { return f[2] > 0; });
+  filas.forEach(function (f) { f[2] = Math.round((enFraccion ? f[2] * 100 : f[2]) * 100) / 100; });
+  if (enFraccion) avisos.push('El puntaje venía como fracción (ej. 0,85): se leyó como porcentaje (85 %). Revise que los puntajes de la vista previa estén bien.');
   if (sinCalcular.length) {
     avisos.push(sinCalcular.length + ' asesor(es) con # Monitoreos, Puntaje o Fallos en error o sin valor, se omitieron (filas ' +
       sinCalcular.slice(0, 5).join(', ') + (sinCalcular.length > 5 ? ' y ' + (sinCalcular.length - 5) + ' más' : '') + '). ' + CALIDAD_RESUMEN_MSG_FORMULAS);
