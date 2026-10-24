@@ -16118,3 +16118,20 @@ Centro de cargas de ORLANT, con la sesión del usuario):**
   después 10.791 (5.687 conectadas, 5.104 no conectadas) = la prueba local.
 - Filtro de skill: LLAMADAS DE SALIDA 10.791; CANCELACIONES Y REPROGRAMACION 0.
 - 0 errores de consola. Octubre: espera los archivos.
+
+**Carga en producción del resumen de calidad de Mobilize (24/10/2026,
+autorizada por el usuario, solo por el Centro de cargas → Calidad: resumen por
+asesor → octubre, con su sesión).**
+- Antes: ningún mes con resumen (la pestaña Calidad salía vacía; la Fase 172 no
+  tenía autorización de carga).
+- Vista previa: octubre, 3 asesores, 34 monitoreos, fallos 0/1/1 (igual que la
+  prueba local con el mismo lector). El script solo guardaba si coincidía.
+- Después (API y pestaña Calidad, MES = Octubre 2026): 3 asesores, promedio
+  ponderado 97,35 % (Sobresaliente), 34 monitoreos, 2 fallos críticos; los 3
+  Sobresaliente, alertas 1 "Sin fallos críticos" y 2 "Alerta".
+- Revisado en 1440 y 375 px, modo claro y oscuro (botón de la luna): tablas
+  por asesor (3) y por mes (1), semáforo, sin desborde horizontal, 0 errores de
+  consola, 0 respuestas de la API con error.
+- En la misma revisión (solo lectura): Tipificación de septiembre de Mobilize
+  bien (167 registros; salida 64 = 49 conectadas + 15 no conectadas).
+- CDR de octubre de ORLANT: no se cargaron, faltan los archivos.
