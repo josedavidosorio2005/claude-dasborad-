@@ -175,9 +175,12 @@ const fechaSchema = z
     return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
   }, 'La fecha no existe en el calendario');
 
+// Fase 177 (auditoria): el mes tiene que existir (01-12); antes pasaba
+// '2026-13' o '2026-00'. Mismo patron que el Centro de cargas.
+const MES_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const mesSchema = z
   .string()
-  .regex(/^\d{4}-\d{2}$/, 'El mes debe tener formato AAAA-MM');
+  .regex(MES_RE, 'El mes debe tener formato AAAA-MM');
 
 // Fase 126 (pedido de Edwin: quitar los meses de prueba, dejar solo
 // ago-sep/2026 real): borrado de produccion por base + rango de meses.
@@ -854,7 +857,7 @@ const whatsappTiemposOpcionesQuery = z.object({
 
 const whatsappTiemposRangosQuery = z.object({
   campana: campanaSchema,
-  mes: z.string().regex(/^\d{4}-\d{2}$/, { message: 'mes debe ser AAAA-MM' }),
+  mes: z.string().regex(MES_RE, { message: 'mes debe ser AAAA-MM' }),
   skill: z.string().trim().max(200).optional(),
 });
 
@@ -1213,7 +1216,7 @@ const inventarioMovCargaBody = z.object({
 // ── Modulo de Gerencia ─────────────────────────────────────
 
 const gerenciaKpiBody = z.object({
-  periodo: z.string().trim().regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato AAAA-MM'),
+  periodo: z.string().trim().regex(MES_RE, 'El periodo debe tener formato AAAA-MM'),
   nombre: z.string().trim().min(1, 'El nombre del KPI es obligatorio').max(200),
   categoria: z.string().trim().min(1).max(100).default('General'),
   valor: z.coerce.number(),
@@ -1228,7 +1231,7 @@ const gerenciaKpiUpdate = gerenciaKpiBody.partial().refine(
 );
 
 const gerenciaCargaBody = z.object({
-  periodo: z.string().trim().regex(/^\d{4}-\d{2}$/, 'El periodo debe tener formato AAAA-MM'),
+  periodo: z.string().trim().regex(MES_RE, 'El periodo debe tener formato AAAA-MM'),
   kpis: z
     .array(
       z.object({

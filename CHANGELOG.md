@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.2 — Octubre 2026
+
+**Fase 177: arreglos de la revisión de errores y seguridad.**
+
+- Tipificación de llamadas: una llamada con skill "-" ahora cuenta como
+  "Llamadas de salida" solo si de verdad es de salida. Antes, una llamada
+  entrante con "-" también se habría contado como salida. Los números de
+  septiembre de ORLANT no cambian (el archivo real no tenía ninguna).
+- Al cargar el resumen de calidad, si el puntaje viene como fracción (0,85
+  en vez de 85), se lee como porcentaje y se avisa. Antes todos los
+  asesores habrían salido "Crítico".
+- Los meses tienen que existir: ya no se acepta un mes como "2026-13".
+- Después de cargar Tipificación o Salida, esos paneles muestran enseguida
+  los meses nuevos, sin tener que recargar la página.
+
 ## v1.72.1 — Octubre 2026
 
 **Fase 176: encabezado del celular todavía más corto.**

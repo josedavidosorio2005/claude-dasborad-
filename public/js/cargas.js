@@ -1151,7 +1151,11 @@ async function _cargasGuardarTipificacion(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/tipificacion/carga', parsed);
-    if(typeof _tipificacionCache !== 'undefined') _tipificacionCache = {}; // invalida el cache del panel abierto
+    // Fase 177: invalida el cache del panel abierto (antes apuntaba a un
+    // nombre que no existe, asi que no vaciaba nada) y el de Salida, que desde
+    // la Fase 170 tambien saca sus meses de la Tipificacion.
+    if(typeof _tipificacionOpciones !== 'undefined') _tipificacionOpciones = {};
+    if(typeof _salOpciones !== 'undefined') _salOpciones = {};
     return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
@@ -1428,6 +1432,7 @@ async function _cargasGuardarSalida(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/salida/carga', parsed);
+    if(typeof _salOpciones !== 'undefined') _salOpciones = {}; // Fase 177: invalida el cache del panel abierto
     return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(salidaMesLbl).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }

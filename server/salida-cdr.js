@@ -17,17 +17,20 @@
 
 const LINEAS = ['3P', 'GENERAL'];
 const SKILL_SALIDA_LLAMADAS = 'LLAMADAS DE SALIDA';
+// Fase 177: una llamada con ese skill pero con un tipo que no es de salida
+// (inbound, otro) no cuenta. Sin tipo (archivo sin TYPE_INTERACTION) si.
+const TIPO_SALIDA_LLAMADAS = "(tipoInteraccion IS NULL OR tipoInteraccion = 'outbound_ma')";
 
 // Salidas por asesor y mes (todas o de un mes): [{ mes, agente, llamadas, wpp }].
 function salidasPorAsesor(db, campana, mes) {
   const filtroMes = mes ? ' AND substr(fecha,1,7) = @mes' : '';
   return db.prepare(`
     SELECT substr(fecha,1,7) AS mes, agente,
-      SUM(CASE WHEN canal = 'LLAMADAS' AND skill = @skillLlam THEN 1 ELSE 0 END) AS llamadas,
+      SUM(CASE WHEN canal = 'LLAMADAS' AND skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS} THEN 1 ELSE 0 END) AS llamadas,
       SUM(CASE WHEN canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma' THEN 1 ELSE 0 END) AS wpp
     FROM tipificaciones
     WHERE campana = @campana${filtroMes}
-      AND ((canal = 'LLAMADAS' AND skill = @skillLlam) OR (canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma'))
+      AND ((canal = 'LLAMADAS' AND skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS}) OR (canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma'))
     GROUP BY mes, agente
     ORDER BY mes, agente`).all({ campana, mes: mes || null, skillLlam: SKILL_SALIDA_LLAMADAS });
 }

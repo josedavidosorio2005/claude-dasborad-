@@ -425,10 +425,12 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       ? String(row[map.hungUp]).trim() : null;
     var skillId = map.skillId !== undefined && row[map.skillId] != null && String(row[map.skillId]).trim() !== ''
       ? String(row[map.skillId]).trim() : null;
-    // Fase 168: "-" en Llamadas = salida, salvo internalcall* o sin tipo.
+    // Fase 168: "-" en Llamadas = salida. Fase 177: solo si el tipo es de
+    // salida (outbound_ma u out_pre); inbound, internalcall*, sin tipo o un
+    // tipo desconocido siguen con "-".
     if (!porSkillId && skill === '-' && map.tipoInteraccion !== undefined) {
       var tipoSalida = tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase();
-      if (tipoSalida && tipoSalida !== '-' && tipoSalida.indexOf('internalcall') !== 0) skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
+      if (TIPIFICACION_CDR_TIPO_INTERACCION_SALIDA.indexOf(tipoSalida) !== -1) skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
     }
     // Fase 174: out_pre es salida aunque traiga skill (ORLANT: CANCELACIONES Y REPROGRAMACION).
     if (!porSkillId && canal === 'LLAMADAS' && map.tipoInteraccion !== undefined && tipificacionNormTexto(row[map.tipoInteraccion]).toLowerCase() === 'out_pre') {

@@ -16245,3 +16245,38 @@ Mobilize (Octubre 2026, "mes en curso, parcial"); subtítulo y "Act. dd/mm
 hh:mm" en 1 línea; el `abbr` dice "Última actualización"; "Cerrar" sin tocar
 título, subtítulo ni fecha; sin desborde; 0 errores de consola. Capturas fuera
 del repo.
+
+### Fase 177 — Arreglos de la auditoría de bugs y seguridad (2026-10-24, v1.72.2)
+
+Auditoría de `main` (v1.72.1) en solo lectura, pedida por el usuario: ningún
+hallazgo de gravedad alta; uno medio y ocho bajos. El usuario dio el OK para
+arreglar los puntos 1, 2, 3 y 5 en un solo PR y anotar el resto en
+`docs/pendientes.md` (sección 3).
+
+**Conteo previo (punto 1).** En los 2 HistCDR reales de septiembre de ORLANT
+(fuera del repo, solo conteos): 19.721 filas; con `SKILL_NAME "-"` hay 10.399
+`outbound_ma` y 5 que no son de salida (1 con tipo "-", 2 `internalcall_inb`,
+2 `internalcall`), que la regla de la Fase 168 ya dejaba como "-". Ninguna
+`inbound` ni de tipo desconocido.
+
+**Cambios:**
+1. `public/js/tipificacion-logic.js`: "-" pasa a "LLAMADAS DE SALIDA" solo con
+   tipo `outbound_ma` u `out_pre` (antes, cualquier tipo salvo "-",
+   vacío o `internalcall*`: un `inbound` o desconocido con "-" también se
+   habría contado como salida). `server/salida-cdr.js`: la salida del CDR
+   cuenta ese skill solo con tipo `outbound_ma` o sin tipo (archivo sin
+   `TYPE_INTERACTION`). Lector de `main` contra el corregido, con el archivo
+   real: 19.721 filas y 10.791 de salida en los dos (= producción), así que
+   septiembre no se recargó.
+2. `server/validation.js`: `MES_RE` (`AAAA-(01..12)`) en `mesSchema`, el mes
+   de WhatsApp por rangos y el periodo de Gerencia. Antes pasaban `2026-13` y
+   `2026-00`.
+3. `public/js/calidad-resumen-logic.js`: si todos los puntajes están entre 0 y
+   1 (y alguno es mayor que 0), se leen como fracción (× 100), con aviso en la
+   vista previa.
+5. `public/js/cargas.js`: tras cargar Tipificación se vacían
+   `_tipificacionOpciones` (antes apuntaba a `_tipificacionCache`, un nombre
+   que no existe) y `_salOpciones`; tras cargar Salida, `_salOpciones`.
+   Deshacer / Eliminar del Centro tienen el mismo hueco: anotado en pendientes.
+
+**Pruebas.** Nueva `server/tests/fase177-auditoria-arreglos.test.js` (6).
