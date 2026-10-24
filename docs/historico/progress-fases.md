@@ -16135,3 +16135,25 @@ asesor → octubre, con su sesión).**
 - En la misma revisión (solo lectura): Tipificación de septiembre de Mobilize
   bien (167 registros; salida 64 = 49 conectadas + 15 no conectadas).
 - CDR de octubre de ORLANT: no se cargaron, faltan los archivos.
+
+**Revisión de los archivos de Descargas (24/10/2026, solo lectura, sin guardar
+nada).** Vista previa real del Centro de cargas en un servidor local temporal
+(v1.71.0, base desechable; el navegador bloqueaba toda escritura a la API).
+
+| Archivo | Carga (mes) | Aceptadas | Omitidas / ignoradas | Avisos |
+|---|---|---|---|---|
+| CDR LLAMADAS ORLANT | Tipificación: Llamadas (sep) | 19.721 (10.791 de salida) | 0 | 3 (días sin datos, rango, 1 TYPE_INTERACTION "-" como "otro") |
+| CDR ORLANT SEPTIEMBRE | Tipificación: Llamadas (sep) | 19.721 (10.791 de salida) | 0 | 3 (iguales) |
+| CDR WHATSAPP ORLANT | Tipificación: WhatsApp (sep) | 13.118 (3.997 de salida) | 97 de agosto + 3 por SKILL_ID | 3 |
+| NIVEL DE SERVICIO WHATSAPP - ORLANT OCTUBRE (y sus 2 copias, idénticas) | WhatsApp tiempos (oct) | 5.196 | 6.876 que no son de WhatsApp | 2 (días sin datos, rango) |
+| FLUNO DE LLAMADAS DE SALIDA (y su copia, idéntica) | Llamadas de salida, Mobilize (oct) | 85 | 0 | 2 (rango; filas sin AGENT_NAME = "Sin asesor") |
+| PLANTILLA DE CALIDAD MOBILIZE OCTUBRE | Calidad: resumen por asesor (oct) | 3 | 0 | 1 (el mes se guarda entero) |
+
+Plantillas descargables contra el archivo real: mismas columnas y mismo orden
+en las 5 (HistCDR 20, HistChat 32, tiempos 4, salida 5, calidad 6). Única
+diferencia: el archivo de Edwin dice "Nombre del Asesor ← Escribir aquí" y la
+plantilla "Nombre del Asesor"; es a propósito (el lector quita la flecha,
+Fase 172). Nota de origen: los dos CDR dicen Wolkvox + "[ruta pendiente de
+confirmar con Edwin]"; tiempos y salida, su reporte de Wolkvox; calidad, el
+libro de Monitoreos de Edwin. Nada falló: sin cambios de código. Los CDR de
+octubre de ORLANT siguen sin llegar (anotado en `docs/pendientes.md`).
