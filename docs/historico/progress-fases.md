@@ -16196,3 +16196,15 @@ completa idénticos en las 12 combinaciones.
 estructura y ARIA del HTML, CSS de escritorio sin cambios y de ≤768/≤480 px,
 sin colores nuevos, y el comportamiento de `gdFiltrosHeaderToggle` y
 `_gdFiltrosHeaderTexto` con un DOM mínimo.
+
+**Verificación en producción (v1.72.0, 24/10/2026, solo lectura, con la sesión
+del usuario; el navegador bloqueaba toda escritura a la API).** ORLANT (8
+pestañas) y Mobilize (5), a 375, 768 y 1440 px, claro y oscuro:
+- Encabezado a 375 px: 166 px en ORLANT y 180 en Mobilize (más que en local:
+  el subtítulo real es más largo y "Última actualización" usa 2 líneas por el
+  espacio reservado a "Cerrar"); a 768 px: 151 px en los dos.
+- Escritorio (1440 px): 131 px en ORLANT; 173 px en Mobilize (la nota de
+  comparación baja de línea, como antes de esta fase).
+- 0 desbordes a lo ancho en las 13 pestañas, en los 6 tamaños y temas; 0
+  errores de consola. Tipificación de ORLANT a 375 px muestra 10.791 / 5.687 /
+  5.104; capturas fuera del repo.
