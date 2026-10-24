@@ -16107,3 +16107,14 @@ y `fase160-crear-hlm` (migración nueva en la lista de posteriores).
 **Dependencias.** `npm audit` marcó un aviso alto nuevo de `body-parser`
 2.3.0 (GHSA-27r3-jxmh-p828, dependencia de express); `npm audit fix` lo subió
 a 2.4.0 dentro del rango de express (solo `package-lock.json`). Audit en 0.
+
+**Recarga en producción (24/10/2026, autorizada en el pedido, solo por el
+Centro de cargas de ORLANT, con la sesión del usuario):**
+- CDR de llamadas de septiembre: 19.721 registros (reemplazó 19.721).
+- CDR de WhatsApp de septiembre: 13.118 registros (reemplazó 13.118; sin cambios
+  de reglas en WhatsApp).
+- Tarjetas de salida de septiembre: antes 10.399 (5.337 conectadas, 5.062 no
+  conectadas, ya con la regla nueva de "no conectada" sobre los datos viejos);
+  después 10.791 (5.687 conectadas, 5.104 no conectadas) = la prueba local.
+- Filtro de skill: LLAMADAS DE SALIDA 10.791; CANCELACIONES Y REPROGRAMACION 0.
+- 0 errores de consola. Octubre: espera los archivos.
