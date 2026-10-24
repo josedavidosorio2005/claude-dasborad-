@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.70.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.71.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -66,6 +66,18 @@ narrativo de cada fase, fase por fase, vive en
   [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
   Pestañas ocultas esperando datos de Edwin: ver
   [`docs/pendientes.md`](docs/pendientes.md).
+- **Reglas de conteo de la salida en Tipificación** (Fase 174, confirmadas
+  por Edwin el 23/10):
+  - Llamada de salida = TYPE_INTERACTION `outbound_ma` **o** `out_pre`
+    (aunque `out_pre` traiga skill, p. ej. 4070 CANCELACIONES Y
+    REPROGRAMACION en ORLANT: se guarda como salida, no como entrada).
+  - "No conectada" es por cliente (`parametros.salidaNoConectada` del
+    registro de clientes): ORLANT = `NO_CONTESTAN` + `BUZON`
+    (DESCRIPTION_COD_ACT, separadas en la tipificación); MOBILIZE =
+    `Cliente_no_contesta`; sin parámetro, el de Mobilize.
+  - En ORLANT la salida se cuenta **por registro** (cada fila del CDR). El
+    teléfono único se usa solo en Llamadas Únicas de Mobilize. No cambió
+    nada en la Fase 174: queda escrito para no volver a preguntarlo.
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline) en
   [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md)
@@ -666,3 +678,4 @@ mismo orden):
 - Fase 171 — Pedidos de Edwin para Mobilize: "-" de salida = Llamadas de salida en Tipificación; llamadas de salida sin quitar repetidos ni filas sin agente (octubre: 85 = 45 + 40), sin el aviso de mes incompleto; Encuesta sigue el MES; cerrar sesión deja el tablero sin filtros; conectadas/no conectadas en azul/magenta; recarga en producción de la salida de octubre de Mobilize: 54 → 85 (45 conectadas, 40 no conectadas) (v1.69.0, 2026-10-23)
 - Fase 172 — Calidad de Mobilize: carga "Calidad: resumen por asesor" con la plantilla de Edwin (valores calculados de fórmulas, aviso único si hay celdas en error, mes elegido al subir, clasificación y alerta recalculadas), panel al inicio de Calidad con promedio ponderado, monitoreos y fallos, tablas por asesor y por mes con semáforo, exportable; plantilla oficial con instrucciones (v1.70.0, 2026-10-23)
 - Fase 173 — Tipificación de septiembre de Mobilize revisada en producción (sí está: 167 llamadas, cargada el 23/10 hacia las 2:13 p. m., después de agosto y octubre); el Centro de cargas mostraba la hora de carga 5 h tarde en producción (servidor en UTC), corregido (v1.70.1, 2026-10-23)
+- Fase 174 — ORLANT: out_pre cuenta como llamada de salida (no como entrada de CANCELACIONES), "no conectada" por cliente (ORLANT NO_CONTESTAN + BUZON, Mobilize Cliente_no_contesta), salida por registro escrita como regla, plantillas de CDR con las 20/32 columnas de Wolkvox; septiembre local: 10.791 de salida, 5.104 no conectadas (v1.71.0, 2026-10-24)

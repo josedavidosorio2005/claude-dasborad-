@@ -4050,6 +4050,26 @@ function crearCalidadResumen() {
 }
 runOnceMigration('fase172_calidad_resumen_v1', crearCalidadResumen);
 
+// Fase 174 (regla confirmada por Edwin): "no conectada" de una llamada de
+// salida es por cliente, en el registro (parametros.salidaNoConectada):
+// ORLANT = NO_CONTESTAN y BUZON (DESCRIPTION_COD_ACT); MOBILIZE sigue con
+// Cliente_no_contesta. Solo agrega el parametro si falta (no pisa uno que un
+// administrador ya haya cambiado). Los datos de Tipificacion no se tocan.
+const SALIDA_NO_CONECTADA_FASE174 = { ORLANT: ['NO_CONTESTAN', 'BUZON'], MOBILIZE: ['Cliente_no_contesta'] };
+function agregarSalidaNoConectada() {
+  for (const [nombre, lista] of Object.entries(SALIDA_NO_CONECTADA_FASE174)) {
+    const reg = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+    if (!reg) continue;
+    let parametros = {};
+    try { parametros = JSON.parse(reg.parametros) || {}; } catch (e) { parametros = {}; }
+    if (Array.isArray(parametros.salidaNoConectada)) continue;
+    parametros.salidaNoConectada = lista;
+    db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(parametros), new Date().toISOString(), nombre);
+  }
+  if (!config.isTest) console.log('[db] Migracion fase174_salida_no_conectada_v1 aplicada.');
+}
+runOnceMigration('fase174_salida_no_conectada_v1', agregarSalidaNoConectada);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4089,6 +4109,7 @@ module.exports.migrarOrlantTipificacionDosCanales = migrarOrlantTipificacionDosC
 module.exports.crearAsesorLinea = crearAsesorLinea;
 // Fase 172: idem.
 module.exports.crearCalidadResumen = crearCalidadResumen;
+module.exports.agregarSalidaNoConectada = agregarSalidaNoConectada;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

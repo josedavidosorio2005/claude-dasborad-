@@ -35,6 +35,8 @@ const REGISTRO_INICIAL = [
       asesorVisibleCliente: false,
       traficoDosHojas: true,
       especificos: ['orlant_pestanas_manuales', 'orlant_resumen_trafico', 'borrado_por_rango'],
+      // Fase 174: "no conectada" de las llamadas de salida (DESCRIPTION_COD_ACT).
+      salidaNoConectada: ['NO_CONTESTAN', 'BUZON'],
     },
     logo: {
       src: 'img/clientes/orlant-logo-blanco.png',
@@ -56,6 +58,7 @@ const REGISTRO_INICIAL = [
       traficoDosHojas: false,
       especificos: [],
       claseUltimaActualizacion: 'gd-ultima-act-mobilize',
+      salidaNoConectada: ['Cliente_no_contesta'], // Fase 174
     },
     logo: {
       src: 'img/clientes/mobilize-logo.png',

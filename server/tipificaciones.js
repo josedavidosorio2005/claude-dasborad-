@@ -13,6 +13,7 @@
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
 const { aplicarAliasAFilas } = require('./alias-asesores');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
+const { leerRegistro } = require('./clientes-registro');
 
 const CANALES = ['LLAMADAS', 'WHATSAPP'];
 
@@ -36,7 +37,14 @@ const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', '
 // literal, a proposito): codificaciones que, en una llamada SALIENTE
 // (tipoInteraccion='outbound_ma'), cuentan como "NO conectada". Cualquier
 // otra codificacion en una saliente cuenta como "conectada".
+// Fase 174: es solo el valor por defecto; cada cliente tiene el suyo en el
+// registro (parametros.salidaNoConectada, ver salidaNoConectadaDe).
 const SALIDA_NO_CONECTADA = ['Cliente_no_contesta'];
+function salidaNoConectadaDe(db, campana) {
+  const c = leerRegistro(db).find((x) => x.nombre === campana);
+  const l = c && c.parametros && c.parametros.salidaNoConectada;
+  return Array.isArray(l) && l.length ? l : SALIDA_NO_CONECTADA;
+}
 
 // Fase 169: en Tipificacion de LLAMADAS, los meses cargados antes de la Fase
 // 168 guardan las llamadas de salida con el skill "LINEA DE SALIDA" (o con
@@ -230,9 +238,10 @@ function tipificacionesResumenSalida(db, q) {
   const { where, params } = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma' });
   const total = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where}`).get(params).n;
   if (!total) return { total: 0, conectadas: 0, noConectadas: 0 };
-  const placeholders = SALIDA_NO_CONECTADA.map((_, i) => `@noConectada${i}`).join(', ');
+  const noConectada = salidaNoConectadaDe(db, q.campana);
+  const placeholders = noConectada.map((_, i) => `@noConectada${i}`).join(', ');
   const paramsNoConectadas = { ...params };
-  SALIDA_NO_CONECTADA.forEach((v, i) => { paramsNoConectadas['noConectada' + i] = v; });
+  noConectada.forEach((v, i) => { paramsNoConectadas['noConectada' + i] = v; });
   const noConectadas = db
     .prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where} AND tipificacion IN (${placeholders})`)
     .get(paramsNoConectadas).n;
@@ -275,6 +284,7 @@ module.exports = {
   cargarTipificaciones,
   tipificacionesPorTipo,
   tipificacionesResumenSalida,
+  salidaNoConectadaDe,
   tipificacionesOpciones,
   tieneAlgunaTipificacion,
   agruparTop10YOtras,

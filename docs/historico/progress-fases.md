@@ -16035,3 +16035,75 @@ API y el tablero).**
 - Se ajustaron 2 valores esperados de `fase153-centro-cargas.test.js`
   (dependían de la regla de +5 h).
 
+
+### Fase 174 — ORLANT: reglas de salida que confirmó Edwin y plantillas de CDR completas (2026-10-24, v1.71.0)
+
+Parte 3 del pedido del 23/10 (respuestas de Edwin a las preguntas de la
+reunión de Tipificación con los CDR).
+
+**out_pre = llamada de salida.**
+- En el CDR de llamadas, TYPE_INTERACTION `out_pre` (marcador predictivo)
+  se normalizaba a "otro" y la fila quedaba con su skill (en ORLANT, 4070
+  CANCELACIONES Y REPROGRAMACION), como si fuera de entrada.
+- Ahora el lector (`tipificacionParseFilas`, `public/js/tipificacion-logic.js`)
+  la guarda como `outbound_ma` con el skill LLAMADAS DE SALIDA; el SKILL_ID
+  original (4070) se conserva. Así cuenta en el filtro "Llamadas de salida",
+  en las tarjetas y en la salida por asesor de la Fase 170 (3P/General según
+  `asesor_linea`), y no cuenta además en CANCELACIONES.
+- Los meses ya cargados no se tocan a mano: el cambio se ve al volver a
+  cargar el CDR.
+
+**"No conectada" por cliente.**
+- Antes era fija, la de Mobilize (`Cliente_no_contesta`), así que ORLANT
+  daba 0 no conectadas.
+- Ahora es `parametros.salidaNoConectada` del registro de clientes
+  (`server/clientes-registro.js` y su copia `public/js/registro-clientes.js`):
+  ORLANT = `NO_CONTESTAN` + `BUZON`; MOBILIZE = `Cliente_no_contesta`. Sin
+  parámetro, el valor de siempre. Ningún `if` por nombre de cliente.
+- Migración idempotente `fase174_salida_no_conectada_v1` (`server/db.js`):
+  agrega el parámetro solo si falta (no pisa un cambio de un administrador).
+  Los datos de Tipificación no se tocan.
+- Los dos códigos siguen separados en la torta de tipificación.
+
+**Conteo por registro.** En ORLANT la salida se cuenta por registro (ya era
+así); el teléfono único es solo de Llamadas Únicas de Mobilize. Sin cambios;
+queda escrito en `PROGRESS.md`.
+
+**Plantillas de CDR completas.**
+- "CDR de llamadas": las 20 columnas del HistCDR de Wolkvox, en su orden;
+  "CDR de WhatsApp": las 32 del HistChat (`ordenCompleto` en
+  `scripts/plantillas/modulos.js`, plantillas regeneradas). Las columnas que
+  el sistema no usa dicen "Viene en el export de Wolkvox; el sistema no la
+  usa" (o "nunca la lee ni la guarda", si tienen datos personales).
+- En INSTRUCCIONES, la ruta de Wolkvox queda "[ruta pendiente de confirmar
+  con Edwin]".
+- El ejemplo inventado trae DATE como texto "aaaa-mm-dd hh:mm:ss"; el lector
+  no lo aceptaba. Ahora acepta ese formato (la fecha y la hora se leen de
+  ahí), útil también para cuando la API de Wolkvox llene el archivo.
+
+**Pendientes** (`docs/pendientes.md`): salen las preguntas ya respondidas
+(out_pre, no conectada, registro vs. teléfono, cuadro quitado); entran la
+versión para celular, Únicas de Mobilize desde el CDR, la frecuencia de la
+API (Mobilize cada 2 h, el resto de noche, revisar el costo por consulta de
+Wolkvox) y la ruta de los CDR en Wolkvox.
+
+**Prueba local con el CDR real de septiembre de ORLANT** (fuera del repo, solo
+conteos):
+- 19.721 filas, encabezado = las 20 columnas del HistCDR en el orden de la
+  plantilla.
+- Salida = 10.791 (10.399 `outbound_ma` + 392 `out_pre`), todas con el skill
+  LLAMADAS DE SALIDA.
+- No conectadas de ORLANT = 5.104 (NO_CONTESTAN 2.921 + BUZON 2.183);
+  conectadas 5.687.
+- En septiembre las 392 filas de CANCELACIONES Y REPROGRAMACION eran todas
+  `out_pre`: ese skill queda sin llamadas de entrada en ese mes.
+
+**Pruebas.** Nueva `server/tests/fase174-orlant-reglas-cdr.test.js` (datos
+inventados): lector, registro, migración, API (tarjetas de ORLANT, filtro de
+skill, salida por asesor), Mobilize sin cambios, plantillas y DATE como
+texto con hora. Ajustadas `fase168-tipificacion-cdr`, `fase153-crear-aurora`
+y `fase160-crear-hlm` (migración nueva en la lista de posteriores).
+
+**Dependencias.** `npm audit` marcó un aviso alto nuevo de `body-parser`
+2.3.0 (GHSA-27r3-jxmh-p828, dependencia de express); `npm audit fix` lo subió
+a 2.4.0 dentro del rango de express (solo `package-lock.json`). Audit en 0.

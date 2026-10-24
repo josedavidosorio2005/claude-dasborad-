@@ -143,16 +143,24 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
-- **Preguntas abiertas de la reunión del 23/10 (Tipificación con los CDR)**:
-  - ¿`out_pre` cuenta como llamada de salida?
-  - ¿La tipificación se cuenta por registro o por teléfono único?
-  - Rutas exactas en Wolkvox de los dos CDR (llamadas: HistCDR; WhatsApp:
-    HistChat).
+- **Preguntas abiertas de la reunión del 23/10 (Tipificación con los CDR)**.
+  Edwin ya respondió `out_pre`, "no conectada", registro o teléfono único y
+  la tabla de detalle quitada (Fase 174, ver la bitácora). Quedan:
+  - **Ruta del CDR en Wolkvox** (llamadas: HistCDR; WhatsApp: HistChat).
+    Las plantillas dicen "[ruta pendiente de confirmar con Edwin]".
   - Confirmaciones (skill 4338) queda fuera del Nivel de Servicio por
     ahora: confirmar si se queda así.
-  - Tarjetas de llamadas de salida de ORLANT (Fase 168): "no conectada" hoy
-    es la regla de Mobilize ("Cliente_no_contesta"), así que ORLANT da 0 no
-    conectadas. ¿Para ORLANT es "No Contestan"? ¿Alguna otra?
+- **Versión para el celular** (Fase 174, 23/10/2026) — a Edwin le pareció
+  incómoda en su teléfono. Va con la propuesta visual A/B de la Fase 164
+  (encabezado muy alto en el teléfono, sección 3). Falta que Edwin diga
+  qué pantallas usa más en el celular.
+- **Llamadas Únicas de Mobilize desde el CDR** (Fase 174) — hoy Edwin arma
+  a mano el archivo de Únicas filtrando el CDR. El CDR ya trae lo necesario
+  (ver "Reciclar bases" en `docs/plantillas/README.md`). Falta que Edwin
+  confirme que da los mismos números que su archivo.
+- **Frecuencia de actualización por API** (Fase 174) — propuesta de Edwin:
+  Mobilize cada 2 horas, el resto en la noche. Antes de decidir: revisar
+  con Wolkvox el costo por consulta de su API.
 - **Llamadas Únicas de agosto de Mobilize: volver a cargar** (Fase 163).
   Desde la v1.62.0 las filas sin asesor cuentan como abandonadas; en la
   carga de agosto anterior se habían omitido. La hacen el usuario y Edwin

@@ -16,6 +16,10 @@
 // `modulo` es el id del catalogo de server/plantillas-cliente.js (Paso 3).
 'use strict';
 
+// Fase 174: columnas del export de Wolkvox que el sistema no usa.
+const NO_USA_TXT = 'Viene en el export de Wolkvox; el sistema no la usa.';
+const NO_LEE_TXT = 'Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda.';
+
 const CARGAS = [
   // ── Mobilize ──────────────────────────────────────────────────────────
   {
@@ -79,20 +83,33 @@ const CARGAS = [
     archivo: 'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx',
     hoja: 'TIPIFICACION_LLAMADAS',
     fuente: { js: 'tipificacion-logic.js', variable: 'TIPIFICACION_COLUMNAS' },
-    // Fase 168: CHANNEL es solo del HistChat de WhatsApp.
-    soloColumnas: ['AGENT_NAME', 'DATE', 'HORA', 'TIME_MIN', 'DESCRIPTION_COD_ACT', 'SKILL_NAME', 'TIME_SEC', 'COD_ACT', 'TYPE_INTERACTION', 'HUNG_UP', 'SKILL_ID'],
+    // Fase 174: la plantilla es el export HistCDR completo, con sus 20
+    // columnas en el mismo orden de Wolkvox (las que el sistema no usa van
+    // con un ejemplo inventado y la nota de que no se leen).
+    ordenCompleto: ['AGENT_NAME', 'DATE', 'DESTINY', 'TELEPHONE', 'COST', 'TIME_SEC', 'TIME_MIN', 'COD_ACT', 'DESCRIPTION_COD_ACT',
+      'COD_ACT_2', 'DESCRIPTION_COD_ACT_2', 'TYPE_INTERACTION', 'CUSTOMER_ID', 'HUNG_UP', 'CAMPAIGN_ID', 'CONN_ID', 'SKILL_ID',
+      'SKILL_NAME', 'AGENT_ID', 'COMMENT'],
     columnas: {
       AGENT_NAME: ['Asesor.', 'Asesor Ejemplo Uno'],
-      DATE: ['Fecha de la llamada (la hora va en HORA).', '2026-08-01'],
-      HORA: ['Hora, si viene aparte.', '08:15'],
-      TIME_MIN: ['Duración en minutos.', 3],
-      DESCRIPTION_COD_ACT: ['Motivo o tipificación.', 'Consulta general'],
-      SKILL_NAME: ['Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida.', 'SKILL SAC'],
+      DATE: ['Fecha y hora de la llamada.', '2026-08-01 08:15:00'],
+      DESTINY: [NO_LEE_TXT, '3000000001'],
+      TELEPHONE: [NO_LEE_TXT, '3000000001'],
+      COST: [NO_USA_TXT, 0],
       TIME_SEC: ['Duración en segundos.', 180],
+      TIME_MIN: ['Duración en minutos.', 3],
       COD_ACT: ['Código de la tipificación (texto).', '401'],
-      TYPE_INTERACTION: ['"inbound" (entrante) u "outbound_ma" (saliente).', 'inbound'],
+      DESCRIPTION_COD_ACT: ['Motivo o tipificación. En una llamada de salida, el cliente define cuáles cuentan como "no conectada" (ORLANT: NO_CONTESTAN y BUZON).', 'Consulta general'],
+      COD_ACT_2: [NO_USA_TXT, '-'],
+      DESCRIPTION_COD_ACT_2: [NO_USA_TXT, '-'],
+      TYPE_INTERACTION: ['"inbound" (entrante), "outbound_ma" u "out_pre" (salientes: las dos cuentan como Llamadas de salida). Las "internalcall" no cuentan como salida.', 'inbound'],
+      CUSTOMER_ID: [NO_LEE_TXT, '1000000001'],
       HUNG_UP: ['Quién colgó ("agent" o "customer").', 'customer'],
+      CAMPAIGN_ID: [NO_USA_TXT, '-'],
+      CONN_ID: [NO_LEE_TXT, 'EJEMPLO-0001'],
       SKILL_ID: ['Identificador técnico de la línea.', '101'],
+      SKILL_NAME: ['Línea o skill. "-" con TYPE_INTERACTION de salida = Llamadas de salida.', 'SKILL SAC'],
+      AGENT_ID: [NO_LEE_TXT, '0000'],
+      COMMENT: [NO_LEE_TXT, ''],
     },
   },
   {
@@ -178,15 +195,48 @@ const CARGAS = [
     // no el nombre del skill; el nombre sale de la tabla "Skills de WhatsApp"
     // del cliente. Con SKILL_ID + CHANNEL el sistema sabe que es WhatsApp
     // (cargasEsHistChatPorSkillId). Solo se ponen las columnas que lee.
-    soloColumnas: ['AGENT_NAME', 'DATE', 'DESCRIPTION_COD_ACT', 'SKILL_ID', 'CHANNEL'],
+    // Fase 174: el export HistChat completo, con sus 32 columnas en el
+    // orden de Wolkvox.
+    ordenCompleto: ['CONN_ID', 'CHANNEL', 'DATE', 'DATE_CLOSE', 'ROUTING', 'CUSTOMER_NAME', 'CUSTOMER_EMAIL', 'CUSTOMER_PHONE',
+      'CUSTOMER_CHARS', 'ASSIGNMENT_TIME', 'AGENT_AVERAGE_RESPONSE_TIME', 'AGENT_ID', 'AGENT_NAME', 'AGENT_CHARS', 'TIME_ON_AGENT',
+      'CHAT_DURATION', 'COD_ACT', 'DESCRIPTION_COD_ACT', 'TRANSFER', 'TRANSFER_TYPE', 'COMMENTS', 'CUSTOMER_ID', 'SKILL_ID',
+      'FIRST RESPONSE TIME', 'LAST_PARTICIPANT_WHO_SPOKE', 'EXTRA_FIELD', 'COMMENT', 'USER_ID', 'FEELING', 'AGENT_DNI',
+      'AGENT_ANSWERS', 'BSUID'],
     // SKILL_ID hace las veces de SKILL_NAME (el nombre sale de la tabla de skills).
     obligatoriaReemplazada: { SKILL_NAME: 'SKILL_ID' },
     columnas: {
-      AGENT_NAME: ['Asesor.', 'Asesor Ejemplo Uno'],
-      DATE: ['Fecha de la conversación (en el export viene con la hora).', '2026-09-01'],
-      DESCRIPTION_COD_ACT: ['Motivo o tipificación.', 'Agendamiento'],
-      SKILL_ID: ['Número del skill (ver la tabla de skills). 0 = WhatsApp de salida.', '4327'],
+      CONN_ID: [NO_LEE_TXT, 'EJEMPLO-0001'],
       CHANNEL: ['Canal del chat ("whatsapp").', 'whatsapp'],
+      DATE: ['Fecha y hora de la conversación.', '2026-09-01 08:15:00'],
+      DATE_CLOSE: [NO_USA_TXT, '2026-09-01 08:30:00'],
+      ROUTING: [NO_USA_TXT, '-'],
+      CUSTOMER_NAME: [NO_LEE_TXT, 'Cliente Ejemplo'],
+      CUSTOMER_EMAIL: [NO_LEE_TXT, 'cliente@ejemplo.com'],
+      CUSTOMER_PHONE: [NO_LEE_TXT, '3000000001'],
+      CUSTOMER_CHARS: [NO_USA_TXT, 0],
+      ASSIGNMENT_TIME: [NO_USA_TXT, 0],
+      AGENT_AVERAGE_RESPONSE_TIME: [NO_USA_TXT, 0],
+      AGENT_ID: [NO_LEE_TXT, '0000'],
+      AGENT_NAME: ['Asesor.', 'Asesor Ejemplo Uno'],
+      AGENT_CHARS: [NO_USA_TXT, 0],
+      TIME_ON_AGENT: [NO_USA_TXT, 0],
+      CHAT_DURATION: [NO_USA_TXT, 0],
+      COD_ACT: [NO_USA_TXT, '401'],
+      DESCRIPTION_COD_ACT: ['Motivo o tipificación.', 'Agendamiento'],
+      TRANSFER: [NO_USA_TXT, '-'],
+      TRANSFER_TYPE: [NO_USA_TXT, '-'],
+      COMMENTS: [NO_LEE_TXT, ''],
+      CUSTOMER_ID: [NO_LEE_TXT, '1000000001'],
+      SKILL_ID: ['Número del skill (ver la tabla de skills). 0 = WhatsApp de salida.', '4327'],
+      'FIRST RESPONSE TIME': [NO_USA_TXT, 0],
+      LAST_PARTICIPANT_WHO_SPOKE: [NO_USA_TXT, '-'],
+      EXTRA_FIELD: [NO_LEE_TXT, ''],
+      COMMENT: [NO_LEE_TXT, ''],
+      USER_ID: [NO_LEE_TXT, '0000'],
+      FEELING: [NO_USA_TXT, '-'],
+      AGENT_DNI: [NO_LEE_TXT, '0000'],
+      AGENT_ANSWERS: [NO_USA_TXT, 0],
+      BSUID: [NO_LEE_TXT, '-'],
     },
   },
   {
@@ -283,7 +333,7 @@ const ORIGEN = {
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': {
-    origen: 'Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan).',
+    origen: 'Wolkvox: CDR de llamadas, export completo (hoja "HistCDR<fecha>") — [ruta pendiente de confirmar con Edwin]. Se sube tal cual: el sistema nunca lee teléfonos, documentos ni comentarios. SKILL_ID/SKILL_NAME "-" = Llamadas de salida (las internalcall no cuentan). TYPE_INTERACTION "out_pre" también es Llamada de salida, aunque traiga skill (ORLANT: 4070 CANCELACIONES Y REPROGRAMACION).',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"Llamadas\".",
     reemplazo: 'Las llamadas de ese cliente entre la primera y la última fecha del archivo.',
@@ -344,6 +394,21 @@ CARGAS.forEach((c) => Object.assign(c, ORIGEN[c.archivo]));
 function columnasDeCarga(c, requerir) {
   const req = requerir || ((js) => require('../../public/js/' + js));
   const lista = req(c.fuente.js)[c.fuente.variable];
+  // Fase 174: export completo de Wolkvox, en su orden. Las columnas que el
+  // lector no conoce se ponen igual (el lector las ignora por nombre).
+  if (c.ordenCompleto) {
+    return c.ordenCompleto.map((label) => {
+      const col = lista.find((x) => x.label === label);
+      return {
+        label,
+        encabezado: label,
+        obligatoria: !!(col && col.obligatoria),
+        alias: col ? [].concat(col.aliases || [], col.labelAlt || []).filter((a) => a !== label) : [],
+        descripcion: (c.columnas[label] || [''])[0],
+        ejemplo: (c.columnas[label] || [])[1],
+      };
+    });
+  }
   return lista
     .filter((col) => !col.ocultaEnPlantilla)
     .filter((col) => !c.soloColumnas || c.soloColumnas.includes(col.label))

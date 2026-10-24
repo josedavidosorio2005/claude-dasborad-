@@ -115,8 +115,10 @@ test('Llamadas: SKILL "-" = LLAMADAS DE SALIDA; internalcall* y filas sin tipo N
     llamada('internalcall', '-', '-'), llamada('internalcall_inb', '-', '-'), llamada('-', '-', '-'),
     llamada('inbound', '4308', 'CALL INBOUND ORLANT 3P'), llamada('out_pre', '4070', 'CANCELACIONES Y REPROGRAMACION'),
   ], null, 'LLAMADAS');
-  assert.deepEqual(r.filas.map((f) => f.skill), ['LLAMADAS DE SALIDA', 'LLAMADAS DE SALIDA', '-', '-', '-', 'CALL INBOUND ORLANT 3P', 'CANCELACIONES Y REPROGRAMACION']);
-  assert.equal(r.salida, 2, 'de salida = outbound_ma');
+  // Fase 174 (regla de Edwin): out_pre tambien es salida (antes quedaba en CANCELACIONES Y REPROGRAMACION).
+  assert.deepEqual(r.filas.map((f) => f.skill), ['LLAMADAS DE SALIDA', 'LLAMADAS DE SALIDA', '-', '-', '-', 'CALL INBOUND ORLANT 3P', 'LLAMADAS DE SALIDA']);
+  assert.equal(r.salida, 3, 'de salida = outbound_ma + out_pre');
+  assert.equal(r.filas[6].skillId, '4070', 'el SKILL_ID original se conserva');
   // Formato viejo sin TYPE_INTERACTION: "-" queda tal cual.
   const viejo = T.tipificacionParseFilas([['AGENT_NAME', 'DATE', 'DESCRIPTION_COD_ACT', 'SKILL_NAME'], ['Asesor Uno', '2026-09-01', 'Agendada', '-']], null, 'LLAMADAS');
   assert.equal(viejo.filas[0].skill, '-');
