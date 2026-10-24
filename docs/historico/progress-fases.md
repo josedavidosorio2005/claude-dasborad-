@@ -16280,3 +16280,15 @@ arreglar los puntos 1, 2, 3 y 5 en un solo PR y anotar el resto en
    Deshacer / Eliminar del Centro tienen el mismo hueco: anotado en pendientes.
 
 **Pruebas.** Nueva `server/tests/fase177-auditoria-arreglos.test.js` (6).
+
+**Deploy y verificación en producción (2026-10-24).** PR #540 mergeado con
+`--match-head-commit` (SHA de `git ls-remote` = `head.sha` de la API); CI y
+deploy en verde a la primera. `/api/health` → `1.72.2`. Sin sesión: los JS
+servidos traen los 3 arreglos del navegador y la API sigue en 401. Con sesión
+(Playwright desde Node, login manual del usuario, escrituras de la API
+bloqueadas; 0 intentadas): Salida de septiembre de ORLANT 10.791 llamadas y
+3.997 WhatsApp (fuente CDR); tarjetas de salida 10.791 / 5.687 conectadas /
+5.104 no conectadas, iguales que antes; `mes=2026-13` rechazado con 400;
+Resumen de calidad de Mobilize de octubre 3 asesores, 34 monitoreos, 97,35 %.
+Pestañas Salida y Tipificación de ORLANT y Calidad de Mobilize pintadas, sin
+NaN ni undefined; único error de consola, el 400 provocado a propósito.
