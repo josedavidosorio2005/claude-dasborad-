@@ -19,7 +19,16 @@
 // en 3P/General por la linea de cada asesor en ese mes. Lo que no tiene
 // linea va a "Sin asignar" (suma al total). Debajo, solo el administrador
 // ve la tabla de asesores del mes para asignarles la linea.
+//
+// Fase 187 (OK de Edwin: una sola clasificacion): si el servidor marca las
+// filas con lineaPorCliente, la linea sale de la clasificacion por cliente
+// de Tipificacion; lo que no tiene linea es "Sin clasificar" y el
+// administrador la cambia con la misma ventana "Clasificación de asesores".
+// Mientras no, el administrador ve tambien lo guardado mes a mes (solo lectura).
 'use strict';
+
+// Fase 187: "Sin clasificar" con la clasificacion por cliente; "Sin asignar" con la linea por mes.
+function _salSinTexto(f){ return f && f.lineaPorCliente ? 'Sin clasificar' : 'Sin asignar'; }
 
 // Total de un canal (3P + General + Sin asignar).
 function _salTotal(f, canal){
@@ -90,7 +99,11 @@ async function _salDibujar(campana, i, opciones){
       ? _gdAvisoSinDatosMesHtml('Llamadas y WhatsApp de salida', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null, mesNombreLargo)
       : '';
     var filaAviso = filas.filter(function(f){ return f.mes === mesSel; })[0];
-    if(filaAviso && filaAviso.asesoresSinAsignar){
+    if(filaAviso && filaAviso.asesoresSinAsignar && filaAviso.lineaPorCliente){
+      avisoEl.innerHTML += '<div class="gd-aviso-sin-datos" role="status">' + esc(filaAviso.asesoresSinAsignar + ' asesor(es) con salidas en ' + mesNombreLargo(mesSel) +
+        ' no están clasificados (Línea General o 3P): ' + gdFmtValor(filaAviso.llamadasSinAsignar || 0) + ' llamada(s) y ' + gdFmtValor(filaAviso.wppSinAsignar || 0) +
+        ' WhatsApp quedan en "Sin clasificar".' + (_salEsAdmin() ? ' Clasifícalos abajo, en "Clasificación de asesores".' : '')) + '</div>';
+    } else if(filaAviso && filaAviso.asesoresSinAsignar){
       avisoEl.innerHTML += '<div class="gd-aviso-sin-datos" role="status">' + esc(filaAviso.asesoresSinAsignar + ' asesor(es) con salidas en ' + mesNombreLargo(mesSel) +
         ' no tienen línea (3P o General): ' + gdFmtValor(filaAviso.llamadasSinAsignar || 0) + ' llamada(s) y ' + gdFmtValor(filaAviso.wppSinAsignar || 0) +
         ' WhatsApp quedan en "Sin asignar".' + (_salEsAdmin() ? ' Asígnalos abajo, en "Línea de cada asesor".' : '')) + '</div>';
@@ -134,7 +147,12 @@ async function _salDibujar(campana, i, opciones){
   // Fase 170: editor de lineas (solo administrador, meses calculados del CDR).
   var asesoresEl = document.getElementById('sal-asesores-'+i);
   var filaMes = filas.filter(function(f){ return f.mes === mesSel; })[0];
-  if(asesoresEl){
+  if(asesoresEl && filaMes && filaMes.lineaPorCliente){
+    // Fase 187: una sola clasificacion (por cliente), la misma ventana de Tipificacion.
+    asesoresEl.innerHTML = _salEsAdmin() ? gdGraficaHtml('Línea de cada asesor',
+      '<p class="sal-asesores-ayuda">La línea de cada asesor es una sola para todos los meses, la misma de Tipificación. Los que no tengan línea quedan en "Sin clasificar".</p>' +
+      '<div class="modal-btns" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn-primary" onclick="salAbrirClasificacion(\''+esc(campana)+'\', \''+esc(mesSel)+'\')">Clasificación de asesores</button></div>') : '';
+  } else if(asesoresEl){
     if(_salEsAdmin() && filaMes && (filaMes.fuenteLlamadas === 'cdr' || filaMes.fuenteWpp === 'cdr')) await _salCargarEditor(campana, i, mesSel);
     else asesoresEl.innerHTML = '';
   }
@@ -155,15 +173,33 @@ function _salEditorFilasHtml(asesores){
         '<td>'+gdFmtValor(a.llamadas)+'</td><td>'+gdFmtValor(a.wpp)+'</td></tr>';
     }).join('') + '</tbody></table></div>';
 }
+// Fase 187: misma ventana que Tipificacion; al guardar, se redibuja el mes.
+function salAbrirClasificacion(campana, mes){
+  tipifAbrirClasificacionCliente(campana, function(){ if(typeof _gdIrAMes === 'function') _gdIrAMes(mes); });
+}
+// Fase 187 (solo lectura): lo guardado mes a mes, antes de pasar a la clasificacion por cliente.
+function salInventarioLineasHtml(inv){
+  if(!inv || !inv.meses || !inv.meses.length) return '<p class="sal-asesores-ayuda">Líneas guardadas mes a mes: ningún mes tiene líneas guardadas.</p>';
+  var html = '<p class="sal-asesores-ayuda"><strong>Líneas guardadas mes a mes</strong> (solo lectura): ' +
+    inv.meses.map(function(m){ return esc(mesNombreLargo(m.mes)+': '+m.asesores+' asesor(es) ('+m.p3+' en 3P, '+m.general+' en General)'); }).join('; ') + '.';
+  if(inv.conflictos && inv.conflictos.length){
+    html += ' Con línea distinta según el mes: ' + inv.conflictos.map(function(c){
+      return esc(c.agente+' ('+Object.keys(c.porMes).map(function(mm){ return salidaMesLbl(mm)+' '+c.porMes[mm]; }).join(', ')+')');
+    }).join('; ') + '.';
+  }
+  return html + '</p>';
+}
 async function _salCargarEditor(campana, i, mes){
   var el = document.getElementById('sal-asesores-'+i);
   if(!el) return;
   _salEditor[i] = { campana: campana, mes: mes };
-  var r = null;
+  var r = null, inv = null;
   try{ r = await apiRequest('GET','/calidad/salida/asesores?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mes)); }
   catch(e){ el.innerHTML = '<p class="sal-asesores-ayuda">'+esc(e.message)+'</p>'; return; }
+  try{ inv = await apiRequest('GET','/calidad/salida/lineas-por-mes?campana='+encodeURIComponent(campana)); }catch(e){ inv = null; }
   el.innerHTML = gdGraficaHtml('Línea de cada asesor — '+esc(mesNombreLargo(mes)),
     '<p class="sal-asesores-ayuda">Solo lo ves tú (administrador). La salida de cada asesor de este mes se suma a la línea que elijas; si no tiene línea, va a "Sin asignar".</p>' +
+    '<div id="sal-inventario-'+i+'">'+salInventarioLineasHtml(inv)+'</div>' +
     '<div id="sal-asesores-tabla-'+i+'">'+_salEditorFilasHtml(r.asesores || [])+'</div>' +
     '<div class="modal-btns" style="justify-content:flex-start;gap:10px;flex-wrap:wrap;margin-top:10px">' +
       '<button type="button" class="btn-cancel" onclick="salCopiarMesAnterior('+i+')">Copiar del mes anterior</button>' +
@@ -234,18 +270,19 @@ function _salTablaHtml(filas, mesSel){
   var encabezados = filas.map(function(f){ return celda('th', salidaMesLbl(f.mes), f.mes); }).join('');
   // Fase 170: "Sin asignar" solo si algun mes lo tiene; % 3P sobre el total del mes.
   var hayLlamSin = filas.some(function(f){ return f.llamadasSinAsignar; });
+  var sinTxt = _salSinTexto(filas[0]).toLowerCase();
   var hayWppSin = filas.some(function(f){ return f.wppSinAsignar; });
   var fuente = function(v){ return v === 'cdr' ? 'CDR' : (v === 'archivo' ? 'Archivo mensual' : '—'); };
   var cuerpo =
     fila('Llamadas 3P', function(f){ return gdFmtValor(f.llamadas3p); }) +
     fila('Llamadas General', function(f){ return gdFmtValor(f.llamadasGeneral); }) +
-    (hayLlamSin ? fila('Llamadas sin asignar', function(f){ return gdFmtValor(f.llamadasSinAsignar || 0); }) : '') +
+    (hayLlamSin ? fila('Llamadas '+sinTxt, function(f){ return gdFmtValor(f.llamadasSinAsignar || 0); }) : '') +
     fila('Total Llamadas', function(f){ return gdFmtValor(_salTotal(f, 'llamadas')); }) +
     fila('% 3P (Llamadas)', function(f){ return pct(f.llamadas3p, _salTotal(f, 'llamadas')); }) +
     fila('Fuente (Llamadas)', function(f){ return fuente(f.fuenteLlamadas); }) +
     fila('WhatsApp 3P', function(f){ return gdFmtValor(f.wpp3p); }) +
     fila('WhatsApp General', function(f){ return gdFmtValor(f.wppGeneral); }) +
-    (hayWppSin ? fila('WhatsApp sin asignar', function(f){ return gdFmtValor(f.wppSinAsignar || 0); }) : '') +
+    (hayWppSin ? fila('WhatsApp '+sinTxt, function(f){ return gdFmtValor(f.wppSinAsignar || 0); }) : '') +
     fila('Total WhatsApp', function(f){ return gdFmtValor(_salTotal(f, 'wpp')); }) +
     fila('% 3P (WhatsApp)', function(f){ return pct(f.wpp3p, _salTotal(f, 'wpp')); }) +
     fila('Fuente (WhatsApp)', function(f){ return fuente(f.fuenteWpp); });

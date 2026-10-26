@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.75.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.76.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -80,6 +80,12 @@ narrativo de cada fase, fase por fase, vive en
     botón "Clasificación de asesores", solo el administrador); sin
     clasificar = "Sin clasificar", que suma a la salida. Independiente de la
     línea por mes de la Fase 170.
+  - **Una sola clasificación (Fase 187, OK de Edwin)**: con
+    `parametros.salidaUsaClasificacion = true` en el registro del cliente,
+    la pestaña de salida usa la clasificación por cliente en todos los meses
+    y la línea mes a mes (`asesor_linea`) deja de usarse sin borrarse.
+    **Todavía apagado en ORLANT**: se enciende con la migración, tras
+    revisar el inventario de lo guardado mes a mes.
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
@@ -300,3 +306,4 @@ mismo orden):
 - Fase 184 — Encuesta de Mobilize: ID de la llamada (CONN_ID del archivo) en la lista de comentarios y en el Excel, sin teléfono y sin cruce con el CDR; vacío si el archivo no lo trae; arreglo de la Fase 178: los meses que solo tienen Encuesta a veces no entraban en el MES (v1.73.0, 2026-10-26)
 - Fase 185 — Tipificación de WhatsApp de ORLANT por fecha de cierre (DATE_CLOSE): octubre cuadra con el archivo y cargar un mes ya no borra el último día del anterior; tarjeta Total WhatsApp; resumen de filas omitidas en la vista previa (v1.74.0, 2026-10-26)
 - Fase 186 — Tipificación de ORLANT: Salida General / Salida 3P / Sin clasificar por la clasificación del asesor (por cliente), filtro "Línea de salida" en las 2 vistas, ventana "Clasificación de asesores" (solo administrador) con carga desde Excel (v1.75.0, 2026-10-26)
+- Fase 187 — Una sola clasificación de asesores: la pestaña de salida puede usar la clasificación por cliente (apagado hasta la migración) e inventario de solo lectura de las líneas guardadas mes a mes (v1.76.0, 2026-10-26)

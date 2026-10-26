@@ -13,7 +13,26 @@
 // Se decide POR CANAL: si un mes tiene el CDR de llamadas pero no el de
 // WhatsApp (o al reves), el canal sin CDR sigue saliendo del archivo
 // mensual (salida_mensual). Los meses sin ningun CDR, igual que siempre.
+//
+// Fase 187 (OK de Edwin, 26/10: una sola clasificacion de asesores): con
+// parametros.salidaUsaClasificacion = true en el registro del cliente, la
+// linea de cada asesor sale de la clasificacion POR CLIENTE de Tipificacion
+// (tabla asesor_clasificacion, Fase 186), igual para todos los meses, y la
+// linea mes a mes (asesor_linea) deja de usarse. asesor_linea no se borra.
+// Sin el parametro, todo sigue igual que en la Fase 170.
 'use strict';
+
+const { leerRegistro } = require('./clientes-registro');
+function usaClasificacionPorCliente(db, campana) {
+  const c = leerRegistro(db).find((x) => x.nombre === campana);
+  return !!(c && c.parametros && c.parametros.salidaUsaClasificacion === true);
+}
+// { agente: '3P'|'GENERAL' } de la clasificacion por cliente.
+function clasificacionPorCliente(db, campana) {
+  const out = {};
+  db.prepare('SELECT agente, linea FROM asesor_clasificacion WHERE campana = ?').all(campana).forEach((f) => { out[f.agente] = f.linea; });
+  return out;
+}
 
 // Fase 183: lazy, para no crear un require circular si tipificaciones.js llega a usar este modulo.
 function salidaPorGuion(c) { return require('./tipificaciones').salidaPorGuion(c); }
@@ -56,14 +75,15 @@ function lineasPorMes(db, campana, mes) {
 
 // Totales por mes calculados del CDR: { 'AAAA-MM': { llamadas3p, ..., cdrLlamadas, cdrWpp, asesoresSinAsignar } }
 function salidaCdrPorMes(db, campana) {
-  const lineas = lineasPorMes(db, campana);
+  const porCliente = usaClasificacionPorCliente(db, campana) ? clasificacionPorCliente(db, campana) : null;
+  const lineas = porCliente ? {} : lineasPorMes(db, campana);
   const out = {};
   for (const s of salidasPorAsesor(db, campana)) {
     const m = out[s.mes] || (out[s.mes] = {
       llamadas3p: 0, llamadasGeneral: 0, llamadasSinAsignar: 0, wpp3p: 0, wppGeneral: 0, wppSinAsignar: 0,
       cdrLlamadas: false, cdrWpp: false, asesoresSinAsignar: [],
     });
-    const linea = (lineas[s.mes] || {})[s.agente] || null;
+    const linea = (porCliente ? porCliente[s.agente] : (lineas[s.mes] || {})[s.agente]) || null;
     const suf = linea === '3P' ? '3p' : linea === 'GENERAL' ? 'General' : 'SinAsignar';
     m['llamadas' + suf] += s.llamadas;
     m['wpp' + suf] += s.wpp;
@@ -82,6 +102,8 @@ function salidaCombinadaPorMes(db, campana) {
   db.prepare('SELECT mes, llamadas3p, llamadasGeneral, wpp3p, wppGeneral FROM salida_mensual WHERE campana = ? ORDER BY mes ASC')
     .all(campana).forEach((f) => { archivo[f.mes] = f; });
   const cdr = salidaCdrPorMes(db, campana);
+  // Fase 187: la pestaña dice "Sin clasificar" (y no "Sin asignar") y manda a Tipificacion.
+  const extra = usaClasificacionPorCliente(db, campana) ? { lineaPorCliente: true } : {};
   const meses = [...new Set([...Object.keys(archivo), ...Object.keys(cdr)])].sort();
   return meses.map((mes) => {
     const a = archivo[mes] || null;
@@ -99,6 +121,7 @@ function salidaCombinadaPorMes(db, campana) {
       fuenteLlamadas: usaLlam ? 'cdr' : (a ? 'archivo' : null),
       fuenteWpp: usaWpp ? 'cdr' : (a ? 'archivo' : null),
       asesoresSinAsignar: c ? c.asesoresSinAsignar.length : 0,
+      ...extra,
     };
   }).filter((f) => f.fuenteLlamadas || f.fuenteWpp);
 }
@@ -132,7 +155,38 @@ function guardarLineasDelMes(db, { campana, mes, asignaciones, guardadoPorNombre
   return { mes, guardadas };
 }
 
+// Fase 187 (solo lectura): lo guardado mes a mes en asesor_linea, para
+// decidir la migracion a la clasificacion por cliente sin perder nada.
+// meses: [{ mes, asesores, p3, general }]; propuesta: { agente: linea } de los
+// asesores con UNA sola linea en todos sus meses; conflictos: asesores con
+// 3P en un mes y General en otro ({ agente, porMes: { mes: linea } });
+// distintaDeClasificacion: asesores ya clasificados por cliente con otra linea.
+function inventarioLineasPorMes(db, campana) {
+  const filas = db.prepare('SELECT mes, agente, linea FROM asesor_linea WHERE campana = ? ORDER BY mes, agente').all(campana);
+  const meses = {};
+  const porAgente = {};
+  for (const f of filas) {
+    const m = meses[f.mes] || (meses[f.mes] = { mes: f.mes, asesores: 0, p3: 0, general: 0 });
+    m.asesores++;
+    if (f.linea === '3P') m.p3++; else m.general++;
+    (porAgente[f.agente] || (porAgente[f.agente] = {}))[f.mes] = f.linea;
+  }
+  const clasif = clasificacionPorCliente(db, campana);
+  const propuesta = {};
+  const conflictos = [];
+  const distintaDeClasificacion = [];
+  Object.keys(porAgente).sort().forEach((agente) => {
+    const lineas = [...new Set(Object.values(porAgente[agente]))];
+    if (lineas.length > 1) { conflictos.push({ agente, porMes: porAgente[agente] }); return; }
+    propuesta[agente] = lineas[0];
+    if (clasif[agente] && clasif[agente] !== lineas[0]) distintaDeClasificacion.push({ agente, porMes: lineas[0], porCliente: clasif[agente] });
+  });
+  return { campana, usaClasificacionPorCliente: usaClasificacionPorCliente(db, campana), meses: Object.values(meses), propuesta, conflictos, distintaDeClasificacion };
+}
+
 module.exports = {
+  usaClasificacionPorCliente,
+  inventarioLineasPorMes,
   LINEAS,
   SKILL_SALIDA_LLAMADAS,
   salidasPorAsesor,
