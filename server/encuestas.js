@@ -14,7 +14,7 @@ function nowStr() {
 
 // Orden FIJO del payload -- igual a ENCUESTA_ORDEN_ARRAY
 // (public/js/encuesta-logic.js) y encuestaFilaArraySchema (validation.js).
-const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario'];
+const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId'];
 
 // Mismos rangos que ENCUESTA_PREGUNTAS (encuesta-logic.js).
 const PREGUNTAS = [
@@ -81,8 +81,8 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
   const { desde, hasta } = rangoFechas(filasObj);
   const del = db.prepare('DELETE FROM encuestas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
-    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @archivoNombre, @cargadoPorNombre, @createdAt)`
+    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @connId, @archivoNombre, @cargadoPorNombre, @createdAt)`
   );
   let borradas = 0;
   db.transaction(() => {
@@ -92,7 +92,7 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
     for (const f of filasObj) {
       insert.run({
         campana, fecha: f.fecha, agente: f.agente || '', skill: f.skill || '',
-        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '',
+        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '', connId: f.connId || '',
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }
@@ -145,7 +145,8 @@ function encuestasResumen(db, q) {
 // puede ver nombres de asesor.
 function encuestasComentarios(db, q, { incluirAgentes }) {
   const { where, params } = whereClausulas(q);
-  const cols = incluirAgentes ? 'fecha, skill, agente, comentario' : 'fecha, skill, comentario';
+  // Fase 184: connId = ID de la llamada ('' si el archivo no lo traia).
+  const cols = incluirAgentes ? 'fecha, connId, skill, agente, comentario' : 'fecha, connId, skill, comentario';
   return db.prepare(`SELECT ${cols} FROM encuestas WHERE ${where} AND comentario <> '' ORDER BY fecha DESC, id DESC LIMIT 1000`).all(params);
 }
 

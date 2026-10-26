@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.73.0 — Octubre 2026
+
+**Fase 184: ID de la llamada en los comentarios de la Encuesta (Mobilize).**
+
+- En la pestaña Encuesta, cada comentario muestra el ID de la llamada de
+  Wolkvox (columna CONN_ID del archivo de encuesta), para ubicar la llamada.
+  También sale en el Excel.
+- No se muestra el teléfono: se mantiene la regla de no guardar teléfonos.
+- Las encuestas ya cargadas y los archivos que no traen CONN_ID quedan con
+  el ID vacío; no se adivina cruzando con otras bases. Para verlo en los
+  meses ya cargados, hay que volver a subir el archivo con esa columna.
+- Arreglo: un mes que solo tiene Encuesta (sin Flujo de Llamadas) a veces
+  no aparecía en el selector MES de Mobilize; ya aparece.
+
 ## v1.72.8 — Octubre 2026
 
 **Fase 183: Tipificación de ORLANT con las reglas de Edwin del 26/10.**

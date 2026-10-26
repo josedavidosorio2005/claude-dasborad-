@@ -16838,3 +16838,36 @@ conteos) y las cifras de agosto que dio Edwin.
   3 de 4); se ajustaron fase164, 168, 169, 170 y 174, que fijaban la regla
   anterior. Suite completa y `npm audit` en 0; verificación local con
   Playwright y Brave a 1440/768/375 px con un CDR sintético.
+
+### Fase 184 — ID de la llamada en los comentarios de la Encuesta de Mobilize (2026-10-26, v1.73.0)
+
+Pedido del usuario (primero dijo ORLANT; ORLANT no tiene Encuesta y se
+corrigió a Mobilize). Decisiones del usuario: solo el ID de la llamada
+(CONN_ID), **sin teléfono** (se mantiene la regla de la Fase 131), tomado
+de la columna CONN_ID del archivo de encuesta; si un archivo no la trae, el
+campo queda vacío, **sin cruce aproximado con el CDR**.
+
+- El archivo de encuesta real que se cargó el 15/10 (septiembre) **no trae**
+  CONN_ID ni teléfono (revisados solo los encabezados): esas 45 encuestas
+  quedan con el ID vacío hasta que Edwin exporte el HistIVR con CONN_ID y se
+  vuelva a subir.
+- Lector (`encuesta-logic.js`): CONN_ID opcional al final del payload, con
+  aviso si falta; TELEPHONE sigue sin leerse. Zod acepta la forma vieja (8
+  campos) y la nueva (9). Migración `fase184_encuestas_conn_id_v1`: columna
+  `connId` con '' por defecto (solo ALTER ADD COLUMN, no toca datos).
+- Lista de comentarios y Excel: columna "ID de llamada". Plantilla
+  `PLANTILLA_ENCUESTA.xlsx` y su ficha regeneradas con CONN_ID.
+- Pruebas: `fase184-encuesta-conn-id.test.js` y ajustes de forma en
+  `fase147-b-encuesta.test.js`.
+- La lista de comentarios pone "ID de llamada" al final (después del
+  comentario), para no quitarle espacio al comentario en el teléfono.
+- **Defecto de la Fase 178 encontrado al verificar**: en `_gdBootstrap`,
+  `mesesSoloPanel = mesesSoloPanel.concat((await fuente()) || [])` leía la
+  lista antes del `await`; la fuente que terminaba última pisaba a las
+  demás. En Mobilize, el Resumen de calidad (vacío) borraba los meses de la
+  Encuesta y un mes con solo Encuesta no salía en el MES. Arreglado (await
+  primero) con prueba que reproduce la carrera.
+- Verificación local con Playwright y Brave a 1440/768/375 px (27 de 27):
+  columna e ID en la tabla, vacío para la carga sin CONN_ID, columnas del
+  Excel, sin teléfonos, mes solo-Encuesta en el MES, sin scroll horizontal de
+  la página ni errores de consola.

@@ -28,10 +28,15 @@ var ENCUESTA_COLUMNAS = [
   { key: 'q3', label: 'Q03', obligatoria: true },
   { key: 'q4', label: 'Q04', obligatoria: true },
   { key: 'comentario', label: 'VOICE_MESSAGE', obligatoria: false },
+  // Fase 184 (pedido del usuario, Mobilize): ID de la llamada, para ubicar
+  // cada comentario en Wolkvox. Opcional: un archivo viejo sin CONN_ID deja
+  // el campo vacio (nunca se cruza con el CDR). El telefono sigue sin leerse.
+  { key: 'connId', label: 'CONN_ID', obligatoria: false },
 ];
 // Orden fijo del payload compacto -- debe coincidir con CAMPOS_FILA
 // (server/encuestas.js) y encuestaFilaArraySchema (validation.js).
-var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario'];
+var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId'];
+var ENCUESTA_CONN_ID_MAX = 100;
 var ENCUESTA_COMENTARIO_MAX = 1000;
 
 // Textos para mostrar (pedido del usuario, ortografia corregida). `valores`
@@ -199,9 +204,11 @@ function encuestaParseFilas(aoa) {
     }
     var agente = _encuestaNorm(row[map.agente]).slice(0, 200);
     var skill = _encuestaNorm(row[map.skill]).slice(0, 200);
-    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario]);
+    var connId = map.connId === undefined || _encuestaSinRespuesta(row[map.connId]) ? '' : _encuestaNorm(row[map.connId]).slice(0, ENCUESTA_CONN_ID_MAX);
+    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario, connId]);
     dias[fecha] = true;
   }
+  if (map.connId === undefined && filas.length) avisos.push('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.');
   var lista = Object.keys(dias).sort();
   return {
     filas: filas, avisos: avisos, conteos: encuestaConteos(filas), dias: lista.length,

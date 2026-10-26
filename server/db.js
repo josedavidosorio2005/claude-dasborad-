@@ -3682,6 +3682,15 @@ function migrarMobilizeEncuestaTab() {
 }
 runOnceMigration('dashboards_config_mobilize_encuesta_tab_v1', migrarMobilizeEncuestaTab);
 
+// Fase 184 (pedido del usuario, Mobilize): ID de la llamada (CONN_ID del
+// archivo de encuesta) para cada comentario. Solo agrega la columna con ''
+// por defecto: las encuestas ya cargadas quedan sin ID (no se cruza con el
+// CDR). Sigue sin telefonos.
+runOnceMigration('fase184_encuestas_conn_id_v1', () => {
+  const cols = db.prepare('PRAGMA table_info(encuestas)').all().map((c) => c.name);
+  if (!cols.includes('connId')) db.exec("ALTER TABLE encuestas ADD COLUMN connId TEXT NOT NULL DEFAULT ''");
+});
+
 // Fase 147 (Parte C): tarjeta FCR en "Flujo de Llamadas" de Mobilize. Solo
 // agrega `fcrBase: 'total'` (pedido de Edwin) al trafico_combo de MOBILIZE
 // del tab "flujo" si todavia no tiene el campo -- nunca pisa una base ya

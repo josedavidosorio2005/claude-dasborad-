@@ -1040,7 +1040,11 @@ async function _gdBootstrap(conservar){
   });
   fuentesSoloPanel.forEach(function(fuente){
     tareasBootstrap.push((async function(){
-      try{ mesesSoloPanel = mesesSoloPanel.concat((await fuente()) || []); }
+      // Fase 184: primero el await y despues el concat. Con
+      // `mesesSoloPanel.concat(await ...)` cada fuente leia la lista ANTES
+      // de esperar y la ultima en terminar pisaba a las demas (en Mobilize,
+      // el Resumen de calidad vacio borraba los meses de la Encuesta).
+      try{ var mesesFuente = (await fuente()) || []; mesesSoloPanel = mesesSoloPanel.concat(mesesFuente); }
       catch(e){ /* sin datos o sin acceso -- el panel muestra su propio aviso */ }
     })());
   });

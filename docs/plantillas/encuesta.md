@@ -26,6 +26,7 @@ Wolkvox: Reportes → numeral 4 (hoja "HistIVR<fecha>"). Se sube tal cual: el en
 | Q03 | Sí | Pregunta 3: 1 = Sí, 2 = No (base de One & Done y FCR). |  |
 | Q04 | Sí | Pregunta 4, de 1 a 5. |  |
 | VOICE_MESSAGE | No | Comentario (opcional). |  |
+| CONN_ID | No | ID de la llamada en Wolkvox (opcional). Sale junto a cada comentario; si no viene, queda vacío. |  |
 
 ## Cómo detecta el encabezado
 
@@ -41,9 +42,9 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ## Ejemplo (inventado)
 
-| AGENT_NAME | SKILL_NAME | DATE | Q01 | Q02 | Q03 | Q04 | VOICE_MESSAGE |
-|---|---|---|---|---|---|---|---|
-| Asesor Ejemplo Uno | SKILL SAC | 2026-08-01 10:20 | 9 | 5 | 1 | 4 | Buena atención |
+| AGENT_NAME | SKILL_NAME | DATE | Q01 | Q02 | Q03 | Q04 | VOICE_MESSAGE | CONN_ID |
+|---|---|---|---|---|---|---|---|---|
+| Asesor Ejemplo Uno | SKILL SAC | 2026-08-01 10:20 | 9 | 5 | 1 | 4 | Buena atención | A1B2C3D4 |
 
 ## Notas
 
