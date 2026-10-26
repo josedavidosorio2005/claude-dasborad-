@@ -17,7 +17,8 @@ const mh = require('../../public/js/motion-helpers.js');
 
 const DIALOGOS = ['clients-modal-overlay', 'modal-user', 'modal-pass', 'modal-delete', 'inv-item-modal',
   'gh-person-modal', 'inv-mov-modal', 'ger-kpi-modal', 'modal-change-own-password', 'modal-encuesta-preguntas', // Fase 147 (Parte B): + preguntas de la encuesta
-  'modal-ver-datos']; // Fase 152 (B9): + "Ver datos" de una grafica
+  'modal-ver-datos', // Fase 152 (B9): + "Ver datos" de una grafica
+  'modal-clasif-asesores']; // Fase 186: + "Clasificación de asesores" de Tipificacion
 
 test('index.html: los 9 dialogos son role="dialog" aria-modal="true" con su titulo <h3> enlazado', () => {
   for (const id of DIALOGOS) {

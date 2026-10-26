@@ -864,6 +864,24 @@
   </div>
 </div>
 
+<!-- Fase 186: "Clasificación de asesores" de Tipificacion (solo administrador, tipificacion.js). Patron A3b. -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-clasif-asesores-title" id="modal-clasif-asesores">
+  <div class="modal tipif-clasif-modal">
+    <h3 id="modal-clasif-asesores-title">Clasificación de asesores</h3>
+    <p class="tipif-linea-nota">Elige la línea de cada asesor. Su salida de llamadas y de WhatsApp se suma a esa línea; los que no tengan línea quedan en "Sin clasificar" y siguen contando en el total.</p>
+    <div class="tipif-clasif-herr">
+      <div class="ig"><label for="tipif-clasif-buscar">Buscar asesor</label><input type="search" id="tipif-clasif-buscar" autocomplete="off" oninput="tipifClasifBuscar(this.value)"></div>
+      <div class="ig"><label for="tipif-clasif-excel">Cargar desde Excel (nombre del asesor, línea)</label><input type="file" id="tipif-clasif-excel" accept=".xlsx,.xls,.csv" onchange="tipifClasifExcel(this)"></div>
+    </div>
+    <div id="tipif-clasif-avisos" aria-live="polite"></div>
+    <div id="tipif-clasif-cuerpo"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="tipifCerrarClasificacion()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="tipifClasifGuardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ DASHBOARD DE CLIENTE (generico, por configuracion) ══════════════════════════════ -->
 <div role="dialog" aria-modal="true" aria-labelledby="gd-title" id="gd-overlay">
   <div id="gd-modal">
@@ -1755,6 +1773,7 @@
 <script src="js/agendas-logic.js"></script>
 <script src="js/efectividad-agendamiento-logic.js"></script>
 <script src="js/tipificacion-logic.js"></script>
+<script src="js/clasificacion-asesores-logic.js"></script>
 <script src="js/llamadas-unicas-logic.js"></script>
 <script src="js/llamadas-salida-logic.js"></script>
 <script src="js/whatsapp-tiempos-logic.js"></script>

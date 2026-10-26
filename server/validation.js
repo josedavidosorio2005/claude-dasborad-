@@ -719,6 +719,27 @@ const tipificacionFiltrosQuery = z.object({
   agente: z.string().trim().max(200).optional(),
   skill: z.string().trim().max(200).optional(),
   tipoInteraccion: z.enum(['inbound', 'outbound_ma', 'otro']).optional(),
+  // Fase 186 (solo ORLANT): "Línea de salida" -- GENERAL, 3P o SIN (sin clasificar).
+  linea: z.enum(['GENERAL', '3P', 'SIN']).optional(),
+});
+
+// Fase 186: clasificacion (General/3P) de los asesores de un cliente.
+const clasificacionAsesoresQuery = z.object({ campana: campanaSchema });
+const clasificacionAsesoresBody = z.object({
+  campana: campanaSchema,
+  asignaciones: z
+    .array(z.object({
+      agente: z.string().trim().min(1).max(200),
+      linea: z.enum(['3P', 'GENERAL']).nullable(),
+    }))
+    .max(2000, 'Demasiados asesores')
+    .superRefine((lista, ctx) => {
+      const vistos = {};
+      lista.forEach((a, i) => {
+        if (vistos[a.agente]) ctx.addIssue({ code: 'custom', message: 'El asesor ' + a.agente + ' está repetido', path: [i, 'agente'] });
+        vistos[a.agente] = true;
+      });
+    }),
 });
 
 const tipificacionOpcionesQuery = z.object({
@@ -1399,6 +1420,8 @@ module.exports = {
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,
     tipificacionSalidaResumenQuery,
+    clasificacionAsesoresQuery,
+    clasificacionAsesoresBody,
     llamadasUnicasCargaBody,
     llamadasUnicasFiltrosQuery,
     llamadasUnicasOpcionesQuery,

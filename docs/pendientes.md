@@ -146,6 +146,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Clasificar a los asesores de ORLANT en Línea General o Línea 3P**
+  (Fase 186, 26/10/2026) — desde la v1.75.0, la salida de Tipificación se
+  reparte por la clasificación del asesor; hasta que alguien la llene, toda
+  la salida queda en "Sin clasificar". Edwin tiene el listado con Isa: se
+  carga desde el Excel (nombre del asesor, línea) en "Clasificación de
+  asesores" o se elige a mano. Es aparte de la línea por mes de la pestaña
+  de salida (Fase 170, ítem del bloque 1); si Edwin quiere una sola, se
+  puede hacer que esa pestaña use esta clasificación cuando un mes no tenga
+  línea propia (no se hizo sin pedirlo).
+
 - **CDR de octubre de ORLANT (llamadas y WhatsApp)** (24/10/2026) — faltan
   los archivos: en Descargas solo están los de septiembre (`CDR LLAMADAS
   ORLANT`, `CDR WHATSAPP ORLANT`, `CDR ORLANT SEPTIEMBRE`, ya cargados).

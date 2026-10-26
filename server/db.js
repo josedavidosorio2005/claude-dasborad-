@@ -4079,6 +4079,28 @@ function agregarSalidaNoConectada() {
 }
 runOnceMigration('fase174_salida_no_conectada_v1', agregarSalidaNoConectada);
 
+// Fase 186 (pedido de Edwin, 26/10): linea (General o 3P) de cada asesor POR
+// CLIENTE, sin mes, para repartir la salida de Tipificacion (llamadas y
+// WhatsApp) en "Salida General" / "Salida 3P" (server/clasificacion-asesores.js).
+// La edita un administrador desde Tipificacion. Solo crea la tabla (vacia):
+// sin fila = "Sin clasificar".
+function crearAsesorClasificacion() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS asesor_clasificacion (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      linea TEXT NOT NULL CHECK (linea IN ('3P', 'GENERAL')),
+      guardadoPorNombre TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_asesor_clasificacion_campana_agente ON asesor_clasificacion(campana, agente);
+  `);
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase186_asesor_clasificacion_v1 aplicada.');
+}
+runOnceMigration('fase186_asesor_clasificacion_v1', crearAsesorClasificacion);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4119,6 +4141,8 @@ module.exports.crearAsesorLinea = crearAsesorLinea;
 // Fase 172: idem.
 module.exports.crearCalidadResumen = crearCalidadResumen;
 module.exports.agregarSalidaNoConectada = agregarSalidaNoConectada;
+// Fase 186: idem.
+module.exports.crearAsesorClasificacion = crearAsesorClasificacion;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

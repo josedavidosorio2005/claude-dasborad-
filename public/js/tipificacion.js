@@ -35,6 +35,7 @@ var _tipificacionEstadoCanal = {};      // por "i::canal": {agente, skill, tipo}
 var _tipificacionCampanaPorPanel = {};
 var _tipificacionCanalesPorPanel = {};  // Fase 131: [{canal,titulo,etiquetaSkill}, ...] que este panel realmente usa
 var _tipificacionPanelConfig = {};      // Fase 131: opciones crudas del panel, por indice
+var _tipificacionClasifPorPanel = {};   // Fase 186: true si el cliente reparte la salida por la clasificacion del asesor
 // Fase 86 (tema 3): mismo patron que _agendasMesSincronizado/
 // _agendasSinDatosMesGlobal (agendas.js) -- ver ese comentario.
 var _tipificacionMesSincronizado = {};
@@ -47,7 +48,7 @@ function _tipificacionSincronizarConMesGlobal(i, mesesCombinados){
   // Se fija el mes SIEMPRE (incluso sin datos): asi Exportar
   // (_gdExportarTipificacion) pide ese mismo mes y, si vuelve vacio, cae
   // solo en su propio aviso por canal -- consistente con lo que se ve.
-  _tipificacionEstadoCompartido[i] = { mes: mesGlobal, desde:'', hasta:'' };
+  _tipificacionEstadoCompartido[i] = { mes: mesGlobal, desde:'', hasta:'', linea: (_tipificacionEstadoCompartido[i]||{}).linea || '' };
   _tipificacionSinDatosMesGlobal[i] = mesesCombinados.indexOf(mesGlobal) === -1;
   return _tipificacionSinDatosMesGlobal[i];
 }
@@ -109,6 +110,10 @@ async function _tipificacionRenderPanel(p, i){
   var mesesCombinados = canalesAUsar.reduce(function(acc, c){ return acc.concat(opPorCanal[c.canal].meses||[]); }, [])
     .filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
 
+  // Fase 186 (solo ORLANT, lo dice el servidor en /opciones).
+  var clasif = canalesAUsar.some(function(c){ return !!(opPorCanal[c.canal] && opPorCanal[c.canal].clasificacionAsesores); });
+  _tipificacionClasifPorPanel[i] = clasif;
+
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
       '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tipificación cargada todavia. Un usuario con permiso de administrador debe subir '+
@@ -144,8 +149,22 @@ async function _tipificacionRenderPanel(p, i){
     mesesCombinados.map(function(m){ return '<option value="'+m+'"'+(m===estado.mes?' selected':'')+'>'+_tipificacionMesLbl(m)+'</option>'; }).join('') + '</select></div>';
   html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="tipif-f-desde-'+i+'">Desde</label><input type="date" id="tipif-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
   html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="tipif-f-hasta-'+i+'">Hasta</label><input type="date" id="tipif-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
+  // Fase 186: "Línea de salida" filtra las 2 mitades (Llamadas y WhatsApp).
+  if(clasif){
+    html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-linea-'+i+'">Línea de salida</label><select id="tipif-f-linea-'+i+'">' +
+      [['', 'Todas'], ['GENERAL', 'Salida General'], ['3P', 'Salida 3P'], ['SIN', 'Sin clasificar']].map(function(o){
+        return '<option value="'+o[0]+'"'+(o[0]===(estado.linea||'')?' selected':'')+'>'+o[1]+'</option>';
+      }).join('') + '</select></div>';
+  }
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_tipificacionAplicarFiltroCompartido('+i+')">Aplicar filtros</button></div>';
+  // Fase 186: solo el administrador clasifica; los usuarios del cliente ven el resultado.
+  if(clasif && typeof isFullAdmin === 'function' && isFullAdmin()){
+    html += '<div class="ig" style="margin-bottom:0"><button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button></div>';
+  }
   html += '</div>';
+  if(clasif && estado.linea){
+    html += '<p class="tipif-linea-nota" role="status">Las tortas de tipificación muestran solo la '+esc(_tipificacionLineaTexto(estado.linea))+' de cada canal. Las tarjetas de total no cambian.</p>';
+  }
 
   var esMultiCanal = canalesAUsar.length > 1;
   html += esMultiCanal ? '<div class="aurora-grid-2">' : '<div>';
@@ -162,6 +181,10 @@ async function _tipificacionRenderPanel(p, i){
     // Fase 185 (pedido de Edwin): con las 2 mitades, "Total WhatsApp" igual que "Total llamadas".
     if(p.mostrarTarjetasSalida && esMultiCanal && c.canal === 'WHATSAPP'){
       html += '<div class="aurora-kpis" id="tipif-total-'+i+'-'+c.canal+'" style="margin-bottom:12px"></div>';
+    }
+    if(clasif){
+      html += '<div class="aurora-kpis tipif-lineas" id="tipif-lineas-'+i+'-'+c.canal+'" style="margin-bottom:6px"></div>' +
+        '<p class="tipif-linea-nota" id="tipif-lineas-nota-'+i+'-'+c.canal+'"></p>';
     }
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
@@ -181,6 +204,9 @@ async function _tipificacionRenderPanel(p, i){
     if(p.mostrarTablaDetalle){
       html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" class="tipif-tabla"></div></div>';
     }
+    if(clasif){
+      html += '<div class="aurora-chart-wrap" style="height:260px;margin-top:12px"><canvas id="tipif-lin-c-'+i+'-'+c.canal+'" aria-label="Salida por línea de '+esc(c.titulo)+'" role="img"></canvas></div>';
+    }
     html += '</div>';
   });
   html += '</div></div>';
@@ -191,7 +217,7 @@ async function _tipificacionRenderPanel(p, i){
 
 function _tipificacionLeerFiltroCompartido(i){
   function v(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
-  return { mes: v('tipif-f-mes-'+i), desde: v('tipif-f-desde-'+i), hasta: v('tipif-f-hasta-'+i) };
+  return { mes: v('tipif-f-mes-'+i), desde: v('tipif-f-desde-'+i), hasta: v('tipif-f-hasta-'+i), linea: v('tipif-f-linea-'+i) };
 }
 function _tipificacionLeerFiltroCanal(i, canal){
   function v(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -216,6 +242,8 @@ function _tipificacionQueryString(campana, canal, compartido, deCanal){
   // Fase 131 (Mobilize): filtro Entrante/Saliente -- ORLANT nunca lo pasa
   // (su mitad no tiene el desplegable "Tipo"), sin cambio alguno.
   if(deCanal.tipo) params.set('tipoInteraccion', deCanal.tipo);
+  // Fase 186: "Línea de salida" (compartido, solo ORLANT).
+  if(compartido.linea) params.set('linea', compartido.linea);
   return params.toString();
 }
 
@@ -301,12 +329,17 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   }catch(e){ showToast(e.message, 'error'); }
 
   var tablaHost = document.getElementById('tipif-tabla-'+i+'-'+canal);
+  // Fase 186: salida por linea (General / 3P / Sin clasificar), sin el filtro de linea.
+  var porLinea = _tipificacionClasifPorPanel[i] ? await _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal) : null;
   // Fase 185: total del mes con los mismos filtros de la mitad (sale del mismo /por-tipo que la torta).
+  // Fase 186: con el filtro de linea, la torta cambia pero el total del mes no.
+  var totalCanal = porLinea ? porLinea.total : (resultado.total||0);
   var hostTotal = document.getElementById('tipif-total-'+i+'-'+canal);
-  if(hostTotal) hostTotal.innerHTML = '<div class="aurora-kpi"><div class="kv">'+(resultado.total||0).toLocaleString('es-CO')+'</div><div class="kl">Total WhatsApp</div></div>';
+  if(hostTotal) hostTotal.innerHTML = '<div class="aurora-kpi"><div class="kv">'+totalCanal.toLocaleString('es-CO')+'</div><div class="kl">Total WhatsApp</div></div>';
   if(!resultado.total){
-    contHost.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Sin datos de '+
-      (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' cargados para este período.</div>';
+    contHost.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">'+(compartido.linea
+      ? 'Sin '+esc(_tipificacionLineaTexto(compartido.linea))+' de '+(canal==='WHATSAPP'?'WhatsApp':'llamadas')+' en este período.'
+      : 'Sin datos de '+(canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' cargados para este período.')+'</div>';
     if(tablaHost) tablaHost.innerHTML = '';
     return;
   }
@@ -323,7 +356,7 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   var coloresPropios = paletaColoresSinRepetir(resultado.datos.filter(function(r){ return !r.esOtras; }).map(function(r){ return r.tipificacion; }));
   var k = 0;
   var colores = resultado.datos.map(function(r){ return r.esOtras ? '#9aa0a6' : coloresPropios[k++]; });
-  var tituloChart = (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' — '+resultado.total.toLocaleString('es-CO')+' registro(s)';
+  var tituloChart = (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+(compartido.linea ? ' — '+_tipificacionLineaTexto(compartido.linea) : '')+' — '+resultado.total.toLocaleString('es-CO')+' registro(s)';
 
   _gdChart('tipif-c-'+i+'-'+canal, {
     type: 'pie',
@@ -361,3 +394,117 @@ async function _tipificacionAplicarFiltroCanal(i, canal){
   var opciones = _tipificacionOpciones[campana+'::'+canal] || {};
   await _tipificacionDibujarCanal(campana, i, canal, opciones);
 }
+
+// ── Fase 186 (pedido de Edwin, solo ORLANT): salida por linea del asesor ──
+function _tipificacionLineaTexto(linea){
+  return linea === 'GENERAL' ? 'salida General' : (linea === '3P' ? 'salida 3P' : 'salida sin clasificar');
+}
+
+// Tarjetas "Salida General / Salida 3P / Sin clasificar" y la torta "Salida
+// por línea" de una mitad. Mismos filtros de la mitad, nunca el de linea (el
+// reparto se ve completo). Devuelve el resultado (para el total del canal).
+async function _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal){
+  var host = document.getElementById('tipif-lineas-'+i+'-'+canal);
+  var nota = document.getElementById('tipif-lineas-nota-'+i+'-'+canal);
+  var r = null;
+  try{ r = await apiRequest('GET','/calidad/tipificacion/salida-por-linea?'+_tipificacionQueryString(campana, canal, Object.assign({}, compartido, { linea:'' }), Object.assign({}, deCanal, { tipo:'' }))); }
+  catch(e){ if(host) host.innerHTML = ''; if(nota) nota.textContent = ''; return null; }
+  var t = clasifTarjetasSalida(r, canal);
+  if(host){
+    host.innerHTML = t.tarjetas.map(function(x){
+      var activa = compartido.linea === x.clave;
+      return '<div class="aurora-kpi'+(activa?' tipif-linea-activa':'')+'"><div class="kv">'+x.valor.toLocaleString('es-CO')+'</div><div class="kl">'+esc(x.etiqueta)+'</div></div>';
+    }).join('');
+  }
+  if(nota) nota.textContent = t.nota + (r.sinClasificar ? ' (General + 3P + Sin clasificar).' : ' (General + 3P).');
+  var canvasId = 'tipif-lin-c-'+i+'-'+canal;
+  if(document.getElementById(canvasId)){
+    var propios = paletaColoresSinRepetir(['Salida General', 'Salida 3P']);
+    var colores = t.tarjetas.map(function(x){ return x.clave === 'GENERAL' ? propios[0] : (x.clave === '3P' ? propios[1] : '#9aa0a6'); });
+    _gdChart(canvasId, {
+      type: 'pie',
+      data: { labels: t.tarjetas.map(function(x){ return x.etiqueta; }), datasets: [{ data: t.tarjetas.map(function(x){ return x.valor; }), backgroundColor: colores }] },
+      options: loPie((canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' de salida por línea — '+(r.salida||0).toLocaleString('es-CO')),
+    });
+  }
+  return r;
+}
+
+// Ventana "Clasificación de asesores" (solo administrador).
+var _tipifClasif = { i: null, campana: '', asesores: [] };
+function _tipifClasifFilasHtml(asesores){
+  if(!asesores.length) return '<p class="tipif-linea-nota">No hay asesores en los CDR cargados de este cliente.</p>';
+  var opt = function(v, txt, sel){ return '<option value="'+v+'"'+(v===sel?' selected':'')+'>'+txt+'</option>'; };
+  return '<div class="gd-tabla-scroll"><table class="aurora-table tipif-clasif-tabla"><thead><tr><th class="th-izq">Asesor</th><th>Línea</th><th>Salida llamadas</th><th>Salida WhatsApp</th></tr></thead><tbody>' +
+    asesores.map(function(a){
+      var l = a.linea || '';
+      // La linea va junto al nombre: en el celular se elige sin deslizar la tabla (igual que Fase 170).
+      return '<tr data-nombre="'+esc(clasifNormNombre(a.agente))+'"><td>'+esc(a.agente)+'</td>' +
+        '<td><select class="tipif-clasif-linea" data-agente="'+esc(a.agente)+'" aria-label="Línea de '+esc(a.agente)+'">' +
+        opt('', 'Sin clasificar', l) + opt('GENERAL', 'Línea General', l) + opt('3P', 'Línea 3P', l) + '</select></td>' +
+        '<td>'+(a.salidaLlamadas||0).toLocaleString('es-CO')+'</td><td>'+(a.salidaWpp||0).toLocaleString('es-CO')+'</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+async function tipifAbrirClasificacion(i){
+  var campana = _tipificacionCampanaPorPanel[i];
+  var ov = document.getElementById('modal-clasif-asesores');
+  var cuerpo = document.getElementById('tipif-clasif-cuerpo');
+  if(!campana || !ov || !cuerpo) return;
+  _tipifClasif = { i: i, campana: campana, asesores: [] };
+  document.getElementById('tipif-clasif-avisos').innerHTML = '';
+  document.getElementById('tipif-clasif-buscar').value = '';
+  cuerpo.innerHTML = '<p class="tipif-linea-nota">Cargando…</p>';
+  ov.classList.add('show');
+  try{
+    var r = await apiRequest('GET','/calidad/tipificacion/clasificacion-asesores?campana='+encodeURIComponent(campana));
+    _tipifClasif.asesores = r.asesores || [];
+    cuerpo.innerHTML = _tipifClasifFilasHtml(_tipifClasif.asesores);
+  }catch(e){ cuerpo.innerHTML = '<p class="tipif-linea-nota">'+esc(e.message)+'</p>'; }
+}
+function tipifCerrarClasificacion(){
+  var ov = document.getElementById('modal-clasif-asesores');
+  if(ov) ov.classList.remove('show');
+}
+function tipifClasifBuscar(texto){
+  var t = clasifNormNombre(texto);
+  document.querySelectorAll('#tipif-clasif-cuerpo tbody tr').forEach(function(tr){
+    tr.style.display = !t || (tr.dataset.nombre || '').indexOf(t) > -1 ? '' : 'none';
+  });
+}
+// Excel (nombre del asesor, línea): llena los selectores, no guarda (falta "Guardar").
+async function tipifClasifExcel(input){
+  var file = input && input.files && input.files[0];
+  var avisosEl = document.getElementById('tipif-clasif-avisos');
+  if(!file || !avisosEl) return;
+  var r;
+  try{
+    var wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type:'array' });
+    var filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, blankrows:false, defval:null });
+    r = clasifLeerExcel(filas, _tipifClasif.asesores.map(function(a){ return a.agente; }));
+  }catch(e){ r = { error: 'No se pudo leer el archivo: '+e.message }; }
+  input.value = '';
+  if(!r.error){
+    document.querySelectorAll('#tipif-clasif-cuerpo select.tipif-clasif-linea').forEach(function(s){
+      var l = r.asignaciones[s.dataset.agente];
+      if(l) s.value = l;
+    });
+  }
+  avisosEl.innerHTML = '<ul class="tipif-clasif-avisos-lista">'+clasifAvisosExcel(r).map(function(a, k){
+    return '<li'+(k>0 || r.error ? ' class="tipif-clasif-aviso"' : '')+'>'+esc(a)+'</li>';
+  }).join('')+'</ul>';
+}
+async function tipifClasifGuardar(){
+  var campana = _tipifClasif.campana;
+  if(!campana) return;
+  var asignaciones = Array.prototype.map.call(document.querySelectorAll('#tipif-clasif-cuerpo select.tipif-clasif-linea'), function(s){
+    return { agente: s.dataset.agente, linea: s.value || null };
+  });
+  try{
+    var r = await apiRequest('PUT','/calidad/tipificacion/clasificacion-asesores', { campana: campana, asignaciones: asignaciones });
+    showToast('✓ Clasificación guardada: '+r.general+' en Línea General, '+r.p3+' en Línea 3P, '+r.sinClasificar+' sin clasificar.');
+    tipifCerrarClasificacion();
+    if(_tipifClasif.i !== null) await _tipificacionAplicarFiltroCompartido(_tipifClasif.i);
+  }catch(e){ showToast(e.message, 'error'); }
+}
+var _tipifClasifOv = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modal-clasif-asesores') : null;
+if(_tipifClasifOv && typeof _tipifClasifOv.addEventListener === 'function') _tipifClasifOv.addEventListener('click', function(e){ if(e.target === this) tipifCerrarClasificacion(); });

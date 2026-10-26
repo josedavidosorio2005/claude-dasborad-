@@ -256,6 +256,24 @@ de entrada; las llamadas internas (`internalcall`) no cuentan. En ORLANT,
 Cliente_no_contesta); el resto son conectadas. Se cuenta cada registro,
 no el teléfono único.
 
+**Salida General y Salida 3P (ORLANT, desde la v1.75.0)**: la salida de
+llamadas (skill "-") y la de WhatsApp (SKILL_ID 0) se reparten según el
+asesor que la hizo. Cada mitad muestra las tarjetas "Salida General",
+"Salida 3P" y, si hay asesores sin línea, "Sin clasificar", más una torta
+de salida por línea; las tres suman la salida del canal y el total del mes
+no cambia. El filtro **"Línea de salida"** (junto al mes) deja en las dos
+tortas de tipificación solo la salida de esa línea. El administrador elige
+la línea de cada asesor con el botón **"Clasificación de asesores"**: una
+ventana con los asesores de los CDR cargados y un selector por cada uno
+(Sin clasificar, Línea General o Línea 3P). Se guarda una sola vez por
+cliente, para todos los meses. También se puede llenar desde un Excel con
+dos columnas, el nombre del asesor y la línea ("General" o "3P"): los
+nombres se comparan sin importar mayúsculas, tildes ni espacios de más; un
+nombre que no coincide con ningún asesor de los CDR se avisa y no se
+aplica. Los usuarios del cliente ven las tarjetas y las tortas, pero no el
+botón. Es aparte de la línea por mes de la pestaña "Llamadas y WhatsApp de
+salida", que no cambia.
+
 **Calidad**: cada monitoreo responde una lista de preguntas con peso
 propio (SI / NO / N/A). Un SI o un N/A suma el peso completo de esa
 pregunta; un NO en una pregunta normal no suma nada; un NO en una
