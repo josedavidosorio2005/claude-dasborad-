@@ -161,10 +161,12 @@ function _encuestaComentariosHtml(lista, ve) {
   if (!lista || !lista.length) return '<div class="gd-vacio-chico">No hay comentarios con estos filtros.</div>';
   return '<div class="table-wrap" style="max-height:360px;overflow:auto"><table class="aurora-table enc-tabla-comentarios"><thead><tr>' +
     '<th class="th-izq">Fecha</th><th class="th-izq">Skill</th>' + (ve ? '<th class="th-izq">Asesor</th>' : '') +
-    '<th class="th-izq">Comentario</th></tr></thead><tbody>' +
+    '<th class="th-izq">Comentario</th><th class="th-izq">ID de llamada</th></tr></thead><tbody>' +
     lista.map(function (c) {
       return '<tr><td>' + esc(_encuestaFmtFecha(c.fecha)) + '</td><td>' + esc(c.skill || 'Sin dato') + '</td>' +
-        (ve ? '<td>' + esc(_encuestaNombre(c.agente)) + '</td>' : '') + '<td style="text-align:left">' + esc(c.comentario) + '</td></tr>';
+        (ve ? '<td>' + esc(_encuestaNombre(c.agente)) + '</td>' : '') + '<td style="text-align:left">' + esc(c.comentario) + '</td>' +
+        // Fase 184: ID de la llamada (CONN_ID), al final para no quitarle espacio al comentario en el celular; vacio si el archivo no lo traia.
+        '<td class="enc-conn-id">' + esc(c.connId || '') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 }
 
@@ -236,6 +238,7 @@ function _encuestaDatosExport(campana) {
       var f = { Fecha: _encuestaFmtFecha(c.fecha), Skill: c.skill || 'Sin dato' };
       if (ve) f.Asesor = _encuestaNombre(c.agente);
       f.Comentario = c.comentario;
+      f['ID de llamada'] = c.connId || ''; // Fase 184
       return f;
     }),
   });

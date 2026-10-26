@@ -127,6 +127,7 @@ const CARGAS = [
       Q03: ['Pregunta 3: 1 = Sí, 2 = No (base de One & Done y FCR).', 1],
       Q04: ['Pregunta 4, de 1 a 5.', 4],
       VOICE_MESSAGE: ['Comentario (opcional).', 'Buena atención'],
+      CONN_ID: ['ID de la llamada en Wolkvox (opcional). Sale junto a cada comentario; si no viene, queda vacío.', 'A1B2C3D4'],
     },
   },
   // ── ORLANT ────────────────────────────────────────────────────────────

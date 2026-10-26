@@ -24,7 +24,8 @@ const HEADER = ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04', 
 // ── Lector ────────────────────────────────────────────────────────────────
 
 test('contrato: payload [fecha, agente, skill, q1..q4, comentario] y rangos iguales en navegador y servidor', () => {
-  assert.deepEqual(L.ENCUESTA_ORDEN_ARRAY, ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario']);
+  // Fase 184: + connId (CONN_ID, ID de la llamada) al final.
+  assert.deepEqual(L.ENCUESTA_ORDEN_ARRAY, ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId']);
   assert.deepEqual(CAMPOS_FILA, L.ENCUESTA_ORDEN_ARRAY);
   assert.deepEqual(PREGUNTAS.map((p) => [p.key, p.min, p.max]), L.ENCUESTA_PREGUNTAS.map((p) => [p.key, p.min, p.max]));
   assert.deepEqual(L.encuestaValoresPosibles(L.ENCUESTA_PREGUNTAS[0]), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
@@ -45,8 +46,8 @@ test('el encabezado se encuentra aunque venga en la fila 2 (fila 1 con textos su
   const r = L.encuestaParseFilas(aoa);
   assert.equal(r.error, undefined);
   assert.deepEqual(r.filas, [
-    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, null, null, null, ''],
-    ['2026-09-02', 'Asesor Dos', 'SKILL B', 10, 5, 1, 4, 'Muy buena atencion'],
+    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, null, null, null, '', ''],
+    ['2026-09-02', 'Asesor Dos', 'SKILL B', 10, 5, 1, 4, 'Muy buena atencion', ''],
   ]);
   assert.equal(r.dias, 2);
   assert.equal(r.desde, '2026-09-01');
@@ -63,8 +64,8 @@ test('fuera de rango = sin respuesta con aviso; columnas extra (telefono) se ign
     [null, null, null, null, null, null, null, null, null],
     ['A', 'S', 'no es fecha', 1, 1, 1, 1, '', ''],
   ]);
-  assert.deepEqual(r.filas, [['2026-09-03', 'A', 'S', null, null, null, null, '']]);
-  assert.equal(r.avisos.length, 5);
+  assert.deepEqual(r.filas, [['2026-09-03', 'A', 'S', null, null, null, null, '', '']]);
+  assert.equal(r.avisos.length, 6); // Fase 184: + el aviso de que falta CONN_ID
   assert.match(r.avisos[0], /Fila 2: Q01 fuera de rango \(0 a 10\)/);
   assert.match(r.avisos[4], /Fila 4: DATE invalida/);
   assert.ok(!JSON.stringify(r.filas).includes('3001234567'));
@@ -101,7 +102,7 @@ test('FCR: base total (pedido de Edwin) o solo los que respondieron Q03', () => 
 
 test('migracion: tabla encuestas con sus columnas e indice, sin telefono; el bloque solo crea', () => {
   const cols = db.prepare('PRAGMA table_info(encuestas)').all().map((c) => c.name).sort();
-  assert.deepEqual(cols, ['agente', 'archivoNombre', 'campana', 'cargadoPorNombre', 'comentario', 'createdAt', 'fecha', 'id', 'q1', 'q2', 'q3', 'q4', 'skill']);
+  assert.deepEqual(cols, ['agente', 'archivoNombre', 'campana', 'cargadoPorNombre', 'comentario', 'connId', 'createdAt', 'fecha', 'id', 'q1', 'q2', 'q3', 'q4', 'skill']);
   assert.ok(!cols.some((c) => /tel/i.test(c)));
   const idx = db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='encuestas'").all().map((r) => r.name);
   assert.ok(idx.includes('idx_encuestas_campana_fecha'));
@@ -218,7 +219,7 @@ test('API/Zod: valores fuera de rango, elemento de mas o comentario largo = 400'
     ['2026-09-01', 'A', 'S', null, 0, null, null, ''],
     ['2026-09-01', 'A', 'S', null, null, 3, null, ''],
     ['2026-09-01', 'A', 'S', null, null, null, 1.5, ''],
-    ['2026-09-01', 'A', 'S', null, null, null, null, '', '3001234567'],
+    ['2026-09-01', 'A', 'S', null, null, null, null, '', 'CONN-1', '3001234567'], // Fase 184: el 9.o es CONN_ID; un 10.o sobra
     ['2026-09-01', 'A', 'S', null, null, null, null, 'x'.repeat(1001)],
   ]) {
     const r = await request(app).post('/api/calidad/encuestas/carga').set(auth(admin)).send({ campana: 'MOBILIZE', filas: [fila] });
@@ -272,7 +273,7 @@ test('Cargar Datos: la hoja "Encuesta de satisfacción" solo aparece con sus col
   assert.ok(!cargasPlanConsolidado(...args, null).some((h) => h.tipo === 'encuesta'));
   const slot = cargasPlanConsolidado(...args, cols).find((h) => h.tipo === 'encuesta');
   assert.equal(slot.hoja, 'ENCUESTA');
-  assert.deepEqual(slot.columnas.map((c) => c.label), HEADER);
+  assert.deepEqual(slot.columnas.map((c) => c.label), HEADER.concat(['CONN_ID'])); // Fase 184
   const cargasJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'cargas.js'), 'utf8');
   // Fase 153 (Paso 2): la lista sale del registro de clientes.
   assert.match(cargasJs, /LISTAS_REGISTRO\.encuesta\.indexOf\(cliente\)/);

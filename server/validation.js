@@ -874,6 +874,9 @@ const encuestaFilaArraySchema = z.tuple([
   encuestaRespuesta(1, 2), // q3 (1 = Si, 2 = No)
   encuestaRespuesta(1, 5), // q4
   z.string().trim().max(1000), // comentario ('' si no hay)
+  // Fase 184: CONN_ID (ID de la llamada, '' si el archivo no lo trae).
+  // Opcional al final: una carga con la forma de antes (8 campos) sigue valida.
+  z.string().trim().max(100).optional(),
 ]);
 
 const encuestasCargaBody = z.object({

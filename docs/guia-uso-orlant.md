@@ -627,11 +627,13 @@ evita que las cargas futuras se unifiquen de la misma forma.
   Cuatro recuadros, uno por pregunta, con una barra por cada respuesta
   posible (0 a 10, 1 a 5 o Sí/No — aunque tenga 0) y debajo cuántos
   respondieron y cuántos no. Al final, los comentarios con texto (fecha,
-  skill, asesor). El botón "Preguntas de la encuesta" muestra el texto
+  ID de llamada, skill, asesor). El ID de llamada (CONN_ID) sirve para
+  buscar la llamada en Wolkvox; también sale en el Excel. El botón "Preguntas de la encuesta" muestra el texto
   completo de las preguntas.
 - **Qué archivo**: el export de Wolkvox (Reportes → numeral 4, hoja
   "HistIVR…") con las columnas AGENT_NAME, SKILL_NAME, DATE, Q01, Q02,
-  Q03, Q04 y VOICE_MESSAGE. Se sube tal cual desde "Cargar Datos" eligiendo
+  Q03, Q04, VOICE_MESSAGE y, opcional, CONN_ID (si un archivo no lo trae,
+  el ID de llamada queda vacío y la vista previa lo avisa). Se sube tal cual desde "Cargar Datos" eligiendo
   Mobilize: el encabezado se encuentra aunque no esté en la fila 1, y la
   hoja de la tabla dinámica se ignora. "-" o "--" = sin respuesta; un valor
   fuera de rango queda como sin respuesta y se avisa.
