@@ -17000,3 +17000,30 @@ perder lo guardado y diciendo antes de migrar qué meses tienen línea propia.
   2221/2221. Verificación local (copia de la base demo, la migración corre
   al arrancar: 0 copiados porque la demo no tiene líneas por mes) con
   Playwright y Brave a 1440/768/375 px: 42 comprobaciones en OK.
+
+### Fase 188 — Botones de línea en la salida de ORLANT (2026-10-26, v1.77.0)
+
+Pedido del usuario (Edwin ya clasificó a los asesores en producción).
+
+- `salida.js`: botones "Total" / "Línea General" / "Línea 3P" (selector
+  `cc-selector` reutilizado del Centro de cargas, `aria-pressed`, 44 px)
+  entre "Línea de cada asesor" y las tarjetas. Cambian tarjetas (con su
+  variación contra el mes anterior de la misma línea), barras y tabla sin
+  volver a pedir datos (`_salPintar`). Con una línea, la tabla muestra su
+  cantidad, el % del Total y la Fuente por canal. Solo aparecen con la
+  clasificación por cliente (ORLANT). El Excel de "Exportar" no cambia.
+- "Línea de cada asesor" / "Clasificación de asesores" pasa arriba; los
+  avisos dicen "arriba" y que los Sin clasificar cuentan en el Total.
+- `salida-logic.js`: `salidaValorLinea` (TOTAL = General + 3P + Sin
+  clasificar) y `SALIDA_LINEAS_BOTONES`.
+- Pruebas: `fase188-salida-botones-linea.test.js` (3: cifras por botón;
+  en 2 meses y 2 canales, General + 3P + Sin clasificar = la salida contada
+  fila por fila en el CDR; orden y botón activo). Ajustes en `fase167` y
+  `fase170`. Suite 2224/2224.
+- Playwright y Brave a 1440/768/375 px (copia local, sintético de marzo de
+  2025: llamadas 5/5/1 = 11, WhatsApp 2/3/1 = 6): 63 comprobaciones en OK
+  (orden, botón activo, tarjetas, barra de marzo y tabla por botón,
+  44 px, sin scroll horizontal ni errores de consola; el cliente usa los
+  botones y no ve "Clasificación de asesores").
+- La suma con los datos reales de producción no se pudo comprobar sin
+  sesión.
