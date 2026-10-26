@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.6 — Octubre 2026
+
+**Fase 181: mantenimiento.**
+
+- Se actualizaron dos componentes internos del servidor (Express y la
+  librería de AWS que sube los respaldos) a sus versiones más recientes
+  dentro de la misma línea. No cambia nada de lo que se ve ni de los
+  números.
+
 ## v1.72.5 — Octubre 2026
 
 **Fase 180: la cuenta del administrador principal no se puede bloquear a
