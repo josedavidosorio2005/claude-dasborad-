@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.76.1 — Octubre 2026
+
+**Fase 187 (paso 2): se activa la clasificación única de asesores en ORLANT.**
+
+- La pestaña "Llamadas y WhatsApp de salida" reparte la salida de todos los
+  meses con la clasificación de asesores de Tipificación (una sola). Lo que
+  no tiene línea queda en "Sin clasificar".
+- Las líneas que se habían elegido mes a mes se copian a la clasificación
+  cuando el asesor tenía la misma línea en todos los meses y todavía no
+  estaba clasificado. Si un asesor tenía 3P en un mes y General en otro,
+  no se copia: hay que elegirle la línea en "Clasificación de asesores".
+- Lo guardado mes a mes no se borra.
+
 ## v1.76.0 — Octubre 2026
 
 **Fase 187: una sola clasificación de asesores (preparación).**

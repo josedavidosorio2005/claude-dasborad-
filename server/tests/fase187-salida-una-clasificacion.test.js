@@ -26,6 +26,7 @@ function encender(valor) {
 
 test('una sola clasificacion: la pestaña de salida usa la por cliente; lo guardado mes a mes no se pierde y se ve antes de migrar', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
+  encender(false); // como estaba antes de la migracion (paso 2)
   const post = async (canal, filas) => {
     const r = await request(app).post('/api/calidad/tipificacion/carga').set(auth(admin)).send({ campana: 'ORLANT', canal, archivoNombre: 's.xlsx', filas });
     assert.equal(r.status, 201, JSON.stringify(r.body));
@@ -104,4 +105,29 @@ test('vista: la pestaña de salida usa "Sin clasificar" y la misma ventana; el a
   assert.ok(t.includes('async function tipifAbrirClasificacionCliente(campana, alGuardar){'));
   assert.ok(t.includes("if(typeof _tipifClasif.alGuardar === 'function') _tipifClasif.alGuardar();"));
   assert.ok(JS('dashboard-generic.js').includes("'Línea General': f.llamadasGeneral, [_salSinTexto(f)]: sin,"));
+});
+
+test('migracion (paso 2): copia a la clasificacion por cliente solo los asesores con una sola linea, sin pisar ni borrar nada; enciende el parametro; idempotente', () => {
+  db.prepare("DELETE FROM asesor_linea WHERE campana = 'ORLANT'").run();
+  db.prepare("DELETE FROM asesor_clasificacion WHERE campana = 'ORLANT'").run();
+  const ins = db.prepare("INSERT INTO asesor_linea (campana, mes, agente, linea, updatedAt) VALUES ('ORLANT', ?, ?, ?, 'x')");
+  // Mig1: 3P en 2 meses (se copia). Mig2: 3P y General (no se copia). Mig3: General, ya clasificado 3P (no se pisa).
+  ins.run('2025-08', 'Mig1', '3P'); ins.run('2025-09', 'Mig1', '3P');
+  ins.run('2025-08', 'Mig2', '3P'); ins.run('2025-09', 'Mig2', 'GENERAL');
+  ins.run('2025-09', 'Mig3', 'GENERAL');
+  db.prepare("INSERT INTO asesor_clasificacion (campana, agente, linea, updatedAt) VALUES ('ORLANT', 'Mig3', '3P', 'x')").run();
+  encender(false);
+  const inv = inventarioLineasPorMes(db, 'ORLANT');
+  assert.deepEqual(inv.propuesta, { Mig1: '3P', Mig3: 'GENERAL' });
+  assert.deepEqual(inv.conflictos.map((c) => c.agente), ['Mig2']);
+  assert.deepEqual(inv.distintaDeClasificacion, [{ agente: 'Mig3', porMes: 'GENERAL', porCliente: '3P' }]);
+
+  db.activarSalidaUnaClasificacion();
+  db.activarSalidaUnaClasificacion(); // idempotente
+  const clasif = Object.fromEntries(db.prepare("SELECT agente, linea FROM asesor_clasificacion WHERE campana = 'ORLANT'").all().map((f) => [f.agente, f.linea]));
+  assert.deepEqual(clasif, { Mig1: '3P', Mig3: '3P' }, 'Mig1 copiado, Mig2 sin copiar (dos lineas), Mig3 sin pisar');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM asesor_linea WHERE campana = 'ORLANT'").get().n, 5, 'lo guardado mes a mes queda intacto');
+  assert.equal(JSON.parse(db.prepare("SELECT parametros FROM clientes_registro WHERE nombre = 'ORLANT'").get().parametros).salidaUsaClasificacion, true);
+  assert.equal(JSON.parse(db.prepare("SELECT parametros FROM clientes_registro WHERE nombre = 'MOBILIZE'").get().parametros).salidaUsaClasificacion, undefined, 'solo ORLANT');
+  assert.ok(db.prepare("SELECT 1 FROM schema_migrations WHERE name = 'fase187_salida_una_clasificacion_v1'").get(), 'corre sola con el deploy');
 });

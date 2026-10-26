@@ -37,6 +37,8 @@ const REGISTRO_INICIAL = [
       especificos: ['orlant_pestanas_manuales', 'orlant_resumen_trafico', 'borrado_por_rango'],
       // Fase 174: "no conectada" de las llamadas de salida (DESCRIPTION_COD_ACT).
       salidaNoConectada: ['NO_CONTESTAN', 'BUZON'],
+      // Fase 187: la pestaña de salida usa la clasificacion de asesores por cliente (una sola).
+      salidaUsaClasificacion: true,
     },
     logo: {
       src: 'img/clientes/orlant-logo-blanco.png',
