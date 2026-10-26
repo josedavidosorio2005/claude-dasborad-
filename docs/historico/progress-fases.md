@@ -16776,3 +16776,17 @@ ADMIN " sí se bloquea; el límite por IP sigue. Fallan en `main` (la
 primera porque el maestro queda bloqueado; la segunda depende de ella).
 Guía de uso y `docs/pendientes.md` con el efecto aceptado (contra el
 maestro solo queda el límite por IP).
+
+### Fase 181 — Actualizaciones menores de dependencias (2026-10-26, v1.72.6)
+
+Pedido del usuario: express 5.3.0, aws-sdk y playwright, sin tocar
+`better-sqlite3` ni `dotenv`. Se subieron express 5.2.1 → 5.3.0 y
+`@aws-sdk/client-s3` y `@aws-sdk/client-ssm` 3.1144 → 3.1156
+(`package.json` y `package-lock.json`); `better-sqlite3` 12.11.1 y
+`dotenv` 17.4.2 sin cambios. **Playwright no se subió**: el job
+`pantallas` de `ci.yml` corre en la imagen oficial de Playwright fijada
+por digest (v1.63.0), que debe ser de la misma versión que el paquete;
+subirlo exige cambiar el workflow y CLAUDE.md pide consultarlo antes.
+Suite completa y `npm audit` en 0. `docs/pendientes.md`: Node 24 antes del
+30/04/2027 y la prueba mensual de restauración del respaldo pasan a ser
+pendientes propios, con fecha.

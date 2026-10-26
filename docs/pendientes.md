@@ -331,18 +331,29 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     entre muchas IP depende de que su contraseña sea larga y única. Las
     demás cuentas sí se pueden bloquear 1 hora a propósito. Si molesta:
     bajar la ventana o avisar por correo al bloquear. Costo: bajo.
-  - **(baja, con fecha) Node.js 22 deja de tener soporte el 30/04/2027**:
-    la imagen usa `node:22-bookworm` (se reconstruye en cada deploy, así
-    que recibe los parches de la 22). Planear el paso a Node 24 (LTS) antes
-    de esa fecha; probar primero que `better-sqlite3` trae binario.
-  - **(baja) Actualizaciones menores disponibles** (26/10/2026, sin avisos
-    de seguridad: `npm audit` en 0): express 5.3.0, express-rate-limit
-    8.7.1, @aws-sdk 3.1156, playwright 1.64.1, supertest 7.3.1. Las mayores
-    (`better-sqlite3` 13, `dotenv` 18) siguen congeladas (sección 1).
-  - **(baja) La última prueba de restauración del respaldo es del 16/10**
-    (copia local, `integrity_check` ok). Recomendado: correr
-    `verificar-restore-backup-produccion.yml` una vez al mes. La prueba
-    desde S3 sigue bloqueada por la Política 1 de IAM (sección 1).
+  - **(baja) Actualizaciones menores que quedan** (26/10/2026, sin avisos
+    de seguridad: `npm audit` en 0). Express 5.3.0 y @aws-sdk 3.1156 se
+    subieron en la Fase 181. Quedan: **playwright 1.64.1** (espera tu OK,
+    porque obliga a cambiar en `ci.yml` el digest de la imagen del job
+    `pantallas`, que debe ser de la misma versión), express-rate-limit
+    8.7.1 y supertest 7.3.1. Las mayores (`better-sqlite3` 13, `dotenv` 18)
+    siguen congeladas (sección 1).
+
+- **Paso a Node.js 24 antes del 30/04/2027** (anotado 26/10/2026, Fase
+  181) — Prioridad MEDIA, con fecha: ese día Node 22 deja de tener soporte.
+  Hoy la imagen usa `node:22-bookworm` (se reconstruye en cada deploy, así
+  que recibe los parches de la 22) y CI prueba solo Node 22. Cómo se
+  cierra: un PR que cambie la imagen (`server/Dockerfile`), la matriz de CI
+  (toca `.github/workflows/`, se consulta antes) y `engines`; probar
+  primero que `better-sqlite3` trae binario para Node 24 y correr la suite
+  completa. Conviene hacerlo con margen, en el primer trimestre de 2027.
+- **Prueba mensual de restauración del respaldo** (anotado 26/10/2026, Fase
+  181) — Prioridad MEDIA, recurrente. La última prueba fue el 16/10/2026
+  (copia local, `integrity_check` ok). Cómo: el primer día hábil de cada
+  mes, correr `verificar-restore-backup-produccion.yml` (solo lectura:
+  copia el último respaldo local a un temporal, lo revisa y lo borra) y
+  anotar el resultado en la bitácora. La prueba desde S3 sigue bloqueada
+  por la Política 1 de IAM (sección 1). Próxima: 2/11/2026.
 
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
