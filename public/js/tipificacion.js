@@ -431,7 +431,7 @@ async function _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal
 }
 
 // Ventana "Clasificación de asesores" (solo administrador).
-var _tipifClasif = { i: null, campana: '', asesores: [] };
+var _tipifClasif = { i: null, campana: '', asesores: [], alGuardar: null };
 function _tipifClasifFilasHtml(asesores){
   if(!asesores.length) return '<p class="tipif-linea-nota">No hay asesores en los CDR cargados de este cliente.</p>';
   var opt = function(v, txt, sel){ return '<option value="'+v+'"'+(v===sel?' selected':'')+'>'+txt+'</option>'; };
@@ -446,11 +446,17 @@ function _tipifClasifFilasHtml(asesores){
     }).join('') + '</tbody></table></div>';
 }
 async function tipifAbrirClasificacion(i){
-  var campana = _tipificacionCampanaPorPanel[i];
+  await _tipifAbrirClasif(_tipificacionCampanaPorPanel[i], i, null);
+}
+// Fase 187: la misma ventana desde la pestaña de salida (una sola clasificacion por cliente).
+async function tipifAbrirClasificacionCliente(campana, alGuardar){
+  await _tipifAbrirClasif(campana, null, alGuardar);
+}
+async function _tipifAbrirClasif(campana, i, alGuardar){
   var ov = document.getElementById('modal-clasif-asesores');
   var cuerpo = document.getElementById('tipif-clasif-cuerpo');
   if(!campana || !ov || !cuerpo) return;
-  _tipifClasif = { i: i, campana: campana, asesores: [] };
+  _tipifClasif = { i: i, campana: campana, asesores: [], alGuardar: alGuardar || null };
   document.getElementById('tipif-clasif-avisos').innerHTML = '';
   document.getElementById('tipif-clasif-buscar').value = '';
   cuerpo.innerHTML = '<p class="tipif-linea-nota">Cargando…</p>';
@@ -504,6 +510,7 @@ async function tipifClasifGuardar(){
     showToast('✓ Clasificación guardada: '+r.general+' en Línea General, '+r.p3+' en Línea 3P, '+r.sinClasificar+' sin clasificar.');
     tipifCerrarClasificacion();
     if(_tipifClasif.i !== null) await _tipificacionAplicarFiltroCompartido(_tipifClasif.i);
+    if(typeof _tipifClasif.alGuardar === 'function') _tipifClasif.alGuardar();
   }catch(e){ showToast(e.message, 'error'); }
 }
 var _tipifClasifOv = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modal-clasif-asesores') : null;

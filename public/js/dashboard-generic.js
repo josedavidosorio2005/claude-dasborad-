@@ -2252,11 +2252,11 @@ async function _gdExportarSalida(p, i){
   var fuente = function(v){ return v === 'cdr' ? 'CDR' : 'Archivo mensual'; };
   var llamadas = filas.map(function(f){
     var sin = f.llamadasSinAsignar || 0, total = f.llamadas3p + f.llamadasGeneral + sin;
-    return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, 'Sin asignar': sin, 'Total': total, '% 3P': pct(f.llamadas3p, total), 'Fuente': fuente(f.fuenteLlamadas) };
+    return { Mes: salidaMesLbl(f.mes), 'Línea 3P': f.llamadas3p, 'Línea General': f.llamadasGeneral, [_salSinTexto(f)]: sin, 'Total': total, '% 3P': pct(f.llamadas3p, total), 'Fuente': fuente(f.fuenteLlamadas) };
   });
   var whatsapp = filas.map(function(f){
     var sin = f.wppSinAsignar || 0, total = f.wpp3p + f.wppGeneral + sin;
-    return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, 'Sin asignar': sin, 'Total': total, '% 3P': pct(f.wpp3p, total), 'Fuente': fuente(f.fuenteWpp) };
+    return { Mes: salidaMesLbl(f.mes), 'WhatsApp 3P': f.wpp3p, 'WhatsApp General': f.wppGeneral, [_salSinTexto(f)]: sin, 'Total': total, '% 3P': pct(f.wpp3p, total), 'Fuente': fuente(f.fuenteWpp) };
   });
   return [
     { titulo: 'Llamadas de salida', tipo: 'tabla', filas: llamadas },

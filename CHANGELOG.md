@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.76.0 — Octubre 2026
+
+**Fase 187: una sola clasificación de asesores (preparación).**
+
+- La pestaña "Llamadas y WhatsApp de salida" ya puede usar la misma
+  clasificación de asesores de Tipificación, una sola para todos los
+  meses, en lugar de elegir la línea mes a mes. **Todavía no está activa**:
+  se enciende con la migración, cuando se revise lo guardado.
+- Mientras tanto, el administrador ve en esa pestaña qué meses tienen
+  líneas guardadas mes a mes y qué asesores cambian de línea según el mes.
+  Nada de lo guardado se borra.
+- Ya activa, la pestaña dirá "Sin clasificar" y tendrá el mismo botón
+  "Clasificación de asesores".
+
 ## v1.75.0 — Octubre 2026
 
 **Fase 186: Salida General y Salida 3P en la Tipificación de ORLANT.**

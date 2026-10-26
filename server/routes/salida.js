@@ -10,7 +10,7 @@ const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
-const { asesoresSalidaDelMes, guardarLineasDelMes } = require('../salida-cdr');
+const { asesoresSalidaDelMes, guardarLineasDelMes, usaClasificacionPorCliente, inventarioLineasPorMes } = require('../salida-cdr');
 const { validate, schemas } = require('../validation');
 const {
   impactoSalida, cargarSalida,
@@ -115,6 +115,10 @@ router.put(
       return res.status(403).json({ error: 'Solo un administrador puede asignar la línea de los asesores' });
     }
     const b = req.body;
+    // Fase 187: con la clasificacion por cliente, la linea mes a mes ya no se cambia.
+    if (usaClasificacionPorCliente(db, b.campana)) {
+      return res.status(409).json({ error: 'La línea de los asesores ahora es una sola para todos los meses: cámbiala en Tipificación, "Clasificación de asesores".' });
+    }
     if (!campaignAccess(req.actor, b.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
@@ -124,6 +128,20 @@ router.put(
     logEvent('SALIDA_LINEAS_ASESOR', { nombre: b.campana, user: '-', rol: 'salida' }, actorLabel(req.actor),
       b.mes + ': ' + n3p + ' asesor(es) en 3P, ' + nGen + ' en General, ' + (b.asignaciones.length - n3p - nGen) + ' sin asignar');
     res.json({ ...r, asesores: asesoresSalidaDelMes(db, b.campana, b.mes) });
+  })
+);
+
+// Fase 187 (solo lectura, solo administrador): lo guardado mes a mes, para
+// decidir la migracion a la clasificacion por cliente.
+router.get(
+  '/calidad/salida/lineas-por-mes',
+  requireActor,
+  validate(schemas.salidaQuery, 'query'),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo un administrador puede ver las líneas guardadas por mes' });
+    }
+    res.json(inventarioLineasPorMes(db, req.query.campana));
   })
 );
 

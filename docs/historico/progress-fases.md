@@ -16948,3 +16948,37 @@ el asesor que los hizo (AGENT_NAME).
 - Cifras de octubre por línea: no se pueden dar todavía; nadie clasificó a
   los asesores, así que en producción toda la salida está en "Sin
   clasificar" hasta que se cargue el listado de Edwin e Isa.
+
+### Fase 187 — Una sola clasificación de asesores (preparación) (2026-10-26, v1.76.0)
+
+Pedido del usuario (OK de Edwin): la pestaña de salida (Fase 170) debe usar
+la clasificación por cliente (Fase 186) y dejar la línea mes a mes, sin
+perder lo guardado y diciendo antes de migrar qué meses tienen línea propia.
+
+- Sin sesión de producción no se pudo ver qué meses tienen líneas guardadas
+  (la copia local del scratchpad es vieja y no tiene `asesor_linea`). Por
+  eso va en 2 pasos: este PR deja el cambio **apagado** y muestra el
+  inventario; la migración que lo enciende espera el OK.
+- `salida-cdr.js`: con `parametros.salidaUsaClasificacion = true` (registro
+  de clientes), `salidaCdrPorMes` toma la línea de `asesor_clasificacion`
+  para todos los meses y las filas llevan `lineaPorCliente: true`. Sin el
+  parámetro, idéntico a la Fase 170. `asesor_linea` no se toca; el PUT de
+  la línea por mes responde 409 una vez activo.
+- Inventario de solo lectura (`GET /calidad/salida/lineas-por-mes`, solo
+  administrador): meses con líneas guardadas (asesores, 3P, General),
+  propuesta (asesores con una sola línea en todos sus meses), conflictos
+  (línea distinta según el mes) y diferencias con la clasificación por
+  cliente. Se ve en la pestaña de salida, debajo del editor por mes.
+- Vista activa: "Sin clasificar" en el aviso, la tabla y el Excel; en vez
+  del editor por mes, el botón "Clasificación de asesores" abre la misma
+  ventana de Tipificación (`tipifAbrirClasificacionCliente`).
+- Pruebas: `fase187-salida-una-clasificacion.test.js` (2: inventario,
+  apagado igual a la Fase 170, encendido igual a Tipificación mes por mes,
+  General + 3P + Sin clasificar = salida, `asesor_linea` intacta, 409,
+  permisos). Ajustes en `fase118` y `fase170`. Suite 2220/2220.
+- Playwright y Brave a 1440/768/375 px (copia local, datos sintéticos de
+  marzo de 2025), apagado y encendido: tabla de siempre e inventario;
+  encendido 3P 5 / General 5 / Sin clasificar 1 en llamadas y 3 / 2 / 1 en
+  WhatsApp, guardar desde la ventana actualiza la tabla, sin errores de
+  consola ni scroll horizontal; el usuario del cliente ve "Sin clasificar",
+  sin botón ni inventario.

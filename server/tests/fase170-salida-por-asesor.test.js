@@ -102,5 +102,6 @@ test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses c
   assert.ok(s.includes("label: tituloEje, data: filas.map(function(f){ return _salTotal(f, canal); })"));
   assert.doesNotMatch(s, /label:'Sin asignar'/);
   const g = JS('dashboard-generic.js');
-  assert.match(g, /'Sin asignar': sin, 'Total': total, '% 3P': pct\(f\.llamadas3p, total\), 'Fuente': fuente\(f\.fuenteLlamadas\)/);
+  // Fase 187: "Sin asignar" o "Sin clasificar" segun la fila (_salSinTexto).
+  assert.match(g, /\[_salSinTexto\(f\)\]: sin, 'Total': total, '% 3P': pct\(f\.llamadas3p, total\), 'Fuente': fuente\(f\.fuenteLlamadas\)/);
 });
