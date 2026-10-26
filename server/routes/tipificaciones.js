@@ -23,7 +23,9 @@ const {
   tipificacionesPorTipo,
   tipificacionesResumenSalida,
   tipificacionesOpciones,
+  usaClasificacionAsesores,
 } = require('../tipificaciones');
+const { listarClasificacion, guardarClasificacion, salidaPorLinea } = require('../clasificacion-asesores');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -157,6 +159,59 @@ router.put(
     logEvent('SKILLS_WHATSAPP_GUARDAR', { nombre: b.campana, user: '-', rol: 'tipificacion' }, actorLabel(req.actor),
       skills.length + ' skill(s) de WhatsApp: ' + skills.map((s) => s.codigo + ' ' + s.nombre).join(', '));
     res.json({ campana: b.campana, skills });
+  })
+);
+
+// Fase 186 (solo ORLANT): salida del canal repartida en General / 3P / Sin
+// clasificar, por la clasificacion del asesor. Lo ve quien ve la campana.
+router.get(
+  '/calidad/tipificacion/salida-por-linea',
+  requireActor,
+  validate(schemas.tipificacionFiltrosQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    if (!usaClasificacionAsesores(req.query.campana)) {
+      return res.status(404).json({ error: 'Este cliente no usa la clasificación de asesores' });
+    }
+    res.json(salidaPorLinea(db, req.query));
+  })
+);
+
+// Fase 186: lista de asesores (de los CDR cargados) con su linea. Solo el
+// administrador la ve y la cambia; los usuarios del cliente ven el resultado.
+router.get(
+  '/calidad/tipificacion/clasificacion-asesores',
+  requireActor,
+  validate(schemas.clasificacionAsesoresQuery, 'query'),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo un administrador puede ver la clasificación de asesores' });
+    }
+    if (!usaClasificacionAsesores(req.query.campana)) {
+      return res.status(404).json({ error: 'Este cliente no usa la clasificación de asesores' });
+    }
+    res.json({ campana: req.query.campana, asesores: listarClasificacion(db, req.query.campana) });
+  })
+);
+
+router.put(
+  '/calidad/tipificacion/clasificacion-asesores',
+  requireActor,
+  validate(schemas.clasificacionAsesoresBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo un administrador puede cambiar la clasificación de asesores' });
+    }
+    const b = req.body;
+    if (!usaClasificacionAsesores(b.campana)) {
+      return res.status(404).json({ error: 'Este cliente no usa la clasificación de asesores' });
+    }
+    const r = guardarClasificacion(db, { campana: b.campana, asignaciones: b.asignaciones, guardadoPorNombre: actorLabel(req.actor) });
+    logEvent('CLASIFICACION_ASESORES', { nombre: b.campana, user: '-', rol: 'tipificacion' }, actorLabel(req.actor),
+      r.general + ' asesor(es) en Línea General, ' + r.p3 + ' en Línea 3P, ' + r.sinClasificar + ' sin clasificar');
+    res.json({ ...r, asesores: listarClasificacion(db, b.campana) });
   })
 );
 

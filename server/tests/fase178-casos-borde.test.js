@@ -104,7 +104,9 @@ test('meses sin datos: las rutas nuevas responden 200 con la estructura vacia, s
     ['/api/calidad/salida/asesores', { campana: 'ORLANT', mes: '2019-02' }, (b) => assert.deepEqual(b.asesores, [])],
     ['/api/calidad/salida/mensual', { campana: 'ORLANT' }, (b) => assert.deepEqual(b, [])],
     ['/api/calidad/calidad-resumen/mensual', { campana: 'MOBILIZE' }, (b) => assert.deepEqual(b, { meses: [] })],
-    ['/api/calidad/tipificacion/opciones', { campana: 'ORLANT', canal: 'LLAMADAS' }, (b) => assert.deepEqual(b, { meses: [], agentes: [], skills: [] })],
+    ['/api/calidad/tipificacion/opciones', { campana: 'ORLANT', canal: 'LLAMADAS' }, (b) => assert.deepEqual(b, { meses: [], agentes: [], clasificacionAsesores: true, skills: [] })],
+    // Fase 186: salida por linea de un mes sin datos.
+    ['/api/calidad/tipificacion/salida-por-linea', { campana: 'ORLANT', canal: 'WHATSAPP', mes: '2019-02' }, (b) => assert.deepEqual(b, { canal: 'WHATSAPP', total: 0, salida: 0, general: 0, p3: 0, sinClasificar: 0 })],
     ['/api/calidad/tipificacion/resumen-salida', { campana: 'ORLANT', mes: '2019-02' }, () => {}],
     ['/api/calidad/encuestas/resumen', { campana: 'MOBILIZE', desde: '2019-02-01', hasta: '2019-02-28' }, (b) => assert.equal(b.total, 0)],
     ['/api/calidad/llamadas-salida/resumen', { campana: 'MOBILIZE', desde: '2019-02-01', hasta: '2019-02-28' }, () => {}],

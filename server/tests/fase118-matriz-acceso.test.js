@@ -197,6 +197,9 @@ declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacio
 // solo un administrador lo cambia. Probado aparte en fase168-tipificacion-cdr.test.js.
 declarar(['GET /calidad/tipificacion/skills-whatsapp'], 'cargaManual');
 declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'admin');
+// Fase 186: salida por linea (la ve quien ve la campana); la clasificacion, solo el administrador.
+declarar(['GET /calidad/tipificacion/salida-por-linea'], 'scopedRead');
+declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipificacion/clasificacion-asesores'], 'admin');
 // Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas --
 // mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');
@@ -278,6 +281,7 @@ const EXTRA_QUERY = {
   'GET /calidad/efectividad-agendamiento/ranking': { mes: '2026-09' },
   'GET /calidad/tipificacion/opciones': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/por-tipo': { canal: 'LLAMADAS' },
+  'GET /calidad/tipificacion/salida-por-linea': { canal: 'WHATSAPP' },
   'GET /calidad/whatsapp-tiempos/rangos': { mes: '2026-09' },
   'GET /calidad/salida/asesores': { mes: '2026-09' },
   'GET /calidad/whatsapp-tiempos/resumen': { mes: '2026-09' },

@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.75.0 — Octubre 2026
+
+**Fase 186: Salida General y Salida 3P en la Tipificación de ORLANT.**
+
+- La salida de llamadas y la de WhatsApp se reparten en "Salida General" y
+  "Salida 3P" según el asesor que la hizo, en tarjetas y en una torta por
+  canal. Los asesores sin línea quedan en "Sin clasificar" y siguen
+  contando: las tres suman la salida, y el total del mes no cambia.
+- Nuevo filtro "Línea de salida", junto al mes: cambia las tortas de
+  Llamadas y de WhatsApp a la vez.
+- Botón "Clasificación de asesores" (solo el administrador): la lista de
+  asesores de los CDR con un selector de línea para cada uno. Se guarda una
+  vez para el cliente y sirve para todos los meses.
+- La lista también se llena desde un Excel (nombre del asesor, línea). Si
+  un nombre no coincide con ningún asesor de los CDR, se avisa y no se
+  aplica.
+- Los usuarios del cliente ven el resultado, pero no pueden cambiarlo.
+
 ## v1.74.0 — Octubre 2026
 
 **Fase 185: Tipificación de WhatsApp de ORLANT cuadra con el archivo.**

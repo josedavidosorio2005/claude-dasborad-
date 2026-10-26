@@ -16903,3 +16903,48 @@ archivo y 8.976 en el tablero (salida 2.663 contra 2.646).
 - Pruebas: `fase185-whatsapp-fecha-cierre.test.js` (6, fallan sin el
   arreglo) y ajuste de `fase178-casos-borde.test.js`. Suite 2212/2212.
   Playwright y Brave a 1440/768/375 px con un HistChat sintético.
+
+### Fase 186 — Salida General y Salida 3P en la Tipificación de ORLANT (2026-10-26, v1.75.0)
+
+Pedido del usuario (solo ORLANT): repartir las llamadas de salida (skill "-")
+y los WhatsApp de salida (SKILL_ID 0) entre Línea General y Línea 3P según
+el asesor que los hizo (AGENT_NAME).
+
+- **Clasificación por cliente** (tabla nueva `asesor_clasificacion`,
+  migración `fase186_asesor_clasificacion_v1`, solo crea la tabla vacía):
+  un asesor, una línea (GENERAL o 3P), para todos los meses. Sin fila =
+  "Sin clasificar", que nunca se descarta. Independiente de `asesor_linea`
+  (línea por mes de la pestaña de salida, Fase 170), que no cambia.
+- **Servidor** (`server/clasificacion-asesores.js`, `routes/tipificaciones.js`):
+  `GET/PUT /calidad/tipificacion/clasificacion-asesores` (solo
+  administrador; la lista son los asesores de los 2 CDR con su salida, más
+  los clasificados sin filas) y `GET /calidad/tipificacion/salida-por-linea`
+  (quien ve la campaña: total del canal, salida, General, 3P, Sin
+  clasificar). `/por-tipo` acepta `linea` (GENERAL, 3P o SIN): deja solo la
+  salida de esa línea. `/opciones` dice `clasificacionAsesores` (true solo
+  en ORLANT). Queda en el Historial (`CLASIFICACION_ASESORES`).
+- **Vista** (`tipificacion.js`): en cada mitad, tarjetas Salida General /
+  Salida 3P / Sin clasificar (esta solo si hay) con la nota "Salida de …:
+  N", y una torta de salida por línea. Filtro "Línea de salida" junto al
+  mes, compartido por las 2 mitades; las tarjetas de total (Total llamadas,
+  Total WhatsApp) no cambian con él. Botón "Clasificación de asesores"
+  solo para el administrador: ventana con buscador, un selector por asesor
+  y carga desde Excel (`clasificacion-asesores-logic.js`: columnas de
+  asesor y "Línea"; coincide sin mayúsculas, tildes ni espacios de más; los
+  nombres sin coincidencia, las líneas inválidas, los asesores con 2 líneas
+  y los nombres que coinciden con 2 asesores se avisan y no se aplican; el
+  Excel llena los selectores y hay que darle a Guardar).
+- Pruebas: `fase186-clasificacion-asesores.test.js` (5: General + 3P + Sin
+  clasificar = salida en cada canal, total sin cambio, filtro en las 2
+  vistas, permisos, Excel). Ajustes en las listas de `fase118` (rutas),
+  `fase144` (diálogo), `fase153`/`fase160` (migración), `fase178` y
+  `fase185`. Suite 2218/2218.
+- Verificación local con Playwright y Brave a 1440/768/375 px con datos
+  sintéticos (llamadas 11 de salida, WhatsApp 6): carga del Excel con un
+  nombre inexistente avisado, tarjetas 5/5/1 y 2/3/1, filtro 3P en las 2
+  tortas (5 y 3), totales sin cambio, Escape, sin scroll horizontal ni
+  errores de consola; usuario del cliente ve las tarjetas, sin botón, y la
+  lista le da 403.
+- Cifras de octubre por línea: no se pueden dar todavía; nadie clasificó a
+  los asesores, así que en producción toda la salida está en "Sin
+  clasificar" hasta que se cargue el listado de Edwin e Isa.

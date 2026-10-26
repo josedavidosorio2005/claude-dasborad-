@@ -77,6 +77,18 @@ const SKILL_GUION_SQL = `CASE WHEN ${SALIDA_CON_SKILL_PROPIO_SQL} THEN CASE TRIM
 function salidaPorGuion(campana) { return CLIENTES_SALIDA_POR_GUION.includes(campana); }
 // Condicion SQL de "llamada de salida" (canal LLAMADAS) de este cliente.
 function condSalidaLlamadasSql(campana) { return salidaPorGuion(campana) ? COND_SALIDA_GUION_SQL : COND_SALIDA_SQL; }
+// Fase 186: salida de un canal (llamadas: la regla del cliente; WhatsApp: SKILL_ID 0, guardado como outbound_ma).
+function condSalidaCanalSql(campana, canal) { return canal === 'WHATSAPP' ? "tipoInteraccion = 'outbound_ma'" : condSalidaLlamadasSql(campana); }
+// Fase 186 (pedido de Edwin, solo ORLANT): la salida se reparte por la
+// clasificacion del asesor (tabla asesor_clasificacion, por cliente).
+const CLIENTES_CLASIFICACION_ASESORES = ['ORLANT'];
+function usaClasificacionAsesores(campana) { return CLIENTES_CLASIFICACION_ASESORES.includes(campana); }
+// linea: 'GENERAL' | '3P' | 'SIN' (asesor sin clasificar).
+function condLineaClasificacionSql(linea) {
+  return linea === 'SIN'
+    ? 'agente NOT IN (SELECT c.agente FROM asesor_clasificacion c WHERE c.campana = @campana)'
+    : 'agente IN (SELECT c.agente FROM asesor_clasificacion c WHERE c.campana = @campana AND c.linea = @lineaClasif)';
+}
 
 function esSkillSalida(skill) {
   return SKILLS_SALIDA_EQUIVALENTES.includes(String(skill == null ? '' : skill).trim().replace(/\s+/g, ' ').toUpperCase());
@@ -220,6 +232,13 @@ function tipificacionesWhereClausulas(q) {
     clausulas.push('tipoInteraccion = @tipoInteraccion');
     params.tipoInteraccion = q.tipoInteraccion;
   }
+  // Fase 186: filtro "Línea de salida" -- deja solo la salida del canal de los
+  // asesores de esa linea (o de los sin clasificar).
+  if (q.linea && usaClasificacionAsesores(q.campana)) {
+    clausulas.push(condSalidaCanalSql(q.campana, q.canal));
+    clausulas.push(condLineaClasificacionSql(q.linea));
+    if (q.linea !== 'SIN') params.lineaClasif = q.linea;
+  }
   return { where: clausulas.join(' AND '), params };
 }
 
@@ -295,6 +314,8 @@ function tipificacionesOpciones(db, campana, canal) {
     agentes: distintos('agente'),
     // Fase 169: en Llamadas, los nombres de salida de meses anteriores se
     // muestran una sola vez, como LLAMADAS DE SALIDA.
+    // Fase 186: el panel muestra el filtro "Línea de salida" y las tarjetas por linea.
+    clasificacionAsesores: usaClasificacionAsesores(campana),
     skills: canal === 'LLAMADAS'
       ? db.prepare(`SELECT DISTINCT ${salidaPorGuion(campana) ? SKILL_GUION_SQL : `CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`} AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`)
         .all(campana, canal).map((r) => r.v)
@@ -312,6 +333,9 @@ function tieneAlgunaTipificacion(db, campana) {
 module.exports = {
   CANALES,
   condSalidaLlamadasSql,
+  condSalidaCanalSql,
+  usaClasificacionAsesores,
+  tipificacionesWhereClausulas,
   salidaPorGuion,
   SKILL_SALIDA,
   esSkillSalida,

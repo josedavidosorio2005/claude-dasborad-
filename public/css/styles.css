@@ -1796,3 +1796,18 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #gd-modal .gd-cliente-logo,#gd-modal .aurora-header h2{margin-right:96px;}
   #gd-modal #gd-cerrar-btn{top:6px;}
 }
+
+/* Fase 186: salida por linea del asesor (Tipificacion de ORLANT) y la ventana "Clasificación de asesores". */
+.tipif-linea-nota{margin:0 0 10px;font-size:var(--fs-sm,0.875rem);color:var(--c-text-muted);}
+#gd-panels .aurora-kpis.tipif-lineas{margin-bottom:6px;}
+.aurora-kpi.tipif-linea-activa{border-left-color:var(--c-brand-green,var(--c-primary-mid));box-shadow:0 0 0 2px var(--c-primary-mid);}
+.modal.tipif-clasif-modal{width:720px;}
+.tipif-clasif-herr{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:10px 0;}
+.tipif-clasif-herr .ig{margin-bottom:0;flex:1 1 200px;}
+.tipif-clasif-tabla select{min-height:44px;min-width:140px;}
+.tipif-clasif-tabla td:first-child{white-space:normal;text-align:left;}
+#tipif-clasif-cuerpo .gd-tabla-scroll{max-height:50vh;overflow:auto;}
+.tipif-clasif-avisos-lista{margin:6px 0 0;padding-left:18px;font-size:var(--fs-sm,0.875rem);color:var(--c-text);}
+.tipif-clasif-avisos-lista li{margin-bottom:6px;}
+.tipif-clasif-avisos-lista li.tipif-clasif-aviso{color:var(--c-warning-dark);}
+@media(max-width:480px){.modal.tipif-clasif-modal{padding:20px 14px 16px;}}

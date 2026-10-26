@@ -338,6 +338,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-encuesta-preguntas': function () { if (typeof _encuestaCerrarPreguntas === 'function') _encuestaCerrarPreguntas(); },
   // Fase 152 (B9): "Ver datos" de una grafica.
   'modal-ver-datos': function () { if (typeof cerrarVerDatos === 'function') cerrarVerDatos(); },
+  // Fase 186: "Clasificación de asesores" de Tipificacion.
+  'modal-clasif-asesores': function () { if (typeof tipifCerrarClasificacion === 'function') tipifCerrarClasificacion(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.

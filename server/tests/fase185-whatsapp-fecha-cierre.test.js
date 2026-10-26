@@ -72,5 +72,7 @@ test('cargar septiembre y despues octubre ya no borra el 30/09; el total cuenta 
 test('vista: tarjeta "Total WhatsApp" en la mitad de WhatsApp, del mismo total que la torta', () => {
   const s = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'tipificacion.js'), 'utf8');
   assert.ok(s.includes("if(p.mostrarTarjetasSalida && esMultiCanal && c.canal === 'WHATSAPP')"));
-  assert.ok(s.includes("(resultado.total||0).toLocaleString('es-CO')+'</div><div class=\"kl\">Total WhatsApp</div>"));
+  // Fase 186: el total sale de salida-por-linea (sin el filtro de linea) o, si no aplica, de /por-tipo.
+  assert.ok(s.includes("var totalCanal = porLinea ? porLinea.total : (resultado.total||0);"));
+  assert.ok(s.includes("totalCanal.toLocaleString('es-CO')+'</div><div class=\"kl\">Total WhatsApp</div>"));
 });

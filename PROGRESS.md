@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.74.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.75.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -74,6 +74,12 @@ narrativo de cada fase, fase por fase, vive en
   - En los meses con CDR, la pestaña "Llamadas y WhatsApp de salida" de
     ORLANT sale del CDR y se reparte en 3P/General por la línea de cada
     asesor en ese mes (Fase 170); sin línea asignada = "Sin asignar".
+  - **Tipificación de ORLANT (Fase 186)**: la salida de llamadas y de
+    WhatsApp se reparte en Salida General / Salida 3P por la clasificación
+    del asesor, **por cliente y sin mes** (tabla `asesor_clasificacion`,
+    botón "Clasificación de asesores", solo el administrador); sin
+    clasificar = "Sin clasificar", que suma a la salida. Independiente de la
+    línea por mes de la Fase 170.
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
@@ -293,3 +299,4 @@ mismo orden):
 - Fase 183 — Tipificación de ORLANT con las reglas de Edwin del 26/10: salida = skill "-" (todas, agosto 6.560), Cancelaciones y reprogramación en su skill, tarjeta Total llamadas, gráfica de salida sin 3P/General, Skill <ID> en WhatsApp, colores en Agendamiento (v1.72.8, 2026-10-26)
 - Fase 184 — Encuesta de Mobilize: ID de la llamada (CONN_ID del archivo) en la lista de comentarios y en el Excel, sin teléfono y sin cruce con el CDR; vacío si el archivo no lo trae; arreglo de la Fase 178: los meses que solo tienen Encuesta a veces no entraban en el MES (v1.73.0, 2026-10-26)
 - Fase 185 — Tipificación de WhatsApp de ORLANT por fecha de cierre (DATE_CLOSE): octubre cuadra con el archivo y cargar un mes ya no borra el último día del anterior; tarjeta Total WhatsApp; resumen de filas omitidas en la vista previa (v1.74.0, 2026-10-26)
+- Fase 186 — Tipificación de ORLANT: Salida General / Salida 3P / Sin clasificar por la clasificación del asesor (por cliente), filtro "Línea de salida" en las 2 vistas, ventana "Clasificación de asesores" (solo administrador) con carga desde Excel (v1.75.0, 2026-10-26)
