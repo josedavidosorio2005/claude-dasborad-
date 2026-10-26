@@ -85,6 +85,11 @@ const loginLimiterPorUsuario = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true,
   keyGenerator: (req) => `usuario:${usuarioIntentado(req)}`,
+  // Fase 180 (pedido del usuario): el admin maestro no entra en este tope,
+  // para que nadie pueda dejarlo fuera a proposito con 30 intentos. Solo el
+  // nombre exacto (el login lo compara asi); sigue con el limite por IP +
+  // usuario de loginLimiter.
+  skip: (req) => req.body?.user === MASTER_ADMIN_USER,
   handler: (req, res, next, options) => {
     const rl = req.rateLimit || {};
     if (rl.used === rl.limit + 1) {

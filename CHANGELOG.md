@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.5 — Octubre 2026
+
+**Fase 180: la cuenta del administrador principal no se puede bloquear a
+propósito.**
+
+- El bloqueo de una hora tras 30 intentos fallidos ya no aplica a la cuenta
+  del administrador principal, para que nadie la pueda dejar fuera a
+  propósito. Sigue teniendo el límite de siempre: 10 intentos por
+  computador cada 15 minutos.
+
 ## v1.72.4 — Octubre 2026
 
 **Fase 179: el Resumen de calidad ignora las filas de total.**

@@ -16762,3 +16762,17 @@ más y duplicaba los monitoreos; con la fórmula en error, sumaba un
 "asesor sin calcular". Prueba nueva `fase179-calidad-resumen-totales.test.js`
 (3): las 3 fallan con el lector de `main`. Guía de uso (md y HTML) con la
 regla; sale de `docs/pendientes.md`.
+
+### Fase 180 — Admin maestro fuera del tope de login por usuario (2026-10-26, v1.72.5)
+
+Pedido del usuario. `loginLimiterPorUsuario` (`server/routes/auth.js`,
+Fase 178) se salta (`skip`) cuando el usuario es exactamente
+`MASTER_ADMIN_USER` (el login lo compara así); variantes como " ADMIN "
+no son el maestro y siguen contando. El límite por IP + usuario
+(`loginLimiter`, 10 cada 15 min) sigue aplicando al maestro. Pruebas en
+`fase178-login-por-usuario.test.js` (2 nuevas): 12 fallidos desde 12 IP no
+bloquean al maestro, entra con su contraseña y no queda LOGIN_BLOQUEADO; "
+ADMIN " sí se bloquea; el límite por IP sigue. Fallan en `main` (la
+primera porque el maestro queda bloqueado; la segunda depende de ella).
+Guía de uso y `docs/pendientes.md` con el efecto aceptado (contra el
+maestro solo queda el límite por IP).
