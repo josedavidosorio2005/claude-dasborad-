@@ -15,6 +15,10 @@
 // mensual (salida_mensual). Los meses sin ningun CDR, igual que siempre.
 'use strict';
 
+// Fase 183: lazy, para no crear un require circular si tipificaciones.js llega a usar este modulo.
+function salidaPorGuion(c) { return require('./tipificaciones').salidaPorGuion(c); }
+function condSalidaLlamadasSql(c) { return require('./tipificaciones').condSalidaLlamadasSql(c); }
+
 const LINEAS = ['3P', 'GENERAL'];
 const SKILL_SALIDA_LLAMADAS = 'LLAMADAS DE SALIDA';
 // Fase 177: una llamada con ese skill pero con un tipo que no es de salida
@@ -24,13 +28,15 @@ const TIPO_SALIDA_LLAMADAS = "(tipoInteraccion IS NULL OR tipoInteraccion = 'out
 // Salidas por asesor y mes (todas o de un mes): [{ mes, agente, llamadas, wpp }].
 function salidasPorAsesor(db, campana, mes) {
   const filtroMes = mes ? ' AND substr(fecha,1,7) = @mes' : '';
+  // Fase 183: ORLANT cuenta el "-" del CDR con cualquier tipo y deja las out_pre en su skill.
+  const condLlam = salidaPorGuion(campana) ? condSalidaLlamadasSql(campana) : `skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS}`;
   return db.prepare(`
     SELECT substr(fecha,1,7) AS mes, agente,
-      SUM(CASE WHEN canal = 'LLAMADAS' AND skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS} THEN 1 ELSE 0 END) AS llamadas,
+      SUM(CASE WHEN canal = 'LLAMADAS' AND ${condLlam} THEN 1 ELSE 0 END) AS llamadas,
       SUM(CASE WHEN canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma' THEN 1 ELSE 0 END) AS wpp
     FROM tipificaciones
     WHERE campana = @campana${filtroMes}
-      AND ((canal = 'LLAMADAS' AND skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS}) OR (canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma'))
+      AND ((canal = 'LLAMADAS' AND ${condLlam}) OR (canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma'))
     GROUP BY mes, agente
     ORDER BY mes, agente`).all({ campana, mes: mes || null, skillLlam: SKILL_SALIDA_LLAMADAS });
 }

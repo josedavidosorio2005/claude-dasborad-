@@ -71,7 +71,7 @@ test('migracion: idempotente y no pisa un cambio de un administrador', () => {
   db.prepare("UPDATE clientes_registro SET parametros = json_set(parametros, '$.salidaNoConectada', json('[\"NO_CONTESTAN\",\"BUZON\"]')) WHERE nombre = 'ORLANT'").run();
 });
 
-test('API: tarjetas de salida de ORLANT con su regla; la salida por asesor (Fase 170) incluye out_pre', async () => {
+test('API: tarjetas de salida de ORLANT con su regla; Fase 183: las out_pre de CANCELACIONES quedan en su skill', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const r = T.tipificacionParseFilas(cdrSintetico(), null, 'LLAMADAS');
   const filas = r.filas.map(T.tipificacionFilaComoArray);
@@ -79,15 +79,19 @@ test('API: tarjetas de salida de ORLANT con su regla; la salida por asesor (Fase
   assert.equal(c.status, 201, JSON.stringify(c.body));
   const s = await request(app).get('/api/calidad/tipificacion/resumen-salida').query({ campana: 'ORLANT', desde: '2025-11-01', hasta: '2025-11-30' }).set(auth(admin));
   assert.equal(s.status, 200);
-  // 6 de salida; no conectadas = NO_CONTESTAN (2) + BUZON (1). Cliente_no_contesta NO es regla de ORLANT.
-  assert.deepEqual(s.body, { total: 6, conectadas: 3, noConectadas: 3 });
-  // Filtro "Llamadas de salida" (skill) trae las 6; CANCELACIONES solo la de entrada.
+  // Fase 183: las 2 out_pre de CANCELACIONES ya no son salida (Edwin, 26/10); el "-" cuenta con
+  // cualquier tipo: 4 outbound_ma + 1 "-" de otro tipo = 5.
+  // No conectadas = NO_CONTESTAN + BUZON. Cliente_no_contesta NO es regla de ORLANT.
+  assert.equal(s.body.total, 5);
+  assert.equal(s.body.conectadas + s.body.noConectadas, 5);
+  assert.equal(s.body.soloTotal, true);
+  // Fase 183: Llamadas de salida trae las 5; CANCELACIONES, la de entrada + las 2 out_pre.
   const q = (skill) => request(app).get('/api/calidad/tipificacion/por-tipo').query({ campana: 'ORLANT', canal: 'LLAMADAS', desde: '2025-11-01', hasta: '2025-11-30', skill }).set(auth(admin));
-  assert.equal((await q('LLAMADAS DE SALIDA')).body.total, 6);
-  assert.equal((await q('CANCELACIONES Y REPROGRAMACION')).body.total, 1);
-  // Fase 170: salida por asesor (sin linea asignada = Sin asignar), con out_pre.
+  assert.equal((await q('LLAMADAS DE SALIDA')).body.total, 5);
+  assert.equal((await q('CANCELACIONES Y REPROGRAMACION')).body.total, 3);
+  // Fase 170: salida por asesor (sin linea asignada = Sin asignar); Fase 183: sin las out_pre.
   const nov = salidaCombinadaPorMes(db, 'ORLANT').find((m) => m.mes === '2025-11');
-  assert.equal(nov.llamadasSinAsignar, 6);
+  assert.equal(nov.llamadasSinAsignar, 5);
 });
 
 test('Mobilize no cambia: su "no conectada" sigue siendo Cliente_no_contesta', async () => {

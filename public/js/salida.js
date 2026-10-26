@@ -206,15 +206,12 @@ async function salGuardarLineas(i){
 // Agendamiento/Citas (que si tienen varios meses de historia).
 function _salDibujarGrafica(canvasId, filas, campo3p, campoGeneral, tituloEje){
   var labels = filas.map(function(f){ return salidaMesLbl(f.mes); });
+  // Fase 183 (pedido de Edwin): una sola serie con toda la salida del mes
+  // (3P y General ya tienen su propia grafica); antes 3P/General/Sin asignar.
+  var canal = campo3p === 'llamadas3p' ? 'llamadas' : 'wpp';
   var ds = [
-    { type:'bar', label:'3P', data: filas.map(function(f){ return f[campo3p]; }), backgroundColor: (typeof CM!=='undefined'?CM:'#1a7a9e'), borderRadius:3, maxBarThickness:60 },
-    { type:'bar', label:'General', data: filas.map(function(f){ return f[campoGeneral]; }), backgroundColor: (typeof CD!=='undefined'?CD:'#0d4a5e'), borderRadius:3, maxBarThickness:60 },
+    { type:'bar', label: tituloEje, data: filas.map(function(f){ return _salTotal(f, canal); }), backgroundColor: (typeof CM!=='undefined'?CM:'#1a7a9e'), borderRadius:3, maxBarThickness:60 },
   ];
-  // Fase 170: "Sin asignar" (asesores sin linea ese mes), solo si hay.
-  var campoSin = campo3p === 'llamadas3p' ? 'llamadasSinAsignar' : 'wppSinAsignar';
-  if(filas.some(function(f){ return f[campoSin]; })){
-    ds.push({ type:'bar', label:'Sin asignar', data: filas.map(function(f){ return f[campoSin] || 0; }), backgroundColor: '#9aa0a6', borderRadius:3, maxBarThickness:60 });
-  }
   var o = loFmt(loBar(tituloEje));
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });

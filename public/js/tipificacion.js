@@ -234,6 +234,8 @@ function _tipificacionQueryStringSalida(campana, compartido, deCanal){
 }
 
 function _tipificacionTarjetasSalidaHtml(resumen){
+  // Fase 183 (pedido de Edwin): en ORLANT una sola tarjeta con el total del mes.
+  if(resumen.soloTotal) return '<div class="aurora-kpi"><div class="kv">'+(resumen.totalLlamadas||0).toLocaleString('es-CO')+'</div><div class="kl">Total llamadas</div></div>';
   var pct = resumen.total ? Math.round((resumen.conectadas/resumen.total)*10000)/100 : null;
   return '<div class="aurora-kpi"><div class="kv">'+resumen.total.toLocaleString('es-CO')+'</div><div class="kl">Llamadas de salida</div></div>' +
     '<div class="aurora-kpi"><div class="kv">'+resumen.conectadas.toLocaleString('es-CO')+'</div><div class="kl">Conectadas'+(pct===null?'':' ('+pct+'%)')+'</div></div>' +

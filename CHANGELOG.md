@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.8 — Octubre 2026
+
+**Fase 183: Tipificación de ORLANT con las reglas de Edwin del 26/10.**
+
+- Llamadas de salida = las filas del CDR con skill "-", todas. Agosto queda
+  en 6.560 (antes 6.945: se estaban sumando las 390 de "Cancelaciones y
+  reprogramación", que son llamadas programadas de ese skill, y faltaban 5
+  filas "-" de llamadas internas).
+- "Cancelaciones y reprogramación" vuelve a aparecer como skill propio en
+  el filtro y en la torta.
+- Ya no queda ninguna fila suelta con "-": todas cuentan como Llamadas de
+  salida.
+- En la mitad de Llamadas, una sola tarjeta: "Total llamadas" del mes.
+- En "Llamadas y WhatsApp de salida", cada gráfica muestra solo la salida
+  del mes (sin repartir en 3P, General y Sin asignar; la tabla de abajo
+  sigue con el detalle).
+- WhatsApp: un skill que no está en la tabla de skills ya no se pierde al
+  cargar; se ve como "Skill <número>".
+- Agendamiento: cada barra de especialidad con su propio color.
+- No hay que volver a cargar nada: los datos ya subidos se leen con la
+  regla nueva. Mobilize no cambia.
+
 ## v1.72.7 — Octubre 2026
 
 **Fase 182: mantenimiento.**

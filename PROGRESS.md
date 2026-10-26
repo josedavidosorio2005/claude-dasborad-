@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.72.7` (ver `server/package.json`, expuesta en
+- **Versión**: `1.72.8` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -54,11 +54,14 @@ narrativo de cada fase, fase por fase, vive en
   alimenta cada una:
   [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
 - **Reglas de conteo de la salida en Tipificación** (Fase 174, confirmadas
-  por Edwin el 23/10):
-  - Llamada de salida = TYPE_INTERACTION `outbound_ma` **o** `out_pre`
-    (aunque `out_pre` traiga skill, p. ej. 4070 CANCELACIONES Y
-    REPROGRAMACION en ORLANT: se guarda como salida, no como entrada). Un
-    SKILL "-" es salida solo con esos dos tipos (Fase 177).
+  por Edwin el 23/10; **ORLANT cambia en la Fase 183**, pedido del 26/10):
+  - **ORLANT (Fase 183)**: llamada de salida = SKILL_NAME "-", con
+    cualquier TYPE_INTERACTION (agosto: 6.560). Las `out_pre` con skill
+    propio (4070 CANCELACIONES Y REPROGRAMACION) cuentan en su skill. Se
+    aplica al leer (`server/tipificaciones.js`, `salidaPorGuion`): el
+    lector las sigue guardando como antes y no hay que recargar nada.
+  - **Mobilize**: llamada de salida = TYPE_INTERACTION `outbound_ma` **o**
+    `out_pre`; un SKILL "-" es salida solo con esos dos tipos (Fase 177).
   - "No conectada" es por cliente (`parametros.salidaNoConectada` del
     registro de clientes): ORLANT = `NO_CONTESTAN` + `BUZON`
     (DESCRIPTION_COD_ACT, separadas en la tipificación); MOBILIZE =
@@ -86,7 +89,8 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Indicador | Valor | Fase |
 |---|---|---|
 | Tipificación de Llamadas (ORLANT) | Ago 14.940 · Sep 19.721 (recargado del CDR, mismas filas) | 116 / 174 |
-| Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas | 174 / 177 |
+| Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas (regla anterior) | 174 / 177 |
+| Llamadas de salida, regla de la Fase 183 (ORLANT) | Ago 6.560 (cifra de Edwin) · Sep 10.404 (filas con skill "-" del CDR del 23/10); falta verlas en producción con sesión | 183 |
 | Tipificación de WhatsApp (ORLANT) | Jul 71 · Ago 12.061 · Sep 13.118 (3.997 de salida) | 122 / 168 |
 | Tráfico de Llamadas (ORLANT) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 | 115 |
 | Tráfico de WhatsApp (ORLANT) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % | 116 |
@@ -283,3 +287,4 @@ mismo orden):
 - Fase 180 — El admin maestro queda fuera del tope de 30 logins fallidos por hora (no se puede bloquear a propósito); sigue con el límite por IP + usuario (v1.72.5, 2026-10-26)
 - Fase 181 — Mantenimiento: express 5.3.0 y @aws-sdk 3.1156 (sin tocar better-sqlite3 ni dotenv; playwright espera OK porque toca CI); pendientes nuevos: paso a Node 24 antes del 30/04/2027 y prueba mensual de restauración del respaldo (v1.72.6, 2026-10-26)
 - Fase 182 — Mantenimiento: playwright 1.64.1 con la imagen del job `pantallas` de CI fijada al digest de v1.64.1-noble (con OK del usuario), express-rate-limit 8.7.1 y supertest 7.3.1 (v1.72.7, 2026-10-26)
+- Fase 183 — Tipificación de ORLANT con las reglas de Edwin del 26/10: salida = skill "-" (todas, agosto 6.560), Cancelaciones y reprogramación en su skill, tarjeta Total llamadas, gráfica de salida sin 3P/General, Skill <ID> en WhatsApp, colores en Agendamiento (v1.72.8, 2026-10-26)
