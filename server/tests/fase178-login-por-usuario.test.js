@@ -51,3 +51,25 @@ test('mayusculas y espacios cuentan como la misma cuenta', async () => {
   const r = await login('JHerrera', 'mala-z', '10.2.1.1');
   assert.equal(r.status, 429);
 });
+
+// Fase 180: el admin maestro (nombre exacto) no entra en el tope por usuario:
+// muchos fallidos desde muchas IP no lo dejan fuera. El limite por IP +
+// usuario (loginLimiter) sigue igual para el.
+test('Fase 180: el admin maestro no se bloquea por el tope por usuario; variantes de su nombre si cuentan', async () => {
+  const { MASTER_PASSWORD } = require('./helpers');
+  for (let i = 0; i < 12; i++) {
+    const r = await login('admin', 'mala-' + i, `10.3.0.${i + 1}`);
+    assert.equal(r.status, 401, `intento ${i + 1}`);
+  }
+  const ok = await login('admin', MASTER_PASSWORD, '10.3.1.1');
+  assert.equal(ok.status, 200, 'el maestro entra con su contrasena');
+  assert.equal(bloqueos('admin'), 0);
+  // " ADMIN " no es el maestro (el login compara el nombre exacto): cuenta.
+  for (let i = 0; i < 5; i++) await login(' ADMIN ', 'mala-' + i, `10.4.0.${i + 1}`);
+  assert.equal((await login(' ADMIN ', 'mala-z', '10.4.1.1')).status, 429);
+});
+
+test('Fase 180: el limite por IP + usuario sigue aplicando al admin maestro', async () => {
+  for (let i = 0; i < 3; i++) assert.equal((await login('admin', 'mala-ip-' + i, '10.5.0.1')).status, 401);
+  assert.equal((await login('admin', 'mala-ip-x', '10.5.0.1')).status, 429);
+});

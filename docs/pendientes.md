@@ -324,11 +324,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     lectura a los 2 grupos de logs (IAM, necesita tu OK) o agregar a
     `salud-servidor.yml` un conteo de líneas 5xx de `docker logs` (solo
     números). Costo: bajo.
-  - **(baja) El tope de login por usuario se puede usar para bloquear una
-    cuenta conocida** durante 1 hora (30 intentos fallidos desde cualquier
-    lado, Fase 178), también la del administrador maestro. Es el costo
-    normal de ese control. Si molesta: excluir al maestro, o bajar la
-    ventana. Costo: bajo.
+  - **(baja) Tope de login por usuario: dos efectos aceptados** (Fase 180).
+    El administrador maestro ya no entra en el tope de 30 fallidos por hora
+    (no se puede bloquear a propósito); a cambio, contra él solo queda el
+    límite por IP + usuario (10 cada 15 min), así que un intento repartido
+    entre muchas IP depende de que su contraseña sea larga y única. Las
+    demás cuentas sí se pueden bloquear 1 hora a propósito. Si molesta:
+    bajar la ventana o avisar por correo al bloquear. Costo: bajo.
   - **(baja, con fecha) Node.js 22 deja de tener soporte el 30/04/2027**:
     la imagen usa `node:22-bookworm` (se reconstruye en cada deploy, así
     que recibe los parches de la 22). Planear el paso a Node 24 (LTS) antes

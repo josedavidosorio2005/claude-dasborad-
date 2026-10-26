@@ -61,7 +61,8 @@ sigue abierta, sin que tengas que volver a entrar.
 plataforma te pide esperar unos minutos antes de volver a intentar (el
 mensaje dice cuántos). Además, si una misma cuenta acumula 30 intentos
 fallidos en una hora (aunque sean desde computadores distintos), queda
-bloqueada para iniciar sesión hasta que pase esa hora, y el administrador
+bloqueada para iniciar sesión hasta que pase esa hora (salvo la cuenta del
+administrador principal, que solo tiene el límite por computador), y el administrador
 ve el aviso "Cuenta bloqueada por intentos" en el Historial.
 
 ![Pantalla de inicio de sesión (datos de demostración)](img/guia-uso/01-login.png)
