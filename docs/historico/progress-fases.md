@@ -16790,3 +16790,16 @@ subirlo exige cambiar el workflow y CLAUDE.md pide consultarlo antes.
 Suite completa y `npm audit` en 0. `docs/pendientes.md`: Node 24 antes del
 30/04/2027 y la prueba mensual de restauración del respaldo pasan a ser
 pendientes propios, con fecha.
+
+### Fase 182 — Playwright 1.64.1 y actualizaciones menores (2026-10-26, v1.72.7)
+
+Con el OK explícito del usuario para tocar `ci.yml` (lo que había quedado
+fuera de la Fase 181). `playwright` 1.63.0 → 1.64.1, `supertest` 7.3.0 →
+7.3.1 y `express-rate-limit` 8.7.0 → 8.7.1 (`package.json` y lockfile;
+`better-sqlite3` y `dotenv` sin cambios). En `ci.yml`, el contenedor del
+job `pantallas` pasa a `mcr.microsoft.com/playwright@sha256:47b510dd…`
+(`v1.64.1-noble`): es el digest del índice multiarquitectura, el mismo
+tipo que el anterior, leído del registro de Microsoft y comprobado
+calculando el sha256 del índice descargado. Suite completa y `npm audit` en
+0; la verificación local de la Fase 178 (Playwright 1.64.1 con Brave) pasa
+entera. Sale de `docs/pendientes.md` el punto de actualizaciones menores.
