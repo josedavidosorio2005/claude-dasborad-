@@ -74,15 +74,17 @@ test('WhatsApp: el skill sale del mapa; 0 = WhatsApp de SALIDA (outbound_ma), lo
   assert.deepEqual(r.avisos, []);
 });
 
-test('WhatsApp: SKILL_ID fuera del mapa se ignora con UN solo aviso agrupado (no uno por fila)', () => {
+test('WhatsApp: Fase 183, un SKILL_ID fuera del mapa se guarda como "Skill <ID>" con UN solo aviso agrupado', () => {
   const filas = [HISTCHAT];
   for (let k = 0; k < 40; k++) filas.push(chat(k % 2 ? '4323' : '4308', '2026-09-05'));
   filas.push(chat('4327', '2026-09-05'));
   const r = T.tipificacionParseFilas(filas, null, 'WHATSAPP', { skillsWhatsapp: MAPA });
-  assert.equal(r.filas.length, 1);
-  assert.equal(r.ignoradasPorSkill, 40);
+  assert.equal(r.filas.length, 41);
+  assert.equal(r.filas.filter((f) => f.skill === 'Skill 4308').length, 20);
+  assert.equal(r.filas.filter((f) => f.skill === 'Skill 4323').length, 20);
+  assert.equal(r.ignoradasPorSkill, 0);
   assert.equal(r.avisos.length, 1);
-  assert.equal(r.avisos[0], '40 fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se ignoraron: 4308 (20), 4323 (20). Si alguno es de WhatsApp, agréguelo en "Skills de WhatsApp".');
+  assert.equal(r.avisos[0], '40 fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se guardaron como "Skill <ID>": 4308 (20), 4323 (20). Para verlas con su nombre, agréguelo en "Skills de WhatsApp".');
 });
 
 test('WhatsApp: el mes sale de DATE -- filas del 31/08 en el archivo de septiembre se leen con su fecha real', () => {

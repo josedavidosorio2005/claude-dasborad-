@@ -19,10 +19,10 @@ function cuerpo(src, desde, hasta) {
   return src.slice(i, src.indexOf(hasta, i + desde.length));
 }
 
-test('Agendas por especialidad: un solo color (serie principal) y sin leyenda', () => {
+test('Agendas por especialidad: Fase 183, un color por barra sin repetir y sin leyenda', () => {
   const b = cuerpo(leer('agendas.js'), "if(vista === 'especialidad'){", "} else if(vista === 'mensual'){");
-  assert.doesNotMatch(b, /paletaColorPara/, 'ya no un color por especialidad');
-  assert.match(b, /backgroundColor: \(typeof colorSerie==='function' \? colorSerie\('principal'\)/);
+  assert.ok(b.includes('paletaColoresSinRepetir(datos.map(function(r){ return r.especialidad; }))'));
+  assert.ok(b.includes('backgroundColor: coloresEsp || '));
   assert.match(b, /o1\.plugins\.legend = \{ display:false \};/);
 });
 

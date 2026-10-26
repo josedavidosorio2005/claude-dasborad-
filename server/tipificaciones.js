@@ -59,6 +59,25 @@ const SKILLS_SALIDA_EQUIVALENTES = ['LLAMADAS DE SALIDA', 'LINEA DE SALIDA'];
 // tambien son "Llamadas de salida"; un "-" que no es outbound_ma (internalcall,
 // sin tipo) sigue como "-".
 const COND_SALIDA_SQL = "(UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ') + ") OR (TRIM(skill) = '-' AND tipoInteraccion = 'outbound_ma'))";
+// Fase 183 (pedido de Edwin, 26/10, solo ORLANT): en el CDR de llamadas,
+// SKILL_NAME "-" es llamada de salida con cualquier TYPE_INTERACTION
+// (agosto: 6.560 filas), y las out_pre que llegan con skill propio (4070
+// CANCELACIONES Y REPROGRAMACION) cuentan en su skill, no como salida. Las
+// filas ya guardadas no se tocan: el parser las guardo como LLAMADAS DE
+// SALIDA con su SKILL_ID original, y aqui se leen con su skill.
+const CLIENTES_SALIDA_POR_GUION = ['ORLANT'];
+const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
+const SKILLS_SALIDA_SQL = SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ');
+const SALIDA_CON_SKILL_PROPIO_SQL = `(UPPER(TRIM(skill)) IN (${SKILLS_SALIDA_SQL}) AND skillId IS NOT NULL AND TRIM(skillId) NOT IN ('', '-', '0'))`;
+// Un skill de salida con un tipo de entrada no cuenta (Fase 177); el "-" si, con cualquier tipo.
+const COND_SALIDA_GUION_SQL = `((UPPER(TRIM(skill)) IN (${SKILLS_SALIDA_SQL}) AND (tipoInteraccion IS NULL OR tipoInteraccion = 'outbound_ma') AND NOT ${SALIDA_CON_SKILL_PROPIO_SQL}) OR TRIM(skill) = '-')`;
+const SKILL_GUION_SQL = `CASE WHEN ${SALIDA_CON_SKILL_PROPIO_SQL} THEN CASE TRIM(skillId) ` +
+  Object.keys(SKILLS_LLAMADAS_POR_ID).map((id) => `WHEN '${id}' THEN '${SKILLS_LLAMADAS_POR_ID[id]}' `).join('') +
+  `ELSE 'Skill ' || TRIM(skillId) END WHEN ${COND_SALIDA_GUION_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`;
+function salidaPorGuion(campana) { return CLIENTES_SALIDA_POR_GUION.includes(campana); }
+// Condicion SQL de "llamada de salida" (canal LLAMADAS) de este cliente.
+function condSalidaLlamadasSql(campana) { return salidaPorGuion(campana) ? COND_SALIDA_GUION_SQL : COND_SALIDA_SQL; }
+
 function esSkillSalida(skill) {
   return SKILLS_SALIDA_EQUIVALENTES.includes(String(skill == null ? '' : skill).trim().replace(/\s+/g, ' ').toUpperCase());
 }
@@ -176,7 +195,15 @@ function tipificacionesWhereClausulas(q) {
     clausulas.push('agente = @agente');
     params.agente = q.agente;
   }
-  if (q.skill && q.canal === 'LLAMADAS' && esSkillSalida(q.skill)) {
+  if (q.skill && q.canal === 'LLAMADAS' && salidaPorGuion(q.campana)) {
+    // Fase 183: ORLANT filtra por el skill ya leido (salida, o el skill propio de las out_pre).
+    if (esSkillSalida(q.skill)) {
+      clausulas.push(COND_SALIDA_GUION_SQL);
+    } else {
+      clausulas.push(`(${SKILL_GUION_SQL}) = @skill`);
+      params.skill = q.skill;
+    }
+  } else if (q.skill && q.canal === 'LLAMADAS' && esSkillSalida(q.skill)) {
     // Fase 169: cualquiera de los nombres de salida trae los de todos los meses
     // (Fase 171: tambien el "-" de salida de Mobilize).
     clausulas.push(COND_SALIDA_SQL);
@@ -235,9 +262,17 @@ function tipificacionesPorTipo(db, q) {
 // NO esta en la lista de "no conectada". Canal siempre 'LLAMADAS' (Mobilize
 // no tiene WhatsApp).
 function tipificacionesResumenSalida(db, q) {
-  const { where, params } = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma' });
+  // Fase 183: totalLlamadas = todas las llamadas (entrada y salida) con los
+  // mismos filtros -- la tarjeta "Total llamadas" de ORLANT.
+  const todas = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined });
+  const totalLlamadas = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${todas.where}`).get(todas.params).n;
+  const { where, params } = salidaPorGuion(q.campana)
+    ? (() => { const w = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined }); return { where: `${w.where} AND ${COND_SALIDA_GUION_SQL}`, params: w.params }; })()
+    : tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma' });
   const total = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where}`).get(params).n;
-  if (!total) return { total: 0, conectadas: 0, noConectadas: 0 };
+  const soloTotal = salidaPorGuion(q.campana); // ORLANT: una sola tarjeta, Total llamadas
+  const extra = soloTotal ? { totalLlamadas, soloTotal } : {};
+  if (!total) return { total: 0, conectadas: 0, noConectadas: 0, ...extra };
   const noConectada = salidaNoConectadaDe(db, q.campana);
   const placeholders = noConectada.map((_, i) => `@noConectada${i}`).join(', ');
   const paramsNoConectadas = { ...params };
@@ -245,7 +280,7 @@ function tipificacionesResumenSalida(db, q) {
   const noConectadas = db
     .prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where} AND tipificacion IN (${placeholders})`)
     .get(paramsNoConectadas).n;
-  return { total, conectadas: total - noConectadas, noConectadas };
+  return { total, conectadas: total - noConectadas, noConectadas, ...extra };
 }
 
 // Valores distintos para los filtros ("Todos" + seleccion) + si hay datos
@@ -261,7 +296,7 @@ function tipificacionesOpciones(db, campana, canal) {
     // Fase 169: en Llamadas, los nombres de salida de meses anteriores se
     // muestran una sola vez, como LLAMADAS DE SALIDA.
     skills: canal === 'LLAMADAS'
-      ? db.prepare(`SELECT DISTINCT CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`)
+      ? db.prepare(`SELECT DISTINCT ${salidaPorGuion(campana) ? SKILL_GUION_SQL : `CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`} AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`)
         .all(campana, canal).map((r) => r.v)
       : distintos('skill'),
   };
@@ -276,6 +311,8 @@ function tieneAlgunaTipificacion(db, campana) {
 
 module.exports = {
   CANALES,
+  condSalidaLlamadasSql,
+  salidaPorGuion,
   SKILL_SALIDA,
   esSkillSalida,
   CAMPOS_FILA,

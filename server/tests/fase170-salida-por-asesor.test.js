@@ -20,7 +20,8 @@ async function preparar(admin) {
   const post = async (url, body) => { const r = await request(app).post(url).set(auth(admin)).send(body); assert.equal(r.status, 201, url + ' ' + JSON.stringify(r.body)); };
   // Archivo mensual de Edwin: octubre, noviembre y diciembre de 2025.
   await post('/api/calidad/salida/carga', { campana: 'ORLANT', filas: [['2025-10', 10, 20, 3, 4], ['2025-11', 100, 200, 30, 40], ['2025-12', 7, 8, 9, 10]] });
-  // Noviembre con los 2 CDR: llamadas de salida de Ana (3), Beto (2) y Caro (1); "-" de internalcall no cuenta.
+  // Noviembre con los 2 CDR: llamadas de salida de Ana (3), Beto (2) y Caro (1). Fase 183: en ORLANT el
+  // "-" de internalcall tambien es salida, asi que Ana suma 4.
   await post('/api/calidad/tipificacion/carga', { campana: 'ORLANT', canal: 'LLAMADAS', filas: [
     tip('Ana', '2025-11-03', 'LLAMADAS DE SALIDA', 'outbound_ma'), tip('Ana', '2025-11-04', 'LLAMADAS DE SALIDA', 'outbound_ma'), tip('Ana', '2025-11-05', 'LLAMADAS DE SALIDA', 'outbound_ma'),
     tip('Beto', '2025-11-03', 'LLAMADAS DE SALIDA', 'outbound_ma'), tip('Beto', '2025-11-06', 'LLAMADAS DE SALIDA', 'outbound_ma'),
@@ -46,16 +47,16 @@ test('salida del CDR por linea del asesor; sin linea = "Sin asignar"; el canal s
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   await preparar(admin);
 
-  // Sin lineas: todo noviembre (CDR) queda "Sin asignar".
+  // Sin lineas: todo noviembre (CDR) queda "Sin asignar". Fase 183: 7, con el "-" que no es outbound_ma.
   let nov = salidaCombinadaPorMes(db, 'ORLANT').find((f) => f.mes === '2025-11');
-  assert.deepEqual(nov, { mes: '2025-11', llamadas3p: 0, llamadasGeneral: 0, llamadasSinAsignar: 6, wpp3p: 0, wppGeneral: 0, wppSinAsignar: 3,
+  assert.deepEqual(nov, { mes: '2025-11', llamadas3p: 0, llamadasGeneral: 0, llamadasSinAsignar: 7, wpp3p: 0, wppGeneral: 0, wppSinAsignar: 3,
     fuenteLlamadas: 'cdr', fuenteWpp: 'cdr', asesoresSinAsignar: 3 });
 
   // El editor: asesores del mes con sus salidas.
   const g = await request(app).get('/api/calidad/salida/asesores').query({ campana: 'ORLANT', mes: '2025-11' }).set(auth(admin));
   assert.equal(g.status, 200);
   assert.deepEqual(g.body.asesores, [
-    { agente: 'Ana', llamadas: 3, wpp: 1, linea: null },
+    { agente: 'Ana', llamadas: 4, wpp: 1, linea: null },
     { agente: 'Beto', llamadas: 2, wpp: 0, linea: null },
     { agente: 'Caro', llamadas: 1, wpp: 2, linea: null },
   ]);
@@ -74,7 +75,7 @@ test('salida del CDR por linea del asesor; sin linea = "Sin asignar"; el canal s
 
   const m = await request(app).get('/api/calidad/salida/mensual').query({ campana: 'ORLANT' }).set(auth(admin));
   const porMes = Object.fromEntries(m.body.filter((f) => f.mes.startsWith('2025-1')).map((f) => [f.mes, f]));
-  assert.deepEqual(porMes['2025-11'], { mes: '2025-11', llamadas3p: 3, llamadasGeneral: 2, llamadasSinAsignar: 1, wpp3p: 1, wppGeneral: 0, wppSinAsignar: 2,
+  assert.deepEqual(porMes['2025-11'], { mes: '2025-11', llamadas3p: 4, llamadasGeneral: 2, llamadasSinAsignar: 1, wpp3p: 1, wppGeneral: 0, wppSinAsignar: 2,
     fuenteLlamadas: 'cdr', fuenteWpp: 'cdr', asesoresSinAsignar: 1 }, 'noviembre del CDR (el archivo 100/200/30/40 ya no manda)');
   assert.equal(porMes['2025-10'].fuenteLlamadas, 'archivo', 'octubre sin CDR: archivo');
   assert.deepEqual([porMes['2025-10'].llamadas3p, porMes['2025-10'].llamadasGeneral], [10, 20]);
@@ -97,7 +98,9 @@ test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses c
   assert.match(s, /no tienen línea \(3P o General\)/);
   assert.match(s, /if\(_salEsAdmin\(\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
   assert.match(s, /aria-label="Línea de '\+esc\(a\.agente\)\+'"/);
-  assert.match(s, /label:'Sin asignar'/);
+  // Fase 183: la grafica es una sola serie con toda la salida del mes.
+  assert.ok(s.includes("label: tituloEje, data: filas.map(function(f){ return _salTotal(f, canal); })"));
+  assert.doesNotMatch(s, /label:'Sin asignar'/);
   const g = JS('dashboard-generic.js');
   assert.match(g, /'Sin asignar': sin, 'Total': total, '% 3P': pct\(f\.llamadas3p, total\), 'Fuente': fuente\(f\.fuenteLlamadas\)/);
 });

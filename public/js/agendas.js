@@ -212,13 +212,14 @@ async function _agendasDibujar(campana, i, opciones, vista){
     // Fase 152 (B1): barras de comparacion (no tiempo) de mayor a menor.
     datos = datos.slice().sort(function(a,b){ return (b.cantidad||0) - (a.cantidad||0); });
     var o1 = loBar();
-    // Fase 164 (lote 2): una sola serie = un solo color y sin leyenda (como
-    // "Calidad por asesor", D-03); antes cada barra tenia un color distinto.
+    // Fase 164 (lote 2): una sola serie y sin leyenda. Fase 183 (pedido de
+    // Edwin): cada barra vuelve a tener su color, sin repetir (paletaColoresSinRepetir).
     o1.plugins.legend = { display:false };
+    var coloresEsp = (typeof paletaColoresSinRepetir === 'function') ? paletaColoresSinRepetir(datos.map(function(r){ return r.especialidad; })) : null;
     _gdChart(canvasId, {
       type: 'bar',
       data: { labels: datos.map(function(r){ return textoFormatoNombre(r.especialidad); }),
-        datasets: [{ label:'Agendas', data: datos.map(function(r){ return r.cantidad; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius:3 }] },
+        datasets: [{ label:'Agendas', data: datos.map(function(r){ return r.cantidad; }), backgroundColor: coloresEsp || (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius:3 }] },
       options: loDatalabelsAuto(o1),
     });
   } else if(vista === 'mensual'){

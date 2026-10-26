@@ -16803,3 +16803,38 @@ tipo que el anterior, leído del registro de Microsoft y comprobado
 calculando el sha256 del índice descargado. Suite completa y `npm audit` en
 0; la verificación local de la Fase 178 (Playwright 1.64.1 con Brave) pasa
 entera. Sale de `docs/pendientes.md` el punto de actualizaciones menores.
+
+### Fase 183 — Tipificación de ORLANT con las reglas de Edwin del 26/10 (2026-10-26, v1.72.8)
+
+Pedido del usuario (solo ORLANT, antes de las 12:15): Edwin recargó agosto,
+septiembre y octubre (1–24) con los 2 CDR. Los CDR nuevos no están en el PC
+local; el análisis se hizo con el CDR de septiembre del 23/10 (solo
+conteos) y las cifras de agosto que dio Edwin.
+
+- **Causa de los 385 de más en agosto (6.945 vs 6.560)**: la regla de la
+  Fase 174 contaba como salida las `out_pre` de 4070 CANCELACIONES Y
+  REPROGRAMACION (390 en agosto) y la de la Fase 177 dejaba fuera los "-"
+  de llamadas internas (`internalcall`, `internalcall_inb` o sin tipo: 5).
+  6.560 − 5 + 390 = 6.945. En septiembre el mismo patrón: 392 `out_pre` y
+  5 "-" internos (10.404 filas con skill "-").
+- **Arreglo, solo ORLANT y al leer** (`server/tipificaciones.js`,
+  `salidaPorGuion` / `condSalidaLlamadasSql`): salida = skill "-" con
+  cualquier tipo; una fila guardada como LLAMADAS DE SALIDA con SKILL_ID
+  propio (4070) se lee como CANCELACIONES Y REPROGRAMACION (otro ID:
+  "Skill <ID>"). Lo usan el filtro de skill, la torta, la tarjeta y la
+  pestaña de salida (`server/salida-cdr.js`). El lector no cambia, así que
+  no hay que recargar; Mobilize sigue con su regla.
+- Tarjeta única "Total llamadas" (todas las llamadas con los filtros) en la
+  mitad de Llamadas de ORLANT (`soloTotal` en `/resumen-salida`).
+- Pestaña de salida: cada gráfica es una sola serie con el total del mes
+  ("Llamadas de salida" / "WhatsApp de salida"); la tabla conserva el
+  detalle 3P/General/Sin asignar.
+- WhatsApp: un SKILL_ID fuera de la tabla se guarda como "Skill <ID>" con
+  un aviso agrupado (antes se ignoraba). La tabla de ORLANT ya tenía los 9
+  códigos del mapa de Edwin.
+- Agendamiento por especialidad: un color por barra
+  (`paletaColoresSinRepetir`), revierte el color único de la Fase 164.
+- Pruebas: `fase183-orlant-salida-guion.test.js` (falla sin el arreglo:
+  3 de 4); se ajustaron fase164, 168, 169, 170 y 174, que fijaban la regla
+  anterior. Suite completa y `npm audit` en 0; verificación local con
+  Playwright y Brave a 1440/768/375 px con un CDR sintético.

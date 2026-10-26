@@ -29,18 +29,20 @@ test('filtro de skill de Llamadas: los 3 nombres de salida salen como uno solo y
   assert.equal(op.body.skills.filter((s) => /salida/i.test(s)).length, 1, 'una sola opcion de salida');
   assert.ok(op.body.skills.includes('LLAMADAS DE SALIDA'));
   assert.ok(!op.body.skills.includes('LINEA DE SALIDA') && !op.body.skills.includes('Linea de salida'));
-  assert.ok(op.body.skills.includes('-') && op.body.skills.includes('CALL INBOUND ORLANT 3P'), 'los demas skills siguen igual');
+  // Fase 183: en ORLANT el "-" del CDR (cualquier tipo) tambien es salida: ya no sale suelto.
+  assert.ok(!op.body.skills.includes('-') && op.body.skills.includes('CALL INBOUND ORLANT 3P'), 'los demas skills siguen igual');
   assert.equal(T.tipificacionEtiquetaSkill('LLAMADAS DE SALIDA'), 'Llamadas de salida');
 
   for (const skill of ['LLAMADAS DE SALIDA', 'LINEA DE SALIDA', 'Linea de salida']) {
     const r = await request(app).get('/api/calidad/tipificacion/por-tipo').query({ campana: 'ORLANT', canal: 'LLAMADAS', desde: '2025-07-01', hasta: '2025-09-30', skill }).set(auth(admin));
-    assert.equal(r.body.total, 4, 'filtrando por "' + skill + '" salen los 3 meses');
+    // Fase 183: + el "-" de septiembre (tipo otro), que en ORLANT tambien es salida.
+    assert.equal(r.body.total, 5, 'filtrando por "' + skill + '" salen los 3 meses');
   }
   const ago = await request(app).get('/api/calidad/tipificacion/por-tipo').query({ campana: 'ORLANT', canal: 'LLAMADAS', mes: '2025-08', skill: 'LLAMADAS DE SALIDA' }).set(auth(admin));
   assert.equal(ago.body.total, 2);
-  // "-" (internalcall/sin tipo) no entra en salida.
+  // Fase 183: en ORLANT el "-" (internalcall/sin tipo) tambien es salida: ya no queda nada como "-".
   const guion = await request(app).get('/api/calidad/tipificacion/por-tipo').query({ campana: 'ORLANT', canal: 'LLAMADAS', mes: '2025-09', skill: '-' }).set(auth(admin));
-  assert.equal(guion.body.total, 1);
+  assert.equal(guion.body.total, 0);
 
   // WhatsApp no cambia.
   const opW = await request(app).get('/api/calidad/tipificacion/opciones').query({ campana: 'ORLANT', canal: 'WHATSAPP' }).set(auth(admin));

@@ -323,6 +323,7 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     return { error: 'Este archivo trae SKILL_ID y no SKILL_NAME: falta la tabla de skills de WhatsApp de este cliente (Cargar Datos, "Skills de WhatsApp").' };
   }
   var ignoradasPorSkill = {}; // Fase 168 -- {SKILL_ID: cantidad}, un solo aviso al final
+  var sinNombrePorSkill = {}; // Fase 183 -- {SKILL_ID: cantidad} guardadas como "Skill <ID>"
 
   var filas = [];
   var avisos = [];
@@ -340,9 +341,15 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     if (porSkillId) {
       skillIdWpp = tipificacionNormTexto(row[map.skillId]);
       skill = Object.prototype.hasOwnProperty.call(skillsWhatsapp, skillIdWpp) ? tipificacionNormTexto(skillsWhatsapp[skillIdWpp]) : '';
+      // Fase 183 (pedido de Edwin): un SKILL_ID que no esta en la tabla ya no
+      // se pierde: se guarda como "Skill <ID>" (un solo aviso al final). Sin
+      // SKILL_ID, la fila se sigue ignorando.
+      if (!skill && skillIdWpp) {
+        sinNombrePorSkill[skillIdWpp] = (sinNombrePorSkill[skillIdWpp] || 0) + 1;
+        skill = 'Skill ' + skillIdWpp;
+      }
       if (!skill) {
-        var claveIgn = skillIdWpp || '(vacio)';
-        ignoradasPorSkill[claveIgn] = (ignoradasPorSkill[claveIgn] || 0) + 1;
+        ignoradasPorSkill['(vacio)'] = (ignoradasPorSkill['(vacio)'] || 0) + 1;
         continue;
       }
     } else {
@@ -448,6 +455,12 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     avisos.push(totalIgnoradasSkill + ' fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se ignoraron: ' +
       Object.keys(ignoradasPorSkill).sort().map(function (k) { return k + ' (' + ignoradasPorSkill[k] + ')'; }).join(', ') +
       '. Si alguno es de WhatsApp, agréguelo en "Skills de WhatsApp".');
+  }
+  var totalSinNombre = Object.keys(sinNombrePorSkill).reduce(function (a, k) { return a + sinNombrePorSkill[k]; }, 0);
+  if (totalSinNombre > 0) {
+    avisos.push(totalSinNombre + ' fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se guardaron como "Skill <ID>": ' +
+      Object.keys(sinNombrePorSkill).sort().map(function (k) { return k + ' (' + sinNombrePorSkill[k] + ')'; }).join(', ') +
+      '. Para verlas con su nombre, agréguelo en "Skills de WhatsApp".');
   }
   var totalExcluidas = Object.keys(excluidasPorCodificacion).reduce(function (a, k) { return a + excluidasPorCodificacion[k]; }, 0);
   if (totalExcluidas > 0) {
