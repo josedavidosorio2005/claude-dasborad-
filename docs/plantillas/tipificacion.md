@@ -65,7 +65,7 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### De dónde sale
 
-Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se ignora y la vista previa dice cuántos.
+Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se guarda como "Skill <número>" y la vista previa dice cuántos. El día de cada chat sale de DATE_CLOSE (fecha de cierre).
 
 **Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Llamadas" — Wolkvox, CDR (hoja "HistCDR<fecha>"). (2) "WhatsApp" — Wolkvox, HistChat (hoja "HistChat<fecha>"). Esta plantilla es la de "WhatsApp".**
 
@@ -81,8 +81,8 @@ Tabla de skills de WhatsApp de ORLANT (SKILL_ID = nombre): 0 = WHATSAPP DE SALID
 |---|---|---|---|
 | CONN_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | CHANNEL | No | Canal del chat ("whatsapp"). |  |
-| DATE | Sí | Fecha y hora de la conversación. |  |
-| DATE_CLOSE | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| DATE | Sí | Fecha y hora de apertura del chat. Solo se usa si la fila no trae DATE_CLOSE. |  |
+| DATE_CLOSE | No | Fecha y hora de cierre: define el día y el mes del chat (Wolkvox arma el archivo por fecha de cierre). |  |
 | ROUTING | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
 | CUSTOMER_NAME | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | CUSTOMER_EMAIL | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |

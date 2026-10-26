@@ -208,8 +208,8 @@ const CARGAS = [
     columnas: {
       CONN_ID: [NO_LEE_TXT, 'EJEMPLO-0001'],
       CHANNEL: ['Canal del chat ("whatsapp").', 'whatsapp'],
-      DATE: ['Fecha y hora de la conversación.', '2026-09-01 08:15:00'],
-      DATE_CLOSE: [NO_USA_TXT, '2026-09-01 08:30:00'],
+      DATE: ['Fecha y hora de apertura del chat. Solo se usa si la fila no trae DATE_CLOSE.', '2026-09-01 08:15:00'],
+      DATE_CLOSE: ['Fecha y hora de cierre: define el día y el mes del chat (Wolkvox arma el archivo por fecha de cierre).', '2026-09-01 08:30:00'],
       ROUTING: [NO_USA_TXT, '-'],
       CUSTOMER_NAME: [NO_LEE_TXT, 'Cliente Ejemplo'],
       CUSTOMER_EMAIL: [NO_LEE_TXT, 'cliente@ejemplo.com'],
@@ -361,7 +361,7 @@ const ORIGEN = {
     reemplazo: 'Las fechas que trae el archivo.',
   },
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': {
-    origen: 'Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se ignora y la vista previa dice cuántos.',
+    origen: 'Wolkvox: CDR de WhatsApp, export "HistChat<fecha>" — [ruta pendiente de confirmar con Edwin]. Se sube tal cual (no hay que renombrar la hoja); el sistema nunca lee nombres, correos, teléfonos ni el texto de las conversaciones. Un SKILL_ID que no esté en la tabla de skills se guarda como "Skill <número>" y la vista previa dice cuántos. El día de cada chat sale de DATE_CLOSE (fecha de cierre).',
     notaSkills: 'Tabla de skills de WhatsApp de ORLANT (SKILL_ID = nombre): 0 = WHATSAPP DE SALIDA; 4042 = WHATSAPP PAUTAS; 4047 = WHATSAPP AUDIFONOS; 4061 = WHATSAPP FONOAUDIOLOGIA; 4071 = WHATSAPP FONIATRIA; 4306 = WHATSAPP 3P; 4327 = WHATSAPP GENERAL; 4338 = WHATSAPP CONFIRMACIONES; 4362 = ATENCION TUTELAS. La edita un administrador en Cargar Datos → "Skills de WhatsApp".',
     notaTitulo: 'Archivos del módulo',
     nota: "Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) \"Llamadas\" — Wolkvox, CDR (hoja \"HistCDR<fecha>\"). (2) \"WhatsApp\" — Wolkvox, HistChat (hoja \"HistChat<fecha>\"). Esta plantilla es la de \"WhatsApp\".",

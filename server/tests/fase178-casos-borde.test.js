@@ -58,7 +58,9 @@ test('CDR con encabezado repetido, fila de totales y filas vacias: solo entran l
     ['Ana', '2026-09-02', 'Agendada', 'GENERAL', 'inbound'],
   ], null, 'LLAMADAS');
   assert.deepEqual(r.filas.map((f) => f.fecha), ['2026-09-01', '2026-09-02']);
-  assert.deepEqual(r.avisos, ['Fila 3: DATE invalida o vacia, se omitio.', 'Fila 6: falta un dato obligatorio (agente/tipificacion/skill), se omitio.']);
+  // Fase 185: con mas de una omitida, un resumen por causa va primero.
+  assert.deepEqual(r.avisos, ['De 4 fila(s) del archivo se omitieron 2: 1 sin asesor, tipificación o skill, 1 con fecha inválida o vacía (detalle fila por fila abajo).',
+    'Fila 3: DATE invalida o vacia, se omitio.', 'Fila 6: falta un dato obligatorio (agente/tipificacion/skill), se omitio.']);
 });
 
 test('CDR donde ninguna fila sirve: error (no una carga vacia que borre el mes)', () => {

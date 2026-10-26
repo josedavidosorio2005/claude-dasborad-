@@ -159,6 +159,10 @@ async function _tipificacionRenderPanel(p, i){
     if(p.mostrarTarjetasSalida && c.canal === 'LLAMADAS'){
       html += '<div class="aurora-kpis" id="tipif-salida-'+i+'-'+c.canal+'" style="margin-bottom:12px"></div>';
     }
+    // Fase 185 (pedido de Edwin): con las 2 mitades, "Total WhatsApp" igual que "Total llamadas".
+    if(p.mostrarTarjetasSalida && esMultiCanal && c.canal === 'WHATSAPP'){
+      html += '<div class="aurora-kpis" id="tipif-total-'+i+'-'+c.canal+'" style="margin-bottom:12px"></div>';
+    }
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
     html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, tipificacionEtiquetaSkill)+'</select></div>';
@@ -297,6 +301,9 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   }catch(e){ showToast(e.message, 'error'); }
 
   var tablaHost = document.getElementById('tipif-tabla-'+i+'-'+canal);
+  // Fase 185: total del mes con los mismos filtros de la mitad (sale del mismo /por-tipo que la torta).
+  var hostTotal = document.getElementById('tipif-total-'+i+'-'+canal);
+  if(hostTotal) hostTotal.innerHTML = '<div class="aurora-kpi"><div class="kv">'+(resultado.total||0).toLocaleString('es-CO')+'</div><div class="kl">Total WhatsApp</div></div>';
   if(!resultado.total){
     contHost.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Sin datos de '+
       (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' cargados para este período.</div>';

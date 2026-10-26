@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.73.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.74.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -66,6 +66,9 @@ narrativo de cada fase, fase por fase, vive en
     registro de clientes): ORLANT = `NO_CONTESTAN` + `BUZON`
     (DESCRIPTION_COD_ACT, separadas en la tipificación); MOBILIZE =
     `Cliente_no_contesta`; sin parámetro, el de Mobilize.
+  - **WhatsApp (HistChat, Fase 185)**: el día de cada chat sale de
+    `DATE_CLOSE` (Wolkvox arma el archivo por fecha de cierre); `DATE` solo
+    si la fila no trae cierre.
   - En ORLANT la salida se cuenta **por registro** (cada fila del CDR). El
     teléfono único se usa solo en Llamadas Únicas de Mobilize.
   - En los meses con CDR, la pestaña "Llamadas y WhatsApp de salida" de
@@ -289,3 +292,4 @@ mismo orden):
 - Fase 182 — Mantenimiento: playwright 1.64.1 con la imagen del job `pantallas` de CI fijada al digest de v1.64.1-noble (con OK del usuario), express-rate-limit 8.7.1 y supertest 7.3.1 (v1.72.7, 2026-10-26)
 - Fase 183 — Tipificación de ORLANT con las reglas de Edwin del 26/10: salida = skill "-" (todas, agosto 6.560), Cancelaciones y reprogramación en su skill, tarjeta Total llamadas, gráfica de salida sin 3P/General, Skill <ID> en WhatsApp, colores en Agendamiento (v1.72.8, 2026-10-26)
 - Fase 184 — Encuesta de Mobilize: ID de la llamada (CONN_ID del archivo) en la lista de comentarios y en el Excel, sin teléfono y sin cruce con el CDR; vacío si el archivo no lo trae; arreglo de la Fase 178: los meses que solo tienen Encuesta a veces no entraban en el MES (v1.73.0, 2026-10-26)
+- Fase 185 — Tipificación de WhatsApp de ORLANT por fecha de cierre (DATE_CLOSE): octubre cuadra con el archivo y cargar un mes ya no borra el último día del anterior; tarjeta Total WhatsApp; resumen de filas omitidas en la vista previa (v1.74.0, 2026-10-26)

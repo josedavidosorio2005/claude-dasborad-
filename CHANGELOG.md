@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.74.0 — Octubre 2026
+
+**Fase 185: Tipificación de WhatsApp de ORLANT cuadra con el archivo.**
+
+- Cada chat cuenta en el día en que se **cerró** (DATE_CLOSE), igual que arma
+  Wolkvox el archivo. Antes contaba el día en que se abrió: los chats
+  abiertos el último día del mes anterior se iban a ese mes (en octubre, 60
+  chats abiertos el 30/09, 17 de ellos de salida), y al cargar el archivo se
+  borraba ese día del mes anterior.
+- Nueva tarjeta "Total WhatsApp" en la mitad de WhatsApp, igual que "Total
+  llamadas".
+- Un skill que no está en la tabla (por ejemplo 4308) se ve como
+  "Skill 4308" y cuenta en el total.
+- Si al cargar se omite más de una fila, la vista previa dice primero
+  cuántas y por qué.
+- Las fechas escritas como "01/10/2026 08:15" ya no se descartan.
+- **Hay que volver a subir** los HistChat de agosto, septiembre y octubre
+  para que tomen la regla nueva (el orden no importa).
+
 ## v1.73.0 — Octubre 2026
 
 **Fase 184: ID de la llamada en los comentarios de la Encuesta (Mobilize).**

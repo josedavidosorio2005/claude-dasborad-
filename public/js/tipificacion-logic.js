@@ -61,6 +61,13 @@ var TIPIFICACION_COLUMNAS = [
   // ("whatsapp"). Solo sirve para la plantilla; no se guarda (no esta en
   // TIPIFICACION_ORDEN_ARRAY).
   { key: 'canalChat', label: 'CHANNEL', obligatoria: false },
+  // Fase 185 (Edwin, octubre: 9.036 en el archivo y 8.976 en el tablero):
+  // Wolkvox arma el HistChat por FECHA DE CIERRE. Un chat abierto el 30/09 y
+  // cerrado el 1/10 viene en el archivo de octubre; con DATE (apertura) se
+  // iba a septiembre y, al reemplazar el rango 30/09..24/10, borraba el 30/09
+  // del archivo de septiembre. En el HistChat el dia sale de DATE_CLOSE (si
+  // viene; si una fila no lo trae, de DATE, con aviso).
+  { key: 'fechaCierre', label: 'DATE_CLOSE', obligatoria: false },
 ];
 var TIPIFICACION_COLUMNAS_OBLIGATORIAS = TIPIFICACION_COLUMNAS.filter(function (c) { return c.obligatoria; });
 // Orden fijo del payload compacto (arrays, no objetos) -- ver
@@ -184,7 +191,8 @@ function tipificacionParseFecha(v) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
     var fh = TIPIFICACION_FECHA_HORA_TEXTO_RE.exec(t);
     if (fh) return fh[1];
-    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);
+    // Fase 185: tambien "dd/mm/aaaa hh:mm[:ss]" (la hora se ignora aqui).
+    var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s*[ap]\.?\s*m\.?)?)?$/i.exec(t);
     if (!m) return null;
     var dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), aaaa = parseInt(m[3], 10);
     if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
@@ -323,6 +331,11 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     return { error: 'Este archivo trae SKILL_ID y no SKILL_NAME: falta la tabla de skills de WhatsApp de este cliente (Cargar Datos, "Skills de WhatsApp").' };
   }
   var ignoradasPorSkill = {}; // Fase 168 -- {SKILL_ID: cantidad}, un solo aviso al final
+  // Fase 185: ninguna fila se pierde en silencio -- conteo por causa, un
+  // resumen al principio de los avisos.
+  var omitidas = { faltaDato: 0, fecha: 0, futura: 0 };
+  var filasLeidas = 0;
+  var sinFechaCierre = 0;
   var sinNombrePorSkill = {}; // Fase 183 -- {SKILL_ID: cantidad} guardadas como "Skill <ID>"
 
   var filas = [];
@@ -332,6 +345,7 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i];
     if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    filasLeidas++;
     var filaNum = i + 1;
 
     var agente = tipificacionNormTexto(row[map.agente]);
@@ -355,7 +369,13 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     } else {
       skill = tipificacionNormTexto(row[map.skill]);
     }
-    var fechaCrudo = ws ? tipificacionValorCrudoSiFechaBoxeada(row[map.fecha], ws, i, map.fecha) : row[map.fecha];
+    var colFecha = map.fecha;
+    if (porSkillId && map.fechaCierre !== undefined) {
+      var cierreCrudo = row[map.fechaCierre];
+      if (cierreCrudo !== null && cierreCrudo !== undefined && String(cierreCrudo).trim() !== '' && String(cierreCrudo).trim() !== '-') colFecha = map.fechaCierre;
+      else sinFechaCierre++;
+    }
+    var fechaCrudo = ws ? tipificacionValorCrudoSiFechaBoxeada(row[colFecha], ws, i, colFecha) : row[colFecha];
     var fecha = tipificacionParseFecha(fechaCrudo);
     // Sin columna HORA propia (export completo HistCDR, Fase 116): si DATE
     // trae fraccion de dia (hora real pegada a la fecha), se saca de ahi --
@@ -373,17 +393,20 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     var duracionMin = map.duracionMin !== undefined ? tipificacionParseDuracion(row[map.duracionMin]) : null;
 
     if (!agente || !tipificacion || !skill) {
+      omitidas.faltaDato++;
       avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (agente/tipificacion/skill), se omitio.');
       continue;
     }
     if (!fecha) {
-      avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.');
+      omitidas.fecha++;
+      avisos.push('Fila ' + filaNum + ': ' + (colFecha === map.fechaCierre ? 'DATE_CLOSE' : 'DATE') + ' invalida o vacia, se omitio.');
       continue;
     }
     // Fase 86 (tema 2): fecha futura -> se rechaza (nunca "posterior a
     // hoy": un dia cualquiera del mes en curso es valido); fecha anterior
     // a 2020 -> solo se advierte, no se omite.
     if (_tipificacionFechaLimites.fechaLimitesEsFutura(fecha)) {
+      omitidas.futura++;
       avisos.push('Fila ' + filaNum + ' (' + agente + '): DATE ' + fecha + ' esta en el futuro, se omitio.');
       continue;
     }
@@ -450,6 +473,16 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     });
   }
 
+  var totalOmitidas = omitidas.faltaDato + omitidas.fecha + omitidas.futura;
+  // Con una sola omitida, su propio aviso ya dice cual y por que.
+  if (totalOmitidas > 1) {
+    var causas = [];
+    if (omitidas.faltaDato) causas.push(omitidas.faltaDato + ' sin asesor, tipificación o skill');
+    if (omitidas.fecha) causas.push(omitidas.fecha + ' con fecha inválida o vacía');
+    if (omitidas.futura) causas.push(omitidas.futura + ' con fecha futura');
+    avisos.unshift('De ' + filasLeidas + ' fila(s) del archivo se omitieron ' + totalOmitidas + ': ' + causas.join(', ') + ' (detalle fila por fila abajo).');
+  }
+  if (sinFechaCierre > 0) avisos.push(sinFechaCierre + ' fila(s) sin DATE_CLOSE: se tomó la fecha de DATE.');
   var totalIgnoradasSkill = Object.keys(ignoradasPorSkill).reduce(function (a, k) { return a + ignoradasPorSkill[k]; }, 0);
   if (totalIgnoradasSkill > 0) {
     avisos.push(totalIgnoradasSkill + ' fila(s) con un SKILL_ID que no está en la tabla de skills de WhatsApp de este cliente, se ignoraron: ' +

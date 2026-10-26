@@ -16871,3 +16871,35 @@ campo queda vacío, **sin cruce aproximado con el CDR**.
   columna e ID en la tabla, vacío para la carga sin CONN_ID, columnas del
   Excel, sin teléfonos, mes solo-Encuesta en el MES, sin scroll horizontal de
   la página ni errores de consola.
+
+### Fase 185 — Tipificación de WhatsApp de ORLANT por fecha de cierre (2026-10-26, v1.74.0)
+
+Pedido del usuario (solo ORLANT, HistChat): octubre con 9.036 filas en el
+archivo y 8.976 en el tablero (salida 2.663 contra 2.646).
+
+- **Causa** (confirmada con el HistChat real de septiembre del 23/10; el de
+  octubre no está en el PC): Wolkvox arma el HistChat por **fecha de
+  cierre**. Septiembre: 13.218 filas, todas cerradas en septiembre, 98
+  abiertas el 31/08 (16 de salida); el lector tomaba el día de `DATE`
+  (apertura), así que esas 98 iban a agosto: 13.218 − 98 = 13.120 y
+  4.013 − 16 = 3.997, justo lo que mostraba el tablero. Octubre: 60 abiertas
+  el 30/09 (17 de salida). Además el reemplazo por rango (30/09..24/10)
+  **borraba el 30/09** cargado desde el archivo de septiembre. No eran
+  duplicados por CONN_ID, ni filas sin asesor, ni skills desconocidos.
+- **Arreglo** (`tipificacion-logic.js`): en el HistChat el día sale de
+  `DATE_CLOSE` (si una fila no lo trae, de `DATE`, con aviso). Con el
+  archivo real de septiembre: 13.218 en septiembre (4.013 de salida) y rango
+  01/09..30/09. Además, resumen por causa cuando se omite más de una fila, y
+  `DATE` en texto "dd/mm/aaaa hh:mm[:ss]" ya se lee.
+- Tarjeta "Total WhatsApp" (mismo total que la torta, con los filtros de
+  la mitad).
+- Skills sin mapear: desde la v1.72.8 se guardan como "Skill <ID>" y
+  cuentan en el total. En el HistChat de septiembre: 4308 (1) y 4323 (2).
+- **Carga vieja "Llamadas y WhatsApp de salida"**: no se quitó. No se
+  pudo confirmar sin sesión qué meses usan todavía `salida_mensual`
+  (`salida-cdr.js` la usa, por canal, en cada mes sin CDR); queda para
+  después de revisarlo en la fila "Fuente" de la pestaña.
+- Hay que volver a subir los HistChat de agosto, septiembre y octubre.
+- Pruebas: `fase185-whatsapp-fecha-cierre.test.js` (6, fallan sin el
+  arreglo) y ajuste de `fase178-casos-borde.test.js`. Suite 2212/2212.
+  Playwright y Brave a 1440/768/375 px con un HistChat sintético.
