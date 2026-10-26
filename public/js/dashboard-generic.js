@@ -835,10 +835,12 @@ async function openGenericDashboardPreview(config){
   await _gdBootstrap();
 }
 
-async function _gdBootstrap(){
-  _gd.compSel = '';
-  _gd.mesesSel = [];
-  _gd.vistaSel = (_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '';
+// `conservar` (Fase 178, gdDatosCambiaron): filtros y pestaña de antes de
+// volver a pedir los datos; sin el, el tablero arranca como al abrirlo.
+async function _gdBootstrap(conservar){
+  _gd.compSel = conservar ? conservar.compSel : '';
+  _gd.mesesSel = conservar ? conservar.mesesSel : [];
+  _gd.vistaSel = conservar ? conservar.vistaSel : ((_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '');
 
   // Fase 90 (tema B, hallazgo real en produccion: el selector "MES" de
   // arriba solo miraba dashboard_cargas -- Agendas/Tipificacion/Trafico
@@ -1021,6 +1023,27 @@ async function _gdBootstrap(){
       }catch(e){ /* sin datos o sin acceso -- el panel muestra su propio aviso */ }
     })());
   });
+  // Fase 178 (punto 4 de la auditoria de v1.72.1): un mes que solo tiene
+  // Resumen de calidad, Encuesta, WhatsApp por rangos o Llamadas de salida
+  // tambien entra en el MES y en MESES. Usan el mismo cargador (y cache)
+  // de su panel, asi que el panel no vuelve a pedirlo.
+  var mesesSoloPanel = [];
+  var fuentesSoloPanel = [];
+  (_gd.config.layout.tabs || []).forEach(function(t){
+    (t.panels || []).forEach(function(p){
+      var camp = p.campana || _gd.cliente;
+      if(p.tipo === 'calidad_resumen_panel' && typeof _calResCargar === 'function') fuentesSoloPanel.push(function(){ return _calResCargar(camp).then(function(r){ return (r.meses || []).map(function(m){ return m.mes; }); }); });
+      if(p.tipo === 'encuesta_panel' && typeof _encuestaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _encuestaCargarOpciones(camp).then(function(r){ return r.meses; }); });
+      if(p.tipo === 'trafico_whatsapp_combo' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(camp)) fuentesSoloPanel.push(function(){ return _wppTiemposCargarOpciones(camp).then(function(r){ return r.meses; }); });
+      if(p.tipo === 'llamadas_unicas_panel' && typeof _llamadasSalidaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _llamadasSalidaCargarOpciones(camp).then(function(r){ return r.meses; }); });
+    });
+  });
+  fuentesSoloPanel.forEach(function(fuente){
+    tareasBootstrap.push((async function(){
+      try{ mesesSoloPanel = mesesSoloPanel.concat((await fuente()) || []); }
+      catch(e){ /* sin datos o sin acceso -- el panel muestra su propio aviso */ }
+    })());
+  });
 
   await Promise.all(tareasBootstrap);
 
@@ -1049,16 +1072,18 @@ async function _gdBootstrap(){
   // tipos de panel), cae al mes mas reciente con CUALQUIER dato -- nunca
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
-  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida, mesesLlamadasUnicas]);
-  _gd.mesSel = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
+  _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida, mesesLlamadasUnicas, mesesSoloPanel]);
+  _gd.mesSel = (conservar && _gd.periodos.indexOf(conservar.mesSel) !== -1) ? conservar.mesSel : gdMesPorDefecto(mesesPrincipales, _gd.periodos);
 
   renderGenericHeader();
   renderGenericKpis();
   renderGenericTabs();
-  var first = _gdTabsVisibles()[0];
-  switchGenericTab(first ? first.key : null);
+  var visibles = _gdTabsVisibles();
+  var tabSel = (conservar && visibles.some(function(t){ return t.key === conservar.tab; })) ? conservar.tab : (visibles[0] ? visibles[0].key : null);
+  switchGenericTab(tabSel);
   renderGenericBanner();
 }
+
 function closeGenericDashboard(){
   // Fase 103: si se cierra el dashboard estando en pantalla completa del
   // navegador, hay que salir primero -- si no, el navegador se queda en
@@ -1367,6 +1392,31 @@ function gdReiniciarFiltros(){
       g.history.replaceState(null, '', g.location.pathname + (g.location.hash || ''));
     }
   }catch(e){}
+}
+
+// ── Fase 178: despues de Deshacer / Eliminar (Centro de cargas) o de una
+// carga, los paneles ya abiertos vuelven a pedir sus datos ──
+// Se vacian las caches de opciones de todos los paneles (y los datos de
+// Trafico, que tambien se guardan en memoria) y, si el tablero de ese
+// cliente esta abierto, se vuelve a armar con el mismo MES, MESES y pestaña
+// (si siguen existiendo). Sin el tablero abierto, solo se vacian las caches.
+function gdCachesDatos(){
+  return GD_ESTADO_A_REINICIAR.filter(function(n){ return /Opciones$/.test(n) || n === '_trafico' || n === '_traficoWpp'; });
+}
+async function gdDatosCambiaron(cliente){
+  var g = (typeof window !== 'undefined') ? window : globalThis;
+  gdCachesDatos().forEach(function(n){
+    if(g[n] && typeof g[n] === 'object' && !Array.isArray(g[n])) Object.keys(g[n]).forEach(function(k){ delete g[n][k]; });
+  });
+  var overlay = (typeof document !== 'undefined') ? document.getElementById('gd-overlay') : null;
+  if(!overlay || !overlay.classList.contains('show') || !_gd.cliente || (cliente && _gd.cliente !== cliente)) return;
+  var conservar = { mesSel: _gd.mesSel, mesesSel: _gdMeses().slice(), compSel: _gd.compSel, vistaSel: _gd.vistaSel, tab: _gd.tab };
+  try{
+    var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(_gd.cliente));
+    _gd.config = resp.config;
+    _gd.cargas = resp.secciones || {};
+  }catch(e){ return; } // se queda lo que ya se veia; al reabrir el tablero sale bien
+  await _gdBootstrap(conservar);
 }
 
 // ── Fase 167: filtro "Meses" (varios meses sueltos, lado a lado) ──

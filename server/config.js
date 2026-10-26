@@ -103,6 +103,12 @@ const schema = z
     // numero tan alto para no frenar a una oficina compartida: cada
     // usuario tiene su propio cupo de 10 fallidos.
     LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+    // Fase 178 (punto 6 de la auditoria de v1.72.1): segundo limite SOLO por
+    // usuario intentado (sin IP), para que un intento repartido entre muchas
+    // IP contra una sola cuenta tambien tenga tope. Solo cuentan los
+    // fallidos; al bloquear queda un aviso en el Historial.
+    LOGIN_RATE_LIMIT_USUARIO_WINDOW_MS: z.coerce.number().int().positive().default(60 * 60 * 1000),
+    LOGIN_RATE_LIMIT_USUARIO_MAX: z.coerce.number().int().positive().default(30),
 
     // Fase 154: cuantas cargas de datos se procesan a la vez (las demas
     // esperan su turno, ver cargas-simultaneas.js).
@@ -179,6 +185,8 @@ const config = Object.freeze({
   loginRateLimit: {
     windowMs: env.LOGIN_RATE_LIMIT_WINDOW_MS,
     max: env.LOGIN_RATE_LIMIT_MAX,
+    usuarioWindowMs: env.LOGIN_RATE_LIMIT_USUARIO_WINDOW_MS,
+    usuarioMax: env.LOGIN_RATE_LIMIT_USUARIO_MAX,
   },
 
   backupDir: env.BACKUP_DIR || null,

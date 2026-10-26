@@ -3,7 +3,7 @@
 // movio el cableado HTTP, sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, isFullAdmin } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
@@ -32,13 +32,16 @@ function toUmbralRow(row) {
 // cualquier actor autenticado (los dashboards los necesitan para pintar);
 // escritura solo administrador. Ver server/db.js para el diseño de
 // (metrica, campana='') = default global vs. override por campana.
+// Fase 178 (punto 9 de la auditoria de v1.72.1): cada quien ve los globales
+// y los de los clientes a los que tiene acceso (campaignAccess), no los de
+// todos los clientes.
 router.get(
   '/umbrales',
   requireActor,
   wrap((req, res) => {
     res.set('Cache-Control', 'no-store');
     const rows = db.prepare('SELECT * FROM umbrales_semaforo ORDER BY metrica, campana').all();
-    res.json(rows.map(toUmbralRow));
+    res.json(rows.filter((r) => !r.campana || campaignAccess(req.actor, r.campana)).map(toUmbralRow));
   })
 );
 

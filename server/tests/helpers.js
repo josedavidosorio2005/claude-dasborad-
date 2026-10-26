@@ -35,6 +35,7 @@ setEnvDefault('TRUST_PROXY', 'false');
 setEnvDefault('RATE_LIMIT_MAX', '10000');
 setEnvDefault('RATE_LIMIT_MAX_AUTENTICADO', '10000'); // Fase 130 (Parte 7)
 setEnvDefault('LOGIN_RATE_LIMIT_MAX', '10000');
+setEnvDefault('LOGIN_RATE_LIMIT_USUARIO_MAX', '10000'); // Fase 178
 
 const { createApp } = require('../server');
 const db = require('../db');

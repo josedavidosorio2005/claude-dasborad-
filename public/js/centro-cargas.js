@@ -262,8 +262,15 @@ async function _ccConfirmarDeshacer(id) {
   try {
     var r = await apiRequest('POST', '/centro-cargas/versiones/' + id + '/deshacer');
     showToast('Listo: volvieron ' + centroTextoRegistros(r.restauradas) + ' de ' + centroNombreMes(r.version.mes) + '.');
+    _ccDatosCambiaron();
   } catch (e) { showToast(e.message, 'error'); }
   await _ccCargar();
+}
+
+// Fase 178: igual que tras una carga, los paneles del tablero ya abierto
+// (y sus caches de meses) se actualizan sin recargar la pagina.
+function _ccDatosCambiaron() {
+  if (typeof gdDatosCambiaron === 'function') gdDatosCambiaron(_cc.cliente);
 }
 
 // ── Eliminar un mes (PR 3) ──────────────────────────────────────────
@@ -283,6 +290,7 @@ async function _ccConfirmarEliminar(ci, mi) {
   try {
     r = await apiRequest('DELETE', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/' + encodeURIComponent(c.id) + '/' + x.mes);
   } catch (e) { showToast(e.message, 'error'); await _ccCargar(); return; }
+  _ccDatosCambiaron();
   await _ccCargar();
   // Aviso de despues, con Deshacer a mano (el mes quedo vacio: deshacer no pisa nada).
   _ccDialogo('Listo: ' + esc(centroNombreMes(x.mes)) + ' quedó sin datos',

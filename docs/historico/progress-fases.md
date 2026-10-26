@@ -16292,3 +16292,53 @@ bloqueadas; 0 intentadas): Salida de septiembre de ORLANT 10.791 llamadas y
 Resumen de calidad de Mobilize de octubre 3 asesores, 34 monitoreos, 97,35 %.
 Pestañas Salida y Tipificación de ORLANT y Calidad de Mobilize pintadas, sin
 NaN ni undefined; único error de consola, el 400 provocado a propósito.
+
+### Fase 178 — Arreglos preventivos (2026-10-26, v1.72.3)
+
+Pedido del usuario (Parte 1): los arreglos ya identificados en la auditoría
+de v1.72.1 (puntos 4, 6 y 9) y el hueco de Deshacer / Eliminar que dejó la
+Fase 177, en un solo PR. Parte 2 (prevención): pruebas que faltaban de lo
+nuevo de las Fases 165 a 177.
+
+**Cambios:**
+1. **Deshacer / Eliminar refrescan el tablero abierto.**
+   `gdDatosCambiaron(cliente)` (`public/js/dashboard-generic.js`) vacía las
+   caches de opciones de todos los paneles y los datos de Tráfico en memoria
+   y, si el tablero de ese cliente está abierto, lo vuelve a armar
+   (`_gdBootstrap(conservar)`) con el mismo MES, MESES, COMPARAR y pestaña
+   (si siguen existiendo; si no, los de siempre). La llaman `_ccConfirmarDeshacer`
+   y `_ccConfirmarEliminar` (`public/js/centro-cargas.js`) y, para que la carga
+   haga lo mismo, `guardarCarga` (`public/js/cargas.js`) cuando algo se guardó.
+   Los filtros propios de cada panel no se tocan.
+2. **(Punto 4) Meses del tablero completos.** `_gdBootstrap` suma a la unión
+   de meses los de Resumen de calidad, Encuesta, WhatsApp por rangos (solo en
+   las campañas con esa vista) y Llamadas de salida, con el mismo cargador
+   (y cache) de cada panel.
+3. **(Punto 9) `GET /umbrales`** devuelve los umbrales globales y los de los
+   clientes con `campaignAccess`; el administrador sigue viendo todos.
+4. **(Punto 6) Segundo límite de login, solo por usuario intentado**
+   (`server/routes/auth.js`, `loginLimiterPorUsuario`): 30 fallidos por hora
+   por defecto (`LOGIN_RATE_LIMIT_USUARIO_MAX` / `_WINDOW_MS`), sin mirar la
+   IP; solo cuentan los fallidos. Responde el mismo 429 que el límite de
+   siempre (10 por IP + usuario cada 15 min, sin cambios). La primera vez que
+   bloquea en la ventana deja `LOGIN_BLOQUEADO` en el Historial (usuario, IP y
+   navegador; nunca la contraseña), con filtro propio "Cuenta bloqueada por
+   intentos" e incluido en "Inicios de sesión".
+
+**Pruebas.** Nuevas: `fase178-arreglos-preventivos.test.js` (6),
+`fase178-login-por-usuario.test.js` (4, baja el límite y simula muchas IP con
+`X-Forwarded-For`) y `fase178-casos-borde.test.js` (8: CDR con columnas
+faltantes o encabezados en minúscula, filas raras —encabezado repetido, fila
+de totales, vacías, otras colas—, y meses sin datos en las rutas nuevas: 200,
+estructura vacía, sin NaN ni null). En un worktree de `main`, 8 de las 10
+primeras fallan (las 2 que pasan son de control); las 8 de casos de borde
+fijan el comportamiento de hoy. Ajustada `fase167-filtro-meses` (firma
+`_gdBootstrap(conservar)`).
+
+**Verificación local** (copia de la base demo, servidor temporal, Playwright
+con Brave): con un mes sintético que solo tiene WhatsApp por rangos (marzo
+2025, 2 filas), aparece en el MES y en MESES; con el tablero abierto en
+septiembre y la pestaña de salida, "Eliminar" en el Centro lo quita del MES
+sin recargar y "Deshacer" lo devuelve, sin mover el mes ni la pestaña; filtro
+nuevo del Historial presente; sin desborde a 375/768/1440; 0 errores de
+consola.
