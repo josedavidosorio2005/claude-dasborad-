@@ -487,7 +487,8 @@ evita que las cargas futuras se unifiquen de la misma forma.
   son fórmulas a ese libro, ábralo junto con la plantilla, deje que
   calcule y guárdela antes de subirla: la plataforma lee los valores ya
   calculados; una celda en error (#REF!) o vacía omite esa fila con un
-  solo aviso.
+  solo aviso. Una fila de total o promedio al final ("TOTAL", "Promedio
+  general") no es un asesor: se omite y la vista previa lo dice.
 - **Columnas**: Nombre del Asesor (puede decir "← Escribir aquí"),
   \# Monitoreos, Prom. Puntaje (%), Clasificación, Alerta Críticos y Total
   Fallos Críticos. Clasificación y Alerta se recalculan siempre con los

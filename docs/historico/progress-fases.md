@@ -16748,3 +16748,17 @@ los ya resueltos (relojes simulados de la Fase 136, `revision-final.js`
 elige el mes y `*.pem` en `.gitignore`, todos de la Fase 146; abandonadas
 de ingreso de Mobilize, Fase 163; CSP duplicado) y entran los hallazgos de
 la Parte 2.
+
+### Fase 179 — Resumen de calidad sin filas de total (2026-10-26, v1.72.4)
+
+Hallazgo de la revisión preventiva de la Fase 178, con OK del usuario.
+`calidadResumenParseFilas` (`public/js/calidad-resumen-logic.js`) omite,
+antes de leer los números, las filas cuyo nombre (sin tildes ni mayúsculas)
+es TOTAL, TOTALES, PROMEDIO, PROMEDIOS, con "GRAN" delante o "GENERAL",
+"GENERALES" o "DEL MES" detrás (`calidadResumenEsFilaTotal`), con un solo
+aviso. Un nombre que solo contiene esas palabras ("Totalina Pérez") sigue
+siendo asesor. Antes, una fila "TOTAL" con números contaba como un asesor
+más y duplicaba los monitoreos; con la fórmula en error, sumaba un
+"asesor sin calcular". Prueba nueva `fase179-calidad-resumen-totales.test.js`
+(3): las 3 fallan con el lector de `main`. Guía de uso (md y HTML) con la
+regla; sale de `docs/pendientes.md`.
