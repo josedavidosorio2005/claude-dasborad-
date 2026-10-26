@@ -148,7 +148,8 @@ test('los modulos filtran SOLO la serie por mes (graficas/tablas/export), nunca 
   assert.match(w, /var agregado = _traficoFiltroMeses\(traficoWppAgregarPorPeriodo\(filtradas,/);
   assert.match(w, /var agregadoComb = estado\.combinar \? agregado : _traficoFiltroMeses\(traficoWppAgregarPorPeriodo\(/);
   assert.match(w, /var totalWpp = filtradas\.reduce/);
-  const s = extraer(JS('salida.js'), 'async function _salDibujar(campana, i, opciones)');
+  // Fase 188: tarjetas, barras y tabla salen de _salPintar (botones de linea).
+  const s = extraer(JS('salida.js'), 'function _salPintar(i)');
   assert.match(s, /var filasMeses = \(typeof gdAplicarFiltroMeses === 'function' \? gdAplicarFiltroMeses\(filas, function\(f\)\{ return f\.mes; \}\) : filas\);/);
   assert.match(s, /_salDibujarGrafica\('sal-llam-'\+i, filasMeses,/);
   assert.match(s, /_salTablaHtml\(filasMeses, mesSel\)/);

@@ -98,12 +98,14 @@ test('salida del CDR por linea del asesor; sin linea = "Sin asignar"; el canal s
 
 test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses con CDR; Excel con Sin asignar y Fuente', () => {
   const s = JS('salida.js');
-  assert.match(s, /var totalLlam = _salTotal\(delMes, 'llamadas'\);/);
+  // Fase 188: Total = General + 3P + Sin asignar/clasificar (salidaValorLinea con 'TOTAL').
+  assert.match(s, /var totalLlam = salidaValorLinea\(delMes, 'llamadas', linea\);/);
   assert.match(s, /no tienen línea \(3P o General\)/);
   assert.match(s, /if\(_salEsAdmin\(\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
   assert.match(s, /aria-label="Línea de '\+esc\(a\.agente\)\+'"/);
   // Fase 183: la grafica es una sola serie con toda la salida del mes.
-  assert.ok(s.includes("label: tituloEje, data: filas.map(function(f){ return _salTotal(f, canal); })"));
+  // Fase 188: la serie es la de la linea elegida (Total por defecto).
+  assert.ok(s.includes("label: tituloEje, data: filas.map(function(f){ return salidaValorLinea(f, canal, linea || 'TOTAL'); })"));
   assert.doesNotMatch(s, /label:'Sin asignar'/);
   const g = JS('dashboard-generic.js');
   // Fase 187: "Sin asignar" o "Sin clasificar" segun la fila (_salSinTexto).

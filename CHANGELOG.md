@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.77.0 — Octubre 2026
+
+**Fase 188: botones Total, Línea General y Línea 3P en la salida de ORLANT.**
+
+- Arriba de la pestaña "Llamadas y WhatsApp de salida" hay tres botones:
+  "Total", "Línea General" y "Línea 3P". Al tocar uno, las tarjetas, las
+  barras y la tabla muestran solo la salida de esa línea, en llamadas y en
+  WhatsApp. El botón activo queda marcado.
+- "Total" muestra todo, incluidos los asesores "Sin clasificar".
+- Con una línea elegida, la tabla dice también qué parte del Total es.
+- El bloque "Línea de cada asesor" (botón "Clasificación de asesores") pasó
+  arriba de la pestaña.
+
 ## v1.76.1 — Octubre 2026
 
 **Fase 187 (paso 2): se activa la clasificación única de asesores en ORLANT.**

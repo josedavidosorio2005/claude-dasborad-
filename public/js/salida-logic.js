@@ -119,8 +119,32 @@ function salidaTextoConfirmacionAnio(filas) {
   }).join('\n');
 }
 
+// Fase 188 (pedido de Edwin): botones "Total", "Línea General" y "Línea 3P"
+// de la pestaña de salida. TOTAL = General + 3P + Sin clasificar (los sin
+// clasificar no son agentes directos, pero cuentan en el total).
+var SALIDA_LINEAS_BOTONES = [
+  { clave: 'TOTAL', etiqueta: 'Total' },
+  { clave: 'GENERAL', etiqueta: 'Línea General' },
+  { clave: '3P', etiqueta: 'Línea 3P' },
+];
+// canal: 'llamadas' | 'wpp'.
+function salidaValorLinea(f, canal, linea) {
+  if (!f) return 0;
+  var pre = canal === 'llamadas' ? 'llamadas' : 'wpp';
+  var p3 = f[pre + '3p'] || 0, gen = f[pre + 'General'] || 0, sin = f[pre + 'SinAsignar'] || 0;
+  if (linea === '3P') return p3;
+  if (linea === 'GENERAL') return gen;
+  return p3 + gen + sin;
+}
+function salidaEtiquetaLinea(linea) {
+  var b = SALIDA_LINEAS_BOTONES.filter(function (x) { return x.clave === linea; })[0];
+  return b ? b.etiqueta : 'Total';
+}
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    SALIDA_LINEAS_BOTONES: SALIDA_LINEAS_BOTONES,
+    salidaValorLinea: salidaValorLinea,
+    salidaEtiquetaLinea: salidaEtiquetaLinea,
     SALIDA_COLUMNAS: SALIDA_COLUMNAS,
     SALIDA_ORDEN_ARRAY: SALIDA_ORDEN_ARRAY,
     salidaColIndexMap: salidaColIndexMap,
