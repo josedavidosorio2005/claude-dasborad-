@@ -331,13 +331,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     entre muchas IP depende de que su contraseña sea larga y única. Las
     demás cuentas sí se pueden bloquear 1 hora a propósito. Si molesta:
     bajar la ventana o avisar por correo al bloquear. Costo: bajo.
-  - **(baja) Actualizaciones menores que quedan** (26/10/2026, sin avisos
-    de seguridad: `npm audit` en 0). Express 5.3.0 y @aws-sdk 3.1156 se
-    subieron en la Fase 181. Quedan: **playwright 1.64.1** (espera tu OK,
-    porque obliga a cambiar en `ci.yml` el digest de la imagen del job
-    `pantallas`, que debe ser de la misma versión), express-rate-limit
-    8.7.1 y supertest 7.3.1. Las mayores (`better-sqlite3` 13, `dotenv` 18)
-    siguen congeladas (sección 1).
 
 - **Paso a Node.js 24 antes del 30/04/2027** (anotado 26/10/2026, Fase
   181) — Prioridad MEDIA, con fecha: ese día Node 22 deja de tener soporte.

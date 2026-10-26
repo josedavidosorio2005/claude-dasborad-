@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.72.6` (ver `server/package.json`, expuesta en
+- **Versión**: `1.72.7` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -282,3 +282,4 @@ mismo orden):
 - Fase 179 — Resumen de calidad: las filas TOTAL / PROMEDIO (y variantes) al final de la plantilla se omiten con aviso en vez de contarse como asesor (v1.72.4, 2026-10-26)
 - Fase 180 — El admin maestro queda fuera del tope de 30 logins fallidos por hora (no se puede bloquear a propósito); sigue con el límite por IP + usuario (v1.72.5, 2026-10-26)
 - Fase 181 — Mantenimiento: express 5.3.0 y @aws-sdk 3.1156 (sin tocar better-sqlite3 ni dotenv; playwright espera OK porque toca CI); pendientes nuevos: paso a Node 24 antes del 30/04/2027 y prueba mensual de restauración del respaldo (v1.72.6, 2026-10-26)
+- Fase 182 — Mantenimiento: playwright 1.64.1 con la imagen del job `pantallas` de CI fijada al digest de v1.64.1-noble (con OK del usuario), express-rate-limit 8.7.1 y supertest 7.3.1 (v1.72.7, 2026-10-26)

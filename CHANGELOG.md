@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.7 — Octubre 2026
+
+**Fase 182: mantenimiento.**
+
+- Se actualizaron el componente que limita los intentos de inicio de sesión
+  y las herramientas de pruebas automáticas a sus versiones más recientes
+  dentro de la misma línea. No cambia nada de lo que se ve ni de los
+  números.
+
 ## v1.72.6 — Octubre 2026
 
 **Fase 181: mantenimiento.**
