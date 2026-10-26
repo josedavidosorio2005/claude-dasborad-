@@ -13,11 +13,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   171) — se cargaron cuando el sistema dejaba una sola llamada por día y
   teléfono, así que les faltan filas. Octubre ya se recargó completo (85).
   Hace falta el archivo de Edwin de cada mes y tu OK.
-- **Asignar la línea (3P o General) de los asesores de septiembre** (Fase
-  170) — desde la v1.68.0, la salida de septiembre de ORLANT sale del CDR y
-  queda toda en "Sin asignar" (22 asesores en producción) hasta que el administrador elija
-  la línea de cada uno en la pestaña de salida. Edwin tiene que decir qué
-  asesor va en cada línea.
 - **Cuenta @admin compartida** (Fase 166, 23/10/2026) — los cambios del
   Centro de cargas (cargar, eliminar, deshacer) quedan en el Historial a
   nombre de "Administrador (@admin)", así que no se pueden atribuir a una
@@ -152,17 +147,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   la salida queda en "Sin clasificar". Edwin tiene el listado con Isa: se
   carga desde el Excel (nombre del asesor, línea) en "Clasificación de
   asesores" o se elige a mano. Desde la Fase 187 (OK de Edwin, una sola
-  clasificación) también alimentará la pestaña de salida, en cuanto se
-  active la migración (ítem de abajo).
-- **Activar la clasificación única en la pestaña de salida** (Fase 187,
-  26/10/2026) — el código está en producción, apagado. Antes de migrar hay
-  que ver en producción (administrador, pestaña "Llamadas y WhatsApp de
-  salida", debajo de "Línea de cada asesor") qué meses tienen líneas
-  guardadas mes a mes y qué asesores cambian de línea según el mes. Con
-  eso y el OK, la migración copia a la clasificación por cliente las
-  líneas de los asesores que tienen una sola (sin pisar las ya
-  clasificadas), enciende el cambio y deja la tabla mes a mes intacta.
-
+  clasificación) también alimenta la pestaña de salida (v1.76.1): los
+  asesores que tenían 3P en un mes y General en otro quedaron sin
+  clasificar y hay que elegirles la línea.
 - **CDR de octubre de ORLANT (llamadas y WhatsApp)** (24/10/2026) — faltan
   los archivos: en Descargas solo están los de septiembre (`CDR LLAMADAS
   ORLANT`, `CDR WHATSAPP ORLANT`, `CDR ORLANT SEPTIEMBRE`, ya cargados).

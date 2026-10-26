@@ -45,6 +45,10 @@ test('migracion: tabla asesor_linea vacia, solo 3P o GENERAL, con triggers de da
 
 test('salida del CDR por linea del asesor; sin linea = "Sin asignar"; el canal sin CDR sigue del archivo; editor solo admin', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
+  // Fase 187: ORLANT usa la clasificacion por cliente; esta prueba es del modo mes a mes (sin el parametro).
+  const reg = db.prepare("SELECT parametros FROM clientes_registro WHERE nombre = 'ORLANT'").get();
+  const par = JSON.parse(reg.parametros); delete par.salidaUsaClasificacion;
+  db.prepare("UPDATE clientes_registro SET parametros = ? WHERE nombre = 'ORLANT'").run(JSON.stringify(par));
   await preparar(admin);
 
   // Sin lineas: todo noviembre (CDR) queda "Sin asignar". Fase 183: 7, con el "-" que no es outbound_ma.

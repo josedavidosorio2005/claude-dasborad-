@@ -240,15 +240,11 @@ asesor. Cada asesor se asigna a la línea **3P** o **General** en cada mes
 y la pestaña lo avisa. Los meses sin CDR siguen con el archivo mensual de
 Edwin. La tabla dice de dónde salió cada mes ("Fuente").
 
-**Una sola clasificación (v1.76.0, se activa con la migración)**: cuando
-se active para ORLANT, la línea de cada asesor deja de elegirse mes a mes y
+**Una sola clasificación (desde la v1.76.1)**: en ORLANT, la línea de cada asesor deja de elegirse mes a mes y
 sale de la **clasificación por cliente** de Tipificación, la misma para
 todos los meses ("Clasificación de asesores"; el botón también está en
 esta pestaña). Los asesores sin línea quedan en **"Sin clasificar"**. Lo
-guardado mes a mes no se borra. Mientras no se active, el administrador ve
-debajo de "Línea de cada asesor" un resumen de solo lectura: qué meses
-tienen líneas guardadas y qué asesores tienen una línea distinta según el
-mes.
+guardado mes a mes no se borra. Al activarla se copiaron las líneas de los asesores que tenían la misma en todos los meses; los que cambiaban de línea según el mes quedaron en "Sin clasificar" hasta que se elija.
 
 **Tipificación**: conteo de cuántas llamadas/chats quedaron marcados con
 cada motivo de contacto, sin cálculo adicional. El nombre del asesor

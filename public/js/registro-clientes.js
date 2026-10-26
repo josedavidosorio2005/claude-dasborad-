@@ -21,7 +21,7 @@ var REGISTRO_CLIENTES = [
       'agendas', 'efectividad_agendamiento', 'inasistencia', 'efectividad_citas', 'salida'],
     parametros: { sedes: [], asesorVisibleCliente: false, traficoDosHojas: true,
       especificos: ['orlant_pestanas_manuales', 'orlant_resumen_trafico', 'borrado_por_rango'],
-      salidaNoConectada: ['NO_CONTESTAN', 'BUZON'] }, // Fase 174
+      salidaNoConectada: ['NO_CONTESTAN', 'BUZON'], salidaUsaClasificacion: true }, // Fase 174; Fase 187
     logo: { src: 'img/clientes/orlant-logo-blanco.png', src2x: 'img/clientes/orlant-logo-blanco@2x.png', alt: 'Orlant', width: 64, height: 25 }
   },
   {

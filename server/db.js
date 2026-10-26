@@ -4101,6 +4101,42 @@ function crearAsesorClasificacion() {
 }
 runOnceMigration('fase186_asesor_clasificacion_v1', crearAsesorClasificacion);
 
+// Fase 187 (OK de Edwin: una sola clasificacion de asesores). Para ORLANT:
+// 1) copia a asesor_clasificacion la linea de cada asesor que tiene UNA sola
+//    linea en todos los meses guardados en asesor_linea, sin pisar a los que
+//    ya estan clasificados por cliente; los que tienen 3P en un mes y General
+//    en otro no se copian (quedan como esten; el inventario los lista);
+// 2) enciende parametros.salidaUsaClasificacion en el registro de ORLANT.
+// asesor_linea no se toca (lo guardado mes a mes no se pierde). Idempotente.
+function activarSalidaUnaClasificacion() {
+  const campana = 'ORLANT';
+  const reg = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(campana);
+  if (!reg) return;
+  const porAgente = {};
+  db.prepare('SELECT agente, linea FROM asesor_linea WHERE campana = ?').all(campana)
+    .forEach((f) => { (porAgente[f.agente] || (porAgente[f.agente] = new Set())).add(f.linea); });
+  const ins = db.prepare(
+    "INSERT OR IGNORE INTO asesor_clasificacion (campana, agente, linea, guardadoPorNombre, updatedAt) VALUES (?, ?, ?, 'Migración Fase 187', ?)"
+  );
+  const ahora = new Date().toISOString();
+  let copiados = 0;
+  let conflictos = 0;
+  db.transaction(() => {
+    for (const [agente, lineas] of Object.entries(porAgente)) {
+      if (lineas.size !== 1) { conflictos++; continue; }
+      copiados += ins.run(campana, agente, [...lineas][0], ahora).changes;
+    }
+    let parametros = {};
+    try { parametros = JSON.parse(reg.parametros) || {}; } catch (e) { parametros = {}; }
+    if (parametros.salidaUsaClasificacion !== true) {
+      parametros.salidaUsaClasificacion = true;
+      db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(parametros), ahora, campana);
+    }
+  })();
+  if (!config.isTest) console.log(`[db] Migracion fase187_salida_una_clasificacion_v1 aplicada: ${copiados} asesor(es) copiados, ${conflictos} con linea distinta segun el mes (no copiados).`);
+}
+runOnceMigration('fase187_salida_una_clasificacion_v1', activarSalidaUnaClasificacion);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4143,6 +4179,8 @@ module.exports.crearCalidadResumen = crearCalidadResumen;
 module.exports.agregarSalidaNoConectada = agregarSalidaNoConectada;
 // Fase 186: idem.
 module.exports.crearAsesorClasificacion = crearAsesorClasificacion;
+// Fase 187: idem.
+module.exports.activarSalidaUnaClasificacion = activarSalidaUnaClasificacion;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

@@ -16982,3 +16982,21 @@ perder lo guardado y diciendo antes de migrar qué meses tienen línea propia.
   WhatsApp, guardar desde la ventana actualiza la tabla, sin errores de
   consola ni scroll horizontal; el usuario del cliente ve "Sin clasificar",
   sin botón ni inventario.
+
+### Fase 187, paso 2 — Se activa la clasificación única en ORLANT (2026-10-26, v1.76.1)
+
+- Migración `fase187_salida_una_clasificacion_v1` (`server/db.js`), solo
+  ORLANT, idempotente: copia a `asesor_clasificacion` la línea de cada
+  asesor que tiene una sola en todos sus meses de `asesor_linea`, sin pisar
+  a los ya clasificados (`INSERT OR IGNORE`); los que tienen 3P en un mes y
+  General en otro no se copian. Enciende `parametros.salidaUsaClasificacion`.
+  `asesor_linea` no se toca. Semilla del registro (servidor y navegador) con
+  el parámetro, para bases nuevas.
+- Sale del bloque 1 de pendientes el ítem de la Fase 170 (asignar la línea
+  de septiembre mes a mes): ahora es la clasificación por cliente.
+- Pruebas: prueba nueva de la migración (copia, conflicto, no pisa,
+  `asesor_linea` intacta, solo ORLANT, idempotente); la de la Fase 170
+  apaga el parámetro para seguir probando el modo mes a mes. Suite
+  2221/2221. Verificación local (copia de la base demo, la migración corre
+  al arrancar: 0 copiados porque la demo no tiene líneas por mes) con
+  Playwright y Brave a 1440/768/375 px: 42 comprobaciones en OK.

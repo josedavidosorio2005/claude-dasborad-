@@ -38,7 +38,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 174: parametro salidaNoConectada de ORLANT y MOBILIZE (no toca Aurora/HLM).
     'fase174_salida_no_conectada_v1',
     // Fase 186: solo crea la tabla asesor_clasificacion (vacia).
-    'fase186_asesor_clasificacion_v1'];
+    'fase186_asesor_clasificacion_v1',
+    // Fase 187: copia lineas de ORLANT y enciende salidaUsaClasificacion (no toca Aurora/HLM).
+    'fase187_salida_una_clasificacion_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
