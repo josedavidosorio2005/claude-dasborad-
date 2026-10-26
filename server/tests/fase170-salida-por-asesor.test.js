@@ -99,7 +99,8 @@ test('salida del CDR por linea del asesor; sin linea = "Sin asignar"; el canal s
 test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses con CDR; Excel con Sin asignar y Fuente', () => {
   const s = JS('salida.js');
   // Fase 188: Total = General + 3P + Sin asignar/clasificar (salidaValorLinea con 'TOTAL').
-  assert.match(s, /var totalLlam = salidaValorLinea\(delMes, 'llamadas', linea\);/);
+  // Fase 189: cada grafica con su propia linea.
+  assert.match(s, /var totalLlam = salidaValorLinea\(delMes, 'llamadas', lineas\.llamadas\);/);
   assert.match(s, /no tienen línea \(3P o General\)/);
   assert.match(s, /if\(_salEsAdmin\(\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
   assert.match(s, /aria-label="Línea de '\+esc\(a\.agente\)\+'"/);

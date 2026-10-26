@@ -100,7 +100,8 @@ test('vista: la pestaña de salida usa "Sin clasificar" y la misma ventana; el a
   assert.ok(s.includes("function _salSinTexto(f){ return f && f.lineaPorCliente ? 'Sin clasificar' : 'Sin asignar'; }"));
   assert.ok(s.includes("onclick=\"salAbrirClasificacion(\\''+esc(campana)+'\\', \\''+esc(mesSel)+'\\')\">Clasificación de asesores</button>"));
   assert.ok(s.includes("'/calidad/salida/lineas-por-mes?campana='"));
-  assert.ok(s.includes("fila('Llamadas '+sinTxt,"));
+  // Fase 189: la tabla se arma por canal ("Llamadas sin clasificar" / "WhatsApp sin clasificar").
+  assert.ok(s.includes("fila(canal+' '+sinTxt,"));
   const t = JS('tipificacion.js');
   assert.ok(t.includes('async function tipifAbrirClasificacionCliente(campana, alGuardar){'));
   assert.ok(t.includes("if(typeof _tipifClasif.alGuardar === 'function') _tipifClasif.alGuardar();"));

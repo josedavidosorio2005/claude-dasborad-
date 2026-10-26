@@ -6,15 +6,12 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
 const { salidaCombinadaPorMes } = require('../salida-cdr');
 const { salidaPorLinea } = require('../clasificacion-asesores');
 const L = require('../../public/js/salida-logic.js');
 const { request, app, tokenFor, MASTER_PASSWORD, db } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
-const JS = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', f), 'utf8');
 const tip = (agente, fecha, skill, tipo) => [agente, fecha, '09:00:00', null, 'AGENDADA', skill, null, null, tipo, null, null];
 const veces = (n, f) => Array.from({ length: n }, f);
 
@@ -58,17 +55,4 @@ test('General + 3P + Sin clasificar = Total en cada mes y canal (contra el conte
   }
 });
 
-test('vista: "Línea de cada asesor" arriba, botones con el activo marcado; cambiar de linea no vuelve a pedir datos', () => {
-  const s = JS('salida.js');
-  const iAse = s.indexOf("html += '<div id=\"sal-asesores-'+i+'\"></div>';");
-  const iLin = s.indexOf("html += '<div id=\"sal-lineas-'+i+'\"></div>';");
-  const iTar = s.indexOf("html += '<div id=\"sal-tarjetas-wrap-'+i+'\"></div>';");
-  assert.ok(iAse > 0 && iAse < iLin && iLin < iTar, 'orden: Línea de cada asesor, botones, tarjetas');
-  assert.ok(s.includes("'<button type=\"button\" class=\"cc-selector-op'+(on?' on':'')+'\" aria-pressed=\"'+on+'\""));
-  const pintar = s.slice(s.indexOf('function _salPintar(i){'), s.indexOf('// ── Fase 170: linea'));
-  assert.doesNotMatch(pintar, /apiRequest/);
-  assert.ok(pintar.includes("var totalLlam = salidaValorLinea(delMes, 'llamadas', linea);"));
-  assert.ok(pintar.includes("linea === 'TOTAL' ? _salTablaHtml(filasMeses, mesSel) : _salTablaLineaHtml(filasMeses, mesSel, linea)"));
-  assert.ok(s.includes("data: filas.map(function(f){ return salidaValorLinea(f, canal, linea || 'TOTAL'); })"));
-  assert.ok(s.includes('Clasifícalos arriba, en "Clasificación de asesores".'));
-});
+// La vista (botones por grafica, Fase 189) se prueba en fase189-salida-botones-por-grafica.test.js.

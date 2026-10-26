@@ -246,10 +246,11 @@ todos los meses ("Clasificación de asesores"; el botón también está en
 esta pestaña). Los asesores sin línea quedan en **"Sin clasificar"**. Lo
 guardado mes a mes no se borra. Al activarla se copiaron las líneas de los asesores que tenían la misma en todos los meses; los que cambiaban de línea según el mes quedaron en "Sin clasificar" hasta que se elija.
 
-**Botones de línea (desde la v1.77.0)**: arriba de la pestaña, debajo de "Línea de cada asesor",
-están los botones **"Total"**, **"Línea General"** y **"Línea 3P"**. Al
-tocar uno, las tarjetas, las barras y la tabla muestran solo la salida de
-esa línea, en llamadas y en WhatsApp; el botón activo queda marcado.
+**Botones de línea (desde la v1.78.0)**: cada gráfica, la de llamadas y la
+de WhatsApp, tiene en su cabecera los botones **"Total"**, **"Línea
+General"** y **"Línea 3P"** (en el celular, debajo del título). Cada grupo
+cambia solo su métrica: su tarjeta, sus barras y su parte de la tabla; el
+botón activo queda marcado.
 "Total" incluye a los asesores "Sin clasificar" (General + 3P + Sin
 clasificar = Total). Con una línea elegida, la tabla dice también qué parte
 del Total es. Los usuarios del cliente también usan los botones.

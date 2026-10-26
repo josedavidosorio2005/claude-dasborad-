@@ -152,7 +152,7 @@ test('los modulos filtran SOLO la serie por mes (graficas/tablas/export), nunca 
   const s = extraer(JS('salida.js'), 'function _salPintar(i)');
   assert.match(s, /var filasMeses = \(typeof gdAplicarFiltroMeses === 'function' \? gdAplicarFiltroMeses\(filas, function\(f\)\{ return f\.mes; \}\) : filas\);/);
   assert.match(s, /_salDibujarGrafica\('sal-llam-'\+i, filasMeses,/);
-  assert.match(s, /_salTablaHtml\(filasMeses, mesSel\)/);
+  assert.match(s, /_salTablaHtml\(filasMeses, mesSel, lineas\)/);
   assert.match(s, /var idx = filas\.map\(function\(f\)\{ return f\.mes; \}\)\.indexOf\(mesSel\);/, 'tarjetas con todas las filas');
   const ina = extraer(JS('inasistencia.js'), 'async function _inasistenciaDibujarPorMes(campana, i, opciones)');
   assert.match(ina, /_inasistenciaDibujarLineaPorMes\('inasist-c-pormes-'\+i, agregadoMeses,/);
