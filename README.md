@@ -13,13 +13,15 @@ menú de usuario. Qué cambia en cada versión: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Clientes y pestañas (hoy)
 
-Desde la Fase 134 solo existen **ORLANT** y **MOBILIZE**, los dos con
-datos reales.
+**ORLANT** y **MOBILIZE** tienen datos reales. **Clínica Aurora** y
+**Hospital La María** ya existen (creados en las Fases 153 y 160), con sus
+pestañas ocultas y visibles solo para el administrador hasta su primera
+carga completa.
 
 | Cliente | Pestañas |
 |---|---|
 | **ORLANT** (8) | Tráfico de Llamadas · Tráfico de WhatsApp · Llamadas y WhatsApp de salida · Agendamiento · Inasistencia · Efectividad de Citas · Tipificación · Calidad |
-| **MOBILIZE** (4) | Flujo de Llamadas (5 sub-pestañas: Flujo de Llamadas, Nivel de Servicio, Abandono, ASA y ATA, AHT) · Llamadas Únicas y de Salida · Tipificación · Calidad |
+| **MOBILIZE** (5) | Flujo de Llamadas (6 sub-pestañas: Flujo de Llamadas, Nivel de Servicio, Abandono, ASA y ATA, AHT, One & Done) · Llamadas Únicas y de Salida · Tipificación · Encuesta · Calidad (con el Resumen de calidad por asesor) |
 
 Qué base alimenta cada pestaña de ORLANT:
 [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
@@ -98,7 +100,8 @@ Monitoreo: `monitor-produccion.yml` (desde afuera, cada 15 min) y
 ## Seguridad (resumen)
 
 - Contraseñas con bcrypt; JWT con expiración; límite de intentos de login
-  y de peticiones a la API.
+  (por IP + usuario y, desde la Fase 178, por usuario solo) y de peticiones
+  a la API.
 - Toda entrada validada con Zod; SQL siempre con parámetros.
 - Todo texto que viene de datos se escapa al mostrarlo (`esc()`), y las
   exportaciones a Excel neutralizan fórmulas (`xlsxFilasSeguras`).

@@ -52,7 +52,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Edwin: 3 de 45 = 6,7 % en septiembre). La otra opción es "respondieron"
   (solo quienes contestaron la pregunta 3: 3 de 4 = 75 %). Se cambia con
   `fcrBase` en la config del panel de Flujo de Llamadas, sin código.
-- **IP que queda permitida en el puerto 22 de Lightsail, por confirmar** —
+- **IP que queda permitida en el puerto 22 de Lightsail, por confirmar**
+  (sigue igual en la última corrida revisada, la verificación de
+  restauración del 16/10: al abrir el puerto para el runner, esa IP también
+  queda en la lista) —
   al terminar el respaldo manual del 15/10/2026, el workflow dejó el puerto
   22 abierto solo para una IP, que parece ser la que ya estaba permitida
   antes. Confirmar a quién pertenece y si debe seguir ahí.
@@ -259,10 +262,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   panel ya construido, con septiembre/2026 real cargado desde el
   2026-10-13; vive en su propia pestaña "Llamadas Únicas" desde la Fase
   139):
-  - **Archivo real de llamadas ABANDONADAS de ingreso**: las filas
-    "NO CONTESTADAS" que se cargaron al principio eran llamadas de SALIDA
-    no conectadas (corregido el 2026-10-13, Fase 141 Parte B). Falta que
-    Edwin defina de dónde salen las abandonadas entrantes reales.
+  - **Archivo real de llamadas ABANDONADAS de ingreso** — RESUELTO (Fase
+    163): salen de Wolkvox, "Skill y servicios → 2. Detalle llamadas
+    abandonadas", en la misma hoja que las contestadas; una fila sin
+    asesor cuenta como abandonada.
   - **Filtro de skill y las abandonadas**: sin confirmar si el filtro de
     Skill del panel debe aplicar también a las llamadas abandonadas o
     solo a las contestadas.
@@ -277,12 +280,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     + 59 conectadas). Faltan 3 respuestas de Edwin: ¿se excluyen las
     filas "PRUEBA" (3) y "TIMEOUTACW" (1)? (todas son conectadas; sin
     ellas quedaría 52 / 55 / 107 — se corrige recargando un Excel limpio,
-    la carga reemplaza por rango de fechas), ¿por qué él cuenta 51 no
-    conectadas únicas y la plataforma 52?, y qué es el "tipo de línea"
-    (el archivo no lo trae). El teléfono no se guarda (decisión del
+    la carga reemplaza por rango de fechas) y qué es el "tipo de línea"
+    (el archivo no lo trae). La pregunta de "51 contra 52 no conectadas
+    únicas" ya no aplica: desde la Fase 171 cada fila cuenta (no se quitan
+    repetidos), y agosto y septiembre esperan recarga (sección 1). El teléfono no se guarda (decisión del
     usuario, 13/10).
 - **Resultado de la encuesta/"guanid" de Mobilize para el 15 de
-  octubre** — Prioridad MEDIA, dependencia de otras personas (no de esta
+  octubre** — probablemente resuelto (la pestaña Encuesta de Mobilize ya
+  tiene septiembre, Fase 171); confirmar y quitar. Prioridad MEDIA, dependencia de otras personas (no de esta
   fase): lo están trabajando fuera de esta línea de trabajo y todavía no
   hay datos — riesgo de plazo que no depende del equipo de la
   plataforma.
@@ -302,10 +307,46 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     una versión de token configurable para el maestro, o una duración más
     corta. Costo: bajo.
   - **(8, baja, ya conocido) CSP con `'unsafe-inline'` en scripts**
-    (`server/server.js`): lo exigen los ~105 `onclick` del HTML. Todo lo
-    nuevo escapa con `esc()`, pero un XSS futuro podría leer el token en
-    memoria. Cómo: pasar los `onclick` a eventos registrados desde el JS y
+    (`server/server.js`): lo exigen los 152 `onclick` de `index.html` (conteo del
+    26/10/2026). Mitigado: todo texto de datos pasa por `esc()` (probado con
+    texto malicioso real en la Fase 146: 66 vistas, nada se ejecutó), pero un
+    XSS futuro podría leer el token en memoria. Cómo: pasar los `onclick` a eventos registrados desde el JS y
     quitar `'unsafe-inline'`. Costo: alto (toca casi toda la interfaz).
+
+- **Revisión preventiva de la Fase 178 (26/10/2026) — hallazgos nuevos**.
+  Nada se aplica sin pedirlo:
+  - **(media) No hay forma de leer los logs de producción**: el workflow
+    `verificar-logs-produccion.yml` (solo lectura, CloudWatch) falla con
+    `AccessDenied`: el rol de deploy de la cuenta AWS actual no tiene
+    `logs:FilterLogEvents`. Tampoco se sabe si el agente de CloudWatch
+    sigue enviando logs tras el cambio de cuenta. Sin eso no se pueden
+    buscar errores 500 ni avisos repetidos. Cómo: dar ese permiso de solo
+    lectura a los 2 grupos de logs (IAM, necesita tu OK) o agregar a
+    `salud-servidor.yml` un conteo de líneas 5xx de `docker logs` (solo
+    números). Costo: bajo.
+  - **(baja) Resumen de calidad: una fila de totales cuenta como asesor**:
+    si la plantilla de Edwin trae al final una fila "TOTAL" o "Promedio" con
+    números, el lector la toma como un asesor más (duplica los monitoreos
+    del mes). El archivo real de octubre no la trae. Cómo: omitir filas
+    cuyo nombre sea TOTAL/PROMEDIO/TOTAL GENERAL, con aviso
+    (`public/js/calidad-resumen-logic.js`). Costo: bajo.
+  - **(baja) El tope de login por usuario se puede usar para bloquear una
+    cuenta conocida** durante 1 hora (30 intentos fallidos desde cualquier
+    lado, Fase 178), también la del administrador maestro. Es el costo
+    normal de ese control. Si molesta: excluir al maestro, o bajar la
+    ventana. Costo: bajo.
+  - **(baja, con fecha) Node.js 22 deja de tener soporte el 30/04/2027**:
+    la imagen usa `node:22-bookworm` (se reconstruye en cada deploy, así
+    que recibe los parches de la 22). Planear el paso a Node 24 (LTS) antes
+    de esa fecha; probar primero que `better-sqlite3` trae binario.
+  - **(baja) Actualizaciones menores disponibles** (26/10/2026, sin avisos
+    de seguridad: `npm audit` en 0): express 5.3.0, express-rate-limit
+    8.7.1, @aws-sdk 3.1156, playwright 1.64.1, supertest 7.3.1. Las mayores
+    (`better-sqlite3` 13, `dotenv` 18) siguen congeladas (sección 1).
+  - **(baja) La última prueba de restauración del respaldo es del 16/10**
+    (copia local, `integrity_check` ok). Recomendado: correr
+    `verificar-restore-backup-produccion.yml` una vez al mes. La prueba
+    desde S3 sigue bloqueada por la Política 1 de IAM (sección 1).
 
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,
@@ -399,33 +440,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   canvas con píxeles, 0 hallazgos), pero no por ojo humano en cada
   combinación. Queda para después si se quiere ese nivel de detalle.
 
-- **Pruebas de tiempos de modales de la Fase 136 inestables bajo carga**
-  (Fase 146) — Prioridad MEDIA. Causa: miden con el reloj real (un
-  `requestAnimationFrame` simulado de 16 ms ×2 contra esperas de 60/100 ms,
-  y la red de seguridad de 400 ms contra una espera de 450 ms); con la CPU
-  saturada (suite en paralelo) los temporizadores se atrasan más que ese
-  margen. Arreglo: temporizadores simulados de `node:test` (`mock.timers`)
-  y una cola de frames manual, con avance exacto — la prueba queda más
-  estricta, no más débil. Archivos: `fase136-pr4-base-movimiento.test.js`,
-  `fase136-pr8-modales-unificados.test.js`.
-- **CSP con `'unsafe-inline'` en `script-src`** (Fase 146) — Prioridad
-  MEDIA, aceptada por ahora. Hace falta porque `index.html` tiene 144
-  manejadores `onclick=` en línea (`server/server.js:80-93` lo explica).
-  Mitigado: todo texto de datos pasa por `esc()` (probado con texto
-  malicioso real en la Fase 146: 66 vistas, nada se ejecutó). Cerrarlo es
-  migrar esos manejadores a `addEventListener` — trabajo grande, después de
-  la entrega.
 - **Código sin uso** (Fase 146) — Prioridad BAJA: las vistas de Tráfico
   "asaaht" (ASA y AHT) y "asa" sola ya no las usa ninguna configuración
   (`public/js/trafico.js`: `_traficoDibujarAsaAht`, sus títulos y su rama
   de resumen). Se pueden quitar cuando convenga.
-- **`revision-final.js` no elige el mes** (Fase 146) — Prioridad BAJA.
-  Contra una base cuyo mes por defecto no tiene Tráfico (la demo local
-  abre en octubre), reporta "sub-pestañas de Flujo" como falla. En
-  producción no pasa (abre en septiembre). Arreglo: elegir el último mes
-  con datos antes de recorrer.
-- **`*.pem` no está en `.gitignore`** (Fase 146) — Prioridad BAJA; hoy no
-  hay ninguno en el repo.
 
 - **Corrección (Fase 146)**: el hallazgo "Tipificación oculta en el seed pero
   visible en producción" era un **error del diagnóstico**. El tablero destapa

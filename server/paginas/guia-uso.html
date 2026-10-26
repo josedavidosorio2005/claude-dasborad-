@@ -28,6 +28,8 @@
   .toc ol{margin:8px 0 0;padding-left:20px}
   table{width:100%;border-collapse:collapse;margin:14px 0;background:var(--c-surface)}
   th,td{border:1px solid var(--c-border);padding:8px 10px;text-align:left;font-size:0.92rem;vertical-align:top}
+  /* Fase 178: en pantallas chicas cada tabla se desplaza de lado dentro de su tarjeta (sin desbordar la pagina). */
+  @media(max-width:600px){table{display:block;overflow-x:auto;max-width:100%}th,td{min-width:110px}}
   th{background:#eef3f5;color:var(--c-primary)}
   code{background:#eef3f5;padding:1px 5px;border-radius:4px;font-size:0.88em}
   .card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:10px;padding:18px 22px;margin:14px 0}
@@ -45,8 +47,8 @@
   <div class="wrap">
     <h1>Guía de uso — SInCo (ORLANT y Mobilize)</h1>
     <p>Para quien usa la plataforma todos los días — sin nada técnico.</p>
-    <span class="version-pill">Versión de la plataforma: 1.30.5</span>
-    <p style="margin:8px 0 0;font-size:0.82rem;opacity:0.95">Desde octubre de 2026, la plataforma solo tiene datos oficiales de <strong>agosto y septiembre de 2026</strong> (más julio de Tipificación de WhatsApp, real). Los datos de meses anteriores que venían en las plantillas de prueba ya se quitaron.</p>
+    <span class="version-pill">Versión de la plataforma: 1.72.3</span>
+    <p style="margin:8px 0 0;font-size:0.82rem;opacity:0.95">La plataforma tiene datos oficiales desde <strong>agosto de 2026</strong> (más julio de Tipificación de WhatsApp, real). Los datos de meses anteriores que venían en las plantillas de prueba ya se quitaron. Octubre llega por partes, a medida que se cargan sus archivos.</p>
   </div>
 </header>
 <div class="wrap">
@@ -71,17 +73,20 @@
 <p>La pantalla de inicio muestra, dentro de la tarjeta, el logo de InConexion® a la izquierda de <strong>SInCo</strong>, en la misma línea (a color en tema claro, blanco en tema oscuro), y otro logo pequeño en la esquina inferior derecha. Escribe tu <strong>usuario</strong> y tu <strong>contraseña</strong>, y presiona "Ingresar". Cada persona tiene su propio usuario, con acceso solo a lo que le corresponde (ver <a href="#s7">sección 7</a>).</p>
 <p><strong>Si olvidaste la contraseña</strong>: hoy la plataforma no tiene un botón de "recuperar contraseña" — tienes que pedirle a un administrador que te la cambie desde la pantalla de Usuarios (Administración → Usuarios → tu usuario → "Cambiar contraseña"). Avísale por el canal que usen normalmente (no la escribas en un mensaje que quede guardado, para que solo tú la conozcas).</p>
 <p><strong>Cómo cambiar mi contraseña:</strong> si ya la sabes y quieres cambiarla tú mismo (sin pedírselo a un administrador), entra a la plataforma y en el menú de tu usuario (arriba a la derecha) elige <strong>"Cambiar mi contraseña"</strong>. Te va a pedir la contraseña actual, la nueva y que la confirmes. Al cambiarla, cualquier otra sesión que tuvieras abierta (otro equipo, otra pestaña) deja de funcionar — la pantalla donde la cambiaste sigue abierta, sin que tengas que volver a entrar.</p>
+<p><strong>Demasiados intentos</strong>: si te equivocas de contraseña muchas veces, la plataforma te pide esperar unos minutos antes de volver a intentar (el mensaje dice cuántos). Además, si una misma cuenta acumula 30 intentos fallidos en una hora (aunque sean desde computadores distintos), queda bloqueada para iniciar sesión hasta que pase esa hora, y el administrador ve el aviso "Cuenta bloqueada por intentos" en el Historial.</p>
 <figure><img src="/img/guia/01-login.png" alt="Pantalla de inicio de sesión"><figcaption>Pantalla de inicio de sesión (datos de demostración).</figcaption></figure>
 
 <h2 id="s2">2. El dashboard de ORLANT</h2>
 <p>Al entrar, elige el dashboard de <strong>ORLANT</strong> en el menú principal. Arriba del todo vas a ver:</p>
 <ul>
-  <li>El <strong>selector de MES</strong> — elige el mes que quieres ver, con su nombre completo (ej. "Septiembre 2026"). Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez. A veces un mes aparece como <strong>parcial</strong> (ej. "Julio 2026" solo con datos de Tipificación de WhatsApp) — es normal y esperado cuando a ese mes solo le llegó una parte de los datos, no es un error.</li>
+  <li>El <strong>selector de MES</strong> — elige el mes que quieres ver, con su nombre completo (ej. "Septiembre 2026"). Mueve las tarjetas y gráficas de todas las pestañas a ese mes a la vez. A veces un mes aparece como <strong>parcial</strong> (ej. "Julio 2026" solo con datos de Tipificación de WhatsApp) — es normal y esperado cuando a ese mes solo le llegó una parte de los datos, no es un error. En la lista salen todos los meses que tienen algún dato, aunque sea de una sola base (por ejemplo, un mes que solo tiene WhatsApp por rangos o el Resumen de calidad).</li>
   <li>El filtro <strong>MESES</strong> — para ver varios meses sueltos lado a lado (por ejemplo, solo septiembre y octubre, sin agosto). Marca los meses que quieras: las gráficas y tablas que van por mes muestran solo esos meses. No suma meses: las tarjetas siguen el selector de MES. "Ver todos los meses" lo deja como estaba.</li>
   <li>El botón <strong>Exportar</strong> — descarga a Excel todo lo que estás viendo en la pestaña activa (una hoja por gráfica/tabla).</li>
   <li>El botón de <strong>pantalla completa</strong> — agranda el dashboard para que ocupe toda la pantalla (útil al compartir pantalla en una reunión); un segundo clic (o la tecla Esc) vuelve a la vista normal.</li>
   <li>El interruptor de <strong>tema oscuro/claro</strong> (en el menú de tu usuario, arriba a la derecha) — cambia el color de toda la plataforma, no afecta los datos.</li>
+  <li><strong>En el celular</strong> (y en tablet): el encabezado es compacto. Los filtros MES, MESES y COMPARAR quedan guardados en un botón que dice el mes elegido (por ejemplo "Sep 2026"); al tocarlo se abren y al elegir un mes se cierran solos. La fecha de la última actualización sale corta ("Act. 24/10 08:30") y Actualizar/Exportar se muestran solo con su icono. Las pantallas de Llamadas y WhatsApp que van lado a lado en el computador quedan una debajo de la otra.</li>
 </ul>
+<p>El tablero de <strong>Mobilize</strong> funciona igual y tiene 5 pestañas: Flujo de Llamadas (con Nivel de Servicio, Abandono, ASA y ATA, AHT y One &amp; Done), Llamadas Únicas y de Salida, Tipificación, Encuesta y Calidad (que empieza con el Resumen de calidad por asesor).</p>
 
 <h3>Las 8 pestañas</h3>
 <table>
@@ -91,8 +96,8 @@
   <tr><td><strong>Agendamiento</strong></td><td>Citas agendadas, con 4 vistas: Por especialidad, Total agendas, Agendas por línea, Ranking de asesores (por EFECTIVIDAD de agendamiento).</td></tr>
   <tr><td><strong>Inasistencia</strong></td><td>El % de inasistencia, por mes y por especialidad, con filtros de sede/especialidad/entidad — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Efectividad de Citas</strong></td><td>El % de citas agendadas que realmente se atendieron, por mes — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
-  <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto).</td></tr>
-  <tr><td><strong>Llamadas y WhatsApp de salida</strong></td><td>Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General) — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
+  <tr><td><strong>Tipificación</strong></td><td>Cómo se clasificó cada llamada/chat (motivo de contacto), con Llamadas y WhatsApp lado a lado y las tarjetas de llamadas de salida (conectadas y no conectadas).</td></tr>
+  <tr><td><strong>Llamadas y WhatsApp de salida</strong></td><td>Llamadas y WhatsApp de SALIDA (no de entrada), por mes y por línea (3P/General). En los meses con CDR sale del CDR, repartido por la línea de cada asesor — ver el detalle en la <a href="#s3">sección 3</a>.</td></tr>
   <tr><td><strong>Calidad</strong></td><td>Monitoreo de calidad de los asesores, con su nota y resultados.</td></tr>
 </table>
 <p>Cada pestaña que tiene varias vistas las muestra como <strong>sub-pestañas</strong> justo debajo del nombre de la pestaña principal — haz clic para cambiar entre ellas, sin perder el mes ni los filtros que ya elegiste.</p>
@@ -136,10 +141,12 @@
 <div class="card">
 <h3>Llamadas y WhatsApp de salida</h3>
 <p>El total del mes de llamadas y WhatsApp de <strong>salida</strong> (que la campaña hace hacia afuera, no las que recibe), separado por línea 3P y Línea General. Muestra 2 tarjetas (total de llamadas y total de WhatsApp del mes elegido, con la variación contra el mes anterior cuando hay con qué comparar) y 2 gráficas de barras (una para llamadas, otra para WhatsApp) — con pocos meses de historia, una gráfica de barras por mes se lee mejor que una línea de tendencia. La tabla de abajo también muestra qué porcentaje de cada mes fue 3P vs. Línea General (participación DENTRO de ese mismo mes — no hay todavía un indicador de salida contra el total de gestión).</p>
+<p><strong>De dónde sale cada mes (desde octubre de 2026)</strong>: en los meses que ya tienen los CDR de Wolkvox cargados (Tipificación), la salida se cuenta del CDR: cada registro de llamada de salida y cada WhatsApp de salida, por asesor. Cada asesor se asigna a la línea <strong>3P</strong> o <strong>General</strong> en cada mes (solo el administrador, en la misma pestaña, "Línea de cada asesor", con "Copiar del mes anterior"); un asesor sin línea suma en <strong>"Sin asignar"</strong> y la pestaña lo avisa. Los meses sin CDR siguen con el archivo mensual de Edwin. La tabla dice de dónde salió cada mes ("Fuente").</p>
 </div>
 <div class="card">
 <h3>Tipificación</h3>
 <p>Conteo de cuántas llamadas/chats quedaron marcados con cada motivo de contacto, sin cálculo adicional. El nombre del asesor también aparece aquí (ya era así desde antes). La tipificación de llamadas y la de WhatsApp van lado a lado en computador (una debajo de la otra en el celular), cada una con su torta y sus filtros de asesor, skill y tipo (entrante o de salida); el mes es el mismo para las dos. Las tarjetas de llamadas de salida van en la mitad de llamadas.</p>
+<p>Reglas de las tarjetas de salida (confirmadas por Edwin el 23/10/2026): una llamada es <strong>de salida</strong> si en el CDR su tipo (TYPE_INTERACTION) es <code>outbound_ma</code> u <code>out_pre</code> (marcador predictivo), aunque traiga un skill de entrada; las llamadas internas (<code>internalcall</code>) no cuentan. En ORLANT, <strong>no conectada</strong> = tipificación NO_CONTESTAN o BUZON (en Mobilize, Cliente_no_contesta); el resto son conectadas. Se cuenta cada registro, no el teléfono único.</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
@@ -155,6 +162,7 @@
 <h2 id="s4">4. Cómo cargar cada base cada mes</h2>
 <p>Todas las cargas se hacen desde <strong>"Cargar Datos"</strong> (menú principal), eligiendo el cliente <strong>ORLANT</strong> y descargando primero la <strong>plantilla consolidada</strong> (un solo Excel con una hoja por base). Llena la hoja que te toque con el archivo que te llegue, sin cambiar los nombres de las columnas, y vuelve a subir ese mismo Excel.</p>
 <p>Al subir, la plataforma te muestra <strong>antes de guardar</strong> cuántas filas se van a reemplazar (para que nunca subas un mes por error sin darte cuenta), y después de guardar te confirma cuántas filas se cargaron. Si algo no cuadra (falta una columna obligatoria, un dato inválido, una fecha futura), sale un <strong>aviso explicando exactamente qué fila y qué columna</strong> tiene el problema — esa fila se omite, pero el resto del archivo sí se carga.</p>
+<p><strong>Centro de cargas</strong> (Cargar Datos → cliente → una tarjeta por base → los meses del año): cada mes muestra cuántos registros tiene. Desde ahí se <strong>sube o reemplaza</strong> un mes (solo entran las filas de ese mes), se <strong>descarga lo cargado</strong> o la <strong>plantilla</strong>, se <strong>elimina</strong> un mes y, si fue un error, se <strong>deshace</strong> (la base anterior se guarda 30 días, en "Versiones guardadas"). Todo queda en el Historial. Después de subir, eliminar o deshacer, el tablero que esté abierto se actualiza solo, sin recargar la página, y se queda en el mismo mes y la misma pestaña. El botón "Actualizar datos" del tablero abre el Centro en la base de la pestaña que estás viendo.</p>
 <figure><img src="/img/guia/04-cargar-datos.png" alt="Pantalla Cargar Datos"><figcaption>Pantalla "Cargar Datos", cliente ORLANT (datos de demostración).</figcaption></figure>
 
 <div class="card">
@@ -174,7 +182,7 @@
 <div class="card">
 <h3>Tipificación</h3>
 <p><strong>Qué archivos</strong>: los dos CDR de Wolkvox, uno de llamadas y uno de WhatsApp. Se cargan por separado: cada uno reemplaza solo su canal y solo las fechas que trae (si el CDR de septiembre trae unas filas del 31 de agosto, la vista previa lo dice; el resto de agosto no se toca).<br>
-<strong>Llamadas</strong> — CDR de llamadas, export completo (hoja "HistCDR…"). Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Las filas con SKILL_ID/SKILL_NAME "-" son <strong>Llamadas de salida</strong> (las internalcall no cuentan como salida).<br>
+<strong>Llamadas</strong> — CDR de llamadas, export completo (hoja "HistCDR…"). Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Las filas con SKILL_ID/SKILL_NAME "-" y tipo <code>outbound_ma</code> u <code>out_pre</code> son <strong>Llamadas de salida</strong>; una fila <code>out_pre</code> cuenta como salida aunque traiga skill (en ORLANT, 4070 CANCELACIONES Y REPROGRAMACION). Las internalcall no cuentan como salida.<br>
 <strong>WhatsApp</strong> — CDR de WhatsApp, export <strong>"HistChat"</strong> (hoja "HistChat…", cambia de nombre cada vez; <strong>no hace falta renombrarla</strong>). Dónde se descarga: [ruta pendiente de confirmar con Edwin]. Trae el <strong>número</strong> del skill (SKILL_ID), no su nombre: la plataforma lo traduce con la tabla de skills de WhatsApp del cliente. El 0 es <strong>WhatsApp de salida</strong>; un número que no esté en la tabla se ignora y la vista previa dice cuántos. Un administrador edita la tabla en Cargar Datos → "Skills de WhatsApp".</p>
 <table>
   <tr><th>SKILL_ID</th><th>Skill (ORLANT)</th></tr>
@@ -234,11 +242,17 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <strong>Hoja</strong>: cualquier nombre (la plataforma la reconoce por sus columnas) — el archivo real de Edwin trae una sola hoja llamada "Hoja1", con el encabezado en la fila 3 (2 filas vacías antes).<br>
 <strong>Columnas obligatorias</strong>: MES, LINEA 3P, LINEA GENERAL, WHATSAPP 3P, WHATSAPP GENERAL.<br>
 <strong>El mes no trae año</strong> (igual que Efectividad de Agendamiento/Citas): antes de guardar, la plataforma muestra a qué año resolvió cada mes (ej. "AGOSTO → Agosto 2026") y pregunta si es correcto — si no lo es, pide el año correcto y vuelve a intentarlo. Nunca lo adivina en silencio.<br>
-<strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.</p>
+<strong>Reemplazo</strong>: por MES — si el archivo trae Agosto y Septiembre, se reemplazan esos 2 meses completos, sin tocar ningún otro mes ya cargado.<br>
+<strong>Meses con CDR</strong> (desde septiembre de 2026): este archivo ya no hace falta; la salida sale del CDR de Tipificación. Lo único que hay que hacer es asignar la <strong>línea de cada asesor</strong> (3P o General) en la pestaña "Llamadas y WhatsApp de salida" → "Línea de cada asesor" (solo el administrador): elegir la línea al lado de cada nombre, o "Copiar del mes anterior", y "Guardar líneas". Queda en el Historial.</p>
 </div>
 <div class="card">
 <h3>Calidad</h3>
 <p>La carga normal es <strong>un monitoreo a la vez</strong>, desde el formulario (ver <a href="#s6">sección 6</a>) — no es una carga de archivo mensual como las demás bases. También existe una <strong>carga masiva</strong> desde Excel (3 hojas: "Monitoreos" para diligenciar, "Diccionario" con la lista de preguntas de referencia, "Resumen por Asesor" de consulta) para cuando hay muchos monitoreos para subir de una vez.</p>
+<h3>Calidad: resumen por asesor (Mobilize)</h3>
+<p><strong>Dónde se ve</strong>: al inicio de la pestaña Calidad de Mobilize. Tarjetas del mes elegido arriba (promedio general ponderado por el número de monitoreos, con semáforo; total de monitoreos y de fallos críticos), tabla por asesor (clasificación y alerta en colores) y tabla por mes (respeta el filtro MESES). Se exporta a Excel y PDF.<br>
+<strong>Qué archivo</strong>: la plantilla de calidad de Edwin, una fila por asesor (no sale de Wolkvox: sale de su libro de Monitoreos). Si las columnas son fórmulas a ese libro, ábralo junto con la plantilla, deje que calcule y guárdela antes de subirla: la plataforma lee los valores ya calculados; una celda en error (#REF!) o vacía omite esa fila con un solo aviso.<br>
+<strong>Columnas</strong>: Nombre del Asesor (puede decir "← Escribir aquí"), # Monitoreos, Prom. Puntaje (%), Clasificación, Alerta Críticos y Total Fallos Críticos. Clasificación y Alerta se recalculan siempre con los números: puntaje menor que 70 Crítico, menor que 90 No crítico, si no Sobresaliente; 0 fallos "Sin fallos críticos", 1 "Alerta", más de 1 "Crítico frecuente". Si el puntaje viene en fracción (0,85), se lee como 85 % y se avisa.<br>
+<strong>Reemplazo</strong>: el mes se elige al subir (Centro de cargas → "Calidad: resumen por asesor" → el mes) y se reemplaza solo ese mes.</p>
 </div>
 <div class="card">
 <h3>Flujo de Llamadas (Mobilize)</h3>
@@ -246,7 +260,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <strong>ATA sin abandonos</strong>: ATA es el tiempo promedio hasta que la persona cuelga sin ser atendida. Si en el período hay datos pero <strong>ninguna llamada abandonada</strong> (como septiembre de 2026 en Mobilize), ATA se muestra como <strong>0:00</strong> en la tarjeta, en la gráfica y en la exportación. Si el período no tiene datos, sale el aviso de "sin datos" de siempre.</p>
 <h3>Llamadas Únicas (Mobilize)</h3>
 <p><strong>Dónde se ve</strong>: en el tablero de Mobilize, pestaña propia <strong>"Llamadas Únicas y de Salida"</strong> (justo después de Flujo de Llamadas). Cuenta una sola vez cada teléfono por día, así que no coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.<br>
-<strong>Qué archivo</strong>: el mismo patrón que las demás bases de Wolkvox, pero este archivo hay que armarlo a mano combinando 3 reportes distintos de Wolkvox (ver abajo cómo sacarlos) — Edwin es quien hace esa combinación antes de subir.<br>
+<strong>Qué archivo</strong>: el mismo patrón que las demás bases de Wolkvox, pero este archivo hay que armarlo a mano combinando 2 reportes distintos de Wolkvox (ver abajo cómo sacarlos) — Edwin es quien hace esa combinación antes de subir.<br>
 <strong>Hoja</strong>: <code>LLAMADAS_UNICAS</code> de la plantilla oficial (<code>PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx</code>, descargable desde "Cargar Datos" eligiendo el cliente Mobilize).<br>
 <strong>Columnas obligatorias</strong>: AGENT_NAME, DATE, TELEPHONE, SKILL_NAME. <strong>No se aceptan filas con SKILL_NAME = NO CONTESTADAS</strong>: esas son llamadas de salida no conectadas y van en "Llamadas de salida". Si el archivo trae alguna, la vista previa lo avisa y esa hoja no se guarda.<br>
 <strong>Privacidad</strong>: TELEPHONE se usa solo un instante, en la computadora de quien sube el archivo, para no contar dos veces una misma llamada del mismo número el mismo día — nunca llega al servidor, nunca se guarda, nunca se exporta ni se muestra en ninguna pantalla.<br>
@@ -254,7 +268,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p><strong>Cómo sacar las llamadas únicas desde Wolkvox, paso a paso:</strong></p>
 <ol>
   <li><strong>Contestadas de ingreso</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "1. Detalle de las llamadas". De ahí se quitan dos cosas antes de pegarlas en la plantilla: las llamadas de salida (el número de teléfono trae un guion) y los duplicados del mismo número el mismo día (no de todo el mes — si el mismo número llama dos días distintos, cuenta en cada uno).</li>
-  <li><strong>Abandonadas</strong>: todavía no se cargan. Edwin está definiendo de qué reporte salen las abandonadas de ingreso (las filas "NO CONTESTADAS" eran llamadas de salida, por eso ya no se aceptan aquí).</li>
+  <li><strong>Abandonadas de ingreso</strong>: en Wolkvox, Reportes → <strong>Skills &amp; Servicios</strong> → <strong>"2. Detalle llamadas abandonadas"</strong> (skill, teléfono y día). Se pegan en la misma hoja con <strong>AGENT_NAME vacío</strong>: una fila sin asesor cuenta como abandonada. (Las filas "NO CONTESTADAS" de antes eran llamadas de salida, por eso no se aceptan aquí.)</li>
   <li><strong>Salientes no conectadas</strong>: en Wolkvox, Reportes → pestaña CDR → reporte "5. Detalle de las llamadas para las no conectadas". Estas llamadas <strong>no van en este archivo</strong>: van en el archivo de "Llamadas de salida" (ver abajo).</li>
 </ol>
 <figure><img src="/img/guia/wolkvox-cdr-mobilize.png" alt="Wolkvox, Reportes → CDR, con reportes 1 y 5 resaltados"><figcaption>Wolkvox, Reportes → CDR, con "1. Detalle de las llamadas" y "5. Detalle de las llamadas para las no conectadas" resaltados.</figcaption></figure>
@@ -275,8 +289,8 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <h3>Llamadas de salida (Mobilize)</h3>
 <p><strong>Filtros</strong>: cada mitad tiene sus propios filtros. Ingreso: Desde, Hasta, Skill y Asesor. Salida: Desde, Hasta, <strong>Tipo</strong> (Conectada / No conectada) y Asesor — el archivo de salida no trae un skill real, por eso el filtro es por Tipo. El filtro y el detalle por <strong>Asesor</strong> los ve también el usuario de Mobilize.</p>
 <p><strong>Dónde se ve</strong>: en la misma pestaña "Llamadas Únicas y de Salida", mitad derecha (las de ingreso quedan a la izquierda; en el celular, una debajo de la otra). Tres tarjetas: Total llamadas de salida, Llamadas de salida no conectadas y Llamadas de salida conectadas, una gráfica de barras por mes y filtros Desde/Hasta. El equipo de InConexion además ve el filtro por asesor y el detalle por asesor y por día; el usuario del cliente no ve nombres de asesor.<br>
-<strong>Qué archivo</strong>: el export de Wolkvox con las columnas AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y SKILL_ID, que debe decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS" (cualquier otro valor se omite y se avisa). Se sube desde "Cargar Datos" eligiendo Mobilize; la plataforma reconoce la hoja por sus columnas.<br>
-<strong>Cómo cuenta</strong>: una sola vez cada teléfono por día, por separado si ese día hubo llamada conectada y no conectada.<br>
+<strong>Qué archivo</strong>: dos reportes de Wolkvox en una sola hoja: las <strong>conectadas</strong> salen de Reportes → CDR → "1. Detalle de las llamadas" (solo las de salida) y las <strong>no conectadas</strong> de Reportes → CDR → "5. Detalle de las llamadas para las no conectadas". Columnas: AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT (la tipificación) y <strong>TIPO</strong> ("Conectada" o "No conectada"; también se acepta con guion, guion bajo, en plural o la columna SKILL_ID de antes, con "LLAMADAS DE SALIDA CONECTADAS/NO CONECTADAS"). Se sube desde el Centro de cargas (Mobilize → Llamadas Únicas y de Salida → "De salida" → el mes).<br>
+<strong>Cómo cuenta</strong>: <strong>cada fila es una llamada</strong> (desde octubre de 2026 ya no se quitan repetidos del mismo teléfono y día). Una fila sin AGENT_NAME se carga como <strong>"Sin asesor"</strong>; solo se omiten las filas vacías o sin fecha/tipo, con un aviso agrupado. Días sin llamadas de salida son normales: no sale el aviso de "mes incompleto".<br>
 <strong>Privacidad</strong>: igual que en Llamadas Únicas, TELEPHONE nunca llega al servidor.<br>
 <strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántos registros va a reemplazar). Se pueden cargar varios meses, uno a la vez.</p>
 <h3>Encuesta (Mobilize)</h3>
@@ -285,6 +299,20 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <strong>Reemplazo</strong>: se reemplaza lo que ya exista entre la primera y la última fecha del archivo (la plataforma muestra antes cuántas encuestas va a reemplazar y pide confirmar); para corregir una base, se vuelve a subir. <strong>Suba siempre el mes completo</strong>: los días de ese rango que no vengan en el archivo se borran (por ejemplo, un archivo con solo el 1 y el 30 de septiembre deja en blanco del 2 al 29).<br>
 <strong>One &amp; Done</strong> (última sub-pestaña de Flujo de Llamadas): barras por mes con el % de encuestas con la pregunta 3 en "Sí" (el mismo número de la tarjeta FCR), la tarjeta del mes con la cuenta ("3 de 45 encuestas") y, debajo, cuántas respondieron Sí, No o no respondieron.</p>
 <p><strong>FCR en Flujo de Llamadas</strong>: la tarjeta "Solución en primer contacto (FCR)" = encuestas con la pregunta 3 en "Sí" ÷ todas las encuestas del mes (configurable para contar solo a quienes respondieron la pregunta 3). Siempre muestra la cuenta, por ejemplo "3 de 45 encuestas"; si el mes no tiene encuestas dice "Sin encuestas este mes".</p>
+</div>
+
+<div class="card">
+<h3>Plantillas nuevas (octubre de 2026): de dónde salen y qué columnas traen</h3>
+<p>Todas se descargan desde el Centro de cargas ("Descargar plantilla") y traen una hoja INSTRUCCIONES. Las de Wolkvox se pueden subir <strong>tal cual salen de Wolkvox</strong>, sin renombrar la hoja ni quitar columnas: la plataforma solo lee las columnas de la última columna de la tabla y nunca lee teléfonos, nombres de clientes, correos ni comentarios.</p>
+<table>
+  <tr><th>Plantilla (carga)</th><th>De dónde se descarga</th><th>Qué columnas trae</th><th>Cuáles lee la plataforma</th></tr>
+  <tr><td>CDR de llamadas (Tipificación → Llamadas)</td><td>Wolkvox, CDR de llamadas, export completo (hoja "HistCDR…"). Ruta exacta: pendiente de confirmar con Edwin.</td><td>Las 20 del HistCDR, en su orden: AGENT_NAME, DATE, DESTINY, TELEPHONE, COST, TIME_SEC, TIME_MIN, COD_ACT, DESCRIPTION_COD_ACT, COD_ACT_2, DESCRIPTION_COD_ACT_2, TYPE_INTERACTION, CUSTOMER_ID, HUNG_UP, CAMPAIGN_ID, CONN_ID, SKILL_ID, SKILL_NAME, AGENT_ID, COMMENT</td><td>Obligatorias: AGENT_NAME, DATE, DESCRIPTION_COD_ACT, SKILL_NAME. Opcionales: TIME_SEC, TIME_MIN, COD_ACT, TYPE_INTERACTION, HUNG_UP, SKILL_ID</td></tr>
+  <tr><td>CDR de WhatsApp (Tipificación → WhatsApp)</td><td>Wolkvox, CDR de WhatsApp, export "HistChat" (hoja "HistChat…"). Ruta exacta: pendiente de confirmar con Edwin.</td><td>Las 32 del HistChat, entre ellas CONN_ID, CHANNEL, DATE, DATE_CLOSE, AGENT_NAME, DESCRIPTION_COD_ACT, SKILL_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, CUSTOMER_PHONE y COMMENTS</td><td>Obligatorias: AGENT_NAME, DATE, DESCRIPTION_COD_ACT y SKILL_ID (que se traduce con la tabla de skills; 0 = salida). Opcional: CHANNEL</td></tr>
+  <tr><td>WhatsApp por rangos de tiempo (ORLANT)</td><td>Wolkvox &gt; Reportes &gt; Skills &amp; Servicios &gt; 10. Detalle de llamadas contestadas (fechas del mes, SKILL = ALL)</td><td>SKILL_NAME, DATE, RESULT, ANSWER_TIME y, según el export, CONN_ID, SKILL_ID, ANI y TIEMPO</td><td>SKILL_NAME (solo colas WHATSAPP…), DATE con hora, RESULT (solo ANSWER) y ANSWER_TIME en segundos (también como texto, con apóstrofo o hh:mm:ss)</td></tr>
+  <tr><td>Llamadas de salida (Mobilize)</td><td>Wolkvox &gt; Reportes &gt; CDR: "1. Detalle de las llamadas" (conectadas, solo salida) + "5. Detalle de las llamadas para las no conectadas"</td><td>AGENT_NAME, DATE, TELEPHONE, DESCRIPTION_COD_ACT, TIPO</td><td>Las 5 (TELEPHONE solo en el navegador, nunca se envía)</td></tr>
+  <tr><td>Llamadas Únicas de ingreso (Mobilize)</td><td>Wolkvox &gt; Reportes &gt; CDR: "1. Detalle de las llamadas" (contestadas) + Skills &amp; Servicios: "2. Detalle llamadas abandonadas"</td><td>AGENT_NAME, DATE, TELEPHONE, SKILL_NAME</td><td>Las 4 (TELEPHONE solo en el navegador; AGENT_NAME vacío = abandonada)</td></tr>
+  <tr><td>Calidad: resumen por asesor (Mobilize)</td><td>No es de Wolkvox: la plantilla de Edwin, calculada desde su libro de Monitoreos</td><td>Nombre del Asesor, # Monitoreos, Prom. Puntaje (%), Clasificación, Alerta Críticos, Total Fallos Críticos</td><td>Nombre, # Monitoreos, Puntaje y Fallos (Clasificación y Alerta se recalculan)</td></tr>
+</table>
 </div>
 
 <h2 id="s5">5. Calendario mensual</h2>
@@ -299,6 +327,9 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
   <tr><td>Efectividad de Citas Atendidas</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Llamadas y WhatsApp de salida</td><td>Edwin</td><td>Resumen propio de ORLANT</td><td>Mensual, después de cerrado el mes</td></tr>
   <tr><td>Calidad</td><td>El equipo de Calidad</td><td>Monitoreos propios</td><td>Continuo, a medida que se hacen</td></tr>
+  <tr><td>WhatsApp por rangos de tiempo (ORLANT)</td><td>Edwin</td><td>Wolkvox</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
+  <tr><td>Llamadas de salida y Únicas (Mobilize)</td><td>Edwin</td><td>Wolkvox</td><td><strong>Pendiente de confirmar con Edwin</strong></td></tr>
+  <tr><td>Calidad: resumen por asesor (Mobilize)</td><td>Edwin</td><td>Libro de Monitoreos de Edwin</td><td>Mensual</td></tr>
 </table>
 <p><em>(Las filas en negrita son las que todavía no tienen una frecuencia confirmada — quedan pendientes de que Edwin la precise; el resto ya se confirmó con él.)</em></p>
 
@@ -333,7 +364,7 @@ El mes en curso puede traer menos especialidades que un mes ya cerrado — es no
 <p>Jose David Osorio — (completar).</p>
 
 <a class="back-link" href="/">&larr; Volver a la plataforma</a>
-<footer>SInCo (InConexion®) — Guía de uso — versión 1.30.5</footer>
+<footer>SInCo (InConexion®) — Guía de uso — versión 1.72.3</footer>
 </div>
 </body>
 </html>
