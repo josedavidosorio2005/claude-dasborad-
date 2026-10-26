@@ -16342,3 +16342,409 @@ septiembre y la pestaña de salida, "Eliminar" en el Centro lo quita del MES
 sin recargar y "Deshacer" lo devuelve, sin mover el mes ni la pestaña; filtro
 nuevo del Historial presente; sin desborde a 375/768/1440; 0 errores de
 consola.
+
+## Resúmenes de las Fases 130 a 140 que estaban en PROGRESS.md (movidos en la Fase 178, sin cambios)
+
+`PROGRESS.md` es un resumen corto que se actualiza en el sitio; estos
+apartados eran el estado "en curso" de esas fases y quedaron viejos (todas
+están cerradas; ver el índice de PROGRESS.md). Se copian aquí tal cual para
+no perder nada (la Parte B y C de la Fase 137 solo estaban ahí).
+
+#### Fase 140 (en curso) — Pulido visual (13-oct)
+
+Capa aditiva al final de `public/css/styles.css` (v1.31.0), sin tocar
+tokens, colores de marca, Quicksand ni contrastes de la Fase 133:
+controles con la fuente de marca, filtros de los tableros con estilo
+propio, `.btn-sm` neutro (Excel/PDF), sin franja vacía de `#gd-kpis`,
+bienvenida centrada, entrada escalonada de tarjetas solo al cambiar de
+pestaña. `.atab` no se tocó (sigue esperando "OK limpieza atab"). PR
+abierto, **sin mergear**: el merge despliega a producción y la Fase 139
+dejó los cambios visuales para después del demo de Mobilize. Detalle en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
+#### Fase 139 (en curso) — SInCo, Llamadas Únicas y cierre antes de la presentación (13-oct)
+
+La plataforma se llama **SInCo** (v1.30.0); Llamadas Únicas de Mobilize
+cargada con septiembre real (solo conteos: 88 contestadas / 51
+abandonadas / 139) y en su propia pestaña (v1.30.2). Abiertos al cierre:
+PR #396 (retirar informa, espera que el usuario dispare el modo `quitar`),
+PR #400 (las pestañas ya no saltan al abrir el dashboard, espera "OK
+aviso"), PR #401 (scripts de verificación + guía con capturas nuevas).
+Detalle y las 3 opciones para los 429 de Docker en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
+#### Fase 138 (en curso) — Reunión con Edwin (9-oct): Mobilize/Orlant
+
+4 PRs independientes (detalle narrativo completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+PR1 (#386, v1.27.0) mes "Mes Año" en español en Calidad/Mis Resultados +
+logo provisional de Orlant; PR2 (#387, v1.28.0) Tipificación de Orlant
+igualada a la de Mobilize + ASA y AHT de Mobilize juntos en una sub-
+pestaña; PR3 (#388, v1.29.0) panel **"Llamadas de ingreso únicas"** de
+Mobilize (3 tarjetas + gráfica por mes, deduplicado por día+teléfono,
+privacidad dura del teléfono) — mergeado con datos de demo, el archivo
+real queda esperando un "OK cargar" explícito; PR4 (documentación) guía
+de uso con el paso a paso para sacar de Wolkvox los 3 reportes que arman
+ese archivo. **Deploy de PR3/`main` bloqueado por un 429 de Docker Hub**
+(límite de descargas anónimas de `node:22-bookworm` desde los runners de
+GitHub, no un problema del código) — estado del reintento en
+`docs/historico/progress-fases.md`, Fase 138. Pendientes reales abiertos
+(5 preguntas a Edwin sobre el panel de Llamadas Únicas + la carga real)
+en `docs/pendientes.md`.
+
+#### Fase 137 (en curso) — Cierra lo pendiente que se puede hacer desde el código
+
+**Parte A (cerrada):** cierre retroactivo de la Fase 134 — ver su
+entrada propia más abajo y en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
+**Parte B (F07, cerrada):** en Gestión de Usuarios, los 4 botones del
+mismo peso por fila (Editar/Contraseña/Suspender/Eliminar) se
+reorganizan — "Editar" queda visible como acción principal,
+"Cambiar contraseña"/"Suspender-Activar"/"Eliminar" se agrupan en un
+menú (ícono de 3 puntos, SVG, patrón WAI-ARIA "menu button" —
+`public/js/row-actions.js`, reutilizable). **Ningún permiso cambia** —
+cada acción sigue gateada por exactamente la misma condición de antes
+(`canEdit`/`canPass`/`canSusp`/`canDel`), solo se reorganiza dónde vive
+el botón. Accesible por teclado completo (Enter/flechas/Escape, foco
+vuelve al botón que abrió el menú), objetivos táctiles ≥44px en móvil,
+sin desbordar a 412px — verificado en navegador real (Playwright):
+Escape cierra y devuelve el foco, clic afuera cierra, elegir una acción
+por teclado cierra el menú y dispara la acción real (confirmado con
+"Cambiar contraseña", que abrió el modal de siempre). 17 pruebas
+nuevas (`fase137-f07-menu-acciones-usuarios.test.js`, incluidos 2
+retoques tras el "OK F07": `font-family:inherit` y cierre del menú al
+hacer scroll/redimensionar) + regresión de Fase 133/136 en verde.
+Versión `1.26.0`.
+
+**Incidente real durante el merge de la Parte B**: PR #382 se mergeó
+con un commit viejo — la API de GitHub (`head.sha`) quedó atrasada más
+de 10 minutos tras un push real y confirmado (`git ls-remote`),
+produciendo un deploy a producción sin los 2 retoques del "OK F07".
+Corregido con un PR de fast-follow (#383) en minutos; regla nueva en
+`CLAUDE.md` (`gh pr merge` siempre con `--match-head-commit`, verificado
+contra `git ls-remote` antes).
+
+**Parte C (producción, solo lectura) — hallazgo real confirmado y
+corregido:** `revision-final.js` original falló 2 veces (Fase 136) y una
+3ª vez justo después de este deploy, siempre en el mismo punto (clic en
+la 2ª pestaña de ORLANT, justo después de exportar). **Causa real
+encontrada y reproducida en local** (commit actual vs. el commit justo
+antes del PR #377): el Escape global que cierra modales (F04, Fase 136)
+no distinguía un popup interno (`#gd-export-menu`, el menú de
+"Exportar") de los 6 modales grandes — un Escape de costumbre que
+`revision-final.js` presiona después de exportar (de cuando Escape
+todavía no hacía nada) cerraba el dashboard ENTERO de ORLANT en vez de
+solo el popup (que, confirmado, ya estaba cerrado por su propio botón
+"Excel" en el momento exacto del Escape). Corregido en
+`motion-helpers.js`: un popup interno todavía abierto intercepta Escape
+primero; un popup cerrado hace <400ms por cualquier camino (clic,
+clic afuera, o su propio Escape) deja ese Escape "gastado" sin cascadear
+al overlay. 4 pruebas nuevas que fallan sin el arreglo, confirmadas con
+`git stash`. **Reproducción de punta a punta tras el fix: 0 errores,
+`correrChequeosAdmin()` completo en las 8 pestañas reales.** La
+atribución anterior ("arranque en frío tras deploy") era incorrecta —
+corregida en `docs/pendientes.md`.
+
+#### Fase 136 (cerrada) — Mejoras visuales y movimiento: ejecuta el plan de 8 PRs de la auditoría de la Fase 135
+
+Ejecuta el plan de `docs/auditoria-ui-fase135.md`: jerarquía visual,
+espaciado, tipografía, botones, cards, menús/pestañas, formularios,
+hover/focus/active, transiciones entre secciones y microinteracciones,
+movimiento suave y sobrio — sin cambiar ningún número ni empeorar lo
+logrado en la Fase 133 (contraste AA, foco visible, objetivos táctiles,
+`prefers-reduced-motion`). 9 PRs de código (#369-#377, detalle completo
+de cada uno en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+F01 (pestañas de ORLANT no se superponen en móvil), F02 (CLS real al
+abrir Calidad/Cargar Datos, de 0.81 a reservado), tokens de espaciado/
+radios/sombras, base de movimiento (tokens + interruptor
+`data-motion="off"`, **sin vendorizar** `motion` — medido en 49 KB gzip
+real, más del doble de lo estimado en la Fase 135, sin necesitarlo para
+los 2 casos de uso reales), componentes base (botones/formularios/menú
+lateral), F03 (transición entre pestañas + configuración central de
+animación de Chart.js, antes 0 módulos la configuraban), F09
+(microinteracciones + "Sin datos" consistente), F08+F11 (toast de error
+en login antes de iniciar sesión corregido; pantalla completa
+verificada), y F04 (**PR 8, el de mayor riesgo**: los 6 modales/overlays
+de la plataforma comparten entrada/salida animada + Escape nuevo,
+aprobado con "OK modales" tras 2 condiciones resueltas en el mismo PR —
+estado base ahora visible por *progressive enhancement*, y ya no se
+oculta un modal que se reabrió durante su propia salida). PR 9
+(aparición al scroll) se descartó explícitamente — sin candidato real,
+tal como anticipaba la propia auditoría.
+
+**Verificación de cierre en producción** (2026-10-09, solo lectura,
+Playwright visible, sesión real del usuario): confirmado en vivo 0
+errores de consola/peticiones fallidas en MOBILIZE (3 pestañas, claro y
+oscuro), tema oscuro, los 3 modales del PR 8 con Escape, y F01 en móvil
+412px. **Un hallazgo real sin resolver** quedó documentado en
+`docs/pendientes.md` §4: el chequeo de datos/canvas de
+`revision-final.js` (sin relación con el PR 8) falló al cambiar de
+pestaña en ORLANT con datos reales (no reproduce en local) — se
+encontró `transition:all` en `.atab`, preexistente a esta fase, como
+sospechoso principal, sin confirmar la causa exacta todavía. La cuenta
+CLIENTES_DASH sigue sin verificar (contraseña temporal pendiente de
+InCo). F07 y F10 (fuera de alcance, decisión explícita del usuario)
+quedan en `docs/pendientes.md` §3.
+
+Versión final `1.25.0`.
+
+#### Fase 135 (cerrada) — Auditoría completa de UI/UX y movimiento (solo auditoría, nada del producto cambió)
+
+Pedido: auditar jerarquía/espaciado/tipografía/componentes/estados,
+decidir qué librería de movimiento usar, y dejar un informe + capturas
+demo para que el usuario decida la Fase 136 — **sin tocar código del
+producto, sin instalar nada, sin tocar producción**. Entregable:
+[`docs/auditoria-ui-fase135.md`](docs/auditoria-ui-fase135.md) (resumen
+ejecutivo, decisión de librería con números reales, inventario de
+consistencia contado con `grep`, 13 hallazgos con evidencia, línea base
+de rendimiento medida con CDP, especificación de movimiento y plan de 8
+PRs temáticos para la Fase 136) + 49 capturas en
+`docs/capturas-demo/fase135-antes/` (seed:demo, nunca producción).
+
+**Paso 1 (librería):** confirmado con números reales (descarga en una
+carpeta temporal fuera del repo, borrada al terminar) que `motion`
+(sucesor JS-plano de Framer Motion) vendorizado pesa **22 KB gzip**,
+encaja en `public/js/vendor/` igual que Chart.js, sin tocar la CSP actual
+(`scriptSrc 'self'`). Recomendación: CSS puro para hover/focus/active/tap
++ `motion` vendorizado para aparición al scroll/entradas escalonadas;
+migrar a React queda documentado como descartado (esfuerzo/riesgo, sin
+beneficio que `motion` no dé ya).
+
+**Hallazgos más relevantes:** bug real de responsive (pestañas de ORLANT
+se superponen a 412px, severidad alta), CLS de 0.81 al abrir un dashboard
+(0 tareas largas >50ms — el salto es de layout, no de JavaScript lento),
+Chart.js sin configuración de animación propia en ningún módulo (usa el
+default ~1000ms en cada refresco), 5 sistemas de modal/overlay
+independientes sin una sola transición compartida, y sin escala de
+espaciado/radios/sombras (60 valores de `padding` distintos, 20 de
+`border-radius`, pese a que ya existen 65 tokens de color/tipografía
+desde la Fase 133). `ui-ux-pro-max-skill` (pedida como guía principal) no
+está instalada — documentado el hueco y el comando sugerido, sin
+instalarla. Detalle completo, con la discrepancia real encontrada entre
+las pestañas que el pedido asumía y las que existen hoy en ORLANT/
+Mobilize, en `docs/auditoria-ui-fase135.md`.
+
+Esta fase **no cambia la versión de la app** (1.21.0 sin cambios) — no
+tocó código del producto, solo documentación y capturas demo.
+
+#### Fase 131 (cerrada) — Cliente Mobilize: Flujo de Llamadas, Tipificación CDR, "Última actualización"
+
+Partes 1, 2, 3, 4 y 6 (detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+cliente renombrado de "MOVILIZE" a "MOBILIZE" en todo el código y en
+producción (migración idempotente, sin que nadie perdiera acceso);
+pestaña "Flujo de Llamadas" reusando el motor de Tráfico de ORLANT;
+pestaña "Tipificación" reusando el motor de ORLANT (CDR, 5 columnas
+nuevas opcionales); "Última actualización" visible en cada dashboard
+(naranja Mobilize, verde de marca el resto). Carga real de
+septiembre/2026 hecha y verificada contra producción en las 2 bases
+(Flujo de Llamadas 27 filas, Tipificación 167 filas tras excluir
+"PRUEBA"). La Parte 5 (marca InConexion®) se separó como **Fase 132** al
+llegar los archivos de diseño.
+
+#### Fase 132 (cerrada) — Marca InConexion®: logo, colores oficiales y tipografía
+
+Cambio puramente visual (detalle completo en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)):
+logo real (con el símbolo de red y el ®) en login/navbar/bienvenida, con
+versión clara/oscura donde el fondo cambia de verdad con el tema;
+favicon nuevo; `--c-brand` (navbar/botones/headers) pasa al teal OFICIAL
+muestreado del logo (`#004150`, mejora el contraste con texto blanco);
+tipografía Quicksand autoalojada (nunca Google Fonts), 4 pesos, ~61KB.
+`--c-primary` (texto en >100 reglas) se dejó intacto a propósito — ya
+era casi idéntico, tocarlo no aportaba nada visible. 10 pruebas nuevas
++ suite completa 1321/1321, `npm audit` en 0, auditoría amplia local
+(`scripts/qa/auditoria-amplia-local.js`) en 0 hallazgos, capturas
+Playwright propias revisadas una por una (claro/oscuro/1366×768/móvil).
+2 hallazgos de contraste **pre-existentes** encontrados y NO corregidos
+(fuera de alcance de esta fase, pertenecen a la Fase 121 de diseño/
+accesibilidad): `.toast`/`.btn-login`/`.btn-primary` en tema oscuro, y
+el encabezado del dashboard montándose en móvil — ambos confirmados
+idénticos con la letra vieja, no los causó este cambio.
+
+#### Fase 130 (cerrada) — Calidad real de septiembre, pedidos de la reunión del 2026-10-07, y el limitador de tasa que bloqueaba oficinas enteras
+
+Pedido original: seguir la carga real de Calidad de ORLANT (95
+monitoreos de septiembre/2026) + varios pedidos puntuales de la reunión
+con Edwin del 2026-10-07 + cierre con verificación completa en
+producción. 8 PRs (#336-#343):
+
+- **Parte 2** (#336, v1.15.2): Inasistencia acepta el encabezado real
+  "FECHA CITA" (con espacio, alias del ya existente) y normaliza "SEDE
+  34 (AUDIFONOS)" a "SEDE 34" (antes quedaba partida en 2 valores de
+  filtro). Verificado contra el archivo real por fuera del repo (lector
+  independiente, sin SheetJS): Ago 11.189/2.459/786/48/7.896/18
+  especialidades, Sep 12.194/2.416/749/61/8.968/19 especialidades.
+- **Parte 3** (#339, v1.15.4): pedido explícito de Edwin ("quitar esos
+  comentarios") — el aviso naranja de mes "incompleto" en Inasistencia
+  se quitó: con archivos reales completos mes a mes, que un mes tenga
+  menos especialidades que otro es variación de negocio normal, no un
+  dato faltante. Los avisos "parcial" y "sin datos por el filtro" se
+  mantienen, siguen siendo útiles.
+- **Parte 4** (#337, v1.15.3): la carga masiva de Calidad reconoce la
+  plantilla real de Edwin (encabezado agrupado antes del real, "Nombre
+  del Asesor" en vez de "ASESOR", cada ítem numerado con su peso y los
+  críticos con emoji) — detecta el encabezado real aunque no esté en la
+  fila 0, empareja cada ítem por su número ignorando emoji/salto de
+  línea/peso.
+- **Cierre de scripts** (#338): subió trabajo de una sesión anterior que
+  había quedado commiteado localmente sin PR — `revision-final.js`
+  extendido (Inasistencia completa ago+sep, meses exactos
+  `['2026-08','2026-09']`, "SEDE 34" única) + 6 scripts de un solo uso
+  (inventario de meses, borrado real de Tipificación de WhatsApp de
+  julio — 71 filas confirmadas por 2 caminos independientes —, carga
+  real de Inasistencia ago-sep). Corregido por construcción: uno de los
+  6 scripts reinventaba su propio bloqueador de red de dry-run en vez de
+  usar `lib/dry-run-seguro.js` (regla fija desde el incidente de la Fase
+  129) — se generalizó el helper con un allowlist de rutas adicionales.
+- **Cierre carga Calidad** (#340, v1.15.5): hallazgo real al intentar la
+  carga de los 95 monitoreos reales — el archivo trae, muy por debajo de
+  los datos reales, ~126 filas de plantilla con la fórmula del puntaje
+  ya copiada pero nunca diligenciada (sin asesor), y eso tumbaba TODA la
+  hoja ("no tiene datos en ninguna hoja reconocida"). Corregido por
+  construcción: una celda con fórmula sin valor solo cuenta como error
+  si su fila SÍ tiene el campo identificador (asesor) lleno — una fila
+  de plantilla vacía nunca lo tiene, una fila real rota siempre lo tiene.
+- **Cierre observaciones** (#341, v1.15.6): segundo hallazgo real de la
+  misma carga — el campo "Observaciones" rechazaba notas de más de 200
+  caracteres (4 de las 95 filas reales superan ese límite, máximo real
+  235). Subido a 500 caracteres, mismo límite que ya usa Inventario. De
+  paso, corrigió un bug del propio script de cierre (no de la app): su
+  bloqueador de red comparaba la ruta `/monitoreos/bulk` literal, pero
+  el servidor la expone bajo `/api` — abortaba el guardado real
+  disfrazado de "no se pudo conectar con el servidor".
+- **Nueva gráfica** (#342, v1.16.0): pedido de Edwin — en Calidad, además
+  de los indicadores y la torta de siempre, una barra horizontal con el
+  nombre de cada asesor y su % promedio de puntaje (sin número de
+  monitoreos), respetando el mismo filtro de mes que sus 2 hermanos.
+  Aprobado con 3 condiciones (acceso igual al resto del dashboard,
+  selector de mes respetado por construcción, probado con datos
+  ficticios antes de tocar producción) — las 3 confirmadas.
+
+**Verificación de cierre** (continuación de esta misma fase,
+2026-10-07): al retomarla, los 95 monitoreos reales de septiembre YA
+estaban en producción (confirmado solo lectura: 95 total / 19 asesores
+distintos / 1 evaluador / 94,79 % promedio — 82 sobresaliente, 13 no
+crítico, 0 crítico — exacto contra lo esperado), así que no hizo falta
+cargar nada en esta sesión.
+
+- **Parte 7** (#343, v1.16.1) — hallazgo real: `revision-final.js`
+  agotó el límite de tasa global de la API (300 peticiones/15min, SOLO
+  por IP) a mitad de una corrida, el mismo día que el usuario reportó
+  que varios clientes reales veían "demasiadas peticiones"/"demasiados
+  intentos" en el uso normal. Diagnóstico (solo lectura, con login
+  real): `trust proxy` ya estaba bien configurado (confirmado contra
+  producción: la IP que ve el servidor es la real del cliente, no la
+  interna de Caddy) — la causa real era contar solo por IP, así que una
+  oficina entera comparte un único cupo. Corregido: el límite general de
+  la API se dividió en 2 cupos mutuamente excluyentes (autenticado por
+  USUARIO, 1.500/15min por defecto; sin sesión por IP, sin cambios,
+  300/15min); el login ahora cuenta por IP + usuario intentado (antes
+  solo IP), con el máximo bajado de 20 a 10 (ya no hace falta un número
+  alto por usuario) y un mensaje que dice los minutos exactos que faltan
+  para reintentar. 2 tests nuevos confirman que 2 usuarios distintos
+  desde la misma IP ya no se bloquean entre sí (en login y en la API
+  general). Desplegado y confirmado en producción (`/api/health` →
+  `1.16.1`).
+- **Verificación final con `revision-final.js`** (después del deploy de
+  la Parte 7): el bloque ADMIN corrió 2 veces, idéntico — `ok:true`, 0
+  discrepancias en los números de control, 0 canvas en blanco, 0
+  errores de consola, exports disparados en las 8 pestañas, integridad
+  de Inasistencia correcta (solo ago-sep, "SEDE 34" única). El bloque
+  CLIENTES_DASH tuvo 2 traspiés reales antes de completarse: en las
+  primeras 2 corridas de esta misma sesión, la segunda ventana no llegó
+  a completarse porque la cuota de tasa (recién diagnosticada en la
+  Parte 7) se agotó a mitad de camino; ya con el fix desplegado, las 2
+  primeras aperturas de la ventana del cliente detectaron por error la
+  cuenta de ADMINISTRADOR (autocompletado del navegador llenando el
+  usuario "admin" antes de que se corrigiera a mano — el mismo patrón ya
+  documentado en el propio script desde la Fase 119). Al tercer intento,
+  CLIENTES_DASH se verificó completo: `ok:true`, las 8 pestañas
+  visibles, 0 canvas en blanco, 0 avisos de demo, "Llamadas y WhatsApp
+  de salida" junto a "Tráfico de WhatsApp", Calidad visible con los 95
+  monitoreos (sin nombres), cambio de contraseña visible y rechaza una
+  contraseña actual incorrecta, las 7 rutas de escalada de privilegios
+  probadas bloqueadas con 403, 0 errores de consola.
+
+**No verificado / pendiente de decisión en esta fase** (anotado en
+`docs/pendientes.md`, con dueño y prioridad):
+- 19 asesores reales de Calidad de septiembre sin usuario ASESOR en la
+  plataforma (dueño InCo/Edwin) — la carga masiva nunca los exige.
+- `# Teléfono` e `ID/Llamada-Wpp` guardados en `monitoreos` — decisión
+  del usuario 2026-10-07: dejarlo así por ahora, sin tocar.
+- Preguntas abiertas de "Llamadas y WhatsApp de salida" (denominador del
+  %, si "3P" significa lo mismo que en el resto de la plataforma,
+  acumulado del período) — esperando respuesta de Edwin.
+- Export a Excel del panel nuevo de Calidad — decisión pendiente,
+  excluido del botón "Exportar" a propósito (superficie de privacidad
+  nueva que nadie pidió todavía).
+- Riesgo residual del limitador de tasa: el tráfico SIN sesión (login,
+  `/health`) sigue contando por IP, sin cambios — 3 opciones anotadas
+  para una decisión futura si hace falta cerrarlo también.
+
+Versión final `1.16.1`. Detalle narrativo completo (incluidos los 2
+traspiés de la verificación, con su causa exacta) en
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md).
+
+(Fase 129 — detalle narrativo movido a
+[`docs/historico/progress-fases.md`](docs/historico/progress-fases.md)
+al cerrar la Fase 136, para no dejar crecer este resumen sin límite —
+ver su línea en el índice más abajo.)
+
+### Fase 178 — deploy, revisión preventiva y documentación (2026-10-26)
+
+**Deploy (Parte 1).** PR #542 mergeado con `--match-head-commit` (SHA de
+`git ls-remote` = `head.sha` de la API = local); CI (Node 22, docker-build,
+pantallas) y deploy en verde a la primera. `/api/health` → `1.72.3`. Sin
+sesión, solo lectura: el `index.html` servido trae el filtro "Cuenta
+bloqueada por intentos"; `dashboard-generic.js` trae `gdDatosCambiaron`,
+`_gdBootstrap(conservar)` y los meses de las fuentes nuevas;
+`centro-cargas.js` llama al refresco; `/api/umbrales` y las rutas de datos
+siguen en 401 sin sesión. La revisión con sesión (umbrales vistos por un
+usuario cliente, tablero tras Deshacer) queda para cuando el usuario
+inicie sesión; no se probó el límite de login contra producción (sería una
+prueba agresiva y dejaría una cuenta bloqueada una hora).
+
+**Revisión preventiva (Parte 2, solo lectura).**
+- **Respaldo**: diario a las 03:15 (hora del servidor,
+  `inconexion-backup.timer`, activo y habilitado), copia local con 14
+  retenidas + subida a S3 (bucket con versionado). Última corrida revisada
+  (salud del 25/10): respaldo de 11 h, 31,7 MB, servicio `success`, S3 OK.
+  Restauración probada el 16/10 con la copia local
+  (`verificar-restore-backup-produccion.yml`: `integrity_check` ok). La
+  prueba desde S3 sigue bloqueada por la Política 1 de IAM.
+- **Logs**: `verificar-logs-produccion.yml` (CloudWatch, solo lectura,
+  120 h) falló con `AccessDenied`: el rol de deploy de la cuenta actual no
+  tiene `logs:FilterLogEvents`. No hubo forma de revisar errores 500 sin
+  ampliar permisos (no se tocó IAM). Anotado en `docs/pendientes.md`.
+- **Servidor** (salud del 25/10): disco del sistema 12 %, de datos 3 %,
+  memoria 39 % (363 de 913 MB), 3 imágenes Docker (770 MB), base 31,7 MB.
+- **Certificado**: Let's Encrypt, vence el 07/01/2027 (73 días); Caddy lo
+  renueva solo.
+- **Monitor externo**: OK cada 15 min, 557 ms, versión correcta.
+- **Node y dependencias**: imagen `node:22-bookworm` (Node 22 sale de
+  soporte el 30/04/2027); `npm audit` 0; menores disponibles (express
+  5.3.0 y otros), mayores congeladas (`better-sqlite3` 13, `dotenv` 18).
+- **Pruebas que faltaban** (Fases 165–177): 8 nuevas en
+  `fase178-casos-borde.test.js` (ya en #542). Encontrado al probar, sin
+  cambiar código: el lector del Resumen de calidad toma una fila "TOTAL"
+  con números como un asesor más (anotado en pendientes).
+
+**Documentación (Parte 3).** Guía de uso (md y HTML servido, mismo
+contenido) al día con las Fases 165–178: versión 1.72.3, Centro de cargas
+con Deshacer/Eliminar, versión para celular, tablero de Mobilize con sus 5
+pestañas, reglas de salida (`out_pre`, no conectada por cliente, por
+registro), salida del CDR con la línea de cada asesor, Resumen de calidad
+de Mobilize, Llamadas de salida de Mobilize (TIPO, cada fila cuenta, "Sin
+asesor"), abandonadas de ingreso, bloqueo por intentos, calendario con las
+bases nuevas y una tabla de las plantillas nuevas (de dónde se descargan
+en Wolkvox, qué columnas traen y cuáles se leen). `PROGRESS.md`: estado
+actual y números de control al día; los apartados "(en curso)" de las
+Fases 130–140 pasaron a esta bitácora (justo antes de esta entrada, tal cual).
+`README.md`: clientes y pestañas de Mobilize. `docs/pendientes.md`: salen
+los ya resueltos (relojes simulados de la Fase 136, `revision-final.js`
+elige el mes y `*.pem` en `.gitignore`, todos de la Fase 146; abandonadas
+de ingreso de Mobilize, Fase 163; CSP duplicado) y entran los hallazgos de
+la Parte 2.
