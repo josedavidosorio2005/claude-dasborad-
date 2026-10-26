@@ -70,6 +70,31 @@ const loginLimiter = rateLimit({
   handler: manejarLoginBloqueado,
 });
 
+// Fase 178 (punto 6 de la auditoria de v1.72.1): loginLimiter cuenta por IP +
+// usuario, asi que muchas IP contra UNA cuenta no tenian tope. Este segundo
+// limite cuenta solo por el usuario intentado (fallidos, ventana mas larga).
+// Responde el mismo 429 que el otro y, la primera vez que bloquea en la
+// ventana, deja "LOGIN_BLOQUEADO" en el Historial (no uno por intento).
+function usuarioIntentado(req) {
+  return typeof req.body?.user === 'string' ? req.body.user.trim().toLowerCase().slice(0, 100) : '';
+}
+const loginLimiterPorUsuario = rateLimit({
+  windowMs: config.loginRateLimit.usuarioWindowMs,
+  max: config.loginRateLimit.usuarioMax,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: (req) => `usuario:${usuarioIntentado(req)}`,
+  handler: (req, res, next, options) => {
+    const rl = req.rateLimit || {};
+    if (rl.used === rl.limit + 1) {
+      registrarLogin(req, 'LOGIN_BLOQUEADO', { nombre: '-', user: usuarioIntentado(req), rol: '-' },
+        `${rl.limit} intentos fallidos en ${Math.round(options.windowMs / 60000)} min: cuenta bloqueada para iniciar sesion hasta que pase la ventana`);
+    }
+    manejarLoginBloqueado(req, res, next, options);
+  },
+});
+
 // Fase 113 (tema A): cada intento de login queda en el Historial (exitoso o
 // fallido), visible SOLO para el administrador completo (ver
 // routes/historial.js). El mensaje de error que recibe quien intenta
@@ -90,6 +115,7 @@ function registrarLogin(req, accion, targetRow, detalle) {
 router.post(
   '/auth/login',
   loginLimiter,
+  loginLimiterPorUsuario,
   validate(schemas.loginBody),
   wrap(async (req, res) => {
     const { user, password } = req.body;

@@ -1478,6 +1478,9 @@ async function guardarCarga(){
   showToast(resumen.join('\n'));
   cancelarPreviewCarga();
   renderCargasExistentes();
+  // Fase 178: el tablero abierto de ese cliente vuelve a pedir sus datos
+  // (mismo MES, MESES y pestaña), como tras Deshacer / Eliminar.
+  if(resumen.some(function(t){ return t.indexOf('✓') === 0; }) && typeof gdDatosCambiaron === 'function') gdDatosCambiaron(cliente);
 }
 
 async function renderCargasExistentes(){

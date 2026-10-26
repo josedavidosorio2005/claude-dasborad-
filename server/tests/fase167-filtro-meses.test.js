@@ -74,7 +74,8 @@ test('dashboard-generic.js: marcar un mes no redibuja la lista (el foco sigue en
   assert.match(extraer(src, 'function onGdMesesChange()'), /_gdMesesBoton\(\);\s*renderGenericTab\(_gd\.tab\);/);
   // Escape en fase de captura: llega antes que el de los modales (motion-helpers.js).
   assert.match(src, /if\(e\.key !== 'Escape' \|\| !det \|\| !det\.open\) return;\s*e\.stopPropagation\(\);[\s\S]*?\}, true\);/);
-  assert.match(extraer(src, 'async function _gdBootstrap()'), /_gd\.mesesSel = \[\];/, 'cada tablero abre con todos los meses');
+  // Fase 178: sin `conservar` (al abrir el tablero), todos los meses.
+  assert.match(extraer(src, 'async function _gdBootstrap(conservar)'), /_gd\.mesesSel = conservar \? conservar\.mesesSel : \[\];/, 'cada tablero abre con todos los meses');
   assert.doesNotMatch(extraer(src, 'function onGdMesesChange()'), /renderGenericKpis/, 'las tarjetas de arriba no cambian');
 });
 

@@ -293,19 +293,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
-  quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177).
+  quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;
+  el 4, el 6, el 9 y el refresco tras Deshacer / Eliminar, en la Fase 178).
   Ninguno es de gravedad alta; nada se aplica sin pedirlo:
-  - **(4, baja) Meses del tablero incompletos**: los meses que solo tienen
-    Resumen de calidad, Encuesta o WhatsApp por rangos no entran en el
-    selector MES ni en el filtro "Meses" (`_gd.periodos`,
-    `public/js/dashboard-generic.js`). Hoy no se nota: ORLANT y Mobilize
-    tienen tráfico en los mismos meses. Cómo: sumar los meses de esas
-    `/opciones` a la unión de periodos. Costo: bajo.
-  - **(6, baja) Login sin tope por cuenta**: el límite es de 10 intentos
-    fallidos por IP y usuario cada 15 min (`server/routes/auth.js`); un
-    intento repartido entre muchas IP contra una sola cuenta no tiene tope
-    ni bloqueo temporal. Cómo: un segundo límite solo por usuario (ej. 30
-    fallidos por hora) y aviso en el Historial. Costo: bajo.
   - **(7, baja) Sesión del administrador maestro sin versión**: no hay forma
     de cerrar a la vez todas sus sesiones abiertas; cada una vence a las 8 h
     o al cerrar sesión en ese equipo (`server/auth.js`, `getActor`). Cómo:
@@ -316,16 +306,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     nuevo escapa con `esc()`, pero un XSS futuro podría leer el token en
     memoria. Cómo: pasar los `onclick` a eventos registrados desde el JS y
     quitar `'unsafe-inline'`. Costo: alto (toca casi toda la interfaz).
-  - **(9, baja) `GET /umbrales` sin filtro por cliente**
-    (`server/routes/umbrales.js`): cualquier usuario con sesión ve los
-    umbrales del semáforo de todos los clientes (solo configuración, no
-    datos). Cómo: filtrar con `campaignAccess`. Costo: bajo.
-  - **(nuevo, baja) Deshacer / Eliminar del Centro de cargas no refrescan
-    los paneles ya abiertos**: después de deshacer o eliminar un mes, los
-    caches de opciones del navegador (`_tipificacionOpciones`,
-    `_salOpciones`, etc.) siguen con los meses de antes hasta recargar la
-    página (`public/js/centro-cargas.js`). Mismo tipo de arreglo que el
-    punto 5 de la Fase 177. Costo: bajo.
 
 - **Mapa de calor por hora (fase futura)** — Tipificación guarda la hora
   de cada registro (`tipificaciones.hora`). Falta contar en producción,

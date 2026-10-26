@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.3 — Octubre 2026
+
+**Fase 178: arreglos preventivos.**
+
+- Centro de cargas: después de **Deshacer** o **Eliminar** un mes (y también
+  después de cargar), el tablero que está abierto detrás se actualiza solo,
+  sin recargar la página. Se queda en el mismo mes y la misma pestaña.
+- El selector MES y el filtro "Meses" ahora incluyen los meses que solo
+  tienen Resumen de calidad, Encuesta, WhatsApp por rangos o Llamadas de
+  salida. Antes, un mes así no se podía elegir arriba.
+- Umbrales del semáforo: cada usuario ve solo los de los clientes a los que
+  tiene acceso (más los generales). El administrador sigue viendo todos.
+- Inicio de sesión más seguro: si una misma cuenta acumula 30 intentos
+  fallidos en una hora (aunque vengan de computadores distintos), queda
+  bloqueada para iniciar sesión hasta que pase la hora. Queda un aviso
+  "Cuenta bloqueada por intentos" en el Historial. El límite de siempre (10
+  intentos por computador y usuario cada 15 minutos) no cambia.
+
 ## v1.72.2 — Octubre 2026
 
 **Fase 177: arreglos de la revisión de errores y seguridad.**
