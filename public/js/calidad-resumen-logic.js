@@ -89,6 +89,15 @@ function _calidadResumenFilasConError(ws) {
 }
 
 // Devuelve { error } si falta una columna obligatoria. Si no:
+// Fase 179: fila de totales al final de la plantilla ("TOTAL", "Promedio
+// general", "Gran total"...): no es un asesor; contarla duplicaba los
+// monitoreos del mes.
+var CALIDAD_RESUMEN_FILA_TOTAL_RE = /^(GRAN )?(TOTAL|TOTALES|PROMEDIO|PROMEDIOS)( GENERAL| GENERALES| DEL MES)?:?$/;
+function calidadResumenEsFilaTotal(nombre) {
+  var n = String(nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+  return CALIDAD_RESUMEN_FILA_TOTAL_RE.test(n);
+}
+
 // { filas: [[agente, monitoreos, puntaje, fallos]], avisos, sinCalcular,
 //   monitoreos (total), promedio (ponderado por monitoreos) }.
 function calidadResumenParseFilas(aoa, ws) {
@@ -102,11 +111,13 @@ function calidadResumenParseFilas(aoa, ws) {
   var filas = [];
   var sinCalcular = [];
   var repetidos = [];
+  var totales = [];
   var vistos = {};
   for (var i = 1; i < aoa.length; i++) {
     var row = aoa[i] || [];
     var agente = String(row[map.agente] == null ? '' : row[map.agente]).trim().replace(/\s+/g, ' ');
     if (!agente) continue; // fila sin asesor = fila vacia de la plantilla
+    if (calidadResumenEsFilaTotal(agente)) { totales.push(i + 1); continue; } // Fase 179
     var mon = _calidadResumenNumero(row[map.monitoreos]);
     var pun = _calidadResumenNumero(row[map.puntaje]);
     var fal = _calidadResumenNumero(row[map.fallos]);
@@ -130,6 +141,7 @@ function calidadResumenParseFilas(aoa, ws) {
     avisos.push(sinCalcular.length + ' asesor(es) con # Monitoreos, Puntaje o Fallos en error o sin valor, se omitieron (filas ' +
       sinCalcular.slice(0, 5).join(', ') + (sinCalcular.length > 5 ? ' y ' + (sinCalcular.length - 5) + ' más' : '') + '). ' + CALIDAD_RESUMEN_MSG_FORMULAS);
   }
+  if (totales.length) avisos.push(totales.length + ' fila(s) de total o promedio, no son asesores: se omitieron (filas ' + totales.join(', ') + ').');
   if (repetidos.length) avisos.push(repetidos.length + ' asesor(es) repetido(s), se dejo la primera fila de cada uno (filas ' + repetidos.join(', ') + ').');
   var total = filas.reduce(function (a, f) { return a + f[1]; }, 0);
   var suma = filas.reduce(function (a, f) { return a + f[1] * f[2]; }, 0);
@@ -149,5 +161,6 @@ if (typeof module !== 'undefined' && module.exports) {
     calidadResumenNivelClasificacion: calidadResumenNivelClasificacion,
     calidadResumenNivelAlerta: calidadResumenNivelAlerta,
     calidadResumenParseFilas: calidadResumenParseFilas,
+    calidadResumenEsFilaTotal: calidadResumenEsFilaTotal,
   };
 }

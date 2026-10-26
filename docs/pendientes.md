@@ -324,12 +324,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     lectura a los 2 grupos de logs (IAM, necesita tu OK) o agregar a
     `salud-servidor.yml` un conteo de líneas 5xx de `docker logs` (solo
     números). Costo: bajo.
-  - **(baja) Resumen de calidad: una fila de totales cuenta como asesor**:
-    si la plantilla de Edwin trae al final una fila "TOTAL" o "Promedio" con
-    números, el lector la toma como un asesor más (duplica los monitoreos
-    del mes). El archivo real de octubre no la trae. Cómo: omitir filas
-    cuyo nombre sea TOTAL/PROMEDIO/TOTAL GENERAL, con aviso
-    (`public/js/calidad-resumen-logic.js`). Costo: bajo.
   - **(baja) El tope de login por usuario se puede usar para bloquear una
     cuenta conocida** durante 1 hora (30 intentos fallidos desde cualquier
     lado, Fase 178), también la del administrador maestro. Es el costo

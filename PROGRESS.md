@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.72.3` (ver `server/package.json`, expuesta en
+- **Versión**: `1.72.4` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -279,3 +279,4 @@ mismo orden):
 - Fase 176 — Tablero en el celular (ajuste): a 375 px "Última actualización" en corto ("Act. 24/10 08:30") y el subtítulo sin " — CLIENTE", cada uno en una línea; encabezado de 166–180 a ~151 px en ORLANT y Mobilize; escritorio y tablet idénticos píxel a píxel (v1.72.1, 2026-10-24)
 - Fase 177 — Arreglos de la auditoría de bugs y seguridad de v1.72.1: "-" del CDR es salida solo con `outbound_ma`/`out_pre` (septiembre de ORLANT sin cambios, 10.791), meses 01–12, puntaje en fracción del Resumen de calidad, caches de Tipificación y Salida tras cargar; el resto, a `docs/pendientes.md` (v1.72.2, 2026-10-24)
 - Fase 178 — Arreglos preventivos: Deshacer / Eliminar del Centro de cargas (y la carga) vuelven a armar el tablero abierto con el mismo MES, MESES y pestaña; los meses que solo tienen Resumen de calidad, Encuesta, WhatsApp por rangos o Llamadas de salida entran en el MES y en MESES; `GET /umbrales` filtrado por los clientes de cada usuario; segundo límite de login solo por usuario (30 fallidos por hora) con "LOGIN_BLOQUEADO" en el Historial; pruebas de casos de borde de las Fases 165–177; revisión preventiva (respaldo, certificado, disco, Node; logs sin permiso de lectura) y guía de uso al día con las Fases 165–178 (v1.72.3, 2026-10-26)
+- Fase 179 — Resumen de calidad: las filas TOTAL / PROMEDIO (y variantes) al final de la plantilla se omiten con aviso en vez de contarse como asesor (v1.72.4, 2026-10-26)

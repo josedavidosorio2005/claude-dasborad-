@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.72.4 — Octubre 2026
+
+**Fase 179: el Resumen de calidad ignora las filas de total.**
+
+- Si la plantilla de calidad trae al final una fila "TOTAL", "Promedio
+  general" o parecida, ya no se cuenta como un asesor más (antes duplicaba
+  los monitoreos del mes). La vista previa avisa cuántas filas se omitieron.
+
 ## v1.72.3 — Octubre 2026
 
 **Fase 178: arreglos preventivos.**
