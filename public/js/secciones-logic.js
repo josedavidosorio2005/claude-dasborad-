@@ -37,8 +37,12 @@ function gdClaseSeccion(seccion) {
 // salida" (pedido de Edwin).
 function gdGraficaHtml(tituloHtml, contenidoHtml, opciones) {
   var clase = 'gd-grafica-titulo' + (opciones && opciones.destacado ? ' gd-grafica-titulo-destacado' : '');
+  var titulo = tituloHtml ? '<h3 class="' + clase + '">' + tituloHtml + '</h3>' : '';
+  // Fase 189: `acciones` = controles de la grafica en su cabecera (a la derecha
+  // del titulo; en el celular, debajo). Sin la opcion, igual que siempre.
+  if (opciones && opciones.acciones) titulo = '<div class="gd-grafica-cab">' + titulo + opciones.acciones + '</div>';
   return '<section class="gd-grafica">' +
-    (tituloHtml ? '<h3 class="' + clase + '">' + tituloHtml + '</h3>' : '') +
+    titulo +
     contenidoHtml +
     '</section>';
 }

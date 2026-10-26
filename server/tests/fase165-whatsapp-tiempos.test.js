@@ -154,8 +154,9 @@ test('"Llamadas de salida" y "WhatsApp de salida" van con el titulo destacado (-
   assert.equal(gdGraficaHtml('X', '<p></p>'), '<section class="gd-grafica"><h3 class="gd-grafica-titulo">X</h3><p></p></section>');
   assert.match(gdGraficaHtml('X', '', { destacado: true }), /<h3 class="gd-grafica-titulo gd-grafica-titulo-destacado">X<\/h3>/);
   const salida = fs.readFileSync(path.join(RAIZ, 'public', 'js', 'salida.js'), 'utf8');
-  assert.match(salida, /gdGraficaHtml\('Llamadas de salida', [^\n]*, \{ destacado: true \}\);/);
-  assert.match(salida, /gdGraficaHtml\('WhatsApp de salida', [^\n]*, \{ destacado: true \}\);/);
+  // Fase 189: ademas, los botones de linea en la cabecera (acciones).
+  assert.match(salida, /gdGraficaHtml\('Llamadas de salida', [^\n]*, \{ destacado: true, acciones: [^\n]*\}\);/);
+  assert.match(salida, /gdGraficaHtml\('WhatsApp de salida', [^\n]*, \{ destacado: true, acciones: [^\n]*\}\);/);
   const css = fs.readFileSync(path.join(RAIZ, 'public', 'css', 'styles.css'), 'utf8');
   assert.match(css, /\.gd-grafica-titulo-destacado\{ font-size:var\(--fs-h3\); font-weight:var\(--fw-bold\); \}/);
 });

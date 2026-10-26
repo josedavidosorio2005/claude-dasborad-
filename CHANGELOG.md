@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.78.0 — Octubre 2026
+
+**Fase 189: los botones de línea van en cada gráfica (pedido de Edwin).**
+
+- Los botones "Total", "Línea General" y "Línea 3P" ya no están arriba de
+  la pestaña: cada gráfica (llamadas y WhatsApp) tiene los suyos en su
+  cabecera, con el mismo estilo de las demás gráficas del tablero.
+- Cada grupo cambia solo su métrica: su tarjeta, sus barras y su parte de
+  la tabla. Por ejemplo, llamadas en "Línea 3P" y WhatsApp en "Total".
+- En el celular, los botones van debajo del título de la gráfica.
+- "Línea de cada asesor" sigue arriba. La cuenta no cambia: General + 3P +
+  Sin clasificar = Total.
+
 ## v1.77.0 — Octubre 2026
 
 **Fase 188: botones Total, Línea General y Línea 3P en la salida de ORLANT.**

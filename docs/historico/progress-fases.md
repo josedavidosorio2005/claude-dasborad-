@@ -17027,3 +17027,29 @@ Pedido del usuario (Edwin ya clasificó a los asesores en producción).
   botones y no ve "Clasificación de asesores").
 - La suma con los datos reales de producción no se pudo comprobar sin
   sesión.
+
+### Fase 189 — Botones de línea en la cabecera de cada gráfica (2026-10-26, v1.78.0)
+
+Ajuste de la Fase 188 pedido por Edwin (ORLANT, pestaña de salida).
+
+- Sale la fila de botones de arriba; "Línea de cada asesor" sigue arriba.
+- `gdGraficaHtml` (`secciones-logic.js`) acepta `acciones`: controles en la
+  cabecera de la gráfica (`.gd-grafica-cab`), a la derecha del título y,
+  hasta 480 px, debajo. Sin la opción, el HTML es el de siempre.
+- `salida.js`: un grupo por gráfica con el selector de pastillas del
+  tablero (`.gd-subtabs` / `.gd-subtab-btn`; `a11y-teclado.js` le da
+  tablist, aria-selected y flechas; 44 px en el tablero móvil). Estado por
+  canal (`_salLinea[i] = { llamadas, wpp }`), se conserva al redibujar.
+  `_salTablaHtml(filas, mesSel, lineas)` arma una parte por canal, cada una
+  con su línea; con Total/Total es la tabla de siempre.
+- Pruebas: `fase189-salida-botones-por-grafica.test.js` (3; la tabla mixta
+  se prueba ejecutando `salida.js` en un contexto aislado). La prueba de
+  vista de la Fase 188 pasa aquí; ajustes de texto en `fase165`, `fase167`,
+  `fase170` y `fase187`. Suite 2226/2226.
+- Playwright y Brave a 1440/768/375 px (sintético de marzo de 2025):
+  73 comprobaciones en OK (sin fila de arriba, cada grupo en su gráfica, al
+  lado del título en 1440/768 y debajo en 375, 44 px, tablist con
+  aria-selected, llamadas 3P = 5 con WhatsApp en Total = 6 y luego WhatsApp
+  General = 2 con llamadas en 3P, General + 3P + Sin clasificar = Total, se
+  conserva al redibujar, sin scroll horizontal ni errores), con captura de
+  cada gráfica a cada ancho (fuera del repo).
