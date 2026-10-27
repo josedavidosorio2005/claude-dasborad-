@@ -17387,3 +17387,18 @@ Pedido del usuario (se presenta al cliente).
   colores verde/amarillo/gris; en 1440 la tabla cabe con la columna Total;
   en 375 cada tabla se desplaza de lado; sin scroll horizontal de la página
   ni errores de consola.
+
+#### Fases 195 y 196 — despliegue y carga de octubre (2026-10-27)
+
+- Con OK del usuario se mergearon en orden #569 (1.82.1), #567 (1.83.0) y
+  #568 (1.84.0), trayendo `main` a cada rama antes de su merge (conflictos
+  solo de versión y documentación) y con `--match-head-commit`; cada deploy
+  se esperó hasta ver su versión en `/api/health`.
+- Carga (OK explícito, Centro de cargas con la sesión del usuario; las únicas
+  escrituras fueron login e impacto/carga de flujo por hora, 0 bloqueadas):
+  vista previa 59 filas, 106 / 104 / 2; guardadas 59, sin reemplazo.
+- Verificación (solo lectura): mapas de octubre ingresadas 106, contestadas
+  104, abandonadas 2 (10 tramos x 31 días), igual que el archivo. NPS de
+  octubre 21,4 (28 contestaron la pregunta 1 de 82 encuestas; el 10 = 42,9 %;
+  promotores 57,1 %, detractores 35,7 %). A 1440/768/375 px: sin scroll
+  horizontal, sin teléfonos visibles, 0 errores de página.
