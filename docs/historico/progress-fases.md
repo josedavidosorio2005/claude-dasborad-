@@ -17402,3 +17402,19 @@ Pedido del usuario (se presenta al cliente).
   octubre 21,4 (28 contestaron la pregunta 1 de 82 encuestas; el 10 = 42,9 %;
   promotores 57,1 %, detractores 35,7 %). A 1440/768/375 px: sin scroll
   horizontal, sin teléfonos visibles, 0 errores de página.
+
+### Fase 197 — NPS y Flujo por hora más claros (2026-10-27, v1.85.0)
+
+Pedido del usuario para la presentación (Mobilize).
+
+- Encuesta, NPS: los "%" de las barras ya no se ocultan en gráficas angostas
+  (menos de 480 px): van verticales. El resumen dice "NPS (promotores −
+  detractores) 21,4" y la cuenta "NPS = 57,1 % de promotores − 35,7 % de
+  detractores = 21,4", con pasivos y la base (28 = 100 %).
+- Flujo por hora: una fila de encabezado "Día del mes" agrupa las columnas
+  de los días; "Hora" y "Total" ocupan las dos filas.
+- Pruebas: `fase197-nps-y-flujo-hora-claros.test.js` (3). Verificación local
+  (copias de la base demo con la encuesta y el flujo por hora reales de
+  octubre, Playwright y Brave a 1440/768/375 px): NPS 21,4 con la fórmula,
+  etiqueta de la barra 10 "42,9 %" (vertical donde la gráfica es angosta);
+  mapas 106 / 104 / 2 bajo "Día del mes"; sin scroll horizontal ni errores.

@@ -837,6 +837,8 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .aurora-table.fh-tabla tbody th,.aurora-table.fh-tabla tbody td{padding:6px 5px;text-align:center;white-space:nowrap;}
 .aurora-table.fh-tabla thead th{padding:8px 5px;letter-spacing:0;}
 .aurora-table.fh-tabla thead th.fh-hora{background:var(--c-brand);color:var(--c-on-brand);}
+.aurora-table.fh-tabla thead th.fh-dias-titulo{text-transform:none;letter-spacing:0;font-size:var(--fs-small);border-bottom:1px solid var(--c-on-brand);}
+.aurora-table.fh-tabla thead th.fh-total{background:var(--c-brand);color:var(--c-on-brand);}
 .aurora-table.fh-tabla tbody .fh-hora{position:sticky;left:0;z-index:var(--z-sticky-col);background:var(--c-surface);text-align:left;}
 .aurora-table.fh-tabla thead .fh-hora{position:sticky;left:0;z-index:var(--z-sticky-col);text-align:left;}
 .fh-celda.fh-alto,.fh-muestra.fh-alto{background:var(--c-calor-alto);color:var(--c-calor-alto-texto);font-weight:700;}
@@ -1010,6 +1012,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .enc-nps-valor{display:inline-flex;align-items:baseline;gap:6px;}
 .enc-nps-num{font-size:var(--fs-kpi);font-weight:700;color:var(--c-primary);}
 .enc-nps-etq{font-weight:600;color:var(--c-text-2);}
+.enc-nps-formula{margin:4px 0 0;font-weight:600;color:var(--c-text);font-size:var(--fs-body);}
 .enc-nps-detalle,.enc-nps-nota{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-small);}
 .enc-nps-nota{color:var(--c-text-muted);}
 .enc-tabla-comentarios td{white-space:normal;overflow-wrap:anywhere;}
