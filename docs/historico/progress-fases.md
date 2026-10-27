@@ -17308,3 +17308,17 @@ agosto 54, abandonadas bien).
   conservadas); abandonadas 2; no conectadas 41. Tablero: salida 45 + 41 =
   86, únicas 62 + 2 = 64, tabla de fuentes, sin teléfonos, sin scroll
   horizontal ni errores de consola.
+- **Carga en producción** (v1.82.0, PR #565; 27/10/2026, OK explícito del
+  usuario, Centro de cargas con su sesión). Las únicas escrituras fueron
+  login e impacto/carga de Tipificación y de no conectadas, 0 bloqueadas.
+  Candados: CDR con vista previa 134 / 45 de salida / 89 / 62 y
+  confirmación "REEMPLAZAR 132"; no conectadas 41, sin reemplazo. Guardadas:
+  CDR 134, no conectadas 41. Las 2 abandonadas de agosto que aparecieron en
+  producción las subió Edwin en la reunión (dicho por el usuario).
+- Verificación (solo lectura): octubre, salida conectada 45 (CDR) + no
+  conectadas 41 (reporte de no conectadas) = 86; únicas 62 + 2 = 64;
+  Tipificación de octubre: SKILL SAC 87, Skill Key Account 2, salida 45. A
+  1440/768/375 px: tablas de fuente correctas, sin scroll horizontal, sin
+  NaN, sin teléfonos visibles, 0 errores. Agosto (27) y septiembre (64)
+  siguen esperando sus CDR para llegar a 28 y 67, y sin reporte de no
+  conectadas ("Pendiente").

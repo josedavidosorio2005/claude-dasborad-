@@ -9,13 +9,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Subir a producción la salida de Mobilize con las reglas de la Fase 194**
-  (27/10/2026) — para que las conectadas cuenten todas las filas "-", el CDR
-  de cada mes se vuelve a subir en Tipificación (octubre: archivo en
-  Descargas; agosto y septiembre: faltan los archivos), y el reporte de no
-  conectadas de octubre va en "No conectadas". Hace falta tu OK; antes, la
-  comparación por mes contra producción.
-
+- **Salida de Mobilize de agosto y septiembre** (Fase 194, 27/10/2026) —
+  octubre ya está (45 conectadas + 41 no conectadas = 86). Para agosto (28
+  filas "-" según Edwin, hoy 27) y septiembre (67, hoy 64) hace falta volver
+  a subir su CDR en Tipificación, y su reporte de no conectadas para que
+  dejen de decir "Pendiente". Hacen falta los archivos y tu OK; antes,
+  revisión local frente a producción.
 - **Volver a subir el CDR de llamadas de Mobilize de agosto y septiembre
   en Tipificación** (Fase 191, 27/10/2026) — octubre ya está (27/10, con el
   CDR y las abandonadas). Agosto y septiembre siguen con la carga vieja
