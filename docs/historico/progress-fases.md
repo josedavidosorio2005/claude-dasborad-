@@ -17157,3 +17157,10 @@ el OK del usuario, después de una prueba previa en una rama local.
   `better-sqlite3` (lo deja correr).
 - Docker no corre en el equipo local: la imagen se probó en el job
   `docker-build` de CI.
+- Riesgo anotado: npm 11.19.1 dice que el script de instalación de
+  `better-sqlite3` "no está cubierto por allowScripts", pero lo corre (el
+  binario queda y carga, también con `npm ci --omit=dev` como el
+  Dockerfile). Si una versión futura de npm lo bloquea por defecto, habría
+  que aprobarlo (`allowScripts`); el job `docker-build` de CI lo detectaría
+  antes de producción. Suite con Node 24 sobre el código de esta rama:
+  2238/2238.
