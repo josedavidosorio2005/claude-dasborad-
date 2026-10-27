@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.90.0 — Octubre 2026
+
+**Fase 202: Calidad de Mobilize por mes, con torta y barras.**
+
+- La carga "Calidad: resumen por asesor" recibe el archivo de Edwin tal cual,
+  con una hoja por mes (AGOSTO, SEPTIEMBRE, OCTUBRE): cada hoja va a su mes.
+  La vista previa dice a qué mes va cada hoja y, antes de guardar, se
+  confirma qué meses son nuevos y cuáles se reemplazan.
+- En la pestaña Calidad, del mes elegido: una torta con el % de monitoreos de
+  cada asesor y barras con el Prom. puntaje (%) de cada asesor. La tabla por
+  asesor sigue con la clasificación, la alerta y los fallos críticos. El
+  Excel trae también el "% de monitoreos".
+- En la computadora, el botón de MESES del encabezado es un poco más alto
+  (más fácil de usar).
+
 ## v1.89.0 — Octubre 2026
 
 **Fase 201: un solo filtro de meses en el encabezado (todos los clientes).**

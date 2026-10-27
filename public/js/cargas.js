@@ -838,6 +838,39 @@ async function procesarArchivoConsolidado(input){
     return res;
   });
 
+  // Fase 202: "Calidad: resumen por asesor" con una hoja por mes (AGOSTO,
+  // SEPTIEMBRE...): se leen TODAS las hojas con nombre de mes y el formato de
+  // la plantilla, cada una para su mes. Un archivo de una sola hoja sin
+  // nombre de mes ("Hoja1") sigue igual: va al mes elegido.
+  _cargasResultados = _cargasResultados.map(function(r){
+    if(r.tipo !== 'calidad_resumen') return r;
+    var planCR = _cargasPlan.filter(function(h){ return h.tipo === 'calidad_resumen'; })[0];
+    var hojasMes = wb.SheetNames.filter(function(n){
+      if(!calidadResumenMesDeHoja(n)) return false;
+      var mapH = calidadResumenColIndexMap(cargasLeerEncabezadoAcotado(XLSX.utils, wb.Sheets[n], 20));
+      return !CALIDAD_RESUMEN_COLUMNAS.some(function(c){ return c.obligatoria && mapH[c.key] === undefined; });
+    });
+    if(!hojasMes.length || !planCR) return r;
+    var porMes = hojasMes.map(function(n){
+      var wsM = wb.Sheets[n];
+      var resM = cargasProcesarHoja(planCR, XLSX.utils.sheet_to_json(wsM, {header:1, blankrows:false, defval:null}), wsM, calidadResumenParseFilas, wb.SheetNames, null);
+      var infoM = calidadResumenMesDeHoja(n);
+      return { hoja: n, info: infoM, periodo: calidadResumenPeriodoDeHoja(infoM, _cargasMesReferenciaCalidad(cliente)), filas: resM.filas || [], monitoreos: resM.monitoreos || 0, promedio: resM.promedio, error: resM.error || null, avisos: resM.avisos || [] };
+    });
+    var avisos = [];
+    porMes.forEach(function(m){
+      if(m.error) avisos.push('Hoja '+m.hoja+': '+m.error);
+      m.avisos.forEach(function(a){ avisos.push('Hoja '+m.hoja+': '+a); });
+    });
+    var validos = porMes.filter(function(m){ return !m.error && m.filas.length; });
+    var nums = validos.map(function(m){ return m.periodo; });
+    if(nums.some(function(x, k){ return nums.indexOf(x) !== k; })) return Object.assign({}, r, { filas: undefined, porMes: undefined, error: 'El archivo trae dos hojas del mismo mes. Deja una sola hoja por mes.' });
+    if(!validos.length) return Object.assign({}, r, { filas: undefined, error: avisos.join(' ') || 'Ninguna hoja de mes trae asesores.' });
+    return Object.assign({}, r, { error: undefined, vacia: false, reconocidaPorEncabezadosComo: undefined, porMes: validos, avisos: avisos,
+      filas: validos.reduce(function(a, m){ return a.concat(m.filas); }, []),
+      monitoreos: validos.reduce(function(a, m){ return a + m.monitoreos; }, 0) });
+  });
+
   // Fase 153 (PR 4): desde el Centro, solo las filas de ese mes. Fase 163:
   // en Flujo de Llamadas todas las skills son de ese cliente; las que no
   // tiene se registran solas al guardar y la vista previa lo dice antes.
@@ -936,6 +969,13 @@ function _cargasEstadoLabel(r){
   // Fase 172: Calidad resumen -- asesores, monitoreos y promedio ponderado.
   if(r.tipo==='calidad_resumen' && r.filas && r.filas.length){
     extra = ' — '+r.filas.length+' asesor(es), '+r.monitoreos+' monitoreo(s), promedio '+String(r.promedio).replace('.', ',')+' %';
+    // Fase 202: una hoja por mes -- los totales de cada mes y a que mes va cada hoja.
+    if(r.porMes){
+      extra = ' — una hoja por mes, cada una a su mes: ' + r.porMes.map(function(m){
+        var per = m.periodo;
+        return m.hoja+' → '+(per ? mesNombreLargo(per) : '¿año?')+': '+m.filas.length+' asesor(es), '+m.monitoreos+' monitoreo(s), promedio '+String(m.promedio).replace('.', ',')+' %';
+      }).join('; ');
+    }
   }
   // Fase 168: Tipificacion -- cuantas de salida y cuantas ignoradas por skill.
   if(r.tipo==='tipificacion' && r.filas && r.filas.length && typeof r.salida === 'number'){
@@ -1328,9 +1368,46 @@ async function _cargasGuardarWhatsappTiempos(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
+// Fase 202: mes de referencia para el año de las hojas por mes: el del Centro
+// (tarjeta), el campo Periodo o, sin ninguno, el mes actual.
+function _cargasMesReferenciaCalidad(cliente){
+  var foco = cliente ? _cargasFocoActivo(cliente) : null;
+  var per = foco ? foco.mes : ((document.getElementById('carga-periodo') || {}).value || '');
+  if(/^\d{4}-\d{2}$/.test(per)) return per;
+  return (typeof gdHoyLocal === 'function' ? gdHoyLocal() : new Date().toISOString()).slice(0, 7);
+}
+
+// Fase 202: una hoja por mes -- una sola confirmacion con todos los meses
+// (asesores nuevos y los que se reemplazan) y luego se guarda mes por mes
+// (cada uno reemplaza solo su mes, con su respaldo para Deshacer).
+async function _cargasGuardarCalidadResumenPorMes(cliente, r){
+  var ref = _cargasMesReferenciaCalidad(cliente);
+  var meses = r.porMes.map(function(m){ return { hoja: m.hoja, mes: calidadResumenPeriodoDeHoja(m.info, ref), filas: m.filas }; });
+  if(meses.some(function(m){ return !m.mes; })) return { ok:false, mensaje: 'No se pudo saber el año de las hojas. Elige el mes (campo Período) antes de guardar.' };
+  var hechos = [];
+  try{
+    var lineas = [];
+    for(var k=0; k<meses.length; k++){
+      var imp = await apiRequest('POST','/calidad/calidad-resumen/carga/impacto', { campana: cliente, mes: meses[k].mes, archivoNombre: _cargasArchivoNombre, filas: meses[k].filas });
+      lineas.push('• '+mesNombreLargo(meses[k].mes)+' (hoja '+meses[k].hoja+'): '+imp.filasNuevas+' asesor(es), '+imp.monitoreos+' monitoreo(s)'+
+        (imp.filasExistentes > 0 ? ' — REEMPLAZA '+imp.filasExistentes+' asesor(es) ya cargados' : ' — mes nuevo'));
+    }
+    if(!confirm('El archivo trae una hoja por mes. Se va a guardar:\n\n'+lineas.join('\n')+'\n\n¿Continuar?')){
+      return { ok:false, mensaje: 'No se guardó nada; el resumen de calidad sigue igual.' };
+    }
+    for(var j=0; j<meses.length; j++){
+      var resp = await apiRequest('POST','/calidad/calidad-resumen/carga', { campana: cliente, mes: meses[j].mes, archivoNombre: _cargasArchivoNombre, filas: meses[j].filas });
+      hechos.push(mesNombreLargo(meses[j].mes)+' '+resp.insertadas);
+    }
+    if(typeof _calResOpciones !== 'undefined') _calResOpciones = {};
+    return { ok:true, mensaje: 'Asesores guardados por mes: '+hechos.join(', ') };
+  }catch(e){ return { ok:false, mensaje: e.message + (hechos && hechos.length ? ' (ya se guardó: '+hechos.join(', ')+')' : '') }; }
+}
+
 // Fase 172: "Calidad: resumen por asesor" -- el mes es el del Centro (tarjeta)
 // o el campo Periodo de Cargar Datos; reemplaza solo ese mes.
 async function _cargasGuardarCalidadResumen(cliente, r){
+  if(r.porMes) return _cargasGuardarCalidadResumenPorMes(cliente, r); // Fase 202
   var foco = _cargasFocoActivo(cliente);
   var mes = foco ? foco.mes : ((document.getElementById('carga-periodo') || {}).value || '');
   if(!/^\d{4}-\d{2}$/.test(mes)) return { ok:false, mensaje: 'Elige el mes (campo Período) antes de guardar el resumen de calidad.' };

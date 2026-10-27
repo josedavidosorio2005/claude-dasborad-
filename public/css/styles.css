@@ -1744,7 +1744,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    MES de al lado (texto blanco sobre la franja de marca); el desplegable usa
    la superficie y el texto del tema. */
 .gd-meses{position:relative;}
-.gd-meses-btn{list-style:none;cursor:pointer;color:var(--c-on-brand);font-size:var(--fs-body);font-weight:var(--fw-semibold);background:rgba(255,255,255,0.15);border-radius:4px;padding:2px 22px 2px 6px;position:relative;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+.gd-meses-btn{min-height:24px;box-sizing:border-box;line-height:20px;list-style:none;cursor:pointer;color:var(--c-on-brand);font-size:var(--fs-body);font-weight:var(--fw-semibold);background:rgba(255,255,255,0.15);border-radius:4px;padding:2px 22px 2px 6px;position:relative;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
 .gd-meses-btn::-webkit-details-marker{display:none;}
 .gd-meses-btn::after{content:'';position:absolute;right:7px;top:50%;width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-70%) rotate(45deg);}
 .gd-meses[open] .gd-meses-btn::after{transform:translateY(-20%) rotate(225deg);}
@@ -1777,6 +1777,8 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 
 /* Fase 172: resumen de calidad por asesor (Mobilize). */
 .cal-res-nota{font-size:var(--fs-small);color:var(--c-text-muted);margin:var(--space-2) 0 0;}
+/* Fase 202: torta y barras del resumen de calidad, lado a lado (una debajo de la otra en el celular). */
+.cal-res-graficas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-3);}
 
 /* Fase 175: encabezado del tablero compacto en el celular y la tablet
    (hasta 768 px). Antes ocupaba 354 px de 812 a 375 px (315 de 1024 a
