@@ -17545,3 +17545,37 @@ Pedido del usuario (entrega del 28/10), PR 1 de 3.
   `'empezaron'`; otra base o forma desconocida intacta; idempotente).
 - Pruebas: `fase200-one-and-done-base.test.js` (4) y las que fijaban
   `fcrBase: 'total'` en el seed (147 C y D).
+
+### Fase 201 — Un solo filtro de meses en el encabezado (2026-10-27, v1.89.0)
+
+Pedido del usuario (entrega del 28/10), PR 2 de 3. Todos los clientes.
+
+- `public/index.html`: fuera el selector MES (`#gd-mes-sel`); la ayuda de
+  MESES dice la regla nueva.
+- Regla: el mes que antes elegía el MES (`_gd.mesSel`) ahora se calcula —
+  el último mes marcado en MESES; sin ninguno, el mes por defecto de siempre
+  (`gdMesPorDefecto`). Función pura `gdMesDeMeses` (mes-global-logic.js).
+  Como las 13 vistas que leían el MES (Tráfico de Llamadas y de WhatsApp,
+  Tipificación, Agendas, Inasistencia, Efectividad de Agendamiento y de
+  Citas, Encuesta, Flujo por hora, Salida, WhatsApp por rangos, Calidad,
+  Resumen de calidad) siguen leyendo `_gd.mesSel`, ninguna necesitó otra
+  regla. Su Desde/Hasta (el filtro por día) se vuelve a sincronizar cuando
+  cambia ese mes, igual que antes con el MES.
+- `dashboard-generic.js`: `_gdMesDesdeMeses` (al marcar/desmarcar MESES o
+  "Ver todos los meses": recalcula el mes y repinta subtítulo, Comparar
+  contra, tarjetas y pestaña, sin redibujar la lista, así el foco sigue en
+  la casilla); `_gdIrAMes` ("Ver <mes>" de los avisos) deja marcado solo ese
+  mes; el encabezado se partió en `_gdPintarSubtitulo`,
+  `_gdPintarUltimaAct`, `_gdPintarVistaYMeses` y `_gdPintarCompararContra`.
+- Qué dependía del MES: Exportar (nombre del archivo y títulos: ahora el mes
+  calculado), Comparar contra (meses anteriores al mes calculado), el
+  refresco tras Deshacer/Eliminar/cargar (conserva MESES; el mes se
+  recalcula) y el cierre de sesión (borra MESES y el mes). Nada se guarda en
+  `localStorage` (allí solo vive la preferencia de tipo de gráfica).
+- En el celular, el botón de MESES pasa a 44 px de alto (antes 32), como
+  tenía el MES.
+- Scripts que se siguen usando: `scripts/produccion/revision-final.js` elige
+  el mes con `_gdIrAMes`; `fase124-parte1-pendientes-fase122.js` lee la
+  lista de MESES.
+- Pruebas: `fase201-solo-filtro-meses.test.js` (5) y las que nombraban el
+  selector MES (133, 136, 144 A2/A7, 167, 175, 178).

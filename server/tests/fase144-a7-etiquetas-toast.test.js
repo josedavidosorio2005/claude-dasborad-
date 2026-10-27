@@ -54,7 +54,7 @@ test('D13: cada for= de index.html apunta a un id que existe una sola vez', () =
 });
 
 test('D13: los campos que la Fase 143 encontro sin etiqueta ahora la tienen', () => {
-  for (const id of ['username', 'password', 'gd-mes-sel', 'carga-cliente', 'carga-periodo']) {
+  for (const id of ['username', 'password', 'carga-cliente', 'carga-periodo']) { // Fase 201: sin selector MES
     assert.match(html, new RegExp('<label for="' + id + '"'), id);
   }
   const js = Object.fromEntries(jsDeVistas.map(({ f, src }) => [f, src]));
@@ -79,7 +79,7 @@ test('D13: los campos que la Fase 143 encontro sin etiqueta ahora la tienen', ()
 test('D13: los textos visibles de las etiquetas no cambian (solo se agrega for=)', () => {
   assert.match(html, /<label for="username">Usuario<\/label>/);
   assert.match(html, /<label for="password">Contraseña<\/label>/); // Fase 145: con ñ
-  assert.match(html, /<label for="gd-mes-sel" style="[^"]*">MES:<\/label>/);
+  assert.ok(!html.includes('<label for="gd-mes-sel"'), 'Fase 201: en el tablero solo queda MESES');
 });
 
 test('D12: toastEsError reconoce errores por tipo o por el texto de siempre', () => {

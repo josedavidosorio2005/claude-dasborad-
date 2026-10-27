@@ -61,11 +61,11 @@ test('movimiento reducido: existe @media(prefers-reduced-motion: reduce) apagand
   assert.match(bloque, /transition-duration:\s*0\.01ms\s*!important/);
 });
 
-test('objetivos tactiles: >=44px en movil para cerrar/exportar/MES/pestanas, >=24px en escritorio', () => {
+test('objetivos tactiles: >=44px en movil para cerrar/exportar/pestanas, >=24px en escritorio (Fase 201: sin selector MES)', () => {
   // Ancla en el selector exacto que agrupa a los 44px moviles (unico en el
   // archivo) en vez de recortar por @media(max-width:768px) -- ese mismo
   // breakpoint se reusa en otras reglas no relacionadas mas arriba.
-  const idx = css.indexOf('.aurora-close,#gd-mes-sel,#gd-export-btn,.atab,');
+  const idx = css.indexOf('.aurora-close,#gd-export-btn,.atab,');
   assert.ok(idx !== -1, 'deberia existir el selector de objetivos tactiles de movil');
   const bloqueMovil = css.slice(idx, css.indexOf('}', css.indexOf('{', idx)) + 1);
   assert.match(bloqueMovil, /min-height:44px;min-width:44px/);

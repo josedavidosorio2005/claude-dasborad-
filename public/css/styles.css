@@ -1272,7 +1272,7 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 button,.btn-sm,.atab,.aurora-close,select,.theme-toggle,
 .navbar-menu-toggle,.navbar-profile-toggle{min-height:24px;min-width:24px;}
 @media(max-width:768px){
-  .aurora-close,#gd-mes-sel,#gd-export-btn,.atab,.btn-ver-datos,
+  .aurora-close,#gd-export-btn,.atab,.btn-ver-datos,
   .navbar-menu-toggle,.navbar-profile-toggle,.theme-toggle{
     min-height:44px;min-width:44px;
   }
@@ -1757,7 +1757,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 @media(max-width:768px){
   .gd-meses-op{min-height:44px;}
   .gd-meses-pop .btn-sm{min-height:44px;}
-  .gd-meses-btn{min-height:32px;display:flex;align-items:center;}
+  .gd-meses-btn{min-height:44px;display:flex;align-items:center;} /* Fase 201: ahora es el filtro de mes principal */
 }
 
 /* Fase 168: editor de skills de WhatsApp (codigo -> nombre) en Cargar Datos. */

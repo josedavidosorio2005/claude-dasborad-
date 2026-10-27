@@ -56,27 +56,29 @@ test('gdAplicarFiltroMeses lee _gd.mesesSel del tablero abierto; sin tablero, la
 
 // ── Control del encabezado ────────────────────────────────────────────────
 
-test('index.html: control "MESES" junto al MES, con ayuda y "Ver todos los meses"', () => {
+test('index.html: control "MESES" (desde la Fase 201, sin MES), con ayuda y "Ver todos los meses"', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
-  const i = html.indexOf('id="gd-mes-sel"');
   const j = html.indexOf('id="gd-meses-wrap"');
   const k = html.indexOf('id="gd-comp-wrap"');
-  assert.ok(i < j && j < k, 'entre MES y COMPARAR CONTRA');
+  assert.ok(!html.includes('id="gd-mes-sel"'), 'Fase 201: sin selector MES');
+  assert.ok(j > 0 && j < k, 'antes de COMPARAR CONTRA');
   assert.match(html, /<summary id="gd-meses-btn" class="gd-meses-btn" aria-describedby="gd-meses-ayuda">Todos<\/summary>/);
   assert.match(html, /<div class="gd-meses-pop" role="group" aria-labelledby="gd-meses-label">/);
-  assert.match(html, /Las tarjetas siguen el MES de la izquierda\./);
+  assert.match(html, /Las tarjetas siguen el último mes marcado; sin ninguno marcado, el mes más reciente con datos\./);
   assert.match(html, /onclick="gdMesesTodos\(\)">Ver todos los meses<\/button>/);
 });
 
 test('dashboard-generic.js: marcar un mes no redibuja la lista (el foco sigue en la casilla) y Escape cierra SOLO la lista', () => {
   const src = JS('dashboard-generic.js');
   assert.doesNotMatch(extraer(src, 'function onGdMesesChange()'), /_gdPintarMeses\(\)/, 'no redibuja la lista al marcar');
-  assert.match(extraer(src, 'function onGdMesesChange()'), /_gdMesesBoton\(\);\s*renderGenericTab\(_gd\.tab\);/);
+  // Fase 201: marcar un mes tambien mueve el mes de las tarjetas, sin redibujar la lista.
+  assert.match(extraer(src, 'function onGdMesesChange()'), /_gdMesesBoton\(\);\s*_gdMesDesdeMeses\(\);/);
+  assert.doesNotMatch(extraer(src, 'function _gdMesDesdeMeses()'), /_gdPintarMeses\(\)/);
   // Escape en fase de captura: llega antes que el de los modales (motion-helpers.js).
   assert.match(src, /if\(e\.key !== 'Escape' \|\| !det \|\| !det\.open\) return;\s*e\.stopPropagation\(\);[\s\S]*?\}, true\);/);
   // Fase 178: sin `conservar` (al abrir el tablero), todos los meses.
   assert.match(extraer(src, 'async function _gdBootstrap(conservar)'), /_gd\.mesesSel = conservar \? conservar\.mesesSel : \[\];/, 'cada tablero abre con todos los meses');
-  assert.doesNotMatch(extraer(src, 'function onGdMesesChange()'), /renderGenericKpis/, 'las tarjetas de arriba no cambian');
+  assert.match(extraer(src, 'function _gdMesDesdeMeses()'), /renderGenericKpis\(\);/, 'Fase 201: las tarjetas siguen el ultimo mes marcado');
 });
 
 test('_gdPintarMeses: una casilla por mes (del mas nuevo al mas viejo), marca los elegidos y descarta meses que ya no existen', () => {

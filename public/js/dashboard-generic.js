@@ -1078,7 +1078,11 @@ async function _gdBootstrap(conservar){
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
   _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida, mesesLlamadasUnicas, mesesSoloPanel]);
-  _gd.mesSel = (conservar && _gd.periodos.indexOf(conservar.mesSel) !== -1) ? conservar.mesSel : gdMesPorDefecto(mesesPrincipales, _gd.periodos);
+  // Fase 201: sin selector MES. El mes de las tarjetas = ultimo marcado en
+  // MESES (que se conserva al recargar datos) o, sin ninguno, el de siempre.
+  _gd.mesDefecto = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
+  _gd.mesesSel = _gdMeses().filter(function(m){ return _gd.periodos.indexOf(m) !== -1; });
+  _gd.mesSel = gdMesDeMeses(_gd.mesesSel, _gd.mesDefecto, _gd.periodos);
 
   renderGenericHeader();
   renderGenericKpis();
@@ -1270,7 +1274,13 @@ function renderGenericHeader(){
   var btnAct = document.getElementById('gd-actualizar-btn');
   if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
+  _gdPintarSubtitulo();
+  _gdPintarUltimaAct();
+  _gdPintarVistaYMeses();
+}
+function _gdPintarSubtitulo(){
   var sub = document.getElementById('gd-sub');
+  if(!sub) return;
   // Fase 122 (pedido de Edwin: "con la fecha uno se enreda mucho, que salga
   // el nombre"): el selector de mes GLOBAL (y este subtitulo) muestran el
   // nombre completo del mes -- distinto del rotulo corto que siguen usando
@@ -1283,6 +1293,9 @@ function renderGenericHeader(){
   // Fase 176: el " — CLIENTE" va en su propio span; en el telefono se oculta
   // (el cliente ya esta en el logo y el titulo) para que quepa en una linea.
   sub.innerHTML = esc('Informe ' + (rotuloParcial || mesLbl)) + '<span class="gd-sub-cliente"> — ' + esc(_gd.cliente) + '</span>';
+  _gdFiltrosHeaderTexto();
+}
+function _gdPintarUltimaAct(){
 
   // Fase 131 (Parte 4): "Ultima actualizacion" -- resaltado naranja para
   // Mobilize, verde InConexion (#74B859, color de marca) para el resto.
@@ -1302,6 +1315,8 @@ function renderGenericHeader(){
     elUa.style.display = 'none';
   }
 
+}
+function _gdPintarVistaYMeses(){
   var vw = document.getElementById('gd-vista-wrap');
   if(_gd.config.vista){
     vw.style.display = '';
@@ -1311,17 +1326,16 @@ function renderGenericHeader(){
     vs.value = _gd.vistaSel;
   } else { vw.style.display = 'none'; }
 
-  var ms = document.getElementById('gd-mes-sel');
-  ms.innerHTML = _gd.periodos.length
-    ? _gd.periodos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('')
-    : '<option value="">Sin datos</option>';
-  ms.value = _gd.mesSel || (_gd.periodos[0] || '');
   _gdPintarMeses();
+  _gdPintarCompararContra();
+}
 
-  // "Comparar contra": periodo anterior automatico + cualquier periodo previo.
+// "Comparar contra": periodo anterior automatico + cualquier periodo previo
+// al mes de las tarjetas (Fase 201: el ultimo marcado en MESES).
+function _gdPintarCompararContra(){
   var cs = document.getElementById('gd-comp-sel');
   if(cs){
-    var verMes = ms.value;
+    var verMes = _gd.mesSel || (_gd.periodos[0] || '');
     var previos = _gd.periodos.filter(function(p){ return !verMes || p < verMes; });
     cs.innerHTML = '<option value="">Período anterior (auto)</option>' +
       previos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('');
@@ -1358,9 +1372,13 @@ function _gdActualizarCompararContra(){
   nota.style.display = todosAutonomos ? '' : 'none';
 }
 
-function onGdMesChange(){
-  _gd.mesSel = document.getElementById('gd-mes-sel').value;
-  renderGenericHeader();
+// Fase 201: el mes de las tarjetas cambia con MESES. Solo se repinta lo que
+// depende de el (subtitulo, Comparar contra, tarjetas y la pestaña); la lista
+// de MESES no se redibuja, asi el foco se queda en la casilla.
+function _gdMesDesdeMeses(){
+  _gd.mesSel = gdMesDeMeses(_gd.mesesSel, _gd.mesDefecto, _gd.periodos);
+  _gdPintarSubtitulo();
+  _gdPintarCompararContra();
   renderGenericKpis();
   renderGenericTab(_gd.tab);
 }
@@ -1389,7 +1407,7 @@ function gdReiniciarFiltros(){
   });
   if(typeof _gd !== 'undefined'){
     _gd.cliente = null; _gd.config = null; _gd.cargas = {}; _gd.periodos = [];
-    _gd.mesSel = ''; _gd.compSel = ''; _gd.vistaSel = ''; _gd.tab = null; _gd.subtab = null; _gd.mesesSel = [];
+    _gd.mesSel = ''; _gd.mesDefecto = ''; _gd.compSel = ''; _gd.vistaSel = ''; _gd.tab = null; _gd.subtab = null; _gd.mesesSel = [];
   }
   // Parametros de filtros en la URL (Trafico: tv_*/tww_*): fuera.
   try{
@@ -1415,7 +1433,7 @@ async function gdDatosCambiaron(cliente){
   });
   var overlay = (typeof document !== 'undefined') ? document.getElementById('gd-overlay') : null;
   if(!overlay || !overlay.classList.contains('show') || !_gd.cliente || (cliente && _gd.cliente !== cliente)) return;
-  var conservar = { mesSel: _gd.mesSel, mesesSel: _gdMeses().slice(), compSel: _gd.compSel, vistaSel: _gd.vistaSel, tab: _gd.tab };
+  var conservar = { mesesSel: _gdMeses().slice(), compSel: _gd.compSel, vistaSel: _gd.vistaSel, tab: _gd.tab }; // Fase 201: el mes sale de MESES
   try{
     var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(_gd.cliente));
     _gd.config = resp.config;
@@ -1471,7 +1489,7 @@ function onGdMesesChange(){
   var marcados = document.querySelectorAll('#gd-meses-lista input:checked');
   _gd.mesesSel = Array.prototype.map.call(marcados, function(x){ return x.value; }).sort();
   _gdMesesBoton();
-  renderGenericTab(_gd.tab);
+  _gdMesDesdeMeses();
 }
 
 function gdMesesTodos(){
@@ -1481,7 +1499,7 @@ function gdMesesTodos(){
   if(det) det.open = false;
   var b = document.getElementById('gd-meses-btn');
   if(b) b.focus();
-  renderGenericTab(_gd.tab);
+  _gdMesDesdeMeses();
 }
 
 function onGdCompChange(){
@@ -1498,17 +1516,13 @@ function onGdVistaChange(){
 
 // Fase 86 (tema 3): el boton "Ver <mes>" del aviso "sin datos" de un panel
 // autonomo (trafico_combo/trafico_whatsapp_combo/agendas_panel/
-// tipificacion_panel) mueve el selector MES de ARRIBA -- asi el resto de
-// pestanas tambien queda consistente con lo que se ve (una sola fuente de
-// verdad, nunca el header diciendo "Informe Ago-26" mientras un panel
-// abajo muestra Abr-25).
+// tipificacion_panel) mueve el mes de ARRIBA -- asi el resto de pestanas
+// tambien queda consistente con lo que se ve. Fase 201: sin selector MES,
+// deja marcado SOLO ese mes en MESES (el mes de las tarjetas sale de ahi).
 function _gdIrAMes(mes){
-  _gd.mesSel = mes;
-  var sel = document.getElementById('gd-mes-sel');
-  if(sel) sel.value = mes;
-  renderGenericHeader();
-  renderGenericKpis();
-  renderGenericTab(_gd.tab);
+  _gd.mesesSel = (_gd.periodos || []).indexOf(mes) !== -1 ? [mes] : [];
+  _gdPintarMeses();
+  _gdMesDesdeMeses();
 }
 
 // _gdFinDeMes: ver gdFinDeMes en mes-global-logic.js (mismo criterio,
@@ -1618,7 +1632,7 @@ document.getElementById('gd-panels').addEventListener('click', function(e){
 
 // Fase 136 (PR 6): transicion de entrada SOLO al cambiar de pestana/sub-
 // pestana real (aqui y en switchGenericSubtab) -- NUNCA en
-// onGdMesChange/onGdCompChange/onGdVistaChange/_gdIrAMes ni en el
+// onGdMesesChange/onGdCompChange/onGdVistaChange/_gdIrAMes ni en el
 // listener de theme.js, que tambien llaman a renderGenericTab() pero son
 // cambios de FILTRO (mes/comparar/vista), no de seccion -- un supervisor
 // los usa para leer una cifra rapido, frecuentes, no deben esperar una

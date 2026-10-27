@@ -61,7 +61,7 @@ test('tras Deshacer / Eliminar: se vacian las caches y el tablero abierto se vue
   assert.deepEqual(Object.keys(ctx._traficoEstado), ['ORLANT'], 'los filtros del panel no se borran');
   assert.deepEqual(llamadas.api, ['GET /dashboard/ORLANT']);
   assert.equal(llamadas.bootstrap.length, 1);
-  assert.deepEqual(JSON.parse(JSON.stringify(llamadas.bootstrap[0])), { mesSel: '2026-09', mesesSel: ['2026-09', '2026-08'], compSel: '2026-08', vistaSel: '', tab: 'salida' });
+  assert.deepEqual(JSON.parse(JSON.stringify(llamadas.bootstrap[0])), { mesesSel: ['2026-09', '2026-08'], compSel: '2026-08', vistaSel: '', tab: 'salida' }); // Fase 201: el mes sale de MESES
   assert.deepEqual(JSON.parse(JSON.stringify(ctx._gd.cargas)), { s: [] });
 });
 
@@ -82,7 +82,8 @@ test('Deshacer, Eliminar y la carga llaman al refresco; el bootstrap conserva ME
   assert.match(fn(cc, '_ccDatosCambiaron'), /gdDatosCambiaron\(_cc\.cliente\)/);
   assert.match(fn(JS('cargas.js'), 'guardarCarga'), /gdDatosCambiaron\(cliente\)/);
   const boot = fn(GD, '_gdBootstrap');
-  assert.match(boot, /_gd\.periodos\.indexOf\(conservar\.mesSel\) !== -1\) \? conservar\.mesSel : gdMesPorDefecto/);
+  // Fase 201: el mes de las tarjetas = ultimo marcado en MESES (conservado) o el de siempre.
+  assert.match(boot, /_gd\.mesSel = gdMesDeMeses\(_gd\.mesesSel, _gd\.mesDefecto, _gd\.periodos\);/);
   assert.match(boot, /visibles\.some\(function\(t\)\{ return t\.key === conservar\.tab; \}\)/);
   // Abrir el tablero sigue igual: sin `conservar`, filtros en blanco.
   assert.match(fn(GD, 'openGenericDashboard'), /await _gdBootstrap\(\);/);

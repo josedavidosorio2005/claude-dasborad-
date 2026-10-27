@@ -118,6 +118,18 @@ function gdMesPorDefecto(mesesPrincipales, mesesTodos) {
   return todos[0] || '';
 }
 
+// ── Fase 201: el MES de las tarjetas sale de MESES ───────────
+// Ya no hay selector MES en el encabezado. El mes que siguen las tarjetas y
+// los paneles que trabajan con un solo mes (antes "el MES de arriba") es el
+// ULTIMO mes marcado en MESES; sin ninguno marcado ("Todos"), el mes por
+// defecto de siempre (gdMesPorDefecto: el mas reciente con datos
+// principales). Nunca un mes que no este en `mesesTodos`.
+function gdMesDeMeses(mesesSel, porDefecto, mesesTodos) {
+  var todos = mesesTodos || [];
+  var marcados = (mesesSel || []).filter(function (m) { return todos.indexOf(m) !== -1; }).sort();
+  return marcados.length ? marcados[marcados.length - 1] : (porDefecto || '');
+}
+
 // ── Fase 152 (B3): mes en curso = parcial ───────────────────
 // `hoy` es 'AAAA-MM-DD' (fecha local de quien mira; la app se usa en
 // Colombia). Un mes que todavia no termina se marca "parcial" y sus
@@ -214,6 +226,7 @@ if (typeof module !== 'undefined' && module.exports) {
     gdFinDeMes: gdFinDeMes,
     gdMesesUnion: gdMesesUnion,
     gdMesPorDefecto: gdMesPorDefecto,
+    gdMesDeMeses: gdMesDeMeses,
     gdDependeDeCargasGenericas: gdDependeDeCargasGenericas,
     gdDestaparPorDatos: gdDestaparPorDatos,
     gdTodasLasPestanasOcultas: gdTodasLasPestanasOcultas,

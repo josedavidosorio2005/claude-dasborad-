@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.89.0 — Octubre 2026
+
+**Fase 201: un solo filtro de meses en el encabezado (todos los clientes).**
+
+- Se quitó el filtro "MES" del encabezado del tablero. Queda solo "MESES",
+  el de las casillas.
+- Las tarjetas de arriba y las pantallas que muestran un solo mes siguen el
+  último mes marcado en MESES. Sin ninguno marcado ("Todos"), el mes más
+  reciente con datos, como al abrir el tablero.
+- Los filtros Desde/Hasta de cada pantalla se ajustan solos a ese mes, igual
+  que antes con el MES. "Comparar contra", Exportar y el botón "Ver <mes>"
+  de los avisos también usan ese mes ("Ver <mes>" deja marcado solo ese mes).
+- En el celular, el botón de MESES es más fácil de tocar.
+
 ## v1.88.0 — Octubre 2026
 
 **Fase 200: One & Done de Mobilize sobre las encuestas que empezaron.**
