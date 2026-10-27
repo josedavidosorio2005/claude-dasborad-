@@ -310,8 +310,35 @@ function encuestaQ3Desglose(porMes) {
   return { total: total, si: si, no: no, sinRespuesta: sinRespuesta, pctSi: pct(si), pctNo: pct(no), pctSinRespuesta: pct(sinRespuesta) };
 }
 
+// ── Fase 195: NPS de la pregunta 1 (0 a 10, "¿qué tan probable es que nos
+// recomiende?"). Base = las encuestas que SÍ contestaron la pregunta 1 (no el
+// total). Promotores 9-10, pasivos 7-8, detractores 0-6. NPS = % promotores -
+// % detractores (de -100 a 100). `datos` = { respondieron, valores:
+// [{ valor, cantidad }] } de /calidad/encuestas/resumen. Porcentajes con 1
+// decimal; null si nadie contesto (nunca un 0 % inventado).
+var ENCUESTA_NPS_PROMOTOR_MIN = 9;
+var ENCUESTA_NPS_DETRACTOR_MAX = 6;
+var ENCUESTA_NPS_NOTA = 'NPS = % de promotores (9 y 10) − % de detractores (0 a 6), sobre las encuestas que contestaron la pregunta 1. Los pasivos (7 y 8) no suman ni restan.';
+function _encuestaPct1(n, base) { return base > 0 ? Math.round((n / base) * 1000) / 10 : null; }
+function encuestaNps(datos) {
+  var valores = (datos && datos.valores) || [];
+  var base = valores.reduce(function (a, x) { return a + (x.cantidad || 0); }, 0);
+  var suma = function (f) { return valores.filter(function (x) { return f(x.valor); }).reduce(function (a, x) { return a + (x.cantidad || 0); }, 0); };
+  var promotores = suma(function (v) { return v >= ENCUESTA_NPS_PROMOTOR_MIN; });
+  var detractores = suma(function (v) { return v <= ENCUESTA_NPS_DETRACTOR_MAX; });
+  return {
+    respondieron: base,
+    porcentajes: valores.map(function (x) { return { valor: x.valor, cantidad: x.cantidad || 0, pct: _encuestaPct1(x.cantidad || 0, base) }; }),
+    promotores: promotores, pasivos: base - promotores - detractores, detractores: detractores,
+    pctPromotores: _encuestaPct1(promotores, base), pctDetractores: _encuestaPct1(detractores, base),
+    nps: base > 0 ? Math.round(((promotores - detractores) / base) * 1000) / 10 : null,
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    ENCUESTA_NPS_NOTA: ENCUESTA_NPS_NOTA,
+    encuestaNps: encuestaNps,
     encuestaMesesRango: encuestaMesesRango,
     encuestaOneAndDoneSerie: encuestaOneAndDoneSerie,
     encuestaQ3Desglose: encuestaQ3Desglose,

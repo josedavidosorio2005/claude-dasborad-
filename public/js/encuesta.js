@@ -92,9 +92,14 @@ async function _encuestaRenderPanel(p, i) {
       '<select id="enc-f-agente-' + i + '">' + _encuestaOptionsHtml(op.agentes, estado.agente, _encuestaNombre) + '</select></div>'
     : '';
   var cuadros = (ENCUESTA_PREGUNTAS || []).map(function (q) {
-    return '<div class="aurora-card enc-pregunta"><div class="aurora-card-title">Pregunta ' + q.n + '</div>' +
+    // Fase 195: la pregunta 1 lleva en su cabecera "Cantidad" | "NPS".
+    var cab = q.key === 'q1'
+      ? '<div class="gd-grafica-cab enc-cab"><div class="aurora-card-title">Pregunta ' + q.n + '</div>' + _encuestaBotonesQ1Html(i) + '</div>'
+      : '<div class="aurora-card-title">Pregunta ' + q.n + '</div>';
+    return '<div class="aurora-card enc-pregunta">' + cab +
       '<div class="aurora-chart-wrap" style="height:230px"><canvas id="enc-c-' + q.key + '-' + i + '" role="img" aria-label="Pregunta ' + q.n + ': cantidad por respuesta"></canvas></div>' +
-      '<p class="enc-pie" id="enc-pie-' + q.key + '-' + i + '"></p></div>';
+      '<p class="enc-pie" id="enc-pie-' + q.key + '-' + i + '"></p>' +
+      (q.key === 'q1' ? '<div class="enc-nps" id="enc-nps-' + i + '" aria-live="polite"></div>' : '') + '</div>';
   }).join('');
   host.innerHTML = '<div class="aurora-card">' + titulo +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:4px">' +
@@ -130,27 +135,77 @@ function _encuestaQuery(campana) {
     (e.agente && _encuestaVeAsesores(campana) ? '&agente=' + encodeURIComponent(e.agente) : '');
 }
 
+// ── Fase 195: vista "Cantidad" | "NPS" de la pregunta 1, por panel ──
+var _encuestaVistaQ1 = {}; // i -> 'cantidad' | 'nps'
+var _encuestaDatosQ1 = {}; // i -> { datos, k } del ultimo dibujo (para cambiar de vista sin pedir otra vez)
+function _encuestaBotonesQ1Html(i) {
+  var activa = _encuestaVistaQ1[i] || 'cantidad';
+  return '<div class="gd-subtabs enc-q1-vista" aria-label="Vista de la pregunta 1">' +
+    [{ v: 'cantidad', t: 'Cantidad' }, { v: 'nps', t: 'NPS' }].map(function (b) {
+      return '<button type="button" class="gd-subtab-btn' + (b.v === activa ? ' on' : '') + '" data-vista="' + b.v + '" onclick="encuestaElegirVistaQ1(' + i + ',\'' + b.v + '\')">' + b.t + '</button>';
+    }).join('') + '</div>';
+}
+function encuestaElegirVistaQ1(i, vista) {
+  _encuestaVistaQ1[i] = vista === 'nps' ? 'nps' : 'cantidad';
+  document.querySelectorAll('#gd-p' + i + ' .enc-q1-vista .gd-subtab-btn').forEach(function (b) {
+    var on = b.getAttribute('data-vista') === _encuestaVistaQ1[i];
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  var u = _encuestaDatosQ1[i];
+  var q = (ENCUESTA_PREGUNTAS || []).filter(function (x) { return x.key === 'q1'; })[0];
+  if (u && q) _encuestaDibujarPregunta(i, q, u.datos, u.k);
+}
+function _encuestaNpsHtml(n) {
+  if (!n.respondieron) return '<p class="enc-nps-nota">Nadie contestó la pregunta 1 con estos filtros: sin NPS.</p>';
+  var pct = function (v) { return encuestaFmtPct(v); };
+  return '<div class="enc-nps-valor"><span class="enc-nps-num">' + String(n.nps).replace('.', ',') + '</span> <span class="enc-nps-etq">NPS</span></div>' +
+    '<p class="enc-nps-detalle">Promotores ' + pct(n.pctPromotores) + ' (' + n.promotores + ') − detractores ' + pct(n.pctDetractores) + ' (' + n.detractores + '); pasivos ' + n.pasivos +
+    ', sobre ' + n.respondieron.toLocaleString('es-CO') + ' que contestaron la pregunta 1.</p>' +
+    '<p class="enc-nps-nota">' + esc(ENCUESTA_NPS_NOTA) + '</p>';
+}
+
 function _encuestaDibujarPregunta(i, q, datos, k) {
   var pie = document.getElementById('enc-pie-' + q.key + '-' + i);
   if (pie) pie.textContent = datos.respondieron.toLocaleString('es-CO') + ' respondieron · ' + datos.sinRespuesta.toLocaleString('es-CO') + ' sin respuesta';
+  // Fase 195: en la pregunta 1, la vista "NPS" cambia cantidades por % sobre las que contestaron.
+  var nps = null;
+  if (q.key === 'q1') {
+    _encuestaDatosQ1[i] = { datos: datos, k: k };
+    var elNps = document.getElementById('enc-nps-' + i);
+    if (_encuestaVistaQ1[i] === 'nps') {
+      nps = encuestaNps(datos);
+      if (elNps) elNps.innerHTML = _encuestaNpsHtml(nps);
+    } else if (elNps) elNps.innerHTML = '';
+  }
   var color = (typeof PC !== 'undefined' && PC.length) ? PC[k % PC.length] : '#29564b';
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
   o.plugins = o.plugins || {};
   o.plugins.legend = { display: false };
-  o.plugins.tooltip = { callbacks: { label: function (ctx) { return 'Cantidad: ' + (ctx.parsed.y || 0).toLocaleString('es-CO'); } } };
+  o.plugins.tooltip = { callbacks: { label: function (ctx) {
+    if (nps) { var x = nps.porcentajes[ctx.dataIndex] || {}; return encuestaFmtPct(ctx.parsed.y) + ' (' + (x.cantidad || 0) + ' de ' + nps.respondieron + ')'; }
+    return 'Cantidad: ' + (ctx.parsed.y || 0).toLocaleString('es-CO');
+  } } };
   if (o.plugins.datalabels) {
     o.plugins.datalabels.display = true;
-    o.plugins.datalabels.formatter = function (v) { return (v || 0).toLocaleString('es-CO'); };
+    o.plugins.datalabels.formatter = function (v) { return nps ? (v ? encuestaFmtPct(v) : '') : (v || 0).toLocaleString('es-CO'); };
+    // Fase 195: en una grafica angosta (celular) los "%" se pisan entre barras
+    // vecinas; ahi se ocultan (quedan en el tooltip, "Ver datos" y el NPS).
+    if (nps) o.plugins.datalabels.display = function (ctx) { return ctx.chart.width >= 480; };
   }
   o.scales = o.scales || {};
-  o.scales.y = Object.assign({}, o.scales.y || {}, { beginAtZero: true, ticks: Object.assign({}, (o.scales.y || {}).ticks || {}, { precision: 0 }) });
+  o.scales.y = Object.assign({}, o.scales.y || {}, nps
+    ? { beginAtZero: true, max: 100, ticks: Object.assign({}, (o.scales.y || {}).ticks || {}, { callback: function (v) { return v + ' %'; } }) }
+    : { beginAtZero: true, ticks: Object.assign({}, (o.scales.y || {}).ticks || {}, { precision: 0 }) });
   o.scales.x = Object.assign({}, o.scales.x || {}, { title: { display: true, text: 'Respuesta' } });
   if (typeof _gdChart === 'function') {
     _gdChart('enc-c-' + q.key + '-' + i, {
       type: 'bar',
       data: {
         labels: datos.valores.map(function (x) { return encuestaEtiquetaValor(q, x.valor); }),
-        datasets: [{ label: 'Cantidad', data: datos.valores.map(function (x) { return x.cantidad; }), backgroundColor: color, borderRadius: 3 }],
+        datasets: [nps
+          ? { label: '% de las que contestaron', data: nps.porcentajes.map(function (x) { return x.pct || 0; }), backgroundColor: color, borderRadius: 3 }
+          : { label: 'Cantidad', data: datos.valores.map(function (x) { return x.cantidad; }), backgroundColor: color, borderRadius: 3 }],
       },
       options: o,
     });

@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.83.0 — Octubre 2026
+
+**Fase 195: NPS en la Encuesta de Mobilize.**
+
+- La gráfica de la pregunta 1 tiene un botón "NPS": cambia las cantidades por
+  porcentajes sobre las encuestas que contestaron la pregunta 1 y muestra el
+  NPS (% de promotores 9-10 menos % de detractores 0-6), con una nota de cómo
+  se calcula. One and Done no cambia.
+
 ## v1.82.1 — Octubre 2026
 
 **Seguridad: actualización de una librería interna.**
