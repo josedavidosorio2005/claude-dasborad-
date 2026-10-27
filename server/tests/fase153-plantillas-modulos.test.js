@@ -23,6 +23,7 @@ const aoa = (ws) => XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, 
 const AHORA = new Date('2026-10-16T12:00:00-05:00');
 const LECTORES = {
   'PLANTILLA_FLUJO_LLAMADAS.xlsx': (a) => JS('trafico-logic.js').traficoParseFilas(a),
+  'PLANTILLA_FLUJO_HORA.xlsx': (a) => JS('flujo-hora-logic.js').flujoHoraParseFilas(a), // Fase 196
   // Fase 194: el modulo lleva los dos reportes de Wolkvox tal cual.
   'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx': (a) => JS('llamadas-unicas-logic.js').llamadasAbandonadasParseFilas(a),
   'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx': (a) => JS('llamadas-salida-logic.js').llamadasNoConectadasParseFilas(a),

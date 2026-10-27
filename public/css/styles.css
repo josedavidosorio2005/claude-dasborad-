@@ -830,6 +830,25 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 /* Fase 191: tabla "De dónde sale cada mes" de Llamadas Únicas y de Salida. */
 .lu-fuentes .td-izq,.ls-fuentes .td-izq{text-align:left;white-space:normal;min-width:180px;}
 .lu-aviso-pendiente{flex-basis:100%;grid-column:1/-1;margin:0;}
+/* Fase 196: Flujo por hora -- mapas de calor (tres niveles con las celdas tintadas del tablero; nunca rosado). */
+.fh-card .gd-grafica{margin:0;}
+.fh-wrap{overflow-x:auto;max-width:100%;}
+.fh-tabla{font-size:var(--fs-small);border-collapse:collapse;min-width:max-content;}
+.aurora-table.fh-tabla tbody th,.aurora-table.fh-tabla tbody td{padding:6px 5px;text-align:center;white-space:nowrap;}
+.aurora-table.fh-tabla thead th{padding:8px 5px;letter-spacing:0;}
+.aurora-table.fh-tabla thead th.fh-hora{background:var(--c-brand);color:var(--c-on-brand);}
+.aurora-table.fh-tabla tbody .fh-hora{position:sticky;left:0;z-index:var(--z-sticky-col);background:var(--c-surface);text-align:left;}
+.aurora-table.fh-tabla thead .fh-hora{position:sticky;left:0;z-index:var(--z-sticky-col);text-align:left;}
+.fh-celda.fh-alto,.fh-muestra.fh-alto{background:var(--c-calor-alto);color:var(--c-calor-alto-texto);font-weight:700;}
+.fh-celda.fh-medio,.fh-muestra.fh-medio{background:var(--c-calor-medio);color:var(--c-calor-medio-texto);font-weight:600;}
+.fh-celda.fh-bajo,.fh-muestra.fh-bajo{background:var(--c-calor-bajo);color:var(--c-calor-bajo-texto);}
+.fh-total{font-weight:700;background:var(--c-surface-alt2);}
+.fh-gran-total{color:var(--c-primary);}
+.fh-fila-total th{background:var(--c-surface-alt2);}
+.fh-leyenda{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-small);display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.fh-leyenda-nota{color:var(--c-text-muted);}
+.fh-muestra{display:inline-block;width:14px;height:14px;border:1px solid var(--c-border);border-radius:3px;vertical-align:middle;}
+.fh-total-titulo{font-weight:400;color:var(--c-text-2);}
 /* Fase 152 (B4): tablas del tablero con su propio scroll horizontal (la
    pagina nunca hace scroll horizontal) y filtros plegables en movil. */
 .gd-tabla-scroll{overflow-x:auto;max-width:100%;}
@@ -1680,6 +1699,11 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    Prueba: server/tests/fase163-visual-secciones.test.js. */
 :root{ --c-acento-llamadas:#1F5F99; --c-acento-whatsapp:#0B6E78; --c-acento-salida:#7A3E9D; }
 :root[data-theme="dark"]{ --c-acento-llamadas:#7CB7EA; --c-acento-whatsapp:#5CC8D0; --c-acento-salida:#C9A0F0; }
+/* Fase 196: mapa de calor de "Flujo por hora" (tres niveles: verde, amarillo, gris; nunca rosado).
+   Contraste del TEXTO sobre cada celda (contrasteRazon): claro 5,84 / 8,94 / 9,07; oscuro 5,01 / 6,48 / 7,45.
+   El numero siempre esta escrito: el color no es la unica senal. */
+:root{ --c-calor-alto:#74B859; --c-calor-alto-texto:#12321A; --c-calor-medio:#F5D54A; --c-calor-medio-texto:#3D3000; --c-calor-bajo:#D9DEE2; --c-calor-bajo-texto:#2E363C; }
+:root[data-theme="dark"]{ --c-calor-alto:#3F7D34; --c-calor-alto-texto:#FFFFFF; --c-calor-medio:#B8961A; --c-calor-medio-texto:#1A1400; --c-calor-bajo:#3A4A53; --c-calor-bajo-texto:#E3E8EB; }
 .gd-sec-llamadas, .gd-tab-sec-llamadas{ --gd-acento:var(--c-acento-llamadas); }
 .gd-sec-whatsapp, .gd-tab-sec-whatsapp{ --gd-acento:var(--c-acento-whatsapp); }
 .gd-sec-salida, .gd-tab-sec-salida{ --gd-acento:var(--c-acento-salida); }

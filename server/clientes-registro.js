@@ -53,7 +53,8 @@ const REGISTRO_INICIAL = [
     orden: 2,
     dashboard: 1,
     // Fase 172: calidad_resumen (resumen por asesor de la plantilla de Edwin).
-    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
+    // Fase 196: flujo_hora (Flujo por hora).
+    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'flujo_hora', 'encuesta'],
     parametros: {
       sedes: [],
       asesorVisibleCliente: true,

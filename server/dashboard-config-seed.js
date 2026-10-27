@@ -485,6 +485,12 @@ const MOBILIZE = {
       { key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida', panels: [
         { tipo: 'llamadas_unicas_panel', campana: 'MOBILIZE' },
       ]},
+      // Fase 196: "Flujo por hora" (mapas de calor por hora y dia), despues
+      // de Llamadas Unicas. Migracion para la base ya sembrada:
+      // fase196_flujo_hora_v1 (db.js).
+      { key: 'flujo_hora', label: 'Flujo por hora', panels: [
+        { tipo: 'flujo_hora_panel', campana: 'MOBILIZE' },
+      ]},
       { key: 'tipificacion', label: 'Tipificación', oculta: true, panels: [
         { tipo: 'tipificacion_panel', titulo: 'Tipificación', campana: 'MOBILIZE',
           soloCanal: 'LLAMADAS', mostrarFiltroTipo: true, mostrarTablaDetalle: true, mostrarTarjetasSalida: true,

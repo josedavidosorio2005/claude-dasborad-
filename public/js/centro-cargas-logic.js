@@ -23,6 +23,7 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_pie: 'calidad',
   calidad_bar_asesores: 'calidad',
   calidad_resumen_panel: 'calidad_resumen', // Fase 172
+  flujo_hora_panel: 'flujo_hora', // Fase 196
 };
 
 // Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD,
@@ -38,6 +39,7 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'inasistencia', nombre: 'Inasistencia' },
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas' },
   { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida' },
+  { id: 'flujo_hora', nombre: 'Flujo por hora' }, // Fase 196
   { id: 'tipificacion', nombre: 'Tipificación' },
   { id: 'encuesta', nombre: 'Encuesta' },
   { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
@@ -154,6 +156,7 @@ var CENTRO_CARGA_PLAN = {
   llamadas_salida: { tipo: 'llamadas_salida' },
   llamadas_abandonadas: { tipo: 'llamadas_abandonadas' }, // Fase 191
   llamadas_no_conectadas: { tipo: 'llamadas_no_conectadas' }, // Fase 194
+  flujo_hora: { tipo: 'flujo_hora' }, // Fase 196
   encuesta: { tipo: 'encuesta' },
   // Fase 172: la plantilla no trae fecha por fila; el mes es el de la tarjeta.
   calidad_resumen: { tipo: 'calidad_resumen', mensual: true, sinFecha: true },
@@ -179,7 +182,7 @@ function centroFiltrarPlan(plan, cargaId) {
 function centroFechaFila(tipo, f) {
   if (!f) return '';
   if (tipo === 'llamadas_unicas' || tipo === 'llamadas_salida' || tipo === 'whatsapp_tiempos') return String(f[1] || '');
-  if (tipo === 'llamadas_abandonadas' || tipo === 'llamadas_no_conectadas') return String(f[0] || ''); // Fases 191/194: [fecha, ...]
+  if (tipo === 'llamadas_abandonadas' || tipo === 'llamadas_no_conectadas' || tipo === 'flujo_hora') return String(f[0] || ''); // Fases 191/194/196: [fecha, ...]
   if (tipo === 'encuesta') return String(f[0] || '');
   return String(f.fecha || f.fechaInicio || f.fechaSolicitud || f.mes || '');
 }

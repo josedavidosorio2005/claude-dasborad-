@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.84.0 — Octubre 2026
+
+**Fase 196: pestaña nueva "Flujo por hora" en Mobilize.**
+
+- Tres mapas de calor, uno debajo del otro: llamadas ingresadas, contestadas
+  y abandonadas por hora (filas) y día del mes (columnas), con fila y columna
+  de Total. Colores en tres niveles: alto en verde, medio en amarillo, bajo en
+  gris; el número siempre está escrito. Sigue el mes de arriba.
+- Base nueva en el Centro de cargas: el reporte por hora de Wolkvox, subido
+  tal cual. La vista previa muestra los totales del archivo, que son los
+  mismos del mapa.
+- En el celular, cada tabla se desplaza de lado dentro de su tarjeta.
+
 ## v1.83.0 — Octubre 2026
 
 **Fase 195: NPS en la Encuesta de Mobilize.**

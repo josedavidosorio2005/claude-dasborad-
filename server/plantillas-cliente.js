@@ -39,6 +39,8 @@ const CATALOGO = [
   { id: 'inasistencia', nombre: 'Inasistencia', grupo: 'salud', carga: 'Inasistencia', disponibleParaNuevos: true },
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas', grupo: 'salud', carga: 'Citas atendidas', disponibleParaNuevos: true },
   { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida', grupo: 'opcional', carga: 'Llamadas únicas + Llamadas de salida (Wolkvox)', disponibleParaNuevos: true },
+  // Fase 196: mapas de calor por hora y dia (reporte de cola por hora de Wolkvox).
+  { id: 'flujo_hora', nombre: 'Flujo por hora', grupo: 'opcional', carga: 'Flujo por hora (Wolkvox)', disponibleParaNuevos: true },
   { id: 'tipificacion', nombre: 'Tipificación', grupo: 'comun', carga: 'CDR / tipificación (Wolkvox)', disponibleParaNuevos: true },
   { id: 'encuesta', nombre: 'Encuesta', grupo: 'opcional', carga: 'HistIVR (Wolkvox)', disponibleParaNuevos: true },
   { id: 'calidad', nombre: 'Calidad', grupo: 'comun', carga: 'Monitoreos + plantilla de evaluación del cliente', disponibleParaNuevos: true },
@@ -76,6 +78,10 @@ const GENERADORES = {
     panels: [{ tipo: 'trafico_whatsapp_combo', campana, mostrarAht: false, mostrarSL5min: false }],
   }),
   whatsapp_tiempos: () => null, // sub-vista de WhatsApp: sin pestana propia
+  flujo_hora: (campana) => ({ // Fase 196
+    key: 'flujo_hora', label: 'Flujo por hora',
+    panels: [{ tipo: 'flujo_hora_panel', campana }],
+  }),
   calidad_resumen: () => null, // Fase 172: sub-vista de Calidad (panel en esa pestaña)
   salida: (campana) => ({
     key: 'salida', label: 'Llamadas y WhatsApp de salida',
@@ -222,8 +228,8 @@ const PERFILES_ACTUALES = {
   MOBILIZE: {
     nombre: 'MOBILIZE',
     titulo: 'Dashboard Mobilize',
-    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
-    visibles: ['flujo_llamadas', 'llamadas_unicas', 'encuesta', 'calidad'],
+    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'flujo_hora', 'encuesta'],
+    visibles: ['flujo_llamadas', 'llamadas_unicas', 'flujo_hora', 'encuesta', 'calidad'],
     ajustes: {
       flujo_llamadas: {
         key: 'flujo',

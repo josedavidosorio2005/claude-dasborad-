@@ -25,6 +25,7 @@ const ANTES = {
   llamadasSalida: ['MOBILIZE'], // CARGAS_CLIENTES_LLAMADAS_SALIDA
   whatsappTiempos: ['ORLANT'], // CARGAS_CLIENTES_WHATSAPP_TIEMPOS y WPP_TIEMPOS_CAMPANAS
   calidadResumen: ['MOBILIZE'], // Fase 172
+  flujoHora: ['MOBILIZE'], // Fase 196
   encuesta: ['MOBILIZE'], // CARGAS_CLIENTES_ENCUESTA
   asesorVisibleCliente: ['MOBILIZE'], // LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE y CAMPANAS_ASESOR_VISIBLE_CLIENTE
   logos: {

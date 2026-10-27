@@ -17349,3 +17349,41 @@ agosto 54, abandonadas bien).
   de 480 px los "%" de las barras se ocultan (se pisaban) y quedan en el
   tooltip, en "Ver datos" y en el NPS. CI: el tamaño de letra del NPS usa el
   token `--fs-kpi`. Suite 2255/2255.
+
+### Fase 196 — Pestaña "Flujo por hora" de Mobilize (2026-10-27, v1.84.0)
+
+Pedido del usuario (se presenta al cliente).
+
+- Archivo de Edwin (`FLUJO POR HORA MES DE OCTUBRE.xlsx`, solo encabezados
+  y conteos): reporte de cola por hora de Wolkvox, hoja "HistQueue…", 59
+  filas, 15 columnas (DATE AAAAMMDD, SKILL_ID, SKILL_NAME, HOUR,
+  INBOUND/ANSWER/ABANDON_CALLS, SERVICE_LEVEL_10/20/30SEC, WAIT_TIME, ABANDON,
+  AHT, ASA, ATA); sin teléfonos. Octubre: 17 días (1 al 23), horas 8 a 17, 2
+  skills; 106 ingresadas, 104 contestadas, 2 abandonadas; en todas las
+  filas ingresadas = contestadas + abandonadas.
+- Lector `flujo-hora-logic.js` (DATE AAAAMMDD, HOUR 0-23; la misma fila dos
+  veces no se suma dos veces), tabla `flujo_hora` sin teléfono, rutas
+  `/calidad/flujo-hora/{opciones,mes,carga,carga/impacto}`, migración
+  `fase196_flujo_hora_v1` (tabla + módulo `flujo_hora` en el registro de
+  MOBILIZE + pestaña después de Llamadas Únicas, solo en la forma reconocible
+  del layout). Centro de cargas: módulo "Flujo por hora" con su plantilla =
+  el reporte tal cual. Un reporte con HOUR nunca entra en Flujo de Llamadas
+  y uno diario nunca en Flujo por hora.
+- Panel `flujo-hora.js`: tres mapas de calor (Ingresadas, Contestadas,
+  Abandonadas), filas = tramo de hora, columnas = días del mes, fila y
+  columna de Total; sigue el MES de arriba. Tres niveles del máximo de cada
+  tabla (alto ≥ 2/3, medio ≥ 1/3, bajo) con tokens nuevos `--c-calor-*`
+  (verde, amarillo, gris, en claro y oscuro; texto ≥ 4,5:1 medido con
+  `contrasteRazon`). En el celular cada tabla se desplaza dentro de su
+  tarjeta con la columna de la hora fija. Exportar trae las tres tablas.
+- Pruebas: `fase196-flujo-hora.test.js` (6: lector y totales 22 / 20 / 2,
+  matriz con totales, niveles y contraste, separación del reporte diario,
+  Centro y migración idempotente, API con el mapa = el archivo). Ajustes de
+  listas en `fase118`, `fase150`, `fase153` (centro, listas, plantillas,
+  aurora), `fase160` y tres pruebas de pestañas de MOBILIZE.
+- Verificación local (copia de la base demo, archivo real subido por el
+  Centro solo a la copia, Playwright y Brave a 1440/768/375 px): vista previa
+  59 filas, 106 / 104 / 2; mapas 106 / 104 / 2 en 10 tramos x 31 días;
+  colores verde/amarillo/gris; en 1440 la tabla cabe con la columna Total;
+  en 375 cada tabla se desplaza de lado; sin scroll horizontal de la página
+  ni errores de consola.

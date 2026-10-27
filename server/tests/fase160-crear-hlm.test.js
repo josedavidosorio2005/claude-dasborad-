@@ -44,7 +44,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 191: columna unicaDia en tipificaciones y tabla llamadas_abandonadas (no toca Aurora/HLM).
     'fase191_llamadas_unicas_fuentes_v1',
     // Fase 194: solo crea la tabla llamadas_no_conectadas (vacia).
-    'fase194_llamadas_no_conectadas_v1'];
+    'fase194_llamadas_no_conectadas_v1',
+    // Fase 196: tabla flujo_hora + modulo y pestaña de MOBILIZE (no toca Aurora/HLM).
+    'fase196_flujo_hora_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
