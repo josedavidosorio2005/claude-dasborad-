@@ -17070,3 +17070,54 @@ Pedido del usuario: quitar las dos tortas de abajo de Tipificación de ORLANT.
   2025): 0 tortas por línea, tarjetas 5/5/1 (llamadas) y 2/3/1 (WhatsApp),
   tortas de tipificación con 14 y 10 registros, sin scroll horizontal ni
   errores de consola.
+
+### Fase 191 — Llamadas Únicas de Mobilize desde las bases de Wolkvox (2026-10-27, v1.80.0)
+
+Pedido del usuario: que las llamadas únicas salgan de las bases tal cual las
+baja Wolkvox (para cuadrar luego con la API), sin plantillas armadas a mano.
+
+- **Contestadas únicas, del CDR de Tipificación**: la tabla `tipificaciones`
+  no guarda el teléfono (Fase 131), así que el lector (`tipificacion-logic.js`,
+  opción `marcarUnicasDia`, solo clientes con Llamadas Únicas) lee TELEPHONE
+  aparte, en memoria, y marca cada fila de ingreso (SKILL_NAME original
+  distinto de "-" y que no quedó como salida) con `unicaDia` = 1 si es la
+  primera de su (día, teléfono) y 0 si se repite; las de salida, 0. El
+  teléfono vive en una propiedad no enumerable y se borra; al servidor solo
+  llega el 0/1 (columna nueva `unicaDia`, migración
+  `fase191_llamadas_unicas_fuentes_v1`, solo agrega). El conteo de
+  Tipificación no cambia. El CDR ya cargado en producción no tiene la marca:
+  hasta volver a subirlo, esos meses siguen con la carga vieja.
+- **Abandonadas únicas, base nueva**: "Detalle de llamadas abandonadas" de
+  Wolkvox tal cual (hoja HistQueue, reconocida por encabezados), tercera carga
+  del módulo Llamadas Únicas en el Centro de cargas ("Abandonadas", sin
+  plantilla). Obligatorias DATE, ANI, SKILL_NAME; RESULT (solo ABANDON) y
+  TYPE_INTERACTION (solo inbound) si vienen; CONN_ID, CUSTOMER_ID, SKILL_ID y
+  ABANDON_TIME no se leen. Única por (día, ANI). Tabla `llamadas_abandonadas`
+  sin teléfono. Rutas `POST /calidad/llamadas-abandonadas/carga(/impacto)`.
+- **Por mes** (`llamadas-unicas.js`): contestadas del CDR si el mes tiene
+  filas marcadas; abandonadas de la base nueva si el mes tiene filas; si no,
+  cada parte de la carga vieja. Cada mes trae `fuenteContestadas` /
+  `fuenteAbandonadas`; el resumen es la suma de los meses.
+- **Salida** (`llamadas-salida.js`): en los meses con CDR, conectadas = filas
+  "-" (guardadas como "-" o "LLAMADAS DE SALIDA"), por registro; no
+  conectadas y total en null ("Pendiente") hasta tener su base. Los meses sin
+  CDR siguen con el archivo de salida.
+- Panel: tabla "De dónde sale cada mes" en cada mitad, "Pendiente" en
+  tarjetas y tablas; el Excel de "Exportar" trae la fuente. Guía de uso,
+  pendientes (recargar el CDR, base de no conectadas, filas "-" con
+  Cliente_no_contesta).
+- Pruebas: `fase191-llamadas-unicas-fuentes.test.js` (10: duplicado el mismo
+  día = 1, mismo teléfono en dos días = 2, filas "-" fuera; sin teléfono en
+  el payload, la base ni las respuestas; columnas obligatorias; fuentes por
+  mes; salida pendiente; migración idempotente; Centro de cargas). Ajustes de
+  listas en `fase118` (2), `fase141`, `fase150`, `fase153`, `fase160` y
+  `tipificacion-logic`.
+- Verificación local (copia de la base demo, Playwright y Brave a
+  1440/768/375 px): por la interfaz del Centro se subió un CDR sintético de
+  octubre (vista previa: 5 de ingreso, 3 únicas) y el reporte real de
+  abandonadas de octubre (solo a la copia local; vista previa: 2 abandonadas
+  únicas, columnas DATE, ANI, SKILL_NAME, RESULT, TYPE_INTERACTION); un
+  archivo sin ANI se rechaza diciendo que falta ANI. Tablero: 5 / 3 / 2,
+  salida 3 conectadas con no conectadas y total "Pendiente", tablas de
+  fuente, sin teléfonos en pantalla ni en la base, sin scroll horizontal ni
+  errores de consola.

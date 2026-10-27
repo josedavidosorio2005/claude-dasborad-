@@ -2277,7 +2277,7 @@ async function _gdExportarLlamadasUnicas(p, i){
     return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'aviso', filas: [], mensaje: 'Sin llamadas únicas cargadas todavía.' }];
   }
   var filas = porMes.map(function(m){
-    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total únicas': m.total, 'Contestadas únicas': m.contestadas, 'Abandonadas únicas': m.abandonadas };
+    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total únicas': m.total, 'Contestadas únicas': m.contestadas, 'Abandonadas únicas': m.abandonadas, Fuente: llamadasUnicasFuenteMes(m) }; // Fase 191: Fuente
   });
   return [{ titulo: 'Llamadas de ingreso únicas', tipo: 'tabla', filas: filas }].concat(await _gdExportarLlamadasSalida(campana));
 }
@@ -2303,7 +2303,7 @@ async function _gdExportarLlamadasSalida(campana){
     return [{ titulo: 'Llamadas de salida', tipo: 'aviso', filas: [], mensaje: 'Sin llamadas de salida cargadas todavía.' }];
   }
   return [{ titulo: 'Llamadas de salida', tipo: 'tabla', filas: porMes.map(function(m){
-    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total llamadas de salida': m.total, 'No conectadas': m.noConectadas, 'Conectadas': m.conectadas };
+    return { Mes: (typeof mesNombreLargo==='function') ? mesNombreLargo(m.periodo) : m.periodo, 'Total llamadas de salida': m.total === null ? 'Pendiente' : m.total, 'No conectadas': m.noConectadas === null ? 'Pendiente' : m.noConectadas, 'Conectadas': m.conectadas, Fuente: llamadasSalidaFuenteMes(m) }; // Fase 191
   }) }];
 }
 

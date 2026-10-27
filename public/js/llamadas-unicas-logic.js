@@ -232,9 +232,102 @@ function llamadasUnicasParseFilas(aoa) {
   return { filas: filas, avisos: avisos, duplicadosQuitados: duplicadosQuitados, contestadas: contestadas, abandonadas: abandonadas, telefonosEnAmbosTipos: telefonosEnAmbosTipos };
 }
 
+// ── Fase 191: "Detalle de llamadas abandonadas" de Wolkvox, tal cual ──────
+// El reporte (Skills y servicios, hoja "HistQueue<fecha>") trae CONN_ID,
+// SKILL_ID, SKILL_NAME, DATE, RESULT, ANI, ABANDON_TIME, TYPE_INTERACTION y
+// CUSTOMER_ID. Se usan DATE, ANI (el telefono, SOLO en memoria para la clave
+// dia+telefono) y SKILL_NAME -- obligatorias --, y RESULT/TYPE_INTERACTION,
+// si vienen, para no contar una fila que no sea una abandonada de ingreso.
+// CONN_ID, CUSTOMER_ID, SKILL_ID y ABANDON_TIME no se leen.
+var LLAMADAS_ABANDONADAS_COLUMNAS = [
+  { key: 'fecha', label: 'DATE', obligatoria: true },
+  { key: 'telefono', label: 'ANI', obligatoria: true },
+  { key: 'skill', label: 'SKILL_NAME', obligatoria: true },
+  { key: 'resultado', label: 'RESULT', obligatoria: false },
+  { key: 'tipoInteraccion', label: 'TYPE_INTERACTION', obligatoria: false },
+];
+// Orden fijo de la fila que va al servidor (= CAMPOS_FILA_ABANDONADAS de
+// server/llamadas-unicas.js). Sin telefono, a proposito.
+var LLAMADAS_ABANDONADAS_ORDEN_ARRAY = ['fecha', 'skill'];
+
+function llamadasAbandonadasColIndexMap(headerRow) {
+  var map = {};
+  (headerRow || []).forEach(function (h, i) {
+    var n = llamadasUnicasNormTexto(h).toUpperCase();
+    LLAMADAS_ABANDONADAS_COLUMNAS.forEach(function (c) { if (c.label === n && map[c.key] === undefined) map[c.key] = i; });
+  });
+  return map;
+}
+
+// { error } si falta una columna obligatoria; si no, { filas, avisos,
+// duplicadosQuitados, abandonadas, columnasUsadas }. Unica = un telefono una
+// sola vez por dia (dias distintos cuentan aparte), igual que las contestadas.
+function llamadasAbandonadasParseFilas(aoa) {
+  if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
+  var map = llamadasAbandonadasColIndexMap(aoa[0]);
+  var faltantes = LLAMADAS_ABANDONADAS_COLUMNAS.filter(function (c) { return c.obligatoria && map[c.key] === undefined; });
+  if (faltantes.length) {
+    return { error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') + '. Sube el reporte "Detalle de llamadas abandonadas" de Wolkvox tal cual.' };
+  }
+  var avisos = [];
+  var noAbandono = 0, deSalida = 0;
+  var vistos = {};
+  var filas = [];
+  var duplicadosQuitados = 0;
+  for (var i = 1; i < aoa.length; i++) {
+    var row = aoa[i];
+    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    var filaNum = i + 1;
+    var fecha = llamadasUnicasParseFecha(row[map.fecha]);
+    var telefono = _llamadasUnicasNormalizarTelefono(row[map.telefono]);
+    var skill = llamadasUnicasNormTexto(row[map.skill]);
+    if (!fecha) { avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.'); continue; }
+    if (!telefono) { avisos.push('Fila ' + filaNum + ': ANI invalido o vacio, se omitio.'); continue; }
+    if (!skill) { avisos.push('Fila ' + filaNum + ': falta SKILL_NAME, se omitio.'); continue; }
+    if (_llamadasUnicasFechaLimites.fechaLimitesEsFutura(fecha)) { avisos.push('Fila ' + filaNum + ': DATE ' + fecha + ' esta en el futuro, se omitio.'); continue; }
+    if (map.resultado !== undefined && llamadasUnicasNormTexto(row[map.resultado]).toUpperCase() !== 'ABANDON') { noAbandono++; continue; }
+    if (map.tipoInteraccion !== undefined) {
+      var tipo = llamadasUnicasNormTexto(row[map.tipoInteraccion]).toLowerCase();
+      if (tipo && tipo !== 'inbound') { deSalida++; continue; }
+    }
+    var clave = fecha + '|' + telefono;
+    if (vistos[clave]) { duplicadosQuitados++; continue; }
+    vistos[clave] = true;
+    filas.push([fecha, skill]);
+  }
+  if (noAbandono) avisos.push(noAbandono + ' fila(s) con RESULT distinto de ABANDON, no se contaron.');
+  if (deSalida) avisos.push(deSalida + ' fila(s) que no son de ingreso (TYPE_INTERACTION distinto de inbound), no se contaron.');
+  if (!filas.length) return { error: 'Ninguna llamada abandonada valida en el archivo.', avisos: avisos };
+  var columnasUsadas = LLAMADAS_ABANDONADAS_COLUMNAS.filter(function (c) { return map[c.key] !== undefined; }).map(function (c) { return c.label; });
+  return { filas: filas, avisos: avisos, duplicadosQuitados: duplicadosQuitados, abandonadas: filas.length, columnasUsadas: columnasUsadas };
+}
+
+// Fase 191: de donde sale cada parte de un mes (tabla del panel). `m` es una
+// fila de /calidad/llamadas-unicas/por-mes o de /calidad/llamadas-salida/por-mes.
+var LLAMADAS_UNICAS_FUENTE_TEXTO = {
+  CDR: 'CDR',
+  ABANDONADAS: 'reporte de abandonadas',
+  PLANTILLA: 'Carga anterior',
+  MIXTA: 'CDR y carga anterior',
+};
+function llamadasUnicasFuenteMes(m) {
+  var t = function (f, vacio) { return (f && LLAMADAS_UNICAS_FUENTE_TEXTO[f]) || vacio; };
+  return 'Contestadas: ' + t(m && m.fuenteContestadas, 'sin cargar') + ' · Abandonadas: ' + t(m && m.fuenteAbandonadas, 'sin cargar');
+}
+function llamadasSalidaFuenteMes(m) {
+  var base = LLAMADAS_UNICAS_FUENTE_TEXTO[m && m.fuente] || LLAMADAS_UNICAS_FUENTE_TEXTO.PLANTILLA;
+  return m && m.noConectadas === null ? base + ' (falta la base de no conectadas)' : base;
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    llamadasUnicasFuenteMes: llamadasUnicasFuenteMes,
+    llamadasSalidaFuenteMes: llamadasSalidaFuenteMes,
+    LLAMADAS_ABANDONADAS_COLUMNAS: LLAMADAS_ABANDONADAS_COLUMNAS,
+    LLAMADAS_ABANDONADAS_ORDEN_ARRAY: LLAMADAS_ABANDONADAS_ORDEN_ARRAY,
+    llamadasAbandonadasColIndexMap: llamadasAbandonadasColIndexMap,
+    llamadasAbandonadasParseFilas: llamadasAbandonadasParseFilas,
     LLAMADAS_UNICAS_COLUMNAS: LLAMADAS_UNICAS_COLUMNAS,
     LLAMADAS_UNICAS_ORDEN_ARRAY: LLAMADAS_UNICAS_ORDEN_ARRAY,
     LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA: LLAMADAS_UNICAS_SKILL_ABANDONADA_ETIQUETA,

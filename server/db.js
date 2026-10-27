@@ -4137,6 +4137,34 @@ function activarSalidaUnaClasificacion() {
 }
 runOnceMigration('fase187_salida_una_clasificacion_v1', activarSalidaUnaClasificacion);
 
+// Fase 191 (Mobilize, Llamadas Unicas desde las bases de Wolkvox): solo
+// AGREGA, nunca borra ni cambia un dato.
+// 1) tipificaciones.unicaDia: 1 = primera llamada de ingreso de su (dia,
+//    telefono) en el CDR, 0 = repeticion o salida, NULL = cargada antes de
+//    esta fase o sin TELEPHONE (ese mes sigue con la carga vieja).
+// 2) llamadas_abandonadas: el reporte "Detalle de llamadas abandonadas" de
+//    Wolkvox, una fila por (dia, telefono) unico. Igual que llamadas_unicas,
+//    NO TIENE columna de telefono (se usa solo en el navegador).
+function crearLlamadasUnicasFuentes() {
+  const cols = db.prepare('PRAGMA table_info(tipificaciones)').all().map((c) => c.name);
+  if (!cols.includes('unicaDia')) db.exec('ALTER TABLE tipificaciones ADD COLUMN unicaDia INTEGER');
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llamadas_abandonadas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_llamadas_abandonadas_campana_fecha ON llamadas_abandonadas(campana, fecha);
+  `);
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase191_llamadas_unicas_fuentes_v1 aplicada.');
+}
+runOnceMigration('fase191_llamadas_unicas_fuentes_v1', crearLlamadasUnicasFuentes);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4181,6 +4209,8 @@ module.exports.agregarSalidaNoConectada = agregarSalidaNoConectada;
 module.exports.crearAsesorClasificacion = crearAsesorClasificacion;
 // Fase 187: idem.
 module.exports.activarSalidaUnaClasificacion = activarSalidaUnaClasificacion;
+// Fase 191: idem.
+module.exports.crearLlamadasUnicasFuentes = crearLlamadasUnicasFuentes;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

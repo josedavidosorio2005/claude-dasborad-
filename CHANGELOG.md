@@ -4,6 +4,26 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.80.0 — Octubre 2026
+
+**Fase 191: Llamadas Únicas de Mobilize con las bases de Wolkvox tal cual.**
+
+- **Contestadas únicas** salen del CDR de llamadas que ya se sube en
+  Tipificación. Solo cuentan los skills de ingreso (las de skill "-" son de
+  salida). Un teléfono cuenta una vez por día: si llama varias veces el mismo
+  día cuenta 1; otro día vuelve a contar. Para que un mes salga de aquí, su
+  CDR se vuelve a subir con esta versión (Tipificación no cambia).
+- **Abandonadas únicas**: base nueva en el Centro de cargas (Llamadas Únicas
+  y de Salida → "Abandonadas"): el reporte "Detalle de llamadas abandonadas"
+  de Wolkvox, subido tal cual. La vista previa dice qué columnas usó y avisa
+  si falta DATE, ANI o SKILL_NAME.
+- **Llamadas de salida conectadas**: en los meses con CDR salen de las filas
+  con skill "-". Las no conectadas necesitan otra base que todavía no está:
+  esos meses dicen "Pendiente", sin inventar la cifra.
+- Debajo de cada gráfica, una tabla "De dónde sale cada mes". Los meses sin
+  CDR siguen con la carga anterior. El Excel de "Exportar" también la trae.
+- El teléfono nunca llega al servidor ni se muestra.
+
 ## v1.79.0 — Octubre 2026
 
 **Fase 190: Tipificación de ORLANT sin las tortas de salida por línea.**

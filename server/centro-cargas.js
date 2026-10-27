@@ -24,6 +24,8 @@ const CARGAS_POR_MODULO = {
   llamadas_unicas: [
     { id: 'llamadas_unicas', nombre: 'Llamadas Únicas (ingreso)', tabla: 'llamadas_unicas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_UNICAS.xlsx' },
     { id: 'llamadas_salida', nombre: 'Llamadas de Salida', tabla: 'llamadas_salida', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_SALIDA.xlsx' },
+    // Fase 191: el reporte de Wolkvox tal cual (sin plantilla armada a mano).
+    { id: 'llamadas_abandonadas', nombre: 'Detalle de llamadas abandonadas (Wolkvox)', tabla: 'llamadas_abandonadas', fecha: 'fecha', plantilla: null },
   ],
   tipificacion: [
     { id: 'tipificacion_llamadas', nombre: 'Tipificación de llamadas', tabla: 'tipificaciones', fecha: 'fecha', filtro: { canal: 'LLAMADAS' }, plantilla: 'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx' },

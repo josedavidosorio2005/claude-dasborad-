@@ -9,6 +9,22 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Volver a subir el CDR de llamadas de Mobilize en Tipificación**
+  (Fase 191, 27/10/2026) — desde la v1.80.0 las contestadas únicas salen
+  del CDR, pero el CDR ya cargado no guarda el teléfono (privacidad), así
+  que agosto, septiembre y octubre siguen con la carga vieja hasta que su
+  CDR se vuelva a subir (Centro de cargas → Tipificación → Llamadas, el
+  mismo archivo de Wolkvox con TELEPHONE). Tipificación queda igual; solo
+  se agrega la marca de única. Es una carga en producción: hace falta tu
+  OK y el archivo de cada mes. Lo mismo con el reporte "Detalle de
+  llamadas abandonadas" de octubre (Abandonadas, en el mismo módulo).
+- **Salida conectada de Mobilize: filas "-" con "Cliente_no_contesta"**
+  (Fase 191) — por el pedido, las conectadas de los meses con CDR son
+  todas las filas con SKILL_NAME "-". Parte de esas filas están tipificadas
+  "Cliente_no_contesta" (la regla de "no conectada" de Tipificación de
+  Mobilize, Fase 174). Confirmar con Edwin si se dejan como conectadas o
+  se descuentan.
+
 - **Volver a subir la salida de agosto y septiembre de Mobilize** (Fase
   171) — se cargaron cuando el sistema dejaba una sola llamada por día y
   teléfono, así que les faltan filas. Octubre ya se recargó completo (85).
@@ -140,6 +156,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Base de llamadas de salida NO conectadas de Mobilize** (Fase 191,
+  27/10/2026) — desde la v1.80.0, en los meses con CDR las conectadas salen
+  del CDR (filas "-"), pero las no conectadas necesitan otra base que
+  todavía no existe. Mientras tanto la tarjeta, el total y la tabla dicen
+  "Pendiente" (nunca una cifra inventada). Cómo se cierra: Edwin dice qué
+  reporte de Wolkvox es (¿CDR → "5. Detalle de las llamadas para las no
+  conectadas"?) y se agrega como base del Centro de cargas, igual que las
+  abandonadas.
 
 - **Clasificar a los asesores de ORLANT en Línea General o Línea 3P**
   (Fase 186, 26/10/2026) — desde la v1.75.0, la salida de Tipificación se

@@ -26,7 +26,8 @@ var _llamadasSalidaEstado = {};   // Fase 141: filtros de la mitad de salida, po
 
 // Aviso bajo el titulo (Fase 139): en español simple, por que este numero no
 // coincide con Flujo de Llamadas.
-var LLAMADAS_UNICAS_AVISO = 'Cuenta una sola vez cada teléfono por día. No coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.';
+// Fase 191: contestadas del CDR de Tipificación y abandonadas del reporte de Wolkvox.
+var LLAMADAS_UNICAS_AVISO = 'Cuenta una sola vez cada teléfono por día. Contestadas: del CDR de llamadas (skills de ingreso); abandonadas: del reporte "Detalle de llamadas abandonadas" de Wolkvox. No coincide con Flujo de Llamadas, que cuenta todas las llamadas de la cola.';
 function _llamadasUnicasTituloHtml() {
   return '<div class="aurora-card-title">Llamadas de ingreso únicas</div>' +
     '<p class="lu-aviso">' + LLAMADAS_UNICAS_AVISO + '</p>';
@@ -116,7 +117,8 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
       '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
-    gdGraficaHtml('Llamadas únicas de ingreso por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '" data-titulo="Llamadas únicas de ingreso por mes"></canvas></div>');
+    gdGraficaHtml('Llamadas únicas de ingreso por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '" data-titulo="Llamadas únicas de ingreso por mes"></canvas></div>') +
+    '<div id="lu-fuentes-' + i + '"></div>';
 
   await _llamadasUnicasRenderContenido(campana, i);
 }
@@ -188,12 +190,26 @@ async function _llamadasUnicasRenderContenido(campana, i) {
   // Fase 167: filtro "Meses" -- solo la grafica por mes; las tarjetas no cambian.
   porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes);
   _llamadasUnicasDibujarBarras(i, porMes, _llamadasUnicasSoloTotal(resumen));
+  var elF = document.getElementById('lu-fuentes-' + i);
+  if (elF) elF.innerHTML = _llamadasUnicasFuentesHtml(porMes);
+}
+
+// Fase 191: tabla por mes con la fuente de cada parte (pedido del 27/10).
+function _llamadasUnicasFuentesHtml(porMes) {
+  if (!porMes.length) return '';
+  var n = function (v) { return (v || 0).toLocaleString('es-CO'); };
+  return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">De dónde sale cada mes</div>' +
+    '<div class="table-wrap"><table class="aurora-table lu-fuentes"><thead><tr><th class="th-izq">Mes</th><th>Contestadas</th><th>Abandonadas</th><th>Total</th><th class="th-izq">Fuente</th></tr></thead><tbody>' +
+    porMes.map(function (m) {
+      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.contestadas) + '</td><td>' + n(m.abandonadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasUnicasFuenteMes === 'function' ? llamadasUnicasFuenteMes(m) : '').split(' · ').join('<br>') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // Fase 141 (Parte C): mitad derecha -- Llamadas de salida
 // ═══════════════════════════════════════════════════════════════════
-var LLAMADAS_SALIDA_AVISO = 'Cuenta una sola vez cada teléfono por día, por separado si la llamada fue conectada y no conectada.';
+// Fase 191: en los meses con CDR, las conectadas salen de ahí; las no conectadas esperan su base.
+var LLAMADAS_SALIDA_AVISO = 'Cuenta cada llamada de salida. En los meses con CDR, las conectadas son las llamadas con skill "-" del CDR; las no conectadas de esos meses quedan pendientes hasta tener su base.';
 
 function _llamadasSalidaTituloHtml() {
   return '<div class="aurora-card-title">Llamadas de salida</div>' +
@@ -239,6 +255,7 @@ async function _llamadasSalidaRenderMitad(campana, i) {
     '</div>' +
     '<div class="aurora-kpis" id="ls-kpis-' + i + '"></div>' +
     gdGraficaHtml('Llamadas de salida por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '" data-titulo="Llamadas de salida por mes"></canvas></div>') +
+    '<div id="ls-fuentes-' + i + '"></div>' +
     (esInterno ? '<div id="ls-detalle-' + i + '"></div>' : '');
   await _llamadasSalidaRenderContenido(campana, i);
 }
@@ -252,10 +269,24 @@ function _llamadasSalidaAplicarFiltros(i) {
 }
 
 // Orden pedido (Edwin, 13/10): total / no conectadas / conectadas.
+// Fase 191: null = pendiente (mes con CDR, falta la base de no conectadas).
+function _llamadasSalidaNum(v) { return v === null || v === undefined ? 'Pendiente' : v.toLocaleString('es-CO'); }
 function _llamadasSalidaKpisHtml(resumen) {
-  return '<div class="aurora-kpi"><div class="kv">' + resumen.total.toLocaleString('es-CO') + '</div><div class="kl">Total llamadas de salida</div></div>' +
-    '<div class="aurora-kpi"><div class="kv">' + resumen.noConectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
-    '<div class="aurora-kpi"><div class="kv">' + resumen.conectadas.toLocaleString('es-CO') + '</div><div class="kl">Llamadas de salida conectadas</div></div>';
+  return '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.total) + '</div><div class="kl">Total llamadas de salida</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.noConectadas) + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
+    '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.conectadas) + '</div><div class="kl">Llamadas de salida conectadas</div></div>' +
+    (resumen.noConectadasPendiente ? '<p class="lu-aviso lu-aviso-pendiente">No conectadas y total quedan pendientes en los meses que salen del CDR: falta la base de llamadas no conectadas.</p>' : '');
+}
+
+// Fase 191: tabla por mes con su fuente.
+function _llamadasSalidaFuentesHtml(porMes) {
+  if (!porMes.length) return '';
+  var n = function (v) { return v === null || v === undefined ? '—' : v.toLocaleString('es-CO'); };
+  return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">De dónde sale cada mes</div>' +
+    '<div class="table-wrap"><table class="aurora-table ls-fuentes"><thead><tr><th class="th-izq">Mes</th><th>Conectadas</th><th>No conectadas</th><th>Total</th><th class="th-izq">Fuente</th></tr></thead><tbody>' +
+    porMes.map(function (m) {
+      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.conectadas) + '</td><td>' + n(m.noConectadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasSalidaFuenteMes === 'function' ? llamadasSalidaFuenteMes(m) : '') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 
 function _llamadasSalidaDibujarBarras(i, porMes) {
@@ -288,7 +319,8 @@ function _llamadasSalidaDetalleHtml(detalle) {
     return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">' + titulo + '</div>' +
       '<div class="table-wrap" style="max-height:280px;overflow:auto"><table class="aurora-table"><thead><tr><th class="th-izq">' + col + '</th><th>Total</th><th>No conectadas</th><th>Conectadas</th></tr></thead><tbody>' +
       filas.map(function (r) {
-        return '<tr><td>' + esc(etiqueta(r)) + '</td><td>' + r.total.toLocaleString('es-CO') + '</td><td>' + r.noConectadas.toLocaleString('es-CO') + '</td><td>' + r.conectadas.toLocaleString('es-CO') + '</td></tr>';
+        var n = function (v) { return v === null || v === undefined ? '—' : v.toLocaleString('es-CO'); }; // Fase 191: null = pendiente
+        return '<tr><td>' + esc(etiqueta(r)) + '</td><td>' + n(r.total) + '</td><td>' + n(r.noConectadas) + '</td><td>' + n(r.conectadas) + '</td></tr>';
       }).join('') +
       '</tbody></table></div>';
   }
@@ -304,7 +336,7 @@ async function _llamadasSalidaRenderContenido(campana, i) {
     (estado.hasta ? '&hasta=' + encodeURIComponent(estado.hasta) : '') +
     (estado.tipo ? '&tipo=' + encodeURIComponent(estado.tipo) : '') +
     (esInterno && estado.agente ? '&agente=' + encodeURIComponent(estado.agente) : '');
-  var resumen = { total: 0, noConectadas: 0, conectadas: 0 };
+  var resumen = { total: 0, noConectadas: 0, conectadas: 0, noConectadasPendiente: false };
   var porMes = [];
   var detalle = null;
   try {
@@ -316,6 +348,8 @@ async function _llamadasSalidaRenderContenido(campana, i) {
   if (elKpis) elKpis.innerHTML = _llamadasSalidaKpisHtml(resumen);
   porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes); // Fase 167: filtro "Meses"
   _llamadasSalidaDibujarBarras(i, porMes);
+  var elFs = document.getElementById('ls-fuentes-' + i);
+  if (elFs) elFs.innerHTML = _llamadasSalidaFuentesHtml(porMes);
   var elDet = document.getElementById('ls-detalle-' + i);
   if (elDet) elDet.innerHTML = detalle ? _llamadasSalidaDetalleHtml(detalle) : '';
 }

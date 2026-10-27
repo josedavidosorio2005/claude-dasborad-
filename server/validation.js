@@ -625,6 +625,9 @@ const tipificacionFilaArraySchema = z.tuple([
   tipificacionTipoInteraccionSchema, // tipoInteraccion
   tipificacionCdrTextoOpcional, // hungUp
   tipificacionCdrTextoOpcional, // skillId
+  // Fase 191: unicaDia (0/1) -- opcional para que un navegador con el JS
+  // anterior (11 columnas) siga pudiendo cargar.
+  z.union([z.literal(0), z.literal(1)]).nullable().optional(), // unicaDia
 ]);
 
 const tipificacionCanalSchema = z.enum(['LLAMADAS', 'WHATSAPP'], { error: 'canal debe ser LLAMADAS o WHATSAPP' });
@@ -786,6 +789,26 @@ const llamadasUnicasCargaBody = z.object({
       filas.forEach((fila, i) => {
         if (fechaLimitesEsFutura(fila[1])) {
           ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[1]), path: [i, 1] });
+        }
+      });
+    }),
+});
+
+// Fase 191: "Detalle de llamadas abandonadas" de Wolkvox -- [fecha, skill],
+// ya deduplicadas por (dia, telefono) en el navegador. Debe coincidir con
+// LLAMADAS_ABANDONADAS_ORDEN_ARRAY (llamadas-unicas-logic.js) y con
+// CAMPOS_FILA_ABANDONADAS (llamadas-unicas.js). Sin telefono, a proposito.
+const llamadasAbandonadasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(z.tuple([fechaSchema, tipificacionTextoObligatorio]))
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0]), path: [i, 0] });
         }
       });
     }),
@@ -1423,6 +1446,7 @@ module.exports = {
     clasificacionAsesoresQuery,
     clasificacionAsesoresBody,
     llamadasUnicasCargaBody,
+    llamadasAbandonadasCargaBody, // Fase 191
     llamadasUnicasFiltrosQuery,
     llamadasUnicasOpcionesQuery,
     llamadasSalidaCargaBody,

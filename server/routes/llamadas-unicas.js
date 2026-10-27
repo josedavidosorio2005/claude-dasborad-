@@ -20,6 +20,8 @@ const {
   llamadasUnicasResumen,
   llamadasUnicasPorMes,
   llamadasUnicasOpciones,
+  impactoLlamadasAbandonadas,
+  cargarLlamadasAbandonadas,
 } = require('../llamadas-unicas');
 const { wrap, logEvent, actorLabel } = require('./shared');
 // Fase 149 (auditoria 148, hallazgo medio): nombres de asesor con la misma
@@ -134,6 +136,51 @@ router.post(
     });
     logEvent(
       'LLAMADAS_UNICAS_CARGA',
+      { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: b.campana },
+      actorLabel(req.actor),
+      `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`
+    );
+    res.status(201).json(resultado);
+  })
+);
+
+// Fase 191: "Detalle de llamadas abandonadas" de Wolkvox (Centro de cargas,
+// modulo Llamadas Unicas). Mismo permiso y mismo patron impacto -> carga.
+router.post(
+  '/calidad/llamadas-abandonadas/carga/impacto',
+  requireActor,
+  validate(schemas.llamadasAbandonadasCargaBody),
+  wrap((req, res) => {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+      return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+    }
+    if (!campaignAccess(req.actor, req.body.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(impactoLlamadasAbandonadas(db, { campana: req.body.campana, filas: req.body.filas }));
+  })
+);
+
+router.post(
+  '/calidad/llamadas-abandonadas/carga',
+  requireActor,
+  validate(schemas.llamadasAbandonadasCargaBody),
+  wrap((req, res) => {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+      return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas abandonadas' });
+    }
+    const b = req.body;
+    if (!campaignAccess(req.actor, b.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    const resultado = cargarLlamadasAbandonadas(db, {
+      campana: b.campana,
+      archivoNombre: b.archivoNombre || '',
+      cargadoPorNombre: req.actor.nombre || '-',
+      filas: b.filas,
+    });
+    logEvent(
+      'LLAMADAS_ABANDONADAS_CARGA',
       { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: b.campana },
       actorLabel(req.actor),
       `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`

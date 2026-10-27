@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.79.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.80.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -71,6 +71,15 @@ narrativo de cada fase, fase por fase, vive en
     si la fila no trae cierre.
   - En ORLANT la salida se cuenta **por registro** (cada fila del CDR). El
     teléfono único se usa solo en Llamadas Únicas de Mobilize.
+  - **Llamadas Únicas de Mobilize (Fase 191)**: contestadas = filas de
+    ingreso del CDR de Tipificación (skill distinto de "-") con
+    `unicaDia = 1` (primera del día para ese teléfono, marcada en el
+    navegador; el teléfono no se guarda); abandonadas = base
+    `llamadas_abandonadas` ("Detalle de llamadas abandonadas" de Wolkvox,
+    única por día y ANI). Un mes sin CDR marcado o sin abandonadas usa la
+    carga vieja (`llamadas_unicas`). Salida conectada = filas "-" del CDR
+    (por registro); no conectadas en null hasta tener su base. El CDR de
+    Mobilize ya cargado no tiene la marca: hay que volver a subirlo.
   - En los meses con CDR, la pestaña "Llamadas y WhatsApp de salida" de
     ORLANT sale del CDR y se reparte en 3P/General por la línea de cada
     asesor en ese mes (Fase 170); sin línea asignada = "Sin asignar".
@@ -311,3 +320,4 @@ mismo orden):
 - Fase 188 — Pestaña de salida de ORLANT: botones Total / Línea General / Línea 3P para tarjetas, barras y tabla (Total incluye Sin clasificar) y "Línea de cada asesor" arriba (v1.77.0, 2026-10-26)
 - Fase 189 — Los botones Total / Línea General / Línea 3P pasan a la cabecera de cada gráfica (llamadas y WhatsApp), cada grupo independiente; en el celular, debajo del título (v1.78.0, 2026-10-26)
 - Fase 190 — Tipificación de ORLANT: salen las tortas "Llamadas de salida por línea" y "WhatsApp de salida por línea" (la salida por línea se ve con los botones de la pestaña de salida) (v1.79.0, 2026-10-27)
+- Fase 191 — Llamadas Únicas de Mobilize desde las bases de Wolkvox: contestadas del CDR (marca de única por día y teléfono), abandonadas del reporte "Detalle de llamadas abandonadas" (base nueva), salida conectada del CDR y no conectadas pendientes; tabla de fuente por mes (v1.80.0, 2026-10-27)

@@ -164,6 +164,8 @@ test('Fase 118 2B.3-2B.6: carga legitima -- SQLite, Historial y GET /por-tipo nu
     [
       'id', 'campana', 'canal', 'agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill',
       'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId',
+      // Fase 191: marca 0/1 de llamada unica (no es PII; el telefono nunca se guarda).
+      'unicaDia',
       'archivoNombre', 'cargadoPorNombre', 'createdAt',
     ].sort()
   );

@@ -78,7 +78,9 @@ var TIPIFICACION_COLUMNAS_OBLIGATORIAS = TIPIFICACION_COLUMNAS.filter(function (
 // CAMPOS_FILA (server/tipificaciones.js) y tipificacionFilaArraySchema
 // (server/validation.js); cambiar el orden en uno sin los otros 2
 // mezclaria columnas en silencio.
-var TIPIFICACION_ORDEN_ARRAY = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId'];
+// Fase 191: 'unicaDia' (Llamadas Unicas de Mobilize, ver
+// _tipificacionMarcarUnicasDia) va al final; null si no se marco.
+var TIPIFICACION_ORDEN_ARRAY = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId', 'unicaDia'];
 
 // PRIVACIDAD (Fase 131, Parte 3): el CDR real de Mobilize/Wolkvox trae
 // columnas con datos personales/comerciales que esta plataforma JAMAS lee
@@ -92,6 +94,38 @@ var TIPIFICACION_ORDEN_ARRAY = ['agente', 'fecha', 'hora', 'duracionMin', 'tipif
 // las de PII. Ver server/tests/fase131-tipificacion-cdr-privacidad.test.js
 // (prueba que falla si alguna de estas 7 columnas llegara a mapearse).
 var TIPIFICACION_CDR_COLUMNAS_PII_PROHIBIDAS = ['TELEPHONE', 'CUSTOMER_ID', 'CONN_ID', 'AGENT_ID', 'DESTINY', 'COST', 'COMMENT'];
+
+// Fase 191 (Mobilize, Llamadas Unicas desde el CDR): con
+// opciones.marcarUnicasDia, TELEPHONE se lee aparte (nunca por
+// tipificacionColIndexMap) SOLO para marcar en memoria cada fila de ingreso
+// como la primera de su (dia, telefono) -- unicaDia = 1 -- o una repeticion
+// -- 0. Mismo criterio que llamadas-unicas-logic.js (Fase 138): el telefono
+// vive en una propiedad NO enumerable de la fila (no entra al deduplicado de
+// la Fase 88 ni a tipificacionFilaComoArray) y se borra al terminar; al
+// servidor solo llega el 0/1. Ingreso = SKILL_NAME original distinto de "-"
+// y que no quedo como salida (out_pre). Las de salida llevan 0.
+function tipificacionIndiceTelefono(headerRow) {
+  var idx = -1;
+  (headerRow || []).forEach(function (h, i) { if (idx === -1 && tipificacionNorm(h) === 'telephone') idx = i; });
+  return idx;
+}
+function _tipificacionMarcarUnicasDia(filas) {
+  var vistos = {};
+  var r = { ingreso: 0, unicas: 0, sinTelefono: 0 };
+  filas.forEach(function (f) {
+    if (f._skillGuion || f.skill === TIPIFICACION_SKILL_SALIDA_LLAMADAS) { f.unicaDia = 0; return; }
+    r.ingreso++;
+    // Sin telefono no hay con que juntarla: cuenta como una llamada (aviso aparte).
+    if (!f._tel) { r.sinTelefono++; r.unicas++; f.unicaDia = 1; return; }
+    var clave = f.fecha + '|' + f._tel;
+    if (vistos[clave]) { f.unicaDia = 0; return; }
+    vistos[clave] = true;
+    r.unicas++;
+    f.unicaDia = 1;
+  });
+  filas.forEach(function (f) { delete f._tel; delete f._skillGuion; });
+  return r;
+}
 
 // Listas CONFIGURABLES (Fase 131, decision tomada con el usuario, pendiente
 // de confirmar con Edwin -- nunca hardcodeadas mas adentro del parseo):
@@ -330,6 +364,9 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   if (porSkillId && !skillsWhatsapp) {
     return { error: 'Este archivo trae SKILL_ID y no SKILL_NAME: falta la tabla de skills de WhatsApp de este cliente (Cargar Datos, "Skills de WhatsApp").' };
   }
+  // Fase 191: columna TELEPHONE solo con marcarUnicasDia (Llamadas); -1 = no se marca.
+  var marcarUnicas = !!(opciones && opciones.marcarUnicasDia) && canal === 'LLAMADAS';
+  var idxTel = marcarUnicas ? tipificacionIndiceTelefono(aoa[0]) : -1;
   var ignoradasPorSkill = {}; // Fase 168 -- {SKILL_ID: cantidad}, un solo aviso al final
   // Fase 185: ninguna fila se pierde en silencio -- conteo por causa, un
   // resumen al principio de los avisos.
@@ -467,10 +504,15 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       skill = TIPIFICACION_SKILL_SALIDA_LLAMADAS;
     }
 
-    filas.push({
+    var filaObj = {
       agente: agente, fecha: fecha, hora: hora, duracionMin: duracionMin, tipificacion: tipificacion, skill: skill,
       duracionSeg: duracionSeg, codAct: codAct, tipoInteraccion: tipoInteraccion, hungUp: hungUp, skillId: skillId,
-    });
+    };
+    if (idxTel !== -1) {
+      Object.defineProperty(filaObj, '_tel', { value: String(row[idxTel] == null ? '' : row[idxTel]).replace(/[^0-9]/g, ''), configurable: true });
+      Object.defineProperty(filaObj, '_skillGuion', { value: tipificacionNormTexto(row[map.skill]) === '-', configurable: true });
+    }
+    filas.push(filaObj);
   }
 
   var totalOmitidas = omitidas.faltaDato + omitidas.fecha + omitidas.futura;
@@ -535,7 +577,14 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
       '(mismos valores en TODAS las columnas, incluida fecha y hora) -- se conservo solo 1 de cada una.'
     );
   }
-  return { filas: dedup.filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(dedup.filas) };
+  var unicasDia = null;
+  if (marcarUnicas && idxTel === -1) {
+    avisos.push('El archivo no trae TELEPHONE: no se pueden contar las llamadas únicas de ingreso de estas fechas (Tipificación se guarda igual).');
+  } else if (idxTel !== -1) {
+    unicasDia = _tipificacionMarcarUnicasDia(dedup.filas);
+    if (unicasDia.sinTelefono) avisos.push(unicasDia.sinTelefono + ' fila(s) de ingreso sin TELEPHONE: cada una cuenta como una llamada única.');
+  }
+  return { filas: dedup.filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(dedup.filas), unicasDia: unicasDia };
 }
 
 // Fase 131, Parte 3: "conectada" para una llamada SALIENTE (outbound_ma) --

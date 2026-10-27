@@ -204,6 +204,8 @@ declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipi
 // mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');
 declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas-unicas/carga'], 'cargaManual');
+// Fase 191: reporte "Detalle de llamadas abandonadas" (mismo permiso que Llamadas Unicas).
+declarar(['POST /calidad/llamadas-abandonadas/carga/impacto', 'POST /calidad/llamadas-abandonadas/carga'], 'cargaManual');
 declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
 // Fase 141, Parte C (Mobilize): Llamadas de salida -- mismo patron que
 // Llamadas Unicas. /detalle ademas exige rol interno (CLIENTES_DASH con

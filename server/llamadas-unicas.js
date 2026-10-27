@@ -121,23 +121,9 @@ function llamadasUnicasWhereClausulas(q) {
   return { where: clausulas.join(' AND '), params };
 }
 
-// Tarjetas-resumen: contestadas/abandonadas/total (suma) que respetan los
-// filtros actuales (fecha/skill/asesor).
-function llamadasUnicasResumen(db, q) {
-  const { where, params } = llamadasUnicasWhereClausulas(q);
-  const fila = db
-    .prepare(`SELECT
-        SUM(CASE WHEN tipo='CONTESTADA' THEN 1 ELSE 0 END) AS contestadas,
-        SUM(CASE WHEN tipo='ABANDONADA' THEN 1 ELSE 0 END) AS abandonadas,
-        COUNT(*) AS total
-      FROM llamadas_unicas WHERE ${where}`)
-    .get(params);
-  return { contestadas: fila.contestadas || 0, abandonadas: fila.abandonadas || 0, total: fila.total || 0 };
-}
-
-// Grafica de barras por mes: 1 fila por 'AAAA-MM' con total/contestadas/
-// abandonadas -- ya agregado en SQL, el navegador nunca ve filas crudas.
-function llamadasUnicasPorMes(db, q) {
+// Fase 191: la carga vieja (plantilla armada a mano) por mes. Ya no es la
+// unica fuente: ver llamadasUnicasPorMes.
+function _porMesPlantilla(db, q) {
   const { where, params } = llamadasUnicasWhereClausulas(q);
   return db
     .prepare(`SELECT substr(fecha,1,7) AS periodo,
@@ -148,6 +134,102 @@ function llamadasUnicasPorMes(db, q) {
     .all(params);
 }
 
+// ── Fase 191: fuentes de cada mes (pedido del 27/10) ──────────────────────
+// - Contestadas unicas: del CDR que se carga en Tipificacion (filas de
+//   ingreso con unicaDia = 1, ver tipificacion-logic.js). Un mes "tiene CDR"
+//   si alguna fila de LLAMADAS de ese mes trae la marca (no NULL).
+// - Abandonadas unicas: del reporte "Detalle de llamadas abandonadas" de
+//   Wolkvox (tabla llamadas_abandonadas), si ese mes tiene filas.
+// - Si no, cada parte sale de la carga vieja (llamadas_unicas). Total =
+//   contestadas + abandonadas. Cada mes dice de donde sale cada parte.
+const SKILLS_SALIDA_CDR = ['-', 'LLAMADAS DE SALIDA'];
+const SQL_NO_SALIDA = 'skill NOT IN (' + SKILLS_SALIDA_CDR.map((x) => "'" + x + "'").join(', ') + ')';
+const FUENTE = { CDR: 'CDR', ABANDONADAS: 'ABANDONADAS', PLANTILLA: 'PLANTILLA' };
+
+function _rango(q) {
+  const c = [];
+  const p = {};
+  if (q.desde) { c.push('fecha >= @desde'); p.desde = q.desde; }
+  if (q.hasta) { c.push('fecha <= @hasta'); p.hasta = q.hasta; }
+  return { sql: c.length ? ' AND ' + c.join(' AND ') : '', params: p };
+}
+
+// Meses con CDR marcado (sin filtros de skill/asesor: el mes tiene CDR aunque
+// un asesor no tenga llamadas en el).
+function mesesCdrMarcado(db, campana, q) {
+  const r = _rango(q || {});
+  return db
+    .prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM tipificaciones
+      WHERE campana = @campana AND canal = 'LLAMADAS' AND unicaDia IS NOT NULL${r.sql} ORDER BY v`)
+    .all({ campana, ...r.params }).map((x) => x.v);
+}
+function mesesAbandonadas(db, campana, q) {
+  const r = _rango(q || {});
+  return db
+    .prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_abandonadas WHERE campana = @campana${r.sql} ORDER BY v`)
+    .all({ campana, ...r.params }).map((x) => x.v);
+}
+
+function _contestadasCdrPorMes(db, q) {
+  const r = _rango(q);
+  const params = { campana: q.campana, ...r.params };
+  let extra = '';
+  if (q.skill) { extra += ' AND skill = @skill'; params.skill = q.skill; }
+  if (q.agente) { extra += ' AND agente = @agente'; params.agente = q.agente; }
+  const out = {};
+  db.prepare(`SELECT substr(fecha,1,7) AS periodo, COUNT(*) AS n FROM tipificaciones
+      WHERE campana = @campana AND canal = 'LLAMADAS' AND unicaDia = 1 AND ${SQL_NO_SALIDA}${r.sql}${extra}
+      GROUP BY periodo`).all(params).forEach((x) => { out[x.periodo] = x.n; });
+  return out;
+}
+
+function _abandonadasPorMes(db, q) {
+  const out = {};
+  // Las abandonadas no traen asesor: con filtro de asesor no hay ninguna.
+  if (q.agente) return out;
+  const r = _rango(q);
+  const params = { campana: q.campana, ...r.params };
+  let extra = '';
+  if (q.skill) { extra += ' AND skill = @skill'; params.skill = q.skill; }
+  db.prepare(`SELECT substr(fecha,1,7) AS periodo, COUNT(*) AS n FROM llamadas_abandonadas
+      WHERE campana = @campana${r.sql}${extra} GROUP BY periodo`).all(params).forEach((x) => { out[x.periodo] = x.n; });
+  return out;
+}
+
+// Grafica de barras por mes: 1 fila por 'AAAA-MM' con total/contestadas/
+// abandonadas y la fuente de cada parte -- ya agregado en SQL, el navegador
+// nunca ve filas crudas.
+function llamadasUnicasPorMes(db, q) {
+  const mesesCdr = new Set(mesesCdrMarcado(db, q.campana, q));
+  const mesesAb = new Set(mesesAbandonadas(db, q.campana, q));
+  const cdr = _contestadasCdrPorMes(db, q);
+  const ab = _abandonadasPorMes(db, q);
+  const vieja = {};
+  _porMesPlantilla(db, q).forEach((m) => { vieja[m.periodo] = m; });
+  const meses = [...new Set([...mesesCdr, ...mesesAb, ...Object.keys(vieja)])].sort();
+  return meses.map((periodo) => {
+    const v = vieja[periodo] || { contestadas: 0, abandonadas: 0 };
+    const deCdr = mesesCdr.has(periodo);
+    const deAb = mesesAb.has(periodo);
+    const contestadas = deCdr ? (cdr[periodo] || 0) : (v.contestadas || 0);
+    const abandonadas = deAb ? (ab[periodo] || 0) : (v.abandonadas || 0);
+    return {
+      periodo, contestadas, abandonadas, total: contestadas + abandonadas,
+      fuenteContestadas: deCdr ? FUENTE.CDR : (vieja[periodo] ? FUENTE.PLANTILLA : null),
+      fuenteAbandonadas: deAb ? FUENTE.ABANDONADAS : (v.abandonadas ? FUENTE.PLANTILLA : null),
+    };
+  });
+}
+
+// Tarjetas-resumen: contestadas/abandonadas/total (suma) que respetan los
+// filtros actuales (fecha/skill/asesor). Fase 191: la suma de los meses, con
+// la misma fuente por mes que la grafica.
+function llamadasUnicasResumen(db, q) {
+  return llamadasUnicasPorMes(db, q).reduce((a, m) => ({
+    contestadas: a.contestadas + m.contestadas, abandonadas: a.abandonadas + m.abandonadas, total: a.total + m.total,
+  }), { contestadas: 0, abandonadas: 0, total: 0 });
+}
+
 // Valores distintos para los filtros (skill incluye "Abandonadas" si hay
 // alguna fila de ese tipo) + meses con datos (para que el panel sepa si
 // mostrar el estado vacio). La lista de asesores va SOLO si `incluirAgentes`
@@ -155,12 +237,60 @@ function llamadasUnicasPorMes(db, q) {
 function llamadasUnicasOpciones(db, campana, { incluirAgentes } = {}) {
   const distintos = (columna) =>
     db.prepare(`SELECT DISTINCT ${columna} AS v FROM llamadas_unicas WHERE campana = ? ORDER BY v`).all(campana).map((r) => r.v);
+  // Fase 191: tambien los skills/asesores de ingreso del CDR marcado y los skills de las abandonadas.
+  const delCdr = (columna) =>
+    db.prepare(`SELECT DISTINCT ${columna} AS v FROM tipificaciones
+      WHERE campana = ? AND canal = 'LLAMADAS' AND unicaDia = 1 AND ${SQL_NO_SALIDA}`).all(campana).map((r) => r.v);
+  const unir = (...listas) => [...new Set([].concat(...listas))].sort();
   const out = {
-    meses: db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_unicas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
-    skills: distintos('skill'),
+    meses: unir(
+      db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_unicas WHERE campana = ?').all(campana).map((r) => r.v),
+      mesesCdrMarcado(db, campana), mesesAbandonadas(db, campana)
+    ),
+    skills: unir(distintos('skill'), delCdr('skill'),
+      db.prepare('SELECT DISTINCT skill AS v FROM llamadas_abandonadas WHERE campana = ?').all(campana).map((r) => r.v)),
   };
-  if (incluirAgentes) out.agentes = distintos('agente').filter((a) => a !== ''); // Fase 163: las abandonadas no traen asesor
+  if (incluirAgentes) out.agentes = unir(distintos('agente'), delCdr('agente')).filter((a) => a !== ''); // Fase 163: las abandonadas no traen asesor
   return out;
+}
+
+// ── Fase 191: carga del reporte "Detalle de llamadas abandonadas" ─────────
+// Filas [fecha, skill] ya deduplicadas por (dia, telefono) en el navegador
+// (llamadasAbandonadasParseFilas): el telefono nunca llega aqui. Reemplaza
+// por periodo (primera a ultima fecha del archivo), igual que las demas.
+const CAMPOS_FILA_ABANDONADAS = ['fecha', 'skill'];
+
+function _abandonadasObjetos(filas) {
+  return filas.map((arr) => ({ fecha: arr[0], skill: arr[1] }));
+}
+
+function impactoLlamadasAbandonadas(db, { campana, filas }) {
+  const filasObj = _abandonadasObjetos(filas);
+  const { desde, hasta } = rangoFechas(filasObj);
+  const existentes = db
+    .prepare('SELECT COUNT(*) AS n FROM llamadas_abandonadas WHERE campana = ? AND fecha >= ? AND fecha <= ?')
+    .get(campana, desde, hasta).n;
+  return { desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length };
+}
+
+function cargarLlamadasAbandonadas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+  const ts = nowStr();
+  const filasObj = _abandonadasObjetos(filas);
+  const { desde, hasta } = rangoFechas(filasObj);
+  const del = db.prepare('DELETE FROM llamadas_abandonadas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
+  const insert = db.prepare(
+    `INSERT INTO llamadas_abandonadas (campana, fecha, skill, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana, @fecha, @skill, @archivoNombre, @cargadoPorNombre, @createdAt)`
+  );
+  let borradas = 0;
+  db.transaction(() => {
+    respaldarAntesDeCambiar(db, 'llamadas_abandonadas', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
+    borradas = del.run(campana, desde, hasta).changes;
+    for (const f of filasObj) {
+      insert.run({ campana, fecha: f.fecha, skill: f.skill, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts });
+    }
+  })();
+  return { insertadas: filasObj.length, borradas, desde, hasta };
 }
 
 module.exports = {
@@ -171,4 +301,11 @@ module.exports = {
   llamadasUnicasResumen,
   llamadasUnicasPorMes,
   llamadasUnicasOpciones,
+  // Fase 191
+  SKILLS_SALIDA_CDR,
+  FUENTE,
+  CAMPOS_FILA_ABANDONADAS,
+  mesesCdrMarcado,
+  impactoLlamadasAbandonadas,
+  cargarLlamadasAbandonadas,
 };

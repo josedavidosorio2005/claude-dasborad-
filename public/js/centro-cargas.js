@@ -154,7 +154,7 @@ function _ccRenderModulo() {
       '<span class="cc-carga-botones">' + (_ccVersionesDe(c.id).length ? '<button type="button" class="btn-cancel cc-btn" onclick="ccVerVersiones(' + ci + ')">' + iconoSvg('rotate-ccw') + ' Versiones guardadas (' + _ccVersionesDe(c.id).length + ')</button>' : '') +
       (c.plantilla
         ? '<button type="button" class="btn-cancel cc-btn" onclick="ccDescargarPlantilla(\'' + esc(c.plantilla) + '\')">' + iconoSvg('download') + ' Descargar plantilla</button>'
-        : '<span class="cc-nota">La plantilla de Calidad se descarga desde Calidad (depende de los ítems de cada campaña).</span>') +
+        : '<span class="cc-nota">' + esc(centroNotaSinPlantilla(c.id)) + '</span>') +
       '</span></div>';
     if (huecos.length) html += '<div class="cc-aviso cc-aviso-falta">Faltan meses entre los cargados: ' + esc(huecos.map(function (x) { return centroNombreMes(x).split(' ')[0]; }).join(', ')) + '.</div>';
     html += '<div class="cc-meses">';

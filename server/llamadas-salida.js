@@ -109,43 +109,120 @@ function normSumas(r) {
   return { total: r.total || 0, noConectadas: r.noConectadas || 0, conectadas: r.conectadas || 0 };
 }
 
-// Tarjetas: total / no conectadas / conectadas, respetando los filtros.
-function llamadasSalidaResumen(db, q) {
-  const { where, params } = llamadasSalidaWhereClausulas(q);
-  return normSumas(db.prepare(`SELECT ${SUMAS} FROM llamadas_salida WHERE ${where}`).get(params));
-}
+// ── Fase 191 (pedido del 27/10): salida conectada desde el CDR ─────────────
+// En los meses que tienen CDR cargado en Tipificacion (canal LLAMADAS), las
+// conectadas salen de ahi: las filas con SKILL_NAME "-" (guardadas como "-" o
+// como "LLAMADAS DE SALIDA", ver tipificacion-logic.js), una por registro.
+// Las no conectadas necesitan otra base que todavia no existe: en esos meses
+// van en null (pendiente) y el total tambien -- nunca se inventa la cifra.
+// Los meses sin CDR siguen con la carga vieja (llamadas_salida).
+const SKILLS_SALIDA_CDR = ['-', 'LLAMADAS DE SALIDA'];
+const SQL_SALIDA_CDR = 'skill IN (' + SKILLS_SALIDA_CDR.map((x) => "'" + x + "'").join(', ') + ')';
+const FUENTE = { CDR: 'CDR', PLANTILLA: 'PLANTILLA' };
 
-// Barras por mes ('AAAA-MM'), ya agregado en SQL.
-function llamadasSalidaPorMes(db, q) {
+function _rangoCdr(q) {
+  const c = ["campana = @campana", "canal = 'LLAMADAS'"];
+  const p = { campana: q.campana };
+  if (q.desde) { c.push('fecha >= @desde'); p.desde = q.desde; }
+  if (q.hasta) { c.push('fecha <= @hasta'); p.hasta = q.hasta; }
+  return { where: c.join(' AND '), params: p };
+}
+function mesesConCdr(db, q) {
+  const { where, params } = _rangoCdr(q);
+  return db.prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM tipificaciones WHERE ${where} ORDER BY v`).all(params).map((x) => x.v);
+}
+// Conectadas del CDR agrupadas por `grupo` (expresion SQL fija de este archivo).
+function _conectadasCdr(db, q, grupo) {
+  const { where, params } = _rangoCdr(q);
+  let extra = '';
+  if (q.agente) { extra += ' AND agente = @agente'; params.agente = q.agente; }
+  // El CDR solo da conectadas: con el filtro "No conectada" no hay ninguna.
+  if (q.tipo === 'NO_CONECTADA') extra += ' AND 0';
+  return db
+    .prepare(`SELECT ${grupo} AS g, substr(fecha,1,7) AS periodo, COUNT(*) AS n FROM tipificaciones
+      WHERE ${where} AND ${SQL_SALIDA_CDR}${extra} GROUP BY g, periodo`)
+    .all(params);
+}
+// Filas de la carga vieja agrupadas, sin los meses que ya salen del CDR.
+function _vieja(db, q, grupo, mesesCdr) {
   const { where, params } = llamadasSalidaWhereClausulas(q);
   return db
-    .prepare(`SELECT substr(fecha,1,7) AS periodo, ${SUMAS} FROM llamadas_salida WHERE ${where} GROUP BY periodo ORDER BY periodo`)
+    .prepare(`SELECT ${grupo} AS g, substr(fecha,1,7) AS periodo, ${SUMAS} FROM llamadas_salida WHERE ${where} GROUP BY g, periodo`)
     .all(params)
-    .map((r) => Object.assign({ periodo: r.periodo }, normSumas(r)));
+    .filter((x) => !mesesCdr.has(x.periodo));
+}
+// Junta las dos fuentes por grupo: las no conectadas (y el total) quedan en
+// null si alguna parte salio del CDR.
+function _combinar(db, q, grupo) {
+  const mesesCdr = new Set(mesesConCdr(db, q));
+  const out = {};
+  const fila = (g) => out[g] || (out[g] = { g, conectadas: 0, noConectadas: 0, total: 0, pendiente: false, fuentes: new Set() });
+  _vieja(db, q, grupo, mesesCdr).forEach((x) => {
+    const f = fila(x.g);
+    const n = normSumas(x);
+    f.conectadas += n.conectadas; f.noConectadas += n.noConectadas; f.total += n.total;
+    f.fuentes.add(FUENTE.PLANTILLA);
+  });
+  _conectadasCdr(db, q, grupo).forEach((x) => {
+    if (!mesesCdr.has(x.periodo)) return;
+    const f = fila(x.g);
+    f.conectadas += x.n; f.pendiente = true; f.fuentes.add(FUENTE.CDR);
+  });
+  // Un mes con CDR pero sin filas de salida (o filtrado) igual queda pendiente.
+  if (grupo === 'substr(fecha,1,7)') mesesCdr.forEach((m) => { const f = fila(m); f.pendiente = true; f.fuentes.add(FUENTE.CDR); });
+  return Object.values(out).map((f) => ({
+    g: f.g, conectadas: f.conectadas,
+    noConectadas: f.pendiente ? null : f.noConectadas,
+    total: f.pendiente ? null : f.total,
+    fuente: f.fuentes.has(FUENTE.CDR) ? (f.fuentes.has(FUENTE.PLANTILLA) ? 'MIXTA' : FUENTE.CDR) : FUENTE.PLANTILLA,
+  }));
 }
 
-// Detalle por asesor y por dia (la ruta lo limita a roles internos).
+function llamadasSalidaPorMes(db, q) {
+  return _combinar(db, q, 'substr(fecha,1,7)')
+    .sort((a, b) => (a.g < b.g ? -1 : 1))
+    .map((x) => ({ periodo: x.g, total: x.total, noConectadas: x.noConectadas, conectadas: x.conectadas, fuente: x.fuente }));
+}
+
+// Fase 191: suma de los meses; si alguno salio del CDR, no conectadas y total
+// quedan en null (noConectadasPendiente) -- nunca una suma a medias.
+function llamadasSalidaResumen(db, q) {
+  const meses = llamadasSalidaPorMes(db, q);
+  const pendiente = meses.some((m) => m.noConectadas === null);
+  const conectadas = meses.reduce((a, m) => a + m.conectadas, 0);
+  return {
+    conectadas,
+    noConectadas: pendiente ? null : meses.reduce((a, m) => a + m.noConectadas, 0),
+    total: pendiente ? null : meses.reduce((a, m) => a + m.total, 0),
+    noConectadasPendiente: pendiente,
+  };
+}
+
 function llamadasSalidaDetalle(db, q) {
-  const { where, params } = llamadasSalidaWhereClausulas(q);
-  const porAsesor = db
-    .prepare(`SELECT agente, ${SUMAS} FROM llamadas_salida WHERE ${where} GROUP BY agente ORDER BY total DESC, agente`)
-    .all(params)
-    .map((r) => Object.assign({ agente: r.agente }, normSumas(r)));
-  const porDia = db
-    .prepare(`SELECT fecha, ${SUMAS} FROM llamadas_salida WHERE ${where} GROUP BY fecha ORDER BY fecha`)
-    .all(params)
-    .map((r) => Object.assign({ fecha: r.fecha }, normSumas(r)));
+  const porAsesor = _combinar(db, q, 'agente')
+    .map((x) => ({ agente: x.g, total: x.total, noConectadas: x.noConectadas, conectadas: x.conectadas }))
+    .sort((a, b) => (b.conectadas - a.conectadas) || (a.agente < b.agente ? -1 : 1));
+  const porDia = _combinar(db, q, 'fecha')
+    .map((x) => ({ fecha: x.g, total: x.total, noConectadas: x.noConectadas, conectadas: x.conectadas }))
+    .sort((a, b) => (a.fecha < b.fecha ? -1 : 1));
   return { porAsesor, porDia };
 }
 
 // Meses con datos (para el estado vacio) y, SOLO si `incluirAgentes`, la
 // lista de asesores para el filtro (la ruta lo decide por rol).
 function llamadasSalidaOpciones(db, campana, { incluirAgentes } = {}) {
+  const unir = (...listas) => [...new Set([].concat(...listas))].sort();
   const out = {
-    meses: db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_salida WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
+    meses: unir(
+      db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_salida WHERE campana = ?').all(campana).map((r) => r.v),
+      mesesConCdr(db, { campana }) // Fase 191
+    ),
   };
   if (incluirAgentes) {
-    out.agentes = db.prepare('SELECT DISTINCT agente AS v FROM llamadas_salida WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v);
+    out.agentes = unir(
+      db.prepare('SELECT DISTINCT agente AS v FROM llamadas_salida WHERE campana = ?').all(campana).map((r) => r.v),
+      db.prepare(`SELECT DISTINCT agente AS v FROM tipificaciones WHERE campana = ? AND canal = 'LLAMADAS' AND ${SQL_SALIDA_CDR}`).all(campana).map((r) => r.v)
+    );
   }
   return out;
 }
@@ -159,4 +236,5 @@ module.exports = {
   llamadasSalidaPorMes,
   llamadasSalidaDetalle,
   llamadasSalidaOpciones,
+  mesesConCdr, // Fase 191
 };
