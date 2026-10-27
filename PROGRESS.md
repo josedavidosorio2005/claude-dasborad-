@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.78.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.79.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -310,3 +310,4 @@ mismo orden):
 - Fase 187 — Una sola clasificación de asesores: la pestaña de salida puede usar la clasificación por cliente (apagado hasta la migración) e inventario de solo lectura de las líneas guardadas mes a mes (v1.76.0); activada en ORLANT con la migración (v1.76.1, 2026-10-26)
 - Fase 188 — Pestaña de salida de ORLANT: botones Total / Línea General / Línea 3P para tarjetas, barras y tabla (Total incluye Sin clasificar) y "Línea de cada asesor" arriba (v1.77.0, 2026-10-26)
 - Fase 189 — Los botones Total / Línea General / Línea 3P pasan a la cabecera de cada gráfica (llamadas y WhatsApp), cada grupo independiente; en el celular, debajo del título (v1.78.0, 2026-10-26)
+- Fase 190 — Tipificación de ORLANT: salen las tortas "Llamadas de salida por línea" y "WhatsApp de salida por línea" (la salida por línea se ve con los botones de la pestaña de salida) (v1.79.0, 2026-10-27)

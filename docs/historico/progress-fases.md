@@ -17053,3 +17053,20 @@ Ajuste de la Fase 188 pedido por Edwin (ORLANT, pestaña de salida).
   General = 2 con llamadas en 3P, General + 3P + Sin clasificar = Total, se
   conserva al redibujar, sin scroll horizontal ni errores), con captura de
   cada gráfica a cada ancho (fuera del repo).
+
+### Fase 190 — Tipificación de ORLANT sin las tortas de salida por línea (2026-10-27, v1.79.0)
+
+Pedido del usuario: quitar las dos tortas de abajo de Tipificación de ORLANT.
+
+- `tipificacion.js`: salen el canvas `tipif-lin-c-*` y su gráfica
+  ("Llamadas de salida por línea" / "WhatsApp de salida por línea"). La
+  salida por línea ya se ve con los botones de la pestaña "Llamadas y
+  WhatsApp de salida" (Fase 189). Siguen las tarjetas Salida General /
+  Salida 3P / Sin clasificar, su nota, el filtro "Línea de salida" y las
+  tortas de tipificación. La guía de uso se ajustó.
+- Pruebas: `fase190-tipif-sin-tortas-linea.test.js` (2); la de vista de la
+  Fase 186 deja de pedir el canvas.
+- Playwright y Brave a 1440/768/375 px (copia local, sintético de marzo de
+  2025): 0 tortas por línea, tarjetas 5/5/1 (llamadas) y 2/3/1 (WhatsApp),
+  tortas de tipificación con 14 y 10 registros, sin scroll horizontal ni
+  errores de consola.
