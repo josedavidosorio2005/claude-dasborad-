@@ -210,8 +210,9 @@ test('tipificacionFilaComoArray: respeta TIPIFICACION_ORDEN_ARRAY', () => {
   // todas opcionales -- un archivo de ORLANT (que nunca las trae) sigue
   // produciendo undefined en esas 5 posiciones, igual que siempre.
   const f = { agente: 'A', fecha: '2026-08-01', hora: '08:00:00', duracionMin: 3, tipificacion: 'T', skill: 'S' };
-  assert.deepEqual(TIPIFICACION_ORDEN_ARRAY, ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId']);
-  assert.deepEqual(tipificacionFilaComoArray(f), ['A', '2026-08-01', '08:00:00', 3, 'T', 'S', undefined, undefined, undefined, undefined, undefined]);
+  // Fase 191: + unicaDia al final (undefined si no se marco).
+  assert.deepEqual(TIPIFICACION_ORDEN_ARRAY, ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId', 'unicaDia']);
+  assert.deepEqual(tipificacionFilaComoArray(f), ['A', '2026-08-01', '08:00:00', 3, 'T', 'S', undefined, undefined, undefined, undefined, undefined, undefined]);
 });
 
 test('tipificacionRangoFechas: primera y ultima DATE entre las filas', () => {

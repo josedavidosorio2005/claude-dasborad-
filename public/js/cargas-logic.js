@@ -302,6 +302,9 @@ var CARGAS_HOJA_LLAMADAS_UNICAS = 'LLAMADAS_UNICAS';
 // Mobilize). Igual que Llamadas Unicas, se reconoce por encabezados si el
 // nombre exacto no esta (el archivo real de Edwin trae una sola hoja).
 var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
+// Fase 191 (Mobilize): "Detalle de llamadas abandonadas" de Wolkvox, tal
+// cual (hoja "HistQueue<fecha>", reconocida por encabezados).
+var CARGAS_HOJA_LLAMADAS_ABANDONADAS = 'LLAMADAS_ABANDONADAS';
 // Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
@@ -355,7 +358,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -606,6 +609,20 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
           'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 191 (Mobilize): abandonadas de ingreso, el reporte de Wolkvox tal cual.
+  if (llamadasAbandonadasCols) {
+    plan.push({
+      tipo: 'llamadas_abandonadas', hoja: CARGAS_HOJA_LLAMADAS_ABANDONADAS, titulo: 'Llamadas abandonadas',
+      descripcion: 'El reporte "Detalle de llamadas abandonadas" de Wolkvox, tal cual lo descarga (sin armar plantilla).',
+      filaUnica: false, columnas: llamadasAbandonadasCols,
+      notasExtra: [
+        'De donde sale: Wolkvox → Skills y servicios → "Detalle de llamadas abandonadas". Se usan DATE, ANI y SKILL_NAME ' +
+          '(obligatorias) y, si vienen, RESULT (solo ABANDON) y TYPE_INTERACTION (solo inbound).',
+        'ANI (el telefono) se usa SOLO para contar una vez cada numero por dia -- nunca se guarda, nunca se exporta, nunca se muestra.',
+        'Al guardar, la carga REEMPLAZA las abandonadas que ya existan entre la primera y la ultima DATE del archivo.',
       ],
     });
   }
@@ -942,6 +959,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_TIPIFICACION_WHATSAPP: CARGAS_HOJA_TIPIFICACION_WHATSAPP,
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
+    CARGAS_HOJA_LLAMADAS_ABANDONADAS: CARGAS_HOJA_LLAMADAS_ABANDONADAS,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
     CARGAS_HOJA_CALIDAD_RESUMEN: CARGAS_HOJA_CALIDAD_RESUMEN,
     CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,

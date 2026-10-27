@@ -29,7 +29,8 @@ function nowStr() {
 // contrato; cambiar el orden en uno sin los otros 2 mezclaria columnas en
 // silencio. Las 5 ultimas (Fase 131, Parte 3) son del CDR de Mobilize,
 // todas opcionales -- ORLANT las guarda como null, igual que siempre.
-const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId'];
+// Fase 191: unicaDia (0/1, Llamadas Unicas de Mobilize), null si no se marco.
+const CAMPOS_FILA = ['agente', 'fecha', 'hora', 'duracionMin', 'tipificacion', 'skill', 'duracionSeg', 'codAct', 'tipoInteraccion', 'hungUp', 'skillId', 'unicaDia'];
 
 // Fase 131, Parte 3 (configurable, mismo criterio que
 // TIPIFICACION_CDR_NO_CONECTADA_POR_DEFECTO en tipificacion-logic.js -- el
@@ -152,9 +153,9 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
   const insert = db.prepare(
     `INSERT INTO tipificaciones
        (campana, canal, agente, fecha, hora, duracionMin, tipificacion, skill,
-        duracionSeg, codAct, tipoInteraccion, hungUp, skillId, archivoNombre, cargadoPorNombre, createdAt)
+        duracionSeg, codAct, tipoInteraccion, hungUp, skillId, unicaDia, archivoNombre, cargadoPorNombre, createdAt)
      VALUES (@campana,@canal,@agente,@fecha,@hora,@duracionMin,@tipificacion,@skill,
-             @duracionSeg,@codAct,@tipoInteraccion,@hungUp,@skillId,@archivoNombre,@cargadoPorNombre,@createdAt)`
+             @duracionSeg,@codAct,@tipoInteraccion,@hungUp,@skillId,@unicaDia,@archivoNombre,@cargadoPorNombre,@createdAt)`
   );
 
   let borradas = 0;
@@ -173,6 +174,7 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
         tipoInteraccion: f.tipoInteraccion == null ? null : f.tipoInteraccion,
         hungUp: f.hungUp == null ? null : f.hungUp,
         skillId: f.skillId == null ? null : f.skillId,
+        unicaDia: f.unicaDia === 0 || f.unicaDia === 1 ? f.unicaDia : null,
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }

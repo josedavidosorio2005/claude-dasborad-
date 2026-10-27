@@ -125,9 +125,10 @@ test('API: carga + impacto + reemplazo por rango (recargar no duplica, otro mes 
   assert.equal(c3.body.borradas, 0);
 
   const resumen = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE' }).set(auth(admin));
-  assert.deepEqual(resumen.body, { total: 5, noConectadas: 2, conectadas: 3 });
+  // Fase 191: + noConectadasPendiente (false: ningun mes sale del CDR).
+  assert.deepEqual(resumen.body, { total: 5, noConectadas: 2, conectadas: 3, noConectadasPendiente: false });
   const sept = await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', desde: '2026-09-01', hasta: '2026-09-30' }).set(auth(admin));
-  assert.deepEqual(sept.body, { total: 4, noConectadas: 2, conectadas: 2 });
+  assert.deepEqual(sept.body, { total: 4, noConectadas: 2, conectadas: 2, noConectadasPendiente: false });
   const porMes = await request(app).get('/api/calidad/llamadas-salida/por-mes').query({ campana: 'MOBILIZE' }).set(auth(admin));
   assert.deepEqual(porMes.body.map((m) => [m.periodo, m.total, m.noConectadas, m.conectadas]), [['2026-09', 4, 2, 2], ['2026-10', 1, 0, 1]]);
   const detalle = await request(app).get('/api/calidad/llamadas-salida/detalle').query({ campana: 'MOBILIZE', desde: '2026-09-01', hasta: '2026-09-30' }).set(auth(admin));

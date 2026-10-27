@@ -297,6 +297,10 @@ function _cargasLlamadasUnicasColumnasUnificado(){
 function _cargasLlamadasSalidaColumnasUnificado(){
   return LLAMADAS_SALIDA_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
 }
+// Fase 191 (Mobilize) — columnas del reporte "Detalle de llamadas abandonadas".
+function _cargasLlamadasAbandonadasColumnas(){
+  return LLAMADAS_ABANDONADAS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
+}
 // Fase 142 (punto 4, ORLANT) — columnas de la hoja WHATSAPP_TIEMPOS.
 function _cargasWhatsappTiemposColumnasUnificado(){
   return WPP_TIEMPOS_COLUMNAS.map(function(c){ return { label:c.label, opcional: !c.obligatoria }; });
@@ -387,6 +391,9 @@ async function onCargaClienteChange(){
     // TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, tipificacion-logic.js). ORLANT
     // nunca pasa esto (undefined), ninguna fila se excluye, igual que siempre.
     var tipificacionOpcionesLlamadas = tieneTipificacionExtra ? { codificacionesExcluidas: TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO } : undefined;
+    // Fase 191: con Llamadas Unicas (Mobilize), el CDR marca la primera
+    // llamada de ingreso de cada (dia, telefono); el telefono no se guarda.
+    if(LISTAS_REGISTRO.llamadasUnicas.indexOf(cliente) !== -1) tipificacionOpcionesLlamadas = Object.assign({}, tipificacionOpcionesLlamadas || {}, { marcarUnicasDia: true });
     var inasistenciaCols = esUnificado ? _cargasInasistenciaColumnasUnificado() : null;
     var efectividadAgendamientoCols = esUnificado ? _cargasEfectividadAgendamientoColumnasUnificado() : null;
     var citasAtendidasCols = esUnificado ? _cargasCitasAtendidasColumnasUnificado() : null;
@@ -400,7 +407,8 @@ async function onCargaClienteChange(){
     var whatsappTiemposCols = LISTAS_REGISTRO.whatsappTiempos.indexOf(cliente) !== -1 ? _cargasWhatsappTiemposColumnasUnificado() : null;
     var encuestaCols = LISTAS_REGISTRO.encuesta.indexOf(cliente) !== -1 ? _cargasEncuestaColumnasUnificado() : null;
     var calidadResumenCols = (LISTAS_REGISTRO.calidadResumen || []).indexOf(cliente) !== -1 ? _cargasCalidadResumenColumnas() : null;
-    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols);
+    var llamadasAbandonadasCols = tieneLlamadasUnicas ? _cargasLlamadasAbandonadasColumnas() : null; // Fase 191
+    _cargasPlan = cargasPlanConsolidado(_cargasSpec.secciones, calidadCols, traficoCols, traficoWpp, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols);
     var foco = _cargasFocoActivo(cliente);
     if(foco) _cargasPlan = centroFiltrarPlan(_cargasPlan, foco.carga);
   }
@@ -654,10 +662,11 @@ async function procesarArchivoConsolidado(input){
     var esTipificacion = h.tipo==='tipificacion';
     var esLlamadasUnicas = h.tipo==='llamadas_unicas';
     var esLlamadasSalida = h.tipo==='llamadas_salida';
+    var esLlamadasAbandonadas = h.tipo==='llamadas_abandonadas'; // Fase 191
     var esWhatsappTiempos = h.tipo==='whatsapp_tiempos';
     var esEncuesta = h.tipo==='encuesta';
     var esCalidadResumen = h.tipo==='calidad_resumen'; // Fase 172
-    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esWhatsappTiempos && !esEncuesta && !esCalidadResumen) return null;
+    if(h.tipo!=='agendas' && h.tipo!=='efectividad_agendamiento' && h.tipo!=='inasistencia' && h.tipo!=='citas_atendidas' && h.tipo!=='salida' && !esTrafico && !esTipificacion && !esLlamadasUnicas && !esLlamadasSalida && !esLlamadasAbandonadas && !esWhatsappTiempos && !esEncuesta && !esCalidadResumen) return null;
     for(var idx=0; idx<wb.SheetNames.length; idx++){
       var nombre = wb.SheetNames[idx];
       if(nombre===h.hoja) continue; // ya se intento por nombre exacto
@@ -693,6 +702,8 @@ async function procesarArchivoConsolidado(input){
       // Fase 141: un CDR de Tipificacion (trae SKILL_NAME, y puede traer
       // TELEPHONE/SKILL_ID) nunca debe colarse en el slot de salida.
       if(esLlamadasSalida && (headerRow0 || []).some(function(c){ return String(c == null ? '' : c).trim().toUpperCase() === 'SKILL_NAME'; })) continue;
+      // Fase 191: el reporte de abandonadas trae ANI y RESULT; un CDR (TELEPHONE, AGENT_NAME) nunca entra aqui.
+      if(esLlamadasAbandonadas && (headerRow0 || []).some(function(c){ var t = String(c == null ? '' : c).trim().toUpperCase(); return t === 'AGENT_NAME' || t === 'TELEPHONE'; })) continue;
       hojasUsadasPorEncabezados[nombre] = true;
       return nombre;
     }
@@ -760,6 +771,8 @@ async function procesarArchivoConsolidado(input){
       parseFn = llamadasUnicasParseFilas;
     } else if(h.tipo === 'llamadas_salida'){
       parseFn = llamadasSalidaParseFilas;
+    } else if(h.tipo === 'llamadas_abandonadas'){
+      parseFn = llamadasAbandonadasParseFilas; // Fase 191
     } else if(h.tipo === 'whatsapp_tiempos'){
       parseFn = wppTiemposParseFilas;
     } else if(h.tipo === 'calidad_resumen'){
@@ -924,6 +937,14 @@ function _cargasEstadoLabel(r){
     var abandLu = r.filas.filter(function(f){ return f[2]==='ABANDONADA'; }).length;
     extra = ' — contestadas únicas '+(r.filas.length-abandLu)+', abandonadas únicas (sin asesor) '+abandLu;
   }
+  // Fase 191: abandonadas unicas y las columnas que se usaron.
+  if(r.tipo==='llamadas_abandonadas' && r.filas && r.filas.length){
+    extra = ' — abandonadas únicas '+r.abandonadas+' ('+(r.duplicadosQuitados||0)+' repetida(s) el mismo día); columnas usadas: '+(r.columnasUsadas||[]).join(', ');
+  }
+  // Fase 191: CDR de Mobilize -- llamadas unicas de ingreso que salen de este archivo.
+  if(r.tipo==='tipificacion' && r.unicasDia && r.filas && r.filas.length){
+    extra += '; llamadas de ingreso '+r.unicasDia.ingreso+', únicas por día '+r.unicasDia.unicas;
+  }
   if(r.tipo==='encuesta' && r.conteos){
     extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
   }
@@ -945,6 +966,7 @@ function _renderPreviewCarga(){
       (r.tipo==='tipificacion' ? ('Tipificación de '+(r.canalTipificacion==='WHATSAPP'?'WhatsApp':'Llamadas')) :
       (r.tipo==='llamadas_unicas' ? 'Llamadas Únicas' :
       (r.tipo==='llamadas_salida' ? 'Llamadas de salida' :
+      r.tipo==='llamadas_abandonadas' ? 'Llamadas abandonadas' :
       (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
       r.tipo==='calidad_resumen' ? 'Calidad: resumen por asesor' :
       (r.tipo==='encuesta' ? 'Encuesta' :
@@ -1188,6 +1210,24 @@ async function _cargasGuardarLlamadasUnicas(cliente, r){
     var respLu = await apiRequest('POST','/calidad/llamadas-unicas/carga', parsed);
     if(typeof _llamadasUnicasOpciones !== 'undefined') _llamadasUnicasOpciones = {}; // invalida el cache del panel abierto (Fase 141: antes apuntaba a un nombre que no existe)
     return { ok:true, mensaje: respLu.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(respLu.desde)+' al '+_agendasFmtFechaCorta(respLu.hasta)+')' };
+  }catch(e){ return { ok:false, mensaje: e.message }; }
+}
+
+// Fase 191: "Detalle de llamadas abandonadas" -- impacto -> confirmar -> guardar.
+async function _cargasGuardarLlamadasAbandonadas(cliente, r){
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
+    return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
+  }
+  try{
+    var impacto = await apiRequest('POST','/calidad/llamadas-abandonadas/carga/impacto', parsed);
+    if(impacto.filasExistentes > 0 && !confirm('Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' llamada(s) abandonada(s) ya cargadas, del '+
+      _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+', por '+impacto.filasNuevas+'.\n\n¿Continuar y sobrescribir?')){
+      return { ok:false, mensaje: 'Se dejaron las llamadas abandonadas anteriores sin tocar.' };
+    }
+    var resp = await apiRequest('POST','/calidad/llamadas-abandonadas/carga', parsed);
+    if(typeof _llamadasUnicasOpciones !== 'undefined') _llamadasUnicasOpciones = {};
+    return { ok:true, mensaje: resp.insertadas+' abandonada(s) única(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 
@@ -1463,6 +1503,7 @@ async function guardarCarga(){
       else if(r.tipo==='tipificacion') res = await _cargasGuardarTipificacion(cliente, r);
       else if(r.tipo==='llamadas_unicas') res = await _cargasGuardarLlamadasUnicas(cliente, r);
       else if(r.tipo==='llamadas_salida') res = await _cargasGuardarLlamadasSalida(cliente, r);
+      else if(r.tipo==='llamadas_abandonadas') res = await _cargasGuardarLlamadasAbandonadas(cliente, r);
       else if(r.tipo==='whatsapp_tiempos') res = await _cargasGuardarWhatsappTiempos(cliente, r);
       else if(r.tipo==='calidad_resumen') res = await _cargasGuardarCalidadResumen(cliente, r);
       else if(r.tipo==='encuesta') res = await _cargasGuardarEncuesta(cliente, r);

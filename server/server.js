@@ -154,6 +154,7 @@ function createApp() {
     // Fase 150: mismo desfase que tenia la Encuesta (8mb en el navegador,
     // 2mb aqui) en Llamadas Unicas y en WhatsApp por rangos de minutos.
     '/api/calidad/llamadas-unicas/carga', '/api/calidad/llamadas-unicas/carga/impacto',
+    '/api/calidad/llamadas-abandonadas/carga', '/api/calidad/llamadas-abandonadas/carga/impacto', // Fase 191
     '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
