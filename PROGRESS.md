@@ -138,7 +138,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |
-| Eficacia de Mobilize (v1.86.0; sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 |
+| Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
 
 ## Índice de fases
 
