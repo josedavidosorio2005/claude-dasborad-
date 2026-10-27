@@ -17256,3 +17256,55 @@ septiembre y octubre), completa; las gráficas son las mismas.
   43). Agosto (54) y septiembre (88) siguen con la carga anterior. A
   1440/768/375 px: tabla de fuentes correcta, sin scroll horizontal, sin
   NaN, sin teléfonos visibles, 0 errores.
+
+### Fase 194 — Salida de Mobilize completa y base de no conectadas (2026-10-27, v1.82.0)
+
+Pedido del usuario después de la reunión con Edwin (validó las únicas:
+agosto 54, abandonadas bien).
+
+- **Por qué faltaban filas "-"** (septiembre 67 en el CDR y 64 en el
+  tablero; agosto 28 y 27). Con el CDR de octubre (el único en el equipo):
+  45 filas "-" en el archivo, 43 en producción; las 2 que faltan son
+  llamadas tipificadas "Prueba", que el lector de Mobilize descartaba
+  (Fase 131) también en la salida. Sin duplicados exactos ni problemas de
+  fecha en octubre. Agosto y septiembre no se pudieron revisar (sus CDR no
+  están en el equipo y las filas descartadas nunca llegan a producción);
+  la misma causa, y el deduplicado exacto de la Fase 88, son los únicos
+  caminos del lector que quitan filas "-".
+- Arreglo (`tipificacion-logic.js`, opción `conservarSalidaGuion`, solo
+  Mobilize): ninguna fila con SKILL_NAME "-" se quita, ni por prueba ni por
+  duplicado exacto; se avisa cuántas "-" de prueba se conservaron. El
+  ingreso no cambia (pruebas y duplicados exactos se siguen quitando;
+  únicas iguales). ORLANT no cambia. Octubre pasa a 45 conectadas al volver
+  a subir su CDR.
+- Base nueva "No conectadas": reporte de Wolkvox "5. Detalle de las
+  llamadas para las no conectadas" (HistCDR, 11 columnas), tal cual.
+  Obligatorias AGENT_NAME, DATE, RING_TIME y RESULT (las dos últimas solo
+  para reconocerlo); TELEPHONE/DESTINY nunca se leen. Cada fila cuenta (sin
+  quitar repetidas). Tabla `llamadas_no_conectadas` sin teléfono (migración
+  `fase194_llamadas_no_conectadas_v1`, solo crea), rutas
+  `POST /calidad/llamadas-no-conectadas/carga(/impacto)`. Alimenta las no
+  conectadas y el total de salida; un mes con CDR sin el reporte sigue
+  "Pendiente". Octubre de Edwin: 41 filas.
+- Centro de cargas, módulo Llamadas Únicas y de Salida: solo "Abandonadas" y
+  "No conectadas", cada una con su plantilla = el reporte de Wolkvox tal cual
+  (`PLANTILLA_LLAMADAS_ABANDONADAS.xlsx`, `PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx`;
+  salen `PLANTILLA_LLAMADAS_UNICAS.xlsx` y `PLANTILLA_LLAMADAS_SALIDA.xlsx`).
+  Las cargas viejas quedan `retirada` en `CARGAS_POR_MODULO`: no se
+  muestran ni se ofrecen en Cargar Datos, pero sus datos (no se borran)
+  se pueden seguir eliminando o deshaciendo. Abandonadas: un mes sin el
+  reporte muestra 0 (antes caía a la carga vieja).
+- Pruebas: `fase194-salida-no-conectadas.test.js` (8: septiembre 67 y
+  agosto 28 con una duplicada exacta y una de prueba; antes 65; ingreso sin
+  cambio; ORLANT sin cambio; no conectadas cuentan repetidas, sin teléfono;
+  Centro; migración; API 67 + 5 = 72, agosto Pendiente, abandonadas viejas =
+  0 sin borrarse; texto de fuente). Ajustes en `fase118`, `fase138`,
+  `fase150`, `fase153` (aurora, permisos, plantillas), `fase155`, `fase160`,
+  `fase163` (2) y `fase191`.
+- Verificación local (copia de la base demo, Playwright y Brave a
+  1440/768/375 px) subiendo por el Centro los archivos reales de octubre
+  solo a la copia: Centro con "Abandonadas" y "No conectadas"; CDR 134
+  filas (45 de salida, 89 de ingreso, 62 únicas, aviso de 2 "-" de prueba
+  conservadas); abandonadas 2; no conectadas 41. Tablero: salida 45 + 41 =
+  86, únicas 62 + 2 = 64, tabla de fuentes, sin teléfonos, sin scroll
+  horizontal ni errores de consola.

@@ -209,7 +209,8 @@ function _llamadasUnicasFuentesHtml(porMes) {
 // Fase 141 (Parte C): mitad derecha -- Llamadas de salida
 // ═══════════════════════════════════════════════════════════════════
 // Fase 191: en los meses con CDR, las conectadas salen de ahí; las no conectadas esperan su base.
-var LLAMADAS_SALIDA_AVISO = 'Cuenta cada llamada de salida. En los meses con CDR, las conectadas son las llamadas con skill "-" del CDR; las no conectadas de esos meses quedan pendientes hasta tener su base.';
+// Fase 194: las no conectadas salen del reporte de Wolkvox de no conectadas.
+var LLAMADAS_SALIDA_AVISO = 'Cuenta cada llamada de salida, sin quitar repetidas. Conectadas: las llamadas con skill "-" del CDR de llamadas; no conectadas: el reporte "5. Detalle de las llamadas para las no conectadas" de Wolkvox. Un mes sin ese reporte dice Pendiente.';
 
 function _llamadasSalidaTituloHtml() {
   return '<div class="aurora-card-title">Llamadas de salida</div>' +
@@ -285,7 +286,7 @@ function _llamadasSalidaFuentesHtml(porMes) {
   return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">De dónde sale cada mes</div>' +
     '<div class="table-wrap"><table class="aurora-table ls-fuentes"><thead><tr><th class="th-izq">Mes</th><th>Conectadas</th><th>No conectadas</th><th>Total</th><th class="th-izq">Fuente</th></tr></thead><tbody>' +
     porMes.map(function (m) {
-      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.conectadas) + '</td><td>' + n(m.noConectadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasSalidaFuenteMes === 'function' ? llamadasSalidaFuenteMes(m) : '') + '</td></tr>';
+      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.conectadas) + '</td><td>' + n(m.noConectadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasSalidaFuenteMes === 'function' ? llamadasSalidaFuenteMes(m) : '').split(' · ').join('<br>') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
 }
 

@@ -93,12 +93,12 @@ const NOTAS = {
   llamadas_unicas: {
     usan: 'MOBILIZE',
     notas: [
-      'Son dos cargas, una por mitad de la pestaña "Llamadas Únicas y de Salida": ingreso (izquierda) y salida (derecha).',
-      'Privacidad: TELEPHONE se usa solo en el navegador de quien sube el archivo, para contar una vez cada número por día. Nunca llega al servidor, nunca se guarda ni se muestra.',
-      'Ingreso: no se aceptan filas con SKILL_NAME = "NO CONTESTADAS" (son salidas no conectadas; van en la carga de salida).',
-      'Salida: SKILL_ID debe decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS"; otro valor se omite con aviso. Una hoja que trae SKILL_NAME nunca se toma como salida (así un CDR no se cuela aquí).',
+      'Fase 194: el módulo lleva dos reportes de Wolkvox, subidos tal cual: "Abandonadas" (Detalle de llamadas abandonadas) y "No conectadas" (5. Detalle de las llamadas para las no conectadas). Las contestadas únicas y la salida conectada salen del CDR que se sube en Tipificación.',
+      'Abandonadas: un teléfono (ANI) cuenta una vez por día; otro día vuelve a contar. Un mes sin este reporte muestra 0.',
+      'No conectadas: cada fila es una llamada, sin quitar repetidas. Un mes con CDR y sin este reporte dice "Pendiente" en no conectadas y en el total de salida.',
+      'Privacidad: el teléfono (ANI, TELEPHONE) solo se usa en el navegador de quien sube el archivo; nunca llega al servidor, nunca se guarda ni se muestra.',
+      'Las cargas viejas (plantilla de ingreso y plantilla de salida) se retiraron del Centro; lo ya guardado no se borra y sigue en los meses sin CDR.',
     ],
-    pendiente: 'Las abandonadas de ingreso siguen sin fuente definida (Edwin). Ver en README.md la propuesta de sacar ingreso y salida conectadas del mismo CDR.',
   },
   tipificacion: {
     usan: 'ORLANT (llamadas y WhatsApp) y MOBILIZE (llamadas, CDR completo)',

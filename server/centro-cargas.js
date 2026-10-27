@@ -21,11 +21,17 @@ const CARGAS_POR_MODULO = {
   efectividad_agendamiento: [{ id: 'efectividad_agendamiento', nombre: 'Efectividad de Agendamiento', tabla: 'efectividad_agendamiento', fecha: 'mes', plantilla: 'PLANTILLA_EFECTIVIDAD_AGENDAMIENTO.xlsx' }],
   inasistencia: [{ id: 'inasistencia', nombre: 'Inasistencia', tabla: 'inasistencias', fecha: 'mes', plantilla: 'PLANTILLA_INASISTENCIA.xlsx' }],
   efectividad_citas: [{ id: 'efectividad_citas', nombre: 'Efectividad de Citas', tabla: 'efectividad_citas', fecha: 'mes', plantilla: 'PLANTILLA_EFECTIVIDAD_CITAS.xlsx' }],
+  // Fase 194 (pedido del 27/10): las contestadas unicas y la salida conectada
+  // salen del CDR de Tipificacion, asi que el Centro solo muestra los dos
+  // reportes de Wolkvox tal cual. Las cargas viejas quedan `retirada`: no se
+  // muestran ni ofrecen plantilla, pero sus datos (que no se borran y siguen
+  // en los meses sin CDR) se pueden seguir eliminando o deshaciendo.
   llamadas_unicas: [
-    { id: 'llamadas_unicas', nombre: 'Llamadas Únicas (ingreso)', tabla: 'llamadas_unicas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_UNICAS.xlsx' },
-    { id: 'llamadas_salida', nombre: 'Llamadas de Salida', tabla: 'llamadas_salida', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_SALIDA.xlsx' },
-    // Fase 191: el reporte de Wolkvox tal cual (sin plantilla armada a mano).
-    { id: 'llamadas_abandonadas', nombre: 'Detalle de llamadas abandonadas (Wolkvox)', tabla: 'llamadas_abandonadas', fecha: 'fecha', plantilla: null },
+    { id: 'llamadas_unicas', nombre: 'Llamadas Únicas (ingreso)', tabla: 'llamadas_unicas', fecha: 'fecha', plantilla: null, retirada: true },
+    { id: 'llamadas_salida', nombre: 'Llamadas de Salida', tabla: 'llamadas_salida', fecha: 'fecha', plantilla: null, retirada: true },
+    // Plantilla = el reporte de Wolkvox tal cual (Fase 194), nada armado a mano.
+    { id: 'llamadas_abandonadas', nombre: 'Detalle de llamadas abandonadas (Wolkvox)', tabla: 'llamadas_abandonadas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx' },
+    { id: 'llamadas_no_conectadas', nombre: 'Llamadas de salida no conectadas (Wolkvox)', tabla: 'llamadas_no_conectadas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx' },
   ],
   tipificacion: [
     { id: 'tipificacion_llamadas', nombre: 'Tipificación de llamadas', tabla: 'tipificaciones', fecha: 'fecha', filtro: { canal: 'LLAMADAS' }, plantilla: 'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx' },
@@ -121,7 +127,7 @@ function resumenCliente(db, cliente, anio, catalogo) {
       id: m.id,
       nombre: m.nombre,
       grupo: m.grupo,
-      cargas: CARGAS_POR_MODULO[m.id].map((c) => ({
+      cargas: CARGAS_POR_MODULO[m.id].filter((c) => !c.retirada).map((c) => ({ // Fase 194
         id: c.id,
         nombre: c.nombre,
         plantilla: c.plantilla,

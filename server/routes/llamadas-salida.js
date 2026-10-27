@@ -23,6 +23,8 @@ const {
   llamadasSalidaPorMes,
   llamadasSalidaDetalle,
   llamadasSalidaOpciones,
+  impactoLlamadasNoConectadas,
+  cargarLlamadasNoConectadas,
 } = require('../llamadas-salida');
 const { wrap, logEvent, actorLabel } = require('./shared');
 const clientesRegistro = require('../clientes-registro');
@@ -129,6 +131,48 @@ router.post(
     });
     logEvent(
       'LLAMADAS_SALIDA_CARGA',
+      { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: b.campana },
+      actorLabel(req.actor),
+      `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`
+    );
+    res.status(201).json(resultado);
+  })
+);
+
+// Fase 194: reporte de Wolkvox de no conectadas (Centro de cargas, modulo
+// Llamadas Unicas y de Salida). Mismo permiso y patron impacto -> carga.
+router.post(
+  '/calidad/llamadas-no-conectadas/carga/impacto',
+  requireActor,
+  validate(schemas.llamadasNoConectadasCargaBody),
+  wrap((req, res) => {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+      return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+    }
+    if (!campaignAccess(req.actor, req.body.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(impactoLlamadasNoConectadas(db, { campana: req.body.campana, filas: req.body.filas }));
+  })
+);
+
+router.post(
+  '/calidad/llamadas-no-conectadas/carga',
+  requireActor,
+  validate(schemas.llamadasNoConectadasCargaBody),
+  wrap((req, res) => {
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+      return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas no conectadas' });
+    }
+    const b = req.body;
+    if (!campaignAccess(req.actor, b.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    const resultado = cargarLlamadasNoConectadas(db, {
+      campana: b.campana, archivoNombre: b.archivoNombre || '', cargadoPorNombre: req.actor.nombre || '-', filas: b.filas,
+    });
+    logEvent(
+      'LLAMADAS_NO_CONECTADAS_CARGA',
       { nombre: `${resultado.insertadas} fila(s)`, user: '-', rol: b.campana },
       actorLabel(req.actor),
       `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`

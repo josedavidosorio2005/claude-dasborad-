@@ -23,8 +23,9 @@ const aoa = (ws) => XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, 
 const AHORA = new Date('2026-10-16T12:00:00-05:00');
 const LECTORES = {
   'PLANTILLA_FLUJO_LLAMADAS.xlsx': (a) => JS('trafico-logic.js').traficoParseFilas(a),
-  'PLANTILLA_LLAMADAS_UNICAS.xlsx': (a) => JS('llamadas-unicas-logic.js').llamadasUnicasParseFilas(a),
-  'PLANTILLA_LLAMADAS_SALIDA.xlsx': (a) => JS('llamadas-salida-logic.js').llamadasSalidaParseFilas(a),
+  // Fase 194: el modulo lleva los dos reportes de Wolkvox tal cual.
+  'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx': (a) => JS('llamadas-unicas-logic.js').llamadasAbandonadasParseFilas(a),
+  'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx': (a) => JS('llamadas-salida-logic.js').llamadasNoConectadasParseFilas(a),
   'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': (a) => JS('tipificacion-logic.js').tipificacionParseFilas(a, null, 'LLAMADAS'),
   // Fase 168: como en Cargar Datos, el HistChat por SKILL_ID se lee con el mapa de skills (semilla de ORLANT).
   'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': (a) => JS('tipificacion-logic.js').tipificacionParseFilas(a, null, 'WHATSAPP',

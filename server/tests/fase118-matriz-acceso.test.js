@@ -206,6 +206,8 @@ declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas
 declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas-unicas/carga'], 'cargaManual');
 // Fase 191: reporte "Detalle de llamadas abandonadas" (mismo permiso que Llamadas Unicas).
 declarar(['POST /calidad/llamadas-abandonadas/carga/impacto', 'POST /calidad/llamadas-abandonadas/carga'], 'cargaManual');
+// Fase 194: reporte de no conectadas (mismo permiso).
+declarar(['POST /calidad/llamadas-no-conectadas/carga/impacto', 'POST /calidad/llamadas-no-conectadas/carga'], 'cargaManual');
 declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
 // Fase 141, Parte C (Mobilize): Llamadas de salida -- mismo patron que
 // Llamadas Unicas. /detalle ademas exige rol interno (CLIENTES_DASH con

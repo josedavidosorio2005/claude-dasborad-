@@ -814,6 +814,26 @@ const llamadasAbandonadasCargaBody = z.object({
     }),
 });
 
+// Fase 194: "5. Detalle de las llamadas para las no conectadas" -- [fecha,
+// agente], una fila por llamada. Debe coincidir con
+// LLAMADAS_NO_CONECTADAS_ORDEN_ARRAY (llamadas-salida-logic.js) y con
+// CAMPOS_FILA_NO_CONECTADAS (llamadas-salida.js). Sin telefono, a proposito.
+const llamadasNoConectadasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(z.tuple([fechaSchema, tipificacionTextoObligatorio]))
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0])) {
+          ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0]), path: [i, 0] });
+        }
+      });
+    }),
+});
+
 const llamadasUnicasFiltrosQuery = z.object({
   campana: campanaSchema,
   desde: fechaSchema.optional(),
@@ -1447,6 +1467,7 @@ module.exports = {
     clasificacionAsesoresBody,
     llamadasUnicasCargaBody,
     llamadasAbandonadasCargaBody, // Fase 191
+    llamadasNoConectadasCargaBody, // Fase 194
     llamadasUnicasFiltrosQuery,
     llamadasUnicasOpcionesQuery,
     llamadasSalidaCargaBody,

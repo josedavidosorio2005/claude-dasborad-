@@ -150,8 +150,71 @@ function llamadasSalidaParseFilas(aoa) {
   return { filas: filas, avisos: avisos, sinAsesor: sinAsesor.length, telefonosEnAmbosTipos: telefonosEnAmbosTipos };
 }
 
+// ── Fase 194: "5. Detalle de las llamadas para las no conectadas" ─────────
+// Reporte de Wolkvox (Reportes → CDR, hoja "HistCDR<fecha>") subido tal cual:
+// AGENT_NAME, DATE, DESTINY, TELEPHONE, RING_TIME, RESULT, TYPE_INTERACTION,
+// CUSTOMER_ID, CAMPAIGN_ID, AGENT_ID, CONN_ID. Se usan AGENT_NAME y DATE;
+// RING_TIME y RESULT son obligatorias solo para reconocer el reporte (el CDR
+// de Tipificacion no las trae). TELEPHONE y los demas datos nunca se leen.
+// Cada fila es una llamada no conectada: NO se quitan repetidas.
+var LLAMADAS_NO_CONECTADAS_COLUMNAS = [
+  { key: 'agente', label: 'AGENT_NAME', obligatoria: true },
+  { key: 'fecha', label: 'DATE', obligatoria: true },
+  { key: 'ringTime', label: 'RING_TIME', obligatoria: true },
+  { key: 'resultado', label: 'RESULT', obligatoria: true },
+];
+// Orden fijo de la fila que va al servidor (= CAMPOS_FILA_NO_CONECTADAS de
+// server/llamadas-salida.js). Sin telefono, a proposito.
+var LLAMADAS_NO_CONECTADAS_ORDEN_ARRAY = ['fecha', 'agente'];
+
+function llamadasNoConectadasColIndexMap(headerRow) {
+  var map = {};
+  (headerRow || []).forEach(function (h, i) {
+    var n = llamadasSalidaNormTexto(h).toUpperCase();
+    LLAMADAS_NO_CONECTADAS_COLUMNAS.forEach(function (c) { if (c.label === n && map[c.key] === undefined) map[c.key] = i; });
+  });
+  return map;
+}
+
+// { error } si falta una columna obligatoria; si no, { filas, avisos,
+// noConectadas, columnasUsadas, porMes }.
+function llamadasNoConectadasParseFilas(aoa) {
+  if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
+  var map = llamadasNoConectadasColIndexMap(aoa[0]);
+  var faltantes = LLAMADAS_NO_CONECTADAS_COLUMNAS.filter(function (c) { return map[c.key] === undefined; });
+  if (faltantes.length) {
+    return { error: 'Faltan columnas obligatorias: ' + faltantes.map(function (c) { return c.label; }).join(', ') + '. Sube el reporte "5. Detalle de las llamadas para las no conectadas" de Wolkvox tal cual.' };
+  }
+  var filas = [];
+  var avisos = [];
+  var porMes = {};
+  var sinAsesor = 0;
+  for (var i = 1; i < aoa.length; i++) {
+    var row = aoa[i];
+    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    var filaNum = i + 1;
+    var fecha = _llamadasSalidaUnicas.llamadasUnicasParseFecha(row[map.fecha]);
+    if (!fecha) { avisos.push('Fila ' + filaNum + ': DATE invalida o vacia, se omitio.'); continue; }
+    if (_llamadasSalidaFechaLimites.fechaLimitesEsFutura(fecha)) { avisos.push('Fila ' + filaNum + ': DATE ' + fecha + ' esta en el futuro, se omitio.'); continue; }
+    var agente = llamadasSalidaNormTexto(row[map.agente]);
+    if (!agente) { agente = LLAMADAS_SALIDA_SIN_ASESOR; sinAsesor++; }
+    filas.push([fecha, agente.slice(0, 200)]);
+    porMes[fecha.slice(0, 7)] = (porMes[fecha.slice(0, 7)] || 0) + 1;
+  }
+  if (sinAsesor) avisos.push(sinAsesor + ' fila(s) sin AGENT_NAME: se cargan como "' + LLAMADAS_SALIDA_SIN_ASESOR + '".');
+  if (!filas.length) return { error: 'Ninguna llamada no conectada valida en el archivo.', avisos: avisos };
+  return {
+    filas: filas, avisos: avisos, noConectadas: filas.length, porMes: porMes,
+    columnasUsadas: LLAMADAS_NO_CONECTADAS_COLUMNAS.map(function (c) { return c.label; }),
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    LLAMADAS_NO_CONECTADAS_COLUMNAS: LLAMADAS_NO_CONECTADAS_COLUMNAS,
+    LLAMADAS_NO_CONECTADAS_ORDEN_ARRAY: LLAMADAS_NO_CONECTADAS_ORDEN_ARRAY,
+    llamadasNoConectadasColIndexMap: llamadasNoConectadasColIndexMap,
+    llamadasNoConectadasParseFilas: llamadasNoConectadasParseFilas,
     LLAMADAS_SALIDA_COLUMNAS: LLAMADAS_SALIDA_COLUMNAS,
     LLAMADAS_SALIDA_ORDEN_ARRAY: LLAMADAS_SALIDA_ORDEN_ARRAY,
     llamadasSalidaColIndexMap: llamadasSalidaColIndexMap,

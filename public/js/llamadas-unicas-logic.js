@@ -309,14 +309,18 @@ var LLAMADAS_UNICAS_FUENTE_TEXTO = {
   ABANDONADAS: 'reporte de abandonadas',
   PLANTILLA: 'Carga anterior',
   MIXTA: 'CDR y carga anterior',
+  NO_CONECTADAS: 'reporte de no conectadas', // Fase 194
 };
 function llamadasUnicasFuenteMes(m) {
   var t = function (f, vacio) { return (f && LLAMADAS_UNICAS_FUENTE_TEXTO[f]) || vacio; };
   return 'Contestadas: ' + t(m && m.fuenteContestadas, 'sin cargar') + ' · Abandonadas: ' + t(m && m.fuenteAbandonadas, 'sin cargar');
 }
+// Fase 194: conectadas y no conectadas pueden salir de bases distintas.
 function llamadasSalidaFuenteMes(m) {
-  var base = LLAMADAS_UNICAS_FUENTE_TEXTO[m && m.fuente] || LLAMADAS_UNICAS_FUENTE_TEXTO.PLANTILLA;
-  return m && m.noConectadas === null ? base + ' (falta la base de no conectadas)' : base;
+  var t = function (f) { return LLAMADAS_UNICAS_FUENTE_TEXTO[f] || LLAMADAS_UNICAS_FUENTE_TEXTO.PLANTILLA; };
+  var con = t(m && m.fuente);
+  if (m && m.noConectadas === null) return 'Conectadas: ' + con + ' · No conectadas: falta su base';
+  return 'Conectadas: ' + con + ' · No conectadas: ' + t((m && m.fuenteNoConectadas) || (m && m.fuente));
 }
 
 // Doble modo: global en el navegador, require() en Node para las pruebas.

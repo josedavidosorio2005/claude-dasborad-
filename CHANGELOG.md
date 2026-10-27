@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.82.0 — Octubre 2026
+
+**Fase 194: Llamadas de salida de Mobilize completas.**
+
+- Llamadas de salida conectadas: ahora cuentan todas las filas con skill "-"
+  del CDR. Antes se perdían las tipificadas como prueba y las repetidas
+  (septiembre 67 en el CDR y 64 en el tablero). Para corregir un mes ya
+  cargado, su CDR se vuelve a subir.
+- Base nueva en el Centro de cargas: "No conectadas", el reporte de Wolkvox
+  "5. Detalle de las llamadas para las no conectadas", subido tal cual. Cada
+  fila cuenta; alimenta las no conectadas y el total de salida.
+- El Centro de cargas de "Llamadas Únicas y de Salida" ya no muestra las
+  cargas armadas a mano de ingreso y de salida (eso sale del CDR). Quedan
+  "Abandonadas" y "No conectadas". Lo ya guardado no se borra.
+- Un mes sin el reporte de abandonadas muestra 0 abandonadas.
+- El teléfono nunca se guarda ni se muestra.
+
 ## v1.81.0 — Octubre 2026
 
 **Fase 193: Encuesta de Mobilize con la base completa de Wolkvox.**

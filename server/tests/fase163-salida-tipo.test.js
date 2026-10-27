@@ -55,12 +55,15 @@ test('codigo de actividad "-" (o vacio) queda "Sin tipificación"', () => {
   assert.deepEqual(r.filas.map((f) => f[3]), ['Sin tipificación', 'Sin tipificación', 'Link_de_pagos']);
 });
 
-test('la plantilla descargable trae los 5 encabezados y dice de que reporte sale cada tipo', () => {
-  const wb = XLSX.read(fs.readFileSync(path.join(__dirname, '..', 'plantillas', 'PLANTILLA_LLAMADAS_SALIDA.xlsx')));
-  assert.deepEqual(wb.SheetNames, ['LLAMADAS_SALIDA', 'INSTRUCCIONES']);
-  assert.deepEqual(XLSX.utils.sheet_to_json(wb.Sheets.LLAMADAS_SALIDA, { header: 1 })[0], HEADER);
+// Fase 194: la plantilla armada a mano de salida (5 encabezados) se retiro: las
+// conectadas salen del CDR y las no conectadas del reporte de Wolkvox, cuya
+// plantilla es el reporte tal cual.
+test('la plantilla de salida es el reporte de no conectadas de Wolkvox (la vieja de 5 columnas se retiro)', () => {
+  assert.ok(!fs.existsSync(path.join(__dirname, '..', 'plantillas', 'PLANTILLA_LLAMADAS_SALIDA.xlsx')));
+  const wb = XLSX.read(fs.readFileSync(path.join(__dirname, '..', 'plantillas', 'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx')));
+  assert.deepEqual(wb.SheetNames, ['LLAMADAS_NO_CONECTADAS', 'INSTRUCCIONES']);
+  assert.deepEqual(XLSX.utils.sheet_to_json(wb.Sheets.LLAMADAS_NO_CONECTADAS, { header: 1 })[0],
+    ['AGENT_NAME', 'DATE', 'DESTINY', 'TELEPHONE', 'RING_TIME', 'RESULT', 'TYPE_INTERACTION', 'CUSTOMER_ID', 'CAMPAIGN_ID', 'AGENT_ID', 'CONN_ID']);
   const ins = XLSX.utils.sheet_to_json(wb.Sheets.INSTRUCCIONES, { header: 1 }).map((r) => r.join(' | ')).join('\n');
-  assert.match(ins, /CONECTADAS salen del CDR/);
-  assert.match(ins, /NO CONECTADAS del reporte "5\. Detalle de llamadas no conectadas"/);
-  assert.match(ins, /TIPO \| Sí \|/);
+  assert.match(ins, /5\. Detalle de las llamadas para las no conectadas/);
 });

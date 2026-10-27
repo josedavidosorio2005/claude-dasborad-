@@ -69,7 +69,7 @@ test('CALIDAD SIN permiso de modulo: no ve el Centro, no sube, no elimina, no de
     ['get', '/api/centro-cargas/' + C + '/llamadas_unicas/2026-04/conteo?desde=2026-04-01&hasta=2026-04-30'],
     ['delete', '/api/centro-cargas/' + C + '/llamadas_unicas/2026-04'],
     ['post', '/api/centro-cargas/versiones/' + vid + '/deshacer'],
-    ['get', '/api/centro-cargas-plantillas/PLANTILLA_LLAMADAS_UNICAS.xlsx'],
+    ['get', '/api/centro-cargas-plantillas/PLANTILLA_LLAMADAS_ABANDONADAS.xlsx'],
     ['get', '/api/dashboard/secciones/' + C],
   ];
   for (const [m, url] of casos) assert.equal((await request(app)[m](url).set(auth(t))).status, 403, m + ' ' + url);
@@ -118,7 +118,7 @@ test('CALIDAD CON cargar_llamadas_unicas: solo ese modulo, solo sus clientes', a
   assert.ok((await request(app).get('/api/centro-cargas/' + C + '/versiones').set(auth(ta))).body.versiones.some((v) => v.carga === 'tipificacion_llamadas'), 'el admin las ve todas');
 
   // Plantillas: la de su modulo si, la de otro no.
-  assert.equal((await request(app).get('/api/centro-cargas-plantillas/PLANTILLA_LLAMADAS_UNICAS.xlsx').set(auth(t))).status, 200);
+  assert.equal((await request(app).get('/api/centro-cargas-plantillas/PLANTILLA_LLAMADAS_ABANDONADAS.xlsx').set(auth(t))).status, 200);
   assert.equal((await request(app).get('/api/centro-cargas-plantillas/PLANTILLA_TIPIFICACION_LLAMADAS.xlsx').set(auth(t))).status, 403);
 });
 

@@ -305,6 +305,8 @@ var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
 // Fase 191 (Mobilize): "Detalle de llamadas abandonadas" de Wolkvox, tal
 // cual (hoja "HistQueue<fecha>", reconocida por encabezados).
 var CARGAS_HOJA_LLAMADAS_ABANDONADAS = 'LLAMADAS_ABANDONADAS';
+// Fase 194 (Mobilize): "5. Detalle de las llamadas para las no conectadas".
+var CARGAS_HOJA_LLAMADAS_NO_CONECTADAS = 'LLAMADAS_NO_CONECTADAS';
 // Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
@@ -358,7 +360,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols, llamadasNoConectadasCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -623,6 +625,20 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
           '(obligatorias) y, si vienen, RESULT (solo ABANDON) y TYPE_INTERACTION (solo inbound).',
         'ANI (el telefono) se usa SOLO para contar una vez cada numero por dia -- nunca se guarda, nunca se exporta, nunca se muestra.',
         'Al guardar, la carga REEMPLAZA las abandonadas que ya existan entre la primera y la ultima DATE del archivo.',
+      ],
+    });
+  }
+  // Fase 194 (Mobilize): no conectadas, el reporte de Wolkvox tal cual.
+  if (llamadasNoConectadasCols) {
+    plan.push({
+      tipo: 'llamadas_no_conectadas', hoja: CARGAS_HOJA_LLAMADAS_NO_CONECTADAS, titulo: 'Llamadas de salida no conectadas',
+      descripcion: 'El reporte "5. Detalle de las llamadas para las no conectadas" de Wolkvox, tal cual lo descarga.',
+      filaUnica: false, columnas: llamadasNoConectadasCols,
+      notasExtra: [
+        'De donde sale: Wolkvox → Reportes → CDR → "5. Detalle de las llamadas para las no conectadas". Se usan AGENT_NAME y DATE; ' +
+          'RING_TIME y RESULT solo para reconocer el reporte.',
+        'Cada fila es una llamada no conectada: no se quita ninguna por repetir numero. TELEPHONE nunca se lee, nunca se guarda, nunca se muestra.',
+        'Al guardar, la carga REEMPLAZA las no conectadas que ya existan entre la primera y la ultima DATE del archivo.',
       ],
     });
   }
@@ -960,6 +976,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_LLAMADAS_UNICAS: CARGAS_HOJA_LLAMADAS_UNICAS,
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
     CARGAS_HOJA_LLAMADAS_ABANDONADAS: CARGAS_HOJA_LLAMADAS_ABANDONADAS,
+    CARGAS_HOJA_LLAMADAS_NO_CONECTADAS: CARGAS_HOJA_LLAMADAS_NO_CONECTADAS,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
     CARGAS_HOJA_CALIDAD_RESUMEN: CARGAS_HOJA_CALIDAD_RESUMEN,
     CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,

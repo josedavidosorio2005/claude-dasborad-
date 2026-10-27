@@ -43,6 +43,7 @@ const FUENTES = [
   { tabla: 'llamadas_unicas', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'llamadas_salida', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'llamadas_abandonadas', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 191
+  { tabla: 'llamadas_no_conectadas', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 194
   { tabla: 'whatsapp_tiempos', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'calidad_resumen_asesor', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 172
 ];

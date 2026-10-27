@@ -59,7 +59,8 @@ test('servidor: guarda el asesor vacio y el resumen separa contestadas y abandon
   assert.equal(g.status, 201, JSON.stringify(g.body));
   const q = 'campana=MOBILIZE&desde=2026-07-01&hasta=2026-07-03&skill=SKILL%20F163';
   const res = await request(app).get('/api/calidad/llamadas-unicas/resumen?' + q).set(auth(t));
-  assert.deepEqual(res.body, { contestadas: 1, abandonadas: 2, total: 3 });
+  // Fase 194: las abandonadas de la carga vieja se guardan (abajo) pero ya no cuentan.
+  assert.deepEqual(res.body, { contestadas: 1, abandonadas: 0, total: 1 });
   const vacio = db.prepare("SELECT COUNT(*) AS n FROM llamadas_unicas WHERE campana = 'MOBILIZE' AND skill = 'SKILL F163' AND agente = ''").get().n;
   assert.equal(vacio, 2);
   const op = await request(app).get('/api/calidad/llamadas-unicas/opciones?campana=MOBILIZE').set(auth(t));

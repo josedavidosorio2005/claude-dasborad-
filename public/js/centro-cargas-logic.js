@@ -46,7 +46,7 @@ var CENTRO_MODULOS_PERMISO = [
 // Una carga del Centro -> su modulo del catalogo (dos cargas comparten modulo).
 function centroModuloDeCarga(cargaId) {
   if (cargaId === 'tipificacion_llamadas' || cargaId === 'tipificacion_whatsapp') return 'tipificacion';
-  if (cargaId === 'llamadas_salida' || cargaId === 'llamadas_abandonadas') return 'llamadas_unicas';
+  if (cargaId === 'llamadas_salida' || cargaId === 'llamadas_abandonadas' || cargaId === 'llamadas_no_conectadas') return 'llamadas_unicas';
   return cargaId;
 }
 
@@ -153,6 +153,7 @@ var CENTRO_CARGA_PLAN = {
   llamadas_unicas: { tipo: 'llamadas_unicas' },
   llamadas_salida: { tipo: 'llamadas_salida' },
   llamadas_abandonadas: { tipo: 'llamadas_abandonadas' }, // Fase 191
+  llamadas_no_conectadas: { tipo: 'llamadas_no_conectadas' }, // Fase 194
   encuesta: { tipo: 'encuesta' },
   // Fase 172: la plantilla no trae fecha por fila; el mes es el de la tarjeta.
   calidad_resumen: { tipo: 'calidad_resumen', mensual: true, sinFecha: true },
@@ -178,7 +179,7 @@ function centroFiltrarPlan(plan, cargaId) {
 function centroFechaFila(tipo, f) {
   if (!f) return '';
   if (tipo === 'llamadas_unicas' || tipo === 'llamadas_salida' || tipo === 'whatsapp_tiempos') return String(f[1] || '');
-  if (tipo === 'llamadas_abandonadas') return String(f[0] || ''); // Fase 191: [fecha, skill]
+  if (tipo === 'llamadas_abandonadas' || tipo === 'llamadas_no_conectadas') return String(f[0] || ''); // Fases 191/194: [fecha, ...]
   if (tipo === 'encuesta') return String(f[0] || '');
   return String(f.fecha || f.fechaInicio || f.fechaSolicitud || f.mes || '');
 }
@@ -282,7 +283,7 @@ function centroTextoReemplazoParcial(mes, rango, conteo) {
 // sin llamadas, asi que el aviso de mes incompleto salia siempre aunque el
 // archivo estuviera bien. Estas cargas no lo llevan.
 // Fase 191: tampoco en las abandonadas (un dia sin abandonos es normal).
-var CENTRO_SIN_AVISO_COBERTURA = ['llamadas_salida', 'llamadas_abandonadas'];
+var CENTRO_SIN_AVISO_COBERTURA = ['llamadas_salida', 'llamadas_abandonadas', 'llamadas_no_conectadas'];
 function centroOmiteCobertura(cargaId) {
   return CENTRO_SIN_AVISO_COBERTURA.indexOf(cargaId) !== -1;
 }
@@ -319,6 +320,7 @@ var CENTRO_ETIQUETA_CARGA = {
   llamadas_unicas: 'Únicas de ingreso',
   llamadas_salida: 'De salida',
   llamadas_abandonadas: 'Abandonadas', // Fase 191
+  llamadas_no_conectadas: 'No conectadas', // Fase 194
   tipificacion_llamadas: 'Llamadas',
   tipificacion_whatsapp: 'WhatsApp',
 };
@@ -327,6 +329,7 @@ var CENTRO_ETIQUETA_CARGA = {
 var CENTRO_NOTA_SIN_PLANTILLA = {
   calidad: 'La plantilla de Calidad se descarga desde Calidad (depende de los ítems de cada campaña).',
   llamadas_abandonadas: 'Sin plantilla: se sube el reporte de Wolkvox "Detalle de llamadas abandonadas" tal cual lo descarga.',
+  llamadas_no_conectadas: 'Sin plantilla: se sube el reporte de Wolkvox "5. Detalle de las llamadas para las no conectadas" tal cual lo descarga.',
 };
 function centroNotaSinPlantilla(cargaId) {
   return CENTRO_NOTA_SIN_PLANTILLA[cargaId] || CENTRO_NOTA_SIN_PLANTILLA.calidad;
