@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.80.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.80.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -322,3 +322,4 @@ mismo orden):
 - Fase 189 — Los botones Total / Línea General / Línea 3P pasan a la cabecera de cada gráfica (llamadas y WhatsApp), cada grupo independiente; en el celular, debajo del título (v1.78.0, 2026-10-26)
 - Fase 190 — Tipificación de ORLANT: salen las tortas "Llamadas de salida por línea" y "WhatsApp de salida por línea" (la salida por línea se ve con los botones de la pestaña de salida) (v1.79.0, 2026-10-27)
 - Fase 191 — Llamadas Únicas de Mobilize desde las bases de Wolkvox: contestadas del CDR (marca de única por día y teléfono), abandonadas del reporte "Detalle de llamadas abandonadas" (base nueva), salida conectada del CDR y no conectadas pendientes; tabla de fuente por mes (v1.80.0, 2026-10-27)
+- Fase 192 — Paso a Node.js 24: imagen node:24-bookworm, CI con Node 24, imágenes de pre-descarga de ci.yml y deploy.yml, engines >=24 (v1.80.1, 2026-10-27)

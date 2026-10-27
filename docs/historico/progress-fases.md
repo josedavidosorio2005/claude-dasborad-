@@ -17135,3 +17135,25 @@ baja Wolkvox (para cuadrar luego con la API), sin plantillas armadas a mano.
     contestadas + 2 abandonadas = 64). Salida conectada desde el CDR: ago
     27, sep 64, oct 43; no conectadas y total "Pendiente". A 1440/768/375
     px: sin scroll horizontal, sin NaN, sin teléfonos en pantalla.
+
+### Fase 192 — Paso a Node.js 24 (2026-10-27, v1.80.1)
+
+Pendiente de la Fase 181 (Node 22 deja de tener soporte el 30/04/2027). Con
+el OK del usuario, después de una prueba previa en una rama local.
+
+- Prueba previa (sin tocar el repo): Node 24.22.1 LTS portátil (checksum
+  verificado contra `SHASUMS256.txt` de nodejs.org), npm 11.19.1, en un
+  worktree aparte. `better-sqlite3` 12.11.1 trae binario precompilado para
+  Node 24 (ABI 137) en linux-x64 (la imagen) y win32-x64; `npm ci` no
+  compiló nada; SQLite 3.53.2. Suite 2238/2238, sin avisos de deprecación;
+  `npm audit` 0 vulnerabilidades.
+- Cambios: `server/Dockerfile` (`node:24-bookworm` y `node:24-bookworm-slim`),
+  `ci.yml` (matriz y job de Docker en Node 24, imágenes de pre-descarga),
+  `deploy.yml` (imágenes de pre-descarga, que la nota original no
+  nombraba), `engines` `>=24`. Textos que decían "Node 22" en `CLAUDE.md`,
+  `README.md`, `docs/infraestructura.md` y `docs/ARQUITECTURA.md`.
+- A saber: con Node 24, `node --test` imprime el formato "spec" (✔) y no TAP;
+  CI no lee esa salida. npm 11 avisa sobre el script de instalación de
+  `better-sqlite3` (lo deja correr).
+- Docker no corre en el equipo local: la imagen se probó en el job
+  `docker-build` de CI.

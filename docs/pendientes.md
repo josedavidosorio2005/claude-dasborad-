@@ -361,14 +361,21 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     demás cuentas sí se pueden bloquear 1 hora a propósito. Si molesta:
     bajar la ventana o avisar por correo al bloquear. Costo: bajo.
 
-- **Paso a Node.js 24 antes del 30/04/2027** (anotado 26/10/2026, Fase
-  181) — Prioridad MEDIA, con fecha: ese día Node 22 deja de tener soporte.
-  Hoy la imagen usa `node:22-bookworm` (se reconstruye en cada deploy, así
-  que recibe los parches de la 22) y CI prueba solo Node 22. Cómo se
-  cierra: un PR que cambie la imagen (`server/Dockerfile`), la matriz de CI
-  (toca `.github/workflows/`, se consulta antes) y `engines`; probar
-  primero que `better-sqlite3` trae binario para Node 24 y correr la suite
-  completa. Conviene hacerlo con margen, en el primer trimestre de 2027.
+- **Paso a Node.js 24 — hecho en la Fase 192 (27/10/2026, v1.80.1)**
+  (anotado 26/10/2026, Fase 181; Node 22 deja de tener soporte el
+  30/04/2027). Resultado de la prueba previa (rama local, Node 24.22.1 LTS
+  portátil, npm 11.19.1): `better-sqlite3` 12.11.1 trae binario para Node 24
+  (ABI 137) en linux-x64 y win32-x64, sin compilar; suite completa
+  2238/2238 en verde, sin avisos de deprecación; `npm audit` 0
+  vulnerabilidades. Con el OK del usuario se cambiaron `server/Dockerfile`
+  (`node:24-bookworm` / `-slim`), `ci.yml` (Node 24 y las imágenes de
+  pre-descarga), `deploy.yml` (imágenes de pre-descarga, que la nota
+  original no nombraba) y `engines` (`>=24`). Dos cosas a saber: con Node
+  24, `node --test` imprime el formato "spec" (✔) en vez de TAP (`ok`,
+  `# pass`) — CI no lee esa salida; y npm 11 avisa sobre el script de
+  instalación de `better-sqlite3`, pero lo deja correr. Verificación en
+  producción: ver la Fase 192 en `docs/historico/progress-fases.md`. Se
+  quita de aquí en el próximo reordenamiento.
 - **Prueba mensual de restauración del respaldo** (anotado 26/10/2026, Fase
   181) — Prioridad MEDIA, recurrente. La última prueba fue el 16/10/2026
   (copia local, `integrity_check` ok). Cómo: el primer día hábil de cada
@@ -425,8 +432,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **`npm test` local se vuelve inestable en algunas máquinas** —
   decenas de `ETIMEDOUT` en una corrida completa de supertest, sin
   imprimir el resumen final. No es un bug de esas pruebas (la misma
-  suite corre en verde en CI, Node 22, en cada PR) — es un límite de
-  recursos de la máquina. **CI (Node 22) sigue siendo la referencia
+  suite corre en verde en CI, Node 24 desde la Fase 192, en cada PR) — es un límite de
+  recursos de la máquina. **CI (Node 24) sigue siendo la referencia
   real**, como indica `CLAUDE.md` — no se investiga más a fondo.
 - **Cobertura con Playwright real para las 9 bases, con archivos
   SINTÉTICOS con la forma exacta de los reales** — no construido, es en

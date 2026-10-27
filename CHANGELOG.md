@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.80.1 — Octubre 2026
+
+**Fase 192: la plataforma pasa a Node.js 24.**
+
+- Por dentro, el servidor ahora corre con Node.js 24 (la versión con soporte
+  largo). Node 22 deja de tener soporte en abril de 2027; así se adelanta el
+  cambio con margen.
+- No cambia nada de lo que se ve ni de las cifras.
+
 ## v1.80.0 — Octubre 2026
 
 **Fase 191: Llamadas Únicas de Mobilize con las bases de Wolkvox tal cual.**
