@@ -17323,6 +17323,33 @@ agosto 54, abandonadas bien).
   siguen esperando sus CDR para llegar a 28 y 67, y sin reporte de no
   conectadas ("Pendiente").
 
+### Seguridad: `qs` 6.17.0 (2026-10-27, v1.82.1)
+
+- `npm audit` marcó un aviso moderado nuevo (GHSA-6pq8-jhm2-2vcw: `qs`
+  6.7.0–6.16.0, `qs.stringify` con `arrayFormat: 'comma'` puede lanzar un
+  error no controlado). `qs` llega por Express/body-parser y supertest.
+  `npm audit fix` lo subió a 6.17.0 solo en `package-lock.json`, dentro del
+  `override` del proyecto. `npm audit` queda en 0. PR aparte de las Fases
+  195 y 196.
+
+### Fase 195 — NPS en la Encuesta de Mobilize (2026-10-27, v1.83.0)
+
+- Pregunta 1: botones "Cantidad" | "NPS" en su cabecera (`.gd-subtabs`). Con
+  NPS, cada barra = % sobre las que contestaron la pregunta 1 y debajo el NPS
+  (% promotores 9-10 − % detractores 0-6) con su nota (`encuestaNps`,
+  `encuesta-logic.js`). One and Done sin cambio.
+- Octubre (archivo real, mismo de producción): 28 contestaron; 10 → 12 / 28
+  = 42,9 %; promotores 16 (57,1 %), pasivos 2, detractores 10 (35,7 %); NPS
+  21,4. Pruebas: `fase195-encuesta-nps.test.js` (3).
+- Verificación local (copia de la base demo con la encuesta real de octubre,
+  Playwright y Brave a 1440/768/375 px): botones "Cantidad" | "NPS" solo en
+  la pregunta 1 (44 px en celular y tablet); con NPS, el 10 = 42,9 % (12 /
+  28), eje a 100 %, NPS 21,4 con su detalle y nota; la pregunta 3 no cambia;
+  vuelve a Cantidad; sin scroll horizontal ni errores. En gráficas de menos
+  de 480 px los "%" de las barras se ocultan (se pisaban) y quedan en el
+  tooltip, en "Ver datos" y en el NPS. CI: el tamaño de letra del NPS usa el
+  token `--fs-kpi`. Suite 2255/2255.
+
 ### Fase 196 — Pestaña "Flujo por hora" de Mobilize (2026-10-27, v1.84.0)
 
 Pedido del usuario (se presenta al cliente).

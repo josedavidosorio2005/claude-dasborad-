@@ -17,6 +17,23 @@ sepan que hay nuevo, que se corrigio y que falta.
   mismos del mapa.
 - En el celular, cada tabla se desplaza de lado dentro de su tarjeta.
 
+## v1.83.0 — Octubre 2026
+
+**Fase 195: NPS en la Encuesta de Mobilize.**
+
+- La gráfica de la pregunta 1 tiene un botón "NPS": cambia las cantidades por
+  porcentajes sobre las encuestas que contestaron la pregunta 1 y muestra el
+  NPS (% de promotores 9-10 menos % de detractores 0-6), con una nota de cómo
+  se calcula. One and Done no cambia.
+
+## v1.82.1 — Octubre 2026
+
+**Seguridad: actualización de una librería interna.**
+
+- Se actualizó `qs` (la usa el servidor por dentro para leer los pedidos) a
+  la 6.17.0, que corrige un aviso de seguridad publicado hoy. No cambia nada
+  de lo que se ve.
+
 ## v1.82.0 — Octubre 2026
 
 **Fase 194: Llamadas de salida de Mobilize completas.**
