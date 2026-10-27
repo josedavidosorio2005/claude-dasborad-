@@ -17520,6 +17520,32 @@ Ajuste de la Fase 198 pedido por el usuario: la Eficacia no va dentro de
     corrigió y ahora se autoprueba al arrancar (se detiene si un patrón
     queda mal escapado).
 
+### Fase 200 — One & Done de Mobilize sobre las encuestas que empezaron (2026-10-27, v1.88.0)
+
+Pedido del usuario (entrega del 28/10), PR 1 de 3.
+
+- Regla nueva: One & Done = encuestas con "Sí" en la pregunta 3 ÷ encuestas
+  que contestaron la pregunta 1 (las que empezaron la encuesta). Igual en la
+  tarjeta FCR de Flujo de Llamadas y en la sub-pestaña One & Done.
+- Antes / después con los tres archivos de encuesta de Wolkvox (los mismos
+  que están en producción; solo conteos): agosto 21 encuestas, 6 con pregunta
+  1, 5 Sí → 23,8 % → 83,3 %; septiembre 45 / 5 / 3 → 6,7 % → 60 %; octubre
+  82 / 28 / 19 → 23,2 % → 67,9 %. En los tres meses ninguna encuesta tiene la
+  pregunta 3 sin la 1.
+- `server/encuestas.js`: base nueva `empezaron` (`q1 IS NOT NULL`) en
+  `FCR_BASES` y en `GET /calidad/encuestas/fcr` (que también devuelve el
+  conteo `empezaron`); validación con la base nueva.
+  `public/js/encuesta-logic.js`: `encuestaFcr` con la base nueva,
+  `encuestaFcrBase`, `encuestaFcrNota` y la fracción "19 de 28 que
+  contestaron la pregunta 1". `public/js/encuesta.js`: la nota (tooltip de
+  la tarjeta FCR y línea bajo la gráfica de One & Done) sale de la base; el
+  Excel de One & Done trae "Contestaron la pregunta 1".
+- Configuración: seed y plantilla con `fcrBase: 'empezaron'`; migración
+  `dashboards_config_mobilize_fcr_empezaron_v1` (solo cambia `'total'` →
+  `'empezaron'`; otra base o forma desconocida intacta; idempotente).
+- Pruebas: `fase200-one-and-done-base.test.js` (4) y las que fijaban
+  `fcrBase: 'total'` en el seed (147 C y D).
+
 ### Fase 201 — Un solo filtro de meses en el encabezado (2026-10-27, v1.89.0)
 
 Pedido del usuario (entrega del 28/10), PR 2 de 3. Todos los clientes.

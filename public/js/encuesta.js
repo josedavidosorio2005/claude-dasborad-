@@ -364,7 +364,7 @@ function _encuestaExportPrint(i) {
 // pregunta 3). Mes de la tarjeta = el del final del rango del panel; los
 // demas meses del rango con encuestas van en una linea aparte. Siempre con
 // la fraccion ("3 de 45 encuestas") para que se entienda.
-var ENCUESTA_FCR_NOTA = 'Encuestas en las que el usuario dijo que su solicitud se resolvió en este primer contacto (pregunta 3 = Sí).';
+// Fase 200: la nota sale de encuestaFcrNota(base) (encuesta-logic.js).
 async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
   var kpis = document.getElementById('tv-kpis-' + i);
   if (!kpis) return;
@@ -375,14 +375,15 @@ async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
     kpis.insertAdjacentHTML('beforeend', '<div class="aurora-kpi enc-fcr" id="tv-fcr-' + i + '"></div>');
     el = document.getElementById('tv-fcr-' + i);
   }
-  var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base === 'respondieron' ? 'respondieron' : 'total') +
+  base = encuestaFcrBase(base);
+  var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base) +
     (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
   var porMes = [];
   try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; } catch (e) { porMes = []; }
   var mesFin = hasta ? hasta.slice(0, 7) : (porMes.length ? porMes[porMes.length - 1].periodo : '');
   var t = encuestaFcrTarjeta(porMes, mesFin);
   var mesLbl = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
-  var nota = ' <span title="' + esc(ENCUESTA_FCR_NOTA) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>';
+  var nota = ' <span title="' + esc(encuestaFcrNota(base)) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>';
   var cuerpo = t.sinEncuestas
     ? '<div class="kv">—</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div><div class="enc-fcr-sub">' + esc(mesLbl(t.mes)) + ': Sin encuestas este mes</div>'
     : '<div class="kv">' + esc(encuestaFmtPct(t.pct)) + '</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div>' +
@@ -404,7 +405,7 @@ var _encuestaOadUltimo = {}; // por indice de panel: serie para exportar
 async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
   var elKpi = document.getElementById('tv-oad-kpi-' + i);
   var elQ3 = document.getElementById('tv-oad-q3-' + i);
-  base = base === 'respondieron' ? 'respondieron' : 'total';
+  base = encuestaFcrBase(base);
   var q = 'campana=' + encodeURIComponent(campana) + '&base=' + encodeURIComponent(base) +
     (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
   var porMes = [];
@@ -443,7 +444,8 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
       'Sí ' + d.si.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctSi)) + ') · ' +
       'No ' + d.no.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctNo)) + ') · ' +
       'Sin respuesta ' + d.sinRespuesta.toLocaleString('es-CO') + ' (' + esc(encuestaFmtPct(d.pctSinRespuesta)) + ')' +
-      (sinMes.length ? '<br>' + esc(sinMes.join(', ')) + ': Sin encuestas este mes' : '');
+      (sinMes.length ? '<br>' + esc(sinMes.join(', ')) + ': Sin encuestas este mes' : '') +
+      '<br>' + esc(encuestaFcrNota(base));
   }
   var color = (typeof PC !== 'undefined' && PC.length) ? PC[0] : '#29564b';
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
@@ -478,6 +480,7 @@ function _encuestaOadDatosExport(i) {
       'Base': s.den,
       'Encuestas del mes': s.total,
       'Respondieron la pregunta 3': s.respondieron,
+      'Contestaron la pregunta 1': s.empezaron,
     };
   });
 }

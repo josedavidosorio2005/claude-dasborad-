@@ -136,6 +136,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Llamadas Únicas y de Salida de Mobilize (v1.82.0) | Oct: únicas 64 = 62 contestadas (CDR) + 2 abandonadas · salida 86 = 45 conectadas (todas las filas "-") + 41 no conectadas (reporte 5) · Ago/Sep: conectadas 27 / 64 hasta subir su CDR (Edwin: 28 / 67), no conectadas Pendiente | 191 / 194 |
 | Resumen de calidad de Mobilize | Oct: 3 asesores, 34 monitoreos, 97,35 % | 174 / 177 |
 | Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
+| One & Done / FCR de Mobilize (base: contestaron la pregunta 1, v1.88.0) | Ago 5/6 = 83,3 % · Sep 3/5 = 60 % · Oct 19/28 = 67,9 % (antes, sobre el total: 23,8 % · 6,7 % · 23,2 %) | 200 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
@@ -338,4 +339,5 @@ mismo orden):
 - Fase 197 — Mobilize: NPS con "%" en las barras también en el celular y resumen "NPS = % promotores − % detractores"; Flujo por hora con el título "Día del mes" (v1.85.0, 2026-10-27)
 - Fase 198 — Mobilize: indicador "Eficacia" al lado del One & Done (contestadas de ingreso con código positivo ÷ contestadas de ingreso; lista de Kelly en server/eficacia.js) (v1.86.0, 2026-10-27)
 - Fase 199 — Mobilize: la Eficacia pasa a su propia sub-pestaña "Eficacia", a la derecha de "One & Done" (que vuelve a como estaba); migración para la configuración de producción (v1.87.0, 2026-10-27)
+- Fase 200 — Mobilize: One & Done y la tarjeta FCR sobre las encuestas que contestaron la pregunta 1 (las que empezaron), no el total; migración de `fcrBase` en producción (v1.88.0, 2026-10-27)
 - Fase 201 — Todos los clientes: sin filtro "MES" en el encabezado; solo "MESES", y las tarjetas siguen el último mes marcado (v1.89.0, 2026-10-27)

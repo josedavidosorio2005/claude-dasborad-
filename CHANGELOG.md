@@ -18,6 +18,21 @@ sepan que hay nuevo, que se corrigio y que falta.
   de los avisos también usan ese mes ("Ver <mes>" deja marcado solo ese mes).
 - En el celular, el botón de MESES es más fácil de tocar.
 
+## v1.88.0 — Octubre 2026
+
+**Fase 200: One & Done de Mobilize sobre las encuestas que empezaron.**
+
+- One & Done = encuestas con "Sí" en la pregunta 3 ÷ encuestas que
+  contestaron la pregunta 1 (las que empezaron la encuesta). Antes se dividía
+  por todas las encuestas del mes.
+- Cambia igual en la tarjeta "Solución en primer contacto (FCR)" de Flujo de
+  Llamadas y en la sub-pestaña One & Done, que ahora muestra la nota con la
+  fórmula. El Excel de One & Done trae también la columna "Contestaron la
+  pregunta 1".
+- Agosto: 5 de 6 = 83,3 % (antes 5 de 21 = 23,8 %). Septiembre: 3 de 5 =
+  60 % (antes 3 de 45 = 6,7 %). Octubre: 19 de 28 = 67,9 % (antes 19 de 82 =
+  23,2 %).
+
 ## v1.87.0 — Octubre 2026
 
 **Fase 199: la Eficacia de Mobilize en su propia sub-pestaña.**

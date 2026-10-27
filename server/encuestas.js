@@ -24,7 +24,9 @@ const PREGUNTAS = [
   { key: 'q4', min: 1, max: 5 },
 ];
 
-const FCR_BASES = ['total', 'respondieron'];
+// Fase 200: 'empezaron' = encuestas que contestaron la pregunta 1 (las que
+// empezaron la encuesta) -- la base de Mobilize desde esa fase.
+const FCR_BASES = ['total', 'respondieron', 'empezaron'];
 
 function filaArrayAObjeto(arr) {
   const obj = {};
@@ -157,11 +159,12 @@ function encuestasFcrPorMes(db, q) {
   return db.prepare(
     `SELECT substr(fecha,1,7) AS periodo, COUNT(*) AS total,
             SUM(CASE WHEN q3 IS NOT NULL THEN 1 ELSE 0 END) AS respondieron,
+            SUM(CASE WHEN q1 IS NOT NULL THEN 1 ELSE 0 END) AS empezaron,
             SUM(CASE WHEN q3 = 1 THEN 1 ELSE 0 END) AS si
        FROM encuestas WHERE ${where} GROUP BY periodo ORDER BY periodo`
   ).all(params).map((r) => {
-    const den = base === 'respondieron' ? r.respondieron : r.total;
-    return { periodo: r.periodo, base, si: r.si, total: r.total, respondieron: r.respondieron, den, pct: den > 0 ? Math.round((r.si / den) * 1000) / 10 : null };
+    const den = base === 'respondieron' ? r.respondieron : base === 'empezaron' ? r.empezaron : r.total;
+    return { periodo: r.periodo, base, si: r.si, total: r.total, respondieron: r.respondieron, empezaron: r.empezaron, den, pct: den > 0 ? Math.round((r.si / den) * 1000) / 10 : null };
   });
 }
 

@@ -1007,7 +1007,7 @@ const encuestasFcrQuery = z.object({
   campana: campanaSchema,
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
-  base: z.enum(['total', 'respondieron']).optional(),
+  base: z.enum(['total', 'respondieron', 'empezaron']).optional(), // Fase 200: + empezaron
 });
 
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
