@@ -17121,3 +17121,17 @@ baja Wolkvox (para cuadrar luego con la API), sin plantillas armadas a mano.
   salida 3 conectadas con no conectadas y total "Pendiente", tablas de
   fuente, sin teléfonos en pantalla ni en la base, sin scroll horizontal ni
   errores de consola.
+- Producción (v1.79.0 y v1.80.0 desplegadas, PR #556 y #557). Revisión de
+  solo lectura con sesión de administrador (Playwright y Brave, toda
+  escritura a la API bloqueada: 0 intentos), sin errores de consola:
+  - Tipificación de ORLANT: 0 tortas por línea; siguen las tarjetas y las 2
+    tortas de tipificación.
+  - Skills del CDR de Mobilize en octubre: de ingreso, **SKILL SAC** (87
+    filas) y **Skill Key Account** (2); de salida, "-" guardado como
+    LLAMADAS DE SALIDA (43 filas, de ellas 17 tipificadas
+    Cliente_no_contesta).
+  - Llamadas Únicas: el CDR cargado todavía no tiene la marca, así que
+    agosto, septiembre y octubre siguen con la carga anterior (octubre 62
+    contestadas + 2 abandonadas = 64). Salida conectada desde el CDR: ago
+    27, sep 64, oct 43; no conectadas y total "Pendiente". A 1440/768/375
+    px: sin scroll horizontal, sin NaN, sin teléfonos en pantalla.
