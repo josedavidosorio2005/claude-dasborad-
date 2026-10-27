@@ -46,12 +46,13 @@ test('desglose de la pregunta 3: Si / No / Sin respuesta en cantidad y % del tot
 });
 
 const panelFlujo = (layout) => layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
-const SUBTABS = ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone'];
+// Fase 199: + Eficacia a la derecha de One & Done (migracion propia, abajo).
+const SUBTABS = ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone', 'eficacia'];
 
 test('seed: One & Done al final; las 5 sub-pestañas, sus textos y fcrBase no cambian; ORLANT intacto', () => {
   const p = panelFlujo(CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout);
   assert.deepEqual(p.subtabs.map((s) => s.key), SUBTABS);
-  assert.deepEqual(p.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done']);
+  assert.deepEqual(p.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done', 'Eficacia']);
   assert.equal(p.fcrBase, 'total');
   assert.ok(!JSON.stringify(CONFIGS.find((c) => c.cliente === 'ORLANT').layout).includes('oneanddone'));
 });
@@ -63,11 +64,13 @@ test('migracion: base migrada = seed; idempotente; forma desconocida intacta; OR
   assert.deepEqual(panelFlujo(original), panelFlujo(CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout));
   // Forma de produccion (5 sub-pestañas) -> agrega One & Done al final.
   const prod = JSON.parse(JSON.stringify(original));
-  panelFlujo(prod).subtabs = panelFlujo(prod).subtabs.filter((s) => s.key !== 'oneanddone');
+  panelFlujo(prod).subtabs = panelFlujo(prod).subtabs.filter((s) => s.key !== 'oneanddone' && s.key !== 'eficacia');
   db.prepare("UPDATE dashboards_config SET layout=? WHERE cliente='MOBILIZE'").run(JSON.stringify(prod));
   db.migrarMobilizeFlujoOneAndDone();
+  db.migrarMobilizeFlujoEficacia(); // Fase 199: despues de One & Done
   assert.deepEqual(panelFlujo(leer('MOBILIZE')).subtabs.map((s) => s.key), SUBTABS);
   db.migrarMobilizeFlujoOneAndDone();
+  db.migrarMobilizeFlujoEficacia();
   assert.deepEqual(panelFlujo(leer('MOBILIZE')).subtabs.map((s) => s.key), SUBTABS, 'idempotente');
   assert.deepEqual(leer('MOBILIZE'), original);
   const rara = { kpis: [], tabs: [{ key: 'flujo', label: 'Flujo', panels: [{ tipo: 'trafico_combo', campana: 'MOBILIZE', subtabs: [{ key: 'resumen', label: 'R' }] }] }] };

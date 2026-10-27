@@ -74,7 +74,7 @@ test('Exportar con One & Done activa: titulo "One & Done"; en otra sub-pestaña:
     document: { getElementById: () => ({ dataset: { campana: 'MOBILIZE' } }) },
   };
   vm.createContext(ctx);
-  vm.runInContext([extraer(traf, 'function _traficoClaveEstado'), extraer(traf, 'function _traficoExportEsOneAndDone'), extraer(traf, 'function _traficoExportTitulo')].join('\n'), ctx);
+  vm.runInContext([extraer(traf, 'function _traficoClaveEstado'), extraer(traf, 'function _traficoExportEsOneAndDone'), extraer(traf, 'function _traficoExportEsEficacia'), extraer(traf, 'function _traficoExportTitulo')].join('\n'), ctx);
   assert.equal(vm.runInContext('_traficoExportTitulo(0)', ctx), 'Trafico de Llamadas');
   ctx._traficoSubtabActivo.MOBILIZE = 'oneanddone';
   assert.equal(vm.runInContext('_traficoExportTitulo(0)', ctx), 'One & Done');

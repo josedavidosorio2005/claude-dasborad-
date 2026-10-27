@@ -1,6 +1,6 @@
 // eficacia.js — InConexion Platform (Fase 198, Mobilize). "Eficacia" en la
-// sub-pestaña One & Done de Flujo de Llamadas: tarjeta del mes (al lado de la
-// de One & Done), barras por mes y la nota de como se calcula. Los datos y la
+// sub-pestaña propia "Eficacia" de Flujo de Llamadas (Fase 199; antes dentro
+// de One & Done): tarjeta del mes, barras por mes y la nota de como se calcula. Los datos y la
 // lista de codigos positivos salen del servidor (server/eficacia.js, unico
 // lugar de la lista); el navegador no la repite.
 'use strict';
@@ -65,6 +65,14 @@ async function _eficaciaDibujar(i, campana, desde, hasta) {
       options: o,
     });
   }
+}
+
+// Fase 199: tabla por mes para el Excel/PDF de la sub-pestaña "Eficacia".
+function _eficaciaDatosExport(i) {
+  var r = _eficaciaUltimo[i];
+  return ((r && r.meses) || []).map(function (m) {
+    return { Mes: m.periodo, 'Contestadas de ingreso': m.contestadas, 'Con código positivo': m.positivas, '% Eficacia': m.pct };
+  });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

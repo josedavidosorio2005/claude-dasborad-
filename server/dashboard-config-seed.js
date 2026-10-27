@@ -462,6 +462,10 @@ const MOBILIZE = {
             // propia grafica. Migracion: dashboards_config_mobilize_flujo_
             // oneanddone_v1 (db.js).
             { key: 'oneanddone', label: 'One & Done' },
+            // Fase 199: Eficacia en su propia sub-pestaña, a la derecha de
+            // One & Done. Migracion: dashboards_config_mobilize_flujo_
+            // eficacia_v1 (db.js).
+            { key: 'eficacia', label: 'Eficacia' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
           // Fase 147 (Parte C): tarjeta "Solucion en primer contacto (FCR)"

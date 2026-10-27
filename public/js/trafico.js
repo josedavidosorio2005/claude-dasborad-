@@ -711,6 +711,10 @@ var TRAFICO_SUBTAB_TITULOS = {
   // grafica -- solo Mobilize la pide en su `subtabs`. La dibuja
   // _encuestaDibujarOneAndDone (encuesta.js) desde GET /calidad/encuestas/fcr.
   oneanddone: 'One & Done — solución en primer contacto',
+  // Fase 199: Eficacia (Fase 198) en su propia sub-pestaña, a la derecha de
+  // One & Done -- solo Mobilize la pide en su `subtabs`. La dibuja
+  // _eficaciaDibujar (eficacia.js) desde GET /calidad/tipificacion/eficacia.
+  eficacia: 'Eficacia — llamadas de ingreso con código positivo',
 };
 // Fase 87 (tema B) / Fase 90 (tema A): mismos 4 titulos salvo "sl" --
 // WhatsApp grafica LAS DOS series (20s, que ya existe en Wolkvox, y 5
@@ -721,7 +725,7 @@ var TRAFICO_WPP_SUBTAB_TITULOS = Object.assign({}, TRAFICO_SUBTAB_TITULOS, {
 });
 var TRAFICO_SUBTAB_CANVAS_SUFIJO = {
   abandono: '-canvas-ab-', aht: '-canvas-aht-', asaata: '-canvas-asaata-', sl: '-canvas-sl-',
-  asa: '-canvas-asa-', asaaht: '-canvas-asaaht-', oneanddone: '-canvas-oad-',
+  asa: '-canvas-asa-', asaaht: '-canvas-asaaht-', oneanddone: '-canvas-oad-', eficacia: '-canvas-ef-',
 };
 // Fase 160 (pedido de Edwin): en Flujo de Llamadas ("tv"), "ASA y ATA" son
 // DOS graficas, una debajo de la otra (ASA en el canvas de siempre, ATA en
@@ -762,14 +766,17 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
       gdGraficaHtml(tituloFlujo, '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'" data-titulo="'+tituloFlujo+'"></canvas></div>');
   }
   if(activo === 'oneanddone'){
-    // Fase 198: la tarjeta de Eficacia va al lado de la de One & Done, y su grafica debajo.
-    return '<div class="oad-ef-fila"><div id="'+prefijo+'-oad-kpi-'+i+'" class="oad-ef-slot"></div><div id="'+prefijo+'-ef-kpi-'+i+'" class="oad-ef-slot"></div></div>' +
-      gdGraficaHtml(esc(titulos[activo]),
+    return gdGraficaHtml(esc(titulos[activo]),
+      '<div id="'+prefijo+'-oad-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
-      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>') +
-      gdGraficaHtml('Eficacia — llamadas de ingreso con código positivo',
-        '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+'-canvas-ef-'+i+'" role="img" aria-label="Eficacia por mes: porcentaje de llamadas contestadas de ingreso con código positivo"></canvas></div>' +
-        '<p id="'+prefijo+'-ef-nota-'+i+'" class="ef-nota"></p>');
+      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>');
+  }
+  if(activo === 'eficacia'){
+    // Fase 199: la Eficacia (Fase 198) en su propia sub-pestaña: tarjeta del mes, barras por mes y nota con la lista.
+    return gdGraficaHtml(esc(titulos[activo]),
+      '<div id="'+prefijo+'-ef-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
+      '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="Eficacia por mes: porcentaje de llamadas contestadas de ingreso con código positivo"></canvas></div>' +
+      '<p id="'+prefijo+'-ef-nota-'+i+'" class="ef-nota"></p>');
   }
   var textoNota = (activo === 'sl' && prefijo === 'tv') ? TRAFICO_NOTA_SL_PROMEDIO : TRAFICO_NOTA_PONDERADO;
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
@@ -1319,7 +1326,7 @@ function _traficoRenderContenido(campana, sede, i){
   // esta en el DOM (otra sub-pestaña activa u otro cliente). Misma base que
   // la tarjeta FCR, asi el numero es identico.
   if(document.getElementById('tv-canvas-oad-'+i) && typeof _encuestaDibujarOneAndDone === 'function') _encuestaDibujarOneAndDone(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase || 'total');
-  // Fase 198: Eficacia, en la misma sub-pestaña (no-op si su canvas no esta).
+  // Fase 198/199: Eficacia, en su sub-pestaña (no-op si su canvas no esta).
   if(document.getElementById('tv-canvas-ef-'+i) && typeof _eficaciaDibujar === 'function') _eficaciaDibujar(i, campana, estado.desde, estado.hasta);
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
@@ -1404,7 +1411,15 @@ function _traficoExportEsOneAndDone(i){
   var sede = host ? (host.dataset.sede || null) : null;
   return (_traficoSubtabActivo[_traficoClaveEstado(campana, sede)] || 'resumen') === 'oneanddone' && typeof _encuestaOadDatosExport === 'function';
 }
+// Fase 199: igual con la sub-pestaña "Eficacia" -- exporta su tabla por mes.
+function _traficoExportEsEficacia(i){
+  var host = document.getElementById('gd-p'+i);
+  var campana = host ? host.dataset.campana : null;
+  var sede = host ? (host.dataset.sede || null) : null;
+  return (_traficoSubtabActivo[_traficoClaveEstado(campana, sede)] || 'resumen') === 'eficacia' && typeof _eficaciaDatosExport === 'function';
+}
 function _traficoExportTitulo(i){
+  if(_traficoExportEsEficacia(i)) return 'Eficacia';
   return _traficoExportEsOneAndDone(i) ? 'One & Done' : 'Trafico de Llamadas';
 }
 
@@ -1413,6 +1428,7 @@ function _traficoDatosExport(i){
   var campana = host ? host.dataset.campana : null;
   var sede = host ? (host.dataset.sede || null) : null;
   if(_traficoExportEsOneAndDone(i)) return _encuestaOadDatosExport(i);
+  if(_traficoExportEsEficacia(i)) return _eficaciaDatosExport(i);
   var agregado = _traficoAgregadoActual[_traficoClaveEstado(campana, sede)] || [];
   return agregado.map(function(a){
     return {
@@ -1440,8 +1456,9 @@ function _traficoExportExcel(i){
   var wb = XLSX.utils.book_new();
   xlsxAgregarAvisoDemo(wb);
   var oad = _traficoExportEsOneAndDone(i);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), oad ? 'One & Done' : 'Trafico');
-  XLSX.writeFile(wb, (oad ? 'One_and_Done_' : 'Trafico_Llamadas_')+String(campana).replace(/\s+/g,'_')+'.xlsx');
+  var ef = _traficoExportEsEficacia(i);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(datos)), ef ? 'Eficacia' : (oad ? 'One & Done' : 'Trafico'));
+  XLSX.writeFile(wb, (ef ? 'Eficacia_' : (oad ? 'One_and_Done_' : 'Trafico_Llamadas_'))+String(campana).replace(/\s+/g,'_')+'.xlsx');
 }
 
 function _traficoExportPrint(i){
@@ -1449,7 +1466,7 @@ function _traficoExportPrint(i){
   if(!datos.length){ showToast('No hay datos para exportar con estos filtros.'); return; }
   var host = document.getElementById('gd-p'+i);
   var campana = host ? host.dataset.campana : '';
-  var tituloPdf = _traficoExportEsOneAndDone(i) ? 'One &amp; Done' : 'Tráfico de Llamadas';
+  var tituloPdf = _traficoExportEsEficacia(i) ? 'Eficacia' : (_traficoExportEsOneAndDone(i) ? 'One &amp; Done' : 'Tráfico de Llamadas');
   var w = window.open('', '_blank');
   if(!w){ showToast('Permite las ventanas emergentes para exportar a PDF.'); return; }
   var cols = Object.keys(datos[0]);

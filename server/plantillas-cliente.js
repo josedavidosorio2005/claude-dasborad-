@@ -246,6 +246,7 @@ const PERFILES_ACTUALES = {
             { key: 'asaata', label: 'ASA y ATA' },
             { key: 'aht', label: 'AHT' },
             { key: 'oneanddone', label: 'One & Done' },
+            { key: 'eficacia', label: 'Eficacia' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
           fcrBase: 'total',

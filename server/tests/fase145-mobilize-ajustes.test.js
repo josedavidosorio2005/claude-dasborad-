@@ -38,8 +38,8 @@ function panelFlujo(layout) {
 
 test('seed: Flujo de Llamadas de MOBILIZE = Flujo de Llamadas, Nivel de Servicio, Abandono, ASA y ATA, AHT', () => {
   const panel = panelFlujo(SEED_MOBILIZE.layout);
-  assert.deepEqual(panel.subtabs.map((s) => s.key), ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone']); // Fase 147 D: + One & Done al final
-  assert.deepEqual(panel.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done']);
+  assert.deepEqual(panel.subtabs.map((s) => s.key), ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone', 'eficacia']); // Fase 147 D: + One & Done al final; Fase 199: + Eficacia
+  assert.deepEqual(panel.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done', 'Eficacia']);
 });
 
 test('seed: la pestaña llamadas_unicas se llama "Llamadas Únicas y de Salida" (la key no cambia)', () => {
