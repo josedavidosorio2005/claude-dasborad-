@@ -18,6 +18,7 @@ var GD_SECCION_POR_TIPO = {
   // Llamadas Unicas de Mobilize: mitad izquierda (ingreso) = llamadas, mitad
   // derecha (salida) = salida; cada mitad marca su propia tarjeta.
   llamadas_unicas_panel: 'llamadas',
+  flujo_hora_panel: 'llamadas', // Fase 196
 };
 
 function gdSeccionDeTipo(tipo) {

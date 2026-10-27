@@ -641,6 +641,30 @@ const calidadResumenFilaArraySchema = z.tuple([
   z.number().int().min(0).max(100000), // fallos criticos
 ]);
 const calidadResumenQuery = z.object({ campana: campanaSchema });
+
+// ── Fase 196: Flujo por hora (Mobilize) ── fila = [fecha, hora, skill,
+// ingresadas, contestadas, abandonadas] (= CAMPOS_FILA de flujo-hora.js).
+const flujoHoraCantidad = z.number().int().min(0).max(1000000);
+const flujoHoraCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z
+    .array(z.tuple([fechaSchema, z.number().int().min(0).max(23), tipificacionTextoObligatorio, flujoHoraCantidad, flujoHoraCantidad, flujoHoraCantidad]))
+    .min(1, 'El archivo no tiene filas de datos')
+    .max(50000, 'Demasiadas filas en un solo archivo')
+    .superRefine((filas, ctx) => {
+      filas.forEach((fila, i) => {
+        if (fechaLimitesEsFutura(fila[0])) ctx.addIssue({ code: 'custom', message: mensajeFechaFutura(fila[0]), path: [i, 0] });
+      });
+    }),
+});
+const flujoHoraOpcionesQuery = z.object({ campana: campanaSchema });
+const flujoHoraMesQuery = z.object({
+  campana: campanaSchema,
+  // Sin mes: el ultimo mes con datos (asi el acceso se revisa antes que el formato).
+  mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'mes debe ser AAAA-MM').optional(),
+  skill: z.string().trim().max(200).optional(),
+});
 const calidadResumenCargaBody = z.object({
   campana: campanaSchema,
   mes: mesSchema,
@@ -1479,6 +1503,7 @@ module.exports = {
     skillsWhatsappQuery,
     salidaAsesoresQuery,
     calidadResumenQuery,
+    flujoHoraCargaBody, flujoHoraOpcionesQuery, flujoHoraMesQuery, // Fase 196
     calidadResumenCargaBody,
     salidaAsesoresBody,
     skillsWhatsappBody,

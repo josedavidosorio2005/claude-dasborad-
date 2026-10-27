@@ -50,6 +50,34 @@ const CARGAS = [
       AHT: ['Tiempo promedio de atención (hora de Excel o segundos). "----" o vacío = sin dato, nunca 0.', '0:03:30'],
     },
   },
+  // Fase 196: Flujo por hora -- el reporte de cola por hora de Wolkvox, sus 15
+  // columnas en el mismo orden (las que no se leen van marcadas).
+  {
+    modulo: 'flujo_hora',
+    carga: 'Flujo por hora',
+    archivo: 'PLANTILLA_FLUJO_HORA.xlsx',
+    hoja: 'FLUJO_HORA',
+    fuente: { js: 'flujo-hora-logic.js', variable: 'FLUJO_HORA_COLUMNAS' },
+    ordenCompleto: ['DATE', 'SKILL_ID', 'SKILL_NAME', 'HOUR', 'INBOUND_CALLS', 'ANSWER_CALLS', 'ABANDON_CALLS', 'SERVICE_LEVEL_10SEC',
+      'SERVICE_LEVEL_20SEC', 'SERVICE_LEVEL_30SEC', 'WAIT_TIME', 'ABANDON', 'AHT', 'ASA', 'ATA'],
+    columnas: {
+      DATE: ['Día, como lo trae Wolkvox (AAAAMMDD).', 20260801],
+      SKILL_ID: [NO_USA_TXT, 101],
+      SKILL_NAME: ['Línea o skill.', 'SKILL SAC'],
+      HOUR: ['Hora del día (0 a 23): 8 = de 8:00 a 9:00.', 8],
+      INBOUND_CALLS: ['Llamadas que entraron a la cola en esa hora (ingresadas).', 6],
+      ANSWER_CALLS: ['Contestadas en esa hora.', 5],
+      ABANDON_CALLS: ['Abandonadas en esa hora.', 1],
+      SERVICE_LEVEL_10SEC: [NO_USA_TXT, '-'],
+      SERVICE_LEVEL_20SEC: [NO_USA_TXT, '-'],
+      SERVICE_LEVEL_30SEC: [NO_USA_TXT, '-'],
+      WAIT_TIME: [NO_USA_TXT, '-'],
+      ABANDON: [NO_USA_TXT, '-'],
+      AHT: [NO_USA_TXT, '-'],
+      ASA: [NO_USA_TXT, '-'],
+      ATA: [NO_USA_TXT, '-'],
+    },
+  },
   // Fase 194: el modulo lleva los dos reportes de Wolkvox tal cual (las
   // contestadas unicas y la salida conectada salen del CDR de Tipificacion).
   {
@@ -359,6 +387,10 @@ const ORIGEN = {
     // Fase 155: una linea en INSTRUCCIONES y en la ficha.
     nota: 'Nivel de atención y tasa de abandono los calcula el sistema; no hace falta llenarlos.',
     reemplazo: 'Las filas de esos skills en las fechas que trae el archivo.',
+  },
+  'PLANTILLA_FLUJO_HORA.xlsx': {
+    origen: 'Wolkvox: reporte de la cola por skill, día y HORA (hoja "HistQueue<fecha>", columna HOUR). Se sube tal cual.',
+    reemplazo: 'Todo el flujo por hora entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx': {
     origen: 'Wolkvox: Skills y servicios → "Detalle de llamadas abandonadas" (hoja "HistQueue<fecha>"). Se sube tal cual.',

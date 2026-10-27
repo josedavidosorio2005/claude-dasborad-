@@ -90,6 +90,14 @@ const NOTAS = {
       'El mes viene sin año: el sistema pregunta a qué año corresponde.',
     ],
   },
+  flujo_hora: {
+    usan: 'MOBILIZE',
+    notas: [
+      'Pestaña "Flujo por hora": tres mapas de calor (Ingresadas, Contestadas, Abandonadas), filas = hora, columnas = días del mes, con fila y columna de Total. Sigue el MES de arriba.',
+      'Colores en tres tramos del valor más alto de cada tabla: alto (verde), medio (amarillo), bajo (gris). El número siempre está escrito.',
+      'El reporte por hora trae la columna HOUR: así nunca se confunde con el de Flujo de Llamadas (diario). No trae teléfonos.',
+    ],
+  },
   llamadas_unicas: {
     usan: 'MOBILIZE',
     notas: [

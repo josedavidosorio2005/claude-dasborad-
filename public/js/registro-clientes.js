@@ -26,7 +26,7 @@ var REGISTRO_CLIENTES = [
   },
   {
     nombre: 'MOBILIZE',
-    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'encuesta'],
+    modulos: ['flujo_llamadas', 'tipificacion', 'calidad', 'calidad_resumen', 'llamadas_unicas', 'flujo_hora', 'encuesta'],
     parametros: { sedes: [], asesorVisibleCliente: true, traficoDosHojas: false, especificos: [],
       claseUltimaActualizacion: 'gd-ultima-act-mobilize', salidaNoConectada: ['Cliente_no_contesta'] }, // Fase 174
     logo: { src: 'img/clientes/mobilize-logo.png', src2x: 'img/clientes/mobilize-logo@2x.png', alt: 'Mobilize', width: 140, height: 25 }
@@ -63,6 +63,7 @@ function derivarListasRegistro(registro) {
     llamadasSalida: filtro(function (c) { return _registroTieneModulo(c, 'llamadas_unicas'); }),
     whatsappTiempos: filtro(function (c) { return _registroTieneModulo(c, 'whatsapp_tiempos'); }),
     calidadResumen: filtro(function (c) { return _registroTieneModulo(c, 'calidad_resumen'); }), // Fase 172
+    flujoHora: filtro(function (c) { return _registroTieneModulo(c, 'flujo_hora'); }), // Fase 196
     encuesta: filtro(function (c) { return _registroTieneModulo(c, 'encuesta'); }),
     asesorVisibleCliente: filtro(function (c) { return _registroParam(c, 'asesorVisibleCliente') === true; }),
     logos: logos,

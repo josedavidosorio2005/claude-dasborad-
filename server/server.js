@@ -347,6 +347,7 @@ function createApp() {
   api.use(require('./routes/llamadas-salida'));
   api.use(require('./routes/whatsapp-tiempos'));
   api.use(require('./routes/calidad-resumen')); // Fase 172
+  api.use(require('./routes/flujo-hora')); // Fase 196
   api.use(require('./routes/encuestas'));
   api.use(require('./routes/inasistencia'));
   api.use(require('./routes/efectividad-citas'));

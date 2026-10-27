@@ -1032,6 +1032,7 @@ async function _gdBootstrap(conservar){
   (_gd.config.layout.tabs || []).forEach(function(t){
     (t.panels || []).forEach(function(p){
       var camp = p.campana || _gd.cliente;
+      if(p.tipo === 'flujo_hora_panel' && typeof _flujoHoraCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _flujoHoraCargarOpciones(camp).then(function(r){ return r.meses; }); }); // Fase 196
       if(p.tipo === 'calidad_resumen_panel' && typeof _calResCargar === 'function') fuentesSoloPanel.push(function(){ return _calResCargar(camp).then(function(r){ return (r.meses || []).map(function(m){ return m.mes; }); }); });
       if(p.tipo === 'encuesta_panel' && typeof _encuestaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _encuestaCargarOpciones(camp).then(function(r){ return r.meses; }); });
       if(p.tipo === 'trafico_whatsapp_combo' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(camp)) fuentesSoloPanel.push(function(){ return _wppTiemposCargarOpciones(camp).then(function(r){ return r.meses; }); });
@@ -1683,7 +1684,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel' || p.tipo === 'flujo_hora_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
@@ -1742,6 +1743,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
   if(p.tipo === 'calidad_resumen_panel'){ _calidadResumenRenderPanel(p, i); return; } // Fase 172
+  if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
   if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
 
@@ -2451,6 +2453,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'llamadas_unicas_panel'){ out = out.concat(await _gdExportarLlamadasUnicas(p, i)); continue; }
     if(p.tipo === 'encuesta_panel'){ out = out.concat(_gdExportarEncuesta(p, i)); continue; }
     if(p.tipo === 'calidad_resumen_panel'){ out = out.concat(await _gdExportarCalidadResumen(p, i)); continue; } // Fase 172
+    if(p.tipo === 'flujo_hora_panel'){ out = out.concat(await _gdExportarFlujoHora(p, i)); continue; } // Fase 196
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

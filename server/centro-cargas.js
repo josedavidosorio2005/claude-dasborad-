@@ -33,6 +33,8 @@ const CARGAS_POR_MODULO = {
     { id: 'llamadas_abandonadas', nombre: 'Detalle de llamadas abandonadas (Wolkvox)', tabla: 'llamadas_abandonadas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx' },
     { id: 'llamadas_no_conectadas', nombre: 'Llamadas de salida no conectadas (Wolkvox)', tabla: 'llamadas_no_conectadas', fecha: 'fecha', plantilla: 'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx' },
   ],
+  // Fase 196: el reporte de cola por hora de Wolkvox, tal cual.
+  flujo_hora: [{ id: 'flujo_hora', nombre: 'Flujo por hora', tabla: 'flujo_hora', fecha: 'fecha', plantilla: 'PLANTILLA_FLUJO_HORA.xlsx' }],
   tipificacion: [
     { id: 'tipificacion_llamadas', nombre: 'Tipificación de llamadas', tabla: 'tipificaciones', fecha: 'fecha', filtro: { canal: 'LLAMADAS' }, plantilla: 'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx' },
     { id: 'tipificacion_whatsapp', nombre: 'Tipificación de WhatsApp', tabla: 'tipificaciones', fecha: 'fecha', filtro: { canal: 'WHATSAPP' }, plantilla: 'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx' },

@@ -307,6 +307,8 @@ var CARGAS_HOJA_LLAMADAS_SALIDA = 'LLAMADAS_SALIDA';
 var CARGAS_HOJA_LLAMADAS_ABANDONADAS = 'LLAMADAS_ABANDONADAS';
 // Fase 194 (Mobilize): "5. Detalle de las llamadas para las no conectadas".
 var CARGAS_HOJA_LLAMADAS_NO_CONECTADAS = 'LLAMADAS_NO_CONECTADAS';
+// Fase 196 (Mobilize): reporte de cola por hora de Wolkvox.
+var CARGAS_HOJA_FLUJO_HORA = 'FLUJO_HORA';
 // Fase 142 (punto 4, ORLANT): tiempos de respuesta de WhatsApp por
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
@@ -360,7 +362,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols, llamadasNoConectadasCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols, llamadasNoConectadasCols, flujoHoraCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -625,6 +627,18 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
           '(obligatorias) y, si vienen, RESULT (solo ABANDON) y TYPE_INTERACTION (solo inbound).',
         'ANI (el telefono) se usa SOLO para contar una vez cada numero por dia -- nunca se guarda, nunca se exporta, nunca se muestra.',
         'Al guardar, la carga REEMPLAZA las abandonadas que ya existan entre la primera y la ultima DATE del archivo.',
+      ],
+    });
+  }
+  // Fase 196 (Mobilize): flujo por hora, el reporte de Wolkvox tal cual.
+  if (flujoHoraCols) {
+    plan.push({
+      tipo: 'flujo_hora', hoja: CARGAS_HOJA_FLUJO_HORA, titulo: 'Flujo por hora',
+      descripcion: 'El reporte de cola por hora de Wolkvox (una fila por día, hora y skill), tal cual lo descarga.',
+      filaUnica: false, columnas: flujoHoraCols,
+      notasExtra: [
+        'Se usan DATE, HOUR, SKILL_NAME, INBOUND_CALLS, ANSWER_CALLS y ABANDON_CALLS; el resto de columnas no se lee.',
+        'Al guardar, la carga REEMPLAZA el flujo por hora que ya exista entre la primera y la ultima DATE del archivo.',
       ],
     });
   }
@@ -977,6 +991,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_LLAMADAS_SALIDA: CARGAS_HOJA_LLAMADAS_SALIDA,
     CARGAS_HOJA_LLAMADAS_ABANDONADAS: CARGAS_HOJA_LLAMADAS_ABANDONADAS,
     CARGAS_HOJA_LLAMADAS_NO_CONECTADAS: CARGAS_HOJA_LLAMADAS_NO_CONECTADAS,
+    CARGAS_HOJA_FLUJO_HORA: CARGAS_HOJA_FLUJO_HORA,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
     CARGAS_HOJA_CALIDAD_RESUMEN: CARGAS_HOJA_CALIDAD_RESUMEN,
     CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,

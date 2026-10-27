@@ -246,6 +246,9 @@ declarar(['GET /calidad/salida/lineas-por-mes'], 'admin');
 // Fase 172: resumen de calidad por asesor (Mobilize).
 declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen/mensual'], 'scopedRead');
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
+// Fase 196: Flujo por hora (Mobilize).
+declarar(['GET /calidad/flujo-hora/opciones', 'GET /calidad/flujo-hora/mes'], 'scopedRead');
+declarar(['POST /calidad/flujo-hora/carga/impacto', 'POST /calidad/flujo-hora/carga'], 'cargaManual');
 
 // Umbrales
 declarar(['GET /umbrales'], 'open');

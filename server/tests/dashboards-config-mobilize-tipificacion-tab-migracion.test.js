@@ -97,7 +97,8 @@ test('migracion dashboards_config_mobilize_tipificacion_tab_v1: agrega el tab "t
   // de esas migraciones, no un error de esta. Fase 147 (Parte B): la
   // migracion de "encuesta" agrega ademas su pestaña antes de Calidad. Por
   // eso hay 5 tabs, y "flujo" queda EXACTAMENTE como estaba en el fixture.
-  assert.equal(layout.tabs.length, 5);
+  // Fase 196: + "Flujo por hora" (su propia migracion, despues de Llamadas Unicas).
+  assert.equal(layout.tabs.length, 6);
   const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
   assert.deepEqual(tabFlujo, LAYOUT_PARTE_2.tabs[0], 'el tab "flujo" original queda intacto (solo su trafico_combo)');
   assert.deepEqual(layout.tabs.map((t) => t.key).slice(0, 2), ['flujo', 'llamadas_unicas'], 'el panel de llamadas unicas vive en su tab propio, despues de flujo');

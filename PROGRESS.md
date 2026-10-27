@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.82.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.84.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -49,7 +49,7 @@ narrativo de cada fase, fase por fase, vive en
 - **Pestañas**: ORLANT, 8 con datos reales (Tráfico de Llamadas, Tráfico de
   WhatsApp, Llamadas y WhatsApp de salida, Agendamiento, Inasistencia,
   Efectividad de Citas, Tipificación, Calidad) + 4 ocultas esperando
-  archivo. MOBILIZE, 5 (Flujo de Llamadas, Llamadas Únicas y de Salida,
+  archivo. MOBILIZE, 6 (Flujo de Llamadas, Llamadas Únicas y de Salida, Flujo por hora,
   Tipificación, Encuesta, Calidad con el Resumen por asesor). Qué base
   alimenta cada una:
   [`docs/inventario-bases-orlant.md`](docs/inventario-bases-orlant.md).
@@ -330,3 +330,4 @@ mismo orden):
 - Fase 192 — Paso a Node.js 24: imagen node:24-bookworm, CI con Node 24, imágenes de pre-descarga de ci.yml y deploy.yml, engines >=24 (v1.80.1, 2026-10-27)
 - Fase 193 — Encuesta de Mobilize con la base completa de Wolkvox (HistIVR de 25 columnas, tal cual): plantilla = el export completo, vista previa con columnas usadas e ID de llamada (v1.81.0, 2026-10-27)
 - Fase 194 — Salida de Mobilize: todas las filas "-" del CDR cuentan (prueba y repetidas incluidas), base nueva "No conectadas" (reporte 5 de Wolkvox, cada fila cuenta), Centro de Llamadas Únicas solo con Abandonadas y No conectadas, abandonadas sin reporte = 0 (v1.82.0, 2026-10-27)
+- Fase 196 — Mobilize: pestaña "Flujo por hora" (mapas de calor hora x día de ingresadas, contestadas y abandonadas, con totales) y base nueva del reporte por hora de Wolkvox (v1.84.0, 2026-10-27)

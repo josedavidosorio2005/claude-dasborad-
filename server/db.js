@@ -4187,6 +4187,59 @@ function crearLlamadasNoConectadas() {
 }
 runOnceMigration('fase194_llamadas_no_conectadas_v1', crearLlamadasNoConectadas);
 
+// Fase 196 (Mobilize): "Flujo por hora". 1) La tabla (una fila por dia + hora
+// + skill; el reporte no trae telefonos). 2) El modulo flujo_hora en el
+// registro de MOBILIZE (despues de llamadas_unicas). 3) La pestaña "Flujo por
+// hora" despues de Llamadas Unicas. Idempotente; no toca a ORLANT.
+function crearFlujoHora() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS flujo_hora (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      hora INTEGER NOT NULL,
+      skill TEXT NOT NULL,
+      ingresadas INTEGER NOT NULL,
+      contestadas INTEGER NOT NULL,
+      abandonadas INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_flujo_hora_campana_fecha ON flujo_hora(campana, fecha);
+  `);
+  asegurarDatosVersion();
+  const reg = db.prepare("SELECT modulos FROM clientes_registro WHERE nombre = 'MOBILIZE'").get();
+  if (reg) {
+    let modulos = [];
+    try { modulos = JSON.parse(reg.modulos) || []; } catch (e) { modulos = []; }
+    if (!modulos.includes('flujo_hora')) {
+      const i = modulos.indexOf('llamadas_unicas');
+      modulos.splice(i === -1 ? modulos.length : i + 1, 0, 'flujo_hora');
+      db.prepare("UPDATE clientes_registro SET modulos = ? WHERE nombre = 'MOBILIZE'").run(JSON.stringify(modulos));
+    }
+  }
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (row) {
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { layout = null; }
+    const tabs = layout && layout.tabs;
+    // Solo la forma reconocible de produccion (pestaña 'flujo' con su trafico_combo de MOBILIZE);
+    // cualquier otro layout se deja intacto. Va despues de 'llamadas_unicas' (Fase 139: esa va
+    // justo despues de Flujo de Llamadas) o, si no esta, despues de 'flujo'.
+    const flujo = Array.isArray(tabs) && tabs.find((t) => t && t.key === 'flujo');
+    const reconocible = flujo && (flujo.panels || []).some((pp) => pp && pp.tipo === 'trafico_combo' && pp.campana === 'MOBILIZE');
+    if (reconocible && !tabs.some((t) => t && t.key === 'flujo_hora')) {
+      const lu = tabs.findIndex((t) => t && t.key === 'llamadas_unicas');
+      const i = lu !== -1 ? lu : tabs.indexOf(flujo);
+      tabs.splice(i + 1, 0, { key: 'flujo_hora', label: 'Flujo por hora', panels: [{ tipo: 'flujo_hora_panel', campana: 'MOBILIZE' }] });
+      db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'MOBILIZE'").run(JSON.stringify(layout), new Date().toISOString());
+    }
+  }
+  if (!config.isTest) console.log('[db] Migracion fase196_flujo_hora_v1 aplicada.');
+}
+runOnceMigration('fase196_flujo_hora_v1', crearFlujoHora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4235,6 +4288,8 @@ module.exports.activarSalidaUnaClasificacion = activarSalidaUnaClasificacion;
 module.exports.crearLlamadasUnicasFuentes = crearLlamadasUnicasFuentes;
 // Fase 194: idem.
 module.exports.crearLlamadasNoConectadas = crearLlamadasNoConectadas;
+// Fase 196: idem.
+module.exports.crearFlujoHora = crearFlujoHora;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;
