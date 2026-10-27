@@ -87,7 +87,7 @@ demo: sin errores de consola, sin gráficas vacías, pestañas sin saltos).
 
 ## Despliegue
 
-Todo cambio va por rama → PR → **CI verde** (Node 22 + docker-build +
+Todo cambio va por rama → PR → **CI verde** (Node 24 + docker-build +
 pantallas) → merge → **despliegue automático**: `deploy.yml` construye la
 imagen, la sube a **ECR** y la levanta en la instancia **Lightsail**
 (Docker + Caddy con HTTPS), y espera `/api/health`. Nunca se commitea

@@ -33,15 +33,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Fase 96: solo Node 22, la version de produccion (server/Dockerfile:
-        # node:22-bookworm). Node 18 y 20 ya no tienen soporte upstream y
-        # eran los que se colgaban -- better-sqlite3@12 solo trae binario
+        # Fase 192: Node 24, la version de produccion (server/Dockerfile:
+        # node:24-bookworm); better-sqlite3 12.11.1 trae binario para Node
+        # 24 (ABI 137) y la suite paso completa en local con 24.22.1.
+        # Antes (Fase 96): solo Node 22. Node 18 y 20 ya no tienen soporte
+        # upstream y eran los que se colgaban -- better-sqlite3@12 solo trae binario
         # prebuilt para 20.x/22.x/23.x/24.x/25.x/26.x, pero en la practica
         # solo 22.x lo resolvia al instante (~3s); 18.x fallaba el chequeo de
         # engines y 20.x igual tardaba ~1m30s por instalacion, contra los 3s
         # de Node 22 -- confirmado en los logs de una corrida real de la
         # Fase 95 (job "Instalar dependencias").
-        node-version: [22]
+        node-version: [24]
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
@@ -88,10 +90,10 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
-      - name: Usar Node 22
+      - name: Usar Node 24
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -159,7 +161,7 @@ jobs:
           NODE_REGISTRY=""
           for REG in $CANDIDATOS; do
             TODAS=1
-            for IMG in node:22-bookworm node:22-bookworm-slim; do
+            for IMG in node:24-bookworm node:24-bookworm-slim; do
               BAJO=0
               for INTENTO in 1 2; do
                 if docker pull -q "$REG/$IMG" > /dev/null 2>&1; then BAJO=1; break; fi
@@ -172,7 +174,7 @@ jobs:
           done
           if [ -z "$NODE_REGISTRY" ]; then echo "::error::Ningun registro entrego las 2 imagenes base de node"; exit 1; fi
           echo "Registro de la imagen base: $NODE_REGISTRY"
-          for IMG in node:22-bookworm node:22-bookworm-slim; do
+          for IMG in node:24-bookworm node:24-bookworm-slim; do
             echo "  $IMG -> $(docker image inspect --format '{{index .RepoDigests 0}}' "$NODE_REGISTRY/$IMG")"
           done
           docker build --build-arg NODE_REGISTRY="$NODE_REGISTRY" -f server/Dockerfile -t inconexion:ci .

@@ -1031,7 +1031,7 @@ despliegue desde cero vive en
 Acá solo el **flujo operativo del día a día**:
 
 - **Disparar un deploy**: push a `main` (directo o vía merge de PR). `ci.yml`
-  corre la suite en Node 22 + build de la imagen Docker; si pasa,
+  corre la suite en Node 24 + build de la imagen Docker; si pasa,
   dispara `deploy.yml` automáticamente (`workflow_run`). No hay paso manual.
 - **Puerto 22 durante el pipeline**: se abre y se cierra **solo dentro de
   `deploy.yml`**, automáticamente: un paso guarda el estado actual del

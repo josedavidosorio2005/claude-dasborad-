@@ -9,9 +9,11 @@
 # docker-compose.yml ya lo hace asi.
 
 # ── Etapa 1: dependencias ───────────────────────────────────
-# node:22 (imagen completa) trae las herramientas de compilacion por si
-# better-sqlite3 necesitara compilar el binario nativo.
-# (Node 22: el AWS SDK v3 pedira >=22 despues de ene-2027; ver AWS_DEPLOY_REPORT.md.)
+# node:24 (imagen completa) trae las herramientas de compilacion por si
+# better-sqlite3 necesitara compilar el binario nativo (12.11.1 trae binario
+# precompilado para Node 24, ABI 137, linux-x64 -- Fase 192).
+# Fase 192: Node 24 LTS (Node 22 deja de tener soporte el 30/04/2027; el
+# AWS SDK v3 pide >=22, ver AWS_DEPLOY_REPORT.md).
 # Imagen bajada del espejo publico de Amazon (public.ecr.aws), no de Docker
 # Hub directo: mismo contenido oficial, pero sin el limite de descargas
 # anonimas de Docker Hub que empezo a dar 429 desde los runners de GitHub
@@ -23,20 +25,20 @@
 # iniciaron sesion en Docker Hub con DOCKERHUB_USERNAME/DOCKERHUB_TOKEN
 # (limite por cuenta, no por IP compartida). Misma imagen oficial de node.
 ARG NODE_REGISTRY=public.ecr.aws/docker/library
-FROM ${NODE_REGISTRY}/node:22-bookworm AS deps
+FROM ${NODE_REGISTRY}/node:24-bookworm AS deps
 WORKDIR /app/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # ── Etapa 2: runtime ────────────────────────────────────────
-FROM ${NODE_REGISTRY}/node:22-bookworm-slim AS runtime
+FROM ${NODE_REGISTRY}/node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production
 # curl para el HEALTHCHECK
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# node_modules ya compilado contra el mismo ABI de Node 22
+# node_modules ya compilado contra el mismo ABI de Node 24
 COPY --from=deps /app/server/node_modules ./server/node_modules
 COPY server/ ./server/
 COPY public/ ./public/
