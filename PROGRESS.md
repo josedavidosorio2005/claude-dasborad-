@@ -131,6 +131,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Llamadas Únicas de Mobilize | Sep 139 = 88 contestadas + 51 abandonadas | 139 |
 | Llamadas Únicas de Mobilize (v1.80.0) | Oct 64 = 62 + 2 (carga anterior; el CDR aún sin recargar) · salida conectada del CDR: Ago 27 · Sep 64 · Oct 43 (no conectadas pendientes) | 191 |
 | Resumen de calidad de Mobilize | Oct: 3 asesores, 34 monitoreos, 97,35 % | 174 / 177 |
+| Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
 
 ## Índice de fases
 

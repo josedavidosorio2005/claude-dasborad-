@@ -17217,3 +17217,16 @@ septiembre y octubre), completa; las gráficas son las mismas.
   Plantilla de Encuesta del Centro: 25 columnas. Pestaña a 1440/768/375
   px: aviso normal de "sin datos" en octubre (con botón al último mes con
   datos), sin scroll horizontal, sin NaN, sin teléfonos visibles.
+- **Carga en producción** (27/10/2026, OK explícito del usuario, solo por
+  el Centro de cargas con su sesión, navegador visible). Las únicas
+  escrituras fueron login + impacto/carga de Encuesta (3 meses), 0
+  bloqueadas. Antes de guardar, el script exigía que la vista previa diera
+  las filas esperadas, todas con ID, y que la confirmación dijera lo
+  esperado (agosto y octubre sin nada que reemplazar; septiembre reemplaza
+  45). Guardadas: agosto 21, septiembre 45, octubre 82.
+- Verificación (solo lectura, misma sesión): agosto 21 / 21, septiembre
+  45 / 45, octubre 82 / 82 (cuadran); comentarios con ID de llamada:
+  agosto 1 de 1, septiembre 2 de 2, octubre 4 de 4; pregunta 3 "Sí":
+  agosto 5 de 6 que respondieron, septiembre 3 de 4, octubre 19 de 22.
+  Pestaña de octubre a 1440/768/375 px: 4 gráficas, 4 comentarios con ID,
+  sin scroll horizontal, sin NaN, sin teléfonos visibles, 0 errores.
