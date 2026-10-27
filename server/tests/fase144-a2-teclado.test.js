@@ -49,7 +49,8 @@ test('index.html: TODAS las opciones de los 3 menus laterales son role="button" 
 
 test('index.html: ningun control anula el foco con outline:none en linea (MES del tablero, Calidad, Inventario, Gerencia, Mis Resultados)', () => {
   const html = leer('index.html');
-  assert.doesNotMatch(html.match(/<select id="gd-mes-sel"[^>]*>/)[0], /outline:\s*none/);
+  // Fase 201: el selector MES ya no existe; la regla de abajo cubre todo el archivo.
+  assert.ok(!html.includes('id="gd-mes-sel"'));
   assert.equal((html.match(/outline:\s*none/g) || []).length, 0);
 });
 

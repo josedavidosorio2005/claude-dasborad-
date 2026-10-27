@@ -35,7 +35,7 @@ test('HTML: los 4 filtros y la nota van dentro de #gd-filtros-header; el boton l
   const ini = HTML.indexOf('<div id="gd-filtros-header"');
   assert.ok(ini > 0, 'falta #gd-filtros-header');
   const cont = bloqueDiv(HTML, ini);
-  for (const id of ['gd-vista-wrap', 'gd-mes-sel', 'gd-meses-wrap', 'gd-comp-wrap', 'gd-comp-nota']) assert.ok(cont.includes('id="' + id + '"'), id);
+  for (const id of ['gd-vista-wrap', 'gd-meses-wrap', 'gd-comp-wrap', 'gd-comp-nota']) assert.ok(cont.includes('id="' + id + '"'), id); // Fase 201: sin MES
   assert.match(HTML, /<button class="aurora-close gd-filtros-header-btn" id="gd-filtros-btn" type="button" aria-expanded="false" aria-controls="gd-filtros-header" onclick="gdFiltrosHeaderToggle\(\)">/);
   assert.match(SPRITE, /<symbol id="i-sliders-horizontal" viewBox="0 0 24 24">/);
   // Actualizar y Exportar: nombre accesible aunque en el telefono solo se vea el icono.
@@ -93,9 +93,10 @@ function el(id, extra) {
 }
 let ctx;
 function entorno({ mesSel = '2026-09', mesesSel = [] } = {}) {
-  const mes = el('gd-mes-sel');
+  // Fase 201: el primer control visible es MESES (su <summary>).
+  const mes = el('gd-meses-btn');
   const cont = el('gd-filtros-header', { querySelectorAll: () => [mes] });
-  const els = { 'gd-filtros-header': cont, 'gd-filtros-btn': el('gd-filtros-btn'), 'gd-filtros-btn-txt': el('gd-filtros-btn-txt'), 'gd-mes-sel': mes };
+  const els = { 'gd-filtros-header': cont, 'gd-filtros-btn': el('gd-filtros-btn'), 'gd-filtros-btn-txt': el('gd-filtros-btn-txt'), 'gd-meses-btn': mes };
   ctx = {
     foco: null, _gd: { mesSel, mesesSel },
     document: { getElementById: (id) => els[id] || null },
@@ -107,12 +108,12 @@ function entorno({ mesSel = '2026-09', mesesSel = [] } = {}) {
   return els;
 }
 
-test('gdFiltrosHeaderToggle: abre y cierra, sincroniza aria-expanded y lleva el foco al MES al abrir', () => {
+test('gdFiltrosHeaderToggle: abre y cierra, sincroniza aria-expanded y lleva el foco a MESES al abrir', () => {
   const e = entorno();
   ctx.gdFiltrosHeaderToggle();
   assert.equal(e['gd-filtros-header'].classList.contains('gd-filtros-abierto'), true);
   assert.equal(e['gd-filtros-btn'].getAttribute('aria-expanded'), 'true');
-  assert.equal(ctx.foco, 'gd-mes-sel', 'el panel va antes del boton en el DOM: el foco entra al abrir');
+  assert.equal(ctx.foco, 'gd-meses-btn', 'el panel va antes del boton en el DOM: el foco entra al abrir');
   ctx.gdFiltrosHeaderToggle();
   assert.equal(e['gd-filtros-btn'].getAttribute('aria-expanded'), 'false');
   ctx.foco = null;

@@ -282,7 +282,7 @@ async function recorrerTabsYSubtabs(page, nombreCombo, erroresConsola, peticione
     for (const vp of [{ w: 1366, h: 768 }, { w: 412, h: 915 }]) {
       await page.setViewportSize({ width: vp.w, height: vp.h });
       await page.waitForTimeout(500);
-      const opcionesMes = await page.evaluate(() => Array.from(document.getElementById('gd-mes-sel').options).map((o) => o.textContent));
+      const opcionesMes = await page.evaluate(() => Array.from(document.querySelectorAll('#gd-meses-lista label')).map((o) => o.textContent.trim()) /* Fase 201: sin selector MES */);
       const overflow = await hayScrollHorizontal(page);
       reporte.mesSelector[`${vp.w}x${vp.h}`] = { opciones: opcionesMes, scrollHorizontal: overflow };
       opcionesMes.forEach((o) => reporte.mesSelector.nombresVistos.add(o));

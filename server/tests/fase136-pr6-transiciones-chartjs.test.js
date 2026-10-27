@@ -40,7 +40,8 @@ test('switchGenericTab y switchGenericSubtab llaman a motionEnter -- las demas l
   assert.match(bloqueTab, /motionEnter\(document\.getElementById\('gd-panels'\)\)/);
   assert.match(bloqueSubtab, /motionEnter\(document\.getElementById\('gd-panels'\)\)/);
 
-  ['onGdMesChange', 'onGdCompChange', 'onGdVistaChange', '_gdIrAMes'].forEach((fn) => {
+  // Fase 201: sin selector MES (onGdMesChange ya no existe); el mes cambia con MESES.
+  ['onGdMesesChange', 'onGdCompChange', 'onGdVistaChange', '_gdIrAMes'].forEach((fn) => {
     const m = texto.match(new RegExp('function ' + fn + '\\([^)]*\\)\\{([\\s\\S]*?)\\n\\}'));
     assert.ok(m, fn + ' deberia existir');
     assert.ok(!/motionEnter/.test(m[1]), fn + ' es un cambio de filtro, no de pestana -- no deberia animar (Paso 4 de la auditoria: "nada que retrase ver un numero")');

@@ -198,12 +198,14 @@ async function abrirDashboard(page, cliente) {
   // octubre), "Flujo de Llamadas" mostraba su aviso de "sin datos" y el
   // chequeo de sub-pestañas fallaba sin que nada estuviera mal.
   const mesRevision = process.env.REVISION_MES || '2026-09';
-  if (await page.locator('#gd-mes-sel option[value="' + mesRevision + '"]').count()) {
-    if ((await page.inputValue('#gd-mes-sel')) !== mesRevision) {
-      await page.selectOption('#gd-mes-sel', mesRevision);
-      await page.waitForTimeout(2000);
-    }
-  }
+  // Fase 201: sin selector MES -- el mes sale de MESES; _gdIrAMes deja
+  // marcado solo ese mes (si existe en el tablero).
+  const cambio = await page.evaluate((m) => {
+    if (typeof _gd === 'undefined' || (_gd.periodos || []).indexOf(m) === -1 || _gd.mesSel === m) return false;
+    _gdIrAMes(m);
+    return true;
+  }, mesRevision);
+  if (cambio) await page.waitForTimeout(2000);
 }
 
 // Fase 139: cierra el dashboard con su boton "X Cerrar" (como un usuario)
