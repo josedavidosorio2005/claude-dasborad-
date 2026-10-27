@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.86.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.87.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -138,7 +138,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |
-| Eficacia de Mobilize (v1.86.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 |
+| Eficacia de Mobilize (v1.86.0; sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 |
 
 ## Índice de fases
 
@@ -337,3 +337,4 @@ mismo orden):
 - Fase 196 — Mobilize: pestaña "Flujo por hora" (mapas de calor hora x día de ingresadas, contestadas y abandonadas, con totales) y base nueva del reporte por hora de Wolkvox (v1.84.0, 2026-10-27)
 - Fase 197 — Mobilize: NPS con "%" en las barras también en el celular y resumen "NPS = % promotores − % detractores"; Flujo por hora con el título "Día del mes" (v1.85.0, 2026-10-27)
 - Fase 198 — Mobilize: indicador "Eficacia" al lado del One & Done (contestadas de ingreso con código positivo ÷ contestadas de ingreso; lista de Kelly en server/eficacia.js) (v1.86.0, 2026-10-27)
+- Fase 199 — Mobilize: la Eficacia pasa a su propia sub-pestaña "Eficacia", a la derecha de "One & Done" (que vuelve a como estaba); migración para la configuración de producción (v1.87.0, 2026-10-27)

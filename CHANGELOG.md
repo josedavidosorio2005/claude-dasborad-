@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.87.0 — Octubre 2026
+
+**Fase 199: la Eficacia de Mobilize en su propia sub-pestaña.**
+
+- En Flujo de Llamadas hay una sub-pestaña nueva, "Eficacia", a la derecha de
+  "One & Done". Ahí están la tarjeta del mes, las barras por mes y la nota con
+  la lista de códigos positivos. Su Excel y su PDF exportan la tabla por mes.
+- "One & Done" vuelve a mostrar solo el One & Done, como antes de la v1.86.0.
+- El cálculo no cambia: octubre, 42 de 89 contestadas de ingreso = 47,2 %.
+
 ## v1.86.0 — Octubre 2026
 
 **Fase 198: indicador "Eficacia" en Mobilize.**

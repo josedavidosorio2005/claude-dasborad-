@@ -66,8 +66,8 @@ test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaata" + "
   // ATA" + "AHT" aparte.
   assert.equal(keys.indexOf('asaaht'), -1, '"asaaht" ya no deberia estar (Fase 145)');
   assert.equal(keys.indexOf('asa'), -1, '"asa" por separado ya no deberia estar');
-  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone']); // Fase 147 D: + One & Done al final
-  assert.deepEqual(panel.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done']);
+  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone', 'eficacia']); // Fase 147 D: + One & Done al final; Fase 199: + Eficacia
+  assert.deepEqual(panel.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done', 'Eficacia']);
 });
 
 // ── Parte 2: trafico.js (global-en-navegador, igual patron que fase132-08) ─
@@ -197,7 +197,7 @@ test('migraciones asaaht_v1 + asaata_aht_v1 (Fase 145): el panel viejo de MOBILI
   // busca el trafico_combo por tipo en vez de asumir panels[0].
   const panel = layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
-  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone']); // Fase 147 D: + One & Done al final
+  assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone', 'eficacia']); // Fase 147 D: + One & Done al final; Fase 199: + Eficacia
   // resumenOcultar/resumenPorSeccion/subtabsTitulos (otras opciones del
   // mismo panel) no se pierden en el reemplazo.
   assert.deepEqual(panel.resumenOcultar, ['tasaAbandono', 'nivelServicio']);

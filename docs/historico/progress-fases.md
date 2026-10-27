@@ -17472,3 +17472,32 @@ Pedido del usuario para la presentación; lista de códigos positivos de Kelly.
 - Quedan para Edwin y Kelly (`docs/pendientes.md`, sección 2): confirmar el
   denominador de la Eficacia, el peso de Otros_motivos y la base de calidad
   de Mobilize.
+
+### Fase 199 — La Eficacia de Mobilize en su propia sub-pestaña (2026-10-27, v1.87.0)
+
+Ajuste de la Fase 198 pedido por el usuario: la Eficacia no va dentro de
+"One & Done".
+
+- `public/js/trafico.js`: sub-pestaña nueva `eficacia` (título "Eficacia —
+  llamadas de ingreso con código positivo", canvas `-canvas-ef-`) con la
+  tarjeta del mes, las barras por mes y la nota con la lista. "One & Done"
+  vuelve exactamente al contenido de antes de la Fase 198 (se quitó la fila
+  compartida `.oad-ef-fila`). Excel/PDF de la sub-pestaña y el Exportar del
+  tablero usan el título "Eficacia" y la tabla por mes
+  (`_eficaciaDatosExport`). El cálculo (`server/eficacia.js`) no cambia.
+- Configuración: seed y plantilla de Mobilize con `{ key: 'eficacia', label:
+  'Eficacia' }` a la derecha de One & Done; migración
+  `dashboards_config_mobilize_flujo_eficacia_v1` (solo la forma reconocible
+  de producción, las 6 sub-pestañas de la Fase 147; otra forma se deja
+  intacta y se registra; idempotente).
+- Pruebas: `fase199-eficacia-subpestana.test.js` (4) y las que fijan la
+  lista exacta de sub-pestañas (138, 139, 145, 147, 150, 198). Suite
+  2278/2278, `npm audit` 0.
+- Verificación local (copia de la base demo con la forma de producción de
+  hoy, sin Eficacia, para que la migración la agregue al arrancar; CDR y
+  encuesta reales de octubre solo en la copia; Playwright y Brave a
+  1440/768/375 px): la migración se aplicó; barra "Flujo de Llamadas · Nivel
+  de Servicio · Abandono · ASA y ATA · AHT · One & Done · Eficacia"; One &
+  Done 23,2 % (19 de 82) sin nada de Eficacia; Eficacia 47,2 % (42 de 89),
+  barra de octubre 47,2, nota con la lista, exportar "Eficacia"; sin scroll
+  horizontal ni errores de consola.

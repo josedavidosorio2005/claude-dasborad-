@@ -86,7 +86,7 @@ test('"flujo" queda solo con trafico_combo; sus sub-pestañas terminan en la for
   assert.deepEqual(flujo.panels.map((p) => p.tipo), ['trafico_combo']);
   // Fase 145: la migracion dashboards_config_mobilize_flujo_asaata_aht_v1
   // (misma carga de db.js) cambia "ASA y AHT" por "ASA y ATA" + "AHT".
-  assert.deepEqual(flujo.panels[0].subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done']); // Fase 147 D: + One & Done al final
+  assert.deepEqual(flujo.panels[0].subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done', 'Eficacia']); // Fase 147 D: + One & Done al final; Fase 199: + Eficacia
   const { subtabs: _subMigradas, ...restoMigrado } = flujo.panels[0];
   const { subtabs: _subProd, ...restoProd } = LAYOUT_PROD.tabs.find((t) => t.key === 'flujo').panels[1];
   assert.deepEqual(restoMigrado, restoProd, 'fuera de las sub-pestañas, el trafico_combo no cambio en nada');

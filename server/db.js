@@ -3739,6 +3739,31 @@ function migrarMobilizeFlujoOneAndDone() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_oneanddone_v1', migrarMobilizeFlujoOneAndDone);
 
+// Fase 199: sub-pestaña "Eficacia" a la derecha de "One & Done" en el
+// trafico_combo de MOBILIZE (tab "flujo"). Solo la agrega: lo demas del panel
+// no se toca. Solo la forma reconocible de produccion (las 6 sub-pestañas de
+// la Fase 147, en ese orden); cualquier otra se deja intacta y se registra.
+// Idempotente.
+const MOBILIZE_FLUJO_SUBTABS_F147 = MOBILIZE_FLUJO_SUBTABS_F145.concat(['oneanddone']);
+function migrarMobilizeFlujoEficacia() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  const keys = panel && Array.isArray(panel.subtabs) ? panel.subtabs.map((s) => s && s.key) : null;
+  if (keys && keys.includes('eficacia')) return;
+  if (!keys || keys.join(',') !== MOBILIZE_FLUJO_SUBTABS_F147.join(',')) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_eficacia_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  panel.subtabs.push({ key: 'eficacia', label: 'Eficacia' });
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_flujo_eficacia_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_flujo_eficacia_v1', migrarMobilizeFlujoEficacia);
+
 // Fase 153 (P3, "OK crear Aurora" del usuario): CLINICA AURORA desde la
 // plantilla de cliente (plantillas-cliente.js, Paso 3). Va AL FINAL, despues
 // de fase134_borrar_clientes_v1 (que borro la Aurora vieja, sin datos), asi
@@ -4267,6 +4292,7 @@ module.exports.migrarMobilizeCalidadAlFinal = migrarMobilizeCalidadAlFinal;
 module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
 module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;
 module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
+module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;

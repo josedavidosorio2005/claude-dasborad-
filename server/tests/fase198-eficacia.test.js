@@ -64,9 +64,9 @@ test('API: octubre 42 de 89 = 47,2 %; la salida no cuenta; mes a mes', async () 
   assert.deepEqual(sinAcceso.body, { codigos: null, meses: [] }, 'una campaña sin lista no tiene Eficacia');
 });
 
-test('pantalla: tarjeta al lado de One & Done, gráfica debajo y nota con la lista', () => {
+test('pantalla: tarjeta, gráfica y nota con la lista (desde la Fase 199, en su propia sub-pestaña)', () => {
   const s = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'trafico.js'), 'utf8');
-  assert.ok(s.includes("<div class=\"oad-ef-fila\"><div id=\"'+prefijo+'-oad-kpi-'+i+'\" class=\"oad-ef-slot\"></div><div id=\"'+prefijo+'-ef-kpi-'+i+'\" class=\"oad-ef-slot\"></div></div>"));
+  assert.ok(s.includes("'<div id=\"'+prefijo+'-ef-kpi-'+i+'\" class=\"aurora-kpis\""));
   assert.ok(s.includes("_eficaciaDibujar(i, campana, estado.desde, estado.hasta)"));
   const nota = eficaciaNotaTexto(LISTA);
   assert.match(nota, /^Eficacia = llamadas contestadas de ingreso con un código positivo ÷ llamadas contestadas de ingreso del mes/);
