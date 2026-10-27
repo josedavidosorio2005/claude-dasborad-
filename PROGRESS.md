@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.85.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.86.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -335,3 +335,4 @@ mismo orden):
 - Fase 195 — Encuesta de Mobilize: botón "NPS" en la pregunta 1 (% sobre las que contestaron y NPS = promotores − detractores) (v1.83.0, 2026-10-27)
 - Fase 196 — Mobilize: pestaña "Flujo por hora" (mapas de calor hora x día de ingresadas, contestadas y abandonadas, con totales) y base nueva del reporte por hora de Wolkvox (v1.84.0, 2026-10-27)
 - Fase 197 — Mobilize: NPS con "%" en las barras también en el celular y resumen "NPS = % promotores − % detractores"; Flujo por hora con el título "Día del mes" (v1.85.0, 2026-10-27)
+- Fase 198 — Mobilize: indicador "Eficacia" al lado del One & Done (contestadas de ingreso con código positivo ÷ contestadas de ingreso; lista de Kelly en server/eficacia.js) (v1.86.0, 2026-10-27)

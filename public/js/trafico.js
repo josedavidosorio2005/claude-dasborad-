@@ -762,10 +762,14 @@ function _traficoSubtabContentHTML(prefijo, i, activo, titulos, resumenSeccionId
       gdGraficaHtml(tituloFlujo, '<div class="aurora-chart-wrap" style="height:280px"><canvas id="'+prefijo+'-canvas-'+i+'" data-titulo="'+tituloFlujo+'"></canvas></div>');
   }
   if(activo === 'oneanddone'){
-    return gdGraficaHtml(esc(titulos[activo]),
-      '<div id="'+prefijo+'-oad-kpi-'+i+'" class="aurora-kpis" style="margin-bottom:10px"></div>' +
+    // Fase 198: la tarjeta de Eficacia va al lado de la de One & Done, y su grafica debajo.
+    return '<div class="oad-ef-fila"><div id="'+prefijo+'-oad-kpi-'+i+'" class="oad-ef-slot"></div><div id="'+prefijo+'-ef-kpi-'+i+'" class="oad-ef-slot"></div></div>' +
+      gdGraficaHtml(esc(titulos[activo]),
       '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+TRAFICO_SUBTAB_CANVAS_SUFIJO[activo]+i+'" role="img" aria-label="One &amp; Done por mes: porcentaje de encuestas con la pregunta 3 en Sí"></canvas></div>' +
-      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>');
+      '<p id="'+prefijo+'-oad-q3-'+i+'" class="enc-oad-q3" style="font-size:var(--fs-small);color:var(--c-text-muted);margin:8px 0 0"></p>') +
+      gdGraficaHtml('Eficacia — llamadas de ingreso con código positivo',
+        '<div class="aurora-chart-wrap" style="height:320px"><canvas id="'+prefijo+'-canvas-ef-'+i+'" role="img" aria-label="Eficacia por mes: porcentaje de llamadas contestadas de ingreso con código positivo"></canvas></div>' +
+        '<p id="'+prefijo+'-ef-nota-'+i+'" class="ef-nota"></p>');
   }
   var textoNota = (activo === 'sl' && prefijo === 'tv') ? TRAFICO_NOTA_SL_PROMEDIO : TRAFICO_NOTA_PONDERADO;
   var nota = (activo === 'sl' || activo === 'aht' || activo === 'asaaht')
@@ -1315,6 +1319,8 @@ function _traficoRenderContenido(campana, sede, i){
   // esta en el DOM (otra sub-pestaña activa u otro cliente). Misma base que
   // la tarjeta FCR, asi el numero es identico.
   if(document.getElementById('tv-canvas-oad-'+i) && typeof _encuestaDibujarOneAndDone === 'function') _encuestaDibujarOneAndDone(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase || 'total');
+  // Fase 198: Eficacia, en la misma sub-pestaña (no-op si su canvas no esta).
+  if(document.getElementById('tv-canvas-ef-'+i) && typeof _eficaciaDibujar === 'function') _eficaciaDibujar(i, campana, estado.desde, estado.hasta);
 
   // Abandono/AHT/ASA-ATA/SL — siempre agregado combinado (traficoAgregar con
   // combinar:true), sin depender del checkbox "Ver skills por separado" de

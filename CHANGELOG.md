@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.86.0 — Octubre 2026
+
+**Fase 198: indicador "Eficacia" en Mobilize.**
+
+- En Flujo de Llamadas → One & Done, al lado del One & Done: Eficacia =
+  llamadas contestadas de ingreso con un código positivo ÷ llamadas contestadas
+  de ingreso del mes, en %. Tarjeta del mes, barras por mes y la nota de cómo
+  se calcula, con la lista de códigos positivos que definió Kelly.
+- Los códigos se reconocen aunque vengan sin tildes, con otras mayúsculas o
+  con "_"; también cuando Wolkvox borra la letra con tilde.
+- Octubre: 42 de 89 contestadas de ingreso = 47,2 %.
+
 ## v1.85.0 — Octubre 2026
 
 **Fase 197: NPS y Flujo por hora más claros (Mobilize).**

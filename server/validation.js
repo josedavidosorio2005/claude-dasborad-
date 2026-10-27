@@ -769,6 +769,13 @@ const clasificacionAsesoresBody = z.object({
     }),
 });
 
+// Fase 198: Eficacia por mes (Mobilize).
+const eficaciaQuery = z.object({
+  campana: campanaSchema,
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+});
+
 const tipificacionOpcionesQuery = z.object({
   campana: campanaSchema,
   canal: tipificacionCanalSchema,
@@ -1504,6 +1511,7 @@ module.exports = {
     salidaAsesoresQuery,
     calidadResumenQuery,
     flujoHoraCargaBody, flujoHoraOpcionesQuery, flujoHoraMesQuery, // Fase 196
+    eficaciaQuery, // Fase 198
     calidadResumenCargaBody,
     salidaAsesoresBody,
     skillsWhatsappBody,
