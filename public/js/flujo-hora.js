@@ -23,7 +23,9 @@ var FLUJO_HORA_NIVEL_TEXTO = { alto: 'Alto', medio: 'Medio', bajo: 'Bajo' };
 
 function _flujoHoraTablaHtml(m, metrica){
   var n = function(v){ return (v || 0).toLocaleString('es-CO'); };
-  var cab = '<tr><th class="th-izq fh-hora" scope="col">Hora</th>' + m.dias.map(function(d){ return '<th scope="col">'+d+'</th>'; }).join('') + '<th scope="col" class="fh-total">Total</th></tr>';
+  // Fase 197: una fila arriba agrupa las columnas como "Día del mes".
+  var cab = '<tr><th class="th-izq fh-hora" scope="col" rowspan="2">Hora</th><th scope="colgroup" colspan="'+m.dias.length+'" class="fh-dias-titulo">Día del mes</th><th scope="col" class="fh-total" rowspan="2">Total</th></tr>' +
+    '<tr>' + m.dias.map(function(d){ return '<th scope="col" aria-label="Día '+d+'">'+d+'</th>'; }).join('') + '</tr>';
   var cuerpo = m.horas.map(function(h){
     return '<tr><th scope="row" class="th-izq fh-hora">'+esc(flujoHoraTramo(h))+'</th>' +
       m.dias.map(function(d){

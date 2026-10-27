@@ -156,12 +156,16 @@ function encuestaElegirVistaQ1(i, vista) {
   var q = (ENCUESTA_PREGUNTAS || []).filter(function (x) { return x.key === 'q1'; })[0];
   if (u && q) _encuestaDibujarPregunta(i, q, u.datos, u.k);
 }
+function _encuestaPctDe(n, base) { return base > 0 ? Math.round((n / base) * 1000) / 10 : null; }
 function _encuestaNpsHtml(n) {
   if (!n.respondieron) return '<p class="enc-nps-nota">Nadie contestó la pregunta 1 con estos filtros: sin NPS.</p>';
   var pct = function (v) { return encuestaFmtPct(v); };
-  return '<div class="enc-nps-valor"><span class="enc-nps-num">' + String(n.nps).replace('.', ',') + '</span> <span class="enc-nps-etq">NPS</span></div>' +
-    '<p class="enc-nps-detalle">Promotores ' + pct(n.pctPromotores) + ' (' + n.promotores + ') − detractores ' + pct(n.pctDetractores) + ' (' + n.detractores + '); pasivos ' + n.pasivos +
-    ', sobre ' + n.respondieron.toLocaleString('es-CO') + ' que contestaron la pregunta 1.</p>' +
+  // Fase 197: el resumen dice que 21,4 es el NPS (promotores − detractores),
+  // no un total ni una cantidad de encuestas.
+  return '<div class="enc-nps-valor"><span class="enc-nps-etq">NPS (promotores − detractores)</span> <span class="enc-nps-num">' + String(n.nps).replace('.', ',') + '</span></div>' +
+    '<p class="enc-nps-formula">NPS = ' + pct(n.pctPromotores) + ' de promotores − ' + pct(n.pctDetractores) + ' de detractores = ' + String(n.nps).replace('.', ',') + '</p>' +
+    '<p class="enc-nps-detalle">Promotores ' + n.promotores + ' (' + pct(n.pctPromotores) + '), pasivos ' + n.pasivos + ' (' + pct(_encuestaPctDe(n.pasivos, n.respondieron)) + '), detractores ' + n.detractores + ' (' + pct(n.pctDetractores) + '), sobre ' +
+    n.respondieron.toLocaleString('es-CO') + ' que contestaron la pregunta 1 (100 %).</p>' +
     '<p class="enc-nps-nota">' + esc(ENCUESTA_NPS_NOTA) + '</p>';
 }
 
@@ -191,7 +195,14 @@ function _encuestaDibujarPregunta(i, q, datos, k) {
     o.plugins.datalabels.formatter = function (v) { return nps ? (v ? encuestaFmtPct(v) : '') : (v || 0).toLocaleString('es-CO'); };
     // Fase 195: en una grafica angosta (celular) los "%" se pisan entre barras
     // vecinas; ahi se ocultan (quedan en el tooltip, "Ver datos" y el NPS).
-    if (nps) o.plugins.datalabels.display = function (ctx) { return ctx.chart.width >= 480; };
+    // Fase 197: en una grafica angosta el "%" va vertical (no se pisa con la barra vecina) y nunca se oculta.
+    if (nps) {
+      o.plugins.datalabels.display = function (ctx) { return !!ctx.dataset.data[ctx.dataIndex]; };
+      o.plugins.datalabels.rotation = function (ctx) { return ctx.chart.width < 480 ? -90 : 0; };
+      o.plugins.datalabels.anchor = 'end';
+      o.plugins.datalabels.align = function (ctx) { return ctx.chart.width < 480 ? 'end' : 'top'; };
+      o.plugins.datalabels.clamp = true;
+    }
   }
   o.scales = o.scales || {};
   o.scales.y = Object.assign({}, o.scales.y || {}, nps
