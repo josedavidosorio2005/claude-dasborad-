@@ -114,7 +114,7 @@ jobs:
           NODE_REGISTRY=""
           for REG in $CANDIDATOS; do
             TODAS=1
-            for IMG in node:22-bookworm node:22-bookworm-slim; do
+            for IMG in node:24-bookworm node:24-bookworm-slim; do
               BAJO=0
               for INTENTO in 1 2; do
                 if docker pull -q "$REG/$IMG" > /dev/null 2>&1; then BAJO=1; break; fi
@@ -127,7 +127,7 @@ jobs:
           done
           if [ -z "$NODE_REGISTRY" ]; then echo "::error::Ningun registro entrego las 2 imagenes base de node"; exit 1; fi
           echo "Registro de la imagen base: $NODE_REGISTRY"
-          for IMG in node:22-bookworm node:22-bookworm-slim; do
+          for IMG in node:24-bookworm node:24-bookworm-slim; do
             echo "  $IMG -> $(docker image inspect --format '{{index .RepoDigests 0}}' "$NODE_REGISTRY/$IMG")"
           done
           docker build --build-arg NODE_REGISTRY="$NODE_REGISTRY" -f server/Dockerfile -t "$IMAGE:$SHA" -t "$IMAGE:latest" .

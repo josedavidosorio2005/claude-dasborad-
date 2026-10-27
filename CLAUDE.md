@@ -57,10 +57,10 @@ asumir en qué quedó una fase anterior.
   sin los retoques. Se corrigió con un PR de fast-follow — ver
   `docs/historico/progress-fases.md`.)
 - Todo cambio sigue el ciclo completo: rama nueva → tests → CI verde
-  (Node 22 + docker-build) → `npm audit` limpio → PR → merge →
+  (Node 24 + docker-build) → `npm audit` limpio → PR → merge →
   deploy automático (AWS vía OIDC) → verificación en producción real
   cuando aplica (no solo el test suite).
-  (Desde la Fase 96, CI solo prueba Node 22 — la versión de producción,
+  (Desde la Fase 192, CI prueba Node 24 — la versión de producción,
   `server/Dockerfile`. Node 18/20 salieron de la matriz: ya no tienen
   soporte upstream y `better-sqlite3` no trae binario listo para ellos,
   lo que colgaba esos jobs.)

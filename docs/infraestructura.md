@@ -33,7 +33,7 @@ cómo se llegó aquí, o para reconstruir todo desde cero, usar el histórico.
 
 ## Cómo se despliega
 
-1. Push a `main` → workflow `CI` (tests Node 22 + `docker-build`) en verde.
+1. Push a `main` → workflow `CI` (tests Node 24 + `docker-build`) en verde.
 2. `deploy.yml` se dispara solo si `CI` terminó OK en `main` (OIDC a AWS,
    sin claves de larga duración para el paso de build/push): build + push
    a ECR (`:sha` y `:latest`) → SSH a la instancia → `docker system prune
