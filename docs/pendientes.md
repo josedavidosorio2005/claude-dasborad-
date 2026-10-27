@@ -13,8 +13,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   con la base completa** (Fase 193, 27/10/2026) — Edwin mandó el export
   HistIVR completo de cada mes (21 / 45 / 82 filas, todas con ID de
   llamada). Desde la v1.81.0 entra tal cual. Es una carga en producción:
-  hace falta tu OK. La comparación por mes contra producción está en la
-  bitácora (Fase 193).
+  hace falta tu OK. Archivo frente a producción: agosto 21 / 0 y octubre
+  82 / 0 (no cargados); septiembre 45 / 45, pero sus 2 comentarios sin ID
+  de llamada (la carga vieja no traía CONN_ID).
 
 - **Volver a subir el CDR de llamadas de Mobilize en Tipificación**
   (Fase 191, 27/10/2026) — desde la v1.80.0 las contestadas únicas salen

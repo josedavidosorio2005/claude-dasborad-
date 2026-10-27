@@ -17209,3 +17209,11 @@ septiembre y octubre), completa; las gráficas son las mismas.
   leer, ID de llamada en todas; comentarios con ID (ago 1, sep 2, oct 4), 4
   gráficas, Excel con "ID de llamada", sin teléfonos en pantalla, en el
   Excel ni en la base, sin scroll horizontal ni errores de consola.
+- Producción (v1.81.0, PR #561), revisión de solo lectura con sesión
+  (escrituras bloqueadas: 0 intentos, 0 errores de consola). Filas por mes,
+  archivo de Edwin frente a producción: agosto 21 / 0 (no cargado);
+  septiembre 45 / 45 (mismas filas, pero sus 2 comentarios sin ID de
+  llamada: la carga vieja no traía CONN_ID); octubre 82 / 0 (no cargado).
+  Plantilla de Encuesta del Centro: 25 columnas. Pestaña a 1440/768/375
+  px: aviso normal de "sin datos" en octubre (con botón al último mes con
+  datos), sin scroll horizontal, sin NaN, sin teléfonos visibles.
