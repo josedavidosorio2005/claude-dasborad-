@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.81.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.82.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -77,9 +77,13 @@ narrativo de cada fase, fase por fase, vive en
     navegador; el teléfono no se guarda); abandonadas = base
     `llamadas_abandonadas` ("Detalle de llamadas abandonadas" de Wolkvox,
     única por día y ANI). Un mes sin CDR marcado o sin abandonadas usa la
-    carga vieja (`llamadas_unicas`). Salida conectada = filas "-" del CDR
-    (por registro); no conectadas en null hasta tener su base. El CDR de
-    Mobilize ya cargado no tiene la marca: hay que volver a subirlo.
+    carga vieja (`llamadas_unicas`); desde la Fase 194, un mes sin el reporte
+    de abandonadas muestra 0. Salida conectada = TODAS las filas "-" del CDR
+    (Fase 194: ni la prueba ni el duplicado exacto las quitan); no conectadas =
+    filas del reporte "5. Detalle de las llamadas para las no conectadas"
+    (`llamadas_no_conectadas`, sin quitar repetidas); sin ese reporte, null
+    ("Pendiente"). El Centro de este módulo solo lleva Abandonadas y No
+    conectadas (las cargas viejas quedan `retirada`, sus datos no se borran).
   - En los meses con CDR, la pestaña "Llamadas y WhatsApp de salida" de
     ORLANT sale del CDR y se reparte en 3P/General por la línea de cada
     asesor en ese mes (Fase 170); sin línea asignada = "Sin asignar".
@@ -325,3 +329,4 @@ mismo orden):
 - Fase 191 — Llamadas Únicas de Mobilize desde las bases de Wolkvox: contestadas del CDR (marca de única por día y teléfono), abandonadas del reporte "Detalle de llamadas abandonadas" (base nueva), salida conectada del CDR y no conectadas pendientes; tabla de fuente por mes (v1.80.0, 2026-10-27)
 - Fase 192 — Paso a Node.js 24: imagen node:24-bookworm, CI con Node 24, imágenes de pre-descarga de ci.yml y deploy.yml, engines >=24 (v1.80.1, 2026-10-27)
 - Fase 193 — Encuesta de Mobilize con la base completa de Wolkvox (HistIVR de 25 columnas, tal cual): plantilla = el export completo, vista previa con columnas usadas e ID de llamada (v1.81.0, 2026-10-27)
+- Fase 194 — Salida de Mobilize: todas las filas "-" del CDR cuentan (prueba y repetidas incluidas), base nueva "No conectadas" (reporte 5 de Wolkvox, cada fila cuenta), Centro de Llamadas Únicas solo con Abandonadas y No conectadas, abandonadas sin reporte = 0 (v1.82.0, 2026-10-27)

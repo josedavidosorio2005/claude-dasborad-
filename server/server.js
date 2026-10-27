@@ -155,6 +155,7 @@ function createApp() {
     // 2mb aqui) en Llamadas Unicas y en WhatsApp por rangos de minutos.
     '/api/calidad/llamadas-unicas/carga', '/api/calidad/llamadas-unicas/carga/impacto',
     '/api/calidad/llamadas-abandonadas/carga', '/api/calidad/llamadas-abandonadas/carga/impacto', // Fase 191
+    '/api/calidad/llamadas-no-conectadas/carga', '/api/calidad/llamadas-no-conectadas/carga/impacto', // Fase 194
     '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });

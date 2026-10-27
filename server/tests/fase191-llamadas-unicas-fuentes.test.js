@@ -110,7 +110,7 @@ test('migracion: unicaDia en tipificaciones, tabla llamadas_abandonadas sin tele
 test('Centro de cargas: tercera carga del modulo Llamadas Unicas, sin plantilla y sin aviso de mes incompleto', () => {
   const c = CARGAS_POR_MODULO.llamadas_unicas.find((x) => x.id === 'llamadas_abandonadas');
   assert.equal(c.tabla, 'llamadas_abandonadas');
-  assert.equal(c.plantilla, null);
+  assert.equal(c.plantilla, 'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx'); // Fase 194: plantilla = el reporte tal cual
   assert.equal(CL.centroModuloDeCarga('llamadas_abandonadas'), 'llamadas_unicas');
   assert.equal(CL.centroEtiquetaCarga(c), 'Abandonadas');
   assert.ok(CL.centroOmiteCobertura('llamadas_abandonadas'));
@@ -160,7 +160,8 @@ test('API: contestadas del CDR, abandonadas del reporte, meses sin CDR con la ca
 
   const porMes = (await request(app).get('/api/calidad/llamadas-unicas/por-mes').query({ campana: 'MOBILIZE', desde: '2025-01-01', hasta: '2025-03-31' }).set(auth(admin))).body;
   assert.deepEqual(porMes, [
-    { periodo: '2025-01', contestadas: 4, abandonadas: 2, total: 6, fuenteContestadas: 'PLANTILLA', fuenteAbandonadas: 'PLANTILLA' },
+    // Fase 194: las 2 abandonadas de la carga vieja ya no cuentan (un mes sin el reporte = 0).
+    { periodo: '2025-01', contestadas: 4, abandonadas: 0, total: 4, fuenteContestadas: 'PLANTILLA', fuenteAbandonadas: null },
     // CDR: 03/03 un telefono 3 veces = 1; 04/03 el mismo telefono = 1 mas; otro telefono = 1; las "-" no cuentan.
     { periodo: '2025-03', contestadas: 3, abandonadas: 2, total: 5, fuenteContestadas: 'CDR', fuenteAbandonadas: 'ABANDONADAS' },
   ]);
@@ -177,8 +178,8 @@ test('API: contestadas del CDR, abandonadas del reporte, meses sin CDR con la ca
   // Salida: marzo del CDR (3 filas "-", conectadas; no conectadas pendientes); enero sigue con la carga vieja.
   const sal = (await request(app).get('/api/calidad/llamadas-salida/por-mes').query({ campana: 'MOBILIZE', desde: '2025-01-01', hasta: '2025-03-31' }).set(auth(admin))).body;
   assert.deepEqual(sal, [
-    { periodo: '2025-01', total: 3, noConectadas: 2, conectadas: 1, fuente: 'PLANTILLA' },
-    { periodo: '2025-03', total: null, noConectadas: null, conectadas: 3, fuente: 'CDR' },
+    { periodo: '2025-01', total: 3, noConectadas: 2, conectadas: 1, fuente: 'PLANTILLA', fuenteNoConectadas: 'PLANTILLA' },
+    { periodo: '2025-03', total: null, noConectadas: null, conectadas: 3, fuente: 'CDR', fuenteNoConectadas: null },
   ]);
   const salRes = (await request(app).get('/api/calidad/llamadas-salida/resumen').query({ campana: 'MOBILIZE', desde: '2025-01-01', hasta: '2025-03-31' }).set(auth(admin))).body;
   assert.deepEqual(salRes, { conectadas: 4, noConectadas: null, total: null, noConectadasPendiente: true });
@@ -209,6 +210,7 @@ test('panel: tabla "De dónde sale cada mes" y "Pendiente" en las no conectadas'
   assert.ok(s.includes("return v === null || v === undefined ? 'Pendiente'"));
   assert.equal(LU.llamadasUnicasFuenteMes({ fuenteContestadas: 'CDR', fuenteAbandonadas: 'ABANDONADAS' }), 'Contestadas: CDR · Abandonadas: reporte de abandonadas');
   assert.equal(LU.llamadasUnicasFuenteMes({ fuenteContestadas: 'PLANTILLA', fuenteAbandonadas: null }), 'Contestadas: Carga anterior · Abandonadas: sin cargar');
-  assert.equal(LU.llamadasSalidaFuenteMes({ fuente: 'CDR', noConectadas: null }), 'CDR (falta la base de no conectadas)');
-  assert.equal(LU.llamadasSalidaFuenteMes({ fuente: 'PLANTILLA', noConectadas: 2 }), 'Carga anterior');
+  // Fase 194: la fuente dice de donde salen conectadas y no conectadas.
+  assert.equal(LU.llamadasSalidaFuenteMes({ fuente: 'CDR', noConectadas: null }), 'Conectadas: CDR · No conectadas: falta su base');
+  assert.equal(LU.llamadasSalidaFuenteMes({ fuente: 'PLANTILLA', noConectadas: 2 }), 'Conectadas: Carga anterior · No conectadas: Carga anterior');
 });

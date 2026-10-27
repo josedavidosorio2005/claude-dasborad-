@@ -118,7 +118,7 @@ function normSumas(r) {
 // Los meses sin CDR siguen con la carga vieja (llamadas_salida).
 const SKILLS_SALIDA_CDR = ['-', 'LLAMADAS DE SALIDA'];
 const SQL_SALIDA_CDR = 'skill IN (' + SKILLS_SALIDA_CDR.map((x) => "'" + x + "'").join(', ') + ')';
-const FUENTE = { CDR: 'CDR', PLANTILLA: 'PLANTILLA' };
+const FUENTE = { CDR: 'CDR', PLANTILLA: 'PLANTILLA', NO_CONECTADAS: 'NO_CONECTADAS' };
 
 function _rangoCdr(q) {
   const c = ["campana = @campana", "canal = 'LLAMADAS'"];
@@ -143,6 +143,30 @@ function _conectadasCdr(db, q, grupo) {
       WHERE ${where} AND ${SQL_SALIDA_CDR}${extra} GROUP BY g, periodo`)
     .all(params);
 }
+// Fase 194: no conectadas del reporte de Wolkvox "5. Detalle de las llamadas
+// para las no conectadas" (tabla llamadas_no_conectadas, una fila por llamada,
+// sin quitar repetidas). Un mes "tiene la base" si tiene alguna fila.
+function _rangoNc(q) {
+  const c = ['campana = @campana'];
+  const p = { campana: q.campana };
+  if (q.desde) { c.push('fecha >= @desde'); p.desde = q.desde; }
+  if (q.hasta) { c.push('fecha <= @hasta'); p.hasta = q.hasta; }
+  return { where: c.join(' AND '), params: p };
+}
+function mesesConNoConectadas(db, q) {
+  const { where, params } = _rangoNc(q);
+  return db.prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_no_conectadas WHERE ${where} ORDER BY v`).all(params).map((x) => x.v);
+}
+function _noConectadasBase(db, q, grupo) {
+  const { where, params } = _rangoNc(q);
+  let extra = '';
+  if (q.agente) { extra += ' AND agente = @agente'; params.agente = q.agente; }
+  if (q.tipo === 'CONECTADA') extra += ' AND 0'; // con el filtro "Conectada" no hay ninguna
+  return db
+    .prepare(`SELECT ${grupo} AS g, substr(fecha,1,7) AS periodo, COUNT(*) AS n FROM llamadas_no_conectadas
+      WHERE ${where}${extra} GROUP BY g, periodo`)
+    .all(params);
+}
 // Filas de la carga vieja agrupadas, sin los meses que ya salen del CDR.
 function _vieja(db, q, grupo, mesesCdr) {
   const { where, params } = llamadasSalidaWhereClausulas(q);
@@ -151,41 +175,56 @@ function _vieja(db, q, grupo, mesesCdr) {
     .all(params)
     .filter((x) => !mesesCdr.has(x.periodo));
 }
-// Junta las dos fuentes por grupo: las no conectadas (y el total) quedan en
-// null si alguna parte salio del CDR.
+// Junta las fuentes por grupo, mes a mes:
+// - conectadas: CDR si el mes tiene CDR; si no, la carga vieja;
+// - no conectadas: la base nueva si el mes la tiene; si no, la carga vieja
+//   en los meses sin CDR; en un mes con CDR y sin la base, null (pendiente)
+//   y el total tambien -- nunca se inventa la cifra.
 function _combinar(db, q, grupo) {
   const mesesCdr = new Set(mesesConCdr(db, q));
-  const out = {};
-  const fila = (g) => out[g] || (out[g] = { g, conectadas: 0, noConectadas: 0, total: 0, pendiente: false, fuentes: new Set() });
+  const mesesNc = new Set(mesesConNoConectadas(db, q));
+  const celdas = {};
+  const celda = (g, periodo) => celdas[g + '|' + periodo] || (celdas[g + '|' + periodo] = { g, periodo, conectadas: 0, noConectadas: 0 });
   _vieja(db, q, grupo, mesesCdr).forEach((x) => {
-    const f = fila(x.g);
+    const c = celda(x.g, x.periodo);
     const n = normSumas(x);
-    f.conectadas += n.conectadas; f.noConectadas += n.noConectadas; f.total += n.total;
-    f.fuentes.add(FUENTE.PLANTILLA);
+    c.conectadas += n.conectadas;
+    if (!mesesNc.has(x.periodo)) c.noConectadas += n.noConectadas;
   });
-  _conectadasCdr(db, q, grupo).forEach((x) => {
-    if (!mesesCdr.has(x.periodo)) return;
-    const f = fila(x.g);
-    f.conectadas += x.n; f.pendiente = true; f.fuentes.add(FUENTE.CDR);
+  _conectadasCdr(db, q, grupo).forEach((x) => { if (mesesCdr.has(x.periodo)) celda(x.g, x.periodo).conectadas += x.n; });
+  _noConectadasBase(db, q, grupo).forEach((x) => { celda(x.g, x.periodo).noConectadas += x.n; });
+  // Por mes: un mes con CDR o con la base aparece aunque no tenga filas con estos filtros.
+  if (grupo === 'substr(fecha,1,7)') [...mesesCdr, ...mesesNc].forEach((m) => celda(m, m));
+  const fuenteCon = (periodo) => (mesesCdr.has(periodo) ? FUENTE.CDR : FUENTE.PLANTILLA);
+  const fuenteNc = (periodo) => (mesesNc.has(periodo) ? FUENTE.NO_CONECTADAS : (mesesCdr.has(periodo) ? null : FUENTE.PLANTILLA));
+  const out = {};
+  Object.values(celdas).forEach((c) => {
+    const o = out[c.g] || (out[c.g] = { g: c.g, conectadas: 0, noConectadas: 0, pendiente: false, fCon: new Set(), fNc: new Set() });
+    o.conectadas += c.conectadas;
+    o.noConectadas += c.noConectadas;
+    o.fCon.add(fuenteCon(c.periodo));
+    const fn = fuenteNc(c.periodo);
+    if (fn === null) o.pendiente = true; else o.fNc.add(fn);
   });
-  // Un mes con CDR pero sin filas de salida (o filtrado) igual queda pendiente.
-  if (grupo === 'substr(fecha,1,7)') mesesCdr.forEach((m) => { const f = fila(m); f.pendiente = true; f.fuentes.add(FUENTE.CDR); });
-  return Object.values(out).map((f) => ({
-    g: f.g, conectadas: f.conectadas,
-    noConectadas: f.pendiente ? null : f.noConectadas,
-    total: f.pendiente ? null : f.total,
-    fuente: f.fuentes.has(FUENTE.CDR) ? (f.fuentes.has(FUENTE.PLANTILLA) ? 'MIXTA' : FUENTE.CDR) : FUENTE.PLANTILLA,
+  const una = (set) => (set.size === 1 ? [...set][0] : (set.size ? 'MIXTA' : null));
+  return Object.values(out).map((o) => ({
+    g: o.g, conectadas: o.conectadas,
+    noConectadas: o.pendiente ? null : o.noConectadas,
+    total: o.pendiente ? null : o.conectadas + o.noConectadas,
+    fuente: una(o.fCon),
+    fuenteNoConectadas: o.pendiente ? null : una(o.fNc),
   }));
 }
 
 function llamadasSalidaPorMes(db, q) {
   return _combinar(db, q, 'substr(fecha,1,7)')
     .sort((a, b) => (a.g < b.g ? -1 : 1))
-    .map((x) => ({ periodo: x.g, total: x.total, noConectadas: x.noConectadas, conectadas: x.conectadas, fuente: x.fuente }));
+    .map((x) => ({ periodo: x.g, total: x.total, noConectadas: x.noConectadas, conectadas: x.conectadas, fuente: x.fuente, fuenteNoConectadas: x.fuenteNoConectadas }));
 }
 
-// Fase 191: suma de los meses; si alguno salio del CDR, no conectadas y total
-// quedan en null (noConectadasPendiente) -- nunca una suma a medias.
+// Fase 191: suma de los meses; si alguno salio del CDR sin la base de no
+// conectadas (Fase 194), no conectadas y total quedan en null
+// (noConectadasPendiente) -- nunca una suma a medias.
 function llamadasSalidaResumen(db, q) {
   const meses = llamadasSalidaPorMes(db, q);
   const pendiente = meses.some((m) => m.noConectadas === null);
@@ -215,16 +254,60 @@ function llamadasSalidaOpciones(db, campana, { incluirAgentes } = {}) {
   const out = {
     meses: unir(
       db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_salida WHERE campana = ?').all(campana).map((r) => r.v),
-      mesesConCdr(db, { campana }) // Fase 191
+      mesesConCdr(db, { campana }), // Fase 191
+      mesesConNoConectadas(db, { campana }) // Fase 194
     ),
   };
   if (incluirAgentes) {
     out.agentes = unir(
       db.prepare('SELECT DISTINCT agente AS v FROM llamadas_salida WHERE campana = ?').all(campana).map((r) => r.v),
-      db.prepare(`SELECT DISTINCT agente AS v FROM tipificaciones WHERE campana = ? AND canal = 'LLAMADAS' AND ${SQL_SALIDA_CDR}`).all(campana).map((r) => r.v)
+      db.prepare(`SELECT DISTINCT agente AS v FROM tipificaciones WHERE campana = ? AND canal = 'LLAMADAS' AND ${SQL_SALIDA_CDR}`).all(campana).map((r) => r.v),
+      db.prepare('SELECT DISTINCT agente AS v FROM llamadas_no_conectadas WHERE campana = ?').all(campana).map((r) => r.v) // Fase 194
     );
   }
   return out;
+}
+
+// ── Fase 194: carga del reporte de no conectadas ──────────────────────────
+// Filas [fecha, agente] (llamadasNoConectadasParseFilas): el telefono nunca
+// llega aqui. Una fila por llamada, sin quitar repetidas. Reemplaza por
+// periodo (primera a ultima fecha del archivo), igual que las demas.
+const CAMPOS_FILA_NO_CONECTADAS = ['fecha', 'agente'];
+
+function _ncObjetos(filas) {
+  return filas.map((arr) => ({ fecha: arr[0], agente: arr[1] }));
+}
+
+function impactoLlamadasNoConectadas(db, { campana, filas }) {
+  const filasObj = _ncObjetos(filas);
+  const { desde, hasta } = rangoFechas(filasObj);
+  const existentes = db
+    .prepare('SELECT COUNT(*) AS n FROM llamadas_no_conectadas WHERE campana = ? AND fecha >= ? AND fecha <= ?')
+    .get(campana, desde, hasta).n;
+  const alias = aplicarAliasAFilas(db, campana, filasObj, 'agente');
+  return { desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length,
+    filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados };
+}
+
+function cargarLlamadasNoConectadas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+  const ts = nowStr();
+  let filasObj = _ncObjetos(filas);
+  filasObj = aplicarAliasAFilas(db, campana, filasObj, 'agente').filas;
+  const { desde, hasta } = rangoFechas(filasObj);
+  const del = db.prepare('DELETE FROM llamadas_no_conectadas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
+  const insert = db.prepare(
+    `INSERT INTO llamadas_no_conectadas (campana, fecha, agente, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana, @fecha, @agente, @archivoNombre, @cargadoPorNombre, @createdAt)`
+  );
+  let borradas = 0;
+  db.transaction(() => {
+    respaldarAntesDeCambiar(db, 'llamadas_no_conectadas', { campana, desde, hasta, guardadoPorNombre: cargadoPorNombre });
+    borradas = del.run(campana, desde, hasta).changes;
+    for (const f of filasObj) {
+      insert.run({ campana, fecha: f.fecha, agente: f.agente, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts });
+    }
+  })();
+  return { insertadas: filasObj.length, borradas, desde, hasta };
 }
 
 module.exports = {
@@ -237,4 +320,9 @@ module.exports = {
   llamadasSalidaDetalle,
   llamadasSalidaOpciones,
   mesesConCdr, // Fase 191
+  // Fase 194
+  CAMPOS_FILA_NO_CONECTADAS,
+  mesesConNoConectadas,
+  impactoLlamadasNoConectadas,
+  cargarLlamadasNoConectadas,
 };

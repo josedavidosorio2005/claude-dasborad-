@@ -367,6 +367,12 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   // Fase 191: columna TELEPHONE solo con marcarUnicasDia (Llamadas); -1 = no se marca.
   var marcarUnicas = !!(opciones && opciones.marcarUnicasDia) && canal === 'LLAMADAS';
   var idxTel = marcarUnicas ? tipificacionIndiceTelefono(aoa[0]) : -1;
+  // Fase 194 (Mobilize): cada fila con SKILL_NAME "-" es una llamada de
+  // salida y se cuenta TODA -- ni la codificacion de prueba ni el
+  // deduplicado exacto de la Fase 88 la quitan (antes se perdian: septiembre
+  // 67 en el CDR y 64 en el tablero). Se avisa cuantas se conservaron.
+  var conservarGuion = !!(opciones && opciones.conservarSalidaGuion) && canal === 'LLAMADAS';
+  var guionPruebaConservadas = 0;
   var ignoradasPorSkill = {}; // Fase 168 -- {SKILL_ID: cantidad}, un solo aviso al final
   // Fase 185: ninguna fila se pierde en silencio -- conteo por causa, un
   // resumen al principio de los avisos.
@@ -457,9 +463,14 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     // de validar que la fila es por lo demas valida -- nunca se cuentan
     // como "omitida por dato faltante", se cuentan aparte para que el
     // preview diga cuantas se excluyeron y por que.
+    var guionOriginal = !porSkillId && tipificacionNormTexto(row[map.skill]) === '-';
     if (codificacionesExcluidas.indexOf(tipificacion) !== -1) {
-      excluidasPorCodificacion[tipificacion] = (excluidasPorCodificacion[tipificacion] || 0) + 1;
-      continue;
+      if (conservarGuion && guionOriginal) {
+        guionPruebaConservadas++; // Fase 194: una fila "-" nunca se excluye
+      } else {
+        excluidasPorCodificacion[tipificacion] = (excluidasPorCodificacion[tipificacion] || 0) + 1;
+        continue;
+      }
     }
 
     // Fase 131, Parte 3: columnas nuevas del CDR de Mobilize, todas
@@ -510,7 +521,9 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     };
     if (idxTel !== -1) {
       Object.defineProperty(filaObj, '_tel', { value: String(row[idxTel] == null ? '' : row[idxTel]).replace(/[^0-9]/g, ''), configurable: true });
-      Object.defineProperty(filaObj, '_skillGuion', { value: tipificacionNormTexto(row[map.skill]) === '-', configurable: true });
+    }
+    if (idxTel !== -1 || conservarGuion) {
+      Object.defineProperty(filaObj, '_skillGuion', { value: guionOriginal, configurable: true });
     }
     filas.push(filaObj);
   }
@@ -570,7 +583,19 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
   if (canal === 'WHATSAPP') {
     return { filas: filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(filas) };
   }
-  var dedup = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas);
+  // Fase 194: con conservarSalidaGuion, el deduplicado exacto solo mira las
+  // filas que NO son "-" (el orden de las filas no cambia).
+  var dedup;
+  if (conservarGuion) {
+    var noGuion = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas.filter(function (f) { return !f._skillGuion; }));
+    var quedan = new Set(noGuion.filas);
+    dedup = { filas: filas.filter(function (f) { return f._skillGuion || quedan.has(f); }), quitadas: noGuion.quitadas };
+  } else {
+    dedup = _tipificacionDuplicadosExactos.quitarDuplicadosExactos(filas);
+  }
+  if (guionPruebaConservadas > 0) {
+    avisos.push(guionPruebaConservadas + ' fila(s) de salida (SKILL_NAME "-") con codificación de prueba se conservaron: cada fila "-" cuenta como llamada de salida.');
+  }
   if (dedup.quitadas > 0) {
     avisos.push(
       'Se encontraron ' + dedup.quitadas + ' fila(s) exactamente duplicada(s) ' +
@@ -584,6 +609,7 @@ function tipificacionParseFilas(aoa, ws, canal, opciones) {
     unicasDia = _tipificacionMarcarUnicasDia(dedup.filas);
     if (unicasDia.sinTelefono) avisos.push(unicasDia.sinTelefono + ' fila(s) de ingreso sin TELEPHONE: cada una cuenta como una llamada única.');
   }
+  dedup.filas.forEach(function (f) { delete f._tel; delete f._skillGuion; }); // marcas internas, nunca viajan
   return { filas: dedup.filas, avisos: avisos, excluidas: totalExcluidas, ignoradasPorSkill: totalIgnoradasSkill, salida: deSalida(dedup.filas), unicasDia: unicasDia };
 }
 

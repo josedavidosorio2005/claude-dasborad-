@@ -81,8 +81,9 @@ test('Centro: modulo con un solo archivo -> sin selector', () => {
 
 test('plantillas de los modulos con dos archivos: INSTRUCCIONES dice que va en cada carga y de que reporte sale', () => {
   const casos = {
-    'PLANTILLA_LLAMADAS_UNICAS.xlsx': ['Únicas de ingreso', 'De salida', 'CDR', 'por skill y servicio', 'Esta plantilla es la de "Únicas de ingreso"'],
-    'PLANTILLA_LLAMADAS_SALIDA.xlsx': ['Únicas de ingreso', 'De salida', 'CDR', 'por skill y servicio', 'Esta plantilla es la de "De salida"'],
+    // Fase 194: los dos reportes de Wolkvox del modulo.
+    'PLANTILLA_LLAMADAS_ABANDONADAS.xlsx': ['"Abandonadas" (esta plantilla)', '"No conectadas"', 'CDR', 'Tipificación'],
+    'PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx': ['"Abandonadas"', '"No conectadas" (esta plantilla)', 'no se quitan repetidas'],
     'PLANTILLA_TIPIFICACION_LLAMADAS.xlsx': ['"Llamadas"', '"WhatsApp"', 'CDR', 'HistChat', 'Esta plantilla es la de "Llamadas"'],
     'PLANTILLA_TIPIFICACION_WHATSAPP.xlsx': ['"Llamadas"', '"WhatsApp"', 'CDR', 'HistChat', 'Esta plantilla es la de "WhatsApp"'],
   };

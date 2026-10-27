@@ -140,7 +140,8 @@ function _porMesPlantilla(db, q) {
 //   si alguna fila de LLAMADAS de ese mes trae la marca (no NULL).
 // - Abandonadas unicas: del reporte "Detalle de llamadas abandonadas" de
 //   Wolkvox (tabla llamadas_abandonadas), si ese mes tiene filas.
-// - Si no, cada parte sale de la carga vieja (llamadas_unicas). Total =
+// - Si no, las contestadas salen de la carga vieja (llamadas_unicas) y las
+//   abandonadas son 0 (Fase 194). Total =
 //   contestadas + abandonadas. Cada mes dice de donde sale cada parte.
 const SKILLS_SALIDA_CDR = ['-', 'LLAMADAS DE SALIDA'];
 const SQL_NO_SALIDA = 'skill NOT IN (' + SKILLS_SALIDA_CDR.map((x) => "'" + x + "'").join(', ') + ')';
@@ -212,11 +213,13 @@ function llamadasUnicasPorMes(db, q) {
     const deCdr = mesesCdr.has(periodo);
     const deAb = mesesAb.has(periodo);
     const contestadas = deCdr ? (cdr[periodo] || 0) : (v.contestadas || 0);
-    const abandonadas = deAb ? (ab[periodo] || 0) : (v.abandonadas || 0);
+    // Fase 194 (pedido del 27/10): las abandonadas salen SOLO del reporte de
+    // Wolkvox; un mes sin ese reporte muestra 0 (la carga vieja no se borra).
+    const abandonadas = deAb ? (ab[periodo] || 0) : 0;
     return {
       periodo, contestadas, abandonadas, total: contestadas + abandonadas,
       fuenteContestadas: deCdr ? FUENTE.CDR : (vieja[periodo] ? FUENTE.PLANTILLA : null),
-      fuenteAbandonadas: deAb ? FUENTE.ABANDONADAS : (v.abandonadas ? FUENTE.PLANTILLA : null),
+      fuenteAbandonadas: deAb ? FUENTE.ABANDONADAS : null,
     };
   });
 }

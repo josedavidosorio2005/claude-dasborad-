@@ -9,6 +9,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Subir a producción la salida de Mobilize con las reglas de la Fase 194**
+  (27/10/2026) — para que las conectadas cuenten todas las filas "-", el CDR
+  de cada mes se vuelve a subir en Tipificación (octubre: archivo en
+  Descargas; agosto y septiembre: faltan los archivos), y el reporte de no
+  conectadas de octubre va en "No conectadas". Hace falta tu OK; antes, la
+  comparación por mes contra producción.
+
 - **Volver a subir el CDR de llamadas de Mobilize de agosto y septiembre
   en Tipificación** (Fase 191, 27/10/2026) — octubre ya está (27/10, con el
   CDR y las abandonadas). Agosto y septiembre siguen con la carga vieja
@@ -154,15 +161,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
-
-- **Base de llamadas de salida NO conectadas de Mobilize** (Fase 191,
-  27/10/2026) — desde la v1.80.0, en los meses con CDR las conectadas salen
-  del CDR (filas "-"), pero las no conectadas necesitan otra base que
-  todavía no existe. Mientras tanto la tarjeta, el total y la tabla dicen
-  "Pendiente" (nunca una cifra inventada). Cómo se cierra: Edwin dice qué
-  reporte de Wolkvox es (¿CDR → "5. Detalle de las llamadas para las no
-  conectadas"?) y se agrega como base del Centro de cargas, igual que las
-  abandonadas.
 
 - **Clasificar a los asesores de ORLANT en Línea General o Línea 3P**
   (Fase 186, 26/10/2026) — desde la v1.75.0, la salida de Tipificación se

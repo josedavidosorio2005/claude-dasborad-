@@ -264,17 +264,19 @@ test('GET /resumen y /por-mes agregan correctamente contestadas/abandonadas/tota
 
   const resumen = await request(app).get('/api/calidad/llamadas-unicas/resumen').query({ campana: 'MOBILIZE', desde: '2026-07-01', hasta: '2026-07-03' }).set(auth(admin));
   assert.equal(resumen.status, 200);
+  // Fase 194: las abandonadas salen solo del reporte de Wolkvox; las de la
+  // carga vieja se guardan pero ya no cuentan (un mes sin el reporte = 0).
   assert.equal(resumen.body.contestadas, 2);
-  assert.equal(resumen.body.abandonadas, 1);
-  assert.equal(resumen.body.total, 3);
+  assert.equal(resumen.body.abandonadas, 0);
+  assert.equal(resumen.body.total, 2);
 
   const porMes = await request(app).get('/api/calidad/llamadas-unicas/por-mes').query({ campana: 'MOBILIZE', desde: '2026-07-01', hasta: '2026-07-03' }).set(auth(admin));
   assert.equal(porMes.status, 200);
   const julio = porMes.body.find((m) => m.periodo === '2026-07');
   assert.ok(julio);
   assert.equal(julio.contestadas, 2);
-  assert.equal(julio.abandonadas, 1);
-  assert.equal(julio.total, 3);
+  assert.equal(julio.abandonadas, 0); // Fase 194
+  assert.equal(julio.total, 2);
 });
 
 test('GET /opciones devuelve "Abandonadas" entre los skills cuando hay filas abandonadas', async () => {

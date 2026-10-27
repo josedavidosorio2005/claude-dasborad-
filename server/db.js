@@ -4165,6 +4165,28 @@ function crearLlamadasUnicasFuentes() {
 }
 runOnceMigration('fase191_llamadas_unicas_fuentes_v1', crearLlamadasUnicasFuentes);
 
+// Fase 194 (Mobilize): reporte de Wolkvox "5. Detalle de las llamadas para
+// las no conectadas", una fila por llamada (sin quitar repetidas). Solo crea
+// la tabla; igual que las demas de Llamadas Unicas, NO TIENE columna de
+// telefono (el navegador nunca lo lee).
+function crearLlamadasNoConectadas() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llamadas_no_conectadas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_llamadas_no_conectadas_campana_fecha ON llamadas_no_conectadas(campana, fecha);
+  `);
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase194_llamadas_no_conectadas_v1 aplicada.');
+}
+runOnceMigration('fase194_llamadas_no_conectadas_v1', crearLlamadasNoConectadas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4211,6 +4233,8 @@ module.exports.crearAsesorClasificacion = crearAsesorClasificacion;
 module.exports.activarSalidaUnaClasificacion = activarSalidaUnaClasificacion;
 // Fase 191: idem.
 module.exports.crearLlamadasUnicasFuentes = crearLlamadasUnicasFuentes;
+// Fase 194: idem.
+module.exports.crearLlamadasNoConectadas = crearLlamadasNoConectadas;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

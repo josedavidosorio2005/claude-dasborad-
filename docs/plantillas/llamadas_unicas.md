@@ -6,26 +6,31 @@
 - **Lo usa hoy:** MOBILIZE
 - **Carga que necesita:** Llamadas únicas + Llamadas de salida (Wolkvox)
 
-## Llamadas Únicas (ingreso)
+## Llamadas abandonadas
 
 ### De dónde sale
 
-Wolkvox, dos reportes en una sola hoja: las CONTESTADAS del CDR → "1. Detalle de las llamadas" (solo las de ingreso, con asesor) y las ABANDONADAS de "Skill y servicios → 2. Detalle llamadas abandonadas" (skill, teléfono y día, con AGENT_NAME vacío).
+Wolkvox: Skills y servicios → "Detalle de llamadas abandonadas" (hoja "HistQueue<fecha>"). Se sube tal cual.
 
-**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "Únicas de ingreso".**
+**Este módulo lleva 2 archivos de Wolkvox, cada uno en su propia carga del Centro de cargas: (1) "Abandonadas" (esta plantilla). (2) "No conectadas". Las contestadas únicas y la salida conectada salen del CDR que se sube en Tipificación. Un teléfono cuenta una vez por día; otro día vuelve a contar.**
 
 ### Plantilla oficial
 
-`server/plantillas/PLANTILLA_LLAMADAS_UNICAS.xlsx` — hoja `LLAMADAS_UNICAS` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
+`server/plantillas/PLANTILLA_LLAMADAS_ABANDONADAS.xlsx` — hoja `LLAMADAS_ABANDONADAS` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
 
 ### Columnas que lee el sistema
 
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
-| AGENT_NAME | Sí | Asesor que atendió. Vacío en las abandonadas (el reporte de abandonadas no trae asesor): una fila sin asesor cuenta como abandonada. |  |
-| DATE | Sí | Fecha de la llamada. |  |
-| TELEPHONE | Sí | Número que llamó. Solo se usa en el navegador para contar una vez por día; nunca se envía ni se guarda. |  |
+| CONN_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| SKILL_ID | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
 | SKILL_NAME | Sí | Línea o skill. |  |
+| DATE | Sí | Fecha y hora de la llamada abandonada. |  |
+| RESULT | No | Solo cuenta "ABANDON". |  |
+| ANI | Sí | Teléfono que llamó. Solo se usa en el navegador para contar una vez por día; nunca se envía ni se guarda. |  |
+| ABANDON_TIME | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| TYPE_INTERACTION | No | Solo cuenta "inbound". |  |
+| CUSTOMER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 
 ### Cómo detecta el encabezado
 
@@ -33,7 +38,7 @@ Cargar Datos busca el encabezado en las primeras 20 filas de cada hoja y lo reco
 
 ### Qué período cubre y qué reemplaza
 
-El mes completo de las fechas del archivo. Antes de guardar, la vista previa muestra cuántos registros se van a reemplazar.
+Las abandonadas entre la primera y la última fecha del archivo. Antes de guardar, la vista previa muestra cuántos registros se van a reemplazar.
 
 ### Si falta una columna
 
@@ -41,31 +46,37 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | TELEPHONE | SKILL_NAME |
-|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-08-01 | 3000000000 | SKILL SAC |
+| CONN_ID | SKILL_ID | SKILL_NAME | DATE | RESULT | ANI | ABANDON_TIME | TYPE_INTERACTION | CUSTOMER_ID |
+|---|---|---|---|---|---|---|---|---|
+| EJEMPLO-0001 | 101 | SKILL SAC | 2026-08-01 09:30 | ABANDON | 3000000001 | 12 | inbound | - |
 
-## Llamadas de Salida
+## Llamadas de salida no conectadas
 
 ### De dónde sale
 
-Wolkvox, dos reportes en una sola hoja: las CONECTADAS salen del CDR → "1. Detalle de las llamadas" (solo las de salida) y las NO CONECTADAS del reporte "5. Detalle de llamadas no conectadas". La columna TIPO dice cuál es cuál: "Conectada" o "No conectada".
+Wolkvox: Reportes → CDR → "5. Detalle de las llamadas para las no conectadas" (hoja "HistCDR<fecha>"). Se sube tal cual.
 
-**Este módulo lleva 2 archivos, cada uno en su propia carga del Centro de cargas: (1) "Únicas de ingreso" — contestadas: Wolkvox, CDR; no contestadas: Wolkvox, reporte por skill y servicio. (2) "De salida" — Wolkvox, CDR. Esta plantilla es la de "De salida".**
+**Este módulo lleva 2 archivos de Wolkvox, cada uno en su propia carga del Centro de cargas: (1) "Abandonadas". (2) "No conectadas" (esta plantilla). Cada fila es una llamada no conectada: no se quitan repetidas.**
 
 ### Plantilla oficial
 
-`server/plantillas/PLANTILLA_LLAMADAS_SALIDA.xlsx` — hoja `LLAMADAS_SALIDA` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
+`server/plantillas/PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx` — hoja `LLAMADAS_NO_CONECTADAS` (solo encabezados) + hoja `INSTRUCCIONES`. Es el formato nativo de Wolkvox con sus columnas cuando el archivo existe: se puede subir el archivo nativo tal cual.
 
 ### Columnas que lee el sistema
 
 | Columna | Obligatoria | Qué va | También se acepta como |
 |---|---|---|---|
-| AGENT_NAME | Sí | Asesor que hizo la llamada. |  |
-| DATE | Sí | Fecha y hora de la llamada. Cuenta el día en hora de Colombia. |  |
-| TELEPHONE | Sí | Número llamado. Solo se usa en el navegador; nunca se envía ni se guarda. |  |
-| DESCRIPTION_COD_ACT | Sí | Tipificación de la llamada. "-" o vacío = "Sin tipificación". |  |
-| TIPO | Sí | "Conectada" (sale del CDR, numeral 1) o "No conectada" (sale del reporte "Detalle de llamadas no conectadas", numeral 5). | SKILL_ID |
+| AGENT_NAME | Sí | Asesor que hizo la llamada. Vacío = "Sin asesor". |  |
+| DATE | Sí | Fecha y hora de la llamada. |  |
+| DESTINY | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| TELEPHONE | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| RING_TIME | Sí | Segundos que timbró (solo para reconocer el reporte). |  |
+| RESULT | Sí | Resultado de la llamada (solo para reconocer el reporte). |  |
+| TYPE_INTERACTION | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| CUSTOMER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CAMPAIGN_ID | No | Viene en el export de Wolkvox; el sistema no la usa. |  |
+| AGENT_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| CONN_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 
 ### Cómo detecta el encabezado
 
@@ -73,7 +84,7 @@ Cargar Datos busca el encabezado en las primeras 20 filas de cada hoja y lo reco
 
 ### Qué período cubre y qué reemplaza
 
-Todo lo que exista entre la primera y la última fecha del archivo. Antes de guardar, la vista previa muestra cuántos registros se van a reemplazar.
+Las no conectadas entre la primera y la última fecha del archivo. Antes de guardar, la vista previa muestra cuántos registros se van a reemplazar.
 
 ### Si falta una columna
 
@@ -81,17 +92,14 @@ Si falta una columna obligatoria, esa hoja no se carga y el aviso dice cuál fal
 
 ### Ejemplo (inventado)
 
-| AGENT_NAME | DATE | TELEPHONE | DESCRIPTION_COD_ACT | TIPO |
-|---|---|---|---|---|
-| Asesor Ejemplo Uno | 2026-08-01 09:30 | 3000000001 | Seguimiento | Conectada |
+| AGENT_NAME | DATE | DESTINY | TELEPHONE | RING_TIME | RESULT | TYPE_INTERACTION | CUSTOMER_ID | CAMPAIGN_ID | AGENT_ID | CONN_ID |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Asesor Ejemplo Uno | 2026-08-01 10:15 | 3000000001 | 3000000001 | 20 | NO ANSWER | outbound_ma | - | 0 | 0000 | EJEMPLO-0002 |
 
 ## Notas
 
-- Son dos cargas, una por mitad de la pestaña "Llamadas Únicas y de Salida": ingreso (izquierda) y salida (derecha).
-- Privacidad: TELEPHONE se usa solo en el navegador de quien sube el archivo, para contar una vez cada número por día. Nunca llega al servidor, nunca se guarda ni se muestra.
-- Ingreso: no se aceptan filas con SKILL_NAME = "NO CONTESTADAS" (son salidas no conectadas; van en la carga de salida).
-- Salida: SKILL_ID debe decir "LLAMADAS DE SALIDA CONECTADAS" o "LLAMADAS DE SALIDA NO CONECTADAS"; otro valor se omite con aviso. Una hoja que trae SKILL_NAME nunca se toma como salida (así un CDR no se cuela aquí).
-
-## Pendiente
-
-Las abandonadas de ingreso siguen sin fuente definida (Edwin). Ver en README.md la propuesta de sacar ingreso y salida conectadas del mismo CDR.
+- Fase 194: el módulo lleva dos reportes de Wolkvox, subidos tal cual: "Abandonadas" (Detalle de llamadas abandonadas) y "No conectadas" (5. Detalle de las llamadas para las no conectadas). Las contestadas únicas y la salida conectada salen del CDR que se sube en Tipificación.
+- Abandonadas: un teléfono (ANI) cuenta una vez por día; otro día vuelve a contar. Un mes sin este reporte muestra 0.
+- No conectadas: cada fila es una llamada, sin quitar repetidas. Un mes con CDR y sin este reporte dice "Pendiente" en no conectadas y en el total de salida.
+- Privacidad: el teléfono (ANI, TELEPHONE) solo se usa en el navegador de quien sube el archivo; nunca llega al servidor, nunca se guarda ni se muestra.
+- Las cargas viejas (plantilla de ingreso y plantilla de salida) se retiraron del Centro; lo ya guardado no se borra y sigue en los meses sin CDR.
