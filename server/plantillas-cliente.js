@@ -249,7 +249,7 @@ const PERFILES_ACTUALES = {
             { key: 'eficacia', label: 'Eficacia' },
           ],
           subtabsTitulos: { sl: 'Nivel de Servicio 80 - 20' },
-          fcrBase: 'total',
+          fcrBase: 'empezaron',
         },
       },
       calidad: { sinPaneles: ['calidad_bar_asesores'] },
