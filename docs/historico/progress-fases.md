@@ -17230,3 +17230,29 @@ septiembre y octubre), completa; las gráficas son las mismas.
   agosto 5 de 6 que respondieron, septiembre 3 de 4, octubre 19 de 22.
   Pestaña de octubre a 1440/768/375 px: 4 gráficas, 4 comentarios con ID,
   sin scroll horizontal, sin NaN, sin teléfonos visibles, 0 errores.
+
+#### Fase 191 — carga de octubre en producción (2026-10-27)
+
+- Revisión local del CDR de octubre de Edwin (`CDR LLAMADAS MES DE
+  OCTUBRE.xlsx`, mismo lector y opciones que el navegador): 149 filas, trae
+  TELEPHONE en todas; 17 de prueba excluidas; 132 entran, igual que
+  producción (SKILL SAC 87, Skill Key Account 2, salida 43: es el mismo
+  archivo, Tipificación no cambia). Ingreso 89, únicas por día 62. Edwin
+  calculaba ~104: son las 104 filas de ingreso antes de quitar repetidas
+  (incluidas 15 de prueba); el usuario confirmó que su regla es la de 62.
+  Variantes revisadas: día + teléfono con pruebas 65, + skill 67, teléfono
+  en el mes 39. El 62 coincide con la carga vieja de octubre.
+- Abandonadas: misma regla (teléfono/ANI una vez por día; otro día vuelve
+  a contar), fijada en `fase191-llamadas-unicas-fuentes.test.js`. El archivo
+  "(1)" es idéntico al anterior (mismo SHA-256): 2 únicas.
+- Carga (OK explícito del usuario, Centro de cargas con su sesión). Las
+  únicas escrituras fueron login e impacto/carga de Tipificación y de
+  abandonadas, 0 bloqueadas. Candados: vista previa 132 / 89 / 62 y
+  confirmación "REEMPLAZAR 132". Resultado: CDR 132 guardadas, abandonadas
+  2 guardadas (sin reemplazo).
+- Verificación (solo lectura): octubre 62 contestadas (fuente CDR) + 2
+  abandonadas (reporte de abandonadas) = 64; salida conectada 43, no
+  conectadas "Pendiente". Tipificación de octubre sin cambios (87 / 2 /
+  43). Agosto (54) y septiembre (88) siguen con la carga anterior. A
+  1440/768/375 px: tabla de fuentes correcta, sin scroll horizontal, sin
+  NaN, sin teléfonos visibles, 0 errores.
