@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.82.1 — Octubre 2026
+
+**Seguridad: actualización de una librería interna.**
+
+- Se actualizó `qs` (la usa el servidor por dentro para leer los pedidos) a
+  la 6.17.0, que corrige un aviso de seguridad publicado hoy. No cambia nada
+  de lo que se ve.
+
 ## v1.82.0 — Octubre 2026
 
 **Fase 194: Llamadas de salida de Mobilize completas.**
