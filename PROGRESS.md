@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.89.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.90.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -341,3 +341,4 @@ mismo orden):
 - Fase 199 — Mobilize: la Eficacia pasa a su propia sub-pestaña "Eficacia", a la derecha de "One & Done" (que vuelve a como estaba); migración para la configuración de producción (v1.87.0, 2026-10-27)
 - Fase 200 — Mobilize: One & Done y la tarjeta FCR sobre las encuestas que contestaron la pregunta 1 (las que empezaron), no el total; migración de `fcrBase` en producción (v1.88.0, 2026-10-27)
 - Fase 201 — Todos los clientes: sin filtro "MES" en el encabezado; solo "MESES", y las tarjetas siguen el último mes marcado (v1.89.0, 2026-10-27)
+- Fase 202 — Mobilize, Calidad: la carga del resumen por asesor recibe el archivo con una hoja por mes (cada hoja a su mes); torta con el % de monitoreos y barras con el Prom. puntaje por asesor (v1.90.0, 2026-10-27)

@@ -57,6 +57,14 @@ async function _calidadResumenRenderPanel(p, i){
       '<div class="aurora-kpi"><div class="kv">'+gdFmtValor(delMes.fallos)+'</div><div class="kl">Fallos críticos del mes</div></div>' +
       '</div>';
     html += '<p class="cal-res-nota">Promedio general ponderado por el número de monitoreos de cada asesor.</p>';
+    // Fase 202: torta con el % de monitoreos de cada asesor (suma 100 %) y
+    // barras con el Prom. puntaje (%) de cada asesor (no suma 100: va en barras).
+    html += '<div class="cal-res-graficas">' +
+      gdGraficaHtml('Monitoreos por asesor (%) — '+esc(mesNombreLargo(mesSel)),
+        '<div class="aurora-chart-wrap" style="height:280px"><canvas id="calres-c-pie-'+i+'" role="img" aria-label="Porcentaje de monitoreos de cada asesor en el mes"></canvas></div>') +
+      gdGraficaHtml('Prom. puntaje (%) por asesor — '+esc(mesNombreLargo(mesSel)),
+        '<div class="aurora-chart-wrap" style="height:280px"><canvas id="calres-c-bar-'+i+'" role="img" aria-label="Promedio de puntaje de cada asesor en el mes"></canvas></div>') +
+      '</div>';
     html += gdGraficaHtml('Por asesor — '+esc(mesNombreLargo(mesSel)),
       '<div class="table-wrap"><table class="aurora-table"><thead><tr><th class="th-izq">Asesor</th><th># Monitoreos</th><th>Prom. puntaje</th><th>Clasificación</th><th>Alerta críticos</th><th>Fallos críticos</th></tr></thead><tbody>' +
       delMes.asesores.map(function(a){
@@ -79,6 +87,33 @@ async function _calidadResumenRenderPanel(p, i){
   }
   html += '</div>';
   host.innerHTML = html;
+  if(delMes) _calResDibujarGraficas(delMes, i);
+}
+
+// Fase 202: torta (% de monitoreos por asesor) y barras (Prom. puntaje por asesor).
+function _calResDibujarGraficas(delMes, i){
+  if(typeof _gdChart !== 'function') return;
+  var nombres = delMes.asesores.map(function(a){ return textoFormatoNombre(a.agente); });
+  var colores = (typeof paletaColoresSinRepetir === 'function') ? paletaColoresSinRepetir(nombres) : (typeof PC !== 'undefined' ? PC.slice(0, nombres.length) : []);
+  var pcts = calidadResumenPctMonitoreos(delMes.asesores);
+  var oPie = (typeof loPie === 'function') ? loPie() : { responsive: true, maintainAspectRatio: false, plugins: {} };
+  oPie.plugins.legend = { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 10, padding: 8 } };
+  oPie.plugins.tooltip = { callbacks: { label: function(ctx){
+    var a = delMes.asesores[ctx.dataIndex];
+    return nombres[ctx.dataIndex]+': '+_calResPct(pcts[ctx.dataIndex])+' ('+a.monitoreos+' de '+delMes.monitoreos+' monitoreos)';
+  } } };
+  _gdChart('calres-c-pie-'+i, { type: 'pie', data: { labels: nombres, datasets: [{ data: delMes.asesores.map(function(a){ return a.monitoreos; }), backgroundColor: colores }] }, options: oPie });
+  var oBar = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
+  oBar.plugins = oBar.plugins || {};
+  oBar.plugins.legend = { display: false };
+  oBar.scales = {
+    y: { min: 0, max: 100, grid: { color: (typeof CHART_GRID !== 'undefined' ? CHART_GRID : '#f0f4f8') }, ticks: { font: { size: 12 }, callback: function(v){ return v + ' %'; } } },
+    x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+  };
+  oBar.plugins.tooltip = { callbacks: { label: function(ctx){ var a = delMes.asesores[ctx.dataIndex]; return _calResPct(a.puntaje)+' · '+a.clasificacion; } } };
+  oBar.plugins.datalabels = { display: true, anchor: 'end', align: 'end', formatter: function(v){ return _calResPct(v); } };
+  var color = (typeof colorSerie === 'function') ? colorSerie('principal') : '#29564b';
+  _gdChart('calres-c-bar-'+i, { type: 'bar', data: { labels: nombres, datasets: [{ label: 'Prom. puntaje (%)', data: delMes.asesores.map(function(a){ return a.puntaje; }), backgroundColor: color, borderRadius: 3 }] }, options: oBar });
 }
 
 // Exportar (Excel/PDF del tablero): asesores del mes elegido + por mes.
@@ -90,8 +125,9 @@ async function _gdExportarCalidadResumen(p){
   var delMes = datos.meses.filter(function(m){ return m.mes === mesSel; })[0];
   var out = [];
   if(delMes){
-    out.push({ titulo: 'Resumen de calidad por asesor — '+mesNombreLargo(mesSel), tipo: 'tabla', filas: delMes.asesores.map(function(a){
-      return { Asesor: textoFormatoNombre(a.agente), '# Monitoreos': a.monitoreos, 'Prom. puntaje (%)': a.puntaje, 'Clasificación': a.clasificacion, 'Alerta críticos': a.alerta, 'Fallos críticos': a.fallos };
+    var pctsExp = calidadResumenPctMonitoreos(delMes.asesores); // Fase 202: lo mismo que la torta
+    out.push({ titulo: 'Resumen de calidad por asesor — '+mesNombreLargo(mesSel), tipo: 'tabla', filas: delMes.asesores.map(function(a, k){
+      return { Asesor: textoFormatoNombre(a.agente), '# Monitoreos': a.monitoreos, '% de monitoreos': pctsExp[k], 'Prom. puntaje (%)': a.puntaje, 'Clasificación': a.clasificacion, 'Alerta críticos': a.alerta, 'Fallos críticos': a.fallos };
     }) });
   }
   var porMes = (typeof gdAplicarFiltroMeses === 'function') ? gdAplicarFiltroMeses(datos.meses, function(m){ return m.mes; }) : datos.meses;

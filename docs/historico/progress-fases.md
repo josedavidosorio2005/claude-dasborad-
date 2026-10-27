@@ -17579,3 +17579,44 @@ Pedido del usuario (entrega del 28/10), PR 2 de 3. Todos los clientes.
   lista de MESES.
 - Pruebas: `fase201-solo-filtro-meses.test.js` (5) y las que nombraban el
   selector MES (133, 136, 144 A2/A7, 167, 175, 178).
+
+### Fase 202 — Calidad de Mobilize por mes, con torta y barras (2026-10-27, v1.90.0)
+
+Pedido del usuario (entrega del 28/10), PR 3 de 3. Provisional: más adelante
+la calidad se va a hacer en la plataforma.
+
+- Archivo de Edwin (`C:\Users\filid\Downloads\CALIDAD MOBILIZE POR MES.xlsx`,
+  fuera del repo): 3 hojas (AGOSTO, SEPTIEMBRE, OCTUBRE), cada una con las 6
+  columnas de la plantilla de la Fase 172 (Nombre del Asesor ← Escribir aquí,
+  # Monitoreos, Prom. Puntaje (%), Clasificación, Alerta Críticos, Total
+  Fallos Críticos), una fila por asesor, valores ya calculados de fórmulas a
+  libros de Monitoreos externos. Agosto 2 asesores / 11 monitoreos / 98,00 %
+  / 0 fallos; septiembre 3 / 34 / 97,35 % / 2; octubre 3 / 27 / 97,22 % / 2.
+- Hallazgo: lo cargado en producción como octubre (3 / 34 / 97,35 %, Fase
+  174) es igual a la hoja SEPTIEMBRE de este archivo; el octubre real es 27
+  monitoreos y 97,22 %.
+- `calidad-resumen-logic.js`: `calidadResumenMesDeHoja` (nombre de mes, con o
+  sin tildes y año; "setiembre" también), `calidadResumenPeriodoDeHoja` (año
+  del mes de referencia; un mes posterior al de referencia es del año
+  anterior) y `calidadResumenPctMonitoreos`. `cargas.js`: si el archivo trae
+  hojas con nombre de mes y el formato de la plantilla, se leen TODAS (cada
+  una con el mismo lector y sus avisos), dos hojas del mismo mes se rechazan,
+  la vista previa dice a qué mes va cada hoja y al guardar hay UNA
+  confirmación con todos los meses (nuevos / se reemplazan) y luego un
+  guardado por mes (cada uno con su respaldo para Deshacer). Un archivo de
+  una sola hoja sin nombre de mes sigue igual que antes.
+- Panel (`calidad-resumen.js`): torta con el % de monitoreos por asesor del
+  mes y barras con el Prom. puntaje (%) por asesor, lado a lado (una debajo
+  de la otra en el celular); la tabla sigue con clasificación, alerta y
+  fallos. Excel con "% de monitoreos".
+- Encabezado: el botón de MESES mide 24 px de alto en la computadora (antes
+  22; hallazgo de la verificación de la Fase 201).
+- Pruebas: `fase202-calidad-por-mes.test.js` (6).
+- Verificación local (copia de la base demo; primero la plantilla vieja como
+  octubre, igual que producción; después el archivo nuevo por la interfaz
+  del Centro, octubre; Playwright y Brave a 1440/768/375 px): vista previa
+  con los tres meses; confirmación "Agosto y Septiembre mes nuevo, Octubre
+  REEMPLAZA 3 asesores"; guardado 2 / 3 / 3; API ago 11 / 98 %, sep 34 /
+  97,35 %, oct 27 / 97,22 %; en cada mes la torta suma 100 % con una porción
+  por asesor y las barras coinciden con la tabla; tabla Por mes con los tres
+  meses; sin scroll horizontal, teléfonos ni errores.

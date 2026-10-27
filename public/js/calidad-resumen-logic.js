@@ -148,6 +148,38 @@ function calidadResumenParseFilas(aoa, ws) {
   return { filas: filas, avisos: avisos, sinCalcular: sinCalcular.length, monitoreos: total, promedio: total ? Math.round(suma / total * 100) / 100 : null };
 }
 
+// ── Fase 202: archivo con una hoja por mes ("AGOSTO", "SEPTIEMBRE"...) ──
+// El archivo de Edwin trae una hoja por mes, con el nombre del mes y sin año.
+// calidadResumenMesDeHoja: { mes: 1..12, anio: AAAA|null } o null si el
+// nombre no es un mes ("Hoja1" sigue el camino de siempre: el mes elegido).
+var CALIDAD_RESUMEN_MESES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+function calidadResumenMesDeHoja(nombre) {
+  var n = String(nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  var m = /^([A-Z]+)(?: (\d{4}))?$/.exec(n);
+  if (!m) return null;
+  var idx = CALIDAD_RESUMEN_MESES.indexOf(m[1] === 'SETIEMBRE' ? 'SEPTIEMBRE' : m[1]);
+  return idx === -1 ? null : { mes: idx + 1, anio: m[2] ? Number(m[2]) : null };
+}
+// Periodo AAAA-MM de una hoja. Sin año en el nombre, el del mes de
+// referencia (el elegido en el Centro o en Período); si el mes de la hoja va
+// despues del de referencia, es del año anterior (ej. DICIEMBRE subido en
+// enero). null si no hay referencia valida.
+function calidadResumenPeriodoDeHoja(info, mesReferencia) {
+  if (!info) return null;
+  var anio = info.anio;
+  if (!anio) {
+    var ref = /^(\d{4})-(\d{2})$/.exec(String(mesReferencia || ''));
+    if (!ref) return null;
+    anio = Number(ref[1]) - (info.mes > Number(ref[2]) ? 1 : 0);
+  }
+  return anio + '-' + (info.mes < 10 ? '0' : '') + info.mes;
+}
+// Torta: % de monitoreos de cada asesor en el mes (suma 100 %).
+function calidadResumenPctMonitoreos(asesores) {
+  var total = (asesores || []).reduce(function (a, x) { return a + (x.monitoreos || 0); }, 0);
+  return (asesores || []).map(function (x) { return total ? Math.round((x.monitoreos || 0) / total * 1000) / 10 : null; });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CALIDAD_RESUMEN_COLUMNAS: CALIDAD_RESUMEN_COLUMNAS,
@@ -162,5 +194,8 @@ if (typeof module !== 'undefined' && module.exports) {
     calidadResumenNivelAlerta: calidadResumenNivelAlerta,
     calidadResumenParseFilas: calidadResumenParseFilas,
     calidadResumenEsFilaTotal: calidadResumenEsFilaTotal,
+    calidadResumenMesDeHoja: calidadResumenMesDeHoja,
+    calidadResumenPeriodoDeHoja: calidadResumenPeriodoDeHoja,
+    calidadResumenPctMonitoreos: calidadResumenPctMonitoreos,
   };
 }
