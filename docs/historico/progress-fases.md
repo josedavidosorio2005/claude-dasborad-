@@ -17322,3 +17322,12 @@ agosto 54, abandonadas bien).
   NaN, sin teléfonos visibles, 0 errores. Agosto (27) y septiembre (64)
   siguen esperando sus CDR para llegar a 28 y 67, y sin reporte de no
   conectadas ("Pendiente").
+
+### Seguridad: `qs` 6.17.0 (2026-10-27, v1.82.1)
+
+- `npm audit` marcó un aviso moderado nuevo (GHSA-6pq8-jhm2-2vcw: `qs`
+  6.7.0–6.16.0, `qs.stringify` con `arrayFormat: 'comma'` puede lanzar un
+  error no controlado). `qs` llega por Express/body-parser y supertest.
+  `npm audit fix` lo subió a 6.17.0 solo en `package-lock.json`, dentro del
+  `override` del proyecto. `npm audit` queda en 0. PR aparte de las Fases
+  195 y 196.
