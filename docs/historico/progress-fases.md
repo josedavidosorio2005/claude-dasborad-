@@ -17164,3 +17164,17 @@ el OK del usuario, después de una prueba previa en una rama local.
   que aprobarlo (`allowScripts`); el job `docker-build` de CI lo detectaría
   antes de producción. Suite con Node 24 sobre el código de esta rama:
   2238/2238.
+- Merge: la regla "Proteger main" (ruleset del repo) exigía el check
+  `test (22)`, que con Node 24 pasa a llamarse `test (24)`; bloqueaba el
+  PR #559 con todo en verde. Con el OK del usuario se cambió solo ese check
+  por la API (`test (22)` → `test (24)`; `pantallas` y `docker-build`
+  igual; copia previa de la regla guardada fuera del repo). Merge sin
+  `--admin`, con `--match-head-commit`. Si algún día cambia la versión de
+  Node de CI, hay que cambiar también este check.
+- Producción (solo lectura): el deploy construyó sobre `node:24-bookworm`
+  y `node:24-bookworm-slim` (log del workflow). `/api/health` ok, versión
+  1.80.1. Monitor de producción (corrida manual): OK, 210 ms, 72 días de
+  certificado. Salud del servidor (corrida manual): disco del sistema 12 %,
+  de datos 3 %, memoria 45 %, 3 imágenes Docker (988 MB), base 40,1 MB,
+  último respaldo de hace 11 h, timer activo, servicio en `success`,
+  subida a S3 OK, certificado 72 días.
