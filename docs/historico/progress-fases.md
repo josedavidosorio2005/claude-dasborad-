@@ -17402,3 +17402,40 @@ Pedido del usuario (se presenta al cliente).
   octubre 21,4 (28 contestaron la pregunta 1 de 82 encuestas; el 10 = 42,9 %;
   promotores 57,1 %, detractores 35,7 %). A 1440/768/375 px: sin scroll
   horizontal, sin teléfonos visibles, 0 errores de página.
+
+### Fase 198 — Indicador "Eficacia" de Mobilize (2026-10-27, v1.86.0)
+
+Pedido del usuario para la presentación; lista de códigos positivos de Kelly.
+
+- Análisis previo con el CDR de octubre (el mismo que está en producción, 134
+  filas; solo tipificaciones y conteos). Contestadas de ingreso: 89 (62
+  únicas por día). Tipificaciones de ingreso: Agendamiento_de_mantenimientos
+  31, Otros_motivos 19, Link_de_pagos 11, Preguntas_Frecuentes 8,
+  TIMEOUTACW 5, Cliente_no_contesta 3, Hurto_de_vehculo 2,
+  documentacion_del_vehculo 2, Solicitud_de_informacion_o_documentacion 2,
+  Devolucion_del_vehiculo 2, Error_facturacion 1,
+  Explicacion_informacion_de_factura 1, Vehiculo_inmovilizado 1,
+  Detalle_cobro_de_multa 1. Casan con la lista: Agendamiento de
+  mantenimientos (31) y Link de pagos (11) = 42. No aparecen en octubre: los
+  otros 9 códigos de la lista. Hallazgo: Wolkvox a veces BORRA la letra con
+  tilde ("vehculo"), así que la comparación acepta también esa forma.
+- El "104" de Edwin: son las filas de ingreso del CDR antes de quitar las 15
+  de prueba (también son las 104 contestadas del reporte por hora de la
+  cola). Denominador elegido: todas las contestadas de ingreso (89), porque
+  la Eficacia mide el resultado de cada llamada atendida, no de cada persona
+  (con únicas sería 32 / 62 = 51,6 %).
+- `server/eficacia.js`: única lista de códigos (`EFICACIA_CODIGOS_POSITIVOS`,
+  por campaña) y cálculo por mes desde `tipificaciones` (ingreso = skill
+  distinto de "-" y "LLAMADAS DE SALIDA"). Ruta de solo lectura
+  `GET /calidad/tipificacion/eficacia`. `public/js/eficacia.js`: tarjeta al
+  lado de One & Done (debajo en el celular), barras por mes (azul
+  secundario) y nota con la fórmula y la lista (leída del servidor).
+- Pruebas: `fase198-eficacia.test.js` (4: lista en un solo lugar,
+  comparación con y sin la letra borrada, API 42 / 89 = 47,2 % sin contar la
+  salida, pantalla y nota). Matriz de acceso actualizada.
+- Verificación local (copia de la base demo con el CDR y la encuesta reales
+  de octubre y un tráfico sintético para que Flujo dibuje sus sub-pestañas;
+  el panel con la configuración de producción; Playwright y Brave a
+  1440/768/375 px): Eficacia 47,2 % (42 de 89) al lado de One & Done 23,2 %
+  (19 de 82), barra de octubre 47,2, nota con la lista, sin scroll horizontal
+  ni errores.

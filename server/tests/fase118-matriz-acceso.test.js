@@ -248,6 +248,8 @@ declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
 // Fase 196: Flujo por hora (Mobilize).
 declarar(['GET /calidad/flujo-hora/opciones', 'GET /calidad/flujo-hora/mes'], 'scopedRead');
+// Fase 198: Eficacia (Mobilize), lectura con acceso a la campaña.
+declarar(['GET /calidad/tipificacion/eficacia'], 'scopedRead');
 declarar(['POST /calidad/flujo-hora/carga/impacto', 'POST /calidad/flujo-hora/carga'], 'cargaManual');
 
 // Umbrales
