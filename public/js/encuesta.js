@@ -189,6 +189,9 @@ function _encuestaDibujarPregunta(i, q, datos, k) {
   if (o.plugins.datalabels) {
     o.plugins.datalabels.display = true;
     o.plugins.datalabels.formatter = function (v) { return nps ? (v ? encuestaFmtPct(v) : '') : (v || 0).toLocaleString('es-CO'); };
+    // Fase 195: en una grafica angosta (celular) los "%" se pisan entre barras
+    // vecinas; ahi se ocultan (quedan en el tooltip, "Ver datos" y el NPS).
+    if (nps) o.plugins.datalabels.display = function (ctx) { return ctx.chart.width >= 480; };
   }
   o.scales = o.scales || {};
   o.scales.y = Object.assign({}, o.scales.y || {}, nps
