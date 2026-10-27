@@ -17455,3 +17455,20 @@ Pedido del usuario para la presentación; lista de códigos positivos de Kelly.
   1440/768/375 px): Eficacia 47,2 % (42 de 89) al lado de One & Done 23,2 %
   (19 de 82), barra de octubre 47,2, nota con la lista, sin scroll horizontal
   ni errores.
+- Producción (v1.85.0 y v1.86.0 desplegadas, PR #571 y #572, mergeados en
+  ese orden con `--match-head-commit`; la rama de #572 se actualizó con
+  `main` antes). Revisión de solo lectura con sesión de administrador
+  (Playwright y Brave, toda escritura a la API bloqueada: 0 intentos, 0
+  errores de página), octubre de Mobilize a 1440/768/375 px:
+  - NPS: "NPS (promotores − detractores) 21,4" con la fórmula "57,1 % de
+    promotores − 35,7 % de detractores"; la barra 10 dice "42,9 %"
+    (vertical a 768 y 375 px).
+  - Flujo por hora: "Día del mes" sobre los días en los tres mapas;
+    ingresadas 106, contestadas 104, abandonadas 2.
+  - Eficacia: 47,2 % (42 de 89 contestadas de ingreso; Agendamiento de
+    mantenimientos 31 + Link de pagos 11), al lado de One & Done 23,2 %
+    (debajo a 375 px), con la nota de la lista. Sin scroll horizontal ni
+    teléfonos en pantalla.
+- Quedan para Edwin y Kelly (`docs/pendientes.md`, sección 2): confirmar el
+  denominador de la Eficacia, el peso de Otros_motivos y la base de calidad
+  de Mobilize.

@@ -161,6 +161,19 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Eficacia de Mobilize: confirmar con Edwin y Kelly** (Fase 198,
+  27/10/2026) — Prioridad MEDIA. En producción desde la v1.86.0: octubre
+  47,2 % (42 de 89). Tres cosas por confirmar:
+  - **Denominador**: hoy son todas las contestadas de ingreso (89, cada
+    llamada cuenta). Con únicas por día sería 32 de 62 = 51,6 %.
+  - **Otros_motivos (19 llamadas de ingreso en octubre)**: no está en la
+    lista de códigos positivos de Kelly, así que baja la eficacia.
+    Confirmar si se deja así o si entra en la lista (único lugar:
+    `server/eficacia.js`).
+  - **Base de calidad de Mobilize**: confirmar con ellos qué base de
+    calidad se usa para Mobilize.
+  Cómo se cierra: su respuesta; si cambia la regla, una fase con prueba y
+  versión nueva.
 - **Clasificar a los asesores de ORLANT en Línea General o Línea 3P**
   (Fase 186, 26/10/2026) — desde la v1.75.0, la salida de Tipificación se
   reparte por la clasificación del asesor; hasta que alguien la llene, toda
