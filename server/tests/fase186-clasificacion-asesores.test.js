@@ -168,7 +168,7 @@ test('vista: boton solo para el administrador, filtro "Línea de salida" compart
   assert.ok(s.includes("linea: v('tipif-f-linea-'+i)"), 'el filtro es del bloque compartido (Mes/rango), no de una mitad');
   assert.ok(s.includes("if(compartido.linea) params.set('linea', compartido.linea);"));
   assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea?'"));
-  assert.ok(s.includes("<canvas id=\"tipif-lin-c-'+i+'-'+c.canal+'\""));
+  // Fase 190: la torta "salida por línea" salio (ver fase190-tipif-sin-tortas-linea.test.js).
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/clasificacion-asesores-logic.js') > -1 && html.indexOf('js/clasificacion-asesores-logic.js') < html.indexOf('js/tipificacion.js'));
   assert.match(html, /id="tipif-clasif-excel" accept="\.xlsx,\.xls,\.csv"/);

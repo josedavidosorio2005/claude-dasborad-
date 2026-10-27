@@ -204,9 +204,6 @@ async function _tipificacionRenderPanel(p, i){
     if(p.mostrarTablaDetalle){
       html += '<div id="tipif-tabla-'+i+'-'+c.canal+'" class="tipif-tabla"></div></div>';
     }
-    if(clasif){
-      html += '<div class="aurora-chart-wrap" style="height:260px;margin-top:12px"><canvas id="tipif-lin-c-'+i+'-'+c.canal+'" aria-label="Salida por línea de '+esc(c.titulo)+'" role="img"></canvas></div>';
-    }
     html += '</div>';
   });
   html += '</div></div>';
@@ -400,9 +397,10 @@ function _tipificacionLineaTexto(linea){
   return linea === 'GENERAL' ? 'salida General' : (linea === '3P' ? 'salida 3P' : 'salida sin clasificar');
 }
 
-// Tarjetas "Salida General / Salida 3P / Sin clasificar" y la torta "Salida
-// por línea" de una mitad. Mismos filtros de la mitad, nunca el de linea (el
-// reparto se ve completo). Devuelve el resultado (para el total del canal).
+// Tarjetas "Salida General / Salida 3P / Sin clasificar" de una mitad. Mismos
+// filtros de la mitad, nunca el de linea (el reparto se ve completo). Fase 190:
+// sin la torta "salida por línea" (se ve con los botones de la pestaña de
+// salida). Devuelve el resultado (para el total del canal).
 async function _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal){
   var host = document.getElementById('tipif-lineas-'+i+'-'+canal);
   var nota = document.getElementById('tipif-lineas-nota-'+i+'-'+canal);
@@ -417,16 +415,6 @@ async function _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal
     }).join('');
   }
   if(nota) nota.textContent = t.nota + (r.sinClasificar ? ' (General + 3P + Sin clasificar).' : ' (General + 3P).');
-  var canvasId = 'tipif-lin-c-'+i+'-'+canal;
-  if(document.getElementById(canvasId)){
-    var propios = paletaColoresSinRepetir(['Salida General', 'Salida 3P']);
-    var colores = t.tarjetas.map(function(x){ return x.clave === 'GENERAL' ? propios[0] : (x.clave === '3P' ? propios[1] : '#9aa0a6'); });
-    _gdChart(canvasId, {
-      type: 'pie',
-      data: { labels: t.tarjetas.map(function(x){ return x.etiqueta; }), datasets: [{ data: t.tarjetas.map(function(x){ return x.valor; }), backgroundColor: colores }] },
-      options: loPie((canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' de salida por línea — '+(r.salida||0).toLocaleString('es-CO')),
-    });
-  }
   return r;
 }
 

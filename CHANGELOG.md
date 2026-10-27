@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.79.0 — Octubre 2026
+
+**Fase 190: Tipificación de ORLANT sin las tortas de salida por línea.**
+
+- En Tipificación de ORLANT salen las dos tortas de abajo: "Llamadas de
+  salida por línea" y "WhatsApp de salida por línea".
+- La salida por línea se sigue viendo con los botones Total / Línea General
+  / Línea 3P de la pestaña "Llamadas y WhatsApp de salida".
+- Nada más cambia: las tarjetas Salida General / Salida 3P / Sin clasificar,
+  el filtro "Línea de salida" y las tortas de tipificación siguen igual.
+
 ## v1.78.0 — Octubre 2026
 
 **Fase 189: los botones de línea van en cada gráfica (pedido de Edwin).**
