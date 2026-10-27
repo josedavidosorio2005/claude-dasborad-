@@ -9,15 +9,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Volver a subir el CDR de llamadas de Mobilize en Tipificación**
-  (Fase 191, 27/10/2026) — desde la v1.80.0 las contestadas únicas salen
-  del CDR, pero el CDR ya cargado no guarda el teléfono (privacidad), así
-  que agosto, septiembre y octubre siguen con la carga vieja hasta que su
-  CDR se vuelva a subir (Centro de cargas → Tipificación → Llamadas, el
-  mismo archivo de Wolkvox con TELEPHONE). Tipificación queda igual; solo
-  se agrega la marca de única. Es una carga en producción: hace falta tu
-  OK y el archivo de cada mes. Lo mismo con el reporte "Detalle de
-  llamadas abandonadas" de octubre (Abandonadas, en el mismo módulo).
+- **Volver a subir el CDR de llamadas de Mobilize de agosto y septiembre
+  en Tipificación** (Fase 191, 27/10/2026) — octubre ya está (27/10, con el
+  CDR y las abandonadas). Agosto y septiembre siguen con la carga vieja
+  hasta subir su CDR de Wolkvox con TELEPHONE (Centro de cargas →
+  Tipificación → Llamadas). Hace falta tu OK y el archivo de cada mes; antes
+  de subir, revisión local (filas frente a producción, ingreso, salida "-",
+  únicas por día).
 - **Salida conectada de Mobilize: filas "-" con "Cliente_no_contesta"**
   (Fase 191) — por el pedido, las conectadas de los meses con CDR son
   todas las filas con SKILL_NAME "-". Parte de esas filas están tipificadas
