@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.81.0 — Octubre 2026
+
+**Fase 193: Encuesta de Mobilize con la base completa de Wolkvox.**
+
+- La encuesta se sube tal cual la descarga Wolkvox (el reporte completo, de
+  25 columnas), sin armar nada a mano. La plantilla del Centro de cargas ahora
+  es ese mismo reporte.
+- Las gráficas son las mismas. La vista previa dice qué columnas usó y
+  cuántas filas traen el ID de la llamada.
+- Cada comentario y el Excel muestran el ID de la llamada. El teléfono y los
+  documentos del reporte nunca se leen ni se guardan.
+
 ## v1.80.1 — Octubre 2026
 
 **Fase 192: la plataforma pasa a Node.js 24.**

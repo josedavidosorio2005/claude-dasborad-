@@ -118,16 +118,40 @@ const CARGAS = [
     archivo: 'PLANTILLA_ENCUESTA.xlsx',
     hoja: 'ENCUESTA',
     fuente: { js: 'encuesta-logic.js', variable: 'ENCUESTA_COLUMNAS' },
+    // Fase 193: la plantilla es el export HistIVR completo de Wolkvox, con
+    // sus 25 columnas en el mismo orden (la base que manda Edwin desde
+    // agosto). Las que el sistema no usa van con un ejemplo inventado y la
+    // nota de que no se leen: ANI (telefono), AGENT_DNI y CUSTOMER_ID nunca
+    // salen del navegador.
+    ordenCompleto: ['AGENT_ID', 'AGENT_NAME', 'AGENT_DNI', 'SKILL_ID', 'SKILL_NAME', 'DATE', 'CONN_ID', 'ANI', 'CUSTOMER_ID',
+      'Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06', 'Q07', 'Q08', 'Q09', 'Q10',
+      'VOICE_MESSAGE_DURATION', 'TYPE_INTERACTION', 'RESULT', 'TIME', 'VOICE_MESSAGE', 'FEELING'],
     columnas: {
+      AGENT_ID: [NO_LEE_TXT, '0000'],
       AGENT_NAME: ['Asesor de la llamada encuestada.', 'Asesor Ejemplo Uno'],
+      AGENT_DNI: [NO_LEE_TXT, '0000000000'],
+      SKILL_ID: [NO_USA_TXT, '101'],
       SKILL_NAME: ['Línea o skill.', 'SKILL SAC'],
       DATE: ['Fecha de la encuesta.', '2026-08-01 10:20'],
+      CONN_ID: ['ID de la llamada en Wolkvox. Sale junto a cada comentario y en el Excel; si un archivo no lo trae, queda vacío.', 'A1B2C3D4'],
+      ANI: [NO_LEE_TXT, '3000000001'],
+      CUSTOMER_ID: [NO_LEE_TXT, '-'],
       Q01: ['Pregunta 1, de 0 a 10. "-" = sin respuesta.', 9],
       Q02: ['Pregunta 2, de 1 a 5.', 5],
       Q03: ['Pregunta 3: 1 = Sí, 2 = No (base de One & Done y FCR).', 1],
       Q04: ['Pregunta 4, de 1 a 5.', 4],
+      Q05: [NO_USA_TXT, '-'],
+      Q06: [NO_USA_TXT, '-'],
+      Q07: [NO_USA_TXT, '-'],
+      Q08: [NO_USA_TXT, '-'],
+      Q09: [NO_USA_TXT, '-'],
+      Q10: [NO_USA_TXT, '-'],
+      VOICE_MESSAGE_DURATION: [NO_USA_TXT, 0],
+      TYPE_INTERACTION: [NO_USA_TXT, 'inbound'],
+      RESULT: [NO_USA_TXT, '-'],
+      TIME: [NO_USA_TXT, 0],
       VOICE_MESSAGE: ['Comentario (opcional).', 'Buena atención'],
-      CONN_ID: ['ID de la llamada en Wolkvox (opcional). Sale junto a cada comentario; si no viene, queda vacío.', 'A1B2C3D4'],
+      FEELING: [NO_USA_TXT, '-'],
     },
   },
   // ── ORLANT ────────────────────────────────────────────────────────────
@@ -340,7 +364,7 @@ const ORIGEN = {
     reemplazo: 'Las llamadas de ese cliente entre la primera y la última fecha del archivo.',
   },
   'PLANTILLA_ENCUESTA.xlsx': {
-    origen: 'Wolkvox: Reportes → numeral 4 (hoja "HistIVR<fecha>"). Se sube tal cual: el encabezado puede estar en la fila 2.',
+    origen: 'Wolkvox: Reportes → numeral 4 (hoja "HistIVR<fecha>"), export completo de 25 columnas. Se sube tal cual, sin armar nada a mano: el encabezado se busca en las primeras filas, y el teléfono (ANI), AGENT_DNI y CUSTOMER_ID nunca se leen ni se guardan.',
     reemplazo: 'Todo lo que exista entre la primera y la última fecha del archivo. Suba siempre el mes completo.',
   },
   'PLANTILLA_FLUJO_WHATSAPP.xlsx': {
