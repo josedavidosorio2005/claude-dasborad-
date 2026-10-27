@@ -947,6 +947,9 @@ function _cargasEstadoLabel(r){
   }
   if(r.tipo==='encuesta' && r.conteos){
     extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
+    // Fase 193: columnas que se usaron y filas con ID de llamada (de las filas que entran, ya filtradas por mes en el Centro).
+    if(r.columnasUsadas) extra += '; columnas usadas: '+r.columnasUsadas.join(', ')+(r.columnasIgnoradas ? ' ('+r.columnasIgnoradas+' columna(s) del archivo no se leen)' : '')+
+      '; con ID de llamada '+r.filas.filter(function(f){ return !!f[8]; }).length+' de '+r.filas.length;
   }
   var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
   return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;

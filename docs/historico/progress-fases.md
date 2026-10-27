@@ -17178,3 +17178,34 @@ el OK del usuario, después de una prueba previa en una rama local.
   de datos 3 %, memoria 45 %, 3 imágenes Docker (988 MB), base 40,1 MB,
   último respaldo de hace 11 h, timer activo, servicio en `success`,
   subida a S3 OK, certificado 72 días.
+
+### Fase 193 — Encuesta de Mobilize con la base completa de Wolkvox (2026-10-27, v1.81.0)
+
+Pedido del usuario: Edwin mandó una base nueva de encuesta (agosto,
+septiembre y octubre), completa; las gráficas son las mismas.
+
+- Comparación (solo encabezados y conteos): los 3 archivos son el export
+  HistIVR completo de Wolkvox, 1 hoja, 25 columnas, encabezado en la fila 1
+  (antes había una fila de texto encima). Están las 9 que lee el sistema
+  (AGENT_NAME, SKILL_NAME, DATE, Q01–Q04, VOICE_MESSAGE, CONN_ID); las 16
+  nuevas no se leen: AGENT_ID, AGENT_DNI, SKILL_ID, ANI (teléfono),
+  CUSTOMER_ID, Q05–Q10 (vacías, "-"), VOICE_MESSAGE_DURATION,
+  TYPE_INTERACTION, RESULT, TIME y FEELING. CONN_ID lleno y único en todas
+  las filas. La plantilla del Centro tenía solo las 9 columnas.
+- El lector ya aceptaba la base tal cual (0 avisos). Cambios: la plantilla
+  del Centro (`scripts/plantillas/modulos.js`, `ordenCompleto`) es ahora el
+  export completo de 25 columnas, con las que no se leen marcadas; ficha
+  regenerada. El lector devuelve las columnas usadas, las ignoradas y las
+  filas con ID de llamada, y la vista previa lo dice. El ID de la llamada ya
+  salía en los comentarios y en el Excel (Fase 184).
+- Pruebas: `fase193-encuesta-base-completa.test.js` (6: la base completa
+  entra con 4 filas y sin avisos; ANI, AGENT_DNI y CUSTOMER_ID no llegan a
+  las filas, ni a la base ni a las respuestas; el formato viejo sigue; la
+  plantilla = las 25 columnas; resumen y comentarios con ID; recargar no
+  duplica).
+- Verificación local (copia de la base demo, Playwright y Brave a
+  1440/768/375 px), subiendo por el Centro los 3 archivos reales solo a la
+  copia local: vista previa 21 / 45 / 82 filas, 9 columnas usadas, 16 sin
+  leer, ID de llamada en todas; comentarios con ID (ago 1, sep 2, oct 4), 4
+  gráficas, Excel con "ID de llamada", sin teléfonos en pantalla, en el
+  Excel ni en la base, sin scroll horizontal ni errores de consola.

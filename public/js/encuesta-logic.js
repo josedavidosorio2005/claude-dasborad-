@@ -15,6 +15,10 @@
 //     en el navegador, y nunca viajan al servidor.
 //   - Los textos de las preguntas NO se leen del archivo (columnas J/K): son
 //     configuracion (ENCUESTA_PREGUNTAS), con la ortografia corregida.
+// Fase 193: la base de Edwin es ahora el export HistIVR COMPLETO (25
+// columnas, encabezado en la fila 1): se sube tal cual. De ahi solo se leen
+// las 9 de ENCUESTA_COLUMNAS; ANI (telefono), AGENT_DNI, CUSTOMER_ID y el
+// resto (Q05-Q10, RESULT, FEELING...) se ignoran por nombre.
 'use strict';
 
 var _encuestaFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
@@ -210,9 +214,15 @@ function encuestaParseFilas(aoa) {
   }
   if (map.connId === undefined && filas.length) avisos.push('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.');
   var lista = Object.keys(dias).sort();
+  // Fase 193: para la vista previa -- que columnas del archivo se usaron,
+  // cuantas se ignoraron y cuantas filas traen ID de llamada.
+  var columnasUsadas = ENCUESTA_COLUMNAS.filter(function (c) { return map[c.key] !== undefined; }).map(function (c) { return c.label; });
+  var columnasArchivo = (aoa[h] || []).filter(function (x) { return _encuestaNorm(x) !== ''; }).length;
   return {
     filas: filas, avisos: avisos, conteos: encuestaConteos(filas), dias: lista.length,
     desde: lista[0] || null, hasta: lista[lista.length - 1] || null,
+    columnasUsadas: columnasUsadas, columnasIgnoradas: Math.max(0, columnasArchivo - columnasUsadas.length),
+    conConnId: filas.filter(function (f) { return !!f[8]; }).length,
   };
 }
 
