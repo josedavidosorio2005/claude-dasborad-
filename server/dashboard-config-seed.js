@@ -473,7 +473,9 @@ const MOBILIZE = {
           // pedido de Edwin) o 'respondieron' (solo las que contestaron la
           // pregunta 3) -- se cambia aqui o en el constructor, sin codigo.
           // Migracion: dashboards_config_mobilize_flujo_fcr_v1 (db.js).
-          fcrBase: 'total',
+          // Fase 200: base 'empezaron' (las que contestaron la pregunta 1).
+          // Migracion: dashboards_config_mobilize_fcr_empezaron_v1 (db.js).
+          fcrBase: 'empezaron',
         },
       ]},
       // Fase 139: pestaña propia de Llamadas Unicas (Fase 138 PR3), SIEMPRE

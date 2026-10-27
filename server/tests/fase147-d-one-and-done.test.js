@@ -53,7 +53,7 @@ test('seed: One & Done al final; las 5 sub-pestañas, sus textos y fcrBase no ca
   const p = panelFlujo(CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout);
   assert.deepEqual(p.subtabs.map((s) => s.key), SUBTABS);
   assert.deepEqual(p.subtabs.map((s) => s.label), ['Resumen', 'Nivel de Servicio', 'Abandono', 'ASA y ATA', 'AHT', 'One & Done', 'Eficacia']);
-  assert.equal(p.fcrBase, 'total');
+  assert.equal(p.fcrBase, 'empezaron'); // Fase 200: base = contestaron la pregunta 1
   assert.ok(!JSON.stringify(CONFIGS.find((c) => c.cliente === 'ORLANT').layout).includes('oneanddone'));
 });
 

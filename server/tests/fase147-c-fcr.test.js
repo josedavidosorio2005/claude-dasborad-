@@ -29,9 +29,9 @@ test('tarjeta: mes objetivo con su fraccion; otros meses aparte; mes sin encuest
   assert.equal(L.encuestaFmtPct(null), '—');
 });
 
-test('seed: el trafico_combo de Flujo de Llamadas de Mobilize trae fcrBase "total" (pedido de Edwin); ORLANT no', () => {
+test('seed: el trafico_combo de Flujo de Llamadas de Mobilize trae fcrBase "empezaron" (Fase 200; antes "total"); ORLANT no', () => {
   const panelM = CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
-  assert.equal(panelM.fcrBase, 'total');
+  assert.equal(panelM.fcrBase, 'empezaron'); // Fase 200
   const orlant = JSON.stringify(CONFIGS.find((c) => c.cliente === 'ORLANT').layout);
   assert.ok(!orlant.includes('fcrBase'));
 });

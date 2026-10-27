@@ -3764,6 +3764,29 @@ function migrarMobilizeFlujoEficacia() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_eficacia_v1', migrarMobilizeFlujoEficacia);
 
+// Fase 200: One & Done / FCR de MOBILIZE sobre las encuestas que contestaron
+// la pregunta 1 (las que empezaron la encuesta), no sobre el total. Solo
+// cambia fcrBase de 'total' (el valor de la Fase 147) a 'empezaron' en el
+// trafico_combo de MOBILIZE del tab "flujo"; otra base ya elegida o una forma
+// desconocida se deja intacta y se registra. Idempotente.
+function migrarMobilizeFcrEmpezaron() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  if (panel && panel.fcrBase === 'empezaron') return;
+  if (!panel || panel.fcrBase !== 'total') {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_fcr_empezaron_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  panel.fcrBase = 'empezaron';
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_fcr_empezaron_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_fcr_empezaron_v1', migrarMobilizeFcrEmpezaron);
+
 // Fase 153 (P3, "OK crear Aurora" del usuario): CLINICA AURORA desde la
 // plantilla de cliente (plantillas-cliente.js, Paso 3). Va AL FINAL, despues
 // de fase134_borrar_clientes_v1 (que borro la Aurora vieja, sin datos), asi
@@ -4293,6 +4316,7 @@ module.exports.migrarMobilizeEncuestaTab = migrarMobilizeEncuestaTab;
 module.exports.migrarMobilizeFlujoFcr = migrarMobilizeFlujoFcr;
 module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
+module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;

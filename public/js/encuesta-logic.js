@@ -234,9 +234,10 @@ function encuestaPlantillaAoA() {
 // FCR ("Solucion en primer contacto", Parte C): encuestas con Q03 = 1 sobre
 // la base elegida en la config del panel. base 'total' = todas las encuestas
 // del periodo (pedido de Edwin); 'respondieron' = solo las que contestaron
-// Q03. pct null si la base es 0.
-function encuestaFcr(si, total, respondieron, base) {
-  var den = base === 'respondieron' ? respondieron : total;
+// Q03; 'empezaron' (Fase 200, Mobilize) = solo las que contestaron la
+// pregunta 1, es decir, las que empezaron la encuesta. pct null si la base es 0.
+function encuestaFcr(si, total, respondieron, base, empezaron) {
+  var den = base === 'respondieron' ? respondieron : base === 'empezaron' ? (empezaron || 0) : total;
   return { num: si, den: den, pct: den > 0 ? Math.round((si / den) * 1000) / 10 : null };
 }
 
@@ -262,9 +263,23 @@ function encuestaFmtPct(v) {
   return v === null || v === undefined ? '—' : String(v).replace('.', ',') + ' %';
 }
 
-// "3 de 45 encuestas" (base total) o "3 de 4 que respondieron la pregunta 3".
+// "3 de 45 encuestas" (base total), "3 de 4 que respondieron la pregunta 3" o
+// (Fase 200) "19 de 28 que contestaron la pregunta 1".
 function encuestaFcrFraccion(si, den, base) {
-  return si + ' de ' + den + (base === 'respondieron' ? ' que respondieron la pregunta 3' : ' encuestas');
+  return si + ' de ' + den + (base === 'respondieron' ? ' que respondieron la pregunta 3' : base === 'empezaron' ? ' que contestaron la pregunta 1' : ' encuestas');
+}
+
+// Fase 200: base valida del FCR / One & Done ('total' si no se reconoce).
+function encuestaFcrBase(base) {
+  return base === 'respondieron' || base === 'empezaron' ? base : 'total';
+}
+
+// Fase 200: nota de la tarjeta FCR y de One & Done, segun la base.
+function encuestaFcrNota(base) {
+  var den = base === 'respondieron' ? 'las encuestas que respondieron la pregunta 3'
+    : base === 'empezaron' ? 'las encuestas que contestaron la pregunta 1 (las que empezaron la encuesta)'
+      : 'todas las encuestas del mes';
+  return 'One & Done = encuestas con "Sí" en la pregunta 3 (la solicitud se resolvió en este primer contacto) ÷ ' + den + '.';
 }
 
 // ── Fase 147 (Parte D): sub-pestaña "One & Done" de Flujo de Llamadas ──
@@ -294,9 +309,9 @@ function encuestaOneAndDoneSerie(porMes, meses, base) {
   (porMes || []).forEach(function (m) { porPeriodo[m.periodo] = m; });
   return (meses || []).map(function (p) {
     var m = porPeriodo[p];
-    if (!m || !m.total) return { periodo: p, sinEncuestas: true, pct: null, si: 0, den: 0, total: 0, respondieron: 0, base: base };
-    var f = encuestaFcr(m.si, m.total, m.respondieron, base);
-    return { periodo: p, sinEncuestas: false, pct: f.pct, si: m.si, den: f.den, total: m.total, respondieron: m.respondieron, base: base };
+    if (!m || !m.total) return { periodo: p, sinEncuestas: true, pct: null, si: 0, den: 0, total: 0, respondieron: 0, empezaron: 0, base: base };
+    var f = encuestaFcr(m.si, m.total, m.respondieron, base, m.empezaron);
+    return { periodo: p, sinEncuestas: false, pct: f.pct, si: m.si, den: f.den, total: m.total, respondieron: m.respondieron, empezaron: m.empezaron || 0, base: base };
   });
 }
 
@@ -361,5 +376,7 @@ if (typeof module !== 'undefined' && module.exports) {
     encuestaFcrTarjeta: encuestaFcrTarjeta,
     encuestaFmtPct: encuestaFmtPct,
     encuestaFcrFraccion: encuestaFcrFraccion,
+    encuestaFcrBase: encuestaFcrBase,
+    encuestaFcrNota: encuestaFcrNota,
   };
 }
