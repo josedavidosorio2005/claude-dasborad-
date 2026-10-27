@@ -16,6 +16,15 @@ sepan que hay nuevo, que se corrigio y que falta.
   con "_"; también cuando Wolkvox borra la letra con tilde.
 - Octubre: 42 de 89 contestadas de ingreso = 47,2 %.
 
+## v1.85.0 — Octubre 2026
+
+**Fase 197: NPS y Flujo por hora más claros (Mobilize).**
+
+- Encuesta, NPS: los porcentajes de las barras se ven también en el celular
+  (verticales). El resumen dice "NPS (promotores − detractores)" y muestra la
+  cuenta: 57,1 % de promotores − 35,7 % de detractores = 21,4 (no es un total).
+- Flujo por hora: las columnas de los mapas llevan el título "Día del mes".
+
 ## v1.84.0 — Octubre 2026
 
 **Fase 196: pestaña nueva "Flujo por hora" en Mobilize.**

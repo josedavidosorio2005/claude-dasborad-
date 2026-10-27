@@ -334,4 +334,5 @@ mismo orden):
 - Fase 194 — Salida de Mobilize: todas las filas "-" del CDR cuentan (prueba y repetidas incluidas), base nueva "No conectadas" (reporte 5 de Wolkvox, cada fila cuenta), Centro de Llamadas Únicas solo con Abandonadas y No conectadas, abandonadas sin reporte = 0 (v1.82.0, 2026-10-27)
 - Fase 195 — Encuesta de Mobilize: botón "NPS" en la pregunta 1 (% sobre las que contestaron y NPS = promotores − detractores) (v1.83.0, 2026-10-27)
 - Fase 196 — Mobilize: pestaña "Flujo por hora" (mapas de calor hora x día de ingresadas, contestadas y abandonadas, con totales) y base nueva del reporte por hora de Wolkvox (v1.84.0, 2026-10-27)
+- Fase 197 — Mobilize: NPS con "%" en las barras también en el celular y resumen "NPS = % promotores − % detractores"; Flujo por hora con el título "Día del mes" (v1.85.0, 2026-10-27)
 - Fase 198 — Mobilize: indicador "Eficacia" al lado del One & Done (contestadas de ingreso con código positivo ÷ contestadas de ingreso; lista de Kelly en server/eficacia.js) (v1.86.0, 2026-10-27)
