@@ -984,6 +984,15 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 .enc-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
 .enc-pie,.enc-total{margin:6px 0 0;color:var(--c-text-2);font-size:var(--fs-small);}
 .enc-pregunta .enc-pie{text-align:center;}
+/* Fase 195: NPS de la pregunta 1. */
+.enc-cab{margin-bottom:var(--space-2);}
+.enc-cab .aurora-card-title{margin:0;}
+.enc-nps{margin-top:var(--space-2);text-align:center;}
+.enc-nps-valor{display:inline-flex;align-items:baseline;gap:6px;}
+.enc-nps-num{font-size:1.6rem;font-weight:700;color:var(--c-primary);}
+.enc-nps-etq{font-weight:600;color:var(--c-text-2);}
+.enc-nps-detalle,.enc-nps-nota{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-small);}
+.enc-nps-nota{color:var(--c-text-muted);}
 .enc-tabla-comentarios td{white-space:normal;overflow-wrap:anywhere;}
 .enc-preguntas-lista{margin:8px 0 0;padding-left:20px;color:var(--c-text);line-height:1.5;}
 .enc-preguntas-lista li{margin-bottom:10px;}

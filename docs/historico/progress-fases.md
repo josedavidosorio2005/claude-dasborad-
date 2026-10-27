@@ -17322,3 +17322,13 @@ agosto 54, abandonadas bien).
   NaN, sin teléfonos visibles, 0 errores. Agosto (27) y septiembre (64)
   siguen esperando sus CDR para llegar a 28 y 67, y sin reporte de no
   conectadas ("Pendiente").
+
+### Fase 195 — NPS en la Encuesta de Mobilize (2026-10-27, v1.83.0)
+
+- Pregunta 1: botones "Cantidad" | "NPS" en su cabecera (`.gd-subtabs`). Con
+  NPS, cada barra = % sobre las que contestaron la pregunta 1 y debajo el NPS
+  (% promotores 9-10 − % detractores 0-6) con su nota (`encuestaNps`,
+  `encuesta-logic.js`). One and Done sin cambio.
+- Octubre (archivo real, mismo de producción): 28 contestaron; 10 → 12 / 28
+  = 42,9 %; promotores 16 (57,1 %), pasivos 2, detractores 10 (35,7 %); NPS
+  21,4. Pruebas: `fase195-encuesta-nps.test.js` (3).
