@@ -17501,3 +17501,21 @@ Ajuste de la Fase 198 pedido por el usuario: la Eficacia no va dentro de
   Done 23,2 % (19 de 82) sin nada de Eficacia; Eficacia 47,2 % (42 de 89),
   barra de octubre 47,2, nota con la lista, exportar "Eficacia"; sin scroll
   horizontal ni errores de consola.
+- Producción (v1.87.0 desplegada, PR #574, mergeado con
+  `--match-head-commit`; la migración
+  `dashboards_config_mobilize_flujo_eficacia_v1` corrió con el deploy).
+  Revisión de solo lectura con sesión de administrador (Playwright y Brave,
+  toda escritura a la API bloqueada: 0 intentos, 0 errores de página),
+  Mobilize, octubre, a 1440/768/375 px:
+  - Barra: Flujo de Llamadas · Nivel de Servicio · Abandono · ASA y ATA ·
+    AHT · One & Done · Eficacia (en 768 y 375 px, en varias filas).
+  - One & Done: 23,2 % (19 de 82 encuestas), sin nada de Eficacia.
+  - Eficacia: 47,2 % (42 de 89 contestadas de ingreso); barras por mes
+    agosto 45,3 · septiembre 53,4 · octubre 47,2 (rango del filtro desde el
+    11/08, así que agosto es parcial; agosto y septiembre siguen con la carga
+    vieja del CDR hasta volver a subirlo); nota con la lista. Sin scroll horizontal.
+  - Teléfonos: la revisión automática de esa corrida no sirvió (el script
+    de verificación perdió el escape de `\b`/`\d` del patrón), así que se
+    revisó en las capturas: ningún teléfono a la vista. El script se
+    corrigió y ahora se autoprueba al arrancar (se detiene si un patrón
+    queda mal escapado).
