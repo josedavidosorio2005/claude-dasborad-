@@ -17822,3 +17822,14 @@ OK del usuario tras la Fase 205.
   distintos y la leyenda completa, sin "Otras"; a 768/375 px 10 porciones
   con "Otras" y su lista en el tooltip; ORLANT y Mobilize con "Llamadas
   ingresadas" en tarjeta, leyenda y Excel a 1440/768/375 px; sin errores.
+- Producción (v1.93.0 desplegada, PR #585, mergeado con
+  `--match-head-commit`; deploy en verde). Revisión de solo lectura con
+  sesión de administrador (Playwright y Brave, toda escritura a la API
+  bloqueada: 0 intentos, 0 errores de página):
+  - Tipificación, octubre: Mobilize a 1440 px, 15 porciones con 15 colores,
+    sin "Otras"; "Ver datos" y la tabla, 15 filas. ORLANT Llamadas (68) y
+    WhatsApp (54) a 1440 px: 15 porciones con 15 colores, "Otras" con su
+    lista; "Ver datos" 68 y 54 filas. A 768/375 px: 10 porciones con "Otras".
+    Sin scroll horizontal.
+  - Tráfico de Llamadas: ORLANT "28.356 Llamadas ingresadas", leyenda y Excel
+    "Llamadas ingresadas"; Mobilize sigue "277 Llamadas ingresadas".
