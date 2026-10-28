@@ -17939,3 +17939,68 @@ La María y cualquier campaña nueva (usan los mismos tipos de panel).
   del mes y "ponderado · Abr a Sep"); ahora, una tarjeta ponderada con los
   meses de MESES: ago 70,57 %, sep 73,54 %, Ago+Sep 72,12 %; octubre sin
   datos de citas (Ago+Oct muestra solo agosto).
+
+### Fase 208 — Calidad de Mobilize sin el aviso de "no hay monitoreos" y números de control explicados (2026-10-28, v1.94.1)
+
+Pedido del usuario: (1) explicar, en solo lectura, los 3 números de control
+que no cuadraban tras la Fase 207; (2) quitar "Todavía no hay monitoreos de
+calidad para Mobilize" cuando ya hay un resumen de calidad cargado.
+
+- **Calidad de Mobilize** (PR #589): `calDashResumenCubreSinMonitoreos`
+  (`calidad-dashboard-logic.js`). En `_gdRenderCalidad`, rama de 0
+  monitoreos: si la pestaña trae un `calidad_resumen_panel` de esa campaña
+  con algún mes cargado, las tarjetas de monitoreos y la tarjeta de la torta
+  se esconden, sin aviso ni "Sin monitoreos todavía". Sin resumen, el aviso
+  de la Fase 145 no cambia. Prueba `fase208-calidad-resumen-sin-aviso.test.js`
+  (5 casos, los 5 fallan sin el arreglo). Suite 2343/2343, `npm audit` 0.
+  Local (Brave, 1440/768/375 px, copias de la base demo con Mobilize en 0
+  monitoreos): con resumen sintético, solo el resumen; sin resumen, el
+  aviso; ORLANT igual; sin errores ni scroll horizontal. Merge con
+  `--match-head-commit`, CI y deploy en verde; producción en v1.94.1.
+  Producción (solo lectura, sesión de administrador, Playwright y Brave,
+  toda escritura bloqueada: 0 intentos, 0 errores): Mobilize > Calidad a
+  1440/768/375 px sin avisos, solo el resumen (97,4 % / 72 / 4).
+- **Números de control** (misma sesión, solo lectura: historial, Centro de
+  cargas, versiones de Deshacer, tráfico por skill, Únicas por mes; horas de
+  Colombia; nada se cambió):
+  - Tráfico de Llamadas de ORLANT, ago 10.411 / sep 10.480 (antes 8.908 /
+    9.043): el 26/10 a las 10:48 a.m. el Flujo de octubre registró 3 skills
+    nuevas para ORLANT (Confirmaciones, Cancelaciones y Reprogramación,
+    Atención Tutelas); a las 10:51 se eliminaron agosto y septiembre y a las
+    10:56 se volvieron a subir con archivos nuevos que traen esas skills.
+    Septiembre: 3P 4.264 + General 4.057 + Régimen Especiales 722 = 9.043
+    (igual al control) + Confirmaciones 988 + Cancelaciones 436 + Tutelas 13.
+    Agosto: las 3 de siempre dan 8.911 (3 más que en la Fase 115: 3P +1,
+    General +2, por el archivo nuevo de Wolkvox) + Confirmaciones 1.045 +
+    Cancelaciones 455. Si esas skills cuentan como llamadas ingresadas lo
+    decide Edwin; quedan como están (decisión del usuario), anotado en
+    `docs/pendientes.md`.
+  - **Carga equivocada del 22/10:** a las 10:26 a.m. se subió el Flujo de
+    agosto de Hospital La María ("FLUJO DE LLAMADAS AGOSTO, HOSPITAL LA
+    MARIA") en el agosto de ORLANT: 50 filas, que registraron las skills
+    Linea Entrada y Programas Especiales a nombre de ORLANT (un minuto
+    después se subió también, bien, en Hospital La María). Del 22 al 26/10,
+    el agosto de ORLANT mostró esas llamadas de más (el mes llegó a 124
+    filas). La eliminación y recarga de agosto del 26/10 lo limpió: hoy esas
+    2 skills tienen 0 filas en ORLANT (siguen en el mapeo, sin efecto). Fue
+    con la cuenta @admin compartida, así que no se puede atribuir a una
+    persona (ver "Cuenta @admin compartida" en `docs/pendientes.md`).
+  - Tipificación de WhatsApp de ORLANT, ago 12.101 (antes 12.061): el 26/10
+    a las 12:36 p.m. se eliminó agosto (12.061) y a las 2:13 p.m. se subió
+    "CDR WPP AGOSTO" (12.101), ya con la regla de la Fase 185 (cada chat por
+    su fecha de cierre). Septiembre igual: 13.218, 4.013 de salida. La salida
+    de WhatsApp de agosto queda en 3.381 (antes 3.382). Cifra correcta:
+    12.101.
+  - Llamadas Únicas de Mobilize con Todos, 201 (antes 208): el 28/10 a las
+    9:43 a.m., después de la verificación de la Fase 203, se volvió a subir
+    el CDR de llamadas de agosto, septiembre y octubre (81 / 170 / 134
+    filas). Desde ahí agosto y septiembre toman las contestadas únicas del
+    CDR (regla de la Fase 191) en vez de la carga vieja: agosto 56 → 50,
+    septiembre 88 → 87, octubre 64 sin cambio. Cifra correcta: 201. Con la
+    misma recarga, la salida conectada de agosto y septiembre quedó en 28 /
+    67 (las cifras de Edwin, antes 27 / 64) y la salida total con Todos en
+    324 (antes 320); salen de pendientes los 2 ítems de volver a subir ese
+    CDR.
+- PROGRESS.md (con OK del usuario): versión, índice y las filas de control
+  de Tráfico de Llamadas, Tipificación de WhatsApp, salida de ORLANT,
+  Tipificación, Únicas y tarjetas con Todos de Mobilize.
