@@ -1851,6 +1851,20 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #gd-modal #gd-cerrar-btn{top:6px;}
 }
 
+/* Fase 211 (pedido del cliente): logo de InConexion en la barra del tablero,
+   a la izquierda de "Actualizar datos". Siempre la version blanca: la barra es
+   --c-brand en los 2 temas. Tamano fijo (no salta al cargar). En el telefono
+   (<=480 px) solo el isotipo; en tablet entra el logo completo. */
+.gd-marca-inconexion{display:inline-flex;align-items:center;flex:none;margin-right:6px;}
+.gd-marca-inconexion img{display:block;object-fit:contain;}
+.gd-marca-logo{width:110px;height:22px;}
+.gd-marca-isotipo{display:none !important;width:26px;height:25px;}
+@media(max-width:768px){#gd-modal .gd-marca-logo{width:90px;height:18px;}}
+@media(max-width:480px){
+  #gd-modal .gd-marca-logo{display:none !important;}
+  #gd-modal .gd-marca-isotipo{display:block !important;}
+}
+
 /* Fase 186: salida por linea del asesor (Tipificacion de ORLANT) y la ventana "Clasificación de asesores". */
 .tipif-linea-nota{margin:0 0 10px;font-size:var(--fs-sm,0.875rem);color:var(--c-text-muted);}
 #gd-panels .aurora-kpis.tipif-lineas{margin-bottom:6px;}

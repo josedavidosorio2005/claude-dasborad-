@@ -5,7 +5,7 @@
 'use strict';
 
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
-const { aplicarAliasAFilas } = require('./alias-asesores');
+const { aplicarAliasAFilas, cargarAliasMapa, resolverAlias } = require('./alias-asesores');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 const { normCodigo, normUsuario, codigosConocidos } = require('./agendas-clasificacion');
 
@@ -58,7 +58,12 @@ function prepararFilasCrudas(db, campana, filasObj) {
 // "Usuario X (sin asesor)"; la linea del codigo de entidad, o 3P si no esta en
 // la lista. Todas las consultas leen de aqui (nunca de la tabla directa), asi
 // el filtro de Agente y el de Tipo de linea usan lo mismo que las graficas.
-const ASESOR_EFECTIVO_SQL = `CASE WHEN a.usuario IS NULL THEN a.asesor ELSE COALESCE(
+// Fase 211: en el formato anterior el alias de asesor (Fase 122) tambien se
+// aplica AL CONSULTAR (@aliasAgendas, ver aliasAgendasJson): un alias creado
+// o cambiado despues de la carga cambia el nombre de agosto/septiembre sin
+// reescribir lo guardado.
+const ASESOR_EFECTIVO_SQL = `CASE WHEN a.usuario IS NULL THEN COALESCE(
+    (SELECT j.value FROM json_each(@aliasAgendas) j WHERE j.key = a.asesor), a.asesor) ELSE COALESCE(
     (SELECT u.asesor FROM agendas_usuarios u
        WHERE u.campana = a.campana AND u.usuario = a.usuario
          AND (u.fechaCambio IS NULL OR u.fechaCambio <= substr(a.fechaSolicitud, 1, 10))
@@ -69,6 +74,20 @@ const LINEA_EFECTIVA_SQL = `CASE WHEN a.usuario IS NULL THEN a.tipoLinea ELSE CO
     '3P') END`;
 const AGENDAS_FUENTE = `(SELECT a.id, a.campana, a.sede, a.examen, a.especialidad, a.profesional, a.fechaSolicitud, a.entidad,
     a.usuario, ${ASESOR_EFECTIVO_SQL} AS asesor, ${LINEA_EFECTIVA_SQL} AS tipoLinea FROM agendas a)`;
+
+// { asesorGuardado: canonico } de los nombres del formato anterior que hoy
+// tienen alias (comparacion normalizada de alias-asesores.js), en JSON para
+// @aliasAgendas. Solo los que cambian; '{}' si ninguno.
+function aliasAgendasJson(db, campana) {
+  const mapa = cargarAliasMapa(db, campana);
+  if (!Object.keys(mapa).length) return '{}';
+  const out = {};
+  db.prepare('SELECT DISTINCT asesor FROM agendas WHERE campana = ? AND usuario IS NULL').all(campana).forEach((r) => {
+    const canonico = resolverAlias(mapa, r.asesor);
+    if (canonico !== r.asesor) out[r.asesor] = canonico;
+  });
+  return JSON.stringify(out);
+}
 
 // Primera y ultima fechaSolicitud entre las filas del archivo que se esta
 // subiendo -- define el periodo que la carga va a REEMPLAZAR.
@@ -156,9 +175,9 @@ function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas, fo
 // pedido explicito de Edwin para "Total de agendas por mes": esa grafica
 // ignora a proposito el filtro de mes (tiene que mostrar TODOS los meses
 // con datos), pero respeta los demas -- incluido el rango de dias.
-function agendasWhereClausulas(q, incluirMes) {
+function agendasWhereClausulas(q, incluirMes, db) {
   const clausulas = ['campana = @campana'];
-  const params = { campana: q.campana };
+  const params = { campana: q.campana, aliasAgendas: db ? aliasAgendasJson(db, q.campana) : '{}' }; // Fase 211
   // Fase 88: `fechaSolicitud` guarda tambien hora ('AAAA-MM-DD HH:MM:SS'),
   // por eso el codigo viejo comparaba con `substr(fechaSolicitud,1,7/10)`
   // -- no sargable, nunca aprovechaba idx_agendas_campana_fecha. El mismo
@@ -201,7 +220,7 @@ function agendasWhereClausulas(q, incluirMes) {
 
 // Grafica principal de Edwin: barras por especialidad, mayor a menor.
 function agendasPorEspecialidad(db, q) {
-  const { where, params } = agendasWhereClausulas(q, true);
+  const { where, params } = agendasWhereClausulas(q, true, db);
   return db
     .prepare(`SELECT especialidad, COUNT(*) AS cantidad FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY especialidad ORDER BY cantidad DESC`)
     .all(params);
@@ -210,7 +229,7 @@ function agendasPorEspecialidad(db, q) {
 // Total de agendas por mes -- TODOS los meses con datos, ignora el filtro
 // de mes (ver agendasWhereClausulas).
 function agendasPorMes(db, q) {
-  const { where, params } = agendasWhereClausulas(q, false);
+  const { where, params } = agendasWhereClausulas(q, false, db);
   return db
     .prepare(`SELECT substr(fechaSolicitud,1,7) AS mes, COUNT(*) AS cantidad FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY mes ORDER BY mes ASC`)
     .all(params);
@@ -222,7 +241,7 @@ function agendasPorMes(db, q) {
 // llena). Mismo criterio que agendasPorMes: TODOS los meses con datos,
 // ignora el filtro de mes (es una serie de tiempo), respeta los demas.
 function agendasPorLinea(db, q) {
-  const { where, params } = agendasWhereClausulas(q, false);
+  const { where, params } = agendasWhereClausulas(q, false, db);
   return db
     .prepare(
       `SELECT substr(fechaSolicitud,1,7) AS mes, tipoLinea, COUNT(*) AS cantidad
@@ -275,7 +294,7 @@ function agendasMesAnterior(mes) {
 // cruda completa: ya viene agrupada por SQL (GROUP BY), nunca una fila por
 // agenda individual.
 function agendasRankingCrudo(db, q) {
-  const { where, params } = agendasWhereClausulas(q, true);
+  const { where, params } = agendasWhereClausulas(q, true, db);
   return db
     .prepare(
       `SELECT asesor, tipoLinea, substr(fechaSolicitud,1,10) AS dia, COUNT(*) AS cantidad
@@ -412,8 +431,9 @@ function agendasRanking(db, q) {
 // cada cambio). Tambien sirve para decidir si la pestana "Agendamiento"
 // tiene datos que mostrar (meses.length > 0), ver dashboard-generic.js.
 function agendasOpciones(db, campana) {
+  const aliasAgendas = aliasAgendasJson(db, campana); // Fase 211
   const distintos = (columna) =>
-    db.prepare(`SELECT DISTINCT ${columna} AS v FROM ${AGENDAS_FUENTE} WHERE campana = ? ORDER BY v`).all(campana).map((r) => r.v);
+    db.prepare(`SELECT DISTINCT ${columna} AS v FROM ${AGENDAS_FUENTE} WHERE campana = @campana ORDER BY v`).all({ campana, aliasAgendas }).map((r) => r.v);
   return {
     meses: db.prepare('SELECT DISTINCT substr(fechaSolicitud,1,7) AS v FROM agendas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
     asesores: distintos('asesor'),
