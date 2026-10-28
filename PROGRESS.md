@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.94.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.94.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -117,12 +117,12 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 
 | Indicador | Valor | Fase |
 |---|---|---|
-| MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción. Filas de abajo que ya no coinciden (Tráfico de Llamadas, Tipificación de WhatsApp, Únicas de Mobilize con Todos): ver `docs/pendientes.md` | 207 |
+| MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción | 207 |
 | Tipificación de Llamadas (ORLANT) | Ago 14.940 · Sep 19.721 (recargado del CDR, mismas filas) | 116 / 174 |
 | Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas (regla anterior) | 174 / 177 |
 | Llamadas de salida, regla de la Fase 183 (ORLANT) | Ago 6.560 (cifra de Edwin) · Sep 10.404 (filas con skill "-" del CDR del 23/10); falta verlas en producción con sesión | 183 |
-| Tipificación de WhatsApp (ORLANT) | Jul 71 · Ago 12.061 · Sep 13.118 (3.997 de salida) | 122 / 168 |
-| Tráfico de Llamadas (ORLANT) | Ago 8.908/7.961/947 · Sep 9.043/8.883/160 | 115 |
+| Tipificación de WhatsApp (ORLANT) | Ago 12.101 (3.381 de salida) · Sep 13.218 (4.013 de salida), por fecha de cierre (recarga del 26/10) | 185 / 208 |
+| Tráfico de Llamadas (ORLANT) | Ago 10.411/9.374/1.037 · Sep 10.480/10.264/216: incluye Confirmaciones, Cancelaciones y Reprogramación y Atención Tutelas (recarga del 26/10). Sin ellas, Ago 8.911/7.961/950 · Sep 9.043/8.883/160. Falta que Edwin confirme si cuentan | 115 / 208 |
 | Tráfico de WhatsApp (ORLANT) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % | 116 |
 | WhatsApp por rangos (ORLANT, oct, 1–22/10) | 5.196 conversaciones; 0 a 3 min 57,6 % | 165 / 166 |
 | Agendas (ORLANT) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores | 126 |
@@ -130,14 +130,14 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Calidad (ORLANT) | Sep: 95 monitoreos, 19 asesores, promedio 94,79 % | 130 |
 | Efectividad de agendamiento (ORLANT) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) | 122 |
 | Efectividad de Citas (ORLANT) | Ago 11.189/7.896 · Sep 12.194/8.968 · período 72,12 % | 126 |
-| Llamadas y WhatsApp de salida (ORLANT) | Ago (archivo): llamadas 6.560, WhatsApp 3.382 · Sep (CDR): llamadas 10.791, WhatsApp 3.997 | 127 / 177 |
-| Tipificación de Mobilize (llamadas) | Ago 80 · Sep 167 (salida 64 = 49 + 15) · Oct 127 | 173 |
+| Llamadas y WhatsApp de salida (ORLANT) | Ago (archivo): llamadas 6.560, WhatsApp 3.381 · Sep (CDR): llamadas 10.791, WhatsApp 4.013 | 127 / 177 / 208 |
+| Tipificación de Mobilize (llamadas) | Ago 81 · Sep 170 (salida 67 = 52 + 15) · Oct 134 (CDR recargado el 28/10) | 173 / 208 |
 | Llamadas de salida de Mobilize | Oct 85 = 45 conectadas + 40 no conectadas | 171 |
-| Llamadas Únicas de Mobilize | Sep 139 = 88 contestadas + 51 abandonadas | 139 |
-| Llamadas Únicas y de Salida de Mobilize (v1.82.0) | Oct: únicas 64 = 62 contestadas (CDR) + 2 abandonadas · salida 86 = 45 conectadas (todas las filas "-") + 41 no conectadas (reporte 5) · Ago/Sep: conectadas 27 / 64 hasta subir su CDR (Edwin: 28 / 67), no conectadas Pendiente | 191 / 194 |
+| Llamadas Únicas de Mobilize (contestadas del CDR desde la recarga del 28/10) | Ago 50 = 48 + 2 · Sep 87 (sin base de abandonadas) · Oct 64 = 62 + 2 · Todos 201 | 191 / 208 |
+| Llamadas Únicas y de Salida de Mobilize (v1.82.0) | Oct: únicas 64 = 62 contestadas (CDR) + 2 abandonadas · salida 86 = 45 conectadas (todas las filas "-") + 41 no conectadas (reporte 5) · Ago/Sep: conectadas 28 / 67 (las cifras de Edwin, desde la recarga del CDR del 28/10), no conectadas 53 / 90 | 191 / 194 / 208 |
 | Resumen de calidad de Mobilize | Ago 2 asesores, 11 monitoreos, 98 %, 0 críticos · Sep 3, 34, 97,35 %, 2 · Oct 3, 27, 97,22 %, 2 (el octubre anterior, 34 / 97,35 %, era septiembre) | 202 |
 | Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
-| Tarjetas de Mobilize con MESES = Todos (v1.91.0, suman todos los meses) | Flujo 277/272/5, 98,2 % · FCR 69,2 % (27/39) · Únicas 208 · Salida 320 · Tipificación salida 136 · Calidad 97,4 % / 72 / 4; verificado en producción | 203 |
+| Tarjetas de Mobilize con MESES = Todos (v1.91.0, suman todos los meses) | Flujo 277/272/5, 98,2 % · FCR 69,2 % (27/39) · Únicas 201 · Salida 324 · Tipificación salida 140 · Calidad 97,4 % / 72 / 4; verificado en producción (Únicas, Salida y Tipificación cambiaron con la recarga del CDR del 28/10; en la Fase 203 eran 208 / 320 / 136) | 203 / 208 |
 | One & Done / FCR de Mobilize (base: contestaron la pregunta 1, v1.88.0) | Ago 5/6 = 83,3 % · Sep 3/5 = 60 % · Oct 19/28 = 67,9 % (antes, sobre el total: 23,8 % · 6,7 % · 23,2 %); verificado en producción | 200 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |
@@ -349,3 +349,4 @@ mismo orden):
 - Fase 205 — Tipificación (Mobilize y ORLANT): "Ver datos", tabla y Excel con todas las tipificaciones (sin "Otras"); la torta muestra las que caben según el ancho (20 / 14 / 10) y el tooltip de "Otras" dice cuáles entran ahí (v1.92.0, 2026-10-28)
 - Fase 206 — Tipificación: tope de 15 porciones a 1440 px (Mobilize muestra sus 15 de octubre) y colores extra para tortas de más de 12; ORLANT, Tráfico de Llamadas: "Llamadas ingresadas" (v1.93.0, 2026-10-28)
 - Fase 207 — La regla de MESES en todas las campañas (ORLANT completo, Aurora, HLM y las nuevas), en el código común: Todos = todos los meses, 1 mes = ese mes, varios = suma; % de totales sumados; una tarjeta ponderada en Efectividad de Citas e Inasistencia; comparación solo con un mes; prueba guardiana (v1.94.0, 2026-10-28)
+- Fase 208 — Calidad de Mobilize sin el aviso de "no hay monitoreos" cuando hay resumen cargado; números de control al día con el historial de cargas (v1.94.1, 2026-10-28)

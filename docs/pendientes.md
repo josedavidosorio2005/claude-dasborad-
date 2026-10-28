@@ -9,19 +9,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Salida de Mobilize de agosto y septiembre** (Fase 194, 27/10/2026) —
-  octubre ya está (45 conectadas + 41 no conectadas = 86). Para agosto (28
-  filas "-" según Edwin, hoy 27) y septiembre (67, hoy 64) hace falta volver
-  a subir su CDR en Tipificación, y su reporte de no conectadas para que
-  dejen de decir "Pendiente". Hacen falta los archivos y tu OK; antes,
-  revisión local frente a producción.
-- **Volver a subir el CDR de llamadas de Mobilize de agosto y septiembre
-  en Tipificación** (Fase 191, 27/10/2026) — octubre ya está (27/10, con el
-  CDR y las abandonadas). Agosto y septiembre siguen con la carga vieja
-  hasta subir su CDR de Wolkvox con TELEPHONE (Centro de cargas →
-  Tipificación → Llamadas). Hace falta tu OK y el archivo de cada mes; antes
-  de subir, revisión local (filas frente a producción, ingreso, salida "-",
-  únicas por día).
 - **Salida conectada de Mobilize: filas "-" con "Cliente_no_contesta"**
   (Fase 191) — por el pedido, las conectadas de los meses con CDR son
   todas las filas con SKILL_NAME "-". Parte de esas filas están tipificadas
@@ -160,6 +147,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **¿Las skills Confirmaciones, Cancelaciones y Reprogramación y Atención
+  Tutelas cuentan como "Llamadas ingresadas" de ORLANT?** (Fase 208,
+  28/10/2026) — llegaron con el Flujo de octubre (26/10) y quedaron
+  registradas a ORLANT; desde la recarga de agosto y septiembre de ese día
+  suman en Tráfico de Llamadas: ago 10.411 (8.911 sin ellas), sep 10.480
+  (9.043 sin ellas). Quedan como están hasta que Edwin responda. Cómo se
+  cierra: si cuentan, nada que hacer; si no, quitarlas del mapeo de skills de
+  ORLANT (Centro de cargas, con tu OK) y anotar las cifras en PROGRESS.md.
 
 - **Nivel de servicio de llamadas con varios meses: ¿promedio simple o
   ponderado?** (Fase 207, 28/10/2026) — desde la v1.94.0, la tarjeta "Nivel
@@ -345,25 +341,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   tarjeta")** — sin entender todavía; lo pregunta el usuario. No se tocó.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
-
-- **Números de control desactualizados en PROGRESS.md** (Fase 207,
-  28/10/2026). La revisión en producción de la v1.94.0 encontró filas que ya
-  no coinciden con un solo mes marcado. La v1.94.0 no las cambió: corrida en
-  local contra la v1.93.0, da lo mismo. Son cambios de datos o de reglas
-  anteriores:
-  - Tráfico de Llamadas de ORLANT: hoy ago 10.411 / 9.374 / 1.037 y sep
-    10.480 / 10.264 / 216 (la fila dice 8.908 / 9.043, Fase 115). El total
-    de 28.356 ya se veía en la v1.93.0 (Fase 206). No se sabe qué carga lo
-    cambió.
-  - Tipificación de WhatsApp de ORLANT: sep 13.218 (4.013 de salida) se
-    explica por la Fase 185 (fecha de cierre); ago 12.101 contra 12.061 (y
-    3.381 de salida contra 3.382) no está explicado.
-  - Llamadas Únicas de Mobilize con MESES = Todos: 201 (50 + 87 + 64)
-    contra 208 de la Fase 203.
-
-  Cómo se cierra: revisar el historial de cargas de esos meses (pantalla
-  de cargas, solo lectura) y poner en la tabla las cifras vigentes con su
-  causa. Costo: bajo.
 
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
   quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;
