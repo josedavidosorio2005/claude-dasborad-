@@ -17750,3 +17750,32 @@ texto; el cálculo no cambia.
   Contestadas", "Nivel de Atención"], Excel con la columna "Llamadas
   ingresadas" en la misma posición; ORLANT sigue con "Total de llamadas" /
   "Total Llamadas"; sin scroll horizontal ni errores.
+
+### Fase 205 — Tipificación con el listado completo (2026-10-28, v1.92.0)
+
+Pedido de Edwin (urgente): las tortas de Tipificación agrupaban las menores
+en "Otras N tipificaciones" (10 más grandes + Otras, en el servidor) y ni
+"Ver datos" decía cuáles eran.
+
+- Mismo código en Mobilize y ORLANT (`tipificacion_panel`,
+  `agruparTop10YOtras`): el cambio aplica a los dos.
+- Servidor (`server/tipificaciones.js`): `GET /calidad/tipificacion/por-tipo`
+  trae además `todas` (listado completo, de mayor a menor) y la fila "Otras"
+  de `datos` trae `incluye` (cuáles). `datos` sigue igual para compatibilidad.
+- Navegador: `tipificacionMaxPorciones` (20 si el contenedor mide ≥ 900 px,
+  14 si ≥ 600, 10 si menos, con la leyenda debajo y la torta más alta) y
+  `tipificacionPorcionesTorta` (todas si caben; si no, las más grandes +
+  "Otras" con su lista; nunca una "Otras" de una sola). Tooltip: "Nombre:
+  cantidad (%)" y, en "Otras", una línea por tipificación (hasta 15 y "… y N
+  más (ver «Ver datos»)") vía `afterLabel` (el ajuste común de los tooltips
+  junta en una línea lo que devuelve `label`). "Ver datos" (`verDatosTodas`),
+  la tabla de detalle y el Excel del tablero: el listado completo.
+- Pruebas: `fase205-tipificacion-listado-completo.test.js` (5) y los
+  sandboxes de 141 y 164 con las funciones nuevas. Suite 2317/2317.
+- Verificación local (copia de la base de la Fase 200, Playwright y Brave a
+  1440/768/375 px): octubre real de la copia (9 tipificaciones en Mobilize y
+  en cada torta de ORLANT) entra completo, sin "Otras", con "Ver datos" de 9
+  filas; con 30 tipificaciones sintéticas inyectadas en el navegador, la
+  torta queda en 14 porciones (contenedor de 663 px junto a la tabla) o 10
+  (327 y 275 px), el tooltip de "Otras" lista cuáles con cantidad y % y "Ver
+  datos" muestra las 30; sin scroll horizontal ni errores.

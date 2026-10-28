@@ -380,23 +380,49 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
     contHost.innerHTML = '<div class="aurora-chart-wrap" style="height:340px"><canvas id="tipif-c-'+i+'-'+canal+'"></canvas></div>';
   }
 
-  var labels = resultado.datos.map(function(r){ return tipificacionEtiqueta(r.tipificacion); });
-  var valores = resultado.datos.map(function(r){ return r.cantidad; });
+  // Fase 205 (pedido de Edwin): la torta muestra todas las tipificaciones que
+  // caben legibles en este ancho; si no caben, "Otras" dice en el tooltip
+  // cuales entran ahi. "Ver datos" y la tabla de detalle: el listado completo.
+  var todas = resultado.todas || resultado.datos;
+  var anchoTorta = contHost.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+  var porciones = tipificacionPorcionesTorta(todas, tipificacionMaxPorciones(anchoTorta));
+  var leyendaAbajo = anchoTorta < 600;
+  var wrapTorta = contHost.querySelector ? contHost.querySelector('.aurora-chart-wrap') : null;
+  if(wrapTorta) wrapTorta.style.height = (leyendaAbajo ? 260 + porciones.length * 20 : Math.max(340, porciones.length * 18 + 60)) + 'px';
+  var labels = porciones.map(function(r){ return r.esOtras ? r.tipificacion : tipificacionEtiqueta(r.tipificacion); });
+  var valores = porciones.map(function(r){ return r.cantidad; });
   // Fase 164 (D-02): sin colores repetidos dentro de la torta (cada
   // tipificacion conserva su color propio salvo choque; "Otras" sigue gris).
-  var coloresPropios = paletaColoresSinRepetir(resultado.datos.filter(function(r){ return !r.esOtras; }).map(function(r){ return r.tipificacion; }));
+  var coloresPropios = paletaColoresSinRepetir(porciones.filter(function(r){ return !r.esOtras; }).map(function(r){ return r.tipificacion; }));
   var k = 0;
-  var colores = resultado.datos.map(function(r){ return r.esOtras ? '#9aa0a6' : coloresPropios[k++]; });
+  var colores = porciones.map(function(r){ return r.esOtras ? '#9aa0a6' : coloresPropios[k++]; });
   var tituloChart = (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+(compartido.linea ? ' — '+_tipificacionLineaTexto(compartido.linea) : '')+' — '+resultado.total.toLocaleString('es-CO')+' registro(s)';
+  var opcTorta = loPie(tituloChart);
+  opcTorta.plugins = opcTorta.plugins || {};
+  if(leyendaAbajo) opcTorta.plugins.legend = Object.assign({}, opcTorta.plugins.legend, { position: 'bottom' });
+  // label: "Nombre: cantidad (%)"; afterLabel (una linea por cada una, Chart.js
+  // no las junta): cuales entran en "Otras".
+  opcTorta.plugins.tooltip = { callbacks: {
+    label: function(ctx){
+      var r = porciones[ctx.dataIndex];
+      return labels[ctx.dataIndex]+': '+tipificacionCantidadPct(r.cantidad, resultado.total);
+    },
+    afterLabel: function(ctx){
+      var r = porciones[ctx.dataIndex];
+      return r && r.esOtras ? tipificacionLineasOtras(r, resultado.total, tipificacionEtiqueta, 15) : '';
+    },
+  } };
 
   _gdChart('tipif-c-'+i+'-'+canal, {
     type: 'pie',
-    data: { labels: labels, datasets: [{ data: valores, backgroundColor: colores }] },
-    options: loPie(tituloChart),
+    data: { labels: labels, datasets: [{ data: valores, backgroundColor: colores,
+      // "Ver datos" (abrirVerDatos): el listado completo, sin "Otras".
+      verDatosTodas: { filas: todas.map(function(r){ return { etiqueta: tipificacionEtiqueta(r.tipificacion), cantidad: r.cantidad }; }), total: resultado.total } }] },
+    options: opcTorta,
   });
 
   if(p.mostrarTablaDetalle && tablaHost){
-    tablaHost.innerHTML = _tipificacionTablaDetalleHtml(resultado.datos, resultado.total);
+    tablaHost.innerHTML = _tipificacionTablaDetalleHtml(todas, resultado.total);
   }
 }
 

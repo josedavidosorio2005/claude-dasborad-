@@ -260,9 +260,14 @@ function agruparTop10YOtras(conteoPorTipificacion) {
   const otrasCantidad = resto.reduce((a, r) => a + r.cantidad, 0);
   const resultado = top.map((r) => ({ tipificacion: r.tipificacion, cantidad: r.cantidad }));
   if (resto.length) {
-    resultado.push({ tipificacion: 'Otras (' + resto.length + ' tipificaciones)', cantidad: otrasCantidad, esOtras: true, distintas: resto.length });
+    // Fase 205: `incluye` dice cuales van en "Otras" (antes no se sabia).
+    resultado.push({ tipificacion: 'Otras (' + resto.length + ' tipificaciones)', cantidad: otrasCantidad, esOtras: true, distintas: resto.length,
+      incluye: resto.map((r) => ({ tipificacion: r.tipificacion, cantidad: r.cantidad })) });
   }
-  return { datos: resultado, total };
+  // Fase 205 (pedido de Edwin): `todas` = el listado completo, una por fila,
+  // de mayor a menor (Ver datos, tabla de detalle, Excel y la torta, que
+  // agrupa en el navegador segun el ancho de pantalla).
+  return { datos: resultado, total, todas: ordenado.map((r) => ({ tipificacion: r.tipificacion, cantidad: r.cantidad })) };
 }
 
 // Grafica principal: conteo por tipificacion (respeta todos los filtros),

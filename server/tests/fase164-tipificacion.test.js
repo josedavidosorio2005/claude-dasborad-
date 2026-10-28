@@ -66,6 +66,8 @@ async function renderTipificacion() {
     paletaColoresSinRepetir: (l) => paletaColoresSinRepetir(l, PC),
     showToast: () => {}, esc: (s) => String(s), textoFormatoNombre: (v) => v, URLSearchParams,
   };
+  // Fase 205: la torta usa las funciones de tipificacion-logic.js.
+  Object.assign(sandbox, require('../../public/js/tipificacion-logic.js'));
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(JS, 'tipificacion.js'), 'utf8'), sandbox);
   return { sandbox, elementos, graficas };

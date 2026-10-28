@@ -638,7 +638,12 @@ function abrirVerDatos(canvasId){
     return sinPrefijoSerie(txt, labels[i]);
   };
   var titulo = _gdTituloGrafica(el);
-  var tabla = verDatosTabla(chart.data, { formatear: formatear, primeraColumna: (tipo === 'pie' || tipo === 'doughnut') ? 'Categoría' : (horizontal ? 'Nombre' : 'Período') });
+  // Fase 205: una torta que agrupa en "Otras" trae su listado completo
+  // (`verDatosTodas`): la tabla muestra una fila por categoria, sin "Otras".
+  var completo = (tipo === 'pie' || tipo === 'doughnut') && chart.data.datasets[0] && chart.data.datasets[0].verDatosTodas;
+  var tabla = completo
+    ? { columnas: ['Categoría', 'Cantidad (%)'], filas: completo.filas.map(function(f){ return [f.etiqueta, tipificacionCantidadPct(f.cantidad, completo.total)]; }) }
+    : verDatosTabla(chart.data, { formatear: formatear, primeraColumna: (tipo === 'pie' || tipo === 'doughnut') ? 'Categoría' : (horizontal ? 'Nombre' : 'Período') });
   document.getElementById('modal-ver-datos-title').textContent = 'Datos de ' + titulo;
   document.getElementById('ver-datos-tabla').innerHTML = verDatosHtml(tabla, 'Datos de ' + titulo);
   openModal('modal-ver-datos');
@@ -2347,7 +2352,8 @@ async function _gdExportarTipificacion(p, i){
     try{ resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, def.canal, compartido, deCanal)) || resultado; }catch(e){}
     var titulo = 'Tipificación de ' + def.titulo;
     if(resultado.total){
-      out.push({ titulo: titulo, tipo: 'tabla', filas: resultado.datos.map(function(r){ return { Tipificacion: (typeof tipificacionEtiqueta==='function'?tipificacionEtiqueta(r.tipificacion):r.tipificacion), Cantidad: r.cantidad }; }) });
+      // Fase 205: el listado completo (una por fila, sin "Otras").
+      out.push({ titulo: titulo, tipo: 'tabla', filas: (resultado.todas || resultado.datos).map(function(r){ return { Tipificacion: (typeof tipificacionEtiqueta==='function'?tipificacionEtiqueta(r.tipificacion):r.tipificacion), Cantidad: r.cantidad }; }) });
     } else {
       out.push({ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de ' + def.titulo + ' para el mes/filtros actuales.' });
     }

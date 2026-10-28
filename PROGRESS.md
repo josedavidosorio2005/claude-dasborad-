@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.91.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.92.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -345,3 +345,4 @@ mismo orden):
 - Fase 202 — Mobilize, Calidad: la carga del resumen por asesor recibe el archivo con una hoja por mes (cada hoja a su mes); torta con el % de monitoreos y barras con el Prom. puntaje por asesor (v1.90.0, 2026-10-27)
 - Fase 203 — Las tarjetas obedecen solo a MESES: Todos = suma de todos los meses cargados, un mes = ese mes, varios = la suma de esos meses (porcentajes con totales sumados); subtítulo con los meses; en todo Mobilize y en Tráfico de Llamadas y Tipificación de ORLANT (v1.91.0, 2026-10-28)
 - Fase 204 — Mobilize, Flujo de Llamadas: el total se llama "Llamadas ingresadas" (tarjeta, leyenda, tooltip, Ver datos y Excel); solo texto; ORLANT sin cambios (v1.91.1, 2026-10-28)
+- Fase 205 — Tipificación (Mobilize y ORLANT): "Ver datos", tabla y Excel con todas las tipificaciones (sin "Otras"); la torta muestra las que caben según el ancho (20 / 14 / 10) y el tooltip de "Otras" dice cuáles entran ahí (v1.92.0, 2026-10-28)

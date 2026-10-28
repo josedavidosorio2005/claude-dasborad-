@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.92.0 — Octubre 2026
+
+**Fase 205: Tipificación con el listado completo (pedido de Edwin).**
+
+- "Ver datos" de cada torta de Tipificación muestra **todas** las
+  tipificaciones, una por fila, con su cantidad y su %, sin agruparlas en
+  "Otras". La tabla de al lado y el Excel también traen el listado completo.
+- La torta muestra todas las tipificaciones que caben legibles en la pantalla
+  (hasta 20 en la computadora, 14 en tableta y 10 en el celular, donde la
+  leyenda va debajo). Si hay más, el resto queda en "Otras" y, al pasar el
+  mouse por "Otras", se ve cuáles son, con su cantidad y %.
+- Aplica en Mobilize y en ORLANT (usan la misma pantalla de Tipificación).
+
 ## v1.91.1 — Octubre 2026
 
 **Fase 204: "Llamadas ingresadas" en Flujo de Llamadas de Mobilize (pedido de Edwin).**

@@ -648,8 +648,55 @@ function tipificacionRangoFechas(filas) {
 }
 
 // Doble modo: global en el navegador, require() en Node para las pruebas.
+// ── Fase 205 (pedido de Edwin): listado completo de tipificaciones ──
+// Cuantas porciones caben legibles en la torta segun el ancho del contenedor
+// (px): leyenda a la derecha en escritorio, abajo en el celular.
+function tipificacionMaxPorciones(ancho) {
+  var a = Number(ancho) || 0;
+  if (a >= 900) return 20;
+  if (a >= 600) return 14;
+  return 10;
+}
+// Porciones de la torta a partir del listado COMPLETO (`todas`, cualquier
+// orden): todas si caben; si no, las max-1 mas grandes + una "Otras (N
+// tipificaciones)" con `incluye` (cuales son, de mayor a menor) para el
+// tooltip. Nunca una "Otras" de una sola tipificacion (se muestra tal cual).
+function tipificacionPorcionesTorta(todas, maxPorciones) {
+  var ordenado = (todas || []).slice().sort(function (a, b) { return b.cantidad - a.cantidad; });
+  var max = Math.max(2, Number(maxPorciones) || 2);
+  if (ordenado.length <= max) return ordenado.map(function (r) { return { tipificacion: r.tipificacion, cantidad: r.cantidad }; });
+  var visibles = ordenado.slice(0, max - 1);
+  var resto = ordenado.slice(max - 1);
+  return visibles.map(function (r) { return { tipificacion: r.tipificacion, cantidad: r.cantidad }; }).concat([{
+    tipificacion: 'Otras (' + resto.length + ' tipificaciones)',
+    cantidad: resto.reduce(function (a, r) { return a + r.cantidad; }, 0),
+    esOtras: true,
+    distintas: resto.length,
+    incluye: resto.map(function (r) { return { tipificacion: r.tipificacion, cantidad: r.cantidad }; }),
+  }]);
+}
+// "1.234 (12,34 %)" con coma decimal.
+function tipificacionCantidadPct(cantidad, total) {
+  var pct = total ? Math.round((cantidad / total) * 10000) / 100 : 0;
+  return Number(cantidad || 0).toLocaleString('es-CO') + ' (' + pct.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %)';
+}
+// Lineas del tooltip de "Otras": cuales entran ahi, con su cantidad y %; si
+// son muchas, las primeras `tope` y "y N mas (ver «Ver datos»)".
+function tipificacionLineasOtras(porcion, total, etiquetar, tope) {
+  var lista = (porcion && porcion.incluye) || [];
+  var t = Math.max(1, Number(tope) || 15);
+  var et = typeof etiquetar === 'function' ? etiquetar : function (x) { return x; };
+  var lineas = lista.slice(0, t).map(function (r) { return '· ' + et(r.tipificacion) + ': ' + tipificacionCantidadPct(r.cantidad, total); });
+  if (lista.length > t) lineas.push('… y ' + (lista.length - t) + ' más (ver «Ver datos»)');
+  return lineas;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    tipificacionMaxPorciones: tipificacionMaxPorciones,
+    tipificacionPorcionesTorta: tipificacionPorcionesTorta,
+    tipificacionCantidadPct: tipificacionCantidadPct,
+    tipificacionLineasOtras: tipificacionLineasOtras,
     TIPIFICACION_COLUMNAS: TIPIFICACION_COLUMNAS,
     TIPIFICACION_ORDEN_ARRAY: TIPIFICACION_ORDEN_ARRAY,
     tipificacionCeldaRef: tipificacionCeldaRef,
