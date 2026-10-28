@@ -4,6 +4,31 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.91.0 — Octubre 2026
+
+**Fase 203: las tarjetas obedecen solo al filtro MESES (pedido de Edwin).**
+
+- Al entrar (y después de cerrar sesión y volver a entrar), MESES está en
+  "Todos" y las tarjetas de resumen suman **todos los meses cargados**, no
+  solo octubre.
+- Con un mes marcado, las tarjetas muestran solo ese mes. Con varios, suman
+  solo esos meses: por ejemplo, agosto y octubre sin contar septiembre. Los
+  porcentajes (nivel de atención, FCR / One & Done, Eficacia, promedio de
+  calidad) se calculan con los totales sumados, no como promedio de
+  porcentajes.
+- El subtítulo dice los meses que se están viendo ("Informe Todos los meses
+  (Ago 2026 – Oct 2026)", "Informe Septiembre 2026" o "Informe Ago 2026, Oct
+  2026"), no un mes fijo.
+- En Mobilize se aplica en Flujo de Llamadas (tarjetas, FCR, One & Done y
+  Eficacia), Llamadas Únicas y de Salida, Flujo por hora (una tabla por cada
+  mes marcado), Tipificación, Encuesta y Calidad. La tarjeta FCR ya no
+  muestra "Otros meses": con varios meses trae el detalle "Por mes" de esos
+  mismos meses.
+- El Desde/Hasta de Tráfico de Llamadas arranca con los meses de MESES
+  ("Todos" = todo lo cargado). En ORLANT, Tráfico de Llamadas y Tipificación
+  también siguen esta regla. Las otras pantallas de un solo mes de ORLANT
+  siguen mostrando el último mes marcado.
+
 ## v1.90.0 — Octubre 2026
 
 **Fase 202: Calidad de Mobilize por mes, con torta y barras.**

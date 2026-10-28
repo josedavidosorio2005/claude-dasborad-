@@ -60,32 +60,50 @@ async function _flujoHoraRenderPanel(p, i){
       (typeof canLoadData === 'function' && canLoadData() ? '. Se sube desde el Centro de cargas: Flujo por hora.' : '.') + '</div></div>';
     return;
   }
-  var mesSel = (typeof _gd !== 'undefined' && _gd.mesSel) || op.meses[op.meses.length - 1];
-  if(op.meses.indexOf(mesSel) === -1){
-    host.innerHTML = '<div class="aurora-card">'+titulo+_gdAvisoSinDatosMesHtml('Flujo por hora', mesSel, op.meses[op.meses.length - 1])+'</div>';
+  // Fase 203: los meses de MESES que tienen flujo por hora (Todos = todos),
+  // cada uno con sus tablas (dia del mes x hora no se suma entre meses).
+  var mesesFh = _flujoHoraMeses(op.meses);
+  if(!mesesFh.length){
+    var marcadosFh = _gdMeses().slice().sort();
+    host.innerHTML = '<div class="aurora-card">'+titulo+_gdAvisoSinDatosMesHtml('Flujo por hora', marcadosFh[marcadosFh.length - 1], op.meses[op.meses.length - 1])+'</div>';
     return;
   }
-  var filas = [];
-  try{ filas = (await apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesSel))) || []; }
-  catch(e){ showToast(e.message, 'error'); }
+  var porMes = await Promise.all(mesesFh.map(function(mes){
+    return apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mes))
+      .then(function(r){ return r || []; }, function(e){ showToast(e.message, 'error'); return []; });
+  }));
   var html = '<div class="aurora-card">'+titulo+_flujoHoraLeyendaHtml()+'</div>';
-  FLUJO_HORA_METRICAS.forEach(function(met){
-    var m = flujoHoraMatriz(filas, mesSel, met.key);
-    html += '<div class="aurora-card fh-card" data-metrica="'+met.key+'">' +
-      gdGraficaHtml(esc(met.titulo)+' — '+esc(mesNombreLargo(mesSel))+' <span class="fh-total-titulo">('+m.total.toLocaleString('es-CO')+')</span>', _flujoHoraTablaHtml(m, met)) +
-      '</div>';
+  mesesFh.forEach(function(mes, k){
+    FLUJO_HORA_METRICAS.forEach(function(met){
+      var m = flujoHoraMatriz(porMes[k], mes, met.key);
+      html += '<div class="aurora-card fh-card" data-metrica="'+met.key+'" data-mes="'+esc(mes)+'">' +
+        gdGraficaHtml(esc(met.titulo)+' — '+esc(mesNombreLargo(mes))+' <span class="fh-total-titulo">('+m.total.toLocaleString('es-CO')+')</span>', _flujoHoraTablaHtml(m, met)) +
+        '</div>';
+    });
   });
   host.innerHTML = html;
 }
+// Meses del panel: los de MESES con flujo por hora, del mas reciente al mas viejo.
+function _flujoHoraMeses(mesesConDatos){
+  var sel = (typeof _gd !== 'undefined' && _gd && _gd.mesesSel) || [];
+  return gdMesesTarjetas(sel, mesesConDatos || []).reverse();
+}
 
-// Exportar (Excel/PDF del tablero): una tabla por metrica del mes elegido.
+// Exportar (Excel/PDF del tablero): una tabla por metrica de cada mes de MESES.
 async function _gdExportarFlujoHora(p){
   var campana = p.campana || _gd.cliente;
   var op = await _flujoHoraCargarOpciones(campana);
-  var mesSel = _gd.mesSel;
-  if(!(op.meses || []).length || op.meses.indexOf(mesSel) === -1) return [{ titulo: 'Flujo por hora', tipo: 'aviso', filas: [], mensaje: 'Sin flujo por hora para este mes.' }];
-  var filas = [];
-  try{ filas = (await apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesSel))) || []; }catch(e){}
+  var mesesFh = _flujoHoraMeses(op.meses);
+  if(!mesesFh.length) return [{ titulo: 'Flujo por hora', tipo: 'aviso', filas: [], mensaje: 'Sin flujo por hora para estos meses.' }];
+  var out = [];
+  for(var k = 0; k < mesesFh.length; k++){
+    var filasMes = [];
+    try{ filasMes = (await apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesesFh[k]))) || []; }catch(e){}
+    out = out.concat(_flujoHoraTablasExport(filasMes, mesesFh[k]));
+  }
+  return out;
+}
+function _flujoHoraTablasExport(filas, mesSel){
   return FLUJO_HORA_METRICAS.map(function(met){
     var m = flujoHoraMatriz(filas, mesSel, met.key);
     var tabla = m.horas.map(function(h){

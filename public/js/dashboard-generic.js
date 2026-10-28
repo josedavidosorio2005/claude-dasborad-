@@ -1183,15 +1183,16 @@ function gdFiltrosHeaderToggle(abrir){
 function _gdFiltrosHeaderTexto(){
   var txt = document.getElementById('gd-filtros-btn-txt');
   if(!txt) return;
-  var mes = _gd.mesSel ? ((typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel) : '';
+  // Fase 203: el boton dice los meses de MESES (los mismos de las tarjetas).
   var nMeses = _gdMeses().length;
-  var extra = nMeses ? ' · ' + nMeses + (nMeses === 1 ? ' mes' : ' meses') : '';
-  var detalle = (mes || '') + extra;
-  // En el telefono (styles.css) se ocultan "Filtros:" y el nombre largo del
-  // mes ("Sep 2026" en vez de "Septiembre 2026"); el nombre completo queda en
-  // aria-label.
-  var partes = mes.split(' ');
-  var corto = partes.length === 2 ? partes[0].slice(0, 3) + ' ' + partes[1] : mes;
+  var mesesT = gdMesesTarjetasActual();
+  var mes = mesesT.length ? gdMesesTarjetasTexto(mesesT, !nMeses, mesNombreLargo) : '';
+  var extra = '';
+  var detalle = mes;
+  // En el telefono (styles.css) se ocultan "Filtros:" y el texto largo; el
+  // corto es "Todos", "Sep 2026" / "Ago 2026, Sep 2026" o "3 meses"; el
+  // texto completo queda en aria-label.
+  var corto = !nMeses ? (mesesT.length ? 'Todos' : '') : nMeses > 2 ? nMeses + ' meses' : gdMesesTexto(_gdMeses(), mesNombreLargo);
   txt.innerHTML = '<span class="gd-filtros-prefijo">Filtros' + (detalle ? ': ' : '') + '</span>' +
     '<span class="gd-filtros-largo">' + esc(mes) + '</span><span class="gd-filtros-corto">' + esc(corto) + '</span>' + esc(extra);
   var btn = document.getElementById('gd-filtros-btn');
@@ -1287,9 +1288,12 @@ function _gdPintarSubtitulo(){
   // los EJES de las graficas de tendencia de 12 meses (_gdResolver modo
   // 'serie', mas abajo en este archivo: Trafico/Calidad), que nunca pasan
   // por mesNombreLargo.
-  var mesLbl = _gd.mesSel ? mesNombreLargo(_gd.mesSel) : (_gd.periodos[0] ? mesNombreLargo(_gd.periodos[0]) : 'Sin datos');
-  // Fase 152 (B3): el mes en curso se marca como parcial en el encabezado.
-  var rotuloParcial = (_gd.mesSel && typeof gdRotuloMesParcial === 'function') ? gdRotuloMesParcial(_gd.mesSel, gdHoyLocal(), null, mesNombreLargo) : '';
+  // Fase 203: el subtitulo dice los meses de MESES ("Todos los meses (Ago
+  // 2026 – Oct 2026)", un mes o la lista), nunca un mes por defecto.
+  var mesesT = gdMesesTarjetasActual();
+  var mesLbl = gdMesesTarjetasTexto(mesesT, !_gdMeses().length, mesNombreLargo);
+  // Fase 152 (B3): un solo mes marcado que es el mes en curso se marca como parcial.
+  var rotuloParcial = (_gdMeses().length === 1 && typeof gdRotuloMesParcial === 'function') ? gdRotuloMesParcial(mesesT[0], gdHoyLocal(), null, mesNombreLargo) : '';
   // Fase 176: el " — CLIENTE" va en su propio span; en el telefono se oculta
   // (el cliente ya esta en el logo y el titulo) para que quepa en una linea.
   sub.innerHTML = esc('Informe ' + (rotuloParcial || mesLbl)) + '<span class="gd-sub-cliente"> — ' + esc(_gd.cliente) + '</span>';
@@ -1391,7 +1395,7 @@ function _gdMesDesdeMeses(){
 var GD_ESTADO_A_REINICIAR = [
   '_traficoEstado', '_traficoMesSincronizado', '_traficoSinDatosMesGlobal', '_traficoSubtabActivo', '_trafico', '_traficoAgregadoActual',
   '_traficoWppEstado', '_traficoWppMesSincronizado', '_traficoWppSinDatosMesGlobal', '_traficoWppSubtabActivo', '_traficoWpp', '_traficoWppAgregadoActual',
-  '_tipificacionEstadoCompartido', '_tipificacionEstadoCanal', '_tipificacionMesSincronizado', '_tipificacionSinDatosMesGlobal', '_tipificacionOpciones',
+  '_tipificacionEstadoCompartido', '_tipificacionEstadoCanal', '_tipificacionMesSincronizado', '_tipificacionSinDatosMesGlobal', '_tipificacionOpciones', '_tipificacionMesesTarjetas',
   '_agendasEstado', '_agendasMesSincronizado', '_agendasSinDatosMesGlobal', '_agendasOpciones',
   '_inasistenciaEstado', '_inasistenciaOpciones', '_ecOpciones', '_eaOpciones', '_eaBusqueda', '_eaUltimoRanking',
   '_encuestaEstado', '_encuestaMesSincronizado', '_encuestaOpciones', '_encuestaUltimo', '_encuestaOadUltimo',

@@ -527,9 +527,25 @@ function traficoFinDeMes(mes) {
   var d = new Date(Date.UTC(y, m, 0));
   return mes + '-' + String(d.getUTCDate()).padStart(2, '0');
 }
+// Fase 203: con `opts.meses` (meses de MESES, gdMesesTarjetas) y `opts.todos`
+// (MESES = "Todos"), la regla 1 usa los meses en vez del mes global: Todos =
+// todo lo cargado (minDisp → fin del mes de maxDisp, asi la tarjeta FCR cuenta las
+// encuestas de todo ese mes); si no, del 1 del primer mes marcado al fin del
+// ultimo. La clave sincronizada es 'todos' o la lista de meses.
+function traficoClaveMeses(meses, todos) { return todos ? 'todos' : (meses || []).slice().sort().join(','); }
 function traficoDecidirRango(opts) {
   var base = opts.estadoPrevio || opts.estadoURL || {};
   var estado = Object.assign({}, base);
+  if (opts.meses) {
+    var clave = traficoClaveMeses(opts.meses, opts.todos);
+    if (opts.mesSincronizado !== clave) {
+      var l = opts.meses.slice().sort();
+      estado.desde = opts.todos || !l.length ? opts.minDisp : l[0] + '-01';
+      estado.hasta = opts.todos || !l.length ? traficoFinDeMes(String(opts.maxDisp).slice(0, 7)) : traficoFinDeMes(l[l.length - 1]);
+      return { estado: estado, sinDatosMes: !opts.todos && !opts.tieneDatosMes, sincronizar: true, origen: 'meses', clave: clave };
+    }
+    if (opts.estadoPrevio) return { estado: estado, sinDatosMes: !!opts.sinDatosPrevio, sincronizar: false, origen: 'previo' };
+  }
   if (opts.mesSel && opts.mesSincronizado !== opts.mesSel) {
     estado.hasta = traficoFinDeMes(opts.mesSel);
     estado.desde = traficoVentana12Meses(estado.hasta, opts.minDisp);
@@ -863,6 +879,7 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoVentana12Meses: traficoVentana12Meses,
     traficoFinDeMes: traficoFinDeMes,
     traficoDecidirRango: traficoDecidirRango,
+    traficoClaveMeses: traficoClaveMeses,
     traficoRangoTexto: traficoRangoTexto,
     traficoPeriodoDe: traficoPeriodoDe,
     traficoFiltrarFilas: traficoFiltrarFilas,

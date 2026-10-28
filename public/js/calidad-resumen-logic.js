@@ -180,6 +180,41 @@ function calidadResumenPctMonitoreos(asesores) {
   return (asesores || []).map(function (x) { return total ? Math.round((x.monitoreos || 0) / total * 1000) / 10 : null; });
 }
 
+// Fase 203: resumen de VARIOS meses (los de MESES). Monitoreos y fallos se
+// suman; el promedio general y el puntaje de cada asesor se ponderan por sus
+// monitoreos (nunca promedio de porcentajes). Con un solo mes, ese mes tal
+// cual (clasificacion y alerta del archivo); con varios, se recalculan con
+// las mismas reglas del archivo de Edwin.
+function calidadResumenSumarMeses(mesesDatos, meses) {
+  var set = {};
+  (meses || []).forEach(function (m) { set[m] = true; });
+  var lista = (mesesDatos || []).filter(function (m) { return set[m.mes]; });
+  if (!lista.length) return null;
+  if (lista.length === 1) return Object.assign({ meses: [lista[0].mes] }, lista[0]);
+  var porAgente = {}, orden = [];
+  var monitoreos = 0, fallos = 0, sumaPond = 0, montPond = 0;
+  lista.forEach(function (m) {
+    monitoreos += m.monitoreos || 0;
+    fallos += m.fallos || 0;
+    if (m.promedio !== null && m.promedio !== undefined) { sumaPond += m.promedio * (m.monitoreos || 0); montPond += m.monitoreos || 0; }
+    (m.asesores || []).forEach(function (a) {
+      if (!porAgente[a.agente]) { porAgente[a.agente] = { agente: a.agente, monitoreos: 0, fallos: 0, _suma: 0, _mon: 0 }; orden.push(a.agente); }
+      var x = porAgente[a.agente];
+      x.monitoreos += a.monitoreos || 0;
+      x.fallos += a.fallos || 0;
+      if (a.puntaje !== null && a.puntaje !== undefined) { x._suma += a.puntaje * (a.monitoreos || 0); x._mon += a.monitoreos || 0; }
+    });
+  });
+  var asesores = orden.map(function (k) {
+    var x = porAgente[k];
+    var puntaje = x._mon ? x._suma / x._mon : null;
+    return { agente: x.agente, monitoreos: x.monitoreos, puntaje: puntaje, fallos: x.fallos,
+      clasificacion: calidadResumenClasificacion(puntaje), alerta: calidadResumenAlerta(x.fallos) };
+  });
+  return { meses: lista.map(function (m) { return m.mes; }).sort(), monitoreos: monitoreos, fallos: fallos,
+    promedio: montPond ? sumaPond / montPond : null, asesores: asesores };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CALIDAD_RESUMEN_COLUMNAS: CALIDAD_RESUMEN_COLUMNAS,
@@ -197,5 +232,6 @@ if (typeof module !== 'undefined' && module.exports) {
     calidadResumenMesDeHoja: calidadResumenMesDeHoja,
     calidadResumenPeriodoDeHoja: calidadResumenPeriodoDeHoja,
     calidadResumenPctMonitoreos: calidadResumenPctMonitoreos,
+    calidadResumenSumarMeses: calidadResumenSumarMeses,
   };
 }

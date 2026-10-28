@@ -92,18 +92,20 @@ function el(id, extra) {
   }, extra);
 }
 let ctx;
-function entorno({ mesSel = '2026-09', mesesSel = [] } = {}) {
+function entorno({ mesSel = '2026-09', mesesSel = [], periodos = ['2026-10', '2026-09'] } = {}) {
   // Fase 201: el primer control visible es MESES (su <summary>).
   const mes = el('gd-meses-btn');
   const cont = el('gd-filtros-header', { querySelectorAll: () => [mes] });
   const els = { 'gd-filtros-header': cont, 'gd-filtros-btn': el('gd-filtros-btn'), 'gd-filtros-btn-txt': el('gd-filtros-btn-txt'), 'gd-meses-btn': mes };
   ctx = {
-    foco: null, _gd: { mesSel, mesesSel },
+    foco: null, _gd: { mesSel, mesesSel, periodos },
     document: { getElementById: (id) => els[id] || null },
     mesNombreLargo: (p) => ({ '2026-09': 'Septiembre 2026', '2026-10': 'Octubre 2026' })[p],
     esc: (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'),
   };
   vm.createContext(ctx);
+  // Fase 203: el texto sale de los meses de MESES (mes-global-logic.js).
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), ctx);
   vm.runInContext(['_gdMeses', 'gdFiltrosHeaderToggle', '_gdFiltrosHeaderTexto'].map(fn).join('\n'), ctx);
   return els;
 }
@@ -121,15 +123,23 @@ test('gdFiltrosHeaderToggle: abre y cierra, sincroniza aria-expanded y lleva el 
   assert.equal(ctx.foco, null);
 });
 
-test('_gdFiltrosHeaderTexto: mes largo y corto, meses marcados y nombre accesible', () => {
-  const e = entorno({ mesSel: '2026-09', mesesSel: ['2026-09', '2026-10'] });
+// Fase 203: el boton dice los meses de MESES, no un mes.
+test('_gdFiltrosHeaderTexto: los meses de MESES (largo y corto), "Todos" y nombre accesible', () => {
+  const e = entorno({ mesesSel: ['2026-09', '2026-10'] });
   ctx._gdFiltrosHeaderTexto();
   assert.equal(e['gd-filtros-btn-txt'].innerHTML,
-    '<span class="gd-filtros-prefijo">Filtros: </span><span class="gd-filtros-largo">Septiembre 2026</span><span class="gd-filtros-corto">Sep 2026</span> · 2 meses');
-  assert.equal(e['gd-filtros-btn'].getAttribute('aria-label'), 'Filtros: Septiembre 2026 · 2 meses');
-  const sinMes = entorno({ mesSel: '' });
+    '<span class="gd-filtros-prefijo">Filtros: </span><span class="gd-filtros-largo">Sep 2026, Oct 2026</span><span class="gd-filtros-corto">Sep 2026, Oct 2026</span>');
+  assert.equal(e['gd-filtros-btn'].getAttribute('aria-label'), 'Filtros: Sep 2026, Oct 2026');
+  const uno = entorno({ mesesSel: ['2026-09'] });
   ctx._gdFiltrosHeaderTexto();
-  assert.equal(sinMes['gd-filtros-btn'].getAttribute('aria-label'), 'Filtros');
+  assert.match(uno['gd-filtros-btn-txt'].innerHTML, /<span class="gd-filtros-largo">Septiembre 2026<\/span><span class="gd-filtros-corto">Sep 2026<\/span>/);
+  const todos = entorno({ mesesSel: [] });
+  ctx._gdFiltrosHeaderTexto();
+  assert.equal(todos['gd-filtros-btn'].getAttribute('aria-label'), 'Filtros: Todos los meses (Sep 2026 – Oct 2026)');
+  assert.match(todos['gd-filtros-btn-txt'].innerHTML, /<span class="gd-filtros-corto">Todos<\/span>/);
+  const sinDatos = entorno({ periodos: [] });
+  ctx._gdFiltrosHeaderTexto();
+  assert.equal(sinDatos['gd-filtros-btn'].getAttribute('aria-label'), 'Filtros');
 });
 
 test('JS: el texto se actualiza con el mes (renderGenericHeader, MESES); Esc no cierra el tablero; cerrar lo pliega', () => {

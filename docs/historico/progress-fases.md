@@ -17648,3 +17648,58 @@ v1.90.0.
 - Escrituras en producción: 6 POST de carga y ninguna otra.
 - Este cierre (bitácora y `PROGRESS.md`) va en un PR de documentación
   aparte, sin cambio de versión.
+
+### Fase 203 — Las tarjetas obedecen solo a MESES (2026-10-28, v1.91.0)
+
+Pedido de Edwin (Mobilize, audios del 27 y 28/10): las tarjetas de resumen
+siguen SOLO al filtro MESES, nunca al MES quitado ni a un "mes actual".
+
+- Antes, verificado en producción (v1.90.0, solo lectura, sesión de
+  administrador, Playwright y Brave, 0 escrituras, 0 errores de página),
+  Mobilize con MESES = Todos / Sep / Ago+Sep / Ago+Oct:
+  - Subtítulo siempre "Informe Octubre 2026 — mes en curso, parcial" con
+    Todos (y el último mes marcado en los demás casos).
+  - Flujo de Llamadas: ventana de 12 meses que termina en el último mes
+    marcado: Todos 277/272/5 (98,2 %); Sep 171 (agosto + septiembre);
+    Ago+Sep 171; Ago+Oct 277 (contaba septiembre). Referencia por mes de las
+    filas cargadas: ago 67/64/3, sep 104/104/0, oct 106/104/2.
+  - FCR y One & Done: solo el último mes (Todos = octubre 67,9 %, 19 de 28)
+    con "Otros meses" aparte.
+  - Llamadas Únicas y de Salida: 208/204/4 y 320/184/136 en los cuatro
+    casos (las tarjetas no seguían a MESES).
+  - Flujo por hora, Tipificación (salida 45/28/17 con Todos), Encuesta y
+    Calidad (97,22 %, 27, 2 con Todos): solo el último mes marcado u
+    octubre.
+- Regla nueva (`mes-global-logic.js`): `gdMesesTarjetas` (marcados; sin
+  ninguno, todos los meses con datos), `gdRangoDeMeses`, `gdSumarMeses`
+  (numerador y denominador sumados; un null = Pendiente) y
+  `gdMesesTarjetasTexto` (subtítulo y botón de filtros).
+- Flujo de Llamadas (`trafico.js`, `traficoDecidirRango` con `meses`):
+  Desde/Hasta arranca con MESES (Todos = primer día cargado → fin del último
+  mes; un rango a mano se respeta hasta que MESES cambie) y las tarjetas
+  suman las filas de los meses marcados. FCR y One & Done
+  (`encuestaFcrTarjetaMeses`) y Eficacia suman si/den de esos meses; con
+  varios meses, detalle "Por mes" (compacto en la tarjeta FCR, con la
+  fracción en el title). Sin "Otros meses".
+- Llamadas Únicas y de Salida: con meses marcados, suma de la tabla por mes
+  filtrada; con Todos, el resumen del servidor. Tipificación: un mes = ese
+  mes; varios/Todos = Desde/Hasta y las tarjetas de salida suman mes a mes.
+  Encuesta: Desde/Hasta de MESES y parámetro nuevo `meses` en
+  `GET /calidad/encuestas/resumen|comentarios` (validado AAAA-MM, hasta 24),
+  así Ago+Oct no cuenta septiembre. Flujo por hora: una tabla por cada mes
+  marcado con datos. Calidad (`calidadResumenSumarMeses`): monitoreos y
+  fallos sumados, promedio y puntaje por asesor ponderados por monitoreos.
+- ORLANT: Tráfico de Llamadas y Tipificación usan el mismo código y siguen
+  la regla; WhatsApp, Agendas, Inasistencia, Efectividad, Salida y Calidad
+  (monitoreos) siguen con el último mes marcado (ver `docs/pendientes.md`).
+- Pruebas: `fase203-tarjetas-siguen-meses.test.js` (15: Todos / 1 mes / 2
+  meses en cada pieza) y las que fijaban la regla anterior (147 C y D, 150,
+  167, 171, 175, 201). Suite 2308/2308, `npm audit` 0.
+- Verificación local (copia de la base de la Fase 200 con encuestas ago–oct
+  y tráfico sintético, más el resumen de calidad de la Fase 202; Playwright
+  y Brave a 1440/768/375 px): 136/136 chequeos; tarjetas de Flujo iguales a
+  la suma de las filas de los meses marcados en los cuatro casos; FCR Todos
+  69,2 % (27 de 39), Sep 60 % (3 de 5), Ago+Oct 70,6 % (24 de 34); Calidad
+  Todos 97,4 % / 72 / 4, Ago+Oct 97,45 % / 38 / 2; Encuesta Ago+Oct 103
+  (21 + 82); tras cerrar sesión e iniciar otra, "Todos los meses" y la suma
+  de todo; sin scroll horizontal, teléfonos ni errores de consola.

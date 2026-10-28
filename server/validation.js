@@ -994,12 +994,16 @@ const encuestasOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// Fase 203: `meses` (opcional) = los meses de MESES, 'AAAA-MM' separados por
+// coma (hasta 24): solo esos meses, aunque el Desde/Hasta cubra otros.
+const mesesListaSchema = z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])(,\d{4}-(0[1-9]|1[0-2])){0,23}$/, 'meses invalidos (AAAA-MM separados por coma)');
 const encuestasFiltrosQuery = z.object({
   campana: campanaSchema,
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
   skill: z.string().trim().max(200).optional(),
   agente: z.string().trim().max(200).optional(),
+  meses: mesesListaSchema.optional(),
 });
 
 // Parte C: la base del FCR la decide la config del panel (fcrBase).

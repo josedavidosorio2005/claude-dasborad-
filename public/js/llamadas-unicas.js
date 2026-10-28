@@ -186,12 +186,28 @@ async function _llamadasUnicasRenderContenido(campana, i) {
     resumen = (await apiRequest('GET', '/calidad/llamadas-unicas/resumen?' + q)) || resumen;
     porMes = (await apiRequest('GET', '/calidad/llamadas-unicas/por-mes?' + q)) || [];
   } catch (e) { /* el panel se queda con los KPIs/grafica en 0 — nunca inventa un numero */ }
-  _llamadasUnicasDibujarKpis(i, resumen);
-  // Fase 167: filtro "Meses" -- solo la grafica por mes; las tarjetas no cambian.
+  // Fase 167 + Fase 203: filtro "Meses" en la grafica y en las tarjetas (suman
+  // solo los meses marcados; con "Todos", el resumen de todo lo cargado).
   porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes);
+  resumen = _llamadasResumenMeses(resumen, porMes, ['total', 'contestadas', 'abandonadas']);
+  _llamadasUnicasDibujarKpis(i, resumen);
   _llamadasUnicasDibujarBarras(i, porMes, _llamadasUnicasSoloTotal(resumen));
   var elF = document.getElementById('lu-fuentes-' + i);
   if (elF) elF.innerHTML = _llamadasUnicasFuentesHtml(porMes);
+}
+
+// Fase 203: con meses marcados en MESES, las tarjetas son la suma de esos
+// meses de la tabla por mes (ya filtrada); con "Todos", el resumen del
+// servidor de todo lo cargado. Un mes "Pendiente" (null) deja el total en
+// Pendiente, igual que el resumen del servidor.
+function _llamadasResumenMeses(resumen, porMesFiltrado, campos) {
+  if (typeof _gd === 'undefined' || !_gd || !(_gd.mesesSel || []).length || typeof gdSumarMeses !== 'function') return resumen;
+  var meses = porMesFiltrado.map(function (m) { return m.periodo; });
+  var s = gdSumarMeses(porMesFiltrado, function (m) { return m.periodo; }, meses, campos);
+  var out = Object.assign({}, resumen);
+  campos.forEach(function (c) { out[c] = s[c]; });
+  if ('noConectadasPendiente' in resumen) out.noConectadasPendiente = porMesFiltrado.some(function (m) { return m.noConectadas === null || m.noConectadas === undefined; });
+  return out;
 }
 
 // Fase 191: tabla por mes con la fuente de cada parte (pedido del 27/10).
@@ -345,9 +361,10 @@ async function _llamadasSalidaRenderContenido(campana, i) {
     porMes = (await apiRequest('GET', '/calidad/llamadas-salida/por-mes?' + q)) || [];
     if (esInterno) detalle = await apiRequest('GET', '/calidad/llamadas-salida/detalle?' + q);
   } catch (e) { /* tarjetas/grafica en 0 -- nunca inventa un numero */ }
+  porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes); // Fase 167: filtro "Meses"
+  resumen = _llamadasResumenMeses(resumen, porMes, ['total', 'noConectadas', 'conectadas']); // Fase 203
   var elKpis = document.getElementById('ls-kpis-' + i);
   if (elKpis) elKpis.innerHTML = _llamadasSalidaKpisHtml(resumen);
-  porMes = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(porMes, function (m) { return m.periodo; }) : porMes); // Fase 167: filtro "Meses"
   _llamadasSalidaDibujarBarras(i, porMes);
   var elFs = document.getElementById('ls-fuentes-' + i);
   if (elFs) elFs.innerHTML = _llamadasSalidaFuentesHtml(porMes);

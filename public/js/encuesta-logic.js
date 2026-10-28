@@ -258,6 +258,27 @@ function encuestaFcrTarjeta(porMes, mesObjetivo) {
   };
 }
 
+// Fase 203: tarjeta FCR / One & Done que SUMA los meses de MESES (`meses`):
+// si y den sumados, pct = si / den (nunca promedio de porcentajes). `porMes`
+// = los meses con encuestas de esos meses (para el detalle "Por mes").
+function encuestaFcrTarjetaMeses(porMes, meses) {
+  var set = {};
+  (meses || []).forEach(function (m) { set[m] = true; });
+  var lista = (porMes || []).filter(function (m) { return set[m.periodo] && m.total > 0; })
+    .sort(function (a, b) { return a.periodo < b.periodo ? -1 : 1; });
+  var si = 0, den = 0;
+  lista.forEach(function (m) { si += m.si || 0; den += m.den || 0; });
+  return {
+    meses: (meses || []).slice().sort(),
+    sinEncuestas: !lista.length,
+    si: si,
+    den: den,
+    pct: den > 0 ? Math.round((si / den) * 1000) / 10 : null,
+    base: lista.length ? lista[0].base : null,
+    porMes: lista,
+  };
+}
+
 // "6,7 %" / "75 %" (coma decimal, como el resto del tablero).
 function encuestaFmtPct(v) {
   return v === null || v === undefined ? '—' : String(v).replace('.', ',') + ' %';
@@ -374,6 +395,7 @@ if (typeof module !== 'undefined' && module.exports) {
     encuestaPlantillaAoA: encuestaPlantillaAoA,
     encuestaFcr: encuestaFcr,
     encuestaFcrTarjeta: encuestaFcrTarjeta,
+    encuestaFcrTarjetaMeses: encuestaFcrTarjetaMeses,
     encuestaFmtPct: encuestaFmtPct,
     encuestaFcrFraccion: encuestaFcrFraccion,
     encuestaFcrBase: encuestaFcrBase,

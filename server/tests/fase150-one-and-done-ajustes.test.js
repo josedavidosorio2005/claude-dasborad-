@@ -32,7 +32,9 @@ function domOneAndDone() {
 
 async function dibujar(apiRequest) {
   const enc = JS('encuesta.js');
-  const fn = 'var _encuestaOadUltimo = {};\n' + extraer(enc, 'async function _encuestaDibujarOneAndDone');
+  // Fase 203: con sus ayudantes de los meses de MESES.
+  const fn = 'var _encuestaOadUltimo = {};\n' + extraer(enc, 'async function _encuestaDibujarOneAndDone') +
+    ['function _encuestaMesesTarjeta', 'function _encuestaMesesLbl(', 'function _encuestaMesesLblTarjeta', 'function _encuestaPorMesHtml'].map((n) => extraer(enc, n)).join('\n');
   const d = domOneAndDone();
   const charts = [];
   const ctx = Object.assign({}, L, {

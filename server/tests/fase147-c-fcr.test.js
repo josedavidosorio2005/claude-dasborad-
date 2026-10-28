@@ -75,21 +75,25 @@ async function dibujar(respuesta, hasta, base) {
   return { html: el['tv-fcr-0'].innerHTML, pedidos };
 }
 
-test('Vista: tarjeta con % y "3 de 45 encuestas" del mes; la base viaja al servidor', async () => {
+// Fase 203: la tarjeta SUMA los meses del rango (si y den sumados) y, con
+// mas de un mes, trae el detalle "Por mes" (antes: solo el mes del final).
+test('Vista: tarjeta con la suma de los meses ("4 de 46 encuestas") y su detalle por mes; la base viaja al servidor', async () => {
   const { html, pedidos } = await dibujar([
     { periodo: '2026-08', base: 'total', si: 1, total: 1, respondieron: 1, den: 1, pct: 100 },
     { periodo: '2026-09', base: 'total', si: 3, total: 45, respondieron: 4, den: 45, pct: 6.7 },
   ], '2026-09-30', 'total');
   assert.match(pedidos[0], /\/calidad\/encuestas\/fcr\?campana=MOBILIZE&base=total&desde=2026-08-01&hasta=2026-09-30$/);
   assert.match(html, /Solución en primer contacto \(FCR\)/);
-  assert.match(html, /6,7 %/);
-  assert.match(html, /Septiembre 2026: 3 de 45 encuestas/);
-  assert.match(html, /Otros meses: Agosto 2026 100 % \(1 de 1 encuestas\)/);
+  assert.match(html, /8,7 %/); // 4 / 46, no el promedio de 100 % y 6,7 %
+  assert.match(html, /Agosto 2026, Septiembre 2026: 4 de 46 encuestas/);
+  // Detalle compacto en la tarjeta; las fracciones van en el title.
+  assert.match(html, /title="Agosto 2026 100 % \(1 de 1 encuestas\) · Septiembre 2026 6,7 % \(3 de 45 encuestas\)">Por mes: Agosto 2026 100 % · Septiembre 2026 6,7 %</);
+  assert.doesNotMatch(html, /Otros meses/);
 });
 
-test('Vista: mes sin encuestas -> "Sin encuestas este mes"; base respondieron se explica', async () => {
+test('Vista: rango sin encuestas -> "Sin encuestas"; base respondieron se explica', async () => {
   const a = await dibujar([], '2026-10-31', 'total');
-  assert.match(a.html, /Octubre 2026: Sin encuestas este mes/);
+  assert.match(a.html, /Agosto 2026, Septiembre 2026, Octubre 2026: Sin encuestas/);
   const b = await dibujar([{ periodo: '2026-09', base: 'respondieron', si: 3, total: 45, respondieron: 4, den: 4, pct: 75 }], '2026-09-30', 'respondieron');
   assert.match(b.pedidos[0], /base=respondieron/);
   assert.match(b.html, /75 %/);

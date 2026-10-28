@@ -89,12 +89,13 @@ test('Centro de cargas: llamadas de salida sin el aviso de "mes incompleto" (sal
 
 // ── 3. Encuesta ───────────────────────────────────────────────────────────
 
-test('Encuesta: sigue el MES de arriba (Desde/Hasta del mes) y un mes sin encuestas muestra el aviso, no los datos de otro mes', () => {
+// Fase 203: ya no hay MES; Desde/Hasta siguen a MESES (Todos = todas).
+test('Encuesta: sigue a MESES (Desde/Hasta de los meses marcados) y meses sin encuestas muestran el aviso, no los datos de otro mes', () => {
   const src = JS('encuesta.js');
-  assert.match(src, /if \(mesGlobal && _encuestaMesSincronizado\[campana\] !== mesGlobal\) \{/);
-  assert.match(src, /estado\.desde = mesGlobal \+ '-01';/);
-  assert.match(src, /estado\.hasta = \(typeof gdFinDeMes === 'function'\) \? gdFinDeMes\(mesGlobal\)/);
-  assert.match(src, /_gdAvisoSinDatosMesHtml\('Encuesta', mesGlobal, mesesEnc\[mesesEnc\.length - 1\]\)/);
+  assert.match(src, /if \(hayTablero && _encuestaMesSincronizado\[campana\] !== claveMeses\) \{/);
+  assert.match(src, /var r = gdRangoDeMeses\(mesesT\);\n    estado\.desde = r\.desde;\n    estado\.hasta = r\.hasta;/);
+  assert.match(src, /_gdAvisoSinDatosMesHtml\('Encuesta', marcados\[marcados\.length - 1\], mesesEnc\[mesesEnc\.length - 1\]\)/);
+  assert.doesNotMatch(src, /_gd\.mesSel/);
 });
 
 // ── 4. Cerrar sesion: sin filtros ─────────────────────────────────────────

@@ -210,8 +210,66 @@ function gdMesesTexto(mesesSel, nombreMes) {
   }).join(', ');
 }
 
+// Fase 203 (pedido de Edwin, audios del 27 y 28/10): las tarjetas de resumen
+// obedecen SOLO a MESES. Suman los meses marcados; sin ninguno ("Todos"),
+// todos los meses con datos -- nunca un "mes actual" ni el mes por defecto.
+// Devuelve los meses en orden ascendente ('AAAA-MM').
+function gdMesesTarjetas(mesesSel, mesesTodos) {
+  var todos = (mesesTodos || []).map(function (m) { return String(m).slice(0, 7); });
+  var marcados = (mesesSel || []).map(function (m) { return String(m).slice(0, 7); })
+    .filter(function (m) { return todos.indexOf(m) !== -1; });
+  var lista = marcados.length ? marcados : todos;
+  return lista.filter(function (m, k) { return lista.indexOf(m) === k; }).sort();
+}
+// Rango de fechas que cubre esos meses: del 1 del primero al ultimo dia del ultimo.
+function gdRangoDeMeses(meses) {
+  var l = (meses || []).slice().sort();
+  if (!l.length) return { desde: '', hasta: '' };
+  return { desde: l[0] + '-01', hasta: gdFinDeMes(l[l.length - 1]) };
+}
+// Suma `campos` de las filas de `lista` cuyo mes esta en `meses` (numerador y
+// denominador sumados, nunca promedio de porcentajes). Un campo null en alguna
+// fila incluida queda null (ej. "Pendiente" de la salida). `filas` = cuantas.
+function gdSumarMeses(lista, getMes, meses, campos) {
+  var set = {};
+  (meses || []).forEach(function (m) { set[String(m).slice(0, 7)] = true; });
+  var out = { filas: 0 };
+  (campos || []).forEach(function (c) { out[c] = 0; });
+  (lista || []).forEach(function (x) {
+    if (!set[String(getMes(x) == null ? '' : getMes(x)).slice(0, 7)]) return;
+    out.filas++;
+    (campos || []).forEach(function (c) {
+      if (out[c] === null) return;
+      out[c] = (x[c] === null || x[c] === undefined) ? null : out[c] + Number(x[c] || 0);
+    });
+  });
+  return out;
+}
+// Texto de los meses de las tarjetas: "Septiembre 2026" (uno marcado), "Ago
+// 2026, Sep 2026" (varios) o "Todos los meses (Ago 2026 – Oct 2026)".
+function gdMesesTarjetasTexto(meses, esTodos, nombreMes) {
+  var l = (meses || []).slice().sort();
+  if (!l.length) return 'Sin datos';
+  var largo = function (m) { return nombreMes ? String(nombreMes(m)) : m; };
+  if (esTodos) {
+    return 'Todos los meses (' + (l.length === 1 ? largo(l[0])
+      : gdMesesTexto([l[0]], nombreMes) + ' – ' + gdMesesTexto([l[l.length - 1]], nombreMes)) + ')';
+  }
+  return l.length === 1 ? largo(l[0]) : gdMesesTexto(l, nombreMes);
+}
+// En el navegador: meses de las tarjetas del tablero abierto.
+function gdMesesTarjetasActual() {
+  if (typeof _gd === 'undefined' || !_gd) return [];
+  return gdMesesTarjetas(_gd.mesesSel, _gd.periodos);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    gdMesesTarjetas: gdMesesTarjetas,
+    gdRangoDeMeses: gdRangoDeMeses,
+    gdSumarMeses: gdSumarMeses,
+    gdMesesTarjetasTexto: gdMesesTarjetasTexto,
+    gdMesesTarjetasActual: gdMesesTarjetasActual,
     gdFiltrarPorMes: gdFiltrarPorMes,
     gdMesesTexto: gdMesesTexto,
     gdAplicarFiltroMeses: gdAplicarFiltroMeses,

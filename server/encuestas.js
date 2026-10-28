@@ -109,6 +109,12 @@ function whereClausulas(q) {
   if (q.hasta) { clausulas.push('fecha <= @hasta'); params.hasta = q.hasta; }
   if (q.skill) { clausulas.push('skill = @skill'); params.skill = q.skill; }
   if (q.agente) { clausulas.push('agente = @agente'); params.agente = q.agente; }
+  // Fase 203: solo los meses de MESES (lista ya validada: AAAA-MM,AAAA-MM...).
+  if (q.meses) {
+    const meses = String(q.meses).split(',');
+    clausulas.push('substr(fecha, 1, 7) IN (' + meses.map((m, k) => '@mes' + k).join(', ') + ')');
+    meses.forEach((m, k) => { params['mes' + k] = m; });
+  }
   return { where: clausulas.join(' AND '), params };
 }
 

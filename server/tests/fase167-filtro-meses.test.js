@@ -64,7 +64,7 @@ test('index.html: control "MESES" (desde la Fase 201, sin MES), con ayuda y "Ver
   assert.ok(j > 0 && j < k, 'antes de COMPARAR CONTRA');
   assert.match(html, /<summary id="gd-meses-btn" class="gd-meses-btn" aria-describedby="gd-meses-ayuda">Todos<\/summary>/);
   assert.match(html, /<div class="gd-meses-pop" role="group" aria-labelledby="gd-meses-label">/);
-  assert.match(html, /Las tarjetas siguen el último mes marcado; sin ninguno marcado, el mes más reciente con datos\./);
+  assert.match(html, /Las tarjetas de resumen suman los meses marcados; sin ninguno marcado, todos los meses cargados\./); // Fase 203
   assert.match(html, /onclick="gdMesesTodos\(\)">Ver todos los meses<\/button>/);
 });
 
@@ -141,10 +141,12 @@ test('_traficoFiltroMeses (Trafico de Llamadas y WhatsApp): por dia y por mes fi
   assert.equal(ctx._traficoFiltroMeses(porAnio, 'anio'), porAnio);
 });
 
-test('los modulos filtran SOLO la serie por mes (graficas/tablas/export), nunca las tarjetas', () => {
+test('los modulos filtran la serie por mes (graficas/tablas/export); las tarjetas de Mobilize siguen a MESES desde la Fase 203', () => {
   const t = JS('trafico.js');
   assert.match(t, /var agregado = _traficoFiltroMeses\(traficoAgregar\(filtradas,/);
-  assert.match(t, /var tot = _traficoTotalesLlamadas\(filtradas\);/, 'tarjetas desde las filas, no del agregado filtrado');
+  // Fase 203: las tarjetas salen de las FILAS de los meses de MESES (no del agregado).
+  assert.match(t, /var filasTarj = mesesTarj \? gdFiltrarPorMes\(filtradas, function\(f\)\{ return f\.fecha; \}, mesesTarj\) : filtradas;/);
+  assert.match(t, /var tot = _traficoTotalesLlamadas\(filasTarj\);/, 'tarjetas desde las filas, no del agregado filtrado');
   assert.match(t, /var agregadoComb = estado\.combinar \? agregado : _traficoFiltroMeses\(traficoAgregar\(/);
   const w = JS('trafico-whatsapp.js');
   assert.match(w, /var agregado = _traficoFiltroMeses\(traficoWppAgregarPorPeriodo\(filtradas,/);

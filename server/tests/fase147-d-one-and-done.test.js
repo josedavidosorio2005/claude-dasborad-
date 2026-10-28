@@ -87,7 +87,7 @@ test('vista: grafica accesible, texto de datos escapado, exportacion con su tabl
   assert.match(traf, /role="img" aria-label="One &amp; Done por mes/);
   assert.match(traf, /'oneanddone' && typeof _encuestaOadDatosExport === 'function'/);
   const vista = enc.slice(enc.indexOf('async function _encuestaDibujarOneAndDone'), enc.indexOf('function _encuestaOadDatosExport'));
-  assert.match(vista, /esc\(mesLbl\(t\.mes\)\)/);
+  assert.match(vista, /esc\(_encuestaMesesLblTarjeta\(t\)\)/); // Fase 203: los meses de MESES
   assert.match(vista, /esc\(sinMes\.join/);
   assert.match(vista, /Sin encuestas este mes/);
   assert.match(vista, /max: 100/);

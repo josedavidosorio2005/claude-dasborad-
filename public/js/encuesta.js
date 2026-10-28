@@ -52,7 +52,7 @@ function _encuestaOptionsHtml(valores, seleccionado, formato) {
 // que cualquier mes mostraba lo cargado. Ahora sigue el MES de arriba como
 // los demas paneles: al cambiar el MES, Desde/Hasta pasan a ese mes; si el
 // mes no tiene encuestas, sale el aviso de siempre con "Ver <ultimo mes>".
-var _encuestaMesSincronizado = {}; // por campana: ultimo _gd.mesSel aplicado
+var _encuestaMesSincronizado = {}; // por campana: ultima clave de MESES aplicada (Fase 203)
 
 async function _encuestaRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i);
@@ -71,17 +71,25 @@ async function _encuestaRenderPanel(p, i) {
   }
   if (!_encuestaEstado[campana]) _encuestaEstado[campana] = { desde: '', hasta: '', skill: '', agente: '' };
   var estado = _encuestaEstado[campana];
-  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
-  if (mesGlobal && _encuestaMesSincronizado[campana] !== mesGlobal) {
-    _encuestaMesSincronizado[campana] = mesGlobal;
-    estado.desde = mesGlobal + '-01';
-    estado.hasta = (typeof gdFinDeMes === 'function') ? gdFinDeMes(mesGlobal) : mesGlobal + '-31';
+  // Fase 203: Desde/Hasta siguen a MESES (Todos = todas las encuestas; un
+  // mes o varios = del primero al ultimo marcado con encuestas). Un rango
+  // puesto a mano se respeta hasta que MESES cambie.
+  var mesesEnc = (op.meses || []).map(function (m) { return String(m).slice(0, 7); }).sort();
+  var hayTablero = typeof _gd !== 'undefined' && _gd && _gd.periodos;
+  var marcados = hayTablero ? _gdMeses().slice().sort() : [];
+  var claveMeses = marcados.length ? marcados.join(',') : 'todos';
+  var mesesT = marcados.filter(function (m) { return mesesEnc.indexOf(m) !== -1; });
+  if (hayTablero && _encuestaMesSincronizado[campana] !== claveMeses) {
+    _encuestaMesSincronizado[campana] = claveMeses;
+    var r = gdRangoDeMeses(mesesT);
+    estado.desde = r.desde;
+    estado.hasta = r.hasta;
+    estado.meses = mesesT.length > 1 ? mesesT.join(',') : ''; // Ago + Oct sin septiembre
   }
-  var mesesEnc = (op.meses || []).slice().sort();
-  if (mesGlobal && estado.desde === mesGlobal + '-01' && mesesEnc.length && mesesEnc.indexOf(mesGlobal) === -1) {
+  if (marcados.length && !mesesT.length && mesesEnc.length && !estado.desde && !estado.hasta) {
     _encuestaUltimo[campana] = null;
     host.innerHTML = '<div class="aurora-card">' + titulo +
-      _gdAvisoSinDatosMesHtml('Encuesta', mesGlobal, mesesEnc[mesesEnc.length - 1]) + '</div>';
+      _gdAvisoSinDatosMesHtml('Encuesta', marcados[marcados.length - 1], mesesEnc[mesesEnc.length - 1]) + '</div>';
     return;
   }
   var ve = _encuestaVeAsesores(campana);
@@ -132,7 +140,8 @@ function _encuestaQuery(campana) {
     (e.desde ? '&desde=' + encodeURIComponent(e.desde) : '') +
     (e.hasta ? '&hasta=' + encodeURIComponent(e.hasta) : '') +
     (e.skill ? '&skill=' + encodeURIComponent(e.skill) : '') +
-    (e.agente && _encuestaVeAsesores(campana) ? '&agente=' + encodeURIComponent(e.agente) : '');
+    (e.agente && _encuestaVeAsesores(campana) ? '&agente=' + encodeURIComponent(e.agente) : '') +
+    (e.meses ? '&meses=' + encodeURIComponent(e.meses) : ''); // Fase 203: solo los meses de MESES
 }
 
 // ── Fase 195: vista "Cantidad" | "NPS" de la pregunta 1, por panel ──
@@ -380,20 +389,54 @@ async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
     (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
   var porMes = [];
   try { porMes = (await apiRequest('GET', '/calidad/encuestas/fcr?' + q)) || []; } catch (e) { porMes = []; }
-  var mesFin = hasta ? hasta.slice(0, 7) : (porMes.length ? porMes[porMes.length - 1].periodo : '');
-  var t = encuestaFcrTarjeta(porMes, mesFin);
-  var mesLbl = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  // Fase 203: la tarjeta SUMA los meses de MESES que caen en el rango (si y
+  // den sumados); con mas de un mes, el detalle "Por mes" de esos mismos meses.
+  var t = encuestaFcrTarjetaMeses(porMes, _encuestaMesesTarjeta(desde, hasta, porMes));
   var nota = ' <span title="' + esc(encuestaFcrNota(base)) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>';
   var cuerpo = t.sinEncuestas
-    ? '<div class="kv">—</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div><div class="enc-fcr-sub">' + esc(mesLbl(t.mes)) + ': Sin encuestas este mes</div>'
+    ? '<div class="kv">—</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div><div class="enc-fcr-sub">' + esc(_encuestaMesesLbl(t.meses)) + ': Sin encuestas</div>'
     : '<div class="kv">' + esc(encuestaFmtPct(t.pct)) + '</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div>' +
-      '<div class="enc-fcr-sub">' + esc(mesLbl(t.mes)) + ': ' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + '</div>';
-  var otros = t.otros.length
-    ? '<div class="enc-fcr-otros">Otros meses: ' + t.otros.map(function (m) {
-        return esc(mesLbl(m.periodo)) + ' ' + esc(encuestaFmtPct(m.pct)) + ' (' + esc(encuestaFcrFraccion(m.si, m.den, m.base)) + ')';
-      }).join(' · ') + '</div>'
-    : '';
-  el.innerHTML = cuerpo + otros;
+      '<div class="enc-fcr-sub">' + esc(_encuestaMesesLblTarjeta(t)) + ': ' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + '</div>';
+  el.innerHTML = cuerpo + _encuestaPorMesHtml(t, true);
+}
+
+// Fase 203: meses de la tarjeta = los de MESES (gdMesesTarjetasActual) dentro
+// del rango Desde/Hasta del panel; sin tablero, los meses del rango.
+function _encuestaMesesTarjeta(desde, hasta, porMes) {
+  var rango = encuestaMesesRango(desde, hasta, porMes);
+  if (typeof gdMesesTarjetasActual !== 'function' || typeof _gd === 'undefined' || !_gd || !(_gd.mesesSel || []).length) return rango;
+  var sel = gdMesesTarjetasActual();
+  return rango.filter(function (m) { return sel.indexOf(m) !== -1; });
+}
+function _encuestaMesesLbl(meses) {
+  var nombre = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  if (!meses.length) return 'Sin meses';
+  if (meses.length === 1) return nombre(meses[0]);
+  return (typeof gdMesesTexto === 'function') ? gdMesesTexto(meses, nombre) : meses.map(nombre).join(', ');
+}
+// Con MESES = "Todos": "Todos los meses (Ago 2026 – Oct 2026)" con los meses
+// que SI tienen encuestas; con meses marcados, esos meses.
+function _encuestaMesesLblTarjeta(t) {
+  var todos = typeof _gd !== 'undefined' && _gd && !(_gd.mesesSel || []).length;
+  var conDatos = t.porMes.map(function (m) { return m.periodo; });
+  if (todos && conDatos.length && typeof gdMesesTarjetasTexto === 'function') {
+    return gdMesesTarjetasTexto(conDatos, true, function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; });
+  }
+  return _encuestaMesesLbl(t.meses);
+}
+// `corto` (tarjeta FCR, fila de tarjetas): "Ago 2026 83,3 %" y la fraccion
+// en el title, para no estirar las demas tarjetas; sin `corto`, completo.
+function _encuestaPorMesHtml(t, corto) {
+  if (t.porMes.length < 2) return '';
+  var nombre = function (m) { return (typeof mesNombreLargo === 'function') ? mesNombreLargo(m) : m; };
+  var nombreCorto = function (m) { return (typeof gdMesesTexto === 'function') ? gdMesesTexto([m], nombre) : nombre(m); };
+  var detalle = function (m) { return nombre(m.periodo) + ' ' + encuestaFmtPct(m.pct) + ' (' + encuestaFcrFraccion(m.si, m.den, m.base) + ')'; };
+  if (corto) {
+    return '<div class="enc-fcr-otros" title="' + esc(t.porMes.map(detalle).join(' · ')) + '">Por mes: ' + t.porMes.map(function (m) {
+      return esc(nombreCorto(m.periodo)) + ' ' + esc(encuestaFmtPct(m.pct));
+    }).join(' · ') + '</div>';
+  }
+  return '<div class="enc-fcr-otros">Por mes: ' + t.porMes.map(function (m) { return esc(detalle(m)); }).join(' · ') + '</div>';
 }
 
 // ── Fase 147 (Parte D): sub-pestaña "One & Done" de Flujo de Llamadas ──
@@ -421,7 +464,10 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
     if (wrapErr && wrapErr.parentNode) wrapErr.parentNode.innerHTML = '<div role="alert" style="text-align:center;color:var(--c-danger-text);padding:24px 8px">No se pudo cargar One &amp; Done. Revisa la conexión y vuelve a aplicar los filtros.</div>';
     return;
   }
-  var serie = encuestaOneAndDoneSerie(porMes, encuestaMesesRango(desde, hasta, porMes), base);
+  // Fase 203: barras, tarjeta y desglose solo con los meses de MESES.
+  var mesesT = _encuestaMesesTarjeta(desde, hasta, porMes);
+  porMes = porMes.filter(function (m) { return mesesT.indexOf(m.periodo) !== -1; });
+  var serie = encuestaOneAndDoneSerie(porMes, mesesT, base);
   _encuestaOadUltimo[i] = serie;
   var d = encuestaQ3Desglose(porMes);
   if (!d.total) {
@@ -431,12 +477,12 @@ async function _encuestaDibujarOneAndDone(i, campana, desde, hasta, base) {
     if (wrap && wrap.parentNode) wrap.parentNode.innerHTML = '<div class="gd-vacio">Sin encuestas en el período seleccionado. Cuando se cargue la Encuesta de satisfacción, aquí aparecerá One &amp; Done por mes.</div>';
     return;
   }
-  var mesFin = hasta ? String(hasta).slice(0, 7) : serie[serie.length - 1].periodo;
-  var t = encuestaFcrTarjeta(porMes, mesFin);
+  var t = encuestaFcrTarjetaMeses(porMes, mesesT);
   if (elKpi) {
     elKpi.innerHTML = '<div class="aurora-kpi enc-oad"><div class="kv">' + (t.sinEncuestas ? '—' : esc(encuestaFmtPct(t.pct))) + '</div>' +
-      '<div class="kl">One &amp; Done — ' + esc(mesLbl(t.mes)) + ': ' +
-      (t.sinEncuestas ? 'Sin encuestas este mes' : esc(encuestaFmtPct(t.pct)) + ' (' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + ')') + '</div></div>';
+      '<div class="kl">One &amp; Done — ' + esc(_encuestaMesesLblTarjeta(t)) + ': ' +
+      (t.sinEncuestas ? 'Sin encuestas' : esc(encuestaFmtPct(t.pct)) + ' (' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + ')') + '</div>' +
+      _encuestaPorMesHtml(t) + '</div>';
   }
   var sinMes = serie.filter(function (s) { return s.sinEncuestas; }).map(function (s) { return mesLbl(s.periodo); });
   if (elQ3) {
