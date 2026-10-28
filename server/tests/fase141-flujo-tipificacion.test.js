@@ -95,6 +95,8 @@ function cargarTipificacion(respuestaPorTipo) {
     textoFormatoNombre: (v) => v,
     URLSearchParams,
   };
+  // Fase 205: la torta usa las funciones de tipificacion-logic.js.
+  Object.assign(sandbox, require('../../public/js/tipificacion-logic.js'));
   vm.createContext(sandbox);
   vm.runInContext(tipificacionJs, sandbox);
   return { sandbox, elementos, llamadas, graficas };
