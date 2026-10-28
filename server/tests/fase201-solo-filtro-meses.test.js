@@ -33,7 +33,7 @@ test('gdMesDeMeses: el último marcado; sin marcados, el de siempre; nunca un me
 test('index.html: sin selector MES en el encabezado; MESES dice la regla de las tarjetas', () => {
   assert.ok(!HTML.includes('id="gd-mes-sel"') && !HTML.includes('onGdMesChange'));
   assert.ok(HTML.includes('id="gd-meses-wrap"'));
-  assert.match(HTML, /Las tarjetas siguen el último mes marcado; sin ninguno marcado, el mes más reciente con datos\./);
+  assert.match(HTML, /Las tarjetas de resumen suman los meses marcados; sin ninguno marcado, todos los meses cargados\./); // Fase 203
   assert.ok(!/function onGdMesChange\(/.test(GD), 'el manejador del MES se fue');
 });
 

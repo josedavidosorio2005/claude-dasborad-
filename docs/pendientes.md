@@ -9,6 +9,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **¿Extender a todo ORLANT la regla de MESES de la Fase 203?** (28/10/2026)
+  — desde la v1.91.0, las tarjetas suman los meses marcados en MESES (Todos
+  = todos los meses cargados) en todo Mobilize y, en ORLANT, en Tráfico de
+  Llamadas y Tipificación (comparten el código). Las demás pantallas de
+  ORLANT (Tráfico de WhatsApp, Agendas, Inasistencia, Efectividad de
+  Agendamiento y de Citas, Llamadas y WhatsApp de salida, Calidad por
+  monitoreos) siguen mostrando el último mes marcado. Cómo se cierra: tu
+  decisión (y la de Edwin para ORLANT); si se extiende, una fase con
+  pruebas Todos / 1 mes / 2 meses por pantalla.
+
 - **Salida de Mobilize de agosto y septiembre** (Fase 194, 27/10/2026) —
   octubre ya está (45 conectadas + 41 no conectadas = 86). Para agosto (28
   filas "-" según Edwin, hoy 27) y septiembre (67, hoy 64) hace falta volver

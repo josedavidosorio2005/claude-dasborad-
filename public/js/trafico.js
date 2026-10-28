@@ -595,18 +595,23 @@ async function _traficoRenderPanel(p, i){
   // otro rango a mano (Fase 77, siempre se respeta). La decision es pura y
   // testeable: traficoDecidirRango (trafico-logic.js). Si el mes elegido no
   // tiene filas, el aviso "Sin datos... Ver <ultimo mes>" se mantiene igual.
+  // Fase 203: el rango arranca con los meses de MESES (Todos = todo lo
+  // cargado), no con un mes; un rango puesto a mano se respeta hasta que
+  // MESES cambie.
+  var mesesT = gdMesesTarjetasActual();
   var decision = traficoDecidirRango({
-    mesSel: _gd.mesSel,
+    meses: mesesT,
+    todos: !_gdMeses().length,
     mesSincronizado: _traficoMesSincronizado[claveEstado],
     estadoPrevio: _traficoEstado[claveEstado] || null,
     sinDatosPrevio: _traficoSinDatosMesGlobal[claveEstado],
     estadoURL: _traficoEstadoDesdeURL(),
     minDisp: minDisp,
     maxDisp: maxDisp,
-    tieneDatosMes: !!_gd.mesSel && fechasDisponibles.some(function(f){ return f.slice(0,7) === _gd.mesSel; }),
+    tieneDatosMes: fechasDisponibles.some(function(f){ return mesesT.indexOf(f.slice(0,7)) !== -1; }),
   });
   var estado = decision.estado;
-  if(decision.sincronizar) _traficoMesSincronizado[claveEstado] = _gd.mesSel;
+  if(decision.sincronizar) _traficoMesSincronizado[claveEstado] = decision.clave;
   _traficoSinDatosMesGlobal[claveEstado] = decision.sinDatosMes;
   _traficoEstado[claveEstado] = estado;
   if(decision.sinDatosMes){
@@ -615,7 +620,7 @@ async function _traficoRenderPanel(p, i){
     // aviso -- nunca un mes viejo distinto de lo que se ve en pantalla.
     _traficoAgregadoActual[claveEstado] = [];
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
-      _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', _gd.mesSel, maxDisp.slice(0,7)) + '</div>';
+      _gdAvisoSinDatosMesHtml('Tráfico de Llamadas', mesesT[mesesT.length - 1], maxDisp.slice(0,7)) + '</div>';
     host.dataset.campana = campana;
     host.dataset.sede = sede || '';
     return;
@@ -1290,7 +1295,11 @@ function _traficoRenderContenido(campana, sede, i){
   var agregado = _traficoFiltroMeses(traficoAgregar(filtradas, { granularidad: estado.granularidad, combinar: estado.combinar }), estado.granularidad);
   _traficoAgregadoActual[claveEstado] = agregado;
 
-  var tot = _traficoTotalesLlamadas(filtradas);
+  // Fase 203: las tarjetas suman solo los meses de MESES (Ago + Oct no cuenta
+  // septiembre aunque quede dentro del Desde/Hasta).
+  var mesesTarj = _gdMeses().length ? gdMesesTarjetasActual() : null;
+  var filasTarj = mesesTarj ? gdFiltrarPorMes(filtradas, function(f){ return f.fecha; }, mesesTarj) : filtradas;
+  var tot = _traficoTotalesLlamadas(filasTarj);
   var totalLlamadas = tot.total, totalContestadas = tot.contestadas, totalAbandonadas = tot.abandonadas;
   var nivelAtencion = tot.nivelAtencion, tasaAbandono = tot.tasaAbandono, nivelServicio = tot.nivelServicio;
 

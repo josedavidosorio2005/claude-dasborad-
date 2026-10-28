@@ -41,16 +41,50 @@ var _tipificacionClasifPorPanel = {};   // Fase 186: true si el cliente reparte 
 var _tipificacionMesSincronizado = {};
 var _tipificacionSinDatosMesGlobal = {};
 
+// Fase 203: el filtro del panel sigue a MESES, no a un mes: un mes marcado
+// = ese mes; varios o "Todos" = Desde/Hasta del primero al ultimo con
+// tipificacion (las tarjetas de salida suman mes a mes, asi Ago + Oct no
+// cuenta septiembre). Un filtro puesto a mano se respeta hasta que MESES cambie.
+var _tipificacionMesesTarjetas = {}; // por panel: meses que suman las tarjetas
 function _tipificacionSincronizarConMesGlobal(i, mesesCombinados){
-  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
-  if(!mesGlobal || _tipificacionMesSincronizado[i] === mesGlobal) return !!_tipificacionSinDatosMesGlobal[i];
-  _tipificacionMesSincronizado[i] = mesGlobal;
-  // Se fija el mes SIEMPRE (incluso sin datos): asi Exportar
-  // (_gdExportarTipificacion) pide ese mismo mes y, si vuelve vacio, cae
-  // solo en su propio aviso por canal -- consistente con lo que se ve.
-  _tipificacionEstadoCompartido[i] = { mes: mesGlobal, desde:'', hasta:'', linea: (_tipificacionEstadoCompartido[i]||{}).linea || '' };
-  _tipificacionSinDatosMesGlobal[i] = mesesCombinados.indexOf(mesGlobal) === -1;
+  if(typeof _gd === 'undefined' || !_gd || !_gd.periodos) return !!_tipificacionSinDatosMesGlobal[i];
+  var marcados = _gdMeses().slice().sort();
+  var clave = marcados.length ? marcados.join(',') : 'todos';
+  if(_tipificacionMesSincronizado[i] === clave) return !!_tipificacionSinDatosMesGlobal[i];
+  _tipificacionMesSincronizado[i] = clave;
+  var mesesT = gdMesesTarjetas(marcados, _gd.periodos).filter(function(m){ return mesesCombinados.indexOf(m) !== -1; });
+  _tipificacionMesesTarjetas[i] = mesesT;
+  var linea = (_tipificacionEstadoCompartido[i]||{}).linea || '';
+  // Se fija el filtro SIEMPRE (incluso sin datos): asi Exportar
+  // (_gdExportarTipificacion) pide esos mismos meses y, si vuelve vacio,
+  // cae solo en su propio aviso por canal -- consistente con lo que se ve.
+  if(!mesesT.length){
+    _tipificacionEstadoCompartido[i] = { mes: marcados[marcados.length-1] || '', desde:'', hasta:'', linea: linea };
+  } else if(mesesT.length === 1){
+    _tipificacionEstadoCompartido[i] = { mes: mesesT[0], desde:'', hasta:'', linea: linea, deMeses: true };
+  } else {
+    var r = gdRangoDeMeses(mesesT);
+    _tipificacionEstadoCompartido[i] = { mes: mesesT[mesesT.length-1], desde: r.desde, hasta: r.hasta, linea: linea, deMeses: true };
+  }
+  _tipificacionSinDatosMesGlobal[i] = !mesesT.length;
   return _tipificacionSinDatosMesGlobal[i];
+}
+// Tarjetas de salida: con varios meses de MESES (y el filtro sin tocar), un
+// pedido por mes y la suma -- nunca los meses del medio que no se marcaron.
+async function _tipificacionResumenSalidaMeses(i, campana, compartido, deCanal){
+  var mesesT = _tipificacionMesesTarjetas[i] || [];
+  if(!compartido.deMeses || mesesT.length < 2){
+    return apiRequest('GET','/calidad/tipificacion/resumen-salida?'+_tipificacionQueryStringSalida(campana, compartido, deCanal));
+  }
+  var partes = await Promise.all(mesesT.map(function(m){
+    return apiRequest('GET','/calidad/tipificacion/resumen-salida?'+_tipificacionQueryStringSalida(campana, { mes: m }, deCanal));
+  }));
+  var suma = Object.assign({}, partes[0] || {});
+  ['total', 'conectadas', 'noConectadas', 'totalLlamadas'].forEach(function(c){
+    if(suma[c] === undefined) return;
+    suma[c] = partes.reduce(function(a, r){ return a + ((r && r[c]) || 0); }, 0);
+  });
+  return suma;
 }
 
 var TIPIFICACION_CANALES = [
@@ -137,7 +171,7 @@ async function _tipificacionRenderPanel(p, i){
   if(_tipificacionSincronizarConMesGlobal(i, mesesCombinados)){
     var ultimoConDatosTipif = mesesCombinados[mesesCombinados.length-1];
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      _gdAvisoSinDatosMesHtml('Tipificación', _gd.mesSel, ultimoConDatosTipif) + '</div>';
+      _gdAvisoSinDatosMesHtml('Tipificación', _tipificacionEstadoCompartido[i].mes, ultimoConDatosTipif) + '</div>';
     return;
   }
   var estado = _tipificacionEstadoCompartido[i];
@@ -306,7 +340,7 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
     var hostSalida = document.getElementById('tipif-salida-'+i+'-'+canal);
     if(hostSalida){
       try{
-        var resumenSalida = await apiRequest('GET','/calidad/tipificacion/resumen-salida?'+_tipificacionQueryStringSalida(campana, compartido, deCanal));
+        var resumenSalida = await _tipificacionResumenSalidaMeses(i, campana, compartido, deCanal); // Fase 203
         hostSalida.innerHTML = _tipificacionTarjetasSalidaHtml(resumenSalida);
       }catch(e){ hostSalida.innerHTML = ''; }
     }

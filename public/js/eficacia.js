@@ -37,12 +37,18 @@ async function _eficaciaDibujar(i, campana, desde, hasta) {
     if (canvas && canvas.parentNode) canvas.parentNode.innerHTML = '<div class="gd-vacio">Sin CDR de llamadas en el período seleccionado. Cuando se cargue en Tipificación, aquí aparecerá la Eficacia por mes.</div>';
     return;
   }
-  var mesFin = hasta ? String(hasta).slice(0, 7) : meses[meses.length - 1].periodo;
-  var delMes = meses.filter(function (m) { return m.periodo === mesFin; })[0];
+  // Fase 203: barras y tarjeta solo con los meses de MESES; la tarjeta suma
+  // positivas y contestadas de esos meses (nunca promedio de porcentajes).
+  if (typeof gdAplicarFiltroMeses === 'function') meses = gdAplicarFiltroMeses(meses, function (m) { return m.periodo; });
+  var suma = { positivas: 0, contestadas: 0 };
+  meses.forEach(function (m) { suma.positivas += m.positivas || 0; suma.contestadas += m.contestadas || 0; });
+  var pctSuma = suma.contestadas > 0 ? Math.round((suma.positivas / suma.contestadas) * 1000) / 10 : null;
+  var lblMeses = !meses.length ? 'sin meses' : meses.length === 1 ? mesLbl(meses[0].periodo)
+    : (typeof gdMesesTexto === 'function' ? gdMesesTexto(meses.map(function (m) { return m.periodo; }), mesLbl) : meses.length + ' meses');
   if (elKpi) {
-    elKpi.innerHTML = '<div class="aurora-kpi enc-ef"><div class="kv">' + (delMes ? esc(_eficaciaPct(delMes.pct)) : '—') + '</div>' +
-      '<div class="kl">Eficacia — ' + esc(mesLbl(mesFin)) + ': ' +
-      (delMes ? delMes.positivas.toLocaleString('es-CO') + ' de ' + delMes.contestadas.toLocaleString('es-CO') + ' contestadas de ingreso con código positivo' : 'sin CDR este mes') + '</div></div>';
+    elKpi.innerHTML = '<div class="aurora-kpi enc-ef"><div class="kv">' + (suma.contestadas ? esc(_eficaciaPct(pctSuma)) : '—') + '</div>' +
+      '<div class="kl">Eficacia — ' + esc(lblMeses) + ': ' +
+      (suma.contestadas ? suma.positivas.toLocaleString('es-CO') + ' de ' + suma.contestadas.toLocaleString('es-CO') + ' contestadas de ingreso con código positivo' : 'sin CDR en estos meses') + '</div></div>';
   }
   // Azul secundario del tablero (nunca morado ni rosado).
   var color = (typeof colorSerie === 'function') ? colorSerie('secundaria') : '#3DA2DB';
