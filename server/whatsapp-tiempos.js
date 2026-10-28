@@ -102,10 +102,19 @@ function whatsappTiemposOpciones(db, campana) {
   };
 }
 
-// Las 5 franjas de UN mes (y cola opcional): cantidad y % sobre el total.
-function whatsappTiemposRangos(db, { campana, mes, skill }) {
-  const clausulas = ['campana = @campana', 'substr(fecha,1,7) = @mes'];
-  const params = { campana, mes };
+// Fase 207: condicion de mes(es) -- un mes o la lista de MESES (ya validada).
+function _condMeses(mes, meses, params) {
+  if (!meses) { params.mes = mes; return 'substr(fecha,1,7) = @mes'; }
+  const lista = String(meses).split(',');
+  lista.forEach((m, k) => { params['mes' + k] = m; });
+  return 'substr(fecha,1,7) IN (' + lista.map((m, k) => '@mes' + k).join(', ') + ')';
+}
+
+// Las 5 franjas de UN mes o de varios sumados (y cola opcional): cantidad y
+// % sobre el total.
+function whatsappTiemposRangos(db, { campana, mes, meses, skill }) {
+  const params = { campana };
+  const clausulas = ['campana = @campana', _condMeses(mes, meses, params)];
   if (skill) { clausulas.push('skill = @skill'); params.skill = skill; }
   const filas = db
     .prepare(`SELECT ${CASE_RANGO} AS rango, COUNT(*) AS n FROM whatsapp_tiempos WHERE ${clausulas.join(' AND ')} GROUP BY rango`)
@@ -115,7 +124,7 @@ function whatsappTiemposRangos(db, { campana, mes, skill }) {
   const total = filas.reduce((a, r) => a + r.n, 0);
   const dias = db.prepare(`SELECT COUNT(DISTINCT fecha) AS n FROM whatsapp_tiempos WHERE ${clausulas.join(' AND ')}`).get(params).n;
   return {
-    mes, total, dias,
+    mes: mes || null, meses: meses ? String(meses).split(',') : [mes], total, dias,
     rangos: RANGOS.map((r) => ({
       key: r.key, label: r.label, cantidad: conteo[r.key] || 0,
       pct: total ? Math.round(((conteo[r.key] || 0) / total) * 1000) / 10 : 0,
@@ -144,11 +153,13 @@ function agruparRangos(filas) {
 
 // Fase 165 (pedido de Edwin): conteo y % por rango POR COLA (del mes elegido)
 // y POR MES (todos los meses, de la cola elegida o de todas).
-function whatsappTiemposResumen(db, { campana, mes, skill }) {
+function whatsappTiemposResumen(db, { campana, mes, meses, skill }) {
+  const paramsSkill = { campana };
+  const condSkill = _condMeses(mes, meses, paramsSkill); // Fase 207: uno o varios meses
   const porSkill = db
     .prepare(`SELECT skill AS grupo, ${CASE_RANGO} AS rango, COUNT(*) AS n FROM whatsapp_tiempos
-      WHERE campana = @campana AND substr(fecha,1,7) = @mes GROUP BY grupo, rango ORDER BY grupo`)
-    .all({ campana, mes });
+      WHERE campana = @campana AND ${condSkill} GROUP BY grupo, rango ORDER BY grupo`)
+    .all(paramsSkill);
   const clausulas = ['campana = @campana'];
   const params = { campana };
   if (skill) { clausulas.push('skill = @skill'); params.skill = skill; }
@@ -157,7 +168,8 @@ function whatsappTiemposResumen(db, { campana, mes, skill }) {
       WHERE ${clausulas.join(' AND ')} GROUP BY grupo, rango ORDER BY grupo`)
     .all(params);
   return {
-    mes,
+    mes: mes || null,
+    meses: meses ? String(meses).split(',') : [mes],
     porSkill: agruparRangos(porSkill).map(({ grupo, ...r }) => ({ skill: grupo, ...r })),
     porMes: agruparRangos(porMes).map(({ grupo, ...r }) => ({ mes: grupo, ...r })),
   };

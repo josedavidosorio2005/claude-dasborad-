@@ -82,8 +82,9 @@ test('Deshacer, Eliminar y la carga llaman al refresco; el bootstrap conserva ME
   assert.match(fn(cc, '_ccDatosCambiaron'), /gdDatosCambiaron\(_cc\.cliente\)/);
   assert.match(fn(JS('cargas.js'), 'guardarCarga'), /gdDatosCambiaron\(cliente\)/);
   const boot = fn(GD, '_gdBootstrap');
-  // Fase 201: el mes de las tarjetas = ultimo marcado en MESES (conservado) o el de siempre.
-  assert.match(boot, /_gd\.mesSel = gdMesDeMeses\(_gd\.mesesSel, _gd\.mesDefecto, _gd\.periodos\);/);
+  // Fase 207: las tarjetas siguen a MESES (conservado al recargar); sin _gd.mesSel.
+  assert.match(boot, /_gd\.mesesSel = _gdMeses\(\)\.filter\(function\(m\)\{ return _gd\.periodos\.indexOf\(m\) !== -1; \}\);/);
+  assert.doesNotMatch(boot, /_gd\.mesSel/);
   assert.match(boot, /visibles\.some\(function\(t\)\{ return t\.key === conservar\.tab; \}\)/);
   // Abrir el tablero sigue igual: sin `conservar`, filtros en blanco.
   assert.match(fn(GD, 'openGenericDashboard'), /await _gdBootstrap\(\);/);

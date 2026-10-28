@@ -108,8 +108,10 @@ test('Trafico: sin umbral no hay semaforo de respaldo quemado (90/70) y la meta 
 
 test('Salida: compara solo contra el mes inmediatamente anterior y nunca en el mes en curso', () => {
   const src = leer('js/salida.js');
-  assert.match(src, /anterior\.mes !== gdMesAnterior\(delMes\.mes\)/);
+  // Fase 207: con UN mes marcado en MESES (con varios no hay comparacion).
+  assert.match(src, /anterior\.mes !== gdMesAnterior\(unico\.mes\)/);
   assert.match(src, /mesEnCurso: enCursoSal/);
+  assert.match(src, /variacion: unico \? kpiVariacion\(totalLlam, totalLlamAnt, optsSal\) : null/);
 });
 
 test('el script nuevo se carga despues de esc.js y semaforo-logic.js', () => {

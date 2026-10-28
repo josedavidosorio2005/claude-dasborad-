@@ -233,6 +233,32 @@ test('GET /calidad/inasistencia/mensual: ignora el filtro implicito de un solo m
   assert.deepEqual(mesesConRango, ['2024-03'], 'el rango desde/hasta SI acota /mensual');
 });
 
+// Fase 207 (CI "pantallas" en rojo): el panel "Por especialidad" pide
+// /especialidad SOLO con `meses` (los de MESES) -- antes la ruta exigia `mes`
+// y respondia 400. /resumen ademas debe acotar a esos meses, no sumar todos.
+test('GET /especialidad y /resumen aceptan `meses` (sin `mes`) y suman SOLO esos meses', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  const especialidad = 'ESP MESES ' + Math.random().toString(36).slice(2, 6);
+  for (const [mes, inas] of [['2023-01', 10], ['2023-02', 20], ['2023-03', 40]]) {
+    await request(app).post('/api/calidad/inasistencia/carga').set(auth(admin)).send({
+      campana: 'ORLANT', filas: [fila({ 0: mes, 2: especialidad, 4: 0, 5: inas, 6: 0, 7: 100 - inas, 8: 100 })],
+    });
+  }
+  const esp = await request(app).get('/api/calidad/inasistencia/especialidad?campana=ORLANT&meses=2023-01,2023-03').set(auth(admin));
+  assert.equal(esp.status, 200, JSON.stringify(esp.body));
+  const filaEsp = esp.body.find((r) => r.especialidad === especialidad);
+  assert.equal(filaEsp.total, 200, 'suma ene + mar, sin feb');
+  assert.equal(filaEsp.inasistencia, 50);
+
+  const res = await request(app).get('/api/calidad/inasistencia/resumen?campana=ORLANT&meses=2023-01,2023-03&especialidad=' + encodeURIComponent(especialidad)).set(auth(admin));
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  assert.equal(res.body.total, 200, 'solo los meses pedidos, nunca todos');
+  assert.equal(res.body.pct, 25, '% desde los totales sumados (50/200)');
+
+  const sinMes = await request(app).get('/api/calidad/inasistencia/especialidad?campana=ORLANT').set(auth(admin));
+  assert.equal(sinMes.status, 400, 'sin mes ni meses sigue siendo 400');
+});
+
 test('GET /calidad/inasistencia/especialidad respeta el acceso por campana', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const create = await request(app)

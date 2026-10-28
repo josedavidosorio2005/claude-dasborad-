@@ -8,7 +8,7 @@
 
 var _gd = {
   cliente: null, config: null, cargas: {}, periodos: [],
-  mesSel: '', compSel: '', vistaSel: '', tab: null, subtab: null, charts: {},
+  compSel: '', vistaSel: '', tab: null, subtab: null, charts: {},
   // Fase 167: meses elegidos en el filtro "Meses" ([] = todos). Solo cambia
   // las graficas/tablas por mes (gdFiltrarPorMes), nunca el MES de arriba.
   mesesSel: []
@@ -16,6 +16,12 @@ var _gd = {
 
 var _GD_MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 function _gdNum(v){ var n = typeof v==='number'?v:Number(v); return Number.isFinite(n)?n:0; }
+// Fase 207: meses de MESES para el nombre del archivo exportado ("Sep-26" o "Ago-26_a_Oct-26").
+function _gdMesesLblExport(){
+  var m = (typeof gdMesesTarjetasActual === 'function') ? gdMesesTarjetasActual() : [];
+  if(!m.length) return 's/d';
+  return m.length === 1 ? _gdMesLbl(m[0]) : _gdMesLbl(m[0]) + '_a_' + _gdMesLbl(m[m.length-1]);
+}
 function _gdMesLbl(p){ var x=String(p||'').split('-'); return x.length<2?(p||''):((_GD_MESES[parseInt(x[1],10)-1]||x[1])+'-'+x[0].slice(2)); }
 // Fase 147: dia con el mes en letras ('15 sep'), ver periodoLegible.
 function _gdDiaLbl(f){ return (typeof fechaDiaCorta === 'function') ? fechaDiaCorta(String(f||'')) : String(f||''); }
@@ -70,10 +76,39 @@ function _gdSemaforoClase(color){
 
 // ── Resolucion de una "fuente" de datos ─────────────────────
 function _gdSeccionCargas(s){ return (_gd.cargas && _gd.cargas[s]) || []; }
+// Fase 207: las cargas genericas siguen a MESES (Todos = todas). Una sola
+// carga solo si hay UN mes; con varios, _gdCargasDeMeses y la suma.
+function _gdCargasDeMeses(s){
+  var meses = gdMesesTarjetasActual();
+  return _gdSeccionCargas(s).filter(function(c){ return meses.indexOf(String(c.periodo).slice(0, 7)) !== -1; })
+    .sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
+}
 function _gdCargaMes(s){
-  var arr = _gdSeccionCargas(s).slice().sort(function(a,b){ return b.periodo.localeCompare(a.periodo); });
-  var tope = _gd.mesSel || (arr[0] && arr[0].periodo);
-  return arr.filter(function(c){ return !tope || c.periodo <= tope; })[0] || null;
+  var arr = _gdCargasDeMeses(s);
+  return arr.length === 1 ? arr[0] : null;
+}
+// Formatos de KPI que se pueden sumar entre meses (conteos). Un % / decimal
+// / tiempo sin formula no se suma: la tarjeta pide elegir un solo mes.
+var GD_FORMATOS_SUMABLES = ['entero', 'miles', undefined, null, ''];
+// Suma de un campo (o de los dos terminos de su formula) en las filas
+// elegidas de varias cargas; null si no se puede sumar.
+function _gdSumarCargas(cargas, f, formato){
+  if(!cargas.length) return null;
+  if(f.formula){
+    var sa = 0, sb = 0, hay = false;
+    cargas.forEach(function(c){
+      var row = _gdPickFila(c.filas);
+      if(!row || row[f.a] === null || row[f.a] === undefined || row[f.b] === null || row[f.b] === undefined) return;
+      sa += _gdNum(row[f.a]); sb += _gdNum(row[f.b]); hay = true;
+    });
+    if(!hay) return null;
+    var tot = {}; tot[f.a] = sa; tot[f.b] = sb;
+    return _gdEvalCampo(tot, f);
+  }
+  if(GD_FORMATOS_SUMABLES.indexOf(formato) === -1) return null;
+  var suma = 0, alguno = false;
+  cargas.forEach(function(c){ var v = _gdEvalCampo(_gdPickFila(c.filas), f); if(v !== null && v !== undefined){ suma += v; alguno = true; } });
+  return alguno ? suma : null;
 }
 function _gdVistaFiltro(){
   var v = _gd.config && _gd.config.vista;
@@ -125,8 +160,6 @@ function _gdResolver(f, extra){
 
   if(f.modo === 'serie'){
     var cargas = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return a.periodo.localeCompare(b.periodo); });
-    var tope = _gd.mesSel || (cargas.length ? cargas[cargas.length-1].periodo : null);
-    if(tope) cargas = cargas.filter(function(c){ return c.periodo <= tope; });
     var labels = cargas.map(function(c){ return _gdMesLargo(c.periodo); });
     var values = cargas.map(function(c){ return _gdEvalCampo(_gdPickFila(c.filas), f); });
     if(f.transform === 'incremento'){
@@ -144,8 +177,12 @@ function _gdResolver(f, extra){
   }
 
   if(f.modo === 'ultimo'){
-    var carga = _gdCargaMes(f.s);
-    return { scalar: carga ? _gdEvalCampo(_gdPickFila(carga.filas), f) : null };
+    // Fase 207: un mes = esa carga; varios = suma (formula: con sus dos
+    // terminos sumados); un % o promedio sin formula -> null + unMes.
+    var cargasU = _gdCargasDeMeses(f.s);
+    if(cargasU.length <= 1) return { scalar: cargasU.length ? _gdEvalCampo(_gdPickFila(cargasU[0].filas), f) : null };
+    var sumU = _gdSumarCargas(cargasU, f, extra && extra.formato);
+    return { scalar: sumU, unMes: sumU === null && !f.formula && GD_FORMATOS_SUMABLES.indexOf(extra && extra.formato) === -1 };
   }
 
   if(f.modo === 'filas'){
@@ -156,8 +193,7 @@ function _gdResolver(f, extra){
     // xk. Para series "(año)" que el PDF pide acumuladas (ej. Ordenes STA
     // por servicio/estado), no solo el ultimo mes cargado.
     if(f.anual){
-      var cActual = _gdCargaMes(f.s);
-      var anio = gdAnioDeMes(_gd.mesSel || (cActual ? cActual.periodo : null));
+      var anio = gdAnioDeMes(gdMesesTarjetasActual().slice(-1)[0] || null); // Fase 207: año del ultimo mes de MESES
       var cargasAnio = gdCargasDelAnio(_gdSeccionCargas(f.s), anio);
       var sumas = {}, orden = [];
       cargasAnio.forEach(function(c){
@@ -172,10 +208,16 @@ function _gdResolver(f, extra){
       return { labels: orden, values: orden.map(function(k){ return sumas[k]; }) };
     }
 
-    var c2 = _gdCargaMes(f.s);
-    var filas = (c2 ? c2.filas || [] : []).filter(function(r){
+    // Fase 207: las filas de TODAS las cargas de MESES; con varios meses y
+    // un eje que no es fecha, se agrupan por categoria (suma; formula con
+    // sus terminos sumados).
+    var cargas2 = _gdCargasDeMeses(f.s);
+    var filas = [];
+    cargas2.forEach(function(c){ filas = filas.concat(c.filas || []); });
+    filas = filas.filter(function(r){
       return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
     });
+    if(cargas2.length > 1 && xk !== 'fecha') filas = gdAgruparFilasPorCategoria(filas, xk, f);
     // filtroCampo (panel con filtro por una columna distinta al eje X, ej. un
     // pie de tipificacion por 'tipificacion' filtrable por 'linea') pisa xk
     // solo para saber QUE columna filtrar — el eje X del grafico sigue siendo xk.
@@ -191,8 +233,9 @@ function _gdResolver(f, extra){
   }
 
   if(f.modo === 'agregado'){
-    var c3 = _gdCargaMes(f.s);
-    var rows = (c3 ? c3.filas || [] : []).filter(function(r){
+    var rows = [];
+    _gdCargasDeMeses(f.s).forEach(function(c){ rows = rows.concat(c.filas || []); }); // Fase 207
+    rows = rows.filter(function(r){
       return _gdFilaMatch(r, f.filtro) && (!vf || _gdUp(r[vf.campo])===_gdUp(vf.valor));
     });
     var total = 0, count = 0;
@@ -203,8 +246,7 @@ function _gdResolver(f, extra){
   // Suma de un campo across TODAS las cargas del año (gdCargasDelAnio) — KPI
   // anual con texto (ej. "Efectividad del año" de ordenamiento medico 3P).
   if(f.modo === 'anual'){
-    var cAct = _gdCargaMes(f.s);
-    var anioK = gdAnioDeMes(_gd.mesSel || (cAct ? cAct.periodo : null));
+    var anioK = gdAnioDeMes(gdMesesTarjetasActual().slice(-1)[0] || null); // Fase 207
     var cargasK = gdCargasDelAnio(_gdSeccionCargas(f.s), anioK);
     var totalK = 0;
     cargasK.forEach(function(c){
@@ -215,7 +257,7 @@ function _gdResolver(f, extra){
   }
 
   // AHT real de Trafico de Llamadas (Wolkvox) para el mes seleccionado
-  // (`_gd.mesSel`, o el mes mas reciente con datos si no hay ninguno
+  // (Fase 207: los meses de MESES; antes `_gd.mesSel` o el mas reciente
   // elegido) -- Fase 65: reemplaza el dato manual de Gestion de base
   // (`aht_segundos`) en 6 clientes, para que la tarjeta "AHT Promedio" de
   // la franja global sea la MISMA fuente y formula que la sub-pestaña
@@ -229,12 +271,10 @@ function _gdResolver(f, extra){
     var campanaAht = f.campana || _gd.cliente;
     var datosAht = (typeof _trafico !== 'undefined' && _trafico[campanaAht]) ? _trafico[campanaAht] : null;
     if(!datosAht || !datosAht.filas || !datosAht.filas.length) return { scalar: null };
-    var mesesAht = datosAht.filas.map(function(r){ return String(r.fecha).slice(0,7); });
-    var mesTopeAht = _gd.mesSel || mesesAht.slice().sort().reverse()[0];
-    if(!mesTopeAht) return { scalar: null };
-    var filasMesAht = (typeof traficoFiltrarFilas === 'function')
-      ? traficoFiltrarFilas(datosAht.filas, { desde: mesTopeAht + '-01', hasta: mesTopeAht + '-31' })
-      : [];
+    // Fase 207: los dias de los meses de MESES (ponderado por contestadas).
+    var mesesTarjAht = gdMesesTarjetasActual();
+    var filasMesAht = datosAht.filas.filter(function(r){ return mesesTarjAht.indexOf(String(r.fecha).slice(0,7)) !== -1; });
+    if(!filasMesAht.length) return { scalar: null };
     return { scalar: (typeof traficoAhtPromedioPeriodo === 'function') ? traficoAhtPromedioPeriodo(filasMesAht) : null };
   }
 
@@ -422,7 +462,8 @@ function _gdAplicarFiltroPanel(i){
 //   - si el usuario eligio "Comparar contra", ese periodo exacto (o el ultimo <=).
 //   - si no, el periodo inmediatamente anterior al que se esta viendo.
 function _gdResolverComp(f){
-  if(!f || f.modo !== 'ultimo') return { scalar: null, periodo: null };
+  // Fase 207: comparar solo tiene sentido con UN mes marcado en MESES.
+  if(!f || f.modo !== 'ultimo' || !gdMesUnicoMarcado()) return { scalar: null, periodo: null };
   var actual = _gdCargaMes(f.s);
   if(!actual) return { scalar: null, periodo: null };
   var arr = _gdSeccionCargas(f.s).slice().sort(function(a,b){ return b.periodo.localeCompare(a.periodo); });
@@ -467,7 +508,8 @@ function _gdFueraDeRango(cur, prev, k){
 // HTML de una tarjeta KPI "de BI": valor grande, tendencia vs comparacion,
 // avance de meta y borde de alerta si esta fuera de rango.
 function _gdKpiCardHtml(k){
-  var cur = _gdResolver(k.fuente).scalar;
+  var resK = _gdResolver(k.fuente, { formato: k.formato });
+  var cur = resK.scalar;
   var comp = _gdResolverComp(k.fuente);
   var prev = comp.scalar;
   var vari = _gdVariacion(cur, prev);
@@ -515,6 +557,7 @@ function _gdKpiCardHtml(k){
   return '<div class="aurora-kpi gd-kpi ' + cls + (alerta ? ' gd-kpi-alerta' : '') + '">' +
     (alerta ? '<div class="gd-kpi-flag" title="Valor fuera del rango esperado">⚠</div>' : '') +
     '<div class="kv">' + semBadge + txt + '</div><div class="kl">' + esc(k.titulo) + '</div>' +
+    (resK.unMes ? '<div class="gd-kpi-nota">Elige un solo mes en MESES para ver este dato.</div>' : '') +
     trendHtml + metaHtml + '</div>';
 }
 
@@ -1083,11 +1126,12 @@ async function _gdBootstrap(conservar){
   // un mes que no sea una opcion real del selector.
   var mesesPrincipales = gdMesesUnion([mesesTraficoLlamadas, mesesTipificacion]);
   _gd.periodos = gdMesesUnion([Object.keys(mesesCargas), mesesTraficoLlamadas, mesesTraficoWpp, mesesAgendas, mesesEfectividadAgendamiento, mesesInasistencia, mesesEfectividadCitas, mesesTipificacion, mesesCalidad, mesesSalida, mesesLlamadasUnicas, mesesSoloPanel]);
-  // Fase 201: sin selector MES. El mes de las tarjetas = ultimo marcado en
-  // MESES (que se conserva al recargar datos) o, sin ninguno, el de siempre.
+  // Fase 207: las tarjetas de TODAS las campañas siguen a MESES (Todos = todos
+  // los meses cargados; gdMesesTarjetasActual). MESES se conserva al recargar.
+  // mesDefecto (mes mas reciente con datos) se conserva como dato, pero NINGUNA
+  // tarjeta lo lee (lo verifica fase207-meses-todas-campanas.test.js).
   _gd.mesDefecto = gdMesPorDefecto(mesesPrincipales, _gd.periodos);
   _gd.mesesSel = _gdMeses().filter(function(m){ return _gd.periodos.indexOf(m) !== -1; });
-  _gd.mesSel = gdMesDeMeses(_gd.mesesSel, _gd.mesDefecto, _gd.periodos);
 
   renderGenericHeader();
   renderGenericKpis();
@@ -1297,8 +1341,9 @@ function _gdPintarSubtitulo(){
   // 2026 – Oct 2026)", un mes o la lista), nunca un mes por defecto.
   var mesesT = gdMesesTarjetasActual();
   var mesLbl = gdMesesTarjetasTexto(mesesT, !_gdMeses().length, mesNombreLargo);
-  // Fase 152 (B3): un solo mes marcado que es el mes en curso se marca como parcial.
-  var rotuloParcial = (_gdMeses().length === 1 && typeof gdRotuloMesParcial === 'function') ? gdRotuloMesParcial(mesesT[0], gdHoyLocal(), null, mesNombreLargo) : '';
+  // Fase 152 (B3) + 207: "parcial" si el mes en curso esta entre los meses.
+  var rotuloParcial = gdRotuloParcialMeses(mesesT, gdHoyLocal(), mesNombreLargo);
+  if(rotuloParcial && mesesT.length > 1) rotuloParcial = mesLbl + ' — ' + rotuloParcial;
   // Fase 176: el " — CLIENTE" va en su propio span; en el telefono se oculta
   // (el cliente ya esta en el logo y el titulo) para que quepa en una linea.
   sub.innerHTML = esc('Informe ' + (rotuloParcial || mesLbl)) + '<span class="gd-sub-cliente"> — ' + esc(_gd.cliente) + '</span>';
@@ -1340,11 +1385,11 @@ function _gdPintarVistaYMeses(){
 }
 
 // "Comparar contra": periodo anterior automatico + cualquier periodo previo
-// al mes de las tarjetas (Fase 201: el ultimo marcado en MESES).
+// al mes marcado. Fase 207: solo con UN mes marcado en MESES.
 function _gdPintarCompararContra(){
   var cs = document.getElementById('gd-comp-sel');
   if(cs){
-    var verMes = _gd.mesSel || (_gd.periodos[0] || '');
+    var verMes = gdMesUnicoMarcado();
     var previos = _gd.periodos.filter(function(p){ return !verMes || p < verMes; });
     cs.innerHTML = '<option value="">Período anterior (auto)</option>' +
       previos.map(function(p){ return '<option value="'+p+'">'+mesNombreLargo(p)+'</option>'; }).join('');
@@ -1377,15 +1422,17 @@ function _gdActualizarCompararContra(){
   var indicesVisibles = subActiva ? subActiva.indices : tab.panels.map(function(p,i){ return i; });
   var visibles = tab.panels.filter(function(p,i){ return indicesVisibles.indexOf(i) !== -1; });
   var todosAutonomos = gdTodosAutonomos(visibles);
-  wrap.style.display = todosAutonomos ? 'none' : '';
-  nota.style.display = todosAutonomos ? '' : 'none';
+  // Fase 207: con Todos o varios meses no hay "mes anterior" contra el que comparar.
+  var sinComparar = todosAutonomos || !gdMesUnicoMarcado();
+  wrap.style.display = sinComparar ? 'none' : '';
+  nota.style.display = sinComparar ? '' : 'none';
+  nota.textContent = todosAutonomos ? 'La comparación aplica a las pestañas de resumen' : 'La comparación aplica con un solo mes marcado en MESES';
 }
 
 // Fase 201: el mes de las tarjetas cambia con MESES. Solo se repinta lo que
 // depende de el (subtitulo, Comparar contra, tarjetas y la pestaña); la lista
 // de MESES no se redibuja, asi el foco se queda en la casilla.
 function _gdMesDesdeMeses(){
-  _gd.mesSel = gdMesDeMeses(_gd.mesesSel, _gd.mesDefecto, _gd.periodos);
   _gdPintarSubtitulo();
   _gdPintarCompararContra();
   renderGenericKpis();
@@ -1416,7 +1463,7 @@ function gdReiniciarFiltros(){
   });
   if(typeof _gd !== 'undefined'){
     _gd.cliente = null; _gd.config = null; _gd.cargas = {}; _gd.periodos = [];
-    _gd.mesSel = ''; _gd.mesDefecto = ''; _gd.compSel = ''; _gd.vistaSel = ''; _gd.tab = null; _gd.subtab = null; _gd.mesesSel = [];
+    _gd.mesDefecto = ''; _gd.compSel = ''; _gd.vistaSel = ''; _gd.tab = null; _gd.subtab = null; _gd.mesesSel = [];
   }
   // Parametros de filtros en la URL (Trafico: tv_*/tww_*): fuera.
   try{
@@ -1952,13 +1999,13 @@ function _gdRenderNotaKpi(p, i){
 // pestaña, "tabCalidad" siempre los emite juntos) — la barra de filtro se
 // dibuja una sola vez (en calidad_kpis, que va primero) y calidad_pie lee
 // el mismo estado sin dibujar una segunda barra redundante. A diferencia
-// del selector de mes global (_gd.mesSel) de antes de la Fase 86, este
+// del selector de mes global de antes de la Fase 86, este
 // filtro ahora SI sigue al selector de mes de arriba (tema 3): el mes
 // elegido desliza la ventana de 12 meses igual que Trafico -- ver
 // _calDashMesSincronizado mas abajo.
 var _calDashFiltro = {}; // por campana: { asesores:[...]|null, desde, hasta }
-var _calDashMesSincronizado = {}; // por campana: ultimo _gd.mesSel ya aplicado
-var _calDashSinDatosMesGlobal = {}; // por campana: true si _gd.mesSel no tiene monitoreos
+var _calDashMesSincronizado = {}; // por campana: ultima clave de MESES aplicada (Fase 207)
+var _calDashSinDatosMesGlobal = {}; // por campana: true si los meses de MESES no tienen monitoreos
 
 function _calDashEstado(camp, todos){
   if(!_calDashFiltro[camp]){
@@ -2004,36 +2051,34 @@ function _gdRenderCalidad(p, i){
   var asesoresDisp = calDashAsesoresDistintos(todos);
   var estado = _calDashEstado(camp, todos);
 
-  // Fase 86 (tema 3): si el selector MES de arriba cambio desde la ultima
-  // vez que se sincronizo esta campana, desliza la ventana de 12 meses
-  // para que TERMINE en el mes elegido (mismo criterio que Trafico). Si
-  // ese mes no tiene ningun monitoreo, aviso con boton al ultimo mes con
-  // datos en vez de KPIs/pie en cero (que se verian como "0 monitoreos
-  // reales" en vez de "mes no sincronizado").
-  if(_gd.mesSel && _calDashMesSincronizado[camp] !== _gd.mesSel){
-    _calDashMesSincronizado[camp] = _gd.mesSel;
-    var inicioMesGlobalCal = _gd.mesSel + '-01', finMesGlobalCal = _gdFinDeMes(_gd.mesSel);
-    var tieneDatosMesGlobalCal = todos.some(function(m){ return m.fecha >= inicioMesGlobalCal && m.fecha <= finMesGlobalCal; });
+  // Fase 207: el rango sigue a MESES (Todos = todos los monitoreos; uno o
+  // varios meses = del primero al ultimo marcado, y solo esos meses). Un
+  // rango puesto a mano se respeta hasta que MESES cambie. Meses marcados sin
+  // monitoreos: aviso con boton al ultimo mes con datos.
+  var marcadosCal = _gdMeses().slice().sort();
+  var claveCal = marcadosCal.length ? marcadosCal.join(',') : 'todos';
+  var fechasCalTodas = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
+  if(_calDashMesSincronizado[camp] !== claveCal){
+    _calDashMesSincronizado[camp] = claveCal;
+    var rangoCal = marcadosCal.length ? gdRangoDeMeses(marcadosCal) : { desde: fechasCalTodas[0] || '', hasta: fechasCalTodas[fechasCalTodas.length-1] || '' };
     // Se fija el rango SIEMPRE (incluso sin datos): asi Exportar
     // (_gdExportarCalidad, que recalcula fresco desde _calDashFiltro en
     // el momento del clic) queda consistente con lo que se ve en pantalla.
-    var fechasCalTodas = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
-    estado.hasta = finMesGlobalCal;
-    estado.desde = (typeof traficoVentana12Meses === 'function') ? traficoVentana12Meses(estado.hasta, fechasCalTodas[0]) : estado.desde;
-    _calDashSinDatosMesGlobal[camp] = !tieneDatosMesGlobalCal;
+    estado.desde = rangoCal.desde;
+    estado.hasta = rangoCal.hasta;
+    estado.meses = marcadosCal.slice();
+    _calDashSinDatosMesGlobal[camp] = marcadosCal.length > 0 && !todos.some(function(m){ return marcadosCal.indexOf(String(m.fecha).slice(0,7)) !== -1; });
   }
   if(_calDashSinDatosMesGlobal[camp]){
-    var fechasCalOrden = todos.map(function(m){ return m.fecha; }).filter(Boolean).sort();
-    var ultimoMesCal = fechasCalOrden.length ? fechasCalOrden[fechasCalOrden.length-1].slice(0,7) : null;
+    var ultimoMesCal = fechasCalTodas.length ? fechasCalTodas[fechasCalTodas.length-1].slice(0,7) : null;
     if(p.tipo === 'calidad_kpis'){
       var fElAviso = document.getElementById('gd-f'+i); if(fElAviso) fElAviso.innerHTML = '';
       var elAviso = document.getElementById('gd-p'+i);
-      if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', _gd.mesSel, ultimoMesCal);
+      if(elAviso) elAviso.innerHTML = _gdAvisoSinDatosMesHtml('Calidad', marcadosCal[marcadosCal.length-1], ultimoMesCal);
     } else {
       // calidad_pie / calidad_bar_asesores: una linea de texto en vez de un
       // canvas vacio (Fase 144, A6) -- el aviso con "Ver <mes>" ya esta arriba.
-      var mesTxt = (typeof mesNombreLargo === 'function') ? mesNombreLargo(_gd.mesSel) : _gd.mesSel;
-      _gdPanelVacioEnCanvas(i, 'Sin monitoreos en ' + String(mesTxt).toLowerCase() + '.');
+      _gdPanelVacioEnCanvas(i, 'Sin monitoreos en los meses elegidos.');
     }
     return;
   }
@@ -2043,6 +2088,8 @@ function _gdRenderCalidad(p, i){
   if(!estado.asesores.length) estado.asesores = asesoresDisp.slice();
 
   var arr = calDashFiltrarMonitoreos(todos, { asesores: estado.asesores, desde: estado.desde, hasta: estado.hasta });
+  // Fase 207: con meses sueltos (Ago + Oct), solo los monitoreos de esos meses.
+  if(estado.meses && estado.meses.length) arr = gdFiltrarPorMes(arr, function(m){ return m.fecha; }, estado.meses);
   var r = calDashResumen(arr);
 
   if(p.tipo === 'calidad_kpis'){
@@ -2133,7 +2180,7 @@ function _gdRenderCalidad(p, i){
 function _gdDatosKpis(){
   var kpis = (_gd.config.layout && _gd.config.layout.kpis) || [];
   return kpis.map(function(k){
-    var cur = _gdResolver(k.fuente).scalar;
+    var cur = _gdResolver(k.fuente, { formato: k.formato }).scalar; // Fase 207
     var comp = _gdResolverComp(k.fuente);
     var v = _gdVariacion(cur, comp.scalar);
     var meta = _gdMetaValor(k);
@@ -2216,7 +2263,7 @@ async function _gdExportarAgendas(p, i){
 
 // "Ranking de Asesores" (Fase 111, pedido textual de Edwin: "el ranking va
 // a ser efectividad por agendamiento"): exporta la tabla COMPLETA del mes
-// elegido arriba (_gd.mesSel -- este panel no tiene su propio filtro de
+// elegido arriba (Fase 207: los meses de MESES -- este panel no tiene su propio filtro de
 // mes, ver public/js/efectividad-agendamiento.js), igual que se ve en
 // pantalla, mas una fila de totales del equipo (ponderado, nunca el
 // promedio simple de los %). La proteccion contra inyeccion de formulas
@@ -2225,11 +2272,12 @@ async function _gdExportarAgendas(p, i){
 async function _gdExportarEfectividadAgendamiento(p, i){
   var campana = p.campana;
   var titulo = p.titulo || 'Ranking de Asesores';
-  if(!_gd.mesSel) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para el mes actual.' }];
+  var mesesEaExp = (typeof _eaMesesPanel === 'function') ? _eaMesesPanel(_eaOpciones[campana] || { meses: [] }) : []; // Fase 207
+  if(!mesesEaExp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para los meses elegidos.' }];
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
-  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(_gd.mesSel)) || ranking; }catch(e){}
+  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(mesesEaExp.join(','))) || ranking; }catch(e){}
   if(!ranking.filas || !ranking.filas.length){
-    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + mesNombreLargo(_gd.mesSel) + '.' }];
+    return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + gdMesesTarjetasTexto(mesesEaExp, false, mesNombreLargo) + '.' }];
   }
   var filas = ranking.filas.map(function(f){
     return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), Gestiones: f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
@@ -2380,16 +2428,16 @@ async function _gdExportarInasistencia(p, i){
   var estado = _inasistenciaEstado[campana] || {};
 
   if(vista === 'porespecialidad'){
-    var mesGlobal = estado.mes || (typeof _gd!=='undefined' ? _gd.mesSel : '');
-    if(!mesGlobal) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
+    var mesesEspExp = estado.meses || []; // Fase 207: los de MESES con datos
+    if(!mesesEspExp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia todavia.' }];
     var paramsEsp = new URLSearchParams();
     paramsEsp.set('campana', campana);
-    paramsEsp.set('mes', mesGlobal);
+    paramsEsp.set('meses', mesesEspExp.join(','));
     if(estado.sede) paramsEsp.set('sede', estado.sede);
     if(estado.entidad) paramsEsp.set('entidad', estado.entidad);
     var filasEsp = [];
     try{ filasEsp = await apiRequest('GET', '/calidad/inasistencia/especialidad?'+paramsEsp.toString()) || []; }catch(e){}
-    if(!filasEsp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para ' + inasistenciaMesLbl(mesGlobal) + ' con estos filtros.' }];
+    if(!filasEsp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para ' + gdMesesTarjetasTexto(mesesEspExp, false, mesNombreLargo) + ' con estos filtros.' }];
     var conPct = filasEsp.map(function(f){ return { especialidad: f.especialidad, pct: inasistenciaPctPonderado(f.inasistencia, f.pendiente, f.total), total: f.total }; });
     var ordenadas = inasistenciaOrdenarBaseBaja(conPct, (typeof INASISTENCIA_BASE_BAJA_UMBRAL!=='undefined') ? INASISTENCIA_BASE_BAJA_UMBRAL : 30);
     return [{ titulo: titulo, tipo: 'tabla', filas: ordenadas.map(function(f){
@@ -2425,6 +2473,7 @@ function _gdExportarCalidad(p, i){
   var todos = (typeof CAL_DB!=='undefined' && CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
   var estado = _calDashEstado(camp, todos);
   var arr = calDashFiltrarMonitoreos(todos, { asesores: estado.asesores, desde: estado.desde, hasta: estado.hasta });
+  if(estado.meses && estado.meses.length) arr = gdFiltrarPorMes(arr, function(m){ return m.fecha; }, estado.meses); // Fase 207
   var r = calDashResumen(arr);
   if(!r.total){
     return [{ titulo: 'Calidad', tipo: 'aviso', filas: [], mensaje: 'Sin monitoreos de Calidad para el filtro actual.' }];
@@ -2527,7 +2576,7 @@ async function _gdExportExcel(){
   if(typeof XLSX === 'undefined'){ showToast('No se pudo exportar: no se pudo cargar el generador de Excel.'); return; }
   try{
     var wb = XLSX.utils.book_new();
-    var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+    var mesLbl = _gdMesesLblExport(); // Fase 207: los meses de MESES
     // El aviso va PRIMERO (primera hoja que se ve al abrir el archivo) si los
     // datos de este dashboard son de demostracion — para que un Excel con
     // datos falsos nunca circule sin decirlo.
@@ -2564,7 +2613,7 @@ async function _gdExportPrint(){
   var w = window.open('', '_blank');
   if(!w){ showToast('No se pudo exportar: permite las ventanas emergentes para exportar a PDF.'); return; }
   try{
-    var mesLbl = _gd.mesSel ? _gdMesLbl(_gd.mesSel) : (_gd.periodos[0] ? _gdMesLbl(_gd.periodos[0]) : 's/d');
+    var mesLbl = _gdMesesLblExport(); // Fase 207: los meses de MESES
     var kpis = _gdDatosKpis();
     var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
     var SEM_HEX = { VERDE: '#27ae60', AMARILLO: '#e67e22', ROJO: '#e74c3c' };

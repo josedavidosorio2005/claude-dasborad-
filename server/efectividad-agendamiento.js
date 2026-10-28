@@ -133,10 +133,13 @@ function efectividadAgendamientoOpciones(db, campana) {
 // `equipo` es el agregado del mes completo: totalGestiones, totalAgendas,
 // efectividad PONDERADA (Σagendas/Σgestiones, nunca el promedio simple de
 // los % de cada asesor -- ver control Sep-26, PROGRESS.md Fase 111).
-function efectividadAgendamientoRanking(db, { campana, mes }) {
+// Fase 207: con `meses` (lista ya validada) suma gestiones y agendas por
+// asesor en esos meses y el puesto sale de los totales sumados.
+function efectividadAgendamientoRanking(db, { campana, mes, meses }) {
+  const lista = meses ? String(meses).split(',') : [mes];
   const filas = db
-    .prepare('SELECT asesor, gestiones, agendas FROM efectividad_agendamiento WHERE campana = ? AND mes = ?')
-    .all(campana, mes);
+    .prepare('SELECT asesor, SUM(gestiones) AS gestiones, SUM(agendas) AS agendas FROM efectividad_agendamiento WHERE campana = ? AND mes IN (' + lista.map(() => '?').join(', ') + ') GROUP BY asesor')
+    .all(campana, ...lista);
 
   const conPct = filas.map((f) => ({
     asesor: f.asesor,

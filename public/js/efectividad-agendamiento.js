@@ -7,7 +7,7 @@
 // `efectividad_agendamiento`.
 //
 // Sin filtros propios -- el Mes lo pone SOLO el selector global de arriba
-// (_gd.mesSel), mismo criterio de "aviso + boton Ver <ultimo mes>" que el
+// (Fase 207: los meses de MESES), mismo criterio de "aviso + boton Ver <ultimo mes>" que el
 // resto de paneles autonomos (Agendas/Inasistencia/Tipificacion/Trafico,
 // Fase 86 tema 3). Tabla con TODOS los asesores (nunca un "Otros") +
 // buscador; grafica combo (barras Gestiones/Agendas + linea % Efectividad
@@ -66,15 +66,20 @@ function _eaBuscarInput(i, texto){
   _eaRenderizarTabla(i);
 }
 
+// Fase 207: meses del panel = los de MESES que tienen datos (Todos = todos).
+function _eaMesesPanel(opciones){
+  var conDatos = (opciones && opciones.meses) || [];
+  return gdMesesTarjetasActual().filter(function(m){ return conDatos.indexOf(m) !== -1; });
+}
 async function _eaDibujar(campana, i, opciones){
-  var mesSel = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
+  var mesesEa = _eaMesesPanel(opciones);
   var avisoEl = document.getElementById('ea-aviso-'+i);
   var tarjetasEl = document.getElementById('ea-tarjetas-wrap-'+i);
   var chartWrapEl = document.getElementById('ea-chart-wrap-'+i);
 
-  if(!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1){
+  if(!mesesEa.length){
     var ultimoConDatos = opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null;
-    if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('efectividad', mesSel, ultimoConDatos, mesNombreLargo);
+    if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('efectividad', _gdMeses().slice(-1)[0] || '', ultimoConDatos, mesNombreLargo);
     if(tarjetasEl) tarjetasEl.innerHTML = '';
     if(chartWrapEl) chartWrapEl.innerHTML = '';
     _eaUltimoRanking[i] = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
@@ -84,7 +89,7 @@ async function _eaDibujar(campana, i, opciones){
   if(avisoEl) avisoEl.innerHTML = '';
 
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
-  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesSel)) || ranking; }
+  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(mesesEa.join(','))) || ranking; }
   catch(e){ showToast(e.message, 'error'); }
   _eaUltimoRanking[i] = ranking;
   _eaBusqueda[i] = '';
@@ -92,9 +97,10 @@ async function _eaDibujar(campana, i, opciones){
   if(buscarEl) buscarEl.value = '';
 
   if(tarjetasEl){
+    var lblEa = gdMesesTarjetasTexto(mesesEa, !_gdMeses().length, mesNombreLargo); // Fase 207
     tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
-      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">Gestiones del mes</div></div>' +
-      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">Agendas del mes</div></div>' +
+      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">Gestiones · '+esc(lblEa)+'</div></div>' +
+      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">Agendas · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+efectividadAgendamientoFmtPct(ranking.equipo.efectividad)+'</div><div class="kl">Efectividad del equipo (ponderada)</div></div>' +
       '</div>';
   }

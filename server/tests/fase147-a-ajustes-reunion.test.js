@@ -53,7 +53,9 @@ test('avisos y titulos con el mes completo; los nombres de archivo exportado NO 
   const gd = fs.readFileSync(path.join(PUB, 'js', 'dashboard-generic.js'), 'utf8');
   assert.match(gd, /var fmt = formatearMes \|\| _gdMesLargo;/, 'aviso de mes sin datos');
   assert.match(gd, /' · comparado con ' \+ esc\(_gdMesLargo\(_gd\.compSel\)\)/, 'titulo del PDF');
-  assert.match(gd, /var mesLbl = _gd\.mesSel \? _gdMesLbl\(_gd\.mesSel\)/, 'nombre de archivo exportado: formato corto de siempre');
+  // Fase 207: los meses de MESES, en el mismo formato corto ("Sep-26" o "Ago-26_a_Oct-26").
+  assert.match(gd, /var mesLbl = _gdMesesLblExport\(\);/, 'nombre de archivo exportado: formato corto de siempre');
+  assert.match(gd, /return m\.length === 1 \? _gdMesLbl\(m\[0\]\) : _gdMesLbl\(m\[0\]\) \+ '_a_' \+ _gdMesLbl\(m\[m\.length-1\]\);/);
   const cargas = fs.readFileSync(path.join(PUB, 'js', 'cargas.js'), 'utf8');
   assert.ok(!/_gdMesLbl/.test(cargas), 'los avisos de Cargar Datos usan el mes completo');
 });

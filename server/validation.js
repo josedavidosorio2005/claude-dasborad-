@@ -181,6 +181,9 @@ const MES_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const mesSchema = z
   .string()
   .regex(MES_RE, 'El mes debe tener formato AAAA-MM');
+// Fase 203: `meses` (opcional) = los meses de MESES, 'AAAA-MM' separados por
+// coma (hasta 24): solo esos meses, aunque el Desde/Hasta cubra otros.
+const mesesListaSchema = z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])(,\d{4}-(0[1-9]|1[0-2])){0,23}$/, 'meses invalidos (AAAA-MM separados por coma)');
 
 // Fase 126 (pedido de Edwin: quitar los meses de prueba, dejar solo
 // ago-sep/2026 real): borrado de produccion por base + rango de meses.
@@ -578,6 +581,7 @@ const agendasCargaBody = z.object({
 const agendasFiltrosQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
+  meses: mesesListaSchema.optional(), // Fase 207: los meses de MESES
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
   asesor: z.string().trim().max(200).optional(),
@@ -950,11 +954,13 @@ const whatsappTiemposOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
+// Fase 207: `meses` (los de MESES) suma esos meses; `mes` sigue igual. Uno de los dos.
 const whatsappTiemposRangosQuery = z.object({
   campana: campanaSchema,
-  mes: z.string().regex(MES_RE, { message: 'mes debe ser AAAA-MM' }),
+  mes: z.string().regex(MES_RE, { message: 'mes debe ser AAAA-MM' }).optional(),
+  meses: mesesListaSchema.optional(),
   skill: z.string().trim().max(200).optional(),
-});
+}).refine((q) => q.mes || q.meses, { message: 'mes o meses requerido' });
 
 // ── Mobilize Encuesta de satisfaccion (Fase 147, Parte B) ───────────────
 // Tupla de orden FIJO = ENCUESTA_ORDEN_ARRAY (encuesta-logic.js) y
@@ -994,9 +1000,6 @@ const encuestasOpcionesQuery = z.object({
   campana: campanaSchema,
 });
 
-// Fase 203: `meses` (opcional) = los meses de MESES, 'AAAA-MM' separados por
-// coma (hasta 24): solo esos meses, aunque el Desde/Hasta cubra otros.
-const mesesListaSchema = z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])(,\d{4}-(0[1-9]|1[0-2])){0,23}$/, 'meses invalidos (AAAA-MM separados por coma)');
 const encuestasFiltrosQuery = z.object({
   campana: campanaSchema,
   desde: fechaSchema.optional(),
@@ -1136,10 +1139,13 @@ const aliasAsesorBody = z.object({
   canonico: nombreAsesorSchema,
 });
 
+// Fase 207: `meses` (los de MESES, AAAA-MM separados por coma) suma por
+// asesor; `mes` (uno solo) sigue igual. Uno de los dos.
 const efectividadAgendamientoRankingQuery = z.object({
   campana: campanaSchema,
-  mes: mesSchema,
-});
+  mes: mesSchema.optional(),
+  meses: mesesListaSchema.optional(),
+}).refine((q) => q.mes || q.meses, { message: 'mes o meses requerido' });
 
 // ── Efectividad de Citas Atendidas (Fase 111, ORLANT, pedido textual de
 // InCo) ────────────────────────────────────────────────────────────────
@@ -1212,6 +1218,7 @@ const salidaQuery = z.object({
 const inasistenciaFiltrosQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
+  meses: mesesListaSchema.optional(), // Fase 207: los meses de MESES
   desde: mesSchema.optional(),
   hasta: mesSchema.optional(),
   sede: z.string().trim().max(120).optional(),

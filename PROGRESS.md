@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.93.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.94.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -347,3 +347,4 @@ mismo orden):
 - Fase 204 — Mobilize, Flujo de Llamadas: el total se llama "Llamadas ingresadas" (tarjeta, leyenda, tooltip, Ver datos y Excel); solo texto; ORLANT sin cambios (v1.91.1, 2026-10-28)
 - Fase 205 — Tipificación (Mobilize y ORLANT): "Ver datos", tabla y Excel con todas las tipificaciones (sin "Otras"); la torta muestra las que caben según el ancho (20 / 14 / 10) y el tooltip de "Otras" dice cuáles entran ahí (v1.92.0, 2026-10-28)
 - Fase 206 — Tipificación: tope de 15 porciones a 1440 px (Mobilize muestra sus 15 de octubre) y colores extra para tortas de más de 12; ORLANT, Tráfico de Llamadas: "Llamadas ingresadas" (v1.93.0, 2026-10-28)
+- Fase 207 — La regla de MESES en todas las campañas (ORLANT completo, Aurora, HLM y las nuevas), en el código común: Todos = todos los meses, 1 mes = ese mes, varios = suma; % de totales sumados; una tarjeta ponderada en Efectividad de Citas e Inasistencia; comparación solo con un mes; prueba guardiana (v1.94.0, 2026-10-28)

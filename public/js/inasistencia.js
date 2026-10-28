@@ -17,13 +17,13 @@
 // filtrado (Σ(I+P)/Σtotal de TODOS los meses que pasan los filtros, nunca
 // el promedio simple de los % de cada mes) + gráfica de barras con el % de
 // CADA mes, resaltando con otro color de la paleta categórica el mes
-// elegido arriba (_gd.mesSel) -- el filtro de Mes aquí SOLO resalta, nunca
+// elegido arriba (Fase 207: MESES) -- el filtro de Mes aquí SOLO resalta, nunca
 // oculta los demás meses. Con una especialidad elegida, el servidor ya
 // filtra a esa única especialidad antes de agregar, así que la gráfica
 // termina mostrando el % de esa especialidad en cada mes subido.
 //
 // "Por especialidad" (porespecialidad): una barra por especialidad, del MES
-// elegido arriba (_gd.mesSel, igual que el resto de la plataforma -- no hay
+// elegido arriba (Fase 207: MESES, igual que el resto de la plataforma -- no hay
 // un selector de mes propio), respetando Sede/Entidad (la Especialidad no
 // aplica a esta vista, su filtro ni se muestra aquí: el punto es desglosar
 // TODAS). Las especialidades con menos de INASISTENCIA_BASE_BAJA_UMBRAL
@@ -52,15 +52,18 @@ async function _inasistenciaCargarOpciones(campana){
   return op;
 }
 
-// El Mes SIEMPRE sigue al selector global (_gd.mesSel) -- a diferencia de
-// Agendas, nunca pisa sede/especialidad/entidad (esos solo cambian con
-// "Aplicar filtros"). Devuelve true si el mes global no tiene datos de
-// Inasistencia para esta campana (usado solo por "Por especialidad").
+// Fase 207: los meses SIEMPRE siguen a MESES (Todos = todos los cargados) --
+// nunca pisa sede/especialidad/entidad (esos solo cambian con "Aplicar
+// filtros"). estado.meses = los de MESES con datos de Inasistencia;
+// estado.mes = el ultimo de ellos (solo para el boton "Ver <mes>").
+// Devuelve true si ninguno de esos meses tiene datos.
 function _inasistenciaSincronizarConMesGlobal(campana, opciones){
   if(!_inasistenciaEstado[campana]) _inasistenciaEstado[campana] = { sede:'', especialidad:'', entidad:'' };
-  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
-  _inasistenciaEstado[campana].mes = mesGlobal;
-  return !mesGlobal || (opciones.meses || []).indexOf(mesGlobal) === -1;
+  var conDatos = (opciones && opciones.meses) || [];
+  var meses = gdMesesTarjetasActual().filter(function(m){ return conDatos.indexOf(m) !== -1; });
+  _inasistenciaEstado[campana].meses = meses;
+  _inasistenciaEstado[campana].mes = meses[meses.length-1] || _gdMeses().slice(-1)[0] || '';
+  return !meses.length;
 }
 
 function _inasistenciaOptionsHtml(valores, seleccionado){
@@ -208,30 +211,29 @@ async function _inasistenciaDibujarPorMes(campana, i, opciones){
   var datos = [];
   try{ datos = await apiRequest('GET','/calidad/inasistencia/mensual?'+params.toString()) || []; }catch(e){ showToast(e.message, 'error'); }
   var agregado = inasistenciaAgregarPorMes(datos);
-  var mesSel = estado.mes;
+  var mesesIna = estado.meses || [];
+  var mesSel = mesesIna.length === 1 ? mesesIna[0] : ''; // solo para resaltar el mes en la grafica y la tabla
   var mesesFormatoViejo = opciones.mesesFormatoViejo || [];
   var esFormatoViejo = {};
   mesesFormatoViejo.forEach(function(m){ esFormatoViejo[m] = true; });
 
-  // 2 tarjetas (Fase 109): % ponderado de TODO el periodo filtrado (con la
-  // etiqueta diciendo el RANGO exacto) + % del mes elegido arriba -- nunca
-  // se confunden entre si.
+  // Fase 207: UNA tarjeta, % ponderado de los meses de MESES (suma de
+  // inasistencia + pendiente / suma de citas). Antes eran 2: todo el
+  // periodo + el mes elegido.
   var wrap = document.getElementById('inasist-tarjetas-wrap-'+i);
   if(wrap){
     if(!agregado.length){
       wrap.innerHTML = '<div class="gd-vacio-chico">Sin datos con estos filtros.</div>';
     } else {
-      var ponderado = inasistenciaPonderadoTotal(agregado);
-      var rangoLbl = inasistenciaRangoLbl(agregado);
-      var delMes = agregado.filter(function(a){ return a.mes === mesSel; })[0];
+      var agregadoTarj = agregado.filter(function(a){ return mesesIna.indexOf(a.mes) !== -1; });
+      var ponderado = inasistenciaPonderadoTotal(agregadoTarj);
       wrap.innerHTML = '<div class="aurora-kpis">' +
-        _inasistenciaTarjetaHtml('% de inasistencia · ' + rangoLbl, ponderado.pct) +
-        _inasistenciaTarjetaHtml('% de inasistencia · ' + (mesSel ? inasistenciaMesLbl(mesSel) : '—'), delMes ? delMes.pct : null) +
+        _inasistenciaTarjetaHtml('% de inasistencia · ' + gdMesesTarjetasTexto(mesesIna, !_gdMeses().length, mesNombreLargo), agregadoTarj.length ? ponderado.pct : null) +
         '</div>';
     }
   }
 
-  // Fase 167: filtro "Meses" -- grafica y tabla; las tarjetas no cambian.
+  // Fase 167: filtro "Meses" -- grafica y tabla (Fase 207: tambien la tarjeta).
   var agregadoMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(agregado, function(a){ return a.mes; }) : agregado);
   _inasistenciaDibujarLineaPorMes('inasist-c-pormes-'+i, agregadoMeses, mesSel, esFormatoViejo);
 
@@ -316,10 +318,10 @@ function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
     '<tr><td>Total de citas</td>'+filaTotal+'</tr></tbody></table></div>';
 }
 
-// "Por especialidad": una barra por especialidad del MES elegido arriba
-// (_gd.mesSel), respetando Sede/Entidad. Las de base baja (<
-// INASISTENCIA_BASE_BAJA_UMBRAL citas en ese mes) se mandan al final con
-// asterisco (inasistenciaOrdenarBaseBaja) -- nunca se expone el conteo.
+// "Por especialidad": una barra por especialidad de los meses de MESES
+// sumados (Fase 207), respetando Sede/Entidad. Las de base baja (<
+// INASISTENCIA_BASE_BAJA_UMBRAL citas sumadas en esos meses) se mandan al
+// final con asterisco (inasistenciaOrdenarBaseBaja) -- nunca se expone el conteo.
 async function _inasistenciaRenderPorEspecialidad(host, campana, i, titulo, opciones){
   var estado = _inasistenciaEstado[campana] || {};
   var html = '<div class="aurora-card">';
@@ -327,7 +329,7 @@ async function _inasistenciaRenderPorEspecialidad(host, campana, i, titulo, opci
   html += _inasistenciaFiltrosHtml(i, 'porespecialidad', opciones, estado);
   html += '<div id="inasist-esp-aviso-'+i+'"></div>';
   html += '<div class="aurora-card-title" style="margin-top:10px">% de inasistencia por especialidad '+
-    '<span class="gd-help" title="% de inasistencia = (Inasistencias + Pendientes) de esa especialidad en el mes elegido arriba, dividido entre su total de citas. Las especialidades con muy pocas citas en el mes (marcadas con *) se muestran al final: su % puede no ser representativo.">?</span></div>';
+    '<span class="gd-help" title="% de inasistencia = (Inasistencias + Pendientes) de esa especialidad en los meses elegidos en MESES, dividido entre su total de citas. Las especialidades con muy pocas citas en esos meses (marcadas con *) se muestran al final: su % puede no ser representativo.">?</span></div>';
   html += '<div class="aurora-chart-wrap" style="height:380px"><canvas id="inasist-c-porespecialidad-'+i+'"></canvas></div>';
   html += '<div id="inasist-esp-nota-'+i+'"></div>';
   html += '</div>';
@@ -339,7 +341,8 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
   var estado = _inasistenciaEstado[campana] || {};
   var avisoEl = document.getElementById('inasist-esp-aviso-'+i);
   var mesGlobal = estado.mes;
-  if(!mesGlobal || (opciones.meses||[]).indexOf(mesGlobal) === -1){
+  var mesesEsp = estado.meses || [];
+  if(!mesesEsp.length){
     var ultimoConDatos = opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null;
     if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('Inasistencia', mesGlobal, ultimoConDatos);
     _gdChart('inasist-c-porespecialidad-'+i, { type:'bar', data:{ labels:[], datasets:[] }, options: loPct(null) });
@@ -351,7 +354,7 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
 
   var params = new URLSearchParams();
   params.set('campana', campana);
-  params.set('mes', mesGlobal);
+  params.set('meses', mesesEsp.join(',')); // Fase 207
   if(estado.sede) params.set('sede', estado.sede);
   if(estado.entidad) params.set('entidad', estado.entidad);
   var filas = [];
@@ -378,7 +381,7 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
   if(notaEl){
     notaEl.innerHTML = ordenadas.some(function(f){ return f.baseBaja; })
       ? '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+
-        '* Base baja: menos de '+INASISTENCIA_BASE_BAJA_UMBRAL+' citas en '+esc(inasistenciaMesLbl(mesGlobal))+' -- el porcentaje puede no ser representativo.</div>'
+        '* Base baja: menos de '+INASISTENCIA_BASE_BAJA_UMBRAL+' citas en '+esc(gdMesesTarjetasTexto(mesesEsp, false, mesNombreLargo))+' -- el porcentaje puede no ser representativo.</div>'
       : '';
   }
 }

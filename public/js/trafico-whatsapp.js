@@ -213,27 +213,30 @@ async function _traficoWppRenderPanel(p, i) {
   // elegido se mantiene en todos los dibujos siguientes. Un periodo "tiene
   // datos" de ese mes si SE SOLAPA con el, no solo si empieza justo ese dia 1
   // (mismo criterio que traficoWppFiltrarFilas).
-  var inicioMesGlobalWpp = _gd.mesSel ? _gd.mesSel + '-01' : null;
-  var finMesGlobalWpp = _gd.mesSel ? traficoFinDeMes(_gd.mesSel) : null;
+  // Fase 207: igual que Trafico de Llamadas (Fase 203) -- el rango arranca
+  // con los meses de MESES (Todos = todo lo cargado). Un periodo "tiene
+  // datos" de un mes si SE SOLAPA con el (criterio de traficoWppFiltrarFilas).
+  var mesesTWpp = gdMesesTarjetasActual();
   var decision = traficoDecidirRango({
-    mesSel: _gd.mesSel,
+    meses: mesesTWpp,
+    todos: !_gdMeses().length,
     mesSincronizado: _traficoWppMesSincronizado[campana],
     estadoPrevio: _traficoWppEstado[campana] || null,
     sinDatosPrevio: _traficoWppSinDatosMesGlobal[campana],
     estadoURL: _traficoWppEstadoDesdeURL(),
     minDisp: minDisp,
     maxDisp: maxDisp,
-    tieneDatosMes: !!_gd.mesSel && datosCampana.filas.some(function(f){ return f.fechaInicio <= finMesGlobalWpp && f.fechaFin >= inicioMesGlobalWpp; }),
+    tieneDatosMes: mesesTWpp.some(function(m){ var ini = m + '-01', fin = traficoFinDeMes(m); return datosCampana.filas.some(function(f){ return f.fechaInicio <= fin && f.fechaFin >= ini; }); }),
   });
   var estado = decision.estado;
-  if(decision.sincronizar) _traficoWppMesSincronizado[campana] = _gd.mesSel;
+  if(decision.sincronizar) _traficoWppMesSincronizado[campana] = decision.clave;
   _traficoWppSinDatosMesGlobal[campana] = decision.sinDatosMes;
   _traficoWppEstado[campana] = estado;
   if(decision.sinDatosMes){
     // Se limpia el agregado cacheado: asi Exportar (_traficoWppDatosExport)
     // queda consistente con lo que se ve en pantalla (ver trafico.js).
     _traficoWppAgregadoActual[campana] = [];
-    var avisoMes = _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', _gd.mesSel, maxDisp.slice(0,7));
+    var avisoMes = _gdAvisoSinDatosMesHtml('Tráfico de WhatsApp', mesesTWpp[mesesTWpp.length - 1], maxDisp.slice(0,7));
     if (_traficoWppSoloNivelServicio(host, i, campana, avisoMes)) return;
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>'+
       avisoMes + '</div>';
@@ -380,7 +383,10 @@ function _traficoWppRenderContenido(i){
 
   // Totales del periodo YA filtrado (nunca promedio de % de cada cola):
   // suma primero, calcula el % despues — mismo criterio de
-  // traficoWppAgregarPorPeriodo/traficoAgregar.
+  // traficoWppAgregarPorPeriodo/traficoAgregar. Fase 207: solo los periodos
+  // de los meses de MESES (Ago + Oct no cuenta septiembre).
+  var mesesTarjWpp = _gdMeses().length ? gdMesesTarjetasActual() : null;
+  if(mesesTarjWpp) filtradas = gdFiltrarPorMes(filtradas, function(f){ return f.fechaInicio; }, mesesTarjWpp);
   var totalWpp = filtradas.reduce(function(a,f){ return a+f.totalWhatsapp; }, 0);
   var totalContestados = filtradas.reduce(function(a,f){ return a+f.contestados; }, 0);
   var tieneAbandonados = filtradas.some(function(f){ return f.abandonados!=null; });

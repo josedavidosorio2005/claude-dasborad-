@@ -4,10 +4,10 @@
 // datos reales) -- ahora lee la tabla `efectividad_citas` (un total real
 // por mes, CITAS_ATENDIDAS.xlsx).
 //
-// Sin filtros propios -- el Mes lo pone SOLO el selector global de arriba
-// (_gd.mesSel), mismo criterio que Efectividad de Agendamiento. 2
-// tarjetas (% del mes elegido + % ponderado del periodo CON datos, nunca
-// el promedio simple) + grafica combo (Agendas/Atendidas en barras, %
+// Sin filtros propios -- los meses los pone SOLO MESES (Fase 207, igual que
+// todas las campañas). UNA tarjeta: % ponderado de los meses de MESES
+// (atendidas ÷ agendas sumadas, nunca el promedio simple; antes eran 2: % del
+// mes elegido + % ponderado del periodo con datos) + grafica combo (Agendas/Atendidas en barras, %
 // Efectividad en linea, eje secundario) + tabla de datos debajo (mismo
 // patron que "Resumen por mes" de Inasistencia, Fase 109) + aviso "sin
 // datos" con boton al ultimo mes con datos.
@@ -54,7 +54,9 @@ async function _efectividadCitasRenderPanel(p, i){
 }
 
 async function _ecDibujar(campana, i, opciones){
-  var mesSel = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
+  var conDatosEc = (opciones && opciones.meses) || [];
+  var mesesEc = gdMesesTarjetasActual().filter(function(m){ return conDatosEc.indexOf(m) !== -1; }); // Fase 207
+  var mesUnicoEc = mesesEc.length === 1 ? mesesEc[0] : '';
   var avisoEl = document.getElementById('ec-aviso-'+i);
   var tarjetasEl = document.getElementById('ec-tarjetas-wrap-'+i);
   var tablaEl = document.getElementById('ec-tabla-'+i);
@@ -64,8 +66,8 @@ async function _ecDibujar(campana, i, opciones){
   catch(e){ showToast(e.message, 'error'); }
 
   if(avisoEl){
-    avisoEl.innerHTML = (!mesSel || (opciones.meses||[]).indexOf(mesSel) === -1)
-      ? _gdAvisoSinDatosMesHtml('Efectividad de Citas', mesSel, opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null, mesNombreLargo)
+    avisoEl.innerHTML = !mesesEc.length
+      ? _gdAvisoSinDatosMesHtml('Efectividad de Citas', _gdMeses().slice(-1)[0] || '', conDatosEc.length ? conDatosEc[conDatosEc.length-1] : null, mesNombreLargo)
       : '';
   }
 
@@ -73,22 +75,20 @@ async function _ecDibujar(campana, i, opciones){
     if(!filas.length){
       tarjetasEl.innerHTML = '<div class="gd-vacio-chico">Sin datos.</div>';
     } else {
-      var ponderado = citasAtendidasPonderado(filas);
-      var rangoLbl = citasAtendidasRangoLbl(filas);
-      var delMes = filas.filter(function(f){ return f.mes === mesSel; })[0];
-      var pctMes = delMes ? (delMes.agendas > 0 ? delMes.atendidas/delMes.agendas : null) : null;
+      // Fase 207: una sola tarjeta, ponderada sobre los meses de MESES.
+      var filasEc = filas.filter(function(f){ return mesesEc.indexOf(f.mes) !== -1; });
+      var ponderado = citasAtendidasPonderado(filasEc);
       tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
-        '<div class="aurora-kpi gd-kpi"><div class="kv">'+(mesSel ? citasAtendidasFmtPct(pctMes) : '—')+'</div><div class="kl">% Efectividad · '+(mesSel ? esc(citasAtendidasMesLbl(mesSel)) : '—')+'</div></div>' +
-        '<div class="aurora-kpi gd-kpi"><div class="kv">'+citasAtendidasFmtPct(ponderado.pct)+'</div><div class="kl">% Efectividad ponderado · '+esc(rangoLbl)+'</div></div>' +
+        '<div class="aurora-kpi gd-kpi"><div class="kv">'+(filasEc.length ? citasAtendidasFmtPct(ponderado.pct) : '—')+'</div><div class="kl">% Efectividad ponderado · '+esc(gdMesesTarjetasTexto(mesesEc, !_gdMeses().length, mesNombreLargo))+'</div></div>' +
         '</div>';
     }
   }
 
-  // Fase 167: filtro "Meses" -- grafica y tabla; las tarjetas no cambian.
+  // Fase 167: filtro "Meses" -- grafica y tabla (Fase 207: tambien la tarjeta).
   var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
   _ecDibujarGrafica(i, filasMeses);
 
-  if(tablaEl) tablaEl.innerHTML = _ecTablaHtml(filasMeses, mesSel);
+  if(tablaEl) tablaEl.innerHTML = _ecTablaHtml(filasMeses, mesUnicoEc);
 }
 
 function _ecDibujarGrafica(i, filas){

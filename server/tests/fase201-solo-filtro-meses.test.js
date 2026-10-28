@@ -53,10 +53,11 @@ function entorno(mesesSel) {
   return { ctx, llamadas };
 }
 
-test('marcar meses mueve el mes de las tarjetas y repinta tarjetas y pestaña, sin redibujar la lista', () => {
+// Fase 207: ya no hay "mes de las tarjetas" (_gd.mesSel): las tarjetas leen MESES.
+test('marcar meses repinta subtitulo, Comparar contra, tarjetas y pestaña, sin redibujar la lista', () => {
   const { ctx, llamadas } = entorno(['2026-08', '2026-09']);
   ctx._gdMesDesdeMeses();
-  assert.equal(ctx._gd.mesSel, '2026-09');
+  assert.equal(ctx._gd.mesSel, '2026-10', 'no toca un _gd.mesSel (el del entorno queda igual)');
   assert.deepEqual(llamadas, ['_gdPintarSubtitulo', '_gdPintarCompararContra', 'renderGenericKpis', 'renderGenericTab']);
 });
 
@@ -64,13 +65,11 @@ test('"Ver todos los meses" vuelve al mes por defecto', () => {
   const { ctx } = entorno(['2026-08']);
   ctx.gdMesesTodos();
   assert.deepEqual([...ctx._gd.mesesSel], []);
-  assert.equal(ctx._gd.mesSel, '2026-10');
 });
 
 test('"Ver <mes>" del aviso sin datos deja marcado solo ese mes en MESES', () => {
   const { ctx, llamadas } = entorno([]);
   ctx._gdIrAMes('2026-08');
   assert.deepEqual([...ctx._gd.mesesSel], ['2026-08']);
-  assert.equal(ctx._gd.mesSel, '2026-08');
   assert.ok(llamadas.includes('_gdPintarMeses'), 'la lista refleja la marca');
 });

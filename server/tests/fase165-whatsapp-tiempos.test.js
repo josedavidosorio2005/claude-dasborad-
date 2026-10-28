@@ -128,12 +128,15 @@ test('Vista: debajo de la tabla del mes, tablas "Por cola" y "Por mes" con conte
       if (url.indexOf('/resumen') !== -1) return resumen;
       return { mes: '2026-09', total: 10, dias: 3, rangos: rangos([5, 1, 1, 1, 2]) };
     },
-    _gd: { mesSel: '2026-09' }, _traficoWppSubtabActivo: { ORLANT: 'sl' }, _gdChart: () => {}, esc: (s) => String(s),
+    // Fase 207: MESES con septiembre marcado (la tabla "Por mes" sigue a MESES, Fase 167).
+    _gd: { mesesSel: ['2026-09'], periodos: ['2026-09', '2026-08'] }, _traficoWppSubtabActivo: { ORLANT: 'sl' }, _gdChart: () => {}, esc: (s) => String(s),
     mesNombreLargo: (m) => ({ '2026-08': 'Agosto 2026', '2026-09': 'Septiembre 2026' }[m] || m),
     fechaLimitesFinDeMesActual: () => '2026-10-31', wppTiemposMesPorDefecto: L.wppTiemposMesPorDefecto,
     WPP_TIEMPOS_RANGOS: L.WPP_TIEMPOS_RANGOS, gdGraficaHtml, canLoadData: () => true,
   };
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'public', 'js', 'mes-global-logic.js'), 'utf8'), sandbox);
+  vm.runInContext('function _gdMeses(){ return _gd.mesesSel; }', sandbox);
   vm.runInContext(fs.readFileSync(path.join(RAIZ, 'public', 'js', 'whatsapp-tiempos.js'), 'utf8'), sandbox);
   await sandbox._wppTiemposRender(0, 'ORLANT');
   const html = el['wtt-resumen-0'].innerHTML;
@@ -141,11 +144,11 @@ test('Vista: debajo de la tabla del mes, tablas "Por cola" y "Por mes" con conte
   assert.match(html, /<h3 class="gd-grafica-titulo">Por mes — todas las colas<\/h3>/);
   assert.match(html, /<th>0 a 3 minutos<\/th><th>3 a 5 minutos<\/th><th>5 a 8 minutos<\/th><th>8 a 10 minutos<\/th><th>10 minutos en adelante<\/th><th>Total<\/th>/);
   assert.match(html, /<td>WHATSAPP ORLANT 3P<\/td><td>5 <span class="wtt-pct">\(50 %\)<\/span><\/td>/);
-  assert.match(html, /<td>Agosto 2026<\/td><td>1 <span class="wtt-pct">\(25 %\)<\/span><\/td>/);
+  assert.doesNotMatch(html, /<td>Agosto 2026<\/td>/, 'Por mes sigue a MESES (solo septiembre)');
   assert.match(el['wtt-kpis-0'].innerHTML, /% contestado en 0 a 3 minutos/);
   const porCola = sandbox._wppTiemposDatosPorCola('ORLANT');
   assert.deepEqual(Object.keys(porCola[0]).slice(0, 4), ['Mes', 'Cola', '0 a 3 minutos', '0 a 3 minutos (%)']);
-  assert.equal(sandbox._wppTiemposDatosPorMes('ORLANT').length, 2);
+  assert.equal(sandbox._wppTiemposDatosPorMes('ORLANT').length, 1);
 });
 
 // ── Titulos de salida, plantilla, manual y pendiente ──────────────────────

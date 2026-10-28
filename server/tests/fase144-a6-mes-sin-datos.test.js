@@ -28,8 +28,9 @@ test('CSS: el aviso ocupa todo el ancho dentro de la grilla de KPIs y el panel v
 
 test('Calidad sin datos del mes: los paneles de grafica muestran una linea de texto en vez de un canvas vacio', () => {
   const f = gd.slice(gd.indexOf('function _gdRenderCalidad'), gd.indexOf("if(!estado.asesores) estado.asesores"));
-  assert.match(f, /_gdPanelVacioEnCanvas\(i, 'Sin monitoreos en ' \+/);
-  assert.match(f, /mesNombreLargo\(_gd\.mesSel\)/);
+  // Fase 207: los meses de MESES sin monitoreos (ya no "el mes elegido").
+  assert.match(f, /_gdPanelVacioEnCanvas\(i, 'Sin monitoreos en los meses elegidos\.'\)/);
+  assert.doesNotMatch(f, /_gd\.mesSel/);
   const helper = gd.slice(gd.indexOf('function _gdPanelVacioEnCanvas'), gd.indexOf('function renderGenericBanner'));
   assert.match(helper, /_gd\.charts\[canvasId\]\.destroy\(\)/, 'destruye el grafico de Chart.js si existia');
   assert.match(helper, /'<div class="gd-panel-vacio">'\+esc\(texto\)\+'<\/div>'/);

@@ -157,14 +157,15 @@ test('los modulos filtran la serie por mes (graficas/tablas/export); las tarjeta
   assert.match(s, /var filasMeses = \(typeof gdAplicarFiltroMeses === 'function' \? gdAplicarFiltroMeses\(filas, function\(f\)\{ return f\.mes; \}\) : filas\);/);
   assert.match(s, /_salDibujarGrafica\('sal-llam-'\+i, filasMeses,/);
   assert.match(s, /_salTablaHtml\(filasMeses, mesSel, lineas\)/);
-  assert.match(s, /var idx = filas\.map\(function\(f\)\{ return f\.mes; \}\)\.indexOf\(mesSel\);/, 'tarjetas con todas las filas');
+  // Fase 207: las tarjetas suman los meses de MESES (todas las campañas).
+  assert.match(s, /var delMeses = filas\.filter\(function\(f\)\{ return meses\.indexOf\(f\.mes\) !== -1; \}\);/, 'tarjetas con los meses de MESES');
   const ina = extraer(JS('inasistencia.js'), 'async function _inasistenciaDibujarPorMes(campana, i, opciones)');
   assert.match(ina, /_inasistenciaDibujarLineaPorMes\('inasist-c-pormes-'\+i, agregadoMeses,/);
   assert.match(ina, /_inasistenciaTablaHtml\(agregadoMeses,/);
-  assert.match(ina, /var ponderado = inasistenciaPonderadoTotal\(agregado\);/, 'tarjeta del rango sin filtrar');
+  assert.match(ina, /var ponderado = inasistenciaPonderadoTotal\(agregadoTarj\);/, 'tarjeta ponderada de los meses de MESES (Fase 207)');
   const ec = extraer(JS('efectividad-citas.js'), 'async function _ecDibujar(campana, i, opciones)');
   assert.match(ec, /_ecDibujarGrafica\(i, filasMeses\);/);
-  assert.match(ec, /var ponderado = citasAtendidasPonderado\(filas\);/);
+  assert.match(ec, /var ponderado = citasAtendidasPonderado\(filasEc\);/); // Fase 207: los meses de MESES
   const ag = JS('agendas.js');
   assert.equal((ag.match(/datos = \(typeof gdAplicarFiltroMeses === 'function' \? gdAplicarFiltroMeses\(datos, function\(r\)\{ return r\.mes; \}\) : datos\); \/\/ Fase 167/g) || []).length, 2, 'Agendas por mes y por linea');
   const lu = JS('llamadas-unicas.js');

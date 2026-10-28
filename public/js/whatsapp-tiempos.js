@@ -21,7 +21,7 @@
 var WPP_TIEMPOS_AVISO = 'Porcentaje de conversaciones de WhatsApp según el tiempo que tardaron en ser contestadas.';
 var _wppTiemposOpciones = {};        // cache por campana: { meses, skills }
 var _wppTiemposEstado = {};          // por campana: { mes, skill, nota }
-var _wppTiemposMesSincronizado = {}; // por campana: ultimo _gd.mesSel aplicado
+var _wppTiemposMesSincronizado = {}; // por campana: ultima clave de MESES aplicada (Fase 207)
 var _wppTiemposUltimo = {};          // por campana: ultima respuesta /rangos (para exportar)
 var _wppTiemposUltimoResumen = {};   // por campana: ultima respuesta /resumen (para exportar)
 
@@ -73,24 +73,30 @@ async function _wppTiemposRender(i, campana) {
       (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') + '</div>';
     return;
   }
-  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
-  var mesActual = (typeof fechaLimitesFinDeMesActual === 'function') ? fechaLimitesFinDeMesActual().slice(0, 7) : null;
-  var estado = _wppTiemposEstado[campana] || { mes: '', skill: '', nota: '' };
-  if (!estado.mes || _wppTiemposMesSincronizado[campana] !== mesGlobal) {
-    _wppTiemposMesSincronizado[campana] = mesGlobal;
-    var preferido = mesGlobal || mesActual;
-    estado.mes = wppTiemposMesPorDefecto(op.meses, preferido, mesActual);
-    estado.nota = (preferido && estado.mes !== preferido)
-      ? 'No hay tiempos de respuesta cargados para ' + _wppTiemposMesLbl(preferido) + '; se muestra ' + _wppTiemposMesLbl(estado.mes) + '.'
+  // Fase 207: sigue a MESES (Todos = todos los meses cargados; uno = ese
+  // mes; varios = esos meses sumados en `estado.meses`). Un mes elegido a
+  // mano en el panel se respeta hasta que MESES cambie.
+  var marcadosWtt = (typeof _gd !== 'undefined' && _gd) ? _gdMeses().slice().sort() : [];
+  var claveWtt = marcadosWtt.length ? marcadosWtt.join(',') : 'todos';
+  var estado = _wppTiemposEstado[campana] || { mes: '', meses: [], skill: '', nota: '' };
+  if (_wppTiemposMesSincronizado[campana] !== claveWtt) {
+    _wppTiemposMesSincronizado[campana] = claveWtt;
+    var mesesWtt = (marcadosWtt.length ? marcadosWtt : op.meses).filter(function (m) { return op.meses.indexOf(m) !== -1; });
+    estado.mes = mesesWtt.length === 1 ? mesesWtt[0] : '';
+    estado.meses = mesesWtt.length > 1 ? mesesWtt : [];
+    estado.nota = !mesesWtt.length
+      ? 'No hay tiempos de respuesta cargados para ' + (marcadosWtt.length === 1 ? _wppTiemposMesLbl(marcadosWtt[0]) : gdMesesTexto(marcadosWtt, _wppTiemposMesLbl)) + '; se muestra ' + _wppTiemposMesLbl(op.meses[op.meses.length - 1]) + '.'
       : '';
+    if (!mesesWtt.length) estado.mes = op.meses[op.meses.length - 1];
   }
-  if (op.meses.indexOf(estado.mes) === -1) estado.mes = op.meses[op.meses.length - 1];
+  if (!(estado.meses || []).length && op.meses.indexOf(estado.mes) === -1) estado.mes = op.meses[op.meses.length - 1];
   if (estado.skill && (op.skills || []).indexOf(estado.skill) === -1) estado.skill = '';
   _wppTiemposEstado[campana] = estado;
 
   content.innerHTML = titulo +
     '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px">' +
       '<div class="ig" style="min-width:160px;margin-bottom:0"><label for="wtt-f-mes-' + i + '">Mes</label><select id="wtt-f-mes-' + i + '">' +
+        ((estado.meses || []).length ? '<option value="__meses__" selected>' + esc(!marcadosWtt.length ? 'Todos los meses' : 'Meses elegidos (' + gdMesesTexto(estado.meses, _wppTiemposMesLbl) + ')') + '</option>' : '') +
         op.meses.slice().reverse().map(function (m) { return '<option value="' + esc(m) + '"' + (m === estado.mes ? ' selected' : '') + '>' + esc(_wppTiemposMesLbl(m)) + '</option>'; }).join('') +
       '</select></div>' +
       '<div class="ig" style="min-width:200px;margin-bottom:0"><label for="wtt-f-skill-' + i + '">Cola</label><select id="wtt-f-skill-' + i + '"><option value="">Todas</option>' +
@@ -113,7 +119,7 @@ function _wppTiemposAplicar(i) {
   var mes = document.getElementById('wtt-f-mes-' + i);
   var skill = document.getElementById('wtt-f-skill-' + i);
   var estado = _wppTiemposEstado[campana] || {};
-  estado.mes = mes ? mes.value : estado.mes;
+  if (mes && mes.value !== '__meses__') { estado.mes = mes.value; estado.meses = []; } // Fase 207: "__meses__" conserva los de MESES
   estado.skill = skill ? skill.value : '';
   estado.nota = '';
   _wppTiemposEstado[campana] = estado;
@@ -128,7 +134,7 @@ function _wppTiemposFmtPct(v) {
 
 async function _wppTiemposDibujar(i, campana) {
   var estado = _wppTiemposEstado[campana];
-  var q = 'campana=' + encodeURIComponent(campana) + '&mes=' + encodeURIComponent(estado.mes) +
+  var q = 'campana=' + encodeURIComponent(campana) + ((estado.meses || []).length ? '&meses=' + encodeURIComponent(estado.meses.join(',')) : '&mes=' + encodeURIComponent(estado.mes)) +
     (estado.skill ? '&skill=' + encodeURIComponent(estado.skill) : '');
   var r = null, resumen = null;
   var pedidos = await Promise.all([
@@ -147,14 +153,14 @@ async function _wppTiemposDibujar(i, campana) {
   var tabla = document.getElementById('wtt-tabla-' + i);
   if (!r || !r.total) {
     if (kpis) kpis.innerHTML = '';
-    if (tabla) tabla.innerHTML = '<div class="gd-vacio-chico">Sin conversaciones de WhatsApp para ' + esc(_wppTiemposMesLbl(estado.mes)) + (estado.skill ? ' en esa cola' : '') + '.</div>';
+    if (tabla) tabla.innerHTML = '<div class="gd-vacio-chico">Sin conversaciones de WhatsApp para ' + esc(_wppTiemposLblEstado(estado)) + (estado.skill ? ' en esa cola' : '') + '.</div>';
     if (typeof _gdChart === 'function') _gdChart('wtt-canvas-' + i, { type: 'bar', data: { labels: [], datasets: [] }, options: {} });
     return;
   }
   var r03 = r.rangos[0];
   if (kpis) kpis.innerHTML =
     '<div class="aurora-kpi"><div class="kv">' + _wppTiemposFmtPct(r03.pct) + '</div><div class="kl">% contestado en 0 a 3 minutos</div></div>' +
-    '<div class="aurora-kpi"><div class="kv">' + r.total.toLocaleString('es-CO') + '</div><div class="kl">Conversaciones contestadas del mes</div></div>';
+    '<div class="aurora-kpi"><div class="kv">' + r.total.toLocaleString('es-CO') + '</div><div class="kl">Conversaciones contestadas · ' + esc(_wppTiemposLblEstado(estado)) + '</div></div>';
   var CDl = (typeof CD !== 'undefined') ? CD : '#0d4a5e';
   var CGl = (typeof colorSerie==='function' ? colorSerie('secundaria') : '#0d4a5e'); // Fase 152 (B1): resalta 0–3 min sin usar el verde del semaforo
   var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {} };
@@ -207,11 +213,15 @@ function _wppTiemposTablaGrupos(titulo, primera, grupos, etiqueta) {
   return gdGraficaHtml(esc(titulo), '<div class="table-wrap"><table class="aurora-table"><thead>' + cab + '</thead><tbody>' + cuerpo + '</tbody></table></div>');
 }
 
+// Fase 207: "Septiembre 2026" o "Ago 2026, Oct 2026" (los meses del panel).
+function _wppTiemposLblEstado(estado) {
+  return (estado.meses || []).length ? gdMesesTexto(estado.meses, _wppTiemposMesLbl) : _wppTiemposMesLbl(estado.mes);
+}
 function _wppTiemposResumenHtml(resumen, estado) {
   if (!resumen) return '';
   var html = '';
   if (resumen.porSkill && resumen.porSkill.length) {
-    html += _wppTiemposTablaGrupos('Por cola — ' + _wppTiemposMesLbl(resumen.mes), 'Cola', resumen.porSkill, function (g) { return g.skill; });
+    html += _wppTiemposTablaGrupos('Por cola — ' + _wppTiemposLblEstado(estado), 'Cola', resumen.porSkill, function (g) { return g.skill; });
   }
   if (resumen.porMes && resumen.porMes.length) {
     html += _wppTiemposTablaGrupos('Por mes — ' + (estado.skill || 'todas las colas'), 'Mes', resumen.porMes, function (g) { return _wppTiemposMesLbl(g.mes); });

@@ -120,7 +120,7 @@ test('cerrar sesion borra los filtros de todos los paneles, el MES, la URL de fi
   ctx.GD_ESTADO_A_REINICIAR.forEach((n) => assert.match(todo, new RegExp('var ' + n + ' = \\{\\}'), n));
   ctx.gdReiniciarFiltros();
   for (const n of ['_traficoEstado', '_tipificacionEstadoCanal', '_encuestaEstado', '_llamadasSalidaEstado']) assert.deepEqual(Object.keys(ctx[n]), [], n);
-  assert.equal(ctx._gd.mesSel, '');
+  assert.equal(ctx._gd.mesDefecto, ''); // Fase 207: ya no hay _gd.mesSel
   assert.equal(ctx._gd.cliente, null);
   assert.deepEqual(Array.from(ctx._gd.mesesSel), []);
   assert.deepEqual(urls, ['/'], 'sin parametros de filtros en la URL');
