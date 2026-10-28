@@ -17779,3 +17779,19 @@ en "Otras N tipificaciones" (10 más grandes + Otras, en el servidor) y ni
   torta queda en 14 porciones (contenedor de 663 px junto a la tabla) o 10
   (327 y 275 px), el tooltip de "Otras" lista cuáles con cantidad y % y "Ver
   datos" muestra las 30; sin scroll horizontal ni errores.
+- Producción (v1.92.0 desplegada, PR #583, mergeado con
+  `--match-head-commit`; deploy en verde). Revisión de solo lectura con
+  sesión de administrador (Playwright y Brave, toda escritura a la API
+  bloqueada: 0 intentos, 0 errores de página):
+  - Octubre 2026, tipificaciones distintas por torta: Mobilize Llamadas 15
+    (134 registros; Entrante 13 / 89, Saliente 8 / 45); ORLANT Llamadas 68
+    (11.681) y WhatsApp 54 (9.036).
+  - "Ver datos" con todas, sin "Otras": Mobilize 15 filas (y la tabla de
+    detalle 15), ORLANT Llamadas 68 y WhatsApp 54, a 1440/768/375 px.
+  - Torta: 14 porciones a 1440 px (contenedor junto a la tabla, < 900 px;
+    en Mobilize 13 + "Otras" con 2) y 10 a 768/375 px (leyenda abajo), con
+    "Otras" y su lista en el tooltip; sin scroll horizontal.
+- Fase 204 en producción (misma sesión, v1.92.0): Mobilize, tarjeta "277
+  Llamadas ingresadas", leyenda ["Llamadas ingresadas", "Llamadas
+  Contestadas", "Nivel de Atención"], Excel "Llamadas ingresadas"; ORLANT
+  sigue con "28.356 Total de llamadas" / "Total Llamadas".
