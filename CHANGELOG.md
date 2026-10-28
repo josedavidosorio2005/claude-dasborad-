@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.91.1 — Octubre 2026
+
+**Fase 204: "Llamadas ingresadas" en Flujo de Llamadas de Mobilize (pedido de Edwin).**
+
+- En Flujo de Llamadas de Mobilize, el total se llama ahora **"Llamadas
+  ingresadas"**: en la tarjeta (antes "Total de llamadas"), en la leyenda de
+  la gráfica (antes "Total Llamadas"), al pasar el mouse, en "Ver datos" y en
+  la columna del Excel.
+- Solo cambia el texto: los números son los mismos.
+- ORLANT (Tráfico de Llamadas) sigue diciendo "Total de llamadas" mientras
+  no se decida cambiarlo allí.
+
 ## v1.91.0 — Octubre 2026
 
 **Fase 203: las tarjetas obedecen solo al filtro MESES (pedido de Edwin).**

@@ -237,6 +237,7 @@ const PERFILES_ACTUALES = {
         panel: {
           etiquetaLinea: 'Tipo de línea',
           etiquetaLineaPlural: 'líneas',
+          etiquetaTotal: 'Llamadas ingresadas', // Fase 204
           resumenOcultar: ['tasaAbandono', 'nivelServicio'],
           resumenPorSeccion: true,
           subtabs: [

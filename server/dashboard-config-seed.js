@@ -364,6 +364,9 @@ const ORLANT = {
 // las pasan, asi que su comportamiento no cambia en nada):
 //   - `etiquetaLinea`/`etiquetaLineaPlural`: el filtro dice "Tipo de línea"
 //     (el nombre real de su columna), no "Skill".
+//   - `etiquetaTotal` (Fase 204): el total se llama "Llamadas ingresadas"
+//     (tarjeta, leyenda, tooltip, Ver datos y Excel) en vez de "Total de
+//     llamadas" / "Total Llamadas". Solo texto.
 //   - `subtabs`/`subtabsTitulos`: orden pedido por Edwin (Resumen -> Nivel
 //     de Servicio 80-20 -> Abandono -> ASA -> AHT, AHT al final) en vez del
 //     orden de siempre (Resumen/Abandono/AHT/ASA y ATA/Nivel de Servicio).
@@ -439,6 +442,7 @@ const MOBILIZE = {
       { key: 'flujo', label: 'Flujo de Llamadas', panels: [
         { tipo: 'trafico_combo', campana: 'MOBILIZE',
           etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
+          etiquetaTotal: 'Llamadas ingresadas', // Fase 204: tarjeta, leyenda, tooltip, Ver datos y Excel
           resumenOcultar: ['tasaAbandono', 'nivelServicio'],
           resumenPorSeccion: true,
           // Fase 138 (PR2, pedido de Edwin 09/10): ASA y AHT antes eran 2
