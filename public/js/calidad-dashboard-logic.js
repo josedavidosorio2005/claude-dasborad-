@@ -83,6 +83,17 @@ function calDashTextoSinMonitoreos(campana) {
   return 'Todavía no hay monitoreos de calidad' + (nombre ? ' para ' + nombre : '') + '.';
 }
 
+// Fase 208 (Mobilize): si la misma pestaña trae el resumen de calidad
+// cargado (calidad_resumen_panel de esa campaña, con al menos un mes), los
+// paneles de monitoreos vacios no dicen "Todavía no hay monitoreos": la
+// calidad ya esta a la vista en el resumen. Sin resumen, el aviso sigue.
+function calDashResumenCubreSinMonitoreos(panelesTab, campana, mesesResumen) {
+  if (!mesesResumen || !mesesResumen.length) return false;
+  return (panelesTab || []).some(function (p) {
+    return !!p && p.tipo === 'calidad_resumen_panel' && (p.campana || campana) === campana;
+  });
+}
+
 // Fase 164 (D-03): alto (px) de la grafica "Promedio de calidad por asesor"
 // para que entren TODOS los nombres del eje: ~28px por barra mas el margen
 // del eje, nunca menos que los 230px de siempre.
@@ -139,5 +150,6 @@ if (typeof module !== 'undefined' && module.exports) {
     calDashAsesoresDistintos: calDashAsesoresDistintos,
     calDashPromedioPorAsesor: calDashPromedioPorAsesor,
     calDashTextoSinMonitoreos: calDashTextoSinMonitoreos,
+    calDashResumenCubreSinMonitoreos: calDashResumenCubreSinMonitoreos,
   };
 }

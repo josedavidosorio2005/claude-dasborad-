@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.94.1 — Octubre 2026
+
+**Fase 208: Calidad de Mobilize sin el aviso de "no hay monitoreos".**
+
+- En la pestaña Calidad de Mobilize ya no sale "Todavía no hay monitoreos
+  de calidad para Mobilize" (ni el cuadro vacío "Sin monitoreos todavía")
+  cuando ya está cargado el resumen de calidad por asesor: la calidad se ve
+  en ese resumen. Si una campaña no tiene ni monitoreos ni resumen, el
+  aviso sigue saliendo como antes.
+
 ## v1.94.0 — Octubre 2026
 
 **Fase 207: la regla de MESES en todas las campañas.**
