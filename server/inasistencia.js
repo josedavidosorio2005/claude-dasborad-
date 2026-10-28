@@ -120,8 +120,8 @@ function _whereFiltros({ campana, mes, meses, sede, especialidad, entidad, desde
 // respeta sede/especialidad/entidad si vienen. El % SIEMPRE se calcula
 // ponderado sobre la suma (Σ(inasistencia+pendiente)/Σtotal), nunca como
 // promedio de porcentajes por fila -- pedido explicito de InCo.
-function inasistenciaResumen(db, { campana, mes, sede, especialidad, entidad }) {
-  const { where, params } = _whereFiltros({ campana, mes, sede, especialidad, entidad });
+function inasistenciaResumen(db, { campana, mes, meses, sede, especialidad, entidad }) {
+  const { where, params } = _whereFiltros({ campana, mes, meses, sede, especialidad, entidad });
   const row = db
     .prepare(
       `SELECT COALESCE(SUM(cancelada),0) AS cancelada, COALESCE(SUM(inasistencia),0) AS inasistencia,

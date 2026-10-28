@@ -62,7 +62,8 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    if (!req.query.mes) return res.status(400).json({ error: 'Indica el mes' });
+    // Fase 207: el panel "Por especialidad" manda `meses` (los de MESES), no `mes`.
+    if (!req.query.mes && !req.query.meses) return res.status(400).json({ error: 'Indica el mes' });
     res.json(inasistenciaPorEspecialidad(db, req.query));
   })
 );
