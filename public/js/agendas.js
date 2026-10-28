@@ -90,8 +90,11 @@ function _agendasOptionsHtml(valores, seleccionado){
 // config del tab.
 var _agendasVistaPorPanel = {};
 
+var _agendasPanelPorIndice = {}; // Fase 210: para volver a pintar el panel despues de guardar una lista
+
 async function _agendasRenderPanel(p, i){
   var campana = p.campana;
+  _agendasPanelPorIndice[i] = p;
   var vista = p.vista || 'especialidad';
   var def = _AGENDAS_VISTAS[vista] || _AGENDAS_VISTAS.especialidad;
   _agendasCampanaPorPanel[i] = campana;
@@ -105,7 +108,7 @@ async function _agendasRenderPanel(p, i){
   var opciones = await _agendasCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin agendas cargadas todavia. Un usuario con permiso de administrador debe subir la hoja AGENDAS desde "Cargar Datos".</div></div>';
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin agendas cargadas todavia. Un usuario con permiso de administrador debe subir la hoja AGENDAS desde "Cargar Datos".</div>'+_agendasBotonesClasifHtml(campana, i)+'</div>';
     return;
   }
 
@@ -135,7 +138,7 @@ async function _agendasRenderPanel(p, i){
   if(_agendasSincronizarConMesGlobal(campana, opciones)){
     var ultimoConDatos = opciones.meses[opciones.meses.length-1];
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      _gdAvisoSinDatosMesHtml('Agendas', _gdMeses().slice(-1)[0] || '', ultimoConDatos) + '</div>';
+      _gdAvisoSinDatosMesHtml('Agendas', _gdMeses().slice(-1)[0] || '', ultimoConDatos) + _agendasBotonesClasifHtml(campana, i) + '</div>';
     return;
   }
   var estado = _agendasEstado[campana];
@@ -160,6 +163,7 @@ async function _agendasRenderPanel(p, i){
   html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="agendas-f-entidad-'+i+'">Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
+  html += _agendasBotonesClasifHtml(campana, i); // Fase 210
 
   html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="agendas-c-'+i+'"></canvas></div>';
   html += '</div>';
@@ -271,3 +275,226 @@ async function _agendasAplicarFiltros(i){
   var vista = _agendasVistaPorPanel[i] || 'especialidad';
   await _agendasDibujar(campana, i, opciones, vista);
 }
+
+// ── Fase 210 (pedido de Edwin, 28/10, solo ORLANT): Clasificación de usuarios
+// y Clasificación de líneas. Una sola ventana (modal-agendas-clasif) con dos
+// modos. La lista se edita en memoria (el "+" agrega, cada fila se puede
+// cambiar o quitar) y solo se guarda con "Guardar" -- el servidor la cruza al
+// consultar, asi que corregirla nunca reescribe las agendas cargadas.
+var _AGENDAS_CLIENTES_CLASIFICACION = ['ORLANT'];
+var _agClasif = { modo: 'usuarios', campana: '', i: null, lista: [], sinAsesor: [], fueraDeLista: 0 };
+
+function _agendasBotonesClasifHtml(campana, i){
+  if(_AGENDAS_CLIENTES_CLASIFICACION.indexOf(campana) === -1 || typeof isFullAdmin !== 'function' || !isFullAdmin()) return '';
+  return '<div class="agendas-clasif-botones" style="margin:0 0 12px">' +
+    '<button type="button" class="btn-sm" onclick="agendasAbrirClasificacion(\'usuarios\','+i+')">Clasificación de usuarios</button>' +
+    '<button type="button" class="btn-sm" onclick="agendasAbrirClasificacion(\'lineas\','+i+')">Clasificación de líneas</button></div>';
+}
+
+function _agClasifFormHtml(modo){
+  if(modo === 'usuarios'){
+    return '<div class="ig"><label for="agendas-clasif-n-usuario">Usuario</label><input id="agendas-clasif-n-usuario" autocomplete="off"></div>' +
+      '<div class="ig"><label for="agendas-clasif-n-asesor">Nombre del asesor</label><input id="agendas-clasif-n-asesor" autocomplete="off"></div>' +
+      '<div class="ig"><label for="agendas-clasif-n-fecha">Fecha de cambio (si el usuario pasa a otra persona)</label><input type="date" id="agendas-clasif-n-fecha"></div>' +
+      '<div class="ig" style="flex:0 0 auto"><button type="submit" class="btn-primary" aria-label="Agregar usuario">+ Agregar</button></div>' +
+      '<p class="agendas-clasif-error" id="agendas-clasif-error" role="alert"></p>';
+  }
+  return '<div class="ig"><label for="agendas-clasif-n-codigo">Código de la entidad</label><input id="agendas-clasif-n-codigo" autocomplete="off"></div>' +
+    '<div class="ig"><label for="agendas-clasif-n-linea">Línea</label><select id="agendas-clasif-n-linea"><option value="">Elige…</option><option value="GENERAL">Línea General</option><option value="3P">Línea 3P</option></select></div>' +
+    '<div class="ig" style="flex:0 0 auto"><button type="submit" class="btn-primary" aria-label="Agregar código">+ Agregar</button></div>' +
+    '<p class="agendas-clasif-error" id="agendas-clasif-error" role="alert"></p>';
+}
+
+function _agClasifTablaHtml(){
+  var n = function(x){ return (x||0).toLocaleString('es-CO'); };
+  if(_agClasif.modo === 'usuarios'){
+    var orden = _agClasif.lista.map(function(u, k){ return { u: u, k: k }; }).sort(function(a, b){
+      if(a.u.usuario !== b.u.usuario) return a.u.usuario < b.u.usuario ? -1 : 1;
+      return (a.u.fechaCambio || '') < (b.u.fechaCambio || '') ? -1 : 1;
+    });
+    var html = orden.length ? '<div class="gd-tabla-scroll"><table class="aurora-table tipif-clasif-tabla agendas-clasif-tabla"><thead><tr><th class="th-izq">Usuario</th><th class="th-izq">Asesor</th><th>Desde</th><th>Agendas del usuario</th><th><span class="sr-only">Quitar</span></th></tr></thead><tbody>' +
+      orden.map(function(o){
+        var u = o.u, k = o.k;
+        return '<tr data-buscar="'+esc(agendasNormCodigo(u.usuario+' '+u.asesor))+'"><td>'+esc(u.usuario)+'</td>' +
+          '<td><input data-k="'+k+'" data-campo="asesor" value="'+esc(u.asesor)+'" aria-label="Asesor del usuario '+esc(u.usuario)+'" onchange="agendasClasifEditar(this)"></td>' +
+          '<td><input type="date" data-k="'+k+'" data-campo="fechaCambio" value="'+esc(u.fechaCambio||'')+'" aria-label="Fecha de cambio del usuario '+esc(u.usuario)+' (vacía = siempre)" title="Vacía = siempre ha sido de esta persona" onchange="agendasClasifEditar(this)"></td>' +
+          '<td>'+n(u.agendasUsuario)+'</td>' +
+          '<td><button type="button" class="btn-cancel" onclick="agendasClasifQuitar('+k+')" aria-label="Quitar el usuario '+esc(u.usuario)+(u.fechaCambio ? ' desde '+esc(u.fechaCambio) : '')+'">✕</button></td></tr>';
+      }).join('') + '</tbody></table></div>' : '<p class="tipif-linea-nota">La lista está vacía. Agrega los usuarios con el "+" o cárgalos desde Excel.</p>';
+    var enLista = {};
+    _agClasif.lista.forEach(function(u){ enLista[u.usuario] = true; });
+    var sin = _agClasif.sinAsesor.filter(function(s){ return !enLista[s.usuario]; });
+    if(sin.length){
+      html += '<p class="agendas-clasif-subtitulo">Usuarios de la base sin asesor ('+sin.length+')</p>' +
+        '<div class="gd-tabla-scroll"><table class="aurora-table agendas-clasif-tabla"><thead><tr><th class="th-izq">Usuario</th><th>Agendas</th><th><span class="sr-only">Asignar</span></th></tr></thead><tbody>' +
+        sin.map(function(s, k){
+          return '<tr class="agendas-clasif-sin" data-buscar="'+esc(agendasNormCodigo(s.usuario))+'"><td>'+esc(s.usuario)+'</td><td>'+n(s.agendas)+'</td>' +
+            '<td><button type="button" class="btn-sm" data-usuario="'+esc(s.usuario)+'" onclick="agendasClasifAsignar(this.dataset.usuario)" aria-label="Asignar asesor al usuario '+esc(s.usuario)+'">Asignar asesor</button></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    return html;
+  }
+  var ordenC = _agClasif.lista.map(function(c, k){ return { c: c, k: k }; }).sort(function(a, b){
+    if(a.c.linea !== b.c.linea) return a.c.linea === 'GENERAL' ? -1 : 1;
+    return a.c.codigo < b.c.codigo ? -1 : 1;
+  });
+  var opt = function(v, txt, sel){ return '<option value="'+v+'"'+(v===sel?' selected':'')+'>'+txt+'</option>'; };
+  return (ordenC.length ? '<div class="gd-tabla-scroll"><table class="aurora-table tipif-clasif-tabla agendas-clasif-tabla"><thead><tr><th class="th-izq">Código</th><th>Línea</th><th>Agendas</th><th><span class="sr-only">Quitar</span></th></tr></thead><tbody>' +
+    ordenC.map(function(o){
+      var c = o.c, k = o.k;
+      return '<tr data-buscar="'+esc(agendasNormCodigo(c.codigo))+'"><td>'+esc(c.codigo)+'</td>' +
+        '<td><select data-k="'+k+'" data-campo="linea" aria-label="Línea del código '+esc(c.codigo)+'" onchange="agendasClasifEditar(this)">'+opt('GENERAL', 'Línea General', c.linea)+opt('3P', 'Línea 3P', c.linea)+'</select></td>' +
+        '<td>'+n(c.agendas)+'</td>' +
+        '<td><button type="button" class="btn-cancel" onclick="agendasClasifQuitar('+k+')" aria-label="Quitar el código '+esc(c.codigo)+'">✕</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<p class="tipif-linea-nota">La lista está vacía. Agrega los códigos con el "+" o cárgalos desde Excel.</p>') +
+    (_agClasif.fueraDeLista ? '<p class="tipif-linea-nota">'+n(_agClasif.fueraDeLista)+' agenda(s) cargadas tienen un código fuera de la lista o vacío: suman a 3P.</p>' : '');
+}
+
+function _agClasifPintar(){
+  var cuerpo = document.getElementById('agendas-clasif-cuerpo');
+  if(cuerpo) cuerpo.innerHTML = _agClasifTablaHtml();
+  agendasClasifBuscar((document.getElementById('agendas-clasif-buscar') || {}).value || '');
+}
+
+async function agendasAbrirClasificacion(modo, i){
+  var campana = _agendasCampanaPorPanel[i];
+  var ov = document.getElementById('modal-agendas-clasif');
+  if(!campana || !ov) return;
+  _agClasif = { modo: modo, campana: campana, i: i, lista: [], sinAsesor: [], fueraDeLista: 0 };
+  var esUsuarios = modo === 'usuarios';
+  document.getElementById('modal-agendas-clasif-title').textContent = esUsuarios ? 'Clasificación de usuarios' : 'Clasificación de líneas';
+  document.getElementById('agendas-clasif-nota').textContent = esUsuarios
+    ? 'Cada usuario del aplicativo (columna A de la base) es de un asesor. Si un usuario pasa a otra persona, agrégalo otra vez con la fecha de cambio: sus agendas desde esa fecha cuentan para la persona nueva y las anteriores siguen siendo de la anterior. Sin fecha = siempre ha sido de esa persona.'
+    : 'Cada código de entidad (columna R de la base) suma a la Línea General o a la Línea 3P. Los códigos que no estén en la lista (particulares, que se crean con la cédula) suman a 3P.';
+  document.getElementById('agendas-clasif-excel-label').textContent = esUsuarios
+    ? 'Cargar desde Excel (USUARIO, NOMBRE, FECHA DE CAMBIO)'
+    : 'Cargar desde Excel (columnas 3P y GENERAL)';
+  document.getElementById('agendas-clasif-agregar').innerHTML = _agClasifFormHtml(modo);
+  document.getElementById('agendas-clasif-avisos').innerHTML = '';
+  document.getElementById('agendas-clasif-buscar').value = '';
+  var cuerpo = document.getElementById('agendas-clasif-cuerpo');
+  cuerpo.innerHTML = '<p class="tipif-linea-nota">Cargando…</p>';
+  ov.classList.add('show');
+  try{
+    var r = await apiRequest('GET', '/calidad/agendas/'+(esUsuarios ? 'usuarios' : 'codigos-entidad')+'?campana='+encodeURIComponent(campana));
+    _agClasif.lista = esUsuarios ? (r.usuarios || []) : (r.codigos || []);
+    _agClasif.sinAsesor = r.sinAsesor || [];
+    _agClasif.fueraDeLista = r.agendasFueraDeLista || 0;
+    _agClasifPintar();
+  }catch(e){ cuerpo.innerHTML = '<p class="tipif-linea-nota">'+esc(e.message)+'</p>'; }
+}
+
+function agendasCerrarClasificacion(){
+  var ov = document.getElementById('modal-agendas-clasif');
+  if(ov) ov.classList.remove('show');
+}
+
+function agendasClasifBuscar(texto){
+  var t = agendasNormCodigo(texto);
+  document.querySelectorAll('#agendas-clasif-cuerpo tbody tr').forEach(function(tr){
+    tr.style.display = !t || (tr.dataset.buscar || '').indexOf(t) > -1 ? '' : 'none';
+  });
+}
+
+// El "+": un usuario repetido sin fecha de cambio no entra (se pide la fecha).
+function agendasClasifAgregar(ev){
+  if(ev && ev.preventDefault) ev.preventDefault();
+  var val = function(id){ var el = document.getElementById(id); return el ? el.value : ''; };
+  var err = document.getElementById('agendas-clasif-error');
+  var esUsuarios = _agClasif.modo === 'usuarios';
+  var r = esUsuarios
+    ? agendasAgregarUsuario(_agClasif.lista, { usuario: val('agendas-clasif-n-usuario'), asesor: val('agendas-clasif-n-asesor'), fechaCambio: val('agendas-clasif-n-fecha') || null })
+    : agendasAgregarCodigo(_agClasif.lista, { codigo: val('agendas-clasif-n-codigo'), linea: val('agendas-clasif-n-linea') });
+  if(r.error){
+    if(err) err.textContent = r.error;
+    var foco = document.getElementById(esUsuarios ? (r.repetido ? 'agendas-clasif-n-fecha' : 'agendas-clasif-n-usuario') : 'agendas-clasif-n-codigo');
+    if(foco) foco.focus();
+    return;
+  }
+  if(err) err.textContent = '';
+  _agClasif.lista = r.lista;
+  document.getElementById('agendas-clasif-agregar').querySelectorAll('input, select').forEach(function(el){ el.value = ''; });
+  _agClasifPintar();
+  showToast(esUsuarios ? 'Usuario agregado a la lista (falta Guardar).' : 'Código agregado a la lista (falta Guardar).');
+}
+
+function agendasClasifAsignar(usuario){
+  var u = document.getElementById('agendas-clasif-n-usuario');
+  var a = document.getElementById('agendas-clasif-n-asesor');
+  if(u) u.value = usuario;
+  if(a) a.focus();
+}
+
+function agendasClasifEditar(el){
+  var item = _agClasif.lista[parseInt(el.dataset.k, 10)];
+  if(!item) return;
+  item[el.dataset.campo] = el.dataset.campo === 'fechaCambio' ? (el.value || null) : el.value;
+}
+
+function agendasClasifQuitar(k){
+  _agClasif.lista.splice(k, 1);
+  _agClasifPintar();
+}
+
+// Excel: reemplaza la lista de la ventana (no guarda hasta "Guardar"). Toma la
+// hoja AGENTES / CODIGOS si el archivo las trae (USUARIOS CON CAMBIOS ORLANT).
+async function agendasClasifExcel(input){
+  var file = input && input.files && input.files[0];
+  var avisosEl = document.getElementById('agendas-clasif-avisos');
+  if(!file || !avisosEl) return;
+  var esUsuarios = _agClasif.modo === 'usuarios';
+  var r;
+  try{
+    var wb = XLSX.read(new Uint8Array(await file.arrayBuffer()), { type:'array' });
+    var preferida = esUsuarios ? 'AGENTES' : 'CODIGOS';
+    var nombre = wb.SheetNames.filter(function(s){ return agendasNormCodigo(s) === preferida; })[0] || wb.SheetNames[0];
+    var filas = XLSX.utils.sheet_to_json(wb.Sheets[nombre], { header:1, blankrows:false, defval:null });
+    r = esUsuarios ? agendasLeerUsuariosExcel(filas) : agendasLeerCodigosExcel(filas);
+  }catch(e){ r = { error: 'No se pudo leer el archivo: '+e.message }; }
+  input.value = '';
+  var avisos = [];
+  if(r.error) avisos.push(r.error);
+  else {
+    var nuevos = esUsuarios ? r.usuarios : r.codigos;
+    // Se conservan los conteos de agendas que ya se conocian.
+    var previos = {};
+    _agClasif.lista.forEach(function(x){ previos[esUsuarios ? x.usuario : x.codigo] = esUsuarios ? x.agendasUsuario : x.agendas; });
+    nuevos.forEach(function(x){
+      var p = previos[esUsuarios ? x.usuario : x.codigo];
+      if(p !== undefined){ if(esUsuarios) x.agendasUsuario = p; else x.agendas = p; }
+    });
+    _agClasif.lista = nuevos;
+    avisos.push(esUsuarios
+      ? nuevos.length+' registro(s) leídos ('+nuevos.filter(function(u){ return u.fechaCambio; }).length+' con fecha de cambio): reemplazan la lista de abajo (falta Guardar).'
+      : nuevos.length+' código(s) leídos ('+nuevos.filter(function(c){ return c.linea === 'GENERAL'; }).length+' General, '+nuevos.filter(function(c){ return c.linea === '3P'; }).length+' 3P): reemplazan la lista de abajo (falta Guardar).');
+    avisos = avisos.concat(r.avisos || []);
+    _agClasifPintar();
+  }
+  avisosEl.innerHTML = '<ul class="tipif-clasif-avisos-lista">'+avisos.map(function(a, k){
+    return '<li'+(k>0 || r.error ? ' class="tipif-clasif-aviso"' : '')+'>'+esc(a)+'</li>';
+  }).join('')+'</ul>';
+}
+
+async function agendasClasifGuardar(){
+  var campana = _agClasif.campana;
+  if(!campana) return;
+  var esUsuarios = _agClasif.modo === 'usuarios';
+  try{
+    var r;
+    if(esUsuarios){
+      r = await apiRequest('PUT', '/calidad/agendas/usuarios', { campana: campana, usuarios: _agClasif.lista.map(function(u){ return { usuario: u.usuario, asesor: u.asesor, fechaCambio: u.fechaCambio || null }; }) });
+      showToast('✓ Clasificación de usuarios guardada: '+r.usuariosDistintos+' usuario(s), '+r.conCambio+' con fecha de cambio.');
+    } else {
+      r = await apiRequest('PUT', '/calidad/agendas/codigos-entidad', { campana: campana, codigos: _agClasif.lista.map(function(c){ return { codigo: c.codigo, linea: c.linea }; }) });
+      showToast('✓ Clasificación de líneas guardada: '+r.general+' código(s) en Línea General, '+r.p3+' en Línea 3P.');
+    }
+    agendasCerrarClasificacion();
+    // El Agente y la linea de cada agenda cambian: se vuelven a pedir las opciones y se repinta.
+    delete _agendasOpciones[campana];
+    var p = _agendasPanelPorIndice[_agClasif.i];
+    if(p) await _agendasRenderPanel(p, _agClasif.i);
+  }catch(e){ showToast(e.message, 'error'); }
+}
+
+var _agClasifOv = (typeof document !== 'undefined' && document.getElementById) ? document.getElementById('modal-agendas-clasif') : null;
+if(_agClasifOv && typeof _agClasifOv.addEventListener === 'function') _agClasifOv.addEventListener('click', function(e){ if(e.target === this) agendasCerrarClasificacion(); });

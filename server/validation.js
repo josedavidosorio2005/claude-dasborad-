@@ -550,11 +550,28 @@ const agendasFilaArraySchema = z.tuple([
   agendasTextoObligatorio, // entidad (ya anonimizada en el navegador -- nunca vacia: "SIN ENTIDAD" si no habia dato)
 ]);
 
+// Fase 210: base CRUDA del aplicativo (formato 'cruda'), mismo orden que
+// CAMPOS_FILA_CRUDA (server/agendas.js) y AGENDAS_ORDEN_ARRAY_CRUDA
+// (agendas-logic.js):
+//   [usuario, sede, examen, especialidad, profesional, fechaSolicitud, codigoEntidad, entidad]
+// codigoEntidad ya viene protegido del navegador (fuera de la lista -> "PARTICULAR / OTRA").
+const agendasFilaCrudaSchema = z.tuple([
+  z.string().trim().min(1).max(60), // usuario
+  agendasTextoObligatorio, // sede
+  agendasTextoObligatorio, // examen
+  agendasTextoObligatorio, // especialidad
+  agendasTextoObligatorio, // profesional
+  agendasFechaHoraSchema, // fechaSolicitud
+  z.string().trim().max(60), // codigoEntidad ('' = sin codigo, suma a 3P)
+  agendasTextoObligatorio, // entidad
+]);
+
 const agendasCargaBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(200).optional().default(''),
+  formato: z.enum(['consolidado', 'cruda']).optional().default('consolidado'),
   filas: z
-    .array(agendasFilaArraySchema)
+    .array(z.array(z.unknown()))
     .min(1, 'El archivo no tiene filas de datos')
     // Fase 122 (hallazgo real en produccion): el archivo real de agosto-
     // septiembre/2026 (2 meses juntos) trae 24.186 filas, por encima del
@@ -572,7 +589,25 @@ const agendasCargaBody = z.object({
         }
       });
     }),
-});
+})
+  // Fase 210: cada fila se valida con la tupla de SU formato (las dos tienen 8
+  // posiciones; el formato lo dice el cuerpo, nunca se adivina por la fila).
+  // Se reportan como mucho 20 filas malas, y las filas salen ya recortadas.
+  .superRefine((b, ctx) => {
+    const tupla = b.formato === 'cruda' ? agendasFilaCrudaSchema : agendasFilaArraySchema;
+    let malas = 0;
+    for (let i = 0; i < b.filas.length && malas < 20; i++) {
+      const r = tupla.safeParse(b.filas[i]);
+      if (!r.success) {
+        malas++;
+        r.error.issues.forEach((iss) => ctx.addIssue({ code: 'custom', message: iss.message, path: ['filas', i, ...iss.path] }));
+      }
+    }
+  })
+  .transform((b) => {
+    const tupla = b.formato === 'cruda' ? agendasFilaCrudaSchema : agendasFilaArraySchema;
+    return { ...b, filas: b.filas.map((f) => tupla.parse(f)) };
+  });
 
 // Filtros compartidos por los 3 endpoints de lectura (opciones/especialidad/
 // mensual) -- todos opcionales salvo `campana`; un filtro vacio/ausente
@@ -771,6 +806,29 @@ const clasificacionAsesoresBody = z.object({
         vistos[a.agente] = true;
       });
     }),
+});
+
+// Fase 210 (solo ORLANT): las 2 listas de Agendamiento. Los repetidos con
+// sentido (usuario que paso a otra persona) los revisa agendas-clasificacion.js.
+const agendasClasificacionQuery = z.object({ campana: campanaSchema });
+const agendasUsuariosBody = z.object({
+  campana: campanaSchema,
+  usuarios: z
+    .array(z.object({
+      usuario: z.string().trim().min(1, 'Falta el usuario').max(60),
+      asesor: z.string().trim().min(1, 'Falta el nombre del asesor').max(200),
+      fechaCambio: fechaSchema.nullable().optional().default(null),
+    }))
+    .max(500, 'Demasiados usuarios'),
+});
+const agendasCodigosBody = z.object({
+  campana: campanaSchema,
+  codigos: z
+    .array(z.object({
+      codigo: z.string().trim().min(1, 'Falta el código').max(60),
+      linea: z.enum(['3P', 'GENERAL'], { error: 'La línea debe ser 3P o GENERAL' }),
+    }))
+    .max(2000, 'Demasiados códigos'),
 });
 
 // Fase 198: Eficacia por mes (Mobilize).
@@ -1501,6 +1559,9 @@ module.exports = {
     traficoWppCargaBody,
     agendasCargaBody,
     agendasFiltrosQuery,
+    agendasClasificacionQuery, // Fase 210
+    agendasUsuariosBody,
+    agendasCodigosBody,
     tipificacionCargaBody,
     tipificacionFiltrosQuery,
     tipificacionOpcionesQuery,

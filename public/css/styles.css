@@ -1865,6 +1865,25 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .tipif-clasif-avisos-lista li{margin-bottom:6px;}
 .tipif-clasif-avisos-lista li.tipif-clasif-aviso{color:var(--c-warning-dark);}
 @media(max-width:480px){.modal.tipif-clasif-modal{padding:20px 14px 16px;}}
+/* Fase 210: Clasificación de usuarios / de líneas de Agendamiento (misma ventana que la de Tipificación). */
+.agendas-clasif-agregar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:10px 0 4px;padding:12px;border:1px solid var(--c-border);border-radius:8px;}
+.agendas-clasif-agregar .ig{margin-bottom:0;flex:1 1 150px;}
+.agendas-clasif-agregar .btn-primary{min-height:44px;}
+.agendas-clasif-error{flex-basis:100%;margin:0;color:var(--c-danger-dark);font-size:var(--fs-sm,0.875rem);}
+.agendas-clasif-error:empty{display:none;}
+.agendas-clasif-tabla input,.agendas-clasif-tabla select{min-height:44px;width:100%;min-width:120px;padding:8px 10px;border:1.5px solid var(--c-border-control);border-radius:var(--r-sm);font:inherit;color:var(--c-primary);background:var(--c-surface-subtle);}
+.agendas-clasif-tabla input[data-campo="asesor"]{min-width:230px;}
+.agendas-clasif-tabla input[type="date"]{min-width:150px;}
+.agendas-clasif-tabla td{vertical-align:middle;}
+/* La primera columna fija del celular (Fase 152) pinta el encabezado de blanco: aqui se deja con su color. */
+.agendas-clasif-tabla thead th:first-child{background:var(--c-brand);color:var(--c-on-brand);}
+#agendas-clasif-buscar{min-height:44px;}
+.agendas-clasif-tabla .btn-cancel,.agendas-clasif-tabla .btn-sm{min-height:44px;min-width:44px;}
+.agendas-clasif-tabla tr.agendas-clasif-sin td{background:var(--c-warning-bg);}
+.agendas-clasif-subtitulo{margin:14px 0 6px;font-weight:700;font-size:var(--fs-sm,0.875rem);}
+#agendas-clasif-cuerpo .gd-tabla-scroll{max-height:46vh;overflow:auto;}
+.agendas-clasif-botones{display:flex;flex-wrap:wrap;gap:8px;}
+.agendas-clasif-botones .btn-sm{min-height:44px;}
 
 /* Fase 189: controles en la cabecera de una grafica (gdGraficaHtml, opcion acciones): a la derecha del titulo; en el celular, debajo. */
 .gd-grafica-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2) var(--space-3);margin:0 0 var(--space-3);}

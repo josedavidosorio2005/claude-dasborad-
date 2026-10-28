@@ -882,6 +882,25 @@
   </div>
 </div>
 
+<!-- Fase 210: "Clasificación de usuarios" y "Clasificación de líneas" de Agendamiento (solo administrador, agendas.js). Una ventana, dos modos. Patron A3b. -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-agendas-clasif-title" id="modal-agendas-clasif">
+  <div class="modal tipif-clasif-modal">
+    <h3 id="modal-agendas-clasif-title">Clasificación de usuarios</h3>
+    <p class="tipif-linea-nota" id="agendas-clasif-nota"></p>
+    <form id="agendas-clasif-agregar" class="agendas-clasif-agregar" onsubmit="agendasClasifAgregar(event)" novalidate></form>
+    <div class="tipif-clasif-herr">
+      <div class="ig"><label for="agendas-clasif-buscar">Buscar</label><input type="search" id="agendas-clasif-buscar" autocomplete="off" oninput="agendasClasifBuscar(this.value)"></div>
+      <div class="ig"><label for="agendas-clasif-excel" id="agendas-clasif-excel-label">Cargar desde Excel</label><input type="file" id="agendas-clasif-excel" accept=".xlsx,.xls" onchange="agendasClasifExcel(this)"></div>
+    </div>
+    <div id="agendas-clasif-avisos" aria-live="polite"></div>
+    <div id="agendas-clasif-cuerpo"></div>
+    <div class="modal-btns">
+      <button type="button" class="btn-cancel" onclick="agendasCerrarClasificacion()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="agendasClasifGuardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ DASHBOARD DE CLIENTE (generico, por configuracion) ══════════════════════════════ -->
 <div role="dialog" aria-modal="true" aria-labelledby="gd-title" id="gd-overlay">
   <div id="gd-modal">

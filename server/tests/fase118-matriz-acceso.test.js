@@ -200,6 +200,11 @@ declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'admin');
 // Fase 186: salida por linea (la ve quien ve la campana); la clasificacion, solo el administrador.
 declarar(['GET /calidad/tipificacion/salida-por-linea'], 'scopedRead');
 declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipificacion/clasificacion-asesores'], 'admin');
+// Fase 210: listas de Agendamiento. La de usuarios (nombres de asesor) es solo del
+// administrador; la de codigos de entidad tambien la LEE quien puede cargar agendas
+// de la campana (el navegador la necesita para proteger el codigo al cargar).
+declarar(['GET /calidad/agendas/usuarios', 'PUT /calidad/agendas/usuarios', 'PUT /calidad/agendas/codigos-entidad'], 'admin');
+declarar(['GET /calidad/agendas/codigos-entidad'], 'cargaManual');
 // Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas --
 // mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
 declarar(['GET /calidad/llamadas-unicas/opciones', 'GET /calidad/llamadas-unicas/resumen', 'GET /calidad/llamadas-unicas/por-mes'], 'scopedRead');

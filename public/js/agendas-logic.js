@@ -154,8 +154,11 @@ function agendasValorCrudoSiFechaBoxeada(v, ws, fila0based, col0based) {
 // real desde la celda cruda (ver agendasValorCrudoSiFechaBoxeada). Sin
 // `ws` (o con el formato de siempre, texto o numero plano), el
 // comportamiento es EXACTAMENTE igual al de siempre.
-function agendasParseFilas(aoa, ws) {
+// `opciones` (Fase 210): { codigosEntidad: [codigo] } -- la Clasificacion de
+// lineas del cliente, solo la usa la base cruda (ver agendasParseFilasCruda).
+function agendasParseFilas(aoa, ws, opciones) {
   if (!aoa || !aoa.length) return { error: 'El archivo esta vacio.' };
+  if (agendasEsBaseCruda(aoa[0])) return agendasParseFilasCruda(aoa, ws, opciones);
   var map = agendasColIndexMap(aoa[0]);
   var faltantes = AGENDAS_COLUMNAS_OBLIGATORIAS.filter(function (c) { return map[c.key] === undefined; });
   if (faltantes.length) {
@@ -251,6 +254,134 @@ function agendasParseFilas(aoa, ws) {
   };
 }
 
+// ── Base CRUDA del aplicativo (Fase 210, pedido de Edwin del 28/10) ──────
+// "AGENDAS MES DE OCTUBRE.xlsx" tal cual sale del aplicativo: 20 columnas,
+// sin NOMBRE DE AGENTE ni TIPO DE LINEA. El asesor sale del USUARIO que asigna
+// la cita (columna A) cruzado con la Clasificacion de usuarios, y la linea del
+// CODIGO_ENTIDAD (columna R) cruzado con la Clasificacion de lineas -- los dos
+// cruces los hace el servidor AL CONSULTAR. Solo se leen estas 8 columnas:
+// la cedula del paciente (PACIDE), las observaciones (CITOBSOBS) y el resto
+// nunca salen del navegador.
+var AGENDAS_COLUMNAS_CRUDA = [
+  { key: 'usuario', label: 'USUARIO_QUE_ASIGNA_CITA', obligatoria: true },
+  { key: 'sede', label: 'CODIGO_SEDE', obligatoria: true },
+  { key: 'examen', label: 'NOMBRE_EXAMEN', obligatoria: true },
+  { key: 'especialidad', label: 'ESPNOM', obligatoria: true },
+  { key: 'profesional', label: 'MEDNOM', obligatoria: true },
+  { key: 'fechaSolicitud', label: 'FECHA_SOL', obligatoria: true },
+  { key: 'codigoEntidad', label: 'CODIGO_ENTIDAD', obligatoria: true },
+  { key: 'entidad', label: 'NOMBRE_ENTIDAD', obligatoria: false },
+];
+// Orden del payload de la base cruda: CAMPOS_FILA_CRUDA (server/agendas.js) y
+// agendasFilaCrudaSchema (validation.js).
+var AGENDAS_ORDEN_ARRAY_CRUDA = ['usuario', 'sede', 'examen', 'especialidad', 'profesional', 'fechaSolicitud', 'codigoEntidad', 'entidad'];
+// Mismos valores que CODIGO_FUERA_DE_LISTA / CODIGO_VACIO (server/agendas.js).
+var AGENDAS_CODIGO_FUERA_DE_LISTA = 'PARTICULAR / OTRA';
+var AGENDAS_CODIGO_VACIO = 'SIN CODIGO';
+
+function _agendasMapaColumnas(headerRow, columnas) {
+  var map = {};
+  (headerRow || []).forEach(function (h, i) {
+    var n = agendasNorm(h);
+    var col = columnas.filter(function (c) { return agendasNorm(c.label) === n; })[0];
+    if (col && map[col.key] === undefined) map[col.key] = i;
+  });
+  return map;
+}
+
+// true si el encabezado trae las 7 columnas obligatorias de la base cruda.
+function agendasEsBaseCruda(headerRow) {
+  var map = _agendasMapaColumnas(headerRow, AGENDAS_COLUMNAS_CRUDA);
+  return AGENDAS_COLUMNAS_CRUDA.every(function (c) { return !c.obligatoria || map[c.key] !== undefined; });
+}
+
+// Codigo: sin espacios de mas y en mayusculas (normCodigo del servidor).
+function agendasNormCodigo(v) {
+  return agendasNormTexto(v).toUpperCase();
+}
+// Usuario: ademas sin ningun espacio ("INCO 19" de la lista = "INCO19" de la
+// base, hallazgo real del 28/10; normUsuario del servidor).
+function agendasNormUsuario(v) {
+  return agendasNormCodigo(v).replace(/\s+/g, '');
+}
+
+function agendasParseFilasCruda(aoa, ws, opciones) {
+  var lista = opciones && opciones.codigosEntidad;
+  if (!Array.isArray(lista)) {
+    return { error: 'No se pudo leer la Clasificación de líneas (códigos de entidad) de este cliente. Vuelve a intentarlo; sin ella no se puede proteger el código de los particulares.' };
+  }
+  if (!lista.length) {
+    return { error: 'La Clasificación de líneas (códigos de entidad) está vacía: llénala primero en Agendamiento → "Clasificación de líneas" y vuelve a subir el archivo.' };
+  }
+  var conocidos = {};
+  lista.forEach(function (c) { conocidos[agendasNormCodigo(c)] = true; });
+  var map = _agendasMapaColumnas(aoa[0], AGENDAS_COLUMNAS_CRUDA);
+
+  var filas = [];
+  var avisos = [];
+  var vistasCrudas = {};
+  var duplicadas = 0, usuariosSinDato = 0, codigosFueraDeLista = 0, codigosVacios = 0;
+  var usuarios = {};
+  for (var i = 1; i < aoa.length; i++) {
+    var row = aoa[i];
+    if (!row || row.every(function (v) { return v === '' || v === null || v === undefined; })) continue;
+    var filaNum = i + 1;
+    // Duplicado exacto en TODAS las columnas del archivo (no solo en las 8
+    // que se guardan: dos citas de pacientes distintos pueden coincidir en
+    // esas 8 y son agendas reales distintas).
+    var claveCruda = JSON.stringify(row);
+    if (vistasCrudas[claveCruda]) { duplicadas++; continue; }
+    vistasCrudas[claveCruda] = true;
+
+    var sede = agendasNormTexto(row[map.sede]);
+    var examen = agendasNormTexto(row[map.examen]);
+    var especialidad = agendasNormTexto(row[map.especialidad]);
+    var profesional = agendasNormTexto(row[map.profesional]);
+    if (!sede || !examen || !especialidad || !profesional) {
+      avisos.push('Fila ' + filaNum + ': falta un dato obligatorio (sede/examen/especialidad/profesional), se omitio.');
+      continue;
+    }
+    var fechaCruda = ws ? agendasValorCrudoSiFechaBoxeada(row[map.fechaSolicitud], ws, i, map.fechaSolicitud) : row[map.fechaSolicitud];
+    var fechaSolicitud = agendasParseFechaSolicitud(fechaCruda);
+    if (!fechaSolicitud) {
+      avisos.push('Fila ' + filaNum + ': FECHA_SOL invalida o vacia, se omitio.');
+      continue;
+    }
+    if (_agendasFechaLimites.fechaLimitesEsFutura(fechaSolicitud.slice(0, 10))) {
+      avisos.push('Fila ' + filaNum + ': FECHA_SOL ' + fechaSolicitud + ' esta en el futuro, se omitio.');
+      continue;
+    }
+    var usuario = agendasNormUsuario(row[map.usuario]);
+    if (!usuario) { usuario = 'SIN USUARIO'; usuariosSinDato++; }
+    usuarios[usuario] = true;
+    // PRIVACIDAD: un codigo que no esta en la lista puede ser la cedula del
+    // paciente particular -- nunca sale del navegador tal cual. Suma a 3P.
+    var codigo = agendasNormCodigo(row[map.codigoEntidad]);
+    var codigoEntidad;
+    if (!codigo) { codigoEntidad = AGENDAS_CODIGO_VACIO; codigosVacios++; }
+    else if (conocidos[codigo]) codigoEntidad = codigo;
+    else { codigoEntidad = AGENDAS_CODIGO_FUERA_DE_LISTA; codigosFueraDeLista++; }
+    filas.push({
+      usuario: usuario, sede: sede, examen: examen, especialidad: especialidad, profesional: profesional,
+      fechaSolicitud: fechaSolicitud, codigoEntidad: codigoEntidad,
+      entidad: map.entidad !== undefined ? agendasNormTexto(row[map.entidad]) : '',
+    });
+  }
+  if (!filas.length) return { error: 'Ninguna fila valida (revisa los avisos anteriores).', avisos: avisos };
+  var priv = agendasAplicarPrivacidadEntidad(filas);
+  if (duplicadas > 0) {
+    avisos.push('Se encontraron ' + duplicadas + ' fila(s) exactamente duplicada(s) (mismos valores en TODAS las columnas del archivo) -- se conservo solo 1 de cada una.');
+  }
+  if (usuariosSinDato > 0) avisos.push(usuariosSinDato + ' fila(s) sin USUARIO_QUE_ASIGNA_CITA -- se guardaron igual, como "SIN USUARIO".');
+  return {
+    formato: 'cruda',
+    filas: priv.filas, avisos: avisos,
+    entidadesAgrupadas: priv.entidadesAgrupadas, entidadesSinDato: priv.entidadesSinDato,
+    usuarios: Object.keys(usuarios).length,
+    codigosFueraDeLista: codigosFueraDeLista, codigosVacios: codigosVacios,
+  };
+}
+
 // ── PRIVACIDAD (obligatorio, Edwin): NOMBRE_ENTIDAD nunca se guarda tal
 // cual vino del archivo.
 //   - Vacia -> "SIN ENTIDAD".
@@ -292,8 +423,129 @@ function agendasAplicarPrivacidadEntidad(filas) {
 // pesa ~35% menos, con margen comodo. El servidor mapea cada posicion de
 // vuelta a su nombre (ver server/agendas.js) -- nunca se cambia el ORDEN
 // sin actualizar los dos lados a la vez.
-function agendasFilaComoArray(f) {
-  return AGENDAS_ORDEN_ARRAY.map(function (k) { return f[k]; });
+function agendasFilaComoArray(f, formato) {
+  return (formato === 'cruda' ? AGENDAS_ORDEN_ARRAY_CRUDA : AGENDAS_ORDEN_ARRAY).map(function (k) { return f[k]; });
+}
+
+// ── Listas de Agendamiento (Fase 210): Clasificacion de usuarios y de lineas ──
+// Fecha de cambio de una celda (serial de Excel, Date o texto dd/mm/aaaa o
+// aaaa-mm-dd) -> 'AAAA-MM-DD', o null si no hay o no se entiende.
+function agendasFechaCambio(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return null;
+    var p2 = function (x) { return (x < 10 ? '0' : '') + x; };
+    return v.getFullYear() + '-' + p2(v.getMonth() + 1) + '-' + p2(v.getDate());
+  }
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) return v.trim();
+  var f = agendasParseFechaSolicitud(typeof v === 'number' ? Math.floor(v) : v);
+  return f ? f.slice(0, 10) : null;
+}
+
+// El "+" de la Clasificacion de usuarios. Un usuario que ya esta en la lista
+// solo se puede volver a agregar con fecha de cambio (desde esa fecha sus
+// agendas son de la persona nueva; las anteriores siguen siendo de la
+// anterior). Devuelve { lista } o { error, repetido }.
+function agendasAgregarUsuario(lista, nuevo) {
+  var usuario = agendasNormUsuario(nuevo.usuario);
+  var asesor = agendasNormTexto(nuevo.asesor);
+  var fechaCambio = nuevo.fechaCambio || null;
+  if (!usuario) return { error: 'Escribe el usuario.' };
+  if (!asesor) return { error: 'Escribe el nombre del asesor.' };
+  var mismos = (lista || []).filter(function (u) { return agendasNormUsuario(u.usuario) === usuario; });
+  if (mismos.length) {
+    if (!fechaCambio) {
+      var actual = mismos.slice().sort(function (a, b) { return (a.fechaCambio || '') < (b.fechaCambio || '') ? -1 : 1; }).pop();
+      return {
+        repetido: true,
+        error: 'El usuario ' + usuario + ' ya existe (hoy es de ' + actual.asesor + '). Indica la fecha de cambio: desde esa fecha sus agendas cuentan para ' + asesor + ' y las anteriores siguen siendo de quien lo tenía.',
+      };
+    }
+    if (mismos.some(function (u) { return u.fechaCambio === fechaCambio; })) {
+      return { repetido: true, error: 'El usuario ' + usuario + ' ya tiene un cambio con esa misma fecha.' };
+    }
+  }
+  return { lista: (lista || []).concat([{ usuario: usuario, asesor: asesor, fechaCambio: fechaCambio }]) };
+}
+
+// El "+" de la Clasificacion de lineas. Un codigo va una sola vez.
+function agendasAgregarCodigo(lista, nuevo) {
+  var codigo = agendasNormCodigo(nuevo.codigo);
+  if (!codigo) return { error: 'Escribe el código de la entidad.' };
+  if (nuevo.linea !== '3P' && nuevo.linea !== 'GENERAL') return { error: 'Elige la línea (3P o General).' };
+  var ya = (lista || []).filter(function (c) { return agendasNormCodigo(c.codigo) === codigo; })[0];
+  if (ya) return { repetido: true, error: 'El código ' + codigo + ' ya está en la lista (' + (ya.linea === '3P' ? 'Línea 3P' : 'Línea General') + ').' };
+  return { lista: (lista || []).concat([{ codigo: codigo, linea: nuevo.linea }]) };
+}
+
+// Hoja de usuarios (USUARIO, NOMBRE..., FECHA DE CAMBIO), como la hoja
+// AGENTES de "USUARIOS CON CAMBIOS ORLANT": un usuario repetido entra con su
+// fecha de cambio. Devuelve { usuarios, avisos } o { error }.
+function agendasLeerUsuariosExcel(filas) {
+  filas = filas || [];
+  var iEnc = -1, cU = -1, cN = -1, cF = -1;
+  for (var r = 0; r < Math.min(filas.length, 10) && iEnc < 0; r++) {
+    var u = -1, n = -1, f = -1;
+    (filas[r] || []).forEach(function (h, c) {
+      var t = agendasNormCodigo(h);
+      if (u < 0 && t === 'USUARIO') u = c;
+      else if (n < 0 && /NOMBRE|ASESOR/.test(t)) n = c;
+      else if (f < 0 && /FECHA/.test(t)) f = c;
+    });
+    if (u >= 0 && n >= 0) { iEnc = r; cU = u; cN = n; cF = f; }
+  }
+  if (iEnc < 0) return { error: 'La hoja debe tener una columna USUARIO y otra con el nombre del asesor (y, si aplica, FECHA DE CAMBIO).' };
+  var lista = [], avisos = [];
+  for (var i = iEnc + 1; i < filas.length; i++) {
+    var fila = filas[i] || [];
+    var usuario = fila[cU], asesor = fila[cN], fechaCruda = cF >= 0 ? fila[cF] : null;
+    if (!agendasNormTexto(usuario) && !agendasNormTexto(asesor)) continue;
+    var fecha = agendasFechaCambio(fechaCruda);
+    if (fechaCruda !== null && fechaCruda !== undefined && fechaCruda !== '' && !fecha) {
+      avisos.push('Fila ' + (i + 1) + ': la fecha de cambio no se entiende, no se aplicó.');
+      continue;
+    }
+    var r2 = agendasAgregarUsuario(lista, { usuario: usuario, asesor: asesor, fechaCambio: fecha });
+    if (r2.error) { avisos.push('Fila ' + (i + 1) + ': ' + r2.error); continue; }
+    lista = r2.lista;
+  }
+  return { usuarios: lista, avisos: avisos };
+}
+
+// Hoja de codigos: o dos columnas "3P" y "GENERAL" con los codigos debajo
+// (hoja CODIGOS de Edwin), o una columna de codigo y otra de LINEA.
+function agendasLeerCodigosExcel(filas) {
+  filas = filas || [];
+  var lista = [], avisos = [];
+  var agregar = function (codigo, linea, filaNum) {
+    if (!agendasNormTexto(codigo)) return;
+    var r = agendasAgregarCodigo(lista, { codigo: codigo, linea: linea });
+    if (r.error) avisos.push('Fila ' + filaNum + ': ' + r.error);
+    else lista = r.lista;
+  };
+  for (var r = 0; r < Math.min(filas.length, 10); r++) {
+    var enc = (filas[r] || []).map(agendasNormCodigo);
+    var c3 = enc.indexOf('3P'), cG = enc.indexOf('GENERAL');
+    var cL = -1, cC = -1;
+    enc.forEach(function (t, c) { if (cL < 0 && /^LINEA\b/.test(t.normalize('NFD').replace(/[̀-ͯ]/g, ''))) cL = c; else if (cC < 0 && /CODIGO|CÓDIGO/.test(t)) cC = c; });
+    if (c3 >= 0 && cG >= 0) {
+      for (var i = r + 1; i < filas.length; i++) {
+        agregar((filas[i] || [])[c3], '3P', i + 1);
+        agregar((filas[i] || [])[cG], 'GENERAL', i + 1);
+      }
+      return { codigos: lista, avisos: avisos };
+    }
+    if (cL >= 0 && cC >= 0) {
+      for (var k = r + 1; k < filas.length; k++) {
+        var lin = agendasNormCodigo((filas[k] || [])[cL]).replace(/^L[IÍ]NEA\s+/, '');
+        if (!agendasNormTexto((filas[k] || [])[cC])) continue;
+        if (lin !== '3P' && lin !== 'GENERAL') { avisos.push('Fila ' + (k + 1) + ': la línea debe ser 3P o General.'); continue; }
+        agregar((filas[k] || [])[cC], lin, k + 1);
+      }
+      return { codigos: lista, avisos: avisos };
+    }
+  }
+  return { error: 'La hoja debe tener dos columnas "3P" y "GENERAL" con los códigos debajo, o una columna de código y otra de "Línea".' };
 }
 
 // Extremos (primera/ultima) de FECHA_SOLICITUD entre las filas ya parseadas
@@ -326,5 +578,19 @@ if (typeof module !== 'undefined' && module.exports) {
     agendasAplicarPrivacidadEntidad: agendasAplicarPrivacidadEntidad,
     agendasFilaComoArray: agendasFilaComoArray,
     agendasRangoFechas: agendasRangoFechas,
+    // Fase 210
+    AGENDAS_COLUMNAS_CRUDA: AGENDAS_COLUMNAS_CRUDA,
+    AGENDAS_ORDEN_ARRAY_CRUDA: AGENDAS_ORDEN_ARRAY_CRUDA,
+    AGENDAS_CODIGO_FUERA_DE_LISTA: AGENDAS_CODIGO_FUERA_DE_LISTA,
+    AGENDAS_CODIGO_VACIO: AGENDAS_CODIGO_VACIO,
+    agendasEsBaseCruda: agendasEsBaseCruda,
+    agendasParseFilasCruda: agendasParseFilasCruda,
+    agendasNormCodigo: agendasNormCodigo,
+    agendasNormUsuario: agendasNormUsuario,
+    agendasFechaCambio: agendasFechaCambio,
+    agendasAgregarUsuario: agendasAgregarUsuario,
+    agendasAgregarCodigo: agendasAgregarCodigo,
+    agendasLeerUsuariosExcel: agendasLeerUsuariosExcel,
+    agendasLeerCodigosExcel: agendasLeerCodigosExcel,
   };
 }
