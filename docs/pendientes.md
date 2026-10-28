@@ -346,6 +346,25 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Números de control desactualizados en PROGRESS.md** (Fase 207,
+  28/10/2026). La revisión en producción de la v1.94.0 encontró filas que ya
+  no coinciden con un solo mes marcado. La v1.94.0 no las cambió: corrida en
+  local contra la v1.93.0, da lo mismo. Son cambios de datos o de reglas
+  anteriores:
+  - Tráfico de Llamadas de ORLANT: hoy ago 10.411 / 9.374 / 1.037 y sep
+    10.480 / 10.264 / 216 (la fila dice 8.908 / 9.043, Fase 115). El total
+    de 28.356 ya se veía en la v1.93.0 (Fase 206). No se sabe qué carga lo
+    cambió.
+  - Tipificación de WhatsApp de ORLANT: sep 13.218 (4.013 de salida) se
+    explica por la Fase 185 (fecha de cierre); ago 12.101 contra 12.061 (y
+    3.381 de salida contra 3.382) no está explicado.
+  - Llamadas Únicas de Mobilize con MESES = Todos: 201 (50 + 87 + 64)
+    contra 208 de la Fase 203.
+
+  Cómo se cierra: revisar el historial de cargas de esos meses (pantalla
+  de cargas, solo lectura) y poner en la tabla las cifras vigentes con su
+  causa. Costo: bajo.
+
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
   quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;
   el 4, el 6, el 9 y el refresco tras Deshacer / Eliminar, en la Fase 178).

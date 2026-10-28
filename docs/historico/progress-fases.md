@@ -17875,3 +17875,67 @@ La María y cualquier campaña nueva (usan los mismos tipos de panel).
   los meses (y "Oct 2026 parcial" cuando octubre está), "vs. agosto" solo
   con un mes, Efectividad de Citas e Inasistencia con una tarjeta; sin
   errores, teléfonos ni scroll horizontal.
+- CI del PR #587 en rojo (job "pantallas"): en ORLANT > Inasistencia > Por
+  especialidad el navegador recibía un 400. Reproducido en local con la
+  demo del CI registrando también los 4xx: `GET
+  /calidad/inasistencia/especialidad` llegaba solo con `meses` (los de
+  MESES) y la ruta seguía exigiendo `mes`. Además `/resumen` aceptaba
+  `meses` pero no lo pasaba al filtro (habría sumado todos los meses).
+  Arreglo: la ruta acepta `mes` o `meses` e `inasistenciaResumen` usa
+  `meses`; prueba nueva en `inasistencia-carga.test.js` (falla sin el
+  arreglo). Recorrido de pantallas contando 4xx: 0 hallazgos. Suite
+  2338/2338, `npm audit` 0.
+- Merge del PR #587 con `--match-head-commit`. El CI de `main` falló en
+  "Instalar dependencias" (se agotó la descarga del binario de
+  `better-sqlite3`), así que el deploy se saltó solo; se relanzó solo el job
+  fallido, pasó, y el deploy dejó producción en v1.94.0.
+- Producción (v1.94.0), revisión de solo lectura con sesión de
+  administrador (Playwright y Brave, toda escritura a la API bloqueada: 0
+  intentos, 0 errores de página, 0 respuestas 4xx/5xx). Las 4 campañas,
+  todas las pestañas visibles con MESES = Todos / Ago / Sep / Ago+Sep /
+  Ago+Oct (solo agregados):
+
+  | ORLANT | Todos | Ago | Sep | Ago+Sep | Ago+Oct |
+  |---|---|---|---|---|---|
+  | Tráfico de Llamadas (ingresadas / contestadas / abandonadas) | 28.356 / 26.981 / 1.375 | 10.411 / 9.374 / 1.037 | 10.480 / 10.264 / 216 | 20.891 / 19.638 / 1.253 | 17.876 / 16.717 / 1.159 |
+  | Nivel de servicio 20 s, llamadas | 67,17 % | 57,58 % | 70,96 % | 64,61 % | 64,77 % |
+  | Tráfico de WhatsApp (total, SL20) | 20.877, 42,13 % | 7.390, 36,05 % | 7.968, 39,88 % | 15.358, 38,04 % | 12.909, 43,52 % |
+  | Salida: llamadas / WhatsApp | 21.988 / 10.057 | 6.560 / 3.381 | 10.404 / 4.013 | 16.964 / 7.394 | 11.584 / 6.044 |
+  | Agendamiento: gestiones / agendas / efectividad | 59.682 / 24.186 / 40,52 % | 26.814 / 11.040 / 41,17 % | 32.868 / 13.146 / 40,00 % | 59.682 / 24.186 / 40,52 % | 26.814 / 11.040 / 41,17 % (oct sin datos) |
+  | Inasistencia | 7,03 % | 7,45 % | 6,64 % | 7,03 % | 7,45 % (oct sin datos) |
+  | Efectividad de Citas (una tarjeta) | 72,12 % | 70,57 % | 73,54 % | 72,12 % | 70,57 % (oct sin datos) |
+  | Tipificación: llamadas / WhatsApp | 46.342 / 34.355 | 14.940 / 12.101 | 19.721 / 13.218 | 34.661 / 25.319 | 26.621 / — |
+  | Calidad: monitoreos / promedio | 95 / 94,8 | sin datos (aviso) | 95 / 94,8 | 95 / 94,8 | sin datos de oct (aviso) |
+
+  | Mobilize | Todos | Ago | Sep | Ago+Sep | Ago+Oct |
+  |---|---|---|---|---|---|
+  | Flujo (ingresadas / contestadas / abandonadas) | 277 / 272 / 5 | 67 / 64 / 3 | 104 / 104 / 0 | 171 / 168 / 3 | 173 / 168 / 5 |
+  | FCR | 69,2 % (27/39) | 83,3 % (5/6) | 60 % (3/5) | 72,7 % (8/11) | 70,6 % (24/34) |
+  | Únicas / salida total | 201 / 324 | 50 / 81 | 87 / 157 | 137 / 238 | 114 / 167 |
+  | Tipificación de salida (conectadas) | 140 (108) | 28 (28) | 67 (52) | 95 (80) | 73 (56) |
+  | Resumen de calidad (promedio / monitoreos / críticos) | 97,4 % / 72 / 4 | 98 % / 11 / 0 | 97,35 % / 34 / 2 | 97,51 % / 45 / 2 | 97,45 % / 38 / 2 |
+
+  Clínica Aurora (solo sep: llamadas 875 / 850 / 25, WhatsApp 1.581) y
+  Hospital La María (solo ago: llamadas 12.087 / 8.356 / 3.731, WhatsApp
+  14.202) dan lo mismo en todos los escenarios, porque tienen un solo mes.
+- Números de control con un solo mes: v1.93.0 y v1.94.0 corridas en local
+  sobre la misma copia de la base (ORLANT y Mobilize, Ago y Sep) dan los
+  mismos valores; solo cambian los rótulos, la tarjeta de período que se
+  quitó en Inasistencia y Efectividad de Citas, y Calidad y Tráfico de
+  WhatsApp, que antes mostraban lo acumulado y ahora el mes marcado (Calidad
+  de ORLANT en sep: 95 / 94,79 %, igual que el número de control).
+  En producción coinciden con PROGRESS.md: Tipificación de llamadas
+  (14.940 / 19.721), Tráfico de WhatsApp (ago y sep), Agendas, Efectividad
+  de agendamiento, Inasistencia (7,45 % ago, 7,03 % período), Efectividad de
+  Citas (72,12 % período; ago 70,57 % = 7.896/11.189 y sep 73,54 % =
+  8.968/12.194), Calidad y las llamadas de salida de la Fase 183. No
+  coinciden, sin que lo cause esta versión: Tráfico de Llamadas (10.411 /
+  10.480 contra 8.908 / 9.043 de la Fase 115; el total 28.356 ya se vio en
+  la v1.93.0, Fase 206), Tipificación de WhatsApp (sep 13.218 y 4.013 de
+  salida por la Fase 185; ago 12.101 contra 12.061) y Llamadas Únicas de
+  Mobilize con Todos (201 contra 208 de la Fase 203). Anotado en
+  `docs/pendientes.md`.
+- Antes y después de Efectividad de Citas (ORLANT): antes, dos tarjetas (la
+  del mes y "ponderado · Abr a Sep"); ahora, una tarjeta ponderada con los
+  meses de MESES: ago 70,57 %, sep 73,54 %, Ago+Sep 72,12 %; octubre sin
+  datos de citas (Ago+Oct muestra solo agosto).

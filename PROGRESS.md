@@ -117,6 +117,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 
 | Indicador | Valor | Fase |
 |---|---|---|
+| MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción. Filas de abajo que ya no coinciden (Tráfico de Llamadas, Tipificación de WhatsApp, Únicas de Mobilize con Todos): ver `docs/pendientes.md` | 207 |
 | Tipificación de Llamadas (ORLANT) | Ago 14.940 · Sep 19.721 (recargado del CDR, mismas filas) | 116 / 174 |
 | Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas (regla anterior) | 174 / 177 |
 | Llamadas de salida, regla de la Fase 183 (ORLANT) | Ago 6.560 (cifra de Edwin) · Sep 10.404 (filas con skill "-" del CDR del 23/10); falta verlas en producción con sesión | 183 |
