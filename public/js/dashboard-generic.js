@@ -2039,6 +2039,22 @@ function _gdRenderCalidad(p, i){
   // aviso de A6 (.gd-aviso-mes, role="status"), pero con un texto que no
   // culpa al mes elegido: "Todavia no hay monitoreos de calidad para X".
   if(!todos.length && _gdCalCargada[camp]){
+    // Fase 208: con el resumen de calidad cargado en esta pestaña, los
+    // paneles de monitoreos vacios se esconden (sin aviso ni torta vacia).
+    var tabCal = (_gd.config.layout.tabs || []).find(function(t){ return t.key === _gd.tab; });
+    var resCal = (typeof _calResOpciones !== 'undefined' && _calResOpciones[camp]) || null;
+    if(tabCal && typeof calDashResumenCubreSinMonitoreos === 'function' &&
+       calDashResumenCubreSinMonitoreos(tabCal.panels, camp, resCal ? resCal.meses : null)){
+      var fElRes = document.getElementById('gd-f'+i); if(fElRes) fElRes.innerHTML = '';
+      if(p.tipo === 'calidad_kpis'){
+        var elRes = document.getElementById('gd-p'+i); if(elRes){ elRes.innerHTML = ''; elRes.style.display = 'none'; }
+      } else {
+        var cvRes = document.getElementById('gd-c'+i);
+        var cardRes = cvRes ? cvRes.closest('.aurora-card') : null;
+        if(cardRes) cardRes.style.display = 'none';
+      }
+      return;
+    }
     if(p.tipo === 'calidad_kpis'){
       var fElVacio = document.getElementById('gd-f'+i); if(fElVacio) fElVacio.innerHTML = '';
       var elVacio = document.getElementById('gd-p'+i);
