@@ -136,6 +136,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Llamadas Únicas y de Salida de Mobilize (v1.82.0) | Oct: únicas 64 = 62 contestadas (CDR) + 2 abandonadas · salida 86 = 45 conectadas (todas las filas "-") + 41 no conectadas (reporte 5) · Ago/Sep: conectadas 27 / 64 hasta subir su CDR (Edwin: 28 / 67), no conectadas Pendiente | 191 / 194 |
 | Resumen de calidad de Mobilize | Ago 2 asesores, 11 monitoreos, 98 %, 0 críticos · Sep 3, 34, 97,35 %, 2 · Oct 3, 27, 97,22 %, 2 (el octubre anterior, 34 / 97,35 %, era septiembre) | 202 |
 | Encuesta de Mobilize (base completa de Wolkvox) | Ago 21 · Sep 45 · Oct 82 encuestas; comentarios con ID 1 / 2 / 4; P3 "Sí" 5 / 3 / 19 | 193 |
+| Tarjetas de Mobilize con MESES = Todos (v1.91.0, suman todos los meses) | Flujo 277/272/5, 98,2 % · FCR 69,2 % (27/39) · Únicas 208 · Salida 320 · Tipificación salida 136 · Calidad 97,4 % / 72 / 4; verificado en producción | 203 |
 | One & Done / FCR de Mobilize (base: contestaron la pregunta 1, v1.88.0) | Ago 5/6 = 83,3 % · Sep 3/5 = 60 % · Oct 19/28 = 67,9 % (antes, sobre el total: 23,8 % · 6,7 % · 23,2 %); verificado en producción | 200 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |

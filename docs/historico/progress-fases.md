@@ -17703,3 +17703,25 @@ siguen SOLO al filtro MESES, nunca al MES quitado ni a un "mes actual".
   Todos 97,4 % / 72 / 4, Ago+Oct 97,45 % / 38 / 2; Encuesta Ago+Oct 103
   (21 + 82); tras cerrar sesión e iniciar otra, "Todos los meses" y la suma
   de todo; sin scroll horizontal, teléfonos ni errores de consola.
+- Producción (v1.91.0 desplegada, PR #580, mergeado con
+  `--match-head-commit`; deploy en verde). Revisión de solo lectura con
+  sesión de administrador (Playwright y Brave, toda escritura a la API
+  bloqueada: 0 intentos, 0 errores de página), Mobilize:
+
+  | Tarjeta | Todos | Sep | Ago+Sep | Ago+Oct |
+  |---|---|---|---|---|
+  | Subtítulo | Todos los meses (Ago – Oct 2026) | Septiembre 2026 | Ago 2026, Sep 2026 | Ago 2026, Oct 2026 |
+  | Flujo: total / contestadas / abandonadas | 277 / 272 / 5 | 104 / 104 / 0 | 171 / 168 / 3 | 173 / 168 / 5 |
+  | Nivel de atención | 98,2 % | 100 % | 98,3 % | 97,1 % |
+  | FCR = One & Done | 69,2 % (27/39) | 60 % (3/5) | 72,7 % (8/11) | 70,6 % (24/34) |
+  | Únicas total / contestadas / abandonadas | 208 / 204 / 4 | 88 | 144 / 142 / 2 | 120 / 116 / 4 |
+  | Salida total / no conectadas / conectadas | 320 / 184 / 136 | 154 / 90 / 64 | 234 / 143 / 91 | 166 / 94 / 72 |
+  | Tipificación, salida / conectadas / no conectadas | 136 / 104 / 32 | 64 / 49 / 15 | 91 / 76 / 15 | 72 / 55 / 17 |
+  | Calidad: promedio / monitoreos / fallos | 97,4 % / 72 / 4 | 97,35 % / 34 / 2 | 97,51 % / 45 / 2 | 97,45 % / 38 / 2 |
+
+  Desde/Hasta de Flujo: Todos 11/08 → 31/10 (todo lo cargado), Sep
+  01/09 → 30/09, Ago+Sep 01/08 → 30/09, Ago+Oct 01/08 → 31/10. Las
+  tarjetas de Flujo coinciden con la suma de las filas por mes (ago 67/64/3,
+  sep 104/104/0, oct 106/104/2); Ago+Oct no cuenta septiembre. Flujo por
+  hora: una tabla por mes marcado con datos (septiembre y octubre). FCR sin
+  "Otros meses".
