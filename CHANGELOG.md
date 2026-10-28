@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.93.0 — Octubre 2026
+
+**Fase 206: 15 tipificaciones a la vista y "Llamadas ingresadas" en ORLANT.**
+
+- Tipificación, en la computadora: la torta muestra hasta 15 tipificaciones
+  (antes 14), así que las 15 de octubre de Mobilize se ven todas, sin
+  "Otras". Cuando hay más de 12, cada porción tiene su propio color (antes
+  algunas repetían color).
+- ORLANT, Tráfico de Llamadas: el total se llama ahora **"Llamadas
+  ingresadas"**, igual que en Mobilize: en la tarjeta, la leyenda, al pasar
+  el mouse, en "Ver datos" y en el Excel. Solo cambia el texto.
+
 ## v1.92.0 — Octubre 2026
 
 **Fase 205: Tipificación con el listado completo (pedido de Edwin).**

@@ -86,6 +86,15 @@ var PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#
 // PC, minimo real medido: ΔE 17.5:1 (peor caso, tritanopia).
 var PC_DARK=['#428a78','#a457db','#abeded','#d9c68c','#ac6939','#9898cd','#53c6a9','#a99670','#bf9540','#cb4da1','#adc7eb','#9e79d2'];
 
+// Fase 206: 8 colores categoricos EXTRA, solo para tortas de mas de 12
+// porciones (Tipificacion: hasta 15/20), asi ninguna porcion repite color.
+// Mismas reglas que PC (sin tonos del semaforo; >=3:1 contra las superficies
+// del tema; medido con contraste-logic.js): claro, contraste 4,30-12,05:1 y
+// ΔE minimo 14,3 contra PC y entre si; oscuro, 4,55-7,64:1 y ΔE minimo 12,1.
+var PC_EXTRA_CLARO=['#2f6fb8','#8a1f4f','#5c5ab8','#1d6f73','#8c5a8c','#4b2c1a','#c04a9a','#3a3a5c'];
+var PC_EXTRA_DARK=['#5aa0e0','#e07ab0','#8f8fe8','#6fd6d0','#d8a8e0','#c8a070','#7fb8d8','#e0b0c8'];
+var PC_EXTRA=PC_EXTRA_CLARO;
+
 // Colores de eje/leyenda/fondo-de-datalabel que lo()/loPie() usaban como
 // literales sueltos -- ahora tambien reasignables por tema. CHART_TICK
 // (claro) baja igual que --c-text-muted en styles.css (2.97 -> 5.38:1).
@@ -102,13 +111,14 @@ function aplicarTemaCharts(){
   var oscuro = typeof temaActual === 'function' && temaActual() === 'dark';
   if(oscuro){
     CD='#5fc9ea'; CM='#7dd6f0'; CG='#4ade80'; CR='#f87171'; CO='#fbbf24'; CP='#c084fc';
-    PC=PC_DARK;
+    PC=PC_DARK; PC_EXTRA=PC_EXTRA_DARK;
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
     SERIE_PRINCIPAL='#dbe9ee'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE=null; SERIE_LINEA='#c084fc';
     SERIE_NO_CONECTADA='#cb4da1';
   } else {
     CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
     PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
+    PC_EXTRA=PC_EXTRA_CLARO;
     CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
     SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
     SERIE_NO_CONECTADA='#d22d80';

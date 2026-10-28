@@ -85,7 +85,8 @@ const ORLANT = {
       // produccion ya tenia dashboards_config sembrado, este orden nuevo del
       // seed nunca le habria llegado solo.
       { key: 'trafico', label: 'Tráfico de Llamadas', panels: [
-        { tipo: 'trafico_combo', campana: 'ORLANT' },
+        // Fase 206: el total se llama "Llamadas ingresadas", igual que en Mobilize.
+        { tipo: 'trafico_combo', campana: 'ORLANT', etiquetaTotal: 'Llamadas ingresadas' },
       ]},
       // Fase 50 (plantilla real confirmada por Edwin): datos por COLA y
       // PERIODO (fechaInicio..fechaFin), no diarios -- panel propio

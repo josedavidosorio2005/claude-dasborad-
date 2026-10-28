@@ -3811,6 +3811,28 @@ function migrarMobilizeFlujoEtiquetaTotal() {
 }
 runOnceMigration('dashboards_config_mobilize_flujo_etiqueta_total_v1', migrarMobilizeFlujoEtiquetaTotal);
 
+// Fase 206 (OK del usuario): lo mismo en Trafico de Llamadas de ORLANT. Solo
+// agrega `etiquetaTotal` al trafico_combo de ORLANT del tab "trafico" si
+// todavia no lo tiene; nunca pisa uno ya puesto. Sin ese panel, se deja
+// intacto y se registra. Solo texto. Idempotente.
+function migrarOrlantTraficoEtiquetaTotal() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'trafico');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'ORLANT');
+  if (!panel) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_trafico_etiqueta_total_v1: ORLANT no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  if (Object.prototype.hasOwnProperty.call(panel, 'etiquetaTotal')) return;
+  panel.etiquetaTotal = 'Llamadas ingresadas';
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'ORLANT');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_orlant_trafico_etiqueta_total_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_orlant_trafico_etiqueta_total_v1', migrarOrlantTraficoEtiquetaTotal);
+
 // Fase 153 (P3, "OK crear Aurora" del usuario): CLINICA AURORA desde la
 // plantilla de cliente (plantillas-cliente.js, Paso 3). Va AL FINAL, despues
 // de fase134_borrar_clientes_v1 (que borro la Aurora vieja, sin datos), asi
@@ -4342,6 +4364,7 @@ module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
 module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTotal;
+module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
 module.exports.crearHospitalLaMaria = crearHospitalLaMaria;

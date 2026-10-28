@@ -25,6 +25,12 @@ alguien los rompe otra vez).
    series de una gráfica sin juicio de valor (skills, asesores, colas).
    Nunca usa tonos verde/ámbar/rojo (reservados al semáforo) — solo
    teal/azul/índigo/púrpura/magenta/marrón.
+   **Extra para tortas grandes (Fase 206)**: `PC_EXTRA_CLARO` /
+   `PC_EXTRA_DARK` (8 colores cada uno, mismas reglas: ≥3:1 contra las
+   superficies del tema y ΔE ≥ 12 contra `PC`/`PC_DARK` y entre sí, medido
+   en `server/tests/fase206-tope15-orlant-ingresadas.test.js`). Solo los
+   usan las tortas de más de 12 porciones (Tipificación) para que ninguna
+   porción repita color; las demás gráficas siguen con las 12 de `PC`.
 
 ## Tokens de color
 

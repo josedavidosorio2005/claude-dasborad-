@@ -64,7 +64,9 @@ test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, todas 
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
   for (const t of cfg.layout.tabs) {
     const o = orl.find((x) => x.key === t.key);
-    assert.deepEqual(JSON.parse(JSON.stringify(t.panels).split(AURORA).join('ORLANT')), o.panels, t.key);
+    // Fase 206: "Llamadas ingresadas" (etiquetaTotal) es solo de ORLANT, no de la plantilla.
+    const panelesOrlant = o.panels.map((p) => { const c = Object.assign({}, p); delete c.etiquetaTotal; return c; });
+    assert.deepEqual(JSON.parse(JSON.stringify(t.panels).split(AURORA).join('ORLANT')), panelesOrlant, t.key);
   }
   for (const tabla of ['dashboard_cargas', 'calidad_nivel_servicio_diario', 'trafico_whatsapp', 'monitoreos']) {
     const col = tabla === 'dashboard_cargas' ? 'cliente' : 'campana';

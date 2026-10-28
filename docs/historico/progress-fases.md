@@ -17795,3 +17795,30 @@ en "Otras N tipificaciones" (10 más grandes + Otras, en el servidor) y ni
   Llamadas ingresadas", leyenda ["Llamadas ingresadas", "Llamadas
   Contestadas", "Nivel de Atención"], Excel "Llamadas ingresadas"; ORLANT
   sigue con "28.356 Total de llamadas" / "Total Llamadas".
+
+### Fase 206 — 15 tipificaciones a la vista y "Llamadas ingresadas" en ORLANT (2026-10-28, v1.93.0)
+
+OK del usuario tras la Fase 205.
+
+- Tipificación: a 1440 px la torta va junto a la tabla (contenedor de ~663
+  px), así que el tope de 600–899 px sube de 14 a 15
+  (`tipificacionMaxPorciones`): las 15 tipificaciones de octubre de Mobilize
+  se ven todas, sin "Otras". La paleta categórica tiene 12 colores; con más
+  porciones se repetían (la 14 quedaba pegada a la 1). Nuevos
+  `PC_EXTRA_CLARO`/`PC_EXTRA_DARK` (`charts.js`, 8 por tema; claro
+  4,30–12,05:1 y ΔE ≥ 14,3; oscuro 4,55–7,64:1 y ΔE ≥ 12,1, contra `PC` y
+  entre sí; sin tonos del semáforo; anotado en `docs/sistema-de-diseno.md`) y
+  `tipificacionSinRepetirConExtra`: solo los colores repetidos toman uno
+  extra, los demás no cambian.
+- ORLANT, Tráfico de Llamadas: `etiquetaTotal: 'Llamadas ingresadas'` en el
+  seed, en el perfil de la plantilla (prueba de "foto") y migración
+  `dashboards_config_orlant_trafico_etiqueta_total_v1` (no pisa un valor
+  puesto; idempotente). Clínica Aurora y Hospital La María (plantilla) no
+  cambian. Sale del pendiente de la Fase 204.
+- Pruebas: `fase206-tope15-orlant-ingresadas.test.js` (6) y las de 153
+  (Aurora), 204 y 205 al día. Suite 2323/2323, `npm audit` 0.
+- Verificación local (copia de la base de la Fase 200, Playwright y Brave):
+  con 15 tipificaciones sintéticas, a 1440 px 15 porciones con 15 colores
+  distintos y la leyenda completa, sin "Otras"; a 768/375 px 10 porciones
+  con "Otras" y su lista en el tooltip; ORLANT y Mobilize con "Llamadas
+  ingresadas" en tarjeta, leyenda y Excel a 1440/768/375 px; sin errores.

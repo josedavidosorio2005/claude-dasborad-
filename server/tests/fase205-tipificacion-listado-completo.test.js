@@ -28,9 +28,9 @@ test('servidor: /por-tipo trae `todas` (listado completo, de mayor a menor) y "O
   assert.equal(otras.incluye.reduce((a, x) => a + x.cantidad, 0), otras.cantidad);
 });
 
-test('cuantas porciones caben: 20 en escritorio, 14 en tableta, 10 en el celular (leyenda abajo)', () => {
+test('cuantas porciones caben: 20 en escritorio, 15 junto a la tabla a 1440 px (Fase 206), 10 en el celular (leyenda abajo)', () => {
   assert.equal(L.tipificacionMaxPorciones(1300), 20);
-  assert.equal(L.tipificacionMaxPorciones(700), 14);
+  assert.equal(L.tipificacionMaxPorciones(700), 15);
   assert.equal(L.tipificacionMaxPorciones(340), 10);
 });
 

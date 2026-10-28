@@ -654,7 +654,7 @@ function tipificacionRangoFechas(filas) {
 function tipificacionMaxPorciones(ancho) {
   var a = Number(ancho) || 0;
   if (a >= 900) return 20;
-  if (a >= 600) return 14;
+  if (a >= 600) return 15; // Fase 206: a 1440 px la torta va junto a la tabla (~660 px)
   return 10;
 }
 // Porciones de la torta a partir del listado COMPLETO (`todas`, cualquier
@@ -674,6 +674,18 @@ function tipificacionPorcionesTorta(todas, maxPorciones) {
     distintas: resto.length,
     incluye: resto.map(function (r) { return { tipificacion: r.tipificacion, cantidad: r.cantidad }; }),
   }]);
+}
+// Fase 206: reemplaza cada color repetido por el siguiente de `extra` que no
+// se haya usado; los que no se repiten quedan igual (cada tipificacion
+// conserva su color de siempre).
+function tipificacionSinRepetirConExtra(colores, extra) {
+  var usados = {};
+  var libres = (extra || []).filter(function (c) { return (colores || []).indexOf(c) === -1; });
+  return (colores || []).map(function (c) {
+    if (usados[c] && libres.length) c = libres.shift();
+    usados[c] = true;
+    return c;
+  });
 }
 // "1.234 (12,34 %)" con coma decimal.
 function tipificacionCantidadPct(cantidad, total) {
@@ -697,6 +709,7 @@ if (typeof module !== 'undefined' && module.exports) {
     tipificacionPorcionesTorta: tipificacionPorcionesTorta,
     tipificacionCantidadPct: tipificacionCantidadPct,
     tipificacionLineasOtras: tipificacionLineasOtras,
+    tipificacionSinRepetirConExtra: tipificacionSinRepetirConExtra,
     TIPIFICACION_COLUMNAS: TIPIFICACION_COLUMNAS,
     TIPIFICACION_ORDEN_ARRAY: TIPIFICACION_ORDEN_ARRAY,
     tipificacionCeldaRef: tipificacionCeldaRef,
