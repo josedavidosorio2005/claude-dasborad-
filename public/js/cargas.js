@@ -29,6 +29,7 @@ var _cargasCalidadPorCampana = {}; // { campana: {campana,engine,items} } — de
 var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente actual
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
+var _cargasCodigosEntidad = null; // Fase 210: codigos de la Clasificacion de lineas (base cruda de Agendas)
 var _cargasSkillsWhatsappMapa = null; // Fase 168: {codigo: nombre} de WhatsApp del cliente (HistChat por SKILL_ID)
 // Fase 153 (Centro de cargas, PR 4): { cliente, carga, mes, nombre } cuando
 // se llega desde "Subir/Reemplazar" de un mes del Centro: el plan queda con
@@ -708,6 +709,7 @@ async function procesarArchivoConsolidado(input){
         var mapCR = calidadResumenColIndexMap(headerRow0);
         if(CALIDAD_RESUMEN_COLUMNAS.some(function(c){ return c.obligatoria && mapCR[c.key] === undefined; })) continue;
       } else if(!cargasEncabezadosCoinciden(headerRow0, h.columnas) &&
+        !(h.tipo==='agendas' && agendasEsBaseCruda(headerRow0)) && // Fase 210: base cruda del aplicativo
         !(esTipificacion && h.canalTipificacion==='WHATSAPP' && cargasEsHistChatPorSkillId(headerRow0))) continue;
       if(esTrafico && h.canalFijo && cargasDetectarCanalTrafico(headerRow0, traficoColIndexMap, traficoWppColIndexMap, traficoWppEsFormatoDiario, _cargasCanalElegido()) !== h.canalFijo) continue;
       // Fase 122: un archivo de voz (HistCDR, trae SKILL_NAME) nunca debe
@@ -751,6 +753,17 @@ async function procesarArchivoConsolidado(input){
     }catch(e){ _cargasSkillsWhatsappMapa = null; }
   }
 
+  // Fase 210: Clasificacion de lineas (codigos de entidad) para la base cruda
+  // de Agendas. Sin lista (error de red o cliente sin ella), el lector de la
+  // base cruda lo dice en vez de mandar codigos sin proteger.
+  _cargasCodigosEntidad = null;
+  if(_cargasPlan.some(function(h){ return h.tipo==='agendas'; })){
+    try{
+      var ce = await apiRequest('GET','/calidad/agendas/codigos-entidad?campana='+encodeURIComponent(cliente));
+      _cargasCodigosEntidad = (ce.codigos || []).map(function(c){ return c.codigo; });
+    }catch(e){ _cargasCodigosEntidad = null; }
+  }
+
   _cargasResultados = _cargasPlan.map(function(h){
     var resuelto = cargasResolverHojaTrafico(h, wb.SheetNames, !!wsData, canalData, dataLegadoUsada);
     var reconocidaPorEncabezadosComo = null;
@@ -769,7 +782,7 @@ async function procesarArchivoConsolidado(input){
     } else if(h.tipo === 'calidad'){
       parseFn = function(a){ return cmParseRows(a, calidad.items); };
     } else if(h.tipo === 'agendas'){
-      parseFn = agendasParseFilas;
+      parseFn = function(a, w){ return agendasParseFilas(a, w, { codigosEntidad: _cargasCodigosEntidad }); };
     } else if(h.tipo === 'efectividad_agendamiento'){
       // Fase 122: `ws` (2do param de cargasProcesarHoja) para que la
       // columna EFECTIVIDAD use el formato real de celda (ver
@@ -962,6 +975,11 @@ function _cargasEstadoLabel(r){
   if(r.tipo==='agendas' && (r.entidadesAgrupadas || r.entidadesSinDato)){
     extra = ' — '+(r.entidadesAgrupadas||0)+' fila(s) con entidad agrupada por privacidad (PARTICULAR / OTRA), '+
       (r.entidadesSinDato||0)+' sin entidad (SIN ENTIDAD)';
+  }
+  // Fase 210: base cruda del aplicativo -- usuarios y codigos fuera de la lista (suman a 3P).
+  if(r.tipo==='agendas' && r.formato==='cruda'){
+    extra += ' — base del aplicativo: '+r.usuarios+' usuario(s); '+(r.codigosFueraDeLista + r.codigosVacios)+
+      ' fila(s) con código de entidad fuera de la Clasificación de líneas o vacío (suman a 3P, el código no se guarda)';
   }
   // Fase 79: cuando la hoja no traia el nombre esperado pero sus
   // encabezados calzaron exacto con el formato (archivo ORIGINAL de
@@ -1200,21 +1218,23 @@ function _agendasFmtFechaCorta(fechaHora){
 async function _cargasGuardarAgendas(cliente, r){
   // Payload compacto (arrays, no objetos) -- ver la nota de tamaño en
   // validation.js (agendasCargaBody) y agendas-logic.js (agendasFilaComoArray).
-  var filasArray = r.filas.map(agendasFilaComoArray);
-  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: filasArray };
+  var formato = r.formato === 'cruda' ? 'cruda' : 'consolidado'; // Fase 210
+  var filasArray = r.filas.map(function(f){ return agendasFilaComoArray(f, formato); });
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, formato: formato, filas: filasArray };
   if(cargasPayloadDemasiadoGrande(parsed, CARGAS_LIMITE_MAYOR_BYTES)){
     return { ok:false, mensaje: CARGAS_MSG_PAYLOAD_GRANDE };
   }
   try{
     var impacto = await apiRequest('POST','/calidad/agendas/carga/impacto', parsed);
     var fraseAliasAgendas = _cargasFraseAlias(impacto);
-    if(impacto.filasExistentes > 0 || fraseAliasAgendas){
+    if(impacto.filasExistentes > 0 || fraseAliasAgendas || impacto.filasSinAsesor){
       var msg = '';
       if(impacto.filasExistentes > 0){
         msg += 'Esta carga va a REEMPLAZAR '+impacto.filasExistentes+' registro(s) de agendas ya cargados, del '+
           _agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+'.';
       }
       if(fraseAliasAgendas) msg += (msg?' ':'')+fraseAliasAgendas;
+      if(impacto.filasSinAsesor) msg += (msg?' ':'')+impacto.filasSinAsesor+' agenda(s) son de usuarios que no están en la Clasificación de usuarios: saldrán como "Usuario X (sin asesor)".';
       msg += '\n\n¿Continuar y sobrescribir?';
       if(!confirm(msg)) return { ok:false, mensaje: 'Se dejaron las agendas anteriores sin tocar.' };
     }

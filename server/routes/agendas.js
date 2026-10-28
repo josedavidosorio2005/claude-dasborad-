@@ -13,9 +13,10 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
+const { usaClasificacionAgendas, listarUsuarios, guardarUsuarios, listarCodigos, guardarCodigos } = require('../agendas-clasificacion');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -114,7 +115,7 @@ router.post(
     if (!campaignAccess(req.actor, b.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(impactoAgendas(db, { campana: b.campana, filas: b.filas }));
+    res.json(impactoAgendas(db, { campana: b.campana, filas: b.filas, formato: b.formato }));
   })
 );
 
@@ -135,6 +136,7 @@ router.post(
       archivoNombre: b.archivoNombre || '',
       cargadoPorNombre: req.actor.nombre || '-',
       filas: b.filas,
+      formato: b.formato,
     });
     logEvent(
       'AGENDAS_CARGA',
@@ -143,6 +145,74 @@ router.post(
       `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`
     );
     res.status(201).json(resultado);
+  })
+);
+
+// ── Fase 210 (pedido de Edwin, 28/10, solo ORLANT): las 2 listas de la base
+// cruda. La de usuarios (nombres de asesor) solo la ve y la cambia un
+// administrador. La de codigos de entidad tambien la LEE quien puede cargar
+// agendas: el navegador la necesita para no mandar al servidor un codigo
+// fuera de la lista (puede ser una cedula).
+function _rechazoClasificacion(req, res, campana, { soloAdmin }) {
+  const puede = isFullAdmin(req.actor) || (!soloAdmin && canLoadModule(req.actor, 'agendas') && campaignAccess(req.actor, campana));
+  if (!puede) {
+    res.status(403).json({ error: 'Solo un administrador puede ver o cambiar esta clasificación' });
+    return true;
+  }
+  if (!usaClasificacionAgendas(campana)) {
+    res.status(404).json({ error: 'Este cliente no usa la clasificación de Agendamiento' });
+    return true;
+  }
+  return false;
+}
+
+router.get(
+  '/calidad/agendas/usuarios',
+  requireActor,
+  validate(schemas.agendasClasificacionQuery, 'query'),
+  wrap((req, res) => {
+    if (_rechazoClasificacion(req, res, req.query.campana, { soloAdmin: true })) return;
+    res.json({ campana: req.query.campana, ...listarUsuarios(db, req.query.campana) });
+  })
+);
+
+router.put(
+  '/calidad/agendas/usuarios',
+  requireActor,
+  validate(schemas.agendasUsuariosBody),
+  wrap((req, res) => {
+    const b = req.body;
+    if (_rechazoClasificacion(req, res, b.campana, { soloAdmin: true })) return;
+    const r = guardarUsuarios(db, { campana: b.campana, usuarios: b.usuarios, guardadoPorNombre: actorLabel(req.actor) });
+    if (r.errores) return res.status(400).json({ error: r.errores[0], detalles: r.errores.map((m) => ({ campo: 'usuarios', mensaje: m })) });
+    logEvent('AGENDAS_USUARIOS', { nombre: b.campana, user: '-', rol: 'agendas' }, actorLabel(req.actor),
+      r.usuariosDistintos + ' usuario(s), ' + r.conCambio + ' con fecha de cambio');
+    res.json({ ...r, ...listarUsuarios(db, b.campana) });
+  })
+);
+
+router.get(
+  '/calidad/agendas/codigos-entidad',
+  requireActor,
+  validate(schemas.agendasClasificacionQuery, 'query'),
+  wrap((req, res) => {
+    if (_rechazoClasificacion(req, res, req.query.campana, { soloAdmin: false })) return;
+    res.json({ campana: req.query.campana, ...listarCodigos(db, req.query.campana) });
+  })
+);
+
+router.put(
+  '/calidad/agendas/codigos-entidad',
+  requireActor,
+  validate(schemas.agendasCodigosBody),
+  wrap((req, res) => {
+    const b = req.body;
+    if (_rechazoClasificacion(req, res, b.campana, { soloAdmin: true })) return;
+    const r = guardarCodigos(db, { campana: b.campana, codigos: b.codigos, guardadoPorNombre: actorLabel(req.actor) });
+    if (r.errores) return res.status(400).json({ error: r.errores[0], detalles: r.errores.map((m) => ({ campo: 'codigos', mensaje: m })) });
+    logEvent('AGENDAS_CODIGOS_ENTIDAD', { nombre: b.campana, user: '-', rol: 'agendas' }, actorLabel(req.actor),
+      r.general + ' código(s) en Línea General, ' + r.p3 + ' en Línea 3P');
+    res.json({ ...r, ...listarCodigos(db, b.campana) });
   })
 );
 

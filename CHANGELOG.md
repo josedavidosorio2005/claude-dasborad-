@@ -4,6 +4,35 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.96.0 — Octubre 2026
+
+**Fase 210: Agendamiento de ORLANT con la base tal cual sale del aplicativo.**
+
+- La base de agendas se sube tal cual sale del aplicativo (como "AGENDAS
+  MES DE OCTUBRE.xlsx"), sin prepararla a mano. El formato de antes se
+  sigue aceptando, y agosto y septiembre quedan como estaban.
+- Botón nuevo **"Clasificación de usuarios"** (solo administrador): lista
+  de usuario → nombre del asesor → fecha de cambio, con un "+" para
+  agregar. Si un usuario pasa a otra persona, se agrega otra vez con la
+  fecha de cambio: sus agendas desde esa fecha cuentan para la persona
+  nueva y las anteriores siguen siendo de la anterior. Sin fecha, siempre
+  ha sido de esa persona. Si se agrega un usuario que ya existe sin fecha,
+  la plataforma avisa que está repetido y pide la fecha.
+- Botón nuevo **"Clasificación de líneas"** (solo administrador): lista
+  de código de entidad → Línea 3P o Línea General, con un "+". Los códigos
+  que no estén en la lista (particulares, que se crean con la cédula) y
+  los que vienen vacíos suman a 3P. Esos códigos no se guardan tal cual,
+  porque pueden ser la cédula de un paciente.
+- Las dos listas se pueden cargar desde el Excel de usuarios y códigos, y
+  corregir cuando se necesite: el cambio se ve de inmediato en las
+  gráficas, sin volver a subir la base.
+- Un usuario que no está en la lista sale como "Usuario X (sin asesor)"
+  hasta que se le asigne una persona.
+- Agendas por especialidad sale de la especialidad de la base. El ranking
+  de asesores no cambia.
+- Esta clasificación es solo de Agendamiento: la Clasificación de
+  asesores de Tipificación sigue igual.
+
 ## v1.95.0 — Octubre 2026
 
 **Fase 209: Flujo por hora de Mobilize en una sola tabla.**

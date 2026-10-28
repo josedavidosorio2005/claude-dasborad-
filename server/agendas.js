@@ -7,6 +7,7 @@
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
 const { aplicarAliasAFilas } = require('./alias-asesores');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
+const { normCodigo, normUsuario, codigosConocidos } = require('./agendas-clasificacion');
 
 function nowStr() {
   const d = new Date();
@@ -20,11 +21,54 @@ function nowStr() {
 // cambiar el orden en uno sin los otros 2 mezclaria columnas en silencio.
 const CAMPOS_FILA = ['asesor', 'sede', 'examen', 'especialidad', 'profesional', 'fechaSolicitud', 'tipoLinea', 'entidad'];
 
-function filaArrayAObjeto(arr) {
+// Fase 210: base CRUDA del aplicativo (formato 'cruda'): en vez de asesor y
+// tipoLinea trae el usuario que asigna la cita y el codigo de entidad -- el
+// asesor y la linea salen de las listas de agendas-clasificacion.js al
+// consultar. Mismo orden en AGENDAS_ORDEN_ARRAY_CRUDA (agendas-logic.js) y
+// agendasFilaCrudaSchema (validation.js).
+const CAMPOS_FILA_CRUDA = ['usuario', 'sede', 'examen', 'especialidad', 'profesional', 'fechaSolicitud', 'codigoEntidad', 'entidad'];
+// Codigo de entidad que no esta en la lista (puede ser la cedula de un
+// particular: nunca se guarda tal cual) y codigo vacio. Los dos suman a 3P.
+const CODIGO_FUERA_DE_LISTA = 'PARTICULAR / OTRA';
+const CODIGO_VACIO = 'SIN CODIGO';
+
+function filaArrayAObjeto(arr, formato) {
   const obj = {};
-  CAMPOS_FILA.forEach((k, i) => { obj[k] = arr[i]; });
+  (formato === 'cruda' ? CAMPOS_FILA_CRUDA : CAMPOS_FILA).forEach((k, i) => { obj[k] = arr[i]; });
+  if (formato === 'cruda') { obj.asesor = ''; obj.tipoLinea = ''; }
   return obj;
 }
+
+// Usuario y codigo normalizados; un codigo fuera de la lista del cliente se
+// reemplaza aqui tambien (el navegador ya lo hace: esto es la segunda red).
+function prepararFilasCrudas(db, campana, filasObj) {
+  const conocidos = codigosConocidos(db, campana);
+  return filasObj.map((f) => {
+    const codigo = normCodigo(f.codigoEntidad);
+    let codigoEntidad = CODIGO_VACIO;
+    if (codigo === CODIGO_FUERA_DE_LISTA) codigoEntidad = CODIGO_FUERA_DE_LISTA;
+    else if (codigo && codigo !== CODIGO_VACIO) codigoEntidad = conocidos.has(codigo) ? codigo : CODIGO_FUERA_DE_LISTA;
+    return { ...f, usuario: normUsuario(f.usuario), codigoEntidad };
+  });
+}
+
+// Asesor y linea EFECTIVOS de cada agenda. Formato anterior (usuario NULL): los
+// guardados. Base cruda: el asesor del usuario segun la fecha de cambio mas
+// reciente que no pase del dia de la solicitud (sin fecha = siempre), o
+// "Usuario X (sin asesor)"; la linea del codigo de entidad, o 3P si no esta en
+// la lista. Todas las consultas leen de aqui (nunca de la tabla directa), asi
+// el filtro de Agente y el de Tipo de linea usan lo mismo que las graficas.
+const ASESOR_EFECTIVO_SQL = `CASE WHEN a.usuario IS NULL THEN a.asesor ELSE COALESCE(
+    (SELECT u.asesor FROM agendas_usuarios u
+       WHERE u.campana = a.campana AND u.usuario = a.usuario
+         AND (u.fechaCambio IS NULL OR u.fechaCambio <= substr(a.fechaSolicitud, 1, 10))
+       ORDER BY u.fechaCambio IS NULL, u.fechaCambio DESC LIMIT 1),
+    'Usuario ' || a.usuario || ' (sin asesor)') END`;
+const LINEA_EFECTIVA_SQL = `CASE WHEN a.usuario IS NULL THEN a.tipoLinea ELSE COALESCE(
+    (SELECT c.linea FROM agendas_codigos_entidad c WHERE c.campana = a.campana AND c.codigo = a.codigoEntidad),
+    '3P') END`;
+const AGENDAS_FUENTE = `(SELECT a.id, a.campana, a.sede, a.examen, a.especialidad, a.profesional, a.fechaSolicitud, a.entidad,
+    a.usuario, ${ASESOR_EFECTIVO_SQL} AS asesor, ${LINEA_EFECTIVA_SQL} AS tipoLinea FROM agendas a)`;
 
 // Primera y ultima fechaSolicitud entre las filas del archivo que se esta
 // subiendo -- define el periodo que la carga va a REEMPLAZAR.
@@ -42,18 +86,27 @@ function rangoFechas(filasObj) {
 // -- no escribe nada. El frontend lo usa para pedir confirmacion explicita
 // ("se reemplazaran N registros del dd/mm al dd/mm") antes de guardar,
 // mismo patron que POST /calidad/trafico/carga/impacto.
-function impactoAgendas(db, { campana, filas }) {
-  const filasObj = filas.map(filaArrayAObjeto);
+function impactoAgendas(db, { campana, filas, formato }) {
+  const filasObj = filas.map((f) => filaArrayAObjeto(f, formato));
   const { desde, hasta } = rangoFechas(filasObj);
   const existentes = db
     .prepare('SELECT COUNT(*) AS n FROM agendas WHERE campana = ? AND fechaSolicitud >= ? AND fechaSolicitud <= ?')
     .get(campana, desde, hasta).n;
   // Fase 122: transparencia del alias de asesor ANTES de confirmar la carga.
   const alias = aplicarAliasAFilas(db, campana, filasObj, 'asesor');
-  return {
+  const r = {
     desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length,
     filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados,
   };
+  // Fase 210: con la base cruda, cuantas agendas quedan sin asesor (usuario
+  // fuera de la lista) y cuantas con codigo fuera de la lista o vacio (3P).
+  if (formato === 'cruda') {
+    const crudas = prepararFilasCrudas(db, campana, filasObj);
+    const enLista = new Set(db.prepare('SELECT DISTINCT usuario FROM agendas_usuarios WHERE campana = ?').all(campana).map((x) => x.usuario));
+    r.filasSinAsesor = crudas.filter((f) => !enLista.has(f.usuario)).length;
+    r.filasCodigoFueraDeLista = crudas.filter((f) => f.codigoEntidad === CODIGO_FUERA_DE_LISTA || f.codigoEntidad === CODIGO_VACIO).length;
+  }
+  return r;
 }
 
 // Reemplaza por PERIODO: borra todo lo que haya en [desde,hasta] del
@@ -61,18 +114,20 @@ function impactoAgendas(db, { campana, filas }) {
 // transaccion (o las dos cosas pasan, o ninguna). Volver a subir el MISMO
 // archivo deja el mismo conteo (borra las N filas viejas de ese rango
 // exacto, inserta las mismas N filas nuevas -- nunca duplica).
-function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas, formato }) {
   const ts = nowStr();
-  let filasObj = filas.map(filaArrayAObjeto);
-  // Fase 122: alias de nombre de asesor ANTES de guardar.
-  filasObj = aplicarAliasAFilas(db, campana, filasObj, 'asesor').filas;
+  let filasObj = filas.map((f) => filaArrayAObjeto(f, formato));
+  // Fase 122: alias de nombre de asesor ANTES de guardar. Fase 210: la base
+  // cruda no trae asesor (sale de la lista de usuarios al consultar).
+  if (formato === 'cruda') filasObj = prepararFilasCrudas(db, campana, filasObj);
+  else filasObj = aplicarAliasAFilas(db, campana, filasObj, 'asesor').filas;
   const { desde, hasta } = rangoFechas(filasObj);
 
   const del = db.prepare('DELETE FROM agendas WHERE campana = ? AND fechaSolicitud >= ? AND fechaSolicitud <= ?');
   const insert = db.prepare(
     `INSERT INTO agendas
-       (campana, asesor, sede, examen, especialidad, profesional, fechaSolicitud, tipoLinea, entidad, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana,@asesor,@sede,@examen,@especialidad,@profesional,@fechaSolicitud,@tipoLinea,@entidad,@archivoNombre,@cargadoPorNombre,@createdAt)`
+       (campana, asesor, sede, examen, especialidad, profesional, fechaSolicitud, tipoLinea, entidad, usuario, codigoEntidad, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana,@asesor,@sede,@examen,@especialidad,@profesional,@fechaSolicitud,@tipoLinea,@entidad,@usuario,@codigoEntidad,@archivoNombre,@cargadoPorNombre,@createdAt)`
   );
 
   let borradas = 0;
@@ -85,6 +140,7 @@ function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas }) 
         campana,
         asesor: f.asesor, sede: f.sede, examen: f.examen, especialidad: f.especialidad,
         profesional: f.profesional, fechaSolicitud: f.fechaSolicitud, tipoLinea: f.tipoLinea, entidad: f.entidad,
+        usuario: formato === 'cruda' ? f.usuario : null, codigoEntidad: formato === 'cruda' ? f.codigoEntidad : null,
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }
@@ -147,7 +203,7 @@ function agendasWhereClausulas(q, incluirMes) {
 function agendasPorEspecialidad(db, q) {
   const { where, params } = agendasWhereClausulas(q, true);
   return db
-    .prepare(`SELECT especialidad, COUNT(*) AS cantidad FROM agendas WHERE ${where} GROUP BY especialidad ORDER BY cantidad DESC`)
+    .prepare(`SELECT especialidad, COUNT(*) AS cantidad FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY especialidad ORDER BY cantidad DESC`)
     .all(params);
 }
 
@@ -156,7 +212,7 @@ function agendasPorEspecialidad(db, q) {
 function agendasPorMes(db, q) {
   const { where, params } = agendasWhereClausulas(q, false);
   return db
-    .prepare(`SELECT substr(fechaSolicitud,1,7) AS mes, COUNT(*) AS cantidad FROM agendas WHERE ${where} GROUP BY mes ORDER BY mes ASC`)
+    .prepare(`SELECT substr(fechaSolicitud,1,7) AS mes, COUNT(*) AS cantidad FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY mes ORDER BY mes ASC`)
     .all(params);
 }
 
@@ -170,7 +226,7 @@ function agendasPorLinea(db, q) {
   return db
     .prepare(
       `SELECT substr(fechaSolicitud,1,7) AS mes, tipoLinea, COUNT(*) AS cantidad
-       FROM agendas WHERE ${where} GROUP BY mes, tipoLinea ORDER BY mes ASC`
+       FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY mes, tipoLinea ORDER BY mes ASC`
     )
     .all(params);
 }
@@ -223,7 +279,7 @@ function agendasRankingCrudo(db, q) {
   return db
     .prepare(
       `SELECT asesor, tipoLinea, substr(fechaSolicitud,1,10) AS dia, COUNT(*) AS cantidad
-       FROM agendas WHERE ${where} GROUP BY asesor, tipoLinea, dia`
+       FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY asesor, tipoLinea, dia`
     )
     .all(params);
 }
@@ -357,7 +413,7 @@ function agendasRanking(db, q) {
 // tiene datos que mostrar (meses.length > 0), ver dashboard-generic.js.
 function agendasOpciones(db, campana) {
   const distintos = (columna) =>
-    db.prepare(`SELECT DISTINCT ${columna} AS v FROM agendas WHERE campana = ? ORDER BY v`).all(campana).map((r) => r.v);
+    db.prepare(`SELECT DISTINCT ${columna} AS v FROM ${AGENDAS_FUENTE} WHERE campana = ? ORDER BY v`).all(campana).map((r) => r.v);
   return {
     meses: db.prepare('SELECT DISTINCT substr(fechaSolicitud,1,7) AS v FROM agendas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
     asesores: distintos('asesor'),
@@ -372,6 +428,10 @@ function agendasOpciones(db, campana) {
 
 module.exports = {
   CAMPOS_FILA,
+  CAMPOS_FILA_CRUDA,
+  CODIGO_FUERA_DE_LISTA,
+  CODIGO_VACIO,
+  AGENDAS_FUENTE,
   filaArrayAObjeto,
   impactoAgendas,
   cargarAgendas,

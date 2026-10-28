@@ -4334,6 +4334,45 @@ function crearFlujoHora() {
 }
 runOnceMigration('fase196_flujo_hora_v1', crearFlujoHora);
 
+// Fase 210 (pedido de Edwin, 28/10, solo ORLANT): la base de agendas cruda del
+// aplicativo trae el USUARIO que asigna la cita (columna A) y el CODIGO_ENTIDAD
+// (columna R), no el nombre del asesor ni la linea. 1) agendas.usuario y
+// agendas.codigoEntidad (NULL en las filas del formato anterior, que siguen
+// usando su asesor/tipoLinea guardados). 2) agendas_usuarios: usuario ->
+// asesor desde una fecha de cambio (NULL = siempre). 3) agendas_codigos_entidad:
+// codigo -> 3P/GENERAL. Las 2 listas las edita un administrador desde
+// Agendamiento y se cruzan AL CONSULTAR (server/agendas.js). Nunca se siembran
+// desde el repo: los nombres reales de asesor no viven en el codigo.
+function crearAgendasUsuariosLineas() {
+  const cols = db.prepare('PRAGMA table_info(agendas)').all().map((c) => c.name);
+  if (!cols.includes('usuario')) db.exec('ALTER TABLE agendas ADD COLUMN usuario TEXT');
+  if (!cols.includes('codigoEntidad')) db.exec('ALTER TABLE agendas ADD COLUMN codigoEntidad TEXT');
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agendas_usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      usuario TEXT NOT NULL,
+      asesor TEXT NOT NULL,
+      fechaCambio TEXT,
+      guardadoPorNombre TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_agendas_usuarios_unico ON agendas_usuarios(campana, usuario, COALESCE(fechaCambio, ''));
+    CREATE TABLE IF NOT EXISTS agendas_codigos_entidad (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      codigo TEXT NOT NULL,
+      linea TEXT NOT NULL CHECK (linea IN ('3P', 'GENERAL')),
+      guardadoPorNombre TEXT NOT NULL DEFAULT '',
+      updatedAt TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_agendas_codigos_entidad_unico ON agendas_codigos_entidad(campana, codigo);
+  `);
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase210_agendas_usuarios_lineas_v1 aplicada.');
+}
+runOnceMigration('fase210_agendas_usuarios_lineas_v1', crearAgendasUsuariosLineas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4388,6 +4427,8 @@ module.exports.crearLlamadasUnicasFuentes = crearLlamadasUnicasFuentes;
 module.exports.crearLlamadasNoConectadas = crearLlamadasNoConectadas;
 // Fase 196: idem.
 module.exports.crearFlujoHora = crearFlujoHora;
+// Fase 210: idem.
+module.exports.crearAgendasUsuariosLineas = crearAgendasUsuariosLineas;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;
