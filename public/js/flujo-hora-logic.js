@@ -23,7 +23,7 @@ var FLUJO_HORA_ORDEN_ARRAY = ['fecha', 'hora', 'skill', 'ingresadas', 'contestad
 var FLUJO_HORA_METRICAS = [
   { key: 'ingresadas', titulo: 'Ingresadas' },
   { key: 'contestadas', titulo: 'Contestadas' },
-  { key: 'abandonadas', titulo: 'Abandonadas' },
+  { key: 'abandonadas', titulo: 'Abandonadas', escala: 'rojo' }, // Fase 209: escala roja
 ];
 
 function _fhNorm(v) { return String(v == null ? '' : v).trim().replace(/\s+/g, ' '); }
@@ -117,19 +117,29 @@ function flujoHoraTramo(h) { return h + ':00 - ' + (h + 1) + ':00'; }
 // horas con datos en el mes. Devuelve { horas, dias, celdas[h][d], totalFila,
 // totalColumna, total, max }.
 function flujoHoraMatriz(filas, mes, metrica) {
-  var anio = Number(String(mes).slice(0, 4)), m = Number(String(mes).slice(5, 7));
-  var nDias = new Date(Date.UTC(anio, m, 0)).getUTCDate();
+  return flujoHoraMatrizMeses(filas, [mes], metrica);
+}
+
+// Fase 209 (pedido de Edwin): UNA tabla consolidada para todos los meses de
+// `meses` -- la celda (hora, dia N) suma el dia N de cada mes elegido.
+// Columnas = dias 1..el mes mas largo de la lista; filas = las horas con
+// datos en esos meses. Mismo resultado que flujoHoraMatriz.
+function flujoHoraMatrizMeses(filas, meses, metrica) {
+  var lista = (meses || []).map(function (x) { return String(x).slice(0, 7); });
+  var nDias = 0;
+  lista.forEach(function (mes) {
+    var n = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).getUTCDate();
+    if (n > nDias) nDias = n;
+  });
   var dias = [];
   for (var d = 1; d <= nDias; d++) dias.push(d);
+  var delPeriodo = (filas || []).filter(function (f) { return lista.indexOf(String(f.dia).slice(0, 7)) !== -1; });
   var horas = [];
-  (filas || []).forEach(function (f) { if (String(f.dia).slice(0, 7) === mes && horas.indexOf(f.hora) === -1) horas.push(f.hora); });
+  delPeriodo.forEach(function (f) { if (horas.indexOf(f.hora) === -1) horas.push(f.hora); });
   horas.sort(function (a, b) { return a - b; });
   var celdas = {};
   horas.forEach(function (h) { celdas[h] = {}; dias.forEach(function (x) { celdas[h][x] = 0; }); });
-  (filas || []).forEach(function (f) {
-    if (String(f.dia).slice(0, 7) !== mes) return;
-    celdas[f.hora][Number(String(f.dia).slice(8, 10))] += f[metrica] || 0;
-  });
+  delPeriodo.forEach(function (f) { celdas[f.hora][Number(String(f.dia).slice(8, 10))] += f[metrica] || 0; });
   var totalFila = {}, totalColumna = {}, total = 0, max = 0;
   dias.forEach(function (x) { totalColumna[x] = 0; });
   horas.forEach(function (h) {
@@ -144,8 +154,9 @@ function flujoHoraMatriz(filas, mes, metrica) {
 }
 
 // Nivel de color de una celda en tres tramos del maximo de la tabla: el mas
-// alto (verde) desde 2/3 del maximo, el medio (amarillo) desde 1/3, el mas
-// bajo (gris) por debajo, incluido 0.
+// alto (verde; rojo en Abandonadas, Fase 209) desde 2/3 del maximo, el medio
+// (amarillo; rojo claro en Abandonadas) desde 1/3, el mas bajo (gris) por
+// debajo, incluido 0.
 function flujoHoraNivel(v, max) {
   if (!max || !v) return 'bajo';
   if (v >= (2 * max) / 3) return 'alto';
@@ -163,6 +174,7 @@ if (typeof module !== 'undefined' && module.exports) {
     flujoHoraParseFilas: flujoHoraParseFilas,
     flujoHoraTramo: flujoHoraTramo,
     flujoHoraMatriz: flujoHoraMatriz,
+    flujoHoraMatrizMeses: flujoHoraMatrizMeses,
     flujoHoraNivel: flujoHoraNivel,
   };
 }
