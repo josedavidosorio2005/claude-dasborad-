@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.95.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.96.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -125,7 +125,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Tráfico de Llamadas (ORLANT) | Ago 10.411/9.374/1.037 · Sep 10.480/10.264/216: incluye Confirmaciones, Cancelaciones y Reprogramación y Atención Tutelas (recarga del 26/10). Sin ellas, Ago 8.911/7.961/950 · Sep 9.043/8.883/160. Falta que Edwin confirme si cuentan | 115 / 208 |
 | Tráfico de WhatsApp (ORLANT) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % | 116 |
 | WhatsApp por rangos (ORLANT, oct, 1–22/10) | 5.196 conversaciones; 0 a 3 min 57,6 % | 165 / 166 |
-| Agendas (ORLANT) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores | 126 |
+| Agendas (ORLANT) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores · Oct 8.635 (base cruda, 01–24/10) = General 5.142 + 3P 3.493 | 126 / 210 |
 | Inasistencia (ORLANT) | Ago 11.189/786/48, 7,45 % · Sep 12.194/749/61 · período 7,03 % | 130 |
 | Calidad (ORLANT) | Sep: 95 monitoreos, 19 asesores, promedio 94,79 % | 130 |
 | Efectividad de agendamiento (ORLANT) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) | 122 |
@@ -351,3 +351,4 @@ mismo orden):
 - Fase 207 — La regla de MESES en todas las campañas (ORLANT completo, Aurora, HLM y las nuevas), en el código común: Todos = todos los meses, 1 mes = ese mes, varios = suma; % de totales sumados; una tarjeta ponderada en Efectividad de Citas e Inasistencia; comparación solo con un mes; prueba guardiana (v1.94.0, 2026-10-28)
 - Fase 208 — Calidad de Mobilize sin el aviso de "no hay monitoreos" cuando hay resumen cargado; números de control al día con el historial de cargas (v1.94.1, 2026-10-28)
 - Fase 209 — Mobilize: Flujo por hora en una sola tabla por métrica que suma los meses de MESES (título con los meses), Abandonadas en escala roja y día 1 visible en el celular (v1.95.0, 2026-10-28)
+- Fase 210 — ORLANT: Agendamiento con la base cruda del aplicativo, Clasificación de usuarios (con fecha de cambio) y de líneas (código → 3P/General), octubre cargado (v1.96.0, 2026-10-28)
