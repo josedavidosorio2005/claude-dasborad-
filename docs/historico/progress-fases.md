@@ -18040,3 +18040,52 @@ Pedido urgente de Edwin (Mobilize, Flujo por hora), en un PR aparte.
 - ORLANT no tiene Flujo por hora (solo MOBILIZE y la plantilla de clientes
   nuevos); si se le agrega, hereda la tabla consolidada. No se cambió nada
   de ORLANT.
+
+### Fase 210 — Agendamiento de ORLANT con la base cruda del aplicativo, Clasificación de usuarios y de líneas (2026-10-28, v1.96.0)
+
+Pedido de Edwin del 28/10 (solo ORLANT, Agendamiento). PR #593.
+
+- **Base cruda**: "AGENDAS MES DE OCTUBRE.xlsx" (hoja "Sheet", 20
+  columnas, 8.635 filas, 01–24/10) sube tal cual; se reconoce por
+  encabezados (`agendasEsBaseCruda`). Se leen 8 columnas: usuario (A),
+  CODIGO_SEDE, NOMBRE_EXAMEN, ESPNOM (I), MEDNOM, FECHA_SOL, CODIGO_ENTIDAD
+  (R, confirmada: los 40 códigos del cuadro aparecen ahí y en ninguna otra)
+  y NOMBRE_ENTIDAD. PACIDE y CITOBSOBS nunca salen del navegador. Un código
+  fuera de la lista se guarda como "PARTICULAR / OTRA" (navegador y
+  servidor); vacío = "SIN CODIGO". El formato anterior sigue igual.
+- **Clasificación de usuarios / de líneas** (2 botones, solo administrador,
+  solo ORLANT; tablas `agendas_usuarios` y `agendas_codigos_entidad`,
+  migración `fase210_agendas_usuarios_lineas_v1`): "+", carga desde el
+  Excel (hojas AGENTES / CODIGOS), editar y quitar. Usuario repetido sin
+  fecha avisa y pide la fecha. Los cruces se hacen al consultar
+  (`AGENDAS_FUENTE`): asesor = registro con la fecha de cambio más reciente
+  que no pase del día de la solicitud (sin fecha = siempre); línea = la del
+  código, o 3P. Nada real en el repo (precarga por la interfaz).
+- **Hallazgos con los archivos reales**: (1) "INCO 19"/"LINCO 3" de la
+  lista = "INCO19"/"LINCO3" de la base: el usuario se compara sin
+  espacios; de 3 usuarios "fuera de la lista" (419 agendas) queda solo
+  INCO20 (4). (2) El usuario con cambio del 07/10 es INCO18, no "518".
+  (3) A 768/375 px el primer encabezado de la tabla salía blanco sobre
+  blanco (regla móvil de `.gd-tabla-scroll`): corregido para estas tablas.
+- **Nombres de ago/sep contra la lista** (producción, solo lectura): 19 de
+  21 nombres cuadran exacto. No cuadran: LINCO3 (otro nombre en ago/sep;
+  el alias vigente no lo cubre) y INCO18 desde el 07/10 (persona nueva,
+  normal). El ranking visible (Efectividad de agendamiento) no usa esta
+  base: no cambia. Ver `docs/pendientes.md`.
+- Pruebas: `fase210-agendas-usuarios-lineas.test.js` (8 casos, datos
+  inventados) + matriz de acceso, diálogos A3b y orden de migraciones.
+  Suite 2358/2358, `npm audit` 0, CI verde, merge con
+  `--match-head-commit`, deploy en verde, health 1.96.0.
+- Local (Brave, copia de la base demo, archivos reales solo en local):
+  mismas cifras que producción; 1440/768/375 sin scroll horizontal, 0
+  errores, Escape cierra.
+- **Producción** (autorizado: precarga de las listas y una sola carga de
+  octubre por el Centro de cargas, con la sesión del usuario): listas 21
+  registros (20 usuarios, INCO18 desde 07/10/2026) y 40 códigos (20 / 20);
+  octubre 8.635 agendas = General 5.142 + 3P 3.493 (2.638 de la lista +
+  844 fuera + 11 vacías); 19 especialidades, top 5 Audífonos 1.562,
+  Vértigo y equilibrio 1.245, Consulta otorrino 1.167,
+  Otorrinolaringología 1.004, Foniatría 933; INCO18: 113 agendas del 01 al
+  06/10 (persona anterior) y 86 desde el 07/10 (persona nueva), 0
+  cruzadas. Agosto 11.040 y septiembre 13.146 sin cambio. 1440/768/375 sin
+  scroll horizontal, 0 errores. Capturas fuera del repo.
