@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.97.0 — Octubre 2026
+
+**Fase 211: logo de InConexion en todos los tableros y nombres de
+Agendamiento.**
+
+- En la barra de arriba de todos los tableros (todos los clientes) se ve
+  ahora el logo de InConexion, a la izquierda de "Actualizar datos". Se ve
+  igual en tema claro y oscuro. En el celular sale solo el símbolo, para
+  que quepan los botones. El logo del cliente no cambia.
+- Agendamiento de ORLANT: cuando se unifica el nombre de un asesor (alias),
+  agosto y septiembre también salen con el nombre nuevo, sin volver a subir
+  esos meses.
+
 ## v1.96.0 — Octubre 2026
 
 **Fase 210: Agendamiento de ORLANT con la base tal cual sale del aplicativo.**
