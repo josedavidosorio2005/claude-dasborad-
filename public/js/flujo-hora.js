@@ -2,9 +2,11 @@
 // "flujo_hora_panel" (pestaña "Flujo por hora"): tres mapas de calor, uno
 // debajo del otro -- Ingresadas, Contestadas y Abandonadas. Filas = hora
 // (tramo), columnas = dias del mes, celda = cantidad de llamadas, con fila y
-// columna de Total. Sigue el MES de arriba. Color en tres niveles del maximo
-// de cada tabla (flujoHoraNivel): alto verde, medio amarillo, bajo gris; el
-// numero siempre esta escrito. En el celular cada tabla se desplaza de lado
+// columna de Total. Fase 209: UNA tabla por metrica que suma los meses de
+// MESES (Todos = todos los meses cargados; el dia N suma el dia N de cada
+// mes). Color en tres niveles del maximo de cada tabla (flujoHoraNivel): alto
+// verde, medio amarillo, bajo gris; en Abandonadas alto rojo, medio rojo
+// claro, bajo gris. El numero siempre esta escrito. En el celular cada tabla se desplaza de lado
 // dentro de su tarjeta (.table-wrap).
 'use strict';
 
@@ -39,12 +41,19 @@ function _flujoHoraTablaHtml(m, metrica){
     m.dias.map(function(d){ return '<td class="fh-total">'+n(m.totalColumna[d])+'</td>'; }).join('') +
     '<td class="fh-total fh-gran-total">'+n(m.total)+'</td></tr>';
   return '<div class="table-wrap fh-wrap" tabindex="0" role="region" aria-label="'+esc(metrica.titulo+' por hora y día')+'">' +
-    '<table class="aurora-table fh-tabla"><thead>'+cab+'</thead><tbody>'+cuerpo+pie+'</tbody></table></div>';
+    '<table class="aurora-table fh-tabla'+(metrica.escala === 'rojo' ? ' fh-escala-rojo' : '')+'"><thead>'+cab+'</thead><tbody>'+cuerpo+pie+'</tbody></table></div>';
 }
 
 function _flujoHoraLeyendaHtml(){
-  return '<p class="fh-leyenda"><span class="fh-muestra fh-alto"></span> Alto · <span class="fh-muestra fh-medio"></span> Medio · <span class="fh-muestra fh-bajo"></span> Bajo ' +
-    '<span class="fh-leyenda-nota">(en tres tramos del valor más alto de cada tabla)</span></p>';
+  return '<p class="fh-leyenda"><span class="fh-leyenda-tit">Ingresadas y contestadas:</span> <span class="fh-muestra fh-alto"></span> Alto · <span class="fh-muestra fh-medio"></span> Medio · <span class="fh-muestra fh-bajo"></span> Bajo</p>' +
+    '<p class="fh-leyenda"><span class="fh-leyenda-tit">Abandonadas:</span> <span class="fh-muestra fh-rojo-alto"></span> Alto · <span class="fh-muestra fh-rojo-medio"></span> Medio · <span class="fh-muestra fh-bajo"></span> Bajo</p>' +
+    '<p class="fh-leyenda"><span class="fh-leyenda-nota">En tres tramos del valor más alto de cada tabla.</span></p>';
+}
+
+// Titulo de los meses de la tabla: "Octubre 2026" con uno solo, "Ago 2026,
+// Sep 2026, Oct 2026" con varios.
+function _flujoHoraTituloMeses(meses){
+  return meses.length === 1 ? mesNombreLargo(meses[0]) : gdMesesTexto(meses, mesNombreLargo);
 }
 
 async function _flujoHoraRenderPanel(p, i){
@@ -60,8 +69,8 @@ async function _flujoHoraRenderPanel(p, i){
       (typeof canLoadData === 'function' && canLoadData() ? '. Se sube desde el Centro de cargas: Flujo por hora.' : '.') + '</div></div>';
     return;
   }
-  // Fase 203: los meses de MESES que tienen flujo por hora (Todos = todos),
-  // cada uno con sus tablas (dia del mes x hora no se suma entre meses).
+  // Fase 203: los meses de MESES que tienen flujo por hora (Todos = todos).
+  // Fase 209: una sola tabla por metrica que los suma.
   var mesesFh = _flujoHoraMeses(op.meses);
   if(!mesesFh.length){
     var marcadosFh = _gdMeses().slice().sort();
@@ -72,14 +81,15 @@ async function _flujoHoraRenderPanel(p, i){
     return apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mes))
       .then(function(r){ return r || []; }, function(e){ showToast(e.message, 'error'); return []; });
   }));
-  var html = '<div class="aurora-card">'+titulo+_flujoHoraLeyendaHtml()+'</div>';
-  mesesFh.forEach(function(mes, k){
-    FLUJO_HORA_METRICAS.forEach(function(met){
-      var m = flujoHoraMatriz(porMes[k], mes, met.key);
-      html += '<div class="aurora-card fh-card" data-metrica="'+met.key+'" data-mes="'+esc(mes)+'">' +
-        gdGraficaHtml(esc(met.titulo)+' — '+esc(mesNombreLargo(mes))+' <span class="fh-total-titulo">('+m.total.toLocaleString('es-CO')+')</span>', _flujoHoraTablaHtml(m, met)) +
-        '</div>';
-    });
+  var filas = [].concat.apply([], porMes);
+  var nota = mesesFh.length > 1 ? '<p class="lu-aviso">Suma de los meses elegidos: cada día suma ese día de todos los meses.</p>' : '';
+  var html = '<div class="aurora-card">'+titulo+nota+_flujoHoraLeyendaHtml()+'</div>';
+  var textoMeses = _flujoHoraTituloMeses(mesesFh);
+  FLUJO_HORA_METRICAS.forEach(function(met){
+    var m = flujoHoraMatrizMeses(filas, mesesFh, met.key);
+    html += '<div class="aurora-card fh-card" data-metrica="'+met.key+'" data-meses="'+esc(mesesFh.slice().sort().join(','))+'">' +
+      gdGraficaHtml(esc(met.titulo)+' — '+esc(textoMeses)+' <span class="fh-total-titulo">('+m.total.toLocaleString('es-CO')+')</span>', _flujoHoraTablaHtml(m, met)) +
+      '</div>';
   });
   host.innerHTML = html;
 }
@@ -89,23 +99,21 @@ function _flujoHoraMeses(mesesConDatos){
   return gdMesesTarjetas(sel, mesesConDatos || []).reverse();
 }
 
-// Exportar (Excel/PDF del tablero): una tabla por metrica de cada mes de MESES.
+// Exportar (Excel/PDF del tablero): una tabla por metrica, con los meses de MESES sumados (Fase 209).
 async function _gdExportarFlujoHora(p){
   var campana = p.campana || _gd.cliente;
   var op = await _flujoHoraCargarOpciones(campana);
   var mesesFh = _flujoHoraMeses(op.meses);
   if(!mesesFh.length) return [{ titulo: 'Flujo por hora', tipo: 'aviso', filas: [], mensaje: 'Sin flujo por hora para estos meses.' }];
-  var out = [];
+  var filas = [];
   for(var k = 0; k < mesesFh.length; k++){
-    var filasMes = [];
-    try{ filasMes = (await apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesesFh[k]))) || []; }catch(e){}
-    out = out.concat(_flujoHoraTablasExport(filasMes, mesesFh[k]));
+    try{ filas = filas.concat((await apiRequest('GET','/calidad/flujo-hora/mes?campana='+encodeURIComponent(campana)+'&mes='+encodeURIComponent(mesesFh[k]))) || []); }catch(e){}
   }
-  return out;
+  return _flujoHoraTablasExport(filas, mesesFh);
 }
-function _flujoHoraTablasExport(filas, mesSel){
+function _flujoHoraTablasExport(filas, meses){
   return FLUJO_HORA_METRICAS.map(function(met){
-    var m = flujoHoraMatriz(filas, mesSel, met.key);
+    var m = flujoHoraMatrizMeses(filas, meses, met.key);
     var tabla = m.horas.map(function(h){
       var f = { Hora: flujoHoraTramo(h) };
       m.dias.forEach(function(d){ f[String(d)] = m.celdas[h][d]; });
@@ -116,6 +124,6 @@ function _flujoHoraTablasExport(filas, mesSel){
     m.dias.forEach(function(d){ tot[String(d)] = m.totalColumna[d]; });
     tot.Total = m.total;
     tabla.push(tot);
-    return { titulo: 'Flujo por hora — '+met.titulo+' — '+mesNombreLargo(mesSel), tipo: 'tabla', filas: tabla };
+    return { titulo: 'Flujo por hora — '+met.titulo+' — '+_flujoHoraTituloMeses(meses), tipo: 'tabla', filas: tabla };
   });
 }

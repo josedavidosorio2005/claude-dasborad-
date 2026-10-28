@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.95.0 — Octubre 2026
+
+**Fase 209: Flujo por hora de Mobilize en una sola tabla.**
+
+- Antes salía una tabla por cada mes. Ahora sale una sola tabla de
+  ingresadas, una de contestadas y una de abandonadas, que suman los meses
+  marcados en MESES. Con "Todos" suman todos los meses cargados; con un
+  solo mes marcado, muestran solo ese mes. El título dice los meses
+  elegidos. Con varios meses, cada día suma ese día de todos los meses (por
+  ejemplo, el día 5 suma el 5 de agosto, el 5 de septiembre y el 5 de
+  octubre).
+- Las abandonadas van ahora en rojo (alto rojo, medio rojo claro, bajo
+  gris). Las ingresadas y las contestadas siguen en verde, amarillo y gris.
+- En el celular y la tablet, el número del día 1 ya se ve en el
+  encabezado (antes salía en blanco).
+- El Excel/PDF exportado sale igual: una tabla por métrica con los meses
+  sumados.
+
 ## v1.94.1 — Octubre 2026
 
 **Fase 208: Calidad de Mobilize sin el aviso de "no hay monitoreos".**

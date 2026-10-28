@@ -844,6 +844,13 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .fh-celda.fh-alto,.fh-muestra.fh-alto{background:var(--c-calor-alto);color:var(--c-calor-alto-texto);font-weight:700;}
 .fh-celda.fh-medio,.fh-muestra.fh-medio{background:var(--c-calor-medio);color:var(--c-calor-medio-texto);font-weight:600;}
 .fh-celda.fh-bajo,.fh-muestra.fh-bajo{background:var(--c-calor-bajo);color:var(--c-calor-bajo-texto);}
+/* Fase 209: Abandonadas en escala roja (el bajo sigue gris). */
+.fh-escala-rojo .fh-celda.fh-alto,.fh-muestra.fh-rojo-alto{background:var(--c-calor-rojo-alto);color:var(--c-calor-rojo-alto-texto);font-weight:700;}
+.fh-escala-rojo .fh-celda.fh-medio,.fh-muestra.fh-rojo-medio{background:var(--c-calor-rojo-medio);color:var(--c-calor-rojo-medio-texto);font-weight:600;}
+.fh-leyenda-tit{font-weight:600;color:var(--c-text);}
+/* Fase 209: el dia 1 es el primer th de la 2a fila del encabezado; la regla movil de .gd-tabla-scroll lo
+   volvia pegajoso y blanco (texto blanco sobre blanco). Solo la columna Hora queda fija. */
+.gd-tabla-scroll .fh-tabla thead tr:nth-child(2) th:first-child{position:static;background:var(--c-brand);text-align:center;}
 .fh-total{font-weight:700;background:var(--c-surface-alt2);}
 .fh-gran-total{color:var(--c-primary);}
 .fh-fila-total th{background:var(--c-surface-alt2);}
@@ -1709,6 +1716,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    El numero siempre esta escrito: el color no es la unica senal. */
 :root{ --c-calor-alto:#74B859; --c-calor-alto-texto:#12321A; --c-calor-medio:#F5D54A; --c-calor-medio-texto:#3D3000; --c-calor-bajo:#D9DEE2; --c-calor-bajo-texto:#2E363C; }
 :root[data-theme="dark"]{ --c-calor-alto:#3F7D34; --c-calor-alto-texto:#FFFFFF; --c-calor-medio:#B8961A; --c-calor-medio-texto:#1A1400; --c-calor-bajo:#3A4A53; --c-calor-bajo-texto:#E3E8EB; }
+/* Fase 209: escala roja de Abandonadas (alto rojo, medio rojo claro; el bajo es el gris de arriba).
+   Contraste del texto: claro 5,44 / 6,37; oscuro 6,04 / 7,99. */
+:root{ --c-calor-rojo-alto:#C0392B; --c-calor-rojo-alto-texto:#FFFFFF; --c-calor-rojo-medio:#F08A78; --c-calor-rojo-medio-texto:#4A0D06; }
+:root[data-theme="dark"]{ --c-calor-rojo-alto:#B3362A; --c-calor-rojo-alto-texto:#FFFFFF; --c-calor-rojo-medio:#6E2A24; --c-calor-rojo-medio-texto:#FFD9D4; }
 .gd-sec-llamadas, .gd-tab-sec-llamadas{ --gd-acento:var(--c-acento-llamadas); }
 .gd-sec-whatsapp, .gd-tab-sec-whatsapp{ --gd-acento:var(--c-acento-whatsapp); }
 .gd-sec-salida, .gd-tab-sec-salida{ --gd-acento:var(--c-acento-salida); }
