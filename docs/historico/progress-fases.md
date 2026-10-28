@@ -18004,3 +18004,39 @@ calidad para Mobilize" cuando ya hay un resumen de calidad cargado.
 - PROGRESS.md (con OK del usuario): versión, índice y las filas de control
   de Tráfico de Llamadas, Tipificación de WhatsApp, salida de ORLANT,
   Tipificación, Únicas y tarjetas con Todos de Mobilize.
+
+### Fase 209 — Flujo por hora de Mobilize en una sola tabla (2026-10-28, v1.95.0)
+
+Pedido urgente de Edwin (Mobilize, Flujo por hora), en un PR aparte.
+
+- **Una tabla consolidada** (PR #591): `flujoHoraMatrizMeses`
+  (`flujo-hora-logic.js`) suma los meses de MESES en una sola tabla por
+  métrica (ingresadas, contestadas, abandonadas); el día N suma el día N de
+  cada mes y las columnas llegan hasta el mes más largo. Todos = todos los
+  meses cargados; un mes = solo ese mes. Título con los meses ("Octubre
+  2026" o "Ago 2026, Sep 2026, Oct 2026") y nota "cada día suma ese día de
+  todos los meses" cuando hay varios. Exportar igual. Reemplaza "una tabla
+  por mes" de la Fase 207 solo en este panel. `flujoHoraMatriz` (un mes)
+  queda como la consolidada con ese mes.
+- **Abandonadas en rojo**: tokens `--c-calor-rojo-*` (claro #C0392B /
+  #F08A78, oscuro #B3362A / #6E2A24; contraste del texto 5,44 / 6,37 /
+  6,04 / 7,99), el bajo sigue gris; leyenda con las dos escalas.
+  Ingresadas y contestadas sin cambio.
+- **Defecto encontrado en la revisión visual**: a 768 y 375 px el día 1 del
+  encabezado salía blanco sobre blanco (la regla móvil de
+  `.gd-tabla-scroll` volvía fijo y blanco el primer `th` de la 2a fila).
+  Corregido solo para `.fh-tabla`.
+- Prueba `fase209-flujo-hora-consolidado.test.js` (6 casos). Suite
+  2349/2349, `npm audit` 0. Local (Brave, base demo copiada con flujo
+  sintético ago/sep/oct, 1440/768/375, Todos / Oct / Ago+Sep): totales
+  iguales a lo esperado, rojo solo en Abandonadas, sin scroll horizontal,
+  0 errores. Merge con `--match-head-commit`, CI y deploy en verde.
+- **Producción** (solo lectura, sesión de administrador, Playwright y
+  Brave, escrituras bloqueadas: 0 intentos, 0 errores), 1440/768/375:
+  Todos 277 / 272 / 5, Oct 106 / 104 / 2, Ago+Sep 171 / 168 / 3; las
+  tarjetas de Flujo de Llamadas dan lo mismo con los mismos MESES (277 /
+  272 / 5 con Todos). Una tabla por métrica, día 1 visible, sin scroll
+  horizontal de la página.
+- ORLANT no tiene Flujo por hora (solo MOBILIZE y la plantilla de clientes
+  nuevos); si se le agrega, hereda la tabla consolidada. No se cambió nada
+  de ORLANT.

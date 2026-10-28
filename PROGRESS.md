@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.94.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.95.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -140,7 +140,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Tarjetas de Mobilize con MESES = Todos (v1.91.0, suman todos los meses) | Flujo 277/272/5, 98,2 % · FCR 69,2 % (27/39) · Únicas 201 · Salida 324 · Tipificación salida 140 · Calidad 97,4 % / 72 / 4; verificado en producción (Únicas, Salida y Tipificación cambiaron con la recarga del CDR del 28/10; en la Fase 203 eran 208 / 320 / 136) | 203 / 208 |
 | One & Done / FCR de Mobilize (base: contestaron la pregunta 1, v1.88.0) | Ago 5/6 = 83,3 % · Sep 3/5 = 60 % · Oct 19/28 = 67,9 % (antes, sobre el total: 23,8 % · 6,7 % · 23,2 %); verificado en producción | 200 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
-| Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días) | 196 |
+| Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días); Ago+Sep 171 / 168 / 3; Todos 277 / 272 / 5 (= tarjetas de Flujo de Llamadas) | 196, 209 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
 
 ## Índice de fases
@@ -350,3 +350,4 @@ mismo orden):
 - Fase 206 — Tipificación: tope de 15 porciones a 1440 px (Mobilize muestra sus 15 de octubre) y colores extra para tortas de más de 12; ORLANT, Tráfico de Llamadas: "Llamadas ingresadas" (v1.93.0, 2026-10-28)
 - Fase 207 — La regla de MESES en todas las campañas (ORLANT completo, Aurora, HLM y las nuevas), en el código común: Todos = todos los meses, 1 mes = ese mes, varios = suma; % de totales sumados; una tarjeta ponderada en Efectividad de Citas e Inasistencia; comparación solo con un mes; prueba guardiana (v1.94.0, 2026-10-28)
 - Fase 208 — Calidad de Mobilize sin el aviso de "no hay monitoreos" cuando hay resumen cargado; números de control al día con el historial de cargas (v1.94.1, 2026-10-28)
+- Fase 209 — Mobilize: Flujo por hora en una sola tabla por métrica que suma los meses de MESES (título con los meses), Abandonadas en escala roja y día 1 visible en el celular (v1.95.0, 2026-10-28)
