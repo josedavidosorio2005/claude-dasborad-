@@ -19,12 +19,12 @@
 var _agendasOpciones = {}; // cache por campana: { meses, asesores, sedes, especialidades, examenes, profesionales, entidades, tiposLinea }
 var _agendasEstado = {};   // estado de filtros por CAMPANA (compartido entre las 4 sub-pestañas): { mes, desde, hasta, asesor, sede, especialidad, examen, profesional, tipoLinea, entidad }
 var _agendasCampanaPorPanel = {}; // que campana quedo pintada en cada indice de panel (i)
-// Fase 86 (tema 3): ultimo _gd.mesSel (selector MES de arriba) ya aplicado
-// a cada campana -- mientras no cambie, se respeta lo que el usuario haya
-// elegido DENTRO de Agendamiento (filtro propio); en cuanto cambia, este
-// mes manda de nuevo. Ver _agendasSincronizarConMesGlobal.
+// Fase 207: ultima clave de MESES ya aplicada a cada campana -- mientras no
+// cambie, se respeta lo que el usuario haya elegido DENTRO de Agendamiento
+// (filtro propio); en cuanto cambia, MESES manda de nuevo. Ver
+// _agendasSincronizarConMesGlobal.
 var _agendasMesSincronizado = {};
-var _agendasSinDatosMesGlobal = {}; // campana -> true si _gd.mesSel no tiene datos para esta campana (aviso, no filtro)
+var _agendasSinDatosMesGlobal = {}; // campana -> true si los meses de MESES no tienen datos (aviso, no filtro)
 
 var _AGENDAS_VISTAS = {
   especialidad: { titulo: 'Agendas por Especialidad', endpoint: '/calidad/agendas/especialidad', incluirMes: true },
@@ -39,21 +39,25 @@ var _AGENDAS_VISTAS = {
   // existiendo (queda en el historial de git si algun dia hace falta).
 };
 
-// Sincroniza el estado de la campana con el selector MES de arriba
-// (_gd.mesSel), salvo que el usuario ya este viendo ese mismo mes global
-// (no pisa un cambio manual DENTRO de Agendamiento mientras el mes de
-// arriba no se mueva de nuevo). Devuelve true si el panel debe mostrar el
-// aviso "sin datos".
+// Fase 207: sincroniza el estado de la campana con MESES (Todos = todos los
+// meses, un mes = ese mes, varios = esos meses sumados, `meses`), salvo que
+// MESES no haya cambiado (no pisa un cambio manual DENTRO de Agendamiento).
+// Devuelve true si el panel debe mostrar el aviso "sin datos".
 function _agendasSincronizarConMesGlobal(campana, opciones){
-  var mesGlobal = (typeof _gd !== 'undefined') ? _gd.mesSel : '';
-  if(!mesGlobal || _agendasMesSincronizado[campana] === mesGlobal) return !!_agendasSinDatosMesGlobal[campana];
-  _agendasMesSincronizado[campana] = mesGlobal;
-  // Se fija el mes SIEMPRE (incluso sin datos): asi Exportar (_gdExportarAgendas,
-  // dashboard-generic.js) pide ese mismo mes y, si vuelve vacio, cae solo
-  // en su propio aviso "Sin datos..." -- el archivo exportado queda
-  // consistente con lo que se ve en pantalla, nunca un mes viejo distinto.
-  _agendasEstado[campana] = { mes: mesGlobal };
-  _agendasSinDatosMesGlobal[campana] = opciones.meses.indexOf(mesGlobal) === -1;
+  if(typeof _gd === 'undefined' || !_gd || !_gd.periodos) return !!_agendasSinDatosMesGlobal[campana];
+  var marcados = _gdMeses().slice().sort();
+  var clave = marcados.length ? marcados.join(',') : 'todos';
+  if(_agendasMesSincronizado[campana] === clave) return !!_agendasSinDatosMesGlobal[campana];
+  _agendasMesSincronizado[campana] = clave;
+  var conDatos = opciones.meses || [];
+  var meses = marcados.filter(function(m){ return conDatos.indexOf(m) !== -1; });
+  // Se fija SIEMPRE (incluso sin datos): asi Exportar (_gdExportarAgendas,
+  // dashboard-generic.js) pide esos mismos meses y, si vuelve vacio, cae
+  // solo en su propio aviso "Sin datos..." -- consistente con la pantalla.
+  if(!marcados.length) _agendasEstado[campana] = { mes: '' };
+  else if(meses.length === 1) _agendasEstado[campana] = { mes: meses[0] };
+  else _agendasEstado[campana] = { mes: '', meses: meses };
+  _agendasSinDatosMesGlobal[campana] = marcados.length > 0 && !meses.length;
   return _agendasSinDatosMesGlobal[campana];
 }
 
@@ -131,7 +135,7 @@ async function _agendasRenderPanel(p, i){
   if(_agendasSincronizarConMesGlobal(campana, opciones)){
     var ultimoConDatos = opciones.meses[opciones.meses.length-1];
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      _gdAvisoSinDatosMesHtml('Agendas', _gd.mesSel, ultimoConDatos) + '</div>';
+      _gdAvisoSinDatosMesHtml('Agendas', _gdMeses().slice(-1)[0] || '', ultimoConDatos) + '</div>';
     return;
   }
   var estado = _agendasEstado[campana];
@@ -140,6 +144,8 @@ async function _agendasRenderPanel(p, i){
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
   html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
   html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label for="agendas-f-mes-'+i+'">Mes</label><select id="agendas-f-mes-'+i+'">' +
+    // Fase 207: con varios meses en MESES, la opcion "Meses elegidos (...)".
+    (estado.meses && estado.meses.length > 1 ? '<option value="__meses__" selected>Meses elegidos ('+esc(gdMesesTexto(estado.meses, mesNombreLargo))+')</option>' : '') +
     '<option value="">Todos</option>' + (opciones.meses||[]).map(function(m){ return '<option value="'+m+'"'+(m===estado.mes?' selected':'')+'>'+_agendasMesLbl(m)+'</option>'; }).join('') + '</select></div>';
   html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="agendas-f-desde-'+i+'">Fecha de solicitud (desde)</label><input type="date" id="agendas-f-desde-'+i+'" value="'+esc(estado.desde||'')+'"></div>';
   html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="agendas-f-hasta-'+i+'">Fecha de solicitud (hasta)</label><input type="date" id="agendas-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
@@ -170,8 +176,11 @@ function _agendasLeerFiltros(i, opciones){
   function v(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
   var examen = v('agendas-f-examen-'+i);
   var profesional = v('agendas-f-profesional-'+i);
+  var mesElegido = v('agendas-f-mes-'+i);
+  var previo = _agendasEstado[_agendasCampanaPorPanel[i]] || {};
   return {
-    mes: v('agendas-f-mes-'+i),
+    mes: mesElegido === '__meses__' ? '' : mesElegido,
+    meses: mesElegido === '__meses__' ? (previo.meses || []) : undefined, // Fase 207
     desde: v('agendas-f-desde-'+i),
     hasta: v('agendas-f-hasta-'+i),
     asesor: v('agendas-f-asesor-'+i),
@@ -188,6 +197,7 @@ function _agendasQueryString(campana, filtros, incluirMes){
   var params = new URLSearchParams();
   params.set('campana', campana);
   if(incluirMes && filtros.mes) params.set('mes', filtros.mes);
+  else if(incluirMes && filtros.meses && filtros.meses.length) params.set('meses', filtros.meses.join(',')); // Fase 207
   if(filtros.desde) params.set('desde', filtros.desde);
   if(filtros.hasta) params.set('hasta', filtros.hasta);
   ['asesor','sede','especialidad','examen','profesional','tipoLinea','entidad'].forEach(function(k){

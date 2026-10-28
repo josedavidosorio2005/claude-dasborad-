@@ -17833,3 +17833,45 @@ OK del usuario tras la Fase 205.
     Sin scroll horizontal.
   - Tráfico de Llamadas: ORLANT "28.356 Llamadas ingresadas", leyenda y Excel
     "Llamadas ingresadas"; Mobilize sigue "277 Llamadas ingresadas".
+
+### Fase 207 — La regla de MESES en todas las campañas (2026-10-28, v1.94.0)
+
+OK del usuario a la propuesta (puntos 1 a 9). La regla de Mobilize (Fase
+203) pasa al código común, así la heredan ORLANT, Clínica Aurora, Hospital
+La María y cualquier campaña nueva (usan los mismos tipos de panel).
+
+- Código común: `_gd.mesSel` (el "mes de las tarjetas") ya no existe.
+  `mes-global-logic.js`: `gdMesesTarjetasActual` (de la Fase 203),
+  `gdRangoTarjetasActual`, `gdMesUnicoMarcado` (comparar solo con un mes),
+  `gdRotuloParcialMeses` ("Oct 2026 parcial") y
+  `gdAgruparFilasPorCategoria`; lista cerrada `GD_TIPOS_SIGUEN_MESES`.
+  `dashboard-generic.js`: las fuentes genéricas de cargas (`_gdResolver`)
+  suman los meses (fórmula con sus términos sumados; un % o promedio sin
+  fórmula pide "elige un solo mes"), "Comparar contra" solo con un mes,
+  subtítulo y nombre del archivo exportado con los meses, Calidad por
+  monitoreos con el rango y los monitoreos de MESES.
+- Pantallas: Tráfico de WhatsApp (rango y tarjetas, como Llamadas en la
+  Fase 203), Agendamiento (parámetro `meses` en el servidor, un rango por
+  mes), Efectividad de Agendamiento (`meses`: suma por asesor y puesto con
+  los totales sumados), Inasistencia (`meses`; una tarjeta ponderada; "Por
+  especialidad" con la base baja sobre la suma), Efectividad de Citas (una
+  tarjeta ponderada), Llamadas y WhatsApp de salida (suma por línea; aviso
+  de asesores sin línea por cada mes; "vs. mes anterior" solo con un mes),
+  WhatsApp por rangos (`meses` en rangos y "por cola").
+- Reglas especiales (punto 1 a 9 de la propuesta): nivel de servicio de
+  llamadas = promedio simple de los días de los meses marcados (la opción
+  ponderada queda para Edwin en `docs/pendientes.md`); WhatsApp sigue
+  ponderado por su total; ASA/ATA/AHT ponderados por contestadas (sin
+  cambio); Flujo por hora, una tabla por mes.
+- Guardia (`fase207-meses-todas-campanas.test.js`, 15 pruebas): falla si un
+  módulo vuelve a leer `_gd.mesSel`, `gdMesDeMeses` o el mes por defecto,
+  o si `_gdRenderPanel` dibuja un tipo de panel que no está en
+  `GD_TIPOS_SIGUEN_MESES`. Pruebas viejas al día (142, 144 A6, 145, 147 A,
+  152 B8, 165, 166, 167, 170, 171, 178, 189, 201, 203). Suite 2337/2337,
+  `npm audit` 0.
+- Verificación local (copia de la base de la Fase 200, Playwright y Brave a
+  1440 y 375 px): las 4 campañas, todas las pestañas visibles y sus
+  sub-pestañas con MESES = Todos / Sep / Ago+Sep / Ago+Oct: subtítulo con
+  los meses (y "Oct 2026 parcial" cuando octubre está), "vs. agosto" solo
+  con un mes, Efectividad de Citas e Inasistencia con una tarjeta; sin
+  errores, teléfonos ni scroll horizontal.

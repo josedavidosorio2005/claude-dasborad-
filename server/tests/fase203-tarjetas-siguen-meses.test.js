@@ -285,7 +285,8 @@ test('Subtitulo "Informe ...": dice los meses de MESES, nunca el mes por defecto
   vm.runInContext(extraer(dg, 'function _gdMeses()') + '\n' + extraer(dg, 'function _gdPintarSubtitulo()'), ctx);
   ctx._gdPintarSubtitulo();
   assert.match(els['gd-sub'].innerHTML, /^Informe Todos los meses \(Ago 2026 – Oct 2026\)/);
-  assert.doesNotMatch(els['gd-sub'].innerHTML, /parcial/);
+  // Fase 207: octubre (en curso) esta entre los meses -> "Oct 2026 parcial".
+  assert.match(els['gd-sub'].innerHTML, /^Informe Todos los meses \(Ago 2026 – Oct 2026\) — Oct 2026 parcial</);
   ctx._gd.mesesSel = ['2026-09'];
   ctx._gdPintarSubtitulo();
   assert.match(els['gd-sub'].innerHTML, /^Informe Septiembre 2026</);

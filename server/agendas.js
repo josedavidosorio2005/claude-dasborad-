@@ -115,6 +115,16 @@ function agendasWhereClausulas(q, incluirMes) {
     clausulas.push('fechaSolicitud >= @mesDesde AND fechaSolicitud <= @mesHasta');
     params.mesDesde = rango.desde;
     params.mesHasta = rango.hasta + ' 23:59:59';
+  } else if (incluirMes && q.meses) {
+    // Fase 207: varios meses de MESES (lista ya validada), cada uno con su
+    // rango directo (sargable, igual que el de un mes).
+    const partes = String(q.meses).split(',').map((m, k) => {
+      const rango = fechaLimitesRangoDeMes(m);
+      params['mesDesde' + k] = rango.desde;
+      params['mesHasta' + k] = rango.hasta + ' 23:59:59';
+      return '(fechaSolicitud >= @mesDesde' + k + ' AND fechaSolicitud <= @mesHasta' + k + ')';
+    });
+    clausulas.push('(' + partes.join(' OR ') + ')');
   }
   if (q.desde) {
     clausulas.push('fechaSolicitud >= @desde');

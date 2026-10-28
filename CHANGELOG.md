@@ -4,6 +4,30 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.94.0 — Octubre 2026
+
+**Fase 207: la regla de MESES en todas las campañas.**
+
+- Lo que ya hacía Mobilize desde la v1.91.0 ahora vale para todas las
+  campañas: ORLANT completo (Tráfico de WhatsApp, Agendamiento,
+  Efectividad de Agendamiento, Inasistencia, Efectividad de Citas, Llamadas
+  y WhatsApp de salida, WhatsApp por rangos y Calidad), Clínica Aurora,
+  Hospital La María y las que se creen después.
+- Al entrar, MESES está en "Todos" y las tarjetas suman todos los meses
+  cargados. Con un mes marcado, muestran ese mes. Con varios, suman solo
+  esos meses. Los porcentajes salen de los totales sumados, nunca del
+  promedio de los porcentajes.
+- Efectividad de Citas y Inasistencia tienen ahora una sola tarjeta: el %
+  ponderado de los meses elegidos (antes eran dos: el del mes y el de todo
+  el período).
+- El "vs. agosto" de las tarjetas y "Comparar contra" aparecen solo con un
+  mes marcado (con varios meses no hay un "mes anterior").
+- Si el mes en curso está entre los elegidos, el subtítulo lo marca como
+  parcial ("Oct 2026 parcial").
+- El nivel de servicio de llamadas sigue siendo el promedio de los días
+  (ahora de los días de los meses elegidos); el de WhatsApp sigue ponderado
+  por el total de WhatsApp, como antes.
+
 ## v1.93.0 — Octubre 2026
 
 **Fase 206: 15 tipificaciones a la vista y "Llamadas ingresadas" en ORLANT.**

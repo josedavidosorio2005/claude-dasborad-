@@ -85,8 +85,10 @@ test('vista: sin fila de botones arriba; un grupo en la cabecera de cada grafica
   assert.ok(elegir.includes('_salLinea[i][canal] = clave;'), 'solo cambia su canal');
   assert.doesNotMatch(elegir, /apiRequest/);
   const pintar = s.slice(s.indexOf('function _salPintar(i){'), s.indexOf('// ── Fase 170: linea'));
-  assert.ok(pintar.includes("var totalLlam = salidaValorLinea(delMes, 'llamadas', lineas.llamadas);"));
-  assert.ok(pintar.includes("var totalWpp = salidaValorLinea(delMes, 'wpp', lineas.wpp);"));
+  // Fase 207: la tarjeta suma los meses de MESES con la linea elegida.
+  assert.ok(pintar.includes("var v = salidaValorLinea(delMeses[k], canal, lineas[canal]);"));
+  assert.ok(pintar.includes("var totalLlam = sumarLinea('llamadas');"));
+  assert.ok(pintar.includes("var totalWpp = sumarLinea('wpp');"));
   assert.ok(pintar.includes("_salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp', 'WhatsApp de salida'+sufijo('wpp'), lineas.wpp);"));
   // En el celular, los botones debajo del titulo; 44 px en el tablero movil (regla de la Fase 175).
   const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'styles.css'), 'utf8');

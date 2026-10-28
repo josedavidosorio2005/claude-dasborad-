@@ -191,7 +191,9 @@ async function renderVista({ meses, mesGlobal, rangos }) {
       if (url.indexOf('/opciones') !== -1) return { meses, skills: ['WHATSAPP ORLANT 3P'] };
       return rangos;
     },
-    _gd: { mesSel: mesGlobal },
+    // Fase 207: MESES con un mes marcado (o Todos); las funciones de MESES dentro del sandbox.
+    _gd: { mesesSel: mesGlobal ? [mesGlobal] : [], periodos: ['2026-10', '2026-09', '2026-08'] },
+    _gdMeses: function () { return this._gd.mesesSel; },
     _traficoWppSubtabActivo: { ORLANT: 'sl' },
     _gdChart: (id, cfg) => graficas.push({ id, cfg }),
     esc: (s) => String(s),
@@ -201,6 +203,8 @@ async function renderVista({ meses, mesGlobal, rangos }) {
     canLoadData: () => true,
   };
   vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), sandbox);
+  vm.runInContext('function _gdMeses(){ return _gd.mesesSel; }', sandbox);
   vm.runInContext(VISTA_JS, sandbox);
   await sandbox._wppTiemposRender(0, 'ORLANT');
   return { sandbox, el, pedidos, graficas };
@@ -219,7 +223,7 @@ test('Vista: mes global sin datos (octubre) -> muestra el ultimo con datos (sept
   assert.match(html, /No hay tiempos de respuesta cargados para Octubre 2026; se muestra Septiembre 2026\./);
   assert.ok(pedidos.some((u) => /\/rangos\?campana=ORLANT&mes=2026-09$/.test(u)));
   assert.match(el['wtt-kpis-0'].innerHTML, /44,7 %<\/div><div class="kl">% contestado en 0 a 3 minutos/);
-  assert.match(el['wtt-kpis-0'].innerHTML, /7\.953<\/div><div class="kl">Conversaciones contestadas del mes/);
+  assert.match(el['wtt-kpis-0'].innerHTML, /7\.953<\/div><div class="kl">Conversaciones contestadas · Septiembre 2026/); // Fase 207
   assert.deepEqual(Array.from(graficas[0].cfg.data.labels), ['0-3 minutos', '3-5 minutos', '5-8 minutos', '8-10 minutos', '10 minutos en adelante']);
   assert.equal(graficas[0].cfg.options.indexAxis, 'y');
   assert.match(el['wtt-tabla-0'].innerHTML, /Total del mes<\/strong><\/td><td><strong>7\.953/);

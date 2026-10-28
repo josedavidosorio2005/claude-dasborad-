@@ -24,7 +24,8 @@ async function dibujar({ campana, mesSel, filas, usaTiempos }) {
     document: { getElementById: (id) => (el[id] = el[id] || { id, innerHTML: '', dataset: {} }), querySelector: () => null },
     window: { location: { search: '', pathname: '/' }, history: { replaceState() {} } },
     URLSearchParams,
-    _gd: { mesSel },
+    // Fase 207: MESES con ese mes marcado.
+    _gd: { mesesSel: mesSel ? [mesSel] : [], periodos: ['2026-10', '2026-09', '2026-08'] },
     esc: (s) => String(s),
     traficoDecidirRango, traficoFinDeMes,
     fechaLimitesRecortar: (x) => x,
@@ -41,6 +42,8 @@ async function dibujar({ campana, mesSel, filas, usaTiempos }) {
     TRAFICO_WPP_SUBTAB_TITULOS: {},
   };
   vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), ctx);
+  vm.runInContext('function _gdMeses(){ return _gd.mesesSel; }', ctx);
   vm.runInContext(SRC, ctx);
   ctx._traficoWppCargarDatos = async () => ({ filas });
   ctx._traficoWppEstadoDesdeURL = () => ({ skills: null, desde: '', hasta: '', granularidad: 'mes', combinar: true });

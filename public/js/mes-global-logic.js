@@ -1,6 +1,6 @@
 // mes-global-logic.js — InConexion Platform (Fase 86, tema 3).
 //
-// Logica pura compartida por el selector "MES" de arriba (_gd.mesSel,
+// Logica pura compartida por el selector "MES" de arriba (Fase 207: hoy MESES, antes _gd.mesSel;
 // dashboard-generic.js) y los 5 paneles autonomos que se sincronizan con
 // el (Trafico Llamadas/WhatsApp, Agendas, Tipificacion, Calidad): que tipos
 // de panel son "autonomos" (tienen su propia ventana de tiempo, por eso
@@ -257,10 +257,59 @@ function gdMesesTarjetasTexto(meses, esTodos, nombreMes) {
   }
   return l.length === 1 ? largo(l[0]) : gdMesesTexto(l, nombreMes);
 }
+// Fase 207: lista CERRADA de tipos de panel que siguen a MESES (todas las
+// campañas, y las que se creen despues, heredan esto porque usan estos
+// mismos tipos). Un tipo de panel nuevo tiene que entrar aqui y leer
+// gdMesesTarjetasActual()/gdRangoTarjetasActual() -- la prueba
+// fase207-meses-todas-campanas.test.js falla si _gdRenderPanel dibuja un
+// tipo que no esta en esta lista, o si algun modulo vuelve a leer un "mes
+// de las tarjetas" (_gd.mesSel) o el "ultimo mes" por defecto.
+var GD_TIPOS_SIGUEN_MESES = ['kpi_row', 'line', 'bar', 'area', 'pie', 'combo', 'tabla', 'nota_kpi',
+  'trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel',
+  'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores',
+  'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'flujo_hora_panel'];
+
 // En el navegador: meses de las tarjetas del tablero abierto.
 function gdMesesTarjetasActual() {
   if (typeof _gd === 'undefined' || !_gd) return [];
   return gdMesesTarjetas(_gd.mesesSel, _gd.periodos);
+}
+// Fase 207 (todas las campañas): rango Desde/Hasta de esos meses.
+function gdRangoTarjetasActual() {
+  return gdRangoDeMeses(gdMesesTarjetasActual());
+}
+// Fase 207: el mes si hay EXACTAMENTE uno marcado en MESES ('' con Todos o
+// con varios). Solo para lo que compara contra el mes anterior ("vs.
+// agosto", "Comparar contra") o lo que no se puede sumar entre meses.
+function gdMesUnicoMarcado(mesesSel) {
+  var sel = mesesSel !== undefined ? mesesSel : ((typeof _gd !== 'undefined' && _gd && _gd.mesesSel) || []);
+  return sel.length === 1 ? String(sel[0]).slice(0, 7) : '';
+}
+// Fase 207: "parcial" si el mes en curso esta entre los meses de las
+// tarjetas: "Octubre 2026 — mes en curso, parcial" (uno) o "Oct 2026 parcial".
+function gdRotuloParcialMeses(meses, hoy, nombreMes) {
+  var actual = gdMesActual(hoy);
+  if (!actual || (meses || []).indexOf(actual) === -1) return '';
+  if (meses.length === 1) return gdRotuloMesParcial(actual, hoy, null, nombreMes);
+  return gdMesesTexto([actual], nombreMes) + ' parcial';
+}
+// Fase 207: filas de varias cargas agrupadas por categoria (`xk`): un campo
+// se suma; una formula (a/b*100, a+b, a-b) suma sus dos terminos y luego se
+// calcula. Devuelve filas nuevas { [xk]: categoria, ...campos sumados }.
+function gdAgruparFilasPorCategoria(filas, xk, f) {
+  var orden = [], por = {};
+  var campos = f && f.formula ? [f.a, f.b] : [f && f.campo];
+  (filas || []).forEach(function (r) {
+    var k = r[xk];
+    if (k === undefined || k === null || k === '') return;
+    if (!por[k]) { por[k] = {}; por[k][xk] = k; campos.forEach(function (c) { por[k][c] = null; }); orden.push(k); }
+    campos.forEach(function (c) {
+      var v = r[c];
+      if (v === null || v === undefined || v === '') return;
+      por[k][c] = (por[k][c] || 0) + (Number(String(v).replace(',', '.')) || 0);
+    });
+  });
+  return orden.map(function (k) { return por[k]; });
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -269,7 +318,12 @@ if (typeof module !== 'undefined' && module.exports) {
     gdRangoDeMeses: gdRangoDeMeses,
     gdSumarMeses: gdSumarMeses,
     gdMesesTarjetasTexto: gdMesesTarjetasTexto,
+    GD_TIPOS_SIGUEN_MESES: GD_TIPOS_SIGUEN_MESES,
     gdMesesTarjetasActual: gdMesesTarjetasActual,
+    gdRangoTarjetasActual: gdRangoTarjetasActual,
+    gdMesUnicoMarcado: gdMesUnicoMarcado,
+    gdRotuloParcialMeses: gdRotuloParcialMeses,
+    gdAgruparFilasPorCategoria: gdAgruparFilasPorCategoria,
     gdFiltrarPorMes: gdFiltrarPorMes,
     gdMesesTexto: gdMesesTexto,
     gdAplicarFiltroMeses: gdAplicarFiltroMeses,

@@ -98,10 +98,16 @@ function cargarInasistencias(db, { campana, archivoNombre, cargadoPorNombre, fil
 // (un filtro vacio/ausente = "Todos", mismo criterio que el resto de la
 // plataforma). `desde`/`hasta` acotan el RANGO de mes (inclusive) para las
 // vistas de todos los meses.
-function _whereFiltros({ campana, mes, sede, especialidad, entidad, desde, hasta }) {
+function _whereFiltros({ campana, mes, meses, sede, especialidad, entidad, desde, hasta }) {
   const clausulas = ['campana = @campana'];
   const params = { campana };
   if (mes) { clausulas.push('mes = @mes'); params.mes = mes; }
+  // Fase 207: varios meses (los de MESES, lista ya validada), sumados.
+  if (meses) {
+    const lista = String(meses).split(',');
+    clausulas.push('mes IN (' + lista.map((m, k) => '@mes' + k).join(', ') + ')');
+    lista.forEach((m, k) => { params['mes' + k] = m; });
+  }
   if (sede) { clausulas.push('sede = @sede'); params.sede = sede; }
   if (especialidad) { clausulas.push('especialidad = @especialidad'); params.especialidad = especialidad; }
   if (entidad) { clausulas.push('entidad = @entidad'); params.entidad = entidad; }
@@ -132,8 +138,8 @@ function inasistenciaResumen(db, { campana, mes, sede, especialidad, entidad }) 
 // Filas por especialidad de UN mes -- fuente de la vista "Por especialidad"
 // (respeta sede/entidad; nunca filtra por especialidad, el punto de esta
 // vista es desglosar TODAS).
-function inasistenciaPorEspecialidad(db, { campana, mes, sede, entidad }) {
-  const { where, params } = _whereFiltros({ campana, mes, sede, entidad });
+function inasistenciaPorEspecialidad(db, { campana, mes, meses, sede, entidad }) {
+  const { where, params } = _whereFiltros({ campana, mes, meses, sede, entidad });
   return db
     .prepare(
       `SELECT especialidad, SUM(cancelada) AS cancelada, SUM(inasistencia) AS inasistencia,

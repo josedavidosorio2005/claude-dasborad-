@@ -23,7 +23,7 @@ test('calDashTextoSinMonitoreos: nombre de la campaña como se lee en la interfa
 test('_gdRenderCalidad: con 0 monitoreos (y la carga terminada) muestra el aviso de A6 con el texto nuevo, antes que el aviso del mes', () => {
   const cuerpo = GD.slice(GD.indexOf('function _gdRenderCalidad('), GD.indexOf('function _gdRenderCalidad(') + 2500);
   const iVacio = cuerpo.indexOf('if(!todos.length && _gdCalCargada[camp])');
-  const iMes = cuerpo.indexOf('_calDashMesSincronizado[camp] !== _gd.mesSel');
+  const iMes = cuerpo.indexOf('_calDashMesSincronizado[camp] !== claveCal'); // Fase 207: clave de MESES
   assert.ok(iVacio !== -1, 'falta la rama de "sin ningun monitoreo"');
   assert.ok(iVacio < iMes, 'la rama de 0 monitoreos va antes de la del mes sin datos');
   const rama = cuerpo.slice(iVacio, iMes);

@@ -9,16 +9,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **¿Extender a todo ORLANT la regla de MESES de la Fase 203?** (28/10/2026)
-  — desde la v1.91.0, las tarjetas suman los meses marcados en MESES (Todos
-  = todos los meses cargados) en todo Mobilize y, en ORLANT, en Tráfico de
-  Llamadas y Tipificación (comparten el código). Las demás pantallas de
-  ORLANT (Tráfico de WhatsApp, Agendas, Inasistencia, Efectividad de
-  Agendamiento y de Citas, Llamadas y WhatsApp de salida, Calidad por
-  monitoreos) siguen mostrando el último mes marcado. Cómo se cierra: tu
-  decisión (y la de Edwin para ORLANT); si se extiende, una fase con
-  pruebas Todos / 1 mes / 2 meses por pantalla.
-
 - **Salida de Mobilize de agosto y septiembre** (Fase 194, 27/10/2026) —
   octubre ya está (45 conectadas + 41 no conectadas = 86). Para agosto (28
   filas "-" según Edwin, hoy 27) y septiembre (67, hoy 64) hace falta volver
@@ -170,6 +160,18 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Nivel de servicio de llamadas con varios meses: ¿promedio simple o
+  ponderado?** (Fase 207, 28/10/2026) — desde la v1.94.0, la tarjeta "Nivel
+  de servicio (20 s)" de Tráfico de Llamadas (ORLANT, y de cualquier
+  campaña que la muestre) es el promedio simple de la columna
+  SERVICE_LEVEL_20SEC de los días de los meses marcados en MESES (decisión
+  del usuario: misma definición de siempre, Fase 163). La opción
+  ponderada sería pesar cada día por sus llamadas ingresadas (Σ SL × llamadas
+  ÷ Σ llamadas), más exacta cuando hay días con mucho y poco volumen; la de
+  WhatsApp ya es ponderada por el total de WhatsApp. Cómo se cierra: la
+  respuesta de Edwin; si elige la ponderada, una fase corta en
+  `traficoServiceLevelPromedioPeriodo` (trafico-logic.js) con su prueba.
 
 - **Eficacia de Mobilize: confirmar con Edwin y Kelly** (Fase 198,
   27/10/2026) — Prioridad MEDIA. En producción desde la v1.86.0: octubre
