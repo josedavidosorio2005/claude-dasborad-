@@ -17620,3 +17620,31 @@ la calidad se va a hacer en la plataforma.
   97,35 %, oct 27 / 97,22 %; en cada mes la torta suma 100 % con una porción
   por asesor y las barras coinciden con la tabla; tabla Por mes con los tres
   meses; sin scroll horizontal, teléfonos ni errores.
+
+### Cierre en producción de las Fases 200–202 (2026-10-27/28, v1.90.0)
+
+PR #576, #577 y #578 mergeados en ese orden y desplegados. Producción en
+v1.90.0.
+
+- **Fase 200, One & Done de Mobilize** (base: contestaron la pregunta 1;
+  la migración `dashboards_config_mobilize_fcr_empezaron_v1` corrió con el
+  deploy): agosto 5 / 6 = 83,3 %, septiembre 3 / 5 = 60 %, octubre 19 / 28
+  = 67,9 %, en la tarjeta FCR y en la sub-pestaña One & Done.
+- **Fase 201, solo MESES**: el selector MES ya no está en ORLANT ni en
+  MOBILIZE; las tarjetas siguen el último mes marcado en MESES. El botón de
+  MESES mide 24 px de alto en la computadora (Fase 202).
+- **Fase 202, Calidad de Mobilize**: se subió `CALIDAD MOBILIZE POR MES.xlsx`
+  (fuera del repo) por el Centro de cargas, con la sesión del usuario.
+  Quedó:
+
+  | Mes | Asesores | Monitoreos | Prom. puntaje | Fallos críticos |
+  |---|---|---|---|---|
+  | Agosto | 2 | 11 | 98 % | 0 |
+  | Septiembre | 3 | 34 | 97,35 % | 2 |
+  | Octubre | 3 | 27 | 97,22 % | 2 |
+
+  El octubre anterior (34 / 97,35 %, Fase 174) era la hoja de septiembre;
+  quedó reemplazado.
+- Escrituras en producción: 6 POST de carga y ninguna otra.
+- Este cierre (bitácora y `PROGRESS.md`) va en un PR de documentación
+  aparte, sin cambio de versión.
