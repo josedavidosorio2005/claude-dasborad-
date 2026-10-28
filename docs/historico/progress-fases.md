@@ -17725,3 +17725,28 @@ siguen SOLO al filtro MESES, nunca al MES quitado ni a un "mes actual".
   sep 104/104/0, oct 106/104/2); Ago+Oct no cuenta septiembre. Flujo por
   hora: una tabla por mes marcado con datos (septiembre y octubre). FCR sin
   "Otros meses".
+
+### Fase 204 — "Llamadas ingresadas" en Flujo de Llamadas de Mobilize (2026-10-28, v1.91.1)
+
+Pedido de Edwin: en Flujo de Llamadas de Mobilize, "Total Llamadas" (leyenda)
+y "Total de llamadas" (tarjeta, 277 con MESES = Todos) pasan a "Llamadas
+ingresadas", también en el tooltip, en "Ver datos" y en el Excel. Solo
+texto; el cálculo no cambia.
+
+- ORLANT (Tráfico de Llamadas) usa el mismo panel (`trafico_combo`) con los
+  mismos textos: no se toca hasta que el usuario decida (`docs/pendientes.md`).
+- Opción nueva del panel `etiquetaTotal` (como `etiquetaLinea`): seed y
+  plantilla de Mobilize con "Llamadas ingresadas"; migración
+  `dashboards_config_mobilize_flujo_etiqueta_total_v1` (solo el trafico_combo
+  de MOBILIZE con la forma de producción, `resumenPorSeccion`; no pisa un
+  valor puesto; idempotente). `trafico.js`: la tarjeta, la leyenda (y con
+  ella el tooltip y "Ver datos"), las barras por skill ("<skill> — Llamadas
+  ingresadas") y la columna del Excel usan la opción; sin ella, los textos de
+  siempre.
+- Pruebas: `fase204-llamadas-ingresadas.test.js` (4). Suite 2312/2312.
+- Verificación local (copia de la base de la Fase 200, la migración se aplicó
+  al arrancar; Playwright y Brave a 1440/768/375 px): Mobilize, tarjeta
+  "Llamadas ingresadas", leyenda ["Llamadas ingresadas", "Llamadas
+  Contestadas", "Nivel de Atención"], Excel con la columna "Llamadas
+  ingresadas" en la misma posición; ORLANT sigue con "Total de llamadas" /
+  "Total Llamadas"; sin scroll horizontal ni errores.

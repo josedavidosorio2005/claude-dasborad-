@@ -1040,7 +1040,7 @@ function _traficoDibujarResumenChart(prefijo, i, agregado, combinar, labelTotal,
       // textoFormatoNombre -- `sk` (usado para el color y para leer
       // porPeriodo) sigue siendo el valor original.
       var skLbl = textoFormatoNombre(sk);
-      datasets.push({ type:'bar', label: skLbl+' — Total', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
+      datasets.push({ type:'bar', label: skLbl+' — '+(labelTotal === 'Total Llamadas' ? 'Total' : labelTotal), data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:0; }), backgroundColor: color, yAxisID:'y', borderRadius:3 });
       datasets.push({ type:'line', label: skLbl+' — Nivel de Atención', data: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].nivelAtencionPct:null; }), borderColor: color, backgroundColor: color, yAxisID:'y2', borderWidth:2, pointRadius:2, tension:0.3,
         fraccion: { num: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].contestadas:null; }), den: periodos.map(function(p){ return porPeriodo[p]?porPeriodo[p].totalLlamadas:null; }) } });
     });
@@ -1321,13 +1321,15 @@ function _traficoRenderContenido(campana, sede, i){
     }
   }
 
+  // Fase 204: `etiquetaTotal` del panel (Mobilize: 'Llamadas ingresadas') en
+  // la tarjeta, la leyenda (y con ella el tooltip y Ver datos) y el Excel.
   var pCfgKpis = _traficoPanelConfig[i] || {};
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
-    { total: 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
+    { total: pCfgKpis.etiquetaTotal || 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
       nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
       nivelServicioNota: 'Promedio simple de la columna SERVICE_LEVEL_20SEC del reporte de Wolkvox (llamadas contestadas dentro de los primeros 20 segundos) en el periodo/filtro actual. No se pondera por llamadas.' }, campana, pCfgKpis.resumenOcultar, contextoKpis);
 
-  _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, 'Total Llamadas', 'Llamadas Contestadas', campana);
+  _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, pCfgKpis.etiquetaTotal || 'Total Llamadas', 'Llamadas Contestadas', campana);
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
   // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
   if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
@@ -1439,11 +1441,14 @@ function _traficoDatosExport(i){
   if(_traficoExportEsOneAndDone(i)) return _encuestaOadDatosExport(i);
   if(_traficoExportEsEficacia(i)) return _eficaciaDatosExport(i);
   var agregado = _traficoAgregadoActual[_traficoClaveEstado(campana, sede)] || [];
+  var colTotal = (_traficoPanelConfig[i] || {}).etiquetaTotal || 'Total Llamadas'; // Fase 204
   return agregado.map(function(a){
-    return {
+    var fila = {
       Periodo: a.periodo,
       Skill: a.skillName || 'Todas (combinado)',
-      'Total Llamadas': a.totalLlamadas,
+    };
+    fila[colTotal] = a.totalLlamadas;
+    return Object.assign(fila, {
       'Llamadas Contestadas': a.contestadas,
       'Llamadas Abandonadas': a.llamadasAbandonadas,
       '% Nivel de Atencion': a.nivelAtencionPct,
@@ -1452,7 +1457,7 @@ function _traficoDatosExport(i){
       'ASA (seg)': a.asaSegundos,
       'ATA (seg)': a.ataSegundos,
       'AHT (seg)': a.ahtSegundos,
-    };
+    });
   });
 }
 
