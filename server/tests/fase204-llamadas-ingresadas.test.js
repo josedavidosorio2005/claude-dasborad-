@@ -20,9 +20,9 @@ function extraer(firma) {
 }
 const panelDe = (layout, cliente, tab) => (layout.tabs.find((t) => t.key === tab) || { panels: [] }).panels.find((p) => p.tipo === 'trafico_combo');
 
-test('seed y plantilla: MOBILIZE trae etiquetaTotal "Llamadas ingresadas"; ORLANT no', () => {
+test('seed y plantilla: MOBILIZE trae etiquetaTotal "Llamadas ingresadas" (ORLANT también desde la Fase 206)', () => {
   assert.equal(panelDe(CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout, 'MOBILIZE', 'flujo').etiquetaTotal, 'Llamadas ingresadas');
-  assert.ok(!JSON.stringify(CONFIGS.find((c) => c.cliente === 'ORLANT').layout).includes('etiquetaTotal'));
+  assert.equal(CONFIGS.find((c) => c.cliente === 'ORLANT').layout.tabs.find((t) => t.key === 'trafico').panels[0].etiquetaTotal, 'Llamadas ingresadas'); // Fase 206
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'plantillas-cliente.js'), 'utf8'), /etiquetaTotal: 'Llamadas ingresadas'/);
 });
 

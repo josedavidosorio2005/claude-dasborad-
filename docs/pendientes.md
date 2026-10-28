@@ -9,12 +9,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **¿"Llamadas ingresadas" también en ORLANT?** (Fase 204, 28/10/2026) — en
-  Mobilize el total de Flujo de Llamadas ya dice "Llamadas ingresadas"
-  (v1.91.1). Tráfico de Llamadas de ORLANT usa el mismo panel y sigue con
-  "Total de llamadas" / "Total Llamadas". Cómo se cierra: tu OK; es poner
-  `etiquetaTotal` en el panel de ORLANT (seed + migración idempotente).
-
 - **¿Extender a todo ORLANT la regla de MESES de la Fase 203?** (28/10/2026)
   — desde la v1.91.0, las tarjetas suman los meses marcados en MESES (Todos
   = todos los meses cargados) en todo Mobilize y, en ORLANT, en Tráfico de

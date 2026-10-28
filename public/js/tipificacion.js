@@ -394,6 +394,9 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   // Fase 164 (D-02): sin colores repetidos dentro de la torta (cada
   // tipificacion conserva su color propio salvo choque; "Otras" sigue gris).
   var coloresPropios = paletaColoresSinRepetir(porciones.filter(function(r){ return !r.esOtras; }).map(function(r){ return r.tipificacion; }));
+  // Fase 206: con mas de 12 porciones la paleta (12) se repetiria; los
+  // repetidos toman los colores extra (PC_EXTRA, charts.js). Los demas no cambian.
+  coloresPropios = tipificacionSinRepetirConExtra(coloresPropios, typeof PC_EXTRA !== 'undefined' ? PC_EXTRA : []);
   var k = 0;
   var colores = porciones.map(function(r){ return r.esOtras ? '#9aa0a6' : coloresPropios[k++]; });
   var tituloChart = (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+(compartido.linea ? ' — '+_tipificacionLineaTexto(compartido.linea) : '')+' — '+resultado.total.toLocaleString('es-CO')+' registro(s)';

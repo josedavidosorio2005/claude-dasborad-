@@ -219,6 +219,9 @@ const PERFILES_ACTUALES = {
     modulos: ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'tipificacion', 'calidad',
       'agendas', 'efectividad_agendamiento', 'inasistencia', 'efectividad_citas', 'salida'],
     visibles: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'],
+    ajustes: {
+      flujo_llamadas: { panel: { etiquetaTotal: 'Llamadas ingresadas' } }, // Fase 206
+    },
     especificos: {
       de: 'ORLANT',
       tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta'],
