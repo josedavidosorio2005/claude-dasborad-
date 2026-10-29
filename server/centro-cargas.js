@@ -47,6 +47,19 @@ const CARGAS_POR_MODULO = {
   calidad: [{ id: 'calidad', nombre: 'Monitoreos de Calidad', tabla: 'monitoreos', fecha: 'fecha', plantilla: null }],
 };
 
+// Fase 213 (pedido de Edwin, 29/10): cargas retiradas SOLO para un cliente.
+// ORLANT ya no usa "Llamadas y WhatsApp de salida" (sale del CDR desde la Fase
+// 170/187) ni la de citas atendidas (Efectividad de Citas se calcula sola desde
+// la Fase 212). Igual que `retirada`: no se muestran en el Centro, pero sus
+// datos no se borran (Edwin borra solo cuando este seguro) y Deshacer/Eliminar
+// por id siguen funcionando. Los demas clientes las siguen viendo.
+const CARGAS_RETIRADAS_POR_CLIENTE = {
+  ORLANT: ['salida', 'efectividad_citas'],
+};
+function cargaRetiradaPara(cliente, carga) {
+  return !!carga.retirada || (CARGAS_RETIRADAS_POR_CLIENTE[cliente] || []).includes(carga.id);
+}
+
 // Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD
 // (auth.canLoadModule). Calidad no: sus monitoreos tienen su propio permiso
 // (canEvaluateCampaign) y no suben desde el Centro.
@@ -119,7 +132,8 @@ function resumenCarga(db, campana, carga, anio) {
 }
 
 // Modulos del cliente (registro) en el orden del catalogo, con sus cargas y
-// sus 12 meses. `catalogo` = CATALOGO de plantillas-cliente.js.
+// sus 12 meses. `catalogo` = CATALOGO de plantillas-cliente.js. Un modulo
+// sin ninguna carga visible para el cliente (Fase 213) no sale.
 function resumenCliente(db, cliente, anio, catalogo) {
   const reg = clientesRegistro.leerRegistro(db).find((c) => c.nombre === cliente);
   if (!reg) return null;
@@ -129,13 +143,14 @@ function resumenCliente(db, cliente, anio, catalogo) {
       id: m.id,
       nombre: m.nombre,
       grupo: m.grupo,
-      cargas: CARGAS_POR_MODULO[m.id].filter((c) => !c.retirada).map((c) => ({ // Fase 194
+      cargas: CARGAS_POR_MODULO[m.id].filter((c) => !cargaRetiradaPara(cliente, c)).map((c) => ({ // Fase 194 / 213
         id: c.id,
         nombre: c.nombre,
         plantilla: c.plantilla,
         meses: resumenCarga(db, cliente, c, anio),
       })),
-    }));
+    }))
+    .filter((m) => m.cargas.length > 0);
 }
 
 // Una carga por su id (ej. 'tipificacion_whatsapp'), o null.
@@ -185,4 +200,4 @@ function conteoRango(db, campana, carga, mes, desde, hasta) {
   return { enMes: r.enMes, enRango: r.enRango };
 }
 
-module.exports = { conteoRango, MODULOS_CON_PERMISO, CARGAS_POR_MODULO, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };
+module.exports = { conteoRango, MODULOS_CON_PERMISO, CARGAS_POR_MODULO, CARGAS_RETIRADAS_POR_CLIENTE, cargaRetiradaPara, PLANTILLAS_DESCARGABLES, COLUMNAS_EXCLUIDAS, instanteCarga, resumenCarga, resumenCliente, cargaPorId, datosDelMes };

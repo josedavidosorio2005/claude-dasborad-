@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.99.1 — Octubre 2026
+
+**Fase 213: Cargar Datos de ORLANT sin las cargas que ya no se usan.**
+
+- En "Cargar Datos" de ORLANT ya no aparecen "Llamadas y WhatsApp de
+  salida" (sale sola del CDR) ni la de citas atendidas de Efectividad de
+  Citas (se calcula sola desde la v1.99.0). No se borró nada: lo que se había
+  subido sigue guardado, y se puede eliminar más adelante cuando Edwin esté
+  seguro. Los demás clientes siguen viendo esas cargas.
+
 ## v1.99.0 — Octubre 2026
 
 **Fase 212: Efectividad de Citas de ORLANT con la fórmula nueva.**
