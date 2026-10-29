@@ -103,11 +103,13 @@ function _ecDibujarGraficaContactos(i, filas){
   var canvasId = 'ec-c-'+i;
   var fr = filas.map(citasEfectividadFraccion);
   var barras = [
-    { label: 'Contestadas (llamadas + WhatsApp)', data: filas.map(function(f){ return f.contactos; }), color: (typeof CM!=='undefined'?CM:'#1a7a9e') },
-    { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: (typeof CD!=='undefined'?CD:'#0d4a5e') },
+    { label: 'Contestadas (llamadas + WhatsApp)', data: filas.map(function(f){ return f.contactos; }), color: (typeof colorSerie==='function' ? colorSerie('principal') : '#004150') },
+    { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: (typeof colorSerie==='function' ? colorSerie('secundaria') : '#3DA2DB') },
   ];
   var linea = { label: '% Efectividad', data: fr.map(function(x){ return x.pct === null ? null : x.pct*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') };
   var ds = gdComboDatasets(barras, linea);
+  // Fase 213: la barra azul lleva su borde en claro (estiloBarraSecundaria, 3:1).
+  if(typeof estiloBarraSecundaria === 'function') Object.assign(ds[1], estiloBarraSecundaria());
   // "agendas de contestados" en el tooltip y en Ver datos (Fase 152, B9).
   ds.forEach(function(d){ if(d.type === 'line') d.fraccion = { num: fr.map(function(x){ return x.num; }), den: fr.map(function(x){ return x.den; }) }; });
   var o = loBar();
@@ -124,7 +126,12 @@ function _ecDibujarGraficaContactos(i, filas){
     y2: { position:'right', beginAtZero:true, grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:12}} },
   };
-  o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+  // Fase 213: cifras legibles en los 2 temas (texto de serie principal sobre el
+  // fondo de etiqueta del tema) y, en pantallas angostas, solo las del %.
+  o.plugins.datalabels = { align:'end', anchor:'end', font:{size:12,weight:'bold'},
+    color: (typeof colorSerie==='function' ? colorSerie('principal') : '#004150'),
+    backgroundColor: (typeof CHART_DL_BG!=='undefined' ? CHART_DL_BG : 'rgba(255,255,255,0.75)'), borderRadius:3, padding:{ top:1, bottom:1, left:3, right:3 },
+    display: function(ctx){ return ctx.dataset.type === 'line' || !ctx.chart || ctx.chart.width > 480; },
     formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null ? citasAtendidasFmtPct(v/100) : '') : gdFmtValor(v); } };
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: filas.map(function(f){ return citasAtendidasMesLbl(f.mes); }), datasets: ds }, options: o });

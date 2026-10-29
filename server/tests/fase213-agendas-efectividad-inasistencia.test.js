@@ -35,6 +35,10 @@ test('Efectividad de Citas: barras de contestadas y agendas + linea del % en eje
   assert.match(f, /y2: \{ position:'right'/);
   assert.match(ec, /if\(desdeContactos\) _ecDibujarGraficaContactos\(i, filasMeses\);/);
   assert.ok(!/_ecDibujarGraficaPct/.test(ec));
+  // v1.100.1: cifras legibles en los 2 temas (fondo de etiqueta) y, a <=480 px, solo las del %.
+  assert.ok(f.includes("backgroundColor: (typeof CHART_DL_BG!=='undefined'"));
+  assert.ok(f.includes("display: function(ctx){ return ctx.dataset.type === 'line' || !ctx.chart || ctx.chart.width > 480; }"));
+  assert.ok(f.includes("colorSerie('secundaria')"));
 });
 
 test('Inasistencia por especialidad: sin "Base baja" ni asterisco', () => {

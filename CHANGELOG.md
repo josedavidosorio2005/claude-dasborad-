@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.100.1 — Octubre 2026
+
+**Arreglo: cifras de la gráfica de Efectividad de Citas.**
+
+- En tema oscuro las cifras de las barras casi no se leían y en el celular
+  se montaban. Ahora las barras usan los colores de la marca, las cifras
+  llevan un fondo y en el celular solo se muestran las del %.
+
 ## v1.100.0 — Octubre 2026
 
 **Fase 213: total de agendas, gráfica de Efectividad de Citas e
