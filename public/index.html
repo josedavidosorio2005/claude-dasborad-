@@ -937,16 +937,18 @@
         <div id="gd-comp-nota" style="display:none;color:#a8d8ea;font-size:0.78rem;font-style:italic;padding:6px 4px">La comparación aplica a las pestañas de resumen</div>
         </div>
       </div>
+      <!-- Fase 212 (pedido de Edwin): logo de InConexion mas grande, arriba a la derecha, encima de los botones. Blanco: la barra es --c-brand en los 2 temas. -->
+      <div class="gd-header-derecha">
+      <span class="gd-marca-inconexion"><img class="gd-marca-logo" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="170" height="34"></span>
       <div class="gd-header-acciones" style="display:flex;align-items:center;gap:8px">
         <button class="aurora-close gd-filtros-header-btn" id="gd-filtros-btn" type="button" aria-expanded="false" aria-controls="gd-filtros-header" onclick="gdFiltrosHeaderToggle()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-sliders-horizontal"></use></svg> <span id="gd-filtros-btn-txt"><span class="gd-filtros-prefijo">Filtros</span></span></button>
-        <!-- Fase 211 (pedido del cliente): logo de InConexion en la barra de todos los tableros, a la izquierda de "Actualizar datos". Blanco: la barra es --c-brand en los 2 temas. En el telefono, solo el isotipo. -->
-        <span class="gd-marca-inconexion"><img class="gd-marca-logo" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="110" height="22"><img class="gd-marca-isotipo" src="img/marca/isotipo-blanco.png" srcset="img/marca/isotipo-blanco.png 1x, img/marca/isotipo-blanco@2x.png 2x" alt="InConexion" width="26" height="25"></span>
         <button class="aurora-close hidden" id="gd-actualizar-btn" aria-label="Actualizar datos" onclick="centroAbrirDesdeTablero()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-refresh-cw"></use></svg> <span class="gd-btn-txt">Actualizar datos</span></button>
         <button class="aurora-close" id="gd-export-btn" aria-label="Exportar" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()"><svg class="icono gd-icono-movil" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-download"></use></svg><span class="gd-btn-txt">Exportar</span></button>
         <!-- Fase 155: tema claro/oscuro dentro del tablero (el modal tapa la barra de arriba). Mismo mecanismo (theme.js): la clase theme-toggle lo sincroniza. -->
         <button class="aurora-close theme-toggle gd-tema-btn" id="gd-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
         <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
         <button class="aurora-close" id="gd-cerrar-btn" onclick="closeGenericDashboard()">X Cerrar</button>
+      </div>
       </div>
     </div>
     <div class="aurora-kpis" id="gd-kpis"></div>

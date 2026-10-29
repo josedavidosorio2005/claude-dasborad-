@@ -2265,14 +2265,17 @@ async function _gdExportarAgendas(p, i){
   if(!datos.length){
     return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Agendas para el mes/filtros actuales.' }];
   }
+  // Fase 212: los filtros aplicados (con el nombre de la sede) en una columna.
+  var txtFiltros = (typeof _agendasFiltrosTexto === 'function') ? _agendasFiltrosTexto(filtros) : '';
+  var conFiltros = function(fila){ if(txtFiltros) fila.Filtros = txtFiltros; return fila; };
   if(vista === 'especialidad'){
-    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Especialidad: textoFormatoNombre(r.especialidad), Cantidad: r.cantidad }; }) }];
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return conFiltros({ Especialidad: textoFormatoNombre(r.especialidad), Cantidad: r.cantidad }); }) }];
   }
   if(vista === 'mensual'){
-    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), Cantidad: r.cantidad }; }) }];
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return conFiltros({ Mes: _agendasMesLbl(r.mes), Cantidad: r.cantidad }); }) }];
   }
   if(vista === 'linea'){
-    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return { Mes: _agendasMesLbl(r.mes), 'Tipo de Línea': r.tipoLinea, Cantidad: r.cantidad }; }) }];
+    return [{ titulo: titulo, tipo: 'tabla', filas: datos.map(function(r){ return conFiltros({ Mes: _agendasMesLbl(r.mes), 'Tipo de Línea': r.tipoLinea, Cantidad: r.cantidad }); }) }];
   }
   return [];
 }
