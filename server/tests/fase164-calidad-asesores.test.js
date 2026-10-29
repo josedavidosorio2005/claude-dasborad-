@@ -29,14 +29,20 @@ test('la grafica por asesor muestra todos los nombres del eje (sin autoSkip)', (
   assert.match(BLOQUE, /wrapAsesores\.style\.height = calDashAltoBarrasAsesores\(labelsAsesores\.length\) \+ 'px'/);
 });
 
-test('un solo color para todas las barras (una sola serie) y sin leyenda', () => {
-  assert.match(BLOQUE, /backgroundColor: colorSerie\('principal'\)/);
+// Fase 213 (pedido de Edwin): ya no es un solo color ni sin leyenda -- cada
+// barra va con el color de marca de "por encima" o "por debajo" del promedio
+// del equipo (con ▲/▼, nunca solo color) y una linea con ese promedio. Siguen
+// sin colores de la paleta categorica (un color por asesor, el problema de D-03).
+test('barras con colores de marca por encima/debajo (nunca uno por asesor) y leyenda que lo explica', () => {
+  assert.ok(BLOQUE.includes("var colEncima = colorSerie('principal'), colDebajo = colorSerie('secundaria');"));
   assert.doesNotMatch(BLOQUE, /paletaColorPara/);
-  assert.match(BLOQUE, /optsBar\.plugins\.legend = \{ display:false \};/);
+  assert.ok(BLOQUE.includes("'▲ Por encima del promedio'"));
+  assert.ok(BLOQUE.includes("'▼ Por debajo del promedio'"));
 });
 
-test('guarda: sigue siendo UNA serie con el promedio, nunca el numero de monitoreos (decision de la Fase 130)', () => {
-  assert.equal((BLOQUE.match(/datasets:\[/g) || []).length, 1);
-  assert.match(BLOQUE, /datasets:\[\{ label:'Promedio', data: valoresAsesores,/);
-  assert.match(BLOQUE, /var valoresAsesores = porAsesor\.map\(function\(x\)\{ return x\.promedio; \}\);/);
+test('guarda: UNA serie de barras con el promedio (mas la linea del equipo), nunca el numero de monitoreos (decision de la Fase 130)', () => {
+  assert.equal(BLOQUE.split("type:'bar', label:").length - 1, 1);
+  assert.ok(BLOQUE.includes("[{ type:'bar', label:'Promedio', data: valoresAsesores,"));
+  assert.ok(BLOQUE.includes('var valoresAsesores = porAsesor.map(function(x){ return x.promedio; });'));
+  assert.ok(BLOQUE.includes("type:'line', label:'Promedio del equipo', data: valoresAsesores.map(function(){ return vsEquipo.equipo; })"));
 });

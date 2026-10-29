@@ -146,7 +146,14 @@ function cmParseRows(aoa, items){
     var fila = i+1;
     var asesor = row[map.fijas.asesor]==null ? '' : String(row[map.fijas.asesor]).trim();
     var fecha = cmParseFecha(row[map.fijas.fecha]);
-    if(!asesor){ avisos.push('Fila '+fila+': ASESOR vacio, se omitio.'); continue; }
+    if(!asesor){
+      // Fase 213: la plantilla trae filas vacias con formulas (puntaje "",
+      // "—", "SIN FALLOS CRITICOS"): sin asesor, sin fecha y sin ningun item
+      // respondido no es un monitoreo -- se salta sin aviso.
+      var algoCargado = fecha || itemsConColumna.some(function(it){ return !!cmParseRespuesta(row[map.items[it.n]]); });
+      if(algoCargado) avisos.push('Fila '+fila+': ASESOR vacio, se omitio.');
+      continue;
+    }
     if(!fecha){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA invalida, se omitio.'); continue; }
     // Fase 86 (tema 2): fecha futura -> se rechaza; fecha anterior a 2020
     // -> solo se advierte, no se omite.
