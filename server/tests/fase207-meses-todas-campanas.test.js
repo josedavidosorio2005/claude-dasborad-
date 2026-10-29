@@ -139,7 +139,9 @@ test('Efectividad de Agendamiento: el servidor suma gestiones y agendas por ases
   const { schemas } = require('../validation');
   assert.equal(schemas.efectividadAgendamientoRankingQuery.safeParse({ campana: 'ORLANT', meses: '2026-08,2026-10' }).success, true);
   assert.equal(schemas.efectividadAgendamientoRankingQuery.safeParse({ campana: 'ORLANT' }).success, false, 'mes o meses requerido');
-  assert.match(JS('efectividad-agendamiento.js'), /'&meses='\+encodeURIComponent\(mesesEa\.join\(','\)\)/);
+  // Fase 214: la URL se arma en _eaRankingUrl (agrega el filtro de linea).
+  assert.match(JS('efectividad-agendamiento.js'), /apiRequest\('GET', _eaRankingUrl\(campana, mesesEa\)\)/);
+  assert.match(JS('efectividad-agendamiento.js'), /'&meses='\+encodeURIComponent\(meses\.join\(','\)\)/);
 });
 
 test('Inasistencia: el servidor suma los meses de MESES; una sola tarjeta ponderada; "Por especialidad" con la base baja sobre la suma', () => {

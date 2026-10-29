@@ -1203,6 +1203,8 @@ const efectividadAgendamientoRankingQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
   meses: mesesListaSchema.optional(),
+  // Fase 214 (solo ORLANT): filtro de las agendas por tipo de linea.
+  linea: z.enum(['GENERAL', '3P']).optional(),
 }).refine((q) => q.mes || q.meses, { message: 'mes o meses requerido' });
 
 // ── Efectividad de Citas Atendidas (Fase 111, ORLANT, pedido textual de

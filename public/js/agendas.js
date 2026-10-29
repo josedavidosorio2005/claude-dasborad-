@@ -145,7 +145,6 @@ async function _agendasRenderPanel(p, i){
 
   var html = '<div class="aurora-card">';
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
-  html += '<div id="agendas-total-'+i+'" aria-live="polite"></div>'; // Fase 213
   html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
   html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label for="agendas-f-mes-'+i+'">Mes</label><select id="agendas-f-mes-'+i+'">' +
     // Fase 207: con varios meses en MESES, la opcion "Meses elegidos (...)".
@@ -165,7 +164,12 @@ async function _agendasRenderPanel(p, i){
   // demas (gd-filtros-siempre, ver _gdPlegarFiltros en dashboard-generic.js).
   html += '<div class="ig agendas-filtro-destacado gd-filtros-siempre" style="min-width:120px;margin-bottom:0"><label for="agendas-f-tipolinea-'+i+'">Tipo de línea</label><select id="agendas-f-tipolinea-'+i+'" onchange="_agendasAplicarFiltros('+i+')">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
   html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="agendas-f-entidad-'+i+'">Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
-  html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
+  // Fase 214: el boton no crece (flex:0 0 auto), asi la tarjeta queda pegada a el.
+  html += '<div class="ig" style="flex:0 0 auto;margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
+  // Fase 214 (pedido de Edwin): "Total de agendas" al lado de "Aplicar filtros",
+  // cerca de la grafica (arriba se perdia). No es un filtro: en tablet/celular
+  // queda visible con los filtros plegados (_gdPlegarFiltros).
+  html += '<div class="agendas-total-junto" id="agendas-total-'+i+'" aria-live="polite"></div>';
   html += '</div>';
   html += _agendasBotonesClasifHtml(campana, i); // Fase 210
 
@@ -227,7 +231,8 @@ function _agendasFiltrosTexto(filtros){
   return partes.join(' · ');
 }
 
-// Fase 213 (pedido de Edwin): tarjeta "Total de agendas" arriba -- el periodo
+// Fase 213 (pedido de Edwin): tarjeta "Total de agendas" (Fase 214: junto a
+// "Aplicar filtros") -- el periodo
 // (mes, meses de MESES o todos) y los filtros puestos.
 function _agendasPeriodoTexto(filtros){
   var f = filtros || {};
@@ -236,8 +241,8 @@ function _agendasPeriodoTexto(filtros){
   return 'Todos los meses';
 }
 function _agendasTarjetaTotalHtml(total, filtros){
-  return '<div class="aurora-kpis"><div class="aurora-kpi gd-kpi"><div class="kv">'+(total === null ? '—' : gdFmtValor(total))+'</div>'+
-    '<div class="kl">Total de agendas · '+esc(_agendasPeriodoTexto(filtros))+'</div></div></div>';
+  return '<div class="aurora-kpi gd-kpi agendas-total-kpi"><div class="kv">'+(total === null ? '—' : gdFmtValor(total))+'</div>'+
+    '<div class="kl">Total de agendas · '+esc(_agendasPeriodoTexto(filtros))+'</div></div>';
 }
 
 // Fase 212 (Edwin: "al elegir General por un momento no salió nada"): cada

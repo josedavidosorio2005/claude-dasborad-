@@ -1449,7 +1449,7 @@ var GD_ESTADO_A_REINICIAR = [
   '_traficoWppEstado', '_traficoWppMesSincronizado', '_traficoWppSinDatosMesGlobal', '_traficoWppSubtabActivo', '_traficoWpp', '_traficoWppAgregadoActual',
   '_tipificacionEstadoCompartido', '_tipificacionEstadoCanal', '_tipificacionMesSincronizado', '_tipificacionSinDatosMesGlobal', '_tipificacionOpciones', '_tipificacionMesesTarjetas',
   '_agendasEstado', '_agendasMesSincronizado', '_agendasSinDatosMesGlobal', '_agendasOpciones',
-  '_inasistenciaEstado', '_inasistenciaOpciones', '_ecOpciones', '_eaOpciones', '_eaBusqueda', '_eaUltimoRanking',
+  '_inasistenciaEstado', '_inasistenciaOpciones', '_ecOpciones', '_eaOpciones', '_eaBusqueda', '_eaUltimoRanking', '_eaLinea',
   '_encuestaEstado', '_encuestaMesSincronizado', '_encuestaOpciones', '_encuestaUltimo', '_encuestaOadUltimo',
   '_llamadasUnicasEstado', '_llamadasUnicasOpciones', '_llamadasSalidaEstado', '_llamadasSalidaOpciones',
   '_wppTiemposEstado', '_wppTiemposMesSincronizado', '_wppTiemposOpciones', '_wppTiemposUltimo', '_wppTiemposUltimoResumen',
@@ -2321,19 +2321,22 @@ async function _gdExportarEfectividadAgendamiento(p, i){
   var mesesEaExp = (typeof _eaMesesPanel === 'function') ? _eaMesesPanel(_eaOpciones[campana] || { meses: [] }) : []; // Fase 207
   if(!mesesEaExp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para los meses elegidos.' }];
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
-  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(mesesEaExp.join(','))) || ranking; }catch(e){}
+  try{ ranking = await apiRequest('GET', (typeof _eaRankingUrl === 'function') ? _eaRankingUrl(campana, mesesEaExp) : '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(mesesEaExp.join(','))) || ranking; }catch(e){}
   if(!ranking.filas || !ranking.filas.length){
     return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + gdMesesTarjetasTexto(mesesEaExp, false, mesNombreLargo) + '.' }];
   }
   // Fase 213 (ORLANT): contestadas (llamadas + WhatsApp) en vez de gestiones;
   // "OTROS" y los usuarios sin asesor, fuera del ranking, al final.
   if(ranking.fuente === 'contactos'){
+    // Fase 214: con el filtro 3P / General, la columna dice de que agendas son.
+    var colAg = ranking.linea ? 'Agendas ' + (ranking.linea === 'GENERAL' ? 'General' : ranking.linea) : 'Agendas';
+    var fila = function(o, agendas, pct){ o[colAg] = agendas; o['% Efectividad'] = pct; return o; };
     var filasC = ranking.filas.map(function(f){
-      return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), 'Llamadas contestadas': f.llamadas, 'WhatsApp contestados': f.whatsapp, 'Contestadas (llamadas + WhatsApp)': f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
+      return fila({ Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), 'Llamadas contestadas': f.llamadas, 'WhatsApp contestados': f.whatsapp, 'Contestadas (llamadas + WhatsApp)': f.gestiones }, f.agendas, efectividadAgendamientoFmtPct(f.efectividad));
     });
-    filasC.push({ Puesto: '', Asesor: 'TOTAL EQUIPO', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': ranking.equipo.gestiones, Agendas: ranking.equipo.agendas, '% Efectividad': efectividadAgendamientoFmtPct(ranking.equipo.efectividad) });
+    filasC.push(fila({ Puesto: '', Asesor: 'TOTAL EQUIPO', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': ranking.equipo.gestiones }, ranking.equipo.agendas, efectividadAgendamientoFmtPct(ranking.equipo.efectividad)));
     (ranking.aparte || []).forEach(function(a){
-      filasC.push({ Puesto: '', Asesor: textoFormatoNombre(a.asesor) + ' (fuera del ranking)', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': '', Agendas: a.agendas, '% Efectividad': '' });
+      filasC.push(fila({ Puesto: '', Asesor: textoFormatoNombre(a.asesor) + ' (fuera del ranking)', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': '' }, a.agendas, ''));
     });
     return [{ titulo: titulo, tipo: 'tabla', filas: filasC }];
   }
