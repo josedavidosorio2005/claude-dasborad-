@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.98.0 — Octubre 2026
+
+**Fase 212: sedes con nombre, filtro "Tipo de línea" resaltado y logo más
+grande.**
+
+- Agendamiento de ORLANT: la sede sale con su nombre (Sede Principal, Sede
+  Poblado, Sede 34 (Audífonos), Sede Rionegro, Sede Llanogrande) en vez del
+  código, en el filtro, en "Ver datos" y en Exportar. Octubre ya cargado se
+  ve así sin volver a subirlo, y agosto/septiembre quedan con el mismo
+  nombre: una sola opción del filtro sirve para todos los meses. Un código
+  que no esté en la lista sale como "Sede" y el código.
+- El filtro **"Tipo de línea"** se ve resaltado en azul, aplica apenas se
+  cambia y en el celular queda siempre a la vista. Debajo del título se ve
+  qué filtros están puestos. Se revisó que General y 3P filtren bien en las
+  tres gráficas.
+- El logo de InConexion es más grande y está arriba a la derecha, encima de
+  los botones Exportar, tema y Cerrar, en todos los tableros, en tema claro
+  y oscuro y en el celular.
+
 ## v1.97.0 — Octubre 2026
 
 **Fase 211: logo de InConexion en todos los tableros y nombres de

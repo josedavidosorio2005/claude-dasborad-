@@ -159,13 +159,18 @@ async function _agendasRenderPanel(p, i){
     '<datalist id="agendas-dl-examen-'+i+'">'+(opciones.examenes||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
   html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="agendas-f-profesional-'+i+'">Profesional</label><input list="agendas-dl-prof-'+i+'" id="agendas-f-profesional-'+i+'" value="'+esc(estado.profesional||'')+'" placeholder="Todos">' +
     '<datalist id="agendas-dl-prof-'+i+'">'+(opciones.profesionales||[]).map(function(v){ return '<option value="'+esc(v)+'">'; }).join('')+'</datalist></div>';
-  html += '<div class="ig" style="min-width:120px;margin-bottom:0"><label for="agendas-f-tipolinea-'+i+'">Tipo de línea</label><select id="agendas-f-tipolinea-'+i+'">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
+  // Fase 212 (pedido de Edwin): "Tipo de línea" es el filtro que mas miran --
+  // resaltado, aplica al cambiarlo y, en tablet/celular, no se pliega con los
+  // demas (gd-filtros-siempre, ver _gdPlegarFiltros en dashboard-generic.js).
+  html += '<div class="ig agendas-filtro-destacado gd-filtros-siempre" style="min-width:120px;margin-bottom:0"><label for="agendas-f-tipolinea-'+i+'">Tipo de línea</label><select id="agendas-f-tipolinea-'+i+'" onchange="_agendasAplicarFiltros('+i+')">'+_agendasOptionsHtml(opciones.tiposLinea, estado.tipoLinea)+'</select></div>';
   html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="agendas-f-entidad-'+i+'">Entidad</label><select id="agendas-f-entidad-'+i+'">'+_agendasOptionsHtml(opciones.entidades, estado.entidad)+'</select></div>';
   html += '<div class="ig" style="margin-bottom:0"><button class="btn-primary" onclick="_agendasAplicarFiltros('+i+')">Aplicar filtros</button></div>';
   html += '</div>';
   html += _agendasBotonesClasifHtml(campana, i); // Fase 210
 
+  html += '<p class="agendas-filtros-aplicados" id="agendas-filtros-txt-'+i+'" aria-live="polite"></p>'; // Fase 212
   html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="agendas-c-'+i+'"></canvas></div>';
+  html += '<div class="gd-vacio-chico" id="agendas-vacio-'+i+'" hidden>Sin agendas con estos filtros.</div>';
   html += '</div>';
 
   host.innerHTML = html;
@@ -210,18 +215,43 @@ function _agendasQueryString(campana, filtros, incluirMes){
   return params.toString();
 }
 
+// Fase 212: filtros aplicados en texto ("Sede Principal · Línea General"), sin
+// el mes (ya lo dice MESES). Va debajo del titulo, en "Ver datos" y en Exportar.
+function _agendasFiltrosTexto(filtros){
+  var f = filtros || {};
+  var partes = [];
+  if(f.tipoLinea) partes.push(f.tipoLinea === 'GENERAL' ? 'Línea General' : 'Línea ' + f.tipoLinea);
+  ['sede','asesor','especialidad','examen','profesional','entidad'].forEach(function(k){ if(f[k]) partes.push(textoFormatoNombre(f[k])); });
+  if(f.desde || f.hasta) partes.push('Solicitud ' + (f.desde || '…') + ' a ' + (f.hasta || '…'));
+  return partes.join(' · ');
+}
+
+// Fase 212 (Edwin: "al elegir General por un momento no salió nada"): cada
+// dibujo lleva un numero; si mientras llega la respuesta se pidio otro, la
+// respuesta vieja se descarta (nunca pisa a la mas nueva).
+var _agendasDibujoN = {};
+
 async function _agendasDibujar(campana, i, opciones, vista){
   vista = vista || 'especialidad';
   var def = _AGENDAS_VISTAS[vista] || _AGENDAS_VISTAS.especialidad;
   var filtros = _agendasLeerFiltros(i, opciones);
   _agendasEstado[campana] = filtros;
+  var n = _agendasDibujoN[i] = (_agendasDibujoN[i] || 0) + 1;
 
   var datos = [];
   try{
     datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || datos;
   }catch(e){ showToast(e.message, 'error'); }
+  if(_agendasDibujoN[i] !== n) return;
 
   var canvasId = 'agendas-c-'+i;
+  var txtFiltros = _agendasFiltrosTexto(filtros);
+  var filtrosEl = document.getElementById('agendas-filtros-txt-'+i);
+  if(filtrosEl) filtrosEl.textContent = txtFiltros ? 'Filtros: ' + txtFiltros : '';
+  var canvasEl = document.getElementById(canvasId);
+  if(canvasEl) canvasEl.setAttribute('data-titulo', ((_agendasPanelPorIndice[i] && _agendasPanelPorIndice[i].titulo) || def.titulo) + (txtFiltros ? ' · ' + txtFiltros : ''));
+  var vacioEl = document.getElementById('agendas-vacio-'+i);
+  if(vacioEl) vacioEl.hidden = datos.length > 0;
   if(vista === 'especialidad'){
     // Fase 152 (B1): barras de comparacion (no tiempo) de mayor a menor.
     datos = datos.slice().sort(function(a,b){ return (b.cantidad||0) - (a.cantidad||0); });

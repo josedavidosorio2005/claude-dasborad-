@@ -135,6 +135,35 @@ function guardarCodigos(db, { campana, codigos, guardadoPorNombre }) {
   return { general: limpios.filter((c) => c.linea === 'GENERAL').length, p3: limpios.filter((c) => c.linea === '3P').length };
 }
 
+// Fase 212 (pedido de Edwin, 29/10): nombre de la sede segun CODIGO_SEDE
+// (columna B de la base cruda). Se compara sin ceros a la izquierda ("1" =
+// "01"); un codigo que no esta aqui sale como "Sede <codigo>". Se aplica AL
+// CONSULTAR (agendas.js, SEDE_EFECTIVA_SQL), asi sirve para lo ya cargado sin
+// volver a subirlo. El formato anterior (ago/sep) trae el nombre en mayusculas
+// ("SEDE PRINCIPAL"): se muestra con el mismo nombre de la lista, asi una sola
+// opcion del filtro sirve para todos los meses.
+const SEDES_AGENDAS = {
+  ORLANT: { 1: 'Sede Principal', 2: 'Sede Poblado', 4: 'Sede 34 (Audífonos)', 5: 'Sede Rionegro', 6: 'Sede Llanogrande' },
+};
+function codigoSedeSinCeros(v) {
+  return String(v == null ? '' : v).trim().replace(/^0+/, '');
+}
+function nombreSede(campana, codigo) {
+  const c = String(codigo == null ? '' : codigo).trim();
+  return (SEDES_AGENDAS[campana] || {})[codigoSedeSinCeros(c)] || 'Sede ' + c;
+}
+// JSON para @sedesAgendas: { codigoSinCeros: nombre, NOMBRE EN MAYUSCULAS (con y
+// sin tildes): nombre }; '{}' si el cliente no tiene lista.
+function sedesAgendasJson(campana) {
+  const out = {};
+  Object.entries(SEDES_AGENDAS[campana] || {}).forEach(([codigo, nombre]) => {
+    out[codigo] = nombre;
+    out[nombre.toUpperCase()] = nombre;
+    out[nombre.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase()] = nombre;
+  });
+  return JSON.stringify(out);
+}
+
 // Codigos de la lista (Set normalizado) -- al guardar agendas, un codigo que no
 // esta aqui no se guarda tal cual (puede ser una cedula).
 function codigosConocidos(db, campana) {
@@ -153,4 +182,8 @@ module.exports = {
   listarCodigos,
   guardarCodigos,
   codigosConocidos,
+  SEDES_AGENDAS,
+  codigoSedeSinCeros,
+  nombreSede,
+  sedesAgendasJson,
 };

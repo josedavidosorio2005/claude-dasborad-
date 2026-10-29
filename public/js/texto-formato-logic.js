@@ -52,6 +52,10 @@ var TEXTO_ESPECIALES = { WHATSAPP: 'WhatsApp', INCONEXION: 'InConexion' };
 
 function _textoFormatoPalabra(palabra) {
   if (!palabra) return palabra;
+  // Fase 212: los signos alrededor ("(audifonos)") no cuentan como la primera
+  // letra ni como parte de una sigla -- la regla se aplica a lo de adentro.
+  var signos = /^([("'¿¡\[]*)(.*?)([)"'?!\].,:;]*)$/.exec(palabra);
+  if ((signos[1] || signos[3]) && signos[2]) return signos[1] + _textoFormatoPalabra(signos[2]) + signos[3];
   var arriba = palabra.toUpperCase();
   if (TEXTO_CONFIG.modoMayusculas) return arriba;
   if (TEXTO_ESPECIALES[arriba]) return TEXTO_ESPECIALES[arriba];

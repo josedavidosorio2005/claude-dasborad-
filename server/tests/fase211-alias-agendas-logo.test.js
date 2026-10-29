@@ -9,12 +9,9 @@
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('fs');
-const path = require('path');
 const { request, app, tokenFor, MASTER_PASSWORD, db } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
-const PUB = path.join(__dirname, '..', '..', 'public');
 
 test('alias al consultar: ago/sep (formato anterior) salen con el nombre canonico, sin reescribir lo guardado', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
@@ -57,23 +54,6 @@ test('alias al consultar: ago/sep (formato anterior) salen con el nombre canonic
   assert.equal(await total('PERSONA VIEJA'), 2);
 });
 
-test('logo de InConexion en la barra de todos los tableros: a la izquierda de "Actualizar datos", blanco, isotipo en el telefono', () => {
-  const html = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
-  const acciones = html.slice(html.indexOf('<div class="gd-header-acciones"'), html.indexOf('id="gd-cerrar-btn"'));
-  const iLogo = acciones.indexOf('class="gd-marca-inconexion"');
-  const iAct = acciones.indexOf('id="gd-actualizar-btn"');
-  assert.ok(iLogo > -1 && iAct > -1 && iLogo < iAct, 'el logo va antes (a la izquierda) de Actualizar datos');
-  assert.match(acciones, /class="gd-marca-logo" src="img\/marca\/logo-horizontal-blanco\.png"[^>]*alt="InConexion" width="110" height="22"/);
-  assert.match(acciones, /class="gd-marca-isotipo" src="img\/marca\/isotipo-blanco\.png"[^>]*alt="InConexion" width="26" height="25"/);
-  for (const f of ['logo-horizontal-blanco.png', 'logo-horizontal-blanco@2x.png', 'isotipo-blanco.png', 'isotipo-blanco@2x.png']) {
-    assert.ok(fs.existsSync(path.join(PUB, 'img', 'marca', f)), f);
-  }
-  // El logo del cliente no cambia.
-  assert.match(html, /<img id="gd-cliente-logo" class="gd-cliente-logo"/);
-  const css = fs.readFileSync(path.join(PUB, 'css', 'styles.css'), 'utf8');
-  assert.match(css, /\.gd-marca-isotipo\{display:none !important;/);
-  assert.match(css, /@media\(max-width:480px\)\{\n  #gd-modal \.gd-marca-logo\{display:none !important;\}\n  #gd-modal \.gd-marca-isotipo\{display:block !important;\}/);
-  // La barra es --c-brand en los 2 temas (por eso el logo blanco sirve en los 2).
-  const oscuro = css.slice(css.indexOf(':root[data-theme="dark"]{'), css.indexOf('}', css.indexOf(':root[data-theme="dark"]{')));
-  assert.ok(!/--c-brand:/.test(oscuro));
-});
+// La prueba del logo de la Fase 211 (a la izquierda de "Actualizar datos",
+// isotipo en el telefono) se reemplazo en la Fase 212: el logo paso arriba a la
+// derecha, mas grande -- ver fase212-sede-linea-logo.test.js.

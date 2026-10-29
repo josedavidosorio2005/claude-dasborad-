@@ -7,7 +7,7 @@
 const { fechaLimitesRangoDeMes } = require('./fecha-limites');
 const { aplicarAliasAFilas, cargarAliasMapa, resolverAlias } = require('./alias-asesores');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
-const { normCodigo, normUsuario, codigosConocidos } = require('./agendas-clasificacion');
+const { normCodigo, normUsuario, codigosConocidos, sedesAgendasJson } = require('./agendas-clasificacion');
 
 function nowStr() {
   const d = new Date();
@@ -72,7 +72,16 @@ const ASESOR_EFECTIVO_SQL = `CASE WHEN a.usuario IS NULL THEN COALESCE(
 const LINEA_EFECTIVA_SQL = `CASE WHEN a.usuario IS NULL THEN a.tipoLinea ELSE COALESCE(
     (SELECT c.linea FROM agendas_codigos_entidad c WHERE c.campana = a.campana AND c.codigo = a.codigoEntidad),
     '3P') END`;
-const AGENDAS_FUENTE = `(SELECT a.id, a.campana, a.sede, a.examen, a.especialidad, a.profesional, a.fechaSolicitud, a.entidad,
+// Fase 212: en la base cruda la sede llega como CODIGO_SEDE; aqui se cambia por
+// su nombre (@sedesAgendas, ver sedesAgendasJson), comparando sin ceros a la
+// izquierda. En el formato anterior, el nombre en mayusculas pasa al mismo
+// nombre de la lista (si no esta, queda tal cual). El filtro Sede, sus
+// opciones y la exportacion leen este valor.
+const SEDE_EFECTIVA_SQL = `CASE WHEN a.usuario IS NULL THEN COALESCE(
+    (SELECT j.value FROM json_each(@sedesAgendas) j WHERE j.key = upper(trim(a.sede))), a.sede) ELSE COALESCE(
+    (SELECT j.value FROM json_each(@sedesAgendas) j WHERE j.key = ltrim(trim(a.sede), '0')),
+    'Sede ' || trim(a.sede)) END`;
+const AGENDAS_FUENTE = `(SELECT a.id, a.campana, ${SEDE_EFECTIVA_SQL} AS sede, a.examen, a.especialidad, a.profesional, a.fechaSolicitud, a.entidad,
     a.usuario, ${ASESOR_EFECTIVO_SQL} AS asesor, ${LINEA_EFECTIVA_SQL} AS tipoLinea FROM agendas a)`;
 
 // { asesorGuardado: canonico } de los nombres del formato anterior que hoy
@@ -177,7 +186,7 @@ function cargarAgendas(db, { campana, archivoNombre, cargadoPorNombre, filas, fo
 // con datos), pero respeta los demas -- incluido el rango de dias.
 function agendasWhereClausulas(q, incluirMes, db) {
   const clausulas = ['campana = @campana'];
-  const params = { campana: q.campana, aliasAgendas: db ? aliasAgendasJson(db, q.campana) : '{}' }; // Fase 211
+  const params = { campana: q.campana, aliasAgendas: db ? aliasAgendasJson(db, q.campana) : '{}', sedesAgendas: sedesAgendasJson(q.campana) }; // Fase 211 / 212
   // Fase 88: `fechaSolicitud` guarda tambien hora ('AAAA-MM-DD HH:MM:SS'),
   // por eso el codigo viejo comparaba con `substr(fechaSolicitud,1,7/10)`
   // -- no sargable, nunca aprovechaba idx_agendas_campana_fecha. El mismo
@@ -433,7 +442,7 @@ function agendasRanking(db, q) {
 function agendasOpciones(db, campana) {
   const aliasAgendas = aliasAgendasJson(db, campana); // Fase 211
   const distintos = (columna) =>
-    db.prepare(`SELECT DISTINCT ${columna} AS v FROM ${AGENDAS_FUENTE} WHERE campana = @campana ORDER BY v`).all({ campana, aliasAgendas }).map((r) => r.v);
+    db.prepare(`SELECT DISTINCT ${columna} AS v FROM ${AGENDAS_FUENTE} WHERE campana = @campana ORDER BY v`).all({ campana, aliasAgendas, sedesAgendas: sedesAgendasJson(campana) }).map((r) => r.v);
   return {
     meses: db.prepare('SELECT DISTINCT substr(fechaSolicitud,1,7) AS v FROM agendas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
     asesores: distintos('asesor'),
