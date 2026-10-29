@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.97.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.99.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -117,7 +117,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 
 | Indicador | Valor | Fase |
 |---|---|---|
-| MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción | 207 |
+| MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %; fórmula anterior, ver la fila de la Fase 212) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción | 207 |
 | Tipificación de Llamadas (ORLANT) | Ago 14.940 · Sep 19.721 (recargado del CDR, mismas filas) | 116 / 174 |
 | Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas (regla anterior) | 174 / 177 |
 | Llamadas de salida, regla de la Fase 183 (ORLANT) | Ago 6.560 (cifra de Edwin) · Sep 10.404 (filas con skill "-" del CDR del 23/10); falta verlas en producción con sesión | 183 |
@@ -126,10 +126,11 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Tráfico de WhatsApp (ORLANT) | Ago 7.390/7.370/20, SL20 36,05 % · Sep 7.968/7.953/15, SL20 39,88 % | 116 |
 | WhatsApp por rangos (ORLANT, oct, 1–22/10) | 5.196 conversaciones; 0 a 3 min 57,6 % | 165 / 166 |
 | Agendas (ORLANT) | 24.186 (Ago 11.040 / Sep 13.146), 20 asesores · Oct 8.635 (base cruda, 01–24/10) = General 5.142 + 3P 3.493 | 126 / 210 |
+| Agendas de octubre por sede (ORLANT, todas / General / 3P, v1.98.0) | Principal 5.425 / 2.779 / 2.646 · 34 (Audífonos) 2.118 / 1.997 / 121 · Poblado 548 / 24 / 524 · Rionegro 477 / 342 / 135 · Llanogrande 67 / 0 / 67 · suma 8.635; verificado en producción | 212 |
 | Inasistencia (ORLANT) | Ago 11.189/786/48, 7,45 % · Sep 12.194/749/61 · período 7,03 % | 130 |
 | Calidad (ORLANT) | Sep: 95 monitoreos, 19 asesores, promedio 94,79 % | 130 |
 | Efectividad de agendamiento (ORLANT) | Ago 41,17 % (11.040 / 26.814) · Sep 40,00 % (13.146 / 32.868) | 122 |
-| Efectividad de Citas (ORLANT) | Ago 11.189/7.896 · Sep 12.194/8.968 · período 72,12 % | 126 |
+| Efectividad de Citas (ORLANT, fórmula nueva desde la v1.99.0: agendas ÷ (llamadas contestadas + WhatsApp contestados)) | Ago 65,93 % (11.040 ÷ 9.374 + 7.370) · Sep 72,16 % (13.146 ÷ 10.264 + 7.953) · Oct 67,17 % (8.635 ÷ 7.343 + 5.512, mes parcial: datos hasta el 24/10) · MESES Ago+Sep 69,18 %; verificado en producción. Antes (archivo CITAS_ATENDIDAS): Ago 70,57 % · Sep 73,54 % · período 72,12 % | 126 / 212 |
 | Llamadas y WhatsApp de salida (ORLANT) | Ago (archivo): llamadas 6.560, WhatsApp 3.381 · Sep (CDR): llamadas 10.791, WhatsApp 4.013 | 127 / 177 / 208 |
 | Tipificación de Mobilize (llamadas) | Ago 81 · Sep 170 (salida 67 = 52 + 15) · Oct 134 (CDR recargado el 28/10) | 173 / 208 |
 | Llamadas de salida de Mobilize | Oct 85 = 45 conectadas + 40 no conectadas | 171 |
@@ -353,3 +354,4 @@ mismo orden):
 - Fase 209 — Mobilize: Flujo por hora en una sola tabla por métrica que suma los meses de MESES (título con los meses), Abandonadas en escala roja y día 1 visible en el celular (v1.95.0, 2026-10-28)
 - Fase 210 — ORLANT: Agendamiento con la base cruda del aplicativo, Clasificación de usuarios (con fecha de cambio) y de líneas (código → 3P/General), octubre cargado (v1.96.0, 2026-10-28)
 - Fase 211 — Logo de InConexion en la barra de todos los tableros (isotipo en el celular) y alias de asesor al consultar Agendamiento; ORLANT: INCO20 → OTROS y LINCO3 unificado en ago/sep (v1.97.0, 2026-10-28)
+- Fase 212 — ORLANT: sede con nombre en Agendamiento (códigos y nombres de ago/sep unificados), filtro "Tipo de línea" resaltado, logo de InConexion más grande arriba a la derecha (v1.98.0) y Efectividad de Citas = agendas ÷ (llamadas + WhatsApp contestados) (v1.99.0, 2026-10-29)

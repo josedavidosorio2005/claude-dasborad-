@@ -146,6 +146,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
+- **Archivo CITAS_ATENDIDAS de ORLANT** (Fase 212) — Prioridad BAJA. Desde
+  la v1.99.0 ORLANT calcula la Efectividad de Citas sin ese archivo; la carga
+  sigue disponible en el Centro de cargas (la usan las plantillas de otros
+  clientes) y lo ya subido de ago/sep queda guardado, sin borrar. Cómo se
+  cierra: decides si se oculta esa carga para ORLANT (cambio pequeño, con PR).
+
 ## 2. Esperando una respuesta de Edwin
 
 - **Agendamiento ORLANT: 20 usuarios en la lista, no 19** (Fase 210) — la
@@ -165,6 +171,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (9.043 sin ellas). Quedan como están hasta que Edwin responda. Cómo se
   cierra: si cuentan, nada que hacer; si no, quitarlas del mapeo de skills de
   ORLANT (Centro de cargas, con tu OK) y anotar las cifras en PROGRESS.md.
+  Desde la Fase 212 también cambian la **Efectividad de Citas** de ORLANT
+  (son parte de las llamadas contestadas del denominador).
+- **Efectividad de Citas de ORLANT: octubre es parcial** (Fase 212,
+  29/10/2026) — oct 67,17 % = 8.635 agendas ÷ (7.343 llamadas + 5.512
+  WhatsApp contestados), con agendas y WhatsApp hasta el 24/10 y 20 días de
+  Tráfico de Llamadas. Se recalcula sola al cargar el resto del mes (agendas,
+  Flujo de llamadas y WhatsApp), sin tocar nada más. Cómo se cierra: llegan
+  los archivos del mes completo y se anota la cifra final en PROGRESS.md.
 
 - **Nivel de servicio de llamadas con varios meses: ¿promedio simple o
   ponderado?** (Fase 207, 28/10/2026) — desde la v1.94.0, la tarjeta "Nivel

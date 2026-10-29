@@ -18124,3 +18124,55 @@ PR #595.
   intacto, 0 errores de consola. Capturas fuera del repo.
 - Pendientes: salen INCO20 y LINCO3; siguen "20 usuarios, no 19" y "el
   518 es INCO18" hasta que Edwin confirme.
+
+### Fase 212 — Sede con nombre, "Tipo de línea" resaltado, logo arriba a la derecha y Efectividad de Citas nueva (2026-10-29, v1.98.0 / v1.99.0)
+
+Pedidos de Edwin del 29/10 (solo ORLANT). PRs #597 (v1.98.0) y #598 (v1.99.0).
+
+- **Antes de cambiar** (producción, solo lectura): el filtro Sede tenía 10
+  opciones: octubre (base cruda) traía el código ("01"…"06") y ago/sep el
+  nombre en mayúsculas. General/3P ya filtraban bien en las 3 vistas con
+  gráfica (ago 5.964/5.076, sep 7.623/5.523, oct 5.142/3.493).
+- **Sede con nombre** (v1.98.0): `SEDES_AGENDAS` (agendas-clasificacion.js)
+  y `SEDE_EFECTIVA_SQL` en `AGENDAS_FUENTE`: el código se compara sin ceros a
+  la izquierda (fuera de la lista = "Sede <código>") y los nombres en
+  mayúsculas de ago/sep pasan al mismo nombre; se cruza al consultar
+  (octubre no se volvió a subir, lo guardado no cambia). Filtro, "Ver datos"
+  (`data-titulo`) y Exportar (columna "Filtros"). `textoFormatoNombre` ya no
+  baja la mayúscula detrás de un paréntesis ("(Audífonos)").
+- **Tipo de línea**: resaltado (azul de marca + `--c-info-bg`), aplica al
+  cambiarlo, no se pliega en ≤768 px; "Filtros: …" debajo del título; una
+  respuesta vieja ya no pisa a la nueva (contador por panel). La caída de la
+  reunión no se reprodujo.
+- **Logo de InConexion**: 170×34 arriba a la derecha, encima de los botones
+  (`.gd-header-derecha`); a ≤768 px en su propia fila (150×30; 140×28 a
+  375 px) y "Cerrar" baja a la fila del título. Sin isotipo.
+- **Efectividad de Citas** (v1.99.0, con el OK del usuario sobre el antes y
+  después): agendas del mes (3P + General) ÷ (contestadas de Tráfico de
+  Llamadas + contestados de Tráfico de WhatsApp) del mismo mes
+  (`efectividadCitasDesdeContactos`, solo ORLANT); barra de % por mes,
+  tarjeta con los totales de MESES sumados, tabla con los componentes,
+  Exportar igual. Los demás clientes siguen con `CITAS_ATENDIDAS` (no tienen
+  filas cargadas: la API responde vacía, sin la forma nueva). Antes → después:
+  ago 70,57 → 65,93 %, sep 73,54 → 72,16 %, oct sin archivo → 67,17 %
+  (parcial, datos hasta el 24/10).
+- Pruebas: `fase212-sede-linea-logo.test.js` (4) y
+  `fase212-efectividad-citas.test.js` (1), datos inventados; la del logo de
+  la Fase 211 y `efectividad-citas-carga.test.js` (a un cliente de prueba) se
+  ajustaron. Suite 2363 → 2364/2364, `npm audit` 0, CI verde, merges con
+  `--match-head-commit`, deploys en verde, health 1.98.0 y 1.99.0.
+- **Verificación local** (Brave, copia de la base demo): logo en ORLANT y
+  MOBILIZE × claro/oscuro × 1440/768/375; Todos/General/3P en las 3
+  sub-pestañas; Efectividad a 1440/768/375 en los 2 temas; sin solapes ni
+  scroll horizontal, 0 errores.
+- **Producción** (solo lectura, escrituras bloqueadas: 0 intentos, 0
+  errores): logo igual que en local en los 12 casos; Sede con 5 opciones;
+  MESES Todos 32.821 = General 18.729 + 3P 14.092, oct 5.142 / 3.493 en las 3
+  vistas. Octubre por sede (todas / General / 3P): Principal 5.425 / 2.779 /
+  2.646 · 34 (Audífonos) 2.118 / 1.997 / 121 · Poblado 548 / 24 / 524 ·
+  Rionegro 477 / 342 / 135 · Llanogrande 67 / 0 / 67 = 8.635. Efectividad
+  con MESES: Ago 65,93 %, Sep 72,16 %, Oct 67,17 %, Ago+Sep 69,18 % (tarjeta,
+  barras y tabla iguales; 1440/768/375). Capturas fuera del repo.
+- Pendientes: octubre parcial de Efectividad (se recalcula sola), si se
+  oculta la carga CITAS_ATENDIDAS para ORLANT, y la pregunta de las skills
+  de Confirmaciones ahora también toca el denominador de Efectividad.
