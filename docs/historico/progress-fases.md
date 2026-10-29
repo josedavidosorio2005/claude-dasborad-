@@ -18251,7 +18251,61 @@ siguiente), todos con CI verde y `--match-head-commit`.
   el CDR (2 con porcentajes de miles) — queda en `docs/pendientes.md`.
   Capturas fuera del repo.
 
-## Fase 215 — Cliente SURA con el tablero "Televentas" (v1.104.0, 2026-10-29)
+
+## Fase 214 — ORLANT: ranking con todo el CDR, filtro de línea, total de agendas junto al botón y tema oscuro (v1.103.0–v1.104.1, 2026-10-29)
+
+Pedidos de Edwin del 29/10 (tarde), solo ORLANT. PRs #606 (v1.103.0), #608
+(v1.104.0) y #609 (v1.104.1), los tres con CI completo en verde y merge con
+`--match-head-commit` comparando el SHA de `git ls-remote` con la API.
+
+- **Punto 1, diagnóstico (producción, solo lectura, solo GET)**: Edwin vio que
+  INCO3 en agosto tenía 505 llamadas + 628 WhatsApp = 1.133 en el CDR y el
+  ranking le daba 205. No era el cruce de nombres (el nombre de la
+  Clasificación de usuarios cruza tal cual con el de Wolkvox): el ranking
+  (v1.101.0) contaba solo el ingreso. 501 de las llamadas eran de salida
+  (skill "-") y 427 de los WhatsApp también (`outbound_ma`): 4 + 201 = 205.
+  La misma causa explicaba casi todos los de más del 100 % y las filas con 0
+  agendas (agentes de Wolkvox sin usuario de Agendamiento).
+- **Punto 1, arreglo (con OK del usuario, #608)**: contestadas = todo el CDR
+  del asesor (ingreso + salida, llamadas y WhatsApp), con Ingreso y Salida en
+  la tabla y en Exportar. Quien sigue por encima del 100 % queda en el ranking
+  con la marca "⚠ agenda más de lo que registra Wolkvox" (texto, no solo
+  color); el eje del % tiene techo (`eaTechoPct`: el mayor % normal
+  redondeado a la decena + 10) y el punto marcado queda arriba con su % real
+  en la cifra, el tooltip y Ver datos. Los agentes del CDR sin usuario en la
+  Clasificación de usuarios (y sin agendas) van aparte, en la nota, con
+  "OTROS". #609: dos marcados seguidos en octubre escondían la cifra del
+  segundo; ahora se muestran siempre, alternando arriba / abajo.
+- **Punto 2 (#606)**: filtro "Agendas: Todos / 3P / General" al lado de las
+  métricas del ranking (arranca en Todos). Filtra solo las agendas
+  (`linea`); las contestadas no cambian porque el CDR no trae la línea, y la
+  nota lo dice. No cambia la Clasificación de usuarios.
+- **Punto 3 (#606)**: "Total de agendas" pasa de arriba a junto a "Aplicar
+  filtros", pegado a la gráfica; en tablet/celular queda visible con los
+  filtros plegados.
+- **Punto 4 (#606 y #608)**: en oscuro, los ejes y leyendas sin color propio
+  usaban el #666 de Chart.js (`Chart.defaults.color` ahora sigue al tema), y
+  las 5 leyendas con `generateLabels` propio no traían `fontColor` (Chart.js
+  4 pinta el texto con el del ítem): salían negras. Auditoría de contraste de
+  todas las gráficas de ORLANT (ejes, cada ítem de leyenda, cifras) a
+  1440/768/375 sin hallazgos (las cifras dentro de las tortas son falsos
+  positivos: van sobre la porción, no sobre el fondo).
+- **Verificación en producción** (solo lectura, 0 escrituras bloqueadas, 0
+  errores de consola, sin scroll horizontal; 1440/768/375, claro y oscuro):
+  ranking Ago 42,60 % (11.039 ÷ 25.914) · Sep 41,40 % (13.088 ÷ 31.614) · Oct
+  41,80 % (8.631 ÷ 20.650); INCO3 ago = 1.133 (205 + 928); marcados Ago 3 ·
+  Sep 2 · Oct 2; aparte sin usuario Ago 8 · Sep 3 · Oct 4 y OTROS oct 4;
+  filtro oct 3P 3.492 + General 5.139 = 8.631; Total de agendas oct 8.635.
+  Capturas fuera del repo.
+- **Abierto**: la pregunta a Edwin sobre INCO3 (sep 387 %, oct 977 % aun
+  contando la salida) y los agentes sin usuario quedan en
+  `docs/pendientes.md`.
+- Pruebas: `fase214-ranking-agendas-tema` y `fase214-ranking-con-salida`
+  (datos inventados); se actualizaron las guardas de `fase213-ranking-
+  contestadas`, `fase213-agendas-efectividad-inasistencia` y
+  `fase207-meses-todas-campanas`. Suite 2383/2383, `npm audit` 0.
+
+## Fase 215 — Cliente SURA con el tablero "Televentas" (v1.105.0, 2026-10-29)
 
 **Pedido**: llevar a la plataforma el HTML de una sola página que hizo Edwin
 (`seguimiento_ventas_offline.html`, 8,7 MB: SheetJS 0.18.5 embebido, 3 Excel

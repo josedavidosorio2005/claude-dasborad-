@@ -117,7 +117,7 @@ function _ecDibujarGraficaContactos(i, filas){
     generateLabels: function(chart){
       return chart.data.datasets.map(function(dset, idx){
         var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
-        return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
+        return { text: dset.label, fontColor: leyendaColorTexto(), fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
       });
     }
   });
@@ -169,7 +169,7 @@ function _ecDibujarGrafica(i, filas){
     generateLabels: function(chart){
       return chart.data.datasets.map(function(dset, idx){
         var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
-        return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
+        return { text: dset.label, fontColor: leyendaColorTexto(), fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
       });
     }
   });

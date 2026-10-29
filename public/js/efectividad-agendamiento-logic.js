@@ -198,6 +198,24 @@ function efectividadAgendamientoFmtPct(v) {
   return (v * 100).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
 }
 
+// Fase 214 (Edwin: los de mas del 100 % no deben deformar la escala): techo
+// del eje del % = el mayor % de los asesores normales (<= 100 %), redondeado
+// a la decena de arriba + 10 (entre 10 y 110). Los marcados (sobreWolkvox)
+// se dibujan EN el techo; su % real va en la cifra, el tooltip y Ver datos.
+// `filas` trae `efectividad` como fraccion 0..1.
+function eaTechoPct(filas) {
+  var max = 0;
+  (filas || []).forEach(function (f) {
+    if (f.efectividad !== null && f.efectividad !== undefined && f.efectividad <= 1) max = Math.max(max, f.efectividad * 100);
+  });
+  return Math.min(110, Math.max(10, Math.ceil(max / 10) * 10 + 10));
+}
+function eaPctEnEscala(f, techo) {
+  if (f.efectividad === null || f.efectividad === undefined) return null;
+  return Math.min(f.efectividad * 100, techo);
+}
+var EA_MARCA_WOLKVOX = 'agenda más de lo que registra Wolkvox';
+
 // Meses distintos que trae el archivo (ordenados) -- el conjunto que la
 // carga va a REEMPLAZAR, mismo criterio que inasistencia-logic.js.
 function efectividadAgendamientoMesesDelArchivo(filas) {
@@ -218,5 +236,8 @@ if (typeof module !== 'undefined' && module.exports) {
     efectividadAgendamientoFilaComoArray: efectividadAgendamientoFilaComoArray,
     efectividadAgendamientoFmtPct: efectividadAgendamientoFmtPct,
     efectividadAgendamientoMesesDelArchivo: efectividadAgendamientoMesesDelArchivo,
+    eaTechoPct: eaTechoPct,
+    eaPctEnEscala: eaPctEnEscala,
+    EA_MARCA_WOLKVOX: EA_MARCA_WOLKVOX,
   };
 }

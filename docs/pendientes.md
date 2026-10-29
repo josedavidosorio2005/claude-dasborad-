@@ -148,6 +148,22 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **INCO3 agenda más de lo que registra Wolkvox** (Fase 214, 29/10/2026) —
+  Prioridad ALTA. Desde la v1.104.0 el ranking cuenta todo el CDR del asesor
+  (ingreso + salida); aun así INCO3 queda muy por encima del 100 %: ago 1.337
+  agendas para 1.133 contactos (118 %), sep 1.554 para 402 (387 %) y oct 1.192
+  para 122 (977 %). También salen marcados INCO12 (ago 181 %, sep 115 %) e
+  INCO13 (ago 152 %, oct 109 %). Pregunta para Edwin: ¿INCO3 agenda por canales
+  que no pasan por Wolkvox (correo, portal, presencial) o ese usuario del
+  aplicativo lo usa más de una persona? Hoy salen en el ranking con la marca
+  "⚠ agenda más de lo que registra Wolkvox". Cómo se cierra: si es un usuario
+  compartido, repartirlo en la Clasificación de usuarios (con fecha de cambio)
+  o pasarlo a "OTROS"; si agenda por otro canal, dejar la marca.
+- **Agentes de Wolkvox sin usuario de Agendamiento** (Fase 214) — Prioridad
+  BAJA. Van aparte, en la nota del ranking, con "OTROS" (ago 8, sep 3, oct 4;
+  son sobre todo agentes de sistema como "Asesor Apoyo" o "Routing Point").
+  Cómo se cierra: si alguno es una persona que agenda, agregarla en la
+  Clasificación de usuarios.
 - **SURA — Televentas: primera carga** (Fase 215, 29/10/2026). El tablero
   está en producción sin datos y solo lo ve el administrador. Falta:
   1. **Los Excel de Edwin** por mes (base de ventas `data_inconexion_03..10`,
@@ -192,15 +208,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ORLANT (Centro de cargas, con tu OK) y anotar las cifras en PROGRESS.md.
   Desde la Fase 212 también cambian la **Efectividad de Citas** de ORLANT
   (son parte de las llamadas contestadas del denominador).
-- **Ranking de asesores de ORLANT: asesores con más agendas que contestadas** (Fase 213,
-  29/10/2026) — Prioridad ALTA. En octubre, 4 asesores tienen más agendas que
-  contestadas en el CDR de Tipificación (>100 %); 2 de ellos casi no tienen
-  contestadas y salen con porcentajes de miles (17.028 % y 8.266 %), lo que
-  aplasta la escala de la gráfica. Pueden ser personas que agendan sin
-  contestar (lista de espera, back office) o que contestan con otro nombre en
-  Wolkvox. Además, 2 asesores de agosto tienen contestadas y 0 agendas. Cómo se
-  cierra: decides con Edwin si esas personas van aparte (como "OTROS"), con un
-  mínimo de contestadas, o si hay que unir nombres con un alias.
 - **Versiones anteriores de las bases de ORLANT borradas el 29/10** (Fase 213) —
   el 29/10 entre las 08:37 y las 08:42 (hora de Colombia; el historial lo guarda
   en hora del servidor, 13:37–13:42) se eliminaron desde Cargar Datos las

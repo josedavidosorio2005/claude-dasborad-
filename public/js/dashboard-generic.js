@@ -1924,7 +1924,7 @@ function _gdRenderPanel(p, i){
       generateLabels: function(chart){
         return chart.data.datasets.map(function(dset, i){
           var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
-          return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(i), datasetIndex: i };
+          return { text: dset.label, fontColor: leyendaColorTexto(), fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(i), datasetIndex: i };
         });
       }
     });
@@ -2183,9 +2183,9 @@ function _gdRenderCalidad(p, i){
     var colEncima = colorSerie('principal'), colDebajo = colorSerie('secundaria');
     optsBar.plugins.legend = { display:true, labels: { generateLabels: function(){
       return [
-        { text: '▲ Por encima del promedio', fillStyle: colEncima, strokeStyle: colEncima, lineWidth: 0 },
-        { text: '▼ Por debajo del promedio', fillStyle: colDebajo, strokeStyle: (typeof SERIE_SECUNDARIA_BORDE!=='undefined' && SERIE_SECUNDARIA_BORDE) || colDebajo, lineWidth: 1 },
-        { text: 'Promedio del equipo', fillStyle: colorSerie('linea'), strokeStyle: colorSerie('linea'), lineWidth: 2 },
+        { text: '▲ Por encima del promedio', fontColor: leyendaColorTexto(), fillStyle: colEncima, strokeStyle: colEncima, lineWidth: 0 },
+        { text: '▼ Por debajo del promedio', fontColor: leyendaColorTexto(), fillStyle: colDebajo, strokeStyle: (typeof SERIE_SECUNDARIA_BORDE!=='undefined' && SERIE_SECUNDARIA_BORDE) || colDebajo, lineWidth: 1 },
+        { text: 'Promedio del equipo', fontColor: leyendaColorTexto(), fillStyle: colorSerie('linea'), strokeStyle: colorSerie('linea'), lineWidth: 2 },
       ];
     } } };
     optsBar.plugins.datalabels = Object.assign({}, optsBar.plugins.datalabels, {
@@ -2325,18 +2325,19 @@ async function _gdExportarEfectividadAgendamiento(p, i){
   if(!ranking.filas || !ranking.filas.length){
     return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + gdMesesTarjetasTexto(mesesEaExp, false, mesNombreLargo) + '.' }];
   }
-  // Fase 213 (ORLANT): contestadas (llamadas + WhatsApp) en vez de gestiones;
+  // Fase 213 (ORLANT): contestadas (llamadas + WhatsApp) en vez de gestiones
+  // (Fase 214: ingreso + salida, con la marca de mas del 100 % en "Nota");
   // "OTROS" y los usuarios sin asesor, fuera del ranking, al final.
   if(ranking.fuente === 'contactos'){
     // Fase 214: con el filtro 3P / General, la columna dice de que agendas son.
     var colAg = ranking.linea ? 'Agendas ' + (ranking.linea === 'GENERAL' ? 'General' : ranking.linea) : 'Agendas';
-    var fila = function(o, agendas, pct){ o[colAg] = agendas; o['% Efectividad'] = pct; return o; };
+    var fila = function(o, agendas, pct, nota){ o[colAg] = agendas; o['% Efectividad'] = pct; o.Nota = nota; return o; };
     var filasC = ranking.filas.map(function(f){
-      return fila({ Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), 'Llamadas contestadas': f.llamadas, 'WhatsApp contestados': f.whatsapp, 'Contestadas (llamadas + WhatsApp)': f.gestiones }, f.agendas, efectividadAgendamientoFmtPct(f.efectividad));
+      return fila({ Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), 'Llamadas (ingreso + salida)': f.llamadas, 'WhatsApp (ingreso + salida)': f.whatsapp, Ingreso: f.ingreso, Salida: f.salida, 'Contestadas (ingreso + salida)': f.gestiones }, f.agendas, efectividadAgendamientoFmtPct(f.efectividad), f.sobreWolkvox ? EA_MARCA_WOLKVOX : '');
     });
-    filasC.push(fila({ Puesto: '', Asesor: 'TOTAL EQUIPO', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': ranking.equipo.gestiones }, ranking.equipo.agendas, efectividadAgendamientoFmtPct(ranking.equipo.efectividad)));
+    filasC.push(fila({ Puesto: '', Asesor: 'TOTAL EQUIPO', 'Llamadas (ingreso + salida)': '', 'WhatsApp (ingreso + salida)': '', Ingreso: '', Salida: '', 'Contestadas (ingreso + salida)': ranking.equipo.gestiones }, ranking.equipo.agendas, efectividadAgendamientoFmtPct(ranking.equipo.efectividad), ''));
     (ranking.aparte || []).forEach(function(a){
-      filasC.push(fila({ Puesto: '', Asesor: textoFormatoNombre(a.asesor) + ' (fuera del ranking)', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': '' }, a.agendas, ''));
+      filasC.push(fila({ Puesto: '', Asesor: textoFormatoNombre(a.asesor) + ' (fuera del ranking)', 'Llamadas (ingreso + salida)': '', 'WhatsApp (ingreso + salida)': '', Ingreso: '', Salida: '', 'Contestadas (ingreso + salida)': a.sinUsuario ? a.gestiones : '' }, a.agendas, '', a.sinUsuario ? 'agente de Wolkvox sin usuario de Agendamiento' : ''));
     });
     return [{ titulo: titulo, tipo: 'tabla', filas: filasC }];
   }

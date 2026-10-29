@@ -124,9 +124,15 @@ function cargarEfectividadAgendamiento(db, { campana, archivoNombre, cargadoPorN
 //   - Agendas por asesor: AGENDAS_FUENTE (base cruda: usuario -> asesor con la
 //     Clasificacion de usuarios y su fecha de cambio; formato anterior: el
 //     nombre con alias). "OTROS" y los usuarios sin asesor van aparte.
-//   - Contestadas por asesor: el CDR de Tipificacion (AGENT_NAME); de ingreso
-//     = lo que no es salida (condSalidaCanalSql), en los 2 canales. Trafico no
-//     sirve: viene por skill, no por asesor.
+//   - Contestadas por asesor: el CDR de Tipificacion (AGENT_NAME). Fase 214
+//     (Edwin: INCO3 en agosto tiene 505 llamadas + 628 WhatsApp = 1.133 y el
+//     ranking daba 205): TODO el CDR del asesor, ingreso + salida
+//     (condSalidaCanalSql), en los 2 canales, con ingreso y salida aparte.
+//     Trafico no sirve: viene por skill, no por asesor.
+//   - Fase 214: quien queda por encima del 100 % sigue en el ranking con
+//     `sobreWolkvox` ("agenda mas de lo que registra Wolkvox"); los agentes
+//     del CDR sin usuario en la Clasificacion de usuarios (y sin agendas) van
+//     aparte con "OTROS".
 //   - Cruce: nombre con alias (Fase 122) y sin tildes/mayusculas/espacios.
 // El total del equipo no cuadra exacto con Efectividad de Citas (que usa los
 // reportes de Trafico): el CDR y el reporte de Wolkvox cuentan distinto.
@@ -150,15 +156,19 @@ function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses, linea 
 
   const { where, params } = agendasWhereClausulas({ campana, meses: lista.join(','), tipoLinea: linea || undefined }, true, db);
   const agendas = db.prepare(`SELECT asesor, COUNT(*) AS n FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY asesor`).all(params);
+  const salidaLl = condSalidaCanalSql(campana, 'LLAMADAS');
+  const salidaWa = condSalidaCanalSql(campana, 'WHATSAPP');
   const contestadas = db.prepare(`
     SELECT agente,
-      SUM(CASE WHEN canal = 'LLAMADAS' AND NOT (${condSalidaCanalSql(campana, 'LLAMADAS')}) THEN 1 ELSE 0 END) AS llamadas,
-      SUM(CASE WHEN canal = 'WHATSAPP' AND NOT (${condSalidaCanalSql(campana, 'WHATSAPP')}) THEN 1 ELSE 0 END) AS whatsapp
+      SUM(CASE WHEN canal = 'LLAMADAS' AND NOT (${salidaLl}) THEN 1 ELSE 0 END) AS llamadasIngreso,
+      SUM(CASE WHEN canal = 'LLAMADAS' AND (${salidaLl}) THEN 1 ELSE 0 END) AS llamadasSalida,
+      SUM(CASE WHEN canal = 'WHATSAPP' AND NOT (${salidaWa}) THEN 1 ELSE 0 END) AS whatsappIngreso,
+      SUM(CASE WHEN canal = 'WHATSAPP' AND (${salidaWa}) THEN 1 ELSE 0 END) AS whatsappSalida
     FROM tipificaciones WHERE campana = ? AND substr(fecha,1,7) IN (${lista.map(() => '?').join(', ')}) GROUP BY agente`).all(campana, ...lista);
 
   const porClave = new Map();
   const fila = (k, nombre) => {
-    if (!porClave.has(k)) porClave.set(k, { asesor: nombre, agendas: 0, llamadas: 0, whatsapp: 0 });
+    if (!porClave.has(k)) porClave.set(k, { asesor: nombre, agendas: 0, llamadas: 0, whatsapp: 0, ingreso: 0, salida: 0, conAgendas: false });
     return porClave.get(k);
   };
   const aparte = [];
@@ -167,16 +177,29 @@ function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses, linea 
     // El nombre que se muestra es el de Agendamiento (lista de usuarios/alias).
     const f = fila(clave(a.asesor), resolverAlias(alias, a.asesor));
     f.agendas += a.n;
+    f.conAgendas = true;
   });
   contestadas.forEach((c) => {
     const f = fila(clave(c.agente), resolverAlias(alias, c.agente));
-    f.llamadas += c.llamadas || 0;
-    f.whatsapp += c.whatsapp || 0;
+    const li = c.llamadasIngreso || 0, ls = c.llamadasSalida || 0, wi = c.whatsappIngreso || 0, ws = c.whatsappSalida || 0;
+    f.llamadas += li + ls;
+    f.whatsapp += wi + ws;
+    f.ingreso += li + wi;
+    f.salida += ls + ws;
+  });
+  // Fase 214: con usuario = esta en la Clasificacion de usuarios (o tiene agendas).
+  const conUsuario = new Set(db.prepare('SELECT DISTINCT asesor FROM agendas_usuarios WHERE campana = ?').all(campana).map((u) => clave(u.asesor)));
+  porClave.forEach((f, k) => {
+    if (f.conAgendas || conUsuario.has(k) || f.llamadas + f.whatsapp === 0) return;
+    aparte.push({ asesor: f.asesor, agendas: 0, gestiones: f.llamadas + f.whatsapp, sinUsuario: true });
+    porClave.delete(k);
   });
 
   const conPct = [...porClave.values()].filter((f) => f.agendas > 0 || f.llamadas + f.whatsapp > 0).map((f) => {
     const gestiones = f.llamadas + f.whatsapp;
-    return { asesor: f.asesor, gestiones, agendas: f.agendas, llamadas: f.llamadas, whatsapp: f.whatsapp, efectividad: gestiones > 0 ? f.agendas / gestiones : null };
+    const efectividad = gestiones > 0 ? f.agendas / gestiones : null;
+    return { asesor: f.asesor, gestiones, agendas: f.agendas, llamadas: f.llamadas, whatsapp: f.whatsapp, ingreso: f.ingreso, salida: f.salida,
+      efectividad, sobreWolkvox: efectividad !== null && efectividad > 1 };
   });
   // Mismo orden que el ranking del archivo: efectividad desc (sin contestadas
   // al final), empate -> mas contestadas, empate total -> alfabetico.

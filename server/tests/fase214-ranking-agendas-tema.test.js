@@ -77,3 +77,13 @@ test('tema oscuro: color por defecto de Chart.js = CHART_TICK del tema; ejes del
   const ejes = ea.slice(ea.indexOf('o.scales = {'), ea.indexOf('o.plugins.datalabels = {'));
   assert.equal((ejes.match(/color:_eaTick\(\)/g) || []).length, 3);
 });
+
+test('tema oscuro: toda leyenda con generateLabels propio pone fontColor (Chart.js 4 pinta con el del item)', () => {
+  assert.ok(JS('charts.js').includes('function leyendaColorTexto(){ return CHART_TICK; }'));
+  for (const f of ['efectividad-agendamiento.js', 'efectividad-citas.js', 'dashboard-generic.js']) {
+    const src = JS(f);
+    const items = src.match(/\{ text: [^}]*fillStyle[^}]*\}/g) || [];
+    assert.ok(items.length > 0, f);
+    items.forEach((it) => assert.ok(it.includes('fontColor: leyendaColorTexto()'), f + ': ' + it.slice(0, 60)));
+  }
+});
