@@ -18251,7 +18251,7 @@ siguiente), todos con CI verde y `--match-head-commit`.
   el CDR (2 con porcentajes de miles) — queda en `docs/pendientes.md`.
   Capturas fuera del repo.
 
-## Fase 215 — Cliente SURA con el tablero "Televentas" (v1.103.0, 2026-10-29)
+## Fase 215 — Cliente SURA con el tablero "Televentas" (v1.104.0, 2026-10-29)
 
 **Pedido**: llevar a la plataforma el HTML de una sola página que hizo Edwin
 (`seguimiento_ventas_offline.html`, 8,7 MB: SheetJS 0.18.5 embebido, 3 Excel

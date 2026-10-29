@@ -13,10 +13,11 @@ const path = require('path');
 
 const JS = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', f), 'utf8');
 
-test('Agendamiento: tarjeta "Total de agendas" arriba, con MESES y filtros', () => {
+// Fase 214: la tarjeta paso de arriba a junto a "Aplicar filtros" (ver fase214-ranking-agendas-tema.test.js).
+test('Agendamiento: tarjeta "Total de agendas" con MESES y filtros', () => {
   const js = JS('agendas.js');
   const render = js.slice(js.indexOf('async function _agendasRenderPanel'), js.indexOf('function _agendasLeerFiltros'));
-  assert.ok(render.indexOf('agendas-total-') > -1 && render.indexOf('agendas-total-') < render.indexOf('class="form-row"'), 'la tarjeta va arriba de los filtros');
+  assert.ok(render.indexOf('agendas-total-') > -1);
   assert.match(js, /if\(def\.incluirMes\) total = datos\.reduce\(/);
   assert.match(js, /_AGENDAS_VISTAS\.especialidad\.endpoint\+'\?'\+_agendasQueryString\(campana, filtros, true\)/);
   assert.match(js, /'<div class="kl">Total de agendas · '\+esc\(_agendasPeriodoTexto\(filtros\)\)/);

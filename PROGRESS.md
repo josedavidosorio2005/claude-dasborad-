@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.103.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.104.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -366,4 +366,4 @@ mismo orden):
 - Fase 211 — Logo de InConexion en la barra de todos los tableros (isotipo en el celular) y alias de asesor al consultar Agendamiento; ORLANT: INCO20 → OTROS y LINCO3 unificado en ago/sep (v1.97.0, 2026-10-28)
 - Fase 212 — ORLANT: sede con nombre en Agendamiento (códigos y nombres de ago/sep unificados), filtro "Tipo de línea" resaltado, logo de InConexion más grande arriba a la derecha (v1.98.0) y Efectividad de Citas = agendas ÷ (llamadas + WhatsApp contestados) (v1.99.0, 2026-10-29)
 - Fase 213 — ORLANT: Cargar Datos sin salida ni citas atendidas (sin borrar), tarjeta Total de agendas, Efectividad de Citas con barras y línea, Inasistencia sin "Base baja", Ranking de asesores por contestadas, Calidad con el promedio del equipo por asesor y Calidad de octubre cargada (v1.99.1–v1.102.0, 2026-10-29)
-- Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.103.0, 2026-10-29)
+- Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.104.0, 2026-10-29)

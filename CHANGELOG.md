@@ -4,7 +4,7 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
-## v1.103.0 — Octubre 2026
+## v1.104.0 — Octubre 2026
 
 **Fase 215: cliente nuevo SURA, tablero "Televentas".**
 
@@ -25,6 +25,21 @@ sepan que hay nuevo, que se corrigio y que falta.
   funcionando igual, pero con un código en lugar del número.
 - Por ahora SURA solo lo ve el administrador, mientras se prueba. Todavía no
   tiene datos: falta montar los Excel de cada mes.
+
+## v1.103.0 — Octubre 2026
+
+**Fase 214: filtro de línea en el ranking, total de agendas junto al botón y
+tema oscuro (ORLANT).**
+
+- Agendamiento → Ranking de asesores: al lado de las métricas hay un filtro
+  "Agendas: Todos / 3P / General" (arranca en Todos). Cambia solo las
+  agendas; las contestadas son todas las del asesor. También sale en
+  Exportar. No cambia la Clasificación de usuarios.
+- Agendamiento: la tarjeta "Total de agendas" ahora va al lado de "Aplicar
+  filtros", cerca de la gráfica. Sigue a los filtros y a MESES.
+- Tema oscuro: los nombres de los ejes y las leyendas de las gráficas que
+  salían oscuros (casi negros) ahora salen claros, en el ranking y en las
+  demás gráficas que no traían color propio.
 
 ## v1.102.0 — Octubre 2026
 
