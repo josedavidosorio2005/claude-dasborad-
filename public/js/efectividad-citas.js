@@ -90,33 +90,44 @@ async function _ecDibujar(campana, i, opciones){
 
   // Fase 167: filtro "Meses" -- grafica y tabla (Fase 207: tambien la tarjeta).
   var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
-  if(desdeContactos) _ecDibujarGraficaPct(i, filasMeses);
+  if(desdeContactos) _ecDibujarGraficaContactos(i, filasMeses);
   else _ecDibujarGrafica(i, filasMeses);
 
   if(tablaEl) tablaEl.innerHTML = desdeContactos ? _ecTablaContactosHtml(filasMeses, mesUnicoEc) : _ecTablaHtml(filasMeses, mesUnicoEc);
 }
 
-// Fase 212 (pedido de Edwin): una barra de % por mes.
-function _ecDibujarGraficaPct(i, filas){
+// Fase 212 / 213 (pedido de Edwin): por mes, barras de contestadas (llamadas +
+// WhatsApp) y de agendas, y una linea del % de efectividad (eje derecho).
+// Mismo patron combo que _ecDibujarGrafica (formula de archivo).
+function _ecDibujarGraficaContactos(i, filas){
   var canvasId = 'ec-c-'+i;
   var fr = filas.map(citasEfectividadFraccion);
+  var barras = [
+    { label: 'Contestadas (llamadas + WhatsApp)', data: filas.map(function(f){ return f.contactos; }), color: (typeof CM!=='undefined'?CM:'#1a7a9e') },
+    { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: (typeof CD!=='undefined'?CD:'#0d4a5e') },
+  ];
+  var linea = { label: '% Efectividad', data: fr.map(function(x){ return x.pct === null ? null : x.pct*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') };
+  var ds = gdComboDatasets(barras, linea);
+  // "agendas de contestados" en el tooltip y en Ver datos (Fase 152, B9).
+  ds.forEach(function(d){ if(d.type === 'line') d.fraccion = { num: fr.map(function(x){ return x.num; }), den: fr.map(function(x){ return x.den; }) }; });
   var o = loBar();
-  o.plugins.legend = { display:false };
+  o.plugins.legend.labels = Object.assign({}, o.plugins.legend.labels, {
+    generateLabels: function(chart){
+      return chart.data.datasets.map(function(dset, idx){
+        var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
+        return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
+      });
+    }
+  });
   o.scales = {
-    y: { beginAtZero:true, grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    y: { position:'left', beginAtZero:true, grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
+    y2: { position:'right', beginAtZero:true, grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
     x: { grid:{display:false}, ticks:{font:{size:12}} },
   };
-  o.plugins.tooltip = Object.assign({}, o.plugins.tooltip, { callbacks: { label: function(ctx){ var x = fr[ctx.dataIndex]; return x.pct === null ? '—' : citasAtendidasFmtPct(x.pct) + ' (' + gdFmtValor(x.num) + ' agendas de ' + gdFmtValor(x.den) + ' contestados)'; } } });
   o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
-    formatter:function(v){ return v!=null ? citasAtendidasFmtPct(v/100) : ''; } };
+    formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null ? citasAtendidasFmtPct(v/100) : '') : gdFmtValor(v); } };
   loDatalabelsAuto(o);
-  _gdChart(canvasId, {
-    type: 'bar',
-    data: { labels: filas.map(function(f){ return citasAtendidasMesLbl(f.mes); }),
-      datasets: [{ label: '% Efectividad', data: fr.map(function(x){ return x.pct === null ? null : x.pct*100; }),
-        backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius:3 }] },
-    options: o,
-  });
+  _gdChart(canvasId, { data: { labels: filas.map(function(f){ return citasAtendidasMesLbl(f.mes); }), datasets: ds }, options: o });
 }
 
 function _ecTablaContactosHtml(filas, mesSel){
