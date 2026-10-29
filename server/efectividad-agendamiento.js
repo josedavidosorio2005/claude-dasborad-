@@ -138,7 +138,9 @@ function _mesesDeAgendas(db, campana) {
   return db.prepare('SELECT DISTINCT substr(fechaSolicitud,1,7) AS v FROM agendas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v);
 }
 
-function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }) {
+// Fase 214 (pedido de Edwin): `linea` (GENERAL | 3P) filtra SOLO las agendas;
+// las contestadas siguen siendo todas las del asesor (el CDR no trae la linea).
+function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses, linea }) {
   const { AGENDAS_FUENTE, agendasWhereClausulas } = require('./agendas');
   const { condSalidaCanalSql } = require('./tipificaciones');
   const { cargarAliasMapa, resolverAlias, aliasNorm } = require('./alias-asesores');
@@ -146,7 +148,7 @@ function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }) {
   const alias = cargarAliasMapa(db, campana);
   const clave = (n) => aliasNorm(resolverAlias(alias, n));
 
-  const { where, params } = agendasWhereClausulas({ campana, meses: lista.join(',') }, true, db);
+  const { where, params } = agendasWhereClausulas({ campana, meses: lista.join(','), tipoLinea: linea || undefined }, true, db);
   const agendas = db.prepare(`SELECT asesor, COUNT(*) AS n FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY asesor`).all(params);
   const contestadas = db.prepare(`
     SELECT agente,
@@ -195,6 +197,7 @@ function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }) {
   const totalAgendas = conPct.reduce((s, f) => s + f.agendas, 0);
   return {
     fuente: 'contactos',
+    linea: linea || null,
     filas: conPct.map((f) => Object.assign({ puesto: f.puesto }, f)),
     equipo: { gestiones: totalGestiones, agendas: totalAgendas, efectividad: totalGestiones > 0 ? totalAgendas / totalGestiones : 0 },
     aparte,
@@ -221,8 +224,8 @@ function efectividadAgendamientoOpciones(db, campana) {
 // los % de cada asesor -- ver control Sep-26, PROGRESS.md Fase 111).
 // Fase 207: con `meses` (lista ya validada) suma gestiones y agendas por
 // asesor en esos meses y el puesto sale de los totales sumados.
-function efectividadAgendamientoRanking(db, { campana, mes, meses }) {
-  if (usaRankingDesdeContactos(campana)) return efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }); // Fase 213
+function efectividadAgendamientoRanking(db, { campana, mes, meses, linea }) {
+  if (usaRankingDesdeContactos(campana)) return efectividadAgendamientoDesdeContactos(db, { campana, mes, meses, linea }); // Fase 213 (Fase 214: linea)
   const lista = meses ? String(meses).split(',') : [mes];
   const filas = db
     .prepare('SELECT asesor, SUM(gestiones) AS gestiones, SUM(agendas) AS agendas FROM efectividad_agendamiento WHERE campana = ? AND mes IN (' + lista.map(() => '?').join(', ') + ') GROUP BY asesor')

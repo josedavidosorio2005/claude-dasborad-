@@ -123,6 +123,10 @@ function aplicarTemaCharts(){
     SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
     SERIE_NO_CONECTADA='#d22d80';
   }
+  // Fase 214 (Edwin: en oscuro, nombres y leyendas negros que no se ven): el
+  // color por defecto de Chart.js (#666) queda en todo lo que no trae color
+  // propio (leyendas, ejes de graficas con escalas propias). Sigue al tema.
+  if(typeof Chart !== 'undefined' && Chart.defaults) Chart.defaults.color = CHART_TICK;
 }
 // Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
 var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';

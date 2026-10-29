@@ -25,6 +25,7 @@ var _eaOpciones = {};     // cache por campana: { meses }
 var _eaCampanaPorPanel = {};
 var _eaUltimoRanking = {}; // i -> ultima respuesta del servidor (para exportar/redibujar en busqueda)
 var _eaBusqueda = {};      // i -> texto de busqueda (nombre de asesor)
+var _eaLinea = {};         // Fase 214: campana -> '' (Todos) | 'GENERAL' | '3P' (solo las agendas)
 var EA_PX_POR_ASESOR = 46; // ancho de cada categoria en la grafica combo (scroll interno si no caben)
 
 async function _eaCargarOpciones(campana){
@@ -96,7 +97,7 @@ async function _eaDibujar(campana, i, opciones){
   if(avisoEl) avisoEl.innerHTML = '';
 
   var ranking = { filas: [], equipo: { gestiones: 0, agendas: 0, efectividad: 0 } };
-  try{ ranking = await apiRequest('GET', '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(mesesEa.join(','))) || ranking; }
+  try{ ranking = await apiRequest('GET', _eaRankingUrl(campana, mesesEa)) || ranking; }
   catch(e){ showToast(e.message, 'error'); }
   _eaUltimoRanking[i] = ranking;
   _eaBusqueda[i] = '';
@@ -110,9 +111,9 @@ async function _eaDibujar(campana, i, opciones){
   if(notaEl) notaEl.innerHTML = contactos ? _eaNotaContactosHtml(ranking) : '';
   if(tarjetasEl){
     var lblEa = gdMesesTarjetasTexto(mesesEa, !_gdMeses().length, mesNombreLargo); // Fase 207
-    tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
+    tarjetasEl.innerHTML = '<div class="aurora-kpis">' + (contactos ? _eaFiltroLineaHtml(campana, i) : '') +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">'+(contactos ? 'Contestadas (llamadas + WhatsApp)' : 'Gestiones')+' · '+esc(lblEa)+'</div></div>' +
-      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">Agendas · '+esc(lblEa)+'</div></div>' +
+      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">'+esc(_eaAgendasTexto(campana, contactos))+' · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+efectividadAgendamientoFmtPct(ranking.equipo.efectividad)+'</div><div class="kl">Efectividad del equipo (ponderada)</div></div>' +
       '</div>';
   }
@@ -125,12 +126,41 @@ async function _eaDibujar(campana, i, opciones){
   _eaRenderizarTabla(i);
 }
 
+// Fase 214 (pedido de Edwin): filtro "Todos / 3P / General" de las agendas, al
+// lado de las metricas; arranca en Todos. No cambia la Clasificacion de usuarios.
+var EA_LINEAS = [['', 'Todos'], ['3P', '3P'], ['GENERAL', 'General']];
+function _eaRankingUrl(campana, meses){
+  var url = '/calidad/efectividad-agendamiento/ranking?campana='+encodeURIComponent(campana)+'&meses='+encodeURIComponent(meses.join(','));
+  return _eaLinea[campana] ? url + '&linea=' + encodeURIComponent(_eaLinea[campana]) : url;
+}
+function _eaLineaTexto(campana){
+  var l = _eaLinea[campana] || '';
+  return l === 'GENERAL' ? 'General' : l;
+}
+function _eaAgendasTexto(campana, contactos){
+  return contactos && _eaLinea[campana] ? 'Agendas ' + _eaLineaTexto(campana) : 'Agendas';
+}
+function _eaFiltroLineaHtml(campana, i){
+  var actual = _eaLinea[campana] || '';
+  return '<div class="ig agendas-filtro-destacado ea-filtro-linea" style="margin-bottom:0"><label for="ea-f-linea-'+i+'">Agendas</label>'+
+    '<select id="ea-f-linea-'+i+'" onchange="_eaCambiarLinea('+i+', this.value)">'+
+    EA_LINEAS.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===actual?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select></div>';
+}
+async function _eaCambiarLinea(i, valor){
+  var campana = _eaCampanaPorPanel[i];
+  _eaLinea[campana] = valor || '';
+  await _eaDibujar(campana, i, _eaOpciones[campana] || { meses: [] });
+  var sel = document.getElementById('ea-f-linea-'+i);
+  if(sel) sel.focus();
+}
+
 // Fase 213: como se calcula, que el total no cuadra exacto con Efectividad de
 // Citas, y "OTROS" (y usuarios sin asesor) aparte, con sus agendas.
 function _eaNotaContactosHtml(ranking){
   var aparte = (ranking.aparte || []).map(function(a){ return esc(textoFormatoNombre(a.asesor)) + ': ' + gdFmtValor(a.agendas) + ' agendas'; });
   return '<p class="tipif-linea-nota">Efectividad por asesor = agendas del asesor ÷ sus contestadas (llamadas + WhatsApp de ingreso, del CDR de Tipificación). '+
     'El total del equipo no cuadra exacto con Efectividad de Citas, que usa los reportes de Tráfico: el CDR y el reporte de Wolkvox cuentan distinto.'+
+    (ranking.linea ? ' Filtro ' + esc(ranking.linea === 'GENERAL' ? 'General' : ranking.linea) + ': solo cambian las agendas; las contestadas son todas las del asesor (el CDR no trae la línea).' : '') +
     (aparte.length ? ' Fuera del ranking: ' + aparte.join(' · ') + '.' : '') + '</p>';
 }
 
@@ -160,9 +190,10 @@ function _eaDibujarGrafica(i, filas, contactos){
     }
   });
   o.scales = {
-    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}} },
-    y2: { position:'right', grid:{display:false}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
-    x: { grid:{display:false}, ticks:{font:{size:12}} },
+    // Fase 214: ejes con el color del tema (antes el #666 de Chart.js, oscuro en tema oscuro).
+    y: { position:'left', grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}, color:_eaTick()} },
+    y2: { position:'right', grid:{display:false}, ticks:{font:{size:12}, color:_eaTick(), callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:12}, color:_eaTick()} },
   };
   o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
     formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
@@ -179,6 +210,8 @@ function _eaDibujarGrafica(i, filas, contactos){
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
 }
+
+function _eaTick(){ return typeof CHART_TICK!=='undefined' ? CHART_TICK : '#4f6f7d'; }
 
 // Tabla: TODOS los asesores, en el orden ya calculado por el servidor
 // (puesto) -- el buscador solo FILTRA por nombre, nunca reordena.
