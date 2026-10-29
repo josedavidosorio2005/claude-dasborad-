@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.102.0 — Octubre 2026
+
+**Fase 213: Calidad con el promedio del equipo por asesor.**
+
+- Calidad → "Promedio de calidad por asesor": ahora tiene una línea con el
+  promedio del equipo (el de todos los monitoreos) y cada asesor sale
+  marcado como por encima (▲) o por debajo (▼) de ese promedio, con su color.
+  Arriba de la gráfica se lee el promedio y cuántos asesores quedan por
+  encima y por debajo.
+- Carga masiva de Calidad: las filas vacías que trae la plantilla (solo con
+  fórmulas) ya no generan avisos de "asesor vacío".
+
 ## v1.101.0 — Octubre 2026
 
 **Fase 213: Ranking de asesores con contestadas y agendas (ORLANT).**

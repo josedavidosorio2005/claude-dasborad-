@@ -72,6 +72,30 @@ function calDashPromedioPorAsesor(monitoreos) {
     .sort(function (a, b) { return b.promedio - a.promedio; });
 }
 
+// Fase 213 (pedido de Edwin, Calidad ORLANT): promedio del EQUIPO = el de
+// todos los monitoreos (no el promedio de los promedios por asesor, decision
+// del usuario) y, por asesor, si queda por encima (>=) o por debajo. La
+// comparacion se hace con los valores sin redondear; se muestran con 1
+// decimal (asesor, igual que calDashPromedioPorAsesor) y 2 (equipo).
+function calDashPuntajeVsEquipo(monitoreos) {
+  var arr = (monitoreos || []).filter(function (m) { return m.asesor && typeof m.puntaje === 'number'; });
+  if (!arr.length) return { equipo: null, filas: [], encima: 0, debajo: 0 };
+  var equipo = arr.reduce(function (a, m) { return a + m.puntaje; }, 0) / arr.length;
+  var sumas = {}, cuentas = {};
+  arr.forEach(function (m) { sumas[m.asesor] = (sumas[m.asesor] || 0) + m.puntaje; cuentas[m.asesor] = (cuentas[m.asesor] || 0) + 1; });
+  var filas = Object.keys(sumas).map(function (a) {
+    var exacto = sumas[a] / cuentas[a];
+    return { asesor: a, promedio: Math.round(exacto * 10) / 10, encima: exacto >= equipo, _exacto: exacto };
+  }).sort(function (x, y) { return y._exacto - x._exacto; })
+    .map(function (f) { return { asesor: f.asesor, promedio: f.promedio, encima: f.encima }; });
+  return {
+    equipo: Math.round(equipo * 100) / 100,
+    filas: filas,
+    encima: filas.filter(function (f) { return f.encima; }).length,
+    debajo: filas.filter(function (f) { return !f.encima; }).length,
+  };
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 // Fase 145 (Calidad sin monitoreos): texto del aviso cuando una campaña
 // todavia no tiene NINGUN monitoreo de calidad (ni en el mes elegido ni en
@@ -142,6 +166,7 @@ function calEstadoHtml(texto, opts) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    calDashPuntajeVsEquipo: calDashPuntajeVsEquipo,
     calEstadoHtml: calEstadoHtml,
     calIconoHtml: calIconoHtml,
     calDashAltoBarrasAsesores: calDashAltoBarrasAsesores,

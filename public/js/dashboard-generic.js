@@ -2153,7 +2153,11 @@ function _gdRenderCalidad(p, i){
     // monitoreos (ni dataset, ni tooltip, ni eje: calDashPromedioPorAsesor
     // ni siquiera lo calcula). Mismo `arr` ya filtrado por mes/asesor/fecha
     // que calidad_kpis/calidad_pie -- el promedio nunca mezcla meses.
-    var porAsesor = calDashPromedioPorAsesor(arr);
+    // Fase 213 (pedido de Edwin): ademas, el promedio del equipo (todos los
+    // monitoreos) como linea, y cada asesor por encima (▲) o por debajo (▼):
+    // color de marca + simbolo, nunca solo color (WCAG 1.4.1).
+    var vsEquipo = calDashPuntajeVsEquipo(arr);
+    var porAsesor = vsEquipo.filas;
     var labelsAsesores = porAsesor.map(function(x){ return textoFormatoNombre(x.asesor); });
     var valoresAsesores = porAsesor.map(function(x){ return x.promedio; });
     var optsBar = loFmt(loBar(), '%');
@@ -2170,11 +2174,34 @@ function _gdRenderCalidad(p, i){
     var canvasAsesores = document.getElementById('gd-c'+i);
     var wrapAsesores = canvasAsesores && canvasAsesores.closest ? canvasAsesores.closest('.aurora-chart-wrap') : null;
     if(wrapAsesores) wrapAsesores.style.height = calDashAltoBarrasAsesores(labelsAsesores.length) + 'px';
+    if(wrapAsesores){
+      var notaEq = document.getElementById('cal-equipo-nota-'+i);
+      if(!notaEq){ notaEq = document.createElement('p'); notaEq.id = 'cal-equipo-nota-'+i; notaEq.className = 'tipif-linea-nota'; wrapAsesores.parentNode.insertBefore(notaEq, wrapAsesores); }
+      notaEq.textContent = vsEquipo.equipo === null ? '' : 'Promedio del equipo (todos los monitoreos): ' + vsEquipo.equipo.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %' +
+        ' · ▲ ' + vsEquipo.encima + ' por encima · ▼ ' + vsEquipo.debajo + ' por debajo';
+    }
+    var colEncima = colorSerie('principal'), colDebajo = colorSerie('secundaria');
+    optsBar.plugins.legend = { display:true, labels: { generateLabels: function(){
+      return [
+        { text: '▲ Por encima del promedio', fillStyle: colEncima, strokeStyle: colEncima, lineWidth: 0 },
+        { text: '▼ Por debajo del promedio', fillStyle: colDebajo, strokeStyle: (typeof SERIE_SECUNDARIA_BORDE!=='undefined' && SERIE_SECUNDARIA_BORDE) || colDebajo, lineWidth: 1 },
+        { text: 'Promedio del equipo', fillStyle: colorSerie('linea'), strokeStyle: colorSerie('linea'), lineWidth: 2 },
+      ];
+    } } };
+    optsBar.plugins.datalabels = Object.assign({}, optsBar.plugins.datalabels, {
+      display: function(ctx){ return ctx.dataset.type !== 'line'; },
+      formatter: function(v, ctx){ return gdFmtValor(v, '%') + ' ' + (porAsesor[ctx.dataIndex] && porAsesor[ctx.dataIndex].encima ? '▲' : '▼'); },
+    });
     loDatalabelsAuto(optsBar);
-    _gdChart('gd-c'+i, { type:'bar',
-      data:{ labels: labelsAsesores, datasets:[{ label:'Promedio', data: valoresAsesores,
-        backgroundColor: colorSerie('principal'), borderRadius:3 }] },
-      options: optsBar });
+    var dsAsesores = [{ type:'bar', label:'Promedio', data: valoresAsesores, borderRadius:3, order: 2,
+      backgroundColor: porAsesor.map(function(x){ return x.encima ? colEncima : colDebajo; }),
+      borderColor: porAsesor.map(function(x){ return x.encima ? colEncima : ((typeof SERIE_SECUNDARIA_BORDE!=='undefined' && SERIE_SECUNDARIA_BORDE) || colDebajo); }),
+      borderWidth: porAsesor.map(function(x){ return x.encima ? 0 : 1; }) }];
+    if(vsEquipo.equipo !== null){
+      dsAsesores.push({ type:'line', label:'Promedio del equipo', data: valoresAsesores.map(function(){ return vsEquipo.equipo; }),
+        borderColor: colorSerie('linea'), borderWidth: 2, borderDash: [6, 4], pointRadius: 0, order: 1 });
+    }
+    _gdChart('gd-c'+i, { type:'bar', data:{ labels: labelsAsesores, datasets: dsAsesores }, options: optsBar });
     return;
   }
   // calidad_pie — clasificacion cualitativa fija (sobresaliente/no critico/
