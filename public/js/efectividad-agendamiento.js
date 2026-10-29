@@ -16,7 +16,7 @@
 //
 // Fase 213 (pedido de Edwin, solo ORLANT): el servidor manda `fuente:
 // 'contactos'` -- "gestiones" son las contestadas del asesor (llamadas +
-// WhatsApp de ingreso del CDR de Tipificacion), "OTROS" y los usuarios sin
+// WhatsApp del CDR de Tipificacion; Fase 214: ingreso + salida), "OTROS" y los usuarios sin
 // asesor van aparte (`aparte`, en una nota). Ver
 // efectividadAgendamientoDesdeContactos (server/efectividad-agendamiento.js).
 'use strict';
@@ -61,7 +61,7 @@ async function _efectividadAgendamientoRenderPanel(p, i){
   html += '<div id="ea-chart-wrap-'+i+'"></div>';
   html += '<div class="search-bar" style="max-width:260px;margin:14px 0 12px"><input type="text" id="ea-buscar-'+i+'" aria-label="Buscar asesor" placeholder="Buscar asesor…" oninput="_eaBuscarInput('+i+', this.value)"></div>';
   html += '<div class="table-wrap"><table class="aurora-table" id="ea-tabla-'+i+'"><thead><tr>' +
-    '<th>Puesto</th><th style="text-align:left">Asesor</th><th id="ea-th-gestiones-'+i+'">Gestiones</th><th>Agendas</th><th>% Efectividad</th>' +
+    '<th>Puesto</th><th style="text-align:left">Asesor</th><th class="ea-col-contactos" hidden>Ingreso</th><th class="ea-col-contactos" hidden>Salida</th><th id="ea-th-gestiones-'+i+'">Gestiones</th><th>Agendas</th><th>% Efectividad</th>' +
     '</tr></thead><tbody></tbody></table></div>';
   html += '</div>';
   host.innerHTML = html;
@@ -107,12 +107,14 @@ async function _eaDibujar(campana, i, opciones){
   var contactos = ranking.fuente === 'contactos'; // Fase 213
   var thG = document.getElementById('ea-th-gestiones-'+i);
   if(thG) thG.textContent = contactos ? 'Contestadas' : 'Gestiones';
+  // Fase 214: ingreso y salida por separado (solo ORLANT).
+  Array.prototype.forEach.call(document.querySelectorAll('#ea-tabla-'+i+' .ea-col-contactos'), function(th){ th.hidden = !contactos; });
   var notaEl = document.getElementById('ea-nota-'+i);
   if(notaEl) notaEl.innerHTML = contactos ? _eaNotaContactosHtml(ranking) : '';
   if(tarjetasEl){
     var lblEa = gdMesesTarjetasTexto(mesesEa, !_gdMeses().length, mesNombreLargo); // Fase 207
     tarjetasEl.innerHTML = '<div class="aurora-kpis">' + (contactos ? _eaFiltroLineaHtml(campana, i) : '') +
-      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">'+(contactos ? 'Contestadas (llamadas + WhatsApp)' : 'Gestiones')+' · '+esc(lblEa)+'</div></div>' +
+      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">'+(contactos ? 'Contestadas (ingreso + salida)' : 'Gestiones')+' · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">'+esc(_eaAgendasTexto(campana, contactos))+' · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+efectividadAgendamientoFmtPct(ranking.equipo.efectividad)+'</div><div class="kl">Efectividad del equipo (ponderada)</div></div>' +
       '</div>';
@@ -156,9 +158,15 @@ async function _eaCambiarLinea(i, valor){
 
 // Fase 213: como se calcula, que el total no cuadra exacto con Efectividad de
 // Citas, y "OTROS" (y usuarios sin asesor) aparte, con sus agendas.
+// Fase 214: contestadas = todo el CDR (ingreso + salida); quien pasa del 100 %
+// lleva la marca; los agentes de Wolkvox sin usuario van con "OTROS".
 function _eaNotaContactosHtml(ranking){
-  var aparte = (ranking.aparte || []).map(function(a){ return esc(textoFormatoNombre(a.asesor)) + ': ' + gdFmtValor(a.agendas) + ' agendas'; });
-  return '<p class="tipif-linea-nota">Efectividad por asesor = agendas del asesor ÷ sus contestadas (llamadas + WhatsApp de ingreso, del CDR de Tipificación). '+
+  var aparte = (ranking.aparte || []).map(function(a){
+    return esc(textoFormatoNombre(a.asesor)) + ': ' + (a.sinUsuario ? gdFmtValor(a.gestiones) + ' contestadas, sin usuario de Agendamiento' : gdFmtValor(a.agendas) + ' agendas');
+  });
+  var marcados = (ranking.filas || []).filter(function(f){ return f.sobreWolkvox; }).length;
+  return '<p class="tipif-linea-nota">Efectividad por asesor = agendas del asesor ÷ sus contestadas (llamadas + WhatsApp, de ingreso y de salida, del CDR de Tipificación). '+
+    (marcados ? '⚠ = ' + EA_MARCA_WOLKVOX + ' (más del 100 %): en la gráfica su punto queda arriba, con su % real en la cifra. ' : '') +
     'El total del equipo no cuadra exacto con Efectividad de Citas, que usa los reportes de Tráfico: el CDR y el reporte de Wolkvox cuentan distinto.'+
     (ranking.linea ? ' Filtro ' + esc(ranking.linea === 'GENERAL' ? 'General' : ranking.linea) + ': solo cambian las agendas; las contestadas son todas las del asesor (el CDR no trae la línea).' : '') +
     (aparte.length ? ' Fuera del ranking: ' + aparte.join(' · ') + '.' : '') + '</p>';
@@ -172,10 +180,11 @@ function _eaDibujarGrafica(i, filas, contactos){
   var canvasId = 'ea-c-'+i;
   var labels = filas.map(function(f){ return textoFormatoNombre(f.asesor); });
   var barras = [
-    { label: contactos ? 'Contestadas (llamadas + WhatsApp)' : 'Gestiones', data: filas.map(function(f){ return f.gestiones; }), color: contactos && typeof colorSerie==='function' ? colorSerie('principal') : (typeof CM!=='undefined'?CM:'#1a7a9e') },
+    { label: contactos ? 'Contestadas (ingreso + salida)' : 'Gestiones', data: filas.map(function(f){ return f.gestiones; }), color: contactos && typeof colorSerie==='function' ? colorSerie('principal') : (typeof CM!=='undefined'?CM:'#1a7a9e') },
     { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: contactos && typeof colorSerie==='function' ? colorSerie('secundaria') : (typeof CD!=='undefined'?CD:'#0d4a5e') },
   ];
-  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.efectividad === null ? null : f.efectividad*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
+  var techo = contactos ? eaTechoPct(filas) : null; // Fase 214
+  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.efectividad === null ? null : (contactos ? eaPctEnEscala(f, techo) : f.efectividad*100); }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
   var ds = gdComboDatasets(barras, linea);
   if(contactos && typeof estiloBarraSecundaria === 'function') Object.assign(ds[1], estiloBarraSecundaria()); // Fase 213
   // Fase 152 (B9): "agendas de gestiones" en el tooltip y en Ver datos.
@@ -185,7 +194,7 @@ function _eaDibujarGrafica(i, filas, contactos){
     generateLabels: function(chart){
       return chart.data.datasets.map(function(dset, idx){
         var color = dset.type === 'line' ? dset.borderColor : dset.backgroundColor;
-        return { text: dset.label, fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
+        return { text: dset.label, fontColor: leyendaColorTexto(), fillStyle: color, strokeStyle: color, lineWidth: dset.type==='line' ? 2 : 0, hidden: !chart.isDatasetVisible(idx), datasetIndex: idx };
       });
     }
   });
@@ -204,8 +213,24 @@ function _eaDibujarGrafica(i, filas, contactos){
     o.plugins.datalabels.backgroundColor = (typeof CHART_DL_BG!=='undefined' ? CHART_DL_BG : 'rgba(255,255,255,0.75)');
     o.plugins.datalabels.borderRadius = 3;
     o.plugins.datalabels.display = function(ctx){ return ctx.dataset.type === 'line'; };
-    o.scales.y2.grace = '12%'; // la cifra del 1er puesto no se corta arriba
     o.scales.y.grace = '8%';
+    // Fase 214: el eje del % no pasa del techo (eaTechoPct); los marcados (⚠)
+    // quedan arriba y muestran su % real en la cifra, el tooltip y Ver datos.
+    o.scales.y2.min = 0;
+    o.scales.y2.max = techo;
+    o.layout = Object.assign({}, o.layout, { padding: Object.assign({}, (o.layout && o.layout.padding) || {}, { top: 28 }) });
+    var pctReal = function(k){ var f = filas[k]; return f && f.efectividad !== null ? gdFmtValor(f.efectividad*100,'%') : ''; };
+    o.plugins.datalabels.formatter = function(v, ctx){
+      if(ctx.dataset.type !== 'line') return v;
+      var f = filas[ctx.dataIndex];
+      return f && f.sobreWolkvox ? '⚠ ' + pctReal(ctx.dataIndex) : (v!=null?gdFmtValor(v,'%'):'');
+    };
+    o.plugins.tooltip = o.plugins.tooltip || {};
+    o.plugins.tooltip.callbacks = Object.assign({}, o.plugins.tooltip.callbacks, { label: function(ctx){
+      if(ctx.dataset.type !== 'line') return (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + gdFmtValor(ctx.raw);
+      var f = filas[ctx.dataIndex];
+      return '% Efectividad: ' + pctReal(ctx.dataIndex) + (f && f.sobreWolkvox ? ' ⚠ ' + EA_MARCA_WOLKVOX : '');
+    } });
   }
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
@@ -226,7 +251,7 @@ function _eaRenderizarTabla(i){
   var tbody = tabla.querySelector('tbody');
   if(!tbody) return;
   if(!filas.length){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--c-text-muted);padding:18px">Sin asesores para este filtro.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="'+(ranking.fuente === 'contactos' ? 7 : 5)+'" style="text-align:center;color:var(--c-text-muted);padding:18px">Sin asesores para este filtro.</td></tr>';
     return;
   }
   var paleta = (typeof PC !== 'undefined') ? PC : ['#0d4a5e'];
@@ -236,9 +261,10 @@ function _eaRenderizarTabla(i){
     return '<tr'+estiloFila+'>'+
       '<td>'+f.puesto+'</td>'+
       '<td style="text-align:left">'+esc(textoFormatoNombre(f.asesor))+'</td>'+
+      (ranking.fuente === 'contactos' ? '<td>'+gdFmtValor(f.ingreso)+'</td><td>'+gdFmtValor(f.salida)+'</td>' : '')+ // Fase 214
       '<td>'+gdFmtValor(f.gestiones)+'</td>'+
       '<td>'+gdFmtValor(f.agendas)+'</td>'+
-      '<td>'+efectividadAgendamientoFmtPct(f.efectividad)+'</td>'+
+      '<td>'+efectividadAgendamientoFmtPct(f.efectividad)+(f.sobreWolkvox ? ' <span class="ea-marca-wolkvox">⚠ '+EA_MARCA_WOLKVOX+'</span>' : '')+'</td>'+
     '</tr>';
   }).join('');
 }
