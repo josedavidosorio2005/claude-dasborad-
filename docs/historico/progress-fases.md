@@ -18176,3 +18176,77 @@ Pedidos de Edwin del 29/10 (solo ORLANT). PRs #597 (v1.98.0) y #598 (v1.99.0).
 - Pendientes: octubre parcial de Efectividad (se recalcula sola), si se
   oculta la carga CITAS_ATENDIDAS para ORLANT, y la pregunta de las skills
   de Confirmaciones ahora también toca el denominador de Efectividad.
+
+### Fase 213 — Cargas ocultas, Total de agendas, Efectividad con barras, Inasistencia sin base baja, Ranking por contestadas y Calidad de octubre (2026-10-29, v1.99.1 → v1.102.0)
+
+Pedidos de Edwin del 29/10 (solo ORLANT). PRs #600, #601, #602, #603 y #604,
+uno a la vez (cada deploy terminado y health con su versión antes del
+siguiente), todos con CI verde y `--match-head-commit`.
+
+- **#600 (v1.99.1)** — Cargar Datos de ORLANT sin "Llamadas y WhatsApp de
+  salida" ni la de citas atendidas (`CARGAS_RETIRADAS_POR_CLIENTE`,
+  `server/centro-cargas.js`). No se borra nada: mismo criterio que
+  `retirada` (Fase 194), lo guardado se descarga, deshace o elimina por id.
+- **#601 (v1.100.0)** — Agendamiento: tarjeta "Total de agendas" arriba que
+  sigue a MESES y a los filtros en las 3 sub-pestañas. Efectividad de Citas:
+  barras de contestadas y de agendas por mes y línea del % (fórmula igual).
+  Inasistencia por especialidad sin el letrero ni el * de "Base baja", de
+  mayor a menor % (`inasistenciaPorPct`; `inasistenciaOrdenarBaseBaja` con
+  umbral 0 volvía a 30 por defecto, por eso no se reutilizó).
+- **#602 (v1.100.1)** — hallazgo de la verificación en producción: a 375 px
+  en tema oscuro las cifras de las barras de Efectividad no se leían; colores
+  de serie de marca, fondo de etiqueta y, a ≤480 px, solo las cifras del %.
+- **#603 (v1.101.0)** — Ranking de asesores por contestadas
+  (`efectividadAgendamientoDesdeContactos`, solo ORLANT): agendas por asesor
+  de `AGENDAS_FUENTE` (Clasificación de usuarios con fecha de cambio: INCO18
+  reparte sus agendas el 07/10) contra las contestadas de ingreso del CDR de
+  Tipificación (llamadas + WhatsApp, `condSalidaCanalSql`), cruzadas por
+  nombre con alias. "OTROS" y usuarios sin asesor aparte, en una nota que
+  también dice que el total no cuadra exacto con Efectividad de Citas. El
+  archivo EFECTIVIDAD_AGENDAMIENTO no se borra (su carga sigue para otros
+  clientes).
+- **#604 (v1.102.0)** — Calidad: "Promedio de calidad por asesor" con la
+  línea del promedio del equipo (todos los monitoreos, decisión del usuario) y
+  cada asesor ▲ por encima / ▼ por debajo (`calDashPuntajeVsEquipo`, compara
+  sin redondear); sigue sin el número de monitoreos por asesor y fuera de
+  Exportar (Fase 130). Carga masiva: las filas vacías con fórmulas se saltan
+  sin aviso (antes 160 avisos con el archivo de octubre).
+- **Cambio de agendas ago/sep (solo lectura, historial y Centro de cargas)**:
+  el 29/10 entre las 08:37 y las 08:42 (Colombia; 13:37–13:42 en el
+  historial, hora del servidor) un usuario de la plataforma eliminó desde
+  Cargar Datos las Agendas de ago/sep/oct (11.040 / 13.146 / 8.635, del
+  archivo "AGENDAS DE AGOSTO Y SEPTIEMBRE" y del de octubre) y las volvió a
+  subir con los archivos de cada mes en base cruda: "AGENDAS MES DE AGOSTO"
+  11.039, "AGENDAS MES DE SEPTIEMBRE" 13.088 y "AGENDAS MES DE OCTUBRE"
+  8.635 (0 reemplazadas). También eliminó Efectividad de Agendamiento ago/sep
+  (19 / 20) y Efectividad de Citas ago/sep (1 / 1). Las versiones anteriores
+  quedan 30 días para Deshacer (versiones 47–49 de Agendas). No fue el código.
+- **Calidad de octubre** (OK del usuario, una sola vez, con su sesión, por
+  la interfaz: Cargar Datos de Dashboards → ORLANT → archivo, el mismo flujo
+  de la Fase 130). Antes, en solo lectura: octubre sin monitoreos (septiembre
+  95), así que sin duplicados; "# Teléfono" se guarda en `monitoreos.telefono`
+  y solo lo ven administrador, CALIDAD, SUPERVISOR y REPORTES, y el asesor en
+  los suyos (Fase 151). La vista previa: 1 sección de Calidad, 58 filas, 20
+  asesores, 0 avisos, ninguna otra sección con filas; escritura permitida solo
+  a `/monitoreos/bulk`. Resultado: 58 insertadas, 0 actualizadas, 0 omitidas;
+  promedio del equipo 96,72 % (54 sobresaliente / 4 no crítico / 0 crítico),
+  12 asesores por encima y 8 por debajo; septiembre sigue en 95.
+- **Archivo de Calidad (estructura)**: 3 hojas — Diccionario (17 ítems, 7
+  críticos, pesos 100), Monitoreos (encabezado en la fila 4, 28 columnas) y
+  Resumen por Asesor (solo 2 ejemplos; su fórmula de promedio empieza en la
+  fila 20 y deja fuera las filas 5–19: no se usa). Misma plantilla que ya
+  tenía ORLANT (pesos, críticos, −20 y cortes 70/90).
+- Pruebas: `fase213-ocultar-cargas-orlant`, `fase213-agendas-efectividad-
+  inasistencia`, `fase213-ranking-contestadas` y `fase213-calidad-puntaje-
+  asesor` (datos inventados); las de los archivos de Efectividad de
+  Agendamiento y de Citas pasan a un cliente de prueba; 2 guardas de la Fase
+  164 se actualizaron al diseño nuevo. Suite 2374/2374, `npm audit` 0.
+- **Verificación en producción** (solo lectura salvo la carga autorizada; 0
+  escrituras bloqueadas, 0 errores de consola; 1440/768/375, claro y oscuro):
+  Centro de ORLANT sin salida ni citas; Total de agendas oct 8.635 (General
+  5.142, 3P 3.493) y Ago+Sep 24.127; Efectividad con barras y línea; 19
+  especialidades sin "Base baja"; ranking oct 66,24 % (13.030 contestadas,
+  8.631 agendas, OTROS 4 aparte), con la nota; Calidad oct como arriba.
+  **Hallazgo**: en octubre 4 asesores tienen más agendas que contestadas en
+  el CDR (2 con porcentajes de miles) — queda en `docs/pendientes.md`.
+  Capturas fuera del repo.
