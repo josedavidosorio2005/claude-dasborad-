@@ -2472,9 +2472,9 @@ async function _gdExportarInasistencia(p, i){
     try{ filasEsp = await apiRequest('GET', '/calidad/inasistencia/especialidad?'+paramsEsp.toString()) || []; }catch(e){}
     if(!filasEsp.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Inasistencia para ' + gdMesesTarjetasTexto(mesesEspExp, false, mesNombreLargo) + ' con estos filtros.' }];
     var conPct = filasEsp.map(function(f){ return { especialidad: f.especialidad, pct: inasistenciaPctPonderado(f.inasistencia, f.pendiente, f.total), total: f.total }; });
-    var ordenadas = inasistenciaOrdenarBaseBaja(conPct, (typeof INASISTENCIA_BASE_BAJA_UMBRAL!=='undefined') ? INASISTENCIA_BASE_BAJA_UMBRAL : 30);
+    var ordenadas = inasistenciaPorPct(conPct); // Fase 213: sin base baja
     return [{ titulo: titulo, tipo: 'tabla', filas: ordenadas.map(function(f){
-      return { Especialidad: textoFormatoNombre(f.especialidad) + (f.baseBaja?' *':''), '% de inasistencia': f.pct===null?'':f.pct };
+      return { Especialidad: textoFormatoNombre(f.especialidad), '% de inasistencia': f.pct===null?'':f.pct };
     }) }];
   }
 

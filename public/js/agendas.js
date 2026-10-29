@@ -145,6 +145,7 @@ async function _agendasRenderPanel(p, i){
 
   var html = '<div class="aurora-card">';
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
+  html += '<div id="agendas-total-'+i+'" aria-live="polite"></div>'; // Fase 213
   html += '<div class="form-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px">';
   html += '<div class="ig" style="min-width:110px;margin-bottom:0"><label for="agendas-f-mes-'+i+'">Mes</label><select id="agendas-f-mes-'+i+'">' +
     // Fase 207: con varios meses en MESES, la opcion "Meses elegidos (...)".
@@ -226,6 +227,19 @@ function _agendasFiltrosTexto(filtros){
   return partes.join(' · ');
 }
 
+// Fase 213 (pedido de Edwin): tarjeta "Total de agendas" arriba -- el periodo
+// (mes, meses de MESES o todos) y los filtros puestos.
+function _agendasPeriodoTexto(filtros){
+  var f = filtros || {};
+  if(f.mes) return mesNombreLargo(f.mes);
+  if(f.meses && f.meses.length) return gdMesesTexto(f.meses, mesNombreLargo);
+  return 'Todos los meses';
+}
+function _agendasTarjetaTotalHtml(total, filtros){
+  return '<div class="aurora-kpis"><div class="aurora-kpi gd-kpi"><div class="kv">'+(total === null ? '—' : gdFmtValor(total))+'</div>'+
+    '<div class="kl">Total de agendas · '+esc(_agendasPeriodoTexto(filtros))+'</div></div></div>';
+}
+
 // Fase 212 (Edwin: "al elegir General por un momento no salió nada"): cada
 // dibujo lleva un numero; si mientras llega la respuesta se pidio otro, la
 // respuesta vieja se descarta (nunca pisa a la mas nueva).
@@ -242,7 +256,20 @@ async function _agendasDibujar(campana, i, opciones, vista){
   try{
     datos = await apiRequest('GET', def.endpoint+'?'+_agendasQueryString(campana, filtros, def.incluirMes)) || datos;
   }catch(e){ showToast(e.message, 'error'); }
+  // Fase 213: "Total de agendas" sigue a MESES y a los filtros en las 3 vistas.
+  // "Por especialidad" ya trae ese periodo; las otras 2 son series de todos los
+  // meses, asi que el total se pide aparte (mismo endpoint, con el mes).
+  var total = null;
+  if(def.incluirMes) total = datos.reduce(function(a, r){ return a + (r.cantidad || 0); }, 0);
+  else {
+    try{
+      var porEsp = await apiRequest('GET', _AGENDAS_VISTAS.especialidad.endpoint+'?'+_agendasQueryString(campana, filtros, true)) || [];
+      total = porEsp.reduce(function(a, r){ return a + (r.cantidad || 0); }, 0);
+    }catch(e){ total = null; }
+  }
   if(_agendasDibujoN[i] !== n) return;
+  var totalEl = document.getElementById('agendas-total-'+i);
+  if(totalEl) totalEl.innerHTML = _agendasTarjetaTotalHtml(total, filtros);
 
   var canvasId = 'agendas-c-'+i;
   var txtFiltros = _agendasFiltrosTexto(filtros);

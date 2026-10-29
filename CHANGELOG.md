@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.100.0 — Octubre 2026
+
+**Fase 213: total de agendas, gráfica de Efectividad de Citas e
+Inasistencia sin aviso de base baja (ORLANT).**
+
+- Agendamiento: arriba sale una tarjeta **"Total de agendas"** que cambia
+  con MESES y con los filtros (por ejemplo, Tipo de línea o Sede).
+- Efectividad de Citas: la gráfica muestra, por mes, una barra de las
+  contestadas (llamadas + WhatsApp), otra de las agendas y una línea con el
+  % de efectividad. La fórmula no cambia.
+- Inasistencia por especialidad: ya no sale el aviso "Base baja" ni el
+  asterisco; todas las especialidades van de mayor a menor %.
+
 ## v1.99.1 — Octubre 2026
 
 **Fase 213: Cargar Datos de ORLANT sin las cargas que ya no se usan.**

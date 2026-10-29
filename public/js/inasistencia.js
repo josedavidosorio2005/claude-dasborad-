@@ -26,17 +26,20 @@
 // elegido arriba (Fase 207: MESES, igual que el resto de la plataforma -- no hay
 // un selector de mes propio), respetando Sede/Entidad (la Especialidad no
 // aplica a esta vista, su filtro ni se muestra aquí: el punto es desglosar
-// TODAS). Las especialidades con menos de INASISTENCIA_BASE_BAJA_UMBRAL
-// citas en ese mes se mandan al final con un asterisco (ver
-// inasistenciaOrdenarBaseBaja, inasistencia-logic.js) -- nunca se muestra
-// el conteo real en pantalla (Fase 106: solo porcentaje).
+// TODAS), de mayor a menor % -- nunca se muestra el conteo real en pantalla
+// (Fase 106: solo porcentaje). Fase 213: sin "Base baja" (inasistenciaPorPct).
 'use strict';
 
 var _inasistenciaOpciones = {}; // cache por campana: { meses, sedes, especialidades, entidades }
 var _inasistenciaEstado = {};   // estado de filtros por CAMPANA (compartido entre las 2 sub-pestañas): { mes, sede, especialidad, entidad }
 var _inasistenciaCampanaPorPanel = {}; // i -> campana (para _inasistenciaAplicarFiltros)
 var _inasistenciaVistaPorPanel = {};   // i -> 'pormes'|'porespecialidad'
-var INASISTENCIA_BASE_BAJA_UMBRAL = 30; // ver inasistenciaOrdenarBaseBaja (inasistencia-logic.js) -- mismo numero, documentado alla.
+// Fase 213 (pedido de Edwin): sin el letrero ni el * de "Base baja" -- todas las
+// especialidades van de mayor a menor % (inasistenciaPorPct).
+// inasistenciaOrdenarBaseBaja (inasistencia-logic.js) queda por si se vuelve a pedir.
+function inasistenciaPorPct(filas){
+  return (filas || []).slice().sort(function(a, b){ return (b.pct || 0) - (a.pct || 0); });
+}
 
 var _INASISTENCIA_VISTAS = {
   pormes: { titulo: 'Inasistencia por Mes' },
@@ -319,9 +322,8 @@ function _inasistenciaTablaHtml(agregado, mesSel, esFormatoViejo){
 }
 
 // "Por especialidad": una barra por especialidad de los meses de MESES
-// sumados (Fase 207), respetando Sede/Entidad. Las de base baja (<
-// INASISTENCIA_BASE_BAJA_UMBRAL citas sumadas en esos meses) se mandan al
-// final con asterisco (inasistenciaOrdenarBaseBaja) -- nunca se expone el conteo.
+// sumados (Fase 207), respetando Sede/Entidad, de mayor a menor % (Fase 213:
+// sin "Base baja") -- nunca se expone el conteo.
 async function _inasistenciaRenderPorEspecialidad(host, campana, i, titulo, opciones){
   var estado = _inasistenciaEstado[campana] || {};
   var html = '<div class="aurora-card">';
@@ -329,9 +331,8 @@ async function _inasistenciaRenderPorEspecialidad(host, campana, i, titulo, opci
   html += _inasistenciaFiltrosHtml(i, 'porespecialidad', opciones, estado);
   html += '<div id="inasist-esp-aviso-'+i+'"></div>';
   html += '<div class="aurora-card-title" style="margin-top:10px">% de inasistencia por especialidad '+
-    '<span class="gd-help" title="% de inasistencia = (Inasistencias + Pendientes) de esa especialidad en los meses elegidos en MESES, dividido entre su total de citas. Las especialidades con muy pocas citas en esos meses (marcadas con *) se muestran al final: su % puede no ser representativo.">?</span></div>';
+    '<span class="gd-help" title="% de inasistencia = (Inasistencias + Pendientes) de esa especialidad en los meses elegidos en MESES, dividido entre su total de citas.">?</span></div>';
   html += '<div class="aurora-chart-wrap" style="height:380px"><canvas id="inasist-c-porespecialidad-'+i+'"></canvas></div>';
-  html += '<div id="inasist-esp-nota-'+i+'"></div>';
   html += '</div>';
   host.innerHTML = html;
   await _inasistenciaDibujarPorEspecialidad(campana, i, opciones);
@@ -346,8 +347,6 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
     var ultimoConDatos = opciones.meses.length ? opciones.meses[opciones.meses.length-1] : null;
     if(avisoEl) avisoEl.innerHTML = _gdAvisoSinDatosMesHtml('Inasistencia', mesGlobal, ultimoConDatos);
     _gdChart('inasist-c-porespecialidad-'+i, { type:'bar', data:{ labels:[], datasets:[] }, options: loPct(null) });
-    var notaElVacio = document.getElementById('inasist-esp-nota-'+i);
-    if(notaElVacio) notaElVacio.innerHTML = '';
     return;
   }
   if(avisoEl) avisoEl.innerHTML = '';
@@ -363,9 +362,9 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
   var conPct = filas.map(function(f){
     return { especialidad: f.especialidad, pct: inasistenciaPctPonderado(f.inasistencia, f.pendiente, f.total), total: f.total };
   });
-  var ordenadas = inasistenciaOrdenarBaseBaja(conPct, INASISTENCIA_BASE_BAJA_UMBRAL);
+  var ordenadas = inasistenciaPorPct(conPct);
 
-  var labels = ordenadas.map(function(f){ return textoFormatoNombre(f.especialidad) + (f.baseBaja ? ' *' : ''); });
+  var labels = ordenadas.map(function(f){ return textoFormatoNombre(f.especialidad); });
   // Fase 164 (lote 2): una sola serie = un solo color y sin leyenda (como
   // "Calidad por asesor", D-03); antes cada barra tenia un color distinto.
   var o = loPct(null);
@@ -377,11 +376,4 @@ async function _inasistenciaDibujarPorEspecialidad(campana, i, opciones){
     options: o,
   });
 
-  var notaEl = document.getElementById('inasist-esp-nota-'+i);
-  if(notaEl){
-    notaEl.innerHTML = ordenadas.some(function(f){ return f.baseBaja; })
-      ? '<div style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-dark);font-size:0.82rem">'+
-        '* Base baja: menos de '+INASISTENCIA_BASE_BAJA_UMBRAL+' citas en '+esc(gdMesesTarjetasTexto(mesesEsp, false, mesNombreLargo))+' -- el porcentaje puede no ser representativo.</div>'
-      : '';
-  }
 }
