@@ -146,12 +146,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
-- **Archivo CITAS_ATENDIDAS de ORLANT** (Fase 212) — Prioridad BAJA. Desde
-  la v1.99.0 ORLANT calcula la Efectividad de Citas sin ese archivo; la carga
-  sigue disponible en el Centro de cargas (la usan las plantillas de otros
-  clientes) y lo ya subido de ago/sep queda guardado, sin borrar. Cómo se
-  cierra: decides si se oculta esa carga para ORLANT (cambio pequeño, con PR).
-
 ## 2. Esperando una respuesta de Edwin
 
 - **Agendamiento ORLANT: 20 usuarios en la lista, no 19** (Fase 210) — la
@@ -173,6 +167,28 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ORLANT (Centro de cargas, con tu OK) y anotar las cifras en PROGRESS.md.
   Desde la Fase 212 también cambian la **Efectividad de Citas** de ORLANT
   (son parte de las llamadas contestadas del denominador).
+- **Ranking de asesores de ORLANT: asesores con más agendas que contestadas** (Fase 213,
+  29/10/2026) — Prioridad ALTA. En octubre, 4 asesores tienen más agendas que
+  contestadas en el CDR de Tipificación (>100 %); 2 de ellos casi no tienen
+  contestadas y salen con porcentajes de miles (17.028 % y 8.266 %), lo que
+  aplasta la escala de la gráfica. Pueden ser personas que agendan sin
+  contestar (lista de espera, back office) o que contestan con otro nombre en
+  Wolkvox. Además, 2 asesores de agosto tienen contestadas y 0 agendas. Cómo se
+  cierra: decides con Edwin si esas personas van aparte (como "OTROS"), con un
+  mínimo de contestadas, o si hay que unir nombres con un alias.
+- **Versiones anteriores de las bases de ORLANT borradas el 29/10** (Fase 213) —
+  el 29/10 entre las 08:37 y las 08:42 (hora de Colombia; el historial lo guarda
+  en hora del servidor, 13:37–13:42) se eliminaron desde Cargar Datos las
+  Agendas de ago/sep/oct (11.040 / 13.146 / 8.635) y se volvieron a subir con
+  los archivos de cada mes en base cruda (11.039 / 13.088 / 8.635); también se
+  eliminaron Efectividad de Agendamiento ago/sep (19 / 20 registros) y
+  Efectividad de Citas ago/sep (1 / 1). Todo queda guardado 30 días para
+  Deshacer (hasta ~28/11/2026). Cómo se cierra: si alguna de esas bases se
+  quería conservar, usar Deshacer antes de esa fecha; si no, nada que hacer.
+- **Carga EFECTIVIDAD_AGENDAMIENTO de ORLANT** (Fase 213) — Prioridad BAJA. Ya no
+  se usa en ORLANT (el ranking sale de agendas + CDR) pero sigue visible en
+  Cargar Datos. Cómo se cierra: decides si se oculta para ORLANT, igual que la
+  de citas atendidas (cambio pequeño, con PR).
 - **Efectividad de Citas de ORLANT: octubre es parcial** (Fase 212,
   29/10/2026) — oct 67,17 % = 8.635 agendas ÷ (7.343 llamadas + 5.512
   WhatsApp contestados), con agendas y WhatsApp hasta el 24/10 y 20 días de
