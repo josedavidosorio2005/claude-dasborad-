@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.104.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.105.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -37,9 +37,19 @@ narrativo de cada fase, fase por fase, vive en
 - **Clientes**: **ORLANT** y **MOBILIZE** tienen datos reales.
   **Hospital La María** (Fase 160, un solo cliente, sin sedes por ahora)
   tiene el Flujo de agosto (Fase 163); **Clínica Aurora** (Fase 153) sigue
-  sin datos. Los dos solo los ve el administrador; lo que falta está en
+  sin datos. **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
+  HTML de Edwin dentro de la plataforma: `public/js/sura-televentas*.js`,
+  rutas `/api/sura-televentas`, tablas `sura_*`), todavía sin datos. Los
+  tres solo los ve el administrador; lo que falta está en
   [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Los otros 12
   clientes de antes se borraron en la Fase 134 y no existen.
+- **Televentas de SURA (Fase 215)**: el cliente ve Cumplimiento, Agentes,
+  Tipificaciones, Detalle ventas y Estrategias (lista
+  `PESTANAS_CLIENTE` de `server/sura-televentas.js`); "Cargar información"
+  y "Bases" y toda escritura son del administrador (403 al resto). El
+  cliente recibe las cédulas seudonimizadas (HMAC). El tablero se regenera
+  desde el HTML de Edwin con `scripts/sura/generar-televentas.js` (sin las
+  constantes SEED: prueba guardiana en `fase215-sura-televentas`).
 - **Meses con datos**: ORLANT tiene datos oficiales desde **agosto de
   2026** (más julio de Tipificación de WhatsApp, real); los meses de prueba
   se borraron en la Fase 126 (`POST /api/admin/borrado-rango`, dry-run +
@@ -357,3 +367,4 @@ mismo orden):
 - Fase 212 — ORLANT: sede con nombre en Agendamiento (códigos y nombres de ago/sep unificados), filtro "Tipo de línea" resaltado, logo de InConexion más grande arriba a la derecha (v1.98.0) y Efectividad de Citas = agendas ÷ (llamadas + WhatsApp contestados) (v1.99.0, 2026-10-29)
 - Fase 213 — ORLANT: Cargar Datos sin salida ni citas atendidas (sin borrar), tarjeta Total de agendas, Efectividad de Citas con barras y línea, Inasistencia sin "Base baja", Ranking de asesores por contestadas, Calidad con el promedio del equipo por asesor y Calidad de octubre cargada (v1.99.1–v1.102.0, 2026-10-29)
 - Fase 214 — ORLANT: Ranking de asesores con todo el CDR (ingreso + salida), marca de más del 100 % sin deformar la escala, agentes sin usuario aparte y filtro Todos / 3P / General; Total de agendas junto a "Aplicar filtros"; leyendas y ejes claros en tema oscuro (v1.103.0–v1.104.1, 2026-10-29)
+- Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.105.0, 2026-10-29)

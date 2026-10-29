@@ -1928,3 +1928,19 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .gd-grafica-cab .gd-grafica-titulo{margin:0;}
 .gd-grafica-cab .gd-subtabs{margin-bottom:0;}
 @media (max-width:480px){.gd-grafica-cab{flex-direction:column;align-items:stretch;}.gd-grafica-cab .gd-subtabs{width:100%;}}
+/* Fase 215: Televentas (SURA). Pantalla completa como el tablero de cliente
+   (#gd-modal); su contenido vive en un Shadow DOM con su propia hoja
+   (css/sura-televentas-app.css). Sin transform ni backdrop-filter en los
+   contenedores: el modal y los tooltips del tablero usan position:fixed. */
+#stv-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
+#stv-overlay.show{display:block;}
+#stv-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
+#stv-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
+#stv-host{padding:0 16px;}
+@media(min-width:901px){#stv-host{padding:0 0 0 0;}}
+@media(max-width:768px){
+  #stv-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}
+  #stv-modal .gd-marca-logo{width:140px;height:28px;}
+  #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;}
+  #stv-modal .gd-marca-inconexion{display:none;}
+}

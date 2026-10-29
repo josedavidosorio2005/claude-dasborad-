@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.105.0 — Octubre 2026
+
+**Fase 215: cliente nuevo SURA, tablero "Televentas".**
+
+- El tablero de seguimiento de ventas que Edwin armó en un solo archivo HTML
+  ahora vive dentro de la plataforma: entra con el usuario de siempre, con el
+  encabezado, el logo y el tema claro/oscuro de InConexion. Las cuentas, los
+  cálculos y las gráficas son los mismos del HTML.
+- Las bases ya no quedan guardadas en un solo navegador: la base de ventas,
+  la base inicial y la de estrategias de cada mes se guardan en el servidor,
+  igual que las metas por mes y campaña, la meta individual por asesor, los
+  asesores quitados/agregados por campaña y los códigos. "Descargar" devuelve
+  el Excel original tal como se montó.
+- Solo el administrador ve "Cargar información" y "Bases" y puede montar,
+  reemplazar o eliminar bases y cambiar metas o códigos. El cliente ve
+  Cumplimiento, Agentes, Tipificaciones, Detalle ventas y Estrategias, sin
+  botones para cambiar datos (y el servidor se lo niega aunque lo intente).
+- Al cliente nunca le llegan las cédulas: el cruce entre las 3 bases sigue
+  funcionando igual, pero con un código en lugar del número.
+- Por ahora SURA solo lo ve el administrador, mientras se prueba. Todavía no
+  tiene datos: falta montar los Excel de cada mes.
+
 ## v1.104.1 — Octubre 2026
 
 **Fase 214: arreglo en el ranking de asesores (ORLANT).**

@@ -18304,3 +18304,68 @@ Pedidos de Edwin del 29/10 (tarde), solo ORLANT. PRs #606 (v1.103.0), #608
   (datos inventados); se actualizaron las guardas de `fase213-ranking-
   contestadas`, `fase213-agendas-efectividad-inasistencia` y
   `fase207-meses-todas-campanas`. Suite 2383/2383, `npm audit` 0.
+
+## Fase 215 — Cliente SURA con el tablero "Televentas" (v1.105.0, 2026-10-29)
+
+**Pedido**: llevar a la plataforma el HTML de una sola página que hizo Edwin
+(`seguimiento_ventas_offline.html`, 8,7 MB: SheetJS 0.18.5 embebido, 3 Excel
+por mes leídos en el navegador y guardados en IndexedDB, 7 pestañas), como
+cliente nuevo SURA, solo visible para el administrador mientras se prueba.
+
+**Hecho**:
+- El HTML quedó FUERA del repo (`~/datos-inconexion/sura/`): trae datos
+  reales en las constantes `SEED`, `SEED_INI`, `SEED_EST`, `SEED_METAS`,
+  `SEED_OLD`, `SEED_EST_OLD`. Nada de eso entra al repo.
+- `scripts/sura/generar-televentas.js` genera `public/js/sura-televentas-app.js`
+  y `public/css/sura-televentas-app.css` desde el HTML: sin SheetJS (usa el
+  `js/vendor/xlsx-0.20.3` de la plataforma, la 0.18.5 tiene vulnerabilidades
+  conocidas), sin SEED, IndexedDB → API, la lógica corre en un Shadow DOM
+  (sus ids y estilos no chocan con los de la plataforma), colores base desde
+  los tokens del sistema de diseño, iconos Lucide en el menú, menú lateral
+  pegajoso bajo el encabezado del tablero. Las fórmulas, cálculos y gráficas
+  del HTML no se tocaron. El alias de una asesora que traía el HTML no va en
+  el código: sale de la configuración `agalias` del servidor.
+- Servidor (`server/sura-televentas.js`, `routes/sura-televentas.js`):
+  tablas `sura_bases` (resultado procesado por cliente/tipo/mes, gzip),
+  `sura_archivos` (Excel original para "Descargar"), `sura_config` (metas,
+  meta individual, asesores por campaña, códigos, tipificaciones, alias) y
+  `sura_versiones` (lo anterior a reemplazar/eliminar, 30 días, tope 3 por
+  mes). El Excel se sigue leyendo en el navegador con las mismas funciones
+  del HTML (mismos números) y el servidor valida la forma del resultado, la
+  firma del archivo (ZIP/OLE) y guarda solo las claves conocidas. Límite de
+  cuerpo propio de 40 MB solo para montar una base; el tope de cargas
+  responde 403 sin leer el cuerpo a quien no es administrador.
+- Permisos: leer = acceso al cliente (`cliente_SURA`); montar, reemplazar,
+  eliminar, descargar el original y cambiar configuración = solo
+  administrador (403). Pestañas por rol en `PESTANAS_CLIENTE` (el cliente:
+  Cumplimiento, Agentes, Tipificaciones, Detalle ventas, Estrategias). Al
+  cliente las cédulas le llegan seudonimizadas (HMAC con llave derivada del
+  secreto del servidor): los cruces por cédula dan lo mismo.
+- Migración `fase215_crear_sura_televentas_v1`: SURA en el registro de
+  clientes (dashboard=1, sin módulos genéricos, `especificos:
+  ['sura_televentas']`), sin usuarios ni permisos.
+
+**Verificación**:
+- Pruebas `fase215-sura-televentas` (10) con Excel SINTÉTICOS
+  (`tests/helpers/sura-sinteticos.js`, columnas estrategia, ciudad,
+  departamento, edad, identificacion, agente, fecha_venta, resultado,
+  total_valor_poliza_anualizado / _mes (×12), cantidad_poliza,
+  resultado_validacion, producto, contacto): lecturas del HTML, persistencia
+  y descarga idéntica, versiones, configuración validada, 5 pestañas y 403
+  para el cliente (y para REPORTES con cargarDatos), cédulas seudonimizadas,
+  cuerpo de más de 2 MB y guardiana que falla si vuelven las constantes SEED
+  o el IndexedDB del HTML (confirmado que detecta el HTML original).
+- Local con Playwright (Brave, 1440/768/375): el administrador montó las 3
+  bases sintéticas de ago/sep/oct por la interfaz; 60 pólizas y
+  $24.970.000 de producción (oct con valor mensual ×12) = lo esperado; 7
+  pestañas; reabrir lee lo mismo del servidor; "Descargar" devuelve el Excel
+  original. El cliente: 5 pestañas, 0 botones de montar/eliminar, 403 en
+  POST/DELETE/PUT y en el archivo original, 0 cédulas reales recibidas, sin
+  desborde horizontal; 0 errores de consola en los dos roles.
+- Guardas existentes al día: las 6 rutas nuevas con su política en la
+  matriz de la Fase 118; SURA en las fotos del registro de clientes (Fases
+  153 y 160: ORLANT, MOBILIZE, Aurora y HLM no cambian); el tablero sin
+  font-weight 800 (Quicksand llega a 700) y con nombre accesible en sus 20
+  campos (D13); las tablas `sura_*` con sus triggers de `datos_version`.
+- Los Excel reales de Edwin no estaban en el equipo: la comparación de
+  conteos contra el HTML queda en `docs/pendientes.md` (sección 2).

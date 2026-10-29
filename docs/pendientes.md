@@ -164,6 +164,31 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   son sobre todo agentes de sistema como "Asesor Apoyo" o "Routing Point").
   Cómo se cierra: si alguno es una persona que agenda, agregarla en la
   Clasificación de usuarios.
+- **SURA — Televentas: primera carga** (Fase 215, 29/10/2026). El tablero
+  está en producción sin datos y solo lo ve el administrador. Falta:
+  1. **Los Excel de Edwin** por mes (base de ventas `data_inconexion_03..10`,
+     `OCTUBRE`, base inicial y `ESTRATEGIAS`): no estaban en este equipo,
+     así que la comparación de conteos contra el HTML original queda por
+     hacer. Cifras del HTML a cuadrar al montarlos — ventas por mes: mar 22,
+     abr 109, may 109, jun 285, jul 310, ago 300, sep 414, oct 310;
+     registros de la base: mar 7.000, abr 9.000, may 12.000, jun 18.000,
+     jul 20.000, ago 26.249, sep 34.000, oct 31.000. Cargar a producción
+     solo con tu OK (por la interfaz: Cargar información → mes → Montar base).
+  2. **Pestañas que ve el cliente**: hoy Cumplimiento, Agentes,
+     Tipificaciones, Detalle ventas y Estrategias (Edwin lo confirma). Se
+     cambia solo `PESTANAS_CLIENTE` en `server/sura-televentas.js`.
+  3. **Metas**: el HTML traía precargadas las metas de producción de
+     Odontológico (mar–oct, dadas por InCo); no se copiaron al repo (es
+     público). Escribirlas una vez en Cargar información → Metas del mes.
+  4. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
+     una asesora; ese alias no va en el código. Se guarda en la
+     configuración `agalias` del tablero (por ahora sin pantalla: pedirlo).
+  5. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
+     Gestión de Usuarios → nuevo usuario, rol **CLIENTES_DASH**, cliente
+     **SURA** marcado y nada más. La contraseña la asigna quien lo crea y la
+     plataforma le pide cambiarla al primer ingreso; nunca va al chat ni al
+     repo. Mientras no exista, nadie fuera del administrador ve SURA.
+
 - **Agendamiento ORLANT: 20 usuarios en la lista, no 19** (Fase 210) — la
   lista trae 21 registros y 20 usuarios distintos (INCO18 repetido por su
   cambio). Edwin habló de 19 usuarios fijos. Se cargó tal cual. Cómo se

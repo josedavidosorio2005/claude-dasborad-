@@ -957,6 +957,28 @@
   </div>
 </div>
 
+<!-- ══ TELEVENTAS (SURA, Fase 215): tablero propio, su contenido vive en un Shadow DOM (sura-televentas.js) ══ -->
+<div role="dialog" aria-modal="true" aria-labelledby="stv-title" id="stv-overlay">
+  <div id="stv-modal">
+    <div class="aurora-header">
+      <div>
+        <h2 id="stv-title">Televentas</h2>
+        <div class="aurora-sub" id="stv-sub"></div>
+      </div>
+      <div class="gd-header-derecha">
+        <span class="gd-marca-inconexion"><img class="gd-marca-logo" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="170" height="34"></span>
+        <div class="gd-header-acciones" style="display:flex;align-items:center;gap:8px">
+          <button class="aurora-close theme-toggle gd-tema-btn" id="stv-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
+          <button class="aurora-close" id="stv-cerrar-btn" type="button" onclick="closeSuraTeleventas()">X Cerrar</button>
+        </div>
+      </div>
+    </div>
+    <div id="stv-host"></div>
+    <!-- Ultimo enfocable del dialogo: asi Tab recorre el tablero (Shadow DOM) antes de volver al encabezado (motion-helpers.js). -->
+    <span class="sr-only" tabindex="0">Fin del tablero</span>
+  </div>
+</div>
+
 <!-- ══ CALIDAD MODULE MODAL ══════════════════════════════ -->
 <div role="dialog" aria-modal="true" aria-labelledby="calidad-modal-title" id="calidad-overlay">
   <div id="calidad-modal">
@@ -1843,6 +1865,8 @@
 <script src="js/dashboard-kpi-logic.js"></script>
 <script src="js/grafica-vacia-logic.js"></script>
 <script src="js/dashboard-generic.js"></script>
+<script src="js/sura-televentas-app.js"></script>
+<script src="js/sura-televentas.js"></script>
 <script src="js/trafico.js"></script>
 <script src="js/trafico-whatsapp.js"></script>
 <script src="js/whatsapp-tiempos.js"></script>

@@ -160,6 +160,12 @@ function createApp() {
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
   const jsonLimiteMayor = express.json({ limit: '8mb' });
+  // Fase 215: montar una base de Televentas (SURA) manda el resultado
+  // procesado mas el Excel original (base64) en un solo cuerpo. Solo el
+  // administrador llega aqui (el tope de cargas responde 403 al resto sin
+  // leer el cuerpo).
+  const RUTA_SURA_BASE = /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/;
+  const jsonLimiteSura = express.json({ limit: '40mb' });
   // Fase 154: el login es la unica ruta que lee un cuerpo sin sesion; su
   // cuerpo es usuario + contrasena, nunca mas de unos pocos KB.
   const jsonLogin = express.json({ limit: '16kb' });
@@ -219,6 +225,7 @@ function createApp() {
     if (!tieneCuerpo(req)) return next();
     if (rutaNormalizada(req) === RUTA_LOGIN) return jsonLogin(req, res, next);
     if (RUTAS_LIMITE_MAYOR.includes(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
+    if (req.method === 'POST' && RUTA_SURA_BASE.test(rutaNormalizada(req))) return jsonLimiteSura(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
 
@@ -353,6 +360,7 @@ function createApp() {
   api.use(require('./routes/inasistencia'));
   api.use(require('./routes/efectividad-citas'));
   api.use(require('./routes/salida'));
+  api.use(require('./routes/sura-televentas')); // Fase 215
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas
   api.use(require('./routes/inventario'));

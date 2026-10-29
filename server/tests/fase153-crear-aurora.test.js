@@ -45,7 +45,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 196: tabla flujo_hora + modulo y pestaña de MOBILIZE (no toca Aurora/HLM).
     'fase196_flujo_hora_v1',
     // Fase 210: columnas nuevas de agendas y 2 tablas vacias de ORLANT (no toca Aurora/HLM).
-    'fase210_agendas_usuarios_lineas_v1'];
+    'fase210_agendas_usuarios_lineas_v1',
+    // Fase 215: agrega SURA (tablero propio) al registro (no toca Aurora/HLM).
+    'fase215_crear_sura_televentas_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -85,7 +87,7 @@ test('sin plantilla de Calidad (no se inventan items) y sin usuarios ni permisos
 
 test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards iguales a la foto', () => {
   // Fase 160: HLM se prueba en fase160-crear-hlm.test.js.
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA');
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA'); // Fase 215: SURA en fase215-sura-televentas
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
   for (const c of ['ORLANT', 'MOBILIZE']) {

@@ -33,6 +33,7 @@ const RUTAS_DE_CARGA = [
   { re: /^\/api\/calidad\/codificaciones\/bulk$/, puede: (a) => isFullAdmin(a) },
   { re: /^\/api\/calidad\/nivel-servicio\/carga-diaria$/, puede: (a) => isFullAdmin(a) },
   { re: /^\/api\/admin\/borrado-rango$/, puede: (a) => isFullAdmin(a) },
+  { re: /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/, puede: (a) => isFullAdmin(a) }, // Fase 215
   { re: /\/carga(\/impacto)?$/, puede: (a) => canLoadAnyModule(a) },
   { re: /^\/api\/dashboard\/cargas(\/\d+)?$/, puede: (a) => canLoadAnyModule(a) },
   { re: /^\/api\/centro-cargas\/versiones\/[^/]+\/deshacer$/, puede: (a) => canLoadAnyModule(a) },

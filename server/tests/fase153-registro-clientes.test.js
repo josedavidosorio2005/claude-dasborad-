@@ -24,6 +24,8 @@ const ANTES = ['ORLANT', 'MOBILIZE'];
 const AURORA = 'CLINICA AURORA';
 // Fase 160: + HOSPITAL LA MARIA, por su propia migracion (fase160-crear-hlm.test.js).
 const CON_AURORA = ANTES.concat([AURORA, 'HOSPITAL LA MARIA']);
+// Fase 215: SURA tiene tablero propio (Televentas) y no tiene Calidad.
+const CON_SURA = CON_AURORA.concat(['SURA']);
 
 function listaDeConstants(nombre) {
   const m = leer('constants.js').match(new RegExp('var ' + nombre + " = \\[([^\\]]*)\\];"));
@@ -32,7 +34,7 @@ function listaDeConstants(nombre) {
 }
 
 test('el registro sembrado da exactamente las listas de antes', () => {
-  assert.deepEqual(reg.listaClientes(db), CON_AURORA);
+  assert.deepEqual(reg.listaClientes(db), CON_SURA);
   assert.deepEqual(reg.campanasCalidad(db), CON_AURORA);
   assert.deepEqual(reg.REGISTRO_INICIAL.map((c) => c.nombre), ANTES, 'la semilla sigue siendo solo ORLANT y MOBILIZE');
   // El respaldo de constants.js sigue igual a la semilla.
@@ -44,7 +46,7 @@ test('el registro sembrado da exactamente las listas de antes', () => {
 
 test('la semilla describe los modulos y parametros reales de ORLANT y MOBILIZE', () => {
   const r = Object.fromEntries(reg.leerRegistro(db).map((c) => [c.nombre, c]));
-  assert.deepEqual(Object.keys(r), CON_AURORA);
+  assert.deepEqual(Object.keys(r), CON_SURA);
   assert.ok(r.ORLANT.modulos.includes('whatsapp_tiempos'));
   assert.ok(!r.ORLANT.modulos.includes('llamadas_unicas'));
   assert.ok(r.MOBILIZE.modulos.includes('llamadas_unicas') && r.MOBILIZE.modulos.includes('encuesta'));
@@ -80,7 +82,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   const r = await request(app).get('/api/dashboard/clientes').set(auth(t));
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
-  assert.deepEqual(r.body.listaClientes, CON_AURORA);
+  assert.deepEqual(r.body.listaClientes, CON_SURA);
   assert.deepEqual(r.body.campanasCalidad, CON_AURORA);
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);
   const sin = await request(app).get('/api/dashboard/clientes');

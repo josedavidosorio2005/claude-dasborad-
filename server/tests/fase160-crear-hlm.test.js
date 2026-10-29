@@ -48,7 +48,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 196: tabla flujo_hora + modulo y pestaña de MOBILIZE (no toca Aurora/HLM).
     'fase196_flujo_hora_v1',
     // Fase 210: columnas nuevas de agendas y 2 tablas vacias de ORLANT (no toca Aurora/HLM).
-    'fase210_agendas_usuarios_lineas_v1'];
+    'fase210_agendas_usuarios_lineas_v1',
+    // Fase 215: agrega SURA (tablero propio) al registro (no toca Aurora/HLM).
+    'fase215_crear_sura_televentas_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
@@ -78,10 +80,10 @@ test('ORLANT, MOBILIZE y Aurora no cambian', () => {
     assert.equal(JSON.stringify(cfgDe(c)), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
   assert.deepEqual(cfgDe(AURORA), generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'] }));
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA);
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA'); // Fase 215
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
-  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM]);
+  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM, 'SURA']); // Fase 215: SURA despues de HLM
 });
 
 test('sin usuarios ni permisos nuevos', () => {

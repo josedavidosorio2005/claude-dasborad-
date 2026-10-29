@@ -179,7 +179,11 @@ asumir en qué quedó una fase anterior.
   María** (Fase 160, un solo cliente). Aurora y Hospital La María se
   crearon sin datos, con sus pestañas ocultas y visibles solo para el
   administrador; su estado al día (datos cargados, pestañas, sedes) está
-  en `PROGRESS.md`. Los otros 12 clientes de antes se borraron en la Fase
+  en `PROGRESS.md`. **SURA** (Fase 215) tiene un tablero propio,
+  "Televentas" (el HTML de Edwin dentro de la plataforma), también sin
+  datos y visible solo para el administrador; el HTML original trae datos
+  reales embebidos y vive fuera del repo (se regenera con
+  `scripts/sura/generar-televentas.js`). Los otros 12 clientes de antes se borraron en la Fase
   134 y no existen — no inventar datos ni adelantarse a pedidos que no
   han llegado.
 - El repositorio es público por decisión del jefe (29/09/2026); no

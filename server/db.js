@@ -648,6 +648,8 @@ const CAMPANAS_CALIDAD = clientesRegistro.campanasCalidad(db);
 // Fase 153 (Centro de cargas, PR 2): versiones para Deshacer (30 dias); las
 // vencidas se borran al arrancar (y cada 24 h, server.js).
 require('./cargas-versiones').crearTabla(db);
+// Fase 215: tablas del tablero Televentas de SURA (antes de asegurarDatosVersion: llevan sus triggers).
+require('./sura-televentas').crearTablas(db);
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');
@@ -4373,6 +4375,31 @@ function crearAgendasUsuariosLineas() {
 }
 runOnceMigration('fase210_agendas_usuarios_lineas_v1', crearAgendasUsuariosLineas);
 
+// Fase 215: cliente SURA con el tablero "Televentas" (sura-televentas.js).
+// Ficha en el registro de clientes (dashboard=1, sin modulos del tablero
+// generico; parametros.especificos = ['sura_televentas'] es lo que abre su
+// tablero propio) y sus tablas, vacias. No crea usuarios ni permisos: nadie
+// la ve salvo el administrador completo hasta que se le asigne el cliente a
+// un usuario. Sus tablas se crean arriba, antes de asegurarDatosVersion. Idempotente.
+function crearSuraTeleventas() {
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  db.prepare(
+    `INSERT OR IGNORE INTO clientes_registro
+       (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+     VALUES (?, ?, 1, ?, ?, NULL, 1, ?, ?)`
+  ).run(
+    'SURA',
+    maxOrden + 1,
+    JSON.stringify([]),
+    JSON.stringify({ sedes: [], asesorVisibleCliente: false, traficoDosHojas: false, especificos: ['sura_televentas'] }),
+    now,
+    now
+  );
+  if (!config.isTest) console.log('[db] Migracion fase215_crear_sura_televentas_v1 aplicada.');
+}
+runOnceMigration('fase215_crear_sura_televentas_v1', crearSuraTeleventas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4429,6 +4456,8 @@ module.exports.crearLlamadasNoConectadas = crearLlamadasNoConectadas;
 module.exports.crearFlujoHora = crearFlujoHora;
 // Fase 210: idem.
 module.exports.crearAgendasUsuariosLineas = crearAgendasUsuariosLineas;
+// Fase 215: idem.
+module.exports.crearSuraTeleventas = crearSuraTeleventas;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;
