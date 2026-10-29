@@ -233,6 +233,21 @@ function _eaDibujarGrafica(i, filas, contactos){
     } });
   }
   loDatalabelsAuto(o);
+  // Fase 214 (verificacion en produccion, octubre): 2 marcados seguidos quedan
+  // en el techo y el 'auto' escondia la cifra del segundo. Los marcados se
+  // muestran siempre, alternando arriba / abajo del punto.
+  if(contactos){
+    var ordenMarca = {};
+    filas.forEach(function(f, k){ if(f.sobreWolkvox) ordenMarca[k] = Object.keys(ordenMarca).length; });
+    var displayAuto = o.plugins.datalabels.display;
+    o.plugins.datalabels.display = function(ctx){
+      if(ctx.dataset.type === 'line' && ordenMarca[ctx.dataIndex] !== undefined) return true;
+      return typeof displayAuto === 'function' ? displayAuto(ctx) : displayAuto;
+    };
+    o.plugins.datalabels.align = function(ctx){
+      return ctx.dataset.type === 'line' && ordenMarca[ctx.dataIndex] % 2 === 1 ? 'bottom' : 'end';
+    };
+  }
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
 }
 

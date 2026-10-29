@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.104.1 — Octubre 2026
+
+**Fase 214: arreglo en el ranking de asesores (ORLANT).**
+
+- Cuando dos asesores seguidos tienen la marca "⚠ agenda más de lo que registra
+  Wolkvox", la cifra del segundo ya no se esconde: una va arriba del punto y
+  la otra abajo.
+
 ## v1.104.0 — Octubre 2026
 
 **Fase 214: el ranking de asesores cuenta todo lo que registra Wolkvox (ORLANT).**

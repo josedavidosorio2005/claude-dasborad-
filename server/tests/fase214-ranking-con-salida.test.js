@@ -90,3 +90,10 @@ test('panel y export: ingreso/salida, marca ⚠ con texto, % real en cifra y too
   assert.ok(gen.includes("Ingreso: f.ingreso, Salida: f.salida, 'Contestadas (ingreso + salida)': f.gestiones }, f.agendas, efectividadAgendamientoFmtPct(f.efectividad), f.sobreWolkvox ? EA_MARCA_WOLKVOX : '')"));
   assert.ok(gen.includes("a.sinUsuario ? 'agente de Wolkvox sin usuario de Agendamiento' : ''"));
 });
+
+test('marcados seguidos: cifra siempre visible, alternando arriba / abajo', () => {
+  const ea = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'efectividad-agendamiento.js'), 'utf8');
+  assert.ok(ea.includes("if(ctx.dataset.type === 'line' && ordenMarca[ctx.dataIndex] !== undefined) return true;"));
+  assert.ok(ea.includes("ordenMarca[ctx.dataIndex] % 2 === 1 ? 'bottom' : 'end'"));
+  assert.ok(ea.lastIndexOf('o.plugins.datalabels.display = function(ctx){') > ea.indexOf('  loDatalabelsAuto(o);'), 'despues del auto');
+});
