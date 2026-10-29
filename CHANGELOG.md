@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.99.0 — Octubre 2026
+
+**Fase 212: Efectividad de Citas de ORLANT con la fórmula nueva.**
+
+- La Efectividad de Citas de ORLANT ya no sale del archivo de citas
+  atendidas: ahora es el total de agendas del mes (3P + General) dividido
+  entre las llamadas contestadas (Tráfico de Llamadas) más los WhatsApp
+  contestados (Tráfico de WhatsApp) del mismo mes. Se calcula sola con lo
+  que ya está cargado.
+- La gráfica es una barra de % por mes, y la tabla de abajo muestra las
+  agendas, las llamadas contestadas, los WhatsApp contestados y el total.
+  Con varios meses en MESES, la tarjeta suma los totales de esos meses.
+
 ## v1.98.0 — Octubre 2026
 
 **Fase 212: sedes con nombre, filtro "Tipo de línea" resaltado y logo más

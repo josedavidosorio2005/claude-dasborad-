@@ -71,24 +71,68 @@ async function _ecDibujar(campana, i, opciones){
       : '';
   }
 
+  // Fase 212 (ORLANT): agendas / (llamadas + WhatsApp contestados), ver
+  // efectividadCitasDesdeContactos (server/efectividad-citas.js).
+  var desdeContactos = filas.length > 0 && filas[0].contactos !== undefined;
   if(tarjetasEl){
     if(!filas.length){
       tarjetasEl.innerHTML = '<div class="gd-vacio-chico">Sin datos.</div>';
     } else {
-      // Fase 207: una sola tarjeta, ponderada sobre los meses de MESES.
+      // Fase 207: una sola tarjeta, ponderada sobre los meses de MESES (totales sumados).
       var filasEc = filas.filter(function(f){ return mesesEc.indexOf(f.mes) !== -1; });
-      var ponderado = citasAtendidasPonderado(filasEc);
+      var ponderado = citasEfectividadPonderado(filasEc);
       tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
-        '<div class="aurora-kpi gd-kpi"><div class="kv">'+(filasEc.length ? citasAtendidasFmtPct(ponderado.pct) : '—')+'</div><div class="kl">% Efectividad ponderado · '+esc(gdMesesTarjetasTexto(mesesEc, !_gdMeses().length, mesNombreLargo))+'</div></div>' +
-        '</div>';
+        '<div class="aurora-kpi gd-kpi"><div class="kv">'+(filasEc.length ? citasAtendidasFmtPct(ponderado.pct) : '—')+'</div><div class="kl">% Efectividad '+(desdeContactos ? '' : 'ponderado ')+'· '+esc(gdMesesTarjetasTexto(mesesEc, !_gdMeses().length, mesNombreLargo))+'</div></div>' +
+        '</div>' +
+        (desdeContactos ? '<p class="tipif-linea-nota">Efectividad = agendas del mes (3P + General) ÷ (llamadas contestadas de Tráfico de Llamadas + WhatsApp contestados de Tráfico de WhatsApp) del mismo mes. Con varios meses, se suman los totales.</p>' : '');
     }
   }
 
   // Fase 167: filtro "Meses" -- grafica y tabla (Fase 207: tambien la tarjeta).
   var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
-  _ecDibujarGrafica(i, filasMeses);
+  if(desdeContactos) _ecDibujarGraficaPct(i, filasMeses);
+  else _ecDibujarGrafica(i, filasMeses);
 
-  if(tablaEl) tablaEl.innerHTML = _ecTablaHtml(filasMeses, mesUnicoEc);
+  if(tablaEl) tablaEl.innerHTML = desdeContactos ? _ecTablaContactosHtml(filasMeses, mesUnicoEc) : _ecTablaHtml(filasMeses, mesUnicoEc);
+}
+
+// Fase 212 (pedido de Edwin): una barra de % por mes.
+function _ecDibujarGraficaPct(i, filas){
+  var canvasId = 'ec-c-'+i;
+  var fr = filas.map(citasEfectividadFraccion);
+  var o = loBar();
+  o.plugins.legend = { display:false };
+  o.scales = {
+    y: { beginAtZero:true, grid:{color:(typeof CHART_GRID!=='undefined'?CHART_GRID:'#f0f4f8')}, ticks:{font:{size:12}, callback:function(v){ return gdFmtValor(v,'%'); }} },
+    x: { grid:{display:false}, ticks:{font:{size:12}} },
+  };
+  o.plugins.tooltip = Object.assign({}, o.plugins.tooltip, { callbacks: { label: function(ctx){ var x = fr[ctx.dataIndex]; return x.pct === null ? '—' : citasAtendidasFmtPct(x.pct) + ' (' + gdFmtValor(x.num) + ' agendas de ' + gdFmtValor(x.den) + ' contestados)'; } } });
+  o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
+    formatter:function(v){ return v!=null ? citasAtendidasFmtPct(v/100) : ''; } };
+  loDatalabelsAuto(o);
+  _gdChart(canvasId, {
+    type: 'bar',
+    data: { labels: filas.map(function(f){ return citasAtendidasMesLbl(f.mes); }),
+      datasets: [{ label: '% Efectividad', data: fr.map(function(x){ return x.pct === null ? null : x.pct*100; }),
+        backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#0d4a5e'), borderRadius:3 }] },
+    options: o,
+  });
+}
+
+function _ecTablaContactosHtml(filas, mesSel){
+  if(!filas.length) return '';
+  function celda(tag, txt, mes){
+    return '<'+tag+(mes===mesSel?' style="font-weight:700"':'')+'>'+esc(txt)+'</'+tag+'>';
+  }
+  function fila(nombre, fn){ return '<tr><td>'+esc(nombre)+'</td>'+filas.map(function(f){ return celda('td', fn(f), f.mes); }).join('')+'</tr>'; }
+  return '<div class="gd-tabla-scroll gd-tabla-mt">' +
+    '<table class="aurora-rank-table"><thead><tr><th></th>'+filas.map(function(f){ return celda('th', citasAtendidasMesLbl(f.mes), f.mes); }).join('')+'</tr></thead><tbody>' +
+    fila('% Efectividad', function(f){ return citasAtendidasFmtPct(citasEfectividadFraccion(f).pct); }) +
+    fila('Agendas (3P + General)', function(f){ return gdFmtValor(f.agendas); }) +
+    fila('Llamadas contestadas', function(f){ return gdFmtValor(f.llamadasContestadas); }) +
+    fila('WhatsApp contestados', function(f){ return gdFmtValor(f.whatsappContestados); }) +
+    fila('Total contestados', function(f){ return gdFmtValor(f.contactos); }) +
+    '</tbody></table></div>';
 }
 
 function _ecDibujarGrafica(i, filas){

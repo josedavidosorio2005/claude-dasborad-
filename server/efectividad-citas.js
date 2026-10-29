@@ -72,17 +72,42 @@ function cargarEfectividadCitas(db, { campana, archivoNombre, cargadoPorNombre, 
   return { insertadas: filasObj.length, borradas, meses };
 }
 
+// Fase 212 (pedido de Edwin, 29/10, solo ORLANT): Efectividad de Citas =
+// agendas del mes (3P + General, tabla agendas) / (llamadas contestadas de
+// Trafico de Llamadas + WhatsApp contestados de Trafico de WhatsApp) del
+// mismo mes. Sale de lo ya cargado: no hay archivo propio. Los demas clientes
+// siguen con el archivo CITAS_ATENDIDAS (atendidas / agendas).
+const CLIENTES_EFECTIVIDAD_DESDE_CONTACTOS = ['ORLANT'];
+function usaEfectividadDesdeContactos(campana) { return CLIENTES_EFECTIVIDAD_DESDE_CONTACTOS.includes(campana); }
+
+// Un mes entra si tiene agendas (el numerador); sin contactos ese mes, el %
+// queda en null ("—"), nunca dividido entre 0.
+function efectividadCitasDesdeContactos(db, campana) {
+  const porMes = (sql) => new Map(db.prepare(sql).all(campana).map((r) => [r.mes, r.n]));
+  const agendas = porMes('SELECT substr(fechaSolicitud,1,7) AS mes, COUNT(*) AS n FROM agendas WHERE campana = ? GROUP BY mes');
+  const llamadas = porMes('SELECT substr(fecha,1,7) AS mes, SUM(contestadas) AS n FROM calidad_nivel_servicio_diario WHERE campana = ? GROUP BY mes');
+  const whatsapp = porMes('SELECT substr(fechaInicio,1,7) AS mes, SUM(contestados) AS n FROM trafico_whatsapp WHERE campana = ? GROUP BY mes');
+  return [...agendas.keys()].sort().map((mes) => {
+    const l = llamadas.get(mes) || 0;
+    const w = whatsapp.get(mes) || 0;
+    return { mes, agendas: agendas.get(mes), llamadasContestadas: l, whatsappContestados: w, contactos: l + w };
+  });
+}
+
 // Valores distintos de Mes + si hay datos -- tambien lo usa el dashboard
 // para decidir si "Efectividad de Citas" tiene algo que mostrar.
 function efectividadCitasOpciones(db, campana) {
+  if (usaEfectividadDesdeContactos(campana)) return { meses: efectividadCitasDesdeContactos(db, campana).map((f) => f.mes) };
   return {
     meses: db.prepare('SELECT DISTINCT mes AS v FROM efectividad_citas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
   };
 }
 
 // Todos los meses con datos, ordenados -- sin filtros (no hay sede/
-// especialidad en esta base, un total por mes).
+// especialidad en esta base, un total por mes). Fase 212: en ORLANT, las filas
+// traen `contactos` (ver efectividadCitasDesdeContactos) en vez de `atendidas`.
 function efectividadCitasPorMes(db, campana) {
+  if (usaEfectividadDesdeContactos(campana)) return efectividadCitasDesdeContactos(db, campana);
   return db
     .prepare('SELECT mes, agendas, atendidas FROM efectividad_citas WHERE campana = ? ORDER BY mes ASC')
     .all(campana);
@@ -96,4 +121,6 @@ module.exports = {
   cargarEfectividadCitas,
   efectividadCitasOpciones,
   efectividadCitasPorMes,
+  usaEfectividadDesdeContactos,
+  efectividadCitasDesdeContactos,
 };

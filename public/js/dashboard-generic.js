@@ -2317,6 +2317,20 @@ async function _gdExportarEfectividadCitas(p, i){
   if(!filas.length){
     return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de citas para el periodo actual.' }];
   }
+  // Fase 212 (ORLANT): agendas / (llamadas + WhatsApp contestados), los meses de MESES.
+  if(filas[0].contactos !== undefined){
+    var filasC = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
+    if(!filasC.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de citas para los meses elegidos.' }];
+    var outC = filasC.map(function(f){
+      return { Mes: citasAtendidasMesLbl(f.mes), 'Agendas (3P + General)': f.agendas, 'Llamadas contestadas': f.llamadasContestadas, 'WhatsApp contestados': f.whatsappContestados, 'Total contestados': f.contactos, '% Efectividad': citasAtendidasFmtPct(citasEfectividadFraccion(f).pct) };
+    });
+    var totC = citasEfectividadPonderado(filasC);
+    outC.push({ Mes: 'TOTAL ('+citasAtendidasRangoLbl(filasC)+')', 'Agendas (3P + General)': totC.num,
+      'Llamadas contestadas': filasC.reduce(function(a, f){ return a + f.llamadasContestadas; }, 0),
+      'WhatsApp contestados': filasC.reduce(function(a, f){ return a + f.whatsappContestados; }, 0),
+      'Total contestados': totC.den, '% Efectividad': citasAtendidasFmtPct(totC.pct) });
+    return [{ titulo: titulo, tipo: 'tabla', filas: outC }];
+  }
   var ponderado = citasAtendidasPonderado(filas);
   var out = filas.map(function(f){
     return { Mes: citasAtendidasMesLbl(f.mes), Agendas: f.agendas, Atendidas: f.atendidas, '% Efectividad': citasAtendidasFmtPct(f.agendas>0?f.atendidas/f.agendas:null) };
