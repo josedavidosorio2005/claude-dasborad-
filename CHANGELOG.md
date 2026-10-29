@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.104.0 — Octubre 2026
+
+**Fase 214: el ranking de asesores cuenta todo lo que registra Wolkvox (ORLANT).**
+
+- Agendamiento → Ranking de asesores: las contestadas de cada asesor ahora
+  son todo su CDR, de ingreso y de salida, en llamadas y WhatsApp (antes solo
+  el ingreso). La tabla muestra Ingreso y Salida por separado. Ejemplo: un
+  asesor con 505 llamadas y 628 WhatsApp en agosto ahora suma 1.133.
+- Quien agenda más de lo que contesta (más del 100 %) sigue en el ranking con
+  la marca "⚠ agenda más de lo que registra Wolkvox". En la gráfica su punto
+  queda arriba, con su % real escrito, sin aplastar la escala de los demás.
+- Los agentes de Wolkvox que no tienen usuario de Agendamiento van aparte, en
+  la nota, junto a "OTROS".
+- Tema oscuro: el texto de las leyendas del ranking, de Efectividad de Citas y
+  de Calidad salía negro; ahora sale claro.
+
 ## v1.103.0 — Octubre 2026
 
 **Fase 214: filtro de línea en el ranking, total de agendas junto al botón y

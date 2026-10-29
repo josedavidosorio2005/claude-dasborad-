@@ -128,6 +128,10 @@ function aplicarTemaCharts(){
   // propio (leyendas, ejes de graficas con escalas propias). Sigue al tema.
   if(typeof Chart !== 'undefined' && Chart.defaults) Chart.defaults.color = CHART_TICK;
 }
+// Fase 214: en Chart.js 4 la leyenda pinta el texto con el `fontColor` de cada
+// item; las leyendas con generateLabels propio deben ponerlo (sin el, el texto
+// salia negro en tema oscuro).
+function leyendaColorTexto(){ return CHART_TICK; }
 // Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
 var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';
 // Fase 171 (pedido de Edwin): "no conectadas" en un color bien distinto del de
