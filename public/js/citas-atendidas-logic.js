@@ -179,6 +179,24 @@ function citasAtendidasPonderado(filas) {
   return { agendas: tot.agendas, atendidas: tot.atendidas, pct: tot.agendas > 0 ? (tot.atendidas / tot.agendas) : null };
 }
 
+// Fase 212 (ORLANT): una fila con `contactos` (llamadas + WhatsApp contestados)
+// se calcula agendas / contactos; las demas, atendidas / agendas. Devuelve la
+// fraccion { num, den, pct } (pct 0..1 o null si den es 0).
+function citasEfectividadFraccion(f) {
+  var desdeContactos = f && f.contactos !== undefined && f.contactos !== null;
+  var num = desdeContactos ? (f.agendas || 0) : (f && f.atendidas) || 0;
+  var den = desdeContactos ? f.contactos : (f && f.agendas) || 0;
+  return { num: num, den: den, pct: den > 0 ? num / den : null };
+}
+
+// Ponderado de varios meses con la misma regla (Σnum / Σden): MESES con varios
+// meses = totales sumados, nunca el promedio de los %.
+function citasEfectividadPonderado(filas) {
+  var num = 0, den = 0;
+  (filas || []).forEach(function (f) { var x = citasEfectividadFraccion(f); num += x.num; den += x.den; });
+  return { num: num, den: den, pct: den > 0 ? num / den : null };
+}
+
 // "Ene-26 a Mar-26" (o "Ene-26" si solo hay un mes, o "" sin meses) --
 // misma idea que inasistenciaRangoLbl. `filas` YA viene ordenada por mes
 // (efectividadCitasPorMes, server/efectividad-citas.js: ORDER BY mes ASC).
@@ -198,6 +216,8 @@ if (typeof module !== 'undefined' && module.exports) {
     _caClasificarCeldaNumerica: _caClasificarCeldaNumerica,
     _caPctDesdeCelda: _caPctDesdeCelda,
     citasAtendidasParseFilas: citasAtendidasParseFilas,
+    citasEfectividadFraccion: citasEfectividadFraccion,
+    citasEfectividadPonderado: citasEfectividadPonderado,
     citasAtendidasFilaComoArray: citasAtendidasFilaComoArray,
     citasAtendidasMesesDelArchivo: citasAtendidasMesesDelArchivo,
     citasAtendidasMesLbl: citasAtendidasMesLbl,
