@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.101.0 — Octubre 2026
+
+**Fase 213: Ranking de asesores con contestadas y agendas (ORLANT).**
+
+- Agendamiento → Ranking de asesores: ahora compara, por asesor, sus
+  contestadas (llamadas + WhatsApp de ingreso, del CDR de Tipificación)
+  contra sus agendas, con barras y una línea del %. Sigue a MESES. Es la
+  misma lógica de Efectividad de Citas, pero por asesor.
+- El asesor de cada agenda sale de la Clasificación de usuarios: un usuario
+  que pasa a otra persona (como INCO18 el 07/10) reparte sus agendas por la
+  fecha de cambio.
+- "OTROS" va aparte, fuera del ranking, en una nota con sus agendas. La nota
+  también aclara que el total del equipo no cuadra exacto con Efectividad
+  de Citas (el CDR y el reporte de Tráfico cuentan distinto).
+- El archivo de Efectividad de Agendamiento ya no se usa en ORLANT, pero no
+  se borró: su carga y lo que tenga guardado siguen.
+
 ## v1.100.1 — Octubre 2026
 
 **Arreglo: cifras de la gráfica de Efectividad de Citas.**

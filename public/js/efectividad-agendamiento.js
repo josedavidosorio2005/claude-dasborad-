@@ -13,6 +13,12 @@
 // buscador; grafica combo (barras Gestiones/Agendas + linea % Efectividad
 // en eje secundario, mismo patron que gd-combo-logic.js) con scroll
 // horizontal PROPIO si hay muchos asesores (nunca scroll de la pagina).
+//
+// Fase 213 (pedido de Edwin, solo ORLANT): el servidor manda `fuente:
+// 'contactos'` -- "gestiones" son las contestadas del asesor (llamadas +
+// WhatsApp de ingreso del CDR de Tipificacion), "OTROS" y los usuarios sin
+// asesor van aparte (`aparte`, en una nota). Ver
+// efectividadAgendamientoDesdeContactos (server/efectividad-agendamiento.js).
 'use strict';
 
 var _eaOpciones = {};     // cache por campana: { meses }
@@ -42,7 +48,7 @@ async function _efectividadAgendamientoRenderPanel(p, i){
   var opciones = await _eaCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin Efectividad de agendamiento cargada todavia. Un usuario con permiso de administrador debe subir la hoja EFECTIVIDAD_AGENDAMIENTO desde "Cargar Datos".</div></div>';
+      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos para el ranking todavía. '+(campana === 'ORLANT' ? 'Sale de las agendas y de la Tipificación cargadas.' : 'Un usuario con permiso de administrador debe subir la hoja EFECTIVIDAD_AGENDAMIENTO desde "Cargar Datos".')+'</div></div>';
     return;
   }
 
@@ -50,10 +56,11 @@ async function _efectividadAgendamientoRenderPanel(p, i){
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
   html += '<div id="ea-aviso-'+i+'"></div>';
   html += '<div id="ea-tarjetas-wrap-'+i+'"></div>';
+  html += '<div id="ea-nota-'+i+'"></div>'; // Fase 213
   html += '<div id="ea-chart-wrap-'+i+'"></div>';
   html += '<div class="search-bar" style="max-width:260px;margin:14px 0 12px"><input type="text" id="ea-buscar-'+i+'" aria-label="Buscar asesor" placeholder="Buscar asesor…" oninput="_eaBuscarInput('+i+', this.value)"></div>';
   html += '<div class="table-wrap"><table class="aurora-table" id="ea-tabla-'+i+'"><thead><tr>' +
-    '<th>Puesto</th><th style="text-align:left">Asesor</th><th>Gestiones</th><th>Agendas</th><th>% Efectividad</th>' +
+    '<th>Puesto</th><th style="text-align:left">Asesor</th><th id="ea-th-gestiones-'+i+'">Gestiones</th><th>Agendas</th><th>% Efectividad</th>' +
     '</tr></thead><tbody></tbody></table></div>';
   html += '</div>';
   host.innerHTML = html;
@@ -96,10 +103,15 @@ async function _eaDibujar(campana, i, opciones){
   var buscarEl = document.getElementById('ea-buscar-'+i);
   if(buscarEl) buscarEl.value = '';
 
+  var contactos = ranking.fuente === 'contactos'; // Fase 213
+  var thG = document.getElementById('ea-th-gestiones-'+i);
+  if(thG) thG.textContent = contactos ? 'Contestadas' : 'Gestiones';
+  var notaEl = document.getElementById('ea-nota-'+i);
+  if(notaEl) notaEl.innerHTML = contactos ? _eaNotaContactosHtml(ranking) : '';
   if(tarjetasEl){
     var lblEa = gdMesesTarjetasTexto(mesesEa, !_gdMeses().length, mesNombreLargo); // Fase 207
     tarjetasEl.innerHTML = '<div class="aurora-kpis">' +
-      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">Gestiones · '+esc(lblEa)+'</div></div>' +
+      '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.gestiones)+'</div><div class="kl">'+(contactos ? 'Contestadas (llamadas + WhatsApp)' : 'Gestiones')+' · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+gdFmtValor(ranking.equipo.agendas)+'</div><div class="kl">Agendas · '+esc(lblEa)+'</div></div>' +
       '<div class="aurora-kpi gd-kpi"><div class="kv">'+efectividadAgendamientoFmtPct(ranking.equipo.efectividad)+'</div><div class="kl">Efectividad del equipo (ponderada)</div></div>' +
       '</div>';
@@ -109,23 +121,33 @@ async function _eaDibujar(campana, i, opciones){
     var anchoMin = Math.max(600, (ranking.filas||[]).length * EA_PX_POR_ASESOR);
     chartWrapEl.innerHTML = '<div style="overflow-x:auto"><div style="min-width:'+anchoMin+'px;height:420px"><canvas id="ea-c-'+i+'"></canvas></div></div>';
   }
-  _eaDibujarGrafica(i, ranking.filas||[]);
+  _eaDibujarGrafica(i, ranking.filas||[], contactos);
   _eaRenderizarTabla(i);
+}
+
+// Fase 213: como se calcula, que el total no cuadra exacto con Efectividad de
+// Citas, y "OTROS" (y usuarios sin asesor) aparte, con sus agendas.
+function _eaNotaContactosHtml(ranking){
+  var aparte = (ranking.aparte || []).map(function(a){ return esc(textoFormatoNombre(a.asesor)) + ': ' + gdFmtValor(a.agendas) + ' agendas'; });
+  return '<p class="tipif-linea-nota">Efectividad por asesor = agendas del asesor ÷ sus contestadas (llamadas + WhatsApp de ingreso, del CDR de Tipificación). '+
+    'El total del equipo no cuadra exacto con Efectividad de Citas, que usa los reportes de Tráfico: el CDR y el reporte de Wolkvox cuentan distinto.'+
+    (aparte.length ? ' Fuera del ranking: ' + aparte.join(' · ') + '.' : '') + '</p>';
 }
 
 // Grafica combo (gd-combo-logic.js, mismo patron que los paneles `combo`
 // del dashboard generico): columnas Gestiones/Agendas por asesor, linea %
 // Efectividad en el eje secundario -- SIEMPRE en el orden del ranking
 // (puesto), nunca el orden de busqueda/filtro de la tabla de abajo.
-function _eaDibujarGrafica(i, filas){
+function _eaDibujarGrafica(i, filas, contactos){
   var canvasId = 'ea-c-'+i;
   var labels = filas.map(function(f){ return textoFormatoNombre(f.asesor); });
   var barras = [
-    { label: 'Gestiones', data: filas.map(function(f){ return f.gestiones; }), color: (typeof CM!=='undefined'?CM:'#1a7a9e') },
-    { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: (typeof CD!=='undefined'?CD:'#0d4a5e') },
+    { label: contactos ? 'Contestadas (llamadas + WhatsApp)' : 'Gestiones', data: filas.map(function(f){ return f.gestiones; }), color: contactos && typeof colorSerie==='function' ? colorSerie('principal') : (typeof CM!=='undefined'?CM:'#1a7a9e') },
+    { label: 'Agendas', data: filas.map(function(f){ return f.agendas; }), color: contactos && typeof colorSerie==='function' ? colorSerie('secundaria') : (typeof CD!=='undefined'?CD:'#0d4a5e') },
   ];
-  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.efectividad*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
+  var linea = { label: '% Efectividad', data: filas.map(function(f){ return f.efectividad === null ? null : f.efectividad*100; }), color: (typeof colorSerie==='function' ? colorSerie('linea') : '#0d4a5e') } // Fase 152 (B1): paleta categorica, no semaforo;
   var ds = gdComboDatasets(barras, linea);
+  if(contactos && typeof estiloBarraSecundaria === 'function') Object.assign(ds[1], estiloBarraSecundaria()); // Fase 213
   // Fase 152 (B9): "agendas de gestiones" en el tooltip y en Ver datos.
   ds.forEach(function(d){ if(d.type === 'line') d.fraccion = { num: filas.map(function(f){ return f.agendas; }), den: filas.map(function(f){ return f.gestiones; }) }; });
   var o = loBar();
@@ -144,6 +166,16 @@ function _eaDibujarGrafica(i, filas){
   };
   o.plugins.datalabels = { display:true, align:'end', anchor:'end', font:{size:12,weight:'bold'}, color:(typeof CD!=='undefined'?CD:'#0d4a5e'),
     formatter:function(v,ctx){ return ctx.dataset.type==='line' ? (v!=null?gdFmtValor(v,'%'):'') : v; } };
+  // Fase 213: cifras legibles en los 2 temas (mismo criterio que Efectividad de
+  // Citas, v1.100.1). Con muchos asesores, solo las del %.
+  if(contactos){
+    o.plugins.datalabels.color = (typeof colorSerie==='function' ? colorSerie('principal') : '#004150');
+    o.plugins.datalabels.backgroundColor = (typeof CHART_DL_BG!=='undefined' ? CHART_DL_BG : 'rgba(255,255,255,0.75)');
+    o.plugins.datalabels.borderRadius = 3;
+    o.plugins.datalabels.display = function(ctx){ return ctx.dataset.type === 'line'; };
+    o.scales.y2.grace = '12%'; // la cifra del 1er puesto no se corta arriba
+    o.scales.y.grace = '8%';
+  }
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
 }

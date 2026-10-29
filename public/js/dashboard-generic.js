@@ -2298,6 +2298,18 @@ async function _gdExportarEfectividadAgendamiento(p, i){
   if(!ranking.filas || !ranking.filas.length){
     return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin datos de Efectividad de agendamiento para ' + gdMesesTarjetasTexto(mesesEaExp, false, mesNombreLargo) + '.' }];
   }
+  // Fase 213 (ORLANT): contestadas (llamadas + WhatsApp) en vez de gestiones;
+  // "OTROS" y los usuarios sin asesor, fuera del ranking, al final.
+  if(ranking.fuente === 'contactos'){
+    var filasC = ranking.filas.map(function(f){
+      return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), 'Llamadas contestadas': f.llamadas, 'WhatsApp contestados': f.whatsapp, 'Contestadas (llamadas + WhatsApp)': f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
+    });
+    filasC.push({ Puesto: '', Asesor: 'TOTAL EQUIPO', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': ranking.equipo.gestiones, Agendas: ranking.equipo.agendas, '% Efectividad': efectividadAgendamientoFmtPct(ranking.equipo.efectividad) });
+    (ranking.aparte || []).forEach(function(a){
+      filasC.push({ Puesto: '', Asesor: textoFormatoNombre(a.asesor) + ' (fuera del ranking)', 'Llamadas contestadas': '', 'WhatsApp contestados': '', 'Contestadas (llamadas + WhatsApp)': '', Agendas: a.agendas, '% Efectividad': '' });
+    });
+    return [{ titulo: titulo, tipo: 'tabla', filas: filasC }];
+  }
   var filas = ranking.filas.map(function(f){
     return { Puesto: f.puesto, Asesor: textoFormatoNombre(f.asesor), Gestiones: f.gestiones, Agendas: f.agendas, '% Efectividad': efectividadAgendamientoFmtPct(f.efectividad) };
   });
