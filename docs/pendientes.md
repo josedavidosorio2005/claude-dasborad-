@@ -165,7 +165,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Cómo se cierra: si alguno es una persona que agenda, agregarla en la
   Clasificación de usuarios.
 - **SURA — Televentas: primera carga** (Fase 215, 29/10/2026). El tablero
-  está en producción sin datos y solo lo ve el administrador. Falta:
+  está en producción (v1.105.0) sin datos y solo lo ve el administrador.
+  **Edwin debe confirmar**: (a) mandar los Excel de cada mes (punto 1);
+  (b) que el cliente vea solo Cumplimiento, Agentes, Tipificaciones, Detalle
+  ventas y Estrategias (punto 2); (c) las metas de producción de
+  Odontológico por mes (punto 3); (d) qué nombres de asesora son la misma
+  persona (punto 4); (e) el visto bueno para el usuario de Jairo (punto 5);
+  y (f) si en el celular quiere los botones de campaña del mismo ancho (hoy
+  salen apilados con anchos distintos, igual que en su HTML). Falta:
   1. **Los Excel de Edwin** por mes (base de ventas `data_inconexion_03..10`,
      `OCTUBRE`, base inicial y `ESTRATEGIAS`): no estaban en este equipo,
      así que la comparación de conteos contra el HTML original queda por

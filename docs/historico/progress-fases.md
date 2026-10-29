@@ -18369,3 +18369,41 @@ cliente nuevo SURA, solo visible para el administrador mientras se prueba.
   campos (D13); las tablas `sura_*` con sus triggers de `datos_version`.
 - Los Excel reales de Edwin no estaban en el equipo: la comparación de
   conteos contra el HTML queda en `docs/pendientes.md` (sección 2).
+
+
+## Fase 215 — cierre: merge con main (v1.105.0) y verificación en producción (2026-10-29)
+
+El PR #607 (cliente SURA, tablero Televentas) chocaba con main, que ya estaba
+en la v1.104.1 por la Fase 214 de ORLANT (#608, #609, #610).
+
+- **Merge de main en la rama del #607** (sin force: commit de merge encima,
+  avance normal de la rama remota). Conflictos solo de texto agregado en el
+  mismo lugar (`package.json`, `package-lock.json`, `CHANGELOG.md`,
+  `PROGRESS.md`, bitácora y pendientes): se conservaron los dos lados, la
+  Fase 214 primero y la 215 después. La Fase 215 pasó a la **v1.105.0**. La
+  rama estaba abierta en otro worktree (de la sesión que la creó, limpio y al
+  día): no se tocó; el merge se hizo en una rama local aparte.
+- **Sin datos reales**: búsqueda en todo el diff del PR (2.913 líneas
+  agregadas) — "SEED" solo en comentarios y en el filtro del generador que
+  las quita; ningún teléfono, correo, cédula ni nombre de persona (las
+  identificaciones son sintéticas, `9000000000+n`, y los asesores
+  `asesor_prueba_N`).
+- **Pruebas**: suite 2396/2396, `npm audit` 0, CI completo en verde (test
+  (24), docker-build, pantallas). Merge con `--match-head-commit` comparando
+  el SHA de `git ls-remote` con la API.
+- **Local** (copia de la base demo): el administrador montó por la interfaz 3
+  bases de ventas sintéticas (ago/sep/oct), la base inicial y la de
+  estrategias; las 7 pestañas cambian bien y las cifras cuadran con los
+  archivos (42 pólizas = 14 × 3; producción $17.741.000 = 1.211.000 +
+  1.218.000 + 15.312.000, octubre con valor mensual × 12). 1440/768/375,
+  claro y oscuro: sin desborde y 0 errores de consola. **ORLANT y Mobilize sin
+  cambios**: misma "foto" (33 vistas, 59 tarjetas, 33 gráficas, 0 errores) con
+  main y con la rama, corridos lado a lado.
+- **Producción** (solo lectura, 0 escrituras bloqueadas): `/api/health` en
+  1.105.0; SURA en la lista de clientes del administrador, 7 pestañas, vacío
+  (sin bases), sin errores de consola ni desborde a 1440/768/375 en claro y
+  oscuro; ORLANT (8 pestañas) y Mobilize (6) recorridos sin errores. Capturas
+  fuera del repo.
+- **Detalle visto**: a 375 px los botones de campaña salen apilados con
+  anchos distintos (igual que en el HTML de Edwin); queda como pregunta en
+  `docs/pendientes.md`, sin cambio.
