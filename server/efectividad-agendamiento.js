@@ -117,10 +117,96 @@ function cargarEfectividadAgendamiento(db, { campana, archivoNombre, cargadoPorN
   return { insertadas: filasObj.length, borradas, meses };
 }
 
+// ── Fase 213 (pedido de Edwin, 29/10, solo ORLANT): ranking por asesor con la
+// misma logica de Efectividad de Citas: agendas del asesor / contestadas del
+// asesor (llamadas + WhatsApp de ingreso). Reemplaza al archivo
+// EFECTIVIDAD_AGENDAMIENTO, que no se borra (su carga y sus datos siguen).
+//   - Agendas por asesor: AGENDAS_FUENTE (base cruda: usuario -> asesor con la
+//     Clasificacion de usuarios y su fecha de cambio; formato anterior: el
+//     nombre con alias). "OTROS" y los usuarios sin asesor van aparte.
+//   - Contestadas por asesor: el CDR de Tipificacion (AGENT_NAME); de ingreso
+//     = lo que no es salida (condSalidaCanalSql), en los 2 canales. Trafico no
+//     sirve: viene por skill, no por asesor.
+//   - Cruce: nombre con alias (Fase 122) y sin tildes/mayusculas/espacios.
+// El total del equipo no cuadra exacto con Efectividad de Citas (que usa los
+// reportes de Trafico): el CDR y el reporte de Wolkvox cuentan distinto.
+const CLIENTES_RANKING_DESDE_CONTACTOS = ['ORLANT'];
+function usaRankingDesdeContactos(campana) { return CLIENTES_RANKING_DESDE_CONTACTOS.includes(campana); }
+const ASESOR_APARTE_RE = /^(OTROS|USUARIO .* \(SIN ASESOR\))$/;
+
+function _mesesDeAgendas(db, campana) {
+  return db.prepare('SELECT DISTINCT substr(fechaSolicitud,1,7) AS v FROM agendas WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v);
+}
+
+function efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }) {
+  const { AGENDAS_FUENTE, agendasWhereClausulas } = require('./agendas');
+  const { condSalidaCanalSql } = require('./tipificaciones');
+  const { cargarAliasMapa, resolverAlias, aliasNorm } = require('./alias-asesores');
+  const lista = meses ? String(meses).split(',') : [mes];
+  const alias = cargarAliasMapa(db, campana);
+  const clave = (n) => aliasNorm(resolverAlias(alias, n));
+
+  const { where, params } = agendasWhereClausulas({ campana, meses: lista.join(',') }, true, db);
+  const agendas = db.prepare(`SELECT asesor, COUNT(*) AS n FROM ${AGENDAS_FUENTE} WHERE ${where} GROUP BY asesor`).all(params);
+  const contestadas = db.prepare(`
+    SELECT agente,
+      SUM(CASE WHEN canal = 'LLAMADAS' AND NOT (${condSalidaCanalSql(campana, 'LLAMADAS')}) THEN 1 ELSE 0 END) AS llamadas,
+      SUM(CASE WHEN canal = 'WHATSAPP' AND NOT (${condSalidaCanalSql(campana, 'WHATSAPP')}) THEN 1 ELSE 0 END) AS whatsapp
+    FROM tipificaciones WHERE campana = ? AND substr(fecha,1,7) IN (${lista.map(() => '?').join(', ')}) GROUP BY agente`).all(campana, ...lista);
+
+  const porClave = new Map();
+  const fila = (k, nombre) => {
+    if (!porClave.has(k)) porClave.set(k, { asesor: nombre, agendas: 0, llamadas: 0, whatsapp: 0 });
+    return porClave.get(k);
+  };
+  const aparte = [];
+  agendas.forEach((a) => {
+    if (ASESOR_APARTE_RE.test(aliasNorm(a.asesor))) { aparte.push({ asesor: a.asesor, agendas: a.n }); return; }
+    // El nombre que se muestra es el de Agendamiento (lista de usuarios/alias).
+    const f = fila(clave(a.asesor), resolverAlias(alias, a.asesor));
+    f.agendas += a.n;
+  });
+  contestadas.forEach((c) => {
+    const f = fila(clave(c.agente), resolverAlias(alias, c.agente));
+    f.llamadas += c.llamadas || 0;
+    f.whatsapp += c.whatsapp || 0;
+  });
+
+  const conPct = [...porClave.values()].filter((f) => f.agendas > 0 || f.llamadas + f.whatsapp > 0).map((f) => {
+    const gestiones = f.llamadas + f.whatsapp;
+    return { asesor: f.asesor, gestiones, agendas: f.agendas, llamadas: f.llamadas, whatsapp: f.whatsapp, efectividad: gestiones > 0 ? f.agendas / gestiones : null };
+  });
+  // Mismo orden que el ranking del archivo: efectividad desc (sin contestadas
+  // al final), empate -> mas contestadas, empate total -> alfabetico.
+  conPct.sort((a, b) => {
+    const ea = a.efectividad === null ? -1 : a.efectividad;
+    const eb = b.efectividad === null ? -1 : b.efectividad;
+    if (eb !== ea) return eb - ea;
+    if (b.gestiones !== a.gestiones) return b.gestiones - a.gestiones;
+    return a.asesor < b.asesor ? -1 : a.asesor > b.asesor ? 1 : 0;
+  });
+  let puestoActual = 0;
+  conPct.forEach((f, k) => {
+    const prev = conPct[k - 1];
+    if (!prev || f.efectividad !== prev.efectividad || f.gestiones !== prev.gestiones) puestoActual = k + 1;
+    f.puesto = puestoActual;
+  });
+  const totalGestiones = conPct.reduce((s, f) => s + f.gestiones, 0);
+  const totalAgendas = conPct.reduce((s, f) => s + f.agendas, 0);
+  return {
+    fuente: 'contactos',
+    filas: conPct.map((f) => Object.assign({ puesto: f.puesto }, f)),
+    equipo: { gestiones: totalGestiones, agendas: totalAgendas, efectividad: totalGestiones > 0 ? totalAgendas / totalGestiones : 0 },
+    aparte,
+  };
+}
+
 // Valores distintos de Mes + si hay datos (meses.length) -- tambien lo usa
 // el dashboard para decidir si el ranking tiene algo que mostrar en el mes
-// elegido arriba (ver public/js/efectividad-agendamiento.js).
+// elegido arriba (ver public/js/efectividad-agendamiento.js). Fase 213: en
+// ORLANT, los meses con agendas.
 function efectividadAgendamientoOpciones(db, campana) {
+  if (usaRankingDesdeContactos(campana)) return { meses: _mesesDeAgendas(db, campana) };
   return {
     meses: db.prepare('SELECT DISTINCT mes AS v FROM efectividad_agendamiento WHERE campana = ? ORDER BY v').all(campana).map((r) => r.v),
   };
@@ -136,6 +222,7 @@ function efectividadAgendamientoOpciones(db, campana) {
 // Fase 207: con `meses` (lista ya validada) suma gestiones y agendas por
 // asesor en esos meses y el puesto sale de los totales sumados.
 function efectividadAgendamientoRanking(db, { campana, mes, meses }) {
+  if (usaRankingDesdeContactos(campana)) return efectividadAgendamientoDesdeContactos(db, { campana, mes, meses }); // Fase 213
   const lista = meses ? String(meses).split(',') : [mes];
   const filas = db
     .prepare('SELECT asesor, SUM(gestiones) AS gestiones, SUM(agendas) AS agendas FROM efectividad_agendamiento WHERE campana = ? AND mes IN (' + lista.map(() => '?').join(', ') + ') GROUP BY asesor')
@@ -185,4 +272,6 @@ module.exports = {
   cargarEfectividadAgendamiento,
   efectividadAgendamientoOpciones,
   efectividadAgendamientoRanking,
+  usaRankingDesdeContactos,
+  efectividadAgendamientoDesdeContactos,
 };

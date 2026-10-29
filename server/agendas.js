@@ -473,4 +473,5 @@ module.exports = {
   agendasRankingCrudo,
   agendasRankingPuro,
   agendasRanking,
+  agendasWhereClausulas, // Fase 213: ranking por contestadas (efectividad-agendamiento.js)
 };

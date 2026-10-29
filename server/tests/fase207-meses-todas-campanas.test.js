@@ -129,10 +129,10 @@ test('Efectividad de Agendamiento: el servidor suma gestiones y agendas por ases
   const mem = new Database(':memory:');
   mem.exec('CREATE TABLE efectividad_agendamiento (campana TEXT, mes TEXT, asesor TEXT, gestiones INTEGER, agendas INTEGER)');
   const ins = mem.prepare('INSERT INTO efectividad_agendamiento VALUES (?, ?, ?, ?, ?)');
-  [['2026-08', 'A', 100, 50], ['2026-08', 'B', 100, 40], ['2026-09', 'A', 100, 10], ['2026-09', 'B', 100, 60], ['2026-10', 'A', 50, 25]].forEach((f) => ins.run('ORLANT', ...f));
-  const uno = efectividadAgendamientoRanking(mem, { campana: 'ORLANT', mes: '2026-09' });
+  [['2026-08', 'A', 100, 50], ['2026-08', 'B', 100, 40], ['2026-09', 'A', 100, 10], ['2026-09', 'B', 100, 60], ['2026-10', 'A', 50, 25]].forEach((f) => ins.run('CLIENTE DEMO', ...f));
+  const uno = efectividadAgendamientoRanking(mem, { campana: 'CLIENTE DEMO', mes: '2026-09' });
   assert.deepEqual(uno.filas.map((f) => [f.puesto, f.asesor]), [[1, 'B'], [2, 'A']]);
-  const dos = efectividadAgendamientoRanking(mem, { campana: 'ORLANT', meses: '2026-08,2026-09' });
+  const dos = efectividadAgendamientoRanking(mem, { campana: 'CLIENTE DEMO', meses: '2026-08,2026-09' });
   assert.deepEqual(dos.filas.map((f) => [f.puesto, f.asesor, f.gestiones, f.agendas]), [[1, 'B', 200, 100], [2, 'A', 200, 60]]);
   assert.equal(dos.equipo.efectividad, 160 / 400, 'ponderada: agendas / gestiones sumadas');
   mem.close();
