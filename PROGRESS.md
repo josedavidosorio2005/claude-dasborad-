@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.96.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.97.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -352,3 +352,4 @@ mismo orden):
 - Fase 208 — Calidad de Mobilize sin el aviso de "no hay monitoreos" cuando hay resumen cargado; números de control al día con el historial de cargas (v1.94.1, 2026-10-28)
 - Fase 209 — Mobilize: Flujo por hora en una sola tabla por métrica que suma los meses de MESES (título con los meses), Abandonadas en escala roja y día 1 visible en el celular (v1.95.0, 2026-10-28)
 - Fase 210 — ORLANT: Agendamiento con la base cruda del aplicativo, Clasificación de usuarios (con fecha de cambio) y de líneas (código → 3P/General), octubre cargado (v1.96.0, 2026-10-28)
+- Fase 211 — Logo de InConexion en la barra de todos los tableros (isotipo en el celular) y alias de asesor al consultar Agendamiento; ORLANT: INCO20 → OTROS y LINCO3 unificado en ago/sep (v1.97.0, 2026-10-28)

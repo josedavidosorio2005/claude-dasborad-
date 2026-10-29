@@ -148,13 +148,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
-- **Agendamiento ORLANT: usuario INCO20 sin asesor** (Fase 210,
-  28/10/2026) — aparece en la base de octubre (4 agendas) y no está en la
-  lista "USUARIOS CON CAMBIOS ORLANT"; sale como "Usuario INCO20 (sin
-  asesor)". Al revisar los archivos, los otros 2 que parecían fuera de la
-  lista eran el mismo usuario escrito con espacio ("INCO 19" = INCO19,
-  "LINCO 3" = LINCO3) y ya cruzan. Cómo se cierra: Edwin dice de quién es
-  INCO20 y un administrador lo agrega en "Clasificación de usuarios".
 - **Agendamiento ORLANT: 20 usuarios en la lista, no 19** (Fase 210) — la
   lista trae 21 registros y 20 usuarios distintos (INCO18 repetido por su
   cambio). Edwin habló de 19 usuarios fijos. Se cargó tal cual. Cómo se
@@ -163,13 +156,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   único usuario con fecha de cambio (07/10/2026) en la lista es INCO18, y
   los nombres de la lista no se escriben exactamente igual que en el
   pedido. Cómo se cierra: Edwin confirma que es ese usuario.
-- **Agendamiento ORLANT: LINCO3 con otro nombre que en ago/sep** (Fase
-  210) — el nombre de LINCO3 en la lista no coincide con el que tienen
-  agosto y septiembre (el alias vigente no lo cubre: le falta un segundo
-  nombre). Con el filtro Agente, octubre sale con un nombre y ago/sep con
-  otro. Cómo se cierra: si es la misma persona, un administrador cambia el
-  nombre de LINCO3 en "Clasificación de usuarios" (o se agrega el alias,
-  con tu OK).
 
 - **¿Las skills Confirmaciones, Cancelaciones y Reprogramación y Atención
   Tutelas cuentan como "Llamadas ingresadas" de ORLANT?** (Fase 208,

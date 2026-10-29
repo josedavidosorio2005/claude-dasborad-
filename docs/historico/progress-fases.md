@@ -18089,3 +18089,38 @@ Pedido de Edwin del 28/10 (solo ORLANT, Agendamiento). PR #593.
   06/10 (persona anterior) y 86 desde el 07/10 (persona nueva), 0
   cruzadas. Agosto 11.040 y septiembre 13.146 sin cambio. 1440/768/375 sin
   scroll horizontal, 0 errores. Capturas fuera del repo.
+
+### Fase 211 — Logo de InConexion en todos los tableros y alias de asesor al consultar Agendamiento (2026-10-28, v1.97.0)
+
+Respuestas de Edwin a los pendientes de la Fase 210 y pedido del cliente.
+PR #595.
+
+- **Logo de InConexion** en la barra de todos los tableros (todos los
+  clientes), a la izquierda de "Actualizar datos": logo horizontal blanco
+  (110×22; 90×18 a ≤768 px) y, a ≤480 px, solo el isotipo blanco (26×25).
+  La barra es `--c-brand` en los 2 temas, por eso la versión blanca sirve
+  en claro y oscuro. El logo del cliente no cambia.
+- **Alias al consultar Agendamiento**: el alias de asesor (Fase 122) se
+  aplica también al consultar las agendas del formato anterior
+  (`aliasAgendasJson`, `json_each(@aliasAgendas)` en `AGENDAS_FUENTE`):
+  un alias creado después de la carga renombra ago/sep sin reescribir lo
+  guardado; el filtro Agente lo sigue.
+- **Datos de ORLANT en producción** (autorizado, con la sesión del
+  usuario): INCO20 → "OTROS" sin fecha, por la ventana "Clasificación de
+  usuarios" (ya no queda ningún usuario sin asesor). LINCO3: el alias
+  viejo (segundo nombre faltante → nombre de ago/sep) se reemplazó por 2
+  alias hacia el nombre de la lista, por la API de administrador de
+  siempre (no hay ventana de alias). Antes se revisó en solo lectura que
+  Tipificación ya usa el nombre de la lista (clasificado General) y que el
+  nombre viejo no aparece allí: sin efecto en Tipificación. Resultado: ese
+  asesor sale con un solo nombre en ago 425, sep 505 y oct 248.
+- Pruebas: `fase211-alias-agendas-logo.test.js` (2 casos, nombres
+  inventados). Suite 2360/2360, `npm audit` 0, CI verde, merge con
+  `--match-head-commit`, deploy en verde, health 1.97.0.
+- **Verificación** (local y producción en solo lectura, escrituras
+  bloqueadas: 0 intentos): ORLANT y MOBILIZE × claro/oscuro ×
+  1440/768/375 — logo (isotipo a 375 px) a la izquierda de Actualizar,
+  imagen cargada, sin solapes ni scroll horizontal, logo del cliente
+  intacto, 0 errores de consola. Capturas fuera del repo.
+- Pendientes: salen INCO20 y LINCO3; siguen "20 usuarios, no 19" y "el
+  518 es INCO18" hasta que Edwin confirme.
