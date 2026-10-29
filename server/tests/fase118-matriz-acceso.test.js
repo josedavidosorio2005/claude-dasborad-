@@ -273,6 +273,13 @@ declarar(['GET /centro-cargas/:cliente', 'GET /centro-cargas/:cliente/:carga/:me
 // Deshacer: mismo criterio sobre el cliente de la version (fase153-versiones.test.js).
 declarar(['POST /centro-cargas/versiones/:id/deshacer'], 'cargaYclienteVersion');
 declarar(['GET /centro-cargas-plantillas/:archivo'], 'dataLoaderGlobal');
+// Fase 215: Televentas de SURA. Leer = campaignAccess al cliente (y que el
+// cliente tenga ese tablero, 404 si no); el archivo original y toda
+// escritura = solo administrador. Matriz propia (cliente, REPORTES con
+// cargarDatos, cliente ajeno, sin sesion) en fase215-sura-televentas.test.js.
+declarar(['GET /sura-televentas/:cliente/resumen', 'GET /sura-televentas/:cliente/bases/:tipo/:mes'], 'televentasLectura');
+declarar(['GET /sura-televentas/:cliente/bases/:tipo/:mes/archivo', 'POST /sura-televentas/:cliente/bases/:tipo/:mes',
+  'DELETE /sura-televentas/:cliente/bases/:tipo/:mes', 'PUT /sura-televentas/:cliente/config/:clave'], 'televentasAdmin');
 declarar(['GET /dashboards/config', 'GET /dashboards/config/:cliente', 'POST /dashboards/config', 'PUT /dashboards/config/:cliente', 'DELETE /dashboards/config/:cliente'], 'admin');
 declarar(['GET /dashboard/:cliente'], 'skip'); // gate por adapter.permiso variable segun el cliente -- cubierto indirectamente via can('Inventario'|'Gerencia'|'GestionHumana') en sus rutas propias
 declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'dataLoaderGlobal');

@@ -32,6 +32,19 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
   cd .. && node scripts/qa/auditoria-amplia-local.js
   ```
 
+## scripts/sura/ — tablero Televentas de SURA (Fase 215)
+
+- **`generar-televentas.js`** — regenera `public/js/sura-televentas-app.js`
+  y `public/css/sura-televentas-app.css` desde el HTML de Edwin
+  (`seguimiento_ventas_offline.html`), que vive FUERA del repo porque trae
+  datos reales. Quita SheetJS embebido y las constantes `SEED*`, cambia
+  IndexedDB por la API y falla si el HTML cambió donde hay un reemplazo.
+  Después correr `server/tests/fase215-sura-televentas.test.js`.
+
+  ```
+  node scripts/sura/generar-televentas.js "<ruta>/seguimiento_ventas_offline.html" .
+  ```
+
 ## scripts/produccion/ — solo lectura contra producción
 
 - **`revision-final.js`** — recorrido de verificación en

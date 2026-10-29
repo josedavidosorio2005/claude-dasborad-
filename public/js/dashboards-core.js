@@ -68,7 +68,8 @@ function openClientsModal(){
   var clientesAccesibles=dashClientesVisibles(CLIENTES_LIST, currentUser, isFullAdmin());
   for(var i=0;i<clientesAccesibles.length;i++){
     var c=clientesAccesibles[i];
-    var built=BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1;
+    // Fase 215: un cliente con tablero propio (SURA, Televentas) tambien esta listo.
+    var built=BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1 || (typeof stvEsTeleventas==='function' && stvEsTeleventas(c));
     var cls='client-card';
     var tag='';
     if(!built){ cls+=' client-soon'; tag='<div class="client-soon-label">Proximamente</div>'; }
@@ -85,6 +86,8 @@ function openClientsModal(){
 function closeClientsModal(){document.getElementById('clients-modal-overlay').classList.remove('show');}
 function openClientByEl(el){
   var c = el.dataset.cliente;
+  // Fase 215: SURA abre su tablero propio (sura-televentas.js), no el generico.
+  if (typeof stvEsTeleventas === 'function' && stvEsTeleventas(c)) { openSuraTeleventas(c); return; }
   // Fase 3: cualquier cliente con dashboard configurado se abre con el modulo generico.
   if (BUILT_CLIENT_DASHBOARDS.indexOf(c) !== -1) { openGenericDashboard(c); return; }
   showToast('El dashboard de '+c+' esta en preparacion. Pronto lo veras aqui.');
