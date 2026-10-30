@@ -234,6 +234,14 @@ function tipificacionesWhereClausulas(q) {
     clausulas.push('tipoInteraccion = @tipoInteraccion');
     params.tipoInteraccion = q.tipoInteraccion;
   }
+  // Fase 219 (pedido de Edwin, ORLANT): "Entrada o salida" con la MISMA regla
+  // de las tarjetas (condSalidaCanalSql), no el TYPE_INTERACTION crudo.
+  // COALESCE: un TYPE_INTERACTION vacio da NULL y la fila se perderia de los
+  // dos lados; asi cada registro es de entrada o de salida, nunca de ninguno.
+  if (q.sentido) {
+    const esSalida = `COALESCE((${condSalidaCanalSql(q.campana, q.canal)}), 0)`;
+    clausulas.push(q.sentido === 'salida' ? `${esSalida} = 1` : `${esSalida} = 0`);
+  }
   // Fase 186: filtro "Línea de salida" -- deja solo la salida del canal de los
   // asesores de esa linea (o de los sin clasificar).
   if (q.linea && usaClasificacionAsesores(q.campana)) {
@@ -290,11 +298,11 @@ function tipificacionesPorTipo(db, q) {
 function tipificacionesResumenSalida(db, q) {
   // Fase 183: totalLlamadas = todas las llamadas (entrada y salida) con los
   // mismos filtros -- la tarjeta "Total llamadas" de ORLANT.
-  const todas = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined });
+  const todas = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined, sentido: undefined });
   const totalLlamadas = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${todas.where}`).get(todas.params).n;
   const { where, params } = salidaPorGuion(q.campana)
-    ? (() => { const w = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined }); return { where: `${w.where} AND ${COND_SALIDA_GUION_SQL}`, params: w.params }; })()
-    : tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma' });
+    ? (() => { const w = tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: undefined, sentido: undefined }); return { where: `${w.where} AND ${COND_SALIDA_GUION_SQL}`, params: w.params }; })()
+    : tipificacionesWhereClausulas({ ...q, canal: 'LLAMADAS', tipoInteraccion: 'outbound_ma', sentido: undefined });
   const total = db.prepare(`SELECT COUNT(*) AS n FROM tipificaciones WHERE ${where}`).get(params).n;
   const soloTotal = salidaPorGuion(q.campana); // ORLANT: una sola tarjeta, Total llamadas
   const extra = soloTotal ? { totalLlamadas, soloTotal } : {};

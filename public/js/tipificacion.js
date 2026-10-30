@@ -36,6 +36,7 @@ var _tipificacionCampanaPorPanel = {};
 var _tipificacionCanalesPorPanel = {};  // Fase 131: [{canal,titulo,etiquetaSkill}, ...] que este panel realmente usa
 var _tipificacionPanelConfig = {};      // Fase 131: opciones crudas del panel, por indice
 var _tipificacionClasifPorPanel = {};   // Fase 186: true si el cliente reparte la salida por la clasificacion del asesor
+var _tipificacionSentidoPorCampana = {}; // Fase 219: true si el filtro de cada mitad es "Entrada o salida" (ORLANT)
 // Fase 86 (tema 3): mismo patron que _agendasMesSincronizado/
 // _agendasSinDatosMesGlobal (agendas.js) -- ver ese comentario.
 var _tipificacionMesSincronizado = {};
@@ -118,6 +119,14 @@ function _tipificacionOptionsHtml(valores, seleccionado, etiqueta){
 }
 // Fase 131: Entrante/Saliente -- TYPE_INTERACCION normalizado por el
 // parser (tipificacionParseFilas) a exactamente estos 3 valores + vacio.
+// Fase 219 (pedido de Edwin, ORLANT): cada registro es de entrada o de salida
+// (la regla de las tarjetas, en el servidor: sentido); no hay "Otro".
+function _tipificacionSentidoOptionsHtml(seleccionado){
+  return [['', 'Todos'], ['entrada', 'Entrada'], ['salida', 'Salida']].map(function(o){
+    return '<option value="'+o[0]+'"'+(o[0]===seleccionado?' selected':'')+'>'+o[1]+'</option>';
+  }).join('');
+}
+
 function _tipificacionTipoOptionsHtml(seleccionado){
   var opciones = [['', 'Todos'], ['inbound', 'Entrante'], ['outbound_ma', 'Saliente'], ['otro', 'Otro']];
   return opciones.map(function(o){
@@ -147,6 +156,7 @@ async function _tipificacionRenderPanel(p, i){
   // Fase 186 (solo ORLANT, lo dice el servidor en /opciones).
   var clasif = canalesAUsar.some(function(c){ return !!(opPorCanal[c.canal] && opPorCanal[c.canal].clasificacionAsesores); });
   _tipificacionClasifPorPanel[i] = clasif;
+  _tipificacionSentidoPorCampana[campana] = clasif;
 
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
@@ -185,8 +195,9 @@ async function _tipificacionRenderPanel(p, i){
   html += '<div class="ig" style="min-width:130px;margin-bottom:0"><label for="tipif-f-hasta-'+i+'">Hasta</label><input type="date" id="tipif-f-hasta-'+i+'" value="'+esc(estado.hasta||'')+'"></div>';
   // Fase 186: "Línea de salida" filtra las 2 mitades (Llamadas y WhatsApp).
   if(clasif){
-    html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-linea-'+i+'">Línea de salida</label><select id="tipif-f-linea-'+i+'">' +
-      [['', 'Todas'], ['GENERAL', 'Salida General'], ['3P', 'Salida 3P'], ['SIN', 'Sin clasificar']].map(function(o){
+    // Fase 219: el texto dice que hay entrada y salida; las 3 lineas filtran solo la salida.
+    html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-linea-'+i+'">Línea (General / 3P)</label><select id="tipif-f-linea-'+i+'">' +
+      [['', 'Entrada y salida (todas)'], ['GENERAL', 'Salida General'], ['3P', 'Salida 3P'], ['SIN', 'Salida sin clasificar']].map(function(o){
         return '<option value="'+o[0]+'"'+(o[0]===(estado.linea||'')?' selected':'')+'>'+o[1]+'</option>';
       }).join('') + '</select></div>';
   }
@@ -196,8 +207,11 @@ async function _tipificacionRenderPanel(p, i){
     html += '<div class="ig" style="margin-bottom:0"><button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button></div>';
   }
   html += '</div>';
-  if(clasif && estado.linea){
-    html += '<p class="tipif-linea-nota" role="status">Las tortas de tipificación muestran solo la '+esc(_tipificacionLineaTexto(estado.linea))+' de cada canal. Las tarjetas de total no cambian.</p>';
+  // Fase 219: una sola linea de nota (sin parrafos).
+  if(clasif){
+    html += '<p class="tipif-linea-nota" role="status">'+(estado.linea
+      ? 'Las tortas muestran solo la '+esc(_tipificacionLineaTexto(estado.linea))+'; las tarjetas no cambian.'
+      : 'Con una línea (General, 3P o sin clasificar), las tortas muestran solo esa salida.')+'</p>';
   }
 
   var esMultiCanal = canalesAUsar.length > 1;
@@ -224,7 +238,10 @@ async function _tipificacionRenderPanel(p, i){
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
     html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, tipificacionEtiquetaSkill)+'</select></div>';
     if(p.mostrarFiltroTipo){
-      html += '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
+      // Fase 219: en ORLANT, "Entrada o salida" (regla de las tarjetas) en vez de "Tipo" (TYPE_INTERACTION crudo).
+      html += clasif
+        ? '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Entrada o salida</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionSentidoOptionsHtml(estadoCanal.tipo)+'</select></div>'
+        : '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
     }
     html += '<div class="ig" style="margin-bottom:0"><button class="btn-sm" onclick="_tipificacionAplicarFiltroCanal('+i+',\''+c.canal+'\')">Aplicar</button></div>';
     html += '</div>';
@@ -272,7 +289,8 @@ function _tipificacionQueryString(campana, canal, compartido, deCanal){
   if(deCanal.skill) params.set('skill', deCanal.skill);
   // Fase 131 (Mobilize): filtro Entrante/Saliente -- ORLANT nunca lo pasa
   // (su mitad no tiene el desplegable "Tipo"), sin cambio alguno.
-  if(deCanal.tipo) params.set('tipoInteraccion', deCanal.tipo);
+  // Fase 219: en ORLANT el mismo desplegable manda "sentido" (entrada / salida).
+  if(deCanal.tipo) params.set(_tipificacionSentidoPorCampana[campana] ? 'sentido' : 'tipoInteraccion', deCanal.tipo);
   // Fase 186: "Línea de salida" (compartido, solo ORLANT).
   if(compartido.linea) params.set('linea', compartido.linea);
   return params.toString();

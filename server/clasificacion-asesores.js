@@ -56,7 +56,7 @@ function guardarClasificacion(db, { campana, asignaciones, guardadoPorNombre }) 
 // salida, general, p3, sinClasificar } -- total = todos los registros del
 // canal (no cambia con la clasificacion).
 function salidaPorLinea(db, q) {
-  const { where, params } = tipificacionesWhereClausulas({ ...q, linea: undefined, tipoInteraccion: undefined });
+  const { where, params } = tipificacionesWhereClausulas({ ...q, linea: undefined, tipoInteraccion: undefined, sentido: undefined });
   const r = db.prepare(`
     SELECT COUNT(*) AS total,
       COALESCE(SUM(esSalida), 0) AS salida,

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.109.4 — Octubre 2026
+
+**Fase 219: Tipificación de ORLANT, filtros más claros.**
+
+- El filtro "Tipo" de cada mitad (Entrante / Saliente / Otro) se cambió por
+  **"Entrada o salida"** (Todos / Entrada / Salida). Ahora usa la misma regla
+  que las tarjetas, así que las cifras cuadran: cada registro es de entrada o
+  de salida, y ya no hay "Otro".
+- El filtro de arriba se llama ahora **"Línea (General / 3P)"**, con la opción
+  "Entrada y salida (todas)" y una nota de una línea: al elegir una línea, las
+  tortas muestran solo esa salida.
+- Mobilize no cambia.
+
 ## v1.109.3 — Octubre 2026
 
 **Fase 219: Ranking de asesores de ORLANT más limpio.**

@@ -19,7 +19,7 @@ test('sin las tortas "salida por línea": ni canvas ni grafica', () => {
 test('lo demas sigue: tarjetas por linea, nota, filtro "Línea de salida" y la torta de tipificacion', () => {
   assert.ok(s.includes("id=\"tipif-lineas-'+i+'-'+c.canal+'\""));
   assert.ok(s.includes("id=\"tipif-lineas-nota-'+i+'-'+c.canal+'\""));
-  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea de salida</label>"));
+  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea (General / 3P)</label>")); // Fase 219: texto nuevo
   assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea?'"));
   assert.ok(s.includes("<canvas id=\"tipif-c-'+i+'-'+c.canal+'\"></canvas>"));
 });

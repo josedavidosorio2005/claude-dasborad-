@@ -164,7 +164,7 @@ test('vista: boton solo para el administrador, filtro "Línea de salida" compart
   const s = JS('tipificacion.js');
   assert.ok(s.includes("if(clasif && typeof isFullAdmin === 'function' && isFullAdmin()){"));
   assert.ok(s.includes('onclick="tipifAbrirClasificacion(\'+i+\')">Clasificación de asesores</button>'));
-  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea de salida</label>"));
+  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea (General / 3P)</label>")); // Fase 219: texto nuevo
   assert.ok(s.includes("linea: v('tipif-f-linea-'+i)"), 'el filtro es del bloque compartido (Mes/rango), no de una mitad');
   assert.ok(s.includes("if(compartido.linea) params.set('linea', compartido.linea);"));
   assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea?'"));
