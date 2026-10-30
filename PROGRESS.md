@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.110.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.112.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -41,8 +41,12 @@ narrativo de cada fase, fase por fase, vive en
   desde la Fase 139, 13/10/2026).
 - **Clientes**: **ORLANT** y **MOBILIZE** tienen datos reales.
   **Hospital La María** (Fase 160, un solo cliente, sin sedes por ahora)
-  tiene el Flujo de agosto (Fase 163); **Clínica Aurora** (Fase 153) sigue
-  sin datos. **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
+  tiene el Flujo de agosto (Fase 163); **Clínica Aurora** (Fase 153) tiene
+  Tráfico de Llamadas y de WhatsApp cargados y, desde la Fase 220, las mismas
+  pestañas que ORLANT para la salida: Tráfico de Llamadas, Tráfico de
+  WhatsApp y Total tráfico visibles; Tipificación y Llamadas y WhatsApp de
+  salida aparecen solas cuando se cargue su CDR (regla de salida de ORLANT,
+  provisional, en `SALIDA_POR_CLIENTE`). **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
   HTML de Edwin dentro de la plataforma: `public/js/sura-televentas*.js`,
   rutas `/api/sura-televentas`, tablas `sura_*`) con datos reales desde la
   Fase 216 (ventas de marzo a octubre, base inicial y estrategias de
@@ -166,6 +170,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días); Ago+Sep 171 / 168 / 3; Todos 277 / 272 / 5 (= tarjetas de Flujo de Llamadas) | 196, 209 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
 | Total tráfico (ORLANT, v1.110.0: entrada de Tráfico de Llamadas y de WhatsApp + llamadas y WhatsApp de salida; cada salida cuenta como contestada) | Ago 27.742 ingresados / 26.685 contestados (96,2 %) · Sep 32.865 / 32.634 (99,3 %) · Oct 20.671 / 20.542 (99,4 %) · Ago–Oct 81.278 / 79.861 (98,3 %). La salida cuadra con su pestaña y los contestados de entrada con Efectividad de Citas. Tipificación, filtro "Entrada o salida" (todos los meses): llamadas 24.354 + 21.988 = 46.342, WhatsApp 24.298 + 10.057 = 34.355. Verificado en producción | 219 |
+| Total tráfico (Clínica Aurora, v1.112.0, todavía sin CDR: solo entrada) | 2.456 ingresados (Tráfico de Llamadas 875 + Tráfico de WhatsApp 1.581) / 2.408 contestados (850 + 1.558) = 98 %. Verificado en producción | 220 |
 | SURA — Televentas: pólizas por mes (tarjetas de "Cargar información" = LEEME de Edwin) | Mar 22 · Abr 109 · May 109 · Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 316 (filas con venta: 22 · 109 · 109 · 285 · 310 · 300 · 414 · 310). Base inicial y estrategias de octubre: 31.000 registros cada una; metas de Odontológico mar–oct. Verificado en producción (v1.106.1) | 216 |
 
 ## Índice de fases
@@ -386,3 +391,4 @@ mismo orden):
 - Fase 217 — SURA: logo de InConexion e iconos de campaña (🦷 💙) con la misma altura visible (~18 px), alineados; el logo también se ve en el celular y la tableta (v1.107.0, 2026-10-30)
 - Fase 218 — SURA: «Cargar información» también en Cargar Datos (misma app), el cliente ve todas las pestañas menos Cargar información, tooltips pequeños y siempre dentro de la pantalla; ORLANT: logo nuevo desde el original de Edwin, 28/22 px, sin salto de pestañas (v1.108.0–v1.109.1, 2026-10-30)
 - Fase 219 — ORLANT: salida sin el aviso de asesores sin línea, Ranking sin párrafo largo y con nota corta, Tipificación con filtro "Entrada o salida" (misma regla de las tarjetas) y "Línea (General / 3P)", y pestaña nueva «Total tráfico» (v1.109.2–v1.110.0, 2026-10-30)
+- Fase 220 — Clínica Aurora como ORLANT: Tráfico de Llamadas y de WhatsApp visibles, carga del CDR de Tipificación (llamadas y WhatsApp), Llamadas y WhatsApp de salida y Total tráfico; regla de salida en un solo lugar (SALIDA_POR_CLIENTE, Aurora provisional) y pruebas guardianas de que ORLANT y Mobilize no cambian (v1.111.0–v1.112.0, 2026-10-30)

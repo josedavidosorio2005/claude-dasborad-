@@ -18604,3 +18604,52 @@ Pedidos de Edwin del 30/10. Plan aprobado antes de tocar código; un PR por punt
   su pestaña y los contestados de entrada con Efectividad de Citas).
   Diseño: salida, Total tráfico, Tipificación y Ranking a 1440/768/375 en claro y oscuro, sin desborde, sin gráficas vacías y 0 errores.
   Capturas fuera del repo.
+
+
+## Fase 220 — Clínica Aurora como ORLANT: Tráfico, salida, Tipificación y Total tráfico (v1.111.0–v1.112.0, 2026-10-30)
+
+Pedido del 30/10 (replicar en Aurora lo de ORLANT). Plan aprobado antes de
+tocar código; un PR por punto.
+
+- **#626 (v1.111.0)**: migración idempotente fase220_aurora_trafico_visible_v1
+  que quita `oculta` solo de Tráfico de Llamadas y Tráfico de WhatsApp de
+  Aurora (antes aparecían al cargar datos). Sin datos, cada una muestra su
+  aviso. La carga de los dos reportes ya estaba lista desde la Fase 160.
+  Local: un Flujo de WhatsApp inventado desde la plantilla oficial cargó
+  "1 fila(s) guardadas" y la pestaña mostró sus tarjetas.
+- **#627 (v1.112.0)**: la regla de salida en un solo lugar,
+  `SALIDA_POR_CLIENTE` (server/tipificaciones.js): ORLANT y Aurora con la regla
+  de ORLANT y clasificación General / 3P (Aurora **provisional** hasta que
+  Edwin confirme; reemplaza las 2 listas fijas). Migración idempotente
+  fase220_aurora_salida_v1: módulos tipificacion y salida,
+  salidaUsaClasificacion, pestañas Tipificación y Salida (ocultas, aparecen
+  con su CDR) y Total tráfico visible después de Salida; las pestañas que ya
+  existían se conservan tal cual; SKILL_ID 0 = WhatsApp de salida en su tabla
+  de skills. Centro de cargas sin la hoja manual de salida (sale del CDR).
+  Sin asesores clasificados, todo va a "Sin clasificar" y cuenta en el Total.
+  Un error de idempotencia (Total tráfico iba al final al correr la migración
+  dos veces) se encontró en la prueba y se corrigió antes del PR. Local: 2 CDR
+  inventados desde las plantillas oficiales cargaron 10 + 8 filas, se
+  destaparon Salida (6 + 3) y Tipificación (todo en "Sin clasificar"), Total
+  tráfico 129 / 119.
+- **#628 (solo pruebas)**: guardas de que ORLANT y Mobilize no cambian
+  (registro y tablero iguales a su foto, regla de salida y clasificación de
+  cada uno, Mobilize con "Tipo", Total tráfico solo en ORLANT y Aurora, cargas
+  retiradas, skills de WhatsApp).
+- **Pruebas**: suite completa en verde en cada PR (2415 → 2431), `npm audit`
+  0, CI completo en verde, merges con `--match-head-commit` uno a la vez
+  esperando el deploy. Pruebas viejas puestas al día con el estado nuevo de
+  Aurora (134, 153, 160, 213) con un helper (tests/helpers-aurora.js).
+- **Producción (v1.112.0, solo lectura, 0 escrituras, en 2 partes)**: Aurora
+  ya tenía Tráfico cargado (no estaba "sin datos" como decía PROGRESS):
+  Tráfico de Llamadas 875 / 850 (97,1 %), Tráfico de WhatsApp 1.581 / 1.558
+  (98,5 %), Total tráfico 2.456 / 2.408 (98 %), que cuadra con las dos.
+  Cargar Datos de Aurora ofrece las 5 hojas (incluidas TIPIFICACION_LLAMADAS y
+  TIPIFICACION_WHATSAPP) y la tabla de skills de WhatsApp con el 0; el Centro
+  muestra Flujo de Llamadas, Flujo de WhatsApp, Tipificación y Calidad.
+  Diseño de las 3 pestañas visibles de Aurora a 1440/768/375 en claro y
+  oscuro sin desborde. ORLANT y Mobilize idénticos: ORLANT 9 pestañas, Total
+  tráfico 81.278 / 79.861 / 98,3 %, salida 21.988 + 10.057; Mobilize 6
+  pestañas y Tipificación con "Tipo". 0 errores. Capturas fuera del repo.
+- **Pendiente para Edwin** (docs/pendientes.md): la regla de salida de Aurora y
+  si reparte en General / 3P.
