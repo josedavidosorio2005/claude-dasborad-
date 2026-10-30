@@ -103,7 +103,8 @@ test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses c
   // Fase 207: la tarjeta suma los meses de MESES con salidaValorLinea.
   assert.match(s, /var v = salidaValorLinea\(delMeses\[k\], canal, lineas\[canal\]\);/);
   assert.match(s, /var totalLlam = sumarLinea\('llamadas'\);/);
-  assert.match(s, /no tienen línea \(3P o General\)/);
+  // Fase 219: el aviso de asesores sin línea ya no se muestra (pedido de Edwin).
+  assert.doesNotMatch(s, /no tienen línea \(3P o General\)|no están clasificados/);
   assert.match(s, /if\(_salEsAdmin\(\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
   assert.match(s, /aria-label="Línea de '\+esc\(a\.agente\)\+'"/);
   // Fase 183: la grafica es una sola serie con toda la salida del mes.
