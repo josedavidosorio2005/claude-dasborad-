@@ -58,13 +58,13 @@ test('ORLANT: ranking por contestadas, cambio de usuario por fecha, OTROS aparte
   assert.deepEqual(r.body.equipo, { gestiones: 13, agendas: 6, efectividad: 6 / 13 });
 });
 
-test('el panel muestra Contestadas, la nota (no cuadra con Efectividad, OTROS aparte) y el export lo trae', () => {
+test('el panel muestra Contestadas (Fase 219: sin la nota larga) y el export lo trae', () => {
   const fs = require('fs');
   const path = require('path');
   const js = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'efectividad-agendamiento.js'), 'utf8');
   assert.match(js, /thG\.textContent = contactos \? 'Contestadas' : 'Gestiones';/);
-  assert.match(js, /El total del equipo no cuadra exacto con Efectividad de Citas/);
-  assert.match(js, /' Fuera del ranking: '/);
+  // Fase 219 (pedido de Edwin): sin el parrafo de debajo de las tarjetas; OTROS sigue aparte en el Excel.
+  assert.doesNotMatch(js, /El total del equipo no cuadra exacto con Efectividad de Citas|' Fuera del ranking: '/);
   // Fase 214: contestadas = ingreso + salida.
   assert.match(js, /label: contactos \? 'Contestadas \(ingreso \+ salida\)' : 'Gestiones'/);
   const gen = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'dashboard-generic.js'), 'utf8');

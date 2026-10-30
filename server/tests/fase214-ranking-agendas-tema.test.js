@@ -47,7 +47,8 @@ test('panel del ranking: filtro Todos / 3P / General junto a las metricas, en el
   assert.match(ea, /var EA_LINEAS = \[\['', 'Todos'\], \['3P', '3P'\], \['GENERAL', 'General'\]\];/);
   assert.ok(ea.includes("tarjetasEl.innerHTML = '<div class=\"aurora-kpis\">' + (contactos ? _eaFiltroLineaHtml(campana, i) : '') +"));
   assert.ok(ea.includes("return _eaLinea[campana] ? url + '&linea=' + encodeURIComponent(_eaLinea[campana]) : url;"));
-  assert.match(ea, /solo cambian las agendas; las contestadas son todas las del asesor/);
+  // Fase 219: la nota larga (que explicaba el filtro) ya no se muestra.
+  assert.doesNotMatch(ea, /solo cambian las agendas; las contestadas son todas las del asesor/);
   const gen = JS('dashboard-generic.js');
   assert.ok(gen.includes("'_eaUltimoRanking', '_eaLinea',"), 'el filtro se reinicia con los demas');
   assert.ok(gen.includes("_eaRankingUrl(campana, mesesEaExp)"), 'el export usa el mismo filtro');

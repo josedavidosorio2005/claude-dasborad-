@@ -110,7 +110,8 @@ async function _eaDibujar(campana, i, opciones){
   // Fase 214: ingreso y salida por separado (solo ORLANT).
   Array.prototype.forEach.call(document.querySelectorAll('#ea-tabla-'+i+' .ea-col-contactos'), function(th){ th.hidden = !contactos; });
   var notaEl = document.getElementById('ea-nota-'+i);
-  if(notaEl) notaEl.innerHTML = contactos ? _eaNotaContactosHtml(ranking) : '';
+  // Fase 219: sin el parrafo de debajo de las tarjetas (pedido de Edwin).
+  if(notaEl) notaEl.innerHTML = '';
   if(tarjetasEl){
     var lblEa = gdMesesTarjetasTexto(mesesEa, !_gdMeses().length, mesNombreLargo); // Fase 207
     tarjetasEl.innerHTML = '<div class="aurora-kpis">' + (contactos ? _eaFiltroLineaHtml(campana, i) : '') +
@@ -156,22 +157,6 @@ async function _eaCambiarLinea(i, valor){
   if(sel) sel.focus();
 }
 
-// Fase 213: como se calcula, que el total no cuadra exacto con Efectividad de
-// Citas, y "OTROS" (y usuarios sin asesor) aparte, con sus agendas.
-// Fase 214: contestadas = todo el CDR (ingreso + salida); quien pasa del 100 %
-// lleva la marca; los agentes de Wolkvox sin usuario van con "OTROS".
-function _eaNotaContactosHtml(ranking){
-  var aparte = (ranking.aparte || []).map(function(a){
-    return esc(textoFormatoNombre(a.asesor)) + ': ' + (a.sinUsuario ? gdFmtValor(a.gestiones) + ' contestadas, sin usuario de Agendamiento' : gdFmtValor(a.agendas) + ' agendas');
-  });
-  var marcados = (ranking.filas || []).filter(function(f){ return f.sobreWolkvox; }).length;
-  return '<p class="tipif-linea-nota">Efectividad por asesor = agendas del asesor ÷ sus contestadas (llamadas + WhatsApp, de ingreso y de salida, del CDR de Tipificación). '+
-    (marcados ? '⚠ = ' + EA_MARCA_WOLKVOX + ' (más del 100 %): en la gráfica su punto queda arriba, con su % real en la cifra. ' : '') +
-    'El total del equipo no cuadra exacto con Efectividad de Citas, que usa los reportes de Tráfico: el CDR y el reporte de Wolkvox cuentan distinto.'+
-    (ranking.linea ? ' Filtro ' + esc(ranking.linea === 'GENERAL' ? 'General' : ranking.linea) + ': solo cambian las agendas; las contestadas son todas las del asesor (el CDR no trae la línea).' : '') +
-    (aparte.length ? ' Fuera del ranking: ' + aparte.join(' · ') + '.' : '') + '</p>';
-}
-
 // Grafica combo (gd-combo-logic.js, mismo patron que los paneles `combo`
 // del dashboard generico): columnas Gestiones/Agendas por asesor, linea %
 // Efectividad en el eje secundario -- SIEMPRE en el orden del ranking
@@ -214,7 +199,7 @@ function _eaDibujarGrafica(i, filas, contactos){
     o.plugins.datalabels.borderRadius = 3;
     o.plugins.datalabels.display = function(ctx){ return ctx.dataset.type === 'line'; };
     o.scales.y.grace = '8%';
-    // Fase 214: el eje del % no pasa del techo (eaTechoPct); los marcados (⚠)
+    // Fase 214: el eje del % no pasa del techo (eaTechoPct); los marcados (mas del 100 %)
     // quedan arriba y muestran su % real en la cifra, el tooltip y Ver datos.
     o.scales.y2.min = 0;
     o.scales.y2.max = techo;
@@ -223,13 +208,13 @@ function _eaDibujarGrafica(i, filas, contactos){
     o.plugins.datalabels.formatter = function(v, ctx){
       if(ctx.dataset.type !== 'line') return v;
       var f = filas[ctx.dataIndex];
-      return f && f.sobreWolkvox ? '⚠ ' + pctReal(ctx.dataIndex) : (v!=null?gdFmtValor(v,'%'):'');
+      return f && f.sobreWolkvox ? pctReal(ctx.dataIndex) : (v!=null?gdFmtValor(v,'%'):'');
     };
     o.plugins.tooltip = o.plugins.tooltip || {};
     o.plugins.tooltip.callbacks = Object.assign({}, o.plugins.tooltip.callbacks, { label: function(ctx){
       if(ctx.dataset.type !== 'line') return (ctx.dataset.label ? ctx.dataset.label + ': ' : '') + gdFmtValor(ctx.raw);
       var f = filas[ctx.dataIndex];
-      return '% Efectividad: ' + pctReal(ctx.dataIndex) + (f && f.sobreWolkvox ? ' ⚠ ' + EA_MARCA_WOLKVOX : '');
+      return '% Efectividad: ' + pctReal(ctx.dataIndex) + (f && f.sobreWolkvox ? ' · ' + EA_MARCA_WOLKVOX : '');
     } });
   }
   loDatalabelsAuto(o);
@@ -279,7 +264,7 @@ function _eaRenderizarTabla(i){
       (ranking.fuente === 'contactos' ? '<td>'+gdFmtValor(f.ingreso)+'</td><td>'+gdFmtValor(f.salida)+'</td>' : '')+ // Fase 214
       '<td>'+gdFmtValor(f.gestiones)+'</td>'+
       '<td>'+gdFmtValor(f.agendas)+'</td>'+
-      '<td>'+efectividadAgendamientoFmtPct(f.efectividad)+(f.sobreWolkvox ? ' <span class="ea-marca-wolkvox">⚠ '+EA_MARCA_WOLKVOX+'</span>' : '')+'</td>'+
+      '<td>'+efectividadAgendamientoFmtPct(f.efectividad)+(f.sobreWolkvox ? ' <span class="ea-marca-wolkvox">'+EA_MARCA_WOLKVOX+'</span>' : '')+'</td>'+
     '</tr>';
   }).join('');
 }

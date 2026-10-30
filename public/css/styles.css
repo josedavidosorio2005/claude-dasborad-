@@ -1887,8 +1887,9 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .agendas-filtro-destacado select{font-weight:var(--fw-semibold);}
 .agendas-filtros-aplicados{margin:0 0 8px;font-size:var(--fs-small);color:var(--c-text-2);}
 .agendas-filtros-aplicados:empty{display:none;}
-/* Fase 214: marca del ranking (mas del 100 %): texto, nunca solo color. */
-.ea-marca-wolkvox{display:block;font-size:var(--fs-note);color:var(--c-warning-text);font-weight:var(--fw-semibold);}
+/* Fase 214: marca del ranking (mas del 100 %): texto, nunca solo color.
+   Fase 219: nota corta en gris pequeno, sin ⚠ ni color de alerta. */
+.ea-marca-wolkvox{display:block;font-size:var(--fs-note);color:var(--c-text-muted);font-weight:var(--fw-regular);}
 /* Fase 214: "Total de agendas" junto a "Aplicar filtros" (tarjeta compacta). */
 .agendas-total-junto:empty{display:none;}
 .agendas-total-kpi{flex:0 0 auto;min-width:0;padding:6px 12px;}

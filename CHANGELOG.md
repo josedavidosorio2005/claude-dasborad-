@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.109.3 — Octubre 2026
+
+**Fase 219: Ranking de asesores de ORLANT más limpio.**
+
+- En Agendamiento › Ranking de asesores ya no sale el párrafo largo de debajo
+  de las tarjetas ("Efectividad por asesor = …").
+- Quien pasa del 100 % ya no lleva la marca ⚠: ahora tiene solo una nota corta
+  en gris, "Proceso donde un paciente puede tener varias agendas", en la tabla,
+  en la gráfica (al pasar el mouse) y en el Excel.
+
 ## v1.109.2 — Octubre 2026
 
 **Fase 219: «Llamadas y WhatsApp de salida» de ORLANT sin el aviso de arriba.**
