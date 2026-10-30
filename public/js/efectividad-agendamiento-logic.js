@@ -214,7 +214,9 @@ function eaPctEnEscala(f, techo) {
   if (f.efectividad === null || f.efectividad === undefined) return null;
   return Math.min(f.efectividad * 100, techo);
 }
-var EA_MARCA_WOLKVOX = 'agenda más de lo que registra Wolkvox';
+// Fase 219 (pedido de Edwin, 30/10): nota corta para quien pasa del 100 %, sin ⚠
+// (tabla, tooltip y columna Nota del Excel).
+var EA_MARCA_WOLKVOX = 'Proceso donde un paciente puede tener varias agendas';
 
 // Meses distintos que trae el archivo (ordenados) -- el conjunto que la
 // carga va a REEMPLAZAR, mismo criterio que inasistencia-logic.js.

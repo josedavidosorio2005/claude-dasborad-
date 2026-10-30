@@ -73,19 +73,21 @@ test('eaTechoPct: los de mas del 100 % no deforman la escala del %', () => {
   assert.deepEqual(filas.map((x) => L.eaPctEnEscala(x, 80)), [80, 69.8, 42, 80, null]);
   assert.equal(L.eaTechoPct([f(1)]), 110, '100 % exacto cabe');
   assert.equal(L.eaTechoPct([f(2)]), 10, 'sin normales, techo minimo');
-  assert.equal(L.EA_MARCA_WOLKVOX, 'agenda más de lo que registra Wolkvox');
+  // Fase 219: nota corta de Edwin en vez de la marca.
+  assert.equal(L.EA_MARCA_WOLKVOX, 'Proceso donde un paciente puede tener varias agendas');
 });
 
-test('panel y export: ingreso/salida, marca ⚠ con texto, % real en cifra y tooltip, sin usuario en la nota', () => {
+test('panel y export: ingreso/salida, nota corta sin ⚠ (Fase 219), % real en cifra y tooltip, sin el parrafo largo', () => {
   const ea = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'efectividad-agendamiento.js'), 'utf8');
   assert.ok(ea.includes('<th class="ea-col-contactos" hidden>Ingreso</th><th class="ea-col-contactos" hidden>Salida</th>'));
   assert.ok(ea.includes("'<td>'+gdFmtValor(f.ingreso)+'</td><td>'+gdFmtValor(f.salida)+'</td>'"));
-  assert.ok(ea.includes("(f.sobreWolkvox ? ' <span class=\"ea-marca-wolkvox\">⚠ '+EA_MARCA_WOLKVOX+'</span>' : '')"));
+  assert.ok(ea.includes("(f.sobreWolkvox ? ' <span class=\"ea-marca-wolkvox\">'+EA_MARCA_WOLKVOX+'</span>' : '')"));
   assert.ok(ea.includes('o.scales.y2.max = techo;'));
-  assert.ok(ea.includes("return f && f.sobreWolkvox ? '⚠ ' + pctReal(ctx.dataIndex)"));
-  assert.ok(ea.includes("(f && f.sobreWolkvox ? ' ⚠ ' + EA_MARCA_WOLKVOX : '')"), 'tooltip y Ver datos con el % real');
-  assert.match(ea, /de ingreso y de salida, del CDR de Tipificación/);
-  assert.match(ea, /contestadas, sin usuario de Agendamiento/);
+  assert.ok(ea.includes("return f && f.sobreWolkvox ? pctReal(ctx.dataIndex)"));
+  assert.ok(ea.includes("(f && f.sobreWolkvox ? ' · ' + EA_MARCA_WOLKVOX : '')"), 'tooltip y Ver datos con el % real');
+  assert.doesNotMatch(ea, /⚠/, 'sin el simbolo ⚠ en el ranking');
+  assert.doesNotMatch(ea, /Efectividad por asesor = agendas del asesor/, 'sin el parrafo largo (Fase 219)');
+  assert.ok(ea.includes("if(notaEl) notaEl.innerHTML = '';"));
   const gen = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'dashboard-generic.js'), 'utf8');
   assert.ok(gen.includes("Ingreso: f.ingreso, Salida: f.salida, 'Contestadas (ingreso + salida)': f.gestiones }, f.agendas, efectividadAgendamientoFmtPct(f.efectividad), f.sobreWolkvox ? EA_MARCA_WOLKVOX : '')"));
   assert.ok(gen.includes("a.sinUsuario ? 'agente de Wolkvox sin usuario de Agendamiento' : ''"));
