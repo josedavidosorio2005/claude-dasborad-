@@ -41,11 +41,16 @@ una, se genera igual que las de arriba desde la carpeta de marca.
 Distinto de los logos de marca InConexion de arriba — es el logo del
 **cliente** (Mobilize, Orlant) que `renderGenericHeader()`
 (`public/js/dashboard-generic.js`) pone junto al título del tablero.
-`mobilize-logo.png` (+@2x) es definitivo. `orlant-logo-blanco.png`
-(+@2x, Fase 138/PR1) es **PROVISIONAL**: generado por software (resize
-simple, sin retoque de diseño) a partir del archivo que mandó Edwin por
-WhatsApp el 09/10/2026 — reemplazar cuando llegue el original en alta
-resolución.
+`mobilize-logo.png` (+@2x) es definitivo. `orlant-logo.png` (+@2x,
+Fase 218) reemplaza al provisional de la Fase 138 (`orlant-logo-blanco`):
+sale del original que mandó Edwin (710×281, a color, fondo blanco), sin la
+línea pequeña de texto de abajo ("Clínica de Otorrinolaringología…", que no
+se lee a ese tamaño), en blanco sobre transparente (alfa = oscuridad del
+píxel) para el encabezado teal, a 28 px de alto en 1x (92×28) y 56 px en 2x
+(184×56). Se muestra a 28 px en escritorio y 22 px en el celular: el alto de
+cada cliente sale del registro (`logo.alto` / `logo.altoMovil`, variables
+CSS `--gd-logo-alto` / `--gd-logo-alto-movil`); sin esos datos, 25/18 px
+como Mobilize.
 
 ## Colores oficiales (`public/css/styles.css`, bloque `:root` al inicio)
 

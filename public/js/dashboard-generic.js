@@ -1311,6 +1311,9 @@ function renderGenericHeader(){
       elLogo.srcset = logoCli.src + ' 1x' + (logoCli.src2x ? ', ' + logoCli.src2x + ' 2x' : '');
       elLogo.alt = logoCli.alt || '';
       elLogo.width = logoCli.width; elLogo.height = logoCli.height;
+      // Fase 218: alto propio del cliente (ORLANT 28/22 px); sin el dato, 25/18 como antes.
+      elLogo.style.setProperty('--gd-logo-alto', (logoCli.alto || 25) + 'px');
+      elLogo.style.setProperty('--gd-logo-alto-movil', (logoCli.altoMovil || 18) + 'px');
       elLogo.style.display = '';
     } else {
       elLogo.style.display = 'none';

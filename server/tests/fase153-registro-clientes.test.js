@@ -53,7 +53,7 @@ test('la semilla describe los modulos y parametros reales de ORLANT y MOBILIZE',
   assert.equal(r.MOBILIZE.parametros.asesorVisibleCliente, true);
   assert.equal(r.ORLANT.parametros.asesorVisibleCliente, false);
   assert.deepEqual(r.ORLANT.parametros.sedes, [], 'sedes previstas (Calidad por sede)');
-  assert.equal(r.ORLANT.logo.src, 'img/clientes/orlant-logo-blanco.png');
+  assert.equal(r.ORLANT.logo.src, 'img/clientes/orlant-logo.png'); // Fase 218
   assert.equal(r.MOBILIZE.logo.width, 140);
 });
 

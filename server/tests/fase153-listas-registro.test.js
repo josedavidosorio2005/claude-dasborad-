@@ -29,7 +29,7 @@ const ANTES = {
   encuesta: ['MOBILIZE'], // CARGAS_CLIENTES_ENCUESTA
   asesorVisibleCliente: ['MOBILIZE'], // LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE y CAMPANAS_ASESOR_VISIBLE_CLIENTE
   logos: {
-    ORLANT: { src: 'img/clientes/orlant-logo-blanco.png', src2x: 'img/clientes/orlant-logo-blanco@2x.png', alt: 'Orlant', width: 64, height: 25 },
+    ORLANT: { src: 'img/clientes/orlant-logo.png', src2x: 'img/clientes/orlant-logo@2x.png', alt: 'Orlant', width: 92, height: 28, alto: 28, altoMovil: 22 }, // Fase 218
     MOBILIZE: { src: 'img/clientes/mobilize-logo.png', src2x: 'img/clientes/mobilize-logo@2x.png', alt: 'Mobilize', width: 140, height: 25 },
   },
   claseUltimaActualizacion: { MOBILIZE: 'gd-ultima-act-mobilize' },

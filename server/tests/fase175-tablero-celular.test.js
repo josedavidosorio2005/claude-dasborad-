@@ -63,7 +63,8 @@ test('<=768 px: filtros plegados, una fila de botones con solo iconos, Cerrar ar
   assert.match(media768, /#gd-modal \.gd-header-acciones \.gd-btn-txt\{display:none;\}/);
   assert.match(media768, /#gd-modal \.gd-header-acciones \.aurora-close\.hidden\{display:none;\}/);
   assert.match(media768, /#gd-modal #gd-cerrar-btn\{position:absolute;/);
-  assert.match(media768, /#gd-modal \.gd-cliente-logo\{height:18px;/);
+  // Fase 218: 18px sigue siendo el alto por defecto; el cliente puede traer el suyo (ORLANT, 22px).
+  assert.match(media768, /#gd-modal \.gd-cliente-logo\{height:var\(--gd-logo-alto-movil,18px\);/);
   assert.match(media768, /#gd-modal \.gd-filtros-header select\{min-height:44px;/);
   // Sin colores nuevos (sistema de diseno): solo tokens y el blanco translucido ya usado por .aurora-close.
   assert.doesNotMatch(CSS175, /#[0-9a-f]{3,6}\b/i);
