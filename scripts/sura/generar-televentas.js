@@ -83,6 +83,19 @@ const layout = `
 .row label select{max-width:100%}
 /* Fase 217: iconos de campaña con la misma altura visible (~18 px) que el logo de InConexion del encabezado */
 .camp-ico{display:inline-block;font-size:20px;line-height:1;vertical-align:middle}
+/* Fase 218: en el Centro de cargas solo se ve «Cargar información» (la misma app) */
+.wrap.stv-solo-carga>header,.wrap.stv-solo-carga>#gfbar,.wrap.stv-solo-carga>#dhbar,.wrap.stv-solo-carga>section:not(#p1){display:none!important}
+.wrap.stv-solo-carga>#p1{display:block!important}
+.wrap.stv-solo-carga{display:block;max-width:none;padding:0}
+.wrap.stv-solo-carga>*{max-width:none}
+/* Fase 218: el recuadro emergente (tooltip) no toma el ancho del tablero (.wrap>*) y cabe en la pantalla */
+.wrap>.mtip{width:auto;grid-column:auto;max-width:min(420px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:hidden;font-size:12px;line-height:1.35;padding:8px 10px}
+.mtip table{font-size:12px}
+.mtip td,.mtip th{padding:2px 6px}
+.mtip .tt:has(tr>:nth-child(5)){table-layout:fixed;width:100%}
+.mtip .tt th{font-size:11px}
+@media(max-width:480px){.wrap>.mtip,.mtip table{font-size:11px}.mtip td,.mtip th{padding:2px 3px}}
+.mtip .tt:has(tr>:nth-child(5)) :is(th,td):first-child{width:36%;overflow:hidden;text-overflow:ellipsis}
 /* el cliente (solo lectura) no ve botones para cambiar datos */
 .stv-lectura [data-ga],.stv-lectura [data-up],.stv-lectura [data-del],.stv-lectura [data-eup],.stv-lectura [data-edel],.stv-lectura [data-iup],.stv-lectura [data-idel]{display:none!important}
 .stv-cargando{padding:40px 16px;text-align:center;color:var(--mut)}
@@ -175,6 +188,11 @@ L('${o.value==="odontologico"?"🦷 ":o.value==="salud_para_ti"?"💙 ":""}', '$
 L('<h4>${c==="odontologico"?"🦷":"💙"} Campaña', '<h4>${CICO(c)} Campaña');
 L('data-cc="${c}">${c==="odontologico"?"🦷":"💙"} ${n}', 'data-cc="${c}">${CICO(c)} ${n}');
 L('ico=x=>x==="odontologico"?"🦷":"💙";', 'ico=CICO;');
+// Fase 218: una sola funcion posiciona el recuadro emergente (tooltip), siempre dentro de la pantalla
+// (primero se reemplazan las 9 copias y despues se agrega tipPos, que lleva el mismo texto).
+js = todas(js, "m.style.left=x+\"px\";m.style.top=y+\"px\"", 'tipPos(m,x,y)', 8);
+js = todas(js, "m.style.left=X+\"px\";m.style.top=Y+\"px\"", 'tipPos(m,X,Y)', 1);
+L("const $=id=>ROOT.getElementById(id);", "const $=id=>ROOT.getElementById(id);\n// Fase 218: el recuadro emergente nunca se sale de la pantalla (8 px de margen).\nconst tipPos=(m,x,y)=>{x=Math.max(8,Math.min(x,innerWidth-m.offsetWidth-8));y=Math.max(8,Math.min(y,innerHeight-m.offsetHeight-8));m.style.left=x+\"px\";m.style.top=y+\"px\"};");
 // ── Sistema de diseno: Quicksand trae 400-700 (Fase 132) y todo campo con nombre accesible (Fase 144, D13) ──
 js = todas(js, 'font-weight:800', 'font-weight:700');
 css = css.replace(/font-weight:\s*(800|900)/g, 'font-weight:700');

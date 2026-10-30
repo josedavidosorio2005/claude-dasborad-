@@ -6,10 +6,13 @@
 //   - el overlay y el encabezado de la plataforma;
 //   - el objeto API que reemplaza a IndexedDB (rutas /api/sura-televentas);
 //   - las pestanas que ve cada rol (las decide el servidor: el cliente no ve
-//     "Cargar informacion" ni "Bases", ni botones para cambiar datos);
+//     "Cargar informacion" ni botones para cambiar datos; Fase 218);
 //   - el tema: copia data-theme del documento al Shadow DOM.
+// Fase 218: la misma app se monta una segunda vez en el Centro de cargas
+// («Cargar Datos»), solo con «Cargar información» (stvMontarCarga).
 
 var _stv = { cliente: null, host: null, root: null, app: null, abierto: false, observador: null };
+var _stvCarga = { cliente: null, host: null, root: null, app: null, abierto: false };
 
 // Cliente con este tablero (registro de clientes: parametros.especificos).
 function stvEsTeleventas(cliente) {
@@ -75,19 +78,28 @@ function _stvHojaCss() {
 }
 
 function _stvSincronizarTema() {
-  if (!_stv.host) return;
-  _stv.host.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+  var tema = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  [_stv.host, _stvCarga.host].forEach(function (h) { if (h) h.setAttribute('data-theme', tema); });
+}
+
+// Shadow DOM con la hoja y el marcado del tablero, y el tema al dia (un solo
+// observador para los dos lugares donde se monta).
+function _stvPrepararHost(host) {
+  var root = host.shadowRoot || host.attachShadow({ mode: 'open' });
+  root.innerHTML = _stvHojaCss() + STV_MARKUP;
+  if (!_stv.observador) {
+    _stv.observador = new MutationObserver(_stvSincronizarTema);
+    _stv.observador.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+  return root;
 }
 
 function _stvCrearHost() {
   var host = document.getElementById('stv-host');
-  var root = host.attachShadow({ mode: 'open' });
-  root.innerHTML = _stvHojaCss() + STV_MARKUP;
+  var root = _stvPrepararHost(host);
   _stv.host = host;
   _stv.root = root;
   _stvSincronizarTema();
-  _stv.observador = new MutationObserver(_stvSincronizarTema);
-  _stv.observador.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   var modal = document.getElementById('stv-modal');
   var head = modal.querySelector('.aurora-header');
   var fijar = function () { host.style.setProperty('--stv-header-h', head.offsetHeight + 'px'); };
@@ -138,6 +150,31 @@ async function openSuraTeleventas(cliente) {
     document.getElementById('stv-sub').textContent = '';
     if (typeof showToast === 'function') showToast('No se pudo abrir el tablero: ' + e.message);
   }
+}
+
+// Fase 218: «Cargar información» de SURA dentro del Centro de cargas. Es la
+// misma app (stvCrearApp, misma API y mismo CSS) con la clase stv-solo-carga,
+// que deja solo ese panel. Se crea una vez y en cada apertura vuelve a leer
+// del servidor; devuelve el resumen (puedeEditar dice si es administrador).
+async function stvMontarCarga(host, cliente) {
+  _stvCarga.abierto = true;
+  if (_stvCarga.host !== host) {
+    _stvCarga.host = host;
+    _stvCarga.root = _stvPrepararHost(host);
+    _stvCarga.app = null;
+    _stvSincronizarTema();
+  }
+  if (!_stvCarga.app || _stvCarga.cliente !== cliente) {
+    _stvCarga.root.innerHTML = _stvHojaCss() + STV_MARKUP;
+    _stvCarga.root.querySelector('.wrap').classList.add('stv-solo-carga');
+    _stvCarga.cliente = cliente;
+    _stvCarga.app = stvCrearApp(_stvCarga.root, _stvApi(cliente), function () { return _stvCarga.abierto; });
+  }
+  return _stvCarga.app.cargar();
+}
+
+function stvDesmontarCarga() {
+  _stvCarga.abierto = false;
 }
 
 function closeSuraTeleventas() {

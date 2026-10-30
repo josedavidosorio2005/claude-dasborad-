@@ -166,12 +166,12 @@ test('metas, meta individual, asesores y codigos se guardan en el servidor (null
   assert.equal((await request(app).put(`${API}/config/metas`).set(auth(tAdmin)).send({})).status, 400);
 });
 
-test('el cliente ve 5 pestanas (sin Cargar informacion ni Bases) y todo lo que escribe da 403', async () => {
+test('el cliente ve 6 pestanas (todas menos Cargar informacion, Fase 218) y todo lo que escribe da 403', async () => {
   const r = await request(app).get(`${API}/resumen`).set(auth(tCliente));
   assert.equal(r.status, 200);
   assert.equal(r.body.puedeEditar, false);
-  assert.deepEqual(r.body.pestanas, ['p9', 'p2', 'p5', 'p7', 'p3']);
-  assert.ok(!r.body.pestanas.includes('p1') && !r.body.pestanas.includes('p10'));
+  assert.deepEqual(r.body.pestanas, ['p9', 'p2', 'p5', 'p7', 'p3', 'p10']);
+  assert.ok(!r.body.pestanas.includes('p1'));
   const v = baseVentas({ mes: '2026-11', n: 8, semilla: 11 });
   const carga = cargaDe('ventas', 'nov.xlsx', v.buf, leer.parseBook(u8(v.buf)));
   for (const t of [tCliente, tReportes]) {

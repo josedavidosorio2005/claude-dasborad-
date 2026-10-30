@@ -48,6 +48,7 @@ async function openCentroCargas(cliente, moduloId) {
 
 function closeCentroCargas() {
   _ccCerrarDialogo();
+  _ccOcultarTeleventas();
   var cerrar = function () { document.getElementById('centro-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('centro-modal', cerrar); else cerrar();
 }
@@ -65,6 +66,12 @@ async function ccCambiarAnio() {
 async function _ccCargar() {
   var body = document.getElementById('cc-body');
   body.innerHTML = '<div class="cc-cargando">Cargando…</div>';
+  // Fase 218: un cliente con tablero propio (SURA, Televentas) no carga por
+  // modulos: el Centro muestra su mismo panel «Cargar información».
+  var esTablero = typeof stvEsTeleventas === 'function' && stvEsTeleventas(_cc.cliente);
+  _ccOcultarTeleventas();
+  document.getElementById('cc-anio').closest('.ig').hidden = esTablero;
+  if (esTablero) { await _ccCargarTeleventas(body); return; }
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);
     _cc.modulos = r.modulos || [];
@@ -79,6 +86,31 @@ async function _ccCargar() {
   }
   if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
   _ccRender();
+}
+
+// Fase 218: «Cargar información» de SURA (sura-televentas.js, stvMontarCarga).
+// Escribir es solo del administrador (lo exige el servidor): al resto, un aviso.
+async function _ccCargarTeleventas(body) {
+  var host = document.getElementById('cc-stv-host');
+  document.getElementById('cc-migas').innerHTML = '<span aria-current="page">' + esc(_cc.cliente) + '</span>';
+  try {
+    var perm = await stvMontarCarga(host, _cc.cliente);
+    if (!perm.puedeEditar) {
+      stvDesmontarCarga();
+      body.innerHTML = '<div class="cc-aviso">Las bases, metas y códigos de ' + esc(_cc.cliente) + ' solo los carga el administrador.</div>';
+      return;
+    }
+    body.innerHTML = '<p class="cc-intro">Bases del mes, metas y códigos del tablero Televentas: es lo mismo de «Cargar información» dentro del tablero.</p>';
+    host.hidden = false;
+  } catch (e) {
+    body.innerHTML = '<div class="cc-aviso cc-aviso-error">' + esc(e.message) + '</div>';
+  }
+}
+
+function _ccOcultarTeleventas() {
+  var host = document.getElementById('cc-stv-host');
+  if (host) host.hidden = true;
+  if (typeof stvDesmontarCarga === 'function') stvDesmontarCarga();
 }
 
 function _ccRender() {

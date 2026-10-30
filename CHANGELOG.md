@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.108.0 — Octubre 2026
+
+**Fase 218: SURA se carga desde «Cargar Datos», el cliente ve más pestañas y los recuadros emergentes son más pequeños.**
+
+- En **Cargar Datos** (donde se cargan los demás clientes), al elegir SURA
+  aparece lo mismo de «Cargar información» del tablero: las bases de cada mes
+  (inicial, ventas y estrategias), las metas y los códigos. Se ve y funciona
+  igual que dentro del tablero, y lo que se guarde en un lugar se ve en el
+  otro. Las bases que ya estaban cargadas no se tocaron.
+- El usuario del cliente de SURA ahora ve todas las pestañas menos «Cargar
+  información», que sigue siendo solo del administrador: Cumplimiento,
+  Agentes, Tipificaciones, Detalle ventas, Estrategias y Bases. Las cédulas
+  le siguen llegando ocultas.
+- Los recuadros que salen al pasar el mouse (por ejemplo en Estrategias) eran
+  enormes y tapaban la información. Ahora son mucho más pequeños, siempre
+  quedan dentro de la pantalla y la tabla de asesores se ve completa.
+- ORLANT, Mobilize y los demás clientes no cambian.
+
 ## v1.107.0 — Octubre 2026
 
 **Fase 217: en el tablero de SURA, los logos se ven del mismo tamaño.**
