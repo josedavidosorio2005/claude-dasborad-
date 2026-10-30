@@ -19,7 +19,10 @@ async function renderDashboardsSection(){
   var noRes = document.getElementById('dashcfg-no-results');
   var rows = [];
   try{ rows = await apiRequest('GET', '/dashboards/config'); }catch(e){ showToast(e.message, 'error'); }
-  if(!rows.length){ tbody.innerHTML = ''; noRes.classList.remove('hidden'); return; }
+  // Fase 216: los tableros propios (SURA, Televentas) tambien se listan, con
+  // un boton para abrirlos; no se editan ni se borran desde aqui.
+  var propios = (typeof dashTablerosPropios === 'function' && typeof REGISTRO_CLIENTES !== 'undefined') ? dashTablerosPropios(REGISTRO_CLIENTES) : [];
+  if(!rows.length && !propios.length){ tbody.innerHTML = ''; noRes.classList.remove('hidden'); return; }
   noRes.classList.add('hidden');
   tbody.innerHTML = rows.map(function(r){
     return '<tr><td><strong>'+esc(r.cliente)+'</strong></td><td>'+esc(r.titulo)+'</td><td>'+r.tabs+'</td><td>'+r.paneles+'</td>'+
@@ -27,7 +30,18 @@ async function renderDashboardsSection(){
       '<td><button class="btn-sm btn-cancel" data-dcaction="preview" data-cliente="'+esc(r.cliente)+'">Previsualizar</button> '+
       '<button class="btn-sm btn-edit" data-dcaction="edit" data-cliente="'+esc(r.cliente)+'">Editar</button> '+
       '<button class="btn-sm btn-delete" data-dcaction="delete" data-cliente="'+esc(r.cliente)+'">Eliminar</button></td></tr>';
+  }).join('') + propios.map(function(p){
+    return '<tr><td><strong>'+esc(p.cliente)+'</strong></td><td>'+esc(p.titulo)+
+      '<div style="font-size:0.78rem;color:var(--c-text-muted)">Tablero propio: se carga y se configura desde el mismo tablero</div></td>'+
+      '<td>—</td><td>—</td><td style="font-size:0.78rem;color:var(--c-text-muted)">—</td>'+
+      '<td><button class="btn-sm btn-cancel" data-dcaction="abrir-propio" data-cliente="'+esc(p.cliente)+'">Abrir</button></td></tr>';
   }).join('');
+}
+
+// Fase 216: abre el tablero propio del cliente (hoy solo Televentas de SURA).
+function abrirTableroPropio(cliente){
+  if(typeof stvEsTeleventas === 'function' && stvEsTeleventas(cliente)){ openSuraTeleventas(cliente); return; }
+  showToast('No se pudo abrir el tablero de '+cliente);
 }
 
 // Los botones Previsualizar/Editar/Eliminar llevan el cliente en data-cliente
@@ -39,6 +53,7 @@ document.getElementById('dashcfg-tbody') && document.getElementById('dashcfg-tbo
   if(btn.dataset.dcaction === 'preview') previewDashCfgGuardado(btn.dataset.cliente);
   else if(btn.dataset.dcaction === 'edit') openDashCfgModal(btn.dataset.cliente);
   else if(btn.dataset.dcaction === 'delete') deleteDashCfg(btn.dataset.cliente);
+  else if(btn.dataset.dcaction === 'abrir-propio') abrirTableroPropio(btn.dataset.cliente);
 });
 
 // Previsualizar el dashboard YA GUARDADO de una campana, desde el listado
