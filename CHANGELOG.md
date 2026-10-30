@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.109.1 — Octubre 2026
+
+**Fase 218: arreglo del recuadro emergente de SURA en pantallas angostas.**
+
+- En el celular y la tableta, el recuadro que sale al pasar el mouse (por
+  ejemplo en Estrategias) a veces salía más angosto, cortado y por fuera de la
+  pantalla. Ahora siempre sale completo y dentro de la pantalla.
+
 ## v1.109.0 — Octubre 2026
 
 **Fase 218: logo nuevo de ORLANT.**
