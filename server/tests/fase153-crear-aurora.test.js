@@ -51,7 +51,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 218: logo nuevo de ORLANT (solo su columna logo; no toca Aurora/HLM).
     'fase218_logo_orlant_v1',
     // Fase 219: pestaña Total tráfico de ORLANT (no toca Aurora/HLM).
-    'fase219_total_trafico_v1'];
+    'fase219_total_trafico_v1',
+    // Fase 220: solo destapa Trafico de Llamadas/WhatsApp de Aurora (no toca HLM).
+    'fase220_aurora_trafico_visible_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -62,12 +64,12 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
   assert.equal(r.parametros.traficoDosHojas, false, 'sin las hojas propias de ORLANT en Cargar Datos');
 });
 
-test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, todas ocultas, sin datos', () => {
+test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin datos (Fase 220: Trafico visible, Calidad oculta)', () => {
   const f = fila();
   const cfg = { titulo: f.titulo, vista: f.vista, secciones: JSON.parse(f.secciones), layout: JSON.parse(f.layout) };
-  assert.deepEqual(cfg, generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'] }));
+  assert.deepEqual(cfg, generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'], visibles: ['flujo_llamadas', 'flujo_whatsapp'] }));
   assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
-  cfg.layout.tabs.forEach((t) => assert.equal(t.oculta, true, t.key));
+  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true]);
   // Mismas pestanas que ORLANT (salvo la campana).
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
   for (const t of cfg.layout.tabs) {
@@ -145,8 +147,8 @@ test('el rol cliente (con acceso a TODOS los clientes de antes) no ve Aurora en 
 
 test('tablero: Flujo de Llamadas/WhatsApp se destapan solos al tener datos; sin pestanas visibles sale un aviso', () => {
   const G = require('../../public/js/mes-global-logic.js');
-  const f = fila();
-  const layout = JSON.parse(f.layout);
+  // Fase 220: la base real ya trae Trafico visible; la logica se prueba con Aurora recien creada (todo oculto).
+  const layout = generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'] }).layout;
   assert.equal(G.gdTodasLasPestanasOcultas(layout), true, 'Aurora sin datos: aviso en vez de pagina en blanco');
   assert.equal(G.gdDestaparPorDatos(layout, 'trafico_combo', 'ORLANT'), 0, 'solo destapa los paneles de SU campana');
   assert.equal(G.gdDestaparPorDatos(layout, 'trafico_combo', AURORA), 1);
