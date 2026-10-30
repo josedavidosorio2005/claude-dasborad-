@@ -28,11 +28,12 @@ const ESPECIFICO = 'sura_televentas';
 const TIPOS = ['ventas', 'inicial', 'estrategias'];
 const CLAVES_CONFIG = ['metas', 'metasI', 'agc', 'dic', 'tip', 'agalias'];
 
-// Pestanas del HTML (data-p). Edwin aun confirma cuales ve el cliente: se
-// cambia SOLO esta lista. Cargar informacion (p1) y Bases (p10) son del
-// administrador.
+// Pestanas del HTML (data-p). Se cambia SOLO esta lista. Fase 218 (pedido de
+// Edwin, 30/10/2026): el cliente ve todas menos Cargar informacion (p1), que
+// es del administrador; Bases (p10) y Estrategias (p3) incluidas, con las
+// cedulas seudonimizadas.
 const PESTANAS = ['p1', 'p9', 'p2', 'p5', 'p7', 'p3', 'p10'];
-const PESTANAS_CLIENTE = ['p9', 'p2', 'p5', 'p7', 'p3'];
+const PESTANAS_CLIENTE = ['p9', 'p2', 'p5', 'p7', 'p3', 'p10'];
 
 const DIAS_RETENCION = 30;
 const TOPE_VERSIONES = 3;

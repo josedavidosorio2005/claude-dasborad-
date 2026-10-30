@@ -145,6 +145,19 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--bd);text-align:right}th:firs
 @media(max-width:600px){.seg{display:flex;flex-wrap:wrap;max-width:100%}}
 /* Fase 217: iconos de campaña con la misma altura visible (~18 px) que el logo de InConexion del encabezado */
 .camp-ico{display:inline-block;font-size:20px;line-height:1;vertical-align:middle}
+/* Fase 218: en el Centro de cargas solo se ve «Cargar información» (la misma app) */
+.wrap.stv-solo-carga>header,.wrap.stv-solo-carga>#gfbar,.wrap.stv-solo-carga>#dhbar,.wrap.stv-solo-carga>section:not(#p1){display:none!important}
+.wrap.stv-solo-carga>#p1{display:block!important}
+.wrap.stv-solo-carga{display:block;max-width:none;padding:0}
+.wrap.stv-solo-carga>*{max-width:none}
+/* Fase 218: el recuadro emergente (tooltip) no toma el ancho del tablero (.wrap>*) y cabe en la pantalla */
+.wrap>.mtip{width:auto;grid-column:auto;max-width:min(420px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:hidden;font-size:12px;line-height:1.35;padding:8px 10px}
+.mtip table{font-size:12px}
+.mtip td,.mtip th{padding:2px 6px}
+.mtip .tt:has(tr>:nth-child(5)){table-layout:fixed;width:100%}
+.mtip .tt th{font-size:11px}
+@media(max-width:480px){.wrap>.mtip,.mtip table{font-size:11px}.mtip td,.mtip th{padding:2px 3px}}
+.mtip .tt:has(tr>:nth-child(5)) :is(th,td):first-child{width:36%;overflow:hidden;text-overflow:ellipsis}
 /* el cliente (solo lectura) no ve botones para cambiar datos */
 .stv-lectura [data-ga],.stv-lectura [data-up],.stv-lectura [data-del],.stv-lectura [data-eup],.stv-lectura [data-edel],.stv-lectura [data-iup],.stv-lectura [data-idel]{display:none!important}
 .stv-cargando{padding:40px 16px;text-align:center;color:var(--mut)}

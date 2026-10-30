@@ -22,6 +22,8 @@ const YEAR=2026;
 let DB={}; // {"2026-09":{file,at,rows:[[agente,fecha,cant,prod,producto]]}}
 let pending=null;
 const $=id=>ROOT.getElementById(id);
+// Fase 218: el recuadro emergente nunca se sale de la pantalla (8 px de margen).
+const tipPos=(m,x,y)=>{x=Math.max(8,Math.min(x,innerWidth-m.offsetWidth-8));y=Math.max(8,Math.min(y,innerHeight-m.offsetHeight-8));m.style.left=x+"px";m.style.top=y+"px"};
 const fmt=n=>new Intl.NumberFormat("es-CO").format(Math.round(n));
 const money=n=>"$"+fmt(n);
 const pretty=s=>String(s||"Sin agente").replace(/_/g," ").toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
@@ -397,7 +399,7 @@ function resumen(gid,lote,keep){
   $("mdl").hidden=false;BLOQUEO.overflow="hidden";
 }
 $("mdl").addEventListener("mousemove",e=>{const t=e.target.closest(".hov"),m=$("mtip");if(!t){m.hidden=true;return}
-  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,innerHeight-h-8);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,innerHeight-h-8);tipPos(m,x,y)});
 $("mdl").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 function cerrarM(){$("mtip").hidden=true;$("mdl").hidden=true;$("mdl").querySelector(".mbox").classList.remove("wide");BLOQUEO.overflow=""}
 $("mdlx").onclick=cerrarM;$("mdl").addEventListener("click",e=>{if(e.target.id==="mdl")cerrarM()});document.addEventListener("keydown",e=>{if(!ABIERTO())return;if(e.key==="Escape"&&!$("mdl").hidden)cerrarM()});
@@ -500,7 +502,7 @@ function tagTip(t,k){
     `<table class="tt"><tr><th>${t==="d"?"Ciudad":"Departamento"}</th><th>Ventas (pólizas)</th></tr>`+L.map(([n,v])=>`<tr><td>${n[0]==="("?n:pretty(n)}</td><td>${fmt(v)}</td></tr>`).join("")+`</table>`;
 }
 $("geof4").addEventListener("mousemove",e=>{const g=e.target.closest(".tag"),m=$("mtip");if(!g||e.target.closest("button")){m.hidden=true;return}
-  m.innerHTML=tagTip(g.dataset.t,g.dataset.k);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=tagTip(g.dataset.t,g.dataset.k);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("geof4").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 
 /* ---------- Productos al pasar el mouse por las tarjetas (Geografía y edad) ---------- */
@@ -514,7 +516,7 @@ function prodTip(f,tt){
   return `<b>Productos vendidos · ${tt}</b><table class="tt"><tr><th>Producto</th><th>Pólizas</th><th>%</th></tr>`+L.map(([n,v])=>`<tr><td>${n}</td><td>${fmt(v)}</td><td>${(v/T*100).toFixed(1).replace(".",",")}%</td></tr>`).join("")+`<tr><th>Total</th><th>${fmt(T)}</th><th>100%</th></tr></table>`;
 }
 $("gk").addEventListener("mousemove",e=>{const g=e.target.closest(".hovk"),m=$("mtip");if(!g||(!g.dataset.f&&!g._pt)){m.hidden=true;return}
-  m.innerHTML=g._pt||prodTip(g.dataset.f,g.dataset.tt);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=g._pt||prodTip(g.dataset.f,g.dataset.tt);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("gk").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 
 /* ---------- Metas (Cargar información › Metas del mes) ---------- */
@@ -610,7 +612,7 @@ function drawX4(R,a,med){
   }
 }
 $("g4x").addEventListener("mousemove",e=>{const t=e.target.closest("tr.hov"),m=$("mtip");if(!t){m.hidden=true;return}
-  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("g4x").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 $("g4x").addEventListener("click",e=>{if(e.target.id==="g4close"){G4V="";draw4();$("g4v").scrollIntoView({block:"nearest"})}});
 $("g4v").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;G4V=G4V===b.dataset.v?"":b.dataset.v;draw4()});
@@ -670,7 +672,7 @@ function draw5(){
 }
 $("ra").addEventListener("change",draw5);
 $("rc").addEventListener("mousemove",e=>{const t=e.target.closest(".bar"),m=$("mtip");if(!t||!t._tip){m.hidden=true;return}
-  m.innerHTML=t._tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=t._tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("rc").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 /* ---------- Página 6: Campañas ---------- */
 function draw6(){
@@ -690,7 +692,7 @@ function draw6(){
 
 ["c1","grc"].forEach(id=>{$(id).addEventListener("mousemove",e=>{const h=e.target.closest(".hit"),m=$("mtip");if(!h){m.hidden=true;return}const x=$(id)._L[+h.dataset.i];
   m.innerHTML=`<b>${x.n}</b><table class="tt"><tr><td>Ventas (pólizas)</td><td><b>${fmt(x.v)}</b></td></tr><tr><td>Producción</td><td><b>${money(x.p)}</b></td></tr></table>`;
-  m.hidden=false;const w=m.offsetWidth,hh=m.offsetHeight;let X=e.clientX+16,Y=e.clientY+16;if(X+w>innerWidth-8)X=e.clientX-w-16;if(Y+hh>innerHeight-8)Y=Math.max(8,e.clientY-hh-16);m.style.left=X+"px";m.style.top=Y+"px"});
+  m.hidden=false;const w=m.offsetWidth,hh=m.offsetHeight;let X=e.clientX+16,Y=e.clientY+16;if(X+w>innerWidth-8)X=e.clientX-w-16;if(Y+hh>innerHeight-8)Y=Math.max(8,e.clientY-hh-16);tipPos(m,X,Y)});
 $(id).addEventListener("mouseleave",()=>$("mtip").hidden=true)});
 $("dhclose4").addEventListener("click",()=>{$("dhpop4").hidden=true;$("dhbtn4").classList.remove("on");$("dhbtn4").scrollIntoView({block:"nearest"})});
 document.addEventListener("keydown",e=>{if(!ABIERTO())return;if(e.key!=="Escape"||!$("mdl").hidden)return;if(!$("dhpop4").hidden)$("dhclose4").click();else if(G4V){G4V="";draw4()}});
@@ -844,7 +846,7 @@ function regData(){const ks=MKF(),M=new Map();let falta=[];
 const regOK=o=>(!GR.c.size||GR.c.has(o.c))&&(!GR.d.size||GR.d.has(o.d));
 const rgn=n=>n[0]==="("||/años$|^Sin dato$/.test(n)?n:pretty(n);let RGD="d";
 $("rgt").addEventListener("mousemove",e=>{const t=e.target.closest("tr.hov"),m=$("mtip"),T=$("rgt")._tips;if(!t||!T){m.hidden=true;return}
-  m.innerHTML=T[+t.dataset.i]();m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=T[+t.dataset.i]();m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("rgt").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 $("rgdim").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;e.preventDefault();RGD=b.dataset.d;$("rgdim").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));draw7r()});
 function draw7r(){
@@ -906,7 +908,7 @@ function rgTip(t,k){
     `<table class="tt"><tr><th>${t==="d"?"Ciudad":"Departamento"}</th><th>Registros</th></tr>`+L.map(([n,v])=>`<tr><td>${rgn(n)}</td><td>${fmt(v)}</td></tr>`).join("")+`</table>`;
 }
 $("geof7").addEventListener("mousemove",e=>{const g=e.target.closest(".tag"),m=$("mtip");if(!g||e.target.closest("button")){m.hidden=true;return}
-  m.innerHTML=rgTip(g.dataset.t,g.dataset.k);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=rgTip(g.dataset.t,g.dataset.k);m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("geof7").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 ["gdim2","gtop","gmed"].forEach(i=>$(i).addEventListener("change",draw7f));
 
@@ -1017,7 +1019,7 @@ $("dvini").addEventListener("click",e=>{const x=e.target.closest("[data-dvx]");i
     L.map(([n,v])=>`<tr><td>${isA?(n?pretty(n):"(sin asesor)"):n}</td><td><b>${fmt(v)}</b></td><td>${T?(v/T*100).toFixed(1).replace(".",","):0}%</td></tr>`).join("")+`<tr><th>Total</th><th>${fmt(T)}</th><th>100%</th></tr></table></div>`;
   $("mdl").hidden=false;BLOQUEO.overflow="hidden"});
 $("dvini").addEventListener("mousemove",e=>{const t=e.target.closest("tr.hov"),m=$("mtip");if(!t){m.hidden=true;return}
-  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);m.style.left=x+"px";m.style.top=y+"px"});
+  m.innerHTML=t.dataset.tip;m.hidden=false;const w=m.offsetWidth,h=m.offsetHeight;let x=e.clientX+16,y=e.clientY+16;if(x+w>innerWidth-8)x=e.clientX-w-16;if(y+h>innerHeight-8)y=Math.max(8,e.clientY-h-16);tipPos(m,x,y)});
 $("dvini").addEventListener("mouseleave",()=>$("mtip").hidden=true);
 /* ---------- Diccionarios de códigos (Cargar información › Códigos) ---------- */
 const DIC0={

@@ -1618,6 +1618,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc-migas a{color:var(--c-primary);cursor:pointer;text-decoration:underline;}
 .cc-migas [aria-current]{color:var(--c-text);font-weight:600;}
 #cc-body{padding:8px 22px 26px;}
+#cc-stv-host{padding:0 22px 26px;} /* Fase 218: panel de carga de SURA */
 .cc-intro{margin:6px 0 14px;color:var(--c-text-2);}
 .cc-cargando{padding:30px;text-align:center;color:var(--c-text-muted);}
 .cc-tarjetas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
@@ -1686,6 +1687,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 @media (max-width:600px){
   .cc-barra{padding:12px 16px 2px;}
   #cc-body{padding:8px 16px 22px;}
+  #cc-stv-host{padding:0 16px 22px;}
   .cc-tarjetas{grid-template-columns:1fr;}
   .cc-meses{grid-template-columns:repeat(2,minmax(0,1fr));}
   .cc-mes{min-height:140px;padding:10px;}
