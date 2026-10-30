@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.110.0 — Octubre 2026
+
+**Fase 219: nueva pestaña «Total tráfico» en ORLANT.**
+
+- Va justo después de «Llamadas y WhatsApp de salida» y suma todo el tráfico:
+  llamadas y WhatsApp de entrada (los de Tráfico de Llamadas y Tráfico de
+  WhatsApp) y llamadas y WhatsApp de salida.
+- Tres tarjetas: **Total ingresados**, **Total contestados** (incluye todas
+  las salidas: cada salida la hizo un asesor) y **Nivel de atención total**
+  (contestados ÷ ingresados). Siguen el filtro de meses de arriba.
+- Una gráfica con dos barras por mes: Total llamadas + WhatsApp y Total
+  contestados. También sale en Exportar, con el detalle de entrada y salida.
+- La tasa de contactabilidad de la salida (salidas conectadas) queda pendiente
+  con Edwin. Mobilize no cambia.
+
 ## v1.109.4 — Octubre 2026
 
 **Fase 219: Tipificación de ORLANT, filtros más claros.**

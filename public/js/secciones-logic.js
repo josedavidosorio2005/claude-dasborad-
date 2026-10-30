@@ -19,6 +19,7 @@ var GD_SECCION_POR_TIPO = {
   // derecha (salida) = salida; cada mitad marca su propia tarjeta.
   llamadas_unicas_panel: 'llamadas',
   flujo_hora_panel: 'llamadas', // Fase 196
+  total_trafico_panel: 'llamadas', // Fase 219 (entrada + salida)
 };
 
 function gdSeccionDeTipo(tipo) {

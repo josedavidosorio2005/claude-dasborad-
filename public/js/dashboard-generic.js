@@ -1757,7 +1757,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel' || p.tipo === 'flujo_hora_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'total_trafico_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel' || p.tipo === 'flujo_hora_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
@@ -1774,7 +1774,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='calidad_resumen_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='total_trafico_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='calidad_resumen_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1817,6 +1817,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
   if(p.tipo === 'calidad_resumen_panel'){ _calidadResumenRenderPanel(p, i); return; } // Fase 172
   if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
+  if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; } // Fase 219
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
   if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
 
@@ -2355,6 +2356,25 @@ async function _gdExportarEfectividadAgendamiento(p, i){
 // TODOS los meses con datos (tabla completa, igual que se ve en pantalla)
 // mas una fila de totales del periodo (ponderado, nunca el promedio
 // simple de los %).
+// Fase 219: "Total tráfico" de ORLANT, los meses de MESES, con el detalle de entrada y salida.
+async function _gdExportarTotalTrafico(p, i){
+  var titulo = p.titulo || 'Total tráfico';
+  var filas = [];
+  try{ filas = await apiRequest('GET', '/calidad/total-trafico/mensual?campana='+encodeURIComponent(p.campana)) || []; }catch(e){}
+  var filasM = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
+  if(!filasM.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin tráfico para los meses elegidos.' }];
+  var fila = function(mes, f, nivel){
+    return { Mes: mes, 'Llamadas de entrada': f.llamadasEntrada, 'Llamadas contestadas': f.llamadasContestadas, 'WhatsApp de entrada': f.whatsappEntrada,
+      'WhatsApp contestados': f.whatsappContestados, 'Llamadas de salida': f.llamadasSalida, 'WhatsApp de salida': f.whatsappSalida,
+      'Total ingresados': f.ingresados, 'Total contestados (incluye todas las salidas)': f.contestados, 'Nivel de atención total': nivel === null ? '—' : gdFmtValor(nivel*100, '%') };
+  };
+  var out = filasM.map(function(f){ return fila(citasAtendidasMesLbl(f.mes), f, f.nivelAtencion); });
+  var tot = {};
+  ['llamadasEntrada','llamadasContestadas','whatsappEntrada','whatsappContestados','llamadasSalida','whatsappSalida','ingresados','contestados'].forEach(function(k){ tot[k] = filasM.reduce(function(a, f){ return a + (f[k] || 0); }, 0); });
+  out.push(fila('TOTAL ('+citasAtendidasRangoLbl(filasM)+')', tot, totalTraficoSumaFilas(filasM).nivelAtencion));
+  return [{ titulo: titulo, tipo: 'tabla', filas: out }];
+}
+
 async function _gdExportarEfectividadCitas(p, i){
   var campana = p.campana;
   var titulo = p.titulo || 'Efectividad de Citas';
@@ -2606,6 +2626,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'encuesta_panel'){ out = out.concat(_gdExportarEncuesta(p, i)); continue; }
     if(p.tipo === 'calidad_resumen_panel'){ out = out.concat(await _gdExportarCalidadResumen(p, i)); continue; } // Fase 172
     if(p.tipo === 'flujo_hora_panel'){ out = out.concat(await _gdExportarFlujoHora(p, i)); continue; } // Fase 196
+    if(p.tipo === 'total_trafico_panel'){ out = out.concat(await _gdExportarTotalTrafico(p, i)); continue; } // Fase 219
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

@@ -242,6 +242,7 @@ declarar(['POST /calidad/inasistencia/carga/impacto', 'POST /calidad/inasistenci
 declarar(['GET /calidad/efectividad-citas/opciones', 'GET /calidad/efectividad-citas/mensual'], 'scopedRead');
 declarar(['POST /calidad/efectividad-citas/carga/impacto', 'POST /calidad/efectividad-citas/carga'], 'cargaManual');
 declarar(['GET /calidad/salida/opciones', 'GET /calidad/salida/mensual'], 'scopedRead');
+declarar(['GET /calidad/total-trafico/mensual'], 'scopedRead'); // Fase 219
 declarar(['POST /calidad/salida/carga/impacto', 'POST /calidad/salida/carga'], 'cargaManual');
 // Fase 170: linea 3P/General de los asesores por mes (salida del CDR).
 declarar(['GET /calidad/salida/asesores'], 'scopedRead');

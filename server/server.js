@@ -360,6 +360,7 @@ function createApp() {
   api.use(require('./routes/inasistencia'));
   api.use(require('./routes/efectividad-citas'));
   api.use(require('./routes/salida'));
+  api.use(require('./routes/total-trafico')); // Fase 219
   api.use(require('./routes/sura-televentas')); // Fase 215
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas
