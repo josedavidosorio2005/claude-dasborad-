@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.107.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.109.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -24,7 +24,12 @@ narrativo de cada fase, fase por fase, vive en
   Fase 132 (Parte 8), `public/img/clientes/mobilize-logo.png` + `@2x`,
   prueba en `server/tests/fase132-08-logo-mobilize.test.js`. Verificado
   en producción real (login de administrador, Playwright visible):
-  logo visible solo en MOBILIZE, 0 errores de consola.
+  logo visible solo en MOBILIZE, 0 errores de consola. Logo de ORLANT
+  (Fase 218, `public/img/clientes/orlant-logo.png` + `@2x`): desde el
+  original de Edwin, sin la línea pequeña de texto, 28 px en escritorio y
+  22 px en el celular; el alto de cada cliente sale del registro
+  (`logo.alto`/`altoMovil`) y el espacio del logo es fijo (sin salto de
+  pestañas) — ver `docs/marca.md`.
 - **Sistema de diseño / accesibilidad WCAG 2.1 AA** (Fase 133, ampliado
   en la Fase 136 con tokens/especificación de movimiento y componentes
   base): [`docs/sistema-de-diseno.md`](docs/sistema-de-diseno.md) —
@@ -46,10 +51,13 @@ narrativo de cada fase, fase por fase, vive en
   tres solo los ve el administrador; lo que falta está en
   [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Los otros 12
   clientes de antes se borraron en la Fase 134 y no existen.
-- **Televentas de SURA (Fase 215)**: el cliente ve Cumplimiento, Agentes,
-  Tipificaciones, Detalle ventas y Estrategias (lista
-  `PESTANAS_CLIENTE` de `server/sura-televentas.js`); "Cargar información"
-  y "Bases" y toda escritura son del administrador (403 al resto). El
+- **Televentas de SURA (Fase 215)**: el cliente ve todas las pestañas
+  menos "Cargar información" (Cumplimiento, Agentes, Tipificaciones,
+  Detalle ventas, Estrategias y Bases, Fase 218; lista
+  `PESTANAS_CLIENTE` de `server/sura-televentas.js`); "Cargar
+  información" y toda escritura son del administrador (403 al resto). Ese
+  mismo panel también está en "Cargar Datos" (Centro de cargas) al elegir
+  SURA (Fase 218: la misma app, `stvMontarCarga`). El
   cliente recibe las cédulas seudonimizadas (HMAC). El tablero se regenera
   desde el HTML de Edwin con `scripts/sura/generar-televentas.js` (sin las
   constantes SEED: prueba guardiana en `fase215-sura-televentas`).
@@ -374,3 +382,4 @@ mismo orden):
 - Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.105.0, 2026-10-29)
 - Fase 216 — SURA: primera carga real por la interfaz (ventas mar–oct, base inicial y estrategias de octubre, metas), SURA en Admin › Dashboards con botón "Abrir" y arreglo del desborde con las bases montadas (v1.106.0–v1.106.1, 2026-10-30)
 - Fase 217 — SURA: logo de InConexion e iconos de campaña (🦷 💙) con la misma altura visible (~18 px), alineados; el logo también se ve en el celular y la tableta (v1.107.0, 2026-10-30)
+- Fase 218 — SURA: «Cargar información» también en Cargar Datos (misma app), el cliente ve todas las pestañas menos Cargar información, tooltips pequeños y siempre dentro de la pantalla; ORLANT: logo nuevo desde el original de Edwin, 28/22 px, sin salto de pestañas (v1.108.0–v1.109.1, 2026-10-30)
