@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const { app, db, request, tokenFor, login, MASTER_PASSWORD, SEED, cleanup } = require('./helpers');
 const { generarLayout, PERFILES_ACTUALES } = require('../plantillas-cliente');
 const reg = require('../clientes-registro');
+const { AURORA_MODULOS, auroraEsperada } = require('./helpers-aurora'); // Fase 220
 const { campaignAccess } = require('../auth');
 
 after(cleanup);
@@ -53,23 +54,25 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 219: pestaña Total tráfico de ORLANT (no toca Aurora/HLM).
     'fase219_total_trafico_v1',
     // Fase 220: solo destapa Trafico de Llamadas/WhatsApp de Aurora (no toca HLM).
-    'fase220_aurora_trafico_visible_v1'];
+    'fase220_aurora_trafico_visible_v1',
+    // Fase 220: salida, Tipificacion y Total trafico de Aurora (no toca HLM).
+    'fase220_aurora_salida_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
-  assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'calidad']);
+  assert.deepEqual(r.modulos, AURORA_MODULOS); // Fase 220: + salida y tipificacion
   assert.equal(r.dashboard, true);
   assert.equal(r.logo, null);
   assert.equal(r.parametros.asesorVisibleCliente, false);
   assert.equal(r.parametros.traficoDosHojas, false, 'sin las hojas propias de ORLANT en Cargar Datos');
 });
 
-test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin datos (Fase 220: Trafico visible, Calidad oculta)', () => {
+test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin datos (Fase 220: Trafico y Total trafico visibles; Salida, Tipificacion y Calidad ocultas)', () => {
   const f = fila();
   const cfg = { titulo: f.titulo, vista: f.vista, secciones: JSON.parse(f.secciones), layout: JSON.parse(f.layout) };
-  assert.deepEqual(cfg, generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'], visibles: ['flujo_llamadas', 'flujo_whatsapp'] }));
-  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
-  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true]);
+  assert.deepEqual(cfg, auroraEsperada());
+  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'tipificacion', 'calidad']);
+  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, true]);
   // Mismas pestanas que ORLANT (salvo la campana).
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
   for (const t of cfg.layout.tabs) {

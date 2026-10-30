@@ -21,7 +21,7 @@ const fotoOtros = () => ['ORLANT', 'MOBILIZE', 'HOSPITAL LA MARIA', 'SURA']
 
 test('Aurora: Trafico de Llamadas y de WhatsApp visibles; Calidad sigue oculta', () => {
   const tabs = layoutDe(AURORA).tabs;
-  assert.deepEqual(tabs.map((t) => t.key + (t.oculta ? '*' : '')), ['trafico', 'trafico_whatsapp', 'calidad*']);
+  assert.deepEqual(tabs.filter((t) => ['trafico', 'trafico_whatsapp', 'calidad'].includes(t.key)).map((t) => t.key + (t.oculta ? '*' : '')), ['trafico', 'trafico_whatsapp', 'calidad*']);
 });
 
 test('la migracion es idempotente y no toca a ningun otro cliente', () => {
@@ -29,7 +29,7 @@ test('la migracion es idempotente y no toca a ningun otro cliente', () => {
   const antes = JSON.stringify(layoutDe(AURORA));
   // Como estaba al crearla (todo oculto): la migracion solo destapa Trafico.
   const l = layoutDe(AURORA);
-  l.tabs.forEach((t) => { t.oculta = true; });
+  l.tabs.forEach((t) => { if (t.key === 'trafico' || t.key === 'trafico_whatsapp') t.oculta = true; });
   db.prepare('UPDATE dashboards_config SET layout = ? WHERE cliente = ?').run(JSON.stringify(l), AURORA);
   db.mostrarTraficoAurora();
   db.mostrarTraficoAurora();
@@ -45,5 +45,5 @@ test('la carga de Trafico de Llamadas y de WhatsApp de Aurora sigue lista (Carga
   const ids = (centro.CARGAS_POR_MODULO.flujo_llamadas || []).concat(centro.CARGAS_POR_MODULO.flujo_whatsapp || []).map((c) => c.id);
   assert.deepEqual(ids, ['flujo_llamadas', 'flujo_whatsapp']);
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
-  assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'calidad'], 'el PR 1 no agrega modulos');
+  assert.ok(r.modulos.includes('flujo_llamadas') && r.modulos.includes('flujo_whatsapp'));
 });

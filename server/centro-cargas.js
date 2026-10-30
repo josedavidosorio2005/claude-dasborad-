@@ -55,6 +55,8 @@ const CARGAS_POR_MODULO = {
 // por id siguen funcionando. Los demas clientes las siguen viendo.
 const CARGAS_RETIRADAS_POR_CLIENTE = {
   ORLANT: ['salida', 'efectividad_citas'],
+  // Fase 220: Aurora saca la salida del CDR de Tipificacion (como ORLANT); no usa la hoja manual.
+  'CLINICA AURORA': ['salida'],
 };
 function cargaRetiradaPara(cliente, carga) {
   return !!carga.retirada || (CARGAS_RETIRADAS_POR_CLIENTE[cliente] || []).includes(carga.id);

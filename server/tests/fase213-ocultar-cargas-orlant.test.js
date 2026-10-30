@@ -17,7 +17,8 @@ test('solo ORLANT: salida y efectividad_citas retiradas; el resto de cargas igua
   assert.equal(cargaRetiradaPara('ORLANT', salida), true);
   assert.equal(cargaRetiradaPara('ORLANT', citas), true);
   assert.equal(cargaRetiradaPara('ORLANT', CARGAS_POR_MODULO.agendas[0]), false);
-  assert.equal(cargaRetiradaPara('CLINICA AURORA', salida), false);
+  // Fase 220: Aurora tambien saca la salida del CDR (sin la hoja manual).
+  assert.equal(cargaRetiradaPara('CLINICA AURORA', salida), true);
   assert.equal(cargaRetiradaPara('CLINICA AURORA', citas), false);
   // Las retiradas de siempre (Fase 194) siguen retiradas para todos.
   assert.equal(cargaRetiradaPara('MOBILIZE', CARGAS_POR_MODULO.llamadas_unicas[0]), true);

@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.112.0 — Octubre 2026
+
+**Fase 220: Clínica Aurora con salida, Tipificación y Total tráfico, como ORLANT.**
+
+- En Cargar Datos, Clínica Aurora ahora tiene la carga del CDR de Tipificación
+  de Wolkvox: el de llamadas (HistCDR) y el de WhatsApp (HistChat).
+- Con ese CDR aparecen solas las pestañas **Tipificación** y **Llamadas y
+  WhatsApp de salida**. Mientras no se clasifiquen los asesores (General o
+  3P), toda la salida queda en "Sin clasificar" y suma en el Total.
+- La pestaña **Total tráfico** ya se ve en Aurora (con el aviso de "sin
+  tráfico cargado" mientras no haya datos).
+- Por ahora Aurora usa la misma regla de salida de ORLANT, hasta que Edwin
+  confirme la suya. ORLANT, Mobilize y los demás clientes no cambian.
+
 ## v1.111.0 — Octubre 2026
 
 **Fase 220: Clínica Aurora muestra Tráfico de Llamadas y Tráfico de WhatsApp.**

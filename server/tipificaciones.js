@@ -66,7 +66,19 @@ const COND_SALIDA_SQL = "(UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.
 // CANCELACIONES Y REPROGRAMACION) cuentan en su skill, no como salida. Las
 // filas ya guardadas no se tocan: el parser las guardo como LLAMADAS DE
 // SALIDA con su SKILL_ID original, y aqui se leen con su skill.
-const CLIENTES_SALIDA_POR_GUION = ['ORLANT'];
+//
+// Fase 220: UN SOLO LUGAR con la regla de salida de cada cliente.
+//   regla 'guion' = la de ORLANT (arriba); sin entrada aqui, la regla general
+//   (COND_SALIDA_SQL, la de Mobilize).
+//   clasificacionAsesores (Fase 186) = la salida se reparte en General / 3P por
+//   la clasificacion de cada asesor (Tipificacion › Clasificacion de asesores);
+//   un asesor sin clasificar va a "Sin clasificar" y cuenta en el Total.
+// CLINICA AURORA usa la regla de ORLANT SOLO MIENTRAS Edwin confirma la suya
+// (docs/pendientes.md). Para cambiarla, se cambia esta linea.
+const SALIDA_POR_CLIENTE = {
+  ORLANT: { regla: 'guion', clasificacionAsesores: true },
+  'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: true }, // provisional
+};
 const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
 const SKILLS_SALIDA_SQL = SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ');
 const SALIDA_CON_SKILL_PROPIO_SQL = `(UPPER(TRIM(skill)) IN (${SKILLS_SALIDA_SQL}) AND skillId IS NOT NULL AND TRIM(skillId) NOT IN ('', '-', '0'))`;
@@ -75,15 +87,14 @@ const COND_SALIDA_GUION_SQL = `((UPPER(TRIM(skill)) IN (${SKILLS_SALIDA_SQL}) AN
 const SKILL_GUION_SQL = `CASE WHEN ${SALIDA_CON_SKILL_PROPIO_SQL} THEN CASE TRIM(skillId) ` +
   Object.keys(SKILLS_LLAMADAS_POR_ID).map((id) => `WHEN '${id}' THEN '${SKILLS_LLAMADAS_POR_ID[id]}' `).join('') +
   `ELSE 'Skill ' || TRIM(skillId) END WHEN ${COND_SALIDA_GUION_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`;
-function salidaPorGuion(campana) { return CLIENTES_SALIDA_POR_GUION.includes(campana); }
+function salidaPorGuion(campana) { return !!(SALIDA_POR_CLIENTE[campana] && SALIDA_POR_CLIENTE[campana].regla === 'guion'); }
 // Condicion SQL de "llamada de salida" (canal LLAMADAS) de este cliente.
 function condSalidaLlamadasSql(campana) { return salidaPorGuion(campana) ? COND_SALIDA_GUION_SQL : COND_SALIDA_SQL; }
 // Fase 186: salida de un canal (llamadas: la regla del cliente; WhatsApp: SKILL_ID 0, guardado como outbound_ma).
 function condSalidaCanalSql(campana, canal) { return canal === 'WHATSAPP' ? "tipoInteraccion = 'outbound_ma'" : condSalidaLlamadasSql(campana); }
-// Fase 186 (pedido de Edwin, solo ORLANT): la salida se reparte por la
-// clasificacion del asesor (tabla asesor_clasificacion, por cliente).
-const CLIENTES_CLASIFICACION_ASESORES = ['ORLANT'];
-function usaClasificacionAsesores(campana) { return CLIENTES_CLASIFICACION_ASESORES.includes(campana); }
+// Fase 186: la salida se reparte por la clasificacion del asesor (tabla
+// asesor_clasificacion, por cliente). Fase 220: sale de SALIDA_POR_CLIENTE.
+function usaClasificacionAsesores(campana) { return !!(SALIDA_POR_CLIENTE[campana] && SALIDA_POR_CLIENTE[campana].clasificacionAsesores); }
 // linea: 'GENERAL' | '3P' | 'SIN' (asesor sin clasificar).
 function condLineaClasificacionSql(linea) {
   return linea === 'SIN'
@@ -346,6 +357,7 @@ function tieneAlgunaTipificacion(db, campana) {
 }
 
 module.exports = {
+  SALIDA_POR_CLIENTE,
   CANALES,
   condSalidaLlamadasSql,
   condSalidaCanalSql,
