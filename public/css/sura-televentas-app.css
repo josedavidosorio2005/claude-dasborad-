@@ -151,7 +151,8 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--bd);text-align:right}th:firs
 .wrap.stv-solo-carga{display:block;max-width:none;padding:0}
 .wrap.stv-solo-carga>*{max-width:none}
 /* Fase 218: el recuadro emergente (tooltip) no toma el ancho del tablero (.wrap>*) y cabe en la pantalla */
-.wrap>.mtip{width:auto;grid-column:auto;max-width:min(420px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:hidden;font-size:12px;line-height:1.35;padding:8px 10px}
+/* width:max-content (no auto): si el recuadro quedo pegado al borde, su ancho no se encoge al medirlo (tipPos) */
+.wrap>.mtip{width:max-content;grid-column:auto;max-width:min(420px,calc(100vw - 16px));max-height:calc(100vh - 16px);overflow:hidden;font-size:12px;line-height:1.35;padding:8px 10px}
 .mtip table{font-size:12px}
 .mtip td,.mtip th{padding:2px 6px}
 .mtip .tt:has(tr>:nth-child(5)){table-layout:fixed;width:100%}
