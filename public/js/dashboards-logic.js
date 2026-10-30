@@ -50,10 +50,28 @@ function dashRolesVisibles(roles, esFullAdmin, puedeAccederRol) {
   });
 }
 
+// Fase 216: clientes con tablero propio (hoy SURA, "Televentas") para la
+// lista "Dashboards configurados" de Admin. No viven en dashboards_config
+// (no se arman con el constructor): salen del registro de clientes, por
+// parametros.especificos -- la misma marca que usa stvEsTeleventas().
+var DASH_TABLEROS_PROPIOS = { sura_televentas: 'Televentas' };
+
+function dashTablerosPropios(registro) {
+  var out = [];
+  (registro || []).forEach(function (c) {
+    var esp = (c && c.parametros && c.parametros.especificos) || [];
+    Object.keys(DASH_TABLEROS_PROPIOS).forEach(function (k) {
+      if (esp.indexOf(k) !== -1) out.push({ cliente: c.nombre, titulo: DASH_TABLEROS_PROPIOS[k], especifico: k });
+    });
+  });
+  return out;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     dashModulosVisibles: dashModulosVisibles,
     dashClientesVisibles: dashClientesVisibles,
     dashRolesVisibles: dashRolesVisibles,
+    dashTablerosPropios: dashTablerosPropios,
   };
 }

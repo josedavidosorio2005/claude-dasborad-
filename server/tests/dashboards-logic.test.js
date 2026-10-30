@@ -94,3 +94,22 @@ test('dashRolesVisibles: isFullAdmin ve TODOS los roles, incluidos ADMIN/AUX_ADM
 test('dashRolesVisibles: sin ningun role_X asignado -> lista vacia', () => {
   assert.deepEqual(dashRolesVisibles(ROLES, false, () => false), []);
 });
+
+// Fase 216: tableros propios (SURA, Televentas) en "Dashboards configurados".
+const { dashTablerosPropios } = require('../../public/js/dashboards-logic.js');
+
+test('dashTablerosPropios: solo los clientes marcados con un tablero propio, con su titulo', () => {
+  const registro = [
+    { nombre: 'CLIENTE A', parametros: { sedes: [] } },
+    { nombre: 'CLIENTE B', parametros: { especificos: ['sura_televentas'] } },
+    { nombre: 'CLIENTE C', parametros: { especificos: ['otra_cosa'] } },
+    { nombre: 'CLIENTE D' },
+  ];
+  assert.deepEqual(dashTablerosPropios(registro), [{ cliente: 'CLIENTE B', titulo: 'Televentas', especifico: 'sura_televentas' }]);
+});
+
+test('dashTablerosPropios: registro vacio o ausente no rompe', () => {
+  assert.deepEqual(dashTablerosPropios([]), []);
+  assert.deepEqual(dashTablerosPropios(undefined), []);
+  assert.deepEqual(dashTablerosPropios([null]), []);
+});

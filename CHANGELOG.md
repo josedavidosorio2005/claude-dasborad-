@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.106.0 — Octubre 2026
+
+**Fase 216: SURA también aparece en Admin › Dashboards.**
+
+- En "Dashboards configurados" (Admin › Dashboards) ahora sale la fila de
+  SURA, "Televentas", con un botón **Abrir** que lleva directo al tablero.
+  Como es un tablero propio (se carga y se configura desde el mismo
+  tablero), esa fila no tiene "Editar" ni "Eliminar".
+- Los demás dashboards (ORLANT, Mobilize, Aurora, Hospital La María) siguen
+  igual.
+
 ## v1.105.0 — Octubre 2026
 
 **Fase 215: cliente nuevo SURA, tablero "Televentas".**
