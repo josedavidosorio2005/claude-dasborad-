@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.109.2 — Octubre 2026
+
+**Fase 219: «Llamadas y WhatsApp de salida» de ORLANT sin el aviso de arriba.**
+
+- Ya no sale el texto "N asesor(es) con salidas en … no están clasificados
+  (Línea General o 3P)…". La pestaña queda solo con las tarjetas y las
+  gráficas; los asesores sin clasificar siguen sumando en el Total.
+
 ## v1.109.1 — Octubre 2026
 
 **Fase 218: arreglo del recuadro emergente de SURA en pantallas angostas.**

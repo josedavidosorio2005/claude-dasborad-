@@ -102,18 +102,9 @@ async function _salDibujar(campana, i, opciones){
     avisoEl.innerHTML = !mesesSal.length
       ? _gdAvisoSinDatosMesHtml('Llamadas y WhatsApp de salida', _gdMeses().slice(-1)[0] || '', conDatosSal.length ? conDatosSal[conDatosSal.length-1] : null, mesNombreLargo)
       : '';
-    // Fase 207: el aviso de asesores sin linea, por cada mes de MESES que lo tenga.
-    filas.filter(function(f){ return mesesSal.indexOf(f.mes) !== -1 && f.asesoresSinAsignar; }).forEach(function(filaAviso){
-      if(filaAviso.lineaPorCliente){
-        avisoEl.innerHTML += '<div class="gd-aviso-sin-datos" role="status">' + esc(filaAviso.asesoresSinAsignar + ' asesor(es) con salidas en ' + mesNombreLargo(filaAviso.mes) +
-          ' no están clasificados (Línea General o 3P): ' + gdFmtValor(filaAviso.llamadasSinAsignar || 0) + ' llamada(s) y ' + gdFmtValor(filaAviso.wppSinAsignar || 0) +
-          ' WhatsApp quedan en "Sin clasificar" (cuentan en el Total).' + (_salEsAdmin() ? ' Clasifícalos arriba, en "Clasificación de asesores".' : '')) + '</div>';
-      } else {
-        avisoEl.innerHTML += '<div class="gd-aviso-sin-datos" role="status">' + esc(filaAviso.asesoresSinAsignar + ' asesor(es) con salidas en ' + mesNombreLargo(filaAviso.mes) +
-          ' no tienen línea (3P o General): ' + gdFmtValor(filaAviso.llamadasSinAsignar || 0) + ' llamada(s) y ' + gdFmtValor(filaAviso.wppSinAsignar || 0) +
-          ' WhatsApp quedan en "Sin asignar".' + (_salEsAdmin() ? ' Asígnalos arriba, en "Línea de cada asesor".' : '')) + '</div>';
-      }
-    });
+    // Fase 219 (pedido de Edwin, 30/10): sin el aviso de asesores sin línea
+    // (Fase 207); la pestaña queda solo con tarjetas y gráficas. Los "Sin
+    // clasificar" siguen sumando en el Total.
   }
 
   // Fase 188/189: botones Total / Línea General / Línea 3P de cada grafica (solo con la clasificacion por cliente).
