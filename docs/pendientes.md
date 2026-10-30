@@ -164,37 +164,38 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   son sobre todo agentes de sistema como "Asesor Apoyo" o "Routing Point").
   Cómo se cierra: si alguno es una persona que agenda, agregarla en la
   Clasificación de usuarios.
-- **SURA — Televentas: primera carga** (Fase 215, 29/10/2026). El tablero
-  está en producción (v1.105.0) sin datos y solo lo ve el administrador.
-  **Edwin debe confirmar**: (a) mandar los Excel de cada mes (punto 1);
-  (b) que el cliente vea solo Cumplimiento, Agentes, Tipificaciones, Detalle
-  ventas y Estrategias (punto 2); (c) las metas de producción de
-  Odontológico por mes (punto 3); (d) qué nombres de asesora son la misma
-  persona (punto 4); (e) el visto bueno para el usuario de Jairo (punto 5);
-  y (f) si en el celular quiere los botones de campaña del mismo ancho (hoy
-  salen apilados con anchos distintos, igual que en su HTML). Falta:
-  1. **Los Excel de Edwin** por mes (base de ventas `data_inconexion_03..10`,
-     `OCTUBRE`, base inicial y `ESTRATEGIAS`): no estaban en este equipo,
-     así que la comparación de conteos contra el HTML original queda por
-     hacer. Cifras del HTML a cuadrar al montarlos — ventas por mes: mar 22,
-     abr 109, may 109, jun 285, jul 310, ago 300, sep 414, oct 310;
-     registros de la base: mar 7.000, abr 9.000, may 12.000, jun 18.000,
-     jul 20.000, ago 26.249, sep 34.000, oct 31.000. Cargar a producción
-     solo con tu OK (por la interfaz: Cargar información → mes → Montar base).
-  2. **Pestañas que ve el cliente**: hoy Cumplimiento, Agentes,
-     Tipificaciones, Detalle ventas y Estrategias (Edwin lo confirma). Se
-     cambia solo `PESTANAS_CLIENTE` en `server/sura-televentas.js`.
-  3. **Metas**: el HTML traía precargadas las metas de producción de
-     Odontológico (mar–oct, dadas por InCo); no se copiaron al repo (es
-     público). Escribirlas una vez en Cargar información → Metas del mes.
-  4. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
+- **SURA — Televentas: con datos, faltan decisiones de Edwin** (Fases
+  215–216, 30/10/2026). Las bases reales ya están en producción (v1.106.1),
+  cargadas por la interfaz una sola vez: ventas de marzo a octubre, base
+  inicial y estrategias de octubre, y las metas de producción de
+  Odontológico de marzo a octubre. Las pólizas por mes cuadran exacto con el
+  LEEME de Edwin (ver Números de control en `PROGRESS.md`). Los códigos
+  (estado civil, ocupación, tipo de identificación) y la tabla de
+  tipificaciones de su archivo de configuración son idénticos a los que ya
+  trae la plataforma, así que no hubo que digitar nada en «Códigos». Solo lo
+  ve el administrador (también desde Admin › Dashboards › "Abrir").
+  **Edwin debe confirmar**:
+  1. **Pestañas que ve el cliente**: hoy Cumplimiento, Agentes,
+     Tipificaciones, Detalle ventas y Estrategias. Se cambia solo
+     `PESTANAS_CLIENTE` en `server/sura-televentas.js`.
+  2. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
      una asesora; ese alias no va en el código. Se guarda en la
      configuración `agalias` del tablero (por ahora sin pantalla: pedirlo).
-  5. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
+  3. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
      Gestión de Usuarios → nuevo usuario, rol **CLIENTES_DASH**, cliente
      **SURA** marcado y nada más. La contraseña la asigna quien lo crea y la
      plataforma le pide cambiarla al primer ingreso; nunca va al chat ni al
      repo. Mientras no exista, nadie fuera del administrador ve SURA.
+  4. **Botones de campaña en el celular**: salen apilados con anchos
+     distintos, igual que en su HTML. ¿Los quiere del mismo ancho?
+  5. **Producción de marzo a julio**: esas bases traen solo
+     `total_valor_poliza` (sin la columna "anualizado" de agosto en
+     adelante), y el tablero, igual que el HTML, la toma como valor mensual
+     × 12. Confirmar que ese valor es mensual.
+  6. **Ventas con fecha de otro mes**: algunas ventas tienen `fecha_venta`
+     del mes siguiente (abril 1, junio 2, agosto 5, septiembre 3 filas); el
+     tablero las cuenta en el mes de la base, igual que el HTML. Confirmar
+     que así está bien.
 
 - **Agendamiento ORLANT: 20 usuarios en la lista, no 19** (Fase 210) — la
   lista trae 21 registros y 20 usuarios distintos (INCO18 repetido por su

@@ -18407,3 +18407,64 @@ en la v1.104.1 por la Fase 214 de ORLANT (#608, #609, #610).
 - **Detalle visto**: a 375 px los botones de campaña salen apilados con
   anchos distintos (igual que en el HTML de Edwin); queda como pregunta en
   `docs/pendientes.md`, sin cambio.
+
+
+## Fase 216 — SURA: primera carga real, SURA en Admin › Dashboards y arreglo del desborde (v1.106.0–v1.106.1, 2026-10-30)
+
+Pedido del usuario: subir a producción las bases reales de SURA que mandó
+Edwin (carpeta de Descargas, fuera del repo), una sola vez y por la interfaz,
+y que SURA aparezca también en Admin › Dashboards.
+
+- **Revisión previa (solo lectura)**: 11 archivos — LEEME, base inicial de
+  octubre (1 hoja, 11 columnas, 31.000 filas), 8 bases de ventas
+  `data_inconexion` de marzo a octubre (marzo–julio en el formato viejo de 51
+  columnas, hoja "data"; agosto–octubre de 42 columnas, hoja "Data" más
+  "Tipificaciones_Resultado"), estrategias de octubre (22 columnas:
+  identificación, estrategia, Estrategia # 1–10, Lote # 1–10; 31.000 filas) y
+  la configuración (metas por mes, 3 tablas de códigos, tipificaciones). Todo
+  coincide con lo que lee «Cargar información» (columnas por nombre).
+  Pólizas por archivo (suma de `cantidad_poliza` en las filas con
+  `fecha_venta`, igual que el tablero): 22 · 109 · 109 · 291 · 315 · 304 ·
+  423 · 316, idénticas al LEEME. Las cifras del HTML anotadas en la Fase 215
+  (jun 285, jul 310, ago 300, sep 414, oct 310) son filas con venta; también
+  cuadran. Códigos y tipificaciones del archivo de configuración: idénticos a
+  los que ya trae la plataforma (39 de 39 tipificaciones), nada que digitar.
+  Producción: SURA sin bases ni metas antes de cargar.
+- **Ensayo local** (copia de la base demo, fuera del repo) con los mismos
+  archivos y el mismo script: las tarjetas mostraron exactamente las pólizas
+  del LEEME, 0 errores.
+- **Carga en producción** (autorizada en el pedido, sesión del usuario en
+  Brave, Playwright con todas las escrituras bloqueadas salvo los POST de
+  bases de SURA y el PUT de metas de SURA; el script abortaba si SURA ya
+  tenía algo): base inicial de octubre, 8 bases de ventas y estrategias de
+  octubre, cada una con su Excel original guardado; metas de producción de
+  Odontológico de marzo a octubre digitadas en «Metas del mes» (los montos no
+  se copian al repo). 0 errores, 0 escrituras bloqueadas.
+- **PR #612 (v1.106.0)**: "Dashboards configurados" lista también los
+  tableros propios (`dashTablerosPropios` en `dashboards-logic.js`, por
+  `parametros.especificos`) con un botón "Abrir" y sin Editar/Eliminar. 2
+  pruebas nuevas. Local a 1440/768/375 en claro y oscuro: sin desborde, 0
+  errores, el botón abre "Televentas SURA" con 7 pestañas.
+- **Hallazgo en la verificación en producción de la v1.106.0**: con las
+  bases montadas, «Cargar información» desbordaba el modal a 1440/768 (el
+  nombre largo del Excel no se cortaba en la tarjeta del mes) y
+  «Estrategias» a 375 (un selector con opciones largas). Con SURA vacío no
+  aparecía. **PR #613 (v1.106.1)**: solo CSS del Shadow DOM de SURA
+  (`overflow-wrap` en la tarjeta; label/select con `max-width:100%`).
+  Local con las bases montadas: 42 vistas (7 pestañas × 3 anchos × 2
+  temas), 0 con desborde.
+- **Pruebas**: suite 2398/2398 en los dos PR, `npm audit` 0, CI completo en
+  verde (test (24), docker-build, pantallas). Merges con
+  `--match-head-commit` comparando `git ls-remote` con la API.
+- **Producción (v1.106.1, solo lectura, 0 escrituras)**: 10 bases (ventas
+  mar–oct; inicial y estrategias de oct, 31.000 registros cada una) y metas
+  de los 8 meses; tarjetas de ventas Mar 22 · Abr 109 · May 109 · Jun 291 ·
+  Jul 315 · Ago 304 · Sep 423 · Oct 316, iguales al LEEME; Admin ›
+  Dashboards con AURORA, HLM, MOBILIZE y ORLANT como antes y SURA con
+  "Abrir"; las 7 pestañas con datos a 1440/768/375 en claro y oscuro, sin
+  desborde y 0 errores de consola. Capturas fuera del repo.
+- **Pendientes para Edwin** (`docs/pendientes.md`): pestañas del cliente,
+  alias de asesoras, usuario de Jairo, botones de campaña en el celular, si
+  el valor de marzo–julio es mensual (se multiplica × 12 como en su HTML) y
+  las ventas con fecha del mes siguiente (abril 1, junio 2, agosto 5,
+  septiembre 3; cuentan en el mes de la base).
