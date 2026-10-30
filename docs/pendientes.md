@@ -174,25 +174,24 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   tipificaciones de su archivo de configuración son idénticos a los que ya
   trae la plataforma, así que no hubo que digitar nada en «Códigos». Solo lo
   ve el administrador (también desde Admin › Dashboards › "Abrir").
-  **Edwin debe confirmar**:
-  1. **Pestañas que ve el cliente**: hoy Cumplimiento, Agentes,
-     Tipificaciones, Detalle ventas y Estrategias. Se cambia solo
-     `PESTANAS_CLIENTE` en `server/sura-televentas.js`.
-  2. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
+  Desde la Fase 218 la carga también se hace desde "Cargar Datos" y el
+  cliente ve todas las pestañas menos «Cargar información» (pedido de Edwin,
+  30/10; cerrado). **Edwin debe confirmar**:
+  1. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
      una asesora; ese alias no va en el código. Se guarda en la
      configuración `agalias` del tablero (por ahora sin pantalla: pedirlo).
-  3. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
+  2. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
      Gestión de Usuarios → nuevo usuario, rol **CLIENTES_DASH**, cliente
      **SURA** marcado y nada más. La contraseña la asigna quien lo crea y la
      plataforma le pide cambiarla al primer ingreso; nunca va al chat ni al
      repo. Mientras no exista, nadie fuera del administrador ve SURA.
-  4. **Botones de campaña en el celular**: salen apilados con anchos
+  3. **Botones de campaña en el celular**: salen apilados con anchos
      distintos, igual que en su HTML. ¿Los quiere del mismo ancho?
-  5. **Producción de marzo a julio**: esas bases traen solo
+  4. **Producción de marzo a julio**: esas bases traen solo
      `total_valor_poliza` (sin la columna "anualizado" de agosto en
      adelante), y el tablero, igual que el HTML, la toma como valor mensual
      × 12. Confirmar que ese valor es mensual.
-  6. **Ventas con fecha de otro mes**: algunas ventas tienen `fecha_venta`
+  5. **Ventas con fecha de otro mes**: algunas ventas tienen `fecha_venta`
      del mes siguiente (abril 1, junio 2, agosto 5, septiembre 3 filas); el
      tablero las cuenta en el mes de la base, igual que el HTML. Confirmar
      que así está bien.

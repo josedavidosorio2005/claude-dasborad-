@@ -18502,3 +18502,60 @@ hace falta, un tamaño intermedio para todos.
   con su texto) a 1440, 768 y 375 px en claro y oscuro; las 7 pestañas sin
   desborde y 0 errores de consola; las bases y las metas de SURA, iguales que
   en la Fase 216. Capturas fuera del repo.
+
+
+## Fase 218 — SURA en Cargar Datos, pestañas del cliente, tooltips y logo de ORLANT (v1.108.0–v1.109.1, 2026-10-30)
+
+Pedidos de Edwin del 30/10/2026.
+
+- **SURA en Cargar Datos (PR #617, v1.108.0)**: «Cargar Datos» abre el
+  Centro de cargas, que ya listaba a SURA pero decía "sin módulos". Al
+  elegir SURA ahora monta el mismo panel «Cargar información» del tablero
+  (bases del mes, Metas y Códigos). Es una segunda instancia de la misma
+  app de la Fase 215 (`stvCrearApp`, mismo `_stvApi` y mismo CSS) con la
+  clase `stv-solo-carga`: no se duplicó lógica. Se crea una vez y relee del
+  servidor al abrirse, igual que el tablero; escribir sigue siendo del
+  administrador (al resto, un aviso). El selector de año se oculta para
+  SURA. Los demás clientes siguen con sus tarjetas. No se tocó ninguna base.
+- **Pestañas del cliente**: `PESTANAS_CLIENTE` = todas menos «Cargar
+  información» (se suma Bases; las cédulas siguen seudonimizadas en los 3
+  tipos de base).
+- **Tooltip**: la regla de escritorio de la Fase 215 (`.wrap>*`, 1180 px)
+  también alcanzaba al recuadro emergente: en Estrategias medía 1180×633
+  (58 % de la pantalla) y se salía. Ahora tope de 420 px, letra de 12 px,
+  tabla de asesores con ancho fijo (nombres con "…", se ven las 5
+  columnas) y una sola función `tipPos` (en lugar de 9 copias) que lo
+  mantiene dentro de la pantalla.
+- **Verificación en producción de la v1.108.0, por partes**: la primera
+  corrida la detuvo Claude Code por falta de memoria del equipo (no por la
+  app); se relanzó en 3 partes con el navegador cerrado entre ellas. A:
+  Centro de cargas en claro y oscuro a 1440/768/375 sin desborde, SURA solo
+  con «Cargar información» y las mismas cifras de ventas y metas, ORLANT
+  con 8 tarjetas y Mobilize con 7. C: tablero sin desborde (7 pestañas ×
+  3 anchos × 2 temas). B: encontró el tooltip de Estrategias angosto (149
+  px), recortado y fuera de la pantalla a 375 px; a 768 la sonda no lo
+  mostró.
+- **PR #619 (v1.109.1)**: causa reproducida en local (con `width:auto`, un
+  recuadro `position:fixed` que quedó pegado al borde se encoge y
+  `tipPos` mide mal); arreglo `width:max-content` con el mismo tope.
+  Prueba guardiana nueva. Producción (v1.109.1, solo lectura): Estrategias
+  420×513 / 420×513 / 359×482 a 1440/768/375, dentro de la pantalla y sin
+  recorte; Detalle ventas y Bases también.
+  Medición completa de tooltips en producción (las 6 pestañas con datos,
+  1440/768/375): ninguno fuera de la pantalla ni recortado; Agentes ~200 px,
+  Detalle ventas ~285, Bases ~218, Tipificaciones hasta 420 px.
+- **Logo de ORLANT (PR #618, v1.109.0)**: el provisional de la Fase 138
+  (64×25, de una imagen de WhatsApp) se reemplazó por uno generado desde el
+  original de Edwin (710×281): sin la línea pequeña de texto, blanco sobre
+  transparente, 92×28 y 184×56. Se muestra a 28 px en escritorio y 22 en el
+  celular (alto por cliente en el registro, variables CSS); Mobilize no
+  cambia. Migración idempotente `fase218_logo_orlant_v1` (solo la columna
+  logo de ORLANT). El job pantallas encontró un salto de 3 px de las
+  pestañas al pasar de ORLANT a Mobilize: el espacio del logo quedó fijo
+  (29 px en escritorio y 20 en el celular, compensado con el margen) y se
+  comprobó en local con el mismo chequeo en los dos órdenes. Producción
+  (v1.109.0, solo lectura): ORLANT 28/22 px y Mobilize igual que antes en
+  los 2 temas y los 3 anchos, sin desborde y 0 errores.
+- **Pruebas**: suites completas en verde en cada PR (2398 → 2404 pruebas),
+  `npm audit` 0, CI completo en verde, merges con `--match-head-commit`
+  comparando `git ls-remote` con la API. Capturas fuera del repo.
