@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.109.0 — Octubre 2026
+
+**Fase 218: logo nuevo de ORLANT.**
+
+- El logo de ORLANT en el encabezado de su tablero se veía muy pequeño y
+  borroso (era provisional, sacado de una imagen de WhatsApp). Ahora sale del
+  logo original que mandó Edwin, en blanco y sin la línea pequeña de texto de
+  abajo, que no se alcanzaba a leer: se ve más grande y nítido (28 px de alto
+  en el computador, 22 px en el celular) y alineado con el título.
+- Mobilize y los demás clientes no cambian.
+
 ## v1.108.0 — Octubre 2026
 
 **Fase 218: SURA se carga desde «Cargar Datos», el cliente ve más pestañas y los recuadros emergentes son más pequeños.**

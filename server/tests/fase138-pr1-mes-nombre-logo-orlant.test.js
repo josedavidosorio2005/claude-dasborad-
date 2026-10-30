@@ -81,8 +81,9 @@ test('dashboard-generic.js: ORLANT tiene su propio logo (distinto del de MOBILIZ
 
 test('dashboard-generic.js: el logo de ORLANT fija width/height explicitos (sin salto de layout), igual que el de MOBILIZE', () => {
   assert.match(dashboardJs, /elLogo\.width = logoCli\.width; elLogo\.height = logoCli\.height;/);
-  assert.equal(logoDe('ORLANT').width, 64);
-  assert.equal(logoDe('ORLANT').height, 25);
+  // Fase 218: logo nuevo (original de Edwin sin la linea pequena), 28 px de alto.
+  assert.equal(logoDe('ORLANT').width, 92);
+  assert.equal(logoDe('ORLANT').height, 28);
   assert.equal(logoDe('MOBILIZE').width, 140);
 });
 

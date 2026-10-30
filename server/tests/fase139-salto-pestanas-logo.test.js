@@ -28,15 +28,16 @@ function altoPng(nombre) {
 test('.gd-cliente-logo tiene alto FIJO (no height:auto): la cabecera mide lo mismo antes y despues de cargar el logo', () => {
   const m = css.match(/\.gd-cliente-logo\{([^}]*)\}/);
   assert.ok(m, 'falta la regla .gd-cliente-logo en styles.css');
-  assert.match(m[1], /height:\s*25px/, '.gd-cliente-logo deberia fijar height:25px');
+  // Fase 218: el alto sale del registro (--gd-logo-alto) con 25px de respaldo; sigue siendo fijo.
+  assert.match(m[1], /height:\s*var\(--gd-logo-alto,\s*25px\)/, '.gd-cliente-logo deberia fijar el alto (variable con 25px de respaldo)');
   assert.doesNotMatch(m[1], /height:\s*auto/, 'height:auto anula la reserva de alto mientras carga la imagen (salto de pestanas)');
   assert.match(m[1], /object-fit:\s*contain/, 'object-fit:contain evita deformar un logo con otra proporcion');
   assert.doesNotMatch(m[1], /transition|animation/, 'el arreglo no agrega animaciones');
 });
 
-test('el alto fijo coincide con el de los logos reales (1x = 25px), asi que no deforma ninguno', () => {
+test('el alto fijo coincide con el de los logos reales (Mobilize 1x = 25px; ORLANT 28px desde la Fase 218), asi que no deforma ninguno', () => {
   assert.equal(altoPng('mobilize-logo.png'), 25);
-  assert.equal(altoPng('orlant-logo-blanco.png'), 25);
+  assert.equal(altoPng('orlant-logo.png'), 28);
 });
 
 test('renderGenericHeader oculta el logo (visibility) mientras carga uno nuevo y lo muestra al terminar o fallar', () => {

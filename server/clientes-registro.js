@@ -40,12 +40,16 @@ const REGISTRO_INICIAL = [
       // Fase 187: la pestaña de salida usa la clasificacion de asesores por cliente (una sola).
       salidaUsaClasificacion: true,
     },
+    // Fase 218: logo desde el original de Edwin (sin la linea pequena de
+    // texto), blanco para el encabezado teal; 28 px en escritorio, 22 en el celular.
     logo: {
-      src: 'img/clientes/orlant-logo-blanco.png',
-      src2x: 'img/clientes/orlant-logo-blanco@2x.png',
+      src: 'img/clientes/orlant-logo.png',
+      src2x: 'img/clientes/orlant-logo@2x.png',
       alt: 'Orlant',
-      width: 64,
-      height: 25,
+      width: 92,
+      height: 28,
+      alto: 28,
+      altoMovil: 22,
     },
   },
   {

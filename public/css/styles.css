@@ -791,7 +791,8 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
    otra pestana. El ancho sigue saliendo del atributo width que pone
    renderGenericHeader (140 Mobilize / 64 Orlant); object-fit evita
    deformar un logo futuro con otra proporcion. */
-.gd-cliente-logo{display:block;max-width:140px;height:25px;object-fit:contain;margin-bottom:4px;}
+/* Fase 218: el alto sale del registro del cliente (--gd-logo-alto, renderGenericHeader); 25px si no lo trae. Sigue siendo fijo (Fase 139). */
+.gd-cliente-logo{display:block;max-width:140px;height:var(--gd-logo-alto,25px);object-fit:contain;object-position:left center;margin-bottom:4px;}
 .aurora-close{background:rgba(255,255,255,0.15);border:none;color:var(--c-on-brand);border-radius:var(--r-sm);padding:6px 14px;font-size:var(--fs-small);cursor:pointer;white-space:nowrap;}
 .aurora-close:hover{background:rgba(255,255,255,0.28);}
 
@@ -1811,7 +1812,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #gd-modal .aurora-header > div:first-child{display:contents !important;}
   #gd-modal .aurora-header > div:first-child > div:first-child{flex:1 1 100%;min-width:0;padding-right:96px;order:1;}
   #gd-modal .gd-header-acciones{order:2;}
-  #gd-modal .gd-cliente-logo{height:18px;max-width:100px;margin-bottom:2px;}
+  #gd-modal .gd-cliente-logo{height:var(--gd-logo-alto-movil,18px);max-width:100px;margin-bottom:2px;}
   #gd-modal .aurora-header h2{font-size:var(--fs-body-lg);line-height:1.25;}
   #gd-modal .aurora-header .aurora-sub{font-size:var(--fs-note);}
   #gd-modal .gd-ultima-act{font-size:var(--fs-note);padding:2px 8px 2px 7px;margin-top:3px;}

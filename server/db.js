@@ -4400,6 +4400,16 @@ function crearSuraTeleventas() {
 }
 runOnceMigration('fase215_crear_sura_televentas_v1', crearSuraTeleventas);
 
+// Fase 218: logo nuevo de ORLANT (original de Edwin, sin la linea pequena de
+// texto; 28 px en escritorio y 22 en el celular). Solo cambia la columna logo
+// de ORLANT; si ORLANT no existe, no hace nada. Idempotente.
+function actualizarLogoOrlant() {
+  const logo = clientesRegistro.REGISTRO_INICIAL.find((c) => c.nombre === 'ORLANT').logo;
+  db.prepare("UPDATE clientes_registro SET logo = ?, updatedAt = ? WHERE nombre = 'ORLANT'").run(JSON.stringify(logo), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase218_logo_orlant_v1 aplicada.');
+}
+runOnceMigration('fase218_logo_orlant_v1', actualizarLogoOrlant);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4458,6 +4468,8 @@ module.exports.crearFlujoHora = crearFlujoHora;
 module.exports.crearAgendasUsuariosLineas = crearAgendasUsuariosLineas;
 // Fase 215: idem.
 module.exports.crearSuraTeleventas = crearSuraTeleventas;
+// Fase 218: idem.
+module.exports.actualizarLogoOrlant = actualizarLogoOrlant;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;
