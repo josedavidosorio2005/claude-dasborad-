@@ -18559,3 +18559,48 @@ Pedidos de Edwin del 30/10/2026.
 - **Pruebas**: suites completas en verde en cada PR (2398 → 2404 pruebas),
   `npm audit` 0, CI completo en verde, merges con `--match-head-commit`
   comparando `git ls-remote` con la API. Capturas fuera del repo.
+
+
+## Fase 219 — ORLANT: salida, Ranking, Tipificación y «Total tráfico» (v1.109.2–v1.110.0, 2026-10-30)
+
+Pedidos de Edwin del 30/10. Plan aprobado antes de tocar código; un PR por punto.
+
+- **#621 (v1.109.2) — Salida**: se quita el aviso "N asesor(es) con salidas en
+  <mes> no están clasificados…" (y su variante "no tienen línea"); la pestaña
+  queda con tarjetas y gráficas. Los sin clasificar siguen en el Total.
+- **#622 (v1.109.3) — Ranking de asesores**: sin el párrafo de debajo de las
+  tarjetas. Quien pasa del 100 % lleva solo la nota corta "Proceso donde un
+  paciente puede tener varias agendas", sin ⚠, en gris pequeño (tabla,
+  tooltip de la gráfica y columna Nota del Excel).
+- **#623 (v1.109.4) — Tipificación**: cada registro es de entrada o de
+  salida con la regla de las tarjetas (llamadas de ORLANT: skill "-" o
+  "LLAMADAS/LINEA DE SALIDA" sin skill propio = salida; WhatsApp:
+  outbound_ma = salida; el resto, entrada). El filtro "Tipo" (TYPE_INTERACTION
+  crudo, con "Otro") pasa a "Entrada o salida" (parámetro sentido, con
+  COALESCE para que un tipo vacío no se pierda); el filtro de arriba pasa a
+  "Línea (General / 3P)" con "Entrada y salida (todas)" y una nota de una
+  línea. Mobilize sigue con "Tipo".
+- **#624 (v1.110.0) — «Total tráfico»**: pestaña nueva después de la salida.
+  Ingresados = llamadas y WhatsApp de entrada (Tráfico) + llamadas y WhatsApp
+  de salida; contestados = contestados de entrada + todas las salidas
+  (decisión de Edwin, opción A; la contactabilidad queda en pendientes);
+  nivel de atención = contestados ÷ ingresados (totales sumados). Gráfica de
+  2 barras por mes y Exportar con el detalle. Sin archivo propio: GET
+  /calidad/total-trafico/mensual (scopedRead). Migración idempotente
+  fase219_total_trafico_v1 solo para la forma reconocible de producción (como
+  la Fase 196); la plantilla la ubica igual (TABS_EXTRA, despuesDe "salida")
+  sin tocar la semilla, para no romper las pruebas de migraciones viejas.
+  En local apareció un error de Chart.js (faltaba type 'bar') y el eje con
+  miles en formato inglés: corregidos antes del PR.
+- **Pruebas**: suite completa en verde en cada PR (2404 → 2415), `npm audit`
+  0, CI completo en verde, merges con `--match-head-commit` uno a la vez
+  esperando cada deploy. Pruebas viejas actualizadas: Fases 170, 186, 190,
+  213, 214, 118 (ruta nueva) y la lista de migraciones de Aurora/HLM.
+- **Producción (v1.110.0, solo lectura, 0 escrituras, en 2 partes)**: salida
+  sin el aviso; Ranking sin párrafo, sin ⚠ y con la nota en 4 filas;
+  Tipificación con las etiquetas nuevas y entrada + salida = todos (llamadas
+  24.354 + 21.988 = 46.342; WhatsApp 24.298 + 10.057 = 34.355); Total tráfico
+  ago–oct 81.278 ingresados, 79.861 contestados, 98,3 % (la salida cuadra con
+  su pestaña y los contestados de entrada con Efectividad de Citas).
+  Diseño: salida, Total tráfico, Tipificación y Ranking a 1440/768/375 en claro y oscuro, sin desborde, sin gráficas vacías y 0 errores.
+  Capturas fuera del repo.
