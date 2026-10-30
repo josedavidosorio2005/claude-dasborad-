@@ -785,6 +785,8 @@ const tipificacionFiltrosQuery = z.object({
   agente: z.string().trim().max(200).optional(),
   skill: z.string().trim().max(200).optional(),
   tipoInteraccion: z.enum(['inbound', 'outbound_ma', 'otro']).optional(),
+  // Fase 219 (ORLANT): "Entrada o salida" con la regla de las tarjetas (condSalidaCanalSql).
+  sentido: z.enum(['entrada', 'salida']).optional(),
   // Fase 186 (solo ORLANT): "Línea de salida" -- GENERAL, 3P o SIN (sin clasificar).
   linea: z.enum(['GENERAL', '3P', 'SIN']).optional(),
 });
