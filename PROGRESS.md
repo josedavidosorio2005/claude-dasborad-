@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.105.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.106.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -39,7 +39,10 @@ narrativo de cada fase, fase por fase, vive en
   tiene el Flujo de agosto (Fase 163); **Clínica Aurora** (Fase 153) sigue
   sin datos. **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
   HTML de Edwin dentro de la plataforma: `public/js/sura-televentas*.js`,
-  rutas `/api/sura-televentas`, tablas `sura_*`), todavía sin datos. Los
+  rutas `/api/sura-televentas`, tablas `sura_*`) con datos reales desde la
+  Fase 216 (ventas de marzo a octubre, base inicial y estrategias de
+  octubre, metas de Odontológico); también sale en Admin › Dashboards con
+  el botón "Abrir". Los
   tres solo los ve el administrador; lo que falta está en
   [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Los otros 12
   clientes de antes se borraron en la Fase 134 y no existen.
@@ -153,6 +156,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días); Ago+Sep 171 / 168 / 3; Todos 277 / 272 / 5 (= tarjetas de Flujo de Llamadas) | 196, 209 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
+| SURA — Televentas: pólizas por mes (tarjetas de "Cargar información" = LEEME de Edwin) | Mar 22 · Abr 109 · May 109 · Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 316 (filas con venta: 22 · 109 · 109 · 285 · 310 · 300 · 414 · 310). Base inicial y estrategias de octubre: 31.000 registros cada una; metas de Odontológico mar–oct. Verificado en producción (v1.106.1) | 216 |
 
 ## Índice de fases
 
@@ -368,3 +372,4 @@ mismo orden):
 - Fase 213 — ORLANT: Cargar Datos sin salida ni citas atendidas (sin borrar), tarjeta Total de agendas, Efectividad de Citas con barras y línea, Inasistencia sin "Base baja", Ranking de asesores por contestadas, Calidad con el promedio del equipo por asesor y Calidad de octubre cargada (v1.99.1–v1.102.0, 2026-10-29)
 - Fase 214 — ORLANT: Ranking de asesores con todo el CDR (ingreso + salida), marca de más del 100 % sin deformar la escala, agentes sin usuario aparte y filtro Todos / 3P / General; Total de agendas junto a "Aplicar filtros"; leyendas y ejes claros en tema oscuro (v1.103.0–v1.104.1, 2026-10-29)
 - Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.105.0, 2026-10-29)
+- Fase 216 — SURA: primera carga real por la interfaz (ventas mar–oct, base inicial y estrategias de octubre, metas), SURA en Admin › Dashboards con botón "Abrir" y arreglo del desborde con las bases montadas (v1.106.0–v1.106.1, 2026-10-30)
