@@ -16,7 +16,7 @@
 // tipo de panel autonomo nuevo y se olvida agregarlo aqui, "Comparar
 // contra" quedaria visible donde no aplica -- ver la prueba de lista
 // cerrada en mes-global-logic.test.js.
-var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'flujo_hora_panel'];
+var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'total_trafico_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'flujo_hora_panel'];
 
 // true si TODOS los paneles visibles (de la pestana o sub-pestana activa)
 // son de tipo autonomo -- en ese caso "Comparar contra" se esconde y se
@@ -266,7 +266,7 @@ function gdMesesTarjetasTexto(meses, esTodos, nombreMes) {
 // de las tarjetas" (_gd.mesSel) o el "ultimo mes" por defecto.
 var GD_TIPOS_SIGUEN_MESES = ['kpi_row', 'line', 'bar', 'area', 'pie', 'combo', 'tabla', 'nota_kpi',
   'trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel',
-  'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores',
+  'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'total_trafico_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores',
   'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'flujo_hora_panel'];
 
 // En el navegador: meses de las tarjetas del tablero abierto.

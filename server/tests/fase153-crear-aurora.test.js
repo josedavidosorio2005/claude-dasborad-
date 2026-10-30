@@ -49,7 +49,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 215: agrega SURA (tablero propio) al registro (no toca Aurora/HLM).
     'fase215_crear_sura_televentas_v1',
     // Fase 218: logo nuevo de ORLANT (solo su columna logo; no toca Aurora/HLM).
-    'fase218_logo_orlant_v1'];
+    'fase218_logo_orlant_v1',
+    // Fase 219: pestaña Total tráfico de ORLANT (no toca Aurora/HLM).
+    'fase219_total_trafico_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

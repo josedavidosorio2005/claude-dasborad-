@@ -4400,6 +4400,27 @@ function crearSuraTeleventas() {
 }
 runOnceMigration('fase215_crear_sura_televentas_v1', crearSuraTeleventas);
 
+// Fase 219 (pedido de Edwin, 30/10): pestaña "Total tráfico" de ORLANT,
+// justo despues de "Llamadas y WhatsApp de salida". Solo con la forma
+// reconocible de produccion (salida con salida_panel y Efectividad de Citas
+// con su panel), como la Fase 196: cualquier otro layout se deja intacto.
+// No toca las demas pestañas. Idempotente.
+function agregarTotalTraficoOrlant() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout && layout.tabs;
+  if (!Array.isArray(tabs) || tabs.some((t) => t && t.key === 'total_trafico')) return;
+  const tiene = (key, tipo) => tabs.some((t) => t && t.key === key && (t.panels || []).some((p) => p && p.tipo === tipo));
+  if (!tiene('salida', 'salida_panel') || !tiene('efectividad', 'efectividad_citas_panel')) return;
+  const iSal = tabs.findIndex((t) => t && t.key === 'salida');
+  tabs.splice(iSal + 1, 0, require('./plantillas-cliente').TABS_EXTRA.total_trafico.crear('ORLANT'));
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'ORLANT'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase219_total_trafico_v1 aplicada.');
+}
+runOnceMigration('fase219_total_trafico_v1', agregarTotalTraficoOrlant);
+
 // Fase 218: logo nuevo de ORLANT (original de Edwin, sin la linea pequena de
 // texto; 28 px en escritorio y 22 en el celular). Solo cambia la columna logo
 // de ORLANT; si ORLANT no existe, no hace nada. Idempotente.
@@ -4470,6 +4491,8 @@ module.exports.crearAgendasUsuariosLineas = crearAgendasUsuariosLineas;
 module.exports.crearSuraTeleventas = crearSuraTeleventas;
 // Fase 218: idem.
 module.exports.actualizarLogoOrlant = actualizarLogoOrlant;
+// Fase 219: idem.
+module.exports.agregarTotalTraficoOrlant = agregarTotalTraficoOrlant;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

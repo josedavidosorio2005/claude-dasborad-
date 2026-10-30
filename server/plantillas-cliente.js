@@ -145,7 +145,18 @@ const GENERADORES = {
   }),
 };
 
+// Fase 219: pestañas especificas que no estan en la semilla (las migraciones
+// viejas de ORLANT comparan la semilla exacta). La misma forma la usa la
+// migracion fase219_total_trafico_v1 (db.js).
+// despuesDe: la pestaña va justo despues de esa (si existe); si no, al final.
+const TABS_EXTRA = {
+  total_trafico: {
+    despuesDe: 'salida',
+    crear: (cliente) => ({ key: 'total_trafico', label: 'Total tráfico', panels: [{ tipo: 'total_trafico_panel', campana: cliente, titulo: 'Total tráfico' }] }),
+  },
+};
 function _tabEspecifica(cliente, key) {
+  if (TABS_EXTRA[key]) return TABS_EXTRA[key].crear(cliente);
   const cfg = CONFIGS.find((c) => c.cliente === cliente);
   const tab = cfg && cfg.layout.tabs.find((t) => t.key === key);
   if (!tab) throw new Error(`Pestaña específica desconocida: ${cliente}/${key}`);
@@ -196,7 +207,11 @@ function generarLayout(perfil) {
   }
 
   const esp = perfil.especificos || {};
-  (esp.tabs || []).forEach((k) => tabs.push(_tabEspecifica(esp.de, k)));
+  (esp.tabs || []).forEach((k) => {
+    const tab = _tabEspecifica(esp.de, k);
+    const i = TABS_EXTRA[k] ? tabs.findIndex((t) => t.key === TABS_EXTRA[k].despuesDe) : -1;
+    if (i !== -1) tabs.splice(i + 1, 0, tab); else tabs.push(tab);
+  });
   const secciones = {};
   (esp.secciones || []).forEach((k) => { secciones[k] = _seccionEspecifica(esp.de, k); });
   if (!Object.keys(secciones).length) secciones.notas = JSON.parse(JSON.stringify(SECCION_VACIA));
@@ -224,7 +239,10 @@ const PERFILES_ACTUALES = {
     },
     especificos: {
       de: 'ORLANT',
-      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta'],
+      // Fase 219: Total tráfico (sin carga propia: sale de lo ya cargado), justo
+      // despues de "Llamadas y WhatsApp de salida" (TABS_EXTRA), igual que la
+      // migracion fase219_total_trafico_v1 en produccion.
+      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta', 'total_trafico'],
       secciones: ['resumen', 'salida', 'tipificacion', 'sta_categorias'],
     },
   },
@@ -267,4 +285,5 @@ module.exports = {
   SECCION_VACIA,
   PERFILES_ACTUALES,
   generarLayout,
+  TABS_EXTRA,
 };
