@@ -1938,9 +1938,11 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 #stv-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
 #stv-host{padding:0 16px;}
 @media(min-width:901px){#stv-host{padding:0 0 0 0;}}
+/* Fase 217: el logo de InConexion se ve en los 3 anchos con la misma altura
+   visible (~18 px de tinta en una caja de 130x26) que los iconos de campaña
+   del tablero (.camp-ico, css/sura-televentas-app.css). */
+#stv-modal .gd-marca-logo{width:130px;height:26px;}
 @media(max-width:768px){
   #stv-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}
-  #stv-modal .gd-marca-logo{width:140px;height:28px;}
-  #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;}
-  #stv-modal .gd-marca-inconexion{display:none;}
+  #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;gap:8px;}
 }

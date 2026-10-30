@@ -143,6 +143,8 @@ th,td{padding:7px 9px;border-bottom:1px solid var(--bd);text-align:right}th:firs
 }
 @media(max-width:900px){.wrap>header{margin-top:4px}}
 @media(max-width:600px){.seg{display:flex;flex-wrap:wrap;max-width:100%}}
+/* Fase 217: iconos de campaña con la misma altura visible (~18 px) que el logo de InConexion del encabezado */
+.camp-ico{display:inline-block;font-size:20px;line-height:1;vertical-align:middle}
 /* el cliente (solo lectura) no ve botones para cambiar datos */
 .stv-lectura [data-ga],.stv-lectura [data-up],.stv-lectura [data-del],.stv-lectura [data-eup],.stv-lectura [data-edel],.stv-lectura [data-iup],.stv-lectura [data-idel]{display:none!important}
 .stv-cargando{padding:40px 16px;text-align:center;color:var(--mut)}
