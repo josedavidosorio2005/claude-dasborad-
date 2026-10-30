@@ -77,6 +77,12 @@ const layout = `
 }
 @media(max-width:900px){.wrap>header{margin-top:4px}}
 @media(max-width:600px){.seg{display:flex;flex-wrap:wrap;max-width:100%}}
+/* Fase 216: nombres de archivo largos y selectores no desbordan con las bases montadas */
+.m small{overflow-wrap:anywhere}
+.row label{max-width:100%;min-width:0}
+.row label select{max-width:100%}
+/* Fase 217: iconos de campaña con la misma altura visible (~18 px) que el logo de InConexion del encabezado */
+.camp-ico{display:inline-block;font-size:20px;line-height:1;vertical-align:middle}
 /* el cliente (solo lectura) no ve botones para cambiar datos */
 .stv-lectura [data-ga],.stv-lectura [data-up],.stv-lectura [data-del],.stv-lectura [data-eup],.stv-lectura [data-edel],.stv-lectura [data-iup],.stv-lectura [data-idel]{display:none!important}
 .stv-cargando{padding:40px 16px;text-align:center;color:var(--mut)}
@@ -163,6 +169,12 @@ L('const b=document.getElementById("mtog"),set=c=>{document.body.classList.toggl
 L('localStorage.setItem("menuOculto",', 'localStorage.setItem("stvMenuOculto",');
 L('c=localStorage.getItem("menuOculto")==="1"', 'c=localStorage.getItem("stvMenuOculto")==="1"');
 L('b.addEventListener("click",()=>set(!document.body.classList.contains("mcol")))', 'b.addEventListener("click",()=>set(!W.classList.contains("mcol")))');
+// Fase 217: los iconos de campaña (🦷 💙) van en un span con tamaño propio (.camp-ico).
+L('function cfBtns(){', 'const CICO=c=>`<span class="camp-ico" aria-hidden="true">${c==="odontologico"?"🦷":"💙"}</span>`; // Fase 217: icono de campaña con tamaño propio\nfunction cfBtns(){');
+L('${o.value==="odontologico"?"🦷 ":o.value==="salud_para_ti"?"💙 ":""}', '${o.value==="odontologico"||o.value==="salud_para_ti"?CICO(o.value)+" ":""}');
+L('<h4>${c==="odontologico"?"🦷":"💙"} Campaña', '<h4>${CICO(c)} Campaña');
+L('data-cc="${c}">${c==="odontologico"?"🦷":"💙"} ${n}', 'data-cc="${c}">${CICO(c)} ${n}');
+L('ico=x=>x==="odontologico"?"🦷":"💙";', 'ico=CICO;');
 // ── Sistema de diseno: Quicksand trae 400-700 (Fase 132) y todo campo con nombre accesible (Fase 144, D13) ──
 js = todas(js, 'font-weight:800', 'font-weight:700');
 css = css.replace(/font-weight:\s*(800|900)/g, 'font-weight:700');

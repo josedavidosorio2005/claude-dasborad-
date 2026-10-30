@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.107.0 — Octubre 2026
+
+**Fase 217: en el tablero de SURA, los logos se ven del mismo tamaño.**
+
+- El logo de InConexion del encabezado y los iconos de las campañas
+  (🦷 Odontológico y 💙 Salud para ti) ahora se ven de la misma altura y
+  alineados con su texto. Se usó un tamaño intermedio: los iconos crecieron
+  un poco y el logo se achicó un poco, para que ninguno quede ni muy grande ni
+  muy pequeño.
+- En el celular y la tableta, el logo de InConexion ahora también se ve en
+  el encabezado del tablero de SURA (antes se ocultaba).
+- Los demás clientes (ORLANT, Mobilize, Aurora, Hospital La María) no
+  cambian.
+
 ## v1.106.1 — Octubre 2026
 
 **Fase 216: arreglo del tablero de SURA con las bases ya montadas.**
