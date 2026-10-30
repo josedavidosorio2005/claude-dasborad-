@@ -18468,3 +18468,37 @@ y que SURA aparezca también en Admin › Dashboards.
   el valor de marzo–julio es mensual (se multiplica × 12 como en su HTML) y
   las ventas con fecha del mes siguiente (abril 1, junio 2, agosto 5,
   septiembre 3; cuentan en el mes de la base).
+
+
+## Fase 217 — SURA: logos del mismo tamaño (v1.107.0, 2026-10-30)
+
+Pedido del usuario: en el tablero de SURA, el logo de InConexion y los de las
+campañas, de la misma altura, con la proporción conservada y alineados; si
+hace falta, un tamaño intermedio para todos.
+
+- **Revisión (local, con las bases montadas)**: el logo de InConexion está en
+  el encabezado del tablero (`#stv-modal`), con una caja de 170×34 a 1440 px.
+  La tinta ocupa 84 de los 120 px del PNG, así que se veía con unos 24 px de
+  alto; a 768 y 375 px estaba oculto. Las campañas no tienen logo en imagen:
+  son los emojis 🦷 (Odontológico) y 💙 (Salud para ti), a 13 px (unos 11,5
+  px visibles), en el filtro general de campaña, en los títulos "Campaña …"
+  de Agendas y en 2 ventanas (asesores por campaña y cumplimiento).
+- **Tamaño común**: igualar a 24 px dejaba los emojis enormes en botones con
+  texto de 13 px, e igualar a 11,5 px dejaba el logo diminuto. Se usó un
+  intermedio de **~18 px de tinta para todos**: logo en una caja de 130×26
+  en los 3 anchos e iconos en `<span class="camp-ico">` (helper `CICO`) a
+  20 px, centrados con su texto.
+- **PR #615**: `sura-televentas-app.js/.css` y las reglas `#stv-modal` de
+  `styles.css` (ORLANT, Mobilize y los demás no cambian). El generador
+  (`scripts/sura/generar-televentas.js`) repite los mismos reemplazos y
+  ahora también el CSS de la Fase 216, que solo estaba en el archivo
+  generado.
+- **Pruebas**: suite 2398/2398, `npm audit` 0, CI completo en verde. Local:
+  42 vistas (7 pestañas × 3 anchos × 2 temas) sin desborde y 0 errores; las
+  2 ventanas con los iconos del mismo tamaño. Merge con
+  `--match-head-commit` comparando `git ls-remote` con la API.
+- **Producción (v1.107.0, solo lectura, 0 escrituras)**: logo de 130×26
+  (~18 px de tinta) e iconos de 27×20 (~18 px de tinta, 0,2 px de desfase
+  con su texto) a 1440, 768 y 375 px en claro y oscuro; las 7 pestañas sin
+  desborde y 0 errores de consola; las bases y las metas de SURA, iguales que
+  en la Fase 216. Capturas fuera del repo.

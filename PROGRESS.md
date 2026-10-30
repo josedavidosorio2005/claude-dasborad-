@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.106.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.107.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -373,3 +373,4 @@ mismo orden):
 - Fase 214 — ORLANT: Ranking de asesores con todo el CDR (ingreso + salida), marca de más del 100 % sin deformar la escala, agentes sin usuario aparte y filtro Todos / 3P / General; Total de agendas junto a "Aplicar filtros"; leyendas y ejes claros en tema oscuro (v1.103.0–v1.104.1, 2026-10-29)
 - Fase 215 — Cliente SURA con el tablero "Televentas": el HTML de Edwin dentro de la plataforma (Shadow DOM, mismos cálculos), bases por cliente/tipo/mes en SQLite con el Excel original, metas/códigos/asesores en el servidor, cliente con 5 pestañas y cédulas seudonimizadas, escritura solo del administrador (v1.105.0, 2026-10-29)
 - Fase 216 — SURA: primera carga real por la interfaz (ventas mar–oct, base inicial y estrategias de octubre, metas), SURA en Admin › Dashboards con botón "Abrir" y arreglo del desborde con las bases montadas (v1.106.0–v1.106.1, 2026-10-30)
+- Fase 217 — SURA: logo de InConexion e iconos de campaña (🦷 💙) con la misma altura visible (~18 px), alineados; el logo también se ve en el celular y la tableta (v1.107.0, 2026-10-30)
