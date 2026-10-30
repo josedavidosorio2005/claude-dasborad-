@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.109.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.110.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -67,9 +67,10 @@ narrativo de cada fase, fase por fase, vive en
   conteo exacto). Octubre llega por partes: ya están WhatsApp por rangos
   de ORLANT (1–22/10) y, de Mobilize, Tipificación, Llamadas de salida y el
   Resumen de calidad; faltan los CDR de octubre de ORLANT.
-- **Pestañas**: ORLANT, 8 con datos reales (Tráfico de Llamadas, Tráfico de
-  WhatsApp, Llamadas y WhatsApp de salida, Agendamiento, Inasistencia,
-  Efectividad de Citas, Tipificación, Calidad) + 4 ocultas esperando
+- **Pestañas**: ORLANT, 9 con datos reales (Tráfico de Llamadas, Tráfico de
+  WhatsApp, Llamadas y WhatsApp de salida, Total tráfico (Fase 219: sale de
+  las 3 anteriores, cada salida cuenta como contestada), Agendamiento,
+  Inasistencia, Efectividad de Citas, Tipificación, Calidad) + 4 ocultas esperando
   archivo. MOBILIZE, 6 (Flujo de Llamadas, Llamadas Únicas y de Salida, Flujo por hora,
   Tipificación, Encuesta, Calidad con el Resumen por asesor). Qué base
   alimenta cada una:
@@ -164,6 +165,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días); Ago+Sep 171 / 168 / 3; Todos 277 / 272 / 5 (= tarjetas de Flujo de Llamadas) | 196, 209 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
+| Total tráfico (ORLANT, v1.110.0: entrada de Tráfico de Llamadas y de WhatsApp + llamadas y WhatsApp de salida; cada salida cuenta como contestada) | Ago 27.742 ingresados / 26.685 contestados (96,2 %) · Sep 32.865 / 32.634 (99,3 %) · Oct 20.671 / 20.542 (99,4 %) · Ago–Oct 81.278 / 79.861 (98,3 %). La salida cuadra con su pestaña y los contestados de entrada con Efectividad de Citas. Tipificación, filtro "Entrada o salida" (todos los meses): llamadas 24.354 + 21.988 = 46.342, WhatsApp 24.298 + 10.057 = 34.355. Verificado en producción | 219 |
 | SURA — Televentas: pólizas por mes (tarjetas de "Cargar información" = LEEME de Edwin) | Mar 22 · Abr 109 · May 109 · Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 316 (filas con venta: 22 · 109 · 109 · 285 · 310 · 300 · 414 · 310). Base inicial y estrategias de octubre: 31.000 registros cada una; metas de Odontológico mar–oct. Verificado en producción (v1.106.1) | 216 |
 
 ## Índice de fases
@@ -383,3 +385,4 @@ mismo orden):
 - Fase 216 — SURA: primera carga real por la interfaz (ventas mar–oct, base inicial y estrategias de octubre, metas), SURA en Admin › Dashboards con botón "Abrir" y arreglo del desborde con las bases montadas (v1.106.0–v1.106.1, 2026-10-30)
 - Fase 217 — SURA: logo de InConexion e iconos de campaña (🦷 💙) con la misma altura visible (~18 px), alineados; el logo también se ve en el celular y la tableta (v1.107.0, 2026-10-30)
 - Fase 218 — SURA: «Cargar información» también en Cargar Datos (misma app), el cliente ve todas las pestañas menos Cargar información, tooltips pequeños y siempre dentro de la pantalla; ORLANT: logo nuevo desde el original de Edwin, 28/22 px, sin salto de pestañas (v1.108.0–v1.109.1, 2026-10-30)
+- Fase 219 — ORLANT: salida sin el aviso de asesores sin línea, Ranking sin párrafo largo y con nota corta, Tipificación con filtro "Entrada o salida" (misma regla de las tarjetas) y "Línea (General / 3P)", y pestaña nueva «Total tráfico» (v1.109.2–v1.110.0, 2026-10-30)

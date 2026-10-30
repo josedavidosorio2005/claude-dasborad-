@@ -418,6 +418,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Otro pendiente de ORLANT que mencionó Edwin ("otra cuenta distinta a la
   tarjeta")** — sin entender todavía; lo pregunta el usuario. No se tocó.
 
+- **ORLANT — Tasa de contactabilidad de la salida** (Fase 219, 30/10/2026) —
+  Edwin la dejó pendiente. En «Total tráfico» cada salida cuenta como
+  contestada (opción A). Si la quiere, se puede mostrar aparte: llamadas de
+  salida conectadas (sin buzón ni "no contestan", según el CDR de
+  Tipificación) ÷ llamadas de salida. Cómo se cierra: Edwin dice si la quiere
+  y en qué pestaña.
+
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
