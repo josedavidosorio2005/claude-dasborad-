@@ -4421,6 +4421,25 @@ function agregarTotalTraficoOrlant() {
 }
 runOnceMigration('fase219_total_trafico_v1', agregarTotalTraficoOrlant);
 
+// Fase 220 (pedido del 30/10): en Clinica Aurora se ven Trafico de Llamadas y
+// Trafico de WhatsApp desde ya, aunque no tengan datos (cada una muestra su
+// aviso de "sin datos"); antes solo aparecian al cargar datos (gdDestaparPorDatos).
+// Solo quita `oculta` de esas 2 pestañas de Aurora; nada mas. Idempotente.
+function mostrarTraficoAurora() {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA.nombre);
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  let cambio = false;
+  ((layout && layout.tabs) || []).forEach((t) => {
+    if (t && (t.key === 'trafico' || t.key === 'trafico_whatsapp') && t.oculta) { delete t.oculta; cambio = true; }
+  });
+  if (!cambio) return;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), AURORA.nombre);
+  if (!config.isTest) console.log('[db] Migracion fase220_aurora_trafico_visible_v1 aplicada.');
+}
+runOnceMigration('fase220_aurora_trafico_visible_v1', mostrarTraficoAurora);
+
 // Fase 218: logo nuevo de ORLANT (original de Edwin, sin la linea pequena de
 // texto; 28 px en escritorio y 22 en el celular). Solo cambia la columna logo
 // de ORLANT; si ORLANT no existe, no hace nada. Idempotente.
@@ -4493,6 +4512,8 @@ module.exports.crearSuraTeleventas = crearSuraTeleventas;
 module.exports.actualizarLogoOrlant = actualizarLogoOrlant;
 // Fase 219: idem.
 module.exports.agregarTotalTraficoOrlant = agregarTotalTraficoOrlant;
+// Fase 220: idem.
+module.exports.mostrarTraficoAurora = mostrarTraficoAurora;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

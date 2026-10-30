@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.111.0 — Octubre 2026
+
+**Fase 220: Clínica Aurora muestra Tráfico de Llamadas y Tráfico de WhatsApp.**
+
+- En el tablero de Clínica Aurora ya se ven las pestañas Tráfico de Llamadas y
+  Tráfico de WhatsApp. Mientras no haya datos, cada una muestra el aviso
+  "Sin datos cargados todavía…" (sin gráficas vacías).
+- La carga de los dos reportes de Wolkvox ya está lista en Cargar Datos
+  (Clínica Aurora › Flujo de Llamadas y Flujo de WhatsApp).
+- ORLANT, Mobilize y los demás clientes no cambian.
+
 ## v1.110.0 — Octubre 2026
 
 **Fase 219: nueva pestaña «Total tráfico» en ORLANT.**
