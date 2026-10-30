@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.106.1 — Octubre 2026
+
+**Fase 216: arreglo del tablero de SURA con las bases ya montadas.**
+
+- En "Cargar información", el nombre largo del Excel de cada mes ya no se
+  sale de su tarjeta: se parte en varias líneas.
+- En "Estrategias", en el celular, los selectores con nombres largos ya no
+  hacen que el tablero se corra hacia el lado.
+
 ## v1.106.0 — Octubre 2026
 
 **Fase 216: SURA también aparece en Admin › Dashboards.**
