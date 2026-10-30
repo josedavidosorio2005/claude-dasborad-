@@ -425,6 +425,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Tipificación) ÷ llamadas de salida. Cómo se cierra: Edwin dice si la quiere
   y en qué pestaña.
 
+- **Clínica Aurora — regla de salida y líneas General / 3P** (Fase 220,
+  30/10/2026). Aurora ya tiene la carga del CDR de Tipificación (llamadas y
+  WhatsApp), la pestaña de salida y Total tráfico, pero **usa la regla de
+  salida de ORLANT solo mientras Edwin confirma la suya** (en ORLANT: llamada
+  con SKILL_NAME "-" o "LLAMADAS DE SALIDA" sin skill propio = salida; en
+  WhatsApp, SKILL_ID 0 = salida). Está en un solo lugar:
+  `SALIDA_POR_CLIENTE` en `server/tipificaciones.js`.
+  **Edwin debe confirmar**: (1) si en el Wolkvox de Aurora la salida se marca
+  igual que en ORLANT o cómo se marca; (2) si Aurora reparte la salida en
+  **General y 3P** como ORLANT, y en ese caso clasificar a sus asesores en
+  Tipificación › Clasificación de asesores (mientras no se clasifiquen, toda
+  la salida queda en "Sin clasificar" y cuenta en el Total); si Aurora no
+  tiene esas líneas, se apaga `clasificacionAsesores` en la misma tabla.
+
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que

@@ -46,7 +46,9 @@ test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () 
   // Fase 160: en la base tambien estan Aurora y HLM (Flujo de WhatsApp, sin el resto de ORLANT).
   const conBase = JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db))));
   assert.deepEqual(conBase.traficoWhatsapp, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
-  assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'] }), ANTES);
+  // Fase 220: Aurora tambien carga el CDR de Tipificacion (llamadas y WhatsApp).
+  assert.deepEqual(conBase.tipificacionExtra, ['MOBILIZE', 'CLINICA AURORA']);
+  assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'], tipificacionExtra: ANTES.tipificacionExtra }), ANTES);
 });
 
 test('servidor: el cliente solo ve nombres de asesor en las campanas marcadas', () => {

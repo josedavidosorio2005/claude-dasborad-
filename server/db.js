@@ -4440,6 +4440,54 @@ function mostrarTraficoAurora() {
 }
 runOnceMigration('fase220_aurora_trafico_visible_v1', mostrarTraficoAurora);
 
+// Fase 220 (pedido del 30/10): Aurora con "Llamadas y WhatsApp de salida",
+// Tipificacion (CDR de llamadas y de WhatsApp) y "Total tráfico", como ORLANT.
+//  - registro: modulos tipificacion y salida (en el orden del catalogo) y
+//    parametros.salidaUsaClasificacion (reparto General / 3P por asesor; sin
+//    clasificar -> "Sin clasificar", cuenta en el Total);
+//  - tablero: pestañas Tipificacion y Salida (ocultas; se destapan solas al
+//    tener datos) y "Total tráfico" visible despues de Salida (con su aviso de
+//    "sin tráfico cargado"). Las pestañas que ya tenia se conservan tal cual.
+// La regla de salida de Aurora esta en SALIDA_POR_CLIENTE (tipificaciones.js),
+// provisional hasta que Edwin confirme la suya. Idempotente.
+function habilitarSalidaAurora() {
+  const { generarLayout, CATALOGO, TABS_EXTRA } = require('./plantillas-cliente');
+  const reg = db.prepare('SELECT modulos, parametros FROM clientes_registro WHERE nombre = ?').get(AURORA.nombre);
+  if (!reg) return;
+  let modulos = [];
+  let parametros = {};
+  try { modulos = JSON.parse(reg.modulos) || []; } catch (e) { modulos = []; }
+  try { parametros = JSON.parse(reg.parametros) || {}; } catch (e) { parametros = {}; }
+  const activos = new Set([...modulos, 'tipificacion', 'salida']);
+  const nuevos = CATALOGO.map((m) => m.id).filter((id) => activos.has(id));
+  modulos.filter((m) => !nuevos.includes(m)).forEach((m) => nuevos.push(m)); // un modulo fuera del catalogo se conserva
+  parametros.salidaUsaClasificacion = true;
+  const ahora = new Date().toISOString();
+  db.transaction(() => {
+    db.prepare('UPDATE clientes_registro SET modulos = ?, parametros = ?, updatedAt = ? WHERE nombre = ?')
+      .run(JSON.stringify(nuevos), JSON.stringify(parametros), ahora, AURORA.nombre);
+    const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA.nombre);
+    if (!row) return;
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { return; }
+    const actuales = new Map(((layout && layout.tabs) || []).map((t) => [t && t.key, t]));
+    const plantilla = generarLayout({ nombre: AURORA.nombre, titulo: AURORA.titulo, modulos: nuevos }).layout.tabs;
+    const tabs = plantilla.map((t) => actuales.get(t.key) || t); // las que ya estaban, tal cual
+    actuales.forEach((t, k) => { if (k !== 'total_trafico' && !plantilla.some((p) => p.key === k)) tabs.push(t); });
+    // "Total tráfico" siempre justo despues de Salida (la que ya estaba, tal cual, o una nueva).
+    const tt = actuales.get('total_trafico') || TABS_EXTRA.total_trafico.crear(AURORA.nombre);
+    const i = tabs.findIndex((t) => t.key === TABS_EXTRA.total_trafico.despuesDe);
+    tabs.splice(i === -1 ? tabs.length : i + 1, 0, tt);
+    layout.tabs = tabs;
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), ahora, AURORA.nombre);
+  })();
+  // SKILL_ID 0 del HistChat = WhatsApp de salida (igual que la semilla de ORLANT): sin
+  // esto la carga avisaria "Skill 0". Los demas codigos los pone el administrador.
+  db.prepare("INSERT OR IGNORE INTO skills_whatsapp (campana, codigo, nombre, updatedAt) VALUES (?, '0', 'WHATSAPP DE SALIDA', ?)").run(AURORA.nombre, ahora);
+  if (!config.isTest) console.log('[db] Migracion fase220_aurora_salida_v1 aplicada.');
+}
+runOnceMigration('fase220_aurora_salida_v1', habilitarSalidaAurora);
+
 // Fase 218: logo nuevo de ORLANT (original de Edwin, sin la linea pequena de
 // texto; 28 px en escritorio y 22 en el celular). Solo cambia la columna logo
 // de ORLANT; si ORLANT no existe, no hace nada. Idempotente.
@@ -4514,6 +4562,7 @@ module.exports.actualizarLogoOrlant = actualizarLogoOrlant;
 module.exports.agregarTotalTraficoOrlant = agregarTotalTraficoOrlant;
 // Fase 220: idem.
 module.exports.mostrarTraficoAurora = mostrarTraficoAurora;
+module.exports.habilitarSalidaAurora = habilitarSalidaAurora;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).
 module.exports.asegurarDatosVersion = asegurarDatosVersion;

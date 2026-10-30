@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const { app, db, request, tokenFor, MASTER_PASSWORD, SEED, cleanup } = require('./helpers');
 const { generarLayout, PERFILES_ACTUALES } = require('../plantillas-cliente');
 const reg = require('../clientes-registro');
+const { auroraEsperada } = require('./helpers-aurora'); // Fase 220
 const { campaignAccess } = require('../auth');
 
 after(cleanup);
@@ -56,7 +57,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 219: pestaña Total tráfico de ORLANT (no toca Aurora/HLM).
     'fase219_total_trafico_v1',
     // Fase 220: solo destapa Trafico de Llamadas/WhatsApp de Aurora (no toca HLM).
-    'fase220_aurora_trafico_visible_v1'];
+    'fase220_aurora_trafico_visible_v1',
+    // Fase 220: salida, Tipificacion y Total trafico de Aurora (no toca HLM).
+    'fase220_aurora_salida_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
@@ -75,7 +78,8 @@ test('el dashboard de HLM es el de la plantilla: como Aurora/ORLANT, todo oculto
   const aur = cfgDe(AURORA).layout.tabs;
   // Fase 220: Aurora tiene Trafico visible; HLM no (todo oculto). Lo demas, igual.
   const sinOculta = (t) => JSON.stringify(Object.assign({}, t, { oculta: undefined }));
-  cfg.layout.tabs.forEach((t, k) => assert.equal(sinOculta(t).split(HLM).join(AURORA), sinOculta(aur[k]), 'igual que Aurora: ' + t.key));
+  // Fase 220: Aurora ademas tiene Salida, Total trafico y Tipificacion; las de HLM son iguales a las suyas.
+  cfg.layout.tabs.forEach((t) => assert.equal(sinOculta(t).split(HLM).join(AURORA), sinOculta(aur.find((a) => a.key === t.key)), 'igual que Aurora: ' + t.key));
   for (const tabla of ['dashboard_cargas', 'calidad_nivel_servicio_diario', 'trafico_whatsapp', 'monitoreos']) {
     const col = tabla === 'dashboard_cargas' ? 'cliente' : 'campana';
     assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM ${tabla} WHERE ${col} = ?`).get(HLM).n, 0, tabla);
@@ -87,7 +91,7 @@ test('ORLANT, MOBILIZE y Aurora no cambian', () => {
   for (const c of ['ORLANT', 'MOBILIZE']) {
     assert.equal(JSON.stringify(cfgDe(c)), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
-  assert.deepEqual(cfgDe(AURORA), generarLayout({ nombre: AURORA, titulo: 'Dashboard Clínica Aurora', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'], visibles: ['flujo_llamadas', 'flujo_whatsapp'] })); // Fase 220
+  assert.deepEqual(cfgDe(AURORA), auroraEsperada()); // Fase 220
   const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA'); // Fase 215
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));

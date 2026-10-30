@@ -173,7 +173,8 @@ test('fase134_borrar_clientes_v1: dashboards_config queda con ORLANT y MOBILIZE 
   // la que queda es la nueva, creada DESPUES por fase153_crear_clinica_aurora_v1.
   const aurora = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('CLINICA AURORA');
   assert.equal(aurora.titulo, 'Dashboard Clínica Aurora');
-  assert.deepEqual(JSON.parse(aurora.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
+  // Fase 220: + Salida, Total trafico y Tipificacion (fase220_aurora_salida_v1).
+  assert.deepEqual(JSON.parse(aurora.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'tipificacion', 'calidad']);
   assert.equal(db.prepare('SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente = ?').get('CLINICA AURORA').c, 0);
 });
 
