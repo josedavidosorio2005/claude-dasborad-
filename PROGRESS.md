@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.114.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.114.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -141,6 +141,14 @@ narrativo de cada fase, fase por fase, vive en
     **Activo en ORLANT desde la v1.76.1** (migración
     `fase187_salida_una_clasificacion_v1`: copia los asesores con una sola
     línea en todos sus meses, sin pisar a los ya clasificados).
+- **Revisión de bugs del 03/11 (Fases 222–225, v1.112.1–v1.114.1)**:
+  usuario nuevo sin clientes ni campañas marcados y sin poder dar accesos que
+  uno no tiene (`accesosSinEscalar`); base inicial de SURA con lista blanca
+  de 10 columnas; fechas en texto DD/MM y "hoy"/mes actual en hora de
+  Colombia; el tablero de SURA no ejecuta HTML de los datos; Gestión Humana
+  con los últimos 60 meses; caché de Agendas e Inasistencia que sí se limpia
+  al cargar. ESLint queda como propuesta sin aplicar
+  ([`docs/propuesta-eslint.md`](docs/propuesta-eslint.md)).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
@@ -183,6 +191,8 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | One & Done / FCR de Mobilize (base: contestaron la pregunta 1, v1.88.0) | Ago 5/6 = 83,3 % · Sep 3/5 = 60 % · Oct 19/28 = 67,9 % (antes, sobre el total: 23,8 % · 6,7 % · 23,2 %); verificado en producción | 200 |
 | NPS de la Encuesta de Mobilize | Oct 21,4 (28 contestaron la pregunta 1; promotores 57,1 %, detractores 35,7 %) | 195 |
 | Flujo por hora de Mobilize | Oct: ingresadas 106, contestadas 104, abandonadas 2 (10 tramos x 31 días); Ago+Sep 171 / 168 / 3; Todos 277 / 272 / 5 (= tarjetas de Flujo de Llamadas) | 196, 209 |
+| Resumen de Flujo de Llamadas de Mobilize (v1.114.0: con Nivel de servicio, Tasa de abandono y Eficacia) | Todos: 277 / 272 · NS 95,91 % · abandono 1,8 % · Eficacia 49,4 % (121/245) · 5 · 98,2 % · FCR 69,2 %. Oct: 106 / 104 · 96,92 % · 1,9 % · 47,2 % · 2 · 98,1 % · 67,9 %. Sep+Oct: 210 / 208 · 98,69 % · 1 % · 50,5 % · 2 · 99,1 % · 66,7 %. Iguales a las sub-pestañas; verificado en producción | 227 |
+| Tasa de contacto de salida de Mobilize (v1.113.0, Todos) | 140 conectadas ÷ 324 = 43,2 %; verificado en producción | 226 |
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
 | Total tráfico (ORLANT, v1.110.0: entrada de Tráfico de Llamadas y de WhatsApp + llamadas y WhatsApp de salida; cada salida cuenta como contestada) | Ago 27.742 ingresados / 26.685 contestados (96,2 %) · Sep 32.865 / 32.634 (99,3 %) · Oct 20.671 / 20.542 (99,4 %) · Ago–Oct 81.278 / 79.861 (98,3 %). La salida cuadra con su pestaña y los contestados de entrada con Efectividad de Citas. Tipificación, filtro "Entrada o salida" (todos los meses): llamadas 24.354 + 21.988 = 46.342, WhatsApp 24.298 + 10.057 = 34.355. Verificado en producción | 219 |
 | Total tráfico (Clínica Aurora, v1.112.0, todavía sin CDR: solo entrada) | 2.456 ingresados (Tráfico de Llamadas 875 + Tráfico de WhatsApp 1.581) / 2.408 contestados (850 + 1.558) = 98 %. Verificado en producción | 220 |
@@ -408,3 +418,9 @@ mismo orden):
 - Fase 219 — ORLANT: salida sin el aviso de asesores sin línea, Ranking sin párrafo largo y con nota corta, Tipificación con filtro "Entrada o salida" (misma regla de las tarjetas) y "Línea (General / 3P)", y pestaña nueva «Total tráfico» (v1.109.2–v1.110.0, 2026-10-30)
 - Fase 220 — Clínica Aurora como ORLANT: Tráfico de Llamadas y de WhatsApp visibles, carga del CDR de Tipificación (llamadas y WhatsApp), Llamadas y WhatsApp de salida y Total tráfico; regla de salida en un solo lugar (SALIDA_POR_CLIENTE, Aurora provisional) y pruebas guardianas de que ORLANT y Mobilize no cambian (v1.111.0–v1.112.0, 2026-10-30)
 - Fase 221 — SURA: usuario de cliente de Jairo (CLIENTES_DASH, acceso a todos los dashboards de cliente por decisión del usuario) creado por la interfaz y vista de cliente verificada en producción con su sesión: 6 pestañas, escrituras con 403, mismas cifras que el administrador (solo docs, v1.112.0, 2026-11-03)
+- Fase 222 — Revisión de bugs del 03/11 (solo lectura) y arreglos: usuario nuevo sin clientes ni campañas marcados y regla `accesosSinEscalar` (#631), base inicial de SURA con lista blanca de columnas (#632) (v1.112.1–v1.112.2, 2026-11-03)
+- Fase 223 — Fechas en texto DD/MM sin corrimiento de hora (`gdFechaTextoAIso`) y "hoy"/mes actual en hora de Colombia en navegador y servidor (v1.112.3, 2026-11-03)
+- Fase 224 — SURA: el tablero Televentas no ejecuta HTML que venga en los datos (un solo `esc`, `stvLimpiarTexto`, generador al día) (v1.112.4, 2026-11-03)
+- Fase 225 — Gestión Humana con los últimos 60 meses, caché de Agendas e Inasistencia que sí se limpia al cargar, Node 24 en el README y propuesta de ESLint sin aplicar (v1.114.1, 2026-11-03)
+- Fase 226 — Mobilize: Llamadas Únicas y de Salida sin tablas "De dónde sale cada mes" y con la tarjeta "Tasa de contacto llamadas de salida" (v1.113.0, 2026-11-03)
+- Fase 227 — Mobilize: Nivel de servicio, Tasa de abandono y Eficacia en el resumen de Flujo de Llamadas (`resumenOrden`, `eficaciaEnResumen`, migración idempotente; ORLANT igual) (v1.114.0, 2026-11-03)

@@ -18689,3 +18689,69 @@ tocar código; un PR por punto.
     de los 403 esperados de la prueba). Capturas fuera del repo
     (`...\bases edwin\capturas-produccion\jairo-sura-2026-11-03\`).
   - Al final se cerró la sesión de Jairo y el navegador.
+
+## Fases 222–227 — Revisión de bugs del 03/11 y pedidos de Edwin para Mobilize (v1.112.1–v1.114.1, 2026-11-03)
+
+- **Revisión de bugs (solo lectura)**: pruebas, `npm audit`, prueba de
+  ESLint fuera del repo, permisos, datos y frontend. El informe quedó en una
+  copia local sin commitear (por pedido). De ahí salió un plan de 5 PRs que
+  el usuario autorizó a mergear en esta tanda (siempre con CI en verde,
+  `--match-head-commit`, sin forzar push, uno a la vez esperando el deploy).
+- **#631, Fase 222 (v1.112.1), H1**: el formulario de usuario nuevo marcaba
+  todos los clientes y campañas. Ahora nacen sin marcar, no se guarda sin al
+  menos uno, y `accesosSinEscalar` (`server/routes/usuarios.js`, en
+  `POST /users`, `PUT /users/:id` y `PUT /users/:id/perms`) impide dar un
+  `cliente_*`/`campana_*` que quien edita no tiene. Efecto: un Auxiliar
+  Admin creado por la interfaz no reparte accesos (lo hace el administrador).
+- **#632, Fase 222 (v1.112.2), S1**: la base inicial de SURA guarda y entrega
+  solo las 10 columnas que usa el tablero (`COLUMNAS_INICIAL`, mismas reglas
+  de `INIF`); al cliente se le filtran también las bases montadas antes. El
+  Excel original sigue completo y solo lo descarga el administrador.
+- **#633, Fase 223 (v1.112.3), H2/H3/H4**: `gdFechaTextoAIso` lee
+  `DD/MM/AAAA` como día/mes y nunca pasa por UTC (WhatsApp con
+  `mesPrimero`); "hoy" y el mes actual salen en hora de Colombia
+  (`gdHoyLocal` en el navegador, `fechaLimitesHoyColombia` en el servidor).
+- **#634, Fase 224 (v1.112.4), XSS de SURA**: un solo `esc`, `stvLimpiarTexto`
+  neutraliza los signos < > comillas y acento grave en todo texto que entra al tablero, el generador
+  produce el archivo idéntico byte a byte y el servidor rechaza nombres de
+  archivo con esos signos. Confirmado en local con
+  `scripts/qa/verificar-xss-sura-local.js` (8 inyectados en `main` → 0).
+- **#635, Fase 226 (v1.113.0), Mobilize (reunión con Edwin del 03/11)**:
+  Llamadas Únicas y de Salida sin las tablas "De dónde sale cada mes" (la
+  fuente sigue en Exportar) y tarjeta "Tasa de contacto llamadas de salida"
+  (conectadas ÷ total, suma de los meses de MESES).
+- **#636, Fase 227 (v1.114.0), Mobilize**: el resumen de Flujo de Llamadas
+  queda Ingresadas, Contestadas, Nivel de servicio, Tasa de abandono,
+  Eficacia, Abandonadas, Nivel de atención y FCR (`resumenOrden`,
+  `eficaciaEnResumen`; migración idempotente
+  `dashboards_config_mobilize_resumen_tarjetas_v1`, que solo actúa sobre la
+  forma de producción). Las sub-pestañas se quedan; ORLANT, Aurora y HLM
+  iguales. Observaciones y NPS que Edwin pospuso: `docs/pendientes.md`.
+- **#637, Fase 225 (v1.114.1)**: Gestión Humana cuenta los últimos 60 meses
+  hasta hoy (antes, con ingresos de hace más de 5 años, se perdían los
+  recientes); `cargas.js` limpiaba `_agendasCache`/`_inasistenciaCache`,
+  que no existen — ahora `_cargasInvalidarOpciones` borra la caché real de
+  ese cliente y el mes recién cargado sale en el filtro sin cerrar sesión;
+  README con Node 24; propuesta de ESLint sin aplicar
+  (`docs/propuesta-eslint.md`: 544 errores y 232 avisos, casi todos falsos
+  positivos).
+- **Pruebas**: suite completa en verde en cada PR (2438 → 2472), `npm audit`
+  0, CI completo en verde (test (24), docker-build, pantallas) en los 7 PRs.
+- **Verificación en producción (03/11, v1.114.0, sesión del administrador,
+  Playwright desde Node con Brave visible, sin `storageState`, 0
+  escrituras, 0 errores de consola)**:
+  - Nuevo usuario: CLIENTES_DASH 5 clientes y CALIDAD 17 campañas, 0 marcadas;
+    guardar sin marcar muestra el aviso (escrituras bloqueadas en la página
+    durante la prueba: ninguna).
+  - SURA abre bien; la base inicial (oct y nov) trae solo las 10 columnas
+    permitidas (solo se miraron los nombres de las columnas).
+  - Metas, Gerencia y Calidad abren en 2026-11 (hora de Colombia).
+  - Mobilize: Llamadas Únicas sin las tablas de fuentes, salida 324 / 184 /
+    140 y tasa de contacto 43,2 %; Flujo de Llamadas con el orden nuevo y las
+    cifras de PROGRESS (Todos, octubre y septiembre + octubre), iguales a sus
+    sub-pestañas. ORLANT con sus 6 tarjetas de siempre, sin Eficacia.
+  - v1.114.1: producción sirve el arreglo de la caché (el comportamiento
+    completo pide una carga real, no autorizada; queda cubierto por la
+    prueba).
+  - Capturas fuera del repo (carpetas mobilize-2026-11-03 y cierre-2026-11-03
+    de capturas-produccion, en la carpeta de bases de Edwin). Sesión y navegador cerrados al final.
