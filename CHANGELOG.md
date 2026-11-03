@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.114.1 — Noviembre 2026
+
+**Fase 225: arreglos de la revisión del 03/11.**
+
+- **Gestión Humana:** con una persona que ingresó hace más de 5 años, las
+  cuentas mensuales se quedaban en los primeros 60 meses desde su ingreso y
+  se perdían los más recientes (incluido el mes actual). Ahora se cuentan los
+  últimos 60 meses hasta hoy.
+- **Cargar Datos (Agendas e Inasistencia):** después de cargar un mes nuevo,
+  ese mes ya sale en el filtro del tablero sin tener que cerrar sesión.
+
 ## v1.114.0 — Noviembre 2026
 
 **Fase 227: Mobilize, más tarjetas en el resumen de Flujo de Llamadas (pedido de Edwin, 03/11).**
