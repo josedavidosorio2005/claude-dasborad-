@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const { app, db, request, tokenFor, MASTER_PASSWORD, SEED, cleanup } = require('./helpers');
 const { generarLayout, PERFILES_ACTUALES } = require('../plantillas-cliente');
 const reg = require('../clientes-registro');
-const { auroraEsperada } = require('./helpers-aurora'); // Fase 220
+const { auroraEsperada, hlmEsperada } = require('./helpers-aurora'); // Fase 220 / 229
 const { campaignAccess } = require('../auth');
 
 after(cleanup);
@@ -61,22 +61,26 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 220: salida, Tipificacion y Total trafico de Aurora (no toca HLM).
     'fase220_aurora_salida_v1',
     // Fase 227: solo el resumen de Flujo de Llamadas de MOBILIZE (no toca Aurora/HLM).
-    'dashboards_config_mobilize_resumen_tarjetas_v1'];
+    'dashboards_config_mobilize_resumen_tarjetas_v1',
+    // Fase 229: HLM como ORLANT (no toca Aurora).
+    'fase229_hlm_como_orlant_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
-  assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'calidad']);
+  // Fase 229: + WhatsApp por rangos, Salida y Tipificacion (fase229_hlm_como_orlant_v1).
+  assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'tipificacion', 'calidad']);
   assert.equal(r.dashboard, true);
   assert.deepEqual(r.parametros.sedes, [], 'las sedes quedan por definir');
   assert.equal(r.parametros.traficoDosHojas, false);
   assert.equal(r.parametros.asesorVisibleCliente, false);
 });
 
-test('el dashboard de HLM es el de la plantilla: como Aurora/ORLANT, todo oculto y sin datos', () => {
+test('el dashboard de HLM es el de la plantilla: como Aurora/ORLANT, todo oculto (menos Total tráfico) y sin datos', () => {
   const cfg = cfgDe(HLM);
-  assert.deepEqual(cfg, generarLayout({ nombre: HLM, titulo: 'Dashboard Hospital La María', modulos: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'] }));
-  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
-  cfg.layout.tabs.forEach((t) => assert.equal(t.oculta, true, t.key));
+  // Fase 229: + Salida, Total trafico y Tipificacion (fase229_hlm_como_orlant_v1).
+  assert.deepEqual(cfg, hlmEsperada());
+  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'tipificacion', 'calidad']);
+  cfg.layout.tabs.forEach((t) => assert.equal(t.oculta, t.key === 'total_trafico' ? undefined : true, t.key));
   const aur = cfgDe(AURORA).layout.tabs;
   // Fase 220: Aurora tiene Trafico visible; HLM no (todo oculto). Lo demas, igual.
   const sinOculta = (t) => JSON.stringify(Object.assign({}, t, { oculta: undefined }));

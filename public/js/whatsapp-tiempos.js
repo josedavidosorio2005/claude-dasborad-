@@ -29,12 +29,21 @@ function wppTiemposUsa(campana) {
   return LISTAS_REGISTRO.whatsappTiempos.indexOf(campana) !== -1;
 }
 
+// Fase 229: sin tiempos por rango, ¿hay filas del Flujo de WhatsApp (con su %
+// mensual de Nivel de Servicio) para mostrar la grafica de siempre?
+var _wppTiemposSinRangos = {}; // por campana: true mientras se muestra la grafica mensual en su lugar
+var WPP_TIEMPOS_SIN_RANGOS = 'Todavía no hay tiempos de respuesta por rango cargados: se muestra el nivel de servicio mensual.';
+function _wppTiemposMensualDisponible(campana) {
+  var c = (typeof _traficoWpp !== 'undefined') ? _traficoWpp[campana] : null;
+  return !!(c && c.filas && c.filas.length);
+}
+
 // true si en el panel i esta activa la sub-pestaña 'sl' de una campaña con
 // esta vista (lo usan trafico-whatsapp.js y los botones Excel/PDF).
 function _wppTiemposActivo(i) {
   var host = document.getElementById('gd-p' + i);
   var campana = host ? host.dataset.campana : null;
-  return !!campana && wppTiemposUsa(campana) && (typeof _traficoWppSubtabActivo !== 'undefined') && _traficoWppSubtabActivo[campana] === 'sl';
+  return !!campana && wppTiemposUsa(campana) && !_wppTiemposSinRangos[campana] && (typeof _traficoWppSubtabActivo !== 'undefined') && _traficoWppSubtabActivo[campana] === 'sl';
 }
 
 // Esconde (o vuelve a mostrar) los filtros propios del panel de WhatsApp
@@ -67,8 +76,20 @@ async function _wppTiemposRender(i, campana) {
   var titulo = '<div class="aurora-card-title" style="font-size:0.85rem">Nivel de Servicio por tiempo de respuesta</div>' +
     '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:-4px 0 10px">' + WPP_TIEMPOS_AVISO + '</p>';
   var op = await _wppTiemposCargarOpciones(campana);
+  _wppTiemposSinRangos[campana] = false;
   if (!op.meses || !op.meses.length) {
     _wppTiemposUltimo[campana] = null;
+    // Fase 229: un cliente que recien estrena la vista (HLM) y ya tiene el %
+    // mensual de Nivel de Servicio sigue viendo esa grafica hasta que suba
+    // los tiempos por rango; sin ninguno de los dos, el aviso de siempre.
+    if (_wppTiemposMensualDisponible(campana)) {
+      _wppTiemposSinRangos[campana] = true;
+      _wppTiemposFiltrosPanel(i, false);
+      content.innerHTML = '<p class="lu-aviso" style="color:var(--c-text-muted);font-size:var(--fs-small);margin:0 0 10px">' + WPP_TIEMPOS_SIN_RANGOS + '</p>' +
+        _traficoSubtabContentHTML('tww', i, 'sl', TRAFICO_WPP_SUBTAB_TITULOS);
+      _traficoWppRenderContenido(i);
+      return;
+    }
     content.innerHTML = titulo + '<div class="gd-vacio">Sin tiempos de respuesta de WhatsApp cargados todavía' +
       (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo desde "Cargar Datos".' : '.') + '</div>';
     return;
