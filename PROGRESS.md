@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.112.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.113.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -101,6 +101,11 @@ narrativo de cada fase, fase por fase, vive en
     si la fila no trae cierre.
   - En ORLANT la salida se cuenta **por registro** (cada fila del CDR). El
     teléfono único se usa solo en Llamadas Únicas de Mobilize.
+  - **Llamadas Únicas y de Salida de Mobilize (Fase 226, pedido de Edwin del
+    03/11)**: sin las tablas "De dónde sale cada mes" (cada mitad: tarjetas y
+    gráfica; la fuente sigue en Exportar) y tarjeta "Tasa de contacto llamadas
+    de salida" = conectadas ÷ total (suma de los meses de MESES; "Pendiente"
+    si falta el reporte de no conectadas).
   - **Llamadas Únicas de Mobilize (Fase 191)**: contestadas = filas de
     ingreso del CDR de Tipificación (skill distinto de "-") con
     `unicaDia = 1` (primera del día para ese teléfono, marcada en el

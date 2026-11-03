@@ -117,8 +117,7 @@ async function _llamadasUnicasRenderIngreso(campana, i) {
       '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasUnicasAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
     '<div class="aurora-kpis" id="lu-kpis-' + i + '"></div>' +
-    gdGraficaHtml('Llamadas únicas de ingreso por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '" data-titulo="Llamadas únicas de ingreso por mes"></canvas></div>') +
-    '<div id="lu-fuentes-' + i + '"></div>';
+    gdGraficaHtml('Llamadas únicas de ingreso por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="lu-canvas-' + i + '" data-titulo="Llamadas únicas de ingreso por mes"></canvas></div>');
 
   await _llamadasUnicasRenderContenido(campana, i);
 }
@@ -192,8 +191,6 @@ async function _llamadasUnicasRenderContenido(campana, i) {
   resumen = _llamadasResumenMeses(resumen, porMes, ['total', 'contestadas', 'abandonadas']);
   _llamadasUnicasDibujarKpis(i, resumen);
   _llamadasUnicasDibujarBarras(i, porMes, _llamadasUnicasSoloTotal(resumen));
-  var elF = document.getElementById('lu-fuentes-' + i);
-  if (elF) elF.innerHTML = _llamadasUnicasFuentesHtml(porMes);
 }
 
 // Fase 203: con meses marcados en MESES, las tarjetas son la suma de esos
@@ -208,17 +205,6 @@ function _llamadasResumenMeses(resumen, porMesFiltrado, campos) {
   campos.forEach(function (c) { out[c] = s[c]; });
   if ('noConectadasPendiente' in resumen) out.noConectadasPendiente = porMesFiltrado.some(function (m) { return m.noConectadas === null || m.noConectadas === undefined; });
   return out;
-}
-
-// Fase 191: tabla por mes con la fuente de cada parte (pedido del 27/10).
-function _llamadasUnicasFuentesHtml(porMes) {
-  if (!porMes.length) return '';
-  var n = function (v) { return (v || 0).toLocaleString('es-CO'); };
-  return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">De dónde sale cada mes</div>' +
-    '<div class="table-wrap"><table class="aurora-table lu-fuentes"><thead><tr><th class="th-izq">Mes</th><th>Contestadas</th><th>Abandonadas</th><th>Total</th><th class="th-izq">Fuente</th></tr></thead><tbody>' +
-    porMes.map(function (m) {
-      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.contestadas) + '</td><td>' + n(m.abandonadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasUnicasFuenteMes === 'function' ? llamadasUnicasFuenteMes(m) : '').split(' · ').join('<br>') + '</td></tr>';
-    }).join('') + '</tbody></table></div>';
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -270,9 +256,8 @@ async function _llamadasSalidaRenderMitad(campana, i) {
       filtroAsesor +
       '<div class="ig ig-sm"><button class="btn-sm" onclick="_llamadasSalidaAplicarFiltros(' + i + ')">Aplicar filtros</button></div>' +
     '</div>' +
-    '<div class="aurora-kpis" id="ls-kpis-' + i + '"></div>' +
+    '<div class="aurora-kpis ls-kpis" id="ls-kpis-' + i + '"></div>' +
     gdGraficaHtml('Llamadas de salida por mes', '<div class="aurora-chart-wrap" style="height:260px"><canvas id="ls-canvas-' + i + '" data-titulo="Llamadas de salida por mes"></canvas></div>') +
-    '<div id="ls-fuentes-' + i + '"></div>' +
     (esInterno ? '<div id="ls-detalle-' + i + '"></div>' : '');
   await _llamadasSalidaRenderContenido(campana, i);
 }
@@ -292,18 +277,9 @@ function _llamadasSalidaKpisHtml(resumen) {
   return '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.total) + '</div><div class="kl">Total llamadas de salida</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.noConectadas) + '</div><div class="kl">Llamadas de salida no conectadas</div></div>' +
     '<div class="aurora-kpi"><div class="kv">' + _llamadasSalidaNum(resumen.conectadas) + '</div><div class="kl">Llamadas de salida conectadas</div></div>' +
+    // Fase 226 (pedido de Edwin, 03/11): conectadas / total de los meses de MESES.
+    '<div class="aurora-kpi"><div class="kv">' + llamadasSalidaTasaContacto(resumen) + '</div><div class="kl">Tasa de contacto llamadas de salida</div></div>' +
     (resumen.noConectadasPendiente ? '<p class="lu-aviso lu-aviso-pendiente">No conectadas y total quedan pendientes en los meses que salen del CDR: falta la base de llamadas no conectadas.</p>' : '');
-}
-
-// Fase 191: tabla por mes con su fuente.
-function _llamadasSalidaFuentesHtml(porMes) {
-  if (!porMes.length) return '';
-  var n = function (v) { return v === null || v === undefined ? '—' : v.toLocaleString('es-CO'); };
-  return '<div class="aurora-card-title" style="font-size:0.85rem;margin-top:12px">De dónde sale cada mes</div>' +
-    '<div class="table-wrap"><table class="aurora-table ls-fuentes"><thead><tr><th class="th-izq">Mes</th><th>Conectadas</th><th>No conectadas</th><th>Total</th><th class="th-izq">Fuente</th></tr></thead><tbody>' +
-    porMes.map(function (m) {
-      return '<tr><td>' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(m.periodo) : m.periodo) + '</td><td>' + n(m.conectadas) + '</td><td>' + n(m.noConectadas) + '</td><td>' + n(m.total) + '</td><td class="td-izq">' + esc(typeof llamadasSalidaFuenteMes === 'function' ? llamadasSalidaFuenteMes(m) : '').split(' · ').join('<br>') + '</td></tr>';
-    }).join('') + '</tbody></table></div>';
 }
 
 function _llamadasSalidaDibujarBarras(i, porMes) {
@@ -366,8 +342,6 @@ async function _llamadasSalidaRenderContenido(campana, i) {
   var elKpis = document.getElementById('ls-kpis-' + i);
   if (elKpis) elKpis.innerHTML = _llamadasSalidaKpisHtml(resumen);
   _llamadasSalidaDibujarBarras(i, porMes);
-  var elFs = document.getElementById('ls-fuentes-' + i);
-  if (elFs) elFs.innerHTML = _llamadasSalidaFuentesHtml(porMes);
   var elDet = document.getElementById('ls-detalle-' + i);
   if (elDet) elDet.innerHTML = detalle ? _llamadasSalidaDetalleHtml(detalle) : '';
 }

@@ -203,11 +203,16 @@ test('API: la carga de abandonadas pide permiso de carga y acceso a la campaña'
   assert.equal(mala.status, 400, 'una fila con un tercer campo (telefono) se rechaza');
 });
 
-test('panel: tabla "De dónde sale cada mes" y "Pendiente" en las no conectadas', () => {
+test('panel: sin la tabla "De dónde sale cada mes" (Fase 226), "Pendiente" en las no conectadas y la fuente sigue en el Excel', () => {
   const s = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'llamadas-unicas.js'), 'utf8');
-  assert.ok(s.includes("'<div id=\"lu-fuentes-' + i + '\"></div>'"));
-  assert.ok(s.includes("'<div id=\"ls-fuentes-' + i + '\"></div>'"));
+  // Fase 226 (pedido de Edwin, 03/11): cada mitad queda solo con sus tarjetas y su grafica.
+  for (const t of ['lu-fuentes', 'ls-fuentes', '_llamadasUnicasFuentesHtml', '_llamadasSalidaFuentesHtml', 'De dónde sale cada mes']) {
+    assert.ok(!s.includes(t), 'ya no esta: ' + t);
+  }
+  assert.ok(s.includes("'<div id=\"ls-detalle-' + i + '\"></div>'"), 'el detalle por asesor y por dia se queda');
   assert.ok(s.includes("return v === null || v === undefined ? 'Pendiente'"));
+  const gd = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'dashboard-generic.js'), 'utf8');
+  assert.ok(gd.includes('Fuente: llamadasUnicasFuenteMes(m)'), 'la fuente de cada mes sigue en Exportar');
   assert.equal(LU.llamadasUnicasFuenteMes({ fuenteContestadas: 'CDR', fuenteAbandonadas: 'ABANDONADAS' }), 'Contestadas: CDR · Abandonadas: reporte de abandonadas');
   assert.equal(LU.llamadasUnicasFuenteMes({ fuenteContestadas: 'PLANTILLA', fuenteAbandonadas: null }), 'Contestadas: Carga anterior · Abandonadas: sin cargar');
   // Fase 194: la fuente dice de donde salen conectadas y no conectadas.

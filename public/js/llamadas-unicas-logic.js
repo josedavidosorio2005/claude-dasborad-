@@ -323,9 +323,24 @@ function llamadasSalidaFuenteMes(m) {
   return 'Conectadas: ' + con + ' · No conectadas: ' + t((m && m.fuenteNoConectadas) || (m && m.fuente));
 }
 
+// Fase 226 (pedido de Edwin, 03/11): tarjeta "Tasa de contacto llamadas de
+// salida" = conectadas / total x 100, con 1 decimal y coma ("52,3 %"). Recibe
+// el resumen ya sumado por MESES (_llamadasResumenMeses: suma de conectadas
+// y de total, nunca promedio de porcentajes). Total pendiente (mes sin
+// reporte de no conectadas) -> "Pendiente"; total 0 -> "—". Nunca un
+// numero inventado.
+function llamadasSalidaTasaContacto(resumen) {
+  var total = resumen ? resumen.total : null;
+  var conectadas = resumen ? resumen.conectadas : null;
+  if (total === null || total === undefined || conectadas === null || conectadas === undefined) return 'Pendiente';
+  if (!(Number(total) > 0)) return '—';
+  return (Math.round((Number(conectadas) / Number(total)) * 1000) / 10).toFixed(1).replace('.', ',') + ' %';
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    llamadasSalidaTasaContacto: llamadasSalidaTasaContacto,
     llamadasUnicasFuenteMes: llamadasUnicasFuenteMes,
     llamadasSalidaFuenteMes: llamadasSalidaFuenteMes,
     LLAMADAS_ABANDONADAS_COLUMNAS: LLAMADAS_ABANDONADAS_COLUMNAS,
