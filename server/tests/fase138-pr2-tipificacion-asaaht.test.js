@@ -198,9 +198,12 @@ test('migraciones asaaht_v1 + asaata_aht_v1 (Fase 145): el panel viejo de MOBILI
   const panel = layout.tabs.find((t) => t.key === 'flujo').panels.find((p) => p.tipo === 'trafico_combo');
   const keys = panel.subtabs.map((s) => s.key);
   assert.deepEqual(keys, ['resumen', 'sl', 'abandono', 'asaata', 'aht', 'oneanddone', 'eficacia']); // Fase 147 D: + One & Done al final; Fase 199: + Eficacia
-  // resumenOcultar/resumenPorSeccion/subtabsTitulos (otras opciones del
-  // mismo panel) no se pierden en el reemplazo.
-  assert.deepEqual(panel.resumenOcultar, ['tasaAbandono', 'nivelServicio']);
+  // resumenPorSeccion/subtabsTitulos (otras opciones del mismo panel) no se
+  // pierden en el reemplazo. Fase 227: resumenOcultar (tasa de abandono y
+  // nivel de servicio) pasa a resumenOrden + eficaciaEnResumen.
+  assert.equal(panel.resumenOcultar, undefined);
+  assert.deepEqual(panel.resumenOrden, ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion']);
+  assert.equal(panel.eficaciaEnResumen, true);
   assert.equal(panel.resumenPorSeccion, true);
 });
 

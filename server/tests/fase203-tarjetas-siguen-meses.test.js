@@ -164,7 +164,10 @@ test('One & Done y Eficacia: barras, tarjeta y desglose solo con los meses de ME
   assert.match(oad, /var t = encuestaFcrTarjetaMeses\(porMes, mesesT\);/);
   assert.doesNotMatch(enc, /encuestaFcrTarjeta\(porMes, mesFin\)|_gd\.mesSel/);
   const ef = JS('eficacia.js');
-  assert.match(ef, /meses = gdAplicarFiltroMeses\(meses, function \(m\) \{ return m\.periodo; \}\);/);
+  // Fase 227: el filtro por MESES vive en _eficaciaMesesFiltrados (lo usan la
+  // sub-pestaña y la tarjeta del resumen).
+  assert.match(ef, /gdAplicarFiltroMeses\(meses, function \(m\) \{ return m\.periodo; \}\)/);
+  assert.match(ef, /meses = _eficaciaMesesFiltrados\(r\);/);
   assert.match(ef, /suma\.positivas \/ suma\.contestadas/);
   assert.doesNotMatch(ef, /mesFin/);
 });

@@ -375,11 +375,14 @@ const ORLANT = {
 //     nueva, independiente de "asaata" -- ver _traficoDibujarAsaAta en
 //     trafico.js. SL10/SL30/WAIT_TIME ya no se grafican para NADIE desde la
 //     Fase 68 (se siguen guardando igual) -- nada que apagar aqui.
-//   - `resumenOcultar`: el resumen principal de Mobilize es SOLO
-//     ingresadas/contestadas/abandonadas/nivel de atencion (pedido
-//     explicito de Edwin) -- se quitan las tarjetas de tasa de abandono y
-//     nivel de servicio, que ya tienen su PROPIA sub-pestaña con su propio
-//     resumen (`resumenPorSeccion`, siguiente punto).
+//   - `resumenOrden` + `eficaciaEnResumen` (Fase 227, pedido de Edwin del
+//     03/11; antes, hasta la v1.113.0, `resumenOcultar` quitaba tasa de
+//     abandono y nivel de servicio): el resumen principal de Mobilize va
+//     ingresadas, contestadas, nivel de servicio, tasa de abandono,
+//     eficacia, abandonadas, nivel de atencion (y FCR al final). Los
+//     valores son los mismos de sus sub-pestañas (`resumenPorSeccion`,
+//     siguiente punto). Migracion: dashboards_config_mobilize_resumen_
+//     tarjetas_v1 (db.js).
 //   - `resumenPorSeccion`: cada sub-pestaña de detalle (SL/Abandono/ASA/
 //     AHT) trae su propio numero acumulado del periodo/filtro actual
 //     ENCIMA de su grafica, no solo el chart solo -- pedido textual de
@@ -444,7 +447,10 @@ const MOBILIZE = {
         { tipo: 'trafico_combo', campana: 'MOBILIZE',
           etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
           etiquetaTotal: 'Llamadas ingresadas', // Fase 204: tarjeta, leyenda, tooltip, Ver datos y Excel
-          resumenOcultar: ['tasaAbandono', 'nivelServicio'],
+          // Fase 227 (pedido de Edwin, 03/11): Nivel de servicio, Tasa de abandono y
+          // Eficacia en el resumen, despues de Llamadas contestadas (FCR sigue al final).
+          resumenOrden: ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'],
+          eficaciaEnResumen: true,
           resumenPorSeccion: true,
           // Fase 138 (PR2, pedido de Edwin 09/10): ASA y AHT antes eran 2
           // sub-pestanas separadas (Fase 131) -- ahora van juntas en 1 sola

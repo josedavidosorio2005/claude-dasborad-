@@ -984,13 +984,23 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   var fmtN = function(n){ return n===null||n===undefined ? '—' : n.toLocaleString('es-CO'); };
   var fmtP = function(n){ return n===null||n===undefined ? '—' : String(n).replace('.', ',')+' %'; };
   var rotulo = ctx.rotuloParcial ? '<div class="gd-mes-parcial kpi-fila-completa">'+esc(ctx.rotuloParcial)+'</div>' : '';
+  // Fase 227 (pedido de Edwin, 03/11, solo Mobilize): cada tarjeta por clave y
+  // el orden lo da el panel (`resumenOrden`); sin esa opcion, el orden de
+  // siempre (ORLANT/Aurora/HLM no cambian). "eficacia" es solo un lugar
+  // (#<prefijo>-ef-res-<i>) que llena _eficaciaDibujarTarjetaResumen
+  // (eficacia.js), y solo si el panel la pide (`ctx.eficaciaEnResumen`).
+  var tarjetas = {
+    total: kpiTarjetaHtml({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }),
+    contestadas: kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, variacion: variacion('contestadas', 'num') }),
+    abandonadas: kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, variacion: variacion('abandonadas', 'num', true) }),
+    nivelAtencion: kpiTarjetaHtml({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }),
+    tasaAbandono: ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband }),
+    nivelServicio: ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs }),
+    eficacia: ctx.eficaciaEnResumen ? '<div class="aurora-kpi enc-ef" id="'+prefijo+'-ef-res-'+i+'"><div class="kv">…</div><div class="kl">Eficacia</div></div>' : '',
+  };
+  var orden = traficoOrdenTarjetas(ctx.orden, !!ctx.eficaciaEnResumen);
   kpisEl.innerHTML = rotulo +
-    kpiTarjetaHtml({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }) +
-    kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, variacion: variacion('contestadas', 'num') }) +
-    kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, variacion: variacion('abandonadas', 'num', true) }) +
-    kpiTarjetaHtml({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }) +
-    (ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband })) +
-    (ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs })) +
+    orden.map(function(k){ return tarjetas[k] || ''; }).join('') +
     tarjeta2 +
     nsSinDato;
 }
@@ -1324,6 +1334,9 @@ function _traficoRenderContenido(campana, sede, i){
   // Fase 204: `etiquetaTotal` del panel (Mobilize: 'Llamadas ingresadas') en
   // la tarjeta, la leyenda (y con ella el tooltip y Ver datos) y el Excel.
   var pCfgKpis = _traficoPanelConfig[i] || {};
+  // Fase 227: orden de las tarjetas y Eficacia en el resumen, solo si el panel los pide (Mobilize).
+  contextoKpis.orden = pCfgKpis.resumenOrden;
+  contextoKpis.eficaciaEnResumen = !!pCfgKpis.eficaciaEnResumen;
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
     { total: pCfgKpis.etiquetaTotal || 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
       nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
@@ -1333,6 +1346,8 @@ function _traficoRenderContenido(campana, sede, i){
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
   // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
   if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
+  // Fase 227: tarjeta Eficacia del resumen (mismo calculo que su sub-pestaña).
+  if(pCfgKpis.eficaciaEnResumen && typeof _eficaciaDibujarTarjetaResumen === 'function') _eficaciaDibujarTarjetaResumen(i, campana, estado.desde, estado.hasta);
   // Fase 147 (Parte D): sub-pestaña "One & Done" -- no-op si su canvas no
   // esta en el DOM (otra sub-pestaña activa u otro cliente). Misma base que
   // la tarjeta FCR, asi el numero es identico.

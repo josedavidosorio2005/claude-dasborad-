@@ -4498,6 +4498,35 @@ function actualizarLogoOrlant() {
 }
 runOnceMigration('fase218_logo_orlant_v1', actualizarLogoOrlant);
 
+// Fase 227 (pedido de Edwin, reunion 03/11, solo MOBILIZE): el resumen de
+// Flujo de Llamadas muestra Nivel de servicio, Tasa de abandono y Eficacia
+// despues de "Llamadas contestadas". En el trafico_combo de MOBILIZE (tab
+// "flujo") quita `resumenOcultar` y pone `resumenOrden` + `eficaciaEnResumen`.
+// Solo con la forma de produccion (resumenPorSeccion y resumenOcultar =
+// tasaAbandono + nivelServicio); cualquier otra se deja intacta y se
+// registra. Ningun otro cliente ni panel se toca. Idempotente.
+const MOBILIZE_RESUMEN_ORDEN = ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'];
+function migrarMobilizeResumenTarjetas() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  if (panel && Array.isArray(panel.resumenOrden)) return;
+  const ocultar = panel && Array.isArray(panel.resumenOcultar) ? panel.resumenOcultar.slice().sort().join(',') : null;
+  if (!panel || panel.resumenPorSeccion !== true || ocultar !== 'nivelServicio,tasaAbandono') {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_tarjetas_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  delete panel.resumenOcultar;
+  panel.resumenOrden = MOBILIZE_RESUMEN_ORDEN.slice();
+  panel.eficaciaEnResumen = true;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_tarjetas_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_resumen_tarjetas_v1', migrarMobilizeResumenTarjetas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4528,6 +4557,7 @@ module.exports.migrarMobilizeFlujoOneAndDone = migrarMobilizeFlujoOneAndDone;
 module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
 module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTotal;
+module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
