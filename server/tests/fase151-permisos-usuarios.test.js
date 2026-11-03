@@ -24,7 +24,10 @@ async function crear(user, rol, perms, extra = {}) {
 
 before(async () => {
   admin = await tokenFor('admin', MASTER_PASSWORD);
-  await crear('f151aux', 'AUX_ADMIN', { crearUsuarios: true, editarUsuarios: true, cambiarPassword: true, suspenderUsuarios: true, eliminarUsuarios: true, gestionPermisos: true });
+  // Fase 222: el AUX solo da clientes/campanas que el tiene -- se le dan los
+  // que reparte en estas pruebas (la regla nueva se prueba en fase222-usuario-accesos).
+  await crear('f151aux', 'AUX_ADMIN', { crearUsuarios: true, editarUsuarios: true, cambiarPassword: true, suspenderUsuarios: true, eliminarUsuarios: true, gestionPermisos: true,
+    campana_ORLANT: true, campana_MOBILIZE: true, cliente_ORLANT: true });
   await crear('f151cal', 'CALIDAD', { Calidad: true, campana_ORLANT: true });
   await crear('f151sup', 'SUPERVISOR', { Calidad: true, campana_ORLANT: true });
   await crear('f151cli', 'CLIENTES_DASH', { ClientesDash: true, cliente_ORLANT: true });

@@ -180,11 +180,18 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   1. **Alias de asesores**: el HTML unía 2 formas de escribir el nombre de
      una asesora; ese alias no va en el código. Se guarda en la
      configuración `agalias` del tablero (por ahora sin pantalla: pedirlo).
-  2. **Usuario de Jairo (solo lectura)**, cuando Edwin dé el visto bueno:
-     Gestión de Usuarios → nuevo usuario, rol **CLIENTES_DASH**, cliente
-     **SURA** marcado y nada más. La contraseña la asigna quien lo crea y la
-     plataforma le pide cambiarla al primer ingreso; nunca va al chat ni al
-     repo. Mientras no exista, nadie fuera del administrador ve SURA.
+  2. ~~**Usuario de Jairo (solo lectura)**~~ — **Hecho y verificado (Fase
+     221, 03/11/2026)**. Creado por la interfaz (Gestión de Usuarios), rol
+     **CLIENTES_DASH**; por decisión del usuario tiene acceso a **todos** los
+     dashboards de cliente (ORLANT, MOBILIZE, CLINICA AURORA, HOSPITAL LA
+     MARIA y SURA), no solo a SURA. La contraseña la puso quien lo creó y la
+     plataforma le pide cambiarla al primer ingreso. Verificado con su sesión
+     en producción (v1.112.0): SURA abre con 6 pestañas (Cumplimiento,
+     Agentes, Tipificaciones, Detalle ventas, Estrategias y Bases, Fase 218),
+     sin «Cargar información» ni botones de montar/reemplazar/eliminar/
+     descargar; las escrituras a `/api/sura-televentas` responden 403; las
+     pólizas por mes son las mismas del administrador. Detalle en
+     `docs/historico/progress-fases.md` (Fase 221).
   3. **Botones de campaña en el celular**: salen apilados con anchos
      distintos, igual que en su HTML. ¿Los quiere del mismo ancho?
   4. **Producción de marzo a julio**: esas bases traen solo
@@ -440,6 +447,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   tiene esas líneas, se apaga `clasificacionAsesores` en la misma tabla.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
+
+- **Usuario nuevo de cliente nace con todos los clientes marcados** (Fase
+  221, 03/11/2026) — Prioridad MEDIA. En Gestión de Usuarios → Nuevo
+  usuario, al elegir el rol CLIENTES_DASH o SUPERVISOR todas las casillas de
+  Clientes salen marcadas (`buildClientCheckboxes(null)` en
+  `public/js/users.js`); lo mismo con las campañas de Calidad
+  (`buildCampaignCheckboxes(null)`). Si quien lo crea no las desmarca, el
+  usuario ve todos los clientes. Propuesta (parche, sin tocar usuarios ya
+  creados): que nazcan sin marcar y no dejar guardar sin al menos un
+  cliente/campaña, con su prueba. Nada se aplica sin pedirlo.
 
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
   quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;

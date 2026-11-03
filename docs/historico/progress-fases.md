@@ -18653,3 +18653,39 @@ tocar código; un PR por punto.
   pestañas y Tipificación con "Tipo". 0 errores. Capturas fuera del repo.
 - **Pendiente para Edwin** (docs/pendientes.md): la regla de salida de Aurora y
   si reparte en General / 3P.
+
+## Fase 221 — SURA: usuario de cliente de Jairo y vista de cliente verificada (solo docs, v1.112.0, 2026-11-03)
+
+- **Revisión del código (solo lectura)**: el rol CLIENTES_DASH con
+  `cliente_SURA` entra al tablero (`campaignAccess`); el servidor le manda
+  `PESTANAS_CLIENTE` (6 pestañas: Cumplimiento, Agentes, Tipificaciones,
+  Detalle ventas, Estrategias y Bases, Fase 218 — sin «Cargar
+  información»); montar, reemplazar, eliminar, configurar y descargar el
+  Excel original son solo del administrador (403); las cédulas le llegan
+  seudonimizadas (HMAC); un usuario nuevo nace con `debe_cambiar_password`.
+- **Usuario creado por la interfaz** (Gestión de Usuarios, lo hizo el
+  usuario con su sesión de administrador; contraseña inicial puesta por él,
+  nunca en el repo). Rol CLIENTES_DASH. Quedó con los 5 clientes marcados
+  (ORLANT, MOBILIZE, CLINICA AURORA, HOSPITAL LA MARIA y SURA): se detectó
+  en la verificación y el usuario confirmó que **así debe ser** (Jairo ve
+  todos los dashboards de cliente). Hallazgo aparte: el formulario de
+  usuario nuevo marca todos los clientes por defecto — quedó en
+  `docs/pendientes.md` (sección 3) como propuesta, sin aplicar.
+- **Verificación en producción con la sesión de Jairo** (Playwright directo
+  desde Node, Brave visible, sin `storageState`, 0 escrituras):
+  - Dashboard Clientes muestra los 5 clientes (sus permisos); SURA abre
+    "Televentas SURA · Ventas por mes" con 6 pestañas, «Cargar información»
+    oculta, la clase de solo lectura activa y 0 botones de
+    montar/reemplazar/eliminar/descargar (tampoco en Bases).
+  - Pólizas por mes (Cumplimiento › Ventas): Mar 22 · Abr 109 · May 109 ·
+    Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 335 (total 1.908). Octubre
+    pasó de 316 a 335 porque su base de ventas se recargó el 30/10 (329
+    filas); los demás meses son iguales a los del administrador.
+  - Escrituras con su sesión (`fetch` desde la página, con mes o clave
+    inválidos para que no pudieran cambiar nada): POST y DELETE de una base
+    → 403, PUT de configuración → 403, descarga del Excel original → 403.
+  - 1440, 768 y 375 px en tema claro y oscuro (Cumplimiento y Bases): sin
+    desborde horizontal, 6 pestañas en todos, 0 errores de consola (fuera
+    de los 403 esperados de la prueba). Capturas fuera del repo
+    (`...\bases edwin\capturas-produccion\jairo-sura-2026-11-03\`).
+  - Al final se cerró la sesión de Jairo y el navegador.
