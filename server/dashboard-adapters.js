@@ -368,10 +368,15 @@ function mesSiguiente(mesKey) {
   const d = new Date(Date.UTC(y, m, 1));
   return d.toISOString().slice(0, 7);
 }
-function listarMeses(desde, hasta) {
+// Fase 225 (revision del 3-nov): los ULTIMOS `tope` meses hasta `hasta`. Antes
+// el tope de 60 vueltas contaba desde `desde`: con alguien que ingreso hace
+// mas de 5 anos se perdian los meses mas recientes (incluido el actual).
+function listarMeses(desde, hasta, tope = 60) {
+  const [y, m] = hasta.split('-').map(Number);
+  const minimo = new Date(Date.UTC(y, m - tope, 1)).toISOString().slice(0, 7);
   const out = [];
-  let cur = desde;
-  for (let i = 0; i < 60 && cur <= hasta; i++) { out.push(cur); cur = mesSiguiente(cur); }
+  let cur = desde > minimo ? desde : minimo;
+  while (cur <= hasta) { out.push(cur); cur = mesSiguiente(cur); }
   return out;
 }
 function mesesEntre(desdeYmd, hastaYmd) {
@@ -493,4 +498,4 @@ const ADAPTERS = {
   GESTION_HUMANA: { permiso: 'GestionHumana', config: GH_CONFIG, build: buildGestionHumana },
 };
 
-module.exports = { ADAPTERS };
+module.exports = { ADAPTERS, listarMeses };
