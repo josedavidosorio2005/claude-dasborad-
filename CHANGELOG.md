@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.112.2 — Noviembre 2026
+
+**Fase 222: la base inicial de SURA guarda solo lo que usa el tablero.**
+
+- Al montar la base inicial de SURA, la plataforma guarda solo las columnas
+  que el tablero usa: identificación (que el cliente ve cambiada por un
+  código), tipo de documento, sexo, edad, ingresos, estado civil, ocupación,
+  rango de saldo, categoría percentil, departamento y ciudad.
+- Si el Excel trae otras columnas, como nombre, teléfono, correo o
+  dirección, ya no se guardan en el tablero ni le llegan al cliente.
+- Las bases iniciales que ya estaban montadas tampoco le entregan al
+  cliente esas columnas de más. Las pantallas y las cifras no cambian.
+
 ## v1.112.1 — Noviembre 2026
 
 **Fase 222: al crear un usuario ya no sale todo marcado.**

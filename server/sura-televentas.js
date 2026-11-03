@@ -164,6 +164,28 @@ function validarEstrategias(d) {
 
 const VALIDADORES = { ventas: validarVentas, inicial: validarInicial, estrategias: validarEstrategias };
 
+// Fase 222 (revision del 3-nov, S1): de la base inicial solo se guardan y se
+// entregan las columnas que usa el tablero -- las mismas reglas de INIF en
+// public/js/sura-televentas-app.js, sobre el encabezado normalizado (`k`).
+// Nombre, telefono, correo, direccion o cualquier otra columna se descartan.
+// La identificacion va aparte (`ids`, seudonimizada para el cliente).
+const COLUMNAS_INICIAL = [
+  (k) => /^sexo|genero/.test(k),
+  (k) => /edad/.test(k),
+  (k) => /ingreso/.test(k),
+  (k) => /estado_?civil/.test(k),
+  (k) => /ocupacion/.test(k),
+  (k) => /saldo/.test(k),
+  (k) => /percentil/.test(k),
+  (k) => /dpto|departamento/.test(k),
+  (k) => /ciudad/.test(k),
+  (k) => /tipo/.test(k) && /document|identific/.test(k),
+];
+function columnaInicialPermitida(c) {
+  const k = esObj(c) && esTxt(c.k) ? c.k : '';
+  return COLUMNAS_INICIAL.some((m) => m(k));
+}
+
 function registrosDe(tipo, d) {
   return tipo === 'ventas' ? d.rows.length : d.ids.length;
 }
@@ -205,6 +227,7 @@ function validarCarga(tipo, mes, body) {
   const datos = {};
   for (const k of CLAVES) if (body.datos[k] !== undefined) datos[k] = body.datos[k];
   if (tipo === 'ventas') datos.v = 18; // version de formato del HTML
+  if (tipo === 'inicial') datos.cols = datos.cols.filter(columnaInicialPermitida);
   return { datos, archivo, archivoNombre: nombre.trim() };
 }
 
@@ -310,7 +333,11 @@ function leerBase(db, { cliente, tipo, mes, seudonimo }) {
   const datos = ungz(row.datos);
   datos.file = row.archivoNombre;
   datos.at = row.cargadoEn;
-  return seudonimo ? seudonimizar(tipo, datos, seudonimo) : datos;
+  if (!seudonimo) return datos;
+  // Bases iniciales montadas antes de la lista blanca: el cliente tampoco
+  // recibe las columnas que no usa el tablero.
+  if (tipo === 'inicial' && esArr(datos.cols)) datos.cols = datos.cols.filter(columnaInicialPermitida);
+  return seudonimizar(tipo, datos, seudonimo);
 }
 
 function leerArchivo(db, { cliente, tipo, mes }) {
