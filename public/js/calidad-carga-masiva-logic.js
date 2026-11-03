@@ -10,6 +10,7 @@
 // fecha-limites-logic.js: global en el navegador, require() en Node --
 // ver ese archivo para el criterio de "fecha futura".
 var _cmFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+var _cmMesGlobal = (typeof require === 'function') ? require('./mes-global-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // Fase 130 (Parte 4): la plantilla REAL que manda Edwin cada mes no es el
 // archivo plano que genera descargarPlantillaMonitoreos (ASESOR, FECHA,
@@ -94,21 +95,10 @@ function cmDetectarFilaEncabezado(aoa, items){
   return 0;
 }
 
+// Fase 223: fecha nativa, serial de Excel (por si cellDates fallo) o texto
+// DD/MM/AAAA / AAAA-MM-DD, con o sin hora, sin pasar por UTC (H2/H3).
 function cmParseFecha(v){
-  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
-  if(typeof v==='string'){
-    var t = v.trim();
-    if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-    var d = new Date(t);
-    if(!isNaN(d)) return d.toISOString().slice(0,10);
-  }
-  if(typeof v==='number'){
-    // Fecha serial de Excel (dias desde 1899-12-30), por si cellDates fallo.
-    var epoch = new Date(Date.UTC(1899,11,30));
-    var d2 = new Date(epoch.getTime() + v*86400000);
-    if(!isNaN(d2)) return d2.toISOString().slice(0,10);
-  }
-  return null;
+  return _cmMesGlobal.gdFechaTextoAIso(v);
 }
 
 function cmParseRespuesta(v){

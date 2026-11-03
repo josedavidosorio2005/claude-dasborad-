@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.112.3 — Noviembre 2026
+
+**Fase 223: fechas en texto y "mes actual" con la hora de Colombia.**
+
+- Si un Excel trae la fecha escrita como texto, por ejemplo `05/10/2026`,
+  ahora se lee como **5 de octubre** (día/mes, como se escribe en
+  Colombia). Antes podía quedar como 10 de mayo.
+- Una fecha con hora de las 7 de la noche en adelante ya no se pasa al
+  día siguiente (ni, el último día del mes, al mes siguiente).
+- Una fecha imposible (por ejemplo 31/02) ya no se convierte en otra: la
+  fila sale con su aviso.
+- Aplica a la carga masiva de monitoreos, el Nivel de servicio diario y
+  las cargas de Tráfico de Llamadas y de WhatsApp. WhatsApp sigue leyendo
+  sus fechas como las exporta Wolkvox (mes/día).
+- El mes que sale por defecto en Calidad, Metas, Gerencia e Inventario es
+  el de Colombia: el último día del mes, después de las 7 p. m., ya no
+  salta al mes siguiente.
+
 ## v1.112.2 — Noviembre 2026
 
 **Fase 222: la base inicial de SURA guarda solo lo que usa el tablero.**

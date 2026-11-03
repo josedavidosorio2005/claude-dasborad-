@@ -249,7 +249,7 @@ function invNuevoMovimiento(){
   }
   document.getElementById('inv-mov-tipo').value = 'Entrada';
   document.getElementById('inv-mov-cantidad').value = '';
-  document.getElementById('inv-mov-fecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('inv-mov-fecha').value = gdHoyLocal();
   document.getElementById('inv-mov-motivo').value = '';
   document.getElementById('inv-mov-destino').value = '';
   document.getElementById('inv-mov-modal').classList.add('show');

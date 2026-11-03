@@ -13,6 +13,7 @@
 // fecha-limites-logic.js: global en el navegador, require() en Node --
 // ver ese archivo para el criterio de "fecha futura".
 var _traficoWppFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+var _traficoWppMesGlobal = (typeof require === 'function') ? require('./mes-global-logic.js') : (typeof window !== 'undefined' ? window : this);
 // Fase 146: regla compartida de ATA con 0 abandonos (trafico-logic.js).
 var _traficoWppLogicaLlamadas = (typeof require === 'function') ? require('./trafico-logic.js') : (typeof window !== 'undefined' ? window : this);
 
@@ -175,8 +176,8 @@ function traficoWppParseFecha(v) {
         return anio + '-' + (mes < 10 ? '0' : '') + mes + '-' + (dia < 10 ? '0' : '') + dia;
       }
     }
-    var d2 = new Date(t);
-    if (!isNaN(d2)) return d2.toISOString().slice(0, 10);
+    // Fase 223 (H3): con hora, sin pasar por UTC; mismo orden M/D que mCorto.
+    return _traficoWppMesGlobal.gdFechaTextoAIso(t, { mesPrimero: true });
   }
   return null;
 }

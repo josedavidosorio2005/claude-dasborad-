@@ -88,7 +88,7 @@ async function loadCalData(camp, mes){
   // puede abrir sin pasar por dashboard-generic.js/_gdBootstrap.
   if(typeof _gdCargarUmbrales === 'function'){ try{ await _gdCargarUmbrales(); }catch(e){} }
   if(!camp) return;
-  mes = mes || new Date().toISOString().slice(0,7);
+  mes = mes || gdHoyLocal().slice(0,7);
   var d = calCampCache(camp);
   var q = 'campana='+encodeURIComponent(camp);
   try{
@@ -263,7 +263,7 @@ function populateCalMesSelect(){
   var sel = document.getElementById('cal-mes-sel');
   var arr = (CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || [];
   var months = calAvailableMonths(arr);
-  var curMonth = new Date().toISOString().slice(0,7);
+  var curMonth = gdHoyLocal().slice(0,7);
   if(months.indexOf(curMonth)===-1) months.unshift(curMonth);
   months.sort().reverse();
   if(_cmesFiltro && months.indexOf(_cmesFiltro)===-1) _cmesFiltro = '';
@@ -585,7 +585,7 @@ function renderCalKpis(){
   var total = arr.length;
   var promedio = total ? Math.round((arr.reduce(function(a,m){return a+m.puntaje;},0)/total)*10)/10 : 0;
   var criticos = arr.filter(function(m){return m.fallos>=2;}).length;
-  var mesMeta = _cmesFiltro || new Date().toISOString().slice(0,7);
+  var mesMeta = _cmesFiltro || gdHoyLocal().slice(0,7);
   var totalLabel = _cmesFiltro ? 'Monitoreos ('+_cmesFiltro+')' : 'Monitoreos Totales (todos los meses)';
 
   var promCardColorReal = (typeof _gdSemaforoColor === 'function') ? _gdSemaforoColor(total ? promedio : null, { metrica: 'qa_promedio', campana: _ccampana }) : null;
@@ -621,7 +621,7 @@ function renderCalKpis(){
 }
 
 function renderCalConfig(){
-  var curMonth = new Date().toISOString().slice(0,7);
+  var curMonth = gdHoyLocal().slice(0,7);
   var row = currentUser ? calGetCronogramaForLider(_ccampana, curMonth, currentUser.id) : null;
   var pv = document.getElementById('cf-cronograma-preview');
   if(pv){
@@ -727,7 +727,7 @@ function ccMostrarSinDatosOCanvas(canvasId, hayDatos, etiqueta){
 
 async function descargarReporteGeneral(){
   if(typeof XLSX==='undefined'){ showToast('No se pudo cargar el generador de Excel. Verifique su conexion a internet e intente de nuevo.'); return; }
-  var mes = _cmesFiltro || new Date().toISOString().slice(0,7);
+  var mes = _cmesFiltro || gdHoyLocal().slice(0,7);
   var campanas = calAccessibleCampanas();
   var wb = XLSX.utils.book_new();
   var usedNames = {};
@@ -809,7 +809,7 @@ function verSupervisionLider(camp, mes, liderNombre){
 function renderCalReportes(){
   var allArr = (CAL_DB[_ccampana]||{}).monitoreos || [];
   var arr = calFilterByMonth(allArr, _cmesFiltro);
-  var curMonth = _cmesFiltro || new Date().toISOString().slice(0,7);
+  var curMonth = _cmesFiltro || gdHoyLocal().slice(0,7);
   var sobresaliente = arr.filter(function(m){return m.puntaje>=90;}).length;
   var noCritico = arr.filter(function(m){return m.puntaje>=70 && m.puntaje<90;}).length;
   var critico = arr.filter(function(m){return m.puntaje<70;}).length;

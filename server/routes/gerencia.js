@@ -6,6 +6,7 @@ const db = require('../db');
 const { requireActor, can, canLoadData } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
+const { fechaLimitesHoyColombia } = require('../fecha-limites');
 
 const router = express.Router();
 
@@ -57,7 +58,7 @@ router.get(
   requireActor,
   wrap((req, res) => {
     if (!can(req.actor, 'Gerencia')) return res.status(403).json({ error: 'Sin acceso al modulo de Gerencia' });
-    const periodo = req.query.periodo || new Date().toISOString().slice(0, 7);
+    const periodo = req.query.periodo || fechaLimitesHoyColombia().slice(0, 7); // Fase 223 (H4): hora Colombia
     const kpis = db.prepare('SELECT * FROM gerencia_kpis WHERE periodo = ? ORDER BY categoria, nombre').all(periodo);
     const porCategoria = {};
     kpis.forEach((k) => {

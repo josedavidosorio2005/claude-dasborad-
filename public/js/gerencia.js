@@ -44,7 +44,7 @@ async function loadGerData(){
     _gerPeriodos = (await apiRequest('GET','/gerencia/periodos')) || [];
   }catch(e){ _gerPeriodos = []; }
   if(!_gerPeriodoSel && _gerPeriodos.length > 0) _gerPeriodoSel = _gerPeriodos[0];
-  if(!_gerPeriodoSel) _gerPeriodoSel = new Date().toISOString().slice(0,7);
+  if(!_gerPeriodoSel) _gerPeriodoSel = gdHoyLocal().slice(0,7);
   try{
     _gerResumen = await apiRequest('GET','/gerencia/resumen?periodo='+encodeURIComponent(_gerPeriodoSel));
   }catch(e){ _gerResumen = null; }
