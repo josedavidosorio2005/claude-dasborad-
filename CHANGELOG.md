@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.113.0 — Noviembre 2026
+
+**Fase 226: Mobilize, pestaña Llamadas Únicas y de Salida (pedido de Edwin, 03/11).**
+
+- Se quitaron las dos tablas "De dónde sale cada mes" (la de ingreso y la de
+  salida). Cada mitad queda con sus tarjetas y su gráfica. El detalle por
+  asesor y por día de la salida se queda igual. De dónde sale cada mes se
+  sigue viendo en el Excel de **Exportar** (columna "Fuente").
+- Tarjeta nueva en la mitad de salida: **"Tasa de contacto llamadas de
+  salida"** = llamadas conectadas ÷ total de llamadas de salida, con un
+  decimal (por ejemplo, 52,3 %). Con varios meses marcados en MESES se suman
+  las conectadas y el total de esos meses. Si a un mes le falta el reporte de
+  no conectadas, la tarjeta dice "Pendiente" (nunca inventa la cifra).
+- Solo cambia Mobilize: ORLANT, Clínica Aurora y Hospital La María siguen
+  igual.
+
 ## v1.112.4 — Noviembre 2026
 
 **Fase 224: el tablero de SURA no ejecuta nada que venga en un Excel.**

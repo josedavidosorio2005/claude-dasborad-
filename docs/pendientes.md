@@ -148,6 +148,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Mobilize, reunión del 03/11: cosas por confirmar** (Fase 226) — Prioridad
+  MEDIA. (1) La "Tasa de contacto llamadas de salida" dice "Pendiente" en los
+  meses sin el reporte de no conectadas: ¿le sirve así? (2) "Quitar todos los
+  letreros que teníamos por ahí": no quedó claro cuáles; si son los avisos de
+  texto bajo los títulos (p. ej. "Cuenta una sola vez cada teléfono por día…"),
+  pedirle un pantallazo. Cómo se cierra: su respuesta en la próxima reunión.
 - **INCO3 agenda más de lo que registra Wolkvox** (Fase 214, 29/10/2026) —
   Prioridad ALTA. Desde la v1.104.0 el ranking cuenta todo el CDR del asesor
   (ingreso + salida); aun así INCO3 queda muy por encima del 100 %: ago 1.337

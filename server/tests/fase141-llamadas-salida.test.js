@@ -258,6 +258,9 @@ async function renderPanel({ rol, respuestas, campana = 'MOBILIZE' }) {
     // Fase 163: el cuadro de cada grafica sale de secciones-logic.js (en el
     // navegador se carga antes que este archivo, ver index.html).
     gdGraficaHtml: require('../../public/js/secciones-logic.js').gdGraficaHtml,
+    // Fase 226: la tasa de contacto sale de llamadas-unicas-logic.js (en el
+    // navegador tambien se carga antes que este archivo).
+    llamadasSalidaTasaContacto: require('../../public/js/llamadas-unicas-logic.js').llamadasSalidaTasaContacto,
     esc: escHtml,
     textoFormatoNombre: (v) => v,
     canLoadData: () => rol === 'ADMIN',
@@ -305,6 +308,7 @@ test('Panel: tarjetas en el orden pedido (ingreso: total/contestadas/abandonadas
   assert.deepEqual(etiquetasKpi(sinAband.elementos['lu-kpis-7'].innerHTML), [['88', 'Llamadas únicas de ingreso']]);
   assert.deepEqual(etiquetasKpi(r.elementos['ls-kpis-7'].innerHTML), [
     ['111', 'Total llamadas de salida'], ['52', 'Llamadas de salida no conectadas'], ['59', 'Llamadas de salida conectadas'],
+    ['53,2 %', 'Tasa de contacto llamadas de salida'], // Fase 226: 59 / 111
   ]);
 });
 
