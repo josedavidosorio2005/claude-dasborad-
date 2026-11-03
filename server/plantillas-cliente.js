@@ -259,7 +259,10 @@ const PERFILES_ACTUALES = {
           etiquetaLinea: 'Tipo de línea',
           etiquetaLineaPlural: 'líneas',
           etiquetaTotal: 'Llamadas ingresadas', // Fase 204
-          resumenOcultar: ['tasaAbandono', 'nivelServicio'],
+          // Fase 227 (pedido de Edwin, 03/11): Nivel de servicio, Tasa de abandono y
+          // Eficacia en el resumen, despues de Llamadas contestadas (FCR sigue al final).
+          resumenOrden: ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'],
+          eficaciaEnResumen: true,
           resumenPorSeccion: true,
           subtabs: [
             { key: 'resumen', label: 'Resumen' },

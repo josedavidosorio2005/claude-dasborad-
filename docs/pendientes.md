@@ -148,6 +148,19 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Mobilize, observaciones que Edwin pospuso** (reunión 03/11, "eso lo
+  trabajamos luego") — Prioridad MEDIA. NPS, observaciones del asesor, cédula,
+  nombre, celular, codificación y observaciones de calidad (área de calidad).
+  Ojo: cédula, nombre y celular son datos personales; antes de construirlo,
+  definir con él quién los ve y cómo. Cómo se cierra: cuando él lo retome.
+- **Mobilize, Flujo de Llamadas: confirmar con Edwin** (Fase 227) — Prioridad
+  BAJA. (1) Orden: hoy Tasa de abandono va tras Nivel de servicio; si la quiere
+  junto a Llamadas abandonadas es un cambio de una línea (`resumenOrden`).
+  (2) ¿Se quedan las sub-pestañas Nivel de Servicio, Abandono y Eficacia? Hoy
+  siguen con su gráfica. (3) ¿Quiere "Tasa de abandono" también como título
+  en la sub-pestaña Abandono (hoy "% Abandono del periodo")? (4) "Acá la mitad
+  es el nivel de servicio": se entendió como la tarjeta de Nivel de servicio
+  en Flujo; confirmar.
 - **Mobilize, reunión del 03/11: cosas por confirmar** (Fase 226) — Prioridad
   MEDIA. (1) La "Tasa de contacto llamadas de salida" dice "Pendiente" en los
   meses sin el reporte de no conectadas: ¿le sirve así? (2) "Quitar todos los

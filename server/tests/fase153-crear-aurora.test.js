@@ -56,7 +56,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 220: solo destapa Trafico de Llamadas/WhatsApp de Aurora (no toca HLM).
     'fase220_aurora_trafico_visible_v1',
     // Fase 220: salida, Tipificacion y Total trafico de Aurora (no toca HLM).
-    'fase220_aurora_salida_v1'];
+    'fase220_aurora_salida_v1',
+    // Fase 227: solo el resumen de Flujo de Llamadas de MOBILIZE (no toca Aurora/HLM).
+    'dashboards_config_mobilize_resumen_tarjetas_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

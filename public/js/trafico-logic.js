@@ -853,9 +853,25 @@ function traficoValidarNuevoMapeo(input) {
   return { ok: true, skillName: skillName, campana: campana, sede: sedesDisponibles.length ? sede : null };
 }
 
+// Fase 227: orden de las tarjetas del resumen de Flujo de Llamadas. Sin
+// `orden` del panel, el de siempre; con orden, las claves conocidas en ese
+// orden y las que falten al final (ninguna tarjeta se pierde por un error de
+// configuracion). "eficacia" solo cuenta si el panel la pide.
+var TRAFICO_ORDEN_TARJETAS = ['total', 'contestadas', 'abandonadas', 'nivelAtencion', 'tasaAbandono', 'nivelServicio'];
+function traficoOrdenTarjetas(orden, conEficacia) {
+  var base = TRAFICO_ORDEN_TARJETAS.concat(conEficacia ? ['eficacia'] : []);
+  if (!Array.isArray(orden) || !orden.length) return base;
+  var out = [];
+  orden.forEach(function (k) { if (base.indexOf(k) !== -1 && out.indexOf(k) === -1) out.push(k); });
+  base.forEach(function (k) { if (out.indexOf(k) === -1) out.push(k); });
+  return out;
+}
+
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    traficoOrdenTarjetas: traficoOrdenTarjetas,
+    TRAFICO_ORDEN_TARJETAS: TRAFICO_ORDEN_TARJETAS,
     traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
     traficoPctAtencionAbandono: traficoPctAtencionAbandono,
     traficoAbandonadasDe: traficoAbandonadasDe,

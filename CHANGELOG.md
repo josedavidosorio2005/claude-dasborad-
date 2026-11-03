@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.114.0 — Noviembre 2026
+
+**Fase 227: Mobilize, más tarjetas en el resumen de Flujo de Llamadas (pedido de Edwin, 03/11).**
+
+- Después de "Llamadas contestadas" ahora salen tres tarjetas más:
+  **Nivel de servicio**, **Tasa de abandono** y **Eficacia**. El orden queda:
+  Llamadas ingresadas, Llamadas contestadas, Nivel de servicio, Tasa de
+  abandono, Eficacia, Llamadas abandonadas, Nivel de atención y FCR.
+- Son los mismos números de sus sub-pestañas (Nivel de Servicio, Abandono y
+  Eficacia), con los mismos filtros y los mismos meses de MESES. Las
+  sub-pestañas siguen igual, con su gráfica.
+- Solo cambia Mobilize: ORLANT, Clínica Aurora y Hospital La María siguen
+  igual.
+
 ## v1.113.0 — Noviembre 2026
 
 **Fase 226: Mobilize, pestaña Llamadas Únicas y de Salida (pedido de Edwin, 03/11).**
