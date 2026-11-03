@@ -73,11 +73,12 @@ const COND_SALIDA_SQL = "(UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.
 //   clasificacionAsesores (Fase 186) = la salida se reparte en General / 3P por
 //   la clasificacion de cada asesor (Tipificacion › Clasificacion de asesores);
 //   un asesor sin clasificar va a "Sin clasificar" y cuenta en el Total.
-// CLINICA AURORA usa la regla de ORLANT SOLO MIENTRAS Edwin confirma la suya
+// CLINICA AURORA y HOSPITAL LA MARIA (Fase 229) usan la regla de ORLANT SOLO MIENTRAS Edwin confirma la suya
 // (docs/pendientes.md). Para cambiarla, se cambia esta linea.
 const SALIDA_POR_CLIENTE = {
   ORLANT: { regla: 'guion', clasificacionAsesores: true },
   'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: true }, // provisional
+  'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // provisional (Fase 229)
 };
 const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
 const SKILLS_SALIDA_SQL = SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ');

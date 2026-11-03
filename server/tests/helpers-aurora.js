@@ -16,4 +16,15 @@ function auroraEsperada() {
   return cfg;
 }
 
-module.exports = { AURORA, AURORA_MODULOS, auroraEsperada };
+// Fase 229: Hospital La Maria despues de fase229_hlm_como_orlant_v1 (como
+// Aurora + WhatsApp por rangos; todo oculto menos "Total tráfico").
+const HLM = 'HOSPITAL LA MARIA';
+const HLM_MODULOS = ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'tipificacion', 'calidad'];
+function hlmEsperada() {
+  const cfg = generarLayout({ nombre: HLM, titulo: 'Dashboard Hospital La María', modulos: HLM_MODULOS });
+  const i = cfg.layout.tabs.findIndex((t) => t.key === 'salida');
+  cfg.layout.tabs.splice(i + 1, 0, TABS_EXTRA.total_trafico.crear(HLM));
+  return cfg;
+}
+
+module.exports = { AURORA, AURORA_MODULOS, auroraEsperada, HLM, HLM_MODULOS, hlmEsperada };

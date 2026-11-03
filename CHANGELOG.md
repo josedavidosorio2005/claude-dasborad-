@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.115.0 — Noviembre 2026
+
+**Fase 229: Hospital La María con las pestañas de ORLANT (pedido de Edwin).**
+
+- Hospital La María ya puede cargar el **CDR de Tipificación** (llamadas y
+  WhatsApp) y los **tiempos de respuesta de WhatsApp por rango**, igual que
+  ORLANT.
+- Pestañas nuevas: **Tipificación** y **Llamadas y WhatsApp de salida** (salen
+  solas cuando se cargue el CDR) y **Total tráfico** (ya muestra la entrada de
+  agosto; la salida se suma al cargar el CDR).
+- La salida usa por ahora la misma regla de ORLANT, hasta que Edwin confirme
+  cómo se marca en el Wolkvox de Hospital La María. Mientras no se clasifiquen
+  sus asesores, la salida sale como "Sin clasificar" y cuenta en el total.
+- En Tráfico de WhatsApp › Nivel de Servicio, mientras no haya tiempos por
+  rango cargados, se sigue viendo la gráfica mensual de siempre, con una nota.
+- Agendamiento, Inasistencia, Efectividad de Citas y Calidad siguen apagados
+  hasta que Edwin confirme. ORLANT, Mobilize y Clínica Aurora no cambian.
+
 ## v1.114.1 — Noviembre 2026
 
 **Fase 225: arreglos de la revisión del 03/11.**

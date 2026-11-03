@@ -36,9 +36,10 @@ test('la regla de salida esta en un solo lugar: ORLANT y Aurora (provisional) co
   assert.deepEqual(t.SALIDA_POR_CLIENTE, {
     ORLANT: { regla: 'guion', clasificacionAsesores: true },
     'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: true },
+    'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // Fase 229, provisional
   });
-  for (const c of ['ORLANT', AURORA]) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), true, c); }
-  for (const c of ['MOBILIZE', 'HOSPITAL LA MARIA', 'SURA']) { assert.equal(t.salidaPorGuion(c), false, c); assert.equal(t.usaClasificacionAsesores(c), false, c); }
+  for (const c of ['ORLANT', AURORA, 'HOSPITAL LA MARIA']) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), true, c); }
+  for (const c of ['MOBILIZE', 'SURA']) { assert.equal(t.salidaPorGuion(c), false, c); assert.equal(t.usaClasificacionAsesores(c), false, c); }
 });
 
 test('sin asesores clasificados: toda la salida de Aurora va a "Sin clasificar" y cuenta en el Total', () => {
@@ -73,7 +74,8 @@ test('registro y Cargar Datos: modulos, clasificacion, CDR de Tipificacion y sin
   assert.ok(!listas.traficoUnificado.includes(AURORA));
   assert.deepEqual(centro.CARGAS_POR_MODULO.tipificacion.map((c) => c.id), ['tipificacion_llamadas', 'tipificacion_whatsapp']);
   assert.equal(centro.cargaRetiradaPara(AURORA, centro.CARGAS_POR_MODULO.salida[0]), true, 'la salida sale del CDR');
-  assert.equal(centro.cargaRetiradaPara('HOSPITAL LA MARIA', centro.CARGAS_POR_MODULO.salida[0]), false);
+  assert.equal(centro.cargaRetiradaPara('HOSPITAL LA MARIA', centro.CARGAS_POR_MODULO.salida[0]), true); // Fase 229
+  assert.equal(centro.cargaRetiradaPara('MOBILIZE', centro.CARGAS_POR_MODULO.salida[0]), false);
   // SKILL_ID 0 (WhatsApp de salida) ya viene en su tabla de skills, como en ORLANT.
   assert.deepEqual(db.prepare('SELECT codigo, nombre FROM skills_whatsapp WHERE campana = ?').all(AURORA), [{ codigo: '0', nombre: 'WHATSAPP DE SALIDA' }]);
 });

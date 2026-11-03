@@ -167,7 +167,8 @@ test('fase134_borrar_clientes_v1: dashboards_config queda con ORLANT y MOBILIZE 
   assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
   const hlm = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('HOSPITAL LA MARIA');
   assert.equal(hlm.titulo, 'Dashboard Hospital La María', 'es la HLM nueva, no la vieja');
-  assert.deepEqual(JSON.parse(hlm.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'calidad']);
+  // Fase 229: + Salida, Total trafico y Tipificacion (fase229_hlm_como_orlant_v1).
+  assert.deepEqual(JSON.parse(hlm.layout).tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'tipificacion', 'calidad']);
   assert.equal(db.prepare('SELECT COUNT(*) c FROM dashboard_cargas WHERE cliente = ?').get('HOSPITAL LA MARIA').c, 0, 'los datos de la HLM vieja no vuelven');
   // Fase 153 (P3): la Aurora vieja (sembrada arriba, sin pestanas) se borro;
   // la que queda es la nueva, creada DESPUES por fase153_crear_clinica_aurora_v1.

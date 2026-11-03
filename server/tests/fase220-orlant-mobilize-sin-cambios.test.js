@@ -56,7 +56,7 @@ test('regla de salida: ORLANT con la suya ("-" con cualquier tipo, out_pre en su
   assert.deepEqual([orl.total, orl.totalLlamadas, orl.soloTotal], [13, 23, true]);
   assert.equal(mob.total, 14);
   assert.ok(!mob.soloTotal);
-  assert.equal(t.condSalidaLlamadasSql('MOBILIZE'), t.condSalidaLlamadasSql('HOSPITAL LA MARIA'), 'Mobilize sigue con la regla general');
+  assert.equal(t.condSalidaLlamadasSql('MOBILIZE'), t.condSalidaLlamadasSql('SURA'), 'Mobilize sigue con la regla general');
 });
 
 test('clasificacion General / 3P: ORLANT si, Mobilize no (ni en Tipificacion ni en la salida)', async () => {
@@ -75,12 +75,12 @@ test('vista de Tipificacion: Mobilize sigue con "Tipo" (Entrante / Saliente / Ot
   assert.ok(s.includes("params.set(_tipificacionSentidoPorCampana[campana] ? 'sentido' : 'tipoInteraccion', deCanal.tipo);"));
 });
 
-test('"Total tráfico": una en ORLANT y una en Aurora; ninguna en Mobilize, HLM ni SURA', () => {
+test('"Total tráfico": una en ORLANT, Aurora y HLM (Fase 229); ninguna en Mobilize ni SURA', () => {
   const cuantas = (c) => {
     const r = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(c);
     return r ? JSON.parse(r.layout).tabs.filter((x) => x.key === 'total_trafico').length : 0;
   };
-  assert.deepEqual(['ORLANT', 'CLINICA AURORA', 'MOBILIZE', 'HOSPITAL LA MARIA', 'SURA'].map(cuantas), [1, 1, 0, 0, 0]);
+  assert.deepEqual(['ORLANT', 'CLINICA AURORA', 'MOBILIZE', 'HOSPITAL LA MARIA', 'SURA'].map(cuantas), [1, 1, 0, 1, 0]);
 });
 
 test('Centro de cargas: lo retirado de ORLANT y de Mobilize no cambia', () => {
@@ -90,7 +90,7 @@ test('Centro de cargas: lo retirado de ORLANT y de Mobilize no cambia', () => {
   assert.equal(centro.cargaRetiradaPara('ORLANT', citas), true);
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', salida), false);
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', citas), false);
-  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'ORLANT']);
+  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT']); // Fase 229: + HLM
 });
 
 test('skills de WhatsApp: ORLANT conserva su semilla; Mobilize no tiene ninguno', () => {
