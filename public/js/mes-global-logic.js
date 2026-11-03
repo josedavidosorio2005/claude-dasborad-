@@ -179,6 +179,42 @@ function gdHoyLocal(fecha) {
   return f.getFullYear() + '-' + (mm < 10 ? '0' + mm : mm) + '-' + (dd < 10 ? '0' + dd : dd);
 }
 
+// Fase 223 (revision del 3-nov, H2/H3): una fecha de Excel -> 'AAAA-MM-DD'
+// SIN pasar por UTC ni por `new Date(texto)` (que lee "05/10/2026" como 10
+// de mayo y corre al dia siguiente una hora de las 7 p. m. en adelante).
+//  - Date de SheetJS (0.20.3 la arma en UTC) y serial de Excel: campos UTC,
+//    el mismo criterio que ya funcionaba con fechas nativas.
+//  - 'AAAA-MM-DD' o 'AAAA/MM/DD', con o sin hora: la fecha tal cual.
+//  - 'DD/MM/AAAA' o 'DD-MM-AAAA', con o sin hora: dia/mes (Colombia).
+//    Con `opciones.mesPrimero`, M/D/AAAA (export de WhatsApp de Wolkvox).
+//  - Cualquier otra cosa, o una fecha imposible (31/02, 13/13): null, para
+//    que la fila salga con su aviso en vez de con una fecha inventada.
+var GD_FECHA_HORA_RE = '(?:[ T]+\\d{1,2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:\\s*[ap]\\.?\\s?m\\.?)?)?';
+var GD_FECHA_AMD_RE = new RegExp('^(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})' + GD_FECHA_HORA_RE + '$', 'i');
+var GD_FECHA_DMA_RE = new RegExp('^(\\d{1,2})[-/](\\d{1,2})[-/](\\d{4})' + GD_FECHA_HORA_RE + '$', 'i');
+function _gdFechaIso(y, m, d) {
+  if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1) return null;
+  if (d > new Date(Date.UTC(y, m, 0)).getUTCDate()) return null;
+  return y + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d);
+}
+function gdFechaTextoAIso(v, opciones) {
+  if (v instanceof Date) {
+    return isNaN(v) ? null : _gdFechaIso(v.getUTCFullYear(), v.getUTCMonth() + 1, v.getUTCDate());
+  }
+  if (typeof v === 'number') {
+    if (!isFinite(v)) return null;
+    var d = new Date(Date.UTC(1899, 11, 30) + Math.floor(v) * 86400000);
+    return _gdFechaIso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+  }
+  if (typeof v !== 'string') return null;
+  var t = v.trim();
+  var a = GD_FECHA_AMD_RE.exec(t);
+  if (a) return _gdFechaIso(+a[1], +a[2], +a[3]);
+  var b = GD_FECHA_DMA_RE.exec(t);
+  if (b) return opciones && opciones.mesPrimero ? _gdFechaIso(+b[3], +b[1], +b[2]) : _gdFechaIso(+b[3], +b[2], +b[1]);
+  return null;
+}
+
 // Fase 167 (pedido de Edwin): filtro "Meses" del tablero -- elegir varios
 // meses sueltos (ej. septiembre y octubre, sin agosto) para VER LADO A LADO
 // en las graficas y tablas que van por mes. No suma meses ni cambia el MES
@@ -333,6 +369,7 @@ if (typeof module !== 'undefined' && module.exports) {
     gdMesDelRango: gdMesDelRango,
     gdRotuloMesParcial: gdRotuloMesParcial,
     gdHoyLocal: gdHoyLocal,
+    gdFechaTextoAIso: gdFechaTextoAIso,
     GD_TIPOS_AUTONOMOS: GD_TIPOS_AUTONOMOS,
     gdTodosAutonomos: gdTodosAutonomos,
     gdFinDeMes: gdFinDeMes,

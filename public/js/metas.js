@@ -41,7 +41,7 @@ async function renderMetasSection(){
   var sel = document.getElementById('meta-campana-sel');
   sel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var monthInput = document.getElementById('meta-mes-input');
-  if(!monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
+  if(!monthInput.value) monthInput.value = gdHoyLocal().slice(0,7);
   populateMetaLiderSelect();
 
   var mesFilter = document.getElementById('metas-mes-filter');
@@ -208,7 +208,7 @@ async function renderNivelServicioSection(){
   var twwSel = document.getElementById('tww-campana-sel');
   if(twwSel) twwSel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var monthInput = document.getElementById('ns-mes-input');
-  if(monthInput && !monthInput.value) monthInput.value = new Date().toISOString().slice(0,7);
+  if(monthInput && !monthInput.value) monthInput.value = gdHoyLocal().slice(0,7);
 
   var mesFilter = document.getElementById('ns-mes-filter');
   if(mesFilter){
@@ -380,15 +380,11 @@ function _nsdColIndexMap(headerRow){
 // DATE: puede venir como fecha nativa de Excel (con {cellDates:true} llega
 // como objeto Date, construido por la libreria en UTC — por eso toISOString
 // da el dia correcto sin importar la zona horaria del navegador) o como texto.
+// Fase 223: el texto DD/MM/AAAA o con hora va por gdFechaTextoAIso (H2/H3).
+// Un numero suelto sigue sin aceptarse, como antes.
 function _nsdParseFecha(v){
-  if(v instanceof Date && !isNaN(v)) return v.toISOString().slice(0,10);
-  if(typeof v==='string'){
-    var t = v.trim();
-    if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-    var d = new Date(t);
-    if(!isNaN(d)) return d.toISOString().slice(0,10);
-  }
-  return null;
+  if(typeof v==='number') return null;
+  return gdFechaTextoAIso(v);
 }
 
 // SERVICE_LEVEL_20SEC viene como texto '87.03 %' (o similar). Celda vacia o

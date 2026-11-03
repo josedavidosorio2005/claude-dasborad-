@@ -17,6 +17,7 @@
 // <script>), require() en Node para las pruebas -- ver ese archivo para
 // el criterio de "fecha futura" (fin del mes en curso, hora Colombia).
 var _traficoFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
+var _traficoMesGlobal = (typeof require === 'function') ? require('./mes-global-logic.js') : (typeof window !== 'undefined' ? window : this);
 
 // ── Columnas del export de Volvox (hoja DATA) ───────────────────────────
 // El emparejamiento es por NOMBRE de columna (normalizado), nunca por
@@ -199,8 +200,9 @@ function traficoParseFecha(v) {
       var pad2 = function (x) { return (x < 10 ? '0' : '') + x; };
       return aaaa + '-' + pad2(mm) + '-' + pad2(dd);
     }
-    var d2 = new Date(t);
-    if (!isNaN(d2)) return d2.toISOString().slice(0, 10);
+    // Fase 223 (H3): fecha con hora sin pasar por UTC (antes `new Date(t)`,
+    // que desde las 7 p. m. daba el dia siguiente).
+    return _traficoMesGlobal.gdFechaTextoAIso(t);
   }
   return null;
 }

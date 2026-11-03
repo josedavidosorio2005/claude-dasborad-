@@ -228,7 +228,7 @@ async function renderSupervisorMetaTable(){
   var tbl = document.getElementById('supervisor-meta-table');
   if(!tbl || !currentUser) return;
   await calLoadPlantillas();
-  var curMonth = new Date().toISOString().slice(0,7);
+  var curMonth = gdHoyLocal().slice(0,7);
   var campanas = CAMPANAS_CON_PLANTILLA.filter(function(c){ return currentUser.perms['campana_'+c]===true; });
   for(var i=0;i<campanas.length;i++){ try{ await loadCalData(campanas[i], curMonth); }catch(e){} }
   var html = '<tr><th>Campana</th><th>Mi Meta</th><th>Realizados</th><th>% Total</th><th>Llamada</th><th>WhatsApp</th></tr>';

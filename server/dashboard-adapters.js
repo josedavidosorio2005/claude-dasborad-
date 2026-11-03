@@ -17,11 +17,13 @@
 
 'use strict';
 
+const { fechaLimitesHoyColombia } = require('./fecha-limites');
+
 const col = (key, label, tipo) => ({ key, label, tipo: tipo || 'entero' });
 const U = (campo, extra) => ({ s: 'resumen', modo: 'ultimo', campo, ...(extra || {}) });
 const S = (campo, extra) => ({ s: 'resumen', modo: 'serie', campo, ...(extra || {}) });
 const kpi = (titulo, fuente, formato, extra) => ({ titulo, fuente, formato: formato || 'entero', ...(extra || {}) });
-const mesActual = () => new Date().toISOString().slice(0, 7);
+const mesActual = () => fechaLimitesHoyColombia().slice(0, 7); // Fase 223 (H4): hora Colombia, no UTC
 
 // ════════════════════════════════════════════════════════════
 // GERENCIA — indicadores ejecutivos mensuales (gerencia_kpis)
@@ -412,7 +414,7 @@ function ingresosCampana(db, campana) {
 
 function buildGestionHumana(db) {
   const gente = db.prepare('SELECT * FROM gestion_humana_personal').all();
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = fechaLimitesHoyColombia(); // Fase 223 (H4): hora Colombia, no UTC
   const mesHoy = hoy.slice(0, 7);
   const costoMes = (p) => Math.round((p.costo_hora || 0) * (p.horas_mes || 0) * 100) / 100;
   const salida = (p) => (p.fecha_salida && String(p.fecha_salida).trim()) ? String(p.fecha_salida).slice(0, 10) : null;

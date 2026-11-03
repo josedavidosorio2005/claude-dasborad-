@@ -687,7 +687,7 @@ router.get(
   validate(schemas.calidadQuery, 'query'),
   wrap((req, res) => {
     const { campana } = req.query;
-    const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+    const mes = req.query.mes || fechaLimitesHoyColombia().slice(0, 7); // Fase 223 (H4): hora Colombia
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
@@ -714,7 +714,7 @@ router.get(
   validate(schemas.calidadQuery, 'query'),
   wrap((req, res) => {
     const { campana } = req.query;
-    const mes = req.query.mes || new Date().toISOString().slice(0, 7);
+    const mes = req.query.mes || fechaLimitesHoyColombia().slice(0, 7); // Fase 223 (H4): hora Colombia
     if (req.actor.isMasterAdmin) return res.json({ campana, mes, meta: null });
     // Fase 81 (hallazgo real): faltaba este gate -- el resultado ya se
     // limita a la meta del propio actor (metaForLiderInMonth con su
