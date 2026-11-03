@@ -32,6 +32,20 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
   cd .. && node scripts/qa/auditoria-amplia-local.js
   ```
 
+- **`verificar-xss-sura-local.js`** (Fase 224) — prueba en navegador del
+  tablero de SURA como **usuario de cliente**. Monta una base de ventas
+  sintética con un asesor `<img src=x onerror=window.__xss=1>`, comprueba
+  que el nombre de archivo `<b>x</b>.xlsx` se rechaza y recorre todas las
+  pestañas a 1440 claro y 375 oscuro, verificando que no se ejecuta nada y
+  que el nombre se ve como texto. Al final borra la base y el usuario de
+  prueba. Solo corre contra `localhost` (se niega con otra URL).
+
+  ```
+  cd server && npm run seed:demo
+  node server.js &
+  cd .. && node scripts/qa/verificar-xss-sura-local.js
+  ```
+
 ## scripts/sura/ — tablero Televentas de SURA (Fase 215)
 
 - **`generar-televentas.js`** — regenera `public/js/sura-televentas-app.js`
