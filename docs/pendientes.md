@@ -467,16 +467,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
-- **Usuario nuevo de cliente nace con todos los clientes marcados** (Fase
-  221, 03/11/2026) — Prioridad MEDIA. En Gestión de Usuarios → Nuevo
-  usuario, al elegir el rol CLIENTES_DASH o SUPERVISOR todas las casillas de
-  Clientes salen marcadas (`buildClientCheckboxes(null)` en
-  `public/js/users.js`); lo mismo con las campañas de Calidad
-  (`buildCampaignCheckboxes(null)`). Si quien lo crea no las desmarca, el
-  usuario ve todos los clientes. Propuesta (parche, sin tocar usuarios ya
-  creados): que nazcan sin marcar y no dejar guardar sin al menos un
-  cliente/campaña, con su prueba. Nada se aplica sin pedirlo.
-
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
   quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;
   el 4, el 6, el 9 y el refresco tras Deshacer / Eliminar, en la Fase 178).
@@ -642,6 +632,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## Decisiones de esta fase (sin pendiente — ya resueltas, quedan aquí solo como referencia)
 
+- **Usuario nuevo con todos los clientes marcados** (Fase 221): resuelto en la
+  Fase 222 (#631, v1.112.1) — las casillas nacen sin marcar, no se guarda sin
+  al menos un cliente/campaña y nadie que no sea administrador completo da
+  accesos que él mismo no tiene. Verificado en producción el 03/11.
+- **ESLint** (hallazgo H5 de la revisión del 03/11): queda como propuesta,
+  sin aplicar, en `docs/propuesta-eslint.md` (toca CI: se decide con el
+  usuario).
 - **Observaciones de Calidad** (`# Teléfono`/`ID-Llamada-Wpp` en
   `monitoreos`, contradice la regla de "nunca guardar # Teléfono"): tu
   decisión 2026-10-07 fue dejarlo así por ahora. Sin cambios.
