@@ -208,7 +208,8 @@ function validarCarga(tipo, mes, body) {
   if (!RE_MES.test(mes)) return { error: 'Mes invalido (AAAA-MM)' };
   if (!esObj(body)) return { error: 'Cuerpo invalido' };
   const nombre = body.archivoNombre;
-  if (!esTxt(nombre) || !nombre.trim() || nombre.length > 200 || !RE_ARCHIVO.test(nombre) || /[\\/\0]/.test(nombre)) {
+  // Fase 224 (XSS): ni rutas ni caracteres de HTML en el nombre del archivo.
+  if (!esTxt(nombre) || !nombre.trim() || nombre.length > 200 || !RE_ARCHIVO.test(nombre) || /[\\/\0<>"'`]/.test(nombre)) {
     return { error: 'Nombre de archivo invalido (.xlsx, .xlsm, .xls o .csv)' };
   }
   if (!esTxt(body.archivo) || !/^[A-Za-z0-9+/]*={0,2}$/.test(body.archivo)) return { error: 'Falta el archivo original' };

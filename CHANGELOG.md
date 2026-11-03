@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.112.4 — Noviembre 2026
+
+**Fase 224: el tablero de SURA no ejecuta nada que venga en un Excel.**
+
+- Si una base de SURA trae en una celda (asesor, ciudad, campaña,
+  estrategia) texto que parece código de página web, el tablero lo
+  muestra como texto y ya no puede ejecutarse en el navegador de quien lo
+  abre (el cliente incluido).
+- Los signos `< > " ' \`` que vengan en los datos se muestran con sus
+  parecidos tipográficos (‹ › ” ’). Los nombres y las cifras normales no
+  cambian.
+- La plataforma ya no acepta un archivo cuyo nombre tenga esos signos.
+
 ## v1.112.3 — Noviembre 2026
 
 **Fase 223: fechas en texto y "mes actual" con la hora de Colombia.**

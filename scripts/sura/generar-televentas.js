@@ -217,12 +217,65 @@ L('<input data-nk="${k}" ', '<input aria-label="Código nuevo" data-nk="${k}" ')
 L('<input data-nv="${k}" ', '<input aria-label="Significado nuevo" data-nv="${k}" ');
 L('<input data-ti="${i}" data-tj="${j}" ', '<input aria-label="${TIPH[j]}, fila ${i+1}" data-ti="${i}" data-tj="${j}" ');
 L('<input data-tn="${j}" ', '<input aria-label="${h}, fila nueva" data-tn="${j}" ');
+// ── Fase 224 (XSS): un solo esc, todo texto que entra pasa por stvLimpiarTexto
+// (definida abajo, en la plantilla) y esc() en los datos que se pintan ──
+const X = (a, b, n) => { const k = js.split(a).length - 1; if (k !== n) throw new Error(`"${a.slice(0, 60)}" aparece ${k} veces (se esperaban ${n})`); js = js.split(a).join(b); };
+X('  const esc=t=>t.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");\n', '', 1);
+X('  const esc=t=>String(t).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");\n', '', 1);
+X('    const esc=t=>t.replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");\n', '', 1);
+X('const $=id=>ROOT.getElementById(id);\n', 'const $=id=>ROOT.getElementById(id);\n// Fase 224 (XSS): un solo esc para todo dato que va a HTML (contenido o atributo).\nconst esc=t=>String(t??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\'/g,"&#39;");\n', 1);
+X('const R=await API.resumen(),cfg=R.config||{};PERM=R;', 'const R=stvLimpiarTexto(await API.resumen()),cfg=R.config||{};PERM=R;', 1);
+X('const b=L.shift(),d=await API.base(b.tipo,b.mes);', 'const b=L.shift(),d=stvLimpiarTexto(await API.base(b.tipo,b.mes));', 1);
+X('r=parseBook(buf);', 'r=stvLimpiarTexto(parseBook(buf));', 1);
+X('r=parseEst(buf);', 'r=stvLimpiarTexto(parseEst(buf));', 1);
+X('r=parseIni(buf);', 'r=stvLimpiarTexto(parseIni(buf));', 1);
+X('async function dicSave(k,m){DB.__dic=DB.__dic||{};DB.__dic[k]=m;', 'async function dicSave(k,m){DB.__dic=DB.__dic||{};DB.__dic[k]=stvLimpiarTexto(m);', 1);
+X('async function tipSave(T){DB.__tip=T;', 'async function tipSave(T){DB.__tip=T=stvLimpiarTexto(T);', 1);
+X('${d.file}', '${esc(d.file)}', 3);
+X('${x.n}', '${esc(x.n)}', 19);
+X('${g.name}', '${esc(g.name)}', 7);
+X('`Estrategia # ${g.num} · ${esc(g.name)}`]', '`Estrategia # ${g.num} · ${g.name}`]', 1); // va a sel(), que ya escapa
+X('${o.n}', '${esc(o.n)}', 6);
+X('${s.n}', '${esc(s.n)}', 4);
+X('${L.n}', '${esc(L.n)}', 2);
+X('${t==="p"?k:pretty(k)}', '${esc(t==="p"?k:pretty(k))}', 1);
+X('${pretty(k)}', '${esc(pretty(k))}', 11);
+X('data-k="${k}"', 'data-k="${esc(k)}"', 2);
+X('`<option value="${v}" ${v===c?"selected":""}>${t}<', '`<option value="${esc(v)}" ${v===c?"selected":""}>${esc(t)}<', 1);
+X('${cName(c)}', '${esc(cName(c))}', 11);
 
 {
   // sin imprimir contexto (podria traer datos): solo cual quedo
   const m = js.match(/SEED|save\(\)|idb\(|origPut|origDel|load\(\)|document\.body\.classList/i);
   if (m || !js.includes('let AGALIAS={};')) throw new Error('quedo algo del almacenamiento viejo: ' + (m ? m[0] : 'AGALIAS con valores'));
 }
+
+// Fase 224 (XSS): va antes de stvCrearApp (tambien se exporta para las pruebas).
+const LIMPIAR = [
+  '// Fase 224 (XSS): todo texto que entra al tablero (bases y configuracion del',
+  '// servidor, o un Excel recien leido) cambia < > " \' ` por sus parecidos',
+  '// tipograficos. Asi ningun dato puede abrir una etiqueta ni salirse de un',
+  '// atributo aunque alguna plantilla no lo escape. Numeros y estructura no',
+  '// cambian; se recorre en el sitio (bases de cientos de miles de valores).',
+  'var STV_TXT_HAY = /[<>"\'`]/;',
+  'var STV_TXT_RE = /[<>"\'`]/g;',
+  'var STV_TXT_MAP = { \'<\': \'‹\', \'>\': \'›\', \'"\': \'”\', "\'": \'’\', \'`\': \'ˋ\' };',
+  'function stvLimpiarTexto(o) {',
+  '  if (typeof o === \'string\') return STV_TXT_HAY.test(o) ? o.replace(STV_TXT_RE, function (c) { return STV_TXT_MAP[c]; }) : o;',
+  '  if (Array.isArray(o)) {',
+  '    for (var i = 0; i < o.length; i++) { var v = o[i]; if (v !== null && typeof v !== \'number\') o[i] = stvLimpiarTexto(v); }',
+  '    return o;',
+  '  }',
+  '  if (o && typeof o === \'object\') {',
+  '    Object.keys(o).forEach(function (k) {',
+  '      var v = stvLimpiarTexto(o[k]), k2 = stvLimpiarTexto(k);',
+  '      if (k2 !== k) delete o[k];',
+  '      o[k2] = v;',
+  '    });',
+  '  }',
+  '  return o;',
+  '}',
+].join('\n');
 
 const app = `// sura-televentas-app.js — Fase 215: logica del tablero "Televentas" de SURA.
 // Es el HTML de una sola pagina que hizo Edwin (lectura de los 3 Excel por
@@ -240,6 +293,8 @@ const app = `// sura-televentas-app.js — Fase 215: logica del tablero "Televen
 /* eslint-disable */
 var STV_MARKUP = ${JSON.stringify(markup)};
 
+${LIMPIAR}
+
 function stvCrearApp(ROOT, API, ABIERTO){
 const BLOQUEO = {}; // el overlay de la plataforma ya bloquea el scroll del fondo
 let PERM = null;
@@ -249,7 +304,7 @@ ${js.trim()}
 return { cargar: cargar, leer: { parseBook: parseBook, parseIni: parseIni, parseEst: parseEst } };
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports = { STV_MARKUP: STV_MARKUP, stvCrearApp: stvCrearApp };
+if (typeof module !== 'undefined' && module.exports) module.exports = { STV_MARKUP: STV_MARKUP, stvCrearApp: stvCrearApp, stvLimpiarTexto: stvLimpiarTexto };
 `;
 fs.writeFileSync(path.join(repo, 'public/js/sura-televentas-app.js'), app);
 fs.writeFileSync(path.join(repo, 'public/css/sura-televentas-app.css'), css);
