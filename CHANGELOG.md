@@ -16,6 +16,7 @@ sepan que hay nuevo, que se corrigio y que falta.
   dirección, ya no se guardan en el tablero ni le llegan al cliente.
 - Las bases iniciales que ya estaban montadas tampoco le entregan al
   cliente esas columnas de más. Las pantallas y las cifras no cambian.
+
 ## v1.112.1 — Noviembre 2026
 
 **Fase 222: al crear un usuario ya no sale todo marcado.**
