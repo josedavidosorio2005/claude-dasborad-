@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.112.1 — Noviembre 2026
+
+**Fase 222: al crear un usuario ya no sale todo marcado.**
+
+- En Gestión de Usuarios → Nuevo usuario, los clientes y las campañas de
+  Calidad ahora salen **sin marcar**: se marca a mano solo lo que esa persona
+  debe ver. Antes salían todos marcados y, si nadie los quitaba, el usuario
+  nuevo veía todos los clientes.
+- Si el rol necesita clientes (Dashboard Clientes, Supervisor) o campañas
+  (Calidad, Reportes, Supervisor, Gerencia) y no se marca ninguno, la
+  plataforma avisa y no guarda.
+- Quien ayuda a administrar usuarios sin ser administrador (Auxiliar Admin)
+  solo puede dar acceso a los clientes y campañas que él mismo tiene. El
+  administrador puede dar cualquiera, como siempre.
+- Los usuarios que ya existen no cambian.
+
 ## v1.112.0 — Octubre 2026
 
 **Fase 220: Clínica Aurora con salida, Tipificación y Total tráfico, como ORLANT.**

@@ -49,6 +49,20 @@ function permsGestionSinCambio(actor, nuevos, actuales) {
 }
 const ERROR_PERMS_GESTION = 'Solo un administrador completo puede otorgar o quitar permisos de gestion de usuarios';
 
+// Fase 222 (revision del 3-nov, H1): quien no es admin completo solo da
+// acceso a clientes o campanas que el mismo tiene. Solo cuentan las llaves
+// que pasan a true: si el usuario ya las tenia, no se bloquea (editar sin
+// tocarlas sigue funcionando), y quitar acceso siempre se puede.
+const RE_PERM_ACCESO = /^(cliente|campana)_/;
+function accesosSinEscalar(actor, nuevos, actuales) {
+  if (isFullAdmin(actor)) return true;
+  const n = nuevos || {};
+  const a = actuales || {};
+  const propios = (actor && actor.perms) || {};
+  return Object.keys(n).every((k) => !RE_PERM_ACCESO.test(k) || n[k] !== true || a[k] === true || propios[k] === true);
+}
+const ERROR_ACCESOS = 'Solo puedes dar acceso a clientes o campañas a los que tú tienes acceso';
+
 router.get(
   '/users',
   requireActor,
@@ -107,6 +121,7 @@ router.post(
       return res.status(403).json({ error: 'Solo un administrador completo puede crear un usuario ADMIN o AUX_ADMIN' });
     }
     if (!permsGestionSinCambio(req.actor, perms, {})) return res.status(403).json({ error: ERROR_PERMS_GESTION });
+    if (!accesosSinEscalar(req.actor, perms, {})) return res.status(403).json({ error: ERROR_ACCESOS });
     const exists = db.prepare('SELECT id FROM users WHERE user = ?').get(user);
     if (exists) return res.status(409).json({ error: 'Ese usuario ya existe' });
 
@@ -172,6 +187,9 @@ router.put(
     }
     if (perms !== undefined && !permsGestionSinCambio(req.actor, perms, JSON.parse(row.perms || '{}'))) {
       return res.status(403).json({ error: ERROR_PERMS_GESTION });
+    }
+    if (perms !== undefined && !accesosSinEscalar(req.actor, perms, JSON.parse(row.perms || '{}'))) {
+      return res.status(403).json({ error: ERROR_ACCESOS });
     }
 
     const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
@@ -285,6 +303,9 @@ router.put(
     }
     if (!permsGestionSinCambio(req.actor, req.body.perms, JSON.parse(row.perms || '{}'))) {
       return res.status(403).json({ error: ERROR_PERMS_GESTION });
+    }
+    if (!accesosSinEscalar(req.actor, req.body.perms, JSON.parse(row.perms || '{}'))) {
+      return res.status(403).json({ error: ERROR_ACCESOS });
     }
     db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(req.body.perms), id);
     logEvent('PERMISOS', row, actorLabel(req.actor), 'Permisos actualizados');

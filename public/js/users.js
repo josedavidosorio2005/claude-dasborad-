@@ -185,7 +185,8 @@ function buildAsesorCampanaSelect(existingCampana){
 function buildClientCheckboxes(existingPerms){
   var grid=document.getElementById('mu-client-perm-grid');
   grid.innerHTML=CLIENTES_LIST.map(function(c){
-    var checked=existingPerms?existingPerms['cliente_'+c]===true:true;
+    // Fase 222: usuario nuevo o cambio de rol -> nada marcado (antes todo).
+    var checked=existingPerms?existingPerms['cliente_'+c]===true:false;
     return '<label class="client-perm-item">'+
       '<input type="checkbox" data-cliente="'+c+'" '+(checked?'checked':'')+'>'+c+'</label>';
   }).join('');
@@ -201,7 +202,7 @@ function getClientChecks(){
 function buildCampaignCheckboxes(existingPerms){
   var grid=document.getElementById('mu-campaign-perm-grid');
   grid.innerHTML=CAMPANAS_CALIDAD.map(function(c){
-    var checked=existingPerms?existingPerms['campana_'+c]===true:true;
+    var checked=existingPerms?existingPerms['campana_'+c]===true:false;
     return '<label class="client-perm-item">'+
       '<input type="checkbox" data-campana="'+c+'" '+(checked?'checked':'')+'>'+c+'</label>';
   }).join('');
@@ -258,6 +259,14 @@ async function saveUserModal(){
   }
   if(pass && pass.length < PASSWORD_MIN){
     showToast('La contrasena debe tener al menos '+PASSWORD_MIN+' caracteres');return;
+  }
+  // Fase 222: el acceso se marca a mano; sin ninguno no se guarda.
+  var algunoMarcado=function(checks){ return Object.keys(checks).some(function(k){ return checks[k]===true; }); };
+  if((rol==='CLIENTES_DASH'||rol==='SUPERVISOR') && !algunoMarcado(getClientChecks())){
+    showToast('Marca al menos un cliente');return;
+  }
+  if((rol==='CALIDAD'||rol==='REPORTES'||rol==='SUPERVISOR'||rol==='GERENCIA') && !algunoMarcado(getCampaignChecks())){
+    showToast('Marca al menos una campaña');return;
   }
 
   if(mode==='create'){

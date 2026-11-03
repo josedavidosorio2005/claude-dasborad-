@@ -24,12 +24,12 @@ function buildPerms(rol, clientChecks, campaignChecks) {
   if (rol === 'GERENCIA') { p['Calidad'] = true; } // ve resultados de Calidad, solo lectura
   if (rol === 'CLIENTES_DASH' || rol === 'SUPERVISOR') {
     CLIENTES_LIST.forEach(function(c){
-      p['cliente_' + c] = clientChecks ? (clientChecks[c] === true) : true;
+      p['cliente_' + c] = clientChecks ? (clientChecks[c] === true) : false; // Fase 222: sin casillas, ninguno
     });
   }
   if (rol === 'CALIDAD' || rol === 'REPORTES' || rol === 'SUPERVISOR' || rol === 'GERENCIA') {
     CAMPANAS_CALIDAD.forEach(function(c){
-      p['campana_' + c] = campaignChecks ? (campaignChecks[c] === true) : true;
+      p['campana_' + c] = campaignChecks ? (campaignChecks[c] === true) : false;
     });
   }
   return p;
