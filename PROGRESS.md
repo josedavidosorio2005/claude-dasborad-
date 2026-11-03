@@ -51,8 +51,9 @@ narrativo de cada fase, fase por fase, vive en
   rutas `/api/sura-televentas`, tablas `sura_*`) con datos reales desde la
   Fase 216 (ventas de marzo a octubre, base inicial y estrategias de
   octubre, metas de Odontológico); también sale en Admin › Dashboards con
-  el botón "Abrir". Los
-  tres solo los ve el administrador; lo que falta está en
+  el botón "Abrir". Además del administrador, desde la Fase 221 hay un
+  usuario de cliente (Jairo, rol CLIENTES_DASH) con acceso a todos los
+  dashboards de cliente por decisión del usuario; lo que falta está en
   [`docs/pendientes.md`](docs/pendientes.md) (sección 2). Los otros 12
   clientes de antes se borraron en la Fase 134 y no existen.
 - **Televentas de SURA (Fase 215)**: el cliente ve todas las pestañas
@@ -65,6 +66,9 @@ narrativo de cada fase, fase por fase, vive en
   cliente recibe las cédulas seudonimizadas (HMAC). El tablero se regenera
   desde el HTML de Edwin con `scripts/sura/generar-televentas.js` (sin las
   constantes SEED: prueba guardiana en `fase215-sura-televentas`).
+  Verificado con la sesión real de un usuario de cliente en producción
+  (Fase 221, v1.112.0): 6 pestañas, sin botones de escritura, escrituras
+  con 403, mismas pólizas por mes que el administrador.
 - **Meses con datos**: ORLANT tiene datos oficiales desde **agosto de
   2026** (más julio de Tipificación de WhatsApp, real); los meses de prueba
   se borraron en la Fase 126 (`POST /api/admin/borrado-rango`, dry-run +
@@ -171,7 +175,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Eficacia de Mobilize (sub-pestaña propia desde la v1.87.0) | Oct 47,2 % = 42 de 89 contestadas de ingreso con código positivo (Agendamiento de mantenimientos 31 + Link de pagos 11); verificado en producción | 198 / 199 |
 | Total tráfico (ORLANT, v1.110.0: entrada de Tráfico de Llamadas y de WhatsApp + llamadas y WhatsApp de salida; cada salida cuenta como contestada) | Ago 27.742 ingresados / 26.685 contestados (96,2 %) · Sep 32.865 / 32.634 (99,3 %) · Oct 20.671 / 20.542 (99,4 %) · Ago–Oct 81.278 / 79.861 (98,3 %). La salida cuadra con su pestaña y los contestados de entrada con Efectividad de Citas. Tipificación, filtro "Entrada o salida" (todos los meses): llamadas 24.354 + 21.988 = 46.342, WhatsApp 24.298 + 10.057 = 34.355. Verificado en producción | 219 |
 | Total tráfico (Clínica Aurora, v1.112.0, todavía sin CDR: solo entrada) | 2.456 ingresados (Tráfico de Llamadas 875 + Tráfico de WhatsApp 1.581) / 2.408 contestados (850 + 1.558) = 98 %. Verificado en producción | 220 |
-| SURA — Televentas: pólizas por mes (tarjetas de "Cargar información" = LEEME de Edwin) | Mar 22 · Abr 109 · May 109 · Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 316 (filas con venta: 22 · 109 · 109 · 285 · 310 · 300 · 414 · 310). Base inicial y estrategias de octubre: 31.000 registros cada una; metas de Odontológico mar–oct. Verificado en producción (v1.106.1) | 216 |
+| SURA — Televentas: pólizas por mes (tarjetas de "Cargar información" = LEEME de Edwin) | Mar 22 · Abr 109 · May 109 · Jun 291 · Jul 315 · Ago 304 · Sep 423 · Oct 335 (filas con venta: 22 · 109 · 109 · 285 · 310 · 300 · 414 · 329; octubre se recargó el 30/10 — antes 316 / 310). Base inicial y estrategias de octubre: 31.000 registros cada una; base inicial de noviembre: 30.000; metas de Odontológico mar–oct. Verificado en producción (v1.106.1; v1.112.0 con la sesión del cliente) | 216, 221 |
 
 ## Índice de fases
 
@@ -392,3 +396,4 @@ mismo orden):
 - Fase 218 — SURA: «Cargar información» también en Cargar Datos (misma app), el cliente ve todas las pestañas menos Cargar información, tooltips pequeños y siempre dentro de la pantalla; ORLANT: logo nuevo desde el original de Edwin, 28/22 px, sin salto de pestañas (v1.108.0–v1.109.1, 2026-10-30)
 - Fase 219 — ORLANT: salida sin el aviso de asesores sin línea, Ranking sin párrafo largo y con nota corta, Tipificación con filtro "Entrada o salida" (misma regla de las tarjetas) y "Línea (General / 3P)", y pestaña nueva «Total tráfico» (v1.109.2–v1.110.0, 2026-10-30)
 - Fase 220 — Clínica Aurora como ORLANT: Tráfico de Llamadas y de WhatsApp visibles, carga del CDR de Tipificación (llamadas y WhatsApp), Llamadas y WhatsApp de salida y Total tráfico; regla de salida en un solo lugar (SALIDA_POR_CLIENTE, Aurora provisional) y pruebas guardianas de que ORLANT y Mobilize no cambian (v1.111.0–v1.112.0, 2026-10-30)
+- Fase 221 — SURA: usuario de cliente de Jairo (CLIENTES_DASH, acceso a todos los dashboards de cliente por decisión del usuario) creado por la interfaz y vista de cliente verificada en producción con su sesión: 6 pestañas, escrituras con 403, mismas cifras que el administrador (solo docs, v1.112.0, 2026-11-03)
