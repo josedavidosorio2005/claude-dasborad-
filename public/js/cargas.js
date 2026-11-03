@@ -1215,6 +1215,14 @@ function _agendasFmtFechaCorta(fechaHora){
   var d = String(fechaHora||'').slice(0,10).split('-');
   return d.length===3 ? (d[2]+'/'+d[1]) : String(fechaHora||'');
 }
+// Fase 225 (revision del 3-nov): tras guardar, la cache de opciones del panel
+// (meses, sedes...) de ese cliente se borra para que el mes nuevo aparezca sin
+// cerrar sesion. Antes se limpiaban _agendasCache/_inasistenciaCache, que no
+// existen: la limpieza no hacia nada.
+function _cargasInvalidarOpciones(nombre, campana){
+  var g = (typeof window !== 'undefined') ? window : globalThis;
+  if(g[nombre] && typeof g[nombre] === 'object') delete g[nombre][campana];
+}
 async function _cargasGuardarAgendas(cliente, r){
   // Payload compacto (arrays, no objetos) -- ver la nota de tamaño en
   // validation.js (agendasCargaBody) y agendas-logic.js (agendasFilaComoArray).
@@ -1241,7 +1249,7 @@ async function _cargasGuardarAgendas(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/agendas/carga', parsed);
-    if(typeof _agendasCache !== 'undefined') _agendasCache = {}; // invalida el cache del panel abierto
+    _cargasInvalidarOpciones('_agendasOpciones', cliente);
     return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+_agendasFmtFechaCorta(resp.desde)+' al '+_agendasFmtFechaCorta(resp.hasta)+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
@@ -1522,7 +1530,7 @@ async function _cargasGuardarInasistencia(cliente, r){
   }catch(e){ return { ok:false, mensaje: e.message }; }
   try{
     var resp = await apiRequest('POST','/calidad/inasistencia/carga', parsed);
-    if(typeof _inasistenciaCache !== 'undefined') _inasistenciaCache = {}; // invalida el cache del panel abierto
+    _cargasInvalidarOpciones('_inasistenciaOpciones', cliente);
     return { ok:true, mensaje: resp.insertadas+' fila(s) guardadas ('+resp.meses.map(inasistenciaMesLbl).join(', ')+')' };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }

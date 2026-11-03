@@ -38,7 +38,7 @@ completa se prueba en `server/tests/fase118-matriz-acceso.test.js`.
 
 ## Stack
 
-- **Servidor:** Node.js 22, Express 5, SQLite (`better-sqlite3`), Zod
+- **Servidor:** Node.js 24, Express 5, SQLite (`better-sqlite3`), Zod
   (validación de toda entrada), JWT + bcrypt, Helmet (CSP/HSTS).
 - **Navegador:** HTML/CSS/JS sin framework, Chart.js (vendorizado) y
   SheetJS para leer y exportar Excel. Los archivos de Excel **se leen en el
@@ -50,7 +50,9 @@ completa se prueba en `server/tests/fase118-matriz-acceso.test.js`.
 
 ## Correr en local
 
-Requisito: Node.js 22.
+Requisito: Node.js 24 (la misma versión de producción, `server/Dockerfile`, y de CI;
+`server/package.json` lo exige en `engines`). Con Node 22 o anterior, `npm install`
+puede no encontrar el binario listo de `better-sqlite3`.
 
 ```bash
 cd server
