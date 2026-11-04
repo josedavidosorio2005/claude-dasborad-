@@ -703,6 +703,59 @@ function tipificacionLineasOtras(porcion, total, etiquetar, tope) {
   return lineas;
 }
 
+// Fase 232 (pedido de Edwin, 04/11, ORLANT): la pestaña sigue a MESES sin
+// filtro propio. Con meses NO seguidos (Ago + Oct) un solo Desde/Hasta
+// contaria septiembre: se parte en tramos de meses seguidos, cada uno con su
+// Desde/Hasta, y se suman los resultados. Meses AAAA-MM, en cualquier orden.
+function tipificacionTramosMeses(meses) {
+  var l = (meses || []).filter(function (m) { return /^\d{4}-\d{2}$/.test(m); })
+    .filter(function (m, i, a) { return a.indexOf(m) === i; }).sort();
+  var sig = function (m) {
+    var a = parseInt(m.slice(0, 4), 10), n = parseInt(m.slice(5, 7), 10) + 1;
+    if (n === 13) { a += 1; n = 1; }
+    return a + '-' + (n < 10 ? '0' + n : '' + n);
+  };
+  var fin = function (m) {
+    var d = new Date(Date.UTC(parseInt(m.slice(0, 4), 10), parseInt(m.slice(5, 7), 10), 0)).getUTCDate();
+    return m + '-' + (d < 10 ? '0' + d : '' + d);
+  };
+  var tramos = [];
+  l.forEach(function (m) {
+    var u = tramos[tramos.length - 1];
+    if (u && sig(u.ultimo) === m) u.ultimo = m;
+    else tramos.push({ primero: m, ultimo: m });
+  });
+  return tramos.map(function (t) { return { desde: t.primero + '-01', hasta: fin(t.ultimo) }; });
+}
+// Suma varias respuestas de /por-tipo (una por tramo): `todas` por
+// tipificacion (de mayor a menor) y `total`. `datos` = `todas` (la torta y
+// Exportar agrupan desde `todas`).
+function tipificacionSumarPorTipo(partes) {
+  var por = {};
+  var orden = [];
+  var total = 0;
+  (partes || []).forEach(function (r) {
+    if (!r) return;
+    total += r.total || 0;
+    (r.todas || r.datos || []).forEach(function (x) {
+      if (x.esOtras) return;
+      if (!(x.tipificacion in por)) { por[x.tipificacion] = 0; orden.push(x.tipificacion); }
+      por[x.tipificacion] += x.cantidad || 0;
+    });
+  });
+  var todas = orden.map(function (k) { return { tipificacion: k, cantidad: por[k] }; })
+    .sort(function (a, b) { return b.cantidad - a.cantidad; });
+  return { datos: todas, todas: todas, total: total };
+}
+// Suma campos numericos de varias respuestas (salida-por-linea).
+function tipificacionSumarCampos(partes, campos) {
+  var base = Object.assign({}, (partes || [])[0] || {});
+  campos.forEach(function (c) {
+    base[c] = (partes || []).reduce(function (a, r) { return a + ((r && r[c]) || 0); }, 0);
+  });
+  return base;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     tipificacionMaxPorciones: tipificacionMaxPorciones,
@@ -733,5 +786,8 @@ if (typeof module !== 'undefined' && module.exports) {
     TIPIFICACION_SKILL_SALIDA_LLAMADAS: TIPIFICACION_SKILL_SALIDA_LLAMADAS,
     TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP: TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP,
     tipificacionEtiquetaSkill: tipificacionEtiquetaSkill,
+    tipificacionTramosMeses: tipificacionTramosMeses,
+    tipificacionSumarPorTipo: tipificacionSumarPorTipo,
+    tipificacionSumarCampos: tipificacionSumarCampos,
   };
 }

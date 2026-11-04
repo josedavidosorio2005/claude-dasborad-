@@ -91,13 +91,13 @@ function clasifAvisosExcel(r) {
 
 // Tarjetas: General + 3P + Sin clasificar = salida del canal (Sin clasificar solo si hay).
 function clasifTarjetasSalida(r, canal) {
-  var nombre = canal === 'WHATSAPP' ? 'WhatsApp' : 'llamadas';
   var t = [
     { clave: 'GENERAL', valor: r.general || 0, etiqueta: 'Salida General' },
     { clave: '3P', valor: r.p3 || 0, etiqueta: 'Salida 3P' },
   ];
   if (r.sinClasificar) t.push({ clave: 'SIN', valor: r.sinClasificar, etiqueta: 'Sin clasificar' });
-  return { tarjetas: t, salida: r.salida || 0, nota: 'Salida de ' + nombre + ': ' + (r.salida || 0).toLocaleString('es-CO') };
+  // Fase 232 (pedido de Edwin, 04/11): sin la nota "Salida de llamadas: N" (confundia).
+  return { tarjetas: t, salida: r.salida || 0 };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

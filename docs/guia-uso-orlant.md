@@ -276,8 +276,10 @@ llamadas (skill "-") y la de WhatsApp (SKILL_ID 0) se reparten según el
 asesor que la hizo. Cada mitad muestra las tarjetas "Salida General",
 "Salida 3P" y, si hay asesores sin línea, "Sin clasificar", más una torta
 de salida por línea; las tres suman la salida del canal y el total del mes
-no cambia. El filtro **"Línea de salida"** (junto al mes) deja en las dos
-tortas de tipificación solo la salida de esa línea. El administrador elige
+no cambia. Desde la v1.116.2 cada mitad tiene su propio filtro **"Línea
+(General / 3P)"** (junto a Agente, Skill o Cola y "Entrada o salida"), que
+deja en la torta de esa mitad solo la salida de esa línea. El mes sale del
+selector MESES del tablero (sin filtro de mes ni de días propio). El administrador elige
 la línea de cada asesor con el botón **"Clasificación de asesores"**: una
 ventana con los asesores de los CDR cargados y un selector por cada uno
 (Sin clasificar, Línea General o Línea 3P). Se guarda una sola vez por

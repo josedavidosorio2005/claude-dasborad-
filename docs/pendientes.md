@@ -169,6 +169,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   del panel (`resumenSoloTitulos` en el trafico_combo de MOBILIZE; con
   `false` vuelven todos los textos). El rótulo de mes parcial ("mes en curso")
   es de toda la fila y se dejó. Cómo se cierra: su respuesta.
+- **ORLANT, Tipificación sin filtro de mes propio: confirmar con Edwin** (Fase
+  232, reunión 04/11) — Prioridad BAJA. Desde la v1.116.2 el mes sale solo del
+  selector MESES del tablero y se perdió el rango por días (Desde/Hasta)
+  dentro del mes. ¿Le sirve así? Si necesita los días, se puede devolver un
+  Desde/Hasta en cada mitad. Cómo se cierra: su respuesta.
+- **Mobilize, Flujo de Llamadas: 8 tarjetas no caben en una fila a 1440 px**
+  (visto al verificar la Fase 231 en producción, 04/11) — Prioridad BAJA. La
+  tarjeta "Solución en primer contacto" baja sola a una segunda fila (pasa
+  desde la Fase 227). Si Edwin las quiere todas en una fila, se ajusta el
+  ancho mínimo de las tarjetas de esa fila. Cómo se cierra: su respuesta.
 - **Mobilize, reunión del 03/11: cosas por confirmar** (Fase 226) — Prioridad
   MEDIA. (1) La "Tasa de contacto llamadas de salida" dice "Pendiente" en los
   meses sin el reporte de no conectadas: ¿le sirve así? (2) "Quitar todos los
