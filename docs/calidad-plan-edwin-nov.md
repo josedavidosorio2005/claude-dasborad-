@@ -5,10 +5,126 @@ análisis de la Fase 94 ([`calidad-flujo-edwin-brecha.md`](calidad-flujo-edwin-b
 y del pedido de Edwin en la reunión del 04/11. Edwin dijo que esto se
 trabaja después y con calma.
 
-> **Prototipo HTML de Edwin**: no se revisó en esta fase porque todavía no
-> está en el equipo. Cuando llegue, se guarda **fuera del repo** (por ejemplo
-> en la carpeta de bases de Edwin) y se completan las secciones 4 y 5 sin
-> copiar datos reales: ni nombres de asesores, ni cédulas, ni teléfonos.
+> **Prototipo HTML de Edwin**: ya se revisó (04/11, después de la Fase 237).
+> Lo que trae, la comparación con la plataforma y el plan por PRs que
+> reemplaza la sección 8 están en la sección siguiente, "Actualización
+> 04/11/2026". Las secciones 1 a 8 quedan como estaban, como antecedente.
+
+## Actualización 04/11/2026: con el HTML de Edwin
+
+**Solo plan. No se construye nada sin el OK del usuario.** Se leyó
+`Calidad InConexion.html` (fuera del repo, en Descargas) solo como guía: no se
+copió al repo ni se pasó ningún texto de sus ítems ni ningún dato. El HTML no
+trae datos embebidos (guarda todo en el navegador con `localStorage`).
+
+**Regla nueva del usuario**: no se suben plantillas en Excel. Toda la calidad
+se hace desde la página: el administrador arma y edita las plantillas en
+pantalla, calidad califica en pantalla y los resultados se ven en pantalla.
+Qué pasa con la carga masiva de monitoreos por Excel que ya existe (Fases 130
+y 239) es la pregunta 7 de la sección E; mientras tanto no se toca.
+
+### A. Qué trae el HTML
+
+| Pieza | En el HTML |
+|---|---|
+| Roles | **Administrador** (todo + Usuarios), **Calidad** (Calificar; solo ve los monitoreos que ella califica; Detalle por mes, Diccionario y Resumen), **Supervisor** (Resultados del equipo de sus plantillas) y **Asesor** (Mis resultados) |
+| Acceso por plantilla | Cada usuario tiene una lista de plantillas; el administrador las ve todas |
+| Plantillas | 6: Televentas SURA, Clínica Orlant, Clínica Aurora, Hospital La María · Sede 33, Hospital La María · Sede Castilla y Mobilize |
+| Cálculo "ponderado" (ORLANT, Aurora, HLM, Mobilize) | Parte de 100. NO en un crítico resta 20; NO en un no crítico resta su peso; SI y N/A no restan. Los pesos suman 100. 1 crítico fallado = Alerta; 2 o más = Crítico absoluto |
+| Cálculo "por descuento" (SURA) | Cualquier NO en un crítico deja la nota en 0 %. Los no críticos descuentan su porcentaje, y algunos tienen opciones con descuento parcial (por ejemplo, solo falta la despedida) |
+| Clasificación | < 70 Crítico, < 90 No crítico, ≥ 90 Sobresaliente (igual que la plataforma) |
+| Monitoreo incompleto | No se guarda hasta calificar todos los ítems ("Faltan ítems por calificar") |
+| Campos del formulario | Comunes: asesor, ID de agente, fecha, ID de llamada, código de gestión, evaluador, motivo (se arma solo con los ítems fallados), observaciones. ORLANT, Aurora y HLM: + teléfono. Mobilize: + placa y tipo de llamada. SURA: + cédula del cliente, ID de contacto, tipificación del sistema, estrategia y causa |
+| Calidad | "Sugerir observación", Detalle por mes, Resumen por asesor, Importar/Exportar Excel |
+| Supervisor (resultado) | Indicadores, calificación por asesor y por mes, torta por clasificación, ítems más afectados, asesores con cada falla, Detalle por mes y Resumen por asesor (con clic al detalle) |
+| Asesor | Su calificación por mes, sus monitoreos por clasificación, ítems a reforzar en el mes, la lista de sus monitoreos y el detalle de cada uno |
+| Diccionario | Por plantilla: cada ítem con su número, nombre, si es crítico, su peso y su descripción (SURA además con viñetas) |
+
+### B. Comparación con la plataforma (después de las Fases 236 y 237)
+
+| Pieza | Plataforma hoy | Qué falta |
+|---|---|---|
+| Login y usuarios | Ya existe (el login del HTML era solo de muestra) | Nada |
+| Roles | CALIDAD, ASESOR, SUPERVISOR, GERENCIA, CLIENTES_DASH, ADMIN | "Resultado" = permiso `ver_calidad` sobre los roles que ya ven el dashboard (sección 2). No hace falta un rol nuevo |
+| Varias plantillas por cliente | Ya existe la base (Fase 237: `nombre`, `principal`, `monitoreos.plantillaId`) | Crear las plantillas reales y una pantalla para hacerlo |
+| Acceso por plantilla | Ya existe (Fase 237: `plantilla_<id>`, sin ninguna marcada = todas las de sus campañas) | Nada |
+| Aviso al asesor | Ya existe (Fase 236: cada 3 min; pestaña Calidad cada 5 min) | Nada |
+| Cálculo ORLANT, Aurora, HLM, Mobilize | El motor `standard` da **el mismo número** que el "ponderado" del HTML cuando los pesos suman 100 (NO en crítico = peso − 20, es decir −20 sobre 100) | Exigir todos los ítems antes de guardar (hoy calcula con los que haya) |
+| Pesos de ORLANT | Los 17 pesos y los 7 críticos son **idénticos** a los del HTML | Solo el texto del diccionario |
+| Cálculo de SURA | El motor `sura` actual (solo SI suma; los críticos solo se cuentan) **no es** el del HTML | Motor nuevo `descuento`, con su prueba, sin tocar los dos que existen |
+| Plantilla de Mobilize | Genérica de 10 ítems | La del HTML tiene 14 ítems y 5 críticos |
+| Aurora y HLM | Sin plantilla; pestaña Calidad oculta | Aurora 12 ítems (5 críticos); HLM Sede 33 7 ítems (3 críticos) y Castilla 12 (5 críticos) |
+| SURA | Sin el módulo `calidad` en el registro; su tablero es Televentas | Agregar el módulo sin crear un tablero genérico, y el botón Calidad en Televentas |
+| Campos por plantilla | Fijos: asesor, fecha, canal, ID de llamada, teléfono, codificación, evaluador, observaciones | ID de agente, placa, tipo de llamada, ID de contacto, tipificación del sistema, estrategia, causa y motivo. **Cédula del cliente**: dato personal, ver pregunta 3 |
+| Diccionario | Solo una hoja del Excel de carga masiva | Descripción por ítem y una pantalla de diccionario |
+| Resumen por asesor | Barras de promedio por asesor (ORLANT); Mobilize desde Excel (Fase 172) | Tabla por asesor desde los monitoreos: # monitoreos, promedio, clasificación, alerta y total de fallos críticos; clic → sus monitoreos → detalle |
+| "Interactivo" (supervisor) | No existe | Ítems más afectados, asesores con cada falla, Detalle por mes |
+| Vista del asesor | "Mis Resultados" (lista y detalle) | Calificación por mes, torta por clasificación e ítems a reforzar |
+| Calidad solo ve lo que califica | Hoy CALIDAD ve los monitoreos de sus campañas | Confirmar (pregunta 4) |
+
+### C. Formulario por cliente
+
+Todas las plantillas se crean **en pantalla** (Admin › Calidad › Plantillas,
+PR C3). Nada se siembra con los textos del HTML desde el repo: el repo es
+público y esos textos son de Edwin. Lo que sí define el código es la forma
+(campos, motor) que cada plantilla puede usar.
+
+| Cliente | Plantilla(s) | Motor | Ítems / críticos | Campos extra |
+|---|---|---|---|---|
+| ORLANT | Clínica Orlant (ya existe, principal) | `standard` | 17 / 7 (iguales) | — (agregar descripciones) |
+| SURA | Televentas SURA | `descuento` (nuevo) | 9 / 4, con opciones de descuento parcial | ID de agente, ID de contacto, tipificación del sistema, estrategia, causa (+ cédula según la pregunta 3) |
+| Mobilize | Mobilize (reemplaza a la genérica como principal) | `standard` | 14 / 5 | ID de agente, placa, tipo de llamada |
+| Clínica Aurora | Clínica Aurora | `standard` | 12 / 5 | ID de agente |
+| Hospital La María | **Sede Castilla** primero (o Sede 33, la que Edwin confirme) | `standard` | Castilla 12 / 5; Sede 33 7 / 3 | ID de agente |
+
+HLM: el HTML trae las dos sedes con ítems distintos, así que no son "la misma
+plantilla". Se arma **solo una** (la que Edwin confirme como vigente) y la otra
+queda para después; con la Fase 237 una segunda plantilla del mismo cliente ya
+cabe sin cambios de base.
+
+### D. Plan por PRs (reemplaza la tabla de la sección 8)
+
+Ya hechos: 1 (Fase 234), 2 (Fase 236), 3 y 4 (Fase 237). Lo que sigue, en
+este orden, un PR por fila, cada uno con su versión, CHANGELOG, pruebas con
+datos sintéticos y verificación en producción en solo lectura:
+
+| # | PR | Qué hace | Tamaño | Depende de |
+|---|---|---|---|---|
+| C1 | Motor `descuento` (SURA) | `computeScore` con el motor nuevo: crítico en NO → 0; no críticos con descuento total o parcial por opción. Prueba con casos sintéticos. No cambia `standard` ni `sura` | S | Nada |
+| C2 | Campos por plantilla y monitoreo completo | Columna `extras` (JSON) en `monitoreos` con los campos que defina la plantilla (lista cerrada de campos permitidos); el servidor rechaza un monitoreo con ítems sin calificar. Migración no destructiva | M | Pregunta 3 (cédula) |
+| C3 | Editor de plantillas en pantalla (solo ADMIN) | Crear, editar, desactivar y marcar principal: nombre, cliente, motor, campos, ítems (categoría, nombre, peso, crítico, N/A, descripción, opciones). Valida que los pesos sumen 100 en `standard`. Una plantilla con monitoreos no cambia sus ítems: se crea una versión nueva para no recalcular los viejos | M | C1, C2 |
+| C4 | Calidad en SURA, Aurora y HLM | Módulo `calidad` en SURA (sin tablero genérico) y destapar Calidad en Aurora y HLM cuando haya plantilla; migración idempotente | S | C3 |
+| C5 | Diccionario | Botón "Diccionario" en el formulario, en Mis Resultados y en la pestaña Calidad; sale de la plantilla | S | C3 |
+| C6 | Resumen por asesor | Tabla por asesor (filtros Mes y Asesor) con clic a sus monitoreos y al detalle; para calidad y para quien vea la pestaña Calidad | M | C3 |
+| C7 | Resultados del equipo ("interactivo") | Ítems más afectados, asesores con cada falla, calificación por mes y Detalle por mes | M | C6 |
+| C8 | Permiso `ver_calidad` (resultado) | Casilla en el formulario de usuario, apagada por defecto; la pestaña Calidad del cliente solo con ese permiso (el administrador siempre). Respeta `asesorVisibleCliente` | S | C6 |
+| C9 | Botón Calidad en cada dashboard | Un botón "Calidad" en el encabezado de ORLANT, Mobilize, Aurora, HLM y Televentas de SURA que abre la pestaña Calidad del cliente (o la vista de resultados en SURA), solo con `ver_calidad` | S | C8 |
+| C10 | Vista del asesor | Mis Resultados con calificación por mes, torta por clasificación e ítems a reforzar | S | C6 |
+
+Después de C3, el administrador (o Edwin con su usuario) crea en pantalla las
+plantillas de SURA, Mobilize, Aurora y la de HLM, en producción, como un
+usuario real. Eso es una escritura en producción: se hace solo con tu
+autorización explícita en esa fase.
+
+### E. Preguntas abiertas para decidir antes de construir
+
+1. **Orden**: ¿empezamos por C1–C3 (motor, campos, editor) o prefieres ver
+   primero el resumen por asesor (C6) con la plantilla de ORLANT que ya
+   existe?
+2. **HLM**: ¿cuál va primero, Sede Castilla o Sede 33?
+3. **Cédula del cliente en SURA**: es un dato personal. ¿Se pide, se pide
+   enmascarada (últimos 4 dígitos) o se deja por fuera? Lo mismo con el
+   teléfono (pendiente abierto desde la Fase 151).
+4. **Calidad solo ve lo que ella califica** (como el HTML) o todo lo de sus
+   campañas (como hoy). Cambiarlo restringe a usuarios que ya trabajan.
+5. **Quién crea las plantillas en pantalla**: solo el administrador, o
+   también un usuario de calidad con un permiso nuevo.
+6. **Mobilize**: ¿la plantilla de 14 ítems del HTML es la de Kelly? Si sí, los
+   monitoreos viejos siguen con la genérica y los nuevos con la de 14.
+7. **Carga masiva de monitoreos por Excel** (Calidad › Importar, y la
+   exportación): ¿se deja como respaldo, o se retira para que todo pase por
+   la página? Retirarla no borra datos.
+
 
 ## Lo que pidió Edwin (04/11)
 
@@ -190,7 +306,7 @@ datos (`datos_version`); hay que confirmar que guardar un monitoreo la limpie.
   contraseña temporal y cambio obligatorio al primer ingreso. Es un tema
   aparte, con su propio PR y revisión de seguridad.
 
-## 8. Plan por fases
+## 8. Plan por fases (reemplazado por la sección D de la actualización)
 
 PRs pequeños, en este orden. Ninguno se empieza sin el OK del usuario, y los
 que dependen de Edwin esperan sus respuestas.

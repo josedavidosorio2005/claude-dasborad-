@@ -18957,3 +18957,59 @@ tocar código; un PR por punto.
   audit` 0; CI en verde en cada PR. Regresión en producción tras cada merge
   (ORLANT, Mobilize, Aurora, HLM y SURA, todas sus pestañas): 0 errores de
   consola, 0 escrituras, sin cambios en las pestañas.
+
+## Fases 241–245 — Tanda del 04/11: SURA, ORLANT, Abandono, Aurora/HLM y plan de Calidad (v1.120.2–v1.121.2, 2026-11-04)
+
+- **Pedido del usuario (04/11)**: retomar la tanda que dejó otra sesión (PR
+  #650 abierto y 3 ramas locales apiladas), con merges autorizados (CI
+  verde, `--match-head-commit`, sin forzar push), verificación en producción
+  en solo lectura tras cada merge (ORLANT, Mobilize, SURA, Aurora y HLM sin
+  cambios no pedidos, 0 errores de consola), Aurora/HLM con Tipificación
+  visible (prioridad alta, se entregan el lunes) y el plan de Calidad con el
+  HTML de Edwin, **solo plan**.
+
+| Pedido | PR | Versión | Desplegado | Verificado en producción |
+|---|---|---|---|---|
+| Fase 241: Cargar datos, la sección de SURA se quedaba al cambiar de cliente | #650 | 1.120.2 | Sí | Sí: SURA visible al elegirla; oculta tras cambiar a ORLANT y tras el cambio rápido SURA → MOBILIZE |
+| Fase 242: SURA sin «Cargar información» en el tablero | #651 | 1.121.0 | Sí | Sí: 6 pestañas, abre en Cumplimiento; la carga sigue en Cargar datos |
+| Fase 243: ORLANT sin «Efectividad de Agendamiento» en Cargar datos | #652 | 1.121.1 | Sí | Sí: la tarjeta ya no sale; la pestaña Agendamiento se dibuja igual; no se borró nada |
+| Fase 244: Abandono con cantidad y % en cada barra | #653 | 1.121.2 | Sí | Sí: todas las barras con 2 líneas (ORLANT llamadas y WhatsApp 3/3, Mobilize 3/3, Aurora y HLM 1/1) |
+| Aurora y HLM: Tipificación visible | — | — | — | Diagnóstico: 0 registros cargados (ver abajo) |
+| Plan de Calidad con el HTML de Edwin | este cierre | — | — | Solo docs |
+
+- **Cómo se verificó**: Playwright desde Node con Brave visible; el usuario
+  inició sesión a mano. El script bloquea toda escritura salvo el login, no
+  guarda cookies ni `storageState` y solo imprime etiquetas de pestañas,
+  conteos y estados. Línea base en 1.120.1 antes del primer merge y una
+  corrida tras cada deploy, comparada con la anterior: mismas pestañas y
+  sub-vistas en los 5 clientes, 0 errores de consola, 0 peticiones
+  fallidas, 0 escrituras. El canvas vacío de Mobilize › Flujo por hora ya
+  estaba así en la línea base (sin cambio).
+- **Fase 244, revisión visual local**: los datos de `seed:demo` no traen
+  cantidades de abandono, así que la gráfica real se dibujó con un agregado
+  sintético inyectado en el navegador (3, 6 y 30 barras, a 1440, 768 y 375
+  px): cada barra con cantidad y %, con 30 barras en modo `auto`, 0 errores.
+  Los 2 commits de la rama se unieron en uno antes de subirla (no estaba
+  publicada; sin forzar push). En producción la línea del % pasa por encima
+  de algunas etiquetas: anotado en pendientes como mejora de prioridad baja.
+- **Aurora y HLM, Tipificación**: en producción (Centro de cargas, solo
+  lectura) las dos tienen 0 registros de Tipificación de llamadas y de
+  WhatsApp en 2026; solo Flujo (Aurora: octubre; HLM: agosto). El Historial
+  de los últimos 12 días solo muestra para Aurora 3 eliminaciones de Flujo
+  del 03/11; las 3 cargas de Tipificación de los últimos 3 días no quedaron
+  en Aurora ni HLM, y ninguna skill de ORLANT o Mobilize menciona a Aurora o
+  La María. La pestaña aparece sola cuando haya CDR en su cliente, así que
+  no hizo falta código: falta la carga (pendientes, sección 2).
+- **Plan de Calidad**: se leyó `Calidad InConexion.html` (Descargas, fuera
+  del repo) solo por estructura; no se copió ningún texto de ítems ni dato.
+  Resultado en `docs/calidad-plan-edwin-nov.md` ("Actualización 04/11/2026"):
+  roles, comparación con las Fases 236/237, formulario por cliente, plan
+  C1–C10 y 7 preguntas. ORLANT del HTML = ORLANT de la plataforma (17 pesos y
+  7 críticos idénticos); el motor `standard` da lo mismo que el "ponderado"
+  del HTML; SURA necesita un motor nuevo. Espera el OK del usuario.
+- **GitHub Actions**: incidente "partial outage" el 04/11 por la tarde; el
+  deploy del #650 y el CI del #651 arrancaron con retraso. No se forzó nada.
+- **Pruebas**: suite completa en verde en cada rama tras rebasarla sobre
+  `main` (2532 → 2540), `npm audit` 0, CI en verde (test 24, docker-build,
+  pantallas) en cada PR, SHA de `git ls-remote` = SHA de la API antes de cada
+  merge.
