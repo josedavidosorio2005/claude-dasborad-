@@ -63,7 +63,12 @@ async function ccCambiarAnio() {
   await _ccCargar();
 }
 
+// Fase 241: cada carga del Centro lleva un numero; una respuesta que llega
+// tarde (otro cliente ya elegido) no pinta nada. Antes, elegir SURA y cambiar
+// a otro cliente mientras SURA cargaba volvia a mostrar SURA abajo.
+var _ccGeneracion = 0;
 async function _ccCargar() {
+  var gen = ++_ccGeneracion;
   var body = document.getElementById('cc-body');
   body.innerHTML = '<div class="cc-cargando">Cargando…</div>';
   // Fase 218: un cliente con tablero propio (SURA, Televentas) no carga por
@@ -71,9 +76,10 @@ async function _ccCargar() {
   var esTablero = typeof stvEsTeleventas === 'function' && stvEsTeleventas(_cc.cliente);
   _ccOcultarTeleventas();
   document.getElementById('cc-anio').closest('.ig').hidden = esTablero;
-  if (esTablero) { await _ccCargarTeleventas(body); return; }
+  if (esTablero) { await _ccCargarTeleventas(body, gen); return; }
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);
+    if (gen !== _ccGeneracion) return; // Fase 241: ya se eligio otro cliente
     _cc.modulos = r.modulos || [];
     // PR 5: el servidor solo manda los modulos que puede cargar; un modulo pedido (atajo del tablero) que no esta, abre las tarjetas.
     if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
@@ -81,20 +87,23 @@ async function _ccCargar() {
     try { _cc.versiones = (await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/versiones')).versiones || []; }
     catch (e2) { _cc.versiones = []; }
   } catch (e) {
+    if (gen !== _ccGeneracion) return;
     body.innerHTML = '<div class="cc-aviso cc-aviso-error">' + esc(e.message) + '</div>';
     return;
   }
+  if (gen !== _ccGeneracion) return;
   if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
   _ccRender();
 }
 
 // Fase 218: «Cargar información» de SURA (sura-televentas.js, stvMontarCarga).
 // Escribir es solo del administrador (lo exige el servidor): al resto, un aviso.
-async function _ccCargarTeleventas(body) {
+async function _ccCargarTeleventas(body, gen) {
   var host = document.getElementById('cc-stv-host');
   document.getElementById('cc-migas').innerHTML = '<span aria-current="page">' + esc(_cc.cliente) + '</span>';
   try {
     var perm = await stvMontarCarga(host, _cc.cliente);
+    if (gen !== undefined && gen !== _ccGeneracion) return; // Fase 241: llego tarde, otro cliente ya esta elegido
     if (!perm.puedeEditar) {
       stvDesmontarCarga();
       body.innerHTML = '<div class="cc-aviso">Las bases, metas y códigos de ' + esc(_cc.cliente) + ' solo los carga el administrador.</div>';
@@ -103,6 +112,7 @@ async function _ccCargarTeleventas(body) {
     body.innerHTML = '<p class="cc-intro">Bases del mes, metas y códigos del tablero Televentas: es lo mismo de «Cargar información» dentro del tablero.</p>';
     host.hidden = false;
   } catch (e) {
+    if (gen !== undefined && gen !== _ccGeneracion) return;
     body.innerHTML = '<div class="cc-aviso cc-aviso-error">' + esc(e.message) + '</div>';
   }
 }

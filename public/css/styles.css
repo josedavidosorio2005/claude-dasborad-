@@ -1630,6 +1630,10 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc-migas [aria-current]{color:var(--c-text);font-weight:600;}
 #cc-body{padding:8px 22px 26px;}
 #cc-stv-host{padding:0 22px 26px;} /* Fase 218: panel de carga de SURA */
+/* Fase 241: la hoja de SURA (shadow DOM) declara :host{display:block}, que le
+   gana al [hidden] del navegador: al cambiar de cliente, SURA se seguia viendo
+   abajo. Una regla de la pagina le gana al :host de adentro. */
+#cc-stv-host[hidden]{display:none;}
 .cc-intro{margin:6px 0 14px;color:var(--c-text-2);}
 .cc-cargando{padding:30px;text-align:center;color:var(--c-text-muted);}
 .cc-tarjetas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}

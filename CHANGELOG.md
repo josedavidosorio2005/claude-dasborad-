@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.120.2 — Noviembre 2026
+
+**Fase 241: Cargar datos, SURA ya no se queda abajo al cambiar de cliente (reporte de Edwin).**
+
+- En "Cargar datos", después de elegir SURA y cambiar a ORLANT, Mobilize u
+  otro cliente, la sección de SURA se seguía viendo abajo. Ahora cada
+  cliente muestra solo lo suyo.
+- También si se cambia de cliente mientras SURA todavía está cargando.
+
 ## v1.120.1 — Noviembre 2026
 
 **Fase 239: arreglos técnicos pequeños.**
