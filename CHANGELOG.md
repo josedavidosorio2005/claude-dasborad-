@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.117.0 — Noviembre 2026
+
+**Fase 234: Admin › Usuarios con filtros por rol y por campaña.**
+
+- Junto al buscador hay dos listas nuevas: **Rol** y **Campaña** (o cliente).
+  Se pueden combinar, por ejemplo "Asesores de ORLANT".
+- La opción "Sin campaña ni cliente" muestra los usuarios que no tienen
+  ninguna asignada.
+- Debajo de la tabla dice cuántos usuarios se ven ("Mostrando 12 de 40").
+- El buscador ahora encuentra nombres con o sin tilde.
+- En el celular, el buscador y los filtros ocupan todo el ancho.
+
 ## v1.116.2 — Noviembre 2026
 
 **Fase 232: ORLANT, Tipificación más simple (pedido de Edwin, reunión del 04/11).**

@@ -6,18 +6,21 @@
 // ═══════════════════════════════════════════════════════════
 function renderUsers(filter){
   filter=filter||'';
-  var fl=filter.toLowerCase();
   var tbody=document.getElementById('users-tbody');
   var noRes=document.getElementById('no-results');
-  var list=users.filter(function(u){
-    return u.nombre.toLowerCase().includes(fl)||u.user.toLowerCase().includes(fl)||(RL[u.rol]||u.rol).toLowerCase().includes(fl);
-  });
   // Aux only sees accessible roles, not other admins or other aux
-  if (!isFullAdmin()) {
-    list=list.filter(function(u){
-      return u.rol!=='ADMIN' && u.rol!=='AUX_ADMIN' && canAccessRole(u.rol);
-    });
-  }
+  var visibles = isFullAdmin() ? users.slice() : users.filter(function(u){
+    return u.rol!=='ADMIN' && u.rol!=='AUX_ADMIN' && canAccessRole(u.rol);
+  });
+  // Fase 234: buscador + rol + campaña/cliente (usuarios-filtro-logic.js).
+  var selRol=document.getElementById('user-filtro-rol');
+  var selCamp=document.getElementById('user-filtro-campana');
+  _usersPintarOpcionesFiltro(visibles, selRol, selCamp);
+  var list=usuariosFiltrar(visibles, { texto: filter, rol: selRol ? selRol.value : '', campana: selCamp ? selCamp.value : '' }, function(r){ return RL[r]||r; });
+  var conteo=document.getElementById('users-conteo');
+  if(conteo) conteo.textContent = list.length===visibles.length
+    ? visibles.length+' usuario'+(visibles.length===1?'':'s')
+    : 'Mostrando '+list.length+' de '+visibles.length+' usuarios';
   if(!list.length){
     tbody.innerHTML='';
     noRes.innerHTML = (users.length===0)
@@ -26,7 +29,7 @@ function renderUsers(filter){
         '<div class="es-hint">Crea el primero con el boton &laquo;+ Nuevo Usuario&raquo; de arriba.</div></div>'
       : '<div class="empty-state"><div class="es-icon">&#128269;</div>'+
         '<div class="es-title">Sin coincidencias</div>'+
-        '<div class="es-hint">Ningun usuario coincide con tu busqueda. Prueba con otro nombre, usuario o rol.</div></div>';
+        '<div class="es-hint">Ningún usuario coincide con la búsqueda o los filtros. Prueba con otro nombre, rol o campaña.</div></div>';
     noRes.classList.remove('hidden');
     return;
   }
@@ -102,6 +105,21 @@ function renderUsers(filter){
   updateStats();
 }
 function filterUsers(){renderUsers(document.getElementById('user-search').value);}
+// Fase 234: opciones de Rol y Campaña con lo que hay en la lista; conserva la elegida.
+function _usersPintarOpcionesFiltro(lista, selRol, selCamp){
+  var op = usuariosOpcionesFiltro(lista, typeof CLIENTES_LIST !== 'undefined' ? CLIENTES_LIST : []);
+  if(selRol){
+    var r = selRol.value;
+    selRol.innerHTML = '<option value="">Todos los roles</option>' + op.roles.map(function(k){ return '<option value="'+esc(k)+'">'+esc(RL[k]||k)+'</option>'; }).join('');
+    selRol.value = op.roles.indexOf(r) !== -1 ? r : '';
+  }
+  if(selCamp){
+    var c = selCamp.value;
+    selCamp.innerHTML = '<option value="">Todas las campañas</option>' + op.campanas.map(function(k){ return '<option value="'+esc(k)+'">'+esc(k)+'</option>'; }).join('') +
+      '<option value="'+USUARIOS_SIN_CAMPANA+'">Sin campaña ni cliente</option>';
+    selCamp.value = (c === USUARIOS_SIN_CAMPANA || op.campanas.indexOf(c) !== -1) ? c : '';
+  }
+}
 
 // ═══════════════════════════════════════════════════════════
 // USER MODAL (create + edit unified)

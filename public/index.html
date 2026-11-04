@@ -120,7 +120,10 @@
           <div class="section-header">
             <h3>Lista de Usuarios</h3>
             <div class="header-actions">
-              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="user-search" aria-label="Buscar usuarios" placeholder="Buscar..." oninput="filterUsers()"></div>
+              <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="user-search" aria-label="Buscar usuarios" placeholder="Buscar nombre o usuario..." oninput="filterUsers()"></div>
+              <!-- Fase 234: filtros por rol y por campaña/cliente (usuarios-filtro-logic.js). -->
+              <select class="hist-filter-sel" id="user-filtro-rol" aria-label="Filtrar por rol" onchange="filterUsers()"><option value="">Todos los roles</option></select>
+              <select class="hist-filter-sel" id="user-filtro-campana" aria-label="Filtrar por campaña o cliente" onchange="filterUsers()"><option value="">Todas las campañas</option></select>
               <button class="btn-primary" id="btn-create-user" onclick="openCreateModal()">+ Nuevo Usuario</button>
               <button class="btn-reset hidden" id="btn-reset" onclick="resetData()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-rotate-ccw"></use></svg> Restablecer</button>
             </div>
@@ -130,6 +133,7 @@
             <tbody id="users-tbody"></tbody></table>
           </div>
           <div class="no-results hidden" id="no-results">No se encontraron usuarios.</div>
+          <p class="users-conteo" id="users-conteo" role="status" aria-live="polite"></p>
         </div>
       </div>
 
@@ -1844,6 +1848,7 @@
 <script src="js/session.js"></script>
 <script src="js/toast-logic.js"></script>
 <script src="js/ui-core.js"></script>
+<script src="js/usuarios-filtro-logic.js"></script>
 <script src="js/users.js"></script>
 <script src="js/roles-perms.js"></script>
 <script src="js/historial.js"></script>
