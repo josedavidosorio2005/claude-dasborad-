@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.125.0 — Noviembre 2026
+
+**Fase 251: Mobilize, NPS más limpio y Cargar datos sin secciones que no usa (pedidos de Edwin).**
+
+- Encuesta › NPS: debajo del número quedan solo "NPS (promotores − detractores)"
+  con su valor y la línea "NPS = % de promotores − % de detractores = valor".
+  Se quitaron las dos líneas de descripción.
+- Cargar datos de Mobilize: ya no salen las secciones "Calidad" (la vieja, de
+  monitoreos por Excel; la que se usa es "Calidad: resumen por asesor") ni
+  "Tipificación de WhatsApp" (Mobilize no tiene WhatsApp). No se borró ningún
+  dato, y el aviso "Falta <mes>" ya no las cuenta.
+- Los demás clientes quedan igual.
+
 ## v1.124.0 — Noviembre 2026
 
 **Fase 250: Flujo de WhatsApp por día (pedido de Edwin).**

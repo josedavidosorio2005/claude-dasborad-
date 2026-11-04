@@ -21,7 +21,8 @@ test('NPS: el resumen muestra la formula con % y aclara que es promotores − de
   const txt = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   assert.match(txt, /NPS \(promotores − detractores\) 21,4/);
   assert.match(txt, /NPS = 57,1 % de promotores − 35,7 % de detractores = 21,4/);
-  assert.match(txt, /Promotores 16 \(57,1 %\), pasivos 2 \(7,1 %\), detractores 10 \(35,7 %\), sobre 28 que contestaron la pregunta 1 \(100 %\)/);
+  // Fase 251: sin la linea de detalle ni la nota (ver fase251-mobilize-nps-cargar.test.js).
+  assert.doesNotMatch(txt, /Promotores 16/);
 });
 
 test('NPS: los "%" de las barras no se ocultan en el celular (van verticales)', () => {

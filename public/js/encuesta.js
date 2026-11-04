@@ -165,17 +165,15 @@ function encuestaElegirVistaQ1(i, vista) {
   var q = (ENCUESTA_PREGUNTAS || []).filter(function (x) { return x.key === 'q1'; })[0];
   if (u && q) _encuestaDibujarPregunta(i, q, u.datos, u.k);
 }
-function _encuestaPctDe(n, base) { return base > 0 ? Math.round((n / base) * 1000) / 10 : null; }
 function _encuestaNpsHtml(n) {
   if (!n.respondieron) return '<p class="enc-nps-nota">Nadie contestó la pregunta 1 con estos filtros: sin NPS.</p>';
   var pct = function (v) { return encuestaFmtPct(v); };
   // Fase 197: el resumen dice que 21,4 es el NPS (promotores − detractores),
   // no un total ni una cantidad de encuestas.
   return '<div class="enc-nps-valor"><span class="enc-nps-etq">NPS (promotores − detractores)</span> <span class="enc-nps-num">' + String(n.nps).replace('.', ',') + '</span></div>' +
-    '<p class="enc-nps-formula">NPS = ' + pct(n.pctPromotores) + ' de promotores − ' + pct(n.pctDetractores) + ' de detractores = ' + String(n.nps).replace('.', ',') + '</p>' +
-    '<p class="enc-nps-detalle">Promotores ' + n.promotores + ' (' + pct(n.pctPromotores) + '), pasivos ' + n.pasivos + ' (' + pct(_encuestaPctDe(n.pasivos, n.respondieron)) + '), detractores ' + n.detractores + ' (' + pct(n.pctDetractores) + '), sobre ' +
-    n.respondieron.toLocaleString('es-CO') + ' que contestaron la pregunta 1 (100 %).</p>' +
-    '<p class="enc-nps-nota">' + esc(ENCUESTA_NPS_NOTA) + '</p>';
+    // Fase 251 (pedido de Edwin, 04/11): solo el valor y la formula; sin las
+    // lineas de detalle (promotores/pasivos/detractores) ni la nota de la formula.
+    '<p class="enc-nps-formula">NPS = ' + pct(n.pctPromotores) + ' de promotores − ' + pct(n.pctDetractores) + ' de detractores = ' + String(n.nps).replace('.', ',') + '</p>';
 }
 
 function _encuestaDibujarPregunta(i, q, datos, k) {

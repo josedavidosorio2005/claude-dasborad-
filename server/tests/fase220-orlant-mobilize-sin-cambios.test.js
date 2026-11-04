@@ -90,7 +90,9 @@ test('Centro de cargas: lo retirado de ORLANT y de Mobilize no cambia', () => {
   assert.equal(centro.cargaRetiradaPara('ORLANT', citas), true);
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', salida), false);
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', citas), false);
-  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT']); // Fase 229: + HLM
+  // Fase 229: + HLM. Fase 251: + MOBILIZE (solo Calidad vieja y Tipificacion de WhatsApp).
+  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
+  assert.deepEqual(centro.CARGAS_RETIRADAS_POR_CLIENTE.MOBILIZE, ['calidad', 'tipificacion_whatsapp']);
 });
 
 test('skills de WhatsApp: ORLANT conserva su semilla; Mobilize no tiene ninguno', () => {
