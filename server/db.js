@@ -4542,6 +4542,17 @@ function habilitarHospitalLaMariaComoOrlant() {
 }
 runOnceMigration('fase229_hlm_como_orlant_v1', habilitarHospitalLaMariaComoOrlant);
 
+// Fase 230 (OK del usuario, 03/11): Clinica Aurora con WhatsApp por rangos de
+// tiempo (sub-vista de Trafico de WhatsApp), como ORLANT y HLM. Solo agrega el
+// modulo whatsapp_tiempos al registro; las pestañas, la regla de salida y lo
+// demas quedan igual (el mismo cuerpo de la Fase 220 conserva todo lo que ya
+// tenia). Mientras no se carguen tiempos por rango, Nivel de Servicio de
+// WhatsApp sigue mostrando la grafica mensual (Fase 229). Idempotente.
+function habilitarWhatsappTiemposAurora() {
+  habilitarModulosComoOrlant(AURORA, ['whatsapp_tiempos'], 'fase230_aurora_whatsapp_tiempos_v1');
+}
+runOnceMigration('fase230_aurora_whatsapp_tiempos_v1', habilitarWhatsappTiemposAurora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4609,6 +4620,7 @@ module.exports.agregarTotalTraficoOrlant = agregarTotalTraficoOrlant;
 module.exports.mostrarTraficoAurora = mostrarTraficoAurora;
 module.exports.habilitarSalidaAurora = habilitarSalidaAurora;
 module.exports.habilitarHospitalLaMariaComoOrlant = habilitarHospitalLaMariaComoOrlant;
+module.exports.habilitarWhatsappTiemposAurora = habilitarWhatsappTiemposAurora;
 module.exports.HLM = HLM;
 module.exports.AURORA = AURORA;
 // Fase 161: idem (prueba de idempotencia y de que las tablas de datos tienen sus triggers).

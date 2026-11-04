@@ -464,6 +464,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Tipificación › Clasificación de asesores (mientras no se clasifiquen, toda
   la salida queda en "Sin clasificar" y cuenta en el Total); si Aurora no
   tiene esas líneas, se apaga `clasificacionAsesores` en la misma tabla.
+  **Fase 229 (03/11)**: Hospital La María quedó igual (misma regla
+  provisional, mismas preguntas). **Fase 230 (04/11)**: Aurora también
+  tiene WhatsApp por rangos de tiempo. Las preguntas para Edwin de los dos,
+  en lenguaje simple, están en
+  [`docs/preguntas-edwin-hlm-aurora.md`](preguntas-edwin-hlm-aurora.md):
+  cómo se marca la salida, General / 3P, SKILL_ID 0 de WhatsApp, sedes de
+  HLM y qué meses cargar. Edwin quedó en revisar Aurora y HLM y avisar si
+  ve errores.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 

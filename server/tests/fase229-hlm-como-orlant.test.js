@@ -86,10 +86,9 @@ test('la migracion es idempotente y conserva lo que ya tenia HLM', () => {
   assert.equal(db.prepare('SELECT COUNT(*) n FROM skills_whatsapp WHERE campana = ?').get(HLM).n, 1);
 });
 
-test('Aurora no cambia con la migracion de HLM', () => {
+test('las pestañas de Aurora no cambian con la migracion de HLM', () => {
   const aur = JSON.parse(db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('CLINICA AURORA').layout);
   assert.deepEqual(aur, auroraEsperada().layout);
-  assert.ok(!derivarListasRegistro(reg.leerRegistro(db)).whatsappTiempos.includes('CLINICA AURORA'));
 });
 
 // ── WhatsApp por rangos sin datos: la grafica mensual de siempre ──

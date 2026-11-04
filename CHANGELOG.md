@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.116.0 — Noviembre 2026
+
+**Fase 230: Clínica Aurora con WhatsApp por rangos de tiempo (pedido de Edwin).**
+
+- Clínica Aurora ya puede cargar los **tiempos de respuesta de WhatsApp por
+  rango** (0–3, 3–5, 5–8, 8–10 y más de 10 minutos), igual que ORLANT y
+  Hospital La María. Se ven en Tráfico de WhatsApp › Nivel de Servicio.
+- Mientras no se carguen, esa sub-pestaña sigue mostrando la gráfica mensual
+  de siempre, con una nota.
+- Nada más cambia en Aurora. ORLANT, Mobilize y Hospital La María siguen igual.
+
 ## v1.115.0 — Noviembre 2026
 
 **Fase 229: Hospital La María con las pestañas de ORLANT (pedido de Edwin).**

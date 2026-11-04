@@ -18755,3 +18755,28 @@ tocar código; un PR por punto.
     prueba).
   - Capturas fuera del repo (carpetas mobilize-2026-11-03 y cierre-2026-11-03
     de capturas-produccion, en la carpeta de bases de Edwin). Sesión y navegador cerrados al final.
+
+## Fases 229–230 — Hospital La María y Clínica Aurora como ORLANT (v1.115.0–v1.116.0, 2026-11-03/04)
+
+- **#639, Fase 229 (v1.115.0)**: Hospital La María recibe, con la migración
+  idempotente `fase229_hlm_como_orlant_v1`, los módulos `tipificacion`,
+  `salida` y `whatsapp_tiempos` (mismo cuerpo de la Fase 220, ahora compartido
+  como `habilitarModulosComoOrlant`), "Total tráfico" después de Salida y la
+  skill 0 de WhatsApp (salida). Regla de salida de ORLANT provisional en
+  `SALIDA_POR_CLIENTE`; la hoja manual de salida queda retirada para HLM. En
+  Tráfico de WhatsApp › Nivel de Servicio, sin tiempos por rango cargados pero
+  con el % mensual, se ve la gráfica mensual con una nota
+  (`public/js/whatsapp-tiempos.js`, depende de los datos, no del cliente).
+  Salud y Calidad siguen apagados. La sesión del 03/11 se cortó antes del
+  cierre de documentación; se cierra aquí.
+- **Fase 230 (v1.116.0)**: Clínica Aurora gana `whatsapp_tiempos` con la
+  migración idempotente `fase230_aurora_whatsapp_tiempos_v1` (mismo cuerpo).
+  Las pestañas no cambian (es una sub-vista de Tráfico de WhatsApp); Cargar
+  Datos ofrece la plantilla de tiempos por rango a Aurora (sale del registro).
+  Mientras Aurora no cargue tiempos por rango, ve la gráfica mensual con la
+  nota de la Fase 229. Pruebas: `fase230-aurora-whatsapp-tiempos.test.js`
+  (registro, pestañas iguales, regla de salida igual, HLM igual, idempotencia
+  conservando retoques, gráfica mensual con nota) y las guardianas de las
+  Fases 153, 160, 220 y 229 ajustadas (ORLANT y Mobilize no cambian).
+- **Preguntas para Edwin** de los dos clientes, en lenguaje simple:
+  [`docs/preguntas-edwin-hlm-aurora.md`](../preguntas-edwin-hlm-aurora.md).
