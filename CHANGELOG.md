@@ -12,6 +12,9 @@ sepan que hay nuevo, que se corrigio y que falta.
   asesor que tienen alias (igual que Agendamiento), y dice cuántos unió.
 - Se quitó código que ya no usaba ninguna pestaña (vistas viejas de ASA de
   Tráfico). No cambia nada de lo que se ve.
+- Con la cuenta de administrador principal, la pestaña Calidad de los
+  dashboards ahora también se actualiza sola cada 5 minutos (en la versión
+  1.119.0 solo pasaba con los demás usuarios).
 
 ## v1.120.0 — Noviembre 2026
 

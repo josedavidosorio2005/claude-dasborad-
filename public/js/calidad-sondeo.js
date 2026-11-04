@@ -8,8 +8,11 @@
 
 var _calSondeo = { timer: null, ultimaAsesor: 0, ultimaDash: 0, enCurso: false };
 
+// Fase 239 (visto al verificar la 236 en produccion): con el administrador
+// MAESTRO, currentUser es null a proposito (session.js); la sesion se mide
+// solo por el token. El aviso del asesor sigue mirando currentUser.rol.
 function _calSondeoConSesion() {
-  return typeof authToken !== 'undefined' && !!authToken && typeof currentUser !== 'undefined' && !!currentUser;
+  return typeof authToken !== 'undefined' && !!authToken;
 }
 
 // Campañas de los paneles de monitoreos (calidad_kpis/pie/bar_asesores) de la
@@ -32,7 +35,7 @@ async function calSondeoTick(forzar) {
   _calSondeo.enCurso = true;
   try {
     // 1) Portal del asesor: el aviso "Tienes N monitoreos nuevos".
-    if (currentUser && currentUser.rol === 'ASESOR' && typeof calCargarAlertaNuevos === 'function' &&
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.rol === 'ASESOR' && typeof calCargarAlertaNuevos === 'function' &&
         calSondeoToca(Object.assign({ ultima: _calSondeo.ultimaAsesor, intervalo: CAL_SONDEO_ASESOR_MS }, base))) {
       _calSondeo.ultimaAsesor = base.ahora;
       var antes = typeof _misMonitoreosNuevos !== 'undefined' ? _misMonitoreosNuevos : 0;
