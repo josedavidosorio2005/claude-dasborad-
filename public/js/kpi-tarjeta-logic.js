@@ -109,7 +109,9 @@ function kpiSparklinePuntos(valores, ancho, alto) {
 
 // HTML de la tarjeta. t = { valor (texto ya formateado), etiqueta, notaHtml
 // (HTML ya escapado, opcional), cls (clase extra), variacion (de
-// kpiVariacion), meta (de kpiMeta), valorPequeno (texto en vez de cifra) }.
+// kpiVariacion), meta (de kpiMeta), valorPequeno (texto en vez de cifra),
+// soloTitulo (Fase 231: solo la cifra y el titulo -- sin nota "?", sin
+// variacion ni linea de meta, pero CON el borde de color del semaforo) }.
 function kpiTarjetaHtml(t) {
   var meta = t.meta || null;
   var cls = ['aurora-kpi', 'kpi-ejecutiva'];
@@ -117,7 +119,8 @@ function kpiTarjetaHtml(t) {
   if (sem) cls.push(sem); else if (t.cls) cls.push(t.cls);
   var html = '<div class="' + cls.join(' ') + '">' +
     '<div class="kv' + (t.valorPequeno ? ' kv-texto' : '') + '">' + _kpiEsc(t.valor) + '</div>' +
-    '<div class="kl">' + _kpiEsc(t.etiqueta) + (t.notaHtml || '') + '</div>';
+    '<div class="kl">' + _kpiEsc(t.etiqueta) + (t.soloTitulo ? '' : (t.notaHtml || '')) + '</div>';
+  if (t.soloTitulo) return html + '</div>';
   var v = t.variacion;
   if (v && v.enCurso) {
     html += '<div class="kpi-var kpi-var-neutra">' + _kpiEsc(v.texto) + '</div>';

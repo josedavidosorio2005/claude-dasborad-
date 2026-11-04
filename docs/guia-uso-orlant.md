@@ -687,7 +687,8 @@ evita que las cargas futuras se unifiquen de la misma forma.
   respuestas de la pregunta 3 (Sí / No / Sin respuesta). Un mes sin
   encuestas dice "Sin encuestas este mes".
 - **FCR en Flujo de Llamadas**: en la sub-pestaña "Flujo de Llamadas" hay
-  una tarjeta "Solución en primer contacto (FCR)" = encuestas con la
+  una tarjeta "Solución en primer contacto" (FCR; desde la v1.116.1 solo
+  con el número y el título, la cuenta está en One & Done) = encuestas con la
   pregunta 3 en "Sí" ÷ todas las encuestas del mes (o, si se configura
   `fcrBase: 'respondieron'` en el panel, ÷ las que respondieron la
   pregunta 3). Siempre muestra la cuenta ("3 de 45 encuestas"); el mes es

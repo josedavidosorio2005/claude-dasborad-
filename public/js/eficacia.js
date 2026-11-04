@@ -40,7 +40,9 @@ function _eficaciaMesesLbl(meses) {
 // resumen de Flujo de Llamadas, en el lugar que le deja _traficoDibujarKpis
 // (#tv-ef-res-<i>, se reescribe en cada filtro). Mismo calculo que la
 // sub-pestaña: mismo endpoint, Desde/Hasta del panel y meses de MESES.
-async function _eficaciaDibujarTarjetaResumen(i, campana, desde, hasta) {
+// Fase 231: con `soloTitulos` (resumenSoloTitulos, Mobilize) solo la cifra y
+// "Eficacia" -- sin "?" ni la linea "X de Y contestadas de ingreso" / "Sin CDR".
+async function _eficaciaDibujarTarjetaResumen(i, campana, desde, hasta, soloTitulos) {
   if (!document.getElementById('tv-ef-res-' + i)) return;
   var q = 'campana=' + encodeURIComponent(campana) + (desde ? '&desde=' + encodeURIComponent(desde) : '') + (hasta ? '&hasta=' + encodeURIComponent(hasta) : '');
   var r = null;
@@ -50,6 +52,11 @@ async function _eficaciaDibujarTarjetaResumen(i, campana, desde, hasta) {
   var nota = r && r.codigos
     ? ' <span title="' + esc(eficaciaNotaTexto(r.codigos)) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
     : '';
+  if (soloTitulos) {
+    var sT = r ? eficaciaSumarMeses(_eficaciaMesesFiltrados(r)) : null;
+    el.innerHTML = '<div class="kv">' + (sT && sT.contestadas ? esc(_eficaciaPct(sT.pct)) : '—') + '</div><div class="kl">Eficacia</div>';
+    return;
+  }
   if (!r) { el.innerHTML = '<div class="kv">—</div><div class="kl">Eficacia</div><div class="enc-fcr-sub">No se pudo cargar</div>'; return; }
   var meses = _eficaciaMesesFiltrados(r);
   var s = eficaciaSumarMeses(meses);

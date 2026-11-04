@@ -161,6 +161,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   en la sub-pestaña Abandono (hoy "% Abandono del periodo")? (4) "Acá la mitad
   es el nivel de servicio": se entendió como la tarjeta de Nivel de servicio
   en Flujo; confirmar.
+- **Mobilize, Flujo de Llamadas "solo títulos": confirmar con Edwin** (Fase
+  231, reunión 04/11) — Prioridad BAJA. Desde la v1.116.1 la fila de tarjetas
+  del resumen muestra solo número y título; también se quitaron la variación
+  contra el mes anterior ("▲ 2,1 % vs. sep") y la línea de meta, pero se dejó
+  el color del borde del semaforo. ¿Las quiere de vuelta? Es una sola opción
+  del panel (`resumenSoloTitulos` en el trafico_combo de MOBILIZE; con
+  `false` vuelven todos los textos). El rótulo de mes parcial ("mes en curso")
+  es de toda la fila y se dejó. Cómo se cierra: su respuesta.
 - **Mobilize, reunión del 03/11: cosas por confirmar** (Fase 226) — Prioridad
   MEDIA. (1) La "Tasa de contacto llamadas de salida" dice "Pendiente" en los
   meses sin el reporte de no conectadas: ¿le sirve así? (2) "Quitar todos los

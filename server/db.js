@@ -4529,6 +4529,30 @@ function migrarMobilizeResumenTarjetas() {
 }
 runOnceMigration('dashboards_config_mobilize_resumen_tarjetas_v1', migrarMobilizeResumenTarjetas);
 
+// Fase 231 (pedido de Edwin, reunion 04/11, solo MOBILIZE): en la fila del
+// resumen de Flujo de Llamadas cada tarjeta muestra solo la cifra y el titulo.
+// Pone `resumenSoloTitulos: true` en el trafico_combo de MOBILIZE (tab
+// "flujo"), solo si tiene la forma de la Fase 227 (resumenOrden); cualquier
+// otra se deja intacta y se registra. Para devolver los textos basta con
+// quitar la opcion. Ningun otro cliente ni panel se toca. Idempotente.
+function migrarMobilizeResumenSoloTitulos() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  if (panel && panel.resumenSoloTitulos !== undefined) return;
+  if (!panel || !Array.isArray(panel.resumenOrden)) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_solo_titulos_v1: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  panel.resumenSoloTitulos = true;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_solo_titulos_v1 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_resumen_solo_titulos_v1', migrarMobilizeResumenSoloTitulos);
+
 // Fase 229 (OK del usuario, 03/11): Hospital La Maria como ORLANT, igual que
 // Aurora en la Fase 220: Tipificacion (CDR de llamadas y WhatsApp), "Llamadas y
 // WhatsApp de salida" (del CDR, regla de ORLANT PROVISIONAL en
@@ -4584,6 +4608,7 @@ module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
 module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTotal;
 module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
+module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
