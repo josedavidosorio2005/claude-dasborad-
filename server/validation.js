@@ -262,6 +262,8 @@ const createMonitoreoBody = z.object({
   evaluador: z.string().trim().max(120).optional().default(''),
   observaciones: textoObservacionesOpt,
   answers: answersSchema,
+  // Fase 237: plantilla elegida (si la campaña tiene varias); sin ella, la principal.
+  plantillaId: z.coerce.number().int().positive().optional(),
 });
 
 // Carga masiva de monitoreos (Excel de 3 hojas: Monitoreos + Diccionario +

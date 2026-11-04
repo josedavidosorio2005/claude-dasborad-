@@ -13,7 +13,7 @@ const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 const PW = 'Clave#Fase222x';
-const ERROR = 'Solo puedes dar acceso a clientes o campañas a los que tú tienes acceso';
+const ERROR = 'Solo puedes dar acceso a clientes, campañas o plantillas a los que tú tienes acceso'; // Fase 237: + plantillas
 let admin;
 let aux;
 const ids = {};

@@ -166,6 +166,7 @@ function openEditModal(id){
   document.getElementById('mu-cargar-datos').checked=(u.perms && u.perms.cargarDatos===true);
   syncCargarDatosLock(u.rol);
   buildCargarModulosCheckboxes(u.perms, u.rol);
+  buildPlantillaCheckboxes(u.perms, u.rol); // Fase 237
   document.getElementById('modal-user').classList.add('show');
 }
 
@@ -182,6 +183,7 @@ function onRolChange(){
   if(showAsesor) buildAsesorCampanaSelect(null);
   syncCargarDatosLock(rol);
   buildCargarModulosCheckboxes(null, rol);
+  buildPlantillaCheckboxes(null, rol); // Fase 237
 }
 
 // REPORTES siempre puede cargar datos (feedback Edwin 2.1): el backend lo fuerza;
@@ -260,6 +262,44 @@ function aplicarCargarModulos(perms, rol){
   return perms;
 }
 
+// Fase 237 (plan de Calidad, sec. 3): acceso por plantilla de calificación,
+// solo para CALIDAD y SUPERVISOR (los que monitorean). Casillas SIN marcar
+// por defecto. Sin ninguna marcada, el usuario sigue como siempre: todas las
+// plantillas de sus campañas; con alguna marcada, solo esas. El servidor
+// (auth.canUsePlantilla) es el candado real.
+var _usersPlantillas = null;
+async function _usersCargarPlantillas(){
+  if(_usersPlantillas) return _usersPlantillas;
+  try{ _usersPlantillas = (await apiRequest('GET','/calidad/plantillas/todas')) || []; }catch(e){ _usersPlantillas = []; }
+  return _usersPlantillas;
+}
+function usersPlantillaEtiqueta(p){ return p.nombre && p.nombre !== p.campana ? p.campana+' — '+p.nombre : p.campana; }
+async function buildPlantillaCheckboxes(existingPerms, rol){
+  var sec=document.getElementById('mu-plantillas-section');
+  if(!sec) return;
+  var mostrar=(rol==='CALIDAD' || rol==='SUPERVISOR');
+  sec.style.display=mostrar?'block':'none';
+  var grid=document.getElementById('mu-plantillas-grid');
+  if(!mostrar){ grid.innerHTML=''; return; }
+  var lista = await _usersCargarPlantillas();
+  grid.innerHTML = lista.length ? lista.map(function(p){
+    var checked=!!(existingPerms && existingPerms['plantilla_'+p.id]===true);
+    return '<label class="client-perm-item"><input type="checkbox" data-plantilla="'+esc(p.id)+'" '+(checked?'checked':'')+'>'+esc(usersPlantillaEtiqueta(p))+'</label>';
+  }).join('') : '<p class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0">Todavía no hay plantillas de calificación.</p>';
+}
+// Pone en `perms` las claves plantilla_<id>: las marcadas si el rol es CALIDAD o
+// SUPERVISOR; las demas (y cualquiera de otro rol) en false.
+function aplicarPlantillas(perms, rol){
+  var monitorea=(rol==='CALIDAD' || rol==='SUPERVISOR');
+  document.querySelectorAll('#mu-plantillas-grid input[data-plantilla]').forEach(function(inp){
+    var k='plantilla_'+inp.dataset.plantilla;
+    if(monitorea && inp.checked) perms[k]=true;
+    else if(perms[k]!==undefined) perms[k]=false;
+  });
+  if(!monitorea) Object.keys(perms).forEach(function(k){ if(/^plantilla_/.test(k)) perms[k]=false; });
+  return perms;
+}
+
 function closeUserModal(){
   document.getElementById('modal-user').classList.remove('show');
 }
@@ -298,6 +338,7 @@ async function saveUserModal(){
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
     if(document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
     aplicarCargarModulos(payload.perms, rol);
+    aplicarPlantillas(payload.perms, rol); // Fase 237
     if(rol==='ASESOR') payload.asesorCampana = document.getElementById('mu-asesor-campana').value;
     var btnC=document.querySelector('#modal-user .btn-primary');
     try{
@@ -324,6 +365,7 @@ async function saveUserModal(){
     }
     newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
     aplicarCargarModulos(newPerms, rol);
+    aplicarPlantillas(newPerms, rol); // Fase 237
     var payload={ nombre:nombre, user:user, rol:rol, perms:newPerms };
     if(pass) payload.password=pass;
     if(rol==='ASESOR') payload.asesorCampana=document.getElementById('mu-asesor-campana').value;

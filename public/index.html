@@ -805,6 +805,12 @@
       <div id="mu-cargar-datos-reportes-note" class="hint" style="display:none;font-size:0.78rem;color:var(--c-text-muted);margin-top:4px">El rol REPORTES siempre puede cargar datos.</div>
     </div>
     <!-- Fase 153 (PR 5): solo rol CALIDAD; todas apagadas por defecto. -->
+    <!-- Fase 237: acceso por plantilla de calificacion (users.js, buildPlantillaCheckboxes). -->
+    <div class="client-perms-section" id="mu-plantillas-section" style="display:none">
+      <h4>Plantillas de calificación que puede usar</h4>
+      <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Sin ninguna marcada, puede usar todas las plantillas de sus campañas. Si marcas alguna, solo podrá monitorear con las marcadas (y siempre dentro de sus campañas).</div>
+      <div class="client-perm-grid" id="mu-plantillas-grid"></div>
+    </div>
     <div class="client-perms-section" id="mu-cargar-modulos-section" style="display:none">
       <h4>Puede cargar en el Centro de cargas (por módulo)</h4>
       <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Solo en los clientes marcados arriba en "Acceso a campañas de Calidad". Si "Puede cargar datos operativos" está marcado, ya carga todos los módulos.</div>
