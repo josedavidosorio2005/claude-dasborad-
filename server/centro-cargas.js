@@ -54,7 +54,11 @@ const CARGAS_POR_MODULO = {
 // datos no se borran (Edwin borra solo cuando este seguro) y Deshacer/Eliminar
 // por id siguen funcionando. Los demas clientes las siguen viendo.
 const CARGAS_RETIRADAS_POR_CLIENTE = {
-  ORLANT: ['salida', 'efectividad_citas'],
+  // Fase 243 (pedido de Edwin, 04/11): tampoco "Efectividad de Agendamiento":
+  // el Ranking de Asesores de ORLANT sale de Agendas + el CDR desde la Fase
+  // 213 (usaRankingDesdeContactos). El MODULO sigue activo en el registro (si
+  // no, el ranking desapareceria de la pestaña Agendamiento) y no se borra nada.
+  ORLANT: ['salida', 'efectividad_citas', 'efectividad_agendamiento'],
   // Fase 220: Aurora saca la salida del CDR de Tipificacion (como ORLANT); no usa la hoja manual.
   'CLINICA AURORA': ['salida'],
   // Fase 229: Hospital La Maria, igual que Aurora.
