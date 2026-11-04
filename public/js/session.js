@@ -261,6 +261,7 @@ function doLogout(){
   try{ if(typeof closeCargas === 'function') closeCargas(); }catch(e){}
   try{ if(typeof closeCentroCargas === 'function') closeCentroCargas(); }catch(e){}
   if(typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
+  if(typeof calSondeoReiniciar === 'function') calSondeoReiniciar(); // Fase 236
   currentUser=null; authToken=null; users=[]; historial=[];
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.119.0 — Noviembre 2026
+
+**Fase 236: Calidad, avisos sin tener que volver a entrar.**
+
+- El asesor ya no tiene que cerrar sesión y volver a entrar para ver que le
+  llegó un monitoreo nuevo: la plataforma revisa cada 3 minutos (mientras
+  la ventana está a la vista) y al volver a ella, y muestra el aviso
+  "Tienes N monitoreos nuevos".
+- En el dashboard de un cliente, la pestaña Calidad se actualiza sola cada
+  5 minutos (y al volver a la ventana) si hay monitoreos nuevos, sin perder
+  los filtros elegidos.
+- Solo consulta; no cambia ningún dato.
+
 ## v1.118.0 — Noviembre 2026
 
 **Fase 235: Mobilize, las 8 tarjetas de Flujo de Llamadas en una sola fila.**
