@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.120.1 — Noviembre 2026
+
+**Fase 239: arreglos técnicos pequeños.**
+
+- La carga masiva de monitoreos de Calidad también une los nombres de
+  asesor que tienen alias (igual que Agendamiento), y dice cuántos unió.
+- Se quitó código que ya no usaba ninguna pestaña (vistas viejas de ASA de
+  Tráfico). No cambia nada de lo que se ve.
+
 ## v1.120.0 — Noviembre 2026
 
 **Fase 237: Calidad, preparada para varias plantillas por cliente.**
