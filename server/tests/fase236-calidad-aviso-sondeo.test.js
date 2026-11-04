@@ -99,6 +99,13 @@ test('dashboard con la pestaña Calidad: pide los monitoreos y redibuja solo si 
   assert.deepEqual(pedidos, []);
 });
 
+test('Fase 239: con el administrador maestro (currentUser null) el dashboard también se refresca', async () => {
+  const _gd = { cliente: 'ORLANT', tab: 'calidad', config: { layout: { tabs: [{ key: 'calidad', panels: [{ tipo: 'calidad_kpis', campana: 'ORLANT' }] }] } } };
+  const { ctx, pedidos } = sandbox({ currentUser: null, _gd });
+  await ctx.calSondeoTick(true);
+  assert.deepEqual(pedidos, ['/monitoreos?campana=ORLANT']);
+});
+
 test('index.html carga los 2 archivos y el cierre de sesión reinicia el sondeo; nada escribe', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/calidad-sondeo-logic.js') > -1 && html.indexOf('js/calidad-sondeo-logic.js') < html.indexOf('js/calidad-sondeo.js'));
