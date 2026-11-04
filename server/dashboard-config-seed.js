@@ -447,9 +447,10 @@ const MOBILIZE = {
         { tipo: 'trafico_combo', campana: 'MOBILIZE',
           etiquetaLinea: 'Tipo de línea', etiquetaLineaPlural: 'líneas',
           etiquetaTotal: 'Llamadas ingresadas', // Fase 204: tarjeta, leyenda, tooltip, Ver datos y Excel
-          // Fase 227 (pedido de Edwin, 03/11): Nivel de servicio, Tasa de abandono y
-          // Eficacia en el resumen, despues de Llamadas contestadas (FCR sigue al final).
-          resumenOrden: ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'],
+          // Fase 227 (pedido de Edwin, 03/11): Tasa de abandono y Eficacia en el resumen.
+          // Fase 248: mismo orden que ORLANT (TRAFICO_ORDEN_TARJETAS_LLAMADAS) y al
+          // final Eficacia (FCR sigue al final, despues de Eficacia).
+          resumenOrden: ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia'],
           eficaciaEnResumen: true,
           // Fase 231 (pedido de Edwin, 04/11): en la fila del resumen, solo la cifra y
           // el titulo de cada tarjeta (sin "?", variacion ni meta; el color se queda).

@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.122.1 — Noviembre 2026
+
+**Fase 248: el mismo orden de tarjetas de ORLANT en Mobilize y en Tráfico de WhatsApp.**
+
+- Mobilize › Flujo de Llamadas: la fila de tarjetas queda Llamadas
+  ingresadas, Contestadas, Abandonadas, Nivel de servicio (20 s), Nivel de
+  atención, Tasa de abandono y, al final, Eficacia y Solución en primer
+  contacto.
+- Tráfico de WhatsApp (todos los clientes que lo tienen): Total de WhatsApp,
+  Contestados, Abandonados, Nivel de servicio, Nivel de atención y Tasa de
+  abandono. Donde hay dos niveles de servicio (5 min y 20 s), el de 20 s
+  sigue al final, como antes.
+- Solo cambia el orden: las cifras, los textos, las gráficas y las
+  sub-pestañas son las mismas. ORLANT, Clínica Aurora y Hospital La María en
+  Tráfico de Llamadas quedan igual.
+
 ## v1.122.0 — Noviembre 2026
 
 **Fase 246: Tráfico de Llamadas, nuevo orden de las tarjetas de Flujo de Llamadas (pedido de Edwin).**

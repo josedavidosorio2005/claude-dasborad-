@@ -863,6 +863,8 @@ var TRAFICO_ORDEN_TARJETAS = ['total', 'contestadas', 'abandonadas', 'nivelAtenc
 // orden de los paneles de Llamadas SIN `resumenOrden` propio (ORLANT, Aurora,
 // HLM); Mobilize tiene el suyo (Fase 227) y no cambia. Trafico de WhatsApp
 // sigue con TRAFICO_ORDEN_TARJETAS.
+// Fase 248: Trafico de WhatsApp (todos los clientes) tambien pasa este orden,
+// y el `resumenOrden` de Mobilize es este mismo + 'eficacia' al final.
 var TRAFICO_ORDEN_TARJETAS_LLAMADAS = ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono'];
 // Fase 244: etiqueta de cada barra de Abandono: [cantidad, "% abandono"]
 // (2 lineas). Sin dato: ''. Formato es-CO (miles con punto, coma decimal).

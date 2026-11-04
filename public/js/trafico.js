@@ -986,7 +986,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   // Fase 227 (pedido de Edwin, 03/11, solo Mobilize): cada tarjeta por clave y
   // el orden lo da el panel (`resumenOrden`); sin esa opcion, el orden de
   // siempre. Fase 246: Trafico de Llamadas pasa TRAFICO_ORDEN_TARJETAS_LLAMADAS
-  // cuando el panel no trae orden propio; WhatsApp no pasa orden. "eficacia" es solo un lugar
+  // cuando el panel no trae orden propio; Fase 248: WhatsApp tambien lo pasa. "eficacia" es solo un lugar
   // (#<prefijo>-ef-res-<i>) que llena _eficaciaDibujarTarjetaResumen
   // (eficacia.js), y solo si el panel la pide (`ctx.eficaciaEnResumen`).
   var tarjetas = {

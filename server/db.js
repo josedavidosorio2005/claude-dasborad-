@@ -4558,6 +4558,32 @@ function migrarMobilizeResumenSoloTitulos() {
 }
 runOnceMigration('dashboards_config_mobilize_resumen_solo_titulos_v1', migrarMobilizeResumenSoloTitulos);
 
+// Fase 248 (pedido del usuario, 04/11): Flujo de Llamadas de MOBILIZE con el
+// mismo orden de tarjetas que ORLANT (Fase 246) y al final Eficacia (FCR sigue
+// despues, la agrega encuesta.js). Solo cambia `resumenOrden` del
+// trafico_combo de MOBILIZE (tab "flujo") si es EXACTAMENTE el de la Fase 227;
+// ya con el nuevo no hace nada; cualquier otro se deja intacto y se registra.
+// Ninguna cifra, texto, sub-pestaña ni otro cliente cambia. Idempotente.
+const MOBILIZE_RESUMEN_ORDEN_V2 = ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia'];
+function migrarMobilizeResumenOrdenComoOrlant() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = (layout.tabs || []).find((t) => t && t.key === 'flujo');
+  const panel = tab && (tab.panels || []).find((p) => p && p.tipo === 'trafico_combo' && p.campana === 'MOBILIZE');
+  const actual = panel && Array.isArray(panel.resumenOrden) ? panel.resumenOrden.join(',') : null;
+  if (actual === MOBILIZE_RESUMEN_ORDEN_V2.join(',')) return;
+  if (actual !== MOBILIZE_RESUMEN_ORDEN.join(',')) {
+    if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_orden_v2: MOBILIZE no tiene la forma esperada -- se deja intacto, revisar a mano.');
+    return;
+  }
+  panel.resumenOrden = MOBILIZE_RESUMEN_ORDEN_V2.slice();
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'MOBILIZE');
+  if (!config.isTest) console.log('[db] Migracion dashboards_config_mobilize_resumen_orden_v2 aplicada.');
+}
+runOnceMigration('dashboards_config_mobilize_resumen_orden_v2', migrarMobilizeResumenOrdenComoOrlant);
+
 // Fase 229 (OK del usuario, 03/11): Hospital La Maria como ORLANT, igual que
 // Aurora en la Fase 220: Tipificacion (CDR de llamadas y WhatsApp), "Llamadas y
 // WhatsApp de salida" (del CDR, regla de ORLANT PROVISIONAL en
@@ -4658,6 +4684,7 @@ module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTot
 module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
 module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
+module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
 // Fase 153 (P3): idem.
 module.exports.crearClinicaAurora = crearClinicaAurora;
