@@ -858,6 +858,12 @@ function traficoValidarNuevoMapeo(input) {
 // orden y las que falten al final (ninguna tarjeta se pierde por un error de
 // configuracion). "eficacia" solo cuenta si el panel la pide.
 var TRAFICO_ORDEN_TARJETAS = ['total', 'contestadas', 'abandonadas', 'nivelAtencion', 'tasaAbandono', 'nivelServicio'];
+// Fase 246 (pedido de Edwin, 04/11): en Trafico de Llamadas > Flujo de
+// Llamadas, Nivel de servicio (20 s) va antes de Nivel de atencion. Es el
+// orden de los paneles de Llamadas SIN `resumenOrden` propio (ORLANT, Aurora,
+// HLM); Mobilize tiene el suyo (Fase 227) y no cambia. Trafico de WhatsApp
+// sigue con TRAFICO_ORDEN_TARJETAS.
+var TRAFICO_ORDEN_TARJETAS_LLAMADAS = ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono'];
 // Fase 244: etiqueta de cada barra de Abandono: [cantidad, "% abandono"]
 // (2 lineas). Sin dato: ''. Formato es-CO (miles con punto, coma decimal).
 var TRAFICO_ABANDONO_ETIQUETAS_MAX = 12;
@@ -888,6 +894,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TRAFICO_ABANDONO_ETIQUETAS_MAX: TRAFICO_ABANDONO_ETIQUETAS_MAX,
     traficoOrdenTarjetas: traficoOrdenTarjetas,
     TRAFICO_ORDEN_TARJETAS: TRAFICO_ORDEN_TARJETAS,
+    TRAFICO_ORDEN_TARJETAS_LLAMADAS: TRAFICO_ORDEN_TARJETAS_LLAMADAS,
     traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
     traficoPctAtencionAbandono: traficoPctAtencionAbandono,
     traficoAbandonadasDe: traficoAbandonadasDe,
