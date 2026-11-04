@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.124.0 — Noviembre 2026
+
+**Fase 250: Flujo de WhatsApp por día (pedido de Edwin).**
+
+- En Tráfico de WhatsApp › Flujo de WhatsApp, el filtro "Granularidad" ahora
+  también tiene "Dia", igual que en Flujo de Llamadas: se elige un mes y se
+  ve día por día en las gráficas.
+- Aplica a todos los clientes con Tráfico de WhatsApp cuya base trae el día
+  en cada fila (la base diaria de Wolkvox). Si un cliente tiene cargada la
+  plantilla vieja por periodo (sin día), la opción "Dia" no aparece y nada
+  se inventa.
+- Las cifras por mes no cambian: la suma de los días da el total del mes.
+
 ## v1.123.0 — Noviembre 2026
 
 **Fase 249: encabezado de los dashboards más sencillo (pedido de Edwin).**

@@ -15,6 +15,8 @@
 // granularidad diaria (traficoWppAgregarPorPeriodo, trafico-whatsapp-
 // logic.js, agrupa por mes/año en vez de sumar dias) y las graficas de
 // tendencia muestran un punto por PERIODO cargado (hoy, uno solo: agosto).
+// Fase 250: con la base DIARIA de Wolkvox (Fase 116: cada fila = una cola por
+// un dia) tambien hay granularidad "Dia" (traficoWppGranularidades).
 
 // Descarga autenticada de la plantilla (GET requiere el header Authorization
 // via JWT, asi que un <a href> plano no sirve -- mismo patron de blob+URL
@@ -229,6 +231,9 @@ async function _traficoWppRenderPanel(p, i) {
     tieneDatosMes: mesesTWpp.some(function(m){ var ini = m + '-01', fin = traficoFinDeMes(m); return datosCampana.filas.some(function(f){ return f.fechaInicio <= fin && f.fechaFin >= ini; }); }),
   });
   var estado = decision.estado;
+  // Fase 250: 'Dia' solo si la base de esta campana trae el dia en cada fila.
+  var granOpc = traficoWppGranularidades(datosCampana.filas);
+  if(granOpc.indexOf(estado.granularidad) === -1) estado.granularidad = 'mes';
   if(decision.sincronizar) _traficoWppMesSincronizado[campana] = decision.clave;
   _traficoWppSinDatosMesGlobal[campana] = decision.sinDatosMes;
   _traficoWppEstado[campana] = estado;
@@ -252,7 +257,7 @@ async function _traficoWppRenderPanel(p, i) {
   if(!estado.skills.length) estado.skills = colas.slice();
   _traficoWppEstado[campana] = estado;
 
-  var GRAN_LABEL = { mes:'Mes', anio:'Año' };
+  var GRAN_LABEL = { dia:'Dia', mes:'Mes', anio:'Año' }; // Fase 250: 'Dia' igual que Llamadas
   var subActivo = _traficoWppSubtabActivo[campana] || 'resumen';
   // Fase 120: si quedo guardado 'aht' de antes de apagarlo (URL vieja
   // compartida, o estado en memoria de una sesion anterior), cae a Resumen
@@ -271,7 +276,7 @@ async function _traficoWppRenderPanel(p, i) {
         '<div><label for="tww-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
         '<div><label for="tww-f-hasta-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Hasta</label><input type="date" id="tww-f-hasta-'+i+'" value="'+esc(estado.hasta)+'"></div>' +
         '<div><label for="tww-f-gran-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Granularidad</label>' +
-          '<select id="tww-f-gran-'+i+'">' + ['mes','anio'].map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
+          '<select id="tww-f-gran-'+i+'">' + granOpc.map(function(g){ return '<option value="'+g+'"'+(estado.granularidad===g?' selected':'')+'>'+GRAN_LABEL[g]+'</option>'; }).join('') + '</select></div>' +
         '<div><label style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">&nbsp;</label>' +
           '<label class="filtro-check" style="font-size:0.8rem"><input type="checkbox" id="tww-f-separado-'+i+'" '+(!estado.combinar?'checked':'')+'> Ver colas por separado</label></div>' +
         '<button class="btn-primary btn-sm" onclick="_traficoWppAplicarFiltros('+i+')">Aplicar filtros</button>' +
