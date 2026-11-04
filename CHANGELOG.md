@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.118.0 — Noviembre 2026
+
+**Fase 235: Mobilize, las 8 tarjetas de Flujo de Llamadas en una sola fila.**
+
+- En el computador (pantallas de 1024 px o más), las 8 tarjetas de arriba de
+  Flujo de Llamadas (Llamadas ingresadas hasta Solución en primer contacto)
+  caben en una sola fila; antes, la última bajaba a una segunda fila.
+- En el celular y en tablet se ven igual que antes.
+- ORLANT, Clínica Aurora y Hospital La María no cambian.
+
 ## v1.117.0 — Noviembre 2026
 
 **Fase 234: Admin › Usuarios con filtros por rol y por campaña.**
