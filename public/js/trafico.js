@@ -1005,6 +1005,9 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
     eficacia: ctx.eficaciaEnResumen ? '<div class="aurora-kpi enc-ef" id="'+prefijo+'-ef-res-'+i+'"><div class="kv">…</div><div class="kl">Eficacia</div></div>' : '',
   };
   var orden = traficoOrdenTarjetas(ctx.orden, !!ctx.eficaciaEnResumen);
+  // Fase 235: la fila "solo titulos" de Mobilize (8 tarjetas) usa columnas
+  // mas angostas desde 1024 px para que quepan en una fila (styles.css).
+  if(kpisEl.classList) kpisEl.classList.toggle('kpis-fila-ancha', solo);
   kpisEl.innerHTML = rotulo +
     orden.map(function(k){ return tarjetas[k] || ''; }).join('') +
     tarjeta2 +
