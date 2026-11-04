@@ -5,10 +5,142 @@ análisis de la Fase 94 ([`calidad-flujo-edwin-brecha.md`](calidad-flujo-edwin-b
 y del pedido de Edwin en la reunión del 04/11. Edwin dijo que esto se
 trabaja después y con calma.
 
+> **Excel de Edwin** (04/11): resumen y diferencias en la sección siguiente,
+> "Actualización 04/11/2026: con los Excel de Edwin".
+>
 > **Prototipo HTML de Edwin**: ya se revisó (04/11, después de la Fase 237).
 > Lo que trae, la comparación con la plataforma y el plan por PRs que
 > reemplaza la sección 8 están en la sección siguiente, "Actualización
 > 04/11/2026". Las secciones 1 a 8 quedan como estaban, como antecedente.
+
+## Actualización 04/11/2026: con los Excel de Edwin
+
+**Solo plan. No se construye nada (C1–C10) sin el OK del usuario.** Edwin mandó
+los 6 Excel de los que sale su HTML: ORLANT, Clínica Aurora, Hospital La María
+Sede Castilla, Hospital La María Sede 33, Mobilize 2026 ajustada y SURA. Se
+leyeron fuera del repo y solo por estructura (hoja "Diccionario de Ítems",
+fila de encabezados de "Monitoreos" y la fórmula del puntaje). No se copió
+ningún Excel ni texto de ítems, y no se leyeron las filas de monitoreos de
+ejemplo (traen datos de personas). **Regla de Edwin**: no se suben plantillas
+por Excel; los Excel solo definen ítems, pesos, críticos, motor y campos, y
+cada plantilla se crea en pantalla (C3).
+
+### F. Las 6 plantillas
+
+| Plantilla | Ítems | Críticos | Motor | Respuestas | Campos del formulario en el Excel (además de los ítems) |
+|---|---|---|---|---|---|
+| ORLANT | 17 (1–17) | 7 | ponderado (`standard`) | SI / NO / N/A | Asesor, Fecha, ID llamada/WhatsApp, Teléfono, Codificación, Evaluador, Observaciones |
+| Clínica Aurora | 12 (1, 3–13: no hay ítem 2) | 5 | ponderado | SI / NO / N/A | Igual que ORLANT |
+| HLM · Sede Castilla | 12 | 5 | ponderado | SI / NO / N/A | Igual que ORLANT |
+| HLM · Sede 33 | 7 | 3 | ponderado | SI / NO / N/A | Igual que ORLANT |
+| Mobilize (2026 ajustada) | 14 | 5 | ponderado | SI / NO / N/A | Asesor, Fecha, Placa VH, Tipo de llamada (Entrada/Salida), ID de grabación, Tipificación, Observaciones. **Sin Teléfono ni Evaluador** |
+| Televentas SURA | 9 | 4 | por descuento (nuevo) | SI / NO, **sin N/A**; 2 ítems con 4 opciones | Asesor, ID de agente, Fecha de monitoreo, ID llamada, Código de gestión, Evaluador, Cédula cliente, ID contacto, Tipificación sistema, Observaciones, Estrategia, Motivo de afectación, Causa |
+
+Los pesos de las 5 ponderadas suman 100. Los de ORLANT son los mismos que ya
+tiene la plataforma.
+
+### G. HTML contra Excel: diferencias
+
+Ítem por ítem (número, nombre, categoría, peso y crítico) las 6 plantillas
+del HTML son **iguales** a los Excel, incluidos los descuentos y opciones de
+SURA. El HTML conserva la numeración de Aurora (1, 3…13), no la renumera.
+Las diferencias son solo de campos y de N/A:
+
+| Tema | HTML | Excel |
+|---|---|---|
+| ID de agente | En las 6 plantillas | Solo en SURA |
+| Motivo de afectación | En las 6 (se arma con los ítems fallados) | Solo en SURA, como columna propia |
+| Mobilize, Evaluador | Lo pide | No lo trae |
+| Mobilize, ID de grabación y Tipificación | Son el ID de llamada y la codificación con otro nombre | Igual (mismos nombres) |
+| N/A en SURA | No lo ofrece | No existe (la fórmula solo descuenta con NO o con la opción elegida) |
+
+### H. Cómo calcula cada una (fórmulas del Excel)
+
+**Ponderado (ORLANT, Aurora, HLM, Mobilize)**, igual al motor `standard` de la
+plataforma: SI y N/A suman el peso del ítem (N/A no se renormaliza); NO en un
+no crítico suma 0; NO en un crítico suma peso − 20. El total se limita entre 0
+y 100. Visto desde 100: un NO no crítico resta su peso y un NO crítico resta 20
+fijos. Clasificación: menos de 70 Crítico, 70 a 89 No crítico, 90 o más
+Sobresaliente. Alerta por monitoreo: 0 críticos fallados = sin fallos, 1 =
+Alerta, 2 o más = Crítico absoluto.
+
+> **HLM Sede 33**: sus 3 críticos pesan 20 cada uno, así que fallar un
+> crítico cuesta lo mismo (20 puntos) que si no fuera crítico. Ahí "crítico"
+> solo cambia la alerta, no la nota. Es coherente con la regla; se le
+> confirma a Edwin.
+
+**Por descuento (SURA)**: motor nuevo `descuento` (C1). El motor `sura` que
+existe hoy no sirve. Casos de prueba de C1:
+
+| Caso | Nota |
+|---|---|
+| NO en cualquiera de los 4 críticos | 0 % |
+| Saludo y despedida: no saluda / no se despide / ninguno | −9 % / −6 % / −15 % |
+| Escucha y respuesta: NO | −28 % |
+| Expresión verbal: NO | −10 % |
+| Tipificación: NO | −30 % |
+| Manejo de objeciones: maneja 2 / maneja 1 / sin manejo | −7 % / −10 % / −12 % |
+| Todo cumple | 100 % |
+| Peor caso sin fallar críticos (−15 −28 −10 −30 −12) | 5 % |
+
+Misma clasificación (70 / 90). No hay alerta de críticos: un crítico ya deja la
+nota en 0.
+
+### I. Resumen por asesor (C6): dos variantes
+
+| Variante | Columnas |
+|---|---|
+| Ponderadas (5 plantillas) | # monitoreos, promedio, clasificación del promedio, alerta y total de fallos críticos. Alerta del resumen sobre la suma de fallos del asesor: 0 = sin fallos, 1 = Alerta, 2 o más = **Crítico frecuente** (nombre distinto al "Crítico absoluto" de un solo monitoreo) |
+| SURA | # monitoreos, promedio, clasificación, cuántas calificaciones en 0 %, mejor y peor calificación |
+
+### J. Ajustes a C2 y C3
+
+- **C2 (campos por plantilla)**: la plantilla define sus campos según la tabla
+  F. Mobilize sin Teléfono; "ID de grabación" y "Tipificación" son etiquetas de
+  ID de llamada y codificación. El evaluador lo pone siempre la plataforma (es
+  el usuario que califica), aunque el Excel de Mobilize no lo traiga. ID de
+  agente y Motivo de afectación según lo que confirme Edwin (lista de abajo).
+  Se mantiene la regla del HTML: no se guarda un monitoreo con ítems sin
+  calificar (el Excel les da 0 en silencio).
+- **C3 (editor)**: "admite N/A" apagado en los 9 ítems de SURA; respuestas por
+  opción con su descuento en los 2 ítems de SURA que las tienen; el número del
+  ítem lo escribe el administrador (Aurora salta el 2). La codificación de cada
+  plantilla como **lista cerrada** (ya existe `calidad_codificaciones`): el
+  Excel de Aurora trae duplicados en texto libre.
+- **Ítems que aplican a veces** (Mobilize ítem 2, solo llamadas de salida;
+  ORLANT ítem 17, solo pacientes 3P): hoy se marcan N/A a mano. Un N/A
+  automático en Mobilize cuando el tipo de llamada es Entrada queda para
+  confirmar.
+
+### K. Las 7 preguntas de la sección E
+
+| # | Pregunta | Estado | Por qué |
+|---|---|---|---|
+| 1 | Orden: C1–C3 o C6 primero | No | Decisión del usuario. Ya no hay bloqueo de datos para C1–C3 |
+| 2 | HLM: Castilla o Sede 33 primero | En parte | Las dos plantillas están completas y se pueden crear juntas (la Fase 237 lo permite); falta cuál es la principal |
+| 3 | Cédula del cliente en SURA (y teléfono) | No | El Excel confirma que se piden (cédula en SURA; teléfono en ORLANT, Aurora y HLM), pero falta decidir si se guardan completos, enmascarados o no |
+| 4 | Calidad ve solo lo que califica | No | El Excel no trae permisos; el HTML dice "solo lo que ella califica", falta la decisión |
+| 5 | Quién crea las plantillas en pantalla | No | Igual |
+| 6 | Mobilize de 14 ítems | En parte | La "2026 AJUSTADA" tiene los 14 ítems y 5 críticos y una hoja de control de cambios: viene de una de 16. Falta el sí de Edwin y saber si hay monitoreos con la de 16 |
+| 7 | Carga masiva de monitoreos por Excel | No | La regla habla de plantillas, no del importador de monitoreos |
+
+### Falta que confirme Edwin
+
+1. **ID de agente**: ¿va en todas las plantillas (como el HTML) o solo en SURA
+   (como los Excel)?
+2. **Mobilize**: ¿la "2026 AJUSTADA" de 14 ítems es la oficial? ¿Hay
+   monitoreos hechos con la de 16 que haya que conservar?
+3. **HLM**: ¿cuál sede es la principal? (Las dos se pueden crear ya.)
+4. **SURA**: "Motivo de afectación", ¿se arma solo con los ítems fallados o lo
+   escribe calidad? Estrategia y Causa, ¿texto libre o lista? ¿Con qué
+   opciones?
+5. **Cédula (SURA) y teléfono**: ¿completo, últimos 4 dígitos o no se guarda?
+6. **N/A automático**: ¿Mobilize ítem 2 va en N/A solo cuando la llamada es de
+   Entrada?
+7. **Sede 33**: los críticos pesan 20, así que fallarlos cuesta lo mismo que
+   un ítem normal. ¿Así está bien?
+8. **Listas de codificación** por plantilla (Aurora, HLM, código de gestión de
+   SURA, tipificación de Mobilize): ¿las manda?
 
 ## Actualización 04/11/2026: con el HTML de Edwin
 
@@ -329,15 +461,15 @@ Tamaños: S = menos de un día; M = 1 o 2 días, con pruebas y verificación.
 
 ## Preguntas para Edwin
 
-1. ¿Puedes mandar el HTML de prueba (o la ruta donde quedó)? Se guarda fuera
-   del repo.
+1. ~~¿Puedes mandar el HTML de prueba?~~ **Resuelta** (04/11): llegó y se
+   revisó fuera del repo.
 2. ¿Cada cliente tiene **una** plantilla o puede tener **varias**? Por
    ejemplo, ¿ORLANT llamadas y ORLANT WhatsApp son plantillas distintas?
-3. Para cada plantilla (SURA, Aurora, HLM, ORLANT): ¿cuáles ítems son
-   críticos?, ¿un crítico en "No" resta 20 puntos (como ORLANT), deja la nota
-   en 0 o solo se cuenta?, ¿cuáles ítems admiten "No aplica"?
-4. ¿El diccionario es un texto por ítem, o también trae ejemplos y
-   categorías?
+3. ~~Críticos, "No" en crítico y "No aplica" por plantilla~~ **Resuelta**
+   (Excel, 04/11): ponderadas, crítico en NO = −20 y N/A en todos los ítems;
+   SURA, crítico en NO = nota 0 y sin N/A (secciones F y H).
+4. ~~¿Cómo es el diccionario?~~ **Resuelta** (Excel, 04/11): un texto por
+   ítem con su categoría; SURA trae además opciones e impacto en la nota.
 5. ¿Qué es exactamente el "interactivo" de la vista de resultados?
 6. ¿Quién debe ver la pestaña Calidad del cliente: el cliente (por ejemplo
    Jairo), solo gerencia o los dos? ¿Ve los nombres de los asesores?
@@ -347,7 +479,9 @@ Tamaños: S = menos de un día; M = 1 o 2 días, con pruebas y verificación.
    plantillas de sus campañas o empezar sin ninguna?
 9. ¿Van a entrar todos los asesores? ¿Cuántos son, más o menos? ¿Hay una lista
    en Excel para crearlos de una vez?
-10. Hospital La María: ¿la plantilla es la misma para Sede 33 y Castilla?
-11. Las preguntas 1, 2, 3, 6 y 9 de la Fase 94 siguen abiertas (fórmula,
-    pesos de ORLANT, si el asesor acepta el monitoreo, si la fecha puede ser
-    de un día anterior y el límite por asesor).
+10. ~~¿Misma plantilla para Sede 33 y Castilla?~~ **Resuelta** (Excel, 04/11):
+    son distintas (7 y 12 ítems).
+11. De la Fase 94: la 1 (fórmula) y la 2 (pesos de ORLANT) quedan **resueltas**
+    con los Excel (04/11: misma fórmula que `standard`, mismos pesos). Siguen
+    abiertas la 3, la 6 y la 9 (si el asesor acepta el monitoreo, si la fecha
+    puede ser de un día anterior y el límite por asesor).

@@ -19013,3 +19013,32 @@ tocar código; un PR por punto.
   `main` (2532 → 2540), `npm audit` 0, CI en verde (test 24, docker-build,
   pantallas) en cada PR, SHA de `git ls-remote` = SHA de la API antes de cada
   merge.
+
+## Fases 246–247 — Orden de tarjetas de Tráfico de Llamadas y plan de Calidad con los Excel de Edwin (v1.122.0, 2026-11-04)
+
+| Pedido | PR | Versión | Desplegado | Verificado en producción |
+|---|---|---|---|---|
+| Fase 246: Flujo de Llamadas con Nivel de servicio (20 s) antes de Nivel de atención | #655 | 1.122.0 | Sí | Sí: ORLANT, Aurora y HLM con Ingresadas, Contestadas, Abandonadas, Nivel de servicio (20 s), Nivel de atención, Tasa de abandono; Mobilize y Tráfico de WhatsApp iguales a antes |
+| Fase 247: plan de Calidad con los 6 Excel de Edwin | este PR | — (solo docs) | — | — |
+
+- **Fase 246**: `TRAFICO_ORDEN_TARJETAS_LLAMADAS` (`trafico-logic.js`); en
+  `trafico.js` Llamadas usa `resumenOrden || TRAFICO_ORDEN_TARJETAS_LLAMADAS`.
+  Tráfico de WhatsApp usa la misma función sin orden y quedó igual (se le
+  preguntó al usuario si lo quiere también). Mobilize ya cumplía el criterio
+  con su orden propio (Fase 227) y no se tocó. Sub-pestañas, cifras y textos
+  sin cambios. Prueba `fase246-orden-tarjetas-llamadas.test.js` (4). Local a
+  1440/768/375 px sin desborde. Producción: línea base en 1.121.2 y corrida
+  tras el deploy con la misma sesión (solo títulos de tarjetas, 0 errores de
+  consola, 0 escrituras, mismas pestañas en los 5 clientes).
+- **Fase 247**: los 6 Excel de Edwin se leyeron en Descargas (fuera del repo)
+  con SheetJS del propio proyecto (no hay Python en el equipo), solo la hoja
+  "Diccionario de Ítems", la fila de encabezados de "Monitoreos" y la fórmula
+  del puntaje; no se leyeron las filas de monitoreos de ejemplo. El análisis
+  previo (`plantillas.json` y demás) no estaba en el equipo, así que la
+  comparación con el HTML se hizo directo contra los Excel: ítems, pesos,
+  críticos, categorías y descuentos de SURA iguales en las 6 plantillas; las
+  diferencias son de campos (ID de agente y Motivo de afectación en todas en
+  el HTML, solo SURA en Excel; Evaluador en Mobilize). Sin versión ni
+  CHANGELOG: es solo documentación (regla de `CLAUDE.md`). No se agregó
+  `*.xlsx` al `.gitignore` porque el repo versiona plantillas sintéticas en
+  `server/plantillas/`; ningún archivo de Edwin quedó dentro del repo.

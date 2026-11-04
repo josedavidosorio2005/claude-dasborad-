@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.121.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.122.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -448,3 +448,5 @@ mismo orden):
 - Fase 243 — ORLANT sin «Efectividad de Agendamiento» en Cargar datos, sin borrar datos; el Ranking de Asesores no cambia (v1.121.1, 2026-11-04)
 - Fase 244 — Abandono de Tráfico de Llamadas y WhatsApp: cantidad y % en cada barra, todos los clientes (v1.121.2, 2026-11-04)
 - Fase 245 — Cierre: Aurora y HLM sin Tipificación cargada en producción (diagnóstico en solo lectura), plan de Calidad con el HTML de Edwin (`docs/calidad-plan-edwin-nov.md`, solo plan) y bitácora (solo docs, 2026-11-04)
+- Fase 246 — Tráfico de Llamadas › Flujo de Llamadas: Nivel de servicio (20 s) antes de Nivel de atención en ORLANT, Aurora y HLM; Mobilize y WhatsApp sin cambios (v1.122.0, 2026-11-04)
+- Fase 247 — Plan de Calidad con los 6 Excel de Edwin: plantillas, diferencias con el HTML, motores, resumen por asesor y preguntas (solo docs, 2026-11-04)
