@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.121.0 — Noviembre 2026
+
+**Fase 242: SURA, sin la pestaña "Cargar información" en el tablero (pedido de Edwin).**
+
+- El tablero de SURA (Televentas) ya no muestra la pestaña "Cargar
+  información", tampoco al administrador. Al abrirlo empieza en
+  "Cumplimiento".
+- Las bases, metas y códigos de SURA se siguen cargando igual, desde
+  "Cargar datos" › SURA.
+
 ## v1.120.2 — Noviembre 2026
 
 **Fase 241: Cargar datos, SURA ya no se queda abajo al cambiar de cliente (reporte de Edwin).**
