@@ -18905,3 +18905,55 @@ tocar código; un PR por punto.
   verificadas en producción en solo lectura; pendientes nuevos en
   `docs/pendientes.md` (tasa de contacto de ORLANT, encuestas de prueba, 8
   tarjetas de Mobilize, rango por días de Tipificación, Calidad).
+
+## Fases 234–240 — Pendientes que no dependen de Edwin (v1.117.0–v1.120.1, 2026-11-04)
+
+- **Pedido del usuario (04/11)**: terminar lo pendiente que no depende de
+  Edwin, un PR por tema, con merges autorizados (`--match-head-commit`, CI
+  verde, sin forzar) y verificación en producción en solo lectura tras cada
+  merge (los 5 clientes + lo propio de cada fase).
+- **#644, Fase 234 (v1.117.0)**: Admin › Usuarios con filtros por rol y por
+  campaña/cliente (`usuarios-filtro-logic.js`: `campana_X`, `cliente_X`,
+  `asesorCampana`; "Sin campaña ni cliente"), buscador sin tildes y conteo;
+  ancho completo en el celular. Producción: filtros y conteo a 375/768/1440
+  px, sin scroll horizontal.
+- **#645, Fase 235 (v1.118.0)**: Mobilize, las 8 tarjetas de Flujo de
+  Llamadas en una fila desde 1024 px (clase `kpis-fila-ancha`, solo con
+  `resumenSoloTitulos`). Producción: 1 fila a 1440 px (159 px c/u) y 1280 px
+  (139 px); 768 y 375 px como antes; sin recortes.
+- **#646, Fase 236 (v1.119.0)**: Calidad, sondeo sin conexiones abiertas
+  (`calidad-sondeo.js`): aviso del asesor cada 3 min y pestaña Calidad cada
+  5 min, solo GET, solo con la pestaña visible, redibuja solo si cambian los
+  monitoreos. **Defecto visto al verificar en producción**: con el
+  administrador maestro (`currentUser` null) la sesión no se detectaba y la
+  pestaña Calidad no se refrescaba; corregido en la Fase 239.
+- **#647, Fase 237 (v1.120.0)**: base para varias plantillas por cliente.
+  Migración `fase237_calidad_plantillas_varias_v1` (recrea la tabla sin
+  `UNIQUE(campana)`, conserva ids, agrega `nombre`/`principal` y
+  `monitoreos.plantillaId`, triggers de `datos_version`); `GET
+  /calidad/plantillas/todas`; `plantillaId` en `POST /monitoreos`; acceso
+  `plantilla_<id>` (sin ninguna marcada, todas las de sus campañas). La CI
+  local encontró 3 guardianas sin la ruta/migración nuevas (corregidas antes
+  del merge). Producción: ORLANT 17 ítems y MOBILIZE 10, principales y
+  usables, una por campaña en la lista de siempre. No hay usuarios CALIDAD
+  en producción: la sección del formulario quedó cubierta por las pruebas.
+- **Fase 238 (ESLint)**: detenida. Todas las versiones de ESLint traen
+  `minimatch` 10 (aviso moderado del 27/10); `npm audit` dejaría de dar 0.
+  Decisión del usuario: esperar (opción c). Anotado en pendientes.
+- **#648, Fase 239 (v1.120.1)**: alias de asesor en la carga masiva de
+  Calidad; sin las vistas `asaaht`/`asa` sola de Tráfico; sin los 2 `var`
+  repetidos; sondeo de Calidad con el administrador maestro. Producción
+  (sesión del maestro): sesión detectada, el tick forzado con la pestaña
+  Calidad de ORLANT pide `GET /api/monitoreos` y el siguiente respeta los 5
+  min.
+- **#649, Fase 240**: CI solo en push a `main` y en pull_request (OK del
+  usuario; antes, push a cualquier rama + pull_request = 2 corridas por
+  push); pendientes, PROGRESS y esta bitácora.
+- **GitHub Actions**: el CI del #644 quedó en cola unos 40 min por un
+  incidente de GitHub ("degraded performance"/"partial outage" en Actions,
+  04/11 desde las 16:05 UTC); no había corridas viejas ocupando cupo; no se
+  forzó nada.
+- **Pruebas**: suite completa en verde en cada rama (2509 → 2526) y `npm
+  audit` 0; CI en verde en cada PR. Regresión en producción tras cada merge
+  (ORLANT, Mobilize, Aurora, HLM y SURA, todas sus pestañas): 0 errores de
+  consola, 0 escrituras, sin cambios en las pestañas.

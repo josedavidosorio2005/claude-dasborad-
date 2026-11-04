@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.116.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.120.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -435,3 +435,10 @@ mismo orden):
 - Fase 231 — Mobilize: la fila de tarjetas de Flujo de Llamadas solo con número y título (sin "?", líneas de detalle, variación ni meta; con el color del semáforo), FCR como "Solución en primer contacto" (`resumenSoloTitulos`, migración idempotente; ORLANT, Aurora y HLM iguales) (v1.116.1, 2026-11-04)
 - Fase 232 — ORLANT, Tipificación: sin la fila de filtros de arriba (Mes, Desde/Hasta, Línea, Aplicar) ni su nota; el mes sale de MESES (meses no seguidos se suman por tramos, sin el mes del medio); la Línea (General / 3P) en cada mitad; sin los títulos "Salida de llamadas/WhatsApp: N"; Mobilize igual (v1.116.2, 2026-11-04)
 - Fase 233 — Calidad conectada a la plataforma: solo diagnóstico y plan (`docs/calidad-plan-edwin-nov.md`: brecha, roles, permiso por plantilla, plantillas, pestaña Calidad, aviso al asesor, usuarios por campaña y rol, 11 PRs y preguntas para Edwin) y cierre de la tanda del 04/11 (solo docs, v1.116.2, 2026-11-04)
+- Fase 234 — Admin › Usuarios con filtros por rol y por campaña/cliente, buscador sin tildes y conteo (v1.117.0, 2026-11-04)
+- Fase 235 — Mobilize: las 8 tarjetas del resumen de Flujo de Llamadas en una fila desde 1024 px (v1.118.0, 2026-11-04)
+- Fase 236 — Calidad: aviso al asesor cada 3 min y pestaña Calidad cada 5 min, solo GET y con la pestaña visible (v1.119.0, 2026-11-04)
+- Fase 237 — Calidad: base para varias plantillas por cliente (`nombre`, `principal`, `monitoreos.plantillaId`) y acceso por plantilla (`plantilla_<id>`), migración no destructiva (v1.120.0, 2026-11-04)
+- Fase 238 — ESLint: en espera por decisión del usuario (aviso de `minimatch` en todas las versiones de ESLint); sin cambios
+- Fase 239 — Alias de asesor en la carga masiva de Calidad, sin las vistas asa/asaaht, sin `var` repetidos y sondeo de Calidad con el administrador maestro (v1.120.1, 2026-11-04)
+- Fase 240 — Cierre: CI solo en push a `main` y en pull_request (OK del usuario), pendientes y bitácora (solo docs/CI, 2026-11-04)
