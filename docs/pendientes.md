@@ -185,6 +185,23 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   sus campañas). **Falta de Edwin**: las plantillas reales (SURA, Aurora,
   HLM, ORLANT; Mobilize con Kelly), el diccionario, el resumen interactivo y
   quién ve la pestaña Calidad del cliente (permiso `ver_calidad`).
+  **Actualización (Fase 245, 04/11)**: ya se revisó el HTML de Edwin (fuera
+  del repo, sin copiar textos ni datos). El plan nuevo (PRs C1–C10, todo
+  desde la página, sin subir plantillas en Excel) y 7 preguntas están en la
+  sección "Actualización 04/11/2026" del plan. **Espera el OK del usuario
+  antes de construir.**
+- **Aurora y Hospital La María, Tipificación** (Fase 245, 04/11) — Prioridad
+  ALTA (se entregan el lunes 09/11). En producción las dos tienen **0
+  registros** de Tipificación (llamadas y WhatsApp) en todo 2026; solo tienen
+  Flujo (Aurora: octubre; HLM: agosto). La pestaña aparece sola en cuanto
+  haya CDR cargado en su propio cliente (no hace falta código). Las 3 cargas
+  de Tipificación del Historial de los últimos 3 días no quedaron en Aurora
+  ni HLM. Cómo se cierra: Edwin carga el CDR de los dos en Cargar datos ›
+  (Aurora / Hospital La María) › Tipificación, o manda los archivos y el
+  usuario autoriza cargarlos por la interfaz.
+- **Abandono, etiqueta y línea** (Fase 244) — Prioridad BAJA. En producción
+  la línea morada del % pasa por encima de algunas etiquetas de barra
+  (cantidad y %). Si molesta, se les pone fondo o se sube la etiqueta.
 - **ORLANT, tasa de contacto de salida** (reunión 04/11) — Prioridad MEDIA.
   Edwin revisa de dónde sale. En Mobilize ya existe (Fase 226: conectadas ÷
   total de salida); en ORLANT "no conectada" = NO_CONTESTAN + BUZON. Cómo se

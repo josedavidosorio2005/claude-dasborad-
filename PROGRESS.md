@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.120.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.121.2` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -65,10 +65,11 @@ narrativo de cada fase, fase por fase, vive en
 - **Televentas de SURA (Fase 215)**: el cliente ve todas las pestañas
   menos "Cargar información" (Cumplimiento, Agentes, Tipificaciones,
   Detalle ventas, Estrategias y Bases, Fase 218; lista
-  `PESTANAS_CLIENTE` de `server/sura-televentas.js`); "Cargar
-  información" y toda escritura son del administrador (403 al resto). Ese
-  mismo panel también está en "Cargar Datos" (Centro de cargas) al elegir
-  SURA (Fase 218: la misma app, `stvMontarCarga`). El
+  `PESTANAS_CLIENTE` de `server/sura-televentas.js`); toda escritura es
+  del administrador (403 al resto). Desde la Fase 242 "Cargar información"
+  tampoco sale en el tablero del administrador: esa carga vive solo en
+  "Cargar Datos" (Centro de cargas) al elegir SURA (Fase 218: la misma app,
+  `stvMontarCarga`). El
   cliente recibe las cédulas seudonimizadas (HMAC). El tablero se regenera
   desde el HTML de Edwin con `scripts/sura/generar-televentas.js` (sin las
   constantes SEED: prueba guardiana en `fase215-sura-televentas`).
@@ -442,3 +443,8 @@ mismo orden):
 - Fase 238 — ESLint: en espera por decisión del usuario (aviso de `minimatch` en todas las versiones de ESLint); sin cambios
 - Fase 239 — Alias de asesor en la carga masiva de Calidad, sin las vistas asa/asaaht, sin `var` repetidos y sondeo de Calidad con el administrador maestro (v1.120.1, 2026-11-04)
 - Fase 240 — Cierre: CI solo en push a `main` y en pull_request (OK del usuario), pendientes y bitácora (solo docs/CI, 2026-11-04)
+- Fase 241 — Cargar datos: la sección de SURA ya no se queda al cambiar de cliente, tampoco si se cambia mientras carga (v1.120.2, 2026-11-04)
+- Fase 242 — SURA sin la pestaña «Cargar información» en el tablero, también para el administrador; abre en Cumplimiento (v1.121.0, 2026-11-04)
+- Fase 243 — ORLANT sin «Efectividad de Agendamiento» en Cargar datos, sin borrar datos; el Ranking de Asesores no cambia (v1.121.1, 2026-11-04)
+- Fase 244 — Abandono de Tráfico de Llamadas y WhatsApp: cantidad y % en cada barra, todos los clientes (v1.121.2, 2026-11-04)
+- Fase 245 — Cierre: Aurora y HLM sin Tipificación cargada en producción (diagnóstico en solo lectura), plan de Calidad con el HTML de Edwin (`docs/calidad-plan-edwin-nov.md`, solo plan) y bitácora (solo docs, 2026-11-04)
