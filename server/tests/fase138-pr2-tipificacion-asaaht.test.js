@@ -74,28 +74,16 @@ test('dashboard-config-seed.js: Flujo de Llamadas de MOBILIZE tiene "asaata" + "
 
 const traficoJs = fs.readFileSync(path.join(PUBLIC_DIR, 'js', 'trafico.js'), 'utf8');
 
-test('trafico.js: "asaaht" tiene titulo, sufijo de canvas y funcion de dibujo propios', () => {
-  assert.match(traficoJs, /asaaht:\s*'ASA y AHT/, 'falta el titulo de "asaaht" en TRAFICO_SUBTAB_TITULOS');
-  assert.match(traficoJs, /asaaht:\s*'-canvas-asaaht-'/, 'falta el sufijo de canvas de "asaaht"');
-  assert.match(traficoJs, /function _traficoDibujarAsaAht\(/, 'falta la funcion _traficoDibujarAsaAht');
-  assert.match(traficoJs, /_traficoDibujarAsaAht\('tv', i, agregadoComb\)/, '_traficoRenderContenido no llama a _traficoDibujarAsaAht');
-});
-
-test('trafico.js: _traficoDibujarAsaAht grafica ASA (asaSegundos) y AHT (ahtSegundos) juntos, en el mismo canvas', () => {
-  const m = traficoJs.match(/function _traficoDibujarAsaAht[\s\S]*?\n\}/);
-  assert.ok(m);
-  const cuerpo = m[0];
-  assert.match(cuerpo, /label:'ASA'.*asaSegundos/);
-  assert.match(cuerpo, /label:'AHT'.*ahtSegundos/);
-  assert.match(cuerpo, /canvasId\s*=\s*prefijo\+'-canvas-asaaht-'\+i/);
-});
-
-test('trafico.js: la sub-pestaña "asaaht" tambien muestra la nota de "ponderado por volumen" (igual que sl/aht)', () => {
-  assert.match(traficoJs, /activo === 'sl' \|\| activo === 'aht' \|\| activo === 'asaaht'/);
-});
-
-test('trafico.js: resumenPorSeccion muestra ASA Y AHT juntos cuando la sub-pestaña activa es "asaaht"', () => {
-  assert.match(traficoJs, /activoSec === 'asaaht'[\s\S]{0,400}ASA promedio del periodo[\s\S]{0,200}AHT promedio del periodo/);
+// Fase 239: las vistas "asaaht" y "asa" sola se quitaron de trafico.js (no las
+// usa ninguna configuracion desde la Fase 145). Queda la guardiana de que no
+// vuelvan a medias (titulo sin dibujo o al reves).
+test('trafico.js: ya no tiene las vistas "asaaht" ni "asa" sola (Fase 239)', () => {
+  assert.ok(!traficoJs.includes("asaaht: '"));
+  assert.ok(!traficoJs.includes("function _traficoDibujarAsaAht("));
+  assert.ok(!traficoJs.includes("activoSec === 'asa'") && !traficoJs.includes("activoSec === 'asaaht'"));
+  assert.ok(!traficoJs.includes("  asa: '"));
+  // ASA y ATA (la que usa Mobilize) sigue
+  assert.ok(traficoJs.includes("_traficoDibujarAsaAta('tv', i, agregadoComb, null, false, true);"));
 });
 
 // ── Parte 3: migraciones de dashboards_config (DB temporal, requiere db.js) ─
