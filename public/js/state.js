@@ -19,7 +19,7 @@ function buildPerms(rol, clientChecks, campaignChecks) {
     return p;
   }
   var defMod = ROLE_DEFAULT[rol];
-  var p = {};
+  p = {}; // Fase 239: sin "var" repetido (la de arriba ya la declara; ESLint no-redeclare)
   DASH_MODULES.forEach(function(m){ p[m.key] = (m.key === defMod); });
   if (rol === 'GERENCIA') { p['Calidad'] = true; } // ve resultados de Calidad, solo lectura
   if (rol === 'CLIENTES_DASH' || rol === 'SUPERVISOR') {

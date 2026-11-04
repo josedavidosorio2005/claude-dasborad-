@@ -366,7 +366,7 @@ async function saveUserModal(){
     newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
     aplicarCargarModulos(newPerms, rol);
     aplicarPlantillas(newPerms, rol); // Fase 237
-    var payload={ nombre:nombre, user:user, rol:rol, perms:newPerms };
+    payload={ nombre:nombre, user:user, rol:rol, perms:newPerms }; // Fase 239: sin "var" repetido (ESLint no-redeclare)
     if(pass) payload.password=pass;
     if(rol==='ASESOR') payload.asesorCampana=document.getElementById('mu-asesor-campana').value;
     var btnE=document.querySelector('#modal-user .btn-primary');

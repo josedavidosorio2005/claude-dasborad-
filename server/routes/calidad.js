@@ -15,6 +15,7 @@ const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
+const { aplicarAliasAFilas } = require('../alias-asesores');
 
 const router = express.Router();
 
@@ -505,7 +506,11 @@ router.post(
         }
       });
     });
-    tx(b.filas);
+    // Fase 239 (pendiente "Alias de asesor no se aplica en Calidad"): el
+    // nombre del asesor de cada fila pasa por el alias de la campaña, igual
+    // que en Agendas y Efectividad de Agendamiento (Fase 122).
+    const alias = aplicarAliasAFilas(db, b.campana, b.filas, 'asesor');
+    tx(alias.filas);
 
     logCalEvent(
       'MONITOREO_BULK',
@@ -514,7 +519,7 @@ router.post(
       req.actor,
       `Carga masiva "${b.archivoNombre || 'sin nombre'}": ${insertadas} nueva(s), ${actualizadas} actualizada(s), ${omitidas} omitida(s)`
     );
-    res.status(201).json({ insertadas, actualizadas, omitidas, avisos });
+    res.status(201).json({ insertadas, actualizadas, omitidas, avisos, filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados });
   })
 );
 
