@@ -694,9 +694,14 @@ require('./sura-televentas').crearTablas(db);
 // tocar las que un admin haya editado desde la API.
 {
   const now = new Date().toISOString();
-  const insertPlantilla = db.prepare(
-    `INSERT INTO calidad_plantillas (campana, engine, items, activo, updatedAt)
-     VALUES (@campana, @engine, @items, 1, @updatedAt)`
+  // Fase 237: en una base ya migrada (con nombre/principal), la plantilla
+  // sembrada es la principal de su campana y se llama como ella.
+  const conPrincipal = db.prepare('PRAGMA table_info(calidad_plantillas)').all().some((c) => c.name === 'principal');
+  const insertPlantilla = db.prepare(conPrincipal
+    ? `INSERT INTO calidad_plantillas (campana, nombre, principal, engine, items, activo, updatedAt)
+       VALUES (@campana, @campana, 1, @engine, @items, 1, @updatedAt)`
+    : `INSERT INTO calidad_plantillas (campana, engine, items, activo, updatedAt)
+       VALUES (@campana, @engine, @items, 1, @updatedAt)`
   );
   const existePlantilla = db.prepare('SELECT 1 FROM calidad_plantillas WHERE campana = ?');
   const txp = db.transaction((rows) => {
@@ -4577,6 +4582,49 @@ function habilitarWhatsappTiemposAurora() {
 }
 runOnceMigration('fase230_aurora_whatsapp_tiempos_v1', habilitarWhatsappTiemposAurora);
 
+// Fase 237 (plan de Calidad, docs/calidad-plan-edwin-nov.md, sec. 3 y 4):
+// base para VARIAS plantillas por cliente. calidad_plantillas tenia
+// UNIQUE(campana); se recrea sin ese UNIQUE, CONSERVANDO cada fila con su
+// mismo id, y con 2 columnas nuevas: `nombre` (el de hoy = la campana) y
+// `principal` (1 = la que se usa cuando no se elige otra; una por campana,
+// indice unico parcial). monitoreos gana `plantillaId` (NULL en los viejos =
+// la principal de su campana, que es la misma de siempre). No borra datos:
+// mismo patron que fase163_skill_por_cliente_v1 (tabla nueva, copia, rename).
+// Idempotente (runOnceMigration + comprobacion de la columna).
+function migrarCalidadPlantillasVarias() {
+  const cols = db.prepare('PRAGMA table_info(calidad_plantillas)').all().map((c) => c.name);
+  db.transaction(() => {
+    if (!cols.includes('principal')) {
+      db.exec(`
+        CREATE TABLE calidad_plantillas_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          campana TEXT NOT NULL,
+          nombre TEXT NOT NULL DEFAULT '',
+          principal INTEGER NOT NULL DEFAULT 0,
+          engine TEXT NOT NULL DEFAULT 'standard',
+          items TEXT NOT NULL,
+          activo INTEGER NOT NULL DEFAULT 1,
+          updatedAt TEXT NOT NULL
+        );
+        INSERT INTO calidad_plantillas_new (id, campana, nombre, principal, engine, items, activo, updatedAt)
+          SELECT id, campana, campana, 1, engine, items, activo, updatedAt FROM calidad_plantillas ORDER BY id;
+        DROP TABLE calidad_plantillas;
+        ALTER TABLE calidad_plantillas_new RENAME TO calidad_plantillas;
+      `);
+    }
+    db.exec(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_calidad_plantillas_principal ON calidad_plantillas(campana) WHERE principal = 1;
+      CREATE INDEX IF NOT EXISTS idx_calidad_plantillas_campana_activo ON calidad_plantillas(campana, activo);
+    `);
+    const colsMon = db.prepare('PRAGMA table_info(monitoreos)').all().map((c) => c.name);
+    if (!colsMon.includes('plantillaId')) db.exec('ALTER TABLE monitoreos ADD COLUMN plantillaId INTEGER');
+  })();
+  // Al recrear la tabla se pierden sus triggers de datos_version (Fase 161).
+  asegurarDatosVersion();
+  if (!config.isTest) console.log('[db] Migracion fase237_calidad_plantillas_varias_v1 aplicada.');
+}
+runOnceMigration('fase237_calidad_plantillas_varias_v1', migrarCalidadPlantillasVarias);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4608,6 +4656,7 @@ module.exports.migrarMobilizeFlujoEficacia = migrarMobilizeFlujoEficacia;
 module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTotal;
 module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
+module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
 // Fase 153 (P3): idem.

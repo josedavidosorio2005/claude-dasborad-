@@ -22,6 +22,8 @@ async function calLoadPlantillas(force){
     var rows = await apiRequest('GET','/calidad/plantillas');
     CAL_PLANTILLAS = {};
     (rows||[]).forEach(function(p){ CAL_PLANTILLAS[p.campana] = { items:p.items||[], engine:p.engine||'standard' }; });
+    // Fase 237: todas las plantillas (varias por campaña, con `usable`).
+    try{ CAL_PLANTILLAS_TODAS = (await apiRequest('GET','/calidad/plantillas/todas')) || []; }catch(e2){ CAL_PLANTILLAS_TODAS = []; }
     _calPlantillasLoaded = true;
   }catch(e){
     if(!_calPlantillasLoaded) showToast('No se pudieron cargar las plantillas de Calidad: '+e.message);
@@ -58,8 +60,39 @@ function calCampanas(){
   var k = Object.keys(CAL_PLANTILLAS);
   return k.length ? k : CAMPANAS_CON_PLANTILLA.slice();
 }
-function calItems(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].items) || []; }
-function calEngine(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].engine) || 'standard'; }
+// Fase 237: una campaña puede tener varias plantillas. calItems/calEngine
+// usan la elegida en el formulario (_calPlantillaElegida[camp]); sin elegir,
+// la principal (CAL_PLANTILLAS, una por campaña, la de siempre).
+var CAL_PLANTILLAS_TODAS = [];
+var _calPlantillaElegida = {};
+function _calPlantillaDe(camp){
+  var id = _calPlantillaElegida[camp];
+  if(!id) return null;
+  return CAL_PLANTILLAS_TODAS.find(function(p){ return p.id === id && p.campana === camp; }) || null;
+}
+function calItemsPrincipal(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].items) || []; }
+function calEnginePrincipal(camp){ return (CAL_PLANTILLAS[camp] && CAL_PLANTILLAS[camp].engine) || 'standard'; }
+function calItems(camp){ var p = _calPlantillaDe(camp); return p ? (p.items || []) : calItemsPrincipal(camp); }
+function calEngine(camp){ var p = _calPlantillaDe(camp); return p ? (p.engine || 'standard') : calEnginePrincipal(camp); }
+// Plantillas de la campaña con las que este usuario puede monitorear.
+function calPlantillasUsables(camp){ return CAL_PLANTILLAS_TODAS.filter(function(p){ return p.campana === camp && p.usable; }); }
+function calElegirPlantilla(v){
+  _calPlantillaElegida[_ccampana] = v ? Number(v) : null;
+  renderCalItemsForm();
+}
+// Selector "Plantilla" del formulario: solo si hay mas de una para elegir.
+function calPlantillaSelectorHtml(camp, editando){
+  var lista = calPlantillasUsables(camp);
+  var elegida = _calPlantillaDe(camp);
+  if(editando){
+    return elegida ? '<p class="cal-plantilla-nota">Plantilla: <strong>'+esc(elegida.nombre)+'</strong></p>' : '';
+  }
+  if(lista.length < 2) return '';
+  var actual = elegida ? elegida.id : (lista.find(function(p){ return p.principal; }) || lista[0]).id;
+  return '<div class="ig cal-plantilla-sel"><label for="cf-plantilla">Plantilla</label><select id="cf-plantilla" onchange="calElegirPlantilla(this.value)">' +
+    lista.map(function(p){ return '<option value="'+p.id+'"'+(p.id===actual?' selected':'')+'>'+esc(p.nombre)+'</option>'; }).join('') +
+    '</select></div>';
+}
 
 // ── Cache de datos por campana ────────────────────────────────
 // { camp: { monitoreos:[], cronogramaRows:[], cronogramaByMes:{}, cumplimiento:{mes:[]} } }
@@ -370,7 +403,7 @@ function renderCalItemsForm(){
         '</select></div>';
     });
   });
-  document.getElementById('cf-items-wrap').innerHTML = html;
+  document.getElementById('cf-items-wrap').innerHTML = calPlantillaSelectorHtml(_ccampana, !!_editingMonitoreoId) + html; // Fase 237
   renderCalPreview();
 }
 
@@ -436,6 +469,8 @@ function resetCalForm(){
   document.getElementById('cf-observaciones').value='';
   calSetFechaEvaluadorAuto();
   setCanalAuditado('LLAMADA');
+  // Fase 237: al salir de una edicion, el formulario vuelve a la plantilla principal.
+  if(_editingMonitoreoId){ _editingMonitoreoId = null; _calPlantillaElegida[_ccampana] = null; renderCalItemsForm(); }
   _editingMonitoreoId = null;
   var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Datos generales del monitoreo';
   renderCalPreview();
@@ -447,6 +482,7 @@ function editarMonitoreo(id){
   var m = arr.find(function(x){ return x.id===id; });
   if(!m){ showToast('Monitoreo no encontrado'); return; }
   _editingMonitoreoId = id;
+  _calPlantillaElegida[_ccampana] = m.plantillaId || null; // Fase 237: la plantilla con que se hizo
   _ctab = 'nuevo';
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab==='nuevo'); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-nuevo'); });
@@ -507,6 +543,9 @@ async function submitMonitoreo(){
     observaciones: document.getElementById('cf-observaciones').value.trim(),
     answers: answers
   };
+  // Fase 237: plantilla elegida (si la campaña tiene varias); sin ella, la principal.
+  var pElegida = _calPlantillaDe(_ccampana);
+  if(pElegida && !pElegida.principal && !editing) body.plantillaId = pElegida.id;
   var btn = document.querySelector('#cpanel-nuevo .btn-primary');
   try{
     await withButtonLoading(btn, 'Guardando...', async function(){

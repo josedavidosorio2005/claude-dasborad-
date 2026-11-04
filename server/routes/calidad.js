@@ -10,7 +10,7 @@
 const express = require('express');
 const db = require('../db');
 const calc = require('../calidad-logic');
-const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
@@ -26,9 +26,15 @@ router.use(['/monitoreos', '/metas', '/calidad'], (req, res, next) => {
 });
 
 // ── Helpers del modulo de Calidad ────────────────────────────
-function getPlantillaRow(campana) {
+// Fase 237: una campaña puede tener varias plantillas. Sin plantillaId (o
+// NULL en un monitoreo viejo) se usa la principal de la campaña -- la misma
+// de siempre. Con plantillaId, esa, si es de la campaña y esta activa.
+function getPlantillaRow(campana, plantillaId) {
+  if (plantillaId) {
+    return db.prepare('SELECT * FROM calidad_plantillas WHERE id = ? AND campana = ? AND activo = 1').get(plantillaId, campana);
+  }
   return db
-    .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1')
+    .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1 ORDER BY principal DESC, id LIMIT 1')
     .get(campana);
 }
 
@@ -65,6 +71,9 @@ function validarCodificacion(campana, valor) {
 
 function toPlantilla(row) {
   return {
+    id: row.id,
+    nombre: row.nombre || row.campana,
+    principal: row.principal === undefined ? true : !!row.principal,
     campana: row.campana,
     engine: row.engine,
     items: JSON.parse(row.items || '[]'),
@@ -109,6 +118,7 @@ function toMonitoreo(row) {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt || null,
     vistoPorAsesorAt: row.vistoPorAsesorAt || null,
+    plantillaId: row.plantillaId || null, // Fase 237 (NULL = la principal de la campaña)
   };
 }
 
@@ -207,11 +217,29 @@ router.get(
   '/calidad/plantillas',
   requireActor,
   wrap((req, res) => {
+    // Fase 237: sigue devolviendo UNA por campaña (la principal), para que el
+    // navegador de hoy (CAL_PLANTILLAS por campaña) no cambie.
     const rows = db
-      .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana')
+      .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana, principal DESC, id')
       .all()
       .filter((row) => campaignAccess(req.actor, row.campana));
-    res.json(rows.map(toPlantilla));
+    const vistas = new Set();
+    res.json(rows.filter((r) => (vistas.has(r.campana) ? false : vistas.add(r.campana))).map(toPlantilla));
+  })
+);
+
+// Fase 237: TODAS las plantillas activas que el actor puede ver (formulario
+// de usuario: acceso por plantilla; formulario de monitoreo: elegir entre
+// varias). `usable`: si este actor puede monitorear con ella.
+router.get(
+  '/calidad/plantillas/todas',
+  requireActor,
+  wrap((req, res) => {
+    const rows = db
+      .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana, principal DESC, id')
+      .all()
+      .filter((row) => campaignAccess(req.actor, row.campana));
+    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, r.id) })));
   })
 );
 
@@ -319,9 +347,13 @@ router.post(
     if (!canEvaluateCampaign(req.actor, b.campana)) {
       return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
     }
-    const plantillaRow = getPlantillaRow(b.campana);
+    const plantillaRow = getPlantillaRow(b.campana, b.plantillaId);
     if (!plantillaRow) {
-      return res.status(400).json({ error: 'Esa campana no tiene plantilla de calificacion' });
+      return res.status(400).json({ error: b.plantillaId ? 'Esa plantilla no es de esta campaña o no está activa' : 'Esa campana no tiene plantilla de calificacion' });
+    }
+    // Fase 237: acceso por plantilla (plantilla_<id>), ademas de la campaña.
+    if (!canUsePlantilla(req.actor, plantillaRow.id)) {
+      return res.status(403).json({ error: 'No tiene acceso a esa plantilla de calificación' });
     }
     const plantilla = toPlantilla(plantillaRow);
     const score = calc.computeScore(plantilla.items, b.answers, plantilla.engine);
@@ -348,12 +380,15 @@ router.post(
         `INSERT INTO monitoreos
            (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
             evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
-            nivelCritico, observaciones, createdAt)
+            nivelCritico, observaciones, createdAt, plantillaId)
          VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                  @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
-                 @nivelCritico,@observaciones,@createdAt)`
+                 @nivelCritico,@observaciones,@createdAt,@plantillaId)`
       )
       .run({
+        // Fase 237: la principal se guarda como NULL (igual que los viejos);
+        // otra plantilla, con su id.
+        plantillaId: plantillaRow.principal ? null : plantillaRow.id,
         campana: b.campana,
         asesor: b.asesor,
         asesorUserId,
@@ -497,7 +532,9 @@ router.put(
         .json({ error: 'Solo el rol Reportes o el Administrador pueden editar un monitoreo guardado' });
     }
     const b = req.body;
-    const plantilla = toPlantilla(getPlantillaRow(row.campana));
+    const plantillaEdit = getPlantillaRow(row.campana, row.plantillaId); // Fase 237: la del monitoreo
+    if (!plantillaEdit) return res.status(400).json({ error: 'La plantilla de este monitoreo ya no está activa' });
+    const plantilla = toPlantilla(plantillaEdit);
     const answers = b.answers || JSON.parse(row.answers || '{}');
     const score = calc.computeScore(plantilla.items, answers, plantilla.engine);
     if (score.puntaje === null) {

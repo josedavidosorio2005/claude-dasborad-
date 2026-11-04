@@ -13,7 +13,7 @@ var _cmParsed = null; // { campana, archivoNombre, filas } listo para POST
 
 function descargarPlantillaMonitoreos(){
   if(typeof XLSX==='undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
-  var items = calItems(_ccampana);
+  var items = calItemsPrincipal(_ccampana); // Fase 237: la carga masiva usa la principal
   if(!items.length){ showToast('Esta campana no tiene plantilla de calificacion.'); return; }
 
   // Fase 117: item.label viene del diccionario de criterios de Calidad,
@@ -41,7 +41,7 @@ function descargarPlantillaMonitoreos(){
 }
 
 async function procesarArchivoMonitoreos(input){
-  var items = calItems(_ccampana);
+  var items = calItemsPrincipal(_ccampana); // Fase 237: la carga masiva usa la principal
   if(!items.length){ showToast('Esta campana no tiene plantilla de calificacion.'); input.value=''; return; }
   var file = input.files && input.files[0];
   if(!file) return;

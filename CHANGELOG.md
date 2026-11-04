@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.120.0 — Noviembre 2026
+
+**Fase 237: Calidad, preparada para varias plantillas por cliente.**
+
+- Cada cliente ya puede tener más de una plantilla de calificación (por
+  ejemplo, una para llamadas y otra para WhatsApp). Por ahora cada cliente
+  sigue con su plantilla de siempre: no cambia nada en pantalla ni en los
+  puntajes. Las plantillas de Edwin se cargarán cuando las entregue.
+- En Admin › Usuarios, a los usuarios de Calidad y Supervisor se les puede
+  marcar a qué plantillas tienen acceso. Si no se marca ninguna, siguen como
+  hoy (todas las de sus campañas); si se marca alguna, solo esas.
+- Cuando un cliente tenga más de una plantilla, "Nuevo monitoreo" mostrará
+  una lista para elegirla. Cada monitoreo recuerda con qué plantilla se hizo.
+
 ## v1.119.0 — Noviembre 2026
 
 **Fase 236: Calidad, avisos sin tener que volver a entrar.**

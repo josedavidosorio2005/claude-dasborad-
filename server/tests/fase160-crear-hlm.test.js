@@ -67,7 +67,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 229: HLM como ORLANT (no toca Aurora).
     'fase229_hlm_como_orlant_v1',
     // Fase 230: WhatsApp por rangos de Aurora (no toca HLM).
-    'fase230_aurora_whatsapp_tiempos_v1'];
+    'fase230_aurora_whatsapp_tiempos_v1',
+    // Fase 237: varias plantillas de Calidad (no toca Aurora/HLM).
+    'fase237_calidad_plantillas_varias_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

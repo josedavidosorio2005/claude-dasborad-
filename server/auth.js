@@ -204,6 +204,21 @@ function canEvaluateCampaign(actor, campana) {
   return actor.perms && actor.perms['campana_' + campana] === true;
 }
 
+// Fase 237 (plan de Calidad, sec. 3): acceso por plantilla. Permisos
+// plantilla_<id> en el mismo perms. Un usuario SIN ninguna plantilla_* en
+// true sigue como siempre (todas las plantillas de sus campañas: no se
+// rompe a nadie al desplegar); en cuanto el administrador le marca alguna,
+// solo puede usar las marcadas. El administrador completo, todas. Se
+// revisa SIEMPRE junto con canEvaluateCampaign (la campaña manda primero).
+function tienePlantillasMarcadas(actor) {
+  return !!(actor && actor.perms && Object.keys(actor.perms).some((k) => /^plantilla_/.test(k) && actor.perms[k] === true));
+}
+function canUsePlantilla(actor, plantillaId) {
+  if (isFullAdmin(actor)) return true;
+  if (!tienePlantillasMarcadas(actor)) return true;
+  return actor.perms['plantilla_' + plantillaId] === true;
+}
+
 // Puede EDITAR / ELIMINAR un monitoreo ya guardado: solo rol REPORTES con acceso
 // a la campana, o el administrador. Equivale a calCanManageMonitoreos().
 function canManageMonitoreos(actor, campana) {
@@ -260,6 +275,8 @@ module.exports = {
   identidadParaLimiteDeTasa,
   campaignAccess,
   canEvaluateCampaign,
+  canUsePlantilla,
+  tienePlantillasMarcadas,
   canManageMonitoreos,
   canLoadData,
   canLoadModule,
