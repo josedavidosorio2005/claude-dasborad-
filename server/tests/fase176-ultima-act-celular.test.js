@@ -37,7 +37,7 @@ test('gdUltimaActTexto: largo para escritorio, "dd/mm hh:mm" para el telefono', 
 test('el encabezado arma las 2 versiones con esc() y el cliente del subtitulo en su propio span', () => {
   assert.match(JS, /elUa\.innerHTML = '<span class="gd-ua-largo">' \+ esc\(gdUltimaActTexto\(fechaUa, false\)\) \+ '<\/span>' \+/);
   assert.match(JS, /'<span class="gd-ua-corto"><abbr title="Última actualización">Act\.<\/abbr> ' \+ esc\(gdUltimaActTexto\(fechaUa, true\)\) \+ '<\/span>'/);
-  assert.match(JS, /sub\.innerHTML = esc\('Informe ' \+ \(rotuloParcial \|\| mesLbl\)\) \+ '<span class="gd-sub-cliente"> — ' \+ esc\(_gd\.cliente\) \+ '<\/span>';/);
+  // Fase 249: el subtitulo "Informe ... — CLIENTE" ya no se muestra.
 });
 
 test('fuera del telefono solo se oculta la version corta; en <=480 px se cambian', () => {
