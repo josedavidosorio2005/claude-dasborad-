@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.122.0 — Noviembre 2026
+
+**Fase 246: Tráfico de Llamadas, nuevo orden de las tarjetas de Flujo de Llamadas (pedido de Edwin).**
+
+- En Tráfico de Llamadas › Flujo de Llamadas, la fila de tarjetas de arriba
+  queda así: Llamadas ingresadas, Contestadas, Abandonadas, Nivel de servicio
+  (20 s), Nivel de atención y Tasa de abandono. Nivel de servicio pasa a ir
+  antes de Nivel de atención.
+- Aplica a ORLANT, Clínica Aurora y Hospital La María. Mobilize ya tenía
+  Nivel de servicio antes de Nivel de atención y queda igual. Las cifras, las
+  gráficas, las sub-pestañas y Tráfico de WhatsApp no cambian.
+
 ## v1.121.2 — Noviembre 2026
 
 **Fase 244: Abandono, cantidad y % en cada barra (pedido de Edwin).**

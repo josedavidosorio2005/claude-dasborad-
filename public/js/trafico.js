@@ -985,7 +985,8 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   var rotulo = ctx.rotuloParcial ? '<div class="gd-mes-parcial kpi-fila-completa">'+esc(ctx.rotuloParcial)+'</div>' : '';
   // Fase 227 (pedido de Edwin, 03/11, solo Mobilize): cada tarjeta por clave y
   // el orden lo da el panel (`resumenOrden`); sin esa opcion, el orden de
-  // siempre (ORLANT/Aurora/HLM no cambian). "eficacia" es solo un lugar
+  // siempre. Fase 246: Trafico de Llamadas pasa TRAFICO_ORDEN_TARJETAS_LLAMADAS
+  // cuando el panel no trae orden propio; WhatsApp no pasa orden. "eficacia" es solo un lugar
   // (#<prefijo>-ef-res-<i>) que llena _eficaciaDibujarTarjetaResumen
   // (eficacia.js), y solo si el panel la pide (`ctx.eficaciaEnResumen`).
   var tarjetas = {
@@ -1324,7 +1325,8 @@ function _traficoRenderContenido(campana, sede, i){
   // la tarjeta, la leyenda (y con ella el tooltip y Ver datos) y el Excel.
   var pCfgKpis = _traficoPanelConfig[i] || {};
   // Fase 227: orden de las tarjetas y Eficacia en el resumen, solo si el panel los pide (Mobilize).
-  contextoKpis.orden = pCfgKpis.resumenOrden;
+  // Fase 246: sin orden propio (ORLANT, Aurora, HLM), Nivel de servicio antes de Nivel de atencion.
+  contextoKpis.orden = pCfgKpis.resumenOrden || TRAFICO_ORDEN_TARJETAS_LLAMADAS;
   contextoKpis.eficaciaEnResumen = !!pCfgKpis.eficaciaEnResumen;
   // Fase 231: solo cifra y titulo en la fila del resumen (solo si el panel lo pide: Mobilize).
   contextoKpis.soloTitulos = !!pCfgKpis.resumenSoloTitulos;
