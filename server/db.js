@@ -4651,6 +4651,31 @@ function migrarCalidadPlantillasVarias() {
 }
 runOnceMigration('fase237_calidad_plantillas_varias_v1', migrarCalidadPlantillasVarias);
 
+// Fase 252 (plan de Calidad C2, pedido de Edwin 04/11): columnas NUEVAS y
+// opcionales, sin tocar ninguna fila existente (ALTER TABLE ADD COLUMN):
+//  - calidad_plantillas.campos (JSON [{k, etiqueta}] de la lista cerrada de
+//    calidad-campos.js; NULL = formulario de siempre), .version (1 = la de
+//    siempre) y .completoObligatorio (0 = como hoy; 1 = no se guarda un
+//    monitoreo con items sin calificar, regla del HTML de Edwin).
+//  - monitoreos.extras (JSON de los campos nuevos: placa, tipo de llamada,
+//    ID de agente, motivo), .origen ('manual' hoy; 'nps' queda preparado para
+//    la auditoria desde la Encuesta, sin construir) y .encuestaId (referencia
+//    opcional a la encuesta, NULL hoy). Idempotente.
+function migrarCalidadCamposPorPlantilla() {
+  const colsPl = db.prepare('PRAGMA table_info(calidad_plantillas)').all().map((c) => c.name);
+  const colsMon = db.prepare('PRAGMA table_info(monitoreos)').all().map((c) => c.name);
+  db.transaction(() => {
+    if (!colsPl.includes('campos')) db.exec('ALTER TABLE calidad_plantillas ADD COLUMN campos TEXT');
+    if (!colsPl.includes('version')) db.exec('ALTER TABLE calidad_plantillas ADD COLUMN version INTEGER NOT NULL DEFAULT 1');
+    if (!colsPl.includes('completoObligatorio')) db.exec('ALTER TABLE calidad_plantillas ADD COLUMN completoObligatorio INTEGER NOT NULL DEFAULT 0');
+    if (!colsMon.includes('extras')) db.exec('ALTER TABLE monitoreos ADD COLUMN extras TEXT');
+    if (!colsMon.includes('origen')) db.exec("ALTER TABLE monitoreos ADD COLUMN origen TEXT NOT NULL DEFAULT 'manual'");
+    if (!colsMon.includes('encuestaId')) db.exec('ALTER TABLE monitoreos ADD COLUMN encuestaId INTEGER');
+  })();
+  if (!config.isTest) console.log('[db] Migracion fase252_calidad_campos_v1 aplicada.');
+}
+runOnceMigration('fase252_calidad_campos_v1', migrarCalidadCamposPorPlantilla);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4683,6 +4708,7 @@ module.exports.migrarMobilizeFcrEmpezaron = migrarMobilizeFcrEmpezaron;
 module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTotal;
 module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
 module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
+module.exports.migrarCalidadCamposPorPlantilla = migrarCalidadCamposPorPlantilla;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

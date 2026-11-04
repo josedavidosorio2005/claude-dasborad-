@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.126.0 — Noviembre 2026
+
+**Fase 252: Calidad, base para las plantillas nuevas de Edwin (paso 1 de Calidad de Mobilize).**
+
+- Cada plantilla de calidad puede traer sus propios campos del formulario,
+  de una lista cerrada: asesor, fecha, placa, tipo de llamada (Entrada o
+  Salida), ID de grabación, tipificación, ID de agente, evaluador, motivo de
+  afectación y observaciones. El motivo se arma solo con los ítems fallados y
+  el evaluador es siempre quien califica.
+- Con esas plantillas no se puede guardar un monitoreo con ítems sin calificar
+  (sale "Faltan ítems por calificar"), como en el HTML de Edwin.
+- La persona de Calidad puede corregir los monitoreos que ella calificó con
+  estas plantillas nuevas (en ORLANT sigue como antes).
+- Las plantillas de hoy (ORLANT y la genérica de Mobilize) siguen igual. No se
+  cambió ningún monitoreo guardado.
+- Queda preparado (sin usarse todavía) el enlace con la Encuesta NPS.
+
 ## v1.125.0 — Noviembre 2026
 
 **Fase 251: Mobilize, NPS más limpio y Cargar datos sin secciones que no usa (pedidos de Edwin).**

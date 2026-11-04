@@ -16,6 +16,7 @@ const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 const { aplicarAliasAFilas } = require('../alias-asesores');
+const camposLib = require('../calidad-campos'); // Fase 252
 
 const router = express.Router();
 
@@ -30,9 +31,11 @@ router.use(['/monitoreos', '/metas', '/calidad'], (req, res, next) => {
 // Fase 237: una campaña puede tener varias plantillas. Sin plantillaId (o
 // NULL en un monitoreo viejo) se usa la principal de la campaña -- la misma
 // de siempre. Con plantillaId, esa, si es de la campaña y esta activa.
-function getPlantillaRow(campana, plantillaId) {
+// Fase 252: `aunInactiva` (solo para EDITAR un monitoreo ya guardado): su
+// plantilla puede haber quedado reemplazada por una version nueva.
+function getPlantillaRow(campana, plantillaId, aunInactiva) {
   if (plantillaId) {
-    return db.prepare('SELECT * FROM calidad_plantillas WHERE id = ? AND campana = ? AND activo = 1').get(plantillaId, campana);
+    return db.prepare('SELECT * FROM calidad_plantillas WHERE id = ? AND campana = ?' + (aunInactiva ? '' : ' AND activo = 1')).get(plantillaId, campana);
   }
   return db
     .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1 ORDER BY principal DESC, id LIMIT 1')
@@ -78,6 +81,11 @@ function toPlantilla(row) {
     campana: row.campana,
     engine: row.engine,
     items: JSON.parse(row.items || '[]'),
+    // Fase 252: campos del formulario (NULL = los de siempre), version y monitoreo completo.
+    campos: row.campos ? JSON.parse(row.campos) : null,
+    version: row.version || 1,
+    completoObligatorio: !!row.completoObligatorio,
+    activo: row.activo === undefined ? true : !!row.activo,
     updatedAt: row.updatedAt,
   };
 }
@@ -120,6 +128,9 @@ function toMonitoreo(row) {
     updatedAt: row.updatedAt || null,
     vistoPorAsesorAt: row.vistoPorAsesorAt || null,
     plantillaId: row.plantillaId || null, // Fase 237 (NULL = la principal de la campaña)
+    extras: row.extras ? JSON.parse(row.extras) : null, // Fase 252
+    origen: row.origen || 'manual',
+    encuestaId: row.encuestaId || null,
   };
 }
 
@@ -198,6 +209,34 @@ function alertaAsesorDesdeId() {
 // por nombre tambien exige que la fila sea de la MISMA campana del actor
 // (asesorCampana, fijada al crear el usuario ASESOR) -- sin esa campana,
 // nunca cae al nombre (nunca adivina).
+// Fase 252: reglas de la plantilla al guardar (crear o editar): monitoreo
+// completo si la plantilla lo pide y los campos extra de su lista cerrada.
+// Devuelve { error, faltantes } o { extras } (JSON listo o null).
+function reglasDePlantilla(plantilla, answers, extrasBody) {
+  if (plantilla.completoObligatorio) {
+    const faltantes = camposLib.itemsFaltantes(plantilla.items, answers);
+    if (faltantes.length) return { error: 'Faltan ítems por calificar: ' + faltantes.join(', '), faltantes };
+  }
+  const ex = camposLib.validarExtras(plantilla, extrasBody);
+  if (ex.error) return { error: ex.error };
+  if (!ex.extras) return { extras: null };
+  if ((plantilla.campos || []).some((c) => c.k === 'motivo')) {
+    const motivo = camposLib.motivoDesdeItems(plantilla.items, answers);
+    if (motivo) ex.extras.motivo = motivo;
+  }
+  return { extras: JSON.stringify(ex.extras) };
+}
+
+// Fase 252: ademas de Reportes/Administrador, la persona de CALIDAD puede
+// editar los monitoreos que ella misma califico (regla del HTML de Edwin),
+// solo con las plantillas nuevas (con campos propios); ORLANT y las viejas, igual que antes.
+function puedeEditarMonitoreo(actor, row) {
+  if (canManageMonitoreos(actor, row.campana)) return true;
+  const pl = getPlantillaRow(row.campana, row.plantillaId, true);
+  if (!pl || !pl.campos) return false;
+  return !!actor && actor.rol === 'CALIDAD' && actor.id != null && row.evaluadorUserId === actor.id && canEvaluateCampaign(actor, row.campana);
+}
+
 function esDelAsesor(actor, row) {
   if (row.asesorUserId) return actor.id != null && row.asesorUserId === actor.id;
   const nombre = (actor.nombre || '').trim().toLowerCase();
@@ -376,15 +415,17 @@ router.post(
     if (!codifCheck.ok) {
       return res.status(400).json({ error: 'Esa codificacion no esta en la lista activa de la campana' });
     }
+    const reglas = reglasDePlantilla(plantilla, b.answers, b.extras); // Fase 252
+    if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
     const info = db
       .prepare(
         `INSERT INTO monitoreos
            (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
             evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
-            nivelCritico, observaciones, createdAt, plantillaId)
+            nivelCritico, observaciones, createdAt, plantillaId, extras, origen)
          VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                  @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
-                 @nivelCritico,@observaciones,@createdAt,@plantillaId)`
+                 @nivelCritico,@observaciones,@createdAt,@plantillaId,@extras,'manual')`
       )
       .run({
         // Fase 237: la principal se guarda como NULL (igual que los viejos);
@@ -408,6 +449,7 @@ router.post(
         nivelCritico: score.nivelCritico,
         observaciones: b.observaciones || null,
         createdAt: now,
+        extras: reglas.extras,
       });
     const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(info.lastInsertRowid);
     logCalEvent('MONITOREO', b.asesor, b.campana, req.actor, `Puntaje: ${score.puntaje}`);
@@ -531,13 +573,13 @@ router.put(
   wrap((req, res) => {
     const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
-    if (!canManageMonitoreos(req.actor, row.campana)) {
+    if (!puedeEditarMonitoreo(req.actor, row)) {
       return res
         .status(403)
-        .json({ error: 'Solo el rol Reportes o el Administrador pueden editar un monitoreo guardado' });
+        .json({ error: 'Solo quien lo calificó, el rol Reportes o el Administrador pueden editar un monitoreo guardado' });
     }
     const b = req.body;
-    const plantillaEdit = getPlantillaRow(row.campana, row.plantillaId); // Fase 237: la del monitoreo
+    const plantillaEdit = getPlantillaRow(row.campana, row.plantillaId, true); // Fase 237: la del monitoreo (Fase 252: aunque ya tenga version nueva)
     if (!plantillaEdit) return res.status(400).json({ error: 'La plantilla de este monitoreo ya no está activa' });
     const plantilla = toPlantilla(plantillaEdit);
     const answers = b.answers || JSON.parse(row.answers || '{}');
@@ -565,11 +607,15 @@ router.put(
       }
       codificacion = codifCheck.valor;
     }
+    // Fase 252: mismas reglas de la plantilla que al crear; sin extras en el body, se conservan.
+    const extrasPrevios = row.extras ? JSON.parse(row.extras) : null;
+    const reglas = reglasDePlantilla(plantilla, answers, b.extras !== undefined ? b.extras : extrasPrevios);
+    if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
     db.prepare(
       `UPDATE monitoreos SET
          asesor=?, asesorUserId=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
          answers=?, puntaje=?, clasificacion=?, fallos=?, nivelCritico=?,
-         observaciones=?, updatedAt=?
+         observaciones=?, updatedAt=?, extras=?
        WHERE id=?`
     ).run(
       asesorNombre,
@@ -587,6 +633,7 @@ router.put(
       score.nivelCritico,
       (b.observaciones ?? row.observaciones) || null,
       nowStr(),
+      reglas.extras,
       row.id
     );
     const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
