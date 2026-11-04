@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.121.2 — Noviembre 2026
+
+**Fase 244: Abandono, cantidad y % en cada barra (pedido de Edwin).**
+
+- En la gráfica de Abandono de Tráfico de Llamadas y de Tráfico de WhatsApp,
+  cada barra muestra ahora dos datos: cuántas se abandonaron y el % de
+  abandono de ese periodo. Antes solo se veía en la última barra.
+- Aplica a todos los clientes. En la vista por día, cuando hay muchas barras,
+  se muestran solo las que caben para que no se monten unas sobre otras.
+
 ## v1.121.1 — Noviembre 2026
 
 **Fase 243: ORLANT, sin "Efectividad de Agendamiento" en Cargar datos (pedido de Edwin).**

@@ -1099,11 +1099,22 @@ function _traficoDibujarAbandono(prefijo, i, agregadoComb, campana){
     var suf = ctx.dataset.yAxisID==='y2' ? '%' : '';
     return ctx.dataset.label + ': ' + (v===null||v===undefined ? '—' : (suf ? gdFmtValor(v,'%') : v.toLocaleString('es-CO')));
   } } };
+  // Fase 244 (pedido de Edwin, 04/11): con display 'auto' las etiquetas de
+  // las barras (cantidad) chocaban con las de la linea (%) y el plugin las
+  // escondia: solo se veia la ultima. Ahora CADA barra lleva su etiqueta de 2
+  // lineas -- cantidad y % de abandono de ese periodo -- y la linea no repite
+  // la suya. Con mas de TRAFICO_ABANDONO_ETIQUETAS_MAX barras (vista por dia)
+  // vuelve a 'auto' para que no se monten. Llamadas y WhatsApp, todos los clientes.
+  var etiquetaBarra = traficoAbandonoEtiquetaBarra(agregadoComb);
   var dsAband = [
-    { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3 },
+    { type:'bar', label:'Abandono', data: agregadoComb.map(function(a){return a.llamadasAbandonadas;}), backgroundColor: CDl, yAxisID:'y', borderRadius:3,
+      datalabels: { display: function(ctx){ return etiquetaBarra(ctx.dataIndex) === '' ? false : (agregadoComb.length <= TRAFICO_ABANDONO_ETIQUETAS_MAX ? true : 'auto'); }, anchor:'end', align:'end', clamp:true, textAlign:'center',
+        formatter: function(v, ctx){ return etiquetaBarra(ctx.dataIndex); } } },
     { type:'line', label:'% Abandono', data: agregadoComb.map(function(a){return a.tasaAbandonoPct;}), borderColor: COl, backgroundColor: COl, yAxisID:'y2', borderWidth:2.5, pointRadius:3, tension:0.3,
+      datalabels: { display:false },
       fraccion: { num: agregadoComb.map(function(a){ return a.llamadasAbandonadas; }), den: agregadoComb.map(function(a){ return a.totalLlamadas; }) } },
   ];
+  oAband.layout = Object.assign({}, oAband.layout, { padding: { top: 36 } }); // espacio para la etiqueta de 2 lineas
   agregarLineaMeta(dsAband, oAband, _traficoUmbral('tasa_abandono', campana), agregadoComb.length, 'y2', ' %');
   if(typeof _gdChart === 'function'){
     _gdChart(prefijo+'-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),

@@ -858,6 +858,20 @@ function traficoValidarNuevoMapeo(input) {
 // orden y las que falten al final (ninguna tarjeta se pierde por un error de
 // configuracion). "eficacia" solo cuenta si el panel la pide.
 var TRAFICO_ORDEN_TARJETAS = ['total', 'contestadas', 'abandonadas', 'nivelAtencion', 'tasaAbandono', 'nivelServicio'];
+// Fase 244: etiqueta de cada barra de Abandono: [cantidad, "% abandono"]
+// (2 lineas). Sin dato: ''. Formato es-CO (miles con punto, coma decimal).
+var TRAFICO_ABANDONO_ETIQUETAS_MAX = 12;
+function traficoAbandonoEtiquetaBarra(agregado) {
+  var fmtN = function (n) { return Math.round(n).toLocaleString('es-CO'); };
+  var fmtP = function (n) { return (Math.round(n * 10) / 10).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' %'; };
+  return function (idx) {
+    var a = (agregado || [])[idx];
+    if (!a || a.llamadasAbandonadas === null || a.llamadasAbandonadas === undefined) return '';
+    var linea1 = fmtN(a.llamadasAbandonadas);
+    return (a.tasaAbandonoPct === null || a.tasaAbandonoPct === undefined) ? linea1 : [linea1, fmtP(a.tasaAbandonoPct)];
+  };
+}
+
 function traficoOrdenTarjetas(orden, conEficacia) {
   var base = TRAFICO_ORDEN_TARJETAS.concat(conEficacia ? ['eficacia'] : []);
   if (!Array.isArray(orden) || !orden.length) return base;
@@ -870,6 +884,8 @@ function traficoOrdenTarjetas(orden, conEficacia) {
 // Doble modo: global en el navegador, require() en Node para las pruebas.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    traficoAbandonoEtiquetaBarra: traficoAbandonoEtiquetaBarra,
+    TRAFICO_ABANDONO_ETIQUETAS_MAX: TRAFICO_ABANDONO_ETIQUETAS_MAX,
     traficoOrdenTarjetas: traficoOrdenTarjetas,
     TRAFICO_ORDEN_TARJETAS: TRAFICO_ORDEN_TARJETAS,
     traficoAtaCeroSinAbandonos: traficoAtaCeroSinAbandonos,
