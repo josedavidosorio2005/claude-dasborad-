@@ -153,21 +153,22 @@ test('Excel (nombre del asesor, línea): coincide sin mayusculas, tildes ni espa
   assert.ok(L.clasifLeerExcel([['Asesor', 'Sede'], ['ANA', 'X']], conocidos).error, 'sin columna Línea: error, no adivina');
 });
 
-test('tarjetas: Sin clasificar solo si hay; la nota dice la salida del canal', () => {
+test('tarjetas: Sin clasificar solo si hay; sin la nota "Salida de ..." (Fase 232)', () => {
   const t = L.clasifTarjetasSalida({ salida: 11, general: 5, p3: 5, sinClasificar: 1 }, 'LLAMADAS');
   assert.deepEqual(t.tarjetas.map((x) => [x.etiqueta, x.valor]), [['Salida General', 5], ['Salida 3P', 5], ['Sin clasificar', 1]]);
-  assert.equal(t.nota, 'Salida de llamadas: 11');
+  assert.equal(t.nota, undefined); // Fase 232: Edwin la quito (confundia)
+  assert.equal(t.salida, 11);
   assert.deepEqual(L.clasifTarjetasSalida({ salida: 6, general: 2, p3: 4, sinClasificar: 0 }, 'WHATSAPP').tarjetas.map((x) => x.clave), ['GENERAL', '3P']);
 });
 
-test('vista: boton solo para el administrador, filtro "Línea de salida" compartido por las 2 mitades, tarjetas y torta por linea', () => {
+test('vista: boton solo para el administrador (en la cabecera), filtro de Línea en cada mitad (Fase 232), tarjetas', () => {
   const s = JS('tipificacion.js');
-  assert.ok(s.includes("if(clasif && typeof isFullAdmin === 'function' && isFullAdmin()){"));
+  assert.ok(s.includes("((typeof isFullAdmin === 'function' && isFullAdmin()) ? '<button type=\"button\" class=\"btn-sm\" onclick=\"tipifAbrirClasificacion('+i+')\">Clasificación de asesores</button>' : '')"));
   assert.ok(s.includes('onclick="tipifAbrirClasificacion(\'+i+\')">Clasificación de asesores</button>'));
-  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea (General / 3P)</label>")); // Fase 219: texto nuevo
-  assert.ok(s.includes("linea: v('tipif-f-linea-'+i)"), 'el filtro es del bloque compartido (Mes/rango), no de una mitad');
-  assert.ok(s.includes("if(compartido.linea) params.set('linea', compartido.linea);"));
-  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea?'"));
+  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'-'+c.canal+'\">Línea (General / 3P)</label>")); // Fase 232: en cada mitad
+  assert.ok(s.includes("linea: v('tipif-f-linea-'+i+'-'+canal)"), 'el filtro es de cada mitad');
+  assert.ok(s.includes("if(deCanal.linea) params.set('linea', deCanal.linea);"));
+  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea'"));
   // Fase 190: la torta "salida por línea" salio (ver fase190-tipif-sin-tortas-linea.test.js).
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/clasificacion-asesores-logic.js') > -1 && html.indexOf('js/clasificacion-asesores-logic.js') < html.indexOf('js/tipificacion.js'));

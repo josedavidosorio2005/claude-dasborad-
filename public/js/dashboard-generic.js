@@ -2496,7 +2496,8 @@ async function _gdExportarTipificacion(p, i){
     var def = canalesAUsar[c];
     var deCanal = _tipificacionEstadoCanal[i+'::'+def.canal] || {};
     var resultado = { datos: [], total: 0 };
-    try{ resultado = await apiRequest('GET','/calidad/tipificacion/por-tipo?'+_tipificacionQueryString(campana, def.canal, compartido, deCanal)) || resultado; }catch(e){}
+    // Fase 232: mismos meses que la pantalla (con meses no seguidos, suma por tramos).
+    try{ resultado = await _tipificacionPorTipo(campana, def.canal, compartido, deCanal) || resultado; }catch(e){}
     var titulo = 'Tipificación de ' + def.titulo;
     if(resultado.total){
       // Fase 205: el listado completo (una por fila, sin "Otras").

@@ -235,6 +235,7 @@ test('Tipificacion: un mes = ese mes; varios/Todos = Desde/Hasta; las tarjetas d
   const ctx = contexto({
     _gd: { mesesSel: [], periodos: PERIODOS },
     URLSearchParams,
+    tipificacionTramosMeses: require('../../public/js/tipificacion-logic.js').tipificacionTramosMeses, // Fase 232
     apiRequest: async (m, url) => { pedidos.push(url); const mes = /mes=(\d{4}-\d{2})/.exec(url); return { '2026-09': { total: 64, conectadas: 49, noConectadas: 15 }, '2026-10': { total: 45, conectadas: 28, noConectadas: 17 }, '2026-08': { total: 30, conectadas: 20, noConectadas: 10 } }[mes && mes[1]] || { total: 139, conectadas: 97, noConectadas: 42 }; },
   });
   vm.runInContext('var _tipificacionEstadoCompartido = {}; var _tipificacionMesSincronizado = {}; var _tipificacionSinDatosMesGlobal = {};\n' +

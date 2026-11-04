@@ -72,5 +72,5 @@ test('vista: ORLANT ve "Entrada o salida" (Todos / Entrada / Salida, sin Otro); 
   assert.ok(s.includes('>Entrada o salida</label>'));
   assert.ok(s.includes("[['', 'Todos'], ['inbound', 'Entrante'], ['outbound_ma', 'Saliente'], ['otro', 'Otro']]"), 'Mobilize no cambia');
   assert.ok(s.includes("params.set(_tipificacionSentidoPorCampana[campana] ? 'sentido' : 'tipoInteraccion', deCanal.tipo);"));
-  assert.ok(s.includes("[['', 'Entrada y salida (todas)'], ['GENERAL', 'Salida General'], ['3P', 'Salida 3P'], ['SIN', 'Salida sin clasificar']]"));
+  assert.ok(s.includes("[['', 'Todas'], ['GENERAL', 'Salida General'], ['3P', 'Salida 3P'], ['SIN', 'Salida sin clasificar']]"));
 });

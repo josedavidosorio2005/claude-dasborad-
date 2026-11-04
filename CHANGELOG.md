@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.116.2 — Noviembre 2026
+
+**Fase 232: ORLANT, Tipificación más simple (pedido de Edwin, reunión del 04/11).**
+
+- Se quitó la fila de filtros de arriba (Mes, Desde, Hasta, Línea y "Aplicar
+  filtros") y la nota de debajo. El mes ahora lo da el selector **MESES** de
+  arriba del tablero, como en las demás pestañas. Si se marcan varios meses,
+  se suman solo esos (agosto + octubre no cuenta septiembre).
+- El filtro **Línea (General / 3P)** pasó a cada mitad (Llamadas y WhatsApp),
+  junto a Agente, Skill o Cola y "Entrada o salida".
+- Se quitaron los títulos "Salida de llamadas: N (General + 3P)" y "Salida de
+  WhatsApp: N (General + 3P)", que confundían. Las tarjetas Salida General,
+  Salida 3P y Sin clasificar se quedan.
+- El botón "Clasificación de asesores" (solo administrador) quedó junto al
+  título.
+- Ya no se puede ver un rango de días dentro del mes en esta pestaña.
+- Mobilize no cambia.
+
 ## v1.116.1 — Noviembre 2026
 
 **Fase 231: Mobilize, tarjetas de Flujo de Llamadas solo con el número y el

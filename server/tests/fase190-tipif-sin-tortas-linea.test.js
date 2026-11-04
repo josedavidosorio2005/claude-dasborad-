@@ -16,10 +16,10 @@ test('sin las tortas "salida por línea": ni canvas ni grafica', () => {
   assert.ok(!s.includes('de salida por línea'), 'no queda el titulo de la torta');
 });
 
-test('lo demas sigue: tarjetas por linea, nota, filtro "Línea de salida" y la torta de tipificacion', () => {
+test('lo demas sigue: tarjetas por linea, filtro de Línea (en cada mitad desde la Fase 232) y la torta de tipificacion', () => {
   assert.ok(s.includes("id=\"tipif-lineas-'+i+'-'+c.canal+'\""));
-  assert.ok(s.includes("id=\"tipif-lineas-nota-'+i+'-'+c.canal+'\""));
-  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'\">Línea (General / 3P)</label>")); // Fase 219: texto nuevo
-  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea?'"));
+  assert.ok(!s.includes('tipif-lineas-nota'), 'Fase 232: sin la nota "Salida de ..."');
+  assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'-'+c.canal+'\">Línea (General / 3P)</label>")); // Fase 232
+  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea'"));
   assert.ok(s.includes("<canvas id=\"tipif-c-'+i+'-'+c.canal+'\"></canvas>"));
 });

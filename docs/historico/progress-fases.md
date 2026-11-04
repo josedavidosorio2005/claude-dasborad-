@@ -18817,3 +18817,48 @@ tocar código; un PR por punto.
   de servicio y Tasa de abandono con el borde verde, sin scroll horizontal;
   la sub-pestaña Nivel de Servicio igual; ORLANT conserva "?" y meta; 0
   errores de consola, 0 escrituras. Guía de uso actualizada.
+- **#641 mergeado y verificado en producción (04/11, v1.116.1, sesión del
+  administrador, Brave visible, 0 escrituras, 0 errores de consola)**:
+  Mobilize › Flujo de Llamadas con MESES = Todos (277 / 272 · 95,91 % · 1,8 %
+  · Eficacia 49,4 % · 5 · 98,2 % · Solución en primer contacto 69,2 %, las
+  cifras de control) y con agosto (67 / 64 · 88,24 % · 4,5 % · 45,3 % · 3 ·
+  95,5 % · 83,3 %): las 8 tarjetas solo con cifra y título, borde verde en
+  Nivel de servicio y Tasa de abandono, sin scroll horizontal; la
+  sub-pestaña Nivel de Servicio con su texto. ORLANT con sus 6 tarjetas, "?"
+  y meta. A 1440 px la tarjeta FCR baja a una segunda fila (viene de la Fase
+  227; anotado en pendientes).
+
+## Fase 232 — ORLANT, Tipificación sin el filtro de arriba y sin "Salida de..." (v1.116.2, 2026-11-04)
+
+- **Pedido de Edwin (reunión 04/11, ORLANT: los paneles con clasificación de
+  asesores)**: sin la fila de filtros de arriba (Mes, Desde, Hasta, Línea,
+  "Aplicar filtros") ni su nota; sin los títulos "Salida de llamadas: N
+  (General + 3P)" / "Salida de WhatsApp: N". El botón "Clasificación de
+  asesores" (solo admin) pasa a la cabecera (`.tipif-cabecera`).
+- **El mes sale de MESES** (`_tipificacionSincronizarConMesGlobal`, que ya
+  existía desde la Fase 203): un mes = ese mes; varios seguidos o Todos = un
+  Desde/Hasta. Hallazgo: con meses NO seguidos (Ago + Oct) la torta y las
+  tarjetas por línea contaban también septiembre (solo las tarjetas de
+  salida sumaban mes a mes). Ahora `tipificacionTramosMeses` parte en tramos
+  de meses seguidos y `_tipificacionPorTipo` / `_tipificacionDibujarLineas`
+  piden uno por tramo y suman (`tipificacionSumarPorTipo`,
+  `tipificacionSumarCampos`); Exportar usa la misma función. Sin cambios en
+  el servidor. El rango por días se fue (pregunta para Edwin en pendientes).
+- **Línea (General / 3P) en cada mitad** (`tipif-f-linea-<i>-<canal>`, opción
+  vacía "Todas"); la consulta la toma de la mitad (`deCanal.linea`). Ningún
+  filtro de ORLANT dice "Línea de salida"; guía de uso actualizada.
+- **Mobilize** (sin clasificación de asesores) conserva su fila de siempre.
+  Aurora y HLM comparten este código (también usan la clasificación), pero
+  todavía no tienen Tipificación cargada.
+- **Pruebas**: `fase232-tipificacion-orlant-sin-filtro-arriba.test.js`
+  (tramos, sumas, render real de ORLANT y de Mobilize, botón solo admin,
+  Línea por mitad, MESES con un mes / Todos / Ago + Oct sin septiembre,
+  tarjetas por línea sin la nota, Exportar); ajustadas fase186, fase190,
+  fase203 y fase219. Suite 2503 / 2503, `npm audit` 0.
+- **Verificación local** (base demo aislada con 120 filas sintéticas de
+  tipificación de ORLANT, puerto 3999, Brave): 1440 claro y 375 oscuro, sin
+  fila de arriba ni notas, 4 filtros por mitad, botón en la cabecera, sin
+  scroll horizontal; MESES = un mes pide ese mes, Jul + Sep pide julio y
+  septiembre por separado (sin agosto); Línea = Salida General marca su
+  tarjeta; 0 errores de consola, 0 escrituras. El texto "Entrada y salida
+  (todas)" se cortaba a 1440 px: queda "Todas".

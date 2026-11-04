@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.116.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.116.2` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -433,3 +433,4 @@ mismo orden):
 - Fase 229 — Hospital La María como ORLANT: carga del CDR de Tipificación (llamadas y WhatsApp), Llamadas y WhatsApp de salida, Total tráfico y WhatsApp por rangos de tiempo; regla de salida de ORLANT provisional; sin tiempos por rango se ve la gráfica mensual con una nota (v1.115.0, 2026-11-03)
 - Fase 230 — Clínica Aurora con WhatsApp por rangos de tiempo (migración `fase230_aurora_whatsapp_tiempos_v1`) y preguntas abiertas para Edwin en `docs/preguntas-edwin-hlm-aurora.md` (v1.116.0, 2026-11-04)
 - Fase 231 — Mobilize: la fila de tarjetas de Flujo de Llamadas solo con número y título (sin "?", líneas de detalle, variación ni meta; con el color del semáforo), FCR como "Solución en primer contacto" (`resumenSoloTitulos`, migración idempotente; ORLANT, Aurora y HLM iguales) (v1.116.1, 2026-11-04)
+- Fase 232 — ORLANT, Tipificación: sin la fila de filtros de arriba (Mes, Desde/Hasta, Línea, Aplicar) ni su nota; el mes sale de MESES (meses no seguidos se suman por tramos, sin el mes del medio); la Línea (General / 3P) en cada mitad; sin los títulos "Salida de llamadas/WhatsApp: N"; Mobilize igual (v1.116.2, 2026-11-04)
