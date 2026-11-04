@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.122.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.122.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -108,12 +108,15 @@ narrativo de cada fase, fase por fase, vive en
     si la fila no trae cierre.
   - En ORLANT la salida se cuenta **por registro** (cada fila del CDR). El
     teléfono único se usa solo en Llamadas Únicas de Mobilize.
-  - **Flujo de Llamadas de Mobilize (Fase 227, pedido de Edwin del 03/11)**:
-    el resumen va Llamadas ingresadas, contestadas, Nivel de servicio, Tasa de
-    abandono, Eficacia, abandonadas, Nivel de atención y FCR (opciones del
-    panel `resumenOrden` y `eficaciaEnResumen`, solo Mobilize; migración
-    `dashboards_config_mobilize_resumen_tarjetas_v1`). Mismos números de sus
-    sub-pestañas, que se quedan.
+  - **Flujo de Llamadas de Mobilize (Fase 227, pedido de Edwin del 03/11;
+    orden de la Fase 248)**: el resumen va como ORLANT — Llamadas ingresadas,
+    contestadas, abandonadas, Nivel de servicio (20 s), Nivel de atención,
+    Tasa de abandono — y al final Eficacia y FCR (opciones del panel
+    `resumenOrden` y `eficaciaEnResumen`, solo Mobilize; migraciones
+    `dashboards_config_mobilize_resumen_tarjetas_v1` y
+    `dashboards_config_mobilize_resumen_orden_v2`). Mismos números de sus
+    sub-pestañas, que se quedan. Tráfico de WhatsApp (todos los clientes)
+    usa el mismo orden desde la Fase 248.
   - **Llamadas Únicas y de Salida de Mobilize (Fase 226, pedido de Edwin del
     03/11)**: sin las tablas "De dónde sale cada mes" (cada mitad: tarjetas y
     gráfica; la fuente sigue en Exportar) y tarjeta "Tasa de contacto llamadas
@@ -450,3 +453,4 @@ mismo orden):
 - Fase 245 — Cierre: Aurora y HLM sin Tipificación cargada en producción (diagnóstico en solo lectura), plan de Calidad con el HTML de Edwin (`docs/calidad-plan-edwin-nov.md`, solo plan) y bitácora (solo docs, 2026-11-04)
 - Fase 246 — Tráfico de Llamadas › Flujo de Llamadas: Nivel de servicio (20 s) antes de Nivel de atención en ORLANT, Aurora y HLM; Mobilize y WhatsApp sin cambios (v1.122.0, 2026-11-04)
 - Fase 247 — Plan de Calidad con los 6 Excel de Edwin: plantillas, diferencias con el HTML, motores, resumen por asesor y preguntas (solo docs, 2026-11-04)
+- Fase 248 — Mismo orden de tarjetas que ORLANT en Mobilize › Flujo de Llamadas (Eficacia y FCR al final) y en Tráfico de WhatsApp de todos los clientes (v1.122.1, 2026-11-04)

@@ -154,9 +154,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Ojo: cédula, nombre y celular son datos personales; antes de construirlo,
   definir con él quién los ve y cómo. Cómo se cierra: cuando él lo retome.
 - **Mobilize, Flujo de Llamadas: confirmar con Edwin** (Fase 227) — Prioridad
-  BAJA. (1) Orden: hoy Tasa de abandono va tras Nivel de servicio; si la quiere
-  junto a Llamadas abandonadas es un cambio de una línea (`resumenOrden`).
-  (2) ¿Se quedan las sub-pestañas Nivel de Servicio, Abandono y Eficacia? Hoy
+  BAJA. (1) Orden: resuelto en la Fase 248 (mismo orden que ORLANT, Eficacia
+  y FCR al final). (2) ¿Se quedan las sub-pestañas Nivel de Servicio, Abandono y Eficacia? Hoy
   siguen con su gráfica. (3) ¿Quiere "Tasa de abandono" también como título
   en la sub-pestaña Abandono (hoy "% Abandono del periodo")? (4) "Acá la mitad
   es el nivel de servicio": se entendió como la tarjeta de Nivel de servicio
@@ -195,14 +194,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   agente, Motivo de afectación, Evaluador en Mobilize). Lo que falta que
   confirme Edwin (8 puntos) está al final de la sección "con los Excel de
   Edwin" del plan.
-- **Mobilize, orden de las tarjetas de Flujo de Llamadas** (Fase 246) —
-  Prioridad BAJA. Mobilize ya tenía Nivel de servicio antes de Nivel de
-  atención (orden de la Fase 227: Ingresadas, Contestadas, Nivel de servicio,
-  Tasa de abandono, Eficacia, Abandonadas, Nivel de atención, FCR) y no se
-  tocó. Si Edwin lo quiere igual que ORLANT (Ingresadas, Contestadas,
-  Abandonadas, Nivel de servicio, Nivel de atención, Tasa de abandono, y
-  Eficacia/FCR al final), es un cambio de configuración. Tráfico de WhatsApp
-  quedó con el orden de siempre; también se puede cambiar si lo pide.
 - **Aurora y Hospital La María, Tipificación** (Fase 245, 04/11) — Prioridad
   ALTA (se entregan el lunes 09/11). En producción las dos tienen **0
   registros** de Tipificación (llamadas y WhatsApp) en todo 2026; solo tienen

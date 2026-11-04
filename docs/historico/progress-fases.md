@@ -19042,3 +19042,46 @@ tocar código; un PR por punto.
   CHANGELOG: es solo documentación (regla de `CLAUDE.md`). No se agregó
   `*.xlsx` al `.gitignore` porque el repo versiona plantillas sintéticas en
   `server/plantillas/`; ningún archivo de Edwin quedó dentro del repo.
+
+## Fase 248 — Mismo orden de tarjetas que ORLANT en Mobilize y Tráfico de WhatsApp (v1.122.1, 2026-11-04)
+
+| Pedido | PR | Versión | Desplegado | Verificado en producción |
+|---|---|---|---|---|
+| Mobilize › Flujo de Llamadas y Tráfico de WhatsApp con el orden de ORLANT | #657 | 1.122.1 | Sí | Sí: Mobilize y WhatsApp (ORLANT, Aurora, HLM) con el orden nuevo; ORLANT, Aurora y HLM en Llamadas iguales a 1.122.0 |
+| Cierre: bitácora y pendientes | este PR | — (solo docs) | — | — |
+
+- **Pedido**: el usuario confirmó que quiere en Mobilize y en Tráfico de
+  WhatsApp el mismo orden que la Fase 246 dio a ORLANT, Aurora y HLM.
+- **Mobilize**: `resumenOrden` del `trafico_combo` (tab "flujo") pasa a
+  Ingresadas, Contestadas, Abandonadas, Nivel de servicio (20 s), Nivel de
+  atención, Tasa de abandono, Eficacia; FCR la sigue agregando
+  `encuesta.js` al final. Migración idempotente
+  `dashboards_config_mobilize_resumen_orden_v2`: solo cambia el orden si es
+  exactamente el de la Fase 227 (otro orden se deja y se registra). Semilla y
+  plantilla con el orden nuevo.
+- **Tráfico de WhatsApp**: `trafico-whatsapp.js` pasa
+  `TRAFICO_ORDEN_TARJETAS_LLAMADAS`. Equivalencias: Total de WhatsApp,
+  contestados, abandonados, Nivel de servicio, Nivel de atención, Tasa de
+  abandono. Donde hay 5 min y 20 s (en producción ORLANT, Aurora y HLM
+  muestran solo la de 20 s), la de 5 min ocupa el lugar de Nivel de servicio y
+  la de 20 s sigue al final, como antes. La sub-vista "Nivel de Servicio" de
+  WhatsApp (tarjetas por rango de tiempo) no se tocó. Mobilize no tiene
+  pestaña de WhatsApp.
+- **Sin cambios**: cifras, textos, sub-pestañas, cálculos, cantidad de
+  tarjetas; el orden por defecto `TRAFICO_ORDEN_TARJETAS` queda igual.
+- **Pruebas**: `fase248-orden-tarjetas.test.js` (7, datos sintéticos); se
+  actualizaron las que fijaban el orden viejo (fase138, 227, 231, 246) y la
+  migración nueva se agregó a las listas de fase153/fase160. Suite 2551/2551,
+  `npm audit` 0, CI en verde (test 24, docker-build, pantallas). SHA de
+  `git ls-remote` = SHA de la API antes del merge (`--match-head-commit`).
+- **Local** (base demo, Brave, 1440/768/375 px): Mobilize con el orden nuevo
+  + Eficacia + FCR al final; WhatsApp de ORLANT y Aurora con datos sintéticos
+  simulados en el navegador (la base demo no trae WhatsApp); sin scroll
+  horizontal, 0 errores.
+- **Producción** (Brave visible, sesión del usuario como admin, toda
+  escritura bloqueada salvo el login, solo títulos de tarjetas): línea base en
+  1.122.0 y corrida tras el deploy en 1.122.1 con la misma sesión. Cambiaron
+  solo Mobilize › Flujo de Llamadas y Tráfico de WhatsApp › Flujo de WhatsApp
+  (ORLANT, Aurora, HLM); Tráfico de Llamadas de ORLANT, Aurora y HLM, Llamadas
+  Únicas de Mobilize, las pestañas y sub-vistas de los 5 clientes (incluido
+  SURA) iguales. 0 errores de consola, 0 peticiones fallidas, 0 escrituras.
