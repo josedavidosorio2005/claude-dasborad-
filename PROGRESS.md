@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.114.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.116.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -46,7 +46,13 @@ narrativo de cada fase, fase por fase, vive en
   pestañas que ORLANT para la salida: Tráfico de Llamadas, Tráfico de
   WhatsApp y Total tráfico visibles; Tipificación y Llamadas y WhatsApp de
   salida aparecen solas cuando se cargue su CDR (regla de salida de ORLANT,
-  provisional, en `SALIDA_POR_CLIENTE`). **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
+  provisional, en `SALIDA_POR_CLIENTE`). Desde la Fase 229, **Hospital La
+  María** tiene lo mismo (Tipificación, salida, Total tráfico y WhatsApp por
+  rangos de tiempo, con la regla de ORLANT provisional) y desde la Fase 230
+  Aurora también tiene WhatsApp por rangos; mientras no se carguen tiempos por
+  rango, los dos siguen viendo la gráfica mensual de Nivel de Servicio con una
+  nota. Lo que Edwin debe confirmar está en
+  [`docs/preguntas-edwin-hlm-aurora.md`](docs/preguntas-edwin-hlm-aurora.md). **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
   HTML de Edwin dentro de la plataforma: `public/js/sura-televentas*.js`,
   rutas `/api/sura-televentas`, tablas `sura_*`) con datos reales desde la
   Fase 216 (ventas de marzo a octubre, base inicial y estrategias de
@@ -424,3 +430,5 @@ mismo orden):
 - Fase 225 — Gestión Humana con los últimos 60 meses, caché de Agendas e Inasistencia que sí se limpia al cargar, Node 24 en el README y propuesta de ESLint sin aplicar (v1.114.1, 2026-11-03)
 - Fase 226 — Mobilize: Llamadas Únicas y de Salida sin tablas "De dónde sale cada mes" y con la tarjeta "Tasa de contacto llamadas de salida" (v1.113.0, 2026-11-03)
 - Fase 227 — Mobilize: Nivel de servicio, Tasa de abandono y Eficacia en el resumen de Flujo de Llamadas (`resumenOrden`, `eficaciaEnResumen`, migración idempotente; ORLANT igual) (v1.114.0, 2026-11-03)
+- Fase 229 — Hospital La María como ORLANT: carga del CDR de Tipificación (llamadas y WhatsApp), Llamadas y WhatsApp de salida, Total tráfico y WhatsApp por rangos de tiempo; regla de salida de ORLANT provisional; sin tiempos por rango se ve la gráfica mensual con una nota (v1.115.0, 2026-11-03)
+- Fase 230 — Clínica Aurora con WhatsApp por rangos de tiempo (migración `fase230_aurora_whatsapp_tiempos_v1`) y preguntas abiertas para Edwin en `docs/preguntas-edwin-hlm-aurora.md` (v1.116.0, 2026-11-04)
