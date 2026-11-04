@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.123.0 — Noviembre 2026
+
+**Fase 249: encabezado de los dashboards más sencillo (pedido de Edwin).**
+
+- Arriba de cada dashboard ya no sale la línea "Informe Todos los meses
+  (…) — CLIENTE". Quedan el título del dashboard y "Última actualización".
+- Aplica a todos los clientes. Los meses elegidos se siguen viendo en el
+  botón de Filtros/MESES, y el Excel y el PDF siguen diciendo el periodo
+  como antes. Los puntos de colores de las pestañas no cambian.
+
 ## v1.122.1 — Noviembre 2026
 
 **Fase 248: el mismo orden de tarjetas de ORLANT en Mobilize y en Tráfico de WhatsApp.**

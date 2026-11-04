@@ -1332,24 +1332,13 @@ function renderGenericHeader(){
   _gdPintarVistaYMeses();
 }
 function _gdPintarSubtitulo(){
+  // Fase 249 (pedido de Edwin, 04/11: "entre mas sencillo, mejor"): el
+  // encabezado ya no muestra la linea "Informe <meses> — <cliente>"; quedan
+  // solo el titulo y "Ultima actualizacion". Los meses siguen en el boton
+  // Filtros/MESES y en los exports (Excel/PDF arman su propio texto con
+  // _gdMesesLblExport, nunca leian este subtitulo).
   var sub = document.getElementById('gd-sub');
-  if(!sub) return;
-  // Fase 122 (pedido de Edwin: "con la fecha uno se enreda mucho, que salga
-  // el nombre"): el selector de mes GLOBAL (y este subtitulo) muestran el
-  // nombre completo del mes -- distinto del rotulo corto que siguen usando
-  // los EJES de las graficas de tendencia de 12 meses (_gdResolver modo
-  // 'serie', mas abajo en este archivo: Trafico/Calidad), que nunca pasan
-  // por mesNombreLargo.
-  // Fase 203: el subtitulo dice los meses de MESES ("Todos los meses (Ago
-  // 2026 – Oct 2026)", un mes o la lista), nunca un mes por defecto.
-  var mesesT = gdMesesTarjetasActual();
-  var mesLbl = gdMesesTarjetasTexto(mesesT, !_gdMeses().length, mesNombreLargo);
-  // Fase 152 (B3) + 207: "parcial" si el mes en curso esta entre los meses.
-  var rotuloParcial = gdRotuloParcialMeses(mesesT, gdHoyLocal(), mesNombreLargo);
-  if(rotuloParcial && mesesT.length > 1) rotuloParcial = mesLbl + ' — ' + rotuloParcial;
-  // Fase 176: el " — CLIENTE" va en su propio span; en el telefono se oculta
-  // (el cliente ya esta en el logo y el titulo) para que quepa en una linea.
-  sub.innerHTML = esc('Informe ' + (rotuloParcial || mesLbl)) + '<span class="gd-sub-cliente"> — ' + esc(_gd.cliente) + '</span>';
+  if(sub){ sub.innerHTML = ''; sub.hidden = true; }
   _gdFiltrosHeaderTexto();
 }
 function _gdPintarUltimaAct(){

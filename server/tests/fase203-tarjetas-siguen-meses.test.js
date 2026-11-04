@@ -274,33 +274,7 @@ test('Flujo por hora: una tabla por cada mes de MESES con datos (Todos = todos);
   assert.doesNotMatch(src, /_gd\.mesSel/);
 });
 
-test('Subtitulo "Informe ...": dice los meses de MESES, nunca el mes por defecto', () => {
-  const dg = JS('dashboard-generic.js');
-  const els = { 'gd-sub': { innerHTML: '' } };
-  const ctx = contexto({
-    _gd: { mesSel: '2026-10', mesesSel: [], periodos: PERIODOS, cliente: 'MOBILIZE' },
-    document: { getElementById: (id) => els[id] || null },
-    mesNombreLargo: nombre,
-    esc: (s) => String(s),
-    gdHoyLocal: () => '2026-10-28',
-    _gdFiltrosHeaderTexto: () => {},
-  });
-  ctx.gdHoyLocal = () => '2026-10-28'; // despues de cargar mes-global-logic.js (que la define)
-  vm.runInContext(extraer(dg, 'function _gdMeses()') + '\n' + extraer(dg, 'function _gdPintarSubtitulo()'), ctx);
-  ctx._gdPintarSubtitulo();
-  assert.match(els['gd-sub'].innerHTML, /^Informe Todos los meses \(Ago 2026 – Oct 2026\)/);
-  // Fase 207: octubre (en curso) esta entre los meses -> "Oct 2026 parcial".
-  assert.match(els['gd-sub'].innerHTML, /^Informe Todos los meses \(Ago 2026 – Oct 2026\) — Oct 2026 parcial</);
-  ctx._gd.mesesSel = ['2026-09'];
-  ctx._gdPintarSubtitulo();
-  assert.match(els['gd-sub'].innerHTML, /^Informe Septiembre 2026</);
-  ctx._gd.mesesSel = ['2026-10'];
-  ctx._gdPintarSubtitulo();
-  assert.match(els['gd-sub'].innerHTML, /^Informe Octubre 2026 — mes en curso, parcial/);
-  ctx._gd.mesesSel = ['2026-08', '2026-09'];
-  ctx._gdPintarSubtitulo();
-  assert.match(els['gd-sub'].innerHTML, /^Informe Ago 2026, Sep 2026</);
-});
+// Fase 249: el subtitulo "Informe ..." ya no se muestra (ver fase249-encabezado-sin-subtitulo.test.js).
 
 // ── Encuesta: parametro `meses` (Ago + Oct sin septiembre) ────────────────
 
