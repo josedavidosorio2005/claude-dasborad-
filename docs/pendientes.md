@@ -178,6 +178,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   construye sin el OK del usuario. Lo primero que se puede hacer sin esperar
   a Edwin: filtros por campaña y rol en Admin › Usuarios, y el aviso al asesor
   cada pocos minutos.
+  **Hecho sin esperar a Edwin (Fases 234–237, v1.117.0–v1.120.0)**: filtros
+  por rol y campaña en Admin › Usuarios, aviso al asesor cada 3 min (y la
+  pestaña Calidad cada 5 min), base para varias plantillas por cliente y
+  acceso por plantilla (`plantilla_<id>`; sin ninguna marcada, todas las de
+  sus campañas). **Falta de Edwin**: las plantillas reales (SURA, Aurora,
+  HLM, ORLANT; Mobilize con Kelly), el diccionario, el resumen interactivo y
+  quién ve la pestaña Calidad del cliente (permiso `ver_calidad`).
 - **ORLANT, tasa de contacto de salida** (reunión 04/11) — Prioridad MEDIA.
   Edwin revisa de dónde sale. En Mobilize ya existe (Fase 226: conectadas ÷
   total de salida); en ORLANT "no conectada" = NO_CONTESTAN + BUZON. Cómo se
@@ -190,11 +197,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   selector MESES del tablero y se perdió el rango por días (Desde/Hasta)
   dentro del mes. ¿Le sirve así? Si necesita los días, se puede devolver un
   Desde/Hasta en cada mitad. Cómo se cierra: su respuesta.
-- **Mobilize, Flujo de Llamadas: 8 tarjetas no caben en una fila a 1440 px**
-  (visto al verificar la Fase 231 en producción, 04/11) — Prioridad BAJA. La
-  tarjeta "Solución en primer contacto" baja sola a una segunda fila (pasa
-  desde la Fase 227). Si Edwin las quiere todas en una fila, se ajusta el
-  ancho mínimo de las tarjetas de esa fila. Cómo se cierra: su respuesta.
 - **Mobilize, reunión del 03/11: cosas por confirmar** (Fase 226) — Prioridad
   MEDIA. (1) La "Tasa de contacto llamadas de salida" dice "Pendiente" en los
   meses sin el reporte de no conectadas: ¿le sirve así? (2) "Quitar todos los
@@ -509,6 +511,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **ESLint** (hallazgo H5 de la revisión del 03/11) — decisión del usuario
+  del 04/11: **esperar** (opción c). Todas las versiones de ESLint (también
+  la 10) traen `minimatch` 10, con un aviso moderado desde el 27/10/2026;
+  agregarlo dejaría `npm audit` con 4 avisos y la regla del repo pide 0.
+  No va en `package.json` ni en `ci.yml`. Cómo se cierra: cuando ESLint
+  publique una versión con `minimatch` 11 (o el aviso se corrija en la 10),
+  se aplica la propuesta (`docs/propuesta-eslint.md`); los 2
+  `no-redeclare` reales ya se corrigieron (Fase 239).
+
 - **Auditoría de bugs y seguridad de v1.72.1 (24/10/2026) — puntos que
   quedan pendientes** (los puntos 1, 2, 3 y 5 se arreglaron en la Fase 177;
   el 4, el 6, el 9 y el refresco tras Deshacer / Eliminar, en la Fase 178).
@@ -607,11 +618,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   lista y borrado de alias solo existen por API directa, nunca desde una
   pantalla. Costo de una pantalla simple (mismo patrón que el catálogo
   de codificaciones de Calidad): medio. Riesgo: bajo.
-- **Alias de asesor no se aplica en Calidad** (el campo `ASESOR` de la
-  carga masiva de monitoreos) — confirmado por código
-  (`aplicarAliasAFilas` nunca se llama desde Calidad). Severidad baja
-  (solo la carga masiva opcional, no el registro manual). Costo de
-  extenderlo: bajo (mismo patrón, una línea más).
 - **`npm test` local se vuelve inestable en algunas máquinas** —
   decenas de `ETIMEDOUT` en una corrida completa de supertest, sin
   imprimir el resumen final. No es un bug de esas pruebas (la misma
@@ -659,10 +665,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   canvas con píxeles, 0 hallazgos), pero no por ojo humano en cada
   combinación. Queda para después si se quiere ese nivel de detalle.
 
-- **Código sin uso** (Fase 146) — Prioridad BAJA: las vistas de Tráfico
-  "asaaht" (ASA y AHT) y "asa" sola ya no las usa ninguna configuración
-  (`public/js/trafico.js`: `_traficoDibujarAsaAht`, sus títulos y su rama
-  de resumen). Se pueden quitar cuando convenga.
 
 - **Corrección (Fase 146)**: el hallazgo "Tipificación oculta en el seed pero
   visible en producción" era un **error del diagnóstico**. El tablero destapa
@@ -678,9 +680,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   Fase 222 (#631, v1.112.1) — las casillas nacen sin marcar, no se guarda sin
   al menos un cliente/campaña y nadie que no sea administrador completo da
   accesos que él mismo no tiene. Verificado en producción el 03/11.
-- **ESLint** (hallazgo H5 de la revisión del 03/11): queda como propuesta,
-  sin aplicar, en `docs/propuesta-eslint.md` (toca CI: se decide con el
-  usuario).
 - **Observaciones de Calidad** (`# Teléfono`/`ID-Llamada-Wpp` en
   `monitoreos`, contradice la regla de "nunca guardar # Teléfono"): tu
   decisión 2026-10-07 fue dejarlo así por ahora. Sin cambios.
