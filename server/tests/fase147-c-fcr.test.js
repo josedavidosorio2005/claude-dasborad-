@@ -83,7 +83,7 @@ test('Vista: tarjeta con la suma de los meses ("4 de 46 encuestas") y su detalle
     { periodo: '2026-09', base: 'total', si: 3, total: 45, respondieron: 4, den: 45, pct: 6.7 },
   ], '2026-09-30', 'total');
   assert.match(pedidos[0], /\/calidad\/encuestas\/fcr\?campana=MOBILIZE&base=total&desde=2026-08-01&hasta=2026-09-30$/);
-  assert.match(html, /Solución en primer contacto \(FCR\)/);
+  assert.match(html, /Solución en primer contacto <span/); // Fase 231: sin "(FCR)"
   assert.match(html, /8,7 %/); // 4 / 46, no el promedio de 100 % y 6,7 %
   assert.match(html, /Agosto 2026, Septiembre 2026: 4 de 46 encuestas/);
   // Detalle compacto en la tarjeta; las fracciones van en el title.
@@ -102,5 +102,5 @@ test('Vista: rango sin encuestas -> "Sin encuestas"; base respondieron se explic
 
 test('Integracion: trafico.js dibuja el FCR solo cuando el panel trae fcrBase', () => {
   const t = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'trafico.js'), 'utf8');
-  assert.match(t, /if\(pCfgKpis\.fcrBase && typeof _encuestaDibujarFcr === 'function'\) _encuestaDibujarFcr\(i, campana, estado\.desde, estado\.hasta, pCfgKpis\.fcrBase\);/);
+  assert.match(t, /if\(pCfgKpis\.fcrBase && typeof _encuestaDibujarFcr === 'function'\) _encuestaDibujarFcr\(i, campana, estado\.desde, estado\.hasta, pCfgKpis\.fcrBase, !!pCfgKpis\.resumenSoloTitulos\);/); // Fase 231
 });

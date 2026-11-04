@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.116.1 — Noviembre 2026
+
+**Fase 231: Mobilize, tarjetas de Flujo de Llamadas solo con el número y el
+título (pedido de Edwin, reunión del 04/11).**
+
+- En la fila de tarjetas de arriba de Flujo de Llamadas, cada tarjeta muestra
+  solo el número y su título. Se quitaron las explicaciones ("?"), las líneas
+  de abajo (cuántas encuestas, cuántas contestadas de ingreso), la comparación
+  con el mes anterior y la línea de meta.
+- El color del borde se queda: sigue diciendo si el indicador cumple la meta.
+- La tarjeta de FCR ahora se llama **"Solución en primer contacto"**.
+- Las sub-pestañas (Nivel de Servicio, Abandono, One & Done, Eficacia) no
+  cambian: allá siguen los detalles. Si Edwin quiere de vuelta la comparación y
+  la meta, se devuelven con un solo cambio.
+- ORLANT, Clínica Aurora y Hospital La María no cambian.
+
 ## v1.116.0 — Noviembre 2026
 
 **Fase 230: Clínica Aurora con WhatsApp por rangos de tiempo (pedido de Edwin).**

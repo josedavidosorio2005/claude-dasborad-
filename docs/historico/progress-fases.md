@@ -18780,3 +18780,40 @@ tocar código; un PR por punto.
   Fases 153, 160, 220 y 229 ajustadas (ORLANT y Mobilize no cambian).
 - **Preguntas para Edwin** de los dos clientes, en lenguaje simple:
   [`docs/preguntas-edwin-hlm-aurora.md`](../preguntas-edwin-hlm-aurora.md).
+- **Verificación en producción de la Fase 230 (04/11, v1.116.0, sesión del
+  administrador, Playwright desde Node con Brave visible, sin
+  `storageState`, 0 escrituras, 0 errores de consola)**: Cargar Datos ofrece
+  WhatsApp por rangos a ORLANT, Clínica Aurora y Hospital La María. Aurora y
+  HLM: pestañas Tráfico de Llamadas, Tráfico de WhatsApp y Total tráfico;
+  WhatsApp › Nivel de Servicio muestra la gráfica mensual con la nota (Aurora,
+  oct 50,5 %); Tipificación todavía no aparece (sale sola al cargar el CDR);
+  Total tráfico dibuja sin NaN. ORLANT igual que antes: sus 9 pestañas y
+  WhatsApp por rangos (0–3 min 48,6 %). Capturas fuera del repo.
+
+## Fase 231 — Mobilize: tarjetas de Flujo de Llamadas solo con número y título (v1.116.1, 2026-11-04)
+
+- **Pedido de Edwin (reunión 04/11, solo Mobilize)**: en la fila de tarjetas
+  del resumen de Flujo de Llamadas, cada tarjeta solo con el número y el
+  título. Opción del panel `resumenSoloTitulos` (semilla, perfil MOBILIZE de
+  `plantillas-cliente.js` y migración idempotente
+  `dashboards_config_mobilize_resumen_solo_titulos_v1`, que solo actúa sobre
+  la forma de la Fase 227 y no pisa un `false` puesto a mano).
+- Con la opción: `kpiTarjetaHtml` (`soloTitulo`) deja `.kv` y `.kl` sin la
+  nota "?", sin variación contra el mes anterior y sin línea de meta, pero
+  con la clase del semáforo (borde de color); `_traficoDibujarKpis` no pone
+  el aviso de "sin dato" de Nivel de servicio; FCR (`_encuestaDibujarFcr`) y
+  Eficacia (`_eficaciaDibujarTarjetaResumen`) quedan con cifra y título. La
+  tarjeta FCR se llama "Solución en primer contacto" (sin "(FCR)"). El
+  rótulo de mes parcial es de toda la fila y se deja. Las sub-pestañas no
+  cambian. Para devolver los textos: `resumenSoloTitulos: false`.
+- **Pruebas**: `fase231-mobilize-resumen-solo-titulos.test.js` (solo `.kv` y
+  `.kl`, semáforo igual, sin aviso de sin dato, FCR y Eficacia, ORLANT
+  guardiana con "?", variación, meta y aviso, opción solo en Mobilize,
+  migración); ajustadas `fase147-c-fcr`, `fase153-crear-aurora` y
+  `fase160-crear-hlm`. Suite 2494 / 2494, `npm audit` 0.
+- **Verificación local** (base demo nueva y aislada, puerto 3999, Brave sin
+  ventana): Mobilize › Flujo de Llamadas con MESES = Todos y un mes, a 1440 y
+  375 px, en claro y oscuro: 8 tarjetas, todas solo con cifra y título, Nivel
+  de servicio y Tasa de abandono con el borde verde, sin scroll horizontal;
+  la sub-pestaña Nivel de Servicio igual; ORLANT conserva "?" y meta; 0
+  errores de consola, 0 escrituras. Guía de uso actualizada.

@@ -451,6 +451,9 @@ const MOBILIZE = {
           // Eficacia en el resumen, despues de Llamadas contestadas (FCR sigue al final).
           resumenOrden: ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'],
           eficaciaEnResumen: true,
+          // Fase 231 (pedido de Edwin, 04/11): en la fila del resumen, solo la cifra y
+          // el titulo de cada tarjeta (sin "?", variacion ni meta; el color se queda).
+          resumenSoloTitulos: true,
           resumenPorSeccion: true,
           // Fase 138 (PR2, pedido de Edwin 09/10): ASA y AHT antes eran 2
           // sub-pestanas separadas (Fase 131) -- ahora van juntas en 1 sola

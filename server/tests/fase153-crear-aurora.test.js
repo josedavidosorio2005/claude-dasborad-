@@ -59,6 +59,8 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase220_aurora_salida_v1',
     // Fase 227: solo el resumen de Flujo de Llamadas de MOBILIZE (no toca Aurora/HLM).
     'dashboards_config_mobilize_resumen_tarjetas_v1',
+    // Fase 231: solo el resumen de Flujo de Llamadas de MOBILIZE (no toca Aurora/HLM).
+    'dashboards_config_mobilize_resumen_solo_titulos_v1',
     // Fase 229: HLM como ORLANT (no toca Aurora).
     'fase229_hlm_como_orlant_v1',
     // Fase 230: WhatsApp por rangos de Aurora (no toca HLM).

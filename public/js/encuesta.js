@@ -366,7 +366,7 @@ function _encuestaExportPrint(i) {
   setTimeout(function () { w.focus(); w.print(); }, 300);
 }
 
-// ── Parte C: "Solución en primer contacto (FCR)" en Flujo de Llamadas ──
+// ── Parte C: "Solución en primer contacto" (FCR) en Flujo de Llamadas ──
 // La llama _traficoRenderContenido (trafico.js) en la sub-pestaña "Flujo de
 // Llamadas" cuando el panel trae `fcrBase` ('total' = todas las encuestas
 // del mes, pedido de Edwin; 'respondieron' = solo las que contestaron la
@@ -374,7 +374,12 @@ function _encuestaExportPrint(i) {
 // demas meses del rango con encuestas van en una linea aparte. Siempre con
 // la fraccion ("3 de 45 encuestas") para que se entienda.
 // Fase 200: la nota sale de encuestaFcrNota(base) (encuesta-logic.js).
-async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
+// Fase 231 (pedido de Edwin, 04/11): el titulo es "Solución en primer contacto"
+// (sin "(FCR)"). Con `soloTitulos` (opcion resumenSoloTitulos del panel,
+// Mobilize) la tarjeta lleva solo la cifra y el titulo: sin "?", sin la linea
+// de encuestas y sin el detalle "Por mes". La sub-pestaña One & Done no cambia.
+var ENCUESTA_FCR_TITULO = 'Solución en primer contacto';
+async function _encuestaDibujarFcr(i, campana, desde, hasta, base, soloTitulos) {
   var kpis = document.getElementById('tv-kpis-' + i);
   if (!kpis) return;
   // Una tarjeta mas al final de la fila de tarjetas de Flujo de Llamadas
@@ -393,9 +398,11 @@ async function _encuestaDibujarFcr(i, campana, desde, hasta, base) {
   // den sumados); con mas de un mes, el detalle "Por mes" de esos mismos meses.
   var t = encuestaFcrTarjetaMeses(porMes, _encuestaMesesTarjeta(desde, hasta, porMes));
   var nota = ' <span title="' + esc(encuestaFcrNota(base)) + '" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>';
+  var valor = t.sinEncuestas ? '—' : esc(encuestaFmtPct(t.pct));
+  if (soloTitulos) { el.innerHTML = '<div class="kv">' + valor + '</div><div class="kl">' + ENCUESTA_FCR_TITULO + '</div>'; return; }
   var cuerpo = t.sinEncuestas
-    ? '<div class="kv">—</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div><div class="enc-fcr-sub">' + esc(_encuestaMesesLbl(t.meses)) + ': Sin encuestas</div>'
-    : '<div class="kv">' + esc(encuestaFmtPct(t.pct)) + '</div><div class="kl">Solución en primer contacto (FCR)' + nota + '</div>' +
+    ? '<div class="kv">—</div><div class="kl">' + ENCUESTA_FCR_TITULO + nota + '</div><div class="enc-fcr-sub">' + esc(_encuestaMesesLbl(t.meses)) + ': Sin encuestas</div>'
+    : '<div class="kv">' + valor + '</div><div class="kl">' + ENCUESTA_FCR_TITULO + nota + '</div>' +
       '<div class="enc-fcr-sub">' + esc(_encuestaMesesLblTarjeta(t)) + ': ' + esc(encuestaFcrFraccion(t.si, t.den, t.base)) + '</div>';
   el.innerHTML = cuerpo + _encuestaPorMesHtml(t, true);
 }

@@ -944,6 +944,12 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   ocultar = ocultar || [];
   var ctx = contexto || {};
   var ant = ctx.anteriores || null;
+  // Fase 231 (pedido de Edwin, reunion 04/11, solo Mobilize: `resumenSoloTitulos`
+  // del panel): cada tarjeta lleva solo la cifra y el titulo -- sin "?", sin
+  // aviso de "sin dato", sin variacion ni linea de meta. El borde de color del
+  // semaforo se queda (kpiTarjetaHtml, soloTitulo). Sin la opcion, todo igual.
+  var solo = !!ctx.soloTitulos;
+  var kpiTarjeta = function(t){ if(solo) t.soloTitulo = true; return kpiTarjetaHtml(t); };
   var umbralDe = function(metrica){ return (metrica && typeof _gdUmbralPara === 'function') ? _gdUmbralPara(metrica, campana) : null; };
   var variacion = function(campo, unidad, mejorBaja){
     if(ctx.mesEnCurso) return kpiVariacion(null, null, { mesEnCurso: true });
@@ -964,7 +970,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   // cargarDatos o admin). Compatible con un string plano (sin detalle,
   // como usaba esta funcion antes de esta fase).
   var nsSinDato = '';
-  if(totales.nivelServicio===null && labels.nivelServicioSinDatoMsg && ocultar.indexOf('nivelServicio')===-1){
+  if(!solo && totales.nivelServicio===null && labels.nivelServicioSinDatoMsg && ocultar.indexOf('nivelServicio')===-1){
     var msg = labels.nivelServicioSinDatoMsg;
     var principal = (typeof msg === 'object') ? msg.principal : msg;
     var puedeVerDetalle = (typeof msg === 'object') && msg.detalle && typeof canLoadData === 'function' && canLoadData();
@@ -978,7 +984,7 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
     var ns2Nota = labels.nivelServicio2Nota
       ? ' <span title="'+esc(labels.nivelServicio2Nota)+'" style="cursor:help;color:var(--c-text-muted);font-size:var(--fs-note);border:1px solid var(--c-border,#999);border-radius:50%;padding:0 4px">?</span>'
       : '';
-    tarjeta2 = kpiTarjetaHtml({ valor: totales.nivelServicio2===null ? '—' : String(totales.nivelServicio2).replace('.', ',')+' %', etiqueta: labels.nivelServicio2Label||'Nivel de servicio', notaHtml: ns2Nota,
+    tarjeta2 = kpiTarjeta({ valor: totales.nivelServicio2===null ? '—' : String(totales.nivelServicio2).replace('.', ',')+' %', etiqueta: labels.nivelServicio2Label||'Nivel de servicio', notaHtml: ns2Nota,
       variacion: ctx.mesEnCurso ? kpiVariacion(null, null, { mesEnCurso: true }) : null });
   }
   var fmtN = function(n){ return n===null||n===undefined ? '—' : n.toLocaleString('es-CO'); };
@@ -990,12 +996,12 @@ function _traficoDibujarKpis(prefijo, i, totales, labels, campana, ocultar, cont
   // (#<prefijo>-ef-res-<i>) que llena _eficaciaDibujarTarjetaResumen
   // (eficacia.js), y solo si el panel la pide (`ctx.eficaciaEnResumen`).
   var tarjetas = {
-    total: kpiTarjetaHtml({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }),
-    contestadas: kpiTarjetaHtml({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, variacion: variacion('contestadas', 'num') }),
-    abandonadas: kpiTarjetaHtml({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, variacion: variacion('abandonadas', 'num', true) }),
-    nivelAtencion: kpiTarjetaHtml({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }),
-    tasaAbandono: ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband }),
-    nivelServicio: ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjetaHtml({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs }),
+    total: kpiTarjeta({ valor: fmtN(totales.total), etiqueta: labels.total, variacion: variacion('total', 'num') }),
+    contestadas: kpiTarjeta({ valor: fmtN(totales.contestadas), etiqueta: labels.contestadas, variacion: variacion('contestadas', 'num') }),
+    abandonadas: kpiTarjeta({ valor: fmtN(totales.abandonadas), etiqueta: labels.abandonadas, variacion: variacion('abandonadas', 'num', true) }),
+    nivelAtencion: kpiTarjeta({ valor: fmtP(totales.nivelAtencion), etiqueta: 'Nivel de atención', variacion: variacion('nivelAtencion', 'pct'), meta: metaNivel }),
+    tasaAbandono: ocultar.indexOf('tasaAbandono')!==-1 ? '' : kpiTarjeta({ valor: fmtP(totales.tasaAbandono), etiqueta: 'Tasa de abandono', variacion: variacion('tasaAbandono', 'pct', true), meta: metaAband }),
+    nivelServicio: ocultar.indexOf('nivelServicio')!==-1 ? '' : kpiTarjeta({ valor: fmtP(totales.nivelServicio), etiqueta: labels.nivelServicioLabel||'Nivel de servicio', notaHtml: nsNota, variacion: variacion('nivelServicio', 'pct'), meta: metaNs }),
     eficacia: ctx.eficaciaEnResumen ? '<div class="aurora-kpi enc-ef" id="'+prefijo+'-ef-res-'+i+'"><div class="kv">…</div><div class="kl">Eficacia</div></div>' : '',
   };
   var orden = traficoOrdenTarjetas(ctx.orden, !!ctx.eficaciaEnResumen);
@@ -1337,6 +1343,8 @@ function _traficoRenderContenido(campana, sede, i){
   // Fase 227: orden de las tarjetas y Eficacia en el resumen, solo si el panel los pide (Mobilize).
   contextoKpis.orden = pCfgKpis.resumenOrden;
   contextoKpis.eficaciaEnResumen = !!pCfgKpis.eficaciaEnResumen;
+  // Fase 231: solo cifra y titulo en la fila del resumen (solo si el panel lo pide: Mobilize).
+  contextoKpis.soloTitulos = !!pCfgKpis.resumenSoloTitulos;
   _traficoDibujarKpis('tv', i, { total: totalLlamadas, contestadas: totalContestadas, abandonadas: totalAbandonadas, nivelAtencion: nivelAtencion, tasaAbandono: tasaAbandono, nivelServicio: nivelServicio },
     { total: pCfgKpis.etiquetaTotal || 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas',
       nivelServicioLabel: 'Nivel de servicio (20 s)', nivelServicioMetrica: 'service_level',
@@ -1345,9 +1353,9 @@ function _traficoRenderContenido(campana, sede, i){
   _traficoDibujarResumenChart('tv', i, agregado, estado.combinar, pCfgKpis.etiquetaTotal || 'Total Llamadas', 'Llamadas Contestadas', campana);
   // Fase 147 (Parte C): tarjeta FCR desde la Encuesta, solo si el panel la
   // pide (`fcrBase`, hoy solo Mobilize) -- ver _encuestaDibujarFcr (encuesta.js).
-  if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase);
+  if(pCfgKpis.fcrBase && typeof _encuestaDibujarFcr === 'function') _encuestaDibujarFcr(i, campana, estado.desde, estado.hasta, pCfgKpis.fcrBase, !!pCfgKpis.resumenSoloTitulos);
   // Fase 227: tarjeta Eficacia del resumen (mismo calculo que su sub-pestaña).
-  if(pCfgKpis.eficaciaEnResumen && typeof _eficaciaDibujarTarjetaResumen === 'function') _eficaciaDibujarTarjetaResumen(i, campana, estado.desde, estado.hasta);
+  if(pCfgKpis.eficaciaEnResumen && typeof _eficaciaDibujarTarjetaResumen === 'function') _eficaciaDibujarTarjetaResumen(i, campana, estado.desde, estado.hasta, !!pCfgKpis.resumenSoloTitulos);
   // Fase 147 (Parte D): sub-pestaña "One & Done" -- no-op si su canvas no
   // esta en el DOM (otra sub-pestaña activa u otro cliente). Misma base que
   // la tarjeta FCR, asi el numero es identico.
