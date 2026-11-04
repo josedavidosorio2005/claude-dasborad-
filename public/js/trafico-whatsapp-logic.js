@@ -501,7 +501,21 @@ function traficoWppFiltrarFilas(filas, opts) {
 // promedio ponderado por TOTAL WHATSAPP.
 function traficoWppPeriodoDe(fechaInicio, granularidad) {
   if (granularidad === 'anio') return fechaInicio.slice(0, 4);
+  // Fase 250: 'dia' solo se ofrece si cada fila es de UN dia (traficoWppTieneDia).
+  if (granularidad === 'dia') return fechaInicio.slice(0, 10);
   return fechaInicio.slice(0, 7); // 'mes' -- unico grano real disponible hoy
+}
+
+// Fase 250 (pedido de Edwin, 04/11): Flujo de WhatsApp por dia, como Flujo de
+// Llamadas. La base diaria de Wolkvox (Fase 116) guarda cada fila con
+// fechaInicio = fechaFin = el dia; la plantilla vieja por periodo, no. Solo hay
+// 'dia' si TODAS las filas de la campana son de un dia: con una sola fila de
+// periodo (varios dias) no se inventa el reparto y el control no se ofrece.
+function traficoWppTieneDia(filas) {
+  return !!(filas && filas.length) && filas.every(function (f) { return !!f.fechaInicio && f.fechaInicio === f.fechaFin; });
+}
+function traficoWppGranularidades(filas) {
+  return traficoWppTieneDia(filas) ? ['dia', 'mes', 'anio'] : ['mes', 'anio'];
 }
 
 function traficoWppAgregarPorPeriodo(filas, opts) {
@@ -624,6 +638,8 @@ if (typeof module !== 'undefined' && module.exports) {
     traficoWppParseFilas: traficoWppParseFilas,
     traficoWppFiltrarFilas: traficoWppFiltrarFilas,
     traficoWppPeriodoDe: traficoWppPeriodoDe,
+    traficoWppTieneDia: traficoWppTieneDia,
+    traficoWppGranularidades: traficoWppGranularidades,
     traficoWppAgregarPorPeriodo: traficoWppAgregarPorPeriodo,
     traficoWppServiceLevelPromedioPeriodo: traficoWppServiceLevelPromedioPeriodo,
   };

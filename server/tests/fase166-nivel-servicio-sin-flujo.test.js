@@ -28,6 +28,8 @@ async function dibujar({ campana, mesSel, filas, usaTiempos }) {
     _gd: { mesesSel: mesSel ? [mesSel] : [], periodos: ['2026-10', '2026-09', '2026-08'] },
     esc: (s) => String(s),
     traficoDecidirRango, traficoFinDeMes,
+    // Fase 250: granularidades del panel (la real, de trafico-whatsapp-logic.js).
+    traficoWppGranularidades: require(path.join(__dirname, '..', '..', 'public', 'js', 'trafico-whatsapp-logic.js')).traficoWppGranularidades,
     fechaLimitesRecortar: (x) => x,
     _gdAvisoSinDatosMesHtml: (etq, mes) => '<div class="gd-aviso-sin-datos">Sin datos de ' + etq + ' para ' + mes + '.</div>',
     TRAFICO_WPP_SUBTABS: [{ key: 'resumen', label: 'Flujo de WhatsApp' }, { key: 'abandono', label: 'Abandono' }, { key: 'sl', label: 'Nivel de Servicio' }],
