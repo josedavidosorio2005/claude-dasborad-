@@ -1,8 +1,13 @@
 name: CI
 
+# Fase 240 (OK del usuario, 04/11/2026): push SOLO a main + pull_request.
+# Antes corria en push a cualquier rama Y en el pull_request de esa rama
+# (2 corridas por cada push de un PR). deploy.yml sigue igual: se dispara con
+# workflow_run del CI de un push a main; el check obligatorio de main
+# (test (24)) lo da la corrida del pull_request.
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
 # Fase 102 (endurecimiento, repo publico): ningun job de este workflow
