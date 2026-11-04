@@ -16,7 +16,7 @@ const { traficoOrdenTarjetas, TRAFICO_ORDEN_TARJETAS, TRAFICO_ORDEN_TARJETAS_LLA
 const seed = require('../dashboard-config-seed');
 const plantillas = require('../plantillas-cliente');
 
-const ORDEN_MOBILIZE = ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'];
+const ORDEN_MOBILIZE = ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia']; // Fase 248
 
 function extraer(src, firma) {
   const ini = src.indexOf(firma);
@@ -57,17 +57,15 @@ test('Tráfico de Llamadas usa ese orden solo si el panel no trae el suyo', () =
   assert.match(src, /contextoKpis\.orden = pCfgKpis\.resumenOrden \|\| TRAFICO_ORDEN_TARJETAS_LLAMADAS;/);
 });
 
-test('Tráfico de WhatsApp no cambia: sin orden, el de siempre', () => {
+test('sin orden, el de siempre (Fase 248: WhatsApp ya pasa el orden de Llamadas, ver fase248)', () => {
   assert.deepEqual(TRAFICO_ORDEN_TARJETAS, ['total', 'contestadas', 'abandonadas', 'nivelAtencion', 'tasaAbandono', 'nivelServicio']);
-  const wpp = fs.readFileSync(path.join(JS, 'trafico-whatsapp.js'), 'utf8');
-  assert.doesNotMatch(wpp, /TRAFICO_ORDEN_TARJETAS_LLAMADAS|contextoKpis\.orden/);
   assert.deepEqual(titulosCon(undefined), [
     'Llamadas ingresadas', 'Llamadas contestadas', 'Llamadas abandonadas',
     'Nivel de atención', 'Tasa de abandono', 'Nivel de servicio (20 s)',
   ]);
 });
 
-test('Mobilize no cambia y ya cumple el criterio (Nivel de servicio antes de Nivel de atención)', () => {
+test('Mobilize cumple el criterio (Nivel de servicio antes de Nivel de atención; Fase 248: orden como ORLANT)', () => {
   const ordenes = [];
   const buscar = (o) => {
     if (!o || typeof o !== 'object') return;

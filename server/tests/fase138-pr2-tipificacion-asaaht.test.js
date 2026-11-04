@@ -190,7 +190,8 @@ test('migraciones asaaht_v1 + asaata_aht_v1 (Fase 145): el panel viejo de MOBILI
   // pierden en el reemplazo. Fase 227: resumenOcultar (tasa de abandono y
   // nivel de servicio) pasa a resumenOrden + eficaciaEnResumen.
   assert.equal(panel.resumenOcultar, undefined);
-  assert.deepEqual(panel.resumenOrden, ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion']);
+  // Fase 248: mismo orden que ORLANT + Eficacia al final.
+  assert.deepEqual(panel.resumenOrden, ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia']);
   assert.equal(panel.eficaciaEnResumen, true);
   assert.equal(panel.resumenPorSeccion, true);
 });

@@ -449,6 +449,10 @@ function _traficoWppRenderContenido(i){
       contextoKpis.mesAnteriorLbl = mesNombreLargo(mesAnt).split(' ')[0].toLowerCase();
     }
   }
+  // Fase 248: mismo orden de tarjetas que Trafico de Llamadas (Ingresadas,
+  // Contestadas, Abandonadas, Nivel de servicio, Nivel de atencion, Tasa de
+  // abandono). La 2a tarjeta de nivel de servicio (20 s, si hay 5 min) sigue al final.
+  contextoKpis.orden = TRAFICO_ORDEN_TARJETAS_LLAMADAS;
   _traficoDibujarKpis('tww', i, kpiTotales, kpiLabels, campana, null, contextoKpis);
 
   _traficoDibujarResumenChart('tww', i, agregado, estado.combinar, 'Total WhatsApp', 'WhatsApp Contestados', campana);

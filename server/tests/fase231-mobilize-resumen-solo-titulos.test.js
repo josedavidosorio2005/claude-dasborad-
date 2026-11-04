@@ -17,7 +17,7 @@ const JS = path.join(__dirname, '..', '..', 'public', 'js');
 const { traficoOrdenTarjetas } = require(path.join(JS, 'trafico-logic.js'));
 const seed = require('../dashboard-config-seed');
 
-const ORDEN_MOBILIZE = ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion'];
+const ORDEN_MOBILIZE = ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia']; // Fase 248
 const UMBRALES = { nivel_atencion: { verde: 90, amarillo: 80 }, tasa_abandono: { verde: 3, amarillo: 10, direccion: 'menor_es_mejor' }, service_level: { verde: 80, amarillo: 70 } };
 
 function extraer(src, firma) {

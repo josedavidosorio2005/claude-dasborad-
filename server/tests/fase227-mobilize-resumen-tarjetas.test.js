@@ -128,12 +128,13 @@ function panelFlujo(layout, campana) {
 
 test('semilla y plantilla de Mobilize con el orden nuevo; ORLANT, Aurora y HLM sin las opciones nuevas', () => {
   const m = panelFlujo(seed.CONFIGS.find((c) => c.cliente === 'MOBILIZE').layout, 'MOBILIZE');
-  assert.deepEqual(m.resumenOrden, ORDEN_MOBILIZE);
+  // Fase 248: semilla y plantilla ya traen el orden como ORLANT + Eficacia al final.
+  assert.deepEqual(m.resumenOrden, ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia']);
   assert.equal(m.eficaciaEnResumen, true);
   assert.equal(m.resumenOcultar, undefined);
   // el perfil de plantillas (fuente de la foto de la Fase 153) lleva lo mismo
   const src = fs.readFileSync(path.join(__dirname, '..', 'plantillas-cliente.js'), 'utf8');
-  assert.ok(src.includes("resumenOrden: ['total', 'contestadas', 'nivelServicio', 'tasaAbandono', 'eficacia', 'abandonadas', 'nivelAtencion']"));
+  assert.ok(src.includes("resumenOrden: ['total', 'contestadas', 'abandonadas', 'nivelServicio', 'nivelAtencion', 'tasaAbandono', 'eficacia']"));
   assert.ok(src.includes('eficaciaEnResumen: true'));
   assert.ok(!src.includes('resumenOcultar'));
   for (const cli of ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']) {
