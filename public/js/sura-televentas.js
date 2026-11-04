@@ -109,9 +109,13 @@ function _stvCrearHost() {
 
 // Pestanas y botones segun lo que devuelve el servidor (PERM.pestanas,
 // PERM.puedeEditar). La primera pestana permitida queda abierta.
+// Fase 242 (pedido de Edwin, 04/11): «Cargar información» (p1) sale del
+// tablero para TODOS (también el administrador): esa carga queda solo en
+// Cargar datos (stvMontarCarga, que la muestra por CSS con .stv-solo-carga).
+var STV_PESTANAS_SOLO_CENTRO = ['p1'];
 function _stvAplicarPermisos(perm) {
   var root = _stv.root;
-  var permitidas = perm.pestanas || [];
+  var permitidas = (perm.pestanas || []).filter(function (p) { return STV_PESTANAS_SOLO_CENTRO.indexOf(p) === -1; });
   root.querySelectorAll('.tab').forEach(function (t) { t.hidden = permitidas.indexOf(t.dataset.p) === -1; });
   root.querySelector('.wrap').classList.toggle('stv-lectura', !perm.puedeEditar);
   var actual = root.querySelector('.tab.on');
