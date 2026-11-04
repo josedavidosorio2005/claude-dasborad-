@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.121.1 — Noviembre 2026
+
+**Fase 243: ORLANT, sin "Efectividad de Agendamiento" en Cargar datos (pedido de Edwin).**
+
+- En "Cargar datos" › ORLANT ya no aparece la carga "Efectividad de
+  Agendamiento": no se usa, porque el Ranking de Asesores de la pestaña
+  Agendamiento sale de Agendas y del CDR.
+- El Ranking de Asesores y la pestaña Efectividad de Citas siguen igual. No se
+  borró ningún dato.
+
 ## v1.121.0 — Noviembre 2026
 
 **Fase 242: SURA, sin la pestaña "Cargar información" en el tablero (pedido de Edwin).**
