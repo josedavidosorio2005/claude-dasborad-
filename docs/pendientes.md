@@ -169,6 +169,22 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   del panel (`resumenSoloTitulos` en el trafico_combo de MOBILIZE; con
   `false` vuelven todos los textos). El rótulo de mes parcial ("mes en curso")
   es de toda la fila y se dejó. Cómo se cierra: su respuesta.
+- **Módulo de Calidad conectado a la plataforma** (reunión 04/11; Edwin dijo
+  que se trabaja después y con calma) — Prioridad MEDIA. Diagnóstico, plan por
+  fases (11 PRs pequeños) y preguntas en
+  [`docs/calidad-plan-edwin-nov.md`](calidad-plan-edwin-nov.md) (Fase 233,
+  solo docs). Falta el HTML de prueba de Edwin (se guarda fuera del repo,
+  sin copiar datos) y la plantilla de Mobilize (la manda Kelly). Nada se
+  construye sin el OK del usuario. Lo primero que se puede hacer sin esperar
+  a Edwin: filtros por campaña y rol en Admin › Usuarios, y el aviso al asesor
+  cada pocos minutos.
+- **ORLANT, tasa de contacto de salida** (reunión 04/11) — Prioridad MEDIA.
+  Edwin revisa de dónde sale. En Mobilize ya existe (Fase 226: conectadas ÷
+  total de salida); en ORLANT "no conectada" = NO_CONTESTAN + BUZON. Cómo se
+  cierra: su respuesta, y entonces se arma el pedido.
+- **Encuestas de prueba en FCR / One & Done** (reunión 04/11) — Prioridad
+  BAJA. Edwin dijo algo como "las pruebas de las encuestas no se cuentan":
+  confirmar si hay encuestas de prueba que excluir y cómo se reconocen.
 - **ORLANT, Tipificación sin filtro de mes propio: confirmar con Edwin** (Fase
   232, reunión 04/11) — Prioridad BAJA. Desde la v1.116.2 el mes sale solo del
   selector MESES del tablero y se perdió el rango por días (Desde/Hasta)

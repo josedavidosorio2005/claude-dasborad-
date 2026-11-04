@@ -18862,3 +18862,46 @@ tocar código; un PR por punto.
   septiembre por separado (sin agosto); Línea = Salida General marca su
   tarjeta; 0 errores de consola, 0 escrituras. El texto "Entrada y salida
   (todas)" se cortaba a 1440 px: queda "Todas".
+- **#642 mergeado y verificado en producción (04/11, v1.116.2, sesión del
+  administrador, Brave visible, 0 escrituras, 0 errores de consola)**: ORLANT
+  › Tipificación a 1440 y 375 px. No tiene la fila de arriba ni las notas;
+  tiene 4 filtros en cada mitad y "Clasificación de asesores" en la cabecera.
+  - Con MESES = Todos pide agosto–octubre (Salida General 17.184 / 3P 6.409 /
+    Sin clasificar 52 en llamadas; 9.098 / 1.808 / 73 en WhatsApp).
+  - Con octubre pide solo octubre.
+  - Con agosto + octubre pide cada mes por separado, sin septiembre (llamadas
+    30.459, General 9.862 / 3P 3.327 / Sin clasificar 52).
+  - Línea = Salida General en Llamadas marca su tarjeta.
+  - Mobilize › Tipificación conserva Mes, Desde, Hasta y "Aplicar filtros".
+
+## Fase 233 — Calidad conectada a la plataforma: diagnóstico y plan; cierre de la tanda del 04/11 (solo docs, 2026-11-04)
+
+- **Pedido (reunión 04/11 con Edwin)**: módulo de Calidad con roles CALIDAD,
+  ASESOR y RESULTADO (pestaña "Calidad" en el dashboard de cada cliente);
+  acceso por plantilla; plantillas de SURA, Aurora, HLM y ORLANT (falta
+  Mobilize, la manda Kelly); aviso al asesor en tiempo real; lista de
+  usuarios por campaña y rol. Edwin dijo que se trabaja después y con calma.
+- **Solo lectura y plan**: [`docs/calidad-plan-edwin-nov.md`](../calidad-plan-edwin-nov.md).
+  Desde la Fase 94 cambiaron varias cosas:
+  - la fecha y el evaluador ya están fijos, ya hay lista de codificaciones y
+    ya hay aviso al asesor al iniciar sesión (Fase 95);
+  - solo quedan las plantillas de ORLANT y Mobilize (Fase 134);
+  - hay **una plantilla por cliente** (`calidad_plantillas.campana UNIQUE`),
+    y lo que más falta es poder tener varias por cliente, con permiso por
+    plantilla.
+
+  El plan recomienda:
+  - RESULTADO como permiso `ver_calidad`, no como un rol nuevo;
+  - permisos `plantilla_<id>` sin marcar por defecto, con las reglas de la
+    Fase 222;
+  - un aviso que consulta cada pocos minutos en vez de una conexión abierta;
+  - 11 PRs pequeños, empezando por filtros de usuarios y el aviso, que no
+    dependen de Edwin.
+- **Prototipo HTML de Edwin**: no se revisó (todavía no está en el equipo).
+  Cuando llegue, se guarda fuera del repo y se completan las secciones 4 y 5
+  del plan sin copiar datos reales.
+- **Cierre de la tanda del 04/11**: Fases 230 (#640), 231 (#641) y 232 (#642)
+  mergeadas con `--match-head-commit`, CI en verde, desplegadas y
+  verificadas en producción en solo lectura; pendientes nuevos en
+  `docs/pendientes.md` (tasa de contacto de ORLANT, encuestas de prueba, 8
+  tarjetas de Mobilize, rango por días de Tipificación, Calidad).
