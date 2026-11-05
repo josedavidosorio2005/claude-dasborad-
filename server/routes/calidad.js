@@ -17,6 +17,8 @@ const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 const { aplicarAliasAFilas } = require('../alias-asesores');
 const camposLib = require('../calidad-campos'); // Fase 252
+const importLib = require('../calidad-plantilla-import'); // Fase 253
+const clientesRegistro = require('../clientes-registro');
 
 const router = express.Router();
 
@@ -86,9 +88,13 @@ function toPlantilla(row) {
     version: row.version || 1,
     completoObligatorio: !!row.completoObligatorio,
     activo: row.activo === undefined ? true : !!row.activo,
+    // Fase 253: todas las versiones de una plantilla comparten familia (el
+    // permiso plantilla_<familiaId> vale para cualquiera de sus versiones).
+    familiaId: row.familiaId || row.id,
     updatedAt: row.updatedAt,
   };
 }
+const familiaDe = (row) => row.familiaId || row.id;
 
 // Fase 151: el telefono del cliente final solo lo reciben los roles que
 // trabajan el monitoreo (CALIDAD, SUPERVISOR, REPORTES) y el administrador.
@@ -279,7 +285,111 @@ router.get(
       .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana, principal DESC, id')
       .all()
       .filter((row) => campaignAccess(req.actor, row.campana));
-    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, r.id) })));
+    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r)) })));
+  })
+);
+
+// ══════════════════════════════════════════════════════════
+// CALIDAD — PLANTILLAS: administracion e importador (Fase 253, B2)
+// ══════════════════════════════════════════════════════════
+// Solo el administrador completo. El archivo de la plantilla (JSON, texto de
+// Edwin) nunca va al repo: se importa en pantalla, como un usuario real.
+
+// Monitoreos que cuelgan de una plantilla: los que guardan su id y, si es la
+// principal de su campaña, los viejos sin plantillaId (que la usan a ella).
+function monitoreosDePlantilla(row) {
+  let n = db.prepare('SELECT COUNT(*) AS n FROM monitoreos WHERE plantillaId = ?').get(row.id).n;
+  if (row.principal) n += db.prepare('SELECT COUNT(*) AS n FROM monitoreos WHERE campana = ? AND plantillaId IS NULL').get(row.campana).n;
+  return n;
+}
+// Middleware: antes de validar el cuerpo (quien no es admin recibe 403, no 400).
+function soloAdmin(req, res, next) {
+  if (isFullAdmin(req.actor)) return next();
+  res.status(403).json({ error: 'Solo el administrador puede administrar las plantillas de calidad' });
+}
+
+router.get(
+  '/calidad/plantillas/admin',
+  requireActor,
+  soloAdmin,
+  wrap((req, res) => {
+    const rows = db.prepare('SELECT * FROM calidad_plantillas ORDER BY campana, COALESCE(familiaId, id), version DESC, id DESC').all();
+    res.json(rows.map((r) => Object.assign(toPlantilla(r), { monitoreos: monitoreosDePlantilla(r) })));
+  })
+);
+
+// Importar: sin `confirmar` es solo la vista previa (valida y dice que va a
+// pasar, sin escribir nada). Con `confirmar`, en una transaccion:
+//  - si ya hay una plantilla ACTIVA de la campaña con el mismo nombre, la
+//    nueva es su version siguiente (misma familia) y la vieja queda inactiva
+//    (sus monitoreos siguen con ella, sin recalcularse);
+//  - si la nueva queda como principal, los monitoreos viejos sin plantillaId
+//    de la principal anterior pasan a guardar el id de esa plantilla (mismo
+//    significado de siempre: nada se recalcula ni se borra).
+router.post(
+  '/calidad/plantillas/importar',
+  requireActor,
+  soloAdmin,
+  validate(schemas.importarPlantillaBody),
+  wrap((req, res) => {
+    const v = importLib.validarPlantillaImport(req.body.archivo, { campanas: clientesRegistro.campanasCalidad(db) });
+    if (v.error) return res.status(400).json({ error: v.error });
+    const p = v.plantilla;
+    const anterior = db
+      .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1 AND lower(trim(nombre)) = lower(trim(?)) ORDER BY version DESC, id DESC LIMIT 1')
+      .get(p.campana, p.nombre);
+    const principalActual = db.prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND principal = 1').get(p.campana);
+    const quedaPrincipal = !!req.body.principal || !!(anterior && anterior.principal) || !principalActual;
+    const version = anterior ? (anterior.version || 1) + 1 : 1;
+    const plan = {
+      accion: anterior ? 'version' : 'nueva',
+      version,
+      reemplaza: anterior ? { id: anterior.id, nombre: anterior.nombre, version: anterior.version || 1, monitoreos: monitoreosDePlantilla(anterior) } : null,
+      principal: quedaPrincipal,
+      principalAnterior: quedaPrincipal && principalActual ? { id: principalActual.id, nombre: principalActual.nombre || principalActual.campana, monitoreosSinPlantillaId: db.prepare('SELECT COUNT(*) AS n FROM monitoreos WHERE campana = ? AND plantillaId IS NULL').get(p.campana).n } : null,
+    };
+    const vista = { nombre: p.nombre, campana: p.campana, engine: p.engine, campos: p.campos, items: p.items, completoObligatorio: true };
+    if (!req.body.confirmar) return res.json({ ok: true, confirmado: false, plantilla: vista, resumen: v.resumen, avisos: v.avisos, plan });
+
+    const now = nowStr();
+    const nuevoId = db.transaction(() => {
+      if (quedaPrincipal && principalActual) {
+        db.prepare('UPDATE monitoreos SET plantillaId = ? WHERE campana = ? AND plantillaId IS NULL').run(principalActual.id, p.campana);
+        db.prepare('UPDATE calidad_plantillas SET principal = 0, updatedAt = ? WHERE id = ?').run(now, principalActual.id);
+      }
+      if (anterior) db.prepare('UPDATE calidad_plantillas SET activo = 0, updatedAt = ? WHERE id = ?').run(now, anterior.id);
+      const info = db
+        .prepare(`INSERT INTO calidad_plantillas (campana, nombre, principal, engine, items, activo, updatedAt, campos, version, completoObligatorio, familiaId)
+                  VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, 1, ?)`)
+        .run(p.campana, p.nombre, quedaPrincipal ? 1 : 0, p.engine, JSON.stringify(p.items), now, JSON.stringify(p.campos), version, anterior ? familiaDe(anterior) : null);
+      return Number(info.lastInsertRowid);
+    })();
+    const row = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(nuevoId);
+    logCalEvent('PLANTILLA_IMPORTADA', p.nombre, p.campana, req.actor, `Versión ${version}, ${p.items.length} ítems${quedaPrincipal ? ', principal' : ''}`);
+    res.status(201).json({ ok: true, confirmado: true, plantilla: Object.assign(toPlantilla(row), { monitoreos: 0 }), plan });
+  })
+);
+
+// Activar / desactivar una plantilla (no se borra nunca: sus monitoreos la
+// siguen usando). La principal no se desactiva: primero se importa o marca otra.
+router.put(
+  '/calidad/plantillas/:id/activo',
+  requireActor,
+  soloAdmin,
+  validate(schemas.idParamSchema, 'params'),
+  wrap((req, res) => {
+    const row = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Plantilla no encontrada' });
+    const activo = req.body && req.body.activo === true;
+    if (!activo && row.principal) return res.status(400).json({ error: 'La plantilla principal no se puede desactivar' });
+    if (activo && !row.activo) {
+      const otra = db.prepare('SELECT id FROM calidad_plantillas WHERE campana = ? AND activo = 1 AND id <> ? AND COALESCE(familiaId, id) = ?').get(row.campana, row.id, familiaDe(row));
+      if (otra) return res.status(400).json({ error: 'Ya hay otra versión activa de esta plantilla' });
+    }
+    db.prepare('UPDATE calidad_plantillas SET activo = ?, updatedAt = ? WHERE id = ?').run(activo ? 1 : 0, nowStr(), row.id);
+    logCalEvent(activo ? 'PLANTILLA_ACTIVADA' : 'PLANTILLA_DESACTIVADA', row.nombre || row.campana, row.campana, req.actor, `Versión ${row.version || 1}`);
+    const r2 = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(row.id);
+    res.json(Object.assign(toPlantilla(r2), { monitoreos: monitoreosDePlantilla(r2) }));
   })
 );
 
@@ -392,7 +502,7 @@ router.post(
       return res.status(400).json({ error: b.plantillaId ? 'Esa plantilla no es de esta campaña o no está activa' : 'Esa campana no tiene plantilla de calificacion' });
     }
     // Fase 237: acceso por plantilla (plantilla_<id>), ademas de la campaña.
-    if (!canUsePlantilla(req.actor, plantillaRow.id)) {
+    if (!canUsePlantilla(req.actor, familiaDe(plantillaRow))) {
       return res.status(403).json({ error: 'No tiene acceso a esa plantilla de calificación' });
     }
     const plantilla = toPlantilla(plantillaRow);
@@ -430,7 +540,9 @@ router.post(
       .run({
         // Fase 237: la principal se guarda como NULL (igual que los viejos);
         // otra plantilla, con su id.
-        plantillaId: plantillaRow.principal ? null : plantillaRow.id,
+        // Fase 253: las plantillas nuevas (con campos) guardan siempre su id, asi
+        // un cambio de principal o una version nueva nunca reinterpreta el monitoreo.
+        plantillaId: plantillaRow.principal && !plantillaRow.campos ? null : plantillaRow.id,
         campana: b.campana,
         asesor: b.asesor,
         asesorUserId,

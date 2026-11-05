@@ -274,6 +274,8 @@ async function openCalidad(){
   populateCalMesSelect();
   var cfg = document.getElementById('ctab-btn-config');
   if(cfg) cfg.style.display = isFullAdmin() ? '' : 'none';
+  var plt = document.getElementById('ctab-btn-plantillas'); // Fase 253: solo el administrador
+  if(plt) plt.style.display = isFullAdmin() ? '' : 'none';
   var canEval = calCanEvaluate();
   var nuevoBtn = document.getElementById('ctab-btn-nuevo');
   if(nuevoBtn) nuevoBtn.style.display = canEval ? '' : 'none';
@@ -375,6 +377,7 @@ function populateCalAsesorSelect(){
 function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
   if(t==='carga' && _calCampanaTieneDashboard(_ccampana)) t='monitoreos';
+  if(t==='plantillas' && !isFullAdmin()) t='resumen'; // Fase 253
   _ctab = t;
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab===t); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-'+t); });
@@ -386,6 +389,7 @@ function switchCalTab(t){
   else if(t==='resumen') renderCalResumenTable();
   else if(t==='reportes') setTimeout(renderCalReportes,60);
   else if(t==='config') renderCalConfig();
+  else if(t==='plantillas' && typeof calPlantillasRender==='function') calPlantillasRender(); // Fase 253
 }
 
 function renderCalItemsForm(){

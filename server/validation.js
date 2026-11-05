@@ -316,6 +316,14 @@ const updateMonitoreoBody = z
   })
   .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
 
+// Fase 253: importar una plantilla de calidad (archivo JSON ya leido en el
+// navegador). El contenido lo valida calidad-plantilla-import.js.
+const importarPlantillaBody = z.object({
+  archivo: z.looseObject({}),
+  principal: z.boolean().optional().default(false),
+  confirmar: z.boolean().optional().default(false),
+});
+
 // Fase 95 (tema B): catalogo de codificaciones validas por campana.
 const codificacionValorSchema = z
   .string(reqStr('La codificacion es obligatoria'))
@@ -1559,6 +1567,7 @@ module.exports = {
     idParamSchema,
     createMonitoreoBody,
     updateMonitoreoBody,
+    importarPlantillaBody,
     monitoreoBulkBody,
     codificacionBulkBody,
     updateCodificacionBody,

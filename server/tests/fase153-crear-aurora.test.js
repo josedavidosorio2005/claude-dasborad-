@@ -70,7 +70,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 237: varias plantillas de Calidad (no toca Aurora/HLM).
     'fase237_calidad_plantillas_varias_v1',
     // Fase 252: columnas opcionales de Calidad (no toca Aurora/HLM).
-    'fase252_calidad_campos_v1'];
+    'fase252_calidad_campos_v1',
+    // Fase 253: familia de versiones de plantilla (no toca Aurora/HLM).
+    'fase253_calidad_plantillas_familia_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

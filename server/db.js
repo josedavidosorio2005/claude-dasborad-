@@ -4676,6 +4676,18 @@ function migrarCalidadCamposPorPlantilla() {
 }
 runOnceMigration('fase252_calidad_campos_v1', migrarCalidadCamposPorPlantilla);
 
+// Fase 253 (plan de Calidad B2: importador y versiones de plantilla). Columna
+// NUEVA y opcional, sin tocar filas: calidad_plantillas.familiaId = id de la
+// primera version de la plantilla (NULL = la fila es su propia familia, como
+// todas las de hoy). El permiso por plantilla (plantilla_<id>) usa ese id de
+// familia, asi que una version nueva no le quita el acceso a nadie.
+function migrarCalidadPlantillasFamilia() {
+  const cols = db.prepare('PRAGMA table_info(calidad_plantillas)').all().map((c) => c.name);
+  if (!cols.includes('familiaId')) db.exec('ALTER TABLE calidad_plantillas ADD COLUMN familiaId INTEGER');
+  if (!config.isTest) console.log('[db] Migracion fase253_calidad_plantillas_familia_v1 aplicada.');
+}
+runOnceMigration('fase253_calidad_plantillas_familia_v1', migrarCalidadPlantillasFamilia);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4709,6 +4721,7 @@ module.exports.migrarMobilizeFlujoEtiquetaTotal = migrarMobilizeFlujoEtiquetaTot
 module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
 module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
 module.exports.migrarCalidadCamposPorPlantilla = migrarCalidadCamposPorPlantilla;
+module.exports.migrarCalidadPlantillasFamilia = migrarCalidadPlantillasFamilia;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

@@ -4,6 +4,29 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.127.0 — Noviembre 2026
+
+**Fase 253: Calidad, importar plantillas en pantalla y perfil Calidad en Usuarios (paso 2 de Calidad de Mobilize).**
+
+- El administrador ya tiene "Calidad" en su menú. Antes solo se llegaba a
+  Calidad desde la pantalla de un usuario de Calidad o Supervisor.
+- Calidad › Plantillas (solo el administrador): se sube el archivo de la
+  plantilla y sale una vista previa con los ítems, los pesos, los críticos,
+  los campos del formulario y lo que va a pasar. Nada se guarda hasta
+  presionar "Importar plantilla". Si el archivo tiene un error (pesos que no
+  suman 100, un ítem sin nombre, un campo que no existe), lo dice en palabras
+  simples.
+- Versiones: si se importa otra vez una plantilla con el mismo nombre, queda
+  como versión nueva y la anterior se desactiva. Los monitoreos que ya se
+  hicieron siguen con su versión y no se recalculan. Una plantilla nunca se
+  borra; se puede desactivar o volver a activar.
+- Quien tiene acceso a una plantilla lo sigue teniendo en sus versiones nuevas.
+- En el formulario de usuario, cada rol trae una línea que explica qué hace
+  (por ejemplo, Calidad califica monitoreos solo en las campañas y plantillas
+  marcadas).
+- Los dashboards de los 5 clientes y las plantillas de hoy (ORLANT y la de
+  Mobilize) quedan igual.
+
 ## v1.126.0 — Noviembre 2026
 
 **Fase 252: Calidad, base para las plantillas nuevas de Edwin (paso 1 de Calidad de Mobilize).**

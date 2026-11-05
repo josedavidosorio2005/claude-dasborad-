@@ -1967,3 +1967,22 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #stv-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}
   #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;gap:8px;}
 }
+
+/* Fase 253: Calidad › Plantillas (importador y versiones, solo administrador) */
+.cpl-ayuda{font-size:var(--fs-small);color:var(--c-text-muted);line-height:1.5;margin:0 0 10px}
+.cpl-archivo-btn{cursor:pointer;display:inline-flex;align-items:center;min-height:44px}
+.cpl-archivo-btn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.cpl-archivo-btn:focus-within{outline:2px solid var(--c-focus);outline-offset:2px}
+.cpl-error{margin-top:10px;padding:8px 12px;border-radius:var(--r-sm);background:var(--c-danger-bg);color:var(--c-danger-dark);font-size:var(--fs-small)}
+.cpl-resumen{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.cpl-campos{font-size:var(--fs-small);color:var(--c-text);margin:6px 0}
+.cpl-plan{font-size:var(--fs-small);color:var(--c-text);margin:6px 0 10px;padding-left:18px;line-height:1.5}
+.cpl-avisos{font-size:var(--fs-small);color:var(--c-warning-dark);background:var(--c-warning-bg);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px}
+.cpl-avisos ul{margin:4px 0 0;padding-left:18px}
+.cpl-items .cpl-desc{font-size:var(--fs-note);color:var(--c-text-muted);max-width:420px}
+.cpl-check{display:flex;align-items:center;gap:8px;font-size:var(--fs-body);margin-top:12px;min-height:44px;cursor:pointer}
+.cpl-check input{width:18px;height:18px}
+.cpl-inactiva td{color:var(--c-text-muted)}
+.cpl-etq{font-size:var(--fs-note);color:var(--c-text-muted);border:1px solid var(--c-border);border-radius:var(--r-md);padding:1px 6px;white-space:nowrap}
+.cpl-vacio{text-align:center;color:var(--c-text-muted)}
+.mu-rol-desc{display:block;margin-top:4px;font-size:var(--fs-note);color:var(--c-text-muted);line-height:1.4}

@@ -85,6 +85,7 @@
         <li><a id="menu-users" role="button" tabindex="0" onclick="showSection('users')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-users"></use></svg></span> Usuarios</a></li>
         <li id="menu-perms-li"><a id="menu-perms" role="button" tabindex="0" onclick="showSection('perms')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-lock"></use></svg></span> Permisos</a></li>
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-history"></use></svg></span> Historial</a></li>
+        <li id="menu-calidad-li" class="hidden"><a id="menu-calidad" role="button" tabindex="0" onclick="openCalidad()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-target"></use></svg></span> Metas Calidad</a></li>
         <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-gauge"></use></svg></span> Umbrales</a></li>
         <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trending-up"></use></svg></span> Rol Reportes</a></li>
@@ -779,6 +780,7 @@
           <option value="SUPERVISOR">SUPERVISOR</option>
           <option value="AUX_ADMIN">AUXILIAR ADMIN</option>
         </select>
+        <small id="mu-rol-desc" class="mu-rol-desc" aria-live="polite"></small>
       </div>
     </div>
     <div class="client-perms-section" id="mu-asesor-note" style="display:none">
@@ -1021,6 +1023,7 @@
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
       <button class="atab" data-ctab="reportes" onclick="switchCalTab('reportes')">Reportes</button>
       <button class="atab" data-ctab="config" id="ctab-btn-config" onclick="switchCalTab('config')">Configuración</button>
+      <button class="atab" data-ctab="plantillas" id="ctab-btn-plantillas" onclick="switchCalTab('plantillas')" style="display:none">Plantillas</button>
     </div>
 
     <div id="cpanel-nuevo" class="atab-panel visible">
@@ -1130,6 +1133,26 @@
         <div class="modal-btns">
           <button class="btn-primary" onclick="descargarReporteGeneral()">Descargar Reporte General (Excel)</button>
         </div>
+      </div>
+    </div>
+
+    <div id="cpanel-plantillas" class="atab-panel">
+      <div class="aurora-card">
+        <div class="aurora-card-title">Importar una plantilla de calificación</div>
+        <p class="cpl-ayuda">Sube el archivo de la plantilla (<strong>.json</strong>, el formato de plantillas de la plataforma). Primero ves una vista previa con los ítems, los pesos y lo que va a pasar; nada se guarda hasta que presionas <strong>Importar plantilla</strong>.</p>
+        <div class="modal-btns" style="justify-content:flex-start">
+          <label class="btn-primary cpl-archivo-btn">
+            Elegir archivo…
+            <input type="file" id="cpl-file" accept=".json,application/json" onchange="calPlantillaArchivo(this)">
+          </label>
+        </div>
+        <div id="cpl-error" class="cpl-error" role="alert" hidden></div>
+      </div>
+      <div class="aurora-card" id="cpl-preview" hidden></div>
+      <div class="aurora-card">
+        <div class="aurora-card-title">Plantillas y versiones</div>
+        <p class="cpl-ayuda">Una plantilla nunca se borra: sus monitoreos la siguen usando. Si importas otra con el mismo nombre en la misma campaña, queda como versión nueva y la anterior se desactiva (los monitoreos viejos no se recalculan).</p>
+        <div style="overflow-x:auto"><table class="aurora-rank-table" id="cpl-tabla"></table></div>
       </div>
     </div>
 
@@ -1862,6 +1885,8 @@
 <script src="js/mi-cuenta.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
+<script src="js/calidad-plantillas-logic.js"></script>
+<script src="js/calidad-plantillas.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>
 <script src="js/calidad-carga-masiva.js"></script>
 <script src="js/metas.js"></script>
