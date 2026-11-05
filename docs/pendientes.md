@@ -170,6 +170,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Calidad de Aurora y Hospital La María** (Fases 262–264, 05/11) — Prioridad
+  ALTA (entrega 09/11). Las 3 plantillas están importadas en producción
+  (Aurora principal; HLM: Sede Castilla principal y Sede 33 activa). Confirmar:
+  (1) ¿cuál sede de HLM es la principal? (hoy Castilla); (2) los campos son los
+  de ORLANT (asesor, fecha, ID llamada, teléfono, codificación, evaluador,
+  observaciones): ¿quiere también "ID de agente" y "Motivo de afectación"
+  como en su HTML?; (3) Sede 33: sus 3 críticos pesan 20, así que fallarlos
+  cuesta lo mismo que un ítem normal (solo cambia la alerta): ¿así está bien?;
+  (4) listas de codificación de Aurora y HLM (hoy texto libre); (5) quién
+  califica: hay que crear los usuarios CALIDAD y ASESOR de esas campañas.
+
 - **Aurora, Agendas por usuaria: confirmar la lectura** (Fase 259) — Prioridad
   MEDIA. (1) ¿"Agendas por usuario" son las confirmaciones (usuario_confirma,
   todas las filas; es lo principal hoy) o las citas creadas (usuario_regcita,

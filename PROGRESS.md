@@ -487,6 +487,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 264 — Plantillas de Calidad de Aurora y HLM importadas en producción (escrituras autorizadas) y bitácora (solo docs, 2026-11-05)
 - Fase 263 — Gráfica de Abandono: la línea del % en su propia franja, sin montarse sobre las etiquetas de las barras (v1.132.1, 2026-11-05)
 - Fase 262 — Calidad de Aurora y HLM: pestaña Calidad que se destapa con monitoreos, «Resultado de los monitoreos» y asesores de esas campañas (v1.132.0, 2026-11-05)
 - Fase 260 — Agendas por usuaria: fechas del .xls real como fecha de Excel (Date) en la carga (v1.131.1, 2026-11-05)
