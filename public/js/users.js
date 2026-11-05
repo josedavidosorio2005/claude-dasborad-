@@ -167,11 +167,18 @@ function openEditModal(id){
   syncCargarDatosLock(u.rol);
   buildCargarModulosCheckboxes(u.perms, u.rol);
   buildPlantillaCheckboxes(u.perms, u.rol); // Fase 237
+  syncRolDescripcion(u.rol); // Fase 253
   document.getElementById('modal-user').classList.add('show');
+}
+
+function syncRolDescripcion(rol){ // Fase 253
+  var el=document.getElementById('mu-rol-desc');
+  if(el) el.textContent=(typeof ROL_DESCRIPCION!=='undefined' && ROL_DESCRIPCION[rol]) || '';
 }
 
 function onRolChange(){
   var rol=document.getElementById('mu-rol').value;
+  syncRolDescripcion(rol);
   var show=(rol==='CLIENTES_DASH' || rol==='SUPERVISOR');
   document.getElementById('mu-client-perms').style.display=show?'block':'none';
   if(show) buildClientCheckboxes(null);
@@ -283,8 +290,10 @@ async function buildPlantillaCheckboxes(existingPerms, rol){
   if(!mostrar){ grid.innerHTML=''; return; }
   var lista = await _usersCargarPlantillas();
   grid.innerHTML = lista.length ? lista.map(function(p){
-    var checked=!!(existingPerms && existingPerms['plantilla_'+p.id]===true);
-    return '<label class="client-perm-item"><input type="checkbox" data-plantilla="'+esc(p.id)+'" '+(checked?'checked':'')+'>'+esc(usersPlantillaEtiqueta(p))+'</label>';
+    // Fase 253: el permiso es por familia (sirve para todas las versiones de la plantilla).
+    var fam=p.familiaId||p.id;
+    var checked=!!(existingPerms && existingPerms['plantilla_'+fam]===true);
+    return '<label class="client-perm-item"><input type="checkbox" data-plantilla="'+esc(fam)+'" '+(checked?'checked':'')+'>'+esc(usersPlantillaEtiqueta(p))+'</label>';
   }).join('') : '<p class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0">Todavía no hay plantillas de calificación.</p>';
 }
 // Pone en `perms` las claves plantilla_<id>: las marcadas si el rol es CALIDAD o

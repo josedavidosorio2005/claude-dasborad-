@@ -170,6 +170,7 @@ declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'admin');
+declarar(['GET /calidad/plantillas/admin', 'POST /calidad/plantillas/importar', 'PUT /calidad/plantillas/:id/activo'], 'admin'); // Fase 253: importador y versiones
 // Fase 122: alias de nombre de asesor -- a diferencia de codificaciones
 // (lectura scoped por campana, escritura admin), aqui las 3 operaciones
 // son admin-only (alta/baja/lista, pedido explicito de InCo).

@@ -82,5 +82,18 @@ var ALL_ROLES = [
 ];
 
 var ROLE_DEFAULT = {CALIDAD:'Calidad',INVENTARIO:'Inventario',GERENCIA:'Gerencia',GESTION_HUMANA:'GestionHumana',CLIENTES_DASH:'ClientesDash',REPORTES:'Calidad'};
+// Fase 253: que hace cada rol, en una linea (formulario de usuario).
+var ROL_DESCRIPCION = {
+  ADMIN: 'Acceso completo a la plataforma.',
+  CALIDAD: 'Califica monitoreos en Calidad, solo en las campañas y plantillas que marques abajo.',
+  INVENTARIO: 'Maneja el módulo de Inventario.',
+  GERENCIA: 'Ve los resultados de Calidad y el módulo de Gerencia (solo lectura).',
+  GESTION_HUMANA: 'Maneja el módulo de Gestión Humana.',
+  CLIENTES_DASH: 'Ve los dashboards de los clientes que marques.',
+  REPORTES: 'Ve los reportes de Calidad y puede corregir o eliminar monitoreos.',
+  ASESOR: 'Solo ve sus propios resultados de Calidad (Mis resultados).',
+  SUPERVISOR: 'Ve los dashboards de sus clientes y también puede calificar monitoreos.',
+  AUX_ADMIN: 'Ayuda a administrar usuarios con los permisos que le des.'
+};
 var RL = {};
 ALL_ROLES.forEach(function(r){ RL[r.key]=r.label; });

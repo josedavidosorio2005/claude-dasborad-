@@ -138,6 +138,10 @@ function enterAdminPanel(){
   if(cargasLi) cargasLi.classList.toggle('hidden', !(isMaster||isAdminRole||canLoadAnyModule()));
   var dashboardsLi=document.getElementById('menu-dashboards-li');
   if(dashboardsLi) dashboardsLi.classList.toggle('hidden', !(isMaster||isAdminRole));
+  // Fase 253: el administrador entra a Calidad desde su menu (antes solo desde
+  // la pantalla de un usuario con el modulo Calidad; Edwin no la encontraba).
+  var calLi=document.getElementById('menu-calidad-li');
+  if(calLi) calLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Calidad)));
   var invLi=document.getElementById('menu-inventario-li');
   if(invLi) invLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Inventario)));
   var gerLi=document.getElementById('menu-gerencia-li');
