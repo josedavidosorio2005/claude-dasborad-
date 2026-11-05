@@ -19283,3 +19283,24 @@ Mobilize (actividad de los usuarios, no del script).
   línea y la meta quedan al menos 85 px por encima de la etiqueta más alta);
   0 errores. Con 30 barras a 375 px las etiquetas vecinas se tocan entre sí
   (ya pasaba; no se quitaron, según el pedido).
+
+## Fase 264 — Plantillas de Aurora y HLM importadas en producción (solo docs, 2026-11-05)
+
+Escrituras autorizadas por el usuario, por Calidad › Plantillas, con su
+sesión de admin en Brave (login a mano, sin guardar cookies). Solo se dejó
+pasar `POST /api/calidad/plantillas/importar`; cada vista previa se comparó
+antes de confirmar.
+
+| Plantilla | Vista previa | Resultado |
+|---|---|---|
+| Clínica Aurora | 12 ítems, 5 críticos, suma 100 | id 10, principal de CLINICA AURORA |
+| Hospital La María · Sede Castilla | 12 ítems, 5 críticos, suma 100 | id 11, principal de HOSPITAL LA MARIA |
+| Hospital La María · Sede 33 | 7 ítems, 3 críticos, suma 100 | id 12, activa (no principal) |
+
+- 6 escrituras (3 vistas previas + 3 confirmaciones), 0 bloqueadas.
+- **Verificación** (solo lectura): 1.132.0 y 1.132.1 con los 5 clientes
+  iguales y 0 errores. Una primera corrida en la misma sesión de la
+  importación mostró gráficas vacías en ORLANT › Tipificación y Mobilize ›
+  Llamadas Únicas: era tiempo de carga (en una corrida limpia Mobilize salió
+  igual, y una sonda con espera de hasta 20 s dio 2/2 gráficas en
+  Tipificación). En Abandono, 0 choques medidos en los 5 clientes.
