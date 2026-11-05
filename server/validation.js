@@ -832,6 +832,15 @@ const tipificacionFiltrosQuery = z.object({
   linea: z.enum(['GENERAL', '3P', 'SIN']).optional(),
 });
 
+// Fase 267: totales de una mitad en un solo pedido (mismos filtros + los meses
+// de MESES cuando son varios, y si se piden las tarjetas de salida / de linea).
+const tipificacionTotalesQuery = tipificacionFiltrosQuery.extend({
+  meses: mesesListaSchema.optional(),
+  salida: z.enum(['1']).optional(),
+  lineas: z.enum(['1']).optional(),
+});
+const tipificacionMesesQuery = z.object({ campana: campanaSchema });
+
 // Fase 186: clasificacion (General/3P) de los asesores de un cliente.
 const clasificacionAsesoresQuery = z.object({ campana: campanaSchema });
 const clasificacionAsesoresBody = z.object({
@@ -1615,6 +1624,8 @@ module.exports = {
     agendasCodigosBody,
     tipificacionCargaBody,
     tipificacionFiltrosQuery,
+    tipificacionTotalesQuery, // Fase 267
+    tipificacionMesesQuery, // Fase 267
     tipificacionOpcionesQuery,
     tipificacionSalidaResumenQuery,
     clasificacionAsesoresQuery,

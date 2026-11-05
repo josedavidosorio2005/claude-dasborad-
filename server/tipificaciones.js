@@ -333,6 +333,11 @@ function tipificacionesResumenSalida(db, q) {
 // (meses.length) -- tambien lo usa dashboard-generic.js para decidir si el
 // tab "Tipificacion" se destapa (ver _gdBootstrap): SIN filtrar por canal,
 // asi que basta con tipificaciones de CUALQUIER canal para destaparlo.
+// Skill que se muestra en el filtro de Llamadas (salida unificada). Solo lee
+// skill, skillId y tipoInteraccion (Fase 267).
+function skillOpcionesSql(campana) {
+  return salidaPorGuion(campana) ? SKILL_GUION_SQL : `CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`;
+}
 function tipificacionesOpciones(db, campana, canal) {
   const distintos = (columna) =>
     db.prepare(`SELECT DISTINCT ${columna} AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`).all(campana, canal).map((r) => r.v);
@@ -343,11 +348,24 @@ function tipificacionesOpciones(db, campana, canal) {
     // muestran una sola vez, como LLAMADAS DE SALIDA.
     // Fase 186: el panel muestra el filtro "Línea de salida" y las tarjetas por linea.
     clasificacionAsesores: usaClasificacionAsesores(campana),
+    // Fase 267: la regla solo lee skill, skillId y tipoInteraccion, asi que se
+    // evalua sobre sus combinaciones distintas (decenas) y no fila por fila
+    // (todo el historial): el mismo resultado, sin el costo.
     skills: canal === 'LLAMADAS'
-      ? db.prepare(`SELECT DISTINCT ${salidaPorGuion(campana) ? SKILL_GUION_SQL : `CASE WHEN ${COND_SALIDA_SQL} THEN '${SKILL_SALIDA}' ELSE skill END`} AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v`)
+      ? db.prepare(`SELECT DISTINCT ${skillOpcionesSql(campana)} AS v FROM (SELECT DISTINCT skill, skillId, tipoInteraccion FROM tipificaciones WHERE campana = ? AND canal = ?) ORDER BY v`)
         .all(campana, canal).map((r) => r.v)
       : distintos('skill'),
   };
+}
+
+// Fase 267: solo los meses con datos de cada canal (lo unico que necesita el
+// tablero al abrirse para destapar la pestaña y armar MESES). Lee solo el
+// indice (campana, canal, fecha): no recorre agentes ni skills.
+function tipificacionesMeses(db, campana) {
+  const st = db.prepare('SELECT DISTINCT substr(fecha,1,7) AS v FROM tipificaciones WHERE campana = ? AND canal = ? ORDER BY v');
+  const out = {};
+  CANALES.forEach((canal) => { out[canal] = st.all(campana, canal).map((r) => r.v); });
+  return out;
 }
 
 // Si ORLANT tiene ALGUNA tipificacion cargada (cualquier canal) -- usado
@@ -375,6 +393,8 @@ module.exports = {
   tipificacionesResumenSalida,
   salidaNoConectadaDe,
   tipificacionesOpciones,
+  tipificacionesMeses,
+  skillOpcionesSql,
   tieneAlgunaTipificacion,
   agruparTop10YOtras,
 };

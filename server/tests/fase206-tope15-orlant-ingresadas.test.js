@@ -92,7 +92,8 @@ test('vista: torta de 15 tipificaciones (contenedor de 663 px) con 15 colores di
   const todas = Array.from({ length: 15 }, (_, k) => ({ tipificacion: 'Codigo_' + (k + 1), cantidad: 40 - k }));
   const sandbox = Object.assign({}, L, {
     document: { getElementById: (id) => (elementos[id] = elementos[id] || { id, innerHTML: '', value: '', clientWidth: 663 }) },
-    apiRequest: async (m, url) => (url.indexOf('/resumen-salida') !== -1 ? { total: 0, conectadas: 0, noConectadas: 0 } : { total: todas.reduce((a, r) => a + r.cantidad, 0), datos: todas.slice(0, 10), todas }),
+    // Fase 267: la mitad pide todo en /totales (la torta viene en porTipo).
+    apiRequest: async (m, url) => ({ porTipo: { total: todas.reduce((a, r) => a + r.cantidad, 0), datos: todas.slice(0, 10), todas }, resumenSalida: { total: 0, conectadas: 0, noConectadas: 0 } }),
     _gdChart: (id, cfg) => graficas.push({ id, cfg }),
     loPie: () => ({ plugins: { legend: { position: 'right' } } }),
     tipificacionEtiqueta: (t) => t,

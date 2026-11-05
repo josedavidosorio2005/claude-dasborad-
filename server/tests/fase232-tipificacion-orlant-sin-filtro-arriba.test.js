@@ -128,17 +128,23 @@ test('MESES manda: un mes = ese mes; Todos = un rango; Ago + Oct = un pedido por
   assert.equal(pedidos.length, 1);
 });
 
-test('las tarjetas por línea suman por tramos y no llevan la nota "Salida de ..."', async () => {
+// Fase 267: la suma por tramos (Ago + Oct, sin septiembre) la hace el servidor
+// en /totales (ver fase267-tipificacion-totales.test.js); aqui, que el pedido
+// lleve esos meses y que las tarjetas pinten lo que llega.
+test('las tarjetas por línea: /totales lleva los meses de MESES; sin la nota "Salida de ..."', async () => {
   const { ctx } = await render({ clasif: true });
   ctx._gd.mesesSel = ['2026-08', '2026-10'];
   ctx._tipificacionSincronizarConMesGlobal(0, ['2026-08', '2026-09', '2026-10']);
   const host = { innerHTML: '' };
   ctx.document.getElementById = (id) => (id === 'tipif-lineas-0-LLAMADAS' ? host : null);
   const pedidos = [];
-  ctx.apiRequest = async (m, url) => { pedidos.push(url); return { canal: 'LLAMADAS', total: 100, salida: 10, general: 6, p3: 3, sinClasificar: 1 }; };
-  const r = await ctx._tipificacionDibujarLineas('ORLANT', 0, 'LLAMADAS', ctx._tipificacionEstadoCompartido[0], { linea: '3P', tipo: 'salida' });
-  assert.equal(pedidos.length, 2);
-  assert.ok(pedidos.every((u) => !u.includes('linea=') && !u.includes('sentido=')), 'las tarjetas nunca se filtran por línea ni por sentido');
+  ctx.apiRequest = async (m, url) => { pedidos.push(url); return {}; };
+  await ctx._tipificacionTotales(0, 'ORLANT', 'LLAMADAS', ctx._tipificacionEstadoCompartido[0], { linea: '3P', tipo: 'salida' }, true, true);
+  assert.equal(pedidos.length, 1);
+  const q = new URLSearchParams(pedidos[0].split('?')[1]);
+  assert.ok(pedidos[0].startsWith('/calidad/tipificacion/totales?'));
+  assert.deepEqual([q.get('meses'), q.get('lineas'), q.get('salida'), q.get('linea'), q.get('sentido')], ['2026-08,2026-10', '1', '1', '3P', 'salida']);
+  const r = ctx._tipificacionDibujarLineas(0, 'LLAMADAS', { linea: '3P' }, { canal: 'LLAMADAS', total: 200, salida: 20, general: 12, p3: 6, sinClasificar: 2 });
   assert.deepEqual([r.total, r.salida, r.general, r.p3, r.sinClasificar], [200, 20, 12, 6, 2]);
   assert.match(host.innerHTML, /tipif-linea-activa"><div class="kv">6<\/div><div class="kl">Salida 3P/);
   assert.doesNotMatch(host.innerHTML, /Salida de llamadas/);

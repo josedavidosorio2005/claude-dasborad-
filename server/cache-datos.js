@@ -34,7 +34,7 @@ const RUTAS = [
   /^\/calidad\/llamadas-unicas\/(resumen|por-mes)$/,
   /^\/calidad\/nivel-servicio\/diario$/,
   /^\/calidad\/salida\/mensual$/,
-  /^\/calidad\/tipificacion\/(por-tipo|resumen-salida)$/,
+  /^\/calidad\/tipificacion\/(por-tipo|resumen-salida|totales)$/, // Fase 267: totales
   /^\/calidad\/trafico\/whatsapp$/,
   /^\/calidad\/whatsapp-tiempos\/(rangos|resumen)$/,
   /^\/calidad\/calidad-resumen\/mensual$/, // Fase 172

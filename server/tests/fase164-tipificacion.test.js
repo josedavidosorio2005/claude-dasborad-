@@ -58,7 +58,8 @@ async function renderTipificacion() {
   const cant = [410, 243, 168, 154, 122, 112, 109, 94, 88];
   const sandbox = {
     document: { getElementById: (id) => (elementos[id] = elementos[id] || { id, innerHTML: '', value: '' }) },
-    apiRequest: async (m, url) => (url.indexOf('/resumen-salida') !== -1 ? { total: 0, conectadas: 0, noConectadas: 0 } : { total, datos: CATEGORIAS.map((t, i) => ({ tipificacion: t, cantidad: cant[i] })) }),
+    // Fase 267: la mitad pide todo en /totales (la torta viene en porTipo).
+    apiRequest: async (m, url) => ({ porTipo: { total, datos: CATEGORIAS.map((t, i) => ({ tipificacion: t, cantidad: cant[i] })) }, resumenSalida: { total: 0, conectadas: 0, noConectadas: 0 } }),
     _gdChart: (id, cfg) => graficas.push({ id, cfg }),
     loPie: (t) => ({ t }),
     tipificacionEtiqueta: (t) => t,

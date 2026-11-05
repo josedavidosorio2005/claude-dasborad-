@@ -23,8 +23,10 @@ const {
   tipificacionesPorTipo,
   tipificacionesResumenSalida,
   tipificacionesOpciones,
+  tipificacionesMeses,
   usaClasificacionAsesores,
 } = require('../tipificaciones');
+const { tipificacionTotales } = require('../tipificacion-totales');
 const { listarClasificacion, guardarClasificacion, salidaPorLinea } = require('../clasificacion-asesores');
 const { wrap, logEvent, actorLabel } = require('./shared');
 
@@ -43,6 +45,35 @@ router.get(
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
     res.json(opcionesConCache(db, JSON.stringify(['tipificacion', req.query.campana, req.query.canal]), () => tipificacionesOpciones(db, req.query.campana, req.query.canal)));
+  })
+);
+
+// Fase 267: solo los meses con datos de cada canal -- lo que necesita el
+// tablero al abrirse (destapar la pestaña y armar MESES), sin calcular los
+// agentes ni los skills de todo el historial.
+router.get(
+  '/calidad/tipificacion/meses',
+  requireActor,
+  validate(schemas.tipificacionMesesQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(opcionesConCache(db, JSON.stringify(['tipificacion-meses', req.query.campana]), () => tipificacionesMeses(db, req.query.campana)));
+  })
+);
+
+// Fase 267: todo lo que dibuja una mitad (torta, tarjetas de salida y de
+// linea) en un solo pedido, con las mismas cifras (ver tipificacion-totales.js).
+router.get(
+  '/calidad/tipificacion/totales',
+  requireActor,
+  validate(schemas.tipificacionTotalesQuery, 'query'),
+  wrap((req, res) => {
+    if (!campaignAccess(req.actor, req.query.campana)) {
+      return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    }
+    res.json(tipificacionTotales(db, req.query));
   })
 );
 

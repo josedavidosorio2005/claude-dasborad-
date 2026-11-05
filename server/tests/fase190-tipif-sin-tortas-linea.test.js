@@ -20,6 +20,6 @@ test('lo demas sigue: tarjetas por linea, filtro de Línea (en cada mitad desde 
   assert.ok(s.includes("id=\"tipif-lineas-'+i+'-'+c.canal+'\""));
   assert.ok(!s.includes('tipif-lineas-nota'), 'Fase 232: sin la nota "Salida de ..."');
   assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'-'+c.canal+'\">Línea (General / 3P)</label>")); // Fase 232
-  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea'"));
+  assert.ok(s.includes("if(conLineas) params.set('lineas', '1');")); // Fase 267: viene en /totales
   assert.ok(s.includes("<canvas id=\"tipif-c-'+i+'-'+c.canal+'\"></canvas>"));
 });
