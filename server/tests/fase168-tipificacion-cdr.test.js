@@ -224,6 +224,6 @@ test('ORLANT: Tipificacion con Llamadas y WhatsApp lado a lado, sin tabla de det
 test('tipificacion.js: tarjetas de salida solo en la mitad de Llamadas; el filtro de skill usa la etiqueta de salida', () => {
   const src = JS('tipificacion.js');
   assert.match(src, /if\(p\.mostrarTarjetasSalida && c\.canal === 'LLAMADAS'\)\{/);
-  assert.match(src, /if\(p\.mostrarTarjetasSalida && canal === 'LLAMADAS'\)\{/);
+  assert.match(src, /var hostSalida = \(p\.mostrarTarjetasSalida && canal === 'LLAMADAS'\) \?/); // Fase 267
   assert.match(src, /_tipificacionOptionsHtml\(op\.skills, estadoCanal\.skill, tipificacionEtiquetaSkill\)/);
 });

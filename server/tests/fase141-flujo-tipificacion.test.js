@@ -82,8 +82,8 @@ function cargarTipificacion(respuestaPorTipo) {
     document: { getElementById: (id) => (elementos[id] = elementos[id] || { id, innerHTML: '', value: '' }) },
     apiRequest: async (metodo, url) => {
       llamadas.push(url);
-      if (url.indexOf('/resumen-salida') !== -1) return { total: 64, conectadas: 40, noConectadas: 24 };
-      return respuestaPorTipo(url);
+      // Fase 267: un solo pedido (/totales) con la torta y las tarjetas de salida.
+      return { porTipo: respuestaPorTipo(url), resumenSalida: { total: 64, conectadas: 40, noConectadas: 24 } };
     },
     _gdChart: (id, cfg) => graficas.push({ id, cfg }),
     loPie: (titulo) => ({ titulo }),
@@ -129,7 +129,7 @@ test('Tipificacion: con cualquier filtro, la torta y la tabla suman lo mismo (Mo
     const tabla = sumaTabla(elementos['tipif-tabla-0-LLAMADAS'].innerHTML);
     assert.equal(pie, esperado[tipo], 'torta con tipo="' + tipo + '"');
     assert.equal(tabla, esperado[tipo], 'tabla con tipo="' + tipo + '"');
-    const ultimaPorTipo = llamadas.filter((u) => u.indexOf('/por-tipo') !== -1).pop();
+    const ultimaPorTipo = llamadas.filter((u) => u.indexOf('/totales') !== -1).pop(); // Fase 267
     assert.equal(new URLSearchParams(ultimaPorTipo.split('?')[1]).get('mes'), '2026-09');
   }
   assert.equal(graficas.length, 1, 'una sola grafica por redibujado');

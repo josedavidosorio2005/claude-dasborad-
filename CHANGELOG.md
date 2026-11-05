@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.133.1 — Noviembre 2026
+
+**Fase 267: la pestaña Tipificación carga más rápido (ORLANT, Mobilize, Aurora y HLM).**
+
+- Cada mitad (Llamadas y WhatsApp) pide sus cifras en un solo paso, y las dos
+  mitades se piden a la vez (antes eran hasta 7 pedidos, uno detrás de otro).
+- Al abrir el tablero de ORLANT ya no se calculan los filtros de Tipificación
+  (asesores y skills de todo el historial): solo se mira qué meses tienen
+  datos. Los filtros se calculan al entrar a la pestaña, y más rápido.
+- Las cifras no cambian: la torta, el total, las tarjetas de salida y las de
+  General / 3P dan exactamente lo mismo que antes.
+
 ## v1.133.0 — Noviembre 2026
 
 **Fase 265: Clínica Aurora › "Agendas por usuaria" con las 3 vistas de Edwin.**

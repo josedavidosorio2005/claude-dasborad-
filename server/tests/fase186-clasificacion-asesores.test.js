@@ -168,7 +168,7 @@ test('vista: boton solo para el administrador (en la cabecera), filtro de Línea
   assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'-'+c.canal+'\">Línea (General / 3P)</label>")); // Fase 232: en cada mitad
   assert.ok(s.includes("linea: v('tipif-f-linea-'+i+'-'+canal)"), 'el filtro es de cada mitad');
   assert.ok(s.includes("if(deCanal.linea) params.set('linea', deCanal.linea);"));
-  assert.ok(s.includes("'/calidad/tipificacion/salida-por-linea'"));
+  assert.ok(s.includes("if(conLineas) params.set('lineas', '1');")); // Fase 267: viene en /totales
   // Fase 190: la torta "salida por línea" salio (ver fase190-tipif-sin-tortas-linea.test.js).
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/clasificacion-asesores-logic.js') > -1 && html.indexOf('js/clasificacion-asesores-logic.js') < html.indexOf('js/tipificacion.js'));

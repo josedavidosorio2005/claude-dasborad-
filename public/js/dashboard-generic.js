@@ -1055,8 +1055,10 @@ async function _gdBootstrap(conservar){
   Object.keys(campanasTipificacion).forEach(function(campTip){
     tareasBootstrap.push((async function(){
       try{
-        var tipifLlamadas = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=LLAMADAS');
-        var tipifWhatsapp = await apiRequest('GET', '/calidad/tipificacion/opciones?campana='+encodeURIComponent(campTip)+'&canal=WHATSAPP');
+        // Fase 267: solo los meses de cada canal (un pedido liviano, sin agentes ni skills).
+        var tipifMeses = await apiRequest('GET', '/calidad/tipificacion/meses?campana='+encodeURIComponent(campTip)) || {};
+        var tipifLlamadas = { meses: tipifMeses.LLAMADAS || [] };
+        var tipifWhatsapp = { meses: tipifMeses.WHATSAPP || [] };
         if(tipifLlamadas && tipifLlamadas.meses) mesesTipificacion = mesesTipificacion.concat(tipifLlamadas.meses);
         if(tipifWhatsapp && tipifWhatsapp.meses) mesesTipificacion = mesesTipificacion.concat(tipifWhatsapp.meses);
         var tieneLlamadas = tipifLlamadas && tipifLlamadas.meses && tipifLlamadas.meses.length;

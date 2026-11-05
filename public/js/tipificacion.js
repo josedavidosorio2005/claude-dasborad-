@@ -75,6 +75,9 @@ function _tipificacionSincronizarConMesGlobal(i, mesesCombinados){
 }
 // Tarjetas de salida: con varios meses de MESES (y el filtro sin tocar), un
 // pedido por mes y la suma -- nunca los meses del medio que no se marcaron.
+// Fase 267: la pantalla ya usa /totales (el servidor hace esta misma suma);
+// esta funcion queda como el calculo de referencia de las pruebas
+// (fase203, fase267: el viejo y el nuevo deben dar lo mismo).
 async function _tipificacionResumenSalidaMeses(i, campana, compartido, deCanal){
   var mesesT = _tipificacionMesesTarjetas[i] || [];
   if(!compartido.deMeses || mesesT.length < 2){
@@ -149,10 +152,10 @@ async function _tipificacionRenderPanel(p, i){
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
     '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Cargando…</div></div>';
 
+  // Fase 267: las opciones de las 2 mitades se piden a la vez (antes, en fila).
   var opPorCanal = {};
-  for(var ci=0; ci<canalesAUsar.length; ci++){
-    opPorCanal[canalesAUsar[ci].canal] = await _tipificacionCargarOpciones(campana, canalesAUsar[ci].canal);
-  }
+  var opciones = await Promise.all(canalesAUsar.map(function(c){ return _tipificacionCargarOpciones(campana, c.canal); }));
+  canalesAUsar.forEach(function(c, k){ opPorCanal[c.canal] = opciones[k]; });
   var mesesCombinados = canalesAUsar.reduce(function(acc, c){ return acc.concat(opPorCanal[c.canal].meses||[]); }, [])
     .filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
 
@@ -294,6 +297,18 @@ async function _tipificacionPorTipo(campana, canal, compartido, deCanal){
   return partes.length === 1 ? partes[0] : tipificacionSumarPorTipo(partes);
 }
 
+// Fase 267: lo que dibuja una mitad, en un solo pedido. Mismos filtros que
+// /por-tipo; con varios meses de MESES manda tambien la lista (el servidor
+// suma por tramo y, las tarjetas de salida, mes a mes, igual que antes).
+async function _tipificacionTotales(i, campana, canal, compartido, deCanal, conSalida, conLineas){
+  var params = new URLSearchParams(_tipificacionQueryString(campana, canal, compartido, deCanal));
+  var mesesT = _tipificacionMesesTarjetas[i] || [];
+  if(compartido && compartido.deMeses && mesesT.length > 1) params.set('meses', mesesT.join(','));
+  if(conSalida) params.set('salida', '1');
+  if(conLineas) params.set('lineas', '1');
+  return apiRequest('GET', '/calidad/tipificacion/totales?'+params.toString());
+}
+
 function _tipificacionQueryString(campana, canal, compartido, deCanal){
   var params = new URLSearchParams();
   params.set('campana', campana);
@@ -376,17 +391,20 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   // Fase 131: tarjetas de SALIDA se calculan ANTES del "sin datos" de abajo
   // (dependen solo de que haya datos del canal, no de que el pie tenga
   // algo que mostrar con los filtros actuales de Tipo).
-  if(p.mostrarTarjetasSalida && canal === 'LLAMADAS'){
-    var hostSalida = document.getElementById('tipif-salida-'+i+'-'+canal);
-    if(hostSalida){
-      try{
-        var resumenSalida = await _tipificacionResumenSalidaMeses(i, campana, compartido, deCanal); // Fase 203
-        hostSalida.innerHTML = _tipificacionTarjetasSalidaHtml(resumenSalida);
-      }catch(e){ hostSalida.innerHTML = ''; }
-    }
+  // Fase 267: torta, tarjetas de salida y de linea llegan en UN solo pedido
+  // (/totales, mismas cifras que /por-tipo, /resumen-salida y /salida-por-linea).
+  var hostSalida = (p.mostrarTarjetasSalida && canal === 'LLAMADAS') ? document.getElementById('tipif-salida-'+i+'-'+canal) : null;
+  var conDatos = !!(opciones.meses && opciones.meses.length);
+  var totales = null, errorTotales = null;
+  if(hostSalida || conDatos){
+    try{ totales = await _tipificacionTotales(i, campana, canal, compartido, deCanal, !!hostSalida, conDatos && !!_tipificacionClasifPorPanel[i]); }
+    catch(e){ errorTotales = e; }
+  }
+  if(hostSalida){
+    hostSalida.innerHTML = (totales && totales.resumenSalida) ? _tipificacionTarjetasSalidaHtml(totales.resumenSalida) : '';
   }
 
-  if(!opciones.meses || !opciones.meses.length){
+  if(!conDatos){
     contHost.innerHTML = '<div style="text-align:center;color:var(--c-text-muted);padding:20px 8px">Sin datos de '+
       (canal==='WHATSAPP'?'WhatsApp':'Llamadas')+' cargados para este período.</div>';
     var tablaHostVacio = document.getElementById('tipif-tabla-'+i+'-'+canal);
@@ -394,14 +412,12 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
     return;
   }
 
-  var resultado = { datos: [], total: 0 };
-  try{
-    resultado = await _tipificacionPorTipo(campana, canal, compartido, deCanal) || { datos:[], total:0 }; // Fase 232
-  }catch(e){ showToast(e.message, 'error'); }
+  var resultado = (totales && totales.porTipo) || { datos:[], total:0 };
+  if(errorTotales) showToast(errorTotales.message, 'error');
 
   var tablaHost = document.getElementById('tipif-tabla-'+i+'-'+canal);
   // Fase 186: salida por linea (General / 3P / Sin clasificar), sin el filtro de linea.
-  var porLinea = _tipificacionClasifPorPanel[i] ? await _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal) : null;
+  var porLinea = _tipificacionClasifPorPanel[i] ? _tipificacionDibujarLineas(i, canal, deCanal, totales && totales.lineas) : null;
   // Fase 185: total del mes con los mismos filtros de la mitad (sale del mismo /por-tipo que la torta).
   // Fase 186: con el filtro de linea, la torta cambia pero el total del mes no.
   var totalCanal = porLinea ? porLinea.total : (resultado.total||0);
@@ -469,11 +485,10 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   }
 }
 
+// Fase 267: las 2 mitades se piden y dibujan a la vez (antes, una tras otra).
 async function _tipificacionDibujarTodos(campana, i, opPorCanal){
   var canalesAUsar = _tipificacionCanalesPorPanel[i] || TIPIFICACION_CANALES;
-  for(var ci=0; ci<canalesAUsar.length; ci++){
-    await _tipificacionDibujarCanal(campana, i, canalesAUsar[ci].canal, opPorCanal[canalesAUsar[ci].canal]);
-  }
+  await Promise.all(canalesAUsar.map(function(c){ return _tipificacionDibujarCanal(campana, i, c.canal, opPorCanal[c.canal]); }));
 }
 
 // "Aplicar filtros" de arriba (Mes/rango, compartidos) redibuja todas las mitades en uso.
@@ -504,15 +519,10 @@ function _tipificacionLineaTexto(linea){
 // filtros de la mitad, nunca el de linea (el reparto se ve completo). Fase 190:
 // sin la torta "salida por línea" (se ve con los botones de la pestaña de
 // salida). Devuelve el resultado (para el total del canal).
-async function _tipificacionDibujarLineas(campana, i, canal, compartido, deCanal){
+// Fase 267: `r` ya viene en /totales (antes, un pedido aparte por tramo).
+function _tipificacionDibujarLineas(i, canal, deCanal, r){
   var host = document.getElementById('tipif-lineas-'+i+'-'+canal);
-  var r = null;
-  var sinFiltro = Object.assign({}, deCanal, { tipo:'', linea:'' });
-  try{
-    var partes = await _tipificacionPedirPorTramos('/calidad/tipificacion/salida-por-linea', compartido, function(c){ return _tipificacionQueryString(campana, canal, c, sinFiltro); });
-    r = partes.length === 1 ? partes[0] : tipificacionSumarCampos(partes, ['total', 'salida', 'general', 'p3', 'sinClasificar']); // Fase 232
-  }
-  catch(e){ if(host) host.innerHTML = ''; return null; }
+  if(!r){ if(host) host.innerHTML = ''; return null; }
   var t = clasifTarjetasSalida(r, canal);
   if(host){
     host.innerHTML = t.tarjetas.map(function(x){

@@ -200,6 +200,8 @@ declarar(['GET /calidad/tipificacion/skills-whatsapp'], 'cargaManual');
 declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'admin');
 // Fase 186: salida por linea (la ve quien ve la campana); la clasificacion, solo el administrador.
 declarar(['GET /calidad/tipificacion/salida-por-linea'], 'scopedRead');
+// Fase 267: totales de una mitad en un pedido y los meses del tablero (misma regla: quien ve la campana).
+declarar(['GET /calidad/tipificacion/totales', 'GET /calidad/tipificacion/meses'], 'scopedRead');
 declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipificacion/clasificacion-asesores'], 'admin');
 // Fase 210: listas de Agendamiento. La de usuarios (nombres de asesor) es solo del
 // administrador; la de codigos de entidad tambien la LEE quien puede cargar agendas
@@ -310,6 +312,7 @@ const EXTRA_QUERY = {
   'GET /calidad/tipificacion/opciones': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/por-tipo': { canal: 'LLAMADAS' },
   'GET /calidad/tipificacion/salida-por-linea': { canal: 'WHATSAPP' },
+  'GET /calidad/tipificacion/totales': { canal: 'LLAMADAS' }, // Fase 267
   'GET /calidad/whatsapp-tiempos/rangos': { mes: '2026-09' },
   'GET /calidad/salida/asesores': { mes: '2026-09' },
   'GET /calidad/whatsapp-tiempos/resumen': { mes: '2026-09' },
