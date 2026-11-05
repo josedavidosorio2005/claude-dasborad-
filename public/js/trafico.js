@@ -1117,6 +1117,15 @@ function _traficoDibujarAbandono(prefijo, i, agregadoComb, campana){
   ];
   oAband.layout = Object.assign({}, oAband.layout, { padding: { top: 36 } }); // espacio para la etiqueta de 2 lineas
   agregarLineaMeta(dsAband, oAband, _traficoUmbral('tasa_abandono', campana), agregadoComb.length, 'y2', ' %');
+  var umbralAb = _traficoUmbral('tasa_abandono', campana);
+  // Fase 263: barras abajo (con sus etiquetas) y la linea del % en la franja de arriba.
+  var escAb = traficoAbandonoEscalas(agregadoComb, umbralAb && umbralAb.verde);
+  if(escAb){
+    oAband.scales.y.max = escAb.yMax; oAband.scales.y.beginAtZero = true;
+    oAband.scales.y.ticks.callback = function(v){ return v > escAb.yMax * TRAFICO_ABANDONO_BARRAS_ALTO * 1.02 ? '' : gdFmtValor(v); };
+    oAband.scales.y2.min = escAb.y2Min; oAband.scales.y2.max = escAb.y2Max;
+    oAband.scales.y2.ticks.callback = function(v){ var desde = escAb.y2Min + (escAb.y2Max - escAb.y2Min) * (TRAFICO_ABANDONO_LINEA_DESDE - 0.04); return (v < 0 || v < desde) ? '' : gdFmtValor(v,'%'); };
+  }
   if(typeof _gdChart === 'function'){
     _gdChart(prefijo+'-canvas-ab-'+i, { data:{ labels: agregadoComb.map(function(a){return a.periodo;}),
       datasets: dsAband }, options: oAband });
