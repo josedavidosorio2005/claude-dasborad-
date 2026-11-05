@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.132.1 — Noviembre 2026
+
+**Fase 263: gráfica de Abandono más legible (llamadas y WhatsApp, todos los clientes).**
+
+- La línea morada del % de abandono ya no se monta sobre las etiquetas de
+  cantidad y % de cada barra: las barras quedan en la parte de abajo con sus
+  etiquetas, y la línea (y la meta, si hay) en la franja de arriba, con su
+  eje a la derecha. No se quitó ninguna etiqueta ni cambió ningún número.
+
 ## v1.132.0 — Noviembre 2026
 
 **Fase 262: Calidad lista para Clínica Aurora y Hospital La María (entrega del lunes 9).**

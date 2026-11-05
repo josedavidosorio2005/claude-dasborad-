@@ -880,6 +880,31 @@ function traficoAbandonoEtiquetaBarra(agregado) {
   };
 }
 
+// Fase 263 (pedido del 05/11): en Abandono la linea morada del % se montaba
+// sobre las etiquetas de cantidad y % de las barras. Se separan en bandas sin
+// quitar ninguna etiqueta: las barras llegan como mucho a BARRAS_ALTO de la
+// altura (sus etiquetas de 2 lineas quedan justo encima) y el eje derecho se
+// escala para que la linea (y la meta, si hay) viva en la franja de arriba
+// [LINEA_DESDE, LINEA_HASTA]. Devuelve { yMax, y2Min, y2Max } o null sin datos.
+var TRAFICO_ABANDONO_BARRAS_ALTO = 0.55;
+var TRAFICO_ABANDONO_LINEA_DESDE = 0.74;
+var TRAFICO_ABANDONO_LINEA_HASTA = 0.96;
+function traficoAbandonoEscalas(agregado, metaPct) {
+  var barras = (agregado || []).map(function (a) { return Number(a && a.llamadasAbandonadas); }).filter(function (v) { return isFinite(v); });
+  var pcts = (agregado || []).map(function (a) { return a ? a.tasaAbandonoPct : null; }).filter(function (v) { return v !== null && v !== undefined && isFinite(Number(v)); }).map(Number);
+  if (metaPct !== null && metaPct !== undefined && isFinite(Number(metaPct))) pcts.push(Number(metaPct));
+  if (!barras.length && !pcts.length) return null;
+  var maxB = barras.length ? Math.max.apply(null, barras) : 0;
+  var yMax = maxB > 0 ? maxB / TRAFICO_ABANDONO_BARRAS_ALTO : 1;
+  var minP = pcts.length ? Math.min.apply(null, pcts) : 0;
+  var maxP = pcts.length ? Math.max.apply(null, pcts) : 1;
+  if (maxP - minP < 0.5) { var c = (maxP + minP) / 2; minP = c - 0.25; maxP = c + 0.25; } // linea casi plana: no exagerar
+  var banda = TRAFICO_ABANDONO_LINEA_HASTA - TRAFICO_ABANDONO_LINEA_DESDE;
+  var span = (maxP - minP) / banda;
+  var y2Min = minP - TRAFICO_ABANDONO_LINEA_DESDE * span;
+  return { yMax: yMax, y2Min: y2Min, y2Max: y2Min + span };
+}
+
 function traficoOrdenTarjetas(orden, conEficacia) {
   var base = TRAFICO_ORDEN_TARJETAS.concat(conEficacia ? ['eficacia'] : []);
   if (!Array.isArray(orden) || !orden.length) return base;
@@ -893,6 +918,8 @@ function traficoOrdenTarjetas(orden, conEficacia) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     traficoAbandonoEtiquetaBarra: traficoAbandonoEtiquetaBarra,
+    traficoAbandonoEscalas: traficoAbandonoEscalas,
+    TRAFICO_ABANDONO_BARRAS_ALTO: TRAFICO_ABANDONO_BARRAS_ALTO, TRAFICO_ABANDONO_LINEA_DESDE: TRAFICO_ABANDONO_LINEA_DESDE, TRAFICO_ABANDONO_LINEA_HASTA: TRAFICO_ABANDONO_LINEA_HASTA,
     TRAFICO_ABANDONO_ETIQUETAS_MAX: TRAFICO_ABANDONO_ETIQUETAS_MAX,
     traficoOrdenTarjetas: traficoOrdenTarjetas,
     TRAFICO_ORDEN_TARJETAS: TRAFICO_ORDEN_TARJETAS,

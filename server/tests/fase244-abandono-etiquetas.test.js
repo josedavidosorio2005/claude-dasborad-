@@ -31,11 +31,12 @@ test('etiqueta de cada barra: cantidad y % (es-CO); sin dato, vacía', () => {
 function dibujar(agregado) {
   let cfg = null;
   const ctx = {
-    colorSerie: () => '#000', loBar: () => ({ plugins: { datalabels: { display: true } }, layout: { padding: { top: 20 } } }),
+    colorSerie: () => '#000', loBar: () => ({ plugins: { datalabels: { display: true } }, layout: { padding: { top: 20 } }, scales: {} }),
     loDatalabelsAuto: (o, f) => { o.plugins.datalabels.display = 'auto'; o.plugins.datalabels.formatter = f; },
     gdFmtValor: (v) => String(v), CHART_GRID: '#eee', agregarLineaMeta: () => {}, _traficoUmbral: () => null,
     _gdChart: (id, c) => { cfg = c; },
     traficoAbandonoEtiquetaBarra: L.traficoAbandonoEtiquetaBarra, TRAFICO_ABANDONO_ETIQUETAS_MAX: L.TRAFICO_ABANDONO_ETIQUETAS_MAX,
+    traficoAbandonoEscalas: L.traficoAbandonoEscalas, TRAFICO_ABANDONO_BARRAS_ALTO: L.TRAFICO_ABANDONO_BARRAS_ALTO, TRAFICO_ABANDONO_LINEA_DESDE: L.TRAFICO_ABANDONO_LINEA_DESDE, // Fase 263
   };
   vm.createContext(ctx);
   const src = fs.readFileSync(path.join(JS, 'trafico.js'), 'utf8');

@@ -19265,3 +19265,21 @@ Mobilize (actividad de los usuarios, no del script).
 - **Local** (Brave, 1440/375): Aurora con un monitoreo sintético muestra
   Calidad y el panel (80 %, un crítico en NO); HLM sin monitoreos sigue sin la
   pestaña; ORLANT igual; 0 errores.
+
+## Fase 263 — Gráfica de Abandono sin choques entre la línea y las etiquetas (v1.132.1, 2026-11-05)
+
+- **Pedido**: la línea morada del % se montaba sobre las etiquetas de cantidad
+  y % de las barras (Fase 244). Separarlas sin quitar ninguna etiqueta.
+- **Cómo**: `traficoAbandonoEscalas` (`trafico-logic.js`) calcula las dos
+  escalas para que la barra más alta llegue al 55 % de la altura (sus
+  etiquetas de 2 líneas quedan justo encima) y la línea del % (con la meta, si
+  hay) quede entre el 74 % y el 96 %, con su eje a la derecha. Las marcas del
+  eje izquierdo por encima de las barras y las del derecho por debajo de la
+  franja de la línea no se pintan. Llamadas y WhatsApp usan la misma función
+  (`_traficoDibujarAbandono`), así que aplica a todos los clientes.
+- **Pruebas**: `fase263-abandono-etiquetas.test.js` (3, sintéticos).
+- **Local** (gráfica real de ORLANT con datos sintéticos, 3, 6 y 30 barras, a
+  375/768/1440 px, con línea de meta): 0 choques medidos punto por punto (la
+  línea y la meta quedan al menos 85 px por encima de la etiqueta más alta);
+  0 errores. Con 30 barras a 375 px las etiquetas vecinas se tocan entre sí
+  (ya pasaba; no se quitaron, según el pedido).
