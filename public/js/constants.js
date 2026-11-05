@@ -31,6 +31,11 @@ var CAMPANAS_CALIDAD = ['ORLANT', 'MOBILIZE'];
 // Debe coincidir con server/calidad-plantillas-seed.js. El detalle de cada
 // plantilla (items, pesos, motor) se pide por API (GET /api/calidad/plantillas).
 var CAMPANAS_CON_PLANTILLA = ['ORLANT', 'MOBILIZE'];
+// Fase 262: campañas con Calidad segun el registro (CAMPANAS_CALIDAD, que llega
+// del servidor); la lista fija queda solo como respaldo si no llego.
+function calidadCampanasRegistro() {
+  return (typeof CAMPANAS_CALIDAD !== 'undefined' && CAMPANAS_CALIDAD && CAMPANAS_CALIDAD.length) ? CAMPANAS_CALIDAD.slice() : CAMPANAS_CON_PLANTILLA.slice();
+}
 
 // soon:true  -> el módulo aparece en el dashboard pero todavía no está construido.
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.

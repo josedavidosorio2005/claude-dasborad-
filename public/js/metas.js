@@ -39,7 +39,8 @@ async function renderMetasSection(){
   }catch(e){ _metasAll = []; showToast('No se pudo cargar el cronograma: '+e.message); }
 
   var sel = document.getElementById('meta-campana-sel');
-  sel.innerHTML = CAMPANAS_CON_PLANTILLA.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  sel.innerHTML = calidadCampanasRegistro().map( // Fase 262
+    function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   var monthInput = document.getElementById('meta-mes-input');
   if(!monthInput.value) monthInput.value = gdHoyLocal().slice(0,7);
   populateMetaLiderSelect();

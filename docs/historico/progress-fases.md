@@ -19240,3 +19240,28 @@ Escrituras hechas: alias (5), carga de agendas (impacto + carga), importar
 plantilla (2 vistas previas + confirmar), activo de la genérica. Ninguna otra
 escritura (0 bloqueadas). Entre corridas apareció 1 usuario ASESOR activo de
 Mobilize (actividad de los usuarios, no del script).
+
+## Fase 262 — Calidad de Clínica Aurora y Hospital La María (v1.132.0, 2026-11-05)
+
+- **Plantillas** (fuera del repo, `Downloads/calidad-edwin/`): sacadas de la
+  hoja "Diccionario de Ítems" de los Excel de Edwin (`CLINICA AURORA.xlsx`,
+  `PLANTILLA DE CALIDAD HOSPITAL LA MARÍA SEDE CASTILLA.xlsx` y `... SEDE
+  33.xlsx`); sin leer las filas de monitoreos. Aurora 12 ítems (1 y 3–13), 5
+  críticos; Castilla 12, 5; Sede 33 7, 3; las tres suman 100 y coinciden ítem
+  por ítem (número, peso, crítico, nombre) con el HTML de Edwin. Pesos: Aurora
+  en fracción ("0.05"), HLM en texto ("5%"). Campos = ORLANT (asesor, fecha, ID
+  llamada, teléfono, codificación, evaluador, observaciones).
+- **Lo que faltaba en el código** (este PR): (1) la pestaña Calidad de Aurora y
+  HLM estaba oculta y nada la destapaba: ahora se destapa en memoria al tener
+  monitoreos; (2) "Resultado de los monitoreos" va en la plantilla de todo
+  cliente (ORLANT no: ajuste `sinPaneles` de su perfil, su foto no cambia) y
+  la migración `fase262_calidad_monitoreos_aurora_hlm_v1` lo agrega a Aurora
+  y HLM; (3) el selector de campaña del ASESOR, Metas Calidad y la meta del
+  supervisor usaban la lista fija ORLANT/MOBILIZE: ahora salen del registro
+  (`calidadCampanasRegistro`).
+- **Pruebas**: `fase262-calidad-aurora-hlm.test.js` (plantillas sintéticas,
+  Aurora sin ítem 2, dos de HLM); ajustes en fase145 (regex del bootstrap),
+  fase153 (Aurora vs ORLANT sin el panel nuevo) y fase256.
+- **Local** (Brave, 1440/375): Aurora con un monitoreo sintético muestra
+  Calidad y el panel (80 %, un crítico en NO); HLM sin monitoreos sigue sin la
+  pestaña; ORLANT igual; 0 errores.

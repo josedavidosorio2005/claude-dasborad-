@@ -240,7 +240,7 @@ async function renderSupervisorMetaTable(){
   if(!tbl || !currentUser) return;
   await calLoadPlantillas();
   var curMonth = gdHoyLocal().slice(0,7);
-  var campanas = CAMPANAS_CON_PLANTILLA.filter(function(c){ return currentUser.perms['campana_'+c]===true; });
+  var campanas = calidadCampanasRegistro().filter(function(c){ return currentUser.perms['campana_'+c]===true; }); // Fase 262
   for(var i=0;i<campanas.length;i++){ try{ await loadCalData(campanas[i], curMonth); }catch(e){} }
   var html = '<tr><th>Campana</th><th>Mi Meta</th><th>Realizados</th><th>% Total</th><th>Llamada</th><th>WhatsApp</th></tr>';
   if(campanas.length===0){

@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.132.0 — Noviembre 2026
+
+**Fase 262: Calidad lista para Clínica Aurora y Hospital La María (entrega del lunes 9).**
+
+- La pestaña Calidad de Aurora y de Hospital La María aparece sola en cuanto
+  la campaña tiene su primer monitoreo (antes quedaba oculta siempre).
+- Esa pestaña trae también "Resultado de los monitoreos" (indicadores,
+  resultado por asesor, ítems más afectados, llamadas con fallas y
+  Diccionario), como Mobilize. ORLANT queda igual.
+- Al crear un usuario ASESOR ya se puede elegir Clínica Aurora u Hospital La
+  María como su campaña (antes solo ORLANT y Mobilize), para que vea "Mis
+  resultados". Lo mismo en Metas Calidad y en la meta del supervisor.
+
 ## v1.131.1 — Noviembre 2026
 
 **Fase 260: arreglo de Agendas por usuaria (Clínica Aurora).**
