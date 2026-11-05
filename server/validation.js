@@ -730,6 +730,28 @@ const calidadResumenCargaBody = z.object({
   filas: z.array(calidadResumenFilaArraySchema).min(1, 'El archivo no tiene asesores').max(2000, 'Demasiadas filas en un solo archivo'),
 });
 
+// Fase 259: "Agendas por usuaria" (Clinica Aurora). Solo conteos agregados
+// del reporte de citas; strictObject: cualquier campo de mas (documento,
+// nombre del paciente, telefono...) se rechaza, nunca se guarda.
+const agendasUsuariaQuery = z.object({ campana: campanaSchema });
+const auTexto = (max) => z.string().trim().max(max);
+const agendasUsuariaFila = z.strictObject({
+  mes: mesSchema,
+  dia: z.union([z.literal(''), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dia invalido')]),
+  sede: auTexto(120).min(1),
+  usuario: auTexto(60).min(1),
+  canal: z.enum(['Llamada', 'WhatsApp', 'No contesta', 'Otro']),
+  tipoCita: z.enum(['Cirugía', 'Consulta', 'Otro']),
+  tipoPaciente: z.enum(['Nuevo', 'Antiguo', 'Otro', 'Sin dato']),
+  rol: z.enum(['confirma', 'crea']),
+  n: z.number().int().min(1).max(100000),
+});
+const agendasUsuariaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(agendasUsuariaFila).min(1, 'El archivo no tiene citas').max(20000, 'Demasiadas filas en un solo archivo'),
+});
+
 // Fase 170: linea (3P/General) de cada asesor por mes, para la salida del CDR.
 const salidaAsesoresQuery = z.object({ campana: campanaSchema, mes: mesSchema });
 const salidaAsesoresBody = z.object({
@@ -1217,6 +1239,11 @@ const aliasAsesorBody = z.object({
   alias: nombreAsesorSchema,
   canonico: nombreAsesorSchema,
 });
+// Fase 259: editar un alias (el nombre al que apunta y, si hace falta, el alias).
+const aliasAsesorEditBody = z.object({
+  alias: nombreAsesorSchema,
+  canonico: nombreAsesorSchema,
+});
 
 // Fase 207: `meses` (los de MESES, AAAA-MM separados por coma) suma por
 // asesor; `mes` (uno solo) sigue igual. Uno de los dos.
@@ -1609,6 +1636,7 @@ module.exports = {
     flujoHoraCargaBody, flujoHoraOpcionesQuery, flujoHoraMesQuery, // Fase 196
     eficaciaQuery, // Fase 198
     calidadResumenCargaBody,
+    agendasUsuariaQuery, agendasUsuariaCargaBody, // Fase 259
     salidaAsesoresBody,
     skillsWhatsappBody,
     encuestasCargaBody,
@@ -1623,6 +1651,7 @@ module.exports = {
     efectividadAgendamientoRankingQuery,
     aliasAsesorQuery,
     aliasAsesorBody,
+    aliasAsesorEditBody,
     efectividadCitasCargaBody,
     efectividadCitasQuery,
     salidaCargaBody,

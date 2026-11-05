@@ -41,6 +41,8 @@ const CARGAS_POR_MODULO = {
   ],
   encuesta: [{ id: 'encuesta', nombre: 'Encuesta', tabla: 'encuestas', fecha: 'fecha', plantilla: 'PLANTILLA_ENCUESTA.xlsx' }],
   // Fase 172: resumen por asesor de la plantilla de Edwin (Mobilize). Mensual.
+  // Fase 259: reporte de citas de la clinica (Aurora), conteos agregados por mes de la cita.
+  agendas_usuaria: [{ id: 'agendas_usuaria', nombre: 'Agendas por usuaria (reporte de citas)', tabla: 'agendas_usuaria', fecha: 'mes', plantilla: null }],
   calidad_resumen: [{ id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', tabla: 'calidad_resumen_asesor', fecha: 'mes', plantilla: 'PLANTILLA_CALIDAD_RESUMEN.xlsx' }],
   // Calidad: la plantilla depende de los items de cada campana (se descarga
   // desde Calidad), por eso no hay archivo fijo.

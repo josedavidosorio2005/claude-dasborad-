@@ -174,7 +174,7 @@ declarar(['GET /calidad/plantillas/admin', 'POST /calidad/plantillas/importar', 
 // Fase 122: alias de nombre de asesor -- a diferencia de codificaciones
 // (lectura scoped por campana, escritura admin), aqui las 3 operaciones
 // son admin-only (alta/baja/lista, pedido explicito de InCo).
-declarar(['GET /alias-asesores', 'POST /alias-asesores', 'DELETE /alias-asesores/:id'], 'admin');
+declarar(['GET /alias-asesores', 'POST /alias-asesores', 'PUT /alias-asesores/:id', 'DELETE /alias-asesores/:id'], 'admin'); // PUT: Fase 259
 declarar(['GET /metas/cumplimiento', 'GET /metas/mi-meta'], 'scopedRead');
 declarar(['GET /metas'], 'scopedReadOrAdmin'); // con campana: scoped: sin campana: admin
 declarar(['POST /metas', 'PUT /metas/:id', 'DELETE /metas/:id'], 'admin');
@@ -253,6 +253,9 @@ declarar(['GET /calidad/salida/lineas-por-mes'], 'admin');
 // Fase 172: resumen de calidad por asesor (Mobilize).
 declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen/mensual'], 'scopedRead');
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
+// Fase 259: Agendas por usuaria (Clinica Aurora).
+declarar(['GET /calidad/agendas-usuaria/opciones', 'GET /calidad/agendas-usuaria/datos'], 'scopedRead');
+declarar(['POST /calidad/agendas-usuaria/carga/impacto', 'POST /calidad/agendas-usuaria/carga'], 'cargaManual');
 // Fase 196: Flujo por hora (Mobilize).
 declarar(['GET /calidad/flujo-hora/opciones', 'GET /calidad/flujo-hora/mes'], 'scopedRead');
 // Fase 198: Eficacia (Mobilize), lectura con acceso a la campaña.

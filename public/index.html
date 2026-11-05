@@ -87,6 +87,7 @@
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-history"></use></svg></span> Historial</a></li>
         <li id="menu-calidad-li" class="hidden"><a id="menu-calidad" role="button" tabindex="0" onclick="openCalidad()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
         <li id="menu-metas-li" class="hidden"><a id="menu-metas" role="button" tabindex="0" onclick="showSection('metas')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-target"></use></svg></span> Metas Calidad</a></li>
+        <li id="menu-aliases-li" class="hidden"><a id="menu-aliases" role="button" tabindex="0" onclick="showSection('aliases')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-users"></use></svg></span> Usuarios del sistema</a></li>
         <li id="menu-umbrales-li" class="hidden"><a id="menu-umbrales" role="button" tabindex="0" onclick="showSection('umbrales')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-gauge"></use></svg></span> Umbrales</a></li>
         <li id="menu-reportesrole-li" class="hidden"><a id="menu-reportesrole" role="button" tabindex="0" onclick="showSection('reportesrole')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trending-up"></use></svg></span> Rol Reportes</a></li>
         <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar Datos</a></li>
@@ -524,6 +525,23 @@
            desplegar: metrica + campana opcional (vacio = global) -> verde/
            amarillo/direccion. Los 12 dashboards de cliente leen esta misma
            tabla via GET /api/umbrales (dashboard-generic.js). -->
+      <!-- Fase 259: usuarios del sistema de un cliente -> nombre real de la asesora (alias_asesores) -->
+      <div id="section-aliases" class="hidden">
+        <div class="page-title">Usuarios del sistema → asesora</div>
+        <div class="page-subtitle">Cuando un archivo trae un usuario del sistema (por ejemplo "INCONEXION A") en vez del nombre de la persona, aquí se dice quién es. El nombre se aplica al mostrar los dashboards, así que un cambio vale también para los meses ya cargados (en Agendas, Tipificación y Efectividad de ORLANT el alias se aplica al cargar, como siempre).</div>
+        <div class="section-card">
+          <div class="form-row">
+            <div class="ig"><label for="alias-campana">Cliente / campaña</label><select id="alias-campana" onchange="aliasCargar()"></select></div>
+          </div>
+          <div class="form-row">
+            <div class="ig"><label for="alias-nuevo-alias">Usuario del sistema (como viene en el archivo)</label><input type="text" id="alias-nuevo-alias" maxlength="120" placeholder="Ej: INCONEXION A" autocomplete="off"></div>
+            <div class="ig"><label for="alias-nuevo-nombre">Nombre de la asesora</label><input type="text" id="alias-nuevo-nombre" maxlength="120" placeholder="Nombre y apellidos" autocomplete="off"></div>
+          </div>
+          <div class="modal-btns" style="justify-content:flex-start"><button type="button" class="btn-primary" onclick="aliasAgregar()">Agregar</button></div>
+          <div style="overflow-x:auto;margin-top:12px"><table class="aurora-rank-table alias-tabla" id="alias-tabla"></table></div>
+        </div>
+      </div>
+
       <div id="section-umbrales" class="hidden">
         <div class="page-title">Umbrales de Semaforo</div>
         <div class="page-subtitle">Define de que color se pinta cada métrica en los dashboards (verde/amarillo/rojo) segun que tan bien o mal esta el valor. Un umbral sin campaña especifica es el <strong>default global</strong> para esa métrica; uno con campaña lo sobreescribe solo ahi. Los cambios se ven en los dashboards al instante, sin desplegar.</div>
@@ -1942,6 +1960,9 @@
 <script src="js/calidad-panel.js"></script>
 <script src="js/calidad-calificar-logic.js"></script>
 <script src="js/calidad-calificar.js"></script>
+<script src="js/alias-admin.js"></script>
+<script src="js/agendas-usuaria-logic.js"></script>
+<script src="js/agendas-usuaria.js"></script>
 <script src="js/calidad-plantillas-logic.js"></script>
 <script src="js/calidad-plantillas.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>

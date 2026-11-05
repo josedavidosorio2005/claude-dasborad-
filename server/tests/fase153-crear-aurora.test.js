@@ -74,7 +74,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 253: familia de versiones de plantilla (no toca Aurora/HLM).
     'fase253_calidad_plantillas_familia_v1',
     // Fase 256: panel de monitoreos en la pestaña Calidad de Mobilize (no toca Aurora/HLM).
-    'fase256_mobilize_calidad_monitoreos_panel_v1'];
+    'fase256_mobilize_calidad_monitoreos_panel_v1',
+    // Fase 259: Agendas por usuaria en Aurora (tabla nueva + modulo; HLM no se toca).
+    'fase259_aurora_agendas_usuaria_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -89,11 +91,12 @@ test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin da
   const f = fila();
   const cfg = { titulo: f.titulo, vista: f.vista, secciones: JSON.parse(f.secciones), layout: JSON.parse(f.layout) };
   assert.deepEqual(cfg, auroraEsperada());
-  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'tipificacion', 'calidad']);
-  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, true]);
+  // Fase 259: + agendas_usuaria (oculta; propia de Aurora, no viene de ORLANT).
+  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendas_usuaria', 'tipificacion', 'calidad']);
+  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, true, true]);
   // Mismas pestanas que ORLANT (salvo la campana).
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
-  for (const t of cfg.layout.tabs) {
+  for (const t of cfg.layout.tabs.filter((x) => x.key !== 'agendas_usuaria')) {
     const o = orl.find((x) => x.key === t.key);
     // Fase 206: "Llamadas ingresadas" (etiquetaTotal) es solo de ORLANT, no de la plantilla.
     const panelesOrlant = o.panels.map((p) => { const c = Object.assign({}, p); delete c.etiquetaTotal; return c; });

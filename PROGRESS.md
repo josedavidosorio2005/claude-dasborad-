@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.130.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.131.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -176,6 +176,13 @@ narrativo de cada fase, fase por fase, vive en
   plantilla de Mobilize no está en el repo** (es público): se importa en
   pantalla (pasos en `docs/pendientes.md`, sección 1). El enlace con la
   Encuesta NPS está solo diseñado (`docs/calidad-plan-edwin-nov.md`).
+- **Agendas por usuaria de Clínica Aurora (Fase 259, v1.131.0, 05/11)**:
+  carga del reporte de citas de la clínica (se lee y se agrega en el
+  navegador; al servidor solo llegan conteos, `agendas_usuaria`), pestaña
+  "Agendas por usuaria" (oculta hasta el primer mes cargado) y Admin ›
+  "Usuarios del sistema → asesora" (alias por cliente, resueltos al mostrar).
+  Falta que el usuario registre los 5 alias y cargue OCTUBRE.xls
+  (`docs/pendientes.md`, sección 1).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
@@ -481,3 +488,4 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 259 — Clínica Aurora: «Agendas por usuaria» desde el reporte de citas de la clínica (agregado en el navegador, sin datos de pacientes) y Admin › «Usuarios del sistema → asesora» (v1.131.0, 2026-11-05)

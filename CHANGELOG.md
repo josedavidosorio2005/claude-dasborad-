@@ -4,6 +4,32 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.131.0 — Noviembre 2026
+
+**Fase 259: Clínica Aurora, pestaña "Agendas por usuaria" (pedido de Edwin, reunión 05/11).**
+
+- Cargar Datos de Clínica Aurora tiene una carga nueva, "Agendas por usuaria
+  (reporte de citas)": se sube el reporte mensual de citas que exporta el
+  sistema de la clínica (.xls o .xlsx) tal cual.
+- **Los datos de los pacientes no salen del computador de quien sube el
+  archivo**: el archivo se lee y se cuenta ahí, y a la plataforma solo llegan
+  cantidades por mes, día, sede, usuario, canal, tipo de cita y tipo de
+  paciente.
+- El canal sale del motivo de confirmación aunque tenga errores de escritura
+  ("LALMADA", "WWP", "NO CONETESTA"…): Llamada, WhatsApp, No contesta u Otro.
+- Pestaña "Agendas por usuaria" en el dashboard de Aurora (aparece sola al
+  cargar el primer mes): filtros por asesora, sede, canal, tipo de cita y tipo
+  de paciente (el mes es el filtro MESES de arriba); tarjetas con el total
+  confirmado y por canal (con %); barras por asesora, apiladas por canal; la
+  tabla por asesora con su total y el botón Excel; la gráfica por día de
+  confirmación; y las citas creadas por InConexion.
+- Admin › "Usuarios del sistema → asesora" (nuevo): para cada cliente se
+  registra quién es cada usuario del sistema ("INCONEXION A" → el nombre de la
+  asesora). El nombre se aplica al mostrar, así que si se corrige también
+  cambian los meses ya cargados. Sirve para cualquier cliente.
+- Subir otra vez el mismo mes lo reemplaza (con Deshacer, como las demás
+  cargas). Los demás clientes quedan igual.
+
 ## v1.130.0 — Noviembre 2026
 
 **Fase 256: Calidad en el dashboard de Mobilize y "Mis resultados" del asesor (paso 5 de Calidad de Mobilize).**

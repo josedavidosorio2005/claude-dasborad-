@@ -4706,6 +4706,38 @@ function migrarMobilizeCalidadMonitoreosPanel() {
 }
 runOnceMigration('fase256_mobilize_calidad_monitoreos_panel_v1', migrarMobilizeCalidadMonitoreosPanel);
 
+// Fase 259 (pedido de Edwin, reunion 05/11): "Agendas por usuaria" de Clinica
+// Aurora. 1) Tabla de conteos AGREGADOS del reporte de citas de la clinica
+// (ningun dato de paciente: los arma el navegador). 2) Modulo agendas_usuaria
+// en el registro de Aurora y su pestaña (oculta; se destapa sola al tener
+// datos), con el mismo cuerpo de las Fases 220/230 (lo que ya tenia queda
+// tal cual). Los nombres de las asesoras NO van aqui: se registran como alias
+// por la interfaz (alias_asesores). Idempotente; no toca otro cliente.
+function crearAgendasUsuariaAurora() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agendas_usuaria (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      dia TEXT NOT NULL DEFAULT '',
+      sede TEXT NOT NULL,
+      usuario TEXT NOT NULL,
+      canal TEXT NOT NULL,
+      tipoCita TEXT NOT NULL,
+      tipoPaciente TEXT NOT NULL,
+      rol TEXT NOT NULL,
+      n INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      cargadoPorNombre TEXT NOT NULL DEFAULT '',
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_agendas_usuaria_campana_mes ON agendas_usuaria(campana, mes);
+  `);
+  asegurarDatosVersion();
+  habilitarModulosComoOrlant(AURORA, ['agendas_usuaria'], 'fase259_aurora_agendas_usuaria_v1');
+}
+runOnceMigration('fase259_aurora_agendas_usuaria_v1', crearAgendasUsuariaAurora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4741,6 +4773,7 @@ module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
 module.exports.migrarCalidadCamposPorPlantilla = migrarCalidadCamposPorPlantilla;
 module.exports.migrarCalidadPlantillasFamilia = migrarCalidadPlantillasFamilia;
 module.exports.migrarMobilizeCalidadMonitoreosPanel = migrarMobilizeCalidadMonitoreosPanel;
+module.exports.crearAgendasUsuariaAurora = crearAgendasUsuariaAurora;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

@@ -63,6 +63,7 @@ function derivarListasRegistro(registro) {
     llamadasSalida: filtro(function (c) { return _registroTieneModulo(c, 'llamadas_unicas'); }),
     whatsappTiempos: filtro(function (c) { return _registroTieneModulo(c, 'whatsapp_tiempos'); }),
     calidadResumen: filtro(function (c) { return _registroTieneModulo(c, 'calidad_resumen'); }), // Fase 172
+    agendasUsuaria: filtro(function (c) { return _registroTieneModulo(c, 'agendas_usuaria'); }), // Fase 259
     flujoHora: filtro(function (c) { return _registroTieneModulo(c, 'flujo_hora'); }), // Fase 196
     encuesta: filtro(function (c) { return _registroTieneModulo(c, 'encuesta'); }),
     asesorVisibleCliente: filtro(function (c) { return _registroParam(c, 'asesorVisibleCliente') === true; }),

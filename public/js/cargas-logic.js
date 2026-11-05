@@ -313,6 +313,7 @@ var CARGAS_HOJA_FLUJO_HORA = 'FLUJO_HORA';
 // conversacion (export HistQueue de Wolkvox) -- reconocida por encabezados.
 var CARGAS_HOJA_WHATSAPP_TIEMPOS = 'WHATSAPP_TIEMPOS';
 var CARGAS_HOJA_CALIDAD_RESUMEN = 'CALIDAD_RESUMEN'; // Fase 172
+var CARGAS_HOJA_AGENDAS_USUARIA = 'REPORTE_CITAS'; // Fase 259 (la hoja real cambia de nombre cada mes: se reconoce por sus columnas)
 // Fase 147 (Parte B, Mobilize): Encuesta de satisfaccion.
 var CARGAS_HOJA_ENCUESTA = 'ENCUESTA';
 // Fase 98 (ORLANT, pedido urgente de Edwin): Inasistencia (totales
@@ -362,7 +363,7 @@ var CARGAS_HOJA_SALIDA = 'SALIDA';
 // tipificacionParseFilas sin tener que hardcodear "MOBILIZE" aqui. Sin este
 // parametro (el caso de ORLANT), queda `undefined` -- comportamiento
 // EXACTAMENTE igual al de siempre.
-function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols, llamadasNoConectadasCols, flujoHoraCols) {
+function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCols, agendasCols, tipificacionCols, inasistenciaCols, efectividadAgendamientoCols, citasAtendidasCols, salidaCols, tipificacionOpcionesLlamadas, llamadasUnicasCols, llamadasSalidaCols, whatsappTiemposCols, encuestaCols, calidadResumenCols, llamadasAbandonadasCols, llamadasNoConectadasCols, flujoHoraCols, agendasUsuariaCols) {
   var plan = [];
   Object.keys(secciones || {}).forEach(function (key) {
     var s = secciones[key];
@@ -671,6 +672,21 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
         'Al guardar, la carga REEMPLAZA todo lo que ya exista entre la primera y la ultima DATE de ' +
           'este archivo (el sistema te muestra antes cuantos registros se van a reemplazar y pide que ' +
           'confirmes) -- nunca duplica, aunque subas el mismo archivo mas de una vez.',
+      ],
+    });
+  }
+  // Fase 259 (Clinica Aurora): reporte de citas del sistema de la clinica,
+  // tal cual (una fila por cita). Se lee y se AGREGA en el navegador: al
+  // servidor solo llegan conteos, nunca datos de pacientes.
+  if (agendasUsuariaCols) {
+    plan.push({
+      tipo: 'agendas_usuaria', hoja: CARGAS_HOJA_AGENDAS_USUARIA, titulo: 'Agendas por usuaria (reporte de citas)',
+      descripcion: 'El reporte mensual de citas que exporta el sistema de la clínica (.xls o .xlsx), tal cual: una fila por cita.',
+      filaUnica: false, columnas: agendasUsuariaCols,
+      notasExtra: [
+        'Columnas que se usan (por nombre): fechacita, usuario_confirma, motivo_conf, fecha_confirma y nombresede; si vienen, usuario_regcita, consulta, cirugia y tipo_paciente. Las demás (datos del paciente) NO se leen ni se envían.',
+        'El mes es el de fechacita. Subir otra vez un mes lo reemplaza entero (con Deshacer por 30 días).',
+        'El nombre de cada asesora sale de "Usuarios del sistema → asesora" (Admin), no del archivo.',
       ],
     });
   }
@@ -994,6 +1010,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CARGAS_HOJA_FLUJO_HORA: CARGAS_HOJA_FLUJO_HORA,
     CARGAS_HOJA_WHATSAPP_TIEMPOS: CARGAS_HOJA_WHATSAPP_TIEMPOS,
     CARGAS_HOJA_CALIDAD_RESUMEN: CARGAS_HOJA_CALIDAD_RESUMEN,
+    CARGAS_HOJA_AGENDAS_USUARIA: CARGAS_HOJA_AGENDAS_USUARIA,
     CARGAS_HOJA_ENCUESTA: CARGAS_HOJA_ENCUESTA,
     CARGAS_HOJA_INASISTENCIA: CARGAS_HOJA_INASISTENCIA,
     CARGAS_HOJA_SALIDA: CARGAS_HOJA_SALIDA,

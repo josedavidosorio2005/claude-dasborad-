@@ -19158,3 +19158,49 @@ tocar código; un PR por punto.
   clientes iguales, 0 errores de consola, 0 escrituras (todas bloqueadas salvo
   el login), 0 peticiones fallidas. La única petición fallida (un 404) fue en
   una corrida previa a B2, que preguntó por la ruta nueva antes del deploy.
+
+## Fase 259 — Clínica Aurora: Agendas por usuaria (v1.131.0, 2026-11-05)
+
+| Pedido | Versión | Verificado en producción |
+|---|---|---|
+| Agendas por usuaria (reporte de citas de la clínica) + Usuarios del sistema → asesora | 1.131.0 | Solo lectura: pestaña configurada (oculta, sin datos) y la carga disponible para el admin |
+
+- **Pedido** (reunión de Edwin del 05/11, entrega lunes 09/11): ver las
+  agendas de cada asesora de InConexion con su nombre real, desde el reporte
+  de citas que exporta el sistema de la clínica (`OCTUBRE.xls`, fuera del
+  repo: 1.678 citas, 73 columnas, con datos de pacientes).
+- **Privacidad**: el lector (`public/js/agendas-usuaria-logic.js`) busca las
+  columnas por nombre, lee solo 9 y AGREGA en el navegador; el cuerpo que
+  llega al servidor solo trae `mes, dia, sede, usuario, canal, tipoCita,
+  tipoPaciente, rol, n` (`z.strictObject`: cualquier campo de más es 400).
+  Los usuarios de la clínica (no InConexion) se agrupan como "Clínica (no
+  InConexion)" sin su nombre de usuario. Verificado con el archivo real en
+  local, imprimiendo solo conteos: 1.678 citas; 585/435/420/191/47; sedes
+  1.509 + 169; Llamada 932, WhatsApp 540, No contesta 178, Otro 28; creadas
+  799; 1.172 filas agregadas.
+- **Datos reales del archivo**: `consulta`/`cirugia` vienen como verdadero/
+  falso (no 0/1); `fecha_confirma` trae 73 días de septiembre (se confirma
+  antes de la cita): el mes es el de la cita.
+- **Servidor**: tabla `agendas_usuaria` y módulo `agendas_usuaria` en
+  Aurora (migración `fase259_aurora_agendas_usuaria_v1`, idempotente, con el
+  cuerpo de las Fases 220/230); `GET /calidad/agendas-usuaria/opciones|datos`
+  (el nombre real se resuelve al leer con `alias_asesores`),
+  `POST .../carga/impacto` y `.../carga` (reemplaza los meses que trae, con
+  respaldo para Deshacer). `PUT /alias-asesores/:id` (editar) y la
+  advertencia de alta no salta si el alias es un usuario del reporte.
+- **Navegador**: tipo nuevo en Cargar Datos y en el Centro de cargas (la hoja
+  se llama como el mes y se reconoce por columnas), panel
+  `agendas_usuaria_panel` en las listas cerradas (MESES, autónomos, Exportar),
+  colores de la paleta categórica (no los del semáforo), y Admin › "Usuarios
+  del sistema → asesora" para cualquier cliente.
+- **Pruebas**: `fase259-aurora-agendas-usuaria.test.js` (8, archivo y nombres
+  ficticios; incluye una prueba de que lo enviado no trae documento, nombre,
+  teléfono, dirección ni diagnóstico). Se ajustaron los guardianes de Aurora
+  (`helpers-aurora.js` y las listas de pestañas: una pestaña más, a propósito),
+  la cantidad de fuentes de "Última actualización" (19) y la lista del
+  registro. Suite 2597/2597, `npm audit` 0.
+- **Local** (base demo, Brave, 1440/768/375 px): alta y edición de alias,
+  carga de un reporte sintético por Cargar Datos (vista previa con los
+  conteos, guardado, cuerpo sin datos de pacientes), pestaña con tarjetas,
+  barras, tabla, Excel, por día y filtros; 0 errores de consola, sin scroll
+  horizontal.

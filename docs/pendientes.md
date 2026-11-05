@@ -9,6 +9,17 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Aurora, Agendas por usuaria: registrar los alias y cargar octubre** (Fase
+  259, 05/11) — Prioridad ALTA (entrega a Edwin el lunes 09/11). Lo haces tú
+  en producción como administrador: (1) Admin › **Usuarios del sistema** →
+  cliente CLINICA AURORA → los 5 usuarios (INCONEXION, INCONEXION A, B, C, D)
+  con el nombre de cada asesora (de la imagen de Edwin; los nombres no van al
+  repo). (2) Cargar Datos → CLINICA AURORA → elegir `OCTUBRE.xls` → la vista
+  previa debe decir 1.678 citas; INCONEXION 585, D 435, B 420, A 191, C 47;
+  canal Llamada 932, WhatsApp 540, No contesta 178, Otro 28; creadas por
+  InConexion 799 → Guardar carga. (También desde el Centro de cargas, tarjeta
+  de octubre.) La pestaña aparece sola.
+
 - **Importar la plantilla de Mobilize en producción** (Fase 253, 05/11) —
   Prioridad ALTA (Edwin la necesita para probar). Es una escritura en
   producción que haces tú como administrador, por la interfaz. El archivo
@@ -179,6 +190,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Aurora, Agendas por usuaria: confirmar la lectura** (Fase 259) — Prioridad
+  MEDIA. (1) ¿"Agendas por usuario" son las confirmaciones (usuario_confirma,
+  todas las filas; es lo principal hoy) o las citas creadas (usuario_regcita,
+  799 de InConexion; hoy van aparte)? (2) "No contesta", ¿cuenta como agenda
+  de la asesora o se separa? (hoy es columna aparte, dentro del total). (3) El
+  mes, ¿por fecha de la cita (hoy) o por fecha de confirmación? (4) ¿El mismo
+  reporte y mapeo aplican a Hospital La María? (5) Los 28 "Otro" son textos de
+  motivo que no dicen el canal: ¿hay una lista cerrada de motivos?
 
 - **Calidad de Mobilize, para probar** (Fases 252–256) — Prioridad ALTA.
   Cuando la plantilla esté importada: probar Calificar, Resumen, Detalle por

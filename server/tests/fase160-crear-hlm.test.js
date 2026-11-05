@@ -77,7 +77,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 253: familia de versiones de plantilla (no toca Aurora/HLM).
     'fase253_calidad_plantillas_familia_v1',
     // Fase 256: panel de monitoreos en la pestaña Calidad de Mobilize (no toca Aurora/HLM).
-    'fase256_mobilize_calidad_monitoreos_panel_v1'];
+    'fase256_mobilize_calidad_monitoreos_panel_v1',
+    // Fase 259: Agendas por usuaria en Aurora (tabla nueva + modulo; HLM no se toca).
+    'fase259_aurora_agendas_usuaria_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
