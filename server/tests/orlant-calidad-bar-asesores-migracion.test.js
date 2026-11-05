@@ -98,13 +98,16 @@ test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: agrega el pane
 // MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
 function sinResumenCalidad(x) {
   const c = JSON.parse(JSON.stringify(x));
-  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel' && p.tipo !== 'calidad_monitoreos_panel'); });
+  // Fase 269: fase269_calidad_solo_monitoreos_v1 deja la pestaña Calidad de
+  // MOBILIZE solo con el panel de monitoreos (su prueba: fase269-calidad-solo-
+  // monitoreos.test.js); aqui se comparan los demas paneles de los dos lados.
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => !/^calidad_(resumen_panel|monitoreos_panel|kpis|pie|bar_asesores)$/.test(p.tipo)); });
   return c;
 }
 
 test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: nunca toca el tab "calidad" de otra campaña', () => {
   const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(OTRO_CLIENTE);
-  assert.deepEqual(sinResumenCalidad(JSON.parse(row.layout)), LAYOUT_OTRO, 'igual -- la query es exclusiva de ORLANT');
+  assert.deepEqual(sinResumenCalidad(JSON.parse(row.layout)), sinResumenCalidad(LAYOUT_OTRO), 'igual -- la query es exclusiva de ORLANT');
 });
 
 test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: es idempotente -- correrla dos veces seguidas no duplica el panel', () => {

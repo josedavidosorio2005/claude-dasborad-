@@ -80,7 +80,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 262: panel de monitoreos en Calidad de Aurora y HLM (la pestaña no cambia de lugar).
     'fase262_calidad_monitoreos_aurora_hlm_v1',
     // Fase 265: columnas nuevas y 3 vistas de Agendas por usuaria (solo Aurora).
-    'fase265_agendas_usuaria_vistas_v1'];
+    'fase265_agendas_usuaria_vistas_v1',
+    // Fase 269: Calidad solo con el resultado de los monitoreos (Mobilize, Aurora y HLM; sin datos que tocar).
+    'fase269_calidad_solo_monitoreos_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -100,7 +102,9 @@ test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin da
   assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, true, true]);
   // Mismas pestanas que ORLANT (salvo la campana).
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
-  for (const t of cfg.layout.tabs.filter((x) => x.key !== 'agendas_usuaria')) {
+  // Fase 269: Calidad ya no es la de ORLANT: solo el resultado de los monitoreos.
+  assert.deepEqual(cfg.layout.tabs.find((t) => t.key === 'calidad').panels, [{ tipo: 'calidad_monitoreos_panel', campana: AURORA }]);
+  for (const t of cfg.layout.tabs.filter((x) => x.key !== 'agendas_usuaria' && x.key !== 'calidad')) {
     const o = orl.find((x) => x.key === t.key);
     // Fase 206: "Llamadas ingresadas" (etiquetaTotal) es solo de ORLANT, no de la plantilla.
     const panelesOrlant = o.panels.map((p) => { const c = Object.assign({}, p); delete c.etiquetaTotal; return c; });

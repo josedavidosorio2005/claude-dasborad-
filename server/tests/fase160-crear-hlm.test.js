@@ -83,7 +83,9 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     // Fase 262: panel de monitoreos en Calidad de Aurora y HLM (la pestaña no cambia de lugar).
     'fase262_calidad_monitoreos_aurora_hlm_v1',
     // Fase 265: columnas nuevas y 3 vistas de Agendas por usuaria (solo Aurora).
-    'fase265_agendas_usuaria_vistas_v1'];
+    'fase265_agendas_usuaria_vistas_v1',
+    // Fase 269: Calidad solo con el resultado de los monitoreos (Mobilize, Aurora y HLM; sin datos que tocar).
+    'fase269_calidad_solo_monitoreos_v1'];
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

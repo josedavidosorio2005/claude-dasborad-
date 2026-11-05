@@ -116,14 +116,15 @@ test('registro y tablero: MOBILIZE tiene el modulo y el panel va primero en Cali
   const mob = reg.leerRegistro(db).find((c) => c.nombre === 'MOBILIZE');
   assert.ok(mob.modulos.includes('calidad_resumen'));
   assert.ok(!reg.leerRegistro(db).find((c) => c.nombre === 'ORLANT').modulos.includes('calidad_resumen'));
+  // Fase 269 (pedido de Edwin): el panel del resumen ya no se muestra (la
+  // pestaña Calidad queda solo con los monitoreos); el modulo, la carga y los
+  // datos siguen. crearCalidadResumen sigue siendo idempotente.
   const lay = JSON.parse(db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get().layout);
-  assert.equal(lay.tabs.find((t) => t.key === 'calidad').panels[0].tipo, 'calidad_resumen_panel');
+  assert.deepEqual(lay.tabs.find((t) => t.key === 'calidad').panels.map((p) => p.tipo), ['calidad_monitoreos_panel']);
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs.find((t) => t.key === 'calidad');
   assert.ok(!orl.panels.some((p) => p.tipo === 'calidad_resumen_panel'));
-  // Idempotente.
   db.crearCalidadResumen();
-  const lay2 = JSON.parse(db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get().layout);
-  assert.equal(lay2.tabs.find((t) => t.key === 'calidad').panels.filter((p) => p.tipo === 'calidad_resumen_panel').length, 1);
+  assert.equal(reg.leerRegistro(db).find((c) => c.nombre === 'MOBILIZE').modulos.filter((m) => m === 'calidad_resumen').length, 1);
   assert.equal(reg.leerRegistro(db).find((c) => c.nombre === 'MOBILIZE').modulos.filter((m) => m === 'calidad_resumen').length, 1);
 });
 

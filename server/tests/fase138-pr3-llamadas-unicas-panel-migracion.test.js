@@ -106,13 +106,16 @@ test('migraciones de llamadas unicas: "flujo" queda EXACTAMENTE como antes (solo
 // MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
 function sinResumenCalidad(x) {
   const c = JSON.parse(JSON.stringify(x));
-  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel' && p.tipo !== 'calidad_monitoreos_panel'); });
+  // Fase 269: fase269_calidad_solo_monitoreos_v1 deja la pestaña Calidad de
+  // MOBILIZE solo con el panel de monitoreos (su prueba: fase269-calidad-solo-
+  // monitoreos.test.js); aqui se comparan los demas paneles de los dos lados.
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => !/^calidad_(resumen_panel|monitoreos_panel|kpis|pie|bar_asesores)$/.test(p.tipo)); });
   return c;
 }
 
 test('migraciones de llamadas unicas: no tocan el tab "calidad" de MOBILIZE', () => {
   const tabCalidad = layoutMobilize().tabs.find((t) => t.key === 'calidad');
-  assert.deepEqual(sinResumenCalidad(tabCalidad), LAYOUT_MOBILIZE.tabs[1]);
+  assert.deepEqual(sinResumenCalidad(tabCalidad), sinResumenCalidad(LAYOUT_MOBILIZE.tabs[1]));
 });
 
 test('migraciones de llamadas unicas: nunca tocan otro cliente, ni uno con "flujo" en forma NO reconocible', () => {
