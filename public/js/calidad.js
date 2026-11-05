@@ -23,7 +23,8 @@ async function calLoadPlantillas(force){
     CAL_PLANTILLAS = {};
     (rows||[]).forEach(function(p){ CAL_PLANTILLAS[p.campana] = { items:p.items||[], engine:p.engine||'standard' }; });
     // Fase 237: todas las plantillas (varias por campaña, con `usable`).
-    try{ CAL_PLANTILLAS_TODAS = (await apiRequest('GET','/calidad/plantillas/todas')) || []; }catch(e2){ CAL_PLANTILLAS_TODAS = []; }
+    // Fase 254: con las versiones inactivas (para ver/editar monitoreos viejos; nunca son usables).
+    try{ CAL_PLANTILLAS_TODAS = (await apiRequest('GET','/calidad/plantillas/todas?inactivas=1')) || []; }catch(e2){ CAL_PLANTILLAS_TODAS = []; }
     _calPlantillasLoaded = true;
   }catch(e){
     if(!_calPlantillasLoaded) showToast('No se pudieron cargar las plantillas de Calidad: '+e.message);
@@ -393,6 +394,7 @@ function switchCalTab(t){
 }
 
 function renderCalItemsForm(){
+  if(typeof cc2Sync==='function' && cc2Sync()) return; // Fase 254: plantilla nueva -> formulario Calificar
   var items = calItems(_ccampana);
   var cats = [];
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
@@ -481,6 +483,9 @@ function resetCalForm(){
 }
 
 function editarMonitoreo(id){
+  // Fase 254: los de plantillas nuevas se editan en el formulario Calificar.
+  var m0 = ((CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || []).find(function(x){ return x.id===id; });
+  if(m0 && typeof cc2PuedeEditar==='function' && cc2PuedeEditar(m0) && cc2Editar(m0)) return;
   if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
   var arr = (CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || [];
   var m = arr.find(function(x){ return x.id===id; });
@@ -580,7 +585,9 @@ async function calMonitoreosDelete(id){
 function renderCalMonitoreosTable(){
   var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
   var canManage = calCanManageMonitoreos();
-  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(canManage?'<th></th>':'')+'</tr>';
+  // Fase 254: Calidad edita lo que ella califico con plantillas nuevas.
+  var puedeAlguno = !canManage && typeof cc2PuedeEditar==='function' && arr.some(function(m){ return cc2PuedeEditar(m); });
+  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+((canManage||puedeAlguno)?'<th></th>':'')+'</tr>';
   if(arr.length===0){
     html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
   } else {
@@ -588,7 +595,8 @@ function renderCalMonitoreosTable(){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
       html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
-        (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):'')+'</tr>';
+        (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):
+          (puedeAlguno?('<td>'+(cc2PuedeEditar(m)?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button>':'')+'</td>'):''))+'</tr>';
     });
   }
   document.getElementById('cal-monitoreos-table').innerHTML = html;

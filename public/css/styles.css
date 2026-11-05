@@ -1808,6 +1808,93 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 /* Fase 202: torta y barras del resumen de calidad, lado a lado (una debajo de la otra en el celular). */
 .cal-res-graficas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-3);}
 
+/* Fase 253: Calidad › Plantillas (importador y versiones, solo administrador) */
+.cpl-ayuda{font-size:var(--fs-small);color:var(--c-text-muted);line-height:1.5;margin:0 0 10px}
+.cpl-archivo-btn{cursor:pointer;display:inline-flex;align-items:center;min-height:44px}
+.cpl-archivo-btn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.cpl-archivo-btn:focus-within{outline:2px solid var(--c-focus);outline-offset:2px}
+.cpl-error{margin-top:10px;padding:8px 12px;border-radius:var(--r-sm);background:var(--c-danger-bg);color:var(--c-danger-dark);font-size:var(--fs-small)}
+.cpl-resumen{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.cpl-campos{font-size:var(--fs-small);color:var(--c-text);margin:6px 0}
+.cpl-plan{font-size:var(--fs-small);color:var(--c-text);margin:6px 0 10px;padding-left:18px;line-height:1.5}
+.cpl-avisos{font-size:var(--fs-small);color:var(--c-warning-dark);background:var(--c-warning-bg);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px}
+.cpl-avisos ul{margin:4px 0 0;padding-left:18px}
+.cpl-items .cpl-desc{font-size:var(--fs-note);color:var(--c-text-muted);max-width:420px}
+.cpl-check{display:flex;align-items:center;gap:8px;font-size:var(--fs-body);margin-top:12px;min-height:44px;cursor:pointer}
+.cpl-check input{width:18px;height:18px}
+.cpl-inactiva td{color:var(--c-text-muted)}
+.cpl-etq{font-size:var(--fs-note);color:var(--c-text-muted);border:1px solid var(--c-border);border-radius:var(--r-md);padding:1px 6px;white-space:nowrap}
+.cpl-vacio{text-align:center;color:var(--c-text-muted)}
+.mu-rol-desc{display:block;margin-top:4px;font-size:var(--fs-note);color:var(--c-text-muted);line-height:1.4}
+
+/* Fase 254: Calidad › Calificar (plantillas nuevas, como el HTML de Edwin) */
+.cc2-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.cc2-form{padding:0}
+.cc2-form .cal-plantilla-sel,.cc2-form .cal-plantilla-nota{padding:14px 18px 0}
+.cc2-sec{padding:16px 18px;border-bottom:1px solid var(--c-border)}
+.cc2-sec:last-child{border-bottom:0}
+.cc2-sec-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-bottom:12px}
+.cc2-sec-h h3{margin:0;font-size:var(--fs-body-lg);color:var(--c-text)}
+.cc2-tag{font-size:var(--fs-note);color:var(--c-text-muted);text-transform:uppercase;letter-spacing:0.04em}
+.cc2-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.cc2-f{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-small);color:var(--c-text)}
+.cc2-f.cc2-wide{grid-column:1/-1}
+.cc2-lt{color:var(--c-text-muted)}
+.cc2-f input,.cc2-f select,.cc2-f textarea{min-height:44px;padding:8px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body)}
+.cc2-f textarea{resize:vertical}
+.cc2-f input[readonly],.cc2-f input:disabled,.cc2-f select:disabled{background:var(--c-surface-alt);color:var(--c-text-muted)}
+.cc2-f .cc2-invalid,.cc2-invalid{border-color:var(--c-danger-dark)!important;box-shadow:0 0 0 2px var(--c-danger-bg)}
+.cc2-hint{font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-cat{margin:14px 0 4px;padding-bottom:6px;border-bottom:1px dashed var(--c-border);font-size:var(--fs-note);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--c-text-link)}
+.cc2-cat:first-child{margin-top:0}
+.cc2-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--c-border)}
+.cc2-item.cc2-missing{background:var(--c-danger-bg);border-radius:var(--r-sm);box-shadow:inset 3px 0 0 var(--c-danger-dark)}
+.cc2-num{font-size:var(--fs-small);color:var(--c-text-muted);text-align:center}
+.cc2-iname b{display:block;font-size:var(--fs-body);font-weight:600;color:var(--c-text)}
+.cc2-iname small{font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-qbtn{background:none;border:0;padding:0;color:var(--c-text-link);font:inherit;font-size:var(--fs-note);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.cc2-seg{display:inline-flex;border:1px solid var(--c-border-control);border-radius:var(--r-sm);overflow:hidden}
+.cc2-seg button{min-width:48px;min-height:44px;padding:0 10px;border:0;border-left:1px solid var(--c-border-control);background:var(--c-surface-alt);color:var(--c-text);font:inherit;font-size:var(--fs-small);font-weight:600;cursor:pointer}
+.cc2-seg button:first-child{border-left:0}
+.cc2-seg button:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+.cc2-seg button.cc2-y[aria-pressed="true"]{background:var(--c-success-dark);color:var(--c-bg)}
+.cc2-seg button.cc2-n[aria-pressed="true"]{background:var(--c-danger-dark);color:var(--c-bg)}
+.cc2-seg button.cc2-x[aria-pressed="true"]{background:var(--c-text-muted);color:var(--c-bg)}
+.cc2-sugerir{margin-top:10px;min-height:44px}
+.cc2-score{position:sticky;top:12px;display:flex;flex-direction:column;gap:10px}
+.cc2-big{font-size:var(--fs-display);font-weight:700;line-height:1.1;color:var(--c-text-muted)}
+.cc2-c-ok{color:var(--c-success-dark)}.cc2-c-warn{color:var(--c-warning-dark)}.cc2-c-bad{color:var(--c-danger-dark)}
+.cc2-pill{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);font-size:var(--fs-note);font-weight:700;background:var(--c-surface-alt);color:var(--c-text-muted)}
+.cc2-pill.cc2-ok{background:var(--c-success-bg);color:var(--c-success-dark)}
+.cc2-pill.cc2-warn{background:var(--c-warning-bg);color:var(--c-warning-dark)}
+.cc2-pill.cc2-bad{background:var(--c-danger-bg);color:var(--c-danger-dark)}
+.cc2-prog{font-size:var(--fs-small);color:var(--c-text-muted)}
+.cc2-ded{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-small);border-top:1px solid var(--c-border);padding-top:8px}
+.cc2-ded>div{display:flex;justify-content:space-between;gap:8px}
+.cc2-ded .cc2-crit{color:var(--c-danger-dark);font-weight:600}
+.cc2-editando{font-size:var(--fs-small);color:var(--c-warning-dark);background:var(--c-warning-bg);border-radius:var(--r-sm);padding:6px 10px}
+.cc2-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cc2-actions button{min-height:44px}
+.cc2-note{margin:0;font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-ov{position:fixed;inset:0;z-index:var(--z-dialogo);background:rgba(8,38,52,0.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.cc2-ov[hidden]{display:none}
+.cc2-dlg{background:var(--c-surface);color:var(--c-text);border-radius:var(--r-lg);padding:20px;max-width:520px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,0.25)}
+.cc2-dlg h3{margin:0 0 10px;font-size:var(--fs-h3)}
+.cc2-dlg p,.cc2-dlg li{font-size:var(--fs-body);line-height:1.5}
+.cc2-crit-sub{color:var(--c-text-muted);font-size:var(--fs-small)!important}
+@media (max-width:900px){
+  .cc2-grid{grid-template-columns:minmax(0,1fr)}
+  .cc2-score{position:sticky;bottom:0;top:auto;order:2;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px;box-shadow:0 -4px 16px rgba(0,0,0,0.12)}
+  .cc2-score .cc2-tag,.cc2-score .cc2-ded,.cc2-score .cc2-note{display:none}
+  .cc2-big{font-size:var(--fs-kpi)}
+  .cc2-actions{margin-left:auto}
+}
+@media (max-width:520px){
+  .cc2-item{grid-template-columns:24px minmax(0,1fr)}
+  .cc2-item .cc2-seg{grid-column:2;justify-self:start}
+  .cc2-sec{padding:14px 12px}
+}
+
 /* Fase 175: encabezado del tablero compacto en el celular y la tablet
    (hasta 768 px). Antes ocupaba 354 px de 812 a 375 px (315 de 1024 a
    768): titulo, MES, MESES, COMPARAR, la nota y 5 botones en varias filas.
@@ -1967,22 +2054,3 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   #stv-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}
   #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;gap:8px;}
 }
-
-/* Fase 253: Calidad › Plantillas (importador y versiones, solo administrador) */
-.cpl-ayuda{font-size:var(--fs-small);color:var(--c-text-muted);line-height:1.5;margin:0 0 10px}
-.cpl-archivo-btn{cursor:pointer;display:inline-flex;align-items:center;min-height:44px}
-.cpl-archivo-btn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.cpl-archivo-btn:focus-within{outline:2px solid var(--c-focus);outline-offset:2px}
-.cpl-error{margin-top:10px;padding:8px 12px;border-radius:var(--r-sm);background:var(--c-danger-bg);color:var(--c-danger-dark);font-size:var(--fs-small)}
-.cpl-resumen{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-.cpl-campos{font-size:var(--fs-small);color:var(--c-text);margin:6px 0}
-.cpl-plan{font-size:var(--fs-small);color:var(--c-text);margin:6px 0 10px;padding-left:18px;line-height:1.5}
-.cpl-avisos{font-size:var(--fs-small);color:var(--c-warning-dark);background:var(--c-warning-bg);border-radius:var(--r-sm);padding:8px 12px;margin-bottom:10px}
-.cpl-avisos ul{margin:4px 0 0;padding-left:18px}
-.cpl-items .cpl-desc{font-size:var(--fs-note);color:var(--c-text-muted);max-width:420px}
-.cpl-check{display:flex;align-items:center;gap:8px;font-size:var(--fs-body);margin-top:12px;min-height:44px;cursor:pointer}
-.cpl-check input{width:18px;height:18px}
-.cpl-inactiva td{color:var(--c-text-muted)}
-.cpl-etq{font-size:var(--fs-note);color:var(--c-text-muted);border:1px solid var(--c-border);border-radius:var(--r-md);padding:1px 6px;white-space:nowrap}
-.cpl-vacio{text-align:center;color:var(--c-text-muted)}
-.mu-rol-desc{display:block;margin-top:4px;font-size:var(--fs-note);color:var(--c-text-muted);line-height:1.4}

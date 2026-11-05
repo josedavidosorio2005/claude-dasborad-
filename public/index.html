@@ -1017,7 +1017,7 @@
     <div class="aurora-kpis" id="cal-kpis-strip"></div>
 
     <div class="aurora-tabs">
-      <button class="atab atab-active" data-ctab="nuevo" id="ctab-btn-nuevo" onclick="switchCalTab('nuevo')">Nuevo Monitoreo</button>
+      <button class="atab atab-active" data-ctab="nuevo" id="ctab-btn-nuevo" onclick="switchCalTab('nuevo')">Calificar</button>
       <button class="atab" data-ctab="carga" id="ctab-btn-carga" onclick="switchCalTab('carga')">Carga Masiva (Excel)</button>
       <button class="atab" data-ctab="monitoreos" onclick="switchCalTab('monitoreos')">Monitoreos</button>
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
@@ -1027,6 +1027,9 @@
     </div>
 
     <div id="cpanel-nuevo" class="atab-panel visible">
+      <!-- Fase 254: formulario "Calificar" de las plantillas nuevas (como el HTML de Edwin) -->
+      <div id="cf2" hidden></div>
+      <div id="cf-viejo">
       <div class="aurora-card">
         <div class="aurora-card-title" id="cf-form-title">Datos generales del monitoreo</div>
         <div class="form-row">
@@ -1069,6 +1072,7 @@
           <button class="btn-cancel" onclick="resetCalForm()">Limpiar</button>
           <button class="btn-primary" onclick="submitMonitoreo()">Guardar Monitoreo</button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -1181,6 +1185,22 @@
     </div>
 
   </div>
+  <!-- Fase 254: dialogos del formulario Calificar -->
+  <div class="cc2-ov" id="cc2-ov-criterio" hidden role="dialog" aria-modal="true" aria-labelledby="cc2-criterio-t">
+    <div class="cc2-dlg">
+      <h3 id="cc2-criterio-t"></h3>
+      <div id="cc2-criterio-b"></div>
+      <div class="modal-btns"><button type="button" class="btn-primary" onclick="cc2CerrarDialogo('cc2-ov-criterio')">Entendido</button></div>
+    </div>
+  </div>
+  <div class="cc2-ov" id="cc2-ov-faltan" hidden role="alertdialog" aria-modal="true" aria-labelledby="cc2-faltan-t">
+    <div class="cc2-dlg">
+      <h3 id="cc2-faltan-t">Faltan ítems por calificar</h3>
+      <ul id="cc2-faltan-l"></ul>
+      <div class="modal-btns"><button type="button" class="btn-primary" id="cc2-faltan-ok" onclick="cc2IrAFaltante()">Revisar</button></div>
+    </div>
+  </div>
+
 </div>
 
   </div>
@@ -1885,6 +1905,8 @@
 <script src="js/mi-cuenta.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
+<script src="js/calidad-calificar-logic.js"></script>
+<script src="js/calidad-calificar.js"></script>
 <script src="js/calidad-plantillas-logic.js"></script>
 <script src="js/calidad-plantillas.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>

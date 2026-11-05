@@ -4,6 +4,27 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.128.0 — Noviembre 2026
+
+**Fase 254: Calidad, formulario "Calificar" igual al de Edwin (paso 3 de Calidad de Mobilize).**
+
+- Con las plantillas nuevas (por ejemplo la de Mobilize, cuando se importe),
+  "Calificar" se ve como el HTML de Edwin: datos de la llamada con los campos
+  de esa plantilla, los ítems por categoría con botones SI / NO / N/A, "Ver
+  criterio" con la descripción de cada ítem, y a la derecha la calificación
+  definitiva en vivo, con los descuentos y la alerta de críticos.
+- El motivo de afectación se llena solo con los ítems en NO, y "Sugerir
+  observación" escribe la observación a partir de lo calificado.
+- No se guarda si falta algún ítem o las observaciones: sale el aviso "Faltan
+  ítems por calificar" con la lista y lleva al primero que falta.
+- En el celular, la calificación queda fija abajo con el botón Guardar.
+- La persona de Calidad entra directo a "Calificar" al iniciar sesión, y en
+  Monitoreos, Resumen y Reportes ve solo los monitoreos que ella calificó.
+  Puede editar los suyos hechos con las plantillas nuevas.
+- La pestaña "Nuevo Monitoreo" ahora se llama "Calificar". ORLANT y la
+  plantilla genérica siguen con su formulario de siempre. Supervisor, Reportes
+  y Gerencia ven lo mismo que antes.
+
 ## v1.127.0 — Noviembre 2026
 
 **Fase 253: Calidad, importar plantillas en pantalla y perfil Calidad en Usuarios (paso 2 de Calidad de Mobilize).**

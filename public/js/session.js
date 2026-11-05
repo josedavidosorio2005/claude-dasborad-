@@ -171,6 +171,11 @@ function enterUserDashboard(){
   var fn=currentUser.nombre.split(' ')[0];
   document.getElementById('welcome-name').textContent='Bienvenido, '+fn;
   renderDashGrid();
+  // Fase 254 (pedido de Edwin): el rol CALIDAD entra directo a Calificar. Al
+  // cerrar el modulo vuelve a su pantalla de inicio de siempre.
+  if(currentUser.rol==='CALIDAD' && currentUser.perms && currentUser.perms.Calidad===true && typeof openCalidad==='function'){
+    openCalidad();
+  }
 }
 
 function enterAsesorPage(){

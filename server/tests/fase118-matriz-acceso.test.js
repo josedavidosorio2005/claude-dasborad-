@@ -478,7 +478,8 @@ function monitoreoBody(campana) {
 // GERENCIA...) recibe las mismas filas SIN ese campo. El asesor lo sigue
 // viendo en sus propios monitoreos.
 test('Fase 151: GET /monitoreos -- telefono solo para CALIDAD/SUPERVISOR/REPORTES/ADMIN; el resto recibe las filas sin el campo', async () => {
-  const creado = await request(app).post('/api/monitoreos').set(auth('ADMIN'))
+  // Fase 254: lo crea CALIDAD (ese rol ve solo lo que califica; el resto ve todo).
+  const creado = await request(app).post('/api/monitoreos').set(auth('CALIDAD'))
     .send({ ...monitoreoBody(PROPIA), telefono: '3000000151' });
   assert.equal(creado.status, 201);
   const VEN = ['ADMIN', 'ADMIN_MASTER', 'CALIDAD', 'SUPERVISOR', 'REPORTES'];
