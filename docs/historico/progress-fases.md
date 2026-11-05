@@ -19204,3 +19204,20 @@ tocar código; un PR por punto.
   conteos, guardado, cuerpo sin datos de pacientes), pestaña con tarjetas,
   barras, tabla, Excel, por día y filtros; 0 errores de consola, sin scroll
   horizontal.
+
+## Fase 260 — Agendas por usuaria: fechas del reporte real (v1.131.1, 2026-11-05)
+
+- **Hallazgo** al hacer la carga autorizada en producción: la vista previa de
+  `OCTUBRE.xls` dio 0 citas ("1678 fila(s) sin fecha de cita válida") y el
+  script paró sin guardar. Causa: Cargar Datos lee con `cellNF: true`, y con
+  eso SheetJS entrega las celdas con formato de fecha de un `.xls` como `Date`
+  (medianoche local), no como serial; el lector solo aceptaba número o texto.
+  La prueba de la Fase 259 no lo vio porque el archivo sintético no tenía
+  formato de fecha.
+- **Arreglo**: `auFecha` acepta `Date` con sus componentes locales (mismo
+  criterio que `agendasFechaCambio`). Comprobado contra el serial en las
+  1.678 filas reales (0 diferencias) y, en local, con las mismas opciones del
+  navegador: 1.678 citas, 585/435/420/191/47, 932/540/178/28, 799 creadas.
+- **Prueba nueva** en `fase259-aurora-agendas-usuaria.test.js`: archivo
+  sintético con celdas con formato de fecha, leído como lo hace Cargar Datos
+  (`sheetStubs` + `cellNF`), en .xlsx y .xls.

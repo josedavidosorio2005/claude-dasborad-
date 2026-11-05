@@ -171,3 +171,23 @@ test('navegador: el tipo nuevo esta en las listas cerradas, en el Centro y en el
   const plan = require('../../public/js/cargas-logic.js').cargasPlanConsolidado({}, null, null, null, null, null, null, null, null, null, undefined, null, null, null, null, null, null, null, null, [{ label: 'fechacita' }]);
   assert.ok(plan.some((h) => h.tipo === 'agendas_usuaria'), 'renglon del plan');
 });
+
+test('Fase 260: fechas como Date (lectura de Cargar Datos con cellNF sobre celdas con formato de fecha)', () => {
+  // Mismas opciones que procesarArchivoConsolidado (cargas.js) y celdas con formato de fecha, como el .xls real.
+  const head = ['fechacita', 'usuario_confirma', 'motivo_conf', 'fecha_confirma', 'nombresede'];
+  const ws = XLSX.utils.aoa_to_sheet([head, [serial('2026-10-31'), 'INCONEXION C', 'CONFIRMA POR WPP', serial('2026-09-30'), 'SEDE UNO'], [serial('2026-10-01'), 'INCONEXION', 'LLAMADA', serial('2026-10-01'), 'SEDE UNO']]);
+  ['A2', 'D2', 'A3', 'D3'].forEach((c) => { ws[c].z = 'dd/mm/yyyy'; });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'oct');
+  for (const bookType of ['xlsx', 'biff8']) {
+    const back = XLSX.read(new Uint8Array(XLSX.write(wb, { type: 'buffer', bookType })), { type: 'array', sheetStubs: true, cellNF: true });
+    const aoa = XLSX.utils.sheet_to_json(back.Sheets.oct, { header: 1, blankrows: false, defval: null });
+    const r = L.auParseFilas(aoa);
+    assert.equal(r.citas, 2, bookType + ': ' + JSON.stringify(r.avisos));
+    assert.deepEqual(r.meses, { '2026-10': 2 }, bookType);
+    const c = r.filas.find((f) => f.usuario === 'INCONEXION C');
+    assert.equal(c.dia, '2026-09-30', bookType);
+  }
+  assert.equal(L.auFecha(new Date(2026, 9, 31)), '2026-10-31');
+  assert.equal(L.auFecha(new Date('x')), null);
+});

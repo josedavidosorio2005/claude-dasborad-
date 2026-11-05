@@ -54,6 +54,18 @@ function auFaltantes(map) {
 // Date con la zona horaria del equipo.
 function auFecha(v) {
   if (v === null || v === undefined || v === '') return null;
+  // Fase 260 (hallazgo con el archivo real): con las opciones de Cargar Datos
+  // (cellNF), SheetJS entrega las celdas con formato de fecha de un .xls como
+  // Date en hora LOCAL (medianoche local del dia del serial). Se toman sus
+  // componentes locales (mismo criterio que agendasFechaCambio); verificado
+  // contra el serial en las 1.678 filas reales.
+  if (v instanceof Date || (v && typeof v.getFullYear === 'function')) {
+    if (isNaN(v.getTime())) return null;
+    var q = function (x) { return (x < 10 ? '0' : '') + x; };
+    var y = v.getFullYear();
+    if (y < 1970 || y > 2200) return null;
+    return y + '-' + q(v.getMonth() + 1) + '-' + q(v.getDate());
+  }
   if (typeof v === 'number' || (typeof v === 'string' && /^\d+(\.\d+)?$/.test(v.trim()))) {
     var n = Math.floor(Number(v));
     if (!Number.isFinite(n) || n < 25569 || n > 120000) return null;

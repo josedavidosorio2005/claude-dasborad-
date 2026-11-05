@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.131.1 — Noviembre 2026
+
+**Fase 260: arreglo de Agendas por usuaria (Clínica Aurora).**
+
+- El reporte de citas real de la clínica trae las fechas con formato de fecha
+  de Excel y la carga no las reconocía (la vista previa decía 0 citas). Ahora
+  las lee bien: con octubre da las 1.678 citas. No se había guardado nada.
+
 ## v1.131.0 — Noviembre 2026
 
 **Fase 259: Clínica Aurora, pestaña "Agendas por usuaria" (pedido de Edwin, reunión 05/11).**
