@@ -204,7 +204,7 @@ function syncCargarDatosLock(rol){
 
 function buildAsesorCampanaSelect(existingCampana){
   var sel=document.getElementById('mu-asesor-campana');
-  var campanas=CAMPANAS_CON_PLANTILLA.slice();
+  var campanas=calidadCampanasRegistro(); // Fase 262: tambien Aurora y Hospital La Maria
   sel.innerHTML=campanas.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
   sel.value = existingCampana && campanas.indexOf(existingCampana)!==-1 ? existingCampana : campanas[0];
 }

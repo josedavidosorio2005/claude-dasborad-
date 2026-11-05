@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.131.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.132.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -487,5 +487,6 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 262 — Calidad de Aurora y HLM: pestaña Calidad que se destapa con monitoreos, «Resultado de los monitoreos» y asesores de esas campañas (v1.132.0, 2026-11-05)
 - Fase 260 — Agendas por usuaria: fechas del .xls real como fecha de Excel (Date) en la carga (v1.131.1, 2026-11-05)
 - Fase 259 — Clínica Aurora: «Agendas por usuaria» desde el reporte de citas de la clínica (agregado en el navegador, sin datos de pacientes) y Admin › «Usuarios del sistema → asesora» (v1.131.0, 2026-11-05)

@@ -147,8 +147,9 @@ const GENERADORES = {
       { tipo: 'calidad_kpis', campana },
       { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
       { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
-      // Fase 256: resultado de los monitoreos (HTML de Edwin), donde ya hay calidad_resumen (Mobilize).
-      ...(activos && activos.has('calidad_resumen') ? [{ tipo: 'calidad_monitoreos_panel', campana }] : []),
+      // Fase 256: resultado de los monitoreos (HTML de Edwin). Fase 262: en todo
+      // cliente; ORLANT no lo lleva (ajuste sinPaneles de su perfil).
+      { tipo: 'calidad_monitoreos_panel', campana },
     ],
   }),
 };
@@ -244,6 +245,7 @@ const PERFILES_ACTUALES = {
     visibles: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'],
     ajustes: {
       flujo_llamadas: { panel: { etiquetaTotal: 'Llamadas ingresadas' } }, // Fase 206
+      calidad: { sinPaneles: ['calidad_monitoreos_panel'] }, // Fase 262: ORLANT sigue con su pestaña Calidad de siempre
     },
     especificos: {
       de: 'ORLANT',

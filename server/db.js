@@ -4738,6 +4738,26 @@ function crearAgendasUsuariaAurora() {
 }
 runOnceMigration('fase259_aurora_agendas_usuaria_v1', crearAgendasUsuariaAurora);
 
+// Fase 262 (Calidad de Aurora y HLM, entrega 09/11): el panel "Resultado de los
+// monitoreos" al final de la pestaña Calidad de CLINICA AURORA y HOSPITAL LA
+// MARIA (como Mobilize, Fase 256). La pestaña sigue oculta: se destapa sola al
+// tener monitoreos. Sin monitoreos el panel no se dibuja. Idempotente; ORLANT,
+// MOBILIZE y SURA no se tocan.
+function agregarMonitoreosPanelAuroraHlm() {
+  for (const cliente of ['CLINICA AURORA', 'HOSPITAL LA MARIA']) {
+    const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(cliente);
+    if (!row) continue;
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { continue; }
+    const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+    if (!tab || (tab.panels || []).some((p) => p && p.tipo === 'calidad_monitoreos_panel')) continue;
+    tab.panels = (tab.panels || []).concat([{ tipo: 'calidad_monitoreos_panel', campana: cliente }]);
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), cliente);
+  }
+  if (!config.isTest) console.log('[db] Migracion fase262_calidad_monitoreos_aurora_hlm_v1 aplicada.');
+}
+runOnceMigration('fase262_calidad_monitoreos_aurora_hlm_v1', agregarMonitoreosPanelAuroraHlm);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4774,6 +4794,7 @@ module.exports.migrarCalidadCamposPorPlantilla = migrarCalidadCamposPorPlantilla
 module.exports.migrarCalidadPlantillasFamilia = migrarCalidadPlantillasFamilia;
 module.exports.migrarMobilizeCalidadMonitoreosPanel = migrarMobilizeCalidadMonitoreosPanel;
 module.exports.crearAgendasUsuariaAurora = crearAgendasUsuariaAurora;
+module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

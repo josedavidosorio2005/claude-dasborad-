@@ -76,7 +76,9 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     // Fase 256: panel de monitoreos en la pestaña Calidad de Mobilize (no toca Aurora/HLM).
     'fase256_mobilize_calidad_monitoreos_panel_v1',
     // Fase 259: Agendas por usuaria en Aurora (tabla nueva + modulo; HLM no se toca).
-    'fase259_aurora_agendas_usuaria_v1'];
+    'fase259_aurora_agendas_usuaria_v1',
+    // Fase 262: panel de monitoreos en Calidad de Aurora y HLM (la pestaña no cambia de lugar).
+    'fase262_calidad_monitoreos_aurora_hlm_v1'];
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -100,7 +102,9 @@ test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin da
     const o = orl.find((x) => x.key === t.key);
     // Fase 206: "Llamadas ingresadas" (etiquetaTotal) es solo de ORLANT, no de la plantilla.
     const panelesOrlant = o.panels.map((p) => { const c = Object.assign({}, p); delete c.etiquetaTotal; return c; });
-    assert.deepEqual(JSON.parse(JSON.stringify(t.panels).split(AURORA).join('ORLANT')), panelesOrlant, t.key);
+    // Fase 262: "Resultado de los monitoreos" va en la plantilla de todo cliente; ORLANT no lo lleva.
+    const sinPanel262 = t.panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel');
+    assert.deepEqual(JSON.parse(JSON.stringify(sinPanel262).split(AURORA).join('ORLANT')), panelesOrlant, t.key);
   }
   for (const tabla of ['dashboard_cargas', 'calidad_nivel_servicio_diario', 'trafico_whatsapp', 'monitoreos']) {
     const col = tabla === 'dashboard_cargas' ? 'cliente' : 'campana';

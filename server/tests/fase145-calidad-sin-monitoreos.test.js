@@ -32,5 +32,6 @@ test('_gdRenderCalidad: con 0 monitoreos (y la carga terminada) muestra el aviso
 });
 
 test('el aviso de 0 monitoreos solo sale si loadCalData termino bien (nunca por un error de red)', () => {
-  assert.match(GD, /_gdCalCargada\[camp\] = false;\s*\n\s*tareasBootstrap\.push\(\(async function\(\)\{ try\{ await loadCalData\(camp\); _gdCalCargada\[camp\] = true; \}catch\(e\)\{\} \}\)\(\)\);/);
+  // Fase 262: dentro del mismo try se destapa la pestaña Calidad si hay monitoreos.
+  assert.match(GD, /_gdCalCargada\[camp\] = false;\s*\n\s*tareasBootstrap\.push\(\(async function\(\)\{ try\{\s*await loadCalData\(camp\); _gdCalCargada\[camp\] = true;[\s\S]{0,900}?\}catch\(e\)\{\} \}\)\(\)\);/);
 });

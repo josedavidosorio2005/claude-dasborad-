@@ -943,7 +943,15 @@ async function _gdBootstrap(conservar){
     // asi "Todavia no hay monitoreos" (_gdRenderCalidad) nunca sale por un
     // error de red, solo cuando la campaña de verdad tiene 0 monitoreos.
     _gdCalCargada[camp] = false;
-    tareasBootstrap.push((async function(){ try{ await loadCalData(camp); _gdCalCargada[camp] = true; }catch(e){} })());
+    tareasBootstrap.push((async function(){ try{
+      await loadCalData(camp); _gdCalCargada[camp] = true;
+      // Fase 262 (Aurora y HLM): la pestaña Calidad oculta se destapa en memoria
+      // al tener monitoreos, como Agendamiento/Inasistencia/Tipificacion.
+      if(camp === _gd.cliente && CAL_DB[camp] && (CAL_DB[camp].monitoreos || []).length){
+        var tabCalidad = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'calidad'; });
+        if(tabCalidad) tabCalidad.oculta = false;
+      }
+    }catch(e){} })());
   });
   Object.keys(campanasTraficoLlamadas).forEach(function(campT){
     tareasBootstrap.push((async function(){ try{ if(typeof _traficoCargarDatos === 'function') await _traficoCargarDatos(campT); }catch(e){} })());
