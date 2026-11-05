@@ -735,15 +735,15 @@ const calidadResumenCargaBody = z.object({
 // nombre del paciente, telefono...) se rechaza, nunca se guarda.
 const agendasUsuariaQuery = z.object({ campana: campanaSchema });
 const auTexto = (max) => z.string().trim().max(max);
+// Fase 265: conteos por fecha de cita, fecha de solicitud, sede, usuario y especialidad.
+const auDia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha invalida');
 const agendasUsuariaFila = z.strictObject({
   mes: mesSchema,
-  dia: z.union([z.literal(''), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Dia invalido')]),
+  fechaCita: auDia,
+  fechaSolicitud: z.union([z.literal(''), auDia]),
   sede: auTexto(120).min(1),
   usuario: auTexto(60).min(1),
-  canal: z.enum(['Llamada', 'WhatsApp', 'No contesta', 'Otro']),
-  tipoCita: z.enum(['Cirugía', 'Consulta', 'Otro']),
-  tipoPaciente: z.enum(['Nuevo', 'Antiguo', 'Otro', 'Sin dato']),
-  rol: z.enum(['confirma', 'crea']),
+  especialidad: auTexto(120).min(1),
   n: z.number().int().min(1).max(100000),
 });
 const agendasUsuariaCargaBody = z.object({

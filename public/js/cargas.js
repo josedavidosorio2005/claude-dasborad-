@@ -996,10 +996,9 @@ function _cargasEstadoLabel(r){
   // encabezados calzaron exacto con el formato (archivo ORIGINAL de
   // Edwin, hoja "DATA"), se dice explicitamente cual hoja se uso.
   // Fase 172: Calidad resumen -- asesores, monitoreos y promedio ponderado.
-  // Fase 259: Agendas por usuaria -- citas, por usuario y por canal (los valores de control).
-  if(r.tipo==='agendas_usuaria' && r.filas && r.filas.length && r.porUsuario){
-    extra = ' — '+r.citas+' cita(s) confirmadas; por usuario: '+Object.keys(r.porUsuario).sort().map(function(u){ return u+' '+r.porUsuario[u]; }).join(', ')+
-      '; por canal: '+AU_CANALES.map(function(c){ return c+' '+(r.porCanal[c]||0); }).join(', ')+(r.tieneRegcita ? '; creadas por InConexion: '+r.creadasInconexion : '');
+  if(r.tipo==='agendas_usuaria' && r.filas && r.filas.length && r.porUsuario){ // Fase 265: citas, usuarios, especialidades y fechas de solicitud
+    extra = ' — '+r.citas+' cita(s); por usuario: '+Object.keys(r.porUsuario).sort().map(function(u){ return u+' '+r.porUsuario[u]; }).join(', ')+
+      '; '+Object.keys(r.porEspecialidad||{}).length+' especialidad(es); fecha de solicitud del '+(r.solicitudDesde||'—')+' al '+(r.solicitudHasta||'—');
   }
   if(r.tipo==='calidad_resumen' && r.filas && r.filas.length){
     extra = ' — '+r.filas.length+' asesor(es), '+r.monitoreos+' monitoreo(s), promedio '+String(r.promedio).replace('.', ',')+' %';

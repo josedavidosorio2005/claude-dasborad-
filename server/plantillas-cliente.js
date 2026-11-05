@@ -63,6 +63,9 @@ const SECCION_VACIA = {
   columnas: [{ key: 'nota', label: 'Nota', tipo: 'texto' }],
 };
 
+// Fase 265: vistas de "Agendas por usuaria" (Clinica Aurora), en el orden de Edwin.
+const AGENDAS_USUARIA_VISTAS = [['mes', 'Agendas por mes'], ['especialidad', 'Agendas por especialidad'], ['asesor', 'Agendas por asesor']];
+
 function _subtabs(lista) {
   return lista.map(([key, label], i) => ({ key, label, indices: [i] }));
 }
@@ -118,9 +121,10 @@ const GENERADORES = {
     key: 'efectividad', label: 'Efectividad de Citas',
     panels: [{ tipo: 'efectividad_citas_panel', titulo: 'Efectividad de Citas', campana }],
   }),
-  agendas_usuaria: (campana) => ({ // Fase 259
+  agendas_usuaria: (campana) => ({ // Fase 259; Fase 265: 3 vistas (pedido de Edwin)
     key: 'agendas_usuaria', label: 'Agendas por usuaria',
-    panels: [{ tipo: 'agendas_usuaria_panel', campana, titulo: 'Agendas por usuaria' }],
+    panels: AGENDAS_USUARIA_VISTAS.map(([vista, titulo]) => ({ tipo: 'agendas_usuaria_panel', campana, vista, titulo })),
+    subtabs: _subtabs(AGENDAS_USUARIA_VISTAS),
   }),
   llamadas_unicas: (campana) => ({
     key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida',
@@ -303,4 +307,5 @@ module.exports = {
   PERFILES_ACTUALES,
   generarLayout,
   TABS_EXTRA,
+  AGENDAS_USUARIA_VISTAS,
 };

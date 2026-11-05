@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.133.0 — Noviembre 2026
+
+**Fase 265: Clínica Aurora › "Agendas por usuaria" con las 3 vistas de Edwin.**
+
+- La pestaña queda con 3 vistas, en este orden: **Agendas por mes** (línea de
+  tiempo por mes), **Agendas por especialidad** (de la columna "especial" del
+  reporte) y **Agendas por asesor** (con el nombre real de cada asesora y una
+  línea por mes). Cada una con su tabla y su botón Excel.
+- Filtros: Sede, Asesor, **Fecha de solicitud de la cita** (columna
+  fecha_registro del reporte) y **Fecha de cita** (columna fechacita), con
+  "desde" y "hasta". Sirven para las 3 vistas. Se quitaron Canal, Tipo de cita
+  y Tipo de paciente, y las gráficas de canal y por día.
+- Para filtrar por fechas, la carga ahora guarda las cantidades por fecha de
+  cita, fecha de solicitud, sede, asesora y especialidad (nunca datos de
+  pacientes). Octubre hay que volver a subirlo una vez.
+
 ## v1.132.1 — Noviembre 2026
 
 **Fase 263: gráfica de Abandono más legible (llamadas y WhatsApp, todos los clientes).**

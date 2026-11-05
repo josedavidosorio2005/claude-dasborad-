@@ -1,34 +1,29 @@
-// agendas-usuaria-logic.js — Fase 259 (pedido de Edwin, reunion 05/11, Clinica
-// Aurora): "Agendas por usuaria" desde el reporte mensual de citas que
-// exporta el sistema de la clinica (una fila por cita). Logica pura, sin DOM.
+// agendas-usuaria-logic.js — Fase 259, cambiada en la Fase 265 (pedido de
+// Edwin, 05/11, Clinica Aurora): "Agendas por usuaria" desde el reporte de
+// citas que exporta el sistema de la clinica (una fila por cita). Logica pura,
+// sin DOM.
 //
 // PRIVACIDAD: el archivo trae datos de pacientes (documento, nombre,
 // telefono, direccion, diagnostico, observaciones). TODO se lee y se AGREGA
 // en el navegador: al servidor solo llegan conteos por
-// (mes de la cita, dia en que se confirmo, sede, usuario, canal, tipo de
-// cita, tipo de paciente, rol). Las columnas se buscan por NOMBRE y solo se
-// leen las de la lista de abajo; ninguna otra columna sale de esta funcion.
+// (fecha de la cita, fecha de solicitud, sede, usuario, especialidad). Las
+// columnas se buscan por NOMBRE y solo se leen las de la lista de abajo.
 //
-// "usuario" es el codigo del sistema de la clinica tal cual ("INCONEXION",
-// "INCONEXION A"...). El nombre real de la asesora se resuelve AL MOSTRAR con
-// los alias de la campaña (alias_asesores), nunca al guardar.
+// Columnas del reporte (Fase 265, confirmado con OCTUBRE.xls): O = fechacita
+// ("Fecha de cita"), M = fecha_registro ("Fecha de solicitud de la cita"),
+// AE = especial (especialidad), BB = usuario_confirma (usuario de la asesora).
+// "usuario" es el codigo del sistema ("INCONEXION", "INCONEXION A"...); el
+// nombre real se resuelve AL MOSTRAR con alias_asesores, nunca al guardar.
 
 var AU_COLUMNAS = [
   { key: 'fechacita', obligatoria: true },
+  { key: 'fecha_registro', obligatoria: true },
   { key: 'usuario_confirma', obligatoria: true },
-  { key: 'motivo_conf', obligatoria: true },
-  { key: 'fecha_confirma', obligatoria: true },
   { key: 'nombresede', obligatoria: true },
-  { key: 'usuario_regcita', obligatoria: false },
-  { key: 'consulta', obligatoria: false },
-  { key: 'cirugia', obligatoria: false },
-  { key: 'tipo_paciente', obligatoria: false },
+  { key: 'especial', obligatoria: true },
 ];
-var AU_CANALES = ['Llamada', 'WhatsApp', 'No contesta', 'Otro'];
-var AU_TIPOS_CITA = ['Cirugía', 'Consulta', 'Otro'];
-var AU_ROLES = ['confirma', 'crea'];
 var AU_CLINICA = 'Clínica (no InConexion)';
-var AU_CAMPOS_FILA = ['mes', 'dia', 'sede', 'usuario', 'canal', 'tipoCita', 'tipoPaciente', 'rol', 'n'];
+var AU_CAMPOS_FILA = ['mes', 'fechaCita', 'fechaSolicitud', 'sede', 'usuario', 'especialidad', 'n'];
 
 function auNorm(s) {
   return String(s === null || s === undefined ? '' : s)
@@ -49,16 +44,10 @@ function auFaltantes(map) {
   return AU_COLUMNAS.filter(function (c) { return c.obligatoria && map[c.key] === undefined; }).map(function (c) { return c.key; });
 }
 
-// Serial de Excel (o texto dd/mm/aaaa, aaaa-mm-dd) -> 'AAAA-MM-DD'.
-// Aritmetica directa sobre UTC (como agendasFechaHoraDesdeSerial): nunca
-// Date con la zona horaria del equipo.
+// Serial de Excel, Date (lectura con cellNF: medianoche local) o texto
+// dd/mm/aaaa, aaaa-mm-dd -> 'AAAA-MM-DD'. El serial con aritmetica UTC.
 function auFecha(v) {
   if (v === null || v === undefined || v === '') return null;
-  // Fase 260 (hallazgo con el archivo real): con las opciones de Cargar Datos
-  // (cellNF), SheetJS entrega las celdas con formato de fecha de un .xls como
-  // Date en hora LOCAL (medianoche local del dia del serial). Se toman sus
-  // componentes locales (mismo criterio que agendasFechaCambio); verificado
-  // contra el serial en las 1.678 filas reales.
   if (v instanceof Date || (v && typeof v.getFullYear === 'function')) {
     if (isNaN(v.getTime())) return null;
     var q = function (x) { return (x < 10 ? '0' : '') + x; };
@@ -85,26 +74,6 @@ function auFecha(v) {
   return null;
 }
 
-// Canal de confirmacion desde motivo_conf (texto libre, con erratas).
-function auCanal(motivo) {
-  var s = auNorm(motivo);
-  if (/NO ?CONT|NO ?CONET/.test(s)) return 'No contesta';
-  if (/WPP|WWP|WAPP|WSP|WHATS/.test(s)) return 'WhatsApp';
-  if (/LLAM|LALM|LLMA|LAMA|LLAA|CEL|TEL/.test(s)) return 'Llamada';
-  return 'Otro';
-}
-
-function auVerdadero(v) {
-  if (v === true || v === 1) return true;
-  var s = auNorm(v);
-  return s === '1' || s === 'TRUE' || s === 'VERDADERO' || s === 'SI' || s === 'X';
-}
-function auTipoCita(consulta, cirugia) {
-  if (auVerdadero(cirugia)) return 'Cirugía';
-  if (auVerdadero(consulta)) return 'Consulta';
-  return 'Otro';
-}
-
 // Codigo del usuario: "INCONEXION", "INCONEXION A"... tal cual (normalizado);
 // cualquier otro usuario (personal de la clinica) se agrupa, sin su nombre.
 function auUsuario(v) {
@@ -112,17 +81,11 @@ function auUsuario(v) {
   if (!s) return '';
   return /^INCONEXION\b/.test(s) ? s : AU_CLINICA;
 }
-function auTipoPaciente(v) {
-  var s = auNorm(v);
-  if (s === 'NUEVO') return 'Nuevo';
-  if (s === 'ANTIGUO') return 'Antiguo';
-  return s ? 'Otro' : 'Sin dato';
-}
-function auSede(v) { return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim().slice(0, 120) || 'Sin sede'; }
+function auTexto(v, vacio) { return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim().slice(0, 120) || vacio; }
 
-// Lee la hoja (aoa con encabezado en alguna de las primeras 20 filas) y la
-// devuelve AGREGADA. { filas:[{mes,dia,sede,usuario,canal,tipoCita,tipoPaciente,rol,n}],
-// citas, porUsuario, porSede, porCanal, creadasInconexion, meses, avisos, error }.
+// Lee la hoja (encabezado en alguna de las primeras 20 filas) y la devuelve
+// AGREGADA. { filas:[{mes,fechaCita,fechaSolicitud,sede,usuario,especialidad,n}],
+// citas, porUsuario, porSede, porEspecialidad, meses, solicitudDesde, solicitudHasta, avisos, error }.
 function auParseFilas(aoa) {
   var filasAoa = aoa || [];
   var iHead = -1, map = null;
@@ -134,14 +97,8 @@ function auParseFilas(aoa) {
     var faltan = auFaltantes(auColIndexMap(filasAoa[0] || []));
     return { error: 'El archivo no es el reporte de citas: faltan las columnas ' + faltan.join(', ') + '.', filas: [] };
   }
-  var tieneRegcita = map.usuario_regcita !== undefined;
   var agg = {};
-  var res = { citas: 0, porUsuario: {}, porSede: {}, porCanal: {}, creadasInconexion: 0, meses: {}, avisos: [], sinFechaCita: 0, sinUsuario: 0 };
-  function sumar(f) {
-    var k = [f.mes, f.dia, f.sede, f.usuario, f.canal, f.tipoCita, f.tipoPaciente, f.rol].join('\u0001');
-    if (!agg[k]) agg[k] = Object.assign({}, f, { n: 0 });
-    agg[k].n++;
-  }
+  var res = { citas: 0, porUsuario: {}, porSede: {}, porEspecialidad: {}, meses: {}, avisos: [], sinFechaCita: 0, sinUsuario: 0, sinSolicitud: 0, solicitudDesde: null, solicitudHasta: null };
   for (var i = iHead + 1; i < filasAoa.length; i++) {
     var row = filasAoa[i];
     if (!row || !row.some(function (c) { return c !== null && c !== undefined && String(c).trim() !== ''; })) continue;
@@ -149,86 +106,79 @@ function auParseFilas(aoa) {
     if (!fc) { res.sinFechaCita++; continue; }
     var usuario = auUsuario(row[map.usuario_confirma]);
     if (!usuario) { res.sinUsuario++; continue; }
-    var base = {
-      mes: fc.slice(0, 7),
-      dia: auFecha(row[map.fecha_confirma]) || '',
-      sede: auSede(row[map.nombresede]),
-      canal: auCanal(row[map.motivo_conf]),
-      tipoCita: auTipoCita(map.consulta !== undefined ? row[map.consulta] : null, map.cirugia !== undefined ? row[map.cirugia] : null),
-      tipoPaciente: map.tipo_paciente !== undefined ? auTipoPaciente(row[map.tipo_paciente]) : 'Sin dato',
-    };
+    var fs = auFecha(row[map.fecha_registro]) || '';
+    if (!fs) res.sinSolicitud++;
+    var f = { mes: fc.slice(0, 7), fechaCita: fc, fechaSolicitud: fs, sede: auTexto(row[map.nombresede], 'Sin sede'), usuario: usuario, especialidad: auTexto(row[map.especial], 'Sin especialidad') };
+    var k = [f.mes, f.fechaCita, f.fechaSolicitud, f.sede, f.usuario, f.especialidad].join('\u0001');
+    if (!agg[k]) agg[k] = Object.assign({}, f, { n: 0 });
+    agg[k].n++;
     res.citas++;
-    res.meses[base.mes] = (res.meses[base.mes] || 0) + 1;
+    res.meses[f.mes] = (res.meses[f.mes] || 0) + 1;
     res.porUsuario[usuario] = (res.porUsuario[usuario] || 0) + 1;
-    res.porSede[base.sede] = (res.porSede[base.sede] || 0) + 1;
-    res.porCanal[base.canal] = (res.porCanal[base.canal] || 0) + 1;
-    sumar(Object.assign({}, base, { usuario: usuario, rol: 'confirma' }));
-    if (tieneRegcita) {
-      var creador = auUsuario(row[map.usuario_regcita]);
-      if (creador && creador !== AU_CLINICA) {
-        res.creadasInconexion++;
-        sumar(Object.assign({}, base, { usuario: creador, rol: 'crea' }));
-      }
+    res.porSede[f.sede] = (res.porSede[f.sede] || 0) + 1;
+    res.porEspecialidad[f.especialidad] = (res.porEspecialidad[f.especialidad] || 0) + 1;
+    if (fs) {
+      if (!res.solicitudDesde || fs < res.solicitudDesde) res.solicitudDesde = fs;
+      if (!res.solicitudHasta || fs > res.solicitudHasta) res.solicitudHasta = fs;
     }
   }
   if (res.sinFechaCita) res.avisos.push(res.sinFechaCita + ' fila(s) sin fecha de cita válida: no se cuentan.');
   if (res.sinUsuario) res.avisos.push(res.sinUsuario + ' fila(s) sin usuario que confirma: no se cuentan.');
-  if (!tieneRegcita) res.avisos.push('El archivo no trae usuario_regcita: no se cuentan las citas creadas.');
+  if (res.sinSolicitud) res.avisos.push(res.sinSolicitud + ' cita(s) sin fecha de solicitud: se cuentan, pero no entran al filtrar por esa fecha.');
   // Solo los campos permitidos, en un orden fijo (nada mas sale del navegador).
-  res.filas = Object.keys(agg).map(function (k) {
-    var o = {}; AU_CAMPOS_FILA.forEach(function (c) { o[c] = agg[k][c]; }); return o;
+  res.filas = Object.keys(agg).map(function (key) {
+    var o = {}; AU_CAMPOS_FILA.forEach(function (c) { o[c] = agg[key][c]; }); return o;
   });
-  res.tieneRegcita = tieneRegcita;
   return res;
 }
 
-// ── Vista (pestaña "Agendas por usuaria") ──────────────────────────────
-// filas: [{mes,dia,sede,usuario,asesora,canal,tipoCita,tipoPaciente,rol,n}]
+// ── Vista (pestaña "Agendas por usuaria": por mes, por especialidad, por asesor) ──
+// filas: [{mes,fechaCita,fechaSolicitud,sede,usuario,asesora,especialidad,n}]
 // (asesora = nombre ya resuelto por el servidor, o el codigo si no hay alias).
+// f: { meses, sedes, asesoras, citaDesde, citaHasta, solicitudDesde, solicitudHasta }
 function auFiltrar(filas, f) {
   var o = f || {};
   var en = function (lista, v) { return !lista || !lista.length || lista.indexOf(v) !== -1; };
+  var rango = function (v, desde, hasta) { if (!desde && !hasta) return true; if (!v) return false; return (!desde || v >= desde) && (!hasta || v <= hasta); };
   return (filas || []).filter(function (r) {
-    return en(o.meses, r.mes) && en(o.asesoras, r.asesora) && en(o.sedes, r.sede) && en(o.canales, r.canal) &&
-      en(o.tiposCita, r.tipoCita) && en(o.tiposPaciente, r.tipoPaciente);
+    return en(o.meses, r.mes) && en(o.sedes, r.sede) && en(o.asesoras, r.asesora) &&
+      rango(r.fechaCita, o.citaDesde, o.citaHasta) && rango(r.fechaSolicitud, o.solicitudDesde, o.solicitudHasta);
   });
 }
 function auPct(n, total) { return total ? Math.round((n / total) * 1000) / 10 : 0; }
+function auTotal(filas) { return (filas || []).reduce(function (s, r) { return s + r.n; }, 0); }
 
-// Tarjetas: total confirmadas y por canal (con % sobre el total).
-function auTarjetas(filas) {
-  var conf = (filas || []).filter(function (r) { return r.rol === 'confirma'; });
-  var total = conf.reduce(function (s, r) { return s + r.n; }, 0);
-  var c = {};
-  AU_CANALES.forEach(function (k) { c[k] = 0; });
-  conf.forEach(function (r) { c[r.canal] = (c[r.canal] || 0) + r.n; });
-  var creadas = (filas || []).filter(function (r) { return r.rol === 'crea'; }).reduce(function (s, r) { return s + r.n; }, 0);
-  return { total: total, llamada: c.Llamada, whatsapp: c.WhatsApp, noContesta: c['No contesta'], otro: c.Otro,
-    pctLlamada: auPct(c.Llamada, total), pctWhatsapp: auPct(c.WhatsApp, total), pctNoContesta: auPct(c['No contesta'], total), creadas: creadas };
+// a) Agendas por mes (mes de la cita), ordenado.
+function auPorMes(filas) {
+  var by = {};
+  (filas || []).forEach(function (r) { by[r.mes] = (by[r.mes] || 0) + r.n; });
+  return Object.keys(by).sort().map(function (m) { return { mes: m, n: by[m] }; });
 }
 
-// Tabla por asesora, de mayor a menor total, con fila de total.
-function auPorAsesora(filas) {
+// b) Agendas por especialidad, de mayor a menor, con %.
+function auPorEspecialidad(filas) {
+  var by = {};
+  (filas || []).forEach(function (r) { by[r.especialidad] = (by[r.especialidad] || 0) + r.n; });
+  var total = auTotal(filas);
+  return Object.keys(by).map(function (k) { return { especialidad: k, n: by[k], pct: auPct(by[k], total) }; })
+    .sort(function (a, b) { return b.n - a.n || a.especialidad.localeCompare(b.especialidad); });
+}
+
+// c) Agendas por asesor: total y por mes (linea de tiempo), de mayor a menor.
+function auPorAsesor(filas) {
+  var meses = auPorMes(filas).map(function (x) { return x.mes; });
   var by = {};
   (filas || []).forEach(function (r) {
-    if (!by[r.asesora]) by[r.asesora] = { asesora: r.asesora, total: 0, Llamada: 0, WhatsApp: 0, 'No contesta': 0, Otro: 0, creadas: 0 };
-    if (r.rol === 'crea') by[r.asesora].creadas += r.n;
-    else { by[r.asesora].total += r.n; by[r.asesora][r.canal] += r.n; }
+    if (!by[r.asesora]) by[r.asesora] = { asesora: r.asesora, total: 0, porMes: {} };
+    by[r.asesora].total += r.n;
+    by[r.asesora].porMes[r.mes] = (by[r.asesora].porMes[r.mes] || 0) + r.n;
   });
-  var lista = Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.total || x.creadas; });
-  var total = lista.reduce(function (s, x) { return s + x.total; }, 0);
-  lista.forEach(function (x) { x.pct = auPct(x.total, total); });
-  lista.sort(function (a, b) { return b.total - a.total || String(a.asesora).localeCompare(String(b.asesora)); });
-  var suma = { asesora: 'Total', total: total, Llamada: 0, WhatsApp: 0, 'No contesta': 0, Otro: 0, creadas: 0, pct: total ? 100 : 0 };
-  lista.forEach(function (x) { AU_CANALES.forEach(function (k) { suma[k] += x[k]; }); suma.creadas += x.creadas; });
-  return { filas: lista, total: suma };
-}
-
-// Confirmadas por dia (fecha_confirma), ordenado.
-function auPorDia(filas) {
-  var by = {};
-  (filas || []).forEach(function (r) { if (r.rol === 'confirma' && r.dia) by[r.dia] = (by[r.dia] || 0) + r.n; });
-  return Object.keys(by).sort().map(function (d) { return { dia: d, n: by[d] }; });
+  var total = auTotal(filas);
+  var lista = Object.keys(by).map(function (k) {
+    var a = by[k];
+    return { asesora: a.asesora, total: a.total, pct: auPct(a.total, total), serie: meses.map(function (m) { return a.porMes[m] || 0; }) };
+  }).sort(function (a, b) { return b.total - a.total || String(a.asesora).localeCompare(String(b.asesora)); });
+  return { meses: meses, filas: lista, total: total };
 }
 
 // Valores distintos de un campo (para los filtros).
@@ -239,7 +189,7 @@ function auOpciones(filas, campo) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AU_COLUMNAS: AU_COLUMNAS, AU_CANALES: AU_CANALES, AU_TIPOS_CITA: AU_TIPOS_CITA, AU_ROLES: AU_ROLES, AU_CLINICA: AU_CLINICA, AU_CAMPOS_FILA: AU_CAMPOS_FILA,
-    auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auCanal: auCanal, auTipoCita: auTipoCita, auUsuario: auUsuario,
-    auTipoPaciente: auTipoPaciente, auParseFilas: auParseFilas, auFiltrar: auFiltrar, auTarjetas: auTarjetas, auPorAsesora: auPorAsesora, auPorDia: auPorDia, auOpciones: auOpciones, auPct: auPct };
+  module.exports = { AU_COLUMNAS: AU_COLUMNAS, AU_CLINICA: AU_CLINICA, AU_CAMPOS_FILA: AU_CAMPOS_FILA,
+    auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auUsuario: auUsuario,
+    auParseFilas: auParseFilas, auFiltrar: auFiltrar, auPct: auPct, auTotal: auTotal, auPorMes: auPorMes, auPorEspecialidad: auPorEspecialidad, auPorAsesor: auPorAsesor, auOpciones: auOpciones };
 }

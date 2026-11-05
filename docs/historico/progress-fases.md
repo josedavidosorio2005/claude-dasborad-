@@ -19304,3 +19304,29 @@ antes de confirmar.
   Llamadas Únicas: era tiempo de carga (en una corrida limpia Mobilize salió
   igual, y una sonda con espera de hasta 20 s dio 2/2 gráficas en
   Tipificación). En Abandono, 0 choques medidos en los 5 clientes.
+
+## Fase 265 — Aurora › Agendas por usuaria con 3 vistas y filtros por fecha (v1.133.0, 2026-11-05)
+
+- **Pedido de Edwin** (revisó la pestaña con octubre): 3 vistas (por mes, por
+  especialidad, por asesor, las de mes y asesor como línea de tiempo por mes);
+  filtros Sede, Asesor, Fecha de solicitud de la cita (columna M) y Fecha de
+  cita (columna O); quitar Canal, Tipo de paciente y Tipo de cita.
+- **Columnas en OCTUBRE.xls** (solo encabezados y conteos): M = `fecha_registro`
+  (solicitudes del 15/12/2025 al 30/10/2026), O = `fechacita` (la de siempre),
+  AE = `especial` (10 especialidades), BB = `usuario_confirma` (la misma que ya
+  se usaba: los conteos por asesora no cambian, 585/435/420/191/47). El lector
+  las busca por nombre, no por posición.
+- **Servidor**: `agendas_usuaria` con columnas nuevas `fechaCita`,
+  `fechaSolicitud`, `especialidad` (migración `fase265_agendas_usuaria_vistas_v1`,
+  solo ADD COLUMN; las filas de la Fase 259 quedan y se reemplazan al recargar
+  el mes). El cuerpo de la carga es `mes, fechaCita, fechaSolicitud, sede,
+  usuario, especialidad, n` (strictObject; la forma vieja ya no se acepta).
+  La misma migración pasa la pestaña de Aurora a 3 paneles con sub-pestañas
+  (solo si tenía la forma de la Fase 259). Con el archivo real: 1.303 filas
+  agregadas.
+- **Pruebas**: `fase259-aurora-agendas-usuaria.test.js` reescrita para la forma
+  nueva (9 pruebas, archivo y nombres ficticios: lector, privacidad, migración,
+  strict, carga/reemplazo/alias, vistas y filtros, fechas Date). Suite en verde.
+- **Local** (Brave, 1440/768/375): carga sintética por Cargar Datos (el cuerpo
+  sin datos de pacientes), las 3 sub-pestañas con sus filtros, filtro de fecha
+  compartido entre vistas y "Quitar filtros"; 0 errores, sin scroll horizontal.
