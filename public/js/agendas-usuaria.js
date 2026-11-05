@@ -98,7 +98,16 @@ async function _auRender(p, i) {
     var serie = auPorMes(arr);
     var oL = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
     if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oL, function (v) { return v === null || v === undefined ? '' : Number(v).toLocaleString('es-CO'); });
-    _gdChart('gd-c' + i + '-au-mes', { type: 'line', data: { labels: serie.map(function (x) { return _auMesCorto(x.mes); }), datasets: [{ label: 'Agendas', data: serie.map(function (x) { return x.n; }), borderColor: SERIE_PRINCIPAL, backgroundColor: SERIE_PRINCIPAL, borderWidth: 2.5, pointRadius: 5, tension: 0.3, fill: false }] }, options: oL });
+    // Fase 268: con un solo mes, una linea es un punto suelto -- se muestra
+    // como barra; con 2 o mas meses, linea de tiempo. El eje arranca en 0.
+    if (serie.length < 2) {
+      var oB1 = (typeof loBar === 'function') ? loBar(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
+      _auEjeDesdeCero(oB1);
+      _gdChart('gd-c' + i + '-au-mes', { type: 'bar', data: { labels: serie.map(function (x) { return _auMesCorto(x.mes); }), datasets: [{ label: 'Agendas', data: serie.map(function (x) { return x.n; }), backgroundColor: SERIE_PRINCIPAL, maxBarThickness: 120 }] }, options: oB1 });
+    } else {
+      _auEjeDesdeCero(oL);
+      _gdChart('gd-c' + i + '-au-mes', { type: 'line', data: { labels: serie.map(function (x) { return _auMesCorto(x.mes); }), datasets: [{ label: 'Agendas', data: serie.map(function (x) { return x.n; }), borderColor: SERIE_PRINCIPAL, backgroundColor: SERIE_PRINCIPAL, borderWidth: 2.5, pointRadius: 5, tension: 0.3, fill: false }] }, options: oL });
+    }
   } else if (vista === 'especialidad') {
     var esp = auPorEspecialidad(arr);
     var oB = (typeof loBar === 'function') ? loBar(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
@@ -111,13 +120,35 @@ async function _auRender(p, i) {
     _gdChart('gd-c' + i + '-au-esp', { type: 'bar', data: { labels: esp.map(function (x) { return x.especialidad; }), datasets: [{ label: 'Agendas', data: esp.map(function (x) { return x.n; }), backgroundColor: SERIE_PRINCIPAL }] }, options: oB });
   } else {
     var a = auPorAsesor(arr);
+    // Fase 268: con un solo mes, barras horizontales por asesora (total y %),
+    // como "por especialidad"; con 2 o mas, una linea por asesora.
+    if (a.meses.length < 2) {
+      var oH = (typeof loBar === 'function') ? loBar(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
+      oH.indexAxis = 'y';
+      if (oH.plugins && oH.plugins.datalabels) {
+        oH.plugins.datalabels.formatter = function (v, ctx) { return v ? Number(v).toLocaleString('es-CO') + ' (' + String(a.filas[ctx.dataIndex].pct).replace('.', ',') + ' %)' : ''; };
+        oH.plugins.datalabels.anchor = 'end'; oH.plugins.datalabels.align = 'end'; oH.plugins.datalabels.clamp = true;
+      }
+      oH.layout = Object.assign({}, oH.layout, { padding: { right: 70 } });
+      _gdChart('gd-c' + i + '-au-ase', { type: 'bar', data: { labels: a.filas.map(function (x) { return x.asesora; }), datasets: [{ label: 'Agendas', data: a.filas.map(function (x) { return x.total; }), backgroundColor: SERIE_PRINCIPAL }] }, options: oH });
+      return;
+    }
     var oA = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
+    _auEjeDesdeCero(oA);
     if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oA, function (v) { return v === null || v === undefined ? '' : Number(v).toLocaleString('es-CO'); });
     _gdChart('gd-c' + i + '-au-ase', { type: 'line', data: { labels: a.meses.map(_auMesCorto), datasets: a.filas.map(function (x, k) {
       var c = pal.length ? pal[k % pal.length] : SERIE_PRINCIPAL;
       return { label: x.asesora, data: x.serie, borderColor: c, backgroundColor: c, borderWidth: 2.5, pointRadius: 5, tension: 0.3, fill: false };
     }) }, options: oA });
   }
+}
+
+// Fase 268: eje de cantidades desde 0 (sin esto, con valores parecidos el eje
+// arranca cerca del minimo y exagera las diferencias).
+function _auEjeDesdeCero(o) {
+  o.scales = o.scales || {};
+  o.scales.y = Object.assign({}, o.scales.y, { beginAtZero: true });
+  return o;
 }
 
 function _auRepintarTodos() {

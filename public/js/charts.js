@@ -29,6 +29,10 @@ if (typeof Chart !== 'undefined' && typeof Chart.register === 'function') {
   });
 }
 if (typeof Chart !== 'undefined') {
+  // Fase 268 (revision del 05/11): los ejes con el mismo formato de numero que
+  // las tarjetas ("1.000", no "1,000"). Sin esto Chart.js usa el idioma del
+  // navegador (en-US en muchos equipos) para las marcas de los ejes.
+  Chart.defaults.locale = 'es-CO';
   Chart.defaults.font.family = (typeof TEXTO_FUENTE !== 'undefined') ? TEXTO_FUENTE : "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
   // Fase 136 (PR 6, F03): hallazgo real de la auditoria de la Fase 135 --
   // 0 modulos configuraban animation en ningun `new Chart(...)`, asi que

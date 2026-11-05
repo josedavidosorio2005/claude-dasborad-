@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.133.2 — Noviembre 2026
+
+**Fase 268: dos detalles de las gráficas que se vieron en la revisión de Aurora y HLM.**
+
+- Los números de los ejes de las gráficas salen con punto de miles, igual que
+  las tarjetas ("1.000", no "1,000"). Aplica a todas las gráficas de todos los
+  clientes; ningún número cambia, solo cómo se escribe.
+- Aurora › Agendas por usuaria: con un solo mes cargado, "Agendas por mes" se
+  ve como una barra y "Agendas por asesor" como barras por asesora (antes, un
+  punto suelto). Con 2 meses o más vuelven a ser líneas de tiempo, con el eje
+  desde 0.
+
 ## v1.133.1 — Noviembre 2026
 
 **Fase 267: la pestaña Tipificación carga más rápido (ORLANT, Mobilize, Aurora y HLM).**
