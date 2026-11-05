@@ -32,16 +32,23 @@ function cc2Sync() {
   return true;
 }
 
+function _cc2Asesores() {
+  return (typeof users !== 'undefined' ? users : []).filter(function (u) { return u.rol === 'ASESOR' && u.asesorCampana === _ccampana && u.active; })
+    .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+}
+
 function _cc2Campo(c) {
   var id = 'cc2-f-' + c.k;
   var req = (c.k === 'asesor' || c.k === 'fecha' || c.k === 'observaciones') ? ' *' : '';
   var lbl = '<span class="cc2-lt">' + esc(c.etiqueta) + req + '</span>';
   if (c.k === 'asesor') {
-    var ases = (typeof users !== 'undefined' ? users : []).filter(function (u) { return u.rol === 'ASESOR' && u.asesorCampana === _ccampana && u.active; })
-      .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
-    if (!ases.length) return '<label class="cc2-f">' + lbl + '<select id="' + id + '" disabled><option value="">—</option></select><small class="cc2-hint">No hay asesores de esta campaña. Créalos en Usuarios (rol ASESOR).</small></label>';
-    return '<label class="cc2-f">' + lbl + '<select id="' + id + '" required><option value="">Selecciona…</option>' +
-      ases.map(function (u) { return '<option value="' + esc(u.nombre) + '" data-user-id="' + u.id + '">' + esc(textoFormatoNombre(u.nombre)) + '</option>'; }).join('') + '</select></label>';
+    // Fase 255: como el HTML de Edwin, se escribe el nombre (con sugerencias de
+    // los usuarios ASESOR de la campaña). Si coincide con uno, queda enlazado
+    // a su usuario y le llega a "Mis resultados".
+    var ases = _cc2Asesores();
+    return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" list="cc2-dl-asesores" maxlength="120" autocomplete="off" required>' +
+      '<datalist id="cc2-dl-asesores">' + ases.map(function (u) { return '<option value="' + esc(u.nombre) + '"></option>'; }).join('') + '</datalist>' +
+      (ases.length ? '' : '<small class="cc2-hint">Esta campaña no tiene usuarios ASESOR: escribe el nombre. Para que el asesor vea sus resultados, créalo en Usuarios (rol ASESOR) con el mismo nombre.</small>') + '</label>';
   }
   if (c.k === 'fecha') return '<label class="cc2-f">' + lbl + '<input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '"' + (isFullAdmin() ? '' : ' disabled') + '></label>';
   if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
@@ -172,7 +179,7 @@ function cc2CerrarDialogo(id) {
 }
 document.addEventListener('keydown', function (e) {
   if (e.key !== 'Escape') return;
-  ['cc2-ov-criterio', 'cc2-ov-faltan'].forEach(function (id) { var ov = document.getElementById(id); if (ov && !ov.hidden) { e.stopPropagation(); cc2CerrarDialogo(id); } });
+  ['cc2-ov-criterio', 'cc2-ov-faltan', 'ca-ov-detalle'].forEach(function (id) { var ov = document.getElementById(id); if (ov && !ov.hidden) { e.stopPropagation(); cc2CerrarDialogo(id); } });
 }, true);
 function cc2IrAFaltante() {
   document.getElementById('cc2-ov-faltan').hidden = true;
@@ -189,7 +196,7 @@ async function cc2Guardar() {
   var asesorSel = document.getElementById('cc2-f-asesor');
   var asesor = _cc2Val('asesor');
   if (asesorSel) asesorSel.classList.toggle('cc2-invalid', !asesor);
-  if (!asesor) { showToast('Selecciona el asesor'); if (asesorSel) asesorSel.focus(); return; }
+  if (!asesor) { showToast('Escribe el nombre del asesor'); if (asesorSel) asesorSel.focus(); return; }
   document.querySelectorAll('#cf2 .cc2-item.cc2-missing').forEach(function (x) { x.classList.remove('cc2-missing'); });
   var falt = cc2Faltantes(p.items, _cc2.answers);
   var pideObs = p.campos.some(function (c) { return c.k === 'observaciones'; });
@@ -204,8 +211,10 @@ async function cc2Guardar() {
     _cc2AbrirDialogo('cc2-ov-faltan');
     return;
   }
-  var opt = asesorSel && asesorSel.selectedOptions && asesorSel.selectedOptions[0];
-  var uid = opt ? opt.getAttribute('data-user-id') : null;
+  var key = asesor.toLowerCase();
+  var au = _cc2Asesores().find(function (u) { return String(u.nombre).trim().toLowerCase() === key; });
+  var uid = au ? au.id : null;
+  if (au) asesor = au.nombre;
   var answers = {};
   p.items.forEach(function (it) { answers[it.n] = _cc2.answers[it.n] || ''; });
   var extras = {};

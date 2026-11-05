@@ -4,6 +4,28 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.129.0 — Noviembre 2026
+
+**Fase 255: Calidad, resumen por asesor, detalle por mes y diccionario (paso 4 de Calidad de Mobilize).**
+
+- Resumen por Asesor: arriba, monitoreos calificados, promedio general,
+  críticos absolutos y asesores evaluados. La tabla queda ordenada de mejor a
+  peor promedio, con clasificación, fallos críticos y alerta (1 fallo =
+  Alerta; 2 o más = Crítico frecuente). Debajo, los ítems más afectados, y al
+  abrir cada uno se ven los asesores que lo fallaron.
+- Al hacer clic en un asesor se abre su Detalle por mes.
+- Detalle por mes (pestaña nueva): los monitoreos del mes elegido arriba, con
+  buscador por asesor. Al hacer clic en uno se ve su detalle: la nota, los
+  datos de la llamada, cada ítem con su respuesta, el motivo y las
+  observaciones.
+- Diccionario (pestaña nueva): las reglas de la plantilla y cada ítem con su
+  descripción y cuánto suma o resta cada respuesta.
+- Si la campaña tiene varias plantillas, se elige cuál ver. La persona de
+  Calidad ve todo esto solo con sus monitoreos.
+- En Calificar, el nombre del asesor se escribe (con sugerencias), como en el
+  HTML de Edwin. Si coincide con un usuario ASESOR de la campaña, ese asesor
+  ve el monitoreo en "Mis resultados".
+
 ## v1.128.0 — Noviembre 2026
 
 **Fase 254: Calidad, formulario "Calificar" igual al de Edwin (paso 3 de Calidad de Mobilize).**

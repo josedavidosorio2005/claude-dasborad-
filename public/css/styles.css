@@ -1895,6 +1895,56 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .cc2-sec{padding:14px 12px}
 }
 
+/* Fase 255: Calidad › Resumen por asesor, Detalle por mes y Diccionario */
+.ca-filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:12px}
+.ca-filtro{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-small);color:var(--c-text-muted)}
+.ca-filtro select,.ca-filtro input{min-height:44px;padding:6px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body);min-width:220px}
+.ca-limpiar{min-height:44px}
+.ca-plantilla{margin:0;font-size:var(--fs-small);color:var(--c-text-muted)}
+.ca-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.ca-kpi{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px}
+.ca-kpi b{display:block;font-size:var(--fs-kpi);font-weight:700;line-height:1.1;color:var(--c-text)}
+.ca-kpi span{font-size:var(--fs-note);color:var(--c-text-muted)}
+.ca-click{cursor:pointer}
+.ca-click:hover td,.ca-click:focus-visible td{background:var(--c-surface-alt)}
+.ca-click:focus-visible{outline:2px solid var(--c-focus);outline-offset:-2px}
+.ca-vacio{text-align:center;color:var(--c-text-muted);font-size:var(--fs-small)}
+.ca-mot{font-size:var(--fs-small);color:var(--c-text-muted);max-width:320px}
+.ca-barras{display:flex;flex-direction:column;gap:6px}
+.ca-bar-fila summary,.ca-bar-fila{list-style:none}
+.ca-bar-fila>summary,div.ca-bar-fila{display:grid;grid-template-columns:minmax(0,2fr) minmax(80px,1fr) auto;gap:10px;align-items:center;min-height:44px;font-size:var(--fs-small);cursor:pointer}
+div.ca-bar-fila{cursor:default}
+.ca-bar-fila>summary::-webkit-details-marker{display:none}
+.ca-bar-fila>summary:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px;border-radius:var(--r-sm)}
+.ca-bar{display:block;height:10px;border-radius:var(--r-pill);background:var(--c-surface-alt);overflow:hidden}
+.ca-bar>span{display:block;height:100%;background:var(--c-danger-dark);border-radius:var(--r-pill)}
+.ca-bar-n{color:var(--c-text-muted);white-space:nowrap}
+.ca-bar-fila ul{margin:2px 0 8px;padding-left:18px;font-size:var(--fs-small);color:var(--c-text)}
+.ca-bar-fila li span{color:var(--c-text-muted)}
+.ca-reglas{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:var(--fs-small);color:var(--c-text-muted);margin-bottom:10px}
+.ca-dcard{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:14px;padding:12px 0;border-bottom:1px solid var(--c-border)}
+.ca-dcard h5{margin:0 0 6px;font-size:var(--fs-body);color:var(--c-text)}
+.ca-dcard p,.ca-dcard li{font-size:var(--fs-small);line-height:1.5;color:var(--c-text);margin:0 0 4px}
+.ca-dcard ul{margin:4px 0 0;padding-left:18px}
+.ca-imp{background:var(--c-surface-alt);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-small);display:flex;flex-direction:column;gap:3px}
+.ca-imp>div{display:flex;justify-content:space-between}
+.ca-dlg-ancho{max-width:720px}
+.ca-det-cab{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+.ca-det-datos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin:0 0 12px}
+.ca-det-datos dt{font-size:var(--fs-note);color:var(--c-text-muted)}
+.ca-det-datos dd{margin:0;font-size:var(--fs-small);color:var(--c-text)}
+.ca-det-items .ca-det-no td{color:var(--c-danger-dark)}
+.ca-det-wrap{overflow-x:auto}
+.aurora-rank-table.ca-det-items{min-width:0}
+.ca-det-items th,.ca-det-items td{white-space:normal}
+.ca-det-items td:last-child,.ca-det-items th:last-child{white-space:nowrap}
+@media (max-width:600px){
+  .ca-dcard{grid-template-columns:minmax(0,1fr)}
+  .ca-filtro select,.ca-filtro input{min-width:0;width:100%}
+  .ca-filtro{flex:1 1 100%}
+  .ca-bar-fila>summary,div.ca-bar-fila{grid-template-columns:minmax(0,1fr) 60px auto}
+}
+
 /* Fase 175: encabezado del tablero compacto en el celular y la tablet
    (hasta 768 px). Antes ocupaba 354 px de 812 a 375 px (315 de 1024 a
    768): titulo, MES, MESES, COMPARAR, la nota y 5 botones en varias filas.
