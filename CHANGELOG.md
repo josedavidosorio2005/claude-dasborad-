@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.134.0 — Noviembre 2026
+
+**Fase 269: la pestaña Calidad de Mobilize, Clínica Aurora y Hospital La María muestra solo "Resultado de los monitoreos".**
+
+- Lo que se ve sale de lo que se califica en la plataforma (Calidad › Calificar):
+  indicadores, resultado por asesor, ítems más afectados y llamadas con fallas.
+- Ya no se muestran el resumen que se subía en Cargar datos (torta "Monitoreos
+  por asesor (%)", barras "Prom. puntaje (%) por asesor" y las tablas "Por
+  asesor" y "Por mes"), ni los indicadores, la torta y las barras de antes. Esos
+  datos no se borraron: solo dejan de mostrarse.
+- ORLANT sigue por ahora con su pestaña Calidad de siempre.
+
 ## v1.133.2 — Noviembre 2026
 
 **Fase 268: dos detalles de las gráficas que se vieron en la revisión de Aurora y HLM.**

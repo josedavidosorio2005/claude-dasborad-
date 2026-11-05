@@ -529,12 +529,11 @@ const MOBILIZE = {
       // base ya sembrada: dashboards_config_mobilize_calidad_al_final_v1.
       // Fase 172: el resumen por asesor (plantilla de Edwin) va primero;
       // migracion para la base ya sembrada: fase172_calidad_resumen_v1.
+      // Fase 269 (pedido de Edwin, 05/11): solo el resultado de los monitoreos
+      // calificados en la plataforma (el resumen de Cargar datos, los
+      // indicadores y la torta ya no se muestran; sus datos no se borran). Base
+      // ya sembrada: fase269_calidad_solo_monitoreos_v1.
       { key: 'calidad', label: 'Calidad', panels: [
-        { tipo: 'calidad_resumen_panel', campana: 'MOBILIZE' },
-        { tipo: 'calidad_kpis', campana: 'MOBILIZE' },
-        { tipo: 'calidad_pie', campana: 'MOBILIZE', titulo: 'Distribución de clasificación' },
-        // Fase 256: resultado de los monitoreos (HTML de Edwin); base ya
-        // sembrada: fase256_mobilize_calidad_monitoreos_panel_v1.
         { tipo: 'calidad_monitoreos_panel', campana: 'MOBILIZE' },
       ]},
     ],

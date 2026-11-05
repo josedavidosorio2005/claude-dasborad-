@@ -83,7 +83,10 @@ const targetTipificacion = targetMobilize.layout.tabs.find((t) => t.key === 'tip
 // MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
 function sinResumenCalidad(x) {
   const c = JSON.parse(JSON.stringify(x));
-  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel' && p.tipo !== 'calidad_monitoreos_panel'); });
+  // Fase 269: fase269_calidad_solo_monitoreos_v1 deja la pestaña Calidad de
+  // MOBILIZE solo con el panel de monitoreos (su prueba: fase269-calidad-solo-
+  // monitoreos.test.js); aqui se comparan los demas paneles de los dos lados.
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => !/^calidad_(resumen_panel|monitoreos_panel|kpis|pie|bar_asesores)$/.test(p.tipo)); });
   return c;
 }
 
@@ -102,7 +105,7 @@ test('migracion dashboards_config_mobilize_tipificacion_tab_v1: agrega el tab "t
   const tabFlujo = layout.tabs.find((t) => t.key === 'flujo');
   assert.deepEqual(tabFlujo, LAYOUT_PARTE_2.tabs[0], 'el tab "flujo" original queda intacto (solo su trafico_combo)');
   assert.deepEqual(layout.tabs.map((t) => t.key).slice(0, 2), ['flujo', 'llamadas_unicas'], 'el panel de llamadas unicas vive en su tab propio, despues de flujo');
-  assert.deepEqual(sinResumenCalidad(layout.tabs.find((t) => t.key === 'calidad')), LAYOUT_PARTE_2.tabs[1], 'el tab "calidad" original no se toco');
+  assert.deepEqual(sinResumenCalidad(layout.tabs.find((t) => t.key === 'calidad')), sinResumenCalidad(LAYOUT_PARTE_2.tabs[1]), 'el tab "calidad" original no se toco');
   const tabTipif = layout.tabs.find((t) => t.key === 'tipificacion');
   assert.ok(tabTipif, 'el tab "tipificacion" debe existir ahora');
   assert.equal(tabTipif.oculta, true, 'nace oculto -- se destapa en memoria solo cuando ya hay datos');

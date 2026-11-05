@@ -143,18 +143,20 @@ const GENERADORES = {
     key: 'encuesta', label: 'Encuesta',
     panels: [{ tipo: 'encuesta_panel', campana }],
   }),
-  calidad: (campana, activos) => ({
+  // Fase 269 (pedido de Edwin, 05/11): la pestaña Calidad muestra solo
+  // "Resultado de los monitoreos" (lo que se califica en la plataforma), igual
+  // en todo cliente. Lo de antes (resumen subido en Cargar datos, indicadores,
+  // torta y barras) queda solo con el ajuste `clasica` (hoy ORLANT, mientras
+  // el usuario decide). Los datos viejos no se borran: solo no se muestran.
+  calidad: (campana, activos, aj) => ({
     key: 'calidad', label: 'Calidad',
-    panels: [
-      // Fase 172: con el modulo calidad_resumen, el resumen por asesor va primero.
-      ...(activos && activos.has('calidad_resumen') ? [{ tipo: 'calidad_resumen_panel', campana }] : []),
-      { tipo: 'calidad_kpis', campana },
-      { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
-      { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
-      // Fase 256: resultado de los monitoreos (HTML de Edwin). Fase 262: en todo
-      // cliente; ORLANT no lo lleva (ajuste sinPaneles de su perfil).
-      { tipo: 'calidad_monitoreos_panel', campana },
-    ],
+    panels: (aj && aj.clasica)
+      ? [
+        { tipo: 'calidad_kpis', campana },
+        { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
+        { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
+      ]
+      : [{ tipo: 'calidad_monitoreos_panel', campana }],
   }),
 };
 
@@ -204,9 +206,9 @@ function generarLayout(perfil) {
   const tabs = [];
   for (const m of CATALOGO) {
     if (!activos.has(m.id)) continue;
-    const tab = GENERADORES[m.id](nombre, activos);
-    if (!tab) continue;
     const aj = ajustes[m.id] || {};
+    const tab = GENERADORES[m.id](nombre, activos, aj);
+    if (!tab) continue;
     if (aj.key) tab.key = aj.key;
     if (aj.label) tab.label = aj.label;
     if (aj.sinPaneles) tab.panels = tab.panels.filter((p) => !aj.sinPaneles.includes(p.tipo));
@@ -249,7 +251,7 @@ const PERFILES_ACTUALES = {
     visibles: ['flujo_llamadas', 'flujo_whatsapp', 'calidad'],
     ajustes: {
       flujo_llamadas: { panel: { etiquetaTotal: 'Llamadas ingresadas' } }, // Fase 206
-      calidad: { sinPaneles: ['calidad_monitoreos_panel'] }, // Fase 262: ORLANT sigue con su pestaña Calidad de siempre
+      calidad: { clasica: true }, // Fase 262/269: ORLANT sigue con su pestaña Calidad de siempre (pendiente de decision)
     },
     especificos: {
       de: 'ORLANT',
@@ -295,7 +297,6 @@ const PERFILES_ACTUALES = {
           fcrBase: 'empezaron',
         },
       },
-      calidad: { sinPaneles: ['calidad_bar_asesores'] },
     },
   },
 };

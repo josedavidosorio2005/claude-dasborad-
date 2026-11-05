@@ -4791,6 +4791,37 @@ function migrarAgendasUsuariaVistas() {
 }
 runOnceMigration('fase265_agendas_usuaria_vistas_v1', migrarAgendasUsuariaVistas);
 
+// Fase 269 (pedido de Edwin, 05/11): en MOBILIZE, CLINICA AURORA y HOSPITAL
+// LA MARIA la pestaña Calidad queda solo con "Resultado de los monitoreos"
+// (calidad_monitoreos_panel). Se quitan de la pantalla el resumen subido en
+// Cargar datos (calidad_resumen_panel), los indicadores, la torta y las barras
+// -- NINGUN dato se borra (calidad_resumen y monitoreos quedan intactos).
+// Solo si la pestaña ya tiene el panel de monitoreos; si no, se deja y se
+// registra. ORLANT no se toca. Idempotente.
+function calidadSoloMonitoreos() {
+  for (const cliente of ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']) {
+    const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(cliente);
+    if (!row) continue;
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { continue; }
+    const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+    if (!tab || !Array.isArray(tab.panels)) continue;
+    const mon = tab.panels.find((p) => p && p.tipo === 'calidad_monitoreos_panel');
+    if (!mon) {
+      if (!config.isTest) console.log('[db] Migracion fase269_calidad_solo_monitoreos_v1: ' + cliente + ' sin panel de monitoreos -- se deja intacta.');
+      continue;
+    }
+    // Solo salen los 4 paneles de antes; cualquier otro panel se queda.
+    const QUITAR = ['calidad_resumen_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores'];
+    const quedan = tab.panels.filter((p) => !(p && QUITAR.includes(p.tipo)));
+    if (quedan.length === tab.panels.length) continue;
+    tab.panels = quedan;
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), cliente);
+  }
+  if (!config.isTest) console.log('[db] Migracion fase269_calidad_solo_monitoreos_v1 aplicada.');
+}
+runOnceMigration('fase269_calidad_solo_monitoreos_v1', calidadSoloMonitoreos);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4844,6 +4875,7 @@ module.exports.migrarOrlantTipificacionDosCanales = migrarOrlantTipificacionDosC
 module.exports.crearAsesorLinea = crearAsesorLinea;
 // Fase 172: idem.
 module.exports.crearCalidadResumen = crearCalidadResumen;
+module.exports.calidadSoloMonitoreos = calidadSoloMonitoreos; // Fase 269
 module.exports.agregarSalidaNoConectada = agregarSalidaNoConectada;
 // Fase 186: idem.
 module.exports.crearAsesorClasificacion = crearAsesorClasificacion;
