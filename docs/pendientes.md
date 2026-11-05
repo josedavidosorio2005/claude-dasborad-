@@ -9,27 +9,6 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Aurora, Agendas por usuaria: registrar los alias y cargar octubre** (Fase
-  259, 05/11) — Prioridad ALTA (entrega a Edwin el lunes 09/11). Lo haces tú
-  en producción como administrador: (1) Admin › **Usuarios del sistema** →
-  cliente CLINICA AURORA → los 5 usuarios (INCONEXION, INCONEXION A, B, C, D)
-  con el nombre de cada asesora (de la imagen de Edwin; los nombres no van al
-  repo). (2) Cargar Datos → CLINICA AURORA → elegir `OCTUBRE.xls` → la vista
-  previa debe decir 1.678 citas; INCONEXION 585, D 435, B 420, A 191, C 47;
-  canal Llamada 932, WhatsApp 540, No contesta 178, Otro 28; creadas por
-  InConexion 799 → Guardar carga. (También desde el Centro de cargas, tarjeta
-  de octubre.) La pestaña aparece sola.
-
-- **Importar la plantilla de Mobilize en producción** (Fase 253, 05/11) —
-  Prioridad ALTA (Edwin la necesita para probar). Es una escritura en
-  producción que haces tú como administrador, por la interfaz. El archivo
-  está fuera del repo (`Downloadscalidad-edwinplantilla-mobilize.json`).
-  Pasos: menú **Calidad** → pestaña **Plantillas** → **Elegir archivo…** →
-  revisar la vista previa (14 ítems, 5 críticos, suma de pesos 100) → marcar
-  **Usar como plantilla principal de MOBILIZE** → **Importar plantilla**.
-  Mobilize tiene 0 monitoreos, así que no cambia ningún dato viejo. Opcional:
-  en la tabla, **Desactivar** la genérica de MOBILIZE para que Calidad no
-  tenga que elegir. Cómo se cierra: la plantilla aparece como "v1, principal".
 - **Usuario de Calidad para que Edwin pruebe** (Fase 253) — la cuenta de
   Edwin en producción es SUPERVISOR (ORLANT y MOBILIZE, sin "crear
   usuarios"): puede calificar desde su pantalla, pero no entra directo a
