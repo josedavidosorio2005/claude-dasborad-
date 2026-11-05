@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.135.0 — Noviembre 2026
+
+**Fase 270: en Calificar, el Asesor se elige de una lista.**
+
+- El campo Asesor ya no se escribe: es una lista con los usuarios de rol Asesor
+  activos de esa campaña. Al elegirlo se muestran sus datos (campaña y usuario)
+  y la calificación queda enlazada a su usuario, así siempre le llega a "Mis
+  resultados" con el mismo nombre.
+- Si la campaña todavía no tiene usuarios Asesor, la lista sale vacía con el
+  aviso de crearlos en Usuarios (rol Asesor, con esa campaña).
+- Al editar un monitoreo viejo cuyo nombre no tiene usuario, se conserva ese
+  nombre (marcado "sin usuario").
+
 ## v1.134.0 — Noviembre 2026
 
 **Fase 269: la pestaña Calidad de Mobilize, Clínica Aurora y Hospital La María muestra solo "Resultado de los monitoreos".**
