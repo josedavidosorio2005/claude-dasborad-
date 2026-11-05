@@ -238,6 +238,11 @@ const textoCortoOpt = z.string().trim().max(200).optional().default('');
 // numero inventado para esta fase.
 const textoObservacionesOpt = z.string().trim().max(500).optional().default('');
 
+const extrasMonitoreoSchema = z
+  .record(z.string().max(40), z.union([z.string().max(200), z.null()]))
+  .refine((o) => Object.keys(o).length <= 20, { message: 'Demasiados campos extra' })
+  .optional();
+
 // El puntaje/clasificacion/fallos NO se aceptan del cliente: los calcula el servidor.
 const createMonitoreoBody = z.object({
   campana: campanaSchema,
@@ -264,6 +269,9 @@ const createMonitoreoBody = z.object({
   answers: answersSchema,
   // Fase 237: plantilla elegida (si la campaña tiene varias); sin ella, la principal.
   plantillaId: z.coerce.number().int().positive().optional(),
+  // Fase 252: campos extra de la plantilla (placa, tipo de llamada, ID de
+  // agente). La lista cerrada y los limites los aplica calidad-campos.js.
+  extras: extrasMonitoreoSchema,
 });
 
 // Carga masiva de monitoreos (Excel de 3 hojas: Monitoreos + Diccionario +
@@ -303,6 +311,7 @@ const updateMonitoreoBody = z
     // no romper un body viejo que todavia lo mande; se ignora en la ruta.
     evaluador: z.string().trim().max(120).optional(),
     observaciones: z.string().trim().max(500).optional(),
+    extras: extrasMonitoreoSchema, // Fase 252
     answers: answersSchema.optional(),
   })
   .refine((b) => Object.keys(b).length > 0, { message: 'Nada que actualizar' });
