@@ -42,13 +42,18 @@ function _cc2Campo(c) {
   var req = (c.k === 'asesor' || c.k === 'fecha' || c.k === 'observaciones') ? ' *' : '';
   var lbl = '<span class="cc2-lt">' + esc(c.etiqueta) + req + '</span>';
   if (c.k === 'asesor') {
-    // Fase 255: como el HTML de Edwin, se escribe el nombre (con sugerencias de
-    // los usuarios ASESOR de la campaña). Si coincide con uno, queda enlazado
-    // a su usuario y le llega a "Mis resultados".
+    // Fase 270 (pedido de Edwin, 05/11): lista desplegable con los usuarios
+    // ASESOR activos de la campaña (ya no texto libre), como el formulario de
+    // siempre (populateCalAsesorSelect): el nombre queda EXACTO y enlazado a
+    // su usuario (asesorUserId), asi le llega a "Mis resultados".
     var ases = _cc2Asesores();
-    return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" list="cc2-dl-asesores" maxlength="120" autocomplete="off" required>' +
-      '<datalist id="cc2-dl-asesores">' + ases.map(function (u) { return '<option value="' + esc(u.nombre) + '"></option>'; }).join('') + '</datalist>' +
-      (ases.length ? '' : '<small class="cc2-hint">Esta campaña no tiene usuarios ASESOR: escribe el nombre. Para que el asesor vea sus resultados, créalo en Usuarios (rol ASESOR) con el mismo nombre.</small>') + '</label>';
+    if (!ases.length) {
+      return '<label class="cc2-f">' + lbl + '<select id="' + id + '" disabled><option value="">—</option></select>' +
+        '<small class="cc2-hint">Esta campaña no tiene usuarios ASESOR. Créalos en Usuarios (rol ASESOR, con esta campaña) para poder calificarlos.</small></label>';
+    }
+    return '<label class="cc2-f">' + lbl + '<select id="' + id + '" required onchange="_cc2AsesorElegido()"><option value="">Selecciona un asesor…</option>' +
+      ases.map(function (u) { return '<option value="' + esc(u.nombre) + '" data-user-id="' + esc(u.id) + '">' + esc(textoFormatoNombre(u.nombre)) + '</option>'; }).join('') +
+      '</select><small class="cc2-hint" id="cc2-asesor-info" hidden></small></label>';
   }
   if (c.k === 'fecha') return '<label class="cc2-f">' + lbl + '<input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '"' + (isFullAdmin() ? '' : ' disabled') + '></label>';
   if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
@@ -145,6 +150,21 @@ function cc2Pintar() {
   var mot = document.getElementById('cc2-f-motivo'); if (mot) mot.value = cc2Motivo(p.items, a);
 }
 
+// Fase 270: al elegir el asesor se llenan sus datos (lo que la plataforma sabe
+// de su usuario) y se avisa que queda enlazado a "Mis resultados".
+function _cc2AsesorElegido() {
+  var sel = document.getElementById('cc2-f-asesor');
+  var info = document.getElementById('cc2-asesor-info');
+  if (!sel || !info) return;
+  var opt = sel.selectedOptions && sel.selectedOptions[0];
+  var uid = opt ? opt.getAttribute('data-user-id') : null;
+  var u = uid ? _cc2Asesores().find(function (x) { return String(x.id) === String(uid); }) : null;
+  sel.classList.remove('cc2-invalid');
+  if (!u) { info.hidden = !(opt && opt.value); info.textContent = opt && opt.value ? 'Sin usuario ASESOR: no le llega a "Mis resultados".' : ''; return; }
+  info.hidden = false;
+  info.textContent = 'Campaña ' + (u.asesorCampana || _ccampana) + (u.user ? ' · usuario ' + u.user : '') + ' · verá esta calificación en "Mis resultados".';
+}
+
 function _cc2Val(k) { var el = document.getElementById('cc2-f-' + k); return el ? String(el.value || '').trim() : ''; }
 
 function cc2Sugerir() {
@@ -196,7 +216,7 @@ async function cc2Guardar() {
   var asesorSel = document.getElementById('cc2-f-asesor');
   var asesor = _cc2Val('asesor');
   if (asesorSel) asesorSel.classList.toggle('cc2-invalid', !asesor);
-  if (!asesor) { showToast('Escribe el nombre del asesor'); if (asesorSel) asesorSel.focus(); return; }
+  if (!asesor) { showToast(asesorSel && asesorSel.disabled ? 'Esta campaña no tiene usuarios ASESOR: créalos en Usuarios' : 'Selecciona el asesor'); if (asesorSel) asesorSel.focus(); return; }
   document.querySelectorAll('#cf2 .cc2-item.cc2-missing').forEach(function (x) { x.classList.remove('cc2-missing'); });
   var falt = cc2Faltantes(p.items, _cc2.answers);
   var pideObs = p.campos.some(function (c) { return c.k === 'observaciones'; });
@@ -211,8 +231,11 @@ async function cc2Guardar() {
     _cc2AbrirDialogo('cc2-ov-faltan');
     return;
   }
-  var key = asesor.toLowerCase();
-  var au = _cc2Asesores().find(function (u) { return String(u.nombre).trim().toLowerCase() === key; });
+  // Fase 270: el id sale de la opcion elegida (data-user-id); un monitoreo viejo
+  // con un nombre sin usuario se edita con ese mismo nombre, sin enlace.
+  var optAs = asesorSel && asesorSel.selectedOptions && asesorSel.selectedOptions[0];
+  var uidOpt = optAs ? optAs.getAttribute('data-user-id') : null;
+  var au = uidOpt ? _cc2Asesores().find(function (u) { return String(u.id) === String(uidOpt); }) : null;
   var uid = au ? au.id : null;
   if (au) asesor = au.nombre;
   var answers = {};
@@ -264,7 +287,14 @@ function cc2Editar(m) {
   switchCalTab('nuevo');
   cc2Sync();
   var set = function (k, v) { var el = document.getElementById('cc2-f-' + k); if (el && v != null) el.value = v; };
-  set('asesor', m.asesor); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono);
+  // Fase 270: si el asesor del monitoreo no esta en la lista (nombre viejo o
+  // usuario inactivo), se agrega como opcion para no perderlo al editar.
+  var selA = document.getElementById('cc2-f-asesor');
+  if (selA && m.asesor && !Array.prototype.some.call(selA.options, function (o) { return o.value === m.asesor; })) {
+    var o = document.createElement('option'); o.value = m.asesor; o.textContent = textoFormatoNombre(m.asesor) + ' (sin usuario)';
+    selA.appendChild(o); selA.disabled = false;
+  }
+  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono);
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   var ex = m.extras || {};
   set('placa', ex.placa); set('tipoLlamada', ex.tipoLlamada); set('idAgente', ex.idAgente);
