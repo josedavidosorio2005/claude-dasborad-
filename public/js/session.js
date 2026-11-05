@@ -114,6 +114,8 @@ function enterAdminPanel(){
   var histLi=document.getElementById('menu-hist-li');
   var metasLi=document.getElementById('menu-metas-li');
   var umbralesLi=document.getElementById('menu-umbrales-li');
+  var aliasesLi=document.getElementById('menu-aliases-li'); // Fase 259: solo admin completo (las rutas lo exigen)
+  if(aliasesLi) aliasesLi.classList.toggle('hidden', !(isMaster||isAdminRole));
   var reportesRoleLi=document.getElementById('menu-reportesrole-li');
   if (isMaster||isAdminRole) {
     histLi.classList.remove('hidden');

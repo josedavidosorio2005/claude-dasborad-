@@ -24,6 +24,7 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_bar_asesores: 'calidad',
   calidad_resumen_panel: 'calidad_resumen', // Fase 172
   calidad_monitoreos_panel: 'calidad', // Fase 256
+  agendas_usuaria_panel: 'agendas_usuaria', // Fase 259
   flujo_hora_panel: 'flujo_hora', // Fase 196
 };
 
@@ -43,6 +44,7 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'flujo_hora', nombre: 'Flujo por hora' }, // Fase 196
   { id: 'tipificacion', nombre: 'Tipificación' },
   { id: 'encuesta', nombre: 'Encuesta' },
+  { id: 'agendas_usuaria', nombre: 'Agendas por usuaria' }, // Fase 259
   { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
 ];
 
@@ -161,6 +163,8 @@ var CENTRO_CARGA_PLAN = {
   encuesta: { tipo: 'encuesta' },
   // Fase 172: la plantilla no trae fecha por fila; el mes es el de la tarjeta.
   calidad_resumen: { tipo: 'calidad_resumen', mensual: true, sinFecha: true },
+  // Fase 259: conteos agregados con su mes (de la cita); reemplaza el mes entero.
+  agendas_usuaria: { tipo: 'agendas_usuaria', mensual: true },
 };
 
 function centroSubeDesdeMes(cargaId) { return Object.prototype.hasOwnProperty.call(CENTRO_CARGA_PLAN, cargaId); }

@@ -29,6 +29,7 @@ Las plantillas viejas (`PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx`, `PLANTILLA_TRA
 | Efectividad de Agendamiento | [efectividad_agendamiento](efectividad_agendamiento.md) | `PLANTILLA_EFECTIVIDAD_AGENDAMIENTO.xlsx` | ORLANT |
 | Inasistencia | [inasistencia](inasistencia.md) | `PLANTILLA_INASISTENCIA.xlsx` | ORLANT |
 | Efectividad de Citas | [efectividad_citas](efectividad_citas.md) | `PLANTILLA_EFECTIVIDAD_CITAS.xlsx` | ORLANT |
+| Agendas por usuaria | [agendas_usuaria](agendas_usuaria.md) | Sin plantilla: el reporte de citas de la clínica tal cual | CLINICA AURORA |
 | Llamadas Únicas y de Salida | [llamadas_unicas](llamadas_unicas.md) | `PLANTILLA_LLAMADAS_ABANDONADAS.xlsx`, `PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx` | MOBILIZE |
 | Tipificación | [tipificacion](tipificacion.md) | `PLANTILLA_TIPIFICACION_LLAMADAS.xlsx`, `PLANTILLA_TIPIFICACION_WHATSAPP.xlsx` | ORLANT, MOBILIZE |
 | Encuesta | [encuesta](encuesta.md) | `PLANTILLA_ENCUESTA.xlsx` | MOBILIZE |

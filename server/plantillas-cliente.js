@@ -38,6 +38,8 @@ const CATALOGO = [
   { id: 'efectividad_agendamiento', nombre: 'Efectividad de Agendamiento', grupo: 'salud', carga: 'Efectividad por asesor', disponibleParaNuevos: true },
   { id: 'inasistencia', nombre: 'Inasistencia', grupo: 'salud', carga: 'Inasistencia', disponibleParaNuevos: true },
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas', grupo: 'salud', carga: 'Citas atendidas', disponibleParaNuevos: true },
+  // Fase 259 (Clinica Aurora): reporte de citas del sistema de la clinica, agregado en el navegador.
+  { id: 'agendas_usuaria', nombre: 'Agendas por usuaria', grupo: 'salud', carga: 'Reporte de citas de la clínica (.xls)', disponibleParaNuevos: true },
   { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida', grupo: 'opcional', carga: 'Llamadas únicas + Llamadas de salida (Wolkvox)', disponibleParaNuevos: true },
   // Fase 196: mapas de calor por hora y dia (reporte de cola por hora de Wolkvox).
   { id: 'flujo_hora', nombre: 'Flujo por hora', grupo: 'opcional', carga: 'Flujo por hora (Wolkvox)', disponibleParaNuevos: true },
@@ -115,6 +117,10 @@ const GENERADORES = {
   efectividad_citas: (campana) => ({
     key: 'efectividad', label: 'Efectividad de Citas',
     panels: [{ tipo: 'efectividad_citas_panel', titulo: 'Efectividad de Citas', campana }],
+  }),
+  agendas_usuaria: (campana) => ({ // Fase 259
+    key: 'agendas_usuaria', label: 'Agendas por usuaria',
+    panels: [{ tipo: 'agendas_usuaria_panel', campana, titulo: 'Agendas por usuaria' }],
   }),
   llamadas_unicas: (campana) => ({
     key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida',

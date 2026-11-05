@@ -75,7 +75,10 @@ router.post(
     db.prepare('SELECT DISTINCT agente AS v FROM tipificaciones WHERE campana = ?').all(campana).forEach((r) => conocidos.add(aliasNorm(r.v)));
     db.prepare('SELECT DISTINCT asesor AS v FROM agendas WHERE campana = ?').all(campana).forEach((r) => conocidos.add(aliasNorm(r.v)));
     db.prepare('SELECT DISTINCT asesor AS v FROM efectividad_agendamiento WHERE campana = ?').all(campana).forEach((r) => conocidos.add(aliasNorm(r.v)));
-    const advertencia = (conocidos.size > 0 && !conocidos.has(aliasNorm(canonico)))
+    // Fase 259: en Agendas por usuaria el archivo trae el CODIGO (el alias), nunca el
+    // nombre real -- si el alias es un usuario de ese reporte, no se advierte.
+    const usuariosAu = new Set(db.prepare('SELECT DISTINCT usuario AS v FROM agendas_usuaria WHERE campana = ?').all(campana).map((r) => aliasNorm(r.v)));
+    const advertencia = (conocidos.size > 0 && !conocidos.has(aliasNorm(canonico)) && !usuariosAu.has(aliasNorm(alias)))
       ? 'El nombre canonico no aparece todavia en ningun archivo cargado de esta campana -- se creo igual.'
       : undefined;
 
@@ -90,6 +93,33 @@ router.post(
       `alias "${alias}" -> "${canonico}"`
     );
     res.status(201).json({ id: info.lastInsertRowid, campana, alias, canonico, createdAt, advertencia });
+  })
+);
+
+// Fase 259: editar (por ejemplo, corregir el nombre o cambiar la persona de un
+// usuario). Mismas reglas que el alta. Como el nombre de Agendas por usuaria
+// se resuelve al mostrar, el cambio vale tambien para los meses ya cargados.
+router.put(
+  '/alias-asesores/:id',
+  requireActor,
+  validate(schemas.idParamSchema, 'params'),
+  validate(schemas.aliasAsesorEditBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) {
+      return res.status(403).json({ error: 'Solo el administrador puede administrar alias de asesor' });
+    }
+    const row = db.prepare('SELECT * FROM alias_asesores WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Alias no encontrado' });
+    const { alias, canonico } = req.body;
+    if (aliasNorm(alias) === aliasNorm(canonico)) return res.status(400).json({ error: 'Un alias no puede apuntar a si mismo' });
+    const otros = db.prepare('SELECT alias FROM alias_asesores WHERE campana = ? AND id <> ?').all(row.campana, row.id);
+    if (otros.some((r) => aliasNorm(r.alias) === aliasNorm(canonico))) {
+      return res.status(400).json({ error: 'El nombre canonico ya es el alias de otra fila -- un alias nunca puede apuntar a otro alias (sin cadenas, sin ciclos)' });
+    }
+    if (otros.some((r) => aliasNorm(r.alias) === aliasNorm(alias))) return res.status(409).json({ error: 'Ya existe un alias con ese nombre para esta campana' });
+    db.prepare('UPDATE alias_asesores SET alias = ?, canonico = ? WHERE id = ?').run(alias, canonico, row.id);
+    logEvent('ALIAS_ASESOR_EDITADO', { nombre: alias, user: '-', rol: row.campana }, actorLabel(req.actor), `alias "${row.alias}" -> "${row.canonico}" ahora "${alias}" -> "${canonico}"`);
+    res.json(db.prepare('SELECT id, campana, alias, canonico, createdAt, createdPorNombre FROM alias_asesores WHERE id = ?').get(row.id));
   })
 );
 

@@ -25,6 +25,7 @@ const ANTES = {
   llamadasSalida: ['MOBILIZE'], // CARGAS_CLIENTES_LLAMADAS_SALIDA
   whatsappTiempos: ['ORLANT'], // CARGAS_CLIENTES_WHATSAPP_TIEMPOS y WPP_TIEMPOS_CAMPANAS
   calidadResumen: ['MOBILIZE'], // Fase 172
+  agendasUsuaria: [], // Fase 259: solo Aurora, que no esta en la semilla (se crea por migracion)
   flujoHora: ['MOBILIZE'], // Fase 196
   encuesta: ['MOBILIZE'], // CARGAS_CLIENTES_ENCUESTA
   asesorVisibleCliente: ['MOBILIZE'], // LU_CAMPANAS_ASESOR_VISIBLE_CLIENTE y CAMPANAS_ASESOR_VISIBLE_CLIENTE
@@ -50,7 +51,8 @@ test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () 
   // Fase 229: HLM tambien (CDR de Tipificacion y WhatsApp por rangos).
   assert.deepEqual(conBase.tipificacionExtra, ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
   assert.deepEqual(conBase.whatsappTiempos, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']); // Fase 230: + Aurora
-  assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'], tipificacionExtra: ANTES.tipificacionExtra, whatsappTiempos: ANTES.whatsappTiempos }), ANTES);
+  assert.deepEqual(conBase.agendasUsuaria, ['CLINICA AURORA']); // Fase 259
+  assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'], tipificacionExtra: ANTES.tipificacionExtra, whatsappTiempos: ANTES.whatsappTiempos, agendasUsuaria: [] }), ANTES);
 });
 
 test('servidor: el cliente solo ve nombres de asesor en las campanas marcadas', () => {
