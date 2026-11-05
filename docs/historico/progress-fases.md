@@ -19330,3 +19330,19 @@ antes de confirmar.
 - **Local** (Brave, 1440/768/375): carga sintética por Cargar Datos (el cuerpo
   sin datos de pacientes), las 3 sub-pestañas con sus filtros, filtro de fecha
   compartido entre vistas y "Quitar filtros"; 0 errores, sin scroll horizontal.
+
+## Fase 266 — Recarga de OCTUBRE.xls en Aurora (solo docs, 2026-11-05)
+
+Escritura autorizada por el usuario solo si la vista previa daba 1.678 citas;
+por Cargar Datos, con su sesión de admin en Brave (login a mano, sin guardar
+cookies). Solo se dejó pasar la carga de agendas (impacto + carga).
+
+| Paso | Resultado |
+|---|---|
+| Vista previa | 1.678 citas; INCONEXION 585, D 435, B 420, A 191, C 47; 10 especialidades; solicitudes del 15/12/2025 al 30/10/2026; 1.303 filas agregadas |
+| Guardar | Aviso "Octubre 2026: 1678 cita(s) — REEMPLAZA 1678 ya cargada(s)" → octubre reemplazado (1.303 filas, antes 1.172 de la forma de la Fase 259) |
+| Aurora › Agendas por usuaria | 3 sub-pestañas en el orden pedido, cada una con 1.678; por especialidad 10 filas; por asesor las 5 con nombre real; filtros Asesor, Sede, Fecha de solicitud de la cita y Fecha de cita |
+| 5 clientes | 0 errores de consola; ORLANT, Mobilize, HLM y SURA iguales (ORLANT › Tipificación: sonda de espera larga 2/2, tiempo de carga) |
+
+Un primer intento no llegó ni al login (`page.goto` excedió 30 s); se repitió
+con más espera. 2 escrituras en total, 0 bloqueadas.
