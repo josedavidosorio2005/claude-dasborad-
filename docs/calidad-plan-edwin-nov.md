@@ -12,6 +12,81 @@ trabaja después y con calma.
 > Lo que trae, la comparación con la plataforma y el plan por PRs que
 > reemplaza la sección 8 están en la sección siguiente, "Actualización
 > 04/11/2026". Las secciones 1 a 8 quedan como estaban, como antecedente.
+>
+> **05/11/2026 (Fases 252–256)**: ya están construidos B1–B5 (campos por
+> plantilla, importador y versiones, formulario Calificar, resumen/detalle/
+> diccionario, pestaña Calidad de Mobilize y Mis resultados). Lo que sigue
+> abajo, "Diseño: enlace Encuesta NPS → Calidad", es **solo diseño**.
+
+## Diseño: enlace Encuesta NPS → Calidad (05/11/2026, no construido)
+
+**Solo diseño. No se construye sin el OK del usuario.** Pedido: cuando una
+encuesta sale mal calificada, la llamada pasa a Calidad para auditarla.
+
+### Qué ya existe
+
+| Pieza | Dónde |
+|---|---|
+| Encuestas por llamada (Mobilize) | Tabla `encuestas` (`campana`, `fecha`, `agente`, `skill`, `q1`–`q4`, `comentario`, `connId`). `q1` es la pregunta de recomendación (0–10, la del NPS), `connId` es el ID de la llamada (Fase 184) |
+| Columnas preparadas en monitoreos | `monitoreos.origen` (`'manual'` hoy) y `monitoreos.encuestaId` (NULL hoy), Fase 252, migración no destructiva |
+| Formulario Calificar | Fase 254, plantillas con campos (Mobilize, al importarla) |
+| Monitoreo completo obligatorio | Servidor (Fase 252): no se guarda con ítems sin calificar |
+
+### Regla para mandar una llamada a auditar
+
+- **Detractor**: `q1` de 0 a 6, la misma definición del NPS de la pestaña Encuesta.
+- Opcional, configurable por campaña en el registro de clientes
+  (`parametros.auditoriaNps`): `{ umbralQ1: 6, incluirQ2Bajo: false }`.
+  Si `incluirQ2Bajo` es verdadero, también entran las encuestas con `q2` de 1 o 2.
+- Solo encuestas con `connId` (sin ID de llamada no hay qué escuchar) y
+  cargadas desde que se active la regla. Las viejas no entran solas.
+
+### Flujo propuesto
+
+1. **Al cargar la encuesta** (Centro de cargas, como hoy), el servidor marca
+   los detractores como **pendientes de auditoría**: tabla nueva
+   `calidad_auditorias` (`id`, `campana`, `encuestaId`, `connId`, `agente`,
+   `fecha`, `motivo` ('NPS 3', por ejemplo), `estado` 'pendiente' |
+   'auditada' | 'descartada', `monitoreoId`, `asignadoA` (usuario CALIDAD,
+   opcional), `createdAt`, `updatedAt`). Es idempotente por `encuestaId`, así
+   que recargar el archivo no duplica. **No se crea un monitoreo vacío**: el
+   monitoreo existe solo cuando Calidad lo califica.
+2. **Calidad › Calificar** muestra arriba una bandeja "Para auditar (N)" con
+   fecha, agente, ID de llamada, nota NPS y comentario del cliente. Al
+   elegir una, el formulario se llena con asesor, fecha y ID de llamada, y
+   el monitoreo se guarda con `origen = 'nps'` y `encuestaId`. La auditoría
+   pasa a `auditada` con su `monitoreoId`.
+3. **Descartar** (por ejemplo, la llamada no se encuentra) pide un motivo
+   corto y deja la auditoría en `descartada`, con quién y cuándo. Nunca se borra.
+4. **Resultados**: en Resumen y en Detalle por mes, un filtro "Origen:
+   Todos / Manual / NPS". En la pestaña Encuesta (dashboard), una tarjeta
+   "Detractores auditados: X de Y (Z %)" y, por cada uno, su nota de calidad.
+
+### Permisos y privacidad
+
+- La bandeja la ven los usuarios CALIDAD con esa campaña (y plantilla), y el
+  administrador. El comentario de la encuesta puede traer datos del cliente:
+  se muestra solo en la bandeja, igual que hoy en la pestaña Encuesta, y
+  nunca se copia al monitoreo.
+- El asesor ve en "Mis resultados" que un monitoreo vino de una encuesta
+  ("Origen: encuesta"), sin el comentario del cliente.
+- Sin teléfonos ni cédulas (pregunta 3 sigue abierta).
+
+### Plan por PRs (cuando se apruebe)
+
+| # | PR | Qué hace | Tamaño |
+|---|---|---|---|
+| N1 | Regla y bandeja en el servidor | `calidad_auditorias` (migración no destructiva), marcar detractores al cargar, `GET /calidad/auditorias`, descartar. Pruebas sintéticas | M |
+| N2 | Bandeja en Calificar | Lista "Para auditar", llenar el formulario, guardar con `origen='nps'` y `encuestaId` | M |
+| N3 | Resultados | Filtro por origen y tarjeta "Detractores auditados" en Encuesta | S |
+
+### Preguntas para Edwin
+
+1. ¿El corte es NPS de 0 a 6 (detractor) o más estricto (0 a 4)?
+2. ¿Se audita **todo** detractor o un porcentaje (por ejemplo, el 30 % al azar)?
+3. ¿Quién audita: cualquier persona de Calidad de la campaña o alguien asignado?
+4. ¿Plazo para auditar (por ejemplo, 48 h)? Si hay plazo, se puede avisar.
+5. ¿Las encuestas de ago–oct ya cargadas entran o solo las nuevas?
 
 ## Actualización 04/11/2026: con los Excel de Edwin
 
