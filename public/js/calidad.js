@@ -388,6 +388,8 @@ function switchCalTab(t){
   else if(t==='carga'){ if(typeof cancelarPreviewMonitoreos==='function') cancelarPreviewMonitoreos(); }
   else if(t==='monitoreos') renderCalMonitoreosTable();
   else if(t==='resumen') renderCalResumenTable();
+  else if(t==='detalle' && typeof caRenderDetalle==='function') caRenderDetalle(); // Fase 255
+  else if(t==='diccionario' && typeof caRenderDiccionario==='function') caRenderDiccionario(); // Fase 255
   else if(t==='reportes') setTimeout(renderCalReportes,60);
   else if(t==='config') renderCalConfig();
   else if(t==='plantillas' && typeof calPlantillasRender==='function') calPlantillasRender(); // Fase 253
@@ -603,6 +605,7 @@ function renderCalMonitoreosTable(){
 }
 
 function renderCalResumenTable(){
+  if(typeof caRenderResumen==='function'){ caRenderResumen(); return; } // Fase 255: resumen como el HTML de Edwin
   var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro);
   var byAsesor = {};
   arr.forEach(function(m){

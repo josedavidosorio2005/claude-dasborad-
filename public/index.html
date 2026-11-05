@@ -1021,6 +1021,8 @@
       <button class="atab" data-ctab="carga" id="ctab-btn-carga" onclick="switchCalTab('carga')">Carga Masiva (Excel)</button>
       <button class="atab" data-ctab="monitoreos" onclick="switchCalTab('monitoreos')">Monitoreos</button>
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
+      <button class="atab" data-ctab="detalle" onclick="switchCalTab('detalle')">Detalle por mes</button>
+      <button class="atab" data-ctab="diccionario" onclick="switchCalTab('diccionario')">Diccionario</button>
       <button class="atab" data-ctab="reportes" onclick="switchCalTab('reportes')">Reportes</button>
       <button class="atab" data-ctab="config" id="ctab-btn-config" onclick="switchCalTab('config')">Configuración</button>
       <button class="atab" data-ctab="plantillas" id="ctab-btn-plantillas" onclick="switchCalTab('plantillas')" style="display:none">Plantillas</button>
@@ -1109,10 +1111,21 @@
     </div>
 
     <div id="cpanel-resumen" class="atab-panel">
+      <div id="ca-resumen"></div>
       <div class="aurora-card">
         <div class="aurora-card-title">Resumen por Asesor</div>
-        <table class="aurora-rank-table" id="cal-resumen-table"></table>
+        <p class="cpl-ayuda">Haz clic en un asesor para ver sus monitoreos.</p>
+        <div style="overflow-x:auto"><table class="aurora-rank-table" id="cal-resumen-table"></table></div>
       </div>
+      <div id="ca-afectados"></div>
+    </div>
+
+    <div id="cpanel-detalle" class="atab-panel">
+      <div class="aurora-card"><div class="aurora-card-title">Detalle por mes</div><div id="ca-detalle"></div></div>
+    </div>
+
+    <div id="cpanel-diccionario" class="atab-panel">
+      <div class="aurora-card"><div class="aurora-card-title">Diccionario de criterios</div><div id="ca-diccionario"></div></div>
     </div>
 
     <div id="cpanel-reportes" class="atab-panel">
@@ -1191,6 +1204,13 @@
       <h3 id="cc2-criterio-t"></h3>
       <div id="cc2-criterio-b"></div>
       <div class="modal-btns"><button type="button" class="btn-primary" onclick="cc2CerrarDialogo('cc2-ov-criterio')">Entendido</button></div>
+    </div>
+  </div>
+  <div class="cc2-ov" id="ca-ov-detalle" hidden role="dialog" aria-modal="true" aria-labelledby="ca-ov-detalle-t">
+    <div class="cc2-dlg ca-dlg-ancho">
+      <h3 id="ca-ov-detalle-t">Monitoreo</h3>
+      <div id="ca-ov-detalle-b"></div>
+      <div class="modal-btns"><button type="button" class="btn-primary" onclick="cc2CerrarDialogo('ca-ov-detalle')">Cerrar</button></div>
     </div>
   </div>
   <div class="cc2-ov" id="cc2-ov-faltan" hidden role="alertdialog" aria-modal="true" aria-labelledby="cc2-faltan-t">
@@ -1905,6 +1925,8 @@
 <script src="js/mi-cuenta.js"></script>
 <script src="js/dashboards-core.js"></script>
 <script src="js/calidad.js"></script>
+<script src="js/calidad-analisis-logic.js"></script>
+<script src="js/calidad-analisis.js"></script>
 <script src="js/calidad-calificar-logic.js"></script>
 <script src="js/calidad-calificar.js"></script>
 <script src="js/calidad-plantillas-logic.js"></script>
