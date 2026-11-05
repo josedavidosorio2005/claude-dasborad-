@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.133.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.133.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -487,6 +487,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 267 — Revisión de Aurora y HLM antes de la entrega (solo lectura) y Tipificación más rápida: un pedido por mitad, solo meses al abrir (v1.133.1, 2026-11-05)
 - Fase 266 — Recarga autorizada de OCTUBRE.xls en Aurora con la forma de la Fase 265 y bitácora (solo docs, 2026-11-05)
 - Fase 265 — Aurora › Agendas por usuaria con 3 vistas (por mes, por especialidad, por asesor) y filtros por fecha de solicitud y fecha de cita (v1.133.0, 2026-11-05)
 - Fase 264 — Plantillas de Calidad de Aurora y HLM importadas en producción (escrituras autorizadas) y bitácora (solo docs, 2026-11-05)
