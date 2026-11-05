@@ -4688,6 +4688,24 @@ function migrarCalidadPlantillasFamilia() {
 }
 runOnceMigration('fase253_calidad_plantillas_familia_v1', migrarCalidadPlantillasFamilia);
 
+// Fase 256 (plan de Calidad B5): panel "calidad_monitoreos_panel" al final de
+// la pestaña Calidad de MOBILIZE (resultado de los monitoreos, items mas
+// afectados y llamadas con fallas). Idempotente: si ya esta, no hace nada.
+// Sin monitoreos el panel no se dibuja, asi que Mobilize se ve igual hasta
+// que haya. No toca a ORLANT, Aurora, HLM ni SURA.
+function migrarMobilizeCalidadMonitoreosPanel() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'MOBILIZE'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+  if (!tab || (tab.panels || []).some((p) => p && p.tipo === 'calidad_monitoreos_panel')) return;
+  tab.panels = (tab.panels || []).concat([{ tipo: 'calidad_monitoreos_panel', campana: 'MOBILIZE' }]);
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'MOBILIZE'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase256_mobilize_calidad_monitoreos_panel_v1 aplicada.');
+}
+runOnceMigration('fase256_mobilize_calidad_monitoreos_panel_v1', migrarMobilizeCalidadMonitoreosPanel);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4722,6 +4740,7 @@ module.exports.migrarMobilizeResumenTarjetas = migrarMobilizeResumenTarjetas;
 module.exports.migrarCalidadPlantillasVarias = migrarCalidadPlantillasVarias;
 module.exports.migrarCalidadCamposPorPlantilla = migrarCalidadCamposPorPlantilla;
 module.exports.migrarCalidadPlantillasFamilia = migrarCalidadPlantillasFamilia;
+module.exports.migrarMobilizeCalidadMonitoreosPanel = migrarMobilizeCalidadMonitoreosPanel;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

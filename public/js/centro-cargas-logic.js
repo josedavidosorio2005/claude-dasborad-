@@ -23,6 +23,7 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_pie: 'calidad',
   calidad_bar_asesores: 'calidad',
   calidad_resumen_panel: 'calidad_resumen', // Fase 172
+  calidad_monitoreos_panel: 'calidad', // Fase 256
   flujo_hora_panel: 'flujo_hora', // Fase 196
 };
 

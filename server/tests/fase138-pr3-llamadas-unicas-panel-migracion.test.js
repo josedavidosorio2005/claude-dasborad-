@@ -106,7 +106,7 @@ test('migraciones de llamadas unicas: "flujo" queda EXACTAMENTE como antes (solo
 // MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
 function sinResumenCalidad(x) {
   const c = JSON.parse(JSON.stringify(x));
-  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel' && p.tipo !== 'calidad_monitoreos_panel'); });
   return c;
 }
 

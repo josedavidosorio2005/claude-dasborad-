@@ -1746,7 +1746,7 @@ function renderGenericTab(key){
     } else if(p.tipo === 'tabla'){
       html += '<div class="aurora-card"><div class="aurora-card-title">'+esc(p.titulo||'')+'</div>'+
         '<div style="overflow-x:auto"><table class="aurora-rank-table" id="gd-p'+i+'"></table></div></div>';
-    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'total_trafico_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel' || p.tipo === 'flujo_hora_panel'){
+    } else if(p.tipo === 'trafico_combo' || p.tipo === 'trafico_whatsapp_combo' || p.tipo === 'agendas_panel' || p.tipo === 'inasistencia_panel' || p.tipo === 'tipificacion_panel' || p.tipo === 'efectividad_agendamiento_panel' || p.tipo === 'efectividad_citas_panel' || p.tipo === 'salida_panel' || p.tipo === 'total_trafico_panel' || p.tipo === 'llamadas_unicas_panel' || p.tipo === 'encuesta_panel' || p.tipo === 'calidad_resumen_panel' || p.tipo === 'calidad_monitoreos_panel' || p.tipo === 'flujo_hora_panel'){
       // Panel grande y autonomo (filtros + KPIs + grafica + export propios):
       // no entra en la rejilla de 2 columnas, ocupa el ancho completo.
       // agendas_panel (Fase 78), inasistencia_panel (Fase 98),
@@ -1763,7 +1763,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
-  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='total_trafico_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='calidad_resumen_panel' && x.p.tipo!=='nota_kpi'; });
+  var chartPanels = panels.map(function(p,i){ return {p:p,i:i}; }).filter(function(x){ return indicesVisibles.indexOf(x.i)!==-1 && x.p.tipo!=='kpi_row' && x.p.tipo!=='calidad_kpis' && x.p.tipo!=='tabla' && x.p.tipo!=='trafico_combo' && x.p.tipo!=='trafico_whatsapp_combo' && x.p.tipo!=='agendas_panel' && x.p.tipo!=='inasistencia_panel' && x.p.tipo!=='tipificacion_panel' && x.p.tipo!=='efectividad_agendamiento_panel' && x.p.tipo!=='efectividad_citas_panel' && x.p.tipo!=='salida_panel' && x.p.tipo!=='total_trafico_panel' && x.p.tipo!=='llamadas_unicas_panel' && x.p.tipo!=='encuesta_panel' && x.p.tipo!=='calidad_resumen_panel' && x.p.tipo!=='calidad_monitoreos_panel' && x.p.tipo!=='nota_kpi'; });
   if(chartPanels.length){
     html += '<div class="aurora-grid-2">' + chartPanels.map(function(x){
       var conmuta = (x.p.tipo === 'line' || x.p.tipo === 'bar' || x.p.tipo === 'area');
@@ -1805,6 +1805,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'tipificacion_panel'){ _tipificacionRenderPanel(p, i); return; }
   if(p.tipo === 'salida_panel'){ _salidaRenderPanel(p, i); return; }
   if(p.tipo === 'calidad_resumen_panel'){ _calidadResumenRenderPanel(p, i); return; } // Fase 172
+  if(p.tipo === 'calidad_monitoreos_panel'){ _cmpRender(p, i); return; } // Fase 256
   if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
   if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; } // Fase 219
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
@@ -2592,6 +2593,8 @@ async function _gdDatosPanelesTab(){
     // nueva (quien lo descarga se lo lleva) que nadie pidio todavia; se deja
     // anotado en docs/pendientes.md para que el usuario decida si hace falta.
     if(p.tipo === 'calidad_bar_asesores'){ continue; }
+    // Fase 256: mismo criterio (resultado por asesor y llamadas con nombre + nota).
+    if(p.tipo === 'calidad_monitoreos_panel'){ continue; }
     if(p.tipo === 'trafico_combo'){
       var dT = (typeof _traficoDatosExport === 'function') ? _traficoDatosExport(i) : [];
       // Fase 150: con la sub-pestaña One & Done activa, la tabla va con su titulo.

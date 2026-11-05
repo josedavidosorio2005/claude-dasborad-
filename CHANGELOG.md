@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.130.0 — Noviembre 2026
+
+**Fase 256: Calidad en el dashboard de Mobilize y "Mis resultados" del asesor (paso 5 de Calidad de Mobilize).**
+
+- Dashboard de Mobilize › Calidad: nuevo bloque "Resultado de los
+  monitoreos", con los indicadores, el resultado por asesor, los ítems más
+  afectados (y qué asesores los fallaron) y la lista de llamadas con fallas.
+  Al hacer clic en una llamada se ve su detalle ítem por ítem, con el motivo.
+  También tiene el botón "Diccionario". Sigue el filtro MESES de arriba.
+- Mientras Mobilize no tenga monitoreos en la plataforma, ese bloque no
+  aparece: la pestaña se ve igual que hoy.
+- El cliente no ve el teléfono (como siempre) y ve los nombres de los asesores
+  porque Mobilize ya lo tiene permitido. No se agrega al Excel de "Exportar",
+  igual que la barra por asesor de ORLANT.
+- "Mis resultados" del asesor: suma su calificación por mes y los ítems a
+  reforzar (los que más falló en el periodo, con su descripción). El detalle
+  de cada monitoreo muestra la plantilla con la que se calificó y el motivo.
+- ORLANT, Aurora, Hospital La María y SURA quedan igual.
+
 ## v1.129.0 — Noviembre 2026
 
 **Fase 255: Calidad, resumen por asesor, detalle por mes y diccionario (paso 4 de Calidad de Mobilize).**

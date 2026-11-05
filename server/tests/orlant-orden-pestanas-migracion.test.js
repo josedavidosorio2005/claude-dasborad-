@@ -122,7 +122,7 @@ test('migracion dashboards_config_orlant_orden_pestanas_v1: no toca panels/subta
 // MOBILIZE; se quita aqui para seguir comprobando lo de esta prueba.
 function sinResumenCalidad(x) {
   const c = JSON.parse(JSON.stringify(x));
-  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel'); });
+  (c.tabs || [c]).forEach((t) => { if (t && t.panels) t.panels = t.panels.filter((p) => p.tipo !== 'calidad_resumen_panel' && p.tipo !== 'calidad_monitoreos_panel'); });
   return c;
 }
 
