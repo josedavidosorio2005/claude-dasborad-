@@ -141,6 +141,8 @@ const GENERADORES = {
       { tipo: 'calidad_kpis', campana },
       { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
       { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
+      // Fase 256: resultado de los monitoreos (HTML de Edwin), donde ya hay calidad_resumen (Mobilize).
+      ...(activos && activos.has('calidad_resumen') ? [{ tipo: 'calidad_monitoreos_panel', campana }] : []),
     ],
   }),
 };

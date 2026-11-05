@@ -95,6 +95,12 @@ function toPlantilla(row) {
   };
 }
 const familiaDe = (row) => row.familiaId || row.id;
+// Fase 256: el asesor ve las plantillas de SU campaña (para el detalle y el
+// diccionario de "Mis resultados"); el resto, segun su acceso de siempre.
+function puedeVerPlantillasDe(actor, campana) {
+  if (campaignAccess(actor, campana)) return true;
+  return !!actor && actor.rol === 'ASESOR' && !!actor.asesorCampana && actor.asesorCampana === campana;
+}
 
 // Fase 151: el telefono del cliente final solo lo reciben los roles que
 // trabajan el monitoreo (CALIDAD, SUPERVISOR, REPORTES) y el administrador.
@@ -268,7 +274,7 @@ router.get(
     const rows = db
       .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana, principal DESC, id')
       .all()
-      .filter((row) => campaignAccess(req.actor, row.campana));
+      .filter((row) => puedeVerPlantillasDe(req.actor, row.campana));
     const vistas = new Set();
     res.json(rows.filter((r) => (vistas.has(r.campana) ? false : vistas.add(r.campana))).map(toPlantilla));
   })
@@ -287,7 +293,7 @@ router.get(
     const rows = db
       .prepare('SELECT * FROM calidad_plantillas' + (conInactivas ? '' : ' WHERE activo = 1') + ' ORDER BY campana, principal DESC, id')
       .all()
-      .filter((row) => campaignAccess(req.actor, row.campana));
+      .filter((row) => puedeVerPlantillasDe(req.actor, row.campana));
     res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: !!r.activo && canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r)) })));
   })
 );

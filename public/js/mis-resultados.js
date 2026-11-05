@@ -135,6 +135,8 @@ async function renderMisResultados(){
   var puntajes = arr.map(function(m){ return m.puntaje; });
   mrmk('mr-ch-tendencia',{type:'line',data:{labels:labels.length?labels:['Sin datos'],datasets:[{label:'Puntaje',data:puntajes.length?puntajes:[0],borderColor:CM,backgroundColor:'rgba(26,122,158,0.1)',tension:0.3,pointRadius:4,borderWidth:2.5,fill:true}]},options:loDatalabelsAuto(lo(null,50))});
 
+  mrRenderPorMesYReforzar(allArr, arr); // Fase 256
+
   var rows = arr.slice().reverse();
   _misMonitoreosList = rows;
   var html = '<tr><th>Fecha</th><th>Campana</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Nivel Critico</th><th></th></tr>';
@@ -175,7 +177,9 @@ function verDetalleMonitoreo(idx){
     '<div class="qi-pill"><div class="qv">'+m.fallos+'</div><div class="ql"># FALLOS CRITICOS</div></div>'+
     '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+calEstadoHtml(m.nivelCritico)+'</div><div class="ql">NIVEL CRITICO</div></div>';
 
-  var items = (CAL_PLANTILLAS[m.campana] && CAL_PLANTILLAS[m.campana].items) || [];
+  // Fase 256: la plantilla con la que se hizo el monitoreo (version incluida); si no, la principal.
+  var plM = (typeof caPlantillaDe === 'function' && typeof CAL_PLANTILLAS_TODAS !== 'undefined') ? caPlantillaDe(m, CAL_PLANTILLAS_TODAS) : null;
+  var items = (plM && plM.items) || (CAL_PLANTILLAS[m.campana] && CAL_PLANTILLAS[m.campana].items) || [];
   var answers = m.answers || {};
   var cats = [];
   items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
@@ -190,9 +194,34 @@ function verDetalleMonitoreo(idx){
         '<span class="qi-answer-badge '+badgeCls+'">'+esc(a||'—')+'</span></div>';
     });
   });
-  document.getElementById('dm-items-wrap').innerHTML = html;
+  var motivoM = m.extras && m.extras.motivo;
+  document.getElementById('dm-items-wrap').innerHTML = (motivoM ? '<p class="mr-motivo"><strong>Motivo de afectación:</strong> '+esc(motivoM)+'</p>' : '') + html;
 
   document.getElementById('detalle-monitoreo-overlay').classList.add('show');
   if (typeof motionAbrirModal === 'function') motionAbrirModal('detalle-monitoreo-modal');
   marcarMonitoreoVisto(m.id);
+}
+
+// Fase 256 (plan de Calidad B5, como "Mis resultados" del HTML de Edwin):
+// calificacion por mes (todos los meses) e items a reforzar del periodo
+// elegido -- los que mas fallo el asesor, con la descripcion del diccionario.
+function mrRenderPorMesYReforzar(todos, delPeriodo){
+  var pm = document.getElementById('mr-por-mes');
+  var rf = document.getElementById('mr-reforzar');
+  if(!pm || !rf || typeof caPorMes !== 'function') return;
+  var meses = caPorMes(todos).slice().reverse();
+  pm.innerHTML = meses.length ? '<div style="overflow-x:auto"><table class="aurora-rank-table mr-mes-tabla"><tr><th>Mes</th><th>Monitoreos</th><th>Promedio</th><th>Clasificación</th></tr>' + meses.map(function(x){
+    return '<tr><td>'+esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(x.mes) : x.mes)+'</td><td>'+x.monitoreos+'</td><td>'+x.promedio+'%</td><td><span class="cc2-pill cc2-'+x.clase.k+'">'+esc(x.clase.t)+'</span></td></tr>';
+  }).join('') + '</table></div>' : '<p class="ca-vacio">Aún no tienes monitoreos.</p>';
+  var pls = typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : [];
+  var porPl = {};
+  (delPeriodo || []).forEach(function(m){ var p = caPlantillaDe(m, pls); if(p){ (porPl[p.id] = porPl[p.id] || { p: p, arr: [] }).arr.push(m); } });
+  var grupos = Object.keys(porPl).map(function(k){ return porPl[k]; }).sort(function(a, b){ return b.arr.length - a.arr.length; });
+  var lista = [];
+  grupos.forEach(function(g){ caItemsAfectados(g.arr, g.p.items).forEach(function(x){ if(x.fallos > 0) lista.push(x); }); });
+  lista.sort(function(a, b){ return b.fallos - a.fallos; });
+  rf.innerHTML = lista.length ? '<ul class="mr-reforzar">' + lista.slice(0, 8).map(function(x){
+    return '<li><details><summary><span>'+esc(x.it.n+'. '+x.it.label)+(x.it.critico ? ' ⚠' : '')+'</span><span class="mr-reforzar-n">'+x.fallos+(x.fallos === 1 ? ' vez' : ' veces')+'</span></summary>' +
+      (x.it.descripcion ? '<p>'+esc(x.it.descripcion)+'</p>' : '') + (x.it.vinetas && x.it.vinetas.length ? '<ul>'+x.it.vinetas.map(function(v){ return '<li>'+esc(v)+'</li>'; }).join('')+'</ul>' : '') + '</details></li>';
+  }).join('') + '</ul>' : '<p class="ca-vacio">'+((delPeriodo || []).length ? '¡Muy bien! No fallaste ningún ítem en este periodo.' : 'Sin monitoreos en este periodo.')+'</p>';
 }

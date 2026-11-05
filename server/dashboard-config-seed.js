@@ -533,6 +533,9 @@ const MOBILIZE = {
         { tipo: 'calidad_resumen_panel', campana: 'MOBILIZE' },
         { tipo: 'calidad_kpis', campana: 'MOBILIZE' },
         { tipo: 'calidad_pie', campana: 'MOBILIZE', titulo: 'Distribución de clasificación' },
+        // Fase 256: resultado de los monitoreos (HTML de Edwin); base ya
+        // sembrada: fase256_mobilize_calidad_monitoreos_panel_v1.
+        { tipo: 'calidad_monitoreos_panel', campana: 'MOBILIZE' },
       ]},
     ],
   },
