@@ -1,0 +1,272 @@
+// calidad-calificar.js — Fase 254 (plan de Calidad B3). Formulario "Calificar"
+// para las plantillas nuevas (las que traen sus campos), igual al HTML de
+// Edwin: datos de la llamada, items por categoria con SI / NO / N/A,
+// "Ver criterio", calificacion definitiva en vivo, motivo automatico,
+// "Sugerir observacion" y aviso "Faltan items por calificar". Las plantillas
+// de siempre (ORLANT, la generica) siguen con el formulario de antes.
+// El servidor vuelve a calcular y a validar todo al guardar.
+var _cc2 = { answers: {}, editId: null, plantilla: null };
+
+// Plantilla que usa el formulario: la elegida o, sin elegir, la principal
+// usable (o la primera usable) de la campaña.
+function cc2PlantillaActual(camp) {
+  var p = (typeof _calPlantillaDe === 'function') ? _calPlantillaDe(camp) : null;
+  if (p) return p;
+  var us = calPlantillasUsables(camp);
+  return us.find(function (x) { return x.principal; }) || us[0] || null;
+}
+
+// Muestra el formulario nuevo si la plantilla trae campos. true = lo mostro.
+function cc2Sync() {
+  var nuevo = document.getElementById('cf2');
+  var viejo = document.getElementById('cf-viejo');
+  if (!nuevo || !viejo) return false;
+  var p = cc2PlantillaActual(_ccampana);
+  var usar = !!(p && p.campos);
+  nuevo.hidden = !usar;
+  viejo.hidden = usar;
+  if (!usar) { _cc2.plantilla = null; return false; }
+  if (!_cc2.plantilla || _cc2.plantilla.id !== p.id) { _cc2.answers = {}; if (!_cc2.editId) _cc2.editId = null; }
+  _cc2.plantilla = p;
+  cc2Render();
+  return true;
+}
+
+function _cc2Campo(c) {
+  var id = 'cc2-f-' + c.k;
+  var req = (c.k === 'asesor' || c.k === 'fecha' || c.k === 'observaciones') ? ' *' : '';
+  var lbl = '<span class="cc2-lt">' + esc(c.etiqueta) + req + '</span>';
+  if (c.k === 'asesor') {
+    var ases = (typeof users !== 'undefined' ? users : []).filter(function (u) { return u.rol === 'ASESOR' && u.asesorCampana === _ccampana && u.active; })
+      .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); });
+    if (!ases.length) return '<label class="cc2-f">' + lbl + '<select id="' + id + '" disabled><option value="">—</option></select><small class="cc2-hint">No hay asesores de esta campaña. Créalos en Usuarios (rol ASESOR).</small></label>';
+    return '<label class="cc2-f">' + lbl + '<select id="' + id + '" required><option value="">Selecciona…</option>' +
+      ases.map(function (u) { return '<option value="' + esc(u.nombre) + '" data-user-id="' + u.id + '">' + esc(textoFormatoNombre(u.nombre)) + '</option>'; }).join('') + '</select></label>';
+  }
+  if (c.k === 'fecha') return '<label class="cc2-f">' + lbl + '<input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '"' + (isFullAdmin() ? '' : ' disabled') + '></label>';
+  if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
+  if (c.k === 'tipoLlamada') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="">Selecciona…</option><option>Entrada</option><option>Salida</option></select></label>';
+  if (c.k === 'codificacion') {
+    var activas = calCodificacionesActivas(_ccampana);
+    if (activas.length) return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="">Selecciona…</option>' + activas.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('') + '</select></label>';
+    return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" maxlength="200" placeholder="Escribe el código" spellcheck="false"></label>';
+  }
+  if (c.k === 'motivo') return '<label class="cc2-f cc2-wide">' + '<span class="cc2-lt">' + esc(c.etiqueta) + ' (automático)</span><input type="text" id="' + id + '" readonly></label>';
+  if (c.k === 'observaciones') return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" maxlength="500" rows="3"></textarea></label>';
+  var extra = c.k === 'placa' ? ' maxlength="20" autocapitalize="characters" spellcheck="false"' : (c.k === 'telefono' ? ' inputmode="tel" maxlength="40"' : ' maxlength="60"');
+  return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '"' + extra + '></label>';
+}
+
+function _cc2Seg(it) {
+  var ops = [['SI', 'y'], ['NO', 'n']];
+  if (it.admiteNA !== false) ops.push(['N/A', 'x']);
+  return '<div class="cc2-seg" role="group" aria-label="' + esc(it.n + '. ' + it.label) + '">' + ops.map(function (o) {
+    return '<button type="button" class="cc2-' + o[1] + '" data-n="' + esc(it.n) + '" data-v="' + o[0] + '" aria-pressed="false">' + o[0] + '</button>';
+  }).join('') + '</div>';
+}
+
+function cc2Render() {
+  var p = _cc2.plantilla;
+  var b = cc2Bloques(p.campos);
+  var itemsHtml = cc2PorCategoria(p.items).map(function (g) {
+    return '<div class="cc2-cat">' + esc(g.cat) + '</div>' + g.items.map(function (it) {
+      return '<div class="cc2-item" data-item="' + esc(it.n) + '"><span class="cc2-num">' + esc(it.n) + '</span>' +
+        '<div class="cc2-iname"><b>' + esc(it.label) + '</b><small>' + esc(cc2SubItem(it)) +
+        (it.descripcion || (it.vinetas && it.vinetas.length) ? ' · <button type="button" class="cc2-qbtn" onclick="cc2VerCriterio(' + Number(it.n) + ')">Ver criterio</button>' : '') +
+        '</small></div>' + _cc2Seg(it) + '</div>';
+    }).join('');
+  }).join('');
+  document.getElementById('cf2').innerHTML =
+    '<div class="cc2-grid">' +
+      '<div class="aurora-card cc2-form">' +
+        calPlantillaSelectorHtml(_ccampana, !!_cc2.editId) +
+        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Información general</h3><span class="cc2-tag">Datos de la llamada</span></div>' +
+          '<div class="cc2-fields">' + b.generales.map(_cc2Campo).join('') + '</div></section>' +
+        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Ítems de la plantilla</h3><span class="cc2-tag">⚠ Crítico: NO resta 20 pts · N/A = no aplica</span></div>' +
+          '<div class="cc2-items" id="cc2-items">' + itemsHtml + '</div></section>' +
+        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Detalles adicionales</h3></div>' +
+          '<div class="cc2-fields">' + b.detalle.map(_cc2Campo).join('') + '</div>' +
+          (b.detalle.some(function (c) { return c.k === 'observaciones'; }) ? '<button type="button" class="btn-cancel cc2-sugerir" onclick="cc2Sugerir()">Sugerir observación</button>' : '') +
+        '</section>' +
+      '</div>' +
+      '<aside class="aurora-card cc2-score" aria-live="polite">' +
+        '<span class="cc2-tag">Calificación definitiva</span>' +
+        '<div class="cc2-big" id="cc2-big">—</div>' +
+        '<div><span class="cc2-pill cc2-na" id="cc2-pill">Sin calificar</span></div>' +
+        '<div class="cc2-prog" id="cc2-prog"></div>' +
+        '<div class="cc2-ded" id="cc2-ded" hidden></div>' +
+        '<div class="cc2-editando" id="cc2-editando"' + (_cc2.editId ? '' : ' hidden') + '>Editando un monitoreo guardado</div>' +
+        '<div class="cc2-actions"><button type="button" class="btn-primary" id="cc2-guardar" onclick="cc2Guardar()">' + (_cc2.editId ? 'Actualizar monitoreo' : 'Guardar monitoreo') + '</button>' +
+          '<button type="button" class="btn-cancel" onclick="cc2Limpiar()">Limpiar</button></div>' +
+        '<p class="cc2-note">Para guardar debes calificar los <b>' + p.items.length + ' ítems</b>' + (b.detalle.some(function (c) { return c.k === 'observaciones'; }) ? ' y escribir las observaciones' : '') + '.</p>' +
+      '</aside>' +
+    '</div>';
+  cc2Pintar();
+}
+
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest && e.target.closest('#cf2 .cc2-seg button');
+  if (!btn) return;
+  var n = btn.dataset.n, v = btn.dataset.v;
+  _cc2.answers[n] = _cc2.answers[n] === v ? undefined : v;
+  if (!_cc2.answers[n]) delete _cc2.answers[n];
+  var fila = btn.closest('.cc2-item'); if (fila) fila.classList.remove('cc2-missing');
+  cc2Pintar();
+});
+
+function cc2Pintar() {
+  var p = _cc2.plantilla; if (!p) return;
+  var a = _cc2.answers;
+  document.querySelectorAll('#cf2 .cc2-seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(a[b.dataset.n] === b.dataset.v)); });
+  var nota = cc2Nota(p.items, a);
+  var falt = cc2Faltantes(p.items, a);
+  var completo = !falt.length;
+  var cls = completo ? cc2Clase(nota) : (nota === null ? cc2Clase(null) : { k: cc2Clase(nota).k, t: 'Parcial · faltan ' + falt.length + ' ítem' + (falt.length === 1 ? '' : 's') });
+  var big = document.getElementById('cc2-big');
+  big.textContent = nota === null ? '—' : nota + '%';
+  big.className = 'cc2-big cc2-c-' + (nota === null ? 'na' : cc2Clase(nota).k);
+  var pill = document.getElementById('cc2-pill');
+  pill.className = 'cc2-pill cc2-' + (completo ? cls.k : 'na');
+  pill.textContent = cls.t;
+  document.getElementById('cc2-prog').textContent = (p.items.length - falt.length) + ' de ' + p.items.length + ' ítems calificados';
+  var ded = cc2Deducciones(p.items, a);
+  var h = ded.map(function (d) { return '<div' + (d.critico ? ' class="cc2-crit"' : '') + '><span>' + esc(d.it.n + '. ' + d.it.label) + (d.critico ? ' ⚠' : '') + '</span><span>−' + d.puntos + '</span></div>'; }).join('');
+  var al = cc2Alerta(ded.filter(function (d) { return d.critico; }).length);
+  if (al) h += '<div class="cc2-crit"><span class="cc2-pill cc2-' + al.k + '">' + esc(al.t) + '</span></div>';
+  if (!h && completo) h = '<div><span>Sin afectaciones</span><span>100%</span></div>';
+  var dEl = document.getElementById('cc2-ded'); dEl.innerHTML = h; dEl.hidden = !h;
+  var mot = document.getElementById('cc2-f-motivo'); if (mot) mot.value = cc2Motivo(p.items, a);
+}
+
+function _cc2Val(k) { var el = document.getElementById('cc2-f-' + k); return el ? String(el.value || '').trim() : ''; }
+
+function cc2Sugerir() {
+  var p = _cc2.plantilla; if (!p) return;
+  var t = cc2SugerirObs(p.items, _cc2.answers);
+  if (t === null) { showToast('Califica los ' + p.items.length + ' ítems para sugerir la observación'); return; }
+  var el = document.getElementById('cc2-f-observaciones'); if (el) { el.value = t.slice(0, 500); el.classList.remove('cc2-invalid'); }
+}
+
+function cc2VerCriterio(n) {
+  var p = _cc2.plantilla; if (!p) return;
+  var it = p.items.find(function (x) { return Number(x.n) === Number(n); }); if (!it) return;
+  document.getElementById('cc2-criterio-t').textContent = it.n + '. ' + it.label;
+  document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2SubItem(it)) + '</p>' +
+    (it.descripcion ? '<p>' + esc(it.descripcion) + '</p>' : '') +
+    (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '');
+  _cc2AbrirDialogo('cc2-ov-criterio');
+}
+var _cc2FocoPrevio = null;
+function _cc2AbrirDialogo(id) {
+  _cc2FocoPrevio = document.activeElement;
+  var ov = document.getElementById(id);
+  // Dentro de la ventana de Calidad, para quedar encima de ella (misma capa).
+  var host = document.getElementById('calidad-overlay');
+  if (host && ov.parentNode !== host) host.appendChild(ov);
+  ov.hidden = false;
+  var b = ov.querySelector('button'); if (b) b.focus();
+}
+function cc2CerrarDialogo(id) {
+  document.getElementById(id).hidden = true;
+  if (_cc2FocoPrevio && _cc2FocoPrevio.focus) _cc2FocoPrevio.focus();
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  ['cc2-ov-criterio', 'cc2-ov-faltan'].forEach(function (id) { var ov = document.getElementById(id); if (ov && !ov.hidden) { e.stopPropagation(); cc2CerrarDialogo(id); } });
+}, true);
+function cc2IrAFaltante() {
+  document.getElementById('cc2-ov-faltan').hidden = true;
+  var f = document.querySelector('#cf2 .cc2-item.cc2-missing');
+  if (f) { f.scrollIntoView({ block: 'center', behavior: 'smooth' }); var b = f.querySelector('.cc2-seg button'); if (b) b.focus({ preventScroll: true }); return; }
+  var o = document.getElementById('cc2-f-observaciones');
+  if (o && o.classList.contains('cc2-invalid')) { o.scrollIntoView({ block: 'center', behavior: 'smooth' }); o.focus({ preventScroll: true }); }
+}
+
+async function cc2Guardar() {
+  var p = _cc2.plantilla; if (!p) return;
+  var editando = !!_cc2.editId;
+  if (!editando && !calCurrentPerm()) { showToast('No tiene permiso para evaluar esta campaña'); return; }
+  var asesorSel = document.getElementById('cc2-f-asesor');
+  var asesor = _cc2Val('asesor');
+  if (asesorSel) asesorSel.classList.toggle('cc2-invalid', !asesor);
+  if (!asesor) { showToast('Selecciona el asesor'); if (asesorSel) asesorSel.focus(); return; }
+  document.querySelectorAll('#cf2 .cc2-item.cc2-missing').forEach(function (x) { x.classList.remove('cc2-missing'); });
+  var falt = cc2Faltantes(p.items, _cc2.answers);
+  var pideObs = p.campos.some(function (c) { return c.k === 'observaciones'; });
+  var obsEl = document.getElementById('cc2-f-observaciones');
+  var sinObs = pideObs && !_cc2Val('observaciones');
+  if (obsEl) obsEl.classList.toggle('cc2-invalid', sinObs);
+  if (falt.length || sinObs) {
+    falt.forEach(function (it) { var f = document.querySelector('#cf2 .cc2-item[data-item="' + it.n + '"]'); if (f) f.classList.add('cc2-missing'); });
+    document.getElementById('cc2-faltan-t').textContent = !falt.length ? 'Faltan las observaciones' :
+      (falt.length === 1 ? 'Falta 1 ítem por calificar' : 'Faltan ' + falt.length + ' ítems por calificar') + (sinObs ? ' y las observaciones' : '');
+    document.getElementById('cc2-faltan-l').innerHTML = falt.map(function (it) { return '<li><b>' + esc(it.n) + '.</b> ' + esc(it.label) + '</li>'; }).join('') + (sinObs ? '<li><b>Observaciones</b> sin escribir</li>' : '');
+    _cc2AbrirDialogo('cc2-ov-faltan');
+    return;
+  }
+  var opt = asesorSel && asesorSel.selectedOptions && asesorSel.selectedOptions[0];
+  var uid = opt ? opt.getAttribute('data-user-id') : null;
+  var answers = {};
+  p.items.forEach(function (it) { answers[it.n] = _cc2.answers[it.n] || ''; });
+  var extras = {};
+  ['placa', 'tipoLlamada', 'idAgente'].forEach(function (k) { var v = _cc2Val(k); if (v) extras[k] = k === 'placa' ? v.toUpperCase() : v; });
+  var body = {
+    asesor: asesor,
+    asesorUserId: uid ? Number(uid) : undefined,
+    fecha: _cc2Val('fecha') || calFechaHoyLocal(),
+    canal: 'LLAMADA',
+    idLlamada: _cc2Val('idLlamada'),
+    telefono: _cc2Val('telefono'),
+    codificacion: _cc2Val('codificacion'),
+    observaciones: _cc2Val('observaciones'),
+    answers: answers,
+    extras: extras,
+  };
+  if (!editando) { body.campana = _ccampana; body.plantillaId = p.id; body.evaluador = currentUser ? currentUser.nombre : ''; }
+  var btn = document.getElementById('cc2-guardar');
+  try {
+    await withButtonLoading(btn, 'Guardando...', function () {
+      return editando ? apiRequest('PUT', '/monitoreos/' + _cc2.editId, body) : apiRequest('POST', '/monitoreos', body);
+    });
+  } catch (e) { showToast(e.message, 'error'); return; }
+  showToast(editando ? 'Monitoreo actualizado' : 'Monitoreo guardado');
+  cc2Limpiar();
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
+  renderCalKpis();
+}
+
+function cc2Limpiar() {
+  var salirEdicion = !!_cc2.editId;
+  _cc2.answers = {}; _cc2.editId = null;
+  if (salirEdicion) _calPlantillaElegida[_ccampana] = null;
+  cc2Sync();
+}
+
+// Editar un monitoreo hecho con una plantilla nueva (quien lo califico,
+// Reportes o el administrador; el servidor decide).
+function cc2Editar(m) {
+  var p = CAL_PLANTILLAS_TODAS.find(function (x) { return x.id === m.plantillaId; });
+  if (!p || !p.campos) return false;
+  _calPlantillaElegida[_ccampana] = p.id;
+  _cc2.editId = m.id;
+  _cc2.plantilla = p;
+  _cc2.answers = {};
+  Object.keys(m.answers || {}).forEach(function (k) { if (m.answers[k]) _cc2.answers[k] = m.answers[k]; });
+  switchCalTab('nuevo');
+  cc2Sync();
+  var set = function (k, v) { var el = document.getElementById('cc2-f-' + k); if (el && v != null) el.value = v; };
+  set('asesor', m.asesor); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono);
+  set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
+  var ex = m.extras || {};
+  set('placa', ex.placa); set('tipoLlamada', ex.tipoLlamada); set('idAgente', ex.idAgente);
+  cc2Pintar();
+  showToast('Editando el monitoreo de ' + textoFormatoNombre(m.asesor) + ' (' + (m.fecha || '-') + ')');
+  return true;
+}
+
+// Puede editar este monitoreo desde la lista (el servidor vuelve a revisar).
+function cc2PuedeEditar(m) {
+  if (calCanManageMonitoreos()) return true;
+  var p = CAL_PLANTILLAS_TODAS.find(function (x) { return x.id === m.plantillaId; });
+  return !!(p && p.campos && currentUser && currentUser.rol === 'CALIDAD' && m.evaluadorUserId === currentUser.id);
+}

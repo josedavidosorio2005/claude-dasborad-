@@ -281,11 +281,14 @@ router.get(
   '/calidad/plantillas/todas',
   requireActor,
   wrap((req, res) => {
+    // Fase 254: ?inactivas=1 agrega las versiones viejas (para ver o editar un
+    // monitoreo hecho con ellas); nunca son "usables" para uno nuevo.
+    const conInactivas = req.query.inactivas === '1';
     const rows = db
-      .prepare('SELECT * FROM calidad_plantillas WHERE activo = 1 ORDER BY campana, principal DESC, id')
+      .prepare('SELECT * FROM calidad_plantillas' + (conInactivas ? '' : ' WHERE activo = 1') + ' ORDER BY campana, principal DESC, id')
       .all()
       .filter((row) => campaignAccess(req.actor, row.campana));
-    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r)) })));
+    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: !!r.activo && canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r)) })));
   })
 );
 
@@ -479,11 +482,14 @@ router.get(
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    const rows = mes
-      ? db
-          .prepare('SELECT * FROM monitoreos WHERE campana = ? AND mes = ? ORDER BY id DESC')
-          .all(campana, mes)
-      : db.prepare('SELECT * FROM monitoreos WHERE campana = ? ORDER BY id DESC').all(campana);
+    // Fase 254 (pedido de Edwin, como su HTML): el rol CALIDAD ve solo los
+    // monitoreos que el mismo califico (por su id; los viejos sin id, por el
+    // nombre del evaluador). Supervisor, Reportes, Gerencia y admin, igual que antes.
+    const soloMios = !!req.actor && req.actor.rol === 'CALIDAD' && !isFullAdmin(req.actor);
+    const filtroMios = soloMios ? ' AND (evaluadorUserId = @uid OR (evaluadorUserId IS NULL AND lower(trim(evaluador)) = lower(trim(@nombre))))' : '';
+    const rows = db
+      .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + filtroMios + ' ORDER BY id DESC')
+      .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
     res.json(rows.map((r) => monitoreoPara(req.actor, r)));
   })
 );
