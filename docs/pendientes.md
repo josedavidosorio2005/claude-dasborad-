@@ -9,6 +9,38 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Importar la plantilla de Mobilize en producción** (Fase 253, 05/11) —
+  Prioridad ALTA (Edwin la necesita para probar). Es una escritura en
+  producción que haces tú como administrador, por la interfaz. El archivo
+  está fuera del repo (`Downloadscalidad-edwinplantilla-mobilize.json`).
+  Pasos: menú **Calidad** → pestaña **Plantillas** → **Elegir archivo…** →
+  revisar la vista previa (14 ítems, 5 críticos, suma de pesos 100) → marcar
+  **Usar como plantilla principal de MOBILIZE** → **Importar plantilla**.
+  Mobilize tiene 0 monitoreos, así que no cambia ningún dato viejo. Opcional:
+  en la tabla, **Desactivar** la genérica de MOBILIZE para que Calidad no
+  tenga que elegir. Cómo se cierra: la plantilla aparece como "v1, principal".
+- **Usuario de Calidad para que Edwin pruebe** (Fase 253) — la cuenta de
+  Edwin en producción es SUPERVISOR (ORLANT y MOBILIZE, sin "crear
+  usuarios"): puede calificar desde su pantalla, pero no entra directo a
+  Calificar ni ve "solo lo suyo" (eso es del rol CALIDAD), y no puede crear
+  usuarios. Decidir si se le crea un usuario CALIDAD de prueba (Usuarios →
+  Nuevo → rol CALIDAD → campaña MOBILIZE → plantilla de Mobilize) o se le
+  cambia el rol. **No hay usuarios ASESOR activos**: el nombre del asesor se
+  escribe a mano; para que el asesor vea "Mis resultados" hay que crearlo
+  (rol ASESOR, campaña MOBILIZE, mismo nombre).
+- **CALIDAD ve solo lo que califica** (Fase 254, pedido del 05/11) — aplicado
+  a todo el rol CALIDAD (también ORLANT). El único usuario CALIDAD activo hoy
+  deja de ver los monitoreos de otros evaluadores (los viejos sin id cuentan
+  como suyos si el evaluador tiene su nombre). Si alguno necesita ver todo,
+  se le da rol REPORTES o SUPERVISOR.
+- **Enlace Encuesta NPS → Calidad** (Fase 257) — solo diseño en
+  `docs/calidad-plan-edwin-nov.md`; se construye (N1–N3) con tu OK y las
+  respuestas de Edwin.
+- **Permiso "ver Calidad" para el cliente** (plan C8) — hoy cualquier usuario
+  con el dashboard de Mobilize ve la pestaña Calidad (y desde la v1.130.0 el
+  resultado por asesor, porque Mobilize permite nombres). Decidir si hace
+  falta la casilla `ver_calidad`.
+
 - **Salida conectada de Mobilize: filas "-" con "Cliente_no_contesta"**
   (Fase 191) — por el pedido, las conectadas de los meses con CDR son
   todas las filas con SKILL_NAME "-". Parte de esas filas están tipificadas
@@ -147,6 +179,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Calidad de Mobilize, para probar** (Fases 252–256) — Prioridad ALTA.
+  Cuando la plantilla esté importada: probar Calificar, Resumen, Detalle por
+  mes, Diccionario y la pestaña Calidad del dashboard. Confirmar: (1) la de
+  14 ítems ("2026 ajustada") es la oficial; (2) observaciones obligatorias
+  como en su HTML; (3) ítem 2 en N/A automático cuando la llamada es de
+  Entrada (hoy a mano); (4) ID de agente en todas las plantillas o solo SURA.
+- **Enlace NPS → Calidad** (Fase 257) — las 5 preguntas del diseño: corte
+  (0–6 o 0–4), todo detractor o un porcentaje, quién audita, plazo, y si
+  entran las encuestas ya cargadas.
 
 - **Mobilize, observaciones que Edwin pospuso** (reunión 03/11, "eso lo
   trabajamos luego") — Prioridad MEDIA. NPS, observaciones del asesor, cédula,
@@ -531,6 +573,18 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ve errores.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
+
+- **Calidad: lo que falta del plan** (Fases 252–256) — motor "por descuento"
+  de SURA (C1, el importador hoy acepta solo `standard`), plantillas de
+  Aurora, HLM y SURA (se importan igual que Mobilize cuando estén sus
+  archivos), módulo Calidad en SURA (C4) y la carga masiva por Excel con
+  plantillas nuevas (hoy sigue con el formulario de siempre). La sección
+  "Resultado de los monitoreos" del dashboard queda fuera del Excel de
+  Exportar (nombres + notas, mismo criterio que la Fase 130).
+- **Calidad: la barra de KPIs del módulo a 375 px** — las tarjetas de arriba
+  del módulo de Calidad se montan con la cabecera al hacer scroll en el
+  celular (existía antes de la Fase 253; visto en las capturas locales).
+  Prioridad BAJA.
 
 - **ESLint** (hallazgo H5 de la revisión del 03/11) — decisión del usuario
   del 04/11: **esperar** (opción c). Todas las versiones de ESLint (también
