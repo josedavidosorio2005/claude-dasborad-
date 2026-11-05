@@ -19221,3 +19221,22 @@ tocar código; un PR por punto.
 - **Prueba nueva** en `fase259-aurora-agendas-usuaria.test.js`: archivo
   sintético con celdas con formato de fecha, leído como lo hace Cargar Datos
   (`sheetStubs` + `cellNF`), en .xlsx y .xls.
+
+## Fase 261 — Escrituras autorizadas en producción: Aurora y plantilla de Mobilize (solo docs, 2026-11-05)
+
+Con autorización explícita del usuario, por la interfaz normal y con su sesión
+de admin en Brave (login a mano, sin guardar cookies). El script solo dejaba
+pasar las escrituras de estos pasos y comparaba la pantalla con lo esperado
+antes de cada guardado.
+
+| Paso | Resultado |
+|---|---|
+| 1. Alias de CLINICA AURORA | 5 usuarios del sistema → asesora registrados (nombres solo en producción) |
+| 2. OCTUBRE.xls (Agendas por usuaria) | 1.ª corrida: la vista previa dio 0 citas y paró sin guardar (arreglado en la Fase 260). 2.ª corrida: vista previa 1.678 citas; 585/435/420/191/47; 932/540/178/28; 799 creadas → guardado (mes nuevo), 1.172 filas agregadas |
+| 3. Plantilla de Mobilize | Vista previa 14 ítems, 5 críticos, pesos 100 → importada como principal (id 9, v1); la genérica (id 8) desactivada; su único monitoreo sigue con ella |
+| Verificación | Aurora › Agendas por usuaria: total 1.678, las 5 asesoras con nombre real, ninguna con código; los 5 clientes abren con 0 errores de consola |
+
+Escrituras hechas: alias (5), carga de agendas (impacto + carga), importar
+plantilla (2 vistas previas + confirmar), activo de la genérica. Ninguna otra
+escritura (0 bloqueadas). Entre corridas apareció 1 usuario ASESOR activo de
+Mobilize (actividad de los usuarios, no del script).

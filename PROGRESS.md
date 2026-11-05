@@ -173,16 +173,15 @@ narrativo de cada fase, fase por fase, vive en
   "Resultado de los monitoreos" (no aparece hasta que haya monitoreos) y, en
   "Mis resultados" del asesor, calificación por mes e ítems a reforzar.
   ORLANT y la plantilla genérica siguen con el formulario de siempre. **La
-  plantilla de Mobilize no está en el repo** (es público): se importa en
-  pantalla (pasos en `docs/pendientes.md`, sección 1). El enlace con la
+  plantilla de Mobilize no está en el repo** (es público); se importó en
+  pantalla el 05/11 (14 ítems, principal; la genérica quedó inactiva). El enlace con la
   Encuesta NPS está solo diseñado (`docs/calidad-plan-edwin-nov.md`).
 - **Agendas por usuaria de Clínica Aurora (Fase 259, v1.131.0, 05/11)**:
   carga del reporte de citas de la clínica (se lee y se agrega en el
   navegador; al servidor solo llegan conteos, `agendas_usuaria`), pestaña
   "Agendas por usuaria" (oculta hasta el primer mes cargado) y Admin ›
   "Usuarios del sistema → asesora" (alias por cliente, resueltos al mostrar).
-  Falta que el usuario registre los 5 alias y cargue OCTUBRE.xls
-  (`docs/pendientes.md`, sección 1).
+  Octubre cargado y los 5 alias registrados en producción (05/11).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
