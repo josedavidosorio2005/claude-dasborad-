@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.122.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.130.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -159,6 +159,23 @@ narrativo de cada fase, fase por fase, vive en
   con los últimos 60 meses; caché de Agendas e Inasistencia que sí se limpia
   al cargar. ESLint queda como propuesta sin aplicar
   ([`docs/propuesta-eslint.md`](docs/propuesta-eslint.md)).
+- **Calidad de Mobilize (Fases 252–256, v1.126.0–v1.130.0, 05/11)**: el
+  módulo de Calidad ya trae lo del HTML de Edwin: campos por plantilla y
+  monitoreo completo obligatorio (servidor); **Calidad** en el menú del
+  administrador; **Calidad › Plantillas** (solo admin) para importar el
+  archivo JSON de una plantilla, con validación, vista previa y versiones (la
+  vieja queda inactiva con sus monitoreos; el permiso `plantilla_<familia>`
+  vale para todas); formulario **Calificar** como el HTML (SI/NO/N/A, Ver
+  criterio, nota en vivo, motivo automático, Sugerir observación, aviso
+  "Faltan ítems por calificar"); el rol CALIDAD entra directo a Calificar y ve
+  **solo lo que califica**; Resumen por asesor, **Detalle por mes** y
+  **Diccionario**; en el dashboard de Mobilize › Calidad, el bloque
+  "Resultado de los monitoreos" (no aparece hasta que haya monitoreos) y, en
+  "Mis resultados" del asesor, calificación por mes e ítems a reforzar.
+  ORLANT y la plantilla genérica siguen con el formulario de siempre. **La
+  plantilla de Mobilize no está en el repo** (es público): se importa en
+  pantalla (pasos en `docs/pendientes.md`, sección 1). El enlace con la
+  Encuesta NPS está solo diseñado (`docs/calidad-plan-edwin-nov.md`).
 - **Infraestructura**: estado vigente (cuenta AWS, recursos, pipeline,
   respaldos) en [`docs/infraestructura.md`](docs/infraestructura.md).
 - **Pendientes**: un solo lugar, [`docs/pendientes.md`](docs/pendientes.md),
@@ -454,3 +471,13 @@ mismo orden):
 - Fase 246 — Tráfico de Llamadas › Flujo de Llamadas: Nivel de servicio (20 s) antes de Nivel de atención en ORLANT, Aurora y HLM; Mobilize y WhatsApp sin cambios (v1.122.0, 2026-11-04)
 - Fase 247 — Plan de Calidad con los 6 Excel de Edwin: plantillas, diferencias con el HTML, motores, resumen por asesor y preguntas (solo docs, 2026-11-04)
 - Fase 248 — Mismo orden de tarjetas que ORLANT en Mobilize › Flujo de Llamadas (Eficacia y FCR al final) y en Tráfico de WhatsApp de todos los clientes (v1.122.1, 2026-11-04)
+- Fase 249 — Encabezado de los dashboards sin la línea «Informe …» (v1.123.0, 2026-11-04)
+- Fase 250 — Flujo de WhatsApp por día (granularidad «Día») (v1.124.0, 2026-11-04)
+- Fase 251 — Mobilize: NPS más limpio y Cargar datos sin la Calidad vieja ni Tipificación de WhatsApp (v1.125.0, 2026-11-04)
+- Fase 252 — Calidad B1: campos por plantilla (lista cerrada), monitoreo completo obligatorio, Calidad edita lo suyo en plantillas nuevas, columnas `origen`/`encuestaId` (v1.126.0, 2026-11-05)
+- Fase 253 — Calidad B2: Calidad en el menú del administrador, importador de plantillas con vista previa, versiones por familia y descripción de cada rol en Usuarios (v1.127.0, 2026-11-05)
+- Fase 254 — Calidad B3: formulario Calificar como el HTML de Edwin; CALIDAD entra directo y ve solo lo suyo (v1.128.0, 2026-11-05)
+- Fase 255 — Calidad B4: Resumen por asesor, Detalle por mes y Diccionario; asesor escrito con sugerencias (v1.129.0, 2026-11-05)
+- Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
+- Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
+- Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)

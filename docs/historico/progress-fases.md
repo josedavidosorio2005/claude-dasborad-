@@ -19085,3 +19085,76 @@ tocar código; un PR por punto.
   (ORLANT, Aurora, HLM); Tráfico de Llamadas de ORLANT, Aurora y HLM, Llamadas
   Únicas de Mobilize, las pestañas y sub-vistas de los 5 clientes (incluido
   SURA) iguales. 0 errores de consola, 0 peticiones fallidas, 0 escrituras.
+
+## Fases 249–251 — Pedidos de Edwin del 04/11 (v1.123.0–v1.125.0, 2026-11-04)
+
+| Fase | Pedido | PR | Versión | Verificado en producción |
+|---|---|---|---|---|
+| 249 | Encabezado de los dashboards sin la línea «Informe …» (todos los clientes) | #659 | 1.123.0 | Sí |
+| 250 | Flujo de WhatsApp por día (granularidad «Día», solo con base diaria) | #660 | 1.124.0 | Sí |
+| 251 | Mobilize: NPS solo con su valor y la fórmula; Cargar datos sin «Calidad» vieja ni «Tipificación de WhatsApp» (sin borrar datos) | #661 | 1.125.0 | Sí |
+
+- Verificadas en producción en solo lectura con la sesión del usuario: los 5
+  clientes con las mismas pestañas, 0 errores de consola, 0 escrituras (los
+  reportes `post-1.123.0`…`post-1.125.0` quedaron fuera del repo).
+
+## Fases 252–258 — Calidad de Mobilize como el HTML de Edwin (v1.126.0–v1.130.0, 2026-11-05)
+
+| Fase | Paso | PR | Versión | Verificado en producción (solo lectura, Brave, sesión del usuario) |
+|---|---|---|---|---|
+| 252 | B1: campos por plantilla, monitoreo completo, `origen`/`encuestaId` | #662 | 1.126.0 | Sí: 5 clientes iguales a 1.125.0; 2 plantillas (ORLANT 153 monitoreos, Mobilize genérica 0) |
+| 253 | B2: Calidad en el menú del admin, importador con vista previa, versiones por familia, descripción de roles | #663 | 1.127.0 | Sí: menú Calidad y pestaña Plantillas visibles; 5 clientes iguales |
+| 254 | B3: formulario Calificar; CALIDAD entra directo y ve solo lo suyo | #664 | 1.128.0 | Sí: pestaña «Calificar»; formulario nuevo sin mostrarse aún (falta importar la plantilla); 5 clientes iguales |
+| 255 | B4: Resumen por asesor, Detalle por mes, Diccionario; asesor escrito con sugerencias | #665 | 1.129.0 | Sí: las 3 pestañas con contenido (ORLANT: 17 ítems en el diccionario); 5 clientes iguales |
+| 256 | B5: «Resultado de los monitoreos» en Mobilize › Calidad; Mis resultados por mes e ítems a reforzar | #666 | 1.130.0 | Sí: panel agregado por la migración y oculto (0 monitoreos de Mobilize); 5 clientes iguales |
+| 257 | Diseño del enlace Encuesta NPS → Calidad | #667 | — (solo docs) | — |
+| 258 | Cierre: bitácora, pendientes y esta tabla | este PR | — (solo docs) | — |
+
+- **Pedido** (05/11): retomar Calidad de Mobilize en el orden B1–B5, después
+  el diseño del enlace con el NPS y el cierre. Prioridad B1–B3 para que Edwin
+  pueda probar.
+- **B1 (Fase 252)**: la rama ya estaba lista con PR #662 abierto. Suite local
+  2567/2567, `npm audit` 0, CI en verde; la migración solo agrega columnas.
+- **B2 (Fase 253)**: **por qué Edwin no vio «Calidad»**: el rol CALIDAD sí
+  estaba en el formulario de usuario, pero el panel del administrador no
+  tenía ninguna entrada a Calidad (solo se llegaba desde la pantalla de un
+  usuario de Calidad o Supervisor). Además, la cuenta de Edwin en producción
+  es SUPERVISOR sin «crear usuarios» (solo se leyó el rol). Se agregó Calidad
+  al menú del admin y una línea que explica cada rol. Importador:
+  `POST /calidad/plantillas/importar` (solo admin, 403 antes de validar;
+  sin `confirmar` es vista previa sin escrituras), formato
+  `inconexion-plantilla-calidad` v1, motor `standard`, pesos que suman 100,
+  campos de la lista cerrada. Versiones: mismo nombre + campaña = versión
+  N+1, la anterior inactiva; `familiaId` (migración
+  `fase253_calidad_plantillas_familia_v1`, solo ADD COLUMN) para que
+  `plantilla_<familia>` siga valiendo. Al cambiar la principal, los
+  monitoreos viejos sin `plantillaId` pasan a guardar el id de su plantilla
+  (mismo significado, no se recalcula nada). La plantilla real de Mobilize
+  se validó localmente fuera del repo (14 ítems, 5 críticos, 100) y **no se
+  importó**: lo hace el usuario (pasos en `docs/pendientes.md`).
+- **B3 (Fase 254)**: formulario nuevo solo para plantillas con campos;
+  ORLANT y la genérica siguen con el de siempre. Lecciones: (1) los diálogos
+  dentro de un modal deben vivir dentro de su overlay, porque el sistema de
+  foco de la Fase 144 marca `inert` todo lo de afuera; (2) a 375 px las
+  `aurora-rank-table` tienen `min-width:600px`, así que hay que anularlo en
+  tablas dentro de diálogos o de cuadrículas; (3) el CSS nuevo va **antes**
+  del bloque «Fase 175» de `styles.css` (su prueba no admite `rgba(` desde ahí).
+  `GET /monitoreos` para el rol CALIDAD: solo lo suyo (por id; viejos sin id,
+  por nombre del evaluador); se ajustó la prueba del teléfono de la Fase 151.
+- **B4 (Fase 255)**: lógica pura `calidad-analisis-logic.js` (se reusa en
+  B5). En producción hay **0 usuarios ASESOR activos**, así que el asesor de
+  Calificar pasó a texto con sugerencias, como el HTML; se enlaza al usuario
+  si el nombre coincide.
+- **B5 (Fase 256)**: panel `calidad_monitoreos_panel` (migración idempotente
+  `fase256_mobilize_calidad_monitoreos_panel_v1` + semilla + generador; listas
+  cerradas de MESES, autónomos y export). Sin monitoreos no se dibuja. Nombres
+  solo con `asesorVisibleCliente`; fuera del export. El ASESOR ahora recibe
+  las plantillas de su campaña (antes su detalle salía sin ítems).
+- **Pruebas**: `fase253`–`fase256` (sintéticas); suite final 2587/2587,
+  `npm audit` 0, CI en verde en cada PR, merge con `--match-head-commit` tras
+  comparar `git ls-remote` con la API. Local con Brave a 1440/768/375 px (y
+  modo oscuro en B3): 0 errores de consola, sin scroll horizontal.
+- **Producción**: cada versión, con la misma sesión, contra la anterior: 5
+  clientes iguales, 0 errores de consola, 0 escrituras (todas bloqueadas salvo
+  el login), 0 peticiones fallidas. La única petición fallida (un 404) fue en
+  una corrida previa a B2, que preguntó por la ruta nueva antes del deploy.
