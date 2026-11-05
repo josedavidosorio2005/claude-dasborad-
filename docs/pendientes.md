@@ -170,6 +170,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Datos de Aurora y Hospital La María para la entrega del 09/11** (Fase 267,
+  revisión en solo lectura del 05/11) — Aurora solo tiene **octubre** (tráfico
+  de llamadas y WhatsApp, Total tráfico y Agendas por usuaria); HLM solo
+  **agosto** (tráfico; última carga 22/10). Sin Tipificación ni Salida en
+  ninguno de los dos (pestañas ocultas), y Calidad sigue oculta hasta el primer
+  monitoreo (las plantillas ya están). Falta: tráfico de sep/oct de HLM, los
+  CDR (HistCDR/HistChat) de ambos si Edwin quiere Tipificación, y el logo de
+  cada clínica si quiere verlo en el encabezado (hoy solo sale el de InConexion).
+
 - **Calidad de Aurora y Hospital La María** (Fases 262–264, 05/11) — Prioridad
   ALTA (entrega 09/11). Las 3 plantillas están importadas en producción
   (Aurora principal; HLM: Sede Castilla principal y Sede 33 activa). Confirmar:

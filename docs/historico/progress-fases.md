@@ -19346,3 +19346,50 @@ cookies). Solo se dejó pasar la carga de agendas (impacto + carga).
 
 Un primer intento no llegó ni al login (`page.goto` excedió 30 s); se repitió
 con más espera. 2 escrituras en total, 0 bloqueadas.
+
+## Fase 267 — Revisión de Aurora y HLM + Tipificación más rápida (v1.133.1, 2026-11-05)
+
+**Parte 1 (solo lectura, sesión de admin en Brave, sin escrituras).** Aurora y
+Hospital La María, todas las pestañas y sub-vistas a 1440 y 375 px, con MESES
+en "Todos" y en el último mes con datos (Aurora 2026-10, HLM 2026-08), hasta
+20 s de espera por gráfica: todas dibujan (Aurora 13 vistas, HLM 10), 0
+errores de consola, 0 pedidos fallidos, sin textos de otro cliente, sin
+títulos repetidos, sin NaN/undefined y sin scroll horizontal. Pestañas
+ocultas en los dos: Salida, Tipificación y Calidad (sin datos / sin
+monitoreos). Hallazgos de diseño propuestos como un solo PR, esperando OK:
+(a) Agendas por mes y por asesor con un solo mes se ven como un punto suelto
+(línea de un solo punto, eje que no arranca en 0); (b) el eje de cantidades de
+las gráficas de Flujo de llamadas / WhatsApp y de Agendas usa coma de miles
+("1,000") mientras las tarjetas usan punto ("1.000"). Datos que faltan: ver
+docs/pendientes.md.
+
+**Parte 2.** Medición en producción (1.133.0): ORLANT › Tipificación no
+descargaba el CDR — 11 pedidos, 21 KB en total; abrir ORLANT disparaba
+`/opciones` de Llamadas y WhatsApp en frío (2,4 s + 1,0 s, en fila) y la
+pestaña hacía 7 pedidos más, uno tras otro: 3,1 s desde el clic hasta las 2
+tortas.
+
+| Cambio | Detalle |
+|---|---|
+| `GET /calidad/tipificacion/totales` | torta + tarjetas de salida + General/3P de una mitad en un pedido; mismas funciones y misma suma por tramos / mes a mes que hacía el navegador; en cache-datos |
+| `GET /calidad/tipificacion/meses` | al abrir el tablero, solo los meses de cada canal (índice) |
+| `/opciones` | la regla del skill de salida sobre las combinaciones distintas de (skill, skillId, tipoInteraccion), no fila por fila |
+| Navegador | opciones y las 2 mitades a la vez; Exportar sigue con /por-tipo |
+
+Prueba `fase267-tipificacion-totales.test.js`: cálculo viejo (funciones de
+antes contra las rutas de antes) vs nuevo, idénticos en 162 combinaciones
+(ORLANT y Mobilize, datos inventados). Suite 2612/2612, audit 0. PR #677
+(CI verde, merge con --match-head-commit), deploy en verde, health 1.133.1.
+
+**Producción (solo lectura, 1.133.1):** viejo vs nuevo con los datos reales,
+26 casos (ORLANT Todos / octubre / ago+oct × Llamadas y WhatsApp × sin filtro,
+Entrada o salida y Línea 3P; Mobilize Todos / octubre / ago+oct): 0
+diferencias (ORLANT Todos: 50.180 llamadas, 37.288 WhatsApp). Tiempos: justo
+después del deploy (todas las cachés frías) clic → 2 tortas 1,37 s (antes
+3,1 s), 4 pedidos y 19 KB; segunda vez, abrir ORLANT 0,63 s y clic → 2 tortas
+0,42 s. ORLANT, Mobilize, Aurora y HLM a 1440 y 375 px: todas las pestañas, 0
+errores de consola. SURA no quedó verificado en esta corrida: el script la
+abrió primero por la ruta equivocada (404 del propio script) y en la sonda
+quedó bloqueada una petición y dio 401 — es del script, no de este cambio (no
+toca SURA); queda por repetir. Mobilize › Flujo por hora: las 3 tablas se
+ven; queda un lienzo vacío en la pestaña (este cambio no toca esa pestaña; por revisar).
