@@ -29,7 +29,7 @@ function impactoAgendasUsuaria(db, { campana, filas }) {
       return {
         mes,
         citasExistentes: db.prepare(`SELECT COALESCE(SUM(n), 0) AS n FROM ${TABLA} WHERE campana = ? AND mes = ? AND rol = 'confirma'`).get(campana, mes).n,
-        citasNuevas: delMes.filter((f) => f.rol === 'confirma').reduce((s, f) => s + f.n, 0),
+        citasNuevas: delMes.reduce((s, f) => s + f.n, 0),
       };
     }),
   };
@@ -41,8 +41,10 @@ function cargarAgendasUsuaria(db, { campana, archivoNombre, cargadoPorNombre, fi
   const ts = nowStr();
   const meses = mesesDe(filas);
   const del = db.prepare(`DELETE FROM ${TABLA} WHERE campana = ? AND mes = ?`);
-  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, archivoNombre, cargadoPorNombre, createdAt)
-    VALUES (@campana, @mes, @dia, @sede, @usuario, @canal, @tipoCita, @tipoPaciente, @rol, @n, @archivoNombre, @cargadoPorNombre, @createdAt)`);
+  // Fase 265: columnas nuevas (fechaCita, fechaSolicitud, especialidad); las de
+  // la Fase 259 (dia/canal/tipoCita/tipoPaciente) quedan vacias en las filas nuevas.
+  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, fechaCita, fechaSolicitud, especialidad, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana, @mes, '', @sede, @usuario, '', '', '', 'confirma', @n, @fechaCita, @fechaSolicitud, @especialidad, @archivoNombre, @cargadoPorNombre, @createdAt)`);
   let borradas = 0;
   db.transaction(() => {
     respaldarAntesDeCambiar(db, TABLA, { campana, meses, guardadoPorNombre: cargadoPorNombre });
@@ -51,7 +53,7 @@ function cargarAgendasUsuaria(db, { campana, archivoNombre, cargadoPorNombre, fi
       ins.run(Object.assign({}, f, { campana, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts }));
     }
   })();
-  return { meses, insertadas: filas.length, borradas, citas: filas.filter((f) => f.rol === 'confirma').reduce((s, f) => s + f.n, 0) };
+  return { meses, insertadas: filas.length, borradas, citas: filas.reduce((s, f) => s + f.n, 0) };
 }
 
 function agendasUsuariaOpciones(db, campana) {
@@ -62,7 +64,8 @@ function agendasUsuariaOpciones(db, campana) {
 // campaña) o el codigo tal cual si no tiene alias.
 function agendasUsuariaDatos(db, campana) {
   const mapa = cargarAliasMapa(db, campana);
-  const filas = db.prepare(`SELECT mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n FROM ${TABLA} WHERE campana = ? ORDER BY mes, dia`).all(campana);
+  // Fase 265: solo las confirmaciones (las filas "crea" de la Fase 259 ya no se muestran).
+  const filas = db.prepare(`SELECT mes, fechaCita, fechaSolicitud, sede, usuario, especialidad, n FROM ${TABLA} WHERE campana = ? AND rol = 'confirma' ORDER BY mes, fechaCita`).all(campana);
   return { filas: filas.map((f) => Object.assign(f, { asesora: resolverAlias(mapa, f.usuario) })) };
 }
 

@@ -4758,6 +4758,39 @@ function agregarMonitoreosPanelAuroraHlm() {
 }
 runOnceMigration('fase262_calidad_monitoreos_aurora_hlm_v1', agregarMonitoreosPanelAuroraHlm);
 
+// Fase 265 (pedido de Edwin, 05/11): "Agendas por usuaria" con 3 vistas (por
+// mes, por especialidad, por asesor) y filtros por fecha de solicitud y fecha
+// de cita. 1) Columnas NUEVAS en agendas_usuaria (ADD COLUMN, sin tocar filas:
+// las de la Fase 259 quedan con '' y se reemplazan al recargar el mes).
+// 2) La pestaña de Aurora pasa de 1 panel a los 3 con sub-pestañas, SOLO si
+// tiene la forma de la Fase 259 (un solo panel agendas_usuaria_panel); otra
+// forma se deja y se registra. Idempotente; no toca otro cliente.
+function migrarAgendasUsuariaVistas() {
+  const cols = db.prepare('PRAGMA table_info(agendas_usuaria)').all().map((c) => c.name);
+  db.transaction(() => {
+    if (!cols.includes('fechaCita')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN fechaCita TEXT NOT NULL DEFAULT ''");
+    if (!cols.includes('fechaSolicitud')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN fechaSolicitud TEXT NOT NULL DEFAULT ''");
+    if (!cols.includes('especialidad')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN especialidad TEXT NOT NULL DEFAULT ''");
+  })();
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'CLINICA AURORA'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'agendas_usuaria');
+  if (!tab) return;
+  const panels = tab.panels || [];
+  if (panels.length !== 1 || panels[0].tipo !== 'agendas_usuaria_panel' || panels[0].vista) {
+    if (!config.isTest) console.log('[db] Migracion fase265_agendas_usuaria_vistas_v1: la pestaña no tiene la forma esperada -- se deja intacta.');
+    return;
+  }
+  const GENERADORES_AGENDAS_USUARIA = require('./plantillas-cliente').AGENDAS_USUARIA_VISTAS;
+  tab.panels = GENERADORES_AGENDAS_USUARIA.map(([vista, titulo]) => ({ tipo: 'agendas_usuaria_panel', campana: 'CLINICA AURORA', vista, titulo }));
+  tab.subtabs = GENERADORES_AGENDAS_USUARIA.map(([key, label], i) => ({ key, label, indices: [i] }));
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'CLINICA AURORA'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase265_agendas_usuaria_vistas_v1 aplicada.');
+}
+runOnceMigration('fase265_agendas_usuaria_vistas_v1', migrarAgendasUsuariaVistas);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4795,6 +4828,7 @@ module.exports.migrarCalidadPlantillasFamilia = migrarCalidadPlantillasFamilia;
 module.exports.migrarMobilizeCalidadMonitoreosPanel = migrarMobilizeCalidadMonitoreosPanel;
 module.exports.crearAgendasUsuariaAurora = crearAgendasUsuariaAurora;
 module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm;
+module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;
