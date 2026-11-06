@@ -184,21 +184,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   `TIPIFICACION_NOMBRES_SKILL_CLIENTE` (`public/js/tipificacion-logic.js`):
   solo cambia el texto, nunca los conteos.
 
-- **Plantilla de Mobilize en producción: 10 ítems, no los 14 del HTML de Edwin**
-  (visto en la Fase 274, 06/11) — la Calidad de Mobilize ya se ve como
-  «Resultados del equipo» del HTML, pero califica con una plantilla de 10
-  ítems («1. Saludo y presentacion»… «10. Manejo adecuado de tiempos y
-  silencios»). La de Edwin (`plantilla-mobilize.json`, fuera del repo, y la
-  del HTML) tiene 14 ítems y 5 críticos. Cómo se cierra: Edwin confirma cuál va
-  y, con tu autorización, se importa por Calidad › Plantillas (vista previa
-  primero; escritura en producción). Los monitoreos ya hechos se quedan con
-  su plantilla.
-
-- ~~**Punto 5: se ve «Cargar datos» antes del tablero**~~ — **RESUELTO**
-  (Fase 273, v1.136.2, PR #685, 06/11). Era al abrir **SURA**: se veía
-  «Cargar información» ~1,8 s mientras llegaban los datos. Ahora se ve
-  «Cargando el tablero…» (también en los otros 4 clientes) y verificado en
-  producción a 1440 y 375 px. Detalle en `docs/historico/progress-fases.md`.
+- **Mobilize: el único monitoreo se calificó con la plantilla vieja** (Fase 274,
+  corregido en la Fase 276, 06/11, solo lectura en producción) — la plantilla
+  **principal y activa** es «Mobilize 2026 ajustada» (id 9, 14 ítems, 5
+  críticos), **idéntica** a `plantilla-mobilize.json` en texto, orden, pesos y
+  críticos; al calificar uno nuevo salen esos 14 ítems. El único monitoreo
+  calificado (id 191, 05/11, 50 %) se hizo con la plantilla anterior
+  «MOBILIZE» (id 8, 10 ítems, hoy inactiva), por eso Calidad › Ítems más
+  afectados muestra 10 ítems para ese mes. No hay que importar nada. Cómo se
+  cierra: Edwin decide si ese monitoreo se deja así o se vuelve a calificar con
+  la plantilla nueva (borrarlo/editarlo es escritura en producción: con tu OK).
 - **Archivos que faltan subir en Aurora y HLM** (Fases 272, 06/11) — todo va
   por Cargar Datos → cliente: (1) «Tipificación de Llamadas»: el CDR de
   llamadas de Wolkvox (HistCDR); (2) «Tipificación de WhatsApp»: el CDR de
