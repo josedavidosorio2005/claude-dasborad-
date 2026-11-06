@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.140.0 — Noviembre 2026
+
+**Fase 278: Clínica Aurora › Llamadas y WhatsApp de salida, solo el total y con las colas de salida.**
+
+- Ya no salen los botones **Total / Línea General / Línea 3P** ni el cuadro «Línea de cada
+  asesor»: la pestaña muestra siempre el **total**. La tabla queda con el total y la fuente
+  de cada canal.
+- **WhatsApp de salida** ahora suma las colas **Confirmaciones whatsapp (4062)**,
+  **Recordaciones 3 dias (4063)** y **Whatsapp de salida (0)**. **Whatsapp de entrada
+  (4019)** no cuenta como salida. **Llamadas de salida no cambia.**
+- Con la misma regla se actualizan «Entrada o salida» de Tipificación y el WhatsApp de salida
+  de **Total tráfico** de Aurora.
+- ORLANT, Hospital La María y Mobilize no cambian.
+
 ## v1.139.0 — Noviembre 2026
 
 **Fase 277: Clínica Aurora › Tipificación sin «General / 3P».**

@@ -126,7 +126,9 @@ async function _salDibujar(campana, i, opciones){
       '<p class="sal-asesores-ayuda">La línea de cada asesor es una sola para todos los meses, la misma de Tipificación. Los que no tengan línea quedan en "Sin clasificar".</p>' +
       '<div class="modal-btns" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn-primary" onclick="salAbrirClasificacion(\''+esc(campana)+'\', \''+esc(mesSel)+'\')">Clasificación de asesores</button></div>') : '';
   } else if(asesoresEl){
-    if(_salEsAdmin() && filaMes && (filaMes.fuenteLlamadas === 'cdr' || filaMes.fuenteWpp === 'cdr')) await _salCargarEditor(campana, i, mesSel);
+    // Fase 278: un cliente sin lineas (Aurora) no tiene editor de lineas.
+    var sinLineas = filas.some(function(f){ return f.sinLineas; });
+    if(!sinLineas && _salEsAdmin() && filaMes && (filaMes.fuenteLlamadas === 'cdr' || filaMes.fuenteWpp === 'cdr')) await _salCargarEditor(campana, i, mesSel);
     else asesoresEl.innerHTML = '';
   }
 }
@@ -323,10 +325,15 @@ function _salTablaHtml(filas, mesSel, lineas){
   // Parte de un canal. Total: 3P, General, Sin asignar/clasificar (solo si algun
   // mes lo tiene), Total, % 3P (sobre el total del mes) y Fuente. Fase 188: con
   // una linea, su cantidad, el % del Total y la Fuente.
+  // Fase 278: sin lineas (Aurora), solo el total y la fuente de cada canal.
+  var sinLineas = filas.some(function(f){ return f.sinLineas; });
   function parte(c){
     var canal = c === 'llamadas' ? 'Llamadas' : 'WhatsApp';
     var pre = c === 'llamadas' ? 'llamadas' : 'wpp';
     var fuenteDe = function(f){ return fuente(c === 'llamadas' ? f.fuenteLlamadas : f.fuenteWpp); };
+    if(sinLineas){
+      return fila('Total '+canal+' de salida', function(f){ return gdFmtValor(_salTotal(f, c)); }) + fila('Fuente ('+canal+')', fuenteDe);
+    }
     var linea = lineas[c] || 'TOTAL';
     if(linea !== 'TOTAL'){
       return fila(canal+' · '+salidaEtiquetaLinea(linea), function(f){ return gdFmtValor(salidaValorLinea(f, c, linea)); }) +

@@ -79,7 +79,11 @@ const SALIDA_POR_CLIENTE = {
   ORLANT: { regla: 'guion', clasificacionAsesores: true },
   // Fase 277 (pedido de Edwin, 06/11): en Aurora no hay lineas General / 3P (sin filtro
   // Linea ni tarjetas por linea en Tipificacion). La regla de salida sigue igual.
-  'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false },
+  // Fase 278 (pedido de Edwin, 06/11): en "Llamadas y WhatsApp de salida" de Aurora,
+  // solo el total (sinLineas) y el WhatsApp de salida suma las colas 4062
+  // (Confirmaciones whatsapp) y 4063 (Recordaciones 3 dias) ademas del SKILL_ID 0.
+  // 4019 (Whatsapp de entrada) no es salida. Llamadas igual.
+  'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false, sinLineas: true, whatsappSalidaSkillIds: ['0', '4062', '4063'] },
   'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // provisional (Fase 229)
 };
 const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
@@ -94,7 +98,19 @@ function salidaPorGuion(campana) { return !!(SALIDA_POR_CLIENTE[campana] && SALI
 // Condicion SQL de "llamada de salida" (canal LLAMADAS) de este cliente.
 function condSalidaLlamadasSql(campana) { return salidaPorGuion(campana) ? COND_SALIDA_GUION_SQL : COND_SALIDA_SQL; }
 // Fase 186: salida de un canal (llamadas: la regla del cliente; WhatsApp: SKILL_ID 0, guardado como outbound_ma).
-function condSalidaCanalSql(campana, canal) { return canal === 'WHATSAPP' ? "tipoInteraccion = 'outbound_ma'" : condSalidaLlamadasSql(campana); }
+// Fase 278: WhatsApp de salida de un cliente. Por defecto, el SKILL_ID 0 (se guarda
+// como outbound_ma). Con whatsappSalidaSkillIds, tambien esas colas (por SKILL_ID,
+// o por "Skill <ID>" si la fila no trae el SKILL_ID).
+function condSalidaWhatsappSql(campana) {
+  const ids = ((SALIDA_POR_CLIENTE[campana] || {}).whatsappSalidaSkillIds || []).map((x) => String(x).replace(/[^0-9]/g, '')).filter((x) => x && x !== '0');
+  if (!ids.length) return "tipoInteraccion = 'outbound_ma'";
+  const lista = ids.map((x) => "'" + x + "'").join(', ');
+  const nombres = ids.map((x) => "'Skill " + x + "'").join(', ');
+  return `(tipoInteraccion = 'outbound_ma' OR TRIM(COALESCE(skillId, '')) IN (${lista}) OR TRIM(skill) IN (${nombres}))`;
+}
+function condSalidaCanalSql(campana, canal) { return canal === 'WHATSAPP' ? condSalidaWhatsappSql(campana) : condSalidaLlamadasSql(campana); }
+// Fase 278: el cliente muestra solo el total de salida (sin lineas General / 3P).
+function salidaSinLineas(campana) { return !!(SALIDA_POR_CLIENTE[campana] && SALIDA_POR_CLIENTE[campana].sinLineas); }
 // Fase 186: la salida se reparte por la clasificacion del asesor (tabla
 // asesor_clasificacion, por cliente). Fase 220: sale de SALIDA_POR_CLIENTE.
 function usaClasificacionAsesores(campana) { return !!(SALIDA_POR_CLIENTE[campana] && SALIDA_POR_CLIENTE[campana].clasificacionAsesores); }
@@ -385,6 +401,8 @@ module.exports = {
   CANALES,
   condSalidaLlamadasSql,
   condSalidaCanalSql,
+  condSalidaWhatsappSql,
+  salidaSinLineas,
   usaClasificacionAsesores,
   tipificacionesWhereClausulas,
   salidaPorGuion,

@@ -38,7 +38,7 @@ test('las pestañas de Aurora son las mismas de la Fase 220 (la sub-vista no agr
 });
 
 test('la regla de salida de Aurora sigue igual (provisional) y HLM no cambia', () => {
-  assert.deepEqual(t.SALIDA_POR_CLIENTE[AURORA], { regla: 'guion', clasificacionAsesores: false }); // Fase 277: sin lineas
+  assert.deepEqual(t.SALIDA_POR_CLIENTE[AURORA], { regla: 'guion', clasificacionAsesores: false, sinLineas: true, whatsappSalidaSkillIds: ['0', '4062', '4063'] }); // Fases 277-278
   assert.deepEqual(layoutDe('HOSPITAL LA MARIA'), hlmEsperada().layout);
 });
 

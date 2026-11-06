@@ -35,27 +35,29 @@ t.cargarTipificaciones(db, { campana: AURORA, canal: 'WHATSAPP', archivoNombre: 
 test('la regla de salida esta en un solo lugar: ORLANT y Aurora (provisional) con la de ORLANT; los demas, no', () => {
   assert.deepEqual(t.SALIDA_POR_CLIENTE, {
     ORLANT: { regla: 'guion', clasificacionAsesores: true },
-    'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false }, // Fase 277: sin lineas General / 3P
+    'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false, sinLineas: true, whatsappSalidaSkillIds: ['0', '4062', '4063'] }, // Fases 277-278
     'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // Fase 229, provisional
   });
   for (const c of ['ORLANT', AURORA, 'HOSPITAL LA MARIA']) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), c !== AURORA, c); } // Fase 277: Aurora sin lineas
   for (const c of ['MOBILIZE', 'SURA']) { assert.equal(t.salidaPorGuion(c), false, c); assert.equal(t.usaClasificacionAsesores(c), false, c); }
 });
 
-test('sin asesores clasificados: toda la salida de Aurora va a "Sin clasificar" y cuenta en el Total', () => {
+// Fase 278: Aurora sin lineas -- toda la salida va al total (sinLineas), sin "Sin clasificar".
+test('Aurora sin lineas: toda la salida va al total y cuenta en Total trafico', () => {
   const oct = salidaCombinadaPorMes(db, AURORA).find((f) => f.mes === '2026-10');
   assert.deepEqual([oct.llamadas3p, oct.llamadasGeneral, oct.llamadasSinAsignar], [0, 0, 6]);
   assert.deepEqual([oct.wpp3p, oct.wppGeneral, oct.wppSinAsignar], [0, 0, 3]);
-  assert.equal(oct.lineaPorCliente, true, 'la pestaña dice "Sin clasificar"');
+  assert.equal(oct.sinLineas, true, 'la pestaña muestra solo el total');
+  assert.equal(oct.lineaPorCliente, undefined);
   const tt = totalTraficoPorMes(db, AURORA).find((f) => f.mes === '2026-10');
   assert.deepEqual([tt.llamadasSalida, tt.whatsappSalida], [6, 3]);
   assert.equal(tt.contestados, 9, 'cada salida cuenta como contestada (no hay entrada de Trafico cargada)');
 });
 
-test('con un asesor clasificado, su salida pasa a esa linea', () => {
+test('Fase 278: aunque haya un asesor clasificado, en Aurora la salida no se reparte en lineas', () => {
   db.prepare("INSERT INTO asesor_clasificacion (campana, agente, linea, guardadoPorNombre, updatedAt) VALUES (?, 'ASESOR A', 'GENERAL', 'test', ?)").run(AURORA, new Date().toISOString());
   const oct = salidaCombinadaPorMes(db, AURORA).find((f) => f.mes === '2026-10');
-  assert.deepEqual([oct.llamadasGeneral, oct.llamadasSinAsignar, oct.wppGeneral, oct.wppSinAsignar], [4, 2, 3, 0]);
+  assert.deepEqual([oct.llamadasGeneral, oct.llamadasSinAsignar, oct.wppGeneral, oct.wppSinAsignar], [0, 6, 0, 3]);
   db.prepare('DELETE FROM asesor_clasificacion WHERE campana = ?').run(AURORA);
 });
 
