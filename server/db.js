@@ -4822,6 +4822,19 @@ function calidadSoloMonitoreos() {
 }
 runOnceMigration('fase269_calidad_solo_monitoreos_v1', calidadSoloMonitoreos);
 
+// Fase 284 (pedido de Edwin, 06/11): pestaña «Errores» (errores de agendamiento).
+// 1) Tablas errores_agendamiento y errores_plan_accion (server/errores.js; ningun
+// dato de paciente). 2) Modulo `errores` en el registro de CLINICA AURORA y su
+// pestaña justo despues de «Agendas por usuaria» (orden del catalogo), visible
+// aunque no haya errores. Lo que Aurora ya tenia queda tal cual. Otro cliente se
+// activa despues con el mismo modulo. Idempotente; no toca otro cliente.
+function crearErroresAurora() {
+  require('./errores').crearTablas(db);
+  asegurarDatosVersion();
+  habilitarModulosComoOrlant(AURORA, ['errores'], 'fase284_aurora_errores_v1');
+}
+runOnceMigration('fase284_aurora_errores_v1', crearErroresAurora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

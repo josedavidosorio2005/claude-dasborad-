@@ -2195,3 +2195,19 @@ div.ca-bar-fila{cursor:default}
 /* Fase 283: marca "Vista de supervisor" en el encabezado del tablero. */
 .gd-vista-sup{display:inline-block;margin:4px 0 2px}
 .gd-vista-sup.hidden{display:none}
+
+/* Fase 284: pestaña «Errores» (errores.js). */
+.err-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.err-agregar{min-height:40px}
+.aurora-chart-wrap.err-chart{height:280px}
+.err-mes-fila{display:flex;margin:0 0 12px}
+.err-plan{white-space:pre-wrap;line-height:1.55;font-size:var(--fs-body);color:var(--c-text);margin:0 0 8px}
+.err-tabla td.err-obs{display:flex;flex-wrap:wrap;gap:6px}
+.err-ver{min-height:36px}
+.err-form{align-items:flex-end}
+.err-form .ca-filtro input[type="number"]{min-width:110px}
+.err-obs-campo,.err-plan-campo{display:flex;flex-direction:column;width:100%}
+.err-obs-campo textarea,.err-plan-campo{width:100%;min-height:72px;padding:8px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body);resize:vertical}
+.err-sub{margin:16px 0 8px;font-size:var(--fs-body);color:var(--c-text)}
+.err-msg{background:var(--c-success-bg);color:var(--c-success-dark);border-radius:var(--r-sm);padding:6px 10px;font-size:var(--fs-small)}
+@media (max-width:600px){.err-form .ca-filtro{flex:1 1 100%}.err-form .ca-filtro select,.err-form .ca-filtro input{min-width:0;width:100%}}

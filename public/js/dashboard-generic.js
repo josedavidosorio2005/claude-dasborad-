@@ -1742,7 +1742,7 @@ function switchGenericSubtab(key){
 // la exclusion de la rejilla de graficas, que antes eran dos copias a mano.
 var GD_TIPOS_PANEL_PROPIO = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'inasistencia_panel', 'tipificacion_panel',
   'efectividad_agendamiento_panel', 'efectividad_citas_panel', 'salida_panel', 'total_trafico_panel', 'llamadas_unicas_panel',
-  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel'];
+  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel']; // Fase 284: errores_panel
 // Paneles que nunca van en la rejilla de graficas (<canvas id="gd-c<i>">).
 var GD_TIPOS_SIN_LIENZO = ['kpi_row', 'calidad_kpis', 'tabla', 'nota_kpi'].concat(GD_TIPOS_PANEL_PROPIO);
 
@@ -1842,6 +1842,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'calidad_monitoreos_panel'){ _cmpRender(p, i); return; } // Fase 256
   if(p.tipo === 'agendas_usuaria_panel'){ _auRender(p, i); return; } // Fase 259
   if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
+  if(p.tipo === 'errores_panel'){ _erroresRenderPanel(p, i); return; } // Fase 284
   if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; } // Fase 219
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
   if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
@@ -2630,6 +2631,12 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'calidad_bar_asesores'){ continue; }
     // Fase 256: mismo criterio (resultado por asesor y llamadas con nombre + nota).
     if(p.tipo === 'calidad_monitoreos_panel'){ continue; }
+    // Fase 284: errores por mes y por asesora (solo conteos, sin las observaciones).
+    if(p.tipo === 'errores_panel'){
+      var fEr = (typeof erroresFilasExport === 'function') ? erroresFilasExport(p.campana) : [];
+      out = out.concat(fEr.length ? fEr : [{ titulo: 'Errores', tipo: 'aviso', filas: [], mensaje: 'Sin errores registrados para el periodo actual.' }]);
+      continue;
+    }
     // Fase 259: la tabla por asesora (solo conteos), con los filtros del panel.
     if(p.tipo === 'agendas_usuaria_panel'){
       var fAu = (typeof _auFilasExport === 'function') ? _auFilasExport(i) : [];

@@ -40,6 +40,9 @@ const CATALOGO = [
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas', grupo: 'salud', carga: 'Citas atendidas', disponibleParaNuevos: true },
   // Fase 259 (Clinica Aurora): reporte de citas del sistema de la clinica, agregado en el navegador.
   { id: 'agendas_usuaria', nombre: 'Agendas por usuaria', grupo: 'salud', carga: 'Reporte de citas de la clínica (.xls)', disponibleParaNuevos: true },
+  // Fase 284: errores de agendamiento; no se cargan con una base, los registra el supervisor en la plataforma.
+  // siempreVisible: la pestaña se ve aunque no haya errores (avisa que no hay).
+  { id: 'errores', nombre: 'Errores', grupo: 'salud', carga: 'Se registran en la plataforma (supervisor o administrador)', disponibleParaNuevos: true, siempreVisible: true },
   { id: 'llamadas_unicas', nombre: 'Llamadas Únicas y de Salida', grupo: 'opcional', carga: 'Llamadas únicas + Llamadas de salida (Wolkvox)', disponibleParaNuevos: true },
   // Fase 196: mapas de calor por hora y dia (reporte de cola por hora de Wolkvox).
   { id: 'flujo_hora', nombre: 'Flujo por hora', grupo: 'opcional', carga: 'Flujo por hora (Wolkvox)', disponibleParaNuevos: true },
@@ -125,6 +128,11 @@ const GENERADORES = {
     key: 'agendas_usuaria', label: 'Agendas por usuaria',
     panels: AGENDAS_USUARIA_VISTAS.map(([vista, titulo]) => ({ tipo: 'agendas_usuaria_panel', campana, vista, titulo })),
     subtabs: _subtabs(AGENDAS_USUARIA_VISTAS),
+  }),
+  // Fase 284: visible aunque no haya errores (la pestaña lo avisa).
+  errores: (campana) => ({
+    key: 'errores', label: 'Errores',
+    panels: [{ tipo: 'errores_panel', campana, titulo: 'Errores de agendamiento' }],
   }),
   llamadas_unicas: (campana) => ({
     key: 'llamadas_unicas', label: 'Llamadas Únicas y de Salida',
@@ -215,7 +223,7 @@ function generarLayout(perfil) {
     if (aj.panel) tab.panels = tab.panels.map((p) => Object.assign(p, JSON.parse(JSON.stringify(aj.panel))));
     // Mismo orden de claves que los layouts guardados: key, label, oculta, panels, subtabs.
     const ordenada = { key: tab.key, label: tab.label };
-    if (!visibles.has(m.id)) ordenada.oculta = true;
+    if (!visibles.has(m.id) && !m.siempreVisible) ordenada.oculta = true; // Fase 284: siempreVisible (Errores)
     ordenada.panels = tab.panels;
     if (tab.subtabs) ordenada.subtabs = tab.subtabs;
     tabs.push(ordenada);

@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.142.0 — Noviembre 2026
+
+**Fase 284: pestaña «Errores» en Clínica Aurora.**
+
+- Aurora tiene una pestaña nueva, **«Errores»**, justo después de «Agendas por usuaria»:
+  - una **línea con los errores de agendamiento de cada mes** (sigue el selector de MESES);
+  - el **«Plan de acción»** del mes elegido;
+  - los **errores del mes por asesora**, con el botón **«Ver observación»**.
+- **Quién registra:** el supervisor de Aurora (desde su portal) y el administrador, con el
+  botón **«Agregar errores»**: mes, asesora, cantidad (o un error a la vez) y observación.
+  Se pueden editar y borrar, y queda registrado quién lo hizo. Ahí mismo se escribe el plan
+  de acción de cada mes.
+- **La cuenta del cliente solo ve**, no edita.
+- La pestaña se ve aunque todavía no haya errores (muestra un aviso).
+- Las observaciones no admiten datos de pacientes (documentos o teléfonos se rechazan).
+- Por ahora solo está activa en Clínica Aurora; se puede encender para otros clientes.
+
 ## v1.141.0 — Noviembre 2026
 
 **Fase 283: perfil propio del SUPERVISOR.**

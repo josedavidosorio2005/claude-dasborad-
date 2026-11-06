@@ -1567,6 +1567,25 @@ const dashboardConfigBody = z.object({
 });
 
 // Middleware factory: valida req[part] contra el schema; si falla -> 400.
+// Fase 284: pestaña «Errores» (errores de agendamiento). La forma; las reglas de
+// contenido (alias, sin datos de pacientes, topes) estan en server/errores.js.
+const mesSchemaErrores = z.string().trim().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'El mes debe ser AAAA-MM');
+const erroresQuery = z.object({ campana: campanaSchema });
+const errorCrearBody = z.strictObject({
+  campana: campanaSchema,
+  mes: mesSchemaErrores,
+  asesor: z.string().trim().min(1, 'Elige la asesora').max(120),
+  cantidad: z.number().int().min(1).max(500).optional(),
+  observacion: z.string().max(1000).optional(),
+});
+const errorEditarBody = z.strictObject({
+  mes: mesSchemaErrores.optional(),
+  asesor: z.string().trim().min(1).max(120).optional(),
+  cantidad: z.number().int().min(1).max(500).optional(),
+  observacion: z.string().max(1000).optional(),
+});
+const errorPlanBody = z.strictObject({ campana: campanaSchema, mes: mesSchemaErrores, texto: z.string().max(4000) });
+
 function validate(schema, part = 'body') {
   return (req, res, next) => {
     const result = schema.safeParse(req[part]);
@@ -1594,6 +1613,10 @@ module.exports = {
   PASSWORD_MIN,
   validate,
   schemas: {
+    erroresQuery,
+    errorCrearBody,
+    errorEditarBody,
+    errorPlanBody,
     loginBody,
     createUserBody,
     updateUserBody,

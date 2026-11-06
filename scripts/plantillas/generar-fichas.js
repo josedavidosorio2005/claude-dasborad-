@@ -170,6 +170,31 @@ const NOTAS = {
       'El mes es el de fechacita. Subir otra vez un mes lo reemplaza entero (Deshacer por 30 días, como las demás cargas).',
     ],
   },
+  // Fase 284: errores de agendamiento, sin base: se registran en la plataforma.
+  errores: {
+    usan: 'CLINICA AURORA',
+    especial: [
+      '## De dónde sale',
+      '',
+      'No se sube ninguna base. Los errores de agendamiento los registra el supervisor del cliente (o el administrador) en la plataforma: en la pestaña Errores del tablero, botón «Agregar errores». Por cada error: mes, asesora (lista de las asesoras del cliente), cantidad (1 = un error individual) y observación. También se escribe ahí el «Plan de acción» del mes.',
+      '',
+      '## Qué muestra la pestaña',
+      '',
+      '«Flujo de errores por mes» (línea con la cantidad de cada mes; sigue a MESES), «Plan de acción» del mes y «Errores por asesor» del mes, con «Ver observación» en cada error. La pestaña se ve aunque no haya errores (lo avisa). El cliente solo la mira.',
+      '',
+      '## Privacidad',
+      '',
+      '**Ningún dato de pacientes.** Se guarda solo mes, asesora, cantidad y observación; el servidor rechaza una observación o un plan con números de documento o de teléfono.',
+      '',
+      '## Nombre real de la asesora',
+      '',
+      'Sale de Admin › Usuarios del sistema (alias por cliente), igual que en Agendas por usuaria.',
+      '',
+      '## Quién puede registrar',
+      '',
+      'El administrador y el supervisor del cliente. Cada alta, edición o borrado queda con quién lo hizo y en el historial.',
+    ],
+  },
   calidad: {
     usan: 'ORLANT y MOBILIZE',
     especial: [
