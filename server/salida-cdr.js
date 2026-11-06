@@ -37,6 +37,8 @@ function clasificacionPorCliente(db, campana) {
 // Fase 183: lazy, para no crear un require circular si tipificaciones.js llega a usar este modulo.
 function salidaPorGuion(c) { return require('./tipificaciones').salidaPorGuion(c); }
 function condSalidaLlamadasSql(c) { return require('./tipificaciones').condSalidaLlamadasSql(c); }
+function condSalidaWhatsappSql(c) { return require('./tipificaciones').condSalidaWhatsappSql(c); }
+function salidaSinLineas(c) { return require('./tipificaciones').salidaSinLineas(c); }
 
 const LINEAS = ['3P', 'GENERAL'];
 const SKILL_SALIDA_LLAMADAS = 'LLAMADAS DE SALIDA';
@@ -49,13 +51,15 @@ function salidasPorAsesor(db, campana, mes) {
   const filtroMes = mes ? ' AND substr(fecha,1,7) = @mes' : '';
   // Fase 183: ORLANT cuenta el "-" del CDR con cualquier tipo y deja las out_pre en su skill.
   const condLlam = salidaPorGuion(campana) ? condSalidaLlamadasSql(campana) : `skill = @skillLlam AND ${TIPO_SALIDA_LLAMADAS}`;
+  // Fase 278: el WhatsApp de salida con la regla del cliente (Aurora: 0, 4062 y 4063).
+  const condWpp = condSalidaWhatsappSql(campana);
   return db.prepare(`
     SELECT substr(fecha,1,7) AS mes, agente,
       SUM(CASE WHEN canal = 'LLAMADAS' AND ${condLlam} THEN 1 ELSE 0 END) AS llamadas,
-      SUM(CASE WHEN canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma' THEN 1 ELSE 0 END) AS wpp
+      SUM(CASE WHEN canal = 'WHATSAPP' AND ${condWpp} THEN 1 ELSE 0 END) AS wpp
     FROM tipificaciones
     WHERE campana = @campana${filtroMes}
-      AND ((canal = 'LLAMADAS' AND ${condLlam}) OR (canal = 'WHATSAPP' AND tipoInteraccion = 'outbound_ma'))
+      AND ((canal = 'LLAMADAS' AND ${condLlam}) OR (canal = 'WHATSAPP' AND ${condWpp}))
     GROUP BY mes, agente
     ORDER BY mes, agente`).all({ campana, mes: mes || null, skillLlam: SKILL_SALIDA_LLAMADAS });
 }
@@ -75,8 +79,10 @@ function lineasPorMes(db, campana, mes) {
 
 // Totales por mes calculados del CDR: { 'AAAA-MM': { llamadas3p, ..., cdrLlamadas, cdrWpp, asesoresSinAsignar } }
 function salidaCdrPorMes(db, campana) {
-  const porCliente = usaClasificacionPorCliente(db, campana) ? clasificacionPorCliente(db, campana) : null;
-  const lineas = porCliente ? {} : lineasPorMes(db, campana);
+  // Fase 278: sin lineas (Aurora), todo va al total ("SinAsignar") y no se buscan lineas.
+  const sinLineas = salidaSinLineas(campana);
+  const porCliente = !sinLineas && usaClasificacionPorCliente(db, campana) ? clasificacionPorCliente(db, campana) : null;
+  const lineas = porCliente || sinLineas ? {} : lineasPorMes(db, campana);
   const out = {};
   for (const s of salidasPorAsesor(db, campana)) {
     const m = out[s.mes] || (out[s.mes] = {
@@ -89,7 +95,7 @@ function salidaCdrPorMes(db, campana) {
     m['wpp' + suf] += s.wpp;
     if (s.llamadas) m.cdrLlamadas = true;
     if (s.wpp) m.cdrWpp = true;
-    if (!linea) m.asesoresSinAsignar.push(s.agente);
+    if (!linea && !sinLineas) m.asesoresSinAsignar.push(s.agente);
   }
   return out;
 }
@@ -103,7 +109,8 @@ function salidaCombinadaPorMes(db, campana) {
     .all(campana).forEach((f) => { archivo[f.mes] = f; });
   const cdr = salidaCdrPorMes(db, campana);
   // Fase 187: la pestaña dice "Sin clasificar" (y no "Sin asignar") y manda a Tipificacion.
-  const extra = usaClasificacionPorCliente(db, campana) ? { lineaPorCliente: true } : {};
+  // Fase 278: sinLineas = la pestaña muestra solo el total (sin botones ni editor de lineas).
+  const extra = salidaSinLineas(campana) ? { sinLineas: true } : usaClasificacionPorCliente(db, campana) ? { lineaPorCliente: true } : {};
   const meses = [...new Set([...Object.keys(archivo), ...Object.keys(cdr)])].sort();
   return meses.map((mes) => {
     const a = archivo[mes] || null;
