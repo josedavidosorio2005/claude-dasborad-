@@ -19393,3 +19393,40 @@ abrió primero por la ruta equivocada (404 del propio script) y en la sonda
 quedó bloqueada una petición y dio 401 — es del script, no de este cambio (no
 toca SURA); queda por repetir. Mobilize › Flujo por hora: las 3 tablas se
 ven; queda un lienzo vacío en la pestaña (este cambio no toca esa pestaña; por revisar).
+
+## Fases 268–272 — Tanda de Edwin del 05–06/11 (v1.133.2 → v1.136.1, 2026-11-06)
+
+Un PR por tema, CI verde, merge con `--match-head-commit` (SHA de
+`git ls-remote` = `head.sha` de la API), deploy y `/api/health` con la
+versión de cada uno.
+
+| Fase | PR | Versión | Qué quedó |
+|---|---|---|---|
+| 268 | #679 | 1.133.2 | Ejes con punto de miles (`Chart.defaults.locale = 'es-CO'`); Aurora › Agendas por usuaria con 1 mes en barras (por mes) y barras horizontales (por especialidad / asesor) |
+| 269 | #680 | 1.134.0 | Calidad de Mobilize, Aurora y HLM solo con «Resultado de los monitoreos» (migración `fase269_calidad_solo_monitoreos_v1`, no borra datos). ORLANT sin cambio: perdería 2 gráficas de Cargar datos, espera decisión |
+| 270 | #681 | 1.135.0 | Calificar: Asesor como lista de usuarios ASESOR activos de la campaña (`asesorUserId`), con sus datos al elegirlo; sin asesores, lista deshabilitada con aviso |
+| 271 | #682 | 1.136.0 | «Marcar todo» / «Ninguno» (`public/js/marcar-todo.js`): MESES del tablero, Agendas por usuaria (Asesor) y 4 listas del formulario de usuario |
+| 272 | #683 | 1.136.1 | WhatsApp › Nivel de servicio de Aurora y HLM igual que ORLANT: se quita el respaldo de la Fase 229 (gráfica mensual tipo llamadas); sin tiempos, aviso con el archivo y la sección de Cargar Datos |
+
+**Tipificación de Aurora y HLM (punto 4)**: ya existía (Fases 220 y 229, regla
+de salida de ORLANT provisional en `SALIDA_POR_CLIENTE`). Verificado en local
+con CDR inventados por Cargar Datos: aparecen solas Tipificación (Llamadas y
+WhatsApp) y «Llamadas y WhatsApp de salida» con el total por mes, en los dos.
+Falta que Edwin suba los CDR (ver `docs/pendientes.md`).
+
+**Bug del login (punto 5)**: no reproducido (local, todos los roles y API
+lenta; producción con el administrador, 54 cuadros tras el clic). Queda en
+pendientes, esperando datos de Edwin.
+
+**Producción (solo lectura, 1.136.1, sesión de admin en Brave, 0 escrituras
+bloqueadas, 0 pedidos fallidos, 0 errores de consola)**: MESES «Marcar todo»
+3/3 y «Ninguno» → «Todos» a 1440/768/375; WhatsApp › Nivel de servicio:
+Aurora y HLM con el título de rangos y el aviso (sin la gráfica mensual),
+ORLANT con su gráfica de rangos; Calificar: Mobilize con lista de asesores,
+Aurora deshabilitada (sin usuarios ASESOR); SURA abre a 1440/768/375 sin
+errores (la verificación pendiente de la Fase 267 queda hecha); ORLANT 25
+vistas, Mobilize 13, Aurora 13, HLM 10, todas dibujadas salvo el lienzo vacío
+conocido de Mobilize › Flujo por hora. 1.134.0 ya se había verificado igual
+(Calidad, ejes 1.000, Agendas con 1 mes, SURA).
+
+Anotado sin construir: «Flujo de errores por mes» (`docs/pendientes.md`).

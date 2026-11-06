@@ -9,6 +9,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Calidad de ORLANT como la de Mobilize** (Fase 269, pedido del 06/11) — en
+  Mobilize, Aurora y HLM la pestaña Calidad ya muestra solo «Resultado de los
+  monitoreos». ORLANT no se cambió: hoy su pestaña muestra «Distribución de
+  clasificación» y «Promedio de calidad por asesor», que salen de la base de
+  Cargar datos, y dejarían de verse. Se aplica (misma migración idempotente,
+  sin borrar datos) con tu OK.
+
 - **Usuario de Calidad para que Edwin pruebe** (Fase 253) — la cuenta de
   Edwin en producción es SUPERVISOR (ORLANT y MOBILIZE, sin "crear
   usuarios"): puede calificar desde su pantalla, pero no entra directo a
@@ -169,6 +176,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Bug: al iniciar sesión se ve un momento la pantalla de Cargar datos**
+  (pedido del 06/11, Fase 272) — no se reprodujo: en local con todos los roles
+  (incluida la API lenta) y en producción con el administrador (54 cuadros
+  desde el clic en Ingresar: del login pasa directo a Gestión de Usuarios).
+  Falta saber con qué usuario entra Edwin, en qué equipo/navegador, y si
+  puede mandar un video o captura del momento. No se tocó código a ciegas.
+- **Archivos que faltan subir en Aurora y HLM** (Fases 272, 06/11) — todo va
+  por Cargar Datos → cliente: (1) «Tipificación de Llamadas»: el CDR de
+  llamadas de Wolkvox (HistCDR); (2) «Tipificación de WhatsApp»: el CDR de
+  WhatsApp (HistChat); (3) «WhatsApp tiempos de respuesta»: Wolkvox > Reportes
+  > Skills & Servicios > 10. Detalle de llamadas contestadas (colas WHATSAPP).
+  Con (1) y (2) aparecen solas las pestañas Tipificación y «Llamadas y WhatsApp
+  de salida»; con (3), el Nivel de servicio por rangos.
 
 - **Datos de Aurora y Hospital La María para la entrega del 09/11** (Fase 267,
   revisión en solo lectura del 05/11) — Aurora solo tiene **octubre** (tráfico
@@ -592,6 +613,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ve errores.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
+
+- **Flujo de errores por mes** (anotado el 06/11, pedido de Edwin, no
+  construir todavía) — que el líder ingrese los errores directamente en la
+  plataforma en vez de subir una base. Falta definir con Edwin qué campos
+  tiene un error, quién lo ingresa y dónde se ve.
 
 - **Calidad: lo que falta del plan** (Fases 252–256) — motor "por descuento"
   de SURA (C1, el importador hoy acepta solo `standard`), plantillas de
