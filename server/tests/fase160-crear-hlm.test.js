@@ -86,7 +86,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase265_agendas_usuaria_vistas_v1',
     // Fase 269: Calidad solo con el resultado de los monitoreos (Mobilize, Aurora y HLM; sin datos que tocar).
     'fase269_calidad_solo_monitoreos_v1',
-    'fase284_aurora_errores_v1']; // Fase 284
+    'fase284_aurora_errores_v1',
+    'fase285_logo_aurora_v1']; // Fases 284 y 285 (logo de Aurora: solo su columna logo)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
