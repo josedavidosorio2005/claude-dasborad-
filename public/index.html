@@ -775,7 +775,7 @@
     <input type="hidden" id="mu-mode"> <!-- create | edit -->
     <div class="form-row">
       <div class="ig"><label for="mu-nombre">Nombre completo</label><input type="text" id="mu-nombre" placeholder="Ej: Maria Gonzalez"></div>
-      <div class="ig"><label for="mu-user">Usuario</label><input type="text" id="mu-user" placeholder="Ej: mgonzalez"></div>
+      <div class="ig"><label for="mu-user">Usuario</label><input type="text" id="mu-user" placeholder="Ej: maria_gonzalez" maxlength="32" autocapitalize="none" autocomplete="off" spellcheck="false" aria-describedby="mu-user-ayuda"><div class="hint" id="mu-user-ayuda" style="font-size:0.78rem;color:var(--c-text-muted);margin-top:4px">3 a 32 caracteres: letras sin tilde, números, punto (.), guion (-) y guion bajo (_).</div></div>
     </div>
     <div class="form-row">
       <div class="ig">
@@ -1954,6 +1954,7 @@
 <script src="js/toast-logic.js"></script>
 <script src="js/ui-core.js"></script>
 <script src="js/usuarios-filtro-logic.js"></script>
+<script src="js/usuario-regla-logic.js"></script>
 <script src="js/users.js"></script>
 <script src="js/roles-perms.js"></script>
 <script src="js/historial.js"></script>

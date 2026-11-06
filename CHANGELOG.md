@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.140.2 — Noviembre 2026
+
+**Fase 280: al crear un usuario, el aviso dice exactamente qué corregir.**
+
+- En **Administración › Usuarios**, el campo **Usuario** ahora muestra la regla debajo: de
+  3 a 32 caracteres, con letras sin tilde, números, punto, guion y guion bajo (por ejemplo
+  «maria_gonzalez»). No deja escribir más de 32.
+- Si algo no sirve, el aviso dice qué es y cómo dejarlo: una tilde o ñ («gonzález» →
+  «gonzalez»), un espacio (se sugiere guion bajo), un carácter no permitido, o el largo.
+- La regla no cambió: un usuario como «nombre_apellido» siempre se pudo usar.
+
 ## v1.140.1 — Noviembre 2026
 
 **Fase 279: el Diccionario de Calidad de Mobilize, igual al del HTML de Edwin.**

@@ -59,7 +59,7 @@ const userSchema = z
   .max(32, 'El usuario no puede superar 32 caracteres')
   .regex(
     /^[a-zA-Z0-9._-]+$/,
-    'El usuario solo puede tener letras, numeros, punto, guion y guion bajo (sin espacios)'
+    'El usuario solo puede tener letras sin tilde ni ñ, numeros, punto, guion y guion bajo (sin espacios)'
   );
 
 const nombreSchema = z
