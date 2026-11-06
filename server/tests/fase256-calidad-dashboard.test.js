@@ -71,6 +71,6 @@ test('navegador: el tipo nuevo esta en las listas cerradas y no se exporta (nomb
   const gd = pub('dashboard-generic.js');
   assert.match(gd, /if\(p\.tipo === 'calidad_monitoreos_panel'\)\{ _cmpRender\(p, i\); return; \}/);
   assert.match(gd, /if\(p\.tipo === 'calidad_monitoreos_panel'\)\{ continue; \}/);
-  assert.match(pub('calidad-panel.js'), /gdMesesTarjetasActual\(\)/, 'sigue a MESES');
+  assert.ok(pub('calidad-panel.js').includes('_gdMeses().slice()'), 'sigue a MESES (Fase 274: los meses marcados)');
   assert.match(pub('calidad-panel.js'), /asesorVisibleCliente/, 'respeta la regla de nombres para el cliente');
 });
