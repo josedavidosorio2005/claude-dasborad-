@@ -181,6 +181,19 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
+- **Pasar las 2 cuentas SUPERVISOR al perfil nuevo** (Fase 283, 06/11) — la
+  simulación en solo lectura (1.141.0) no cambia ningún tablero ni Calidad: solo
+  marca «Clientes que supervisa» (la cuenta de Edwin: los 5 clientes; la otra:
+  MOBILIZE) y les suma cargar bases de esos clientes. Se escribe por
+  Administración › Usuarios › Editar con tu OK. Hasta entonces las dos cuentas
+  siguen exactamente como antes.
+
+- **Logo de Clínica Aurora** (Fase 284, 06/11) — el archivo que mandaste
+  (`logo-aurora.png` en Descargas) no está en el equipo; con el archivo se pone
+  en su encabezado como ORLANT. Hospital La María y SURA tampoco tienen logo hoy:
+  HLM lo necesitaría cuando sus pestañas queden visibles para el cliente; SURA
+  usa su tablero propio y solo lo llevaría en la tarjeta del selector.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **Nombres de otros skills de WhatsApp sin nombre** (Fase 275, 06/11) — en
@@ -631,17 +644,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
-- **Admin › Dashboards › «Nuevo dashboard» ofrece SURA como cliente «libre»**
-  (visto en la Fase 281, 06/11) — la lista de clientes para armar un tablero
-  genérico solo excluye los que ya tienen uno genérico (`BUILT_CLIENT_DASHBOARDS`),
-  no los de tablero propio (SURA, Televentas). Riesgo bajo (solo administrador; el
-  clic en SURA abre su tablero propio igual), pero se podría armar un tablero
-  genérico de más. Arreglo: usar `dashClienteTieneTablero` también ahí.
+- ~~**Admin › Dashboards › «Nuevo dashboard» ofrece SURA como cliente «libre»**~~
+  — **HECHO** en la Fase 282 (v1.140.4): la lista usa `dashClienteTieneTablero`.
 
-- **Flujo de errores por mes** (anotado el 06/11, pedido de Edwin, no
-  construir todavía) — que el líder ingrese los errores directamente en la
-  plataforma en vez de subir una base. Falta definir con Edwin qué campos
-  tiene un error, quién lo ingresa y dónde se ve.
+- ~~**Flujo de errores por mes**~~ — **HECHO** en la Fase 284 (v1.142.0): pestaña
+  «Errores» en Clínica Aurora; la registran el supervisor del cliente y el
+  administrador. Para otro cliente se enciende el módulo `errores` (migración).
 
 - **Calidad: lo que falta del plan** (Fases 252–256) — motor "por descuento"
   de SURA (C1, el importador hoy acepta solo `standard`), plantillas de

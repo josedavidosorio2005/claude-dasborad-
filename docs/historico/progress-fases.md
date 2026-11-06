@@ -19657,3 +19657,76 @@ Local en Brave 1440/375, 6 roles, 0 errores.
 «Próximamente»; encabezado «Edwin García»; SURA abre desde el selector; los 4
 tableros sin vistas vacías ni scroll horizontal; 0 escrituras, 0 pedidos fallidos,
 0 errores de consola.
+
+## Fase 282 — «Nuevo dashboard» sin SURA ni clientes con tablero propio (v1.140.4, 2026-11-06)
+
+Pendiente técnico visto en la Fase 281. Admin › Dashboards › «Nuevo dashboard»
+ofrecía SURA como cliente «libre» porque solo excluía los clientes con tablero
+genérico. Ahora usa la misma regla del Portal Supervisor y del selector
+(`dashClienteTieneTablero`), así que no ofrece ningún cliente que ya tenga tablero,
+genérico o propio. Pruebas: `fase282-nuevo-dashboard-sin-sura.test.js` (3). PR #700.
+**Producción (1.140.4, solo lectura):** la lista de «Nuevo dashboard» queda vacía
+(los 5 clientes ya tienen tablero), que es lo correcto; 0 escrituras, 0 errores.
+
+## Fase 283 — Perfil propio del SUPERVISOR (v1.141.0, 2026-11-06)
+
+Pedido de Edwin, con el plan aprobado por el usuario: (a) el supervisor no ve las
+pestañas ocultas del administrador, (b) carga todos los módulos de sus clientes,
+(c) las 2 cuentas SUPERVISOR se migran solo después de ver la simulación y con OK.
+
+- En Usuarios, el SUPERVISOR tiene una sola lista, «Clientes que supervisa»
+  (`supervisa_<cliente>`). «Acceso a clientes» queda solo para las cuentas de cliente.
+- Una cuenta SUPERVISOR con al menos una llave `supervisa_` recibe acceso a tablero
+  y Calidad SOLO de esos clientes (`permisosEfectivos`, en el servidor y en el
+  navegador). Sin ninguna llave, la cuenta sigue exactamente como antes.
+- Carga de bases: menú «Cargar bases» y «Actualizar datos», todos los módulos, solo
+  de sus clientes (`supervisorCarga`, `requireCargaGenerica`). Marca «Vista de
+  supervisor» en el tablero. No crea usuarios ni cambia contraseñas de otros, y solo
+  puede dar `supervisa_C` quien tiene acceso a C.
+
+Pruebas: `fase283-perfil-supervisor.test.js` (7). PR #701.
+
+**Simulación de la migración (producción 1.141.0, solo lectura, 0 escrituras):**
+- La cuenta de Edwin quedaría con «Clientes que supervisa» = los 5 clientes.
+- La otra cuenta SUPERVISOR quedaría solo con MOBILIZE.
+- Ninguna de las dos pierde ni gana tableros ni Calidad. Las dos ganan la carga de
+  bases de sus clientes.
+- Se escriben 5 llaves por cuenta y se conservan las existentes (17 y 3).
+- El formulario de Edwin se abre con los 5 clientes ya marcados.
+
+**Pendiente:** el OK del usuario para escribir (ver `docs/pendientes.md`).
+
+## Fase 284 — Clínica Aurora: pestaña «Errores» (v1.142.0, 2026-11-06)
+
+Pedido de Edwin, con su modelo «FLUJO ERRORES POR MES». La pestaña «Errores» va
+justo después de «Agendas por usuaria» y se ve aunque no haya errores (muestra un
+aviso). Tiene:
+- una línea de errores por mes, que sigue el selector de MESES;
+- el «Plan de acción» del mes;
+- los errores del mes por asesora, con «Ver observación».
+
+«Agregar errores» solo lo tienen el supervisor del cliente y el administrador: mes,
+asesora (con los alias de Usuarios del sistema), cantidad o error individual, y
+observación. Se puede editar y borrar, con historial que no copia la observación.
+El plan de acción se escribe por mes. La cuenta del cliente solo ve. Se rechazan
+textos con números que parecen documentos o teléfonos.
+
+Implementación:
+- Tablas `errores_agendamiento` y `errores_plan_accion`; rutas en `/api/calidad/errores`.
+- Módulo `errores` del catálogo, con la marca nueva `siempreVisible`.
+- Migración idempotente `fase284_aurora_errores_v1`, solo para CLINICA AURORA.
+- Para otro cliente, basta otra migración que encienda el módulo.
+
+Pruebas: `fase284-errores-aurora.test.js` (6, nombres inventados) y la matriz de
+acceso actualizada. Suite 2705/2705. Local a 1440 y 375 con admin, supervisor y
+cliente: línea 5, 7, 1, 3, 8, 12, 4, 4, 2, como el modelo. PR #702.
+
+**Producción (1.142.0, solo lectura, sesión de admin en Brave):**
+- Aurora pasa de 6 a 7 pestañas («Errores» después de «Agendas por usuaria»), con
+  el aviso de «sin errores» y el botón «Agregar errores».
+- El editor se abrió y se cerró sin guardar.
+- ORLANT (9), MOBILIZE (6) y HLM (3) quedan con las mismas pestañas; SURA abre igual.
+- A 1440 y 375: sin scroll horizontal, 0 escrituras, 0 errores de consola.
+
+**Logo de Aurora:** no aplicado, porque el archivo indicado no está en el equipo
+(ver `docs/pendientes.md`).
