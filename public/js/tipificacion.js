@@ -237,7 +237,7 @@ async function _tipificacionRenderPanel(p, i){
     }
     html += '<div class="form-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:8px">';
     html += '<div class="ig" style="min-width:150px;margin-bottom:0"><label for="tipif-f-agente-'+i+'-'+c.canal+'">Agente</label><select id="tipif-f-agente-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.agentes, estadoCanal.agente)+'</select></div>';
-    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, tipificacionEtiquetaSkill)+'</select></div>';
+    html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, function(v){ return tipificacionEtiquetaSkill(v, campana); })+'</select></div>'; // Fase 275: nombre del skill por cliente (solo el texto; el valor sigue igual)
     if(p.mostrarFiltroTipo){
       // Fase 219: en ORLANT, "Entrada o salida" (regla de las tarjetas) en vez de "Tipo" (TYPE_INTERACTION crudo).
       html += clasif

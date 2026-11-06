@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.138.0 — Noviembre 2026
+
+**Fase 275: en Clínica Aurora, las colas de WhatsApp con su nombre.**
+
+- En **Clínica Aurora › Tipificación › Tipificación de WhatsApp**, el filtro **Cola** ya no
+  dice «Skill 4019», «Skill 4062» ni «Skill 4063»: ahora dice **Whatsapp de entrada**,
+  **Confirmaciones whatsapp** y **Recordaciones 3 dias**.
+- Las colas que todavía no tienen nombre (por ejemplo 4166 y 4169) siguen como «Skill 4166».
+  «WhatsApp de salida» queda igual.
+- Solo cambia el nombre que se ve: los números y los filtros dan exactamente lo mismo.
+  ORLANT y Mobilize no cambian.
+
 ## v1.137.0 — Noviembre 2026
 
 **Fase 274: la Calidad de Mobilize, Clínica Aurora y Hospital La María se ve como el HTML de Edwin («Resultados del equipo»).**
