@@ -19569,3 +19569,57 @@ Fase 274 («producción tiene 10 ítems»): no hay que importar nada (pendientes
 Nota: dos comparaciones automáticas de texto del formulario fallaron por el
 script (solo el número del ítem; luego una expresión mal escapada que quitó las
 «s»); la comparación se hizo contra los ítems de la id 9 que devuelve la API.
+
+## Fases 277–280 — Cambios de Edwin del 06/11 (v1.139.0 → v1.140.2, 2026-11-06)
+
+Un PR por tema, CI verde, merge con `--match-head-commit`, deploy y health con su
+versión. Antes y después medidos en producción (solo lectura, sesión de admin en
+Brave, 0 escrituras, 0 pedidos fallidos, 0 errores de consola).
+
+| Fase | PR | Versión | Qué quedó |
+|---|---|---|---|
+| 277 | #693 | 1.139.0 | Aurora › Tipificación sin filtro «Línea (General / 3P)», sin tarjetas Salida General / 3P / Sin clasificar y sin «Clasificación de asesores». `SALIDA_POR_CLIENTE`: Aurora con `clasificacionAsesores: false`; `/opciones` manda `vistaSalida` para conservar la vista de ORLANT (cabecera y «Entrada o salida») |
+| 278 | #694 | 1.140.0 | Aurora › Llamadas y WhatsApp de salida solo con el total (sin botones, sin editor de líneas, tabla con total y fuente). WhatsApp de salida = 0 + 4062 + 4063 (`whatsappSalidaSkillIds`; regla única `condSalidaWhatsappSql`, también en `salida-cdr.js`, Total tráfico y «Entrada o salida») |
+| 279 | #695 | 1.140.1 | Mobilize › Calidad › Diccionario como `buildDict` del HTML, con la plantilla principal y activa (14 ítems) |
+| 280 | #696 | 1.140.2 | Aviso exacto al crear un usuario (tilde/ñ, espacio, carácter, largo), regla visible y `maxlength=32`; regla sin cambio. `docs/usuarios.md` |
+
+**WhatsApp de salida de Aurora (producción):**
+
+| Mes | Antes (1.138.1, solo SKILL_ID 0) | Después (1.140.2) | 4062 | 4063 |
+|---|---|---|---|---|
+| Jul 2026 | 720 | 4.149 | 3.182 | 247 |
+| Ago 2026 | 883 | 3.695 | 2.598 | 214 |
+| Sep 2026 | 1.184 | 4.917 | 3.482 | 251 |
+| Oct 2026 | 1.287 | 4.405 | 2.881 | 237 |
+| Total | 4.074 | 17.166 | | |
+
+Llamadas de salida sin cambio (2.719 / 3.640 / 5.211 / 4.449; 16.019). ORLANT
+igual (23.645 llamadas, 10.979 WhatsApp, con sus líneas).
+
+**Diccionario — qué era lo diferente:** abría la plantilla de los monitoreos del
+periodo (la vieja id 8, 10 ítems, agrupados por categoría, «Sin descripción»)
+en vez de la principal (id 9, 14 ítems); y el formato no era el del HTML (sin
+peso en la etiqueta, reglas «los pesos suman 100», título «Diccionario · …»).
+Después: «Diccionario de criterios · Mobilize 2026 ajustada», 14 tarjetas en
+orden con peso, categoría, descripción e impacto.
+
+**Usuarios:** el encabezado ya usaba el «Nombre completo» (campo existente); la
+cuenta de Edwin lo tiene como «edwin» (pendiente con OK). El límite del usuario
+era y sigue siendo 3 a 32 (letras sin tilde, números, . - _): un «nombre_apellido»
+de ese largo siempre pasó; faltaba un aviso que dijera qué sobraba (lo más
+probable, una tilde). Regla de Edwin para usuarios de cliente («Orlant») en
+`docs/usuarios.md`.
+
+**Pruebas:** fase277 (4, panel real con /opciones del servidor), fase278 (5, HistChat
+sintético; falla 5/5 con main), fase279 (3, contra `buildDict` transcrito; falla 3/3
+con main), fase280 (4, ruta real y 400 usuarios inventados); 9 pruebas viejas
+actualizadas a las reglas nuevas. Suite 2682/2682, audit 0.
+
+**Producción (1.140.2) a 1440 y 375:** Aurora › Tipificación con Agente, Skill,
+«Entrada o salida» y Cola, tarjetas Total llamadas / Total WhatsApp; Aurora › salida
+sin botones ni editor, 16.019 + 17.166; ORLANT igual en Tipificación y salida;
+Diccionario de Mobilize con 14 tarjetas; formulario de usuario con la regla y el
+tope en 32 (abierto y cerrado sin guardar); 5 clientes sin vistas vacías ni scroll
+horizontal (Aurora 15 vistas: los botones General / 3P de salida ya no cuentan
+como sub-vistas). Un comando de publicación se bloqueó porque la descripción
+nombraba a una persona real: se rehízo con ejemplos inventados (el repo es público).
