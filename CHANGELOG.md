@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.136.2 — Noviembre 2026
+
+**Fase 273: al abrir SURA ya no se ve «Cargar información» antes del tablero.**
+
+- Al abrir el tablero de **SURA**, durante 1 o 2 segundos se veía la pantalla
+  «Cargar información» mientras llegaban los datos. Ahora se ve un aviso de
+  **«Cargando el tablero…»** y después el tablero, sin pasar por esa pantalla.
+  Es igual para cualquier usuario (administrador, supervisor, reportes…).
+- Si el tablero no se puede cargar, sale un mensaje para cerrarlo y volver a
+  abrirlo (nunca la pantalla de carga).
+- En **ORLANT, Mobilize, Clínica Aurora y Hospital La María**, mientras el
+  tablero carga ya no queda la pantalla en blanco: se ve el mismo aviso
+  «Cargando el tablero…».
+
 ## v1.136.1 — Noviembre 2026
 
 **Fase 272: Nivel de servicio de WhatsApp en Clínica Aurora y Hospital La María igual que ORLANT.**

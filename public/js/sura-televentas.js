@@ -11,7 +11,7 @@
 // Fase 218: la misma app se monta una segunda vez en el Centro de cargas
 // («Cargar Datos»), solo con «Cargar información» (stvMontarCarga).
 
-var _stv = { cliente: null, host: null, root: null, app: null, abierto: false, observador: null };
+var _stv = { cliente: null, host: null, root: null, app: null, abierto: false, observador: null, listo: false };
 var _stvCarga = { cliente: null, host: null, root: null, app: null, abierto: false };
 
 // Cliente con este tablero (registro de clientes: parametros.especificos).
@@ -71,10 +71,46 @@ function _stvApi(cliente) {
   };
 }
 
+// Fase 273 (punto 5 de Edwin, 06/11): mientras llega el primer resumen, el
+// marcado del HTML de Edwin trae «Cargar información» (p1) como pestaña
+// activa, y se veia ~2 s antes del tablero. Ahora, hasta aplicar los permisos,
+// la .wrap lleva .stv-cargando: todo oculto salvo un indicador de carga. Va en
+// un <style> en linea (no en el .css, que llega por <link> y puede tardar mas
+// que el propio marcado).
+var STV_CSS_CARGANDO =
+  '.stv-cargando-ind{display:none}' +
+  '.wrap.stv-cargando>*:not(.stv-cargando-ind){display:none!important}' +
+  '.wrap.stv-cargando>.stv-cargando-ind{display:flex;align-items:center;justify-content:center;gap:10px;min-height:220px;padding:40px 16px;' +
+    'color:var(--c-text-muted,#5b6b73);font-family:inherit;font-size:0.95rem;text-align:center}' +
+  '.stv-cargando-ind .stv-spin{width:20px;height:20px;flex:none;border:2.5px solid var(--c-border,#d6dee2);border-top-color:var(--c-primary-mid,#0f6f8a);border-radius:50%;animation:stv-giro .8s linear infinite}' +
+  '.stv-cargando-ind.stv-error .stv-spin{display:none}' +
+  '@keyframes stv-giro{to{transform:rotate(360deg)}}' +
+  '@media (prefers-reduced-motion:reduce){.stv-cargando-ind .stv-spin{animation:none}}' +
+  ':host-context([data-motion="off"]) .stv-cargando-ind .stv-spin{animation:none}';
+
 // Hoja del Shadow DOM con la version del build (como los ?v= de index.html).
 function _stvHojaCss() {
   var v = (typeof window !== 'undefined' && window.__BUILD_ID__) ? '?v=' + encodeURIComponent(window.__BUILD_ID__) : '';
-  return '<link rel="stylesheet" href="css/sura-televentas-app.css' + v + '">';
+  return '<style>' + STV_CSS_CARGANDO + '</style><link rel="stylesheet" href="css/sura-televentas-app.css' + v + '">';
+}
+
+// Fase 273: estado de carga del tablero. estado: 'cargando' (indicador),
+// 'error' (mensaje, sin pestañas: nunca «Cargar información») o null (tablero).
+function _stvEstadoCarga(root, estado, texto) {
+  var wrap = root && root.querySelector('.wrap');
+  if (!wrap) return;
+  var ind = wrap.querySelector('.stv-cargando-ind');
+  if (!ind) {
+    ind = document.createElement('div');
+    ind.className = 'stv-cargando-ind';
+    ind.setAttribute('role', 'status');
+    ind.setAttribute('aria-live', 'polite');
+    wrap.insertBefore(ind, wrap.firstChild);
+  }
+  wrap.classList.toggle('stv-cargando', !!estado);
+  ind.classList.toggle('stv-error', estado === 'error');
+  ind.innerHTML = estado ? '<span class="stv-spin" aria-hidden="true"></span><span></span>' : '';
+  if (estado) ind.lastChild.textContent = texto || 'Cargando el tablero…';
 }
 
 function _stvSincronizarTema() {
@@ -142,16 +178,24 @@ async function openSuraTeleventas(cliente) {
   if (!_stv.app || _stv.cliente !== cliente) {
     _stv.root.innerHTML = _stvHojaCss() + STV_MARKUP;
     _stv.cliente = cliente;
+    _stv.listo = false;
     _stv.app = stvCrearApp(_stv.root, _stvApi(cliente), function () { return _stv.abierto; });
   }
+  // Fase 273: hasta que el servidor diga que pestañas van (y con que datos),
+  // solo el indicador. Al volver a abrir, el tablero ya armado se queda a la
+  // vista mientras recarga (como antes).
+  if (!_stv.listo) _stvEstadoCarga(_stv.root, 'cargando');
   try {
     var perm = await _stv.app.cargar();
     _stvAplicarPermisos(perm);
+    _stv.listo = true;
+    _stvEstadoCarga(_stv.root, null);
     document.getElementById('stv-sub').textContent = perm.puedeEditar
       ? 'Ventas, metas y estrategias por mes'
       : 'Ventas por mes';
   } catch (e) {
     document.getElementById('stv-sub').textContent = '';
+    if (!_stv.listo) _stvEstadoCarga(_stv.root, 'error', 'No se pudo cargar el tablero. Ciérralo y vuelve a abrirlo.');
     if (typeof showToast === 'function') showToast('No se pudo abrir el tablero: ' + e.message);
   }
 }
