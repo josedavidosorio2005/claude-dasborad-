@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.137.0 — Noviembre 2026
+
+**Fase 274: la Calidad de Mobilize, Clínica Aurora y Hospital La María se ve como el HTML de Edwin («Resultados del equipo»).**
+
+En la pestaña **Calidad › Resultado de los monitoreos** (lo que se califica en la plataforma):
+
+- Arriba, filtros **Mes** y **Asesor** (se pueden marcar varios, con «Marcar todo» y «Ninguno»)
+  y los botones **Detalle por mes**, **Resumen por asesor** y **Diccionario**.
+- Cuatro tarjetas: **Monitoreos calificados**, **Promedio general** (en rojo si es crítico),
+  **Con fallos en ítems críticos** y **Asesores evaluados** (igual que el HTML para estas plantillas).
+- **Calificación definitiva por asesor** (línea con las referencias de 90 % y 70 %),
+  **Calificación definitiva por mes** y **Monitoreos por clasificación** (torta Sobresaliente /
+  No crítico / Crítico, con cantidad y %).
+- **Resultado por asesor** (con su clasificación en color) e **Ítems más afectados** (todos los
+  ítems de la plantilla, con ⚠ en los críticos), y la nota de la escala al pie.
+- **Llamadas con fallas** sigue debajo, con el detalle de cada llamada al hacer clic.
+- Por defecto se ve el mes actual (o el último con monitoreos); si se marcan meses en MESES, se usan esos.
+- Los cálculos son los mismos del HTML de Edwin. ORLANT no cambia.
+
 ## v1.136.2 — Noviembre 2026
 
 **Fase 273: al abrir SURA ya no se ve «Cargar información» antes del tablero.**
