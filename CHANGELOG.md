@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.136.1 — Noviembre 2026
+
+**Fase 272: Nivel de servicio de WhatsApp en Clínica Aurora y Hospital La María igual que ORLANT.**
+
+- En **Tráfico de WhatsApp › Nivel de servicio** ya no se muestra el cálculo
+  mensual como el de llamadas: se ve el **% por rangos de tiempo de respuesta**
+  (0 a 3, 3 a 5, 5 a 8, 8 a 10 y más de 10 minutos), igual que en ORLANT.
+- Mientras no se suba el archivo de tiempos, la vista dice qué subir y dónde:
+  Cargar Datos → "WhatsApp tiempos de respuesta" (el "10. Detalle de llamadas
+  contestadas" de Wolkvox, el mismo de ORLANT).
+- No se borró nada: el porcentaje mensual que ya estaba cargado se conserva.
+
 ## v1.136.0 — Noviembre 2026
 
 **Fase 271: botones "Marcar todo" y "Ninguno" en las listas con casillas.**
