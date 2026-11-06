@@ -35,10 +35,10 @@ t.cargarTipificaciones(db, { campana: AURORA, canal: 'WHATSAPP', archivoNombre: 
 test('la regla de salida esta en un solo lugar: ORLANT y Aurora (provisional) con la de ORLANT; los demas, no', () => {
   assert.deepEqual(t.SALIDA_POR_CLIENTE, {
     ORLANT: { regla: 'guion', clasificacionAsesores: true },
-    'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: true },
+    'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false }, // Fase 277: sin lineas General / 3P
     'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // Fase 229, provisional
   });
-  for (const c of ['ORLANT', AURORA, 'HOSPITAL LA MARIA']) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), true, c); }
+  for (const c of ['ORLANT', AURORA, 'HOSPITAL LA MARIA']) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), c !== AURORA, c); } // Fase 277: Aurora sin lineas
   for (const c of ['MOBILIZE', 'SURA']) { assert.equal(t.salidaPorGuion(c), false, c); assert.equal(t.usaClasificacionAsesores(c), false, c); }
 });
 

@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.139.0 — Noviembre 2026
+
+**Fase 277: Clínica Aurora › Tipificación sin «General / 3P».**
+
+- En **Clínica Aurora › Tipificación** (llamadas y WhatsApp) ya no salen el filtro
+  **«Línea (General / 3P)»** ni las tarjetas **«Salida General»**, **«Salida 3P»** y
+  «Sin clasificar», ni el botón «Clasificación de asesores»: en Aurora no hay líneas.
+- Se quedan los filtros de siempre (Agente, Skill / Cola y «Entrada o salida») y los
+  números no cambian.
+- ORLANT, Hospital La María y Mobilize no cambian.
+
 ## v1.138.1 — Noviembre 2026
 
 **Fase 276: Mobilize › Flujo por hora sin el recuadro vacío.**
