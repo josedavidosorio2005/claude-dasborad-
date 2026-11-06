@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const db = require('./db');
 const config = require('./config');
+// Fase 283: perfil del SUPERVISOR (supervisa_<C>), la misma regla que el navegador.
+const { permisosEfectivos, supervisorUsaPerfil, supervisorClientes } = require('../public/js/perfil-supervisor-logic.js');
 
 // La validez de JWT_SECRET (longitud minima, etc.) ya se garantiza en config.js
 // al arrancar; aqui solo lo consumimos.
@@ -97,7 +99,8 @@ function getActor(req) {
   // sin necesidad de guardar una lista de tokens revocados. Se trata igual
   // que "actor no encontrado" (401 generico) para no distinguir el motivo.
   if (req.auth.tokenVersion !== row.token_version) return null;
-  return { ...row, perms: JSON.parse(row.perms || '{}'), isMasterAdmin: false };
+  // Fase 283: un SUPERVISOR en el perfil nuevo decide su acceso SOLO por supervisa_<C>.
+  return { ...row, perms: permisosEfectivos(row.rol, JSON.parse(row.perms || '{}')), isMasterAdmin: false };
 }
 
 function isFullAdmin(actor) {
@@ -240,8 +243,14 @@ function canLoadData(actor) {
 // con su `cargar_<modulo>` en true (apagado por defecto, se activa por
 // usuario en Usuarios) -- y siempre con campaignAccess al cliente, que cada
 // ruta sigue exigiendo aparte. `modulo` = id del catalogo (centro-cargas.js).
+// Fase 283: un SUPERVISOR (perfil nuevo) carga TODOS los modulos, solo de sus
+// clientes -- cada ruta exige ademas campaignAccess/clienteAccess al cliente.
+function supervisorCarga(actor) {
+  return !!(actor && supervisorUsaPerfil(actor.rol, actor.perms) && supervisorClientes(actor.perms).length);
+}
 function canLoadModule(actor, modulo) {
   if (canLoadData(actor)) return true;
+  if (supervisorCarga(actor)) return true;
   return !!(actor && actor.rol === 'CALIDAD' && actor.perms && actor.perms['cargar_' + modulo] === true);
 }
 
@@ -249,6 +258,7 @@ function canLoadModule(actor, modulo) {
 // perezoso: centro-cargas.js depende de la base, como este archivo.
 function canLoadAnyModule(actor) {
   if (canLoadData(actor)) return true;
+  if (supervisorCarga(actor)) return true;
   if (!actor || actor.rol !== 'CALIDAD' || !actor.perms) return false;
   return require('./centro-cargas').MODULOS_CON_PERMISO.some((m) => actor.perms['cargar_' + m] === true);
 }
@@ -281,5 +291,6 @@ module.exports = {
   canLoadData,
   canLoadModule,
   canLoadAnyModule,
+  supervisorCarga,
   requireDataLoader,
 };

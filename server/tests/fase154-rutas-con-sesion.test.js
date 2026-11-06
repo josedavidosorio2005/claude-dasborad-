@@ -15,7 +15,8 @@ after(cleanup);
 const SIN_SESION = new Set(['GET /api/health', 'POST /api/auth/login']);
 // El frontend estatico (index y el fallback de la SPA) no es API.
 const FRONTEND = new Set(['GET /', 'GET /index.html', 'GET /{*splat}']);
-const GUARDIAS = new Set(['requireActor', 'requireDataLoader', 'requirePermission']);
+// Fase 283: requireCargaGenerica (routes/dashboards.js) empieza llamando a requireActor.
+const GUARDIAS = new Set(['requireActor', 'requireDataLoader', 'requirePermission', 'requireCargaGenerica']);
 
 function rutasSinSesion(aplicacion, prefijoApi) {
   const sin = [];

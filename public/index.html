@@ -815,6 +815,12 @@
       <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-client-perm-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-client-perm-grid" data-on="0">Ninguno</button></div>
       <div class="client-perm-grid" id="mu-client-perm-grid"></div>
     </div>
+    <div class="client-perms-section" id="mu-supervisa-perms" style="display:none">
+      <h4>Clientes que supervisa</h4>
+      <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Por cada cliente marcado, el supervisor abre su tablero desde su portal, carga sus bases y hace su control de Calidad. No crea usuarios ni cambia contraseñas.</div>
+      <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-supervisa-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-supervisa-grid" data-on="0">Ninguno</button></div>
+      <div class="client-perm-grid" id="mu-supervisa-grid"></div>
+    </div>
     <div class="client-perms-section" id="mu-campaign-perms">
       <h4>Acceso a campañas de Calidad</h4>
       <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-campaign-perm-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-campaign-perm-grid" data-on="0">Ninguno</button></div>
@@ -943,6 +949,7 @@
         <div>
           <img id="gd-cliente-logo" class="gd-cliente-logo" src="" alt="" width="140" height="25" style="display:none">
           <h2 id="gd-title">Dashboard</h2>
+          <span id="gd-vista-sup" class="navbar-role gd-vista-sup hidden">Vista de supervisor</span>
           <div class="aurora-sub" id="gd-sub"></div>
           <div id="gd-ultima-act" class="gd-ultima-act" style="display:none"></div>
         </div>
@@ -1750,6 +1757,7 @@
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
         <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
+        <li id="supervisor-menu-cargas-li" class="hidden"><a id="supervisor-menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar bases</a></li>
         <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
       </ul>
     </aside>
@@ -1949,6 +1957,7 @@
 <script src="js/constants.js"></script>
 <script src="js/registro-clientes.js"></script>
 <script src="js/dashboards-logic.js"></script>
+<script src="js/perfil-supervisor-logic.js"></script>
 <script src="js/state.js"></script>
 <script src="js/session.js"></script>
 <script src="js/toast-logic.js"></script>

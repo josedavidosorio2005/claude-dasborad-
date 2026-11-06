@@ -4,6 +4,23 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.141.0 — Noviembre 2026
+
+**Fase 283: perfil propio del SUPERVISOR.**
+
+- En **Administración › Usuarios**, el rol SUPERVISOR tiene una sola lista: **«Clientes que
+  supervisa»**. Ya no se le dan los permisos de un cliente («Acceso a clientes») ni los de
+  campañas aparte: la vista de cliente queda solo para las cuentas de cliente.
+- Por cada cliente que supervisa, el supervisor:
+  - abre su **tablero** desde su portal, con la marca **«Vista de supervisor»**;
+  - **carga sus bases** desde el menú nuevo **«Cargar bases»** (todos los módulos, solo de
+    sus clientes) o desde «Actualizar datos» en el tablero;
+  - hace el **control de Calidad** (calificar y ver resultados), como antes.
+- No ve las pestañas que solo ve el administrador. No crea usuarios ni cambia contraseñas de
+  otros (sigue siendo solo del administrador).
+- Las cuentas de supervisor que ya existen siguen igual hasta que se pasen al perfil nuevo
+  desde Usuarios (al abrirlas, «Clientes que supervisa» viene marcado con lo que ya tenían).
+
 ## v1.140.4 — Noviembre 2026
 
 **Fase 282: «Nuevo dashboard» ya no ofrece SURA.**

@@ -53,13 +53,16 @@ const ERROR_PERMS_GESTION = 'Solo un administrador completo puede otorgar o quit
 // acceso a clientes o campanas que el mismo tiene. Solo cuentan las llaves
 // que pasan a true: si el usuario ya las tenia, no se bloquea (editar sin
 // tocarlas sigue funcionando), y quitar acceso siempre se puede.
-const RE_PERM_ACCESO = /^(cliente|campana|plantilla)_/; // Fase 237: + plantilla_<id>
+const RE_PERM_ACCESO = /^(cliente|campana|plantilla|supervisa)_/; // Fase 237: + plantilla_<id>; Fase 283: + supervisa_<C>
 function accesosSinEscalar(actor, nuevos, actuales) {
   if (isFullAdmin(actor)) return true;
   const n = nuevos || {};
   const a = actuales || {};
   const propios = (actor && actor.perms) || {};
-  return Object.keys(n).every((k) => !RE_PERM_ACCESO.test(k) || n[k] !== true || a[k] === true || propios[k] === true);
+  // Fase 283: supervisa_<C> solo si quien lo da tiene acceso a ese cliente.
+  const tieneCliente = (c) => propios['supervisa_' + c] === true || propios['cliente_' + c] === true || propios['campana_' + c] === true;
+  return Object.keys(n).every((k) => !RE_PERM_ACCESO.test(k) || n[k] !== true || a[k] === true || propios[k] === true ||
+    (k.indexOf('supervisa_') === 0 && tieneCliente(k.slice('supervisa_'.length))));
 }
 const ERROR_ACCESOS = 'Solo puedes dar acceso a clientes, campañas o plantillas a los que tú tienes acceso';
 

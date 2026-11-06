@@ -42,7 +42,11 @@ function renderUsers(filter){
     var sl=u.active?'Suspender':'Activar';
     var sc=u.active?'btn-suspend':'btn-activate';
     var extra='';
-    if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
+    if(u.rol==='SUPERVISOR' && supervisorUsaPerfil(u.rol, u.perms)){ // Fase 283: los clientes que supervisa
+      var sup=supervisorClientes(u.perms);
+      extra='<div style="font-size:var(--fs-note);color:'+(sup.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
+        calEstadoHtml(sup.length? '✅ Supervisa: '+sup.join(', ') : '⚠ No supervisa ningún cliente', { sinColor:true })+'</div>';
+    } else if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
       extra='<div style="font-size:var(--fs-note);color:'+(asignadas.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         calEstadoHtml(asignadas.length? '✅ '+asignadas.join(', ') : '⚠ Sin campanas asignadas', { sinColor:true })+'</div>';
@@ -148,13 +152,14 @@ function openEditModal(id){
   document.getElementById('mu-pass').value='';
   document.getElementById('mu-rol').value=u.rol;
   document.getElementById('mu-pass-hint').style.display='block';
-  if (u.rol==='CLIENTES_DASH' || u.rol==='SUPERVISOR'){
+  syncSupervisa(u.rol, u); // Fase 283
+  if (u.rol==='CLIENTES_DASH'){
     buildClientCheckboxes(u.perms);
     document.getElementById('mu-client-perms').style.display='block';
   } else {
     document.getElementById('mu-client-perms').style.display='none';
   }
-  if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
+  if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='GERENCIA'){
     buildCampaignCheckboxes(u.perms);
     document.getElementById('mu-campaign-perms').style.display='block';
   } else {
@@ -179,10 +184,13 @@ function syncRolDescripcion(rol){ // Fase 253
 function onRolChange(){
   var rol=document.getElementById('mu-rol').value;
   syncRolDescripcion(rol);
-  var show=(rol==='CLIENTES_DASH' || rol==='SUPERVISOR');
+  // Fase 283: "Acceso a clientes" es solo de las cuentas de cliente; el SUPERVISOR
+  // tiene su lista propia ("Clientes que supervisa").
+  var show=(rol==='CLIENTES_DASH');
   document.getElementById('mu-client-perms').style.display=show?'block':'none';
   if(show) buildClientCheckboxes(null);
-  var showCal=(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR' || rol==='GERENCIA');
+  syncSupervisa(rol, null);
+  var showCal=(rol==='CALIDAD' || rol==='REPORTES' || rol==='GERENCIA');
   document.getElementById('mu-campaign-perms').style.display=showCal?'block':'none';
   if(showCal) buildCampaignCheckboxes(null);
   var showAsesor=(rol==='ASESOR');
@@ -191,6 +199,35 @@ function onRolChange(){
   syncCargarDatosLock(rol);
   buildCargarModulosCheckboxes(null, rol);
   buildPlantillaCheckboxes(null, rol); // Fase 237
+}
+
+// Fase 283: "Clientes que supervisa" (solo SUPERVISOR). Al abrir un supervisor que
+// todavia no esta en el perfil nuevo, se marcan los clientes a los que hoy tiene
+// acceso (cliente_ o campana_); al guardar, queda en el perfil nuevo. El SUPERVISOR
+// no usa "Puede cargar datos operativos": carga las bases de los clientes que supervisa.
+function syncSupervisa(rol, user){
+  var sec=document.getElementById('mu-supervisa-perms');
+  var esSup=(rol==='SUPERVISOR');
+  if(sec) sec.style.display=esSup?'block':'none';
+  var cd=document.getElementById('mu-cargar-datos-section');
+  if(cd) cd.style.display=esSup?'none':'';
+  if(!esSup) return;
+  var marcados=user ? supervisorClientesIniciales(user.rol, user.perms, CLIENTES_LIST) : [];
+  document.getElementById('mu-supervisa-grid').innerHTML=CLIENTES_LIST.map(function(c){
+    return '<label class="client-perm-item"><input type="checkbox" data-supervisa="'+esc(c)+'" '+(marcados.indexOf(c)!==-1?'checked':'')+'>'+esc(c)+'</label>';
+  }).join('');
+}
+function getSupervisaChecks(){
+  var checks={};
+  document.querySelectorAll('#mu-supervisa-grid input[data-supervisa]').forEach(function(inp){ checks[inp.dataset.supervisa]=inp.checked; });
+  return checks;
+}
+// Pone supervisa_<C> (true/false) de TODOS los clientes: con eso la cuenta queda en el perfil nuevo.
+function aplicarSupervisa(perms, rol){
+  if(rol!=='SUPERVISOR') return perms;
+  var ch=getSupervisaChecks();
+  CLIENTES_LIST.forEach(function(c){ perms['supervisa_'+c]=ch[c]===true; });
+  return perms;
 }
 
 // REPORTES siempre puede cargar datos (feedback Edwin 2.1): el backend lo fuerza;
@@ -329,10 +366,13 @@ async function saveUserModal(){
   }
   // Fase 222: el acceso se marca a mano; sin ninguno no se guarda.
   var algunoMarcado=function(checks){ return Object.keys(checks).some(function(k){ return checks[k]===true; }); };
-  if((rol==='CLIENTES_DASH'||rol==='SUPERVISOR') && !algunoMarcado(getClientChecks())){
+  if(rol==='CLIENTES_DASH' && !algunoMarcado(getClientChecks())){
     showToast('Marca al menos un cliente');return;
   }
-  if((rol==='CALIDAD'||rol==='REPORTES'||rol==='SUPERVISOR'||rol==='GERENCIA') && !algunoMarcado(getCampaignChecks())){
+  if(rol==='SUPERVISOR' && !algunoMarcado(getSupervisaChecks())){ // Fase 283
+    showToast('Marca al menos un cliente que supervisa');return;
+  }
+  if((rol==='CALIDAD'||rol==='REPORTES'||rol==='GERENCIA') && !algunoMarcado(getCampaignChecks())){
     showToast('Marca al menos una campaña');return;
   }
 
@@ -341,11 +381,12 @@ async function saveUserModal(){
     if(!pass || pass.length < PASSWORD_MIN){
       showToast('Define una contrasena de al menos '+PASSWORD_MIN+' caracteres para el nuevo usuario');return;
     }
-    var clientChecks=(rol==='CLIENTES_DASH'||rol==='SUPERVISOR')?getClientChecks():null;
-    var campaignChecks=(rol==='CALIDAD'||rol==='REPORTES'||rol==='SUPERVISOR'||rol==='GERENCIA')?getCampaignChecks():null;
+    var clientChecks=(rol==='CLIENTES_DASH')?getClientChecks():null;
+    var campaignChecks=(rol==='CALIDAD'||rol==='REPORTES'||rol==='GERENCIA')?getCampaignChecks():null;
     var payload={ nombre:nombre, user:user, password:pass, rol:rol,
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
-    if(document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
+    if(rol!=='SUPERVISOR' && document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
+    aplicarSupervisa(payload.perms, rol); // Fase 283
     aplicarCargarModulos(payload.perms, rol);
     aplicarPlantillas(payload.perms, rol); // Fase 237
     if(rol==='ASESOR') payload.asesorCampana = document.getElementById('mu-asesor-campana').value;
@@ -364,15 +405,17 @@ async function saveUserModal(){
     var u=users.find(function(x){return x.id===id;}); if(!u) return;
     var prevRol=u.rol;
     var newPerms = (prevRol!==rol) ? buildPerms(rol,null,null) : Object.assign({},u.perms);
-    if(rol==='CLIENTES_DASH' || rol==='SUPERVISOR'){
+    if(rol==='CLIENTES_DASH'){
       var cc=getClientChecks();
       CLIENTES_LIST.forEach(function(c){newPerms['cliente_'+c]=cc[c]===true;});
     }
-    if(rol==='CALIDAD' || rol==='REPORTES' || rol==='SUPERVISOR' || rol==='GERENCIA'){
+    if(rol==='CALIDAD' || rol==='REPORTES' || rol==='GERENCIA'){
       var cac=getCampaignChecks();
       CAMPANAS_CALIDAD.forEach(function(c){newPerms['campana_'+c]=cac[c]===true;});
     }
-    newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
+    // Fase 283: el SUPERVISOR no usa la casilla (carga por supervisa_); se conserva lo guardado.
+    if(rol!=='SUPERVISOR') newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
+    aplicarSupervisa(newPerms, rol);
     aplicarCargarModulos(newPerms, rol);
     aplicarPlantillas(newPerms, rol); // Fase 237
     payload={ nombre:nombre, user:user, rol:rol, perms:newPerms }; // Fase 239: sin "var" repetido (ESLint no-redeclare)

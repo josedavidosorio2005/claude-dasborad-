@@ -1345,6 +1345,9 @@ function renderGenericHeader(){
   var btnAct = document.getElementById('gd-actualizar-btn');
   if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
+  // Fase 283: el supervisor abre el tablero desde su portal, en su vista (no la del cliente).
+  var vistaSup = document.getElementById('gd-vista-sup');
+  if (vistaSup) vistaSup.classList.toggle('hidden', !(typeof currentUser !== 'undefined' && currentUser && currentUser.rol === 'SUPERVISOR'));
   _gdPintarSubtitulo();
   _gdPintarUltimaAct();
   _gdPintarVistaYMeses();
