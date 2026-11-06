@@ -63,7 +63,7 @@ async function _auRender(p, i) {
   var hayFiltro = f.asesoras.length || f.sede || f.citaDesde || f.citaHasta || f.solicitudDesde || f.solicitudHasta;
   var filtros =
     '<div class="aurora-card au-filtros-card"><div class="au-filtros">' +
-      '<details class="au-asesoras"><summary>Asesor: ' + (f.asesoras.length ? f.asesoras.length + ' elegido(s)' : 'Todos') + '</summary><div class="au-asesoras-lista">' +
+      '<details class="au-asesoras"><summary>Asesor: ' + (f.asesoras.length ? f.asesoras.length + ' elegido(s)' : 'Todos') + '</summary>' + (typeof marcarTodoBarraHtml === 'function' ? marcarTodoBarraHtml('au-asesoras-lista-' + i) : '') + '<div class="au-asesoras-lista" id="au-asesoras-lista-' + i + '">' + // Fase 271
         asesorasDisp.map(function (a) { return '<label><input type="checkbox" data-au-asesora data-i="' + i + '" value="' + esc(a) + '"' + (f.asesoras.indexOf(a) !== -1 ? ' checked' : '') + '> ' + esc(a) + '</label>'; }).join('') + '</div></details>' +
       '<div class="au-filtro"><label for="au-f-sede-' + i + '">Sede</label><select id="au-f-sede-' + i + '" data-au-campo="sede" data-i="' + i + '"><option value="">Todas</option>' +
         auOpciones(delMes, 'sede').map(function (v) { return '<option value="' + esc(v) + '"' + (v === f.sede ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></div>' +

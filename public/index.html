@@ -812,10 +812,12 @@
     </div>
     <div class="client-perms-section" id="mu-client-perms">
       <h4>Acceso a clientes</h4>
+      <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-client-perm-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-client-perm-grid" data-on="0">Ninguno</button></div>
       <div class="client-perm-grid" id="mu-client-perm-grid"></div>
     </div>
     <div class="client-perms-section" id="mu-campaign-perms">
       <h4>Acceso a campañas de Calidad</h4>
+      <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-campaign-perm-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-campaign-perm-grid" data-on="0">Ninguno</button></div>
       <div class="client-perm-grid" id="mu-campaign-perm-grid"></div>
     </div>
     <div class="client-perms-section" id="mu-cargar-datos-section">
@@ -829,11 +831,13 @@
     <div class="client-perms-section" id="mu-plantillas-section" style="display:none">
       <h4>Plantillas de calificación que puede usar</h4>
       <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Sin ninguna marcada, puede usar todas las plantillas de sus campañas. Si marcas alguna, solo podrá monitorear con las marcadas (y siempre dentro de sus campañas).</div>
+      <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-plantillas-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-plantillas-grid" data-on="0">Ninguno</button></div>
       <div class="client-perm-grid" id="mu-plantillas-grid"></div>
     </div>
     <div class="client-perms-section" id="mu-cargar-modulos-section" style="display:none">
       <h4>Puede cargar en el Centro de cargas (por módulo)</h4>
       <div class="hint" style="font-size:0.78rem;color:var(--c-text-muted);margin:0 0 6px">Solo en los clientes marcados arriba en "Acceso a campañas de Calidad". Si "Puede cargar datos operativos" está marcado, ya carga todos los módulos.</div>
+      <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="mu-cargar-modulos-grid" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="mu-cargar-modulos-grid" data-on="0">Ninguno</button></div>
       <div class="client-perm-grid" id="mu-cargar-modulos-grid"></div>
     </div>
     <div class="modal-btns">
@@ -955,6 +959,7 @@
             <summary id="gd-meses-btn" class="gd-meses-btn" aria-describedby="gd-meses-ayuda">Todos</summary>
             <div class="gd-meses-pop" role="group" aria-labelledby="gd-meses-label">
               <p id="gd-meses-ayuda" class="gd-meses-ayuda">Meses que se muestran en las gráficas y tablas por mes. Las tarjetas de resumen suman los meses marcados; sin ninguno marcado, todos los meses cargados.</p>
+              <div class="marcar-todo" role="group" aria-label="Selección rápida"><button type="button" class="btn-sm" data-marcar-todo="gd-meses-lista" data-on="1">Marcar todo</button><button type="button" class="btn-sm" data-marcar-todo="gd-meses-lista" data-on="0">Ninguno</button></div>
               <div id="gd-meses-lista"></div>
               <button type="button" class="btn-sm" onclick="gdMesesTodos()">Ver todos los meses</button>
             </div>
@@ -1906,6 +1911,7 @@
 
 <!-- Codigo de la app. El orden importa: state/constantes antes que el resto. -->
 <script src="js/esc.js"></script>
+<script src="js/marcar-todo.js"></script>
 <script src="js/motion-helpers.js"></script>
 <script src="js/row-actions.js"></script>
 <script src="js/texto-formato-logic.js"></script>

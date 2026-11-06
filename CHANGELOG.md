@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.136.0 — Noviembre 2026
+
+**Fase 271: botones "Marcar todo" y "Ninguno" en las listas con casillas.**
+
+- En el selector **MESES** de los tableros (todos los clientes). Con "Ninguno"
+  queda como "Todos": sin meses marcados se ven todos los cargados.
+- En **Clínica Aurora › Agendas por usuaria**, en el filtro **Asesor**.
+- En el formulario de **usuario** (Administración › Usuarios): Acceso a
+  clientes, Acceso a campañas de Calidad, Plantillas de calificación y Módulos
+  del Centro de cargas.
+
 ## v1.135.0 — Noviembre 2026
 
 **Fase 270: en Calificar, el Asesor se elige de una lista.**

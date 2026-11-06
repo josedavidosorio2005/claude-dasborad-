@@ -1979,6 +1979,10 @@ div.ca-bar-fila{cursor:default}
 .alias-acciones{white-space:nowrap}
 @media (max-width:600px){.au-filtro{flex:1 1 100%}.au-filtro select{min-width:0;width:100%}.au-asesoras{flex:1 1 100%}.au-fechas{flex:1 1 100%}.au-fechas label{flex:1 1 40%}.au-fechas input{width:100%;min-width:0}}
 
+/* Fase 271: "Marcar todo / Ninguno" junto a las listas con casillas (marcar-todo.js). */
+.marcar-todo{display:flex;flex-wrap:wrap;gap:var(--space-2);margin:0 0 6px}
+.marcar-todo .btn-sm{min-height:32px}
+
 /* Fase 175: encabezado del tablero compacto en el celular y la tablet
    (hasta 768 px). Antes ocupaba 354 px de 812 a 375 px (315 de 1024 a
    768): titulo, MES, MESES, COMPARAR, la nota y 5 botones en varias filas.
