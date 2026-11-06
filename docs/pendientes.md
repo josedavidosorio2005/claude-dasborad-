@@ -177,6 +177,16 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Plantilla de Mobilize en producción: 10 ítems, no los 14 del HTML de Edwin**
+  (visto en la Fase 274, 06/11) — la Calidad de Mobilize ya se ve como
+  «Resultados del equipo» del HTML, pero califica con una plantilla de 10
+  ítems («1. Saludo y presentacion»… «10. Manejo adecuado de tiempos y
+  silencios»). La de Edwin (`plantilla-mobilize.json`, fuera del repo, y la
+  del HTML) tiene 14 ítems y 5 críticos. Cómo se cierra: Edwin confirma cuál va
+  y, con tu autorización, se importa por Calidad › Plantillas (vista previa
+  primero; escritura en producción). Los monitoreos ya hechos se quedan con
+  su plantilla.
+
 - ~~**Punto 5: se ve «Cargar datos» antes del tablero**~~ — **RESUELTO**
   (Fase 273, v1.136.2, PR #685, 06/11). Era al abrir **SURA**: se veía
   «Cargar información» ~1,8 s mientras llegaban los datos. Ahora se ve
