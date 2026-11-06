@@ -159,10 +159,14 @@ async function _tipificacionRenderPanel(p, i){
   var mesesCombinados = canalesAUsar.reduce(function(acc, c){ return acc.concat(opPorCanal[c.canal].meses||[]); }, [])
     .filter(function(v,idx,arr){ return arr.indexOf(v)===idx; }).sort();
 
-  // Fase 186 (solo ORLANT, lo dice el servidor en /opciones).
+  // Fase 186 (lo dice el servidor en /opciones): `clasif` = la salida se reparte en
+  // General / 3P (filtro Linea, tarjetas por linea y "Clasificación de asesores").
+  // Fase 277: `vista` = la vista de salida de ORLANT (sin la fila Mes/Desde/Hasta y
+  // con "Entrada o salida"), que Aurora conserva aunque ya no tenga lineas.
   var clasif = canalesAUsar.some(function(c){ return !!(opPorCanal[c.canal] && opPorCanal[c.canal].clasificacionAsesores); });
+  var vista = clasif || canalesAUsar.some(function(c){ return !!(opPorCanal[c.canal] && opPorCanal[c.canal].vistaSalida); });
   _tipificacionClasifPorPanel[i] = clasif;
-  _tipificacionSentidoPorCampana[campana] = clasif;
+  _tipificacionSentidoPorCampana[campana] = vista;
 
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
@@ -199,9 +203,9 @@ async function _tipificacionRenderPanel(p, i){
   // (_tipificacionSincronizarConMesGlobal); la Linea (General / 3P) pasa a los
   // filtros de cada mitad; "Clasificación de asesores" (solo admin) queda en
   // la cabecera. Los demas paneles (Mobilize) siguen con su fila de siempre.
-  if(clasif){
+  if(vista){
     html += '<div class="aurora-card-title tipif-cabecera">'+esc(titulo)+
-      ((typeof isFullAdmin === 'function' && isFullAdmin()) ? '<button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button>' : '')+
+      (clasif && (typeof isFullAdmin === 'function' && isFullAdmin()) ? '<button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button>' : '')+
       '</div>';
   } else {
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';
@@ -240,7 +244,7 @@ async function _tipificacionRenderPanel(p, i){
     html += '<div class="ig" style="min-width:170px;margin-bottom:0"><label for="tipif-f-skill-'+i+'-'+c.canal+'">'+esc(c.etiquetaSkill)+'</label><select id="tipif-f-skill-'+i+'-'+c.canal+'">'+_tipificacionOptionsHtml(op.skills, estadoCanal.skill, function(v){ return tipificacionEtiquetaSkill(v, campana); })+'</select></div>'; // Fase 275: nombre del skill por cliente (solo el texto; el valor sigue igual)
     if(p.mostrarFiltroTipo){
       // Fase 219: en ORLANT, "Entrada o salida" (regla de las tarjetas) en vez de "Tipo" (TYPE_INTERACTION crudo).
-      html += clasif
+      html += vista
         ? '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Entrada o salida</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionSentidoOptionsHtml(estadoCanal.tipo)+'</select></div>'
         : '<div class="ig" style="min-width:140px;margin-bottom:0"><label for="tipif-f-tipo-'+i+'-'+c.canal+'">Tipo</label><select id="tipif-f-tipo-'+i+'-'+c.canal+'">'+_tipificacionTipoOptionsHtml(estadoCanal.tipo)+'</select></div>';
     }

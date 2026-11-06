@@ -77,7 +77,9 @@ const COND_SALIDA_SQL = "(UPPER(TRIM(skill)) IN (" + SKILLS_SALIDA_EQUIVALENTES.
 // (docs/pendientes.md). Para cambiarla, se cambia esta linea.
 const SALIDA_POR_CLIENTE = {
   ORLANT: { regla: 'guion', clasificacionAsesores: true },
-  'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: true }, // provisional
+  // Fase 277 (pedido de Edwin, 06/11): en Aurora no hay lineas General / 3P (sin filtro
+  // Linea ni tarjetas por linea en Tipificacion). La regla de salida sigue igual.
+  'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false },
   'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // provisional (Fase 229)
 };
 const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
@@ -348,6 +350,9 @@ function tipificacionesOpciones(db, campana, canal) {
     // muestran una sola vez, como LLAMADAS DE SALIDA.
     // Fase 186: el panel muestra el filtro "Línea de salida" y las tarjetas por linea.
     clasificacionAsesores: usaClasificacionAsesores(campana),
+    // Fase 277: vista de salida como ORLANT (cabecera sin Mes/Desde/Hasta y filtro
+    // "Entrada o salida") aunque el cliente no reparta en General / 3P (Aurora).
+    vistaSalida: salidaPorGuion(campana),
     // Fase 267: la regla solo lee skill, skillId y tipoInteraccion, asi que se
     // evalua sobre sus combinaciones distintas (decenas) y no fila por fila
     // (todo el historial): el mismo resultado, sin el costo.
