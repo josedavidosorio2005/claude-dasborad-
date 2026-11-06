@@ -8,7 +8,8 @@ const { generarLayout, TABS_EXTRA } = require('../plantillas-cliente');
 const AURORA = 'CLINICA AURORA';
 // Fase 230: + whatsapp_tiempos (sub-vista de WhatsApp: no cambia las pestañas).
 // Fase 259: + agendas_usuaria (pestaña "Agendas por usuaria", oculta hasta tener datos).
-const AURORA_MODULOS = ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'agendas_usuaria', 'tipificacion', 'calidad'];
+// Fase 284: + errores (pestaña "Errores", visible aunque no haya errores).
+const AURORA_MODULOS = ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'];
 
 // Plantilla con los modulos de hoy, Trafico visible (Fase 220) y "Total tráfico" despues de Salida.
 function auroraEsperada() {

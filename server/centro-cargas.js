@@ -42,6 +42,8 @@ const CARGAS_POR_MODULO = {
   encuesta: [{ id: 'encuesta', nombre: 'Encuesta', tabla: 'encuestas', fecha: 'fecha', plantilla: 'PLANTILLA_ENCUESTA.xlsx' }],
   // Fase 172: resumen por asesor de la plantilla de Edwin (Mobilize). Mensual.
   // Fase 259: reporte de citas de la clinica (Aurora), conteos agregados por mes de la cita.
+  // Fase 284: Errores no se carga con una base (se registra en la plataforma).
+  errores: [],
   agendas_usuaria: [{ id: 'agendas_usuaria', nombre: 'Agendas por usuaria (reporte de citas)', tabla: 'agendas_usuaria', fecha: 'mes', plantilla: null }],
   calidad_resumen: [{ id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', tabla: 'calidad_resumen_asesor', fecha: 'mes', plantilla: 'PLANTILLA_CALIDAD_RESUMEN.xlsx' }],
   // Calidad: la plantilla depende de los items de cada campana (se descarga
@@ -78,7 +80,8 @@ function cargaRetiradaPara(cliente, carga) {
 // Fase 153 (PR 5): modulos con permiso propio `cargar_<modulo>` para CALIDAD
 // (auth.canLoadModule). Calidad no: sus monitoreos tienen su propio permiso
 // (canEvaluateCampaign) y no suben desde el Centro.
-const MODULOS_CON_PERMISO = Object.keys(CARGAS_POR_MODULO).filter((m) => m !== 'calidad');
+// Fase 284: un modulo sin cargas (Errores: se registra en la plataforma) no tiene permiso de carga.
+const MODULOS_CON_PERMISO = Object.keys(CARGAS_POR_MODULO).filter((m) => m !== 'calidad' && CARGAS_POR_MODULO[m].length);
 
 // Lista cerrada de plantillas que se pueden descargar (nunca una ruta armada
 // con lo que manda el navegador).
@@ -153,7 +156,7 @@ function resumenCliente(db, cliente, anio, catalogo) {
   const reg = clientesRegistro.leerRegistro(db).find((c) => c.nombre === cliente);
   if (!reg) return null;
   return catalogo
-    .filter((m) => reg.modulos.includes(m.id) && CARGAS_POR_MODULO[m.id])
+    .filter((m) => reg.modulos.includes(m.id) && CARGAS_POR_MODULO[m.id] && CARGAS_POR_MODULO[m.id].length) // Fase 284: sin cargas, sin tarjeta
     .map((m) => ({
       id: m.id,
       nombre: m.nombre,
