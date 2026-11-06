@@ -225,5 +225,6 @@ test('tipificacion.js: tarjetas de salida solo en la mitad de Llamadas; el filtr
   const src = JS('tipificacion.js');
   assert.match(src, /if\(p\.mostrarTarjetasSalida && c\.canal === 'LLAMADAS'\)\{/);
   assert.match(src, /var hostSalida = \(p\.mostrarTarjetasSalida && canal === 'LLAMADAS'\) \?/); // Fase 267
-  assert.match(src, /_tipificacionOptionsHtml\(op\.skills, estadoCanal\.skill, tipificacionEtiquetaSkill\)/);
+  // Fase 275: la etiqueta recibe tambien el cliente del panel (nombres de skill por cliente).
+  assert.match(src, /_tipificacionOptionsHtml\(op\.skills, estadoCanal\.skill, function\(v\)\{ return tipificacionEtiquetaSkill\(v, campana\); \}\)/);
 });

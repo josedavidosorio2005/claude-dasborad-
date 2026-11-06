@@ -169,11 +169,29 @@ var TIPIFICACION_ETIQUETAS_SKILL = {
   'WHATSAPP DE SALIDA': 'WhatsApp de salida',
 };
 
-// Texto visible de un skill/cola: los de salida con su nombre fijo; el resto
-// con la regla de nombres de siempre (textoFormatoNombre).
-function tipificacionEtiquetaSkill(skill) {
+// Fase 275 (pedido de Edwin, 06/11): nombre VISIBLE de los skills que el CDR
+// de WhatsApp trae solo como numero (SKILL_ID fuera de skills_whatsapp, que
+// se guardan como "Skill <ID>", Fase 183), por cliente. Solo cambia lo que se
+// ve: lo guardado, el valor del filtro y los conteos siguen con "Skill <ID>".
+// Para otro cliente (HLM...), agregar su entrada: { '<SKILL_ID>': 'Nombre' }.
+// El SKILL_ID 0 no va aqui: ya se guarda como WHATSAPP DE SALIDA.
+var TIPIFICACION_NOMBRES_SKILL_CLIENTE = {
+  'CLINICA AURORA': {
+    '4019': 'Whatsapp de entrada',
+    '4062': 'Confirmaciones whatsapp',
+    '4063': 'Recordaciones 3 dias',
+  },
+};
+
+// Texto visible de un skill/cola: los de salida con su nombre fijo; un
+// "Skill <ID>" con nombre en la tabla del cliente (campana), ese nombre; el
+// resto con la regla de nombres de siempre (textoFormatoNombre).
+function tipificacionEtiquetaSkill(skill, campana) {
   var v = String(skill == null ? '' : skill).trim();
   if (TIPIFICACION_ETIQUETAS_SKILL[v.toUpperCase()]) return TIPIFICACION_ETIQUETAS_SKILL[v.toUpperCase()];
+  var tabla = campana ? TIPIFICACION_NOMBRES_SKILL_CLIENTE[String(campana).trim().toUpperCase()] : null;
+  var id = /^skill\s+(\d+)$/i.exec(v);
+  if (tabla && id && Object.prototype.hasOwnProperty.call(tabla, id[1])) return tabla[id[1]];
   return _tipificacionTexto.textoFormatoNombre(v);
 }
 
@@ -786,6 +804,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TIPIFICACION_SKILL_SALIDA_LLAMADAS: TIPIFICACION_SKILL_SALIDA_LLAMADAS,
     TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP: TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP,
     tipificacionEtiquetaSkill: tipificacionEtiquetaSkill,
+    TIPIFICACION_NOMBRES_SKILL_CLIENTE: TIPIFICACION_NOMBRES_SKILL_CLIENTE,
     tipificacionTramosMeses: tipificacionTramosMeses,
     tipificacionSumarPorTipo: tipificacionSumarPorTipo,
     tipificacionSumarCampos: tipificacionSumarCampos,
