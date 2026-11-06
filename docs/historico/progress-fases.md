@@ -19511,3 +19511,32 @@ HLM 10, todas dibujadas salvo el lienzo vacío conocido de Mobilize › Flujo po
 hora; 0 escrituras, 0 pedidos fallidos, 0 errores de consola. Captura al lado
 del HTML guardada fuera del repo (tiene datos reales). Hallazgo: la plantilla
 de Mobilize en producción tiene 10 ítems, no los 14 del HTML (pendientes).
+
+## Fase 275 — Aurora: nombres de los skills de WhatsApp en el filtro Cola (v1.138.0, 2026-11-06)
+
+Pedido de Edwin: en Clínica Aurora › Tipificación › Tipificación de WhatsApp,
+el filtro Cola mostraba «Skill 4019», «Skill 4062»… (SKILL_ID del HistChat fuera
+de `skills_whatsapp`, guardados como «Skill <ID>» desde la Fase 183).
+
+**Qué quedó (PR #689):** `TIPIFICACION_NOMBRES_SKILL_CLIENTE` en
+`public/js/tipificacion-logic.js` (por cliente; hoy solo CLINICA AURORA: 4019
+Whatsapp de entrada, 4062 Confirmaciones whatsapp, 4063 Recordaciones 3 dias) y
+`tipificacionEtiquetaSkill(skill, campana)`: solo el texto visible. Lo guardado,
+el valor de la opción del filtro y los conteos no cambian; el 0 sigue como
+«WhatsApp de salida» y los desconocidos como «Skill <ID>». Es el único lugar
+donde se ve ese skill en Aurora («Llamadas y WhatsApp de salida», Total tráfico y
+Exportar no muestran skills). El filtro **Skill de Llamadas** ya muestra nombres
+(el HistCDR trae SKILL_NAME). ORLANT y Mobilize sin cambios.
+
+**Pruebas:** `fase275-nombres-skill-aurora.test.js` (5; HistChat sintético con
+4019/4062/4063/4166/4169/0, servidor real en base de prueba: mismos valores y
+mismos conteos por opción antes y después); `fase168` actualizada a la
+llamada nueva. Suite 2662/2662, audit 0. Primer intento de merge rechazado por
+la protección de `main` (los checks del PR recién creado aún no existían): no
+se mergeó nada; se esperó CI verde y se mergeó con `--match-head-commit`.
+
+**Producción (1.138.0, solo lectura):** Aurora a 1440 y 375 con los 3 nombres;
+por opción (tarjeta Total WhatsApp): Todos 22.797 = 5.628 + 12.143 + 949 + 2 + 1
++ 4.074. ORLANT y Mobilize con el mismo texto de siempre; los 5 clientes a 1440
+y 375 sin errores (salvo el lienzo vacío conocido de Mobilize › Flujo por hora);
+0 escrituras, 0 pedidos fallidos, 0 errores de consola.

@@ -177,6 +177,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Nombres de otros skills de WhatsApp sin nombre** (Fase 275, 06/11) — en
+  Aurora quedan «Skill 4166» y «Skill 4169» (2 y 1 chats); en ORLANT,
+  «Skill 4070», «4308», «4323», «4345» y «4346» (ORLANT no se tocó a
+  propósito). Si Edwin da sus nombres, se agregan a
+  `TIPIFICACION_NOMBRES_SKILL_CLIENTE` (`public/js/tipificacion-logic.js`):
+  solo cambia el texto, nunca los conteos.
+
 - **Plantilla de Mobilize en producción: 10 ítems, no los 14 del HTML de Edwin**
   (visto en la Fase 274, 06/11) — la Calidad de Mobilize ya se ve como
   «Resultados del equipo» del HTML, pero califica con una plantilla de 10
