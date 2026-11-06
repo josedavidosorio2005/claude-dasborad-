@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.136.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.137.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 274 — Calidad de Mobilize, Aurora y HLM como «Resultados del equipo» del HTML de Edwin (v1.137.0, 2026-11-06)
 - Fase 273 — SURA sin el destello de «Cargar información» al abrir; indicador «Cargando el tablero…» en SURA y en los tableros de cliente (v1.136.2, 2026-11-06)
 - Fase 272 — WhatsApp › Nivel de servicio de Aurora y HLM igual que ORLANT (sin la gráfica mensual tipo llamadas) y bitácora de la tanda del 06/11 (v1.136.1, 2026-11-06)
 - Fase 271 — Botones «Marcar todo» / «Ninguno» en MESES, Agendas por usuaria y el formulario de usuario (v1.136.0, 2026-11-06)

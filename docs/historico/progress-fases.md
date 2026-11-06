@@ -19469,3 +19469,45 @@ ingreso, indicador hasta +1.794 ms y luego Cumplimiento (como antes). ORLANT,
 Mobilize, Aurora y HLM (primer ingreso y cambio de cliente): indicador y
 luego su primera pestaña de siempre, 0 avisos de «Cargar Datos». 0 escrituras
 bloqueadas, 0 pedidos fallidos, 0 errores de consola.
+
+## Fase 274 — Calidad como «Resultados del equipo» del HTML de Edwin (v1.137.0, 2026-11-06)
+
+Pedido de Edwin: la pestaña Calidad › «Resultado de los monitoreos» (Mobilize,
+Aurora y HLM; ORLANT no se toca) como la vista «Resultados del equipo» del HTML
+`Calidad InConexion.html` (en Descargas, fuera del repo; no estaba en
+`Downloads/calidad-edwin`, que solo tiene las plantillas JSON).
+
+**Decisión del usuario:** en el HTML, Mobilize, Aurora y las 2 sedes de HLM son
+modelo `weighted`: la 3.ª tarjeta es «Con fallos en ítems críticos» y la
+última columna «Fallos críticos» («Notas en 0%»/«En 0%» son del modelo
+`deduct`, el de SURA). Se dejó como el HTML; con un motor tipo SURA cambia solo.
+
+**Qué quedó (PR #687):** `public/js/calidad-equipo-logic.js` (cálculos puros:
+`ceResultado`, `ceResumenAsesores`, `ceDetalleMes`, mes por defecto) y
+`calidad-panel.js` reescrito: filtros Mes y Asesor (varios, buscador, Marcar
+todo / Ninguno), botones Detalle por mes / Resumen por asesor / Diccionario,
+4 tarjetas, línea por asesor con banda 90/70, línea por mes, torta con
+cantidad y %, Resultado por asesor, todos los ítems con ⚠, nota de la escala y
+Llamadas con fallas debajo. Meses: los marcados en MESES; con «Todos», el mes
+por defecto del HTML (el actual si tiene monitoreos; si no, el último). Sin
+permiso de nombres para el cliente, sin vistas por asesor. Arreglos de paso:
+«Promedio general» en rojo (especificidad de `.ca-kpi b`), los monitoreos sin
+nota ya no cuentan como 0 (como el HTML).
+
+**Pruebas:** `fase274-calidad-como-html.test.js` (26): la lógica del HTML
+transcrita (klass, calc weighted, renderRes, drawPie, renderResAs,
+renderDetMes, keyName) contra la nueva, con 300 monitoreos sintéticos × 3
+semillas × 7 filtros, y `computeScore` (standard) = `calc` del HTML. Suite
+2657/2657, audit 0. Local en Brave (base demo) 1440/768/375, claro y oscuro,
+administrador y cliente; el HTML abierto sin red con los mismos monitoreos
+sintéticos da los mismos números (43 · 57,5 % · 11 asesores · Septiembre 2026).
+
+**Producción (1.137.0, solo lectura, sesión de admin en Brave):** Mobilize ›
+Calidad a 1440 y 375 con todos los bloques (hoy 1 monitoreo calificado,
+noviembre, 50 % en rojo), filtros, los 3 diálogos y el detalle de la llamada;
+ORLANT › Calidad igual (3 paneles); Aurora y HLM con Calidad oculta (sin
+monitoreos, como antes); SURA abre; ORLANT 25 vistas, Mobilize 13, Aurora 20,
+HLM 10, todas dibujadas salvo el lienzo vacío conocido de Mobilize › Flujo por
+hora; 0 escrituras, 0 pedidos fallidos, 0 errores de consola. Captura al lado
+del HTML guardada fuera del repo (tiene datos reales). Hallazgo: la plantilla
+de Mobilize en producción tiene 10 ítems, no los 14 del HTML (pendientes).
