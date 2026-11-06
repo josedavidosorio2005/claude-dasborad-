@@ -177,12 +177,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
-- **Bug: al iniciar sesión se ve un momento la pantalla de Cargar datos**
-  (pedido del 06/11, Fase 272) — no se reprodujo: en local con todos los roles
-  (incluida la API lenta) y en producción con el administrador (54 cuadros
-  desde el clic en Ingresar: del login pasa directo a Gestión de Usuarios).
-  Falta saber con qué usuario entra Edwin, en qué equipo/navegador, y si
-  puede mandar un video o captura del momento. No se tocó código a ciegas.
+- ~~**Punto 5: se ve «Cargar datos» antes del tablero**~~ — **RESUELTO**
+  (Fase 273, v1.136.2, PR #685, 06/11). Era al abrir **SURA**: se veía
+  «Cargar información» ~1,8 s mientras llegaban los datos. Ahora se ve
+  «Cargando el tablero…» (también en los otros 4 clientes) y verificado en
+  producción a 1440 y 375 px. Detalle en `docs/historico/progress-fases.md`.
 - **Archivos que faltan subir en Aurora y HLM** (Fases 272, 06/11) — todo va
   por Cargar Datos → cliente: (1) «Tipificación de Llamadas»: el CDR de
   llamadas de Wolkvox (HistCDR); (2) «Tipificación de WhatsApp»: el CDR de

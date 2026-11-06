@@ -19430,3 +19430,42 @@ conocido de Mobilize › Flujo por hora. 1.134.0 ya se había verificado igual
 (Calidad, ejes 1.000, Agendas con 1 mes, SURA).
 
 Anotado sin construir: «Flujo de errores por mes» (`docs/pendientes.md`).
+
+## Fase 273 — Punto 5: «Cargar información» al abrir SURA (v1.136.2, 2026-11-06)
+
+El punto 5 de Edwin (Fase 272: "no reproducido") era al **abrir el tablero de
+SURA**, no al iniciar sesión.
+
+**Reproducción (producción 1.136.1, solo lectura, sesión de admin en Brave,
+grabación cuadro a cuadro desde el clic en la tarjeta del selector de
+clientes):** a 1440 px, primer ingreso, desde +110 ms hasta **+1.805 ms** se
+pinta el panel `p1` «Cargar información» como pestaña activa; luego
+Cumplimiento. Causa: el marcado del HTML de Edwin (`STV_MARKUP`) trae `p1`
+activa y `openSuraTeleventas` espera `cargar()` (`/resumen` 232 ms + 13
+bases: 9 ventas, 2 inicial, 2 estrategias; la última a los 1.457 ms) antes de
+que `_stvAplicarPermisos` oculte `p1` (Fase 242). Al reabrir no pasaba (queda
+el tablero anterior). Los otros 4 clientes (primer ingreso y cambio de
+cliente) nunca mostraron un aviso de «Cargar Datos»; sí el cuerpo en blanco
+hasta que salía la primera pestaña (ORLANT, primer ingreso: 4,1 s).
+
+**Arreglo (PR #685):** SURA, hasta aplicar los permisos, `.wrap.stv-cargando`
+(regla en un `<style>` en línea del Shadow DOM, no en el `.css` que llega por
+`<link>`): solo «Cargando el tablero…» (`role="status"`); si falla, un
+mensaje sin pestañas. Tableros genéricos: `#gd-panels` con el mismo
+indicador (`.loading-state` + `.spinner`) hasta el primer
+`renderGenericTab`. No depende del rol. Los avisos de «Cargar Datos» de cada
+panel siguen saliendo solo cuando la respuesta confirma que no hay datos.
+
+**Pruebas:** `fase273-sura-sin-destello.test.js` (8; `openSuraTeleventas` y
+`openGenericDashboard` reales, API lenta de 300 ms, datos inventados;
+administrador, supervisor y reportes; falla y reapertura): con el código
+anterior fallan 6 (se ve `p1` / cuerpo vacío). Suite 2631/2631, audit 0. Local
+en Brave con la API +700 ms: administrador, supervisor y reportes a 1440 y 375,
+nunca `p1`, indicador en los 5 clientes.
+
+**Producción (1.136.2, solo lectura, misma grabación):** SURA a 1440 y 375,
+primer ingreso, reapertura y desde otro cliente: nunca `p1`; en el primer
+ingreso, indicador hasta +1.794 ms y luego Cumplimiento (como antes). ORLANT,
+Mobilize, Aurora y HLM (primer ingreso y cambio de cliente): indicador y
+luego su primera pestaña de siempre, 0 avisos de «Cargar Datos». 0 escrituras
+bloqueadas, 0 pedidos fallidos, 0 errores de consola.
