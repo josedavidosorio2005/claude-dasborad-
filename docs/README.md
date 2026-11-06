@@ -38,6 +38,9 @@ proyecto, ver [`PROGRESS.md`](../PROGRESS.md) en la raíz del repo.
   tipografía, foco, objetivos táctiles, teclado, diálogos, avisos de "sin
   datos" y reglas WCAG 2.1 AA. Leerlo antes de agregar un color o un
   componente.
+- **[usuarios.md](usuarios.md)** — reglas para crear usuarios: nombre completo
+  (lo que se ve en el encabezado), usuario de 3 a 32 caracteres y la regla de Edwin
+  para los usuarios de cliente (Fase 280).
 - **[marca.md](marca.md)** — dónde viven el logo, el favicon, los colores
   oficiales y la tipografía (Fase 132): qué archivo usar en cada sitio y
   los tokens CSS de marca.

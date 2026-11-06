@@ -9,6 +9,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Nombre completo de la cuenta de Edwin** (Fase 280, 06/11) — el encabezado ya
+  muestra el «Nombre completo» del usuario; en la cuenta de Edwin (SUPERVISOR) ese
+  campo dice «edwin», por eso se ve así. Cómo se cierra: con tu OK, editar esa
+  cuenta en Administración › Usuarios y poner «Edwin García» (escritura en
+  producción, por la interfaz). No hace falta código.
+
 - **Calidad de ORLANT como la de Mobilize** (Fase 269, pedido del 06/11) — en
   Mobilize, Aurora y HLM la pestaña Calidad ya muestra solo «Resultado de los
   monitoreos». ORLANT no se cambió: hoy su pestaña muestra «Distribución de
