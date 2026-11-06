@@ -19540,3 +19540,32 @@ por opción (tarjeta Total WhatsApp): Todos 22.797 = 5.628 + 12.143 + 949 + 2 + 
 + 4.074. ORLANT y Mobilize con el mismo texto de siempre; los 5 clientes a 1440
 y 375 sin errores (salvo el lienzo vacío conocido de Mobilize › Flujo por hora);
 0 escrituras, 0 pedidos fallidos, 0 errores de consola.
+
+## Fase 276 — Flujo por hora sin lienzo vacío y plantillas de Mobilize (v1.138.1, 2026-11-06)
+
+**1. Mobilize › Flujo por hora con un lienzo vacío.** Reproducido en producción
+(1.138.0, solo lectura, 1440 y 375): las 3 tablas y, además, una tarjeta sin
+título con `<canvas id="gd-c0">` de 230 px, sin gráfica y sin pintar. **Código,
+no datos:** `renderGenericTab` armaba `flujo_hora_panel` como panel propio de
+ancho completo (lista de la Fase 196), pero la exclusión de la rejilla de
+gráficas — una copia a mano de esa lista — nunca lo incluyó. Arreglo (PR #691):
+una sola lista `GD_TIPOS_PANEL_PROPIO` (y `GD_TIPOS_SIN_LIENZO` = esa + kpi_row,
+calidad_kpis, tabla, nota_kpi); comparado con `main`, lo único que cambia es
+`flujo_hora_panel`. Prueba `fase276-flujo-hora-sin-lienzo.test.js` (4, el
+`renderGenericTab` real con DOM mínimo y la pestaña de Mobilize con datos
+inventados): falla 4/4 con el código anterior y pasa con el arreglo. Suite
+2666/2666, audit 0. **Producción (1.138.1, solo lectura):** Flujo por hora con
+las 3 tablas y 0 lienzos a 1440 y 375; los 5 clientes a 1440 y 375 sin vistas
+vacías (ya no queda la de Flujo por hora), sin scroll horizontal, 0 escrituras,
+0 pedidos fallidos, 0 errores de consola.
+
+**2. Plantillas de MOBILIZE (solo lectura).** Principal y activa: «Mobilize 2026
+ajustada» (id 9, v1, motor standard, 14 ítems, 5 críticos), idéntica a
+`plantilla-mobilize.json` (texto, orden, pesos y críticos). Inactiva: «MOBILIZE»
+(id 8, 10 ítems, 5 críticos). El único monitoreo calificado (id 191, 05/11,
+50 %) usa la id 8: por eso Calidad muestra 10 ítems para noviembre. Calificar
+(abierto sin guardar) muestra los 14 ítems de la id 9. Corrige lo anotado en la
+Fase 274 («producción tiene 10 ítems»): no hay que importar nada (pendientes).
+Nota: dos comparaciones automáticas de texto del formulario fallaron por el
+script (solo el número del ítem; luego una expresión mal escapada que quitó las
+«s»); la comparación se hizo contra los ítems de la id 9 que devuelve la API.
