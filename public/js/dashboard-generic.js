@@ -841,6 +841,7 @@ function _gdObservarAlturaHeader(){
   if (typeof ResizeObserver === 'function') new ResizeObserver(fijar).observe(head);
 }
 
+var GD_CARGANDO_HTML = '<div class="loading-state gd-cargando" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span>Cargando el tablero…</div>';
 async function openGenericDashboard(cliente){
   _gdBloquearScrollFondo(true);
   _gdObservarAlturaHeader();
@@ -849,13 +850,17 @@ async function openGenericDashboard(cliente){
   document.getElementById('gd-title').textContent = 'Cargando…';
   document.getElementById('gd-kpis').innerHTML = '';
   document.getElementById('gd-tabs').innerHTML = '';
-  document.getElementById('gd-panels').innerHTML = '';
+  // Fase 273 (punto 5): mientras llegan la config y los datos, un indicador de
+  // carga (antes, el cuerpo en blanco hasta ~4 s). Lo reemplaza el primer
+  // renderGenericTab (switchGenericTab siempre corre al final de _gdBootstrap).
+  document.getElementById('gd-panels').innerHTML = GD_CARGANDO_HTML;
   try{
     var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(cliente));
     _gd.cliente = cliente;
     _gd.config = resp.config;
     _gd.cargas = resp.secciones || {};
   }catch(e){
+    document.getElementById('gd-panels').innerHTML = '';
     document.getElementById('gd-title').textContent = 'Dashboard';
     showToast('No se pudo abrir el dashboard: '+e.message);
     return;
