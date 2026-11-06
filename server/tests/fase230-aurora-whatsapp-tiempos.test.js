@@ -53,7 +53,7 @@ test('la migracion es idempotente y conserva retoques de Aurora', () => {
   assert.equal(db.prepare('SELECT COUNT(*) n FROM skills_whatsapp WHERE campana = ?').get(AURORA).n, 1);
 });
 
-test('Aurora sin tiempos por rango cargados: se ve la grafica mensual con la nota (como HLM, Fase 229)', async () => {
+test('Aurora sin tiempos por rango cargados: el aviso como ORLANT, sin la grafica mensual (Fase 272)', async () => {
   const fs = require('node:fs');
   const path = require('node:path');
   const vm = require('node:vm');
@@ -75,6 +75,7 @@ test('Aurora sin tiempos por rango cargados: se ve la grafica mensual con la not
   const p = path.join(__dirname, '..', '..', 'public', 'js', 'whatsapp-tiempos.js');
   vm.runInContext(fs.readFileSync(p, 'utf8'), sb, { filename: p });
   await sb._wppTiemposRender(0, AURORA);
-  assert.deepEqual(llamadas, ['mensual 0']);
-  assert.match(el.innerHTML, /se muestra el nivel de servicio mensual/);
+  assert.deepEqual(llamadas, []);
+  assert.doesNotMatch(el.innerHTML, /grafica-mensual|nivel de servicio mensual/);
+  assert.match(el.innerHTML, /Sin tiempos de respuesta de WhatsApp cargados/);
 });

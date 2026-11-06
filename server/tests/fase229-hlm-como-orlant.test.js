@@ -113,13 +113,17 @@ function sandboxTiempos({ conRangos, conMensual }) {
   return { sb, el, llamadas };
 }
 
-test('WhatsApp por rangos sin tiempos cargados: si hay % mensual, se ve la grafica mensual con una nota', async () => {
+// Fase 272 (pedido de Edwin): aunque haya % mensual, ya NO se muestra la grafica
+// mensual (calculada como la de llamadas): se ve igual que ORLANT, con el aviso.
+test('WhatsApp por rangos sin tiempos cargados: aunque haya % mensual, el aviso como ORLANT (Fase 272)', async () => {
   const { sb, el, llamadas } = sandboxTiempos({ conRangos: false, conMensual: true });
   await sb._wppTiemposRender(0, HLM);
-  assert.deepEqual(llamadas, ['mensual 0']);
-  assert.match(el.innerHTML, /se muestra el nivel de servicio mensual/);
-  assert.match(el.innerHTML, /grafica-mensual/);
-  assert.equal(sb._wppTiemposActivo(0), false, 'los filtros y Excel/PDF vuelven a ser los de la grafica mensual');
+  assert.deepEqual(llamadas, [], 'no dibuja la grafica mensual');
+  assert.doesNotMatch(el.innerHTML, /grafica-mensual|nivel de servicio mensual/);
+  assert.match(el.innerHTML, /Nivel de Servicio por tiempo de respuesta/);
+  assert.match(el.innerHTML, /Sin tiempos de respuesta de WhatsApp cargados/);
+  assert.match(el.innerHTML, /WhatsApp tiempos de respuesta/, 'dice en que seccion de Cargar Datos se sube');
+  assert.equal(sb._wppTiemposActivo(0), true);
 });
 
 test('WhatsApp por rangos sin tiempos ni % mensual: el aviso de siempre', async () => {

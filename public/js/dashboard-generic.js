@@ -1457,7 +1457,7 @@ var GD_ESTADO_A_REINICIAR = [
   '_inasistenciaEstado', '_inasistenciaOpciones', '_ecOpciones', '_eaOpciones', '_eaBusqueda', '_eaUltimoRanking', '_eaLinea',
   '_encuestaEstado', '_encuestaMesSincronizado', '_encuestaOpciones', '_encuestaUltimo', '_encuestaOadUltimo',
   '_llamadasUnicasEstado', '_llamadasUnicasOpciones', '_llamadasSalidaEstado', '_llamadasSalidaOpciones',
-  '_wppTiemposEstado', '_wppTiemposMesSincronizado', '_wppTiemposOpciones', '_wppTiemposUltimo', '_wppTiemposUltimoResumen', '_wppTiemposSinRangos',
+  '_wppTiemposEstado', '_wppTiemposMesSincronizado', '_wppTiemposOpciones', '_wppTiemposUltimo', '_wppTiemposUltimoResumen',
   '_calDashFiltro', '_calDashMesSincronizado', '_calDashSinDatosMesGlobal',
   '_gdCatFiltro', '_gdFechaFiltro', '_gdSerieFiltro', '_gdUnicoFiltro', '_salOpciones', '_salEditor', '_calResOpciones',
 ];
