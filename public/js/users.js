@@ -321,9 +321,9 @@ async function saveUserModal(){
   var rol=document.getElementById('mu-rol').value;
   if(!nombre||!user){showToast('Complete nombre y usuario');return;}
   // El servidor exige usuario sin espacios/caracteres raros y contrasena de 8+.
-  if(!/^[a-zA-Z0-9._-]{3,32}$/.test(user)){
-    showToast('El usuario: 3-32 caracteres, solo letras, numeros, . _ -');return;
-  }
+  // Fase 280: el aviso dice exactamente que corregir (tilde, espacio, largo...).
+  var problemaUsuario = usuarioProblema(user);
+  if(problemaUsuario){ showToast(problemaUsuario, 'error'); return; }
   if(pass && pass.length < PASSWORD_MIN){
     showToast('La contrasena debe tener al menos '+PASSWORD_MIN+' caracteres');return;
   }
