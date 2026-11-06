@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.133.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.136.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -49,9 +49,8 @@ narrativo de cada fase, fase por fase, vive en
   provisional, en `SALIDA_POR_CLIENTE`). Desde la Fase 229, **Hospital La
   María** tiene lo mismo (Tipificación, salida, Total tráfico y WhatsApp por
   rangos de tiempo, con la regla de ORLANT provisional) y desde la Fase 230
-  Aurora también tiene WhatsApp por rangos; mientras no se carguen tiempos por
-  rango, los dos siguen viendo la gráfica mensual de Nivel de Servicio con una
-  nota. Lo que Edwin debe confirmar está en
+  Aurora también tiene WhatsApp por rangos; desde la Fase 272, sin tiempos por
+  rango ven el aviso de qué subir (igual que ORLANT), ya no la gráfica mensual. Lo que Edwin debe confirmar está en
   [`docs/preguntas-edwin-hlm-aurora.md`](docs/preguntas-edwin-hlm-aurora.md). **SURA** (Fase 215) tiene su tablero propio "Televentas" (el
   HTML de Edwin dentro de la plataforma: `public/js/sura-televentas*.js`,
   rutas `/api/sura-televentas`, tablas `sura_*`) con datos reales desde la
@@ -487,6 +486,11 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 272 — WhatsApp › Nivel de servicio de Aurora y HLM igual que ORLANT (sin la gráfica mensual tipo llamadas) y bitácora de la tanda del 06/11 (v1.136.1, 2026-11-06)
+- Fase 271 — Botones «Marcar todo» / «Ninguno» en MESES, Agendas por usuaria y el formulario de usuario (v1.136.0, 2026-11-06)
+- Fase 270 — Calificar: el Asesor se elige de la lista de usuarios ASESOR de la campaña (v1.135.0, 2026-11-05)
+- Fase 269 — Calidad de Mobilize, Aurora y HLM solo con «Resultado de los monitoreos» (v1.134.0, 2026-11-05)
+- Fase 268 — Ejes con punto de miles y Agendas por usuaria con un solo mes en barras (v1.133.2, 2026-11-05)
 - Fase 267 — Revisión de Aurora y HLM antes de la entrega (solo lectura) y Tipificación más rápida: un pedido por mitad, solo meses al abrir (v1.133.1, 2026-11-05)
 - Fase 266 — Recarga autorizada de OCTUBRE.xls en Aurora con la forma de la Fase 265 y bitácora (solo docs, 2026-11-05)
 - Fase 265 — Aurora › Agendas por usuaria con 3 vistas (por mes, por especialidad, por asesor) y filtros por fecha de solicitud y fecha de cita (v1.133.0, 2026-11-05)
