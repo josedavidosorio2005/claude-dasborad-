@@ -87,7 +87,7 @@ test('contador de rol en oscuro (--c-text-2) y texto verde de campañas (--c-suc
   assert.ok(contrasteRazon(token('--c-text-2', true), '#1c3e49') >= 4.5);
   const users = leer('js/users.js');
   assert.doesNotMatch(users, /'var\(--c-success\)'/, '--c-success es token de RELLENO, no de texto');
-  assert.equal((users.match(/'var\(--c-success-text\)'/g) || []).length, 2);
+  assert.equal((users.match(/'var\(--c-success-text\)'/g) || []).length, 3); // Fase 283: + "Supervisa: …" (mismo token AA)
   assert.ok(contrasteRazon(token('--c-success-text'), '#ffffff') >= 4.5);
   assert.ok(contrasteRazon(token('--c-success-text', true), token('--c-surface', true)) >= 4.5);
 });

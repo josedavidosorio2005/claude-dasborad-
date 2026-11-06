@@ -164,7 +164,10 @@ router.post(
     registrarLogin(req, 'LOGIN_OK', row, '');
 
     const token = signToken({ isMasterAdmin: false, userId: row.id, rol: row.rol, tokenVersion: row.token_version });
-    res.json({ token, user: toPublicUser({ ...row, last_login_at: ahora }) });
+    // Fase 283: el navegador recibe los permisos EFECTIVOS de la propia cuenta (SUPERVISOR: por supervisa_).
+    const pub = toPublicUser({ ...row, last_login_at: ahora });
+    pub.perms = require('../../public/js/perfil-supervisor-logic.js').permisosEfectivos(row.rol, pub.perms);
+    res.json({ token, user: pub });
   })
 );
 

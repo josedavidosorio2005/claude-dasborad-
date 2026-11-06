@@ -11,7 +11,8 @@ var USUARIOS_SIN_CAMPANA = '__SIN__';
 // la campaña del asesor (asesorCampana). Sin repetir, en orden alfabetico.
 function usuariosCampanasDe(u) {
   var set = {};
-  var perms = (u && u.perms) || {};
+  // Fase 283: un SUPERVISOR en el perfil nuevo, por los clientes que supervisa.
+  var perms = (u && typeof permisosEfectivos === 'function') ? permisosEfectivos(u.rol, u.perms || {}) : ((u && u.perms) || {});
   Object.keys(perms).forEach(function (k) {
     if (perms[k] !== true) return;
     var m = /^(campana|cliente)_(.+)$/.exec(k);

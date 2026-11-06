@@ -5,7 +5,19 @@
 // sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, isFullAdmin, can, requireDataLoader, canLoadData, canLoadAnyModule, campaignAccess } = require('../auth');
+const { requireActor, isFullAdmin, can, canLoadData, canLoadAnyModule, campaignAccess, supervisorCarga } = require('../auth');
+
+// Fase 283: las cargas genericas (dashboard_cargas) las hace quien tiene cargarDatos
+// (global, como siempre) o un SUPERVISOR con clientes supervisados -- a ese, solo
+// de SUS clientes (POST/DELETE ya exigen clienteAccess; GET se filtra abajo).
+function requireCargaGenerica(req, res, next) {
+  requireActor(req, res, () => {
+    if (!canLoadData(req.actor) && !supervisorCarga(req.actor)) {
+      return res.status(403).json({ error: 'Sin permiso para cargar datos de dashboards' });
+    }
+    next();
+  });
+}
 const { validate, schemas } = require('../validation');
 const secciones = require('../dashboard-secciones');
 const { ADAPTERS } = require('../dashboard-adapters');
@@ -171,7 +183,7 @@ router.get(
 // Cargas existentes (para la pantalla de carga). Solo quien puede cargar.
 router.get(
   '/dashboard/cargas',
-  requireDataLoader,
+  requireCargaGenerica,
   wrap((req, res) => {
     const { cliente, seccion } = req.query;
     let rows;
@@ -188,6 +200,8 @@ router.get(
     } else {
       rows = db.prepare('SELECT * FROM dashboard_cargas ORDER BY cliente, seccion, periodo DESC').all();
     }
+    // Fase 283: el supervisor (sin cargarDatos) solo ve las cargas de sus clientes.
+    if (!canLoadData(req.actor)) rows = rows.filter((row) => clienteAccess(req.actor, row.cliente));
     res.json(rows.map((row) => toCarga(row, clienteAccess(req.actor, row.cliente))));
   })
 );
@@ -356,7 +370,7 @@ router.get(
 // fuera de su lista.
 router.post(
   '/dashboard/cargas',
-  requireDataLoader,
+  requireCargaGenerica,
   validate(schemas.cargaBody),
   wrap((req, res) => {
     const b = req.body;
@@ -451,7 +465,7 @@ router.post(
 
 router.delete(
   '/dashboard/cargas/:id',
-  requireDataLoader,
+  requireCargaGenerica,
   validate(schemas.idParamSchema, 'params'),
   wrap((req, res) => {
     const row = db.prepare('SELECT * FROM dashboard_cargas WHERE id = ?').get(req.params.id);

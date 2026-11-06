@@ -2191,3 +2191,7 @@ div.ca-bar-fila{cursor:default}
   #stv-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}
   #stv-modal .gd-header-derecha{flex-direction:row;align-items:center;gap:8px;}
 }
+
+/* Fase 283: marca "Vista de supervisor" en el encabezado del tablero. */
+.gd-vista-sup{display:inline-block;margin:4px 0 2px}
+.gd-vista-sup.hidden{display:none}

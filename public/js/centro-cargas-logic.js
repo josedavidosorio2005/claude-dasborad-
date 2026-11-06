@@ -62,6 +62,8 @@ function centroPuedeCargarModulo(u, esAdmin, modulo) {
   if (esAdmin) return true;
   var p = (u && u.perms) || {};
   if (p.cargarDatos === true) return true;
+  // Fase 283: el SUPERVISOR (perfil nuevo) carga todos los modulos de sus clientes.
+  if (u && u.rol === 'SUPERVISOR' && typeof supervisorUsaPerfil === 'function' && supervisorUsaPerfil(u.rol, p) && supervisorClientes(p).length) return true;
   return !!(u && u.rol === 'CALIDAD' && p['cargar_' + modulo] === true);
 }
 function centroPuedeCargarAlgo(u, esAdmin) {

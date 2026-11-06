@@ -204,6 +204,9 @@ function enterSupervisorPage(){
   hideAllPages();
   document.getElementById('supervisor-page').style.display='block';
   document.getElementById('nb-user-supervisor').textContent = currentUser.nombre;
+  // Fase 283: "Cargar bases" (Centro de cargas, solo de sus clientes) si puede cargar.
+  var cargasSup = document.getElementById('supervisor-menu-cargas-li');
+  if(cargasSup) cargasSup.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule()));
   showSupervisorSection('dashboards');
 }
 
