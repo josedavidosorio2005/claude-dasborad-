@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.138.1 — Noviembre 2026
+
+**Fase 276: Mobilize › Flujo por hora sin el recuadro vacío.**
+
+- Debajo de las tablas de **Flujo por hora** salía un recuadro de gráfica en blanco.
+  No faltaban datos: era un error de la pantalla, que reservaba espacio para una
+  gráfica que esa pestaña no tiene. Ya no sale.
+- Las tablas y los números de Flujo por hora no cambian, y las demás pestañas tampoco.
+
 ## v1.138.0 — Noviembre 2026
 
 **Fase 275: en Clínica Aurora, las colas de WhatsApp con su nombre.**
