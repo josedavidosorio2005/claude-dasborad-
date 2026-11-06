@@ -331,8 +331,46 @@ function _cmpVer(camp, id) {
   _cmpVolverA = (ov && !ov.hidden && _cmpDlg.vista === 'detalle' && document.getElementById('cmp-dlg-cuerpo')) ? { camp: _cmpDlg.camp, mes: _cmpDlg.mes, q: _cmpDlg.q } : null;
   _cmpAbrir('Detalle del monitoreo · ' + (m.fecha || ''), caDetalleHtml(copia, caPlantillaDe(m, pls)));
 }
+// Fase 279 (pedido de Edwin, 06/11): el Diccionario es el de la plantilla con la
+// que se califica HOY (la principal y activa de la campaña), aunque los
+// monitoreos del periodo se hayan hecho con una anterior; sin principal, la de
+// los monitoreos. Antes abria la de los monitoreos (en Mobilize, la vieja de 10
+// items en vez de la de 14).
+function cmpPlantillaDiccionario(camp, plId, pls) {
+  var lista = pls || [];
+  return lista.find(function (q) { return q.campana === camp && q.principal && q.activo !== false; }) ||
+    lista.find(function (q) { return q.id === plId; }) || null;
+}
+// Diccionario como el del HTML de Edwin (buildDict, modelo "weighted"): las 4
+// reglas, una tarjeta por item EN ORDEN (sin agrupar por categoria) con su peso
+// en la etiqueta, la categoria debajo, la descripcion y el impacto en la nota.
+// Una plantilla de descuento (motor sura) sigue con el diccionario de siempre.
+function cmpDiccionarioHtml(p) {
+  if (!p) return '<p class="ca-vacio">Esta campaña no tiene plantilla.</p>';
+  if (p.motor === 'sura' && typeof caDiccionarioHtml === 'function') return caDiccionarioHtml(p);
+  var items = (p.items || []).slice().sort(function (a, b) { return a.n - b.n; });
+  var crit = items.filter(function (it) { return it.critico; }).length;
+  var reglas = '<div class="ca-reglas cmp-reglas">' +
+    '<span><b>' + items.length + ' ítems</b> · ' + crit + ' críticos · los pesos suman 100%</span>' +
+    '<span><span class="cc2-pill cc2-bad">⚠ Crítico</span> NO resta 20 pts</span>' +
+    '<span>SI o N/A suman el peso del ítem · NO en no crítico pierde su peso</span>' +
+    '<span>1 crítico fallado = Alerta · 2 o más = Crítico absoluto</span></div>';
+  return reglas + '<div class="cmp-dicc-lista">' + items.map(function (it) {
+    var w = Number(it.weight) || 0;
+    var etiqueta = it.critico
+      ? '<span class="cc2-pill cc2-bad">⚠ Crítico · peso ' + esc(w) + '% · NO = −20 pts</span>'
+      : '<span class="cc2-pill">Peso ' + esc(w) + '% · NO = −' + esc(w) + ' pts</span>';
+    var na = it.admiteNA === false ? 'No aplica' : '+' + w;
+    return '<article class="ca-dcard cmp-dcard"><div><h5><span class="cc2-num">' + esc(it.n) + '</span> ' + esc(it.label) + ' ' + etiqueta + '</h5>' +
+      (it.cat ? '<p class="cmp-dcat">' + esc(it.cat) + '</p>' : '') +
+      (it.descripcion ? '<p>' + esc(it.descripcion) + '</p>' : '<p class="ca-vacio">Sin descripción.</p>') +
+      (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '') + '</div>' +
+      '<div class="ca-imp"><span class="cc2-tag">Impacto en nota</span><div><span>SI</span><span>+' + esc(w) + '</span></div><div><span>N/A</span><span>' + esc(na) + '</span></div>' +
+      '<div><span>NO</span><span>' + esc(it.critico ? String(w - 20) : '0') + '</span></div></div></article>';
+  }).join('') + '</div>';
+}
 function _cmpDiccionario(camp, plId) {
   var pls = (typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : []);
-  var pl = pls.find(function (q) { return q.id === plId; });
-  if (pl) _cmpAbrir('Diccionario · ' + pl.nombre, caDiccionarioHtml(pl));
+  var pl = cmpPlantillaDiccionario(camp, plId, pls);
+  if (pl) _cmpAbrir('Diccionario de criterios · ' + pl.nombre, cmpDiccionarioHtml(pl));
 }

@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.140.1 — Noviembre 2026
+
+**Fase 279: el Diccionario de Calidad de Mobilize, igual al del HTML de Edwin.**
+
+- **Mobilize › Calidad › Diccionario** ahora abre la plantilla con la que se califica hoy
+  («Mobilize 2026 ajustada», **14 ítems**). Antes abría la plantilla anterior (10 ítems)
+  porque el único monitoreo del mes se hizo con ella.
+- Se ve como el del HTML: «Diccionario de criterios», las reglas de la plantilla, una tarjeta
+  por ítem en orden con su **peso** («⚠ Crítico · peso 10% · NO = −20 pts» o «Peso 4% · NO =
+  −4 pts»), su categoría, su descripción y el impacto en la nota (SI, N/A y NO).
+- Los resultados y las calificaciones no cambian.
+
 ## v1.140.0 — Noviembre 2026
 
 **Fase 278: Clínica Aurora › Llamadas y WhatsApp de salida, solo el total y con las colas de salida.**

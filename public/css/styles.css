@@ -1992,6 +1992,9 @@ div.ca-bar-fila{cursor:default}
 .cmp-tabla td:nth-child(2){white-space:nowrap}
 .cmp-nota{margin:0 0 16px}
 .cmp-vacio{padding:32px 8px;text-align:center}
+/* Fase 279: Diccionario del panel como el del HTML de Edwin (calidad-panel.js, cmpDiccionarioHtml). */
+.cmp-dcard h5{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.cmp-dcat{color:var(--c-text-muted);font-size:var(--fs-note)!important;margin:0 0 6px!important}
 @media (max-width:900px){.cmp-duo{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:600px){.cmp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cmp-botones{margin-left:0;width:100%}.cmp-btn{flex:1 1 auto}.cmp-pick{flex:1 1 100%}.cmp-pick>summary{width:100%}.cmp-pick-v{max-width:none;flex:1}.aurora-chart-wrap.cmp-chart-as{height:300px}.cmp-torta{justify-content:center}}
 .aurora-rank-table.mr-mes-tabla{min-width:0}
