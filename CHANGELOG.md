@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.140.4 — Noviembre 2026
+
+**Fase 282: «Nuevo dashboard» ya no ofrece SURA.**
+
+- En **Administración › Dashboards › Nuevo dashboard**, la lista de clientes ya no ofrece
+  SURA (ni otro cliente con tablero propio) para armar un tablero nuevo: SURA ya tiene el
+  suyo (Televentas). Editar un tablero existente no cambia.
+
 ## v1.140.3 — Noviembre 2026
 
 **Fase 281: SURA ya no sale «Próximamente» en el Portal Supervisor.**

@@ -77,9 +77,17 @@ function dashClienteTieneTablero(cliente, construidos, registro) {
   return dashTablerosPropios(registro).some(function (t) { return t.cliente === cliente; });
 }
 
+// Fase 282: clientes "libres" para armar un tablero NUEVO en Admin › Dashboards ›
+// Nuevo dashboard: los que todavia no tienen tablero, ni generico ni propio (SURA,
+// Televentas, ya no sale). Al editar, el cliente que se edita siempre queda.
+function dashClientesLibres(clientesList, construidos, registro, editando) {
+  return (clientesList || []).filter(function (c) { return c === editando || !dashClienteTieneTablero(c, construidos, registro); });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     dashClienteTieneTablero: dashClienteTieneTablero,
+    dashClientesLibres: dashClientesLibres,
     dashModulosVisibles: dashModulosVisibles,
     dashClientesVisibles: dashClientesVisibles,
     dashRolesVisibles: dashRolesVisibles,

@@ -90,7 +90,7 @@ async function openDashCfgModal(cliente){
       _dcState = _dcFromConfig(cfg);
     }catch(e){ showToast(e.message, 'error'); return; }
   } else {
-    var libres = CLIENTES_LIST.filter(function(c){ return BUILT_CLIENT_DASHBOARDS.indexOf(c)===-1; });
+    var libres = dashClientesLibres(CLIENTES_LIST, BUILT_CLIENT_DASHBOARDS, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), null); // Fase 282: sin los de tablero propio (SURA)
     _dcState = { cliente:libres[0] || '', titulo:'', vista:null,
       secciones:[ _dcNuevaSeccion() ],
       tabs:[ { key:'general', label:'General', panels:[] } ],
@@ -230,7 +230,7 @@ function _seccionKeys(){ return _dcState.secciones.map(function(s){ return s.key
 
 function _dcRender(){
   var st = _dcState;
-  var clientesLibres = CLIENTES_LIST.filter(function(c){ return c===_dcEditCliente || BUILT_CLIENT_DASHBOARDS.indexOf(c)===-1; });
+  var clientesLibres = dashClientesLibres(CLIENTES_LIST, BUILT_CLIENT_DASHBOARDS, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), _dcEditCliente); // Fase 282
   var h = '';
   h += '<div class="form-row">'+
     '<div class="ig"><label for="dc-cliente">Cliente</label>'+
