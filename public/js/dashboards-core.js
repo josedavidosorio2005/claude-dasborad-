@@ -69,7 +69,7 @@ function openClientsModal(){
   for(var i=0;i<clientesAccesibles.length;i++){
     var c=clientesAccesibles[i];
     // Fase 215: un cliente con tablero propio (SURA, Televentas) tambien esta listo.
-    var built=BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1 || (typeof stvEsTeleventas==='function' && stvEsTeleventas(c));
+    var built=dashClienteTieneTablero(c, BUILT_CLIENT_DASHBOARDS, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : [])); // Fase 281: la misma regla que el Portal Supervisor
     var cls='client-card';
     var tag='';
     if(!built){ cls+=' client-soon'; tag='<div class="client-soon-label">Proximamente</div>'; }

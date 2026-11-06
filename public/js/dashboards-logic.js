@@ -67,8 +67,19 @@ function dashTablerosPropios(registro) {
   return out;
 }
 
+// Fase 281: ¿el cliente ya tiene tablero? Uno generico (construidos = los de
+// dashboards_config, BUILT_CLIENT_DASHBOARDS) o uno propio del registro (SURA,
+// Televentas). La usan el selector de clientes y el Portal Supervisor, para que
+// ningun portal marque como "Proximamente" un tablero que ya existe (el Portal
+// Supervisor solo miraba los genericos y SURA salia "Proximamente").
+function dashClienteTieneTablero(cliente, construidos, registro) {
+  if ((construidos || []).indexOf(cliente) !== -1) return true;
+  return dashTablerosPropios(registro).some(function (t) { return t.cliente === cliente; });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    dashClienteTieneTablero: dashClienteTieneTablero,
     dashModulosVisibles: dashModulosVisibles,
     dashClientesVisibles: dashClientesVisibles,
     dashRolesVisibles: dashRolesVisibles,
