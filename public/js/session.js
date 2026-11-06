@@ -225,7 +225,8 @@ function renderSupervisorClientsGrid(){
   CLIENTES_LIST.forEach(function(c){
     var hasPerm = currentUser && currentUser.perms['cliente_'+c]===true;
     if(!hasPerm) return;
-    var built = BUILT_CLIENT_DASHBOARDS.indexOf(c)!==-1;
+    // Fase 281: tambien los tableros propios (SURA), igual que el selector de clientes.
+    var built = dashClienteTieneTablero(c, BUILT_CLIENT_DASHBOARDS, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []));
     html+='<div class="client-card'+(built?'':' client-soon')+'" data-cliente="'+c+'" role="button" tabindex="0" onclick="openClientByEl(this)">'+
       '<div class="client-name">'+c+'</div>'+
       (built?'':'<div class="client-soon-label">Proximamente</div>')+'</div>';

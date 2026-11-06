@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.140.3 — Noviembre 2026
+
+**Fase 281: SURA ya no sale «Próximamente» en el Portal Supervisor.**
+
+- En el **Portal Supervisor › Mis Dashboards**, SURA aparecía como «PRÓXIMAMENTE» aunque su
+  tablero (Televentas) ya existe. Ahora sale como los demás clientes, listo para abrir.
+- Todos los portales usan la misma regla para saber si un cliente ya tiene tablero, así
+  que dicen lo mismo con cualquier rol.
+
 ## v1.140.2 — Noviembre 2026
 
 **Fase 280: al crear un usuario, el aviso dice exactamente qué corregir.**
