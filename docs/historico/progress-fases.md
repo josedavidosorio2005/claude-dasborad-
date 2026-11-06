@@ -19623,3 +19623,37 @@ tope en 32 (abierto y cerrado sin guardar); 5 clientes sin vistas vacías ni scr
 horizontal (Aurora 15 vistas: los botones General / 3P de salida ya no cuentan
 como sub-vistas). Un comando de publicación se bloqueó porque la descripción
 nombraba a una persona real: se rehízo con ejemplos inventados (el repo es público).
+
+## Fase 281 — SURA listo en el Portal Supervisor y nombre completo de Edwin (v1.140.3, 2026-11-06)
+
+**Nombre completo de la cuenta de Edwin (escritura autorizada, 06/11).** Por
+Administración › Usuarios › Editar, con la sesión de admin del usuario en Brave:
+solo «Nombre completo», «edwin» → «Edwin García». El script solo dejaba pasar UNA
+escritura (`PUT /api/users/<id>`) y solo si el rol, el usuario y los permisos eran
+idénticos y sin contraseña; comparado campo por campo antes y después: solo cambió
+`nombre` (permisos idénticos). El encabezado del Portal Supervisor, armado en
+pantalla con ese registro, muestra «Edwin García · SUPERVISOR».
+
+**SURA «PRÓXIMAMENTE» en el Portal Supervisor (PR #698).** Visto en esa misma
+vista: la lista del Portal Supervisor (`renderSupervisorClientsGrid`, session.js)
+solo miraba los tableros genéricos (`BUILT_CLIENT_DASHBOARDS`); el selector de
+clientes de los demás roles (`openClientsModal`) también miraba el tablero propio
+(`stvEsTeleventas`). El clic ya lo abría; la etiqueta y el atenuado eran lo malo.
+Arreglo: `dashClienteTieneTablero(cliente, construidos, registro)` en
+`dashboards-logic.js` (genérico o tablero propio del registro), usada por las dos
+listas. Revisados los demás portales: el selector ya estaba bien (sin cambio), el
+del Asesor no lista clientes, Admin › Dashboards › «Abrir» ya abría SURA. Fuera de
+este PR: «Nuevo dashboard» ofrece SURA como cliente «libre» (pendientes, técnico).
+
+**Pruebas:** `fase281-supervisor-sura-listo.test.js` (5): las dos listas reales con
+registro y permisos sintéticos (SURA listo; iguales en 60 combinaciones de permisos;
+selector sin cambio) y la ruta real `/api/dashboard/clientes` para un supervisor
+sintético con acceso a SURA. Con `main` fallan las del portal. Suite 2687/2687.
+Local en Brave 1440/375, 6 roles, 0 errores.
+
+**Producción (1.140.3, solo lectura):** selector de clientes y Portal Supervisor
+(con el registro de la cuenta de Edwin, que tiene acceso a SURA) iguales a 1440 y
+375: ORLANT, MOBILIZE, CLINICA AURORA, HOSPITAL LA MARIA y SURA, ninguno
+«Próximamente»; encabezado «Edwin García»; SURA abre desde el selector; los 4
+tableros sin vistas vacías ni scroll horizontal; 0 escrituras, 0 pedidos fallidos,
+0 errores de consola.

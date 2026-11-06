@@ -9,11 +9,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Nombre completo de la cuenta de Edwin** (Fase 280, 06/11) — el encabezado ya
-  muestra el «Nombre completo» del usuario; en la cuenta de Edwin (SUPERVISOR) ese
-  campo dice «edwin», por eso se ve así. Cómo se cierra: con tu OK, editar esa
-  cuenta en Administración › Usuarios y poner «Edwin García» (escritura en
-  producción, por la interfaz). No hace falta código.
+- ~~**Nombre completo de la cuenta de Edwin**~~ — **HECHO** (06/11, con tu OK):
+  por Administración › Usuarios › Editar, solo el campo «Nombre completo»
+  («edwin» → «Edwin García»); usuario, rol, estado y permisos sin cambio. El
+  encabezado del Portal Supervisor lo muestra. Detalle en
+  `docs/historico/progress-fases.md` (Fase 281).
 
 - **Calidad de ORLANT como la de Mobilize** (Fase 269, pedido del 06/11) — en
   Mobilize, Aurora y HLM la pestaña Calidad ya muestra solo «Resultado de los
@@ -630,6 +630,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   ve errores.
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
+
+- **Admin › Dashboards › «Nuevo dashboard» ofrece SURA como cliente «libre»**
+  (visto en la Fase 281, 06/11) — la lista de clientes para armar un tablero
+  genérico solo excluye los que ya tienen uno genérico (`BUILT_CLIENT_DASHBOARDS`),
+  no los de tablero propio (SURA, Televentas). Riesgo bajo (solo administrador; el
+  clic en SURA abre su tablero propio igual), pero se podría armar un tablero
+  genérico de más. Arreglo: usar `dashClienteTieneTablero` también ahí.
 
 - **Flujo de errores por mes** (anotado el 06/11, pedido de Edwin, no
   construir todavía) — que el líder ingrese los errores directamente en la

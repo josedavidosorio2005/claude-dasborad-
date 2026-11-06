@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.140.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.140.3` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 281 — SURA listo (no «Próximamente») en el Portal Supervisor, con la misma regla en todos los portales; nombre completo de la cuenta de Edwin (v1.140.3, 2026-11-06)
 - Fase 280 — Usuarios: aviso exacto al crear un usuario (regla de 3 a 32 sin cambio) y docs/usuarios.md con la regla de Edwin para usuarios de cliente (v1.140.2, 2026-11-06)
 - Fase 279 — Mobilize › Calidad › Diccionario como el del HTML de Edwin, con la plantilla principal de 14 ítems (v1.140.1, 2026-11-06)
 - Fase 278 — Aurora › Llamadas y WhatsApp de salida solo con el total; WhatsApp de salida con 0, 4062 y 4063 (v1.140.0, 2026-11-06)
