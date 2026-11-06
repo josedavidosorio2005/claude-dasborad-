@@ -168,8 +168,22 @@ function registroParaNavegador(db) {
   return leerRegistro(db).map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo }));
 }
 
+// Fase 285: logo de CLINICA AURORA (se creo por migracion, Fase 153, sin logo). Desde el
+// original de Edwin: solo la palabra «aurora» con los rayos (sin la linea de abajo), en
+// blanco con fondo transparente para el encabezado teal; 28 px en escritorio, 22 en el celular.
+const LOGO_AURORA = {
+  src: 'img/clientes/aurora-logo.png',
+  src2x: 'img/clientes/aurora-logo@2x.png',
+  alt: 'Clínica Aurora',
+  width: 95,
+  height: 28,
+  alto: 28,
+  altoMovil: 22,
+};
+
 module.exports = {
   REGISTRO_INICIAL,
+  LOGO_AURORA,
   asesorVisibleCliente,
   registroParaNavegador,
   crearTablaRegistro,

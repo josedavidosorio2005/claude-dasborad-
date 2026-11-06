@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.143.0 — Noviembre 2026
+
+**Fase 285: logo de Clínica Aurora.**
+
+- El tablero de **Clínica Aurora** muestra su logo en el encabezado, como ORLANT y Mobilize:
+  la palabra «aurora» con sus rayos, en blanco para que se lea sobre el fondo oscuro (sin la
+  línea pequeña de abajo, que no se alcanza a leer en ese tamaño).
+- Las tarjetas del selector de clientes no cambian, y los demás clientes tampoco.
+
 ## v1.142.0 — Noviembre 2026
 
 **Fase 284: pestaña «Errores» en Clínica Aurora.**

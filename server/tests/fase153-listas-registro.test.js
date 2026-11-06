@@ -52,6 +52,9 @@ test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () 
   assert.deepEqual(conBase.tipificacionExtra, ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
   assert.deepEqual(conBase.whatsappTiempos, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']); // Fase 230: + Aurora
   assert.deepEqual(conBase.agendasUsuaria, ['CLINICA AURORA']); // Fase 259
+  // Fase 285: en la base, Aurora tambien trae su logo (los demas quedan igual).
+  assert.deepEqual(conBase.logos['CLINICA AURORA'], reg.LOGO_AURORA);
+  delete conBase.logos['CLINICA AURORA'];
   assert.deepEqual(Object.assign(conBase, { traficoWhatsapp: ['ORLANT'], tipificacionExtra: ANTES.tipificacionExtra, whatsappTiempos: ANTES.whatsappTiempos, agendasUsuaria: [] }), ANTES);
 });
 

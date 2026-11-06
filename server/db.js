@@ -4835,6 +4835,14 @@ function crearErroresAurora() {
 }
 runOnceMigration('fase284_aurora_errores_v1', crearErroresAurora);
 
+// Fase 285: logo de CLINICA AURORA en su encabezado (como ORLANT, Fase 218). Solo cambia
+// la columna logo de Aurora; si Aurora no existe, no hace nada. Idempotente.
+function actualizarLogoAurora() {
+  db.prepare('UPDATE clientes_registro SET logo = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(clientesRegistro.LOGO_AURORA), new Date().toISOString(), AURORA.nombre);
+  if (!config.isTest) console.log('[db] Migracion fase285_logo_aurora_v1 aplicada.');
+}
+runOnceMigration('fase285_logo_aurora_v1', actualizarLogoAurora);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -4906,6 +4914,7 @@ module.exports.crearAgendasUsuariosLineas = crearAgendasUsuariosLineas;
 module.exports.crearSuraTeleventas = crearSuraTeleventas;
 // Fase 218: idem.
 module.exports.actualizarLogoOrlant = actualizarLogoOrlant;
+module.exports.actualizarLogoAurora = actualizarLogoAurora; // Fase 285
 // Fase 219: idem.
 module.exports.agregarTotalTraficoOrlant = agregarTotalTraficoOrlant;
 // Fase 220: idem.
