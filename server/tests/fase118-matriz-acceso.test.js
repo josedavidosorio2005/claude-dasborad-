@@ -261,7 +261,7 @@ declarar(['GET /calidad/agendas-usuaria/opciones', 'GET /calidad/agendas-usuaria
 // SUPERVISOR de ese cliente (ninguna categoria de arriba lo describe: confirmado por
 // lectura y ejecutado en fase284-errores-aurora.test.js).
 declarar(['GET /calidad/errores'], 'scopedRead');
-declarar(['GET /calidad/errores/asesoras', 'POST /calidad/errores', 'PUT /calidad/errores/plan', 'PUT /calidad/errores/:id', 'DELETE /calidad/errores/:id'], 'cargaManual');
+declarar(['GET /calidad/errores/asesoras', 'POST /calidad/errores', 'POST /calidad/errores/guardar', 'PUT /calidad/errores/plan', 'PUT /calidad/errores/:id', 'DELETE /calidad/errores/:id'], 'cargaManual');
 declarar(['POST /calidad/agendas-usuaria/carga/impacto', 'POST /calidad/agendas-usuaria/carga'], 'cargaManual');
 // Fase 196: Flujo por hora (Mobilize).
 declarar(['GET /calidad/flujo-hora/opciones', 'GET /calidad/flujo-hora/mes'], 'scopedRead');

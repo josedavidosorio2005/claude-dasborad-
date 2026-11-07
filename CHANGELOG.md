@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.0 — Noviembre 2026
+
+**Fase 286: «Agregar errores» más simple (Clínica Aurora › Errores).**
+
+- **Un solo botón «Guardar».** El error (mes, asesora, cantidad y observación) y el plan de
+  acción del mes se guardan juntos, así que lo que se escribió en el plan ya no se pierde al
+  agregar un error. Para guardar solo el plan de acción, se deja la asesora sin elegir.
+- **Los errores ya registrados van en una pestañita aparte, «Errores del mes»**, solo los del
+  mes elegido, en una lista corta con scroll (ya no crece hacia abajo sin control). Ahí se
+  pueden editar o borrar; borrar sigue pidiendo confirmación («¿Borrar?»).
+- **La pestaña Errores se actualiza sola** después de guardar o borrar, sin cambiar de pestaña.
+  Si el mes guardado no está entre los meses elegidos arriba en «Meses», sale un aviso con el
+  botón «Ver todos los meses».
+- Los demás clientes y pestañas no cambian.
+
 ## v1.143.0 — Noviembre 2026
 
 **Fase 285: logo de Clínica Aurora.**
