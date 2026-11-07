@@ -19883,3 +19883,43 @@ al arrancar. Espera el OK del usuario.
 **Incidencia del deploy del PR #714.** Falló el paso SSH (`dial tcp :22: i/o timeout`), sin
 llegar a la instancia; producción siguió en 1.144.4. Se volvió a correr solo el job fallido
 (intento 2: éxito) sin tocar el workflow.
+
+## Fase 294 — Caché de opciones precalentada al arrancar (v1.144.8, 2026-11-07)
+
+**Pedido.** OK del usuario al hallazgo #7 de la revisión del 07/11: al arrancar el servidor,
+llenar en segundo plano la caché de opciones de los 5 clientes con las mismas funciones y
+claves de `opcionesConCache`, sin cambiar ningún resultado y sin que el arranque ni
+`/api/health` esperen. Lo opcional (`agendasOpciones` en una pasada) queda para después
+(en `docs/pendientes.md`).
+
+**Qué se hizo (PR #718).**
+- `server/opciones-precalentar.js`: arma la lista con los clientes del registro (en su orden,
+  ORLANT primero) y, por cliente, las 18 consultas de opciones con la clave exacta de cada
+  ruta (`JSON.stringify([...])`): incluye los 2 canales de Tipificación y las 2 variantes
+  con y sin nombres de asesor (Encuestas, Llamadas de salida, Llamadas únicas).
+- Empieza 3 s después de `listen` y corre una consulta por turno del event loop (20 ms entre
+  una y otra), así los pedidos que lleguen se atienden entre consulta y consulta. Si una
+  falla, se registra y sigue la siguiente; se cancela en el cierre ordenado (`server.js`).
+- Si los datos cambian, la caché se vacía como siempre (firma `datos_version`).
+- `cache-opciones.js`: `tamanoCache`, solo para la prueba.
+
+**Pruebas.** `fase294-precalentar-opciones` (5): ya precalentado, abrir cada ruta de
+opciones de cada cliente, como admin y como cliente, no agrega ninguna clave (si una clave
+no fuera la de su ruta, la prueba falla); el resultado es igual al cálculo directo; corre en
+segundo plano, una falla no corta las demás y cancelar funciona. Suite 2746/2746, `npm audit`
+en 0, CI en verde (Node 24, docker-build, pantallas).
+
+**Local (copia de la base local).** 90 consultas en ~3 s; `/api/health` respondió en ≤13 ms
+durante todo el precalentado.
+
+**Producción (solo lectura, admin, 1440 px, Playwright con Brave).**
+
+| | 1ª apertura de ORLANT | Opción más lenta | 2ª apertura |
+|---|---|---|---|
+| Antes (1.144.7) | 4,2 s | `whatsapp-tiempos/opciones` 3,5 s | 0,7 s |
+| Después (1.144.8) | 0,8 s | `agendas/opciones` 0,17 s | 0,6 s |
+
+La medición de después fue unos 4 min tras el deploy (un primer intento a los 60 s perdió la
+sesión al recargar la página, por el script de medición). No se puede descartar que alguien
+más abriera ORLANT en ese rato, pero las consultas de opciones de esa primera apertura ya
+salieron de la caché (≤0,17 s cada una). `/api/health`: `ok:true`, versión 1.144.8.

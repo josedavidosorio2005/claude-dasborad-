@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.144.7` (ver `server/package.json`, expuesta en
+- **Versión**: `1.144.8` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 294 — Caché de opciones precalentada al arrancar: ORLANT abre en 0,8 s tras el deploy (antes 4,2 s) (v1.144.8, 2026-11-07)
 - Fase 293 — SURA › Agentes sin desplazamiento lateral a 375 px (v1.144.7, 2026-11-07)
 - Fase 292 — Fechas de creación en hora de Colombia: Usuarios, Historial y Errores, sin cambiar lo guardado (v1.144.6, 2026-11-07)
 - Fase 291 — Al guardar un SUPERVISOR se apaga «Puede cargar datos» general (v1.144.5, 2026-11-07)

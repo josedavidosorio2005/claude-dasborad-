@@ -659,17 +659,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   plantilla vieja. Siguen como datos o cuentas por cargar o crear con tu OK: #2 (HLM), #3
   (agendas de Aurora) y #4 (ASESOR/CALIDAD de Aurora y HLM).
 
-- **ORLANT tarda unos 4 s en abrir la primera vez después de cada deploy** (hallazgo #7,
-  medido el 07/11 en producción) — Prioridad MEDIA. Al reiniciar, la caché de «opciones» está
-  vacía y las 6–7 consultas de opciones de ORLANT (Efectividad de Citas, WhatsApp tiempos,
-  Salida, Tipificación, Agendamiento, Efectividad de Agendamiento…) corren una tras otra en el
-  único hilo de Node:
-  - la más lenta tardó entre 3,4 y 3,5 s esperando su turno;
-  - la segunda apertura tarda 0,5–0,6 s.
+- ~~**ORLANT tarda unos 4 s en abrir la primera vez después de cada deploy**~~ (hallazgo #7)
+  — **HECHO** en la Fase 294 (v1.144.8): al arrancar, la caché de «opciones» se llena sola en
+  segundo plano para los 5 clientes. Primera apertura de ORLANT en producción: 4,2 s → 0,8 s.
 
-  **Propuesta, espera tu OK:** al arrancar el servidor, llenar esa caché en segundo plano para
-  los 5 clientes (las mismas funciones y claves de `opcionesConCache`), sin cambiar ningún
-  resultado. Opcional después: `agendasOpciones` en una sola pasada en vez de 6 `DISTINCT`.
+- **Opcional (del hallazgo #7): `agendasOpciones` en una sola pasada** en vez de 6 `DISTINCT`
+  — Prioridad BAJA. Con el precalentado ya no se nota al abrir; solo acortaría el precalentado
+  y la primera consulta después de cada carga de datos. Espera tu OK.
 
 - ~~**Admin › Dashboards › «Nuevo dashboard» ofrece SURA como cliente «libre»**~~
   — **HECHO** en la Fase 282 (v1.140.4): la lista usa `dashClienteTieneTablero`.
