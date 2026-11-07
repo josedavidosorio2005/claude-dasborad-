@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.5 — Noviembre 2026
+
+**Fase 291: el supervisor carga bases solo de sus clientes.**
+
+- Al guardar una cuenta **SUPERVISOR** (crearla, editarla o cambiar sus permisos), el permiso
+  general «Puede cargar datos» queda apagado: el supervisor carga las bases solo de los clientes
+  que supervisa. Hoy ninguna cuenta lo tenía encendido, así que nadie pierde nada.
+
 ## v1.144.4 — Noviembre 2026
 
 **Fase 290: «Ninguno» en el filtro Mes de Calidad.**
