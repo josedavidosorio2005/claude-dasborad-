@@ -10,6 +10,7 @@ const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendasUsuaria, cargarAgendasUsuaria, agendasUsuariaOpciones, agendasUsuariaDatos } = require('../agendas-usuaria');
 const { wrap, logEvent, actorLabel } = require('./shared');
+const { ocultaAsesores, seudonimos } = require('../privacidad-cliente'); // Fase 287 (#5)
 
 const router = express.Router();
 const sinAcceso = (res) => res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
@@ -23,7 +24,13 @@ router.get('/calidad/agendas-usuaria/opciones', requireActor, validate(schemas.a
 // Sin cache de opciones: el nombre depende de los alias, que cambian aparte.
 router.get('/calidad/agendas-usuaria/datos', requireActor, validate(schemas.agendasUsuariaQuery, 'query'), wrap((req, res) => {
   if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-  res.json(agendasUsuariaDatos(db, req.query.campana));
+  const d = agendasUsuariaDatos(db, req.query.campana);
+  // Fase 287 (#5): el cliente que oculta nombres (Aurora, HLM) recibe "Asesor 1, 2..." y sin el usuario del sistema.
+  if (ocultaAsesores(db, req.actor, req.query.campana)) {
+    const alias = seudonimos(d.filas.map((f) => f.asesora));
+    return res.json({ ...d, filas: d.filas.map((f) => ({ ...f, asesora: alias(f.asesora), usuario: '' })) });
+  }
+  res.json(d);
 }));
 
 router.post('/calidad/agendas-usuaria/carga/impacto', requireActor, validate(schemas.agendasUsuariaCargaBody), wrap((req, res) => {

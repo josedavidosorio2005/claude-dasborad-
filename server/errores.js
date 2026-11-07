@@ -12,8 +12,9 @@ const { cargarAliasMapa, resolverAlias, aliasNorm } = require('./alias-asesores'
 const OBS_MAX = 1000;
 const PLAN_MAX = 4000;
 const CANTIDAD_MAX = 500;
-// Una observacion o un plan no pueden traer numeros de documento o de telefono.
-const RE_DATO_PACIENTE = /\d[\d .-]{6,}\d/;
+// Una observacion o un plan no pueden traer numeros de documento o de telefono
+// (Fase 287: la regla es la misma de los monitoreos, en datos-paciente.js).
+const { pareceDatoPaciente } = require('./datos-paciente');
 
 function crearTablas(db) {
   db.exec(`
@@ -41,9 +42,6 @@ function crearTablas(db) {
     );
   `);
 }
-
-// Texto con un posible dato de paciente (documento, telefono).
-function pareceDatoPaciente(texto) { return RE_DATO_PACIENTE.test(String(texto || '')); }
 
 // Nombre real de la asesora (alias de "Usuarios del sistema").
 function nombreReal(db, campana, asesor) {

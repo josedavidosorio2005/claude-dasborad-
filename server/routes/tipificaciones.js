@@ -28,6 +28,10 @@ const {
 } = require('../tipificaciones');
 const { tipificacionTotales } = require('../tipificacion-totales');
 const { listarClasificacion, guardarClasificacion, salidaPorLinea } = require('../clasificacion-asesores');
+// Fase 287 (revision del 07/11, #5): el cliente que oculta nombres (Aurora, HLM) no
+// recibe la lista de agentes ni puede filtrar por un agente (?agente= se ignora).
+const { ocultaAsesores } = require('../privacidad-cliente');
+function filtrosPara(req) { return ocultaAsesores(db, req.actor, req.query.campana) ? { ...req.query, agente: undefined } : req.query; }
 const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
@@ -44,7 +48,8 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(opcionesConCache(db, JSON.stringify(['tipificacion', req.query.campana, req.query.canal]), () => tipificacionesOpciones(db, req.query.campana, req.query.canal)));
+    const op = opcionesConCache(db, JSON.stringify(['tipificacion', req.query.campana, req.query.canal]), () => tipificacionesOpciones(db, req.query.campana, req.query.canal));
+    res.json(ocultaAsesores(db, req.actor, req.query.campana) ? { ...op, agentes: [] } : op);
   })
 );
 
@@ -73,7 +78,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(tipificacionTotales(db, req.query));
+    res.json(tipificacionTotales(db, filtrosPara(req)));
   })
 );
 
@@ -87,7 +92,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(tipificacionesPorTipo(db, req.query));
+    res.json(tipificacionesPorTipo(db, filtrosPara(req)));
   })
 );
 
@@ -104,7 +109,7 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    res.json(tipificacionesResumenSalida(db, req.query));
+    res.json(tipificacionesResumenSalida(db, filtrosPara(req)));
   })
 );
 

@@ -9,6 +9,7 @@ const { requireActor, campaignAccess, canLoadModule } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoCalidadResumen, cargarCalidadResumen, calidadResumenOpciones, calidadResumenPorMes } = require('../calidad-resumen');
 const { wrap, logEvent, actorLabel } = require('./shared');
+const { ocultaAsesores, seudonimos } = require('../privacidad-cliente'); // Fase 287 (#5)
 
 const router = express.Router();
 const sinAcceso = (res) => res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
@@ -20,7 +21,13 @@ router.get('/calidad/calidad-resumen/opciones', requireActor, validate(schemas.c
 
 router.get('/calidad/calidad-resumen/mensual', requireActor, validate(schemas.calidadResumenQuery, 'query'), wrap((req, res) => {
   if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-  res.json(calidadResumenPorMes(db, req.query.campana));
+  const r = calidadResumenPorMes(db, req.query.campana);
+  // Fase 287 (#5): el cliente que oculta nombres (Aurora, HLM) recibe "Asesor 1, 2...".
+  if (ocultaAsesores(db, req.actor, req.query.campana)) {
+    const alias = seudonimos((r.meses || []).flatMap((m) => (m.asesores || []).map((a) => a.agente)));
+    return res.json({ ...r, meses: (r.meses || []).map((m) => ({ ...m, asesores: (m.asesores || []).map((a) => ({ ...a, agente: alias(a.agente) })) })) });
+  }
+  res.json(r);
 }));
 
 router.post('/calidad/calidad-resumen/carga/impacto', requireActor, validate(schemas.calidadResumenCargaBody), wrap((req, res) => {
