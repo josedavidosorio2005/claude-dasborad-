@@ -183,8 +183,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 - ~~**Pasar las 2 cuentas SUPERVISOR al perfil nuevo**~~ — **HECHO** (06/11, con tu
   OK; Fase 285). Falta solo que Edwin lo vea al entrar (no se probó con su sesión).
-  Hay una tercera cuenta SUPERVISOR (id 56, creada el 06/11, ya con el perfil nuevo)
-  que no se tocó: confirmar si la reconoces.
+  ~~Hay una tercera cuenta SUPERVISOR (id 56, creada el 06/11, ya con el perfil nuevo)
+  que no se tocó: confirmar si la reconoces.~~ — **RESUELTO** (07/11): la reconociste;
+  es la supervisora de Clínica Aurora y Hospital La María (supervisa solo esos 2
+  clientes, plantillas de Calidad 10/11/12). Se deja como está, sin cambios.
 
 - ~~**Logo de Clínica Aurora**~~ — **HECHO** (Fase 285, v1.143.0). Hospital La María
   sigue sin logo (lo necesitaría cuando sus pestañas queden visibles para el
