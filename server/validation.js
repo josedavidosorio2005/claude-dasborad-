@@ -1585,6 +1585,18 @@ const errorEditarBody = z.strictObject({
   observacion: z.string().max(1000).optional(),
 });
 const errorPlanBody = z.strictObject({ campana: campanaSchema, mes: mesSchemaErrores, texto: z.string().max(4000) });
+// Fase 286: un solo «Guardar» (error y plan de accion del mes, juntos).
+const errorGuardarBody = z.strictObject({
+  campana: campanaSchema,
+  mes: mesSchemaErrores,
+  error: z.strictObject({
+    id: z.number().int().positive().optional(),
+    asesor: z.string().trim().min(1, 'Elige la asesora').max(120),
+    cantidad: z.number().int().min(1).max(500).optional(),
+    observacion: z.string().max(1000).optional(),
+  }).optional(),
+  plan: z.string().max(4000).optional(),
+});
 
 function validate(schema, part = 'body') {
   return (req, res, next) => {
@@ -1617,6 +1629,7 @@ module.exports = {
     errorCrearBody,
     errorEditarBody,
     errorPlanBody,
+    errorGuardarBody,
     loginBody,
     createUserBody,
     updateUserBody,

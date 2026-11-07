@@ -2210,4 +2210,27 @@ div.ca-bar-fila{cursor:default}
 .err-obs-campo textarea,.err-plan-campo{width:100%;min-height:72px;padding:8px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body);resize:vertical}
 .err-sub{margin:16px 0 8px;font-size:var(--fs-body);color:var(--c-text)}
 .err-msg{background:var(--c-success-bg);color:var(--c-success-dark);border-radius:var(--r-sm);padding:6px 10px;font-size:var(--fs-small)}
+/* Fase 286: sub-pestañas del editor (Registrar / Errores del mes), lista compacta con scroll y aviso de MESES */
+.err-tabs{margin:4px 0 12px}
+.err-tabs .gd-subtab-btn{min-height:44px}
+.err-plan-lbl{margin-top:12px}
+.err-lista{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--c-border);border-radius:var(--r-sm)}
+.err-lista:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px}
+.aurora-rank-table.err-lista-tabla{margin:0;min-width:0}
+.err-lista-tabla thead th{position:sticky;top:0;z-index:var(--z-sticky-header)}
+.err-lista-tabla tbody tr:first-child td{font-weight:inherit;color:var(--c-text)}
+.err-lista-tabla td.err-acc{white-space:nowrap;text-align:right}
+.err-lista-tabla .btn-sm{min-height:36px}
+.err-aviso{background:var(--c-warning-bg);color:var(--c-text);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-small);display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+/* En el celular cada error es una tarjetita: asesora y cantidad, la observacion y los botones (sin scroll de lado) */
+@media (max-width:600px){
+  .err-lista-tabla,.err-lista-tabla tbody{display:block;width:100%}
+  .err-lista-tabla thead{display:none}
+  .err-lista-tabla tr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 10px;border-bottom:1px solid var(--c-border)}
+  .err-lista-tabla td{display:block;padding:0;border:0;background:none!important}
+  .err-lista-tabla td.ca-mot{grid-column:1 / -1}
+  .err-lista-tabla td.err-acc{grid-column:1 / -1;text-align:left;margin-top:6px;display:flex;gap:8px}
+  .err-lista-tabla .btn-sm{min-height:44px;flex:1}
+  .err-lista-tabla tbody tr:nth-child(even){background:var(--c-surface-subtle)}
+}
 @media (max-width:600px){.err-form .ca-filtro{flex:1 1 100%}.err-form .ca-filtro select,.err-form .ca-filtro input{min-width:0;width:100%}}

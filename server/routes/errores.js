@@ -57,6 +57,20 @@ router.post('/calidad/errores', requireActor, validate(schemas.errorCrearBody), 
   res.status(201).json(r.fila);
 }));
 
+// Fase 286: un solo «Guardar» — el error (nuevo o editado) y el plan de accion del mes
+// en una sola transaccion. Mismo permiso y mismo historial que las rutas de abajo.
+router.post('/calidad/errores/guardar', requireActor, validate(schemas.errorGuardarBody), wrap((req, res) => {
+  const b = req.body;
+  if (!guardiaEscritura(req, res, b.campana)) return;
+  const r = errores.guardarJunto(db, b.campana, b, req.actor, nowStr());
+  if (r.noExiste) return res.status(404).json({ error: 'Error no encontrado' });
+  if (r.error) return res.status(400).json({ error: r.error });
+  if (r.creado) logEvent('ERROR_AGENDAMIENTO_CREADO', { nombre: r.creado.fila.asesor, user: '-', rol: b.campana }, actorLabel(req.actor), detalleLog(r.creado.fila));
+  if (r.edicion) logEvent('ERROR_AGENDAMIENTO_EDITADO', { nombre: r.edicion.fila.asesor, user: '-', rol: b.campana }, actorLabel(req.actor), detalleLog(r.edicion.antes) + ' -> ' + detalleLog(r.edicion.fila));
+  if (r.plan) logEvent('ERRORES_PLAN_ACCION', { nombre: b.mes, user: '-', rol: b.campana }, actorLabel(req.actor), r.plan.borrado ? `plan de ${b.mes} borrado` : `plan de ${b.mes} guardado`);
+  res.json({ ok: true, registro: r.creado ? r.creado.fila : (r.edicion ? r.edicion.fila : null), plan: r.plan ? (r.plan.plan || null) : undefined });
+}));
+
 router.put('/calidad/errores/plan', requireActor, validate(schemas.errorPlanBody), wrap((req, res) => {
   const b = req.body;
   if (!guardiaEscritura(req, res, b.campana)) return;

@@ -154,4 +154,40 @@ function guardarPlan(db, campana, mes, texto, actor, ahora) {
   return { plan: db.prepare('SELECT * FROM errores_plan_accion WHERE campana = ? AND mes = ?').get(campana, mes) };
 }
 
-module.exports = { OBS_MAX, PLAN_MAX, CANTIDAD_MAX, crearTablas, pareceDatoPaciente, nombreReal, asesorasDe, resumen, crear, editar, borrar, guardarPlan };
+// Fase 286 (pedido de Edwin, 07/11): un solo «Guardar» para el error y el plan de
+// accion del mes. Primero se valida TODO (error y plan) y despues se escribe en una
+// sola transaccion: o se guardan los dos o ninguno, y el plan escrito nunca se pierde.
+//  b = { mes, error?: { id?, asesor, cantidad?, observacion? }, plan?: texto }
+//  - `error.id`: editar ese error (debe ser de la misma campaña).
+//  - `plan` ausente: el plan del mes no se toca; '' lo borra (como guardarPlan).
+function guardarJunto(db, campana, b, actor, ahora) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(b.mes || ''))) return { error: 'El mes debe ser AAAA-MM' };
+  if (!b.error && b.plan === undefined) return { error: 'Elige la asesora o escribe el plan de acción' };
+  let previa = null;
+  if (b.error) {
+    if (b.error.id) {
+      previa = db.prepare('SELECT * FROM errores_agendamiento WHERE id = ?').get(b.error.id);
+      if (!previa || previa.campana !== campana) return { noExiste: true };
+    }
+    const v = validar(db, campana, { ...b.error, mes: b.mes }, false);
+    if (v.error) return v;
+  }
+  if (b.plan !== undefined) {
+    const t = String(b.plan || '').trim();
+    if (t.length > PLAN_MAX) return { error: 'El plan de acción puede tener hasta ' + PLAN_MAX + ' caracteres' };
+    if (pareceDatoPaciente(t)) return { error: 'El plan de acción no puede tener documentos ni teléfonos (datos de pacientes).' };
+  }
+  const out = {};
+  db.transaction(() => {
+    if (b.error) {
+      const datos = { ...b.error, mes: b.mes };
+      delete datos.id;
+      if (previa) out.edicion = editar(db, previa.id, datos, actor, ahora);
+      else out.creado = crear(db, campana, datos, actor, ahora);
+    }
+    if (b.plan !== undefined) out.plan = guardarPlan(db, campana, b.mes, b.plan, actor, ahora);
+  })();
+  return out;
+}
+
+module.exports = { OBS_MAX, PLAN_MAX, CANTIDAD_MAX, crearTablas, pareceDatoPaciente, nombreReal, asesorasDe, resumen, crear, editar, borrar, guardarPlan, guardarJunto };
