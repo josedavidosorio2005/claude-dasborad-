@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.8 — Noviembre 2026
+
+**Fase 294: los tableros abren más rápido después de cada actualización.**
+
+- Después de cada actualización de la plataforma, la primera persona que abría un tablero (por
+  ejemplo ORLANT) esperaba unos 4 segundos mientras se preparaban las listas de los filtros
+  (meses, asesores, skills…). Ahora la plataforma las prepara sola al arrancar, para los 5
+  clientes, así que esa primera apertura ya no espera. Los datos que se ven no cambian.
+
 ## v1.144.7 — Noviembre 2026
 
 **Fase 293: SURA › Agentes en el celular.**

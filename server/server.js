@@ -497,6 +497,10 @@ function start() {
       `InConexion backend escuchando en http://localhost:${config.port} (${config.nodeEnv})`
     );
   });
+  // Fase 294 (revision 07/11, #7): llena la cache de opciones en segundo
+  // plano (una consulta por turno, sin bloquear el arranque ni /api/health),
+  // asi la primera apertura de un tablero tras un deploy no espera ~4 s.
+  const cancelarPrecalentado = require('./opciones-precalentar').precalentarEnSegundoPlano(db);
   // Fase 153 (Centro de cargas): las versiones de Deshacer vencen a los 30
   // dias; ademas de al arrancar (db.js), se limpian una vez al dia.
   const purgaVersiones = setInterval(() => {
@@ -513,6 +517,7 @@ function start() {
   function shutdown(signal) {
     if (shuttingDown) return;
     shuttingDown = true;
+    cancelarPrecalentado();
     console.log(`\n[shutdown] Recibido ${signal}. Cerrando ordenadamente...`);
 
     const guard = setTimeout(() => {
