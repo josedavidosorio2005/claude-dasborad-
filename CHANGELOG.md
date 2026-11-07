@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.4 — Noviembre 2026
+
+**Fase 290: «Ninguno» en el filtro Mes de Calidad.**
+
+- En Calidad › Resultado de los monitoreos, «Ninguno» en el filtro **Mes** ahora muestra
+  **todos los meses** (dice «Todos»), igual que el filtro «Meses» de arriba. Antes dejaba la
+  pestaña vacía.
+
 ## v1.144.3 — Noviembre 2026
 
 **Fase 289: porcentajes de Tipificación en formato colombiano.**
