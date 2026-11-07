@@ -386,6 +386,7 @@ async function saveUserModal(){
     var payload={ nombre:nombre, user:user, password:pass, rol:rol,
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
     if(rol!=='SUPERVISOR' && document.getElementById('mu-cargar-datos').checked) payload.perms.cargarDatos=true;
+    if(rol==='SUPERVISOR') payload.perms.cargarDatos=false; // Fase 291 (#14): carga solo de los clientes que supervisa
     aplicarSupervisa(payload.perms, rol); // Fase 283
     aplicarCargarModulos(payload.perms, rol);
     aplicarPlantillas(payload.perms, rol); // Fase 237
@@ -414,7 +415,8 @@ async function saveUserModal(){
       CAMPANAS_CALIDAD.forEach(function(c){newPerms['campana_'+c]=cac[c]===true;});
     }
     // Fase 283: el SUPERVISOR no usa la casilla (carga por supervisa_); se conserva lo guardado.
-    if(rol!=='SUPERVISOR') newPerms.cargarDatos = document.getElementById('mu-cargar-datos').checked;
+    // Fase 291 (#14): al guardar un SUPERVISOR se apaga el permiso general (carga solo de los clientes que supervisa).
+    newPerms.cargarDatos = rol==='SUPERVISOR' ? false : document.getElementById('mu-cargar-datos').checked;
     aplicarSupervisa(newPerms, rol);
     aplicarCargarModulos(newPerms, rol);
     aplicarPlantillas(newPerms, rol); // Fase 237

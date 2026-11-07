@@ -18,6 +18,9 @@ const router = express.Router();
 function applyRolePermDefaults(rol, perms) {
   const p = perms && typeof perms === 'object' ? { ...perms } : {};
   if (rol === 'REPORTES') p.cargarDatos = true;
+  // Fase 291 (revision del 07/11, #14): un SUPERVISOR carga bases solo de los clientes
+  // que supervisa (auth.supervisorCarga), nunca con el permiso general de TODOS.
+  if (rol === 'SUPERVISOR') p.cargarDatos = false;
   return p;
 }
 
@@ -310,7 +313,7 @@ router.put(
     if (!accesosSinEscalar(req.actor, req.body.perms, JSON.parse(row.perms || '{}'))) {
       return res.status(403).json({ error: ERROR_ACCESOS });
     }
-    db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(req.body.perms), id);
+    db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(applyRolePermDefaults(row.rol, req.body.perms)), id); // Fase 291
     logEvent('PERMISOS', row, actorLabel(req.actor), 'Permisos actualizados');
     res.json({ ok: true });
   })
