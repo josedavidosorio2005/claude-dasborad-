@@ -75,4 +75,9 @@ function firmaDatos(db) {
   return firmaActual(db, estadoDe(db));
 }
 
-module.exports = { opcionesConCache, firmaDatos };
+// Fase 294: cuantas entradas hay (solo lo usan las pruebas del precalentado).
+function tamanoCache(db) {
+  return estadoDe(db).entradas.size;
+}
+
+module.exports = { opcionesConCache, firmaDatos, tamanoCache };
