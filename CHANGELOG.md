@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.2 — Noviembre 2026
+
+**Fase 288: las fechas ya no se rechazan como dato de paciente.**
+
+- En Errores (observación y plan de acción) y en las observaciones de Calidad, una **fecha**
+  como «15-10-2026» o «2026-10-15» (con o sin hora) ya no se toma por un documento o teléfono.
+- Cuando sí se rechaza un número, el aviso **dice cuál** («La observación tiene «3001234567»,
+  que parece un documento o teléfono…»), para corregirlo sin adivinar.
+
 ## v1.144.1 — Noviembre 2026
 
 **Fase 287: lo que ve la cuenta del cliente en Calidad (y los nombres de asesor de Aurora y HLM).**

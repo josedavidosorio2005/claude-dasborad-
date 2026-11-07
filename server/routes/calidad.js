@@ -22,11 +22,14 @@ const clientesRegistro = require('../clientes-registro');
 // Fase 287 (revision del 07/11, #5): lo que recibe una cuenta de cliente y la revision
 // de datos de pacientes en las observaciones (la misma de Errores).
 const privacidad = require('../privacidad-cliente');
-const { pareceDatoPaciente } = require('../datos-paciente');
-const ERROR_OBS_PACIENTE = 'Las observaciones y el motivo no pueden tener documentos ni teléfonos (datos de pacientes). Escríbelos sin esos números.';
-// Observaciones o motivo de afectacion con un posible dato de paciente.
+const { pareceDatoPaciente, mensajeDatoPaciente, datoPacienteEncontrado } = require('../datos-paciente');
+// Observaciones o motivo de afectacion con un posible dato de paciente: el mensaje
+// (Fase 288: dice que campo y que numero) o null.
 function textoMonitoreoConDatoPaciente(observaciones, extras) {
-  return pareceDatoPaciente(observaciones) || pareceDatoPaciente(extras && extras.motivo);
+  if (pareceDatoPaciente(observaciones)) return mensajeDatoPaciente('La observación', observaciones);
+  const motivo = extras && extras.motivo;
+  if (pareceDatoPaciente(motivo)) return mensajeDatoPaciente('El motivo de afectación', motivo);
+  return null;
 }
 
 const router = express.Router();
@@ -550,7 +553,8 @@ router.post(
     }
     const reglas = reglasDePlantilla(plantilla, b.answers, b.extras); // Fase 252
     if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
-    if (textoMonitoreoConDatoPaciente(b.observaciones, b.extras)) return res.status(400).json({ error: ERROR_OBS_PACIENTE }); // Fase 287
+    const errPaciente = textoMonitoreoConDatoPaciente(b.observaciones, b.extras); // Fase 287
+    if (errPaciente) return res.status(400).json({ error: errPaciente });
     const info = db
       .prepare(
         `INSERT INTO monitoreos
@@ -658,7 +662,7 @@ router.post(
         // Fase 287: la fila con un documento o telefono en las observaciones no se guarda.
         if (textoMonitoreoConDatoPaciente(fila.observaciones, null)) {
           omitidas++;
-          avisos.push(`Fila ${idx + 2}: las observaciones tienen un documento o teléfono (dato de paciente), se omitio.`);
+          avisos.push(`Fila ${idx + 2}: las observaciones tienen «${datoPacienteEncontrado(fila.observaciones)}», que parece un documento o teléfono (dato de paciente); se omitio.`);
           return;
         }
         const payload = {
@@ -757,7 +761,8 @@ router.put(
     // lo ya guardado no se vuelve a revisar al editar otra cosa.
     const obsNueva = b.observaciones !== undefined && (b.observaciones || '') !== (row.observaciones || '') ? b.observaciones : '';
     const motivoNuevo = b.extras && (b.extras.motivo || '') !== ((extrasPrevios && extrasPrevios.motivo) || '') ? { motivo: b.extras.motivo } : null;
-    if (textoMonitoreoConDatoPaciente(obsNueva, motivoNuevo)) return res.status(400).json({ error: ERROR_OBS_PACIENTE });
+    const errPacienteEd = textoMonitoreoConDatoPaciente(obsNueva, motivoNuevo);
+    if (errPacienteEd) return res.status(400).json({ error: errPacienteEd });
     db.prepare(
       `UPDATE monitoreos SET
          asesor=?, asesorUserId=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
