@@ -5,6 +5,7 @@ const express = require('express');
 const db = require('../db');
 const { requireActor, isFullAdmin } = require('../auth');
 const { wrap } = require('./shared');
+const { fechaLimitesAhoraColombiaStr } = require('../fecha-limites');
 
 const router = express.Router();
 
@@ -27,7 +28,10 @@ router.get(
     // creciente en el orden de insercion), asi que sirve de desempate exacto
     // sin cambiar el orden visible en ningun caso donde `ts` ya difiere.
     const rows = db.prepare('SELECT * FROM historial ORDER BY ts DESC, id DESC').all();
-    res.json(rows);
+    // Fase 292 (#15): la hora de cada fila sale de `ts` (el instante exacto) en hora de
+    // Colombia; antes las filas escritas con nowStr salian en UTC (CREADO, PERMISOS...)
+    // y las de inicio de sesion en Colombia. Lo guardado no cambia.
+    res.json(rows.map((r) => (r.ts ? { ...r, fecha: fechaLimitesAhoraColombiaStr(new Date(Number(r.ts))) } : r)));
   })
 );
 

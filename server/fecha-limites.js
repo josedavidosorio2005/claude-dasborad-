@@ -53,6 +53,18 @@ function fechaLimitesAhoraColombiaStr(ahora) {
   );
 }
 
+// Fase 292 (revision del 07/11, #15): un texto 'DD/MM/AAAA HH:MM:SS' escrito con
+// nowStr (routes/shared.js: hora LOCAL DEL PROCESO, UTC en produccion) mostrado en
+// hora de Colombia, SIN cambiar lo guardado. Se lee como hora local del proceso (la
+// misma con que se escribio) y se pasa a Colombia; en un equipo que ya esta en hora de
+// Colombia queda igual. Otro formato: tal cual.
+function fechaServidorAColombiaStr(texto) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/.exec(String(texto || ''));
+  if (!m) return texto;
+  const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), Number(m[6]));
+  return isNaN(d.getTime()) ? texto : fechaLimitesAhoraColombiaStr(d);
+}
+
 // Primer y ultimo dia de un mes 'AAAA-MM' como 'AAAA-MM-DD' (sin hora).
 // Fase 88: reemplaza filtros `substr(columna,1,7) = @mes` (no sargables,
 // nunca usan la parte de fecha de un indice compuesto) por un rango
@@ -74,4 +86,5 @@ module.exports = {
   fechaLimitesEsFutura,
   fechaLimitesRangoDeMes,
   fechaLimitesAhoraColombiaStr,
+  fechaServidorAColombiaStr,
 };
