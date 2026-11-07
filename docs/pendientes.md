@@ -650,6 +650,27 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Revisión de bugs del 07/11** (`docs/revision-bugs-2026-11-07.md`) — **HECHOS** el 07/11
+  (Fases 287–293, v1.144.1–v1.144.7, PRs #710–#716): #5 privacidad de Calidad para el cliente,
+  #11 fechas en la revisión de datos de pacientes, #12 «72,97 %», #13 «Ninguno» = Todos en
+  Calidad, #14 SUPERVISOR sin «Puede cargar datos», #15 fechas en hora de Colombia y #10 SURA ›
+  Agentes a 375 px. **Los decide Edwin el lunes 09/11** (no se tocaron): #1 qué pestañas ve el
+  cliente de Aurora y HLM, #6 nombres en Errores, #8 salida de Mobilize y #9 monitoreo con la
+  plantilla vieja. Siguen como datos o cuentas por cargar o crear con tu OK: #2 (HLM), #3
+  (agendas de Aurora) y #4 (ASESOR/CALIDAD de Aurora y HLM).
+
+- **ORLANT tarda unos 4 s en abrir la primera vez después de cada deploy** (hallazgo #7,
+  medido el 07/11 en producción) — Prioridad MEDIA. Al reiniciar, la caché de «opciones» está
+  vacía y las 6–7 consultas de opciones de ORLANT (Efectividad de Citas, WhatsApp tiempos,
+  Salida, Tipificación, Agendamiento, Efectividad de Agendamiento…) corren una tras otra en el
+  único hilo de Node:
+  - la más lenta tardó entre 3,4 y 3,5 s esperando su turno;
+  - la segunda apertura tarda 0,5–0,6 s.
+
+  **Propuesta, espera tu OK:** al arrancar el servidor, llenar esa caché en segundo plano para
+  los 5 clientes (las mismas funciones y claves de `opcionesConCache`), sin cambiar ningún
+  resultado. Opcional después: `agendasOpciones` en una sola pasada en vez de 6 `DISTINCT`.
+
 - ~~**Admin › Dashboards › «Nuevo dashboard» ofrece SURA como cliente «libre»**~~
   — **HECHO** en la Fase 282 (v1.140.4): la lista usa `dashClienteTieneTablero`.
 
