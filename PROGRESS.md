@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.143.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.144.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 286 — Clínica Aurora › Errores: un solo «Guardar» (error y plan de acción juntos), «Errores del mes» en sub-pestaña con scroll y la pestaña que se actualiza sola (v1.144.0, 2026-11-07)
 - Fase 285 — Logo de Clínica Aurora en su encabezado (blanco, sin la línea de abajo); migración de las 2 cuentas SUPERVISOR al perfil nuevo (v1.143.0, 2026-11-06)
 - Fase 284 — Clínica Aurora: pestaña «Errores» (errores de agendamiento por mes, plan de acción y errores por asesora; la registran el supervisor y el administrador) (v1.142.0, 2026-11-06)
 - Fase 283 — Perfil propio del SUPERVISOR: «Clientes que supervisa», carga de bases y tableros solo de sus clientes; simulación de la migración de las 2 cuentas (v1.141.0, 2026-11-06)
