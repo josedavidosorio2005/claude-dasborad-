@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.7 — Noviembre 2026
+
+**Fase 293: SURA › Agentes en el celular.**
+
+- En el celular, las tarjetas de cada agente de **SURA › Agentes** ya caben en la pantalla: la
+  pestaña no se mueve de lado. En el computador se ve igual que antes.
+
 ## v1.144.6 — Noviembre 2026
 
 **Fase 292: fechas de creación en hora de Colombia.**
