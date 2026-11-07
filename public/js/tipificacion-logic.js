@@ -705,6 +705,13 @@ function tipificacionSinRepetirConExtra(colores, extra) {
     return c;
   });
 }
+// Fase 289 (revision del 07/11, #12): porcentaje con coma decimal, 2 decimales y
+// espacio antes del % ("72,97 %"), igual que la tabla de Tipificacion. "" sin valor.
+function tipificacionPctTexto(pct) {
+  if (pct === null || pct === undefined || !isFinite(Number(pct))) return '';
+  return Number(pct).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' %';
+}
+
 // "1.234 (12,34 %)" con coma decimal.
 function tipificacionCantidadPct(cantidad, total) {
   var pct = total ? Math.round((cantidad / total) * 10000) / 100 : 0;
@@ -804,6 +811,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TIPIFICACION_SKILL_SALIDA_LLAMADAS: TIPIFICACION_SKILL_SALIDA_LLAMADAS,
     TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP: TIPIFICACION_SKILL_ID_SALIDA_WHATSAPP,
     tipificacionEtiquetaSkill: tipificacionEtiquetaSkill,
+    tipificacionPctTexto: tipificacionPctTexto,
     TIPIFICACION_NOMBRES_SKILL_CLIENTE: TIPIFICACION_NOMBRES_SKILL_CLIENTE,
     tipificacionTramosMeses: tipificacionTramosMeses,
     tipificacionSumarPorTipo: tipificacionSumarPorTipo,
