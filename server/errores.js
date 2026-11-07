@@ -14,7 +14,7 @@ const PLAN_MAX = 4000;
 const CANTIDAD_MAX = 500;
 // Una observacion o un plan no pueden traer numeros de documento o de telefono
 // (Fase 287: la regla es la misma de los monitoreos, en datos-paciente.js).
-const { pareceDatoPaciente } = require('./datos-paciente');
+const { pareceDatoPaciente, mensajeDatoPaciente } = require('./datos-paciente');
 
 function crearTablas(db) {
   db.exec(`
@@ -108,7 +108,7 @@ function validar(db, campana, b, parcial) {
   if (!parcial || b.observacion !== undefined) {
     const o = String(b.observacion || '').trim();
     if (o.length > OBS_MAX) return { error: 'La observación puede tener hasta ' + OBS_MAX + ' caracteres' };
-    if (pareceDatoPaciente(o)) return { error: 'La observación no puede tener documentos ni teléfonos (datos de pacientes). Descríbela sin esos números.' };
+    if (pareceDatoPaciente(o)) return { error: mensajeDatoPaciente('La observación', o) }; // Fase 288: dice que numero
     out.observacion = o;
   }
   return { datos: out };
@@ -144,7 +144,7 @@ function guardarPlan(db, campana, mes, texto, actor, ahora) {
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes || ''))) return { error: 'El mes debe ser AAAA-MM' };
   const t = String(texto || '').trim();
   if (t.length > PLAN_MAX) return { error: 'El plan de acción puede tener hasta ' + PLAN_MAX + ' caracteres' };
-  if (pareceDatoPaciente(t)) return { error: 'El plan de acción no puede tener documentos ni teléfonos (datos de pacientes).' };
+  if (pareceDatoPaciente(t)) return { error: mensajeDatoPaciente('El plan de acción', t) };
   if (!t) { db.prepare('DELETE FROM errores_plan_accion WHERE campana = ? AND mes = ?').run(campana, mes); return { borrado: true }; }
   db.prepare(`INSERT INTO errores_plan_accion (campana, mes, texto, actualizadoPorNombre, actualizadoEn) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(campana, mes) DO UPDATE SET texto = excluded.texto, actualizadoPorNombre = excluded.actualizadoPorNombre, actualizadoEn = excluded.actualizadoEn`)
@@ -173,7 +173,7 @@ function guardarJunto(db, campana, b, actor, ahora) {
   if (b.plan !== undefined) {
     const t = String(b.plan || '').trim();
     if (t.length > PLAN_MAX) return { error: 'El plan de acción puede tener hasta ' + PLAN_MAX + ' caracteres' };
-    if (pareceDatoPaciente(t)) return { error: 'El plan de acción no puede tener documentos ni teléfonos (datos de pacientes).' };
+    if (pareceDatoPaciente(t)) return { error: mensajeDatoPaciente('El plan de acción', t) };
   }
   const out = {};
   db.transaction(() => {
