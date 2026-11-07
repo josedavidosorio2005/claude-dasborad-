@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.3 — Noviembre 2026
+
+**Fase 289: porcentajes de Tipificación en formato colombiano.**
+
+- La tarjeta «Conectadas» de Tipificación muestra el porcentaje con coma y espacio
+  («72,97 %»), como el resto de la plataforma (antes «72.97%»).
+
 ## v1.144.2 — Noviembre 2026
 
 **Fase 288: las fechas ya no se rechazan como dato de paciente.**
