@@ -4843,6 +4843,24 @@ function actualizarLogoAurora() {
 }
 runOnceMigration('fase285_logo_aurora_v1', actualizarLogoAurora);
 
+// Fase 287 (revision del 07/11, #5): el cliente de Clinica Aurora y de Hospital La
+// Maria no recibe nombres de asesor (parametro asesorOcultoCliente del registro; ver
+// privacidad-cliente.js). Solo toca la columna parametros de esos 2 clientes.
+function marcarAsesorOcultoCliente() {
+  const ahora = new Date().toISOString();
+  for (const nombre of ['CLINICA AURORA', 'HOSPITAL LA MARIA']) {
+    const reg = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+    if (!reg) continue;
+    let parametros = {};
+    try { parametros = JSON.parse(reg.parametros) || {}; } catch (e) { parametros = {}; }
+    if (parametros.asesorOcultoCliente === true) continue;
+    parametros.asesorOcultoCliente = true;
+    db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(parametros), ahora, nombre);
+  }
+  if (!config.isTest) console.log('[db] Migracion fase287_asesor_oculto_cliente_v1 aplicada.');
+}
+runOnceMigration('fase287_asesor_oculto_cliente_v1', marcarAsesorOcultoCliente);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

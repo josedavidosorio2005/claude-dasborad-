@@ -11,6 +11,7 @@ const db = require('../db');
 const { opcionesConCache } = require('../cache-opciones');
 const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
 const { asesoresSalidaDelMes, guardarLineasDelMes, usaClasificacionPorCliente, inventarioLineasPorMes } = require('../salida-cdr');
+const { ocultaAsesores } = require('../privacidad-cliente'); // Fase 287 (#5)
 const { validate, schemas } = require('../validation');
 const {
   impactoSalida, cargarSalida,
@@ -102,6 +103,8 @@ router.get(
     if (!campaignAccess(req.actor, req.query.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
+    // Fase 287: el cliente que oculta nombres (Aurora, HLM) no recibe la lista por asesor.
+    if (ocultaAsesores(db, req.actor, req.query.campana)) return res.json({ campana: req.query.campana, mes: req.query.mes, asesores: [] });
     res.json({ campana: req.query.campana, mes: req.query.mes, asesores: asesoresSalidaDelMes(db, req.query.campana, req.query.mes) });
   })
 );

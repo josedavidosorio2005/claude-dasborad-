@@ -19,6 +19,15 @@ const { aplicarAliasAFilas } = require('../alias-asesores');
 const camposLib = require('../calidad-campos'); // Fase 252
 const importLib = require('../calidad-plantilla-import'); // Fase 253
 const clientesRegistro = require('../clientes-registro');
+// Fase 287 (revision del 07/11, #5): lo que recibe una cuenta de cliente y la revision
+// de datos de pacientes en las observaciones (la misma de Errores).
+const privacidad = require('../privacidad-cliente');
+const { pareceDatoPaciente } = require('../datos-paciente');
+const ERROR_OBS_PACIENTE = 'Las observaciones y el motivo no pueden tener documentos ni teléfonos (datos de pacientes). Escríbelos sin esos números.';
+// Observaciones o motivo de afectacion con un posible dato de paciente.
+function textoMonitoreoConDatoPaciente(observaciones, extras) {
+  return pareceDatoPaciente(observaciones) || pareceDatoPaciente(extras && extras.motivo);
+}
 
 const router = express.Router();
 
@@ -496,7 +505,9 @@ router.get(
     const rows = db
       .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + filtroMios + ' ORDER BY id DESC')
       .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
-    res.json(rows.map((r) => monitoreoPara(req.actor, r)));
+    const lista = rows.map((r) => monitoreoPara(req.actor, r));
+    // Fase 287: la cuenta de cliente, sin evaluador ni observaciones (y sin nombre de asesor si el cliente los oculta).
+    res.json(privacidad.esCuentaCliente(req.actor) ? privacidad.monitoreosParaCliente(lista, privacidad.ocultaAsesores(db, req.actor, campana)) : lista);
   })
 );
 
@@ -539,6 +550,7 @@ router.post(
     }
     const reglas = reglasDePlantilla(plantilla, b.answers, b.extras); // Fase 252
     if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
+    if (textoMonitoreoConDatoPaciente(b.observaciones, b.extras)) return res.status(400).json({ error: ERROR_OBS_PACIENTE }); // Fase 287
     const info = db
       .prepare(
         `INSERT INTO monitoreos
@@ -643,6 +655,12 @@ router.post(
           avisos.push(`Fila ${idx + 2}: ninguna respuesta valida, se omitio.`);
           return;
         }
+        // Fase 287: la fila con un documento o telefono en las observaciones no se guarda.
+        if (textoMonitoreoConDatoPaciente(fila.observaciones, null)) {
+          omitidas++;
+          avisos.push(`Fila ${idx + 2}: las observaciones tienen un documento o teléfono (dato de paciente), se omitio.`);
+          return;
+        }
         const payload = {
           campana: b.campana,
           asesor: fila.asesor,
@@ -735,6 +753,11 @@ router.put(
     const extrasPrevios = row.extras ? JSON.parse(row.extras) : null;
     const reglas = reglasDePlantilla(plantilla, answers, b.extras !== undefined ? b.extras : extrasPrevios);
     if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
+    // Fase 287: el texto NUEVO (el que cambia) pasa por la revision de datos de pacientes;
+    // lo ya guardado no se vuelve a revisar al editar otra cosa.
+    const obsNueva = b.observaciones !== undefined && (b.observaciones || '') !== (row.observaciones || '') ? b.observaciones : '';
+    const motivoNuevo = b.extras && (b.extras.motivo || '') !== ((extrasPrevios && extrasPrevios.motivo) || '') ? { motivo: b.extras.motivo } : null;
+    if (textoMonitoreoConDatoPaciente(obsNueva, motivoNuevo)) return res.status(400).json({ error: ERROR_OBS_PACIENTE });
     db.prepare(
       `UPDATE monitoreos SET
          asesor=?, asesorUserId=?, fecha=?, mes=?, canal=?, idLlamada=?, telefono=?, codificacion=?,
@@ -915,7 +938,9 @@ router.get(
     res.json({
       campana,
       mes,
-      lideres: calc.lideresCumplimiento(monitoreos, cronograma, mes),
+      // Fase 287: la cuenta de cliente no recibe el nombre de los evaluadores.
+      lideres: calc.lideresCumplimiento(monitoreos, cronograma, mes)
+        .map((l) => (privacidad.esCuentaCliente(req.actor) ? { ...l, liderNombre: '' } : l)),
     });
   })
 );

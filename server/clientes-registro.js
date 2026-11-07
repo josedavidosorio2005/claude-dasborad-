@@ -162,6 +162,16 @@ function asesorVisibleCliente(db, campana) {
   return !!c && c.parametros.asesorVisibleCliente === true;
 }
 
+// Fase 287 (revision del 07/11, #5): el cliente de esta campaña NO recibe ningun
+// nombre de asesor en ninguna respuesta (Calidad, Tipificacion, Salida, Agendas por
+// usuaria, resumen de Calidad): se reemplaza por "Asesor 1, 2...". Hoy Clinica Aurora
+// y Hospital La Maria (migracion fase287_asesor_oculto_cliente_v1). ORLANT no: su
+// cliente sigue viendo «Promedio de calidad por asesor» con nombres (Fase 130).
+function asesorOcultoCliente(db, campana) {
+  const c = leerRegistro(db).find((x) => x.nombre === campana);
+  return !!c && c.parametros.asesorOcultoCliente === true;
+}
+
 // Lo que el navegador necesita para armar sus listas por modulo
 // (public/js/registro-clientes.js): sin fechas ni orden interno.
 function registroParaNavegador(db) {
@@ -185,6 +195,7 @@ module.exports = {
   REGISTRO_INICIAL,
   LOGO_AURORA,
   asesorVisibleCliente,
+  asesorOcultoCliente,
   registroParaNavegador,
   crearTablaRegistro,
   sembrarRegistro,

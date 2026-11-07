@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.1 — Noviembre 2026
+
+**Fase 287: lo que ve la cuenta del cliente en Calidad (y los nombres de asesor de Aurora y HLM).**
+
+- La cuenta del cliente ya **no recibe el nombre del evaluador, las observaciones ni el motivo**
+  de cada monitoreo de Calidad (en ningún cliente). El teléfono ya no le llegaba.
+- En **Clínica Aurora y Hospital La María**, el cliente tampoco recibe **ningún nombre de asesor**
+  (Calidad, Tipificación, Llamadas y WhatsApp de salida, Agendas por usuaria): sale «Asesor 1,
+  Asesor 2…», así los conteos siguen cuadrando. ORLANT y Mobilize se ven igual que antes.
+- Las **observaciones nuevas** de los monitoreos (y el motivo de afectación) no aceptan
+  documentos ni teléfonos de pacientes, igual que en Errores. Lo ya guardado no se cambia.
+
 ## v1.144.0 — Noviembre 2026
 
 **Fase 286: «Agregar errores» más simple (Clínica Aurora › Errores).**
