@@ -65,6 +65,14 @@ function ceMesesConDatos(monitoreos) {
   (monitoreos || []).forEach(function (m) { if (_ceNota(m) !== null && m.fecha) o[_ceMes(m)] = true; });
   return Object.keys(o).sort().reverse();
 }
+// Fase 290 (revision del 07/11, #13): el filtro Mes sin ningun mes marcado ("Ninguno")
+// equivale a "Todos", como «Meses» del tablero: todos los meses con monitoreos.
+function ceMesesEfectivos(elegidos, monitoreos) {
+  return (elegidos && elegidos.length) ? elegidos.slice() : ceMesesConDatos(monitoreos).slice().sort();
+}
+// Texto del filtro Mes: "Todos" sin ninguno marcado.
+function ceMesFiltroDesc(elegidos) { return (elegidos && elegidos.length) ? ceMesDesc(elegidos) : 'Todos'; }
+
 // Mes por defecto del HTML: el actual si tiene datos; si no, el ultimo con datos.
 function ceMesPorDefecto(monitoreos, hoyMes) {
   var wd = ceMesesConDatos(monitoreos);
@@ -179,6 +187,6 @@ function ceMesesDetalle(monitoreos) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
-    ceMesesConDatos: ceMesesConDatos, ceMesPorDefecto: ceMesPorDefecto, ceAsesoresDe: ceAsesoresDe, ceResultado: ceResultado,
+    ceMesesConDatos: ceMesesConDatos, ceMesesEfectivos: ceMesesEfectivos, ceMesFiltroDesc: ceMesFiltroDesc, ceMesPorDefecto: ceMesPorDefecto, ceAsesoresDe: ceAsesoresDe, ceResultado: ceResultado,
     ceResumenAsesores: ceResumenAsesores, ceDetalleMes: ceDetalleMes, ceMesesDetalle: ceMesesDetalle };
 }

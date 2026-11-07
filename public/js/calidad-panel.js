@@ -71,8 +71,10 @@ function _cmpRender(p, i) {
   var st = _cmpFiltro[camp];
   if (!st || st.clave !== clave) st = _cmpFiltro[camp] = { clave: clave, meses: marcados.length ? marcados : [ceMesPorDefecto(arr, hoy)], asesores: null, q: '' };
   var asesores = ve ? st.asesores : null;
-  var v = ceResultado(arr, { meses: st.meses, asesores: asesores, plantilla: pl });
-  var mesDesc = ceMesDesc(st.meses);
+  // Fase 290: Mes en "Ninguno" = Todos (los meses con monitoreos), igual que «Meses».
+  var mesesEf = ceMesesEfectivos(st.meses, arr);
+  var v = ceResultado(arr, { meses: mesesEf, asesores: asesores, plantilla: pl });
+  var mesDesc = ceMesFiltroDesc(st.meses);
   var titulo = '<div class="aurora-card-title">Resultado de los monitoreos</div>';
 
   // Filtros y botones.
@@ -83,7 +85,7 @@ function _cmpRender(p, i) {
   var pickMes = _cmpPickHtml('cmp-mes-' + i, 'Mes', mesDesc, opMeses, false);
   var pickAs = '';
   if (ve) {
-    var disp = ceAsesoresDe(arr, st.meses);
+    var disp = ceAsesoresDe(arr, mesesEf);
     (st.asesores || []).forEach(function (a) { if (disp.indexOf(a) === -1) disp.push(a); });
     disp.sort();
     var qq = String(st.q || '').toLowerCase();
