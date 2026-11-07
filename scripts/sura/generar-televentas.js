@@ -100,6 +100,8 @@ const layout = `
 /* el cliente (solo lectura) no ve botones para cambiar datos */
 .stv-lectura [data-ga],.stv-lectura [data-up],.stv-lectura [data-del],.stv-lectura [data-eup],.stv-lectura [data-edel],.stv-lectura [data-iup],.stv-lectura [data-idel]{display:none!important}
 .stv-cargando{padding:40px 16px;text-align:center;color:var(--mut)}
+/* Fase 293 (revision del 07/11, #10): tarjetas de Agentes nunca mas anchas que el panel (375 px) */
+.agrid{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
 `;
 css = tokens + css.trim() + '\n' + layout;
 
