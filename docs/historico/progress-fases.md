@@ -19773,3 +19773,51 @@ la columna `logo` de Aurora. Las tarjetas del selector no cambian. Pruebas:
 - Las pestañas son las mismas (9/6/7/3).
 - El selector tiene 5 tarjetas, ninguna con imagen.
 - Sin scroll horizontal, 0 escrituras y 0 errores de consola.
+
+## Fase 286 — Aurora › Errores: un solo «Guardar» y lista aparte (v1.144.0, 2026-11-07)
+
+**Pedido de Edwin (07/11).** Lo pidió al probar «Agregar errores» con la cuenta de la
+supervisora de Aurora. Antes había dos botones, «Agregar error» y «Guardar plan de acción».
+Al agregar un error, el formulario se redibujaba y se perdía el plan que estaba escrito; se
+reprodujo en local antes de cambiar nada. Además, la lista de errores crecía hacia abajo, y
+la pestaña no siempre mostraba lo recién guardado.
+
+**Qué se hizo (PR #707):**
+- **Un solo «Guardar».** Usa la ruta nueva `POST /api/calidad/errores/guardar`
+  (`guardarJunto` en `server/errores.js`): valida el error y el plan, y escribe los dos en una
+  sola transacción (o los dos, o ninguno).
+  - Sin asesora elegida, se guarda solo el plan. El plan se envía solo si cambió.
+  - Mismo permiso (`cargaManual`) y mismo historial que las rutas de antes, que siguen igual.
+- **Lo escrito no se pierde.** Asesora, cantidad, observación y plan se conservan al cambiar
+  de sub-pestaña o de mes y al borrar otro error.
+- **«Errores del mes» en una sub-pestaña** (`role="tab"`, con flechas, Inicio y Fin):
+  - solo los del mes elegido, en una lista con scroll (hasta 320 px o 45vh);
+  - en el celular, cada error es una tarjeta con «Editar» y «Borrar» de 44 px;
+  - «Borrar» sigue pidiendo confirmación («¿Borrar?»).
+- **La pestaña se redibuja sola** al guardar o borrar.
+  - Causa probable de «no se ve»: en producción Aurora tiene meses en «Meses» (jul–oct). Si
+    se marca uno y se guarda en otro mes, la línea no lo mostraba.
+  - Ahora sale un aviso con «Ver todos los meses».
+
+**Pruebas:**
+- `fase286-errores-guardar.test.js` (7 pruebas): guardar junto; solo plan; transacción (con un
+  dato de paciente en el plan, el error tampoco queda); edición por id (404 si el id es de otra
+  campaña); permisos; aviso de «Meses»; un solo botón en el editor.
+- `fase118-matriz-acceso`: ruta nueva declarada.
+- Suite completa 2716/2716; `npm audit` en 0.
+- Local, con la base demo sintética, como SUPERVISOR de Aurora a 1440 y 375: 21 comprobaciones
+  OK y 0 errores de consola.
+
+**Producción (1.144.0, solo lectura, admin, 1440 y 375):**
+- Aurora › Errores: el editor tiene un solo botón primario, «Guardar», con la asesora vacía
+  por defecto (5 asesoras en la lista). Hay 2 sub-pestañas de 44 px, la flecha cambia de
+  sub-pestaña y el diálogo no tiene scroll horizontal.
+- Producción no tiene errores registrados (0), así que la lista muestra «Sin errores» y no se
+  probó guardar ni borrar allí (no se escriben errores de prueba en producción).
+- Las pestañas no cambian: ORLANT 9, Mobilize 6, Aurora 7, HLM 3; SURA abre igual. El selector
+  tiene 5 tarjetas.
+- Sin scroll horizontal, 0 escrituras y 0 errores de consola.
+
+**Pendiente anotado:** la base de agendamiento de Aurora que pasó Edwin no era la definitiva.
+Las agendas salen de 3 bases y se corrigen el lunes 09/11 con él; la reunión con el cliente es
+el martes 10/11 (ver `docs/pendientes.md`).

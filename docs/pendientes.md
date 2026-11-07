@@ -194,6 +194,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Aurora, Agendas: la base que pasó Edwin no era la definitiva** (anotado 07/11) —
+  Prioridad ALTA. Las agendas de Aurora salen de **3 bases**, no de una. Se corrigen el
+  **lunes 09/11 con Edwin** (qué 3 bases son, cómo se juntan y qué meses se recargan).
+  La **reunión con el cliente es el martes 10/11**. Hasta entonces, «Agendas por usuaria»
+  de Aurora muestra lo cargado con la base anterior; no se recarga ni se borra nada sin
+  los archivos definitivos y tu OK. Relacionado: «Aurora, Agendas por usuaria: confirmar
+  la lectura» (más abajo).
+
 - **Nombres de otros skills de WhatsApp sin nombre** (Fase 275, 06/11) — en
   Aurora quedan «Skill 4166» y «Skill 4169» (2 y 1 chats); en ORLANT,
   «Skill 4070», «4308», «4323», «4345» y «4346» (ORLANT no se tocó a
