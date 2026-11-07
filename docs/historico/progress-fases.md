@@ -19730,3 +19730,46 @@ cliente: línea 5, 7, 1, 3, 8, 12, 4, 4, 2, como el modelo. PR #702.
 
 **Logo de Aurora:** no aplicado, porque el archivo indicado no está en el equipo
 (ver `docs/pendientes.md`).
+
+## Fase 285 — Cuentas SUPERVISOR migradas y logo de Clínica Aurora (v1.143.0, 2026-11-06)
+
+**Migración de las cuentas SUPERVISOR (escritura autorizada, 06/11).** Se hizo por
+Administración › Usuarios › Editar › Guardar, con la sesión de admin del usuario en Brave.
+El formulario ya traía marcados los clientes de la simulación de la Fase 283.
+
+Guardia del script:
+- solo dejaba pasar dos escrituras (`PUT /api/users/<id>`), una por cuenta;
+- sin contraseña y con nombre, usuario y rol idénticos;
+- solo podían cambiar llaves `supervisa_`, y con los valores esperados.
+
+Resultado: 2 escrituras, 0 bloqueadas, 0 errores de consola.
+
+| Cuenta | Llaves que cambiaron | Clientes que supervisa (después) | Tableros | Calidad | Cargar bases |
+|---|---|---|---|---|---|
+| edwin | 5 `supervisa_` | los 5 clientes | los 5, sin cambio | ORLANT, MOBILIZE, AURORA, HLM, sin cambio | antes no; ahora los 5 |
+| id 46 | `supervisa_MOBILIZE` | MOBILIZE | MOBILIZE, sin cambio | MOBILIZE, sin cambio | antes no; ahora MOBILIZE |
+
+En la primera corrida apareció una tercera cuenta SUPERVISOR (id 56, creada el 06/11 y
+ya con el perfil nuevo). El script se detuvo sin escribir nada. Se volvió a correr
+dejando esa cuenta fuera, sin tocarla. No se verificó con la sesión de Edwin (el
+usuario no tiene su clave); Edwin lo revisa al entrar.
+
+**Logo de Clínica Aurora (PR #704).** El original de Edwin es «aurora» en azul oscuro
+sobre fondo claro, 200×200. Sobre el encabezado teal no se leía bien, así que el usuario
+eligió la opción C:
+- una versión blanca con fondo transparente, generada del mismo archivo;
+- solo la palabra con los rayos, sin «Clínica dermatológica especializada»;
+- `aurora-logo.png` de 95×28 y `@2x` de 190×56.
+
+En código: `LOGO_AURORA` en `clientes-registro.js` (28 px en escritorio, 22 en el
+celular, como ORLANT) y la migración idempotente `fase285_logo_aurora_v1`, que solo toca
+la columna `logo` de Aurora. Las tarjetas del selector no cambian. Pruebas:
+`fase285-logo-aurora.test.js` (4); suite 2709/2709.
+
+**Producción (1.143.0, solo lectura, 1440 y 375):**
+- Aurora muestra su logo a 28 px en escritorio y 22 px en el celular.
+- ORLANT (28/22 px) y Mobilize (25/18 px) quedan igual.
+- HLM sigue sin logo y SURA abre igual.
+- Las pestañas son las mismas (9/6/7/3).
+- El selector tiene 5 tarjetas, ninguna con imagen.
+- Sin scroll horizontal, 0 escrituras y 0 errores de consola.

@@ -181,18 +181,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   exportaciones de Excel que Edwin ya usa** ("Campana", "Categoria",
   "Periodo", "Metrica"…), así que no se tocan sin acordarlo con él.
 
-- **Pasar las 2 cuentas SUPERVISOR al perfil nuevo** (Fase 283, 06/11) — la
-  simulación en solo lectura (1.141.0) no cambia ningún tablero ni Calidad: solo
-  marca «Clientes que supervisa» (la cuenta de Edwin: los 5 clientes; la otra:
-  MOBILIZE) y les suma cargar bases de esos clientes. Se escribe por
-  Administración › Usuarios › Editar con tu OK. Hasta entonces las dos cuentas
-  siguen exactamente como antes.
+- ~~**Pasar las 2 cuentas SUPERVISOR al perfil nuevo**~~ — **HECHO** (06/11, con tu
+  OK; Fase 285). Falta solo que Edwin lo vea al entrar (no se probó con su sesión).
+  Hay una tercera cuenta SUPERVISOR (id 56, creada el 06/11, ya con el perfil nuevo)
+  que no se tocó: confirmar si la reconoces.
 
-- **Logo de Clínica Aurora** (Fase 284, 06/11) — el archivo que mandaste
-  (`logo-aurora.png` en Descargas) no está en el equipo; con el archivo se pone
-  en su encabezado como ORLANT. Hospital La María y SURA tampoco tienen logo hoy:
-  HLM lo necesitaría cuando sus pestañas queden visibles para el cliente; SURA
-  usa su tablero propio y solo lo llevaría en la tarjeta del selector.
+- ~~**Logo de Clínica Aurora**~~ — **HECHO** (Fase 285, v1.143.0). Hospital La María
+  sigue sin logo (lo necesitaría cuando sus pestañas queden visibles para el
+  cliente); SURA usa su tablero propio.
 
 ## 2. Esperando una respuesta de Edwin
 
