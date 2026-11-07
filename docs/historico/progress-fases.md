@@ -19821,3 +19821,65 @@ la pestaña no siempre mostraba lo recién guardado.
 **Pendiente anotado:** la base de agendamiento de Aurora que pasó Edwin no era la definitiva.
 Las agendas salen de 3 bases y se corrigen el lunes 09/11 con él; la reunión con el cliente es
 el martes 10/11 (ver `docs/pendientes.md`).
+
+## Fases 287–293 — Arreglos de la revisión de bugs del 07/11 (v1.144.1–v1.144.7, 2026-11-07)
+
+**Revisión (solo lectura, PR #709).** Quedó en `docs/revision-bugs-2026-11-07.md`:
+- suite 2716/2716 y `npm audit` 0;
+- diff de las Fases 268–286;
+- producción a 1440 y 375 px con los 5 clientes, filtros, Marcar todo/Ninguno, Meses y
+  Exportar (0 errores de consola);
+- 15 hallazgos.
+
+El usuario autorizó arreglar los #5, #10, #11, #12, #13, #14 y #15, medir el #7 y no tocar
+los #1, #6, #8 ni #9 (los decide Edwin el lunes). Un PR por tema, uno a la vez, con
+`--match-head-commit` y esperando cada deploy.
+
+| Fase | PR | Versión | Qué |
+|---|---|---|---|
+| 287 | #710 | 1.144.1 | **#5** Privacidad de Calidad para CLIENTES_DASH (ver detalle abajo) |
+| 288 | #711 | 1.144.2 | **#11** Las fechas («15-10-2026», «2026-10-15 10:30»…) no son dato de paciente; el aviso dice el campo y el número |
+| 289 | #712 | 1.144.3 | **#12** «Conectadas (72,97 %)» con `tipificacionPctTexto` |
+| 290 | #713 | 1.144.4 | **#13** Calidad: Mes en «Ninguno» = Todos (`ceMesesEfectivos`) |
+| 291 | #714 | 1.144.5 | **#14** SUPERVISOR con `cargarDatos: false` al crear, editar o cambiar permisos (también `PUT /users/:id/perms`) |
+| 292 | #715 | 1.144.6 | **#15** Fechas en hora de Colombia sin cambiar lo guardado (ver detalle abajo) |
+| 293 | #716 | 1.144.7 | **#10** SURA › Agentes: `.agrid` con `minmax(min(300px,100%),1fr)` en el CSS y en el generador |
+
+**Detalle de la Fase 287 (#5).**
+- A toda cuenta de cliente, los monitoreos le llegan sin evaluador, observaciones ni motivo.
+- En Aurora y HLM (parámetro `asesorOcultoCliente`, migración `fase287_asesor_oculto_cliente_v1`),
+  ningún nombre de asesor: Calidad, Tipificación, Salida, Agendas por usuaria y el resumen de
+  Calidad usan «Asesor N».
+- `/metas/cumplimiento` no manda el nombre del evaluador al cliente.
+- Las observaciones y el motivo nuevos pasan por la revisión de datos de pacientes de Errores
+  (`server/datos-paciente.js`).
+- ORLANT y Mobilize siguen viendo los nombres de asesor (decisión del usuario).
+- La prueba falló 0/7 con `main` y pasó 7/7 con el arreglo.
+
+**Detalle de la Fase 292 (#15).** `nowStr` escribe la hora del proceso (UTC en producción).
+- Usuarios › Creado usa `fechaServidorAColombiaStr`.
+- El Historial toma la hora de `ts`.
+- Errores convierte registrado, editado y plan actualizado.
+- `nowStr` no se cambió (lo usan 74 lugares).
+
+**Pruebas.** Cada PR tuvo su prueba con datos sintéticos, la suite completa en verde (2723 →
+2741) y `npm audit` en 0. El #13 se probó además en local a 1440 y 375 px.
+
+**Producción (1.144.7, solo lectura, admin, 1440 y 375):**
+- Tipificación de Mobilize: «Conectadas (72,97 %)».
+- Calidad de Mobilize: Mes «Ninguno» → «Todos».
+- Cuenta id 56: «Creado» y el Historial dicen 16:02:26.
+- SURA › Agentes a 375 px: el panel mide 297 de 297 (antes 300 de 297).
+- Los 5 clientes con las mismas pestañas (9/6/7/3, SURA abre).
+- Sin scroll horizontal, 0 escrituras, 0 pedidos fallidos y 0 errores de consola.
+- La vista de la cuenta del cliente no se probó en producción (no hay su clave); la cubren
+  las pruebas.
+
+**#7, medido sin cambiar nada.** La primera apertura de ORLANT después de un deploy tardó
+4,0 s (dos mediciones); la segunda, 0,5–0,6 s. Las consultas de «opciones» con la caché vacía
+corren una tras otra en el hilo de Node. Propuesta en `docs/pendientes.md`: llenar la caché
+al arrancar. Espera el OK del usuario.
+
+**Incidencia del deploy del PR #714.** Falló el paso SSH (`dial tcp :22: i/o timeout`), sin
+llegar a la instancia; producción siguió en 1.144.4. Se volvió a correr solo el job fallido
+(intento 2: éxito) sin tocar el workflow.

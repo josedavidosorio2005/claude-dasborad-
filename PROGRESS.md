@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.144.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.144.7` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,14 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 293 — SURA › Agentes sin desplazamiento lateral a 375 px (v1.144.7, 2026-11-07)
+- Fase 292 — Fechas de creación en hora de Colombia: Usuarios, Historial y Errores, sin cambiar lo guardado (v1.144.6, 2026-11-07)
+- Fase 291 — Al guardar un SUPERVISOR se apaga «Puede cargar datos» general (v1.144.5, 2026-11-07)
+- Fase 290 — Calidad: «Ninguno» en el filtro Mes = Todos (v1.144.4, 2026-11-07)
+- Fase 289 — Porcentajes de Tipificación en formato colombiano (v1.144.3, 2026-11-07)
+- Fase 288 — Las fechas no se rechazan como dato de paciente; el aviso dice qué número (v1.144.2, 2026-11-07)
+- Fase 287 — Privacidad de Calidad para la cuenta del cliente; Aurora y HLM sin nombres de asesor (v1.144.1, 2026-11-07)
+- Revisión de bugs del 07/11 antes de la entrega de Aurora y HLM (`docs/revision-bugs-2026-11-07.md`, solo docs, 2026-11-07)
 - Fase 286 — Clínica Aurora › Errores: un solo «Guardar» (error y plan de acción juntos), «Errores del mes» en sub-pestaña con scroll y la pestaña que se actualiza sola (v1.144.0, 2026-11-07)
 - Fase 285 — Logo de Clínica Aurora en su encabezado (blanco, sin la línea de abajo); migración de las 2 cuentas SUPERVISOR al perfil nuevo (v1.143.0, 2026-11-06)
 - Fase 284 — Clínica Aurora: pestaña «Errores» (errores de agendamiento por mes, plan de acción y errores por asesora; la registran el supervisor y el administrador) (v1.142.0, 2026-11-06)
