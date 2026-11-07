@@ -15,6 +15,8 @@ const CANTIDAD_MAX = 500;
 // Una observacion o un plan no pueden traer numeros de documento o de telefono
 // (Fase 287: la regla es la misma de los monitoreos, en datos-paciente.js).
 const { pareceDatoPaciente, mensajeDatoPaciente } = require('./datos-paciente');
+// Fase 292 (#15): las fechas (escritas con nowStr) se muestran en hora de Colombia.
+const { fechaServidorAColombiaStr: aColombia } = require('./fecha-limites');
 
 function crearTablas(db) {
   db.exec(`
@@ -68,11 +70,11 @@ function resumen(db, campana) {
   for (const f of filas) {
     const asesor = resolverAlias(mapa, f.asesor) || f.asesor;
     porMes[f.mes] = (porMes[f.mes] || 0) + f.cantidad;
-    (detalle[f.mes] = detalle[f.mes] || []).push({ ...f, asesor });
+    (detalle[f.mes] = detalle[f.mes] || []).push({ ...f, asesor, creadoEn: aColombia(f.creadoEn), editadoEn: f.editadoEn ? aColombia(f.editadoEn) : f.editadoEn });
   }
   const planes = {};
   db.prepare('SELECT mes, texto, actualizadoPorNombre, actualizadoEn FROM errores_plan_accion WHERE campana = ?').all(campana)
-    .forEach((p) => { planes[p.mes] = p; });
+    .forEach((p) => { planes[p.mes] = { ...p, actualizadoEn: aColombia(p.actualizadoEn) }; });
   const meses = [...new Set([...Object.keys(porMes), ...Object.keys(planes)])].sort();
   return {
     campana,

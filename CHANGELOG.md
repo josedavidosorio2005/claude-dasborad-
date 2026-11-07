@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.144.6 — Noviembre 2026
+
+**Fase 292: fechas de creación en hora de Colombia.**
+
+- En **Usuarios** («Creado»), en el **Historial** y en **Errores** (registrado, editado y plan
+  de acción actualizado), las fechas se muestran en **hora de Colombia**. Antes algunas salían
+  5 horas adelantadas (la hora del servidor). Lo guardado no se cambia: solo cómo se muestra.
+
 ## v1.144.5 — Noviembre 2026
 
 **Fase 291: el supervisor carga bases solo de sus clientes.**

@@ -83,7 +83,7 @@ function toPublicUser(row) {
     active: !!row.active,
     perms: JSON.parse(row.perms || '{}'),
     asesorCampana: row.asesorCampana || undefined,
-    createdAt: row.createdAt,
+    createdAt: require('../fecha-limites').fechaServidorAColombiaStr(row.createdAt), // Fase 292: en hora de Colombia (lo guardado no cambia)
     // Fase 113 (tema A): "Ultimo ingreso" en la lista de Usuarios. NULL para
     // una cuenta que no ha iniciado sesion desde este deploy (el frontend
     // muestra "Sin registro" para ese caso) -- ver routes/usuarios.js para el
