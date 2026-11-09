@@ -76,7 +76,18 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Contraseña temporal del usuario CLIENTES_DASH** — Prioridad ALTA.
   Cómo se cierra: la cambias desde la propia plataforma (nunca queda en
   el repo/commits/logs). Anotado 2026-10-02 (Fase 112), sigue sin
-  hacerse. Efecto concreto más reciente: la verificación de cierre de
+  hacerse. **Fase 295 (09/11/2026):** el valor estaba escrito en la
+  bitácora desde la Fase 137; se retiró del archivo y una prueba
+  (`fase295-sin-contrasenas-en-docs`) impide que vuelva, pero sigue en
+  el historial de git de un repo público — rotarla ya no es opcional.
+  No va en una variable de entorno: las cuentas de la plataforma
+  guardan solo el hash bcrypt en la base y se rotan sin tocar código
+  (solo el admin maestro vive en `MASTER_ADMIN_PASSWORD_HASH`). Paso
+  manual: entrar como administrador › Usuarios › la cuenta de cliente
+  de ORLANT › menú de acciones de la fila (⋯) › «Cambiar contraseña» › escribir una nueva (12+
+  caracteres, no reutilizada) › Guardar; entregarla al cliente por un
+  canal privado (nunca por el chat de Claude ni por GitHub). Repetir
+  con cualquier otra cuenta que haya recibido esa misma clave. Efecto concreto más reciente: la verificación de cierre de
   la Fase 137 (Parte C) no pudo confirmar el lado CLIENTES_DASH de
   producción (`scripts/produccion/revision-final.js` espera 2 sesiones,
   una por cada rol) — solo se verificó ADMINISTRADOR, en verde. Igual en
