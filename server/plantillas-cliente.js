@@ -40,6 +40,10 @@ const CATALOGO = [
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas', grupo: 'salud', carga: 'Citas atendidas', disponibleParaNuevos: true },
   // Fase 259 (Clinica Aurora): reporte de citas del sistema de la clinica, agregado en el navegador.
   { id: 'agendas_usuaria', nombre: 'Agendas (3 bases)', grupo: 'salud', carga: '3 bases de la clínica: citas, cancelaciones e inasistencias (.xls)', disponibleParaNuevos: true }, // Fase 303
+  // Fase 306 (Clinica Aurora): Inasistencia (% por especialidad) y Encuestas (por entidad y fecha).
+  // Nombres con «(Aurora)» para no confundirlos con Inasistencia de ORLANT y Encuesta de Mobilize.
+  { id: 'inasistencia_au', nombre: 'Inasistencia (Aurora)', grupo: 'salud', carga: 'Base para sacar inasistencias de la clínica (.xls)', disponibleParaNuevos: false, siempreVisible: true },
+  { id: 'encuestas_au', nombre: 'Encuestas (Aurora)', grupo: 'salud', carga: 'Compilado de encuestas de la clínica (.xlsx)', disponibleParaNuevos: false, siempreVisible: true },
   // Fase 284: errores de agendamiento; no se cargan con una base, los registra el supervisor en la plataforma.
   // siempreVisible: la pestaña se ve aunque no haya errores (avisa que no hay).
   { id: 'errores', nombre: 'Errores', grupo: 'salud', carga: 'Se registran en la plataforma (supervisor o administrador)', disponibleParaNuevos: true, siempreVisible: true },
@@ -130,6 +134,15 @@ const GENERADORES = {
   agendas_usuaria: (campana) => ({
     key: 'agendas_usuaria', label: 'Agendas',
     panels: [{ tipo: 'agendas_usuaria_panel', campana, vista: 'agendas', titulo: 'Agendas' }],
+  }),
+  // Fase 306 (Aurora).
+  inasistencia_au: (campana) => ({
+    key: 'inasistencia_au', label: 'Inasistencia',
+    panels: [{ tipo: 'aurora_inasistencia_panel', campana, titulo: 'Inasistencia por especialidad' }],
+  }),
+  encuestas_au: (campana) => ({
+    key: 'encuestas_au', label: 'Encuestas',
+    panels: [{ tipo: 'aurora_encuestas_panel', campana, titulo: 'Encuestas' }],
   }),
   // Fase 284: visible aunque no haya errores (la pestaña lo avisa).
   errores: (campana) => ({

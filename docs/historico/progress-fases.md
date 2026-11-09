@@ -20157,3 +20157,35 @@ ORLANT conserva «Día»). **ORLANT main vs rama** sobre la misma base (13 pesta
 copia, 23 vistas, 16 gráficas): texto, datos de gráficas, colores de botones y orden idénticos, 0
 errores. Mobilize en claro/oscuro 1440/375: botones negro/blanco y blanco/negro, activo azul; ORLANT
 sin la clase. Agendas: nombres completos en 1440 (2 líneas), 768 y 375 (verticales), 0 errores.
+
+## Fase 306 — Aurora: pestañas «Inasistencia» y «Encuestas» (v1.153.0, 2026-11-10)
+
+El pedido la llamó «Fase 303», pero ese número ya estaba usado (v1.150.1); queda como Fase 306.
+ORLANT no se toca.
+
+- **Bases reales revisadas en local (solo estructura y conteos, nada al repo):** la base de
+  inasistencias trae 21 columnas (`nit, nombre, fecha, hora, codsede, sede, estado, observacion,
+  codespecialidad, especialidad, …, profesional, entidad, …`), 4232 filas de octubre de 2026;
+  ESTADO: ASISTIÓ 2496, CANCELÓ 1561, NO ASISTIÓ 163, vacío 12. El compilado de encuestas trae
+  `FECHA, CEDULA, NOMBRE, CELULAR, ENTIDAD` (2963 filas, 22 sin entidad) — no trae respuestas ni
+  puntajes, así que la vista cuenta encuestas.
+- **Inasistencia:** % = filas con estado «No asistió» (sin importar tildes/mayúsculas) ÷ total de
+  filas de la especialidad × 100 (el total incluye canceladas y estados vacíos, como en el ejemplo
+  del pedido: Auxiliar de enfermería 352 y 20 → 5,7 %). Solo el %, de mayor a menor, nombres
+  completos (`auPartirEtiqueta`, trozos más cortos en pantalla < 600 px).
+- **Encuestas:** barras por entidad (de mayor a menor) y línea por fecha; filas sin entidad no se
+  grafican (aviso en la confirmación).
+- **Carga:** módulos nuevos `inasistencia_au` y `encuestas_au` en el Centro de cargas (ventana
+  propia, `public/js/aurora-bases.js`), lectura por nombre de encabezado
+  (`public/js/aurora-bases-logic.js`), solo agregados al servidor (`server/aurora-bases.js`,
+  tablas `aurora_inasistencia` y `aurora_encuestas`, respaldo para Deshacer). El compilado de
+  encuestas rechaza la base de citas (trae «Estado» y «Especialidad»). Migración
+  `fase306_aurora_inasistencia_encuestas_v1` solo en Aurora.
+- **Errores siempre de última** en Aurora/HLM (`pestanasOrdenCliente`).
+
+**Pruebas.** `fase306-aurora-inasistencia-encuestas` (7, fixtures sintéticos con los nombres de
+columna reales en otro orden); ajustadas fase118/134/150/153/160/230/284/297. Suite 2817/2817,
+`npm audit` 0. Local (Playwright + Brave, archivos sintéticos): carga desde el Centro como
+SUPERVISOR (archivo cruzado rechazado en las dos), pestañas en claro/oscuro × 1440/768/375 ×
+SUPERVISOR/CLIENTE: 0 errores, sin desborde, Errores de última, barras de mayor a menor con la
+paleta de Aurora. **ORLANT main vs rama** (misma base, 23 vistas): 0 diferencias, 0 errores.

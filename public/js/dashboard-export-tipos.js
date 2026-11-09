@@ -11,6 +11,7 @@
 var GD_EXPORT_TIPOS_SOPORTADOS = [
   'kpi_row', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'trafico_combo', 'trafico_whatsapp_combo',
   'agendas_panel', 'efectividad_agendamiento_panel', 'tipificacion_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'salida_panel', 'total_trafico_panel', 'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'nota_kpi', 'pie', 'tabla', 'line', 'bar', 'area', 'combo',
+  'aurora_inasistencia_panel', 'aurora_encuestas_panel', // Fase 306
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

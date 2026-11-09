@@ -262,6 +262,10 @@ declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
 // Fase 259: Agendas por usuaria (Clinica Aurora).
 declarar(['GET /calidad/agendas-usuaria/opciones', 'GET /calidad/agendas-usuaria/datos'], 'scopedRead');
+// Fase 306: Inasistencia y Encuestas de Aurora. Leer = acceso a la campaña; cargar = permiso del modulo + campaña
+// (ejecutado en fase306-aurora-inasistencia-encuestas.test.js).
+declarar(['GET /calidad/aurora-inasistencia/opciones', 'GET /calidad/aurora-inasistencia/datos', 'GET /calidad/aurora-encuestas/opciones', 'GET /calidad/aurora-encuestas/datos'], 'scopedRead');
+declarar(['POST /calidad/aurora-inasistencia/carga/impacto', 'POST /calidad/aurora-inasistencia/carga', 'POST /calidad/aurora-encuestas/carga/impacto', 'POST /calidad/aurora-encuestas/carga'], 'cargaManual');
 // Fase 284: pestaña Errores. Leer = acceso al cliente; registrar = administrador o el
 // SUPERVISOR de ese cliente (ninguna categoria de arriba lo describe: confirmado por
 // lectura y ejecutado en fase284-errores-aurora.test.js).

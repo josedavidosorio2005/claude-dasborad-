@@ -89,7 +89,8 @@ function graficasLineasColores(oscuro) {
 // una pestaña que se agregue después por migración no deshace este orden. Las que
 // no están en la lista quedan al final, en el orden que ya tenían. Otro cliente: igual.
 // Fase 305: «Errores» siempre de ultima (despues de Tipificación).
-var PESTANAS_ORDEN_AURORA_HLM = ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'tipificacion', 'errores'];
+// Fase 306: + Inasistencia y Encuestas (Aurora), antes de Errores.
+var PESTANAS_ORDEN_AURORA_HLM = ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'tipificacion', 'inasistencia_au', 'encuestas_au', 'errores'];
 
 // ORLANT (Fase 300): solo se mueve Total tráfico justo despues de Tráfico de
 // WhatsApp (o de Tráfico de Llamadas si no esta); todas las demas, igual.
@@ -111,7 +112,10 @@ function pestanasOrdenCliente(tabs, cliente) {
   var lista = (tabs || []).slice();
   if (_glNorm(cliente) === 'ORLANT') return _glMoverTotalTrafico(lista);
   if (!graficasLineasAplica(cliente)) return lista;
-  var pos = function (t) { var k = PESTANAS_ORDEN_AURORA_HLM.indexOf(t && t.key); return k === -1 ? PESTANAS_ORDEN_AURORA_HLM.length : k; };
+  var pos = function (t) {
+    if (t && t.key === 'errores') return PESTANAS_ORDEN_AURORA_HLM.length + 1; // Fase 306: Errores SIEMPRE de ultima
+    var k = PESTANAS_ORDEN_AURORA_HLM.indexOf(t && t.key); return k === -1 ? PESTANAS_ORDEN_AURORA_HLM.length : k;
+  };
   return lista.map(function (t, i) { return { t: t, i: i }; })
     .sort(function (a, b) { return (pos(a.t) - pos(b.t)) || (a.i - b.i); })
     .map(function (x) { return x.t; });

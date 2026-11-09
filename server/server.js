@@ -356,6 +356,7 @@ function createApp() {
   api.use(require('./routes/whatsapp-tiempos'));
   api.use(require('./routes/calidad-resumen')); // Fase 172
   api.use(require('./routes/agendas-usuaria')); // Fase 259
+  api.use(require('./routes/aurora-bases')); // Fase 306: Inasistencia y Encuestas de Aurora
   api.use(require('./routes/flujo-hora')); // Fase 196
   api.use(require('./routes/eficacia')); // Fase 198
   api.use(require('./routes/encuestas'));

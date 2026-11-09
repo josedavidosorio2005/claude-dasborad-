@@ -752,6 +752,30 @@ const agendasUsuariaFila = z.strictObject({
   n: z.number().int().min(1).max(100000),
   base: z.enum(AU_BASES_IDS, { error: 'Base desconocida' }).optional(),
 });
+// Fase 306 (Aurora): conteos de las bases de Inasistencia y de Encuestas. Nada de
+// pacientes: solo especialidad / entidad, fechas y cantidades.
+const auroraInasistenciaFila = z.strictObject({
+  mes: mesSchema,
+  especialidad: z.string().trim().min(1).max(160),
+  total: z.number().int().min(1).max(1000000),
+  noAsistio: z.number().int().min(0).max(1000000),
+}).refine((f) => f.noAsistio <= f.total, { message: 'Las inasistencias no pueden superar el total de citas' });
+const auroraInasistenciaCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(auroraInasistenciaFila).min(1, 'El archivo no tiene citas').max(5000, 'Demasiadas filas en un solo archivo'),
+});
+const auroraEncuestasFila = z.strictObject({
+  mes: mesSchema,
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha invalida'),
+  entidad: z.string().trim().min(1).max(160),
+  n: z.number().int().min(1).max(1000000),
+});
+const auroraEncuestasCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(auroraEncuestasFila).min(1, 'El archivo no tiene encuestas con entidad').max(20000, 'Demasiadas filas en un solo archivo'),
+});
 const agendasUsuariaCargaBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(200).optional().default(''),
@@ -1690,6 +1714,7 @@ module.exports = {
     eficaciaQuery, // Fase 198
     calidadResumenCargaBody,
     agendasUsuariaQuery, agendasUsuariaCargaBody, // Fase 259
+    auroraInasistenciaCargaBody, auroraEncuestasCargaBody, // Fase 306
     salidaAsesoresBody,
     skillsWhatsappBody,
     encuestasCargaBody,
