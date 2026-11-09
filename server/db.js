@@ -4803,6 +4803,38 @@ function agregarBaseAgendasUsuaria() {
 }
 runOnceMigration('fase301_agendas_usuaria_base_v1', agregarBaseAgendasUsuaria);
 
+// Fase 302 (10/11): «Agendas» de Aurora con las 3 bases reales. 1) Columnas NUEVAS
+// entidad y prof en agendas_usuaria (ADD COLUMN, no toca filas). 2) La pestaña
+// «Agendas por usuaria» pasa a «Agendas», una sola vista (filtros + 2 graficas),
+// SOLO si tiene la forma de la Fase 265 (sus 3 paneles); otra forma se deja
+// intacta. Solo CLINICA AURORA. Idempotente.
+function agendasTresBasesAurora() {
+  const cols = db.prepare('PRAGMA table_info(agendas_usuaria)').all().map((c) => c.name);
+  if (cols.length) {
+    db.transaction(() => {
+      if (!cols.includes('entidad')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN entidad TEXT NOT NULL DEFAULT ''");
+      if (!cols.includes('prof')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN prof TEXT NOT NULL DEFAULT ''");
+    })();
+  }
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'CLINICA AURORA'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'agendas_usuaria');
+  if (!tab) return;
+  const vistas = (tab.panels || []).map((p) => p && p.tipo === 'agendas_usuaria_panel' ? p.vista : null);
+  if (vistas.join(',') !== 'mes,especialidad,asesor') {
+    if (!config.isTest) console.log('[db] Migracion fase302_agendas_tres_bases_v1: la pestaña no tiene la forma esperada -- se deja intacta.');
+    return;
+  }
+  tab.label = 'Agendas';
+  tab.panels = [{ tipo: 'agendas_usuaria_panel', campana: 'CLINICA AURORA', vista: 'agendas', titulo: 'Agendas' }];
+  delete tab.subtabs;
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'CLINICA AURORA'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase302_agendas_tres_bases_v1 aplicada.');
+}
+runOnceMigration('fase302_agendas_tres_bases_v1', agendasTresBasesAurora);
+
 // Fase 269 (pedido de Edwin, 05/11): en MOBILIZE, CLINICA AURORA y HOSPITAL
 // LA MARIA la pestaña Calidad queda solo con "Resultado de los monitoreos"
 // (calidad_monitoreos_panel). Se quitan de la pantalla el resumen subido en
@@ -4911,6 +4943,7 @@ module.exports.migrarMobilizeCalidadMonitoreosPanel = migrarMobilizeCalidadMonit
 module.exports.crearAgendasUsuariaAurora = crearAgendasUsuariaAurora;
 module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm;
 module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
+module.exports.agendasTresBasesAurora = agendasTresBasesAurora; // Fase 302
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

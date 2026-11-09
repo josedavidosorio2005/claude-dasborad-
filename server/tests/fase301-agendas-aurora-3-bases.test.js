@@ -21,10 +21,10 @@ let admin;
 before(async () => { admin = await tokenFor('admin', MASTER_PASSWORD); });
 
 // Cabecera "real" de siempre + una columna con dato de paciente que NUNCA se lee.
-const CAMPOS = ['fechacita', 'fecha_registro', 'usuario_confirma', 'nombresede', 'especial', 'paciente_ficticio'];
+const CAMPOS = ['fechacita', 'fecha_registro', 'usuario_regcita', 'nombresede', 'especial', 'paciente_ficticio'];
 function filaCita(i, usuario) {
   return { fechacita: '2026-10-' + String(1 + (i % 28)).padStart(2, '0'), fecha_registro: '2026-09-' + String(1 + (i % 28)).padStart(2, '0'),
-    usuario_confirma: usuario, nombresede: 'SEDE ' + (i % 2 ? 'NORTE' : 'SUR'), especial: i % 3 ? 'MEDICINA GENERAL' : 'PEDIATRIA',
+    usuario_regcita: usuario, nombresede: 'SEDE ' + (i % 2 ? 'NORTE' : 'SUR'), especial: i % 3 ? 'MEDICINA GENERAL' : 'PEDIATRIA',
     paciente_ficticio: 'Paciente Ficticio ' + i };
 }
 // Libro .xlsx con los encabezados dados (en ese orden) y n citas, leido de vuelta
@@ -41,19 +41,21 @@ function libro(encabezados, claves, n, usuario, titulo) {
   return XLSX.utils.sheet_to_json(leido.Sheets.REPORTE, { header: 1, blankrows: false, defval: null });
 }
 const orden1 = CAMPOS.slice();
-const orden2 = ['especial', 'paciente_ficticio', 'nombresede', 'fechacita', 'usuario_confirma', 'fecha_registro'];
-const orden3 = ['usuario_confirma', 'especial', 'fecha_registro', 'paciente_ficticio', 'fechacita', 'nombresede'];
+const orden2 = ['especial', 'paciente_ficticio', 'nombresede', 'fechacita', 'usuario_regcita', 'fecha_registro'];
+const orden3 = ['usuario_regcita', 'especial', 'fecha_registro', 'paciente_ficticio', 'fechacita', 'nombresede'];
 // Mismos encabezados, escritos distinto: mayusculas, tildes, espacios de mas, sin guion bajo.
-const ESCRITURA = { fechacita: '  FECHACITA ', fecha_registro: 'Fecha Registro', usuario_confirma: 'USUARIO  CONFIRMA', nombresede: 'NombreSede',
+const ESCRITURA = { fechacita: '  FECHACITA ', fecha_registro: 'Fecha Registro', usuario_regcita: 'USUARIO  REGCITA', nombresede: 'NombreSede',
   especial: 'Especiál', paciente_ficticio: 'Paciente' };
 
-test('el mapa de encabezados es configurable: cada campo con sus sinonimos, la base de siempre primero', () => {
-  assert.deepEqual(L.AU_MAPA_ENCABEZADOS.map((c) => c.key), ['fechacita', 'fecha_registro', 'usuario_confirma', 'nombresede', 'especial']);
+test('el mapa de encabezados es configurable (Fase 302: las 7 columnas reales; solo fechacita obligatoria)', () => {
+  assert.deepEqual(L.AU_MAPA_ENCABEZADOS.map((c) => c.key), ['fechacita', 'fecha_registro', 'entidad', 'usuario_regcita', 'especial', 'prof', 'sede']);
   L.AU_MAPA_ENCABEZADOS.forEach((c) => {
-    assert.equal(c.sinonimos[0], c.key, c.key + ': el nombre de siempre va primero (manda sobre los genericos)');
-    assert.ok(c.etiqueta && c.obligatoria === true);
+    // sede: primero «nombresede» (el nombre), luego «sede» (codigo 001/002).
+    assert.equal(c.sinonimos[0], c.key === 'sede' ? 'nombresede' : c.key, c.key);
+    assert.equal(c.obligatoria, c.key === 'fechacita', c.key);
+    assert.ok(c.etiqueta);
   });
-  assert.deepEqual(L.AU_TIPOS_BASE.map((b) => b.id), ['base1', 'base2', 'base3']);
+  assert.deepEqual(L.AU_TIPOS_BASE.map((b) => b.id), ['citas', 'cancelaciones', 'inasistencias']);
   assert.deepEqual(L.AU_COLUMNAS, L.AU_MAPA_ENCABEZADOS.map((c) => ({ key: c.key, obligatoria: c.obligatoria })), 'AU_COLUMNAS sale del mapa');
 });
 
@@ -77,54 +79,61 @@ test('la misma base con las columnas en 3 ordenes distintos da EXACTAMENTE el mi
 });
 
 test('un sinonimo generico no le gana al nombre de siempre (sede vs nombresede)', () => {
-  const enc = ['sede', 'fechacita', 'fecha_registro', 'usuario_confirma', 'nombresede', 'especial'];
+  const enc = ['sede', 'fechacita', 'fecha_registro', 'usuario_regcita', 'nombresede', 'especial'];
   const aoa = [enc, ['COD-01', '2026-10-05', '2026-09-30', 'INCONEXION', 'SEDE REAL', 'PEDIATRIA']];
   const r = L.auParseFilas(aoa);
   assert.equal(r.filas[0].sede, 'SEDE REAL');
   // Si solo viene el generico, se usa.
-  const r2 = L.auParseFilas([['Sede', 'Fecha de cita', 'Fecha de solicitud', 'Usuario que confirma', 'Especialidad'], ['SEDE X', '2026-10-05', '2026-09-30', 'INCONEXION', 'PEDIATRIA']]);
+  const r2 = L.auParseFilas([['Sede', 'Fecha de cita', 'Fecha de registro', 'Usuario que registra', 'Especialidad'], ['SEDE X', '2026-10-05', '2026-09-30', 'INCONEXION', 'PEDIATRIA']]);
   assert.equal(r2.error, undefined, r2.error);
   assert.equal(r2.filas[0].sede, 'SEDE X');
 });
 
 test('unir 3 bases: un solo conjunto, cada fila con su base', () => {
   const u = L.auUnirBases([
-    { base: 'base1', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 10, 'INCONEXION A') },
-    { base: 'base2', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 20, 'INCONEXION B') },
-    { base: 'base3', archivo: 'b3.xlsx', aoa: libro(orden3.map((k) => ESCRITURA[k]), orden3, 5, 'INCONEXION') },
+    { base: 'citas', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 10, 'INCONEXION A') },
+    { base: 'cancelaciones', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 20, 'INCONEXION B') },
+    { base: 'inasistencias', archivo: 'b3.xlsx', aoa: libro(orden3.map((k) => ESCRITURA[k]), orden3, 5, 'INCONEXION') },
   ]);
   assert.equal(u.error, undefined, u.error);
   assert.equal(u.citas, 35);
-  assert.deepEqual(Object.keys(u.porBase).sort(), ['base1', 'base2', 'base3']);
-  assert.deepEqual([u.porBase.base1.citas, u.porBase.base2.citas, u.porBase.base3.citas], [10, 20, 5]);
+  assert.deepEqual(Object.keys(u.porBase).sort(), ['cancelaciones', 'citas', 'inasistencias']);
+  assert.deepEqual([u.porBase.citas.citas, u.porBase.cancelaciones.citas, u.porBase.inasistencias.citas], [10, 20, 5]);
   assert.ok(u.filas.every((f) => L.AU_TIPOS_BASE.some((b) => b.id === f.base)), 'toda fila sabe de que base vino');
   const suma = (b) => u.filas.filter((f) => f.base === b).reduce((s, f) => s + f.n, 0);
-  assert.deepEqual([suma('base1'), suma('base2'), suma('base3')], [10, 20, 5]);
+  assert.deepEqual([suma('citas'), suma('cancelaciones'), suma('inasistencias')], [10, 20, 5]);
   // Una sola base tambien vale.
-  const una = L.auUnirBases([{ base: 'base2', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 4, 'INCONEXION B') }]);
+  const una = L.auUnirBases([{ base: 'cancelaciones', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 4, 'INCONEXION B') }]);
   assert.equal(una.error, undefined);
   assert.equal(una.citas, 4);
 });
 
-test('falta una columna obligatoria: error claro con la columna y el archivo, y no se une nada', () => {
-  const sinSede = orden2.filter((k) => k !== 'nombresede');
+test('falta la columna obligatoria (fechacita): error con la columna y el archivo, y no se une nada', () => {
+  const sinFecha = orden2.filter((k) => k !== 'fechacita');
   const u = L.auUnirBases([
-    { base: 'base1', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 3, 'INCONEXION') },
-    { base: 'base2', archivo: 'octubre-base2.xlsx', aoa: libro(sinSede, sinSede, 3, 'INCONEXION') },
+    { base: 'citas', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 3, 'INCONEXION') },
+    { base: 'cancelaciones', archivo: 'octubre-cancelaciones.xlsx', aoa: libro(sinFecha, sinFecha, 3, 'INCONEXION') },
   ]);
   assert.ok(u.error);
   assert.deepEqual(u.filas, [], 'no se guarda a medias');
   assert.equal(u.errores.length, 1);
-  assert.match(u.errores[0], /octubre-base2\.xlsx/);
-  assert.match(u.errores[0], /Base 2/);
-  assert.match(u.errores[0], /falta la columna «Sede»/);
-  assert.match(u.errores[0], /nombresede/, 'dice como se busca');
-  // Dos que faltan, en plural; la misma base dos veces; ningun archivo.
-  const sinDos = orden1.filter((k) => k !== 'fechacita' && k !== 'especial');
-  assert.match(L.auUnirBases([{ base: 'base3', archivo: 'x.xlsx', aoa: libro(sinDos, sinDos, 2, 'INCONEXION') }]).error, /faltan las columnas «Fecha de cita».*«Especialidad»/);
-  assert.match(L.auUnirBases([{ base: 'base1', archivo: 'a.xlsx', aoa: libro(orden1, orden1, 1, 'INCONEXION') }, { base: 'base1', archivo: 'b.xlsx', aoa: libro(orden1, orden1, 1, 'INCONEXION') }]).error, /Base 1 viene dos veces/);
+  assert.match(u.errores[0], /octubre-cancelaciones\.xlsx/);
+  assert.match(u.errores[0], /Cancelaciones/);
+  assert.match(u.errores[0], /falta la columna «Fecha de cita»/);
+  assert.match(u.errores[0], /fechacita/, 'dice como se busca');
+  assert.match(L.auUnirBases([{ base: 'citas', archivo: 'a.xlsx', aoa: libro(orden1, orden1, 1, 'INCONEXION') }, { base: 'citas', archivo: 'b.xlsx', aoa: libro(orden1, orden1, 1, 'INCONEXION') }]).error, /Citas asignadas y cumplidas viene dos veces/);
   assert.match(L.auUnirBases([]).error, /Elige al menos un archivo/);
   assert.match(L.auUnirBases([{ base: 'otra', archivo: 'z.xlsx', aoa: [] }]).error, /no tiene una base válida/);
+});
+
+test('Fase 302: una columna NO obligatoria que falta no es error: esas citas no suman en esa dimension', () => {
+  const sinSede = orden2.filter((k) => k !== 'nombresede' && k !== 'fecha_registro');
+  const u = L.auUnirBases([{ base: 'inasistencias', archivo: 'inas.xlsx', aoa: libro(sinSede, sinSede, 6, 'INCONEXION') }]);
+  assert.equal(u.error, undefined, u.error);
+  assert.equal(u.citas, 6);
+  assert.ok(u.filas.every((f) => f.sede === '' && f.fechaSolicitud === ''));
+  assert.match(u.avisos.join(' '), /No trae la columna «Fecha de registro»/);
+  assert.match(u.avisos.join(' '), /No trae la columna «Sede»/);
 });
 
 test('servidor: cada base reemplaza SOLO lo suyo; la carga de siempre (sin base) sigue reemplazando el mes entero', async () => {
@@ -141,29 +150,29 @@ test('servidor: cada base reemplaza SOLO lo suyo; la carga de siempre (sin base)
   assert.equal(await total(), 7);
   // 2) Base 1 y Base 2 juntas: reemplazan lo de antes (sin base) y quedan las 2.
   const u = L.auUnirBases([
-    { base: 'base1', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 10, 'INCONEXION A') },
-    { base: 'base2', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 20, 'INCONEXION B') },
+    { base: 'citas', archivo: 'b1.xlsx', aoa: libro(orden1, orden1, 10, 'INCONEXION A') },
+    { base: 'cancelaciones', archivo: 'b2.xlsx', aoa: libro(orden2, orden2, 20, 'INCONEXION B') },
   ]);
   const imp = await request(app).post(API + '/carga/impacto').set(H(admin)).send({ campana: AURORA, filas: u.filas });
   assert.equal(imp.status, 200);
   const im = imp.body.meses.find((m) => m.mes === mes);
-  assert.deepEqual(im.bases, ['base1', 'base2']);
+  assert.deepEqual(im.bases, ['cancelaciones', 'citas']);
   assert.equal(im.citasExistentes, 7, 'reemplaza lo cargado sin base');
   const r = await enviar(u.filas);
   assert.equal(r.status, 201, JSON.stringify(r.body));
-  assert.deepEqual(r.body.porBase, { base1: 10, base2: 20 });
-  assert.deepEqual(porBase(), { base1: 10, base2: 20 });
+  assert.deepEqual(r.body.porBase, { citas: 10, cancelaciones: 20 });
+  assert.deepEqual(porBase(), { citas: 10, cancelaciones: 20 });
   assert.equal(await total(), 30, 'la pestaña suma igual que antes');
   // 3) Solo Base 3: se agrega sin tocar la 1 ni la 2.
-  const u3 = L.auUnirBases([{ base: 'base3', archivo: 'b3.xlsx', aoa: libro(orden3, orden3, 5, 'INCONEXION') }]);
+  const u3 = L.auUnirBases([{ base: 'inasistencias', archivo: 'b3.xlsx', aoa: libro(orden3, orden3, 5, 'INCONEXION') }]);
   assert.equal((await enviar(u3.filas)).status, 201);
-  assert.deepEqual(porBase(), { base1: 10, base2: 20, base3: 5 });
+  assert.deepEqual(porBase(), { citas: 10, cancelaciones: 20, inasistencias: 5 });
   // 4) Base 2 otra vez (corregida): solo cambia la 2.
-  const u2 = L.auUnirBases([{ base: 'base2', archivo: 'b2-bis.xlsx', aoa: libro(orden2, orden2, 8, 'INCONEXION B') }]);
+  const u2 = L.auUnirBases([{ base: 'cancelaciones', archivo: 'b2-bis.xlsx', aoa: libro(orden2, orden2, 8, 'INCONEXION B') }]);
   const imp2 = (await request(app).post(API + '/carga/impacto').set(H(admin)).send({ campana: AURORA, filas: u2.filas })).body.meses.find((m) => m.mes === mes);
   assert.equal(imp2.citasExistentes, 20);
   assert.equal((await enviar(u2.filas)).status, 201);
-  assert.deepEqual(porBase(), { base1: 10, base2: 8, base3: 5 });
+  assert.deepEqual(porBase(), { citas: 10, cancelaciones: 8, inasistencias: 5 });
   assert.equal(await total(), 23);
   // 5) La carga de siempre (sin base) vuelve a reemplazar el mes entero.
   const imp3 = (await request(app).post(API + '/carga/impacto').set(H(admin)).send({ campana: AURORA, filas: L.auParseFilas(libro(orden1, orden1, 4, 'INCONEXION')).filas })).body.meses.find((m) => m.mes === mes);
@@ -171,16 +180,16 @@ test('servidor: cada base reemplaza SOLO lo suyo; la carga de siempre (sin base)
   assert.equal(imp3.citasExistentes, 23);
   assert.equal((await enviar(L.auParseFilas(libro(orden1, orden1, 4, 'INCONEXION')).filas)).status, 201);
   assert.deepEqual(porBase(), { '': 4 });
-  // La base no sale en la lectura de la pestaña (la vista no cambia).
+  // Fase 302: la lectura trae la base (la vista «Agendas» la usa para sus botones).
   const d = await request(app).get(API + '/datos?campana=' + encodeURIComponent(AURORA)).set(H(admin));
-  assert.ok(d.body.filas.every((f) => !('base' in f)));
+  assert.ok(d.body.filas.filter((f) => f.mes === mes).every((f) => f.base === ''), 'la carga de siempre queda sin base');
 });
 
 test('servidor: una base desconocida o campos de mas se rechazan (400)', async () => {
   const fila = { mes: '2026-11', fechaCita: '2026-11-03', fechaSolicitud: '', sede: 'S', usuario: 'INCONEXION', especialidad: 'E', n: 1 };
   assert.equal((await request(app).post(API + '/carga').set(H(admin)).send({ campana: AURORA, filas: [{ ...fila, base: 'base9' }] })).status, 400);
-  assert.equal((await request(app).post(API + '/carga').set(H(admin)).send({ campana: AURORA, filas: [{ ...fila, base: 'base1', paciente: 'x' }] })).status, 400);
-  assert.equal((await request(app).post(API + '/carga').set(H(admin)).send({ campana: AURORA, filas: [{ ...fila, base: 'base1' }] })).status, 201);
+  assert.equal((await request(app).post(API + '/carga').set(H(admin)).send({ campana: AURORA, filas: [{ ...fila, base: 'citas', paciente: 'x' }] })).status, 400);
+  assert.equal((await request(app).post(API + '/carga').set(H(admin)).send({ campana: AURORA, filas: [{ ...fila, base: 'citas' }] })).status, 201);
 });
 
 test('la columna base es nueva (ADD COLUMN) y la migracion quedo registrada', () => {

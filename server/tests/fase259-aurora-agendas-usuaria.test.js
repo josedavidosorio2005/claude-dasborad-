@@ -22,7 +22,7 @@ const serial = (iso) => Math.round(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) -
 
 // Reporte SINTETICO con columnas sensibles de mentira que nunca deben salir.
 function reporte(filas) {
-  const head = ['Id', 'documento', 'nombres', 'telefono', 'direccion', 'diagnostico', 'fecha_registro', 'FechaCita', 'especial', 'usuario_confirma', 'motivo_conf', 'nombresede', 'observacion'];
+  const head = ['Id', 'documento', 'nombres', 'telefono', 'direccion', 'diagnostico', 'fecha_registro', 'FechaCita', 'especial', 'usuario_regcita', 'motivo_conf', 'nombresede', 'observacion']; // Fase 302: usuario que registra
   const aoa = [['Reporte de citas (sintetico)'], head].concat(filas.map((f, i) => [i + 1, '1000' + i, 'Paciente Ficticio ' + i, '300000000' + i, 'Calle Falsa ' + i, 'DX FICTICIO',
     f.sol ? serial(f.sol) : null, serial(f.cita), f.esp || 'ESPECIALIDAD UNO', f.conf, 'CONFIRMA', f.sede || 'SEDE UNO', 'obs ficticia']));
   const wb = XLSX.utils.book_new();
@@ -60,12 +60,15 @@ test('lector: columnas por nombre, mes de la cita, fecha de solicitud y especial
   assert.deepEqual(r.porUsuario, { INCONEXION: 1, 'INCONEXION A': 2, 'INCONEXION B': 3, [L.AU_CLINICA]: 1 });
   assert.deepEqual(r.porEspecialidad, { DERMATOLOGIA: 4, RADIOLOGIA: 2, COSMETOLOGIA: 1 });
   assert.deepEqual([r.solicitudDesde, r.solicitudHasta], ['2026-08-15', '2026-10-09']);
-  assert.match(r.avisos.join(' '), /1 cita\(s\) sin fecha de solicitud/);
+  assert.match(r.avisos.join(' '), /1 cita\(s\) sin fecha de registro/); // Fase 302
   assert.equal(r.filas.reduce((s, f) => s + f.n, 0), 7);
   const f = r.filas.find((x) => x.especialidad === 'RADIOLOGIA' && x.usuario === 'INCONEXION A');
   assert.deepEqual([f.mes, f.fechaCita, f.fechaSolicitud], ['2026-10', '2026-10-07', '2026-08-15']);
-  const sinCol = L.auParseFilas([['fechacita', 'usuario_confirma'], [serial('2026-10-01'), 'INCONEXION']]);
-  assert.match(sinCol.error, /faltan las columnas fecha_registro, nombresede, especial/);
+  // Fase 302: solo fechacita es obligatoria; con casi nada mas, no parece una base.
+  const sinCol = L.auParseFilas([['fechacita', 'usuario_regcita'], [serial('2026-10-01'), 'INCONEXION']]);
+  assert.match(sinCol.error, /no parece una base de citas: solo se reconocen 2 columna/);
+  const sinFecha = L.auParseFilas([['entidad', 'usuario_regcita', 'especial', 'prof'], ['EPS', 'INCONEXION', 'X', 'Y']]);
+  assert.match(sinFecha.error, /faltan las columnas fechacita/);
 });
 
 test('PRIVACIDAD: lo que sale del navegador solo trae conteos (nunca documento, nombres, telefono, direccion, diagnostico)', () => {
@@ -77,21 +80,22 @@ test('PRIVACIDAD: lo que sale del navegador solo trae conteos (nunca documento, 
   r.filas.forEach((f) => assert.deepEqual(Object.keys(f), L.AU_CAMPOS_FILA));
 });
 
-test('migracion: modulo y pestaña SOLO en Aurora, con las 3 vistas (sub-pestañas); idempotente', () => {
+test('migracion: modulo y pestaña SOLO en Aurora; desde la Fase 302 «Agendas», una sola vista; idempotente', () => {
   const reg = JSON.parse(db.prepare('SELECT modulos FROM clientes_registro WHERE nombre = ?').get(AURORA).modulos);
   assert.ok(reg.includes('agendas_usuaria'));
   const tab = JSON.parse(db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA).layout).tabs.find((t) => t.key === 'agendas_usuaria');
   assert.equal(tab.oculta, true);
-  assert.deepEqual(tab.panels.map((p) => [p.tipo, p.vista, p.titulo]), [['agendas_usuaria_panel', 'mes', 'Agendas por mes'], ['agendas_usuaria_panel', 'especialidad', 'Agendas por especialidad'], ['agendas_usuaria_panel', 'asesor', 'Agendas por asesor']]);
-  assert.deepEqual(tab.subtabs.map((s) => [s.key, s.label, s.indices]), [['mes', 'Agendas por mes', [0]], ['especialidad', 'Agendas por especialidad', [1]], ['asesor', 'Agendas por asesor', [2]]]);
+  assert.equal(tab.label, 'Agendas');
+  assert.deepEqual(tab.panels.map((p) => [p.tipo, p.vista, p.titulo]), [['agendas_usuaria_panel', 'agendas', 'Agendas']]);
+  assert.equal(tab.subtabs, undefined);
   for (const c of ['ORLANT', 'MOBILIZE', 'HOSPITAL LA MARIA']) {
     const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(c);
     if (row) assert.ok(!row.layout.includes('agendas_usuaria'), c);
   }
   const cols = db.prepare('PRAGMA table_info(agendas_usuaria)').all().map((c) => c.name);
-  for (const c of ['fechaCita', 'fechaSolicitud', 'especialidad']) assert.ok(cols.includes(c), c);
+  for (const c of ['fechaCita', 'fechaSolicitud', 'especialidad', 'entidad', 'prof', 'base']) assert.ok(cols.includes(c), c);
   const antes = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA).layout;
-  dbMod.crearAgendasUsuariaAurora(); dbMod.migrarAgendasUsuariaVistas();
+  dbMod.crearAgendasUsuariaAurora(); dbMod.migrarAgendasUsuariaVistas(); dbMod.agendasTresBasesAurora();
   assert.equal(db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA).layout, antes);
 });
 
@@ -115,7 +119,7 @@ test('carga, impacto, recarga del mismo mes reemplaza (con respaldo) y nombre re
   assert.equal(c1.body.citas, 7);
   let d = await request(app).get('/api/calidad/agendas-usuaria/datos?campana=' + encodeURIComponent(AURORA)).set(auth(admin));
   assert.ok(d.body.filas.every((f) => f.asesora === f.usuario));
-  assert.deepEqual(Object.keys(d.body.filas[0]).sort(), ['asesora', 'especialidad', 'fechaCita', 'fechaSolicitud', 'mes', 'n', 'sede', 'usuario']);
+  assert.deepEqual(Object.keys(d.body.filas[0]).sort(), ['asesora', 'base', 'entidad', 'especialidad', 'fechaCita', 'fechaSolicitud', 'mes', 'n', 'prof', 'sede', 'usuario']); // Fase 302: + base, entidad, prof
   const a = await request(app).post('/api/alias-asesores').set(auth(admin)).send({ campana: AURORA, alias: 'INCONEXION A', canonico: 'Asesora Ficticia Uno' });
   assert.equal(a.status, 201, JSON.stringify(a.body));
   d = await request(app).get('/api/calidad/agendas-usuaria/datos?campana=' + encodeURIComponent(AURORA)).set(auth(admin));
@@ -166,7 +170,7 @@ test('navegador: el tipo nuevo esta en las listas cerradas, en el Centro y en el
 });
 
 test('Fase 260: fechas como Date (lectura de Cargar Datos con cellNF sobre celdas con formato de fecha)', () => {
-  const head = ['fechacita', 'fecha_registro', 'usuario_confirma', 'nombresede', 'especial'];
+  const head = ['fechacita', 'fecha_registro', 'usuario_regcita', 'nombresede', 'especial']; // Fase 302
   const ws = XLSX.utils.aoa_to_sheet([head, [serial('2026-10-31'), serial('2026-09-30'), 'INCONEXION C', 'SEDE UNO', 'DERMATOLOGIA'], [serial('2026-10-01'), serial('2026-10-01'), 'INCONEXION', 'SEDE UNO', 'RADIOLOGIA']]);
   ['A2', 'B2', 'A3', 'B3'].forEach((c) => { ws[c].z = 'dd/mm/yyyy'; });
   const wb = XLSX.utils.book_new();

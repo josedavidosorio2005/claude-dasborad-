@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.150.0 — Noviembre 2026
+
+**Fase 302: Clínica Aurora — nueva pestaña «Agendas» con sus 3 bases.**
+
+- La pestaña «Agendas por usuaria» pasa a llamarse **«Agendas»** y trabaja con las 3 bases de
+  la clínica: **Citas asignadas y cumplidas**, **Cancelaciones** e **Inasistencias**.
+- **Filtros arriba**: fecha de registro, fecha de cita, entidad, usuario que registra,
+  especialidad, profesional y sede, y botones para ver **Todas** o una sola base.
+- **Dos gráficas grandes** con botones arriba (sin cuadro de resumen): agendas por mes según
+  **fecha de registro** o **fecha de cita**, y agendas por **usuario que registra**,
+  **especialidad** o **profesional** (las 10 primeras, con «Ver más»).
+- Cada columna se lee por su nombre. Si una base no trae una columna (Cancelaciones e
+  Inasistencias no traen fecha de registro), no es error: esas citas no cuentan en lo que
+  dependa de esa columna, y la gráfica lo dice.
+- Las bases se suben en **Cargar datos › Clínica Aurora › Agendas › Subir** (una o las tres a
+  la vez). Hasta que se suban, la pestaña muestra «Información pendiente»: lo cargado antes con
+  el reporte anterior no se usa aquí. Las demás pestañas de Aurora y los demás clientes no cambian.
+
 ## v1.149.0 — Noviembre 2026
 
 **Fase 301: Clínica Aurora — «Agendas por usuaria» lista para recibir 3 bases.**

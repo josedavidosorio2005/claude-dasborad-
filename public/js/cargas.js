@@ -1471,7 +1471,11 @@ async function _cargasGuardarCalidadResumen(cliente, r){
 // Fase 259 (Clinica Aurora): Agendas por usuaria -- solo conteos agregados;
 // confirmar SIEMPRE con lo que se reemplaza mes por mes.
 async function _cargasGuardarAgendasUsuaria(cliente, r){
-  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas };
+  // Fase 302: cada archivo es una de las 3 bases; se reconoce por su nombre
+  // (CITAS..., CANCELACIONES..., INASISTENCIAS...). Si no, la ventana del Centro.
+  var baseAu = (typeof auBaseDesdeArchivo === 'function') ? auBaseDesdeArchivo(_cargasArchivoNombre) : '';
+  if(!baseAu) return { ok:false, mensaje: 'No se reconoce la base por el nombre del archivo («'+_cargasArchivoNombre+'»). Usa Centro de cargas › Agendas › Subir y elige la base de cada archivo.' };
+  var parsed = { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas.map(function(f){ return Object.assign({}, f, { base: baseAu }); }) };
   try{
     var imp = await apiRequest('POST','/calidad/agendas-usuaria/carga/impacto', parsed);
     var lineas = (imp.meses || []).map(function(m){
