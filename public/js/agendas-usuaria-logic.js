@@ -9,40 +9,51 @@
 // (fecha de la cita, fecha de solicitud, sede, usuario, especialidad). Las
 // columnas se buscan por NOMBRE y solo se leen las de la lista de abajo.
 //
-// Columnas del reporte (Fase 265, confirmado con OCTUBRE.xls): O = fechacita
+// Fase 302: ahora 3 bases (Citas asignadas y cumplidas, Cancelaciones,
+// Inasistencias) con el mapa de abajo. Historico -- Columnas del reporte (Fase 265, confirmado con OCTUBRE.xls): O = fechacita
 // ("Fecha de cita"), M = fecha_registro ("Fecha de solicitud de la cita"),
 // AE = especial (especialidad), BB = usuario_confirma (usuario de la asesora).
 // "usuario" es el codigo del sistema ("INCONEXION", "INCONEXION A"...); el
 // nombre real se resuelve AL MOSTRAR con alias_asesores, nunca al guardar.
 
-// ── Fase 301 (09/11): MAPA DE ENCABEZADOS, el unico lugar que se toca cuando el
-// supervisor muestre los nombres reales de las 3 bases. Cada columna se ubica por
-// NOMBRE (sin importar mayusculas, tildes, espacios, guiones bajos ni puntos),
-// nunca por posicion. Si varios sinonimos aparecen en el archivo gana el que va
-// PRIMERO en la lista (asi el nombre de siempre del reporte manda sobre uno
-// generico como "sede"). `key` es el nombre interno de siempre (no cambiarlo).
+// ── MAPA DE ENCABEZADOS (Fase 301; Fase 302 con los encabezados REALES de las 3
+// bases de Aurora, 10/11). Es el unico lugar que se toca si cambia un nombre de
+// columna. Cada columna se ubica por NOMBRE (sin importar mayusculas, tildes,
+// espacios, guiones bajos ni puntos), nunca por posicion. Si varios sinonimos
+// aparecen en el archivo gana el que va PRIMERO (asi «nombresede», el nombre de
+// la sede, manda sobre «sede», que en el reporte es un codigo 001/002).
+// Solo «fechacita» es obligatoria: si a una base le falta otra columna (ej.
+// Cancelaciones e Inasistencias no traen fecha_registro) NO es error -- esas
+// citas simplemente no suman en lo que dependa de esa columna. Las demas
+// columnas del archivo (nombres, cedula, direccion, diagnostico...) no se leen.
+// `key` es el nombre interno (no cambiarlo); `campo` es donde queda en la fila.
 var AU_MAPA_ENCABEZADOS = [
   { key: 'fechacita', campo: 'fechaCita', etiqueta: 'Fecha de cita', obligatoria: true,
     sinonimos: ['fechacita', 'fecha cita', 'fecha de cita', 'fecha de la cita'] },
-  { key: 'fecha_registro', campo: 'fechaSolicitud', etiqueta: 'Fecha de solicitud', obligatoria: true,
-    sinonimos: ['fecha_registro', 'fecha registro', 'fecha de registro', 'fecha de solicitud', 'fecha de solicitud de la cita'] },
-  { key: 'usuario_confirma', campo: 'usuario', etiqueta: 'Usuario que confirma', obligatoria: true,
-    sinonimos: ['usuario_confirma', 'usuario confirma', 'usuario que confirma'] },
-  { key: 'nombresede', campo: 'sede', etiqueta: 'Sede', obligatoria: true,
-    sinonimos: ['nombresede', 'nombre sede', 'nombre de la sede', 'sede'] },
-  { key: 'especial', campo: 'especialidad', etiqueta: 'Especialidad', obligatoria: true,
+  { key: 'fecha_registro', campo: 'fechaSolicitud', etiqueta: 'Fecha de registro', obligatoria: false,
+    sinonimos: ['fecha_registro', 'fecha registro', 'fecha de registro'] },
+  { key: 'entidad', campo: 'entidad', etiqueta: 'Entidad', obligatoria: false,
+    sinonimos: ['entidad', 'nombre entidad'] },
+  { key: 'usuario_regcita', campo: 'usuario', etiqueta: 'Usuario que registra', obligatoria: false,
+    sinonimos: ['usuario_regcita', 'usuario regcita', 'usuario que registra', 'usuario registra'] },
+  { key: 'especial', campo: 'especialidad', etiqueta: 'Especialidad', obligatoria: false,
     sinonimos: ['especial', 'especialidad'] },
+  { key: 'prof', campo: 'prof', etiqueta: 'Profesional', obligatoria: false,
+    sinonimos: ['prof', 'profesional'] },
+  { key: 'sede', campo: 'sede', etiqueta: 'Sede', obligatoria: false,
+    sinonimos: ['nombresede', 'nombre sede', 'nombre de la sede', 'sede'] },
 ];
-// Las 3 bases de Aurora (Fase 301). Los nombres reales los dira el supervisor:
-// se cambian aqui (`id` es lo que se guarda: no cambiarlo despues de cargar).
+// Las 3 bases de Aurora (Fase 302). `id` es lo que se guarda (no cambiarlo);
+// `archivo` reconoce la base por el nombre del archivo en Cargar Datos.
 var AU_TIPOS_BASE = [
-  { id: 'base1', etiqueta: 'Base 1' },
-  { id: 'base2', etiqueta: 'Base 2' },
-  { id: 'base3', etiqueta: 'Base 3' },
+  { id: 'citas', etiqueta: 'Citas asignadas y cumplidas', archivo: /cita/i },
+  { id: 'cancelaciones', etiqueta: 'Cancelaciones', archivo: /cancel/i },
+  { id: 'inasistencias', etiqueta: 'Inasistencias', archivo: /inasist/i },
 ];
 var AU_COLUMNAS = AU_MAPA_ENCABEZADOS.map(function (c) { return { key: c.key, obligatoria: c.obligatoria }; });
 var AU_CLINICA = 'Clínica (no InConexion)';
-var AU_CAMPOS_FILA = ['mes', 'fechaCita', 'fechaSolicitud', 'sede', 'usuario', 'especialidad', 'n'];
+// Fase 302: + entidad y prof. Nada mas sale del navegador.
+var AU_CAMPOS_FILA = ['mes', 'fechaCita', 'fechaSolicitud', 'sede', 'usuario', 'especialidad', 'entidad', 'prof', 'n'];
 
 function auNorm(s) {
   return String(s === null || s === undefined ? '' : s)
@@ -114,11 +125,10 @@ function auUsuario(v) {
 function auTexto(v, vacio) { return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim().slice(0, 120) || vacio; }
 
 // Lee la hoja (encabezado en alguna de las primeras 20 filas) y la devuelve
-// AGREGADA. { filas:[{mes,fechaCita,fechaSolicitud,sede,usuario,especialidad,n}],
-// citas, porUsuario, porSede, porEspecialidad, meses, solicitudDesde, solicitudHasta, avisos, error }.
-// opts (Fase 301, opcional): { base: id de AU_TIPOS_BASE, archivo: nombre del
-// archivo } -- cada fila agregada lleva su `base` y el error dice el archivo.
-// Sin opts, todo igual que antes (una sola base, sin `base` en las filas).
+// AGREGADA. opts (opcional): { base: id de AU_TIPOS_BASE, archivo: nombre } --
+// cada fila agregada lleva su `base` y los errores dicen el archivo.
+// -> { filas:[{mes,fechaCita,fechaSolicitud,sede,usuario,especialidad,entidad,prof,n,(base)}],
+//      citas, porUsuario, porSede, porEspecialidad, meses, sinColumnas, avisos, error }
 function auParseFilas(aoa, opts) {
   var o = opts || {};
   var filasAoa = aoa || [];
@@ -126,49 +136,72 @@ function auParseFilas(aoa, opts) {
   var mejor = null; // la fila con mas columnas reconocidas (para decir que falta)
   for (var r = 0; r < Math.min(20, filasAoa.length); r++) {
     var m = auColIndexMap(filasAoa[r]);
-    if (!auFaltantes(m).length) { iHead = r; map = m; break; }
+    // El encabezado: las obligatorias y al menos 3 columnas del mapa.
+    if (!auFaltantes(m).length && Object.keys(m).length >= 3) { iHead = r; map = m; break; }
     if (!mejor || Object.keys(m).length > Object.keys(mejor).length) mejor = m;
   }
   if (iHead === -1) {
-    var faltan = auFaltantes(mejor || auColIndexMap(filasAoa[0] || []));
+    var faltan = auFaltantes(mejor || {});
+    if (!faltan.length) {
+      // Tiene fechacita pero casi nada mas: no parece una de las bases.
+      var pocas = 'no parece una base de citas: solo se reconocen ' + Object.keys(mejor || {}).length + ' columna(s) de ' +
+        AU_MAPA_ENCABEZADOS.map(function (c) { return c.key; }).join(', ') + ' (se necesitan al menos 3, con fechacita).';
+      return { error: o.archivo ? 'El archivo «' + o.archivo + '»' + (o.base ? ' (' + auEtiquetaBase(o.base) + ')' : '') + ' ' + pocas : 'El archivo ' + pocas, faltan: [], filas: [] };
+    }
     if (o.archivo) return { error: auMensajeFaltantes(faltan, o.archivo, o.base), faltan: faltan, filas: [] };
     return { error: 'El archivo no es el reporte de citas: faltan las columnas ' + faltan.join(', ') + '.', faltan: faltan, filas: [] };
   }
+  var tiene = function (k) { return map[k] !== undefined; };
+  var celda = function (row, k) { return tiene(k) ? row[map[k]] : null; };
   var agg = {};
-  var res = { citas: 0, porUsuario: {}, porSede: {}, porEspecialidad: {}, meses: {}, avisos: [], sinFechaCita: 0, sinUsuario: 0, sinSolicitud: 0, solicitudDesde: null, solicitudHasta: null };
+  var res = { citas: 0, porUsuario: {}, porSede: {}, porEspecialidad: {}, meses: {}, avisos: [], sinFechaCita: 0, solicitudDesde: null, solicitudHasta: null,
+    sinColumnas: AU_MAPA_ENCABEZADOS.filter(function (c) { return !tiene(c.key); }).map(function (c) { return c.key; }) };
   for (var i = iHead + 1; i < filasAoa.length; i++) {
     var row = filasAoa[i];
     if (!row || !row.some(function (c) { return c !== null && c !== undefined && String(c).trim() !== ''; })) continue;
-    var fc = auFecha(row[map.fechacita]);
+    var fc = auFecha(celda(row, 'fechacita'));
     if (!fc) { res.sinFechaCita++; continue; }
-    var usuario = auUsuario(row[map.usuario_confirma]);
-    if (!usuario) { res.sinUsuario++; continue; }
-    var fs = auFecha(row[map.fecha_registro]) || '';
-    if (!fs) res.sinSolicitud++;
-    var f = { mes: fc.slice(0, 7), fechaCita: fc, fechaSolicitud: fs, sede: auTexto(row[map.nombresede], 'Sin sede'), usuario: usuario, especialidad: auTexto(row[map.especial], 'Sin especialidad') };
-    if (o.base) f.base = o.base; // Fase 301: de que base vino
-    var k = [f.mes, f.fechaCita, f.fechaSolicitud, f.sede, f.usuario, f.especialidad, f.base || ''].join('\u0001');
+    var fs = auFecha(celda(row, 'fecha_registro')) || '';
+    if (!fs && tiene('fecha_registro')) res.sinSolicitud = (res.sinSolicitud || 0) + 1;
+    var f = { mes: fc.slice(0, 7), fechaCita: fc, fechaSolicitud: fs,
+      sede: auTexto(celda(row, 'sede'), ''), usuario: tiene('usuario_regcita') ? auUsuario(celda(row, 'usuario_regcita')) : '',
+      especialidad: auTexto(celda(row, 'especial'), ''), entidad: auTexto(celda(row, 'entidad'), ''), prof: auTexto(celda(row, 'prof'), '') };
+    if (o.base) f.base = o.base; // de que base vino
+    var k = [f.mes, f.fechaCita, f.fechaSolicitud, f.sede, f.usuario, f.especialidad, f.entidad, f.prof, f.base || ''].join('\u0001');
     if (!agg[k]) agg[k] = Object.assign({}, f, { n: 0 });
     agg[k].n++;
     res.citas++;
     res.meses[f.mes] = (res.meses[f.mes] || 0) + 1;
-    res.porUsuario[usuario] = (res.porUsuario[usuario] || 0) + 1;
-    res.porSede[f.sede] = (res.porSede[f.sede] || 0) + 1;
-    res.porEspecialidad[f.especialidad] = (res.porEspecialidad[f.especialidad] || 0) + 1;
+    if (f.usuario) res.porUsuario[f.usuario] = (res.porUsuario[f.usuario] || 0) + 1;
+    if (f.sede) res.porSede[f.sede] = (res.porSede[f.sede] || 0) + 1;
+    if (f.especialidad) res.porEspecialidad[f.especialidad] = (res.porEspecialidad[f.especialidad] || 0) + 1;
     if (fs) {
       if (!res.solicitudDesde || fs < res.solicitudDesde) res.solicitudDesde = fs;
       if (!res.solicitudHasta || fs > res.solicitudHasta) res.solicitudHasta = fs;
     }
   }
   if (res.sinFechaCita) res.avisos.push(res.sinFechaCita + ' fila(s) sin fecha de cita válida: no se cuentan.');
-  if (res.sinUsuario) res.avisos.push(res.sinUsuario + ' fila(s) sin usuario que confirma: no se cuentan.');
-  if (res.sinSolicitud) res.avisos.push(res.sinSolicitud + ' cita(s) sin fecha de solicitud: se cuentan, pero no entran al filtrar por esa fecha.');
-  // Solo los campos permitidos, en un orden fijo (nada mas sale del navegador).
+  if (res.sinSolicitud) res.avisos.push(res.sinSolicitud + ' cita(s) sin fecha de registro: se cuentan, pero no suman al mirar por fecha de registro.');
+  res.sinColumnas.forEach(function (key) {
+    var c = AU_MAPA_ENCABEZADOS.filter(function (x) { return x.key === key; })[0];
+    res.avisos.push('No trae la columna «' + c.etiqueta + '»: sus citas no suman en lo que dependa de esa columna.');
+  });
   var campos = o.base ? AU_CAMPOS_FILA.concat(['base']) : AU_CAMPOS_FILA;
   res.filas = Object.keys(agg).map(function (key) {
     var x = {}; campos.forEach(function (c) { x[c] = agg[key][c]; }); return x;
   });
   return res;
+}
+
+// Fase 302: la base por el nombre del archivo ("INASISTENCIAS.xlsx" -> inasistencias). '' si no se reconoce.
+function auBaseDesdeArchivo(nombre) {
+  var n = String(nombre || '');
+  var orden = ['inasistencias', 'cancelaciones', 'citas']; // "cita" aparece en los otros nombres: va de ultima
+  for (var k = 0; k < orden.length; k++) {
+    var b = AU_TIPOS_BASE.filter(function (t) { return t.id === orden[k]; })[0];
+    if (b && b.archivo.test(n)) return b.id;
+  }
+  return '';
 }
 
 function auEtiquetaBase(id) {
@@ -268,9 +301,71 @@ function auOpciones(filas, campo) {
   return Object.keys(s).sort(function (a, b) { return a.localeCompare(b); });
 }
 
+// ── Fase 302: vista «Agendas» (filtros + base + 2 graficas) ──
+// Solo filas con base (las 3 bases); lo cargado antes con el reporte de una sola
+// base (base '') no entra: su "usuario" era el que confirma, no el que registra.
+// f: { meses, bases (null = todas), citaDesde, citaHasta, registroDesde, registroHasta,
+//      entidad, usuario, especialidad, prof, sede } ('' = sin filtro)
+var AU_DIMENSIONES = { usuario: 'Usuario que registra', especialidad: 'Especialidad', prof: 'Profesional', entidad: 'Entidad', sede: 'Sede' };
+function auValorDim(r, dim) { return dim === 'usuario' ? (r.asesora || r.usuario || '') : (r[dim] || ''); }
+function auFiltrarAgendas(filas, f) {
+  var o = f || {};
+  return (filas || []).filter(function (r) {
+    if (!r.base) return false;
+    if (o.bases && o.bases.length && o.bases.indexOf(r.base) === -1) return false;
+    if (o.meses && o.meses.length && o.meses.indexOf(r.mes) === -1) return false;
+    if (o.citaDesde && r.fechaCita < o.citaDesde) return false;
+    if (o.citaHasta && r.fechaCita > o.citaHasta) return false;
+    if ((o.registroDesde || o.registroHasta) && !r.fechaSolicitud) return false;
+    if (o.registroDesde && r.fechaSolicitud < o.registroDesde) return false;
+    if (o.registroHasta && r.fechaSolicitud > o.registroHasta) return false;
+    for (var d in AU_DIMENSIONES) if (o[d] && auValorDim(r, d) !== o[d]) return false;
+    return true;
+  });
+}
+// Linea por mes de `campo` ('fechaCita' | 'fechaSolicitud'): una serie por base y el total.
+// Las citas sin esa fecha no suman (sinFecha cuenta cuantas quedaron fuera, por base).
+function auSerieMensual(filas, campo) {
+  var meses = {}, porBase = {}, sinFecha = {};
+  (filas || []).forEach(function (r) {
+    var d = r[campo];
+    if (!d) { sinFecha[r.base] = (sinFecha[r.base] || 0) + r.n; return; }
+    var m = d.slice(0, 7); meses[m] = true;
+    porBase[r.base] = porBase[r.base] || {};
+    porBase[r.base][m] = (porBase[r.base][m] || 0) + r.n;
+  });
+  var lista = Object.keys(meses).sort();
+  var series = AU_TIPOS_BASE.filter(function (b) { return porBase[b.id]; }).map(function (b) {
+    return { base: b.id, etiqueta: b.etiqueta, data: lista.map(function (m) { return porBase[b.id][m] || 0; }) };
+  });
+  var total = lista.map(function (m, k) { return series.reduce(function (s, x) { return s + x.data[k]; }, 0); });
+  return { meses: lista, series: series, total: total, sinFecha: sinFecha };
+}
+// Ranking por `dim` (usuario | especialidad | prof | ...): de mayor a menor, con el
+// detalle por base. Las citas sin ese dato no suman. top: cuantas mostrar (null = todas).
+function auRanking(filas, dim, top) {
+  var acc = {};
+  (filas || []).forEach(function (r) {
+    var v = auValorDim(r, dim); if (!v) return;
+    var x = acc[v] || (acc[v] = { valor: v, total: 0, porBase: {} });
+    x.total += r.n; x.porBase[r.base] = (x.porBase[r.base] || 0) + r.n;
+  });
+  var todos = Object.keys(acc).map(function (k) { return acc[k]; })
+    .sort(function (a, b) { return b.total - a.total || (a.valor < b.valor ? -1 : 1); });
+  var n = (top && top > 0) ? Math.min(top, todos.length) : todos.length;
+  return { items: todos.slice(0, n), cantidad: todos.length, ocultos: todos.length - n };
+}
+function auOpcionesAgendas(filas, dim) {
+  var vistos = {};
+  (filas || []).forEach(function (r) { var v = auValorDim(r, dim); if (v) vistos[v] = true; });
+  return Object.keys(vistos).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AU_COLUMNAS: AU_COLUMNAS, AU_CLINICA: AU_CLINICA, AU_CAMPOS_FILA: AU_CAMPOS_FILA,
     AU_MAPA_ENCABEZADOS: AU_MAPA_ENCABEZADOS, AU_TIPOS_BASE: AU_TIPOS_BASE, auNormEncabezado: auNormEncabezado,
+    auBaseDesdeArchivo: auBaseDesdeArchivo, AU_DIMENSIONES: AU_DIMENSIONES, auFiltrarAgendas: auFiltrarAgendas,
+    auSerieMensual: auSerieMensual, auRanking: auRanking, auOpcionesAgendas: auOpcionesAgendas, auValorDim: auValorDim,
     auUnirBases: auUnirBases, auMensajeFaltantes: auMensajeFaltantes, auEtiquetaBase: auEtiquetaBase,
     auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auUsuario: auUsuario,
     auParseFilas: auParseFilas, auFiltrar: auFiltrar, auPct: auPct, auTotal: auTotal, auPorMes: auPorMes, auPorEspecialidad: auPorEspecialidad, auPorAsesor: auPorAsesor, auOpciones: auOpciones };

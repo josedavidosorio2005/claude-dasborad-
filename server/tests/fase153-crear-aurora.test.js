@@ -86,7 +86,8 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase284_aurora_errores_v1',
     'fase285_logo_aurora_v1', // Fases 284 y 285 (logo de Aurora: solo su columna logo)
     'fase287_asesor_oculto_cliente_v1', // Fase 287: parametro asesorOcultoCliente de Aurora y HLM
-    'fase301_agendas_usuaria_base_v1']; // Fase 301: columna base en agendas_usuaria (ADD COLUMN, sin tocar filas)
+    'fase301_agendas_usuaria_base_v1', // Fase 301: columna base en agendas_usuaria (ADD COLUMN, sin tocar filas)
+    'fase302_agendas_tres_bases_v1']; // Fase 302: columnas entidad/prof y la pestaña «Agendas» (sobre una base nueva ya viene asi)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

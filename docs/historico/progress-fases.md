@@ -20057,3 +20057,39 @@ Local (Playwright + Brave, copia de la base demo, Excel sintéticos con fechas r
 375/768/1440): error con archivo y columna; 3 bases unidas y guardadas por base (12/20/7); 0
 errores de consola. ORLANT local: mismas pestañas y resultados que antes; ningún archivo de ORLANT
 ni de la carga genérica (`cargas.js`, `cargas-logic.js`) cambió.
+
+
+## Fase 302 — «Agendas» de Aurora con las 3 bases reales (v1.150.0, 2026-11-10)
+
+Pedido: renombrar la pestaña a «Agendas», usar las 3 bases reales (Citas asignadas y cumplidas,
+Cancelaciones, Inasistencias), filtros arriba, botones de base y 2 gráficas grandes estilo
+pregunta 1 de la Encuesta. Sin tocar ORLANT, Mobilize, SURA ni las demás pestañas de Aurora.
+
+- Encabezados reales leídos de los 3 archivos (fuera del repo; solo nombres de columna, conteos y
+  tipos, ningún valor). Hallazgos: `sede` es un código (001/002) y `nombresede` el nombre (se usa
+  `nombresede` primero); Cancelaciones e Inasistencias no traen `fecha_registro` pero sí
+  `fechareg` (NO se usa: queda como decisión del usuario/supervisor); todos los `usuario_regcita`
+  son INCONEXION*.
+- `agendas-usuaria-logic.js`: `AU_MAPA_ENCABEZADOS` con fechacita (única obligatoria),
+  fecha_registro, entidad, usuario_regcita, especial, prof, sede/nombresede; `AU_TIPOS_BASE`
+  citas/cancelaciones/inasistencias (con reconocimiento por nombre de archivo). Columna que falta
+  = aviso, no error. Funciones de la vista: `auFiltrarAgendas`, `auSerieMensual`, `auRanking`
+  (top N), `auOpcionesAgendas`. La vista usa solo filas con base: lo cargado antes (base '', cuyo
+  usuario era el que confirma) no entra y la pestaña muestra «Información pendiente».
+- `agendas-usuaria.js`: vista `agendas` (filtros, botones Todas/3 bases, gráfica 1 línea por mes
+  con «Fecha de registro»/«Fecha de cita», gráfica 2 barras apiladas por base con «Usuario que
+  registra»/«Especialidad»/«Profesional», top 10 + «Ver más», Excel con 2 hojas). Ventana de
+  bases: aviso si un archivo parece de otra base. `cargas.js`/`cargas-logic.js` (solo la rama de
+  Agendas de Aurora): Cargar Datos reconoce la base por el nombre del archivo.
+- Servidor: columnas `entidad` y `prof` (migración `fase302_agendas_tres_bases_v1`, ADD COLUMN);
+  la misma migración convierte la pestaña de 3 vistas de producción en «Agendas» (una vista; otra
+  forma se deja). Plantilla con la forma nueva. Validación: sede/usuario/especialidad pueden ir
+  vacías; entidad y prof opcionales.
+
+**Pruebas.** `fase302-agendas-aurora-vista` (7) con encabezados reales y valores sintéticos;
+`fase259`, `fase301`, `fase153`, `fase160` al modelo nuevo. Suite 2793/2793, `npm audit` 0.
+Con los archivos reales en local (solo agregados): 857 + 659 + 68 = 1.584 citas; Cancelaciones e
+Inasistencias avisan que no traen fecha de registro. Local (Playwright + Brave, CLIENTE y
+SUPERVISOR, 375/768/1440): «Información pendiente» antes de subir, casilla equivocada detectada,
+3 bases guardadas, nota de fecha de registro, «Ver más», el cliente ve «Asesor 1, 2…», 0 errores.
+ORLANT local: mismas pestañas y resultados. No se subió nada en producción.

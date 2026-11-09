@@ -743,9 +743,12 @@ const agendasUsuariaFila = z.strictObject({
   mes: mesSchema,
   fechaCita: auDia,
   fechaSolicitud: z.union([z.literal(''), auDia]),
-  sede: auTexto(120).min(1),
-  usuario: auTexto(60).min(1),
-  especialidad: auTexto(120).min(1),
+  // Fase 302: '' = esa base no trae la columna (la cita no suma en esa dimension).
+  sede: auTexto(120),
+  usuario: auTexto(60),
+  especialidad: auTexto(120),
+  entidad: auTexto(120).optional(),
+  prof: auTexto(120).optional(),
   n: z.number().int().min(1).max(100000),
   base: z.enum(AU_BASES_IDS, { error: 'Base desconocida' }).optional(),
 });

@@ -680,12 +680,13 @@ function cargasPlanConsolidado(secciones, calidadCols, traficoCols, traficoWppCo
   // servidor solo llegan conteos, nunca datos de pacientes.
   if (agendasUsuariaCols) {
     plan.push({
-      tipo: 'agendas_usuaria', hoja: CARGAS_HOJA_AGENDAS_USUARIA, titulo: 'Agendas por usuaria (reporte de citas)',
-      descripcion: 'El reporte mensual de citas que exporta el sistema de la clínica (.xls o .xlsx), tal cual: una fila por cita.',
+      tipo: 'agendas_usuaria', hoja: CARGAS_HOJA_AGENDAS_USUARIA, titulo: 'Agendas (3 bases de la clínica)',
+      descripcion: 'Una de las 3 bases que exporta el sistema de la clínica (.xls o .xlsx), tal cual: Citas asignadas y cumplidas, Cancelaciones o Inasistencias. La base se reconoce por el nombre del archivo.',
       filaUnica: false, columnas: agendasUsuariaCols,
       notasExtra: [
-        'Columnas que se usan (por nombre): fechacita, usuario_confirma, motivo_conf, fecha_confirma y nombresede; si vienen, usuario_regcita, consulta, cirugia y tipo_paciente. Las demás (datos del paciente) NO se leen ni se envían.',
-        'El mes es el de fechacita. Subir otra vez un mes lo reemplaza entero (con Deshacer por 30 días).',
+        // Fase 302: las columnas reales de las 3 bases (mapa en agendas-usuaria-logic.js).
+        'Columnas que se usan (por nombre, en cualquier orden): fechacita (obligatoria), fecha_registro, entidad, usuario_regcita, especial, prof y nombresede/sede. Si una base no trae alguna, esas citas no suman en lo que dependa de ella. Las demás (datos del paciente) NO se leen ni se envían.',
+        'El mes es el de fechacita. Subir otra vez una base reemplaza solo esa base del mes (con Deshacer por 30 días). Para subir las 3 juntas: Centro de cargas › Agendas › Subir.',
         'El nombre de cada asesora sale de "Usuarios del sistema → asesora" (Admin), no del archivo.',
       ],
     });
