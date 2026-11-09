@@ -42,8 +42,8 @@ test('Aurora: los 3 skills conocidos con su nombre; los desconocidos y la salida
   assert.equal(e('Skill 4019'), 'Whatsapp de entrada');
   assert.equal(e('Skill 4062'), 'Confirmaciones whatsapp');
   assert.equal(e('Skill 4063'), 'Recordaciones 3 dias');
-  assert.equal(e('Skill 4166'), 'Skill 4166');
-  assert.equal(e('Skill 4169'), 'Skill 4169');
+  assert.equal(e('Skill 4166'), 'Skill 4166 (nombre pendiente)'); // Fase 298
+  assert.equal(e('Skill 4169'), 'Skill 4169 (nombre pendiente)'); // Fase 298
   assert.equal(e('WHATSAPP DE SALIDA'), 'WhatsApp de salida', 'la salida (SKILL_ID 0) sigue igual');
   assert.equal(T.tipificacionEtiquetaSkill('Skill 4019', 'clinica aurora'), 'Whatsapp de entrada', 'el nombre del cliente sin importar mayusculas');
 });
@@ -65,8 +65,8 @@ test('filtro Cola: el valor de cada opcion es el mismo de antes (lo que va al se
   const antes = opciones(opcionesHtml(skills, T.tipificacionEtiquetaSkill));
   const despues = opciones(opcionesHtml(skills, (v) => T.tipificacionEtiquetaSkill(v, AURORA)));
   assert.deepEqual(despues.map((o) => o.valor), antes.map((o) => o.valor), 'mismos valores, en el mismo orden');
-  assert.deepEqual(despues.map((o) => o.texto), ['Todos', 'Whatsapp de entrada', 'Confirmaciones whatsapp', 'Recordaciones 3 dias', 'Skill 4166', 'Skill 4169', 'WhatsApp de salida']);
-  assert.deepEqual(antes.map((o) => o.texto), ['Todos', 'Skill 4019', 'Skill 4062', 'Skill 4063', 'Skill 4166', 'Skill 4169', 'WhatsApp de salida']);
+  assert.deepEqual(despues.map((o) => o.texto), ['Todos', 'Whatsapp de entrada', 'Confirmaciones whatsapp', 'Recordaciones 3 dias', 'Skill 4166 (nombre pendiente)', 'Skill 4169 (nombre pendiente)', 'WhatsApp de salida'] /* Fase 298 */);
+  assert.deepEqual(antes.map((o) => o.texto), ['Todos', 'Skill 4019 (nombre pendiente)', 'Skill 4062 (nombre pendiente)', 'Skill 4063 (nombre pendiente)', 'Skill 4166 (nombre pendiente)', 'Skill 4169 (nombre pendiente)', 'WhatsApp de salida'] /* Fase 298 */);
 });
 
 test('conteos: elegir cada opcion del filtro da exactamente lo mismo antes y despues (servidor real, base de prueba)', () => {
