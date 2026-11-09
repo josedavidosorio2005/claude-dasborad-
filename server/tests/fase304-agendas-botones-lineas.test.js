@@ -44,11 +44,12 @@ test('botones de base justo DEBAJO de los filtros, dentro de la misma tarjeta', 
 });
 
 test('botones resaltados: claro fondo negro/letra blanca, oscuro fondo blanco/letra negra; activo azul con ✓; 44 px', () => {
-  assert.match(css, /\.au-ag-botones \.gd-subtab-btn\{min-height:44px;[^}]*background:#111;color:#fff;/);
-  assert.match(css, /\[data-theme="dark"\] \.au-ag-botones \.gd-subtab-btn\{background:#fff;color:#111;/);
-  assert.match(css, /\.au-ag-botones \.gd-subtab-btn\.on\{background:#1565c0;[^}]*color:#fff;/);
-  assert.match(css, /\[data-theme="dark"\] \.au-ag-botones \.gd-subtab-btn\.on\{background:#90c8f8;[^}]*color:#0a2540;/);
-  assert.match(css, /\.au-ag-botones \.gd-subtab-btn\.on::before\{content:"✓ "\}/);
+  // Fase 305: los mismos reglones cubren tambien los botones de Mobilize (.gd-botones-resaltados).
+  assert.match(css, /\.au-ag-botones \.gd-subtab-btn,\.gd-botones-resaltados \.gd-subtab-btn\{min-height:44px;[^}]*background:#111;color:#fff;/);
+  assert.match(css, /\[data-theme="dark"\] \.au-ag-botones \.gd-subtab-btn,\[data-theme="dark"\] \.gd-botones-resaltados \.gd-subtab-btn\{background:#fff;color:#111;/);
+  assert.match(css, /\.au-ag-botones \.gd-subtab-btn\.on,\.gd-botones-resaltados \.gd-subtab-btn\.on\{background:#1565c0;[^}]*color:#fff;/);
+  assert.match(css, /\[data-theme="dark"\] \.au-ag-botones \.gd-subtab-btn\.on,\[data-theme="dark"\] \.gd-botones-resaltados \.gd-subtab-btn\.on\{background:#90c8f8;[^}]*color:#0a2540;/);
+  assert.match(css, /\.au-ag-botones \.gd-subtab-btn\.on::before,\.gd-botones-resaltados \.gd-subtab-btn\.on::before\{content:"✓ "\}/);
   // Contraste del texto de cada estado (WCAG AA 4.5:1).
   for (const [fondo, texto] of [['#111111', '#ffffff'], ['#ffffff', '#111111'], ['#1565c0', '#ffffff'], ['#90c8f8', '#0a2540']]) {
     assert.ok(contrasteRazon(fondo, texto) >= 4.5, fondo + '/' + texto);

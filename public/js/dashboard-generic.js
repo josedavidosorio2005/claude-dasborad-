@@ -856,6 +856,7 @@ async function openGenericDashboard(cliente){
   document.getElementById('gd-panels').innerHTML = GD_CARGANDO_HTML;
   try{
     var resp = await apiRequest('GET','/dashboard/'+encodeURIComponent(cliente));
+    if(typeof gdCambiarEstadoACliente === 'function') gdCambiarEstadoACliente(cliente); // Fase 305: filtros por cliente
     _gd.cliente = cliente;
     _gd.config = resp.config;
     _gd.cargas = resp.secciones || {};
@@ -878,6 +879,7 @@ async function openGenericDashboardPreview(config){
   document.getElementById('gd-kpis').innerHTML = '';
   document.getElementById('gd-tabs').innerHTML = '';
   document.getElementById('gd-panels').innerHTML = '';
+  if(typeof gdCambiarEstadoACliente === 'function') gdCambiarEstadoACliente(config.cliente); // Fase 305: filtros por cliente
   _gd.cliente = config.cliente;
   _gd.config = config;
   _gd.cargas = {};
@@ -892,6 +894,9 @@ async function openGenericDashboardPreview(config){
 // volver a pedir los datos; sin el, el tablero arranca como al abrirlo.
 async function _gdBootstrap(conservar){
   if(typeof _auCache !== 'undefined') _auCache = {}; // Fase 259: al abrir/actualizar, datos y nombres frescos
+  // Fase 305: botones resaltados solo en los clientes de la lista (hoy MOBILIZE).
+  var ovB = document.getElementById('gd-overlay');
+  if(ovB) ovB.classList.toggle('gd-botones-resaltados', typeof gdBotonesResaltados === 'function' && gdBotonesResaltados(_gd.cliente));
   _gd.compSel = conservar ? conservar.compSel : '';
   _gd.mesesSel = conservar ? conservar.mesesSel : [];
   _gd.vistaSel = conservar ? conservar.vistaSel : ((_gd.config.vista && _gd.config.vista.opciones[0] && _gd.config.vista.opciones[0].valor) || '');
@@ -1469,8 +1474,63 @@ var GD_ESTADO_A_REINICIAR = [
   '_calDashFiltro', '_calDashMesSincronizado', '_calDashSinDatosMesGlobal',
   '_gdCatFiltro', '_gdFechaFiltro', '_gdSerieFiltro', '_gdUnicoFiltro', '_salOpciones', '_salEditor', '_calResOpciones',
 ];
+// Fase 305 (bug: un filtro elegido en una campaña, ej. Tráfico «Día», aparecia
+// aplicado en otra): cada CLIENTE guarda sus propios filtros. Al pasar de un
+// cliente a otro se aparta el estado del anterior (los objetos de arriba, los de
+// cada panel de abajo y los ?tv_/?tvw_ de la URL) y se pone el del nuevo (vacio
+// si nunca se abrio). Volver a abrir el mismo cliente no cambia nada (igual que
+// antes): por eso un cliente usado solo se ve y calcula exactamente igual.
+var GD_ESTADO_POR_PANEL = ['_salLinea', '_encuestaVistaQ1', '_errEstado', '_cmpFiltro', '_cmpEstado', '_cmpVerTodas', '_eficaciaUltimo'];
+var GD_URL_PREFIJOS_FILTRO = ['tv_', 'tvw_'];
+var _gdEstadoPorCliente = {};
+var _gdEstadoClienteActivo = null;
+function _gdGlobal(){ return (typeof window !== 'undefined') ? window : globalThis; }
+function _gdNombresEstado(){ return GD_ESTADO_A_REINICIAR.concat(GD_ESTADO_POR_PANEL); }
+function _gdEsFiltroURL(k){ return GD_URL_PREFIJOS_FILTRO.some(function(p){ return k.indexOf(p) === 0; }); }
+function gdApartarEstadoCliente(cliente){
+  var g = _gdGlobal(), snap = { objs: {}, url: [] };
+  _gdNombresEstado().forEach(function(n){
+    var o = g[n];
+    if(o && typeof o === 'object' && !Array.isArray(o)){
+      snap.objs[n] = Object.assign({}, o);
+      Object.keys(o).forEach(function(k){ delete o[k]; });
+    }
+  });
+  try{
+    if(g.location && g.history && g.history.replaceState){
+      var params = new URLSearchParams(g.location.search || '');
+      var quedan = new URLSearchParams();
+      params.forEach(function(v, k){ if(_gdEsFiltroURL(k)) snap.url.push([k, v]); else quedan.append(k, v); });
+      var qs = quedan.toString();
+      g.history.replaceState(null, '', g.location.pathname + (qs ? '?' + qs : '') + (g.location.hash || ''));
+    }
+  }catch(e){}
+  if(cliente) _gdEstadoPorCliente[cliente] = snap;
+}
+function gdPonerEstadoCliente(cliente){
+  var g = _gdGlobal(), snap = _gdEstadoPorCliente[cliente];
+  if(!snap) return;
+  Object.keys(snap.objs).forEach(function(n){ if(g[n] && typeof g[n] === 'object') Object.assign(g[n], snap.objs[n]); });
+  try{
+    if(snap.url.length && g.location && g.history && g.history.replaceState){
+      var params = new URLSearchParams(g.location.search || '');
+      snap.url.forEach(function(kv){ params.set(kv[0], kv[1]); });
+      var qs = params.toString();
+      g.history.replaceState(null, '', g.location.pathname + (qs ? '?' + qs : '') + (g.location.hash || ''));
+    }
+  }catch(e){}
+}
+// Se llama al abrir un tablero (normal o vista previa) ANTES de pintarlo.
+function gdCambiarEstadoACliente(cliente){
+  if(_gdEstadoClienteActivo === cliente) return;
+  gdApartarEstadoCliente(_gdEstadoClienteActivo);
+  gdPonerEstadoCliente(cliente);
+  _gdEstadoClienteActivo = cliente;
+}
+
 function gdReiniciarFiltros(){
   var g = (typeof window !== 'undefined') ? window : globalThis;
+  _gdEstadoPorCliente = {}; _gdEstadoClienteActivo = null; // Fase 305: al cerrar sesion, nada de ningun cliente
   GD_ESTADO_A_REINICIAR.forEach(function(n){
     if(g[n] && typeof g[n] === 'object' && !Array.isArray(g[n])) Object.keys(g[n]).forEach(function(k){ delete g[n][k]; });
   });

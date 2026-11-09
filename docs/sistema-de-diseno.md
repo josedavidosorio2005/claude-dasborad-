@@ -524,7 +524,10 @@ Pedido del supervisor de Clínica Aurora (10/11/2026), solo en la pestaña «Age
 - **Botones** de la pestaña (base y vista de cada gráfica, `.au-ag-botones`): tema claro fondo
   `#111` y letra blanca; tema oscuro fondo blanco y letra `#111`; activo azul (`#1565c0` con
   letra blanca / `#90c8f8` con letra `#0a2540`), borde doble y «✓». Todos ≥ 4,5:1 y 44 px de
-  alto. Medido en `fase304-agendas-botones-lineas.test.js`. No se usa fuera de esta pestaña.
+  alto. Medido en `fase304-agendas-botones-lineas.test.js`. Fase 305: el mismo estilo se aplica a
+  todo el tablero de MOBILIZE (clase `.gd-botones-resaltados` en `#gd-overlay`, lista
+  `GD_CLIENTES_BOTONES_RESALTADOS` en `graficas-lineas-logic.js`; también los `.btn-sm` de sus
+  paneles, sin estado activo). ORLANT y los demás clientes no la llevan.
 
 ## Fechas con nombre (Fase 147)
 

@@ -20129,3 +20129,31 @@ gráficas. Suite completa en verde. Local (Playwright + Brave, CLIENTE y SUPERVI
 375/768/1440): base debajo de los filtros, colores de botones esperados, gráfica 2 de línea de
 mayor a menor, la gráfica 1 NO se recrea al cambiar la 2 (ni la 2 al cambiar la 1), 0 errores.
 ORLANT local: mismas pestañas y resultados.
+
+## Fase 305 — Filtros por campaña, nombres completos en Agendas, Errores al final y botones de Mobilize (v1.152.0, 2026-11-10)
+
+ORLANT congelado: solo se permitía el arreglo compartido del punto 3, con ORLANT igual.
+
+- **Bug (compartido):** los filtros se cruzaban entre campañas. Causa: los de Tráfico de Llamadas y
+  de WhatsApp viven en la URL (`?tv_…`/`?tvw_…`), una sola para toda la página, y los objetos de
+  estado de los paneles (algunos por número de panel, no por campaña) solo se limpiaban al cerrar
+  sesión. Reproducido en local sobre main: «Día» en ORLANT → Aurora y HLM abrían en «Día» con las
+  líneas y fechas de ORLANT en la URL. Arreglo (`dashboard-generic.js`): `gdCambiarEstadoACliente`
+  al abrir un tablero (normal o vista previa) aparta el estado del cliente anterior (lista
+  `GD_ESTADO_A_REINICIAR` + `GD_ESTADO_POR_PANEL` + `tv_`/`tvw_` de la URL) y pone el del nuevo;
+  abrir el mismo cliente no cambia nada; cerrar sesión lo borra todo.
+- **Aurora › Agendas:** gráfica 2 con los nombres completos (`auPartirEtiqueta`: varias líneas si
+  caben ≥ 80 px por nombre; si no, verticales), pasando por encima del ajuste común de celular
+  (`gdOpcionesGraficaMovil`, sin tocarlo) solo en esa gráfica.
+- **Aurora:** «Errores» de última (`PESTANAS_ORDEN_AURORA_HLM`).
+- **Mobilize:** botones resaltados como Aurora › Agendas (clase `.gd-botones-resaltados` solo para
+  MOBILIZE; sub-pestañas y `.btn-sm` de sus paneles). En la base demo la pestaña «Llamadas Únicas y
+  de Salida» no tiene datos: se verificó en Flujo de Llamadas y Encuesta.
+
+**Pruebas.** `fase305-filtros-por-campana` (7, con el código real de `dashboard-generic.js` en
+sandbox); `fase297`, `fase304`, `fase273` ajustadas. Suite 2806/2806, `npm audit` 0. Local
+(Playwright + Brave): cruce de filtros main vs rama (main: Aurora/HLM en «Día»; rama: «Mes» y
+ORLANT conserva «Día»). **ORLANT main vs rama** sobre la misma base (13 pestañas visibles en la
+copia, 23 vistas, 16 gráficas): texto, datos de gráficas, colores de botones y orden idénticos, 0
+errores. Mobilize en claro/oscuro 1440/375: botones negro/blanco y blanco/negro, activo azul; ORLANT
+sin la clase. Agendas: nombres completos en 1440 (2 líneas), 768 y 375 (verticales), 0 errores.

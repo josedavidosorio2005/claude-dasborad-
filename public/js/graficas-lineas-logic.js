@@ -88,7 +88,8 @@ function graficasLineasColores(oscuro) {
 // MOSTRAR (dashboard-generic.js, _gdTabsVisibles): dashboards_config no cambia, así
 // una pestaña que se agregue después por migración no deshace este orden. Las que
 // no están en la lista quedan al final, en el orden que ya tenían. Otro cliente: igual.
-var PESTANAS_ORDEN_AURORA_HLM = ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'errores', 'tipificacion'];
+// Fase 305: «Errores» siempre de ultima (despues de Tipificación).
+var PESTANAS_ORDEN_AURORA_HLM = ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'tipificacion', 'errores'];
 
 // ORLANT (Fase 300): solo se mueve Total tráfico justo despues de Tráfico de
 // WhatsApp (o de Tráfico de Llamadas si no esta); todas las demas, igual.
@@ -116,8 +117,16 @@ function pestanasOrdenCliente(tabs, cliente) {
     .map(function (x) { return x.t; });
 }
 
+// Fase 305: clientes cuyo tablero lleva los botones (sub-pestañas y vistas)
+// resaltados como Aurora › Agendas (claro negro/blanco, oscuro blanco/negro,
+// activo azul con ✓). Solo MOBILIZE; ORLANT se ve igual que siempre.
+var GD_CLIENTES_BOTONES_RESALTADOS = ['MOBILIZE'];
+function gdBotonesResaltados(cliente) {
+  return GD_CLIENTES_BOTONES_RESALTADOS.indexOf(_glNorm(cliente)) !== -1;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { PESTANAS_ORDEN_AURORA_HLM: PESTANAS_ORDEN_AURORA_HLM, pestanasOrdenCliente: pestanasOrdenCliente, GRAFICAS_LINEAS_CLIENTES: GRAFICAS_LINEAS_CLIENTES, graficasLineasAplica: graficasLineasAplica,
+  module.exports = { PESTANAS_ORDEN_AURORA_HLM: PESTANAS_ORDEN_AURORA_HLM, GD_CLIENTES_BOTONES_RESALTADOS: GD_CLIENTES_BOTONES_RESALTADOS, gdBotonesResaltados: gdBotonesResaltados, pestanasOrdenCliente: pestanasOrdenCliente, GRAFICAS_LINEAS_CLIENTES: GRAFICAS_LINEAS_CLIENTES, graficasLineasAplica: graficasLineasAplica,
     TOTAL_TRAFICO_LINEAS_CLIENTES: TOTAL_TRAFICO_LINEAS_CLIENTES, totalTraficoLineasAplica: totalTraficoLineasAplica,
     totalTraficoSeriesIngreso: totalTraficoSeriesIngreso, variacionMesAMes: variacionMesAMes,
     variacionTexto: variacionTexto, variacionSentido: variacionSentido, graficasLineasColores: graficasLineasColores };
