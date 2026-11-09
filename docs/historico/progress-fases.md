@@ -20023,3 +20023,37 @@ Pedido del 10/11 (reunión con ORLANT a las 2 p. m.: nada de ORLANT podía rompe
 mueve Total tráfico, el resto en el mismo orden, sin mutar la lista; Mobilize/SURA igual). Suite
 2775/2775, `npm audit` 0. Local (Playwright + Brave, copia de la base demo con datos sintéticos,
 CLIENTE y SUPERVISOR, 375/768/1440): orden correcto en ORLANT, Aurora y HLM, 0 errores.
+
+
+## Fase 301 — Agendas por usuaria de Aurora lista para 3 bases (v1.149.0, 2026-11-10)
+
+Pedido: preparar la carga de "Agendas por usuaria" (Aurora) para 3 bases con los mismos
+encabezados en distinto orden. Sin tocar ORLANT, Mobilize ni SURA; sin cambiar el cálculo ni la
+vista de la pestaña (la lógica la define el supervisor en la próxima reunión).
+
+- `public/js/agendas-usuaria-logic.js`: **`AU_MAPA_ENCABEZADOS`** (campo, etiqueta, obligatoria,
+  sinónimos; el nombre de siempre primero, así gana sobre un genérico como «sede») y
+  **`AU_TIPOS_BASE`** (`base1`..`base3`, etiquetas «Base 1..3»): los dos lugares que se ajustan
+  cuando el supervisor muestre los nombres reales. `auNormEncabezado` (sin mayúsculas, tildes,
+  espacios, `_`, `-`, `.`). `auParseFilas(aoa, { base, archivo })` agrega `base` a cada fila y,
+  sin opciones, se comporta como antes. `auUnirBases(partes)` une 1 a 3 bases; si alguna falla no
+  se une nada y cada error dice la columna que falta y el archivo.
+- `public/js/agendas-usuaria.js`: ventana «cargar bases» (una casilla por base), misma lectura que
+  Cargar Datos (`cellNF`), hoja elegida por sus columnas; confirma con el impacto por mes y base.
+  `centro-cargas.js`: una línea en `ccSubir`, solo para `agendas_usuaria` (solo Aurora).
+- Servidor: columna nueva `base` en `agendas_usuaria` (migración `fase301_agendas_usuaria_base_v1`,
+  ADD COLUMN, no toca filas). `validation.js`: `base` opcional (ids de `AU_TIPOS_BASE`).
+  `cargarAgendasUsuaria`/`impactoAgendasUsuaria`: si todas las filas de un mes traen base, solo se
+  reemplazan esas bases (y lo cargado antes sin base); la carga de siempre (sin base) reemplaza el
+  mes entero como antes. El respaldo para Deshacer sigue siendo el mes completo. La lectura de la
+  pestaña no devuelve `base` (la vista no cambia).
+
+**Pruebas.** `fase301-agendas-aurora-3-bases` (10): mapa configurable, normalización, misma base
+en 3 órdenes = mismo resultado, sinónimo genérico no gana al de siempre, unión de 3 bases con
+origen, errores (columna + archivo, plural, base repetida, sin archivo), servidor (una base
+reemplaza solo lo suyo, la carga de siempre el mes entero, base desconocida 400, migración).
+`fase153`/`fase160`: la migración nueva en la lista cerrada. Suite 2785/2785, `npm audit` 0.
+Local (Playwright + Brave, copia de la base demo, Excel sintéticos con fechas reales,
+375/768/1440): error con archivo y columna; 3 bases unidas y guardadas por base (12/20/7); 0
+errores de consola. ORLANT local: mismas pestañas y resultados que antes; ningún archivo de ORLANT
+ni de la carga genérica (`cargas.js`, `cargas-logic.js`) cambió.

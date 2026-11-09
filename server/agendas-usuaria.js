@@ -21,16 +21,35 @@ function nowStr() {
 
 function mesesDe(filas) { return [...new Set(filas.map((f) => f.mes))].sort(); }
 
+// Fase 301: que reemplaza una carga en UN mes. Si todas sus filas de ese mes
+// traen `base`: solo esas bases (y lo cargado antes sin base, que ya queda
+// cubierto por las bases nuevas); las otras bases del mes se quedan. Si alguna
+// fila viene sin base (la carga de siempre, un solo archivo): el mes entero.
+function alcanceDelMes(filas, mes) {
+  const delMes = filas.filter((f) => f.mes === mes);
+  const bases = [...new Set(delMes.map((f) => f.base || ''))];
+  if (bases.includes('')) return { completo: true, bases: [] };
+  return { completo: false, bases: bases.sort() };
+}
+function whereAlcance(alcance) {
+  if (alcance.completo) return { sql: '', params: [] };
+  return { sql: ` AND (base = '' OR base IN (${alcance.bases.map(() => '?').join(', ')}))`, params: alcance.bases };
+}
+
 function impactoAgendasUsuaria(db, { campana, filas }) {
   const meses = mesesDe(filas);
   return {
     meses: meses.map((mes) => {
       const delMes = filas.filter((f) => f.mes === mes);
-      return {
+      const alcance = alcanceDelMes(filas, mes);
+      const w = whereAlcance(alcance);
+      const r = {
         mes,
-        citasExistentes: db.prepare(`SELECT COALESCE(SUM(n), 0) AS n FROM ${TABLA} WHERE campana = ? AND mes = ? AND rol = 'confirma'`).get(campana, mes).n,
+        citasExistentes: db.prepare(`SELECT COALESCE(SUM(n), 0) AS n FROM ${TABLA} WHERE campana = ? AND mes = ? AND rol = 'confirma'${w.sql}`).get(campana, mes, ...w.params).n,
         citasNuevas: delMes.reduce((s, f) => s + f.n, 0),
       };
+      if (!alcance.completo) r.bases = alcance.bases; // Fase 301: solo esas bases (sin el campo = el mes entero, como siempre)
+      return r;
     }),
   };
 }
@@ -40,20 +59,29 @@ function impactoAgendasUsuaria(db, { campana, filas }) {
 function cargarAgendasUsuaria(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
   const ts = nowStr();
   const meses = mesesDe(filas);
-  const del = db.prepare(`DELETE FROM ${TABLA} WHERE campana = ? AND mes = ?`);
   // Fase 265: columnas nuevas (fechaCita, fechaSolicitud, especialidad); las de
   // la Fase 259 (dia/canal/tipoCita/tipoPaciente) quedan vacias en las filas nuevas.
-  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, fechaCita, fechaSolicitud, especialidad, archivoNombre, cargadoPorNombre, createdAt)
-    VALUES (@campana, @mes, '', @sede, @usuario, '', '', '', 'confirma', @n, @fechaCita, @fechaSolicitud, @especialidad, @archivoNombre, @cargadoPorNombre, @createdAt)`);
+  // Fase 301: `base` ('' en la carga de siempre).
+  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, fechaCita, fechaSolicitud, especialidad, base, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana, @mes, '', @sede, @usuario, '', '', '', 'confirma', @n, @fechaCita, @fechaSolicitud, @especialidad, @base, @archivoNombre, @cargadoPorNombre, @createdAt)`);
   let borradas = 0;
+  const porBase = {};
   db.transaction(() => {
+    // Respaldo del mes COMPLETO (Deshacer devuelve el mes como estaba).
     respaldarAntesDeCambiar(db, TABLA, { campana, meses, guardadoPorNombre: cargadoPorNombre });
-    for (const mes of meses) borradas += del.run(campana, mes).changes;
+    for (const mes of meses) {
+      const w = whereAlcance(alcanceDelMes(filas, mes));
+      borradas += db.prepare(`DELETE FROM ${TABLA} WHERE campana = ? AND mes = ?${w.sql}`).run(campana, mes, ...w.params).changes;
+    }
     for (const f of filas) {
-      ins.run(Object.assign({}, f, { campana, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts }));
+      const base = f.base || '';
+      porBase[base] = (porBase[base] || 0) + f.n;
+      ins.run(Object.assign({}, f, { base, campana, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts }));
     }
   })();
-  return { meses, insertadas: filas.length, borradas, citas: filas.reduce((s, f) => s + f.n, 0) };
+  const r = { meses, insertadas: filas.length, borradas, citas: filas.reduce((s, f) => s + f.n, 0) };
+  if (Object.keys(porBase).some((b) => b !== '')) r.porBase = porBase; // Fase 301
+  return r;
 }
 
 function agendasUsuariaOpciones(db, campana) {
@@ -69,4 +97,4 @@ function agendasUsuariaDatos(db, campana) {
   return { filas: filas.map((f) => Object.assign(f, { asesora: resolverAlias(mapa, f.usuario) })) };
 }
 
-module.exports = { TABLA, impactoAgendasUsuaria, cargarAgendasUsuaria, agendasUsuariaOpciones, agendasUsuariaDatos };
+module.exports = { TABLA, alcanceDelMes, impactoAgendasUsuaria, cargarAgendasUsuaria, agendasUsuariaOpciones, agendasUsuariaDatos };

@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.148.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.149.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 301 — Agendas por usuaria de Aurora lista para 3 bases: lectura por nombre de encabezado (mapa con sinónimos), unión con la base de origen, errores por archivo (v1.149.0, 2026-11-10)
 - Fase 300 — Total tráfico tercera en Aurora/HLM; ORLANT con la misma gráfica de líneas y Total tráfico tercera (v1.148.0, 2026-11-10)
 - Fase 299 — El SUPERVISOR carga los datos de sus campañas (por rol + acceso), también SURA: bases, metas y códigos (v1.147.0, 2026-11-09)
 - Fase 298 — Tipificación: «Skill N (nombre pendiente)» para los skills sin nombre (Aurora 4166/4169) (v1.146.1, 2026-11-09)

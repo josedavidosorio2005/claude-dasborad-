@@ -15,13 +15,32 @@
 // "usuario" es el codigo del sistema ("INCONEXION", "INCONEXION A"...); el
 // nombre real se resuelve AL MOSTRAR con alias_asesores, nunca al guardar.
 
-var AU_COLUMNAS = [
-  { key: 'fechacita', obligatoria: true },
-  { key: 'fecha_registro', obligatoria: true },
-  { key: 'usuario_confirma', obligatoria: true },
-  { key: 'nombresede', obligatoria: true },
-  { key: 'especial', obligatoria: true },
+// ── Fase 301 (09/11): MAPA DE ENCABEZADOS, el unico lugar que se toca cuando el
+// supervisor muestre los nombres reales de las 3 bases. Cada columna se ubica por
+// NOMBRE (sin importar mayusculas, tildes, espacios, guiones bajos ni puntos),
+// nunca por posicion. Si varios sinonimos aparecen en el archivo gana el que va
+// PRIMERO en la lista (asi el nombre de siempre del reporte manda sobre uno
+// generico como "sede"). `key` es el nombre interno de siempre (no cambiarlo).
+var AU_MAPA_ENCABEZADOS = [
+  { key: 'fechacita', campo: 'fechaCita', etiqueta: 'Fecha de cita', obligatoria: true,
+    sinonimos: ['fechacita', 'fecha cita', 'fecha de cita', 'fecha de la cita'] },
+  { key: 'fecha_registro', campo: 'fechaSolicitud', etiqueta: 'Fecha de solicitud', obligatoria: true,
+    sinonimos: ['fecha_registro', 'fecha registro', 'fecha de registro', 'fecha de solicitud', 'fecha de solicitud de la cita'] },
+  { key: 'usuario_confirma', campo: 'usuario', etiqueta: 'Usuario que confirma', obligatoria: true,
+    sinonimos: ['usuario_confirma', 'usuario confirma', 'usuario que confirma'] },
+  { key: 'nombresede', campo: 'sede', etiqueta: 'Sede', obligatoria: true,
+    sinonimos: ['nombresede', 'nombre sede', 'nombre de la sede', 'sede'] },
+  { key: 'especial', campo: 'especialidad', etiqueta: 'Especialidad', obligatoria: true,
+    sinonimos: ['especial', 'especialidad'] },
 ];
+// Las 3 bases de Aurora (Fase 301). Los nombres reales los dira el supervisor:
+// se cambian aqui (`id` es lo que se guarda: no cambiarlo despues de cargar).
+var AU_TIPOS_BASE = [
+  { id: 'base1', etiqueta: 'Base 1' },
+  { id: 'base2', etiqueta: 'Base 2' },
+  { id: 'base3', etiqueta: 'Base 3' },
+];
+var AU_COLUMNAS = AU_MAPA_ENCABEZADOS.map(function (c) { return { key: c.key, obligatoria: c.obligatoria }; });
 var AU_CLINICA = 'Clínica (no InConexion)';
 var AU_CAMPOS_FILA = ['mes', 'fechaCita', 'fechaSolicitud', 'sede', 'usuario', 'especialidad', 'n'];
 
@@ -31,12 +50,23 @@ function auNorm(s) {
     .toUpperCase().replace(/\s+/g, ' ').trim();
 }
 
-// { key: indiceDeColumna } buscando por nombre (sin mayusculas ni espacios de mas).
+// Encabezado comparable: sin tildes, en minusculas, y espacios/_/-/. como un solo espacio.
+function auNormEncabezado(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[\s_.\-]+/g, ' ').trim();
+}
+
+// { key: indiceDeColumna } buscando por NOMBRE con los sinonimos del mapa (gana
+// el primer sinonimo que aparezca; entre columnas repetidas, la primera).
 function auColIndexMap(header) {
+  var norm = (header || []).map(auNormEncabezado);
   var map = {};
-  (header || []).forEach(function (h, i) {
-    var k = auNorm(h).toLowerCase().replace(/ /g, '_');
-    AU_COLUMNAS.forEach(function (c) { if (map[c.key] === undefined && k === c.key) map[c.key] = i; });
+  AU_MAPA_ENCABEZADOS.forEach(function (c) {
+    for (var s = 0; s < c.sinonimos.length && map[c.key] === undefined; s++) {
+      var i = norm.indexOf(auNormEncabezado(c.sinonimos[s]));
+      if (i !== -1) map[c.key] = i;
+    }
   });
   return map;
 }
@@ -86,16 +116,23 @@ function auTexto(v, vacio) { return String(v === null || v === undefined ? '' : 
 // Lee la hoja (encabezado en alguna de las primeras 20 filas) y la devuelve
 // AGREGADA. { filas:[{mes,fechaCita,fechaSolicitud,sede,usuario,especialidad,n}],
 // citas, porUsuario, porSede, porEspecialidad, meses, solicitudDesde, solicitudHasta, avisos, error }.
-function auParseFilas(aoa) {
+// opts (Fase 301, opcional): { base: id de AU_TIPOS_BASE, archivo: nombre del
+// archivo } -- cada fila agregada lleva su `base` y el error dice el archivo.
+// Sin opts, todo igual que antes (una sola base, sin `base` en las filas).
+function auParseFilas(aoa, opts) {
+  var o = opts || {};
   var filasAoa = aoa || [];
   var iHead = -1, map = null;
+  var mejor = null; // la fila con mas columnas reconocidas (para decir que falta)
   for (var r = 0; r < Math.min(20, filasAoa.length); r++) {
     var m = auColIndexMap(filasAoa[r]);
     if (!auFaltantes(m).length) { iHead = r; map = m; break; }
+    if (!mejor || Object.keys(m).length > Object.keys(mejor).length) mejor = m;
   }
   if (iHead === -1) {
-    var faltan = auFaltantes(auColIndexMap(filasAoa[0] || []));
-    return { error: 'El archivo no es el reporte de citas: faltan las columnas ' + faltan.join(', ') + '.', filas: [] };
+    var faltan = auFaltantes(mejor || auColIndexMap(filasAoa[0] || []));
+    if (o.archivo) return { error: auMensajeFaltantes(faltan, o.archivo, o.base), faltan: faltan, filas: [] };
+    return { error: 'El archivo no es el reporte de citas: faltan las columnas ' + faltan.join(', ') + '.', faltan: faltan, filas: [] };
   }
   var agg = {};
   var res = { citas: 0, porUsuario: {}, porSede: {}, porEspecialidad: {}, meses: {}, avisos: [], sinFechaCita: 0, sinUsuario: 0, sinSolicitud: 0, solicitudDesde: null, solicitudHasta: null };
@@ -109,7 +146,8 @@ function auParseFilas(aoa) {
     var fs = auFecha(row[map.fecha_registro]) || '';
     if (!fs) res.sinSolicitud++;
     var f = { mes: fc.slice(0, 7), fechaCita: fc, fechaSolicitud: fs, sede: auTexto(row[map.nombresede], 'Sin sede'), usuario: usuario, especialidad: auTexto(row[map.especial], 'Sin especialidad') };
-    var k = [f.mes, f.fechaCita, f.fechaSolicitud, f.sede, f.usuario, f.especialidad].join('\u0001');
+    if (o.base) f.base = o.base; // Fase 301: de que base vino
+    var k = [f.mes, f.fechaCita, f.fechaSolicitud, f.sede, f.usuario, f.especialidad, f.base || ''].join('\u0001');
     if (!agg[k]) agg[k] = Object.assign({}, f, { n: 0 });
     agg[k].n++;
     res.citas++;
@@ -126,10 +164,52 @@ function auParseFilas(aoa) {
   if (res.sinUsuario) res.avisos.push(res.sinUsuario + ' fila(s) sin usuario que confirma: no se cuentan.');
   if (res.sinSolicitud) res.avisos.push(res.sinSolicitud + ' cita(s) sin fecha de solicitud: se cuentan, pero no entran al filtrar por esa fecha.');
   // Solo los campos permitidos, en un orden fijo (nada mas sale del navegador).
+  var campos = o.base ? AU_CAMPOS_FILA.concat(['base']) : AU_CAMPOS_FILA;
   res.filas = Object.keys(agg).map(function (key) {
-    var o = {}; AU_CAMPOS_FILA.forEach(function (c) { o[c] = agg[key][c]; }); return o;
+    var x = {}; campos.forEach(function (c) { x[c] = agg[key][c]; }); return x;
   });
   return res;
+}
+
+function auEtiquetaBase(id) {
+  var b = AU_TIPOS_BASE.filter(function (t) { return t.id === id; })[0];
+  return b ? b.etiqueta : (id || '');
+}
+// "En el archivo «x.xlsx» (Base 2) falta la columna «Fecha de cita» (se busca como: fechacita, fecha cita…)."
+function auMensajeFaltantes(faltan, archivo, base) {
+  var desc = (faltan || []).map(function (k) {
+    var c = AU_MAPA_ENCABEZADOS.filter(function (x) { return x.key === k; })[0];
+    return c ? '«' + c.etiqueta + '» (se busca como: ' + c.sinonimos.join(', ') + ')' : '«' + k + '»';
+  });
+  return 'En el archivo «' + (archivo || 'sin nombre') + '»' + (base ? ' (' + auEtiquetaBase(base) + ')' : '') +
+    (desc.length === 1 ? ' falta la columna ' : ' faltan las columnas ') + desc.join('; ') + '.';
+}
+
+// Fase 301: lee 1 a 3 bases (cada una con su tipo) y las UNE en un solo conjunto.
+// partes: [{ base, archivo, aoa }]. Si alguna falla, no se une nada y vuelve
+// `errores` (uno por archivo) para no guardar a medias.
+// -> { filas (cada una con `base`), citas, porBase: { base: { archivo, citas, meses } },
+//      meses, avisos, errores, error }
+function auUnirBases(partes) {
+  var ids = AU_TIPOS_BASE.map(function (t) { return t.id; });
+  var out = { filas: [], citas: 0, porBase: {}, meses: {}, avisos: [], errores: [] };
+  var vistas = {};
+  (partes || []).forEach(function (p) {
+    if (ids.indexOf(p.base) === -1) { out.errores.push('El archivo «' + (p.archivo || 'sin nombre') + '» no tiene una base válida.'); return; }
+    if (vistas[p.base]) { out.errores.push(auEtiquetaBase(p.base) + ' viene dos veces («' + vistas[p.base] + '» y «' + p.archivo + '»): sube un archivo por base.'); return; }
+    vistas[p.base] = p.archivo || 'sin nombre';
+    var r = auParseFilas(p.aoa, { base: p.base, archivo: p.archivo || 'sin nombre' });
+    if (r.error) { out.errores.push(r.error); return; }
+    if (!r.filas.length) { out.errores.push('El archivo «' + (p.archivo || 'sin nombre') + '» (' + auEtiquetaBase(p.base) + ') no tiene citas que contar.'); return; }
+    out.porBase[p.base] = { archivo: p.archivo || '', citas: r.citas, meses: Object.keys(r.meses).sort() };
+    Object.keys(r.meses).forEach(function (m) { out.meses[m] = (out.meses[m] || 0) + r.meses[m]; });
+    r.avisos.forEach(function (a) { out.avisos.push('«' + p.archivo + '» (' + auEtiquetaBase(p.base) + '): ' + a); });
+    out.citas += r.citas;
+    out.filas = out.filas.concat(r.filas);
+  });
+  if (!Object.keys(vistas).length && !out.errores.length) out.errores.push('Elige al menos un archivo.');
+  if (out.errores.length) { out.error = out.errores.join(' '); out.filas = []; }
+  return out;
 }
 
 // ── Vista (pestaña "Agendas por usuaria": por mes, por especialidad, por asesor) ──
@@ -190,6 +270,8 @@ function auOpciones(filas, campo) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AU_COLUMNAS: AU_COLUMNAS, AU_CLINICA: AU_CLINICA, AU_CAMPOS_FILA: AU_CAMPOS_FILA,
+    AU_MAPA_ENCABEZADOS: AU_MAPA_ENCABEZADOS, AU_TIPOS_BASE: AU_TIPOS_BASE, auNormEncabezado: auNormEncabezado,
+    auUnirBases: auUnirBases, auMensajeFaltantes: auMensajeFaltantes, auEtiquetaBase: auEtiquetaBase,
     auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auUsuario: auUsuario,
     auParseFilas: auParseFilas, auFiltrar: auFiltrar, auPct: auPct, auTotal: auTotal, auPorMes: auPorMes, auPorEspecialidad: auPorEspecialidad, auPorAsesor: auPorAsesor, auOpciones: auOpciones };
 }
