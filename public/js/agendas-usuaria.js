@@ -49,9 +49,9 @@ async function _auRender(p, i) {
   if (vista === 'agendas') { await _auRenderAgendas(p, i, el, camp); return; } // Fase 302
   var datos;
   try { datos = await _auCargar(camp); } catch (e) { el.innerHTML = '<div class="aurora-card"><div class="gd-aviso-mes" role="status">' + esc(e.message) + '</div></div>'; return; }
-  var titulo = p.titulo || _AU_TITULOS[vista] || 'Agendas por usuaria';
+  var titulo = p.titulo || _AU_TITULOS[vista] || 'Agendas';
   if (!datos.filas.length) {
-    el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="gd-aviso-mes" role="status">Todavía no hay agendas cargadas. Se suben en Cargar Datos › Agendas por usuaria (reporte de citas de la clínica).</div></div>';
+    el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="gd-aviso-mes" role="status">Todavía no hay agendas cargadas. Se suben en Cargar Datos › Agendas.</div></div>';
     return;
   }
   var f = _auFiltrosActuales(camp);

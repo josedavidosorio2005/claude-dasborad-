@@ -20093,3 +20093,16 @@ Inasistencias avisan que no traen fecha de registro. Local (Playwright + Brave, 
 SUPERVISOR, 375/768/1440): «Información pendiente» antes de subir, casilla equivocada detectada,
 3 bases guardadas, nota de fecha de registro, «Ver más», el cliente ve «Asesor 1, 2…», 0 errores.
 ORLANT local: mismas pestañas y resultados. No se subió nada en producción.
+
+## Fase 303 — «Agendas (3 bases)» también en Cargar datos (v1.150.1, 2026-11-10)
+
+Reporte del usuario: en producción, Cargar datos › Clínica Aurora seguía mostrando «Agendas por
+usuaria». Verificado con `gh`: #729 MERGED, main y `/api/health` en 1.150.0 con la Fase 302 (#730,
+duplicado, ya cerrado). No era una versión vieja: la Fase 302 renombró la pestaña, pero no el
+nombre del MÓDULO de carga. Se renombra en el Centro de cargas (`centro-cargas-logic.js`,
+`server/centro-cargas.js`), el catálogo (`plantillas-cliente.js`), Cargar Datos y el aviso de
+guardar (`cargas.js`, solo la rama de Agendas), Exportar (`dashboard-generic.js`) y la ficha del
+módulo (`scripts/plantillas/generar-fichas.js` → `docs/plantillas/agendas_usuaria.md`, índice).
+El módulo queda «Agendas (3 bases)» porque el de ORLANT ya se llama «Agendas» (en Usuarios ›
+permisos de carga se habrían visto dos iguales). ORLANT no cambia. Suite 2793/2793; local: el
+Centro de Aurora muestra «Agendas (3 bases)» y el de ORLANT su «Agendas» de siempre, 0 errores.

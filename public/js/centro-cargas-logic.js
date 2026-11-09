@@ -44,7 +44,7 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'flujo_hora', nombre: 'Flujo por hora' }, // Fase 196
   { id: 'tipificacion', nombre: 'Tipificación' },
   { id: 'encuesta', nombre: 'Encuesta' },
-  { id: 'agendas_usuaria', nombre: 'Agendas por usuaria' }, // Fase 259
+  { id: 'agendas_usuaria', nombre: 'Agendas (3 bases)' }, // Fase 259; Fase 303 (no confundir con «Agendas» de ORLANT)
   { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
 ];
 

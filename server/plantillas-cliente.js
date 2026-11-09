@@ -39,7 +39,7 @@ const CATALOGO = [
   { id: 'inasistencia', nombre: 'Inasistencia', grupo: 'salud', carga: 'Inasistencia', disponibleParaNuevos: true },
   { id: 'efectividad_citas', nombre: 'Efectividad de Citas', grupo: 'salud', carga: 'Citas atendidas', disponibleParaNuevos: true },
   // Fase 259 (Clinica Aurora): reporte de citas del sistema de la clinica, agregado en el navegador.
-  { id: 'agendas_usuaria', nombre: 'Agendas por usuaria', grupo: 'salud', carga: 'Reporte de citas de la clínica (.xls)', disponibleParaNuevos: true },
+  { id: 'agendas_usuaria', nombre: 'Agendas (3 bases)', grupo: 'salud', carga: '3 bases de la clínica: citas, cancelaciones e inasistencias (.xls)', disponibleParaNuevos: true }, // Fase 303
   // Fase 284: errores de agendamiento; no se cargan con una base, los registra el supervisor en la plataforma.
   // siempreVisible: la pestaña se ve aunque no haya errores (avisa que no hay).
   { id: 'errores', nombre: 'Errores', grupo: 'salud', carga: 'Se registran en la plataforma (supervisor o administrador)', disponibleParaNuevos: true, siempreVisible: true },

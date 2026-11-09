@@ -2642,7 +2642,7 @@ async function _gdDatosPanelesTab(){
     // Fase 259: la tabla por asesora (solo conteos), con los filtros del panel.
     if(p.tipo === 'agendas_usuaria_panel'){
       var fAu = (typeof _auFilasExport === 'function') ? _auFilasExport(i) : [];
-      out.push(fAu.length ? { titulo: 'Agendas por usuaria', tipo: 'tabla', filas: fAu } : { titulo: 'Agendas por usuaria', tipo: 'aviso', filas: [], mensaje: 'Sin agendas para el periodo/filtros actuales.' });
+      out.push(fAu.length ? { titulo: 'Agendas', tipo: 'tabla', filas: fAu } : { titulo: 'Agendas', tipo: 'aviso', filas: [], mensaje: 'Sin agendas para el periodo/filtros actuales.' });
       continue;
     }
     if(p.tipo === 'trafico_combo'){
