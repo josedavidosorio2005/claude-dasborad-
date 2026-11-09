@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.154.1 — Noviembre 2026
+
+**Fase 309: revisión de seguridad.**
+
+- **Arreglo:** la cuenta del cliente ya no recibe el nombre de los líderes que evalúan Calidad
+  (en las metas de Calidad). Lo demás de la revisión salió bien; el detalle está en
+  `docs/revision-seguridad-2026-11-09.md`. ORLANT no cambia.
+
 ## v1.154.0 — Noviembre 2026
 
 **Fase 307: Calidad lista para que los líderes evalúen en ORLANT y en Clínica Aurora, igual que en Mobilize.**
