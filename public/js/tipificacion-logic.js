@@ -192,6 +192,10 @@ function tipificacionEtiquetaSkill(skill, campana) {
   var tabla = campana ? TIPIFICACION_NOMBRES_SKILL_CLIENTE[String(campana).trim().toUpperCase()] : null;
   var id = /^skill\s+(\d+)$/i.exec(v);
   if (tabla && id && Object.prototype.hasOwnProperty.call(tabla, id[1])) return tabla[id[1]];
+  // Fase 298 (revision de Aurora/HLM, 09/11): un SKILL_ID sin nombre en la tabla (hoy 4166
+  // y 4169 de Aurora, pendientes de Edwin) se lee 'Skill 4166 (nombre pendiente)' en vez
+  // de un numero suelto. Solo el texto visible: el valor del filtro sigue igual.
+  if (id) return 'Skill ' + id[1] + ' (nombre pendiente)';
   return _tipificacionTexto.textoFormatoNombre(v);
 }
 

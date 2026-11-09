@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.146.1 — Noviembre 2026
+
+**Fase 298: skills sin nombre en Tipificación.**
+
+- En el filtro de **Tipificación**, un skill que todavía no tiene nombre (hoy en Clínica Aurora el
+  4166 y el 4169, que debe confirmar Edwin) se lee **«Skill 4166 (nombre pendiente)»** en vez de
+  un número suelto. Los conteos no cambian; cuando llegue el nombre, se muestra solo.
+
 ## v1.146.0 — Noviembre 2026
 
 **Fase 297: Clínica Aurora y Hospital La María — gráficas de líneas y nuevo orden de pestañas.**
