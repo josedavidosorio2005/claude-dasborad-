@@ -20220,3 +20220,14 @@ Calidad de Aurora aparece con el primer monitoreo, penúltima antes de Errores; 
 sin evaluador/observaciones; claro/oscuro × 1440/768/375 × 4 perfiles, 0 errores. **ORLANT main
 vs rama** (23 vistas): 22 idénticas; Calidad = el contenido de main completo e igual al inicio, más
 el panel de monitoreos al final.
+
+## Fase 308 — Revisión antes de la reunión con clientes (solo docs, 2026-11-10)
+
+Revisión en solo lectura, sin cambios de código (no se sube versión). Los 21 errores de consola
+al cargar Inasistencia/Encuestas de Aurora son todos de la librería de Excel con el `.xls` viejo
+(reproducido en local con el archivo real, sin guardar). Recorrido de demo en producción como
+administrador (Aurora, HLM, Mobilize, SURA; 1440 y 375 px): 0 errores, 0 respuestas > 3 s,
+ninguna pantalla vacía sin aviso. Mobilize › Llamadas Únicas y de Salida: botones resaltados; no
+existen botones «abandonadas / no conectadas» (son tarjetas y un desplegable). El login distingue
+mayúsculas en el usuario (un usuario de Aurora está en mayúsculas en su bloc de credenciales).
+Lista para el supervisor en `docs/pendientes-2026-11-10.md`.
