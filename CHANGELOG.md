@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.152.0 — Noviembre 2026
+
+**Fase 305: cada campaña recuerda sus propios filtros; nombres completos en Agendas.**
+
+- **Arreglo importante:** un filtro elegido en una campaña (por ejemplo, Tráfico «Día» en
+  ORLANT) ya no aparece aplicado en otra campaña (Aurora, Hospital La María…). Cada campaña
+  recuerda solo sus propios filtros; al volver a ella, siguen como los dejaste. ORLANT se ve y
+  calcula igual que antes.
+- **Clínica Aurora › Agendas:** en la gráfica de usuario que registra / especialidad /
+  profesional, los nombres se leen **completos** (en varias líneas o verticales si son muchos),
+  sin pasar el mouse.
+- **Clínica Aurora:** la pestaña **«Errores»** va siempre de **última**, después de Tipificación.
+- **Mobilize:** los botones resaltan con el mismo estilo de Aurora › Agendas (tema claro: fondo
+  negro y letra blanca; tema oscuro: fondo blanco y letra negra; el activo en azul con ✓).
+  No cambia ningún cálculo.
+
 ## v1.151.0 — Noviembre 2026
 
 **Fase 304: Clínica Aurora › Agendas — botones más visibles, gráficas de línea en azul.**

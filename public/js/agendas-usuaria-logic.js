@@ -366,6 +366,20 @@ function auOpcionesAgendas(filas, dim) {
 // lo entrega, se cambia aqui. Cada color >= 3:1 contra la tarjeta en su tema
 // (WCAG 1.4.11; fase304-agendas-botones-lineas.test.js). Las bases ademas se
 // distinguen por el marcador y el trazo (auEstiloBase), no solo por el tono.
+// Fase 305: etiqueta en varias lineas (por palabras, ~max letras por linea) para
+// que los nombres se lean COMPLETOS en el eje, sin cortar. Una palabra mas larga
+// que max queda entera en su linea.
+function auPartirEtiqueta(texto, max) {
+  var lim = max || 14, lineas = [], actual = '';
+  String(texto === null || texto === undefined ? '' : texto).split(/\s+/).filter(Boolean).forEach(function (w) {
+    if (!actual) actual = w;
+    else if ((actual + ' ' + w).length <= lim) actual += ' ' + w;
+    else { lineas.push(actual); actual = w; }
+  });
+  if (actual) lineas.push(actual);
+  return lineas.length > 1 ? lineas : (lineas[0] || '');
+}
+
 var AU_PALETA = {
   claro: { total: '#0a2540', citas: '#1565c0', cancelaciones: '#2b7bbf', inasistencias: '#4a8fc7' },
   oscuro: { total: '#eaf4ff', citas: '#90c8f8', cancelaciones: '#5eaef0', inasistencias: '#bfe0fc' },
@@ -383,7 +397,7 @@ if (typeof module !== 'undefined' && module.exports) {
     AU_MAPA_ENCABEZADOS: AU_MAPA_ENCABEZADOS, AU_TIPOS_BASE: AU_TIPOS_BASE, auNormEncabezado: auNormEncabezado,
     auBaseDesdeArchivo: auBaseDesdeArchivo, AU_DIMENSIONES: AU_DIMENSIONES, auFiltrarAgendas: auFiltrarAgendas,
     auSerieMensual: auSerieMensual, auRanking: auRanking, auOpcionesAgendas: auOpcionesAgendas, auValorDim: auValorDim,
-    AU_PALETA: AU_PALETA, auColorAgendas: auColorAgendas, auEstiloBase: auEstiloBase,
+    AU_PALETA: AU_PALETA, auColorAgendas: auColorAgendas, auEstiloBase: auEstiloBase, auPartirEtiqueta: auPartirEtiqueta,
     auUnirBases: auUnirBases, auMensajeFaltantes: auMensajeFaltantes, auEtiquetaBase: auEtiquetaBase,
     auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auUsuario: auUsuario,
     auParseFilas: auParseFilas, auFiltrar: auFiltrar, auPct: auPct, auTotal: auTotal, auPorMes: auPorMes, auPorEspecialidad: auPorEspecialidad, auPorAsesor: auPorAsesor, auOpciones: auOpciones };

@@ -365,18 +365,30 @@ function _auPintarG2(i, camp) {
   var verMas = rk.cantidad > AU_TOP
     ? '<div class="au-ag-vermas"><button type="button" class="btn-sm" data-au-ag="vermas" data-i="' + i + '">' + (st.verMas ? 'Ver menos' : 'Ver más (' + rk.cantidad + ')') + '</button></div>' : '';
   host.innerHTML = (rk.items.length
-    ? '<div class="aurora-chart-wrap" style="height:360px"><canvas id="gd-c' + i + '-au-g2"></canvas></div>'
+    ? '<div class="aurora-chart-wrap au-g2-wrap"><canvas id="gd-c' + i + '-au-g2"></canvas></div>'
     : '<div class="gd-vacio" role="status">Sin datos de ' + esc(etiqueta.toLowerCase()) + ' con estos filtros.</div>') + verMas;
   if (!rk.items.length) return;
   var basesEnRk = AU_TIPOS_BASE.filter(function (b) { return rk.items.some(function (x) { return x.porBase[b.id]; }); });
   var conTotal = !st.base && basesEnRk.length > 1;
   var series = basesEnRk.map(function (b) { return { base: b.id, etiqueta: b.etiqueta, data: rk.items.map(function (x) { return x.porBase[b.id] || 0; }) }; });
   var o = _auOpcionesLinea();
-  // Nombres largos cortados con «…» en el eje (mas en el celular); completos en el tooltip.
-  o.scales.x = Object.assign({}, o.scales.x, { ticks: Object.assign({}, (o.scales.x || {}).ticks, { autoSkip: false, maxRotation: 50, minRotation: 0, callback: function (v) {
-    var t = String(this.getLabelForValue(v) || ''); var max = (this.chart && this.chart.width < 480) ? 10 : 18;
-    return t.length > max ? t.slice(0, max - 1) + '…' : t; } }) });
+  // Fase 305: nombres COMPLETOS en el eje (sin cortar ni pasar el mouse). Si a
+  // cada nombre le toca espacio (>= 80 px), en varias lineas; si no (celular,
+  // tableta o «Ver más» con muchos), verticales en una linea. Siempre todos.
+  o.scales.x = Object.assign({}, o.scales.x, { ticks: Object.assign({}, (o.scales.x || {}).ticks, { autoSkip: false, font: { size: 11 },
+    maxRotation: 0, minRotation: 0, callback: function (v) {
+    var t = String(this.getLabelForValue(v) || '');
+    return (this.chart && this.chart.$auVertical) ? t : auPartirEtiqueta(t, 14); } }) });
   _gdChart('gd-c' + i + '-au-g2', { type: 'line', data: { labels: rk.items.map(function (x) { return x.valor; }), datasets: _auDatasetsLinea(series, rk.items.map(function (x) { return x.total; }), conTotal) }, options: o });
+  // Tambien pasa por encima del ajuste comun de celular (gdOpcionesGraficaMovil,
+  // compartido: inclina a 45 grados y salta etiquetas), solo en esta grafica.
+  var ch = _gd.charts['gd-c' + i + '-au-g2'];
+  if (ch && ch.options && ch.options.scales && ch.options.scales.x) {
+    var area = ch.chartArea ? (ch.chartArea.right - ch.chartArea.left) : ch.width;
+    ch.$auVertical = area / Math.max(1, rk.items.length) < 80;
+    Object.assign(ch.options.scales.x.ticks, { autoSkip: false, maxRotation: ch.$auVertical ? 90 : 0, minRotation: ch.$auVertical ? 90 : 0 });
+    ch.update('none');
+  }
 }
 
 // Botones: la base redibuja todo (como los filtros); cada grafica, solo la suya.
