@@ -2036,6 +2036,22 @@ div.ca-bar-fila{cursor:default}
 .au-fechas label{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-note);color:var(--c-text-muted)}
 .au-fechas input{min-height:44px;padding:6px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body)}
 .au-limpiar{min-height:44px}
+/* Fase 304 (Aurora › Agendas): la base justo debajo de los filtros y TODOS los botones
+   de la pestaña resaltados -- tema claro: fondo negro y letra blanca; tema oscuro: fondo
+   blanco y letra negra. El activo, en el azul de Aurora, con borde doble y ✓. */
+.au-ag-base{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--c-border)}
+.au-ag-base-titulo{font-size:var(--fs-small);font-weight:700;color:var(--c-text)}
+.au-ag-botones{gap:8px}
+.au-ag-botones .gd-subtab-btn{min-height:44px;padding:8px 16px;background:#111;color:#fff;border:2px solid #111;font-weight:600}
+.au-ag-botones .gd-subtab-btn:hover{background:#333;border-color:#333;color:#fff}
+.au-ag-botones .gd-subtab-btn.on{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:700;box-shadow:0 0 0 2px #fff inset}
+.au-ag-botones .gd-subtab-btn.on::before{content:"✓ "}
+.au-ag-botones .gd-subtab-btn:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px}
+[data-theme="dark"] .au-ag-botones .gd-subtab-btn{background:#fff;color:#111;border-color:#fff}
+[data-theme="dark"] .au-ag-botones .gd-subtab-btn:hover{background:#dde8f3;border-color:#dde8f3;color:#111}
+[data-theme="dark"] .au-ag-botones .gd-subtab-btn.on{background:#90c8f8;border-color:#90c8f8;color:#0a2540;box-shadow:0 0 0 2px #0a2540 inset}
+.au-ag-vermas{display:flex;justify-content:center;margin-top:10px}
+.au-ag-nota{margin:8px 0 0;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center}
 .au-tabla .au-total th,.au-tabla .au-total td{font-weight:700;border-top:2px solid var(--c-border)}
 .aurora-rank-table.alias-tabla input{min-height:40px;width:100%;padding:6px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit}
 .alias-acciones{white-space:nowrap}

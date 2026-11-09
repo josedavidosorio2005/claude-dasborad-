@@ -20106,3 +20106,26 @@ módulo (`scripts/plantillas/generar-fichas.js` → `docs/plantillas/agendas_usu
 El módulo queda «Agendas (3 bases)» porque el de ORLANT ya se llama «Agendas» (en Usuarios ›
 permisos de carga se habrían visto dos iguales). ORLANT no cambia. Suite 2793/2793; local: el
 Centro de Aurora muestra «Agendas (3 bases)» y el de ORLANT su «Agendas» de siempre, 0 errores.
+
+## Fase 304 — Aurora › Agendas: botones resaltados, gráfica 2 de línea y paleta azul (v1.151.0, 2026-11-10)
+
+Ajustes del supervisor (solo Aurora › Agendas; ORLANT, Mobilize, SURA y las demás pestañas igual):
+
+- Botones de base justo **debajo de los filtros** (misma tarjeta). Todos los botones de la
+  pestaña (`.au-ag-botones`: base, «Fecha de registro/Fecha de cita», «Usuario que
+  registra/Especialidad/Profesional») resaltados: claro negro/blanco, oscuro blanco/negro, activo
+  azul con borde doble y ✓, 44 px.
+- Gráfica 2 de **línea** por categoría, de mayor a menor (`auRanking`), top 10 + «Ver más»; con
+  «Todas», una línea por base y el Total (valores solo en el Total para no saturar).
+- **Bug**: los botones de la gráfica 2 repintaban toda la pestaña (y la gráfica 1). Ahora cada
+  gráfica se redibuja sola (`_auPintarG1`/`_auPintarG2`, botones marcados en el sitio); la base y
+  los filtros redibujan las dos.
+- Paleta azul de Aurora (`AU_PALETA`/`auColorAgendas`, sin el hex oficial en el repo) y marcador +
+  trazo propio por base (`auEstiloBase`). Excepción documentada en `docs/sistema-de-diseno.md`.
+
+**Pruebas.** `fase304-agendas-botones-lineas` (6): contraste de la paleta y de los botones en
+los 2 temas, marcadores, base bajo los filtros, gráfica 2 de línea y orden, independencia de las
+gráficas. Suite completa en verde. Local (Playwright + Brave, CLIENTE y SUPERVISOR, claro y oscuro,
+375/768/1440): base debajo de los filtros, colores de botones esperados, gráfica 2 de línea de
+mayor a menor, la gráfica 1 NO se recrea al cambiar la 2 (ni la 2 al cambiar la 1), 0 errores.
+ORLANT local: mismas pestañas y resultados.

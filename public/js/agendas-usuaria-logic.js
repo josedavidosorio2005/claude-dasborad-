@@ -361,11 +361,29 @@ function auOpcionesAgendas(filas, dim) {
   return Object.keys(vistos).sort(function (a, b) { return a.localeCompare(b, 'es'); });
 }
 
+// Fase 304 (pedido del supervisor): las graficas de «Agendas» en la paleta AZUL de
+// Aurora (no morados). El repo no tiene el hex oficial de la marca: si el cliente
+// lo entrega, se cambia aqui. Cada color >= 3:1 contra la tarjeta en su tema
+// (WCAG 1.4.11; fase304-agendas-botones-lineas.test.js). Las bases ademas se
+// distinguen por el marcador y el trazo (auEstiloBase), no solo por el tono.
+var AU_PALETA = {
+  claro: { total: '#0a2540', citas: '#1565c0', cancelaciones: '#2b7bbf', inasistencias: '#4a8fc7' },
+  oscuro: { total: '#eaf4ff', citas: '#90c8f8', cancelaciones: '#5eaef0', inasistencias: '#bfe0fc' },
+};
+function auColorAgendas(id, oscuro) {
+  var p = oscuro ? AU_PALETA.oscuro : AU_PALETA.claro;
+  return p[id] || p.total;
+}
+function auEstiloBase(id) {
+  return { citas: { punto: 'rect', trazo: [] }, cancelaciones: { punto: 'triangle', trazo: [7, 4] }, inasistencias: { punto: 'rectRot', trazo: [2, 3] } }[id] || { punto: 'circle', trazo: [] };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AU_COLUMNAS: AU_COLUMNAS, AU_CLINICA: AU_CLINICA, AU_CAMPOS_FILA: AU_CAMPOS_FILA,
     AU_MAPA_ENCABEZADOS: AU_MAPA_ENCABEZADOS, AU_TIPOS_BASE: AU_TIPOS_BASE, auNormEncabezado: auNormEncabezado,
     auBaseDesdeArchivo: auBaseDesdeArchivo, AU_DIMENSIONES: AU_DIMENSIONES, auFiltrarAgendas: auFiltrarAgendas,
     auSerieMensual: auSerieMensual, auRanking: auRanking, auOpcionesAgendas: auOpcionesAgendas, auValorDim: auValorDim,
+    AU_PALETA: AU_PALETA, auColorAgendas: auColorAgendas, auEstiloBase: auEstiloBase,
     auUnirBases: auUnirBases, auMensajeFaltantes: auMensajeFaltantes, auEtiquetaBase: auEtiquetaBase,
     auNorm: auNorm, auColIndexMap: auColIndexMap, auFaltantes: auFaltantes, auFecha: auFecha, auUsuario: auUsuario,
     auParseFilas: auParseFilas, auFiltrar: auFiltrar, auPct: auPct, auTotal: auTotal, auPorMes: auPorMes, auPorEspecialidad: auPorEspecialidad, auPorAsesor: auPorAsesor, auOpciones: auOpciones };

@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.151.0 — Noviembre 2026
+
+**Fase 304: Clínica Aurora › Agendas — botones más visibles, gráficas de línea en azul.**
+
+- Los botones de base (**Todas / Citas asignadas y cumplidas / Cancelaciones / Inasistencias**)
+  pasan **justo debajo de los filtros**.
+- **Todos los botones** de la pestaña resaltan: en tema claro, fondo negro y letra blanca; en
+  tema oscuro, fondo blanco y letra negra. El botón activo va en azul, con ✓.
+- La gráfica de **Usuario que registra / Especialidad / Profesional** ahora es de **línea**,
+  ordenada de **mayor a menor**, con las 10 primeras y «Ver más».
+- Cada gráfica cambia **solo con sus propios botones** (antes, cambiar la de abajo recargaba
+  también la de arriba). Los filtros y los botones de base cambian las dos.
+- Las gráficas usan la **paleta azul de Aurora** (antes había morados), legibles en tema claro y
+  oscuro; cada base tiene además su propio marcador y trazo.
+- Ningún otro cliente ni otra pestaña cambia.
+
 ## v1.150.1 — Noviembre 2026
 
 **Fase 303: «Agendas» también en Cargar datos.**

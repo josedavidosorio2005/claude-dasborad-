@@ -220,29 +220,37 @@ function _auExportExcel(i) {
   XLSX.writeFile(wb, 'Agendas_' + vista + '_' + String(_gd.cliente).replace(/\s+/g, '_') + '.xlsx');
 }
 
-// ── Fase 302 (10/11): vista «Agendas» (pestaña de una sola vista) ──
+// ── Fase 302 (10/11): vista «Agendas» (pestaña de una sola vista); Fase 304 ──
 // Filtros arriba (fecha de registro, fecha de cita, entidad, usuario que registra,
-// especialidad, profesional, sede), botones de base (Todas / Citas asignadas y
-// cumplidas / Cancelaciones / Inasistencias) y 2 graficas grandes con botones de
-// vista, como la pregunta 1 de la Encuesta (sin cuadro de resumen):
-//   1) linea por mes: «Fecha de registro» / «Fecha de cita»;
-//   2) ranking: «Usuario que registra» / «Especialidad» / «Profesional» (top 10 + ver mas).
+// especialidad, profesional, sede) y, JUSTO DEBAJO, los botones de base (Todas /
+// Citas asignadas y cumplidas / Cancelaciones / Inasistencias). 2 graficas de
+// LINEA con sus botones (sin cuadro de resumen):
+//   1) por mes: «Fecha de registro» / «Fecha de cita»;
+//   2) por categoria, de MAYOR a MENOR: «Usuario que registra» / «Especialidad» /
+//      «Profesional» (top 10 + ver mas).
+// Fase 304: cada grafica se redibuja SOLO con sus botones; los filtros y la base
+// redibujan las dos. Colores: paleta azul de Aurora (auColorAgendas, en la logica).
 // Solo las filas cargadas con base (auFiltrarAgendas). Logica en agendas-usuaria-logic.js.
 var _auAg = {}; // por campaña: { base, g1, g2, verMas }
 var AU_TOP = 10;
 var AU_G1 = [{ v: 'fechaSolicitud', t: 'Fecha de registro' }, { v: 'fechaCita', t: 'Fecha de cita' }];
 var AU_G2 = [{ v: 'usuario', t: 'Usuario que registra' }, { v: 'especialidad', t: 'Especialidad' }, { v: 'prof', t: 'Profesional' }];
 function _auEstadoAg(camp) { return _auAg[camp] || (_auAg[camp] = { base: '', g1: 'fechaCita', g2: 'usuario', verMas: false }); }
-function _auColorBase(id) {
-  var pal = (typeof PC !== 'undefined' && PC.length) ? PC : ['#349db2', '#a92dd2', '#d22d80'];
-  var idx = { citas: 4, cancelaciones: 1, inasistencias: 6 }[id];
-  return pal[(idx === undefined ? 0 : idx) % pal.length];
-}
+function _auOscuro() { return typeof temaActual === 'function' && temaActual() === 'dark'; }
+function _auColor(id) { return auColorAgendas(id, _auOscuro()); }
 function _auBotones(grupo, lista, activa, i, etiqueta) {
-  return '<div class="gd-subtabs au-ag-botones" aria-label="' + esc(etiqueta) + '">' + lista.map(function (b) {
+  return '<div class="gd-subtabs au-ag-botones" role="group" aria-label="' + esc(etiqueta) + '">' + lista.map(function (b) {
     var on = b.v === activa;
     return '<button type="button" class="gd-subtab-btn' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-au-ag="' + grupo + '" data-v="' + esc(b.v) + '" data-i="' + i + '">' + esc(b.t) + '</button>';
   }).join('') + '</div>';
+}
+// Marca el boton activo de un grupo sin repintar nada mas.
+function _auMarcarBotones(host, grupo, valor) {
+  host.querySelectorAll('[data-au-ag="' + grupo + '"]').forEach(function (b) {
+    var on = b.getAttribute('data-v') === valor;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
 }
 function _auSelect(campo, etiqueta, opciones, valor, i) {
   return '<div class="au-filtro"><label for="au-f-' + campo + '-' + i + '">' + esc(etiqueta) + '</label><select id="au-f-' + campo + '-' + i + '" data-au-campo="' + campo + '" data-i="' + i + '"><option value="">Todos</option>' +
@@ -255,6 +263,34 @@ function _auFiltroAg(camp) {
     registroDesde: f.registroDesde, registroHasta: f.registroHasta, entidad: f.entidad, usuario: f.usuario,
     especialidad: f.especialidad, prof: f.prof, sede: f.sede };
 }
+function _auFmtN(v) { return v === null || v === undefined ? '' : Number(v).toLocaleString('es-CO'); }
+
+// Opciones comunes de las 2 graficas de linea (eje desde 0, leyenda abajo con el
+// marcador de cada serie, valores solo en la serie principal para no saturar).
+function _auOpcionesLinea() {
+  var o = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {}, scales: { x: {}, y: {} } };
+  _auEjeDesdeCero(o);
+  if (o.scales && o.scales.y) o.scales.y.grace = '12%';
+  if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, _auFmtN);
+  o.plugins.legend = { position: 'bottom', labels: { usePointStyle: true, boxWidth: 12, padding: 12, color: (typeof leyendaColorTexto === 'function' ? leyendaColorTexto() : undefined) } };
+  o.layout = { padding: { top: 22, left: 10, right: 30 } };
+  return o;
+}
+// Una serie por base (estilo propio de cada base: color, marcador y trazo, para no
+// depender solo del color) y, con «Todas», el Total. Solo la principal lleva valores.
+function _auDatasetsLinea(series, total, conTotal) {
+  var ds = series.map(function (x) {
+    var e = auEstiloBase(x.base), c = _auColor(x.base);
+    return { label: x.etiqueta, data: x.data, borderColor: c, backgroundColor: c, pointBackgroundColor: c, pointStyle: e.punto, borderDash: e.trazo,
+      borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 7, tension: 0.25, fill: false, datalabels: { color: c, display: conTotal ? false : 'auto' } };
+  });
+  if (conTotal) {
+    var ct = _auColor('total');
+    ds.unshift({ label: 'Total', data: total, borderColor: ct, backgroundColor: ct, pointBackgroundColor: ct, pointStyle: 'circle', borderWidth: 3.5,
+      pointRadius: 6, pointHoverRadius: 8, tension: 0.25, fill: false, datalabels: { color: ct } });
+  }
+  return ds;
+}
 
 async function _auRenderAgendas(p, i, el, camp) {
   var datos;
@@ -262,7 +298,7 @@ async function _auRenderAgendas(p, i, el, camp) {
   var titulo = p.titulo || 'Agendas';
   var conBase = datos.filas.filter(function (r) { return r.base; });
   if (!conBase.length) {
-    var interno = 'Todavía no hay agendas con las 3 bases (' + AU_TIPOS_BASE.map(function (b) { return b.etiqueta; }).join(', ') + '). Súbelas en Cargar datos › ' + esc(camp) + ' › Agendas › Subir.' +
+    var interno = 'Todavía no hay agendas con las 3 bases (' + AU_TIPOS_BASE.map(function (b) { return b.etiqueta; }).join(', ') + '). Súbelas en Cargar datos › ' + esc(camp) + ' › Agendas (3 bases) › Subir.' +
       (datos.filas.length ? ' Lo cargado antes con el reporte de una sola base no se usa en esta vista.' : '');
     el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div>' +
       (typeof avisoPendienteHtml === 'function' ? avisoPendienteHtml('Agendas', interno) : '<div class="gd-vacio" role="status">' + interno + '</div>') + '</div>';
@@ -275,11 +311,9 @@ async function _auRenderAgendas(p, i, el, camp) {
   ['entidad', 'usuario', 'especialidad', 'prof', 'sede'].forEach(function (d) {
     if (f[d] && auOpcionesAgendas(paraOpciones, d).indexOf(f[d]) === -1) f[d] = '';
   });
-  fl = _auFiltroAg(camp);
   var hayFiltro = ['entidad', 'usuario', 'especialidad', 'prof', 'sede', 'citaDesde', 'citaHasta', 'registroDesde', 'registroHasta'].some(function (k) { return f[k]; });
   var bases = [{ v: '', t: 'Todas' }].concat(AU_TIPOS_BASE.map(function (b) { return { v: b.id, t: b.etiqueta }; }));
   var filtros = '<div class="aurora-card au-filtros-card">' +
-    '<div class="au-ag-base">' + _auBotones('base', bases, st.base, i, 'Base') + '</div>' +
     '<div class="au-filtros">' +
       _auFecha('Fecha de registro', f.registroDesde, f.registroHasta, 'registroDesde', 'registroHasta', i) +
       _auFecha('Fecha de cita', f.citaDesde, f.citaHasta, 'citaDesde', 'citaHasta', i) +
@@ -290,80 +324,73 @@ async function _auRenderAgendas(p, i, el, camp) {
       _auSelect('sede', 'Sede', auOpcionesAgendas(paraOpciones, 'sede'), f.sede, i) +
       (hayFiltro ? '<button type="button" class="btn-cancel au-limpiar" data-au-limpiar data-i="' + i + '">Quitar filtros</button>' : '') +
       '<button type="button" class="btn-sm au-ag-excel" onclick="_auExportExcel(' + i + ')">Excel</button>' +
-    '</div></div>';
-  var arr = auFiltrarAgendas(datos.filas, fl);
-  var serie = auSerieMensual(arr, st.g1);
-  var rk = auRanking(arr, st.g2, st.verMas ? null : AU_TOP);
-  var sinFecha = Object.keys(serie.sinFecha).filter(function (b) { return serie.sinFecha[b] > 0; });
-  var notaG1 = (st.g1 === 'fechaSolicitud' && sinFecha.length)
-    ? '<p class="au-ag-nota">' + esc(sinFecha.map(auEtiquetaBase).join(' y ')) + ' no ' + (sinFecha.length > 1 ? 'traen' : 'trae') + ' fecha de registro: esas citas no suman en esta gráfica.</p>' : '';
-  var g1 = gdGraficaHtml('Agendas por mes', '<div class="aurora-chart-wrap" style="height:340px"><canvas id="gd-c' + i + '-au-g1"></canvas></div>' + notaG1,
-    { destacado: true, acciones: _auBotones('g1', AU_G1, st.g1, i, 'Agendas por mes según') });
-  var etiquetaG2 = AU_DIMENSIONES[st.g2] || 'Agendas';
-  var verMas = rk.cantidad > AU_TOP
-    ? '<div class="au-ag-vermas"><button type="button" class="btn-sm" data-au-ag="vermas" data-i="' + i + '">' + (st.verMas ? 'Ver menos' : 'Ver más (' + rk.cantidad + ')') + '</button></div>' : '';
-  var alto = Math.max(260, 34 * Math.max(rk.items.length, 1) + 90);
-  var g2 = gdGraficaHtml('Agendas por ' + etiquetaG2.toLowerCase(), (rk.items.length
-      ? '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-au-g2"></canvas></div>'
-      : '<div class="gd-vacio" role="status">Sin datos de ' + esc(etiquetaG2.toLowerCase()) + ' con estos filtros.</div>') + verMas,
+    '</div>' +
+    // Fase 304: la base, justo debajo de los filtros.
+    '<div class="au-ag-base"><span class="au-ag-base-titulo" id="au-ag-base-tit-' + i + '">Base</span>' + _auBotones('base', bases, st.base, i, 'Base') + '</div>' +
+  '</div>';
+  var g1 = gdGraficaHtml('Agendas por mes', '<div id="au-g1-' + i + '"></div>', { destacado: true, acciones: _auBotones('g1', AU_G1, st.g1, i, 'Agendas por mes según') });
+  var g2 = gdGraficaHtml('<span id="au-g2-tit-' + i + '">Agendas por ' + esc((AU_DIMENSIONES[st.g2] || '').toLowerCase()) + '</span>', '<div id="au-g2-' + i + '"></div>',
     { destacado: true, acciones: _auBotones('g2', AU_G2, st.g2, i, 'Agendas según') });
+  var arr = auFiltrarAgendas(datos.filas, _auFiltroAg(camp));
   el.innerHTML = filtros + (arr.length ? g1 + g2 : '<div class="aurora-card"><div class="gd-vacio" role="status">Sin agendas con estos filtros.</div></div>');
   if (!arr.length) return;
-
-  // Grafica 1: una linea por base (y el total con "Todas").
-  var fmtN = function (v) { return v === null || v === undefined ? '' : Number(v).toLocaleString('es-CO'); };
-  var oL = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
-  _auEjeDesdeCero(oL);
-  if (oL.scales && oL.scales.y) oL.scales.y.grace = '12%';
-  if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(oL, fmtN);
-  if (oL.plugins) oL.plugins.legend = { position: 'bottom', labels: { usePointStyle: true, boxWidth: 12, padding: 10, color: (typeof leyendaColorTexto === 'function' ? leyendaColorTexto() : undefined) } };
-  oL.layout = { padding: { top: 20, left: 10, right: 30 } };
-  var dsL = serie.series.map(function (x) {
-    var c = _auColorBase(x.base);
-    return { label: x.etiqueta, data: x.data, borderColor: c, backgroundColor: c, pointBackgroundColor: c, borderWidth: 2.5, pointRadius: 5, tension: 0.25, fill: false, datalabels: { color: c } };
-  });
-  if (!st.base && serie.series.length > 1) {
-    dsL.unshift({ label: 'Total', data: serie.total, borderColor: SERIE_PRINCIPAL, backgroundColor: SERIE_PRINCIPAL, pointBackgroundColor: SERIE_PRINCIPAL, borderWidth: 3, pointRadius: 5, tension: 0.25, fill: false, datalabels: { color: SERIE_PRINCIPAL } });
-  }
-  _gdChart('gd-c' + i + '-au-g1', { type: 'line', data: { labels: serie.meses.map(_auMesCorto), datasets: dsL }, options: oL });
-
-  // Grafica 2: barras horizontales, apiladas por base con "Todas".
-  if (!rk.items.length) return;
-  var oB = (typeof loBar === 'function') ? loBar(null) : { responsive: true, maintainAspectRatio: false, plugins: {} };
-  oB.indexAxis = 'y';
-  var basesEnRk = AU_TIPOS_BASE.filter(function (b) { return rk.items.some(function (x) { return x.porBase[b.id]; }); });
-  var apilar = !st.base && basesEnRk.length > 1;
-  oB.scales = Object.assign({}, oB.scales, { x: Object.assign({}, (oB.scales || {}).x, { stacked: apilar, beginAtZero: true }), y: Object.assign({}, (oB.scales || {}).y, { stacked: apilar }) });
-  if (oB.plugins) {
-    oB.plugins.legend = apilar ? { position: 'bottom', labels: { boxWidth: 12, padding: 10, color: (typeof leyendaColorTexto === 'function' ? leyendaColorTexto() : undefined) } } : { display: false };
-    // El total al final de cada barra (en la ultima serie), no un numero por pedazo.
-    oB.plugins.datalabels = Object.assign({}, oB.plugins.datalabels, { anchor: 'end', align: 'end', clamp: true,
-      display: function (ctx) { return ctx.datasetIndex === ctx.chart.data.datasets.length - 1; },
-      formatter: function (v, ctx) { return fmtN(rk.items[ctx.dataIndex].total); } });
-  }
-  oB.layout = Object.assign({}, oB.layout, { padding: { right: 60 } });
-  // Nombres largos: cortados con «…» en el eje (mas en el celular); completos en el tooltip.
-  oB.scales.y.ticks = Object.assign({}, oB.scales.y.ticks, { autoSkip: false, callback: function (v) {
-    var t = String(this.getLabelForValue(v) || ''); var max = (this.chart && this.chart.width < 480) ? 14 : 30;
-    return t.length > max ? t.slice(0, max - 1) + '…' : t; } });
-  var dsB = apilar
-    ? basesEnRk.map(function (b) { var c = _auColorBase(b.id); return { label: b.etiqueta, data: rk.items.map(function (x) { return x.porBase[b.id] || 0; }), backgroundColor: c }; })
-    : [{ label: 'Agendas', data: rk.items.map(function (x) { return x.total; }), backgroundColor: st.base ? _auColorBase(st.base) : SERIE_PRINCIPAL }];
-  _gdChart('gd-c' + i + '-au-g2', { type: 'bar', data: { labels: rk.items.map(function (x) { return x.valor; }), datasets: dsB }, options: oB });
+  _auPintarG1(i, camp);
+  _auPintarG2(i, camp);
 }
 
-// Botones de base / vista de cada grafica / ver mas.
+// Grafica 1: linea por mes (una serie por base y, con «Todas», el total).
+function _auPintarG1(i, camp) {
+  var host = document.getElementById('au-g1-' + i); if (!host || !_auCache[camp]) return;
+  var st = _auEstadoAg(camp);
+  var serie = auSerieMensual(auFiltrarAgendas(_auCache[camp].filas, _auFiltroAg(camp)), st.g1);
+  var sinFecha = Object.keys(serie.sinFecha).filter(function (b) { return serie.sinFecha[b] > 0; });
+  var nota = (st.g1 === 'fechaSolicitud' && sinFecha.length)
+    ? '<p class="au-ag-nota">' + esc(sinFecha.map(auEtiquetaBase).join(' y ')) + ' no ' + (sinFecha.length > 1 ? 'traen' : 'trae') + ' fecha de registro: esas citas no suman en esta gráfica.</p>' : '';
+  host.innerHTML = (serie.meses.length
+    ? '<div class="aurora-chart-wrap" style="height:340px"><canvas id="gd-c' + i + '-au-g1"></canvas></div>'
+    : '<div class="gd-vacio" role="status">Sin citas con fecha para esta vista.</div>') + nota;
+  if (!serie.meses.length) return;
+  var conTotal = !st.base && serie.series.length > 1;
+  _gdChart('gd-c' + i + '-au-g1', { type: 'line', data: { labels: serie.meses.map(_auMesCorto), datasets: _auDatasetsLinea(serie.series, serie.total, conTotal) }, options: _auOpcionesLinea() });
+}
+
+// Grafica 2: linea por categoria, de MAYOR a MENOR (top 10 + ver mas).
+function _auPintarG2(i, camp) {
+  var host = document.getElementById('au-g2-' + i); if (!host || !_auCache[camp]) return;
+  var st = _auEstadoAg(camp);
+  var tit = document.getElementById('au-g2-tit-' + i);
+  var etiqueta = AU_DIMENSIONES[st.g2] || 'Agendas';
+  if (tit) tit.textContent = 'Agendas por ' + etiqueta.toLowerCase();
+  var rk = auRanking(auFiltrarAgendas(_auCache[camp].filas, _auFiltroAg(camp)), st.g2, st.verMas ? null : AU_TOP);
+  var verMas = rk.cantidad > AU_TOP
+    ? '<div class="au-ag-vermas"><button type="button" class="btn-sm" data-au-ag="vermas" data-i="' + i + '">' + (st.verMas ? 'Ver menos' : 'Ver más (' + rk.cantidad + ')') + '</button></div>' : '';
+  host.innerHTML = (rk.items.length
+    ? '<div class="aurora-chart-wrap" style="height:360px"><canvas id="gd-c' + i + '-au-g2"></canvas></div>'
+    : '<div class="gd-vacio" role="status">Sin datos de ' + esc(etiqueta.toLowerCase()) + ' con estos filtros.</div>') + verMas;
+  if (!rk.items.length) return;
+  var basesEnRk = AU_TIPOS_BASE.filter(function (b) { return rk.items.some(function (x) { return x.porBase[b.id]; }); });
+  var conTotal = !st.base && basesEnRk.length > 1;
+  var series = basesEnRk.map(function (b) { return { base: b.id, etiqueta: b.etiqueta, data: rk.items.map(function (x) { return x.porBase[b.id] || 0; }) }; });
+  var o = _auOpcionesLinea();
+  // Nombres largos cortados con «…» en el eje (mas en el celular); completos en el tooltip.
+  o.scales.x = Object.assign({}, o.scales.x, { ticks: Object.assign({}, (o.scales.x || {}).ticks, { autoSkip: false, maxRotation: 50, minRotation: 0, callback: function (v) {
+    var t = String(this.getLabelForValue(v) || ''); var max = (this.chart && this.chart.width < 480) ? 10 : 18;
+    return t.length > max ? t.slice(0, max - 1) + '…' : t; } }) });
+  _gdChart('gd-c' + i + '-au-g2', { type: 'line', data: { labels: rk.items.map(function (x) { return x.valor; }), datasets: _auDatasetsLinea(series, rk.items.map(function (x) { return x.total; }), conTotal) }, options: o });
+}
+
+// Botones: la base redibuja todo (como los filtros); cada grafica, solo la suya.
 document.addEventListener('click', function (e) {
   var b = e.target && e.target.closest && e.target.closest('[data-au-ag]');
   if (!b) return;
   var host = b.closest('[id^="gd-p"]'); if (!host) return;
-  var st = _auEstadoAg(host.dataset.campana);
+  var camp = host.dataset.campana, st = _auEstadoAg(camp);
+  var i = b.getAttribute('data-i');
   var g = b.getAttribute('data-au-ag');
-  if (g === 'vermas') st.verMas = !st.verMas;
-  else if (g === 'base') st.base = b.getAttribute('data-v') || '';
-  else if (g === 'g1') st.g1 = b.getAttribute('data-v');
-  else if (g === 'g2') { st.g2 = b.getAttribute('data-v'); st.verMas = false; }
-  _auRepintarTodos();
+  if (g === 'base') { st.base = b.getAttribute('data-v') || ''; _auRepintarTodos(); return; }
+  if (g === 'g1') { st.g1 = b.getAttribute('data-v'); _auMarcarBotones(host, 'g1', st.g1); _auPintarG1(i, camp); return; }
+  if (g === 'g2') { st.g2 = b.getAttribute('data-v'); st.verMas = false; _auMarcarBotones(host, 'g2', st.g2); _auPintarG2(i, camp); return; }
+  if (g === 'vermas') { st.verMas = !st.verMas; _auPintarG2(i, camp); var nb = host.querySelector('[data-au-ag="vermas"]'); if (nb) nb.focus(); }
 });
 
 // Excel de la vista «Agendas»: por mes (grafica 1) y el ranking completo (grafica 2).

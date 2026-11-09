@@ -512,6 +512,20 @@ fija bajo la gráfica ("variación frente al mes anterior"). Valores en
 ≥ 3:1 contra la tarjeta en claro y oscuro (WCAG 1.4.11), medido en
 `fase297-graficas-lineas.test.js`. ORLANT y Mobilize no cambian.
 
+## Aurora › Agendas: paleta azul y botones resaltados (Fase 304) — excepción documentada
+
+Pedido del supervisor de Clínica Aurora (10/11/2026), solo en la pestaña «Agendas»:
+
+- **Gráficas** en una paleta azul de Aurora (`AU_PALETA` en
+  `public/js/agendas-usuaria-logic.js`; el repo no tiene el hex oficial de la marca: si el
+  cliente lo entrega, se cambia ahí). Total + 3 bases, cada tono ≥ 3:1 contra la tarjeta en
+  claro y oscuro. Como los tonos son de la misma familia, cada base lleva además su marcador
+  y su trazo (`auEstiloBase`): nunca se distingue solo por el color.
+- **Botones** de la pestaña (base y vista de cada gráfica, `.au-ag-botones`): tema claro fondo
+  `#111` y letra blanca; tema oscuro fondo blanco y letra `#111`; activo azul (`#1565c0` con
+  letra blanca / `#90c8f8` con letra `#0a2540`), borde doble y «✓». Todos ≥ 4,5:1 y 44 px de
+  alto. Medido en `fase304-agendas-botones-lineas.test.js`. No se usa fuera de esta pestaña.
+
 ## Fechas con nombre (Fase 147)
 
 Todo lo que se **ve** muestra el mes con nombre: "Septiembre 2026", y por
