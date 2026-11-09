@@ -22,10 +22,10 @@ test('base nueva: Mobilize, Aurora y HLM con Calidad solo de monitoreos; ORLANT 
     assert.deepEqual(t.panels, [{ tipo: 'calidad_monitoreos_panel', campana: c }], c);
     assert.equal(t.oculta, true, c + ': sigue oculta hasta el primer monitoreo');
   }
-  assert.deepEqual(calidadDe('ORLANT').panels.map((p) => p.tipo), ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores']);
+  assert.deepEqual(calidadDe('ORLANT').panels.map((p) => p.tipo), ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'calidad_monitoreos_panel']); // Fase 307
   // La plantilla (cliente nuevo) tambien: solo monitoreos; ORLANT con su ajuste.
   assert.deepEqual(generarLayout(PERFILES_ACTUALES.MOBILIZE).layout.tabs.find((t) => t.key === 'calidad').panels.map((p) => p.tipo), ['calidad_monitoreos_panel']);
-  assert.deepEqual(generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs.find((t) => t.key === 'calidad').panels.map((p) => p.tipo), ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores']);
+  assert.deepEqual(generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs.find((t) => t.key === 'calidad').panels.map((p) => p.tipo), ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'calidad_monitoreos_panel']); // Fase 307
 });
 
 test('migracion sobre la forma de produccion: quita los 4 paneles viejos, deja el resto, no borra datos, idempotente', () => {

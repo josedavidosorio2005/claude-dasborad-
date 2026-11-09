@@ -39,8 +39,8 @@ test('migracion: el panel queda al final de Calidad de MOBILIZE, una sola vez; l
   dbMod.migrarMobilizeCalidadMonitoreosPanel();
   assert.equal(JSON.stringify(layoutDe('MOBILIZE')), mobAntes, 'idempotente');
   assert.equal(JSON.stringify(db.prepare("SELECT cliente, layout FROM dashboards_config WHERE cliente <> 'MOBILIZE'").all()), antes);
-  // Fase 262: Aurora y HLM tambien lo tienen; ORLANT y SURA no.
-  assert.ok(otros.filter((r) => !['CLINICA AURORA', 'HOSPITAL LA MARIA'].includes(r.cliente)).every((r) => !r.layout.includes('calidad_monitoreos_panel')), 'ORLANT y SURA no lo tienen');
+  // Fase 262: Aurora y HLM tambien lo tienen; Fase 307: ORLANT tambien. SURA no.
+  assert.ok(otros.filter((r) => !['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT'].includes(r.cliente)).every((r) => !r.layout.includes('calidad_monitoreos_panel')), 'SURA no lo tiene');
 });
 
 test('el asesor ve las plantillas de SU campaña (no las de otra), nunca usables', async () => {

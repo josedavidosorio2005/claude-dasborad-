@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.154.0 — Noviembre 2026
+
+**Fase 307: Calidad lista para que los líderes evalúen en ORLANT y en Clínica Aurora, igual que en Mobilize.**
+
+- **ORLANT:** la pestaña Calidad sigue mostrando lo de siempre (indicadores, distribución de
+  clasificación y promedio por asesor) y ahora suma al final **«Resultado de los monitoreos»**,
+  el mismo de Mobilize: lo que los líderes califican en la plataforma. Se califica con la
+  plantilla de ORLANT. El resto de ORLANT no cambia.
+- **Clínica Aurora:** ya tenía Calidad con su plantilla. La pestaña aparece sola en cuanto se
+  guarda el primer monitoreo, y «Errores» sigue de última.
+- **Quién evalúa:** igual que en Mobilize, el administrador y los usuarios con rol Supervisor o
+  Calidad que tengan acceso a esa campaña. El cliente ve los resultados sin el nombre del
+  evaluador ni las observaciones.
+- Mobilize, SURA y Hospital La María no cambian.
+
 ## v1.153.0 — Noviembre 2026
 
 **Fase 306: Clínica Aurora estrena las pestañas «Inasistencia» y «Encuestas».**

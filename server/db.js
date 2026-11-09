@@ -4844,6 +4844,28 @@ function auroraInasistenciaEncuestas() {
 }
 runOnceMigration('fase306_aurora_inasistencia_encuestas_v1', auroraInasistenciaEncuestas);
 
+// Fase 307 (pedido del supervisor, 10/11): Calidad de ORLANT como Mobilize para
+// que los lideres evaluen. Decision del usuario: se CONSERVA lo que ORLANT ya
+// muestra (indicadores, torta y barras de la base de Cargar datos) y se agrega
+// al final «Resultado de los monitoreos» (calidad_monitoreos_panel, el mismo de
+// Mobilize). Sin monitoreos el panel no se dibuja: ORLANT se ve igual que hoy.
+// Solo ORLANT; ningun dato se borra. Idempotente.
+function orlantCalidadMonitoreos() {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+  if (!tab || !Array.isArray(tab.panels) || tab.panels.some((p) => p && p.tipo === 'calidad_monitoreos_panel')) return;
+  // Solo sobre la forma reconocible (indicadores + torta); una pestaña distinta se deja.
+  const tipos = tab.panels.map((p) => p && p.tipo);
+  if (!tipos.includes('calidad_kpis') || !tipos.includes('calidad_pie')) return;
+  tab.panels = tab.panels.concat([{ tipo: 'calidad_monitoreos_panel', campana: 'ORLANT' }]);
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'ORLANT');
+  if (!config.isTest) console.log('[db] Migracion fase307_orlant_calidad_monitoreos_v1 aplicada.');
+}
+runOnceMigration('fase307_orlant_calidad_monitoreos_v1', orlantCalidadMonitoreos);
+
 // Fase 269 (pedido de Edwin, 05/11): en MOBILIZE, CLINICA AURORA y HOSPITAL
 // LA MARIA la pestaña Calidad queda solo con "Resultado de los monitoreos"
 // (calidad_monitoreos_panel). Se quitan de la pantalla el resumen subido en
@@ -4954,6 +4976,7 @@ module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm
 module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
 module.exports.agendasTresBasesAurora = agendasTresBasesAurora; // Fase 302
 module.exports.auroraInasistenciaEncuestas = auroraInasistenciaEncuestas; // Fase 306
+module.exports.orlantCalidadMonitoreos = orlantCalidadMonitoreos; // Fase 307
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

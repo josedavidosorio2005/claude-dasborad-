@@ -20189,3 +20189,34 @@ columna reales en otro orden); ajustadas fase118/134/150/153/160/230/284/297. Su
 SUPERVISOR (archivo cruzado rechazado en las dos), pestañas en claro/oscuro × 1440/768/375 ×
 SUPERVISOR/CLIENTE: 0 errores, sin desborde, Errores de última, barras de mayor a menor con la
 paleta de Aurora. **ORLANT main vs rama** (misma base, 23 vistas): 0 diferencias, 0 errores.
+
+## Fase 307 — Calidad para que los líderes evalúen en ORLANT y Clínica Aurora (v1.154.0, 2026-11-10)
+
+Pedido del supervisor: Calidad en ORLANT y Aurora igual que en Mobilize. ORLANT congelado salvo Calidad.
+
+- **Revisión:** el componente (`calidad_monitoreos_panel`, `_cmpRender`), el formulario
+  Calificar, el guardado (`POST /monitoreos`) y los permisos (`canEvaluateCampaign`: admin, o
+  SUPERVISOR/CALIDAD con `campana_<X>`) ya eran genéricos por campaña: la lista de campañas de
+  Calificar sale de las plantillas. Privacidad de la cuenta cliente: `monitoreosParaCliente` (sin
+  evaluador ni observaciones). «Errores del mes» es de la pestaña Errores de Aurora, no de Calidad.
+- **Plantillas:** ORLANT usa la suya de la semilla del repo (`calidad-plantillas-seed.js`,
+  17 ítems). Aurora usa la importada en producción (id 10, desde la matriz del supervisor; el JSON
+  vive fuera del repo). No se inventó ninguna.
+- **ORLANT (decisión del usuario):** conserva indicadores, torta y barras de su Calidad y suma
+  «Resultado de los monitoreos» al final. Migración idempotente
+  `fase307_orlant_calidad_monitoreos_v1` (solo ORLANT, solo sobre la forma reconocible
+  kpis+torta) y la plantilla del tablero (`plantillas-cliente.js`, ajuste `clasica`). En
+  `dashboard-generic.js` ese panel va después de la rejilla de 2 columnas cuando la pestaña tiene
+  gráficas; sin rejilla (Mobilize/Aurora/HLM) queda donde siempre. Sin monitoreos el panel no se
+  dibuja. Pendiente de la Fase 269 resuelto.
+- **Aurora (decisión del usuario):** sin cambios: su pestaña Calidad se destapa sola con el
+  primer monitoreo, antes de Errores.
+
+**Pruebas.** `fase307-calidad-orlant-aurora` (6, datos sintéticos); ajustadas fase138, 153, 160,
+256, 262, 269 y las de migraciones viejas de Calidad/orden de ORLANT (cuentan el panel nuevo).
+Suite 2823/2823, `npm audit` 0. Local (Playwright + Brave): SUPERVISOR de ORLANT y de Aurora ven
+solo su campaña en Calificar y guardan con su plantilla (17 y 5 ítems); la otra campaña → 403;
+Calidad de Aurora aparece con el primer monitoreo, penúltima antes de Errores; cliente y líder
+sin evaluador/observaciones; claro/oscuro × 1440/768/375 × 4 perfiles, 0 errores. **ORLANT main
+vs rama** (23 vistas): 22 idénticas; Calidad = el contenido de main completo e igual al inicio, más
+el panel de monitoreos al final.

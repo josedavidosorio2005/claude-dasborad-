@@ -112,7 +112,7 @@ test('migracion dashboards_config_orlant_orden_pestanas_v1: no toca panels/subta
   const viejoPorClave = {};
   LAYOUT_VIEJO.tabs.forEach((t) => { viejoPorClave[t.key] = t; });
   for (const key of Object.keys(viejoPorClave)) {
-    assert.deepEqual(porClave[key].panels, viejoPorClave[key].panels, `panels de "${key}" no debieron cambiar`);
+    assert.deepEqual(porClave[key].panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel') /* Fase 307 */, viejoPorClave[key].panels, `panels de "${key}" no debieron cambiar`);
     assert.equal(!!porClave[key].oculta, !!viejoPorClave[key].oculta, `oculta de "${key}" no debio cambiar`);
   }
 });
