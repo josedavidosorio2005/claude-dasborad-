@@ -19923,3 +19923,42 @@ La medición de después fue unos 4 min tras el deploy (un primer intento a los 
 sesión al recargar la página, por el script de medición). No se puede descartar que alguien
 más abriera ORLANT en ese rato, pero las consultas de opciones de esa primera apertura ya
 salieron de la caché (≤0,17 s cada una). `/api/health`: `ok:true`, versión 1.144.8.
+
+
+## Fases 295–298 — Revisión de Aurora y HLM antes de la reunión del 10/11 y pedido del supervisor (v1.145.0–v1.146.1, 2026-11-09)
+
+**Fase 295 (#721, solo docs + prueba).** La bitácora tenía escrito el valor de la contraseña
+temporal de la cuenta CLIENTES_DASH de ORLANT (Fase 137). Se retiró del archivo;
+`fase295-sin-contrasenas-en-docs` falla si una contraseña temporal/inicial vuelve a quedar
+escrita en un `.md` (nunca imprime el valor). No se movió a variable de entorno: ningún código
+la lee, las cuentas guardan solo el hash bcrypt y se rotan desde Usuarios. El valor sigue en el
+historial de git del repo público: **la rotación la hace el usuario** (paso en
+`docs/pendientes.md`). Excepción a "aditivo": se editó una línea vieja de esta bitácora solo
+para retirar el secreto.
+
+**Fase 296 (#722, v1.145.0).** `public/js/aviso-pendiente-logic.js`: los avisos de "sin datos"
+de Tráfico de Llamadas/WhatsApp, Tipificación, Salida, Total tráfico, tiempos de WhatsApp,
+Agendas, Inasistencia, Efectividad de citas y el aviso general muestran «Información
+pendiente» a quien no carga datos; quien carga sigue viendo la instrucción. Tráfico de
+Llamadas y de WhatsApp avisan los meses recientes que faltan (HLM: septiembre y octubre).
+
+**Fase 297 (#723, v1.146.0), pedido del supervisor de Aurora, igual en HLM.**
+`public/js/graficas-lineas-logic.js`: Total tráfico en 3 líneas de ingreso (Total =
+`llamadasEntrada + whatsappEntrada`), la salida en línea con la variación vs. el mes anterior
+(▲ verde / ▼ rojo, nota fija, tooltip) y el orden de pestañas aplicado al mostrar
+(`_gdTabsVisibles`). Se probó primero una migración de `dashboards_config`, pero rompía 13
+pruebas de layout de fases anteriores y una migración futura por catálogo podía deshacer el
+orden. Sin cambios de cálculo; ORLANT y Mobilize igual. Excepción de colores en
+`docs/sistema-de-diseno.md`. Lección: una captura con `fullPage: true` anima el redimensionado
+de Chart.js y deja las líneas "comprimidas" en la foto (el gráfico estaba bien): capturar sin
+`fullPage`.
+
+**Fase 298 (#724, v1.146.1).** «Skill N (nombre pendiente)» para los skills sin nombre (Aurora
+4166/4169); el valor del filtro y los conteos no cambian.
+
+**Verificación.** Suite 2765/2765, `npm audit` 0, CI en verde en los 4 PRs, merge con
+`--match-head-commit`, uno a la vez esperando el deploy. Local (Playwright + Brave, copia de la
+base demo con datos sintéticos, CLIENTE y SUPERVISOR, 375/768/1440 px) sin errores. Producción
+solo lectura (SUPERVISOR #56) antes y después: 0 errores de la app, ninguna petición > 3 s, todo
+lo de arriba visible. **Sin verificar en producción con la cuenta del cliente** (en las dos
+corridas se repitió la del supervisor). Informe: `docs/revision-aurora-hlm-2026-11-09.md`.
