@@ -1700,6 +1700,11 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 #cc-dialogo.show{display:flex;}
 .cc-dialogo-caja{background:var(--c-surface);color:var(--c-text);border-radius:var(--r-lg);max-width:480px;width:100%;padding:20px 22px;box-shadow:var(--shadow-xl);}
 .cc-dialogo-caja h3{margin:0 0 10px;}
+/* Fase 301: ventana de las 3 bases de Agendas por usuaria (Aurora). */
+.au-bases-ayuda{margin:0 0 12px;color:var(--c-text-muted);font-size:var(--fs-small);}
+.au-bases-estado{margin-top:10px;font-size:var(--fs-small);}
+.au-bases-estado p{margin:0 0 6px;}
+.au-bases-error{color:var(--c-danger-text);}
 .cc-tranquilo{background:var(--c-success-bg);color:var(--c-success-text);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-body);}
 
 .cc-archivo{display:flex;align-items:center;gap:8px;border:2px dashed var(--c-border);border-radius:var(--r-md);padding:14px;cursor:pointer;margin:10px 0 6px;min-height:44px;}

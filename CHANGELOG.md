@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.149.0 — Noviembre 2026
+
+**Fase 301: Clínica Aurora — «Agendas por usuaria» lista para recibir 3 bases.**
+
+- En **Cargar datos › Clínica Aurora › Agendas por usuaria › Subir** sale una ventana con una
+  casilla por base (**Base 1, Base 2, Base 3**): se puede subir una sola o las tres a la vez, y
+  se unen en una sola carga. Queda guardado de qué base vino cada cita.
+- Cada columna se busca por su **nombre**, en cualquier orden y sin importar mayúsculas, tildes
+  ni espacios de más. Si a un archivo le falta una columna, el aviso dice **cuál falta y en qué
+  archivo**.
+- Al subir una base solo se reemplaza **esa** base del mes; las otras se quedan.
+- La pestaña se calcula y se ve **igual que antes** (los nombres de las bases y cómo se muestran
+  se definen con el supervisor). Ningún otro cliente cambia.
+
 ## v1.148.0 — Noviembre 2026
 
 **Fase 300: Total tráfico de tercera y la misma gráfica en ORLANT.**

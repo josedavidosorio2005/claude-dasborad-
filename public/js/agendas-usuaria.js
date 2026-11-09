@@ -205,3 +205,91 @@ function _auExportExcel(i) {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(xlsxFilasSeguras(filas)), (_AU_TITULOS[vista] || 'Agendas').slice(0, 31));
   XLSX.writeFile(wb, 'Agendas_' + vista + '_' + String(_gd.cliente).replace(/\s+/g, '_') + '.xlsx');
 }
+
+// ── Fase 301 (09/11): cargar las 3 bases de "Agendas por usuaria" de Aurora ──
+// Desde el Centro de cargas (módulo Agendas por usuaria › Subir). Una casilla por
+// base (AU_TIPOS_BASE): se puede subir una sola o las 3 juntas. Cada archivo se
+// lee por NOMBRE de encabezado (AU_MAPA_ENCABEZADOS), se agrega aquí (ningún dato
+// de paciente sale del navegador) y las bases se UNEN en una sola carga, cada
+// fila con su base. En el servidor solo se reemplazan las bases que se suben.
+// La pestaña se calcula y se muestra igual que antes.
+var _auBases = { cliente: '', mes: '' };
+
+function auAbrirCargaBases(cliente, mes) {
+  _auBases.cliente = cliente; _auBases.mes = mes || '';
+  var casillas = AU_TIPOS_BASE.map(function (b) {
+    return '<div class="ig"><label for="au-base-' + b.id + '">' + esc(b.etiqueta) + '</label>' +
+      '<input type="file" id="au-base-' + b.id + '" accept=".xls,.xlsx,.csv" data-au-base="' + esc(b.id) + '"></div>';
+  }).join('');
+  var cuerpo = '<p class="au-bases-ayuda">Sube una base o las tres a la vez. Cada columna se busca por su nombre, en cualquier orden. ' +
+    'Solo se reemplazan las bases que subas; las demás del mes se quedan.</p>' + casillas +
+    '<div id="au-bases-estado" class="au-bases-estado" role="status" aria-live="polite"></div>';
+  _ccDialogo('Agendas por usuaria — cargar bases' + (mes && typeof centroNombreMes === 'function' ? ' (' + esc(centroNombreMes(mes)) + ')' : ''), cuerpo,
+    '<button type="button" class="btn-cancel" onclick="_ccCerrarDialogo()">Cancelar</button>' +
+    '<button type="button" class="btn-primary" id="au-bases-guardar" onclick="auGuardarBases()">Revisar y guardar</button>');
+}
+
+function _auLeerArchivo(file) {
+  return new Promise(function (ok, mal) {
+    var fr = new FileReader();
+    fr.onload = function () { ok(fr.result); };
+    fr.onerror = function () { mal(new Error('No se pudo leer el archivo «' + file.name + '»')); };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+// La hoja del reporte: la que reconoce TODAS las columnas; si ninguna, la que
+// reconoce más (así el error dice exactamente qué falta). Mismas opciones de
+// lectura que Cargar Datos (cellNF: fechas como en la carga de siempre).
+function auAoaDelLibro(wb) {
+  var mejor = null, mejorN = -1;
+  for (var k = 0; k < wb.SheetNames.length; k++) {
+    var aoa = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[k]], { header: 1, blankrows: false, defval: null });
+    var r = auParseFilas(aoa);
+    if (!r.error) return aoa;
+    var n = AU_MAPA_ENCABEZADOS.length - (r.faltan || []).length;
+    if (n > mejorN) { mejorN = n; mejor = aoa; }
+  }
+  return mejor || [];
+}
+
+async function auGuardarBases() {
+  var estado = document.getElementById('au-bases-estado');
+  var btn = document.getElementById('au-bases-guardar');
+  var decir = function (html, error) { if (estado) { estado.innerHTML = html; estado.setAttribute('role', error ? 'alert' : 'status'); estado.classList.toggle('au-bases-error', !!error); } };
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('input[data-au-base]'));
+  var elegidos = inputs.filter(function (el) { return el.files && el.files[0]; });
+  if (!elegidos.length) { decir('Elige al menos un archivo.', true); return; }
+  if (btn) btn.disabled = true;
+  try {
+    decir('Leyendo ' + elegidos.length + ' archivo(s)…');
+    var partes = [];
+    for (var k = 0; k < elegidos.length; k++) {
+      var f = elegidos[k].files[0];
+      var wb = XLSX.read(new Uint8Array(await _auLeerArchivo(f)), { type: 'array', sheetStubs: true, cellNF: true });
+      partes.push({ base: elegidos[k].dataset.auBase, archivo: f.name, aoa: auAoaDelLibro(wb) });
+    }
+    var u = auUnirBases(partes);
+    if (u.error) { decir(u.errores.map(function (e) { return '<p>' + esc(e) + '</p>'; }).join(''), true); return; }
+    var archivoNombre = partes.map(function (p) { return auEtiquetaBase(p.base) + ': ' + p.archivo; }).join(' | ').slice(0, 200);
+    var cuerpo = { campana: _auBases.cliente, archivoNombre: archivoNombre, filas: u.filas };
+    var imp = await apiRequest('POST', '/calidad/agendas-usuaria/carga/impacto', cuerpo);
+    var resumenBases = Object.keys(u.porBase).map(function (b) { return '• ' + auEtiquetaBase(b) + ' («' + u.porBase[b].archivo + '»): ' + u.porBase[b].citas + ' cita(s)'; });
+    var lineas = (imp.meses || []).map(function (m) {
+      var que = m.bases ? m.bases.map(auEtiquetaBase).join(', ') : 'el mes completo';
+      return '• ' + mesNombreLargo(m.mes) + ': ' + m.citasNuevas + ' cita(s) — reemplaza ' + que + (m.citasExistentes > 0 ? ' (' + m.citasExistentes + ' ya cargada(s))' : ' (nada cargado)');
+    });
+    var avisos = u.avisos.length ? '\n\nAvisos:\n' + u.avisos.join('\n') : '';
+    if (!confirm('Agendas por usuaria — bases unidas:\n' + resumenBases.join('\n') + '\n\nSe va a guardar:\n' + lineas.join('\n') + avisos + '\n\n¿Continuar?')) { decir('No se guardó nada.'); return; }
+    var resp = await apiRequest('POST', '/calidad/agendas-usuaria/carga', cuerpo);
+    if (typeof _auCache !== 'undefined') _auCache = {};
+    if (typeof showToast === 'function') showToast(resp.citas + ' cita(s) guardadas (' + resp.meses.map(mesNombreLargo).join(', ') + ')');
+    _ccCerrarDialogo();
+    if (typeof _ccCargar === 'function') _ccCargar();
+  } catch (e) {
+    decir(esc(e.message || String(e)), true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+

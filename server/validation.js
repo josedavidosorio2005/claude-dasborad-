@@ -737,6 +737,8 @@ const agendasUsuariaQuery = z.object({ campana: campanaSchema });
 const auTexto = (max) => z.string().trim().max(max);
 // Fase 265: conteos por fecha de cita, fecha de solicitud, sede, usuario y especialidad.
 const auDia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha invalida');
+// Fase 301: `base` (opcional) = de cual de las 3 bases vino (ids de AU_TIPOS_BASE).
+const AU_BASES_IDS = require('../public/js/agendas-usuaria-logic.js').AU_TIPOS_BASE.map((b) => b.id);
 const agendasUsuariaFila = z.strictObject({
   mes: mesSchema,
   fechaCita: auDia,
@@ -745,6 +747,7 @@ const agendasUsuariaFila = z.strictObject({
   usuario: auTexto(60).min(1),
   especialidad: auTexto(120).min(1),
   n: z.number().int().min(1).max(100000),
+  base: z.enum(AU_BASES_IDS, { error: 'Base desconocida' }).optional(),
 });
 const agendasUsuariaCargaBody = z.object({
   campana: campanaSchema,

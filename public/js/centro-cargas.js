@@ -248,6 +248,8 @@ function _ccCerrarDialogo() {
 var _ccVolverA = null;
 function ccSubir(ci, mi) {
   var m = _ccModuloActual(), c = m.cargas[ci], x = c.meses[mi];
+  // Fase 301: Agendas por usuaria (solo Aurora) sube sus 1 a 3 bases en su propia ventana.
+  if (c.id === 'agendas_usuaria' && typeof auAbrirCargaBases === 'function') { auAbrirCargaBases(_cc.cliente, x.mes); return; }
   _ccVolverA = { cliente: _cc.cliente, modulo: _cc.modulo };
   var cliente = _cc.cliente;
   // PR 4: las cargas de CENTRO_CARGA_PLAN suben con el plan de ese modulo y

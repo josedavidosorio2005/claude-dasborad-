@@ -4791,6 +4791,18 @@ function migrarAgendasUsuariaVistas() {
 }
 runOnceMigration('fase265_agendas_usuaria_vistas_v1', migrarAgendasUsuariaVistas);
 
+// Fase 301 (09/11): "Agendas por usuaria" de Aurora recibe hasta 3 bases por mes.
+// Columna NUEVA `base` (de que base vino cada fila; '' = cargada antes, sin base).
+// ADD COLUMN: no cambia ni borra ninguna fila. Solo la tabla agendas_usuaria
+// (Aurora); ningun otro cliente. Idempotente.
+function agregarBaseAgendasUsuaria() {
+  const cols = db.prepare('PRAGMA table_info(agendas_usuaria)').all().map((c) => c.name);
+  if (!cols.length) return;
+  if (!cols.includes('base')) db.exec("ALTER TABLE agendas_usuaria ADD COLUMN base TEXT NOT NULL DEFAULT ''");
+  if (!config.isTest) console.log('[db] Migracion fase301_agendas_usuaria_base_v1 aplicada.');
+}
+runOnceMigration('fase301_agendas_usuaria_base_v1', agregarBaseAgendasUsuaria);
+
 // Fase 269 (pedido de Edwin, 05/11): en MOBILIZE, CLINICA AURORA y HOSPITAL
 // LA MARIA la pestaña Calidad queda solo con "Resultado de los monitoreos"
 // (calidad_monitoreos_panel). Se quitan de la pantalla el resumen subido en
