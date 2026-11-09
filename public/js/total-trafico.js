@@ -24,7 +24,7 @@ async function _totalTraficoRenderPanel(p, i){
   catch(e){ showToast(e.message, 'error'); }
   if(!filas.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div class="gd-vacio">Sin tráfico cargado todavía (Tráfico de Llamadas, Tráfico de WhatsApp o Llamadas y WhatsApp de salida).</div></div>';
+      avisoPendienteHtml('Total tráfico', 'Sin tráfico cargado todavía (Tráfico de Llamadas, Tráfico de WhatsApp o Llamadas y WhatsApp de salida).') + '</div>'; // Fase 296
     return;
   }
 

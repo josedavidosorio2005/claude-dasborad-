@@ -37,7 +37,7 @@ async function _efectividadCitasRenderPanel(p, i){
   var opciones = await _ecCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div class="gd-vacio">Sin Efectividad de citas cargada todavia. Un usuario con permiso de administrador debe subir la hoja CITAS_ATENDIDAS desde "Cargar Datos".</div></div>';
+      avisoPendienteHtml('Efectividad de citas', 'Sin Efectividad de citas cargada todavía. Un usuario con permiso de administrador debe subir la hoja CITAS_ATENDIDAS desde "Cargar Datos".') + '</div>'; // Fase 296
     return;
   }
 

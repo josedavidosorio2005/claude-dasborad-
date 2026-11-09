@@ -31,6 +31,9 @@ async function dibujar({ campana, mesSel, filas, usaTiempos }) {
     // Fase 250: granularidades del panel (la real, de trafico-whatsapp-logic.js).
     traficoWppGranularidades: require(path.join(__dirname, '..', '..', 'public', 'js', 'trafico-whatsapp-logic.js')).traficoWppGranularidades,
     fechaLimitesRecortar: (x) => x,
+    // Fase 296: el aviso vacio depende de si la cuenta carga datos (aqui, admin) y del mes de hoy.
+    canLoadData: () => true,
+    fechaLimitesHoyColombia: () => '2026-10-20',
     _gdAvisoSinDatosMesHtml: (etq, mes) => '<div class="gd-aviso-sin-datos">Sin datos de ' + etq + ' para ' + mes + '.</div>',
     TRAFICO_WPP_SUBTABS: [{ key: 'resumen', label: 'Flujo de WhatsApp' }, { key: 'abandono', label: 'Abandono' }, { key: 'sl', label: 'Nivel de Servicio' }],
     _traficoSubtabsNavHTML: (pref, i, activo, fn, attr, subtabs) => subtabs.map((s) => '<button class="gd-subtab-btn' + (activo === s.key ? ' on' : '') + '" data-' + attr + '="' + s.key + '">' + s.label + '</button>').join(''),
@@ -46,6 +49,7 @@ async function dibujar({ campana, mesSel, filas, usaTiempos }) {
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), ctx);
   vm.runInContext('function _gdMeses(){ return _gd.mesesSel; }', ctx);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'aviso-pendiente-logic.js'), 'utf8'), ctx); // Fase 296
   vm.runInContext(SRC, ctx);
   ctx._traficoWppCargarDatos = async () => ({ filas });
   ctx._traficoWppEstadoDesdeURL = () => ({ skills: null, desde: '', hasta: '', granularidad: 'mes', combinar: true });
@@ -68,7 +72,7 @@ test('ORLANT, MES octubre sin Flujo de octubre: aviso + sub-pestaña "Nivel de S
 
 test('ORLANT sin ningun Flujo de WhatsApp cargado: tambien muestra "Nivel de Servicio"', async () => {
   const { html, tiempos } = await dibujar({ campana: 'ORLANT', mesSel: '2026-10', filas: [], usaTiempos: ['ORLANT'] });
-  assert.match(html, /Sin datos de Flujo de WhatsApp cargados todavia\./);
+  assert.match(html, /Sin datos de Flujo de WhatsApp cargados todavía\./);
   assert.match(html, /data-trafwppsub="sl"/);
   assert.equal(tiempos.length, 1);
 });
@@ -79,7 +83,7 @@ test('una campaña sin la vista de rangos sigue igual que antes: solo el aviso, 
   assert.doesNotMatch(mes.html, /gd-subtab-btn/);
   assert.equal(mes.tiempos.length, 0);
   const vacio = await dibujar({ campana: 'MOBILIZE', mesSel: '2026-10', filas: [], usaTiempos: ['ORLANT'] });
-  assert.match(vacio.html, /Sin datos cargados todavia\. Un usuario con permiso de administrador/);
+  assert.match(vacio.html, /Sin datos cargados todavía\. Un usuario con permiso de administrador/);
   assert.doesNotMatch(vacio.html, /gd-subtab-btn/);
 });
 

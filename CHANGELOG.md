@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.145.0 — Noviembre 2026
+
+**Fase 296: «Información pendiente» en vez de pantallas vacías.**
+
+- Cuando a una pestaña todavía le faltan datos por cargar (Tráfico de Llamadas, Tráfico de
+  WhatsApp, Tipificación, Llamadas y WhatsApp de salida, Total tráfico, tiempos de respuesta de
+  WhatsApp, Agendas, Inasistencia, Efectividad de citas), la cuenta del cliente ahora ve un aviso
+  de **«Información pendiente»**. Antes veía la instrucción interna de qué archivo subir y desde
+  dónde. Quien sí carga datos (administración y supervisores) sigue viendo esa instrucción.
+- En **Tráfico de Llamadas** y **Tráfico de WhatsApp**, si faltan los meses más recientes (por
+  ejemplo, Hospital La María tiene solo agosto), sale arriba una línea que dice qué meses están
+  pendientes. Los números que se ven no cambian.
+
 ## v1.144.8 — Noviembre 2026
 
 **Fase 294: los tableros abren más rápido después de cada actualización.**

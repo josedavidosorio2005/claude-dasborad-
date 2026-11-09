@@ -205,6 +205,7 @@ async function renderVista({ meses, mesGlobal, rangos }) {
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'mes-global-logic.js'), 'utf8'), sandbox);
   vm.runInContext('function _gdMeses(){ return _gd.mesesSel; }', sandbox);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'aviso-pendiente-logic.js'), 'utf8'), sandbox); // Fase 296
   vm.runInContext(VISTA_JS, sandbox);
   await sandbox._wppTiemposRender(0, 'ORLANT');
   return { sandbox, el, pedidos, graficas };

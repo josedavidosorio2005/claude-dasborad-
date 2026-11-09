@@ -170,8 +170,8 @@ async function _tipificacionRenderPanel(p, i){
 
   if(!mesesCombinados.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin tipificación cargada todavia. Un usuario con permiso de administrador debe subir '+
-      (p.soloCanal ? 'el archivo' : 'el CDR de llamadas (HistCDR) y el de WhatsApp (HistChat)')+' desde "Cargar Datos".</div></div>';
+      avisoPendienteHtml('Tipificación', 'Sin tipificación cargada todavía. Un usuario con permiso de administrador debe subir '+
+      (p.soloCanal ? 'el archivo' : 'el CDR de llamadas (HistCDR) y el de WhatsApp (HistChat)')+' desde "Cargar Datos".') + '</div>'; // Fase 296
     return;
   }
 
