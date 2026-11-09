@@ -1083,7 +1083,7 @@ function _renderPreviewCarga(){
       r.tipo==='flujo_hora' ? 'Flujo por hora' :
       (r.tipo==='whatsapp_tiempos' ? 'WhatsApp tiempos de respuesta' :
       r.tipo==='calidad_resumen' ? 'Calidad: resumen por asesor' :
-      r.tipo==='agendas_usuaria' ? 'Agendas por usuaria' :
+      r.tipo==='agendas_usuaria' ? 'Agendas' :
       (r.tipo==='encuesta' ? 'Encuesta' :
       (r.canal==='whatsapp' ? 'Trafico de WhatsApp' : 'Trafico de Llamadas'))))))))))));
     return '<tr><td>'+esc(r.titulo)+'</td><td>'+esc(tipoLabel)+'</td><td>'+_cargasEstadoLabel(r)+'</td></tr>';
@@ -1481,7 +1481,7 @@ async function _cargasGuardarAgendasUsuaria(cliente, r){
     var lineas = (imp.meses || []).map(function(m){
       return '• '+mesNombreLargo(m.mes)+': '+m.citasNuevas+' cita(s)'+(m.citasExistentes > 0 ? ' — REEMPLAZA '+m.citasExistentes+' ya cargada(s)' : ' — mes nuevo');
     });
-    if(!confirm('Agendas por usuaria — se va a guardar:\n\n'+lineas.join('\n')+'\n\n¿Continuar?')) return { ok:false, mensaje: 'No se guardó nada.' };
+    if(!confirm('Agendas — se va a guardar:\n\n'+lineas.join('\n')+'\n\n¿Continuar?')) return { ok:false, mensaje: 'No se guardó nada.' };
     var resp = await apiRequest('POST','/calidad/agendas-usuaria/carga', parsed);
     if(typeof _auCache !== 'undefined') _auCache = {};
     return { ok:true, mensaje: resp.citas+' cita(s) guardadas ('+resp.meses.map(mesNombreLargo).join(', ')+')' };

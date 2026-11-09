@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.150.1 — Noviembre 2026
+
+**Fase 303: «Agendas» también en Cargar datos.**
+
+- En **Cargar datos › Clínica Aurora** (Centro de cargas), en Usuarios (permisos de carga), en
+  el plan de Cargar Datos, en el aviso antes de guardar y al exportar, el módulo ya no dice
+  «Agendas por usuaria»: ahora es **«Agendas (3 bases)»** (citas, cancelaciones e
+  inasistencias). Lleva «(3 bases)» para no confundirlo con «Agendas» de ORLANT, que no cambia.
+- La pestaña del tablero ya se llamaba «Agendas» desde la v1.150.0. Nada más cambia.
+
 ## v1.150.0 — Noviembre 2026
 
 **Fase 302: Clínica Aurora — nueva pestaña «Agendas» con sus 3 bases.**

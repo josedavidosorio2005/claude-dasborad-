@@ -20,7 +20,7 @@ No se sube ninguna base. Los errores de agendamiento los registra el supervisor 
 
 ## Nombre real de la asesora
 
-Sale de Admin › Usuarios del sistema (alias por cliente), igual que en Agendas por usuaria.
+Sale de Admin › Usuarios del sistema (alias por cliente), igual que en Agendas.
 
 ## Quién puede registrar
 
