@@ -140,7 +140,9 @@ router.post(
       });
     }
 
-    const row = db.prepare('SELECT * FROM users WHERE user = ?').get(user);
+    // Fase 310: el usuario se compara sin distinguir mayusculas (la contrasena SI las distingue).
+    // Crear/renombrar rechaza un nombre que ya exista con otras mayusculas, asi que hay a lo sumo uno.
+    const row = db.prepare('SELECT * FROM users WHERE user = ? COLLATE NOCASE ORDER BY id LIMIT 1').get(user);
     if (!row) {
       await bcrypt.compare(password, DUMMY_HASH_PARA_TIMING);
       registrarLogin(req, 'LOGIN_FALLIDO', { nombre: '-', user, rol: '-' }, 'Usuario no existe');

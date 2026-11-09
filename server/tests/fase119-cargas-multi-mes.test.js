@@ -8,7 +8,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { request, app, db, tokenFor, MASTER_PASSWORD, registrarModulosPrueba } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
@@ -45,6 +45,9 @@ function contarFilas(tabla, campana) {
 }
 
 let adminToken;
+// Fase 310: para probar el aislamiento se carga en Aurora modulos que en produccion no tiene.
+registrarModulosPrueba('CLINICA AURORA', ['agendas', 'inasistencia', 'efectividad_agendamiento', 'efectividad_citas']);
+
 test('setup: token admin', async () => {
   adminToken = await tokenFor('admin', MASTER_PASSWORD);
   assert.ok(adminToken);

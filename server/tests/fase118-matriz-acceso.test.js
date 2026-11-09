@@ -753,6 +753,10 @@ test('Fase 153: GET /centro-cargas/:cliente/:carga/:mes/datos -- mismo criterio 
 // (PROPIA); el resto de roles no cambia (ver fase153-permisos-modulo.test.js
 // para Eliminar/Deshacer/plantillas/Trafico en detalle).
 test('Fase 153 PR 5: CALIDAD sin cargar_<modulo> no sube, no elimina, no deshace; con el permiso, solo ese modulo y su cliente', async () => {
+  // Fase 310: una carga debe ser de un modulo de la campaña (registro de clientes); solo en esta base de prueba
+  // se le agrega a PROPIA el modulo que esta prueba usa para los permisos de CALIDAD.
+  { const r = db.prepare('SELECT modulos FROM clientes_registro WHERE nombre = ?').get(PROPIA); const m = JSON.parse((r && r.modulos) || '[]');
+    if (r && !m.includes('llamadas_unicas')) db.prepare('UPDATE clientes_registro SET modulos = ? WHERE nombre = ?').run(JSON.stringify(m.concat(['llamadas_unicas'])), PROPIA); }
   const id = actores.CALIDAD.id;
   const original = db.prepare('SELECT perms FROM users WHERE id = ?').get(id).perms;
   const lu = (campana) => ({ campana, archivoNombre: 'm.xlsx', filas: [['Asesor M', '2026-08-05', 'CONTESTADA', 'SKILL M']] });

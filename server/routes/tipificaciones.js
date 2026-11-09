@@ -14,7 +14,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign, campanaDeCarga } = require('../auth');
 const { listarSkillsWhatsapp, guardarSkillsWhatsapp } = require('../skills-whatsapp');
 const { validate, schemas } = require('../validation');
 const {
@@ -121,7 +121,7 @@ router.post(
   requireActor,
   validate(schemas.tipificacionCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'tipificacion')) {
+    if (!canLoadModule(req.actor, 'tipificacion', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -137,7 +137,7 @@ router.post(
   requireActor,
   validate(schemas.tipificacionCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'tipificacion')) {
+    if (!canLoadModule(req.actor, 'tipificacion', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir tipificacion' });
     }
     const b = req.body;
@@ -169,7 +169,7 @@ router.get(
   requireActor,
   validate(schemas.skillsWhatsappQuery, 'query'),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'tipificacion')) {
+    if (!canLoadModule(req.actor, 'tipificacion', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos de Tipificación' });
     }
     if (!campaignAccess(req.actor, req.query.campana)) {

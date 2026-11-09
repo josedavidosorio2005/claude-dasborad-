@@ -6,7 +6,7 @@
 const express = require('express');
 const db = require('../db');
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendasUsuaria, cargarAgendasUsuaria, agendasUsuariaOpciones, agendasUsuariaDatos } = require('../agendas-usuaria');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -34,13 +34,13 @@ router.get('/calidad/agendas-usuaria/datos', requireActor, validate(schemas.agen
 }));
 
 router.post('/calidad/agendas-usuaria/carga/impacto', requireActor, validate(schemas.agendasUsuariaCargaBody), wrap((req, res) => {
-  if (!canLoadModule(req.actor, 'agendas_usuaria')) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+  if (!canLoadModule(req.actor, 'agendas_usuaria', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
   if (!campaignAccess(req.actor, req.body.campana)) return sinAcceso(res);
   res.json(impactoAgendasUsuaria(db, req.body));
 }));
 
 router.post('/calidad/agendas-usuaria/carga', requireActor, validate(schemas.agendasUsuariaCargaBody), wrap((req, res) => {
-  if (!canLoadModule(req.actor, 'agendas_usuaria')) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir las agendas por usuaria' });
+  if (!canLoadModule(req.actor, 'agendas_usuaria', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir las agendas por usuaria' });
   const b = req.body;
   if (!campaignAccess(req.actor, b.campana)) return sinAcceso(res);
   const r = cargarAgendasUsuaria(db, { campana: b.campana, archivoNombre: b.archivoNombre || '', cargadoPorNombre: req.actor.nombre || '-', filas: b.filas });

@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.154.2 — Noviembre 2026
+
+**Fase 310: dos arreglos de la revisión de seguridad.**
+
+- **Cargas:** la plataforma ahora revisa que el tipo de base que se sube sea de la campaña
+  elegida. Si no lo es, avisa con un mensaje claro y no guarda nada. Las cargas de siempre
+  siguen igual (ORLANT incluido).
+- **Inicio de sesión:** el usuario ya no distingue mayúsculas (por ejemplo, da igual escribirlo
+  todo en mayúsculas). La contraseña sí las sigue distinguiendo. No se pueden crear dos usuarios
+  que solo se diferencien en mayúsculas.
+
 ## v1.154.1 — Noviembre 2026
 
 **Fase 309: revisión de seguridad.**

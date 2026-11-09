@@ -8,7 +8,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { request, app, db, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers');
+const { request, app, db, tokenFor, MASTER_PASSWORD, SEED, registrarModulosPrueba } = require('./helpers');
 const { aliasNorm, resolverAlias, cargarAliasMapa, aplicarAliasAFilas } = require('../alias-asesores');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
@@ -18,7 +18,7 @@ function rand() { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
 // campanaSchema no acepta "_" (solo letras/numeros/espacios y .-/) -- un
 // nombre de campana ficticio por prueba, con espacio, nunca choca con
 // ORLANT real.
-function campanaFicticia() { return 'CAMPANA FICTICIA ' + rand(); }
+function campanaFicticia() { const c = 'CAMPANA FICTICIA ' + rand(); registrarModulosPrueba(c, ['tipificacion', 'agendas', 'efectividad_agendamiento', 'efectividad_citas', 'inasistencia']); return c; } // Fase 310
 
 // ── Unidad: normalizacion y resolucion (sin DB) ─────────────────────────
 test('aliasNorm: mayusculas, sin tildes, espacios colapsados', () => {

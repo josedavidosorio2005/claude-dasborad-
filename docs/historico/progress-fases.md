@@ -20241,3 +20241,23 @@ nombre de los líderes de Calidad (quienes evalúan); ahora va vacío para la cu
 reportados sin tocar. Permisos, fuga entre campañas (matriz de la Fase 118), cargas de Excel,
 secretos (`npm audit` 0), sesión (token en memoria, límites de login) y cabeceras de producción,
 sin problemas. ORLANT: nada que reportar. Detalle en `docs/revision-seguridad-2026-11-09.md`.
+
+## Fase 310 — Carga solo de módulos de la campaña y login sin distinguir mayúsculas (v1.154.2, 2026-11-10)
+
+Arreglos de los hallazgos 2 y 5 de `docs/revision-seguridad-2026-11-09.md`.
+
+- **Carga:** `canLoadModule(actor, modulo, campana)` (`server/auth.js`). Con la campaña de la
+  petición (`campanaDeCarga`: cuerpo o query de POST/PUT/DELETE), exige que el módulo esté en
+  `clientes_registro.modulos` de esa campaña (la misma configuración del Centro de cargas, sin listas
+  fijas); si no, 400 con mensaje claro (`err.statusPublico` en el manejador de errores). Solo se
+  revisa si quien carga tiene permiso y acceso a la campaña (si no, el 403 de siempre). 42 llamadas
+  en 16 rutas de carga; el Centro de cargas (que ya trabaja sobre el registro) no cambia. Pruebas
+  que cargaban en campañas ficticias registran sus módulos con `registrarModulosPrueba` (helpers).
+- **Login:** `WHERE user = ? COLLATE NOCASE` (la contraseña sigue con bcrypt, distingue
+  mayúsculas). Crear/renombrar rechaza un nombre que ya exista con otras mayúsculas (409) y el
+  nombre reservado del admin en cualquier forma (400). Los nombres guardados no cambian. Los
+  límites de intentos ya contaban por usuario en minúsculas. Antes del cambio se comprobó en
+  producción (solo lectura): 39 usuarios, ninguno que solo se diferencie en mayúsculas.
+
+**Pruebas.** `fase310-carga-modulo-login` (5) + ajustes en fase118/119/122 y efectividad-*.
+Suite 2829/2829.

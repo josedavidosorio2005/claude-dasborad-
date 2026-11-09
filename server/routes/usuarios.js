@@ -122,13 +122,13 @@ router.post(
   validate(schemas.createUserBody),
   wrap(async (req, res) => {
     const { nombre, user, password, rol, perms, asesorCampana } = req.body;
-    if (user === MASTER_ADMIN_USER) return res.status(400).json({ error: 'Nombre de usuario reservado' });
+    if (String(user).toLowerCase() === String(MASTER_ADMIN_USER).toLowerCase()) return res.status(400).json({ error: 'Nombre de usuario reservado' }); // Fase 310: sin distinguir mayusculas
     if (!puedeAsignarRol(req.actor, rol)) {
       return res.status(403).json({ error: 'Solo un administrador completo puede crear un usuario ADMIN o AUX_ADMIN' });
     }
     if (!permsGestionSinCambio(req.actor, perms, {})) return res.status(403).json({ error: ERROR_PERMS_GESTION });
     if (!accesosSinEscalar(req.actor, perms, {})) return res.status(403).json({ error: ERROR_ACCESOS });
-    const exists = db.prepare('SELECT id FROM users WHERE user = ?').get(user);
+    const exists = db.prepare('SELECT id FROM users WHERE user = ? COLLATE NOCASE').get(user); // Fase 310: sin distinguir mayusculas
     if (exists) return res.status(409).json({ error: 'Ese usuario ya existe' });
 
     const hash = await bcrypt.hash(password, 10);
@@ -163,9 +163,9 @@ router.put(
       return res.status(403).json({ error: 'Solo un administrador completo puede editar un usuario ADMIN o AUX_ADMIN' });
     }
     const { nombre, user, rol, password, perms, asesorCampana } = req.body;
-    if (user && user === MASTER_ADMIN_USER) return res.status(400).json({ error: 'Nombre de usuario reservado' });
+    if (user && String(user).toLowerCase() === String(MASTER_ADMIN_USER).toLowerCase()) return res.status(400).json({ error: 'Nombre de usuario reservado' }); // Fase 310
     if (user) {
-      const dupe = db.prepare('SELECT id FROM users WHERE user = ? AND id != ?').get(user, id);
+      const dupe = db.prepare('SELECT id FROM users WHERE user = ? COLLATE NOCASE AND id != ?').get(user, id); // Fase 310
       if (dupe) return res.status(409).json({ error: 'Ese usuario ya existe' });
     }
     if (rol !== undefined) {

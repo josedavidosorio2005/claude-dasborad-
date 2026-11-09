@@ -89,7 +89,22 @@ function cleanup() {
 
 process.on('exit', cleanup);
 
+// Fase 310: una carga solo se acepta si el modulo es de la campaña en el registro de
+// clientes. Las pruebas que cargan en campañas FICTICIAS (o un modulo que esa campaña
+// no tiene, para probar aislamiento) lo registran aqui, solo en la base de prueba.
+function registrarModulosPrueba(campana, modulos) {
+  const ahora = new Date().toISOString();
+  const row = db.prepare('SELECT modulos FROM clientes_registro WHERE nombre = ?').get(campana);
+  if (!row) {
+    db.prepare('INSERT INTO clientes_registro (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt) VALUES (?, 99, 1, ?, \'{}\', NULL, 1, ?, ?)').run(campana, JSON.stringify(modulos), ahora, ahora);
+    return;
+  }
+  const act = JSON.parse(row.modulos || '[]');
+  db.prepare('UPDATE clientes_registro SET modulos = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(act.concat(modulos.filter((m) => !act.includes(m)))), ahora, campana);
+}
+
 module.exports = {
+  registrarModulosPrueba,
   app,
   db,
   request,

@@ -9,7 +9,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign, campanaDeCarga } = require('../auth');
 const { asesoresSalidaDelMes, guardarLineasDelMes, usaClasificacionPorCliente, inventarioLineasPorMes } = require('../salida-cdr');
 const { ocultaAsesores } = require('../privacidad-cliente'); // Fase 287 (#5)
 const { validate, schemas } = require('../validation');
@@ -54,7 +54,7 @@ router.post(
   requireActor,
   validate(schemas.salidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'salida')) {
+    if (!canLoadModule(req.actor, 'salida', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -70,7 +70,7 @@ router.post(
   requireActor,
   validate(schemas.salidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'salida')) {
+    if (!canLoadModule(req.actor, 'salida', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir Salida' });
     }
     const b = req.body;

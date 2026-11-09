@@ -12,7 +12,7 @@
 const path = require('path');
 const express = require('express');
 const db = require('../db');
-const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadData, canLoadModule, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { cargarTraficoWhatsapp } = require('../trafico-whatsapp');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -48,7 +48,7 @@ router.get(
   requireActor,
   wrap((req, res) => {
     // Fase 299: la plantilla VACIA la baja tambien quien carga este modulo (supervisor, CALIDAD con su permiso).
-    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
+    if (!canLoadModule(req.actor, 'flujo_whatsapp', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
     }
     res.download(PLANTILLA_TRAFICO_WPP_PATH, 'PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx', (err) => {
@@ -82,7 +82,7 @@ router.post(
   requireActor,
   validate(schemas.traficoWppCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
+    if (!canLoadModule(req.actor, 'flujo_whatsapp', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir trafico de WhatsApp' });
     }
     const b = req.body;
@@ -124,7 +124,7 @@ router.post(
   requireActor,
   validate(schemas.traficoWppCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
+    if (!canLoadModule(req.actor, 'flujo_whatsapp', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;

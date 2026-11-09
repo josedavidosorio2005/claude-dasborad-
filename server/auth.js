@@ -273,10 +273,34 @@ function canLoadCampaign(actor, campana) {
 function puedeCargarAlgunaCampana(actor) {
   return isFullAdmin(actor) || supervisorCarga(actor);
 }
-function canLoadModule(actor, modulo) {
-  if (canLoadData(actor)) return true;
-  if (supervisorCarga(actor)) return true;
-  return !!(actor && actor.rol === 'CALIDAD' && actor.perms && actor.perms['cargar_' + modulo] === true);
+// Fase 310 (revision de seguridad, hallazgo 2): con `campana`, el modulo debe ser
+// de esa campaña segun el registro de clientes (clientes_registro.modulos, la misma
+// configuracion del Centro de cargas). Si no, error 400 con mensaje claro. Solo se
+// revisa cuando quien carga SI tiene permiso y acceso a la campaña (si no, sigue el
+// 403 de siempre y no se revela la configuracion de una campaña ajena).
+function moduloEsDeLaCampana(campana, modulo) {
+  const reg = require('./clientes-registro').leerRegistro(db).find((c) => c.nombre === campana);
+  return !!reg && reg.modulos.includes(modulo);
+}
+function errorModuloAjeno(campana, modulo) {
+  const e = new Error('Esta carga («' + modulo + '») no es de la campaña ' + campana + '. Revise el tipo de base o la campaña elegida.');
+  e.statusPublico = 400;
+  return e;
+}
+// La campaña de una peticion de carga (POST/PUT/DELETE, en el cuerpo o la query).
+function campanaDeCarga(req) {
+  if (!req || req.method === 'GET') return undefined;
+  if (req.body && typeof req.body.campana === 'string') return req.body.campana;
+  if (req.query && typeof req.query.campana === 'string') return req.query.campana;
+  return undefined;
+}
+function canLoadModule(actor, modulo, campana) {
+  const permitido = canLoadData(actor) || supervisorCarga(actor) ||
+    !!(actor && actor.rol === 'CALIDAD' && actor.perms && actor.perms['cargar_' + modulo] === true);
+  if (permitido && campana !== undefined && campaignAccess(actor, campana) && !moduloEsDeLaCampana(campana, modulo)) {
+    throw errorModuloAjeno(campana, modulo);
+  }
+  return permitido;
 }
 
 // Puede cargar al menos un modulo (abrir el Centro de cargas). Requiere
@@ -315,6 +339,7 @@ module.exports = {
   canManageMonitoreos,
   canLoadData,
   canLoadModule,
+  campanaDeCarga, // Fase 310
   canLoadAnyModule,
   supervisorCarga,
   supervisorPuedeCargarEn,
