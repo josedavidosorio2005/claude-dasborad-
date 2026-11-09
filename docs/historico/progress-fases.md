@@ -11037,7 +11037,7 @@ pronto. No agrega funciones nuevas — verifica con evidencia, endurece lo
 que hiciera falta, y prepara la entrega. Antes de pegar el prompt, el
 jefe creó desde la propia plataforma el usuario real del cliente de
 ORLANT (rol `CLIENTES_DASH`, solo ORLANT) y explicó por qué su
-contraseña temporal (`12345678`) nunca debía dársele a Claude Code ni
+contraseña temporal (valor retirado de este archivo el 09/11/2026, Fase 295 — nunca debió escribirse aquí) nunca debía dársele a Claude Code ni
 quedar en ningún archivo — la escribió él mismo en el navegador cuando
 el script la pidió, y la cambiaría apenas terminara la fase.
 
