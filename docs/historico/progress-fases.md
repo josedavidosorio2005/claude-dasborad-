@@ -20231,3 +20231,13 @@ ninguna pantalla vacía sin aviso. Mobilize › Llamadas Únicas y de Salida: bo
 existen botones «abandonadas / no conectadas» (son tarjetas y un desplegable). El login distingue
 mayúsculas en el usuario (un usuario de Aurora está en mayúsculas en su bloc de credenciales).
 Lista para el supervisor en `docs/pendientes-2026-11-10.md`.
+
+## Fase 309 — Revisión de seguridad (v1.154.1, 2026-11-10)
+
+Pasada enfocada de 30 minutos sobre lo tocado en las Fases 298–308 (código + producción en solo
+lectura). Un hallazgo alto arreglado: `GET /metas?campana=X` devolvía a la cuenta cliente el
+nombre de los líderes de Calidad (quienes evalúan); ahora va vacío para la cuenta cliente, como en
+`/metas/cumplimiento` (prueba `fase309-revision-seguridad`). Cuatro hallazgos bajos/informativos
+reportados sin tocar. Permisos, fuga entre campañas (matriz de la Fase 118), cargas de Excel,
+secretos (`npm audit` 0), sesión (token en memoria, límites de login) y cabeceras de producción,
+sin problemas. ORLANT: nada que reportar. Detalle en `docs/revision-seguridad-2026-11-09.md`.

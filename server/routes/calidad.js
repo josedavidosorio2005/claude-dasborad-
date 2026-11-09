@@ -992,7 +992,10 @@ router.get(
       const rows = db
         .prepare('SELECT * FROM cronograma_metas WHERE campana = ? ORDER BY mes DESC, liderNombre')
         .all(campana);
-      return res.json(rows.map(toMetaRow));
+      // Fase 309 (revision de seguridad): la cuenta cliente no recibe el nombre de los
+      // lideres (son quienes evaluan), igual que /metas/cumplimiento.
+      const cliente = privacidad.esCuentaCliente(req.actor);
+      return res.json(rows.map(toMetaRow).map((m) => (cliente ? { ...m, liderNombre: '' } : m)));
     }
     // Sin campana: solo el administrador puede ver el cronograma completo.
     if (!isFullAdmin(req.actor)) {
