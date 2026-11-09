@@ -62,8 +62,9 @@ function cargarAgendasUsuaria(db, { campana, archivoNombre, cargadoPorNombre, fi
   // Fase 265: columnas nuevas (fechaCita, fechaSolicitud, especialidad); las de
   // la Fase 259 (dia/canal/tipoCita/tipoPaciente) quedan vacias en las filas nuevas.
   // Fase 301: `base` ('' en la carga de siempre).
-  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, fechaCita, fechaSolicitud, especialidad, base, archivoNombre, cargadoPorNombre, createdAt)
-    VALUES (@campana, @mes, '', @sede, @usuario, '', '', '', 'confirma', @n, @fechaCita, @fechaSolicitud, @especialidad, @base, @archivoNombre, @cargadoPorNombre, @createdAt)`);
+  // Fase 302: + entidad y prof ('' si la base no las trae).
+  const ins = db.prepare(`INSERT INTO ${TABLA} (campana, mes, dia, sede, usuario, canal, tipoCita, tipoPaciente, rol, n, fechaCita, fechaSolicitud, especialidad, entidad, prof, base, archivoNombre, cargadoPorNombre, createdAt)
+    VALUES (@campana, @mes, '', @sede, @usuario, '', '', '', 'confirma', @n, @fechaCita, @fechaSolicitud, @especialidad, @entidad, @prof, @base, @archivoNombre, @cargadoPorNombre, @createdAt)`);
   let borradas = 0;
   const porBase = {};
   db.transaction(() => {
@@ -76,7 +77,7 @@ function cargarAgendasUsuaria(db, { campana, archivoNombre, cargadoPorNombre, fi
     for (const f of filas) {
       const base = f.base || '';
       porBase[base] = (porBase[base] || 0) + f.n;
-      ins.run(Object.assign({}, f, { base, campana, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts }));
+      ins.run(Object.assign({}, f, { base, entidad: f.entidad || '', prof: f.prof || '', campana, archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts }));
     }
   })();
   const r = { meses, insertadas: filas.length, borradas, citas: filas.reduce((s, f) => s + f.n, 0) };
@@ -93,7 +94,8 @@ function agendasUsuariaOpciones(db, campana) {
 function agendasUsuariaDatos(db, campana) {
   const mapa = cargarAliasMapa(db, campana);
   // Fase 265: solo las confirmaciones (las filas "crea" de la Fase 259 ya no se muestran).
-  const filas = db.prepare(`SELECT mes, fechaCita, fechaSolicitud, sede, usuario, especialidad, n FROM ${TABLA} WHERE campana = ? AND rol = 'confirma' ORDER BY mes, fechaCita`).all(campana);
+  // Fase 302: + base, entidad y prof (la vista «Agendas» usa solo las filas con base).
+  const filas = db.prepare(`SELECT mes, fechaCita, fechaSolicitud, sede, usuario, especialidad, entidad, prof, base, n FROM ${TABLA} WHERE campana = ? AND rol = 'confirma' ORDER BY mes, fechaCita`).all(campana);
   return { filas: filas.map((f) => Object.assign(f, { asesora: resolverAlias(mapa, f.usuario) })) };
 }
 

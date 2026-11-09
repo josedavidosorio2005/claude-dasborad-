@@ -124,10 +124,12 @@ const GENERADORES = {
     key: 'efectividad', label: 'Efectividad de Citas',
     panels: [{ tipo: 'efectividad_citas_panel', titulo: 'Efectividad de Citas', campana }],
   }),
-  agendas_usuaria: (campana) => ({ // Fase 259; Fase 265: 3 vistas (pedido de Edwin)
-    key: 'agendas_usuaria', label: 'Agendas por usuaria',
-    panels: AGENDAS_USUARIA_VISTAS.map(([vista, titulo]) => ({ tipo: 'agendas_usuaria_panel', campana, vista, titulo })),
-    subtabs: _subtabs(AGENDAS_USUARIA_VISTAS),
+  // Fase 259; Fase 265: 3 vistas; Fase 302: «Agendas», una sola vista (filtros +
+  // 2 graficas) con las 3 bases. La migracion fase302 lleva a esta misma forma la
+  // pestaña de 3 vistas que ya existe en produccion.
+  agendas_usuaria: (campana) => ({
+    key: 'agendas_usuaria', label: 'Agendas',
+    panels: [{ tipo: 'agendas_usuaria_panel', campana, vista: 'agendas', titulo: 'Agendas' }],
   }),
   // Fase 284: visible aunque no haya errores (la pestaña lo avisa).
   errores: (campana) => ({
